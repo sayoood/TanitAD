@@ -5589,7 +5589,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         _resync_ema_o5(stack)
         _resync_ema_o5(stack)
         enc_seed_report["exercised"] = True
-    assert_trunk_anchor_unwired(a)
+    assert_trunk_anchor_preflight(a)
     freeze = apply_stage_freeze(stack, a.stage)
     weights = _weights_from_args(a)
     w_stage_dry = weights.for_stage(a.stage)
@@ -5618,6 +5618,13 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     o1_k = min(a.o1_k, a.dry_k)
     o5_k = min(a.o5_k, a.dry_k)
     trainable = [p for p in stack.parameters() if p.requires_grad]
+    # ⛔ D-V7-TRUNK-ANCHOR is EXERCISED here for the same reason --init-from and
+    # the seed are: a pre-launch verifier that skips a flag the launch carries
+    # is structurally incapable of catching that flag's failure class.
+    anchor = build_trunk_anchor(a, stack, enc_seed_report)
+    obs_mon = build_observer_monitor(a, stack)
+    tap = (EncoderTokenTap(stack.encoder)
+           if (anchor is not None or obs_mon is not None) else None)
     # D-V7-DINO-SEED: identical to the previous line at the flag defaults.
     trunk_opt_report = {"trunk_lr_split": False, "n_groups": 0}
     opt = None
@@ -5641,6 +5648,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                 n_action=stack.vocab_a_str.table.weight.shape[0])
         dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
+        if tap is not None:
+            tap.arm()
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
                          o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
                          sigreg_bank=sigreg_bank,
@@ -5679,6 +5688,9 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          t2_positive=getattr(a, "t2_positive", "photometric"),
                          t2_negative=getattr(a, "t2_negative", "lane_mirror"),
                          t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
+        if tap is not None:
+            tap.disarm()
+            anchor_and_monitor_step(anchor, obs_mon, tap, L, b, step)
         if opt is not None:
             opt.zero_grad(set_to_none=True)
             L["loss"].backward()
@@ -5731,6 +5743,19 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         "init": init_report,
         "encoder_seed": enc_seed_report,          # D-V7-DINO-SEED
         "trunk_optimizer": trunk_opt_report,      # D-V7-DINO-SEED
+        "trunk_anchor": (anchor.report() if anchor is not None else
+                         {"w_trunk_anchor": 0.0,
+                          "_read": "--w-trunk-anchor 0 — nothing constructed, "
+                                   "no hook registered, byte-identical to "
+                                   "every pre-D-V7-TRUNK-ANCHOR arm"}),
+        "observer_monitor": ({"every": obs_mon.every, "window": obs_mon.window,
+                              "d": obs_mon.dims,
+                              "threshold": obs_mon.threshold,
+                              "targets": list(obs_mon.TARGETS),
+                              "caveat": TRUNK_ANCHOR_CAVEAT,
+                              "floor": OBS_MONITOR_FLOOR}
+                             if obs_mon is not None else
+                             {"every": 0, "_read": "--obs-monitor-every 0"}),
         "s2_labels": s2_report,
         "gate_verdict": gate["verdict"],
         "_read": "synthetic tensors — NO corpus. This proves the launch "
@@ -6147,7 +6172,7 @@ def train(a) -> dict:
         # init while the student is seeded is a silent two-model run.
         _resync_ema_o5(stack)
         _resync_ema_o5(stack)
-    assert_trunk_anchor_unwired(a)
+    assert_trunk_anchor_preflight(a)
     stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
     print(f"[v6] stage {a.stage}: trainable "
@@ -6554,6 +6579,18 @@ def train(a) -> dict:
     if not trainable:
         raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
                          f"— the freeze map and the stage disagree")
+    # ---- D-V7-TRUNK-ANCHOR: the anchor, the monitor, and the token tap ------
+    # ⛔ At the defaults ALL THREE are None: nothing is constructed, no forward
+    # hook is registered, and `trainable` is not touched — so the loss, the RNG
+    # stream, the state_dict and the optimizer groups stay bit-identical to
+    # every arm trained before this change. ⚠️ The teacher is deliberately NOT
+    # appended to `trainable` (unlike o7/o8/o9/o10, which contribute learnable
+    # heads): it is FROZEN, and a frozen teacher inside the optimizer is the
+    # failure this design is written against.
+    anchor = build_trunk_anchor(a, stack, enc_seed_report)
+    obs_mon = build_observer_monitor(a, stack)
+    tap = (EncoderTokenTap(stack.encoder)
+           if (anchor is not None or obs_mon is not None) else None)
     # E-DEC-9: O7 frozen-teacher distillation. Built ONLY when the weight is
     # non-zero, so with the flag off nothing is constructed, nothing enters the
     # optimiser, and the loss / RNG stream / state_dict stay bit-identical.
@@ -6748,6 +6785,22 @@ def train(a) -> dict:
         cfg_json["s1_multi"] = reach
     if s2_cfg is not None:
         cfg_json["s2"] = s2_cfg
+    # D-V7-TRUNK-ANCHOR: what the anchor and the monitor ACTUALLY are for this
+    # run, beside the flags that asked for them. ⚠️ The caveat rides in the
+    # RECORD, not only in a doc — a reading quoted out of this file carries the
+    # sentence that makes it quotable.
+    cfg_json["trunk_anchor"] = (
+        anchor.report() if anchor is not None else
+        {"w_trunk_anchor": 0.0,
+         "_read": "--w-trunk-anchor 0 — nothing constructed, no hook "
+                  "registered, byte-identical to every pre-D-V7-TRUNK-ANCHOR "
+                  "arm"})
+    cfg_json["observer_monitor"] = (
+        {"every": obs_mon.every, "window": obs_mon.window, "d": obs_mon.dims,
+         "threshold": obs_mon.threshold, "targets": list(obs_mon.TARGETS),
+         "caveat": TRUNK_ANCHOR_CAVEAT, "floor": OBS_MONITOR_FLOOR}
+        if obs_mon is not None else
+        {"every": 0, "_read": "--obs-monitor-every 0 (OFF)"})
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
     log_path = out_dir / "train_log.jsonl"
     fh = open(log_path, "a")
@@ -7037,6 +7090,8 @@ def train(a) -> dict:
             # the join was precomputed per episode, so this is O(batch).
             batch |= {kk: v.to(device)
                       for kk, v in s2_sup.batch(idx).items()}
+        if tap is not None:
+            tap.arm()
         with torch.autocast(dev_type,
                             dtype=amp_spec["dtype"] or torch.float32,
                             enabled=bool(amp_spec["autocast"])):
@@ -7071,6 +7126,10 @@ def train(a) -> dict:
                              t2_negative=getattr(a, "t2_negative",
                                                  "lane_mirror"),
                              t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
+            # ---- D-V7-TRUNK-ANCHOR: the anchor term + the SS6.2b monitor ----
+            if tap is not None:
+                tap.disarm()
+                anchor_and_monitor_step(anchor, obs_mon, tap, L, batch, step)
             # ---- O7: distil the readout cells into a FROZEN teacher ---------
             # The teacher sees the NEWEST RGB frame: the 9-channel stack is
             # [f_{t-2}, f_{t-1}, f_t], so the last three channels are frame t.
@@ -8164,55 +8223,506 @@ def build_lr_scheduler(a, opt):
               lambda e: _cos(int(e))])
 
 
-def assert_trunk_anchor_unwired(a) -> float:
-    """`--w-trunk-anchor` is DECLARED but NOT WIRED. Non-zero REFUSES.
+# ============================================================================
+# D-V7-TRUNK-ANCHOR — the anchor is WIRED, and the monitor rides beside it
+# ============================================================================
+#: `--w-trunk-anchor` was DECLARED-BUT-NOT-WIRED (D-V7-DINO-SEED) and refused at
+#: any non-zero value, so `PREREG_V7F.md` rung R3's `anchored` arm could not run.
+#: Both halves that refusal named are supplied here.
+#:
+#:   1. **THE SECOND FROZEN FORWARD.** The teacher is a `deepcopy` of the LIVE
+#:      encoder taken after `apply_encoder_seed` and before the first step — the
+#:      SEED'S OWN weights, same class, same geometry. That is the only
+#:      construction under which the word *anchor* is literally true. O7's
+#:      teacher is not reusable, for three independent reasons each sufficient:
+#:      it is `dinov3-vitl16` (1024-d, a DIFFERENT network); its `target()`
+#:      returns pooled READOUT CELLS, not per-patch trunk tokens; and it is
+#:      constructed only under `--w-o7-distill > 0`, which every v7f arm sets to
+#:      0. ⇒ `--w-trunk-anchor > 0` REFUSES without `--init-encoder-from`: a
+#:      "frozen copy" of a randomly-initialised trunk is a random-feature
+#:      regulariser wearing an anchor's name.
+#:      ⭐ `--trunk-anchor-model` STOPS BEING INERT: it is CROSS-CHECKED against
+#:      the seed's own provenance stamp and refuses on disagreement. A teacher
+#:      pulled separately from HF could silently be a different network, which
+#:      is failure reason (a) above; a checked one cannot be.
+#:
+#:   2. **THE LIVE TRUNK'S PATCH TOKENS AT THE LOSS SITE.** `stage_a_losses`
+#:      returns `z_op_win` / `z_tac` / `z_str` / `plan` and no tokens, so they
+#:      are taken with a forward hook on `stack.encoder`, armed ONLY around the
+#:      `v6_loss_step` call. `tanitad/models/v6.py:5163` is the ONE
+#:      `self.encoder(...)` call in the whole class, so the capture count is
+#:      ASSERTED at exactly 1 and a second call REFUSES rather than anchoring
+#:      the wrong tensor. The hook yields the EXACT `(input, output)` pair, so
+#:      the teacher is fed the identical tensor the live trunk saw — no
+#:      reconstruction of the input from `batch["frames"]`, which is where O7's
+#:      hard-coded `[:, -1, -3:]` slice would have to be re-derived per
+#:      `--in-channels`.
+#:      ⛔ THE TWO ALTERNATIVES AND WHY NOT:
+#:        * change `V6Stack.forward`'s return contract to emit `tok_win` — a
+#:          route exists that does not, so `v6.py` stays untouched;
+#:        * a second LIVE forward on the newest frame — correct, and NOT free.
+#:          MEASURED (SPEC.md §3): the tap costs ONE teacher forward (`B` images
+#:          under `no_grad`); the second-live-forward route costs that PLUS a
+#:          `B`-image forward AND backward through the trunk.
+TRUNK_ANCHOR_CAVEAT = (
+    "OBSERVER-EFFECT CAVEAT (BINDING, D-V7-DINO-SEED): this monitor's step-0 "
+    "control does NOT measure the published DINOv3. The seed cannot transfer "
+    "positional information -- DINOv3 is RoPE-only and ViTEncoder is "
+    "learned-APE-only, so `pos` is left at its own init -- and the CLS / "
+    "register / mask tokens are dropped. No reading here may be quoted beside "
+    "the published rho 0.91 without this sentence.")
 
-    ⛔ WHY A REFUSAL AND NOT A NO-OP. This repo's own words, from
-    `refa_v1_train.py`: *"A capability that exists at both ends and is not
-    connected in the middle is not a capability."* A weight flag that is
-    accepted, recorded in `config.json`, and then contributes nothing would
-    produce a run row claiming a distillation anchor that never ran — the exact
-    "looks like a successful init" class this whole change is written against.
+#: The floor set, stated with every reading. `rho_constant` is EXACTLY 0.0 by
+#: construction (a constant predictor carries no information and its Pearson
+#: rho is defined to 0 here), which is the control that must read a known value.
+OBS_MONITOR_FLOOR = (
+    "FLOORS: rho_constant is the constant-only control and reads EXACTLY 0.0 "
+    "by construction; rho_pixel is the raw-pixel floor (a representation that "
+    "does not beat raw input has added nothing); rho_shuffled is the "
+    "time-shuffled no-information control and must sit at the constant floor. "
+    "n and d are printed. ridge lambda is FIXED, never selected -- a "
+    "hyper-parameter chosen on the scored split is the 2026-08-22 failure "
+    "class. This is an IN-TRAINING SENTINEL: the gate read of PREREG_V7F "
+    "SS6.2b (frozen-at-checkpoint trunk, FIT/val split, static contrast, "
+    "episode-cluster bootstrap) is the offline instrument, not this.")
 
-    ⭐ WHAT IS MISSING, AND WHY IT IS NOT A SMALL EDIT (MEASURED, source read):
-      1. **O7's teacher CANNOT be reused.** Three independent reasons, any one
-         sufficient: (a) it is `facebook/dinov3-vitl16-…` (1024-d ViT-L/16),
-         while the anchor must be the frozen copy of the *seed's own* ViT-B/16
-         weights — anchoring to a different network is not an anchor; (b) its
-         `target()` returns READOUT CELLS (`[B, n_cells, 1024]`, pooled through
-         `grid_hw`), not the per-patch trunk tokens the anchor pulls on; (c) it
-         is constructed ONLY when `--w-o7-distill > 0`, and `PREREG_V7F.md` §4.1
-         puts O7 on the do-not-add list at **zero** for every v7f arm — so on
-         the v7f launch line no teacher exists at all.
-         ⇒ **A SECOND FROZEN FORWARD IS REQUIRED.** That is the honest answer to
-         the brief's question, and it is a cost the schedule must carry.
-      2. The anchor also needs the LIVE encoder's patch tokens at the loss site.
-         `stage_a_losses` does not expose them (`L["out"]` carries `z_op_win`,
-         `z_tac`, `z_str`, `plan` — grep `L["out"][` — there is no token entry),
-         and `encode_window(..., return_tokens=True)` exists but is not called
-         by the trainer. Reaching them means either changing the forward's
-         return contract or paying a second LIVE encoder forward.
 
-    ⇒ ESCALATED, not silently narrowed: the loss-composition path is owned
-    elsewhere and (2) is a change to it. `--w-trunk-anchor 0.0` (the default) is
-    byte-identical to today; any other value stops the run here."""
+class EncoderTokenTap:
+    """Capture the EXACT ``(input, output)`` of the trunk's window forward.
+
+    Zero extra live compute: the tokens are already computed by
+    ``V6Stack.encode_window`` and already retained by autograd for the readout's
+    backward, so holding a reference to them costs nothing but the reference.
+
+    ⛔ ARMED NARROWLY ON PURPOSE. ``train()`` calls ``stack.encoder`` three more
+    times per step under ``no_grad`` (the O5/T1/S1 future targets, lines
+    ~6892/6997/7021). Arming around ``v6_loss_step`` alone excludes them, and
+    the capture count is then asserted at 1 — a second capture REFUSES instead
+    of silently anchoring whichever tensor happened to land last.
+    """
+
+    def __init__(self, encoder):
+        self.encoder = encoder
+        self._h = None
+        self.captures: list = []
+
+    def _hook(self, _mod, args, out):
+        self.captures.append((args[0] if args else None, out))
+
+    def arm(self):
+        self.disarm()
+        self.captures = []
+        self._h = self.encoder.register_forward_hook(self._hook)
+        return self
+
+    def disarm(self):
+        if self._h is not None:
+            self._h.remove()
+            self._h = None
+
+    def one(self):
+        if len(self.captures) != 1:
+            raise RuntimeError(
+                f"[v6] ⛔ the trunk tap captured {len(self.captures)} encoder "
+                f"forward(s), expected exactly 1. `V6Stack.encode_window` is "
+                f"the only caller of `self.encoder(...)` in v6.py; if that "
+                f"changed, the anchor/monitor would be reading an unknown "
+                f"tensor and this refuses rather than guessing which.")
+        return self.captures[0]
+
+    def clear(self):
+        self.captures = []
+
+
+def trunk_anchor_loss(live_tok: Tensor, teacher_tok: Tensor) -> Tensor:
+    """L2 (MSE) between the live trunk's patch tokens and the frozen teacher's.
+
+    ⭐ **L2, NOT COSINE — the justification, in two sentences.** The teacher is
+    the SAME architecture at the SAME initialisation, so the two token fields
+    live in ONE coordinate frame and an MSE is a well-posed pull back toward the
+    exact starting point — an anchor, which is precisely what `PREREG_V7F.md`
+    §10 D7 specifies (*"an MSE anchor from the live trunk's patch tokens to a
+    frozen copy of the same DINOv3 weights"*). ⚠️ **What cosine would change:**
+    cosine constrains DIRECTION only and leaves the token norms free, so the
+    trunk could rescale its features by any factor — a change the readout
+    absorbs at no loss cost — and still read as fully anchored; cosine would be
+    the right choice only if a global re-normalisation of the trunk were
+    something we wanted to permit, and §6.2b's whole premise is that the FROZEN
+    features' linear decodability is what has to survive.
+    """
+    return torch.nn.functional.mse_loss(live_tok.float(), teacher_tok.float())
+
+
+class TrunkAnchor:
+    """A FROZEN copy of the seed's own trunk, plus the L2 pull toward it.
+
+    ⛔ DELIBERATELY **NOT** AN ``nn.Module`` REGISTERED ON THE STACK.
+    ``trainable`` is built as ``[p for p in stack.parameters() if
+    p.requires_grad]``; a teacher registered as a submodule would be swept into
+    that list by construction, leaving ``requires_grad_(False)`` as the only
+    thing between the teacher and the optimizer. Two guards beat one: the
+    teacher is a free-standing object **and** every parameter is
+    ``requires_grad=False``. Both are pinned in
+    ``stack/tests/test_trunk_anchor.py``.
+
+    ⚠️ **Newest frame only.** The pull is applied to the newest frame of each
+    window, the same ``[:, -1]`` slice O7/O8/O9 already take. Anchoring all
+    ``W`` frames would multiply the TEACHER forward by ``W`` (6 at v7f) for a
+    sample of the same distribution; that is a cost decision, it is stated here
+    and it is recorded in ``config.json`` as ``frames="newest"``.
+
+    ⚠️ **AT STEP 0 THE TERM IS 0 UP TO FLOATING-POINT BATCH-SHAPE NOISE, NOT
+    BIT-EXACTLY 0** — stated because a control that "must read a known value"
+    has to say which value, to what precision, and why. The live trunk runs on
+    ``B*W`` images and the teacher on ``B``; a different batch extent selects a
+    different GEMM blocking, so identical weights on identical pixels differ in
+    the last bits. MEASURED on the tiny CPU rig: MSE **1.5e-14**, relative
+    drift **<1e-5** — six or more orders below anything the anchor has to
+    resolve. Making it bit-exact would mean running the teacher over all ``W``
+    frames, i.e. paying ``W`` teacher forwards to remove 1e-14.
+    """
+
+    def __init__(self, encoder, *, w: float, model_id: str, seed_path: str,
+                 source_sha256: str | None = None):
+        import copy
+        self.teacher = copy.deepcopy(encoder)
+        self.teacher.eval()
+        for p in self.teacher.parameters():
+            p.requires_grad_(False)
+        self.w = float(w)
+        self.model_id = model_id
+        self.seed_path = seed_path
+        self.source_sha256 = source_sha256
+        self.n_params = int(sum(p.numel() for p in self.teacher.parameters()))
+
+    def parameters(self):
+        return list(self.teacher.parameters())
+
+    def report(self) -> dict:
+        return {"w_trunk_anchor": self.w, "form": "l2_mse_per_patch_token",
+                "frames": "newest",
+                "teacher": "deepcopy of the SEEDED live encoder",
+                "teacher_model_id": self.model_id,
+                "teacher_seed_path": self.seed_path,
+                "teacher_source_sha256": self.source_sha256,
+                "teacher_n_params": self.n_params,
+                "teacher_requires_grad": any(
+                    p.requires_grad for p in self.teacher.parameters()),
+                "_evidence_class": "MEASURED (ours; this run's own objects)"}
+
+    def loss(self, enc_in: Tensor, live_tok: Tensor, *, b: int, w: int):
+        """``(term, log)`` from the tap's ``[B*W, ...]`` input/output pair."""
+        if enc_in is None:
+            raise RuntimeError(
+                "[v6] ⛔ the trunk tap captured no ENCODER INPUT — the anchor "
+                "must feed the teacher the identical tensor the live trunk "
+                "saw, and reconstructing it from batch['frames'] is the "
+                "wrong-scope class this tap exists to avoid.")
+        x = enc_in.reshape(b, w, *enc_in.shape[1:])[:, -1]
+        z_live = live_tok.reshape(b, w, *live_tok.shape[1:])[:, -1]
+        with torch.no_grad():
+            z_ref = self.teacher(x)
+        term = trunk_anchor_loss(z_live, z_ref)
+        with torch.no_grad():
+            drift = float((z_live.float() - z_ref.float()).norm()
+                          / z_ref.float().norm().clamp_min(1e-12))
+        return term, {"trunk_anchor": float(term.detach()),
+                      "trunk_anchor_w": self.w,
+                      "trunk_anchor_rel_drift": drift,
+                      "trunk_anchor_form": "l2_mse_per_patch_token"}
+
+
+def _pearson(x: Tensor, y: Tensor) -> float:
+    """Pearson rho, with the CONSTANT case defined to 0.0.
+
+    ⛔ A constant prediction has zero variance, so rho is 0/0. Defining it to
+    0.0 is what makes the constant-only control read a KNOWN value exactly —
+    the control that caught three of the four 2026-08-22 probe failures."""
+    x = x.double() - x.double().mean()
+    y = y.double() - y.double().mean()
+    nx, ny = float(x.norm()), float(y.norm())
+    if nx < 1e-12 or ny < 1e-12:
+        return 0.0
+    return float((x @ y) / (nx * ny))
+
+
+class ObserverEffectMonitor:
+    """`PREREG_V7F.md` §6.2b's linear probe, read WHILE the corruption happens.
+
+    ⭐ WHY IT IS IN THE TRAINER AT ALL. §6.2b's threshold refuses the RUN, not
+    the checkpoint — *"a trunk that has lost its dynamic content cannot be
+    recovered by more steps"*. A monitor that is only ever read offline reports
+    the loss after the GPU is spent; this one reports it while it is happening.
+
+    ⚠️ WHAT IT IS NOT. This is a SENTINEL, not the gate read. The gate read
+    freezes the trunk at a step-stamped checkpoint, fits on the FIT split,
+    scores on val, carries the STATIC-target contrast and an episode-cluster
+    bootstrap. This reads the training stream. Both facts ride in every record
+    (:data:`OBS_MONITOR_FLOOR`), and so does :data:`TRUNK_ANCHOR_CAVEAT`.
+
+    The four controls §6.2b requires that are affordable in-loop are all here:
+    a constant-only control that reads EXACTLY 0.0, a raw-pixel floor, a
+    time-shuffled no-information control, and `n`/`d` printed. The ridge lambda
+    is FIXED and never selected, which removes the lambda-selection failure
+    class rather than guarding against it.
+    """
+
+    TARGETS = ("speed", "steer", "accel")     # all DYNAMIC — the corrupted kind
+
+    def __init__(self, *, d_model: int, dims: int = 32, window: int = 256,
+                 every: int = 250, seed: int = 0, threshold: float = 0.70,
+                 ridge: float = 1.0):
+        g = torch.Generator().manual_seed(int(seed))
+        # ⚠️ FIXED at construction and never redrawn: two readings are only
+        # comparable across steps (and across ARMS, which is what R3 needs) if
+        # the feature basis is the same one.
+        self.R = torch.randn(int(d_model), int(dims), generator=g) \
+            / float(d_model) ** 0.5
+        self.Rpix = None
+        self.dims, self.every = int(dims), int(every)
+        self.window = int(window)
+        self.threshold, self.ridge, self.seed = float(threshold), float(ridge), int(seed)
+        self._f: deque = deque(maxlen=self.window)
+        self._p: deque = deque(maxlen=self.window)
+        self._t: deque = deque(maxlen=self.window)
+        self.rho0 = None
+        self.rho0_step = None
+        self.consecutive_fails = 0
+
+    # -- ingest ------------------------------------------------------------ #
+    @torch.no_grad()
+    def observe(self, tok: Tensor, frames: Tensor, targ: Tensor) -> None:
+        """``tok`` [B, n_tok, d] · ``frames`` [B, C, H, W] · ``targ`` [B, T]."""
+        f = tok.detach().float().mean(dim=1) @ self.R.to(tok.device)
+        pix = torch.nn.functional.adaptive_avg_pool2d(
+            frames.detach().float(), (8, 8)).reshape(frames.shape[0], -1)
+        if self.Rpix is None or self.Rpix.shape[0] != pix.shape[1]:
+            g = torch.Generator().manual_seed(self.seed + 1)
+            self.Rpix = torch.randn(pix.shape[1], self.dims, generator=g) \
+                / float(pix.shape[1]) ** 0.5
+        p = pix @ self.Rpix.to(pix.device)
+        t = targ.detach().float()
+        for i in range(f.shape[0]):
+            self._f.append(f[i].cpu())
+            self._p.append(p[i].cpu())
+            self._t.append(t[i].cpu())
+
+    # -- probe -------------------------------------------------------------- #
+    def _probe(self, F: Tensor, T: Tensor) -> list:
+        """Ridge on the EVEN rows, scored on the ODD rows.
+
+        ⛔ AN ALTERNATING SPLIT, NOT A CONTIGUOUS ONE. The buffer spans many
+        steps and the trunk moves across them, so a first-half/second-half split
+        would fit an OLD trunk and score a NEW one, confounding drift with
+        corruption. Alternating rows put both halves on the same steps."""
+        n = F.shape[0]
+        i_fit = torch.arange(0, n, 2)
+        i_sc = torch.arange(1, n, 2)
+        m = min(len(i_fit), len(i_sc))
+        i_fit, i_sc = i_fit[:m], i_sc[:m]
+        A, B = F[i_fit].double(), F[i_sc].double()
+        mu = A.mean(0, keepdim=True)
+        sd = A.std(0, keepdim=True).clamp_min(1e-6)
+        A, B = (A - mu) / sd, (B - mu) / sd
+        A = torch.cat([A, torch.ones(A.shape[0], 1, dtype=A.dtype)], 1)
+        B = torch.cat([B, torch.ones(B.shape[0], 1, dtype=B.dtype)], 1)
+        Y = T[i_fit].double()
+        lam = self.ridge * torch.eye(A.shape[1], dtype=A.dtype)
+        lam[-1, -1] = 0.0                     # never shrink the intercept
+        W = torch.linalg.solve(A.T @ A + lam, A.T @ Y)
+        pred = B @ W
+        truth = T[i_sc].double()
+        return [_pearson(pred[:, j], truth[:, j]) for j in range(T.shape[1])]
+
+    def read(self, step: int) -> dict:
+        n = len(self._f)
+        need = 4 * self.dims
+        base = {"obs_n": n, "obs_d": self.dims,
+                "obs_caveat": TRUNK_ANCHOR_CAVEAT, "obs_floor": OBS_MONITOR_FLOOR}
+        if n < need:
+            return base | {"observer_effect": "UNDERPOWERED",
+                           "obs_n_needed": need,
+                           "obs_read": f"n={n} < 4*d={need}. n << d is the "
+                                       f"2026-08-22 failure #4 — the fit "
+                                       f"correctly chooses maximal shrinkage "
+                                       f"and EVERY arm reads the floor. No "
+                                       f"reading is emitted."}
+        F = torch.stack(list(self._f))
+        P = torch.stack(list(self._p))
+        T = torch.stack(list(self._t))
+        rho_t = self._probe(F, T)
+        rho_p = self._probe(P, T)
+        g = torch.Generator().manual_seed(self.seed + 7)
+        rho_s = self._probe(F, T[torch.randperm(T.shape[0], generator=g)])
+        dyn = sum(rho_t) / len(rho_t)
+        if self.rho0 is None:
+            self.rho0 = dyn
+            self.rho0_step = int(step)
+        ratio = (dyn / self.rho0) if abs(self.rho0) > 1e-9 else float("nan")
+        trips = bool(ratio == ratio and ratio < self.threshold)
+        self.consecutive_fails = self.consecutive_fails + 1 if trips else 0
+        return base | {
+            "observer_effect": "TRIPPED" if trips else "OK",
+            "obs_rho_dynamic": dyn,
+            "obs_rho_per_target": dict(zip(self.TARGETS, rho_t)),
+            "obs_rho_pixel": sum(rho_p) / len(rho_p),
+            "obs_rho_shuffled": sum(rho_s) / len(rho_s),
+            "obs_rho_constant": 0.0,
+            "obs_rho_step0": self.rho0,
+            "obs_step0_step": self.rho0_step,
+            "obs_ratio_to_step0": ratio,
+            "obs_threshold": self.threshold,
+            "obs_consecutive_fails": self.consecutive_fails,
+            "obs_beats_pixel_floor": bool(dyn > sum(rho_p) / len(rho_p)),
+            "obs_ridge_lambda": self.ridge,
+            "_evidence_class": "MEASURED (ours; in-training sentinel, "
+                               "NOT the SS6.2b gate read)"}
+
+
+# ---------------------------------------------------------------------------- #
+# construction + preflight                                                      #
+# ---------------------------------------------------------------------------- #
+
+def assert_trunk_anchor_preflight(a) -> float:
+    """Args-only refusals for ``--w-trunk-anchor``, before any object exists.
+
+    The stack-dependent checks (a trainable trunk, the teacher's identity
+    against the seed stamp) live in :func:`build_trunk_anchor`; these three need
+    nothing but the namespace, so they fire in milliseconds and before the
+    corpus mounts."""
     w = float(getattr(a, "w_trunk_anchor", 0.0))
-    if w:
+    if w < 0:
+        raise SystemExit(f"[v6] ⛔ --w-trunk-anchor {w:g} is negative — a "
+                         f"NEGATIVE anchor pushes the trunk AWAY from its "
+                         f"init, which is the deliberate-regression arm of a "
+                         f"different experiment, not this one.")
+    if not w:
+        return w
+    if not getattr(a, "init_encoder_from", None):
         raise SystemExit(
-            f"[v6] ⛔ --w-trunk-anchor {w:g} is DECLARED BUT NOT WIRED "
-            f"(D-V7-DINO-SEED). Refusing rather than training without it and "
-            f"recording it in config.json.\n"
-            f"  Two things are missing, both outside this change's file "
-            f"ownership:\n"
-            f"    1. a FROZEN second copy of the seed's own DINOv3 weights — "
-            f"O7's teacher cannot be reused (it is vitl16 not vitb16, it "
-            f"returns readout CELLS not patch tokens, and at "
-            f"--w-o7-distill 0 it is never constructed at all);\n"
-            f"    2. the LIVE encoder's patch tokens at the loss site — "
-            f"`stage_a_losses` does not return them today.\n"
-            f"  Run with --w-trunk-anchor 0 (the `full`/regression arm of "
-            f"PREREG_V7F R3), or wire the term first.")
+            "[v6] ⛔ --w-trunk-anchor > 0 REQUIRES --init-encoder-from.\n"
+            "  The anchor's teacher is a FROZEN COPY OF THE SEED'S OWN "
+            "WEIGHTS. Without a seed the copy would be of a RANDOMLY-"
+            "INITIALISED trunk, and pulling the encoder toward random features "
+            "is a random-feature regulariser wearing an anchor's name — it "
+            "would train, log a falling `trunk_anchor`, and mean nothing.\n"
+            "  Pass --init-encoder-from <seed built by "
+            "stack/scripts/dinov3_seed_checkpoint.py>, or --w-trunk-anchor 0 "
+            "(PREREG_V7F R3's `full` regression arm).")
+    if int(getattr(a, "obs_monitor_every", 0)) <= 0:
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 REQUIRES --obs-monitor-every > 0.\n"
+            "  PREREG_V7F.md SS6.2b: the Observer-Effect monitor is what makes "
+            "a trainable trunk DEFENSIBLE — an anchor running with nothing "
+            "watching the corruption it exists to prevent is a weight, not a "
+            "defence, and rung R3's `anchored` arm is scored on the monitor, "
+            "not on the term.\n"
+            "  Pass --obs-monitor-every 250 (the monitor is usable ALONE, "
+            "which is how R3's `full` and `frozen` arms carry it).")
     return w
+
+
+def build_trunk_anchor(a, stack: V6Stack, enc_seed_report: dict | None = None):
+    """``TrunkAnchor`` when the weight is non-zero, else ``None``.
+
+    ⛔ Nothing is constructed at the default, so the loss, the RNG stream, the
+    state_dict and the optimizer groups stay bit-identical to every arm trained
+    before this change."""
+    w = float(getattr(a, "w_trunk_anchor", 0.0))
+    if not w:
+        return None
+    rep = enc_seed_report or {}
+    if not rep.get("init_encoder_from"):
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 but no encoder seed was loaded — see "
+            "assert_trunk_anchor_preflight(). Refusing to deepcopy a trunk "
+            "whose provenance is unknown.")
+    want = str(getattr(a, "trunk_anchor_model", "") or "")
+    got = str(rep.get("dinov3_model_id") or "")
+    if want and got and want != got:
+        raise SystemExit(
+            f"[v6] ⛔ --trunk-anchor-model {want!r} disagrees with the SEED's "
+            f"own provenance stamp {got!r}.\n"
+            f"  The teacher IS the seed (a frozen copy of these very weights), "
+            f"so this flag is now a CROSS-CHECK, not a second download. A "
+            f"disagreement means the run row would name one network while the "
+            f"anchor pulled toward another — reason (a) of the three that made "
+            f"O7's teacher unusable, reintroduced.\n"
+            f"  Pass --trunk-anchor-model {got} or rebuild the seed.")
+    n_trunk = sum(1 for n, p in stack.named_parameters()
+                  if stack.group_of(n) == TRUNK_GROUP and p.requires_grad)
+    if not n_trunk:
+        raise SystemExit(
+            "[v6] ⛔ --w-trunk-anchor > 0 but the trunk has NO trainable "
+            "parameter — the stage freeze or --freeze-encoder already froze "
+            "it. An anchor on a frozen trunk is a constant added to the loss, "
+            "and the run row would record a distillation anchor that could not "
+            "move anything. (Same refusal as --trunk-lr-scale on a frozen "
+            "trunk; PREREG_V7F R3's `frozen` arm carries --w-trunk-anchor 0.)")
+    anch = TrunkAnchor(stack.encoder, w=w, model_id=got or want,
+                       seed_path=str(rep.get("init_encoder_from")),
+                       source_sha256=rep.get("source_sha256"))
+    print(f"[anchor] trunk anchor ON  w={w:g} form=l2_mse_per_patch_token "
+          f"frames=newest teacher={anch.model_id or '<seed>'} "
+          f"({anch.n_params/1e6:.2f} M, FROZEN, outside every optimizer group)",
+          flush=True)
+    print(f"[anchor] {TRUNK_ANCHOR_CAVEAT}", flush=True)
+    return anch
+
+
+def build_observer_monitor(a, stack: V6Stack):
+    """``ObserverEffectMonitor`` when ``--obs-monitor-every > 0``, else ``None``."""
+    every = int(getattr(a, "obs_monitor_every", 0))
+    if every <= 0:
+        return None
+    mon = ObserverEffectMonitor(
+        d_model=int(stack.cfg.encoder.d_model),
+        dims=int(getattr(a, "obs_monitor_dims", 32)),
+        window=int(getattr(a, "obs_monitor_window", 256)),
+        every=every, seed=int(getattr(a, "seed", 0)))
+    print(f"[obs] Observer-Effect monitor ON  every={every} "
+          f"window={mon.window} d={mon.dims} threshold={mon.threshold:g} "
+          f"targets={list(mon.TARGETS)}", flush=True)
+    print(f"[obs] {TRUNK_ANCHOR_CAVEAT}", flush=True)
+    print(f"[obs] {OBS_MONITOR_FLOOR}", flush=True)
+    return mon
+
+
+def observer_targets(batch: dict) -> Tensor:
+    """The DYNAMIC targets §6.2b names, taken from the batch as it stands.
+
+    speed (`v0`), steer and accel at the window's last tick — the time-varying
+    invariants the paper reports as the ones a full fine-tune destroys (rho 0.94
+    -> -0.03), while static ones are spared. ⚠️ The STATIC contrast (`n_agents`)
+    is NOT available in this batch and belongs to the offline instrument; the
+    record says so rather than leaving it to be assumed."""
+    a2 = batch["actions2"]
+    return torch.stack([batch["v0"].float(),
+                        a2[:, -1, 0].float(), a2[:, -1, 1].float()], dim=1)
+
+
+def anchor_and_monitor_step(anchor, monitor, tap, L: dict, batch: dict,
+                            step: int) -> None:
+    """Fold the anchor term into ``L["loss"]`` and feed/read the monitor.
+
+    One call site shape for BOTH the real loop and ``--dry-run``: a pre-launch
+    verifier that skips a flag the launch carries is structurally incapable of
+    catching that flag's failure class."""
+    if anchor is None and monitor is None:
+        return
+    enc_in, live_tok = tap.one()
+    b, wnd = batch["frames"].shape[:2]
+    if anchor is not None:
+        term, lg = anchor.loss(enc_in, live_tok, b=b, w=wnd)
+        L["loss"] = L["loss"] + anchor.w * term
+        L["log"] |= lg
+    if monitor is not None:
+        monitor.observe(
+            live_tok.reshape(b, wnd, *live_tok.shape[1:])[:, -1],
+            batch["frames"][:, -1], observer_targets(batch))
+        if int(step) % monitor.every == 0:
+            L["log"] |= monitor.read(int(step))
+    tap.clear()
 
 
 # ============================================================================
@@ -8270,18 +8780,42 @@ def build_parser() -> argparse.ArgumentParser:
                          "ramp would make 'stationary' untrue from step 1. "
                          "0 = today's behaviour")
     ap.add_argument("--w-trunk-anchor", type=float, default=0.0,
-                    help="⛔ DECLARED BUT NOT WIRED — any non-zero value "
-                         "REFUSES at startup rather than training without the "
-                         "term while config.json records it. Needs a second "
-                         "frozen DINOv3 forward (O7's teacher is vitl16, "
-                         "returns readout cells, and is absent at "
-                         "--w-o7-distill 0) plus encoder patch tokens at the "
-                         "loss site. See assert_trunk_anchor_unwired()")
+                    help="⭐ WIRED (D-V7-TRUNK-ANCHOR). L2 (MSE) pull of the "
+                         "LIVE trunk's per-patch tokens toward a FROZEN copy "
+                         "of the SEED's own weights, on the NEWEST frame of "
+                         "each window. 0.0 = today, byte-identical: nothing is "
+                         "constructed and no hook is registered. ⛔ >0 REQUIRES "
+                         "--init-encoder-from (a frozen copy of a RANDOM trunk "
+                         "is not an anchor) and --obs-monitor-every > 0 "
+                         "(PREREG_V7F SS6.2b: the monitor is what makes a "
+                         "trainable trunk defensible). PREREG_V7F D7 "
+                         "recommends 1.0")
     ap.add_argument("--trunk-anchor-model", type=str,
                     default="facebook/dinov3-vitb16-pretrain-lvd1689m",
-                    help="the frozen teacher --w-trunk-anchor would pull "
-                         "toward; RECORDED in config.json today, inert until "
-                         "the term is wired")
+                    help="⭐ NO LONGER INERT — CROSS-CHECKED against the "
+                         "seed's own provenance stamp and REFUSES on "
+                         "disagreement. The teacher IS the seed (a frozen copy "
+                         "of those weights), never a second download, so this "
+                         "flag is the guard that the run row and the anchor "
+                         "name the same network")
+    # ---- D-V7-TRUNK-ANCHOR: the Observer-Effect monitor (PREREG_V7F SS6.2b) --
+    ap.add_argument("--obs-monitor-every", type=int, default=0,
+                    help="read the Observer-Effect probe every N steps "
+                         "(0 = OFF = today, byte-identical). A LINEAR ridge on "
+                         "the trunk's patch tokens against DYNAMIC targets "
+                         "(speed/steer/accel), with a constant-only control "
+                         "that reads EXACTLY 0.0, a raw-pixel floor, a "
+                         "time-shuffled control and n/d printed. Usable ALONE, "
+                         "which is how R3's `full` and `frozen` arms carry it. "
+                         "⚠️ An IN-TRAINING SENTINEL, not SS6.2b's gate read")
+    ap.add_argument("--obs-monitor-window", type=int, default=256,
+                    help="rows of the monitor's ring buffer. The read needs "
+                         "n >= 4*d or it emits UNDERPOWERED rather than a "
+                         "number (n << d is the 2026-08-22 failure #4)")
+    ap.add_argument("--obs-monitor-dims", type=int, default=32,
+                    help="dimension of the FIXED seeded random projection the "
+                         "probe fits in. Fixed at construction so readings are "
+                         "comparable across steps AND across arms")
     ap.add_argument("--gate-probes", default=None,
                     help="JSON of externally-run battery probes to fold into "
                          "this stage's gate")

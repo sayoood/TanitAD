@@ -216,3 +216,9 @@ that all lands before S-W's first gate.
 
 - **R33 — STRUCK**: the two refcv3 readings are reconciled; the cause was the estimator and the package's definition (half-mean vs `sd_step`) is now primary on the page. The conclusion is unchanged.
 - **R47 — the rule this earns**: when a number about to be published disagrees with a banked one, DIFF THE DEFINITIONS FIRST. Printing both and deferring is honest but is not the work.
+
+## Added 2026-09-03 11:30 Berlin (from D-V7-TRUNK-ANCHOR)
+
+- **R23 — STRUCK**: `--w-trunk-anchor` is wired, monitored and test-pinned; rung R3's four `trunk_policy` arms are unblocked by this change.
+- **R48 — rung R3's `lastk` arm has no flag**: `--trunk-lr-scale` is whole-trunk. A per-block LR policy is a separate, unowned change; either implement it or drop `lastk` from R3 and say so.
+- **R49 — `dry_run()` does not seed the global RNG** (two identical default dry-runs read 4.0784 vs 4.1158). Pre-existing; a seeding fix would move every banked dry-run number, so it needs a stated cut-over like R21's.

@@ -51,7 +51,8 @@ import dinov3_seed_checkpoint as S                                   # noqa: E40
 from train_v6_staged import (build_lr_scheduler,                     # noqa: E402
                              build_parser, build_stack_from_args,
                              build_trunk_optimizer, load_encoder_seed,
-                             apply_encoder_seed, assert_trunk_anchor_unwired,
+                             apply_encoder_seed,
+                             assert_trunk_anchor_preflight,
                              trunk_lr_factor, trunk_lr_split_active,
                              O7_DEFAULT_MODEL, O7Distill)
 
@@ -669,13 +670,26 @@ def test_a_frozen_trunk_plus_a_trunk_schedule_refuses():
     assert "NO trainable parameter" in str(e.value)
 
 
-def test_the_trunk_anchor_flag_refuses_when_set_rather_than_running_inert():
-    assert assert_trunk_anchor_unwired(_args()) == 0.0
+def test_the_trunk_anchor_flag_refuses_when_its_PRECONDITIONS_are_absent():
+    """⭐ SUPERSEDED IN PLACE by D-V7-TRUNK-ANCHOR (2026-09-03), with the reason.
+
+    This test used to assert that ``--w-trunk-anchor`` was DECLARED BUT NOT
+    WIRED and refused at ANY non-zero value. The term is now WIRED
+    (``stack/tests/test_trunk_anchor.py``), so that assertion would pin a
+    defect rather than a contract. What survives, and is what this file cares
+    about, is the SEED half: a non-zero weight without ``--init-encoder-from``
+    still refuses, because the anchor's teacher is a frozen copy of the SEED's
+    own weights and a copy of a randomly-initialised trunk is not an anchor."""
+    assert assert_trunk_anchor_preflight(_args()) == 0.0
     with pytest.raises(SystemExit) as e:
-        assert_trunk_anchor_unwired(_args("--w-trunk-anchor", "1.0"))
+        assert_trunk_anchor_preflight(_args("--w-trunk-anchor", "1.0"))
     m = str(e.value)
-    assert "DECLARED BUT NOT WIRED" in m
-    assert "vitl16" in m and "readout" in m.lower()
+    assert "--init-encoder-from" in m and "--w-trunk-anchor" in m
+    # ... and the monitor is not optional either (PREREG_V7F SS6.2b)
+    with pytest.raises(SystemExit) as e2:
+        assert_trunk_anchor_preflight(
+            _args("--w-trunk-anchor", "1.0", "--init-encoder-from", "X"))
+    assert "--obs-monitor-every" in str(e2.value)
 
 
 def test_o7s_teacher_cannot_be_reused_for_the_trunk_anchor():

@@ -1,0 +1,55 @@
+{
+ "A_tiny_cpu_full_step": [
+  {
+   "arm": "default (w=0, monitor off)",
+   "step_s": 0.16682,
+   "teacher_params": 0,
+   "teacher_bytes_fp32": 0,
+   "vs_default_pct": 0.0
+  },
+  {
+   "arm": "monitor only",
+   "step_s": 0.16269,
+   "teacher_params": 0,
+   "teacher_bytes_fp32": 0,
+   "vs_default_pct": -2.48
+  },
+  {
+   "arm": "anchor + monitor",
+   "step_s": 0.17595,
+   "teacher_params": 299648,
+   "teacher_bytes_fp32": 1198592,
+   "vs_default_pct": 5.47
+  }
+ ],
+ "B_v7f_encoder_per_image_cpu": {
+  "geometry": "768x12 heads12 patch16 256x640 in_ch3",
+  "n_tokens": 640,
+  "n_params": 86138112,
+  "params_bytes_fp32": 344552448,
+  "forward_no_grad_s": 0.8911,
+  "forward_plus_backward_s": 3.4954,
+  "bwd_over_fwd": 3.922
+ },
+ "C_v7f_projection": {
+  "batch": 8,
+  "window": 6,
+  "live_encoder_fwd_bwd_s": 167.78,
+  "tap_route_extra_s": 7.129,
+  "tap_route_extra_pct_of_encoder": 4.25,
+  "second_live_forward_route_extra_s": 35.092,
+  "second_live_route_extra_pct_of_encoder": 20.92,
+  "all_W_frames_anchor_extra_pct_of_encoder": 25.49,
+  "teacher_memory_MB_fp32": 344.6,
+  "teacher_memory_MB_if_TRAINABLE_with_adamw": 1378.2,
+  "_read": "CPU per-image timings scaled by batch (the encoder is linear in batch at fixed token count). The RATIO is the quotable quantity; the absolute seconds are CPU numbers and are NOT a Thor/A40 estimate.",
+  "_evidence_class": "MEASURED per-image (ours, CPU) + arithmetic batch scaling"
+ },
+ "_provenance": {
+  "script": "cost_probe.py (this folder)",
+  "host": "dev box (Windows), CPU only, torch.set_num_threads(4)",
+  "method": "min of 5 reps after 2 warm-ups (section A); min of 3 after 1 (section B)",
+  "gpu": "NONE - Thor and the A40 pod were not contacted",
+  "date": "2026-09-03"
+ }
+}
