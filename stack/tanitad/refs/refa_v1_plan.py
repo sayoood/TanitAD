@@ -54,10 +54,11 @@ from torch import Tensor
 
 # The programme's single unicycle integrator — never re-derive it here (a second
 # integrator is a second convention, and two conventions is a retraction).
-from tanitad.models.kinematic import rollout_unicycle
+from tanitad.models.kinematic import (STEER_WHEELBASE_M, as_curvature,
+                                      rollout_unicycle)
 
 __all__ = ["PlanConfig", "PlanResult", "colored_noise", "icem_plan",
-           "cost_fidelity", "DINO_WM_DEFAULTS"]
+           "cost_fidelity", "DINO_WM_DEFAULTS", "unicycle_paths"]
 
 #: DINO-WM's published planning configuration, kept as a named constant so an
 #: arm that claims "we used their setup" can be checked against one place.
@@ -288,12 +289,31 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
                       elites=elites)
 
 
-def unicycle_paths(controls: Tensor, v0: Tensor, dt: float) -> Tensor:
+def unicycle_paths(controls: Tensor, v0: Tensor, dt: float, *,
+                   action_units: str = "kappa",
+                   wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
     """``[n, H, 2]`` controls -> ``[n, H, 2]`` (x, y) paths in the ego frame.
 
     Thin wrapper over the programme's integrator so every planner cost is
     computed in the SAME metric convention as the eval (x forward, y left).
+
+    ⭐ ``action_units`` STATES WHICH UNIT CHANNEL 1 ARRIVES IN (PI ruling
+    2026-09-03; the contract is documented on `kinematic.STEER_WHEELBASE_M`):
+
+    * ``"kappa"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller) — the
+      controls are already GEOMETRY. This is the right unit for a PLANNER
+      candidate: ``PlanConfig.kappa_max``, ``_clip`` and ``GOAL_KAPPA_*`` are all
+      curvature, so a candidate integrated here needs no conversion.
+    * ``"steer"`` — the controls are COMMAND (a road-wheel angle), which is what
+      the v2ep ``actions[:, 0]`` channel and every RECORDED action is. They are
+      converted with ``kappa = tan(steer)/L_enc`` BEFORE integration.
+
+    ⛔ The integrator itself is untouched and still defines ``yaw_rate = v*kappa``.
+    Converting here rather than inside `rollout_unicycle` is deliberate: a
+    planner candidate and a recorded action arrive at the SAME integrator in
+    DIFFERENT units, so the unit has to travel with the call, not with the model.
     """
+    controls = as_curvature(controls, action_units, wheelbase)
     n, H, _ = controls.shape
     v = v0.expand(n) if v0.ndim else v0.repeat(n)
     state0 = torch.zeros(n, 4, device=controls.device)

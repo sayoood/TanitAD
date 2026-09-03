@@ -56,6 +56,9 @@ from torch import Tensor, nn
 
 from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
 from tanitad.models.fourbrain import StrategicPolicy, TacticalPolicy
+# ⭐ THE ONE COMMAND<->GEOMETRY BRIDGE (PI ruling 2026-09-03). Imported, never
+# re-derived: a second conversion is a second convention.
+from tanitad.models.kinematic import _check_units, as_command
 # ⛔ ONE VOCABULARY SOURCE. These tuples are IMPORTED, never re-declared — a
 # second copy is a second vocabulary, and the programme has already paid for
 # that once (see the defect note below).
@@ -1706,8 +1709,31 @@ class RefAV1(nn.Module):
     def plan(self, feats: Tensor, *, v0: float, goal_field: Tensor | None = None,
              target_speed: float | None = None, nav_cmd: Tensor | None = None,
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
-             cost_chunk: int = 64):
+             cost_chunk: int = 64, model_action_units: str = "kappa"):
         """One MPC tick for ONE window (B must be 1).
+
+        ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
+        2026-09-03; contract on `kinematic.STEER_WHEELBASE_M`). The search space
+        is GEOMETRY: ``PlanConfig.kappa_max``, ``_clip`` and the canonical
+        controls behind an imagined goal are all curvature, and a candidate's
+        metre-valued path is integrated as curvature. The PREDICTOR, however,
+        was trained on the v2ep COMMAND channel — a road-wheel angle. So:
+
+        * ``"kappa"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller)
+          hands the candidate to the model unconverted. ⛔ This is the LEGACY
+          path and it is wrong by ``arctan(L*kappa)``: a ``GOAL_KAPPA_TURN =
+          0.08`` (R = 12.5 m) candidate is imagined by the model as the
+          consequence of a 0.08 rad *steering angle* — R ~ 36 m — so the cost
+          surface is flat in curvature exactly where the tactical goals live.
+          Kept as the default only so every banked number stays reproducible.
+        * ``"steer"`` converts each candidate with ``steer = arctan(L_enc*kappa)``
+          immediately before `augment_actions`, i.e. at the model boundary and
+          nowhere else. The search, the clip, the cost's own curvature penalty
+          and the integrated path all stay in curvature.
+
+        ⚠️ It is a CALL-SITE argument, not a `RefAV1Config` field, on purpose:
+        adding a config field would change every serialised config dict while a
+        training run is live. Nothing on the training path can see this.
 
         The cost is where the hierarchy earns its keep (change #8): the tactical
         target speed and the strategic goal field enter as **cost terms**, not as
@@ -1730,6 +1756,7 @@ class RefAV1(nn.Module):
         """
         if feats.shape[0] != 1:
             raise ValueError("plan() is a single-window API (B must be 1)")
+        _check_units(model_action_units)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -1797,10 +1824,18 @@ class RefAV1(nn.Module):
             z0 = search_z if z0 is None else z0
             n = controls.shape[0]
             z = z0.expand(n, -1, -1)
+            # ⭐ THE PLANNER->MODEL CROSSING. `controls` is GEOMETRY (kappa);
+            # the predictor consumes COMMAND (steer). Converted HERE and only
+            # here, so the search, the clip and the integrated path all stay in
+            # curvature. `model_action_units="kappa"` is the legacy pass-through
+            # and returns the same object (see kinematic.as_command).
+            controls_m = as_command(controls, model_action_units)
             # Speed channel (config-gated): each candidate's OWN accelerations
             # integrated from this tick's measured v0 — the same code path as
             # the T0 forward, so T1 cannot silently read a speed T0 never had.
-            acts = self.augment_actions(controls, v0_t.expand(n))
+            # ⚠️ channel 0 (accel) is unit-invariant, so the speed channel is
+            # identical under either spelling — verified by test C3.
+            acts = self.augment_actions(controls_m, v0_t.expand(n))
             # last_only: the cost reads the terminal field only (see rollout).
             zk = pred.rollout(z, acts, intent=intent, last_only=True)
             c = torch.zeros(n, device=controls.device)

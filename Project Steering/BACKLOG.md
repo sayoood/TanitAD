@@ -149,3 +149,9 @@ that all lands before S-W's first gate.
 - **R8 — STRUCK 2026-09-03** (D-V7-EVAL-EXCLUSION): exclusion is ON by default and a contaminated run refuses at preflight without a stamped override.
 - **R18 — gate the fp8 shipper** (`stack/scripts/dinov3_fp8_encode_ship.py`, C-FP8-SHIPPER-UNGATED): call `parity.guard_corpus_build` on the SOURCE split before encoding (preferred), or classify it in `test_build_parity_guard.NOT_AN_INGEST_DOOR` with a stated reason AND an assertion that the shipped set equals the source set. The guard stays RED until then. It built a clip of the live refav1 training cache on 2026-09-02.
 - **R19 — bound `_artifact_path_names`' two-hop closure** in `test_build_parity_guard.py`: it reached ~200 unrelated locals and produced a spurious ungated-writer entry; the owner of that suite should bound it so the instrument's population is stable under unrelated edits.
+
+## Added 2026-09-03 09:25 Berlin
+
+- **R20 — refcv3 T1 adapter: triage the rescued draft** (`Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/`). Re-derive the T1 definition for a supervised trajectory model FIRST (the killed agent never wrote it down), then decide: finish the draft or restart from the current `refav1_arm.py`, which has since gained `ha0`, the trivial-profile instrument and `--action-units`. It also carries C-REFCV3-ARM-SAME-DEFECT. refcv3 ends ≈ 2026-09-03 23:00Z and has no admissible T1 instrument until this lands.
+- **R21 — decide when `--action-units steer` becomes the default** (D-STEER-INTERFACE-RESOLVED). Every banked refav1 lateral number was produced OFF; ON and OFF numbers are not comparable, so the flip needs a stated cut-over and a re-read of anything quoted across it.
+- **R22 — run `actdiv_anchored`'s `d(a)` in BOTH unit conventions** (~15 min CPU): the only admissible test of what the unit costs the imagination, and item (iii) of D-ACTDIV-ANCHORED-REFAV1's next-probe list.

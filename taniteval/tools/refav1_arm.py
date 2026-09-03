@@ -162,6 +162,10 @@ def _bootstrap_paths() -> None:
 
 _bootstrap_paths()
 
+# The ONE encoding constant (imported after the bootstrap puts `stack` on the
+# path). NEVER spelled 2.9 locally -- a second copy is a second convention.
+from tanitad.models.kinematic import STEER_WHEELBASE_M  # noqa: E402
+
 
 def _load_t1():
     """Import the SIBLING ``t1_eval.py`` by file, so ``analyze`` / the tier
@@ -411,10 +415,18 @@ def hold_v0_controls(k: int):
     return torch.zeros(int(k), 2, dtype=torch.float32)           # [K, 2]
 
 
-def paths_from_controls(controls, v0: float, dt: float, k: int):
+def paths_from_controls(controls, v0: float, dt: float, k: int, *,
+                        action_units: str = "kappa"):
     """``[K',>=2]`` controls -> ``[1,K,2]`` ego-frame path via the programme's
     ONE unicycle integrator (``refa_v1_plan.unicycle_paths``): position advances
-    on the speed at the START of the step, v updates last, clamped at 0."""
+    on the speed at the START of the step, v updates last, clamped at 0.
+
+    ⭐ ``action_units`` names the unit channel 1 ARRIVES in (PI ruling
+    2026-09-03; contract on `kinematic.STEER_WHEELBASE_M`). ``"kappa"`` (default)
+    integrates as supplied -- byte-identical to every pre-2026-09-03 call, and
+    the correct reading for a PLANNER candidate. ``"steer"`` converts with
+    ``kappa = tan(steer)/L_enc`` first -- the correct reading for a RECORDED
+    v2ep action, which is a road-wheel angle."""
     import torch
     from tanitad.refs.refa_v1_plan import unicycle_paths
     c = controls[..., :2]
@@ -425,7 +437,7 @@ def paths_from_controls(controls, v0: float, dt: float, k: int):
                          f"horizon — no action exists beyond the plan; refusing "
                          f"to extrapolate")
     v0_t = torch.as_tensor([float(v0)], dtype=torch.float32, device=c.device)
-    return unicycle_paths(c[:, :k].float(), v0_t, dt)
+    return unicycle_paths(c[:, :k].float(), v0_t, dt, action_units=action_units)
 
 
 def gt_waypoints(poses, t: int, k: int):
@@ -562,6 +574,22 @@ def run_dump(a) -> dict:
        f"(W={ld.W}, K_loader={k_loader}, grid 0.2 s); labels="
        f"{'ON' if ld._labels_on else 'OFF'} nav={'ON' if ld._nav_on else 'OFF'}")
 
+    # ⭐ THE ACTION-UNIT CONTRACT for this run (PI ruling 2026-09-03; see
+    # `kinematic.STEER_WHEELBASE_M`). "kappa" = the LEGACY reading under which
+    # every banked refav1 number was produced: recorded v2ep actions integrated
+    # as if channel 1 were a curvature, and planner candidates handed to the
+    # model unconverted. "steer" = the repaired contract. DEFAULT IS LEGACY so a
+    # re-analysis of a banked dump is byte-identical.
+    rec_units = getattr(a, "action_units", "kappa")
+    if rec_units not in ("kappa", "steer"):
+        raise SystemExit(f"[refav1_arm] --action-units must be kappa|steer, "
+                         f"got {rec_units!r}")
+    if rec_units != "kappa":
+        _p(f"[units] ⚠️ action_units={rec_units}: recorded actions are converted "
+           f"kappa = tan(steer)/{STEER_WHEELBASE_M} before integration and "
+           f"planner candidates reach the model as arctan("
+           f"{STEER_WHEELBASE_M}*kappa). NUMBERS ARE NOT COMPARABLE to a "
+           f"kappa-unit run.")
     stride = max(1, int(a.window_stride))
     sel = [(wi, ei, t) for wi, (ei, t) in enumerate(ld.windows)
            if (t - (ld.W - 1)) % stride == 0]
@@ -634,9 +662,15 @@ def run_dump(a) -> dict:
             with torch.no_grad():
                 # -- GT and the two non-planning arms --------------------------
                 g = gt_waypoints(poses, t, k)                    # [1,k,2]
-                ol = paths_from_controls(act[0], v0, DT, k)
+                # ⭐ `ol` and `ha` replay RECORDED v2ep actions, whose channel 1
+                # is a road-wheel angle. `rec_units` states that; "kappa" is the
+                # legacy (unconverted) reading every banked number was produced
+                # under. `ha0` is exactly zero, which is 0 in either unit.
+                ol = paths_from_controls(act[0], v0, DT, k,
+                                         action_units=rec_units)
                 hold = hold_action_controls(ld, v_ep, kap_ep, t).to(dev)
-                ha = paths_from_controls(hold[None].expand(k, 2), v0, DT, k)
+                ha = paths_from_controls(hold[None].expand(k, 2), v0, DT, k,
+                                         action_units=rec_units)
                 # ⭐ the constant-velocity floor: SAME integrator, SAME v0, zero
                 # controls — so any difference from `ha` is the held action alone.
                 ha0 = paths_from_controls(hold_v0_controls(k).to(dev), v0, DT, k)
@@ -695,8 +729,12 @@ def run_dump(a) -> dict:
                           "cl_oraclegoal": nav_t}[arm]
                     gf = goal_oracle if arm == "cl_oraclegoal" else None
                     tp = time.time()
+                    # ⭐ the planner->model crossing travels with the call:
+                    # the candidate stays curvature, the MODEL is fed
+                    # arctan(L_enc*kappa) when `rec_units == "steer"`.
                     res = model.plan(feats, v0=v0, nav_cmd=nv, plan_cfg=pc,
-                                     goal_field=gf)
+                                     goal_field=gf,
+                                     model_action_units=rec_units)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
                     plans[arm] = res
@@ -810,6 +848,22 @@ def run_dump(a) -> dict:
                      "never widens actions (the model refuses a 3-wide input)")},
         "hold_action_rule": hold_action_controls.__doc__,
         "hold_v0_rule": hold_v0_controls.__doc__,
+        # ⭐ THE UNIT PROVENANCE. Without this a repaired and an unrepaired dump
+        # are indistinguishable after the fact -- which is exactly how a 2.9x
+        # over-rotation survived a "r = 0.995" channel check.
+        "action_units": {
+            "recorded": rec_units,
+            "planner_search": "kappa",
+            "planner_to_model": rec_units,
+            "L_enc_m": STEER_WHEELBASE_M,
+            "rule": ("v2ep actions[:,0] is a road-wheel angle "
+                     "(physicalai.signals_at: steer = arctan(L_enc*curvature), "
+                     "L_enc MEASURED = 2.9 exactly). 'kappa' = the LEGACY "
+                     "reading (integrate it unconverted, hand it to the model "
+                     "unconverted); 'steer' = the repaired contract "
+                     "(kappa = tan(steer)/L_enc before any integration, "
+                     "steer = arctan(L_enc*kappa) at the model boundary). "
+                     "The two are NOT comparable.")},
         "goal": {"source_names": list(GOAL_SOURCE_NAMES),
                  "space": sorted(goal_space_seen) or None,
                  "rule": ("per window from PlanResult.goal_source / goal_space / "
@@ -1817,6 +1871,13 @@ def main(argv=None):
     ap.add_argument("--episodes-n", type=int, default=0,
                     help="first N episodes of the sorted cache (0 = all)")
     ap.add_argument("--window-stride", type=int, default=1)
+    ap.add_argument("--action-units", choices=("kappa", "steer"), default="kappa",
+                    help="unit of v2ep actions[:,0] as this run READS it. "
+                         "'kappa' (default) = the LEGACY, unconverted reading "
+                         "every banked number was produced under. 'steer' = the "
+                         "repaired contract: kappa = tan(steer)/2.9 before any "
+                         "integration, and arctan(2.9*kappa) at the "
+                         "planner->model boundary. NOT comparable to 'kappa'.")
     ap.add_argument("--horizon-k", type=int, default=K_TRAJ_DEFAULT,
                     help=f"trajectory horizon in 0.2 s steps (default "
                          f"{K_TRAJ_DEFAULT} = 2.0 s = the plan horizon)")

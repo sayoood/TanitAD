@@ -14,6 +14,87 @@ import torch
 from torch import Tensor
 
 
+# --------------------------------------------------------------------------- #
+# ⭐ THE COMMAND ↔ GEOMETRY BRIDGE (PI ruling 2026-09-03)
+#
+# The programme has exactly TWO unit domains for action channel 1 and every
+# module belongs to exactly one of them:
+#
+#   COMMAND   ``steer``  road-wheel angle [rad] — what a driver commands, what
+#             `physicalai.signals_at` stores in v2ep ``actions[:, 0]``, and what
+#             every trained refav1 / v6 / v7 checkpoint has ever consumed.
+#   GEOMETRY  ``kappa``  path curvature [1/m] — what `rollout_unicycle`
+#             integrates (``yaw_rate = v * kappa``), what ``GOAL_KAPPA_*`` and
+#             ``PlanConfig.kappa_max`` are expressed in, and the only unit in
+#             which a metre-valued trajectory can be produced.
+#
+# Crossing between them REQUIRES one of the two exact inverses below. A crossing
+# that applies neither is the defect measured on 2026-09-03: reading the stored
+# COMMAND channel as GEOMETRY over-rotates by x2.870 and misses the human's
+# lateral position by 0.716 m on curved windows — worse than a straight line.
+#
+# ⛔ ``STEER_WHEELBASE_M`` IS AN ENCODING CONSTANT, NOT A VEHICLE PROPERTY.
+# `physicalai.signals_at` wrote ``steer = arctan(wheelbase * curvature)`` with
+# the value the BUILD passed, and every shipped cache passed the legacy 2.9
+# (`physicalai.DEFAULT_WHEELBASE_MODE == "const2p9"`; `scripts/v2_compressed.py`
+# does not plumb a wheelbase at all). The inverse must use THAT number.
+# MEASURED 2026-09-03 by algebraic inversion against the producer's own input
+# (the raw egomotion ``curvature`` column) on 20/20 local eval clips:
+#   L_enc = 2.9000000 (spread 3e-8, pointwise IQR 1.2e-7), and the forward map
+#   at exactly 2.9 reproduces the stored channel to 1.5e-8 rad.
+# The clips' TRUE wheelbases — from the release's own
+# ``calibration/vehicle_dimensions`` — are {2.73, 3.135, 3.165, 3.216}, mean
+# 3.085, and NOT ONE of them is 2.9. Using a real wheelbase here would inject an
+# error the encoding never had.
+# (`TanitAD Research Lab/Data Engineering/Research/2026-09-03-steer-curvature-interface/`)
+# --------------------------------------------------------------------------- #
+STEER_WHEELBASE_M = 2.9
+#: The two legal spellings of action channel 1. Every API that can receive
+#: either states which one it got; there is no "guess from the magnitude".
+ACTION_UNITS = ("kappa", "steer")
+
+
+def kappa_of_steer(steer: Tensor, wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
+    """COMMAND -> GEOMETRY: ``kappa = tan(steer) / L_enc`` [1/m]."""
+    return torch.tan(steer) / float(wheelbase)
+
+
+def steer_of_kappa(kappa: Tensor, wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
+    """GEOMETRY -> COMMAND: ``steer = arctan(L_enc * kappa)`` [rad]."""
+    return torch.atan(float(wheelbase) * kappa)
+
+
+def _check_units(units: str) -> str:
+    if units not in ACTION_UNITS:
+        raise ValueError(f"action_units must be one of {ACTION_UNITS}, "
+                         f"got {units!r}")
+    return units
+
+
+def as_curvature(controls: Tensor, units: str,
+                 wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
+    """``[..., >=2]`` controls whose channel 1 is in ``units`` -> channel 1 in
+    GEOMETRY (kappa). ``units="kappa"`` returns the input object UNCHANGED — not
+    a copy, not a re-scale — so a legacy caller is byte-identical."""
+    if _check_units(units) == "kappa":
+        return controls
+    return torch.cat([controls[..., :1],
+                      kappa_of_steer(controls[..., 1:2], wheelbase),
+                      controls[..., 2:]], dim=-1)
+
+
+def as_command(controls: Tensor, units: str,
+               wheelbase: float = STEER_WHEELBASE_M) -> Tensor:
+    """``[..., >=2]`` controls whose channel 1 is in GEOMETRY (kappa) -> channel
+    1 in ``units``. ``units="kappa"`` returns the input UNCHANGED (the legacy,
+    unconverted path); ``units="steer"`` applies ``arctan(L_enc * kappa)``."""
+    if _check_units(units) == "kappa":
+        return controls
+    return torch.cat([controls[..., :1],
+                      steer_of_kappa(controls[..., 1:2], wheelbase),
+                      controls[..., 2:]], dim=-1)
+
+
 def rollout_bicycle(state0: Tensor, controls: Tensor, dt: float = 0.1,
                     wheelbase: float = 2.7) -> Tensor:
     """Integrate the kinematic bicycle model.
