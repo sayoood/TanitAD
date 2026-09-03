@@ -76,8 +76,12 @@ travels with the call (`action_units=`), and `rollout_unicycle` keeps its single
 * `stack/scripts/stage_a_probes.py:168-177` already ships `kappa_of_steer` / `steer_of_kappa` and
   applies deltas in κ space through the encoding.
 
+* `stack/tanitad/models/v6.py:5316-5339` converts κ → steer before the predictor, naming the
+  channel `steer_road_rad`; `stack/scripts/train_stage_a.py:182-208` builds its counterfactuals as
+  `steer_of_kappa(kappa_of_steer(steer) + Δκ)` — perturb in curvature, hand back a command.
+
 ⇒ The ruling is not a new convention; it is the convention **the rest of the programme already
-uses**, and the refav1 line is the one place that never crossed.
+uses at five independent sites**, and the refav1 line is the one place that never crossed.
 
 ---
 
@@ -234,7 +238,11 @@ the change: 91 passed** (`test_refav1_arm.py`, `test_refav1_kin_contract.py`,
 `test_steer_curvature_interface.py`); plus **95 passed** across `test_refa_v1*.py` /
 `test_refa_v1_plan_goal.py` / `test_refa_v1_proposal.py` / `test_refa_v1_speed_channel.py` and
 **61 passed** across `test_kinematic_losses.py` / `test_kinematic_nan.py` /
-`test_cond_parameterisation.py` / `test_ego_plan.py`.
+`test_cond_parameterisation.py` / `test_ego_plan.py`. The whole-repo sweep then surfaced six more
+suites that touch the integrator or the bridge and had not been run: **121 passed** across
+`test_unicycle_action_space.py`, `test_stage_a.py`, `test_stage_a_train.py`,
+`test_t1_v2_adapter.py`, `test_retime_path.py` — **and `test_cost_surface_probe.py`, another
+FlyWheel's suite, which passes against this package's staged bridge.**
 
 ### 3.3 B-ON — the SPEC's declared cross-check, and it HOLDS
 
@@ -326,12 +334,26 @@ AFFECTED · converts already ⇒ ALREADY CORRECT.** Two probes for every absence
 
 | 29 | **`taniteval/tools/cost_surface_probe.py`** (ArchInf FlyWheel, staged `A` ~07:20 today) | `:199-204` `to_steer`, `:254-282` `score(units=)`, `:579-584` the C7 control, `:999-1002` `--wheelbase` | scores the planner cost in BOTH conventions, converting at the model boundary | ✅ **ALREADY CORRECT — and it CONSUMES this package's bridge.** Imports `STEER_WHEELBASE_M` + `as_command` from `kinematic.py`; **cannot import without this package staged.** Its C7 control reads **0.000e+00** against `as_command` at L ∈ {2.9, 2.73, 3.216} (verified here) |
 
-⚠️ **HONESTY NOTE ON THIS TABLE'S COVERAGE.** Rows 1-28 were swept against a fast off-Drive mirror
-of `stack/`, `taniteval/`, `colab/`, `tools/`. **Row 29 did not exist when that sweep ran** — it was
-created by another FlyWheel *during* this session and was surfaced only when the slow whole-repo
-`Select-String` second probe finally returned. Two consequences, both stated rather than papered
-over: (i) **a mirror is not the repo**, and a sweep is a snapshot, not a standing guarantee — a
-blast-radius table on a live tree has a timestamp; (ii) the same probe also surfaced
+| 30 | `stack/tanitad/models/v6.py:5316-5339` | imports `steer_of_kappa`, converts κ → steer, docstring says *"channel 0 = steer_road_rad (`steer_of_kappa`, the corpus encoding)"* | GEOMETRY → COMMAND at the model boundary | ✅ **ALREADY CORRECT** |
+| 31 | `stack/scripts/train_stage_a.py:182-208` | `steer_of_kappa(kappa_of_steer(steer) + dk)` — perturbs in κ space, returns to steer | round trip through the bridge | ✅ **ALREADY CORRECT** |
+| 32 | `stack/tests/test_t1_v2_adapter.py:357-363` | pins `steer_of_kappa(yaw_rate / v)` | test | ✅ **ALREADY CORRECT** |
+| 33 | `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-18-zod-loader/zod.py:143,237,261-268` | ZOD's own corpus: stores `("steer_road_rad", "accel_mps2")`, derived ratio-free from OxTS, with a measured CAN:road steering ratio | COMMAND, its own encoding | ✅ **NOT AFFECTED** — same convention, **different `L_enc`**; never cross-apply 2.9 to it (same caveat as `l2d.py` 2.72 and alpasim 2.7) |
+| 34 | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/refcv3_arm.py` | an incoming COPY of row 9's file, 3 integrator call sites | integrated as GEOMETRY | ⛔ **AFFECTED — NOT FIXED.** The refcv3 defect exists in **two** places; E2 must fix both |
+
+⚠️ **COVERAGE, CLOSED OUT.** Rows 1-28 were first swept against a fast off-Drive
+mirror of `stack/`, `taniteval/`, `colab/`, `tools/`, and **row 29 did not exist when that sweep
+ran** — it was created by another FlyWheel *during* this session and surfaced only when the slow
+whole-repo `Select-String` probe returned. **A mirror is not the repo, and a sweep is a snapshot.**
+⇒ rather than leave that as a caveat, the table was then RE-SWEPT across the **whole repository**,
+enumerating files through **`git ls-files` + `git status`** rather than directory recursion — which
+covers files created during this session, and inherently excludes `.git` and `.claude/worktrees`.
+**2,434 tracked/pending `.py` files, 0 unreadable (no G: flap), three pattern families** —
+channel-1 reads (**31** files), integrator calls (**16**), bridge symbols (**16**). Rows 30-34 are
+what that added. ⚠️ Two runs of the same sweep **seconds apart returned 2,434 and 2,435**: another
+FlyWheel is adding files to this tree right now, which is the timestamp caveat above stated as a
+measurement rather than a worry. **It found NO new
+AFFECTED consumer** — four more sites that already implement the contract, and one more COPY of the
+known refcv3 defect. The earlier probe also surfaced
 `.claude/worktrees/**` (≈ 25 stale worktree copies of `physicalai.py` and its tests — **not
 production, not affected**) and seven Research Lab package scripts, each checked here and each
 reading **0** occurrences of `actions[:,0]` / `rollout_unicycle` / `unicycle_paths`
@@ -514,7 +536,7 @@ D-KAPPA-REPAIR | DECISION | 2026-09-03 | PI ruling, implemented by Data Eng
 |---|---|---|---|
 | E1 | **When does `--action-units steer` become the default?** Every banked refav1 lateral number is OFF; flipping it silently makes old and new incomparable. Proposal: flip it at the next refav1 T1 read and re-stamp the banked ones as `action_units=kappa`. | Master Mind | the next T1 read will otherwise quote an unconverted `ol` again |
 | E0 | **`taniteval/tools/cost_surface_probe.py` and this package are ONE landing.** That file imports `STEER_WHEELBASE_M` / `as_command` from `kinematic.py` and does not import without it. Land them together, or neither. | Master Mind | staging one without the other leaves a tracked file that cannot be imported |
-| E2 | **`taniteval/tools/refcv3_arm.py:477-507` has the identical defect** and is not fixed here (not my ownership). It picks up the new kwarg for free; someone must pass it and re-read refcv3's lateral rows. | refcv3 owner | refcv3 lateral numbers are currently ×2.9 over-rotated |
+| E2 | **`taniteval/tools/refcv3_arm.py:477-507` has the identical defect**, and so does its incoming copy at `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/refcv3_arm.py` — **BOTH** need it. Not fixed here (not my ownership); both pick up the new kwarg for free, someone must pass it and re-read refcv3's lateral rows. | refcv3 owner | refcv3 lateral numbers are currently ×2.9 over-rotated |
 | E3 | `t1_eval.DEFAULT_TIERS` (`taniteval/tools/t1_eval.py:145`) still does not know `ha0` — carried over unresolved from the Benchmarks package. One line: `"ha0": "T1"`. | t1_eval owner | the standalone `--analyze-only` CLI refuses any dump containing `ha0` |
 | E4 | `stack/scripts/stage_a_probes.py:145,168-177` duplicates `WHEELBASE` + `kappa_of_steer`/`steer_of_kappa`, and `w7_roll_rerank.py:166` imports them from there. Consolidating onto `kinematic.STEER_WHEELBASE_M` is correct but touches a script another line imports. | Master Mind | two copies of a constant is how this class of defect starts |
 | E5 | **Re-run the §5.2 checkpoint units test** on the first checkpoint whose action-ablation Δ clears 10× the unit Δ. ~15 min CPU, 0 GPU. | whoever banks the next refav1 checkpoint | it is the only *empirical* half of "not mis-trained" |
