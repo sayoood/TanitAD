@@ -1,0 +1,1890 @@
+#!/usr/bin/env python3
+"""refcv3_arm.py — the eval adapter for REF-C v3 (``tanitad.refs.refc_v3``).
+
+⛔⛔ READ ``taniteval/tools/REFCV3_ARM.md`` §2 FIRST. It is the DEFINITION of what
+this arm is, derived with file:line, and it is the deliverable the Master Mind
+reviews BEFORE any number produced here may be quoted.
+
+WHY THIS FILE EXISTS (register ``D-V7-READINESS-2026-09-02`` §D, BACKLOG R20):
+refcv3 has NO admissible T1 number and no instrument that can produce one. Its
+in-training eval is a T0 loss on 160 fixed windows and must never be quoted as
+driving performance.
+
+⛔⛔ THE ONE FACT THAT SHAPES EVERY LINE BELOW (register ``D-HF-COMPARABILITY``,
+MEASURED). refcv3 is a SUPERVISED ONE-SHOT ANCHOR TRAJECTORY MODEL — 128 anchors
+x 8 slots (``refc_v3.py:196``/``:197``/``:106``), NO action input, NO rollout, NO
+per-step decode (``refc_v3.py:480`` — the forward signature has no action
+argument). ``t1_eval.roll_closed`` (``t1_eval.py:760``) carries the FLAGSHIP,
+which is also supervised, because the flagship is ADDITIONALLY autoregressive: it
+feeds ``(steer = atan(L*kappa), a_j)`` back into the predictor each step. refcv3
+has no action to feed back, so THERE IS NO LOOP TO CLOSE and roll_closed cannot
+be ported. Consequences, all implemented here:
+
+  * the arm is named ``os`` (one-shot) and ⛔ NEVER ``cl`` — a shared column name
+    is how two different procedures end up in one table read as one quantity;
+  * ⭐ only ``ha0`` (constant velocity at the measured v0) is BIT-COMPARABLE
+    across refav1 and refcv3, and it is the floor both must be beaten against;
+  * ``ol`` DOES NOT EXIST for refcv3 (it consumes no recorded actions) — it is
+    written into the record as ABSENT WITH ITS REASON, never silently dropped;
+  * the admissible cross-model claim is each arm's MARGIN OVER THE SAME ``ha0``
+    FLOOR, per family, paired — ⛔ never ``os`` against ``cl`` as levels.
+
+ARMS AND TIER STAMPS (``Project Steering/EVAL_DOCTRINE.md``; the stamps travel
+into ``t1_eval.analyze`` unchanged):
+
+    os          T1*  ONE forward pass at the window origin: the observed frames,
+                     the clip's v7.2 nav token and the MEASURED v0 at t0 and
+                     nothing else; the path is the model's OWN selection
+                     ``out["traj"]`` — ranked by ``sel_score_v3``
+                     (``refc_v3.py:509-527``) on the hierarchical arm, by the
+                     core's own ``sel_score`` (``refc.py:1531-1534``) on the flat
+                     arm. ⛔ NEVER ``a_star``.
+    os_navshuf  T1*  the same forward with nav_cmd PERMUTED across the eval
+                     windows — MANDATORY for every nav-conditioned result: nav is
+                     an INPUT, and flagship v1's route head scored 1.0000 by
+                     echoing it.
+    ha          T1   HOLD-ACTION control: the (a, steer) that CLOSES at t0, held
+                     for the horizon through the programme's ONE unicycle. Reads
+                     only frames <= t0. NOT a floor — it can be WORSE than
+                     trivial, because a held noisy steer drifts.
+    ha0         T1   ⭐ CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0 —
+                     a straight line at constant speed. THE STRONGEST TRIVIAL
+                     BASELINE and the echo test's real bar; consumes strictly
+                     less than ``ha``. Exactly zero in either action unit, which
+                     is what makes it bit-comparable with refav1's ``ha0``.
+    oracle_sel  T0   (opt-in, --with-oracle-sel) the ``a_star``-selected anchor's
+                     refinement — the GROUND-TRUTH-NEAREST anchor
+                     (``refc_v3_train.py:460-463``). The CEILING, reported beside
+                     the deployed arm to show how much of ``traj`` was selection.
+                     ⛔ NEVER compared to a T1 number.
+    ol          ABSENT — refcv3 consumes no recorded actions (see above).
+
+⚠️ ``T1*`` = STAMPED T1, RULING OPEN. EVAL_DOCTRINE's T1 row says *"the predictor
+consumes the decoder/planner's own actions"*, which does not literally cover a
+model that consumes NO actions. Whether the doctrine admits it is a PI /
+Master-Mind ruling (BACKLOG R30); the record carries ``_tier_ruling`` with
+status ``UNRULED`` on every emitted block, so the numbers exist and are correctly
+labelled either way, and the MARGIN framing (``os - ha0``) survives the ruling in
+both directions.
+
+THE GRID (index-select, never interpolation). The model emits 8 slots at
+``V3_HORIZONS = (5,10,15,20,30,40,50,60)`` x 0.1 s; ``t1_eval``'s dump contract is
+a UNIFORM [N, K, 2] grid, so the dump is an INDEX-SELECT of the model's own slots:
+    --grid 2s   dt 0.5 s, K 4 -> slots 5,10,15,20      (indices 0,1,2,3)
+    --grid 6s   dt 1.0 s, K 6 -> slots 10,20,30,40,50,60 (indices 1,3,4,5,6,7)
+A grid the model cannot serve by index-select is REFUSED. GT comes from the
+TRAINER'S OWN target function (``refb_labels.waypoint_targets``,
+``refc_v3_train.py:452``), so the arm is scored against the GT it was trained
+against. ``ha``/``ha0`` integrate at the corpus's native 0.1 s tick and are then
+index-selected onto the same instants.
+
+⛔ ACTION UNITS. ``physicalai.py:621`` writes ``steer = arctan(L_enc * curvature)``
+into ``actions[:, 0]`` (``:632``) — a ROAD-WHEEL ANGLE, not a curvature. The
+``refav1_loader`` docstring calling it "the MEASURED true-kappa channel" is wrong,
+and the rescued refcv3 draft inherited that sentence into its
+``recorded_controls`` (``C-REFCV3-ARM-SAME-DEFECT``; the identical defect cost
+refav1 0.716 m of curved-window lateral error against a 0.053 m floor).
+``--action-units`` names the unit channel 1 ARRIVES in and the value is PRINTED
+into the manifest.
+⚠️ THE DEFAULT HERE IS ``steer`` — DELIBERATELY DIFFERENT FROM ``refav1_arm.py``,
+whose ``kappa`` default exists only to keep re-analysis of PRE-2026-09-03 BANKED
+dumps byte-identical. refcv3 has no banked dumps, so shipping the known defect as
+this instrument's default would have no benefit at all. ``os`` never touches the
+channel (the model emits a path, not a control), so this affects ``ha`` only —
+and ``ha0`` is zero in either unit.
+
+DUMP SCHEMA — two files per episode, so ``t1_eval.py --analyze-only`` stays valid:
+    <dump>/ep{fi:03d}.npz            the t1_eval contract (unchanged):
+        g [N,K,2]  os ha ha0 [os_navshuf] [oracle_sel] [N,K,2]
+        ws [N] PROVIDER frame index of the window origin t0
+        eid [1]  clip_index [1]  v0 [N]
+    <dump>/decisions/ep{fi:03d}.npz  the refcv3 sidecar (_SIDECAR_DOC)
+    <dump>/manifest.json             model rebuild + cross-checks, grid, tiers,
+                                     the T1 definition, action-units, nav policy,
+                                     label join, label timing, episodes.
+
+ESTIMATOR: full-set pooled point estimates; intervals = episode-cluster bootstrap
+(``taniteval.ci``, ``ci.py:225``), PAIRED across arms on the same windows
+(``ci.py:275``). ``overlapping_holdout_se`` is never used — it biases the POINT
+ESTIMATE, not only the interval.
+
+⛔⛔ THE TRIVIAL-PROFILE INSTRUMENT PRINTS BEFORE ANY FAMILY ROW. On 2026-09-03 a
+paired refav1 read was rolled for 2.5 h and then found VOID: ``cl`` was a straight
+constant-speed line on 140/140 windows and bit-identical to ``cl_navshuf`` on
+122/140. This instrument (``refav1_arm.trivial_profile``, IMPORTED — one
+instrument, not two) reads that in the first minute.
+
+PROVENANCE. This tool is a RESTART from the current ``refav1_arm.py``, not a
+continuation of the rescued draft
+(``…/incoming/2026-09-03-refcv3-arm-UNVERIFIED/refcv3_arm.py``). The draft has
+ZERO references to ``ha0``, ``trivial_profile``, ``action_units``,
+``sel_score_v3``, ``a_star`` or ``oracle_sel``, and its spine is the claim
+``D-HF-COMPARABILITY`` forbids. Its model-rebuild path (config from ``argv``
+through the trainer's own parser), its grid index-select, its eval-dataset
+subclass, its corpus join and its common-grid lead join were HARVESTED and are
+credited at their definitions.
+"""
+from __future__ import annotations
+
+import argparse
+import dataclasses
+import glob
+import importlib.util
+import json
+import os
+import sys
+import time
+
+import numpy as np
+
+# --------------------------------------------------------------------------- #
+# path bootstrap — EAGER, and it evicts a wrongly-bound namespace package        #
+# --------------------------------------------------------------------------- #
+_HERE = os.path.dirname(os.path.abspath(__file__))       # <repo>/taniteval/tools
+_TE_PARENT = os.path.dirname(_HERE)                       # <repo>/taniteval
+_REPO = os.path.dirname(_TE_PARENT)                       # <repo>
+_TE_PKG = os.path.join(_TE_PARENT, "taniteval")           # the REAL package dir
+_SCRIPTS = os.path.join(_REPO, "stack", "scripts")        # refc_v3_train.py lives here
+
+
+def _bootstrap_paths() -> None:
+    """⛔ THE NAMESPACE-PACKAGE SHADOW. The outer ``<repo>/taniteval/`` has no
+    ``__init__.py``; run from the repo root, ``import taniteval`` binds THAT
+    directory as a namespace package and ``taniteval.ci`` "does not exist". Once
+    bound, no sys.path edit undoes it — so the wrong binding is EVICTED here and
+    every module the ANALYSIS needs is imported NOW, before anything expensive.
+    (An analysis-time ``ModuleNotFoundError`` has already destroyed a completed
+    2-arm / 40-episode rollout after the GPU was paid for.)"""
+    for p in (os.path.join(_REPO, "stack"), _TE_PARENT, _SCRIPTS):
+        if os.path.isdir(p) and p not in sys.path:
+            sys.path.insert(0, p)
+    m = sys.modules.get("taniteval")
+    if m is not None:
+        paths = [os.path.normcase(os.path.abspath(p))
+                 for p in (getattr(m, "__path__", None) or [])]
+        if os.path.normcase(os.path.abspath(_TE_PKG)) not in paths:
+            for k in [k for k in sys.modules
+                      if k == "taniteval" or k.startswith("taniteval.")]:
+                del sys.modules[k]
+    try:
+        import taniteval.ci            # noqa: F401  (the preflight)
+        import taniteval.four_families  # noqa: F401
+        import taniteval.lead_metrics   # noqa: F401
+        import taniteval.selgap         # noqa: F401
+    except ModuleNotFoundError as ex:                      # pragma: no cover
+        sys.exit(f"[refcv3_arm] taniteval preflight failed ({ex}). The real "
+                 f"package is {_TE_PKG}; a namespace shadow of the outer dir "
+                 f"was probably bound first. sys.path[:3]={sys.path[:3]}")
+
+
+_bootstrap_paths()
+
+
+def _load_by_path(name: str, path: str):
+    """Import a SIBLING module by file, so its machinery is REUSED, never copied."""
+    if not os.path.exists(path):
+        sys.exit(f"[refcv3_arm] required sibling {path} is missing")
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: ⭐ THE TEMPLATE, IMPORTED. ``refav1_arm`` owns the dump contract, the
+#: trivial-profile instrument, the lead-block reader/join, the unicycle call with
+#: its action-unit contract, the per-window family components and the paired
+#: bootstrap. Importing it is what keeps ONE convention in the programme.
+ra = _load_by_path("refav1_arm_for_refcv3", os.path.join(_HERE, "refav1_arm.py"))
+t1 = ra.t1                                   # the SAME t1_eval module object
+
+_TRAINER = None
+
+
+def trainer():
+    """``refc_v3_train.py`` imported lazily by path — it is a SCRIPT, and it owns
+    ``V3Dataset`` (the window contract the run trained on), ``frames_to_device``
+    (the ONE frame-ingest point) and ``build_parser`` / ``_pin_trainer_cfg`` (the
+    only way a checkpoint's config is recoverable). *(Harvested from the rescued
+    draft, which derived it.)*"""
+    global _TRAINER
+    if _TRAINER is None:
+        _TRAINER = _load_by_path("refc_v3_train_for_arm",
+                                 os.path.join(_SCRIPTS, "refc_v3_train.py"))
+    return _TRAINER
+
+
+# --------------------------------------------------------------------------- #
+# constants                                                                    #
+# --------------------------------------------------------------------------- #
+DT_FRAME = 0.1           # the 10 Hz corpus tick (the v2ep provider's own grid)
+#: ``--grid`` -> (dt_s, K). Both are index-selects of V3_HORIZONS; nothing else is.
+GRIDS = {"2s": (0.5, 4), "6s": (1.0, 6)}
+ARM_TIERS = {"os": "T1", "os_navshuf": "T1", "ha": "T1", "ha0": "T1",
+             "oracle_sel": "T0"}
+ARM_MEANING = {
+    "os": "T1 (RULING OPEN) — ONE forward pass at t0: observed frames + the "
+          "clip's v7.2 nav token + the MEASURED v0, path = the model's OWN "
+          "sel_score_v3 selection out['traj']. NEVER a_star. No action input, "
+          "no rollout, no loop to close — hence 'os', never 'cl'.",
+    "os_navshuf": "T1 (RULING OPEN) — as os with nav_cmd PERMUTED across the "
+                  "eval windows: the mandatory control for any nav-conditioned "
+                  "claim (nav is an INPUT; an echo scores well and learns nothing)",
+    "ha": "T1 — HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for "
+          "the horizon. Consumes no recorded future. NOT the floor — a held "
+          "noisy steer drifts, so this arm can be WORSE than trivial.",
+    "ha0": "T1 — ⭐ CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. "
+           "a straight line at constant speed. The STRONGEST TRIVIAL BASELINE, "
+           "the echo test's real bar, and the ONLY arm bit-comparable with "
+           "refav1's (zero is zero in either action unit).",
+    "oracle_sel": "T0 — the a_star-selected anchor's refinement: a_star is the "
+                  "GT-NEAREST anchor (refc_v3_train.py:460), so this is the "
+                  "CEILING, not a driveable arm. Never compared to a T1 number.",
+}
+#: ⛔ ARMS THAT DO NOT EXIST FOR THIS MODEL. Written into the record with the
+#: structural reason, so a reader never sees a silently missing column.
+ABSENT_ARMS = {
+    "ol": {
+        "status": "ABSENT",
+        "arm": "ol",
+        "tier_if_it_existed": "T0",
+        "reason": ("`ol` is 'the RECORDED future (a, steer) integrated from v0'. "
+                   "refcv3 CONSUMES NO ACTIONS (refc_v3.py:480 — the forward "
+                   "signature has no action argument), so integrating the "
+                   "recorded actions is not a rollout OF THIS MODEL: it is a "
+                   "property of the corpus and of the unicycle, identical for "
+                   "every refcv3 checkpoint ever trained. Emitting it under this "
+                   "model's name would put the same name on two different "
+                   "objects across the H-vs-F table — the exact failure "
+                   "D-HF-COMPARABILITY forbids."),
+        "for_comparison": ("use `ha0` — the ONLY bit-comparable arm across "
+                           "refav1 and refcv3 — as the shared floor; the "
+                           "kinematic-contract control that `ol` provides lives "
+                           "in refav1_arm.py, where the model actually consumes "
+                           "actions."),
+    },
+}
+#: ⚠️ THE OPEN RULING, stamped on every emitted block (BACKLOG R30 / RESULT §5.4 W6).
+TIER_RULING = {
+    "arm": "os",
+    "stamped": "T1",
+    "status": "UNRULED",
+    "decided_by": "PI / Master Mind — NOT a FlyWheel",
+    "question": ("does EVAL_DOCTRINE admit as T1 a model that consumes NO "
+                 "actions at all? Its T1 row reads 'the predictor consumes the "
+                 "decoder/planner's own actions', which does not literally cover "
+                 "refcv3."),
+    "benchmarks_recommendation": (
+        "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to "
+        "keep future information out of inference, and a correctly-gated refcv3 "
+        "forward pass (frames <= t0, nav token, measured v0, selection by "
+        "sel_score_v3 and never by a_star) admits none — but keep the DISTINCT "
+        "arm name `os` so no reader believes two `cl` columns describe the same "
+        "procedure."),
+    "why_the_numbers_are_valid_either_way": (
+        "every headline statistic here is a MARGIN over `ha0` measured on the "
+        "same windows with the same instrument (`os - ha0`), so the ruling "
+        "changes the LABEL on the row, never the arithmetic in it."),
+}
+_TIER_NOTE = dict(t1._TIER_NOTE)
+NAV_SOURCES = ("auto", "v72", "none")
+_UNVERIFIED_ON_REAL_CKPT = (
+    "UNVERIFIED on a real checkpoint — this box is forbidden from contacting the "
+    "training pod `tanitad-refcv3`; validated on a random-init RefCV3Model at "
+    "refc_v3_smoke_config over a synthetic 3-episode slice only")
+_SIDECAR_DOC = {
+    "sel_idx": "the anchor the MODEL selected (out['sel_idx'])",
+    "sel_idx_base": "hier only: the pre-graft core selection (out['sel_idx_base'])",
+    "sel_score_max": "max of the ranking score the selection argmaxed over",
+    "a_star": "the GT-NEAREST anchor (refc_v3_train.py:460) — the ORACLE, banked "
+              "as a diagnostic; the deployed arm NEVER selects with it",
+    "anchor_acc": "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); "
+                  "chance = 1/128 = 0.0078",
+    "sel_agrees_oracle": "1.0 where sel_idx == a_star — how much of `traj` was "
+                         "selection rather than refinement",
+    "goal_gate": "hier only: out['goal_gate_value'] — the zero-init E9 gate",
+    "goal_score_absmean": "hier only: the SCALE the gate multiplies. The gate "
+                          "alone cannot distinguish 'has not opened yet' from "
+                          "'will never open'; both are required.",
+    "goal_dist_sel": "hier only: the selected anchor's goal distance",
+    "lat_label/lon_label": "the v7.2 tactical class ids (IGNORE_ID -> -100)",
+    "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
+    "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
+    "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head "
+        "argmaxes under each nav conditioning (-1 = the head does not exist)",
+    "ha_controls": "the held (a, channel-1) actually integrated, in the run's "
+                   "declared action units",
+}
+
+
+def _p(*a):
+    print(*a, flush=True)
+
+
+def _refused(reason, tier, n=0):
+    """The binding shape for a family/metric whose INPUTS are missing here."""
+    return {"status": "REFUSED", "reason": reason, "n": int(n), "tier": tier,
+            "estimator": "n/a — inputs missing (WORK ITEM, not a pass)"}
+
+
+# --------------------------------------------------------------------------- #
+# config (de)serialisation — nested dataclasses, tuples survive JSON            #
+# *(harvested from the rescued draft, which derived it)*                        #
+# --------------------------------------------------------------------------- #
+def _default_of(f):
+    if f.default is not dataclasses.MISSING:
+        return f.default
+    if f.default_factory is not dataclasses.MISSING:
+        return f.default_factory()
+    return None
+
+
+def cfg_from_dict(cls, d: dict):
+    """JSON dict -> dataclass ``cls`` (recursively), REFUSING unknown fields by
+    name: a checkpoint written by a NEWER model file must be evaluated with that
+    file, never with fields silently dropped."""
+    names = {f.name for f in dataclasses.fields(cls)}
+    unknown = sorted(set(d) - names)
+    if unknown:
+        raise SystemExit(f"[refcv3_arm] the config carries fields this "
+                         f"{cls.__name__} does not know: {unknown} — sync the "
+                         f"model file; refusing to drop them silently")
+    kw = {}
+    for f in dataclasses.fields(cls):
+        if f.name not in d:
+            continue
+        v, dflt = d[f.name], _default_of(f)
+        if dataclasses.is_dataclass(dflt) and isinstance(v, dict):
+            kw[f.name] = cfg_from_dict(type(dflt), v)
+        elif isinstance(dflt, tuple) and isinstance(v, list):
+            kw[f.name] = tuple(v)
+        else:
+            kw[f.name] = v
+    return cls(**kw)
+
+
+# --------------------------------------------------------------------------- #
+# model loading — REBUILT THROUGH THE TRAINER, cross-checked, strict            #
+# --------------------------------------------------------------------------- #
+def rebuild_config(config: dict):
+    """``(cfg, train_args, source)`` from the run's ``config.json``.
+
+    ⚠️ ``refc_v3_train.train`` WRITES NO MODEL CONFIG (``refc_v3_train.py:1097``
+    stamps arm/argv/horizons/image_hw/vocab/nav, not a ``RefCV3Config``), and the
+    checkpoint carries only ``model``/``opt``/``step``. The model is a function of
+    ``--arm/--size/--smoke/--image-hw/...``, so it is rebuilt HERE through the
+    trainer's OWN ``build_parser`` + ``_pin_trainer_cfg`` on the recorded
+    ``argv`` — never re-derived. A config.json carrying the adapter extension
+    ``refcv3_arm_model_cfg`` (a full RefCV3Config dict) is rebuilt from that
+    instead. *(Harvested from the rescued draft.)*"""
+    tr = trainer()
+    from tanitad.refs import refc
+    from tanitad.refs import refc_v3 as v3
+    argv = config.get("argv")
+    args = None
+    if argv:
+        try:
+            args = tr.build_parser().parse_args(list(argv))
+        except SystemExit:
+            raise SystemExit(
+                f"[refcv3_arm] config.json argv does not parse with this box's "
+                f"refc_v3_train.build_parser — trainer/checkpoint version skew. "
+                f"argv={list(argv)[:12]}") from None
+    if isinstance(config.get("refcv3_arm_model_cfg"), dict):
+        cfg = cfg_from_dict(v3.RefCV3Config, config["refcv3_arm_model_cfg"])
+        src = "config.json[refcv3_arm_model_cfg] (explicit RefCV3Config)"
+    else:
+        if args is None:
+            raise SystemExit("[refcv3_arm] config.json carries neither argv nor "
+                             "refcv3_arm_model_cfg — the model cannot be rebuilt")
+        hier = args.arm == "hier"
+        base = (v3.refc_v3_smoke_config(hier) if args.smoke
+                else v3.refc_v3_sized_config(args.size, hier=hier))
+        cfg = tr._pin_trainer_cfg(base, args)
+        if getattr(args, "graft_lan", False) or getattr(args, "goal_str", False):
+            cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
+        src = ("config.json[argv] -> refc_v3_train.build_parser + "
+               "_pin_trainer_cfg (the trainer's own build path)")
+    return cfg, args, src
+
+
+def cross_check_config(config: dict, cfg, model) -> dict:
+    """Every fact ``config.json`` states about the model must hold for the rebuilt
+    one. A contradiction is a REFUSAL naming BOTH values (the
+    ``adopt_ckpt_geometry`` lesson in ``t1_eval``) — never a silent override in
+    either direction. *(Harvested from the rescued draft.)*"""
+    from tanitad.refs import refc_v3 as v3
+    checks, conflict = {}, []
+
+    def _chk(name, have, want):
+        checks[name] = {"config_json": want, "rebuilt": have}
+        if want is not None and have != want:
+            conflict.append(f"{name}: config.json {want!r} vs rebuilt {have!r}")
+
+    if "arm" in config:
+        _chk("arm", "hier" if cfg.hier else "flat", config["arm"])
+    if "image_hw" in config:
+        _chk("image_hw", list(cfg.core.encoder.image_hw()), list(config["image_hw"]))
+    if "tac_vocab_version" in config:
+        _chk("tac_vocab_version", cfg.tac_vocab_version, config["tac_vocab_version"])
+    if "horizons" in config:
+        _chk("horizons", list(cfg.core.trajectory.horizons), list(config["horizons"]))
+    if "goal_tau_steps" in config:
+        _chk("goal_tau_steps", list(cfg.goal_tau_steps), list(config["goal_tau_steps"]))
+    if isinstance(config.get("param_breakdown"), dict):
+        bd = v3.param_breakdown_v3(model)
+        _chk("param_breakdown", {k: int(v) for k, v in bd.items()},
+             {k: int(v) for k, v in config["param_breakdown"].items()})
+    if conflict:
+        raise SystemExit("[refcv3_arm] ⛔ config.json CONTRADICTS the rebuilt "
+                         "model — refusing rather than guessing which describes "
+                         "the weights:\n  " + "\n  ".join(conflict))
+    return checks
+
+
+def load_model(ckpt_path: str, config_path: str | None = None,
+               device: str = "cpu", allow_nonstrict: bool = False):
+    """``(model, cfg, train_args, provenance)`` — rebuilt, cross-checked, STRICT."""
+    import torch
+    from tanitad.refs import refc_v3 as v3
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or "model" not in ck:
+        raise SystemExit(f"[refcv3_arm] {ckpt_path} has no 'model' key — not a "
+                         f"refc_v3_train.py checkpoint")
+    side = config_path or os.path.join(
+        os.path.dirname(os.path.abspath(ckpt_path)), "config.json")
+    if not os.path.exists(side):
+        raise SystemExit(f"[refcv3_arm] no config.json at {side} — the trainer "
+                         f"writes one beside ckpt.pt (refc_v3_train.py:1097) and "
+                         f"the model cannot be rebuilt without it (pass --config)")
+    with open(side, encoding="utf-8") as fh:
+        config = json.load(fh)
+    if not isinstance(config, dict):
+        raise SystemExit(f"[refcv3_arm] {side} is not a config dict")
+    cfg, targs, src = rebuild_config(config)
+    model = v3.RefCV3Model(cfg)
+    checks = cross_check_config(config, cfg, model)
+    try:
+        res = model.load_state_dict(ck["model"], strict=False)
+    except RuntimeError as ex:
+        raise SystemExit(
+            f"[refcv3_arm] ⛔ the rebuilt model and the weights DISAGREE ON "
+            f"SHAPE — config.json/argv describe a different build than the "
+            f"checkpoint. Refusing; fix the config, never the weights.\n"
+            f"{str(ex)[:1500]}") from None
+    strict_rep = {"missing_keys": list(res.missing_keys),
+                  "unexpected_keys": list(res.unexpected_keys)}
+    if (res.missing_keys or res.unexpected_keys) and not allow_nonstrict:
+        raise SystemExit(f"[refcv3_arm] ⛔ NON-STRICT LOAD: missing "
+                         f"{list(res.missing_keys)[:8]} unexpected "
+                         f"{list(res.unexpected_keys)[:8]} — the checkpoint and "
+                         f"the rebuilt model disagree. Pass --allow-nonstrict "
+                         f"only for a deliberate diagnostic, and say so.")
+    # ---- EVAL-TIME NEUTRALISATION, recorded -------------------------------- #
+    # ``refc_select.apply_seam_clamp`` RAISES after `seam_fail_patience`
+    # CONSECUTIVE saturated calls. The counter lives on the MODEL, not on a
+    # batch, so a trained gate sitting above the clamp would kill a 20k-window
+    # eval at window 50 — a TRAINING-DYNAMICS report firing inside an eval. The
+    # clamp itself stays (it IS the emitted score); only the fail-loud patience
+    # is switched off, and the saturation telemetry is banked per window instead.
+    # No parameter changes; the state_dict is byte-identical either way.
+    # *(Harvested from the rescued draft, which found this.)*
+    overrides = {}
+    if getattr(cfg, "seam_fail_patience", 0):
+        overrides["v3.seam_fail_patience"] = {"trained": cfg.seam_fail_patience,
+                                              "eval": 0}
+        cfg.seam_fail_patience = 0
+    sel = getattr(getattr(model.core, "decoder", None), "sel", None)
+    if sel is not None and getattr(sel, "seam_fail_patience", 0):
+        overrides["core.decoder.sel.seam_fail_patience"] = {
+            "trained": sel.seam_fail_patience, "eval": 0}
+        sel.seam_fail_patience = 0
+    if hasattr(model.core, "cfg"):
+        model.core.cfg.seam_fail_patience = 0
+    model = model.to(device).eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    mode = getattr(targs, "mode", "diffusion") if targs is not None else "diffusion"
+    steps = cfg.core.decoder.diffusion_steps if mode == "diffusion" else 0
+    prov = {"ckpt": ckpt_path, "step": ck.get("step"),
+            "config_json": side, "rebuilt_from": src,
+            "config_cross_checks": checks, "state_dict_load": strict_rep,
+            "eval_time_cfg_overrides": overrides,
+            "cfg": dataclasses.asdict(cfg),
+            "param_breakdown": v3.param_breakdown_v3(model),
+            "arm": "hier" if cfg.hier else "flat",
+            "hier": bool(cfg.hier),
+            "tac_vocab_version": cfg.tac_vocab_version,
+            "horizons": list(cfg.core.trajectory.horizons),
+            "n_anchors": int(cfg.core.anchors.n_anchors),
+            "window": int(cfg.core.window),
+            "decoder_steps": int(steps), "decoder_mode": mode,
+            "nav_from_v7_trained": bool(config.get("nav_from_v7", False)),
+            "nav_cmd_derivation_trained": config.get("nav_cmd_derivation"),
+            "train_labels_manifest": config.get("v7_labels"),
+            "eval_labels_md5_at_train": (((config.get("nav_from_v7_stats") or {})
+                                          .get("eval") or {}).get("label_md5")),
+            "u8_batches_trained": config.get("u8_batches")}
+    return model, cfg, targs, prov
+
+
+# --------------------------------------------------------------------------- #
+# grid + kinematics                                                            #
+# --------------------------------------------------------------------------- #
+def grid_slots(horizons, grid: str) -> dict:
+    """``--grid`` -> the model slots that ARE that grid. INDEX-SELECT ONLY: a grid
+    the model cannot serve by index-select is REFUSED, never interpolated.
+    *(Harvested from the rescued draft.)*"""
+    if grid not in GRIDS:
+        raise SystemExit(f"[refcv3_arm] unknown --grid {grid!r}; known {sorted(GRIDS)}")
+    dt, k = GRIDS[grid]
+    hz = [int(h) for h in horizons]
+    need = [int(round(10 * dt * j)) for j in range(1, k + 1)]
+    missing = [h for h in need if h not in hz]
+    if missing:
+        raise SystemExit(f"[refcv3_arm] --grid {grid} needs model slots at {need} "
+                         f"(0.1 s steps) but the model emits {hz}; missing "
+                         f"{missing}. A grid the model cannot serve by "
+                         f"index-select is refused (no interpolation).")
+    return {"name": grid, "dt_s": dt, "k": k, "horizons_steps": need,
+            "slots": [hz.index(h) for h in need],
+            "instants_s": [round(h * DT_FRAME, 3) for h in need],
+            "dropped_model_slots": [h for h in hz if h not in need],
+            "n_frames": need[-1]}
+
+
+def hold_controls(v, kap, t0: int):
+    """⭐ THE ACTION THAT **CLOSES** AT t0 — ``(a, channel-1)`` from ``v[t0]``,
+    ``v[t0-1]`` and ``kap[t0-1]``.
+
+    Every frame index is ``<= t0``, so NOTHING recorded after the window origin
+    enters the hold-action arm. (The action *opening* at t0 would need
+    ``v[t0+1]`` — a future value — which is exactly why it is not the one held.)
+    ``kap`` is ``episode.actions[:, 0]``, which ``physicalai.py:621`` wrote as a
+    road-wheel STEER ANGLE; the unit travels with the integration call, not with
+    this function."""
+    if t0 < 1:
+        raise ValueError("hold-action needs t0 >= 1 (one closed step before t0)")
+    import torch
+    a = (v[t0] - v[t0 - 1]) / DT_FRAME
+    return torch.stack([a.to(torch.float32), kap[t0 - 1].to(torch.float32)])
+
+
+def hold_v0_controls(n: int):
+    """⭐ THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for ``n`` ticks.
+
+    Integrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE.
+    It consumes strictly LESS than ``hold_controls`` — not even the last observed
+    action, only the ``v0`` the PI ruling of 2026-09-02 admits — and it is EXACTLY
+    ZERO in either action unit, which is what makes it the one arm that is
+    bit-comparable between refav1 and refcv3."""
+    import torch
+    return torch.zeros(int(n), 2, dtype=torch.float32)
+
+
+def integrate_select(controls, v0: float, grid: dict, *, action_units: str):
+    """``[n, 2]`` controls at 0.1 s -> ``[1, K, 2]`` on the dump grid.
+
+    Integrated at the corpus's NATIVE tick through the programme's ONE unicycle
+    (``refav1_arm.paths_from_controls`` -> ``refa_v1_plan.unicycle_paths``, which
+    applies ``kappa = tan(steer)/L_enc`` when ``action_units == "steer"``), then
+    INDEX-SELECTED onto the grid instants — so the controls and the model share
+    one grid and one GT array, and no path is ever resampled."""
+    import torch
+    n = int(controls.shape[0])
+    path = ra.paths_from_controls(controls, v0, DT_FRAME, n,
+                                  action_units=action_units)      # [1, n, 2]
+    idx = torch.tensor([h - 1 for h in grid["horizons_steps"]],
+                       device=path.device)
+    return path[:, idx].float().cpu().numpy()
+
+
+# --------------------------------------------------------------------------- #
+# the eval windows — the TRAINER's dataset, future-frame decode removed        #
+# --------------------------------------------------------------------------- #
+def make_eval_dataset_class():
+    """``refc_v3_train.V3Dataset`` (nav / v7.2 labels / route v2.1 / goals / the
+    extended future poses — the trainer's EXACT window contract) with ONE change:
+    the FUTURE FRAMES are never decoded, because only the loss's LAW target reads
+    them and this adapter computes no LAW. Decoding them would be the dominant
+    cost of the roll for a tensor nothing consumes.
+    *(Harvested from the rescued draft.)*"""
+    tr = trainer()
+    import torch
+
+    class EvalV3Windows(tr.V3Dataset):
+        u8_frames = True
+
+        def _window_u8(self, i: int) -> dict:
+            e_i, t = self.index[i]
+            ep = self.episodes[e_i]
+            w = self.window
+            return {
+                "frames": ep.frames[t:t + w],
+                "actions": ep.actions[t:t + w],
+                "future_frames": torch.zeros(0, dtype=torch.uint8),
+                "future_actions": ep.actions[t + w:t + w + self.max_horizon],
+                "future_poses": ep.poses[t + w:t + w + self.max_horizon],
+                "pose_last": ep.poses[t + w - 1],
+                "episode_id": ep.episode_id,
+            }
+
+    return EvalV3Windows
+
+
+def build_corpus(a, cfg, prov: dict):
+    """The eval episodes (v2 providers), the trainer's window dataset with the
+    v7.2 label join and the nav source, and the join report.
+    *(Harvested from the rescued draft; the manifest-derived ``n_stack`` offset
+    and the geometry/channel refusals are kept verbatim because they are the
+    trainer's own rules.)*"""
+    from tanitad.data import v7_labels as v7l
+    from tanitad.data.v2_dataset import (build_v2_providers,
+                                         load_or_build_manifest,
+                                         stable_episode_id)
+    man = load_or_build_manifest(a.episodes, verbose=False)
+    eps = build_v2_providers([a.episodes], lru_size=a.lru, verbose=False)
+    files = list(man["files"])
+    clip_ids = [str(c) for c in man["clip_id"]]
+    n_stack = [int(x) for x in man["n_stack"]]
+    if len(eps) != len(files):
+        raise SystemExit(f"[refcv3_arm] {len(eps)} providers for {len(files)} clip "
+                         f"files under {a.episodes} — manifest drift")
+    keep = list(range(len(eps)))
+    if a.episodes_n:
+        keep = keep[:int(a.episodes_n)]
+    eps = [eps[i] for i in keep]
+    files = [files[i] for i in keep]
+    clip_ids = [clip_ids[i] for i in keep]
+    n_stack = [n_stack[i] for i in keep]
+    if not eps:
+        raise SystemExit(f"[refcv3_arm] no *.v2ep.pt under {a.episodes}")
+    eh, ew = cfg.core.encoder.image_hw()
+    fh, fw = int(eps[0].frames.shape[-2]), int(eps[0].frames.shape[-1])
+    ch = int(eps[0].frames.shape[1])
+    if (fh, fw) != (eh, ew):
+        raise SystemExit(f"[refcv3_arm] ⛔ geometry mismatch: encoder built for "
+                         f"{eh}x{ew}, corpus emits {fh}x{fw}")
+    if ch != cfg.core.encoder.in_channels:
+        raise SystemExit(f"[refcv3_arm] ⛔ channel mismatch: encoder expects "
+                         f"{cfg.core.encoder.in_channels}, corpus emits {ch}")
+    if len(set(n_stack)) != 1:
+        raise SystemExit(f"[refcv3_arm] the cache mixes n_stack {sorted(set(n_stack))} "
+                         f"— the provider->RAW frame offset would differ per clip; "
+                         f"refusing (the lead-block join is keyed on RAW frames)")
+    # ⭐ PROVIDER -> RAW FRAME. ``v2_dataset.py:36-38``: the provider stores
+    # ``poses[n_stack-1:]``, so provider row j IS raw frame j + (n_stack - 1).
+    # Read from the manifest, never derived from the channel count.
+    raw_offset = n_stack[0] - 1
+    Ds = make_eval_dataset_class()
+    ds = Ds(eps, window=cfg.core.window, max_horizon=20,
+            channels=cfg.core.encoder.in_channels)
+    ds.u8_frames = True
+    if not a.labels:
+        raise SystemExit("[refcv3_arm] --labels (the v7.2 EVAL blob) is required: "
+                         "the tactical heads and the nav token are defined by it")
+    labels, lman = v7l.load_v7_labels(a.labels, allow_oracle_nav=True)
+    by_sid = {stable_episode_id(l.clip_id): l for l in labels}
+    ds.v7_by_sid = by_sid
+    ds.v7_dt = DT_FRAME
+    hit = sum(1 for e in eps if int(e.episode_id) in by_sid)
+    if hit == 0:
+        raise SystemExit(f"[refcv3_arm] ⛔ {a.labels} joined ZERO of {len(eps)} "
+                         f"episodes — wrong blob for this corpus (md5={lman.md5})")
+    join = {"labels": {"path": a.labels, "md5": lman.md5,
+                       "n_records": lman.n_records, "n_episodes": len(eps),
+                       "n_joined": hit, "n_missing": len(eps) - hit,
+                       "join_key": "stable_episode_id(clip_id) (the trainer's key)",
+                       **{k: v for k, v in lman.to_dict().items()
+                          if k in ("schema_version", "vocab", "allow_oracle_nav",
+                                   "divergences")}},
+            "frames": {"n_stack": n_stack[0], "provider_to_raw_frame_offset": raw_offset,
+                       "rule": "v2_dataset.py:36-38 — the provider stores "
+                               "poses[n_stack-1:], so provider row j is RAW frame "
+                               "j + (n_stack-1). The lead block is keyed on RAW "
+                               "frames and this is the ONLY place the two meet."}}
+    md5_train_eval = prov.get("eval_labels_md5_at_train")
+    if md5_train_eval and md5_train_eval != lman.md5:
+        _p(f"[labels] ⚠️ WARNING: this blob md5={lman.md5} != the eval blob the run "
+           f"used in training ({md5_train_eval}) — a DIFFERENT eval set; both are "
+           f"recorded in the manifest")
+    # ---- nav source -------------------------------------------------------- #
+    src = a.nav_source
+    if src == "auto":
+        src = "v72" if prov.get("nav_from_v7_trained") else "none"
+    nav_stats = None
+    if src == "v72":
+        nav_stats = ds.enable_nav_from_v7(lman)        # the TRAINER's own path
+        if not prov.get("nav_from_v7_trained"):
+            _p("[nav] ⚠️ WARNING: the run trained on the v1 nav derivation but is "
+               "being fed v7.2 tokens (--nav-source v72) — an input-distribution "
+               "shift; recorded in the manifest")
+    join["nav"] = {
+        "source": src, "stats": nav_stats,
+        "trained_on": prov.get("nav_cmd_derivation_trained"),
+        "rule": ("v72: the clip's v7.2 nav_command token -> refb.NAV_COMMANDS "
+                 "index (V3Dataset.enable_nav_from_v7, refc_v3_train.py:246-306, "
+                 "position-pinned); a clip without a record feeds index 0 + "
+                 "nav_valid=False. none: nav_cmd=0 on every window (the published "
+                 "REF-C convention) and NO shuffle arm — the v1 derivation reads "
+                 "15-25 s of FUTURE poses and is not an inference input.")}
+    return eps, files, clip_ids, ds, lman, join, src, raw_offset
+
+
+# --------------------------------------------------------------------------- #
+# the roll — writes the dump                                                    #
+# --------------------------------------------------------------------------- #
+def _head_argmax(out, key, row):
+    v = out.get(key)
+    return -1 if v is None else int(v[row].argmax(-1))
+
+
+def run_dump(a) -> dict:
+    """Roll every arm over the eval grid and write the dump. Returns the manifest."""
+    import torch
+    import refb_labels
+
+    t_start = time.time()
+    tr = trainer()
+    dev = a.device
+    model, cfg, targs, prov = load_model(a.ckpt, a.config, dev, a.allow_nonstrict)
+    hier = bool(cfg.hier)
+    grid = grid_slots(cfg.core.trajectory.horizons, a.grid)
+    eps, files, clip_ids, ds, lman, join, nav_src, raw_off = build_corpus(a, cfg, prov)
+    units = a.action_units
+    if units not in ("kappa", "steer"):
+        raise SystemExit(f"[refcv3_arm] --action-units must be kappa|steer, got {units!r}")
+    steps = int(prov["decoder_steps"])
+    W = int(cfg.core.window)
+
+    _p(f"[model] {prov['ckpt']} step={prov['step']} arm={prov['arm']} "
+       f"anchors={prov['n_anchors']} horizons={prov['horizons']} "
+       f"window={W} decoder={prov['decoder_mode']}/{steps} "
+       f"config<-{prov['rebuilt_from']}")
+    _p(f"[grid] {grid['name']}: dt={grid['dt_s']} s K={grid['k']} instants="
+       f"{grid['instants_s']} s <- model slots {grid['horizons_steps']} "
+       f"(indices {grid['slots']}); dropped {grid['dropped_model_slots']}")
+    _p(f"[units] action_units={units} — the RECORDED channel 1 is a road-wheel "
+       f"STEER angle (physicalai.py:621). "
+       + ("kappa = tan(steer)/%s is applied before integration; `ha` is NOT "
+          "comparable to a kappa-unit refav1 run (`ha0` is, it is zero)."
+          % ra.STEER_WHEELBASE_M if units == "steer" else
+          "⛔ LEGACY UNCONVERTED READING — `ha` carries the "
+          "C-REFCV3-ARM-SAME-DEFECT over-rotation. Use --action-units steer "
+          "unless you are deliberately reproducing a legacy number."))
+
+    # ---- window selection -------------------------------------------------- #
+    stride = max(1, int(a.window_stride))
+    sel = [(wi, e_i, t) for wi, (e_i, t) in enumerate(ds.index) if wi % stride == 0]
+    if not sel:
+        raise SystemExit("[refcv3_arm] the stride selected zero windows")
+
+    # ---- nav for every selected window, then the shuffle -------------------- #
+    nav_on = bool(getattr(ds, "nav_from_v7", False)) or nav_src == "v72"
+    nav_true = np.zeros(len(sel), dtype=np.int64)
+    nav_valid = np.zeros(len(sel), dtype=bool)
+    for i, (wi, e_i, t) in enumerate(sel):
+        if nav_on and getattr(ds, "_nav_by_sid", None) is not None:
+            nid = ds._nav_by_sid.get(int(ds.episodes[e_i].episode_id))
+            nav_true[i] = 0 if nid is None else int(nid)
+            nav_valid[i] = nid is not None
+    nav_shuf, shuf_stats = ra.shuffle_nav(nav_true, nav_valid, a.nav_shuffle_seed)
+
+    arms = ["os", "ha", "ha0"]
+    if nav_on and not a.no_navshuf:
+        arms.append("os_navshuf")
+    if a.with_oracle_sel:
+        arms.append("oracle_sel")
+    if nav_on and a.no_navshuf:
+        _p("[nav] ⚠️ --no-navshuf: the record is NOT admissible for any "
+           "nav-conditioned (STRATEGIC) claim")
+    if not nav_on:
+        _p("[nav] nav source 'none': nav_cmd=0 on every window; no os_navshuf arm "
+           "and the STRATEGIC family will be REFUSED with that reason")
+    # the head conditionings that need their own forward row
+    conds = ["nav_true"] + (["nav_shuffled"] if "os_navshuf" in arms else [])
+    if a.with_navzero:
+        conds.append("nav_zero")
+
+    _p(f"[roll] {len(sel)} windows / {len(eps)} episodes · arms={arms} · "
+       f"conditionings={conds} · nav_shuffle changed "
+       f"{shuf_stats['n_changed']}/{shuf_stats['n_windows']}")
+    os.makedirs(a.dump_dir, exist_ok=True)
+    os.makedirs(os.path.join(a.dump_dir, "decisions"), exist_ok=True)
+
+    by_ep: dict[int, list] = {}
+    for i, (wi, e_i, t) in enumerate(sel):
+        by_ep.setdefault(e_i, []).append((i, wi, t))
+
+    horizons = list(cfg.core.trajectory.horizons)
+    slots = grid["slots"]
+    anchors_bank = model.core.decoder.anchors.detach()          # [N, S, 2]
+    episodes_manifest, n_done, n_skipped = [], 0, 0
+    t_fwd_first = None
+    skip_reasons: dict[str, int] = {}
+
+    for fi, e_i in enumerate(sorted(by_ep)):
+        ep = ds.episodes[e_i]
+        v_ep = ep.poses[:, 3].float()
+        kap_ep = ep.actions[:, 0].float()
+        acc = {k: [] for k in ["g", "v0"] + arms}
+        dec: dict[str, list] = {}
+        ws = []
+        for (i, wi, t) in by_ep[e_i]:
+            t0 = t + W - 1                       # PROVIDER index of the origin
+            item = ds[wi]
+            fv = item["future_valid_ext"]
+            if not bool(fv[[h - 1 for h in grid["horizons_steps"]]].all()):
+                n_skipped += 1
+                skip_reasons["horizon_beyond_episode"] = \
+                    skip_reasons.get("horizon_beyond_episode", 0) + 1
+                continue
+            if t0 < 1:
+                n_skipped += 1
+                skip_reasons["no_closed_action_before_t0"] = \
+                    skip_reasons.get("no_closed_action_before_t0", 0) + 1
+                continue
+            pose_last = item["pose_last"].float()
+            v0 = float(pose_last[3])
+            # -- GT: the TRAINER's own target function, then index-select ------
+            traj_tgt = refb_labels.waypoint_targets(
+                pose_last[None], item["future_poses_ext"].float()[None],
+                horizons)                                        # [1, S, 2]
+            g = traj_tgt[:, slots].float().cpu().numpy()          # [1, K, 2]
+            # -- the two model-free controls -----------------------------------
+            hold = hold_controls(v_ep, kap_ep, t0)
+            n_f = grid["n_frames"]
+            ha = integrate_select(hold[None].expand(n_f, 2), v0, grid,
+                                  action_units=units)
+            # ⭐ ha0: SAME integrator, SAME v0, zero controls — so any difference
+            # from `ha` is the held action alone, and the arm is exactly zero in
+            # either unit (hence bit-comparable across models).
+            ha0 = integrate_select(hold_v0_controls(n_f), v0, grid,
+                                   action_units=units)
+            # -- the model, one batched forward over the nav conditionings -----
+            fr = tr.frames_to_device(item["frames"][None], dev)   # [1, W, C, H, W]
+            b = len(conds)
+            fr_b = fr.expand(b, *fr.shape[1:]).contiguous() if b > 1 else fr
+            nav_vals = {"nav_true": int(nav_true[i]),
+                        "nav_shuffled": int(nav_shuf[i]), "nav_zero": 0}
+            nav_t = torch.tensor([nav_vals[c] for c in conds],
+                                 dtype=torch.long, device=dev)
+            v0_t = torch.full((b,), v0, dtype=torch.float32, device=dev)
+            tf = time.time()
+            with torch.no_grad():
+                out = model(fr_b, nav_cmd=nav_t if nav_on else None,
+                            v0=v0_t, steps=steps)
+            if t_fwd_first is None:
+                t_fwd_first = time.time() - tf
+                _p(f"[cost] first forward ({b} row(s)) took {t_fwd_first:.2f} s "
+                   f"-> ESTIMATED {t_fwd_first * len(sel) / 3600:.2f} h for "
+                   f"{len(sel)} windows (forward only; IO/analysis extra)")
+            # ⭐ THE DEPLOYED SELECTION IS out["traj"] AND NOTHING ELSE
+            # (refc_v3.py:520-525 on hier; refc.py:1531-1534 on flat).
+            traj = out["traj"].float()                            # [b, S, 2]
+            acc["os"].append(traj[0:1, slots].cpu().numpy())
+            if "os_navshuf" in arms:
+                r = conds.index("nav_shuffled")
+                acc["os_navshuf"].append(traj[r:r + 1, slots].cpu().numpy())
+            # -- the ORACLE ceiling, exactly as the trainer computes it --------
+            if "oracle_sel" in arms:
+                sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
+                tgt = traj_tgt.to(anchors_bank.dtype)
+                dist = (((tgt[:, None] - anchors_bank[None]) ** 2).sum(-1)
+                        * sv[None, None]).sum(-1)                 # [1, N]
+                a_star = int(dist.argmin(dim=1)[0])
+                acc["oracle_sel"].append(
+                    out["anchor_traj"][0:1, a_star][:, slots].float().cpu().numpy())
+            else:
+                sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
+                tgt = traj_tgt.to(anchors_bank.dtype)
+                dist = (((tgt[:, None] - anchors_bank[None]) ** 2).sum(-1)
+                        * sv[None, None]).sum(-1)
+                a_star = int(dist.argmin(dim=1)[0])
+            acc["g"].append(g)
+            acc["ha"].append(ha)
+            acc["ha0"].append(ha0)
+            acc["v0"].append(np.array([v0], dtype=np.float32))
+            # -- the sidecar ---------------------------------------------------
+            sel_idx = int(out["sel_idx"][0])
+            rank_key = "sel_score_v3" if "sel_score_v3" in out else "sel_score"
+            dec.setdefault("sel_idx", []).append(sel_idx)
+            dec.setdefault("sel_idx_base", []).append(
+                int(out["sel_idx_base"][0]) if "sel_idx_base" in out else -1)
+            dec.setdefault("sel_score_max", []).append(
+                float(out[rank_key][0].max()))
+            dec.setdefault("a_star", []).append(a_star)
+            dec.setdefault("sel_agrees_oracle", []).append(
+                float(sel_idx == a_star))
+            dec.setdefault("anchor_acc", []).append(
+                float(int(out["anchor_logits"][0].argmax(-1)) == a_star))
+            dec.setdefault("goal_gate", []).append(
+                float(out["goal_gate_value"]) if "goal_gate_value" in out
+                else float("nan"))
+            dec.setdefault("goal_score_absmean", []).append(
+                float(out["goal_score_absmean"]) if "goal_score_absmean" in out
+                else float("nan"))
+            dec.setdefault("goal_dist_sel", []).append(
+                float(out["goal_dist"][0, sel_idx]) if "goal_dist" in out
+                else float("nan"))
+            for ci_, cname in enumerate(conds):
+                dec.setdefault(f"lat_pred_{cname}", []).append(
+                    _head_argmax(out, "lat_logits_tac" if hier else "lat_decision", ci_))
+                dec.setdefault(f"lon_pred_{cname}", []).append(
+                    _head_argmax(out, "lon_logits_tac" if hier else "lon_decision", ci_))
+                dec.setdefault(f"route_pred_{cname}", []).append(
+                    _head_argmax(out, "route_logits", ci_))
+            for cname in ("nav_true", "nav_shuffled", "nav_zero"):
+                if cname in conds:
+                    continue
+                for hk in ("lat", "lon", "route"):
+                    dec.setdefault(f"{hk}_pred_{cname}", []).append(-1)
+            lat_v7 = int(item["lat_v7"]) if "lat_v7" in item else -100
+            lon_v7 = int(item["lon_v7"]) if "lon_v7" in item else -100
+            from tanitad.data import v7_labels as _v7l
+            dec.setdefault("lat_label", []).append(
+                -100 if lat_v7 == _v7l.IGNORE_ID else lat_v7)
+            dec.setdefault("lon_label", []).append(
+                -100 if lon_v7 == _v7l.IGNORE_ID else lon_v7)
+            rv = bool(item["route_valid"])
+            dec.setdefault("route_label", []).append(
+                int(item["route_target"]) if rv else -100)
+            dec.setdefault("nav_cmd", []).append(int(nav_true[i]))
+            dec.setdefault("nav_cmd_shuf", []).append(int(nav_shuf[i]))
+            dec.setdefault("nav_valid", []).append(bool(nav_valid[i]))
+            dec.setdefault("ha_controls", []).append(
+                hold[None].expand(n_f, 2).float().cpu().numpy()[None])
+            ws.append(int(t0))
+            n_done += 1
+        if not ws:
+            _p(f"  [{fi + 1}/{len(by_ep)}] {clip_ids[e_i][:12]} — 0 scoreable "
+               f"windows, episode SKIPPED")
+            continue
+        np.savez_compressed(
+            os.path.join(a.dump_dir, f"ep{len(episodes_manifest):03d}.npz"),
+            **{k: np.concatenate(v).astype(np.float32) for k, v in acc.items()},
+            ws=np.array(ws), eid=np.array([len(episodes_manifest)]),
+            clip_index=np.array([e_i]))
+        dec_np = {}
+        for k, v in dec.items():
+            if isinstance(v[0], np.ndarray):
+                dec_np[k] = np.concatenate(v).astype(np.float32)
+            elif isinstance(v[0], bool):
+                dec_np[k] = np.array(v, dtype=bool)
+            elif isinstance(v[0], float):
+                dec_np[k] = np.array(v, dtype=np.float32)
+            else:
+                dec_np[k] = np.array(v, dtype=np.int64)
+        np.savez_compressed(
+            os.path.join(a.dump_dir, "decisions",
+                         f"ep{len(episodes_manifest):03d}.npz"),
+            ws=np.array(ws), **dec_np)
+        episodes_manifest.append(
+            {"file_index": len(episodes_manifest), "episode_index": e_i,
+             "clip_id": clip_ids[e_i],
+             "episode_id": int(ds.episodes[e_i].episode_id),
+             "n_windows": len(ws)})
+        _p(f"  [{fi + 1}/{len(by_ep)}] {clip_ids[e_i][:12]} {len(ws)} windows "
+           f"{time.time() - t_start:.0f}s")
+
+    if not episodes_manifest:
+        raise SystemExit("[refcv3_arm] every window was skipped — nothing dumped "
+                         f"(reasons: {skip_reasons})")
+    manifest = {
+        "tool": "taniteval/tools/refcv3_arm.py",
+        "doc": "taniteval/tools/REFCV3_ARM.md",
+        "model": prov,
+        "t1_definition": {
+            "arm": "os",
+            "_is": ("ONE forward pass of RefCV3Model at the window origin, "
+                    "consuming the observed frames, the clip's v7.2 nav token and "
+                    "the MEASURED v0 at t0 and nothing else, emitting the whole "
+                    "6 s path as the model's OWN sel_score_v3-ranked choice among "
+                    "its 128 anchors."),
+            "no_closed_loop_because": (
+                "refc_v3.py:480 — forward(frames, nav_cmd, v0, steps, lan, "
+                "nav_known) has NO action argument; there is no per-step decode "
+                "and no state that advances, so t1_eval.roll_closed "
+                "(t1_eval.py:760) has no action to feed back and CANNOT be "
+                "ported. The flagship is supervised AND autoregressive; that is "
+                "the difference."),
+            "selection": ("out['traj'] — refc_v3.py:520-525: rank = "
+                          "sel_score_v3 (= apply_seam_clamp(sel_score, "
+                          "goal_gate*score), banked at :527) masked by "
+                          "reach_keep, then argmax — on the hier arm; the core's "
+                          "own sel_score at refc.py:1531-1534 on the flat arm. "
+                          "⛔ NEVER a_star (refc_v3_train.py:460), which is the "
+                          "GT-nearest anchor and makes eval_traj an "
+                          "ORACLE-SELECTED lower bound."),
+            "inputs_admitted": ["frames <= t0", "nav_cmd (v7.2 token)",
+                                "v0 = pose_last[:, 3] measured at t0"],
+            "ade_note": ("ADE here is recomputed as an L2 norm from the dumped "
+                         "path. refcv3's training-time `traj` is a mean L1 PER "
+                         "COORDINATE (refc_v3_train.py:464-465) — ⛔ a different "
+                         "statistic; never convert one into the other."),
+        },
+        "tier_ruling": TIER_RULING,
+        "grid": {**grid, "n_windows": n_done, "n_windows_skipped": n_skipped,
+                 "skip_reasons": skip_reasons,
+                 "n_episodes": len(episodes_manifest),
+                 "n_episodes_available": len(files),
+                 "window_stride": stride, "obs_window": W,
+                 "ws_is": "the PROVIDER frame index of the window origin t0 "
+                          "(= t + window - 1); RAW frame = ws + "
+                          f"{raw_off} (see corpus.frames)"},
+        "arms": arms, "tiers": {x: ARM_TIERS[x] for x in arms},
+        "arm_meaning": {x: ARM_MEANING[x] for x in arms},
+        "absent_arms": ABSENT_ARMS,
+        "action_units": {
+            "recorded": units, "L_enc_m": ra.STEER_WHEELBASE_M,
+            "applies_to": ["ha"],
+            "does_not_apply_to": ["os", "os_navshuf", "oracle_sel (the model "
+                                  "emits a PATH, not a control — there is no "
+                                  "channel to convert)",
+                                  "ha0 (exactly zero in either unit)"],
+            "rule": ("v2ep actions[:,0] is a road-wheel angle "
+                     "(physicalai.py:621 steer = arctan(L_enc*curvature), "
+                     ":632 the column stack). 'steer' = the repaired contract "
+                     "(kappa = tan(steer)/L_enc before any integration); "
+                     "'kappa' = the LEGACY unconverted reading, which carries "
+                     "the C-REFCV3-ARM-SAME-DEFECT over-rotation. NOT comparable.")},
+        "hold_action_rule": hold_controls.__doc__,
+        "hold_v0_rule": hold_v0_controls.__doc__,
+        "nav_shuffle": shuf_stats,
+        "head_conditionings": conds,
+        "sidecar_schema": _SIDECAR_DOC,
+        "corpus": {"episodes": a.episodes, "labels": a.labels,
+                   "n_episodes_available": len(files), **join},
+        "episodes": episodes_manifest,
+        "wallclock_s": round(time.time() - t_start, 1),
+        "first_forward_s": t_fwd_first,
+        "_unverified": _UNVERIFIED_ON_REAL_CKPT,
+    }
+    with open(os.path.join(a.dump_dir, "manifest.json"), "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, indent=1, default=str)
+    _p(f"[dump] {n_done} windows over {len(episodes_manifest)} episodes "
+       f"({n_skipped} skipped: {skip_reasons or 'none'})")
+    _p("REFCV3_DUMP_DONE")
+    return manifest
+
+
+# --------------------------------------------------------------------------- #
+# distance-keeping on the COMMON grid of the dump and the banked lead block      #
+# *(harvested from the rescued draft, which derived the common-grid rule)*       #
+# --------------------------------------------------------------------------- #
+def lead_block_common_grid(path: str, dt: float, k: int):
+    """Index-select the banked B1 block onto the instants it SHARES with the dump.
+
+    Returns ``(view, idx, meta, info)`` or ``(None, None, meta, refusal)``. The
+    block is on a 0.2 s / K=10 grid; refcv3's grid is not a subset of it, so BOTH
+    sides are index-selected onto the common instants — no resampling of the lead
+    track, no interpolation of the path. The common instants must be uniformly
+    spaced starting at their own spacing, or ``lead_metrics.distance_keeping``'s
+    scalar ``dt`` would misstate the closing rate; otherwise REFUSED with the
+    rebuild command. Every ``gt_*`` column is DROPPED (they were computed over the
+    block's own 10-step grid) and the GT reference is recomputed on the view."""
+    blk, idx, meta = ra.load_lead_block_rows(path)
+    ts = np.asarray(blk["ts_rel_s"], dtype=np.float64).reshape(-1)
+    want = np.arange(1, int(k) + 1, dtype=np.float64) * float(dt)
+    cols, rows, inst = [], [], []
+    for c, w in enumerate(want):
+        hit = np.flatnonzero(np.abs(ts - w) <= ra.LEAD_TS_TOL_S)
+        if hit.size:
+            cols.append(c)
+            rows.append(int(hit[0]))
+            inst.append(float(w))
+    rebuild = (f"taniteval/tools/build_lead_block_b1.py --dt {dt} --k {k} "
+               f"(a block on the dump's OWN grid makes the FULL horizon scoreable)")
+    if not cols:
+        return None, None, meta, _refused(
+            f"the lead block grid {np.round(ts, 3).tolist()} shares NO instant "
+            f"with the dump grid {np.round(want, 3).tolist()} — WORK ITEM: "
+            f"{rebuild}", "n/a", 0)
+    gaps = np.diff(np.array(inst)) if len(inst) > 1 else np.array([inst[0]])
+    if not (np.allclose(gaps, gaps[0])
+            and abs(inst[0] - gaps[0]) <= ra.LEAD_TS_TOL_S):
+        return None, None, meta, _refused(
+            f"the common instants {inst} s are not a uniform grid starting at "
+            f"their own spacing — a scalar dt would misstate the closing rate; "
+            f"WORK ITEM: {rebuild}", "n/a", 0)
+    view = {k_: v for k_, v in blk.items() if not str(k_).startswith("gt_")}
+    view["ts_rel_s"] = np.array(inst, dtype=np.float64)
+    view["leads"] = np.asarray(blk["leads"], dtype=np.float64)[:, rows]
+    info = {"dump_cols": cols, "block_rows": rows, "instants_s": inst,
+            "dt_s": float(gaps[0]), "k": len(inst),
+            "dropped_dump_instants_s": [float(w) for c, w in enumerate(want)
+                                        if c not in cols],
+            "block_grid_s": np.round(ts, 3).tolist(),
+            "rebuild_for_full_horizon": rebuild,
+            "_is": ("distance-keeping is scored on the instants the dump and the "
+                    "banked block SHARE, by index-select on BOTH sides — no "
+                    "resampling of the lead track, no interpolation of the path")}
+    return view, idx, meta, info
+
+
+def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
+                      pairs, eid_w, n_boot, seed, tiers, dt, k, raw_off) -> dict:
+    """``rec['refcv3']['distance_keeping']`` + the per-arm LONGITUDINAL patch.
+
+    ⚠️ ``refav1_arm.join_lead_block`` keys on ``(clip_id, RAW frame 2t)`` because
+    a refav1 window origin ``t`` is a 0.2 s CACHE step. refcv3's ``ws`` is a
+    PROVIDER frame index, so the dump is rewritten into a temporary
+    ``ws' = (ws + raw_off) / 2`` view for the join and the guards (the exact-grid
+    assertion, the LABEL-FREE speed proof, NO_LABEL never scored as free flow)
+    are the SAME ones. ⛔ If the offset were wrong the speed proof FAILS LOUDLY
+    per episode (SPEED_MISMATCH) rather than placing another clip's traffic on
+    these windows — that is why it is the guard and not a comment."""
+    from taniteval import four_families as ff
+    from taniteval import lead_metrics as lm
+    view, idx, meta, info = lead_block_common_grid(lead_path, dt, k)
+    base = {"block": lead_path, "block_sha256": ra._sha256(lead_path),
+            "block_version": meta.get("version"), "block_tool": meta.get("tool"),
+            "block_built_utc": meta.get("built_utc"),
+            "block_rows_all": meta.get("n_rows"),
+            "block_clips": meta.get("n_clips"),
+            "conventions": meta.get("conventions"), "states": meta.get("states"),
+            "join_key": ("(clip_id from the dump manifest, RAW frame = ws + "
+                         f"{raw_off}); refav1_arm.join_lead_block maps t -> 2t, "
+                         "so a half-frame view is passed to it")}
+    if view is None:
+        out = dict(base)
+        out.update(info)
+        return out
+    # -- the half-frame view: join_lead_block does frame = 2 * ws --------------
+    import tempfile
+    shim_dir = tempfile.mkdtemp(prefix="refcv3_leadjoin_")
+    shim_files = []
+    odd = 0
+    for fi, f in enumerate(files):
+        with np.load(f) as d:
+            ws = np.asarray(d["ws"]).astype(np.int64).reshape(-1)
+            v0 = np.asarray(d["v0"], dtype=np.float32).reshape(-1) if "v0" in d.files \
+                else None
+        raw = ws + int(raw_off)
+        odd += int((raw % 2 != 0).sum())
+        sf = os.path.join(shim_dir, os.path.basename(f))
+        np.savez(sf, ws=raw // 2, **({"v0": v0} if v0 is not None else {}))
+        shim_files.append(sf)
+    if odd:
+        base["_odd_raw_frames"] = (
+            f"{odd} window origins land on an ODD raw frame; the B1 block carries "
+            f"a row per RAW frame but join_lead_block reaches only EVEN ones "
+            f"(frame = 2t). Those windows join to frame-1 and are caught by the "
+            f"label-free speed proof if the lead differs. WORK ITEM: give "
+            f"join_lead_block a frame-identity mode.")
+    lead = ra.join_lead_block(shim_files, manifest, view, idx,
+                              k=info["k"], dt=info["dt_s"])
+    cov = lead.pop("coverage")
+    out = dict(base)
+    out.update({"grid": info, "coverage": cov})
+    n_lab = cov["counts"]["LEAD"] + cov["counts"]["NO_LEAD"]
+    if n_lab == 0:
+        out.update(_refused(
+            f"the lead block covers 0 labelled windows of {cov['n_windows']} "
+            f"(NO_LABEL {cov['counts']['NO_LABEL']}, NOT_STRAIGHT "
+            f"{cov['counts']['NOT_STRAIGHT']}, no-row {cov['n_windows_no_row']}; "
+            f"episodes OK {cov['n_episodes_ok']}/{cov['n_episodes']}) — nothing "
+            f"is scoreable; NOT read as free flow", "n/a", 0))
+        return out
+    cols, dtv = info["dump_cols"], info["dt_s"]
+    out.update({
+        "status": "PRESENT", "n": int(cov["counts"]["LEAD"]),
+        "tier": {x: tiers.get(x) for x in arms},
+        "estimator": ("per arm: lead_metrics.distance_keeping on the common-grid "
+                      "view + episode-cluster bootstrap; pairs: "
+                      "lead_metrics.paired_distance_keeping"),
+        "_binding": ("LONGITUDINAL distance-keeping: headway / time-gap / min-TTC "
+                     "per arm with n and CI, per speed band, never pooled with "
+                     "speed accuracy; a censored TTC carries n_closing; scored on "
+                     f"the SHARED instants {info['instants_s']} s only")})
+    pw, per_arm = {}, {}
+    for arm in arms:
+        dk = lm.distance_keeping(P_cat[arm][:, cols], lead["leads"],
+                                 lead["lead_lens"], lead["speeds"], dtv)
+        pw[arm] = {kk: np.asarray(dk[kk], dtype=np.float64) for kk in ra._DK_KEYS}
+        blk = {"tier": tiers.get(arm), "status": dk.get("status"),
+               "reason": dk.get("reason"), "n": dk.get("n"),
+               "n_windows": dk.get("n_windows"), "dt_s": dtv,
+               "instants_s": info["instants_s"],
+               "mean_headway_min_m": dk.get("mean_headway_min_m"),
+               "mean_time_gap_min_s": dk.get("mean_time_gap_min_s"),
+               "n_time_gap": dk.get("n_time_gap"),
+               "mean_min_ttc_s": dk.get("mean_min_ttc_s"),
+               "n_closing": dk.get("n_closing"),
+               "censoring_note": dk.get("censoring_note"),
+               "ci": {kk: ra._boot(pw[arm][kk], eid_w, n_boot, seed)
+                      for kk in ra._DK_KEYS},
+               "_grid_note": (f"min-over-steps is a min over {info['k']} "
+                              f"instant(s) {info['instants_s']} s — coarser than "
+                              f"the block's own {len(info['block_grid_s'])}-step "
+                              f"grid; a lead closest BETWEEN them is not seen. "
+                              f"Rebuild: {info['rebuild_for_full_horizon']}")}
+        if dk.get("status") == "OK":
+            blk["by_speed"] = lm.distance_keeping_by_speed(
+                dk, lead["speeds"], lead["eid"], states=lead["state"],
+                n_boot=n_boot, seed=seed)
+        per_arm[arm] = blk
+        # -- patch the canonical family block, and re-check its CI coverage ----
+        fam = rec["arms"][arm]["four_families"]
+        lon = fam["longitudinal"]
+        lon["distance_keeping"] = {
+            **{kk: v for kk, v in blk.items() if kk != "tier"},
+            "_declared_by": ("taniteval/tools/refcv3_arm.py — computed on the "
+                             "COMMON-GRID view of the banked B1 EVAL lead block "
+                             "(refav1_arm.join_lead_block guards: exact grid, "
+                             "label-free speed proof, NO_LABEL never free flow)"),
+            "_time_join": info["_is"]}
+        ci_ = lon.setdefault("ci", {})
+        comps_ = ci_.setdefault("components", {})
+        unav_ = ci_.setdefault("unavailable", {})
+        for kk, name in (("headway_min_m", "mean_headway_min_m"),
+                         ("time_gap_min_s", "mean_time_gap_min_s"),
+                         ("min_ttc_s", "mean_min_ttc_s")):
+            key = f"distance_keeping.{name}"
+            bb = blk["ci"][kk]
+            if bb.get("status") == "NOT-APPLICABLE":
+                unav_[key] = {"status": "UNAVAILABLE", "reason": bb.get("reason"),
+                              "n": 0}
+            else:
+                comps_[key] = bb
+                unav_.pop(key, None)
+        fam["_ci_coverage"]["longitudinal"] = ff.ci_coverage(lon, "longitudinal")
+        fam["_intervals_complete"] = bool(
+            fam["_ci_coverage"]["longitudinal"].get("complete")
+            and fam["_ci_coverage"]["lateral"].get("complete"))
+    out["per_arm"] = per_arm
+    gt = lm.distance_keeping(G_all[:, cols], lead["leads"], lead["lead_lens"],
+                             lead["speeds"], dtv)
+    out["gt_reference"] = {
+        "_is": ("lead_metrics.distance_keeping of the GT ego path on the same "
+                "instants: the value a perfect reproduction scores here"),
+        **{kk: ra._boot(np.asarray(gt[kk], dtype=np.float64), eid_w, n_boot, seed)
+           for kk in ra._DK_KEYS}}
+    out["paired"] = {nm: lm.paired_distance_keeping(
+        pw[hi], pw[lo], eid_w, names=(hi, lo), n_boot=n_boot, seed=seed)
+        for lo, hi, nm in pairs}
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# the analysis (CPU)                                                           #
+# --------------------------------------------------------------------------- #
+def _load_decisions(dump_dir: str):
+    files = sorted(glob.glob(os.path.join(dump_dir, "decisions", "ep*.npz")))
+    if not files:
+        return None, []
+    cat: dict[str, list] = {}
+    eid = []
+    for f in files:
+        with np.load(f) as d:
+            n = int(d["ws"].shape[0])
+            for k in d.files:
+                cat.setdefault(k, []).append(d[k])
+        eid += [os.path.splitext(os.path.basename(f))[0]] * n
+    return {k: np.concatenate(v) for k, v in cat.items()}, eid
+
+
+#: an arm whose selection carries this little scene information is DEGENERATE:
+#: the fraction of windows landing on the single most-chosen anchor.
+SELECTION_DEGENERATE_FRAC = 0.9
+
+
+def _selection_profile(dec, manifest) -> dict:
+    """⛔ HOW MUCH SCENE INFORMATION IS IN THE MODEL'S OWN SELECTION?
+
+    An anchored one-shot model can be fully degenerate while its PATHS look
+    perfectly non-trivial: if ``sel_idx`` is a constant, the arm is "always
+    anchor k, refined", and every family row below is a property of that one
+    anchor. The trivial profile cannot see this (the paths bend and change
+    speed), so it is asked here, separately, and BEFORE any family row.
+
+    Reports ``n_distinct``, the modal anchor and its share, the selection
+    entropy in nats against ``ln(n_anchors)``, and how often the deployed
+    selection coincides with the ORACLE ``a_star``."""
+    if not dec or "sel_idx" not in dec:
+        return _refused("no decisions sidecar — the selection cannot be "
+                        "profiled (this dump was not written by "
+                        "refcv3_arm.run_dump)", "n/a", 0)
+    n_anchors = int((((manifest or {}).get("model") or {}).get("n_anchors")) or 128)
+    sel = np.asarray(dec["sel_idx"], dtype=np.int64)
+    n = int(sel.size)
+    counts = np.bincount(sel, minlength=n_anchors)
+    modal = int(counts.argmax())
+    modal_frac = float(counts[modal] / max(1, n))
+    ent = _entropy(sel, n_anchors)
+    star = (np.asarray(dec["a_star"], dtype=np.int64) if "a_star" in dec
+            else None)
+    out = {
+        "n_windows": n, "n_anchors": n_anchors,
+        "n_distinct_selected": int(np.count_nonzero(counts)),
+        "modal_anchor": modal, "modal_frac": round(modal_frac, 4),
+        "entropy_nats": round(float(ent), 4),
+        "max_entropy_nats": round(float(np.log(n_anchors)), 4),
+        "entropy_ratio": round(float(ent / max(1e-12, np.log(n_anchors))), 4),
+        "agrees_with_oracle_frac": (round(float((sel == star).mean()), 4)
+                                    if star is not None else None),
+        "degenerate": bool(modal_frac >= SELECTION_DEGENERATE_FRAC),
+        "rule": {"degenerate_modal_frac_at_or_above": SELECTION_DEGENERATE_FRAC},
+        "_reading": ("a DEGENERATE selection means the model emits essentially "
+                     "ONE anchor for every scene: the arm is a constant map and "
+                     "every family row is a property of that constant, not of "
+                     "the model's scene understanding. It is invisible to the "
+                     "trivial profile, because the constant anchor is neither "
+                     "straight nor constant-speed."),
+    }
+    return out
+
+
+def _print_selection_profile(sp: dict) -> None:
+    if sp.get("status") in ("REFUSED", "UNAVAILABLE"):
+        _p(f"[selection-profile] {sp.get('status')} — {str(sp.get('reason'))[:120]}")
+        return
+    _p(f"[selection-profile] {sp['n_windows']} windows over {sp['n_anchors']} "
+       f"anchors — the model's OWN choice, before any family row")
+    _p(f"  n_distinct={sp['n_distinct_selected']:4d}  modal=#{sp['modal_anchor']} "
+       f"({sp['modal_frac']:.4f})  entropy={sp['entropy_nats']:.4f}/"
+       f"{sp['max_entropy_nats']:.4f} nats (ratio {sp['entropy_ratio']:.4f})  "
+       f"agrees_with_oracle={sp['agrees_with_oracle_frac']}")
+    if sp["degenerate"]:
+        _p(f"  ⛔ VOID-RISK: the selection is a CONSTANT on "
+           f"{sp['modal_frac']:.2%} of windows — the arm is 'always anchor "
+           f"#{sp['modal_anchor']}, refined'. Read every family row below as a "
+           f"property of that one anchor, NEVER as scene understanding. The "
+           f"trivial profile CANNOT see this.")
+
+
+def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
+                   dt: float | None = None, tiers: dict | None = None,
+                   lead_block: str | None = None) -> dict:
+    """``t1_eval.analyze`` on the trajectory dump + the refcv3 sidecar analysis."""
+    from taniteval import ci as _ci
+    from taniteval import four_families as ff
+    files = sorted(glob.glob(os.path.join(dump_dir, "ep*.npz")))
+    if not files:
+        raise ValueError(f"no ep*.npz under {dump_dir}")
+    man_path = os.path.join(dump_dir, "manifest.json")
+    manifest = None
+    if os.path.exists(man_path):
+        with open(man_path, encoding="utf-8") as fh:
+            manifest = json.load(fh)
+    grid_man = (manifest or {}).get("grid") or {}
+    dt = float(dt if dt is not None else grid_man.get("dt_s") or GRIDS["2s"][0])
+    raw_off = 0
+    fr = ((manifest or {}).get("corpus") or {}).get("frames") or {}
+    if "provider_to_raw_frame_offset" in fr:
+        raw_off = int(fr["provider_to_raw_frame_offset"])
+    tiers = dict(ARM_TIERS, **(tiers or {}))
+    with np.load(files[0]) as d0:
+        arms = [k for k in d0.files if k not in ("g", "ws", *t1._META_KEYS)
+                and not k.endswith(t1._FAN_SUFFIXES)]
+        k_dump = int(d0["g"].shape[1])
+    unstamped = [x for x in arms if tiers.get(x) not in ("T0", "T1")]
+    if unstamped:
+        raise SystemExit(
+            f"[refcv3_arm] arms {unstamped} carry no T0/T1 tier stamp. Every "
+            f"emitted number carries its tier (EVAL_DOCTRINE.md); pass "
+            f"--tiers name=T0|T1. Known here: {sorted(ARM_TIERS)}")
+    # ⭐ THE HEADLINE PAIRS: the echo test's REAL bar is `os - ha0`, never `- ha`
+    # alone. `ha` holds a noisy observed steer and drifts, so an arm that does
+    # NOTHING can beat it and read as lateral skill (MEASURED 2026-09-03).
+    pairs = [(x, y, nm) for x, y, nm in (
+        ("ha0", "os", "paired_os_minus_ha0"),
+        ("ha", "os", "paired_os_minus_ha"),
+        ("os_navshuf", "os", "paired_os_minus_navshuf"),
+        ("ha0", "ha", "paired_ha_minus_ha0"),
+        ("os", "oracle_sel", "paired_oraclesel_minus_os"))
+        if x in arms and y in arms]
+
+    # ---- ⭐ THE TRIVIAL-PROFILE INSTRUMENT, BEFORE ANY FAMILY ROW ------------
+    # It runs HERE, not later, on purpose: a reader who sees the family table
+    # first has already formed the reading this instrument exists to prevent.
+    # One instrument, not two — refav1_arm's, imported.
+    triv = ra.trivial_profile(files, arms, dt=dt)
+    ra._print_trivial_profile(triv)
+    # ⚠️ `ha0` IS the constant-velocity plan BY DEFINITION, so it is degenerate on
+    # every correct run. Escalating on it would make the loudest warning in this
+    # tool fire every time and be learned as noise — so the VOID-RISK line names
+    # only the arms whose degeneracy is a FINDING.
+    triv["degenerate_arms_excluding_floor"] = [
+        x for x in triv["degenerate_arms"] if x != "ha0"]
+    triv["_floor_note"] = ("`ha0` is expected in degenerate_arms — it IS the "
+                           "constant-velocity plan. VOID-RISK is raised only on "
+                           "degenerate_arms_excluding_floor.")
+    if triv["degenerate_arms_excluding_floor"]:
+        _p(f"  ⛔ VOID-RISK: {triv['degenerate_arms_excluding_floor']} are the "
+           f"CONSTANT-VELOCITY plan on > 50 % of windows. A read whose arm is "
+           f"the baseline, or bit-identical to another arm, is stamped VOID — "
+           f"never reported as 'no difference'.")
+    ident_os = ((triv["arms"].get("os") or {}).get("identical_to") or {})
+    for other, r in ident_os.items():
+        if other != "ha0" and r["frac"] > 0.5:
+            _p(f"  ⛔ VOID-RISK: `os` is bit-identical to `{other}` on "
+               f"{r['n']}/{triv['arms']['os']['n']} windows ({r['frac']:.2%}) — "
+               f"on those windows the instrument saw ONE arm, not two.")
+
+    # ---- ⭐ THE SELECTION PROFILE, ALSO BEFORE ANY FAMILY ROW ----------------
+    # ⛔ WHY IT EXISTS, AND WHY THE TRIVIAL PROFILE ALONE IS NOT ENOUGH HERE
+    # (MEASURED on this tool's own fixture, 2026-09-03): a random-init RefCV3
+    # selected ONE anchor on 42/42 windows. Its paths are neither straight nor
+    # constant-speed — the anchor bends and the refinement moves with the scene —
+    # so `trivial_frac` reads 0.0000 and the trivial profile CANNOT see it. Yet
+    # the model's selection carried ZERO scene information, which is refcv3's
+    # characteristic degeneracy and exactly the reading a family table would
+    # otherwise be given as skill.
+    dec_early, _ = _load_decisions(dump_dir)
+    selp = _selection_profile(dec_early, manifest)
+    _print_selection_profile(selp)
+
+    # ---- the analysis ------------------------------------------------------- #
+    rec = t1.analyze(files, tiers={x: tiers[x] for x in arms},
+                     n_boot=n_boot, seed=seed, dt=dt, paired=pairs)
+    rec["tool"] = ("taniteval/tools/refcv3_arm.py (trajectory families via "
+                   "taniteval/tools/t1_eval.py::analyze, IMPORTED)")
+
+    G_all, P_all, eid_w, v0_w = [], {x: [] for x in arms}, [], []
+    for f in files:
+        with np.load(f) as d:
+            G = d["g"][..., :2].astype(np.float64)
+            G_all.append(G)
+            eid_w += [os.path.splitext(os.path.basename(f))[0]] * G.shape[0]
+            for x in arms:
+                P_all[x].append(d[x][..., :2].astype(np.float64))
+            if "v0" in d.files:
+                v0_w.append(np.asarray(d["v0"], dtype=np.float64).reshape(-1))
+    G_all = np.concatenate(G_all)
+    N = int(G_all.shape[0])
+    P_cat = {x: np.concatenate(P_all[x]) for x in arms}
+    comps = {x: ra._components(P_cat[x], G_all, dt) for x in arms}
+
+    ref = {
+        "n_windows": N, "n_episodes": len(files),
+        "tiers": {x: tiers[x] for x in arms},
+        "arm_meaning": {x: ARM_MEANING.get(x) for x in arms},
+        "absent_arms": ABSENT_ARMS,
+        "tier_ruling": TIER_RULING,
+        "_tier_doctrine": rec["_tier_doctrine"],
+        # ⭐ banked FIRST in the record too, for the same reason they print first.
+        "trivial_profile": triv,
+        "selection_profile": selp,
+        "t1_definition": (manifest or {}).get("t1_definition"),
+        "families_paired": {nm: ra._paired_families(comps, x, y, eid_w, tiers,
+                                                    n_boot, seed)
+                            for x, y, nm in pairs},
+        "headline": {
+            "_is": ("the admissible cross-model statistic is each arm's MARGIN "
+                    "over the SAME ha0 floor, per family, paired — "
+                    "(cl - ha0)_refav1 vs (os - ha0)_refcv3. ⛔ NEVER cl vs os "
+                    "as levels (D-HF-COMPARABILITY)."),
+            "margin_block": "families_paired.paired_os_minus_ha0",
+            "floor_arm": "ha0",
+            "floor_is_bit_comparable_with_refav1": True,
+        },
+        "families_note": (
+            "LONGITUDINAL / LATERAL / ADE and the TRAJECTORY-DERIVED tactical "
+            "rows per arm live in rec['arms'][arm]['four_families'] (t1_eval, "
+            "unchanged). The DECLARED tactical decisions, the anchor selection "
+            "and STRATEGIC come from refcv3's own heads and live below "
+            "(rec['refcv3']); the trajectory-only STRATEGIC row in rec['arms'] "
+            "stays UNAVAILABLE by design because a route class cannot be read "
+            "off a short path."),
+    }
+
+    # ---- LONGITUDINAL distance-keeping -------------------------------------- #
+    if lead_block:
+        ref["distance_keeping"] = _distance_keeping(
+            rec, files, manifest, lead_block, arms, P_cat, G_all, pairs, eid_w,
+            n_boot, seed, tiers, dt, k_dump, raw_off)
+        dk = ref["distance_keeping"]
+        cov = dk.get("coverage")
+        if cov:
+            _p(f"[lead] {os.path.basename(lead_block)}: {cov['n_windows']} windows / "
+               f"{cov['n_episodes']} eps · OK eps {cov['n_episodes_ok']} · "
+               f"LEAD {cov['counts']['LEAD']} NO_LEAD {cov['counts']['NO_LEAD']} "
+               f"NOT_STRAIGHT {cov['counts']['NOT_STRAIGHT']} NO_LABEL "
+               f"{cov['counts']['NO_LABEL']} · speed-check max "
+               f"{cov['speed_check']['max_mps']} m/s · {dk.get('status')}")
+        else:
+            _p(f"[lead] {dk.get('status')} — {str(dk.get('reason'))[:200]}")
+    else:
+        ref["distance_keeping"] = _refused(
+            "no lead block passed (--lead-block); the banked B1 EVAL block is "
+            f"{ra.LEAD_BLOCK_DEFAULT}. The LONGITUDINAL family's distance-keeping "
+            "half is a WORK ITEM, not a pass.", "n/a", 0)
+
+    dec, eid_d = _load_decisions(dump_dir)
+    if dec is None:
+        ref["sidecar"] = _refused("no decisions/ep*.npz sidecar — this dump was "
+                                  "not written by refcv3_arm.run_dump", "n/a")
+        rec["refcv3"] = ref
+        return rec
+    if len(eid_d) != N:
+        raise ValueError(f"decisions sidecar has {len(eid_d)} rows for {N} "
+                         f"windows — different grids; refusing the join")
+
+    n_anchors = int((((manifest or {}).get("model") or {})
+                     .get("n_anchors")) or 128)
+    # ---- TACTICAL: the anchor selection + the declared heads ---------------- #
+    tac = {"tier": "T1 (the heads read the OBSERVED window only)",
+           "tier_ruling": TIER_RULING["status"],
+           "n_windows": N,
+           "anchor_selection": {
+               "_is": ("the TACTICAL family's goal/anchor-selection half. "
+                       "`anchor_acc` is 1 where anchor_logits.argmax equals "
+                       "a_star, the GT-NEAREST anchor "
+                       "(refc_v3_train.py:460, :642) — chance is 1/n_anchors."),
+               "n_anchors": n_anchors,
+               "chance": round(1.0 / max(1, n_anchors), 6),
+               "anchor_acc": _ci.episode_cluster_bootstrap(
+                   dec["anchor_acc"].astype(np.float64), eid_d,
+                   n_boot=n_boot, seed=seed),
+               "deployed_selection_agrees_oracle": _ci.episode_cluster_bootstrap(
+                   dec["sel_agrees_oracle"].astype(np.float64), eid_d,
+                   n_boot=n_boot, seed=seed),
+               "_reading": ("deployed_selection_agrees_oracle is how often the "
+                            "DEPLOYED path IS the oracle path. Where it is low, "
+                            "the run's own `eval_traj` (oracle-selected) is a "
+                            "LOOSE lower bound on what refcv3 would drive."),
+               "n_distinct_selected": int(np.unique(dec["sel_idx"]).size),
+               "selected_entropy_nats": float(_entropy(dec["sel_idx"], n_anchors)),
+               "_degeneracy_note": ("n_distinct_selected == 1 means the model "
+                                    "emits ONE anchor for every scene: the arm is "
+                                    "a constant, and every family row below is a "
+                                    "property of that constant."),
+           },
+           "declared_heads": {}}
+    for hk in ("lat", "lon"):
+        lbl = dec[f"{hk}_label"].astype(int)
+        m = lbl != -100
+        names = [str(i) for i in range(int(max(lbl.max(initial=0), 0)) + 1)]
+        for cname in ("nav_true", "nav_shuffled", "nav_zero"):
+            key = f"{hk}_{cname}"
+            pred = dec.get(f"{hk}_pred_{cname}")
+            if pred is None or (pred.astype(int) < 0).all():
+                tac["declared_heads"][key] = _refused(
+                    f"the {cname} conditioning was not rolled, or this build has "
+                    f"no {hk} head (pred = -1)", "T1", N)
+            elif m.sum() == 0:
+                tac["declared_heads"][key] = _refused(
+                    f"no window carries a {hk} v7.2 label (IGNORE_ID everywhere)",
+                    "T1", 0)
+            else:
+                pi = pred.astype(int)
+                nn = [str(i) for i in range(
+                    int(max(lbl[m].max(), pi[m].max())) + 1)]
+                e_m = [e for e, kk in zip(eid_d, m) if kk]
+                blk = ff._agreement_block(lbl[m], pi[m], nn, e_m, n_boot, seed,
+                                          tier="T1")
+                blk["n_excluded_no_label"] = int((~m).sum())
+                blk["chance_ce_nats_if_8_class"] = round(float(np.log(8.0)), 4)
+                tac["declared_heads"][key] = blk
+        if m.sum() and dec.get(f"{hk}_pred_nav_shuffled") is not None \
+                and not (dec[f"{hk}_pred_nav_true"].astype(int) < 0).all() \
+                and not (dec[f"{hk}_pred_nav_shuffled"].astype(int) < 0).all():
+            e_m = [e for e, kk in zip(eid_d, m) if kk]
+            ct = (dec[f"{hk}_pred_nav_true"].astype(int) == lbl).astype(float)
+            cs = (dec[f"{hk}_pred_nav_shuffled"].astype(int) == lbl).astype(float)
+            tac[f"{hk}_paired_true_minus_shuffled_accuracy"] = \
+                _ci.paired_episode_cluster_bootstrap(ct[m], cs[m], e_m,
+                                                     n_boot=n_boot, seed=seed)
+    ref["tactical_declared"] = tac
+
+    # ---- STRATEGIC: the route head, with the nav-echo control beside it ------ #
+    from tanitad.refs.refb import ROUTE_CLASSES
+    nav_valid = dec["nav_valid"].astype(bool)
+    route_lbl = dec["route_label"].astype(int)
+    labeled = route_lbl != -100
+    strat = {"tier": "T1 (the route head reads the OBSERVED window only)",
+             "tier_ruling": TIER_RULING["status"],
+             "n_windows": N, "n_nav_valid": int(nav_valid.sum()),
+             "nav_valid_frac": round(float(nav_valid.mean()), 4) if N else None,
+             "n_route_labeled": int(labeled.sum()),
+             "n_excluded_no_route_label": int((~labeled).sum()),
+             "nav_shuffle": (manifest or {}).get("nav_shuffle"),
+             "_echo_caveat": ("nav_cmd is an INPUT and the route label derives "
+                              "from the same clip, so under the TRUE nav this "
+                              "measures the nav ECHO (flagship v1 scored 1.0000 "
+                              "on a bijection of its own input). Evidence of "
+                              "route skill is ONLY the shuffled/zero "
+                              "conditioning, and the CHANGED subset is where the "
+                              "control has power at all."),
+             "conditionings": {}}
+    use = labeled & nav_valid
+    eid_use = [e for e, kk in zip(eid_d, use) if kk]
+    for cname in ("nav_true", "nav_shuffled", "nav_zero"):
+        pred = dec.get(f"route_pred_{cname}")
+        if pred is None or (pred.astype(int) < 0).all():
+            strat["conditionings"][cname] = _refused(
+                f"the {cname} conditioning was not rolled (pred = -1)", "T1", N)
+            continue
+        if use.sum() == 0:
+            strat["conditionings"][cname] = _refused(
+                "no window is both route-labeled and nav-valid", "T1", 0)
+            continue
+        pi = pred.astype(int)
+        blk = ff._agreement_block(route_lbl[use], pi[use], list(ROUTE_CLASSES),
+                                  eid_use, n_boot, seed, tier="T1")
+        blk["nav_echo_index"] = round(
+            float((pi[use] == dec["nav_cmd"][use].astype(int)).mean()), 4)
+        blk["_nav_echo_index_is"] = (
+            "fraction of scored windows whose route_pred equals the FED nav "
+            "index — the echo index under this conditioning. NAV_COMMANDS and "
+            "ROUTE_CLASSES are both 3-wide and index-aligned in refb.")
+        maj = int(np.bincount(route_lbl[use].clip(min=0),
+                              minlength=len(ROUTE_CLASSES)).argmax())
+        blk["majority_class"] = ROUTE_CLASSES[maj]
+        blk["majority_class_rate"] = round(float((route_lbl[use] == maj).mean()), 4)
+        strat["conditionings"][cname] = blk
+    if use.sum() and dec.get("route_pred_nav_shuffled") is not None \
+            and not (dec["route_pred_nav_true"].astype(int) < 0).all() \
+            and not (dec["route_pred_nav_shuffled"].astype(int) < 0).all():
+        pt_ = dec["route_pred_nav_true"].astype(int)
+        ps_ = dec["route_pred_nav_shuffled"].astype(int)
+        c_t = (pt_ == route_lbl).astype(float)
+        c_s = (ps_ == route_lbl).astype(float)
+        strat["paired_true_minus_shuffled_accuracy"] = \
+            _ci.paired_episode_cluster_bootstrap(c_t[use], c_s[use], eid_use,
+                                                 n_boot=n_boot, seed=seed)
+        changed = use & (dec["nav_cmd_shuf"].astype(int) != dec["nav_cmd"].astype(int))
+        strat["n_changed_subset"] = int(changed.sum())
+        if changed.sum():
+            e_c = [e for e, kk in zip(eid_d, changed) if kk]
+            strat["changed_subset"] = {
+                "n": int(changed.sum()), "tier": "T1",
+                "estimator": "episode_cluster_bootstrap",
+                "route_follows_LABEL_under_shuffle": _ci.episode_cluster_bootstrap(
+                    c_s[changed], e_c, n_boot=n_boot, seed=seed),
+                "route_follows_SHUFFLED_NAV_under_shuffle":
+                    _ci.episode_cluster_bootstrap(
+                        (ps_ == dec["nav_cmd_shuf"].astype(int)).astype(float)[changed],
+                        e_c, n_boot=n_boot, seed=seed),
+                "_reading": ("on windows whose nav token CHANGED, the label route "
+                             "and the shuffled-nav route are different classes by "
+                             "construction, so the two rates are mutually "
+                             "exclusive: an ECHO reads follows_nav ~ 1 / "
+                             "follows_label ~ 0; route skill from vision reads "
+                             "follows_label high regardless of the token."),
+            }
+        else:
+            strat["changed_subset"] = _refused(
+                "the permutation changed no nav token (FOLLOW-dominated "
+                "marginal) — the shuffle control has no power on this set", "T1")
+    else:
+        strat["changed_subset"] = _refused(
+            "no nav-shuffled conditioning in this dump (--no-navshuf or "
+            "--nav-source none) — ⛔ the STRATEGIC family is INADMISSIBLE without "
+            "it", "T1")
+    ref["strategic"] = strat
+
+    # ---- the E9 goal gate: the value AND the scale it multiplies ------------- #
+    gg, gs = dec.get("goal_gate"), dec.get("goal_score_absmean")
+    if gg is None or not np.isfinite(gg.astype(np.float64)).any():
+        ref["goal_gate"] = _refused(
+            "this build has no E9 goal cascade (flat arm) — no gate exists",
+            "T1", N)
+    else:
+        ref["goal_gate"] = {
+            "tier": "T1", "n": N,
+            "gate_mean": round(float(np.nanmean(gg.astype(np.float64))), 8),
+            "score_absmean_mean": (round(float(np.nanmean(gs.astype(np.float64))), 8)
+                                   if gs is not None else None),
+            "_binding": ("⛔ REPORT BOTH. The gate alone cannot distinguish "
+                         "'has not opened yet' from 'will never open'; the score "
+                         "scale it multiplies is what makes the reading "
+                         "falsifiable (CAVEAT-B, PI 2026-09-02)."),
+        }
+
+    # ---- the T0 arms that DO NOT exist here, said out loud ------------------- #
+    ref["law_diagnostic"] = _refused(
+        "`law` consumes a FUTURE frame's pooled latent (refc_v3_train.py's LAW "
+        "target). It is a T0 WM-fidelity diagnostic with NO refav1 analogue and "
+        "it can never enter a T1 row (D-HF-COMPARABILITY). Not computed here on "
+        "purpose: this adapter never decodes a future frame.", "T0", 0)
+
+    ref["protocol"] = {
+        "inference_inputs": ("the OBSERVED window's frames (vision); the MEASURED "
+                             "v0 at t0 (PI ruling 2026-09-02); the clip's v7.2 nav "
+                             "token (goal input, PI 2026-08-03); NOTHING recorded "
+                             "after the window origin on any arm here"),
+        "vision_only": ("vision + v0(t0) + nav token — both additions admitted by "
+                        "the two PI rulings above; no ego state beyond v0, no "
+                        "future"),
+        "goal_source": ("the model's own tactical goal head (E4/E9), decoded from "
+                        "vision + nav + v0 inside the forward pass; the selection "
+                        "it grafts is banked per window (sel_score_v3)"),
+        "goal_situation_disjoint": ("True by construction: nav is the v7.2 labels "
+                                    "blob's nav_command token, not a situation "
+                                    "classifier output"),
+        "corpus": ((manifest or {}).get("corpus") or {}).get("episodes"),
+        "labels": ((manifest or {}).get("corpus") or {}).get("labels"),
+        "parity_key": ("the eval split is the v7.2 EVAL clip set, identified by "
+                       "the labels blob md5 in corpus.labels — NOT the canonical "
+                       "train parity key e438721ae894; cross-arm deltas are valid "
+                       "only against dumps on this SAME corpus + grid"),
+    }
+    for arm in rec.get("arms", {}):
+        fam = rec["arms"][arm].get("four_families")
+        if not isinstance(fam, dict) or "_protocol" not in fam:
+            continue
+        fam["_protocol"].update({k: v for k, v in ref["protocol"].items()
+                                 if k in fam["_protocol"]})
+        fam["_protocol"]["_declared_by"] = ("taniteval/tools/refcv3_arm.py "
+                                            "analyze_refcv3 (post hoc, from the "
+                                            "roll's manifest + the model's own "
+                                            "input contract)")
+        fam["_protocol_undeclared"] = sorted(
+            k for k, v in fam["_protocol"].items()
+            if not k.startswith("_") and isinstance(v, str)
+            and v.startswith("UNDECLARED"))
+    ref["manifest"] = manifest
+    rec["refcv3"] = ref
+    return rec
+
+
+def _entropy(idx, n_classes: int) -> float:
+    c = np.bincount(np.asarray(idx, dtype=np.int64), minlength=int(n_classes))
+    p = c[c > 0] / max(1, c.sum())
+    # max(0.0, ...): a single-class histogram gives -(1*log 1) = -0.0, which
+    # prints as "-0.0000" and reads like a broken metric rather than a degenerate
+    # selection. The value is zero; say zero.
+    return float(max(0.0, -(p * np.log(p)).sum()))
+
+
+# --------------------------------------------------------------------------- #
+# CLI                                                                          #
+# --------------------------------------------------------------------------- #
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description="refcv3 eval adapter — writes a t1_eval-compatible dump + a "
+                    "decisions sidecar and analyses both. Read "
+                    "taniteval/tools/REFCV3_ARM.md §2 first: the deployed arm is "
+                    "`os` (one-shot), never `cl`.")
+    ap.add_argument("--ckpt", help="refc_v3_train.py ckpt.pt")
+    ap.add_argument("--config", default=None,
+                    help="config.json (default: sibling of --ckpt)")
+    ap.add_argument("--episodes", help="v2 episode cache dir (<clip>.v2ep.pt)")
+    ap.add_argument("--labels", default=None,
+                    help="the v7.2 EVAL labels blob (REQUIRED)")
+    ap.add_argument("--nav-source", choices=NAV_SOURCES, default="auto",
+                    help="auto = whatever the run trained on (config.json "
+                         "nav_from_v7); v72 = the clip's v7.2 token; none = "
+                         "nav_cmd 0 everywhere and NO shuffle arm")
+    ap.add_argument("--grid", choices=sorted(GRIDS), default="2s",
+                    help="the dump grid — an INDEX-SELECT of V3_HORIZONS")
+    ap.add_argument("--arm", default="refcv3", help="label for the output record")
+    ap.add_argument("--out", help="JSON output FILE")
+    ap.add_argument("--dump-dir", default=None)
+    ap.add_argument("--analyze-only", default=None, metavar="DUMP_DIR")
+    ap.add_argument("--dump-only", action="store_true")
+    ap.add_argument("--device", default="cuda")
+    ap.add_argument("--episodes-n", type=int, default=0,
+                    help="first N clips of the cache manifest (0 = all)")
+    ap.add_argument("--window-stride", type=int, default=1)
+    ap.add_argument("--lru", type=int, default=8)
+    ap.add_argument("--action-units", choices=("kappa", "steer"), default="steer",
+                    help="unit of the RECORDED actions[:,0] as this run READS it. "
+                         "DEFAULT 'steer' = the repaired contract (kappa = "
+                         "tan(steer)/2.9 before integration), because "
+                         "physicalai.py:621 writes a road-wheel angle there. "
+                         "'kappa' is the LEGACY unconverted reading and carries "
+                         "the C-REFCV3-ARM-SAME-DEFECT over-rotation; it affects "
+                         "`ha` only (`os` has no control channel, `ha0` is zero).")
+    ap.add_argument("--nav-shuffle-seed", type=int, default=0)
+    ap.add_argument("--no-navshuf", action="store_true",
+                    help="skip the nav-shuffle arm (⛔ then the record is NOT "
+                         "admissible for any nav-conditioned claim)")
+    ap.add_argument("--with-navzero", action="store_true",
+                    help="ALSO roll a nav_cmd=0 head conditioning (one more "
+                         "forward row per window)")
+    ap.add_argument("--with-oracle-sel", action="store_true",
+                    help="ALSO bank the T0 `oracle_sel` ceiling arm (the "
+                         "a_star / GT-nearest anchor). Never compared to T1.")
+    ap.add_argument("--allow-nonstrict", action="store_true")
+    ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tiers", default="",
+                    help="extra tier stamps name=T0|T1, merged over this tool's "
+                         "own ARM_TIERS and t1_eval.DEFAULT_TIERS")
+    ap.add_argument("--lead-block", default=None,
+                    help="per-frame B1 lead block for LONGITUDINAL "
+                         f"distance-keeping; default = {ra.LEAD_BLOCK_DEFAULT} "
+                         f"when it exists")
+    ap.add_argument("--no-lead-block", action="store_true",
+                    help="analyse WITHOUT a lead block (distance-keeping stays "
+                         "REFUSED with its reason — a WORK ITEM, not a pass)")
+    a = ap.parse_args(argv)
+
+    lead_path = None
+    if not a.no_lead_block:
+        if a.lead_block and not os.path.exists(a.lead_block):
+            sys.exit(f"--lead-block {a.lead_block} does not exist")
+        lead_path = a.lead_block or (ra.LEAD_BLOCK_DEFAULT
+                                     if os.path.exists(ra.LEAD_BLOCK_DEFAULT)
+                                     else None)
+        if lead_path is None:
+            _p(f"[lead] no lead block (banked default absent: "
+               f"{ra.LEAD_BLOCK_DEFAULT}); distance-keeping will be REFUSED with "
+               f"its reason — a WORK ITEM, not a pass")
+    if not a.out:
+        sys.exit("--out is required")
+    if os.path.isdir(a.out):
+        sys.exit(f"--out must be a FILE, got a directory: {a.out}")
+
+    if a.analyze_only is None:
+        for r, name in ((a.ckpt, "--ckpt"), (a.episodes, "--episodes"),
+                        (a.labels, "--labels"), (a.dump_dir, "--dump-dir")):
+            if not r:
+                sys.exit(f"rollout mode needs {name} (or use --analyze-only)")
+        run_dump(a)
+        dump_dir = a.dump_dir
+        if a.dump_only:
+            _p(f"[dump-only] {dump_dir}; analyse later with --analyze-only")
+            return
+    else:
+        dump_dir = a.analyze_only
+
+    rec = analyze_refcv3(dump_dir, n_boot=a.n_boot, seed=a.seed,
+                         tiers=t1._parse_tiers(a.tiers), lead_block=lead_path)
+    rec.update({"arm": a.arm, "ckpt": a.ckpt, "dump_dir": dump_dir,
+                "mode": "analyze-only" if a.analyze_only else "rollout+analyze",
+                "lead_block": lead_path,
+                "_unverified": _UNVERIFIED_ON_REAL_CKPT})
+    with open(a.out, "w", encoding="utf-8") as fh:
+        json.dump(rec, fh, indent=1, default=str)
+    _p(f"[out] {a.out}")
+    r = rec.get("refcv3", {})
+    dkb = r.get("distance_keeping") or {}
+    for arm, blk in rec["arms"].items():
+        ivl = blk["intervals"]["metrics"]
+        ade = ivl.get("ade_dense_m", {})
+        dk = (dkb.get("per_arm") or {}).get(arm) or {}
+        _p(f"  {arm:12s} tier={blk['tier']}"
+           f"{'*' if arm.startswith('os') else ' '}  ADE={ade.get('mean')} "
+           f"[{ade.get('lo')}, {ade.get('hi')}]  families_unavailable="
+           f"{blk['four_families']['_families_unavailable']}  "
+           f"distance_keeping={dk.get('status') or dkb.get('status')}")
+    _p(f"  * = tier stamped T1 with the ruling OPEN ({TIER_RULING['question'][:60]}…)")
+    for nm, blk in (r.get("families_paired") or {}).items():
+        ade = ((blk.get("families") or {}).get("ADE") or {}).get("ade_m") or {}
+        _p(f"  {nm:28s} ADE delta={ade.get('delta')} "
+           f"[{ade.get('lo')}, {ade.get('hi')}] separated={ade.get('separated')} "
+           f"n_win={ade.get('n_windows')} n_ep={ade.get('n_episodes')}"
+           + ("  ⛔ DEGENERATE (float64 resolution — arms effectively IDENTICAL)"
+              if ade.get("degenerate") else ""))
+    sp = r.get("selection_profile") or {}
+    if sp.get("degenerate"):
+        _p(f"  ⛔ the selection is CONSTANT on {sp['modal_frac']:.2%} of windows "
+           f"— every family row above is a property of anchor "
+           f"#{sp['modal_anchor']}, not of scene understanding")
+    _p(f"  ABSENT: ol — {ABSENT_ARMS['ol']['reason'][:90]}…")
+    s = r.get("strategic") or {}
+    _p(f"  strategic nav_valid_frac={s.get('nav_valid_frac')} "
+       f"n_labeled={s.get('n_route_labeled')} "
+       f"changed_subset_n={s.get('n_changed_subset')}")
+    asel = ((r.get("tactical_declared") or {}).get("anchor_selection") or {})
+    _p(f"  tactical anchor_acc={(asel.get('anchor_acc') or {}).get('mean')} "
+       f"(chance {asel.get('chance')}) n_distinct_selected="
+       f"{asel.get('n_distinct_selected')}")
+
+
+if __name__ == "__main__":
+    main()

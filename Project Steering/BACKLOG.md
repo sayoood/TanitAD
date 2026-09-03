@@ -222,3 +222,10 @@ that all lands before S-W's first gate.
 - **R23 — STRUCK**: `--w-trunk-anchor` is wired, monitored and test-pinned; rung R3's four `trunk_policy` arms are unblocked by this change.
 - **R48 — rung R3's `lastk` arm has no flag**: `--trunk-lr-scale` is whole-trunk. A per-block LR policy is a separate, unowned change; either implement it or drop `lastk` from R3 and say so.
 - **R49 — `dry_run()` does not seed the global RNG** (two identical default dry-runs read 4.0784 vs 4.1158). Pre-existing; a seeding fix would move every banked dry-run number, so it needs a stated cut-over like R21's.
+
+## Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)
+
+- **R20 — STRUCK**: refcv3 has a real T1 instrument, restarted from `refav1_arm.py` with the evidence for that choice; the rescued draft stays filed as UNVERIFIED history.
+- **R50 — the SELECTION PROFILE gate, and it generalises.** A random-init anchor model picked ONE anchor on 42/42 windows while the trivial-profile gate read 0.0000: our degeneracy instrument asks whether a TRAJECTORY is trivial, not whether a SELECTION is. Add it as `T1_CHECKLIST.md` GATE 6's second bullet and carry it on every anchor-model read.
+- **R51 — `REFCV3_ARM.md` §2 needs a human read before any refcv3 number is quoted** (GATE 2 is blocked on that, not on GPU).
+- **R52 — the lead-block join reaches only EVEN raw frames** (`_odd_raw_frames` prints the count); fix before the real read or state the coverage in the result.

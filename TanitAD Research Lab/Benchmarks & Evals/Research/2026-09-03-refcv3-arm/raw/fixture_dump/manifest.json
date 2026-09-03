@@ -1,0 +1,440 @@
+{
+ "tool": "taniteval/tools/refcv3_arm.py",
+ "doc": "taniteval/tools/REFCV3_ARM.md",
+ "model": {
+  "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8e7cfa33-c625-47cf-88aa-711db80ac113\\scratchpad\\out\\fixture\\run\\ckpt.pt",
+  "step": 11,
+  "config_json": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8e7cfa33-c625-47cf-88aa-711db80ac113\\scratchpad\\out\\fixture\\run\\config.json",
+  "rebuilt_from": "config.json[refcv3_arm_model_cfg] (explicit RefCV3Config)",
+  "config_cross_checks": {
+   "arm": {
+    "config_json": "hier",
+    "rebuilt": "hier"
+   },
+   "image_hw": {
+    "config_json": [
+     64,
+     64
+    ],
+    "rebuilt": [
+     64,
+     64
+    ]
+   },
+   "tac_vocab_version": {
+    "config_json": "v7.0",
+    "rebuilt": "v7.0"
+   },
+   "horizons": {
+    "config_json": [
+     5,
+     10,
+     15,
+     20,
+     30,
+     40,
+     50,
+     60
+    ],
+    "rebuilt": [
+     5,
+     10,
+     15,
+     20,
+     30,
+     40,
+     50,
+     60
+    ]
+   },
+   "goal_tau_steps": {
+    "config_json": [
+     20,
+     40,
+     60
+    ],
+    "rebuilt": [
+     20,
+     40,
+     60
+    ]
+   }
+  },
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": []
+  },
+  "eval_time_cfg_overrides": {
+   "v3.seam_fail_patience": {
+    "trained": 50,
+    "eval": 0
+   },
+   "core.decoder.sel.seam_fail_patience": {
+    "trained": 50,
+    "eval": 0
+   }
+  },
+  "cfg": {
+   "tac_vocab_version": "v7.0",
+   "core": {
+    "encoder": {
+     "in_channels": 9,
+     "image_size": 64,
+     "image_width": null,
+     "base_width": 8,
+     "blocks": [
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    "window": 4,
+    "measurement": {
+     "hidden": 32,
+     "d_out": 16
+    },
+    "trajectory": {
+     "horizons": [
+      5,
+      10,
+      15,
+      20,
+      30,
+      40,
+      50,
+      60
+     ]
+    },
+    "anchors": {
+     "n_anchors": 20,
+     "pool_size": 256,
+     "seed": 0
+    },
+    "decoder": {
+     "d": 32,
+     "n_heads": 4,
+     "layers": 2,
+     "ff_mult": 2,
+     "aux_hidden": 32,
+     "diffusion_steps": 2,
+     "noise_std": 0.1
+    },
+    "law": {
+     "hidden": 32
+    },
+    "strategic": {
+     "hidden": 16,
+     "d_ctx": 8
+    },
+    "imagination": {
+     "d": 512,
+     "depth": 6,
+     "n_heads": 8,
+     "ff_mult": 4,
+     "head_hidden": 1024
+    },
+    "lan": {
+     "k": 4,
+     "feats": 4,
+     "hidden": 64,
+     "d_out": 64
+    },
+    "speed_hidden": 32,
+    "ego_dropout": 0.5,
+    "route_dropout": 0.5,
+    "hierarchy": true,
+    "graft_maneuver": true,
+    "factored_maneuver": true,
+    "tactical_speed_input": false,
+    "man_prior_tau": 0.0,
+    "graft_prior_center": true,
+    "tactical_prior_momentum": 0.99,
+    "graft_target_latent": true,
+    "grounded_selector": false,
+    "graft_imagination": false,
+    "graft_lan": false,
+    "sel_refined": false,
+    "sel_score_emitted": false,
+    "sel_ce_reach": false,
+    "sel_score_emitted_t": -1,
+    "sel_ce_objective": "ce",
+    "sel_ce_weight": 1.0,
+    "sel_ce_soft_tau": 0.0,
+    "sel_reach_clamp": true,
+    "sel_accel_max": 2.5,
+    "sel_anchor_prefilter": false,
+    "sel_anchor_prefilter_guard": true,
+    "graft_cons": false,
+    "cons_detach": true,
+    "graft_route": false,
+    "graft_goal": false,
+    "seam_clamp": 0.0,
+    "seam_fail": 1.5,
+    "seam_fail_frac": 0.75,
+    "seam_fail_patience": 0,
+    "ego_valid_channel": false,
+    "nav_known_channel": false,
+    "tactical_latent_dim": 32,
+    "refc1": false,
+    "path_dists": [
+     2.0,
+     5.0,
+     10.0,
+     20.0
+    ],
+    "speed_bins": 4,
+    "speed_max": 30.0
+   },
+   "hier": true,
+   "d_tac": 32,
+   "tac_hidden": 16,
+   "d_gcond": 8,
+   "goal_tau_steps": [
+    20,
+    40,
+    60
+   ],
+   "scorer_tau_m": 1.0,
+   "seam_clamp": 1.0,
+   "seam_fail": 1.5,
+   "seam_fail_frac": 0.75,
+   "seam_fail_patience": 0,
+   "admission_sigma_m": 0.8,
+   "nav_inject": true,
+   "n_nav_commands": 4,
+   "d_nav": 64,
+   "uplink_grad": true
+  },
+  "param_breakdown": {
+   "core": 121346,
+   "phi_tac": 7440,
+   "str_goal_head": 27,
+   "gstr_cond": 608,
+   "tac_heads": 924,
+   "tac_latent_proj": 1056,
+   "scorer": 88,
+   "nav_inject": 2856,
+   "total": 134345
+  },
+  "arm": "hier",
+  "hier": true,
+  "tac_vocab_version": "v7.0",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_anchors": 20,
+  "window": 4,
+  "decoder_steps": 2,
+  "decoder_mode": "diffusion",
+  "nav_from_v7_trained": true,
+  "nav_cmd_derivation_trained": "v7.2 nav_command token (test fixture)",
+  "train_labels_manifest": null,
+  "eval_labels_md5_at_train": null,
+  "u8_batches_trained": null
+ },
+ "t1_definition": {
+  "arm": "os",
+  "_is": "ONE forward pass of RefCV3Model at the window origin, consuming the observed frames, the clip's v7.2 nav token and the MEASURED v0 at t0 and nothing else, emitting the whole 6 s path as the model's OWN sel_score_v3-ranked choice among its 128 anchors.",
+  "no_closed_loop_because": "refc_v3.py:480 \u2014 forward(frames, nav_cmd, v0, steps, lan, nav_known) has NO action argument; there is no per-step decode and no state that advances, so t1_eval.roll_closed (t1_eval.py:760) has no action to feed back and CANNOT be ported. The flagship is supervised AND autoregressive; that is the difference.",
+  "selection": "out['traj'] \u2014 refc_v3.py:520-525: rank = sel_score_v3 (= apply_seam_clamp(sel_score, goal_gate*score), banked at :527) masked by reach_keep, then argmax \u2014 on the hier arm; the core's own sel_score at refc.py:1531-1534 on the flat arm. \u26d4 NEVER a_star (refc_v3_train.py:460), which is the GT-nearest anchor and makes eval_traj an ORACLE-SELECTED lower bound.",
+  "inputs_admitted": [
+   "frames <= t0",
+   "nav_cmd (v7.2 token)",
+   "v0 = pose_last[:, 3] measured at t0"
+  ],
+  "ade_note": "ADE here is recomputed as an L2 norm from the dumped path. refcv3's training-time `traj` is a mean L1 PER COORDINATE (refc_v3_train.py:464-465) \u2014 \u26d4 a different statistic; never convert one into the other."
+ },
+ "tier_ruling": {
+  "arm": "os",
+  "stamped": "T1",
+  "status": "UNRULED",
+  "decided_by": "PI / Master Mind \u2014 NOT a FlyWheel",
+  "question": "does EVAL_DOCTRINE admit as T1 a model that consumes NO actions at all? Its T1 row reads 'the predictor consumes the decoder/planner's own actions', which does not literally cover refcv3.",
+  "benchmarks_recommendation": "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to keep future information out of inference, and a correctly-gated refcv3 forward pass (frames <= t0, nav token, measured v0, selection by sel_score_v3 and never by a_star) admits none \u2014 but keep the DISTINCT arm name `os` so no reader believes two `cl` columns describe the same procedure.",
+  "why_the_numbers_are_valid_either_way": "every headline statistic here is a MARGIN over `ha0` measured on the same windows with the same instrument (`os - ha0`), so the ruling changes the LABEL on the row, never the arithmetic in it."
+ },
+ "grid": {
+  "name": "2s",
+  "dt_s": 0.5,
+  "k": 4,
+  "horizons_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "slots": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "instants_s": [
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "dropped_model_slots": [
+   30,
+   40,
+   50,
+   60
+  ],
+  "n_frames": 20,
+  "n_windows": 42,
+  "n_windows_skipped": 0,
+  "skip_reasons": {},
+  "n_episodes": 3,
+  "n_episodes_available": 3,
+  "window_stride": 1,
+  "obs_window": 4,
+  "ws_is": "the PROVIDER frame index of the window origin t0 (= t + window - 1); RAW frame = ws + 2 (see corpus.frames)"
+ },
+ "arms": [
+  "os",
+  "ha",
+  "ha0",
+  "os_navshuf",
+  "oracle_sel"
+ ],
+ "tiers": {
+  "os": "T1",
+  "ha": "T1",
+  "ha0": "T1",
+  "os_navshuf": "T1",
+  "oracle_sel": "T0"
+ },
+ "arm_meaning": {
+  "os": "T1 (RULING OPEN) \u2014 ONE forward pass at t0: observed frames + the clip's v7.2 nav token + the MEASURED v0, path = the model's OWN sel_score_v3 selection out['traj']. NEVER a_star. No action input, no rollout, no loop to close \u2014 hence 'os', never 'cl'.",
+  "ha": "T1 \u2014 HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for the horizon. Consumes no recorded future. NOT the floor \u2014 a held noisy steer drifts, so this arm can be WORSE than trivial.",
+  "ha0": "T1 \u2014 \u2b50 CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE, the echo test's real bar, and the ONLY arm bit-comparable with refav1's (zero is zero in either action unit).",
+  "os_navshuf": "T1 (RULING OPEN) \u2014 as os with nav_cmd PERMUTED across the eval windows: the mandatory control for any nav-conditioned claim (nav is an INPUT; an echo scores well and learns nothing)",
+  "oracle_sel": "T0 \u2014 the a_star-selected anchor's refinement: a_star is the GT-NEAREST anchor (refc_v3_train.py:460), so this is the CEILING, not a driveable arm. Never compared to a T1 number."
+ },
+ "absent_arms": {
+  "ol": {
+   "status": "ABSENT",
+   "arm": "ol",
+   "tier_if_it_existed": "T0",
+   "reason": "`ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (refc_v3.py:480 \u2014 the forward signature has no action argument), so integrating the recorded actions is not a rollout OF THIS MODEL: it is a property of the corpus and of the unicycle, identical for every refcv3 checkpoint ever trained. Emitting it under this model's name would put the same name on two different objects across the H-vs-F table \u2014 the exact failure D-HF-COMPARABILITY forbids.",
+   "for_comparison": "use `ha0` \u2014 the ONLY bit-comparable arm across refav1 and refcv3 \u2014 as the shared floor; the kinematic-contract control that `ol` provides lives in refav1_arm.py, where the model actually consumes actions."
+  }
+ },
+ "action_units": {
+  "recorded": "steer",
+  "L_enc_m": 2.9,
+  "applies_to": [
+   "ha"
+  ],
+  "does_not_apply_to": [
+   "os",
+   "os_navshuf",
+   "oracle_sel (the model emits a PATH, not a control \u2014 there is no channel to convert)",
+   "ha0 (exactly zero in either unit)"
+  ],
+  "rule": "v2ep actions[:,0] is a road-wheel angle (physicalai.py:621 steer = arctan(L_enc*curvature), :632 the column stack). 'steer' = the repaired contract (kappa = tan(steer)/L_enc before any integration); 'kappa' = the LEGACY unconverted reading, which carries the C-REFCV3-ARM-SAME-DEFECT over-rotation. NOT comparable."
+ },
+ "hold_action_rule": "\u2b50 THE ACTION THAT **CLOSES** AT t0 \u2014 ``(a, channel-1)`` from ``v[t0]``,\n``v[t0-1]`` and ``kap[t0-1]``.\n\nEvery frame index is ``<= t0``, so NOTHING recorded after the window origin\nenters the hold-action arm. (The action *opening* at t0 would need\n``v[t0+1]`` \u2014 a future value \u2014 which is exactly why it is not the one held.)\n``kap`` is ``episode.actions[:, 0]``, which ``physicalai.py:621`` wrote as a\nroad-wheel STEER ANGLE; the unit travels with the integration call, not with\nthis function.",
+ "hold_v0_rule": "\u2b50 THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for ``n`` ticks.\n\nIntegrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE.\nIt consumes strictly LESS than ``hold_controls`` \u2014 not even the last observed\naction, only the ``v0`` the PI ruling of 2026-09-02 admits \u2014 and it is EXACTLY\nZERO in either action unit, which is what makes it the one arm that is\nbit-comparable between refav1 and refcv3.",
+ "nav_shuffle": {
+  "seed": 0,
+  "n_windows": 42,
+  "n_valid": 42,
+  "n_changed": 25,
+  "changed_frac": 0.5952,
+  "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
+ },
+ "head_conditionings": [
+  "nav_true",
+  "nav_shuffled"
+ ],
+ "sidecar_schema": {
+  "sel_idx": "the anchor the MODEL selected (out['sel_idx'])",
+  "sel_idx_base": "hier only: the pre-graft core selection (out['sel_idx_base'])",
+  "sel_score_max": "max of the ranking score the selection argmaxed over",
+  "a_star": "the GT-NEAREST anchor (refc_v3_train.py:460) \u2014 the ORACLE, banked as a diagnostic; the deployed arm NEVER selects with it",
+  "anchor_acc": "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/128 = 0.0078",
+  "sel_agrees_oracle": "1.0 where sel_idx == a_star \u2014 how much of `traj` was selection rather than refinement",
+  "goal_gate": "hier only: out['goal_gate_value'] \u2014 the zero-init E9 gate",
+  "goal_score_absmean": "hier only: the SCALE the gate multiplies. The gate alone cannot distinguish 'has not opened yet' from 'will never open'; both are required.",
+  "goal_dist_sel": "hier only: the selected anchor's goal distance",
+  "lat_label/lon_label": "the v7.2 tactical class ids (IGNORE_ID -> -100)",
+  "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
+  "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
+  "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head argmaxes under each nav conditioning (-1 = the head does not exist)",
+  "ha_controls": "the held (a, channel-1) actually integrated, in the run's declared action units"
+ },
+ "corpus": {
+  "episodes": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8e7cfa33-c625-47cf-88aa-711db80ac113\\scratchpad\\out\\fixture\\eps",
+  "labels": {
+   "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8e7cfa33-c625-47cf-88aa-711db80ac113\\scratchpad\\out\\fixture\\labels_v72_eval.jsonl",
+   "md5": "ffe781e088cd05a47b01f1d31c6263c0",
+   "n_records": 3,
+   "n_episodes": 3,
+   "n_joined": 3,
+   "n_missing": 0,
+   "join_key": "stable_episode_id(clip_id) (the trainer's key)",
+   "schema_version": "s2-geom-v7",
+   "vocab": "v7",
+   "allow_oracle_nav": true,
+   "divergences": []
+  },
+  "n_episodes_available": 3,
+  "frames": {
+   "n_stack": 3,
+   "provider_to_raw_frame_offset": 2,
+   "rule": "v2_dataset.py:36-38 \u2014 the provider stores poses[n_stack-1:], so provider row j is RAW frame j + (n_stack-1). The lead block is keyed on RAW frames and this is the ONLY place the two meet."
+  },
+  "nav": {
+   "source": "v72",
+   "stats": {
+    "n_clips": 3,
+    "follow": 1,
+    "left": 1,
+    "right": 1,
+    "missing": 0,
+    "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+    "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+    "label_md5": "ffe781e088cd05a47b01f1d31c6263c0",
+    "allow_oracle_nav": true
+   },
+   "trained_on": "v7.2 nav_command token (test fixture)",
+   "rule": "v72: the clip's v7.2 nav_command token -> refb.NAV_COMMANDS index (V3Dataset.enable_nav_from_v7, refc_v3_train.py:246-306, position-pinned); a clip without a record feeds index 0 + nav_valid=False. none: nav_cmd=0 on every window (the published REF-C convention) and NO shuffle arm \u2014 the v1 derivation reads 15-25 s of FUTURE poses and is not an inference input."
+  }
+ },
+ "episodes": [
+  {
+   "file_index": 0,
+   "episode_index": 0,
+   "clip_id": "clip-aaaaaaa0",
+   "episode_id": 1758841367445708983,
+   "n_windows": 14
+  },
+  {
+   "file_index": 1,
+   "episode_index": 1,
+   "clip_id": "clip-bbbbbbb1",
+   "episode_id": 7013165987021431117,
+   "n_windows": 14
+  },
+  {
+   "file_index": 2,
+   "episode_index": 2,
+   "clip_id": "clip-ccccccc2",
+   "episode_id": 7559845827670063453,
+   "n_windows": 14
+  }
+ ],
+ "wallclock_s": 3.0,
+ "first_forward_s": 0.07130312919616699,
+ "_unverified": "UNVERIFIED on a real checkpoint \u2014 this box is forbidden from contacting the training pod `tanitad-refcv3`; validated on a random-init RefCV3Model at refc_v3_smoke_config over a synthetic 3-episode slice only"
+}
