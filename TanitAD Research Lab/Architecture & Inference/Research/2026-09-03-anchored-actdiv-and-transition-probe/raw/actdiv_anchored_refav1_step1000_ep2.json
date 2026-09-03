@@ -1,0 +1,1183 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box cpu)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "hypothesis": "H-REFAV1-LAT-INSENSITIVE",
+ "paper": "2606.31232 (Delta-JEPA), Figure 6 / \u00a7Action-Sensitive Latent Dynamics",
+ "family": "refav1",
+ "tanitad_imported_from": "C:\\Users\\Admin\\tanitad-wt\\stack\\tanitad\\__init__.py",
+ "metric_families": {
+  "longitudinal": "REFUSED",
+  "lateral": "REFUSED",
+  "tactical": "REFUSED",
+  "strategic": "REFUSED",
+  "reason": "T0-DIAGNOSTIC world-model probe (EVAL_DOCTRINE)"
+ },
+ "cache": "C:\\Users\\Admin\\refav1_eval_slice\\fp8",
+ "episodes": "C:\\Users\\Admin\\refav1_eval_slice\\eps",
+ "labels": "C:\\Users\\Admin\\tanitad-wt\\_s2build\\release\\v72\\s2_labels_v7.2_eval.jsonl.gz",
+ "nav": "C:\\Users\\Admin\\tanitad-wt\\_s2build\\release\\v72\\s2_labels_v7.2_eval.jsonl.gz",
+ "episodes_n": 20,
+ "window_stride": 10,
+ "horizon": "h=1 (one operative step, 0.2 s); the h=10 planner-horizon read is a GPU follow-up",
+ "kappa_levels": [
+  0.02,
+  0.05,
+  0.1
+ ],
+ "accel_levels": [
+  0.5,
+  1.5
+ ],
+ "channels": [
+  1,
+  0
+ ],
+ "verdict_space": "tac (the planner's cost space: _tac_field of the terminal field)",
+ "n_perm": 200,
+ "seed": 0,
+ "thresholds": {
+  "structured_f_over_null_p95": 5.0,
+  "monotone_rho_min": 0.8,
+  "sign_cos_max": 0.0,
+  "material_rel_mag_at_2sigma": 0.0595,
+  "material_level": 2.0,
+  "scene_spread_min": 1e-06
+ },
+ "generated_utc": "2026-09-03T02:25:49Z",
+ "arms": {
+  "refav1_step1000_ep2": {
+   "ckpt_path": "C:\\Users\\Admin\\refav1_eval_slice\\ckpt_ep2\\ckpt.pt",
+   "ckpt_md5": "c26c7ad00e5b408b54570cb2bd1bcfae",
+   "provenance": {
+    "ckpt": "C:\\Users\\Admin\\refav1_eval_slice\\ckpt_ep2\\ckpt.pt",
+    "step": 1000,
+    "config_source": "C:\\Users\\Admin\\refav1_eval_slice\\ckpt_ep2\\config.json",
+    "state_dict_load": {
+     "missing_keys": [],
+     "unexpected_keys": []
+    },
+    "eval_time_cfg_overrides": {},
+    "cfg": {
+     "tac_vocab_version": "v7.0",
+     "d_enc": 1024,
+     "n_tokens": 640,
+     "d_state": 1024,
+     "op_dt": 0.2,
+     "op_steps": 30,
+     "op_layers": 6,
+     "op_heads": 8,
+     "op_window": 4,
+     "tac_dt": 0.6,
+     "tac_steps": 10,
+     "tac_queries": 64,
+     "tac_layers": 4,
+     "str_dt": 3.0,
+     "str_steps": 2,
+     "str_dim": 256,
+     "str_layers": 2,
+     "str_horizon_s": 12.0,
+     "w_feat_str_ext": 0.25,
+     "a_dim": 2,
+     "speed_channel": false,
+     "tmix_groups": null,
+     "plan_horizon_s": 2.0,
+     "goal_times_s": [
+      2.0,
+      4.0,
+      6.0
+     ],
+     "plan_level": "tactical",
+     "verify_on_operative": true,
+     "tactical_cfg": {
+      "d_model": 512,
+      "depth": 6,
+      "n_heads": 8,
+      "n_maneuvers": 5,
+      "waypoint_horizons": [
+       5,
+       10,
+       15,
+       20
+      ],
+      "d_intent": 256,
+      "cadence": 5
+     },
+     "strategic_cfg": {
+      "n_commands": 4,
+      "d_cmd": 128,
+      "d_model": 384,
+      "depth": 4,
+      "n_heads": 6,
+      "d_ctx": 256,
+      "n_route": 3,
+      "cadence": 20
+     },
+     "w_feat_op": 1.0,
+     "w_feat_tac": 0.5,
+     "w_feat_str": 0.25,
+     "w_aux_head": 0.0,
+     "proposal_k": 1,
+     "w_cf": 0.0,
+     "cf_negs": 3,
+     "cf_tau": 1.0,
+     "cf_at_step": 4,
+     "motion_inject": false,
+     "w_tac_label": 0.1,
+     "w_str_label": 0.1,
+     "nav_inject": true,
+     "target_space": "frozen",
+     "detach_aux_targets": true,
+     "ema_targets": true,
+     "ema_decay": 0.996,
+     "ema_decay_end": 0.999,
+     "w_sigreg": 0.0,
+     "sigreg_slices": 512,
+     "var_floor": 0.0,
+     "min_participation": 0.0,
+     "bptt_truncate": 15
+    },
+    "trainable_parameters": 0,
+    "a_dim": 2,
+    "target_space": "frozen",
+    "tac_vocab_version": "v7.0"
+   },
+   "read": {
+    "n_windows": 140,
+    "n_candidates": 10,
+    "candidates": [
+     {
+      "id": "zero",
+      "axis": -1,
+      "axis_name": "zero",
+      "level": 0.0,
+      "abs_level": 0.0,
+      "a2": [
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "id": "kappa+0.02",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": 0.02,
+      "abs_level": 0.02,
+      "a2": [
+       0.0,
+       0.02
+      ]
+     },
+     {
+      "id": "kappa-0.02",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": -0.02,
+      "abs_level": 0.02,
+      "a2": [
+       0.0,
+       -0.02
+      ]
+     },
+     {
+      "id": "kappa+0.05",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": 0.05,
+      "abs_level": 0.05,
+      "a2": [
+       0.0,
+       0.05
+      ]
+     },
+     {
+      "id": "kappa-0.05",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": -0.05,
+      "abs_level": 0.05,
+      "a2": [
+       0.0,
+       -0.05
+      ]
+     },
+     {
+      "id": "kappa+0.1",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": 0.1,
+      "abs_level": 0.1,
+      "a2": [
+       0.0,
+       0.1
+      ]
+     },
+     {
+      "id": "kappa-0.1",
+      "axis": 0,
+      "axis_name": "kappa",
+      "channel": 1,
+      "level": -0.1,
+      "abs_level": 0.1,
+      "a2": [
+       0.0,
+       -0.1
+      ]
+     },
+     {
+      "id": "accel+0.5",
+      "axis": 1,
+      "axis_name": "accel",
+      "channel": 0,
+      "level": 0.5,
+      "abs_level": 0.5,
+      "a2": [
+       0.5,
+       0.0
+      ]
+     },
+     {
+      "id": "accel-0.5",
+      "axis": 1,
+      "axis_name": "accel",
+      "channel": 0,
+      "level": -0.5,
+      "abs_level": 0.5,
+      "a2": [
+       -0.5,
+       0.0
+      ]
+     },
+     {
+      "id": "accel+1.5",
+      "axis": 1,
+      "axis_name": "accel",
+      "channel": 0,
+      "level": 1.5,
+      "abs_level": 1.5,
+      "a2": [
+       1.5,
+       0.0
+      ]
+     },
+     {
+      "id": "accel-1.5",
+      "axis": 1,
+      "axis_name": "accel",
+      "channel": 0,
+      "level": -1.5,
+      "abs_level": 1.5,
+      "a2": [
+       -1.5,
+       0.0
+      ]
+     }
+    ],
+    "controls": {
+     "C0_identity_max_abs_diff": 0.0,
+     "C0_passes": true,
+     "zero_model_max_abs_displacement": 0.0,
+     "zero_model_passes": true,
+     "zero_model_candidates_checked": [
+      "kappa+0.02",
+      "accel+0.5"
+     ]
+    },
+    "own_first_action_sigma": [
+     0.7426345944404602,
+     0.047564566135406494
+    ],
+    "spaces": {
+     "tac": {
+      "scene_spread": 0.08914564549922943,
+      "grid": {
+       "material_level_used": "top-level-per-axis",
+       "per_axis": {
+        "kappa": {
+         "n_candidates": 6,
+         "F_sep": 29.912064380436657,
+         "null": {
+          "n_perm": 200,
+          "median": 1.077503657648795,
+          "p95": 2.5446329211918615,
+          "max": 3.9936003142307426,
+          "mean": 1.2050859752163752
+         },
+         "F_over_null_p95": 11.754962427518375,
+         "mean_norms": {
+          "kappa+0.02": 0.002973690604496071,
+          "kappa-0.02": 0.0028850992587002304,
+          "kappa+0.05": 0.007597888853168265,
+          "kappa-0.05": 0.007033899879919541,
+          "kappa+0.1": 0.015713060565443217,
+          "kappa-0.1": 0.013425464012587431
+         }
+        },
+        "accel": {
+         "n_candidates": 4,
+         "F_sep": 102.28482475410087,
+         "null": {
+          "n_perm": 200,
+          "median": 1.0639165924172789,
+          "p95": 3.235096925409914,
+          "max": 5.698186908883845,
+          "mean": 1.2661506811861876
+         },
+         "F_over_null_p95": 31.61723655038265,
+         "mean_norms": {
+          "accel+0.5": 0.22399922287083046,
+          "accel-0.5": 0.2610537771604094,
+          "accel+1.5": 0.41415591752837455,
+          "accel-1.5": 0.6982358131845792
+         }
+        }
+       },
+       "n_windows": 140,
+       "n_candidates": 10,
+       "state_dim": 65536,
+       "zero_anchor_max_abs": 0.0,
+       "F_sep": 87.10787036150046,
+       "degenerate": false,
+       "ss_between": 107.22292257316792,
+       "ss_within": 190.1089378008914,
+       "null": {
+        "n_perm": 200,
+        "median": 1.0247125171244895,
+        "p95": 1.9218231891146305,
+        "max": 2.447692659824009,
+        "mean": 1.103176609090176
+       },
+       "F_over_null_p95": 45.32564226245516,
+       "scene_spread": 0.08914564549922943,
+       "rel_units": "per-dim RMS of the mean displacement (\u2016m\u2016/\u221aS) over the per-dim scene std",
+       "per_candidate": {
+        "kappa+0.02": {
+         "axis": "kappa",
+         "level": 0.02,
+         "a2": [
+          0.0,
+          0.02
+         ],
+         "mean_norm": 0.002973690604496071,
+         "rel_to_scene": 0.0001303033800334441
+        },
+        "kappa-0.02": {
+         "axis": "kappa",
+         "level": -0.02,
+         "a2": [
+          0.0,
+          -0.02
+         ],
+         "mean_norm": 0.0028850992587002304,
+         "rel_to_scene": 0.0001264214187488854
+        },
+        "kappa+0.05": {
+         "axis": "kappa",
+         "level": 0.05,
+         "a2": [
+          0.0,
+          0.05
+         ],
+         "mean_norm": 0.007597888853168265,
+         "rel_to_scene": 0.0003329299279452195
+        },
+        "kappa-0.05": {
+         "axis": "kappa",
+         "level": -0.05,
+         "a2": [
+          0.0,
+          -0.05
+         ],
+         "mean_norm": 0.007033899879919541,
+         "rel_to_scene": 0.000308216640892159
+        },
+        "kappa+0.1": {
+         "axis": "kappa",
+         "level": 0.1,
+         "a2": [
+          0.0,
+          0.1
+         ],
+         "mean_norm": 0.015713060565443217,
+         "rel_to_scene": 0.0006885265397993346
+        },
+        "kappa-0.1": {
+         "axis": "kappa",
+         "level": -0.1,
+         "a2": [
+          0.0,
+          -0.1
+         ],
+         "mean_norm": 0.013425464012587431,
+         "rel_to_scene": 0.0005882869376903324
+        },
+        "accel+0.5": {
+         "axis": "accel",
+         "level": 0.5,
+         "a2": [
+          0.5,
+          0.0
+         ],
+         "mean_norm": 0.22399922287083046,
+         "rel_to_scene": 0.009815364053275545
+        },
+        "accel-0.5": {
+         "axis": "accel",
+         "level": -0.5,
+         "a2": [
+          -0.5,
+          0.0
+         ],
+         "mean_norm": 0.2610537771604094,
+         "rel_to_scene": 0.011439047990758715
+        },
+        "accel+1.5": {
+         "axis": "accel",
+         "level": 1.5,
+         "a2": [
+          1.5,
+          0.0
+         ],
+         "mean_norm": 0.41415591752837455,
+         "rel_to_scene": 0.01814779110954104
+        },
+        "accel-1.5": {
+         "axis": "accel",
+         "level": -1.5,
+         "a2": [
+          -1.5,
+          0.0
+         ],
+         "mean_norm": 0.6982358131845792,
+         "rel_to_scene": 0.030595814635453376
+        }
+       },
+       "axes": {
+        "kappa": {
+         "spearman_rho_abslevel_vs_norm": 0.9561828874675149,
+         "norm_by_level": {
+          "0.02": 0.0029293949315981507,
+          "0.05": 0.007315894366543903,
+          "0.1": 0.014569262289015325
+         },
+         "sign_cos_by_level": {
+          "0.02": -0.9999808068894005,
+          "0.05": -0.9999052637752005,
+          "0.1": -0.9996114171768881
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "accel": {
+         "spearman_rho_abslevel_vs_norm": 0.8944271909999159,
+         "norm_by_level": {
+          "0.5": 0.24252650001561993,
+          "1.5": 0.5561958653564769
+         },
+         "sign_cos_by_level": {
+          "0.5": -0.9981635603420891,
+          "1.5": -0.9791861314617132
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "abs_a_pooled": {
+         "norm_by_abs_level": {
+          "0.02": 0.0029293949315981507,
+          "0.05": 0.007315894366543903,
+          "0.1": 0.014569262289015325,
+          "0.5": 0.24252650001561993,
+          "1.5": 0.5561958653564769
+         },
+         "spearman_rho": 1.0
+        }
+       },
+       "rel_mag_at_material_level": 0.01250510480562102,
+       "max_abs_displacement": 0.041338443756103516
+      },
+      "realised": {
+       "abs_a": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.10893174576669974,
+         0.2992313205051179,
+         0.7211005999320926,
+         2.397056158251791
+        ],
+        "bin_mean_norms": [
+         0.023202195357040573,
+         0.01900519255997692,
+         0.08547917911338368,
+         0.2190218447056442
+        ],
+        "F_sep": 9.238440790190655,
+        "F_sep_shuffled_actions": [
+         0.9188708720787189,
+         1.6987244221206388
+        ],
+        "F_sep_shuffled_actions_max": 1.6987244221206388,
+        "spearman_rho_center_vs_norm": 0.8
+       },
+       "kappa": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.753770078931536,
+         0.09788131926740919,
+         0.15308621951511928,
+         0.9617056471960885
+        ],
+        "bin_mean_norms": [
+         0.1487478410948639,
+         0.0763452502447278,
+         0.06643659901689375,
+         0.2314450928960677
+        ],
+        "F_sep": 16.20923419494556,
+        "F_sep_shuffled_actions": [
+         0.4654357886844364,
+         1.8611240983307478
+        ],
+        "F_sep_shuffled_actions_max": 1.8611240983307478,
+        "spearman_rho_center_vs_norm": 0.8
+       },
+       "accel": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.02579901262984744,
+         0.0007112658904848754,
+         0.0019079344546688453,
+         0.04020204235400472
+        ],
+        "bin_mean_norms": [
+         0.08309381403299101,
+         0.0869770900386578,
+         0.020074325581650506,
+         0.0866671542561913
+        ],
+        "F_sep": 3.0191189461668007,
+        "F_sep_shuffled_actions": [
+         1.5285285251720822,
+         1.3460580413274983
+        ],
+        "F_sep_shuffled_actions_max": 1.5285285251720822,
+        "spearman_rho_center_vs_norm": -0.2
+       }
+      },
+      "verdict": {
+       "verdict": "LAT-INSENSITIVE-REFUTED",
+       "kappa_F_over_null_p95": 11.754962427518375,
+       "accel_F_over_null_p95": 31.61723655038265,
+       "kappa_separated": true,
+       "accel_separated": true,
+       "bar": 5.0
+      }
+     },
+     "pooled": {
+      "scene_spread": 0.26377469301223755,
+      "grid": {
+       "material_level_used": "top-level-per-axis",
+       "per_axis": {
+        "kappa": {
+         "n_candidates": 6,
+         "F_sep": 27.472505242260322,
+         "null": {
+          "n_perm": 200,
+          "median": 1.0715534532380024,
+          "p95": 2.494881185397293,
+          "max": 3.9919805375008295,
+          "mean": 1.2042298577800543
+         },
+         "F_over_null_p95": 11.01154852706363,
+         "mean_norms": {
+          "kappa+0.02": 0.0005451393396008158,
+          "kappa-0.02": 0.000529384212344245,
+          "kappa+0.05": 0.0013919851736096892,
+          "kappa-0.05": 0.0012921675064109914,
+          "kappa+0.1": 0.002877814083438113,
+          "kappa-0.1": 0.0024719745198078973
+         }
+        },
+        "accel": {
+         "n_candidates": 4,
+         "F_sep": 102.986738582226,
+         "null": {
+          "n_perm": 200,
+          "median": 1.0733518374252708,
+          "p95": 3.1506621252628473,
+          "max": 5.55748887125752,
+          "mean": 1.2698360872409382
+         },
+         "F_over_null_p95": 32.687331896508645,
+         "mean_norms": {
+          "accel+0.5": 0.04180398128872916,
+          "accel-0.5": 0.04856990032788274,
+          "accel+1.5": 0.0794948036357077,
+          "accel-1.5": 0.134258728466366
+         }
+        }
+       },
+       "n_windows": 140,
+       "n_candidates": 10,
+       "state_dim": 1024,
+       "zero_anchor_max_abs": 0.0,
+       "F_sep": 88.3441571843709,
+       "degenerate": false,
+       "ss_between": 3.9056084729169736,
+       "ss_within": 6.8278372904539975,
+       "null": {
+        "n_perm": 200,
+        "median": 1.025303252181308,
+        "p95": 1.9093105113520064,
+        "max": 2.4363461486203515,
+        "mean": 1.102548777951263
+       },
+       "F_over_null_p95": 46.27018845761935,
+       "scene_spread": 0.26377469301223755,
+       "rel_units": "per-dim RMS of the mean displacement (\u2016m\u2016/\u221aS) over the per-dim scene std",
+       "per_candidate": {
+        "kappa+0.02": {
+         "axis": "kappa",
+         "level": 0.02,
+         "a2": [
+          0.0,
+          0.02
+         ],
+         "mean_norm": 0.0005451393396008158,
+         "rel_to_scene": 6.458392261965459e-05
+        },
+        "kappa-0.02": {
+         "axis": "kappa",
+         "level": -0.02,
+         "a2": [
+          0.0,
+          -0.02
+         ],
+         "mean_norm": 0.000529384212344245,
+         "rel_to_scene": 6.271737613202397e-05
+        },
+        "kappa+0.05": {
+         "axis": "kappa",
+         "level": 0.05,
+         "a2": [
+          0.0,
+          0.05
+         ],
+         "mean_norm": 0.0013919851736096892,
+         "rel_to_scene": 0.00016491171377568307
+        },
+        "kappa-0.05": {
+         "axis": "kappa",
+         "level": -0.05,
+         "a2": [
+          0.0,
+          -0.05
+         ],
+         "mean_norm": 0.0012921675064109914,
+         "rel_to_scene": 0.00015308608310453075
+        },
+        "kappa+0.1": {
+         "axis": "kappa",
+         "level": 0.1,
+         "a2": [
+          0.0,
+          0.1
+         ],
+         "mean_norm": 0.002877814083438113,
+         "rel_to_scene": 0.00034094131275614356
+        },
+        "kappa-0.1": {
+         "axis": "kappa",
+         "level": -0.1,
+         "a2": [
+          0.0,
+          -0.1
+         ],
+         "mean_norm": 0.0024719745198078973,
+         "rel_to_scene": 0.00029286055785652225
+        },
+        "accel+0.5": {
+         "axis": "accel",
+         "level": 0.5,
+         "a2": [
+          0.5,
+          0.0
+         ],
+         "mean_norm": 0.04180398128872916,
+         "rel_to_scene": 0.0049526146741157556
+        },
+        "accel-0.5": {
+         "axis": "accel",
+         "level": -0.5,
+         "a2": [
+          -0.5,
+          0.0
+         ],
+         "mean_norm": 0.04856990032788274,
+         "rel_to_scene": 0.00575418880376033
+        },
+        "accel+1.5": {
+         "axis": "accel",
+         "level": 1.5,
+         "a2": [
+          1.5,
+          0.0
+         ],
+         "mean_norm": 0.0794948036357077,
+         "rel_to_scene": 0.009417933863354409
+        },
+        "accel-1.5": {
+         "axis": "accel",
+         "level": -1.5,
+         "a2": [
+          -1.5,
+          0.0
+         ],
+         "mean_norm": 0.134258728466366,
+         "rel_to_scene": 0.015905943123889023
+        }
+       },
+       "axes": {
+        "kappa": {
+         "spearman_rho_abslevel_vs_norm": 0.9561828874675149,
+         "norm_by_level": {
+          "0.02": 0.0005372617759725304,
+          "0.05": 0.0013420763400103404,
+          "0.1": 0.002674894301623005
+         },
+         "sign_cos_by_level": {
+          "0.02": -0.99995103055924,
+          "0.05": -0.9996949410265364,
+          "0.1": -0.9987385743505027
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "accel": {
+         "spearman_rho_abslevel_vs_norm": 0.8944271909999159,
+         "norm_by_level": {
+          "0.5": 0.04518694080830595,
+          "1.5": 0.10687676605103685
+         },
+         "sign_cos_by_level": {
+          "0.5": -0.9935788657620579,
+          "1.5": -0.9319461332510326
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "abs_a_pooled": {
+         "norm_by_abs_level": {
+          "0.02": 0.0005372617759725304,
+          "0.05": 0.0013420763400103404,
+          "0.1": 0.002674894301623005,
+          "0.5": 0.04518694080830595,
+          "1.5": 0.10687676605103685
+         },
+         "spearman_rho": 1.0
+        }
+       },
+       "rel_mag_at_material_level": 0.006489419714464024,
+       "max_abs_displacement": 0.0892643928527832
+      },
+      "realised": {
+       "abs_a": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.10893174576669974,
+         0.2992313205051179,
+         0.7211005999320926,
+         2.397056158251791
+        ],
+        "bin_mean_norms": [
+         0.0043120253348809465,
+         0.0035780011820873182,
+         0.016293316621537705,
+         0.043626629082887
+        ],
+        "F_sep": 9.284040155078634,
+        "F_sep_shuffled_actions": [
+         0.9316209633514938,
+         1.7086990845848804
+        ],
+        "F_sep_shuffled_actions_max": 1.7086990845848804,
+        "spearman_rho_center_vs_norm": 0.8
+       },
+       "kappa": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.753770078931536,
+         0.09788131926740919,
+         0.15308621951511928,
+         0.9617056471960885
+        ],
+        "bin_mean_norms": [
+         0.03330912429938948,
+         0.014107513659285996,
+         0.01231665103941756,
+         0.04359325782771549
+        ],
+        "F_sep": 16.48366080826054,
+        "F_sep_shuffled_actions": [
+         0.48252272194783874,
+         1.8416462939589704
+        ],
+        "F_sep_shuffled_actions_max": 1.8416462939589704,
+        "spearman_rho_center_vs_norm": 0.8
+       },
+       "accel": {
+        "bins": 4,
+        "sizes": [
+         35,
+         35,
+         35,
+         35
+        ],
+        "bin_centers_abs": [
+         0.02579901262984744,
+         0.0007112658904848754,
+         0.0019079344546688453,
+         0.04020204235400472
+        ],
+        "bin_mean_norms": [
+         0.01626898976274768,
+         0.0164904383214133,
+         0.006707083388184088,
+         0.017120247308308353
+        ],
+        "F_sep": 2.8714758736062245,
+        "F_sep_shuffled_actions": [
+         1.5711252516088294,
+         1.3499615933546092
+        ],
+        "F_sep_shuffled_actions_max": 1.5711252516088294,
+        "spearman_rho_center_vs_norm": 0.4
+       }
+      },
+      "verdict": {
+       "verdict": "LAT-INSENSITIVE-REFUTED",
+       "kappa_F_over_null_p95": 11.01154852706363,
+       "accel_F_over_null_p95": 32.687331896508645,
+       "kappa_separated": true,
+       "accel_separated": true,
+       "bar": 5.0
+      }
+     },
+     "full_subsample": {
+      "scene_spread": 0.6020207405090332,
+      "grid": {
+       "material_level_used": "top-level-per-axis",
+       "per_axis": {
+        "kappa": {
+         "n_candidates": 6,
+         "F_sep": 26.251418113018335,
+         "null": {
+          "n_perm": 200,
+          "median": 1.063831430180616,
+          "p95": 2.4528702895961905,
+          "max": 3.8396866684522615,
+          "mean": 1.1984189524499795
+         },
+         "F_over_null_p95": 10.702326260121989,
+         "mean_norms": {
+          "kappa+0.02": 0.001534575910629352,
+          "kappa-0.02": 0.001490064263582414,
+          "kappa+0.05": 0.00391869378149722,
+          "kappa-0.05": 0.0036364834147085876,
+          "kappa+0.1": 0.008101069276336885,
+          "kappa-0.1": 0.006958142581890115
+         }
+        },
+        "accel": {
+         "n_candidates": 4,
+         "F_sep": 95.90292251452122,
+         "null": {
+          "n_perm": 200,
+          "median": 1.0684018940643702,
+          "p95": 3.045846531959597,
+          "max": 5.321200170362759,
+          "mean": 1.2447194886343895
+         },
+         "F_over_null_p95": 31.48645918572281,
+         "mean_norms": {
+          "accel+0.5": 0.11712198884294862,
+          "accel-0.5": 0.13636793597354616,
+          "accel+1.5": 0.22232939541999627,
+          "accel-1.5": 0.37700540367276936
+         }
+        }
+       },
+       "n_windows": 140,
+       "n_candidates": 10,
+       "state_dim": 8192,
+       "zero_anchor_max_abs": 0.0,
+       "F_sep": 82.31966014218462,
+       "degenerate": false,
+       "ss_between": 30.720599529840268,
+       "ss_within": 57.63660733282187,
+       "null": {
+        "n_perm": 200,
+        "median": 1.01969082830552,
+        "p95": 1.8621755994970848,
+        "max": 2.3637643238192876,
+        "mean": 1.093802382486701
+       },
+       "F_over_null_p95": 44.20617484431467,
+       "scene_spread": 0.6020207405090332,
+       "rel_units": "per-dim RMS of the mean displacement (\u2016m\u2016/\u221aS) over the per-dim scene std",
+       "per_candidate": {
+        "kappa+0.02": {
+         "axis": "kappa",
+         "level": 0.02,
+         "a2": [
+          0.0,
+          0.02
+         ],
+         "mean_norm": 0.001534575910629352,
+         "rel_to_scene": 2.816319687066636e-05
+        },
+        "kappa-0.02": {
+         "axis": "kappa",
+         "level": -0.02,
+         "a2": [
+          0.0,
+          -0.02
+         ],
+         "mean_norm": 0.001490064263582414,
+         "rel_to_scene": 2.734629998720987e-05
+        },
+        "kappa+0.05": {
+         "axis": "kappa",
+         "level": 0.05,
+         "a2": [
+          0.0,
+          0.05
+         ],
+         "mean_norm": 0.00391869378149722,
+         "rel_to_scene": 7.191755303841619e-05
+        },
+        "kappa-0.05": {
+         "axis": "kappa",
+         "level": -0.05,
+         "a2": [
+          0.0,
+          -0.05
+         ],
+         "mean_norm": 0.0036364834147085876,
+         "rel_to_scene": 6.673830705667023e-05
+        },
+        "kappa+0.1": {
+         "axis": "kappa",
+         "level": 0.1,
+         "a2": [
+          0.0,
+          0.1
+         ],
+         "mean_norm": 0.008101069276336885,
+         "rel_to_scene": 0.0001486743062445271
+        },
+        "kappa-0.1": {
+         "axis": "kappa",
+         "level": -0.1,
+         "a2": [
+          0.0,
+          -0.1
+         ],
+         "mean_norm": 0.006958142581890115,
+         "rel_to_scene": 0.0001276988241706274
+        },
+        "accel+0.5": {
+         "axis": "accel",
+         "level": 0.5,
+         "a2": [
+          0.5,
+          0.0
+         ],
+         "mean_norm": 0.11712198884294862,
+         "rel_to_scene": 0.0021494730933937158
+        },
+        "accel-0.5": {
+         "axis": "accel",
+         "level": -0.5,
+         "a2": [
+          -0.5,
+          0.0
+         ],
+         "mean_norm": 0.13636793597354616,
+         "rel_to_scene": 0.0025026829895266225
+        },
+        "accel+1.5": {
+         "axis": "accel",
+         "level": 1.5,
+         "a2": [
+          1.5,
+          0.0
+         ],
+         "mean_norm": 0.22232939541999627,
+         "rel_to_scene": 0.004080284650618325
+        },
+        "accel-1.5": {
+         "axis": "accel",
+         "level": -1.5,
+         "a2": [
+          -1.5,
+          0.0
+         ],
+         "mean_norm": 0.37700540367276936,
+         "rel_to_scene": 0.006918965253785837
+        }
+       },
+       "axes": {
+        "kappa": {
+         "spearman_rho_abslevel_vs_norm": 0.9561828874675149,
+         "norm_by_level": {
+          "0.02": 0.001512320087105883,
+          "0.05": 0.003777588598102904,
+          "0.1": 0.0075296059291135
+         },
+         "sign_cos_by_level": {
+          "0.02": -0.9999243438656216,
+          "0.05": -0.9994147878116387,
+          "0.1": -0.9975787436742791
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "accel": {
+         "spearman_rho_abslevel_vs_norm": 0.8944271909999159,
+         "norm_by_level": {
+          "0.5": 0.1267449624082474,
+          "1.5": 0.29966739954638283
+         },
+         "sign_cos_by_level": {
+          "0.5": -0.9917215279117928,
+          "1.5": -0.93111220492841
+         },
+         "monotone": true,
+         "sign_consistent": true
+        },
+        "abs_a_pooled": {
+         "norm_by_abs_level": {
+          "0.02": 0.001512320087105883,
+          "0.05": 0.003777588598102904,
+          "0.1": 0.0075296059291135,
+          "0.5": 0.1267449624082474,
+          "1.5": 0.29966739954638283
+         },
+         "spearman_rho": 1.0
+        }
+       },
+       "rel_mag_at_material_level": 0.002818905758704829,
+       "max_abs_displacement": 0.10126686096191406
+      },
+      "realised": null,
+      "verdict": {
+       "verdict": "LAT-INSENSITIVE-REFUTED",
+       "kappa_F_over_null_p95": 10.702326260121989,
+       "accel_F_over_null_p95": 31.48645918572281,
+       "kappa_separated": true,
+       "accel_separated": true,
+       "bar": 5.0
+      }
+     }
+    },
+    "full_field_exact": {
+     "F_sep": 82.13024233410941,
+     "ss_between": 2507.2938578654894,
+     "ss_within": 4714.921031910559,
+     "mean_norm": {
+      "kappa+0.02": 0.013873490027582,
+      "kappa-0.02": 0.013474033911179089,
+      "kappa+0.05": 0.035424457727618555,
+      "kappa-0.05": 0.03289262341453793,
+      "kappa+0.1": 0.07323276324941118,
+      "kappa-0.1": 0.0629555060286233,
+      "accel+0.5": 1.059701730580901,
+      "accel-0.5": 1.2313839288334214,
+      "accel+1.5": 2.013674190987825,
+      "accel-1.5": 3.402610566232728
+     },
+     "state_dim": 655360,
+     "axes": {
+      "kappa": {
+       "F_sep_exact": 26.46127752587798,
+       "sign_cos_by_level": {
+        "0.02": -0.9999339568911207,
+        "0.05": -0.9995309686779867,
+        "0.1": -0.9980345185574666
+       },
+       "norm_by_level": {
+        "0.02": 0.013673761969380544,
+        "0.05": 0.03415854057107824,
+        "0.1": 0.06809413463901724
+       },
+       "spearman_rho_abslevel_vs_norm": 1.0
+      },
+      "accel": {
+       "F_sep_exact": 95.67989702197437,
+       "sign_cos_by_level": {
+        "0.5": -0.9916459311480943,
+        "1.5": -0.9293121067079303
+       },
+       "norm_by_level": {
+        "0.5": 1.145542829707161,
+        "1.5": 2.7081423786102765
+       },
+       "spearman_rho_abslevel_vs_norm": NaN
+      }
+     },
+     "scene_spread_note": "exact full-field means; F_sep exact; null from full_subsample"
+    },
+    "verdict_space": "tac",
+    "verdict": {
+     "verdict": "LAT-INSENSITIVE-REFUTED",
+     "kappa_F_over_null_p95": 11.754962427518375,
+     "accel_F_over_null_p95": 31.61723655038265,
+     "kappa_separated": true,
+     "accel_separated": true,
+     "bar": 5.0
+    },
+    "space_agreement": {
+     "tac": "LAT-INSENSITIVE-REFUTED",
+     "pooled": "LAT-INSENSITIVE-REFUTED",
+     "full_subsample": "LAT-INSENSITIVE-REFUTED"
+    },
+    "seconds": 1616.0
+   },
+   "seconds": 1621.4
+  }
+ }
+}
