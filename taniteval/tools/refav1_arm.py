@@ -960,8 +960,7 @@ def load_lead_block_rows(path: str):
 
 
 def join_lead_block(files, manifest, blk, idx, *, k: int, dt: float,
-                    speed_tol: float = LEAD_SPEED_TOL_MPS,
-                    frame_of_t=None) -> dict:
+                    speed_tol: float = LEAD_SPEED_TOL_MPS) -> dict:
     """Lead rows for the dump's windows, IN DUMP ORDER, keyed by ``(clip_id, 2t)``.
 
     Per episode file ``ep{fi:03d}.npz``: the clip comes from the manifest's
@@ -1023,20 +1022,14 @@ def join_lead_block(files, manifest, blk, idx, *, k: int, dt: float,
                               "(v2ep without `clip_id`) — nothing to join on")
             n_no_row += n
         else:
-            # frame_of_t: the provider-index -> RAW-frame map. DEFAULT 2*t
-            # (refav1: 5 Hz provider over a 10 Hz block). A corpus whose
-            # provider index IS the raw frame passes identity; without it
-            # odd frames truncate to frame-1 and the speed proof refuses.
-            _f = frame_of_t if frame_of_t is not None else (lambda t: 2 * t)
-            rows = np.array([idx.get((str(clip), int(_f(int(t)))), -1)
-                             for t in ws], dtype=np.int64)
+            rows = np.array([idx.get((str(clip), 2 * int(t)), -1) for t in ws],
+                            dtype=np.int64)
             have = rows >= 0
             cov["n_windows_with_row"] = int(have.sum())
             if not have.any():
                 cov.update(status=LEAD_EP_NO_ROWS,
                            reason=f"clip {clip} has no rows in the block "
-                                  f"(frames {int(_f(int(ws.min())))}.."
-                                  f"{int(_f(int(ws.max())))})")
+                                  f"(frames {2 * int(ws.min())}..{2 * int(ws.max())})")
                 n_no_row += n
             else:
                 r = rows[have]
