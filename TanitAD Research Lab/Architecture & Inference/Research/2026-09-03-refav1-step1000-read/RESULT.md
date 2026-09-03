@@ -70,3 +70,22 @@ Bold = interval excludes 0 ("separated").
 - Budget: 2.51 h projected > the 2 h rule; kept deliberately (detached run, full search quality on the first real read). Recorded here and in the register row.
 - 20-clip local slice (episodes chosen by the slice builder, non-parity): exploratory power only; n_episodes 7 for the distance-keeping pairs.
 - `_unverified` stamp of the adapter on a real checkpoint: this read IS that verification for the plumbing (all five arms rolled, analyze() completed, all families PRESENT or REFUSED with reasons); the numbers are the first on a trained checkpoint.
+
+## 7. AMENDMENT (2026-09-03 03:55 Berlin) — the closed-loop plan is the constant-velocity straight line on 140/140 windows
+
+Re-read of the banked dumps (`raw/t1_dump_manifest.json`; per-episode `ep*.npz` trajectories, `tools/straight_line_probe.py`):
+
+| arm | straight-line plans (y ≡ 0) | constant-speed plans | mean lateral error, human-straight windows (n 68) | human-curved windows (n 72) |
+|---|---|---|---|---|
+| cl | **140/140** | **140/140** | 0.035 m | 0.496 m |
+| ha (hold observed a, κ) | 3/140 | 1/140 | 0.120 m | 0.763 m |
+| ol (recorded a, κ replayed) | 1/140 | 1/140 | 0.069 m | **0.716 m** |
+| cl_navshuf | 140/140 | 122/140 | 0.035 m | 0.496 m |
+| cl_oraclegoal | 140/140 | 96/140 | 0.035 m | 0.496 m |
+
+cl is identical to cl_navshuf on 122/140 windows and to cl_oraclegoal on 96/140; the differences are speed profiles only.
+
+**What this corrects in §4:**
+1. Reading 2 ("lateral planning already beats holding") is WRONG as an interpretation. Every cl plan has κ = 0: the "gain" is a straight line beating the hold-action control's held, noisy κ (which drifts 0.12 m even where the human drives straight). The lateral rows of the cl − ha comparison are VOID as evidence of planning. The echo test must be run against the STRONGEST trivial baseline — a constant-velocity straight line (`ha0`) — not only against hold-(a, κ).
+2. Reading 3 is sharpened: curvature never moves under any nav or goal (0 of 140 windows), so the search's cost is flat in κ — the deployed policy at step 1,000 IS the CV baseline; the "cem" label on 24 % of windows names a CV profile chosen from the proposal set. Hypothesis H-REFAV1-LAT-INSENSITIVE: the imagination is insensitive to the lateral action (the P2 family), testable with the anchored displacement diagnostic on refav1's predictor (κ = ±0.05 vs 0).
+3. NEW, instrument-level: the open-loop replay of the recorded (a, κ) misses the human's lateral position by 0.72 m on curved windows — MORE than the human's own excursion (0.50 m, the straight line's error). The kinematic contract ("recorded actions must reproduce GT") is not met laterally on this slice: a κ sign / timing / unit convention defect in the loader-to-unicycle path, or a slip component κ cannot carry. Until it is resolved, no LATERAL row of any refav1 T1 read is quotable, including the paired clean-epoch read.
