@@ -235,3 +235,10 @@ that all lands before S-W's first gate.
 - **R39 — DISCHARGED for refcv3**: the nav-zero arm ships on by default, with its per-layer removal stated and its lower-bound caveat carried in the record. refav1 still needs the same arm on its trajectory side.
 - **R53 — `trivial_profile.identity_to`'s 1e-9 m threshold is unresolvable for CROSS-CALL arms.** The batching floor alone is 5.96e-07 m (different batch sizes take different GEMM paths), so two arms that are provably identical read as different, and a reader can take that as evidence. Fix the threshold in `refav1_arm.py` (batch-aware, or compare at matched batch), or make the instrument refuse to compare across calls.
 - **R54 — PI decision D3b: which margin leads the H-vs-F table**, the fed-nav one or the deployment (nav-zero) one. Quoting only the fed-nav margin overstates the system, since nav is an oracle input that will not exist at deployment. Default: lead with the deployment margin and report the fed-nav one beside it.
+
+## Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)
+
+- **R41 — STRUCK, with a FAIL**: the cost repair does not make the planner turn where the human turns (6/27 and 0/27 against a bar of 14). The programme moves to the goal-SPACE branch and the tactical decoder remains the lever.
+- **R55 — `chord` must NOT become the default.** Default-safe as a flag, but a 5,793× reweighting wearing a metric's clothes; any adoption needs the weight re-derived WITH it.
+- **R56 — unreconciled: the κ² charge reads 3.20e-04 (cost-repair) vs 2.24e-04 (cost-surface), 1.43×.** Both MEASURED in different packages, neither withdrawn. Reconcile before either number is quoted again.
+- **R57 — an unowned file appeared inside another stream's package dir**: `…/2026-09-03-cost-repair/PROPOSED_REGISTER_ROWS.md` (12,695 B) at 11:28, after the Master Mind's 11:15 listing; a file of that name belongs to `2026-09-03-anchored-actdiv-refav1`. Unread, unstaged, unmodified by the stream that found it. Identify its owner before staging anything from that directory.
