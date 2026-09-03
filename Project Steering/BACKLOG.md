@@ -204,3 +204,10 @@ that all lands before S-W's first gate.
 ## Added 2026-09-03 10:20 Berlin
 
 - **R13 — STRUCK**: `"ha0": "T1"` is in `t1_eval.DEFAULT_TIERS`; a standalone read no longer aborts after the rollout, and the constant-velocity floor is present by default.
+
+## Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)
+
+- **R43 — MERGE `LAB-REP-2` into theme 1's `LAB-DRIFT-2` before either is scheduled.** The same lever (multi-horizon heads + a training-only cross-modal target) arrived from two independent primaries; running both spends the tiny-ladder budget twice on one variable.
+- **R44 — adopt the three-gate ORDER for P5/L3** (capture → real-effect resolvability → propagation; `2608.29998`). ⛔ `rdw8p30k` currently FAILS gate 1 (pooled cross-clip R² −0.05…−0.09), so no propagation number on that arm may be quoted until it passes.
+- **R45 — add the four controls we lack** to the criteria registry: a COUNTERFACTUAL input, a VALIDATED POSITIVE control (an engineered-leaky model that must fire), the PASSTHROUGH bound (an untrained copy), and the normalisation-state check (effective rank moved 16.5 → 67.8 with no weight change).
+- **R46 — the oracle-input audit of refav1 as a PUBLISHABLE result** (LAB-REP-4): the field states it could not find a public-weights world model conditioning its predictor on language and calls demonstrating the leak in a released model the key remaining step. Verify refav1's conditioning form first (UNVERIFIED), then decide with the PI whether we publish.

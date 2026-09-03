@@ -52,3 +52,49 @@ As theme 1: banked PDFs only (tag `sota-2026-09-03-decodability`), ≥ 3 primari
 
 - H-SOTA-R3 B is refuted by any banked table with a "predictor vs. current-frame/persistence" row on a physical target.
 - H-SOTA-R1 A is refuted paper-by-paper if the probe table lacks a control that must read the no-information value.
+
+---
+
+# ⛔ AMENDMENT 1 — 2026-09-03, second attempt (the first was killed by the model limit)
+
+**Written before RESULT.md, after re-reading `SPEC.md` §1 against the register.** The SPEC above was
+authored 2026-09-03 ~00:58 Berlin. Between then and this pass the programme's own position moved,
+and **four rows of §1 are no longer admissible as written**. They are amended here rather than
+silently re-used, per the file-ownership rule in the brief.
+
+## A1.1 — Rows of §1 that are WITHDRAWN or RE-CLASSIFIED
+
+| §1 row, as written | status now | source of the change |
+|---|---|---|
+| "**L3 FAILED**: `splitp30k` predictor delta −0.0008 / −0.0320 / −0.0158, t −3.69 / −5.62 / −6.26" | ⛔ **WITHDRAWN as a t-statistic.** Those t's are pseudo-replicated: `envpred.loeo` scored a pooled 12-clip half per iteration and divided 24 ~92 %-overlapping scores by √24. Under a true leave-one-clip-out read **no predicted column separates from `z_t` on `n_agents` for any local arm at any K** (\|t\| ≤ 1.5; pooled-form re-read: every ẑ CI spans 0). **L3 has never been passed or failed on an admissible read** — an instrument gap, not a model finding. | `D-P2-LEAK-AUDIT` / `H-LEAK-2`, `…/2026-09-03-p2-probe-leak-audit/RESULT.md` finding 2, §3b · MEASURED |
+| "ceiling beyond drift is small but non-zero…; the predictor adds −0.0023 (t −1.84, null)" and every other **drift** row | ⚠️ **RE-INTERPRETED.** An endpoint-shuffled control reproduces **100–102 %** of "drift" (`postrain30k` control 0.6774 vs true 0.6697; `rdw8p30k` 0.6727 vs 0.6737). The statistic measures decay of the latent toward the **clip mean** — an input-derived, encoder-time-series quantity — not a predictor property. | `H-LEAK-3`, same package R3 · MEASURED |
+| "L1 (rank) PASSED — participation 3.80/3.62 → 25.58/26.96" | ⛔ **VOID AS A GATE.** `O6_PARTICIPATION_FLOOR = 8.56` is not reproducible: the 12 val clips it is sourced to read **5.756** through the same function, the 130-clip lead corpus **20.228 ± 0.327**, and the 3.51× spread is **episode diversity alone**. Participation readings stay admissible as a WITHIN-RUN collapse trend and are UNDECIDABLE as a bar absent a matched reference (same corpus, same episode count, same ambient `d`). | `C-PARTICIPATION-FLOOR-RETIRED` · MEASURED |
+| *(absent from §1 — added here)* a decoder can look competent on an **oracle** input | ⭐ **NEW STATE.** refav1's tactical head ranks turns at AUC **0.873** (incumbent) / **0.922** (ep2) against the in-band v7.2 label; under `nav_zero` the incumbent collapses to **0.520 [0.000, 1.000]** (no-information 0.500) while ep2 holds at 0.858 [0.667, 1.000]; a predictor reading **nothing but `nav_cmd`** scores **0.684** accuracy against the model's 0.650 and the constant control's 0.650. `nav` is an **ego-future (oracle) derivation that will not exist at deployment**. | `D-REFAV1-TAC-DECODER-PANEL` · MEASURED |
+
+**Consequence for this pass.** §1's "our measured state" column is replaced by the four rows above
+plus the L2 rows (which survive — they are state probes on `z_t`, not predictor deltas, and the
+leak audit lists them as "out of scope, provenance noted": they share the `loeo`/`probe` estimator
+and therefore carry the same (E) defect on their **t's**, though not on their point estimates).
+
+## A1.2 — Questions ADDED by the PI brief (NOT pre-registered)
+
+The brief that opened this second attempt added two questions the SPEC does not contain:
+
+* **Q-R6 (oracle input).** How does the field guard against a probe passing on an ORACLE or
+  otherwise unshippable input, and does anyone report the deployment-input ablation we now require?
+* **Q-R7 (corpus dependence).** Which representation-quality measures survive the corpus dependence
+  that killed our participation floor — is there a matched-reference convention, or does the field
+  simply not compare across corpora?
+
+⚠️ **These two are reported in RESULT.md as DIRECTED FINDINGS, not as pre-registered hypothesis
+tests.** The primaries answering them were read before any outcome was committed, so no
+"outcome A / outcome B" claim is made about *the literature* for Q-R6/Q-R7. Both outcomes ARE
+committed in advance for the **experiments** they generate (`PROPOSED_HYPOTHESES.md`), which is
+where pre-registration binds.
+
+## A1.3 — What the amendment does NOT change
+
+`H-SOTA-R1 … R4` in §3 stand exactly as written and are answered in RESULT.md §2. §5
+(admissibility) and §6 (falsifiers) stand. The falsifier in §6 for **H-SOTA-R3 B** — "refuted by any
+banked table with a *predictor vs. current-frame/persistence* row on a physical target" — **fired**,
+and RESULT.md §2 records it as such.

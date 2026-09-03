@@ -2710,12 +2710,16 @@
     "benchmark-portfolio",
     "benchmarks",
     "data-efficiency",
-    "input-pipeline"
+    "driving",
+    "input-pipeline",
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -3139,11 +3143,13 @@
    "sha256": "c861d20a504b54bf67034507a2b1924b1168e263ac9aad93020f4c57705a3448",
    "banked": "2026-08-28",
    "tags": [
-    "anti-collapse"
+    "anti-collapse",
+    "sota-2026-09-03-decodability"
    ],
    "note": "RankMe: effective-rank (entropy) of embeddings predicts downstream quality label-free - the instrument behind our G-RANK family",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-28-anticollapse-beyond-ema/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-28-anticollapse-beyond-ema/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   },
   "2603.20111": {
@@ -5708,7 +5714,8 @@
    "banked": "2026-08-30",
    "tags": [
     "A2_jepa",
-    "closed-loop-wm"
+    "closed-loop-wm",
+    "sota-2026-09-03-decodability"
    ],
    "note": "Delta-JEPA: diagnoses action-insensitivity in JEPA latent world models and predicts latent DIFFERENCES rather than absolute next-latents | READ IN FULL 2026-09-03: LDAD decodes a_t from dz=z_{t+1}-z_t (two ENCODER outputs), ViT-Tiny from scratch; lambda=0 nearly collapses, 50 best (Fig 3); Table 1 Delta-JEPA 100/81.33/89.07/79.27 vs LeWM 74.93/79.87/84.53/64.13; Table 2 dz beats concat +4.07/+1.07/+12.60/+0.67; Table 3 realised end-effector decode target 64.93 vs raw action 81.33; Table 5 dx-from-dz linear r 0.992 vs LeWM 0.765",
    "cited_by": [
@@ -7725,6 +7732,7 @@
    "sha256": "621eb1cd069f43437479b843178e7e56e05cc8276ded4428160adc40bd904187",
    "banked": "2026-08-31",
    "tags": [
+    "sota-2026-09-03-decodability",
     "v7-gate"
    ],
    "note": "READ IN FULL 2026-09-03: identifiability map (Fig 1, linear-probe R2 as the objective is enriched: prediction-only / +multi-horizon / +cross-modal targets / +fusion vs recoverability certificate): object position 0.04 / 0.89 / 0.97 / 0.98 vs 1.00; mass 0.04 / 0.15 / 0.26 / 0.29 vs 0.86; stiffness -0.02 / -0.01 / 0.46 / 0.50 vs 0.87; drag 0.00 / 0.00 / 0.13 / 0.12 vs 0.89 (blind region). LAZY EQUILIBRIUM: single-step vision-only WMs discard visible predictable state (position 0.04); escapes: cross-modal targets 0.58, multi-horizon action-conditioned heads 0.89, composed 0.98; direct long-horizon heads beat autoregressive composition (0.10 vs 0.19 arena units; static 0.21). Target pressure causal and modality-specific (stiffness 0.40-0.57 as a target vs -0.02 fused vs -0.01 proprio substitute). Force forecast beats persistence only with touch fused AND forecast: VFX 0.39 -> 0.51 held-out, paired episode-bootstrap CIs [+0.01,+0.17] at 800 and [+0.14,+0.28] at 4,258 episodes; camera-only VX -0.05/-0.11/-0.05. SIGReg 60x sweep = monotone dose-response on metric precision (stiffness 0.12 -> 0.57). Certificate gate: a recurrent probe on RAW observations must certify recoverability before any model claim.",
@@ -9227,6 +9235,137 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2608.29998": {
+   "key": "2608.29998",
+   "kind": "arxiv",
+   "title": "The Intervention Gap in Latent World Models",
+   "authors": [
+    "Donna Vakalis"
+   ],
+   "published": "2026-08-30",
+   "abstract": "Planning-time intervention fidelity is a distinct, measurable property of a learned world model: whether the model's own open-loop transitions move task variables the way matched environment interventions do. In the settings we test, it is neither revealed by reward fit nor ensured by task-anchored training. Across released TD-MPC2 checkpoint sizes, episode return falls as an operator-error diagnostic on task observables grows, while reward-prediction error stays small and nearly flat, and a self-supervised world model trained without task signal preserves the same operator substantially better than a task-anchored model on the shared task. A capture-gated matched-intervention audit then localizes what fails. On Cheetah, three LeWorldModel checkpoints capture the current task query and support decodable real intervention effects; however, their imagined five-step effects are worse than p",
+   "url": "https://arxiv.org/abs/2608.29998",
+   "path": "TanitAD Research Lab/Library/papers/2608.29998_The-Intervention-Gap-in-Latent-World-Models.pdf",
+   "bytes": 602383,
+   "sha256": "44cddd511d0d03d74bbe75cb2bfe5f0be6ff296ba177a357d7b3d1dcce30297c",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Intervention fidelity is a distinct measurable property; reward fit does not reveal it; uncertainty unit is the environment family, not the rollout",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2607.06925": {
+   "key": "2607.06925",
+   "kind": "arxiv",
+   "title": "Grounding Spatial Relations in a Compact World Model: Instruction Leakage and a Goal-Free Dynamics Fix",
+   "authors": [
+    "Yufeng Wang",
+    "Lu Wei",
+    "Haibin Ling"
+   ],
+   "published": "2026-07-08",
+   "abstract": "Compact world models that condition on a language goal promise to ground relations such as ``put the red block left of the blue block'' using a sparse set of explicit \\emph{reference anchors}. We ask when such references actually ground a relation, and identify a trap: a goal-conditioned predictor reaches a striking $0.90$ relation-readout accuracy, yet this is \\emph{instruction transcription}, not perception. Withholding the goal collapses it to chance ($0.90\\!\\to\\!0.27$, three seeds) and a counterfactual instruction makes the predicted anchors follow the \\emph{false} instruction $94.5\\%$ of the time (true scene $2.3\\%$; $N{=}256$). Tested across three settings and a within-task ablation, our central claim characterizes the confound: \\textbf{instruction leakage occurs when the scored quantity is transcribable from the instruction (when the instruction names the answer) and is essentiall",
+   "url": "https://arxiv.org/abs/2607.06925",
+   "path": "TanitAD Research Lab/Library/papers/2607.06925_Grounding-Spatial-Relations-in-a-Compact-World-Model-Instruc.pdf",
+   "bytes": 597207,
+   "sha256": "c0a9daf7fd93bcc465c2b6b13b63b34f2de9dc5299fdab1eb7d58bb04fdaccea",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Instruction leakage: a 0.90 relation readout is transcription of the goal, not perception; GoalFree fix + goal-withheld and counterfactual-goal controls",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2608.10145": {
+   "key": "2608.10145",
+   "kind": "arxiv",
+   "title": "The Evaluation Protocol Determines the Result: An Independent Reproduction of LeWorldModel on TwoRoom",
+   "authors": [
+    "Joyjeet Singh"
+   ],
+   "published": "2026-08-10",
+   "abstract": "LeWorldModel trains a latent world model with a prediction loss and a single anti-collapse regulariser, and reports approximately 87% of goals reached on TwoRoom, its simplest diagnostic environment. We reproduce that result by independent reimplementation on roughly $25 of rented compute, with all evaluation on one laptop CPU. We reach 94.0% at the repository's evaluation goal offset, against 84.0% for the authors' own released checkpoint measured under our protocol on identical episodes, and we reproduce the reported representation result directly (position probe Pearson r = 0.9988 against a reported 0.996). Reaching that point required four conventions that determine the outcome and appear in no released configuration file: dense action gathering across a frameskip block, a programmatically-set action-encoder width, ImageNet pixel normalisation, and action z-scoring. A reproducer foll",
+   "url": "https://arxiv.org/abs/2608.10145",
+   "path": "TanitAD Research Lab/Library/papers/2608.10145_The-Evaluation-Protocol-Determines-the-Result-An-Independent.pdf",
+   "bytes": 766761,
+   "sha256": "68ccdf6935fd6c3d1cab54c8d2237d4f3b62d66ccc48874e2655ada8df0f57aa",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Independent reproduction of LeWorldModel: the evaluation protocol, not the method, decides the reported result",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2605.06388": {
+   "key": "2605.06388",
+   "kind": "arxiv",
+   "title": "Reconstruction or Semantics? What Makes a Latent Space Useful for Robotic World Models",
+   "authors": [
+    " Nilaksh",
+    "Saurav Jha",
+    "Artem Zholus",
+    "Sarath Chandar"
+   ],
+   "published": "2026-05-07",
+   "abstract": "World model-based policy evaluation is a practical proxy for testing real-world robot control by rolling out candidate actions in action-conditioned video diffusion models. As these models increasingly adopt latent diffusion modeling (LDM), choosing the right latent space becomes critical. While the status quo uses autoencoding latent spaces like VAEs that are primarily trained for pixel reconstruction, recent work suggests benefits from pretrained encoders with representation-aligned semantic latent spaces. We systematically evaluate these latent spaces for action-conditioned LDM by comparing six reconstruction and semantic encoders to train world model variants under a fixed protocol on BridgeV2 dataset, and show effective world model training in high-dimensional representation spaces with and without dimension compression. We then propose three axes to assess robotic world model perfo",
+   "url": "https://arxiv.org/abs/2605.06388",
+   "path": "TanitAD Research Lab/Library/papers/2605.06388_Reconstruction-or-Semantics-What-Makes-a-Latent-Space-Useful.pdf",
+   "bytes": 5563417,
+   "sha256": "ae409282f58b6d5c6f01b9f317abde8e040ad318d5bbd30bb41951da372ffa3b",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Reconstruction vs semantics: what a latent space must carry to be useful for robotic world models",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2608.06799": {
+   "key": "2608.06799",
+   "kind": "arxiv",
+   "title": "Is Forward Prediction Enough? Physical State Grounding for JEPA World Models",
+   "authors": [
+    "Haodong Yan",
+    "Jiaguan Zhu",
+    "Mingyuan Jia",
+    "Ruiqing Yin",
+    "Junjie He",
+    "Zhide Zhong",
+    "Junfeng Li",
+    "Jinxuan Lu",
+    "Hengtao Li",
+    "Tianran Zhang",
+    "Jiayi Chen",
+    "Wenxuan Song"
+   ],
+   "published": "2026-08-07",
+   "abstract": "Learning structured and control-relevant latent representations remains a key challenge for world models. Recent JEPA-based world models learn action-conditioned predictive latent dynamics from observation sequences. However, their forward-prediction objectives do not explicitly enforce reliable identifiability of robot-centric physical state from individual latents or state changes from latent pairs, which can limit downstream planning and policy performance. We propose PSG-JEPA, a physically grounded JEPA world model that shapes its latent space with two complementary grounding objectives beyond forward prediction: grounding individual latents in robot proprioceptive state, and grounding latent pairs in multi-horizon joint-angle changes. Both objectives are applied only during training, leaving the inference architecture and computational cost unchanged. To comprehensively evaluate PSG",
+   "url": "https://arxiv.org/abs/2608.06799",
+   "path": "TanitAD Research Lab/Library/papers/2608.06799_Is-Forward-Prediction-Enough-Physical-State-Grounding-for-JE.pdf",
+   "bytes": 2406537,
+   "sha256": "391a03f3269d720720789e48c8bde1e6afd8e34201b7675358579d0e9749847c",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Is forward prediction enough? physical state grounding for JEPA world models",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   }
  }
