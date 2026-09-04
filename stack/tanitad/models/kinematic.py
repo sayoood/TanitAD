@@ -635,3 +635,281 @@ def unicycle_decode(base: Tensor, delta: Tensor, v0: Tensor,
     state0 = torch.stack([z, z, z, v0], dim=-1)
     return rollout_unicycle(state0, c, dt, accel_limit=accel_limit,
                             curvature_limit=curvature_limit)[..., :2]
+
+
+# --------------------------------------------------------------------------- #
+# ⭐ VARIABLE-STEP UNICYCLE — the L4 kernel for REF-C v4 (2026-09-04)           #
+#                                                                             #
+# ⛔ WHY THIS EXISTS, AND WHY THE SCALAR-dt FUNCTIONS ABOVE CANNOT BE USED FOR #
+# REF-C's EMISSION. MEASURED 2026-09-04: refc_v3's fan is emitted on the       #
+# ``horizons`` grid ``[5, 10, 15, 20, 30, 40, 50, 60]`` frames at the 10 Hz    #
+# tick, i.e. slot times 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0 s. The per-slot #
+# spacing is therefore                                                         #
+#       [0.5, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 1.0]  s                            #
+# which is NOT UNIFORM — it doubles at the 2 s seam.                           #
+#                                                                             #
+# ``rollout_unicycle`` / ``unicycle_controls_from_path`` / ``unicycle_decode`` #
+# each take a SCALAR ``dt``. Wiring them into an 8-slot REF-C emission would   #
+# integrate eight equal steps across a grid whose second half is twice as long #
+# — a 2x time error on every waypoint from 3 s out, which is exactly the range #
+# where the programme's measured longitudinal deficit lives.                   #
+#                                                                             #
+# ⛔ AND IT WOULD FAIL SILENTLY. The output is still [B, S, 2], the L1 still   #
+# falls, ADE still computes. Nothing raises. This is the ``df`` / Thor         #
+# ``free`` / cgroup ``usage_in_bytes`` / ``step_s`` family in an integrator's  #
+# costume: a correct formula quoted outside its scope, read as an answer. It   #
+# is also the ``HORIZON = round(6.0 * 10.0 / STRIDE)`` derived-constant trap   #
+# from ``v2_compressed.py`` with the constant moved into the time axis.        #
+#                                                                             #
+# ⇒ Two admissible ways to emit a unicycle path on this grid, and BOTH are     #
+#   provided here so an arm has to say which it chose:                         #
+#   (a) integrate at the NATIVE uniform tick and SUBSAMPLE to the slots        #
+#       (:func:`rollout_unicycle_grid`) — physically the honest one, and the   #
+#       convention ``refa_v1``'s ladder already uses ("the abstracted levels   #
+#       SUBSAMPLE the operative target grid"); jerk is then differenced on a   #
+#       uniform sequence, where it means what its units say.                   #
+#   (b) integrate the slots directly under a PER-STEP dt                       #
+#       (:func:`rollout_unicycle_varstep`) — cheaper (8 steps, not 60), exact  #
+#       for the waypoints, but its differences straddle the 2 s seam, so a     #
+#       jerk computed on them is NOT comparable to a 10 Hz jerk.               #
+#                                                                             #
+# ⚠️ A NOTE ON THE CHANNEL CONVENTION, because a briefing inverted it and the  #
+# inversion would have mis-aimed the whole cost budget. In THIS module's       #
+# unicycle convention ``controls[..., 0] = accel`` and                          #
+# ``controls[..., 1] = curvature`` (see :func:`rollout_unicycle`). MEASURED    #
+# from source 2026-09-04, ``refa_v1``'s planner cost uses the SAME convention: #
+#   ``jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt``  -> LONGITUDINAL
+#   ``c += 0.05 * controls[..., 1].pow(2).mean(-1)   # curvature``  -> lateral MAGNITUDE
+#   ``v_end = v0 + controls[..., 0].sum(-1) * pc.dt``  -> channel 0 integrates to SPEED
+# So refav1 ALREADY penalises longitudinal jerk; what it has never had is a    #
+# curvature-RATE (lateral jerk) term. Do not repeat the claim that its         #
+# channel 0 is steer.                                                          #
+# --------------------------------------------------------------------------- #
+
+def slot_dts(horizons, tick: float = 0.1) -> list[float]:
+    """Per-slot dt [s] for a ``horizons`` grid given in FRAMES at ``tick``.
+
+    ``slot_dts([5, 10, 20])`` -> ``[0.5, 0.5, 1.0]``. The first entry is the gap
+    from t=0 (the ego's own position) to the first slot, matching the
+    ``torch.cat([zeros, path])`` origin-prepend convention every inverse map in
+    this module uses.
+    """
+    h = [int(x) for x in horizons]
+    if not h:
+        raise ValueError("horizons must be non-empty")
+    if any(b <= a for a, b in zip(h, h[1:])):
+        raise ValueError(f"horizons must be strictly increasing, got {h}")
+    if h[0] <= 0:
+        raise ValueError(f"horizons must be positive, got {h}")
+    return [float(b - a) * float(tick) for a, b in zip([0] + h[:-1], h)]
+
+
+def uniform_slot_dt(horizons, tick: float = 0.1) -> float:
+    """The single dt of a UNIFORM ``horizons`` grid, or raise.
+
+    ⭐ Call this before passing a scalar ``dt`` to any function above. It turns
+    the silent 2x time error described in this section's header into a loud
+    refusal at wiring time, which is the only point at which it is cheap.
+    """
+    d = slot_dts(horizons, tick)
+    if max(d) - min(d) > 1e-9:
+        raise ValueError(
+            f"horizons {list(horizons)} give NON-UNIFORM slot spacing {d} s — a "
+            f"scalar dt is inexpressible here. Use rollout_unicycle_grid (integrate "
+            f"at the native tick, subsample) or the *_varstep functions, and say "
+            f"in the arm's config which one was chosen.")
+    return d[0]
+
+
+def _as_dts(dts, K: int, ref: Tensor) -> Tensor:
+    """Normalise ``dts`` (float | sequence | Tensor) to a [1, K] or [B, K] tensor."""
+    t = torch.as_tensor(dts, dtype=ref.dtype, device=ref.device)
+    if t.ndim == 0:
+        t = t.reshape(1, 1).expand(1, K)
+    elif t.ndim == 1:
+        if t.shape[0] != K:
+            raise ValueError(f"dts has length {t.shape[0]}, expected {K}")
+        t = t.reshape(1, K)
+    elif t.ndim != 2 or t.shape[1] != K:
+        raise ValueError(f"dts must be scalar, [K] or [B, K] with K={K}, "
+                         f"got {tuple(t.shape)}")
+    if bool((t <= 0).any()):
+        raise ValueError("every dt must be > 0")
+    return t
+
+
+def rollout_unicycle_varstep(state0: Tensor, controls: Tensor, dts,
+                             accel_limit: float | None = None,
+                             curvature_limit: float | None = None) -> Tensor:
+    """:func:`rollout_unicycle` with a PER-STEP dt.
+
+    ``state0`` [B, 4] = (x, y, yaw, v); ``controls`` [B, K, 2] = (accel, curvature);
+    ``dts`` scalar | [K] | [B, K]. Returns states [B, K, 4]. Differentiable.
+
+    ⛔ The update ORDER is copied verbatim from :func:`rollout_unicycle` and is
+    load-bearing: position and heading advance on the speed at the START of the
+    step and ``v`` is updated LAST. The two must stay consistent or a
+    fixed-vs-variable-step ablation would be measuring the integrator.
+    """
+    if controls.shape[-1] != 2:
+        raise ValueError(f"controls must be [B, K, 2] = (accel, curvature), "
+                         f"got trailing dim {controls.shape[-1]}")
+    K = controls.shape[1]
+    dt = _as_dts(dts, K, controls)
+    accel = controls[..., 0]
+    curvature = controls[..., 1]
+    if accel_limit is not None:
+        accel = _squash(accel, accel_limit)
+    if curvature_limit is not None:
+        curvature = _squash(curvature, curvature_limit)
+
+    x, y, yaw, v = state0.unbind(-1)
+    out = []
+    for k in range(K):
+        h = dt[:, k]
+        x = x + v * torch.cos(yaw) * h
+        y = y + v * torch.sin(yaw) * h
+        yaw = yaw + v * curvature[:, k] * h
+        v = (v + accel[:, k] * h).clamp_min(0.0)
+        out.append(torch.stack([x, y, yaw, v], dim=-1))
+    return torch.stack(out, dim=1)
+
+
+def unicycle_controls_from_path_varstep(path: Tensor, dts) -> Tensor:
+    """:func:`unicycle_controls_from_path` with a PER-STEP dt.
+
+    Every convention is inherited verbatim — origin prepended, forward
+    differences, the last control replicated because it is unobservable, the
+    ``MIN_DS_MPS`` moving-gate, epsilon INSIDE the sqrt, and curvature returned
+    as 0 (not a huge number) where the ego is not moving. Read that function's
+    docstring before changing anything here; each of those is a measured trap.
+
+    ⚠️ ``accel[k]`` is divided by ``dt[k]`` because the integrator applies it
+    over step k (``v_{k+1} = v_k + a_k * dt_k``). ``curvature`` is ``dh / ds``
+    and carries no dt at all, so it is unchanged by the variable grid.
+    """
+    if path.shape[-1] != 2:
+        raise ValueError(f"path must be [B, K, 2], got trailing dim {path.shape[-1]}")
+    if path.shape[1] < 2:
+        raise ValueError("need at least 2 waypoints to recover a control")
+    K = path.shape[1]
+    dt = _as_dts(dts, K, path)
+
+    zero = torch.zeros_like(path[:, :1])
+    p = torch.cat([zero, path], dim=1)
+    d = p[:, 1:] - p[:, :-1]
+    ds = (d.pow(2).sum(-1) + 1e-12).sqrt()
+    speed = ds / dt
+
+    accel = (speed[:, 1:] - speed[:, :-1]) / dt[:, :-1]
+    accel = torch.cat([accel, accel[:, -1:]], dim=1)
+
+    _mv = ds > (MIN_DS_MPS * dt)
+    _d_safe = torch.where(_mv.unsqueeze(-1), d,
+                          torch.stack([torch.ones_like(ds), torch.zeros_like(ds)], -1))
+    heading = torch.atan2(_d_safe[..., 1], _d_safe[..., 0])
+    dh = heading[:, 1:] - heading[:, :-1]
+    dh = (dh + torch.pi) % (2 * torch.pi) - torch.pi
+    moving = ds[:, :-1] > (MIN_DS_MPS * dt[:, :-1])
+    curv = torch.where(moving, dh / ds[:, :-1].clamp_min(_DS_EPS),
+                       torch.zeros_like(dh))
+    curv = torch.cat([curv, curv[:, -1:]], dim=1)
+    return torch.stack([accel, curv], dim=-1)
+
+
+def control_smoothness_losses(controls: Tensor, dts,
+                              jerk_limit: float,
+                              curvature_rate_limit: float) -> dict:
+    """BOTH-CHANNEL smoothness barriers for a (accel, curvature) sequence.
+
+    Returns ``{"jerk_lon": ..., "curv_rate": ...}`` — the longitudinal jerk
+    ``d(accel)/dt`` [m/s^3] and the lateral curvature rate ``d(kappa)/dt``
+    [1/(m s)], each rectified above its limit and averaged.
+
+    ⛔ BARRIERS, NOT SHRINKAGE — the same argument :func:`kinematic_losses`
+    makes and for the same reason: a plain ``lambda * jerk**2`` also punishes
+    legitimate emergency braking and hard avoidance, i.e. it trains the arm to
+    be smooth exactly when it should be decisive.
+
+    ⛔ BOTH LIMITS ARE REQUIRED ARGUMENTS AND NEITHER HAS A DEFAULT. The
+    accel/jerk limits used elsewhere in this module (2.785 / 6.369) are the
+    human's own p99 MEASURED on PhysicalAI OOD-val over 6,834 windows. An
+    invented curvature-rate limit would be a number with no evidence class
+    deciding a GPU-day, which the operating standard forbids — measure the p99
+    on the arm's OWN corpus and pass it, and record the value and the n in the
+    arm's config.
+
+    ⚠️ These differences are only physically meaningful on a UNIFORM control
+    sequence. On REF-C's native ``horizons`` grid the spacing doubles at the 2 s
+    seam, so a "jerk" differenced across it mixes two time bases. Emit through
+    :func:`rollout_unicycle_grid` and compute this on the 10 Hz controls, or
+    state explicitly that the value is a seam-straddling proxy.
+    """
+    if controls.shape[-1] != 2:
+        raise ValueError(f"controls must be [B, K, 2], got trailing dim "
+                         f"{controls.shape[-1]}")
+    if controls.shape[1] < 2:
+        raise ValueError("need at least 2 control steps to difference")
+    K = controls.shape[1]
+    dt = _as_dts(dts, K, controls)[:, :-1]
+    d_acc = (controls[:, 1:, 0] - controls[:, :-1, 0]) / dt
+    d_curv = (controls[:, 1:, 1] - controls[:, :-1, 1]) / dt
+    return {
+        "jerk_lon": torch.relu(d_acc.abs() - float(jerk_limit)).mean(),
+        "curv_rate": torch.relu(d_curv.abs() - float(curvature_rate_limit)).mean(),
+    }
+
+
+def rollout_unicycle_grid(state0: Tensor, controls: Tensor, horizons,
+                          tick: float = 0.1,
+                          accel_limit: float | None = None,
+                          curvature_limit: float | None = None) -> Tensor:
+    """⭐ THE RECOMMENDED EMISSION: integrate at the NATIVE tick, then subsample.
+
+    ``controls`` [B, T, 2] at the uniform ``tick`` (T must reach ``max(horizons)``);
+    returns states [B, len(horizons), 4] at the requested frame indices.
+
+    This is the option that keeps jerk meaningful: the head emits a uniform 10 Hz
+    control sequence, the physics is integrated on that uniform grid, and only the
+    READOUT is sparse and non-uniform. Differencing for
+    :func:`control_smoothness_losses` happens on ``controls``, before the subsample.
+    """
+    h = [int(x) for x in horizons]
+    T = controls.shape[1]
+    if h[-1] > T:
+        raise ValueError(f"controls has {T} steps but horizons reach {h[-1]}")
+    st = rollout_unicycle(state0, controls, dt=float(tick),
+                          accel_limit=accel_limit, curvature_limit=curvature_limit)
+    idx = torch.as_tensor([x - 1 for x in h], device=st.device, dtype=torch.long)
+    return st.index_select(1, idx)
+
+
+def unicycle_decode_varstep(base: Tensor, delta: Tensor, v0: Tensor, dts,
+                            accel_limit: float = A2S_ACCEL_LIMIT,
+                            curvature_limit: float = A2S_CURVATURE_LIMIT) -> Tensor:
+    """:func:`unicycle_decode` on a non-uniform slot grid.
+
+    ``base`` [B, S, 2] anchor waypoints AT THE SLOT TIMES, ``delta`` [B, S, 2] the
+    head's ``(d_accel, d_curvature)``, ``v0`` [B] the ego's measured entry speed,
+    ``dts`` the per-slot spacing from :func:`slot_dts`. Returns [B, S, 2].
+
+    ⭐ The feasibility argument is :func:`unicycle_decode`'s and is unchanged: it
+    is the free-form per-waypoint OFFSET that destroys feasibility, and composing
+    the correction in CONTROL space makes every emitted path drivable by
+    construction.
+
+    ⚠️ ONE PREMISE DOES CHANGE under a data-driven vocabulary, and in our favour.
+    :func:`unicycle_decode` argues the base is feasible because
+    ``fourbrain._synth_anchor_pool`` builds it from unicycle rollouts. A vocabulary
+    clustered from REAL human trajectories is not built that way — it is feasible
+    for the stronger reason that a human actually drove it.
+    """
+    if base.shape != delta.shape:
+        raise ValueError(f"base {tuple(base.shape)} != delta {tuple(delta.shape)}")
+    c = unicycle_controls_from_path_varstep(base, dts) + delta
+    B = base.shape[0]
+    v0 = torch.as_tensor(v0, dtype=base.dtype, device=base.device).reshape(B)
+    z = torch.zeros_like(v0)
+    state0 = torch.stack([z, z, z, v0], dim=-1)
+    return rollout_unicycle_varstep(state0, c, dts, accel_limit=accel_limit,
+                                    curvature_limit=curvature_limit)[..., :2]
