@@ -61,7 +61,7 @@ architecture, comma val, 30 eps).
 ## 3. Hypothesis ledger
 
 > **⛔ This section no longer carries a status table.** The single quotable source for hypothesis
-> status is **[`TanitAD Research Hub/HYPOTHESIS_LEDGER.md`](../TanitAD%20Research%20Hub/HYPOTHESIS_LEDGER.md)**.
+> status is **[`TanitAD Research Lab/HYPOTHESIS_LEDGER.md`](../TanitAD%20Research%20Hub/HYPOTHESIS_LEDGER.md)**.
 >
 > **Why:** two ledgers had diverged — that file's table was frozen at **2026-07-05** while this one
 > was live, and H4 / H25–H28 existed only here while H20–H24 and IMP-1…IMP-8 existed in neither.
@@ -125,29 +125,55 @@ a map + reactive agents, i.e. a renderer, and every renderer we have sits at ~3.
 > §§5.1–5.4 below are the **2026-07-25 snapshot**, kept for their provenance tables. Where they and
 > this section disagree, **this section is newer**. §5.0.5 is the do-not-re-quote list.
 
-#### 5.0.1 ⭐⭐ Closed-loop on a neural reconstruction, on the edge device — and **ADE saw nothing**
+#### 5.0.1 ⭐⭐ Closed-loop on a neural reconstruction, on the edge device
+
+> ⛔⛔ **THIS SECTION CONTRADICTED ITSELF UNTIL 2026-09-03.** Its heading read *"and ADE saw nothing"* and its table showed `ade_0_2s` **+0.7885 [−0.8653, +2.7282] ❌ not separated** — while **line 45 of this same document** already carried the retraction (R-2026-08-03-C) saying ADE *does* separate. The table below was the **pre-retraction** panel (`metrics_empty.json`); it is now replaced by the current one, re-read from the raw JSON. ⚠️ **The quotable artifact is `results/closedloop-hq-render/`, NOT `metrics_empty.json` and NOT this section's prose.**
 
 `MEASURED` — run dir **`stack/experiments/alpasim-gsplat/results/`**
 (`metrics_empty.json`, `metrics_objects.json`, `contract_test.json`, `actor_map.json`); code
 `stack/experiments/alpasim-gsplat/`; videos
-`TanitAD Research Hub/Evaluation/Videos/alpasim-closedloop/` (4 × 18.0 s, 1800×850, each verified by
+`TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/` ⚠️ *(the path this section used to cite, `…/Evaluation/Videos/alpasim-closedloop/`, has **0 tracked files** — Research-Hub→Research-Lab rename drift)* (4 × 18.0 s, 1800×850, each verified by
 **decoding it back** and md5-matched to Thor).
 
 **9 rollout starts × 50 ticks in a NuRec reconstruction rendered ON THE JETSON THOR**, paired over
 **437 shared windows**, episode-cluster bootstrap. Paired Δ = flagship v1 − REF-C base (positive =
 flagship worse), empty-road:
 
+**CURRENT panel** — `results/closedloop-hq-render/HQ_flagship_vs_refc_empty.json`,
+`paired_A_minus_B`. MEASURED (re-read from the raw JSON 2026-09-03). Paired Δ = flagship v1
+− REF-C base (positive = flagship WORSE), empty-road, **n = 437 windows / 9 episodes**,
+paired episode-cluster bootstrap, 2000 resamples.
+
 | family | metric | paired Δ [CI95] | sep |
 |---|---|---|:--:|
-| **ADE** | `ade_0_2s` | **+0.7885 [−0.8653, +2.7282]** | ❌ |
-| **LONGITUDINAL** | `abs_target_speed_err_ms` | +1.1242 [−0.1008, +2.5657] | ❌ |
-| **LONGITUDINAL** | `along_track_ade_m` | +0.6498 [−1.0166, +2.5903] | ❌ |
-| **LATERAL** | `cross_track_abs_m` (= `dist_to_gt_traj_m`) | **+1.1705 [+0.0296, +2.2438]** | ✅ |
-| **LATERAL** | `heading_err_rad` | **+0.0838 [+0.0278, +0.1750]** | ✅ |
-| **LATERAL** | `curvature_err_1pm` | **+0.0050 [+0.0008, +0.0130]** | ✅ |
-| **LATERAL** | `yawrate_err_rads` | **+0.0378 [+0.0201, +0.0565]** | ✅ |
-| **TACTICAL** | `manoeuvre_plan_eq_logged` | +0.0709 [−0.1241, +0.2600] | ❌ |
-| **STRATEGIC** | `route_corridor_departure_rate` | +0.2037 [−0.0023, +0.3982] | ❌ |
+| **ADE** | `ade_0_2s` | **+7.1642 [+5.2654, +8.9661]** | ✅ |
+| **LONGITUDINAL** | `along_track_ade_m` | **+7.1528 [+5.2402, +8.9528]** | ✅ |
+| **LONGITUDINAL** | `abs_target_speed_err_ms` | **+6.3971 [+4.9996, +7.8014]** | ✅ |
+| **LONGITUDINAL** | `abs_executed_speed_err_ms` | **+3.1996 [+2.0777, +4.3144]** | ✅ |
+| **LATERAL** | `cross_track_abs_m` (= `dist_to_gt_traj_m`) | **+4.5033 [+2.0194, +7.3718]** | ✅ |
+| **LATERAL** | `lateral_ade_m` | **+0.4751 [+0.3203, +0.6569]** | ✅ |
+| **LATERAL** | `heading_err_rad` | **+0.1700 [+0.1303, +0.2119]** | ✅ |
+| **LATERAL** | `yawrate_err_rads` | **+0.1066 [+0.0774, +0.1393]** | ✅ |
+| **LATERAL** | `curvature_err_1pm` | **+0.0166 [+0.0125, +0.0213]** | ✅ |
+| **TACTICAL** | `manoeuvre_plan_eq_logged` | −0.0618 [−0.2165, +0.0801] | ❌ |
+
+⛔ **Reported per family with its reason, never silently dropped:** the four
+`synth_lead_*` metrics read **n = 0, "no jointly finite windows"** — no synthetic lead was
+jointly in frame for both arms. The four `real_lead_*` metrics run on a reduced
+**n = 102** (TTC on **n = 79**) and **none separates**. So the LONGITUDINAL family's
+*distance-keeping* half is **NOT measured here**; only its speed half is.
+
+⚠️ **`route_corridor_departure_rate` is not in this file's paired block** and is therefore
+omitted rather than quoted from prose. Note what it measures where it does exist: it is
+`int(abs(cross_track) > CORRIDOR_M)` against the **LOGGED path** (`cl_metrics.py:386`) — a
+deviation measure, **not an off-road rate**. There is no map in this harness.
+
+⭐ **What the corrected table says:** the separation is no longer "entirely lateral". ADE,
+both longitudinal metrics and every lateral metric separate, all in the same direction —
+flagship v1 is worse — and the effect is **an order of magnitude larger** than the
+superseded panel showed (ADE +7.16 vs +0.79). The mechanism recorded at line 45 is that
+flagship v1's driven path moves **9.05 m** mean under the render change while REF-C's moves
+**0.43 m** (21×).
 
 ⭐ **REF-C base beats flagship v1 closed-loop and the whole separation is LATERAL. An ADE-only table
 would have reported NO DIFFERENCE** on a comparison where four lateral measures separate cleanly and
@@ -193,8 +219,8 @@ so the doctrine is not an artifact of one harness.
 
 #### 5.0.2 ⭐ The Thor planning tick is UNDER budget — measured end-to-end on real weights
 
-`MEASURED` — artifact **`TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-08-03-thor-batch9-engine/thor_d6_tick_intent_K20.json`**;
-engines at `thor:~/trt_deploy/`; runbook `TanitAD Research Hub/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md`.
+`MEASURED` — artifact **`TanitAD Research Lab/Production & Optimization/Implementation/incoming/2026-08-03-thor-batch9-engine/thor_d6_tick_intent_K20.json`**;
+engines at `thor:~/trt_deploy/`; runbook `TanitAD Research Lab/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md`.
 
 First tick measured **end-to-end** (encoder + strategic head + tactical head + 9-candidate fan +
 `step_readout` decode + SE(2) + scoring) rather than composed arithmetically. **60 real held-out
@@ -244,7 +270,7 @@ numerics — *argued, not measured*).
 
 #### 5.0.4 REF-C's route pathway is LIVE — the defect is the ARCHITECTURE, not the label
 
-`MEASURED` — run dir **`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`**
+`MEASURED` — run dir **`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`**
 (REF-C-base 104.192 M, **859 windows / 39 val episodes**, **256 px square raster asserted before any
 forward pass**, paired episode-cluster bootstrap n_boot 2000). Pre-registration:
 `PREREG_lan_refc.md`.
@@ -542,7 +568,7 @@ absence, the cheapest metric-or-power check *before* declaring closure.
   > ALREADY EXIST in this repo (MEASURED).** On the **x86 A40 eval pod**, 2026-07-22, all of
   > `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` imported and a full bare topology ran
   > (renderer :6011 · physics :6006 · controller-MPC :6007 · driver :6789 · runtime) —
-  > `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
+  > `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
   > The banked result summaries in that same directory carry **`scene_score_enabled: true`** and real
   > safety fields: `M2_results-summary.json` → `collision_any 0.0`, `collision_at_fault 0.0`,
   > `offroad 0.0`, `offroad_or_collision 0.0`, `min_distance_to_obstacle_m 1.4279`,

@@ -11412,3 +11412,120 @@ must change is the word on the axis label.
 `EVAL_DOCTRINE`, the banked reports and the registry rows still carry the old word;
 they are being swept. Until the sweep lands, read "closed loop" in any TanitAD
 document dated before 2026-09-02 as "self-action open loop".
+
+# 2026-09-03 (#14) — "the programme has published NO closed-loop number" (mine, corrected within the hour)
+
+**Retracted.** While landing the PI's open/closed-loop ruling I wrote that sentence into
+**five committed files** — `VOCABULARY.md`, `EVAL_DOCTRINE.md`, `MODEL_REGISTRY.md`
+§1.12, `GOALS_AND_CLAIMS.md` D-LOOP-2, and RETRACTION_LOG #13. It is false.
+`PROGRAM_OVERVIEW.md` §5.0.1 is a genuine closed-loop measurement under the PI's own
+definition: **9 rollout starts x 50 ticks in a NuRec reconstruction RENDERED ON THE
+JETSON THOR**, paired over **437 shared windows** with an episode-cluster bootstrap, all
+four metric families reported separately, videos verified by **decoding them back** and
+md5-matching to Thor, and a determinism control reading exactly **0.0 on 450/450
+windows**. Code `stack/experiments/alpasim-gsplat/`; results dir confirmed present by
+two probes with different path-binding (13+ JSON files ~55 KB each under
+`results/closedloop-hq-render/`, plus sibling scene dirs). The model drives, the
+reconstruction re-renders, the next observation is a consequence of the model's own
+output. That is closed loop.
+
+**Root-cause class: A STALE ABSENCE-LINE GENERALISED TO A PROGRAMME-WIDE ABSENCE — the
+exact failure the "absence at ONE location is not absence" rule exists to stop.** I read
+`EVAL_DOCTRINE.md`'s T2 cell, *"NOT YET PROVISIONED"*, and generalised it. One second
+probe would have refuted it, and the aggravating detail is the chronology: the doctrine
+is dated **2026-08-09** and the closed-loop panel **2026-08-03**, so the line I trusted
+was *already stale when it was written*. I then propagated it into four more documents in
+the same turn — including the registry, which is the programme's ONLY quotable source.
+
+⚠️ **The mechanism that made this dangerous is the correction itself.** I was mid-way
+through a doctrine sweep, i.e. writing with unusual authority into exactly the files
+other agents and future contexts treat as ground truth. A sweep is the worst possible
+place to carry an unverified premise, because every file it touches gains the premise's
+authority. **A sweep must verify each claim it ADDS at least as hard as the claim it
+REMOVES** — I verified the removals (every "closed loop" occurrence checked by exact
+match) and asserted the addition from memory.
+
+**What survives untouched:** the re-labelling itself. T1 IS open loop; the `taniteval`
+figures including 1.7318 m ARE self-action open-loop numbers; their measurements are
+valid and only the word was wrong; `EVAL_DOCTRINE` rule 2 DID license driving claims it
+should not have. None of that depended on the false sentence.
+
+⭐ **And the correction improves the programme's position rather than worsening it.** The
+PI asked to compare open and closed loop for refav1 and refcv3. Closed loop is therefore
+**not a research project** — it is pointing an existing, already-validated harness at two
+new checkpoints. The real gaps are narrower and nameable: (a) the scene has **no reactive
+agents**, so collision and off-road rates stay out of reach; (b) refcv3 emits a
+trajectory and no controls, so it needs a **tracking controller** and a re-plan rate;
+(c) the harness renders **on Thor**, which is training refav1 until ≈00:50Z, so runs are
+compute-gated, not capability-gated.
+
+# 2026-09-03 (#15) — "the stored order is (kappa, accel-like)" / "the measured true-kappa channel" (refav1_loader.py)
+
+**Corrected.** `stack/tanitad/data/refav1_loader.py`'s ACTIONS docstring inferred a
+channel's IDENTITY from a correlation: *"`actions[:, 0]` correlates r = 0.995 with
+pose-derived curvature ⇒ the STORED order is (kappa, accel-like)"*, and then labelled
+that channel *"the measured true-kappa channel"*. The producer settles it —
+`tanitad/data/physicalai.py` writes `steer = np.arctan(float(wheelbase) * curv)` — so
+channel 0 is a **road-wheel STEER ANGLE**, arctan(L·κ) at the encoder's
+**L = 2.9000000 ± 3e-8**, roughly **2.9× the magnitude of κ**.
+
+**Root-cause class: A CORRELATION USED TO ESTABLISH AN IDENTITY, WHEN IT CAN ONLY
+ESTABLISH A MONOTONE RELATION.** ⭐ **Pearson r is SCALE-INVARIANT.** r = 0.995 between
+`actions[:, 0]` and pose-derived curvature is exactly as consistent with *"this channel
+IS κ"* as with *"this channel is 2.9 κ"*, or with any positive multiple — and
+arctan(2.9κ) ≈ 2.9κ over our curvature range, so the near-linearity is expected, not
+evidence. **No correlation, however high, can fix a scale.** The r = 0.995 was a correct
+measurement of the wrong quantity for the question being asked. The right probe is the
+PRODUCER, and it is two greps away.
+
+⚠️ **What was right and stays right:** the ORDER conclusion — channel 0 is the
+steer/curvature-like one and channel 1 is the poor accel proxy (r = 0.47) — and the
+loader's decision to re-derive `a` from poses rather than trust channel 1. The loader's
+BEHAVIOUR is unchanged by this correction; only its description was wrong.
+
+⛔ **Where it still bites:** anything CONSUMING channel 0 as a curvature is off by ~2.9×.
+The closed-loop feasibility study names this as blocker A1 for driving refav1 in the
+AlpaSim/NuRec harness, since a tracking controller crosses exactly this interface. The
+rule that travels: **state the projection/convention before quoting a channel, and
+identify a channel from its producer, never from its correlation with something else.**
+Same family as the cylindrical-vs-pinhole FOV error and the `df` / Thor `free` / cgroup
+`usage_in_bytes` scope traps — a true measurement quoted outside the scope where it
+answers the question.
+
+# 2026-09-03 (#16) — "STRATEGIC is a clear positive" (refcv3 @ 30k open-loop eval, commit 3cdd7f2/eb5fee5)
+
+**Corrected.** That commit's message states: *"STRATEGIC is a clear positive and is NOT a
+nav echo: on the 1,736 changed-nav windows the route follows the LABEL 0.7414 and the
+shuffled nav only 0.2224."* The raw JSON it banks says something else about the family of
+that name. `taniteval/results/refcv3-30k-openloop-20260903-2004.json` holds **two different
+objects**:
+
+| path | content |
+|---|---|
+| `/arms/<arm>/four_families/strategic/` | **`status: UNAVAILABLE`, `n: 0`** — on **every** arm (`os`, `ha`, `ha0`, `os_navshuf`, `os_navzero`). Reason, quoted: *"strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt'])"* |
+| `/refcv3/strategic/` | a **separate route-head probe**: `changed_subset/route_follows_LABEL 0.7414`, `route_follows_SHUFFLED_NAV 0.2224`, and `conditionings/{nav_true,nav_shuffled,nav_zero}/kappa` all **0.4659, identical to four decimals** |
+
+⇒ **The BINDING METRIC FAMILY is unmeasured. The positive is a side probe wearing the
+family's name.**
+
+**Root-cause class: A SIDE PROBE REPORTED UNDER A BINDING METRIC'S NAME, WHILE THAT METRIC
+READS UNAVAILABLE IN THE SAME ARTIFACT.** This is worse than an ordinary overstatement,
+because the four-family rule exists precisely so a missing family is VISIBLE. The eval did
+the right thing — it emitted `UNAVAILABLE` with `n: 0`, the reason, and a `how_to_populate`
+field. The summary then filled the visible hole with the nearest available number. **A rule
+that forces an absence to be declared is defeated if prose may answer the declaration with
+a different measurement.**
+
+⚠️ **And the probe proves less than the wording implies.** The head is nav-INSENSITIVE by
+construction — `kappa` is byte-identical across `nav_true`, `nav_shuffled` and `nav_zero`
+because the route head reads pooled vision only and nav never reaches it. So *"it is not a
+nav echo"* is true but vacuous: it cannot echo an input it never receives. The
+0.7414-vs-0.2224 contrast is therefore **not** evidence about echo at all; it is the
+vision-only head's agreement with the true route (74.14 %) against a shuffled-label
+baseline (22.24 %). That is a real and worthwhile finding — stated correctly.
+
+**What survives:** the route head reads vision, not nav, and predicts the true route on
+74.14 % of changed-nav windows against a 22.24 % shuffled baseline, κ 0.4659. **What does
+not:** any claim that the STRATEGIC family is a positive, or that this constitutes an echo
+test. Same family as the earlier "true but wrong for the reader" cases — a correct
+measurement whose framing licenses a conclusion the artifact does not support.

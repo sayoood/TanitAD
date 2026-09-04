@@ -244,3 +244,111 @@ and (c) demotes the ADE tables under an explicit T0 stamp.
 6. ⚠️ **Both `build_lead_block.py` citations in the registry point at `tools/build_lead_block.py`,
    which does not exist** — the instrument is at `taniteval/tools/build_lead_block.py`. The registry
    already annotates this in §1.13/§1.14; the leaderboard now states the correct path.
+
+---
+
+## 6. Amendment **2026-09-03** — the SCHEMA GAP, and what would close it
+
+*PI instruction, verbatim: **"Document the results in the leaderboard even if the old includes
+partial criteria."** This section is the honest statement of that partiality. ⛔ **No old row was
+retro-filled and no number was invented**; the leaderboard's §0.9 carries the same content inline so
+a reader of the page alone cannot miss it.*
+
+### 6.1 The gap in one paragraph
+
+The leaderboard's schema was designed around **`ADE + tier + estimator`** and was extended in the
+2026-08-23 rebuild to carry **the four metric families**. Two binding rules have landed **since**
+every table on the page was written, and the schema has **no column for either**: the
+**`loop` axis** (PI 2026-09-02) and the **`ha0` trivial floor** (`D-REFAV1-HA0-ARM`). Three families
+remain partly or wholly unmeasured on the older corpora, for reasons that are recorded per cell.
+**The result is that the page's numbers are individually correct and collectively under-specified**:
+a reader can tell what each arm scored, but not — without §0.8/§0.9 — whether the number was produced
+in a loop that closes, nor whether the arm beat the strongest trivial baseline.
+
+### 6.2 The six omitted criteria, and the cost of closing each
+
+| id | omitted criterion | closes with | GPU? |
+|---|---|---|---|
+| **G-1 / W-18** | the **`loop` column** (open / closed) | a **lookup on the tier**, plus header corrections at 13 sites on the page and `EVAL_DOCTRINE.md:11` (**a separate stream owns the header edits**) | ⛔ **no** |
+| **G-2 / W-19** | the **`ha0` column** — constant velocity at the **measured** `v0` | ⛔ **a re-RUN of every T1 arm with `ha0` in the battery.** It cannot be rescored from banked dumps: `ha0` is a rollout, not a statistic | ✅ **yes** |
+| **G-3 / W-3** | **STRATEGIC** on every PhysicalAI block | ⛔ **nothing on this corpus** — settled at five probes: no map, no lane graph, no junction label, no route signal, and both available label sources inadmissible. Needs the VLM PH0→PH1→PH2 pipeline or an external corpus | — |
+| **G-4 / W-4** | **TACTICAL** on C1 and C2 | a **hierarchy-traversing rescore**; already closed at source for future T1 runs (`t1_eval.py` passes `tactical_from_traj=True`) | partly |
+| **G-5 / W-1** | **LONGITUDINAL distance-keeping** on C1, C2, C3 | a **JOIN**, not new data — `obstacle.offline` covers 97.44 % of the corpus and the instrument exists at `taniteval/tools/build_lead_block.py`. Copy the C4 recipe | ⛔ **no** |
+| **G-6 / W-5** | a **per-window reducer** for heading / yaw-rate / curvature | implement it inside `four_families`; three C1 intervals are currently **refused on purpose**, and the same hazard is **unflagged at T1** | ⛔ **no** |
+
+⭐ **W-19 is the one that changes readings, not just completeness.** MEASURED on the refcv3 arm
+package's own fixture: paired **`ha − ha0` = +0.1330 [−0.0502, 0.2326], NOT separated**. `ha` holds
+the last **observed** `(a, κ)`, which drifts even where the human drives straight ⇒ **an arm can beat
+`ha` by doing nothing at all.** §1a's headline — *the hold-action control beats the repaired arm 22×
+and the v5f arm 25×* — is therefore stated against a floor whose **own** margin over the true floor is
+unknown. The direction of that headline is not in doubt; its **magnitude against `ha0` is unmeasured**.
+
+### 6.3 What was ADDED on 2026-09-03, and what was deliberately NOT added
+
+| added | where |
+|---|---|
+| §0.8 — the `loop` column + **13 mislabelled sites enumerated with file:line** | `LEADERBOARD.md` |
+| §0.9 — criteria coverage: the six omitted criteria + **row-by-row quotable-as-is vs needs-re-measurement** | `LEADERBOARD.md` |
+| §1d — the **B1-corpus line**: refcv3 identity + admissibility, the four families **PENDING with the filename that fills them**, the T0 in-training read with the three reasons it may not be promoted, and refav1's step-1000 T1 read | `LEADERBOARD.md` |
+| W-18 … W-22 | `LEADERBOARD.md` §12.1 |
+
+⛔ **NOT added, deliberately:**
+
+1. **No refcv3 family number.** `taniteval/results/refcv3-30k-openloop-*.json` **does not exist** —
+   verified by two differently-bound probes (`ls`+`grep`; .NET `Directory.GetFiles`), 105 files in
+   `taniteval/results/`, **zero** matching `refcv3|refav1|openloop`. The cells say `⏳ PENDING` and
+   name the file.
+2. **No header corrections.** Every *"closed loop"* mislabel is listed with file:line and **left in
+   place** — a separate stream owns it, and two streams editing the same 13 sites is a merge conflict.
+3. **No retro-fill of any old row.** An unmeasured cell stays unmeasured.
+4. **`eval_traj` was NOT put in an ADE column**, although it is refcv3's only trajectory-shaped
+   number. From source: it is a **mean L1 per COORDINATE** (`refc_v3_train.py:462–465`), not an L2
+   norm; and it is scored on the **GT-nearest** anchor `a_star` (`:457–459`, `:463`), which the model's
+   own selection matches on only **57 %** of windows. It is a **loose lower bound**, not an ADE.
+
+### 6.4 A refusal that no later work can undo
+
+⛔ **refcv3's in-training eval can never carry a confidence interval** —
+`refcv3_epoch_read.json → estimator_refusal.ci_available = false`. Every `eval_*` value is **already**
+the pooled mean over the 160 held-out windows; the file carries **no per-window values and no episode
+index**, both of which `taniteval/ci.py` requires. **No estimator can recover an interval from it**,
+so every statement derived from that series is a **DIRECTION, not a verdict** — and the programme's
+binding paired-episode-cluster-bootstrap rule is **unsatisfiable by that artifact**. The fix is
+**forward-looking only**: the in-training eval must dump per-window values with episode ids (W-21).
+
+### 6.5 Escalations added by this amendment
+
+7. ⭐⚠️ **REGISTRY — the claim I wrote went STALE INSIDE THE HOUR, and the correction is the finding.**
+   At **21:2xZ**, three differently-bound probes (Bash `grep -n -E`, PowerShell
+   `Select-String -LiteralPath`, .NET `File.ReadAllText` + `Regex.Matches`) agreed on **0** hits for
+   `refcv3` / `refc_v3` / `refc-v3` / `refav1` / `refa_v1` / `REF-C v3` / `REF-A v1` across all
+   **381,371** characters of `MODEL_REGISTRY.md`, and I wrote *"no row for either arm"*. At
+   **21:5xZ** a re-probe read **385,121** characters and **7 / 10 / 3** hits: a sibling stream had
+   minted **§4.5 `refcv3-b1-v72-30k`** while the section was being written.
+   ⇒ **refcv3 HAS a registry row; `refav1` still does not** (0 hits on the re-probe), so **W-20
+   stands, narrowed to refav1 alone** — same class as W-12 (v7-tiny).
+   ⭐ **The corroboration is worth more than the correction:** §4.5 was written independently and
+   reaches the **same pending verdict** as §1d — one-shot / no action input read from
+   `refc_v3.py:480`, the B1 non-parity corpus, the **ORACLE** nav caveat, the `ha0`-margin framing,
+   the UNRULED tier, all four families **NOT MEASURED**, and the *same* artifact filename
+   (`taniteval/results/refcv3-30k-openloop-*.json`) named as the thing that will close them.
+   ⚠️ **The lesson is the standing one — the repo advances mid-session.** Re-probe before shipping an
+   absence claim, and most of all when the claim is being written **into a page about stale absence
+   claims**. Recorded here rather than silently corrected, because the silent version teaches nobody.
+8. ⛔ **The tier ruling for refcv3 is OPEN and it is the PI's** (BACKLOG R30): does the doctrine admit
+   at **T1** a model that consumes **no actions at all**? §1d stamps `T1 / status: UNRULED` and frames
+   every read as a **margin over `ha0`**, which keeps the numbers correct either way.
+9. ✅ **The apparent parameter-count conflict is RESOLVED — and neither number was wrong.**
+   `config.json → param_breakdown.total` reads **107,032,901**; the tasking brief stated
+   **107,082,365 / 544 tensors**; Δ **49,464**. `MODEL_REGISTRY.md` §4.5 measured both and reconciles
+   them: **107,082,365 is the ALL-TENSOR element count over 544 tensors, of which 201 are BUFFERS
+   totalling exactly 49,464 elements** ⇒ `107,082,365 − 49,464 = 107,032,901` **parameters**.
+   ⭐ **Quote 107,032,901.** *(A worked example of the standing scope rule: two true measurements of
+   different objects read as a contradiction. The fix was to find what each one counted, not to pick
+   a winner.)*
+10. ⚠️ **refcv3's nav token is an ORACLE** — `config.json` states
+    `nav_cmd_derivation = "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)"`.
+    Under the binding rule that a supplied route is optimistic by construction, **every refcv3 number
+    carrying nav is an optimistic bound**, and `os_navshuf` / `os_navzero` are what bound that
+    optimism. ✅ The goal path is clean on the other axis: `goal_provenance` records
+    `contains_situation_classifier_output: false`.

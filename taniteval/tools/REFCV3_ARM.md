@@ -1,5 +1,23 @@
 # REFCV3_ARM — the eval adapter for REF-C v3 (`refcv3`), and the definition of what its arm IS
 
+> ⛔⛔ **CORRECTED 2026-09-03 — `ckpt_40284_FINAL.pt` IS NEVER WRITTEN.**
+> `refc_v3_train.py:103` sets `MILESTONES = (5000, 15000, 20000, 30000)` and 40,284
+> is not among them, so no `ckpt_<step>.pt` is produced at the end. The final
+> checkpoint is plain **`ckpt.pt`**, written by the `or step == args.steps` branch
+> at `refc_v3_train.py:1191`.
+>
+> ⚠️ **`ckpt.pt` is ALSO the ROLLING checkpoint** (`--save-every 500`) **and its name
+> never changes**, so before the run ends that same path holds an earlier step — and
+> a report of "the final read" silently computed from step 38,850 is undetectable to
+> a reader. ⇒ **always pass `--expect-step 40284`**, which refuses a checkpoint whose
+> own `step` field differs, or verify by content:
+> `python -c "import torch; print(torch.load('.../ckpt.pt', map_location='cpu')['step'])"`.
+>
+> It is ~1.28 GB (optimizer state included), unlike the 428 MB milestone files which
+> carry only `{"model", "step"}`. *(Escalated independently by three streams and
+> edited by none, each correctly declining to touch another stream's file.)*
+
+
 **Instrument:** `taniteval/tools/refcv3_arm.py` · **owner:** Benchmarks & Evals FlyWheel ·
 **written:** 2026-09-03 · **status of every number it can produce today:** UNVERIFIED on a real
 checkpoint (validated on a random-init `RefCV3Model` at `refc_v3_smoke_config` over a synthetic
@@ -411,7 +429,8 @@ its first forward; that number, not an assumption, sets the stride.
 
 ```bash
 OMP_NUM_THREADS=6 python taniteval/tools/refcv3_arm.py \
-  --ckpt   /workspace/experiments/refcv3-b1-v72-30k/ckpt_40284_FINAL.pt \
+  --ckpt   /workspace/experiments/refcv3-b1-v72-30k/ckpt.pt \
+  --expect-step 40284 \
   --episodes  <B1 EVAL v2 cache dir>            \
   --labels    <.../v72/s2_labels_v7.2_eval.jsonl.gz>  \
   --nav-source v72 --grid 2s --action-units steer \
@@ -425,7 +444,8 @@ block attached:
 
 ```bash
 OMP_NUM_THREADS=6 python taniteval/tools/refcv3_arm.py \
-  --ckpt   /workspace/experiments/refcv3-b1-v72-30k/ckpt_40284_FINAL.pt \
+  --ckpt   /workspace/experiments/refcv3-b1-v72-30k/ckpt.pt \
+  --expect-step 40284 \
   --episodes  <B1 EVAL v2 cache dir>            \
   --labels    <.../v72/s2_labels_v7.2_eval.jsonl.gz>  \
   --nav-source v72 --grid 2s --action-units steer \

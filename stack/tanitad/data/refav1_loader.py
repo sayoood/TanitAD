@@ -14,14 +14,35 @@ GRID: cache index j <-> v2ep frame 2j (0.2 s = every 2nd frame at 10 Hz).
 ⛔ An episode whose cache length disagrees with ceil(T_ep/2) is REFUSED — a
 mis-gridded cache is a silent time-warp, not a smaller dataset.
 
-ACTIONS — (a, kappa), and the channel order is MEASURED, not assumed:
-  v2ep `actions[:, 0]` correlates r = 0.995 with pose-derived curvature and
-  `actions[:, 1]` only r = 0.47 with pose-derived accel (6 episodes,
-  2026-09-01) ⇒ the STORED order is (kappa, accel-like) — the REVERSE of
-  RefAV1Config's `a_dim: (a, kappa)`. This loader emits
+ACTIONS — the channel ORDER is MEASURED; the channel IDENTITY is read from
+the PRODUCER, because a correlation cannot supply it.
+  ⛔ CORRECTED 2026-09-03. This block used to read: *"actions[:, 0] correlates
+  r = 0.995 with pose-derived curvature ⇒ the STORED order is (kappa,
+  accel-like)"*, and labelled channel 0 "the measured true-kappa channel". The
+  ORDER conclusion stands. The IDENTITY does not. The producer
+  (`tanitad/data/physicalai.py`) writes
+
+      steer = np.arctan(float(wheelbase) * curv)
+
+  so `actions[:, 0]` is a ROAD-WHEEL STEER ANGLE — arctan(L·κ) at the ENCODER's
+  L = 2.9000000 ± 3e-8 — and is ~2.9× the magnitude of κ. It still correlates
+  with κ at r = 0.995 because arctan(2.9κ) ≈ 2.9κ over our curvature range.
+  ⭐ **Pearson r is SCALE-INVARIANT: r = 0.995 cannot distinguish κ from 2.9κ,
+  and no correlation ever could.** The measurement was right; the identity
+  inferred from it was not.
+  ⚠️ Real per-clip wheelbases in the release are 2.730 / 3.135 / 3.165 / 3.216
+  — NONE is 2.9. At this interface the ENCODER's constant is the correct one,
+  not the vehicle's.
+  Measured supporting figures (6 episodes, 2026-09-01): `actions[:, 0]` vs
+  pose-derived curvature r = 0.995; `actions[:, 1]` vs pose-derived accel
+  r = 0.47 — the latter is why accel is re-derived rather than trusted. This
+  loader emits
       a      = (v[2(j+1)] - v[2j]) / 0.2      # poses ch3, exact on the grid
-      kappa  = actions[2j, 0]                  # the measured true-kappa channel
-  so a silent channel swap cannot reach the model.
+      steer  = actions[2j, 0]                  # a STEER ANGLE, ≈ 2.9·κ
+  so a silent channel swap cannot reach the model. ⛔ Anything CONSUMING this
+  channel as a curvature — a planner emitting κ, a closed-loop tracking
+  controller — is off by the same ~2.9×. Convert at the model boundary using
+  the ENCODER's L, and say which convention you are in.
 
 SPEED — ``v0`` = v[2t], the ego speed MEASURED at the window anchor (the
   last observed cache index t), in m/s. Always emitted. ⛔ NO future speed is

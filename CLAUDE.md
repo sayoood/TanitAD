@@ -164,6 +164,27 @@ Every subagent brief MUST carry the preamble in
   ⚠️ **And with several agents live, RE-VERIFY AT THE END OF THE TURN.** MEASURED 2026-08-16: five
   files were staged and verified, three orchestrator commits then landed, and the same check
   afterwards reported them `??`. Staging is not a latch — the index moves under you.
+  ⛔⛔ **AND A COMMIT IS NOT A LATCH EITHER — MEASURED THREE TIMES INDEPENDENTLY ON 2026-09-03.**
+  A commit that has *landed* can be silently removed from the branch by a sibling whose scratch
+  index was seeded from a tree that **predates** it. The replacement still points its `-p` parent
+  at your commit, so `git log` shows your subject sitting in the history **while its file content
+  is gone from HEAD**. Three cases in one night: one agent's five paths reverted under a parent
+  that named them; a second agent's whole commit vanished when a third replaced the tip; and my
+  own doctrine commit lost `PROGRAM_OVERVIEW.md` and a retraction-log entry, with the *other three*
+  files from the same commit surviving — so even a partial survival proves nothing about the rest.
+  ⇒ **`git log` is NOT evidence that your change is in HEAD.** The check is a positive content
+  assertion per file — `git show HEAD:<path> | grep -c <marker>`, or a blob comparison
+  (`git rev-parse HEAD:<path>` vs `git hash-object <path>`) — run **at the end of the turn**, on
+  **every** path you committed. ⭐ **The mechanism is a slow `read-tree`, and the fix is cheap:**
+  a scratch index **on the G: mount** takes **13 minutes** to seed under ~97 concurrent git
+  processes, which is a 13-minute window for another agent to land a commit inside; the *same*
+  `read-tree` with the index **on local disk** is **3m39s**. Put `GIT_INDEX_FILE` on local disk,
+  re-read `HEAD` **immediately before** `commit-tree`, and make the final write a
+  **compare-and-swap** (`git update-ref HEAD <new> <old>`) so a lost race FAILS instead of
+  clobbering. ⛔ A plain `update-ref HEAD <new>` is how a sibling's work disappears — it cannot
+  detect that HEAD moved. *(`stack/scripts/scoped_commit.py` reads HEAD **after** `write-tree`,
+  so its window is the entire tree build; its stray-path guard then refuses forever under
+  contention. Correct, but livelocked — it needs the CAS and the local-disk index.)*
 - ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
   HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
   tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
