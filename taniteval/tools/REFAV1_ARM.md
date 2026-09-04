@@ -1,11 +1,17 @@
 # REFAV1_ARM — the T0 / T1 eval adapter for REF-A v1 (`refav1`)
 
-**Status (2026-09-02):** plumbing VALIDATED on a random-init `RefAV1` + a synthetic
-3-episode eval slice of the right shapes/dtypes (`stack/tests/test_refav1_arm.py`,
-15 tests; the untouched `t1_eval.py --analyze-only` CLI also reads the dump).
-⛔ **UNVERIFIED on a real checkpoint** — this box may not contact Thor; the
-first real read is the Master Mind's, at the step-1000 pull. Every number in this
-file is MEASURED on the synthetic fixture unless marked otherwise.
+**Status (2026-09-04):** ⭐ **VERIFIED ON THE REAL EPOCH-END CHECKPOINT.** The adapter has now read
+`refav1-b1-v72-ep3-speed` @ **step 21,109** end to end on Thor over the **full 141-clip v7.2 EVAL
+split**, and on the dev-box RTX 4060 over the banked 20-clip slice — strict load, fp8 cache, label
+join, four families, distance-keeping and the decision sidecars all exercised. §7's six UNVERIFIED
+items are **all closed**; §6 now carries the resolved paths and the measured Thor wall-clock.
+Result: `taniteval/results/RESULT-refav1-21109-openloop.md` (tag `refav1-21109-openloop`).
+
+*(Prior status, kept for provenance: plumbing VALIDATED 2026-09-02 on a random-init `RefAV1` + a
+synthetic 3-episode eval slice of the right shapes/dtypes — `stack/tests/test_refav1_arm.py`,
+15 tests; the untouched `t1_eval.py --analyze-only` CLI also reads the dump.)* Numbers in this file
+are MEASURED on the synthetic fixture unless marked otherwise; §6 and §7 are MEASURED on the real
+run.
 
 Files: `taniteval/tools/refav1_arm.py` (the tool), `stack/tests/test_refav1_arm.py`
 (the pin), this note. `taniteval/tools/t1_eval.py` is **not modified** and no
@@ -183,22 +189,36 @@ eval clips).
   on every window whose horizon reaches the perturbed frames.
 * Constant-only WM control: zero prediction reads `≈ tgt_std²` (asserted within 0.15).
 
-## 6. Invocation for the real run (Thor — paths marked ⚠️ are UNVERIFIED from this box)
+## 6. Invocation for the real run — ⭐ RUN AND VERIFIED ON THOR 2026-09-04, every path resolved
 
 ```bash
-# on Thor, tanitad-train venv, from the repo checkout
-PYTHONPATH=<repo>/stack:<repo>/taniteval python3 taniteval/tools/refav1_arm.py \
-  --ckpt   /home/nvidia/experiments/refav1-b1-v72-1ep-21109/ckpt.pt \
-  --config /home/nvidia/experiments/refav1-b1-v72-1ep-21109/config.json   # optional; cross-checked vs ckpt['cfg'], contradiction = refusal
-  --cache    <refav1-fp8-eval dir: the 141-clip v7.2 EVAL symlink split>   # ⚠️ path not known here
-  --episodes /home/nvidia/data/physicalai-b1-w120-256x640cyl                # ⚠️ the B1 v2ep dir (dinov3_fp8_encode_ship.py SRC["b1"])
-  --labels   <s2_labels_v7.2 EVAL blob, md5 aa12c948f062181c3297265b51526ec5>  # ⚠️ path not known here
-  --nav      <same blob> \
-  --device cuda --window-stride 10 --episodes-n 0 \
-  --with-oracle-goal-arm            # optional T0 arm: search-vs-goal attribution
-  --dump-dir /home/nvidia/experiments/refav1-b1-v72-1ep-21109/t1_dump \
-  --out      /home/nvidia/experiments/refav1-b1-v72-1ep-21109/refav1_t1.json --arm refav1-21109
+# on Thor, tanitad-train venv, from a self-contained eval checkout (see the note below)
+R=/home/nvidia/refav1_evalrun
+PYTHONPATH=$R/repo/stack:$R/repo/taniteval OMP_NUM_THREADS=6 \
+/home/nvidia/venvs/tanitad-train/bin/python taniteval/tools/refav1_arm.py \
+  --ckpt   /home/nvidia/experiments/refav1-b1-v72-ep3-speed/ckpt.pt \
+  --config /home/nvidia/experiments/refav1-b1-v72-ep3-speed/config.json \
+  --cache    /home/nvidia/data/refav1-fp8-eval \
+  --episodes /home/nvidia/data/physicalai-b1-w120-256x640cyl \
+  --labels /home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz \
+  --nav    /home/nvidia/data/v72/labels/s2_labels_v7.2_eval.jsonl.gz \
+  --lead-block $R/b1_eval_lead_block.npz \
+  --device cuda --window-stride 40 --episodes-n 0 --no-navshuf \
+  --dump-dir $R/full_dump --out $R/refav1_t1_full_21109.json --arm refav1-21109-full141
 ```
+
+⚠️ **The run directory is `refav1-b1-v72-ep3-speed`, NOT `refav1-b1-v72-1ep-21109`** (that older
+directory holds a different checkpoint). The epoch-end checkpoint is 2,122,997,633 B,
+md5 `1189bc020018c2c67ce03d566c390285`, `ckpt["step"] == 21109`.
+
+⚠️ **`/home/nvidia/TanitAD` on Thor is a STALE checkout** (HEAD `30d6d60`, and it carries no
+`refav1_arm.py` at all). Ship a self-contained tree instead of running from it — a `tar` of
+`stack/tanitad`, `taniteval/taniteval`, `taniteval/tools/{refav1_arm,t1_eval}.py` is 1.9 MB, and
+`refav1_arm.py`'s own path bootstrap puts `<repo>/stack` and `<repo>/taniteval` on `sys.path`, so
+no PYTHONPATH surgery is needed beyond the line above.
+
+⚠️ **`--lead-block` must be shipped too** (2.5 MB); without it the LONGITUDINAL family's
+distance-keeping half comes back `REFUSED`, which is a missing metric, not a pass.
 
 * ⛔ **Never on the training pod/box while it trains**; the checkpoint is pulled
   by the Master Mind. `RefAV1Windows` REFUSES a mis-gridded cache and a zero-join
@@ -214,22 +234,31 @@ PYTHONPATH=<repo>/stack:<repo>/taniteval python3 taniteval/tools/refav1_arm.py \
 * `--wm-k` must be ≥ 15 (the strategic stride) — `forward()` refuses a shorter
   future; default = `cfg.op_steps` (30).
 
-## 7. UNVERIFIED until a real checkpoint is read
+## 7. ✅ ALL SIX CLOSED — the real checkpoint has now been read (2026-09-04)
 
-1. The real `ckpt.pt` loads STRICT into `RefAV1(RefAV1Config(**cfg))` on the eval
-   box's copy of `refa_v1.py` (the trainer's `vars(cfg)` carries dataclass sub-configs;
-   a `config.json` with dict sub-configs is handled and cross-checked — but the
-   Master Mind's `config.json` format is not known here).
-2. The fp8 eval cache opens through `RefAV1Windows` (`torch.load(mmap=True)` on
-   `float8_e4m3fn`; the live TRAIN run proves the loader reads fp8, the eval split
-   itself is unseen), and its `index.json` geometry matches `DINOV3_GEOMETRY`.
-3. The 141-clip eval split's `clip_id`s join the eval labels blob (loader prints the
-   join report; `nav_valid_frac` is reported — the loader docstring's obligation).
-4. Wall-clock per `plan()` on Thor (only the 4060 number exists).
-5. Whether the live run's `target_space` is `frozen` (register says yes; the tool
-   reads it from the config and labels the WM space accordingly).
-6. `ema_targets` checkpoints: the `ema.*` keys are part of the state_dict and load
-   with the same config; not exercised here.
+`MEASURED (ours)`, Jetson Thor + dev-box RTX 4060, step-21,109 checkpoint
+(`refav1-b1-v72-ep3-speed`). Evidence: the run's own startup lines and
+`<dump>/manifest.json`; artifacts under `taniteval/results/` tagged `refav1-21109-openloop`.
+
+1. ✅ **Strict load.** `state_dict_load = {"missing_keys": [], "unexpected_keys": []}` against
+   `RefAV1(RefAV1Config(**cfg))` built from the Master Mind's `config.json`, with
+   `eval_time_cfg_overrides = {}` — the `config.json` format (dataclass sub-configs serialised as
+   dicts) is handled and cross-checks clean against `ckpt['cfg']`.
+2. ✅ **The fp8 EVAL cache opens.** `[loader] 9443 windows over 141 episodes (W=4, K_loader=30,
+   grid 0.2 s)` from `/home/nvidia/data/refav1-fp8-eval` — 141 symlinks into
+   `dinov3-b1-fp8-w120-256x640cyl`; the geometry gate passed.
+3. ✅ **The 141-clip split joins the labels blob.** `labels 141/141 eps (0 missing),
+   2961/9443 windows in-band ±[2.0] s, md5 aa12c948f062181c3297265b51526ec5`; `nav 141/141 eps
+   (0 missing)`, `nav_valid_frac 1.0`.
+4. ✅ **Wall-clock on Thor: first `plan()` 36.56 s, sustained ≈ 40 s per window per planning arm**
+   — **1.8× SLOWER than the RTX 4060's 20.96 s** on the identical arm and plan budget
+   (`{samples 300, iters 30, elites 30}`). ⇒ budget Thor at ~90 s per episode at 2 windows/episode;
+   141 episodes at stride 40 is ~3.5 h for ONE planning arm. `cl_navshuf` / `cl_oraclegoal` each
+   DOUBLE that — they are not "cheap".
+5. ✅ **`target_space` is `frozen`** (read from the config; the WM block is labelled accordingly and
+   its constant-only control reads ≈ the target variance).
+6. ✅ **`ema_targets` checkpoints load** — the run carries `ema_targets: true` and the `ema.*` keys
+   are inside the strict load of item 1.
 
 ## 8. Decisions for the Master Mind
 

@@ -2078,7 +2078,7 @@ CPU-smoke-validated before launch.
 
 ---
 
-### 2.4 REF-A **v1** — `refav1-b1-v72-ep3-speed` — ✅ **COMPLETE at step 21,109 (one full epoch)** · ⛔ **NO EVAL RESULT YET — do not quote a capability number**
+### 2.4 REF-A **v1** — `refav1-b1-v72-ep3-speed` — ✅ **COMPLETE at step 21,109 (one full epoch)** · ✅ **EVAL LANDED 2026-09-04 (open loop, 141 clips)** · ⛔ **the PLANNER arm is a trivial baseline on 282/282 windows — quote no planning number from `cl`**
 
 **The latent world model + planner line** (not a frozen-encoder arm like 2.1–2.3). Trained
 on Thor, `/home/nvidia/experiments/refav1-b1-v72-ep3-speed/`.
@@ -2087,11 +2087,11 @@ on Thor, `/home/nvidia/experiments/refav1-b1-v72-ep3-speed/`.
 |---|---|
 | **Status** | ✅ COMPLETE — final step **21,109 / 21,109**, MEASURED from the checkpoint's own `step` field, not the log |
 | **Checkpoint** | `ckpt.pt` · **2,122,997,633 B** · keys `['cfg','model','opt','step']` · **407 tensors** · **182,459,701 params** |
-| **Reading it** | ⛔ requires `PYTHONPATH=/home/nvidia/TanitAD/stack` — without it `torch.load` dies `ModuleNotFoundError: No module named 'tanitad'` |
+| **Reading it** | ⛔ requires a `stack/` on `PYTHONPATH` — without it `torch.load` dies `ModuleNotFoundError: No module named 'tanitad'`. ⚠️ **NOT `/home/nvidia/TanitAD/stack`**: that checkout on Thor is stale (HEAD `30d6d60`) and carries no `refav1_arm.py` at all. The 2026-09-04 read shipped a self-contained 1.9 MB tree to `/home/nvidia/refav1_evalrun/repo/` and used `PYTHONPATH=$R/repo/stack:$R/repo/taniteval` — see `REFAV1_ARM.md` §6 |
 | **Precision** | bf16 + TF32 (requested and effective) |
 | **Corpus** | 168,910 windows over 4,572 episodes; v7.2 labels, join 4,572/4,572 eps (0 missing), md5 `0ff902130ce76886b8a925eceed9e3a5` |
 | **Ego input** | `--speed-channel` ON — speed enters as a THIRD action channel `(a, steer, v)`. ⭐ Unlike refcv3 it has **no ego dropout and no zero-fill**: a missing `v0` **raises** (`refa_v1.py:1343`), so a zero there means exactly one thing |
-| **Eval** | ⛔ **PENDING.** No four-family result exists for this checkpoint. The open-loop read is in flight |
+| **Eval** | ✅ **DONE 2026-09-04, OPEN LOOP.** `taniteval/results/RESULT-refav1-21109-openloop.md` (+ `refav1-21109-openloop*.json`, `openloop-suite-refav1-21109.*`, dump tarball). **n = 282 windows / 141 episode clusters**, the full v7.2 EVAL split, stride 40, K=10 @ 0.2 s, `--action-units kappa` (legacy), episode-cluster bootstrap `n_boot 2000`. Criteria registry v2.5.0: **0 violations, 3 work items**; `const0` control OK. **ADE: `ol` 0.4237 [0.3466, 0.5070] < `ha0` 0.5316 [0.4710, 0.5939] < `ha` 0.5391 [0.4544, 0.6301] < `cl` 0.5474 [0.4839, 0.6108]** — ⛔ the deployed arm is **last**, and paired `cl − ha0` = **+0.0158 [+0.0007, +0.0315] separated**, i.e. *worse than constant velocity*. ⛔ **ADE is one row of four; read the RESULT for LON / LAT / TACTICAL / STRATEGIC** |
 
 **Training health — MEASURED over 350 logged rows, `train_log.jsonl`:**
 
@@ -2120,14 +2120,42 @@ and exited cleanly without logging — which is exactly what a stale log beside 
 process looks like. **Neither artifact indicates a training failure.** The done-marker was
 written by the Master Mind 2026-09-04 and both trainer and supervisor are confirmed gone.
 
-⛔ **THE OPEN DEFECT THAT DECIDES WHETHER THIS ARM MEANS ANYTHING.** At an EARLIER checkpoint,
-MEASURED on 120 shared windows: refav1's `cl` arm was **BIT-IDENTICAL to the trivial floor
-`ha0`** (constant velocity at the measured v0) on **120/120 windows** — margin exactly 0.0000 on
-every metric in every family. The instrument saw the baseline, not the model. **This is
-categorical, not statistical: it does not depend on n.** Whether it still holds at 21,109 is
-the single most important open question for this arm, because if it does, every refav1 metric
-is really a floor measurement and the planner contributes nothing. The in-flight eval tests it
-directly.
+⛔ **THE OPEN DEFECT IS NOW CLOSED AS A QUESTION AND OPEN AS A DEFECT — ANSWERED 2026-09-04 ON THE
+FULL 141-CLIP SPLIT.** The question was whether the earlier 120/120 and 140/140 constant-velocity
+reads survive the epoch. They do, and the larger sample makes the statement **sharper, not weaker**:
+
+| quantity, n = 282 windows / 141 episode clusters | value |
+|---|---|
+| `cl` bit-identical to `ha0` (< 1e-9 m) | **270/282 = 0.9574** (max residual 2.7000 m) |
+| `cl_controls` **exactly zero** | 270/282 |
+| **κ identically zero** | ⭐ **282/282 = 1.0000 — the planner never turns, on any window** |
+| **acceleration constant in time** | **282/282 = 1.0000** |
+| **distinct plans emitted, in total** | ⭐ **2** — `a = 0` (270) and `a = −1.5` (12), **both entries of `_baseline_controls` that `icem_plan` injects into its own population** |
+
+⇒ **the plan is an injected trivial baseline on 282/282 = 100 % of windows**; the 12 exceptions are
+the `decel_1.5` baseline winning instead of `cv`/`hold_v0`, not evidence of planning. Paired
+`cl − ha0` ADE **+0.0158 [+0.0007, +0.0315] separated** — the arm is *worse* than the floor it
+collapses onto. Every LATERAL and trajectory-TACTICAL `cl − ha0` delta is exactly 0.0000 with a
+zero-width interval. **MECHANISM** (source-grounded, `RESULT-refav1-21109-openloop.md` §1): the cost
+adds `W_JERK·jerk² + W_KAPPA·κ²`, which only the injected constant-accel straight lines pay zero of,
+while the world-model term varies by 1.63e-10 along κ against a float32 `1−cos` step of 5.96e-08
+(`D-REFAV1-COST-SURFACE`). **It is a property of the COST, not of the weights — so "it is early in
+training" is refuted as an explanation and must not be offered again.**
+
+⛔ **`planner.baseline_won_frac` UNDER-REPORTS this and must not be quoted.** It reads **0.6631**
+while the true trivial-plan rate is **1.0000**: `plan_source` says `cem` on 95 windows and on
+**95/95** of them the returned controls are bit-exactly an injected baseline. Both existing
+tie-break repairs are gated on the LABEL rather than the content (`refa_v1_plan.py:277-281`,
+`refa_v1.py:2203`). The honest statistic is the CONTENT of `cl_controls`.
+
+⭐ **What the epoch DID buy, and it is not nothing** (same record): the **world model beats the
+persist-last-field floor**, separated, at every horizon from 1.0 s out, with the margin growing
+0.1129 → 0.2454 to 6 s (and honestly LOSING at 0.2 s, −0.0442); the **declared LON tactical head**
+reads 0.4326 [0.3546, 0.5177] against a 0.2979 majority floor **under nav_zero**, the deployment
+condition; and the **tactical decoder now asks for turns on 13.5 %** of windows (`TURN_R` 31 /
+`TURN_L` 7 of 282) against the incumbent's `LANE_KEEP` on 140/140. ⛔ But the **strategic route head
+is a pure nav echo**: 1.0000 under true nav, κ **−0.1427** under shuffle, and exactly the
+majority-class rate with nav withheld.
 
 ⚠️ **Action-unit contract:** `actions[:, 0]` is a **road-wheel STEER ANGLE**, `arctan(L·κ)` at
 the ENCODER's **L = 2.9000000 ± 3e-8** — NOT curvature, and ~2.9× its magnitude. See
