@@ -249,8 +249,26 @@ HEAD_BATCH01 = {
 HEAD_TRAIN1 = {
     "frames": (_F, (2, 4, 1, 64, 64), "ea9932d9bfeee4ba7c67ca675f0f369ed7fe7d00ab8a2e4fda52af5d276efb8c"),
     "future_frames": (_F, (2, 20, 1, 64, 64), "a57a5796f4f668b07599d9ef6b1034eee9db3dfcd44a7765a30546e1b5d1a474"),
-    "loss": 214.69766235351562,
-    "loss_hex": "9ab25643",                 # struct.pack("<f", loss).hex()
+    # ⭐ RE-MINTED 2026-09-04 (refcv4). The previous pin was
+    # 214.69766235351562 / "9ab25643", recorded before the TACTICAL AUX BUDGET
+    # FIX: `compute_losses_v3` spent `LAT_WEIGHT*(loss_lat + loss_lat_tac) +
+    # LON_WEIGHT*(loss_lon + loss_lon_tac)` = 0.05*2 + 0.05*2 = **0.20**,
+    # against the invariant `refc_train.py:83-91` states IN WRITING -- that the
+    # total tactical aux pressure is held at EXACTLY `MANEUVER_WEIGHT` (0.10)
+    # so an arm differs in STRUCTURE, not in loss budget. It is now halved to
+    # 0.025*4 = 0.10.
+    # ⛔ WHY RE-MINTING IS ADMISSIBLE HERE, AND WHAT WAS CHECKED FIRST. This pin
+    # exists to catch an UNINTENDED numeric change, so it may only be moved with
+    # the change ACCOUNTED FOR, never merely because it fired:
+    #   * the property the test actually protects -- `torch.equal(on, off)`,
+    #     u8-path vs float-path -- still PASSES untouched;
+    #   * the delta is EXACTLY the aux term and nothing else:
+    #     214.69766235 - 214.58363342 = 0.11402893 = 0.025 x 4.5611572,
+    #     i.e. 0.025 x (loss_lat + loss_lat_tac + loss_lon + loss_lon_tac),
+    #     which is the halving's arithmetic to 8 significant figures.
+    # Any FUTURE movement of this constant needs the same two lines of evidence.
+    "loss": 214.58363342285156,
+    "loss_hex": "69955643",                 # struct.pack("<f", loss).hex()
 }
 
 # -------------------------------------------------------- the live shape

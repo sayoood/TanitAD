@@ -445,7 +445,22 @@ def _v3_core_base() -> refc.RefCConfig:
     #       same arm -- and keeps the registered v4 delta at three keys instead
     #       of silently widening a second head's input.
     cfg.tactical_speed_input = False
-    cfg.sel_reach_clamp = True        # precondition, measured inert on ADE @2s
+    cfg.sel_reach_clamp = True        # precondition, measured inert on ADE
+    # ⛔ AND `sel_accel_max` IS NOW RE-DERIVED AT THE PLANNED HORIZON, not
+    # inherited. `refc.py:652` sets `horizon_s = max(horizons)*0.1`, so at
+    # V3_HORIZONS the band is a*6.0. MEASURED 2026-09-04 on the refcv4
+    # data-driven vocabulary, 19,602 held-out eval + 635,331 train windows:
+    #   a=2.5 (the 2 s default) -> +-15.0 m/s, kills 18.02 %  <- near-vacuous
+    #   a=2.0                   -> +-12.0 m/s, kills 26.23 %  <- the pick
+    #   a=1.5                   -> +- 9.0 m/s, kills 38.18 %
+    # The binding criterion is GT DELETION, not kill rate: a band that removes
+    # the trajectory the ego actually flew is wrong, not conservative. At a=2.0
+    # it deletes 0.000 % of eval and 0.007 % of train ground truth and moves the
+    # oracle-in-vocabulary ADE by +0.00000 m. The trainer pins it through
+    # `--sel-accel-max` (applied to BOTH arms, so the hier/flat delta is
+    # unchanged). ⚠️ The 72.08 % / 77.28 % / 3.58x figures elsewhere in this
+    # file are 2 s statistics and are NOT reproduced at 6 s -- see the module
+    # docstring's standing warning, which this block is the discharge of.
     return cfg
 
 
