@@ -11880,3 +11880,61 @@ md5 `aa12c948f062181c3297265b51526ec5`) live on **local disk** at
 refcv3 trained on labels that git has never seen**, and a pre-schema-fix pair sits beside
 them quarantined as `DO-NOT-USE`. That is one disk failure away from making every v7.2
 result unreproducible.
+
+### #20 ADDENDUM 2 (same day, THIRD revision) — the source WAS in-repo; I transposed a digit and swapped the denominator
+
+Both earlier accounts of this retraction were wrong, and the true one is simpler and
+less flattering than either.
+
+**The artifact exists**, at `GOALS_AND_CLAIMS.md:2387`, inside the `D-REFAV1-LAUNCHED`
+row: *"labels 4,571/4,571 episodes (0 missing), **45,456/168,873 windows in-band ±2.0 s
+(26.9 %)**"*. Run `/home/nvidia/experiments/refav1-b1-v72-1ep-21109` — **REF-A v1**.
+Generator `refav1_loader.py:428-429`. `45,456 / 168,873 = 26.9174 %`.
+
+| I wrote | the artifact says | what happened |
+|---|---|---|
+| `45,466` | **`45,456`** | **a transposed digit** |
+| `168,910` | **`168,873`** | **a denominator from a DIFFERENT RUN** — `GOALS_AND_CLAIMS.md:2334` says 168,910 is *"the previous 168,873 + exactly the rebuilt episode's 37"* |
+| "refcv3's v7.2 join" | **REF-A v1** | wrong arm |
+
+⇒ **Retract ADDENDUM 1's account too.** The percentage was NOT a 20-episode slice
+generalised, and I did NOT back-construct a fraction. It was a **real full-corpus
+measurement of another model**, mis-transcribed in the numerator and mis-paired in the
+denominator. That the two errors nearly cancel — 45,456/168,873 and 45,466/168,910 both
+round to 26.9 % — is exactly why nothing looked wrong.
+
+⛔ **THE LOAD-BEARING NUMBER: refcv3's window count is 805,687, not 168,910 — a 4.77x
+error.** `GOALS_AND_CLAIMS.md:2405` derives it (170.95 windows/episode over a 60-episode
+probe x 4,713 episodes), `:2397` states it, and it reconciles independently:
+40,284 steps x batch 20 = 805,680 ~= one epoch. The two arms window the **same episodes**
+completely differently — **refcv3 170.9 win/ep vs refav1 36.9, a 4.63x gap**
+(`GOALS_AND_CLAIMS.md:2407`; corroborated in `Reports/2026-09-02-2300-v7-readiness.md:86`:
+*"'one epoch' is not one sample budget"*). refav1's 0.2 s grid over 64 of 101 frames vs
+refcv3's 28 of 199 is the cause.
+
+⛔⛔ **AND THIS PROGRAMME HAD ALREADY LOGGED THIS EXACT ERROR, IN THE OPPOSITE
+DIRECTION.** `GOALS_AND_CLAIMS.md:2407` records the PI catching a figure of 100,711
+computed as *"refcv3's 805,687 windows ÷ refav1's batch 8"* — filed there as *"the
+derived-constant-out-of-scope error one level in."* I then made the mirror image of it,
+inheriting refav1's window count into refcv3, in a register that already contained the
+warning.
+
+**Root-cause class (final): A CROSS-ARM CONSTANT INHERITED THROUGH A SHARED WORD.** The
+likely vector is `GOALS_AND_CLAIMS.md:2286` — *"loader 168,910 windows over 4,572
+episodes (refcv3's exact **corpus**, unchanged)"*. **"Corpus" means the CLIP SET, which
+the two arms genuinely share; the WINDOW GRID is not shared and differs by 4.63x.** A
+word that is true at one level of the artifact and false at the next is how a number
+walks between arms without anyone noticing.
+
+⚠️ **Three revisions of one retraction is itself the finding.** Each pass was a real
+measurement that survived its own checks; what kept failing was the SCOPE, and scope
+errors do not announce themselves — the arithmetic is always self-consistent. ⇒ **A
+number carries the ARM and the ARTIFACT PATH, or it is not quotable.** Percentages are
+the worst offenders, because two different fractions round to the same one.
+
+**Unchanged and re-verified:** refcv3's own tactical coverage — **23.5331 %** (training
+log), **24.375 %** (in-training eval), **23.9892 %** (banked dump) for the extra v7.2
+`z_tac` head — and **100 %** kin3 tactical coverage at `refc_v3_train.py:537, 546-547`.
+The original headline is false twice over: the denominator was another model's window
+grid, AND every refcv3 window carries a tactical label regardless. The only family
+genuinely at 0 % remains **strategic** (`goal_str`, 0 of 614 rows).
