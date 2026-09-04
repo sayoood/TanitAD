@@ -180,6 +180,24 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
         cfg.core.ego_valid_channel = True
     if getattr(args, "ego_dropout", None) is not None:
         cfg.core.ego_dropout = float(args.ego_dropout)
+    # ---- ⛔ S2 REACH CLAMP, RE-DERIVED FOR THE HORIZON ACTUALLY PLANNED OVER
+    # `refc.py:652` DERIVES `horizon_s` from `max(trajectory.horizons)`, so at
+    # V3_HORIZONS the band is a*6.0, not a*2.0. The inherited `sel_accel_max =
+    # 2.5` therefore opens it to +-15.0 m/s on a corpus whose v0 mean is
+    # 5.24 m/s -- near-vacuous. MEASURED 2026-09-04 on the refcv4 anchor
+    # vocabulary over 19,602 held-out eval / 635,331 train windows
+    # (`refc_anchors_6s_b1train_128.pt.json`, `clamp6s.json`):
+    #     a=2.5 kills 18.02 %   a=2.0 kills 26.23 %   a=1.5 kills 38.18 %
+    # and the GT-deletion rate -- the criterion that actually binds, because a
+    # band that removes the trajectory the ego FLEW is wrong, not conservative
+    # -- is eval 0.000 % at a>=1.5 and train 0.007 % at a=2.0 vs 0.048 % at
+    # a=1.5. dADE on the survivors is +0.00000 m at every a>=1.25, so the
+    # "inert on ADE" property the 2 s statistic claimed does still hold here.
+    # ⚠️ The 72.08 %/77.28 % figures in `refc_v3.py` are 2 s statistics and are
+    # NOT reproduced at 6 s -- they must never be quoted for this band.
+    # Applied to BOTH arms, so `config_delta` (hier vs flat) is unchanged.
+    if getattr(args, "sel_accel_max", None) is not None:
+        cfg.core.sel_accel_max = float(args.sel_accel_max)
     return cfg
 
 
@@ -633,8 +651,16 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
 
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
             + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
-            + LAT_WEIGHT * (loss_lat + loss_lat_tac)
-            + LON_WEIGHT * (loss_lon + loss_lon_tac))
+            + (LAT_WEIGHT / 2.0) * (loss_lat + loss_lat_tac)
+            + (LON_WEIGHT / 2.0) * (loss_lon + loss_lon_tac))
+    # ⛔ THE /2 IS THE FIX, NOT A TYPO. `refc_train.py:83-91` states in writing
+    # that the TOTAL tactical aux pressure is held at EXACTLY MANEUVER_WEIGHT
+    # (0.10) so an arm differs from the base run in STRUCTURE, not in loss
+    # budget. This trainer supervises TWO tactical surfaces -- the core's pooled
+    # kin3 heads (`loss_lat`/`loss_lon`) and the v7.2 z_tac heads
+    # (`loss_lat_tac`/`loss_lon_tac`) -- so the unhalved form spends
+    # 0.05*2 + 0.05*2 = 0.20, i.e. DOUBLE the documented budget, which refcv3
+    # shipped with. Halving restores 0.025*4 = 0.10 = MANEUVER_WEIGHT.
 
     extra: dict = {}
     # ⭐ WHICH label set trained the tactical decision surface, and how many
@@ -816,6 +842,32 @@ def _lan_arm_preflight(cfg, args) -> int:
           f"{dead_gs:.4f} under the +inf-guard control "
           f"(control able to fail: True)")
     return 0
+
+
+
+def _anchor_stamp(path, anchors) -> dict:
+    """Record the anchor vocabulary BY CONTENT, not by the presence of a path.
+
+    A run that was launched without ``--anchors`` silently carries
+    ``refc.default_anchors`` (the SYNTHETIC bootstrap set), and that is
+    indistinguishable from a data-driven run in every artifact refcv3 left
+    behind.  The sha256 of the tensor actually installed in the decoder is what
+    settles it, so `source` is derived from the tensor, never from the flag.
+    """
+    import hashlib
+    a = anchors.detach().to("cpu", torch.float32).contiguous()
+    h = hashlib.sha256(a.numpy().tobytes()).hexdigest()
+    stamp = {"path": str(path) if path else None,
+             "shape": list(a.shape),
+             "sha256_installed": h,
+             "source": "file" if path else "refc.default_anchors (SYNTHETIC)"}
+    if path:
+        try:
+            stamp["file_sha256"] = hashlib.sha256(
+                open(path, "rb").read()).hexdigest()
+        except OSError as e:
+            stamp["file_sha256"] = f"unreadable: {e}"
+    return stamp
 
 
 def preflight(args) -> int:
@@ -1029,10 +1081,35 @@ def train(args) -> dict:
         cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
 
     model = v3.RefCV3Model(cfg).to(device)
+    # ⛔ THE ANCHOR VOCABULARY IS LOAD-BEARING AND ITS ABSENCE WAS SILENT.
+    # refcv3 trained without `--anchors` and nobody noticed for the whole run,
+    # because this branch printed nothing and recorded nothing. MEASURED cost:
+    # the synthetic fallback's oracle-in-vocabulary ADE is 0.9433 m, WORSE than a
+    # single straight line (0.6780 m), against the data-driven set's 0.4369 m — so
+    # the model's CEILING was below the trivial floor before training began.
+    # The base trainer has always been loud here (`refc_train.py:918-923`); this
+    # one was not. Both branches now speak, and the default is a WARNING, not a
+    # default. See RETRACTION_LOG and `.../2026-09-04-refcv3-smoothness/`.
     if args.anchors:
         anc = torch.load(args.anchors, map_location=device,
                          weights_only=True)
+        anc = anc["anchors"] if isinstance(anc, dict) else anc
         model.core.decoder.load_anchors(anc.to(device))
+        try:
+            import hashlib
+            _sha = hashlib.sha256(
+                anc.detach().float().cpu().numpy().tobytes()).hexdigest()[:16]
+        except Exception:                      # provenance is best-effort, never fatal
+            _sha = "unavailable"
+        print(f"[v3] anchors: loaded {tuple(anc.shape)} from {args.anchors} "
+              f"(sha256 {_sha})", flush=True)
+    else:
+        print("[v3] ⛔ anchors: NO --anchors GIVEN — using the SYNTHETIC "
+              "`default_anchors` fallback. Its oracle-in-vocabulary ADE was MEASURED "
+              "at 0.9433 m, worse than a single straight line (0.6780 m) and 2.16x "
+              "the data-driven vocabulary (0.4369 m). The model's ceiling is below "
+              "the trivial floor. This is almost certainly NOT what you want.",
+              flush=True)
 
     # data — raw epcache, v2 compressed cache, or CI-synthetic; exactly one
     n_src = sum(1 for s in (args.data_root, args.v2_cache,
@@ -1245,6 +1322,27 @@ def train(args) -> dict:
         # so a static declaration could not tell the two arms apart, which
         # is exactly the "declared provenance" failure the audit exists for.
         "horizons": list(cfg.core.trajectory.horizons),
+        # ⭐⭐ THE SELECTION / VOCABULARY STAMP. MEASURED 2026-09-04: refcv3's
+        # config.json recorded NEITHER, so its own artifact cannot answer
+        # "which anchor vocabulary?" or "how wide was the reach band?" — and
+        # the answer to the first was `default_anchors` (SYNTHETIC), whose
+        # oracle-in-vocabulary ADE 0-2 s is 1.0882 m against 0.3796 m for the
+        # data-driven set and 0.6843 m for a single straight line. A silent
+        # fallback to the synthetic default is exactly what an unstamped run
+        # cannot rule out afterwards, so it is stamped here by CONTENT
+        # (sha256 + shape), not by the presence of a path.
+        "anchors": _anchor_stamp(getattr(args, "anchors", None),
+                                 model.core.decoder.anchors),
+        "selection": {
+            "sel_reach_clamp": bool(cfg.core.sel_reach_clamp),
+            "sel_accel_max": float(cfg.core.sel_accel_max),
+            "horizon_s": float(cfg.core.selection().horizon_s),
+            "band_ms": float(cfg.core.sel_accel_max
+                             * cfg.core.selection().horizon_s),
+            "note": ("horizon_s is DERIVED from max(horizons); the 72.08 % / "
+                     "77.28 % kill statistics quoted elsewhere are 2 s numbers "
+                     "and do NOT hold here (re-derived 2026-09-04)."),
+        },
         "goal_tau_steps": list(cfg.goal_tau_steps),
         "admission_sigma_m": cfg.admission_sigma_m,
         # ⭐⭐ THE EGO STAMP (v4). refcv3 recorded NEITHER ego knob, so a
@@ -1544,6 +1642,15 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--anchors", default=None,
                     help="6 s anchor vocabulary (build_refc_anchors.py over "
                          "V3_HORIZONS; the model's synthetic default otherwise)")
+    ap.add_argument("--sel-accel-max", type=float, default=None,
+                    help="S2 reach-clamp bound in m/s^2. RE-DERIVE IT FOR THE "
+                         "HORIZON: `horizon_s` is max(horizons)*0.1, so the "
+                         "band is a*horizon_s. The 2.5 default is a 2 s number "
+                         "(+-5 m/s); at 6 s it opens to +-15 m/s and kills "
+                         "only 18.02 pct of a data-driven vocabulary. MEASURED "
+                         "pick for V3_HORIZONS: 2.0 (+-12 m/s, kills 26.23 "
+                         "pct, deletes 0.000 pct of eval / 0.007 pct of train "
+                         "GT, dADE +0.00000 m).")
     ap.add_argument("--batch", type=int, default=20)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--warmup", type=int, default=2000)
