@@ -497,6 +497,26 @@ procedure below, which is what actually holds.**
    program work — which is the check the pathspec rule above exists to force anyway. When a
    sibling agent's deliverables are in there, say so in the commit message rather than
    splitting them out.
+⛔⛔ **AND THE SHARED INDEX CAN CARRY PHANTOM DELETIONS THAT TURN THAT EXACT ADVICE
+   INTO A MASS DELETE.** MEASURED 2026-09-04: `git diff --cached --diff-filter=D` listed
+   **269 staged deletions**, and on classification **269 of 269 were PHANTOM** -- every
+   single path was present in `HEAD` **and** non-empty on disk. Zero were genuine. The
+   mechanism is the `read-tree`-from-a-stale-tree one already documented above for scratch
+   indexes, except it landed in the **SHARED** index: seeded from a tree that predates the
+   recent commits, so everything newer reads as deleted. It had swallowed whole banked
+   packages (`2026-09-03-refc-v4-design/`, `2026-09-03-ego-zero-collision/`), two
+   pre-registrations, `GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md`, and a decisions file
+   committed and blob-verified **ten minutes earlier**.
+   ⇒ **`git status` showing `D ` is NOT evidence a file is gone. Classify before acting:**
+   a path with `git cat-file -e HEAD:<path>` **and** a non-empty worktree file is a phantom,
+   and the repair is `git reset -- <paths>` in batches of ~30 (it updates the index only and
+   never touches the worktree). ⚠️ **Run that classification BEFORE any pathspec-free
+   commit**, every time -- item 1 above tells you to list the index, and this is the reason
+   the listing must be read for `D` lines specifically, not just skimmed for foreign paths.
+   ⭐ `stack/scripts/mm_commit.py` is IMMUNE and is why several commits survived this: it
+   seeds a **private scratch index from HEAD** and never reads the shared one. That immunity
+   is the argument for making it the default, not merely the safest option.
+
 2. **Every crash leaves a stale `.git/index.lock`**, so the next attempt dies with *"Another git
    process seems to be running"* — that reads like contention but is debris. Confirm no git
    process is alive, then `rm -f .git/index.lock` (the index survives intact). Clear it between
