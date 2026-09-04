@@ -1,6 +1,6 @@
 # PREREG — REF-C v4, the combined-lever arm (2026-09-04)
 
-**Status:** the arm is **LIVE**. Launched 2026-09-04 ~07:32 UTC on `tanitad-refcv3`
+**Status:** the arm is **LIVE**. Launched 2026-09-04 ~07:10 UTC on `tanitad-refcv3`
 (A40, 69.30.85.211:22001) into `/workspace/experiments/refcv4-b1-v72-40k`, supervised by
 `/workspace/sup_refcv4.sh`. This prereg is written **after** the launch and says so; it was
 not available beforehand because the launch and the prereg were carried by two different
@@ -70,9 +70,24 @@ Both of the 2026-09-02 supervisor defects are closed.
 | **L2** | 6 s data-driven anchor vocabulary | ✅ | `--anchors …/anchors.pt`, the k-means/slotnorm bank. Gate §4. |
 | **L3** | reach clamp re-derived for the 6 s horizon | ✅ | `--sel-accel-max 2.0`. Kill rate §5. |
 | **L4** | `(accel, curvature)` through `rollout_unicycle` + jerk / curvature-rate costs | ⛔ **NO** | §6 — and the reason is not an oversight. |
-| **L5** | `tac_vocab_version` pinned, head/label widths agree, `goal_str` supervised | ✅ | Pin at `refc_v3_train.py:160-161`, width refusal `:592-599`, `--goal-str` passed. |
+| **L5** | `tac_vocab_version` pinned, head/label widths agree, `goal_str` supervised, aux budget restored | ✅ | Pin at `refc_v3_train.py:160-161`, width refusal `:592-599`, `--goal-str` passed. Tactical aux budget **0.20 → 0.10** (`compute_losses_v3` was spending `0.05×2 + 0.05×2` against the invariant `refc_train.py:83-91` states in writing). `goal_str` is now really supervised: first row **0.76149**, where refcv3 had it in **0 of 614 rows**. |
 
 So the live arm is **4 of 5**.
+
+**Two further corrections the launching agent measured, recorded here because both
+contradict the standing brief:**
+
+* ⚠️ **`--graft-lan` is NOT `--goal-str`'s label path.** `--graft-lan` supplies the
+  corridor as a **model INPUT** and is refused by E12 and the vision-only rule; its own
+  help string says it is *"NOT part of any registered v3 arm"*. `--goal-str` **alone**
+  mints the label (`refc_v3_train.py:1084`, `want_lan = bool(args.graft_lan or
+  args.goal_str)`). The arm launched with `--goal-str` only, `graft_lan False` verified on
+  the built config. Passing `--graft-lan` as the brief suggested would have opened a
+  privileged-input back door.
+* The run stamps `anchors.file_sha256` of the tensor **actually installed in the decoder**
+  into `config.json` — not merely the presence of a flag. refcv3 recorded neither, which is
+  why *"which vocabulary did it train on?"* had to be answered later by reading a launch
+  script. **908 tests pass.**
 
 ---
 
@@ -115,10 +130,19 @@ Chosen operating point `a_max = 2.0` ⇒ band ±12.0 m/s:
 | turn candidates per window (ep / tm) | 19.04 / 29.28 |
 | Δ ADE vs unclamped | **0.0000** |
 
-The inherited justification ("inert on ADE, deletes 72.08 %") was measured at
-`horizon_s = 2.0` and does **not** transfer: at 6 s the same rule kills 26.23 %, not 72 %.
-Re-deriving was correct and `refc_v3.py:79-82`'s written warning was well-founded. Turns
-survive (0.00 % empty windows, 19.04 turn candidates/window).
+The inherited justification ("inert on ADE, deletes 72.08 % / 77.28 %") was measured at
+`horizon_s = 2.0` and does **not** transfer. `refc.py:652` derives
+`horizon_s = max(horizons) × 0.1 = 6.0 s`, so the **inherited `sel_accel_max 2.5`** opens
+the band to ±15.0 m/s and kills only **18.02 %** — not 72 %, and not the 37.1 % the brief
+carried either. Re-deriving was correct and `refc_v3.py:79-82`'s written warning was
+well-founded. Turns survive (0.00 % empty windows, 19.04 turn candidates/window >30°).
+
+⭐ **The keeper, and it generalises beyond this knob:** the binding criterion is **GT
+DELETION, not kill rate** — a band that removes the trajectory the ego actually **flew** is
+wrong, not conservative. And the inherited **value** (2.5) was defensible while the
+inherited **statistic** (72.08 %) was wrong by 4×. *A config that is right for the wrong
+reason reads exactly like one that is right*, which is why the re-derivation had to happen
+even though the outcome barely moved.
 
 ---
 
@@ -180,6 +204,18 @@ known value:
 The new vocabulary is **already cleaner than the humans it was clustered from**. The
 residual L4 motivation is only the free-form per-waypoint offset — real, but smaller than
 advertised.
+
+⭐ **Independently corroborated by a second instrument, from a different agent, on a
+different statistic.** The launching agent measured the OLD synthetic vocabulary as not
+merely coarse but **UNFLYABLE**: max `|accel|` **14.15 m/s²** with **10.71 %** of segments
+above 8 m/s², and **no turn sharper than 74.5°**. Root cause named in source:
+`synth_anchor_pool` samples `v ≤ 30 m/s` and `|yaw_rate| ≤ 0.35 rad/s`
+**INDEPENDENTLY**, so it emits an 86 m radius at 108 km/h = **1.07 g lateral**. The new
+set reads max `|accel|` **4.30 m/s²**, **0.00 %** above 8, and turns to **178.4°**.
+Two instruments that share no code — recovered unicycle controls plus smoothness
+barriers here, raw accel/turn statistics there — agree that L2 fixed the feasibility
+problem L4 was partly meant to fix. That is a genuine second probe, not the same query
+run twice.
 
 **(d) A control-space decode breaks a documented architectural invariant.**
 `refc_v3.py:383` / `:763` rely on a **zero-init delta head so the model STARTS at the
