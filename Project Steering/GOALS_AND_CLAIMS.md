@@ -2522,3 +2522,89 @@ reported as a property of the dataset. See RETRACTION_LOG C142.
 
 ⚠️ **The anchor differs: Alpamayo `t0_us` = 5.1 s, our s2 anchor = 8.0 s.** Every
 cross-source statistic published before today compared moments 2.9 s apart.
+
+---
+
+## D-REFCV4-NAV-WIRING — nav reaches ONE layer, not three (2026-09-04, Arch+Inference)
+
+**Full design + audit: `Project Steering/DESIGN_REFCV4_NAV_WIRING.md`.** Every
+claim below carries `file:line` there, re-pinned by CONTENT against the current
+`refc.py` (2,477 lines) / `refc_v3.py` (1,270 lines) — both moved during the audit.
+
+**ASSERTED (MEASURED, source read).**
+* The CORE's two decision heads are strictly `f(pooled)` — vision only. `route_head
+  = nn.Linear(feat, 3)` on `pooled` (`refc.py:1955`, called `:2278`); `tac_in =
+  pooled` because `tactical_speed_input = False` (`refc_v3.py:447`). **Nav reaches
+  neither.**
+* Nav enters at exactly ONE place: the measurement encoder, `meas_in = ([v, nav] +
+  ...)` (`refc.py:2273-2275`), and `m` reaches the DECODER (`:2364`) and, through
+  `cond_proj(m)` (`:1503`), the selector's anchor confidence. **Nav is present in
+  the operative path and absent from both decision heads** — the inversion of the
+  hierarchy's thesis.
+* `route_head`'s output reaches NOTHING downstream: `graft_route = False`
+  (`refc.py:2341-2342`, `:1643-1644`). It is a dangling aux.
+* E13's nav injection into `ctx` is a rebind of the HOOK'S LOCAL parameter
+  (`refc_v3.py:861`); the hook returns only `{maneuver_logits, target_latent}`
+  (`:968-969`), so the decoder still receives the un-nav'd `ctx` built at
+  `refc.py:2190`. **The nav-augmented `ctx` never leaves the hook.**
+* The live 40,284-step arm runs with `--nav-from-v7` OFF, `--goal-str`/`--graft-lan`
+  OFF and `--ego-state-inject` OFF (verified in TWO files: `refcv3_b1_launch.sh:126-142`,
+  `sup_refcv3.sh:62-76`). ⇒ **`str_goal_head` has NO DIRECT LOSS** — it trains only
+  by backprop through the tactical FiLM — and the arm is **v3, not v4**.
+
+**REFUTED — the standing claim was VACUOUS.** *"The route head is not a nav echo"*
+rests on `paired_true_minus_shuffled_accuracy` = **0.0 [0.0, 0.0]**, n=3,622 win /
+128 eps (`taniteval/results/refcv3-40284-openloop.ARM.json`), with the shuffle
+changing the token on **49.89 %** of windows. The head is `nn.Linear(feat, 3)(pooled)`
+and **cannot echo an input it never receives**. It is a pin on the WIRING, not a
+finding about the model (C109 class: a probe that cannot fire proves nothing).
+⇒ Re-label wherever quoted.
+
+**ROOT CAUSE of the dead nav channel — a CORPUS interaction, not a wiring bug.**
+`nav_command` needs `NAV_MIN_STEPS = 150` future poses (15 s) and reads to 250
+(25 s) — `refb_labels.py:72-73` — while `*.v2ep` episodes are **199 frames = 19.9 s**.
+Only windows with `t0 <= 4.9 s` (**28.5 %**) can ever emit left/right; on a 74 %-straight
+corpus that lands at ~5 % non-follow, i.e. the MEASURED **94.6 % `follow`**
+(`refc_v3_train.py:1127-1128`).
+
+**CORRECTED SCOPE — two numbers were quoted outside their scope.**
+* `45,466 / 168,910 = 26.92 %` is a **REF-A v1** figure (`refav1_loader.py` grid,
+  `dt = 0.2`). The literals are banked NOWHERE (two mechanisms); the nearest artifact
+  is a 20-episode slice. **REF-C v3's own in-band coverage is 41/172 = 23.84 %**
+  (DERIVED on its grid), cross-checked against the banked **24.0 %** at
+  `RESULT-refcv3-40284-stratified.md:361`. At +-4.0 s: **47.09 %**.
+* The oft-quoted **72.08 %** reach-clamp kill rate is **REF-C-XL step-30k, 256
+  anchors, 881 windows**. refcv3-40284 is 128 anchors / 4,823 windows / 6 s path.
+  ⛔ **The refcv3 reach telemetry is NOT BANKED AT ALL** — `reach_frac_*` is computed
+  at runtime and the shipped `refcv3_arm.py` never reads `sel_tele` (two probes).
+
+**CORRECTED — "the selection surface is unstructured" is wrong.** MEASURED on the
+arm: **50 of 128** anchors ever selected, entropy **2.8425 / 4.8520 nats (0.586)**,
+modal anchor #57 at 14.8 %, oracle agreement 0.5652, and `goal_gate` has **OPENED to
+0.1744** (score_absmean 4.0686). What is missing is any RANKING TERM expressing the
+commanded manoeuvre: `r_terms` is **empty** (`graft_route`/`graft_goal`/`graft_cons`
+all False). Oracle selection is worth **-0.0751 m [-0.0884, -0.0618]** = **17.0 %**
+of deployed ADE.
+
+**BOUNDING FACT — this work is necessary and provably NOT sufficient.** Oracle
+selection (-0.0751) + oracle nav (-0.0239) = **0.099 m**, still short of the
+**0.1423 m** by which the trivial hold-action control beats the model.
+
+**CORRECTED — a 30 s strategic label IS constructible.** `s2_geom_emit_v7.py:52,59`
+already emit `STRATEGIC_S = (8.0, 30.0)` and `LOOKAHEAD_S = 30.0`, and **1,882 train
+manoeuvres start in [8, 30) s** (`band_census.json`). The reach exists because the
+emitter reads the RAW clip (`recording_span_s` mean **139.7 s**) while the trainer's
+`*.v2ep` cache is a **19.9 s excerpt**. **The horizon is not the constraint; EVENT
+DENSITY is:** ≥1 event on **47.75 %** of clips, **≥2 (the PI's over-next) on 18.72 %**
+= ~12.4 % of windows; median inter-event gap **8.9 s**. 43.0 % of windows have a
+fully-observed 30 s horizon; the rest are right-censored at 38 s − NOW and must be
+MODELLED as censored, not as negatives.
+
+**HYPOTHESIS (pre-registered primary).** `t_bin` accuracy, not `p_man`. The v7.2 nav
+command is a **per-clip constant** — it can echo *whether* a routing manoeuvre happens
+and cannot echo *when*. Timing is the one strategic quantity a nav-conditioned head
+cannot fake, and it is what the PI's *"within its time frame"* names. Controls that
+must read known values: constant-only, nav-shuffled, `os_navzero`.
+
+**RETIRES on execution: C-NAV-SOURCE-DIVERGENCE** (this file, above) — W0
+(`--nav-from-v7` ON) aligns refcv3 to the v7.2 token and closes the contradiction.
