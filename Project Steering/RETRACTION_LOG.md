@@ -11837,3 +11837,46 @@ The index blob (38,498 B, `ego_state_inject` x0 — the file that TRAINED refcv3
 read before the v4 commit landed and refer to the training file, so they stand — but a
 future citation must name the blob. *(Separately: the file was found DELETED from the
 working tree during this audit and restored from HEAD, verified byte-identical.)*
+
+### #20 ADDENDUM (same day) — the 26.92 % was REAL and MIS-SCOPED, and I back-constructed a fraction to fit it
+
+The entry above says *"the number I built it from does not exist"*. That is true of
+`45,466`, and it understates what happened. A forensic sweep found the generator of the
+**percentage**:
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-tactical-decoder/tools/window_band_census.py`
+emits `raw/window_band_census.json`, which reports `frac_in_band` = **0.269283 — that is
+199 / 739 — on a TWENTY-EPISODE SLICE** (and 0.313667 = 420/1339 for the eval shape).
+**0.269283 is the 26.92 %.** It is a real measurement, correctly computed, on 20 episodes.
+
+⇒ The failure was not fabrication. It was **generalising a 20-episode slice to a
+4,572-clip corpus**, and then — worse — **BACK-CONSTRUCTING a numerator and denominator
+to fit a percentage I had already accepted.** `168,910` is refav1's corpus row, which I
+had written myself hours earlier; `45,466` is simply `0.2692 x 168,910`, which is why two
+independent probes could not find it anywhere: **it was never measured by anything. I
+computed it to make an inherited percentage look sourced.**
+
+**Root-cause class (sharpened): A REAL STATISTIC PROMOTED OUT OF ITS SAMPLE, THEN GIVEN A
+MANUFACTURED PROVENANCE.** The second half is the dangerous one. A bare "≈27 %" would have
+been challengeable on its face; "45,466 of 168,910" reads as a census and passes every
+review that does not go to the artifact. **A fraction I did not read off an artifact must
+never be written as though I had** — and the tell was available at the time: I could not
+have named the file that produced 45,466, because none does.
+
+⚠️ **The band itself is well-built and was never the problem.** `v7_labels.py:291-311`
+derives the ±2.0 s from each record's OWN `bands["tactical_s"] = (2.0, 6.0)` — half-width
+`(6.0-2.0)/2` — and its docstring explicitly cites the `HORIZON` trap as the reason it is
+derived rather than hardcoded. `tactical_class_ids` (`:314-323`) returns `IGNORE_ID` and
+⛔ *"Never clamps to a 'neutral' class — an unlabelled window must not train a wrong
+one."* The measured replacements stand: **23.53 % train / 23.99 % dump** for the extra
+v7.2 8x8 head, against **100 %** kinematic tactical coverage.
+
+⛔ **A STRANDING RISK FOUND IN THE SAME SWEEP, unrelated to the retraction but
+load-bearing:** the **v7.2 label blobs are NOT IN THE REPOSITORY.** Only v7.0 is tracked.
+`s2_labels_v7.2_train.jsonl.gz` (1,999,886 B, md5 `0ff902130ce76886b8a925eceed9e3a5` —
+the md5 stamped in `MODEL_REGISTRY.md:2092`) and `s2_labels_v7.2_eval.jsonl.gz` (65,787 B,
+md5 `aa12c948f062181c3297265b51526ec5`) live on **local disk** at
+`C:\Users\Admin\tanitad-wt\_s2build\release\v72\` plus pod copies. **Both refav1 and
+refcv3 trained on labels that git has never seen**, and a pre-schema-fix pair sits beside
+them quarantined as `DO-NOT-USE`. That is one disk failure away from making every v7.2
+result unreproducible.
