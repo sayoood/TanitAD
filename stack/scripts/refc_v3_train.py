@@ -99,6 +99,12 @@ GOAL_STR_WEIGHT = ROUTE_WEIGHT
 SEL_V3_WEIGHT = 1.0
 #: the registered dominance lever set — build REFUSES any other delta (C122).
 REGISTERED_DELTA_KEYS = {"hier", "core.graft_target_latent"}
+#: ⭐ v4 adds its own lever set on top of the hier/flat pair. Both arms of a
+#: v4 run carry the SAME ego pins, so the hier-vs-flat delta is UNCHANGED - the
+#: v4 levers are checked against refcv3 separately (`REGISTERED_DELTA_KEYS_V4`,
+#: `tests/test_refc_v4.py::test_registered_delta_is_pinned`), which keeps the
+#: two questions ("what does the hierarchy cost?" and "what does v4 change?")
+#: from being answered by one confounded diff.
 
 MILESTONES = (5000, 15000, 20000, 30000)
 MAX_H_EXT = max(v3.V3_HORIZONS)            # 60 — fetched by clamp, never enum
@@ -160,6 +166,20 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
             in_channels=enc.in_channels, image_size=h,
             image_width=None if w == h else w,
             base_width=enc.base_width, blocks=enc.blocks)
+    # ---- ⭐⭐ REF-C v4 pins (E11' + E14 + X15) ------------------------
+    # Applied to BOTH arms identically, exactly like every other pin here, so
+    # `config_delta` stays the derived instrument it is: the v4 lever set is
+    # registered in REGISTERED_DELTA_KEYS_V4 and checked against the SAME
+    # helper's output, never against a hand-written list of intentions.
+    if getattr(args, "ego_state_inject", False):
+        cfg.ego_state_inject = True
+        cfg.core.ego_valid_channel = True     # precondition, not an option
+    if getattr(args, "echo_base", False):
+        cfg.echo_base = True
+    if getattr(args, "ego_valid_channel", False):
+        cfg.core.ego_valid_channel = True
+    if getattr(args, "ego_dropout", None) is not None:
+        cfg.core.ego_dropout = float(args.ego_dropout)
     return cfg
 
 
@@ -426,13 +446,31 @@ def frames_to_device(x: torch.Tensor, device) -> torch.Tensor:
 
 
 def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
-                      mode: str = "diffusion") -> dict:
+                      mode: str = "diffusion",
+                      ablate_frames: bool = False) -> dict:
     cfg = model.cfg
     core = cfg.core
     # --u8-batches: uint8 in flight -> float32 [0,1] HERE, on the device, by
     # the contract's own /255 (frames_to_device). Float batches pass through.
     frames = frames_to_device(batch["frames"], device)
     fut_frames = frames_to_device(batch["future_frames"], device)
+    # ⛔⛔ THE DELIBERATE-REGRESSION LEVER (rig only, `--ablate-frames`).
+    # Replace the OBSERVED window with a scalar constant, so every sample sees
+    # the SAME information-free image. The arm keeps every ego channel and
+    # therefore can ONLY solve the task by echoing its own dynamics — it is an
+    # echo BY CONSTRUCTION, and `TanitAD_ValidateAIDesign` §2 requires it: if
+    # the anti-echo gate does not FAIL this arm, a PASS on the real arm means
+    # nothing.
+    # ⚠️ CONSTANT, NOT ZERO, and not noise. Zeros push the trunk's activation
+    # statistics off-distribution, so a failure could be read as "the encoder
+    # broke" rather than "the scene carries nothing"; fresh noise per step
+    # would make the input a random variable the model can average out, which
+    # is a DIFFERENT ablation. A constant removes exactly the information and
+    # nothing else. ⛔ `fut_frames` is deliberately NOT ablated: it is the
+    # LAW auxiliary's TARGET, and ablating a target changes the objective
+    # rather than the input — a second lever hidden inside the first.
+    if ablate_frames:
+        frames = torch.full_like(frames, float(frames.mean()))
     fut_ext = batch["future_poses_ext"].to(device)          # [B, 60, 4]
     fut_valid = batch["future_valid_ext"].to(device)        # [B, 60] bool
     pose_last = batch["pose_last"].to(device)
@@ -446,7 +484,19 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     b = frames.shape[0]
     steps = core.decoder.diffusion_steps if mode == "diffusion" else 0
 
-    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan)
+    # ⭐⭐ REF-C v4 (E11'): the MEASURED ego state at t0. Derived from
+    # `pose_last` + `actions[:, -1]`, both of which sit at the LAST OBSERVED
+    # frame and both of which the window contract ALREADY returns - no new
+    # dataset field and no cache rebuild. `future_poses_ext` is NOT read here
+    # and must not be: that is the edge E11' pins interventionally.
+    ego_state = None
+    if getattr(cfg, "ego_state_inject", False):
+        ego_state = v3.ego_state_from_batch(
+            {"pose_last": pose_last, "actions": batch["actions"]},
+            device=device)
+
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+                ego_state=ego_state)
 
     # ---- trajectory target over the 8-slot 6 s horizon, masked -------------
     traj_tgt = refb_labels.waypoint_targets(pose_last, fut_ext,
@@ -635,6 +685,29 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         # everywhere) is the advertised-but-inert defect; this makes it visible.
         if "nav_injected" in out:
             extra["nav_injected"] = float(bool(out["nav_injected"]))
+        # ⭐⭐ THE ANTI-ECHO READOUT (E11'/E14). The model COMPUTES these
+        # every forward and the trainer was DROPPING them, so the design's own
+        # promise — *"is it echoing? is read off the LOG rather than inferred
+        # from an eval three days later"* — was not kept by the code that
+        # writes the log. Same class as the `tac_label_v7` drop noted below:
+        # a diagnostic that does not survive to the log is not a diagnostic.
+        #   echo_ratio = |g_tac_delta| / |echo_base| = how much goal VISION
+        #   contributes beyond the ego self-extrapolation. A run that sits at
+        #   ~0 has learned nothing the ego state did not already say.
+        # ⚠️ It is a RATIO OF MAGNITUDES, not a verdict: a large delta can
+        # still be wrong, and a small one can still be right if `ha0_ext` is
+        # already near-optimal. The verdict is `tanitad.eval.echo_gate`; this
+        # is the live tell that says whether to keep paying for the run.
+        for _k in ("echo_ratio", "echo_base_absmean", "g_tac_delta_absmean"):
+            if _k in out:
+                extra[_k] = out[_k]
+        # E11' telemetry, the mirror of `nav_injected`: did the ego block
+        # actually reach the goal path on this batch? An edge that silently
+        # no-ops reads as "the hypothesis failed".
+        if "ego_injected" in out:
+            extra["ego_injected"] = float(bool(out["ego_injected"]))
+        if "ego_keep_frac" in out:
+            extra["ego_keep_frac"] = out["ego_keep_frac"]
 
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
@@ -777,18 +850,85 @@ def preflight(args) -> int:
                   "flat-in-disguise; the experiment would be VOID (OUTCOME V).")
             return 3
         model.eval()
-        with torch.no_grad():
-            a = model(frames, v0=torch.tensor([0.0, 0.0]))
-            bq = model(frames, v0=torch.tensor([9.0, 4.0]))
-            c = model(torch.rand_like(frames), v0=torch.tensor([0.0, 0.0]))
-        for k in ("g_str", "g_tac", "z_tac"):
-            if not torch.equal(a[k], bq[k]):
-                print(f"[v3-preflight] ⛔ FAIL: v0 leaked into {k} (E11)")
+        if getattr(cfg, "ego_state_inject", False):
+            # ================= REF-C v4 (E11') =================
+            # ⭐⭐ THE REFUSED EDGE MOVED, SO THE PREFLIGHT MOVES WITH IT.
+            # Under v3 this block pinned `v0 -> goal` as a REFUSED edge. E11'
+            # admits it, so the v4 checks are: ego MUST reach the goal path
+            # (else the arm is v3 wearing a v4 config, and a null result would
+            # be about the wiring), frames MUST still reach the vision-borne
+            # nodes, and the E14 base MUST be exactly the extrapolation.
+            e_lo = v3.ego_state_at_t0(
+                torch.zeros(2, cfg.core.window, 4),
+                torch.zeros(2, cfg.core.window, 2))
+            e_hi = torch.tensor([[9.0, 2.5, 0.45, 0.05, 1.0],
+                                 [4.0, -1.5, -0.20, -0.05, 1.0]])
+            with torch.no_grad():
+                a = model(frames, v0=torch.tensor([0.0, 0.0]), ego_state=e_lo)
+                bq = model(frames, v0=torch.tensor([9.0, 4.0]), ego_state=e_hi)
+                c = model(torch.rand_like(frames),
+                          v0=torch.tensor([0.0, 0.0]), ego_state=e_lo)
+            # (1) ego REACHES the goal path. ⚠️ `z_tac`/`g_str` are
+            # zero-init on the ego edge, so at step 0 only the E14 base can
+            # carry it - which is exactly what `echo_base` is for. Without
+            # `echo_base` this check is deferred to the trained gate, and the
+            # preflight SAYS SO rather than passing silently.
+            if getattr(cfg, "echo_base", False):
+                if torch.equal(a["g_tac"], bq["g_tac"]):
+                    print("[v3-preflight] ⛔ FAIL: ego does not move "
+                          "g_tac (E11' DEAD - this is v3 wearing a v4 config)")
+                    return 4
+                want = v3.kinematic_goal_extrapolation(
+                    e_hi[:, 0], e_hi[:, 1], e_hi[:, 3], cfg.goal_tau_seconds)
+                if not torch.equal(bq["g_tac"], want):
+                    print("[v3-preflight] ⛔ FAIL: E14 base is not the "
+                          "kinematic extrapolation at init - the residual head "
+                          "is not zero-init, so the arm does NOT start at "
+                          "ha0_ext and every echo-ratio reading is off-scale")
+                    return 4
+            else:
+                print("[v3-preflight] ⚠ ego->goal is zero-init and "
+                      "UNVERIFIABLE at step 0 without --echo-base; the live "
+                      "check is `echo_ratio` in the training log")
+            # (2) frames STILL move the vision-borne nodes (C109: a probe that
+            #     cannot fire proves nothing). ⛔ `g_tac` is deliberately
+            #     EXCLUDED under `echo_base`: its residual head is zero-init, so
+            #     it is vision-dead AT INIT BY DESIGN. That is the one node whose
+            #     liveness the preflight genuinely cannot assert - and weakening
+            #     the check to cover it would be exactly the vacuous pass C109
+            #     names, so it is deferred to the logged `echo_ratio` instead.
+            for k in ("g_str", "z_tac"):
+                if torch.equal(a[k], c[k]):
+                    print(f"[v3-preflight] ⛔ FAIL: frames do not move {k}"
+                          f" - probe UNPOWERED, not clean (C109)")
+                    return 4
+            # (3) the ego block is WITHHELD honestly: keep=0 zeroes the base.
+            e_off = e_hi.clone(); e_off[:, 4] = 0.0
+            with torch.no_grad():
+                d = model(frames, v0=torch.tensor([9.0, 4.0]),
+                          ego_state=e_off)
+            if getattr(cfg, "echo_base", False) and                     not torch.equal(d["echo_base"],
+                                    torch.zeros_like(d["echo_base"])):
+                print("[v3-preflight] ⛔ FAIL: keep=0 did not zero the "
+                      "E14 base - a withheld ego block is leaking (X15)")
                 return 4
-            if torch.equal(a[k], c[k]):
-                print(f"[v3-preflight] ⛔ FAIL: frames do not move {k} — "
-                      f"probe UNPOWERED, not clean (C109)")
-                return 4
+            print("[v3-preflight] E11' OK: ego reaches the goal path, frames "
+                  "still move g_str/z_tac, keep=0 withholds cleanly")
+        else:
+            # ================= REF-C v3 (E11, unchanged) =================
+            with torch.no_grad():
+                a = model(frames, v0=torch.tensor([0.0, 0.0]))
+                bq = model(frames, v0=torch.tensor([9.0, 4.0]))
+                c = model(torch.rand_like(frames), v0=torch.tensor([0.0, 0.0]))
+            for k in ("g_str", "g_tac", "z_tac"):
+                if not torch.equal(a[k], bq[k]):
+                    print(f"[v3-preflight] ⛔ FAIL: v0 leaked into {k} "
+                          f"(E11)")
+                    return 4
+                if torch.equal(a[k], c[k]):
+                    print(f"[v3-preflight] ⛔ FAIL: frames do not move {k}"
+                          f" - probe UNPOWERED, not clean (C109)")
+                    return 4
         model.train()
     # one synthetic end-to-end loss step (fail here, not on the pod). The lan
     # LABEL pathway is exercised on the train path, not here — the hier loss
@@ -1100,10 +1240,44 @@ def train(args) -> dict:
                              for k, (a, b) in delta.items()},
         "param_breakdown": v3.param_breakdown_v3(model),
         "goal_provenance": refc.RefCModel.goal_provenance(),
-        "provenance_roles": v3.RefCV3Model.provenance_roles(),
+        "provenance_roles": model.provenance_roles(),   # v4: INSTANCE call —
+        # the refused edge differs between v3 (v0) and v4 (future ego),
+        # so a static declaration could not tell the two arms apart, which
+        # is exactly the "declared provenance" failure the audit exists for.
         "horizons": list(cfg.core.trajectory.horizons),
         "goal_tau_steps": list(cfg.goal_tau_steps),
         "admission_sigma_m": cfg.admission_sigma_m,
+        # ⭐⭐ THE EGO STAMP (v4). refcv3 recorded NEITHER ego knob, so a
+        # finished run cannot answer "was the speed masked?" from its own
+        # artifact - and that answer changes what every longitudinal number
+        # MEANS. A run's config.json is the only durable record it has.
+        "ego": {
+            "ego_state_inject": bool(getattr(cfg, "ego_state_inject", False)),
+            "echo_base": bool(getattr(cfg, "echo_base", False)),
+            "ego_valid_channel": bool(cfg.core.ego_valid_channel),
+            "ego_dropout": float(cfg.core.ego_dropout),
+            "tactical_speed_input": bool(cfg.core.tactical_speed_input),
+            "channels": (["v0", "a_long", "yaw_rate", "curvature", "keep"]
+                         if getattr(cfg, "ego_state_inject", False)
+                         else ["v0"]),
+            "derivation": ("t0 = last OBSERVED frame; a_long = corpus ax "
+                           "(actions[:,-1,1]); curvature = tan(steer)/2.9 "
+                           "(actions[:,-1,0]); yaw_rate = v0*curvature. NO "
+                           "finite differencing, NO future read."),
+            "wheelbase_mode": "const2p9",
+        },
+        # ⭐ THE RUNG, STAMPED. `--size` decides ~4x of the parameter count and
+        # was recorded NOWHERE, so a finished run could not say which rung it
+        # was — and with a VALIDATION-RIG rung now reachable by name, an
+        # unstamped run is one whose numbers cannot be told apart from a
+        # registered arm's. `rig_rung: true` is the refusal token: nothing
+        # carrying it may enter MODEL_REGISTRY.md.
+        "size": args.size,
+        "rig_rung": bool(args.size in v3.V3_RIG_SIZES),
+        # ⛔ the deliberate-regression stamp. A run whose frames were
+        # ablated is a GATE CONTROL; its numbers are not the model's and the
+        # artifact must say so on its own.
+        "ablate_frames": bool(args.ablate_frames),
         # the 2026-09-01 B1-readiness fields — the config.json is the ONLY
         # durable record of what corpus/geometry/vocab a run actually used.
         "image_hw": list(cfg.core.encoder.image_hw()),
@@ -1137,7 +1311,8 @@ def train(args) -> dict:
             batch = next(it)
         for g in opt.param_groups:
             g["lr"] = args.lr * sched(step)
-        losses = compute_losses_v3(model, batch, device, mode=args.mode)
+        losses = compute_losses_v3(model, batch, device, mode=args.mode,
+                                   ablate_frames=args.ablate_frames)
         opt.zero_grad(set_to_none=True)
         losses["loss"].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
@@ -1224,8 +1399,9 @@ def train(args) -> dict:
                     for eb in eval_dl:
                         if nb_e >= args.eval_batches:
                             break
-                        el = compute_losses_v3(model, eb, device,
-                                               mode=args.mode)
+                        el = compute_losses_v3(
+                            model, eb, device, mode=args.mode,
+                            ablate_frames=args.ablate_frames)
                         for k, v in el.items():
                             if torch.is_tensor(v) and v.ndim == 0:
                                 acc[k] = acc.get(k, 0.0) + float(v.detach())
@@ -1270,14 +1446,21 @@ def train(args) -> dict:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--size", choices=tuple(v3.V3_SIZES), default="small",
+    ap.add_argument("--size",
+                    choices=tuple(v3.V3_SIZES) + tuple(v3.V3_RIG_SIZES),
+                    default="small",
                     help="encoder rung. 'small' is the AS-REGISTERED arm "
                          "(62,930,419); 'xl' is the D-008 >=250M rung "
                          "(217,760,775). ⛔ The size axis moves the ENCODER "
                          "ONLY — the H-vs-F delta is identical at every rung "
                          "(pinned by tests). ⚠️ Anything but 'small' VOIDS the "
                          "registered cost line in PREREG_REFC_V3.md; amend "
-                         "BEFORE any read, never after.")
+                         "BEFORE any read, never after. ⛔ 'tiny' (16,989,725) "
+                         "is the VALIDATION RIG rung (V3_RIG_SIZES), not a "
+                         "member of the registered ladder: it exists so a "
+                         "design change can be gated on the dev box before it "
+                         "earns compute, and NOTHING measured at it is a model "
+                         "claim or may enter MODEL_REGISTRY.md.")
     ap.add_argument("--arm", choices=("hier", "flat"), required=True,
                     help="v3-H (goal cascade) or v3-F (flat) — the dominance "
                          "pair; delta pinned to the registered lever set")
@@ -1385,6 +1568,43 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--preflight", action="store_true",
                     help="build + pin delta + C115 gate + E11 audit + one "
                          "synthetic loss step, then exit")
+    # ---- ⭐⭐ REF-C v4 (E11' + E14 + X15), PI 2026-09-03 -----------------
+    # ⚠️ There was NO CLI flag for EITHER ego knob before this, and refcv3's
+    # config.json stamped NEITHER - so a finished run cannot answer "was the
+    # speed masked?" from its own record. v4 adds the flags AND the stamp, and
+    # the stamp is the half that still matters in six months.
+    ap.add_argument("--ego-state-inject", action="store_true",
+                    help="E11prime: feed the MEASURED t0 ego state (v0, "
+                         "a_long, yaw_rate, curvature) to the goal/tactical "
+                         "path. Implies --ego-valid-channel (refused "
+                         "otherwise).")
+    ap.add_argument("--echo-base", action="store_true",
+                    help="E14: g_tac = kinematic extrapolation + zero-init "
+                         "residual, so the trivial solution is free and every "
+                         "learned parameter is spent on the scene.")
+    ap.add_argument("--ego-valid-channel", action="store_true",
+                    help="X15: an explicit 'the ego block is present' bit. "
+                         "MEASURED n=781,635 windows: v0 is EXACTLY 0.0 on "
+                         "4.4531 pct, so with --ego-dropout 0.5 the input "
+                         "reads zero on 52.227 pct of TRAIN samples of which "
+                         "only 4.263 pct are a genuinely stopped car (22.5:1) "
+                         "- while at eval, dropout being training-only, 100 "
+                         "pct are genuine. The same token means something "
+                         "23.5x different between train and eval without it.")
+    ap.add_argument("--ablate-frames", action="store_true",
+                    help="⛔⛔ RIG ONLY - THE DELIBERATE-REGRESSION LEVER. "
+                         "Replace the observed window with a scalar constant, "
+                         "so the arm keeps every ego channel and NO scene "
+                         "information: an echo BY CONSTRUCTION. Required by "
+                         "TanitAD_ValidateAIDesign section 2 - if the "
+                         "anti-echo gate does not FAIL this arm, a PASS on the "
+                         "real arm means nothing. It is stamped in config.json "
+                         "as `ablate_frames`; a run carrying it is a GATE "
+                         "CONTROL and never a model.")
+    ap.add_argument("--ego-dropout", type=float, default=None,
+                    help="override core.ego_dropout. Under v4 this is ONE "
+                         "draw per sample, shared by the goal path and the "
+                         "measurement encoder (never two).")
     ap.add_argument("--nav-from-v7", action="store_true",
                     help="feed the model's nav_cmd INPUT from the clip's v7.2 "
                          "nav_command token (oracle, provenance ego-future; "

@@ -7,9 +7,26 @@ TRUNCATED-DIFFUSION trajectory decoder in the DiffusionDrive spirit (arXiv
 the conv feature map, emitting a per-anchor confidence + a per-anchor offset, and
 (optionally) refining the winning modes with a few truncated denoising steps. The
 rest of the TCP-C stack is KEPT verbatim: the torchvision-free ResNet-34-style
-encoder, the measurement encoder with per-sample ego-dropout, the LAW latent-
-world-model aux, the strategic-ctx hierarchy graft, and the REF-C.1 target-speed
-class head.
+encoder, the measurement encoder (TCP's FC-128 x 2, bit-for-bit), the LAW
+latent-world-model aux, the strategic-ctx hierarchy graft, and the REF-C.1
+target-speed class head.
+
+⚠⚠ CORRECTION 2026-09-04 -- THIS DOCSTRING USED TO SAY "the measurement encoder
+with per-sample ego-dropout" INSIDE THE "kept verbatim" LIST, AND THAT LAUNDERED
+AN UNSWEPT HYPER-PARAMETER AS INHERITED, VALIDATED PRACTICE. The ENCODER is
+TCP's. The **ego-dropout is not**: the string "dropout" occurs ZERO times in
+arXiv 2206.08129 (two probes -- a full-text search for dropout/drop out/mask,
+and TCP's own layer table, which lists the measurement encoder with no
+regulariser). ``ego_dropout = 0.5`` is a TanitAD invention that nobody, upstream
+or here, has ever swept; the two published planners that DID sweep it landed on
+**0.5** (DRAMA, NAVSIM PDMS 0.835 -> 0.848) and **0.75** (PlanTF, nuPlan
+closed-loop, at a measured cost of -1.48 OLS). Same root-cause class as the
+registry's un-refined-anchor correction: a true statement about one component
+extended over a neighbour it never covered.
+⛔ AND IT IS NOT A FREE KNOB: with ``ego_valid_channel = False`` a withheld
+speed is byte-identical to a genuine standstill -- MEASURED 22.5 : 1 withheld
+vs genuine at train against 100 % genuine at eval (X15; see
+``ego_valid_channel`` below and REF-C v4's PREREG section 4.2).
 
 Why anchors + FPS (not k-means): comma2k19 is ~74 % straight, so k-means
 collapses almost every centroid onto the straight mode and starves the turns.
@@ -1952,7 +1969,8 @@ class RefCModel(nn.Module):
                 target_latent: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
                 nav_known: Tensor | None = None,
-                hierarchy_hook=None) -> dict:
+                hierarchy_hook=None,
+                ego_keep: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -2030,7 +2048,25 @@ class RefCModel(nn.Module):
         keep = torch.ones(b, 1, dtype=v.dtype, device=v.device) \
             if v0 is not None else torch.zeros(b, 1, dtype=v.dtype,
                                                device=v.device)
-        if self.training and self.cfg.ego_dropout > 0:
+        # ⭐ REF-C v4 SEAM (2026-09-03): a CALLER-SUPPLIED withholding draw
+        # overrides the internal one. Additive and gated — with `ego_keep=None`
+        # (every pre-v4 caller) this branch is dead and the forward is
+        # byte-identical to the pre-seam file.
+        #
+        # ⛔ WHY IT HAD TO EXIST RATHER THAN v4 DRAWING ITS OWN. v4 feeds the
+        # measured ego state to the GOAL path as well as to the measurement
+        # encoder, and the two must be withheld TOGETHER: this file's own
+        # comment 30 lines down warns that a second, unsynchronised dropout is
+        # the wrong fix ("`ego_dropout` is the knob to sweep — not a second
+        # dropout here"), and it is right. The alternative — pre-multiplying
+        # `v0` outside — is WORSE THAN WRONG: `keep` is derived from
+        # `v0 is not None`, so a pre-zeroed v0 would arrive with keep = 1 and
+        # assert "this really is a stationary car", which is EXACTLY the X15
+        # zero-collision this seam exists to remove. One draw, one owner.
+        if ego_keep is not None:
+            keep = keep * ego_keep.to(v.dtype).reshape(b, 1)
+            v = v * keep
+        elif self.training and self.cfg.ego_dropout > 0:
             keep = keep * (torch.rand(b, 1, device=v.device)
                            >= self.cfg.ego_dropout).to(v.dtype)
             v = v * keep                         # per-sample Bernoulli zero

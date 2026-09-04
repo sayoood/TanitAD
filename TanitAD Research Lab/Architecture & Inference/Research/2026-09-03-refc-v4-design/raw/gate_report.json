@@ -1,0 +1,3380 @@
+{
+ "_scope": "RIG RUNG (tiny, 17 M) on a NON-PARITY corpus \u2014 validates the DESIGN and the GATE, never a model claim (H-SCALE-2)",
+ "n_episodes_pool": 40,
+ "n_windows": 800,
+ "taus_s": [
+  2.0,
+  4.0,
+  6.0
+ ],
+ "arms": {
+  "A_v3": {
+   "status": "MEASURED",
+   "config": {
+    "ego_state_inject": false,
+    "echo_base": false,
+    "ego_valid_channel": false,
+    "ego_dropout": 0.5,
+    "tactical_speed_input": false,
+    "channels": [
+     "v0"
+    ],
+    "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+    "wheelbase_mode": "const2p9"
+   },
+   "size": "tiny",
+   "rig_rung": true,
+   "ablate_frames": false,
+   "load": {
+    "missing": 0,
+    "unexpected": 0
+   },
+   "four_families": [
+    {
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 800,
+     "ade_m": {
+      "arm": 5.659428596496582,
+      "ha0_ext": 1.30531907081604
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.6815438270568848,
+       "ha0_ext": 1.2520751953125
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.2004467397928238,
+       "ha0_ext": 0.09082814306020737
+      },
+      "curvature_err_invm": {
+       "arm": 0.02614710107445717,
+       "ha0_ext": 0.016020741313695908
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.1002233698964119,
+       "ha0_ext": 0.045414071530103683
+      },
+      "cross_track_m": {
+       "arm": 1.1181083917617798,
+       "ha0_ext": 0.4347917139530182
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 707,
+     "ade_m": {
+      "arm": 12.196627616882324,
+      "ha0_ext": 5.962288856506348
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.9001078605651855,
+       "ha0_ext": 2.6510746479034424
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.4046294093132019,
+       "ha0_ext": 0.2789325714111328
+      },
+      "curvature_err_invm": {
+       "arm": 0.03106766566634178,
+       "ha0_ext": 0.029097432270646095
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.10115735232830048,
+       "ha0_ext": 0.07033861428499222
+      },
+      "cross_track_m": {
+       "arm": 4.180314064025879,
+       "ha0_ext": 2.5906286239624023
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 618,
+     "ade_m": {
+      "arm": 19.37843132019043,
+      "ha0_ext": 14.134145736694336
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 3.0470871925354004,
+       "ha0_ext": 3.888564348220825
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.5943475365638733,
+       "ha0_ext": 0.5063830018043518
+      },
+      "curvature_err_invm": {
+       "arm": 0.029406877234578133,
+       "ha0_ext": 0.0501520112156868
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.09905792027711868,
+       "ha0_ext": 0.09243620187044144
+      },
+      "cross_track_m": {
+       "arm": 8.49014949798584,
+       "ha0_ext": 6.6533074378967285
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    }
+   ],
+   "tactical_family": {
+    "lat": {
+     "n": 800,
+     "accuracy": 0.6712499856948853,
+     "majority_class_control": 0.6762499809265137,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 541,
+       "support_frac": 0.6762499809265137,
+       "recall": 0.9704251289367676,
+       "predicted_frac": 0.949999988079071
+      },
+      {
+       "class": 1,
+       "n": 120,
+       "support_frac": 0.15000000596046448,
+       "recall": 0.10000000149011612,
+       "predicted_frac": 0.05000000074505806
+      },
+      {
+       "class": 2,
+       "n": 139,
+       "support_frac": 0.17374999821186066,
+       "recall": 0.0,
+       "predicted_frac": 0.0
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "lon": {
+     "n": 800,
+     "accuracy": 0.4000000059604645,
+     "majority_class_control": 0.4675000011920929,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 184,
+       "support_frac": 0.23000000417232513,
+       "recall": 0.20652173459529877,
+       "predicted_frac": 0.18125000596046448
+      },
+      {
+       "class": 1,
+       "n": 374,
+       "support_frac": 0.4675000011920929,
+       "recall": 0.49197861552238464,
+       "predicted_frac": 0.4925000071525574
+      },
+      {
+       "class": 2,
+       "n": 242,
+       "support_frac": 0.30250000953674316,
+       "recall": 0.40495866537094116,
+       "predicted_frac": 0.32624998688697815
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "_strategic_note": "the STRATEGIC family (g_str bearing/distance vs the LAN corridor) is NOT computed here: the LAN label is training-only (E12) and is not emitted by this dataset, so there is no target on these windows. Reported as absent WITH the reason, per the rule -- not silently dropped.",
+    "_selected_vs_executed_note": "selected-vs-executed manoeuvre agreement would need the label function applied to the ARM'S OWN 20-step future, and the model emits an 8-slot plan plus 3 goal rows, not a 20-step pose track. Computing it would require re-deriving the classifier on a different support -- a new instrument, filed as a work item rather than approximated here."
+   },
+   "manoeuvre_stratified": [
+    {
+     "subset": "straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 235,
+     "n_episodes": 40,
+     "arm_ade": 6.722424507141113,
+     "ha0_ext_ade": 0.5988041162490845,
+     "ha_ade": 0.5294880867004395,
+     "ha0_ade": 0.5297940373420715
+    },
+    {
+     "subset": "straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 198,
+     "n_episodes": 40,
+     "arm_ade": 12.647582054138184,
+     "ha0_ext_ade": 3.183262348175049,
+     "ha_ade": 3.3921921253204346,
+     "ha0_ade": 2.2699577808380127
+    },
+    {
+     "subset": "straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 175,
+     "n_episodes": 39,
+     "arm_ade": 18.58350372314453,
+     "ha0_ext_ade": 9.077309608459473,
+     "ha_ade": 9.73529052734375,
+     "ha0_ade": 6.79090690612793
+    },
+    {
+     "subset": "non_straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 565,
+     "n_episodes": 40,
+     "arm_ade": 5.21729850769043,
+     "ha0_ext_ade": 1.5991793870925903,
+     "ha_ade": 1.1701644659042358,
+     "ha0_ade": 2.5611345767974854
+    },
+    {
+     "subset": "non_straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 509,
+     "n_episodes": 40,
+     "arm_ade": 12.02120590209961,
+     "ha0_ext_ade": 7.043324947357178,
+     "ha_ade": 6.667921543121338,
+     "ha0_ade": 9.333934783935547
+    },
+    {
+     "subset": "non_straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 443,
+     "n_episodes": 39,
+     "arm_ade": 19.69245147705078,
+     "ha0_ext_ade": 16.13176918029785,
+     "ha_ade": 16.906494140625,
+     "ha0_ade": 18.558378219604492
+    }
+   ],
+   "gate1": {
+    "slots": [
+     {
+      "slot": 0,
+      "arm_mean": 5.659429329661652,
+      "vs": {
+       "ha": {
+        "ref_mean": 0.9819657632499593,
+        "delta_ref_minus_arm": -4.677463566411693,
+        "relative_margin": -4.763367259293179,
+        "separated": true,
+        "ci": [
+         -5.5267,
+         -3.886
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 1.3053191506030453,
+        "delta_ref_minus_arm": -4.3541101790586065,
+        "relative_margin": -3.335667125581547,
+        "separated": true,
+        "ci": [
+         -5.2251,
+         -3.5716
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 1.9644283412088408,
+        "delta_ref_minus_arm": -3.6950009884528114,
+        "relative_margin": -1.8809548360410218,
+        "separated": true,
+        "ci": [
+         -4.5259,
+         -2.9323
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 6.396253842450679,
+        "delta_ref_minus_arm": 0.7368245127890267,
+        "relative_margin": 0.11519625876929201,
+        "separated": true,
+        "ci": [
+         0.0905,
+         1.4273
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 2.0,
+      "n_windows": 800,
+      "n_episodes": 40
+     },
+     {
+      "slot": 1,
+      "arm_mean": 12.19662655659199,
+      "vs": {
+       "ha": {
+        "ref_mean": 5.750532206213181,
+        "delta_ref_minus_arm": -6.446094350378809,
+        "relative_margin": -1.1209561340103626,
+        "separated": true,
+        "ci": [
+         -8.2003,
+         -4.8016
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 5.962289274593473,
+        "delta_ref_minus_arm": -6.234337281998518,
+        "relative_margin": -1.045628112772773,
+        "separated": true,
+        "ci": [
+         -7.9729,
+         -4.6106
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 7.355621460432653,
+        "delta_ref_minus_arm": -4.841005096159337,
+        "relative_margin": -0.6581367899639838,
+        "separated": true,
+        "ci": [
+         -6.4172,
+         -3.4262
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 13.21990845509432,
+        "delta_ref_minus_arm": 1.0232818985023293,
+        "relative_margin": 0.07740461304843646,
+        "separated": false,
+        "ci": [
+         -0.3345,
+         2.3915
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       }
+      },
+      "tau_s": 4.0,
+      "n_windows": 707,
+      "n_episodes": 40
+     },
+     {
+      "slot": 2,
+      "arm_mean": 19.378429931537234,
+      "vs": {
+       "ha": {
+        "ref_mean": 14.875814849448325,
+        "delta_ref_minus_arm": -4.502615082088909,
+        "relative_margin": -0.30268023148028694,
+        "separated": true,
+        "ci": [
+         -7.5039,
+         -1.3948
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 14.134146800363824,
+        "delta_ref_minus_arm": -5.244283131173409,
+        "relative_margin": -0.37103641310973345,
+        "separated": true,
+        "ci": [
+         -8.1022,
+         -2.2793
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 15.226165287397066,
+        "delta_ref_minus_arm": -4.152264644140168,
+        "relative_margin": -0.2727058695190352,
+        "separated": true,
+        "ci": [
+         -6.4706,
+         -1.9401
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 20.310640449252908,
+        "delta_ref_minus_arm": 0.9322105177156743,
+        "relative_margin": 0.04589764266886838,
+        "separated": false,
+        "ci": [
+         -1.102,
+         2.959
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       }
+      },
+      "tau_s": 6.0,
+      "n_windows": 618,
+      "n_episodes": 40
+     }
+    ],
+    "n_windows": 800,
+    "n_episodes": 40,
+    "references": [
+     "constant_only",
+     "ha",
+     "ha0",
+     "ha0_ext"
+    ],
+    "raw_pixel_floor": {
+     "meta": {
+      "n_fit": 400,
+      "n_score": 400,
+      "d": 192,
+      "lambda": 1.0,
+      "lambda_selected_on": "inner val of FIT",
+      "underpowered_n_lt_d": false,
+      "_reads": "n < d means the validation CORRECTLY chooses maximal regularisation and everything reads 0.0000 \u2014 that is underpowered by construction, not an absence of signal"
+     },
+     "per_slot": [
+      {
+       "slot": 0,
+       "tau_s": 2.0,
+       "n": 400,
+       "floor_ade": 4.80580997467041,
+       "arm_ade": 5.673357963562012
+      },
+      {
+       "slot": 1,
+       "tau_s": 4.0,
+       "n": 358,
+       "floor_ade": 10.258828163146973,
+       "arm_ade": 12.032930374145508
+      },
+      {
+       "slot": 2,
+       "tau_s": 6.0,
+       "n": 315,
+       "floor_ade": 16.20998191833496,
+       "arm_ade": 19.037633895874023
+      }
+     ]
+    }
+   },
+   "gate2": {
+    "status": "UNPOWERED",
+    "verdict": null,
+    "reason": "this arm has no ego_state input at all (v3), so the ego direction cannot be probed \u2014 that is the arm's definition, not a defect"
+   },
+   "gate2b": {
+    "n": 16,
+    "base_ade": 12.275629997253418,
+    "sources": {
+     "scene": {
+      "ade_deranged": 15.725128173828125,
+      "degradation_abs": 3.449498176574707,
+      "degradation_rel": 0.281003759265024,
+      "separated": true,
+      "ci": [
+       0.6287,
+       6.6531
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     },
+     "ego": {
+      "ade_deranged": 12.275629997253418,
+      "degradation_abs": 0.0,
+      "degradation_rel": 0.0,
+      "separated": false,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": false
+     }
+    },
+    "verdict": "IGNORES_EGO",
+    "_reads": "the ego channels are present and unused; a 'no improvement' result from this arm is about the wiring, not the hypothesis"
+   },
+   "gate2b_realframes": null,
+   "GATE": {
+    "applicable": false,
+    "reason": "this arm has no ego input by construction (the v3 control), so the ego clauses of the gate are a category error, not a failure",
+    "scene_is_used": true,
+    "scene_degradation_rel": 0.281003759265024
+   }
+  },
+  "B_v4_noguard": {
+   "status": "MEASURED",
+   "config": {
+    "ego_state_inject": true,
+    "echo_base": false,
+    "ego_valid_channel": true,
+    "ego_dropout": 0.0,
+    "tactical_speed_input": false,
+    "channels": [
+     "v0",
+     "a_long",
+     "yaw_rate",
+     "curvature",
+     "keep"
+    ],
+    "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+    "wheelbase_mode": "const2p9"
+   },
+   "size": "tiny",
+   "rig_rung": true,
+   "ablate_frames": false,
+   "load": {
+    "missing": 0,
+    "unexpected": 0
+   },
+   "four_families": [
+    {
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 800,
+     "ade_m": {
+      "arm": 1.8825794458389282,
+      "ha0_ext": 1.30531907081604
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 1.435524582862854,
+       "ha0_ext": 1.2520751953125
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.12051037698984146,
+       "ha0_ext": 0.09082814306020737
+      },
+      "curvature_err_invm": {
+       "arm": 0.021148448809981346,
+       "ha0_ext": 0.016020741313695908
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.06025519222021103,
+       "ha0_ext": 0.045414071530103683
+      },
+      "cross_track_m": {
+       "arm": 0.7789731621742249,
+       "ha0_ext": 0.4347917139530182
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 707,
+     "ade_m": {
+      "arm": 7.406432151794434,
+      "ha0_ext": 5.962288856506348
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.383040189743042,
+       "ha0_ext": 2.6510746479034424
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.31424134969711304,
+       "ha0_ext": 0.2789325714111328
+      },
+      "curvature_err_invm": {
+       "arm": 0.027921069413423538,
+       "ha0_ext": 0.029097432270646095
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.07856033742427826,
+       "ha0_ext": 0.07033861428499222
+      },
+      "cross_track_m": {
+       "arm": 3.6645328998565674,
+       "ha0_ext": 2.5906286239624023
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 618,
+     "ade_m": {
+      "arm": 14.955141067504883,
+      "ha0_ext": 14.134145736694336
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.7860779762268066,
+       "ha0_ext": 3.888564348220825
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.5104198455810547,
+       "ha0_ext": 0.5063830018043518
+      },
+      "curvature_err_invm": {
+       "arm": 0.027554219588637352,
+       "ha0_ext": 0.0501520112156868
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.08506996184587479,
+       "ha0_ext": 0.09243620187044144
+      },
+      "cross_track_m": {
+       "arm": 7.943788528442383,
+       "ha0_ext": 6.6533074378967285
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    }
+   ],
+   "tactical_family": {
+    "lat": {
+     "n": 800,
+     "accuracy": 0.6637499928474426,
+     "majority_class_control": 0.6762499809265137,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 541,
+       "support_frac": 0.6762499809265137,
+       "recall": 0.9371533989906311,
+       "predicted_frac": 0.9012500047683716
+      },
+      {
+       "class": 1,
+       "n": 120,
+       "support_frac": 0.15000000596046448,
+       "recall": 0.008333333767950535,
+       "predicted_frac": 0.06750000268220901
+      },
+      {
+       "class": 2,
+       "n": 139,
+       "support_frac": 0.17374999821186066,
+       "recall": 0.16546761989593506,
+       "predicted_frac": 0.03125
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "lon": {
+     "n": 800,
+     "accuracy": 0.45249998569488525,
+     "majority_class_control": 0.4675000011920929,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 184,
+       "support_frac": 0.23000000417232513,
+       "recall": 0.22282609343528748,
+       "predicted_frac": 0.10875000059604645
+      },
+      {
+       "class": 1,
+       "n": 374,
+       "support_frac": 0.4675000011920929,
+       "recall": 0.6042780876159668,
+       "predicted_frac": 0.5899999737739563
+      },
+      {
+       "class": 2,
+       "n": 242,
+       "support_frac": 0.30250000953674316,
+       "recall": 0.39256197214126587,
+       "predicted_frac": 0.30125001072883606
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "_strategic_note": "the STRATEGIC family (g_str bearing/distance vs the LAN corridor) is NOT computed here: the LAN label is training-only (E12) and is not emitted by this dataset, so there is no target on these windows. Reported as absent WITH the reason, per the rule -- not silently dropped.",
+    "_selected_vs_executed_note": "selected-vs-executed manoeuvre agreement would need the label function applied to the ARM'S OWN 20-step future, and the model emits an 8-slot plan plus 3 goal rows, not a 20-step pose track. Computing it would require re-deriving the classifier on a different support -- a new instrument, filed as a work item rather than approximated here."
+   },
+   "manoeuvre_stratified": [
+    {
+     "subset": "straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 235,
+     "n_episodes": 40,
+     "arm_ade": 1.5463579893112183,
+     "ha0_ext_ade": 0.5988041162490845,
+     "ha_ade": 0.5294880867004395,
+     "ha0_ade": 0.5297940373420715
+    },
+    {
+     "subset": "straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 198,
+     "n_episodes": 40,
+     "arm_ade": 5.645636558532715,
+     "ha0_ext_ade": 3.183262348175049,
+     "ha_ade": 3.3921921253204346,
+     "ha0_ade": 2.2699577808380127
+    },
+    {
+     "subset": "straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 175,
+     "n_episodes": 39,
+     "arm_ade": 11.07313346862793,
+     "ha0_ext_ade": 9.077309608459473,
+     "ha_ade": 9.73529052734375,
+     "ha0_ade": 6.79090690612793
+    },
+    {
+     "subset": "non_straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 565,
+     "n_episodes": 40,
+     "arm_ade": 2.02242374420166,
+     "ha0_ext_ade": 1.5991793870925903,
+     "ha_ade": 1.1701644659042358,
+     "ha0_ade": 2.5611345767974854
+    },
+    {
+     "subset": "non_straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 509,
+     "n_episodes": 40,
+     "arm_ade": 8.091378211975098,
+     "ha0_ext_ade": 7.043324947357178,
+     "ha_ade": 6.667921543121338,
+     "ha0_ade": 9.333934783935547
+    },
+    {
+     "subset": "non_straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 443,
+     "n_episodes": 39,
+     "arm_ade": 16.488664627075195,
+     "ha0_ext_ade": 16.13176918029785,
+     "ha_ade": 16.906494140625,
+     "ha0_ade": 18.558378219604492
+    }
+   ],
+   "gate1": {
+    "slots": [
+     {
+      "slot": 0,
+      "arm_mean": 1.8825794091029093,
+      "vs": {
+       "ha": {
+        "ref_mean": 0.9819657632499593,
+        "delta_ref_minus_arm": -0.90061364585295,
+        "relative_margin": -0.9171538148868219,
+        "separated": true,
+        "ci": [
+         -1.16,
+         -0.6745
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 1.3053191506030453,
+        "delta_ref_minus_arm": -0.5772602584998641,
+        "relative_margin": -0.442236872287651,
+        "separated": true,
+        "ci": [
+         -0.8522,
+         -0.3428
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 1.9644283412088408,
+        "delta_ref_minus_arm": 0.08184893210593147,
+        "relative_margin": 0.0416655219174676,
+        "separated": false,
+        "ci": [
+         -0.1707,
+         0.2988
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 6.396253842450679,
+        "delta_ref_minus_arm": 4.513674433347769,
+        "relative_margin": 0.705674687797942,
+        "separated": true,
+        "ci": [
+         3.9446,
+         5.1316
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 2.0,
+      "n_windows": 800,
+      "n_episodes": 40
+     },
+     {
+      "slot": 1,
+      "arm_mean": 7.406432313747082,
+      "vs": {
+       "ha": {
+        "ref_mean": 5.750532206213181,
+        "delta_ref_minus_arm": -1.6559001075339008,
+        "relative_margin": -0.2879559748825992,
+        "separated": true,
+        "ci": [
+         -2.6488,
+         -0.6919
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 5.962289274593473,
+        "delta_ref_minus_arm": -1.4441430391536096,
+        "relative_margin": -0.24221284353099018,
+        "separated": true,
+        "ci": [
+         -2.425,
+         -0.556
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 7.355621460432653,
+        "delta_ref_minus_arm": -0.05081085331442914,
+        "relative_margin": -0.006907758044340753,
+        "separated": false,
+        "ci": [
+         -0.8691,
+         0.6326
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 13.21990845509432,
+        "delta_ref_minus_arm": 5.813476141347238,
+        "relative_margin": 0.4397516186359825,
+        "separated": true,
+        "ci": [
+         4.7193,
+         6.9841
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 4.0,
+      "n_windows": 707,
+      "n_episodes": 40
+     },
+     {
+      "slot": 2,
+      "arm_mean": 14.955140802997215,
+      "vs": {
+       "ha": {
+        "ref_mean": 14.875814849448325,
+        "delta_ref_minus_arm": -0.07932595354889038,
+        "relative_margin": -0.005332545097644329,
+        "separated": false,
+        "ci": [
+         -2.2566,
+         2.1218
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 14.134146800363824,
+        "delta_ref_minus_arm": -0.8209940026333911,
+        "relative_margin": -0.05808585507349181,
+        "separated": false,
+        "ci": [
+         -2.851,
+         1.1745
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 15.226165287397066,
+        "delta_ref_minus_arm": 0.2710244843998506,
+        "relative_margin": 0.01779991739772993,
+        "separated": false,
+        "ci": [
+         -1.2924,
+         1.6118
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 20.310640449252908,
+        "delta_ref_minus_arm": 5.3554996462556925,
+        "relative_margin": 0.26367950629802445,
+        "separated": true,
+        "ci": [
+         3.6012,
+         7.1314
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 6.0,
+      "n_windows": 618,
+      "n_episodes": 40
+     }
+    ],
+    "n_windows": 800,
+    "n_episodes": 40,
+    "references": [
+     "constant_only",
+     "ha",
+     "ha0",
+     "ha0_ext"
+    ],
+    "raw_pixel_floor": {
+     "meta": {
+      "n_fit": 400,
+      "n_score": 400,
+      "d": 192,
+      "lambda": 1.0,
+      "lambda_selected_on": "inner val of FIT",
+      "underpowered_n_lt_d": false,
+      "_reads": "n < d means the validation CORRECTLY chooses maximal regularisation and everything reads 0.0000 \u2014 that is underpowered by construction, not an absence of signal"
+     },
+     "per_slot": [
+      {
+       "slot": 0,
+       "tau_s": 2.0,
+       "n": 400,
+       "floor_ade": 4.80580997467041,
+       "arm_ade": 1.8758732080459595
+      },
+      {
+       "slot": 1,
+       "tau_s": 4.0,
+       "n": 358,
+       "floor_ade": 10.258828163146973,
+       "arm_ade": 7.100365161895752
+      },
+      {
+       "slot": 2,
+       "tau_s": 6.0,
+       "n": 315,
+       "floor_ade": 16.20998191833496,
+       "arm_ade": 14.44511604309082
+      }
+     ]
+    }
+   },
+   "gate2": {
+    "status": "MEASURED",
+    "verdict": "READS_BOTH",
+    "reason": "the goal path reads the measured ego state AND the scene \u2014 the admissible v4 state",
+    "ego_moves_goal": true,
+    "scene_moves_goal": true,
+    "future_leak": [],
+    "determinism": {
+     "deterministic": true,
+     "max_drift": 0.0,
+     "worst_node": null,
+     "nodes": [
+      "ego_state",
+      "frames",
+      "g_str",
+      "g_tac",
+      "goal_point_tac"
+     ],
+     "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+    },
+    "detail": {
+     "ego": {
+      "source": "ego_state",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.977755606174469,
+        "rel": 1.9779279667548773,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 2121.2387466430664,
+        "rel": 39.690796941538174,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 1245.0169858932495,
+        "rel": 60.79080464148326,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "scene": {
+      "source": "frames",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.0674490630626678,
+        "rel": 1.0675420908055757,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 37.15226173400879,
+        "rel": 0.6951612017916569,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 9.470561027526855,
+        "rel": 0.46242182379268665,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "future": {}
+    },
+    "_note": "REQUIRED: both EGO and SCENE. An arm passing only EGO is the echo; an arm passing only SCENE never got the channels."
+   },
+   "gate2b": {
+    "n": 16,
+    "base_ade": 6.6373162269592285,
+    "sources": {
+     "scene": {
+      "ade_deranged": 7.878619194030762,
+      "degradation_abs": 1.2413029670715332,
+      "degradation_rel": 0.1870188076966486,
+      "separated": false,
+      "ci": [
+       -0.503,
+       3.0048
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": false
+     },
+     "ego": {
+      "ade_deranged": 16.18701171875,
+      "degradation_abs": 9.54969596862793,
+      "degradation_rel": 1.4387887576968676,
+      "separated": true,
+      "ci": [
+       5.2932,
+       14.3841
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     }
+    },
+    "verdict": "ECHOING",
+    "_reads": "\u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration"
+   },
+   "gate2b_realframes": null,
+   "GATE": {
+    "applicable": true,
+    "raised": true,
+    "message": "ANTI-ECHO GATE FAILED \u2014 this arm has not been shown to beat its own measured dynamics:\n  GATE 2b (ECHOING): \u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration \u2014 scene degradation +0.1870 (required 0.05), ego degradation +1.4388\n  GATE 1 slot 2: did NOT clear ha \u2014 ref 14.8758 vs arm 14.9551 (relative margin -0.0053, required 0.1, CI [-2.2566, 2.1218], separated=False)\n  GATE 1 slot 2: did NOT clear ha0_ext \u2014 ref 14.1341 vs arm 14.9551 (relative margin -0.0581, required 0.1, CI [-2.851, 1.1745], separated=False)\n(MEASURED 2026-09-03: a constant-a, constant-kappa extrapolation of the measured t0 ego state reaches ADE 0.4449 m at 2 s from ZERO PIXELS \u2014 the same league as flagship v1's deployed 0.452 m. Clearing `ha0` is not evidence of anything.)"
+   }
+  },
+  "C_v4_drop": {
+   "status": "MEASURED",
+   "config": {
+    "ego_state_inject": true,
+    "echo_base": false,
+    "ego_valid_channel": true,
+    "ego_dropout": 0.5,
+    "tactical_speed_input": false,
+    "channels": [
+     "v0",
+     "a_long",
+     "yaw_rate",
+     "curvature",
+     "keep"
+    ],
+    "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+    "wheelbase_mode": "const2p9"
+   },
+   "size": "tiny",
+   "rig_rung": true,
+   "ablate_frames": false,
+   "load": {
+    "missing": 0,
+    "unexpected": 0
+   },
+   "four_families": [
+    {
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 800,
+     "ade_m": {
+      "arm": 5.066162109375,
+      "ha0_ext": 1.30531907081604
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.4421238899230957,
+       "ha0_ext": 1.2520751953125
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.13342773914337158,
+       "ha0_ext": 0.09082814306020737
+      },
+      "curvature_err_invm": {
+       "arm": 0.018664533272385597,
+       "ha0_ext": 0.016020741313695908
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.06671386957168579,
+       "ha0_ext": 0.045414071530103683
+      },
+      "cross_track_m": {
+       "arm": 0.8951818943023682,
+       "ha0_ext": 0.4347917139530182
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 707,
+     "ade_m": {
+      "arm": 11.230443000793457,
+      "ha0_ext": 5.962288856506348
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.702542543411255,
+       "ha0_ext": 2.6510746479034424
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.3194825351238251,
+       "ha0_ext": 0.2789325714111328
+      },
+      "curvature_err_invm": {
+       "arm": 0.02610834315419197,
+       "ha0_ext": 0.029097432270646095
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.07987063378095627,
+       "ha0_ext": 0.07033861428499222
+      },
+      "cross_track_m": {
+       "arm": 3.6429710388183594,
+       "ha0_ext": 2.5906286239624023
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 618,
+     "ade_m": {
+      "arm": 17.856775283813477,
+      "ha0_ext": 14.134145736694336
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.9215784072875977,
+       "ha0_ext": 3.888564348220825
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.5068295001983643,
+       "ha0_ext": 0.5063830018043518
+      },
+      "curvature_err_invm": {
+       "arm": 0.026382625102996826,
+       "ha0_ext": 0.0501520112156868
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.08447159826755524,
+       "ha0_ext": 0.09243620187044144
+      },
+      "cross_track_m": {
+       "arm": 7.464628219604492,
+       "ha0_ext": 6.6533074378967285
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    }
+   ],
+   "tactical_family": {
+    "lat": {
+     "n": 800,
+     "accuracy": 0.6499999761581421,
+     "majority_class_control": 0.6762499809265137,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 541,
+       "support_frac": 0.6762499809265137,
+       "recall": 0.9353049993515015,
+       "predicted_frac": 0.9275000095367432
+      },
+      {
+       "class": 1,
+       "n": 120,
+       "support_frac": 0.15000000596046448,
+       "recall": 0.03333333507180214,
+       "predicted_frac": 0.05874999985098839
+      },
+      {
+       "class": 2,
+       "n": 139,
+       "support_frac": 0.17374999821186066,
+       "recall": 0.07194244861602783,
+       "predicted_frac": 0.013749999925494194
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "lon": {
+     "n": 800,
+     "accuracy": 0.40625,
+     "majority_class_control": 0.4675000011920929,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 184,
+       "support_frac": 0.23000000417232513,
+       "recall": 0.11413043737411499,
+       "predicted_frac": 0.10999999940395355
+      },
+      {
+       "class": 1,
+       "n": 374,
+       "support_frac": 0.4675000011920929,
+       "recall": 0.529411792755127,
+       "predicted_frac": 0.5149999856948853
+      },
+      {
+       "class": 2,
+       "n": 242,
+       "support_frac": 0.30250000953674316,
+       "recall": 0.43801653385162354,
+       "predicted_frac": 0.375
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "_strategic_note": "the STRATEGIC family (g_str bearing/distance vs the LAN corridor) is NOT computed here: the LAN label is training-only (E12) and is not emitted by this dataset, so there is no target on these windows. Reported as absent WITH the reason, per the rule -- not silently dropped.",
+    "_selected_vs_executed_note": "selected-vs-executed manoeuvre agreement would need the label function applied to the ARM'S OWN 20-step future, and the model emits an 8-slot plan plus 3 goal rows, not a 20-step pose track. Computing it would require re-deriving the classifier on a different support -- a new instrument, filed as a work item rather than approximated here."
+   },
+   "manoeuvre_stratified": [
+    {
+     "subset": "straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 235,
+     "n_episodes": 40,
+     "arm_ade": 5.892237663269043,
+     "ha0_ext_ade": 0.5988041162490845,
+     "ha_ade": 0.5294880867004395,
+     "ha0_ade": 0.5297940373420715
+    },
+    {
+     "subset": "straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 198,
+     "n_episodes": 40,
+     "arm_ade": 11.415157318115234,
+     "ha0_ext_ade": 3.183262348175049,
+     "ha_ade": 3.3921921253204346,
+     "ha0_ade": 2.2699577808380127
+    },
+    {
+     "subset": "straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 175,
+     "n_episodes": 39,
+     "arm_ade": 16.340290069580078,
+     "ha0_ext_ade": 9.077309608459473,
+     "ha_ade": 9.73529052734375,
+     "ha0_ade": 6.79090690612793
+    },
+    {
+     "subset": "non_straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 565,
+     "n_episodes": 40,
+     "arm_ade": 4.722572326660156,
+     "ha0_ext_ade": 1.5991793870925903,
+     "ha_ade": 1.1701644659042358,
+     "ha0_ade": 2.5611345767974854
+    },
+    {
+     "subset": "non_straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 509,
+     "n_episodes": 40,
+     "arm_ade": 11.158590316772461,
+     "ha0_ext_ade": 7.043324947357178,
+     "ha_ade": 6.667921543121338,
+     "ha0_ade": 9.333934783935547
+    },
+    {
+     "subset": "non_straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 443,
+     "n_episodes": 39,
+     "arm_ade": 18.45583724975586,
+     "ha0_ext_ade": 16.13176918029785,
+     "ha_ade": 16.906494140625,
+     "ha0_ade": 18.558378219604492
+    }
+   ],
+   "gate1": {
+    "slots": [
+     {
+      "slot": 0,
+      "arm_mean": 5.066161650605499,
+      "vs": {
+       "ha": {
+        "ref_mean": 0.9819657632499593,
+        "delta_ref_minus_arm": -4.08419588735554,
+        "relative_margin": -4.159203956193235,
+        "separated": true,
+        "ci": [
+         -4.8618,
+         -3.3805
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 1.3053191506030453,
+        "delta_ref_minus_arm": -3.760842500002454,
+        "relative_margin": -2.8811670297375014,
+        "separated": true,
+        "ci": [
+         -4.5816,
+         -3.0428
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 1.9644283412088408,
+        "delta_ref_minus_arm": -3.101733309396659,
+        "relative_margin": -1.5789495825986506,
+        "separated": true,
+        "ci": [
+         -3.8811,
+         -2.4107
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 6.396253842450679,
+        "delta_ref_minus_arm": 1.3300921918451794,
+        "relative_margin": 0.20794862502448216,
+        "separated": true,
+        "ci": [
+         0.6771,
+         1.982
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 2.0,
+      "n_windows": 800,
+      "n_episodes": 40
+     },
+     {
+      "slot": 1,
+      "arm_mean": 11.230443267560073,
+      "vs": {
+       "ha": {
+        "ref_mean": 5.750532206213181,
+        "delta_ref_minus_arm": -5.4799110613468915,
+        "relative_margin": -0.9529398088451889,
+        "separated": true,
+        "ci": [
+         -7.1918,
+         -3.9363
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 5.962289274593473,
+        "delta_ref_minus_arm": -5.2681539929666,
+        "relative_margin": -0.8835790667546568,
+        "separated": true,
+        "ci": [
+         -7.0349,
+         -3.7123
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 7.355621460432653,
+        "delta_ref_minus_arm": -3.87482180712742,
+        "relative_margin": -0.5267837432867984,
+        "separated": true,
+        "ci": [
+         -5.4318,
+         -2.4853
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 13.21990845509432,
+        "delta_ref_minus_arm": 1.9894651875342468,
+        "relative_margin": 0.1504900880586357,
+        "separated": true,
+        "ci": [
+         0.6365,
+         3.2589
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 4.0,
+      "n_windows": 707,
+      "n_episodes": 40
+     },
+     {
+      "slot": 2,
+      "arm_mean": 17.856775342550094,
+      "vs": {
+       "ha": {
+        "ref_mean": 14.875814849448325,
+        "delta_ref_minus_arm": -2.980960493101769,
+        "relative_margin": -0.2003897281104113,
+        "separated": false,
+        "ci": [
+         -6.2194,
+         0.0676
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 14.134146800363824,
+        "delta_ref_minus_arm": -3.7226285421862695,
+        "relative_margin": -0.26337836975702317,
+        "separated": true,
+        "ci": [
+         -6.8413,
+         -0.8191
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 15.226165287397066,
+        "delta_ref_minus_arm": -2.630610055153028,
+        "relative_margin": -0.17276904627657133,
+        "separated": true,
+        "ci": [
+         -5.2002,
+         -0.438
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 20.310640449252908,
+        "delta_ref_minus_arm": 2.453865106702814,
+        "relative_margin": 0.12081672721418665,
+        "separated": true,
+        "ci": [
+         0.3333,
+         4.3446
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 6.0,
+      "n_windows": 618,
+      "n_episodes": 40
+     }
+    ],
+    "n_windows": 800,
+    "n_episodes": 40,
+    "references": [
+     "constant_only",
+     "ha",
+     "ha0",
+     "ha0_ext"
+    ],
+    "raw_pixel_floor": {
+     "meta": {
+      "n_fit": 400,
+      "n_score": 400,
+      "d": 192,
+      "lambda": 1.0,
+      "lambda_selected_on": "inner val of FIT",
+      "underpowered_n_lt_d": false,
+      "_reads": "n < d means the validation CORRECTLY chooses maximal regularisation and everything reads 0.0000 \u2014 that is underpowered by construction, not an absence of signal"
+     },
+     "per_slot": [
+      {
+       "slot": 0,
+       "tau_s": 2.0,
+       "n": 400,
+       "floor_ade": 4.80580997467041,
+       "arm_ade": 5.024843215942383
+      },
+      {
+       "slot": 1,
+       "tau_s": 4.0,
+       "n": 358,
+       "floor_ade": 10.258828163146973,
+       "arm_ade": 11.094179153442383
+      },
+      {
+       "slot": 2,
+       "tau_s": 6.0,
+       "n": 315,
+       "floor_ade": 16.20998191833496,
+       "arm_ade": 17.633689880371094
+      }
+     ]
+    }
+   },
+   "gate2": {
+    "status": "MEASURED",
+    "verdict": "READS_BOTH",
+    "reason": "the goal path reads the measured ego state AND the scene \u2014 the admissible v4 state",
+    "ego_moves_goal": true,
+    "scene_moves_goal": true,
+    "future_leak": [],
+    "determinism": {
+     "deterministic": true,
+     "max_drift": 0.0,
+     "worst_node": null,
+     "nodes": [
+      "ego_state",
+      "frames",
+      "g_str",
+      "g_tac",
+      "goal_point_tac"
+     ],
+     "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+    },
+    "detail": {
+     "ego": {
+      "source": "ego_state",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.8955762386322021,
+        "rel": 1.901467800179525,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 918.5380244851112,
+        "rel": 15.879857431718175,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 654.2339392900467,
+        "rel": 33.07463042145283,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "scene": {
+      "source": "frames",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.5291514992713928,
+        "rel": 1.5339041913496811,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 49.889655113220215,
+        "rel": 0.8625017031381136,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 17.005072116851807,
+        "rel": 0.8596870962783797,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "future": {}
+    },
+    "_note": "REQUIRED: both EGO and SCENE. An arm passing only EGO is the echo; an arm passing only SCENE never got the channels."
+   },
+   "gate2b": {
+    "n": 16,
+    "base_ade": 10.350919723510742,
+    "sources": {
+     "scene": {
+      "ade_deranged": 15.175966262817383,
+      "degradation_abs": 4.825046539306641,
+      "degradation_rel": 0.46614664862555033,
+      "separated": true,
+      "ci": [
+       2.5901,
+       8.1356
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     },
+     "ego": {
+      "ade_deranged": 11.59482192993164,
+      "degradation_abs": 1.2439022064208984,
+      "degradation_rel": 0.12017310921613462,
+      "separated": true,
+      "ci": [
+       0.6285,
+       1.9095
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     }
+    },
+    "verdict": "READS_BOTH",
+    "_reads": "the admissible v4 state: wrong scene hurts, wrong ego hurts"
+   },
+   "gate2b_realframes": null,
+   "GATE": {
+    "applicable": true,
+    "raised": true,
+    "message": "ANTI-ECHO GATE FAILED \u2014 this arm has not been shown to beat its own measured dynamics:\n  GATE 1 slot 2: did NOT clear ha \u2014 ref 14.8758 vs arm 17.8568 (relative margin -0.2004, required 0.1, CI [-6.2194, 0.0676], separated=False)\n  GATE 1 slot 2: did NOT clear ha0_ext \u2014 ref 14.1341 vs arm 17.8568 (relative margin -0.2634, required 0.1, CI [-6.8413, -0.8191], separated=True)\n(MEASURED 2026-09-03: a constant-a, constant-kappa extrapolation of the measured t0 ego state reaches ADE 0.4449 m at 2 s from ZERO PIXELS \u2014 the same league as flagship v1's deployed 0.452 m. Clearing `ha0` is not evidence of anything.)"
+   }
+  },
+  "D_v4_full": {
+   "status": "MEASURED",
+   "config": {
+    "ego_state_inject": true,
+    "echo_base": true,
+    "ego_valid_channel": true,
+    "ego_dropout": 0.5,
+    "tactical_speed_input": false,
+    "channels": [
+     "v0",
+     "a_long",
+     "yaw_rate",
+     "curvature",
+     "keep"
+    ],
+    "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+    "wheelbase_mode": "const2p9"
+   },
+   "size": "tiny",
+   "rig_rung": true,
+   "ablate_frames": false,
+   "load": {
+    "missing": 0,
+    "unexpected": 0
+   },
+   "four_families": [
+    {
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 800,
+     "ade_m": {
+      "arm": 2.663987159729004,
+      "ha0_ext": 1.30531907081604
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 1.3775277137756348,
+       "ha0_ext": 1.2520751953125
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.09648896008729935,
+       "ha0_ext": 0.09082814306020737
+      },
+      "curvature_err_invm": {
+       "arm": 0.01752098649740219,
+       "ha0_ext": 0.016020741313695908
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.04824448004364967,
+       "ha0_ext": 0.045414071530103683
+      },
+      "cross_track_m": {
+       "arm": 0.5563043355941772,
+       "ha0_ext": 0.4347917139530182
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 707,
+     "ade_m": {
+      "arm": 6.569924354553223,
+      "ha0_ext": 5.962288856506348
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.0988166332244873,
+       "ha0_ext": 2.6510746479034424
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.29710566997528076,
+       "ha0_ext": 0.2789325714111328
+      },
+      "curvature_err_invm": {
+       "arm": 0.02993854321539402,
+       "ha0_ext": 0.029097432270646095
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.07475258409976959,
+       "ha0_ext": 0.07033861428499222
+      },
+      "cross_track_m": {
+       "arm": 2.716651201248169,
+       "ha0_ext": 2.5906286239624023
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 618,
+     "ade_m": {
+      "arm": 13.274603843688965,
+      "ha0_ext": 14.134145736694336
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.9829373359680176,
+       "ha0_ext": 3.888564348220825
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.5321456789970398,
+       "ha0_ext": 0.5063830018043518
+      },
+      "curvature_err_invm": {
+       "arm": 0.035696841776371,
+       "ha0_ext": 0.0501520112156868
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.09757854789495468,
+       "ha0_ext": 0.09243620187044144
+      },
+      "cross_track_m": {
+       "arm": 6.758365631103516,
+       "ha0_ext": 6.6533074378967285
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    }
+   ],
+   "tactical_family": {
+    "lat": {
+     "n": 800,
+     "accuracy": 0.6587499976158142,
+     "majority_class_control": 0.6762499809265137,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 541,
+       "support_frac": 0.6762499809265137,
+       "recall": 0.929759681224823,
+       "predicted_frac": 0.9112499952316284
+      },
+      {
+       "class": 1,
+       "n": 120,
+       "support_frac": 0.15000000596046448,
+       "recall": 0.0,
+       "predicted_frac": 0.03750000149011612
+      },
+      {
+       "class": 2,
+       "n": 139,
+       "support_frac": 0.17374999821186066,
+       "recall": 0.17266187071800232,
+       "predicted_frac": 0.051249999552965164
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "lon": {
+     "n": 800,
+     "accuracy": 0.4375,
+     "majority_class_control": 0.4675000011920929,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 184,
+       "support_frac": 0.23000000417232513,
+       "recall": 0.22826087474822998,
+       "predicted_frac": 0.14000000059604645
+      },
+      {
+       "class": 1,
+       "n": 374,
+       "support_frac": 0.4675000011920929,
+       "recall": 0.5561497211456299,
+       "predicted_frac": 0.5112500190734863
+      },
+      {
+       "class": 2,
+       "n": 242,
+       "support_frac": 0.30250000953674316,
+       "recall": 0.41322314739227295,
+       "predicted_frac": 0.3487499952316284
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "_strategic_note": "the STRATEGIC family (g_str bearing/distance vs the LAN corridor) is NOT computed here: the LAN label is training-only (E12) and is not emitted by this dataset, so there is no target on these windows. Reported as absent WITH the reason, per the rule -- not silently dropped.",
+    "_selected_vs_executed_note": "selected-vs-executed manoeuvre agreement would need the label function applied to the ARM'S OWN 20-step future, and the model emits an 8-slot plan plus 3 goal rows, not a 20-step pose track. Computing it would require re-deriving the classifier on a different support -- a new instrument, filed as a work item rather than approximated here."
+   },
+   "manoeuvre_stratified": [
+    {
+     "subset": "straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 235,
+     "n_episodes": 40,
+     "arm_ade": 2.1872851848602295,
+     "ha0_ext_ade": 0.5988041162490845,
+     "ha_ade": 0.5294880867004395,
+     "ha0_ade": 0.5297940373420715
+    },
+    {
+     "subset": "straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 198,
+     "n_episodes": 40,
+     "arm_ade": 4.471767902374268,
+     "ha0_ext_ade": 3.183262348175049,
+     "ha_ade": 3.3921921253204346,
+     "ha0_ade": 2.2699577808380127
+    },
+    {
+     "subset": "straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 175,
+     "n_episodes": 39,
+     "arm_ade": 8.897299766540527,
+     "ha0_ext_ade": 9.077309608459473,
+     "ha_ade": 9.73529052734375,
+     "ha0_ade": 6.79090690612793
+    },
+    {
+     "subset": "non_straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 565,
+     "n_episodes": 40,
+     "arm_ade": 2.8622615337371826,
+     "ha0_ext_ade": 1.5991793870925903,
+     "ha_ade": 1.1701644659042358,
+     "ha0_ade": 2.5611345767974854
+    },
+    {
+     "subset": "non_straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 509,
+     "n_episodes": 40,
+     "arm_ade": 7.386102676391602,
+     "ha0_ext_ade": 7.043324947357178,
+     "ha_ade": 6.667921543121338,
+     "ha0_ade": 9.333934783935547
+    },
+    {
+     "subset": "non_straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 443,
+     "n_episodes": 39,
+     "arm_ade": 15.00378704071045,
+     "ha0_ext_ade": 16.13176918029785,
+     "ha_ade": 16.906494140625,
+     "ha0_ade": 18.558378219604492
+    }
+   ],
+   "gate1": {
+    "slots": [
+     {
+      "slot": 0,
+      "arm_mean": 2.66398723221384,
+      "vs": {
+       "ha": {
+        "ref_mean": 0.9819657632499593,
+        "delta_ref_minus_arm": -1.6820214689638804,
+        "relative_margin": -1.7129125392284394,
+        "separated": true,
+        "ci": [
+         -2.1244,
+         -1.2863
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 1.3053191506030453,
+        "delta_ref_minus_arm": -1.3586680816107946,
+        "relative_margin": -1.0408704116407872,
+        "separated": true,
+        "ci": [
+         -1.751,
+         -0.9934
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 1.9644283412088408,
+        "delta_ref_minus_arm": -0.699558891004999,
+        "relative_margin": -0.35611321437895505,
+        "separated": true,
+        "ci": [
+         -1.1063,
+         -0.3203
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 6.396253842450679,
+        "delta_ref_minus_arm": 3.732266610236839,
+        "relative_margin": 0.5835082068611035,
+        "separated": true,
+        "ci": [
+         2.9614,
+         4.5213
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 2.0,
+      "n_windows": 800,
+      "n_episodes": 40
+     },
+     {
+      "slot": 1,
+      "arm_mean": 6.569924510973262,
+      "vs": {
+       "ha": {
+        "ref_mean": 5.750532206213181,
+        "delta_ref_minus_arm": -0.8193923047600808,
+        "relative_margin": -0.1424898210073088,
+        "separated": false,
+        "ci": [
+         -1.759,
+         0.0259
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 5.962289274593473,
+        "delta_ref_minus_arm": -0.6076352363797897,
+        "relative_margin": -0.10191307539690284,
+        "separated": false,
+        "ci": [
+         -1.4849,
+         0.1586
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 7.355621460432653,
+        "delta_ref_minus_arm": 0.7856969494593908,
+        "relative_margin": 0.10681584876081655,
+        "separated": false,
+        "ci": [
+         -0.1886,
+         1.6587
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": false
+       },
+       "constant_only": {
+        "ref_mean": 13.21990845509432,
+        "delta_ref_minus_arm": 6.6499839441210575,
+        "relative_margin": 0.5030279874259245,
+        "separated": true,
+        "ci": [
+         5.0986,
+         8.1911
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 4.0,
+      "n_windows": 707,
+      "n_episodes": 40
+     },
+     {
+      "slot": 2,
+      "arm_mean": 13.274604286118425,
+      "vs": {
+       "ha": {
+        "ref_mean": 14.875814849448325,
+        "delta_ref_minus_arm": 1.6012105633299,
+        "relative_margin": 0.10763851120325564,
+        "separated": true,
+        "ci": [
+         0.2461,
+         2.9435
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": true
+       },
+       "ha0_ext": {
+        "ref_mean": 14.134146800363824,
+        "delta_ref_minus_arm": 0.8595425142453994,
+        "relative_margin": 0.060813187126602795,
+        "separated": false,
+        "ci": [
+         -0.3199,
+         1.8692
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 15.226165287397066,
+        "delta_ref_minus_arm": 1.951561001278641,
+        "relative_margin": 0.1281715365912899,
+        "separated": true,
+        "ci": [
+         0.183,
+         3.5636
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       },
+       "constant_only": {
+        "ref_mean": 20.310640449252908,
+        "delta_ref_minus_arm": 7.036036163134483,
+        "relative_margin": 0.34642118650637094,
+        "separated": true,
+        "ci": [
+         4.5244,
+         9.599
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 6.0,
+      "n_windows": 618,
+      "n_episodes": 40
+     }
+    ],
+    "n_windows": 800,
+    "n_episodes": 40,
+    "references": [
+     "constant_only",
+     "ha",
+     "ha0",
+     "ha0_ext"
+    ],
+    "raw_pixel_floor": {
+     "meta": {
+      "n_fit": 400,
+      "n_score": 400,
+      "d": 192,
+      "lambda": 1.0,
+      "lambda_selected_on": "inner val of FIT",
+      "underpowered_n_lt_d": false,
+      "_reads": "n < d means the validation CORRECTLY chooses maximal regularisation and everything reads 0.0000 \u2014 that is underpowered by construction, not an absence of signal"
+     },
+     "per_slot": [
+      {
+       "slot": 0,
+       "tau_s": 2.0,
+       "n": 400,
+       "floor_ade": 4.80580997467041,
+       "arm_ade": 2.6128580570220947
+      },
+      {
+       "slot": 1,
+       "tau_s": 4.0,
+       "n": 358,
+       "floor_ade": 10.258828163146973,
+       "arm_ade": 6.286600589752197
+      },
+      {
+       "slot": 2,
+       "tau_s": 6.0,
+       "n": 315,
+       "floor_ade": 16.20998191833496,
+       "arm_ade": 12.458331108093262
+      }
+     ]
+    }
+   },
+   "gate2": {
+    "status": "MEASURED",
+    "verdict": "READS_BOTH",
+    "reason": "the goal path reads the measured ego state AND the scene \u2014 the admissible v4 state",
+    "ego_moves_goal": true,
+    "scene_moves_goal": true,
+    "future_leak": [],
+    "determinism": {
+     "deterministic": true,
+     "max_drift": 0.0,
+     "worst_node": null,
+     "nodes": [
+      "ego_state",
+      "frames",
+      "g_str",
+      "g_tac",
+      "goal_point_tac"
+     ],
+     "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+    },
+    "detail": {
+     "ego": {
+      "source": "ego_state",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.9944818019866943,
+        "rel": 1.9952455441286798,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 13547.05474177748,
+        "rel": 203.09191970593477,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 48.97790604829788,
+        "rel": 2.1978938900996923,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "scene": {
+      "source": "frames",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.8920832872390747,
+        "rel": 1.8928078181629326,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 36.767502665519714,
+        "rel": 0.5512034048334937,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 13.909770011901855,
+        "rel": 0.6242038704493265,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "future": {}
+    },
+    "_note": "REQUIRED: both EGO and SCENE. An arm passing only EGO is the echo; an arm passing only SCENE never got the channels."
+   },
+   "gate2b": {
+    "n": 16,
+    "base_ade": 9.15173053741455,
+    "sources": {
+     "scene": {
+      "ade_deranged": 9.443181991577148,
+      "degradation_abs": 0.29145145416259766,
+      "degradation_rel": 0.031846594802051,
+      "separated": false,
+      "ci": [
+       -3.1866,
+       4.1785
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": false
+     },
+     "ego": {
+      "ade_deranged": 18.02384376525879,
+      "degradation_abs": 8.872113227844238,
+      "degradation_rel": 0.969446509769145,
+      "separated": true,
+      "ci": [
+       2.4787,
+       14.521
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     }
+    },
+    "verdict": "ECHOING",
+    "_reads": "\u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration"
+   },
+   "gate2b_realframes": null,
+   "GATE": {
+    "applicable": true,
+    "raised": true,
+    "message": "ANTI-ECHO GATE FAILED \u2014 this arm has not been shown to beat its own measured dynamics:\n  GATE 2b (ECHOING): \u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration \u2014 scene degradation +0.0318 (required 0.05), ego degradation +0.9694\n  GATE 1 slot 2: did NOT clear ha0_ext \u2014 ref 14.1341 vs arm 13.2746 (relative margin +0.0608, required 0.1, CI [-0.3199, 1.8692], separated=False)\n  GATE 1: cleared `ha` but TIED `ha0_ext` \u2014 the margin is a sharper ego extrapolation, not scene reading. `ha` uses a finite-difference accel (corr +0.5624 with the corpus's own ax); beating it that way is echoing harder.\n(MEASURED 2026-09-03: a constant-a, constant-kappa extrapolation of the measured t0 ego state reaches ADE 0.4449 m at 2 s from ZERO PIXELS \u2014 the same league as flagship v1's deployed 0.452 m. Clearing `ha0` is not evidence of anything.)"
+   }
+  },
+  "E_regress": {
+   "status": "MEASURED",
+   "config": {
+    "ego_state_inject": true,
+    "echo_base": true,
+    "ego_valid_channel": true,
+    "ego_dropout": 0.5,
+    "tactical_speed_input": false,
+    "channels": [
+     "v0",
+     "a_long",
+     "yaw_rate",
+     "curvature",
+     "keep"
+    ],
+    "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+    "wheelbase_mode": "const2p9"
+   },
+   "size": "tiny",
+   "rig_rung": true,
+   "ablate_frames": true,
+   "load": {
+    "missing": 0,
+    "unexpected": 0
+   },
+   "four_families": [
+    {
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 800,
+     "ade_m": {
+      "arm": 1.4613113403320312,
+      "ha0_ext": 1.30531907081604
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 1.1230974197387695,
+       "ha0_ext": 1.2520751953125
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.09153762459754944,
+       "ha0_ext": 0.09082814306020737
+      },
+      "curvature_err_invm": {
+       "arm": 0.01786402426660061,
+       "ha0_ext": 0.016020741313695908
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.04576881229877472,
+       "ha0_ext": 0.045414071530103683
+      },
+      "cross_track_m": {
+       "arm": 0.4301019012928009,
+       "ha0_ext": 0.4347917139530182
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 707,
+     "ade_m": {
+      "arm": 5.722801685333252,
+      "ha0_ext": 5.962288856506348
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 2.4086503982543945,
+       "ha0_ext": 2.6510746479034424
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.2798648774623871,
+       "ha0_ext": 0.2789325714111328
+      },
+      "curvature_err_invm": {
+       "arm": 0.032783348113298416,
+       "ha0_ext": 0.029097432270646095
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.0705462396144867,
+       "ha0_ext": 0.07033861428499222
+      },
+      "cross_track_m": {
+       "arm": 2.5738816261291504,
+       "ha0_ext": 2.5906286239624023
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    },
+    {
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 618,
+     "ade_m": {
+      "arm": 13.474318504333496,
+      "ha0_ext": 14.134145736694336
+     },
+     "longitudinal": {
+      "speed_err_mps": {
+       "arm": 3.5953965187072754,
+       "ha0_ext": 3.888564348220825
+      },
+      "headway_ttc": null,
+      "_reason": "needs a lead agent in frame; supply obstacle.offline joins to compute it \u2014 n reported per-window when present"
+     },
+     "lateral": {
+      "heading_err_rad": {
+       "arm": 0.508558452129364,
+       "ha0_ext": 0.5063830018043518
+      },
+      "curvature_err_invm": {
+       "arm": 0.04775518178939819,
+       "ha0_ext": 0.0501520112156868
+      },
+      "yaw_rate_err_radps": {
+       "arm": 0.09280896186828613,
+       "ha0_ext": 0.09243620187044144
+      },
+      "cross_track_m": {
+       "arm": 6.640097141265869,
+       "ha0_ext": 6.6533074378967285
+      }
+     },
+     "tactical": null,
+     "_tactical_reason": "decision quality needs the lat/lon head logits, not a goal row \u2014 computed by the caller from `lat_logits_tac`/`lon_logits_tac`",
+     "strategic": null,
+     "_strategic_reason": "g_str bearing error needs the strategic head output and the LAN label; computed by the caller"
+    }
+   ],
+   "tactical_family": {
+    "lat": {
+     "n": 800,
+     "accuracy": 0.6899999976158142,
+     "majority_class_control": 0.6762499809265137,
+     "beats_majority": true,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 541,
+       "support_frac": 0.6762499809265137,
+       "recall": 0.9611830115318298,
+       "predicted_frac": 0.9200000166893005
+      },
+      {
+       "class": 1,
+       "n": 120,
+       "support_frac": 0.15000000596046448,
+       "recall": 0.008333333767950535,
+       "predicted_frac": 0.038750000298023224
+      },
+      {
+       "class": 2,
+       "n": 139,
+       "support_frac": 0.17374999821186066,
+       "recall": 0.22302158176898956,
+       "predicted_frac": 0.04125000163912773
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "lon": {
+     "n": 800,
+     "accuracy": 0.45625001192092896,
+     "majority_class_control": 0.4675000011920929,
+     "beats_majority": false,
+     "per_class": [
+      {
+       "class": 0,
+       "n": 184,
+       "support_frac": 0.23000000417232513,
+       "recall": 0.0,
+       "predicted_frac": 0.0
+      },
+      {
+       "class": 1,
+       "n": 374,
+       "support_frac": 0.4675000011920929,
+       "recall": 0.9465240836143494,
+       "predicted_frac": 0.9549999833106995
+      },
+      {
+       "class": 2,
+       "n": 242,
+       "support_frac": 0.30250000953674316,
+       "recall": 0.04545454680919647,
+       "predicted_frac": 0.04500000178813934
+      }
+     ],
+     "_reads": "accuracy BELOW the majority-class control is worse than a constant predictor; a class with recall 0 and predicted_frac 0 is UNREACHABLE, which is the X15 signature"
+    },
+    "_strategic_note": "the STRATEGIC family (g_str bearing/distance vs the LAN corridor) is NOT computed here: the LAN label is training-only (E12) and is not emitted by this dataset, so there is no target on these windows. Reported as absent WITH the reason, per the rule -- not silently dropped.",
+    "_selected_vs_executed_note": "selected-vs-executed manoeuvre agreement would need the label function applied to the ARM'S OWN 20-step future, and the model emits an 8-slot plan plus 3 goal rows, not a 20-step pose track. Computing it would require re-deriving the classifier on a different support -- a new instrument, filed as a work item rather than approximated here."
+   },
+   "manoeuvre_stratified": [
+    {
+     "subset": "straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 235,
+     "n_episodes": 40,
+     "arm_ade": 0.8355371356010437,
+     "ha0_ext_ade": 0.5988041162490845,
+     "ha_ade": 0.5294880867004395,
+     "ha0_ade": 0.5297940373420715
+    },
+    {
+     "subset": "straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 198,
+     "n_episodes": 40,
+     "arm_ade": 3.136599063873291,
+     "ha0_ext_ade": 3.183262348175049,
+     "ha_ade": 3.3921921253204346,
+     "ha0_ade": 2.2699577808380127
+    },
+    {
+     "subset": "straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 175,
+     "n_episodes": 39,
+     "arm_ade": 8.571159362792969,
+     "ha0_ext_ade": 9.077309608459473,
+     "ha_ade": 9.73529052734375,
+     "ha0_ade": 6.79090690612793
+    },
+    {
+     "subset": "non_straight",
+     "slot": 0,
+     "tau_s": 2.0,
+     "n": 565,
+     "n_episodes": 40,
+     "arm_ade": 1.721589207649231,
+     "ha0_ext_ade": 1.5991793870925903,
+     "ha_ade": 1.1701644659042358,
+     "ha0_ade": 2.5611345767974854
+    },
+    {
+     "subset": "non_straight",
+     "slot": 1,
+     "tau_s": 4.0,
+     "n": 509,
+     "n_episodes": 40,
+     "arm_ade": 6.7288289070129395,
+     "ha0_ext_ade": 7.043324947357178,
+     "ha_ade": 6.667921543121338,
+     "ha0_ade": 9.333934783935547
+    },
+    {
+     "subset": "non_straight",
+     "slot": 2,
+     "tau_s": 6.0,
+     "n": 443,
+     "n_episodes": 39,
+     "arm_ade": 15.411231994628906,
+     "ha0_ext_ade": 16.13176918029785,
+     "ha_ade": 16.906494140625,
+     "ha0_ade": 18.558378219604492
+    }
+   ],
+   "gate1": {
+    "slots": [
+     {
+      "slot": 0,
+      "arm_mean": 1.4613113079336473,
+      "vs": {
+       "ha": {
+        "ref_mean": 0.9819657632499593,
+        "delta_ref_minus_arm": -0.47934554468368795,
+        "relative_margin": -0.4881489382045498,
+        "separated": true,
+        "ci": [
+         -0.5992,
+         -0.3623
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 1.3053191506030453,
+        "delta_ref_minus_arm": -0.155992157330602,
+        "relative_margin": -0.1195049940533969,
+        "separated": true,
+        "ci": [
+         -0.2553,
+         -0.0614
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 1.9644283412088408,
+        "delta_ref_minus_arm": 0.5031170332751935,
+        "relative_margin": 0.2561137114146871,
+        "separated": true,
+        "ci": [
+         0.3403,
+         0.661
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       },
+       "constant_only": {
+        "ref_mean": 6.396253842450679,
+        "delta_ref_minus_arm": 4.934942534517031,
+        "relative_margin": 0.7715363798986195,
+        "separated": true,
+        "ci": [
+         4.2464,
+         5.6739
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 2.0,
+      "n_windows": 800,
+      "n_episodes": 40
+     },
+     {
+      "slot": 1,
+      "arm_mean": 5.722801413234254,
+      "vs": {
+       "ha": {
+        "ref_mean": 5.750532206213181,
+        "delta_ref_minus_arm": 0.027730792978927,
+        "relative_margin": 0.004822300264480768,
+        "separated": false,
+        "ci": [
+         -0.393,
+         0.4757
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 5.962289274593473,
+        "delta_ref_minus_arm": 0.23948786135921818,
+        "relative_margin": 0.040167098631011526,
+        "separated": false,
+        "ci": [
+         -0.0284,
+         0.5184
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 7.355621460432653,
+        "delta_ref_minus_arm": 1.6328200471983987,
+        "relative_margin": 0.22198260962471514,
+        "separated": true,
+        "ci": [
+         0.9924,
+         2.2747
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       },
+       "constant_only": {
+        "ref_mean": 13.21990845509432,
+        "delta_ref_minus_arm": 7.497107041860065,
+        "relative_margin": 0.5671073341639548,
+        "separated": true,
+        "ci": [
+         5.9569,
+         9.1195
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 4.0,
+      "n_windows": 707,
+      "n_episodes": 40
+     },
+     {
+      "slot": 2,
+      "arm_mean": 13.474318655906998,
+      "vs": {
+       "ha": {
+        "ref_mean": 14.875814849448325,
+        "delta_ref_minus_arm": 1.4014961935413268,
+        "relative_margin": 0.09421307052590143,
+        "separated": true,
+        "ci": [
+         0.6515,
+         2.3099
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0_ext": {
+        "ref_mean": 14.134146800363824,
+        "delta_ref_minus_arm": 0.6598281444568261,
+        "relative_margin": 0.04668326668574304,
+        "separated": true,
+        "ci": [
+         0.2769,
+         1.0316
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": 0.1,
+        "passes": false
+       },
+       "ha0": {
+        "ref_mean": 15.226165287397066,
+        "delta_ref_minus_arm": 1.7518466314900678,
+        "relative_margin": 0.11505501210735565,
+        "separated": true,
+        "ci": [
+         0.0762,
+         3.3734
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       },
+       "constant_only": {
+        "ref_mean": 20.310640449252908,
+        "delta_ref_minus_arm": 6.83632179334591,
+        "relative_margin": 0.33658819427318315,
+        "separated": true,
+        "ci": [
+         4.1624,
+         9.505
+        ],
+        "estimator": "paired_episode_cluster_bootstrap",
+        "required_relative_margin": null,
+        "passes": true
+       }
+      },
+      "tau_s": 6.0,
+      "n_windows": 618,
+      "n_episodes": 40
+     }
+    ],
+    "n_windows": 800,
+    "n_episodes": 40,
+    "references": [
+     "constant_only",
+     "ha",
+     "ha0",
+     "ha0_ext"
+    ],
+    "raw_pixel_floor": {
+     "meta": {
+      "n_fit": 400,
+      "n_score": 400,
+      "d": 192,
+      "lambda": 1.0,
+      "lambda_selected_on": "inner val of FIT",
+      "underpowered_n_lt_d": false,
+      "_reads": "n < d means the validation CORRECTLY chooses maximal regularisation and everything reads 0.0000 \u2014 that is underpowered by construction, not an absence of signal"
+     },
+     "per_slot": [
+      {
+       "slot": 0,
+       "tau_s": 2.0,
+       "n": 400,
+       "floor_ade": 4.80580997467041,
+       "arm_ade": 1.4000719785690308
+      },
+      {
+       "slot": 1,
+       "tau_s": 4.0,
+       "n": 358,
+       "floor_ade": 10.258828163146973,
+       "arm_ade": 5.54664945602417
+      },
+      {
+       "slot": 2,
+       "tau_s": 6.0,
+       "n": 315,
+       "floor_ade": 16.20998191833496,
+       "arm_ade": 12.777989387512207
+      }
+     ]
+    }
+   },
+   "gate2": {
+    "status": "MEASURED",
+    "verdict": "READS_BOTH",
+    "reason": "the goal path reads the measured ego state AND the scene \u2014 the admissible v4 state",
+    "ego_moves_goal": true,
+    "scene_moves_goal": true,
+    "future_leak": [],
+    "determinism": {
+     "deterministic": true,
+     "max_drift": 0.0,
+     "worst_node": null,
+     "nodes": [
+      "ego_state",
+      "frames",
+      "g_str",
+      "g_tac",
+      "goal_point_tac"
+     ],
+     "_reads": "a non-deterministic forward makes every node look dependent on every other; no verdict is admissible until this is exactly 0.0"
+    },
+    "detail": {
+     "ego": {
+      "source": "ego_state",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 1.9936158657073975,
+        "rel": 2.0064251533343396,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 13541.665490321815,
+        "rel": 191.9345294942525,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 107.76610016822815,
+        "rel": 5.31000270431944,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "shuffle",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "scene": {
+      "source": "frames",
+      "n_probes": 5,
+      "kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "shuffle",
+       "offset"
+      ],
+      "effective_kinds": [
+       "noise",
+       "zero",
+       "sign",
+       "offset"
+      ],
+      "source_was_perturbable": true,
+      "targets": {
+       "g_str": {
+        "depends": true,
+        "max_abs": 0.3183596432209015,
+        "rel": 0.3204051527440614,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "offset"
+        ]
+       },
+       "g_tac": {
+        "depends": true,
+        "max_abs": 2.1881790161132812,
+        "rel": 0.0310144354257652,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "offset"
+        ]
+       },
+       "goal_point_tac": {
+        "depends": true,
+        "max_abs": 0.805546760559082,
+        "rel": 0.03969203182027718,
+        "kinds_that_moved": [
+         "noise",
+         "zero",
+         "sign",
+         "offset"
+        ]
+       }
+      },
+      "any_dependence": true,
+      "_reads": "depends=True means the target's VALUE changed when the source's value was replaced mid-forward: a live forward information path, regardless of detach()."
+     },
+     "future": {}
+    },
+    "_note": "REQUIRED: both EGO and SCENE. An arm passing only EGO is the echo; an arm passing only SCENE never got the channels."
+   },
+   "gate2b": {
+    "n": 16,
+    "base_ade": 7.015430450439453,
+    "sources": {
+     "scene": {
+      "ade_deranged": 7.015430450439453,
+      "degradation_abs": 0.0,
+      "degradation_rel": 0.0,
+      "separated": false,
+      "ci": [
+       0.0,
+       0.0
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": false
+     },
+     "ego": {
+      "ade_deranged": 20.965002059936523,
+      "degradation_abs": 13.94957160949707,
+      "degradation_rel": 1.9884127863634165,
+      "separated": true,
+      "ci": [
+       8.2341,
+       18.8372
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     }
+    },
+    "verdict": "ECHOING",
+    "_reads": "\u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration"
+   },
+   "gate2b_realframes": {
+    "n": 16,
+    "base_ade": 7.317834377288818,
+    "sources": {
+     "scene": {
+      "ade_deranged": 7.275022506713867,
+      "degradation_abs": -0.04281187057495117,
+      "degradation_rel": -0.005850347024499415,
+      "separated": false,
+      "ci": [
+       -0.1668,
+       0.0695
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": false
+     },
+     "ego": {
+      "ade_deranged": 20.955947875976562,
+      "degradation_abs": 13.638113021850586,
+      "degradation_rel": 1.863681564613842,
+      "separated": true,
+      "ci": [
+       7.9093,
+       18.5043
+      ],
+      "estimator": "paired_episode_cluster_bootstrap",
+      "required_rel": 0.05,
+      "is_used": true
+     }
+    },
+    "verdict": "ECHOING",
+    "_reads": "\u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration"
+   },
+   "GATE": {
+    "applicable": true,
+    "raised": true,
+    "message": "ANTI-ECHO GATE FAILED \u2014 this arm has not been shown to beat its own measured dynamics:\n  GATE 2b (ECHOING): \u26d4\u26d4 the wrong SCENE does not hurt \u2014 the arm is reproducing its own dynamics and the image is decoration \u2014 scene degradation +0.0000 (required 0.05), ego degradation +1.9884\n  GATE 1 slot 2: did NOT clear ha \u2014 ref 14.8758 vs arm 13.4743 (relative margin +0.0942, required 0.1, CI [0.6515, 2.3099], separated=True)\n  GATE 1 slot 2: did NOT clear ha0_ext \u2014 ref 14.1341 vs arm 13.4743 (relative margin +0.0467, required 0.1, CI [0.2769, 1.0316], separated=True)\n(MEASURED 2026-09-03: a constant-a, constant-kappa extrapolation of the measured t0 ego state reaches ADE 0.4449 m at 2 s from ZERO PIXELS \u2014 the same league as flagship v1's deployed 0.452 m. Clearing `ha0` is not evidence of anything.)"
+   }
+  }
+ },
+ "manoeuvre_census": {
+  "straight": 235,
+  "non_straight": 565,
+  "unlabelled": 0,
+  "_reads": "the corpus own per-frame `maneuvers` label at t0; class 0 is keep-forward. A split that is almost all straight cannot show an echo -- nuScenes is 87 % straight at eval and that is why its L2 ranking inverts under stratification"
+ },
+ "controls_by_slot": [
+  {
+   "slot": 0,
+   "tau_s": 2.0,
+   "n": 800,
+   "ha0": 1.964428424835205,
+   "ha": 0.9819657802581787,
+   "ha0_ext": 1.3053191900253296,
+   "constant_only": 6.39625358581543
+  },
+  {
+   "slot": 1,
+   "tau_s": 4.0,
+   "n": 707,
+   "ha0": 7.355622291564941,
+   "ha": 5.750532150268555,
+   "ha0_ext": 5.962288856506348,
+   "constant_only": 13.219907760620117
+  },
+  {
+   "slot": 2,
+   "tau_s": 6.0,
+   "n": 618,
+   "ha0": 15.226165771484375,
+   "ha": 14.875815391540527,
+   "ha0_ext": 14.134147644042969,
+   "constant_only": 20.310640335083008
+  }
+ ]
+}

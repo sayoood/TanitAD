@@ -55,9 +55,18 @@ WHAT IS DELIBERATELY NOT HERE
 * No roll-consistency argmin (+5.9787 m WORSE, measured).
 * No MPC/CEM (C101: 35.8 % worse than CV at T1; and ``law_head`` cannot be
   iterated — argued from source in ``refc_select.py``).
-* No ego state into any goal head (edge E11, REFUSED — pinned by test + audit;
-  matches the C120 finding on v6: *"every goal head is a function of frames
-  alone"*).
+* No ego state into any goal head — **TRUE FOR v3 ONLY, AND v4 REVERSES IT**
+  (``ego_state_inject``). E11 refused ``v0 -> {z_tac, g_str, g_tac}`` on the
+  2026-08-03 vision-only rule; the PI narrowed that rule twice (2026-09-02
+  measured-``v``-at-cycle-time, 2026-09-03 *"the rule is ... anti-ECHO"*), and
+  **E11'** makes the MEASURED t0 ego state a REQUIRED LIVE edge into all three
+  goal nodes. The refusal is not deleted but MOVED: **E11'' refuses
+  ``future_poses``/``future_actions`` into any goal node**, which is the edge
+  the PI's *"and not the future one"* actually names. ⛔ With
+  ``ego_state_inject=False`` (the default) this file still builds v3 and the
+  original refusal still holds, pinned by
+  ``test_T5b_the_ORIGINAL_E11_test_still_passes_on_a_v3_config``. See
+  ``.../2026-09-03-refc-v4-design/PREREG_REFC_V4.md`` §3.
 * No supplied route at inference (E12): the LAN corridor is the TRAINING LABEL
   for ``g_str`` only (``refc_goal_config`` precedent).
 
@@ -81,6 +90,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field, fields, is_dataclass
+from typing import Sequence
 
 import torch
 import torch.nn.functional as F
@@ -95,10 +105,14 @@ __all__ = [
     "V3_HORIZONS", "SEAM_SLOT", "GOAL_TAU_STEPS", "RefCV3Config",
     "refc_v3_flat_config", "refc_v3_hier_config", "refc_v3_smoke_config",
     "refc_v3_sized_config", "refc_v3_small_config", "refc_v3_xl_config",
-    "V3_SIZES",
+    "V3_SIZES", "V3_RIG_SIZES",
     "RefCV3Model", "config_delta", "param_breakdown_v3",
     "masked_goal_loss", "strategic_goal_loss", "selection_ce",
     "freeze_history_report",
+    # --- v4 (E11' + E14) ---
+    "WHEELBASE_CONST2P9", "EGO_DIMS", "ego_state_at_t0",
+    "kinematic_goal_extrapolation", "refc_v4_config",
+    "REGISTERED_DELTA_KEYS_V4",
 ]
 
 #: 6.0 s @ 10 Hz — BINDING (PLAN_STEPS=60, DT=0.1). 0.5 s stride through the
@@ -114,6 +128,185 @@ SEAM_SLOT: int = 3
 GOAL_TAU_STEPS: tuple[int, ...] = (20, 40, 60)
 #: Goal row layout, E4.1 verbatim: (x, y, heading, speed).
 GOAL_DIMS: int = 4
+
+# ============================================================================
+# ⭐⭐ REF-C v4 — THE MEASURED EGO STATE AT t0 (E11', PI 2026-09-03)
+# ============================================================================
+# PI, verbatim: *"allow it to use the measured ego state (measured current
+# speed, measured current acceleration, measured current yaw rate) and not the
+# future one"*, under the narrowed vision-only rule: *"the rule is saying that
+# the semantic understanding and the trajectory planning must be based on image
+# frames and should avoid ECHO of the ego dynamics"*.
+#
+# ⭐ THE FINDING THAT MADE THIS CHEAP: neither derived channel needs a finite
+# difference. MEASURED at source, `tanitad/data/physicalai.py:597-632`:
+#     actions[:, 1] = ax        the dataset's OWN longitudinal accel — its
+#                               docstring says explicitly "NOT d/dt(v), which
+#                               differentiates interpolation noise and lags"
+#     actions[:, 0] = atan(WHEELBASE * curvature)   an INVERTIBLE encoding of
+#                               the dataset's OWN curvature column
+# and `_contract.py:130` already returns `ep.actions[t:t+w]` in every window.
+# So the brief's worst-case hazard (differencing noisy poses) does not arise:
+# v4 READS two measured signals and differentiates nothing.
+#
+# ⚠️ THE WHEELBASE CANCELS, AND THAT IS NOT AN ACCIDENT WE MAY ASSUME.
+# `WHEELBASE = 2.9` is wrong for 98.2 % of clips, but the cache stored
+# `atan(2.9 * curvature)`, so `tan(steer)/2.9` recovers `curvature` EXACTLY —
+# provided the cache is the LEGACY `const2p9` regime, which the parity corpus
+# `physicalai-train-e438721ae894` is (`physicalai.py:82`). A `per_clip_v1`
+# cache needs its per-clip L and is REFUSED below rather than silently
+# mis-inverted: a wrong wheelbase would scale every curvature by L_true/2.9 and
+# read exactly like a working channel.
+#: The legacy wheelbase the parity caches encoded `steer` with. Inverting with
+#: any OTHER value silently rescales curvature — hence the explicit refusal.
+WHEELBASE_CONST2P9: float = 2.9
+#: Ego block layout: (v0, a_long, yaw_rate, curvature, ego_keep). FOUR value
+#: channels + the X15 validity bit.
+EGO_DIMS: int = 5
+#: Per-channel scales, so the block enters at ~unit magnitude. MEASURED on the
+#: val epcache (40 ep / 7,963 frames): v std 3.671, a std 0.931, r std 0.159,
+#: k std 0.055 — these are ~2 sigma, not guesses.
+EGO_SCALE_V: float = 10.0
+EGO_SCALE_A: float = 3.0
+EGO_SCALE_R: float = 0.5
+EGO_SCALE_K: float = 0.1
+
+
+def ego_state_at_t0(poses_win: Tensor, actions_win: Tensor, *,
+                    wheelbase_mode: str = "const2p9",
+                    keep: Tensor | None = None) -> Tensor:
+    """The MEASURED ego state at t0, as the ``[B, 5]`` block the model reads.
+
+    ``poses_win``  ``[B, W, 4]`` = (x, y, yaw, speed) over the OBSERVED window.
+    ``actions_win`` ``[B, W, 2]`` = (steer, accel) over the same window.
+    Returns ``[B, 5]`` = ``(v0, a_long, yaw_rate, curvature, keep)`` at
+    ``t0 = W-1`` — the LAST OBSERVED frame, the same index ``pose_last`` uses
+    (``tanitad/data/_contract.py:137``).
+
+    ⛔⛔ EVERY READ IS AT ``[:, -1]`` OF THE **OBSERVED** WINDOW. There is no
+    index into the future here and there must never be one: the obvious wrong
+    implementation of this feature is ``a0 = (future[:, 0, 3] - v0) / dt``,
+    which would look identical in a config diff and would satisfy any *"does
+    the goal use acceleration?"* check while violating the PI's *"not the
+    future one"*. That is why the refused edge is PINNED interventionally
+    (``future_poses -> any goal node`` must leave every goal node
+    bit-identical) rather than asserted in a docstring — including this one.
+
+    ⚠️ ``curvature`` is fed ALONGSIDE ``yaw_rate`` and not instead of it:
+    ``yaw_rate = v0 * curvature`` VANISHES at standstill, and MEASURED 16.50 %
+    of frames have ``v < 0.5 m/s``. A stopped car with the wheel turned has a
+    real path geometry and a zero yaw rate. The two are algebraically dependent
+    given ``v0``; that is disclosed, not hidden.
+    """
+    if wheelbase_mode != "const2p9":
+        raise ValueError(
+            f"ego_state_at_t0 can only invert the LEGACY 'const2p9' steer "
+            f"encoding, got {wheelbase_mode!r}. A per-clip regime stored "
+            f"atan(L_clip * curvature); inverting it with 2.9 rescales every "
+            f"curvature by L_clip/2.9 and reads exactly like a working "
+            f"channel. Pass the per-clip L through explicitly instead.")
+    if poses_win.dim() != 3 or poses_win.shape[-1] != 4:
+        raise ValueError(f"poses_win must be [B, W, 4], got "
+                         f"{tuple(poses_win.shape)}")
+    if actions_win.dim() != 3 or actions_win.shape[-1] != 2:
+        raise ValueError(f"actions_win must be [B, W, 2], got "
+                         f"{tuple(actions_win.shape)}")
+    if poses_win.shape[1] != actions_win.shape[1]:
+        raise ValueError("poses_win and actions_win must cover the SAME "
+                         f"observed window: {poses_win.shape[1]} != "
+                         f"{actions_win.shape[1]}")
+    v0 = poses_win[:, -1, 3]                                # MEASURED speed
+    a0 = actions_win[:, -1, 1]                              # MEASURED ax
+    k0 = torch.tan(actions_win[:, -1, 0]) / WHEELBASE_CONST2P9   # curvature
+    r0 = v0 * k0                                            # yaw rate [rad/s]
+    if keep is None:
+        keep = torch.ones_like(v0)
+    return torch.stack([v0, a0, r0, k0, keep.to(v0.dtype)], dim=-1)
+
+
+def ego_state_from_batch(batch: dict, *, wheelbase_mode: str = "const2p9",
+                         device=None) -> Tensor:
+    """The ``[B, 5]`` ego block from a ``V3Dataset`` batch. THE trainer entry.
+
+    Reads ``pose_last`` ``[B, 4]`` (already ``ep.poses[t + w - 1]``, i.e. t0 by
+    construction — ``_contract.py:137``) and ``actions`` ``[B, W, 2]`` at
+    ``[:, -1]``. ⭐ Both fields are ALREADY in every window the contract
+    returns; v4 adds no dataset field and no cache rebuild.
+
+    ⛔ ``future_poses`` / ``future_poses_ext`` are NOT touched here and must
+    never be: that is the refused edge E11' pins, and the pin is an
+    interventional bit-identity check, not this sentence.
+    """
+    pose_last = batch["pose_last"]
+    actions = batch["actions"]
+    if device is not None:
+        pose_last, actions = pose_last.to(device), actions.to(device)
+    if actions.dim() != 3 or actions.shape[-1] != 2:
+        raise ValueError(
+            f"batch['actions'] must be [B, W, 2] = (steer, accel) over the "
+            f"OBSERVED window, got {tuple(actions.shape)}. If it is missing, "
+            f"the cache predates the action contract and the ego channels "
+            f"cannot be derived — REFUSE rather than substitute zeros, which "
+            f"would train a dead channel and read as 'ego does not help'.")
+    return ego_state_at_t0(pose_last.unsqueeze(1).expand(-1, actions.shape[1],
+                                                         -1),
+                           actions, wheelbase_mode=wheelbase_mode)
+
+
+def kinematic_goal_extrapolation(v0: Tensor, a0: Tensor, k0: Tensor,
+                                 taus_s: Sequence[float]) -> Tensor:
+    """⭐ ``ha0_ext`` — THE ECHO, in closed form, in the goal label's own frame.
+
+    Constant longitudinal acceleration ``a0`` and constant curvature ``k0``
+    from the measured t0 state, integrated exactly. Returns ``[B, K, 4]`` =
+    ``(x, y, heading, speed)`` in the EGO FRAME OF t0 (+x forward, +y left,
+    heading = wrap(yaw(t0+tau) - yaw(t0))) — which is verbatim the layout
+    ``refb_labels.goal_tac_targets`` produces, so base and label live in the
+    same frame and the residual is meaningful.
+
+    ⛔⛔ THIS FUNCTION IS THE TRIVIAL SOLUTION, AND IT IS NOT SMALL. MEASURED
+    2026-09-03 on the val epcache (40 ep, 1,041 windows @2 s / 801 @6 s):
+
+        horizon   ha0 (const v)   ha0_ext (this)   ext beats ha0 by
+          2.0 s     0.7040 m        0.4449 m           +36.80 %
+          6.0 s     5.3547 m        4.4652 m           +16.61 %
+
+    **0.4449 m at 2 s from ZERO PIXELS** is the same league as flagship v1's
+    deployed 0.452 m. ⇒ any arm handed (v0, a0, k0) can reproduce the
+    programme's headline 2 s number without reading the image, and the
+    anti-echo bar at 2 s is 0.4449, NOT the 0.7040 of the old ``ha0`` control.
+
+    ⚠️ Those two numbers are a corpus-kinematic property of THOSE windows. They
+    are the design input and the gate's construction; they are NOT decision
+    numbers. ``echo_gate`` recomputes both controls on the SAME windows as the
+    model, paired — quoting 0.4449 against a differently-windowed model would
+    be the ``df``/``step_s`` scope error in a new costume.
+
+    A vehicle that would reverse under constant ``a0`` is STOPPED instead of
+    run backwards: ``tau`` is clamped at ``-v0/a0`` when ``a0 < 0``. Physical,
+    and it keeps the arc length monotone (a negative arc would rotate the
+    heading the wrong way through ``theta = k0 * s``).
+    """
+    tau = torch.as_tensor(list(taus_s), dtype=v0.dtype,
+                          device=v0.device).reshape(1, -1)      # [1, K]
+    v0, a0, k0 = (t.reshape(-1, 1) for t in (v0, a0, k0))       # [B, 1]
+    # Stop time under a deceleration; +inf when a0 >= 0 (never binds).
+    t_stop = torch.where(a0 < 0, -v0 / a0.clamp(max=-1e-6),
+                         torch.full_like(a0, float("inf")))
+    ts = torch.minimum(tau.expand_as(v0 * tau), t_stop)         # [B, K]
+    ts = ts.clamp_min(0.0)
+    s = (v0 * ts + 0.5 * a0 * ts * ts).clamp_min(0.0)            # arc length
+    speed = (v0 + a0 * ts).clamp_min(0.0)
+    theta = k0 * s                                              # heading @ tau
+    # x = sin(theta)/k, y = (1 - cos(theta))/k, with the k->0 limits x = s,
+    # y = k s^2 / 2 taken by a Taylor branch (a bare divide is NaN at k = 0,
+    # and k IS exactly 0 on straight windows — 0.40 % of frames carry a zero
+    # steer and every synthetic corpus is entirely straight).
+    small = k0.abs() < 1e-6
+    k_safe = torch.where(small, torch.ones_like(k0), k0)
+    x = torch.where(small, s, torch.sin(theta) / k_safe)
+    y = torch.where(small, 0.5 * k0 * s * s, (1.0 - torch.cos(theta)) / k_safe)
+    return torch.stack([x, y, theta, speed], dim=-1)            # [B, K, 4]
 
 
 # ============================================================================
@@ -173,9 +366,41 @@ class RefCV3Config:
     # winner's-curse firewall (SEL-1's refusal), a different failure mode.
     uplink_grad: bool = True
 
+    # --- ⭐⭐ v4: E11' + E14 (PI 2026-09-03) --------------------------------
+    # ⛔ BOTH DEFAULT FALSE. With both off this class builds today's refcv3
+    # BIT-IDENTICALLY (pinned by tests/test_refc_v4.py::test_v3_parity) — the
+    # live 40,284-step run resumes through this file, so a default that moved
+    # would silently change a training in flight.
+    #
+    # E11' — the measured ego state at t0 reaches {z_tac, g_str, g_tac}. This
+    # RELAXES E11, which refused it. The relaxation is the PI's, twice narrowed:
+    # the line is TIME (measured at t0, never future) plus ANTI-ECHO, not
+    # MODALITY. What stays refused is unchanged and is listed in
+    # `provenance_roles`.
+    ego_state_inject: bool = False
+    d_ego: int = 32                   # ego embed width (~= d_nav's 64 / 2)
+    # E14 — echo-quotiented goal supervision: g_tac = ha0_ext + delta, with a
+    # ZERO-INIT delta head, so the model STARTS at the kinematic extrapolation
+    # and every learned parameter is spent on what the ego state cannot
+    # explain. Emits `g_tac_delta_absmean` / `echo_base_absmean` every step, so
+    # "is it echoing?" is read off the LOG rather than inferred from an eval
+    # three days later (the Caveat-B discipline applied to the echo).
+    echo_base: bool = False
+
     @property
     def n_goal_taus(self) -> int:
         return len(self.goal_tau_steps)
+
+    @property
+    def goal_tau_seconds(self) -> tuple[float, ...]:
+        """``goal_tau_steps`` in SECONDS at the binding 10 Hz (DT = 0.1).
+
+        The E14 base is integrated in seconds while the taus are stored in
+        10 Hz steps; deriving the conversion here (rather than at each call
+        site) is the C-class rule that a derived constant is re-derived, never
+        re-typed — a hardcoded 2/4/6 would silently become a different
+        experiment the moment `goal_tau_steps` moves."""
+        return tuple(float(s) * 0.1 for s in self.goal_tau_steps)
 
 
 def _v3_core_base() -> refc.RefCConfig:
@@ -210,7 +435,16 @@ def _v3_core_base() -> refc.RefCConfig:
     # rung, which is what makes it comparable across the ladder too.
     cfg.strategic = refc.StrategicCtxConfig(hidden=512, d_ctx=256)
     cfg.factored_maneuver = True      # action space: both arms, never a lever
-    cfg.tactical_speed_input = False  # goal path stays vision-pure (E11)
+    # ⚠️ WHAT THIS FLAG MEANS CHANGED WHEN E11' LANDED, AND THE OLD COMMENT
+    # ("goal path stays vision-pure") IS NOW FALSE IN A v4 BUILD. It is kept
+    # False in BOTH v3 and v4, but for a different reason in each:
+    #   v3: it IS the E11 refusal -- no ego reaches any goal head at all.
+    #   v4: the ego reaches the hierarchy's goal path through its OWN embedding
+    #       (`ego_state_inject`), so leaving this False keeps the CORE's own
+    #       pooled aux lat/lon heads ego-free -- a control that sits inside the
+    #       same arm -- and keeps the registered v4 delta at three keys instead
+    #       of silently widening a second head's input.
+    cfg.tactical_speed_input = False
     cfg.sel_reach_clamp = True        # precondition, measured inert on ADE @2s
     return cfg
 
@@ -240,6 +474,66 @@ V3_SIZES: dict[str, tuple[int, tuple[int, ...]]] = {
     "xl": (124, (3, 8, 20, 6)),
 }
 
+#: ⭐ THE VALIDATION RIG RUNG — **deliberately NOT in** :data:`V3_SIZES`.
+#:
+#: ``TanitAD_ValidateAIDesign`` §2 requires a design change to be validated on a
+#: tiny rig (~19 M, ~29 min/arm on the dev box) BEFORE it earns compute. REF-C's
+#: smallest REGISTERED rung is 63 M and does not fit that budget on the dev
+#: box's 8,187 MiB RTX 4060, so v4's gate needed a rung of its own.
+#:
+#: MEASURED by building: ``tiny`` = **16,989,725** params (``small`` 63,158,525
+#: at the same v7.0 heads) — inside the skill's band, and it moves the
+#: **ENCODER ONLY**, exactly like every registered rung.
+#:
+#: ⛔⛔ WHY IT IS A SEPARATE DICT AND NOT A FOURTH ENTRY ABOVE. ``V3_SIZES`` is
+#: read by ``refc_v3_scale_matrix`` and by the D-008 package decision, and
+#: ``tests/test_refc_v3_scale_matrix.py`` asserts *"the hierarchy cost is near
+#: constant across the ladder"* (spread < 10 %) — an assertion about the
+#: REGISTERED ladder whose ``aligned`` adapter tracks the encoder's ``feat_dim``.
+#: Adding a 2x-narrower encoder to that dict would break a guard that exists to
+#: catch exactly this kind of quiet geometry drift, and "the test went red so I
+#: widened the band" is how a guard stops guarding. The rig rung is therefore
+#: reachable by name and invisible to the ladder.
+#:
+#: ⛔ NOTHING MEASURED AT THIS RUNG IS A MODEL CLAIM. It validates the DESIGN
+#: (does the wiring fire, does the gate fail what it must fail) and never the
+#: architecture's quality. No registry row may cite it.
+V3_RIG_SIZES: dict[str, tuple[int, tuple[int, ...]]] = {
+    "tiny": (32, (2, 2, 4, 2)),
+}
+
+
+#: ⭐⭐ THE v4 LEVER SET — pinned, not asserted (the C122 rule). The launch
+#: preflight refuses unless ``config_delta(cfg_v4, cfg_v3)`` equals EXACTLY
+#: this. `core.ego_valid_channel` is in the set ON PURPOSE and is NOT a hidden
+#: second lever: admitting four channels whose withheld state is
+#: indistinguishable from a real physical state would multiply the X15 defect,
+#: so the flag is a PRECONDITION of the lever — the same relationship
+#: `graft_target_latent` has to `hier` in refcv3's own registered delta.
+REGISTERED_DELTA_KEYS_V4: frozenset = frozenset({
+    "ego_state_inject", "echo_base", "core.ego_valid_channel",
+})
+
+
+def refc_v4_config(size: str = "small", *, hier: bool = True,
+                   echo_base: bool = True) -> RefCV3Config:
+    """⭐⭐ REF-C v4 — v3 at the same rung, plus E11' and (by default) E14.
+
+    ``config_delta(refc_v4_config(s), refc_v3_sized_config(s))`` is
+    :data:`REGISTERED_DELTA_KEYS_V4` exactly — asserted by
+    ``tests/test_refc_v4.py``, so the "everything else identical" claim of
+    ``PREREG_REFC_V4.md`` is DERIVED from the dataclasses rather than believed.
+
+    ``echo_base=False`` builds the one-variable intermediate arm ``A-ego``
+    (ego admitted, no echo quotient), which is what makes v3 -> A -> v4 two
+    single-variable steps instead of one bundle.
+    """
+    cfg = refc_v3_sized_config(size, hier=hier)
+    cfg.ego_state_inject = True
+    cfg.echo_base = bool(echo_base)
+    cfg.core.ego_valid_channel = True        # X15 — precondition, not option
+    return cfg
+
 
 def refc_v3_sized_config(size: str = "small", *, hier: bool = True
                          ) -> RefCV3Config:
@@ -249,10 +543,19 @@ def refc_v3_sized_config(size: str = "small", *, hier: bool = True
     factoring and reach clamp are ``_v3_core_base``'s and do not vary — so a
     small-vs-XL comparison attributes to scale, not to a config bundle. That is
     the C122 lesson applied to the size axis.
+
+    ⭐ ``size`` may also name a rung of :data:`V3_RIG_SIZES` (``tiny``) — the
+    validation-rig geometry. It is resolved here so the rig runs through the
+    SAME builder as every registered rung (one implementation), but it is not a
+    member of the registered ladder and nothing measured at it is a model claim.
     """
-    if size not in V3_SIZES:
-        raise ValueError(f"size must be one of {sorted(V3_SIZES)}, got {size!r}")
-    bw, blocks = V3_SIZES[size]
+    table = (V3_SIZES if size in V3_SIZES
+             else V3_RIG_SIZES if size in V3_RIG_SIZES else None)
+    if table is None:
+        raise ValueError(
+            f"size must be one of {sorted(V3_SIZES)} "
+            f"(or the validation rig rung {sorted(V3_RIG_SIZES)}), got {size!r}")
+    bw, blocks = table[size]
     cfg = refc_v3_hier_config() if hier else refc_v3_flat_config()
     cfg.core.encoder = refc.CNNEncoderConfig(
         in_channels=cfg.core.encoder.in_channels,
@@ -361,6 +664,63 @@ class RefCV3Model(nn.Module):
                 nn.init.zeros_(lin.bias)
         else:
             self.nav_inj = None
+
+        # ⭐⭐ E11' — THE MEASURED EGO STATE INTO THE TACTICAL AND STRATEGIC
+        # STATES (PI 2026-09-03). Structurally the E13 nav block one edge over,
+        # and deliberately so: its own embedding (never the core's measurement
+        # encoder — sharing would couple two unrelated conditioning surfaces
+        # through one gradient) and ZERO-INIT projections.
+        #
+        # ⚠️ WHAT ZERO-INIT DOES AND DOES NOT BUY HERE — stated precisely,
+        # because the first draft of this comment OVERCLAIMED and the tiny-rig
+        # test caught it. It buys that **the EDGE is bit-inert at init**:
+        # within one v4 model, changing `ego_state` leaves `z_tac`, `ctx`,
+        # `g_str` and `traj` bit-identical, so any later delta is attributable
+        # to TRAINING (`test_T6_the_ego_edge_is_bit_inert_at_init`).
+        # ⛔ It does NOT buy that a v4 model equals a v3 model at step 0: the
+        # required `core.ego_valid_channel=True` widens `d_meas_in` by one, so
+        # the measurement Linear has a different SHAPE and every subsequent RNG
+        # draw shifts. Seeding does not fix that, it HIDES it. The two arms are
+        # compared by TRAINING them, never by an init identity that is false.
+        #
+        # ⛔ WHAT THIS DOES NOT RELAX. The situation classifier's output is
+        # still refused into every goal node (PI 2026-08-03, UNCHANGED), the
+        # LAN corridor is still label-only at inference (E12, UNCHANGED), and
+        # ANY future ego quantity is refused — that last one is now the audit's
+        # PINNED NEGATIVE EDGE, because E11's negative became a positive and a
+        # provenance audit with no refused edge left has no teeth.
+        if cfg.ego_state_inject:
+            if not cfg.core.ego_valid_channel:
+                raise ValueError(
+                    "ego_state_inject requires core.ego_valid_channel=True. "
+                    "With ego_dropout > 0 and no validity bit, a WITHHELD ego "
+                    "channel is byte-identical to a genuine physical zero, and "
+                    "the mechanism is DIFFERENT PER CHANNEL — MEASURED, val "
+                    "epcache (census_val40.json / zero_probe_val40.json): "
+                    "v0 is EXACTLY 0.0 on 11.00 % of frames and its [0, 0.1) "
+                    "bin holds 12.63x the next (a hard atom: withheld reads as "
+                    "a genuine standstill); curvature is exactly 0.0 on "
+                    "0.387 % (reads as a genuinely straight wheel); yaw_rate "
+                    "on 11.34 %. "
+                    "⚠ a_long is NEVER exactly 0.0 (0.000 % of 7,963 frames) "
+                    "— an earlier version of this message claimed 0 was its "
+                    "MODE and that was an inherited plausibility, not a "
+                    "measurement. It is still unsafe to zero-fill: 0.0 sits at "
+                    "the CENTRE of its density (mean -0.1607, std 0.9312), so "
+                    "a withheld value reads as an ordinary cruise and the "
+                    "model cannot tell 'no reading' from 'not accelerating'. "
+                    "Admitting three more channels whose withheld state is a "
+                    "confident lie would multiply the X15 defect by four, so "
+                    "the flag is a PRECONDITION of the lever, not an option "
+                    "beside it.")
+            self.ego_inj = nn.Linear(EGO_DIMS, cfg.d_ego)
+            self.ego_to_tac = nn.Linear(cfg.d_ego, cfg.d_tac)
+            self.ego_to_str = nn.Linear(cfg.d_ego, d_ctx)
+            for lin in (self.ego_to_tac, self.ego_to_str):
+                nn.init.zeros_(lin.weight)
+                nn.init.zeros_(lin.bias)
+        else:
+            self.ego_inj = None
         # E6 — factored tactical decision heads on z_tac (the H arm's decision
         # supplier; the core's own pooled-based heads keep training as the
         # shared aux surface in BOTH arms, so the supervision surface is
@@ -384,6 +744,16 @@ class RefCV3Model(nn.Module):
         self.lon_head_tac = nn.Linear(cfg.d_tac, _nlon)
         # E8 — tactical geometric goals, E4.1 layout (x, y, heading, speed)@tau.
         self.tac_goal_head = nn.Linear(cfg.d_tac, k * GOAL_DIMS)
+        # ⭐ E14 — under `echo_base` this head predicts the RESIDUAL over the
+        # kinematic extrapolation, so it is ZERO-INIT: the model starts exactly
+        # AT `ha0_ext` (a known, MEASURED 0.4449 m @2 s) instead of at random,
+        # and every parameter it learns is spent on what the ego state cannot
+        # explain — which is the scene. ⚠️ This changes the head's init, so a
+        # v3 checkpoint must NOT be resumed into an `echo_base` build; v4 is a
+        # fresh run and `ckpt_compat` refuses the cross-load.
+        if cfg.echo_base:
+            nn.init.zeros_(self.tac_goal_head.weight)
+            nn.init.zeros_(self.tac_goal_head.bias)
         # E7 — tactical latent into the decoder's target-latent FiLM port.
         self.tac_latent_proj = nn.Linear(cfg.d_tac, cfg.core.tactical_latent_dim)
         # E9 — selection by distance to the predicted goal. THE v6 scorer,
@@ -398,24 +768,58 @@ class RefCV3Model(nn.Module):
         self._seam = sl.SeamState()                      # not a buffer (no ckpt key)
 
     # --- provenance (the PI's admissibility ruling, as data + roles) --------
-    @staticmethod
-    def provenance_roles() -> dict:
+    def provenance_roles(self) -> dict:
         """Role map for ``tanitad.eval.goal_provenance.audit_arm``. GOAL nodes:
         g_str, g_tac, goal_point. SITUATION_OUTPUT nodes: NONE IN GRAPH — and
         the audit MEASURES that (positive control on frames, pinned negative
-        edge on v0) rather than trusting this declaration."""
+        edge) rather than trusting this declaration.
+
+        ⭐⭐ v4 MOVES THE PINNED NEGATIVE EDGE, AND THE AUDIT GETS STRONGER.
+        Under v3 the refused edge was ``v0 -> goal``. E11' admits it, so an
+        audit that only ever refused ``v0`` would be left with no teeth at
+        exactly the moment new ego plumbing arrives. The replacement is the
+        edge the PI's constraint actually names — *"and not the future one"*:
+
+            ⛔ future_poses / future_actions -> ANY goal node : REFUSED
+
+        ⚠️ Why that is the right one, mechanically. The obvious wrong
+        implementation of this feature is ``a0 = (future[:, 0, 3] - v0) / dt``.
+        It would look identical in a config diff, satisfy every *"does the goal
+        use acceleration?"* check, produce a BETTER-looking result — and be a
+        future read. Under v3 nothing probed that edge because no ego plumbing
+        existed. v4 adds the plumbing, so v4 adds the probe.
+        """
+        v4 = bool(self.cfg.ego_state_inject)
+        refused = ["lan -> inference (E12; label-only)",
+                   "situation classifier output -> any goal node "
+                   "(PI 2026-08-03, UNCHANGED)"]
+        refused.append(
+            "future_poses/future_actions -> any goal node (E11'; the PI's "
+            "'not the future one', pinned interventionally)" if v4
+            else "v0 -> any goal node (E11)")
         return {
             "goal": ["g_str", "g_tac", "goal_point_tac"],
             "situation_output": [],
-            "inference_inputs_of_goals": ["frames (via pooled_seq/ctx only)"],
-            "refused_edges": ["v0 -> any goal node (E11)",
-                              "lan -> inference (E12; label-only)"],
+            "inference_inputs_of_goals": (
+                ["frames (via pooled_seq/ctx)",
+                 "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) "
+                 "— MEASURED at the last OBSERVED frame (E11')"]
+                if v4 else ["frames (via pooled_seq/ctx only)"]),
+            "required_live_edges": (
+                ["ego_state -> {z_tac, g_str, g_tac}", "frames -> every goal"]
+                if v4 else ["frames -> every goal"]),
+            "refused_edges": refused,
             "shared_trunk": "encoder (common ancestor, declared; zero-init "
                             "gates carry attributability)",
+            "_reads": ("`required_live_edges` is not decoration: an arm where "
+                       "the SCENE edge does not fire is ECHOING, and an arm "
+                       "where the EGO edge does not fire is v3 wearing a v4 "
+                       "config. Both are failures and both are measured."),
         }
 
     # --- the in-forward hierarchy supplier ----------------------------------
-    def _hook(self, cache: dict, nav_cmd: Tensor | None = None):
+    def _hook(self, cache: dict, nav_cmd: Tensor | None = None,
+              ego_state: Tensor | None = None):
         cfg = self.cfg
 
         def hook(pooled_seq: Tensor, ctx: Tensor) -> dict:
@@ -440,6 +844,27 @@ class RefCV3Model(nn.Module):
                 nav_t, nav_s = self.nav_to_tac(e), self.nav_to_str(e)
                 z_tac_raw = z_tac_raw + nav_t                     # -> tactical
                 ctx = ctx + nav_s                                 # -> strategic
+            # ⭐⭐ E11' — THE MEASURED EGO STATE REACHES THE GOAL PATH (v4).
+            # Additive and ZERO-INIT, exactly like E13 above, so a v4 build is
+            # bit-identical to v3 at step 0. `ego_state` is [B, 5] =
+            # (v0, a_long, yaw_rate, curvature, keep), every channel read at
+            # the LAST OBSERVED frame by `ego_state_at_t0`.
+            ego_e = None
+            if self.ego_inj is not None and ego_state is not None:
+                es = ego_state.to(pooled_seq.dtype)
+                keep_b = es[:, 4:5]
+                # Scale to ~unit, then RE-APPLY `keep`: a withheld block must
+                # be exactly zeros next to a keep bit of 0, never a scaled
+                # leftover. The X15 rule is that "withheld" and "genuinely
+                # zero" differ in the FLAG, and that only works if the values
+                # really are zero when the flag is.
+                es = torch.cat([
+                    es[:, 0:1] / EGO_SCALE_V, es[:, 1:2] / EGO_SCALE_A,
+                    es[:, 2:3] / EGO_SCALE_R, es[:, 3:4] / EGO_SCALE_K,
+                ], dim=-1) * keep_b
+                ego_e = self.ego_inj(torch.cat([es, keep_b], dim=-1))
+                z_tac_raw = z_tac_raw + self.ego_to_tac(ego_e)    # -> tactical
+                ctx = ctx + self.ego_to_str(ego_e)                # -> strategic
             g = self.str_goal_head(ctx)                           # [B, 3]
             bearing = g[:, :2] / torch.linalg.vector_norm(
                 g[:, :2], dim=-1, keepdim=True).clamp_min(1e-6)
@@ -463,12 +888,41 @@ class RefCV3Model(nn.Module):
             lat = self.lat_head_tac(z_tac)
             lon = self.lon_head_tac(z_tac)
             man5 = tac.derive_man5_logprobs(lat, lon)             # exact push-fwd
-            g_tac = self.tac_goal_head(z_tac).reshape(
+            g_delta = self.tac_goal_head(z_tac).reshape(
                 b, cfg.n_goal_taus, GOAL_DIMS)
+            # ⭐⭐ E14 — ECHO-QUOTIENTED GOAL SUPERVISION. The head predicts the
+            # RESIDUAL over the kinematic self-extrapolation, so the trivial
+            # solution is FREE and gradient descent has no incentive to re-derive
+            # it. `echo_base` is multiplied by `keep`, which makes the withheld
+            # regime (keep=0) an absolute-prediction regime — i.e. refcv4 trains
+            # its OWN vision-only arm, and the eval reads it at keep=0 with no
+            # second run and no second config.
+            #
+            # ⚠️ STATED HONESTLY: this does NOT make echoing impossible. A lazy
+            # model outputs delta ~ 0 and scores exactly ha0_ext. What E14 buys
+            # is that this outcome is VISIBLE FROM STEP 1 and attributable —
+            # `g_tac_delta_absmean / echo_base_absmean` is the readout. The
+            # thing that CATCHES echoing is the gate (`tanitad.eval.echo_gate`);
+            # E14 is what makes its verdict interpretable. Both ship.
+            echo_base = None
+            if cfg.echo_base and ego_state is not None:
+                es_raw = ego_state.to(z_tac.dtype)
+                echo_base = kinematic_goal_extrapolation(
+                    es_raw[:, 0], es_raw[:, 1], es_raw[:, 3],
+                    cfg.goal_tau_seconds) * es_raw[:, 4].reshape(-1, 1, 1)
+                g_tac = echo_base + g_delta
+            else:
+                g_tac = g_delta
             cache.update(z_tac=z_tac, g_str=g_str, g_str_raw=g,
                          lat_logits_tac=lat, lon_logits_tac=lon,
-                         g_tac=g_tac,
+                         g_tac=g_tac, g_tac_delta=g_delta,
+                         ego_injected=bool(ego_e is not None),
                          nav_injected=bool(nav_t is not None))
+            if echo_base is not None:
+                cache.update(
+                    echo_base=echo_base,
+                    echo_base_absmean=echo_base.detach().abs().mean(),
+                    g_tac_delta_absmean=g_delta.detach().abs().mean())
             # E6 live (the H19 seam is live-from-step-0 by design); E7 detached
             # unless the Caveat-A lever is open.
             z_up = z_tac if cfg.uplink_grad else z_tac.detach()
@@ -480,14 +934,46 @@ class RefCV3Model(nn.Module):
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
-                nav_known: Tensor | None = None) -> dict:
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        if ego_state is not None and not self.cfg.ego_state_inject:
+            raise ValueError(
+                "ego_state was supplied but cfg.ego_state_inject is False — it "
+                "would be SILENTLY DROPPED and the arm would report as a v4 "
+                "while running v3. Turn the lever on or stop passing it.")
+        if ego_state is not None and ego_state.shape[-1] != EGO_DIMS:
+            raise ValueError(f"ego_state must be [B, {EGO_DIMS}] = (v0, "
+                             f"a_long, yaw_rate, curvature, keep), got "
+                             f"{tuple(ego_state.shape)}")
+        # ⭐ ONE WITHHOLDING DRAW, ONE OWNER (E11'/X15). In training v4 draws
+        # `keep` HERE and hands the SAME vector to both consumers: the goal
+        # path (through `ego_state[:, 4]`) and the core's measurement encoder
+        # (through the `ego_keep` seam). `refc.py` warns that a second,
+        # unsynchronised dropout is the wrong fix, and it is right — so there
+        # is exactly one, at the level where both consumers are visible.
+        ego_keep = None
+        if ego_state is not None:
+            ego_state = ego_state.clone()
+            if self.training and self.cfg.core.ego_dropout > 0:
+                k = (torch.rand(ego_state.shape[0], device=ego_state.device)
+                     >= self.cfg.core.ego_dropout).to(ego_state.dtype)
+                ego_state[:, 4] = ego_state[:, 4] * k
+            ego_keep = ego_state[:, 4]
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
-                             nav_known=nav_known)
+                             nav_known=nav_known, ego_keep=ego_keep)
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
-                        nav_known=nav_known,
-                        hierarchy_hook=self._hook(cache, nav_cmd))
+                        nav_known=nav_known, ego_keep=ego_keep,
+                        hierarchy_hook=self._hook(cache, nav_cmd, ego_state))
         # ---- E9: goal selection over the emitted fan (post-decoder) --------
         fan = out["anchor_traj"]                                  # [B, N, S, 2]
         b = fan.shape[0]
@@ -509,6 +995,24 @@ class RefCV3Model(nn.Module):
         graft = self.goal_gate * sc["score"]                      # [B, N]
         out["goal_gate_value"] = self.goal_gate.detach()
         out["goal_score_absmean"] = sc["score"].detach().abs().mean()
+        # ⭐ THE ANTI-ECHO READOUT. `g_tac_delta_absmean / echo_base_absmean` is
+        # "how much goal does VISION contribute beyond the ego echo". It is
+        # emitted every step for exactly the Caveat-B reason: a 0.0000 read at
+        # 30k must be a LOGGED fact, not a conclusion inferred three days later
+        # from an eval — that inference is what produced Caveat-B in the first
+        # place.
+        if "echo_base_absmean" in cache:
+            eb = cache["echo_base_absmean"].clamp_min(1e-9)
+            out["echo_ratio"] = cache["g_tac_delta_absmean"] / eb
+        # ⭐ THE REALISED WITHHOLDING RATE, per step. `ego_dropout` is a
+        # CONFIGURED probability; this is what the batch actually got. They
+        # differ whenever the draw is not where you think it is — and the
+        # X15 measurement (a withheld zero being indistinguishable from a
+        # genuine standstill) is the reason we may not infer one from the
+        # other. In eval() no draw happens and this reads exactly 1.0, which
+        # is itself the train/eval asymmetry made visible in the log.
+        if ego_keep is not None:
+            out["ego_keep_frac"] = ego_keep.detach().float().mean()
         blended, tele = sl.apply_seam_clamp(
             out["sel_score"], graft, clamp=self.cfg.seam_clamp,
             fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
@@ -585,6 +1089,13 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
             "tac_latent_proj": cnt(model.tac_latent_proj),
             "scorer": cnt(model.scorer) + model.goal_gate.numel(),
         })
+        # ⭐ E11' ego injection — accounted EXPLICITLY, for the same reason E13
+        # is: `test_param_breakdown_smoke_sums` asserts the lines sum to the
+        # total, so an unaccounted module is a TEST FAILURE rather than a
+        # silent capacity confound inside the exact claim v4 exists to test.
+        if getattr(model, "ego_inj", None) is not None:
+            out["ego_inject"] = (cnt(model.ego_inj) + cnt(model.ego_to_tac)
+                                 + cnt(model.ego_to_str))
         # ⭐ E13 nav injection — accounted EXPLICITLY. Caught by
         # `test_param_breakdown_smoke_sums`, whose sum-equals-total assertion
         # fired the moment these parameters existed but had no ledger line: a

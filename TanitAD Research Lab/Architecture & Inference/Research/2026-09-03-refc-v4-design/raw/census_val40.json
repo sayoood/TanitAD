@@ -1,0 +1,55 @@
+{
+ "n_episodes": 40,
+ "n_frames": 7963,
+ "wheelbase_used": 2.9,
+ "channels": {
+  "a_long": {
+   "nonzero_frac": 1.0,
+   "mean": -0.16072176950250186,
+   "std": 0.9312323246067316,
+   "min": -4.127626895904541,
+   "max": 4.407310485839844
+  },
+  "curvature": {
+   "nonzero_frac": 0.9959814140399347,
+   "std": 0.05457626509185822
+  },
+  "yaw_rate": {
+   "std": 0.15930430952280697,
+   "absmax": 0.8694989072920021
+  },
+  "v0": {
+   "mean": 5.244886016482741,
+   "std": 3.6714376306919743,
+   "frac_below_0p5": 0.16501318598518147
+  }
+ },
+ "finite_diff_crosscheck": {
+  "corr_a_long": 0.5623812286448262,
+  "corr_yaw_rate": 0.9430278021378395,
+  "n_episodes": 40,
+  "_reads": "corr_yaw_rate near +1 confirms the SIGN and WHEELBASE inversion against an independent field (quaternion yaw). corr_a_long well below 1 is EXPECTED and is why `ax` is used and d/dt(v) refused \u2014 physicalai.py says so at :13."
+ },
+ "echo": {
+  "2.0s": {
+   "n_windows": 1041,
+   "ha0_ade_m": 0.7040189126178586,
+   "ha0_ext_ade_m": 0.44492156584936776,
+   "ext_beats_ha0_pct": 36.80261170897391,
+   "tier": "corpus-kinematic (NOT a driving number, NOT T1)"
+  },
+  "6.0s": {
+   "n_windows": 801,
+   "ha0_ade_m": 5.354738906811478,
+   "ha0_ext_ade_m": 4.465150607352016,
+   "ext_beats_ha0_pct": 16.6131031772224,
+   "tier": "corpus-kinematic (NOT a driving number, NOT T1)"
+  }
+ },
+ "_provenance": {
+  "root": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-val-bb543bdf7836",
+  "n_files": 40,
+  "instrument": "tanitad.eval.echo_gate.corpus_echo_report",
+  "evidence_class": "MEASURED"
+ }
+}
