@@ -311,6 +311,55 @@ is dropped silently.
 
 ---
 
+---
+
+## 8b. The ego-dropout regime — turn coverage holds; the GEOMETRIC ceiling does not
+
+The run carries `ego_dropout 0.5`, and `refc.py:1341-1344` rolls the bank for a
+**withheld** row at `ref_speed_ms = 10.0` instead of the measured `v0`, so **half
+of training rows are supervised against a fixed 10 m/s bank**. Supply was
+re-measured there.
+
+⛔ **A defect I nearly manufactured, and the code forbids it.** My first pass
+applied the reach band at the row's *true* `v0` to that fixed bank and got **130
+empty windows**. That is not what runs: `refc.py:1538` and `:1681` both do
+`keep = keep | (~ego_keep)[:, None]`, precisely so a withheld channel cannot
+decide which candidates exist — a withheld row keeps **all 117**. The corrected
+figure is **0 empty**. *(Reported because the wrong version looked exactly like a
+finding, and only reading the gate line refuted it.)*
+
+**Turn coverage is unaffected.** The 10 m/s bank holds **66 / 48 / 40** of 117
+candidates above 30° / 45° / 60° of terminal heading, max **191.9°** ⇒ windows
+with no > 30° candidate **0.00 %**, and GT demand > supply **0.00 %**. The verdict
+does not change.
+
+**The geometric ceiling does change, sharply, and it is a mechanical consequence
+of a fixed-speed bank meeting a speed-varying corpus** — not a coverage hole:
+
+| `v0` band | n | OIV ADE, withheld (10 m/s bank) | OIV ADE, measured `v0` |
+|---|---|---|---|
+| [0, 5) | 981 | 6.9130 | 0.8694 |
+| [5, 10) | 1,395 | **2.3750** | 1.2310 |
+| [10, 15) | 1,222 | **2.5692** | 1.0835 |
+| [15, 20) | 585 | 7.8632 | 1.2372 |
+| [20, 25) | 291 | 19.5285 | 1.2414 |
+| [25, ∞) | 349 | 37.5622 | 1.0897 |
+| **pooled** | **4,823** | **7.5941** | **1.1112** |
+
+paired: **+6.4829 m [+4.9994, +8.0756], SEPARATED** (episode-cluster, n_boot
+2000, seed 0).
+
+⚠️ **Scope, stated rather than escalated.** The anchor-classification target is
+computed against `out["anchor_bank"]`, i.e. *the bank actually decoded*, so on a
+withheld row `a_star` is the nearest anchor in a bank whose geometry does not fit
+that window. This bounds what the anchor-classification loss can teach on **~50 %
+of rows** — but (a) the offset head is unclamped and corrects on top of the
+prior, (b) speed-blindness is the *registered purpose* of E11'/X15 ego-dropout,
+and (c) it is orthogonal to turn coverage, which is intact in both regimes. ⇒ **a
+measured property of the registered design, for the Master Mind's attention at
+the next revision — NOT a reason to touch this run**, and it would need a
+pre-registration to change.
+
 ## 9. Escalations for the Master Mind
 
 1. ⭐ **NO ACTION on `refcv4b-b1-v72-40k`. Do not abort.** The flagged regression
@@ -332,7 +381,14 @@ is dropped silently.
    candidates leave a μ = 0.7 circle at `v0 = 10 m/s` because constant curvature
    under positive `a_lon` raises `v²κ` — a per-candidate Kamm filter at build
    time costs **+0.0043 m** of oracle ADE and removes the tail.
-4. **The end-bearing metric should be retired from turn-coverage gates** and
+4. ⚠️ **A measured scope note on the registered ego-dropout lever (§8b), not an
+   abort reason:** the withheld-row bank is rolled at a fixed 10 m/s, and its
+   oracle ceiling on this corpus is **7.5941 m** against **1.1112 m** at the
+   measured `v0` (**+6.4829 [+4.9994, +8.0756]**, separated), rising to
+   **37.5622 m** above 25 m/s. Turn coverage there is intact (0.00 % missing);
+   it is the *geometry* that does not transfer. Worth a pre-registered look at
+   the next revision — e.g. a speed-bucketed reference roll.
+5. **The end-bearing metric should be retired from turn-coverage gates** and
    replaced by terminal heading with its definition stamped (§7a). It is the
    metric that generated this whole investigation.
 
@@ -348,8 +404,9 @@ is dropped silently.
 | `raw/TURNCOV6S_PART3.json` | same dir | Kamm instrument comparison, admissible supply, oracle friction load |
 | `raw/TURNCOV6S_PART4.json` | same dir | launch-package reconciliation (48.3 / 8.85 %) + signed-direction control |
 | `raw/TURNCOV6S_PART5.json` | same dir | episode-cluster CIs on the hole/rest and turn/straight contrasts |
+| `raw/TURNCOV6S_PART6.json` | same dir | the ego-dropout / reference-speed regime (§8b) |
 | `raw/per_window.npz` | same dir | 4,823-row per-window bank (v0, ws, eid, demand, supply, oracle ADE/ALONG/LAT, turn bin) — re-analysable with zero GPU and zero pod contact |
-| `raw/scripts/turncov6s{,_b,_c,_d,_e}.py` | same dir | the five instruments, runnable off-mount with `PYTHONPATH=<clone>/stack` |
+| `raw/scripts/turncov6s{,_b,_c,_d,_e,_f}.py` | same dir | the six instruments, runnable off-mount with `PYTHONPATH=<clone>/stack` |
 | `raw/anchors_live_refcv4b.pt` | same dir | the LIVE pod artifact, `sha256 e86cf507…e8fb` verified against the pod |
 | `raw/_v2manifest_b1eval141.pt` | same dir | ego poses + actions for the 141 eval clips, `md5 4c146bbb…6438` verified against the pod — **this is what makes the 6 s GT reproducible without the pod**; it existed in ONE place (pod `/root/data/eval/`) before this run |
 
