@@ -18,13 +18,15 @@ printed, never passed as an argv. Loaded into os.environ at runtime only.
 `curl` needs `--ssl-no-revoke` or it reports HTTP 000 and looks like an outage.
 The venv carrying `huggingface_hub` is `C:/Users/Admin/venvs/tanitad`.
 
-⛔ WHAT MAY NOT BE PUBLISHED. The card's section 4 stamps all four binding metric
-families NOT MEASURED. If the eval has landed by the time this runs, FILL section
-4 from the raw JSON (`taniteval/results/refcv3-30k-openloop-*.json`) BEFORE
-`--publish`. Never publish a number that is not in that JSON or in
-`Project Steering/MODEL_REGISTRY.md`. The in-repo card copy
-(`Project Steering/HF_CARD_tanitad-refc-v3.md`) and the published `README.md`
-must stay byte-identical — this script checks that and refuses otherwise.
+⛔ WHAT MAY NOT BE PUBLISHED. Never publish a number that is not in the raw eval
+JSON (`taniteval/results/refcv3-40284-openloop{,.ARM}.json`) or in
+`Project Steering/MODEL_REGISTRY.md`. The preflight makes POSITIVE content
+assertions on the card — that it scopes itself to the final step, states the
+hold-action loss, declares STRATEGIC unavailable, states non-parity, and marks
+the route head a probe — and refuses if any of them has been edited away. The
+in-repo card copy (`Project Steering/HF_CARD_tanitad-refc-v3.md`) is what gets
+uploaded as `README.md`, and every text artifact is re-downloaded and re-hashed
+after the commit, because a create_commit that returned a URL is not evidence.
 
 ⛔ NO CLOSED-LOOP CLAIM. Binding PI ruling 2026-09-02: a model consuming its own
 planner's output is still OPEN loop. This script greps the card for the guard
@@ -59,6 +61,32 @@ TARGET_STEP = 40284
 REPO_ROOT = Path(r"G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD")
 CARD = REPO_ROOT / "Project Steering" / "HF_CARD_tanitad-refc-v3.md"
 KEYS = REPO_ROOT / "Keys.txt"
+
+# ⛔ EVERY CHECKPOINT CARRIES ITS STEP IN ITS FILENAME, AND NOTHING IS CALLED BARE
+# `ckpt.pt`. This repo holds TWO evaluated steps (30,000 and 40,284) and an
+# ambiguous name is exactly how a reader ends up quoting one checkpoint's numbers
+# for the other's weights — the same inversion the `flagship4b-phase0-30k` repo
+# name invites and that CLAUDE.md opens by warning about.
+#
+# (pod filename, path in the HF repo, expected md5 or None)
+PUBLISH_FROM_POD = [
+    ("ckpt_40284_FINAL.pt", "ckpt_40284_FINAL.pt",
+     "fc304b62686ddb9e685d14bdab482404"),          # {model, opt, step} — resumable
+    ("ckpt_step40284_frozen.pt", "ckpt_40284.pt",
+     "b1ed7075ff730d0993d2eaa3c86f6b56"),          # {model, step} — inference
+    ("metrics.jsonl", "metrics.jsonl", None),
+    ("summary.json", "summary.json", None),        # the run's own done-marker
+    ("supervisor.log", "supervisor.log", None),    # the evidence behind caveat C7
+]
+
+# published straight out of the git repo (path in repo, path in the HF repo)
+PUBLISH_FROM_REPO = [
+    (CARD, "README.md"),
+    (REPO_ROOT / "taniteval" / "results" / "refcv3-40284-openloop.json",
+     "eval/refcv3-40284-openloop.json"),
+    (REPO_ROOT / "taniteval" / "results" / "refcv3-40284-openloop.ARM.json",
+     "eval/refcv3-40284-openloop.ARM.json"),
+]
 
 GUARD = "This card makes NO closed-loop claim for REF-C v3"
 PRO_PUBLIC_TB, PRO_PRIVATE_TB = 10.0, 1.0    # huggingface.co/docs/hub/storage-limits
@@ -112,10 +140,20 @@ def preflight(a) -> dict:
     text = card.decode("utf-8")
     print(f"  card: {len(card):,} B  md5 {hashlib.md5(card).hexdigest()}")
     assert GUARD in text, "REFUSING: the no-closed-loop guard is gone from the card"
-    n_unmeasured = text.count("NOT MEASURED")
-    print(f"  no-closed-loop guard: present | 'NOT MEASURED' occurrences: {n_unmeasured}")
-    if n_unmeasured:
-        print("  ⚠️  the four metric families are still NOT MEASURED — see the note below")
+    # ⛔ POSITIVE CONTENT ASSERTIONS, not a keyword count. The old check counted the
+    # string "NOT MEASURED" anywhere in the file, which also matches the card's own
+    # evidence-class LEGEND — so it fired on a fully-measured card. Absence of a
+    # keyword is not evidence; presence of the specific claim is.
+    for what, needle in [
+        ("the FINAL step is the card's scope", f"MEASURED on the FINAL `ckpt_{TARGET_STEP}.pt`"),
+        ("the hold-action loss is stated", "THE TRIVIAL CONTROL WON"),
+        ("STRATEGIC is declared unavailable", "UNAVAILABLE, n = 0"),
+        ("non-parity is stated", "v2_parity.parity false"),
+        ("the route head is marked a probe", "reported AS A PROBE"),
+    ]:
+        assert needle in text, f"REFUSING: the card no longer states {what} ({needle!r})"
+        print(f"  card states: {what}")
+    print("  no-closed-loop guard: present")
 
     # 2. has the eval landed? (two differently-bound probes; absence at one
     #    location is not absence)
@@ -212,61 +250,101 @@ def preflight(a) -> dict:
 
 
 # --------------------------------------------------------------------- pull
-def pull(a, pre: dict) -> Path:
-    dest = Path(a.workdir) / "ckpt.pt"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    print("=" * 68)
-    print(f"PULL {POD}:{RUN}/ckpt.pt -> {dest}")
-    subprocess.run(["scp", "-o", "BatchMode=yes", "-o", "ConnectTimeout=25",
-                    "-o", "StrictHostKeyChecking=no",
-                    f"{POD}:{RUN}/ckpt.pt", str(dest)], check=True)
-    remote = ssh(f"md5sum {RUN}/ckpt.pt").split()[0]
-    local = md5_file(dest)
-    print(f"  pod   md5 {remote}")
-    print(f"  local md5 {local}")
-    if remote != local:
-        raise SystemExit("⛔ md5 MISMATCH — the transfer is corrupt, do not publish")
-    print(f"  size {dest.stat().st_size:,} B — VERIFIED BY CONTENT")
+def pull(a, pre: dict) -> dict:
+    """Fetch every pod-side artifact, md5-verified at BOTH ends.
 
-    import torch                                # verify the STEP, not just the bytes
-    ck = torch.load(dest, map_location="cpu", weights_only=True)
-    step = int(ck["step"])
-    n_t = len(ck["model"])
+    Idempotent: a file already on disk whose md5 matches the pod is not re-fetched,
+    so a re-run after a failed upload does not repay 1.3 GB of transfer.
+    """
+    wd = Path(a.workdir)
+    wd.mkdir(parents=True, exist_ok=True)
+    print("=" * 68)
+    print(f"PULL {POD}:{RUN}/ -> {wd}")
+    got: dict[str, Path] = {}
+    for remote_name, repo_path, want_md5 in PUBLISH_FROM_POD:
+        dest = wd / remote_name
+        remote = ssh(f"md5sum {RUN}/{remote_name}").split()[0]
+        if dest.exists() and md5_file(dest) == remote:
+            print(f"  {remote_name:28s} already local, md5 matches the pod — skipping")
+        else:
+            subprocess.run(["scp", "-o", "BatchMode=yes", "-o", "ConnectTimeout=25",
+                            "-o", "StrictHostKeyChecking=no",
+                            f"{POD}:{RUN}/{remote_name}", str(dest)], check=True)
+        local = md5_file(dest)
+        if remote != local:
+            raise SystemExit(f"⛔ md5 MISMATCH on {remote_name} — transfer is corrupt, "
+                             f"do not publish (pod {remote} != local {local})")
+        # ⛔ A published md5 that nobody re-derived is a claim, not a check.
+        if want_md5 and local != want_md5:
+            raise SystemExit(f"⛔ {remote_name} md5 {local} != the expected {want_md5}. "
+                             f"The artifact changed; STOP and re-verify before publishing.")
+        print(f"  {remote_name:28s} {dest.stat().st_size:>13,} B  md5 {local}  ✅ both ends")
+        got[repo_path] = dest
+
+    # ⛔ VERIFY THE STEP BY CONTENT. The filename says 40284; only the tensor says so.
+    import torch
+    ck = torch.load(got["ckpt_40284_FINAL.pt"], map_location="cpu", weights_only=True)
+    step, n_t = int(ck["step"]), len(ck["model"])
     n_all = sum(v.numel() for v in ck["model"].values())
-    print(f"  step {step} | {n_t} tensors | {n_all:,} elements")
+    print(f"\n  CONTENT CHECK  step={step} | {n_t} tensors | {n_all:,} elements "
+          f"| optimizer state: {'yes' if 'opt' in ck else 'no'}")
     if step != TARGET_STEP:
-        print(f"  ⚠️  step is {step}, not the target {TARGET_STEP}. If the run failed, "
-              f"the card MUST say so explicitly before publishing.")
-    return dest
+        raise SystemExit(f"⛔ REFUSING: step is {step}, not the target {TARGET_STEP}.")
+
+    # the model-only file must be the SAME WEIGHTS, or the two artifacts disagree
+    mo = torch.load(got["ckpt_40284.pt"], map_location="cpu", weights_only=True)
+    if int(mo["step"]) != TARGET_STEP or set(mo["model"]) != set(ck["model"]):
+        raise SystemExit("⛔ REFUSING: the model-only checkpoint does not match the final one")
+    diff = [k for k in ck["model"] if not torch.equal(ck["model"][k], mo["model"][k])]
+    if diff:
+        raise SystemExit(f"⛔ REFUSING: {len(diff)} tensors differ between the full and "
+                         f"model-only checkpoints, e.g. {diff[:3]}")
+    print(f"  CONTENT CHECK  model-only file is BITWISE IDENTICAL to the final "
+          f"checkpoint's weights ({n_t}/{n_t} tensors equal)")
+    return got
 
 
 # ------------------------------------------------------------------ publish
-def publish(a, ck: Path) -> None:
+def publish(a, got: dict) -> None:
     hf = api()
     from huggingface_hub import CommitOperationAdd, hf_hub_download
     print("=" * 68)
-    print(f"PUBLISH {ck.name} -> {REPO}")
-    ops = [CommitOperationAdd("ckpt.pt", str(ck)),
-           CommitOperationAdd("README.md", str(CARD))]
-    mj = Path(a.workdir) / "metrics.jsonl"
-    if mj.exists():
-        ops.append(CommitOperationAdd("metrics.jsonl", str(mj)))
-    res = hf.create_commit(repo_id=REPO, repo_type="model", operations=ops,
-                           commit_message=f"Final checkpoint (step {TARGET_STEP}) + card")
+    print(f"PUBLISH -> {REPO}")
+    ops, expect = [], {}
+    for repo_path, local in got.items():
+        ops.append(CommitOperationAdd(repo_path, str(local)))
+        expect[repo_path] = md5_file(local)
+    for local, repo_path in PUBLISH_FROM_REPO:
+        if not local.exists():
+            raise SystemExit(f"⛔ REFUSING: {local} is missing — it is named on the card")
+        ops.append(CommitOperationAdd(repo_path, str(local)))
+        expect[repo_path] = md5_file(local)
+    for repo_path in sorted(expect):
+        print(f"  + {repo_path:38s} md5 {expect[repo_path]}")
+    res = hf.create_commit(
+        repo_id=REPO, repo_type="model", operations=ops,
+        commit_message=f"FINAL checkpoint (step {TARGET_STEP}) + its four-family eval + card")
     print("  commit:", getattr(res, "commit_url", res))
 
-    # VERIFY BY CONTENT, never by exit code
+    # ⛔ VERIFY BY CONTENT, NEVER BY EXIT CODE. Re-download every text artifact and
+    # re-hash it; a create_commit that returned a URL is not evidence of what landed.
     info = hf.model_info(REPO, files_metadata=True)
-    print(f"  gated={getattr(info,'gated',None)} private={getattr(info,'private',None)}")
-    for s in info.siblings:
-        print(f"    {s.rfilename:20s} {s.size}")
-    p = hf_hub_download(REPO, "README.md", token=os.environ["HF_TOKEN"],
-                        force_download=True)
-    same = md5_file(Path(p)) == md5_file(CARD)
-    print(f"  published README identical to the in-repo card: {same}")
-    if not same:
-        raise SystemExit("⛔ the published card and the in-repo copy diverged — fix before "
-                         "reporting this as done")
+    print(f"\n  gated={getattr(info,'gated',None)} private={getattr(info,'private',None)}")
+    for s in sorted(info.siblings, key=lambda x: x.rfilename):
+        print(f"    {s.rfilename:38s} {s.size if s.size is not None else '':>13}")
+    bad = []
+    for repo_path, want in expect.items():
+        if repo_path.endswith(".pt"):
+            continue                     # multi-GB: verified by md5 at both ends in pull()
+        p = hf_hub_download(REPO, repo_path, token=os.environ["HF_TOKEN"],
+                            force_download=True)
+        got_md5 = md5_file(Path(p))
+        ok = got_md5 == want
+        print(f"  re-download {repo_path:38s} {'✅ md5 matches' if ok else '⛔ MISMATCH'}")
+        if not ok:
+            bad.append(repo_path)
+    if bad:
+        raise SystemExit(f"⛔ published bytes differ for {bad} — fix before reporting this done")
 
 
 def main() -> int:
@@ -282,12 +360,13 @@ def main() -> int:
     pre = preflight(a)
     if a.check:
         return 0
-    ck = pull(a, pre)
+    got = pull(a, pre)
     if a.pull:
         return 0
     if pre["procs"] > 0:
-        print("\n⚠️  the trainer is still running; ckpt.pt is a mid-run save, not the final.")
-    publish(a, ck)
+        raise SystemExit("⛔ REFUSING: the trainer is still running, so the checkpoints are "
+                         "mid-run saves, not the final ones. Never publish a live run's ckpt.")
+    publish(a, got)
     return 0
 
 

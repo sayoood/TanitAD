@@ -2618,7 +2618,7 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 
 ---
 
-### 4.5 REF-C **v3** — `refcv3-b1-v72-30k` — 🟢 **LIVE** to 40,284 · ✅ **step-30,000 EVALUATED 2026-09-03 (four families, T1-stamped/UNRULED, OPEN LOOP)** · ⛔ **a trivial hold-action control BEATS it**
+### 4.5 REF-C **v3** — `refcv3-b1-v72-30k` — ✅ **COMPLETE at 40,284** · ✅ **FINAL step-40,284 EVALUATED 2026-09-04 (four families, T1-stamped/UNRULED, OPEN LOOP)** · ✅ **PUBLISHED to HF** · ⛔ **a trivial hold-action control STILL BEATS it**
 
 **The goal-mediated strategic/tactical/operative hierarchy on the supervised anchor arm.** Code
 `stack/tanitad/refs/refc_v3.py`, trainer `stack/scripts/refc_v3_train.py`. Design + pre-registration:
@@ -2639,83 +2639,148 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 | **Nav source** | ⚠️ **ORACLE** — `config.json` `nav_cmd_derivation` = *"v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)"*. On PhysicalAI-derived data the only route supplier is the ego's own future path, so a supplied nav command is **optimistic by construction** |
 | **Goal provenance** | `contains_situation_classifier_output: false`, `situation_classifier_in_graph: false`, `supplied_or_predicted: "predicted"`, goal inference inputs = `pooled` conv features only. Shared **encoder** declared; attributability rests on the zero-init gates (an argument, not a measurement) |
 | **Split** | ⭐ **LEAK-GUARDED.** `/root/data/train` and `/root/data/eval` are symlink views of ONE built B1 epcache, split by v7.2 `clip_id` by `stack/scripts/refcv3_make_split.py`, which **refuses to run if the label sets intersect**. It exists because of a MEASURED leak (2026-09-02): v7.2 ships 4,572 train / **147** eval, and raw B1 is **4,713 = 4,572 + 141 of those eval clips** (the other 6 are val40 clips the parity gate drops) — so training on all of B1 and evaluating on the v7.2 eval split would have trained on 141 of the 147 eval clips. The run's own **4,572 + 141 = 4,713** is the independent check that the split happened. |
-| **Location** | `tanitad-refcv3` (= `tanitad-a40`) `:/workspace/experiments/refcv3-b1-v72-30k/` — `ckpt.pt` (model+opt+step), milestones `ckpt_{5000,15000,20000,30000}.pt` (`MILESTONES` at `refc_v3_train.py:103`; **40,284 is NOT a milestone**, so the final artifact is `ckpt.pt`) |
+| **Location** | `tanitad-refcv3` (= `tanitad-a40`) `:/workspace/experiments/refcv3-b1-v72-30k/` — `ckpt.pt` (model+opt+step), milestones `ckpt_{5000,15000,20000,30000}.pt` (`MILESTONES` at `refc_v3_train.py:103`; **40,284 is NOT a milestone**, so the trainer's final artifact is `ckpt.pt`). The eval stream made two immutable step-stamped copies: `ckpt_40284_FINAL.pt` (= `ckpt.pt`, model+opt+step) and `ckpt_step40284_frozen.pt` (model+step only). ⭐ **No longer single-copy — all three are now on HF** |
+| **Run completion** | ✅ **step 40,284**, verified two ways: `summary.json` = `{"done": true, "final_step": 40284, "target": 40284}`, and `torch.load(ckpt)["step"]` = **40284** (MEASURED on the dev box after transfer) |
 | **`ckpt_30000.pt`** | 428,519,790 B, md5 **`00da81c6efcd91e7b618a1fbddb3b78f`** (MEASURED on the pod and again after transfer to the dev box — both agree) |
-| **HF** | ✅ **`Sayood/tanitad-refc-v3`** — public + **gated `manual`**, created 2026-09-03. Naming follows the family convention `tanitad-<arm>-<variant>` (cf. `tanitad-refc-base`, `tanitad-refc-xl`). In-repo card copy: `Project Steering/HF_CARD_tanitad-refc-v3.md` |
+| **`ckpt_40284_FINAL.pt`** ⭐ | the FINAL checkpoint, `{model, opt, step}`, **1,284,991,701 B**, md5 **`fc304b62686ddb9e685d14bdab482404`** (MEASURED on the pod and again after transfer — both agree). `step` field reads **40284** |
+| **`ckpt_40284.pt`** (HF name; `ckpt_step40284_frozen.pt` on the pod) | model-only view, `{model, step}`, **428,518,255 B**, md5 **`b1ed7075ff730d0993d2eaa3c86f6b56`**. ⭐ Its `model` dict is **BITWISE IDENTICAL** to `ckpt_40284_FINAL.pt`'s — MEASURED, 544/544 tensors compare equal, same sha256 `158fef8f25edbc49dff542e68b75e900ae1e0508ad462e94d5176d1becb17a4e` |
+| **HF** | ✅ **`Sayood/tanitad-refc-v3`** — public + **gated `manual`**, created 2026-09-03, **final weights + final eval published 2026-09-04**. Naming follows the family convention `tanitad-<arm>-<variant>` (cf. `tanitad-refc-base`, `tanitad-refc-xl`). In-repo card copy: `Project Steering/HF_CARD_tanitad-refc-v3.md` (kept byte-identical to the published `README.md`, checked by `stack/scripts/publish_refcv3_hf.py`). ⛔ **No file in the HF repo is named bare `ckpt.pt`** — every checkpoint is step-stamped so 30,000 and 40,284 cannot be confused |
 
-#### Results — MEASURED 2026-09-03 on `ckpt_30000.pt` [TIER T1 stamped, **ruling UNRULED**; OPEN LOOP]
+#### Results — MEASURED 2026-09-04 on the FINAL `ckpt_40284.pt` [TIER T1 stamped, **ruling UNRULED**; ⛔ OPEN LOOP on every arm]
 
-⛔ **Scope.** Raw: `taniteval/results/refcv3-30k-openloop-20260903-2004.json` (+ `.RESULT.md`,
-`-dump.tar.gz`). Scored on **`ckpt_30000.pt`, step 30,000**, md5 `00da81c6efcd91e7b618a1fbddb3b78f`
-— **verified byte-identical** to the file the evaluator loaded (`manifest.model.ckpt`).
-⛔ **These numbers do NOT describe the final step-40,284 `ckpt.pt`.**
-Instrument `taniteval/tools/refcv3_arm.py`; **n = 4,823 windows / 141 episodes** of the v7.2 EVAL
-split (labels md5 `aa12c948f062181c3297265b51526ec5`); grid `2s`, dt 0.5 s, 4 horizon steps;
-**episode-cluster bootstrap B = 2,000, paired for deltas**.
+⛔ **Scope.** Raw: `taniteval/results/refcv3-40284-openloop.json` (md5
+`5cfe3258c18871218bd85d691904eb20`) and `taniteval/results/refcv3-40284-openloop.ARM.json` (md5
+`0de8e8a4ece162332bc3a387fd5d679c`), both published under `eval/` on HF. Step **40,284**, verified
+by the checkpoint's own `step` field AND by `summary.json`. Instruments
+`taniteval/tools/openloop_suite.py` over `taniteval/tools/refcv3_arm.py`'s dump;
+**n = 4,823 windows / 141 episodes** of the v7.2 EVAL split (labels md5
+`aa12c948f062181c3297265b51526ec5`); grid `2s`, dt 0.5 s, 4 horizon steps;
+**episode-cluster bootstrap B = 2,000, seed 0, paired for every delta**.
+**Criteria checker (registry 2.5.0): 0 violations / 0 work items.**
+⛔ **NON-PARITY** (`v2_parity.parity false`, `checked false`, `corpus_key null`) — not cross-arm
+comparable with refc-base/refc-xl; only the margin over the shared `ha0` floor is admissible.
 
-| arm | what it is | ADE (m) |
-|---|---|---|
-| `ha` | hold-action: the (a, steer) closing at t0, held | **0.2998** |
-| `oracle_sel` (T0) | GT-nearest anchor's refinement — a ceiling | 0.3999 |
-| **`os`** | **the model**, own `sel_score_v3` choice | **0.4798** · own CI [0.4472, 0.5140] · FDE 0.9889 [0.9183, 1.0609] |
-| `os_navshuf` | nav permuted | 0.4984 |
-| `os_navzero` | **nav withheld — the deployment condition** | 0.5034 |
-| `ha0` | constant velocity at measured v0 — the trivial floor | 0.6726 |
-
-**Paired margins over the shared `ha0` floor** (the only admissible cross-model comparison):
-
-| contrast | ADE Δ | CI95 | separated |
+| arm | what it is | ADE (m) | FDE (m) |
 |---|---|---|---|
-| `os` − `ha0` | **−0.1924** | [−0.2525, −0.1379] | ✅ |
-| `os_navzero` − `ha0` (deployment) | −0.1689 | [−0.2312, −0.1109] | ✅ |
-| `os` − `os_navzero` (oracle nav's worth) | −0.0235 | [−0.0383, −0.0112] | ✅ |
-| `os` − `os_navshuf` | −0.0186 | [−0.0261, −0.0114] | ✅ |
-| **`ha` − `ha0`** | **−0.3727** | [−0.4346, −0.3161] | ✅ |
+| ⭐ `ha` | hold-action: the (a, steer) closing at t0, held | **0.2996** [0.2755, 0.3278] | 0.6588 [0.6044, 0.7192] |
+| `oracle_sel` (T0) | GT-nearest anchor's refinement — a ceiling | 0.3668 [0.3437, 0.3914] | 0.7770 [0.7261, 0.8297] |
+| **`os`** | **the model**, own `sel_score_v3` choice, oracle nav | **0.4419** [0.4098, 0.4743] | 0.9288 [0.8611, 0.9947] |
+| `os_navshuf` | nav permuted | 0.4563 [0.4240, 0.4884] | 0.9582 [0.8887, 1.0246] |
+| **`os_navzero`** | **nav withheld — the deployment condition** | **0.4659** [0.4310, 0.5010] | 0.9655 [0.8935, 1.0362] |
+| `ha0` | constant velocity at measured v0 — the trivial floor | 0.6723 [0.6007, 0.7469] | 1.4029 [1.2484, 1.5646] |
 
-> ⛔⛔ **THE HEADLINE IS NOT "IT BEATS THE FLOOR". A TRIVIAL HOLD-ACTION CONTROL BEATS THE MODEL.**
-> `ha` 0.2998 vs `os` 0.4798, and `ha` clears the floor by **0.3727 m** against the model's
-> **0.1924 m** — nearly 2×. On this corpus and grid, holding the action that closes at t0 is the
-> better trajectory predictor. Any claim that refcv3 "works" must survive this row.
-> ⛔ **And `os` − `ha0` on speed MAE is +0.0112 [−0.0169, +0.0395], NOT separated** — the model adds
-> **nothing measurable over constant velocity longitudinally**; the whole margin is path shape. The
-> instrument marks `_longitudinal_claim_admissible: false`.
-> ⚠️ The oracle nav — the input that will not exist at deployment — is worth **2.35 cm** of ADE.
+**Paired margins** (the only admissible cross-model comparison is the `ha0` row):
+
+| contrast | ADE Δ | CI95 | verdict |
+|---|---|---|---|
+| `os` − `ha0` | **−0.2304** | [−0.2881, −0.1781] | ✅ WON |
+| `os_navzero` − `ha0` (deployment) | −0.2064 | [−0.2673, −0.1479] | ✅ WON |
+| ⛔ **`os` − `ha`** | **+0.1423** | [+0.1187, +0.1658] | ⛔ **LOST — the trivial control won** |
+| `ha` − `ha0` | −0.3727 | [−0.4346, −0.3161] | ✅ |
+| `os` − `os_navzero` (oracle nav's worth) | −0.0239 | [−0.0428, −0.0089] | ✅ |
+| `os` − `os_navshuf` | −0.0144 | [−0.0220, −0.0069] | ✅ |
+| `oracle_sel` − `os` (selection headroom, **T0−T1**) | −0.0751 | [−0.0884, −0.0618] | ✅ |
+
+> ⛔⛔ **THE HEADLINE IS UNCHANGED BY TRAINING TO THE END: A TRIVIAL HOLD-ACTION CONTROL BEATS THE
+> MODEL.** `ha` 0.2996 vs `os` 0.4419, paired **+0.1423 [+0.1187, +0.1658], separated**. The final
+> 10,284 steps closed **21 %** of the step-30,000 deficit (+0.1803 [+0.1563, +0.2047] → +0.1423).
+> Any claim that refcv3 "works" must survive this row.
+>
+> ⭐⭐ **AND THE DEFICIT IS NOT IN SELECTION AND NOT IN ROUTING — IT IS IN THE ANCHOR FAN.**
+> A perfect anchor chooser over this model's own fan buys **0.0751 m** (`oracle_sel` − `os`) and the
+> oracle nav is worth **0.0239 m** (`os` − `os_navzero`). **0.0751 + 0.0239 = 0.099 m, still short
+> of the 0.1423 m by which `ha` wins** ⇒ **a perfect selector WITH its oracle route would still not
+> reach hold-action.** This is the single most decision-relevant line in the row: the next
+> experiment belongs on the **trajectories on offer**, not on the scorer or the nav conditioning.
+>
+> ⚠️ The oracle nav — the input that will not exist at deployment — is worth **2.39 cm** of ADE.
 
 **The four families** (never pooled; each with its `n`):
 
-| family | headline | n |
+| family | headline | verdict vs `ha0` | n |
+|---|---|---|---|
+| **ADE** | see the tables above | ✅ **WON** 2/2 | 4,823 win / 141 eps |
+| **LONGITUDINAL** | speed MAE **0.4516** [0.4197, 0.4828] m/s, bias +0.0327 · along MAE 0.4030 [0.3722, 0.4332] m · **accel MAE 0.6806** [0.6464, 0.7156] m/s² · target-speed within 0.5/1.0/2.0 m/s = 0.7135/0.8784/0.9713 · ego-progress ratio 1.0031 [0.9886, 1.0144] | ⛔ **LOST** 2/3 won, **accel +0.2020 [+0.1713, +0.2342] LOST** | 4,823 win / 19,292 steps |
+| *distance-keeping* | headway **28.06 m** [24.02, 32.32] · time-gap 3.97 s [3.21, 4.86] · min TTC 24.99 s [23.56, 26.32] ⚠️ **788/1,252 censored at the 30 s cap; n_closing = 464** — never quote the TTC mean alone | — | 1,252 win / 67 eps |
+| **LATERAL** | heading MAE **1.3109°** [0.8087, 2.2671] · yaw-rate MAE 1.7940 [1.5761, 2.0309] °/s · curvature MAE 0.008815 [0.0063, 0.0121] m⁻¹ · cross-track MAE 0.1084 [0.0958, 0.1222] m, final 0.2337 m | ⛔ **LOST** 2/3 won, **yaw-rate +0.1700 [+0.1006, +0.2534] rad/s LOST** (see the scope warning below) | 18,115 heading / 13,538 curv+yaw steps |
+| **TACTICAL** | lateral acc **0.9540** [0.9396, 0.9664], κ **0.8113** [0.7541, 0.8578] · ⛔ longitudinal acc 0.7477, κ 0.3078: **brake_stop recall 0.3835**, accelerate recall **0.3439** | ⚠️ **MIXED** — lat +0.0881 [+0.0580, +0.1233] WON, lon −0.0100 [−0.0356, +0.0162] TIED | 4,823 |
+| **STRATEGIC** | ⛔ **UNAVAILABLE, `n = 0`**: *"strategic decisions not present in the scored pass (missing `['route_pred', 'route_gt']`). A world-model FIDELITY pass does not traverse the hierarchy… Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."* `how_to_populate`: *"supply `optionset` (map-derived option sets from `stack/experiments/nurec-gsplat/strategic_gt.py`, consumed by `taniteval.strategic_optionset`). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."* **A WORK ITEM, not a pass.** | — | **0** |
+
+⇒ block reports **`_complete: false`**, `_families_unavailable: ['strategic']`, `_rule_satisfied: true`
+(the latter records only that the missing family was declared properly — it is not a pass),
+`gaps.n_gaps: 0`.
+
+⛔⛔ **THE YAW-RATE ROW CARRIES A SCOPE TRAP AND MUST NEVER BE QUOTED BARE.** The two yaw-rate
+numbers in this row are over **different populations and disagree in SIGN**, and both are MEASURED:
+the **level** (`os` 1.7940 °/s vs `ha0` **2.3714** °/s — `os` is *better*) is over the **13,538 steps
+that pass the 0.25 m minimum-arc filter**, while the **paired delta** (+0.1700 rad/s ≈ 9.7 °/s —
+`os` is *worse*) is over **all 4,823 windows, unfiltered**. The family verdict uses the paired,
+unfiltered figure because that is what the criteria registry keys on. **HYPOTHESIS (not measured):**
+the flip is carried by near-stationary steps where yaw rate = dθ/dt is unstable. Note also that
+yaw-rate is the **one lateral metric the instrument does NOT mark dt-invariant**
+(`dt_invariant: ['heading_mae_deg', 'curvature_*', 'cross_*']`). *Same family as the `df` / Thor
+`free` / cgroup `usage_in_bytes` traps: a true measurement quoted outside its scope.*
+
+⭐ **ONE VERDICT FLIPPED between 30,000 and 40,284: the longitudinal claim is now admissible.** At
+30,000, `os` − `ha0` speed MAE was +0.0112 [−0.0169, +0.0395], **not separated**, and the instrument
+stamped `_longitudinal_claim_admissible: false`. At 40,284 it is **−0.0364 [−0.0636, −0.0079],
+separated**, the anti-echo block reads **BEATS_HOLDV0** (arm 0.4516 vs hold-v0 0.4880), and the flag
+is **`true`**. ⚠️ **The deployment row does NOT inherit it**: `os_navzero` − `ha0` speed MAE is
+**−0.0134 [−0.0437, +0.0179], TIED**; and acceleration is worse than constant velocity either way.
+
+**The route head — reported AS A PROBE, ⛔ NOT as the STRATEGIC family** (substituting it is
+RETRACTION_LOG #16; the JSON itself stamps `_strategic_source: "refcv3 route head (sidecar)"`):
+accuracy **0.7667 [0.7097, 0.8224]** vs a no-information rate of 0.6742, κ 0.4604, n = 3,622 win /
+128 eps (1,201 windows excluded, no route label). ⛔ It reads **0.7667 identically under true,
+shuffled AND zero nav**, and paired `true − shuffled` is **exactly +0.0000 [0.0000, 0.0000]** — the
+head is **nav-insensitive by construction**, so "it is not a nav echo" is **vacuous** (it cannot echo
+what it never reads) and the shuffle/zero controls have **no power** on it.
+
+**Degeneracy / echo guards — why the numbers are readable:** selection profile **50 of 128** anchors
+used, modal anchor 57 at **14.82 %**, entropy 2.8425/4.8520 nats (**ratio 0.5858**), agrees with the
+oracle on **56.52 %** → **`degenerate: false`** · `os` `trivial_frac` **0.0000** (only `ha0` is
+trivial, by construction) · ⭐ **`const0` constant-only control reads its KNOWN values exactly** —
+paired against itself `delta 0.0 [0.0, 0.0]` (bit-exact), analytic ADE **14.248286** vs expected
+14.248286 (|Δ| 1.07e-07) and speed MAE **11.395674** vs expected 11.395674 (|Δ| 0.0); *if this fails,
+the harness is wrong, not the model* · anti-echo: **BEATS_HOLDV0**, copy-detector **CLEAN** (echo
+index 0.0193 vs GT 0.1719) · `goal_gate` **0.17444** on `score_absmean` **4.0686** (report both —
+the gate alone cannot distinguish "not yet open" from "never opens") · `law_diagnostic` **REFUSED**
+and `goal_setting.anchor_selection` **UNAVAILABLE** (no fan+selector surface in a one-path dump) —
+both work items, not passes.
+
+#### What changed from step 30,000 to step 40,284 (same instrument, same 4,823 windows)
+
+| | step 30,000 | **step 40,284** | |
+|---|---|---|---|
+| `os` ADE | 0.4798 | **0.4419** | improved |
+| **`os` − `ha`** | **+0.1803** | **+0.1423** | ⛔ still LOST; 21 % closed |
+| `os` − `ha0` | −0.1924 | **−0.2304** | improved |
+| `os_navzero` − `ha0` | −0.1689 | **−0.2064** | improved |
+| `_longitudinal_claim_admissible` | **false** | **true** | ⭐ the one verdict that flipped |
+| lateral decision κ | 0.7753 | **0.8113** | improved |
+| brake_stop recall | 0.3106 | **0.3835** | improved; still misses 62 % |
+| accelerate | 1,014 predicted vs 538 true (over) | **456 predicted vs 538 true** (under) | over-prediction gone |
+| STRATEGIC | UNAVAILABLE, n = 0 | **UNAVAILABLE, n = 0** | unchanged — a work item |
+| selection entropy ratio | 0.5782 | **0.5858** | unchanged in kind |
+
+⚠️ **One seed, no replicate** — none of these movements is separated from seed variance, and the
+two-point sequence is not a learning curve. ⛔ Do not fit an exponent to it.
+
+#### In-training monitor — a T0 loss-surface diagnostic, **never a result**
+
+| row | step 30,000 | **step 40,284 (final)** |
 |---|---|---|
-| **LONGITUDINAL** | speed MAE **0.4992** [0.4675, 0.5318] m/s, bias +0.0673 · along MAE 0.4380 [0.4063, 0.4714] m · accel MAE 0.8026 m/s² · target-speed within 0.5/1.0/2.0 m/s = 0.6823/0.8607/0.9655 · ego-progress ratio 1.0187 | 4,823 windows / 19,292 steps |
-| *distance-keeping* | headway **28.31 m** [24.16, 32.89] · time-gap 3.98 s · min TTC 24.30 s ⚠️ **739/1,244 censored at the 30 s cap; n_closing = 505** — never quote the TTC mean alone | 1,244 win / 68 eps |
-| **LATERAL** | heading MAE **1.4891°** [0.916, 2.5892] · yaw-rate MAE 2.2053 °/s · curvature MAE 0.00945 m⁻¹ · cross-track MAE 0.1165 m, final 0.2422 m | 18,147 / 13,559 steps |
-| **TACTICAL** | lateral acc **0.9494**, κ 0.7753 (lane_keep r 0.9825 · turn_left 0.7689 · turn_right 0.7146). ⛔ longitudinal: **brake_stop recall 0.3106**, accelerate precision **0.2811** (1,014 predicted vs 538 true) — the known longitudinal defect, still present | 4,823 |
-| **STRATEGIC** | ⛔ **UNAVAILABLE**, `n = 0`: *"strategic decisions not present in the scored pass (missing `route_pred`/`route_gt`) — a world-model FIDELITY pass does not traverse the hierarchy."* Needs map-derived option sets; the instrument states a route label off the ego's own future yaw is **not** a substitute. **A WORK ITEM, not a pass.** | 0 |
+| `eval_loss` | 7.94893 | **7.94446** |
+| `eval_traj` | 0.93026 | **0.92696** |
+| `eval_anchor_acc` | 0.56875 | **0.62500** |
+| `eval_slot_valid_frac` | 0.91953 | **0.91953** |
+| `eval_goal2s_err_m` | 1.91019 | **1.97867** ⚠️ *worse* |
+| `eval_goal_gate` | 0.15595 | **0.17444** |
+| `eval_goal_score_absmean` | — | **4.07210** |
 
-⇒ block reports **`_complete: false`**, `_families_unavailable: ['strategic']`, `_rule_satisfied: true`.
-
-**Head ablations (true nav − shuffled nav, accuracy):** lateral **+0.0233 [−0.0026, +0.0537] NOT
-separated** · longitudinal **+0.0225 [+0.0009, +0.0417] separated** · ⚠️ **route head exactly
-+0.0000 [0.0000, 0.0000]** — entirely insensitive to which nav command it is given.
-
-**Degeneracy / echo guards — why the numbers are trustworthy:** selection profile **51 of 128**
-anchors used, modal anchor 57 at 15.36 %, entropy ratio 0.5782, agrees with oracle on 55.98 % →
-**`degenerate: false`** · `os` `trivial_frac` **0.0000** (only `ha0` is trivial, by construction) ·
-anti-echo: hold-v0 NOT separated, copy-detector **CLEAN** (echo index 0.0097 vs GT 0.1719) ·
-`goal_gate` **0.15595** — the zero-init E9 gate did learn to open · `law_diagnostic` **REFUSED**
-(inputs missing — a work item, not a pass).
-
-⭐ **The selection profile is a NEW gate the T1 runbook lacks.** MEASURED by the Benchmarks
-FlyWheel: a randomly-initialised RefCV3 selecting **one anchor on 42/42 windows** reads
-`trivial_frac 0.0000` — the standard trivial-profile gate is **blind to this architecture's
-characteristic degeneracy**. `T1_CHECKLIST.md` GATE 6 needs the second bullet.
-
-#### In-training monitor at step 30,000 — a T0 loss-surface diagnostic, **never a result**
-
-`eval_loss 7.94893 · eval_traj 0.93026 · eval_anchor_acc 0.56875 · eval_slot_valid_frac 0.91953 ·
-eval_goal2s_err_m 1.91019 · goal_gate 0.15595` (MEASURED, `metrics.jsonl` step 30000; 8 batches /
-160 windows). The trainer's own source says this block *"is NOT the four-metric-family result and must
-never be quoted as one"*. The last figure is the **Caveat-B instrument**: the zero-init `goal_gate` has
-**opened to 0.15595**, so the E9 goal-selection edge is live — which says nothing about whether it helped.
+MEASURED, `metrics.jsonl`, 8 batches / 160 windows. The trainer's own source says this block *"is NOT
+the four-metric-family result and must never be quoted as one"*. Note the rows do not all move
+together — `eval_goal2s_err_m` **regressed** while the loss fell.
 
 #### ⚠️ Three caveats that travel with this row
 
@@ -2724,6 +2789,8 @@ never be quoted as one"*. The last figure is the **Caveat-B instrument**: the ze
    17,000** (supervisor v2) and **`--u8-batches` at step 18,500** (supervisor v3, after repeated cgroup OOM
    kills at eval boundaries). Steps 0–17,000 did **not** take the nav command from the v7.2 token. Resume is
    a strict `load_state_dict` (`refc_v3_train.py:1093`). **Do not describe this as a single-recipe run.**
+   ⭐ **But the final segment IS clean:** `supervisor.log` records **no relaunch after step 18,500**, so
+   the last **21,784 steps ran uninterrupted under one recipe** to step 40,284 (MEASURED, `supervisor.log`).
 2. **Six buffer values may carry a held-out-label EMA.** `compute_losses_v3` called
    `core.update_tactical_prior()` unconditionally, so the in-training eval's held-out label marginals EMA'd
    into `core.lat_log_prior` / `core.lon_log_prior` (3 + 3 values, which shape the manoeuvre decode through
@@ -2732,7 +2799,8 @@ never be quoted as one"*. The last figure is the **Caveat-B instrument**: the ze
    segments — and buffers carry across resumes. 6 of 107,032,901 values.
 3. **The 6 s band's statistics are NOT inherited from the 2 s band.** v1/v2 REF-C planned to 2.0 s over
    4 slots. The 2 s-band reachability figures (72.08 % clipped / 3.58×) must not be quoted here;
-   `slot_valid_frac ≈ 0.92` at step 30,000 means ~8 % of far slots are masked on a given batch.
+   `slot_valid_frac ≈ 0.92` at step 30,000 **and unchanged at 40,284** means ~8 % of far slots are
+   masked on a given batch — training to the end did not improve far-slot coverage.
 
 ---
 
