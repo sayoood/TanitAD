@@ -14,6 +14,16 @@
 
 ---
 
+## 0b. ⛔⛔ SCOPE NARROWED BEFORE THIS WAS EVER RUN — read this first
+
+**E-SEED-2c (`…/2026-09-04-v7-seed-and-external-target/RESULT.md` §2.4) ran the SAME cached features through the register's OWN environment instrument** (`rangeprobe_rff.rff_fold` + `within_clip_r` + `panel_kfold.kfold_clip_scores`, imported not re-implemented) **and the repair's benefit does not appear on the scene axis**: `seed_imnet_pos0 − seed_asis` **+0.0295 [−0.0690, +0.1246] NOT separated**, and the repaired seed does **not** beat the raw-pixel floor (**+0.0061 [−0.1236, +0.1318]**). Under that instrument **not one speed contrast is separated either**, `dino_hf − scratch` included — so §0's ego numbers are a property of the linear/pooled-R² read.
+
+⇒ **This prereg is kept, with its success criterion rewritten to require the SCENE axis, because the change is free and correct hygiene and because a null on a pre-registered cheap arm is a result.** ⛔ **It is no longer the programme's leading recipe change.** That is now `PREREG_V7F` §10 **D1 option A** — wrap the real `DINOv3ViTModel` so RoPE comes with the weights — because the seed loses a **separated** fraction of DINOv3's scene content (`dino_hf − seed_asis` **+0.2050 [+0.0896, +0.3233]**; still **+0.1755 [+0.0525, +0.2959]** after both repairs) and **no cheap wiring change recovers it**.
+
+⭐ **Why the honest thing is to keep it rather than delete it:** the failure branch below was written before the arm existed, the arm was run, and it fired. Deleting the prereg would hide the one measurement in this package that refuted its own author.
+
+---
+
 ## 1. Hypothesis (register id proposed)
 
 > **`H-V7SEED-1` — Initialising `ViTEncoder.pos` to ZERO (rather than `trunc_normal_(std=0.02)`) when seeding from a RoPE-only trunk, with the ImageNet affine folded into the patch-embed `Conv2d`, raises the seeded trunk's decodability at step 0 to a level not separable from published DINOv3, AND that advantage survives a short trained arm rather than being erased in the first few hundred steps.**
@@ -34,8 +44,15 @@ held_constant: [seed_source_sha256, enc_dim, enc_depth, enc_heads, patch,
                 frame_h, frame_w, projection, corpus, clip_split, seed, steps,
                 batch, window, o5_k, o5_target, w_o5, w_o6, cond_param, lr,
                 probe_lambda_grid, pca_k, k_outer, k_inner, n_boot]
-success: "at step 0, (repaired - as_wired) speed R2 delta > 0 with a paired
-          clip-cluster-bootstrap CI EXCLUDING 0 (reproduces E-SEED-2);
+success: "AT STEP 0 AND ON THE SCENE AXIS -- (repaired - as_wired) `n_agents`
+          delta > 0 under the REGISTER'S OWN instrument (rff_fold +
+          within_clip_r + kfold_clip_scores) with a paired clip-bootstrap CI
+          EXCLUDING 0, AND (repaired - pixel) > 0 with its CI excluding 0.
+          !! THIS IS THE BINDING HALF AND IT IS CURRENTLY FAILING: E-SEED-2c
+          MEASURED +0.0295 [-0.0690, +0.1246] and +0.0061 [-0.1236, +0.1318].
+          The EGO half -- (repaired - as_wired) speed R2 delta > 0 under a
+          linear ridge, MEASURED +0.2165 [+0.0243, +0.4567] -- is reported but
+          is NOT sufficient on its own (E-DEC-17: ego is free);
           AND at step 2,000 of a matched tiny arm the repaired arm's
           Observer-Effect monitor ratio rho(2000)/rho(0) is NOT BELOW the
           as-wired arm's, paired CI excluding 0 in the repaired arm's favour
