@@ -185,6 +185,19 @@ class _BasePolicy:
     # consumed is recorded as DROPPED in the payload instead of vanishing. An
     # arm that says False is not broken — it is un-wired, and the rollout says so.
     consumes_nav_known = False
+    #: ⭐ G1 (2026-09-04). WHICH CANONICALISATION THIS ARM WAS TRAINED AT.
+    #: `"ftheta256"` is the historical path — `ftheta_crop_resize(..., 256,
+    #: center="principal")` onto a 256x256 f-theta raster at `F_REF = 266`, the
+    #: geometry flagship-v1 / refc-base / refc-xl were built on. It is UNCHANGED.
+    #: `"cyl256x640"` is the 256x640 EQUIDISTANT-AZIMUTH CYLINDRICAL frame the v7
+    #: corpus (and therefore refcv3) was built at.
+    #: ⛔ An arm must be fed the raster it was trained at; this attribute is the
+    #: only place that choice is made, and it is per-ARM, never a CLI flag — a
+    #: flag would let the wrong geometry be selected for an arm by accident.
+    canon_mode = "ftheta256"
+    #: observation-window length in 10 Hz ticks. Read from the loaded config for
+    #: refcv3 rather than assumed; `WINDOW` is the historical arms' value.
+    window = WINDOW
 
     def __init__(self, device="cuda"):
         import torch
@@ -194,8 +207,77 @@ class _BasePolicy:
         self._crop, self._stack = ftheta_crop_resize, stack_frames
         self.device = device if torch.cuda.is_available() else "cpu"
         self.f_eff = None
+        self.canon_provenance = None
+
+    # ------------------------------------------------------------------ #
+    def _canon_cyl(self, frames, intr):
+        """G1: the 256x640 cylindrical canonicalisation (refcv3's own).
+
+        ⚠️ **STATE THE PROJECTION BEFORE USING ANY CAMERA FORMULA.** This frame
+        is CYLINDRICAL: the column is LINEAR IN AZIMUTH, so the field is
+        ``2 * (W/2) / f_ref`` = 2 * 320 / 305.5774907364391 = **2.0944 rad =
+        120.0 deg**, which is exactly the rig's own name
+        (`camera_front_wide_120fov`). The pinhole formula ``2*atan((W/2)/f)``
+        returns a plausible-looking **92.6 deg** and is WRONG here.
+        """
+        torch = self.torch
+        from tanitad.data.calib import (PHYSICALAI_WIDE120_256x640,
+                                        cylindrical_rectify)
+        frame = PHYSICALAI_WIDE120_256x640
+        vid = torch.from_numpy(np.stack(frames)).permute(0, 3, 1, 2)
+        # `require_per_clip=True` (the default) REFUSES a corpus-median
+        # intrinsic. The renderer serves a real per-clip principal point over
+        # the wire, so `build_intr` sets `per_clip=True` and this is wired, not
+        # defaulted — see calib.py:981 for why that matters (~215 px rig error).
+        canon = cylindrical_rectify(vid, intr, frame)          # [T,3,256,640] u8
+        if self.f_eff is None:
+            self.f_eff = float(cylindrical_rectify.last_f_eff)
+            obs = float(cylindrical_rectify.last_observed_frac)
+            # `last_f_eff` IS `frame.f_ref` by construction, so this asserts the
+            # frame we ran with, not a resampling accident.
+            ok_f = abs(self.f_eff - frame.f_ref) < 1e-9
+            # ⚠️ The threshold is NOT 1.0. `PHYSICALAI_WIDE120_256x640`'s observed
+            # mask is 8.897 % on rig B and 0.0017 % on rig A (calib.py, MEASURED
+            # over 3,000 clips), so a rig-B clip legitimately reads ~0.911 — that
+            # is what refcv3's own training frames look like. A WRONG crop box
+            # reads far lower, which is what this refusal is for.
+            ok_o = obs > 0.85
+            rig = "B (cy~755)" if intr.cy > 650 else "A (cy~543)"
+            logger.info("CANON[cyl] f_eff=%.7f (f_ref=%.7f) observed_frac=%.6f "
+                        "hfov=%.3f deg rig=%s %s", self.f_eff, frame.f_ref, obs,
+                        math.degrees(2.0 * (frame.width / 2.0) / frame.f_ref), rig,
+                        "OK" if (ok_f and ok_o) else "FAIL")
+            self.canon_provenance = {
+                "mode": "cyl256x640", "f_eff": self.f_eff, "f_ref": frame.f_ref,
+                "observed_frac": obs, "projection": frame.projection,
+                "height": frame.height, "width": frame.width,
+                "hfov_deg_cylindrical": math.degrees(
+                    2.0 * (frame.width / 2.0) / frame.f_ref),
+                "hfov_deg_pinhole_formula_WRONG_HERE": math.degrees(
+                    2.0 * math.atan((frame.width / 2.0) / frame.f_ref)),
+                "intr_cx": float(intr.cx), "intr_cy": float(intr.cy),
+                "intr_per_clip": bool(intr.per_clip), "rig": rig}
+            if not (ok_f and ok_o):
+                raise RuntimeError(
+                    f"cylindrical canon self-check FAILED (f_eff={self.f_eff}, "
+                    f"observed_frac={obs}) — the model would see a raster it was "
+                    f"never trained at. Refusing.")
+        st = self._stack(canon, STACK)                       # [T-2, 9, 256, 640]
+        fw = st[-self.window:][None].to(self.device)
+        # ⛔ A 0-dim DEVICE-TENSOR divisor, not the Python scalar 255.0. The run
+        # trained with `--u8-batches`, whose ingest is
+        # `refc_v3_train.frames_to_device` — and MEASURED 2026-09-02, a Python
+        # scalar makes CUDA take the multiply-by-reciprocal path and land 1 ulp
+        # off the CPU contract on 126/256 uint8 values. Same map, same bits.
+        fw = fw.float().div_(self.torch.tensor(255.0, device=fw.device))
+        if tuple(fw.shape[-3:]) != (9, 256, 640) or fw.shape[1] != self.window:
+            raise RuntimeError(f"raster assertion failed: {tuple(fw.shape)} != "
+                               f"(1,{self.window},9,256,640)")
+        return fw
 
     def canon(self, frames, intr):
+        if self.canon_mode == "cyl256x640":
+            return self._canon_cyl(frames, intr)
         torch = self.torch
         vid = torch.from_numpy(np.stack(frames)).permute(0, 3, 1, 2)
         canon = self._crop(vid, intr, 256, center="principal")
@@ -204,6 +286,10 @@ class _BasePolicy:
             ok = abs(self.f_eff - self.F_REF) < 8.0
             logger.info("CANON f_eff=%.2f (F_REF=%.1f) %s", self.f_eff, self.F_REF,
                         "OK" if ok else "FAIL")
+            self.canon_provenance = {"mode": "ftheta256", "f_eff": self.f_eff,
+                                     "f_ref": float(self.F_REF),
+                                     "projection": "ftheta_crop_resize",
+                                     "height": 256, "width": 256}
             if not ok:
                 raise RuntimeError(f"f_eff self-check FAILED ({self.f_eff}) — the model "
                                    "would see a raster it was never trained at. Refusing.")
@@ -284,6 +370,86 @@ class RefCPolicy(_BasePolicy):
         for k, v in out.items():
             if hasattr(v, "shape") and v.ndim == 2 and v.shape[0] == 1 and v.shape[1] <= 16:
                 extra[k] = v[0].float().cpu().numpy().tolist()
+        return traj.astype(np.float64), extra
+
+
+class RefCV3Policy(_BasePolicy):
+    """G2 (2026-09-04). refcv3 in the closed loop.
+
+    ⭐ **The loader is IMPORTED, never forked.** `taniteval/tools/refcv3_arm.py`
+    already owns a strict, cross-checked `load_model` that rebuilds the config
+    through the trainer's OWN `build_parser` + `_pin_trainer_cfg` on the recorded
+    argv, cross-checks arm / image_hw / tac_vocab_version / horizons /
+    param_breakdown against `config.json`, and REFUSES a non-strict state-dict
+    load ("fix the config, never the weights"). Re-implementing any of that here
+    would be a second, drifting copy of the one contract that matters.
+    """
+    name = "refcv3"
+    canon_mode = "cyl256x640"
+    consumes_nav_known = False       # refc.py:2042-2045 RAISES if fed with the
+                                     # gate off, and nothing in v3 turns it on.
+
+    def __init__(self, ckpt, device="cuda", config=None):
+        super().__init__(device)
+        import refcv3_arm
+        self.model, self.cfg, self.targs, self.prov = refcv3_arm.load_model(
+            ckpt, config, self.device, allow_nonstrict=False)
+        self.step = self.prov.get("step")
+        self.horizons = [int(h) for h in self.prov["horizons"]]
+        self.window = int(self.prov["window"])
+        self.decoder_steps = int(self.prov["decoder_steps"])
+        # ---- G3: ASSERT the grid, never assume it -------------------------- #
+        # The harness steers to `traj[LOOKAHEAD_IDX]` and scores at
+        # HORIZON_S = (0.5, 1.0, 1.5, 2.0) s. A checkpoint built on a different
+        # horizon grid would silently steer to the wrong lookahead.
+        if tuple(self.horizons[:len(WP_STEPS)]) != tuple(WP_STEPS):
+            raise RuntimeError(
+                f"⛔ HORIZON GRID MISMATCH: the checkpoint's first "
+                f"{len(WP_STEPS)} horizons are {self.horizons[:len(WP_STEPS)]} "
+                f"but the harness scores/steers on WP_STEPS={list(WP_STEPS)} "
+                f"(= {list(HORIZON_S)} s at {DT} s/tick). Refusing — "
+                f"LOOKAHEAD_IDX={LOOKAHEAD_IDX} would be the wrong waypoint.")
+        # image geometry must be the one `_canon_cyl` produces
+        ihw = list(self.cfg.core.encoder.image_hw())
+        if ihw != [256, 640]:
+            raise RuntimeError(f"⛔ checkpoint image_hw={ihw}, but this policy "
+                               f"canonicalises to [256, 640]. Refusing.")
+        if int(self.cfg.core.encoder.in_channels) != 3 * STACK:
+            raise RuntimeError(f"⛔ encoder in_channels="
+                               f"{self.cfg.core.encoder.in_channels} != 3*STACK="
+                               f"{3 * STACK}; the D-015 frame stack disagrees.")
+        logger.info("refcv3 loaded step=%s window=%d horizons=%s decoder=%s/%d "
+                    "image_hw=%s hier=%s anchors=%d params=%s",
+                    self.step, self.window, self.horizons,
+                    self.prov["decoder_mode"], self.decoder_steps, ihw,
+                    self.prov["hier"], self.prov["n_anchors"],
+                    self.prov["param_breakdown"].get("total"))
+        logger.info("refcv3 strict load: missing=%s unexpected=%s",
+                    self.prov["state_dict_load"]["missing_keys"],
+                    self.prov["state_dict_load"]["unexpected_keys"])
+
+    def plan(self, frames, intr, v0, nav_cmd, nav_known=None):
+        torch = self.torch
+        with torch.no_grad():
+            fw = self.canon(frames, intr)                    # [1,W,9,256,640]
+            v0t = torch.tensor([float(v0)], dtype=torch.float32, device=self.device)
+            navt = torch.tensor([nav_cmd], dtype=torch.long, device=self.device)
+            # `lan` and `ego_state` are deliberately NOT passed: the run's config
+            # carries neither (`graft_lan`/`goal_str` absent from argv,
+            # `ego_state_inject` off), and `forward` RAISES on an ego block it
+            # would have to drop. `steps` is the run's own decoder step count.
+            out = self.model(fw, nav_cmd=navt, v0=v0t, steps=self.decoder_steps)
+            # ⭐ THE DEPLOYED SELECTION IS out["traj"] AND NOTHING ELSE
+            # (refc_v3.py:520-525 on hier; refc.py:1531-1534 on flat).
+            full = out["traj"][0].float().cpu().numpy()      # [S, 2]
+            traj = full[:len(WP_STEPS)]                      # index-select, never interp
+        extra = {}
+        for k, v in out.items():
+            if hasattr(v, "shape") and v.ndim == 2 and v.shape[0] == 1 and v.shape[1] <= 16:
+                extra[k] = v[0].float().cpu().numpy().tolist()
+        # the 3-6 s tail this arm can serve but the harness does not score, banked
+        # verbatim so a longer-horizon rescore never needs the GPU again
+        extra["traj_full_6s"] = full.tolist()
         return traj.astype(np.float64), extra
 
 
@@ -431,13 +597,19 @@ def plan_to_poses(traj, v0):
 
 
 def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
-                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None, leadgeom=None,
+                gt_ts_us, warm=None, save_frames=None, log=None, leadgeom=None,
                 shutter_s=0.0, gt_stride=0):
     """One closed-loop rollout. Returns a record dict."""
     from collections import deque
     gf = GroundFollower(gt_T)
     gtp = gt_poses_xyv(gt_T)
-    frames = deque(maxlen=NEED_FRAMES)
+    # The native-frame need is a property of THE ARM's observation window, read
+    # from its loaded config — not a module constant. For every historical arm
+    # `policy.window` IS `WINDOW`, so this is `NEED_FRAMES` unchanged.
+    need = int(getattr(policy, "window", WINDOW)) + STACK - 1
+    if warm is None:
+        warm = need
+    frames = deque(maxlen=need)
     rec = {"start_frame": start_frame, "n_steps": n_steps, "arm": policy.name,
            "steps": []}
 
@@ -549,8 +721,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene-dir", required=True)
     ap.add_argument("--arm", required=True,
-                    choices=["flagship-v1", "refc-base", "refc-xl"])
+                    choices=["flagship-v1", "refc-base", "refc-xl", "refcv3"])
     ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--ckpt-config", default=None,
+                    help="refcv3 only: the run's config.json. Defaults to the "
+                         "one beside --ckpt, which is where the trainer writes it.")
     ap.add_argument("--condition", default="empty",
                     choices=["empty", "objects", "lead25", "lead15", "lead8",
                              "cutin", "behind"],
@@ -659,6 +834,8 @@ def main():
 
     if args.arm == "flagship-v1":
         pol = FlagshipV1Policy(args.ckpt)
+    elif args.arm == "refcv3":
+        pol = RefCV3Policy(args.ckpt, config=args.ckpt_config)
     else:
         pol = RefCPolicy(args.ckpt, preset=args.arm.split("-", 1)[1])
 
@@ -702,9 +879,16 @@ def main():
                "scene": sd.name, "layers": layers, "steps": args.steps,
                "f_eff": pol.f_eff, "gt": gt_dump, "rollouts": recs,
                "synth_attach": attach_info,
+               # G1 provenance: WHICH raster the model actually saw, banked in
+               # the artifact so a geometry question never needs the GPU again.
+               "canon": pol.canon_provenance,
+               "window": int(getattr(pol, "window", WINDOW)),
+               "model_provenance": getattr(pol, "prov", None),
                "lead_path_extrapolated_calls": int(leadgeom.path.n_extrap)}
     p = out / f"rollouts_{args.arm}_{args.condition}.json"
-    p.write_text(json.dumps(payload))
+    # `default=str` only ever fires on the provenance block (a rebuilt dataclass
+    # can carry a non-JSON leaf); every metric-bearing field is already plain.
+    p.write_text(json.dumps(payload, default=str))
     logger.info("wrote %s (%d rollouts)", p, len(recs))
 
 

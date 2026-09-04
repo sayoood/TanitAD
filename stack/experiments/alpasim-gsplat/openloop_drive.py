@@ -72,9 +72,16 @@ NAV_NAMES = ("follow", "left", "right", "straight")
 
 
 def build_policy(arm: str, ckpt: str):
-    from closedloop_drive import FlagshipV1Policy, RefCPolicy
+    from closedloop_drive import FlagshipV1Policy, RefCPolicy, RefCV3Policy
     if arm == "flagship-v1":
         return FlagshipV1Policy(ckpt)
+    if arm == "refcv3":
+        # ⭐ 2026-09-04. The docstring's "⛔ Both arms are 256px SQUARE" no longer
+        # holds for EVERY arm: `RefCV3Policy` declares `canon_mode="cyl256x640"`
+        # and `_BasePolicy.canon` dispatches on it. The refusal is unchanged for
+        # the 256-square arms — it moved from "the only geometry" to "this arm's
+        # geometry", which is the assertion that was actually wanted.
+        return RefCV3Policy(ckpt)
     return RefCPolicy(ckpt, preset=arm.split("-", 1)[1])
 
 
@@ -187,6 +194,19 @@ def main():
             raise SystemExit(f"--ckpt wants arm=path, got {spec!r}")
         arms[a] = str(Path(p).expanduser())
     pols = {a: build_policy(a, p) for a, p in arms.items()}
+    # ⛔ ONE shared frame deque drives EVERY arm (that is what makes the pairing an
+    # identity rather than a determinism claim), so every arm must want the same
+    # native-frame count. ASSERT it — an arm with a different observation window
+    # would silently receive the wrong stack. refcv3's window IS 8, verified from
+    # its own loaded config, so this passes; it is here for the next arm.
+    for _a, _p in pols.items():
+        _need = int(getattr(_p, "window", WINDOW)) + STACK - 1
+        if _need != NEED_FRAMES:
+            raise SystemExit(
+                f"⛔ arm {_a!r} needs {_need} native frames (window="
+                f"{getattr(_p, 'window', WINDOW)}) but this sweep's shared deque "
+                f"holds {NEED_FRAMES}. One deque cannot serve two window lengths; "
+                f"run that arm in its own sweep.")
 
     vdir = out / "frames"
     if args.save_video_frames:
