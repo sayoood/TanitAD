@@ -11529,3 +11529,42 @@ baseline (22.24 %). That is a real and worthwhile finding — stated correctly.
 not:** any claim that the STRATEGIC family is a positive, or that this constitutes an echo
 test. Same family as the earlier "true but wrong for the reader" cases — a correct
 measurement whose framing licenses a conclusion the artifact does not support.
+
+# 2026-09-04 (#17) — "on the deployment-relevant arm, neither model is shown to beat a straight line" (paired open-loop harness)
+
+**Corrected.** The paired refav1-vs-refcv3 record reports `os_navzero − ha0` =
+**−0.1349 [−0.3276, +0.0541], NOT separated**, on its **n = 120** shared windows over
+20 episodes, and draws the deployment conclusion from it. The single-model artifact
+measures the *same quantity* on **n = 4,823** windows over 141 episodes and it **IS**
+separated:
+
+| artifact | n windows | n episodes | `os_navzero − ha0` (ADE) | separated |
+|---|---|---|---|---|
+| paired harness | 120 | 20 | −0.1349 [−0.3276, +0.0541] | no |
+| single-model read | **4,823** | **141** | **−0.1689 [−0.2312, −0.1109]**, `p_delta_gt0 = 0.0` | **yes** |
+
+⭐ **The two point estimates AGREE** (−0.1349 vs −0.1689). Only the interval differs —
+**3.2× wider** at the smaller n, which is what ~7× fewer episodes predicts under an
+episode-cluster bootstrap. So the paired subset is **UNDERPOWERED, not contradictory**,
+and refcv3 *does* clear the constant-velocity floor with nav withheld.
+
+**Root-cause class: AN UNDERPOWERED NULL REPORTED AS A NEGATIVE — and it is the failure
+mode our own validation skill names.** `TanitAD_ValidateAIDesign` §4 requires every panel
+to print its `n` and `d` precisely because *"n ≪ d is underpowered BY CONSTRUCTION, not a
+negative."* The record did print n = 120 honestly and did hedge with "is not shown to",
+which is literally true. **That is what makes this case instructive rather than sloppy:
+the wording was defensible and the takeaway was still wrong.** A reader acts on "neither
+model beats a straight line without oracle nav", which the 4,823-window read refutes.
+
+⇒ **The rule: when a paired subset returns a null on a quantity that a larger read has
+already separated, report the LARGER read as the estimate and the subset as a power
+limit — never the other way round.** State both n's side by side. Same family as
+[[true but wrong for the reader]]: a correct measurement whose framing licenses a
+conclusion the evidence does not support.
+
+⚠️ **What is NOT retracted, and is the more important half of that record:** refav1's
+`cl` arm was **bit-identical to `ha0` on 120/120 windows** — constant velocity on 100 %,
+margin exactly 0.0000 on every metric in every family. That finding is **categorical, not
+statistical**: it does not depend on n at all, and 120/120 is as decisive as 4,823/4,823
+would be. The cross-model read is VOID because the instrument saw the baseline rather than
+the model — which remains the sharpest result of the night.
