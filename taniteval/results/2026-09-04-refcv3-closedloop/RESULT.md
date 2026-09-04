@@ -388,7 +388,8 @@ ground-following is a **harness choice, not a physics engine**.
 | **Harness patch (G1/G2/G3)** | `repo:stack/experiments/alpasim-gsplat/closedloop_drive.py` | no |
 | **Open-loop arm registration + window guard** | `repo:stack/experiments/alpasim-gsplat/openloop_drive.py` | no |
 | refcv3 checkpoint on Thor | `tanitad-thor-wifi:/home/nvidia/models/refcv3-b1-v72-40284/{ckpt.pt,config.json}` md5 `b1ed7075ff730d0993d2eaa3c86f6b56` | ⚠️ **no — the source `tanitad-refcv3:/workspace/experiments/refcv3-b1-v72-30k/` still holds it** |
-| Thor run tree `tanitad_cl_v3` + `run_panel_v3.sh` | `tanitad-thor-wifi:/home/nvidia/` | ⚠️ **YES, Thor only** — but it is a *derived* overlay of repo code + `run_panel_v3.sh`, whose exact protocol is transcribed in §3/§4 and which is `run_panel_hq.sh` with the arm list changed |
+| **Panel runner (the exact protocol)** | `repo:stack/experiments/alpasim-gsplat/run_panel_v3.sh` — pulled off Thor and banked | no |
+| Thor run tree `tanitad_cl_v3` | `tanitad-thor-wifi:/home/nvidia/tanitad_cl_v3` | ⚠️ Thor only — but it is a purely *derived* overlay: `tanitad_cl` + the repo's current `stack/tanitad`, `stack/scripts`, `taniteval/taniteval`, `taniteval/tools`, rebuildable in one command from the repo |
 | refc-base / flagship-v1 closed-loop rollouts | not re-banked — **bit-identical** to the 2026-08-03 artifacts already in `repo:stack/experiments/alpasim-gsplat/results/closedloop-hq-render/rollouts/` | no |
 
 **Nothing that took real effort lives only on a host.** No training was disturbed (Thor was idle at
