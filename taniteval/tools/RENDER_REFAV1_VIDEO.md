@@ -47,23 +47,35 @@ channel refuses anything at or over **30 MiB**.
 
 | reel | clips | replan | frames / duration | full | small (1280 px) | decode |
 |---|---|---|---|---|---|---|
-| **`refav1_reel_step21109_dense4`** | 4 | every **0.8 s** (stride 4) | 852 / **85.20 s** | 22.42 MiB | 3.20 MiB | 852 frames, clean, both |
+| ⭐ **`refav1_reel_step21109_dense8`** | **8** | every **0.8 s** (stride 4) | **1,564 / 156.40 s** | 46.95 MiB | **6.98 MiB** | 1,564 frames, clean, both |
 | `refav1_reel_step21109_eval8` | 8 | every 8 s (stride 40 — the eval's own grid) | 444 / 44.40 s | 8.18 MiB | 1.53 MiB | 444 frames, clean, both |
+
+Only the SMALL file has to clear the 30 MiB ceiling; the full-quality render is
+allowed to exceed it and does. *(A 4-clip `dense4` precursor was rendered and
+verified first — 852 frames / 85.20 s — and is superseded by `dense8`, which is a
+strict superset at the same stride; its stills remain in the repo as the record
+of that render.)*
 
 **Why two.** The 141-clip EVAL dump is `--window-stride 40`: one plan every 8 s,
 so a reel built on it shows ~2.2 s of each clip before the plan has nothing left
-to draw (the renderer SKIPS and COUNTS those frames — 480 of them). It covers all
-eight clips and is the companion. The dense reel re-rolls four of the same clips
+to draw (the renderer SKIPS and COUNTS those frames — 480 of 924). It is the
+companion, on the eval's own grid. The dense reel re-rolls the same eight clips
 at stride 4, where **no frame is ever skipped**, and is the one to watch.
 
-⭐ **The dense reel is also an independent check of the headline at a different
-stride and on a deliberately harder clip set.** Its four clips carry GT lateral
-> 0.5 m on **48/84 = 57 %** of windows (30 of them > 2.0 m, max 7.26 m) — far more
-lateral demand than the full split — and the planner still emits **κ identically
-zero on 84/84 = 1.0000** of windows, constant acceleration on 84/84, and the same
-**two** distinct accelerations (`a = 0` on 74, `a = −1.5` on 10). `cl` is
-bit-identical to `ha0` on **74/84 = 0.8810**. Denser sampling on harder roads
-does not find a single steering command.
+⭐ **The dense reel is also an independent check of the headline, at 10× the
+sampling density and on the clips with the MOST lateral demand in the split.**
+Over its 168 scored windows the planner emits **κ identically zero on
+168/168 = 1.0000**, constant acceleration on 168/168, and the same **two**
+distinct accelerations as the whole split (`a = 0` on 138, `a = −1.5` on 30);
+`cl` is bit-identical to `ha0` on **138/168 = 0.8214**. ⇒ the 141-clip result is
+not an artifact of a sparse grid or of easy roads — denser sampling on harder
+roads does not find a single steering command.
+
+**Provenance of the dense dump.** 168 windows of `plan()` at ~23–70 s each, split
+across the Jetson Thor and the dev-box RTX 4060 purely to halve the wall-clock,
+then merged by `taniteval/tools/merge_arm_dumps.py`, which REFUSES unless both
+halves carry the same checkpoint step, strict-load report, plan config, grid and
+action units, and refuses on any clip present in both.
 
 ---
 
