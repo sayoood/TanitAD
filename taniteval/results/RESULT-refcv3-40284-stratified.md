@@ -390,6 +390,24 @@ threshold on **realised Δv**. They answer different questions and the projectio
 
 ### 7.2 The v2 curvature gate (§1) — the mix conclusion is gate-insensitive.
 
+### 7.3 ⭐ THE SEMANTIC CONTROL — the cells mean what their names say, and this is model-free
+
+`ha0` **is** the constant-velocity-straight policy, by construction. If the strata are named
+correctly, `ha0` must be far worse *outside* the straight/constant cell — and that check involves no
+model at all:
+
+| stratum pair | `ha0` ADE (m) | ratio |
+|---|---|---:|
+| `CROSS/straight_const` **0.3335** vs `CROSS/manoeuvre` **1.3656** | | **4.09×** |
+| `LAT/lane_keep` **0.5181** vs `LAT/turn_left` **1.6665** / `LAT/turn_right` **1.6683** | | **3.22× / 3.22×** |
+| `LON/steady` **0.4790** vs `LON/brake_stop` **1.2614** / `LON/accelerate` **1.2940** | | **2.63× / 2.70×** |
+
+✅ **The arm that literally drives straight at constant speed is 4× worse everywhere the cut says
+the ego did something else.** A stratifier that had mislabelled its cells could not produce that
+ordering. (`ha` shows the same ordering more weakly — 2.08× — which is the point of §10's structural
+caveat: `ha` carries the *current* dynamics, so it is a far stronger baseline on sustained
+manoeuvres than `ha0` is.)
+
 ---
 
 ## 8. Controls — all five pass, and one standing claim needed correcting
