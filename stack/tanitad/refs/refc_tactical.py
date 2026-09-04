@@ -308,6 +308,25 @@ def derive_man5_logprobs(lat_logits: Tensor, lon_logits: Tensor) -> Tensor:
     working unchanged. Emitted as log-probs, which is what ``graft_maneuver``
     consumes anyway (``refc.py`` applies ``log_softmax`` to the 5-way logits).
     """
+    # ⛔⛔ THIS FUNCTION INDEXES BY POSITION, SO A WIDER VOCABULARY SILENTLY
+    # SCRAMBLES IT. MEASURED 2026-09-04, live in a training run: fed the 8-wide
+    # v7.0 heads, the turns read LANE_CHANGE_L/R, `accelerate` read YIELD_MERGE,
+    # `brake_stop` read FOLLOW, and 10 of 16 classes were never read. The result
+    # still sums to 1 and still looks like a distribution, so NOTHING downstream
+    # complained -- while it fed `refc.py:1405`, the LIVE H19 anchor prior, so
+    # anchor selection was reweighted by a scrambled distribution from step 0.
+    # A positional contract that is not asserted is not a contract.
+    for _name, _t in (("lat_logits", lat_logits), ("lon_logits", lon_logits)):
+        if _t.shape[-1] != 3:
+            raise ValueError(
+                f"derive_man5_logprobs: {_name} has width {_t.shape[-1]}, expected 3. "
+                "This function indexes LAT_/LON_ constants POSITIONALLY into a 3-wide "
+                "kin3 vocabulary; a wider head (e.g. the 8-wide v7.0 z_tac heads) does "
+                "not raise here by accident -- it silently reads the WRONG CLASSES and "
+                "still returns a valid-looking distribution, which then reweights the "
+                "H19 anchor prior. Pass the core's 3-wide kin3 logits, or collapse the "
+                "v7 vocabulary to 5-way explicitly first. See RETRACTION_LOG 'Defect A'."
+            )
     lat = torch.log_softmax(lat_logits, dim=-1)
     lon = torch.log_softmax(lon_logits, dim=-1)
     lk = lat[:, LAT_LANE_KEEP]
