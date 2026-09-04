@@ -430,6 +430,34 @@ Every subagent brief MUST carry the preamble in
   again; and a bulk `git add -- <directory>` across large trees can die with
   **`3221225478` = `0xC0000006` STATUS_IN_PAGE_ERROR**, so add explicit FILE paths in batches,
   never whole directories.
+- ⛔⛔ **A SEARCH TOOL WILL REPORT "NO MATCHES" FOR FILES IT COULD NOT OPEN — AND
+  DIRECTORY LISTINGS KEEP WORKING WHILE CONTENT READS FAIL.** MEASURED 2026-09-04 with an
+  INTERLEAVED SAME-BREATH CONTROL (100+ samples): the mount served content in only 5, and
+  in **all 5** the control file read fine while the target failed — the target never read
+  once. Metadata resolved throughout (listings showed the file and its exact byte count),
+  so every tool reported the file as present and matchless. ⇒ **"0 hits" is a claim about
+  the SEARCH, not about the CONTENT, unless you also assert the file was READ.** Count
+  unreadable files explicitly and retry them to zero, or report the gap. ⚠️ The
+  discriminator between "the mount is flapping" and "this file is unreadable" is an
+  interleaved control **in the same breath** — a control that succeeded in a *different
+  second* proves nothing, and reading one that way is how two wrong diagnoses got made
+  before the third stuck. *(Local cause here: `.claude/worktrees/` content is cloud-only
+  and NEVER hydrates on this machine — 27 identical copies, 0 readable, while their
+  metadata resolves perfectly.)*
+- ⛔ **SEARCH THE COMMA-FORMATTED FORM OF EVERY NUMBER.** MEASURED 2026-09-04: a retraction
+  took THREE revisions — first "the number does not exist", then "it was back-constructed"
+  — because `45,456` and `168,873` live in prose as **comma-formatted** and every
+  `\b45456\b` / `\b168910\b` probe missed them. Mount health was irrelevant; the regex
+  was. The true account (a transposed digit plus a denominator from a different run) only
+  appeared once someone searched `45,4` and `168,`. ⇒ **When hunting a figure in prose,
+  search BOTH forms, or your absence claim is about your regex.**
+- ⚠️ **A number carries its ARM and its ARTIFACT PATH, or it is not quotable — and
+  PERCENTAGES are the worst offenders, because two different fractions round to the same
+  one.** `45,456/168,873` and the fabricated `45,466/168,910` both read 26.9 %, which is
+  exactly why nothing looked wrong for hours. *(Same night, same file: `168,910` is REF-A
+  v1's window count; refcv3's is **805,687** — a 4.77x error — because the two arms window
+  the SAME episodes at 170.9 vs 36.9 windows/episode. The vector was one word: "corpus"
+  means the CLIP SET, which they share; the WINDOW GRID is not shared.)*
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts. ⚠️ **But see the `ls-tree` trap above: repeated
   samples through ONE broken channel are one sample.** A second *probe* means a different
