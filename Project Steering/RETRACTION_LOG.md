@@ -11736,3 +11736,104 @@ one:** because ours is derived from the ego's own future, it is **noiseless and 
 timed**, where a real router is coarser and sometimes wrong. So when comparing against
 published numbers or claiming a deployment figure, state that our route signal is a
 CLEAN version of the deployment one — never that it is absent.
+
+# 2026-09-04 (#19) — "flagship v1 − refc-base = +7.1642, so REF-C beats flagship in closed loop" (the programme's most-quoted closed-loop number)
+
+**Re-read, not re-measured — the arithmetic is unchanged and the CONCLUSION inverts.**
+Until tonight no closed-loop panel this programme ever published carried a TRIVIAL
+FLOOR. Adding three (`cl_ha0` constant velocity at the measured `v0`; `cl_ha` hold the
+action closing at t0; `cl_ha0_ext` constant accel AND constant yaw rate) through the
+identical rollout/render/metric path decomposes the published headline **exactly**, on
+the same 437 windows:
+
+```
+flagship-v1 − cl_ha0   = +7.0745 [+5.1151, +9.0440]   separated, the FLOOR wins
+refc-base   − cl_ha0   = −0.0897 [−0.4029, +0.1994]   NOT separated
+                         +7.0745 − (−0.0897) = +7.1642   (the published figure)
+```
+
+⇒ **98.75 % of `+7.1642` is flagship v1 losing to a straight line.** refc-base's own
+contribution is −0.0897 and is statistically indistinguishable from a constant-velocity
+policy. And on the same panel **refcv3 − `cl_ha0` = +0.1307 [−0.6213, +0.8809]**, also
+straddling zero. **Neither model separates from the floor in closed loop.**
+
+**Root-cause class: A CONTRAST PUBLISHED WITHOUT THE ONLY BASELINE THAT MAKES A LEVEL
+INTERPRETABLE.** A paired delta between two arms is a real measurement of *their
+difference*; it silently becomes a claim about *capability* the moment it is read as
+"A beats B, therefore B is good". The open-loop suite had learned this — `ha0` is
+mandatory there — and the closed-loop harness never inherited the lesson. The rule that
+travels: **a floor is not a nice-to-have on a panel, it is what converts a difference
+into a claim.** Every closed-loop figure in this registry predating 2026-09-04 should be
+read as a difference only, until re-scored against `cl_ha0`.
+
+⭐ **Independently replicated on a different corpus AND a different instrument.** The
+same floors added to the open-loop driver give `refcv3 − cl_ha0_ext` **+0.3558 [+0.0224,
++0.6981], separated, floor wins** — and the models' advantage there is **LATERAL ONLY**:
+refcv3 wins all five lateral metrics against `cl_ha0` and **not one longitudinal
+metric**, while the floor beats it on manoeuvre agreement. That is the third independent
+confirmation of the axis, after the stratification (`brake_stop` +0.4930, 2.31x, 45 % of
+the deficit) and the within-arm bisect (92.2 % of the gap along-track; the fan's lateral
+half already BEATS the floor at −0.0193 [−0.0340, −0.0052]).
+
+⚠️ **Honest limit, on every line of that panel: n = 1 SCENE.** The nine bootstrap
+clusters are disjoint segments of ONE clip, not independent episodes. Two of 79 NuRec
+directories hold a real volume and one of those is in refcv3's training set. This is a
+PROVISIONING ceiling, not a compute one — the whole measurement cost ~4 GPU-minutes.
+Controls were unusually strong: `cl_ha0`'s commanded steer and accel read exactly 0.0 on
+all 450 steps, determinism and render-independence are bit-identical 450/450 with
+zero-width CIs on 13/13 metrics, and poisoning every pose after t0 with NaN leaves the
+answer unchanged.
+
+
+# 2026-09-04 (#20) — "73.08 % of refcv3's training windows carry no tactical or strategic label" (mine)
+
+**Retracted. The number I built it from does not exist in this repository.** I wrote
+"45,466 of 168,910 windows in-band at ±2.0 s = 26.92 %" into three agent briefs, into my
+reports to the PI, and reasoned from it as a primary cause of refcv3's deficit. Two
+probes of different path-binding (git object store; a filesystem `os.walk` over 7,889
+text files) find **`45,466` nowhere** — the only hits are a PyTorch-profiler sequence
+number and substrings inside floats. And **`168,910` occurs exactly once in the tree: in
+`MODEL_REGISTRY.md` §2.4 — the REF-A v1 row, which I WROTE MYSELF EARLIER THE SAME
+NIGHT.** It is refav1's window count, from refav1's loader
+(`refav1_loader.py:382-391, 428-429`), on refav1's window grid.
+`refc_v3_train.py` does not import `refav1_loader` at all; it does its own per-clip join
+at `:347-355`.
+
+**Root-cause class: A NUMBER QUOTED OUTSIDE THE SCOPE WHERE IT ANSWERS THE QUESTION —
+for the THIRD time in one night, and this time taken from a row I had authored hours
+earlier.** The aggravating feature is that authorship felt like verification: I trusted
+the figure *because I had recently written it*, which is exactly the property that makes
+it INHERITED rather than MEASURED for any other arm.
+
+**What is true, MEASURED at source, three artifacts:**
+
+| label family | refc-base | refcv3 |
+|---|---|---|
+| kinematic tactical | **100 %**, weight 0.10 (`refc_train.py:497-498, 536, 80`) | **100 %**, weight 0.05+0.05 (`refc_v3_train.py:537, 546-547`) |
+| extra v7.2 8x8 head | — | **23.53 %** train / 23.99 % dump — a FURTHER 0.05+0.05 |
+| route (same labeler, same mask, same 0.1 weight) | 80.05 % PUBLISHED | **75.10 % MEASURED** |
+| strategic `goal_str` | n/a | ⛔ **0 of 614 rows — never fired** |
+
+⇒ **Every refcv3 window carries a tactical label, from the same family and the same
+class budget refc-base uses.** The ~23.5 % belongs to an ADDITIONAL head layered on top.
+The supervision story is a **~5-point route gap, not a 73-point tactical hole**, and its
+LOCAL form is independently refuted by the bisect's difference-in-differences: +0.0274
+[−0.0135, +0.0726], not separated.
+
+⭐ **Two real defects replace the false one, and both are sharper:**
+1. **The tactical aux budget silently DOUBLED** — 0.20 against refc-base's 0.10, because
+   the v7.2 head was added without reducing the kin3 term. `refc_train.py:83-91` states
+   in writing that total tactical pressure is held at EXACTLY `MANEUVER_WEIGHT`. It was
+   not preserved in v3.
+2. **The strategic head was NEVER SUPERVISED** — `goal_str` in 0 of 614 logged rows while
+   every other hierarchy key appears in 559/559; `--goal-str`/`--graft-lan` absent from
+   argv. This is THESIS-INVALIDATING rather than an ADE cause: **refcv3 cannot testify
+   about the goal cascade in either direction**, which is the one thing it was built to
+   test. With `v3-F` also never trained, **no hierarchy claim may cite this run.**
+
+⚠️ **A citation hazard this exposed:** `refc_v3.py:NNN` is AMBIGUOUS in this programme.
+The index blob (38,498 B, `ego_state_inject` x0 — the file that TRAINED refcv3) and HEAD
+(69,240 B, x11 — post-v4) have different numbering. My `:213` and `:480` citations were
+read before the v4 commit landed and refer to the training file, so they stand — but a
+future citation must name the blob. *(Separately: the file was found DELETED from the
+working tree during this audit and restored from HEAD, verified byte-identical.)*
