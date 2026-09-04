@@ -2037,6 +2037,63 @@ CPU-smoke-validated before launch.
 
 ---
 
+### 2.4 REF-A **v1** — `refav1-b1-v72-ep3-speed` — ✅ **COMPLETE at step 21,109 (one full epoch)** · ⛔ **NO EVAL RESULT YET — do not quote a capability number**
+
+**The latent world model + planner line** (not a frozen-encoder arm like 2.1–2.3). Trained
+on Thor, `/home/nvidia/experiments/refav1-b1-v72-ep3-speed/`.
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ COMPLETE — final step **21,109 / 21,109**, MEASURED from the checkpoint's own `step` field, not the log |
+| **Checkpoint** | `ckpt.pt` · **2,122,997,633 B** · keys `['cfg','model','opt','step']` · **407 tensors** · **182,459,701 params** |
+| **Reading it** | ⛔ requires `PYTHONPATH=/home/nvidia/TanitAD/stack` — without it `torch.load` dies `ModuleNotFoundError: No module named 'tanitad'` |
+| **Precision** | bf16 + TF32 (requested and effective) |
+| **Corpus** | 168,910 windows over 4,572 episodes; v7.2 labels, join 4,572/4,572 eps (0 missing), md5 `0ff902130ce76886b8a925eceed9e3a5` |
+| **Ego input** | `--speed-channel` ON — speed enters as a THIRD action channel `(a, steer, v)`. ⭐ Unlike refcv3 it has **no ego dropout and no zero-fill**: a missing `v0` **raises** (`refa_v1.py:1343`), so a zero there means exactly one thing |
+| **Eval** | ⛔ **PENDING.** No four-family result exists for this checkpoint. The open-loop read is in flight |
+
+**Training health — MEASURED over 350 logged rows, `train_log.jsonl`:**
+
+| signal | first 40 | middle | last 40 |
+|---|---|---|---|
+| `participation` | 15.9482 | 21.4348 | **22.7930** |
+| `tgt_std_op` | 0.9991 | 1.0001 | 0.9978 |
+| `tgt_std_tac` | 0.0958 | 0.2491 | **0.3160** |
+| `loss` | 0.7214 | 0.6103 | 0.6139 |
+| `grad_norm` | 1.5343 | 1.1498 | 1.3099 |
+
+**0 non-finite loss rows of 350. 0 drift alarms in the training signal.** Participation rises
+monotonically and `tgt_std_op` stays pinned at the anti-collapse target — the representation is
+EXPANDING, not collapsing. ⛔ **This is a TRAINING-DYNAMICS claim only. Rank is NECESSARY, NOT
+SUFFICIENT (C131)** — flagship v1 carried the highest rank ever measured here and had no
+environment interpretation. No capability claim may be made from these curves.
+
+⚠️ **TWO ARTIFACTS IN THIS RUN DIRECTORY ARE RED HERRINGS — both are the DONE-MARKER TRAP.**
+`train_log.jsonl`'s last ROW reads **21,100**, not 21,109, purely because `--log-every 50` and
+21,109 is not a multiple of 50 — the checkpoint is authoritative and says 21,109. And a
+**`DRIFT_ALARM` file exists** saying *"log stale 9332s with trainer alive (hang?)"*: it fired
+because `summary.json` was never written, so the supervisor relaunched the **already-finished**
+run **80 times over 2.7 h** (`supervisor.log`, relaunch #1..#80, then *"REFUSING further
+relaunches at step 21100"* at 03:34:55Z). Each relaunch resumed, printed `done: 21109 steps`,
+and exited cleanly without logging — which is exactly what a stale log beside a briefly-alive
+process looks like. **Neither artifact indicates a training failure.** The done-marker was
+written by the Master Mind 2026-09-04 and both trainer and supervisor are confirmed gone.
+
+⛔ **THE OPEN DEFECT THAT DECIDES WHETHER THIS ARM MEANS ANYTHING.** At an EARLIER checkpoint,
+MEASURED on 120 shared windows: refav1's `cl` arm was **BIT-IDENTICAL to the trivial floor
+`ha0`** (constant velocity at the measured v0) on **120/120 windows** — margin exactly 0.0000 on
+every metric in every family. The instrument saw the baseline, not the model. **This is
+categorical, not statistical: it does not depend on n.** Whether it still holds at 21,109 is
+the single most important open question for this arm, because if it does, every refav1 metric
+is really a floor measurement and the planner contributes nothing. The in-flight eval tests it
+directly.
+
+⚠️ **Action-unit contract:** `actions[:, 0]` is a **road-wheel STEER ANGLE**, `arctan(L·κ)` at
+the ENCODER's **L = 2.9000000 ± 3e-8** — NOT curvature, and ~2.9× its magnitude. See
+RETRACTION_LOG #15: the old docstring inferred the channel's identity from an r = 0.995
+correlation, and Pearson r is scale-invariant, so it cannot distinguish κ from 2.9κ. Anything
+consuming that channel as a curvature is off by the same factor.
+
 ## 3. REF-B — hierarchical vision→action, **NO world model** (H1/D4 control)
 
 **Shared** (`refb_config()`, `stack/tanitad/refs/refb.py`) — budget-matched to the flagship within ±2 %:
