@@ -71,8 +71,15 @@ LOOKAHEAD_IDX = 0
 NAV_NAMES = ("follow", "left", "right", "straight")
 
 
-def build_policy(arm: str, ckpt: str):
-    from closedloop_drive import FlagshipV1Policy, RefCPolicy, RefCV3Policy
+def build_policy(arm: str, ckpt: str | None):
+    from closedloop_drive import (FLOOR_ARMS, FlagshipV1Policy,
+                                  KinematicFloorPolicy, RefCPolicy, RefCV3Policy)
+    if arm in FLOOR_ARMS:
+        # ⭐ THE TRIVIAL FLOOR, in the harness where the models are WEAKEST
+        # against it. The SAME class the closed loop drives — one definition of
+        # "do nothing", scored by one instrument on both tiers, so the open->closed
+        # penalty can be quoted for the floor itself and not only for the models.
+        return KinematicFloorPolicy(arm)
     if arm == "flagship-v1":
         return FlagshipV1Policy(ckpt)
     if arm == "refcv3":
@@ -101,8 +108,13 @@ def segment_bounds(ticks, n_clusters):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene-dir", required=True)
-    ap.add_argument("--ckpt", action="append", required=True,
+    ap.add_argument("--ckpt", action="append", default=None,
                     help="arm=path, repeatable. e.g. --ckpt flagship-v1=~/models/.../ckpt.pt")
+    ap.add_argument("--floor", action="append", default=None,
+                    help="a TRIVIAL FLOOR arm (cl_ha0 / cl_ha / cl_ha0_ext), repeatable "
+                         "and WITHOUT a checkpoint — it loads no weights. Runs in the "
+                         "same shared-frame sweep as the model arms, so the floor and "
+                         "the models are scored on identical windows.")
     ap.add_argument("--out", required=True)
     ap.add_argument("--layers", default="background,road")
     ap.add_argument("--n-clusters", type=int, default=9,
@@ -121,6 +133,31 @@ def main():
                     help="measured-better (grad-NCC 0.3747) at 161x the cost. OFF by "
                          "default; if you turn it on, SAY SO and quote the cost.")
     args = ap.parse_args()
+
+    # ---- PREFLIGHT: resolve the arm set BEFORE the scene loads ------------------
+    # ⛔ An arm-spec error must cost 2 seconds, not the 30 s scene load plus a
+    # render pass. This is the same lesson as the analysis-time import that killed a
+    # 100 %-complete two-arm rollout after the compute was already paid for.
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from closedloop_drive import FLOOR_ARMS
+    arms = {}
+    for spec in (args.ckpt or []):
+        a, _, p = spec.partition("=")
+        if not p:
+            raise SystemExit(f"--ckpt wants arm=path, got {spec!r}")
+        if a in FLOOR_ARMS:
+            raise SystemExit(f"{a!r} is a TRIVIAL FLOOR arm and loads no weights — "
+                             f"pass it as --floor {a}, not --ckpt.")
+        arms[a] = str(Path(p).expanduser())
+    for a in (args.floor or []):
+        if a not in FLOOR_ARMS:
+            raise SystemExit(f"--floor {a!r} is not a floor arm; expected one of "
+                             f"{FLOOR_ARMS}.")
+        if a in arms:
+            raise SystemExit(f"arm {a!r} given twice.")
+        arms[a] = None
+    if not arms:
+        raise SystemExit("nothing to run: give at least one --ckpt arm=path or --floor arm.")
 
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
@@ -187,12 +224,6 @@ def main():
     logger.info("GT: %d camera frames -> %d ticks at 10 Hz (stride %d)",
                 r.n_frames(), n, stride)
 
-    arms = {}
-    for spec in args.ckpt:
-        a, _, p = spec.partition("=")
-        if not p:
-            raise SystemExit(f"--ckpt wants arm=path, got {spec!r}")
-        arms[a] = str(Path(p).expanduser())
     pols = {a: build_policy(a, p) for a, p in arms.items()}
     # ⛔ ONE shared frame deque drives EVERY arm (that is what makes the pairing an
     # identity rather than a determinism claim), so every arm must want the same
@@ -242,6 +273,14 @@ def main():
         nk = navd.get("nav_known")
         fl = list(frames)
         for a, pol in pols.items():
+            # ⭐ FLOOR ARMS ONLY, and PER TICK: in open loop every tick is a fresh
+            # window origin, so the trivial control's t0 state must be re-measured at
+            # `k` rather than once per sweep. It reads logged poses k-2, k-1, k only
+            # — no future pose ever enters a floor arm. Model policies carry no
+            # `set_t0`, so this hook is inert for them and every historical open-loop
+            # sweep is byte-identical with or without it.
+            if hasattr(pol, "set_t0"):
+                pol.set_t0(gt_T, k)
             t_p = time.time()
             # E1: the companion bit reaches the arm only if the arm was BUILT to
             # read it (`consumes_nav_known`). Either way it is recorded per tick,

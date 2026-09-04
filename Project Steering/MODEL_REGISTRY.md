@@ -1273,6 +1273,47 @@ with every non-regression gate green — registered as the best open-loop head i
 
 > ⛔ **RE-LABELLED 2026-09-02 (PI ruling).** This section was titled "CLOSED-LOOP" and every figure in it has been quoted as a closed-loop result. It is **OPEN LOOP**: the predictor consumes its own actions, but the trajectory never reaches the ego data, which keeps arriving from the recording. The MEASUREMENTS BELOW ARE UNCHANGED AND REMAIN VALID — only the word changes. See `RETRACTION_LOG.md` entry #13. ⛔ **This banner first claimed no true closed-loop number existed; that was FALSE (RETRACTION_LOG #14).** ⭐ **We DO have closed-loop numbers**: the AlpaSim/NuRec panel of 2026-08-03 (PROGRAM_OVERVIEW §5.0.1) — 9 rollout starts x 50 ticks in a reconstruction RENDERED ON THE JETSON THOR, 437 paired windows, four families, `stack/experiments/alpasim-gsplat/`. ⚠️ But the scene has **no reactive agents**, so safety-grade metrics (collision, off-road) remain out of reach — and **neither refav1 nor refcv3 has been through that harness**.
 
+> ⛔⛔ **AND THAT PANEL HAD NO FLOOR — CORRECTED 2026-09-04. Its headline is 98.75 % a model
+> losing to a straight line.** The panel's quoted contrast is `flagship-v1 − refc-base`
+> `ade_0_2s` **+7.1642 [+5.2654, +8.9661]** (437 paired windows). Scored against a **trivial
+> constant-velocity control** (`cl_ha0`: `a = 0`, `kappa = 0` at the measured `v0`) driven
+> through the **identical** rollout/render/metric path, on the **same 437 windows** with the
+> **same paired episode-cluster bootstrap**, it decomposes exactly:
+> `flagship-v1 − cl_ha0` = **+7.0745 [+5.1151, +9.0440]** (separated — the FLOOR wins) minus
+> `refc-base − cl_ha0` = **−0.0897 [−0.4029, +0.1994]** (**indistinguishable from doing
+> nothing**), and **+7.0745 − (−0.0897) = +7.1642**, the published number to four decimals.
+> ⇒ **`+7.1642` is a valid measurement of flagship-v1's failure and is NOT evidence that
+> refc-base drives.** ⛔ Never quote it again without this decomposition.
+>
+> ⛔ **The same correction applies to the 2026-09-04 refcv3 panel.** `refcv3 − cl_ha0` =
+> **+0.1307 [−0.6213, +0.8809]** and `refc-base − cl_ha0` = **−0.0897 [−0.4029, +0.1994]** —
+> **neither arm is separated from the trivial control**, and the best `ade_0_2s` on the scene
+> belongs to a trivial constant-turn-rate extrapolation (`cl_ha0_ext` **2.6552 m**;
+> refc-base 2.6554, `cl_ha` 2.6651, `cl_ha0` 2.7452, refcv3 **2.8755**, flagship-v1 9.6955).
+> That panel's verdict line *"refcv3 drives closed-loop"* is **not supported by its own
+> instrument once the floor is present**; the supportable form is *"refcv3 completes a
+> closed-loop rollout; its `ade_0_2s` is not separated from the trivial control's."*
+> ⭐ What the models **do** buy is LATERAL: vs `cl_ha0`, refcv3 wins every lateral metric
+> (cross-track −1.6906 m, heading −0.0716 rad, curvature −0.0026 1/m, yaw-rate −0.0284 rad/s)
+> and **no** longitudinal one; and the floor **beats** refcv3 on `manoeuvre_plan_eq_logged`
+> (−0.1517 [−0.2736, −0.0489]).
+>
+> ⭐ **Cross-corpus replication of the open-loop finding.** The same three floors run through
+> `openloop_drive.py` on the same NuRec scene give `refcv3 − cl_ha0_ext` = **+0.3558
+> [+0.0224, +0.6981]**, separated, floor wins — the same sign as the PhysicalAI read
+> (`os − ha` = +0.1423 [+0.1187, +0.1658], 4,823 windows / 141 episodes, `refcv3_arm.py`)
+> through a **different instrument on a different corpus**.
+>
+> **Instrument:** `KinematicFloorPolicy` in `stack/experiments/alpasim-gsplat/closedloop_drive.py`
+> (`--arm cl_ha0|cl_ha|cl_ha0_ext`) and `openloop_drive.py --floor …`; guards in
+> `stack/tests/test_closedloop_floor.py` (29). **Controls:** determinism and
+> render-independence both **BIT-IDENTICAL 450/450 steps** and `delta = 0.0` with a
+> zero-width CI on 13/13 scored metrics; `cl_ha0`'s commanded steer and accel read **exactly
+> 0.0** on all 450 steps. **Raw + full four-family tables:**
+> `taniteval/results/2026-09-04-closedloop-floor/` (`RESULT.md`, `FLOOR_SUMMARY.json`, `raw/`).
+> ⚠️ **n = 1 SCENE**, 9 rollout starts as bootstrap clusters — a provisioning ceiling (2 of 79
+> NuRec dirs hold a real volume, and one of those is in refcv3's training set).
+
 **The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
 `signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
 closed loop, not re-perception). `tools/closed_loop_dump.py` → `results/closed_loop_analysis.json`;
