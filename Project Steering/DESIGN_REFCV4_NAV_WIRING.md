@@ -141,8 +141,13 @@ be re-labelled wherever it is quoted**: it is a *pin on the wiring*, not a findi
 > ⚠️ **SCOPE NOTE (Master Mind, 2026-09-04, added at integration).** This audit ran
 > for ~16 h and began **before** `refcv4b-b1-v72-40k` was launched. **"The live run" in
 > this section is `refcv3-b1-v72-30k`**, the arm training when the audit started. The
-> three facts below are TRUE OF refcv3 and are the reason its strategic level was never
-> supervised (`D-REFCV3-GSTR1`). They are **NOT true of refcv4b**, MEASURED from that
+> three facts below are TRUE OF refcv3 **with one qualification added 2026-09-05**: refcv3's
+> banked log (`…/2026-09-04-refcv4b-pace-regression/raw/metrics.v3ref.jsonl`, 852 train rows)
+> shows `nav_injected` ON from step 550 on every row, and its FINAL config carries
+> `--nav-from-v7` — the run switched nav to the v7.2 token at step 16,500 (Training Watch,
+> 2026-09-03). So "`--nav-from-v7` OFF" holds for refcv3's first 16,500 steps only; `goal_str`
+> and `ego_injected` never appear in its log, so those two facts hold for the whole run and
+> are the reason its strategic level was never supervised (`D-REFCV3-GSTR1`). They are **NOT true of refcv4b**, MEASURED from that
 > run's own `config.json['argv']` and `/proc/<pid>/cmdline` on the pod:
 > `--nav-from-v7` **ON** (config key `nav_from_v7: true`) · `--goal-str` **ON** ·
 > `--ego-state-inject` **ON** (`ego.ego_state_inject: true`, `ego_valid_channel: true`,
