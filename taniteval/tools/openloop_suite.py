@@ -684,7 +684,36 @@ def build_artifact(rec: dict, dump_dir: str | None, prov: dict, a) -> dict:
     silence reads exactly like compliance. The headline arm's block is promoted to
     the top level so the checker scores the artifact it is meant to score.
     """
-    ref = rec.get("refcv3") or {}
+    # ⛔ THE MODEL SUB-RECORD IS RESOLVED, NOT HARDCODED.
+    # MEASURED 2026-09-04: this line read `rec.get("refcv3")`. A refav1 record
+    # nests its blocks under `refav1`, so `ref` came back EMPTY and with it the
+    # trivial profile, all four paired family tables and the route-head
+    # conditionings — while the summary line still printed "0 violations",
+    # because the criteria checker reads the promoted `four_families` by a
+    # different path. The rendered report therefore said *"No paired block for
+    # this family in the record"* for every one of the four BINDING families on
+    # a record that contained all four. A completeness gate that cannot see a
+    # present measurement teaches the wrong lesson, and this one taught it
+    # silently. (It is also the true root of the `strategic.echo_test` work item
+    # previously filed as a suite "shape mismatch".)
+    _MODEL_BLOCK_KEYS = ("refcv3", "refav1", "refc", "refb", "refa")
+    ref, _ref_key = {}, None
+    for _k in _MODEL_BLOCK_KEYS:
+        if isinstance(rec.get(_k), dict) and rec[_k]:
+            ref, _ref_key = rec[_k], _k
+            break
+    if not ref:
+        # last resort: ANY top-level dict that looks like a model block
+        for _k, _v in rec.items():
+            if isinstance(_v, dict) and ("families_paired" in _v
+                                         or "trivial_profile" in _v):
+                ref, _ref_key = _v, _k
+                break
+    if not ref:
+        _p(f"[suite] ⚠️ no model sub-record found (tried {_MODEL_BLOCK_KEYS} and "
+           f"a shape probe); top-level keys are {sorted(rec)}. The paired family "
+           f"tables and the trivial profile will be EMPTY — that is a record/key "
+           f"mismatch, NOT an absent measurement.")
     arms = rec.get("arms") or {}
     headline_arm = a.headline_arm
     if headline_arm not in arms:
@@ -721,9 +750,33 @@ def build_artifact(rec: dict, dump_dir: str | None, prov: dict, a) -> dict:
             "check that the metric pipeline reads a KNOWN value — pass "
             "--dump-dir alongside --arm-json.")
 
+    # ⛔ THE FLOOR-BLOCK KEY IS DERIVED FROM THE HEADLINE ARM, NOT HARDCODED.
+    # MEASURED 2026-09-04: these two lines read `paired_os_minus_ha0` — refcv3's
+    # arm name `os` — so on a refav1 record (whose deployed arm is `cl` and whose
+    # block is `paired_cl_minus_ha0`) EVERY ONE of the four binding family tables
+    # rendered as *"No paired block for this family in the record"* while the
+    # record contained all four, AND the criteria line still printed
+    # "0 violations" because the checker reads `four_families` by a different
+    # path. A reader of the rendered report would conclude the binding
+    # four-family rule was unmet; a reader of the summary line would not notice
+    # the tables were empty. That is a completeness instrument reporting the
+    # wrong scope — the `df`-on-a-pod family, in the gate that exists to catch it.
     paired = ref.get("families_paired") or {}
-    floor_block = paired.get("paired_os_minus_ha0") or {}
-    deploy_block = paired.get("paired_os_navzero_minus_ha0") or {}
+    _floor_key = f"paired_{headline_arm}_minus_ha0"
+    _deploy_key = f"paired_{headline_arm}_navzero_minus_ha0"
+    floor_block = paired.get(_floor_key) or {}
+    deploy_block = paired.get(_deploy_key) or {}
+    _paired_key_report = {
+        "floor_key_tried": _floor_key, "floor_key_found": bool(floor_block),
+        "deploy_key_tried": _deploy_key, "deploy_key_found": bool(deploy_block),
+        "keys_present_in_record": sorted(paired.keys()),
+        "rule": ("derived from --headline-arm; a hardcoded arm name silently "
+                 "empties every family table on any other model's record"),
+    }
+    if paired and not floor_block:
+        _p(f"[suite] ⚠️ no paired floor block under {_floor_key!r}; the record "
+           f"carries {sorted(paired.keys())} — the family tables will be empty "
+           f"and that is a RECORD/KEY mismatch, not an absent measurement.")
 
     art = {
         # ⛔ NOT `block`. The registry resolves the tier from key_paths
@@ -759,6 +812,8 @@ def build_artifact(rec: dict, dump_dir: str | None, prov: dict, a) -> dict:
         # ------------------------------------------------------------------ #
         "headline_arm": headline_arm,
         "floor_arm": "ha0",
+        "paired_key_resolution": dict(_paired_key_report,
+                                      model_block_key=_ref_key),
         "n_windows": ref.get("n_windows", rec.get("n_windows")),
         "n_episodes": ref.get("n_episodes", rec.get("n_episodes")),
         "dt_s": dt,
@@ -857,6 +912,8 @@ def build_artifact(rec: dict, dump_dir: str | None, prov: dict, a) -> dict:
                       "constant anchor), not the model."),
             "trivial_profile": _dig(ref, "trivial_profile"),
             "selection_profile": _dig(ref, "selection_profile"),
+            "degeneracy": degenerate_arms_from_table(
+                _dig(ref, "trivial_profile") or {}, "ha0"),
         },
 
         # ⭐ THE ROUTE-HEAD ECHO TEST, at the key the registry's leak guard reads.
@@ -1352,6 +1409,42 @@ def _family_table_md(block: dict) -> list:
     return rows
 
 
+def degenerate_arms_from_table(triv: dict, floor_arm: str = "ha0",
+                               thresh: float = 0.5) -> dict:
+    """⛔ DERIVE the degenerate-arm list from the trivial-profile TABLE; never
+    look it up by key name.
+
+    MEASURED 2026-09-04: this suite read `trivial_profile["degenerate_arms_
+    excluding_floor"]`. `refav1_arm.trivial_profile()` writes the key
+    `degenerate_arms` (["cl", "ha0"]). The lookup returned None, so the VOID
+    GATE — the gate that decides whether the whole read is admissible — printed
+    *"no arm besides the floor is degenerate"* on an arm whose own
+    `trivial_frac` in the SAME TABLE, two lines above, read **0.9574**.
+
+    That is the worst failure shape in the programme: a check that reports a
+    PASS by reading a key that does not exist, beside the data that refutes it.
+    Absence of a key is not absence of degeneracy. So the list is recomputed
+    from `trivial_frac`, and any disagreement with whatever key the emitter did
+    write is reported rather than resolved silently.
+    """
+    arms = (triv or {}).get("arms") or {}
+    derived = sorted(a for a, row in arms.items()
+                     if a != floor_arm
+                     and isinstance(row, dict)
+                     and isinstance(row.get("trivial_frac"), (int, float))
+                     and float(row["trivial_frac"]) > thresh)
+    declared = None
+    for k in ("degenerate_arms_excluding_floor", "degenerate_arms"):
+        if isinstance((triv or {}).get(k), list):
+            declared = [x for x in triv[k] if x != floor_arm]
+            break
+    return {"derived": derived, "declared_excluding_floor": declared,
+            "agree": (declared is None) or (sorted(declared) == derived),
+            "threshold": thresh, "floor_arm": floor_arm,
+            "rule": ("recomputed from the trivial_frac column, because a KEY "
+                     "LOOKUP that misses reports a false PASS on the void gate")}
+
+
 def render_markdown(art: dict, crit: dict) -> str:
     L = []
     A = L.append
@@ -1428,11 +1521,18 @@ def render_markdown(art: dict, crit: dict) -> str:
           f"{row.get('straight_frac','—')} | {row.get('const_speed_frac','—')} | "
           f"{row.get('trivial_frac','—')} |")
     A("")
-    deg = triv.get("degenerate_arms_excluding_floor")
+    _dg = degenerate_arms_from_table(triv, art.get("floor_arm", "ha0"))
+    deg = _dg["derived"]
+    if not _dg["agree"]:
+        A(f"> ⚠️ The emitter DECLARED `{_dg['declared_excluding_floor']}` "
+          f"degenerate; recomputing from the `trivial_frac` column gives "
+          f"`{deg}`. Reported, not resolved.")
+        A("")
     if deg:
         A(f"> ⛔ **VOID-RISK:** `{deg}` are the constant-velocity plan on more than "
           f"half the windows. A read whose arm IS the baseline is VOID, never "
-          f"'no difference'.")
+          f"'no difference'. ⇒ read every LATERAL row below as a CONTROL, never "
+          f"as planning skill.")
     else:
         A("> Trivial profile: no arm besides the floor is degenerate. "
           "(`ha0` is expected here — it *is* the constant-velocity plan.)")
@@ -1910,7 +2010,7 @@ def render_html(art: dict, crit: dict) -> str:
            [[f"<code>{_e(k)}</code>", _fmt_n(r.get("n")), _e(r.get("straight_frac")),
              _e(r.get("const_speed_frac")), _e(r.get("trivial_frac"))]
             for k, r in (triv.get("arms") or {}).items()]))
-    deg = triv.get("degenerate_arms_excluding_floor")
+    deg = degenerate_arms_from_table(triv, art.get("floor_arm", "ha0"))["derived"]
     A(f'<p class="rule warn">⛔ VOID-RISK: {_e(deg)} are the constant-velocity plan '
       f'on more than half the windows.</p>' if deg else
       '<p class="rule">Trivial profile: no arm besides the floor is degenerate '
