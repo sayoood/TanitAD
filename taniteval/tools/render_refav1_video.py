@@ -478,6 +478,7 @@ def main(argv=None):
                  f"dump {os.path.abspath(a.dump_dir)}")
 
     n_out = 0
+    index: list[dict] = []
     stats = dict(frames=0, clips=0, ident=0, scored=0, kzero=0,
                  plans=0, cam_on=0, cam_off=0, skipped_stale=0)
     horizon_s = float(grid.get("horizon_k", 10)) * DT_CACHE
@@ -486,6 +487,7 @@ def main(argv=None):
     if cards.get("intro"):
         im = draw_card(cards["intro"], F, card_foot)
         for _ in range(a.card_frames):
+            index.append({"frame": n_out, "kind": "card", "card": "intro"})
             im.save(os.path.join(frames_dir, f"f_{n_out:06d}.png"))
             n_out += 1
 
@@ -530,6 +532,8 @@ def main(argv=None):
                    f"refav1  ·  step {step}  ·  OPEN LOOP  ·  "
                    f"{len(ws)} scored windows on this clip",
                    fill=C_DIM, font=F["body"])
+            index.append({"frame": n_out, "kind": "title", "clip_id": cid,
+                          "clip_order": ci})
             im.save(os.path.join(frames_dir, f"f_{n_out:06d}.png"))
             n_out += 1
             if a.max_frames and n_out >= a.max_frames:
@@ -612,14 +616,33 @@ def main(argv=None):
                             "horizon predicted from this clip's own extrinsics "
                             "— if it is not on the skyline the projection is wrong",
                             fill=(140, 150, 168), font=F["micro"])
-                polyline(dc, proj_to(g_c), C_GT, 7)
+                pts_gt, pts_cl = proj_to(g_c), proj_to(cl_c)
+                polyline(dc, pts_gt, C_GT, 7)
                 polyline(dc, proj_to(ha_c), C_HA, 3)
                 polyline(dc, proj_to(ha0_c), C_HA0, 11)   # the FLOOR, wide…
-                polyline(dc, proj_to(cl_c), C_CL, 4)      # …the model on top
+                polyline(dc, pts_cl, C_CL, 4)             # …the model on top
+                # ⛔ AN EMPTY CAMERA PANEL MUST SAY WHY. The projector DROPS a
+                # point nearer than 0.5 m radially or behind the image plane
+                # rather than clamping it, and the camera sits ~2.0-2.1 m
+                # FORWARD of the vehicle origin — so a short remaining plan at
+                # low speed lands under the hood and nothing is drawn. Silence
+                # there reads as "the model predicted nothing".
+                n_vis = sum(1 for q in pts_cl if q is not None)
+                if n_vis < 2:
+                    dc.text((x0c + 12, y0c + H_CAM - 46),
+                            fit(dc, f"the remaining "
+                                    f"{max(0.0, 2.0 - plan_age_s):.1f} s of the plan "
+                                    f"projects BELOW the image — the camera sits "
+                                    f"~2 m forward of the vehicle origin and the "
+                                    f"projector drops a point rather than clamping "
+                                    f"it. The BEV carries this window.",
+                                F["micro"], W_LEFT - 24),
+                            fill=C_WARN, font=F["micro"])
                 elements.append(VizElement(
                     "camera", "present", kind="derived",
                     value=f"GT (green) + cl (orange) + ha0 (white) projected, "
-                          f"plan age {plan_age_s:.1f} s",
+                          f"plan age {plan_age_s:.1f} s, "
+                          f"{n_vis}/{len(pts_cl)} plan points inside the raster",
                     source="CylProjector(v2ep['frame'], per-clip "
                            "sensor_extrinsics) applied to ep*.npz g/cl/ha0, "
                            f"drawn on the v2ep PNG at raw index {f} "
@@ -784,6 +807,22 @@ def main(argv=None):
 
             check_frame(elements, where=f"render_refav1_video:{cid}:{f}")
             im.save(os.path.join(frames_dir, f"f_{n_out:06d}.png"))
+            # ⭐ the frame INDEX: which clip / raw frame / scored window every
+            # output frame is, so a representative still can be chosen by a
+            # MEASURED property instead of by eye — and so a still committed to
+            # the repo can be traced back to the window it shows.
+            index.append({"frame": n_out, "kind": "clip", "clip_id": cid,
+                          "clip_order": ci, "raw_frame": f,
+                          "t_cache": t_w, "t_s": round(t_w * DT_CACHE, 2),
+                          "plan_age_s": round(plan_age_s, 2),
+                          "cl_equals_ha0": ident, "kappa_zero": kzero,
+                          "plan_source": src, "a_mps2": float(ctrl[0, 0]),
+                          "kappa_1pm": float(ctrl[0, 1]),
+                          "ade_cl_m": round(ade_cl, 4),
+                          "ade_ha0_m": round(ade_ha0, 4),
+                          "v0_mps": round(float(ep["v0"][wi]), 3),
+                          "gt_lat_extent_m": round(float(np.abs(g_c[:, 1]).max()), 3),
+                          "camera": bool(cam_on)})
             n_out += 1
             stats["frames"] += 1
             if a.max_frames and n_out >= a.max_frames:
@@ -795,9 +834,17 @@ def main(argv=None):
     if cards.get("outro") and not (a.max_frames and n_out >= a.max_frames):
         im = draw_card(cards["outro"], F, card_foot)
         for _ in range(a.card_frames):
+            index.append({"frame": n_out, "kind": "card", "card": "outro"})
             im.save(os.path.join(frames_dir, f"f_{n_out:06d}.png"))
             n_out += 1
 
+    idx_path = os.path.splitext(a.out)[0] + "_frame_index.json"
+    with open(idx_path, "w", encoding="utf-8") as fh:
+        json.dump({"tool": "render_refav1_video.py", "step": step, "fps": a.fps,
+                   "n_frames": n_out, "ckpt": ckpt, "dump_dir":
+                   os.path.abspath(a.dump_dir), "stats": stats,
+                   "frames": index}, fh, indent=1)
+    _p(f"[index ] {idx_path}")
     _p(f"[frames] {n_out} written to {frames_dir} in {time.time()-t_start:.0f} s")
     _p(f"[shape ] scored windows drawn {stats['scored']}  "
        f"cl≡ha0 on {stats['ident']}  kappa≡0 on {stats['kzero']}  "
@@ -826,6 +873,7 @@ def main(argv=None):
 
     if not a.keep_frames:
         keep = {0, n_out // 2, n_out - 1}
+        keep |= {int(r["frame"]) for r in index if r.get("kind") == "title"}
         for i, p in enumerate(sorted(glob.glob(os.path.join(frames_dir, "f_*.png")))):
             if i not in keep:
                 os.remove(p)
