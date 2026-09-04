@@ -1,0 +1,35 @@
+R0 RIDER - is the closed-loop yaw-rate separation carried by SPEED error?
+omega = v * kappa, so  d(omega) = kappa_gt*dv + v_gt*dkappa + dv*dkappa.
+Levels are UNPAIRED (each arm drives its own path) - directional only.
+
+== refcv3   closed loop (step 40,284)  n=450 steps
+   |yawrate err| (plan omega = v_target*kappa_plan)  0.02011 rad/s   [panel reports 0.0206 / 0.0132 -> this reproduces the LEVEL]
+   |speed-driven term|  kappa_gt*(v_target-v_gt)     0.00968
+   |curv-driven term|   v_gt*(kappa_plan-kappa_gt)   0.02011
+   |v_target - v_gt|                                 1.82622 m/s
+   |kappa_plan - kappa_gt|                           0.001435 1/m
+== refc-base closed loop (banked 2026-08-03)  n=450 steps
+   |yawrate err| (plan omega = v_target*kappa_plan)  0.01301 rad/s   [panel reports 0.0206 / 0.0132 -> this reproduces the LEVEL]
+   |speed-driven term|  kappa_gt*(v_target-v_gt)     0.00715
+   |curv-driven term|   v_gt*(kappa_plan-kappa_gt)   0.01574
+   |v_target - v_gt|                                 1.67621 m/s
+   |kappa_plan - kappa_gt|                           0.001168 1/m
+
+delta refcv3 - refc-base:  speed-driven +0.002526   curv-driven +0.004369
+                          |dv| +0.150007 m/s      |dkappa| +0.000267 1/m
+
+VERDICT: INCONCLUSIVE - the hypothesis is NOT confirmed.
+  * The CURVATURE-driven term dominates for BOTH arms and is where refcv3 loses
+    most (+0.004369 vs +0.002526), i.e. this probe points AWAY from 'the yaw-rate
+    separation is longitudinal'.
+  * refcv3's speed error IS worse (+0.150 m/s), consistent with the longitudinal
+    story, but it is the smaller half.
+  * !! SCOPE CONFLICT, UNRESOLVED: my |kappa_plan - kappa_gt| says refcv3 is WORSE
+    (0.001435 vs 0.001168) while the panel's `curvature_err_1pm` says refcv3 is
+    BETTER (0.00110 vs 0.00160).  They are DIFFERENT QUANTITIES - mine is the single
+    commanded curvature at the control tick against a finite-differenced GT curvature;
+    cl_metrics.py's is computed along the plan polyline.  Neither number refutes the
+    other and mine must NOT be quoted as a correction to the panel.
+  => Re-run this decomposition INSIDE cl_metrics.py, using its own definitions and
+     its own paired estimator, before any re-filing of the LATERAL family.
+
