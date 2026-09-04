@@ -2848,24 +2848,23 @@
   },
   "paradrive-cvpr2024": {
    "key": "paradrive-cvpr2024",
-   "path": "TanitAD Research Lab/Library/papers/paradrive-cvpr2024_PARA-Drive-Parallelized-Architecture-for-Real-time-Autonomou.pdf",
-   "bytes": 924562,
-   "sha256": "a0e5048acdd1391d60e5b81a52564faa1654ade366a3226377525d755e31e90a",
-   "banked": "2026-08-23",
-   "tags": [
-    "benchmarks",
-    "recovered-orphan"
-   ],
-   "cited_by": [
-    "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
-   ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
    "kind": "local",
-   "url": "",
+   "title": "PARA-Drive: Parallelized Architecture for Real-time Autonomous Driving (CVPR 2024, pp. 15449-15458)",
    "authors": [],
    "published": "",
    "abstract": "",
-   "title": "PARA Drive Parallelized Architecture for Real time Autonomou"
+   "url": "https://openaccess.thecvf.com/content/CVPR2024/papers/Weng_PARA-Drive_Parallelized_Architecture_for_Real-time_Autonomous_Driving_CVPR_2024_paper.pdf",
+   "path": "TanitAD Research Lab/Library/papers/paradrive-cvpr2024_PARA-Drive-Parallelized-Architecture-for-Real-time-Autonomou.pdf",
+   "bytes": 1093903,
+   "sha256": "a484b25a148de08da9ae111b0ed66a119ce1acfd3d7a0f69d7cbc6a072c50658",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "Ego = CAN bus (velocity, acceleration, angular velocity) + high-level command + history traj, into the PLANNER HEAD ONLY (never the BEV encoder). Table 6: PARA-Drive w/o ego L2 Ave_all 0.5574 == AD-MLP blind 0.5568, but Offroad 0.12 vs 1.21. NO ego dropout (0 hits). 'targeted' split = drop 'keep forward' commands -> 686 keyframes.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
   },
   "2204.02968": {
    "key": "2204.02968",
@@ -4279,11 +4278,13 @@
    "sha256": "516935ee9c219c9c086bed034c0f21d79eb61949e9d4248739ac91e1d225e31a",
    "banked": "2026-08-30",
    "tags": [
-    "input-pipeline"
+    "input-pipeline",
+    "v7-seed-transfer"
    ],
-   "note": "FlexiViT: MEASURED accuracy-vs-patch-size curve; ViT-B/8 85.6% @156 GFLOPs vs ViT-B/32 79.1% @8.6 GFLOPs on ImageNet",
+   "note": "FlexiViT: MEASURED accuracy-vs-patch-size curve; ViT-B/8 85.6% @156 GFLOPs vs ViT-B/32 79.1% @8.6 GFLOPs on ImageNet | FlexiViT: resizing a PRETRAINED ViT patch-embedding and position-embedding to a new grid; the measured alternative to leaving pos at random init (to verify in full)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
    ]
   },
   "2112.11790": {
@@ -4474,12 +4475,14 @@
    "banked": "2026-08-30",
    "tags": [
     "closed-loop-wm",
-    "input-pipeline"
+    "input-pipeline",
+    "refc-ego"
    ],
-   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it",
+   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it | Copycat: target-conditioned adversary + IB; the ACTION-PREDICTABILITY PROBE is the transferable echo detector",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
    ]
   },
   "1604.07316": {
@@ -9366,6 +9369,1006 @@
    "note": "Is forward prediction enough? physical state grounding for JEPA world models",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2309.10443": {
+   "key": "2309.10443",
+   "kind": "arxiv",
+   "title": "Rethinking Imitation-based Planner for Autonomous Driving",
+   "authors": [
+    "Jie Cheng",
+    "Yingbing Chen",
+    "Xiaodong Mei",
+    "Bowen Yang",
+    "Bo Li",
+    "Ming Liu"
+   ],
+   "published": "2023-09-19",
+   "abstract": "In recent years, imitation-based driving planners have reported considerable success. However, due to the absence of a standardized benchmark, the effectiveness of various designs remains unclear. The newly released nuPlan addresses this issue by offering a large-scale real-world dataset and a standardized closed-loop benchmark for equitable comparisons. Utilizing this platform, we conduct a comprehensive study on two fundamental yet underexplored aspects of imitation-based planners: the essential features for ego planning and the effective data augmentation techniques to reduce compounding errors. Furthermore, we highlight an imitation gap that has been overlooked by current learning systems. Finally, integrating our findings, we propose a strong baseline model-PlanTF. Our results demonstrate that a well-designed, purely imitation-based planner can achieve highly competitive performance",
+   "url": "https://arxiv.org/abs/2309.10443",
+   "path": "TanitAD Research Lab/Library/papers/2309.10443_Rethinking-Imitation-based-Planner-for-Autonomous-Driving.pdf",
+   "bytes": 792535,
+   "sha256": "6dd6c2fb57bb35caa44b9115b87f2dae38654d8726a7a03d66c3946d8b529ab0",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "PlanTF: State Dropout Encoder — per-scalar ego-state tokens, position/heading EXEMPT from dropout; rate ablation p=0.25/0.50/0.75, best closed-loop at 0.75",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2408.03601": {
+   "key": "2408.03601",
+   "kind": "arxiv",
+   "title": "DRAMA: An Efficient End-to-end Motion Planner for Autonomous Driving with Mamba",
+   "authors": [
+    "Chengran Yuan",
+    "Zhanqi Zhang",
+    "Jiawei Sun",
+    "Shuo Sun",
+    "Zefan Huang",
+    "Christina Dao Wen Lee",
+    "Dongen Li",
+    "Yuhang Han",
+    "Anthony Wong",
+    "Keng Peng Tee",
+    "Marcelo H. Ang"
+   ],
+   "published": "2024-08-07",
+   "abstract": "Motion planning is a challenging task to generate safe and feasible trajectories in highly dynamic and complex environments, forming a core capability for autonomous vehicles. In this paper, we propose DRAMA, the first Mamba-based end-to-end motion planner for autonomous vehicles. DRAMA fuses camera, LiDAR Bird's Eye View images in the feature space, as well as ego status information, to generate a series of future ego trajectories. Unlike traditional transformer-based methods with quadratic attention complexity for sequence length, DRAMA is able to achieve a less computationally intensive attention complexity, demonstrating potential to deal with increasingly complex scenarios. Leveraging our Mamba fusion module, DRAMA efficiently and effectively fuses the features of the camera and LiDAR modalities. In addition, we introduce a Mamba-Transformer decoder that enhances the overall plannin",
+   "url": "https://arxiv.org/abs/2408.03601",
+   "path": "TanitAD Research Lab/Library/papers/2408.03601_DRAMA-An-Efficient-End-to-end-Motion-Planner-for-Autonomous.pdf",
+   "bytes": 2314487,
+   "sha256": "2bb85df0c9b10472a883df24dcb82d0d5fca5e10a4c70cb37756b084b0c7c996",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "DRAMA: Feature State Dropout on NAVSIM PDMS - ego-state rate 0.5 vs sensor-fusion 0.1, 0.835->0.848 PDMS",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2606.14438": {
+   "key": "2606.14438",
+   "kind": "arxiv",
+   "title": "Physics-Grounded Causal Auditing of End-to-End Driving Planners",
+   "authors": [
+    "Zikun Guo",
+    "Minglan Chen",
+    "Jinyou Zhai",
+    "Rongjin Zou"
+   ],
+   "published": "2026-06-12",
+   "abstract": "End-to-end (E2E) autonomous-driving planners trained by imitation are prone to statistical shortcuts: they associate scene elements that merely co-occur with expert actions (a roadside object, a building facade) with driving decisions, rather than the variables that causally determine them. Such causal confusion silently compromises reliability in long-tail scenarios, and it is difficult to detect, because prevailing open-loop metrics (L2 displacement and collision rate) are dominated by ego status and do not indicate whether a planner depends on spurious cues. Existing remedies based on causal-intervention training require retraining large models and cannot audit a planner that is already deployed. We present CADET, a training-free framework that audits, benchmarks, and repairs spurious reliance in pretrained E2E planners without any parameter update.",
+   "url": "https://arxiv.org/abs/2606.14438",
+   "path": "TanitAD Research Lab/Library/papers/2606.14438_Physics-Grounded-Causal-Auditing-of-End-to-End-Driving-Plann.pdf",
+   "bytes": 1191156,
+   "sha256": "e69810c9264fe90eb3864a6d82b3b776b594832cbd761bb838187b0d7e61f62b",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "CADET: formal shortcut metric PCR + CRI (plan must respond in the RIGHT DIRECTION to a causal change); training-free test-time causal masking",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2511.13079": {
+   "key": "2511.13079",
+   "kind": "arxiv",
+   "title": "Decoupling Scene Perception and Ego Status: A Multi-Context Fusion Approach for Enhanced Generalization in End-to-End Autonomous Driving",
+   "authors": [
+    "Jiacheng Tang",
+    "Mingyue Feng",
+    "Jiachao Liu",
+    "Yaonong Wang",
+    "Jian Pu"
+   ],
+   "published": "2025-11-17",
+   "abstract": "Modular design of planning-oriented autonomous driving has markedly advanced end-to-end systems. However, existing architectures remain constrained by an over-reliance on ego status, hindering generalization and robust scene understanding. We identify the root cause as an inherent design within these architectures that allows ego status to be easily leveraged as a shortcut. Specifically, the premature fusion of ego status in the upstream BEV encoder allows an information flow from this strong prior to dominate the downstream planning module. To address this challenge, we propose AdaptiveAD, an architectural-level solution based on a multi-context fusion strategy. Its core is a dual-branch structure that explicitly decouples scene perception and ego status. One branch performs scene-driven reasoning based on multi-task learning, but with ego status deliberately omitted from the BEV encode",
+   "url": "https://arxiv.org/abs/2511.13079",
+   "path": "TanitAD Research Lab/Library/papers/2511.13079_Decoupling-Scene-Perception-and-Ego-Status-A-Multi-Context-F.pdf",
+   "bytes": 3417704,
+   "sha256": "1058a8ce02a0c836977ac7e00aff05e38600194b5982894ccdeacc8c4df7538a",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego",
+    "v7-trivial-control"
+   ],
+   "note": "AdaptiveAD: architectural ego/scene decoupling - ego status REMOVED from the BEV encoder, dual branch + scene-aware fusion; velocity-perturbation table | Decoupling scene perception from ego status; ego-status dropout in E2E driving",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "1606.01865": {
+   "key": "1606.01865",
+   "kind": "arxiv",
+   "title": "Recurrent Neural Networks for Multivariate Time Series with Missing Values",
+   "authors": [
+    "Zhengping Che",
+    "Sanjay Purushotham",
+    "Kyunghyun Cho",
+    "David Sontag",
+    "Yan Liu"
+   ],
+   "published": "2016-06-06",
+   "abstract": "Multivariate time series data in practical applications, such as health care, geoscience, and biology, are characterized by a variety of missing values. In time series prediction and other related tasks, it has been noted that missing values and their missing patterns are often correlated with the target labels, a.k.a., informative missingness. There is very limited work on exploiting the missing patterns for effective imputation and improving prediction performance. In this paper, we develop novel deep learning models, namely GRU-D, as one of the early attempts. GRU-D is based on Gated Recurrent Unit (GRU), a state-of-the-art recurrent neural network. It takes two representations of missing patterns, i.e., masking and time interval, and effectively incorporates them into a deep model architecture so that it not only captures the long-term temporal dependencies in time series, but also u",
+   "url": "https://arxiv.org/abs/1606.01865",
+   "path": "TanitAD Research Lab/Library/papers/1606.01865_Recurrent-Neural-Networks-for-Multivariate-Time-Series-with.pdf",
+   "bytes": 3223249,
+   "sha256": "cc2bb89fde8ee3d96a26dc26559268d77766aaa837b029cc6b32f95b74ee91fb",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "GRU-D: missingness INDICATOR (mask + time-since) - the primary for 'a masked-to-zero channel whose zero is in-distribution is a confident lie'",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2404.14327": {
+   "key": "2404.14327",
+   "kind": "arxiv",
+   "title": "PLUTO: Pushing the Limit of Imitation Learning-based Planning for Autonomous Driving",
+   "authors": [
+    "Jie Cheng",
+    "Yingbing Chen",
+    "Qifeng Chen"
+   ],
+   "published": "2024-04-22",
+   "abstract": "We present PLUTO, a powerful framework that pushes the limit of imitation learning-based planning for autonomous driving. Our improvements stem from three pivotal aspects: a longitudinal-lateral aware model architecture that enables flexible and diverse driving behaviors; An innovative auxiliary loss computation method that is broadly applicable and efficient for batch-wise calculation; A novel training framework that leverages contrastive learning, augmented by a suite of new data augmentations to regulate driving behaviors and facilitate the understanding of underlying interactions. We assessed our framework using the large-scale real-world nuPlan dataset and its associated standardized planning benchmark. Impressively, PLUTO achieves state-of-the-art closed-loop performance, beating other competing learning-based methods and surpassing the current top-performed rule-based planner for ",
+   "url": "https://arxiv.org/abs/2404.14327",
+   "path": "TanitAD Research Lab/Library/papers/2404.14327_PLUTO-Pushing-the-Limit-of-Imitation-Learning-based-Planning.pdf",
+   "bytes": 6473482,
+   "sha256": "b37e5977a1d7086f11c467a4aa50358934fc6b10466aa6da00ef0f9472434527",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "PLUTO: reuses PlanTF State Dropout Encoder; +2.60 nuPlan score from SDE alone",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2409.18341": {
+   "key": "2409.18341",
+   "kind": "arxiv",
+   "title": "Navigation-Guided Sparse Scene Representation for End-to-End Autonomous Driving",
+   "authors": [
+    "Peidong Li",
+    "Dixiao Cui"
+   ],
+   "published": "2024-09-26",
+   "abstract": "End-to-End Autonomous Driving (E2EAD) methods typically rely on supervised perception tasks to extract explicit scene information (e.g., objects, maps). This reliance necessitates expensive annotations and constrains deployment and data scalability in real-time applications. In this paper, we introduce SSR, a novel framework that utilizes only 16 navigation-guided tokens as Sparse Scene Representation, efficiently extracting crucial scene information for E2EAD. Our method eliminates the need for human-designed supervised sub-tasks, allowing computational resources to concentrate on essential elements directly related to navigation intent. We further introduce a temporal enhancement module, aligning predicted future scenes with actual future scenes through self-supervision. SSR achieves a 27.2\\% relative reduction in L2 error and a 51.6\\% decrease in collision rate to UniAD in nuScenes, w",
+   "url": "https://arxiv.org/abs/2409.18341",
+   "path": "TanitAD Research Lab/Library/papers/2409.18341_Navigation-Guided-Sparse-Scene-Representation-for-End-to-End.pdf",
+   "bytes": 20075590,
+   "sha256": "5421d1057e6c21b93c8cb56f115d89ce319e508be9e82dc96dd481c0ebe82f31",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "SSR: counter-evidence - removing ALL perception supervision beats UniAD/VAD; adding map/obstacle supervision WORSENS L2",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "1505.07818": {
+   "key": "1505.07818",
+   "kind": "arxiv",
+   "title": "Domain-Adversarial Training of Neural Networks",
+   "authors": [
+    "Yaroslav Ganin",
+    "Evgeniya Ustinova",
+    "Hana Ajakan",
+    "Pascal Germain",
+    "Hugo Larochelle",
+    "François Laviolette",
+    "Mario Marchand",
+    "Victor Lempitsky"
+   ],
+   "published": "2015-05-28",
+   "abstract": "We introduce a new representation learning approach for domain adaptation, in which data at training and test time come from similar but different distributions. Our approach is directly inspired by the theory on domain adaptation suggesting that, for effective domain transfer to be achieved, predictions must be made based on features that cannot discriminate between the training (source) and test (target) domains. The approach implements this idea in the context of neural network architectures that are trained on labeled data from the source domain and unlabeled data from the target domain (no labeled target-domain data is necessary). As the training progresses, the approach promotes the emergence of features that are (i) discriminative for the main learning task on the source domain and (ii) indiscriminate with respect to the shift between the domains. We show that this adaptation beha",
+   "url": "https://arxiv.org/abs/1505.07818",
+   "path": "TanitAD Research Lab/Library/papers/1505.07818_Domain-Adversarial-Training-of-Neural-Networks.pdf",
+   "bytes": 5925127,
+   "sha256": "39349d71ca79d44b9cfb24be39ceb5802d58f4e004287655b7df49337938bb59",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "DANN: gradient-reversal layer + the lambda ramp schedule 2/(1+exp(-10p))-1",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2110.14118": {
+   "key": "2110.14118",
+   "kind": "arxiv",
+   "title": "Object-Aware Regularization for Addressing Causal Confusion in Imitation Learning",
+   "authors": [
+    "Jongjin Park",
+    "Younggyo Seo",
+    "Chang Liu",
+    "Li Zhao",
+    "Tao Qin",
+    "Jinwoo Shin",
+    "Tie-Yan Liu"
+   ],
+   "published": "2021-10-27",
+   "abstract": "Behavioral cloning has proven to be effective for learning sequential decision-making policies from expert demonstrations. However, behavioral cloning often suffers from the causal confusion problem where a policy relies on the noticeable effect of expert actions due to the strong correlation but not the cause we desire. This paper presents Object-aware REgularizatiOn (OREO), a simple technique that regularizes an imitation policy in an object-aware manner. Our main idea is to encourage a policy to uniformly attend to all semantic objects, in order to prevent the policy from exploiting nuisance variables strongly correlated with expert actions. To this end, we introduce a two-stage approach: (a) we extract semantic objects from images by utilizing discrete codes from a vector-quantized variational autoencoder, and (b) we randomly drop the units that share the same discrete code together,",
+   "url": "https://arxiv.org/abs/2110.14118",
+   "path": "TanitAD Research Lab/Library/papers/2110.14118_Object-Aware-Regularization-for-Addressing-Causal-Confusion.pdf",
+   "bytes": 1300437,
+   "sha256": "e08c124111905715b2b97f5f292525f7b91ad06a875ad8a0bd1db8455ff59072",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "OREO: object-aware (VQ-VAE-code-grouped) structured dropout p=0.5 against causal confusion",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2106.06452": {
+   "key": "2106.06452",
+   "kind": "arxiv",
+   "title": "Keyframe-Focused Visual Imitation Learning",
+   "authors": [
+    "Chuan Wen",
+    "Jierui Lin",
+    "Jianing Qian",
+    "Yang Gao",
+    "Dinesh Jayaraman"
+   ],
+   "published": "2021-06-11",
+   "abstract": "Imitation learning trains control policies by mimicking pre-recorded expert demonstrations. In partially observable settings, imitation policies must rely on observation histories, but many seemingly paradoxical results show better performance for policies that only access the most recent observation. Recent solutions ranging from causal graph learning to deep information bottlenecks have shown promising results, but failed to scale to realistic settings such as visual imitation. We propose a solution that outperforms these prior approaches by upweighting demonstration keyframes corresponding to expert action changepoints. This simple approach easily scales to complex visual imitation settings. Our experimental results demonstrate consistent performance improvements over all baselines on image-based Gym MuJoCo continuous control tasks. Finally, on the CARLA photorealistic vision-based ur",
+   "url": "https://arxiv.org/abs/2106.06452",
+   "path": "TanitAD Research Lab/Library/papers/2106.06452_Keyframe-Focused-Visual-Imitation-Learning.pdf",
+   "bytes": 9530005,
+   "sha256": "555d3832aed1016337c5cbd6f11f462edebfd2a908068dd8383051529820f12e",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "Keyframe-Focused: zero-cost BC loss reweighting by action-predictability error (APE)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2603.18561": {
+   "key": "2603.18561",
+   "kind": "arxiv",
+   "title": "CausalVAD: De-confounding End-to-End Autonomous Driving via Causal Intervention",
+   "authors": [
+    "Jiacheng Tang",
+    "Zhiyuan Zhou",
+    "Zhuolin He",
+    "Jia Zhang",
+    "Kai Zhang",
+    "Jian Pu"
+   ],
+   "published": "2026-03-19",
+   "abstract": "Planning-oriented end-to-end driving models show great promise, yet they fundamentally learn statistical correlations instead of true causal relationships. This vulnerability leads to causal confusion, where models exploit dataset biases as shortcuts, critically harming their reliability and safety in complex scenarios. To address this, we introduce CausalVAD, a de-confounding training framework that leverages causal intervention. At its core, we design the sparse causal intervention scheme (SCIS), a lightweight, plug-and-play module to instantiate the backdoor adjustment theory in neural networks. SCIS constructs a dictionary of prototypes representing latent driving contexts. It then uses this dictionary to intervene on the model's sparse vectorized queries. This step actively eliminates spurious associations induced by confounders, thereby eliminating spurious factors from the represe",
+   "url": "https://arxiv.org/abs/2603.18561",
+   "path": "TanitAD Research Lab/Library/papers/2603.18561_CausalVAD-De-confounding-End-to-End-Autonomous-Driving-via-C.pdf",
+   "bytes": 3073540,
+   "sha256": "180ef446cde6a0f99cf07eec4d03bc308861e4014befb31134df0215a7fe6a9e",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "CausalVAD: backdoor-adjustment de-confounding, +4.7M params/+6ms, velocity-perturbation table",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2407.06546": {
+   "key": "2407.06546",
+   "kind": "arxiv",
+   "title": "Exploring the Causality of End-to-End Autonomous Driving",
+   "authors": [
+    "Jiankun Li",
+    "Hao Li",
+    "Jiangjiang Liu",
+    "Zhikang Zou",
+    "Xiaoqing Ye",
+    "Fan Wang",
+    "Jizhou Huang",
+    "Hua Wu",
+    "Haifeng Wang"
+   ],
+   "published": "2024-07-09",
+   "abstract": "Deep learning-based models are widely deployed in autonomous driving areas, especially the increasingly noticed end-to-end solutions. However, the black-box property of these models raises concerns about their trustworthiness and safety for autonomous driving, and how to debug the causality has become a pressing concern. Despite some existing research on the explainability of autonomous driving, there is currently no systematic solution to help researchers debug and identify the key factors that lead to the final predicted action of end-to-end autonomous driving. In this work, we propose a comprehensive approach to explore and analyze the causality of end-to-end autonomous driving. First, we validate the essential information that the final planning depends on by using controlled variables and counterfactual interventions for qualitative analysis. Then, we quantitatively assess the facto",
+   "url": "https://arxiv.org/abs/2407.06546",
+   "path": "TanitAD Research Lab/Library/papers/2407.06546_Exploring-the-Causality-of-End-to-End-Autonomous-Driving.pdf",
+   "bytes": 28241552,
+   "sha256": "f335eed98e285b6eb8dbbf5a3b130f84cbca9aaeb509e51f58bf03c8ae0d2530",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "Per-input causal ablation on a CARLA E2E stack: w/o current speed -6.7 DS, w/o historical speed -1.4, w/o BEV -43.6",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "1501.00102": {
+   "key": "1501.00102",
+   "kind": "arxiv",
+   "title": "ModDrop: adaptive multi-modal gesture recognition",
+   "authors": [
+    "Natalia Neverova",
+    "Christian Wolf",
+    "Graham W. Taylor",
+    "Florian Nebout"
+   ],
+   "published": "2014-12-31",
+   "abstract": "We present a method for gesture detection and localisation based on multi-scale and multi-modal deep learning. Each visual modality captures spatial information at a particular spatial scale (such as motion of the upper body or a hand), and the whole system operates at three temporal scales. Key to our technique is a training strategy which exploits: i) careful initialization of individual modalities; and ii) gradual fusion involving random dropping of separate channels (dubbed ModDrop) for learning cross-modality correlations while preserving uniqueness of each modality-specific representation. We present experiments on the ChaLearn 2014 Looking at People Challenge gesture recognition track, in which we placed first out of 17 teams. Fusing multiple modalities at several spatial and temporal scales leads to a significant increase in recognition rates, allowing the model to compensate for",
+   "url": "https://arxiv.org/abs/1501.00102",
+   "path": "TanitAD Research Lab/Library/papers/1501.00102_ModDrop-adaptive-multi-modal-gesture-recognition.pdf",
+   "bytes": 3542738,
+   "sha256": "6dc50a534ddbccdbcf7f03dd4cf77f53ce5537003d23e8c646970db71d79bde4",
+   "banked": "2026-09-03",
+   "tags": [
+    "refc-ego"
+   ],
+   "note": "ModDrop: modality dropout precedent (whole-channel dropping during gradual fusion)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+   ]
+  },
+  "2110.09348": {
+   "key": "2110.09348",
+   "kind": "arxiv",
+   "title": "Understanding Dimensional Collapse in Contrastive Self-supervised Learning",
+   "authors": [
+    "Li Jing",
+    "Pascal Vincent",
+    "Yann LeCun",
+    "Yuandong Tian"
+   ],
+   "published": "2021-10-18",
+   "abstract": "Self-supervised visual representation learning aims to learn useful representations without relying on human annotations. Joint embedding approach bases on maximizing the agreement between embedding vectors from different views of the same image. Various methods have been proposed to solve the collapsing problem where all embedding vectors collapse to a trivial constant solution. Among these methods, contrastive learning prevents collapse via negative sample pairs. It has been shown that non-contrastive methods suffer from a lesser collapse problem of a different nature: dimensional collapse, whereby the embedding vectors end up spanning a lower-dimensional subspace instead of the entire available embedding space. Here, we show that dimensional collapse also happens in contrastive learning. In this paper, we shed light on the dynamics at play in contrastive learning that leads to dimensi",
+   "url": "https://arxiv.org/abs/2110.09348",
+   "path": "TanitAD Research Lab/Library/papers/2110.09348_Understanding-Dimensional-Collapse-in-Contrastive-Self-super.pdf",
+   "bytes": 766005,
+   "sha256": "575847f8de13f88d1814e74566a5148ac30a6c40429e67c223c22761a5785d6f",
+   "banked": "2026-09-03",
+   "tags": [
+    "anti-collapse",
+    "v7-anticollapse"
+   ],
+   "note": "Dimensional collapse defined by the SINGULAR-VALUE SPECTRUM of the embedding covariance; mechanism = implicit regularisation drives low-rank weights; DirectCLR",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2403.13298": {
+   "key": "2403.13298",
+   "kind": "arxiv",
+   "title": "Rotary Position Embedding for Vision Transformer",
+   "authors": [
+    "Byeongho Heo",
+    "Song Park",
+    "Dongyoon Han",
+    "Sangdoo Yun"
+   ],
+   "published": "2024-03-20",
+   "abstract": "Rotary Position Embedding (RoPE) performs remarkably on language models, especially for length extrapolation of Transformers. However, the impacts of RoPE on computer vision domains have been underexplored, even though RoPE appears capable of enhancing Vision Transformer (ViT) performance in a way similar to the language domain. This study provides a comprehensive analysis of RoPE when applied to ViTs, utilizing practical implementations of RoPE for 2D vision data. The analysis reveals that RoPE demonstrates impressive extrapolation performance, i.e., maintaining precision while increasing image resolution at inference. It eventually leads to performance improvement for ImageNet-1k, COCO detection, and ADE-20k segmentation. We believe this study provides thorough guidelines to apply RoPE into ViT, promising improved backbone performance with minimal extra computational overhead. Our code",
+   "url": "https://arxiv.org/abs/2403.13298",
+   "path": "TanitAD Research Lab/Library/papers/2403.13298_Rotary-Position-Embedding-for-Vision-Transformer.pdf",
+   "bytes": 892373,
+   "sha256": "416333c35d83ae252bb66c6e18c227d3440d0df453c0e09548f1e17c1b1d1405",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-seed-transfer"
+   ],
+   "note": "RoPE-ViT: 2D RoPE vs learned APE in ViT; APE tied to the training grid, RoPE extrapolates - the two PE families in the DINOv3-seed mismatch (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2102.10882": {
+   "key": "2102.10882",
+   "kind": "arxiv",
+   "title": "Conditional Positional Encodings for Vision Transformers",
+   "authors": [
+    "Xiangxiang Chu",
+    "Zhi Tian",
+    "Bo Zhang",
+    "Xinlong Wang",
+    "Chunhua Shen"
+   ],
+   "published": "2021-02-22",
+   "abstract": "We propose a conditional positional encoding (CPE) scheme for vision Transformers. Unlike previous fixed or learnable positional encodings, which are pre-defined and independent of input tokens, CPE is dynamically generated and conditioned on the local neighborhood of the input tokens. As a result, CPE can easily generalize to the input sequences that are longer than what the model has ever seen during training. Besides, CPE can keep the desired translation-invariance in the image classification task, resulting in improved performance. We implement CPE with a simple Position Encoding Generator (PEG) to get seamlessly incorporated into the current Transformer framework. Built on PEG, we present Conditional Position encoding Vision Transformer (CPVT). We demonstrate that CPVT has visually similar attention maps compared to those with learned positional encodings and delivers outperforming ",
+   "url": "https://arxiv.org/abs/2102.10882",
+   "path": "TanitAD Research Lab/Library/papers/2102.10882_Conditional-Positional-Encodings-for-Vision-Transformers.pdf",
+   "bytes": 1748912,
+   "sha256": "22e5d447148ded8349a7f52009928d5332f9f1c80da4a0e7b312e34711318763",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-seed-transfer"
+   ],
+   "note": "CPVT: measures ViT with NO position encoding and with swapped PE families - the cost of losing the positional code (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2008.11687": {
+   "key": "2008.11687",
+   "kind": "arxiv",
+   "title": "What is being transferred in transfer learning?",
+   "authors": [
+    "Behnam Neyshabur",
+    "Hanie Sedghi",
+    "Chiyuan Zhang"
+   ],
+   "published": "2020-08-26",
+   "abstract": "One desired capability for machines is the ability to transfer their knowledge of one domain to another where data is (usually) scarce. Despite ample adaptation of transfer learning in various deep learning applications, we yet do not understand what enables a successful transfer and which part of the network is responsible for that. In this paper, we provide new tools and analyses to address these fundamental questions. Through a series of analyses on transferring to block-shuffled images, we separate the effect of feature reuse from learning low-level statistics of data and show that some benefit of transfer learning comes from the latter. We present that when training from pre-trained weights, the model stays in the same basin in the loss landscape and different instances of such model are similar in feature space and close in parameter space.",
+   "url": "https://arxiv.org/abs/2008.11687",
+   "path": "TanitAD Research Lab/Library/papers/2008.11687_What-is-being-transferred-in-transfer-learning.pdf",
+   "bytes": 4337840,
+   "sha256": "d9c38a21e68051cf379ccd84f30b3a9e4a49a822127e262c80000b91c4d72ba2",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-seed-transfer"
+   ],
+   "note": "What is being transferred in transfer learning: module criticality, block re-initialisation experiments - how much pretrained benefit survives partial transfer (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "1711.02257": {
+   "key": "1711.02257",
+   "kind": "arxiv",
+   "title": "GradNorm: Gradient Normalization for Adaptive Loss Balancing in Deep Multitask Networks",
+   "authors": [
+    "Zhao Chen",
+    "Vijay Badrinarayanan",
+    "Chen-Yu Lee",
+    "Andrew Rabinovich"
+   ],
+   "published": "2017-11-07",
+   "abstract": "Deep multitask networks, in which one neural network produces multiple predictive outputs, can offer better speed and performance than their single-task counterparts but are challenging to train properly. We present a gradient normalization (GradNorm) algorithm that automatically balances training in deep multitask models by dynamically tuning gradient magnitudes. We show that for various network architectures, for both regression and classification tasks, and on both synthetic and real datasets, GradNorm improves accuracy and reduces overfitting across multiple tasks when compared to single-task networks, static baselines, and other adaptive multitask loss balancing techniques. GradNorm also matches or surpasses the performance of exhaustive grid search methods, despite only involving a single asymmetry hyperparameter $α$. Thus, what was once a tedious search process that incurred expon",
+   "url": "https://arxiv.org/abs/1711.02257",
+   "path": "TanitAD Research Lab/Library/papers/1711.02257_GradNorm-Gradient-Normalization-for-Adaptive-Loss-Balancing.pdf",
+   "bytes": 1710011,
+   "sha256": "e72930c1f875396f16955748e5af9f2b14c9365c50c1e055cbc36612f326a726",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "GradNorm: balances a multi-term objective by equalising per-task GRADIENT NORMS at a shared layer, not by loss magnitude - the instrument for asking whether a distillation term dominates an SSL term (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2407.03475": {
+   "key": "2407.03475",
+   "kind": "arxiv",
+   "title": "How JEPA Avoids Noisy Features: The Implicit Bias of Deep Linear Self Distillation Networks",
+   "authors": [
+    "Etai Littwin",
+    "Omid Saremi",
+    "Madhu Advani",
+    "Vimal Thilak",
+    "Preetum Nakkiran",
+    "Chen Huang",
+    "Joshua Susskind"
+   ],
+   "published": "2024-07-03",
+   "abstract": "Two competing paradigms exist for self-supervised learning of data representations. Joint Embedding Predictive Architecture (JEPA) is a class of architectures in which semantically similar inputs are encoded into representations that are predictive of each other. A recent successful approach that falls under the JEPA framework is self-distillation, where an online encoder is trained to predict the output of the target encoder, sometimes using a lightweight predictor network. This is contrasted with the Masked AutoEncoder (MAE) paradigm, where an encoder and decoder are trained to reconstruct missing parts of the input in the data space rather, than its latent representation. A common motivation for using the JEPA approach over MAE is that the JEPA objective prioritizes abstract features over fine-grained pixel information (which can be unpredictable and uninformative). In this work, we s",
+   "url": "https://arxiv.org/abs/2407.03475",
+   "path": "TanitAD Research Lab/Library/papers/2407.03475_How-JEPA-Avoids-Noisy-Features-The-Implicit-Bias-of-Deep-Lin.pdf",
+   "bytes": 3507375,
+   "sha256": "332054c52e3000240ba1ae13867ed1ae12a9b77757d9b70ff07236e574b62bae",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "Implicit bias of deep linear SELF-DISTILLATION (JEPA-family): theory of what a self-generated target selects for - directly on E-DEC-7 (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2607.21576": {
+   "key": "2607.21576",
+   "kind": "arxiv",
+   "title": "Self-Supervised Learning of Structured Dynamics from Videos",
+   "authors": [
+    "Lukas Knobel",
+    "Andrew Zisserman",
+    "Yuki M. Asano"
+   ],
+   "published": "2026-07-23",
+   "abstract": "Understanding motion in video is a fundamental challenge for visual learning, as frame-to-frame change entangles two sources of dynamics: camera motion and object motion. This decomposition has remained underexplored in representation learning, partly because these factors are tightly coupled in natural videos and difficult to supervise separately. Yet recovering it is important for learning robust motion representations that separate meaningful object dynamics from camera-induced variation. We study whether such structured motion representations can be recovered from frozen features of a pretrained image vision transformer. We propose the Structured Dynamics Model (SDM), which explicitly separates the dominant source of temporal change from residual dynamics through future-feature prediction, rather than representing video change with a single entangled latent or with unstructured, spat",
+   "url": "https://arxiv.org/abs/2607.21576",
+   "path": "TanitAD Research Lab/Library/papers/2607.21576_Self-Supervised-Learning-of-Structured-Dynamics-from-Videos.pdf",
+   "bytes": 2037458,
+   "sha256": "a6c0d9dff9361a37cb97b2a9210620cad382cc31c47025009977f1783b0c459d",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-egomotion-shortcut"
+   ],
+   "note": "SDM: self-supervised FUTURE-FEATURE prediction on FROZEN image-ViT features separates CAMERA motion from object motion; the primary token captures camera motion - the published form of our ego-motion degeneracy (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "2002.08822": {
+   "key": "2002.08822",
+   "kind": "arxiv",
+   "title": "Automatic Shortcut Removal for Self-Supervised Representation Learning",
+   "authors": [
+    "Matthias Minderer",
+    "Olivier Bachem",
+    "Neil Houlsby",
+    "Michael Tschannen"
+   ],
+   "published": "2020-02-20",
+   "abstract": "In self-supervised visual representation learning, a feature extractor is trained on a \"pretext task\" for which labels can be generated cheaply, without human annotation. A central challenge in this approach is that the feature extractor quickly learns to exploit low-level visual features such as color aberrations or watermarks and then fails to learn useful semantic representations. Much work has gone into identifying such \"shortcut\" features and hand-designing schemes to reduce their effect. Here, we propose a general framework for mitigating the effect shortcut features. Our key assumption is that those features which are the first to be exploited for solving the pretext task may also be the most vulnerable to an adversary trained to make the task harder. We show that this assumption holds across common pretext tasks and datasets by training a \"lens\" network to make small image change",
+   "url": "https://arxiv.org/abs/2002.08822",
+   "path": "TanitAD Research Lab/Library/papers/2002.08822_Automatic-Shortcut-Removal-for-Self-Supervised-Representatio.pdf",
+   "bytes": 7327503,
+   "sha256": "bfface12dabf41143a6e813bb6d5f1ee6fca4872e2f41fba90fb6550c55f9ef9",
+   "banked": "2026-09-03",
+   "tags": [
+    "v7-egomotion-shortcut"
+   ],
+   "note": "Automatic Shortcut Removal: an adversarial lens that removes the easiest cue an SSL pretext exploits - the general mechanism behind a self-generated-target shortcut (to verify in full)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+   ]
+  },
+  "1705.07115": {
+   "key": "1705.07115",
+   "kind": "arxiv",
+   "title": "Multi-Task Learning Using Uncertainty to Weigh Losses for Scene Geometry and Semantics",
+   "authors": [
+    "Alex Kendall",
+    "Yarin Gal",
+    "Roberto Cipolla"
+   ],
+   "published": "2017-05-19",
+   "abstract": "Numerous deep learning applications benefit from multi-task learning with multiple regression and classification objectives. In this paper we make the observation that the performance of such systems is strongly dependent on the relative weighting between each task's loss. Tuning these weights by hand is a difficult and expensive process, making multi-task learning prohibitive in practice. We propose a principled approach to multi-task deep learning which weighs multiple loss functions by considering the homoscedastic uncertainty of each task. This allows us to simultaneously learn various quantities with different units or scales in both classification and regression settings. We demonstrate our model learning per-pixel depth regression, semantic and instance segmentation from a monocular input image. Perhaps surprisingly, we show our model can learn multi-task weightings and outperform",
+   "url": "https://arxiv.org/abs/1705.07115",
+   "path": "TanitAD Research Lab/Library/papers/1705.07115_Multi-Task-Learning-Using-Uncertainty-to-Weigh-Losses-for-Sc.pdf",
+   "bytes": 4528609,
+   "sha256": "408fd70c33271009143e873e41efe9bd805d7bce6c9f72813ec378de2f16b30c",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "Uncertainty weighting: learn per-task homoscedastic sigma as the loss weight",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2001.06782": {
+   "key": "2001.06782",
+   "kind": "arxiv",
+   "title": "Gradient Surgery for Multi-Task Learning",
+   "authors": [
+    "Tianhe Yu",
+    "Saurabh Kumar",
+    "Abhishek Gupta",
+    "Sergey Levine",
+    "Karol Hausman",
+    "Chelsea Finn"
+   ],
+   "published": "2020-01-19",
+   "abstract": "While deep learning and deep reinforcement learning (RL) systems have demonstrated impressive results in domains such as image classification, game playing, and robotic control, data efficiency remains a major challenge. Multi-task learning has emerged as a promising approach for sharing structure across multiple tasks to enable more efficient learning. However, the multi-task setting presents a number of optimization challenges, making it difficult to realize large efficiency gains compared to learning tasks independently. The reasons why multi-task learning is so challenging compared to single-task learning are not fully understood. In this work, we identify a set of three conditions of the multi-task optimization landscape that cause detrimental gradient interference, and develop a simple yet general approach for avoiding such interference between task gradients. We propose a form of ",
+   "url": "https://arxiv.org/abs/2001.06782",
+   "path": "TanitAD Research Lab/Library/papers/2001.06782_Gradient-Surgery-for-Multi-Task-Learning.pdf",
+   "bytes": 3646651,
+   "sha256": "4b960b81a001f376e8cb551c61c5578129dd99a9d1ff147be5ea56b9e578cbdf",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2110.14048": {
+   "key": "2110.14048",
+   "kind": "arxiv",
+   "title": "Conflict-Averse Gradient Descent for Multi-task Learning",
+   "authors": [
+    "Bo Liu",
+    "Xingchao Liu",
+    "Xiaojie Jin",
+    "Peter Stone",
+    "Qiang Liu"
+   ],
+   "published": "2021-10-26",
+   "abstract": "The goal of multi-task learning is to enable more efficient learning than single task learning by sharing model structures for a diverse set of tasks. A standard multi-task learning objective is to minimize the average loss across all tasks. While straightforward, using this objective often results in much worse final performance for each task than learning them independently. A major challenge in optimizing a multi-task model is the conflicting gradients, where gradients of different task objectives are not well aligned so that following the average gradient direction can be detrimental to specific tasks' performance. Previous work has proposed several heuristics to manipulate the task gradients for mitigating this problem. But most of them lack convergence guarantee and/or could converge to any Pareto-stationary point. In this paper, we introduce Conflict-Averse Gradient descent (CAGra",
+   "url": "https://arxiv.org/abs/2110.14048",
+   "path": "TanitAD Research Lab/Library/papers/2110.14048_Conflict-Averse-Gradient-Descent-for-Multi-task-Learning.pdf",
+   "bytes": 10198918,
+   "sha256": "47770cef6bda95b28d1cf091c4e6d7d1e903c6565f4b93a4f68193ae2aeb5b80",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "1803.10704": {
+   "key": "1803.10704",
+   "kind": "arxiv",
+   "title": "End-to-End Multi-Task Learning with Attention",
+   "authors": [
+    "Shikun Liu",
+    "Edward Johns",
+    "Andrew J. Davison"
+   ],
+   "published": "2018-03-28",
+   "abstract": "We propose a novel multi-task learning architecture, which allows learning of task-specific feature-level attention. Our design, the Multi-Task Attention Network (MTAN), consists of a single shared network containing a global feature pool, together with a soft-attention module for each task. These modules allow for learning of task-specific features from the global features, whilst simultaneously allowing for features to be shared across different tasks. The architecture can be trained end-to-end and can be built upon any feed-forward neural network, is simple to implement, and is parameter efficient. We evaluate our approach on a variety of datasets, across both image-to-image predictions and image classification tasks. We show that our architecture is state-of-the-art in multi-task learning compared to existing methods, and is also less sensitive to various weighting schemes in the mul",
+   "url": "https://arxiv.org/abs/1803.10704",
+   "path": "TanitAD Research Lab/Library/papers/1803.10704_End-to-End-Multi-Task-Learning-with-Attention.pdf",
+   "bytes": 2433969,
+   "sha256": "c350da43842b2154d39d716efa346e622da52b7a7fe46fda35953ecb35d0e11f",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "1812.02224": {
+   "key": "1812.02224",
+   "kind": "arxiv",
+   "title": "Adapting Auxiliary Losses Using Gradient Similarity",
+   "authors": [
+    "Yunshu Du",
+    "Wojciech M. Czarnecki",
+    "Siddhant M. Jayakumar",
+    "Mehrdad Farajtabar",
+    "Razvan Pascanu",
+    "Balaji Lakshminarayanan"
+   ],
+   "published": "2018-12-05",
+   "abstract": "One approach to deal with the statistical inefficiency of neural networks is to rely on auxiliary losses that help to build useful representations. However, it is not always trivial to know if an auxiliary task will be helpful for the main task and when it could start hurting. We propose to use the cosine similarity between gradients of tasks as an adaptive weight to detect when an auxiliary loss is helpful to the main loss. We show that our approach is guaranteed to converge to critical points of the main task and demonstrate the practical usefulness of the proposed algorithm in a few domains: multi-task supervised learning on subsets of ImageNet, reinforcement learning on gridworld, and reinforcement learning on Atari games.",
+   "url": "https://arxiv.org/abs/1812.02224",
+   "path": "TanitAD Research Lab/Library/papers/1812.02224_Adapting-Auxiliary-Losses-Using-Gradient-Similarity.pdf",
+   "bytes": 4542488,
+   "sha256": "412530b180f36025ae310cacd041d006a74c6725313793daf8e69e9ee0fd8651",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2202.01017": {
+   "key": "2202.01017",
+   "kind": "arxiv",
+   "title": "Multi-Task Learning as a Bargaining Game",
+   "authors": [
+    "Aviv Navon",
+    "Aviv Shamsian",
+    "Idan Achituve",
+    "Haggai Maron",
+    "Kenji Kawaguchi",
+    "Gal Chechik",
+    "Ethan Fetaya"
+   ],
+   "published": "2022-02-02",
+   "abstract": "In Multi-task learning (MTL), a joint model is trained to simultaneously make predictions for several tasks. Joint training reduces computation costs and improves data efficiency; however, since the gradients of these different tasks may conflict, training a joint model for MTL often yields lower performance than its corresponding single-task counterparts. A common method for alleviating this issue is to combine per-task gradients into a joint update direction using a particular heuristic. In this paper, we propose viewing the gradients combination step as a bargaining game, where tasks negotiate to reach an agreement on a joint direction of parameter update. Under certain assumptions, the bargaining problem has a unique solution, known as the Nash Bargaining Solution, which we propose to use as a principled approach to multi-task learning. We describe a new MTL optimization procedure, N",
+   "url": "https://arxiv.org/abs/2202.01017",
+   "path": "TanitAD Research Lab/Library/papers/2202.01017_Multi-Task-Learning-as-a-Bargaining-Game.pdf",
+   "bytes": 6965544,
+   "sha256": "eecd80be9b34bf3865f6edb63b57522fd87a66be6aafbed9fb090c4438e20482",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2201.04122": {
+   "key": "2201.04122",
+   "kind": "arxiv",
+   "title": "In Defense of the Unitary Scalarization for Deep Multi-Task Learning",
+   "authors": [
+    "Vitaly Kurin",
+    "Alessandro De Palma",
+    "Ilya Kostrikov",
+    "Shimon Whiteson",
+    "M. Pawan Kumar"
+   ],
+   "published": "2022-01-11",
+   "abstract": "Recent multi-task learning research argues against unitary scalarization, where training simply minimizes the sum of the task losses. Several ad-hoc multi-task optimization algorithms have instead been proposed, inspired by various hypotheses about what makes multi-task settings difficult. The majority of these optimizers require per-task gradients, and introduce significant memory, runtime, and implementation overhead. We show that unitary scalarization, coupled with standard regularization and stabilization techniques from single-task learning, matches or improves upon the performance of complex multi-task optimizers in popular supervised and reinforcement learning settings. We then present an analysis suggesting that many specialized multi-task optimizers can be partly interpreted as forms of regularization, potentially explaining our surprising results. We believe our results call fo",
+   "url": "https://arxiv.org/abs/2201.04122",
+   "path": "TanitAD Research Lab/Library/papers/2201.04122_In-Defense-of-the-Unitary-Scalarization-for-Deep-Multi-Task.pdf",
+   "bytes": 2271440,
+   "sha256": "c8b614ab0fa467f7c6eebce9c8b25ce1a95119312c3773db47dc7658cb88b1d5",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1 loss balancing in hybrid objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2010.08244": {
+   "key": "2010.08244",
+   "kind": "arxiv",
+   "title": "Auxiliary Task Reweighting for Minimum-data Learning",
+   "authors": [
+    "Baifeng Shi",
+    "Judy Hoffman",
+    "Kate Saenko",
+    "Trevor Darrell",
+    "Huijuan Xu"
+   ],
+   "published": "2020-10-16",
+   "abstract": "Supervised learning requires a large amount of training data, limiting its application where labeled data is scarce. To compensate for data scarcity, one possible method is to utilize auxiliary tasks to provide additional supervision for the main task. Assigning and optimizing the importance weights for different auxiliary tasks remains an crucial and largely understudied research question. In this work, we propose a method to automatically reweight auxiliary tasks in order to reduce the data requirement on the main task. Specifically, we formulate the weighted likelihood function of auxiliary tasks as a surrogate prior for the main task. By adjusting the auxiliary task weights to minimize the divergence between the surrogate prior and the true prior of the main task, we obtain a more accurate prior estimation, achieving the goal of minimizing the required amount of training data for the",
+   "url": "https://arxiv.org/abs/2010.08244",
+   "path": "TanitAD Research Lab/Library/papers/2010.08244_Auxiliary-Task-Reweighting-for-Minimum-data-Learning.pdf",
+   "bytes": 1052196,
+   "sha256": "579e80cb79b203cbf9b2a589b6944e4bae5a2f7c244cb20353d6290cc1b0fdca",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1: auxiliary/main weighting rule",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "1810.04650": {
+   "key": "1810.04650",
+   "kind": "arxiv",
+   "title": "Multi-Task Learning as Multi-Objective Optimization",
+   "authors": [
+    "Ozan Sener",
+    "Vladlen Koltun"
+   ],
+   "published": "2018-10-10",
+   "abstract": "In multi-task learning, multiple tasks are solved jointly, sharing inductive bias between them. Multi-task learning is inherently a multi-objective problem because different tasks may conflict, necessitating a trade-off. A common compromise is to optimize a proxy objective that minimizes a weighted linear combination of per-task losses. However, this workaround is only valid when the tasks do not compete, which is rarely the case. In this paper, we explicitly cast multi-task learning as multi-objective optimization, with the overall objective of finding a Pareto optimal solution. To this end, we use algorithms developed in the gradient-based multi-objective optimization literature. These algorithms are not directly applicable to large-scale learning problems since they scale poorly with the dimensionality of the gradients and the number of tasks. We therefore propose an upper bound for t",
+   "url": "https://arxiv.org/abs/1810.04650",
+   "path": "TanitAD Research Lab/Library/papers/1810.04650_Multi-Task-Learning-as-Multi-Objective-Optimization.pdf",
+   "bytes": 1148354,
+   "sha256": "f667a8e903dc07efeadfd0204051ffbeffc93aee10c78f1a7da410e43eb11e1d",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "S1: auxiliary/main weighting rule",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2302.14138": {
+   "key": "2302.14138",
+   "kind": "arxiv",
+   "title": "Layer Grafted Pre-training: Bridging Contrastive Learning And Masked Image Modeling For Label-Efficient Representations",
+   "authors": [
+    "Ziyu Jiang",
+    "Yinpeng Chen",
+    "Mengchen Liu",
+    "Dongdong Chen",
+    "Xiyang Dai",
+    "Lu Yuan",
+    "Zicheng Liu",
+    "Zhangyang Wang"
+   ],
+   "published": "2023-02-27",
+   "abstract": "Recently, both Contrastive Learning (CL) and Mask Image Modeling (MIM) demonstrate that self-supervision is powerful to learn good representations. However, naively combining them is far from success. In this paper, we start by making the empirical observation that a naive joint optimization of CL and MIM losses leads to conflicting gradient directions - more severe as the layers go deeper. This motivates us to shift the paradigm from combining loss at the end, to choosing the proper learning method per network layer. Inspired by experimental observations, we find that MIM and CL are suitable to lower and higher layers, respectively. We hence propose to combine them in a surprisingly simple, \"sequential cascade\" fashion: early layers are first trained under one MIM loss, on top of which latter layers continue to be trained under another CL loss. The proposed Layer Grafted Pre-training le",
+   "url": "https://arxiv.org/abs/2302.14138",
+   "path": "TanitAD Research Lab/Library/papers/2302.14138_Layer-Grafted-Pre-training-Bridging-Contrastive-Learning-And.pdf",
+   "bytes": 1200213,
+   "sha256": "57a16b0a994584319487e09a82f8112ccc0a2831f3331e622f63d10237877545",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-staged-objectives"
+   ],
+   "note": "Layer Grafted: sequential CL-then-MIM beats joint combination",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2505.08170": {
+   "key": "2505.08170",
+   "kind": "local",
+   "title": "MoKD: Multi-Task Optimization for Knowledge Distillation",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://arxiv.org/abs/2505.08170",
+   "path": "TanitAD Research Lab/Library/papers/2505.08170_MoKD-Multi-Task-Optimization-for-Knowledge-Distillation.pdf",
+   "bytes": 3131808,
+   "sha256": "948bfe3df263f4bac7a8526477f3207af1aad2c7857fad6ad8ef7c7a0c1742b1",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-loss-balance"
+   ],
+   "note": "MoKD: distillation as multi-task optimisation; gradient conflict between KD and task loss",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "1912.06844": {
+   "key": "1912.06844",
+   "kind": "arxiv",
+   "title": "Regularizing Deep Multi-Task Networks using Orthogonal Gradients",
+   "authors": [
+    "Mihai Suteu",
+    "Yike Guo"
+   ],
+   "published": "2019-12-14",
+   "abstract": "Deep neural networks are a promising approach towards multi-task learning because of their capability to leverage knowledge across domains and learn general purpose representations. Nevertheless, they can fail to live up to these promises as tasks often compete for a model's limited resources, potentially leading to lower overall performance. In this work we tackle the issue of interfering tasks through a comprehensive analysis of their training, derived from looking at the interaction between gradients within their shared parameters. Our empirical results show that well-performing models have low variance in the angles between task gradients and that popular regularization methods implicitly reduce this measure. Based on this observation, we propose a novel gradient regularization term that minimizes task interference by enforcing near orthogonal gradients. Updating the shared parameter",
+   "url": "https://arxiv.org/abs/1912.06844",
+   "path": "TanitAD Research Lab/Library/papers/1912.06844_Regularizing-Deep-Multi-Task-Networks-using-Orthogonal-Gradi.pdf",
+   "bytes": 437435,
+   "sha256": "b6767b41a62fcc7319877f0b110f005343f409d51f1e912d804cee5a34fb5a09",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-subspace-separation"
+   ],
+   "note": "Orthogonal-gradient regulariser for deep MTL",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2609.03150": {
+   "key": "2609.03150",
+   "kind": "arxiv",
+   "title": "Routing Is Not Enough: Diagnosing Intra-Adapter Subspace Contention in MoE+LoRA Fine-Tuning",
+   "authors": [
+    "Mehreen Hossain Chowdhury",
+    "Nowshin Mahjabin",
+    "Ahmed Shafin Ruhan",
+    "Md Azam Hossain",
+    "Abu Raihan Mostofa Kamal",
+    "Md Tahmid Rahman Laskar"
+   ],
+   "published": "2026-09-02",
+   "abstract": "Multi-domain fine-tuning often combines MoE routing with LoRA, assuming that token-level routing separates domain-specific updates. We test this assumption in MoE+LoRA using Python code paired with biomedical text and mathematical reasoning. Although these domains show near-disjoint expert routing, adding biomedical data substantially increases code perplexity, indicating that routing separation alone may not prevent negative transfer. To localize the failure, we introduce Jaccard routing overlap and adapter-gradient cosine similarity, which measure expert sharing and update compatibility, respectively. These diagnostics indicate that interference arises mostly from nearly orthogonal domain gradients competing within the same low-rank adapter subspace. We address this issue with SpawnLoRA, which dynamically adds gated sub-adapters inside MoE experts when adapter-level contention is detec",
+   "url": "https://arxiv.org/abs/2609.03150",
+   "path": "TanitAD Research Lab/Library/papers/2609.03150_Routing-Is-Not-Enough-Diagnosing-Intra-Adapter-Subspace-Cont.pdf",
+   "bytes": 490195,
+   "sha256": "f0c44d29a310ee70843ddf59ded06180a271375e45420a6e4cb6a48c586794ba",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-subspace-separation"
+   ],
+   "note": "Diagnoses subspace contention between adapters directly",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2103.02631": {
+   "key": "2103.02631",
+   "kind": "arxiv",
+   "title": "RotoGrad: Gradient Homogenization in Multitask Learning",
+   "authors": [
+    "Adrián Javaloy",
+    "Isabel Valera"
+   ],
+   "published": "2021-03-03",
+   "abstract": "Multitask learning is being increasingly adopted in applications domains like computer vision and reinforcement learning. However, optimally exploiting its advantages remains a major challenge due to the effect of negative transfer. Previous works have tracked down this issue to the disparities in gradient magnitudes and directions across tasks, when optimizing the shared network parameters. While recent work has acknowledged that negative transfer is a two-fold problem, existing approaches fall short as they only focus on either homogenizing the gradient magnitude across tasks; or greedily change the gradient directions, overlooking future conflicts. In this work, we introduce RotoGrad, an algorithm that tackles negative transfer as a whole: it jointly homogenizes gradient magnitudes and directions, while ensuring training convergence. We show that RotoGrad outperforms competing methods",
+   "url": "https://arxiv.org/abs/2103.02631",
+   "path": "TanitAD Research Lab/Library/papers/2103.02631_RotoGrad-Gradient-Homogenization-in-Multitask-Learning.pdf",
+   "bytes": 2492985,
+   "sha256": "561a7204264623419af1e538df6b228a106292c9d830b774c5f2c29799b77ef8",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-subspace-separation"
+   ],
+   "note": "RotoGrad: per-task rotation of the shared representation separates directions and homogenizes gradient magnitudes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2402.07119": {
+   "key": "2402.07119",
+   "kind": "arxiv",
+   "title": "Two-Stage Multi-task Self-Supervised Learning for Medical Image Segmentation",
+   "authors": [
+    "Binyan Hu",
+    "A. K. Qin"
+   ],
+   "published": "2024-02-11",
+   "abstract": "Medical image segmentation has been significantly advanced by deep learning (DL) techniques, though the data scarcity inherent in medical applications poses a great challenge to DL-based segmentation methods. Self-supervised learning offers a solution by creating auxiliary learning tasks from the available dataset and then leveraging the knowledge acquired from solving auxiliary tasks to help better solve the target segmentation task. Different auxiliary tasks may have different properties and thus can help the target task to different extents. It is desired to leverage their complementary advantages to enhance the overall assistance to the target task. To achieve this, existing methods often adopt a joint training paradigm, which co-solves segmentation and auxiliary tasks by integrating their losses or intermediate gradients. However, direct coupling of losses or intermediate gradients ",
+   "url": "https://arxiv.org/abs/2402.07119",
+   "path": "TanitAD Research Lab/Library/papers/2402.07119_Two-Stage-Multi-task-Self-Supervised-Learning-for-Medical-Im.pdf",
+   "bytes": 823903,
+   "sha256": "9b040ec06b0f7951b724be29e6f81e5be1d1d59977dddb60acb53c8c7cea5b0d",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-staged-objectives"
+   ],
+   "note": "Two-stage multi-task SSL: sequential vs joint pretext objectives",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2303.03369": {
+   "key": "2303.03369",
+   "kind": "arxiv",
+   "title": "Multimodal Prompting with Missing Modalities for Visual Recognition",
+   "authors": [
+    "Yi-Lun Lee",
+    "Yi-Hsuan Tsai",
+    "Wei-Chen Chiu",
+    "Chen-Yu Lee"
+   ],
+   "published": "2023-03-06",
+   "abstract": "In this paper, we tackle two challenges in multimodal learning for visual recognition: 1) when missing-modality occurs either during training or testing in real-world situations; and 2) when the computation resources are not available to finetune on heavy transformer models. To this end, we propose to utilize prompt learning and mitigate the above two challenges together. Specifically, our modality-missing-aware prompts can be plugged into multimodal transformers to handle general missing-modality cases, while only requiring less than 1% learnable parameters compared to training the entire model. We further explore the effect of different prompt configurations and analyze the robustness to missing modality. Extensive experiments are conducted to show the effectiveness of our prompt learning framework that improves the performance under various missing-modality cases, while alleviating th",
+   "url": "https://arxiv.org/abs/2303.03369",
+   "path": "TanitAD Research Lab/Library/papers/2303.03369_Multimodal-Prompting-with-Missing-Modalities-for-Visual-Reco.pdf",
+   "bytes": 8737457,
+   "sha256": "ba91b823f607abe87e770d29d8dbd09246b194db82287c0af18db67a47a13585",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-validity-flag"
+   ],
+   "note": "Missing-modality prompting: train/test modality-mismatch degradation measured",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2407.19804": {
+   "key": "2407.19804",
+   "kind": "arxiv",
+   "title": "Imputation for prediction: beware of diminishing returns",
+   "authors": [
+    "Marine Le Morvan",
+    "Gaël Varoquaux"
+   ],
+   "published": "2024-07-29",
+   "abstract": "Missing values are prevalent across various fields, posing challenges for training and deploying predictive models. In this context, imputation is a common practice, driven by the hope that accurate imputations will enhance predictions. However, recent theoretical and empirical studies indicate that simple constant imputation can be consistent and competitive. This empirical study aims at clarifying if and when investing in advanced imputation methods yields significantly better predictions. Relating imputation and predictive accuracies across combinations of imputation and predictive models on 19 datasets, we show that imputation accuracy matters less i) when using expressive models, ii) when incorporating missingness indicators as complementary inputs, iii) matters much more for generated linear outcomes than for real-data outcomes. Interestingly, we also show that the use of the missi",
+   "url": "https://arxiv.org/abs/2407.19804",
+   "path": "TanitAD Research Lab/Library/papers/2407.19804_Imputation-for-prediction-beware-of-diminishing-returns.pdf",
+   "bytes": 4248068,
+   "sha256": "212398b2357ec85f73cfb16c0be819d57765b8110550cf6fe7a86c76a528a73a",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-validity-flag"
+   ],
+   "note": "Imputation vs missingness indicator: when the mask must be an explicit input",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
+   ]
+  },
+  "2608.29005": {
+   "key": "2608.29005",
+   "kind": "arxiv",
+   "title": "A Degradation-Tolerance Benchmark for Camera-Only End-to-End Driving",
+   "authors": [
+    "Haohua Que",
+    "Handong Yao"
+   ],
+   "published": "2026-08-29",
+   "abstract": "Camera-only end-to-end (E2E) driving models are nearing deployment, where the camera stream is degraded by blur, noise, low light, weather, frame loss, and memory faults. How much a policy tolerates before its driving breaks is unclear. Corruption-robustness benchmarks target detection or bird's-eye-view perception, not the planning output that drives the car. We present DriveDegrade, a benchmark for image-degradation tolerance in camera-only E2E driving. Sixteen corruption families at five severities are injected on the fly inside the image loader, one operator reaching fifteen policies, and we evaluate open-loop planning on nuScenes and NAVSIM plus a CARLA closed-loop anchor. First, mild degradation barely affects planning, and the families that break it have a clear threshold at mid severity. Second, fragility is corruption-dependent: blur, JPEG, and raindrop damage planning most, whi",
+   "url": "https://arxiv.org/abs/2608.29005",
+   "path": "TanitAD Research Lab/Library/papers/2608.29005_A-Degradation-Tolerance-Benchmark-for-Camera-Only-End-to-End.pdf",
+   "bytes": 7235974,
+   "sha256": "21b2c9f5d2f2e0ad7f387424487a43b231338fadec548fbd279038e2e82f8a14",
+   "banked": "2026-09-04",
+   "tags": [
+    "v7-validity-flag"
+   ],
+   "note": "Degradation-tolerance benchmark for camera-only E2E driving",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-v7-external-target-dominance/LIT_SOTA.md"
    ]
   }
  }
