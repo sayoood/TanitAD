@@ -1,0 +1,59 @@
+{
+ "_meta": {
+  "evidence_class": "MEASURED",
+  "pod": "tanitad-refcv3 (= tanitad-a40), 69.30.85.211:22001, container 979e39dfcad2",
+  "when_utc": "2026-09-04T12:32Z - 13:05Z",
+  "live_trainer_pid": 2346318,
+  "workers": [2346433, 2346434, 2346435, 2346436, 2346437, 2346438],
+  "method": "read-only /proc and nvidia-smi over ssh -n (no PTY, so no command echo); the run was NOT touched"
+ },
+ "gpu": {
+  "name": "NVIDIA A40", "count": 1, "pci": "00000000:56:00.0",
+  "utilization_gpu_pct": {"n_samples": 40, "mean": 100.0, "samples_below_95": 0, "samples_below_60": 0},
+  "power_draw_W_mean": 284.7, "power_limit_W": 300.0,
+  "clocks_sm_MHz_mean": 1724, "clocks_max_sm_MHz": 1740,
+  "memory_used_MiB": 43413, "memory_total_MiB": 46068, "memory_used_pct": 94.2,
+  "compute_apps": [{"pid": 2346318, "used_MiB": 43404}],
+  "clocks_event_reasons": {"sw_power_cap": "Active", "hw_slowdown": "Not Active",
+                           "hw_thermal_slowdown": "Not Active", "sw_thermal_slowdown": "Not Active"},
+  "ecc_mode": "Enabled", "persistence_mode": "Enabled",
+  "interpretation": "GPU at 99.1 % of max SM clock and 94.9 % of its power cap, 100 % util with zero samples below 95 %. It is doing real, saturating work and cannot have run ~2x faster in the past for an environmental reason."
+ },
+ "cgroup_memory": {
+  "limit_bytes": 49999998976,
+  "stat_rss_bytes": 16134447104,
+  "stat_cache_bytes": 32971849728,
+  "stat_shmem_bytes": 4971999232,
+  "failcnt": 0,
+  "oom_kill_total": 24,
+  "interpretation": "failcnt 0 settles it: this cgroup has NEVER hit its limit. rss 16.1 / 50 GB. The 33 GB of `cache` is reclaimable page cache and is NOT pressure (CLAUDE.md cgroup trap). oom_kill 24 is historical (C-REFCV3-EVAL-DEATH), not current. shmem 4.97 GB == the 6 workers x prefetch 1 x 0.826 GB of in-flight uint8 batches, exactly as the trainer banner predicts."
+ },
+ "host": {
+  "nproc": 96, "loadavg_1m": 5.34,
+  "MemTotal_kB": 527972716, "MemFree_kB": 115589668, "MemAvailable_kB": 475857616, "Cached_kB": 361333932
+ },
+ "processes": {
+  "python3_trainer_count": 1,
+  "other_gpu_tenants": 0,
+  "main_cpu_pct_20s_window": 100.0,
+  "main_cpu_pct_75s_window": 155.5,
+  "worker_cpu_pct_each_75s_window": [15.7, 15.4, 17.3, 17.7, 18.1, 15.9],
+  "worker_state_samples": {"pattern": "SSSSRS", "n_samples": 30, "D_state_observed": 0},
+  "interpretation": "One trainer, no contention. Workers are overwhelmingly in S (sleeping on a full output queue), never observed in D (uninterruptible block-IO wait) across 180 process-samples."
+ },
+ "io": {
+  "backing_store": "dm-1 over nvme0n1 + nvme1n1 (RAID-1 NVMe); /root/data is on the container overlay, NOT the MooseFS /workspace mount",
+  "window_s": 60,
+  "dm1_read_MB_s": 155.7, "dm1_device_utilization_pct": 3.2, "dm1_avg_queue_depth": 0.15,
+  "nvme0n1_read_MB_s": 77.9, "nvme1n1_read_MB_s": 77.9,
+  "worker_aggregate_read_rate_MB_s_75s": 150.4,
+  "worker_read_bytes_each_GB_at_1h05m": [96.76, 97.12, 97.27, 96.80, 96.42, 96.21],
+  "train_cache_size": "157 GB (/root/data/train), 4572 clips, ~34 MB/clip",
+  "implied_bytes_per_step_MB": 578,
+  "interpretation": "DECISIVE: the device is 96.8 % IDLE with an average queue depth of 0.15 while serving 155.7 MB/s. The store is nowhere near saturated and could serve far more if asked. IO and page-cache state are REFUTED as the cause."
+ },
+ "unusable_probes": {
+  "delayacct_blkio_ticks": "read 0 for every process; kernel.task_delayacct is disabled in this container, so the field is CONSTANT ZERO and proves nothing. Not evidence of absent IO wait.",
+  "nvidia_smi_lms_loop": "`nvidia-smi -lms 250 -c 60` returned 2 all-zero rows under ssh -n; replaced with an explicit shell loop."
+ }
+}

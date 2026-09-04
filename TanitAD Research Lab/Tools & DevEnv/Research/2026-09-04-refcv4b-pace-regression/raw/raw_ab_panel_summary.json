@@ -1,0 +1,59 @@
+{
+ "_meta": {
+  "evidence_class": "MEASURED (ours; dev box RTX 4060, off-Drive clone C:/Users/Admin/run_refcv4v/repo/stack)",
+  "purpose": "separate the CODE change (the 11:40 UTC patch to refc.py) from the FLAG (--anchor-v0-conditioned). The launch agent's steptime.py toggled the flag INSIDE the new code and therefore could not detect a regression introduced by the patch itself.",
+  "method": "the patch is a list of exact string substitutions (patch_refc.py, banked in commit 187c513). Reversing them on a COPY of the clone reconstructs the pre-11:40 forward path. 12 of 16 reverse edits applied; the 4 that did not (init-signature, init-buffers, construction, load-anchors+roll-bank) are CONSTRUCTOR plumbing only - they add two buffers and three kwargs and touch no forward-path code. Every forward-path edit (fan-x0, fan-refine, prefilter-mask, lan-prior-body, goal-along-body, rank-goal-priors, conf-lan-prior, decoder-return-bank, model-return-bank) reversed cleanly, verified by 'x0 = anchors[None].expand' being restored and 'bank = self.roll_bank' absent.",
+  "config": "batch 2, image 128x320, 4 frames, 20 timed iters after 5 warmup, fwd+bwd+opt.step, seed 0, 3 repeats",
+  "scale_caveat": "THIS PANEL DOES NOT COVER SCALE. Peak memory here is ~1 GB; the live run sits at 43,413 / 46,068 MiB = 94.2 % of the A40. A cost that only appears near the memory ceiling is invisible to it."
+ },
+ "arms": {
+  "A_oldcode_fixed": {
+   "desc": "pre-11:40 forward path + FIXED 128-anchor vocabulary == the ABORTED run's graph",
+   "ms_per_step_median": 128.63,
+   "samples": [
+    130.23,
+    128.63,
+    128.51
+   ]
+  },
+  "C_newcode_fixed": {
+   "desc": "post-11:40 forward path + FIXED 128-anchor vocabulary == THE CONTROL",
+   "ms_per_step_median": 130.17,
+   "samples": [
+    130.89,
+    128.65,
+    130.17
+   ]
+  },
+  "B_newcode_v0cond": {
+   "desc": "post-11:40 forward path + 117 v0-CONDITIONED == the LIVE run's graph",
+   "ms_per_step_median": 141.88,
+   "samples": [
+    140.3,
+    141.88,
+    142.82
+   ]
+  }
+ },
+ "ratios": {
+  "CONTROL_C_over_A": {
+   "value": 1.012,
+   "must_read": "~1.00 - patch_refc.py asserts the fixed-vocabulary path is 'exactly the old anchors[None].expand(...)' and 'verified bit-identical, 2026-09-04'",
+   "verdict": "PASS - the control reads its known value"
+  },
+  "FLAG_B_over_C": {
+   "value": 1.09,
+   "pct": 9.0,
+   "cross_check": "the launch agent independently measured +8.8 % for the same toggle; this reproduces it"
+  },
+  "TOTAL_B_over_A": {
+   "value": 1.103,
+   "pct": 10.3
+  },
+  "OBSERVED_ON_POD": {
+   "value": 1.9572,
+   "pct": 95.7
+  }
+ },
+ "verdict": "The 11:40 code patch AND the v0-conditioned flag together account for +10 %. The pod shows +96 %. The code change is EXONERATED as the cause of the pace difference."
+}
