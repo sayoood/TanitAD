@@ -1,5 +1,35 @@
 """Build the REF-C anchor vocabulary via furthest-point sampling (FPS).
 
+**FPS LOSES TO A SINGLE STRAIGHT LINE AT THE 6 s / 8-SLOT GRID. MEASURED 2026-09-04**
+on 19,602 held-out windows over the 141 B1-v7.2 EVAL clips (oracle-in-vocabulary
+ADE 0-2 s, lower is better):
+
+    zero path (no information)      14.3264
+    straight-line control            0.6843
+    synthetic pool (refcv3 shipped)  1.0882
+    best FPS variant                 0.7666   <- WORSE THAN A STRAIGHT LINE
+    k-means, slot-normalised         0.3796   <- shipped in refcv4
+
+The argument below - that k-means collapses onto the straight mode - is REAL, and was
+right for the 2 s / 4-slot grid this tool still DEFAULTS to (--horizons 5,10,15,20,
+--n-anchors 64). It does not survive at 6 s. FPS minimises worst-case COVERING RADIUS;
+the gate that decides whether a model can plan is MEAN ADE to the nearest anchor, which
+is Lloyd's objective, not FPS's. The fix for the straight-mode collapse is PER-SLOT
+NORMALISATION, not a different sampler.
+
+Why this matters more than a tuning note: refcv3 trained 40,284 steps on the synthetic
+fallback because nobody passed --anchors, and a perfect chooser on that fan still lost
+to a hold-action control. A VOCABULARY IS A CEILING - no selector, however good, can
+pick a trajectory the fan does not contain. Rebuilding at 6 s with FPS reproduces that
+failure with a different number.
+
+This tool therefore REFUSES a >4-slot build unless --i-know-fps-loses-at-6s is passed.
+The validated k-means/slot-norm builder and its held-out gate live at
+"TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-refcv4-launch/".
+Note it saves {"anchors": ..., **meta} - a DICT. refc_v3_train.py unwraps that as of
+2026-09-04 (anc["anchors"] if isinstance(anc, dict)); older trainers do not.
+
+
 REF-C's anchored-diffusion decoder selects over a fixed vocabulary of ego-frame
 future trajectories [n_horizons, 2]. This tool builds that vocabulary by FPS —
 NOT k-means: comma2k19 is ~74 % straight, so k-means collapses nearly every
@@ -112,6 +142,9 @@ def main(argv=None) -> str:
     ap.add_argument("--max-pool", type=int, default=200_000,
                     help="cap the real-data pool (random subsample) for FPS")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--i-know-fps-loses-at-6s", action="store_true",
+                    help="build a >4-slot FPS vocabulary anyway; it is MEASURED to "
+                         "lose to a straight line (0.7666 vs 0.6843)")
     ap.add_argument("--smoke", action="store_true",
                     help="force the synthetic path with a 20-anchor default")
     args = ap.parse_args(argv)
@@ -119,6 +152,18 @@ def main(argv=None) -> str:
     if args.data_root and args.v2_cache:
         raise SystemExit("pass at most one of --data-root / --v2-cache")
     horizons = tuple(int(x) for x in args.horizons.split(","))
+    # MEASURED 2026-09-04: FPS at the 6 s / 8-slot grid scores 0.7666 oracle-in-
+    # vocabulary ADE against a straight line's 0.6843 - it is WORSE THAN DRAWING A
+    # STRAIGHT LINE, and a vocabulary is a ceiling no selector can beat. refcv3 spent
+    # 40,284 steps proving that. Refuse rather than hand back a fan that cannot plan.
+    if len(horizons) > 4 and not args.i_know_fps_loses_at_6s:
+        raise SystemExit(
+            "REFUSED: %d slots requested, but FPS is MEASURED to lose to a single "
+            "straight line beyond the 2 s / 4-slot grid (0.7666 vs 0.6843 oracle-in-"
+            "vocabulary ADE, 19,602 held-out windows, 2026-09-04). Use the validated "
+            "k-means/slot-normalised builder in 'TanitAD Research Lab/Architecture & "
+            "Inference/Research/2026-09-04-refcv4-launch/' (it scores 0.3796), or pass "
+            "--i-know-fps-loses-at-6s to build it anyway." % len(horizons))
     data_root = None if args.smoke else args.data_root
     v2_cache = None if args.smoke else args.v2_cache
     n_anchors = 20 if (args.smoke and args.n_anchors == 64) else args.n_anchors
