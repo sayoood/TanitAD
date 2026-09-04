@@ -913,6 +913,76 @@ def _load_eff():
     return mod
 
 
+def preflight_analysis_imports(lead_used: bool) -> dict:
+    """⛔ EVERY MODULE ``analyze_refav1`` NEEDS, RESOLVED IN ~2 s BEFORE THE
+    ROLLOUT — because the alternative has now happened, at full price.
+
+    MEASURED 2026-09-04: the Thor rollout completed **all 141 episodes**
+    (10,898 s = 3.0 h of GPU, ``REFAV1_DUMP_DONE`` printed) and then
+    ``analyze()`` died on
+    ``FileNotFoundError: .../taniteval/tools/eval_four_families.py`` — a sibling
+    absent from the shipped tree. The traceback reads like a total failure; it
+    was a **100 %-complete run missing its last step**, recovered later with
+    ``--analyze-only`` at zero GPU.
+
+    ``_bootstrap_paths()`` already preflights ``taniteval.ci`` and
+    ``taniteval.four_families``. It does **not** preflight the siblings this
+    module loads **BY FILE PATH** — and the file-loaded one is exactly what
+    failed. A preflight that covers only the imports written as ``import`` is
+    the same scope error as reading ``df`` on a pod: it answers a neighbouring
+    question and is read as an answer.
+
+    ⇒ This probe EXECUTES every module the analysis path will need, including
+    the file-loaded siblings, and it must stay AHEAD of ``run_dump``. It returns
+    what it checked so a green preflight is visible rather than silent.
+    """
+    checked, warned = [], []
+    # (a) siblings loaded BY FILE PATH — the class that actually failed
+    sibs = [("t1_eval.py", True), ("eval_four_families.py", bool(lead_used))]
+    for fname, fatal in sibs:
+        path = os.path.join(_HERE, fname)
+        try:
+            if not os.path.exists(path):
+                raise FileNotFoundError(path)
+            spec = importlib.util.spec_from_file_location(
+                f"_preflight_{fname[:-3]}", path)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            checked.append(f"file:{fname}")
+        except Exception as ex:                                # noqa: BLE001
+            msg = (f"[refav1_arm] ⛔ PREFLIGHT FAILED on the file-loaded sibling "
+                   f"{path}: {type(ex).__name__}: {ex}. "
+                   f"    The analysis step needs it AFTER the rollout, so "
+                   f"running would spend the whole GPU budget and then die "
+                   f"with nothing but the dump. Ship the file (or pass "
+                   f"--no-lead-block if it is only needed for the lead block) "
+                   f"and re-launch.")
+            if fatal:
+                sys.exit(msg)
+            warned.append(f"file:{fname} ({type(ex).__name__})")
+    # (b) modules imported lazily INSIDE the analysis functions
+    lazy = ["taniteval.ci", "taniteval.four_families", "taniteval.lead_metrics",
+            "tanitad.refs.refc_tactical", "tanitad.refs.refb",
+            "tanitad.models.v6", "tanitad.models.metric_dynamics",
+            "tanitad.refs.refa_v1_plan", "tanitad.data.refav1_loader"]
+    import importlib as _il
+    for name in lazy:
+        try:
+            _il.import_module(name)
+            checked.append(name)
+        except Exception as ex:                                # noqa: BLE001
+            sys.exit(f"[refav1_arm] ⛔ PREFLIGHT FAILED importing {name}: "
+                     f"{type(ex).__name__}: {ex}. "
+                     f"    analyze_refav1() imports it lazily, i.e. AFTER the "
+                     f"rollout has been paid for. Refusing to start.")
+    rep = {"n_checked": len(checked), "checked": checked, "warned": warned,
+           "lead_block_in_play": bool(lead_used)}
+    _p(f"[preflight] {len(checked)} analysis imports OK"
+       + (f"  ⚠️ non-fatal: {warned}" if warned else "")
+       + "  (this probe exists because a 3.0 h rollout once died in analyze())")
+    return rep
+
+
 def _sha256(path: str) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -1929,6 +1999,9 @@ def main(argv=None):
         sys.exit("--out is required")
     if os.path.isdir(a.out):
         sys.exit(f"--out must be a FILE, got a directory: {a.out}")
+    # ⛔ AHEAD OF THE ROLLOUT, ALWAYS. See preflight_analysis_imports().
+    preflight_analysis_imports(lead_used=lead_path is not None)
+
     if a.analyze_only is None:
         for r, name in ((a.ckpt, "--ckpt"), (a.cache, "--cache"),
                         (a.episodes, "--episodes"), (a.dump_dir, "--dump-dir")):
