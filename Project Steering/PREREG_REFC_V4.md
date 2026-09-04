@@ -267,3 +267,374 @@ and `ego_dropout 0.5` was the only scene-reading lever while being the **worst**
 ⚠️ **Stranded — exists in ONE place only:** the anchor bank, the anchor gate log, the clamp
 derivation and both builder scripts live **only on the pod**. They are the evidence for §4
 and §5 and should be pulled into the repo.
+
+---
+---
+
+# ⭐ AMENDMENT — refcv4**b**, THE v0-CONDITIONED-VOCABULARY RELAUNCH
+### Registered 2026-09-04 ~13:2x UTC, BEFORE the launch. PI decision; executed by the Arch+Inference FlyWheel.
+
+**refcv4 was ABORTED at step 6,400 of 40,284** and archived at
+`pod:/workspace/experiments/refcv4-b1-v72-40k.ABORTED-step6400` with a
+`WHY_ABORTED.md`. This section registers its successor, **refcv4b**, whose run
+directory is `pod:/workspace/experiments/refcv4b-b1-v72-40k`.
+
+## A9. WHY THE INCUMBENT WAS ABORTED — two MEASURED reasons
+
+**A9.1 The shipped vocabulary's ceiling was above the bar.** On the banked
+4,823-window / 141-episode surface `ha` = 0.2996 was measured on (all four
+published arms reproduce from the dump to **< 4e-5 m**), refcv4's 128 fixed
+ego-frame paths read **oracle-in-vocabulary 0.3773 m** — ALONG 0.3041 / LAT
+0.1503 — i.e. **+0.0777 m [+0.0528, +0.1044], SEPARATED WORSE than hold-action**.
+Paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = the episode.
+Source: `…/2026-09-04-refcv4-gate-validation/raw/REFCV4_ANCHOR_GATE.json`.
+
+⚠️ **The counter-argument is on the record and is not dismissed.** That same
+validation showed the raw min-over-anchors quantity is an *initialisation*, not
+a ceiling, for a select-**then-refine** decoder: refcv3's raw vocabulary read
+1.0838 while its refined `oracle_sel` read 0.3668, a −66.2 % refinement gain.
+So the abort is **not** justified by "the ceiling is above the bar" alone. It is
+justified because **a strictly better vocabulary was available at a SMALLER
+budget for zero GPU**, which makes continuing the incumbent a choice to keep the
+worse initialisation for 21 more hours.
+
+**A9.2 Defect A was live.** `refc_v3.py:903-905` fed the **8-wide v7** `z_tac`
+heads to `refc_tactical.derive_man5_logprobs`, whose contract is `[B,3]×[B,3]`
+and which indexes **positionally**. The surviving slots were mislabelled
+(`turn_left` ← `LANE_CHANGE_L`, `turn_right` ← `LANE_CHANGE_R`, `accelerate` ←
+`YIELD_MERGE`, `brake_stop` ← `FOLLOW`) and **10 of 16 classes were never read**
+— while feeding `refc.py:1405`, the **live H19 anchor prior**. Not inert
+telemetry: a semantically scrambled distribution reweighted anchor selection for
+all 6,400 banked steps, and for the whole of refcv3.
+
+## A10. THE LEVER — a v0-CONDITIONED vocabulary
+
+**The mechanism, stated so it is falsifiable.** A fixed bank of paths in
+absolute metres must spend its budget on the SPEED axis before it can spend any
+of it on shape: over 6 s the corpus covers ~0–216 m of along-track displacement.
+`ha` is v0-conditioned by construction, which is why no fixed bank of this size
+reaches it. Conditioning removes the speed axis from the budget entirely.
+
+**What ships:** `controls [N, 2] = (accel m/s², curvature 1/m)` held constant
+over the horizon, rolled **per window** from that window's measured `v0` through
+the programme's own integrator (`refa_v1_plan.unicycle_paths`,
+`action_units="kappa"` → `models.kinematic.rollout_unicycle`) — the same
+arithmetic as the offline builder, not a second implementation.
+
+### A10.1 THE GATE — pre-registered, and it PASSED
+
+**Gate as issued (PI):** the built vocabulary's oracle-in-vocabulary must BEAT
+`ha` = 0.2996 on the n = 4,823 surface, or STOP and report.
+
+| family (odd × odd, so 0 is a grid node in BOTH axes) | N | ADE 0–2 s | ALONG | LAT | paired vs `ha` | verdict |
+|---|---|---|---|---|---|---|
+| **13 accel × 9 curvature — SHIPPED** | **117** | **0.2610** | **0.1473** | **0.1701** | **−0.0387 [−0.0652, −0.0104]** | ⭐ **BEATS** |
+| 13 × 11 | 143 | 0.2476 | 0.1462 | 0.1558 | −0.0520 [−0.0782, −0.0255] | BEATS (over budget) |
+| 11 × 13 | 143 | 0.2529 | 0.1651 | 0.1437 | −0.0467 [−0.0721, −0.0215] | BEATS (over budget) |
+| 15 × 9, accel [−5, 3] | 135 | 0.2593 | 0.1451 | 0.1702 | −0.0403 [−0.0669, −0.0121] | BEATS (over budget) |
+| 11 × 11 | 121 | 0.2639 | 0.1662 | 0.1560 | −0.0357 [−0.0613, −0.0092] | BEATS |
+| 17 × 7 | 119 | 0.2654 | 0.1271 | 0.1931 | −0.0342 [−0.0648, +0.0011] | tied |
+| 9 × 13 | 117 | 0.2774 | 0.1947 | 0.1431 | −0.0222 [−0.0465, +0.0025] | tied |
+| 13 × 9, κ ±0.08 | 117 | 0.2807 | 0.1511 | 0.1897 | −0.0189 [−0.0494, +0.0162] | tied |
+| *(refcv4's SHIPPED fixed-path set, for scale)* | 128 | **0.3773** | 0.3041 | 0.1503 | **+0.0777 [+0.0528, +0.1044]** | **loses** |
+
+⭐ **13 × 9 = 117 is chosen because it clears the bar at a SMALLER budget than
+128.** The 143-anchor families score better and are **deliberately not taken**:
+a bigger vocabulary is a confound against the incumbent's 128, and the claim
+"beats hold-action with fewer candidates" is the stronger one. ⛔ **No family was
+selected by trimming anchors on the scored surface** — every row is a pure
+product grid fixed in advance, because pruning on the surface being scored is
+the "tunes on the data it scores" failure.
+
+**Split, as required: the gain is on the axis that carries the deficit.**
+ALONG-track falls **0.3041 → 0.1473 (−51.6 %)** and LATERAL **0.1503 → 0.1701
+(+13.2 %, a regression)**; net −0.1163. `D-REFCV3-AXIS1` puts 92.2 % of the
+deficit along-track, so this trades a small lateral loss for a large
+longitudinal gain. **That trade is stated in advance and is not hidden by the
+scalar.**
+
+### A10.2 CONTROLS THAT READ KNOWN VALUES (all four did)
+
+| control | required | read |
+|---|---|---|
+| `ha` reproduced from the dump | 0.2996 | **0.299618** (Δ +1.8e-05) |
+| 1-point grid `{a=0, κ=0}` == `ha0` | 0.6723 | **0.672288** (Δ −1.2e-05) |
+| zero path (no information) | large | **14.2483 m** |
+| train/eval clip intersection | **0** | **0** — the builder reads **no corpus at all**; the family is closed-form, so contamination is impossible by construction, not by a lucky split |
+
+⛔⛔ **THE PINNED TRAP, ASSERTED AND PRINTED.** The vocabulary MUST contain
+`κ = 0` **and** `a = 0` EXACTLY. `emit_anchors.py` asserts both and prints the
+grids; the trainer re-asserts `{a=0, κ=0}` at load and **exits** if it is absent;
+the supervisor refuses to enter its loop without it. An even-count `linspace`
+omits zero and the set then reads **1.2768 m** — a 4.9× artifact that looks
+exactly like a resolution finding.
+⚠️ **CORRECTION TO THE PRIOR PASS, on the record:** §3.5 of the gate-validation
+report claimed *"Every grid in the table above contains a = 0 and κ = 0
+exactly"*. That is **false for the accel axis**: `np.linspace(-4, 3, 13)` has
+step 7/12 and its nodes are …, −0.5, +0.0833, … — **no 0.0**. Only κ was
+symmetric-and-odd. The grids here **re-centre** the accel axis onto zero and
+assert it, which is why 13 × 9 reads 0.2610 here against that report's 0.2572:
+**they are different grids**, and this one is the one that contains the
+straight-ahead control.
+
+### A10.3 TURN COVERAGE — the regression is largely repaired
+
+Same instrument, same definitions (`refc_select.anchor_reachability_mask`,
+which already accepts a per-window `[B, N, S, 2]` bank), same 4,823 windows, at
+each window's own v0.
+
+| vocabulary | a_max | killed | empty | surv/win | >30° turns/win (end-bearing / terminal-heading) | **windows with NO >30° turn** |
+|---|---|---|---|---|---|---|
+| refcv3 synthetic (shipped) | 2.5 | 37.10 % | 0.00 % | 80.5 | 40.4 / 57.5 | **0.00 %** |
+| refcv4 fixed-path (shipped, ABORTED) | 2.0 | 26.60 % | 0.00 % | 94.0 | 19.0 / 29.2 | ⚠️ **4.62 %** |
+| ⭐ **refcv4b v0-conditioned (SHIPPED)** | **2.0** | **12.61 %** | **0.00 %** | **102.2** | **49.3 / 54.5** | ⭐ **0.70 %** |
+| refcv4b v0-conditioned | 2.5 | 8.68 % | 0.00 % | 106.8 | 53.1 / 58.2 | **0.00 %** |
+| refcv4b v0-conditioned | 1.5 | 21.34 % | 0.00 % | 92.0 | 42.0 / 48.6 | 1.74 % |
+
+⇒ The 4.62 % hole shrinks **6.6×** to **0.70 %**, and the set carries **more**
+turning survivors per window (49.3) than refcv3's 40.4. It does **not** fully
+recover refcv3's 0.00 % at the shipped clamp; that is stated, not smoothed over.
+⚠️ **The clamp is now nearly inert** (12.61 % killed against 26.60 %): a bank
+rolled from the window's own v0 is reachable by construction, so
+`--sel-accel-max 2.0` mostly removes `|a| > 2.0` candidates. **`--sel-accel-max
+2.0` is kept anyway** — the binding criterion was GT deletion (0.000 % on eval),
+not kill rate, and changing it would add a sixth lever.
+
+## A11. DEFECT A — RESOLUTION **(a)**, and why
+
+⭐ **Chosen: (a) — the push-forward is called ONLY on the kin3 vocabulary its
+positional contract is defined on.** Under a v7 vocabulary the v3 tactical hook
+supplies **no** `maneuver_logits`, so `refc.py:2128` falls back to the CORE's own
+**3-wide** kin3-derived 5-way (`refc.py:2115-2117`; heads sized `N_LAT_MAN` /
+`N_LON_MAN` = 3 at `refc.py:1759-1760`).
+
+**Why (a) and not (b) or (c):**
+1. It **removes a scrambled input** rather than adding an unvalidated mapping —
+   the brief's stated preference over (c).
+2. It **keeps H19 alive**. (b) would delete the anchor-prior seam entirely, and
+   that seam is the programme's hierarchy thesis; losing it costs an instrument.
+3. (c) would require **inventing** an 8→5 collapse. There is none in the tree:
+   `COLLAPSE_TABLE` is 3×3 → 5 only, and inventing one silently is how this
+   defect was born.
+
+⚠️ **STATED HONESTLY — this is a real reduction, not a free fix.** Under a v7
+vocabulary the **tactical brain no longer drives the anchor prior**; H19 is fed
+by the core's aux head. The tactical level reaches the decoder through **E7**
+(`target_latent`) and **E9** (goal selection) only. An explicit, *validated* 8→5
+collapse is the right long-term answer and is now a backlog item.
+
+**Blast radius, MEASURED on a smoke forward (B=3, 21 anchors, v7.0 vocab):** the
+fix changes **`anchor_logits` and `sel_score` only** (max |Δ| 5.75e-01);
+`anchor_traj`, `offset`, `maneuver_logits`, `traj`, `sel_idx` and the anchor
+buffer are all **bit-identical**. That is exactly the intended surface.
+
+## A12. THE CODE CHANGE, AND THE PROOF IT IS SAFE
+
+| file | change |
+|---|---|
+| `stack/tanitad/refs/refc.py` | `AnchorConfig.v0_conditioned` / `ref_speed_ms`; `anchor_controls` buffer; `roll_bank()`; the fan, the S2b prefilter mask and the two param-free geometric priors read a `[B, N, S, 2]` **bank**; `anchor_bank` published in the output |
+| `stack/tanitad/refs/refc_v3.py` | Defect A resolution (a) |
+| `stack/tanitad/refs/refc_tactical.py` | the width assertion (`c37fa68`) — **was NOT on the pod**; shipped now |
+| `stack/scripts/refc_v3_train.py` | `--anchor-v0-conditioned`, `--anchor-ref-speed`, `--n-anchors`; the anchor file's `controls` load with **both-directions refusal**; the `{a=0, κ=0}` assertion at load; **`a_star` measured against `out["anchor_bank"]`, not `decoder.anchors`**; provenance stamp records the controls |
+
+⭐ **BIT-IDENTITY, MEASURED.** With `v0_conditioned=False` the patched decoder
+produces **bit-identical** `anchor_logits`, `anchor_traj`, `offset`, `sel_score`,
+`traj`, `sel_idx`, `maneuver_logits` and `anchors` against the pristine module on
+the same seed. The new path is opt-in and provably inert when off.
+
+⭐ **THE ANCHOR TARGET WAS THE SILENT TRAP AND IT IS CLOSED.**
+`refc_v3_train.py:525` scored `a_star` against `model.core.decoder.anchors`. With
+a v0-conditioned vocabulary that buffer is the family rolled at the **reference**
+speed, not this window's fan — so the anchor classifier would have been
+supervised against a geometry the model never emitted, **silently**, with
+`anchor_acc` still reading plausibly. It now reads `out["anchor_bank"]`, which
+IS `x0`. For a fixed vocabulary that is unchanged arithmetic (verified).
+
+⭐ **ego-dropout is NOT weakened.** `v_ms` is the PRE-dropout speed; rolling a
+withheld row's bank from it would put the withheld channel into the candidate
+**geometry** — a harder leak than the ranking one S2 guards. Withheld rows roll
+at `--anchor-ref-speed 10.0`. **MEASURED:** a withheld row's bank equals the
+reference-speed bank to **0.000e+00**, a kept row differs by **42.0 m**.
+
+**Verified on the pod, by CONTENT, after shipping:** `torch.equal(
+decoder.anchors, file["anchors"])` = **True**; `torch.equal(
+decoder.anchor_controls, file["controls"])` = **True**; the rolled bank equals
+`unicycle_paths` at v0 ∈ {2, 11, 27} m/s to **0.000e+00**; `{a=0, κ=0}` vs
+`(v0·t, 0)` to **≤ 9.2e-05 m**; rows differ by **54.0 m**.
+
+## A13. LEVERS — UNCHANGED FROM refcv4 EXCEPT THE TWO ABOVE
+
+`--ego-state-inject --ego-dropout 0.5` (⛔ **no `--echo-base`**: the tiny rig
+MEASURED that E14 moved the verdict from `READS_BOTH` to `ECHOING`) ·
+`--goal-str` (refcv3's strategic head was never supervised — `goal_str` in 0 of
+614 rows) · `ego_valid_channel` on · tactical aux budget **0.10** · unchanged
+`--sel-accel-max 2.0` · `--nav-from-v7` · `--u8-batches` · `--image-hw 256 640` ·
+`--steps 40284 --batch 20 --seed 0 --lr 1e-4 --warmup 2000`.
+
+## A14. ⛔ ATTRIBUTION IS FORFEITED — PI DECISION, RECORDED IN ADVANCE
+
+**Six-plus levers move at once against refcv3** (data-driven→v0-conditioned
+vocabulary, reach clamp, ego-state injection + dropout, goal-str supervision,
+Defect A resolution, and the anchor-target correction). **No result from this arm
+can be attributed to any single lever.** It answers *"does the stack work"*, not
+*"which lever did it"*. A per-lever answer needs the tiny-rig ladder, which is
+the `TanitAD_ValidateAIDesign` instrument and is a separate work package.
+⚠️ refcv4b vs the ABORTED refcv4 is a **two-lever** delta (vocabulary + Defect
+A) but only over the first 6,400 steps, and the aborted arm never reached a
+checkpoint worth scoring; treat it as a curve comparison, not an arm delta.
+
+## A15. ⛔ THE ACCEPTANCE GATE IS THE SCENE-READING ECHO GATE — **NOT** ADE
+
+**Committed in advance, with both outcomes.**
+
+* ⛔ **ADE is NOT the acceptance criterion, and grading on it selects for the
+  echo.** MEASURED on the tiny rig: the **image-blind** arm `E_regress` was the
+  **BEST** on the composite ADE clause (+0.0970 relative margin vs `ha`) while
+  every scene-reading arm was negative; and `ego_dropout 0.5` — the only
+  scene-reading lever — was the **worst** on ADE. An arm that reads nothing wins
+  that table.
+* ⭐ **PASS** = `tanitad.eval.echo_gate` **GATE 2b (source ablation)** returns
+  `READS_BOTH`: scene degradation **≥ 0.05** with a non-zero ego degradation, on
+  the val windows, with the **image-blind deliberate-regression control present
+  and reading `ECHOING`**. A gate with no arm that can fail it is not a gate.
+* ⛔ **`gate2` (ego intervention) alone is NOT admissible** — it returns
+  `READS_BOTH` for an arm with literally no scene input.
+* ⭐ **FAIL** = scene degradation < 0.05, or the deliberate-regression control
+  fails to read `ECHOING`. **A fail is a reportable result and the arm is not
+  promoted**, whatever its ADE.
+* **Secondary, reported but not deciding:** the four binding metric families
+  (LONGITUDINAL / LATERAL / TACTICAL / STRATEGIC), each with a paired
+  episode-cluster bootstrap CI on identical windows. ⛔ Never
+  `overlapping_holdout_se`. An ADE-only table is an incomplete result.
+* **Mid-run kill criterion, inherited from §1.4 of the gate validation:** at the
+  first pulled checkpoint, score refined `oracle_sel` on the same 4,823 windows.
+  **If it is ≥ 0.2996 SEPARATED, the arm cannot beat hold-action and is killed
+  then.** That is the model-inclusive ceiling, answerable from a checkpoint.
+
+## A16. ARTIFACTS
+
+| artifact | where |
+|---|---|
+| the vocabulary (`anchors` + `controls`) + its build json | `repo:TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-refcv4b-vocabulary/` · `pod:/workspace/experiments/refcv4b-b1-v72-40k/anchors.pt` |
+| builder + gate + coverage instruments | `repo:…/2026-09-04-refcv4b-vocabulary/scripts/` |
+| gate + coverage artifacts (JSON) | `repo:…/2026-09-04-refcv4b-vocabulary/raw/` |
+| the four patched modules | `repo:stack/…` (staged) · `pod:/workspace/TanitAD/stack/…` (md5-verified both ends) |
+| supervisor | `repo:…/2026-09-04-refcv4b-vocabulary/sup_refcv4b.sh` · `pod:/workspace/sup_refcv4b.sh` |
+| the ABORTED incumbent | `pod:/workspace/experiments/refcv4-b1-v72-40k.ABORTED-step6400` (+ `WHY_ABORTED.md`) — **ONE PLACE ONLY**, 1.7 GB of checkpoints |
+| pre-change backups of the four modules | `pod:/workspace/backup_prev4b/` |
+
+---
+
+## ⭐⭐ A17. CORRECTION TO §A10 — THE SHIPPED FAMILY IS **SPEED-CLAMPED**, NOT FLAT-CURVATURE
+### Registered 2026-09-04 11:40 UTC, BEFORE the launch that is actually running.
+
+§A10 above registered a **flat-curvature** family (13 accel × 9 curvature = 117,
+κ ∈ [−0.06, 0.06]) and it was launched at 11:24 UTC. **It ran to step 200 and was
+STOPPED**, because the Kamm-circle check found a defect the gate could not see.
+Its directory is archived at
+`pod:/workspace/experiments/refcv4b-b1-v72-40k.SUPERSEDED-flatkappa-step200`.
+Everything in §A9 and §A11–A16 stands unchanged; §A10's *family* is superseded by
+this section. **The A10 numbers are kept on the record rather than edited away.**
+
+### A17.1 What the Kamm check found
+
+`a_lat = v² · κ`. A **constant curvature** of 0.06 at v₀ = 27 m/s is
+**43.7 m/s² = 4.5 g**. MEASURED over the corpus speed distribution:
+
+| family (117 anchors each) | over μ = 0.7 @ v₀ = 27.27 m/s (p95) | peak |
+|---|---|---|
+| flat κ ∈ [−0.06, 0.06] (**launched, then stopped**) | **104 / 117** | **3.96 g** |
+| ⭐ speed-clamped (a_lon, a_lat), a_lat_max 3.0 (**SHIPPED**) | **0 / 117** | **0.68 g** |
+| *(refcv4's fixed-path set, for scale)* | 0 / 128 | 0.44 g |
+| *(refcv3's synthetic set, for scale)* | 43 / 128 | 1.50 g |
+
+Those anchors are not **wrong** — the oracle never selects one, because the GT it
+is scored against is flyable — but they are **wasted budget**, and at high speed
+they waste nearly all of it. It is also a straight regression against the one
+property the aborted refcv4 set actually had.
+
+### A17.2 The fix — the control space becomes the Kamm-circle space
+
+Channel 1 of the vocabulary is now **lateral acceleration**, and curvature is
+DERIVED per window:
+`κ = clamp(a_lat / max(v₀, 4.0)², ±0.12)`.
+A bound on the grid is then a bound on the friction circle, by construction.
+`a_lat = 0 ⟺ κ = 0` **exactly**, so the pinned straight-ahead control survives
+the reparameterisation (asserted and printed by the builder, re-asserted by the
+trainer at load, and re-asserted by the supervisor before its loop).
+
+### A17.3 THE GATE, RE-RUN — it passes by a WIDER margin, on the same surface
+
+| family | N | ADE 0–2 s | ALONG | LAT | paired vs `ha` = 0.2996 |
+|---|---|---|---|---|---|
+| ⭐ **speed-clamped, a_lat_max 3.0 — SHIPPED** | **117** | ⭐ **0.1987** | **0.1432** | **0.1037** | ⭐ **−0.1009 [−0.1213, −0.0813] BEATS** |
+| speed-clamped, a_lat_max 4.0 | 117 | 0.2096 | 0.1431 | 0.1166 | −0.0900 [−0.1102, −0.0706] BEATS |
+| speed-clamped, a_lat_max 6.0 | 117 | 0.2295 | 0.1443 | 0.1386 | −0.0701 [−0.0913, −0.0500] BEATS |
+| speed-clamped, 11 × 11 = 121, 4.0 | 121 | 0.2161 | 0.1628 | 0.1046 | −0.0835 [−0.1040, −0.0638] BEATS |
+| speed-clamped, 13 × 11 = 143, 4.0 | 143 | 0.1991 | 0.1426 | 0.1046 | −0.1005 [−0.1211, −0.0807] BEATS |
+| speed-clamped, 15 × 7 = 105, 4.0 | 105 | 0.2144 | 0.1313 | 0.1336 | −0.0852 [−0.1049, −0.0666] BEATS |
+| *flat κ (§A10, superseded)* | 117 | 0.2610 | 0.1473 | 0.1701 | −0.0387 [−0.0652, −0.0104] BEATS |
+| *refcv4 fixed-path (ABORTED)* | 128 | 0.3773 | 0.3041 | 0.1503 | **+0.0777 [+0.0528, +0.1044] LOSES** |
+
+⭐ **Both axes improve now.** ALONG **0.3041 → 0.1432 (−52.9 %)** and LATERAL
+**0.1503 → 0.1037 (−31.0 %)** against the aborted set — the lateral regression
+that §A10's flat family carried (+13.2 %) is **gone**.
+
+⛔ **ON SELECTION — stated because it is the failure class this programme
+measures.** `a_lat_max = 3.0 m/s² ≈ 0.31 g` is the standard **comfortable**
+lateral bound for a passenger vehicle and is chosen **on physics**. The sweep
+`{3.0, 4.0, 6.0}` is reported as a **sensitivity check, not a selection**: every
+value clears the bar **separated**, so the GATE VERDICT does not depend on the
+choice. The choice affects only which of several passing families ships. No
+family was ever produced by trimming anchors on the scored surface.
+
+### A17.4 ⚠️ THE ONE METRIC THAT GOT WORSE, REPORTED IN FULL
+
+| vocabulary | a_max | killed | surv/win | >30° turns/win (end-bearing / terminal-heading) | **windows with NO >30° end-bearing** |
+|---|---|---|---|---|---|
+| refcv3 synthetic | 2.5 | 37.10 % | 80.5 | 40.4 / 57.5 | **0.00 %** |
+| refcv4 fixed-path (ABORTED) | 2.0 | 26.60 % | 94.0 | 19.0 / 29.2 | 4.62 % |
+| refcv4b flat κ (superseded) | 2.0 | 12.61 % | 102.2 | 49.3 / 54.5 | 0.70 % |
+| ⭐ **refcv4b speed-clamped (SHIPPED)** | **2.0** | **0.00 %** | **117.0** | **30.9 / 48.3** | ⚠️ **8.85 %** |
+
+⚠️ **8.85 % of windows have no candidate whose END-BEARING turns > 30°** — the
+worst of the four, and it must not be buried. **The reading, with the arithmetic:**
+a 30° end-bearing after 6 s at 27 m/s needs `y ≈ x·tan30° = 93.5 m`, i.e.
+`½·a_lat·36 = 93.5` ⇒ **a_lat ≈ 5.2 m/s² = 0.53 g sustained for six seconds**.
+That is not a comfortable manoeuvre, so the "missing" candidates are precisely
+the ones the physical clamp is there to exclude. Two things support that reading
+and one qualifies it:
+* the **terminal-heading** count is **48.3 per window** — turning candidates are
+  abundant; it is the *bearing* threshold that is speed-inappropriate;
+* the aborted refcv4 set's own 4.62 % was already read as *"physics, not a defect,
+  at high v₀"* in the gate validation;
+* ⚠️ **UNVERIFIED:** I did **not** measure the fraction of windows with no >30°
+  **terminal-heading** candidate. That is the metric that would settle it, and it
+  is a work item, not a claim.
+
+⚠️ **`--sel-accel-max 2.0` is now COMPLETELY INERT** (0.00 % killed, 117.0
+survivors/window): a bank rolled from the window's own v₀ is longitudinally
+reachable by construction. It is **kept unchanged anyway** — removing it would
+add a lever and change nothing measurable — but no future report may describe
+this arm as "reach-clamped" in any load-bearing sense.
+
+### A17.5 Verified on the pod, by CONTENT, after shipping
+
+`torch.equal(decoder.anchors, file["anchors"])` **True** ·
+`torch.equal(decoder.anchor_controls, file["controls"])` **True** · the decoder's
+rolled bank equals the offline derivation to **0.000e+00** at v₀ ∈
+{1, 4, 10, 18, 27, 36} m/s · `{a_lon=0, a_lat=0}` vs `(v₀·t, 0)` to **≤ 1.1e-04 m**
+· the reference-speed roll equals the stored `anchors` buffer to **0.000e+00** ·
+with `v0_conditioned=False` the whole decoder is still **bit-identical** to the
+pristine module.
+
+### A17.6 The run that is actually running
+
+| | |
+|---|---|
+| run dir | `pod:/workspace/experiments/refcv4b-b1-v72-40k` |
+| supervisor | `pod:/workspace/sup_refcv4b_v3.sh`, lock `/workspace/.sup_refcv4b_v3.lock` |
+| anchors | `anchors.pt` sha256 `51f930dc6f3564ff…`, 117 × 8 × 2 + controls 117 × 2, units `alat` |
+| launched | 2026-09-04 **11:40:23 UTC** |
+| superseded flat-κ run | `…/refcv4b-b1-v72-40k.SUPERSEDED-flatkappa-step200` |
+| aborted incumbent | `…/refcv4-b1-v72-40k.ABORTED-step6400` |

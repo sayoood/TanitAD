@@ -1,0 +1,68 @@
+{
+ "artifact_kind": "tanitad.refc_anchor_vocabulary",
+ "variant": "v0-CONDITIONED constant-(accel, curvature)",
+ "n_anchors": 117,
+ "horizons_steps": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "dt_s": 0.1,
+ "ref_speed_ms": 10.0,
+ "accel_grid_ms2": [
+  -4.0,
+  -3.5000000000000004,
+  -2.916666666666667,
+  -2.333333333333334,
+  -1.7500000000000004,
+  -1.166666666666667,
+  -0.5833333333333339,
+  0.0,
+  0.583333333333333,
+  1.166666666666666,
+  1.75,
+  2.333333333333333,
+  2.916666666666666
+ ],
+ "curvature_grid_inv_m": [
+  -0.06,
+  -0.045,
+  -0.03,
+  -0.015,
+  0.0,
+  0.015,
+  0.03,
+  0.045,
+  0.06
+ ],
+ "straight_ahead_control_index": 67,
+ "asserted_zero_present": {
+  "accel": true,
+  "curvature": true
+ },
+ "integrator": "tanitad.refs.refa_v1_plan.unicycle_paths (action_units='kappa') -> models.kinematic.rollout_unicycle",
+ "gate": {
+  "surface": "taniteval/results/refcv3-40284-openloop-dump.tar.gz",
+  "windows": 4823,
+  "episodes": 141,
+  "oracle_in_vocabulary_ade_0_2s_m": 0.261,
+  "along_mae_m": 0.1473,
+  "lat_mae_m": 0.1701,
+  "bar_ha_m": 0.2996,
+  "paired_delta_vs_ha": [
+   -0.0387,
+   -0.0652,
+   -0.0104
+  ],
+  "verdict": "BEATS ha (separated)",
+  "estimator": "paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = episode"
+ },
+ "file_sha256": "73ea09dd3e18413c6428174659fdc32f9d443abd45b953cff5cc642b8e648631",
+ "anchors_sha256": "f9e4eab64841b44d67139afd76268c8fc827fb9263edf13927ee128b4e4390ea",
+ "controls_sha256": "6cc281c5f5d1d00dfbf949d16205fa3746b1f6f65a8bf2ad0774a25142d30e44"
+}

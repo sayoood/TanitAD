@@ -145,6 +145,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 
+from tanitad.models.kinematic import rollout_unicycle
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
 
@@ -314,6 +315,47 @@ class AnchorConfig:
     n_anchors: int = 128          # FPS vocabulary size (base 128; XL 256; 20 smoke)
     pool_size: int = 4096         # synthetic pool the default anchors FPS over
     seed: int = 0
+    # ⭐⭐ refcv4-b — THE v0-CONDITIONED VOCABULARY (2026-09-04).
+    #
+    # A FIXED bank of paths in absolute metres must spend its budget on the
+    # SPEED axis before it can spend any of it on shape: over 6 s the corpus
+    # covers ~0-216 m of along-track displacement, so most of 128 anchors go to
+    # "how fast", not "which way". `ha` (hold-action) is v0-conditioned by
+    # construction, which is why a fixed bank cannot reach it. MEASURED on the
+    # banked 4,823-window surface: the shipped fixed-path set reads 0.3773 m
+    # oracle-in-vocabulary (+0.0777 [+0.0528, +0.1044] SEPARATED WORSE than
+    # ha = 0.2996), while a v0-conditioned constant-(accel, curvature) family of
+    # 117 candidates reads 0.2610 (-0.0387 [-0.0652, -0.0104] BEATS ha).
+    #
+    # With this ON, `anchor_controls` [N, 2] = (accel m/s^2, curvature 1/m) is
+    # the vocabulary and the emitted bank is rolled per window through
+    # `rollout_unicycle` from the window's own v0. `anchors` [N, S, 2] still
+    # holds the bank rolled at `ref_speed_ms` -- it is the checkpoint-visible
+    # artifact and the surface `_lan_anchor_prior` / `_goal_along_prior` fall
+    # back to, so a content check against the built file still works.
+    #
+    # ⛔ ego-dropout is NOT weakened by this. `v_ms` is the PRE-dropout speed;
+    # rolling the bank from it on a window whose speed was WITHHELD would feed
+    # the channel back in through the candidate GEOMETRY -- a more direct leak
+    # than the ranking one S2 guards. Withheld rows are rolled at
+    # `ref_speed_ms` instead, so the dropout regime stays genuinely speed-blind.
+    v0_conditioned: bool = False
+    ref_speed_ms: float = 10.0
+    # ⭐ WHAT CHANNEL 1 OF `anchor_controls` MEANS.
+    #   "kappa" — curvature 1/m, integrated as supplied (the literal control).
+    #   "alat"  — LATERAL ACCELERATION m/s^2; curvature is DERIVED per window as
+    #             `a_lat / max(v0, alat_v_floor_ms)^2`, clamped to `kappa_cap`.
+    # MEASURED: a constant-CURVATURE family is unflyable at speed (a_lat =
+    # v^2 * kappa, so kappa 0.06 at 27 m/s is 4.5 g and 104 of 117 anchors break
+    # a mu = 0.7 circle). Under "alat" the control space IS the Kamm-circle
+    # space, so a bound on the grid is a bound on the friction circle: the same
+    # 117-anchor budget reads 0.1987 m oracle-in-vocabulary (-0.1009 [-0.1213,
+    # -0.0813] vs ha) with 0/117 over mu = 0.7 and a 0.68 g peak.
+    # `a_lat = 0` <=> `kappa = 0` exactly, so the pinned straight-ahead control
+    # survives the reparameterisation.
+    control_units: str = "kappa"
+    alat_v_floor_ms: float = 4.0     # below this the clamp would explode
+    kappa_cap: float = 0.12          # ~8.3 m turn radius; a parking-lot bound
 
 
 @dataclass
@@ -1087,7 +1129,13 @@ class AnchoredDiffusionDecoder(nn.Module):
                  n_maneuvers: int = N_MANEUVERS,
                  graft_lan: bool = False, d_lan: int = 0,
                  factored_maneuver: bool = False,
-                 sel: "SelectionConfig | None" = None):
+                 sel: "SelectionConfig | None" = None,
+                 horizons: tuple[int, ...] = (),
+                 v0_conditioned: bool = False,
+                 ref_speed_ms: float = 10.0,
+                 control_units: str = "kappa",
+                 alat_v_floor_ms: float = 4.0,
+                 kappa_cap: float = 0.12):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
@@ -1102,6 +1150,32 @@ class AnchoredDiffusionDecoder(nn.Module):
         self._seam_rank = sl.SeamState()
         # Anchor vocabulary — a persistent buffer (travels with the checkpoint).
         self.register_buffer("anchors", anchors)              # [N, S, 2]
+        # ⭐ refcv4-b: the v0-CONDITIONED vocabulary. `anchor_controls` [N, 2]
+        # = (accel m/s^2, curvature 1/m) held constant over the horizon; the
+        # emitted bank is rolled per window from that window's own v0. `anchors`
+        # keeps holding the SAME family rolled at `ref_speed_ms`, so it stays
+        # the checkpoint-visible artifact a content check can compare, and it is
+        # the surface the two param-free geometric priors fall back to.
+        self.anchor_v0_cond = bool(v0_conditioned)
+        self.anchor_ref_speed = float(ref_speed_ms)
+        self.anchor_dt = 0.1
+        if control_units not in ("kappa", "alat"):
+            raise ValueError(f"control_units {control_units!r} not in "
+                             f"('kappa', 'alat')")
+        self.anchor_control_units = control_units
+        self.anchor_alat_v_floor = float(alat_v_floor_ms)
+        self.anchor_kappa_cap = float(kappa_cap)
+        self.register_buffer("anchor_controls",
+                             torch.zeros(anchors.shape[0], 2), persistent=True)
+        # slot index of each horizon inside a dt-tick rollout. `rollout_unicycle`
+        # returns the state AFTER each step, so horizon k lands at index k - 1.
+        _h = tuple(horizons) or tuple(range(1, n_steps + 1))
+        if len(_h) != n_steps:
+            raise ValueError(f"horizons {_h} does not match n_steps {n_steps}")
+        self.register_buffer("anchor_slots",
+                             torch.tensor([k - 1 for k in _h],
+                                          dtype=torch.long), persistent=False)
+        self.anchor_roll_steps = int(max(_h))
         d = cfg.d
         self.feat_proj = nn.Linear(feat_dim, d)               # conv map -> KV
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
@@ -1212,13 +1286,86 @@ class AnchoredDiffusionDecoder(nn.Module):
             self.goal_gate = nn.Parameter(torch.zeros(1))
             self.goal_dist_gate = nn.Parameter(torch.zeros(1))
 
-    def load_anchors(self, anchors: Tensor) -> None:
+    def load_anchors(self, anchors: Tensor,
+                     controls: Tensor | None = None) -> None:
         """Install an externally-built anchor vocabulary (build_refc_anchors.py).
-        Shape must match [N, n_steps, 2] of the constructed decoder."""
+        Shape must match [N, n_steps, 2] of the constructed decoder.
+
+        ``controls`` [N, 2] = the (accel, curvature) the paths were rolled from.
+        Required when the decoder is ``v0_conditioned`` — without it the bank
+        cannot be re-rolled at the window's speed, and a silent fallback to the
+        fixed paths would be exactly the defect this vocabulary exists to fix,
+        so it RAISES instead.
+        """
         if tuple(anchors.shape) != tuple(self.anchors.shape):
             raise ValueError(f"anchor shape {tuple(anchors.shape)} != decoder "
                              f"{tuple(self.anchors.shape)}")
         self.anchors.copy_(anchors.to(self.anchors.dtype))
+        if controls is not None:
+            if tuple(controls.shape) != tuple(self.anchor_controls.shape):
+                raise ValueError(
+                    f"anchor controls {tuple(controls.shape)} != decoder "
+                    f"{tuple(self.anchor_controls.shape)}")
+            self.anchor_controls.copy_(controls.to(self.anchor_controls.dtype))
+        elif self.anchor_v0_cond:
+            raise ValueError(
+                "v0_conditioned decoder loaded an anchor file with no "
+                "`controls` [N, 2]. The bank is rolled per window from those "
+                "controls; falling back to the fixed paths would silently "
+                "restore the un-conditioned vocabulary this build exists to "
+                "replace.")
+
+    def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
+                  batch: int, dtype: torch.dtype) -> Tensor:
+        """[B, N, S, 2] — the anchor bank THIS forward decodes.
+
+        Fixed builds expand the stored paths, which is byte-identical to the
+        pre-2026-09-04 ``anchors[None].expand(...)``. v0-conditioned builds roll
+        ``anchor_controls`` through the programme's OWN integrator
+        (:func:`tanitad.models.kinematic.rollout_unicycle`, the one
+        ``refa_v1_plan.unicycle_paths`` calls with ``action_units="kappa"``)
+        from each window's measured speed.
+
+        ⛔ ``ego_keep`` binds here for the same reason it binds on the S2 band,
+        only harder: ``v_ms`` is the PRE-dropout speed, and rolling the bank
+        from it on a withheld row would put the withheld channel into the
+        candidate GEOMETRY. Withheld rows are rolled at ``ref_speed_ms``, so the
+        dropout regime is genuinely speed-blind.
+        """
+        n = self.anchors.shape[0]
+        if not self.anchor_v0_cond:
+            return self.anchors.to(dtype)[None].expand(
+                batch, n, self.n_steps, 2)
+        if v_ms is None:
+            v = self.anchors.new_full((batch,), self.anchor_ref_speed)
+        else:
+            v = v_ms.reshape(-1).to(torch.float32)
+            if ego_keep is not None:
+                v = torch.where(ego_keep.reshape(-1),
+                                v, torch.full_like(v, self.anchor_ref_speed))
+        # ⚠️ rolled in float32 regardless of the AMP dtype: 60 sequential
+        # integration steps in fp16 accumulate visible drift, and the bank is
+        # the geometry every anchor target is measured against.
+        h = self.anchor_roll_steps
+        ctrl = self.anchor_controls.to(torch.float32)
+        if self.anchor_control_units == "alat":
+            # kappa = a_lat / v^2, clamped. The floor keeps a standing-start
+            # window from asking for an infinite curvature, and the cap is a
+            # geometric bound (~8.3 m radius) that no road manoeuvre needs.
+            vv = v.clamp_min(self.anchor_alat_v_floor) ** 2          # [B]
+            kap = (ctrl[None, :, 1] / vv[:, None]).clamp(
+                -self.anchor_kappa_cap, self.anchor_kappa_cap)       # [B, N]
+            ctrl = torch.stack(
+                [ctrl[None, :, 0].expand(batch, n), kap], dim=-1)    # [B, N, 2]
+            ctrl = ctrl[:, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
+        else:
+            ctrl = ctrl[None, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
+        state0 = torch.zeros(batch * n, 4, device=ctrl.device,
+                             dtype=torch.float32)
+        state0[:, 3] = v[:, None].expand(batch, n).reshape(-1)
+        path = rollout_unicycle(state0, ctrl, dt=self.anchor_dt)[..., :2]
+        return path[:, self.anchor_slots].reshape(
+            batch, n, self.n_steps, 2).to(dtype)
 
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
                 t_idx: int) -> tuple[Tensor, Tensor]:
@@ -1233,7 +1380,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
 
-    def _lan_anchor_prior(self, lan_dir: Tensor) -> Tensor:
+    def _lan_anchor_prior(self, lan_dir: Tensor,
+                          bank: Tensor | None = None) -> Tensor:
         """Param-free geometric route compatibility of every anchor. [B, N].
 
         ``lan_dir`` [B, 3] = (cos, sin, valid) of the route's bearing at its
@@ -1244,12 +1392,18 @@ class AnchoredDiffusionDecoder(nn.Module):
         GOAL_INPUT.md measured at +83.7 % and which a route input must never
         supply). Invalid routes score 0 for every anchor.
         """
-        a = self.anchors.to(lan_dir.dtype)                    # [N, S, 2]
-        end = a[:, -1]                                        # [N, 2]
+        if bank is None:                    # fixed vocabulary — legacy path,
+            a = self.anchors.to(lan_dir.dtype)  # bit-identical to pre-refcv4-b
+            end = a[:, -1]                                    # [N, 2]
+            r = torch.linalg.vector_norm(end, dim=-1).clamp_min(1e-6)
+            cos_a, sin_a = end[:, 0] / r, end[:, 1] / r       # [N]
+            compat = (cos_a[None] * lan_dir[:, 0:1]
+                      + sin_a[None] * lan_dir[:, 1:2])        # [B, N]
+            return compat * lan_dir[:, 2:3]
+        end = bank.to(lan_dir.dtype)[:, :, -1]                # [B, N, 2]
         r = torch.linalg.vector_norm(end, dim=-1).clamp_min(1e-6)
-        cos_a, sin_a = end[:, 0] / r, end[:, 1] / r           # [N]
-        compat = (cos_a[None] * lan_dir[:, 0:1]
-                  + sin_a[None] * lan_dir[:, 1:2])            # [B, N]
+        cos_a, sin_a = end[..., 0] / r, end[..., 1] / r       # [B, N]
+        compat = cos_a * lan_dir[:, 0:1] + sin_a * lan_dir[:, 1:2]
         return compat * lan_dir[:, 2:3]
 
     def _apply_grafts(self, base: Tensor, terms: list[Tensor],
@@ -1277,7 +1431,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             fail_frac=self.sel.seam_fail_frac, patience=patience,
             state=state, surface=surface)
 
-    def _goal_along_prior(self, dist_pref: Tensor) -> Tensor:
+    def _goal_along_prior(self, dist_pref: Tensor,
+                          bank: Tensor | None = None) -> Tensor:
         """Along-track compatibility of every anchor with a PREDICTED goal
         distance. ``dist_pref`` [B] in [-1, 1] -> [B, N].
 
@@ -1296,9 +1451,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         label is used only to train the head, which is the sanctioned direction
         ("LABELS MAY USE EGO; INFERENCE IS VISION-ONLY").
         """
-        end_x = self.anchors.to(dist_pref.dtype)[:, -1, 0]           # [N]
-        z = (end_x - end_x.mean()) / end_x.std().clamp_min(1e-6)     # [N]
-        return z[None] * dist_pref.reshape(-1, 1)                   # [B, N]
+        if bank is None:              # fixed vocabulary — legacy path, exact
+            end_x = self.anchors.to(dist_pref.dtype)[:, -1, 0]       # [N]
+            z = (end_x - end_x.mean()) / end_x.std().clamp_min(1e-6)  # [N]
+            return z[None] * dist_pref.reshape(-1, 1)               # [B, N]
+        end_x = bank.to(dist_pref.dtype)[:, :, -1, 0]                # [B, N]
+        z = ((end_x - end_x.mean(dim=1, keepdim=True))
+             / end_x.std(dim=1, keepdim=True).clamp_min(1e-6))       # [B, N]
+        return z * dist_pref.reshape(-1, 1)                          # [B, N]
 
     @staticmethod
     def _grounded_score(x: Tensor) -> Tensor:
@@ -1350,7 +1510,14 @@ class AnchoredDiffusionDecoder(nn.Module):
 
         anchors = self.anchors.to(fmap.dtype)                 # [N, S, 2]
         n = anchors.shape[0]
-        x0 = anchors[None].expand(b, n, self.n_steps, 2)
+        # ⭐ refcv4-b: [B, N, S, 2]. For a fixed vocabulary this is exactly the
+        # old `anchors[None].expand(...)`; for a v0-conditioned one it is the
+        # per-window roll. `bank` — not `anchors` — is the geometry every
+        # consumer below must read, including the anchor target in the trainer,
+        # which is why it is also returned.
+        bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype)
+        x0 = bank
+        prior_bank = bank if self.anchor_v0_cond else None
 
         # ---- S2b: PRE-DECODE anchor band (opt-in, inference-only) ---------- #
         # Gather the survivors into a dense [B, K, S, 2], decode ONLY those, and
@@ -1361,7 +1528,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         pre_tele: dict = {}          # merged into `tele` once it exists (l.~1373)
         if sel.anchor_prefilter and v_ms is not None:
             pre_keep = sl.anchor_reachability_mask(
-                anchors, v_ms.to(anchors.dtype), accel_max=sel.accel_max,
+                bank, v_ms.to(bank.dtype), accel_max=sel.accel_max,
                 horizon_s=sel.horizon_s)
             if ego_keep is not None:
                 # ⚠️ STRONGER than the S2 version of this guard. `v_ms` is the
@@ -1397,7 +1564,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 pre_tele["prefilter_speedup"] = 1.0
         else:
             conf0, offset = self._decode(kv, cond, x0, 0)     # classifier pass
-        x = anchors[None] + offset                            # [B, N, S, 2]
+        x = bank + offset                                     # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
         terms: list[Tensor] = []
@@ -1414,7 +1581,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             terms.append(self.lon_to_anchor(lon_prior))
         # LAN: the route reweights the SAME anchor priors, geometrically.
         if self.lan_gate is not None and lan_dir is not None:
-            terms.append(self.lan_gate * self._lan_anchor_prior(lan_dir))
+            terms.append(self.lan_gate
+                         * self._lan_anchor_prior(lan_dir, prior_bank))
         conf, tele = self._apply_grafts(conf0, terms, self._seam_conf, "conf",
                                         sel.seam_fail_patience)
 
@@ -1480,10 +1648,12 @@ class AnchoredDiffusionDecoder(nn.Module):
         # along-track term. Two gates, so bearing and distance are individually
         # ablatable and the K7 prediction is readable off the learned values.
         if self.goal_gate is not None and goal_dir is not None:
-            r_terms.append(self.goal_gate * self._lan_anchor_prior(goal_dir))
+            r_terms.append(self.goal_gate
+                           * self._lan_anchor_prior(goal_dir, prior_bank))
         if self.goal_dist_gate is not None and goal_dist_pref is not None:
             r_terms.append(self.goal_dist_gate
-                           * self._goal_along_prior(goal_dist_pref))
+                           * self._goal_along_prior(goal_dist_pref,
+                                                    prior_bank))
         if (self.cons_gate is not None and cons_head is not None
                 and cons_ctx is not None):
             cons_s = sl.consequence_scores(x, cons_ctx, cons_head,
@@ -1547,7 +1717,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                                                   .sum())
         traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
         out = {"anchor_logits": conf, "refined_logits": refined,
-               "anchor_traj": x, "offset": offset, "sel_score": score,
+               "anchor_traj": x, "anchor_bank": bank,
+               "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
         if cons_s is not None:
             out["cons_score"] = cons_s
@@ -1701,7 +1872,13 @@ class RefCModel(nn.Module):
             grounded_selector=cfg.grounded_selector,
             graft_lan=cfg.graft_lan, d_lan=cfg.lan.d_out,
             factored_maneuver=cfg.factored_maneuver,
-            sel=cfg.selection())
+            sel=cfg.selection(),
+            horizons=cfg.trajectory.horizons,
+            v0_conditioned=cfg.anchors.v0_conditioned,
+            ref_speed_ms=cfg.anchors.ref_speed_ms,
+            control_units=cfg.anchors.control_units,
+            alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
+            kappa_cap=cfg.anchors.kappa_cap)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -2203,7 +2380,8 @@ class RefCModel(nn.Module):
                "anchor_logits": dec["anchor_logits"],
                "refined_logits": dec["refined_logits"],
                "sel_score": dec["sel_score"], "sel_tele": dec["sel_tele"],
-               "anchor_traj": dec["anchor_traj"], "offset": dec["offset"],
+               "anchor_traj": dec["anchor_traj"],
+               "anchor_bank": dec["anchor_bank"], "offset": dec["offset"],
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}

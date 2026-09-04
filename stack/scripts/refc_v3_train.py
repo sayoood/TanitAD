@@ -198,6 +198,19 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # Applied to BOTH arms, so `config_delta` (hier vs flat) is unchanged.
     if getattr(args, "sel_accel_max", None) is not None:
         cfg.core.sel_accel_max = float(args.sel_accel_max)
+    # ⭐ refcv4-b — the v0-CONDITIONED vocabulary. Applied to BOTH arms, so
+    # `config_delta` (hier vs flat) is unchanged and C122 still passes.
+    if getattr(args, "n_anchors", None):
+        # ⚠️ The vocabulary SIZE is a property of the built vocabulary, not of
+        # the model family: a v0-conditioned (accel, curvature) product grid is
+        # odd x odd, so it can never be exactly 128. Applied to BOTH arms.
+        cfg.core.anchors.n_anchors = int(args.n_anchors)
+    if getattr(args, "anchor_v0_conditioned", False):
+        cfg.core.anchors.v0_conditioned = True
+        cfg.core.anchors.ref_speed_ms = float(
+            getattr(args, "anchor_ref_speed", 10.0))
+        cfg.core.anchors.control_units = str(
+            getattr(args, "anchor_control_units", "kappa"))
     return cfg
 
 
@@ -522,8 +535,16 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     slot_valid = torch.stack([fut_valid[:, h - 1]
                               for h in core.trajectory.horizons], dim=1)
     sv = slot_valid.to(traj_tgt.dtype)                      # [B, S]
-    anchors = model.core.decoder.anchors.to(traj_tgt.dtype)  # [N, S, 2]
-    dist = (((traj_tgt[:, None] - anchors[None]) ** 2).sum(-1)
+    # ⛔ THE TARGET MUST BE MEASURED AGAINST THE BANK THAT WAS ACTUALLY
+    # DECODED. With a v0-conditioned vocabulary `decoder.anchors` is the family
+    # rolled at the REFERENCE speed, not this window's fan, so scoring `a_star`
+    # against it would supervise the anchor classifier on a geometry the model
+    # never emitted — silently, and with `anchor_acc` still reading plausibly.
+    # `out["anchor_bank"]` is [B, N, S, 2] and is EXACTLY `x0`; for a fixed
+    # vocabulary it is `anchors[None].expand(...)`, so this line is unchanged
+    # arithmetic there (verified bit-identical, 2026-09-04).
+    anchors = out["anchor_bank"].to(traj_tgt.dtype)          # [B, N, S, 2]
+    dist = (((traj_tgt[:, None] - anchors) ** 2).sum(-1)
             * sv[:, None]).sum(-1)                          # [B, N] valid-only
     a_star = dist.argmin(dim=1)
     ar = torch.arange(b, device=device)
@@ -845,7 +866,7 @@ def _lan_arm_preflight(cfg, args) -> int:
 
 
 
-def _anchor_stamp(path, anchors) -> dict:
+def _anchor_stamp(path, anchors, controls=None, units="kappa") -> dict:
     """Record the anchor vocabulary BY CONTENT, not by the presence of a path.
 
     A run that was launched without ``--anchors`` silently carries
@@ -861,6 +882,17 @@ def _anchor_stamp(path, anchors) -> dict:
              "shape": list(a.shape),
              "sha256_installed": h,
              "source": "file" if path else "refc.default_anchors (SYNTHETIC)"}
+    if controls is not None:
+        c = controls.detach().to("cpu", torch.float32).contiguous()
+        stamp["controls_shape"] = list(c.shape)
+        stamp["controls_sha256_installed"] = hashlib.sha256(
+            c.numpy().tobytes()).hexdigest()
+        stamp["v0_conditioned"] = True
+        stamp["control_units"] = units
+        stamp["straight_ahead_control_present"] = bool(
+            ((c[:, 0] == 0) & (c[:, 1] == 0)).any())
+    else:
+        stamp["v0_conditioned"] = False
     if path:
         try:
             stamp["file_sha256"] = hashlib.sha256(
@@ -1093,8 +1125,30 @@ def train(args) -> dict:
     if args.anchors:
         anc = torch.load(args.anchors, map_location=device,
                          weights_only=True)
+        _ctrl = anc.get("controls") if isinstance(anc, dict) else None
         anc = anc["anchors"] if isinstance(anc, dict) else anc
-        model.core.decoder.load_anchors(anc.to(device))
+        # ⛔ BOTH DIRECTIONS ARE REFUSED, LOUDLY. A v0-conditioned build given a
+        # controls-free file would silently fall back to fixed paths — the exact
+        # vocabulary this arm exists to replace — and a fixed build given a
+        # controls file would train against a bank rolled at one reference speed
+        # while the file's author meant per-window. Neither failure is visible in
+        # any artifact the run leaves behind, so neither is allowed to be silent.
+        _want = bool(getattr(args, "anchor_v0_conditioned", False))
+        if _want and _ctrl is None:
+            raise SystemExit(
+                "[v3] ⛔ --anchor-v0-conditioned given but "
+                f"{args.anchors} carries no `controls` [N, 2]. The bank is "
+                "rolled per window from those controls; there is nothing to "
+                "roll.")
+        if _ctrl is not None and not _want:
+            raise SystemExit(
+                f"[v3] ⛔ {args.anchors} carries `controls` [N, 2] (a "
+                "v0-CONDITIONED vocabulary) but --anchor-v0-conditioned was NOT "
+                "given. Its paths are the family rolled at the REFERENCE speed "
+                "only, and training on them fixed would silently be a different "
+                "experiment.")
+        model.core.decoder.load_anchors(
+            anc.to(device), None if _ctrl is None else _ctrl.to(device))
         try:
             import hashlib
             _sha = hashlib.sha256(
@@ -1103,6 +1157,21 @@ def train(args) -> dict:
             _sha = "unavailable"
         print(f"[v3] anchors: loaded {tuple(anc.shape)} from {args.anchors} "
               f"(sha256 {_sha})", flush=True)
+        if _ctrl is not None:
+            _ok = bool(((_ctrl[:, 0] == 0) & (_ctrl[:, 1] == 0)).any())
+            _u = getattr(args, "anchor_control_units", "kappa")
+            print(f"[v3] anchors: v0-CONDITIONED, controls {tuple(_ctrl.shape)} "
+                  f"(accel, {'lateral accel' if _u == 'alat' else 'curvature'}), "
+                  f"units={_u}, rolled per window; withheld rows at "
+                  f"{getattr(args, 'anchor_ref_speed', 10.0)} m/s. "
+                  f"straight-ahead control present: {_ok}", flush=True)
+            if not _ok:
+                raise SystemExit(
+                    "[v3] ⛔ the control grid does not contain {a=0, kappa=0} "
+                    "EXACTLY. An even-count linspace omits it and the set then "
+                    "reads 1.2768 m oracle-in-vocabulary against 0.2610 — a "
+                    "4.9x artifact that looks exactly like a resolution "
+                    "finding. Rebuild with odd counts.")
     else:
         print("[v3] ⛔ anchors: NO --anchors GIVEN — using the SYNTHETIC "
               "`default_anchors` fallback. Its oracle-in-vocabulary ADE was MEASURED "
@@ -1331,8 +1400,11 @@ def train(args) -> dict:
         # fallback to the synthetic default is exactly what an unstamped run
         # cannot rule out afterwards, so it is stamped here by CONTENT
         # (sha256 + shape), not by the presence of a path.
-        "anchors": _anchor_stamp(getattr(args, "anchors", None),
-                                 model.core.decoder.anchors),
+        "anchors": _anchor_stamp(
+            getattr(args, "anchors", None), model.core.decoder.anchors,
+            model.core.decoder.anchor_controls
+            if getattr(model.core.decoder, "anchor_v0_cond", False) else None,
+            getattr(args, "anchor_control_units", "kappa")),
         "selection": {
             "sel_reach_clamp": bool(cfg.core.sel_reach_clamp),
             "sel_accel_max": float(cfg.core.sel_accel_max),
@@ -1642,6 +1714,40 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--anchors", default=None,
                     help="6 s anchor vocabulary (build_refc_anchors.py over "
                          "V3_HORIZONS; the model's synthetic default otherwise)")
+    ap.add_argument("--n-anchors", type=int, default=None,
+                    help="anchor vocabulary size. Needed when the built file is "
+                         "not the 128 the size preset assumes; `load_anchors` "
+                         "refuses a shape mismatch, so a wrong value is loud.")
+    ap.add_argument("--anchor-v0-conditioned", action="store_true",
+                    help="refcv4-b: the anchor file carries `controls` [N, 2] = "
+                         "(accel, curvature) and the bank is ROLLED PER WINDOW "
+                         "from that window's measured v0 instead of being a "
+                         "fixed set of paths in absolute metres. MEASURED on the "
+                         "4,823-window banked surface: the fixed-path set reads "
+                         "0.3773 m oracle-in-vocabulary (+0.0777 [+0.0528, "
+                         "+0.1044] SEPARATED WORSE than ha = 0.2996); the "
+                         "v0-conditioned family at 117 candidates reads 0.2610 "
+                         "(-0.0387 [-0.0652, -0.0104] BEATS ha). Requires a "
+                         "`controls` entry in --anchors; refused without one.")
+    ap.add_argument("--anchor-control-units", default="kappa",
+                    choices=["kappa", "alat"],
+                    help="what channel 1 of the anchor controls MEANS. "
+                         "'kappa' = curvature 1/m, integrated as supplied. "
+                         "'alat' = LATERAL ACCELERATION m/s^2, with curvature "
+                         "DERIVED per window as a_lat / max(v0, 4.0)^2 and "
+                         "clamped. MEASURED: a constant-CURVATURE family is "
+                         "unflyable at speed (104 of 117 anchors break a mu=0.7 "
+                         "circle at v0 = 27 m/s, peak 3.96 g); under 'alat' the "
+                         "control space IS the Kamm-circle space, and the same "
+                         "117 anchors read 0.1987 m oracle-in-vocabulary "
+                         "(-0.1009 [-0.1213, -0.0813] vs ha) with 0/117 over "
+                         "mu = 0.7 and a 0.68 g peak.")
+    ap.add_argument("--anchor-ref-speed", type=float, default=10.0,
+                    help="m/s the bank is rolled at where the ego channel was "
+                         "WITHHELD by --ego-dropout. Rolling a withheld row from "
+                         "its true v0 would put the withheld channel into the "
+                         "candidate GEOMETRY, which is a harder leak than the "
+                         "ranking one S2 guards.")
     ap.add_argument("--sel-accel-max", type=float, default=None,
                     help="S2 reach-clamp bound in m/s^2. RE-DERIVE IT FOR THE "
                          "HORIZON: `horizon_s` is max(horizons)*0.1, so the "

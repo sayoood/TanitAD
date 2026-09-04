@@ -1,0 +1,84 @@
+{
+ "artifact_kind": "tanitad.refc_anchor_vocabulary",
+ "variant": "v0-CONDITIONED, SPEED-CLAMPED constant-(a_lon, a_lat)",
+ "control_units": "alat",
+ "n_anchors": 117,
+ "horizons_steps": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "dt_s": 0.1,
+ "ref_speed_ms": 10.0,
+ "alat_v_floor_ms": 4.0,
+ "kappa_cap_inv_m": 0.12,
+ "a_lon_grid_ms2": [
+  -4.0,
+  -3.5000000000000004,
+  -2.916666666666667,
+  -2.333333333333334,
+  -1.7500000000000004,
+  -1.166666666666667,
+  -0.5833333333333339,
+  0.0,
+  0.583333333333333,
+  1.166666666666666,
+  1.75,
+  2.333333333333333,
+  2.916666666666666
+ ],
+ "a_lat_grid_ms2": [
+  -3.0,
+  -2.25,
+  -1.5,
+  -0.75,
+  0.0,
+  0.75,
+  1.5,
+  2.25,
+  3.0
+ ],
+ "a_lat_max_ms2": 3.0,
+ "a_lat_max_rationale": "3.0 m/s^2 ~ 0.31 g, the standard COMFORTABLE lateral bound for a passenger vehicle. Chosen on physics, not on the score: the sweep {3.0, 4.0, 6.0} clears the gate SEPARATED at every value (-0.1009 / -0.0900 / -0.0701), so the gate verdict does not depend on this choice.",
+ "kappa_derivation": "kappa = clamp(a_lat / max(v0, alat_v_floor_ms)^2, -kappa_cap, +kappa_cap), per window, in the decoder's `roll_bank`",
+ "straight_ahead_control_index": 67,
+ "asserted_zero_present": {
+  "a_lon": true,
+  "a_lat": true
+ },
+ "integrator": "tanitad.refs.refa_v1_plan.unicycle_paths (action_units='kappa') -> models.kinematic.rollout_unicycle",
+ "gate": {
+  "surface": "taniteval/results/refcv3-40284-openloop-dump.tar.gz",
+  "windows": 4823,
+  "episodes": 141,
+  "oracle_in_vocabulary_ade_0_2s_m": 0.1987,
+  "along_mae_m": 0.1432,
+  "lat_mae_m": 0.1037,
+  "bar_ha_m": 0.2996,
+  "paired_delta_vs_ha": [
+   -0.1009,
+   -0.1213,
+   -0.0813
+  ],
+  "verdict": "BEATS ha (separated)",
+  "estimator": "paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = episode"
+ },
+ "kamm": {
+  "over_mu_0.7_at_v0_27.27_ms": 0,
+  "peak_g_at_v0_27.27_ms": 0.68,
+  "over_mu_0.7_at_v0_10.09_ms": 12,
+  "peak_g_at_v0_10.09_ms": 1.23,
+  "flat_kappa_family_for_scale": {
+   "over_mu_0.7_at_27.27": 104,
+   "peak_g": 3.96
+  }
+ },
+ "file_sha256": "e86cf507d55a4585435025fe52f33817d08dab879e1f65ff6a1fc9b0eb81e8fb",
+ "anchors_sha256": "51f930dc6f3564ff8f21c9070ca97b805d4e82908e42d0ef1f99be9f5a3a66df",
+ "controls_sha256": "b072f4c052331beb79bef117c7b233f702802b517429cc9157a841294e089664"
+}
