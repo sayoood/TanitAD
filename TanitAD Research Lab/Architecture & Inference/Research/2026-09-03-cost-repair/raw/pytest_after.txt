@@ -1,0 +1,24 @@
+................................................................F....... [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 56%]
+..........s............................................................. [ 75%]
+........................................................................ [ 94%]
+....................                                                     [100%]
+================================== FAILURES ===================================
+_____________________ test_refa_surfaces_the_measured_arm _____________________
+
+    def test_refa_surfaces_the_measured_arm():
+        """The '(b) half' of the rule: the arm that already tested it."""
+        hits = DC.search(["REF-A"], context=2, require_all=True)
+>       assert hits, "REF-A must be findable — it is the measured frozen arm"
+E       AssertionError: REF-A must be findable — it is the measured frozen arm
+E       assert []
+
+stack\tests\test_decision_check.py:45: AssertionError
+---------------------------- Captured stdout call -----------------------------
+  ⚠️  DECISION: DECISIONS_2026-07-20.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  REGISTRY: MODEL_REGISTRY.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  RETRACTION: RETRACTION_LOG.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+=========================== short test summary info ===========================
+FAILED stack\tests\test_decision_check.py::test_refa_surfaces_the_measured_arm
+1 failed, 378 passed, 1 skipped, 5476 deselected in 123.68s (0:02:03)
