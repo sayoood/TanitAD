@@ -1,0 +1,367 @@
+{
+ "_definitions": "TURN COVERAGE **AND DEMAND** at the 6 s horizon for the LIVE refcv4b vocabulary.\n\nSettles the launch package's own flagged UNVERIFIED: it measured `8.85 %` of\nwindows with no candidate whose END-BEARING turns > 30 deg and did NOT measure\nthe TERMINAL-HEADING equivalent, nor the DEMAND the corpus actually places.\n\n\u26d4 MODEL-FREE. No forward pass, no checkpoint. Every number here is a property of\n(the vocabulary, the reach clamp, the corpus) and nothing else, so it is a\nCEILING/SUPPLY statement and may never be compared to an achievement\n(`GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md`).\n\nDEFINITIONS, DECLARED BEFORE ANY NUMBER\n=======================================\nFor a path P (candidate or GT) over 0..6 s in the ego frame at t0:\n  * END-BEARING     eb   = |atan2(y(6s), x(6s))|            -- the CHORD angle\n  * TERMINAL-HEAD.  th_s = |atan2(dy, dx)| over the 5->6 s slot segment\n                           -- EXACTLY the launch instrument's definition\n  * TERMINAL-HEAD.  th_x = |yaw(6s) - yaw(0)|               -- EXACT, integrated\n                           (candidates: the unicycle's own yaw state;\n                            GT: the corpus pose yaw column, wrapped)\nThese three are NEVER conflated: all three are reported side by side.\n\nSUPPLY  = max over the RE ACH-CLAMPED survivors at this window's v0.\nDEMAND  = the same statistic computed on the GROUND-TRUTH 6 s path.\nTHE DECISION NUMBER = P(DEMAND > SUPPLY) and the ADE penalty on exactly those\nwindows.\n\nCONTROLS THAT MUST READ KNOWN VALUES\n====================================\n K1 v0 round-trip     : the dump's v0 must equal poses[ws, 3] to 1e-5 on every\n                        window, or the window->pose mapping is wrong and every\n                        GT number below is void.\n K2 integrator parity : my vectorised roll must reproduce\n                        `refa_v1_plan.unicycle_paths` bit-close (< 1e-9).\n K3 straight control  : the {a_lon=0, a_lat=0} candidate must have th_x = eb =\n                        th_s = 0 EXACTLY and y == 0 to < 1e-12.\n K4 zero-path control : ADE of the constant-zero predictor must equal the mean\n                        ||GT|| recomputed independently in float64.\n K5 n and d printed for every cell.\n",
+ "K1_v0_roundtrip_max_abs_err": 0.0,
+ "n_windows": 4823,
+ "n_episodes": 141,
+ "n_windows_true_6s": 3722,
+ "v0_stats_ms": {
+  "mean": 11.354709392281476,
+  "p05": 0.4274624675512315,
+  "median": 10.08990478515625,
+  "p95": 27.27458763122558,
+  "max": 36.27055358886719
+ },
+ "vocabulary": {
+  "n": 117,
+  "a_lon_grid": [
+   -4.0,
+   -3.5,
+   -2.916667,
+   -2.333333,
+   -1.75,
+   -1.166667,
+   -0.583333,
+   0.0,
+   0.583333,
+   1.166667,
+   1.75,
+   2.333333,
+   2.916667
+  ],
+  "a_lat_grid": [
+   -3.0,
+   -2.25,
+   -1.5,
+   -0.75,
+   0.0,
+   0.75,
+   1.5,
+   2.25,
+   3.0
+  ],
+  "straight_index": 67,
+  "kappa": "clamp(a_lat / max(v0, 4.0)^2, -0.12, 0.12)  [refc.py:1351-1356]",
+  "sha256_matches_live_pod_anchors": true
+ },
+ "K2_integrator_parity_max_abs_err_m": 2.842170943040401e-14,
+ "K2_float32_state0_path_delta_m": 1.4305118156698882e-07,
+ "K3_straight_control": {
+  "y_max_abs_m": 0.0,
+  "yaw6_max_abs_rad": 0.0
+ },
+ "K4_zero_path_control_max_abs_err_m": 1.4210854715202004e-14,
+ "supply": [
+  {
+   "metric": "END-BEARING (clamped survivors)",
+   "n": 4823,
+   "no_cand_gt15deg_pct": 0.0,
+   "no_cand_gt30deg_pct": 8.853410740203193,
+   "no_cand_gt45deg_pct": 19.489944018245904,
+   "no_cand_gt60deg_pct": 29.81546755131661,
+   "max_available_deg_median": 92.97402129787436,
+   "max_available_deg_p05": 24.447800939146656
+  },
+  {
+   "metric": "TERMINAL-HEADING, 5->6 s slot segment (clamped)",
+   "n": 4823,
+   "no_cand_gt15deg_pct": 0.0,
+   "no_cand_gt30deg_pct": 0.0,
+   "no_cand_gt45deg_pct": 6.0335890524569775,
+   "no_cand_gt60deg_pct": 11.714700393945678,
+   "max_available_deg_median": 161.65421494597095,
+   "max_available_deg_p05": 44.25473702675223
+  },
+  {
+   "metric": "TERMINAL-HEADING, EXACT integrated yaw (clamped)",
+   "n": 4823,
+   "no_cand_gt15deg_pct": 0.0,
+   "no_cand_gt30deg_pct": 0.0,
+   "no_cand_gt45deg_pct": 3.4211071946921003,
+   "no_cand_gt60deg_pct": 8.666804893219988,
+   "max_available_deg_median": 189.37598524793003,
+   "max_available_deg_p05": 49.74118497023396
+  },
+  {
+   "metric": "END-BEARING (all 117, no reach clamp)",
+   "n": 4823,
+   "no_cand_gt15deg_pct": 0.0,
+   "no_cand_gt30deg_pct": 8.853410740203193,
+   "no_cand_gt45deg_pct": 19.489944018245904,
+   "no_cand_gt60deg_pct": 29.81546755131661,
+   "max_available_deg_median": 92.97402129787436,
+   "max_available_deg_p05": 24.447800939146656
+  },
+  {
+   "metric": "TERMINAL-HEADING EXACT (all 117, no clamp)",
+   "n": 4823,
+   "no_cand_gt15deg_pct": 0.0,
+   "no_cand_gt30deg_pct": 0.0,
+   "no_cand_gt45deg_pct": 3.4211071946921003,
+   "no_cand_gt60deg_pct": 8.666804893219988,
+   "max_available_deg_median": 189.37598524793003,
+   "max_available_deg_p05": 49.74118497023396
+  }
+ ],
+ "turns_gt30_per_window": {
+  "end_bearing": 30.940493468795356,
+  "terminal_heading_exact": 55.10802405142028
+ },
+ "demand": [
+  {
+   "metric": "GT TERMINAL-HEADING EXACT (|dyaw| over 6 s)",
+   "n": 3722,
+   "gt5deg_pct": 37.6947877485223,
+   "gt5deg_n": 1403,
+   "gt15deg_pct": 22.00429876410532,
+   "gt15deg_n": 819,
+   "gt30deg_pct": 14.051585169263836,
+   "gt30deg_n": 523,
+   "gt45deg_pct": 8.812466415905428,
+   "gt45deg_n": 328,
+   "gt60deg_pct": 5.212251477700161,
+   "gt60deg_n": 194,
+   "gt90deg_pct": 1.07469102632993,
+   "gt90deg_n": 40,
+   "p50": 2.6565253981308556,
+   "p95": 61.252944889868076,
+   "p99": 90.57308803268421,
+   "max": 109.02804807452462
+  },
+  {
+   "metric": "GT END-BEARING",
+   "n": 3722,
+   "gt5deg_pct": 26.679204728640514,
+   "gt5deg_n": 993,
+   "gt15deg_pct": 12.815690488984416,
+   "gt15deg_n": 477,
+   "gt30deg_pct": 5.991402471789361,
+   "gt30deg_n": 223,
+   "gt45deg_pct": 2.4717893605588395,
+   "gt45deg_n": 92,
+   "gt60deg_pct": 0.7254164427727029,
+   "gt60deg_n": 27,
+   "gt90deg_pct": 0.32240730789897903,
+   "gt90deg_n": 12,
+   "p50": 1.363536686740559,
+   "p95": 33.63695168194009,
+   "p99": 57.1819009025362,
+   "max": 179.90554309761606
+  },
+  {
+   "metric": "GT TERMINAL-HEADING, 5->6 s segment",
+   "n": 3722,
+   "gt5deg_pct": 35.67974207415368,
+   "gt5deg_n": 1328,
+   "gt15deg_pct": 20.7684040838259,
+   "gt15deg_n": 773,
+   "gt30deg_pct": 12.708221386351424,
+   "gt30deg_n": 473,
+   "gt45deg_pct": 7.97958087049973,
+   "gt45deg_n": 297,
+   "gt60deg_pct": 4.540569586243954,
+   "gt60deg_n": 169,
+   "gt90deg_pct": 0.9940891993551854,
+   "gt90deg_n": 37,
+   "p50": 2.3209412669533815,
+   "p95": 57.369618110000744,
+   "p99": 89.51773409744966,
+   "max": 179.80858310901485
+  },
+  {
+   "metric": "GT TERMINAL-HEADING EXACT (ALL windows, incl. end-clamped)",
+   "n": 4823,
+   "gt5deg_pct": 35.807588637777314,
+   "gt5deg_n": 1727,
+   "gt15deg_pct": 20.09122952519179,
+   "gt15deg_n": 969,
+   "gt30deg_pct": 12.5233257308729,
+   "gt30deg_n": 604,
+   "gt45deg_pct": 7.713041675305826,
+   "gt45deg_n": 372,
+   "gt60deg_pct": 4.4785403275969315,
+   "gt60deg_n": 216,
+   "gt90deg_pct": 0.8293593199253577,
+   "gt90deg_n": 40,
+   "p50": 2.222558230156694,
+   "p95": 56.99119098364963,
+   "p99": 87.08947645624525,
+   "max": 109.02804807452462
+  }
+ ],
+ "intersection": {
+  "exact_terminal_heading/all_windows": {
+   "n": 4823,
+   "n_exceeding": 0,
+   "pct_exceeding": 0.0,
+   "median_shortfall_deg": 0.0,
+   "p95_shortfall_deg": 0.0,
+   "max_shortfall_deg": 0.0,
+   "oiv_ade_on_exceeding_m": 0.0,
+   "oiv_ade_on_rest_m": 1.1112312983562613,
+   "n_episodes_exceeding": 0
+  },
+  "exact_terminal_heading/true_6s": {
+   "n": 3722,
+   "n_exceeding": 0,
+   "pct_exceeding": 0.0,
+   "median_shortfall_deg": 0.0,
+   "p95_shortfall_deg": 0.0,
+   "max_shortfall_deg": 0.0,
+   "oiv_ade_on_exceeding_m": 0.0,
+   "oiv_ade_on_rest_m": 1.2919061526249542,
+   "n_episodes_exceeding": 0
+  },
+  "end_bearing/all_windows": {
+   "n": 4823,
+   "n_exceeding": 12,
+   "pct_exceeding": 0.2488077959776073,
+   "median_shortfall_deg": 14.570325487628443,
+   "p95_shortfall_deg": 24.949355847737735,
+   "max_shortfall_deg": 27.2103165617121,
+   "oiv_ade_on_exceeding_m": 2.8171483095896104,
+   "oiv_ade_on_rest_m": 1.1069762569647004,
+   "n_episodes_exceeding": 2
+  },
+  "end_bearing/true_6s": {
+   "n": 3722,
+   "n_exceeding": 11,
+   "pct_exceeding": 0.2955400322407308,
+   "median_shortfall_deg": 14.753280783240537,
+   "p95_shortfall_deg": 25.154897730826313,
+   "max_shortfall_deg": 27.2103165617121,
+   "oiv_ade_on_exceeding_m": 3.072714033338743,
+   "oiv_ade_on_rest_m": 1.2866275520623427,
+   "n_episodes_exceeding": 2
+  },
+  "segment_terminal_heading/all_windows": {
+   "n": 4823,
+   "n_exceeding": 5,
+   "pct_exceeding": 0.1036699149906697,
+   "median_shortfall_deg": 2.043278448784291,
+   "p95_shortfall_deg": 12.862409862391486,
+   "max_shortfall_deg": 14.500576087399711,
+   "oiv_ade_on_exceeding_m": 3.9817573735749376,
+   "oiv_ade_on_rest_m": 1.1082523381287617,
+   "n_episodes_exceeding": 1
+  },
+  "segment_terminal_heading/true_6s": {
+   "n": 3722,
+   "n_exceeding": 5,
+   "pct_exceeding": 0.13433637829124126,
+   "median_shortfall_deg": 2.043278448784291,
+   "p95_shortfall_deg": 12.862409862391486,
+   "max_shortfall_deg": 14.500576087399711,
+   "oiv_ade_on_exceeding_m": 3.9817573735749376,
+   "oiv_ade_on_rest_m": 1.2882878432074805,
+   "n_episodes_exceeding": 1
+  }
+ },
+ "oiv_by_turn_bin": [
+  {
+   "bin_deg": [
+    0,
+    5
+   ],
+   "n": 3096,
+   "n_episodes": 137,
+   "oiv_ade_m": 0.8695876915640637,
+   "oiv_along_mae_m": 0.6874475403483292,
+   "oiv_lat_mae_m": 0.35633386223549945,
+   "straight_anchor_ade_m": 2.0454999825580886,
+   "zero_path_ade_m": 32.03097141856161,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 0.8695876915640637,
+   "underpowered": false
+  },
+  {
+   "bin_deg": [
+    5,
+    15
+   ],
+   "n": 758,
+   "n_episodes": 94,
+   "oiv_ade_m": 1.3501003278859085,
+   "oiv_along_mae_m": 0.8319858143919574,
+   "oiv_lat_mae_m": 0.8806181585994237,
+   "straight_anchor_ade_m": 3.3106776397581026,
+   "zero_path_ade_m": 27.58617394502251,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 1.3501003278859085,
+   "underpowered": false
+  },
+  {
+   "bin_deg": [
+    15,
+    30
+   ],
+   "n": 365,
+   "n_episodes": 60,
+   "oiv_ade_m": 1.5755668662284108,
+   "oiv_along_mae_m": 0.9109767463926318,
+   "oiv_lat_mae_m": 1.0794172525753207,
+   "straight_anchor_ade_m": 5.49777653917222,
+   "zero_path_ade_m": 29.69543547148233,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 1.5755668662284108,
+   "underpowered": false
+  },
+  {
+   "bin_deg": [
+    30,
+    45
+   ],
+   "n": 232,
+   "n_episodes": 46,
+   "oiv_ade_m": 1.64268731944663,
+   "oiv_along_mae_m": 1.0274558938105107,
+   "oiv_lat_mae_m": 1.0776282452693364,
+   "straight_anchor_ade_m": 6.645340885158966,
+   "zero_path_ade_m": 23.174954039704783,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 1.64268731944663,
+   "underpowered": false
+  },
+  {
+   "bin_deg": [
+    45,
+    90
+   ],
+   "n": 332,
+   "n_episodes": 34,
+   "oiv_ade_m": 1.8337242404296128,
+   "oiv_along_mae_m": 1.1813934851316437,
+   "oiv_lat_mae_m": 1.1535644129935763,
+   "straight_anchor_ade_m": 8.90746662228551,
+   "zero_path_ade_m": 21.24367987360204,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 1.8337242404296128,
+   "underpowered": false
+  },
+  {
+   "bin_deg": [
+    90,
+    null
+   ],
+   "n": 40,
+   "n_episodes": 8,
+   "oiv_ade_m": 1.9716799561192233,
+   "oiv_along_mae_m": 1.0509795471250853,
+   "oiv_lat_mae_m": 1.4539854264197483,
+   "straight_anchor_ade_m": 12.57996028970025,
+   "zero_path_ade_m": 19.66045277403601,
+   "pct_demand_exceeds_supply": 0.0,
+   "oiv_ade_unclamped_117_m": 1.9716799561192233,
+   "underpowered": true
+  }
+ ],
+ "oiv_pooled": {
+  "ade_m": 1.1112312983562613,
+  "along_mae_m": 0.7804521938572649,
+  "lat_mae_m": 0.5921331233594452,
+  "straight_anchor_ade_m": 3.2865947437856153,
+  "zero_path_ade_m": 29.88450144629768,
+  "n": 4823,
+  "n_episodes": 141,
+  "d_candidates": 117
+ }
+}
