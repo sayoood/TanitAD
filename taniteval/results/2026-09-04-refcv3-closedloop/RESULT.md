@@ -392,7 +392,24 @@ ground-following is a **harness choice, not a physics engine**.
 | Thor run tree `tanitad_cl_v3` | `tanitad-thor-wifi:/home/nvidia/tanitad_cl_v3` | ⚠️ Thor only — but it is a purely *derived* overlay: `tanitad_cl` + the repo's current `stack/tanitad`, `stack/scripts`, `taniteval/taniteval`, `taniteval/tools`, rebuildable in one command from the repo |
 | refc-base / flagship-v1 closed-loop rollouts | not re-banked — **bit-identical** to the 2026-08-03 artifacts already in `repo:stack/experiments/alpasim-gsplat/results/closedloop-hq-render/rollouts/` | no |
 
-**Nothing that took real effort lives only on a host.** No training was disturbed (Thor was idle at
-0 % before the first launch; the refcv3 pod's run is `done: true` at 40,284 and its A40 shows
-0 MiB used). Peak Thor device memory `torch.cuda.max_memory_allocated()` = **1.53 GB**.
-Total GPU: **≈9 minutes**.
+**Nothing that took real effort lives only on a host.** No training was disturbed (the refcv3 pod's
+run is `done: true` at 40,284 and its A40 shows 0 MiB used). Peak Thor device memory
+`torch.cuda.max_memory_allocated()` = **1.53 GB**. Total GPU: **≈9 minutes**.
+
+### ⚠️ CO-TENANCY DISCLOSURE — and why it does not touch the numbers
+
+**Thor was verified idle (0 % util, no python processes) at 05:53 UTC**, immediately before the
+first launch. **It was not idle for the whole run.** A sibling agent's **refav1 open-loop eval**
+(`taniteval/tools/refav1_arm.py`, PID 2874655, 2,127 MiB) started at **≈06:00** and was still
+running at 06:34 — so it was co-resident on the GPU for **every panel in this document**. It is
+disclosed here rather than left to be discovered.
+
+⭐ **The bit-exact control in §2 is what settles the question, and it settles it cleanly.**
+refc-base and flagship-v1 were re-run **inside that same contention window** and came back
+**bit-identical to the 2026-08-03 banked rollouts** — 450/450 steps, `max|Δplan| = max|Δego| =
+max|Δv| = 0.0`. GPU co-tenancy changes **wall-clock, not arithmetic**, and this is the direct
+positive evidence of that rather than an argument for it. Neither job OOMed (1.53 + 2.13 GB), and
+both completed. **No number in this document is affected.**
+
+⚠️ The one thing co-tenancy *did* touch is the **timing** figures — 0.26 s/step closed loop,
+68.6 ms/frame render. Treat those as **upper bounds**, not as clean latency measurements.
