@@ -172,6 +172,13 @@ Every subagent brief MUST carry the preamble in
   that named them; a second agent's whole commit vanished when a third replaced the tip; and my
   own doctrine commit lost `PROGRAM_OVERVIEW.md` and a retraction-log entry, with the *other three*
   files from the same commit surviving — so even a partial survival proves nothing about the rest.
+  ⛔⛔ **AND THE BLOB COMPARISON ITSELF HAS A HOLE: BOTH OPERANDS CAN FAIL IDENTICALLY, AND THE SHELL THEN REPORTS A MATCH.** MEASURED 2026-09-04, and it made me report a commit as landed that had not landed. `a=$(git rev-parse HEAD:<path>)` and `b=$(git hash-object <path>)` BOTH return the **empty string** when the mount is in an outage window; `[ "$a" = "$b" ]` is then **true**, and the check prints its success message. HEAD held `887e9aab` while the worktree held `507ba1ad`. ⚠️ This is the *positive-assertion* rule defeating itself: the assertion was positive in FORM but its two halves came through the SAME broken channel, which is the same error as taking "multiple samples" through one failing probe. ⇒ **ASSERT THE SHAPE BEFORE COMPARING: require BOTH sides to be 40 characters, and report INCONCLUSIVE — never MATCH — when either is not.**
+  ```
+  a=$(git rev-parse "HEAD:$p" 2>/dev/null); b=$(git hash-object "$p" 2>/dev/null)
+  if [ ${#a} -ne 40 ] || [ ${#b} -ne 40 ]; then echo "INCONCLUSIVE"
+  elif [ "$a" = "$b" ]; then echo "VERIFIED $a"; else echo "MISMATCH"; fi
+  ```
+  The same hole exists in every `grep -c` verification: a count of `0` from a file that could not be READ is indistinguishable from a genuine absence, so pair it with a same-breath control that must read non-zero.
   ⇒ **`git log` is NOT evidence that your change is in HEAD.** The check is a positive content
   assertion per file — `git show HEAD:<path> | grep -c <marker>`, or a blob comparison
   (`git rev-parse HEAD:<path>` vs `git hash-object <path>`) — run **at the end of the turn**, on
