@@ -209,6 +209,141 @@ def _check_goal_time_grid(grid: str) -> str:
     return grid
 
 
+#: ⛔ THE GOAL TERM'S METRIC (`plan(cost_metric=...)`, 2026-09-03, L3 / R29).
+#: The shipped goal term is ``1 - cosine_similarity(z_terminal, goal)`` in
+#: FLOAT32. Near ``cos = 1`` that is a CATASTROPHIC CANCELLATION against 1.0:
+#: whatever the term's own magnitude, it can only take values that are integer
+#: multiples of ``spacing(1f)/2 = 5.9604645e-08``.
+#:   * ``"cos"``   -- DEFAULT and byte-identical to every pre-2026-09-03 caller.
+#:   * ``"chord"`` -- the Euclidean distance between the two NORMALISED fields,
+#:     ``||z/||z|| - g/||g||||``. On unit vectors ``chord = sqrt(2*(1-cos))``,
+#:     so it is MONOTONE-EQUIVALENT and cannot re-rank two candidates in exact
+#:     arithmetic. What it changes is the ARITHMETIC: the component difference
+#:     ``x_i - y_i`` of two nearly equal normalised vectors is EXACT (Sterbenz),
+#:     so the result carries only the normalisation's relative error and is
+#:     resolved at the DIFFERENCE's own scale instead of at 1.0's.
+#: ⭐ IT IS NOT WEIGHT-NEUTRAL, AND MUST NEVER SHIP ALONE. ``chord`` is
+#: ``sqrt(2x)`` of the old term, so at ``x ~ 1e-9`` it is ~4.5e-05 -- the goal
+#: term is multiplied by ``1/chord``, a measured **5,792.6x** implicit
+#: re-weighting against the unchanged ``0.05*kappa^2`` penalty
+#: (`PREREG_TACTICAL_DECODER.md` §5 L3: *"Swapping the metric while holding
+#: 0.05 fixed is therefore NOT a one-variable arm"*). Any arm that flips this
+#: flag must declare `W_KAPPA` in the same breath -- see the derivation banked
+#: at `.../Research/2026-09-03-cost-repair/RESULT.md` §4.
+#: ⚠️ ``sqrt(2*(1-cos))`` computed FROM the float32 cosine recovers NOTHING:
+#: it inherits the 5.96e-08 quantum before the square root can act. The chord
+#: must be computed as a NORM OF A DIFFERENCE, which is what this does, and
+#: that distinction is the deliberate-regression arm of the L3 experiment.
+#:
+#: ⭐⭐ ``"ccos"`` -- THE CENTRED COSINE (2026-09-04, D-REFAV1-COST-FORM).
+#: ``1 - cos(z_K - z_ref, g - z_ref)`` where ``z_ref`` is the ZERO-ACTION
+#: (constant-velocity) terminal field for the SAME window, rolled by the SAME
+#: predictor from the SAME ``z0`` in the SAME forward pass, so no future
+#: information and no extra rollout beyond the one the ``cv`` baseline already
+#: pays for.
+#: ⛔ IT IS A DIFFERENT KIND OF CHANGE FROM ``"chord"`` AND THE TWO MUST NEVER
+#: BE CONFLATED. ``chord = sqrt(2*(1-cos))`` is MONOTONE-EQUIVALENT: in exact
+#: arithmetic it cannot re-rank two candidates, and it repairs float32
+#: cancellation ONLY. **Subtracting a common vector CHANGES THE RANKING** --
+#: ``cos(x, y)`` and ``cos(x - r, y - r)`` are different functions of the same
+#: pair, and `test_cost_ccos.py::test_k_*` exhibits an exact candidate pair
+#: whose order flips in float64. That re-ranking IS the repair.
+#: ⭐ WHY IT IS NEEDED (MEASURED, `.../Research/2026-09-04-refav1-cost-scale/
+#: RESULT.md` §2a/§4b, step 21,109, n = 282 windows / 141 clusters): the
+#: compared fields are UNCENTRED and **99.3 % common mode**, so the shipped
+#: term realises ~1.2e-05 of its own [0, 2] range while the CHEAPEST jerk
+#: charge in a 300-sample iCEM population is ``0.02 * 4.711 = 0.094`` -- i.e.
+#: **100.00 % of the iteration-0 population is excluded before the world model
+#: is consulted**. Centring takes that a-priori exclusion to **1.67 %** and the
+#: left/right decision from **1.4 % to 41.3 %** of the term's own magnitude, at
+#: the SHIPPED weights.
+#: ⛔ NOT WEIGHT-NEUTRAL EITHER, and by a much larger factor than the chord:
+#: it rescales the goal term against an unchanged `W_JERK` / `W_KAPPA` /
+#: `W_VEND`. Any arm that flips this flag declares the weight triple in the
+#: same breath -- see `W_KAPPA` and the measured factor banked at
+#: `.../Research/2026-09-04-refav1-centred-goal/RESULT.md` §3.
+#: ⚠️ AND IT CARRIES A MEASURED DEGENERACY THAT IS NOT REPAIRED HERE. The
+#: do-nothing candidate IS ``z_ref``, so its centred vector is the ZERO vector
+#: and ``ccos(cv) = 1.0`` EXACTLY -- the worst-but-one value in the range, by
+#: definition rather than by measurement (MEASURED 40/40 windows,
+#: `raw/cost_forms_devbox.json`). On the **86.5 %** of the eval grid whose
+#: decoded goal is LANE_KEEP the goal itself is "hold", ``||g - z_ref||`` is
+#: float32 rounding (4.18e-08 relative), and the centred direction is noise.
+#: A HOLD BRANCH (gate on ``||g - z_ref||`` and fall back to a distance) is a
+#: PRE-REGISTRATION ITEM belonging to the PI / Master Mind, deliberately NOT
+#: taken in this file. ⇒ ``"ccos"`` is an INSTRUMENTED OPTION, not a candidate
+#: default; `_check_cost_metric` accepts it and nothing selects it.
+COST_METRICS = ("cos", "chord", "ccos")
+
+#: eps of `F.cosine_similarity`'s own default, applied per-vector here so a
+#: zero field cannot divide by zero. Never reached on a real rollout.
+_CHORD_EPS = 1e-8
+
+
+def _check_cost_metric(metric: str) -> str:
+    if metric not in COST_METRICS:
+        raise ValueError(f"cost_metric must be one of {COST_METRICS}, "
+                         f"got {metric!r}")
+    return metric
+
+
+def _goal_term(zt: Tensor, g: Tensor, metric: str = "cos",
+               z_ref: Tensor | None = None) -> Tensor:
+    """``[n, ...]`` terminal fields + ``[n, ...]`` goal -> ``[n]`` goal cost.
+
+    THE ONE PLACE the planner's goal distance is computed. `_cost_chunk` calls
+    it and nothing else does; a probe that wants to measure the SHIPPED metric
+    calls this function rather than re-implementing it.
+
+    ``"cos"`` is bit-identical to the pre-2026-09-03 expression
+    ``1.0 - F.cosine_similarity(zt.flatten(1), g.flatten(1), dim=-1)`` -- it IS
+    that expression, and adding ``z_ref`` did not touch that branch:
+    `test_cost_chord.py::test_a_*` and `test_cost_ccos.py::test_a_*` both pin
+    it bit-for-bit. See `COST_METRICS` for why ``"chord"`` is not a cosmetic
+    reformulation, why ``"ccos"`` is a DIFFERENT KIND of change (it re-ranks;
+    the chord provably cannot), and why neither may ship without a weight
+    statement.
+
+    ``z_ref`` ``[1, ...]`` or ``[n, ...]`` is the CENTRING REFERENCE and is
+    REQUIRED by ``"ccos"`` and ignored by the other two. `plan()` supplies the
+    zero-action terminal field of the same window, same predictor, same ``z0``
+    -- never a mean over anything and never anything from the future.
+    """
+    x = zt.flatten(1)
+    y = g.flatten(1)
+    if metric == "cos":
+        return 1.0 - F.cosine_similarity(x, y, dim=-1)
+    if metric == "ccos":
+        if z_ref is None:
+            raise ValueError(
+                "cost_metric='ccos' needs z_ref: the ZERO-ACTION terminal "
+                "field of this window. Centring on anything else (a batch "
+                "mean, a running average, the goal) is a different estimator "
+                "and would leak across candidates -- see COST_METRICS")
+        r = z_ref.flatten(1)
+        return 1.0 - F.cosine_similarity(x - r, y - r, dim=-1)
+    xn = x / x.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
+    yn = y / y.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
+    return (xn - yn).norm(dim=-1)
+
+
+#: ⭐ THE EXPLICIT COST WEIGHTS -- named so that L4 is addressable in ONE place.
+#: These are the values every banked refav1 number was produced under and they
+#: are NOT changed by the 2026-09-03 L3 work; `test_cost_chord.py` pins them.
+#: ⛔ `W_KAPPA` IS 99.5 % OF ALL COST VARIATION over the candidate box
+#: (`D-REFAV1-COST-SURFACE`), against a world-model contribution of 1.63e-10
+#: along kappa. Under the SHIPPED ``"cos"`` metric the weight that would let a
+#: correct turn win is **1.66e-08** -- ``w*kappa_max^2 = 6.6e-10``, i.e. the
+#: whole penalty over the whole box is ~90x SMALLER than one representable step
+#: of the term it trades against. That is a DELETION of the penalty, not a
+#: weight, and it is why L4 cannot be taken alone either. The derivation, the
+#: chord-side weights and the deletion test are banked at
+#: `.../Research/2026-09-03-cost-repair/RESULT.md` §4.
+W_JERK = 0.02                                   #: comfort, on channel 0 only
+W_KAPPA = 0.05                                  #: curvature, on RAW curvature
+W_VEND = 0.10                                   #: terminal speed vs target
+
+
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
                        op_dt: float) -> Tensor:
     """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
@@ -1849,7 +1984,8 @@ class RefAV1(nn.Module):
              target_speed: float | None = None, nav_cmd: Tensor | None = None,
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
              cost_chunk: int = 64, model_action_units: str = "kappa",
-             cost_time_grid: str = "dense", goal_time_grid: str = "full"):
+             cost_time_grid: str = "dense", goal_time_grid: str = "full",
+             cost_metric: str = "cos"):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -1905,10 +2041,27 @@ class RefAV1(nn.Module):
         `GOAL_TIME_GRIDS` for the measurement, for why the truncation (not the
         regrid) is the cause, and for what ``"plan"`` does NOT buy.
 
-        ⚠️ All three are CALL-SITE arguments, not `RefAV1Config` fields, on
+        ⛔ ``cost_metric`` -- THE GOAL TERM'S ARITHMETIC (L3 / R29).
+        ``"cos"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller) is
+        ``1 - cosine_similarity``, whose float32 representable steps just below
+        ``cos = 1`` are ``5.96e-08`` apart -- so the modelled kappa-response
+        (MEASURED at ``1.63e-10`` over the whole candidate box,
+        `D-REFAV1-COST-SURFACE`) is quantised away before any weight gets to
+        act on it. ``"chord"`` computes ``||z_hat - g_hat||`` directly, which is
+        monotone-equivalent (``chord = sqrt(2*(1-cos))``) and therefore cannot
+        re-rank anything in exact arithmetic, but resolves the response at the
+        DIFFERENCE's own scale. ⭐ **It is NOT weight-neutral**: it multiplies
+        the goal term by ``1/chord`` (measured 5,792.6x) against an unchanged
+        ``W_KAPPA``, so flipping it is a metric change AND an implicit
+        re-weighting. See `COST_METRICS` and `W_KAPPA`; never flip it without
+        declaring the weight in the same arm.
+
+        ⚠️ All four are CALL-SITE arguments, not `RefAV1Config` fields, on
         purpose: adding a config field would change every serialised config
         dict while a training run is live. Nothing on the training path can
-        see them.
+        see them -- MEASURED 2026-09-03 with two differently-bound probes:
+        `stack/scripts/refa_v1_train.py` contains ``.plan(`` 0 times,
+        ``plan_cfg`` 0 times and ``icem`` 0 times.
 
         The cost is where the hierarchy earns its keep (change #8): the tactical
         target speed and the strategic goal field enter as **cost terms**, not as
@@ -1934,6 +2087,7 @@ class RefAV1(nn.Module):
         _check_units(model_action_units)
         _check_cost_time_grid(cost_time_grid)
         _check_goal_time_grid(goal_time_grid)
+        _check_cost_metric(cost_metric)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -2040,6 +2194,37 @@ class RefAV1(nn.Module):
             seed_pool = (seed if seed_pool is None
                          else torch.cat([seed_pool, seed], dim=0))
 
+        # ⭐ THE CENTRING REFERENCE for `cost_metric="ccos"` (D-REFAV1-COST-FORM).
+        # The ZERO-ACTION (constant-velocity) terminal field of THIS window --
+        # which is exactly the `cv` / `hold_v0` baseline's rollout
+        # (`refa_v1_plan._baseline_controls`: `cv` IS `torch.zeros(H, 2)`), so
+        # centring uses NO privileged information and NO future information.
+        # ⛔ It is keyed on (predictor, z0) and computed INSIDE the same forward
+        # pass as the candidates it centres: `plan()` scores under two different
+        # (pred, z0) pairs -- the coarse tactical search and the coarse->fine
+        # re-score on the operative predictor -- and a reference borrowed from
+        # the other one would be a different rollout. Cached because iCEM calls
+        # `_cost_chunk` ~2,100 times per tick for at most TWO distinct keys.
+        _zref_cache: dict = {}
+
+        def _zero_action_ref(pred, z0) -> Tensor:
+            key = (id(pred), int(z0.data_ptr()))
+            hit = _zref_cache.get(key)
+            if hit is not None:
+                return hit
+            zero = torch.zeros(1, pc.horizon, cfg.a_dim, device=feats.device,
+                               dtype=v0_t.dtype)
+            acts0 = self._model_actions(zero, v0_t, model_action_units)
+            # the SAME time re-grid the candidates get; an all-zero control is
+            # invariant to it in VALUE but not in ROLLOUT LENGTH, so it must be
+            # applied or the reference sits at a different horizon.
+            if tac_idx is not None and pred is self.tactical:
+                acts0 = acts0.index_select(1, tac_idx)
+            zk0 = pred.rollout(z0, acts0, intent=intent, last_only=True)
+            ref = zk0 if pred is self.tactical else self._tac_field(zk0)
+            _zref_cache[key] = ref
+            return ref
+
         def _cost_chunk(controls: Tensor, pred=None, z0=None) -> Tensor:
             pred = pred or search_pred
             z0 = search_z if z0 is None else z0
@@ -2072,14 +2257,20 @@ class RefAV1(nn.Module):
                 # space by the model's own tac_pool (see the docstring)
                 zt = zk if pred is self.tactical else self._tac_field(zk)
                 g = goal_t.expand(n, -1, -1)
-                c = c + (1.0 - F.cosine_similarity(
-                    zt.flatten(1), g.flatten(1), dim=-1))
+                # ⛔ THE ONE SITE the goal distance is computed. `"cos"` IS the
+                # pre-2026-09-03 expression; `"chord"` is monotone-equivalent
+                # and NOT weight-neutral; `"ccos"` DOES re-rank (that is the
+                # point) and is not weight-neutral either -- see
+                # `COST_METRICS` / `W_KAPPA`.
+                z_ref = (_zero_action_ref(pred, z0)
+                         if cost_metric == "ccos" else None)
+                c = c + _goal_term(zt, g, cost_metric, z_ref)
             jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
-            c = c + 0.02 * jerk.pow(2).mean(-1)                    # comfort
-            c = c + 0.05 * controls[..., 1].pow(2).mean(-1)        # curvature
+            c = c + W_JERK * jerk.pow(2).mean(-1)                  # comfort
+            c = c + W_KAPPA * controls[..., 1].pow(2).mean(-1)     # curvature
             if target_speed is not None:
                 v_end = v0 + controls[..., 0].sum(-1) * pc.dt
-                c = c + 0.10 * (v_end - target_speed).pow(2)
+                c = c + W_VEND * (v_end - target_speed).pow(2)
             return c
 
         def cost_fn(controls: Tensor) -> Tensor:
@@ -2124,6 +2315,7 @@ class RefAV1(nn.Module):
         res.model_action_units = model_action_units
         res.cost_time_grid = cost_time_grid
         res.goal_time_grid = goal_time_grid
+        res.cost_metric = cost_metric
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the
