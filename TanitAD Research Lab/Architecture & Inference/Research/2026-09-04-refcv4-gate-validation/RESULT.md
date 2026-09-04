@@ -104,6 +104,22 @@ refined oracle lands near refcv3's. That is a real hypothesis. It is **not** dec
 from the anchor set, and it is **not** grounds to destroy 21.8 h of A40 before the first
 checkpoint can answer it.
 
+### ⛔ 1.3b And the quantity called "the fan's ceiling" is not the fan's ceiling
+
+`oracle_sel` picks `a_star` = the argmin over the **RAW anchor bank**
+(`refcv3_arm.py:1054`) and then reads **that anchor's refinement**. The true
+oracle over the emitted fan is `min` over all 128 **refined** trajectories, which is
+**≤ `oracle_sel` by definition**. So refcv3's real fan ceiling is *below* 0.3668 by an
+unmeasured amount, and "the fan's ceiling is below the bar" rests on an **upper bound
+on the ceiling**, not the ceiling. `refc.py:1454` records the quantity by name —
+*"the published oracle-in-fan (0.1914 base / 0.1640 XL)"*, `INHERITED` from a code
+comment, not re-verified here — and **0.1914 is well below `ha` = 0.2996**.
+
+⚠️ **There is no oracle-in-fan arm in the harness.** `oracle_in_fan`, `best_in_fan`
+and `fan_oracle` all return 0 matches in `taniteval/tools/refcv3_arm.py`. Building one
+is ~2 lines beside `:1051` (argmin over `out["anchor_traj"]` instead of over
+`anchors_bank`) and it is the instrument this whole argument has been missing.
+
 ### ⇒ 1.4 The gate that replaces it (mid-run, cheap, decisive)
 
 **At the first pulled checkpoint, score refcv4's `oracle_sel` on these same 4,823
@@ -122,7 +138,11 @@ was always about, and it is answerable from a checkpoint rather than from an anc
 | trainer | PID **2330189** + 6 workers — alive, A40 **42,669 / 46,068 MiB, 100 %** |
 | anchors installed | `sha256 68f81acf…a806b` — **identical** at `…/refcv4-b1-v72-40k/anchors.pt`, `/workspace/refc_anchors_6s_b1train_128.pt` and my local copy. This is the file I scored. |
 | `config.json` | `sel_accel_max 2.0` · `horizon_s 6.0` · `band_ms 12.0` · `tac_vocab_version "v7.0"` |
-| rate | step 300 @ `elapsed_s` 593.8 ⇒ **1.95 s/step** (Δelapsed/Δstep, NOT `step_s`) ⇒ **~21.8 h**, not 53 h |
+| rate | step 1150 @ `elapsed_s` 2372.1 ⇒ **2.059 s/step** over 1,100 steps (Δelapsed/Δstep, ⛔ NOT `step_s`); recent 250 steps **2.191** ⇒ **ETA ~23.8 h**, not 53 h |
+| health at 1150 | `tac_label_v7 1.0` · `goal_str 0.78825` · `anchor_acc 0.15` (chance 1/128 = 0.0078, so **19× chance**) |
+| ⭐ supervisor lock-fd trap | **CLEAN.** `sup_refcv4.sh` carries `200>&-` on the trainer (`:101`) **and on both `sleep`s** (`:131`, `:133`), and the `/proc/*/fd` scan names exactly **one** holder of `/workspace/.sup_refcv4.lock` — PID 2330171, the supervisor itself. Neither the trainer nor its six workers hold it, so a supervisor restart is possible without killing the run |
+| ⚠️ parity | `v2_parity.parity false`, `checked false`, `corpus_key null` — refcv4 is **non-parity like refcv3**. refcv4-vs-refcv3 is a valid arm delta (same `/root/data/train`); a LEVEL against `refc-base` is not |
+| route leak | **none.** `graft_lan` absent; `provenance_roles.refused_edges` names `lan -> inference (E12; label-only)` and `situation classifier output -> any goal node` |
 
 ---
 
@@ -206,6 +226,113 @@ too. Recorded, not patched — patching a live run is worse.
 
 ---
 
+## ⭐ 3.5 PRE-REGISTRATION FOR THE NEXT ARM — the deferred lever is worth more than the one that shipped
+
+The shipped vocabulary is **128 fixed ego-frame paths in absolute metres**; it is
+**not conditioned on the window's speed**, while `ha` is. The sibling deferred
+*"(accel, curvature) through `rollout_unicycle`"* to the next arm. That lever is
+priceable **now, zero GPU**, on the same 4,823 windows, through the programme's own
+integrator (`refa_v1_plan.unicycle_paths`, `action_units="kappa"`).
+
+⛔ **Control that must read a known value:** a **1-point** grid `{a=0, κ=0}` must
+reproduce `ha0`. It reads **0.672288** against the published **0.6723** — Δ **−1.2e-05**.
+
+| v0-conditioned (a, κ) grid over a ∈ [−4, 3] m/s², κ ∈ [−0.06, 0.06] 1/m | M | ADE | ALONG | LAT | paired vs `ha` |
+|---|---|---|---|---|---|
+| 13 × 9 | 117 | ⭐ **0.2572** | 0.1419 | 0.1703 | **−0.0424 [−0.0685, −0.0146] BEATS** |
+| 11 × 11 | 121 | **0.2610** | 0.1598 | 0.1567 | **−0.0386 [−0.0642, −0.0116] BEATS** |
+| 17 × 7 | 119 | 0.2666 | 0.1295 | 0.1930 | −0.0330 [−0.0634, +0.0022] tied |
+| 9 × 15 | 135 | 0.2759 | 0.1991 | 0.1361 | −0.0237 [−0.0491, +0.0025] tied |
+| 7 × 19 | 133 | 0.3487 | 0.2922 | 0.1257 | +0.0491 loses |
+| *(the SHIPPED fixed-path vocabulary, for scale)* | 128 | **0.3773** | 0.3041 | 0.1503 | **+0.0777 loses** |
+
+⇒ **At the SAME 128-candidate budget, a v0-conditioned kinematic vocabulary CLEARS
+0.2996 where the shipped fixed-path one does not** — same surface, same metric, both
+raw min-over-vocabulary, no model in either. The ordering is driven by **accel**
+resolution, i.e. the **along-track** axis, which is where 92.2 % of the deficit lives.
+
+⛔⛔ **A trap worth pinning: the vocabulary must contain the straight-ahead control
+EXACTLY.** My first grids used even counts, so `np.linspace(−0.06, 0.06, n)` omitted
+`κ = 0`. That alone read **1.2768 m** (LAT 1.1859) against **0.2608 m** for an
+otherwise-comparable grid containing zero — a **4.9×** difference that looks exactly
+like a resolution finding and is not one. Every grid in the table above contains
+`a = 0` and `κ = 0` exactly.
+
+⚠️ **Scope:** constant `(a, κ)` held for **2 s**, scored at 0–2 s, because that is
+where `ha` = 0.2996 was measured. The run plans **6 s**; a constant-control family
+will be weaker there and this does **not** transfer to the 6 s horizon unmeasured.
+
+## ⭐ 3.6 THE TINY RIG — the combined arm READS THE SCENE, and the gate proves it can fail
+
+**5 arms × 2,000 steps**, `--size tiny --episodes 48 --batch 12 --lr 1e-4 --warmup 250
+--seed 0`, dev-box RTX 4060, **sequential** (`OMP_NUM_THREADS=6`). ⛔ **Scored with the
+anti-echo gate, NOT with ADE.** The rig tree was built by overlaying **the POD's OWN
+`stack/`** (tar md5 `3c7ef7dc94c504fac79b42a3f4b62f61`, per-file md5 matched:
+`refc_v3_train.py` `bb97c5d3…`, `refc_v3.py` `3861a33b…`, `refc.py` `7b1f359b…`) so the
+rig runs **the bytes the A40 imports**, verified by `import tanitad; print(__file__)`.
+
+⚠️ **RIG SCOPE (H-SCALE-2):** 17 M params on the **NON-PARITY** local epcache
+(`physicalai-val-bb543bdf7836`), `tac_label_v7 = 0.0` (the epcache has no v7.2 labels,
+where the A40 has `1.0`). This validates the **design and the gate**, never a model claim.
+
+**The ladder — each rung adds ONE lever group** (⚠️ the tactical-aux `/2` is
+*unconditional* in this trainer, so it is HELD CONSTANT across all five, not tested):
+
+| arm | levers added |
+|---|---|
+| `A_v3` | — (incumbent) |
+| `B_ego` | `--ego-state-inject --ego-dropout 0.5` |
+| `C_anch` | + `--anchors <new> --sel-accel-max 2.0` |
+| **`D_full`** | + `--goal-str` — ⭐ **the LAUNCHED lever set** |
+| **`E_regress`** | + `--ablate-frames` — ⛔ **the deliberate regression (image-blind)** |
+
+### 3.6.1 ⭐ The verdict — GATE 2b, source ablation (scene ⊥ ego)
+
+n = **640 windows / 40 episodes**, manoeuvre census **189 straight / 451 non-straight**.
+
+| arm | scene used? | scene degradation | ego used? | ego degradation | **verdict** |
+|---|---|---|---|---|---|
+| `A_v3` | True | 0.1568 | False | 0.0000 | `IGNORES_EGO` — **correct by construction**, it has no ego input |
+| `B_ego` | True | 0.4247 | True | 0.1168 | `READS_BOTH` |
+| `C_anch` | True | 0.3621 | True | 0.1190 | `READS_BOTH` |
+| ⭐ **`D_full`** | **True** | ⭐ **0.6028** | True | 0.0661 | ⭐ **`READS_BOTH`** |
+| ⛔ **`E_regress`** | **False** | ⛔ **0.0000** | True | **2.4875** | ⛔ **`ECHOING`** |
+
+⭐⭐ **THE GATE IS ABLE TO FAIL, AND IT FAILS EXACTLY THE ARM IT MUST.** `E_regress` is
+the **only** arm called `ECHOING` (scene degradation **0.0000** against a required 0.05).
+Without that arm a PASS would mean nothing; with it, the PASS on `D_full` means something.
+
+⭐ **The five levers together INCREASE scene reading rather than degrading it.**
+`D_full`'s scene degradation **0.6028** is **1.42×** `B_ego`'s and **3.84×** `A_v3`'s —
+the highest of any arm. **No adverse lever interaction is visible at 2,000 steps.**
+
+### 3.6.2 ⛔ Two instrument findings the panel produced for free
+
+1. **`gate2` (ego intervention) reads `READS_BOTH` for the IMAGE-BLIND arm.** Only
+   `gate2b` (source ablation) catches it. ⇒ **`gate2` alone is not a gate** — a design
+   validated on it would pass an arm with literally no scene input.
+2. ⭐⭐ **The mission's warning reproduced in-panel: an ADE gate selects for the echo.**
+   On the composite gate's ADE clause (GATE 1, 6 s), the **image-blind** `E_regress` is
+   the **BEST** arm — relative margin **+0.0970 vs `ha`** — while every scene-reading arm
+   is **negative** (`D_full` −0.1221, `C_anch` −0.1476, `B_ego` −0.1384). **The arm that
+   reads nothing wins on ADE and loses on scene.** ⇒ GATE 1 raised for all four ego arms;
+   at 2,000 steps on a 17 M rung that is expected and is **not** the acceptance criterion.
+
+Controls, same windows: `constant_only` **6.4448 / 13.2513 / 20.3085** at 2/4/6 s (the
+no-information value, above every arm); `ha` 0.9922 / 5.7637 / 15.1481; `ha0` 1.9666 /
+7.3733 / 15.4740; `ha0_ext` 1.3290 / 6.0900 / 14.5494.
+
+### 3.6.3 ⚠️ Reported honestly: one arm died on the first pass, and it was probably my fault
+
+`C_anch` exited **rc 127 at step 300** on pass 1, with **no traceback** — its `.log` held
+only the 4 startup lines, so stdout was never flushed, which is the signature of a hard
+kill rather than a Python exception. **It coincides exactly (09:56–09:58) with a
+CPU-heavy probe I was running on the same 31.8 GB box**, so the leading hypothesis is
+self-inflicted host contention; I did **not** establish the cause and do not claim it.
+Re-run alone on pass 2: **rc 0, 2,000 steps, `ckpt.pt` 204,389,943 B**. All five arms in
+the table above carry a `summary.json` with `"done": true` and a checkpoint —
+**verified by content, not by the driver's exit code**, which is what caught this.
+
 ## 4. Deliverable manifest
 
 | artifact | where it lives |
@@ -213,7 +340,9 @@ too. Recorded, not patched — patching a live run is worse.
 | this report | `repo:TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-refcv4-gate-validation/RESULT.md` |
 | gate artifact (both vocabularies, controls, CI) | `repo:…/raw/REFCV4_ANCHOR_GATE.json` |
 | clamp + Kamm artifact | `repo:…/raw/ZERO_GPU_CHECKS.json` |
-| the two instruments | `repo:…/raw/scripts/gate_both.py`, `…/zero_gpu_checks.py` |
+| the instruments | `repo:…/raw/scripts/gate_both.py`, `…/zero_gpu_checks.py`, `…/gate_recompute.py`, `…/kinvocab_probe.py` |
+| kinematic-vocabulary pre-registration | `repo:…/raw/KINVOCAB_PROBE.json` |
+| tiny-rig gate report + panel + scorer | `repo:…/raw/rig/gate_report.json`, `…/rig/panel.sh`, `…/rig/gate_score.py`, `…/rig/arm_configs/*.json` — **and `devbox:C:\Users\Admin\run_refcv4v`** (the 5 checkpoints, ~1 GB, live in ONE place only and are rig-scope screening artifacts) |
 | refcv3's ACTUAL anchor bank, extracted from `ckpt_40284_FINAL.pt` | `repo:…/raw/refcv3_anchors.pt` (sha256 `b31a17f4…1412`) — was **checkpoint-only** before this |
 | tiny-rig panel + arms | `devbox:C:\Users\Admin\run_refcv4v` — see §5 |
 
@@ -226,4 +355,20 @@ too. Recorded, not patched — patching a live run is worse.
    not merely a zero-mass one.
 3. ⚠️ **refcv4 loses the "a sharp turn exists in every window" property** refcv3 had
    (§3.1). Cheap fix if wanted: k-medoid + a turn-coverage constraint at rebuild.
-4. **ETA is ~21.8 h, not ~53 h** (MEASURED at step 300).
+4. **ETA is ~23.8 h, not ~53 h** (MEASURED over 1,100 steps).
+5. ⭐ **The deferred `(accel, curvature)` lever beats the one that shipped** (§3.5) — a
+   v0-conditioned vocabulary of the same budget clears 0.2996 where the fixed-path one
+   does not. That is the next arm, and it is now pre-registered with both outcomes.
+6. ⛔ **`gate2` alone is not a gate** (§3.6.2) — it passes an image-blind arm. Any design
+   validated on the ego-intervention probe without the source ablation must be re-read.
+7. ⚠️ **A 0-byte `.git/index.lock` (created 2026-09-04 09:52:44) is blocking every
+   agent's `git add`** — my own staging loop hit it and silently no-opped for ten
+   attempts because the error went to stderr. The only live `git.exe` is a **hung
+   `git grep` from 07:54:57** (PID 24768). I did **not** clear the lock: the memory
+   `git-index-corruption-on-gdrive` records index corruption from removing a lock while
+   an orphaned git process lived, and that risk is the whole programme's, not mine to
+   take. `mm_commit.py` is unaffected (private index), which is how this landed.
+8. ⚠️ **`mm_commit.py` must be run FROM THE REPO ROOT and with a private `TEMP`.** Three
+   attempts failed: from another cwd `git hash-object` cannot open the work-tree paths,
+   and with the shared `%TEMP%` `read-tree` failed 8/8 on `Unable to create <scratch>`.
+   Repo-root cwd + `TEMP`/`TMP` pointed at a session-private directory committed first try.
