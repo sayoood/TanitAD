@@ -138,6 +138,19 @@ be re-labelled wherever it is quoted**: it is a *pin on the wiring*, not a findi
 
 ### 1.5 What the live run actually trains — three facts, each verified in two files
 
+> ⚠️ **SCOPE NOTE (Master Mind, 2026-09-04, added at integration).** This audit ran
+> for ~16 h and began **before** `refcv4b-b1-v72-40k` was launched. **"The live run" in
+> this section is `refcv3-b1-v72-30k`**, the arm training when the audit started. The
+> three facts below are TRUE OF refcv3 and are the reason its strategic level was never
+> supervised (`D-REFCV3-GSTR1`). They are **NOT true of refcv4b**, MEASURED from that
+> run's own `config.json['argv']` and `/proc/<pid>/cmdline` on the pod:
+> `--nav-from-v7` **ON** (config key `nav_from_v7: true`) · `--goal-str` **ON** ·
+> `--ego-state-inject` **ON** (`ego.ego_state_inject: true`, `ego_valid_channel: true`,
+> `ego_dropout: 0.5`). ⇒ **E20 is already satisfied in refcv4b**; the remaining six
+> edges of §2.2 are the delta *from refcv4b*, not from refcv3. A doc that says "the
+> live run" without naming it is the *true-but-wrong-for-the-reader* class: every number
+> here is correct and the natural reading of it is not.
+
 Flag list is exactly `--arm hier --size base --v2-cache --v7-labels --eval-cache --eval-labels
 --eval-every --eval-batches --image-hw --steps --batch --workers --v2-lru --lr --warmup --seed
 --log-every --save-every --out`.
