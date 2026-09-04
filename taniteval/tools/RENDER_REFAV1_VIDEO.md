@@ -37,6 +37,36 @@ cannot carry it.
 
 ---
 
+## 1a. ⭐ THE DELIVERED REELS (2026-09-04)
+
+Two reels, from the same checkpoint and the same planner config, differing ONLY
+in the replan stride. Both were verified by **decoding them back** — container
+metadata *and* a real full-packet decode — never by ffmpeg's exit code
+(`taniteval/tools/verify_mp4.py`), and each ships as a pair because the delivery
+channel refuses anything at or over **30 MiB**.
+
+| reel | clips | replan | frames / duration | full | small (1280 px) | decode |
+|---|---|---|---|---|---|---|
+| **`refav1_reel_step21109_dense4`** | 4 | every **0.8 s** (stride 4) | 852 / **85.20 s** | 22.42 MiB | 3.20 MiB | 852 frames, clean, both |
+| `refav1_reel_step21109_eval8` | 8 | every 8 s (stride 40 — the eval's own grid) | 444 / 44.40 s | 8.18 MiB | 1.53 MiB | 444 frames, clean, both |
+
+**Why two.** The 141-clip EVAL dump is `--window-stride 40`: one plan every 8 s,
+so a reel built on it shows ~2.2 s of each clip before the plan has nothing left
+to draw (the renderer SKIPS and COUNTS those frames — 480 of them). It covers all
+eight clips and is the companion. The dense reel re-rolls four of the same clips
+at stride 4, where **no frame is ever skipped**, and is the one to watch.
+
+⭐ **The dense reel is also an independent check of the headline at a different
+stride and on a deliberately harder clip set.** Its four clips carry GT lateral
+> 0.5 m on **48/84 = 57 %** of windows (30 of them > 2.0 m, max 7.26 m) — far more
+lateral demand than the full split — and the planner still emits **κ identically
+zero on 84/84 = 1.0000** of windows, constant acceleration on 84/84, and the same
+**two** distinct accelerations (`a = 0` on 74, `a = −1.5` on 10). `cl` is
+bit-identical to `ha0` on **74/84 = 0.8810**. Denser sampling on harder roads
+does not find a single steering command.
+
+---
+
 ## 2. The panels
 
 | # | panel | what is drawn | source |
