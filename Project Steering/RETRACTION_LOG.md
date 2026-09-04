@@ -11568,3 +11568,171 @@ margin exactly 0.0000 on every metric in every family. That finding is **categor
 statistical**: it does not depend on n at all, and 120/120 is as decisive as 4,823/4,823
 would be. The cross-model read is VOID because the instrument saw the baseline rather than
 the model — which remains the sharpest result of the night.
+
+---
+
+## 2026-09-04 — REF-C v4 (E-REFC-V4): three corrections that shipped WITH the change
+
+*Package: `TanitAD Research Lab/Architecture & Inference/Research/
+2026-09-03-refc-v4-design/`. Hypotheses H-ECHO-1..7 in `GOALS_AND_CLAIMS.md`.*
+
+### 1. ⛔⛔ AN INTERVENTIONAL PROBE CANNOT DETECT AN ECHO — it measures WIRING, and echoing is about USE
+
+**Retracted:** that `ego_intervention_test`'s `scene -> goal` direction
+establishes an arm reads the scene.
+
+**MEASURED 2026-09-03:** the deliberate-regression arm — REF-C v4 trained with
+the observed window replaced by a **constant**, i.e. an echo *by construction* —
+**PASSED** that probe. Perturbing `frames` moved every goal node. Of course it
+did: the encoder is a live function of its input, so `frames -> goal` is a live
+forward path in **any** model with a non-degenerate trunk, **including one that
+has learned to ignore the scene completely**.
+
+**Root-cause class: THE CONVERSE OF THE FINDING `goal_provenance` WAS BUILT ON.**
+That module exists because *"a detached wire carries the full signal and zero
+gradient"* — a gradient probe certifies a leaking wire clean. Read in the other
+direction: **a live wire can carry zero useful signal.** An interventional probe
+is NECESSARY (it catches a severed wire and a future leak) and it is **NOT
+SUFFICIENT** (it cannot catch an ignored one).
+
+⇒ **The fix, and it is functional rather than structural:** hand the model the
+**WRONG** scene while holding ego correct and ask whether its ERROR rises
+(`echo_gate.source_ablation_test`). A model that reads the scene is hurt by the
+wrong scene; a model that echoes is not. `assert_not_echoing(gate2b=None)` now
+returns a verdict explicitly marked `STRUCTURAL_ONLY` and **is not an anti-echo
+pass.** ⚠️ Generalise it: for any "does the model use X?" question, a probe that
+perturbs X and watches the output move answers *"is X wired?"*, not *"is X
+used?"* — and the two come apart exactly where the interesting failures live.
+
+### 2. `ha0_ext` = 0.4476 m @ 2 s → **0.4449 m**; 4.5912 → **4.4652** @ 6 s
+
+**Retracted:** the corpus-echo figures first recorded in `echo_gate.py` and
+`refc_v3.py` (+36.42 % / +14.26 % over `ha0`).
+
+**MEASURED 2026-09-04**, same instrument, same 40 val episodes, same window
+counts (1,041 @ 2 s / 801 @ 6 s), banked at `.../raw/census_val40.json`: `ha0`
+reproduces **exactly** (0.70402 / 5.35474) while `ha0_ext` reads **0.44492 /
+4.46515** (+36.80 % / +16.61 %). Mechanism: the **deceleration stop clamp**
+(`tau` clamped at `-v0/a0`, so the vehicle stops instead of reversing) landed
+*after* that first measurement; it can only lower the error, and it lowered both
+cells.
+
+**Root-cause class: A DERIVED CONSTANT RE-MEASURED AFTER ITS INPUT CHANGED**
+(the `HORIZON = round(6.0*10.0/STRIDE)` family in `CLAUDE.md`). Cost here was
+nil because the number had not yet decided anything — which is the whole reason
+to re-run the census before quoting it. ⇒ **The banked artifact, never the
+docstring, is the source**; docstrings were corrected in the same commit.
+
+### 3. `refc.py`'s docstring laundered an unswept hyper-parameter as inherited practice
+
+**Retracted:** *"The rest of the TCP-C stack is KEPT verbatim: … the measurement
+encoder **with per-sample ego-dropout** …"*.
+
+The **encoder** is TCP's (FC-128 x 2, bit-for-bit `MeasurementConfig`). The
+**dropout is not**: *"dropout"* occurs **ZERO** times in arXiv 2206.08129 — two
+probes, a full-text search for `dropout|drop out|mask` and TCP's own layer
+table, which lists the measurement encoder with no regulariser. `ego_dropout =
+0.5` is a **TanitAD invention that nobody, upstream or here, has ever swept**;
+the two published planners that DID sweep it landed on **0.5** (DRAMA, NAVSIM
+PDMS 0.835 -> 0.848) and **0.75** (PlanTF, nuPlan closed-loop, at a measured
+**-1.48 OLS**).
+
+**Root-cause class: A TRUE STATEMENT ABOUT ONE COMPONENT EXTENDED OVER A
+NEIGHBOUR IT NEVER COVERED** — the same shape as the registry's un-refined-anchor
+correction, and a sibling of [[true but wrong for the reader]]: a reader infers
+"validated upstream, do not touch", which is the opposite of the truth. ⚠️ It is
+not a cosmetic knob either: with `ego_valid_channel = False` a withheld speed is
+byte-identical to a genuine standstill (**22.5 : 1** withheld-vs-genuine at
+train against **100 %** genuine at eval), so the unswept rate sits directly on
+top of the X15 defect.
+
+### 4. ⚠️ (not a retraction — an instrument gap closed) the trainer DROPPED its own anti-echo readout
+
+`RefCV3Model` computed `echo_ratio`, `echo_base_absmean` and
+`g_tac_delta_absmean` on every forward and `refc_v3_train.py` never wrote them
+to `metrics.jsonl`. The design's own promise — *"is it echoing? is read off the
+LOG rather than inferred from an eval three days later"* — was **not kept by the
+code that writes the log**. Same class as the `tac_label_v7` drop already
+recorded in that file: **a diagnostic that does not survive to the log is not a
+diagnostic.**
+
+### 5. *"`a_long = 0` is the MODE of the distribution"* — REFUTED by our own census
+
+**Retracted:** the X15 raise message in `refc_v3.py` (and the first draft of the
+v4 pre-registration) justified `ego_valid_channel` partly with *"`a_long = 0` is
+the MODE of the distribution"*.
+
+**MEASURED 2026-09-04**, val epcache, 40 ep / 7,963 frames
+(`.../2026-09-03-refc-v4-design/raw/census_val40.json`): `a_long` is **non-zero
+on 100.0 %** of the sample. It is never exactly zero at all.
+
+⭐ **The X15 argument survives and is SHARPER once stated per channel**, because
+the mechanism is genuinely different for each:
+
+| channel | exactly 0.0 | why a withheld 0 is still a lie |
+|---|---|---|
+| `v0` | 4.4531 % of train windows / **11.00 % of val frames** | indistinguishable from a genuine standstill |
+| `curvature` | **0.387 %** of val frames | indistinguishable from a genuinely straight wheel |
+| `a_long` | **0.000 %** | out of distribution as an exact value, yet at the CENTRE of the density (mean -0.1607, std 0.9312) — it reads as an ordinary cruise, so the model cannot tell "no reading" from "not accelerating" |
+
+**Root-cause class: C4 — INHERITED WITHOUT RE-VERIFICATION, in the specific
+costume of a plausibility standing where a measurement was one command away.**
+The sentence was written to justify a design decision *in the same file as the
+decision*, which is exactly where a claim feels safest and gets checked least.
+⚠️ Note what it did NOT do: it did not change the decision. `ego_valid_channel`
+is still a precondition; only the reason for one of the four channels was wrong.
+That is the dangerous shape — **a wrong premise under a right conclusion
+survives review, because the conclusion keeps testing true.**
+
+⭐ **And the load-bearing half got a SECOND PROBE rather than a re-read.** The
+4.4531 % figure is INHERITED here (a sibling package measured it over 781,635
+TRAIN windows) and it decides a design constraint, so it was re-measured on a
+different split with a different unit (`raw/zero_probe_val40.json`, 100 val
+episodes / 19,900 frames). ⚠️ The two `v0` rates differ 2.5x and are **not the
+same quantity** — per-window-at-t0 over train vs per-frame over val — so
+reporting them as agreeing would itself be the `df`/`step_s` scope error. What
+reproduces is the structural fact the argument actually needs: **a hard atom at
+exactly zero, 13x the neighbouring bin in the sibling sample and 12.63x here.**
+
+# 2026-09-04 (#18) — "the nav is ORACLE-derived and will not exist at deployment" (mine, a framing error)
+
+**Retracted by the PI.** Verbatim: *"please consider, the fed nav commands are at the
+same time ground truth, they were validated, we dont have better information"*.
+
+I had stamped the v7.2 nav command **"oracle-derived, optimistic by construction, will
+not exist at deployment"** and instructed streams to treat **`os_navzero` as "the
+deployment-relevant arm"** and to make refcv4 "degrade gracefully" without nav. That
+framing is wrong, and it reached the HF model card, the eval reports and three live
+agent briefs.
+
+**Root-cause class: TWO DIFFERENT THINGS COLLAPSED UNDER ONE WORD — "derived from the
+future".** They are not the same:
+
+| | admissible? | why |
+|---|---|---|
+| **ego-future leakage** — the car's own future trajectory, speeds, actions, poses | ⛔ NO | the model would be reading the answer it is asked to predict |
+| **a route / nav command** | ✅ **YES** | it is what a MAP ROUTER supplies at deployment — *"turn left at the next junction"*. Every real AD system has one |
+
+Our nav LABEL happens to be derived from the ego's future path **because PhysicalAI-AV
+ships no map** (settled at five probes: no map, lane graph, junction annotation or route
+signal; `egomotion` carries no lat/lon/GNSS). But the *derivation* being future-based
+does not make the *signal* inadmissible — it makes it a **stand-in for a router we do
+not have in this corpus**. It was validated, and there is no better source.
+
+⇒ **`os` (nav fed) is the deployment-relevant arm. `os_navzero` is a ROBUSTNESS
+ABLATION, not the honest number.** On the 40,284 read that flips which figure leads:
+`os` **0.4419** m, not `os_navzero` **0.4659** m. ⚠️ It does NOT change the headline —
+`os` still loses to hold-action at 0.2996 m — but it removes a hedge that was
+mis-shaping the refcv4 design.
+
+⭐ **What this UNBLOCKS.** I had been designing refcv4 to work *without* nav. It should
+instead consume nav as a first-class input **in all three layers**, which is exactly the
+PI's WP-3. The current defect is that nav reaches only the measurement encoder
+(`refc.py:2096-2098`) and neither decision head (`:2101` route head reads `pooled`;
+`:2110` tactical head reads `pooled` with `tactical_speed_input = False`).
+
+⚠️ **The one nuance that survives, and it is a comparability point, not an admissibility
+one:** because ours is derived from the ego's own future, it is **noiseless and perfectly
+timed**, where a real router is coarser and sometimes wrong. So when comparing against
+published numbers or claiming a deployment figure, state that our route signal is a
+CLEAN version of the deployment one — never that it is absent.
