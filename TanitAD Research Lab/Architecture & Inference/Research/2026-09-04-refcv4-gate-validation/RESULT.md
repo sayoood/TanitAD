@@ -361,13 +361,17 @@ the table above carry a `summary.json` with `"done": true` and a checkpoint —
    does not. That is the next arm, and it is now pre-registered with both outcomes.
 6. ⛔ **`gate2` alone is not a gate** (§3.6.2) — it passes an image-blind arm. Any design
    validated on the ego-intervention probe without the source ablation must be re-read.
-7. ⚠️ **A 0-byte `.git/index.lock` (created 2026-09-04 09:52:44) is blocking every
-   agent's `git add`** — my own staging loop hit it and silently no-opped for ten
-   attempts because the error went to stderr. The only live `git.exe` is a **hung
-   `git grep` from 07:54:57** (PID 24768). I did **not** clear the lock: the memory
-   `git-index-corruption-on-gdrive` records index corruption from removing a lock while
-   an orphaned git process lived, and that risk is the whole programme's, not mine to
-   take. `mm_commit.py` is unaffected (private index), which is how this landed.
+7. ⚠️ **RESOLVED BY 11:20, RECORDED BECAUSE THE FAILURE MODE IS INVISIBLE.** A 0-byte
+   `.git/index.lock` (created 09:52:44) blocked every agent's `git add` for ~90 minutes.
+   ⛔ **`git add` returned exit 0 and staged nothing** — the *"Another git process seems
+   to be running"* message goes to **stderr**, so my `git add … 2>&1 | Out-Null` loop
+   reported ten clean passes while the index never moved. The check that caught it was a
+   **blob comparison against the index** (`git ls-files --stage` vs `git cat-file blob`),
+   not the exit code, and the fresh-inode un-poison did **not** help because the file was
+   never the problem. I did **not** clear the lock (memory `git-index-corruption-on-gdrive`
+   records corruption from removing a lock while an orphaned git process lived, and a
+   **hung `git grep` from 07:54:57, PID 24768, is still alive**); it cleared on its own.
+   `mm_commit.py` is unaffected — private index — which is how this landed.
 8. ⚠️ **`mm_commit.py` must be run FROM THE REPO ROOT and with a private `TEMP`.** Three
    attempts failed: from another cwd `git hash-object` cannot open the work-tree paths,
    and with the shared `%TEMP%` `read-tree` failed 8/8 on `Unable to create <scratch>`.
