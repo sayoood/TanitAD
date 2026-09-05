@@ -1,0 +1,46 @@
+{
+ "s40": "C:/Users/Admin/refav1_drive/logits_stride40.npz",
+ "s5": "C:/Users/Admin/refav1_drive/logits_stride5.npz",
+ "n_s40": 282,
+ "n_s5": 1974,
+ "n_found_in_s5": 282,
+ "coverage": 1.0,
+ "checks": {
+  "lat_logits_bit_identical": {
+   "ok": true,
+   "max_abs_diff": 0.0
+  },
+  "lon_logits_bit_identical": {
+   "ok": true,
+   "max_abs_diff": 0.0
+  },
+  "route_logits_bit_identical": {
+   "ok": true,
+   "max_abs_diff": 0.0
+  },
+  "v0_identical": {
+   "ok": true,
+   "n": 282
+  },
+  "lat_label_identical": {
+   "ok": true,
+   "n": 282
+  },
+  "nav_cmd_identical": {
+   "ok": true,
+   "n": 282
+  },
+  "argmax_identical": {
+   "ok": true,
+   "n": 282
+  },
+  "CONTROL_shifted_join_is_NOT_identical": {
+   "ok": true,
+   "argmax_agreement_when_shifted": 0.9539007092198581,
+   "note": "must be False/low, else the join proves nothing"
+  }
+ },
+ "PASS": true,
+ "failed_checks": [],
+ "verdict": "the stride-5 panel is ANCHORED: it reproduces the assert-dump-controlled stride-40 extraction exactly on every shared window"
+}
