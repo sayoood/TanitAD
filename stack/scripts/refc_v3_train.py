@@ -88,6 +88,8 @@ from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
 from tanitad.refs import refc_agents as _refc_agents  # noqa: E402
 from tanitad.models import kinematic as kin  # noqa: E402
+from tanitad.models import agent_slots as _agent_slots  # noqa: E402
+import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
 #: tactical goal regression (E8) — sized with the route/maneuver aux family;
@@ -303,6 +305,16 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "would read as 'agent tokens do not help' — a REFUTATION "
                 "manufactured by a missing loss. Pass --w-agent > 0, or use "
                 "--agents oracle (which needs no detector loss).")
+        if args.agents == "head" and not getattr(args, "agent_join", None):
+            raise SystemExit(
+                "[v3] ⛔ --agents head without --agent-join has NO LABELS. "
+                "The detector would be shaped only by the planner loss "
+                "through its token gate and the arm would read as 'the "
+                "learned agent head does not help' -- a REFUTATION "
+                "manufactured by missing supervision. This fires HERE, before "
+                "the GPU, rather than at the first batch. Pass --agent-join "
+                "(HF Sayood/tanitad-ph0-aug120 -> "
+                "joins/train2400_agents.jsonl.xz), or --agents oracle.")
 
 
 # ============================================================================
@@ -379,6 +391,17 @@ class V3Dataset(RouteV21Dataset):
     v7_manifest = None
     _nav_by_sid: dict | None = None
     nav_from_v7_stats: dict | None = None
+    #: ``obstacle.offline`` agent join (refcv5 WP-6 / ``E-AGT-HEAD``), set by
+    #: :meth:`enable_agent_join`. While it is None the batch carries NO
+    #: ``agent_box`` and ``--w-agent > 0`` REFUSES in ``compute_losses_v3`` --
+    #: which is the guard that caught an arm training no detector at all.
+    agent_join = None
+    #: ``n_pad`` for the padded target block. 0 = the reader's own MEASURED
+    #: ``max_agents_per_frame``, so nothing is truncated before ``match_slots``
+    #: applies its own counted nearest-N policy. Fixing it here instead would
+    #: hide drops the loss is supposed to report.
+    agent_pad: int = 0
+    agent_join_stats: dict | None = None
 
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
@@ -447,6 +470,170 @@ class V3Dataset(RouteV21Dataset):
               f"(of {n} clips; md5={manifest.md5})", flush=True)
         return self.nav_from_v7_stats
 
+    # ---- refcv5 WP-6: obstacle.offline -> the batch ---------------------
+    def enable_agent_join(self, reader, pad: int = 0,
+                          allow_legacy_ids: bool = False) -> dict:
+        """Attach the ``obstacle.offline`` join so ``__getitem__`` emits the
+        ``agent_*`` target block ``compute_losses_v3`` consumes.
+
+        ``reader`` is a ``train_p8_occupancy.JoinFileReader`` -- the SAME
+        reader ``build_obstacle_join.py``'s output was verified through. No
+        second label path is built here; this method is a join and a census.
+
+        WHAT IT REFUSES, AND WHY EACH REFUSAL EXISTS
+        --------------------------------------------
+        * **Zero joined clips** -- the wrong join for this corpus. The same
+          shape as ``--nav-from-v7``'s "joined ZERO of N clips": a flag that
+          silently supervises nothing is worse than a crash.
+        * **Only LEGACY-id matches** -- ``JoinFileReader`` accepts the 63-bit
+          stable id AND the legacy 16-bit (first-4-BYTES-of-the-clip-id) key.
+          The legacy key COLLIDES (MEASURED on this join: 34 of 2,308 clips
+          share a prefix), so an episode that is NOT in the join can still
+          match one that is, and the head would then be trained on ANOTHER
+          CLIP'S agents while every count looked healthy. That is a label
+          corruption no downstream metric could attribute, so it must be asked
+          for BY NAME (``allow_legacy_ids=True``) and it is stamped into
+          config.json.
+
+        Returns the stats that go into config.json -- including the NOW-frame
+        label coverage over this dataset's OWN window index, which is the
+        number that decides how much supervision the run actually gets, and is
+        NOT the same as clip coverage.
+        """
+        eps_ids = [int(e.episode_id) for e in self.episodes]
+        n_stable = sum(1 for i in eps_ids if i in reader._clip_of_uid)
+        n_legacy = sum(1 for i in eps_ids
+                       if i not in reader._clip_of_uid
+                       and i in reader._clip_of_legacy)
+        n_ambig = len(reader._ambiguous_legacy)
+        if (n_stable + n_legacy) == 0:
+            raise SystemExit(
+                f"[v3] REFUSING: the agent join covers ZERO of "
+                f"{len(eps_ids)} episodes ({reader.path}). That is the wrong "
+                f"join for this corpus -- a run would stamp the flag and "
+                f"train no detector.")
+        if n_stable == 0 and not allow_legacy_ids:
+            raise SystemExit(
+                f"[v3] REFUSING: the agent join matches this corpus ONLY "
+                f"through the LEGACY 16-bit episode id ({n_legacy}/"
+                f"{len(eps_ids)} episodes; {n_ambig} ids are ambiguous WITHIN "
+                f"the join itself). That key is the first 4 BYTES of the clip "
+                f"id and collides, so an episode absent from the join can "
+                f"match a different clip that is present, and the detector "
+                f"would train on another clip's agents. Pass "
+                f"--agent-join-allow-legacy-ids to accept that risk by name "
+                f"(it is stamped into config.json), or use a v2 cache whose "
+                f"providers carry stable ids.")
+
+        self.agent_join = reader
+        self.agent_pad = int(pad or reader.max_agents_per_frame)
+        if self.agent_pad <= 0:
+            raise SystemExit("[v3] REFUSING: the agent join carries no agents "
+                             "at all (max_agents_per_frame == 0).")
+
+        # NOW-frame coverage over THIS dataset's own window index. Clip
+        # coverage is not supervision coverage: the join's label span ends
+        # ~20 s in, and a window whose NOW frame is past it is NO_LABEL.
+        w = self.window
+        n_lab = n_clear = 0
+        n_boxes = 0
+        for e_i, t in self.index:
+            ep = self.episodes[e_i]
+            ag = reader.lookup(int(ep.episode_id), t + w - 1)
+            if ag is None:
+                continue
+            n_lab += 1
+            n_boxes += int(ag.shape[0])
+            if ag.shape[0] == 0:
+                n_clear += 1
+        n_win = len(self.index)
+        self.agent_join_stats = {
+            "path": str(reader.path),
+            "n_episodes": len(eps_ids),
+            "n_episodes_joined_stable_id": n_stable,
+            "n_episodes_joined_legacy_id": n_legacy,
+            "n_ambiguous_legacy_ids_in_join": n_ambig,
+            "id_space": ("stable-63bit" if n_legacy == 0 else
+                         ("mixed" if n_stable else "legacy-16bit-COLLIDING")),
+            "allow_legacy_ids": bool(allow_legacy_ids),
+            "n_windows": n_win,
+            "n_windows_labelled": n_lab,
+            "frac_windows_labelled": round(n_lab / max(n_win, 1), 4),
+            "n_windows_labelled_clear": n_clear,
+            "n_target_boxes_prefilter": n_boxes,
+            "agent_pad": int(self.agent_pad),
+            "reader_max_agents_per_frame": int(reader.max_agents_per_frame),
+            "reader_n_records": int(reader.n_records),
+            "reader_n_clips": int(reader.n_clips),
+            "reader_has_classes": bool(reader.has_classes),
+            "reader_has_occlusion_flags": bool(reader.has_occlusion_flags),
+            "reader_with_rates": bool(getattr(reader, "with_rates", False)),
+        }
+        if n_lab == 0:
+            raise SystemExit(
+                f"[v3] REFUSING: the agent join covers "
+                f"{n_stable + n_legacy}/{len(eps_ids)} episodes but ZERO of "
+                f"{n_win} window NOW-frames. Every window would be NO_LABEL "
+                f"and the detection loss would never be computed -- the "
+                f"silent-skip failure with the labels present.")
+        print("[v3] agent join: %d/%d episodes (%s), %d/%d windows labelled "
+              "(%.1f %%), %d prefilter target boxes, pad %d"
+              % (n_stable + n_legacy, len(eps_ids),
+                 self.agent_join_stats["id_space"], n_lab, n_win,
+                 100.0 * n_lab / max(n_win, 1), n_boxes, self.agent_pad),
+              flush=True)
+        return self.agent_join_stats
+
+    def _agent_item(self, ep, f: int) -> dict:
+        """The padded target block for ONE window, at its NOW frame ``f``.
+
+        NO_LABEL and LABELLED-CLEAR are DIFFERENT STATES and are emitted
+        differently: both carry ``valid`` all-False, but ``agent_label`` is
+        False for NO_LABEL and True for labelled-clear. Collapsing them would
+        train the head that an unlabelled frame is an empty road -- the
+        ``"no agents"`` defect the join doc calls out by name.
+
+        Targets are emitted RAW (no visibility filter here). The filter lives
+        in ``refc_agents.agent_losses`` where it can be turned OFF by name for
+        the deliberate-regression arm; filtering at the dataset would delete
+        that control.
+        """
+        r = self.agent_join
+        eid = int(ep.episode_id)
+        pad = int(self.agent_pad)
+        ag = r.lookup(eid, int(f))
+        has = ag is not None
+        if not has:
+            ag = _np.zeros((0, 6), dtype=_np.float64)
+            cls = rates = rmask = None
+        else:
+            cls = r.lookup_classes(eid, int(f))
+            rr = r.lookup_rates(eid, int(f))
+            rates, rmask = (rr if rr is not None else (None, None))
+        n_raw = int(ag.shape[0])
+        if n_raw > pad:
+            # Should be impossible when pad came from the reader's own
+            # measured max; kept as a COUNTED nearest-N truncation rather than
+            # an exception so a caller-supplied --agent-pad degrades the way
+            # match_slots does, visibly.
+            order = _np.argsort(_np.hypot(ag[:, 0], ag[:, 1]))[:pad]
+            ag = ag[order]
+            if cls is not None:
+                cls = _np.asarray(cls)[order]
+            if rates is not None:
+                rates, rmask = _np.asarray(rates)[order], \
+                    _np.asarray(rmask)[order]
+        t = _agent_slots.targets_from_join(ag, classes=cls, rates=rates,
+                                           rates_mask=rmask, n_pad=pad)
+        return {"agent_box": t["box"][0], "agent_yaw": t["yaw"][0],
+                "agent_cls": t["cls"][0], "agent_valid": t["valid"][0],
+                "agent_occ": t["occ"][0], "agent_rates": t["rates"][0],
+                "agent_rates_mask": t["rates_mask"][0],
+                "agent_label": torch.tensor(bool(has)),
+                "agent_n_raw": torch.tensor(int(n_raw), dtype=torch.long),
+                "agent_n_truncated": torch.tensor(max(n_raw - pad, 0),
+                                                  dtype=torch.long)}
+
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
         e_i, t = self.index[i]
@@ -492,6 +679,12 @@ class V3Dataset(RouteV21Dataset):
             else:
                 item["nav_cmd"] = torch.tensor(nav_idx, dtype=torch.long)
                 item["nav_valid"] = torch.tensor(True)
+        # ---- refcv5 WP-6: the obstacle.offline target block ---------------
+        # The window's NOW is the last OBSERVED frame -- the same t + w - 1
+        # the v7.2 tactical labels above are read at, so the detector and the
+        # tactical heads are supervised at ONE instant, not two.
+        if self.agent_join is not None:
+            item.update(self._agent_item(ep, t + w - 1))
         return item
 
 
@@ -931,7 +1124,36 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                   "rates_mask": batch.get(
                       "agent_rates_mask",
                       torch.zeros_like(batch["agent_valid"])).to(device)}
-        ag = _refc_agents.agent_losses(out["agent_slots"], tgt_ag,
+        # ⛔⛔ NO_LABEL IS NOT "LABELLED CLEAR", AND THE DIFFERENCE IS A
+        # HALLUCINATION EITHER WAY ROUND. An absent (clip, frame) line means
+        # the join says NOTHING about that frame (the label span ends ~20 s
+        # in); an EMPTY agents list means the road really was clear. Scoring
+        # the first as the second trains the presence head to say "empty" on
+        # frames full of cars -- the `"no agents"` defect the join doc names.
+        # `agent_label` carries the distinction from the dataset and the rows
+        # are SELECTED here, so the DETR set loss never sees a NO_LABEL frame.
+        keep_ag = batch.get("agent_label")
+        n_lab = (int(keep_ag.sum()) if keep_ag is not None
+                 else int(batch["agent_valid"].shape[0]))
+        extra["agent_n_windows"] = float(batch["agent_valid"].shape[0])
+        extra["agent_n_labelled"] = float(n_lab)
+        if keep_ag is not None and n_lab:
+            sel = keep_ag.to(device).nonzero(as_tuple=False).flatten()
+            tgt_ag = {k: v.index_select(0, sel) for k, v in tgt_ag.items()}
+            slots_ag = {k: (v.index_select(0, sel)
+                            if torch.is_tensor(v) and v.shape[:1] ==
+                            keep_ag.shape[:1] else v)
+                        for k, v in out["agent_slots"].items()}
+        else:
+            slots_ag = out["agent_slots"]
+        if "agent_n_raw" in batch:
+            extra["agent_n_raw"] = float(batch["agent_n_raw"].sum())
+        if "agent_n_truncated" in batch:
+            extra["agent_n_truncated"] = float(
+                batch["agent_n_truncated"].sum())
+    if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch \
+            and n_lab > 0:
+        ag = _refc_agents.agent_losses(slots_ag, tgt_ag,
                                        core.agents,
                                        cam=getattr(model, "_rig_camera", None))
         loss = loss + w_agent * ag["total"]
@@ -1666,6 +1888,26 @@ def train(args) -> dict:
         # (MEASURED, nav-source-agreement package); the two agree on 65.5 %.
         if nav_on:
             nav_stats = ds.enable_nav_from_v7(manifest)
+    # ---- refcv5 WP-6: the obstacle.offline join (E-AGT-HEAD labels) -------
+    # ⛔ The reader is RESTRICTED to this corpus's episode ids. The full train
+    # join is 433,040 records / 12.1 M boxes and costs ~2.1 GB RSS (MEASURED
+    # 2026-09-05); a tiny rig must not pay that, and a run must not silently
+    # hold a corpus it is not training on.
+    agent_stats = eval_agent_stats = None
+    if getattr(args, "agent_join", None):
+        from train_p8_occupancy import JoinFileReader
+        _t_join = time.time()
+        _rd = JoinFileReader(
+            args.agent_join,
+            episode_ids={int(e.episode_id) for e in eps},
+            with_rates=not bool(getattr(args, "agent_join_no_rates", False)))
+        print(f"[v3] agent join loaded: {_rd.n_records} records / "
+              f"{_rd.n_clips} clips (filtered out "
+              f"{_rd.n_records_filtered_out}) in {time.time() - _t_join:.1f} s")
+        agent_stats = ds.enable_agent_join(
+            _rd, pad=int(getattr(args, "agent_pad", 0)),
+            allow_legacy_ids=bool(getattr(
+                args, "agent_join_allow_legacy_ids", False)))
     # launch-line P4: the run PRINTS its episode/window counts at start — the
     # only way a parity claim about the enumeration is checkable from the log.
     print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
@@ -1703,6 +1945,19 @@ def train(args) -> dict:
             # (refused above when --eval-labels is missing)
             if nav_on:
                 eval_nav_stats = e_ds.enable_nav_from_v7(e_man)
+        # the eval sees the SAME label source as training, with its OWN
+        # episode restriction -- and the SAME pad, so the two blocks are
+        # directly comparable rather than two different paddings.
+        if getattr(args, "agent_join", None):
+            from train_p8_occupancy import JoinFileReader as _JFR
+            _e_rd = _JFR(args.agent_join,
+                         episode_ids={int(e.episode_id) for e in e_eps},
+                         with_rates=not bool(getattr(
+                             args, "agent_join_no_rates", False)))
+            eval_agent_stats = e_ds.enable_agent_join(
+                _e_rd, pad=int(ds.agent_pad),
+                allow_legacy_ids=bool(getattr(
+                    args, "agent_join_allow_legacy_ids", False)))
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
@@ -1871,6 +2126,13 @@ def train(args) -> dict:
         "nav_from_v7_stats": ({"train": nav_stats, "eval": eval_nav_stats}
                               if nav_on else None),
         "v7_labels": v7_manifest,
+        # ⭐ refcv5 WP-6: WHICH labels the detector saw, and HOW MANY windows
+        # actually carried one. A run that stamps `w_agent > 0` without this
+        # cannot say whether its detector was supervised on 100 % or 3 % of
+        # its windows -- and those are different experiments.
+        "agent_join": str(getattr(args, "agent_join", None) or "") or None,
+        "agent_join_stats": ({"train": agent_stats, "eval": eval_agent_stats}
+                             if agent_stats is not None else None),
     }, indent=1), encoding="utf-8")
 
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
@@ -2236,6 +2498,36 @@ def build_parser() -> argparse.ArgumentParser:
                          "detector specification.")
     g5.add_argument("--agent-miss-rate", type=float, default=0.0,
                     help="E-AGT-BUDGET: the miss rate on the ORACLE boxes.")
+    g5.add_argument("--agent-join", default=None,
+                    help="obstacle.offline join file (.jsonl or .jsonl.xz) "
+                         "-- the TRAIN-TIME LABELS for --agents head. Without "
+                         "it the batch carries no `agent_box` and "
+                         "--w-agent > 0 REFUSES, because a run that stamps "
+                         "w_agent > 0 while training no detector reads as "
+                         "'the agent head does not help'. Train corpus: "
+                         "HF Sayood/tanitad-ph0-aug120 -> "
+                         "joins/train2400_agents.jsonl.xz (2,308 clips, "
+                         "433,040 frames, md5 "
+                         "24cbdca8c3b23aafc2fb17e6bf99cf76).")
+    g5.add_argument("--agent-pad", type=int, default=0,
+                    help="targets per window in the padded block. 0 = the "
+                         "join's own MEASURED max, so nothing is truncated "
+                         "before match_slots applies its counted nearest-N "
+                         "policy. A smaller value truncates VISIBLY (counted "
+                         "in agent_n_truncated), never silently.")
+    g5.add_argument("--agent-join-no-rates", action="store_true",
+                    help="skip the per-track rate finite differences. The "
+                         "rates term is then computed over ZERO items and "
+                         "SAYS SO -- but v_rel_x is what the LONGITUDINAL "
+                         "family (closing speed, TTC) is built from, so the "
+                         "default computes them.")
+    g5.add_argument("--agent-join-allow-legacy-ids", action="store_true",
+                    help="accept a join that matches this corpus ONLY through "
+                         "the LEGACY 16-bit episode id. That key is the first "
+                         "4 BYTES of the clip id and COLLIDES (34 of 2,308 "
+                         "clips on the train join), so an episode absent from "
+                         "the join can match a different clip that is "
+                         "present. Stamped into config.json.")
     g5.add_argument("--agent-presence-hard", action="store_true",
                     help="hard-mask sub-threshold slots instead of soft "
                          "scaling. Soft is the default BECAUSE a hard mask has "

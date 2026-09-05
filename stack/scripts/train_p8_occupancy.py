@@ -130,6 +130,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import lzma
 import math
 import os
 import random
@@ -146,6 +147,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from tanitad.data.bev_raster import (BEVGrid, GRID_DEFAULT,  # noqa: E402
                                      agents_to_array, fov_census, fov_mask,
                                      rasterize)
+from tanitad.models.agent_slots import (  # noqa: E402
+    track_rates_from_join)
 
 KS_DEFAULT = (5, 10, 15, 20)          # 0.5/1/1.5/2 s @10 Hz — the WP_STEPS grid
 GATE_K = 10                           # gate (a) horizon (WM_PHYSICS_PROOF.md P8)
@@ -250,18 +253,87 @@ class JoinFileReader:
     clip's agents.
     """
 
-    def __init__(self, path: str | os.PathLike):
+    def __init__(self, path: str | os.PathLike, *, episode_ids=None,
+                 with_rates: bool = False):
+        """``episode_ids`` / ``with_rates`` are the E-AGT-HEAD additions
+        (2026-09-05); both default to the historical behaviour exactly.
+
+        ``episode_ids`` -- keep ONLY these clips. The TRAIN join is 433,040
+        records / 12,122,129 boxes and a full load costs ~2.1 GB RSS
+        (MEASURED 2026-09-05), so a caller that needs eight clips may say so.
+        Ids are the STABLE 63-bit ids the v2 providers carry; the legacy
+        16-bit id is honoured too, exactly as :meth:`_clip_of` does at lookup.
+
+        ``with_rates`` -- compute the ego-frame relative rates
+        (``v_rel_x, v_rel_y, yaw_rate_rel``) per record through the EXISTING
+        ``agent_slots.track_rates_from_join``. It needs a record's NEIGHBOURS,
+        so the file is streamed with a 3-deep per-clip window.
+        The stream ASSERTS its own precondition -- a clip's records arrive
+        contiguously and with increasing ``frame_idx`` -- and REFUSES
+        otherwise. A silently mis-ordered file would yield rates that look
+        entirely plausible and are differences between unrelated frames.
+
+        ``path`` may be ``.xz``; it is streamed, never expanded to disk.
+        """
         self.path = str(path)
+        self.episode_ids = (None if episode_ids is None
+                            else {int(x) for x in episode_ids})
+        self.with_rates = bool(with_rates)
         self._by_clip: dict[tuple[str, int], np.ndarray] = {}
         self._cls_by_clip: dict[tuple[str, int], np.ndarray] = {}
+        self._rates_by_clip: dict[tuple[str, int], tuple] = {}
         self._clip_of_uid: dict[int, str] = {}
         self._clip_of_legacy: dict[int, str] = {}
         self._ambiguous_legacy: set[int] = set()
         self.has_occlusion_flags = False
         self.has_classes = False
+        #: the widest frame among the RETAINED records -- the honest ``n_pad``
+        #: for a batch, so no target is truncated before ``match_slots`` gets
+        #: to apply its own COUNTED nearest-N policy. MEASURED on the train
+        #: join: 312 raw / 94 inside the decode box.
+        self.max_agents_per_frame = 0
+        self.n_records_filtered_out = 0
         seen_clips: set[str] = set()
         n_lines = 0
-        with open(self.path, "r", encoding="utf-8") as fh:
+
+        # --- the episode-id filter, decided ONCE per clip -------------------
+        _keep_clip: dict[str, bool] = {}
+
+        def _wanted(cid: str) -> bool:
+            if self.episode_ids is None:
+                return True
+            hit = _keep_clip.get(cid)
+            if hit is None:
+                hit = (episode_uid_of_clip(cid) in self.episode_ids
+                       or legacy_episode_id_of_clip(cid) in self.episode_ids)
+                _keep_clip[cid] = hit
+            return hit
+
+        # --- the 3-deep per-clip window `track_rates_from_join` needs -------
+        win: list = []
+        win_clip = [None]
+
+        def _emit_rates(prev_rec, rec, next_rec) -> None:
+            rt, rm = track_rates_from_join(prev_rec, rec, next_rec)
+            self._rates_by_clip[(str(rec["clip_id"]),
+                                 int(rec["frame_idx"]))] = (
+                np.asarray(rt, dtype=np.float32), np.asarray(rm, dtype=bool))
+
+        def _drain() -> None:
+            if not win:
+                return
+            if len(win) == 1:
+                _emit_rates(None, win[0], None)
+            else:
+                _emit_rates(win[-2], win[-1], None)
+            win.clear()
+
+        def _opener(p):
+            if str(p).endswith(".xz"):
+                return lzma.open(p, "rt", encoding="utf-8")
+            return open(p, "r", encoding="utf-8")
+
+        with _opener(self.path) as fh:
             for ln, line in enumerate(fh, 1):
                 line = line.strip()
                 if not line:
@@ -270,6 +342,9 @@ class JoinFileReader:
                     rec = json.loads(line)
                     cid = str(rec["clip_id"])
                     fi = int(rec["frame_idx"])
+                    if not _wanted(cid):
+                        self.n_records_filtered_out += 1
+                        continue
                     ag = agents_to_array(rec["agents"])
                 except (KeyError, TypeError, ValueError) as ex:
                     raise ValueError(f"{self.path}:{ln}: bad join record "
@@ -280,6 +355,8 @@ class JoinFileReader:
                                      f"clip {cid!r} frame {fi} — the join "
                                      f"builder emitted this frame twice")
                 self._by_clip[key] = ag
+                if ag.shape[0] > self.max_agents_per_frame:
+                    self.max_agents_per_frame = int(ag.shape[0])
                 # per-agent label_class ("cls" in the 2026-08 join schema) —
                 # kept ALIGNED with the [A, 6] rows so consumers (the P1
                 # lead-gap probe) can filter candidates by class. Older join
@@ -303,11 +380,49 @@ class JoinFileReader:
                         self._ambiguous_legacy.add(leg)
                     else:
                         self._clip_of_legacy[leg] = cid
+                if self.with_rates:
+                    if win_clip[0] != cid:
+                        _drain()
+                        win_clip[0] = cid
+                    elif win and int(win[-1]["frame_idx"]) >= fi:
+                        raise ValueError(
+                            f"{self.path}:{ln}: clip {cid!r} frame {fi} does "
+                            f"not follow {win[-1]['frame_idx']} -- with_rates "
+                            f"streams a 3-deep window and needs each clip's "
+                            f"records contiguous and increasing. Refusing "
+                            f"rather than differencing unrelated frames.")
+                    win.append(rec)
+                    if len(win) == 2:
+                        _emit_rates(None, win[0], win[1])   # the clip's FIRST
+                    elif len(win) == 3:
+                        _emit_rates(win[0], win[1], win[2])
+                        win.pop(0)
                 n_lines += 1
+        if self.with_rates:
+            _drain()
         self.n_records = n_lines
         self.n_clips = len(self._clip_of_uid)
         if n_lines == 0:
-            raise ValueError(f"{self.path}: empty join file")
+            raise ValueError(
+                f"{self.path}: no usable records"
+                + ("" if self.episode_ids is None else
+                   f" for the {len(self.episode_ids)} requested episode ids "
+                   f"({self.n_records_filtered_out} filtered out) -- that is "
+                   f"the WRONG JOIN for this corpus, not an empty file"))
+
+    def lookup_rates(self, episode_id: int, frame_idx: int):
+        """``(rates [A, 3] float32, mask [A] bool)`` aligned with
+        :meth:`lookup`'s rows, or ``None`` when rates were not computed (built
+        without ``with_rates``) or the frame is NO_LABEL.
+
+        A missing rate is MASKED, never zero-filled: zero is a legitimate
+        value (a stationary car), and filling it would teach the head that
+        unseen means still.
+        """
+        cid = self._clip_of(episode_id)
+        if cid is None:
+            return None
+        return self._rates_by_clip.get((cid, int(frame_idx)))
 
     def _clip_of(self, episode_id: int) -> str | None:
         cid = self._clip_of_uid.get(int(episode_id))
@@ -668,7 +783,7 @@ P4_SPLIT_STAMP = {
         "[58.5, 60.0] deg annulus were labelled `visible` though the encoder "
         "never saw them. That contamination can only RAISE the visible arm, so "
         "it makes the published occluded>visible gap CONSERVATIVE."),
-    "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/"
+    "artifact": "TanitAD Research Lab/Architecture & Inference/Implementation/"
                 "incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md",
     "_evidence_class": "MEASURED (ours)",
 }
