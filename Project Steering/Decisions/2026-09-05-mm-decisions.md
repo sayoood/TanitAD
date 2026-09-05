@@ -2190,3 +2190,70 @@ changes the *vocabulary*, not the search — is the right arm.
 (`--a-sustain-mode a0_shift`; same `ccos`, same `(0.0, 15.11245, 64.297)`, same seed, same ckpt
 21,109, same 40 windows). ⭐ **The lever provably reached `plan()`** — a reached-it guard raises on
 window 1 if `res.a_shift` returns `None`, and the first plan completed in 69 s. ETA ~1–1.5 h.
+
+## M44. ⛔⛔ THE `sep` DEFECT IS ASYMMETRIC AND FAVOURS "IMPROVED" — escalates M42
+
+### 1. The actual bug, in the shared instrument every arm on this rig uses
+
+`stack/scripts/rl_refcv3_min.py`, inside `paired_delta`:
+
+```python
+"sep": bool((lo > 0) == (hi > 0))   # asks: do the ENDPOINTS AGREE about being positive?
+"sep": bool(lo > 0 or hi < 0)       # means: does the INTERVAL EXCLUDE ZERO?   <- the fix
+```
+
+| `lo` | `hi` | buggy | correct | |
+|---|---|---|---|---|
+| 0.0 | 0.0 | **True** | False | exactly-zero interval read as separated |
+| **−1.0** | **0.0** | **True** | False | ⛔ **touches zero FROM BELOW → separated** |
+| 0.0 | 1.0 | False | False | touches zero from above → correctly not |
+
+### 2. ⛔⛔ THE ASYMMETRY IS THE SERIOUS HALF, AND I MISSED IT
+
+`M42` reported this as a symmetric quirk — *"a delta of exactly 0.0 with CI [0,0] is called
+separated."* **That was the visible half.** The mirror rows show the defect is **DIRECTIONAL**: an
+interval touching zero **from below** is called separated while **its mirror image is not.**
+
+⇒ ⛔ **On this rig's safety metrics, NEGATIVE MEANS BETTER.** Therefore **the defect systematically
+favoured reporting IMPROVEMENTS.** It is not a noise inflator — it is a **bias toward false
+positives in the direction we most want to believe.**
+
+⚠️ **That is worse than what I told the PI**, and the difference was not visible from the
+exactly-zero rows alone — which is precisely why I graded it too gently.
+
+### 3. Blast radius, and what survives
+
+**36 of `ctrl0`'s 40** `sep=True` rows (weights **bitwise frozen**) and **11 of `ctrl_null`'s 35**.
+⇒ the circulating **"a zero-information arm separates 35 of 57"** should read **24 of 57** — now
+confirmed by the mechanism rather than by counting.
+
+⭐ **What survives untouched:** every number quoted **with its delta and interval attached**. The
+decode's *"exactly 0.0000 m, CI [0,0]"*, the 1.2 mm cost, `fan_contact` → 0.000000, the `W_KAPPA`
+table, `a_sustain`'s 0.3001, the `+0.4862 [+0.2825, +0.7201]` longitudinal gap, `coll200`'s
+`−0.001693 [−0.003646, −0.000260]` — **all read from the interval, none from the flag.**
+
+⛔ **What must be re-read:** any *"separated"* claim on this rig quoted **by the flag**, and
+specifically any whose **upper bound is exactly 0** — the improvement direction on a safety metric.
+
+### 4. ⭐ Fixed, and the fix was verified to be capable of failing
+
+Corrected and pinned by `stack/tests/test_rl_paired_delta_sep.py`, with the check that matters:
+**3 of 5 tests FAIL on the unfixed tree and all 5 pass on the fixed one.** Suite **200 passed**.
+⭐ **Shipped to the run clone BEFORE chain4 computes the verdict**, so the banked two-floor verdict
+uses the corrected predicate rather than needing a later retraction.
+
+### 5. Two self-inflicted errors, both recorded rather than quietly rewritten
+
+* ⛔ **Its first asymmetry test PASSED on the buggy tree.** It drove the case through `paired_delta`,
+  and **bootstrapped percentiles essentially never land exactly on zero**, so the `[−1, 0]` interval
+  was never constructed. ⇒ ⭐ ***A test that cannot fail on the defect it names is decoration.*** Now
+  it evaluates the predicate **directly**.
+* ⚠️ **Its first verification asserted the buggy string was absent from the whole file** — and the
+  fix's own comment **quotes** that string, so the check failed on its own text. ⇒ **the self-match
+  trap from the monitor rule, wearing a verification costume.** *(Same family as a polling monitor
+  matching its own echoed command.)*
+
+⇒ **State:** `ctrl_null` s1 is in its AFTER readout; chain4 then banks the two-floor verdict **under
+the corrected predicate**. No GPU queued beyond it. ⚠️ The mount is flapping (`not a git repository`
+is the transient signature) and the commit is retrying in background — to be confirmed by blob
+comparison when it settles.
