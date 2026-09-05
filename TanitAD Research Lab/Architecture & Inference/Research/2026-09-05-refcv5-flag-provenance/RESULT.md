@@ -171,6 +171,23 @@ Deliberate regressions, both green: dropping one knob from the stamp must raise;
 `agent_knobs` block must raise. And an AST assertion pins the link this file's other tests depend
 on — `config.json["seams"]` **is** the checked object, and the check happens **before** the write.
 
+### ⭐ Confirmed on a REAL `config.json`, not only in the unit tests
+
+A 2-step `--smoke --agents oracle` run was driven to `summary.json` and its own
+`config.json` read back (`raw/e2e_run_config.json`):
+
+```
+seams.agent_rig_camera = {"source": "off", "reason": "not requested",
+                          "w_project": 0.0, "w_ground": 0.0}
+seams.agent_knobs      = all 17 knobs, incl. w_agent 0.0, w_u0 0.0,
+                         agent_queries 100, agent_rig_camera "off"
+seams.agents.queries   = 100          agent_join_digest = null (no join)
+```
+
+⚠️ Stated because a unit test asserting on `_seam_stamp` is an assertion about
+a function; this is the assertion about the **file a reader will actually
+open**.
+
 ---
 
 ## P3 — M17 implemented, and the cost MEASURED rather than assumed
@@ -388,6 +405,7 @@ nothing.
 | cost raw (b2 / b4 replicate) | `repo:…/raw/query_cost_b2_cpu.json`, `raw/query_cost_b4_replicate_cpu.json` |
 | digest-scope incident raw | `repo:…/raw/join_digest_scope_incident.json` |
 | backfill evidence | `repo:…/raw/backfill_train2400.json` |
+| a real run's `config.json` | `repo:…/raw/e2e_run_config.json` |
 | backfilled sidecar (box only) | `devbox:C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl.xz.meta.json` (`.bak` kept) — **exists in ONE place**, and is a local convenience, not a deliverable |
 
 Nothing else lives in only one place.
