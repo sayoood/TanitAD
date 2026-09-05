@@ -1,6 +1,6 @@
 # What is maximally achievable with cameras alone — the v5a (pure-vision) study
 
-**status: IN PROGRESS — done: §0–§4 (inventory, mechanisms, the ten-rung v5a ladder, the v5a/v5b decision) / next: §5 manifest + the D-V5A-* / H-V5A-* register rows in GOALS_AND_CLAIMS.md**
+**status: COMPLETE — §0–§5 written; 11 `D-V5A-*` + 8 `H-V5A-*` rows registered in `Project Steering/GOALS_AND_CLAIMS.md`; 7 integration escalations open (§5.3); zero arms launched, zero GPU consumed**
 
 - **Agent:** TanitAD Architecture & Inference FlyWheel · **date:** 2026-09-05 · **branch:** `agent/arch-inf-20260803`
 - **GPU spent by this document:** **0** (two network probes on the dev box, no CUDA; `nvidia-smi` showed the 4060 at 52 % / 4,610 MiB from sibling streams and was not touched)
@@ -576,4 +576,87 @@ strictly cheaper than discovering it fails on 1.57 TB of LiDAR.
 
 ## §5 Deliverable manifest, primaries to bank, integration escalations
 
-*(to be filled)*
+### 5.1 Manifest — every artifact and where it lives
+
+| artifact | path | state |
+|---|---|---|
+| **this study** | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vision-only-maximum/RESULT.md` | **repo, committed** (branch `agent/arch-inf-20260803`) |
+| camera-rig probe (P-3): HF blob listing + per-sensor boresights + coverage | `…/2026-09-05-vision-only-maximum/code/probe_camera_rig.py` | **repo, committed** |
+| its output | `…/2026-09-05-vision-only-maximum/raw/camera_rig_probe.json` | **repo, committed** |
+| ground-plane probe (P-4): the metric-scale anchor, with both controls | `…/2026-09-05-vision-only-maximum/code/probe_rig_ground_plane.py` | **repo, committed** |
+| its output | `…/2026-09-05-vision-only-maximum/raw/rig_ground_plane_probe.json` | **repo, committed** |
+| register rows `D-V5A-*` (11) and `H-V5A-*` (8) | `Project Steering/GOALS_AND_CLAIMS.md` (**appended**, prefix verified byte-identical) | **repo, committed** |
+
+⛔ **Nothing is stranded**: both probes were authored on local disk (the G: mount raises `Errno 22`
+mid-write) and copied in with a verified read-back; nothing lives only on a pod, only in a worktree,
+or only in this agent's context. Every committed path was verified by a **length-guarded blob
+comparison** (`git rev-parse HEAD:<path>` vs `git hash-object <path>`, both 40 chars) plus positive
+content assertions on the register file. **No arm was launched, no GPU was consumed** beyond two HF
+network probes; `refcv4b-b1-v72-40k` on `tanitad-refcv3` was not touched.
+
+⚠️ **Operational note for the next generation:** the Drive client wedged mid-study — eight
+consecutive control reads of `CLAUDE.md` returned empty while directory listings kept working — and
+was restarted under the PI's standing authorisation (`Stop-Process` then `Start-Process` of
+`GoogleDriveFS.exe`, 130.0.2.0). It recovered on the first probe afterwards. A sibling had
+restarted it ~11 minutes earlier and that restart did **not** clear the wedge, so a recent restart
+is not evidence that a restart will not help.
+
+### 5.2 Primaries the library stream should bank (⛔ this stream did not run `kb_add.py` — the VLA stream owns the writer)
+
+Ordered by what the v5a ladder actually depends on. Each is cited in the section named.
+
+| # | primary | arXiv | needed by |
+|---|---|---|---|
+| 1 | **PackNet-SfM** — *3D Packing for Self-Supervised Monocular Depth Estimation* (Guizilini et al., 2020) — ⭐ **the velocity-supervision loss is exactly our metric-scale recipe** | `1905.02693` | §2.4, `H-V5A-DEPTH-1` |
+| 2 | **MonoDepth2** — *Digging Into Self-Supervised Monocular Depth Estimation* (Godard et al., 2019) | `1806.01260` | §2.4 |
+| 3 | **SfMLearner** — *Unsupervised Learning of Depth and Ego-Motion from Video* (Zhou et al., 2017) | `1704.07813` | §2.4 (the lineage and the scale ambiguity) |
+| 4 | **LSS** — *Lift, Splat, Shoot* (Philion & Fidler, 2020) | `2008.05711` | §2.3, `H-V5A-BEV-1` (the recommended first lift) |
+| 5 | **BEVDepth** (Li et al., 2022) — the reference for *why explicit depth supervision is what makes a lift work*, i.e. the honest statement of what a depth-teacher-less lift gives up | `2206.10092` | §2.3, §4.1 |
+| 6 | **SimpleBEV** (Harley et al., 2022) — the parameter-free-lift baseline; the right control for #4 | `2206.07959` | §2.3 |
+| 7 | **BEVDet** (Huang et al., 2021) | `2112.11790` | §2.3 |
+| 8 | **Pseudo-LiDAR** (Wang et al., 2019) — cited here mainly for the **trap** in §2.4, so bank it with that note | `1812.07179` | §2.4 |
+| 9 | **DETR3D** (Wang et al., 2021) and **PETR** (Liu et al., 2022) — query-based multi-view 3D detection, the shape `H-V5A-AGT-3`'s head takes | `2110.06922`, `2203.05625` | §2.5, `H-V5A-AGT-3` |
+| 10 | **FCOS3D** (Wang et al., 2021) — the single-camera monocular-3D baseline, i.e. the accuracy band `H-V5A-AGT-2`'s σ bar is compared against | `2104.10956` | §2.5 |
+| 11 | **SurroundOcc** (Wei et al., 2023) and **SelfOcc** (Huang et al., 2023) — for the §2.6 refusal: what camera-only occupancy needs that our corpus does not have | `2303.09551`, `2311.12754` | §2.6 |
+
+Already banked and cited without re-banking: TransFuser `2205.15997`, BEVFormer `2203.17270`,
+DiffusionDrive `2411.15139`, DiffusionDriveV2 `2512.07745`.
+
+⚠️ **Every numeric claim taken from #1–#11 before the PDF is banked is `PUBLISHED-SECONDARY` and is
+inadmissible for the registry or the paper** (the 2026-08-18 precedent: five claims marked SECONDARY
+purely because the primaries were not to hand). This document quotes **no** numeric result from any
+of them — the accuracy bands in §2.5 are stated as *qualitative* and the actual bar is **derived**
+by `H-V5A-AGT-2`, which is precisely why the ladder does not depend on banking them first.
+
+### 5.3 Integration escalations — ⛔ named here, not written into a README nobody re-reads
+
+| # | to | request | why it cannot wait for someone to notice |
+|---|---|---|---|
+| **1** | **Master Mind** | **Reconcile this document with `REFCV5_DESIGN_PLAN.md` §7–§10**, which a sibling wrote concurrently on the older single-track assumption. Concretely: that plan's §3.4 arm names (`E-BEV-1`, `E-LIDAR-1`, `WP-DE-BEV-1`) and this document's `WP-V5A-*` ladder describe **overlapping work under two naming schemes**, and §7's ordering does not yet contain `E-AGT-0`, `E-DEPTH-0` or `E-THOR-MV`. ⛔ I did not edit that file | two ladders with different names for the same arm is how an experiment gets run twice or not at all |
+| **2** | **Master Mind / PI** | **`D-V5A-CAM3` is a correction to a banked DataFlyWheel figure** (the 2026-07-26 census's camera bytes). It is a **retraction-log candidate** — root-cause class *"a true measurement quoted outside its scope"*. I have not written to `RETRACTION_LOG.md`; the Master Mind should judge whether it rises to an entry | the old "40.7 TB / 21.1 MB per clip" figures are exactly what a "can we afford surround cameras?" decision would be taken on, and they are ~46 % high |
+| **3** | **DataFlyWheel** | **The B1 corpus's CHUNK SPREAD is not banked.** §1.3's 429 GB assumes **per-clip HTTP range reads of zip members**; if the build pulls **whole chunks**, the same six cameras cost `n_chunks × 6 × ≈ 1.3 GB`, which for a wide spread is **terabytes**. The number that settles it — how many of the 3,146 chunks B1's 4,713 clips touch — is a one-query readout from the r0/B1 selection tables | a 429 GB plan silently becoming a multi-TB plan is the same class as `D-V5A-CAM3` |
+| **4** | **DataFlyWheel** | ⭐ **Make `WP-V5A-7`'s range-read fetcher a shared component**, not a camera-specific script: the LiDAR sidecar build (`REFCV5_DESIGN_PLAN.md` §3.1) needs the identical mechanism and currently carries it as a HYPOTHESIS | proving it on 3 GB of camera de-risks 1.57 TB of LiDAR for free |
+| **5** | **Deploy / Production FlyWheel** | **`WP-V5A-0` (`H-V5A-THOR`) needs ~20 minutes of an idle Thor** and is inference-only. It is the cheapest measurement in the programme that changes a design (input vs teacher for six cameras). ⛔ Only in-process `torch.cuda.max_memory_allocated()` is admissible for memory there | it is currently the single UNMEASURED number two §2 rows hang on |
+| **6** | **Benchmarks & Eval** | Any v5a arm should ship a **night-stratified** four-family table (night is **15.41 %** of the corpus, MEASURED). It costs nothing extra at eval time and it is half of `H-V5A-LEAD`'s evidence — and half of the v5b case | asked for after the fact, it means re-running the eval |
+| **7** | **PI** | `D-V5A-BOUNDARY` is a **decision rule awaiting sign-off**, and it interacts with the still-unresolved `D-REFCV5-PLAN-7` (may LiDAR be an *inference* input at all, given the constitution's literal "vision-only"?). ⛔ Two honesty items belong to that decision: **even with LiDAR there is no NAVSIM-style DAC** on this corpus, and **occlusion is closed by neither release** | these are the two places a LiDAR investment is routinely over-sold |
+
+### 5.4 What this study does **not** claim
+
+* **No driving-performance claim of any kind.** Nothing here is a T0 or T1 result; the ladder
+  decides what to build and measure. Every `H-V5A-*` row is **OPEN**, and **no arm has been
+  launched**.
+* The **coverage** numbers are azimuth-union figures from **median** rig poses over **one chunk**
+  (100 clips). PhysicalAI has **two rigs by `cy`** (CLAUDE.md), and the per-axis p95−p05 spread is
+  banked in `raw/camera_rig_probe.json` but was **not** analysed per rig. A rig-stratified re-read
+  is cheap and should precede any *per-clip* geometric use of these poses.
+* The **byte** figures are the HF listing's own `size` fields at the repo sha recorded in the JSON.
+  They are corpus totals; the **B1 slice is derived by per-clip means**, which assumes B1's clips
+  are byte-typical (escalation #3 is the check).
+* The **ground-plane** verdict is from **12 clips of one chunk**. It is a strong result (87,481
+  cuboids, two controls in opposite directions), but the 0.05–0.13 m offset is a **median across
+  classes on one draw**, not a per-clip calibration constant.
+* Every **Thor** figure other than the 60.3 / 63.1 ms anchor is **ESTIMATED** from the encoder share.
+  ⛔ No Thor latency in this document was taken from a datacentre GPU, and `H-V5A-THOR` exists
+  precisely because the multi-view number is unmeasured.
+* The **parameter and GPU-hour** figures in §2 and §3 are **ESTIMATED** from module shapes and the
+  inherited rig-arm timing; they are planning figures, not measurements.
