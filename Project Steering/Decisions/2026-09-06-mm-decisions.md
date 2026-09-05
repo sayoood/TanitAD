@@ -598,3 +598,60 @@ until re-measured:**
 2. **the STRATEGIC defect gate**, which cannot fire on a family that has never been produced;
 3. **`assert_matches_diffusers`**, the one independent check on the sampler's math, which cannot pass.
 ⛔ **None of these needs a GPU, and none of them is "the model has no sampler."**
+
+## M61. ⛔⛔ A FOURTH VARIANCE — THE SEED FLOOR IS RIG-DEPENDENT. Every "x floor" multiple carries its GPU or it is inadmissible.
+
+### 1. The measurement
+
+**MEASURED:** the **same baseline pair** — same arms, same flags — reads a seed floor of **−0.1000 on
+one GPU and +0.0000 on the other**. And the in-rig floors on Thor are **~7x SMALLER** than the dev-box
+floors that had been used to judge the same arms.
+
+⇒ ⛔ **A floor measured on one rig, applied on another, is a scope error** — and it is **directional in
+the dangerous way here: the too-LARGE floor SUPPRESSES real effects.** The stream retracted its own
+*"not established"* on **curvature** and **tactical-lat** on exactly this basis: both costs are **real**
+and had been dismissed against a floor from the wrong hardware.
+
+### 2. ⭐ The estimator family now has FOUR members, and each answers a DIFFERENT question
+
+| # | variance | the question it answers | how you measure it |
+|---|---|---|---|
+| 1 | **episode draw** | *would another draw of EPISODES say this?* | the paired episode-cluster bootstrap — **the ONLY one it answers** |
+| 2 | **training run** (`H-ESTIM-SEED-1`) | *would another TRAINING RUN say this?* | a replicate arm, same flags |
+| 3 | **inference run** | *would another INFERENCE RUN say this?* | a `--plan-seed` replicate — mandatory wherever the planner **samples** |
+| 4 | ⭐ **the RIG** (this entry) | *would another GPU say this?* | the floor **re-measured on the rig the arm ran on** |
+
+⇒ ⛔ **NAME WHICH ONE YOUR INTERVAL ANSWERED**, and ⛔ **quote every `x floor` multiple WITH ITS RIG.**
+A multiple is a ratio of two numbers from **two possibly different machines**, and until tonight nobody
+was checking that they matched.
+
+⚠️ **Same shape as every scope trap this programme has banked** — `df` on a pod, `free` on Thor, cgroup
+`usage_in_bytes`, `step_s`, the cylindrical FOV, `anchors.pt`'s units, `M52`'s model scope — *a true
+measurement quoted outside the thing it was measured on.* **Here the scope is the HARDWARE.**
+
+### 3. ⛔ Blast radius — bounded, but it must be checked, not assumed
+
+Every claim of the form *"N x its seed floor"* is exposed **iff** the delta and the floor came from
+different rigs. ⭐ **The remedy is cheap and mechanical: `raw/seed_floor.txt` already prints the
+per-metric table — it now needs a RIG column, and every quoted multiple must name it.**
+⚠️ **This compounds the already-banked rule that a floor belongs to the STATISTIC, not the family**
+(a paired floor applied to a per-class recall withdrew a finding earlier tonight). ⇒ **A floor is now
+identified by THREE things: the metric, the statistic, and the rig.**
+
+### 4. Two further results from the same stream, both clean
+
+* ⭐ **`T_lonseam` is exactly inert on all ELEVEN metrics — confirmed on a SECOND GPU.** `W_JERK = 0.0`
+  makes the jerk-seam lever **arithmetically dead**; P4's first named successor is blocked by
+  construction, and **`goal_reach_s` is now the live lever.** *(This is the independent replication of
+  the inert-arm error banked earlier: a lever multiplied by a zero coefficient is not a null about the
+  lever.)*
+* ⭐ **The pre-registered "D2 ~ D1" outcome FIRES:** `a_shift` vs `a_sustain` **straddles zero** on LON
+  speed and separates on **1 metric of 11 at only 2.1x the seed floor**. ⇒ ⛔ **the expressivity claim
+  that D2 dominates DOES NOT TRANSFER TO THE PLANNER** — an oracle-level advantage that the search does
+  not realise. **Reported as the pre-registered null, not reframed.**
+
+### 5. Where refav1 stands, per family, honestly
+
+**refav1 does NOT beat `ha0_ext` outright at T1.** But **`a_shift` is a real, REPLICATED,
+seed-floor-clearing LONGITUDINAL win that halves the programme's stated gap** — and that is the first
+replicated win in this package, against a night in which two headline zeros died to replication.
