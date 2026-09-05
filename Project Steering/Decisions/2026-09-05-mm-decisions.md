@@ -717,3 +717,92 @@ wrong tensor** — *the control checked the arithmetic, not the object.* ⇒ **A
 WHICH object it operated on, not only that the operation was self-consistent.** This programme's
 controls have caught many things today; this is the first time a control was itself the defect, and
 it generalises to every identity/parity check we run.
+
+## M24. ⭐ THE KINEMATIC GATE IS QUOTABLE AT **T0** — and this is the first Rule Zero turn that behaved exactly as intended
+
+### 1. The result
+
+**The driven path is measurably safer at no measurable ADE cost**, on two **episode-disjoint** draws:
+
+| metric | draw A | draw B | replicate floor | verdict |
+|---|---|---|---|---|
+| `sel_envelope` | **−0.0300 SEP** | **−0.0200 SEP** | 0.0100 | **QUOTABLE** |
+| `sel_peak_g` | **−0.0378** | **−0.0330** | 0.0048 | **QUOTABLE** |
+| `ade_m` | +0.0064 | −0.0099 | 0.0163 | not separated, **sign flips** ⇒ no cost |
+
+⭐ **And one four-family movement is separated and is an IMPROVEMENT:** LONGITUDINAL `accel_mae`
+**−0.1846 [−0.2840, −0.1014]** and **−0.1402 [−0.2327, −0.0629]** against a 0.0444 floor ⇒
+**−19.5 % / −14.3 %**.
+
+⛔ **BUT THIS IS T0, AND T1 WAS NOT RUN** (the 4060 was saturated all session). Per
+`EVAL_DOCTRINE`, **T1 is the primary tier for any capability claim** ⇒ **this is not yet a driving
+result and must not be quoted as one.** The hook is one site — `taniteval/tools/refcv3_arm.py:1117`,
+all four tensors already in `out`, and it **must use `sel_score_v3`** — and it needs a GPU slot.
+
+### 2. ⭐ All three variances were named BEFORE any number existed
+
+This is the `CLAUDE.md` THIRD-VARIANCE block being applied on the day it was written, and applied
+better than it was written:
+
+* **V1 (episode draw)** — paired episode-cluster bootstrap **plus an episode-disjoint second draw**.
+* **V2 (training run)** — ⭐ **STRUCTURALLY ABSENT**: zero training steps, one frozen checkpoint, no
+  seed enters. The hole `H-ESTIM-SEED-1` warns about **cannot exist here**, and saying so is better
+  than measuring a floor for it.
+* **V3 (inference sampling)** — ⭐ **ASSERTED, NOT ASSUMED**: `refc.py:1720`/`:1501` gate their
+  stochastic ops on **config, not `self.training`**, so two forwards on one batch in one process are
+  **bitwise identical**. That makes V3 a **structural identity, not an estimate of zero.**
+
+⇒ **The `one_variable` claim is held BY CONSTRUCTION**, not by care: one forward per window banks the
+fan, and both rules, both draws, all four families and every bootstrap are computed **offline from
+that same fan**. `model` and `gate_k` differ only in *which of 128 already-emitted candidates is
+returned*. That is the strongest form of one-variable control this programme has produced.
+
+### 3. ⛔ Its own deliberate-regression control found a confound — and the identity control had never run
+
+The probe ranked by `sel_score`; refcv3 is the **`hier`** arm and `refc.py:1763` argmaxes
+**`sel_score_v3`**. They disagreed with the model's own `sel_idx` on **35/400 (8.75 %)** and
+**29/400 (7.25 %)** — *the gate's candidate set did not contain the model's own pick on about one
+window in eleven.*
+
+⚠️ **And the reason it went unnoticed is the sharpest lesson:** the probe's docstring called `k = 1`
+*"a built-in identity control"* while `GATE_KS = (2, 4, 8, …)` — **`k = 1` is not in the tuple, so
+the identity control never ran.** A control that is documented but not executed is worse than none,
+because it is cited. ⇒ On the corrected ranking `gate1 == model` on **400/400 and 400/400, every
+metric exactly 0.0, asserted on the INDEX** (retraction #30's rule: assert *which object*).
+The confound had inflated gate2's share from **46.2 % → 50.3 %**.
+
+### 4. The 8.56× question was MINE and it had the wrong denominator
+
+I asked how much of the 8.56× fan-to-vocabulary gap the gate closes. **Answer: 0.00 %, and that is
+a STRUCTURAL ZERO** — the 8.56× is a **fan** property and a selection rule changes no waypoint.
+
+⭐ The correct denominator is the one a re-ranking rule actually owns: **D2 = 0.0819 g**, against
+which **gate2 closes 46.2 %**. And the driven path is already **24.3× better conditioned than the
+fan's average member** and **2.80× below the vocabulary's own 0.4808 g**. ⇒ **A question can carry a
+scope error as easily as an answer**, and the right response was to correct the denominator rather
+than compute a meaningless ratio.
+
+### 5. What it does NOT claim — all three volunteered
+
+* ⛔ **Its own committed LATERAL hypothesis is NOT supported** — curvature and yaw-rate **sign-flip
+  between draws**. The gain comes from the *longitudinal* half of `comfort`, not the curvature half.
+* ⚠️ **The real cost is TACTICAL:** manoeuvre agreement **−2.5 pp** consistently on both draws, and
+  the gate changes the pick on **~49 %** of windows. ⛔ **No paired CI exists for those rows** — and
+  that is *stated as un-intervalled, not hidden*.
+* **"No scene input" is sharpened, not just confirmed.** Under a full scene garble the gate's score
+  **and its argmax** are bitwise unchanged (0.000e+00) while `headway` moves 0.75, `collision` 1.0,
+  `progress` 3.06. But the **candidate set** is `sel_score_v3` masked by `reach_keep` — model
+  outputs that are scene-conditioned. ⇒ the admissible wording is **"adds no NEW scene input and no
+  new perception"**, and `M23`'s phrasing is corrected to that.
+* **STRATEGIC reads `UNAVAILABLE` with `defect: false`** — a corpus property, **not**
+  `D-NAVCOMP-SHAPE-1`. The defect classifier added today did its job on its first real use.
+
+### 6. ⭐⭐ Rule Zero worked, and so did the bar it does not lower
+
+The successor arms **ran without being asked**: similarity scaling was found to be the **wrong
+operation** (lat_acc scales by *s*), and a control-space-roll stand-in produced *"a spectacular
+result that is NOT quoted because its known-answer control failed at 3.17e-2 m."*
+
+⇒ **That is precisely the pair this rule was written to produce**: keep going after a refutation,
+**and refuse to quote a spectacular number whose control failed.** It is the clearest evidence so far
+that Rule Zero can be followed without loosening anything.
