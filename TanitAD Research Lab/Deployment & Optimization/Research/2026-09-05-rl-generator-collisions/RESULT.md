@@ -470,6 +470,56 @@ dominates. The finding was not an artefact of the unperturbed operating point.
 
 Registered as `D-RL-TIMING-SURFACE-1`. Artifact: `raw/p8_timing_error_surface.json`.
 
+### 6.9 ⭐⭐ `ctrl0` — a FROZEN-WEIGHT arm separates 4 metrics, and the rig's separation counts are inflated by a tool quirk
+
+`ctrl0` (lr = 0, `weights_changed` **False** — the weights are bitwise frozen) is the brief's
+mandated zero-lever floor, and it produces two findings that generalise past this package.
+
+**(a) The floor of "separated" is ~1e-8.** With the weights *unchanged*, **21 of 57** metrics move
+at all — max |Δ| **1.16e-07**, which is GPU floating-point non-determinism in the readout, not a
+lever — and the episode-cluster bootstrap calls **4 of them SEPARATED**:
+
+| metric | Δ | CI |
+|---|---|---|
+| `mass_conf_unsafe` | −1.025e-08 | [−2.162e-08, −1.235e-09] |
+| `mass_conf_ttc_below` | −9.998e-09 | [−2.132e-08, −9.866e-10] |
+| `mass_rank_unsafe` | −8.497e-09 | — |
+| `mass_rank_ttc_below` | −8.249e-09 | — |
+
+⇒ **This is `H-ESTIM-SEED-1` in its purest form, and stronger than the `A0b_replicate` case that
+established it** — there, a real training run with a real seed separated on 3 of 18 metrics; here
+**the weights did not change at all** and 4 still separate. `sep` is a statement about an
+interval, and it carries **no magnitude information whatever**.
+
+**(b) ⛔ A TOOL QUIRK INFLATES EVERY SEPARATION COUNT ON THIS RIG.** A delta of **exactly 0.0 with
+CI [0, 0]** is reported `sep=True`, although a [0, 0] interval plainly does not exclude 0. The
+effect is large and it reaches a figure already in circulation:
+
+| arm | `sep=True` | of which Δ **== 0** (the quirk) | **real** separations | largest real \|Δ\| |
+|---|---|---|---|---|
+| `ctrl0` (weights frozen) | 40 / 57 | **36** | **4** | 1.03e-08 |
+| `ctrl_null` (zero reward, weights DID change) | 35 / 57 | **11** | **24** | **0.134314** |
+
+⚠️ **Stated carefully, because it sharpens a programme claim rather than overturning it.** The
+figure *"a zero-information arm separates 35 of 57 metrics"* is **inflated by 11** — the honest
+number is **24 of 57**. But the claim's substance **stands and is not weakened**: those 24 are
+real, and `fan_peak_g_mean` drifts **+0.134** on an arm carrying no reward at all. The doctrine
+is right; its headline count should be 24.
+
+⇒ **Two operational consequences.** (1) **Never count `sep` without checking the delta** — the
+exact-zero rows are not separations, which is also why `top32_contact`'s "+0.000000, CI [0,0],
+sep=True" in §1.1 is a *non-result* and was quoted there by its delta and interval rather than by
+its flag. (2) `analyze_veto.py`'s `sep` computation should require a non-zero delta; until it
+does, every separation count from this instrument needs the split above.
+
+⭐ **And a guard passed that matters:** `ctrl0`'s BEFORE readout is **bitwise identical** to
+`coll200`'s (`fan_contact` = 103/768 = 0.13411458333333334 on both), so the zero-lever floor is
+definition-matched to the lever — unlike the banked `ctrl_null` of §6.2. *(An earlier check of
+mine printed a spurious mismatch here; the cause was my own truncated float literal in the
+comparison, not the data, and it is recorded rather than quietly fixed.)*
+
+Registered as `D-RL-CTRL0-SEPFLOOR-1`.
+
 ### 6.7 Still pending
 
 **One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
