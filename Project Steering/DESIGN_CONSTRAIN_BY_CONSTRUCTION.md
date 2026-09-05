@@ -111,3 +111,35 @@ nothing.
 
 ⚠️ **This document is a hypothesis with a test attached, not a finding.** It is written down before
 the test so it can fail.
+
+---
+
+# ADDENDUM 1 (same day) — THE PRINCIPLE IS THREE-PART, NOT TWO
+
+⛔ **The body above says *make the bad unrepresentable and the good representable*. That is
+INCOMPLETE, and two arms measured after it was written show why.**
+
+| part | mechanism | evidence |
+|---|---|---|
+| **1. make the bad UNREPRESENTABLE** | a constraint with units | Kamm cap `peak_g` max **3.262 → 0.707 = μ**, free on the longitudinal family, turn decisions **bit-identical**; the friction projection closed **96.87 %** of the gap at **1.2 mm** |
+| **2. make the good REPRESENTABLE** | vocabulary / candidate set | ⛔ **ALONE IT DOES NOTHING.** L=3 realised **2.3 %** (no chooser). `l3ladder` added rungs at R 500–125 m and **not one window of 40 realised one** — its spine is bit-for-bit the baseline's |
+| **3. ⭐ GIVE THE SEARCH A REASON TO PREFER IT** | cost / preference | `W_KAPPA` alone produced curvatures **0.0115–0.0530 — exactly the band the rungs occupy — with no ladder at all** |
+
+⭐⭐ **The mechanism, confirmed from BOTH directions:** supply the candidates without the
+preference and nothing is picked; supply the preference without the candidates and the search
+**synthesises** them. ⇒ `D-REFAV1-DRIVE-GATE`'s gate is **not a wall around the reachable set — it
+is an ABSENCE OF PREFERENCE.**
+
+⭐ **Operational consequence:** part **3 can SUBSTITUTE for part 2** whenever the search can
+synthesise what it needs. A wider vocabulary is only worth its cost when the search **cannot reach**
+the band — a cheap test that had never been run. ⚠️ And a wider vocabulary is **not free**:
+`l3ladder` cost `lane_keep` recall **0.7143 → 0.5714** and goal FDE **2.9639 → 3.3200**.
+
+⛔ **And parts do not compose arbitrarily: a CONSTRAINT cannot supply a PREFERENCE.** A cap can
+forbid a curvature but cannot make a rung attractive ⇒ *ladder + cap* is the **less** informative
+pairing and *ladder + `W_KAPPA`* is the informative one.
+
+⇒ **The prediction this makes for the open blocker:** refav1's longitudinal gap has
+`ADAPT_SPEED_FOR_CURVE`'s canonical control at `a == 0`, so **part 2 is missing AND part 3 has
+nothing to prefer.** ⛔ **Fixing either alone will null** — exactly as the lateral side demonstrated
+twice today. Written before the longitudinal arm runs, so it can fail.

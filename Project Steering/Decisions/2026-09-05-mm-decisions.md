@@ -1468,3 +1468,82 @@ single next thing is still **giving v7f a command channel with units (`a_lon, a_
 (`tau_drift.json`, `tau_nrmse.json`, `tau_absorb.json`) still do not exist in the repo** — confirmed
 by two independent methods. That is a remaining provenance gap on a **completed** arm, and it is the
 same stranding that produced this correction.
+
+## M34. ⭐⭐ THE SEED POOL WAS NEVER THE CONSTRAINT — and the design principle needs a THIRD part
+
+### 1. `l3ladder`: a null so clean it identifies the mechanism
+
+`ccos` + `(0, 0, 64.297)` + **10 extra iteration-0 candidates at R 500/200/100/50/25 m** — the
+candidate set is the only variable.
+
+| | `ccos_argmax` | `l3ladder` | |
+|---|---|---|---|
+| ADE | 1.3272 | **1.3236** | Δ **0.0036 = 17× BELOW** the 0.0607 seed floor |
+| EXACTLY-constant series | 0.7750 | **0.7750** | unchanged |
+| turn recall L / R | 0.3636 / 0.75 | **0.3636 / 0.75** | identical |
+
+⭐ **The decisive row is the histogram — NOT ONE WINDOW OF 40 REALISES A RUNG:**
+
+```
+l3ladder   0.0000 x10   0.0800 x21   then 0.1009 0.1189 0.1253 ... all ABOVE 0.10
+wk15       0.0000 x18   0.0800 x9    then 0.0115 0.0120 0.0140 ... 0.0530
+```
+
+The rungs sit at **0.002–0.04**. `l3ladder`'s extra mass is **entirely above 0.10**, and its
+`0.0000 ×10 / 0.0800 ×21` spine is **bit-for-bit the uncapped arm's**.
+
+### 2. ⭐⭐⭐ The answer is complete because it comes from BOTH directions
+
+* **`wk15` produced curvatures 0.0115–0.0530 — exactly the band the rungs occupy — with NO LADDER AT
+  ALL**, purely because the penalty gave the search a *reason to prefer* them.
+* **`l3ladder` hands the search those very magnitudes and it never picks one**, because with
+  `W_KAPPA = 0` the cost is **indifferent** and the goal-aligned canonical seed wins.
+
+⇒ **`D-REFAV1-DRIVE-GATE`'s gate is NOT a wall around the reachable set. It is an ABSENCE OF
+PREFERENCE.** Confirmed by supplying the candidates without the preference (nothing happens) and by
+supplying the preference without the candidates (the search synthesises them).
+
+### 3. ⛔ THE DESIGN PRINCIPLE WAS TWO-PART AND IT NEEDS THREE
+
+`DESIGN_CONSTRAIN_BY_CONSTRUCTION.md` said: *make the bad unrepresentable and the good
+representable.* **That is incomplete.** The corrected form, with today's evidence attached to each
+part:
+
+| part | mechanism | evidence |
+|---|---|---|
+| **1. make the bad UNREPRESENTABLE** | constraint with units | Kamm cap: `peak_g` max **3.262 → 0.707 = μ**, free on longitudinal, turn decisions **bit-identical**; friction projection: **96.87 %** of the gap at **1.2 mm** |
+| **2. make the good REPRESENTABLE** | vocabulary / candidate set | ⛔ **alone it does NOTHING**: L=3 realised **2.3 %** (no chooser); `l3ladder` realised **0 of 40 windows** (no preference) |
+| **3. ⭐ GIVE THE SEARCH A REASON TO PREFER IT** | cost / preference | `W_KAPPA` alone produced **exactly the rungs' band without the rungs** |
+
+⭐ **And the sharpest consequence: (3) can SUBSTITUTE for (2) whenever the search can synthesise what
+it needs.** A wider vocabulary is only worth its cost when the search **cannot reach** the band — a
+test that is cheap to run and that we had never run.
+
+⚠️ **The ladder is also not free**, exactly as its own docstring warned *before* the arm ran (*"with
+`W_KAPPA = 0` a wider curvature set can only add ways to be wrong"*): `lane_keep` recall
+**0.7143 → 0.5714** (~2× the floor) and goal FDE **2.9639 → 3.3200**.
+
+⇒ **The informative combination is ladder + `W_KAPPA`, never ladder alone — and never ladder + a
+CONSTRAINT**, because *a cap can forbid a curvature but cannot make a rung attractive*. That is part
+3 of the principle stated as an operational rule. **`wk15_ladder`** (one variable against `wk15`)
+started 19:13:04Z; `combined` (ladder + cap) is at 2/8 and is now known to be the **less** informative
+pairing.
+
+### 4. Where refav1 stands: three of four levers answered
+
+| lever | verdict |
+|---|---|
+| `W_KAPPA` | **the ACCURACY lever**, interior optimum, ADE −33 %, costs the longitudinal family and turn symmetry |
+| Kamm cap | **the SAFETY lever**, `peak_g` max → μ, **free** on longitudinal, decisions untouched |
+| hold branch (`ccosh`) | **NULL** — the CEM's best sample was already the all-zero plan |
+| seed pool (`l3ladder`) | **NULL** — an absence of preference, not of candidates |
+
+⇒ **The LONGITUDINAL family remains the blocker**, and the three-part principle now predicts its fix
+precisely: `ADAPT_SPEED_FOR_CURVE`'s canonical control is `a == 0`, so part **2** is missing *and*
+part **3** has nothing to prefer. ⛔ **Fixing either alone will null**, exactly as the lateral side
+just demonstrated twice.
+
+⚠️ **Process note worth keeping:** two commits were **correctly REFUSED** by `mktree_commit.py`'s
+compare-and-swap when a sibling moved HEAD mid-build. Reducing the commit to only the **29 changed
+paths of 225** shrank the build window and it won immediately. ⇒ **the fix for a lost CAS race is to
+commit what CHANGED, not to force.**
