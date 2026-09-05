@@ -564,9 +564,10 @@ The LiDAR build raises the ceiling; it never blocks the launch.
 
 ## §7A The reconciled release ladder (v5a / v5b)
 
-> ⚠️ **STATUS: PART 1 of 6 LANDED — 2026-09-05, Arch+Inference FlyWheel, integration task delegated by
-> the Master Mind. Parts 2–6 are being filled in and committed one at a time; a heading with
-> `*(pending)*` under it is NOT a finding, it is work in flight.**
+> ⚠️ **STATUS: PARTS 1–3 LANDED (crosswalk · v5a ladder · v5b ladder) — 2026-09-05, Arch+Inference
+> FlyWheel, integration task delegated by the Master Mind. Parts 4–7 are being filled in and
+> committed one at a time; a heading with `*(pending)*` under it is NOT a finding, it is work in
+> flight.**
 
 This section reconciles two completed documents that describe overlapping work under two
 incompatible naming schemes:
@@ -697,11 +698,121 @@ refcv4b"*) says what was meant. §7A reads it as **WP-7**. §7 is left as writte
 
 ### 7A.2 v5a — camera-only, ordered
 
-*(pending)*
+**What v5a is.** Everything reachable from **cameras alone** — which (B) §1.2 MEASURED is a great
+deal more than "the front-wide camera": PhysicalAI-AV is a **7-camera 360°-covered rig** and we read
+**one**, which is **33.36 %** of the azimuth circle; the three 120° cameras reach **70.53 %** and all
+seven **100.00 %** (`raw/camera_rig_probe.json`, union over 3,600 bins, with the convention control
+reading its known value — the front-wide boresight lands at **−0.58° azimuth, −0.54° elevation**).
 
-### 7A.3 v5b — LiDAR, ordered, off the model critical path
+⭐ **The capability statement v5a is ordered around, and it is (B)'s, not a new one:** of
+DiffusionDrive's three grounded attentions, **v5a recovers two and refuses the third on evidence**
+((B) §3.9; (A) §1.3 #19/#20/#21 agrees component-by-component):
 
-*(pending)*
+| DD's grounded attention | v5a | by which canonical rung |
+|---|---|---|
+| **waypoint-indexed spatial** (`GridSampleCrossBEVAttention`) | ✅ **recovered** | `E-DDA-1` (WP-3) in PV today; `E-BEVA-1` (WP-V5A-8) in a camera-lifted BEV. A LiDAR BEV would improve the **map it samples**, not the attention |
+| **agent cross-attention** (30 detection queries) | ✅ **recovered** | `E-AGT-ORACLE` → `E-AGT-BUDGET` → `E-AGT-HEAD`: `obstacle.offline` as **labels**, a monocular detector at inference. **No new sensor.** |
+| **ego-query attention** | ⛔ **deliberately refused** | our FiLM + `ego_dropout 0.5` + X15 is the one design MEASURED to make an arm read the scene (`H-ECHO-8`); DD's ego query is an unguarded echo channel. (A) §1.3 #21 = **KEEP OURS / SKIP** |
+
+**Rig cost anchor** (both documents inherit the same one): **≈ 29 min/arm on the dev-box RTX 4060,
+≈ 17 min/arm on Jetson Thor.** ⚠️ Both boxes are contended by sibling streams; the ladder is
+**serial**, and `OMP_NUM_THREADS=6` is set before any multi-arm panel (CLAUDE.md: 7 concurrent arms
+sat at 0–6 % `sm` for 50 min).
+
+⚠️ **"Zero pod GPU" ≠ "zero GPU."** The dev-box 4060 (8,187 MiB) and Thor are not pod GPU; the A40
+(`tanitad-refcv3`) is, and it is **training refcv4b** — ⛔ never eval on it while it trains.
+
+---
+
+#### Phase A — instruments. 0 GPU, and they unblock *reads*, not runs
+
+⛔ These are first not because they are interesting but because **two of them make results
+unreadable while they are missing** (§7A.5). Full statements in (A) §7.3; the source verification is
+in §7A.5.
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **A1** | **`WP-0.1`** — the ablation switches | add `--ablate {gstr_zero,gstr_shuffle,e7_off,e9_off,h19_off,ego_zero,sel_refined}` + `--ablate-frames` to `taniteval/tools/refcv3_arm.py` | v5a | the twelve arms of `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3 all roll | **0 GPU · CPU ~1 d** | — | ⭐ **NOW** |
+| **A2** | **`WP-0.2`** — port `ha0_ext` | make `ha0_ext` an arm of the REF-C harness, calling the **same** `stack/tanitad/eval/echo_gate.py::ha0_ext` the refav1 harness calls | v5a | `ha0_ext` appears in a refcv-arm dump's `arm_keys` | **0 GPU · CPU ~0.5 d** (~30 lines + one shared call) | — | ⭐ **NOW** |
+| **A3** | **`WP-0.3`** — the fan readouts | implement `fan_floor@k` (k = 1, 5, 10), fan-collision-vs-replay, DD's diversity D, the sampled-fan Kamm(μ=0.7) rate in `taniteval/plan_fan.py`, tests first on a synthetic fan whose floor is known by construction | v5a | a synthetic fan reads its known floor | **0 GPU · CPU ~1 d** | — | ⭐ **NOW** |
+
+#### Phase B — the rungs that start TODAY at zero pod GPU and zero new bytes
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **B1** | **`WP-V5A-0` · `E-THOR-MV`** | ⭐ does a 2nd/3rd/6th camera through the trunk cost ~54 ms each or nothing? — the **single UNMEASURED number** that decides whether surround cameras are an *input* or a *teacher* | v5a | p50 at 3 views ≤ **1.30×** the 1-view p50 ⇒ affordable **input**; ≥ **2.0×** ⇒ **teacher only**. Control: the 1-view tick must reproduce **60.3 ms p50 / 63.1 ms p95**; deliberate regression: 6 views must be visibly slower than 3 | **≈ 20 min · Thor, inference only** | an idle Thor | ⭐ **NOW** |
+| **B2** | **`WP-1` · `V5-VOCAB`** | vocabulary v5: realised-speed κ clamp + build-time Kamm filter + the 13 × 11 grid | v5a | ⛔ **MODEL-FREE**, stamped per `GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md` — a raw-anchor ceiling is **never** compared to `ha`, `os` or `oracle_sel` | **0 GPU · CPU ~0.5 d** | — | ⭐ **NOW** |
+| **B3** | **`WP-2` · `E-DDA-2`** | the ranked object becomes the emitted object (`sel.refined + score_emitted + sel_ce_reach`, **0 new params**) | v5a | pick changes on ≥ 10 % of windows **and** the selection gap shrinks with a paired CI excluding 0, no family separated-worse | **4 arms ≈ 2 h · tiny rig** | — | ⭐ **NOW** (first *free* read is `H-SEL-1` inside **D2**) |
+| **B4** | **`WP-3` · `E-DDA-1`** | ⭐ waypoint-indexed grid-sample attention on the **PV** map — DD's first grounded attention, **no BEV** | v5a | TACTICAL **and** LONGITUDINAL improve, paired CIs excluding 0, **and** the attention map moves when the candidate moves (permutation test). Controls: random sampling locations at equal params; frozen zero-init gate must read **delta == 0 exactly**; a **pinhole-formula arm that must MISPROJECT** | ⚠️ **4 arms ≈ 2 h** (A §7.1) / **2 arms ≈ 1.0 h** (B §3.0) — see §7A.7 #1 · tiny rig | — | ⭐ **NOW** |
+| **B5** | **`WP-V5A-1` · `E-AGT-ORACLE`** | ⭐ the **ceiling**: `cross_agent` fed ground-truth boxes at inference, run once, deliberately inadmissible as a capability claim | v5a | separates on **LONGITUDINAL and TACTICAL** ⇒ continue. ⛔ **no separation on either ⇒ the whole agent-token mechanism is REFUSED for zero further GPU-days.** Controls: constant-only token set (must read the no-information value); no-token = today's arm bit-identical; deliberate regression = temporally shuffled boxes, which must **lose** | **4 arms ≈ 2.0 h · tiny rig** | the B1 `obstacle.offline` join (pod-side, CPU, exists) | ⭐ **NOW** |
+| **B6** | **`WP-V5A-6` · `E-DEPTH-0`** | monocular depth head measured **before** it is used: range error at `obstacle.offline` box centres **as a function of distance** | v5a | ⭐ the **two scale anchors must AGREE**: camera height (**1.43–1.56 m**, from rig `z = 0` ≡ the road plane to within 0.05–0.13 m, MEASURED over 87,481 cuboids with `protruding_object` at **+1.68 m** as the opposite-direction control) and PackNet-SfM velocity supervision on the measured `v0`. Disagreement > a few % ⇒ the depth is wrong and says so. ⚠️ **raw-input floor mandatory**: beat "predict the corpus-median range for that image row" | **2 arms ≈ 1.0 h · tiny rig** | — | ⭐ **NOW** |
+| **B7** | **`WP-4` · `E-DDA-3`** | the **control-space** DDIM sampler (anchored Gaussian, x0, AdaLN, Fourier query init) — noise on `(a_lon, a_lat)`, re-rolled through the unicycle, so every sample is flyable | v5a | diversity D rises **and** oracle-in-fan at **equal N** improves (paired CI excluding 0) **and** the sampled fan's Kamm(μ=0.7) rate does not rise. Controls: `σ ≡ 0` must reproduce the deterministic decoder **bit-for-bit**; deliberate regression = DD's literal metre-space `norm_odo` sampler, which **must fail flyability** | **5 arms ≈ 2.5 h · tiny rig** | ⛔ **A3** for the primary readout; **D1** for the *decision to train it* | ⭐ **NOW** (code + rig) |
+| **B8** | **`WP-5` · `E-DDA-5`** | loss form: (a) CE → focal BCE on the score head; (c) anchor-assignment metric → mean-L2 — ⛔ **two separate arms, never bundled** | v5a | separated family gain; ECE of the winner is the readout for (a) | **4 arms ≈ 2 h · tiny rig** | — | ⭐ **NOW** |
+| **B9** | **`WP-8` · nav / strategic wiring** | E15–E21 + selector gates S7/S8 — **one edge per arm**, 7 edges, all zero-init and individually gated, **+7,682** params total | v5a | per-edge separation; each edge ships **its eval-time switch** so the §7A.5 A1 ablation table extends by one row | **≈ 6 h total · tiny rig** | — | ⭐ **NOW** |
+| **B10** | **`WP-9a` · `E-DDA-4`** | is the bank a prior? `‖offset‖` on the classifier pass; oracle-in-bank vs oracle-in-fan at equal N | v5a | a readout, not an arm — it **decides whether the sampler is the fork at all** ((A) §4.2 #2) | **≈ 0.5 h · 4060** | — | ⭐ **NOW** on `ckpt_step9500.pt` (already on the dev box) as an early-training diagnostic; **repeat on the final** for the decision |
+| **B11** | **`WP-10` · `H-EGO-LIT-4`** | the withheld-bank panel: the bank's reference speed (`--withheld-bank {fixed,pred,random,none}`) | v5a | outcome sets whether `roll_bank` survives into v5a's vocabulary ((A) §2 I4 / §1.2 #14) | **5 arms · 4060 — 🟢 RUNNING** | — | already running |
+
+#### Phase C — camera rungs that wait on a Phase B *result*, not on a checkpoint
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **C1** | **`WP-V5A-2` · `E-AGT-BUDGET`** | ⭐ the **derived** accuracy bar: sweep range-noise σ ∈ {0, 0.5, 1, 2, 4} m on the oracle boxes, plus a **separate** miss-rate panel {0, 10, 25, 50 %} | v5a | separation survives to **σ ≥ 1 m** ⇒ a monocular detector suffices, build `E-AGT-HEAD`. Dies **below σ = 0.5 m** ⇒ the mechanism needs LiDAR-grade range and is a **v5b** item. Control: `σ = 0` must reproduce **B5** exactly | **6 arms ≈ 2.9 h · tiny rig** | **B5** separates | ⭐ **NOW** (after B5) |
+| **C2** | **`WP-V5A-5` · `E-DDA-1b`** | which feature stage the attention samples: the 8 × 20 map (**6.0°/column**) vs the stride-8 32 × 80 stage (**1.5°/column**) | v5a | separated improvement on LATERAL at range. ⛔ a **distinct arm on purpose** — bundling it into `E-DDA-1` makes the result non-attributable (the `--v2` conflation failure) | **2 arms ≈ 1.0 h · tiny rig** | **B4** separates | ⭐ **NOW** (after B4) |
+| **C3** | **`WP-6` · `E-AGT-HEAD`** | ⭐ the deliverable arm: tokens from a **learned** monocular 3D head (DETR, K = 30, Hungarian, 10 dynamic classes, auxiliary head on the shared trunk) + `cross_agent` in every decoder layer, zero-init gated, **≈ 6 M params** | v5a | the learned arm lands **inside C1's σ budget**; detection AP > prior **and** > pixel floor; LONGITUDINAL improves with a CI excluding 0. ⛔ shortfall is reported **as the v5b case**, not re-tuned. Deliberate regression: the head trained on **shuffled** labels — its tokens must not help. ⛔ **Leak guard (I3):** the oracle loader path stays behind `AGENT_ORACLE=1`, asserted OFF by a test | ⚠️ **4 arms ≈ 2.5 h** (A) / **3 arms ≈ 3.0 h** (B) — §7A.7 #2 · tiny rig | **C1** says the bar is reachable | ⭐ **NOW** (after C1) |
+| **C4** | **`WP-V5A-8` · `E-BEVA-1`** | the polar-native LSS lift into an ego-frame grid the fan indexes directly, **taught by the agent raster alone** — zero new bytes | v5a | ⛔ **non-negotiable: an explicit `fov_mask` channel with every loss masked by it** — an out-of-frustum cell is **UNOBSERVED, not free** (reuse `bev_raster.py`'s existing `fov_mask`/`fov_census`). **Deliberate regression: the same lift with the mask removed must be CAUGHT** — better on a naive occupancy metric, worse on the families; if masked and unmasked are indistinguishable the occupancy readout is not measuring occupancy | **3 arms ≈ 1.5 h · tiny rig** | **B4** separates (⛔ if grounding the attention in PV does not separate, **the geometry is not what is missing** and a lift is premature) | ⭐ **NOW** (after B4) |
+| **C5** | **`WP-V5A-7` · `E-CAM-1`** | the surround pilot: the **cross pair** on ~100 clips (**≈ 3 GB**), shared trunk + view embedding, fetched by **HTTP range reads of zip members** | v5a | separation on **LATERAL / TACTICAL** ⇒ buy the corpus. ⚠️ no separation at n = 100 is reported **underpowered with its n**, never "no effect". ⭐ **B1 selects the variant**: linear ⇒ the *input* arm; ≥ 2.0× ⇒ the **distillation** arm (the cross pair supervises a 360° agent-presence target the front-only trunk must predict; tick unchanged, **0 ms**) | **2 arms ≈ 1.0 h · tiny rig** + ≈ 3 GB | **B1** | ⭐ **NOW** (after B1) |
+| **C6** | **`WP-V5A-9` · the surround corpus pull** | build the `*.v2ep.pt`-shaped caches for the extra cameras — **149 GB** (cross pair) or **429 GB** (all six) for B1, **0 episodes lost** (all 7 cameras at 100.00 % coverage), **0 new calibration** (the other six extrinsics rows are in the 41 KB parquet we already pay for) | v5a | engineering, not an arm. ⛔ codec must stay **PNG** (`v2_dataset.py:325` and `slice_v2_cache.py` refuse to sub-frame a lossy cache) | **0 GPU** · a non-training pod · ≈ 160 GB cache per extra camera (ESTIMATED) | **C5** separates | ⭐ **NOW** in principle; ⚠️ the **B1 chunk spread is not banked** — §7A.7 #3 |
+
+#### Phase D — rungs that genuinely wait for a refcv4b checkpoint
+
+refcv4b is 🟢 **TRAINING** on `tanitad-refcv3` (= `tanitad-a40`), 40,284 steps at **3.844 s/step**
+marginal median, ETA **~2026-09-06 08:00 UTC** (ESTIMATED, `MODEL_REGISTRY.md` §4.6).
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **D1** | **`WP-9a` final** — `E-DDA-4` on the final ckpt | the **decision** read: is the bank a prior? | v5a | `‖offset‖ < 1 m` ⇒ the sampler is the fork ((A) §1.2 #15) | **≈ 0.5 h · 4060** | the refcv4b **final** | ⏳ **waits** (the *diagnostic* already runs at B10) |
+| **D2** | **`WP-9b`** — the hierarchy panel | the 12-arm post-training ablation of `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3 (H-NAVC-1..3, H-SEAM-1, H-H19-1, H-CONS-1, **H-SEL-1**) | v5a | every control at its known value **before any row is read** (`ha0` compliance = 0.0000 exactly; each nav-blind control's shuffle/zero delta = 0.0000 exactly; `ha`/`ha0`/`ha0_ext` bit-identical across arms). **Any control off its value voids the panel** | **6–10 h · 4060** | ⛔ **A1** (the switches), and refcv4b | ⏳ **waits** — ⛔ **and A1 must land first** |
+| **D3** | **`WP-7` · `E-DDA-2b`** | the four-family coarse-to-fine sub-metric selector (**no PDM, no map**; `DAC` refused as unconstructible on PhysicalAI), generator **frozen**, ≈ 3.5 M params outside the generator | v5a | the selection gap closes with a CI excluding 0 **and** fan-collision-vs-replay does **not** rise (⇒ V2 Tab. 9's hackish direction is REFUSED). Deliberate regression: a progress-only head that **must** buy progress *with* collisions, else the collision readout is blind and the panel is **VOID** | **module 0 GPU · training ≈ 3–5 h · 4060** | ⛔ **A3**; a refcv4b checkpoint's fan | **module ⭐ NOW**; ⏳ **training waits** |
+| **D4** | **`WP-13` · `E-DDA-3b` → `E-DDA-6`** | head-only scale-policy RL (trainable **8.60 %**): V2's two code ingredients (≥ GT bar + 2-scalar control-scale exploration), then the grouping key | v5a | ⛔ **`G-REWARD` is a PRECONDITION, not a milestone**: hold-v0 must beat the human on **≤ 30 %** of lead windows (**today 78.3 %**, `D-RL-REWARD-FLOOR-1`). A reward that fails G-REWARD **may not train anything**. Controls: `ctrl0` lr = 0 must read delta **exactly zero**; the GT-future-in-the-advantage regression **must FAIL G-FAN** or the run is VOID | **≈ 2.5–3 h per panel · 4060** | ⛔ **A3**, ⛔ **G-REWARD**, a refcv4b final | ⏳ **waits** |
+
+#### Phase E — the v5a launch
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **E1** | **`WP-14a`** (≡ (B)'s `WP-V5A-F`) | the **refcv5a** full-scale run — camera-only | v5a | ⭐ **the bundling rule, unchanged from (A) §7.4:** the launch bundles **only levers whose rig arm PASSED**; the registered delta is pinned as a **frozenset** the preflight refuses to deviate from; the bundle is declared **as a bundle** in the registry row, so a refcv5a-vs-refcv4b delta is an **arm** delta and never a lever attribution. ⚠️ **Any lever whose rig arm has not run by the launch date is LEFT OUT, not launched hopefully** | **A40 (`tanitad-refcv3`), 40,284 steps ≈ 43 h @ 3.844 s/step** | refcv4b's verdict + ⛔ PI / Master Mind `LAUNCH_APPROVED=1` | ⏳ **waits** |
+
+**v5a rig-GPU total (ESTIMATED, serial, on hardware we already own):** Phase B ≈ **11 h** + Phase C
+≈ **6.4–8.4 h** + Phase D ≈ **12–18.5 h** ⇒ **≈ 29–38 rig-GPU-h**, plus Phase A's ≈ 2.5 CPU-days and
+E1's ≈ 43 A40-hours. ⚠️ This is **larger than (B)'s ≈ 13.4 h** because (B) priced only its own ten
+rungs; the union carries (A)'s sampler, selector, loss-form, nav-wiring, RL and hierarchy rungs as
+well. Neither figure is wrong — they count different sets, and this is the union.
+
+⭐ **Eleven rungs (A1–A3, B1–B11 minus the two that wait) start today at zero pod GPU**, and between
+them they decide the two highest-value mechanisms in the programme: **grounded spatial attention**
+and **agent tokens**.
+
+### 7A.3 v5b — LiDAR, ordered, and explicitly OFF the model critical path
+
+⛔ **This ordering preserves (A) §7.4's own statement, and that statement is the point of the
+release split:** *"What is NOT on the path, and why that is deliberate: the LiDAR/BEV work
+(WP-11/WP-12). §3.4's camera-only fallback … is a complete path to closing the cross-attention gap
+without a single byte of LiDAR. The LiDAR build raises the ceiling; it never blocks the launch."*
+`D-REFCV5-PLAN-8` registers it. **Nothing in v5a waits for anything in v5b.**
+
+| # | CANONICAL | objective (one line) | release | gate | cost · box | depends on | **starts now / waits for refcv4b** |
+|---|---|---|---|---|---|---|---|
+| **L1** | **`WP-11a`** — the LiDAR pilot | 10 clips on the dev box: decode with `DracoPy`, print points/spin, field names, spin timestamps and rate, decode time; confirm the 128 × 3600 layout against `lidar_intrinsics.offline` | v5b | ⭐ a **control that must read a known value**: the rig-frame point cloud of a known parked-car frame puts the car where `obstacle.offline` puts it | **0 pod GPU · dev box ≤ 1 d** | — | ⭐ **NOW** — independent of refcv4b |
+| **L2** | **`WP-11b`** — the rasteriser | `stack/tanitad/data/lidar_bev.py`, pure numpy, **tests first**: LiDAR → rig frame → the DD-faithful **256 × 256 @ 0.25 m/px, ±32 m, 2 height bins** histogram | v5b | asserts on **CONTENT** (non-zero, mean occupancy printed; an all-zero raster is a **refusal**, never an output); a deliberate-regression test feeds a wrong extrinsic and **must see the parked car move**; point density inside `obstacle.offline` footprints ≫ outside, against a pre-registered bar | **0 GPU · CPU** | L1 | ⭐ **NOW** |
+| **L3** | **`WP-11c`** — sidecar + loader + read-set | `scripts/v2_bev_sidecar.py` writing `<clip>.v2bev.pt` **beside** `*.v2ep.pt` (MANIFEST-last, sha256 per file, provenance stamp); `_V2BevProxy` in `v2_dataset.py`; declare the new read-set layer in `stack/tests/test_physicalai_feature_readset.py` | v5b | ⛔ a window without a sidecar raises **`NO_BEV`**, never returns zeros (the `jpeg_buf`-is-PNG / zero-memmap trap); ⛔ frames stay **byte-identical** (I6); ⛔ **re-time the real path on one chunk** before the corpus run — never port an old timing onto a new format | **0 GPU · CPU** | L2 | ⭐ **NOW** |
+| **L4** | **`WP-11d`** — the corpus build | streamed chunk-in → rasters-out → chunk-deleted, B1 train + eval; sidecars published **PRIVATE** on the PI's HF account | v5b | ⛔ **never the training pod**; ⛔ **`df` cannot see the ~466 GB MooseFS quota** — use a real `dd` write test | **≈ 1.53 TB transit** (≈ 3.6 h at ~118 MB/s) **+ ≈ 3–8 h** build · a non-training pod; output ≈ **14–38 GB** PNG for B1 (ESTIMATED) | L3 + HF quota + a free pod | ⏳ **waits on provisioning, not on refcv4b** |
+| **L5** | **`WP-12a` · `E-BEV-1`** | the camera→BEV lift **taught by the LiDAR histogram** (+ agent raster) — LiDAR as a **train-time label**, inference stays camera-only | v5b | paired against **C4 `E-BEVA-1`** on the same windows, so *what the LiDAR teacher buys beyond the agent raster* is the measured quantity. I3 ✔ (LiDAR is a label here) | **4 arms ≈ 3 h · tiny rig** | L4, and **C4** for the pairing | ⏳ after L4 |
+| **L6** | **`WP-12b` · `E-LIDAR-1`** | LiDAR BEV as an **inference input** (small BEV encoder → tokens into the decoder KV, late fusion) | v5b | ⛔ **gated on `D-REFCV5-PLAN-7` — a PI doctrine ruling, OPEN**: the constitution's literal wording is *vision-only*; the Mission Plan (`:181`) and ROADMAP L4 foresee LiDAR/radar fusion. Built and pre-registered either way; **not run** without the ruling. Paired against L5 on the same windows | **4 arms ≈ 3 h · tiny rig** | L4 **and** `D-REFCV5-PLAN-7` | ⏳ **waits on the PI**, not on refcv4b |
+| **L7** | **`WP-14b`** | the **refcv5b** full-scale run | v5b | the same bundling rule as E1: only levers whose rig arm passed, pinned as a frozenset | **A40 ≈ 43 h** | v5a's verdict + PI approval | ⏳ **waits** |
+
+⚠️ **What L1–L3 cost is engineering, not GPU, and they are independent of everything in v5a** — so
+they are legitimate pull-items for a GPU-gated turn. ⛔ **What they must never do is become a
+predecessor of a v5a rung.** The moment an v5a rung is written as "after WP-11", the split has been
+lost; §7 already contained exactly that edge for `E-BEV-1`, and §7A.1.b is where it was removed.
 
 ### 7A.4 The release boundary as a decision rule, not a date
 
