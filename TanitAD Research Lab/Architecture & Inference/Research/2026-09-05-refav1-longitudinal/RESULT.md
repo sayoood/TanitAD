@@ -13,9 +13,15 @@ expressivity* row — those are labelled and are NOT planner results.
 
 ## 0. The one-line answer
 
-**P4 — does refav1 BEAT `ha0_ext`? NOT YET, and not measurable this turn: the
-answer is GATED ON COMPUTE, and the blocker is named and measured.** The last
-standing verdict is `M27`'s **PARITY**.
+**P4 — does refav1 BEAT `ha0_ext`? PARTLY, AND MEASURED (§6).** `lonshift`
+(D2) landed: it **beats `ha0_ext` on FDE with a separated interval
+(−0.3723 [−0.7473, −0.0180])** and on the lateral family, moves ADE from
++0.0162 to **−0.0904** (better, interval still touching zero), and **cuts the
+longitudinal gap 47 %, +0.4862 → +0.2599** — but it **still loses that
+family**, so the conjunction the bar demands is **NOT YET** met. Against `ha0`
+(constant velocity) it now **wins ADE, FDE and the whole longitudinal family,
+all separated**. And it gets there **while ACTING**: `frac a == 0` fell
+**0.475 → 0.000**.
 
 What this turn did produce, all MEASURED:
 
@@ -516,21 +522,98 @@ must read exactly 0.0000 with a zero-width interval.
 
 ---
 
-## 6. P4 — does refav1 now BEAT `ha0_ext`?
+## 6. ⭐⭐⭐ THE RESULT — `lonshift` (D2) LANDED, and P4 answered honestly
 
-**NOT YET MEASURED for the new arms.** The last measured verdict stands:
-**refav1 reaches PARITY on ADE (+0.0162 [−0.1648, +0.1980], inside the 0.0607
-seed floor), BEATS `ha0_ext` on the GT-turn stratum (0.9699 vs 1.1521), and
-LOSES the longitudinal family (`speed_mae` 0.79 vs 0.31).**
+**Arm:** `lonshift`, landed 2026-09-05T21:18:02Z, exit 0. `ccos`,
+`(0.0, 15.11245, 64.29715042415070)`, `--plan-seed 0`, ckpt 21,109, 40 windows /
+8 episodes, stride 16. **ONE variable against the banked `wk15`:**
+`--a-sustain-mode a0_shift`. Verified by an **argv audit of the live process**
+and by the reached-it guard, which raises on window 1 if `res.a_shift` returns
+`None` — the first `plan()` completed (69.00 s), so the lever provably reached
+`plan()`. Estimator: paired episode-cluster bootstrap, `n_boot 2000`, per family,
+never pooled. Known-value control `wk15 − wk15` reads **`+0.0000 [0, 0]` on all
+ten metrics**. Artifacts: `raw/pd_lonshift.md` / `.json`,
+`raw/lon_emitted_lonshift.txt`, `raw/arms/rec_lonshift.json`.
 
-What this turn changes is that **the longitudinal loss is no longer a suspect
-list**: it is a vocabulary that cannot express 82.4 % of the corpus's
-acceleration demand, a goal that commands `a ≡ 0` on 77.5 % of windows, a jerk
-term that does not price the seam it needs to, and a third cost weight that has
-never been evaluated. Three of the four are now implemented, pinned and queued;
-the fourth is escalated.
+### 6.1 ⛔ FIRST: DOES IT ACT? (a floor tie reached by doing nothing is not a result)
 
----
+| | `wk15` | **`lonshift`** |
+|---|---|---|
+| `frac a == 0` over the plan window | 0.475 | **0.000** |
+| `mean abs a` | 0.31305 | **0.46552** |
+| emitted `a` constant over the horizon | 0.475 | **0.000** |
+| **`a[0] == a_goal[0]` (the plan copies the token)** | 0.675 | **0.050** |
+| CEM wins (vs a baseline winning) | 0.750 | **1.000** |
+| `plan_cost == basecost_cv` | 0.250 | **0.000** |
+| distinct emitted `a[0]` | 17 (`0.0` x19, `-1.5` x4, `+0.75` x3) | **40, no repeats** |
+
+⭐⭐ **The do-nothing plan is gone on every window, and the quantisation with
+it.** §1.7 measured that the emitted `a[0]` WAS the decoded token's canonical
+rung on 27/40 windows; under D2 that falls to **2/40**, the CEM wins **100 %** of
+windows, and no plan cost equals the do-nothing baseline any more. The
+vocabulary change did not merely move the goal — **it unlocked the search**.
+
+### 6.2 THE FOUR FAMILIES, `lonshift − wk15` (the lever's own effect)
+
+| family | metric | delta | seed floor (`wk151 − wk15`) | verdict |
+|---|---|---|---|---|
+| ADE | `ade_m` | −0.1066 [−0.2114, +0.0193] | +0.0150 | better, not separated |
+| ADE | `fde_m` | −0.2658 [−0.5148, +0.0442] | +0.0567 | better, not separated |
+| **LON** | `speed_mae` | **−0.2263 [−0.3173, −0.1411]** | +0.0076 | **SEPARATED, 29.8x the floor** |
+| **LON** | `along_mae` | **−0.1398 [−0.2291, −0.0578]** | +0.0170 | **SEPARATED, 8.2x** |
+| **LON** | `accel_mae` | **−0.2078 [−0.3055, −0.1107]** | −0.0040 | **SEPARATED, 52x** |
+| LAT | cross / heading / yaw | +0.0202 / +0.8225 / +0.0146 — none separated | +0.0073 / +0.4148 / +0.0096 | ⭐ **untouched — same order as seed noise** |
+| TAC | `traj_lat_correct` | −0.1000 [−0.1750, −0.0250] | **−0.1000 [−0.1750, −0.0250]** | ⛔ **NOT ATTRIBUTABLE** — below |
+| TAC | `traj_lon_correct` | +0.0250 [−0.1250, +0.2000] | +0.0000 | not separated |
+
+⭐⭐ **The tactical row is the seed-floor rule working exactly as written, on its
+first live use.** `TAC_traj_lat_correct` reads `−0.1000 [−0.1750, −0.0250]` —
+**separated** — and a naive reading would have reported it as lever damage. But
+the **seed pair** (`wk151 − wk15`, two arms differing ONLY in `--plan-seed`)
+reads **`−0.1000 [−0.1750, −0.0250]`, bit-for-bit the same interval**. The
+lever's delta does not exceed the floor's — it EQUALS it. ⇒ **the tactical
+regression is NOT attributable to `a_shift`.** That is `D-REFAV1-CG-SEEDFLOOR` /
+`H-ESTIM-SEED-1` catching a false positive in the field.
+
+### 6.3 ⛔ P4, ANSWERED AS COMMITTED — against BOTH floors
+
+| pair | ADE | FDE | LON speed | LAT heading | LAT yaw |
+|---|---|---|---|---|---|
+| `wk15 − ha0_ext` (before) | +0.0162 | −0.1065 | **+0.4862** | −4.5589 | −0.1154 |
+| **`lonshift − ha0_ext`** | **−0.0904** [−0.2078, +0.0177] | **−0.3723 [−0.7473, −0.0180]** | **+0.2599** [+0.1290, +0.4265] | **−3.6436** [−5.7301, −1.2515] | **−0.1009** [−0.1461, −0.0525] |
+| **`lonshift − ha0`** | **−0.1383 [−0.2155, −0.0602]** | **−0.3643 [−0.5409, −0.1819]** | **−0.1560 [−0.2553, −0.0521]** | +0.1935, ns | +0.0063 |
+
+⭐ **AGAINST `ha0` (constant velocity): refav1 now BEATS IT ON ADE, FDE AND THE
+ENTIRE LONGITUDINAL FAMILY, every one separated** — ADE −0.1383, FDE −0.3643,
+LON speed −0.1560, along −0.1557, accel −0.1240. *(Two tiny lateral costs,
+cross +0.0230 and yaw +0.0063, are separated but an order of magnitude smaller
+than the wins, and they are reported here rather than omitted.)*
+
+⭐ **AGAINST `ha0_ext` (the INTEGRATOR, M11): it now BEATS IT ON FDE with a
+SEPARATED interval (−0.3723 [−0.7473, −0.0180]) and on the whole lateral
+family**, and ADE moves from **+0.0162 (worse) to −0.0904 (better)** — though
+that ADE interval still touches zero.
+
+⛔ **AND IT STILL LOSES THE LONGITUDINAL FAMILY: +0.2599 [+0.1290, +0.4265],
+separated.** ⇒ **the honest answer to P4 is NOT YET on the conjunction the bar
+demands (ADE *and* longitudinal, both against `ha0_ext`).** What changed is the
+size and the direction: **the longitudinal gap fell 47 % (+0.4862 → +0.2599) on
+ONE variable**, the arm got there **while acting on every window rather than by
+stopping**, and it is the first refav1 arm to beat `ha0_ext` on a distance metric
+with a separated interval.
+
+### 6.4 What is still owed on this result
+
+1. ⛔ **`lonshift_s1` (the `--plan-seed 1` REPLICATE) has not run** — it is arm 3
+   in the queue. The floor quoted above is **`wk15`'s** seed pair, not
+   `lonshift`'s own. On `LON_speed_mae` the effect is **29.8x** that floor, so it
+   is very unlikely to be noise — but the formal claim needs the replicate, and
+   this result is quotable only with that caveat attached.
+2. `lonseam` (the cost lever alone) started automatically at **21:17:38Z**;
+   `loncomb2` and `lonvocab` follow. `lonvocab` (D1) is what makes the vocabulary
+   win **attributable** between the maintain-only and the all-token form.
+3. The **remaining +0.2599** is the next lever's target. §1.8 says where it
+   lives; `HANDOFF.md` §4 lists the order.
 
 ## 7. Deliverable manifest
 
