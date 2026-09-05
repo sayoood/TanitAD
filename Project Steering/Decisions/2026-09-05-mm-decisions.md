@@ -2569,3 +2569,66 @@ source, and were INHERITED from agent prose when written** — this is the check
 namespace's silence is not absence.** Same family as the units rule (`M18`, the `anchors.pt`
 `control_units` case): **an artifact that does not state a fact in the place you look reads exactly
 like an artifact where the fact is false.**
+
+## M50. ⛔⛔ A KNOWN-FLAKY ENVIRONMENT IS AN ALIBI GENERATOR — I cleared my own blast radius on a search that could not have found anything
+
+### 1. The claim to the PI, and why it was invalid
+
+I told the PI: *"Control passed (7 files) and both searches came back empty — the false claim reached
+**no committed document**. Blast radius confirmed bounded to the two live briefs."*
+
+⛔ **The search could not have matched.** My pattern was
+`mktree[^.]{0,150}(exits? 0|exit code 0|exits zero)` — and **`[^.]` EXCLUDES PERIODS**, so it could
+never match any text containing **`mktree_commit.py`**, which is every real occurrence. ⚠️ The control
+passed because it tested a **different pattern** (`mktree_commit`, no character class) — *a control
+that shares the channel but not the PATTERN does not discriminate*, which is the same shape as M47's
+*shares the channel but not the SCOPE*.
+
+**A completed background probe found what I had missed:** `RETRACTION_LOG.md:13197` and
+`…/2026-09-05-mm-decisions.md:2268`.
+
+⭐ **The substance survives, and only by luck of context:** **both occurrences sit INSIDE retractions** —
+one is the retraction's own heading, the other is M45 quoting the claim in order to refute it two lines
+later. ⇒ the false claim was never **asserted as true** in a committed document. ⛔ **But that
+conclusion is now supported by a search that works, rather than by one that never could.**
+
+### 2. ⭐⭐ THE REAL FINDING: a real intermittent fault ABSORBS unrelated bugs
+
+Tonight, in one hour, **BOTH** were true and I attributed **all** of it to the first:
+
+| miss | true cause | verified by |
+|---|---|---|
+| `git ls-files \| grep rec_combined.json` → 0 | ⭐ **GENUINE mount transient** | the identical command **now returns 1** |
+| `git grep` regex → 0 (twice) | ⛔ **MY PATTERN** | exact-literal probe finds it on **all three channels** |
+
+⇒ ⛔⛔ **When an environment has a documented flaky component, that component becomes a ready-made
+explanation that silently absorbs your own defects.** Every false negative gets the same diagnosis,
+because the diagnosis is *always available and often correct*. **The alibi is what makes it dangerous —
+a fault that failed every time would be found immediately.**
+
+### 3. ⭐ The discriminator, and it is one command
+
+⛔ **Never diagnose a zero-result with a control that differs from the query.** Probe with an
+**EXACT LITERAL known to exist in the target**:
+
+```
+git grep -c -F "<literal that must exist>" HEAD -- <path>     # channel up?  (must be >0)
+git grep -c -F "<literal you are hunting>" HEAD -- <path>     # then this 0 is REAL
+```
+
+MEASURED: `-F "reports failure and exits 0"` returns **1 on git-grep-HEAD, git-grep-worktree AND bash
+grep**, with a same-file control of **69**. ⇒ **the channel was never down; only my regex was wrong.**
+⭐ A literal cannot be defeated by a character class, an escape, or an interval quantifier — which is
+exactly why it separates *"the tool cannot read"* from *"my pattern cannot match"*.
+
+### 4. Scope, and the count
+
+⚠️ **This is the THIRD time tonight my instrument was the fault rather than its target** — the
+committer's exit code (`M45`, and already banked by a sibling as `D-SHELL-PIPEFAIL-1`), the blast-radius
+search (this entry), and it is the same class the B1 stream self-corrected within the same hour
+(*"one of my four false negatives was my error, not the mount's"*). ⛔ **Two independent agents and I
+all reached for the mount first.** That is not three coincidences; it is the alibi working as described.
+
+⇒ **Adds to the family in `CLAUDE.md`:** *"0 hits is a claim about the SEARCH, not the CONTENT"* now
+carries a second half — ⭐ **"…and when the search is broken, it is at least as likely to be YOUR
+PATTERN as the mount. Prove the channel with a literal before blaming the environment."**
