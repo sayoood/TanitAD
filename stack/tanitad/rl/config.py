@@ -73,6 +73,10 @@ class PostTrainConfig:
     #: DDv2 ablation: MULTIPLICATIVE exploration noise beat additive
     #: (90.1 vs 89.7 PDMS). Multiplicative scales with the offset magnitude, so
     #: it explores proportionally instead of swamping small offsets.
+    #: ``"two_scalar"`` (added 2026-09-05) is V2's RELEASED sampler: one scalar
+    #: per axis per trajectory, broadcast over the waypoints — a (stretch-along,
+    #: stretch-lateral) family per anchor (`_model_rl.py:646-654`; the additive
+    #: DDPM term there is multiplied by zero). See refcv3_adapter.sample_offsets.
     noise_mode: str = "multiplicative"
     noise_scale: float = 0.1
 
@@ -83,6 +87,16 @@ class PostTrainConfig:
     #: signal orders them. They are different objects.
     ttc_min_s: float = 1.5
     veto_value: float = -1.0
+
+    #: ⭐ THE >=GT POSITIVE MASK (V2's released code, `_model_rl.py:891-893`;
+    #: added 2026-09-05, REF-C RL re-scope). When True the caller MUST supply a
+    #: per-window `gt_bar` (the GT trajectory's reward under the same spec) to
+    #: `rl_objective`; positive INTER-anchor advantage is then granted only to
+    #: anchors whose mean sampled reward is >= the bar. `rl_objective` REFUSES
+    #: a configured bar with no value handed in — a bar that silently never
+    #: applies is the false-green class. OFF by default so every earlier run
+    #: record keeps its meaning.
+    use_gt_bar: bool = False
 
     # --- REFERENCE-POLICY ANCHOR (the trust region; OUTSIDE the advantage) --
     #: ⭐ GRPO's stabiliser is a trust region against the REFERENCE POLICY, not
@@ -181,9 +195,9 @@ class PostTrainConfig:
                 "one gives an identically-zero advantage and a SILENT no-op.")
         if self.normalize not in ("none", "std"):
             raise ValueError(f"normalize must be 'none'|'std', got {self.normalize!r}")
-        if self.noise_mode not in ("multiplicative", "additive"):
-            raise ValueError(f"noise_mode must be 'multiplicative'|'additive', "
-                             f"got {self.noise_mode!r}")
+        if self.noise_mode not in ("multiplicative", "additive", "two_scalar"):
+            raise ValueError(f"noise_mode must be 'multiplicative'|'additive'|"
+                             f"'two_scalar', got {self.noise_mode!r}")
         if not self.freeze_trunk:
             # allowed, but it must be a decision someone typed
             pass

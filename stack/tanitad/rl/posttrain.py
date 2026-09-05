@@ -153,6 +153,13 @@ def apply_exploration_noise(offset: Tensor, cfg: PostTrainConfig,
     offsets are perturbed proportionally instead of being swamped — DDv2's
     ablation measured 90.1 vs 89.7 PDMS for multiplicative over additive.
     """
+    if cfg.noise_mode == "two_scalar":
+        # V2's released sampler: ONE scalar per axis per trajectory, broadcast
+        # over the waypoints (see refcv3_adapter.sample_offsets for the pin).
+        shape = (*offset.shape[:-2], 1, offset.shape[-1])
+        eps = torch.randn(shape, generator=gen, device=offset.device,
+                          dtype=offset.dtype).expand(offset.shape)
+        return offset * (1.0 + cfg.noise_scale * eps)
     eps = torch.randn(offset.shape, generator=gen, device=offset.device,
                       dtype=offset.dtype)
     if cfg.noise_mode == "multiplicative":
@@ -162,18 +169,36 @@ def apply_exploration_noise(offset: Tensor, cfg: PostTrainConfig,
 
 def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
                  spec: R.RewardSpec, *, imitation_loss: Tensor | None = None,
-                 anchor_pair: tuple[Tensor, Tensor] | None = None
+                 anchor_pair: tuple[Tensor, Tensor] | None = None,
+                 gt_bar: Tensor | None = None
                  ) -> dict[str, Tensor]:
     """One RL objective evaluation over ``traj [B, N, G, S, 2]``.
 
     Returns the loss and every part of it, because an aggregate that hides which
     half moved makes an ablation unattributable.
+
+    ``gt_bar`` ``[B]`` — the GT trajectory's reward under ``spec`` on the same
+    window (V2's >=GT positive mask, `advantage.truncated_inter_anchor_advantage`).
+    Required iff ``cfg.use_gt_bar``; refused otherwise, in both directions.
     """
     AUD.assert_selector_disjoint(ctx)
     reward = spec(traj, ctx)                                    # [B, N, G]
     if reward.shape != logp.shape:
         raise ValueError(f"reward {tuple(reward.shape)} vs logp "
                          f"{tuple(logp.shape)} must match")
+    use_bar = bool(getattr(cfg, "use_gt_bar", False))
+    if use_bar and gt_bar is None:
+        raise ValueError(
+            "use_gt_bar=True but no gt_bar was handed to rl_objective. A bar that "
+            "is configured and never applied is a silent no-op that still exits 0 "
+            "— refusing. Score the GT trajectory under the same RewardSpec and pass "
+            "it as gt_bar=[B].")
+    if gt_bar is not None and not use_bar:
+        raise ValueError("gt_bar was supplied but cfg.use_gt_bar is False — the run "
+                         "record would not say the bar was in force; set use_gt_bar")
+    if gt_bar is not None and tuple(gt_bar.shape) != tuple(reward.shape[:-2]):
+        raise ValueError(f"gt_bar {tuple(gt_bar.shape)} must be per-window "
+                         f"{tuple(reward.shape[:-2])}")
     # ⛔ THE VETO CHANNEL — constraints, not ranking terms. Collision OR
     # TTC-imminent. Applied outside the group-relative centring so a vetoed
     # candidate is PINNED, never merely ranked lower.
@@ -195,7 +220,8 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
 
     parts = A.composite_advantage(reward, veto_ig=veto,
                                   w_intra=cfg.w_intra, w_inter=cfg.w_inter,
-                                  normalize=cfg.normalize)
+                                  normalize=cfg.normalize,
+                                  gt_bar=(gt_bar.detach() if gt_bar is not None else None))
     pg = A.policy_gradient_loss(logp, parts["total"], kl_coef=cfg.kl_coef)
     loss = pg["loss"]
     if imitation_loss is not None:
@@ -207,7 +233,13 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
     # fan-collapse objective (see rewards.DEFAULT_WEIGHTS on gt_similarity).
     out = {"loss": loss, "pg": pg["pg"], "reward": reward,
            "advantage": parts["total"], "adv_intra": parts["intra"],
-           "adv_inter": parts["inter"]}
+           "adv_inter": parts["inter"],
+           # the veto channel's firing rate — how often the constraint had
+           # anything to constrain. A reward whose veto never fires cannot
+           # push mass away from collision (the re-scope's primary question).
+           "veto_rate": veto.to(reward.dtype).mean().detach()}
+    if "frac_above_bar" in parts:
+        out["frac_above_bar"] = parts["frac_above_bar"]
     if cfg.w_anchor > 0.0:
         if anchor_pair is None:
             raise ValueError(
@@ -267,7 +299,8 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
         traj, logp, ctx = got[0], got[1], got[2]
         extras = got[3] if len(got) > 3 else {}
         out = rl_objective(traj, logp, ctx, cfg, spec,
-                           anchor_pair=extras.get("anchor_pair"))
+                           anchor_pair=extras.get("anchor_pair"),
+                           gt_bar=extras.get("gt_bar"))
 
         opt.zero_grad(set_to_none=True)
         out["loss"].backward()
@@ -285,8 +318,12 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
             counters.components_fired.setdefault(name, 0)
             counters.components_fired[name] += int(bool(info["fired"]))
 
-        history.append({"step": step, "loss": float(out["loss"].detach()),
-                        "reward_mean": float(out["reward"].detach().mean())})
+        h = {"step": step, "loss": float(out["loss"].detach()),
+             "reward_mean": float(out["reward"].detach().mean()),
+             "veto_rate": float(out["veto_rate"])}
+        if "frac_above_bar" in out:
+            h["frac_above_bar"] = float(out["frac_above_bar"])
+        history.append(h)
         if step >= cfg.steps:
             break
 
@@ -307,6 +344,15 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
                          "reason": audit.reason,
                          "reference": audit.reference, "scores": audit.scores},
         "final_loss": history[-1]["loss"] if history else None,
+        # the two facts the RE-SCOPE (2026-09-05) needs from every run record:
+        # how often the veto channel had anything to pin, and how often V2's
+        # >=GT bar let a positive advantage through at all.
+        "veto_rate_mean": (float(sum(h["veto_rate"] for h in history) / len(history))
+                           if history else None),
+        "frac_above_bar_mean": (float(sum(h["frac_above_bar"] for h in history) / len(history))
+                                if history and "frac_above_bar" in history[0] else None),
+        "use_gt_bar": bool(getattr(cfg, "use_gt_bar", False)),
+        "noise_mode": cfg.noise_mode,
         "_tier": "T0 training-side; capability claims are T1 only",
         "_evidence_class": "MEASURED (ours)",
     }

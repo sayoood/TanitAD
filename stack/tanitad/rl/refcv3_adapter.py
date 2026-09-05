@@ -62,13 +62,34 @@ def sample_offsets(offset: Tensor, cfg: PostTrainConfig, *,
     b, n, s, two = offset.shape
     mean = offset.unsqueeze(2).expand(b, n, g, s, two)
 
-    if cfg.noise_mode == "multiplicative":
+    if cfg.noise_mode in ("multiplicative", "two_scalar"):
         scale = (mean.abs() * cfg.noise_scale).clamp_min(min_scale)
     else:
         scale = torch.full_like(mean, max(cfg.noise_scale, min_scale))
 
-    eps = torch.randn(mean.shape, generator=generator, device=mean.device,
-                      dtype=mean.dtype)
+    if cfg.noise_mode == "two_scalar":
+        # ⭐ THE V2-FAITHFUL SCALE POLICY (added 2026-09-05, REF-C RL re-scope).
+        # DDv2's released sampler draws TWO scalars per trajectory — one
+        # longitudinal, one lateral — and scales every waypoint by them
+        # (`diffusiondrivev2_model_rl.py:646-654`: `randn([B, N, 1, 1])` per
+        # axis, broadcast over the 8 waypoints; the additive DDPM term is
+        # multiplied by ZERO at :640/:666). The explored family per anchor is
+        # therefore a 2-parameter (stretch-along, stretch-lateral) family, which
+        # keeps every sample smooth and is exactly the along-track axis on which
+        # our fan's deficit sits (D-REFCV3-AXIS1: 92.2 % of the os-ha gap).
+        # ⚠️ STATED LIMIT, as in V2 itself (DDv2 analysis §1.3 #3): the
+        # likelihood below is the per-coordinate Gaussian summed over (S, 2),
+        # while the sampler has rank 2 — the 2S terms are perfectly correlated.
+        # That is the SAME class of estimator the published method trains with
+        # (a directional finite difference along the mean), and it is pinned
+        # here on purpose so the port is the released mechanism and not a
+        # re-derivation of it. `test_rl_v2_faithful.py` pins the constant
+        # per-axis ratio and the directional convergence.
+        eps = torch.randn((b, n, g, 1, two), generator=generator,
+                          device=mean.device, dtype=mean.dtype).expand(b, n, g, s, two)
+    else:
+        eps = torch.randn(mean.shape, generator=generator, device=mean.device,
+                          dtype=mean.dtype)
     sample = mean + scale * eps
 
     # ⛔ THE SCORE-FUNCTION GRADIENT LIVES IN (sample.detach() - mean) — NOT eps.

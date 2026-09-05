@@ -90,18 +90,42 @@ def grpo_advantage(reward: Tensor, *, normalize: str = "none") -> Tensor:
 
 def truncated_inter_anchor_advantage(reward: Tensor, *,
                                      veto: Tensor | None = None,
-                                     veto_value: float = -1.0) -> Tensor:
+                                     veto_value: float = -1.0,
+                                     gt_bar: Tensor | None = None,
+                                     bar_eps: float = 1e-6) -> Tensor:
     """Cross-anchor advantage with negatives truncated to 0. ``reward`` [..., N].
 
     Negatives -> 0 (do not push mass into the low-quality modes); VETOED
     candidates -> ``veto_value``.
+
+    ⭐ ``gt_bar`` — THE >=GT POSITIVE MASK (added 2026-09-05, REF-C RL re-scope).
+    DiffusionDriveV2's RELEASED code does something its paper does not say
+    (`hustvl/DiffusionDriveV2@1cd12a1`, `diffusiondrivev2_model_rl.py:891-893`,
+    PUBLISHED-CODE, read in full by the 2026-09-05 DDv2 analysis): the GT
+    trajectory is scored under the SAME reward as the candidates and positive
+    advantage is granted ONLY to candidates whose reward is at least the
+    human's own — ``mask_positive = reward > reward_gt - 1e-6``, then
+    ``clamp(min=0) * mask_positive``. ``gt_bar`` is that per-window scalar,
+    ``[...]`` or ``[..., 1]``, broadcast over N.
+
+    ⛔ WHY THIS IS NOT AN ECHO. The bar is the human's SCORE, not the human's
+    SHAPE: a candidate far from the logged path that scores higher earns
+    positive advantage, and a candidate that merely reproduces the logged path
+    gains nothing beyond it. It is the same object as DDv2's; the ego future
+    enters as one threshold value per window, never as a target (the DDv2
+    analysis §3.3: "a bar, not a target"). The reward context itself still
+    carries no future (``FORBIDDEN_FUTURE_CTX`` in the driver) — the bar is
+    handed in beside the context, and the caller records ``frac_above_bar``
+    so a bar that zeroes every row (V2's own common case: most rows carry
+    lambda_IL = 1.0) is a logged fact, not a silent no-op.
 
     ⛔ ``veto`` IS THE CONSTRAINT CHANNEL, AND IT IS DELIBERATELY NOT A REWARD
     TERM. It carries collision AND TTC-imminent — failures that are never
     acceptable at any ranking. Applying it HERE, after the centring, is what
     makes it a constraint: a vetoed candidate is PINNED rather than merely
     ordered below its neighbours, so no amount of good behaviour elsewhere in
-    the trajectory can buy it back.
+    the trajectory can buy it back. The veto is applied AFTER the bar, so a
+    vetoed candidate is pinned at ``veto_value`` whatever the bar said.
 
     ⚠️ Why the separation is load-bearing: the first ``headway`` term tried to be
     a constraint and a ranking signal at once. It saturated at its bound and A0
@@ -110,6 +134,15 @@ def truncated_inter_anchor_advantage(reward: Tensor, *,
     produces something that does neither.
     """
     adv = (reward - reward.mean(dim=-1, keepdim=True)).clamp_min(0.0)
+    if gt_bar is not None:
+        bar = gt_bar
+        if bar.dim() == reward.dim() - 1:
+            bar = bar.unsqueeze(-1)
+        if bar.dim() != reward.dim() or bar.shape[-1] != 1:
+            raise ValueError(f"gt_bar {tuple(gt_bar.shape)} must be per-window "
+                             f"([...] or [..., 1]) against reward {tuple(reward.shape)}")
+        above = reward > (bar - bar_eps)
+        adv = adv * above.to(adv.dtype)
     if veto is not None:
         if veto.shape != reward.shape:
             raise ValueError(f"veto {tuple(veto.shape)} must match "
@@ -121,22 +154,34 @@ def truncated_inter_anchor_advantage(reward: Tensor, *,
 def composite_advantage(reward_ig: Tensor, *,
                         veto_ig: Tensor | None = None,
                         w_intra: float = 1.0, w_inter: float = 1.0,
-                        normalize: str = "none") -> dict[str, Tensor]:
+                        normalize: str = "none",
+                        gt_bar: Tensor | None = None) -> dict[str, Tensor]:
     """DDv2's composition on a ``[..., N, G]`` reward (N anchors x G samples).
 
     Returns the two parts and their weighted sum, so a caller can log and audit
     each independently — an aggregate that hides which half moved is how a
     +0.9/+0.6 ablation becomes unattributable.
+
+    ``gt_bar`` ``[...]`` (per window) applies V2's >=GT positive mask to the
+    INTER-anchor half only — exactly where the released code applies it
+    (`_model_rl.py:891-893`); the intra-anchor centring is untouched. The
+    returned ``frac_above_bar`` is the share of anchors whose mean sampled
+    reward cleared the bar, so a bar that zeroed the batch is visible.
     """
     if reward_ig.dim() < 2:
         raise ValueError(f"expected [..., N, G], got {tuple(reward_ig.shape)}")
     intra = grpo_advantage(reward_ig, normalize=normalize)          # [..., N, G]
     per_anchor = reward_ig.mean(dim=-1)                              # [..., N]
     veto_n = veto_ig.any(dim=-1) if veto_ig is not None else None
-    inter = truncated_inter_anchor_advantage(per_anchor, veto=veto_n)
+    inter = truncated_inter_anchor_advantage(per_anchor, veto=veto_n,
+                                             gt_bar=gt_bar)
     total = w_intra * intra + w_inter * inter.unsqueeze(-1)
-    return {"intra": intra, "inter": inter, "total": total,
-            "per_anchor_reward": per_anchor}
+    out = {"intra": intra, "inter": inter, "total": total,
+           "per_anchor_reward": per_anchor}
+    if gt_bar is not None:
+        bar = gt_bar.unsqueeze(-1) if gt_bar.dim() == per_anchor.dim() - 1 else gt_bar
+        out["frac_above_bar"] = (per_anchor > (bar - EPS)).to(per_anchor.dtype).mean()
+    return out
 
 
 def policy_gradient_loss(logp: Tensor, advantage: Tensor, *,
