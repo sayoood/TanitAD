@@ -345,7 +345,8 @@ W_VEND = 0.10                                   #: terminal speed vs target
 
 
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
-                       op_dt: float) -> Tensor:
+                       op_dt: float, *,
+                       kappa_turn: float | None = None) -> Tensor:
     """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
     the operative grid. Deterministic, future-free; see the table above."""
     a = torch.zeros(op_steps)
@@ -375,7 +376,24 @@ def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
         k[n:2 * n] = -sign * kap
 
     if lat.startswith("TURN_"):
-        k[:int(round(GOAL_TURN_S / op_dt))] = sign * GOAL_KAPPA_TURN
+        # ⭐⭐ `kappa_turn` — THE VOCABULARY'S ONLY SUSTAINED CURVATURE, MADE A
+        # KNOB (D-REFAV1-VOCAB-QUANT / D-REFAV1-VOCAB-DESIGN, 2026-09-05).
+        # `NUDGE_*` and `LANE_CHANGE_*` are S-curves (`+kap` then `-kap`) with
+        # ZERO net heading change, so THIS LINE is the only place the goal can
+        # ask for a curve that is still there at the end of the horizon.
+        # MEASURED: at the shipped 0.08 (R 12.5 m) `LANE_KEEP` is the
+        # VOCABULARY-OPTIMAL token on 90.6 % of GT-turn windows, because the
+        # corpus curves at R 100-1000 m — so the head emitting `LANE_KEEP` is
+        # not a decision error, it is the vocabulary having no token for the
+        # road. An ORACLE chooser makes only 38.7 % of real turns expressible
+        # at 0.08 against 100 % at 0.02, and the MEDIAN curvature error on a
+        # turn falls 2.5x (`.../2026-09-05-refav1-goal-margin/ESCALATION.md`).
+        # ⛔ `None` is the SHIPPED constant and skips the branch entirely, so an
+        # arm that does not ask for it is BIT-IDENTICAL to the pre-2026-09-05
+        # expression — asserted by `tests/test_refa_v1_goal_kappa.py::test_a_*`,
+        # each with a same-breath control that must differ.
+        kt = GOAL_KAPPA_TURN if kappa_turn is None else float(kappa_turn)
+        k[:int(round(GOAL_TURN_S / op_dt))] = sign * kt
     elif lat.startswith("LANE_CHANGE_"):
         _s_curve(*GOAL_LANE_CHANGE)
     elif lat.startswith("NUDGE_"):
@@ -1898,7 +1916,8 @@ class RefAV1(nn.Module):
     # -- the imagined goal: the tactical brain's own 6 s field --------------- #
     def _imagine_tactical_goal(self, last: Tensor, brains: dict, v0: Tensor,
                                *, units: str = "kappa",
-                               lat_logit_bias: Tensor | None = None
+                               lat_logit_bias: Tensor | None = None,
+                               goal_kappa_turn: float | None = None
                                ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
@@ -1969,7 +1988,8 @@ class RefAV1(nn.Module):
             raise ValueError(f"v0 carries {v0.shape[0]} rows for a batch of "
                              f"{last.shape[0]}")
         ctrl = torch.stack([
-            canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt)
+            canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt,
+                               kappa_turn=goal_kappa_turn)
             for i, j, v in zip(lat_i, lon_i, v0.tolist())]).to(last)   # [B,K,2]
         stride = self._stride(cfg.tac_dt)
         # ⭐ THE GOAL CROSSES INTO THE MODEL HERE — through the same boundary a
@@ -1987,7 +2007,8 @@ class RefAV1(nn.Module):
     @torch.no_grad()
     def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
                       model_action_units: str = "kappa",
-                      lat_logit_bias: Tensor | None = None
+                      lat_logit_bias: Tensor | None = None,
+                      goal_kappa_turn: float | None = None
                       ) -> tuple[Tensor, dict]:
         """`_imagine_tactical_goal` from raw inputs — what `plan()` uses when no
         goal is supplied. ``(goal [B, Q, d], {"lat", "lon", "controls"})``.
@@ -2010,7 +2031,8 @@ class RefAV1(nn.Module):
             v0_t = v0_t.expand(feats.shape[0])
         return self._imagine_tactical_goal(last, brains, v0_t,
                                            units=model_action_units,
-                                           lat_logit_bias=lat_logit_bias)
+                                           lat_logit_bias=lat_logit_bias,
+                                           goal_kappa_turn=goal_kappa_turn)
 
     # -- deployment: behaviour by PLANNING, not regression ----------------- #
     @torch.no_grad()
@@ -2021,7 +2043,8 @@ class RefAV1(nn.Module):
              cost_time_grid: str = "dense", goal_time_grid: str = "full",
              cost_metric: str = "cos",
              cost_weights: tuple[float, float, float] | None = None,
-             lat_logit_bias: Tensor | None = None):
+             lat_logit_bias: Tensor | None = None,
+             goal_kappa_turn: float | None = None):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -2203,7 +2226,8 @@ class RefAV1(nn.Module):
             # both sides of the cosine, or the comparison is across conventions.
             goal_t, ga = self._imagine_tactical_goal(
                 last, brains, v0_t, units=model_action_units,
-                lat_logit_bias=lat_logit_bias)
+                lat_logit_bias=lat_logit_bias,
+                goal_kappa_turn=goal_kappa_turn)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0]}
@@ -2381,6 +2405,12 @@ class RefAV1(nn.Module):
         res.lat_logit_bias = (None if lat_logit_bias is None
                               else [float(x) for x in
                                     torch.as_tensor(lat_logit_bias).flatten()])
+        # ⭐ THE GOAL'S SUSTAINED CURVATURE TRAVELS TOO. `None` is the shipped
+        # GOAL_KAPPA_TURN; anything else changed the goal FIELD the whole search
+        # was scored against, so a banked window must say so or two arms that
+        # differ ONLY in this are indistinguishable in their dumps.
+        res.goal_kappa_turn = (None if goal_kappa_turn is None
+                               else float(goal_kappa_turn))
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the

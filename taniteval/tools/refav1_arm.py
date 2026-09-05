@@ -724,6 +724,37 @@ def run_dump(a) -> dict:
     else:
         _p("[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, "
            "bit-identical to pre-2026-09-05 arms)")
+
+    # ⭐⭐ `--goal-kappa-turn` — THE VOCABULARY KNOB (D-REFAV1-VOCAB-QUANT).
+    # `canonical_controls` can command exactly TWO sustained curvatures, 0 and
+    # GOAL_KAPPA_TURN = 0.08 (R 12.5 m), because NUDGE_*/LANE_CHANGE_* are
+    # S-curves with ZERO net heading change. The corpus curves at R 100-1000 m,
+    # so on 90.6 % of GT-turn windows LANE_KEEP is the VOCABULARY-OPTIMAL token
+    # and no decision rule or head re-fit can reach the road.
+    # ⛔ SAME VERIFY-GATE AS ABOVE: a stack predating the parameter would ignore
+    # the flag and bank a shipped-vocabulary arm under a finer-vocabulary name.
+    gk_raw = getattr(a, "goal_kappa_turn", None)
+    goal_kappa_turn = None
+    if gk_raw is not None:
+        import inspect as _inspect2
+        if "goal_kappa_turn" not in _inspect2.signature(_R.RefAV1.plan).parameters:
+            raise SystemExit(
+                "[refav1_arm] ⛔ STALE STACK: --goal-kappa-turn was given but "
+                f"{_R.__file__}'s plan() has no such parameter; refusing to "
+                "bank a shipped-vocabulary arm under a finer-vocabulary name")
+        goal_kappa_turn = float(gk_raw)
+        if not (0.0 < goal_kappa_turn <= float(_R.GOAL_KAPPA_MAX)):
+            raise SystemExit(
+                f"[refav1_arm] --goal-kappa-turn {goal_kappa_turn} outside "
+                f"(0, GOAL_KAPPA_MAX={_R.GOAL_KAPPA_MAX}] — the planner clips "
+                "curvature at that bound, so a larger goal is unreachable")
+        _p(f"[goal-vocab] goal_kappa_turn={goal_kappa_turn} 1/m "
+           f"(R {1.0 / goal_kappa_turn:.1f} m) — SHIPPED is "
+           f"{_R.GOAL_KAPPA_TURN} (R {1.0 / _R.GOAL_KAPPA_TURN:.1f} m). This "
+           "changes the GOAL FIELD the whole search is scored against.")
+    else:
+        _p(f"[goal-vocab] goal_kappa_turn=None -> shipped GOAL_KAPPA_TURN="
+           f"{_R.GOAL_KAPPA_TURN} (bit-identical to pre-2026-09-05 arms)")
     _p(f"[grid] K={k} ({k * DT:.1f} s) K_wm={k_wm} stride={stride} "
        f"windows={len(sel)} arms={arms} plan={{samples {pc.n_samples}, iters "
        f"{pc.n_iters}, elites {pc.n_elites}, seed {pc.seed}}} nav_shuffle="
@@ -852,7 +883,8 @@ def run_dump(a) -> dict:
                                      model_action_units=rec_units,
                                      cost_metric=cost_metric,
                                      cost_weights=cost_weights,
-                                     lat_logit_bias=lat_logit_bias)
+                                     lat_logit_bias=lat_logit_bias,
+                                     goal_kappa_turn=goal_kappa_turn)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
                         # ⛔ the flag must have REACHED plan(): a result that
@@ -1007,6 +1039,10 @@ def run_dump(a) -> dict:
                                else [float(x) for x in lat_logit_bias]),
             "source": ("CLI override (--lat-logit-bias)" if lat_logit_bias
                        is not None else "plain argmax (legacy path)"),
+            "goal_kappa_turn": goal_kappa_turn,
+            "goal_kappa_turn_source": ("CLI override (--goal-kappa-turn)"
+                                       if goal_kappa_turn is not None
+                                       else "shipped GOAL_KAPPA_TURN"),
             "site": "refa_v1._imagine_tactical_goal -> lat_head(intent).argmax",
             "why_it_matters": ("the decoded token's canonical profile is the "
                                "planner's ONLY curvature-carrying candidate; a "
@@ -2169,6 +2205,24 @@ def main(argv=None):
                     help="'w_jerk,w_kappa,w_vend' passed to plan(cost_weights=); "
                          "default = the shipped module constants (0.02, 0.05, 0.10). "
                          "Banked in manifest['cost'] and the record")
+    ap.add_argument("--goal-kappa-turn", type=float, default=None,
+                    help="the SUSTAINED curvature (1/m) a TURN_L/TURN_R goal "
+                         "commands. Omit for the shipped GOAL_KAPPA_TURN=0.08 "
+                         "(R 12.5 m), which is BIT-IDENTICAL to every arm "
+                         "banked before 2026-09-05. MEASURED "
+                         "(D-REFAV1-VOCAB-QUANT, 4786 windows / 141 episodes): "
+                         "the vocabulary's only sustained curvatures are 0 and "
+                         "0.08 because NUDGE_*/LANE_CHANGE_* are S-curves with "
+                         "zero NET heading change, while the corpus curves at "
+                         "R 100-1000 m — so LANE_KEEP is the VOCABULARY-OPTIMAL "
+                         "token on 90.6 % of GT-turn windows and the head "
+                         "already turns MORE than its vocabulary justifies. "
+                         "Under an ORACLE chooser 0.02 makes 100 % of real "
+                         "turns expressible against 38.7 % at 0.08, and cuts "
+                         "the MEDIAN curvature error on a turn 2.5x. "
+                         "⛔ Needs --cost-metric ccos to reach the wheels: "
+                         "under the shipped cos a decoded turn is refused on "
+                         "38/38 windows (D-REFAV1-DRIVE-GATE2)")
     ap.add_argument("--lat-logit-bias", default=None,
                     help="comma-separated additive bias on the LATERAL goal "
                          "logits, one value per lat token (8 for v7.0). This "
