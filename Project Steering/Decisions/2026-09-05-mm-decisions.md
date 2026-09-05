@@ -1807,3 +1807,63 @@ pre-existing failure established **by checkout**, not asserted.
 ⇒ **`ta_wk15_s0/s1` and `ta_ccos_s0/s1` are queued** behind the two sibling arms, gated on **arm
 count, not process count** (`M28` §3), with `raw/turn_asym_read.py` printing the verdict against four
 committed conditions mechanically.
+
+## M38. ⭐ THE FIRST ARM TO MOVE THE GENERATOR'S COLLISION RATE — and it trades friction, exactly as the veto did
+
+### 1. The result, and why it is the right object
+
+`coll200` seed 0: **`fan_contact` 0.13411458 → 0.13259549, Δ = −0.001693 [−0.003646, −0.000260],
+separated.** `veto_rate_mean` **0.0000 exactly** (the veto is genuinely off), `final_loss` 0.02588
+against `ctrl_null`'s 0.04459.
+
+⭐⭐ **`sel_idx_agreement_with_base` = 1.000 — the FAN moved underneath an UNCHANGED SELECTION.** That
+is precisely the object the PI named: *"our model is creating trajectories with collision … it is not
+about assessing the gt trajectory."* **The generator changed while the selector's picks stayed
+identical.** No previous RL arm had ever done that (`retraction #32`).
+
+⛔ **It is NOT quotable and the stream is not claiming it.** One seed, and `H-ESTIM-SEED-1` is
+explicit: a separated one-seed CI is **necessary, not sufficient** — on this rig a **zero-lever**
+replicate separated **3 of 18** metrics with nothing moved. The s1 replicate is training.
+
+### 2. ⛔ The cost is real, separated, and on BOTH objects
+
+`fan_peak_g_mean` **+0.025303** · `sel_peak_g` **+0.023960** · `fan_infeasible` **+0.002209** — all
+separated, all **worse**. And **`fan_unsafe` — the aggregate that CONTAINS contact — is +0.000781,
+NOT improved.**
+
+⭐⭐ **This is the veto arm's trade mirrored: contact improves, friction degrades, on the fan AND on
+the driven path.** ⇒ **Two independent levers now show the SAME trade**, which makes it look
+structural rather than a tuning artefact: in this decoder, moving a candidate away from an agent
+moves it into more friction.
+
+⭐ **And that is exactly why the braking result (`M35`) matters more than either lever.** All 1,053
+colliders are fixable by **braking alone** — `fan_contact` → **0.000000** at **0.000 m on the driven
+path** — because braking is **LONGITUDINAL and does not touch curvature.** ⇒ **The trade is a
+property of steering around the problem, not of solving it.** The way out of the trade is the
+channel neither lever uses.
+
+### 3. ⭐⭐ The guard caught a floor that was 38 % too permissive
+
+The stream's first act on the panel was a **definition-match check** between the lever and the banked
+null. It failed on exactly the family it should:
+
+| BEFORE readout | `coll200` | banked `ctrl_null` | |
+|---|---|---|---|
+| `fan_contact` | 0.1341145833 | 0.0974392361 | ratio **1.3764** |
+| `fan_peak_g_mean` | 4.180895572900772 | 4.180895572900772 | ⭐ **bitwise identical** |
+
+**The contact family moved and the friction family did not — the signature of a
+collision-DEFINITION change, not a lever effect.** ⇒ the banked `ctrl_null` is **POINT**-definition;
+its drift is **~38 % too small** to floor a **SWEPT**-definition lever.
+
+⭐ **And 1.3764 reproduces the independent SWEPT/POINT ratio 1.3782 measured on a DIFFERENT window
+set** (36 lead windows of 120 vs 65 of 240). **Two populations, two routes, three significant
+figures** ⇒ `D-RL-CONTACT-DEFN-1` is confirmed by a **third** mechanism.
+
+⇒ The chain was killed and replaced to floor against `s1/ctrl_null` — **definition-matched AND
+dose-matched** — with an explicit guard that compares the two BEFORE readouts and **logs the verdict
+rather than proceeding silently.**
+
+⚠️ **The general rule this earns:** ⛔ **a floor must match the lever in DEFINITION, not only in
+dose.** A null banked under a superseded predicate is not a null — it is a different measurement
+wearing the right filename, and it would have made this lever's effect look **38 % larger** than it is.
