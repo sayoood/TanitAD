@@ -75,3 +75,83 @@ comparing anything across records.**
    whose geometry does not match the rollout, so a "correct" target is unreachable and the search
    chases it. **Measure the realised cost of the oracle goal against the shipped goal** — if the oracle
    goal scores *worse under our own cost*, the cost is refuted directly, with no GPU.
+
+## M54. ⭐⭐⭐ THE SEARCH IS EXONERATED — THE COST IS THE DEFECT. Two independent streams, same verdict.
+
+### 1. The measurement M53 asked for, run in the same session
+
+MEASURED, zero GPU, `dump_oracle_s0/decisions/ep000..ep007.npz`, **8 episodes / 40 windows** (both
+counts asserted against their controls):
+
+| arm | falls back to a baseline | CEM won | `finecost_cv` (landscape control) | `plan_neval` |
+|---|---|---|---|---|
+| `cl` — shipped goal | **10 / 40** | 0.750 | 1.06419 | 2100 |
+| **`cl_oraclegoal`** — TRUE future as goal | **0 / 40** | **1.000** | 1.05611 | 2099 |
+| `cl_oracleseed` — de-confounded | **0 / 40** | **1.000** | 1.05611 | 2100 |
+
+⇒ ⛔⛔ **Given a PERFECT goal the CEM search beats every injected baseline on EVERY window** — against
+falling back on a quarter of them in normal operation — **with an essentially identical evaluation
+budget and a near-identically scaled cost landscape** (the `finecost_cv` control, 1.064 vs 1.056).
+**And it drives 2.03x worse** (`M53`: ADE 2.6899 vs 1.3272).
+
+⇒ ⭐⭐ **THE SEARCH OPTIMISES BETTER AND DRIVES WORSE. That is the definition of a MISSPECIFIED
+OBJECTIVE.** `M53` concluded *"the search and its cost coupling"*; this narrows it and **exonerates
+half of it: the search is healthy; the COST is the defect.**
+
+⚠️ **Caveat kept explicit rather than buried:** `finecost_plan` (0.82033 vs 0.63541) is **NOT directly
+comparable across these arms** — the goal term is evaluated against different targets, so it is a
+lower value of a *different* function. ⛔ **The admissible signals are the BASELINE-FALLBACK COUNT and
+the matched `finecost_cv` control**, both of which are computed the same way in every arm. The
+per-window `fine/cv` ratio printed in the probe is also inadmissible (mean-of-ratios with small
+denominators) and is not quoted.
+
+### 2. ⭐⭐ INDEPENDENT CONFIRMATION from a stream that was answering a different question
+
+The turn-asymmetry stream found a **second assignment site** it had previously missed
+(`refa_v1.py:2571-2599`): the decoded goal's **own canonical control is appended to `seed_pool`
+unconditionally on every window**, with the source's own comment explaining why — *"without this the
+planner returned `hold_v0` on 24/24 windows against a TURN goal… `colored_noise` is zero-mean, so a
+sustained curvature is unreachable unless some candidate carries it."*
+
+MEASURED (realised `|kappa|` exactly 0.080000; `GOAL_KAPPA_TURN` imported from source):
+
+| arm | exact-rung windows | `TURN_L` | `TURN_R` |
+|---|---|---|---|
+| `ccos_argmax` (`W_KAPPA` 0) | **21/22** | **8/9** | **13/13** |
+| `ccos_seed1` (replicate) | **21/22** | **8/9** | **13/13** |
+| `wk15` (`W_KAPPA` 15.11) | 9/22 | ⛔ **0/9** | 9/13 |
+
+⇒ ⛔ **"The search failed to FIND the left-turn candidate" is dead.** On all nine left-goal windows the
+full `+0.08` candidate was **present by construction and LOST ON COST.**
+
+⇒ ⭐⭐⭐ **Two streams, different data, different questions, one verdict: THE COST IS THE DEFECT.**
+That convergence is worth more than either result alone, because neither was designed to test the
+other. ⭐ It also re-reads `M48`'s ladder finding: the ladder did not help the search *find* anything —
+it added **cheaper** candidates to a comparison that was already being lost, which is exactly why it
+removed the RIGHT turns too.
+
+### 3. What this changes
+
+1. ⭐⭐ **Promote the cost work to the top of refav1.** The goal-conditioned lateral cost (plan item A3)
+   is no longer one option among several — it targets the proven defect. ⛔ **Deprioritise every
+   goal-setting improvement**: an arm that improves the goal is currently unmeasurable through a
+   planner that drives worse when handed a perfect one.
+2. ⭐ **The κ penalty is refuted as a lateral lever twice over** — by the frontier (`kamm07` buys 77 %
+   of its ADE gain at zero turning cost) and now by mechanism (it makes the correct, injected candidate
+   lose). **The constraint replaces it.**
+3. ⚠️ **`ol` = 0.8052 m is the parameterisation floor and `lonshift` is already at 0.7868** (`M53` §3)
+   ⇒ **ADE is now measuring the parameterisation, not the policy.** Judge refav1 on the LATERAL and
+   TACTICAL families from here; an ADE-led arm will mislead.
+
+### 4. ⛔ A Master-Mind scheduling ruling, made rather than deferred
+
+The longitudinal stream escalated that **`lonshift_s1`** — the inference-seed replicate that converts
+the package's largest separated win into a **quotable** one — has been starved: its gate correctly caps
+the 8 GB dev-box at 2 concurrent arms (a third is a measured OOM risk that would also endanger the
+sibling's arms), and the sibling refav1 stream kept both slots with back-to-back exploratory arms.
+
+⇒ **RULING: `lonshift_s1` takes the next free dev-box slot.** ⭐ **Validating a landed result outranks
+launching another exploratory arm** — our own estimator doctrine says a one-seed win is *necessary,
+not sufficient*, and refav1's planner **samples**, so the inference-seed replicate is the specific
+control that makes the +0.2263 [−0.3173, −0.1411] longitudinal win admissible. The gate is behaving
+correctly and must NOT be loosened; this is a priority decision, not a capacity one.
