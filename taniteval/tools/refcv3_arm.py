@@ -1895,7 +1895,13 @@ def run_dump(a) -> dict:
         "ablation": dict(abl_rec, verified=abl_state.verified,
                          n_gstr_windows=abl_state.n_gstr_windows),
         "navcomp_sidecar": True,
-        "corpus": {"episodes": a.episodes, "labels": a.labels,
+        #: ⛔ `**join` carries its OWN "labels" key -- the provenance BLOCK,
+        #: with the path under `.path`. A literal `"labels": a.labels` here is
+        #: DEAD (the splat comes last and overwrites it) while LOOKING like it
+        #: publishes the path, and reading it as one cost the STRATEGIC
+        #: nav-compliance family on every arm. The path is now published
+        #: unambiguously as `labels_path`; `labels` stays the provenance block.
+        "corpus": {"episodes": a.episodes, "labels_path": a.labels,
                    "n_episodes_available": len(files), **join},
         "episodes": episodes_manifest,
         "wallclock_s": round(time.time() - t_start, 1),

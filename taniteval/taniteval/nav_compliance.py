@@ -1010,6 +1010,31 @@ def _load_sidecar(dump_dir: str) -> tuple[list[dict], dict]:
     return eps, manifest
 
 
+def resolve_labels_path(labels_path, corpus):
+    """The labels blob's PATH, from any of the three manifest shapes we have written.
+
+    ⛔ **`corpus["labels"]` IS A DICT ON EVERY DUMP `refcv3_arm.py` HAS EVER
+    WRITTEN.** Its manifest literal read ``{"labels": a.labels, **join}`` and
+    ``join`` carries its OWN ``"labels"`` key holding the provenance BLOCK; the
+    splat comes last, so the dict overwrote the path. Reading it as a path raised
+    ``TypeError: os.path.exists(dict)``, which ``from_refcv3_dump``'s caller
+    caught as a REFUSAL — so the entire STRATEGIC nav-compliance family read
+    UNAVAILABLE on **every arm**, silently, while the other three families
+    reported normally. MEASURED 2026-09-05 on the RL panel: 3/3 strategic
+    nav-compliance rows lost on 4,823 windows of compute already paid for.
+
+    ⇒ Accept all three shapes, so banked dumps are readable **without a
+    re-roll**: the explicit ``labels_path`` key (written from 2026-09-05), the
+    provenance dict's ``.path``, and a bare string (the pre-``join`` era).
+    An explicit argument always wins.
+    """
+    if labels_path is None:
+        labels_path = corpus.get("labels_path") or corpus.get("labels")
+    if isinstance(labels_path, dict):
+        labels_path = labels_path.get("path")
+    return labels_path
+
+
 def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
                      n_boot: int = 2000, seed: int = 0, tag: str | None = None,
                      min_delta: float = 0.0) -> dict:
@@ -1028,7 +1053,7 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
             f"the dump's sidecar predates the nav-compliance keys (missing "
             f"{missing}); re-roll with the current refcv3_arm.py — nothing here "
             f"can be computed post hoc", n_all)
-    labels_path = labels_path or ((manifest.get("corpus") or {}).get("labels"))
+    labels_path = resolve_labels_path(labels_path, manifest.get("corpus") or {})
     if not labels_path or not os.path.exists(labels_path):
         return unavailable_block(
             f"labels blob not found at {labels_path!r}; pass --labels", n_all)

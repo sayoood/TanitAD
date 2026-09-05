@@ -2874,3 +2874,20 @@ instead of choosing silently**. Both are now decided. Decision record:
 ⚠️ **Neither adjudication produces a model number, and neither moves an acceptance bar.** They fix
 *which control the bar is read against* and *which ablation the panel runs*. `D-REFCV5-PLAN-9`'s
 and `D-REFCV4-*`'s claims remain exactly as open as before.
+
+---
+
+### 2026-09-05 — A BINDING METRIC FAMILY WAS ABSENT FROM EVERY refcv3 EVAL, AND NOTHING FAILED
+
+| id | claim | status | evidence |
+|---|---|---|---|
+| D-NAVCOMP-SHAPE-1 | ⛔⛔ **THE STRATEGIC nav-COMPLIANCE FAMILY HAS BEEN REFUSED ON EVERY refcv3 ARM SINCE THE SIDECAR LANDED — because a manifest key holds a DICT where the reader wanted a PATH.** `refcv3_arm.py:1898` built `"corpus": {"episodes": …, "labels": a.labels, **join}` while `join` (`:1266`) carries its **own** `"labels"` key holding the *provenance block*; **the splat comes last, so the dict overwrites the path**. `nav_compliance.py` then called `os.path.exists(<dict>)` → `TypeError: _path_exists: path should be string, bytes, os.PathLike or integer, not dict`. ⚠️ **The caller wraps that in `except Exception` and converts it to a REFUSAL**, so the family read UNAVAILABLE with a reason nobody parsed while LONGITUDINAL / LATERAL / TACTICAL reported normally — *the eval never failed*. MEASURED on the RL panel: **3/3 strategic nav-compliance rows lost over 4,823 windows / 141 episodes** of compute already paid for; re-MEASURED on a banked `manifest.json`, where `corpus.labels` reads `dict`, the pre-fix expression reproduces the exact `TypeError`, and the fixed resolver returns the real path string | **SUPPORTED (MEASURED 2026-09-05, source + a banked manifest) — FIXED in the same turn** | `repo:taniteval/taniteval/nav_compliance.py::resolve_labels_path`; `repo:taniteval/tools/refcv3_arm.py:1898`; pin `repo:stack/tests/test_navcomp_labels_shape.py` (**8 passed**, incl. a deliberate-regression control that asserts the OLD expression really raises); log `…/2026-09-05-refc-rl-readiness/raw/run/t1_analyze_rl.log:43,45,47` |
+| D-NAVCOMP-SHAPE-2 | ⭐ **THE FIX RECOVERS THE FAMILY ON DUMPS ALREADY PAID FOR — no re-roll.** `resolve_labels_path` accepts all three manifest generations: the explicit `labels_path` key (written from today), the provenance dict's `.path`, and a bare string; an explicit `--labels` always wins. The writer now publishes the path under `labels_path` and leaves `labels` as the richer provenance block, so the shape is no longer self-contradictory. ⚠️ **This does NOT retract any published strategic number — there were none to retract**; it makes the family readable for the first time, including on the banked refcv4b/refcv3 dumps when the hierarchy panel rolls | **SUPPORTED (MEASURED 2026-09-05)** | same pins |
+
+⚠️ **The class, which is the part worth keeping.** A `try/except Exception` that converts a crash into a
+polite REFUSAL is the right shape for a *missing input* and the wrong shape for a *type error in our own
+code*: it turned a loud failure into a silent absence, inside the one rule that says an eval reporting
+fewer than four families is INCOMPLETE. Same family as the trainer log that went stale while the run was
+healthy, and the memmap of zeros that exited 0 — **an error path that reports success in the shape the
+reader expects.** ⇒ A refusal reason that names a `TypeError` from our own module is a BUG, never a
+refusal, and should be re-raised.
