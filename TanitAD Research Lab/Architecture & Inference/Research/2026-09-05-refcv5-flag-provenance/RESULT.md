@@ -15,7 +15,7 @@
 | **P3** | `--agent-queries` default **32 → 100**, help text corrected. Cost MEASURED through the shipped path at the corpus geometry: step time **+8.2 %** (above a 3.8 % replicate noise floor), parameters **+17,408 = +0.077 %**, peak memory **no detectable difference**. ⇒ **the cost does not bind.** |
 | **P4** | `tanitad/data/join_meta.py` (NEW): builders **declare** the digest's artifact scope, consumers **REFUSE** an undeclared one, and `backfill` **MEASURES** the scope of a legacy digest. Demonstrated end to end on the **real 136,689,648-byte train join**. |
 
-`pytest -q` green on the touched surface; **33 new tests**, every gate shown to FAIL its defect.
+`pytest -q` green on the touched surface; **38 new tests**, every gate shown to FAIL its defect.
 
 ---
 
@@ -53,6 +53,7 @@ earliest of them is a startup refusal. `model._rig_camera` is assigned from it.
 |---|---|
 | `w_project > 0` or `w_ground > 0`, `--agent-rig-camera off` | ⛔ **REFUSES** at pin time, naming `config.json` and the M18 incident |
 | `--agent-rig-camera nominal\|extrinsics`, `--agents off` | ⛔ **REFUSES** — the camera is consumed only by `agent_losses`, so this would be the same defect mirrored |
+| **any** agent weight > 0 with `--agents off` (`--w-agent`, `--agent-w-project`, `--agent-w-ground`) | ⛔ **REFUSES** — see the fourth direction below |
 | `--agent-rig-camera extrinsics` with no `--agent-rig-extrinsics` | ⛔ **REFUSES** |
 | an extrinsics JSON with no quaternion | ⛔ **REFUSES** |
 | a geometry with no **declared** `CanonicalFrame` (e.g. the 64×64 tiny rig) | ⛔ **REFUSES** rather than inventing an `f_ref` |
@@ -71,6 +72,30 @@ message naming the fix (declare the frame in `tanitad.data.calib`).
 rig.** That is the correct outcome — a 64 px grey crop has no honest `f_ref` — and it is why the
 "the terms actually compute" test drives the loss directly at 256×640 instead of through the tiny
 rig.
+
+### ⛔⛔ A FOURTH DEAD-FLAG DIRECTION, FOUND WHILE FIXING THE FIRST — and one of them was SILENT in a way the M18 audit did not name
+
+M18 named `--agent-w-project` / `--agent-w-ground`. **The same defect exists one
+flag over, on `--w-agent` itself.** MEASURED at source: with `--agents off` no
+`AgentSeamConfig` is built, so the model emits no `agent_slots`; and
+`compute_losses_v3`'s existing guard fires only when `agent_box` is **ABSENT**
+from the batch. So
+
+```
+--agents off --w-agent 1.0 --agent-join joins/train2400_agents.jsonl.xz
+```
+
+passes that guard — **the join does put `agent_box` in the batch** — then falls
+through the `"agent_slots" in out` condition and computes **nothing**, while
+`w_agent: 1.0` is stamped into `config.json`. That is a run reading *"the agent
+head does not help"* manufactured by a seam that was never built: the exact
+shape of the refusal `_pin_refcv5_seams` already carries for `--agents head`
+with `--w-agent 0`, in the opposite direction.
+
+⇒ `--agents off` now refuses **every** non-zero agent weight and the camera with
+it, so there is no third state in this direction either. ⚠️ The converse control
+is asserted too: `--agents off` with **default** weights — the arm every banked
+run used — is untouched.
 
 ### ⚠️ The mount pose carries its provenance (the `anchor_meta` pattern)
 
@@ -316,7 +341,7 @@ DataFlyWheel backfills them it **starts failing**, which is the signal the migra
 |---|---|
 | `stack/scripts/refc_v3_train.py` | `AGENT_QUERIES_DEFAULT = 100`; `_build_rig_camera` + `_read_rig_extrinsics` + `_agent_cam_frames` and the four refusals; `--agent-rig-camera` / `--agent-rig-extrinsics` / `--agent-cam-height` / `--agent-join-verify`; `model._rig_camera` **assigned**; `agent_knob_dests` / `agent_knob_stamp` / `assert_knobs_stamped`; `_verify_agent_join`; `config.json` gains `seams.agent_rig_camera`, `seams.agent_knobs`, `agent_join_digest`; `--agent-queries` help corrected. |
 | `stack/tanitad/data/join_meta.py` | **NEW** — the digest-scope contract, its refusals, the measuring backfill and a `__main__` migration CLI. |
-| `stack/tests/test_refc_v3_agent_provenance.py` | **NEW** — 33 tests over P1–P4, each with the control that must read a known value and the deliberate regression that must fail. |
+| `stack/tests/test_refc_v3_agent_provenance.py` | **NEW** — 38 tests over P1–P4, each with the control that must read a known value and the deliberate regression that must fail. |
 
 **Backward compatibility:** every default is the previous behaviour except `--agent-queries`
 (32 → 100, the M17 ruling). A run with both monocular weights at 0 — i.e. every arm banked so far —
@@ -344,6 +369,9 @@ nothing.
    and `join_meta.attach` is the one-line builder change.
 5. ⚠️ **M18 bullet 3 is corrected** (P2): `w_agent`/`w_u0` were in `config.json["seams"]` already.
    Worth a line in the decisions file so the next reader does not re-fix a fixed thing.
+6. ⛔ **M18's list of silent flags was INCOMPLETE**: `--w-agent` under `--agents off` is the same
+   defect and is the worst of the three, because a join makes the existing loss-time guard miss it.
+   Fixed here; flagged so the decisions file records that the audit had a gap, not just a finding.
 
 ---
 
@@ -353,7 +381,7 @@ nothing.
 |---|---|
 | trainer changes | `repo:stack/scripts/refc_v3_train.py` |
 | digest-scope contract | `repo:stack/tanitad/data/join_meta.py` |
-| tests (33) | `repo:stack/tests/test_refc_v3_agent_provenance.py` |
+| tests (37 passed + 1 skipped) | `repo:stack/tests/test_refc_v3_agent_provenance.py` |
 | this report | `repo:TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refcv5-flag-provenance/RESULT.md` |
 | cost instrument | `repo:…/2026-09-05-refcv5-flag-provenance/measure_query_cost.py` |
 | incident probe | `repo:…/2026-09-05-refcv5-flag-provenance/probe_digest_scope_incident.py` |

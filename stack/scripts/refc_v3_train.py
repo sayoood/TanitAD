@@ -344,15 +344,39 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "the GPU, rather than at the first batch. Pass --agent-join "
                 "(HF Sayood/tanitad-ph0-aug120 -> "
                 "joins/train2400_agents.jsonl.xz), or --agents oracle.")
-    elif str(getattr(args, "agent_rig_camera", "off")) != "off":
-        raise SystemExit(
-            "[v3] ⛔ --agent-rig-camera "
-            f"{getattr(args, 'agent_rig_camera')} with --agents off. The "
-            "camera is consumed ONLY by `refc_agents.agent_losses`, which is "
-            "not called without an agent seam, so this camera would be built "
-            "and never used -- a flag that parses and does nothing, which is "
-            "the exact defect this switch exists to remove. Pass --agents "
-            "head/oracle, or --agent-rig-camera off.")
+    else:
+        # ⛔⛔ --agents off MAKES EVERY AGENT WEIGHT A NO-OP, AND ONE OF THEM
+        # IS A SILENT ONE THAT THE M18 AUDIT DID NOT NAME. MEASURED at source:
+        # with `--agents off` no `AgentSeamConfig` is built, so `out` carries
+        # no `agent_slots`; `compute_losses_v3`'s first guard only fires when
+        # `agent_box` is ABSENT from the batch, so
+        # `--agents off --w-agent 1.0 --agent-join <file>` passes that guard
+        # (the join DOES put `agent_box` in the batch), then falls through the
+        # `"agent_slots" in out` condition and computes NOTHING -- while
+        # `w_agent 1.0` is stamped into config.json. Exactly the
+        # `--agent-w-project` defect, one flag over.
+        # ⇒ every agent weight is refused here rather than silently dropped,
+        # and the camera with it. There is no third state in this direction
+        # either.
+        _dead = {k: float(getattr(args, k, 0.0) or 0.0)
+                 for k in ("w_agent", "agent_w_project", "agent_w_ground")}
+        _dead = {k: v for k, v in _dead.items() if v > 0.0}
+        _cam = str(getattr(args, "agent_rig_camera", "off"))
+        if _dead or _cam != "off":
+            raise SystemExit(
+                "[v3] ⛔ --agents off, but "
+                + (f"{_dead} " if _dead else "")
+                + (f"--agent-rig-camera {_cam} " if _cam != "off" else "")
+                + "is set. With no agent seam the model emits no "
+                "`agent_slots` and `refc_agents.agent_losses` is never "
+                "called, so every one of these parses, is STAMPED INTO "
+                "config.json, and trains nothing -- the run record would "
+                "state a configuration that did not happen (mm-decisions "
+                "M18). ⚠️ `--w-agent > 0` with a join is the silent one: "
+                "the join puts `agent_box` in the batch, so the loss-time "
+                "guard does not fire and the detection loss is simply "
+                "skipped. Pass --agents head/oracle, or set these to their "
+                "defaults.")
 
 
 # ============================================================================

@@ -94,6 +94,40 @@ def test_P1_a_camera_with_agents_off_REFUSES():
         t._pin_refcv5_seams(v3.refc_v3_smoke_config(True), a)
 
 
+@pytest.mark.parametrize("argv,needle", [
+    (["--w-agent", "1.0", "--agent-join", "j.jsonl"], "w_agent"),
+    (["--agent-w-project", "0.2"], "agent_w_project"),
+    (["--agent-w-ground", "0.2"], "agent_w_ground"),
+    (["--agent-rig-camera", "nominal"], "--agent-rig-camera"),
+])
+def test_P1_every_agent_weight_under_agents_off_REFUSES(argv, needle):
+    """\u26d4\u26d4 THE FOURTH DEAD-FLAG DIRECTION, AND ONE OF THEM WAS SILENT IN A
+    WAY THE M18 AUDIT DID NOT NAME. With ``--agents off`` no ``AgentSeamConfig``
+    is built, so the model emits no ``agent_slots`` and ``agent_losses`` is
+    never called \u2014 every agent weight parses, is stamped into ``config.json``
+    and trains nothing.
+
+    \u26a0\ufe0f ``--w-agent 1.0`` WITH a join is the dangerous one: the join puts
+    ``agent_box`` into the batch, so ``compute_losses_v3``'s existing guard
+    (which fires only when ``agent_box`` is ABSENT) does not fire, and the
+    detection loss is simply skipped. That is the `--agent-w-project` defect
+    one flag over, and it is now a refusal."""
+    a = _args("--agents", "off", *argv)
+    with pytest.raises(SystemExit, match="--agents off") as e:
+        t._pin_refcv5_seams(v3.refc_v3_smoke_config(True), a)
+    assert needle in str(e.value)
+
+
+def test_P1_agents_off_with_DEFAULT_weights_is_untouched():
+    """The converse control: `--agents off` is the default arm, and it must
+    stay exactly as green as it was for every banked run."""
+    a = _args("--agents", "off")
+    cfg = v3.refc_v3_smoke_config(True)
+    t._pin_refcv5_seams(cfg, a)                        # no raise
+    assert getattr(cfg.core, "agents", None) is None or \
+        not cfg.core.agents.enable
+
+
 def test_P1_unknown_geometry_REFUSES_rather_than_inventing_an_f_ref():
     """⛔ A CanonicalFrame is not its pixel count. This corpus is CYLINDRICAL
     (column linear in azimuth); the pinhole formula reads 92.6 deg for a
