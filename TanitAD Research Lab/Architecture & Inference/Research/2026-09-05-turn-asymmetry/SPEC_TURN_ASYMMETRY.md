@@ -314,6 +314,35 @@ would edit `refa_v1.py` under a sibling stream's live arms, so it is registered
 as the next work item rather than hacked in mid-flight.** If §5 returns outcome
 A, this is the first thing to measure and it is a one-field dump change.
 
+### §3.15 ⭐ A FREE TEST OF THE LAST STANDING EXPLANATION — registered before it lands
+
+The sibling cost-geometry stream has an arm running that I did not ask for and
+that happens to be the cleanest available probe of "it is the stochastic search":
+**`wk15_ladder` = `wk15` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`, same
+`W_KAPPA = 15.11245`, same `--plan-seed 0`, same 40 windows.**
+
+⭐ **The ladder is SIGN-SYMMETRIC BY CONSTRUCTION** — `refa_v1.py:2643-2646`
+loops `for sgn in (1.0, -1.0)` and the validator **refuses a negative entry**
+precisely because *"a negative magnitude is the sign, which this ladder adds for
+you"*. So that arm hands iteration 0 an **exactly balanced** set of left AND
+right curvature candidates at five magnitudes.
+
+> ⭐ **REGISTERED PREDICTION, before the record exists.** If the asymmetry is the
+> SEARCH failing to find the left candidate, handing it perfectly symmetric left
+> candidates should **raise `turn_left` recall** relative to `wk15`'s 0.0. If
+> `turn_left` recall stays at **0.0** while symmetric candidates were on the
+> table, the search-failure explanation is **weakened**, and the cause sits in
+> the COST LANDSCAPE — i.e. in the world model's goal-latent geometry, the one
+> thing this package has not been able to audit from source.
+
+⚠️ **Scope it honestly, twice.** (a) The ladder tops out at **0.04**, below the
+goal's `GOAL_KAPPA_TURN = 0.08`, so a ladder-seeded plan cannot satisfy the
+`|kappa| > 0.06` RETENTION criterion — this read is on **RECALL** only, where
+0.04 at 5 m/s over 2 s gives `dyaw ≈ 0.4 rad`, comfortably over the 0.15 gate.
+(b) It is **one arm at one seed on the degenerate 40-window panel** (§3.13), so
+it is a **direction-of-travel** reading and can never be the verdict. §5's
+outcomes remain decided on the wide panel alone.
+
 ---
 
 ## §4 — THE ARMS, in priority order
