@@ -512,3 +512,89 @@ The RL adapter passed **5 of the 8 parameters `forward` accepts**. refcv4b train
 CONDITIONED policy, with nothing raising.** ⇒ ⭐ **the arm would have run, produced numbers, and
 measured a different model** — the most dangerous shape of defect this programme has, because its
 output is indistinguishable from a result.
+
+## M60. ⛔⛔ TWO INDEPENDENT REVIEWS CONVERGED ON THE SAME FALSE CONCLUSION — refcv5's architecture is PRESENT, and a shared stale mirror is why both said otherwise
+
+### 1. The contradiction, and the measurement that settles it
+
+Two agents, working separately, both concluded refcv5 was **skeleton-without-mechanism**:
+* the readiness stream: `control_head` / `sampler` / `cross_agent` = **0 / 0 / 0**, *"7 of 7 local
+  `refc.py` copies read zero"*;
+* the independent review: **`DecoderConfig(sampler='ddim')` -> `TypeError`**, 15 red tests, and the
+  headline *"if refcv5 started training tomorrow it would train a model with no sampler and no agent
+  head."*
+
+**MEASURED on this repository, with controls:**
+
+| probe | result |
+|---|---|
+| `DecoderConfig(sampler='ddim')` | ⭐ **OK — constructs** |
+| `DecoderConfig` sampler-ish fields | `sampler`, `sampler_space`, `sampler_train_t_max`, `sampler_infer_t`, `sampler_steps`, `sampler_groups`, `control_norm`, `cross_agent` |
+| `refc.py` at **HEAD** | `sampler` 49 · `control_head` 12 · `cross_agent` 11 (control: 59 `def`) |
+| `refc.py` at **`a5dbfbb`** (2026-09-05 **14:57**) | `sampler` **46** · `control_head` **8** · `cross_agent` **11** (control: 55 `def`) |
+| `a5dbfbb:refc.py` lines 396-407 | `sampler: str = "none"`, `sampler_train_t_max`, `sampler_infer_t`, `sampler_steps`, `sampler_groups`, `sampler_space` — **all declared** |
+
+The WP series landed **yesterday afternoon**: `4b36c96` 14:48 (WP-6 agent-token seam) -> `a5dbfbb`
+14:57 (WP-4, *"the diffusion mechanism, in CONTROL space"*) -> `3fd2291` 15:10 (WP-6/WP-7 selector +
+trainer) -> `68bc48c` 19:40 (feasibility-aware decode).
+
+⇒ ⛔ **`DecoderConfig(sampler='ddim')` COULD NOT have raised `TypeError` from `a5dbfbb` onward.**
+**Both reports are measuring something that is not this repository.**
+
+### 2. ⭐⭐ The class, and it is the night's recurring one at AGENT scale
+
+`M50` established that a known-flaky channel becomes an **alibi generator** — and that *"three probes
+agreed on a wrong answer because they share one failure mode"* is exactly what *"take multiple
+samples"* fails to protect against. ⭐ **Here the shared channel is not a mount read but a WORKING
+COPY.** The banked hazard is explicit: **`tanitad-wt` is re-synced FROM the repo and silently drops
+edits AND deletes repo-absent files mid-run**, and this session has already seen `scratchpad/pkg/`
+overwritten between two siblings and a `RESULT.md` silently reverted to a stale 12,817-byte version.
+
+⇒ ⛔⛔ **TWO INDEPENDENT REVIEWS ARE NOT INDEPENDENT IF THEY READ THE SAME TREE.** Agreement between
+reviewers is evidence only when their **channels** differ, not merely their reasoning.
+⇒ ⭐ **RULE: any agent asserting that code is ABSENT must first print the file's provenance — the
+resolved path and the commit its tree came from — and assert a positive control from HEAD** (e.g.
+`git show HEAD:<path> | grep -c <symbol>`). A count from an unnamed working copy is inadmissible.
+
+⚠️ **I am not exempt: `M59` retracted the first report on symbol counts alone**, which is *"a count is
+not a capability"* — the same error one level up. It reached the right answer for an insufficient
+reason, and only the **reachability test** (`DecoderConfig(sampler='ddim')` constructing) and the
+**`a5dbfbb` provenance** actually establish it.
+
+### 3. ⛔ SCOPE THE CORRECTION — most of the review SURVIVES and is valuable
+
+Only the *"no mechanism"* headline falls. **These are independent of the mirror question and stand
+until re-measured:**
+
+* ⭐⭐ **`n = 2,400` IS A CLIP COUNT, and only 23.30 % of WINDOWS are supervised** (76.70 % carry
+  `IGNORE_ID`), measured on the real parity cache. **The label build's "100 % coverage" is 100 % of
+  CLIPS.** ⇒ **This is the same defect `M55` measured on refav1 from the other side** — `lat_label`
+  `-100` on **32 of 40 windows = 80 %**, against this rig's 76.70 %. **Two rigs, one defect**, and it
+  is the single most consequential item in the review.
+* ⛔ **The eval-side label join has NO COVERAGE FLOOR** — the 0.50 floor exists only on the train side.
+* ⛔ **The STRATEGIC defect gate CANNOT FIRE, mutation-proven:** `refcv3_arm.py:2633` writes at
+  `rec["refcv3"]["_defects"]` while `run_hierarchy_panel.py:71` reads `rec["_defects"]`. A record
+  carrying a real defect returns **`ok=True`**. All three guards over it are blind — two are
+  source-string matches, and one is a test whose **NAME** asserts *"at the top level"* while its
+  **assertion does not**.
+* ⛔ **`assert_matches_diffusers` can only SKIP or FAIL** — it compares float64 against float32 at
+  `atol=1e-10` (float32 eps 1.192e-07; observed error 1.689e-07 = 1.42x eps). **The only independent
+  check on WP-4's schedule math is incapable of passing.**
+* ⛔ **`criteria_check --all`: 493 silent omissions, 61 work items, 7 unstamped tiers; STRATEGIC
+  `nav_compliance` and both its controls read 0 present / 38 MISSING — never once produced.**
+* ⛔ **The turn bound is 8.2x worse than stated**: **10.24 % of the turn class (n = 293)**, not 1.25 %
+  of the corpus — **on the class whose recall already collapsed to 0.0000.**
+* ⭐ **The 2,400 vs 2,376 question is RESOLVED, and there is no re-selection:** `3000 discovered −
+  600 val = 2,400 CLIPS`; `− 24 raw-build skips = 2,376 raw EPISODES`. The v2/w120 cache built all
+  2,400 and is a separately registered corpus (`skip_count 0`), digest recomputed **MATCH**; 24/24
+  skipped clips named and labelled. **Parity is intact.** One sentence is owed in cross-arm tables:
+  refcv5 trains 2,400, raw-epcache arms trained 2,376 — a **1.00 %** disjoint difference.
+
+### 4. What this changes for goal 7
+
+⭐ **The GPU is not the only blocker, and neither is the architecture.** The binding items are now:
+1. **the supervision denominator** — 23.30 % of windows, not 100 %; the record must say so, and the
+   eval-side join needs the same coverage floor the train side has;
+2. **the STRATEGIC defect gate**, which cannot fire on a family that has never been produced;
+3. **`assert_matches_diffusers`**, the one independent check on the sampler's math, which cannot pass.
+⛔ **None of these needs a GPU, and none of them is "the model has no sampler."**
