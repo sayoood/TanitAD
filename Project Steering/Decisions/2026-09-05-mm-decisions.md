@@ -1547,3 +1547,92 @@ just demonstrated twice.
 compare-and-swap when a sibling moved HEAD mid-build. Reducing the commit to only the **29 changed
 paths of 225** shrank the build window and it won immediately. ⇒ **the fix for a lost CAS race is to
 commit what CHANGED, not to force.**
+
+## M35. ⭐⭐⭐ ALL 1,053 COLLIDERS ARE FIXABLE BY BRAKING ALONE — at 0.000 m on the driven path
+
+### 1. ⛔ First: I fabricated a number, and I put it in a RETRACTION
+
+My retraction **#31** asserted that the veto arm moved `top32_contact` **0.03299 → 0.02691 =
+−0.00729**, and pinned it to a package file. MEASURED in
+`…/2026-09-05-veto-only-fan-safety/raw/veto_verdict_veto{200,2k}.json`:
+
+> base **0.03298611** → after_s0 **0.03298611** → after_s1 **0.03298611** — **delta EXACTLY 0.0,
+> CI [0, 0], both seeds, both doses.** `fan_contact` moved the **wrong way** (+0.000391 / +0.001693,
+> neither separated).
+
+The strings `0.02691` / `0.00729` appear **nowhere** in that package — searched bare **and**
+comma-grouped. ⛔ **The number never existed; I asserted it and cited a file that does not contain
+it.** Logged as **retraction #32**.
+
+⭐ **The aggravating fact is where it happened: inside the retraction log, which is the mechanism
+that is supposed to STOP provenance errors.** A fabricated figure in a correction inherits the
+correction's authority. ⇒ **A retraction is not exempt from the citation rule; it is the place the
+rule matters most.**
+
+⇒ **No RL arm has ever moved the generator's collision rate.** The PI's point is untouched and gets
+**larger**, not smaller.
+
+### 2. ⛔ Second: my collision numbers were under a SUPERSEDED predicate
+
+I quoted `fan_contact` **2.487 %**. That bank predates the swept-segment fix I landed the same day.
+Positively identified rather than assumed: the per-step **POINT** test reproduces the banked flag
+with **0 disagreements over 30,720 candidates**, every structural flag reproduces exactly, and only
+`contact` differs — one-sidedly. ⇒ **`fan_contact` 0.024870 → 0.034277, +37.8 %**, corroborated
+twice (commit `9765634` landed after the arms froze; and **1,053 − 764 = 289** swept-only colliders,
+exactly).
+
+⇒ The true generator collision rate is **3.4277 %**, and on the 36 lead windows **`fan_contact` =
+0.0974** (449 / 4,608) — **39.4× its own floor**, so it is the admissible primary metric.
+⛔ `sel_contact` and `top8_contact` are **structural zeros**; `mass_rank_contact` is
+**UNDETECTABLE-DOWNWARD**. *Only one of these four could ever have shown a result, and it is not the
+one I first read.*
+
+### 3. ⛔ My design note's prediction is PARTLY REFUTED — and the reason is instructive
+
+`DESIGN_CONSTRAIN_BY_CONSTRUCTION` predicted the friction projection's shape would carry to
+collision. MEASURED with the decode ON vs OFF: `fan_kamm_over` **0.840625 → 0.000000**,
+`fan_envelope` **0.887728 → 0.000000** — ⭐ the friction half is exactly as predicted — **but
+`fan_contact` 0.034277 → 0.036230 (ns) and `top32_contact` +0.004687 [+0.001260, +0.009333],
+separated WORSE.**
+
+⭐ **Mechanism: the infeasible candidates were flying into unreachable geometry AWAY from the lead;
+making them realizable pulls them back to where the lead is.** ⇒ **"run RL on top of the projection"
+cannot by itself be the fix** — the projection is a clean *substrate*, and **collisions are
+orthogonal to friction.** The principle survives; my assumption that one constraint implies the
+other does not.
+
+### 4. ⭐⭐ WHY RL COULD NOT MOVE IT — the mechanism, not a verdict
+
+**The GRPO advantage is identically zero in 92.08 % of windows**: only **19 / 240** contain **both a
+collider and a non-collider**. A group-relative advantage needs within-group variation, and 92 % of
+groups have none.
+
+⭐ Corroborated by a second, independent probe: `components_fired.collision` reads **41/200 in BOTH
+`ctrl_null` (weight 0.0) and `coll200` (weight 1.0)** ⇒ **the sparsity is a property of the DATA, not
+of the arm.** No amount of reward tuning reaches it.
+
+⚠️ And `progress` is **not** the lever after all: AUC **0.8947** in isolation, but the **composed**
+reward reads **AUC 0.0000 exactly** and deleting `progress` changes it by **exactly nothing** — the
+ranking is already perfect. *(Its first probe FAILED both controls — constant read +0.6464 vs 0 —
+and would have shipped a false positive.)*
+
+### 5. ⭐⭐⭐ THE ANSWER: braking. 100 % of colliders, measured without training anything.
+
+> **All 1,053 colliders are fixable by BRAKING ALONE (100 %), taking `fan_contact`
+> 0.034277 → 0.000000 for 0.196 m [0.077, 0.346] of amortised FAN displacement and 0.000 m on the
+> DRIVEN path** — the selector already picks a non-collider in **240/240** windows.
+
+⇒ **The trade is favourable, it needs no learning, and it is a LONGITUDINAL intervention.**
+
+⭐⭐ **That is the same blocker as refav1's**, from the opposite direction: refav1 cannot brake
+because `ADAPT_SPEED_FOR_CURVE`'s canonical control is `a == 0`; refcv3's colliders are *all* fixable
+by braking. **The longitudinal channel is where both arms' remaining safety and accuracy live**, and
+it is now the programme's single highest-value target rather than one arm's leftover.
+
+⚠️ **Successor S2 refined, not adopted:** the binary collision term is **exactly flat inside the
+colliding set** (std 0.000e+00) while severity varies **8.09×** — so grade by **PENETRATION DEPTH,
+not TTC**, because `min_ttc_s` is **saturated at the 0.5 s grid floor for ≥ 75 % of colliders**.
+
+⚠️ **Recorded before the numbers:** `reward_audit` is **INCONCLUSIVE** for a collision-only reward,
+because that term's documented degenerate is *"stand still forever."* ⇒ **the LONGITUDINAL family is
+the CHECK on the degenerate**, not an optional extra — a third reason the same channel is the target.
