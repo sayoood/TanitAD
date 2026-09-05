@@ -705,22 +705,45 @@ the camera is built, **the term runs** — and adds nothing.
 that one needs a gradient. Recorded here because the three together say the real invariant is
 *"the weight changes the gradient"*, and only the third measures it.
 
-## 12. Full-suite regression — the numbers, and their admissibility
+## 12. Full-suite regression — attributed by CONTROL, not by argument
 
-| run | failed | passed | skipped | errors | `Errno 22` | wall |
+| run | failed | passed | errors | `Errno 22` | wall | tree stable? |
 |---|---|---|---|---|---|---|
-| baseline (`raw/fullsuite_postchange.txt`, before this work) | 27 | 6,213 | 115 | 7 | **0** | 22:30 |
-| with this work | **28** | 6,223 | 115 | 7 | **0** | 32:14 |
+| baseline (`raw/fullsuite_postchange.txt`, before this work) | 27 | 6,213 | 7 | **0** | 22:30 | — |
+| run 2 (`raw/fullsuite_guardaudit_2026-09-05.txt`) | 28 | 6,223 | 7 | **0** | 32:14 | **no** — mirror resynced |
+| **run 3, final** (`raw/fullsuite_final_2026-09-05.txt`) | **30** | 6,290 | 7 | **0** | 22:52 | **no** — `refc_agents.py` moved |
 
-`comm` over the two sorted FAILED sets: **exactly one entry differs**, and it is
-`test_every_anchor_is_present_in_the_shipped_source_exactly_once` — §9. **Zero in baseline, zero in
-mine.** Nothing regressed; `+10 passed` is this addendum's 11 tests minus that one. Both runs carry
-**zero `Errno 22`**, which is what makes either number quotable at all
-(`gdrive-mount-hard-failure`: a `G:` failure count is admissible only with zero `Errno 22`).
+⛔ **NEITHER of my runs had a stable tree, and I know that because I bracketed them.** An `md5sum`
+before and after each run (the discipline this session's mirror incident forced) reported
+`refc_agents.py: FAILED` on run 3 — a sibling stream committed while it was in flight. **A wall-clock
+count from a moving tree is not attributable**, so the verdict below is reached by CONTROL instead.
 
-⚠️ **The 28-failure run predates the fix in §9 and the pin in §10.** The four touched test files are
-green at 79 passed / 1 skipped on `e8de537`, and the audit is 10/10 — but **the whole suite has not
-been re-run since**, and I am not claiming a 27 I did not measure.
+**The control: which files do the failures NAME?**
+
+```
+run 3 FAILED set  minus  baseline FAILED set  =  exactly 3 entries, all in
+    tests/test_feasible_decode.py::test_decoder_hook_*
+baseline FAILED set  minus  run 3 FAILED set  =  0 entries
+grep for my files in the 30 failures            =  NONE
+```
+
+`test_feasible_decode.py` belongs to another stream (`c3ae6f9`) and is untouched by this work.
+
+⇒ **This work introduces ZERO new failures.** All 27 baseline failures survive unchanged (I fixed
+none and broke none), the 3-over-baseline delta is entirely a sibling's file, and **none of the 30
+names anything I wrote**. `test_guard_mutation_audit.py` and `test_refc_v3_agent_provenance.py` are
+both absent from the failure list, i.e. the 11 guard tests and the new argv→config pin all pass.
+
+⭐ **Run 2's extra failure is now explained and closed.** It was
+`test_every_anchor_is_present_in_the_shipped_source_exactly_once` — the rot check firing on
+`e8de537`'s refactor (§9). Anchors re-pointed; it passes in run 3.
+
+⚠️ **What this does NOT claim.** I have not produced a green full suite, and the 27 pre-existing
+failures are not mine to speak for. Both my runs carry **zero `Errno 22`**, which is the only thing
+that makes any count from this tree quotable at all
+(`gdrive-mount-hard-failure`). Chasing a stable whole-suite number on a branch taking a sibling
+commit every ~20 minutes is a losing race; attribution by control is the answer that survives it,
+and is the same method `6ff9740` used to reach *"0 of 27 are mine"*.
 
 ## 13. Manifest (addendum 2)
 
@@ -729,6 +752,7 @@ been re-run since**, and I am not claiming a 27 I did not measure.
 | audit, re-pointed + 10th mutation | `repo:stack/scripts/guard_mutation_audit.py` |
 | the new pin | `repo:stack/tests/test_refc_v3_agent_provenance.py` |
 | audit output, 10/10 on `e8de537` | `repo:…/raw/guard_mutation_audit_2026-09-05.txt` |
-| full-suite log, this work | `repo:…/raw/fullsuite_guardaudit_2026-09-05.txt` |
+| full-suite log, run 2 | `repo:…/raw/fullsuite_guardaudit_2026-09-05.txt` |
+| full-suite log, run 3 (final) | `repo:…/raw/fullsuite_final_2026-09-05.txt` |
 
 Nothing here exists in only one place.
