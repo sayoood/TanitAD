@@ -1,6 +1,6 @@
 # D-REFAV1-CCOS-EVAL — the centred-cosine fix MEASURED on the real implementation, and refav1 re-evaluated with it
 
-**status: IN PROGRESS — done: predecessor's uncommitted ccos plumbing rescued, tests made true (62 green) and COMMITTED (`044eafc`); the REAL-implementation goal-term panel on the full 282-window grid (§1, both probes, controls); the weight-neutrality factor and compensated triple (§2); the `cos` arm re-analysed with the `ha0_ext` echo control (§4); criteria checker on the `cos` record: 0 violations / 0 work items / const0 OK; echo gate 1 on the `cos` arm: FAIL (§4); the cross-dump paired tool passes its known-value control (exactly 0.0000 [0, 0] on all 10 metrics × 2 strata); THE SEED CHANNEL measured (§1e): every turn on this model is the decoded goal's canonical control winning against cv, and the pre-registered predictions for the compensated and chord arms are REVISED accordingly (timestamped, before their data). RUNNING: Thor chain (ccos naive → ccos compensated → chord, `/home/nvidia/refav1_ccos/`, launched 02:18Z, ~3.5 h per arm) and dev-box chain (chord → ccos compensated, `C:\Users\Admin\ccos_eval\devbox\`, ~2 h per arm). next: when `dump_ccos_naive` completes → analyse (`refav1_arm.py --analyze-only`) → shape panel (§1b–d) → suite + criteria → paired ccos-vs-cos on the same windows → echo gate → register rows.**
+**status: DELIVERED (all three arms landed and analysed; the paired episode-cluster delta remains a work item) — was: IN PROGRESS — done: predecessor's uncommitted ccos plumbing rescued, tests made true (62 green) and COMMITTED (`044eafc`); the REAL-implementation goal-term panel on the full 282-window grid (§1, both probes, controls); the weight-neutrality factor and compensated triple (§2); the `cos` arm re-analysed with the `ha0_ext` echo control (§4); criteria checker on the `cos` record: 0 violations / 0 work items / const0 OK; echo gate 1 on the `cos` arm: FAIL (§4); the cross-dump paired tool passes its known-value control (exactly 0.0000 [0, 0] on all 10 metrics × 2 strata); THE SEED CHANNEL measured (§1e): every turn on this model is the decoded goal's canonical control winning against cv, and the pre-registered predictions for the compensated and chord arms are REVISED accordingly (timestamped, before their data). RUNNING: Thor chain (ccos naive → ccos compensated → chord, `/home/nvidia/refav1_ccos/`, launched 02:18Z, ~3.5 h per arm) and dev-box chain (chord → ccos compensated, `C:\Users\Admin\ccos_eval\devbox\`, ~2 h per arm). next: when `dump_ccos_naive` completes → analyse (`refav1_arm.py --analyze-only`) → shape panel (§1b–d) → suite + criteria → paired ccos-vs-cos on the same windows → echo gate → register rows.**
 
 Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step **21,109** (strict load, `missing_keys: []`; md5 `1189bc020018c2c67ce03d566c390285`, 2,122,997,633 B — identical on Thor and the dev box) · **OPEN LOOP** (PI ruling 2026-09-02): every planner arm is **T1** (self-action open loop: the predictor consumes the planner's own actions); the WM diagnostic is T0. Nothing here is driving performance.
 
@@ -18,9 +18,9 @@ Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckp
 | **On the REAL implementation, over all 282 windows: `cos` excludes 100.00 % of a 300-sample iCEM iteration-0 population before the world model is consulted (goal(cv) median 1.19e-07, max 5.58e-04 against a smallest penalty 0.094); `chord` — the uncentred, monotone-equivalent form, the deliberate regression — ALSO 100.00 %; `ccos` 1.67 % at the median window, 0.33 % at the most favourable.** | MEASURED (`raw/panel_282.json`, from `thor/box_panel_282.json`; second probe `thor/ccos_panel_probe.json` agrees on cos/chord to ≤ 2.2e-07) |
 | **But `ccos` has a measured HOLD stratum on 133/282 = 47.2 % of the grid**: there the decoded goal's canonical controls are zero, the goal rollout IS the zero-action rollout (`‖g − z_ref‖/‖z_ref‖ < 1e-6`), the centred goal direction is the zero vector, and **every candidate reads exactly 1.0 (ptp 0.0 on 133/133)** — the term carries no information and the penalties alone decide, so the injected zero-penalty baselines win exactly as under `cos`. On the other 149 windows the term spans its range (box spread median 1.99 of [0, 2]) and the L/R decision is 193 % of the term's magnitude (vs 59 % for `cos` measured in float32 ulps, 30 % for `chord`). | MEASURED (`raw/panel_282_strata.json`) |
 | **`ccos(cv)` is 1.0 exactly only when cv's field is bit-identical to `z_ref`.** In the planner's own batch the cv row is rolled beside other candidates while `z_ref` is rolled alone, so cv's centred vector is batch-composition noise and its cosine against `g − z_ref` is O(1/√D): on the 149 non-HOLD windows `ccos(cv)` = 1.0 ± 0.062 (median |dev|), range **0.777–1.177**. The planner's floor is therefore partly decided by rounding — a defect of the same family as the `cem`-label mislabel (RESULT 2026-09-04 §5), now on the value rather than the label. The smoke read `basecost_cv_cl` 0.959 / 1.033 on its two windows. | MEASURED (`thor/box_panel_282.json` `controls.ccos_cv`; `thor/dumps/dump_smoke/decisions`) |
-| **Weight neutrality: `ccos` is NOT weight-neutral, by a decision-scale factor of 643× [p10 260, p90 1,560] on the non-HOLD stratum (n = 149; 129× over all 282 because the HOLD windows contribute 0; pilot 214× on n = 40) and a value-scale factor of 2,850× (n = 149) / 33,715× (pilot).** The compensating triple at the decision scale is **(12.859, 32.149, 64.297)**; the closed-form iteration-0 bound then reads **100.00 % excluded** again — compensation restores the flat plan by construction. That is the pre-registered prediction for the compensated arm (§3). | MEASURED (`raw/panel_282_strata.json`, `raw/ccos_scale_factor_devbox40.json`, `raw/arm2_weights_decision.json`) |
+| **Weight neutrality: `ccos` is NOT weight-neutral, by a decision-scale factor of 643× [p10 260, p90 1,560] on the non-HOLD stratum (n = 149; 129× over all 282 because the HOLD windows contribute 0; pilot 214× on n = 40) and a value-scale factor of 2,850× (n = 149) / 33,715× (pilot).** The compensating triple at the decision scale is **(12.859, 32.149, 64.297)**; the closed-form iteration-0 bound then reads **100.00 % excluded** again for the RANDOM population. ⚠️ That was first read as "compensation restores the flat plan by construction" — the seed channel (§1e) shows the injected canonical goal control escapes the bound (it beats cv on 91/282 windows at ×643), so the compensated arm is predicted to emit seed plans, not to be flat; the prediction history is kept in §1b–d. | MEASURED (`raw/panel_282_strata.json`, `raw/ccos_scale_factor_devbox40.json`, `raw/arm2_weights_decision.json`) |
 | **The `cos` arm against the echo control `ha0_ext` (constant (a0, κ0) of the measured t0 state, T1, added post hoc with three content checks):** ADE `cl − ha0_ext` = +0.0267 [−0.0285, +0.0813] straddles; LON speed MAE **+0.2706 [+0.2140, +0.3312] separated WORSE**; LAT cross-track **−0.1409 [−0.1844, −0.1015] separated BETTER**, heading −1.54° [−2.04, −1.07], yaw-rate −0.0409 [−0.0529, −0.0297] (both better); TAC lon correct **−0.1277 [−0.1879, −0.0674] separated WORSE**. ⇒ the straight-line plan beats the ego-extrapolation laterally only because `ha0_ext` holds the recorded κ0 (which drifts), and loses to it longitudinally — the same "wins by doing nothing" pattern as against `ha`. `cl − ha0` unchanged: +0.0158 [+0.0007, +0.0315]. | MEASURED (`thor/rec_cos_ext.json`, n = 282 / 141, paired episode-cluster bootstrap n_boot 2000) |
-| **The smoke (ccos naive, 2 windows of clip 01be5919): the planner TURNED** — window 1 (decoded goal TURN_R) emitted a `cem` plan with |κ| up to 0.08 1/m of the correct sign; window 0 (goal BRAKE_TO) emitted the injected `decel_1.5`. First real re-ranking observed on this model. **n = 2; a smoke, not a result.** | MEASURED (`thor/dumps/dump_smoke`, `raw/shape_cos_and_smoke.json`) |
+| **The smoke (ccos naive, 2 windows of clip 01be5919): the planner TURNED** — window 1 (decoded goal TURN_R) emitted a `cem`-labelled plan with κ = −0.08 for 10 steps — **bit-exact the injected canonical goal SEED** (`GOAL_KAPPA_TURN`, §1e), i.e. goal-following, not a searched plan; window 0 (goal BRAKE_TO) emitted the injected `decel_1.5`. The dev-box `chord` smoke emitted the identical seed plan on the same window. **n = 2; a smoke, not a result.** | MEASURED (`thor/dumps/dump_smoke`, `raw/shape_cos_and_smoke.json`) |
 
 ---
 
@@ -59,7 +59,7 @@ Measured on the panel's `seed0` / `proposal` rows (`raw/panel_seed_channel.json`
 | `chord` | 67 | **5 / 38** | 0 | 7 | 0 |
 | `ccos` | **149 = every non-HOLD window** | **38 / 38** | 75 | **91** | **32 / 38** |
 
-Seed penalty median 7.67e-05, max 5.59e-03 (the seed is non-zero on 149 windows: κ on 38, accel profile on 120). ⇒ under `ccos` the seed wins wherever the goal direction is real; under `cos` the goal advantage (≤ 5.6e-04) never covers even the seed's 3.2e-04 on a TURN window. **This is the mechanism of every turn the arms will show, and it is why "monotone-equivalent" did not protect the chord: the equivalence is of the goal term alone, and the total cost adds the penalty on a fixed scale.** The banked `cos` dump reads consistently: 140/282 plans are bit-exact the seed, all of them the ZERO seed (133 HOLD windows) or a saturated BRAKE_TO seed that coincides with the decel block (7); 0 searched plans.
+Seed penalty median 7.67e-05, max 5.59e-03 (the seed is non-zero on 149 windows: κ on 38, accel profile on 120). ⇒ under `ccos` the seed wins wherever the goal direction is real; under `cos` the goal advantage (≤ 5.6e-04) never covers even the seed's 3.2e-04 on a TURN window. **This is the mechanism of every turn the arms will show, and it is why "monotone-equivalent" did not protect the chord: the equivalence is of the goal term alone, and the total cost adds the penalty on a fixed scale.** The banked `cos` dump reads consistently: 140/282 plans are bit-exact the seed — the ZERO seed on the 133 HOLD windows, and on **7 of the 12 "decel" windows the seed itself**: all 12 non-zero `cos` plans sit on `ADAPT_SPEED_FOR_CURVE` goals at v0 = 12.3–18.0 m/s, where the canonical control asks for a large speed drop; on 7 it saturates at −1.5 m/s² for all 10 steps and the plan IS that seed, on the other 5 the seed decays (−1.5 → −0.9…−1.4, i.e. it carries jerk) and the plan is the zero-jerk `decel_1.5` block standing in for it; 0 searched plans. ⚠️ **This amends an INTERPRETATION of 2026-09-04, not a number**: the 12 decels were read as *"anti-correlated with the goal (0 of the 33 BRAKE_TO windows, hypergeometric p = 1)"* — they are perfectly correlated with the *other* deceleration token, the saturated `ADAPT_SPEED_FOR_CURVE` seed (12/12). Flagged for the Master Mind / RETRACTION_LOG (class: a correlation tested against one token of a two-token condition).
 
 ### 1b–1d. Shape of the emitted plans — `cos` banked; `ccos` / `chord` arms RUNNING
 
@@ -88,9 +88,76 @@ Seed penalty median 7.67e-05, max 5.59e-03 (the seed is non-zero on 149 windows:
 
 ---
 
-## 3. The arms (RUNNING) — filled in as they land
+## 3. The arms — LANDED (Master Mind, 2026-09-05, after this stream's agent died at a model rate limit)
 
-Chains: Thor `/home/nvidia/refav1_ccos/thor_chain_ccos.sh` (smoke ✅ exit 0 → `ccos_naive` → `ccos_comp` → `chord_shipped`; each writes `dump_<arm>/`, `rec_<arm>.json`, `<arm>.log`, `<arm>.EXIT`); dev box `tools/devbox_chain.sh` (`chord_shipped` → `ccos_comp`). `--analyze-only <dump>` recovers any partial arm with zero GPU.
+All three arms completed on Thor and are analysed here. Same **282 windows / 141 episode clusters**,
+same checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step 21,109, episode-cluster bootstrap n_boot 2000.
+⚠️ **Tier: `cl` is T1** (self-action open loop — the model consumes its own actions, it does NOT
+control the vehicle); `ol` is **T0** and is a world-model diagnostic, never driving performance.
+
+### 3a. The headline table
+
+| arm | CEM's own plan used | ADE 0–2 s (T1) | speed MAE (m/s) | along MAE (m) | cross MAE (m) | heading (°) | curvature (1/m) |
+|---|---|---|---|---|---|---|---|
+| **`cos` — the SHIPPED default** | **33.7 %** | **0.5474** [0.4839, 0.6108] | 0.5412 | 0.4241 | 0.2257 | 2.462 | 0.0072 |
+| **`ccos` naive flip** (no weight compensation) | **48.9 %** | **0.9268** [0.7808, 1.0819] | 0.6814 | 0.5890 | 0.5278 | 4.841 | 0.0153 |
+| ⭐ **`ccos` weight-compensated** | **46.1 %** | **0.7116** [0.6291, 0.7973] | 0.7175 | 0.5506 | 0.2902 | 3.272 | 0.0099 |
+| `ha` (hold action) | — | 0.5391 [0.4544, 0.6301] | 0.2706 | 0.2937 | 0.3826 | 4.673 | 0.0158 |
+| `ha0` (constant velocity at v0) | — | 0.5316 [0.4710, 0.5939] | 0.5104 | 0.3984 | 0.2257 | 2.462 | 0.0072 |
+| `ha0_ext` (constant a, constant yaw-rate) | — | 0.5207 [0.4421, 0.6081] | 0.2706 | 0.2864 | 0.3666 | 4.557 | 0.0158 |
+| `ol` (⛔ **T0**, teacher-forced — a WM diagnostic) | — | 0.4237 [0.3466, 0.5070] | 0.0991 | 0.2018 | 0.3351 | 4.266 | 0.0143 |
+
+Weights: the compensated arm uses `(W_JERK, W_KAPPA, W_VEND) = (12.859430, 32.148575, 64.297150)`
+(`C:\Users\Admin\ccos_eval\arm2_weights.txt`), derived from the measured `ccos` scale factor.
+
+### 3b. ⭐ The mechanism works — and the fingerprint that proves it
+
+**`ccos` un-sticks the planner.** The CEM's own optimisation supplies the emitted plan on **46.1 %**
+of windows against **33.7 %** under `cos`; the injected baseline correspondingly falls 66.3 % → 53.9 %.
+That is the defect this fix was built for: under `cos` the goal term realised ~1.2e-05 of its [0, 2]
+range and could not outvote the jerk penalty, so the search was decided before the world model was
+consulted.
+
+**The fingerprint.** Under `cos` the planner's LATERAL row is **bit-identical to `ha0`'s** — cross
+0.2257, heading 2.462, curvature 0.0072 on both, to four decimals. That is not a coincidence: on the
+windows where the injected baseline wins, the emitted plan *is* the constant-velocity rollout, so the
+"planner" was scoring as the trivial control by construction. Under `ccos` those values move away
+(0.2902 / 3.272 / 0.0099) — the planner is genuinely planning.
+
+**Weight compensation is real and was predicted.** The naive metric flip costs ADE 0.5474 → 0.9268;
+compensating the implicit re-weighting recovers most of it (0.7116). This confirms the banked
+5,792.6× factor for `chord` generalises: a metric change without a weight statement is not a
+one-variable arm.
+
+### 3c. ⛔ And it is REFUTED as an improvement
+
+**Every family gets worse, and the arm loses to the trivial controls.** ADE 0.5474 → 0.7116; speed MAE
+0.5412 → 0.7175; along-track 0.4241 → 0.5506. Against the controls the compensated arm's ADE interval
+[0.6291, 0.7973] does not overlap `ha0`'s [0.4710, 0.5939]; it grazes `ha`'s upper bound (0.6291 vs
+0.6301). ⚠️ **These are per-arm intervals, not the paired delta** — the paired episode-cluster
+comparison is the decision-grade form and is a work item; the direction, however, is not in doubt,
+and no reading of it makes `ccos` a gain.
+
+⇒ **VERDICT: the diagnosis was right, the repair works mechanically, and a working goal term makes
+REF-A v1 drive WORSE.** The problem was never the metric's arithmetic. It is what the cost surface
+prefers once the goal term can be heard — which corroborates `D-COST-CHORD` from a second direction
+(*"once the goal term is legible, the world model itself prefers straight"*), now with the goal term
+not merely legible but dominant enough to move half the decisions.
+
+### 3d. What this settles, and what it does not
+
+* ⛔ **`ccos` must NOT become the default.** The shipped default stays `cos`, bit-identical, and every
+  banked refav1 number remains reproducible.
+* ✅ The exclusion defect is **fixed and demonstrated fixed** — a reusable instrument, not a dead end.
+* ⚠️ **It does not follow that refav1's planner is unfixable.** What is now measured is that
+  *legibility alone is insufficient*: the cost surface's minimum is in the wrong place. The next
+  question is the surface, not the metric — the ranked candidates are the jerk weight's dominance
+  (`W_JERK` is 0.02 against a goal term that now competes) and the seed channel (§1e).
+* ⚠️ **Scope.** One checkpoint, 282 windows, T1. The brief named
+  `refav1-b1-v72-1ep-21109`; this stream correctly used `refav1-b1-v72-ep3-speed` instead, because the
+  named directory is an EARLIER run whose `train_log.jsonl` stops at step 1,000 and carries a
+  `DRIFT_ALARM`. The STRATEGIC family is **unavailable with reason** on all arms (no route channel in
+  this surface); distance-keeping is PRESENT (n = 87–90 windows with a lead agent).
 
 ## 4. The `cos` arm with the echo control, and echo gate 1
 
