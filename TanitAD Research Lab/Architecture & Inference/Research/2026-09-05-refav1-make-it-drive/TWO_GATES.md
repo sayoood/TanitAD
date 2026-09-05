@@ -78,14 +78,38 @@ part of this finding: **gate 2 is a one-flag change; gate 1 is a modelling probl
 
 ---
 
+## ⛔ RECONCILIATION WITH `D-REFAV1-CCOS-ARMS` — this does NOT reopen that ruling
+
+The register already carries **`D-REFAV1-CCOS-ARMS` / `D-REFAV1-SURFACE-PAIRED`: "`ccos`
+does NOT become the default"**, because under `ccos` *every family degrades* (ADE **0.5474
+→ 0.7116**, paired-separated worse on 9 of 13 metrics). **Nothing here contradicts that, and
+this package claims no ADE gain from `ccos`.** The two results compose:
+
+* **They already measured the same thing from the outside.** `D-REFAV1-SURFACE-PAIRED` (2)
+  reports `cos − ha0` at **exactly 0.0000 with a zero-width interval on all three lateral
+  metrics**, a window-level identity on all 282 windows — *"under `cos` there is nothing
+  left to attribute to lateral planning."* **This package supplies the MECHANISM for that
+  identity** (the turn is decoded, then refused) and shows it is structural rather than a
+  tuning outcome.
+* ⇒ **`ccos` is NECESSARY BUT NOT SUFFICIENT.** It is the difference between a planner that
+  *cannot* steer and one that *can*; it is not, on today's goal head, an improvement —
+  because the turns it becomes able to execute are taken on the wrong windows (recall 20.5 %,
+  direction 77.8 %). Enabling turning while the goal head is this imprecise buys net-negative
+  ADE, which is exactly what they measured.
+* ⇒ **the binding constraint is the GOAL HEAD**, which is precisely where
+  `D-REFAV1-SURFACE-SCREEN` (2) and the open `H-REFAV1-SURFACE-1` had already pointed. This
+  package converts that from an inference to a mechanism, and supplies the lever.
+
 ## Consequences that need a decision above me (ESCALATED)
 
-1. ⛔ **`refa_v1.py:COST_METRICS` says `ccos` is *"an INSTRUMENTED OPTION, not a candidate
-   default; `_check_cost_metric` accepts it and nothing selects it."* That sentence is now
-   contradicted by measurement:** `ccos` is a **prerequisite for lateral control**. Making
-   it the default is a PI / Master Mind call (the same doc requires any arm flipping it to
-   declare its weight triple in the same breath), so it is **not taken here** — but every
-   refav1 arm run with `cos` has been measuring a planner that cannot steer.
+1. **`refa_v1.py:COST_METRICS` calls `ccos` *"an INSTRUMENTED OPTION, not a candidate
+   default; `_check_cost_metric` accepts it and nothing selects it."*** That description is
+   now incomplete in one specific way: `ccos` is the **only** setting under which lateral
+   control exists at all. ⛔ **This is NOT a recommendation to flip the default** — the
+   paired refutation above stands and the default should stay until a goal head exists whose
+   turns are worth executing. It is a recommendation that **the sentence and the flag's
+   status be re-read**, because "nothing selects it" currently means "no refav1 arm can
+   steer", and any future lateral work must run under `ccos` or measure zero by construction.
 2. **The `ccos` hold-branch is now load-bearing, not cosmetic.** The same docstring flags
    that on a LANE_KEEP goal `||g − z_ref||` is float32 rounding and the centred direction
    is noise, and parks a hold-branch as a pre-registration item. Gate 1 puts **86.5 %** of
