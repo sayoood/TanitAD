@@ -1,6 +1,6 @@
 # refcv5 — Design Plan: closing the DiffusionDrive gaps without giving up the hierarchy
 
-**status: IN PROGRESS — done: skeleton, §0 summary, §1 gap table, §2 invariants, §3 BEV/LiDAR / next: §4 diffusion mechanism, §5 selection, §6 RL, §7 ladder, §8 claims, §9 VLA interface, §10 register rows, manifest**
+**status: IN PROGRESS — done: skeleton, §0 summary, §1 gap table, §2 invariants, §3 BEV/LiDAR, §4 diffusion mechanism, §5 selection, §6 RL / next: §7 ladder, §8 claims, §9 VLA interface, §10 register rows, manifest**
 **author:** Architecture & Inference FlyWheel · **date:** 2026-09-05 · **branch:** `agent/arch-inf-20260803`
 **GPU spent by this document:** 0 (design synthesis; every number is cited to its artifact)
 **Owner for integration:** Master Mind. **Sibling streams:** `Project Steering/REFCV5_VLA_EXTENSION_PLAN.md` (VLA, §9 interface; not yet present in HEAD at the time of writing), DataFlyWheel (§3 work package), `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-refc-rl-readiness/` (§6 vehicle), `…/Architecture & Inference/Research/2026-09-05-withheld-bank-panel/` (§2, pending panel).
@@ -188,11 +188,127 @@ Every adopted mechanism in §1 is checked against these six. A violation is a re
 
 ---
 
-## §4 The diffusion mechanism (`H-DDA-3`) `[PENDING]`
+## §4 The diffusion mechanism (`H-DDA-3`) — anchored Gaussian, DDIM, x0, AdaLN — in CONTROL space
 
-## §5 Selection: score the emitted fan, then the sub-metric selector `[PENDING]`
+### 4.1 What is adopted from DD, item by item (PUBLISHED, `hustvl/DiffusionDrive@9b52ed0`; audit §1.1)
 
-## §6 The RL stage: head-only scale policy, collision-truncated advantage `[PENDING]`
+| item | DD | refcv5 |
+|---|---|---|
+| schedule | `diffusers.DDIMScheduler(num_train_timesteps=1000, beta_schedule="scaled_linear", prediction_type="sample")` (+ V2's `steps_offset=1`) | same object, behind `DecoderConfig.sampler = "ddim"` (default `"none"` = today's decoder, byte-identical, pinned by a parity test like `tests/test_refc_v4.py::test_v3_parity`) |
+| forward noising | τ_t = √ᾱ_t·a_k + √(1−ᾱ_t)·ε in normalised metres | same formula on the **normalised control sequence** (§4.2) |
+| train timestep | t ~ U[0, 50) | same |
+| inference | fresh ε at t = 8, two DDIM steps `[10, 0]`, η = 0 | same; G ≥ 1 samples per anchor; eval at a **fixed seed** (bit-reproducible at the seed; a seed sweep is the variance readout — the old "two calls bit-identical" property is replaced, not lost) |
+| prediction target | x0 ("sample"): `poses_reg = delta + noisy_input` | x0 in control space: `u0_hat = u_t + Δ(u_t, t, scene)` |
+| timestep embedding | `SinusoidalPosEmb(d) → Linear → Mish → Linear`, injected **per layer** as AdaLN scale/shift after the FFN | same; `CrossAttnLayer` gains a `time_mod: FiLM(d_t, d)` after its MLP; the 3-row `nn.Embedding` is retired under the flag |
+| query init | sinusoidal Fourier features of each waypoint (64/pt) → MLP | same, on the **rolled waypoints** of `u_t` (the query still sees geometry) |
+| loss | per cascade layer `(reg, cls)`, one random t per sample, coordinates detached between layers | per refinement pass: L1 on the **rolled** waypoints (today's `loss_traj`) + L1 on the controls vs `unicycle_controls_from_path_varstep(GT)` (the x0 loss); **detach** `u` between passes; keep the t = 0 CE on the classifier surface; add the emitted-fan confidence CE (§5.1) |
+| mode-collapse control | truncation (start near the anchor, 2 steps) + per-mode cls | same — **the pass count stops being a knob** (`D-REFC-DDAUDIT-2`: passes beyond 2 collapse the spread 104 → 42 m) |
+
+### 4.2 The design question ours raises — noise in CONTROL space, not metre space. Decision: CONTROL space.
+
+**The state.** A candidate is a control sequence `u ∈ ℝ^{8×2}` — one `(a_lon, a_lat)` pair per slot of the 8-slot 0.5…6 s grid — rolled through the programme's own integrator (`kinematic.rollout_unicycle_varstep`, `unicycle_decode_varstep`, `kinematic.py:741,887`) from the window's `v0`. The anchor `a_k` is the constant pair `(a_lon_k, a_lat_k)` repeated over the 8 slots — exactly today's `anchor_controls` (`refc.py::roll_bank`, `:1378-1439`) with the κ derivation `a_lat / max(v, 4)²` clamped ±0.12 unchanged (vocabulary v5 adds the realised-speed clamp, §2 I4). Normalisation for the scheduler: `a_lon / 4.0`, `a_lat / 3.0` — the grid's own ranges (`a_lon ∈ [−4.0, +2.9167]`, `a_lat ∈ [−3.0, +3.0]`, `MODEL_REGISTRY.md` §4.6) — so [−1, 1] means the same thing the vocabulary means. The GT target in control space is `unicycle_controls_from_path_varstep(GT waypoints, dts)` (`kinematic.py:778`), which exists and is tested.
+
+**Why control space (the argument):**
+
+1. **Flyability is preserved by construction.** ESTIMATED from the `scaled_linear` schedule (arithmetic, this stream, reproducing the audit's 0.899 / 0.727 m at t = 8 as a control): √(1−ᾱ₈) = **0.0316**. In DD's metre normalisation that is σ_x 0.90 m / σ_y 0.73 m **per waypoint, independently** — over a 0.5 s slot a 0.73 m lateral excursion is an implied lateral acceleration of ≈ **5.8 m/s²** (0.6 g) and a 0.91 m along-track one a **1.8 m/s** speed jump; the sampled fan would be full of trajectories no car can drive, which is precisely what the selected-trajectory smoothness finding (`D-REFCV4B-EGODROP2` §3: jerk 2.42 vs the human's 0.86 m/s³) says we must not add. In control units the same schedule gives σ(t = 8) = **0.126 m/s² along / 0.095 m/s² lateral**, i.e. ≈ **2.3 m along-track and ≈ 1.7 m lateral at the 6 s endpoint** (the lateral figure is speed-independent because κ = a_lat/v² cancels against path length) — comparable to DD's ~0.9 m endpoint noise at their 4 s horizon, but every sample is a smooth, integrable path. At t = 49 (the training maximum) σ = 0.377 / 0.283 m/s².
+2. **The vocabulary stays the prior.** DD's premise — anchors near the modes, small noise, two steps — holds only if the bank is a real prior; `E-DDA-4` (a free readout from the refcv4b dump: classifier-pass ‖offset‖ mean, oracle-in-bank vs oracle-in-fan) decides that before the sampler is trained. If offsets are still metres-scale at 40 k, the fork is *not* a bigger σ; it is a denser / re-centred grid (§1.2 #13), because a sampler cannot fix a vocabulary (`D-REFCV4-VOCAB1`).
+3. **One parametrisation for the sampler and the RL policy.** V2's released exploration is two scalars per anchor scaling the mean trajectory along-track and laterally (`D-DDV2-CODE-2`). In control space that is a scale on `(a_lon, a_lat)` — the *same* two numbers the sampler noises. E-DDA-3b (§6) and E-DDA-3 share the state, the integrator and the flyability guard, and the RL stage needs no chain density (`D-DDV2-ORDER-1`).
+4. **The resolution objection is answered by the sequence, not by metres.** A constant `(a_lon, a_lat)` held for 6 s cannot trace a real 6 s trajectory (turn-coverage §5: the ceiling degrades 0.87 → 1.97 m with turn magnitude, a model-class limit, not a coverage hole). The **8-slot control sequence** has the same 16 degrees of freedom as the waypoint offset it replaces, so nothing expressible before becomes inexpressible — and `control_smoothness_losses` (`kinematic.py:820`) regularises it in the programme's own units.
+
+**What is given up, stated:** DD's x0 is directly the waypoints, so its loss is one L1; ours rolls through the integrator, which is ~60 sequential steps in float32 per candidate (`roll_bank` already pays this per window: 117 × 60 steps) — the sampler adds G × 2 refinement rolls per window. On the A40 the current forward is 3.844 s/step at batch 20 (`MODEL_REGISTRY.md` §4.6); the roll is a small fraction of that (ESTIMATED — the tiny-rig arm measures it, and the `--anchor-prefilter` S2b path can still decode only reach-survivors because candidates stay independent).
+
+**Deliberate-regression arm for E-DDA-3 (must FAIL):** the DD-literal metre-space sampler (`norm_odo` on waypoints). Pre-registered expectation: it fails the flyability gate (Kamm μ = 0.7 violations on the sampled fan ≫ the control-space arm's) and raises selected-trajectory jerk; if it does *not*, the flyability instrument cannot see what it is cited for and the arm is VOID. **Control that must read a known value:** the sampler at σ ≡ 0, t = 0, reproduces the deterministic decoder bit-for-bit.
+
+### 4.3 File-level plan (0 GPU to implement; validated on the tiny rig per §7)
+
+| file | change |
+|---|---|
+| `stack/tanitad/refs/refc.py` `DecoderConfig` (`:380-387`) | `sampler: str = "none"` (`"none" | "ddim"`), `sampler_train_t_max: int = 50`, `sampler_infer_t: int = 8`, `sampler_steps: int = 2`, `sampler_groups: int = 1`, `control_norm: tuple = (4.0, 3.0)`; `noise_std` retired under `"ddim"` |
+| `AnchoredDiffusionDecoder.__init__` (`:1134-1260`) | under `"ddim"`: `time_mlp` (sinusoidal → Linear → Mish → Linear), per-layer `time_mod` FiLM in `CrossAttnLayer`, `wp_embed` (Fourier features of rolled waypoints → d); `offset_head` becomes `control_head: Linear(d, 8·2)` predicting Δu; a `DDIMScheduler` instance (diffusers; a 30-line local re-implementation if the dependency is refused on pods) |
+| `forward` (`:1541-1770`) | classifier pass unchanged (t = 0 token, priors, reach band); under `"ddim"`: `u_t = add_noise(u_anchor, ε, t)` (train: t ~ U[0, 50); eval: t = 8, G groups), each refinement pass rolls `u_t` → waypoints → `wp_embed` → layers with `time_mod(t)` → `Δu` → `u0_hat`; DDIM step to the next `u_t`; detach between passes; emit the rolled fan `[B, G·N, S, 2]` + `u0_hat` |
+| `stack/tanitad/models/kinematic.py` | no change — `rollout_unicycle_varstep`, `unicycle_controls_from_path_varstep`, `control_smoothness_losses` exist; add a batched `roll_controls(v0, u, dts)` wrapper with a test against `roll_bank`'s constant-control case (must be bit-identical for a constant `u`) |
+| `stack/scripts/refc_v3_train.py` `compute_losses_v3` (`:537-575`) | `steps` logic unchanged; add `loss_u0 = L1(u0_hat[a_star], u_gt)` with `u_gt` from `unicycle_controls_from_path_varstep`, per-pass `loss_traj` on the rolled fan, `loss_smooth` (weight 0 by default), all stamped in `config.json` |
+| `taniteval/tools/refcv3_arm.py`, `taniteval/plan_fan.py` | dump `u0_hat`, the G-fan, the seed; implement DD's diversity score D (Eq. 3 of `2411.15139`) and the sampled-fan Kamm violation rate as readouts |
+| tests | parity (sampler off ≡ refcv4b), σ ≡ 0 identity, constant-`u` roll ≡ `roll_bank`, deliberate-regression (metre-space arm fails flyability) |
+
+---
+
+## §5 Selection — score the fan actually emitted, then the four-family selector
+
+### 5.1 Step 1 — E-DDA-2, zero parameters: the ranked object becomes the emitted object
+
+MEASURED defect (`D-REFC-DDAUDIT-3`): the ranking reads the t = 0 confidence and the fan leaves two passes later; `sel_idx_base` is unchanged on 201/201 windows for every `steps`. The fix exists in source: `SelectionConfig.refined` + `score_emitted` (+ `score_emitted_t`) make one extra confidence-only pass on the emitted fan (`refc.py:1703-1710`), and `sel_ce_reach` supervises that confidence over the reach-surviving set (E-SEL-0 showed the *unsupervised* refined readout ranks worse — so the arm is the supervised one, `H-DDA-2`). The priors (H19, factored, LAN, goal) are re-applied to the refined readout (`refc.py:1677-1683`), so turning this on deletes nothing from the hierarchy's seam. **First free read:** `H-SEL-1` in refcv4b's post-training ablation (eval-time switch; pick changes on ≥ 10 % of windows without ADE loss). **Ladder:** paired vs the all-off control on the tiny rig; readouts = the selection gap (`oracle_sel − os`; 0.0751 m [0.0618, 0.0884] on refcv3, `D-REFCV3-40284a`) and the four families. Under the §4 sampler the "emitted fan" is the G·N rolled fan and this pass scores it — the two levers compose without a second mechanism.
+
+### 5.2 Step 2 — E-DDA-2b, V2's coarse-to-fine sub-metric selector with OUR heads (no PDM, no map)
+
+**What V2 does** (`D-DDV2-CODE-4`, `diffusiondrivev2_model_sel.py` @ `1cd12a1`): candidate embedding (sinusoid of (x, y) + heading) → coarse scorer (1 layer: grid-sample BEV attention → agent MHA → **self-attention among candidates** → ego MHA → FFN; five heads NC / EP / DAC / TTC / C; BCE against PDM sub-scores + `MarginRankingLoss(0.05)` on EP pairs × 2) → top-32 → fine scorer (3 layers) → argmax of `σ(NC)·σ(DAC)·(5σ(TTC)+5σ(EP)+2σ(C))/12`. Trained with the generator frozen, 20 epochs; the v1 classifier is abandoned. Authors' control: the selector alone bought **+1.0 PDMS in the hackish direction** (NC 98.2 → 97.2, TTC 94.7 → 92.2, EP 82.2 → 86.8; Tab. 9) — the pattern `H-DDA-7` pre-registers for us.
+
+**Our adaptation — heads are the four families, targets are the environment, never the answer:**
+
+| head | target (train-time, rule-based, against the `obstacle.offline` REPLAY join) | family | instrument that exists |
+|---|---|---|---|
+| `NC` | no contact with any replayed agent over the 6 s candidate (time-aligned moving lead, `rl/rewards.py::_collision` — the static-lead defect is fixed, `D-RL-READY-1` #3) | LONGITUDINAL (distance keeping) | `rewards.py`, `taniteval/lead_metrics.py`, `lead_source.py` |
+| `TTC/headway` | min TTC ≥ threshold and time-gap ≥ threshold along the candidate vs the lead's own track (`ttc_violation`, `_headway`; thresholds from `PREREG_D_SAFE_CAL`, calibrated so the human is not flagged — `H-RL-THRESH-1` class clear at 0.047 on fit8) | LONGITUDINAL | same |
+| `comfort/feasibility` | jerk, lateral acceleration, curvature, yaw-rate within bounds on the rolled path (`_comfort`, `_kinematic_feasibility`; `flyability.py` Kamm) | LATERAL + comfort | `stack/tanitad/instruments/flyability.py` |
+| `progress` | along-track displacement relative to `v0` (hackable — see §6; a *head*, never the only head) | LONGITUDINAL (progress) | `_progress` |
+| `tactical-consistency` | the candidate's `(a_lon, a_lat)` cell class agrees with the v7.2 factored label (`vocab_v7.py`) — ⚠️ a label derived from the ego future, i.e. a **partial echo** (V2 analysis §3.3); admissible as a selector target only if reported separately and **never used as both the RL grouping key and a reward** (`H-DDA-6` rule) | TACTICAL | `refc_tactical.py`, `v7_labels.py` |
+| `compliance` | the candidate's terminal heading agrees with the nav command on informative windows — the compliance metric's own predicate (`nav_compliance.py`, τ_plan from GT + label only); the selector is *told* the command here (this is S7 in learned form), so the read is the shuffle / zero delta | STRATEGIC | `taniteval/taniteval/nav_compliance.py` |
+
+Score composition: `σ(NC) · (5·σ(TTC) + 5·σ(progress) + 2·σ(comfort) + w_c·σ(compliance) + w_t·σ(tactical)) / (12 + w_c + w_t)` — PDMS's structure with the map half removed and the two hierarchy heads added; `w_c`, `w_t` are config, reported, and ablated as switches (I2). ⛔ `DAC` (drivable area) is not constructible on PhysicalAI (no map, pinned); on the AlpaSim/NuRec arm `map.xodr` supplies it (W6).
+
+**Fan and augmentation.** Candidates = the 117-fan (× G under the sampler) + **2 multiplicative augmentations in control space** (`u·(1+s)`, `s ~ U(0.1, 0.2)`, V2's train recipe) + ≈ 1 % foreign bank (the 6 s k-means vocabulary `D-REFCV4-VOCAB1` that the arm does not use — V2's GTRS-vocabulary trick) ≈ 350–700 candidates. Scorer width d = 256, 8 heads (V2: 512 / 16 over 800 — half our budget, Thor-minded); coarse 1 layer → top-32 → fine 3 layers; candidate self-attention lives **only here** (the generator keeps candidates independent, §1.3 #22). Scene attention = the E-DDA-1 / E-BEV-1 grid-sample module, reused; agent MHA = E-AGT-1 tokens if present, else omitted (ablatable). Losses: BCE per head (V2's NC 0.5 → 0 mapping; comfort masked where undefined) + `MarginRankingLoss(0.05)` on progress pairs × 2. **Generator frozen** (stage II), trained on the dev box from the refcv4b final checkpoint's fan — it can start the day refcv4b lands, at 0 pod GPU.
+
+**Why this is not the re-scorer SEL-1 refused (winner's curse):** v1.2's `refc_rescorer.py` was trained toward the fan's own GT-distance winner; these targets are environment predicates that the GT does not enter (except the tactical head, quarantined above), and E9's goal detach stays hard.
+
+**Readouts (pre-registered in `H-DDA-7`):** the selection gap closes with CI excluding 0 **and** fan-collision-vs-replay does not rise ⇒ adopt; closes but collision rises ⇒ the Tab. 9 hackish direction, refuse; no change ⇒ selection is not binding at this fan quality, bank. Four families always; ADE-only reading refused in advance. Deliberate regression: the **progress-only head** must buy progress with collisions, or the collision readout cannot see collisions and the panel is VOID. Nav shuffle / zero controls on the compliance head (I2).
+
+**Files:** new `stack/tanitad/refs/refc_selector.py` (`SubMetricSelector`, coarse/fine, heads, composition); `stack/scripts/refc_selector_train.py` (frozen generator, dumps in, rule targets from the replay join — reuses `rl/rewards.py`); `taniteval/tools/refcv3_arm.py` gains `--selector <ckpt>` and dumps `sel_idx_selector` beside `sel_idx` / `sel_idx_base`; the criteria registry gains the selector's per-head calibration (ECE) as a reported, not gated, criterion.
+
+---
+
+## §6 The RL stage — a head-only scale policy whose job is to remove collision-prone and infeasible candidates from the fan
+
+### 6.1 Purpose, re-scoped by the PI (2026-09-05)
+
+Not to chase ADE. V2's published shape is the target: the raw fan's **floor** rose (PDMS@10 75.3 → 84.4, +9.1) while the top barely moved (@1 93.5 → 94.9) and diversity fell 28 % (`D-DDV2-RES-1`, Tab. 3) — the fan got *safer*, not *closer*. Our corresponding readout does not exist yet and is a work item: **`fan_floor@k`** — the k-th-best candidate's four-family score (k = 1, 5, 10) and the **fan-collision rate vs replay** — implemented in `taniteval/plan_fan.py` beside DD's diversity D (§4.3). A capability claim after RL is T1 on the four families; the reward is never quoted as a result (`EVAL_DOCTRINE.md`, I5).
+
+### 6.2 Mechanism (V2's released code, `D-DDV2-CODE-2/3`, ported one-to-one where our constraints allow)
+
+| ingredient | V2 (`_model_rl.py` @ `1cd12a1`) | refcv5 | state in `stack/tanitad/rl/` |
+|---|---|---|---|
+| trainable surface | `_trajectory_head` only; trunk + agent/BEV heads frozen **and in eval mode** | `core.decoder` minus the selector tensors (9.21 M / 107.03 M = 8.60 % on refcv3, MEASURED `D-RL-READY-1`); goal heads, `phi_tac`, `str_goal_head`, the §5 selector and the trunk frozen | `posttrain.py::select_trainable(freeze_trunk=True)` + the 15-prefix tripwire — exists |
+| policy | 2 scalars per anchor scale the DDIM mean along / laterally, `σ ≥ 0.04` (the additive term × 0) | 2 scalars per anchor scale `(a_lon, a_lat)` of the emitted control sequence, `u' = u ⊙ (1 + 0.04·ε_{lon,lat})`, re-rolled → always flyable (§4.2) | `refcv3_adapter.py::sample_offsets` is per-coordinate → **add the 2-scalar control-scale mode** (one-line change, integration request #1 of the V2 analysis) |
+| likelihood | isotropic Gaussian, σ 0.1, summed over 16 coords — not the sampler's density | same class (the surrogate `logp`, `D-DDV2-CODE-3`); stated limit; the chain density comes with E-DDA-3 later | exists |
+| groups | G = 4 per anchor, `(r − mean_G)/(std_G + 1e-4)`, discount 0.8 over 10 steps | G = 4 per anchor, centre-only by default (Dr. GRPO), std divisor a flag; one step (no chain) until E-DDA-3 | `advantage.py::grpo_advantage` — exists |
+| inter-anchor truncation | `clamp(min=0) · (r > r_GT − 1e-6)`; −1 on collision **or** off-drivable | `clamp(min=0) · (r ≥ r_GT)` with the GT scored under the same rule reward; −1 on collision (**no** drivable-area term: no map) | `truncated_inter_anchor_advantage` exists (veto → −1); **add the ≥ GT bar** (one line behind a config field) |
+| IL term | L1 of all 80 chains to the GT, λ = 0.1 (1.0 on rows with no positive sample) | same, on all G·N samples | `config.py` refuses `gt_similarity` + `w_imitation` double counting — keep that refusal: the IL term is the trainer's, not a reward component |
+| trust region | none (no KL, no ref policy) | the existing L2 anchor to the frozen fan (`anchor.py`, `w_anchor` 1.0, monotone in the pilot sweep) — **ours, not V2's**; stated | exists |
+| grouping key | anchor | anchor (default) vs `(a_lon, a_lat)` cell vs v7.2 tactical class — E-DDA-6 decides; **the class is the key XOR a reward term, never both** | E-DDA-6 |
+| recipe | 10 epochs, lr 2e-4, wd 1e-4, cosine, batch 512, cold start = the IL checkpoint | 2,000 steps on the 120-clip fit set, lr per the pilot ladder, cold start = the refcv4b (later refcv5) final checkpoint | `rl_refcv3_min.py` + `launch_refcv3_rl_min.sh`, STAGE 0 passes, cost MEASURED 0.862 s/step / 1.78 GB on the 4060 |
+
+### 6.3 The reward — PDMS's structure, none of its map terms, and the echo traps named
+
+`R = NC(replay) · (5·TTC/headway + 5·progress + 2·comfort) / 12`, the ≥ GT bar, collision → −1; scored at **train time** on the model's own emitted candidates against **replayed** `obstacle.offline` agents (NAVSIM's non-reactive assumption; privileged inputs are admissible at train time). Selector disjointness (`FORBIDDEN_REWARD_INPUTS`) stands: no term reads any model-produced ranking.
+
+| candidate term | reads | verdict |
+|---|---|---|
+| ADE / FDE to the GT future | the ego's GT future, whole shape | ⛔ **ECHO — it is the IL loss.** RL on it re-learns imitation with variance |
+| "stay within X m of the recorded path" | the GT future, banded | ⛔ ECHO with a dead zone — the recorded path is the answer |
+| target-speed / speed-profile match to GT | the GT future (speed) | ⛔ ECHO — the longitudinal IL target |
+| route / strategic-goal alignment | `nav_command` = ego-future oracle (4,719/4,719) | ⛔ ECHO of the strategic IL target |
+| v7.2 tactical class agreement | a label derived from the ego future | ⚠️ partial echo — admissible only as the *grouping key* (E-DDA-6), never as a reward term while it is the key |
+| progress normalised by the GT's progress (V2's EP) | one GT scalar | ⚠️ acceptable as a **normaliser**, a trap as a term ("match the human's distance" is the longitudinal echo in ratio form) |
+| ≥ GT mask | the GT's **score**, not its shape | ✅ a bar, not a target |
+| collision / clearance / TTC / headway vs replay | other agents' futures | ✅ the environment; caveat: agents were recorded reacting to the human (non-reactive replay, NAVSIM's own caveat) |
+| comfort / feasibility | candidate geometry only | ✅ — but see the floor defect below |
+| progress (along-track vs `v0`) | candidate geometry | ✅ hackable (`HACKABLE_WEIGHTS` regression arm); needs the collision term to fire |
+| drivable area / lane keeping | map | ✗ unavailable on PhysicalAI (AlpaSim `map.xodr` only) |
+
+⛔ **The reward-floor defect is fixed BEFORE any arm, and it is a design item, not a launch.** MEASURED (`D-RL-REWARD-FLOOR-1`, fit8, 318 lead windows): the DEFAULT composition ranks the hold-v0 straight path **above the human's own future on 78.3 %** of lead windows — feasibility (0.50) and comfort (0.20) are maximal for a straight constant-speed path and progress reads 1.0 for it. The ≥ GT bar does **not** repair this: hold-v0-like samples *beat* the human under such a reward and collect positive advantage. Fix: move feasibility and comfort from the *reward* into **vetoes** (thresholds calibrated on the demonstration, `PREREG_D_SAFE_CAL`), keep the environment terms (NC, TTC/headway, progress) as the reward, and gate the design on the existing `humanflag` instrument (`rl_refcv3_min.py --mode humanflag`): **G-REWARD — hold-v0 ≥ human on ≤ 30 % of lead windows on the 120-clip fit set**, pre-registered; a reward that fails it may not train anything.
+
+### 6.4 The vehicle, and what it decides
+
+`H-RL-MIN-1` (`…/2026-09-05-refc-rl-readiness/`: driver `stack/scripts/rl_refcv3_min.py`, chain `launch_refcv3_rl_min.sh`, STAGE 0 PASS, four arms `base · rl · reg_echo · ctrl0`, verdict order VOID → FAIL-COLLAPSE → FAIL-GUARD → FAIL-FAN → PASS → SPLIT → REJECT-SELECTOR → NULL) is re-scoped as **E-DDA-3b**: base = the **refcv4b final** checkpoint (not refcv3) once it lands; the one-variable delta vs the surrogate per-coordinate version = the two code-only V2 ingredients (≥ GT bar + 2-scalar control-scale exploration); `reg_echo` (the GT future inside the advantage) **must FAIL the G-FAN gate or the run is VOID**; `ctrl0` (lr 0) must read Δ = 0 exactly. Outcomes committed in `H-DDA-5`: the along-track oracle gap shrinks with CI excluding 0 **and** fan-collision does not rise ⇒ the V2 lever transfers on the predicted axis, schedule E-DDA-3's chain; along shrinks but lateral worsens ⇒ scale-only exploration too coarse, stop; neither ⇒ V2's map half was load-bearing, park RL until a lane signal exists. Then **E-DDA-6** (grouping key) on the same rig. Cost ≈ 2.5–3 h of the 4060 serial per panel (MEASURED/ESTIMATED, `D-RL-READY-1`), 0 pod GPU. ⛔ **Launch is the Master Mind's / PI's call** (`LAUNCH_APPROVED=1`); this plan launches nothing.
 
 ## §7 Implementation ladder `[PENDING]`
 
