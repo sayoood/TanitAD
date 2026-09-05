@@ -493,10 +493,157 @@ edge-by-edge cannot be ablated, and an un-ablatable module cannot be attributed.
 tiny-rig arm that answers it before any GPU-day is spent.
 
 ## 3. The grounding / consistency mechanism — the USP
-### 3.1 Consistency losses text ↔ `g_tac` / selected anchor
-### 3.2 Verification against the fan
-### 3.3 Contradiction detection and grounding tokens (`obstacle.offline`)
-### 3.4 EXPLANATION FAITHFULNESS — the fifth metric family, with controls
+
+### 3.0 The consistency paradox, and the two modes that resolve it
+
+⛔ **State the trap before the mechanism.** *"Train the text to agree with the plan"* is the obvious answer and it is
+**self-defeating**: a CoT optimised to match the plan is trivially consistent, carries no independent information, and
+— fatally — **can never flag a wrong plan**, which is the one thing an explanation channel is for. This is the same
+shape as the programme's own echo defects: refcv3's route head scored **1.0000** by reproducing its own nav input
+(369/369 and 81/81), and the S-curve "lateral skill" was **97.9 % open-loop, 0.0 % hold-action**. A consistency loss
+without an anti-echo control manufactures exactly that number again, in a new costume.
+
+⭐ **The resolution: our causal claim is deliberately weaker than the literature's, and therefore testable.**
+VLADriveBench (`2606.12706`) asks whether the CoT *causes* the action, and finds ORION's does not. We do not want ours
+to cause the action by default — the 2.15 M-parameter cascade is the authority, and a 368 M language module silently
+overriding it would dissolve the hierarchy that is the programme's thesis. So the module ships in **two modes**, and
+the mode is a **gate**, not a rewrite:
+
+| mode | write-back gates | what the module is | what must be measured | first deployable |
+|---|---|---|---|---|
+| **M — monitor** | **closed** (all zero-init heads gated to 0) | a **runtime consistency monitor** in the sense of `2608.29583` — it explains and it flags, it does not steer | F1–F6 below; **F7 (causal influence) must read EXACTLY 0.0000**, because there is no path | ⭐ **yes — zero planner risk** |
+| **I — influence** | opened **one edge at a time** | the CoT is causally in the loop through `g_str` / `g_tac` / the geometric goal point | F7 becomes non-zero *and must earn its edge* with a T1 four-family delta and the echo gate | only after M passes |
+
+**The claim mode M actually supports** — and it is the one to write in the paper — is: *the explanation and the plan
+are both produced from the same scene tensor, and a divergence between them is a detectable, measurable fault.* Not
+*"the CoT is the reason"*. `2307.13702` (Lanham) and `2305.04388` (Turpin) are the reason to be this careful: stated
+reasoning routinely misrepresents the true cause, and larger models are **less** faithful, not more.
+
+### 3.1 Consistency between the emitted text goal and `g_tac` / the selected anchor
+
+**The interface that makes consistency mechanical rather than rhetorical** is the executable-token vocabulary
+(`2608.10976`): every emitted token has *executable semantics*, so it can be compared to kinematics rather than to
+another string. Our vocabulary is not invented — it is the **v7.2 factored 8-way lat/lon set**
+(`stack/tanitad/data/vocab_v7.py`) plus a small closed set of rule/interaction modifiers, in XCoT's deterministic
+order (primary lateral/nav manoeuvre → longitudinal adjustment → rule/safety modifier).
+
+| loss | form | against what | why it is not an echo |
+|---|---|---|---|
+| **L_tac** | CE(XCoT primary lat/lon token, v7.2 label) | the **label**, not the model's own head | the target is the corpus label; matching the model's own `lat_logits_tac` would be self-distillation and would read 1.0 by construction |
+| **L_agree** | KL(XCoT lat/lon distribution ‖ `lat_logits_tac` / `lon_logits_tac`), **weight ramped from 0 and capped**, and reported as a *measured* rate, not driven to 1 | the cascade's tactical heads | the cap is the mechanism: consistency is a **calibration target, not a constraint**. A model at 100 % agreement is refused — it has become the echo |
+| **L_goal** | Smooth-L1(emitted geometric goal point, label goal point) + CE(E19 `p_man`, `t_bin`) | the v7.2 `manoeuvre_sequence` labels over `STRATEGIC_S = (8, 30) s` | the 30 s label is a **training target and never an input** (`refused_edges`, invariant I1) |
+| **L_ref** | CE(referent pointer, `obstacle.offline` critical agent \| NULL) | §3.3 | 853 clips carry an explicit `type: none` — a real negative class, so NULL is learnable and not a degenerate default |
+| **L_cot** | token CE on the prose head, **slow clock only** | the Alpamayo sentence (form) + our template (content) | §0.2: the teacher supplies the *kind* of sentence; the content comes from our labels |
+
+⚠️ **`L_agree` is the one that needs a deliberate-regression arm** (per `TanitAD_ValidateAIDesign`): an arm trained
+with `L_agree` at 10× weight must **FAIL** the F5 scene-sensitivity gate. If it passes, the gate is not measuring
+grounding and the whole family is invalid.
+
+### 3.2 Verification against the fan — "name a manoeuvre the plan actually contains"
+
+REF-C emits **117 anchors** with confidences and picks one (`sel_score → sel_score_v3 → argmax`). Every anchor is a
+constant-`(a_lon, a_lat)` control rolled from the measured `v0`, so **every anchor has a computable v7.2 class** — the
+machinery already exists (`derive_man5_logprobs` on the 5-way surface, `refc.py:2290-2305`; the factored 8-way set in
+`vocab_v7.py`). Two verifications follow directly, and both are free at eval time because the fan is already dumped:
+
+- **FAN-SUPPORT@k** — the fraction of windows where the explanation's primary manoeuvre lies in the class set spanned
+  by the **top-k anchors by confidence**. `k = 117` must read **1.0000** exactly (every class is present) — that is a
+  control that must read a known value, and if it does not, the class mapping is broken, not the model.
+  `k = 1` is the strict form and coincides with PLAN-NAME below.
+- **PLAN-NAME accuracy** — the explanation's primary manoeuvre equals the **selected** anchor's class.
+
+⭐ Why this is stronger than a text-similarity score: it is a **statement about the plan the car will execute**, in the
+plan's own vocabulary, computed from the same tensor. `2608.29583`'s monitor reaches **F1 0.75** doing an approximate
+version of this on Alpamayo 1.5 with a *learned* judge; ours is exact and rule-based because our fan is enumerable.
+
+### 3.3 Grounding tokens — the referent must POINT, not describe
+
+⛔ **The single defect the corpus already exhibits is a hallucinated referent** — the cyclist invented through a
+68–82° junction turn (D-DATA-COT-HALLUC), and `2605.17268` measures **94 missed pedestrians** in a third of
+pedestrian-relevant PhysicalAI-AV scenes. A string cannot be checked; a pointer can.
+
+**Mechanism.** The refcv5 plan's `E-AGT-1` already produces **agent tokens from `obstacle.offline`** (3-D tracks on
+**97.44 %** of the corpus, 10 dynamic classes over 87,481 cuboids). The language module emits, for each referent slot,
+a **softmax over {agent tokens} ∪ {NULL}** — so *"the lead vehicle"* is emitted as `REF(k)` and rendered to text only
+afterwards. Consequences:
+
+1. **A referent that does not exist cannot be emitted.** The hallucinated cyclist is structurally impossible, not
+   merely penalised.
+2. **The negative class is real.** `critical_components_analysis` carries `type: none` on **853** clips (§0.2), so
+   NULL has genuine supervision and the head cannot collapse to "always point at something".
+3. **The 2-D boxes are the cross-modal check.** `grounding_via_vqa` gives boxes on **4,728** rows (Car 2,292 ·
+   Pedestrian 1,079 · traffic light 889) — the only channel that ties a CoT token to image space, and therefore the
+   only way to audit the *teacher's* referents before distilling them.
+4. ⛔ **`obstacle.offline` is a TRAIN-TIME label only.** Labels may use ego and other privileged channels (PI
+   2026-08-03); at inference the referent pointer must resolve against **agent tokens produced by our trunk**, never
+   against the offline track file. This is invariant I3 and it is the same test as the vision-only rule.
+
+**Rule-based contradiction detection** (the `2606.23938` neuro-symbolic idea, made cheap by executable tokens). Each
+token carries a checkable predicate over the **selected anchor's rolled control**, so a violation is a fact, not a
+judgement:
+
+| token | predicate on the plan | fires when |
+|---|---|---|
+| `DECELERATE` / `STOP_POINT` | selected anchor `a_lon < −τ_dec` ; terminal speed ≈ 0 within the horizon for `STOP_POINT` | the text says brake and the plan accelerates — `2605.17268` measures this exact failure at **37.9 % of stop-claimed cases** |
+| `KEEP_SPEED` | \|Δv\| over the horizon below τ_keep | — |
+| `NAV_LEFT/RIGHT_LANE_CHANGE` | cumulative lateral offset > ½ lane width **and** nav token consistent | — |
+| `HAZARD_YIELD` / `GAP_TARGET` | referent pointer ≠ NULL | an interaction claim with nobody to interact with |
+| `RED_LIGHT_HOLD` | referent class ∈ {traffic light} | — |
+
+⇒ **CONTRADICTION RATE**, reported **per rule with its own n** (a pooled rate hides which rule fires, and CLAUDE.md's
+"never pooled" rule applies to this family too).
+
+### 3.4 ⭐ EXPLANATION FAITHFULNESS — the FIFTH metric family, with controls that must read known values
+
+**This is the deliverable that makes the USP a claim rather than a slogan.** It sits **beside** the binding four
+(LONGITUDINAL · LATERAL · TACTICAL · STRATEGIC), never inside them, never pooled with them, and it carries the same
+apparatus: the **paired episode-cluster bootstrap** over the 141 eval clips (`taniteval/ci.py`), never
+`overlapping_holdout_se`; a **T-tier stamp** on every row; and `n` **and** `d` printed in the table (the probe rule).
+
+| id | metric | definition | reported with |
+|---|---|---|---|
+| **F1** | **plan consistency** | rate(emitted primary manoeuvre = selected anchor's v7.2 class) | + the class prior; + `Δ_plan-shuffle` |
+| **F2** | **fan support@k** | primary manoeuvre ∈ classes of the top-k anchors | k ∈ {1, 3, 10, 117}; **k = 117 must read 1.0000** |
+| **F3** | **referent grounding** | precision / recall / NULL-accuracy of `REF(k)` against the critical-agent label | per class; explicit-none subset separately |
+| **F4** | **contradiction rate** | per-rule violation rate over §3.3 | per rule, with n |
+| **F5** | **scene sensitivity** | 1 − agreement(explanation \| scene tokens, explanation \| **shuffled** scene tokens) | ⭐ the anti-echo gate |
+| **F6** | **nav-echo quotient** | accuracy of the emitted strategic manoeuvre **conditioned on nav** — i.e. what the explanation adds beyond the nav token — plus `Δ_nav-shuffle` | ⛔ a bare accuracy here is inadmissible |
+| **F7** | **causal influence** | change in the selected anchor when an XCoT token is forced to a different value (`2606.12706`'s intervention) | **must read exactly 0.0000 in mode M** |
+
+**The control rig — five controls, each of which must read a KNOWN value.** *(This exists because on 2026-08-22 four
+distinct probe failures in one afternoon each produced a confident publishable-looking number, and every one was
+caught only by a control reading the same value as the thing being measured.)*
+
+| control | construction | the value it MUST read | what its failure proves |
+|---|---|---|---|
+| **C-A constant** | always emit the modal token sequence | F1 = the class prior, **F5 = 0.0000 exactly** | if C-A scores like the model, F1 is measuring the prior |
+| **C-B plan-echo** | explanation computed from the **plan alone**, scene tokens withheld | F1 ≈ 1.0, **F5 = 0.0000** | ⭐ this is the control that gives F5 its meaning: it is the only thing separating *grounded* from *echo* |
+| **C-C scene-only** | plan/goal prefix tokens withheld | F1 < full model | if equal, the plan input is doing nothing and mode I can never work |
+| **C-D nav-only** | only the nav token and `v0` as input | F6 ≈ 0 beyond nav | ⛔ this is refcv3's 141/141 route bijection, pre-armed |
+| **C-E floor** | the §2.b from-scratch template decoder, same targets, no pretrained LM | the pretrained LM **must beat it** | a learned representation that does not beat the cheap floor has added nothing |
+
+**The two interventions the PI's brief names, made precise:**
+
+- *"shuffle the scene ⇒ the explanation must change"* → **F5 with the C-B control.** Shuffle `pooled` across windows
+  **within an episode** (so the ego state and nav are unchanged and only the scene moves); the explanation must change
+  on a majority of windows. A module reading only ego/nav reads F5 ≈ 0 — which is precisely `2501.04003`'s finding that
+  VLMs answer from textual cues rather than visual grounding, turned into a gate.
+- *"shuffle the plan ⇒ consistency must drop"* → **F1 with `Δ_plan-shuffle`.** Replace the selected anchor with one
+  drawn from another window; F1 must fall to the class prior. If it does not, F1 was never measuring agreement.
+
+⚠️ **Two openly-stated weaknesses of this family, so nobody inherits them as folklore.**
+1. **F1 and F5 trade off by construction.** A perfectly plan-consistent module is at risk on F5; a perfectly
+   scene-sensitive one is at risk on F1. ⇒ they are reported **as a pair, never as a mean**, and the target is a
+   *region* (F1 well above prior **and** F5 well above 0), not a maximum on either.
+2. **F3 is only as good as its labels**, and the labels come from a teacher measured at **42.5 %** reasoning fidelity
+   (`2605.17268`). ⇒ F3's *label* set is `obstacle.offline` (geometry, ours), **not** the Alpamayo referents; the
+   Alpamayo `grounding_via_vqa` boxes are used to *audit the teacher*, never as ground truth.
+
+**Integration.** The four families are enforced by the criteria registry
+(`products/P7-TanitEval/CRITERIA_REGISTRY.json` v2.6.0, INHERITED from `REFCV5_DESIGN_PLAN.md` §2 I5). A fifth family
+is a **registry version bump plus checker rules**, not a paragraph in a report — CLAUDE.md's own C126 lesson is that
+"no prose correction can reach a glob". ⇒ plan **WP-6**: add `explanation_faithfulness` to the registry with F1–F7 and
+the five controls as *required* keys, so an eval that omits them is a **violation**, not an omission.
 
 ## 4. Own hypotheses — `H-VLA-*` (validation on the tiny rig / dev box, both outcomes committed)
 
