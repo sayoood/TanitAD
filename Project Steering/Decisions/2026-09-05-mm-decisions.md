@@ -2453,3 +2453,69 @@ shows over `ha` is not evidence of lateral skill. ⇒ **Any claim resting on `co
 ⇒ **Net effect on the headline: the zero-violation result is STRONGER than when I qualified it.**
 Its attribution to genuine path selection is now supported by an oracle-anchored control rather than
 merely unrefuted.
+
+## M48. ⭐⭐ A CONSTRAINT AND A PENALTY INTERACT WITH A DISCRETE VOCABULARY IN **OPPOSITE** DIRECTIONS — and this unifies M47 with the L3 null
+
+### 1. The measurement
+
+MEASURED, n = 40, planner arm, `…/2026-09-05-refav1-cost-geometry` (commit `1378363`):
+
+| arm | distinct realised curvatures | on-rung windows |
+|---|---|---|
+| `wk15` — quadratic penalty, **no** ladder | **15** (0.0115 … 0.0530) | 0 |
+| `l3ladder` — ladder, **no** penalty | 11 | 0 |
+| **`wk15_ladder` — BOTH** | ⛔ **2** (`0.0000 ×18`, `0.0020 ×22`) | **22 / 40** |
+
+Against `wk15`, each on its **own per-metric floor**: TAC lateral kappa **0.2611 → 0.0000** (2.7×),
+`turn_right` recall **0.50 → 0.00**, curvature MAE +0.00881 (13.3×), heading +4.83 (4.2×) — while
+LON speed **−0.0310** (8.2×) and accel **−0.0445** (7.3×) *improve*, for the same reason: the plan
+stops spending its freedom on curvature.
+
+### 2. ⭐ The principle, and it is general
+
+* ⛔ **A CONSTRAINT FORBIDS BUT DOES NOT RANK — it has no preference gradient.** A discrete ladder
+  therefore **HELPS** it: the constraint needs *feasible options to select among*, and the ladder
+  supplies them. ⇒ this is exactly why `combined` (cap + ladder) reached `kamm_over_rate` **0.0000**
+  while the cap alone left 0.1481.
+* ⛔ **A PENALTY RANKS — it always prefers the cheapest non-zero option available.** A discrete ladder
+  therefore **HARMS** it: it converts *"smallest expressible curvature"* from a **continuum the search
+  trades along** into a **fixed floor it snaps to**. `wk15` found 13 intermediate magnitudes precisely
+  because nothing quantised it.
+
+⇒ ⭐⭐ **This amends the three-part design principle** (`DESIGN_CONSTRAIN_BY_CONSTRUCTION.md`).
+Part **(2) "make the good REPRESENTABLE" is NOT neutral with respect to part (3)**: *how* you make the
+good representable depends on whether the reason-to-prefer is a **constraint** or a **penalty**. The
+same vocabulary is a **gift to one and a cage to the other.** ⛔ A design that adds a discrete
+vocabulary must therefore state which of the two it is pairing with — the pairing, not the vocabulary,
+is the load-bearing choice.
+
+### 3. ⭐ It closes the L3 null and M47 into one account
+
+* **L3 null:** with no cost preferring them, not one window chose a rung. **Correct** — a ladder is
+  inert without a reason to prefer it.
+* **M47:** the cap + ladder pair moves longitudinal authority by *exactly zero* and sits on the
+  oracle's 31/40. **Correct** — a constraint given feasible options changes *which* candidate is
+  selected, not *how much authority* the planner spends.
+* **This entry:** the penalty + ladder pair collapses the lateral channel to two curvatures.
+⇒ **All three are the same mechanism seen from three sides**, and the discriminator is always
+*"does the thing paired with the vocabulary RANK, or merely FORBID?"*
+
+### 4. ⭐ The stream acted on it rather than banking a verdict
+
+`best` had started **one minute earlier** carrying `W_KAPPA` + cap + **ladder** — which this
+measurement predicts would inherit the collapse. It was killed by explicit PID, its partial dump
+deleted so it could not be mistaken for a panel, and relaunched as `W_KAPPA` + cap, **no ladder**,
+verified from the run's own banner (`seed_kappa_ladder=None`). ⭐ That is also **cleaner attribution**:
+one variable against `wk15` and one against `kamm07`, rather than three against the baseline.
+⭐ **And the prediction that the unrun ladder arm WOULD collapse is pre-registered**
+(`PREREG_COST_GEOMETRY.md` §7) — so it cannot be claimed after the fact.
+
+### 5. ⚠️ A conflation hazard this package has now produced TWICE
+
+Its curvature table's *"EXACTLY-constant"* column (`wk15` **0.6750**) and M47's `const_speed_frac`
+(`wk15` **0.4750**) are **different statistics on different axes** — lateral vs longitudinal. Verified:
+0.6750 appears in **none** of `wk15`'s `trivial_profile` fields (0.4750 / 0.4750 / 0.2500). **No
+contradiction, and M47 stands** — but this is the *same* "two statistics, one loose noun" family as the
+seed-floor withdrawal earlier in this very package (`TAC_traj_lat_correct`'s paired floor applied to
+`lane_keep` recall). ⇒ ⛔ **a "constant fraction" must name its AXIS, exactly as a floor must name its
+STATISTIC.**
