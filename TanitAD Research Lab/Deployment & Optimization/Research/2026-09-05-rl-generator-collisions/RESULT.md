@@ -303,7 +303,139 @@ veto package stated the same caveat for its own single-seed null.
 earning its place: it is normally a formality, and here it caught a silent cross-definition
 comparison that would have produced a floor 38 % too permissive on the package's primary endpoint.
 
-### 6.3 Still pending
+### 6.3 ⛔ THE REPLICATE LANDED — AND THE ARM FAILS ITS COMMITTED SUCCESS CRITERION
+
+`coll200` s1: `veto_rate_mean` **0.0000** exactly, 326.3 s, `final_loss` **0.11635** (vs s0's
+0.02588 — a 4.5× difference, so the two runs are genuinely different training trajectories),
+`components_fired.collision` **44 / 200**, `sel_idx_agreement_with_base` 0.975.
+**G2 guard between the two seeds: BEFORE readouts bitwise identical on `fan_contact`,
+`fan_peak_g_mean` and `fan_infeasible`.** ✅
+
+| metric | Δ s0 | sep | Δ s1 | sep | same sign | reading |
+|---|---|---|---|---|---|---|
+| **`fan_contact`** (PRIMARY) | −0.001693 | **yes** | −0.001693 | **no** | yes | ⛔ **NOT separated at both seeds** |
+| `top32_contact` | −0.001042 | yes | **+0.000000** | yes | **no** | ⛔ sign disagrees |
+| `fan_unsafe` | +0.000781 | no | −0.003776 | yes | **no** | ⛔ sign disagrees |
+| ⛔ `fan_peak_g_mean` (g) | +0.025303 | yes | **+0.040678** | **yes** | **yes** | **QUOTABLE REGRESSION** |
+| ⛔ `fan_infeasible` | +0.002209 | yes | **+0.002489** | **yes** | **yes** | **QUOTABLE REGRESSION** |
+| `sel_peak_g` (g) | +0.023960 | yes | +0.008523 | no | yes | not replicated |
+| `top32_infeasible` | +0.000857 | no | +0.012790 | yes | yes | not replicated |
+
+> ⛔ **FAILURE against the committed SUCCESS text.** SPEC §6 required `fan_contact` to decrease
+> **separated at BOTH seeds**, same sign, above both floors. It is separated on **s0 only**.
+> ⭐ **The gain is not replicated; the COSTS are.** `fan_peak_g_mean` and `fan_infeasible` clear
+> the bar the collision gain does not: separated at both seeds, same sign, and larger on the
+> second seed. A report quoting only s0's `fan_contact` would be true and misleading.
+
+⚠️ **One coincidence, stated rather than built on.** Both seeds report an episode-clustered delta
+of **−0.001692708333** to twelve decimal places, while their AFTER states genuinely differ
+(`611/4608` vs `613/4608`) and their full-population changes are **−0.001519** and **−0.001085** —
+a factor of 1.4 apart. The clustered means coinciding exactly is an artefact of the cluster
+weighting over n = 30 episodes, **not** evidence of a stable effect. The full-population numbers
+are the more trustworthy read and they do **not** agree.
+
+### 6.4 ⭐ P5 — CONTINUING, not stopping: S2 is built and its controls pass
+
+The arm failed, so per SPEC §6 the named successors run. **S2 (a penetration-graded collision
+term) is implemented and controlled** in `raw/s2_graded_collision.py`:
+
+```
+pen = (r - d_min_swept).clamp_min(0)                      # r = 2.0 m, the contact radius
+out = 0                              where pen == 0
+out = -(0.5 + 0.5 * min(1, pen / r)) where pen  > 0       # range [-1, 0], neutral 0
+```
+
+⭐ **The normaliser is the contact radius itself — a GEOMETRIC constant, not one fitted to the
+observed depths.** The deepest possible incursion into a disc of radius `r` is `r`, so `pen/r` is
+in [0, 1] by construction. A severity scale tuned on the scored data is precisely the probe-panel
+error, and this avoids it entirely.
+
+| control | result |
+|---|---|
+| **S1 SUPPORT-IDENTITY** — must punish exactly the same candidates as the stock term | **0 disagreements / 1,053** ✅ |
+| **S2 NOT-FLAT** — the entire point | graded std **0.125746** vs binary **0.000e+00** ✅ |
+| **S3 CLEAN-ZERO** — non-colliders read the neutral value exactly | max abs **0.000e+00** ✅ |
+| **S4 IN-RANGE** — same contract as the stock component | [−0.9995, 0.0], colliders ≤ −0.50 ✅ |
+| **S5 MONOTONE** — deeper never scores higher | rank corr **−1.000000000** ✅ |
+
+⭐ **And the swept geometry is load-bearing, not cosmetic: swept penetration is > 0 for all 1,053
+colliders, while the per-SAMPLE depth is > 0 for only 764 — grading on sampled points alone would
+leave 289 colliders flat at the floor and reintroduce the very flatness S2 exists to remove.**
+That 289 is the third independent appearance of the swept-vs-point gap (§1.2, §5.1, here).
+
+### 6.5 ⭐ THE ESCALATION (24bd5e8) — answered, accepted, and acted on
+
+M39 (`c9ab82c`) takes `fan_contact` to a **structural zero at +0.0000 m and zero GPU** with a
+contact-stage projection, and the escalation asks **one** thing of this stream: *"supply the
+population its `fan_contact` base is computed over, so the two results can be read on ONE
+object."* It is right to ask, and here it is.
+
+| number | population | fraction | definition |
+|---|---|---|---|
+| **0.134114583333** (this package's arms) | **36 lead-bearing windows** of the RL rig's 120-window eval readout × 128 candidates = **4,608** | **618 / 4,608** | SWEPT |
+| 0.034277 (banked fan, **all** windows) | 240 windows × 128 = 30,720 | 1,053 / 30,720 | SWEPT |
+| **0.126562** (banked fan, **lead-only**) | **65 lead-bearing windows** × 128 = 8,320 | 1,053 / 8,320 | SWEPT |
+
+Source for the first row is the artifact itself, not an inference:
+`arm_summary.json::fan_safety_n["fan_contact"] = 36`.
+
+⇒ **The escalation's objection is exactly correct and the reconciliation is the lead-only
+restriction: 0.134115 (36 lead windows) against 0.126562 (65 lead windows) — both lead-only,
+both SWEPT, 5.97 % apart, consistent with two window draws from one corpus.** `0.034277` is the
+all-windows rate and was never comparable to an RL-rig figure. Both streams' relative movements
+are therefore readable on one object, and the absolute rates are now reconciled rather than
+merely flagged as incomparable.
+
+**Accepted:** `fan_contact` is retired as the RL primary endpoint. It is solved by construction,
+and §6.3 is the third instance of the same trade signature. **Acted on:** the T1 four-family
+evals — ~40 GPU-minutes to price this arm against a retired endpoint — were **cancelled**
+(`raw/chain_after_coll4.sh` records the decision and the reason). The arms in flight finish, as
+the escalation asks, because they establish the rig's noise floor.
+
+⭐ **Two independent confirmations between the streams, worth recording because they were
+derived separately:** M39 reports the point→swept correction as **764 → 1,053, +37.83 %**; §1.2
+of this package measured **+37.8 %** from the opposite direction (identifying the banked
+definition rather than the corrected one). And M39's own contact-vs-friction split — *"M35
+measured the friction projection making contact slightly worse"* — is **§4.1 of this package**,
+measured before either result existed.
+
+### 6.6 ⭐ THE FIRST-SEGMENT BLIND SPOT: real, and MEASURED to be immaterial here
+
+M39 names a defect it does not size: `rewards._collision` builds
+`rel = lead[..., 1:, :] - traj[..., 1:, :]`, dropping index 0, so **the t0→t1 segment is never
+swept** and a plan driving through a car in the first step can read CLEAR. The size decides
+whether a *structural zero on this metric* is a zero on the road, so it is measured
+(`raw/p7_first_segment_blindspot.json`).
+
+Controls: **P2** the reimplementation restricted to segments 1–3 reproduces the stock flag with
+**0 disagreements** (so any difference is attributable to the first segment and nothing else) ✅ ·
+**P1** no candidate loses its flag under a wider sweep ✅ · **P3** the t0 condition never varies
+by candidate within a window ✅.
+
+| | value |
+|---|---|
+| stock colliders | 1,053 (`fan_contact` 0.034277) |
+| with the t0→t1 segment swept | 1,055 (`fan_contact` 0.034342) |
+| **newly detected** | **2 = +0.19 % of the stock count** |
+| **windows gaining a collider** | **0** (of 19 collider-bearing) |
+| leads already within 2 m at t0 (a SCENE property, never charged to the plan) | **0 / 65** |
+
+⇒ **The defect is REAL and, on this corpus, IMMATERIAL — it does not undermine M39's structural
+zero.** Reporting "the defect is real" without its size would have been alarming and wrong.
+⚠️ **But it is immaterial only HERE**: this is a lead-following corpus where no lead is within
+2 m at t0. On a corpus with close cut-ins or a parked obstacle — exactly M39's *"car parked
+1.5 m ahead"* — it is not, so the fix is still worth making.
+
+⚠️ **And making it exposed a `one_variable` error of my own, caught by the controls.** I first
+folded the first-segment fix straight into the S2 graded component; **S1 and S3 immediately
+failed**, because the change moved the term's **SUPPORT** (which candidates are punished) as well
+as its **GRADING** (how much) — two levers in one arm, and an unattributable result if it moved.
+It is now a separate switch, `sweep_first_segment`, **default OFF**, so S2's arm runs
+support-identical to the stock term. Both modes pass all five controls, and the fix-ON mode
+gains **exactly 2** candidates — independently matching p7's count from a separately written
+probe.
+
+### 6.7 Still pending
 
 **One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
 `coll200` differs from the already-banked `ctrl_null` in **the collision weight alone,
