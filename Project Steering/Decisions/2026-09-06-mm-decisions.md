@@ -754,3 +754,85 @@ table would have shown "1 of 3" and been read as success.
 ⛔ The **writer's** comment remains wrong and its placement remains misleading — `refcv3_arm.py` is
 being edited by sibling streams, so it is left alone deliberately rather than raced. ⚠️ **The reader
 fix makes the gate correct regardless**, but the comment should be corrected when that file is quiet.
+
+## M64. ⭐⭐⭐ OUTCOME A — THE TURN ASYMMETRY IS REAL, AND THE DEFECT IS NAMED: refav1's planner emits ZERO left turns
+
+### 1. The verdict, on both inference seeds, every power target met
+
+The power target was derived **before looking**: a recall on `n` trials moves in steps of `1/n`, so
+`2/n <= 0.0750` ⇒ **n >= 27 per direction, >= 5 clusters.** ⚠️ **The banked panel's 11/8 resolved only
+to 0.0909 / 0.1250 — COARSER THAN THE FLOOR ITSELF**, which is why it could never have decided this.
+
+Achieved **30 left / 30 right, 6 clusters each, granularity 0.0333**, parity untouched (windows
+stratified inside the same 8 episodes).
+
+| arm | recall LEFT | recall RIGHT | R − L |
+|---|---|---|---|
+| `ta_wk15_s0` | ⛔ **0.0000** | 0.4333 | **+0.4333 [+0.1667, +0.6539] SEPARATED** |
+| `ta_wk15_s1` | ⛔ **0.0000** | 0.5000 | **+0.5000 [+0.1874, +0.7407] SEPARATED** |
+| `ha0_ext` (floor) | 0.7333 | 0.7000 | −0.0333 |
+
+Panel's own seed floor `0.1935` (the CI's **reach**, per the stream's own hardening of its rule).
+**Both gaps clear it by 2.24x and 2.58x, signs agree.** ⭐ And it survives the confound that voided the
+banked panel: the **within-episode** contrast over the 4 episodes carrying both directions reads
+**+0.4250** and **+0.5083**, both separated, while the floors read **−0.1917** and **+0.0000** — **the
+plan's gap runs AGAINST its own floor.**
+
+### 2. ⛔⛔ The named defect
+
+**refav1's planner emits ZERO left turns.** Not *fewer* — **zero**, on **30 GT-left windows across 6
+episodes, at BOTH seeds**, while emitting **13–15 right turns** on the matched stratum. **A structural
+zero with full cluster support.**
+
+⭐ **And it is the COST, not the goal head.** Restricted to windows where the head decoded the
+**correct** turn token: GT-left **0/9 at both seeds** (median realised kappa +0.021/+0.025, full
+magnitude **0/9**); GT-right **13/20** and **15/20** (median −0.080, full on 18–19/20). In episodes 1
+and 6 the head decodes left correctly (**4/5** and **5/5**) and the plan still produces **0/5 in both.**
+⇒ Combined with the full `+0.08` candidate being **handed** to the search and losing (`M54` §2), **the
+loss is the cost comparison.**
+
+⛔ **The next lever is NOT a direction-aware seed pool — refuted: that candidate is already there.**
+
+### 3. ⛔ What is still OPEN, and is not being claimed
+
+**That the curvature PENALTY causes the asymmetry.** The increment over the goal-head baseline is
+**+0.0667 / +0.1333**, both **BELOW** the 0.1935 floor. The head-correct cell says the cost is doing
+the work; the pooled arithmetic cannot separate cost from head. **`ta_ccos_s0/s1` (`W_KAPPA = 0`, same
+75 windows) adjudicates it and is running.** ⭐ That is exactly why `M62` reversed the scheduling
+ruling — those arms are the head-baseline, not another exploratory round.
+
+### 4. ⭐ M57's CORPUS REQUEST IS NARROWER THAN I ESCALATED — correcting myself to the PI
+
+`M57` told the PI that settling this **needs more EPISODES, not more compute**, because raising n did
+not raise the cluster count. **That is true of the WITHIN-EPISODE contrast (4 clusters) and NOT of the
+per-direction recall**, which reached **6 clusters by stratifying windows inside the SAME 8 episodes**
+and **separated at both seeds.**
+
+⇒ ⛔ **The corpus ask I escalated is real but bounded**: it constrains the *within-episode* attribution,
+not the headline question, **and the headline question is now answered without it.** ⭐ **A power
+computation done before looking is what converted an "unresolvable" slice into a decided one** — the
+banked panel failed not because the corpus was too small but because **nobody had checked that its
+granularity was coarser than the floor it was being judged against.**
+
+### 5. Three cross-stream results, all from independent convergence
+
+* ⭐ **The inert-seam diagnosis reproduced on a SECOND GPU** — `T_lonseam` reads `+0.0000 [0,0]` on all
+  eleven metrics with a same-breath non-zero control. **Now two-rig.**
+* ⛔ **A pre-registered outcome fired AGAINST its own author's attribution**: `lonshift − lonvocab`
+  straddles zero on LON speed (−0.0549 [−0.1248, +0.0068]), along and ADE, separating on **1 of 11** at
+  2.1x the in-rig floor. ⇒ **`D-REFAV1-LON-ADDRESSABLE-62` is REFUTED at the arm level**; the
+  expressivity table's *"D2 dominates on every column"* **does not transfer to the planner.** Both
+  remain real levers (D1 36.0 %, D2 47.4 % of the gap) — D2 weakly better, not distinguishably so.
+* ⭐ **`M61`'s rig-dependence confirmed from the other side, and the author accepted the correction:**
+  a `TAC_traj_lat_correct −0.1000` reported as *not attributable* on the dev box **is** attributable on
+  Thor, whose in-rig floor is ~7x tighter. *"A seed floor carries its rig and its arm, never a
+  programme constant."*
+
+### 6. ⛔ A time-critical cross-stream refutation, delivered the right way
+
+One stream named **`goal_reach_s` as the live next lever**; another had already **refuted it 0-GPU**:
+tau = 1.0 gives LON speed **+0.1552** against D2's **+0.1517**, tau = 0.6 gives **+0.1825** and loses
+the floor win entirely — with a **tau = 2.0 control reproducing D2 to four decimals**, so the negative
+is a measurement rather than a broken rig. ⭐ **It put the refutation in the COMMIT SUBJECT LINE
+(`e432341`), because a `git log` subject is what another agent actually reads.** That is the
+escalate-integration rule executed properly — not a note buried in a document nobody re-opens.
