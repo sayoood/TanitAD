@@ -1875,6 +1875,175 @@ o1ctrl30k:    act_emb 0.3021 → film0 0.0144 (21.0× drop) → block0 0.0038  (
 
 ## New DECIDED / MEASURED rows
 
+### `D-REFCV5-PARITY-LABELS` — ⭐ **DECIDED + MEASURED: parity tactical/strategic supervision goes 7.917 % → 100.000 %**
+
+**PI 2026-09-05:** *"follow your recommendation regarding 2 (refcv5) and build."* Built.
+
+**MEASURED, zero GPU, zero download, 13.5 s (177.8 clips/s), 2,400 emitted / 0 failed.** Computed
+with the TRAINER'S OWN arithmetic (`refc_v3_train.py:2572-2583`, `frac = hit/len(eps)` through
+`stable_episode_id`), on Thor, against the real parity cache:
+
+| | records | joined | coverage | floor 0.50 |
+|---|---|---|---|---|
+| BEFORE `s2_labels_v7.2_train.jsonl.gz` | 4,572 | 190 / 2,400 | **7.917 %** | ⛔ REFUSED |
+| BEFORE train **+ eval** (the honest union) | 4,719 | 201 / 2,400 | **8.375 %** | ⛔ REFUSED |
+| ⭐ AFTER `s2_labels_parity-v7geom-1_train.jsonl.gz` | 2,400 | **2,400 / 2,400** | **100.000 %** | ✅ PASS |
+
+⚠️ **CORRECTION to `M25` and to the brief:** the inherited **190/2,400 = 7.92 %** is the **train blob
+alone**; the v7.2 *eval* blob adds **11** parity clips, so pre-existing coverage was
+**201/2,400 = 8.375 %**. Neither clears the floor, so the decision is unchanged — but a figure that
+silently drops a second artifact is the scope error this programme keeps paying for.
+
+⛔ **Parity is sacred and the builder ENFORCES it**: `stack/scripts/build_parity_v7geom_labels.py`
+refuses unless `sha256(sorted(clip_ids))` equals the committed
+`e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de` (retyped into the builder so an
+unreadable manifest becomes a refusal, never a silent pass). MATCH confirmed three ways: Thor's 2,400
+`.v2ep.pt` filenames, the banked `parity_clip_ids.json`, and `parity.manifest_entry()` in-process.
+
+⭐ **THE CONTROL THAT MAKES IT ADMISSIBLE — 201/201 EXACT.** `s2_geom_emit_v7.emit_one` is used
+**UNCHANGED**; re-emitting the 201 parity clips that ARE in v7.2 reproduces the shipped blob exactly
+on `a_tac.lat`, `a_tac.lon`, `nav_command.token`, `t0_s`, `bands.tactical_s` (**201/201**) and on
+`a_str`, `g_str`, `g_tac.anchor`, `horizon` (**201/201**). **Negative control non-vacuous:** every
+clip compared against clip 0 matches only **3/50**, over **18** distinct `(lat, lon)` pairs.
+⭐ **Same-breath control on the join:** on the identical cache in the same run, the shipped blob reads
+**190/2,400 = 0.0792** — exactly the value `refc_v3_train.py:2568-2570` names in its own comment.
+
+⭐ **The unlock was a MEASUREMENT, not a pipeline.** `egomotion_source.available()` returns **22,810**
+clips on the dev box (197 provider chunk zips ∪ 4,800 flat parquets) and **2,400/2,400 parity clips
+are in it**. The kinematic layer — `a_tac.lat/lon`, `a_str`, `g_str`, `nav_command`, `bands`,
+`g_tac.anchor`, `horizon` — is *"ego geometry only"* per the record's own `_provenance`, so it needs
+egomotion and nothing else.
+
+⛔ **TWO CLAIMS REFUTED BY RUNNING THE CODE** (class: *absence read out of docstrings rather than out
+of an execution*): (i) *"`_alpamayo_layer` refuses to soft-default and would raise for a
+non-Alpamayo clip"* — **2,199 of 2,400 clips have no Alpamayo record and every one emitted cleanly**;
+(ii) *"the ego source is the Alpamayo-scoped flat store"* — `_index()` unions the 197 chunk zips
+**first**. A third, *"a geometry-only emit would be a different label distribution"*, is also
+**REFUTED**: every class on both supervised heads lands within **3.19 pp** of the shipped blob
+(largest: CRUISE 30.46 vs 27.27 %). ⭐ `ACCELERATE` is **544/2,400 = 22.67 %** — the factored 8×8
+vocabulary directly addresses the 5-way-softmax defect that produced **0/881 accelerate**.
+
+**Verified THROUGH THE CONSUMER**, not through the builder's bookkeeping: `v7_labels.load_v7_labels`
+loads 2,400 records (md5 `0d45b8d1344aa669c9d39e1ade2832fe`), **0** vocabulary/band/anchor
+violations, `is_oracle_nav` true **2,400/2,400** (shipped: 4,190/4,719 = 88.8 %), every nav token
+resolving through `_NAV_TOKEN_TO_ROUTE`. Guards proven to fire with converse controls: a fabricated
+token is detected, a wrong `require_records` raises, `allow_oracle_nav=False` refuses at
+`oracle_nav()` **access** (the shipped blob behaves identically).
+
+**Horizon, stated:** full **tactical** band `available_s >= 6 s` on **2,400/2,400**; full
+**strategic** band `>= 30 s` on **2,203/2,400 = 91.79 %** (recording spans 20.2-141.3 s). The 20.1 s
+cache is the FIRST 20.1 s of the recording (window at offset 0, `r > 0.99` on 31 clips) while the
+labels read the FULL recording to 43 s. Labels may use ego (PI 2026-08-03); inference stays
+vision-only.
+
+**Scope declared per record (`_parity_scope`), never inferred:** the PERCEPTION layer
+(`cot_source`, `cot_tokens`, `semantics`, `scene`, `alpamayo`) is present on **201/2,400** and
+**ABSENT on 2,199** — Alpamayo annotates a different clip set. ⭐ **No consumer reads it**: `V7Label`,
+the only parsed surface, is
+`['clip_id','tac_lat','tac_lon','str_action','str_goal','tac_anchor','bands','t0_s','horizon','audit','_oracle']`,
+and `g_tac.anchor` (the admissible predicted goal point) is present **2,400/2,400**.
+⚠️ **The one real consequence, bounded:** turn *suppression* needs the CoT; it fires on **68/4,719 =
+1.44 %** of shipped records, and **275** parity records are geometric turns with no CoT to contest
+them, so **~30 of 2,400 = 1.27 %** of labels may be over-called as turns (`ESTIMATED` from the
+shipped rate — it cannot be measured on parity, because the contesting text does not exist).
+⚠️ `assert_mask_matches_presence` fails **identically on both blobs** (`LANE_CHANGE_L/R` absent but
+unmasked, + `ABORT_LC`, `YIELD_MERGE`, 2 `str_action`, 4 `str_goal`) — a pre-existing v7 vocab/mask
+issue, and the new artifact reproducing the reference artifact's *pathology exactly* is the strongest
+form of the faithfulness control.
+
+Artifacts: `TanitAD Research Lab/Data Engineering/Research/2026-09-05-refcv5-labels-and-strategy/`
+(`RESULT.md`, `raw/s2_labels_parity-v7geom-1_train.jsonl.gz` + `.meta.json`,
+`raw/thor_join_verification.txt`, `code/`), builder `stack/scripts/build_parity_v7geom_labels.py`,
+and `thor6:/home/nvidia/data/parity-v7geom-1/` (md5-verified).
+
+### `D-REFCV5-ANCHOR-UNITS` — ⭐ **CLOSED, and the belief that it was already closed was FALSE**
+
+`M25` blocker 3 was *"an `anchors.pt` with DECLARED units"*. A code-reading pass reported it
+satisfied, because `emit_anchors_alat.py` calls `anchor_meta.build_anchor_artifact(...)` and asserts
+read-back, and the banked artifact **matched the live bank by BYTE SIZE (10,597 B)**.
+
+⛔ **MEASURED: the artifact ON DISK declares nothing.** The banked
+`…/2026-09-04-refcv4b-vocabulary/raw/refc_anchors_6s_v0cond_alat_117.pt` and the live
+`navcomp/ckpt/anchors.pt` are **md5-identical (`297f6f1db52f6a56094846b0d7f71ed9`)** and are the bare
+two-key `{anchors, controls}` **incident shape** — **both REFUSED** by
+`anchor_meta.read_anchor_artifact` with `AnchorUnitsMissing`. The banked copy is the **pre-fix**
+artifact. ⚠️ **A size check is not a content check**, and here the two files matching by size was the
+very reason the wrong conclusion looked safe.
+
+⭐ **CLOSED this turn** by re-running the repo's own builder (byte-verified copy, blob
+`0dac9c59b98b3ae41fa094f976775c858fe0b7d8`). New artifact **13,477 B, sha256 `897099148d1b16eb…`,
+md5 `76dfc63bd205abaad3c06f44775992cf`**, declaring `control_units='alat'` with
+`control_units_source='file'` and `horizon_s 6.0 · dt 0.1 · ref_speed_ms 10.0 · kappa_cap 0.12 ·
+alat_v_floor 4.0`. ⭐ **Its geometry is BIT-IDENTICAL to the live bank — `max |Δ| = 0.0` on both
+`anchors [117,8,2]` and `controls [117,2]`**, negative control non-vacuous (a flipped copy compares
+unequal). ⇒ **the vocabulary did not change; only the declaration was added, so no re-validation of
+the anchor gate is owed.** Resolves on Thor as well as locally.
+
+### `D-REFCV5-CONSTRUCTION-UNREACHABLE` — ⛔⛔ **NEW BLOCKER: the two constrain-by-construction assets cannot be turned on from a launch**
+
+**MEASURED, two probes across two trees:** `stack/scripts/refc_v3_train.py` contains the string
+`feasible` **ZERO times** (199,298 bytes read; same-breath control: 33 `def ` — the file *was* read).
+`stack/tanitad/refs/refc.py` carries `RefCConfig.feasible_decode: bool = False` with the decoder
+integration at `:1469-1494`; `stack/tanitad/refs/contact_projection.py` (28,418 B) is referenced by
+**nothing** in `stack/` outside its tests.
+
+⇒ **`feasible_decode` — 96.87 % of the feasibility gap, `envelope` 0.8879 → 0.0000, `kamm_over`
+0.8408 → 0.0000, `-0.0103 m` of oracle-ADE at matched `peak_g` — and `contact_projection` —
+`fan_contact` 3.4277 % → structural **0.000000 %** at **+0.0000 m** — are BUILT, VALIDATED, and
+UNREACHABLE from any training or eval launch.**
+
+⭐ This is `DESIGN_CONSTRAIN_BY_CONSTRUCTION.md`'s own **part (2)** biting the programme that wrote it:
+*make the good representable — ALONE IT DOES NOTHING.* The mechanism exists and the search has no way
+to reach it. Same family as *"an artifact stranded on one disk"*, with the disk being an unexported
+config field. **Fix is a CLI flag + a config pin, ZERO GPU** (refcv5 Stage 0).
+
+### `D-REFCV5-PREFLIGHT-INERT-GUARD` — ⭐ **FIXED: `check_anchors` never ran the resolver it cited**
+
+`refcv5_preflight.py` read `meta = am.read_meta(d) if hasattr(am, "read_meta") else None`.
+**`anchor_meta` HAS NO `read_meta`** (its surface is `sha256_of_tensor`, `provenance_stamp`,
+`build_anchor_artifact`, `read_anchor_artifact`, `mismatches`, `describe`), so the `hasattr` guard was
+**always False**, the check fell through to a raw `d.get("control_units")`, and it **never once
+exercised** `AnchorUnitsMissing`/`AnchorUnitsConflict` — a **bare-tensor** artifact read as *"no
+controls, therefore fine"*.
+
+**FIXED:** routed through `anchor_meta.read_anchor_artifact` — the same resolver
+`refc_v3_train.py:1699` uses — plus a **same-breath deliberate-regression control**: a units-stripped
+copy of the file under test must be **REFUSED**, or the row reports **INCONCLUSIVE rather than PASS**.
+Fired correctly on its first run. ⚠️ Class: **a guard that parses, runs, and checks nothing** — the
+dead-flag family one level in, and the reason the anchors row is now evidence rather than decoration.
+
+### `D-REFCV5-READINESS` — **NO-GO on ONE blocker, and it is a GPU**
+
+Preflight `stack/scripts/refcv5_preflight.py`: **14 PASS / 1 FAIL / 1 INCONCLUSIVE** (was 14/1/**2**).
+⛔ INCONCLUSIVE counts as a failure.
+
+* ✅ **CLOSED this turn:** v7 label coverage (**2,400/2,400 = 1.0000** vs floor 0.50) and the anchor
+  units row (`alat`, source `file`, units-stripped regression **REFUSED**).
+* ⭐ **`M25` blocker 2 was ALREADY DONE and unrecorded:** Thor holds the complete **85 GB→80 G**
+  parity cache — `/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl`, **2,400/2,400
+  `.v2ep.pt`, 2,400 distinct stable ids, 0 collisions, digest MATCH.**
+* ⛔ **`M25` blocker 1 has moved the WRONG WAY.** The brief inherited *"Thor is FREE"*.
+  **REFUTED, MEASURED 2026-09-05 22:45 local:** thor6 is at **98 % GPU** running **three
+  `refav1_arm.py` eval arms** (PIDs 3089311 / 3089318 / 3089325, 17 min in) against
+  `refav1_lon/ckpt/ckpt.pt`. Load 1.29 / 14 cores, 141 G free — CPU work is safe there and this
+  turn's verification ran there; a training arm is **not**, and none was started.
+* ⛔ **FAIL (real):** `--agent-w-ground` gradient **1.164e-10** against `agent_w_project`'s
+  **1.462e-03** — the tautology of `M25` §1. The trainer already **refuses** it
+  (`refc_v3_train.py:1919-1931`), so the disposition is simply **do not pass the flag**; softening
+  the check would reproduce the inert-guard defect above.
+* Other rows GO: agent join **2,308/2,400 = 96.17 %** stable-id / 0 legacy-only, per-clip cameras
+  **2,400/2,400** (`PER-CLIP`, z 1.213-1.667 m), 18 knobs stamped, 4/4 seam guards fired with the
+  legal-config control passing.
+
+⚠️ **UNMEASURED and named rather than guessed:** a refcv5 **step time on Thor**. v6's 26.47 s/step is
+a different trainer with a different `step_s` divisor and porting it would be the `df`/`free`/`step_s`
+scope error. ⇒ **the first action once a GPU frees is a 50-step timing probe, not a launch.**
+
+⇒ **refcv5 cannot start training tonight, and the only missing precondition is a GPU. The PI supplies
+it (or releases Thor); everything else is done, or is the zero-GPU Stage-0 wiring above.** The label
+blob and the units-declaring anchor bank are already **on Thor, md5-verified**, beside the cache.
+
+
 ### `D-REFAV1-SEED-GOAL-MISMATCH` — ⛔ **BLOCKING, and prior to both fixes R28 proposed**
 
 ℹ️ **Attribution: escalated qualitatively by the steer-conversion agent in commit `4139203`** (*"a 2 s plan is judged against a 6 s goal, so the planner's own seed cannot reproduce its own goal"*). This row is the MEASUREMENT of that residual, and it shows the same commit's `cost_time_grid` repair does not close it.
@@ -3131,8 +3300,9 @@ Trigger: PI 2026-09-05, verbatim — *"I dont need refutaions, I need xcellent r
 | D-REFAV1-CG-L3-NULL | ⛔⭐ **L3 ANSWERED, AND THE NULL SETTLES THE QUESTION: THE CANDIDATE SET WAS NEVER THE BINDING CONSTRAINT — THE COST WAS.** `l3ladder` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04` = **10 extra iteration-0 candidates at R 500/200/100/50/25 m**, both signs; the candidate set is the only variable against `ccos_argmax` (`canonical_controls` and the goal field untouched, so the arms are comparable window-for-window). MEASURED T1, n = 40 windows / 8 episodes: **ADE 1.3272 → 1.3236**, a delta of **0.0036 = 17× BELOW the 0.0607 inference-seed floor**; EXACTLY-constant-series fraction **0.7750 → 0.7750**; turn recalls **0.3636 / 0.75 → 0.3636 / 0.75 identical**. ⛔ **THE DECISIVE ROW IS THE HISTOGRAM: NOT ONE WINDOW OF 40 REALISES A RUNG.** `l3ladder` realises `0.0000 ×10, 0.0800 ×21` — bit-for-bit the uncapped arm's spine — plus nine values all **ABOVE 0.10**; nothing at 0.002/0.005/0.01/0.02/0.04. ⭐ **Put beside `D-REFAV1-CG-P1-REFUTED` the answer is complete:** `wk15` produced intermediate curvatures **0.0115–0.0530 — exactly the band the rungs occupy — with NO LADDER AT ALL**, purely because the penalty gave the search a reason to prefer them; `l3ladder` hands the search those very magnitudes and it never picks one, because with `W_KAPPA = 0` the cost is indifferent and the goal-aligned canonical seed wins. ⇒ **`D-REFAV1-DRIVE-GATE`'s gate is not a wall around the reachable set, it is an ABSENCE OF PREFERENCE** — confirmed now from both directions. ⛔⛔ **SELF-CORRECTION, SAME TURN:** an earlier version of this row said *"the ladder is not free: `lane_keep` recall 0.7143 → 0.5714 (~2× the 0.0750 floor) and goal FDE 2.9639 → 3.3200"*. **WITHDRAWN — NOT SUPPORTED.** The `ccos_seed1` replicate (only `--plan-seed` differs) reads **lane_keep 0.5714** and **goal FDE 3.3079** BY ITSELF: l3ladder's deltas are **0.1429 / 0.3561 / 0.0973** against seed floors of **0.1429 / 0.3440 / 0.0973** on the same metrics — **all inside the floor**. The error was quoting the paired `TAC_traj_lat_correct` floor (0.0750) against a PER-CLASS recall whose own seed variation is 0.1429. ⇒ **the ladder is inert on all four families, neither costly nor beneficial**, which makes the null TOTAL rather than weaker; and the `--seed-kappa-ladder` docstring's warning is UNTESTED on this panel, not vindicated. ⇒ the informative combination is **ladder + `W_KAPPA`**, never ladder alone and never ladder + a CONSTRAINT (a cap can forbid a curvature but cannot make a rung attractive); `wk15_ladder` was queued the moment this landed and is one variable against `wk15` | **SUPPORTED (as a NULL) — MEASURED 2026-09-05, T1, n = 40 windows / 8 episode clusters, four families; the null is read against the measured seed floor, not asserted from a CI** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.7; `raw/kappa_quantisation_all.txt`, `raw/four_family_all.txt`, `raw/ade_by_stratum.txt`; record `C:/Users/Admin/refav1_margin/p4out/rec_l3ladder.json` |
 | D-REFAV1-CG-ZEROVIOL | ⭐⭐⭐ **`combined` IS THE ONLY refav1 ARM THAT IS ENTIRELY INSIDE THE TYRE'S FRICTION CIRCLE *WHILE STILL TURNING* — `kamm_over_rate` EXACTLY 0.0000 AT TURN RECALLS 0.3636 / 0.7500 — AND THE SAFETY REPAIR IS FREE IN ADE.** ⚠️ **HEADLINE CORRECTED 2026-09-05 23:0x, was “THE FIRST refav1 ARM”: `wk15` (`W_KAPPA` alone, no cap, no ladder) ALSO reads `kamm_over_rate` **0.0000** — see `D-REFAV1-CG-ZEROVIOL-SCOPE`. The zero is not unique; reaching it *while still turning* is.** `combined` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04` + `--kamm-mu 0.7`; **one** variable against `kamm07` (the candidate set). MEASURED `assert_feasible`, `v0 >= 2 m/s`, n = 27: **`kamm_over_rate` 0.0000**, `peak_g` max **0.618**, `max\|kappa\|` 0.1505. ⛔ **THE ZERO IS BRACKETED ON BOTH SIDES IN THE SAME TABLE:** the GROUND-TRUTH control reads the same known value **0.0000** (must be zero) while **three** arms read NON-zero — `kamm07` **0.1481**, `ccos_argmax` **0.2963** (`peak_g` max 3.262), `ha0_ext` **0.1852** — so it is a measurement, not an unevaluated branch. **It closes the residual `D-REFAV1-CG-KAMM-ARM` flagged as a work item (0.1481 → 0.0000) in the same turn it was raised.** **FREE IN ADE:** paired vs `kamm07`, `ade_m` **+0.0577 [−0.0369, +0.1589]** — not separated AND below the 0.0607 inference-seed floor; `LAT cross/heading/yaw_rate` all n.s.; the one separated row is `LON accel_mae` **+0.0176 [+0.0013, +0.0415]** (2.9× its floor), a small real cost. ⭐ **AND IT EXPLAINS THE L3 NULL WITHOUT OVERTURNING IT:** `D-REFAV1-CG-L3-NULL` stands — with `W_KAPPA = 0` and no cap, not one window of 40 chose a rung. Under the cap the picture inverts: `combined` is **4.434113e+00 m** from `kamm07` (control: 1.359604e+01 m from `ccos_argmax`) and the realised set now contains **0.0198, 0.0216, 0.0374, 0.0400, 0.0500, 0.0559, 0.0827**, including the rung value **0.0400 exactly**. ⇒ **the ladder's role is not to be PREFERRED, it is to give the CONSTRAINT something feasible to select** instead of clipping a candidate whose rolled-out path still violates. **A constraint plus a feasible candidate set reaches zero; either alone does not.** ⚠️ `combined` also carries the highest tactical lateral kappa of any arm (**0.4148**) with both turn recalls at the uncapped values (0.3636 / 0.75) — but 0.4148 − 0.3795 = **0.0353 is BELOW the 0.0973 seed floor** on that metric, so "best tactical" is **NOT established and is not claimed** | **SUPPORTED — MEASURED 2026-09-05, T1, n = 40 windows / 8 episode clusters (27 after the near-stationary cut the control forces), four families, paired episode-cluster bootstrap, sufficiency read against the inference-seed floor** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.8; `raw/feas_audit_all.txt`, `raw/pd_comb.md`, `raw/kappa_quantisation_all.txt`; record `C:/Users/Admin/refav1_margin/p4out/rec_combined.json` |
 | D-REFAV1-CG-ANTAGONISM | ⭐⭐⛔ **A DISCRETE CANDIDATE LADDER AND A CONTINUOUS QUADRATIC PENALTY ARE ANTAGONISTIC; A LADDER AND A CONSTRAINT ARE COMPLEMENTARY. THIS IS A STATEMENT ABOUT OPTIMISER DESIGN, NOT ABOUT refav1.** `wk15_ladder` = `ccos` + `W_KAPPA = 15.11245` + the five rungs; the candidate set is the only variable against `wk15`. MEASURED T1, n = 40 windows / 8 episodes: the realised curvature set **collapses from 15 distinct values to TWO** — **`0.0000 ×18` and `0.0020 ×22`**, with **22 of 40 windows landing EXACTLY on the SMALLEST rung** (0.002 = R 500 m) and the EXACTLY-constant-series fraction rising to **1.0000**. Mechanism: a quadratic penalty always prefers the **cheapest non-zero option available**, so a discrete ladder converts *"smallest expressible curvature"* from a continuum the search trades along into a **fixed floor it snaps to**; `wk15` alone realises 13 intermediate magnitudes over 0.0115–0.0530 precisely because nothing quantised it. **Deltas vs `wk15`, each against its OWN per-metric seed floor:** TAC lateral kappa **0.2611 → 0.0000** (2.7× floor, WORSE) · `turn_right` recall **0.50 → 0.00** · LAT curvature MAE **+0.00881** (13.3×, WORSE) · LAT heading **+4.8295** (4.2×, WORSE) · **LON speed MAE −0.0310 (8.2×, BETTER)** and **LON accel MAE −0.0445 (7.3×, BETTER)** — the longitudinal family improves for the same reason the lateral one degrades, the plan stops spending its freedom on curvature; ADE +0.0474, cross −0.0024, yaw-rate +0.3849 all inside their floors. ⇒ **a CONSTRAINT has no preference gradient — it forbids, it does not rank — so a ladder hands it feasible options, which is exactly why `combined` (cap + ladder) reached `kamm_over 0.0000` (`D-REFAV1-CG-ZEROVIOL`). A PENALTY ranks, so a ladder replaces its continuum with a floor.** ⚠️ **ARM-SET CONSEQUENCE, recorded not applied silently:** the synthesis arm `best` had started 1 minute earlier as `W_KAPPA` + cap + **ladder**; on this measurement it would inherit the collapse, so it was killed by explicit PID and relaunched as **`W_KAPPA` + cap alone** — which is also *cleaner* attribution (ONE variable against `wk15`, ONE against `kamm07`). No criterion moved and nothing had been observed about `best`; `PREREG_COST_GEOMETRY.md` §7. **The unrun `W_KAPPA` + cap + ladder arm is now PREDICTED to collapse, and that prediction is registered** | **SUPPORTED — MEASURED 2026-09-05, T1, n = 40 windows / 8 episode clusters, four families, every delta read against the PER-METRIC seed floor (the lesson of the withdrawal logged in `RETRACTION_LOG.md` the same turn)** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.9; `raw/kappa_quantisation_all.txt`, `raw/four_family_all.txt`, `raw/seed_floor.txt`; record `C:/Users/Admin/refav1_margin/p4out/rec_wk15_ladder.json` |
-| D-REFAV1-CG-LEVER-SPLIT | ⭐ **THE PACKAGE'S TWO WORKING LEVERS ARE SEPARATED BY WHAT THEY BUY, AND THEY HAVE NEVER BEEN RUN TOGETHER.** `W_KAPPA` = the **ACCURACY** lever: ADE **0.8934** (best), curvature MAE **0.030982** / heading **15.2704** / yaw-rate **6.6750** (all best of any arm), GT-straight **0.8242** — paid for with a separated 14–20×-floor regression in the longitudinal family and with turning suppressed *in general* (lat kappa 0.3795 → 0.2611, turn recall → **0.0**/0.5). `--kamm-mu` + the seed ladder = the **SAFETY** lever: the only arm that is zero-violation **while still turning** (⚠️ CORRECTED — `wk15` reads 0.0000 too, at turn_left recall **0.0000 of n_true = 11**; `D-REFAV1-CG-ZEROVIOL-SCOPE`), `peak_g` max 3.262 → **0.618**, at **no ADE cost against the cap alone** and with the turn decisions intact (0.3636 / 0.75, GT-turn ADE within noise of the uncapped arm). ⇒ **they are complementary rather than competing, and the arm that combines them (`wk15` + cap + ladder) is unrun.** `wk15_ladder` (`W_KAPPA` + ladder, no cap) is the half already on the GPU and is one variable against `wk15` | **MEASURED 2026-09-05 — a synthesis of `D-REFAV1-CG-WK15`, `D-REFAV1-CG-KAMM-ARM` and `D-REFAV1-CG-ZEROVIOL`; the combination itself is UNMEASURED and is named as the next arm, not claimed** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.8, `HANDOFF.md` §7 |
+| D-REFAV1-CG-LEVER-SPLIT | ⭐ **THE PACKAGE'S TWO WORKING LEVERS ARE SEPARATED BY WHAT THEY BUY, AND THEY HAVE NEVER BEEN RUN TOGETHER.** `W_KAPPA` = the **ACCURACY** lever: ADE **0.8934** (best), curvature MAE **0.030982** / heading **15.2704** / yaw-rate **6.6750** (all best of any arm), GT-straight **0.8242** — paid for with a separated 14–20×-floor regression in the longitudinal family and with turning suppressed *in general* (lat kappa 0.3795 → 0.2611, turn recall → **0.0**/0.5). `--kamm-mu` + the seed ladder = the **SAFETY** lever — ⚠️ **and see `D-REFAV1-CG-FACTORIAL`: as a RANKING this split is WRONG, because the factorial shows the two levers buy the SAME things and differ in what they COST** — the only arm that is zero-violation **while still turning** (⚠️ CORRECTED — `wk15` reads 0.0000 too, at turn_left recall **0.0000 of n_true = 11**; `D-REFAV1-CG-ZEROVIOL-SCOPE`), `peak_g` max 3.262 → **0.618**, at **no ADE cost against the cap alone** and with the turn decisions intact (0.3636 / 0.75, GT-turn ADE within noise of the uncapped arm). ⇒ **they are complementary rather than competing, and the arm that combines them (`wk15` + cap + ladder) is unrun.** `wk15_ladder` (`W_KAPPA` + ladder, no cap) is the half already on the GPU and is one variable against `wk15` | **MEASURED 2026-09-05 — a synthesis of `D-REFAV1-CG-WK15`, `D-REFAV1-CG-KAMM-ARM` and `D-REFAV1-CG-ZEROVIOL`; the combination itself is UNMEASURED and is named as the next arm, not claimed** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.8, `HANDOFF.md` §7 |
 | D-REFAV1-CG-ZEROVIOL-SCOPE | ⛔⛔ **THE “FIRST / ONLY ZERO-VIOLATION ARM” CLAIM IS WITHDRAWN: `W_KAPPA` ALONE ALSO REACHES `kamm_over_rate` 0.0000, AND IT BUYS IT BY NOT TURNING.** MEASURED (`raw/feas_audit_all.txt`, generated 22:28; re-derived independently at 23:0x by a second invocation of `feas_audit.py` — both agree), `assert_feasible`, `v0 >= 2 m/s`, n = 27: **four** arms read `kamm_over_rate` **0.0000** — `cos_wk`, **`wk15`**, **`wk151`**, `combined` — not one. ⛔ `cos_wk`'s zero is **VACUOUS**: an all-zero path (`max|a|` **0.000**, `max|kappa|` **0.0000**, `peak_g` **0.000**) is trivially inside every friction circle — the poisoned-floor-arm class, and the reason a zero needs a MOTION assertion beside it. ⚠️ `wk15` / `wk151` are **non-degenerate** (`max|a|` 1.500, `max|kappa|` 0.0800 / 0.0166, `peak_g` max 0.332 / 0.158) but reach the zero by **suppressing turns**: turn_left recall **0.0000 of n_true = 11** (`wk151` also turn_right **0.0000 of 8**), against a **0.0000 MEASURED seed floor** on that per-class statistic (`raw/seed_floor_ext_ccos.txt`) — so the suppression is real, not noise. ⭐ **THE SURVIVING CLAIM IS STRONGER THAN THE WITHDRAWN ONE:** `combined` is the **only** arm that reaches zero **while still turning** — turn recalls 0.3636 / 0.7500, identical to the uncapped `ccos_argmax`, at `peak_g` max 0.618 vs its 3.262. ⛔ **ROOT-CAUSE CLASS: a number quoted from a STALE GENERATION of a regenerated artifact.** The audit was regenerated under a NEW NAME — `feas_audit.txt` (19:43, two arms) became `feas_audit_all.txt` (22:28, ten arms) — and §7.8's table row was carried from the old one, which is why it printed `wk15 kamm_over_rate (not run)` about an arm that had run two hours earlier. `RESULT.md` was finalised at 22:47, **19 minutes AFTER** the artifact that refutes it was written. Same family as `MODEL_REGISTRY.md`'s “prose lied to us”: a true measurement, quoted from the wrong artifact GENERATION. ⇒ **Durable fix:** `raw/seed_floor_ext.py` regenerates the per-metric floor AND the feasibility rows into ONE table, so the floor and the rate a claim rests on cannot come from different generations | **CORRECTS `D-REFAV1-CG-ZEROVIOL` AND `D-REFAV1-CG-LEVER-SPLIT` — MEASURED 2026-09-05, T1, n = 27 windows after the near-stationary cut, `assert_feasible` (`tanitad.refs.feasible_decode`), GT control `g` = 0.0000 and `ha0_ext` = 0.1852 non-zero in the same table** | `…/2026-09-05-refav1-cost-geometry/raw/feas_audit_all.txt`, `raw/seed_floor_ext_ccos.txt`, `raw/SPEC_BEST_AND_SEED.md` §0 |
+| D-REFAV1-CG-FACTORIAL | ⭐⭐⭐ **THE 2x2x2 FACTORIAL RE-RANKS THE TWO LEVERS: THE KAMM CAP **DOMINATES** `W_KAPPA` — IT BUYS 74 % OF THE ADE AND MORE OF THE SAFETY, AND IT COSTS NEITHER THE TURNS NOR THE LONGITUDINAL FAMILY.** A complete design over {`W_KAPPA` 0 / 15.11245} x {`--kamm-mu` off / 0.7} x {`--seed-kappa-ladder` off / on}; **6 of 8 cells MEASURED**, cell 7 (`best`, a sibling agent's arm) running and cell 8 (`bestlad`, mine) queued. Every cell's coding is asserted against its OWN record's manifest — `W_KAPPA`, `kamm_mu`, `seed_kappa_ladder`, `seed` — never against its arm NAME, and the check prints **ALL CELLS MATCH THEIR RECORDS**. MAIN EFFECTS (marginal contrasts, **2/4 pairs** for `W_KAPPA` and the cap, 3/4 for the ladder — the design is NOT yet balanced), each against its **own** per-metric inference-seed floor: **`W_KAPPA`** ADE **−0.4083** (6.7x floor), `kamm_over` **−0.2778** (7.5x), but `turn_left` recall **−0.3636 → EXACTLY 0.0000 of n_true = 11 in BOTH its cells**, `turn_right` **−0.5000**, `lane_keep` **+0.3572** (2.5x), `LON speed_mae` **+0.0535 (14.1x floor, WORSE)**, `LON accel_mae` **+0.0569 (9.3x, WORSE)**, `TAC lat_kappa` **−0.2003 (2.1x, WORSE)**. **cap** ADE **−0.3039** (5.0x), `kamm_over` **−0.2037** (5.5x), `turn_left` recall **0.0000 IN FLOOR**, `LON speed_mae` **+0.00035 IN FLOOR**, `LON accel_mae` **+0.00175 IN FLOOR**, `TAC lat_kappa` **+0.0588 IN FLOOR**. **ladder** — every family row IN FLOOR except `kamm_over` −0.0617 (1.7x), consistent with `D-REFAV1-CG-L3-NULL`. ⇒ **`D-REFAV1-CG-LEVER-SPLIT` IS WRONG AS A RANKING.** It reads `W_KAPPA` = *“the ACCURACY lever”* and cap+ladder = *“the SAFETY lever”*, as though they bought different things. They buy **the same two things** and differ in what they **charge**: the cap costs nothing measurable, while `W_KAPPA` buys its extra ~0.10 m of ADE by **DELETING A DECISION CLASS** and pays a 9–14x-floor longitudinal regression on top. ⚠️ **HONEST LIMITS, in the artifact and not only here:** 2 of 4 pairs on the two interesting levers, so the marginals are over a SUBSET of the design; they are **point estimates with NO interval** (decision-grade intervals = the paired episode-cluster bootstrap, run when cells 7–8 land); and **every floor comes from ONE seed pair**, so a floor of 0.00000 means *“that pair agreed exactly”*, NOT *“this statistic is noiseless”* — the `recL`/`recR` effects are quotable because 0.3636 → 0.0000 is a whole class disappearing with a mechanism, not because their floor reads zero | **PARTIAL — MEASURED 2026-09-05, T1, 6/8 cells, n = 40 windows / 8 episode clusters (27 after the near-stationary cut), GT control `kamm_over` 0.0000 in EVERY row; TO BE COMPLETED when cells 7–8 land** | `…/2026-09-05-refav1-cost-geometry/raw/factorial.py`, `raw/factorial.txt`, `raw/seed_floor_ext_ccos.txt` |
 | D-REFAV1-CG-CLI-DEFECTS | ⚠️ **TWO DEFECTS I INTRODUCED IN `refav1_arm.py`, BOTH CAUGHT BEFORE THEY COST GPU, LOGGED BECAUSE THE SECOND IS INVISIBLE TO EVERY ARM THAT RUNS.** (1) `UnboundLocalError: _inspect2` killed `l3ladder` and `combined` at startup (18:39:32Z / 18:39:56Z): `inspect` is imported INSIDE the `--goal-kappa-turn` branch and my seed-ladder block referenced it from a sibling branch, so any arm passing `--seed-kappa-ladder` WITHOUT `--goal-kappa-turn` died. ⭐ **Zero GPU wasted — the tool raised in `run_dump` BEFORE the rollout**, which is exactly what its preflight-import design exists for. (2) A **bare `%`** in the `--kamm-mu` help text broke `--help` itself with `TypeError: must be real number, not dict`, because argparse `%`-formats help strings; the file's own convention (`--goal-kappa-turn` writes `100 %%`) was the thing I broke. **This one never affects a running arm and surfaces only when an operator asks for help or makes a CLI typo — the worst moment to hand someone a traceback.** Both fixed; `--help` now exits 0 and lists all three new flags. Relaunched under `raw/queueG.sh`, which `rm -rf`s the stale dump first so a partial dump cannot be mistaken for a panel. **ROOT-CAUSE CLASS: a conditional import is not a module import, and a help string is CODE** | **MEASURED and REPAIRED 2026-09-05, same turn** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.5.1; `taniteval/tools/refav1_arm.py` |
 
 
