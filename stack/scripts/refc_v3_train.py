@@ -389,6 +389,13 @@ def _pin_refcv5_seams(cfg, args) -> None:
 #: the corpus constructor, from a ``sensor_extrinsics`` quaternion on file.
 AGENT_RIG_CAMERA_SOURCES = ("off", "nominal", "extrinsics")
 
+#: a parameter gradient at or below this is INDISTINGUISHABLE FROM ZERO in
+#: float32 and is treated as "this term trains nothing". The measured
+#: tautology reads 8.73e-11; a live term reads O(1e-3) or more, so the
+#: floor sits three orders below the smallest live signal and seven above
+#: the dead one -- it separates them by construction, not by tuning.
+_GROUND_GRAD_FLOOR: float = 1e-7
+
 #: ``_build_rig_camera`` is called at pin time (three times, via the config
 #: delta), at model setup and at stamp time — deliberately, so a camera that
 #: cannot be built refuses at the earliest of them. Its human-facing lines are
@@ -409,26 +416,14 @@ def _agent_cam_frames() -> dict:
             (128, 576): _calib.PHYSICALAI_RIG_CLEAN_128x576}
 
 
-def _read_rig_extrinsics(path: str):
-    """A ``FrontWideExtrinsics``-shaped JSON: ``qx qy qz qw`` (+ ``x y z``).
-
-    The quaternion is ``rotation_cam_to_vehicle`` — the dataset's own
-    ``calibration/sensor_extrinsics`` convention (``physicalai
-    .FrontWideExtrinsics``). ⚠️ Read from a FILE, never guessed: the mount
-    pitch is what puts the horizon on the right row, and it is the whole
-    difference between :meth:`RigCamera.nominal` and the corpus camera.
-    """
+def _extr_from_obj(d: dict, path: str, where: str):
+    """One ``FrontWideExtrinsics`` from a JSON object, or REFUSE."""
     from tanitad.data.physicalai import FrontWideExtrinsics
-    with open(path, "r", encoding="utf-8") as fh:
-        d = json.load(fh)
-    if not isinstance(d, dict):
-        raise SystemExit(f"[v3] ⛔ {path} is not a JSON object.")
-    d = d.get("front_wide", d) if "front_wide" in d else d
     miss = [k for k in ("qx", "qy", "qz", "qw") if k not in d]
     if miss:
         raise SystemExit(
-            f"[v3] ⛔ --agent-rig-extrinsics {path} declares no {miss}. The "
-            "file must carry the sensor_extrinsics quaternion "
+            f"[v3] ⛔ --agent-rig-extrinsics {path} [{where}] declares no "
+            f"{miss}. The file must carry the sensor_extrinsics quaternion "
             "(rotation_cam_to_vehicle) as qx/qy/qz/qw, plus optional x/y/z "
             "[m] in the rig frame. A camera whose MOUNT POSE is guessed "
             "biases `ground_range_prior` directly (it back-projects through "
@@ -437,6 +432,48 @@ def _read_rig_extrinsics(path: str):
         qx=float(d["qx"]), qy=float(d["qy"]), qz=float(d["qz"]),
         qw=float(d["qw"]), x=float(d.get("x", 0.0)),
         y=float(d.get("y", 0.0)), z=float(d.get("z", 1.5)))
+
+
+def _read_rig_extrinsics(path: str):
+    """``-> (single | None, {clip_id: FrontWideExtrinsics} | None)``.
+
+    Two shapes are accepted and they are DISTINGUISHED, never conflated:
+
+    * a **single** ``FrontWideExtrinsics``-shaped object (``qx qy qz qw``
+      + optional ``x y z``) — ONE mount pose for the whole run;
+    * a **per-CLIP TABLE**, ``{clip_id: {qx, qy, qz, qw, x, y, z, ...}}`` —
+      the shape ``taniteval/tools/pai_extrinsics_table.py`` already emits and
+      that ``taniteval/results/videos/refcv3_five_panel_step40284/
+      extrinsics_used.json`` already holds.
+
+    ⛔⛔ **WHY BOTH, AND WHY THE DIFFERENCE IS STAMPED.** MEASURED over 40
+    PhysicalAI clips from the dataset's own ``calibration/sensor_extrinsics``:
+    mount height **1.245-1.607 m**, median 1.306, **37 distinct values in 40
+    clips**, CV 7.4 %; forward offset ~2.0-2.1 m; pitch -1.15..+2.34 deg. The
+    rig label does NOT stand in for it — the two rigs' medians differ by 1.5 %
+    while the WITHIN-rig spread is 29 %. ``ground_range_prior`` back-projects
+    through the road plane, so its supervised range is directly proportional
+    to the mount height: a single 1.5 m camera on a 1.245 m clip biases every
+    range it teaches by **+20 %**. A run may still declare one camera — it is
+    a legal coarse arm — but ``config.json`` says ``mount_pose_scope:
+    SINGLE-CAMERA-WHOLE-CORPUS`` so no reader can mistake it for a per-clip
+    one. That is the whole M18 lesson applied to the mount pose.
+
+    ⚠️ Read from a FILE, never guessed.
+    """
+    with open(path, "r", encoding="utf-8") as fh:
+        d = json.load(fh)
+    if not isinstance(d, dict):
+        raise SystemExit(f"[v3] ⛔ {path} is not a JSON object.")
+    d = d.get("front_wide", d) if "front_wide" in d else d
+    quat = ("qx", "qy", "qz", "qw")
+    vals = [v for v in d.values() if isinstance(v, dict)]
+    is_table = (bool(d) and len(vals) == len(d)
+                and all(all(k in v for k in quat) for v in vals))
+    if is_table:
+        return None, {str(k): _extr_from_obj(v, path, str(k))
+                      for k, v in d.items()}
+    return _extr_from_obj(d, path, "front_wide"), None
 
 
 def _build_rig_camera(cfg, args):
@@ -487,6 +524,7 @@ def _build_rig_camera(cfg, args):
                 "--agent-rig-extrinsics <sensor_extrinsics.json> (the "
                 "corpus constructor), or set both weights to 0.")
         return None, {"source": "off", "reason": "not requested",
+                      "mount_pose_scope": "NONE", "n_clips": 0,
                       "w_project": w_pj, "w_ground": w_gr}
     from tanitad.data.rig_projection import CAM_HEIGHT_RANGE_M, RigCamera
     hw = tuple(int(v) for v in cfg.core.encoder.image_hw())
@@ -513,6 +551,8 @@ def _build_rig_camera(cfg, args):
                 f"front-wide mount (MEASURED corpus range {lo}-{hi} m).")
         cam = RigCamera.nominal(frame, height_m=h_m)
         stamp = {"source": "nominal", "mount_pose": "NOMINAL-no-pitch",
+                 "mount_pose_scope": "SINGLE-CAMERA-WHOLE-CORPUS",
+                 "n_clips": 1,
                  "height_m": h_m, "extrinsics_path": None,
                  "in_measured_height_band": bool(lo <= h_m <= hi)}
         _say = ("nominal", hw, h_m) not in _RIG_CAM_ANNOUNCED
@@ -537,17 +577,77 @@ def _build_rig_camera(cfg, args):
                 "`RigCamera.from_extrinsics` is the ONLY admissible "
                 "constructor for corpus work -- the per-clip mount pitch is "
                 "what puts the horizon on the right row.")
-        extr = _read_rig_extrinsics(path)
-        cam = RigCamera.from_extrinsics(extr, frame)
-        stamp = {"source": "extrinsics", "mount_pose": "from-sensor_extrinsics",
-                 "height_m": float(extr.z), "extrinsics_path": str(path),
-                 "optical_axis_pitch_rad": float(extr.optical_axis_pitch_rad()),
-                 "quat_cam_to_vehicle": [extr.qx, extr.qy, extr.qz, extr.qw]}
-        if ("extrinsics", hw, str(path)) not in _RIG_CAM_ANNOUNCED:
-            _RIG_CAM_ANNOUNCED.add(("extrinsics", hw, str(path)))
-            print(f"[v3] rig camera = EXTRINSICS from {path} (pitch "
-                  f"{stamp['optical_axis_pitch_rad']:+.4f} rad, z "
-                  f"{stamp['height_m']:.3f} m)", flush=True)
+        extr, table = _read_rig_extrinsics(path)
+        if table is not None:
+            # ---- PER-CLIP BANK ------------------------------------------ #
+            from tanitad.data.v2_dataset import stable_episode_id
+            from tanitad.refs.refc_agents import RigCameraBank
+            by_ep = {}
+            for cid, e in table.items():
+                sid = int(stable_episode_id(str(cid)))
+                if sid in by_ep:
+                    # ⛔ A collision would attach one clip's mount pose to
+                    # another clip's rows -- a label corruption no downstream
+                    # metric could attribute. 63-bit ids make this ~4e-12, so
+                    # it is asserted rather than assumed.
+                    raise SystemExit(
+                        f"[v3] ⛔ --agent-rig-extrinsics {path}: two clip_ids "
+                        f"collide on stable_episode_id {sid}. Refusing rather "
+                        "than attaching one clip's camera to another's rows.")
+                by_ep[sid] = RigCamera.from_extrinsics(e, frame)
+            cam = RigCameraBank(by_episode=by_ep, default=None)
+            zs = sorted(float(e.z) for e in table.values())
+            ps = sorted(float(e.optical_axis_pitch_rad())
+                        for e in table.values())
+            stamp = {"source": "extrinsics",
+                     "mount_pose": "from-sensor_extrinsics",
+                     "mount_pose_scope": "PER-CLIP",
+                     "extrinsics_path": str(path),
+                     "n_clips": len(by_ep),
+                     "key": "stable_episode_id(clip_id)",
+                     "height_m_min": zs[0], "height_m_max": zs[-1],
+                     "height_m_median": zs[len(zs) // 2],
+                     "optical_axis_pitch_rad_min": ps[0],
+                     "optical_axis_pitch_rad_max": ps[-1]}
+            if ("per-clip", hw, str(path)) not in _RIG_CAM_ANNOUNCED:
+                _RIG_CAM_ANNOUNCED.add(("per-clip", hw, str(path)))
+                print("[v3] rig camera = PER-CLIP EXTRINSICS from %s "
+                      "(%d clips, z %.3f-%.3f m, pitch %+.4f..%+.4f rad)"
+                      % (path, len(by_ep), zs[0], zs[-1], ps[0], ps[-1]),
+                      flush=True)
+        else:
+            cam = RigCamera.from_extrinsics(extr, frame)
+            stamp = {"source": "extrinsics",
+                     "mount_pose": "from-sensor_extrinsics",
+                     # ⛔ STATED, so a reader of config.json cannot mistake a
+                     # ONE-camera arm for a per-clip one. The corpus mount
+                     # pose is per CLIP (1.245-1.607 m over 40 clips, 37
+                     # distinct values, CV 7.4 %); one camera per RUN is a
+                     # legal coarse arm and this is the word that says so.
+                     "mount_pose_scope": "SINGLE-CAMERA-WHOLE-CORPUS",
+                     "n_clips": 1,
+                     "height_m": float(extr.z), "extrinsics_path": str(path),
+                     "optical_axis_pitch_rad":
+                         float(extr.optical_axis_pitch_rad()),
+                     "quat_cam_to_vehicle": [extr.qx, extr.qy, extr.qz,
+                                             extr.qw]}
+            if ("extrinsics", hw, str(path)) not in _RIG_CAM_ANNOUNCED:
+                _RIG_CAM_ANNOUNCED.add(("extrinsics", hw, str(path)))
+                print(f"[v3] rig camera = EXTRINSICS from {path} (pitch "
+                      f"{stamp['optical_axis_pitch_rad']:+.4f} rad, z "
+                      f"{stamp['height_m']:.3f} m)", flush=True)
+                if w_gr > 0.0:
+                    print("[v3] ⚠️ ONE camera for the whole corpus with "
+                          "--agent-w-ground > 0. `ground_range_prior` "
+                          "back-projects through the road plane, so its "
+                          "supervised range scales with the mount height, and "
+                          "the MEASURED corpus height spans 1.245-1.607 m "
+                          "(37 distinct values in 40 clips). Pass a PER-CLIP "
+                          "extrinsics table (the shape "
+                          "taniteval/tools/pai_extrinsics_table.py emits) to "
+                          "remove that bias; config.json records "
+                          "mount_pose_scope so the arm is identifiable "
+                          "either way.", flush=True)
     stamp.update({"frame": frame.to_dict() if hasattr(frame, "to_dict") else
                   {"height": frame.height, "width": frame.width,
                    "f_ref": float(frame.f_ref),
@@ -870,7 +970,14 @@ class V3Dataset(RouteV21Dataset):
                     _np.asarray(rmask)[order]
         t = _agent_slots.targets_from_join(ag, classes=cls, rates=rates,
                                            rates_mask=rmask, n_pad=pad)
-        return {"agent_box": t["box"][0], "agent_yaw": t["yaw"][0],
+        # ⭐ THE EPISODE ID TRAVELS WITH THE TARGETS. Without it a
+        # per-clip RigCamera cannot be resolved at loss time and the
+        # run silently falls back to ONE mount pose for a corpus whose
+        # MEASURED mount height spans 1.245-1.607 m (37 distinct
+        # values in 40 clips). `agent_ep` is the join key the loss
+        # uses; it is the SAME id the join itself was matched on.
+        return {"agent_ep": torch.tensor(eid, dtype=torch.long),
+                "agent_box": t["box"][0], "agent_yaw": t["yaw"][0],
                 "agent_cls": t["cls"][0], "agent_valid": t["valid"][0],
                 "agent_occ": t["occ"][0], "agent_rates": t["rates"][0],
                 "agent_rates_mask": t["rates_mask"][0],
@@ -1003,6 +1110,40 @@ def frames_to_device(x: torch.Tensor, device) -> torch.Tensor:
         return x.float().div_(torch.full((), 255.0, device=x.device,
                                          dtype=torch.float32))
     return x
+
+
+def _resolve_rig_cameras(model, ep_ids, n_rows: int):
+    """``model._rig_camera`` -> what ``refc_agents.agent_losses`` takes.
+
+    ``None`` / a single ``RigCamera`` pass straight through (every banked arm
+    is untouched). A :class:`refc_agents.RigCameraBank` is resolved to a
+    per-ROW list using the batch's own ``agent_ep``.
+
+    ⛔ A bank with no ``agent_ep`` in the batch REFUSES. Falling back to the
+    bank's default would train the monocular terms against ONE mount pose
+    while ``config.json`` says ``mount_pose_scope: PER-CLIP`` -- the M18
+    dead-flag defect with the object swapped from a weight to a camera.
+    """
+    cam = getattr(model, "_rig_camera", None)
+    if not isinstance(cam, _refc_agents.RigCameraBank):
+        return cam
+    if ep_ids is None:
+        raise SystemExit(
+            "[v3] \u26d4 REFUSING: a PER-CLIP rig camera bank was built "
+            "(--agent-rig-extrinsics carries a clip table) but the batch "
+            "carries no `agent_ep`. The dataset emits it only alongside the "
+            "agent join, so this arm would train the monocular terms against "
+            "no camera at all while config.json records mount_pose_scope "
+            "PER-CLIP. Pass --agent-join, or use a single-camera "
+            "extrinsics file.")
+    cams = cam.for_episodes(ep_ids)
+    if len(cams) != int(n_rows):
+        raise SystemExit(
+            "[v3] \u26d4 REFUSING: %d per-clip cameras for %d supervised rows "
+            "-- the episode ids were not selected with the same mask as the "
+            "targets, so a camera would attach to the wrong clip."
+            % (len(cams), int(n_rows)))
+    return cams
 
 
 def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
@@ -1378,12 +1519,21 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         # `agent_label` carries the distinction from the dataset and the rows
         # are SELECTED here, so the DETR set loss never sees a NO_LABEL frame.
         keep_ag = batch.get("agent_label")
+        ep_ag = batch.get("agent_ep")
         n_lab = (int(keep_ag.sum()) if keep_ag is not None
                  else int(batch["agent_valid"].shape[0]))
         extra["agent_n_windows"] = float(batch["agent_valid"].shape[0])
         extra["agent_n_labelled"] = float(n_lab)
         if keep_ag is not None and n_lab:
             sel = keep_ag.to(device).nonzero(as_tuple=False).flatten()
+            # ⛔ THE EPISODE IDS ARE SELECTED WITH THE SAME MASK. A
+            # camera list built from the UNSELECTED ids would be the
+            # right length only by accident and would attach clip k's
+            # mount pose to clip k+1's row -- silently, and with every
+            # count still looking healthy.
+            if ep_ag is not None:
+                ep_ag = ep_ag.index_select(
+                    0, keep_ag.nonzero(as_tuple=False).flatten())
             tgt_ag = {k: v.index_select(0, sel) for k, v in tgt_ag.items()}
             slots_ag = {k: (v.index_select(0, sel)
                             if torch.is_tensor(v) and v.shape[:1] ==
@@ -1398,9 +1548,10 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 batch["agent_n_truncated"].sum())
     if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch \
             and n_lab > 0:
-        ag = _refc_agents.agent_losses(slots_ag, tgt_ag,
-                                       core.agents,
-                                       cam=getattr(model, "_rig_camera", None))
+        ag = _refc_agents.agent_losses(
+            slots_ag, tgt_ag, core.agents,
+            cam=_resolve_rig_cameras(model, ep_ag,
+                                     int(tgt_ag["valid"].shape[0])))
         loss = loss + w_agent * ag["total"]
         for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
                      "ground"):
@@ -1412,6 +1563,11 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         extra["agent_n_target"] = float(ag["n"]["target"])
         extra["agent_n_matched"] = float(ag["n"]["matched"])
         extra["agent_n_dropped"] = float(ag["n"]["dropped"])
+        # ⭐ the camera scope and the rows it could not cover, IN THE
+        # LOG ROW. A monocular term computed over 12 of 32 rows is not
+        # the term the config says it trained.
+        extra["agent_rows_with_cam"] = float(ag["n"]["rows_with_cam"])
+        extra["agent_rows_no_cam"] = float(ag["n"]["rows_no_cam"])
 
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
@@ -1679,6 +1835,158 @@ def agent_knob_stamp(args, parser: argparse.ArgumentParser | None = None
         out[d] = v if isinstance(v, (int, float, str, bool, type(None))) \
             else (list(v) if isinstance(v, (list, tuple)) else repr(v))
     return out
+
+
+def assert_ground_prior_is_supervised(model, args) -> dict:
+    """\u26d4\u26d4 MEASURE, at startup, that ``--agent-w-ground`` trains anything.
+
+    **MEASURED 2026-09-05 (this stream): IT DOES NOT.**
+    ``refc_agents.ground_range_prior`` projects a slot's foot at rig ``z = 0``
+    and back-projects the resulting pixel onto the plane
+    ``z = ROAD_PLANE_Z_M``, and ``ROAD_PLANE_Z_M`` **is 0.0** --
+    ``RigCamera.project`` and ``RigCamera.ground_intersection`` are exact
+    inverses, so ``r_back == r_pred`` **by construction**. Over 128 random
+    boxes across the decode box the term reads **2.61e-08** with a parameter
+    gradient of **8.73e-11**: a constant zero. An arm passing
+    ``--agent-w-ground 0.5`` therefore stamps the weight into ``config.json``,
+    adds ``w_ground * 0`` to the total, and would read afterwards as *"the
+    ground prior does not help"*.
+
+    \u2b50 **This is the SAME defect M18 closed, one level in.** M18 fixed
+    *"the camera is None so the term never runs"*; the term now runs and is
+    identically zero. A guard on the flag cannot see that, and neither can a
+    guard on the camera -- only a guard on the **gradient** can.
+
+    \u26d4 **The refusal is MEASURED, not hardcoded**, so it lifts itself the day
+    the term becomes real (the decoder would need an image-plane output --
+    ``AgentSlotDecoder`` emits no pixel today, which is why the term has
+    nothing independent to constrain).
+
+    \u26a0\ufe0f **The probe carries its own POSITIVE CONTROL.** A reading of
+    "gradient ~ 0" is indistinguishable from a probe that never ran, so
+    ``monocular_projection_loss`` is driven through the same tensors in the
+    same breath and MUST read non-zero. If the control is also flat the result
+    is **INCONCLUSIVE, which is a refusal** -- never a pass.
+    """
+    w_gr = float(getattr(args, "agent_w_ground", 0.0))
+    cam = getattr(model, "_rig_camera", None)
+    if w_gr <= 0.0 or cam is None:
+        return {"checked": False, "reason": "w_ground == 0 or no camera"}
+    if isinstance(cam, _refc_agents.RigCameraBank):
+        cam = next(iter(cam.by_episode.values()), None)
+        if cam is None:
+            return {"checked": False, "reason": "empty bank"}
+    g = torch.Generator().manual_seed(0)
+    B, N = 4, 32
+    cx = torch.rand(B, N, generator=g) * 50.0 + 5.0
+    cy = (torch.rand(B, N, generator=g) * 2.0 - 1.0) * 14.0
+    box = torch.stack([cx, cy, torch.full_like(cx, 4.5),
+                       torch.full_like(cx, 1.9)], dim=-1).requires_grad_(True)
+    gp = _refc_agents.ground_range_prior(box, cam)
+    grad_ground = 0.0
+    if gp["n"] and gp["loss"].requires_grad:
+        grad_ground = float(torch.autograd.grad(gp["loss"], box,
+                                                retain_graph=False)[0]
+                            .abs().max())
+    # -- the same-breath POSITIVE CONTROL: a term known to be alive ---------
+    box2 = box.detach().clone().requires_grad_(True)
+    tgt = box2.detach() + 1.0
+    idx = torch.arange(N)
+    match = {"rows": [idx] * B, "cols": [idx] * B,
+             "n_dropped": [0] * B, "n_target": [N] * B}
+    pj = _refc_agents.monocular_projection_loss(box2, tgt, cam, match)
+    grad_ctrl = 0.0
+    if pj["n"] and pj["loss"].requires_grad:
+        grad_ctrl = float(torch.autograd.grad(pj["loss"], box2)[0].abs().max())
+    out = {"checked": True, "loss_ground": float(gp["loss"].detach()),
+           "n_ground": int(gp["n"]), "grad_absmax_ground": grad_ground,
+           "control_grad_absmax_project": grad_ctrl,
+           "control_n_project": int(pj["n"]),
+           "floor": _GROUND_GRAD_FLOOR}
+    print("[v3] ground-prior probe: loss %.3e grad %.3e (n %d) | CONTROL "
+          "project grad %.3e (n %d)"
+          % (out["loss_ground"], grad_ground, out["n_ground"], grad_ctrl,
+             out["control_n_project"]), flush=True)
+    if grad_ctrl <= _GROUND_GRAD_FLOOR or pj["n"] == 0:
+        raise SystemExit(
+            "[v3] \u26d4 INCONCLUSIVE (= a refusal): the ground-prior probe's "
+            "own POSITIVE CONTROL read a flat gradient (%.3e over n=%d). A "
+            "zero reading from the ground term cannot be distinguished from a "
+            "probe that never ran, so the run stops rather than reporting a "
+            "pass it did not earn." % (grad_ctrl, pj["n"]))
+    if grad_ground <= _GROUND_GRAD_FLOOR:
+        raise SystemExit(
+            "[v3] \u26d4 REFUSING --agent-w-ground %g: `ground_range_prior` is a "
+            "TAUTOLOGY on this geometry and trains NOTHING. MEASURED right "
+            "now on this run's own camera: loss %.3e, parameter gradient "
+            "%.3e over n=%d (floor %.0e), while the same-breath control term "
+            "reads gradient %.3e. The term projects the box foot at rig z=0 "
+            "and back-projects that pixel onto z=ROAD_PLANE_Z_M=0.0 -- "
+            "`project` and `ground_intersection` are exact inverses, so "
+            "r_back == r_pred BY CONSTRUCTION and there is no independent "
+            "image-plane quantity for it to constrain (AgentSlotDecoder emits "
+            "no pixel). Running anyway would stamp w_ground into config.json, "
+            "add exactly 0 to the total, and read afterwards as 'the ground "
+            "prior does not help' -- the M18 dead-flag defect one level in. "
+            "Set --agent-w-ground 0, or give the head an image-plane output "
+            "first (escalated: refcv5 needs a per-slot foot-row so the prior "
+            "has something to constrain)."
+            % (w_gr, out["loss_ground"], grad_ground, out["n_ground"],
+               _GROUND_GRAD_FLOOR, grad_ctrl))
+    return out
+
+
+def assert_rig_camera_covers(model, ds, args) -> dict:
+    """MEASURE a per-clip camera bank against the run's OWN episodes, and
+    REFUSE a gap unless it was accepted by name. Returns the stamp block.
+
+    \u26d4\u26d4 **WHY THIS IS A REFUSAL AND NOT A WARNING.** A bank keyed by
+    ``stable_episode_id(clip_id)`` and built from a table that predates the
+    corpus (or names a different split) can cover a fraction of the episodes
+    and nothing downstream notices: the uncovered rows simply get no camera,
+    both monocular terms skip them -- COUNTED, but only in the log row -- and
+    ``config.json`` still reads ``mount_pose_scope: PER-CLIP``. A later
+    comparison between a "projection arm" and a "BEV-only arm" would then be
+    a comparison between two fractions nobody recorded. That is exactly the
+    M18 defect (a stamped knob that computes nothing) with a camera in place
+    of a weight, so it is measured here, before the first step, against the
+    episode list the run actually loaded.
+
+    \u26a0\ufe0f The measurement is over EPISODES, not windows: an episode with
+    no camera contributes every one of its windows to the gap.
+    """
+    cam = getattr(model, "_rig_camera", None)
+    if not isinstance(cam, _refc_agents.RigCameraBank):
+        return {}
+    eps = getattr(ds, "episodes", None) or []
+    ids = []
+    for e in eps:
+        try:
+            ids.append(int(e.episode_id))
+        except (TypeError, ValueError):
+            continue
+    cov = cam.coverage(ids)
+    cov["bank_n_clips"] = len(cam)
+    cov["allow_partial"] = bool(
+        getattr(args, "agent_rig_extrinsics_allow_partial", False))
+    print("[v3] rig camera coverage: %d/%d episodes (%.4f) from a %d-clip "
+          "bank" % (cov["n_covered"], cov["n"], cov["frac"],
+                    cov["bank_n_clips"]), flush=True)
+    if cov["n_missing"] and not cov["allow_partial"]:
+        raise SystemExit(
+            "[v3] \u26d4 REFUSING: the PER-CLIP extrinsics table covers "
+            "%d/%d episodes of this run (%d missing, e.g. %s). The "
+            "uncovered rows would get NO camera, both monocular terms "
+            "would skip them, and config.json would still read "
+            "mount_pose_scope PER-CLIP -- a run record stating a "
+            "configuration that did not happen. Extend the table "
+            "(taniteval/tools/pai_extrinsics_table.py builds it from the "
+            "dataset's own calibration/sensor_extrinsics), or pass "
+            "--agent-rig-extrinsics-allow-partial to accept the gap BY "
+            "NAME (it is stamped into config.json)."
+            % (cov["n_covered"], cov["n"], cov["n_missing"],
+               cov["missing_sample"][:4]))
+    return {"coverage": cov}
 
 
 def assert_knobs_stamped(args, stamp: dict,
@@ -2106,6 +2414,9 @@ def train(args) -> dict:
     # no camera, so reaching this line with a weight > 0 and `cam is None` is
     # now unreachable from any argv.
     model._rig_camera, _cam_stamp = _build_rig_camera(cfg, args)
+    # ⛔ M18 ONE LEVEL IN: the camera exists and the term still trains
+    # nothing. MEASURED at startup, with its own positive control.
+    _ground_probe = assert_ground_prior_is_supervised(model, args)
     # ⛔ THE ANCHOR VOCABULARY IS LOAD-BEARING AND ITS ABSENCE WAS SILENT.
     # refcv3 trained without `--anchors` and nobody noticed for the whole run,
     # because this branch printed nothing and recorded nothing. MEASURED cost:
@@ -2421,6 +2732,9 @@ def train(args) -> dict:
     # ⛔ M18: the record is CHECKED before it is written. A knob that does not
     # reach config.json refuses the run here, not in an audit months later.
     _seams = _seam_stamp(cfg, args)
+    _seams["agent_rig_camera"].update(
+        assert_rig_camera_covers(model, ds, args))
+    _seams["agent_ground_prior_probe"] = _ground_probe
     assert_knobs_stamped(args, _seams)
     (out_dir / "config.json").write_text(json.dumps({
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
@@ -2917,6 +3231,15 @@ def build_parser() -> argparse.ArgumentParser:
                          "quaternion (qx/qy/qz/qw = rotation_cam_to_vehicle) "
                          "and optional x/y/z [m] in the rig frame. Required "
                          "by --agent-rig-camera extrinsics.")
+    g5.add_argument("--agent-rig-extrinsics-allow-partial",
+                    action="store_true",
+                    help="accept a PER-CLIP extrinsics table that does not "
+                         "cover every episode of the run. Without it a gap "
+                         "REFUSES: the uncovered rows get no camera, both "
+                         "monocular terms skip them, and config.json would "
+                         "still read mount_pose_scope PER-CLIP -- the M18 "
+                         "dead-flag defect with a camera in place of a "
+                         "weight. The coverage is stamped either way.")
     g5.add_argument("--agent-cam-height", type=float, default=1.5,
                     help="mount height [m] for --agent-rig-camera nominal. "
                          "The MEASURED corpus band is 1.43-1.56 m; outside "

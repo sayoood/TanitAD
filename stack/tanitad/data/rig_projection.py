@@ -40,7 +40,8 @@ FRAMES AND CONVENTIONS (both MEASURED, both pinned by tests)
 ⭐ THE METRIC-SCALE ANCHOR IS SETTLED AND FREE. Over 87,481 ``obstacle.offline``
 cuboids the ground-standing classes' bottom faces read **-0.05 to -0.13 m**
 while ``protruding_object`` reads **+1.68 m** => **rig z = 0 IS the road
-plane**, and the front-wide camera sits at **1.43-1.56 m** above it. A
+plane**, and the front-wide camera sits **1.2131-1.6672 m** above it -- a
+PER-CLIP quantity, not a constant (see :data:`CAM_HEIGHT_SAMPLES`). A
 monocular detector therefore does not have to invent scale: a pixel plus the
 road-plane assumption already fixes a metric range
 (:func:`ground_intersection`).
@@ -70,6 +71,7 @@ from tanitad.data.calib import CanonicalFrame
 
 __all__ = [
     "RIG_TO_CAM", "ROAD_PLANE_Z_M", "CAM_HEIGHT_RANGE_M",
+    "CAM_HEIGHT_SAMPLES",
     "RigCamera", "rig_to_cam", "cam_to_rig",
     "project_cam_to_frame", "project_rig_to_frame",
     "frame_to_cam_ray", "ground_intersection",
@@ -94,8 +96,50 @@ RIG_TO_CAM: tuple[tuple[float, ...], ...] = (
 #: The road plane in the rig frame, MEASURED (see the module docstring).
 ROAD_PLANE_Z_M: float = 0.0
 
-#: Front-wide camera height above the road plane, MEASURED range over the corpus.
-CAM_HEIGHT_RANGE_M: tuple[float, float] = (1.43, 1.56)
+#: ⛔⛔ **THE FRONT-WIDE MOUNT HEIGHT IS NOT A CONSTANT, AND THE BAND HAS
+#: WIDENED EVERY TIME THE SAMPLE GREW.** This value was ``(1.43, 1.56)`` and was
+#: refuted at BOTH ends by artifacts already in this repo.
+#:
+#:   sample                                              span [m]        source
+#:   12 clips, one obstacle.offline chunk (87,481 cub.)  1.43 - 1.56     GOALS_AND_CLAIMS
+#:                                                                       D-V5A-GROUND1
+#:   3 clips, the banked render table                    1.2922 - 1.5758 taniteval/results/
+#:                                                                       videos/refcv3_five_
+#:                                                                       panel_step40284/
+#:                                                                       extrinsics_used.json
+#:   40 clips, read from calibration/sensor_extrinsics   1.245 - 1.607   taniteval/tools/
+#:     (median 1.306, 37 distinct values, CV 7.4 %)                      pai_extrinsics_table.py
+#:   **2,308 clips (the train parity corpus)**           **UNMEASURED**  --
+#:
+#: ⚠️ Each band strictly CONTAINED the previous one, so there is no reason to
+#: expect 1.245-1.607 to survive the train corpus either. ⛔ This is a GUARD
+#: BAND for a hand-passed ``--agent-cam-height``, never a value to compute with:
+#: the admissible constructor is :meth:`RigCamera.from_extrinsics` per CLIP.
+#: Three camera-height constants circulate in this repo (1.22 / 1.43 / 1.5 m)
+#: and all three are wrong as a constant -- 554 DISTINCT heights over the
+#: 2,400 parity clips. ⚠️ The sharper claim "1.22 m is below every
+#: observed minimum" held on 40 clips and is RETRACTED on the parity corpus,
+#: whose minimum is 1.2131 m: 1.22 is inside the range, and still not a
+#: constant.
+CAM_HEIGHT_SAMPLES: dict = {
+    "chunk12_cuboids": (1.43, 1.56),
+    "banked_render_table_3clip": (1.2922, 1.5758),
+    "sensor_extrinsics_40clip": (1.245, 1.607),
+    # ⭐ MEASURED 2026-09-05 over ALL 2,400 parity clips, read from the
+    # dataset's own calibration/sensor_extrinsics and verified against
+    # parity_manifest.json's clip_id_sha256_sorted (e61a04553df5...):
+    # median 1.2993 m, **554 distinct values in 2,400 clips**, forward offset
+    # 1.6969-2.1635 m, pitch -2.440..+3.945 deg. Builder:
+    # stack/scripts/build_rig_extrinsics_table.py
+    "train2400_parity": (1.2131, 1.6672),
+}
+#: the UNION of every sample above. A hand-passed height outside it is warned
+#: about; a height outside 0.5-3.0 m is refused.
+#: ⚠️ The prediction the earlier bands invited came true: each widening
+#: strictly CONTAINED the previous one, and the parity corpus widened it again
+#: at BOTH ends (1.2131 < 1.245 and 1.6672 > 1.607). Treat any future band as
+#: provisional until it is measured on the corpus being trained.
+CAM_HEIGHT_RANGE_M: tuple[float, float] = (1.2131, 1.6672)
 
 _EPS = 1e-9
 

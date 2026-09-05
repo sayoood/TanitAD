@@ -80,7 +80,7 @@ __all__ = [
     "OracleAgentEmbed", "build_agent_head", "degrade_boxes",
     "monocular_projection_loss", "ground_range_prior", "slot_pad_mask",
     "filter_targets_to_visible", "visible_target_filter", "TOKEN_FEAT_DIM",
-    "FOV_HALF_ANGLE_RAD",
+    "FOV_HALF_ANGLE_RAD", "RigCameraBank", "row_cameras",
 ]
 
 #: The rig's own horizontal half-field. The camera is `camera_front_wide_120fov`
@@ -456,10 +456,147 @@ class OracleAgentEmbed(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# PER-CLIP CAMERAS -- the corpus has two rigs and a per-CLIP mount pose
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class RigCameraBank:
+    """episode id -> that clip's OWN :class:`RigCamera`, plus an explicit
+    fallback for episodes the table does not cover.
+
+    ⛔⛔ **WHY A BANK AND NOT A CONSTANT**, with each figure's evidence
+    class stated because they come from three different samples:
+
+    * **MEASURED (ours, 2026-09-05)** on the repo's own banked render table
+      ``taniteval/results/videos/refcv3_five_panel_step{30000,40284}/
+      extrinsics_used.json`` -- **3 clips**, mount height **1.2922 / 1.2968 /
+      1.5758 m**, forward offset **1.9964-2.1286 m**. ⭐ Small, but decisive
+      against a constant: it STRADDLES the shipped guard band ``(1.43, 1.56)``
+      at **both** ends.
+    * **INHERITED** (``taniteval/tools/pai_extrinsics_table.py``'s docstring,
+      citing ``.../pod-rescue-20260802/pod3/workspace/idm3_geom.py``, NOT
+      re-verified by this stream): over **40 clips** the height spans
+      **1.245-1.607 m**, median 1.306, **37 distinct values in 40**, CV 7.4 %;
+      pitch -1.15..+2.34 deg; and **the rig label is not a proxy** -- rig-A vs
+      rig-B medians differ 1.5 % while the WITHIN-rig spread is 29 %.
+    * **UNMEASURED**: the 2,308-clip train parity corpus. Every band so far
+      strictly contained the previous one, so 1.245-1.607 is not a bound.
+
+    ⭐ **MEASURED 2026-09-05 on the PARITY CORPUS ITSELF** (all 2,400
+    clips, ``stack/scripts/build_rig_extrinsics_table.py``, clip set
+    verified against ``parity_manifest.json``'s
+    ``clip_id_sha256_sorted``): mount height **1.2131-1.6672 m**, median
+    **1.2993**, **554 DISTINCT VALUES in 2,400 clips**; forward offset
+    1.6969-2.1635 m; pitch -2.440..+3.945 deg. This widened BOTH earlier
+    bands at BOTH ends, exactly as their monotone growth predicted.
+
+    ⚠️ Three camera-height constants circulate in this repo
+    (1.22 / 1.43 / 1.5 m) and **all three are wrong as a constant**. But
+    the sharper claim *"1.22 m is below every observed minimum"* held
+    only on 40 clips and is **RETRACTED** on parity, whose minimum is
+    1.2131 m -- 1.22 is inside the range, and still not a constant. See
+    :data:`tanitad.data.rig_projection.CAM_HEIGHT_SAMPLES`.
+
+    ⭐ **Why that binds HERE and not merely in a renderer.**
+    :func:`ground_range_prior` back-projects a pixel through the road plane,
+    so the range it supervises is directly proportional to the mount height.
+    A 1.5 m constant applied to a 1.245 m clip biases every range it teaches
+    by **+20 %**, and the head learns that bias as geometry.
+    :func:`monocular_projection_loss` is a DIFFERENCE of two projections and
+    cancels a common mount error to first order; the ground term does not.
+    That asymmetry is exactly why the camera must be per clip, not per run.
+
+    ⛔ A bank is **not** resolved inside the loss: the loss has no episode
+    ids, and inventing a lookup there is how a camera silently attaches to the
+    wrong clip. The caller resolves it (:meth:`for_episodes`) and passes a
+    per-row list.
+    """
+
+    #: ``int(episode_id) -> RigCamera``. The key is whatever id the BATCH
+    #: carries; ``refc_v3_train`` emits ``stable_episode_id(clip_id)``.
+    by_episode: dict
+    #: used for an episode the table does not cover. ``None`` means the row
+    #: gets NO camera and the monocular terms skip it -- legal only because
+    #: both terms COUNT the skipped rows and the trainer refuses an uncovered
+    #: corpus unless the gap is accepted by name.
+    default: "RigCamera | None" = None
+
+    def __len__(self) -> int:
+        return len(self.by_episode)
+
+    def get(self, ep_id) -> "RigCamera | None":
+        return self.by_episode.get(int(ep_id), self.default)
+
+    def for_episodes(self, ep_ids) -> list:
+        """``[B]`` episode ids (tensor / list) -> ``[B]`` cameras.
+
+        ⭐ The returned list is exactly what :func:`agent_losses` takes, and
+        its length IS the batch size, so a mismatch raises rather than
+        misaligning rows.
+        """
+        if torch.is_tensor(ep_ids):
+            ep_ids = ep_ids.detach().reshape(-1).tolist()
+        return [self.get(e) for e in list(ep_ids)]
+
+    def coverage(self, ep_ids) -> dict:
+        """``{n, n_covered, frac, n_missing, missing_sample, has_default}``.
+
+        A run record must state this: a bank covering 60 % of the corpus
+        trains the monocular terms on 60 % of it while ``config.json`` says
+        the camera source was ``extrinsics``.
+        """
+        if torch.is_tensor(ep_ids):
+            ep_ids = ep_ids.detach().reshape(-1).tolist()
+        ids = [int(e) for e in list(ep_ids)]
+        miss = [e for e in ids if e not in self.by_episode]
+        n = len(ids)
+        return {"n": n, "n_covered": n - len(miss),
+                "frac": ((n - len(miss)) / n) if n else 0.0,
+                "n_missing": len(miss),
+                "missing_sample": sorted(set(miss))[:8],
+                "has_default": self.default is not None}
+
+
+def row_cameras(cam, batch_size: int) -> list:
+    """Normalise the ``cam`` argument to EXACTLY one entry per batch row.
+
+    Accepts ``None`` (no camera at all), ONE :class:`RigCamera` (the whole
+    batch shares a mount pose -- the pre-2026-09-05 behaviour, kept so every
+    banked arm is untouched), or a sequence of length ``batch_size`` whose
+    entries are ``RigCamera`` or ``None``.
+
+    ⛔ A partial list is REFUSED rather than padded. Padding would attach
+    clip *k*'s mount pose to row *k+1*, a label corruption no downstream
+    metric could attribute.
+    """
+    if cam is None:
+        return [None] * int(batch_size)
+    if isinstance(cam, RigCamera):
+        return [cam] * int(batch_size)
+    if isinstance(cam, RigCameraBank):
+        raise TypeError(
+            "a RigCameraBank must be resolved BEFORE the loss: call "
+            "bank.for_episodes(batch['agent_ep']). The loss has no episode "
+            "ids and must not invent a lookup.")
+    cams = list(cam)
+    if len(cams) != int(batch_size):
+        raise ValueError(
+            "cam carries %d entries for a batch of %d. Pass ONE camera for "
+            "the whole batch or exactly one per row -- a partial list would "
+            "attach one clip's mount pose to another clip's row."
+            % (len(cams), int(batch_size)))
+    bad = [i for i, c in enumerate(cams)
+           if c is not None and not isinstance(c, RigCamera)]
+    if bad:
+        raise TypeError("cam[%d] is a %s, not a RigCamera or None"
+                        % (bad[0], type(cams[bad[0]]).__name__))
+    return cams
+
+
+# ---------------------------------------------------------------------------
 # Gap #2 — the IMAGE-PLANE term a monocular head needs
 # ---------------------------------------------------------------------------
 def monocular_projection_loss(pred_box: Tensor, tgt_box: Tensor,
-                              cam: RigCamera, match: dict,
+                              cam, match: dict,
                               z_center_m: float = 0.75) -> dict:
     """L1 between the PROJECTED pixel centres of matched predicted and target
     boxes, in the canonical cylindrical frame.
@@ -486,37 +623,70 @@ def monocular_projection_loss(pred_box: Tensor, tgt_box: Tensor,
     computed over, RETURNED so a panel can print its own ``n``.
     """
     device = pred_box.device
+    cams = row_cameras(cam, int(pred_box.shape[0]))
     losses: list[Tensor] = []
     n = 0
+    n_rows = n_rows_no_cam = 0
     for b, (rows, cols) in enumerate(zip(match["rows"], match["cols"])):
         if rows.numel() == 0:
+            continue
+        n_rows += 1
+        cam_b = cams[b]
+        # ⛔ A row whose clip has no declared camera is COUNTED, never
+        # silently dropped: a term that quietly skips rows while its
+        # weight is stamped into config.json is the dead-flag class
+        # this module exists to refuse (M18).
+        if cam_b is None:
+            n_rows_no_cam += 1
             continue
         pb = pred_box[b, rows.to(device)]                  # [M, 4]
         tb = tgt_box[b, cols.to(device)]                   # [M, 4]
         z = pb.new_full((pb.shape[0], 1), float(z_center_m))
         p3 = torch.cat([pb[:, :1], pb[:, 1:2], z], dim=-1)
         t3 = torch.cat([tb[:, :1], tb[:, 1:2], z], dim=-1)
-        pc, pr, pv = cam.project(p3.to(cam.t_cam_in_rig.dtype))
-        tc, tr, tv = cam.project(t3.to(cam.t_cam_in_rig.dtype))
+        pc, pr, pv = cam_b.project(p3.to(cam_b.t_cam_in_rig.dtype))
+        tc, tr, tv = cam_b.project(t3.to(cam_b.t_cam_in_rig.dtype))
         keep = pv & tv
         if not bool(keep.any()):
             continue
         # normalise by the frame so column and row errors are commensurate and
         # the term is scale-free across the 256x640 / 176x624 frames.
-        w = float(cam.frame.width)
-        h = float(cam.frame.height)
+        w = float(cam_b.frame.width)
+        h = float(cam_b.frame.height)
         d = ((pc - tc).abs() / w + (pr - tr).abs() / h)[keep]
         losses.append(d.to(pred_box.dtype).mean())
         n += int(keep.sum())
     if not losses:
-        return {"loss": pred_box.new_zeros(()), "n": 0}
-    return {"loss": torch.stack(losses).mean(), "n": n}
+        return {"loss": pred_box.new_zeros(()), "n": 0,
+                "n_rows": n_rows, "n_rows_no_cam": n_rows_no_cam}
+    return {"loss": torch.stack(losses).mean(), "n": n,
+            "n_rows": n_rows, "n_rows_no_cam": n_rows_no_cam}
 
 
 # ---------------------------------------------------------------------------
 # Gap #3 — the free metric anchor
 # ---------------------------------------------------------------------------
-def ground_range_prior(pred_box: Tensor, cam: RigCamera,
+def _ground_terms(pred_box: Tensor, cam: RigCamera):
+    """``(d, ok)`` UN-REDUCED for ONE camera and any leading shape.
+
+    Split out of :func:`ground_range_prior` so the per-clip path
+    reuses the SAME arithmetic rather than a second spelling of it --
+    two implementations of one geometry is how they drift apart
+    (the ``advect`` precedent, retired 2026-07-27).
+    """
+    dt = cam.t_cam_in_rig.dtype
+    cx, cy = pred_box[..., 0], pred_box[..., 1]
+    foot = torch.stack([cx, cy, torch.zeros_like(cx)], dim=-1).to(dt)
+    col, row, valid = cam.project(foot)
+    p_rig, hits = cam.ground_intersection(col, row)
+    ok = valid & hits
+    r_pred = torch.sqrt(cx * cx + cy * cy).to(dt)
+    r_back = torch.linalg.vector_norm(p_rig[..., :2], dim=-1)
+    d = (r_pred - r_back).abs() / r_pred.clamp_min(1.0)
+    return d, ok
+
+
+def ground_range_prior(pred_box: Tensor, cam,
                        z_center_m: float = 0.75) -> dict:
     """Consistency between a slot's predicted range and the range its own
     projected FOOT point implies under the road plane.
@@ -535,32 +705,63 @@ def ground_range_prior(pred_box: Tensor, cam: RigCamera,
 
     Returns ``{"loss", "n", "frac_hit"}``.
     """
-    dt = cam.t_cam_in_rig.dtype
-    cx, cy = pred_box[..., 0], pred_box[..., 1]
-    foot = torch.stack([cx, cy, torch.zeros_like(cx)], dim=-1).to(dt)
-    col, row, valid = cam.project(foot)
-    p_rig, hits = cam.ground_intersection(col, row)
-    ok = valid & hits
+    n_rows_no_cam = 0
+    if cam is None or isinstance(cam, RigCamera):
+        # ⭐ The ONE-camera path is byte-for-byte the arithmetic every
+        # banked arm ran: one vectorised call over [B, N]. It is kept
+        # as its own branch so adding per-clip cameras cannot perturb
+        # an arm that did not ask for them.
+        if cam is None:
+            return {"loss": pred_box.new_zeros(()), "n": 0,
+                    "frac_hit": 0.0,
+                    "n_rows_no_cam": int(pred_box.shape[0])}
+        d_all, ok = _ground_terms(pred_box, cam)
+        d_all, ok = d_all.reshape(-1), ok.reshape(-1)
+    else:
+        cams = row_cameras(cam, int(pred_box.shape[0]))
+        ds, oks = [], []
+        for b, cam_b in enumerate(cams):
+            if cam_b is None:
+                # ⛔ COUNTED, never silently skipped -- see
+                # `monocular_projection_loss`.
+                n_rows_no_cam += 1
+                continue
+            d_b, ok_b = _ground_terms(pred_box[b], cam_b)
+            ds.append(d_b.reshape(-1))
+            oks.append(ok_b.reshape(-1))
+        if not ds:
+            return {"loss": pred_box.new_zeros(()), "n": 0,
+                    "frac_hit": 0.0, "n_rows_no_cam": n_rows_no_cam}
+        d_all, ok = torch.cat(ds), torch.cat(oks)
     if not bool(ok.any()):
-        return {"loss": pred_box.new_zeros(()), "n": 0, "frac_hit": 0.0}
-    r_pred = torch.sqrt(cx * cx + cy * cy).to(dt)
-    r_back = torch.linalg.vector_norm(p_rig[..., :2], dim=-1)
-    d = ((r_pred - r_back).abs() / r_pred.clamp_min(1.0))[ok]
+        return {"loss": pred_box.new_zeros(()), "n": 0,
+                "frac_hit": 0.0, "n_rows_no_cam": n_rows_no_cam}
+    d = d_all[ok]
     return {"loss": d.to(pred_box.dtype).mean(), "n": int(ok.sum()),
-            "frac_hit": float(ok.to(torch.float32).mean())}
+            "frac_hit": float(ok.to(torch.float32).mean()),
+            "n_rows_no_cam": n_rows_no_cam}
 
 
 # ---------------------------------------------------------------------------
 # The composed training loss
 # ---------------------------------------------------------------------------
 def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
-                 cam: RigCamera | None = None,
+                 cam=None,
                  weights: dict | None = None,
                  filter_visible: bool = True) -> dict:
     """``slot_set_loss`` + the two monocular terms, per term, with their ``n``.
 
     ⛔ Per-term, never pooled into one score — the four-families discipline's
     sibling rule: a composite hides exactly the trade-off one wants to see.
+
+    ``cam`` is ``None``, ONE :class:`RigCamera` for the whole batch, or a
+    **per-row sequence** of length ``B`` (resolve a :class:`RigCameraBank`
+    with :meth:`RigCameraBank.for_episodes` first). ⛔⛔ **The corpus has a
+    per-CLIP mount pose** -- height 1.245-1.607 m over 40 clips, 37 distinct
+    values, and the rig label explains almost none of it -- so one camera per
+    RUN is a measured misconfiguration, not a simplification. The output
+    carries ``cam_scope`` and ``n["rows_no_cam_*"]`` so a run record states
+    which of the three it actually used and how many rows went unsupervised.
     """
     # ⛔ THE FILTER IS ON BY DEFAULT AND THAT IS THE POINT. Without it 61.8 %
     # of the targets `match_slots` keeps are outside the camera's field
@@ -573,15 +774,24 @@ def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
     match = match_slots(slots, tgt)
     out = slot_set_loss(slots, tgt, match=match, weights=weights)
     total = out["total"]
-    if cam is not None and cfg.w_project > 0.0:
+    _cams = row_cameras(cam, int(slots["box"].shape[0]))
+    _n_cam = sum(1 for c in _cams if c is not None)
+    out["cam_scope"] = ("none" if cam is None else
+                        ("single" if isinstance(cam, RigCamera)
+                         else "per-row"))
+    out["n"]["rows_with_cam"] = int(_n_cam)
+    out["n"]["rows_no_cam"] = int(len(_cams) - _n_cam)
+    if _n_cam and cfg.w_project > 0.0:
         pj = monocular_projection_loss(slots["box"], tgt["box"], cam, match)
         out["loss_project"] = pj["loss"]
         out["n"]["project"] = pj["n"]
+        out["n"]["rows_no_cam_project"] = int(pj.get("n_rows_no_cam", 0))
         total = total + cfg.w_project * pj["loss"]
-    if cam is not None and cfg.w_ground > 0.0:
+    if _n_cam and cfg.w_ground > 0.0:
         gp = ground_range_prior(slots["box"], cam)
         out["loss_ground"] = gp["loss"]
         out["n"]["ground"] = gp["n"]
+        out["n"]["rows_no_cam_ground"] = int(gp.get("n_rows_no_cam", 0))
         out["ground_frac_hit"] = gp["frac_hit"]
         total = total + cfg.w_ground * gp["loss"]
     out["total"] = total

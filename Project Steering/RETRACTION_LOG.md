@@ -12545,3 +12545,43 @@ name is not the definition, and in a loop the last assignment is the one that co
 → **Pinned:** `RESULT.md` §6 (corrected in the same turn, with the source lines quoted),
 §8 (the stage decomposition that replaces the guess); `raw/patch_rerank_lambda_fix.py`;
 `stack/scripts/rl_fan_rerank_probe.py`; register row `D-REFC-OFFSET-FEAS-1` (re-worded).
+
+
+---
+
+## 2026-09-05 — "1.22 m is below every observed minimum" — RETRACTED the same hour, by our own measurement (Architecture & Inference FlyWheel)
+
+**What I wrote:** while fixing `agent_losses(cam=...)` to take a per-clip camera I documented, in
+three places (`rig_projection.py`, `refc_agents.py`, and a new test), that the three camera-height
+constants circulating in this repo (1.22 / 1.43 / 1.5 m) are all wrong **and** that *"1.22 m is
+BELOW the observed minimum"*. The second half was INHERITED from `pai_extrinsics_table.py`'s
+docstring, which reports **1.245-1.607 m over 40 clips**.
+
+**What is true.** MEASURED the same session over **all 2,400 parity clips**, read from
+PhysicalAI-AV's own `calibration/sensor_extrinsics`
+(`stack/scripts/build_rig_extrinsics_table.py`, clip set verified against `parity_manifest.json`'s
+committed `clip_id_sha256_sorted` = `e61a04553df5...`): the height spans **1.2131-1.6672 m**,
+median **1.2993**, **554 distinct values**. **1.22 m is INSIDE the observed range.**
+
+**What survives:** the height is not a constant — 554 distinct values over 2,400 clips — and all
+three circulating constants are wrong *as constants*. That is the load-bearing half and it is
+strengthened, not weakened, by the parity measurement.
+
+**Root-cause CLASS — the `df` / `free` / `step_s` / cylindrical-FOV / anchor-units family, with the
+scope being SAMPLE SIZE: a small-sample EXTREMUM quoted as a BOUND.** The band had already widened
+three times (12 clips 1.43-1.56 -> 3 clips 1.2922-1.5758 -> 40 clips 1.245-1.607), each one strictly
+CONTAINING the previous, and I repeated the pattern by treating the newest minimum as a floor. A
+maximum over a sample is never a bound; the parity corpus widened it at BOTH ends exactly as that
+monotone growth predicted.
+
+⚠️ **The aggravating detail: the false half was the SHARPER, more quotable half.** "All three are
+wrong as a constant" is the finding; "1.22 is below the minimum" is the sentence that would have
+been copied forward. → **Durable rule: when a claim has a general form and a sharp form, the sharp
+form needs its own evidence — inheriting the general form's does not license it.**
+
+→ **Pinned:** `tanitad/data/rig_projection.py::CAM_HEIGHT_SAMPLES` now names EVERY sample with its
+corpus and its size, so the next widening is a table row rather than a silent edit;
+`CAM_HEIGHT_RANGE_M` is their union (1.2131, 1.6672);
+`stack/tests/test_refc_agents_per_clip_camera.py::test_the_camera_height_band_carries_every_sample_it_came_from`
+asserts the parity row is present and that it widened the 40-clip band at both ends. Register rows
+`D-RC5-CAMHEIGHT` (supported) and `D-RC5-122` (retracted) in `GOALS_AND_CLAIMS.md`.
