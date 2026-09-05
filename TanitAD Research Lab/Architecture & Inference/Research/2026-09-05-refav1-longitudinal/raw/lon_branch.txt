@@ -1,0 +1,25 @@
+C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\f407bc82-7969-457c-a947-6be2014fee89\scratchpad\lon_branch.py:33: DeprecationWarning: __array_wrap__ must accept context and return_scalar arguments (positionally) in the future. (Deprecated NumPy 2.0)
+  azero[i]= float(np.abs(R.canonical_controls(lat_s[i],lon_s[i],v0,OP,DT)[:K,0]).max())<1e-9
+== TABLE H. decoded LON token x what it COMMANDS at that window's own v0 ==
+decoded LON                 n   med v0 n maintain    n a==0  med a_cmd0 med a0_meas
+ACCELERATE                  3   14.716         0         0      0.7500      0.1702
+ADAPT_SPEED_FOR_CURVE      29    3.471        27        27      0.0000     -0.2257
+BRAKE_TO                    4    8.173         0         0     -1.5000      0.1100
+CRUISE                      4   10.613         4         4      0.0000     -0.1333
+
+  MAINTAIN branch (v_t == v0, the branch D1 touches): 31 / 40  (77.5 %)
+  goal commands a == 0 over the whole plan window     : 31 / 40  (77.5 %)
+  ... and on the GT-LON stratum (|dv_gt| >= 1.0)      : 20 / 24  (83.3 %)
+
+== TABLE I. REACHABILITY: is the GT demand inside the vocabulary's box? ==
+  GT dv ABOVE the vocabulary's most-positive reachable dv: 14 / 40 (35.0 %)
+  GT dv BELOW the vocabulary's most-negative reachable dv: 8 / 40 (20.0 %)
+  median |quantisation residual| to the NEAREST reachable dv: 0.1578 m/s
+  ... with D1 (a_sustain=a0 on the maintain branch) the maintain rows
+      become a0*2s, and the residual falls to             : 0.0960 m/s
+
+== TABLE J. the POSITIVE-side asymmetry (the analogue of kappa in {0,0.08}) ==
+  most-positive reachable dv over 2 s, median over windows: +0.9770 m/s
+  most-negative reachable dv over 2 s, median over windows: -2.8468 m/s
+  GT dv p90 = +2.3416  p10 = -2.1579   => positive demand exceeds supply by 2.40x
+  windows where GT dv > 0 : 17 ; of those, UNREACHABLE : 14 (82.4 %)

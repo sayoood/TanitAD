@@ -409,6 +409,16 @@ def _goal_term(zt: Tensor, g: Tensor, metric: str = "cos",
 #: weight, and it is why L4 cannot be taken alone either. The derivation, the
 #: chord-side weights and the deletion test are banked at
 #: `.../Research/2026-09-03-cost-repair/RESULT.md` §4.
+#: ⛔ THE MAINTAIN-BRANCH PREDICATE for `a_sustain`. A token is on the
+#: maintain branch when its target speed IS the measured v0 -- `CRUISE`
+#: always, `ADAPT_SPEED_FOR_CURVE` while `v0 <= GOAL_CURVE_VMAX_MPS`. Counted
+#: on THAT predicate, never on the decode: M28 (2) measured that a `LANE_KEEP`
+#: decode is not a hold goal, and the same trap applies here -- 29/40 windows
+#: decode `ADAPT_SPEED_FOR_CURVE` but only 27 of them sit below the 8 m/s cap
+#: and therefore actually command `a == 0`; the other 2 command a SUSTAINED
+#: BRAKE to 8 m/s, which is a different mechanism with the same token name.
+_MAINTAIN_EPS = 1e-9
+
 W_JERK = 0.02                                   #: comfort, on channel 0 only
 W_KAPPA = 0.05                                  #: curvature, on RAW curvature
 W_VEND = 0.10                                   #: terminal speed vs target
@@ -416,7 +426,8 @@ W_VEND = 0.10                                   #: terminal speed vs target
 
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
                        op_dt: float, *,
-                       kappa_turn: float | None = None) -> Tensor:
+                       kappa_turn: float | None = None,
+                       a_sustain: float | None = None) -> Tensor:
     """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
     the operative grid. Deterministic, future-free; see the table above."""
     a = torch.zeros(op_steps)
@@ -430,11 +441,48 @@ def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
         v_t = min(float(v0), GOAL_CURVE_VMAX_MPS)
     else:
         v_t = max(0.0, float(v0) + GOAL_LON_DV_MPS.get(lon, 0.0))
-    v = float(v0)
-    for i in range(op_steps):
-        a_i = max(-GOAL_A_MAX, min(GOAL_A_MAX, (v_t - v) / GOAL_REACH_S))
-        a[i] = a_i
-        v += a_i * op_dt
+    if a_sustain is not None and abs(v_t - float(v0)) < _MAINTAIN_EPS:
+        # ⭐⭐ `a_sustain` -- THE LONGITUDINAL ANALOGUE OF `kappa_turn`
+        # (D-REFAV1-LON-VOCAB, 2026-09-05). It touches ONLY the MAINTAIN
+        # branch (`v_t == v0`), which is `CRUISE` always and
+        # `ADAPT_SPEED_FOR_CURVE` while `v0 <= GOAL_CURVE_VMAX_MPS`. On that
+        # branch the shipped profile is `a == 0` EXACTLY -- the vocabulary can
+        # say "hold this SPEED" and has no way to say "hold this
+        # ACCELERATION".
+        # MEASURED (dump_wk15, n = 40 windows, ckpt 21,109; banked at
+        # `.../2026-09-05-refav1-longitudinal/raw/lon_branch.txt`):
+        #   * the maintain branch is **31 / 40 windows (77.5 %)** and
+        #     **20 / 24 (83.3 %)** of the GT-LON stratum, so the goal is
+        #     silent exactly where longitudinal action is demanded;
+        #   * the vocabulary's reachable `dv` over the 2.0 s plan window is
+        #     **[-2.85, +0.98] m/s** while the corpus demands p10 -2.16 /
+        #     p90 **+2.34** -- the positive side is short by **2.40x**, and
+        #     **14 of the 17 accelerating windows (82.4 %) are outside the
+        #     reachable set entirely**. That is the `kappa in {0, 0.08}`
+        #     defect with the sign flipped: laterally the only magnitude was
+        #     6.9x too BIG, longitudinally the only positive one is 2.4x too
+        #     SMALL.
+        # ⭐ THE HINT IS MEASURABLE, WHICH IS WHY THIS IS NOT `kappa_turn`'s
+        # oracle problem: `choose_kappa_level` needs a curvature the head
+        # cannot supply, so M15's payoff was an ORACLE-CHOOSER bound. Here the
+        # natural hint is `a0 = (v[t0] - v[t0-dt]) / dt`, a BACKWARD DIFFERENCE
+        # OF PAST MEASURED SPEEDS closing at t0 (`echo_gate.ha0_ext`'s own
+        # definition, "no future") -- admissible at T1 under the PI ruling of
+        # 2026-09-02 that the measured state at cycle time is a legal initial
+        # state. So the ORACLE column and the REALISED column COINCIDE, and
+        # there is no free parameter to tune on the scored split.
+        # ⚠ The value is clipped to `GOAL_A_MAX` like every other row.
+        # ⛔ `None` is the SHIPPED path and skips this branch entirely, so an
+        # arm that does not ask for it is BIT-IDENTICAL to the pre-2026-09-05
+        # expression -- asserted by `tests/test_refa_v1_a_sustain.py`, each
+        # case with a same-breath control that must differ.
+        a[:] = max(-GOAL_A_MAX, min(GOAL_A_MAX, float(a_sustain)))
+    else:
+        v = float(v0)
+        for i in range(op_steps):
+            a_i = max(-GOAL_A_MAX, min(GOAL_A_MAX, (v_t - v) / GOAL_REACH_S))
+            a[i] = a_i
+            v += a_i * op_dt
     # --- lateral: x forward, y left, so +kappa turns LEFT (kinematic.py) --- #
     sign = 1.0 if lat.endswith("_L") else -1.0
     v_ref = max(float(v0), GOAL_V_REF_MIN_MPS)
@@ -2039,7 +2087,8 @@ class RefAV1(nn.Module):
                                lat_logit_bias: Tensor | None = None,
                                goal_kappa_turn: float | None = None,
                                goal_kappa_levels=None,
-                               goal_kappa_hint=None
+                               goal_kappa_hint=None,
+                               a_sustain=None
                                ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
@@ -2135,10 +2184,23 @@ class RefAV1(nn.Module):
                 raise ValueError(f"goal_kappa_hint carries {len(hint)} rows for "
                                  f"a batch of {len(lat_i)}")
             kt = [choose_kappa_level(goal_kappa_levels, h) for h in hint]
+        # ⭐ `a_sustain` may be a SCALAR (one value for the batch) or one value
+        # per row -- the per-row form is what a measured-a0 hint is.
+        if a_sustain is None:
+            asu = [None] * len(lat_i)
+        else:
+            asu = torch.as_tensor(a_sustain, dtype=torch.float32
+                                  ).reshape(-1).tolist()
+            if len(asu) == 1:
+                asu = asu * len(lat_i)
+            if len(asu) != len(lat_i):
+                raise ValueError(f"a_sustain carries {len(asu)} rows for a "
+                                 f"batch of {len(lat_i)}")
         ctrl = torch.stack([
             canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt,
-                               kappa_turn=k)
-            for i, j, v, k in zip(lat_i, lon_i, v0.tolist(), kt)]).to(last)
+                               kappa_turn=k, a_sustain=s)
+            for i, j, v, k, s in zip(lat_i, lon_i, v0.tolist(), kt,
+                                     asu)]).to(last)
         stride = self._stride(cfg.tac_dt)
         # ⭐ THE GOAL CROSSES INTO THE MODEL HERE — through the same boundary a
         # planner candidate crosses (`_model_actions`), so `units` cannot apply
@@ -2153,7 +2215,9 @@ class RefAV1(nn.Module):
                       "lon": [lon_v[j] for j in lon_i], "controls": ctrl,
                       "kappa_turn_used": [None if k is None else float(k)
                                           for k in kt],
-                      "kappa_vocab": goal_kappa_vocab_id(goal_kappa_levels)}
+                      "kappa_vocab": goal_kappa_vocab_id(goal_kappa_levels),
+                      "a_sustain_used": [None if s is None else float(s)
+                                         for s in asu]}
 
     @torch.no_grad()
     def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
@@ -2199,6 +2263,8 @@ class RefAV1(nn.Module):
              goal_kappa_turn: float | None = None,
              goal_kappa_levels=None,
              goal_kappa_hint=None,
+             a_sustain=None,
+             jerk_seam_a0: float | None = None,
              goal_keeps_seed: bool = False):
         """One MPC tick for ONE window (B must be 1).
 
@@ -2402,7 +2468,8 @@ class RefAV1(nn.Module):
                 lat_logit_bias=lat_logit_bias,
                 goal_kappa_turn=goal_kappa_turn,
                 goal_kappa_levels=goal_kappa_levels,
-                goal_kappa_hint=goal_kappa_hint)
+                goal_kappa_hint=goal_kappa_hint,
+                a_sustain=a_sustain)
             goal_t, goal_source = self._tac_field(goal_field), "supplied+seed"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0],
@@ -2418,7 +2485,8 @@ class RefAV1(nn.Module):
                 lat_logit_bias=lat_logit_bias,
                 goal_kappa_turn=goal_kappa_turn,
                 goal_kappa_levels=goal_kappa_levels,
-                goal_kappa_hint=goal_kappa_hint)
+                goal_kappa_hint=goal_kappa_hint,
+                a_sustain=a_sustain)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0],
@@ -2588,7 +2656,36 @@ class RefAV1(nn.Module):
                 z_ref = (_zero_action_ref(pred, z0)
                          if cost_metric in ("ccos", "ccosh") else None)
                 c = c + _goal_term(zt, g, cost_metric, z_ref)
-            jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
+            if jerk_seam_a0 is None:
+                jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
+            else:
+                # ⛔⛔ THE MISSING TERM (D-REFAV1-LON-COST, 2026-09-05). The
+                # shipped jerk is the diff of the plan's OWN actions, indices
+                # 1..H-1 against 0..H-2 -- so the step from the car's MEASURED
+                # acceleration at t0 to `controls[0]` is NOT PRICED. A plan
+                # that drops instantly from a0 = -2.3 m/s^2 to a = 0 therefore
+                # costs exactly the same jerk as one that continues smoothly,
+                # and the all-zero control is the JOINT minimiser of BOTH
+                # regularisers (`w_jerk*mean(jerk^2)` is 0 for ANY constant a,
+                # including 0; `w_kappa*mean(kappa^2)` is 0 only at kappa = 0).
+                # ⛔ And the third weight cannot oppose it: `target_speed`
+                # defaults to `None` and `refav1_arm.py`'s single `.plan(...)`
+                # call never passes it, so `w_vend` has contributed ZERO cost
+                # to every banked refav1 window -- the longitudinal channel has
+                # no cost term at all unless one is armed.
+                # ⭐ Prepending the measured a0 as the (-1)-th action prices
+                # the seam with the SAME `w_jerk` -- a repair of an incomplete
+                # term, not a new weight, exactly as `ccosh` repaired an
+                # undefined cost rather than re-weighting one.
+                # ⚠ `a0` is a backward difference of PAST measured speeds
+                # (`echo_gate.ha0_ext`: "no future"), admissible at T1 under
+                # the 2026-09-02 PI ruling on the measured state at cycle time.
+                # ⛔ `None` is the SHIPPED path: bit-identical to every arm
+                # banked before 2026-09-05.
+                a_prev = controls.new_full((controls.shape[0], 1),
+                                           float(jerk_seam_a0))
+                a_seq = torch.cat([a_prev, controls[:, :, 0]], dim=1)
+                jerk = (a_seq[:, 1:] - a_seq[:, :-1]) / pc.dt
             c = c + w_jerk * jerk.pow(2).mean(-1)                  # comfort
             c = c + w_kappa * controls[..., 1].pow(2).mean(-1)     # curvature
             if target_speed is not None:
@@ -2639,6 +2736,20 @@ class RefAV1(nn.Module):
         res.cost_time_grid = cost_time_grid
         res.goal_time_grid = goal_time_grid
         res.goal_keeps_seed = bool(goal_keeps_seed)
+        # ⭐ THE LONGITUDINAL LEVERS TRAVEL ON THE RESULT, like every other
+        # convention: a banked window must say whether its goal could express a
+        # sustained acceleration, whether the jerk seam was priced, and whether
+        # `W_VEND` was armed AT ALL -- `target_speed=None` (the shipped path)
+        # makes the third weight of the cost triple a DEAD TERM, and a dump
+        # that does not record it cannot be told apart from one where it bound.
+        res.a_sustain = (None if a_sustain is None else
+                         [float(x) for x in
+                          torch.as_tensor(a_sustain).flatten()])
+        res.jerk_seam_a0 = (None if jerk_seam_a0 is None
+                            else float(jerk_seam_a0))
+        res.target_speed = (None if target_speed is None
+                            else float(target_speed))
+        res.w_vend_armed = target_speed is not None
         # ⚠️ THE PARITY STAMP. A dump that does not name its action space cannot
         # be compared with one that does; M16 (1) makes the cross-vocabulary
         # comparison inadmissible without it.

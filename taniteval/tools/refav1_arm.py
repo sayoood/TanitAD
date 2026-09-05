@@ -507,6 +507,57 @@ def gt_waypoints(poses, t: int, k: int):
 
 
 # --------------------------------------------------------------------------- #
+# window selection                                                             #
+# --------------------------------------------------------------------------- #
+def select_windows(ld, stride: int, window_list: str | None):
+    """-> (``[(wi, ei, t), ...]``, meta or None). The panel's own definition.
+
+    ⭐ ``window_list = None`` is the SHIPPED path and is bit-identical to the
+    pre-2026-09-05 expression ``(t - (W - 1)) % stride == 0`` — pinned by
+    ``stack/tests/test_refav1_window_list.py::test_a_*``, each with a
+    same-breath control that must differ. Every banked dump was produced on that
+    path and none of them move.
+
+    ⛔ **A STRIDE CANNOT ENRICH A STRATUM.** The banked stride-16 panel carries
+    11 GT-left and 8 GT-right turns, and a recall on 11 trials has a resolution
+    of 1/11 = 0.0909 — COARSER than the 0.0750 inference-seed floor it is being
+    compared against, so it cannot represent that floor in either direction.
+    ``--window-list`` supplies an explicit, externally computed, GT-only
+    stratified selection so a per-direction rate can be resolved at all.
+
+    ⚠️ The file is (episode NAME, t) pairs, never window indices: an index is
+    meaningful only against one loader construction and would silently select a
+    DIFFERENT window under any change of episode set or grid. A requested pair
+    that the loader does not carry is REFUSED by name rather than dropped — a
+    silently thinned panel is how an underpowered stratum gets read as a
+    negative.
+    """
+    if not window_list:
+        return [(wi, ei, t) for wi, (ei, t) in enumerate(ld.windows)
+                if (t - (ld.W - 1)) % stride == 0], None
+    with open(window_list, "rb") as fh:
+        blob = fh.read()
+    doc = json.loads(blob.decode("utf-8"))
+    want = [(str(e), int(t)) for e, t in doc["windows"]]
+    if len(set(want)) != len(want):
+        raise SystemExit(f"[refav1_arm] ⛔ {window_list}: duplicate (episode, t) "
+                         f"pairs — {len(want) - len(set(want))} of {len(want)}")
+    have = {(ld.names[ei], t): wi for wi, (ei, t) in enumerate(ld.windows)}
+    missing = [w for w in want if w not in have]
+    if missing:
+        raise SystemExit(
+            f"[refav1_arm] ⛔ {window_list}: {len(missing)} of {len(want)} "
+            f"requested windows are not on this loader's grid; first five "
+            f"{missing[:5]} — refusing rather than silently thinning the panel")
+    sel = sorted((have[w] for w in want))
+    return ([(wi, ld.windows[wi][0], ld.windows[wi][1]) for wi in sel],
+            {"path": window_list,
+             "sha256": hashlib.sha256(blob).hexdigest(),
+             "rule": str(doc.get("rule", "<no rule declared>")),
+             "n_requested": len(want), "n_selected": len(sel)})
+
+
+# --------------------------------------------------------------------------- #
 # nav shuffle                                                                  #
 # --------------------------------------------------------------------------- #
 def shuffle_nav(nav: np.ndarray, valid: np.ndarray, seed: int):
@@ -655,10 +706,15 @@ def run_dump(a) -> dict:
            f"{STEER_WHEELBASE_M}*kappa). NUMBERS ARE NOT COMPARABLE to a "
            f"kappa-unit run.")
     stride = max(1, int(a.window_stride))
-    sel = [(wi, ei, t) for wi, (ei, t) in enumerate(ld.windows)
-           if (t - (ld.W - 1)) % stride == 0]
+    sel, wlist_meta = select_windows(ld, stride,
+                                     getattr(a, "window_list", None))
     if not sel:
         raise SystemExit("[refav1_arm] the stride selected zero windows")
+    if wlist_meta is not None:
+        _p(f"[window-list] {wlist_meta['n_selected']} windows from "
+           f"{wlist_meta['path']} sha256={wlist_meta['sha256'][:16]} "
+           f"rule={wlist_meta['rule'][:70]!r} "
+           f"(--window-stride IGNORED)")
     # ---- nav for every selected window (the loader's own table), then shuffle
     nav_true = np.zeros(len(sel), dtype=np.int64)
     nav_valid = np.zeros(len(sel), dtype=bool)
@@ -961,6 +1017,19 @@ def run_dump(a) -> dict:
                         gkh = float(_G["yaw_rate"].mean(1)
                                     / _G["speed"].mean(1).clamp_min(0.5))
                     tp = time.time()
+                    # ⭐⭐ THE THREE LONGITUDINAL LEVERS, all OFF by default
+                    # and all fed from `ext` -- the SAME measured (a0, kappa0)
+                    # `ha0_ext` holds, i.e. a backward difference of past
+                    # speeds closing at t0 with NOTHING from the future
+                    # (`hold_ext_controls`). Admissible at T1 under the PI
+                    # ruling of 2026-09-02 on the measured state at cycle time;
+                    # strictly LESS information than `ha`, which holds the last
+                    # observed ACTION.
+                    _a0 = float(ext[0])
+                    a_sustain = (_a0 if getattr(a, "a_sustain_mode",
+                                              "none") == "a0" else None)
+                    jerk_seam = (_a0 if getattr(a, "jerk_seam", "off")
+                                 == "a0" else None)
                     # ⭐ the planner->model crossing travels with the call:
                     # the candidate stays curvature, the MODEL is fed
                     # arctan(L_enc*kappa) when `rec_units == "steer"`.
@@ -974,6 +1043,8 @@ def run_dump(a) -> dict:
                                      seed_kappa_ladder=seed_kappa_ladder,
                                      goal_kappa_levels=gk_levels,
                                      goal_kappa_hint=gkh,
+                                     a_sustain=a_sustain,
+                                     jerk_seam_a0=jerk_seam,
                                      goal_keeps_seed=gks)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
@@ -995,6 +1066,47 @@ def run_dump(a) -> dict:
                         # a result that does not carry it back was produced by
                         # an older plan() and would be banked under the wrong
                         # arm name — the same trap as the cost flags above.
+                        # ⛔ AND THE THREE LONGITUDINAL LEVERS MUST HAVE
+                        # REACHED plan() TOO. Same trap as the cost flags
+                        # above: a stack that silently ignores a kwarg would
+                        # bank a SHIPPED-vocabulary arm under a lever's name,
+                        # which is the one failure this whole package exists to
+                        # avoid. `w_vend_armed` is checked explicitly because
+                        # its absence is exactly what made the third weight a
+                        # dead term unnoticed for the whole programme.
+                        if getattr(a, "a_sustain_mode", "none") != "none":
+                            got_s = getattr(res, "a_sustain", "__absent__")
+                            if got_s in ("__absent__", None):
+                                raise RuntimeError(
+                                    "plan() returned a_sustain=%r for "
+                                    "--a-sustain-mode %s: the flag did not "
+                                    "reach it (stale stack)"
+                                    % (got_s, getattr(a, "a_sustain_mode",
+                                                      "none")))
+                        if getattr(a, "jerk_seam", "off") != "off":
+                            got_j = getattr(res, "jerk_seam_a0", "__absent__")
+                            if got_j in ("__absent__", None):
+                                raise RuntimeError(
+                                    "plan() returned jerk_seam_a0=%r for "
+                                    "--jerk-seam %s: the flag did not reach it"
+                                    % (got_j, getattr(a, "jerk_seam",
+                                                      "off")))
+                        # ⛔ W_VEND MUST STAY DEAD IN THIS TOOL. `target_speed`
+                        # is not passed by design: `tests/test_steer_conversion
+                        # _complete.py::test_C1_no_production_plan_call_site_
+                        # passes_target_speed` pins the CALL SITE, and its own
+                        # docstring reserves arming T4 as a PI decision. So the
+                        # third entry of every `--cost-weights` triple this tool
+                        # has ever banked contributed EXACTLY ZERO cost -- which
+                        # also means the 643x W_VEND difference between the
+                        # shipped and A/B triples is a difference in a number
+                        # that is never read, not a confound. Asserted here so a
+                        # future edit that arms it cannot pass unnoticed.
+                        if getattr(res, "w_vend_armed", None) is True:
+                            raise RuntimeError(
+                                "plan() reports w_vend_armed=True: this tool "
+                                "must never arm T4 (test_C1 pins the call "
+                                "site; arming it is a PI decision)")
                         got_b = getattr(res, "lat_logit_bias", "__absent__")
                         want_b = (None if lat_logit_bias is None else
                                   [float(x) for x in lat_logit_bias])
@@ -1132,7 +1244,9 @@ def run_dump(a) -> dict:
         "tool": "taniteval/tools/refav1_arm.py",
         "model": prov,
         "grid": {"dt_s": DT, "horizon_k": k, "wm_k": k_wm, "window": ld.W,
-                 "window_stride": stride, "n_windows": n_done,
+                 "window_stride": (stride if wlist_meta is None
+                                   else "IGNORED (--window-list)"),
+                 "window_list": wlist_meta, "n_windows": n_done,
                  "n_episodes": len(episodes_manifest),
                  "n_episodes_available": len(episode_names(a.cache))},
         "arms": arms, "tiers": {x: ARM_TIERS[x] for x in arms},
@@ -1151,6 +1265,14 @@ def run_dump(a) -> dict:
             "source": ("CLI override (--lat-logit-bias)" if lat_logit_bias
                        is not None else "plain argmax (legacy path)"),
             "kamm_mu": getattr(a, "kamm_mu", None),
+            # the longitudinal levers, so a dump says which vocabulary and
+            # which cost geometry produced it
+            "a_sustain_mode": getattr(a, "a_sustain_mode", "none"),
+            "jerk_seam": getattr(a, "jerk_seam", "off"),
+            # W_VEND is a DEAD TERM in this tool by design (test_C1 pins the
+            # call site; arming it is a PI decision). Recorded so a reader of a
+            # banked cost triple knows its third entry never bound.
+            "w_vend_armed": False,
             "kamm_note": (
                 "speed-dependent curvature cap |kappa| <= mu*g/v^2 inside "
                 "_clip; None = the shipped CONSTANT kappa_max"),
@@ -2293,7 +2415,41 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
 # --------------------------------------------------------------------------- #
 # CLI                                                                          #
 # --------------------------------------------------------------------------- #
+def _survive_a_narrow_console() -> str | None:
+    """⛔ A HELP STRING IS CODE, AND THIS FILE'S HELP STRINGS CARRY ``⛔``/``⚠️``.
+
+    MEASURED 2026-09-05 on the dev box: ``refav1_arm.py --help`` exits **1** with
+    ``UnicodeEncodeError: 'charmap' codec can't encode character '\\u26d4'``,
+    because a default Windows console is **cp1252** and argparse writes the whole
+    help text in one call. **Nine** pre-existing help strings carry a marker, so
+    the failure is not one typo. Every RUNNING arm is fine — the queue scripts set
+    ``PYTHONIOENCODING=utf-8`` — which is exactly why this stayed invisible: it
+    surfaces only when an operator asks for help or mistypes a flag, i.e. at the
+    worst possible moment to be handed a traceback.
+
+    ⚠️ Sibling of the ``%`` defect logged in `M30` §4, one layer down: that one
+    broke help through argparse's FORMATTER, this one through the STREAM. Fixing
+    the formatter did not fix the stream, and the same command still died.
+
+    ⇒ Degrade the markers instead of dying. On a stream that can already encode
+    them **nothing changes**, so no log and no banked record moves.
+    """
+    enc = getattr(sys.stdout, "encoding", None)
+    try:
+        "⛔⚠️⭐—".encode(enc or "ascii", errors="strict")
+        return None
+    except (UnicodeEncodeError, LookupError, TypeError):
+        pass
+    for s in (sys.stdout, sys.stderr):
+        try:
+            s.reconfigure(errors="backslashreplace")
+        except Exception:                                        # noqa: BLE001
+            pass
+    return str(enc)
+
+
 def main(argv=None):
+    _narrow = _survive_a_narrow_console()
     ap = argparse.ArgumentParser(
         description="refav1 T0/T1 eval adapter (writes a t1_eval-compatible dump "
                     "+ a decisions sidecar; analyses both).")
@@ -2313,6 +2469,15 @@ def main(argv=None):
     ap.add_argument("--episodes-n", type=int, default=0,
                     help="first N episodes of the sorted cache (0 = all)")
     ap.add_argument("--window-stride", type=int, default=1)
+    ap.add_argument("--window-list", default=None,
+                    help="JSON {'windows': [[episode_name, t], ...], 'rule': "
+                         "str} naming an explicit, externally computed window "
+                         "selection. OVERRIDES --window-stride. Omitting it is "
+                         "bit-identical to every banked arm. Use it when a "
+                         "STRATUM must be enriched: a stride cannot, and a "
+                         "recall on 11 windows resolves only to 1/11 = 0.0909, "
+                         "coarser than the 0.0750 absolute inference-seed floor "
+                         "it is compared against.")
     ap.add_argument("--action-units", choices=("kappa", "steer"), default="kappa",
                     help="unit of v2ep actions[:,0] as this run READS it. "
                          "'kappa' (default) = the LEGACY, unconverted reading "
@@ -2383,6 +2548,35 @@ def main(argv=None):
                     help="speed (m/s) below which the constant kappa_max governs "
                          "(default 2.0); mu*g/v^2 exceeds the clip there anyway "
                          "and the division is ill-conditioned")
+    ap.add_argument("--a-sustain-mode", choices=("none", "a0"), default="none",
+                    help="THE LONGITUDINAL VOCABULARY LEVER (D-REFAV1-LON-VOCAB). "
+                         "'none' is the shipped path, BIT-IDENTICAL to every arm "
+                         "banked before 2026-09-05. 'a0' gives the goal's MAINTAIN "
+                         "branch (v_t == v0: CRUISE always, ADAPT_SPEED_FOR_CURVE "
+                         "below GOAL_CURVE_VMAX_MPS) a CONSTANT acceleration equal "
+                         "to the MEASURED a0 at t0 -- the same backward difference "
+                         "of past speeds ha0_ext holds, no future. MEASURED reason "
+                         "(raw/lon_branch.txt, n = 40 windows, ckpt 21109): the "
+                         "maintain branch is 31/40 windows (77.5 %%) and 20/24 "
+                         "(83.3 %%) of the GT-LON stratum, and on it the shipped "
+                         "goal commands a == 0 EXACTLY; the vocabulary's reachable "
+                         "dv over 2 s is [-2.85, +0.98] m/s against a corpus p90 of "
+                         "+2.34, so 14 of the 17 accelerating windows (82.4 %%) are "
+                         "outside it entirely. THIS IS A VOCABULARY CHANGE: it "
+                         "moves the goal field the plan is scored against, so it is "
+                         "NOT window-comparable with a shipped-vocabulary arm on "
+                         "the goal term -- it is comparable on the four families")
+    ap.add_argument("--jerk-seam", choices=("off", "a0"), default="off",
+                    help="PRICE THE JERK SEAM (D-REFAV1-LON-COST). The shipped "
+                         "jerk term diffs the plan's OWN actions only, so the step "
+                         "from the car's measured a0 to controls[0] is FREE: "
+                         "dropping instantly from a0 = -2.3 m/s^2 to a = 0 costs "
+                         "the same as continuing smoothly, and the all-zero plan is "
+                         "the joint minimiser of both regularisers. 'a0' prepends "
+                         "the measured a0 as the (-1)-th action so the seam is "
+                         "priced with the SAME w_jerk -- a repair of an incomplete "
+                         "term, not a new weight. 'off' is bit-identical to every "
+                         "pre-2026-09-05 arm")
     ap.add_argument("--seed-kappa-ladder", default=None,
                     help="comma-separated SUSTAINED curvature magnitudes "
                          "(1/m) to add to iCEM's iteration-0 candidate pool, "
@@ -2447,6 +2641,11 @@ def main(argv=None):
                     help="analyse WITHOUT a lead block (distance-keeping stays "
                          "UNAVAILABLE with its reason — a WORK ITEM, not a pass)")
     a = ap.parse_args(argv)
+    if _narrow:
+        _p(f"[console] stdout encoding is {_narrow!r}, which cannot represent "
+           f"this tool's markers; they are backslash-escaped for this run. Set "
+           f"PYTHONIOENCODING=utf-8 for readable output. (No banked number "
+           f"depends on this — see _survive_a_narrow_console.)")
     lead_path = None
     if not a.no_lead_block:
         lead_path = a.lead_block or (LEAD_BLOCK_DEFAULT if os.path.exists(LEAD_BLOCK_DEFAULT)
