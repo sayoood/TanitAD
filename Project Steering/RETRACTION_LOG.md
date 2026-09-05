@@ -13305,3 +13305,89 @@ made three arms unquotable. A second probe over the whole record found them at
 `refav1.manifest.plan_cfg.kamm_mu` and `…goal_rule.seed_kappa_ladder`; provenance
 is complete. **Class: absence at one location** — the same class this package
 retracted earlier the same day, which is precisely why the second probe was run.
+
+---
+
+## 2026-09-05 (later still) — "`combined` is the FIRST / ONLY refav1 arm with zero friction-circle violations": THE ARTIFACT WAS REGENERATED AND THE CLAIM WAS NOT RE-READ
+
+**RETRACTED, before it was quoted outside the programme, by the successor agent that
+was sent to run the arm this claim recommended.** The claim had already been reported
+to the PI.
+
+**What was written.** `RESULT.md` §7.8, titled *"`combined` — THE FIRST refav1 ARM
+WITH **ZERO** FRICTION-CIRCLE VIOLATIONS"*; its closing paragraph, *"the only
+zero-violation arm"*; and the register row `D-REFAV1-CG-ZEROVIOL`, *"`combined` IS THE
+FIRST refav1 ARM WHOSE PLANS ARE ENTIRELY INSIDE THE TYRE'S FRICTION CIRCLE"*. §7.8's
+own table printed `wk15  kamm_over_rate  (not run)`.
+
+**What is true.** MEASURED `assert_feasible` (`tanitad.refs.feasible_decode`),
+`v0 >= 2 m/s`, n = 27 — `raw/feas_audit_all.txt`, generated **22:28**, and re-derived
+at 23:0x by a **second, independent invocation** of `feas_audit.py` that agrees to
+four decimals: **four** arms read `kamm_over_rate` **0.0000**, not one.
+
+| arm | `kamm_over` | `max\|a\|` | `max\|kappa\|` | `peak_g` max | turn_L recall | turn_R recall |
+|---|---|---|---|---|---|---|
+| `g` GT (CONTROL, must be 0) | 0.0000 | 3.016 | 0.1701 | 0.373 | — | — |
+| `cos_wk` | 0.0000 | **0.000** | **0.0000** | **0.000** | — | — |
+| `wk15` | **0.0000** | 1.500 | 0.0800 | 0.332 | **0.0000** of 11 | 0.5000 |
+| `wk151` | **0.0000** | 1.500 | 0.0166 | 0.158 | **0.0000** of 11 | **0.0000** of 8 |
+| `combined` | **0.0000** | 1.165 | 0.1505 | 0.618 | **0.3636** | **0.7500** |
+| `kamm07` (CONTROL, > 0) | 0.1481 | 0.947 | 0.1747 | 0.707 | 0.3636 | 0.6250 |
+| `ccos_argmax` (CONTROL, > 0) | 0.2963 | 1.091 | 0.2000 | 3.262 | 0.3636 | 0.7500 |
+| `ha0_ext` (CONTROL, > 0) | 0.1852 | 2.310 | 0.7672 | 1.436 | — | — |
+
+* `cos_wk`'s zero is **VACUOUS** — an all-zero path is trivially inside every friction
+  circle. That is the poisoned-floor-arm class already in `CLAUDE.md`, and it is why a
+  zero needs a **motion assertion** printed beside it.
+* `wk15` / `wk151`'s zeros are **non-degenerate but bought by not turning**: turn_left
+  recall **0.0000 of n_true = 11**, against a **0.0000 measured seed floor** on that
+  per-class statistic (`raw/seed_floor_ext_ccos.txt`) — the suppression is real.
+
+⭐ **The surviving claim is STRONGER than the withdrawn one, and that is the point of
+correcting it rather than deleting it:** `combined` is the **only** arm that reaches
+zero **while still turning** — turn recalls 0.3636 / 0.7500, identical to the uncapped
+`ccos_argmax`, at `peak_g` max 0.618 against its 3.262. The withdrawn version was a
+claim about a *rate*; the replacement is a claim about a *trade*, and only the second
+one distinguishes planning inside the circle from declining to turn.
+
+**ROOT-CAUSE CLASS: A NUMBER QUOTED FROM A STALE GENERATION OF A REGENERATED
+ARTIFACT — and the rename is what hid it.** The feasibility audit was regenerated
+under a **new file name**: `feas_audit.txt` (19:43, **two** arms — `ccos_argmax` and
+`cos_argmax`, verified) became `feas_audit_all.txt` (22:28, **ten** arms). §7.8's table
+row was carried from the old file, which is exactly why it says *"(not run)"* about an
+arm that had finished two hours earlier. **`RESULT.md` was finalised at 22:47 — 19
+minutes AFTER the artifact that refutes it was written, in the same directory.**
+
+This is the `MODEL_REGISTRY.md` family — *"this rule exists because prose lied to
+us"* — with the object swapped: not a summary quoted instead of the raw JSON, but
+**the right raw artifact quoted at the wrong generation**. It is also the sibling of
+the same package's earlier retraction: that one borrowed a floor from a *cousin
+metric*, this one borrows a rate from a *cousin file*. Both are "the operand looked
+right".
+
+⚠️ **Why the ordinary defences did not catch it.** The `0.0000` **was** bracketed by
+controls — a GT control at the known value and three arms non-zero in the same table —
+and that discipline is correct and stays. But a bracketing table answers *"is this zero
+real?"*, not *"is this zero unique?"*. **A superlative — "first", "only", "best" — is a
+claim about the WHOLE PANEL, and it is refuted by a single row the table did not
+include.** A control set is not a census.
+
+⇒ **THE DURABLE FIX, and it is cheap:**
+1. **A superlative must be computed over the panel, never asserted from the arms in
+   view.** If the word is *first* / *only* / *best*, the supporting table must contain
+   **every** arm, and an arm whose cell reads *"(not run)"* **voids the superlative**
+   until it is filled — that cell is the refutation waiting to happen, not a footnote.
+2. **Regenerate the evidence into the same artifact as the claim.**
+   `raw/seed_floor_ext.py` (new) prints the per-metric seed floor **and** the
+   `assert_feasible` rows into **one** table, so the floor and the rate a claim rests on
+   can no longer come from different generations of different files.
+3. **A zero on a safety rate carries its motion assertion** (`max|a|`, `max|kappa|`)
+   in the same row, so a `cos_wk`-style all-zero path cannot pass as a safety result.
+
+**Blast radius, bounded and stated:** `D-REFAV1-CG-ZEROVIOL` (headline corrected in
+place), `D-REFAV1-CG-LEVER-SPLIT` (*"the only zero-violation arm"* corrected), and
+`RESULT.md` §7.8 (title, table row, closing paragraph). The new row
+`D-REFAV1-CG-ZEROVIOL-SCOPE` carries the measurement. **Nothing else moves:** the
+`0.0000` itself reproduces, the ADE-freeness against `kamm07` is untouched, the L3-null
+explanation is untouched, and `D-REFAV1-CG-WK15` already recorded `wk15`'s turn
+suppression — the two facts had simply never been put in one table.

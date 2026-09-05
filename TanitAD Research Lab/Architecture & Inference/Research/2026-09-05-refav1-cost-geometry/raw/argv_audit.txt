@@ -1,0 +1,31 @@
+ARGV AUDIT -- written BEFORE launch, not after.
+The reference is the banked `combined` invocation; each new arm must
+differ in EXACTLY ONE token once the three identity tokens are set aside.
+
+REFERENCE CHECK vs rec_combined.json manifest: PASS
+  got  {'W_KAPPA': 0.0, 'W_VEND': 64.2971504241507, 'kamm_mu': 0.7, 'seed': 0, 'ladder': (0.002, 0.005, 0.01, 0.02, 0.04)}
+  want {'W_KAPPA': 0.0, 'W_VEND': 64.2971504241507, 'kamm_mu': 0.7, 'seed': 0, 'ladder': (0.002, 0.005, 0.01, 0.02, 0.04)}
+
+==== combined_seed1
+  ref  n_tokens=37
+  new  n_tokens=37
+  DIFF @26  under --plan-seed: '0' -> '1'
+  identity  --dump-dir  C:/Users/Admin/refav1_margin/p4out/dump_combined -> C:/Users/Admin/refav1_margin/p4out/dump_combined_seed1  (names the arm, not a variable)
+  identity  --out  C:/Users/Admin/refav1_margin/p4out/rec_combined.json -> C:/Users/Admin/refav1_margin/p4out/rec_combined_seed1.json  (names the arm, not a variable)
+  identity  --arm  refav1-21109-p4-combined -> refav1-21109-p4-combined_seed1  (names the arm, not a variable)
+  real differing tokens: 1  ["--plan-seed: '0' -> '1'"]
+
+==== bestlad
+  ref  n_tokens=37
+  new  n_tokens=37
+  DIFF @24  under --cost-weights: '0.0,0.0,64.29715042415070' -> '0.0,15.11245,64.29715042415070'
+  identity  --dump-dir  C:/Users/Admin/refav1_margin/p4out/dump_combined -> C:/Users/Admin/refav1_margin/p4out/dump_bestlad  (names the arm, not a variable)
+  identity  --out  C:/Users/Admin/refav1_margin/p4out/rec_combined.json -> C:/Users/Admin/refav1_margin/p4out/rec_bestlad.json  (names the arm, not a variable)
+  identity  --arm  refav1-21109-p4-combined -> refav1-21109-p4-bestlad  (names the arm, not a variable)
+  real differing tokens: 1  ["--cost-weights: '0.0,0.0,64.29715042415070' -> '0.0,15.11245,64.29715042415070'"]
+
+VERDICT
+  combined_seed1   PASS  (1 real diff)
+  bestlad          PASS  (1 real diff)
+  reference       PASS
+  OVERALL         PASS
