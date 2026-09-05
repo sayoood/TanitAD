@@ -55,7 +55,7 @@ than its trainable-parameter count suggested.
 |---|---|
 | **a feasibility REWARD** (`feasibility x4` moves ρ(reward, envelope) by **0.001**) | additive and out-votable inside a weighted sum; this is a **constraint on the representable set** |
 | **a post-train VETO** (closed **~2.7 %** of the gap, regressed T1 `ade_m` **+0.0362 separated**) | soft — it penalises a path the decode can still emit; this removes the ability |
-| **the top-2 kinematic GATE** (a sibling stream, `sel_envelope` −31 %) | a selection rule closes **0.00 %** of the fan-level gap — a structural zero — and its ceiling on the driven path is `sel_env` ≈ 0.06. **They compose; neither replaces the other.** |
+| **the top-2 kinematic GATE** (the sibling stream, RESOLVED SUCCESS while this ran: `sel_envelope` **0.1075 → 0.0775 / 0.1100 → 0.0900** on two episode-disjoint 400 w draws, `ade_m` not separated, **T1 NOT RUN** — the 4060 was saturated) | a selection rule closes **0.00 %** of the FAN-level gap — a structural zero — and its ceiling on the driven path is `sel_env` ≈ 0.06, which it cannot cross because it only ever picks among the 128 candidates already emitted. **They compose on different objects and neither replaces the other:** the gate picks a better candidate, the projection removes what remains — and this package reaches T1 without GPU because its lever is a deterministic function of a banked rollout. |
 
 ---
 
@@ -304,9 +304,13 @@ held stopped step can contribute.
 1. **Run the in-decoder arm** (`feasible_decode=True` through `refcv3_arm.py`) when the 4060 frees:
    it is the only way to see whether a selector ranking *projected* geometry beats one ranking raw
    geometry. ~1.5 h, 0 pod-hours.
-2. **Compose with the sibling's top-2 kinematic gate.** They act on different objects — the gate
-   picks a better candidate (`sel_peak_g` → 0.106), the projection removes what remains (`sel_env`
-   → 0.0000, which the gate's own ceiling of ≈0.06 cannot reach). Neither is a substitute.
+2. **Compose with the sibling's top-2 kinematic gate**, now RESOLVED SUCCESS on all four of its
+   committed clauses (`…/2026-09-05-kinematic-gate/RESULT.md`). They act on different objects — the
+   gate picks a better candidate (`sel_envelope` −0.0300 / −0.0200 separated on two
+   episode-disjoint draws), the projection removes what remains (`sel_env` → **0.0000**, which the
+   gate's own ceiling of ≈0.06 structurally cannot reach). ⭐ **And the gate's T1 was NOT RUN** (the
+   4060 was saturated all session) while this lever reached T1 with zero GPU, so the composed arm's
+   cheapest route is to derive the gated-then-projected `os` from the same banked base dump.
 3. **Project the 2–6 s tail on its own 1 s grid**, and re-read the 6 s families.
 4. **A longitudinal PAIR for `progress`** — P1, P1b and P1c together say no reshaping of a single
    scalar clears both bars on this fan. Scoped, not started.
