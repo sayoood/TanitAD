@@ -806,3 +806,88 @@ result that is NOT quoted because its known-answer control failed at 3.17e-2 m."
 ⇒ **That is precisely the pair this rule was written to produce**: keep going after a refutation,
 **and refuse to quote a spectacular number whose control failed.** It is the clearest evidence so far
 that Rule Zero can be followed without loosening anything.
+
+## M25. refcv5 is CODE-COMPLETE and VALIDATED — **NO-GO on four blockers, none of them code** — and a dead flag one level deeper than any so far
+
+### 1. ⛔⛔ `--agent-w-ground` COMPUTES A TAUTOLOGY. The term runs, and is zero by construction.
+
+MEASURED: `ground_range_prior` projects a foot at rig `z = 0` and back-projects onto
+`z = ROAD_PLANE_Z_M`, **which is 0.0** — exact inverses, so `r_back == r_pred` **by
+construction**. Loss **2.61e-08**, gradient **8.73e-11**.
+
+⇒ An arm would **train, converge, stamp the weight, add exactly zero**, and read afterwards as
+*"the ground prior does not help."*
+
+⭐⭐ **THIS IS A NEW AND DEEPER MEMBER OF THE DEAD-FLAG FAMILY, AND IT DEFEATS EVERY GUARD WE
+BUILT TODAY.** The four earlier ones were *the term is guarded out* — a flag set while the code
+path never executes, catchable by inspecting the guard. Here **the flag is set, the camera IS
+built, and the term DOES run.** No flag audit, no config-provenance assertion, no
+argparse-derived stamp can see it. ⇒ **Only a GRADIENT PROBE can.** It now refuses at startup,
+with a **same-breath positive control** — a flat control stops the run as INCONCLUSIVE, never as
+a pass.
+
+⇒ **RULE: a loss term earns its weight by producing a NON-ZERO GRADIENT on real data, asserted
+once at startup — not by appearing in the loss sum.** Same family as *"a flag that parses and
+does nothing is worse than a missing one"*, moved one level in: **a term that computes and
+cancels is worse than one that never runs**, because it survives every structural check.
+
+### 2. The per-clip camera is real, and its guard fired on its first run
+
+`agent_losses(cam=…)` now takes `None` · one `RigCamera` · **a per-ROW sequence**, resolved by a
+`RigCameraBank` keyed on `stable_episode_id(clip_id)` from the batch's new `agent_ep`, selected
+with the **same mask** as the targets. `config.json` stamps `mount_pose_scope`
+(`PER-CLIP` / `SINGLE-CAMERA-WHOLE-CORPUS` / `NONE`), and an uncovered corpus **refuses** unless
+accepted by name. Controls: **B identical cameras reproduce the single-camera path to < 1e-12**
+(so no banked arm shifts), and a mixed batch lands **strictly between** two mount heights (so
+`cams[b]` is genuinely read). Root-cause class **C28** — *a constant where the quantity is
+per-clip*.
+
+⭐ **`build_rig_extrinsics_table.py` covered 2,400/2,400 parity clips, and its clip-set assertion
+against `parity_manifest.json` FIRED ON THE FIRST RUN**: `r0_selection.parquet` holds **500**
+clips, and a table built over those would have supplied cameras **for a different corpus** —
+silently, and with every downstream number looking fine. *Parity is sacred, and this is what
+enforcing it looks like in code rather than in prose.*
+
+⚠️ **Camera height is MEASURED on parity for the first time: 1.2131–1.6672 m, 554 distinct values
+across 2,400 clips** — refuting **both** prior bands (12-clip and 40-clip) **at both ends**. The
+stream retracted its own sentence from an hour earlier (*"1.22 m is below every observed
+minimum"* — false on parity) and logged the class: **a small-sample extremum quoted as a bound.**
+
+### 3. The standing blocker is REFUTED — absence had been found at one location
+
+*"No parity-corpus episode source on this box"* has gated refcv5 for days. MEASURED: the complete
+**85.00 GB** v2 cache is **on HF**, the join is **on this box**, md5 exact. ⭐ And it was priced on
+**the consumer's loader**, not on the 349 GB raw epcache — the `DE-C152` rule applied correctly,
+which is the difference between an 85 GB move and a "1.38 TB wall".
+
+### 4. Validation: `V-RC5-READY` passes all five gates
+
+SPEC banked **before** any arm ran. **Four deliberate regressions refused before a checkpoint
+existed**; the **converse control was NOT refused** (so the guard is not over-broad — the check
+that makes a refusal evidence rather than a blanket); and the **replicate arm is byte-identical**.
+Preflight `refcv5_preflight.py`: **14 PASS / 1 FAIL / 2 INCONCLUSIVE**, INCONCLUSIVE counted as
+failure. Parity digest MATCH · join **2,308/2,400 on the stable id, 0 legacy-only** · per-clip
+cameras **2,400/2,400** · **18/18 knobs stamped**.
+
+### 5. ⛔ GO/NO-GO: **NO-GO.** Four blockers, and the split matters
+
+| # | blocker | whose |
+|---|---|---|
+| 1 | **a GPU.** The only live pod is training refcv4b (**67.4 %**, ~10 h left); five legacy pods refuse connections | ⛔ **PI — spend** |
+| 2 | the **85.00 GB** cache moved onto it (~12 min HF→pod) | mechanical, no decision |
+| 3 | an **`anchors.pt` with DECLARED units** — without one the run silently falls back to the synthetic default (oracle-in-vocabulary **1.0882 m** vs **0.3796 m**) | work item — build it |
+| 4 | **v7.2 supervision covers 190/2,400 = 7.92 % of parity**, against the trainer's own **50 %** floor | ⛔ **PI — ruling, or a label build** |
+
+⭐ **On (4), my recommendation is the parity-scoped label build, not the kin3 fallback.** At 7.92 %
+coverage the TACTICAL and STRATEGIC families would be computed on **one twelfth** of the corpus —
+and today's most expensive lesson is that a family which is *thin or absent* in the record is worse
+than one that fails, because it reads as fine. The STRATEGIC family was silently missing from
+**every refcv3 eval for its whole life**. Starting refcv5's first real arm with 8 % tactical and
+strategic coverage would manufacture exactly that shape: three families that look healthy and two
+that are statistically empty. ⚠️ Note also that the trainer already carries a **50 % floor**, i.e.
+someone has already ruled that 8 % is not enough — running under it would be overriding a
+committed guard, which needs to be a decision and not a default.
+
+⚠️ **Operational note worth keeping:** a docstring edit was **silently reverted between writing and
+committing**, caught only by the end-of-turn marker check whose control read 6. That is the
+*"a commit is not a latch"* class, observed live again.
