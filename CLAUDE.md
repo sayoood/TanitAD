@@ -94,6 +94,18 @@ and *`overlapping_holdout_se` biases the point estimate* — with the object swa
 estimator is correct and its **question** is narrower than the claim being hung on it. Registered
 as `H-ESTIM-SEED-1`; instrument `…/2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md`.
 
+⛔⛔ **AND ON A STOCHASTIC PLANNER THERE IS A THIRD VARIANCE THE SAME INTERVAL IS
+BLIND TO — INFERENCE.** MEASURED 2026-09-05 on refav1: iCEM **samples**, so **the same
+checkpoint evaluated twice does not give the same answer** — no retraining involved — and
+this rig's **seed floor is ≈0.30 m ADE**, while *"the programme has been comparing
+single-seed arms"* (`D-REFAV1-SEED-GOAL-MISMATCH`). ⇒ **Three different questions ride on
+one interval:** *would another draw of EPISODES say this?* (what the bootstrap actually
+answers), *would another TRAINING RUN say this?* (`H-ESTIM-SEED-1`), and *would another
+INFERENCE RUN say this?* (this one). **Name which one your separated CI has answered.**
+⇒ For any arm whose planner samples, a replicate must vary the **inference** seed, and an
+effect smaller than that floor is not an effect. *(The refav1 A/B's +0.8927 m ADE clears it
+at 11.2× and is reported that way; a 0.2 m "win" on that rig would not have been one.)*
+
 ## Briefing a subagent — the contract
 
 Every subagent brief MUST carry the preamble in
