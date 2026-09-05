@@ -516,13 +516,17 @@
    "sha256": "6ad4f8a379494eeb099cf7d489b75bec1c0ec3321428bcd0b0ca0f05662b8600",
    "banked": "2026-08-21",
    "tags": [
+    "diffusiondrive",
     "driving",
+    "ego-input",
     "input-pipeline"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
   "2603.14482": {
@@ -2264,12 +2268,14 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "ego-input",
     "input-pipeline",
     "nuscenes"
    ],
    "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2302,11 +2308,13 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline"
    ],
    "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2330,10 +2338,12 @@
    "tags": [
     "anti-echo-control",
     "benchmark-portfolio",
-    "benchmarks"
+    "benchmarks",
+    "ego-input"
    ],
    "note": "PDM CoRL2023: the planner and scoring function PDMS is named after | PDM: open-loop ego-forecasting and closed-loop planning fundamentally misaligned; best open-loop uses ONLY centerline; rule-based PDM-Closed wins closed-loop nuPlan",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2397,12 +2407,14 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline",
     "nuscenes"
    ],
    "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ]
@@ -2469,12 +2481,14 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline",
     "nuscenes"
    ],
    "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ]
@@ -2506,11 +2520,13 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline"
    ],
    "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2563,10 +2579,14 @@
    "sha256": "33cf828e4a5cb7e9ae271883ce8cd2fd0596df59623f2b4d7e8492b61996e897",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "diffusiondrive",
+    "ego-input"
    ],
-   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables",
+   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2621,10 +2641,12 @@
    "sha256": "04569f633b3ca9cff25f66b59be09a2838a9297a94a180a26bb252835b9dbeae",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "ego-input"
    ],
    "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2649,10 +2671,12 @@
    "sha256": "0ed2f486728ac94f4e4dc9eabfe5bb76dbb80e69adbe1285867ac47bca4136a1",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "ego-input"
    ],
    "note": "VADv2: navtest PDMS 89.3; its EPDMS tables are mis-captioned and inadmissible as NavSim results",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2677,11 +2701,13 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline"
    ],
    "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2711,6 +2737,7 @@
     "benchmarks",
     "data-efficiency",
     "driving",
+    "ego-input",
     "input-pipeline",
     "open-loop-eval",
     "sota-2026-09-03",
@@ -2721,6 +2748,7 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2822,11 +2850,13 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "ego-input",
     "input-pipeline",
     "recovered-orphan"
    ],
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
    "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision",
@@ -3738,11 +3768,13 @@
    "sha256": "076ce47e0b0a323c9bb0072432e7f1219ccdcf645b8ff6db172f1bb9efb85023",
    "banked": "2026-08-29",
    "tags": [
+    "diffusiondrive",
     "refc-lineage"
    ],
-   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard",
+   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
    ]
   },
   "2507.04049": {
@@ -3769,11 +3801,13 @@
    "sha256": "bf2c358071fe3e5a83cb21968a5d700761337c46f74f7e51b3178a0a38d0678c",
    "banked": "2026-08-29",
    "tags": [
+    "diffusiondrive",
     "refc-lineage"
    ],
-   "note": "DIVER: reinforced-diffusion successor; navtest PDMS 88.3 @R34 (DDv2 Tab.1 official same-backbone)",
+   "note": "DIVER: reinforced-diffusion successor; navtest PDMS 88.3 @R34 (DDv2 Tab.1 official same-backbone) | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
    ]
   },
   "2504.19580": {
@@ -3856,11 +3890,13 @@
    "sha256": "4b81907b0a8ea7118e4922720f2e7d269d5cf00d3725e44fc6d25f49d02413f3",
    "banked": "2026-08-29",
    "tags": [
+    "diffusiondrive",
     "rl-posttrain"
    ],
-   "note": "DPPO: the two-layer MDP that DDv2 cites (ref [38]) for treating the denoising chain as an MDP; diffusion-policy RL fine-tuning, PPO on the denoising MDP.",
+   "note": "DPPO: the two-layer MDP that DDv2 cites (ref [38]) for treating the denoising chain as an MDP; diffusion-policy RL fine-tuning, PPO on the denoising MDP. | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
    ]
   },
   "2305.13301": {
@@ -6754,11 +6790,13 @@
    "sha256": "ab74aeb623c4adaaf7bf54dcc734402e56447339641f8aaf1fbb0c497fe7197c",
    "banked": "2026-08-30",
    "tags": [
+    "ego-input",
     "input-pipeline"
    ],
    "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
   "2504.04338": {
@@ -9393,11 +9431,13 @@
    "sha256": "6dd6c2fb57bb35caa44b9115b87f2dae38654d8726a7a03d66c3946d8b529ab0",
    "banked": "2026-09-03",
    "tags": [
+    "ego-input",
     "refc-ego"
    ],
    "note": "PlanTF: State Dropout Encoder — per-scalar ego-state tokens, position/heading EXEMPT from dropout; rate ablation p=0.25/0.50/0.75, best closed-loop at 0.75",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
   "2408.03601": {
@@ -9425,11 +9465,13 @@
    "sha256": "2bb85df0c9b10472a883df24dcb82d0d5fca5e10a4c70cb37756b084b0c7c996",
    "banked": "2026-09-03",
    "tags": [
+    "ego-input",
     "refc-ego"
    ],
    "note": "DRAMA: Feature State Dropout on NAVSIM PDMS - ego-state rate 0.5 vs sensor-fusion 0.1, 0.835->0.848 PDMS",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
   "2606.14438": {
@@ -9528,11 +9570,13 @@
    "sha256": "b37e5977a1d7086f11c467a4aa50358934fc6b10466aa6da00ef0f9472434527",
    "banked": "2026-09-03",
    "tags": [
+    "ego-input",
     "refc-ego"
    ],
    "note": "PLUTO: reuses PlanTF State Dropout Encoder; +2.60 nuPlan score from SDE alone",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   },
   "2409.18341": {
@@ -10509,6 +10553,40 @@
    ],
    "note": "re-indexed 2026-09-05 after library.json was zeroed by a dying agent; PDF was already on disk",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
+   ]
+  },
+  "2506.06664": {
+   "key": "2506.06664",
+   "kind": "arxiv",
+   "title": "Generalized Trajectory Scoring for End-to-end Multimodal Planning",
+   "authors": [
+    "Zhenxin Li",
+    "Wenhao Yao",
+    "Zi Wang",
+    "Xinglong Sun",
+    "Joshua Chen",
+    "Nadine Chang",
+    "Maying Shen",
+    "Zuxuan Wu",
+    "Shiyi Lan",
+    "Jose M. Alvarez"
+   ],
+   "published": "2025-06-07",
+   "abstract": "End-to-end multi-modal planning is a promising paradigm in autonomous driving, enabling decision-making with diverse trajectory candidates. A key component is a robust trajectory scorer capable of selecting the optimal trajectory from these candidates. While recent trajectory scorers focus on scoring either large sets of static trajectories or small sets of dynamically generated ones, both approaches face significant limitations in generalization. Static vocabularies provide effective coarse discretization but struggle to make fine-grained adaptation, while dynamic proposals offer detailed precision but fail to capture broader trajectory distributions. To overcome these challenges, we propose GTRS (Generalized Trajectory Scoring), a unified framework for end-to-end multi-modal planning that combines coarse and fine-grained trajectory evaluation. GTRS consists of three complementary innovations: (1) a diffusion-based trajectory generator that produces diverse fine-grained proposals; (2) a vocabulary generalization technique that trains a scorer on super-dense trajectory sets with dropout regularization, enabling its robust inference on smaller subsets; and (3) a sensor augmentation strategy that enhances out-of-domain generalization while incorporating refinement training for critical trajectory discrimination. As the winning solution of the Navsim v2 Challenge, GTRS demonstrates superior performance even with sub-optimal sensor inputs, approaching privileged methods that rely on ground-truth perception. Code will be available at https://github.com/NVlabs/GTRS.",
+   "url": "https://arxiv.org/abs/2506.06664",
+   "path": "TanitAD Research Lab/Library/papers/2506.06664_Generalized-Trajectory-Scoring-for-End-to-end-Multimodal-Pla.pdf",
+   "bytes": 1672617,
+   "sha256": "8ecd35af11b94ef62e3618669f55058f29b443ef8468fb90c93d83d8f12dc6da",
+   "banked": "2026-09-05",
+   "tags": [
+    "diffusiondrive",
+    "ego-input",
+    "vocabulary"
+   ],
+   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
    ]
   }
