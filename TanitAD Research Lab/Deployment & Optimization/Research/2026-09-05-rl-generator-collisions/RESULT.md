@@ -558,7 +558,61 @@ disagreement is intended, not drift.
 
 Registered as `D-RL-CTRL0-SEPFLOOR-1`.
 
-### 6.7 Still pending
+### 6.7 ⭐ THE VERDICT — all four arms landed, on a definition-matched null
+
+All four arms complete (`coll200` s0/s1, `ctrl0`, `ctrl_null` s1). **The definition-match guard
+passed on exactly the arm it was built for:**
+
+| BEFORE `fan_contact` | value | matches `coll200`? |
+|---|---|---|
+| `coll200` | 0.1341145833 | — |
+| **`ctrl_null` s1 (this panel, current code)** | **0.1341145833** | ⭐ **yes** |
+| `ctrl_null` s0 (banked, POINT definition) | 0.0974392361 | ⛔ **no** |
+
+⇒ §6.2's correction is **empirically validated**: had the verdict used the banked null it would
+have floored a swept-definition lever with a point-definition drift. `--null-dir` pointed at the
+matched arm. *(Instrument provenance: the verdict was produced by `analyze_veto.py`, md5
+`7dd4ed4d…`, bit-identical to the copy VERIFIED in HEAD at `b82713f2c…`.)*
+
+#### The primary endpoint
+
+| | Δ s0 | Δ s1 | replicate floor | zero-info null | **lever − null (s0)** |
+|---|---|---|---|---|---|
+| **`fan_contact`** | **−0.001693** *(sep)* | −0.001693 *(ns)* | 0.000000 | **+0.001042** | **−0.002734 [−0.005339, −0.000781] *(sep)*** |
+
+> ⛔ **FAILURE against the committed SUCCESS text.** SPEC §6 required `fan_contact` to decrease
+> **separated at BOTH seeds**. It is separated on **s0 only**, so `quotable_as_lever = False` and
+> the tool's verdict is **null**. Reported as written.
+
+⭐ **But the evidence is better than a bare null, and saying only "null" would be its own kind of
+misreport.** Three things point one way: the direction is the **same at both seeds**; the
+**zero-information arm drifts the OPPOSITE way** (+0.001042), so nuisance drift cannot be the
+explanation; and the **direct lever-minus-null contrast is −0.002734 and separated**. ⚠️ That
+contrast is **one seed**, so it is necessary and not sufficient — the same rule that failed the
+headline applies to it.
+
+#### The costs — replicated, but NOT cleanly attributable
+
+| | Δ s0 | Δ s1 | tool verdict | **contrast vs the dose-matched null** |
+|---|---|---|---|---|
+| `fan_peak_g_mean` (g) | +0.025303 | +0.040678 | **WORSENED** *(quotable_strict)* | +0.011247 [−0.001241, +0.024344] **ns** |
+| `fan_infeasible` | +0.002209 | +0.002489 | **WORSENED** *(quotable_strict)* | +0.001961 [−0.000280, +0.004005] **ns** |
+| `sel_peak_g` (g) | +0.023960 | +0.008523 *(ns)* | null | +0.022750 *(sep)* |
+
+⛔⛔ **This is the correction my earlier reading needed, and it cuts against my own framing.** I
+reported these as "the costs are replicated while the gain is not". They *are* replicated — but
+the **zero-information arm drifts `fan_peak_g_mean` +0.014056 in the SAME direction**, and the
+direct contrast against it is **not separated**. ⇒ **the friction and feasibility worsenings
+cannot be cleanly attributed to the collision reward**; a dose-matched arm carrying **no reward
+at all** produces a substantial part of them.
+
+⇒ **The honest three-line summary of this panel:**
+1. the arm **fails** its committed criterion, on the replicate;
+2. its **costs are replicated but not separable from the optimizer's own drift**;
+3. the **only quantity separated against the dose-matched null is `fan_contact` itself, in the
+   improving direction** — which is precisely the endpoint M39 has since retired by construction.
+
+### 6.10 Still pending — nothing
 
 **One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
 `coll200` differs from the already-banked `ctrl_null` in **the collision weight alone,
