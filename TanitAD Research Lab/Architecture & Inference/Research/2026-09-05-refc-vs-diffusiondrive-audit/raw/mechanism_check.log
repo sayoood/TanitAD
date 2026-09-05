@@ -1,0 +1,57 @@
+[env] {"tanitad_file": "C:\\Users\\Admin\\run_refcv3_viz\\repo\\stack\\tanitad\\__init__.py", "refc_py": "C:\\Users\\Admin\\run_refcv3_viz\\repo\\stack\\tanitad\\refs\\refc.py", "refc_py_md5": "b33656099fd3ace0e4ce17986aac16e1", "torch": "2.11.0+cu128", "cuda": "NVIDIA GeForce RTX 4060", "omp_threads": "6"}
+
+[B] ===== smoke-config structural checks (random init, CPU) =====
+  t_idx_trace_steps4: [0, 1, 2, 2, 2]
+  eval_deterministic_steps0: True
+  eval_deterministic_steps2: True
+  steps0_fan_equals_bank_plus_offset: True
+  has_anchor_bank_key(v4_tree): False
+  x_updated_pass1_mean_disp_m: 8.28966236114502
+  x_updated_pass2_mean_disp_m: 9.727811813354492
+  anchor_logits_identical_across_steps: True
+  refined_logits_differ_from_anchor_logits_at_steps2: True
+  decode_t0_vs_t2_conf_absdiff: 0.010681772604584694
+  decode_t0_vs_t2_offset_diff_m: 0.944456934928894
+  time_embed_rows: 3
+  time_embed_pairwise_l2: [[0.0, 7.656, 6.612], [7.656, 0.0, 7.79], [6.612, 7.79, 0.0]]
+  train_noise_std_pass1: 0.10297386348247528
+  train_noise_mean_pass1: 0.0009439245914109051
+  train_mode_nondeterministic: True
+  cfg_noise_std: 0.1
+  cfg_diffusion_steps: 2
+[A] time_embed rows 3 norms [20.1762, 19.9637, 19.4434] pairwise L2 [[0.0, 27.4445, 26.7427], [27.4445, 0.0, 28.9921], [26.7427, 28.9921, 0.0]]
+[A] 20 windows  7s  (0.35 s/window)  encodes=20
+[A] 40 windows  14s  (0.34 s/window)  encodes=40
+[A] 60 windows  20s  (0.33 s/window)  encodes=60
+[A] 80 windows  27s  (0.33 s/window)  encodes=80
+[A] 100 windows  33s  (0.33 s/window)  encodes=100
+[A] 120 windows  39s  (0.33 s/window)  encodes=120
+[A] 140 windows  47s  (0.33 s/window)  encodes=140
+[A] 160 windows  53s  (0.33 s/window)  encodes=160
+[A] 180 windows  60s  (0.33 s/window)  encodes=180
+[A] 200 windows  67s  (0.33 s/window)  encodes=200
+
+[A] ===== SUMMARY (trained refcv3 @ 40,284; nav_cmd=None; n_windows=201, n_clips=3) =====
+  steps=0: ADE0-6s 6.4152  ADE0-2s 3.1841  oracle-in-fan 3.9424  endpoint-spread 103.718 m  sel!=k0 0.000
+  steps=1: ADE0-6s 5.1530  ADE0-2s 2.1077  oracle-in-fan 3.0609  endpoint-spread 92.277 m  sel!=k0 0.144  per-pass disp 5.6831 m
+  steps=2: ADE0-6s 3.9272  ADE0-2s 0.6509  oracle-in-fan 1.7210  endpoint-spread 81.681 m  sel!=k0 0.109  per-pass disp 4.2841 m
+  steps=3: ADE0-6s 3.9920  ADE0-2s 0.9793  oracle-in-fan 1.7837  endpoint-spread 72.523 m  sel!=k0 0.119  per-pass disp 3.3009 m
+  steps=4: ADE0-6s 3.8730  ADE0-2s 0.9196  oracle-in-fan 1.7127  endpoint-spread 64.546 m  sel!=k0 0.114  per-pass disp 2.8216 m
+  steps=8: ADE0-6s 3.7271  ADE0-2s 0.9013  oracle-in-fan 1.6972  endpoint-spread 42.025 m  sel!=k0 0.124  per-pass disp 2.0356 m
+  ha0 (constant-velocity straight line) ADE0-6s 10.0348
+  classifier-pass |offset| mean 8.4093 m
+  _decode same x: |conf(t0)-conf(t2)| 0.5043  |off(t0)-off(t2)| 1.8102 m  (|off t0| 8.4093, |off t2| 8.4352)
+  t_idx FORCED 0 at steps=2: ADE 5.4095  fan diff vs k2 1.8602 m  sel agree 0.995
+  train-noise at eval (std measured 0.0994 vs cfg 0.1): ADE 3.9224  fan diff vs k2 0.0622 m  sel agree 0.997
+  t_idx trace for steps=8: [0, 1, 2, 2, 2, 2, 2, 2, 2]
+  paired ade_k0_minus_k2: +2.4880 (window-level SE 0.1045, n=201)
+  paired ade_k1_minus_k2: +1.2258 (window-level SE 0.0607, n=201)
+  paired ade_k4_minus_k2: -0.0542 (window-level SE 0.0493, n=201)
+  paired ade_k8_minus_k2: -0.2002 (window-level SE 0.0651, n=201)
+  paired ade_t0forced_minus_k2: +1.4823 (window-level SE 0.0585, n=201)
+  paired ade_noise_minus_k2: -0.0048 (window-level SE 0.0060, n=201)
+  paired ade_k2_minus_ha0: -6.1076 (window-level SE 0.4833, n=201)
+  paired oracle_k0_minus_k2: +2.2214 (window-level SE 0.0679, n=201)
+  paired oracle_k8_minus_k2: -0.0239 (window-level SE 0.0701, n=201)
+[done] wrote C:/Users/Admin/refc_dd_audit/mechanism_check.json
+EXIT=0
