@@ -248,8 +248,62 @@ Artifact: `raw/p6_graded_term_headroom.json`.
 
 ## 6. P4 — the collision lever at 200 steps, against BOTH floors
 
-⏳ **PENDING — arms running.** `coll200` s0 (trained, in AFTER readout), `coll200` s1, `ctrl0`
-(lr = 0, the zero-lever floor), `ctrl_null` s1 (zero-information).
+⏳ **PARTIAL — `coll200` s0 has landed; the replicate (s1), `ctrl0` and the definition-matched
+null are still running. ⛔ NOTHING IN §6.1 IS QUOTABLE YET** — `H-ESTIM-SEED-1` is explicit that
+a separated one-seed CI is **necessary and not sufficient**, and on this rig a *zero-lever*
+replicate separated 3 of 18 metrics with nothing moved.
+
+### 6.1 `coll200` seed 0 — the first time any arm has moved the generator's collision rate
+
+`veto_rate_mean` **0.0000** exactly (the veto really is off), `weights_changed` True,
+`final_loss` **0.02588** vs `ctrl_null`'s **0.04459**, 318.5 s, `components_fired.collision`
+**41 / 200**, `sel_idx_agreement_with_base` **1.000** (the selector picked the identical
+candidate in every window, so the fan moved underneath an unchanged selection).
+
+| metric | before | after | Δ s0 [CI] | sep |
+|---|---|---|---|---|
+| ⭐ **`fan_contact`** (PRIMARY) | 0.13411458 | 0.13259549 | **−0.001693** [−0.003646, −0.000260] | **yes** |
+| `top32_contact` | 0.03298611 | 0.03211806 | −0.001042 [−0.003125, **+0.000000**] | marginal (CI touches 0) |
+| `top8_contact`, `sel_contact` | 0.0 | 0.0 | +0.000000 | structural zero |
+| ⛔ `fan_peak_g_mean` (g) | 4.180896 | 4.211516 | **+0.025303** | **yes — WORSE** |
+| ⛔ `sel_peak_g` (g) | 0.194649 | 0.222833 | **+0.023960** | **yes — WORSE** |
+| ⛔ `fan_infeasible` | 0.894531 | 0.897070 | **+0.002209** | **yes — WORSE** |
+| `fan_unsafe` (contact ∨ ttc) | 0.428385 | 0.429036 | +0.000781 | no |
+| `R3` (sel-ADE 2 s, T0) | — | — | +0.006438 [−0.000141, +0.012912] | no |
+
+⇒ On one seed the collision reward **does** reduce the generator's collision rate — and buys it
+with a **separated** worsening of friction on both the fan **and the driven path**. That is the
+veto arm's trade mirrored: there, a constraint channel made the fan blander and the selected path
+more aggressive; here, a collision reward makes the fan safer on contact and more aggressive on
+friction. `fan_unsafe` — the aggregate that contains contact — **did not improve**.
+
+### 6.2 ⛔ THE BANKED ZERO-INFORMATION FLOOR IS NOT COMPARABLE, AND THE ARMS' OWN READOUTS SAID SO
+
+The panel's first act was a definition-match check between the lever and the banked null, and it
+**failed on exactly the family it should**:
+
+| BEFORE readout | `coll200` | banked `ctrl_null` | |
+|---|---|---|---|
+| `fan_contact` | **0.1341145833** | **0.0974392361** | ratio **1.3764** |
+| `fan_peak_g_mean` | 4.180895572900772 | 4.180895572900772 | **bitwise identical** |
+
+The **contact** family moved and the **friction** family did not — precisely the signature of a
+collision-definition change — and **1.3764 reproduces the independent SWEPT/POINT ratio 1.3782**
+measured in §1.2 on a *different* window set (36 lead windows of 120 vs 65 of 240). Two
+populations, two routes, three significant figures.
+
+⇒ The banked `s0/ctrl_null` was scored under the **POINT** definition; a POINT-definition drift is
+**~38 % too small** to floor a SWEPT-definition lever. The verdict is therefore computed with
+`--null-dir` pointed at **`s1/ctrl_null`, which this panel runs under the CURRENT code** —
+definition-matched and dose-matched (200 steps). The seed differs from the lever's, which is
+acceptable because the null is a **direction + magnitude** check and never a paired contrast; the
+veto package stated the same caveat for its own single-seed null.
+
+⭐ This is the `H-VETO-FAN-1` **G2 guard** (*"every arm's BEFORE readout bitwise identical"*)
+earning its place: it is normally a formality, and here it caught a silent cross-definition
+comparison that would have produced a floor 38 % too permissive on the package's primary endpoint.
+
+### 6.3 Still pending
 
 **One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
 `coll200` differs from the already-banked `ctrl_null` in **the collision weight alone,
