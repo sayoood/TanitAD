@@ -1247,3 +1247,79 @@ optimum while genuinely acting, and wins the turn stratum on ADE. **The lateral 
 exhausted**; the blocker is the **LONGITUDINAL family**, which no arm in this package addresses and
 which is the subject of the successor brief. `kamm07` (L4) at 3/8, `l3ladder` running, `combined`
 queued, with `HANDOFF.md` + `raw/finalize.sh` sufficient to land them.
+
+## M31. ⭐⭐⭐ CONSTRAINT BEATS PENALTY — measured, and it dissolves the left-turn asymmetry
+
+**`DESIGN_CONSTRAIN_BY_CONSTRUCTION.md` was written as a hypothesis and confirmed within the hour by
+an arm that was already running when I wrote it.** The prediction was: *"a penalty strong enough to
+prevent bad behaviour also prevents GOOD behaviour; a projection deletes the infeasible turn and
+leaves the feasible one untouched."*
+
+### 1. The safety axis — the only lever in the package that moves it
+
+`assert_feasible` at `v0 ≥ 2 m/s`, n = 27; the **ground-truth control reads `envelope 0.0000 /
+kamm_over 0.0000`**, so the block is admissible:
+
+| | `ccos_argmax` | **`kamm07`** (constraint) | ground truth |
+|---|---|---|---|
+| `kamm_over_rate` (μ = 0.7) | 0.2963 | **0.1481** | 0.0000 |
+| `peak_g` mean | 0.558 | **0.256** | 0.178 |
+| **`peak_g` max** | **3.262** | ⭐ **0.707 — equal to μ to tolerance** | 0.373 |
+| `max |κ|` | 0.2000 *(the clip)* | **0.174670** *(below it)* | 0.1701 |
+
+⭐ **`peak_g` max lands exactly on μ.** A constraint with units binds where its physics says it
+should — that is the signature of a constraint rather than a tuned penalty.
+
+### 2. ⭐⭐ It is FREE on the longitudinal family, where the penalty is separably worse
+
+| metric | `kamm07 − base` | `wk15 − base` (penalty) |
+|---|---|---|
+| `LON speed_mae` | **−0.0017 — inside its 0.0038 floor** | **+0.0764 WORSE**, 20× floor, separated |
+| `LON accel_mae` | **+0.0013 — inside its 0.0061 floor** | **+0.0874 WORSE**, 14× floor, separated |
+| `LAT yaw_rate` | −0.0676 [−0.1476, −0.0038] sep., 8.3× | −0.1571, 19×, sep. |
+| `ade_m` | −0.3344 [−0.9536, +0.0625] not sep. | **−0.4338** sep., 7.1× |
+
+### 3. ⭐⭐⭐ IT DISSOLVES THE LEFT/RIGHT ASYMMETRY — the asymmetry belongs to the PENALTY
+
+The PI asked for a wider panel to settle whether `wk15`'s left-turn collapse is real. **A different
+arm answered it structurally:**
+
+| | base | **`kamm07`** | `wk15` |
+|---|---|---|---|
+| TAC lat kappa | 0.3795 | **0.3644** *(inside the floor)* | 0.2611 |
+| **`turn_left` recall** | 0.3636 | ⭐ **0.3636 — IDENTICAL** | ⛔ **0.0000** |
+| **GT-turn ADE** | 0.9195 | ⭐ **0.9195 — IDENTICAL** | 0.9699 |
+
+⇒ **The constraint removes the curvature the tyre cannot deliver and leaves every turn DECISION
+untouched, bit-identically.** The penalty charges *every* curvature and pays for its accuracy by
+suppressing turning in general — left first.
+
+⇒ **The left-turn asymmetry is a property of the PENALTY, not of the corpus, the vocabulary, or the
+head.** ⚠️ The wider panel still runs — it settles whether the *penalty's* asymmetry is real at n —
+but the **fix is already identified and does not depend on that answer.**
+
+### 4. The residual, stated as a scope difference rather than a failure
+
+`kamm_over_rate` is **0.1481**, not 0. ⚠️ **The cap and the checker are not the same object:** the
+cap acts on the candidate's controls at plan time using its **own accel-integrated speed**, while
+`assert_feasible` re-derives `κ = a_lat / v_mid²` from the **rolled-out path** with `v_mid` floored at
+0.5 m/s. ⇒ closing that is a **work item with a named mechanism**, not an unexplained gap — and it is
+the same *"price the artifact the CONSUMER opens"* rule that has bitten this programme before.
+
+### 5. What this changes
+
+* ⭐ **`combined` (ladder + cap) is now clearly the right final arm** — their straight-window gains
+  differ (+0.1957 vs +0.4304 against `ha0_ext`), so they attack **different halves of the same 21
+  windows** and should compose rather than cancel. Queued behind `l3ladder` (7/8).
+* ⭐ **The design principle now has a second independent confirmation** — the friction *projection*
+  on refcv3 (96.87 % of the gap at 1.2 mm) and the friction *cap* on refav1 (peak_g 3.262 → 0.707,
+  free on longitudinal, tactical decisions bit-identical). **Two arms, two codebases, same shape.**
+* ⇒ **The collision projection now running is the third instance of the same design**, and its
+  prediction is sharper because of this: it should remove colliding candidates **without moving the
+  non-colliding ones at all** — which is exactly control #3 of its SPEC.
+
+⚠️ **Standing, unchanged and honestly scoped:** refav1 does not yet beat the floors overall — parity
+at the ladder optimum, a win on turns, and the **longitudinal family** still the blocker. ⭐ But that
+blocker is now the *only* one, it has a named mechanism (`ADAPT_SPEED_FOR_CURVE`'s canonical control
+is `a == 0`), and the lever that fixes it is predicted by this same principle: **representability,
+not penalty.**
