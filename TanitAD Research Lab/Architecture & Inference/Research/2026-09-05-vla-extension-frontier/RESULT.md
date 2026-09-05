@@ -1,6 +1,6 @@
 # VLA extension frontier research — a language backbone for the tactical and strategic layers of REF-C v5
 
-**status: IN PROGRESS — done: §0 (our architecture, the Alpamayo CoT we hold, Thor), §1 survey (58 primaries banked) / next: §2 design options, §3 grounding, §4 hypotheses, §5 traps, §6 manifest, plan (B)**
+**status: COMPLETE — §0 architecture · §1 survey (58 banked primaries) · §2 design options priced on Thor · §3 grounding + the fifth metric family · §4 `H-VLA-1..8` · §5 refusals · §6 manifest · §7 reconciliation with `REFCV5_DESIGN_PLAN.md` §9. Deliverable B is `Project Steering/REFCV5_VLA_EXTENSION_PLAN.md`. ⛔ Nothing here is trained; every latency figure is ESTIMATED until the plan's WP-0 measures Thor.**
 
 - **Agent:** TanitAD Research Lab (Architecture & Inference), time-boxed ~4 h, zero GPU, no sub-agents.
 - **Branch:** `agent/arch-inf-20260803`. **Date:** 2026-09-05.
