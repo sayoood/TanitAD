@@ -1,35 +1,44 @@
-# refcv5 BUILD — environment extraction from the front camera, emitted-fan scoring, control-space diffusion
+# refcv5 BUILD — Architecture & Inference FlyWheel
 
-**STATUS: IN PROGRESS (started 2026-09-05).** This is a **BUILD**, not a study. The deliverable is
-working code that makes refcv5 trainable. Every component ships with a test that fails without it and
-a control that must read a known value.
+**STATUS: IN PROGRESS** · opened 2026-09-05 · agent generation 10 (nine predecessors died mid-work)
+**Branch:** `agent/arch-inf-20260803` · **Bank:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refcv5-build/`
 
-**author:** Architecture & Inference FlyWheel · **branch:** `agent/arch-inf-20260803`
-**PI instruction (verbatim, 2026-09-05):** *"I propose to prepare refcv5 for training, implement all
-missing pieces. Let's follow environment extraction from the front camera and train it based on GT
-data. If the whole refcv5 is driving and achieves good quality, we can extend it to multi cameras
-(first step 4) then to Lidar."*
-**Standing correction that governs this stream:** *"our goals in TanitAD programme is not to refute
-hypotheses, it's about achieving excellent results and really driving autonomously with a reference
-implementation."* ⇒ a clean refutation is not a deliverable; a fixed component is.
+## The mandate (PI, 2026-09-05, verbatim)
 
-**GPU spent by this stream: 0 so far.** `refcv4b-b1-v72-40k` is LIVE on `tanitad-refcv3` — untouched.
-The dev-box 4060 is running an RL arm; Thor is running refav1 Stage B. All work below is CPU.
+> "I propose to prepare refcv5 for training, implement all missing pieces. Let's follow environment
+> extraction from the front camera and train it based on GT data. If the whole refcv5 is driving and
+> achieves good quality, we can extend it to multi cameras (first step 4) then to Lidar."
 
-## Component ledger
+**This is a BUILD, not a refutation.** The deliverable is working code that makes refcv5 trainable.
+Gates and controls apply — they stop us fooling ourselves — but a clean refutation is not a deliverable.
 
-| # | component | file(s) | status |
-|---|---|---|---|
-| 0 | STATUS banked | this file | ☑ DONE |
-| 1 | Monocular 3D agent detection head (GT = `obstacle.offline`), cylindrical projection | `stack/tanitad/models/agent_det.py`, `stack/tanitad/data/agent_targets.py` | ⬜ |
-| 1b | Agent-token cross-attention in the REF-C decoder, zero-init gated | `stack/tanitad/refs/refc.py` | ⬜ |
-| 1c | Agent-raster BEV aux target (v5a, no LiDAR) reusing `bev_raster.py` | `stack/tanitad/data/agent_targets.py` | ⬜ |
-| 2 | Emitted-fan scorer with four-family heads | `stack/tanitad/refs/refc.py` | ⬜ |
-| 3 | Control-space truncated diffusion (anchored Gaussian, DDIM, x0, per-layer AdaLN) | `stack/tanitad/refs/refc.py` | ⬜ |
-| 4 | Trainer wiring, seams stamp, smoke run, launch argv | `stack/scripts/refc_v3_train.py` | ⬜ |
-| 5 | Blockers: `ha0_ext` on the REF-C surface (M11 integrator), 12 ablation CLI flags | tbd | ⬜ |
+## Build order (each ships with a test that fails without it)
+
+| # | component | status |
+|---|---|---|
+| 1 | Environment extraction from front camera, GT-supervised (`obstacle.offline` labels → mono-3D agent head → agent tokens) | PENDING |
+| 2 | Score the fan we actually emit (four-family heads on the EMITTED fan) | PENDING |
+| 3 | Diffusion in CONTROL space (anchored Gaussian, DDIM, x0-pred, per-layer AdaLN) | PENDING |
+| 4 | Trainable end to end (`refc_v3_train.py` flags, seams stamp, tiny-rig smoke, launch argv) | PENDING |
+
+⛔ **Do not launch the full training** — that is the Master Mind's call.
+⛔ `refcv4b-b1-v72-40k` is LIVE on pod `tanitad-refcv3` — never touched.
+
+## Binding constraints carried
+
+- Frames are **256×640 CYLINDRICAL**, `f_ref` 305.577, **HFOV 120°** — the pinhole formula is WRONG
+  here. Project only through `calib.py::CanonicalFrame`.
+- Rig **z = 0 is the road plane** (MEASURED over 87,481 cuboids: ground-standing classes' bottom
+  faces −0.05 to −0.13 m; `protruding_object` +1.68 m). Camera height 1.43–1.56 m.
+- `obstacle.offline` is a **LABEL** (privileged); inference is **VISION-ONLY**.
+- Canonical `ha0_ext` is the INTEGRATOR `refav1_arm.hold_ext_controls`, never the closed form
+  (§M11 — they differ by 0.54 m at 2 s).
+- Every seam **zero-init and gated**: a v5 build with all gates off must be **bit-identical to v4b**.
 
 ## Log
 
-- 2026-09-05 — stream opened; STATUS banked before any code (eight agent generations died mid-work
-  in 48 h, so the bank comes first).
+- `2026-09-05` STATUS header banked before first line of code.
+
+## Deliverable manifest
+
+(appended as components land)
