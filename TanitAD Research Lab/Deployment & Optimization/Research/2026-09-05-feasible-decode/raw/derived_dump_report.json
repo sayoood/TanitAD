@@ -1,0 +1,178 @@
+{
+ "_tool": "2026-09-05-feasible-decode/raw/derive_projected_dump.py",
+ "_tier": "T1 -- self-action OPEN loop (PI ruling 2026-09-02)",
+ "_evidence_class": "MEASURED (ours)",
+ "base_dump": "C:/Users/Admin/_wp56/dump/refcv3_40284_dump",
+ "n_windows": 4823,
+ "n_episodes": 141,
+ "margin": 0.01,
+ "driven_path_safety": {
+  "base": {
+   "envelope": 0.08646070957183838,
+   "kamm_over": 0.0020733983255922794,
+   "off_reach": 0.0,
+   "infeasible": 0.08646070957183838,
+   "peak_g_mean": 0.14153626561164856,
+   "peak_g_p95": 0.3321164846420288,
+   "peak_g_max": 1.4471766948699951
+  },
+  "human_gt": {
+   "envelope": 0.006842214614152908,
+   "kamm_over": 0.0,
+   "off_reach": 0.000207339835469611,
+   "infeasible": 0.006842214614152908,
+   "peak_g_mean": 0.08985625207424164,
+   "peak_g_p95": 0.26735013723373413,
+   "peak_g_max": 0.613670825958252
+  },
+  "ha0_floor": {
+   "envelope": 0.0,
+   "kamm_over": 0.0,
+   "off_reach": 0.0,
+   "infeasible": 0.0,
+   "peak_g_mean": 8.331106187142723e-07,
+   "peak_g_p95": 2.3331481315835845e-06,
+   "peak_g_max": 4.666296263167169e-06
+  }
+ },
+ "arms": {
+  "projoff": {
+   "config": {
+    "enabled": false,
+    "mu": null,
+    "clamp_entry": false
+   },
+   "n_windows": 4823,
+   "n_bit_identical_to_base": 4823,
+   "frac_bit_identical": 1.0,
+   "max_abs_delta_m": 0.0,
+   "determinism_F2": "PASS (bit-identical under a different torch seed)",
+   "driven_path_safety": {
+    "envelope": 0.08646070957183838,
+    "kamm_over": 0.0020733983255922794,
+    "off_reach": 0.0,
+    "infeasible": 0.08646070957183838,
+    "peak_g_mean": 0.14153626561164856,
+    "peak_g_p95": 0.3321164846420288,
+    "peak_g_max": 1.4471766948699951
+   },
+   "d_ade_0_2s_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_windows": 4823,
+    "n_episodes": 141,
+    "estimator": "paired episode_cluster_bootstrap",
+    "separated": false
+   }
+  },
+  "proj07": {
+   "config": {
+    "enabled": true,
+    "mu": 0.7,
+    "clamp_entry": false
+   },
+   "n_windows": 4823,
+   "n_bit_identical_to_base": 4402,
+   "frac_bit_identical": 0.9127099315778561,
+   "max_abs_delta_m": 2.544989585876465,
+   "determinism_F2": "PASS (bit-identical under a different torch seed)",
+   "driven_path_safety": {
+    "envelope": 0.0,
+    "kamm_over": 0.0,
+    "off_reach": 0.0,
+    "infeasible": 0.0,
+    "peak_g_mean": 0.12785206735134125,
+    "peak_g_p95": 0.32934123277664185,
+    "peak_g_max": 0.5958622694015503
+   },
+   "d_ade_0_2s_m": {
+    "mean": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0024,
+    "n_windows": 4823,
+    "n_episodes": 141,
+    "estimator": "paired episode_cluster_bootstrap",
+    "separated": false
+   }
+  },
+  "proj07e": {
+   "config": {
+    "enabled": true,
+    "mu": 0.7,
+    "clamp_entry": true
+   },
+   "n_windows": 4823,
+   "n_bit_identical_to_base": 4402,
+   "frac_bit_identical": 0.9127099315778561,
+   "max_abs_delta_m": 2.544989585876465,
+   "determinism_F2": "PASS (bit-identical under a different torch seed)",
+   "driven_path_safety": {
+    "envelope": 0.0,
+    "kamm_over": 0.0,
+    "off_reach": 0.0,
+    "infeasible": 0.0,
+    "peak_g_mean": 0.12785206735134125,
+    "peak_g_p95": 0.32934123277664185,
+    "peak_g_max": 0.5958622694015503
+   },
+   "d_ade_0_2s_m": {
+    "mean": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0024,
+    "n_windows": 4823,
+    "n_episodes": 141,
+    "estimator": "paired episode_cluster_bootstrap",
+    "separated": false
+   }
+  },
+  "projbox": {
+   "config": {
+    "enabled": true,
+    "mu": null,
+    "clamp_entry": false
+   },
+   "n_windows": 4823,
+   "n_bit_identical_to_base": 4402,
+   "frac_bit_identical": 0.9127099315778561,
+   "max_abs_delta_m": 2.544989585876465,
+   "determinism_F2": "PASS (bit-identical under a different torch seed)",
+   "driven_path_safety": {
+    "envelope": 0.0,
+    "kamm_over": 0.0,
+    "off_reach": 0.0,
+    "infeasible": 0.0,
+    "peak_g_mean": 0.12785206735134125,
+    "peak_g_p95": 0.32934123277664185,
+    "peak_g_max": 0.5958622694015503
+   },
+   "d_ade_0_2s_m": {
+    "mean": 0.0012,
+    "lo": 0.0,
+    "hi": 0.0024,
+    "n_windows": 4823,
+    "n_episodes": 141,
+    "estimator": "paired episode_cluster_bootstrap",
+    "separated": false
+   }
+  }
+ },
+ "F1_disabled_lever_floor": {
+  "name": "F1 -- the identical pipeline with the lever DISABLED",
+  "n_bit_identical_to_base": 4823,
+  "n_windows": 4823,
+  "max_abs_delta_m": 0.0,
+  "d_ade_0_2s_m": {
+   "mean": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n_windows": 4823,
+   "n_episodes": 141,
+   "estimator": "paired episode_cluster_bootstrap",
+   "separated": false
+  },
+  "PASS": true,
+  "why_stronger_than_ctrl0": "ctrl0 (lr=0) exists because a loss-zeroing control still moves every tensor under AdamW. This lever takes NO gradient step at all, so its zero-lever arm is bit-identical rather than merely small, and the rig's run-to-run noise floor is EXACTLY 0.",
+  "scope": "retires the TRAINING-variance question for THIS arm only; a fine-tuned arm re-acquires H-ESTIM-SEED-1 in full."
+ }
+}
