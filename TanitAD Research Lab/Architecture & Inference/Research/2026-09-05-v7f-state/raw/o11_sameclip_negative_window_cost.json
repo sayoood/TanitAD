@@ -1,0 +1,118 @@
+{
+  "claim": "cost of time-shifted same-clip negatives for the O11 control is LINEAR IN THE SHIFT, not in the horizon",
+  "evidence_class": "MEASURED (from source; 0 GPU, CPU arithmetic)",
+  "measured_at": "2026-09-05",
+  "source_facts": {
+    "future_action_horizon": "stack/tanitad/data/_contract.py:135 -- future_actions = ep.actions[t+w : t+w+max_horizon]",
+    "windowing": "stack/tanitad/data/_contract.py:120 -- t_max = frames - window - max_horizon",
+    "max_horizon_is_independent_flag": "stack/scripts/train_v6_staged.py:6243 -- max_h = int(a.max_horizon) if a.max_horizon else max(need, plan.maneuver_h)",
+    "need_k": "stack/scripts/train_v6_staged.py:6220 -- need_k = max(a.o1_k, a.o5_k)",
+    "T_frames_per_episode": "198.92 (MEASURED two ways per train_v6_staged.py:3943 -- banked o4_n counts differ by exactly 40*2400 across max_horizon 20->60; Research Lab measured max_k=9 directly)",
+    "window": 6
+  },
+  "formula": "windows_per_episode = (T - window) - max_horizon = 192.92 - max_horizon",
+  "table": [
+    {
+      "o5_k": 4,
+      "shift_s": 4,
+      "max_horizon": 8,
+      "windows_per_episode": 184.92,
+      "baseline_windows_per_episode": 188.92,
+      "relative_loss_pct": 2.12
+    },
+    {
+      "o5_k": 4,
+      "shift_s": 8,
+      "max_horizon": 12,
+      "windows_per_episode": 180.92,
+      "baseline_windows_per_episode": 188.92,
+      "relative_loss_pct": 4.23
+    },
+    {
+      "o5_k": 4,
+      "shift_s": 16,
+      "max_horizon": 20,
+      "windows_per_episode": 172.92,
+      "baseline_windows_per_episode": 188.92,
+      "relative_loss_pct": 8.47
+    },
+    {
+      "o5_k": 4,
+      "shift_s": 4,
+      "max_horizon": 8,
+      "windows_per_episode": 184.92,
+      "baseline_windows_per_episode": 188.92,
+      "relative_loss_pct": 2.12
+    },
+    {
+      "o5_k": 8,
+      "shift_s": 4,
+      "max_horizon": 12,
+      "windows_per_episode": 180.92,
+      "baseline_windows_per_episode": 184.92,
+      "relative_loss_pct": 2.16
+    },
+    {
+      "o5_k": 8,
+      "shift_s": 8,
+      "max_horizon": 16,
+      "windows_per_episode": 176.92,
+      "baseline_windows_per_episode": 184.92,
+      "relative_loss_pct": 4.33
+    },
+    {
+      "o5_k": 8,
+      "shift_s": 16,
+      "max_horizon": 24,
+      "windows_per_episode": 168.92,
+      "baseline_windows_per_episode": 184.92,
+      "relative_loss_pct": 8.65
+    },
+    {
+      "o5_k": 8,
+      "shift_s": 8,
+      "max_horizon": 16,
+      "windows_per_episode": 176.92,
+      "baseline_windows_per_episode": 184.92,
+      "relative_loss_pct": 4.33
+    },
+    {
+      "o5_k": 60,
+      "shift_s": 4,
+      "max_horizon": 64,
+      "windows_per_episode": 128.92,
+      "baseline_windows_per_episode": 132.92,
+      "relative_loss_pct": 3.01
+    },
+    {
+      "o5_k": 60,
+      "shift_s": 8,
+      "max_horizon": 68,
+      "windows_per_episode": 124.92,
+      "baseline_windows_per_episode": 132.92,
+      "relative_loss_pct": 6.02
+    },
+    {
+      "o5_k": 60,
+      "shift_s": 16,
+      "max_horizon": 76,
+      "windows_per_episode": 116.92,
+      "baseline_windows_per_episode": 132.92,
+      "relative_loss_pct": 12.04
+    },
+    {
+      "o5_k": 60,
+      "shift_s": 60,
+      "max_horizon": 120,
+      "windows_per_episode": 72.92,
+      "baseline_windows_per_episode": 132.92,
+      "relative_loss_pct": 45.14
+    }
+  ],
+  "corrects": "V7_LAUNCH_GATE.md scoped the time-shifted same-clip-negative option as 'neither is small', framing it as needing >= o5_k + shift steps. The MARGINAL cost over the o5_k baseline is only `shift` windows per episode.",
+  "caveats": [
+    "CONSERVATIVE UPPER BOUND: true baseline is max_h = max(need, plan.maneuver_h) >= o5_k, so real relative loss is smaller than tabulated.",
+    "A small shift is a WEAK negative: the action sequence is autocorrelated, so shift trades window cost against negative strength. The right s is empirical; this prices the cost only.",
+    "This prices the CONTROL's data cost only. It does not price GPU time and is not evidence about the O11 result itself (see H-LEAK-6)."
+  ]
+}
