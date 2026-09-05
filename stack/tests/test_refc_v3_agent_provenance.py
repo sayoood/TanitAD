@@ -323,6 +323,63 @@ def test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera():
 # P2 — every knob reaches the record, and the check is DERIVED
 # =========================================================================
 
+def test_P1_the_two_weights_SURVIVE_the_trip_from_argv_to_the_LOSS_CONFIG():
+    """⛔ THE LEG OF THE TRIP NOTHING ELSE WATCHES.
+
+    Every other P1 gate reads ONE end of the wire. The refusals read ``args``;
+    ``agent_rig_camera`` in the stamp reads ``args``; the "terms COMPUTE" test
+    hand-builds an ``AgentSeamConfig(w_project=1.0)``. But the LOSS reads
+    ``cfg.core.agents`` -- and nothing asserted that argv reaches it.
+
+    So dropping the weight in ``_pin_refcv5_seams`` alone would re-open M18 in
+    its exact original shape: the camera still builds, the refusal still fires
+    correctly, ``config.json['seams']['agent_rig_camera']['w_project']`` still
+    reads 0.2 -- and the addend is simply gone. MEASURED 2026-09-05 as UNPINNED
+    (the plumbing was correct; the coverage was not).
+
+    The two weights are given DIFFERENT values on purpose: equal ones cannot
+    catch a copy-paste that reads ``agent_w_project`` into both.
+    """
+    a = _args("--agents", "head", "--w-agent", "1.0", "--agent-join", "j",
+              "--agent-w-project", "0.2", "--agent-w-ground", "0.1",
+              "--agent-rig-camera", "nominal", "--image-hw", "256", "640")
+    cfg, a = _cfg_at(args=a)
+    ag = cfg.core.agents
+    assert ag is not None, "no AgentSeamConfig was built under --agents head"
+    assert float(ag.w_project) == 0.2, f"w_project reached the loss config as {ag.w_project}"
+    assert float(ag.w_ground) == 0.1, f"w_ground reached the loss config as {ag.w_ground}"
+    d = ag.as_dict()
+    assert float(d["w_project"]) == 0.2 and float(d["w_ground"]) == 0.1
+
+    # ⭐ THE TWO STAMPS ARE INDEPENDENT READS AND MUST AGREE. `agents`
+    # comes from the config the loss uses; `agent_rig_camera` comes from argv.
+    # Their agreement is the only thing in config.json that can distinguish a
+    # run that trained the term from one that recorded it.
+    st = _seam_stamp_of(cfg, a)
+    assert float(st["agents"]["w_project"]) == \
+        float(st["agent_rig_camera"]["w_project"]), (
+            "config.json would state two different w_project values: the loss "
+            "config says {} and argv says {}".format(
+                st["agents"]["w_project"],
+                st["agent_rig_camera"]["w_project"]))
+    assert float(st["agents"]["w_ground"]) == \
+        float(st["agent_rig_camera"]["w_ground"])
+
+    # ⛔ CONTROL THAT MUST READ A KNOWN VALUE: with the weights at zero the
+    # same path must read zero, so the assertions above are reading argv and
+    # not a constant baked into the config builder.
+    z = _args("--agents", "head", "--w-agent", "1.0", "--agent-join", "j",
+              "--image-hw", "256", "640")
+    zcfg, _ = _cfg_at(args=z)
+    assert float(zcfg.core.agents.w_project) == 0.0
+    assert float(zcfg.core.agents.w_ground) == 0.0
+
+
+def _seam_stamp_of(cfg, a):
+    """`_seam_stamp` needs the parser's defaults present on the namespace."""
+    return t._seam_stamp(cfg, a)
+
+
 def test_P2_knob_set_is_derived_from_the_parser_not_listed():
     p = t.build_parser()
     dests = t.agent_knob_dests(p)

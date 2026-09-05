@@ -59,6 +59,16 @@ copying `stack/` is 2.1 GB. So the audit edits in place and restores, with:
    the audit, not a skipped case: it means the registry has rotted against a
    refactor, which is precisely when this instrument is needed.
 
+⭐ THE ROT CHECK EARNED ITS KEEP WITHIN THE HOUR. MEASURED 2026-09-05: commit
+`e8de537` landed per-clip cameras and rewrote `agent_losses`' guard from
+`cam is not None` to a per-row `_n_cam` count, roughly an hour after this file
+was committed. `test_every_anchor_is_present_in_the_shipped_source_exactly_once`
+went red in the very next suite run and NAMED both stale anchors. Without it
+the audit would have applied nothing, caught nothing, and printed a clean
+**9/9** over a registry that no longer touched the guard it claimed to test.
+⇒ **Re-point a rotted anchor; never delete the entry.** The guard still exists,
+so its evidence must too.
+
 USAGE
 -----
     python stack/scripts/guard_mutation_audit.py               # the full audit
@@ -176,8 +186,8 @@ MUTATIONS: tuple[Mutation, ...] = (
                 "the term, which is what made the original bug survivable: "
                 "nothing downstream noticed a missing addend."),
         path=_AGENTS,
-        old="    if cam is not None and cfg.w_project > 0.0:",
-        new="    if False and cam is not None and cfg.w_project > 0.0:",
+        old="    if _n_cam and cfg.w_project > 0.0:",
+        new="    if False and _n_cam and cfg.w_project > 0.0:",
         caught_by=(f"{_PROV}::test_P1_the_camera_the_TRAINER_builds_makes_the_"
                    "terms_COMPUTE",),
         source="mm-decisions M18",
@@ -189,8 +199,8 @@ MUTATIONS: tuple[Mutation, ...] = (
                 "exercises `w_project` would certify `w_ground` for free — "
                 "the two are independent addends behind independent guards."),
         path=_AGENTS,
-        old="    if cam is not None and cfg.w_ground > 0.0:",
-        new="    if False and cam is not None and cfg.w_ground > 0.0:",
+        old="    if _n_cam and cfg.w_ground > 0.0:",
+        new="    if False and _n_cam and cfg.w_ground > 0.0:",
         caught_by=(f"{_PROV}::test_P1_the_camera_the_TRAINER_builds_makes_the_"
                    "terms_COMPUTE",),
         source="mm-decisions M18",
@@ -260,6 +270,23 @@ MUTATIONS: tuple[Mutation, ...] = (
              'away",),'),
         caught_by=(f"{_SELF}::test_every_named_guard_actually_exists",),
         source="this file, 2026-09-05",
+    ),
+    Mutation(
+        key="weight_lost_between_argv_and_config",
+        defect=("`--agent-w-project` reaches the pin-time REFUSAL but not "
+                "`cfg.core.agents.w_project`, which is what the loss reads. "
+                "M18 in its exact original shape, and every other P1 guard "
+                "still passes: the camera builds, the refusal fires "
+                "correctly, and config.json's `agent_rig_camera.w_project` "
+                "still reads 0.2 because that stamp reads argv too. Only the "
+                "addend disappears. MEASURED as UNPINNED 2026-09-05 -- the "
+                "plumbing was right, nothing watched it."),
+        path=_TRAIN,
+        old='            w_project=float(getattr(args, "agent_w_project", 0.0)),',
+        new="            w_project=0.0,",
+        caught_by=(f"{_PROV}::test_P1_the_two_weights_SURVIVE_the_trip_from_"
+                   "argv_to_the_LOSS_CONFIG",),
+        source="found 2026-09-05 while auditing the M18 guards",
     ),
     Mutation(
         key="knob_stamp_emptied",

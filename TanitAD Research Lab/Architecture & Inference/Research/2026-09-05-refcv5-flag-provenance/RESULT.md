@@ -629,3 +629,106 @@ python stack/scripts/guard_mutation_audit.py   # non-zero if any guard is decora
 (` M` in `git status`), and editing a shared steering doc under someone else's in-flight edit is how
 work gets silently reverted. **Raised here rather than written into a README** — per rule 3 of the
 standard, which exists because "please merge this" in a README went unread for ten days.
+
+---
+
+# ADDENDUM 2 — the rot check earned its keep **within the hour**, and a tenth defect
+
+Written after `e8de537` landed. Everything below is MEASURED on that commit.
+
+## 9. ⭐⭐ THE INSTRUMENT'S FIRST REAL REFACTOR CAME BEFORE ITS FIRST DAY
+
+The audit committed in `a1a894a` claims nine guards are load-bearing. About an hour later
+`e8de537` landed the per-clip camera and rewrote `agent_losses`' guard from
+`if cam is not None and cfg.w_project > 0.0:` to a per-row
+`if _n_cam and cfg.w_project > 0.0:`.
+
+**Two of the nine anchors stopped matching, and the very next full-suite run said so** —
+by name, in the same run that was checking it:
+
+```
+FAILED tests/test_guard_mutation_audit.py::test_every_anchor_is_present_in_the_shipped_source_exactly_once
+E   monocular_terms_skipped: anchor occurs 0x in tanitad/refs/refc_agents.py (need exactly 1)
+E   ground_term_skipped:     anchor occurs 0x in tanitad/refs/refc_agents.py (need exactly 1)
+```
+
+⇒ **Without that check the audit would have applied nothing, caught nothing, and printed a clean
+`9/9` over a registry that no longer touched the guard it claimed to test** — a green audit
+certifying an absent guard, on day one. The anchors are **re-pointed, not deleted**: the guard
+still exists, so its evidence must too. That rule is now written into the audit's docstring beside
+the incident.
+
+⚠️ **This is also the honest reading of the full-suite delta below.** My run shows one more failure
+than baseline, and that failure is *the instrument working correctly*, not a regression.
+
+## 10. A TENTH DEFECT — the leg of the trip nothing was watching
+
+Found by asking which end of the wire each existing gate reads. **Every P1 gate reads argv**: the
+refusals read `args`, and `config.json`'s `agent_rig_camera.w_project` reads `args`. The
+"terms COMPUTE" test hand-builds an `AgentSeamConfig(w_project=1.0)`. **But the loss reads
+`cfg.core.agents`** — and nothing asserted that argv reaches it.
+
+So dropping the weight in `_pin_refcv5_seams` alone re-opens M18 in its **exact original shape**:
+
+| what still passes with the weight dropped | why |
+|---|---|
+| the camera builds | `_build_rig_camera` reads argv |
+| `--agent-rig-camera off` still refuses correctly | reads argv |
+| `config.json` still reads `agent_rig_camera.w_project = 0.2` | reads argv |
+| **the addend is gone** | the loss reads `cfg.core.agents.w_project` |
+
+MEASURED 2026-09-05: **the plumbing was correct, the coverage was not** — argv → config was
+verified working, and `grep` over `stack/tests/**` found no assertion on it. Now pinned by
+`test_P1_the_two_weights_SURVIVE_the_trip_from_argv_to_the_LOSS_CONFIG`, which gives the two
+weights **different** values (0.2 / 0.1, so a copy-paste reading `agent_w_project` into both is
+caught), requires the two independent stamps to **agree**, and carries a zero-weight control.
+Registered as mutation `weight_lost_between_argv_and_config`.
+
+**Result: 10 / 10 defects CAUGHT by the named guard**, anchors 10/10 present exactly once.
+
+## 11. Convergent evidence — the sibling stream found the same family one level deeper
+
+`e8de537` reports that `--agent-w-ground` computes a **tautology**: `ground_range_prior` projects a
+foot at rig z = 0 and back-projects onto `ROAD_PLANE_Z_M`, which *is* 0.0, so the two are exact
+inverses and the loss is identically zero (2.61e-08, parameter gradient 8.73e-11). The flag is set,
+the camera is built, **the term runs** — and adds nothing.
+
+⇒ Three distinct depths of one defect, found independently on one day:
+
+| depth | the flag… | caught by |
+|---|---|---|
+| M18 | never reaches the term (`_rig_camera = None`) | a refusal + these mutations |
+| **§10 here** | reaches the *refusal* and the *stamp* but not the *loss config* | the new pin |
+| `e8de537` | reaches the loss, and the loss is **identically zero** | a **gradient** probe |
+
+**No flag guard and no camera guard can see the third**, and no mutation of a guard can either —
+that one needs a gradient. Recorded here because the three together say the real invariant is
+*"the weight changes the gradient"*, and only the third measures it.
+
+## 12. Full-suite regression — the numbers, and their admissibility
+
+| run | failed | passed | skipped | errors | `Errno 22` | wall |
+|---|---|---|---|---|---|---|
+| baseline (`raw/fullsuite_postchange.txt`, before this work) | 27 | 6,213 | 115 | 7 | **0** | 22:30 |
+| with this work | **28** | 6,223 | 115 | 7 | **0** | 32:14 |
+
+`comm` over the two sorted FAILED sets: **exactly one entry differs**, and it is
+`test_every_anchor_is_present_in_the_shipped_source_exactly_once` — §9. **Zero in baseline, zero in
+mine.** Nothing regressed; `+10 passed` is this addendum's 11 tests minus that one. Both runs carry
+**zero `Errno 22`**, which is what makes either number quotable at all
+(`gdrive-mount-hard-failure`: a `G:` failure count is admissible only with zero `Errno 22`).
+
+⚠️ **The 28-failure run predates the fix in §9 and the pin in §10.** The four touched test files are
+green at 79 passed / 1 skipped on `e8de537`, and the audit is 10/10 — but **the whole suite has not
+been re-run since**, and I am not claiming a 27 I did not measure.
+
+## 13. Manifest (addendum 2)
+
+| artifact | lives at |
+|---|---|
+| audit, re-pointed + 10th mutation | `repo:stack/scripts/guard_mutation_audit.py` |
+| the new pin | `repo:stack/tests/test_refc_v3_agent_provenance.py` |
+| audit output, 10/10 on `e8de537` | `repo:…/raw/guard_mutation_audit_2026-09-05.txt` |
+| full-suite log, this work | `repo:…/raw/fullsuite_guardaudit_2026-09-05.txt` |
+
+Nothing here exists in only one place.
