@@ -1,0 +1,266 @@
+# PRE-REGISTRATION — is refav1's left/right turn asymmetry real?
+
+*Written 2026-09-05 BEFORE any arm ran on the wider panel. Both outcomes are
+committed below. The power target is derived from the measured seed floor and is
+stated before the achievable n was known to bind.*
+
+**Question (PI, direct).** `wk15` = `ccos` + `W_KAPPA = 15.11245` is the interior
+optimum of a closed ladder (ADE 1.3272 -> 0.8934, best curvature 0.030982 and
+heading 15.2704 of any arm, parity with `ha0_ext`). Its **turn recall is
+asymmetric**: **0.0 LEFT (n = 11)** against **0.5 RIGHT (n = 8)**, where
+`W_KAPPA = 0` reads 0.3636 / 0.75. ⛔ Until this is settled, `wk15` may NOT be
+quoted as a lateral fix (`M30` §3).
+
+---
+
+## §1 — THE POWER TARGET, derived before looking
+
+MEASURED input, and the only one: the inference-seed floor on the tactical
+lateral family is **0.0750 absolute** (`TAC_traj_lat_correct`, paired
+episode-cluster bootstrap, 40 windows / 8 episodes,
+`.../2026-09-05-refav1-cost-geometry/RESULT.md` §4).
+
+⭐ **A recall on `n` trials lives on a grid of spacing `1/n`.** For a floor of
+0.0750 to be *representable at all*, the instrument needs `1/n <= 0.0750`, i.e.
+**n >= 14**. At exactly 14 the floor is ONE countable window, so any candidate
+effect is confounded with a single window flipping. Requiring the floor to span
+at least **two** countable steps gives `2/n <= 0.0750`:
+
+> ⭐ **TARGET: n >= 27 windows per direction. ADOPTED: n_L >= 30, n_R >= 30.**
+
+⛔ **This is what makes `M30`'s "far too thin to call" precise rather than
+rhetorical.** The banked panel has `n_L = 11` (granularity **0.0909**) and
+`n_R = 8` (**0.1250**) — **both COARSER than the 0.0750 floor itself**. A panel
+whose smallest representable change is larger than the noise floor cannot
+resolve that floor, so no per-direction recall claim can be made on it in either
+direction. *(Same family as `H-ESTIM-SEED-1`: a statistic whose question is
+narrower than the claim hung on it — here, one whose RESOLUTION is coarser than
+the floor it is being compared against.)*
+
+**Cluster requirement.** The decision estimator is the paired episode-cluster
+bootstrap over the 8 eval episodes; its resolution is bounded by the number of
+CLUSTERS carrying each stratum, never by the window count (`RETRACTION_LOG` #17:
+a stratum with few clusters is a POWER LIMIT, not a negative).
+
+> ⭐ **TARGET: >= 5 of the 8 episodes must carry each direction.**
+
+**The effect size that would call it.** ⛔ NOT 0.0750 — that is a *pooled
+accuracy* floor and the wrong statistic for a per-direction rate. The panel
+measures its OWN per-direction floor by running the same arm at `--plan-seed 0`
+and `--plan-seed 1`:
+
+```
+floor_dir = max over dir in {L, R} of | recall_dir(seed 0) - recall_dir(seed 1) |
+```
+
+**The asymmetry is REAL only if ALL THREE hold:**
+
+1. `|recall_R - recall_L| > floor_dir` at **BOTH** seeds;
+2. the **SIGN** of `recall_R - recall_L` **agrees** across the two seeds;
+3. the n and cluster targets of this section are met.
+
+Any other combination is **NOT ESTABLISHED** and is reported as such.
+
+### §1.1 The higher-powered secondary statistic, registered here
+
+The recall is capped by the GT turn count. A strictly higher-powered read of the
+same question is **goal-conditioned curvature retention**: over ALL windows whose
+DECODED goal token is `TURN_L` or `TURN_R`, the fraction whose plan realises
+`max|kappa| > 0.06` — i.e. tracks the goal's canonical `GOAL_KAPPA_TURN = 0.08`
+rather than being crushed by the charge. It uses every turn-GOAL window, not only
+the GT-turn ones, and it is the quantity the ladder actually moves.
+
+⚠️ **It is a DIFFERENT claim from turn recall and is reported separately**, never
+substituted for it. Its own seed floor is measured the same way.
+
+---
+
+## §2 — THE PANEL. Selection rule, stated before it ran
+
+⛔ **PARITY: the corpus is NOT re-selected.** The episode set is the SAME 8
+eval-slice episodes (`C:/Users/Admin/refav1_margin/p4/fp8`, labels blob md5
+`aa12c948f062181c3297265b51526ec5`). Enrichment is by **stratified sampling of
+windows within that fixed episode set**, over the loader's own 535-window grid.
+
+**MEASURED census (GT poses ONLY — no arm output is read, so running it before
+this SPEC was committed cannot leak the outcome). Tool `raw/census.py`.**
+
+| stratum | n windows | episodes carrying it |
+|---|---|---|
+| `lane_keep` | 294 | 8 |
+| `turn_left` | **144** | **6** — {0, 1, 2, 5, 6, 7} |
+| `turn_right` | **97** | **6** — {0, 2, 3, 4, 6, 7} |
+| **total** | **535** | 8 |
+
+⭐ **The census reproduces the banked stride-16 panel EXACTLY — LK 21 / TL 11 /
+TR 8 of 40** — the same-breath control that this GT pipeline is the arm tool's
+own and not a re-derivation.
+
+⚠️ **Turn definition.** The recall's labeller is the programme's canonical gate
+`tanitad.refs.refc_tactical.factor_from_kinematics` (v1 branch, `kappa=None`): a
+turn is `|dyaw| > YAW_TURN_RAD = 0.15 rad` over the 2 s horizon, with `turn_l` =
+`dyaw > +0.15` and `turn_r` = `dyaw < -0.15`. **The stratum is defined by the
+SAME gate the recall is scored with**, so the selection and the metric cannot
+disagree. *(The `|kappa| > 4e-2` crossover is the ADE-stratum definition of
+`RESULT.md` §7.2; it is recorded per window here but is NOT the recall's class
+definition, and the two must not be conflated.)*
+
+**SELECTION RULE (deterministic, published before the run):**
+
+1. Strata from GT only, by the gate above.
+2. Quota: **30 `turn_left` + 30 `turn_right` + 15 `lane_keep` = 75 windows.**
+3. Allocate each stratum's quota across the episodes that carry it by
+   **round-robin, largest remaining availability first**, so no single episode
+   can dominate a direction.
+4. Within an (episode, stratum) cell, take the requested count **evenly spaced in
+   `t`** across that cell's available indices — maximum spacing, to minimise the
+   frame overlap between neighbouring windows.
+5. Ordering by ascending `(episode, t)`; the list is written to JSON and its
+   sha256 recorded in the run record.
+
+⚠️ **The windows OVERLAP by construction** (the grid steps 0.2 s; a window spans
+0.8 s of observation and a 2 s future). Overlap is exactly why the decision
+estimator resamples **EPISODES**, and why §1's cluster target exists.
+⛔ **The resulting ADE / four-family numbers are NOT comparable to the banked
+40-window panel** — this is a deliberately turn-enriched panel on a different
+window grid. Cross-panel comparison is refused; only WITHIN-panel arm-to-arm
+deltas are quoted.
+
+---
+
+## §3 — WHAT IS ALREADY SETTLED AT ZERO GPU (mechanism, P4)
+
+Run before the panel, on synthetic pairs and on the BANKED dumps. Tools
+`raw/mirror_assert.py`, `raw/census.py`, `raw/corpus_asym.py`,
+`raw/speed_confound.py`, `raw/goal_asym.py`, `raw/goal_scale.py`, `raw/mech.py`.
+Every assertion carries a same-breath control that must read the other way.
+
+1. **The goal vocabulary is EXACTLY antisymmetric.**
+   `canonical_controls("TURN_L").kappa == -canonical_controls("TURN_R").kappa`
+   bit-for-bit (`max|kL + kR| = 0.000e+00`) at every `v0` and every `lon` token,
+   with the accel channel EXACTLY equal; `NUDGE_*` and `LANE_CHANGE_*` likewise.
+   Controls: kappa is not identically zero (0.08000); `LANE_KEEP` differs.
+2. **The curvature charge is EXACTLY sign-invariant.**
+   `W_KAPPA * mean(kappa^2)` over 2000 random profiles reads
+   `max|c(+k) - c(-k)| = 0.000e+00` at every ladder rung (0, 0.05, 15.11245,
+   151.1245). Control: the charge is not constant (std 5.7e-05).
+3. **`_clip` and the Kamm cap are sign-symmetric**, plain and at `mu = 0.7`, with
+   controls proving both actually bite (2533/5000 steps clipped;
+   `max|k_kamm - k_plain| = 0.18360`).
+4. **The iCEM noise pool is zero-mean and sign-balanced** at both seeds (mean
+   4.3e-10 against 4*SE 1.9e-02; n(+) 20045 vs n(-) 19955 of 40000).
+5. **The labeller is exactly mirror-symmetric** — mirroring `y` swaps
+   `turn_left <-> turn_right` on 3000/3000 synthetic windows, leaves the
+   longitudinal label untouched, and negates `dyaw` to float32 epsilon
+   (2.4e-07 rad = 1.6e-06 of the 0.15 rad gate).
+6. **The corpus IS asymmetric — but not in the way that would explain it.**
+   GT-left turns happen at **v0 median 1.886 m/s**, GT-right at **5.189 m/s**
+   over all 535 windows (MWU p = 2.5e-06), a 2.75x speed gap; and because the
+   turn gate is on `dyaw ~= kappa * v * T`, a left turn needs **3.62x** the
+   curvature and pays **13.1x** the `W_KAPPA` charge to be LABELLED a turn.
+   ⛔ **That hypothesis is REFUTED by its own test:** pooled by speed band on the
+   banked panel `wk15` reads SLOW **0.2000** / FAST **0.2222** — flat — while by
+   direction it reads LEFT **0.0000** / RIGHT **0.5000**; and in the SLOW band
+   itself right is 2/2 while left is 0/8. **Recorded as refuted, by me, in the
+   same breath as it was proposed.**
+7. **The floors are symmetric on the same windows** — `ha0_ext` reads
+   **0.7273 L / 0.7500 R**, `ha` 0.6364 / 0.7500, `ol` 0.7273 / 1.0. Whatever the
+   effect is, it is in the PLANNER, not in the corpus or the labeller.
+8. **The decoded goal token is IDENTICAL across all seven banked arms (40/40),
+   including across the two plan seeds**, so the goal head is not the seed's
+   doing. Its own recall is near-symmetric: **left 6/11 = 0.5455**, **right
+   5/8 = 0.6250**.
+9. ⭐⭐ **THE EFFECT LIVES IN CURVATURE RETENTION, AND ON THE BANKED PANEL IT IS
+   STARK.** Of windows whose DECODED goal is `TURN_L`, `wk15` tracks the goal at
+   full `|kappa| > 0.06` on **0 of 9**; of those whose goal is `TURN_R`, on
+   **9 of 13**. ⛔ **CONTROL at `W_KAPPA = 0`, same goals, same seed: `TURN_L
+   9/9` and `TURN_R 13/13`** — a complete symmetry. The split is created by the
+   charge and does not predate it.
+10. ⭐ **AND THE GOAL TERM'S OWN SCALE IS SYMMETRIC** — median goal decision
+    `TURN_L` **0.98185** vs `TURN_R` **0.97965** (ratio **1.002**, MWU p = 0.79;
+    control `LANE_KEEP` reads **0.00000**). So the split is NOT "the left goal is
+    worth less"; the full-`kappa` plan's goal cost is 0.00001 median in BOTH
+    directions, and the charge it pays is **0.09672 in both**.
+11. ⇒ **The split is produced INSIDE the stochastic iCEM search.** On the 9
+    `TURN_R` windows that kept full curvature, the arm returned the SAME plan as
+    the `W_KAPPA = 0` arm to five decimals — i.e. **no cheaper crushed candidate
+    was found there** — while on all 9 `TURN_L` windows one was found and won.
+    ⚠️ Those 9 rows carry `d_goal = 0.00000` **by construction** and are therefore
+    UNINFORMATIVE about what a crushed right plan would have cost. They must not
+    be read as "the goal objected".
+
+⇒ ⛔ **Every deterministic component is provably sign-symmetric, and the observed
+split is produced inside a stochastic search. That is precisely the condition
+under which `H-ESTIM-SEED-1` binds: a separated-looking result whose only
+untested cause is the INFERENCE SEED. §4's seed pair is therefore not a
+formality — it is the discriminating experiment.**
+
+### §3.12 AMENDMENT, written 2026-09-05 21:30 — BEFORE any wide arm ran
+
+⛔ **§3.9's 0/9 vs 9/13 fails this SPEC's OWN cluster criterion, and I am
+recording that against myself rather than quoting the split as settled.** The
+reader (`raw/turn_asym_read.py`) prints each stratum's cluster count, and on the
+banked panel the decoded-goal strata are **`TURN_L` n = 9 in only 2 EPISODES**
+and **`TURN_R` n = 13 in 4 episodes** — both below §1's `>= 5 clusters` target.
+⇒ The retention split is a **striking observation with an effective n of 2 and 4
+clusters**, not a decision-grade result, and §5's outcomes are decided on the
+WIDE panel only. *(This is `RETRACTION_LOG` #17 again, and it is the reason the
+reader was built to print clusters beside every rate instead of only n.)*
+
+⚠️ Two more numbers the reader surfaced on the banked panel, both of which
+belong here because they bound what any wide-panel result can mean:
+
+* **`ol` — the T0 arm, which has no planner at all — is itself L/R uneven**
+  (0.7273 L vs 1.0000 R, contrast **+0.2727 [+0.0000, +0.5000]**, not
+  separated). So a small directional gap is present in the *corpus-plus-labeller*
+  before any planner acts, and only a gap materially larger than the floor arms'
+  is attributable to the cost.
+* **The reader reproduces the banked pooled seed delta EXACTLY** —
+  `TAC_traj_lat_correct` **−0.0750 [−0.1750, +0.0000]**, the same 0.0750 quoted
+  in `RESULT.md` §4 — which is the same-breath control that this tool is reading
+  the programme's estimator and not a re-implementation of it.
+
+---
+
+## §4 — THE ARMS, in priority order
+
+Two at a time is the measured dev-box ceiling. A killed run still yields value,
+because round 1 alone answers the PI's question about `wk15`.
+
+| round | arms | answers |
+|---|---|---|
+| **1** | `wk15_wideA` (`--plan-seed 0`), `wk15_wideB` (`--plan-seed 1`) | the panel's own per-direction seed floor **and** `wk15`'s asymmetry against it |
+| **2** | `ccos_wideA` (`W_KAPPA = 0`, seed 0), `ccos_wideB` (seed 1) | the contrast that makes it a claim about the PENALTY rather than about `wk15` |
+
+All arms: `--cost-metric ccos`, `--cost-weights 0,<W_KAPPA>,64.2971504241507`,
+`--no-navshuf --no-lead-block`, argmax goal rule, vocabulary **v7.0 /
+`GOAL_KAPPA_TURN = 0.08` untouched** — so the arms are comparable
+window-for-window with each other, and with nothing else.
+
+---
+
+## §5 — BOTH OUTCOMES, COMMITTED
+
+**A — the asymmetry is REAL** (all three §1 conditions hold).
+⇒ `wk15` may be quoted as a lateral fix **on ADE, curvature MAE and heading MAE
+only**, always with the per-direction recall stated beside it. `M30` §3's caveat
+**stands and hardens** into a named defect. The mechanism of §3.9-11 is the work
+item, and the next lever is a **direction-aware search** (a seed pool carrying
+both signs of the goal's canonical curvature), not another weight.
+
+**B — the asymmetry is NOT ESTABLISHED** (the gap is inside the panel's own seed
+floor, or its sign flips between seeds).
+⇒ The per-direction recall claim is **retracted as unresolvable at the n
+available**, `M30` §3's caveat is **lifted**, and `wk15` may be quoted as a
+lateral fix. The retraction is logged with its class.
+
+**C — UNDERPOWERED** (an n or cluster target of §1 is missed).
+⇒ **INCONCLUSIVE, reported as such; NEITHER A NOR B may be quoted.** A confident
+null from an underpowered panel is worse than no panel, because it will be
+quoted. ⛔ This outcome is a legitimate result of this SPEC and is not a failure
+of the run.
+
+⚠️ **A fourth possibility is registered so it cannot be presented as a surprise:
+the two seeds may disagree so much that the SEED FLOOR ITSELF exceeds the L/R gap
+in both directions.** That is outcome B by the rule above, and it would make the
+interesting number the floor, not the gap.

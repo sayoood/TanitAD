@@ -277,8 +277,19 @@ def test_A6_adding_ha0_moves_no_existing_arm(rolled):
     from its own documented rule and required to match the dump bit for bit — so a
     silent change of semantics anywhere in the roll would fail here."""
     _, _, manifest, rec, dump = rolled
-    assert manifest["tiers"] == {"cl": "T1", "ha": "T1", "ha0": "T1", "ol": "T0"}, (
+    # ⚠️ 2026-09-05: this was an EQUALITY against exactly four arms, and it went
+    # RED the moment `ha0_ext` — the M11 integrator floor — was legitimately
+    # added. An equality here does not test "no existing arm moved"; it tests
+    # "no arm was ever added", which is not the guarantee the test is named for
+    # and which every correct addition must break. The subset form asserts the
+    # actual invariant and stays true across the next one.
+    pre_existing = {"cl": "T1", "ha": "T1", "ha0": "T1", "ol": "T0"}
+    assert {k: manifest["tiers"].get(k) for k in pre_existing} == pre_existing, (
         "the pre-existing tier stamps must be untouched")
+    # ...and a NEW arm may not arrive unstamped or mis-stamped: every arm in the
+    # manifest carries a tier, and every tier is one of the two that exist.
+    assert all(manifest["tiers"].get(k) in ("T0", "T1")
+               for k in manifest["tiers"]), manifest["tiers"]
     for nm, ep in dump.items():
         poses, acts = _synth(int(ep["clip_index"][0]))
         for w, t in enumerate(ep["ws"].tolist()):

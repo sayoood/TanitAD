@@ -1,0 +1,66 @@
+vocab: LANE_KEEP=0 TURN_L=6 TURN_R=7  (imported, not hand-written)
+
+==============================================================================================
+1. CONTROL -- is the DECODED goal token identical across arms at the same seed?
+==============================================================================================
+  cos_argmax    goal_lat identical to ccos_argmax on 40/40 
+  ccos_argmax   goal_lat identical to ccos_argmax on 40/40 
+  ccos_seed1    goal_lat identical to ccos_argmax on 40/40 
+  ccosh_w000    goal_lat identical to ccos_argmax on 40/40 
+  wk15          goal_lat identical to ccos_argmax on 40/40 
+  wk151         goal_lat identical to ccos_argmax on 40/40 
+  cos_wk        goal_lat identical to ccos_argmax on 40/40 
+  (ccos_seed1 is the SAME head at a different PLAN seed: the goal decode must be identical; if it is, the goal is not a seed artefact.)
+
+==============================================================================================
+2. THE DECODED GOAL vs the GROUND TRUTH DIRECTION (ccos_argmax head, all arms share it)
+==============================================================================================
+  decoded goal counts: LANE_KEEP=18 TURN_L=9 TURN_R=13  other=0
+  GT counts:           lane_keep=21 turn_left=11 turn_right=8
+
+  goal-token confusion (GT rows, decoded-goal cols):
+         LANE_KEEP     TURN_L     TURN_R      other
+  GT LK         13          3          5          0
+  GT TL          2          6          3          0
+  GT TR          3          0          5          0
+
+  ** GOAL RECALL (the head, before ANY cost): left 6/11 = 0.5455   right 5/8 = 0.6250 **
+
+==============================================================================================
+3. THE PLAN'S SIGNED CURVATURE -- emission by direction, all 40 windows
+==============================================================================================
+  arm           | n k>+.02 n k<-.02 |   sum k+   sum k- | mean signed
+  cos_argmax    |       15       22 |    2.207   -3.072 |   -0.02162
+  ccos_argmax   |       16       14 |    1.867   -1.129 |    0.01846
+  ccos_seed1    |       16       14 |    1.801   -1.183 |    0.01545
+  ccosh_w000    |       16       14 |    1.867   -1.129 |    0.01846
+  wk15          |        5       13 |    0.193   -0.899 |   -0.01764
+  wk151         |        0        2 |    0.128   -0.122 |    0.00017
+  cos_wk        |        0        0 |    0.000    0.000 |    0.00000
+  (+kappa = LEFT; kinematic.py: x forward, y left)
+
+==============================================================================================
+4. ON GT-LEFT WINDOWS ONLY: what does each arm emit, and what was the goal?
+==============================================================================================
+  win eid   v0  goal_tok | cos_argma ccos_argm ccos_seed ccosh_w00 wk15      wk151     cos_wk   
+   30   6  0.20  TURN_L   | +0.1979   +0.0800   +0.0800   +0.0800   +0.0207   -0.0066   +0.0000  
+   10   2  0.55  TURN_R   | +0.1363   -0.0800   -0.0800   -0.0800   -0.0800   +0.0193   +0.0000  
+   33   6  0.71  TURN_L   | -0.1350   +0.0800   +0.0800   +0.0800   +0.0306   +0.0090   +0.0000  
+   32   6  1.06  TURN_L   | +0.1463   +0.0800   +0.0800   +0.0800   +0.0247   +0.0086   +0.0000  
+   31   6  1.40  TURN_L   | +0.0418   +0.0800   +0.0800   +0.0800   +0.0282   +0.0084   +0.0000  
+   34   6  1.50  TURN_L   | -0.1674   +0.0800   +0.0800   +0.0800   +0.0338   +0.0117   +0.0000  
+   27   5  3.26  LANE_KEEP| +0.0000   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000  
+   36   7  3.63  TURN_R   | -0.2000   -0.0800   -0.0800   -0.0800   -0.0444   +0.0000   +0.0000  
+    8   1  5.27  TURN_L   | -0.1827   +0.0800   +0.0800   +0.0800   +0.0120   +0.0096   +0.0000  
+    0   0  5.65  TURN_R   | -0.1546   -0.0800   -0.0800   -0.0800   -0.0327   +0.0000   +0.0000  
+   26   5  6.34  LANE_KEEP| -0.1134   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000  
+
+  GT-RIGHT windows:
+   13   2  1.12  TURN_R   | -0.0800   -0.0800   -0.0800   -0.0800   -0.0800   +0.0140   +0.0000  
+   38   7  3.47  TURN_R   | -0.1190   -0.0800   -0.0800   -0.0800   -0.0800   +0.0000   +0.0000  
+   24   4  4.89  LANE_KEEP| +0.1746   +0.1747   +0.1603   +0.1747   +0.0000   +0.0000   +0.0000  
+   23   4  5.37  TURN_R   | -0.0917   -0.0800   -0.0800   -0.0800   -0.0800   +0.0166   +0.0000  
+    4   0  5.48  TURN_R   | -0.1487   -0.0800   -0.0800   -0.0800   -0.0489   +0.0000   +0.0000  
+   19   3  5.81  LANE_KEEP| +0.1510   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000   +0.0000  
+    3   0  6.38  TURN_R   | -0.0800   -0.0800   -0.0800   -0.0800   -0.0800   +0.0158   +0.0000  
+   18   3 10.15  LANE_KEEP| -0.1135   -0.0888   +0.1381   -0.0888   +0.0000   +0.0000   +0.0000  

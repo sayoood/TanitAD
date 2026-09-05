@@ -1,0 +1,47 @@
+==============================================================================
+A. THE GOAL VOCABULARY -- canonical_controls(TURN_L) vs (TURN_R)
+==============================================================================
+  [PASS] kappa channel is EXACTLY antisymmetric         max|kL + kR| = 0.000e+00 ; kL[0]=+0.08000 kR[0]=-0.08000
+        control(ok): kappa is NOT identically zero  max|kL| = 0.08000 (must be non-zero)
+  [PASS] accel channel is EXACTLY equal                 max|aL - aR| = 0.000e+00
+        control(ok): LANE_KEEP kappa DIFFERS from TURN_L max|kLK - kL| = 0.08000 (must be non-zero)
+  [PASS] NUDGE_L/NUDGE_R kappa antisymmetric            max|kA + kB| = 0.000e+00
+  [PASS] LANE_CHANGE_L/LANE_CHANGE_R kappa antisymmetric max|kA + kB| = 0.000e+00
+
+==============================================================================
+B. THE COST -- does the curvature charge treat +kappa and -kappa alike?
+==============================================================================
+  [PASS] W_KAPPA * kappa^2 is EXACTLY sign-invariant    max|c(+k) - c(-k)| = 0.000e+00 over n=2000 random profiles
+        control(ok): the charge is NOT constant     std = 5.701e-05 (must be non-zero)
+  [PASS] sign-invariance holds at every ladder rung (0, 0.05, 15.11245, 151.1245)
+
+==============================================================================
+C. THE CLIP and the KAMM CAP
+==============================================================================
+  [PASS] _clip (no Kamm): kappa clip is sign-symmetric  max|k+ + k-| = 0.000e+00
+        control(ok): the clip actually BITES        2533 of 5000 steps exceeded kappa_max=0.200
+  [PASS] _clip WITH Kamm mu=0.7: sign-symmetric         max|k+ + k-| = 0.000e+00
+        control(ok): the Kamm cap actually BITES at v=20 max|k_kamm - k_plain| = 0.18360
+
+==============================================================================
+D. THE iCEM SEARCH DISTRIBUTION -- is the noise pool sign-symmetric?
+==============================================================================
+  [PASS] colored_noise kappa channel is zero-mean (seed 0) mean = +4.292e-10, 4*SE = 1.897e-02, n = 40000
+        control(ok): the noise is NOT degenerate    std = 0.9487
+  [PASS]   ... and balanced in sign (seed 0)            n(+)=20045 n(-)=19955  |diff|=90  4*sqrt(n)=800
+  [PASS] colored_noise kappa channel is zero-mean (seed 1) mean = -1.431e-09, 4*SE = 1.897e-02, n = 40000
+        control(ok): the noise is NOT degenerate    std = 0.9487
+  [PASS]   ... and balanced in sign (seed 1)            n(+)=20026 n(-)=19974  |diff|=52  4*sqrt(n)=800
+
+==============================================================================
+E. THE LABELLER -- factor_from_kinematics on a mirrored trajectory
+==============================================================================
+  [PASS] mirroring y swaps turn_left <-> turn_right EXACTLY 3000/3000 windows map correctly
+        control(ok): the mirror actually CHANGES the label set 2423 of 3000 labels differ
+  [PASS] mirroring leaves the LONGITUDINAL label untouched identical
+  [**FAIL**] dyaw is exactly negated by the mirror          max|dy + dym| = 2.384e-07
+        label mix in the synthetic set: {1: 1181, 2: 1242, 0: 577}
+
+==============================================================================
+SUMMARY: 22 assertions, 1 FAILED
+==============================================================================
