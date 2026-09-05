@@ -367,6 +367,49 @@ nothing.
 
 ---
 
+## The suite, and the attribution done by CONTROL rather than by argument
+
+**Touched surface — the binding check.** Every test file that imports any module
+this change touches (`refc_v3_train`, `refc_agents`, `rig_projection`,
+`anchor_meta`), run against the final code: **239 passed, 1 skipped**.
+
+**Whole `stack/` suite:** `6,213 passed · 27 failed · 7 errors · 115 skipped ·
+2 xfailed` in 22:30.
+
+⛔ **27 of 27 failures and 7 of 7 errors are NOT attributable to this change —
+MEASURED, not argued.** The pre-change `refc_v3_train.py` (blob at `1ea30c8`,
+asserted to lack `AGENT_QUERIES_DEFAULT` and `_build_rig_camera`) was shadowed
+onto `PYTHONPATH` ahead of the current one — the shadow verified active by
+importing it and printing its `__file__` — and the failing files re-run against
+it:
+
+| set | with the change | with the PRE-change trainer |
+|---|---|---|
+| the 9 files failing in run 1 | 13 failed, 7 errors | **13 failed, 7 errors — identical names** |
+| the 5 remaining files | 14 failed | **14 failed — identical names** |
+| **total** | **27 + 7** | **27 + 7, same set** |
+
+⚠️ **And most of them are not code failures at all** — they are the mirror-resync
+trap in `CLAUDE.md`, measured: the off-Drive run surface was missing **93 files**
+under `taniteval/` and `tools/`, plus `Project Steering/`'s record files
+(`test_decision_check` fails with *"record file(s) absent: DECISIONS_2026-07-20.md,
+MODEL_REGISTRY.md, RETRACTION_LOG.md"* — all three present in the repo) and
+`E4_SELECTOR_RESOLUTION.md` (present in the repo, absent from the mirror).
+Syncing `taniteval/` turned **4** of them green — with this change in place.
+The rest are other streams' known items: `test_mktree_commit` (6 — the tool
+hardcodes the G: repo path, so its fixture repo is not the repo it acts on),
+`test_refav1_kin_contract::test_A6` (named in mm-decisions **M14** as failing
+independently), the v6 trainer's own runbook/horizon refusals, and
+`test_text_encoding_is_explicit`, whose 9 offenders are all other files.
+
+⚠️ **The first full run reported 38 failures and I could not attribute them from
+it** — the background command piped through `tail -20`, so the short summary was
+truncated and *"the failures I can see"* was a claim about the pipe, not about the
+suite. Re-run with `-rf` and the whole output captured. Same family as *"0 hits is
+a claim about the SEARCH"*.
+
+---
+
 ## ⚠️ ESCALATIONS — for the Master Mind, not for a reader to find later
 
 1. ⛔ **`AgentSeamConfig.queries` still defaults to 32 in `tanitad/refs/refc_agents.py`, and its
