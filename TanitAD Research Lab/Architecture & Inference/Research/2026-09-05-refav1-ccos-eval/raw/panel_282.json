@@ -1,0 +1,395 @@
+{
+ "tool": "panel_analysis.py",
+ "source": "thor/box_panel_282.json",
+ "n_windows": 282,
+ "n_episodes": 141,
+ "box_names": [
+  "cv",
+  "decel_1.5",
+  "kap+0.2",
+  "kap-0.2",
+  "kap+0.1",
+  "kap-0.1",
+  "kap+0.05",
+  "kap-0.05",
+  "kap+0.02",
+  "kap-0.02",
+  "kap+0.01",
+  "kap-0.01",
+  "acc+4.0",
+  "acc-4.0",
+  "acc+2.0",
+  "acc-2.0",
+  "acc+1.5",
+  "acc-1.5",
+  "acc+0.5",
+  "acc-0.5",
+  "turnL_slow",
+  "turnR_slow",
+  "rampL",
+  "rampR",
+  "seed0",
+  "proposal"
+ ],
+ "n_designed": 22,
+ "goal_dim": [
+  64,
+  1024
+ ],
+ "model": {
+  "ckpt": "/home/nvidia/experiments/refav1-b1-v72-ep3-speed/ckpt.pt",
+  "step": 21109,
+  "config_source": "/home/nvidia/experiments/refav1-b1-v72-ep3-speed/config.json",
+  "state_dict_load": {
+   "missing_keys": [],
+   "unexpected_keys": []
+  },
+  "eval_time_cfg_overrides": {},
+  "cfg": {
+   "tac_vocab_version": "v7.0",
+   "d_enc": 1024,
+   "n_tokens": 640,
+   "d_state": 1024,
+   "op_dt": 0.2,
+   "op_steps": 30,
+   "op_layers": 6,
+   "op_heads": 8,
+   "op_window": 4,
+   "tac_dt": 0.6,
+   "tac_steps": 10,
+   "tac_queries": 64,
+   "tac_layers": 4,
+   "str_dt": 3.0,
+   "str_steps": 2,
+   "str_dim": 256,
+   "str_layers": 2,
+   "str_horizon_s": 12.0,
+   "w_feat_str_ext": 0.25,
+   "a_dim": 2,
+   "speed_channel": true,
+   "tmix_groups": null,
+   "plan_horizon_s": 2.0,
+   "goal_times_s": [
+    2.0,
+    4.0,
+    6.0
+   ],
+   "plan_level": "tactical",
+   "verify_on_operative": true,
+   "tactical_cfg": {
+    "d_model": 512,
+    "depth": 6,
+    "n_heads": 8,
+    "n_maneuvers": 5,
+    "waypoint_horizons": [
+     5,
+     10,
+     15,
+     20
+    ],
+    "d_intent": 256,
+    "cadence": 5
+   },
+   "strategic_cfg": {
+    "n_commands": 4,
+    "d_cmd": 128,
+    "d_model": 384,
+    "depth": 4,
+    "n_heads": 6,
+    "d_ctx": 256,
+    "n_route": 3,
+    "cadence": 20
+   },
+   "w_feat_op": 1.0,
+   "w_feat_tac": 0.5,
+   "w_feat_str": 0.25,
+   "w_aux_head": 0.0,
+   "proposal_k": 1,
+   "w_cf": 0.0,
+   "cf_negs": 3,
+   "cf_tau": 1.0,
+   "cf_at_step": 4,
+   "motion_inject": false,
+   "w_tac_label": 0.1,
+   "w_str_label": 0.1,
+   "nav_inject": true,
+   "target_space": "frozen",
+   "detach_aux_targets": true,
+   "ema_targets": true,
+   "ema_decay": 0.996,
+   "ema_decay_end": 0.999,
+   "w_sigreg": 0.0,
+   "sigreg_slices": 512,
+   "var_floor": 0.0,
+   "min_participation": 0.0,
+   "bptt_truncate": 15
+  },
+  "trainable_parameters": 0,
+  "a_dim": 2,
+  "target_space": "frozen",
+  "tac_vocab_version": "v7.0"
+ },
+ "icem_iter0": {
+  "n": 300,
+  "jerk_raw_min": 4.710708141326904,
+  "jerk_raw_median": 18.006519317626953,
+  "penalty_shipped_median": 0.36196404695510864,
+  "penalty_shipped_p90": 0.6868163347244263,
+  "penalty_shipped_max": 1.3442996740341187
+ },
+ "metrics": {
+  "cos": {
+   "goal_cv": {
+    "median": 1.1920928955078125e-07,
+    "p10": 0.0,
+    "p90": 4.4357776641845706e-05,
+    "max": 0.0005575418472290039,
+    "min": -1.1920928955078125e-07,
+    "n_exactly_0": 95,
+    "n_exactly_1": 0,
+    "ci95_median_episode_cluster": [
+     5.960464477539063e-08,
+     1.7881393432617188e-07
+    ]
+   },
+   "cost_cv_equals_goal_cv_max_abs": 0.0,
+   "term_median_over_box": 3.8504600524902344e-05,
+   "box_spread_median": 0.0024174153804779053,
+   "kappa_subbox_spread_median": 2.0265579223632812e-06,
+   "LR_gap_median": 4.76837158203125e-07,
+   "LR_rel_to_term_median_pct": 31.297451490548887,
+   "LR_rel_ci95": [
+    30.508474576271187,
+    38.35616438356164
+   ],
+   "exclusion_iter0_shipped": {
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0,
+    "using_goal_cv_minus_best_candidate_median_pct": 100.0
+   }
+  },
+  "chord": {
+   "goal_cv": {
+    "median": 0.00036284580710344017,
+    "p10": 3.9459120770857224e-08,
+    "p90": 0.00942118251696229,
+    "max": 0.0333944708108902,
+    "min": 3.3430765711273125e-08,
+    "n_exactly_0": 0,
+    "n_exactly_1": 0,
+    "ci95_median_episode_cluster": [
+     9.472809026078721e-08,
+     0.0005495552904903889
+    ]
+   },
+   "cost_cv_equals_goal_cv_max_abs": 0.0,
+   "term_median_over_box": 0.00877968780696392,
+   "box_spread_median": 0.0684258868714096,
+   "kappa_subbox_spread_median": 0.001960754272650078,
+   "LR_gap_median": 0.0007307854975806549,
+   "LR_rel_to_term_median_pct": 8.479779163701942,
+   "LR_rel_ci95": [
+    0.7901386860573986,
+    15.563614426482502
+   ],
+   "exclusion_iter0_shipped": {
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0,
+    "using_goal_cv_minus_best_candidate_median_pct": 100.0
+   },
+   "leverage_vs_cos": {
+    "value_median_cell_ratio": 178.8326299863254,
+    "value_ci95": [
+     NaN,
+     NaN
+    ],
+    "decision_median_box_spread_ratio": 28.160378779567136,
+    "decision_ci95": [
+     26.548574949647325,
+     29.909689178399987
+    ],
+    "LR_gap_median_ratio": 107.91523004033024,
+    "n_cells": 5566,
+    "n_windows": 282,
+    "compensated_triple_decision": [
+     0.5632075755913427,
+     1.4080189389783568,
+     2.8160378779567137
+    ],
+    "compensated_triple_value": [
+     3.576652599726508,
+     8.941631499316271,
+     17.883262998632542
+    ]
+   },
+   "exclusion_iter0_compensated_decision": {
+    "factor": 28.160378779567136,
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0
+   },
+   "exclusion_iter0_compensated_value": {
+    "factor": 178.8326299863254,
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0
+   }
+  },
+  "ccos": {
+   "goal_cv": {
+    "median": 1.0,
+    "p10": 0.9315951526165008,
+    "p90": 1.084571933746338,
+    "max": 1.1765661239624023,
+    "min": 0.7771585583686829,
+    "n_exactly_0": 0,
+    "n_exactly_1": 133,
+    "ci95_median_episode_cluster": [
+     1.0,
+     1.0
+    ]
+   },
+   "cost_cv_equals_goal_cv_max_abs": 0.0,
+   "term_median_over_box": 1.0,
+   "box_spread_median": 1.9522498846054077,
+   "kappa_subbox_spread_median": 1.8959859311580658,
+   "LR_gap_median": 1.8923969268798828,
+   "LR_rel_to_term_median_pct": 189.38533952056565,
+   "LR_rel_ci95": [
+    0.0,
+    191.18806965206642
+   ],
+   "exclusion_iter0_shipped": {
+    "at_median_window_pct": 1.6666666666666667,
+    "at_max_window_pct": 0.33333333333333337,
+    "using_goal_cv_minus_best_candidate_median_pct": 4.0
+   },
+   "leverage_vs_cos": {
+    "value_median_cell_ratio": 5165.6216130943185,
+    "value_ci95": [
+     NaN,
+     NaN
+    ],
+    "decision_median_box_spread_ratio": 128.63311044281727,
+    "decision_ci95": [
+     0.0,
+     318.18406328381246
+    ],
+    "LR_gap_median_ratio": 123650.36590038314,
+    "n_cells": 5566,
+    "n_windows": 282,
+    "compensated_triple_decision": [
+     2.5726622088563453,
+     6.431655522140864,
+     12.863311044281728
+    ],
+    "compensated_triple_value": [
+     103.31243226188637,
+     258.28108065471594,
+     516.5621613094319
+    ]
+   },
+   "exclusion_iter0_compensated_decision": {
+    "factor": 128.63311044281727,
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0
+   },
+   "exclusion_iter0_compensated_value": {
+    "factor": 5165.6216130943185,
+    "at_median_window_pct": 100.0,
+    "at_max_window_pct": 100.0
+   }
+  }
+ },
+ "pilot_devbox40": {
+  "value_leverage": 33715.32684680578,
+  "decision_leverage": 214.45956959102523,
+  "compensated_triple_decision_scale": [
+   4.289191391820505,
+   10.722978479551262,
+   21.445956959102524
+  ],
+  "compensated_triple_value_scale": [
+   674.3065369361155,
+   1685.7663423402892,
+   3371.5326846805783
+  ],
+  "rule": "compensated = shipped x F; F_decision preserves the goal:penalty balance at the scale that trades against the penalties (ranking); F_value preserves it at the term-magnitude scale (the chord's 5,792.6x convention)"
+ },
+ "controls": {
+  "zero_model_ptp_max": {
+   "cos": 0.0,
+   "chord": 0.0,
+   "ccos": 0.0
+  },
+  "zero_model_value_ccos_unique": [
+   0.77715862,
+   0.78398138,
+   0.80212319,
+   0.81193817,
+   0.81255519
+  ],
+  "identity_max_abs": {
+   "cos": 2.384185791015625e-07,
+   "chord": 0.0,
+   "ccos": 1.0
+  },
+  "ccos_cv_from_plan_closure": {
+   "median": 1.0,
+   "min": 0.7771586179733276,
+   "max": 1.1765661239624023,
+   "n_exactly_1": 133,
+   "note": "cv row scored ALONE against the captured z_ref: bit-identical fields give exactly 1.0; the in-batch value (basecost_cv_cl in the arm dumps) is the one the planner sees"
+  },
+  "float64_crosscheck_max_abs_ccos32_minus_ccos64": 2.494834798749679e-07,
+  "float64_crosscheck_median_abs": 3.847426710557045e-09,
+  "goalresp_rel": {
+   "median": 0.00036417884435858104,
+   "n_below_1e-6": 133,
+   "note": "||g - z_ref|| / ||z_ref||: float rounding when the decoded goal is HOLD"
+  },
+  "refnorm_median": 315.85610246913177
+ },
+ "crosscheck_second_probe": {
+  "source": "thor/ccos_panel_probe.json",
+  "shared_box_rows": [
+   "cv",
+   "decel_1.5",
+   "kap+0.2",
+   "kap-0.2",
+   "kap+0.1",
+   "kap-0.1",
+   "kap+0.05",
+   "kap-0.05",
+   "kap+0.02",
+   "kap-0.02",
+   "kap+0.01",
+   "kap-0.01",
+   "acc+4.0",
+   "acc-4.0",
+   "acc+2.0",
+   "acc-2.0",
+   "acc+1.5",
+   "acc-1.5",
+   "acc+0.5",
+   "acc-0.5"
+  ],
+  "n_windows_matched": 282,
+  "agreement": {
+   "cos": {
+    "max_abs": 1.7881393432617188e-07,
+    "median_abs": 0.0,
+    "n_cells": 5640
+   },
+   "chord": {
+    "max_abs": 2.2351741790771484e-07,
+    "median_abs": 1.3941736654032866e-10,
+    "n_cells": 5640
+   },
+   "ccos": {
+    "max_abs": 0.03139138221740723,
+    "median_abs": 0.0,
+    "n_cells": 5640
+   }
+  },
+  "note": "two independently written capture tools, same checkpoint, same windows; differences are batch-composition ulps (the probe's cv row is rolled with a different box) \u2014 agreement to ~1e-6 is the pass"
+ }
+}

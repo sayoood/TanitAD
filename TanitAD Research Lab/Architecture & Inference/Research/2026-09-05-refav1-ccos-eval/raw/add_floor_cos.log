@@ -1,0 +1,22 @@
+[2026-09-05T02:15:14Z] add_floor start
+[add_floor] 282 windows / 141 episodes -> /home/nvidia/refav1_ccos/dump_cos_ext; v0 max|d| 0.0, ha_controls max|d| 0.00e+00, kappa differs from ha on 276/282 windows
+[2026-09-05T02:15:17Z] analyze start
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+[trivial-profile] 282 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n= 282 straight=1.0000 const_speed=0.9574 CONSTANT-VELOCITY=0.9574  identical_to: ha=5/282, ha0=270/282, ha0_ext=5/282, ol=5/282
+  ha             n= 282 straight=0.0248 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha0=5/282, ha0_ext=8/282, ol=5/282
+  ha0            n= 282 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl=270/282, ha=5/282, ha0_ext=5/282, ol=5/282
+  ol             n= 282 straight=0.0248 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha=5/282, ha0=5/282, ha0_ext=5/282
+  ha0_ext        n= 282 straight=0.0319 const_speed=0.0177 CONSTANT-VELOCITY=0.0177  identical_to: cl=5/282, ha=8/282, ha0=5/282, ol=5/282
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['cl', 'ha0'] — read their LATERAL rows as a control, never as planning skill
+[lead] b1_eval_lead_block.npz: 282 windows / 141 eps · OK eps 141 · LEAD 90 NO_LEAD 63 NOT_STRAIGHT 108 NO_LABEL 21 (no-row 0) · speed-check max 1.3e-05 m/s · PRESENT
+[out] /home/nvidia/refav1_ccos/rec_cos_ext.json
+  cl             tier=T1  ADE=0.5474 [0.4839, 0.6108]  families_unavailable=['strategic']  distance_keeping=OK n=87 headway=26.2149 time_gap=4.6913 min_ttc=22.9028
+  ha             tier=T1  ADE=0.5391 [0.4544, 0.6301]  families_unavailable=['strategic']  distance_keeping=OK n=88 headway=26.9053 time_gap=4.793 min_ttc=24.8532
+  ha0            tier=T1  ADE=0.5316 [0.471, 0.5939]  families_unavailable=['strategic']  distance_keeping=OK n=87 headway=26.1645 time_gap=4.6877 min_ttc=22.8378
+  ol             tier=T0  ADE=0.4237 [0.3466, 0.507]  families_unavailable=['strategic']  distance_keeping=OK n=88 headway=27.0347 time_gap=4.8065 min_ttc=25.0674
+  ha0_ext        tier=T1  ADE=0.5207 [0.4421, 0.6081]  families_unavailable=['strategic']  distance_keeping=OK n=88 headway=26.9324 time_gap=4.7992 min_ttc=25.1401
+  distance_keeping coverage: {'LEAD': 90, 'NO_LEAD': 63, 'NOT_STRAIGHT': 108, 'NO_LABEL': 21} of 282 windows (no-row 0; eps OK 141/141) status=PRESENT
+  planner[cl] baseline_won_frac=0.6631 sources={'cem': 0.3369, 'baseline:hold_v0': 0.6383, 'baseline:decel_1.5': 0.0248} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.4113, 'BRAKE_TO': 0.117, 'ADAPT_SPEED_FOR_CURVE': 0.2766, 'ACCELERATE': 0.195}
+  strategic nav_valid_frac=1.0 n_labeled=141
+[2026-09-05T02:15:46Z] done
