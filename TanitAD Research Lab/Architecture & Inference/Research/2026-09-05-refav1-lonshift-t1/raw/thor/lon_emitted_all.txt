@@ -1,0 +1,14 @@
+# Emitted LONGITUDINAL control, per arm. `a_goal` is the decoded token's
+# own canonical a[0] at that window's v0 -- so `a_emit == a_goal` means
+# the plan IS the goal profile and a goal change would move it.
+
+arm               n   mean|a| frac a==0   const-a  ==a_goal  cem frac   cost~cv
+-------------------------------------------------------------------------------
+T_wk15           40   0.31402     0.475     0.475     0.675     0.750     0.250
+T_lonshift       40   0.46910     0.000     0.000     0.050     1.000     0.000
+T_lonshift_s1    40   0.48662     0.000     0.000     0.050     1.000     0.000
+
+# distinct emitted a[0] values (the longitudinal quantisation):
+  T_wk15         17 distinct; top: +0.000000 x19, -1.500000 x4, +0.750000 x3, -1.280142 x1, -1.273655 x1, -0.874332 x1, -0.857565 x1, -0.832212 x1
+  T_lonshift     40 distinct; top: -1.500000 x1, -1.327026 x1, -1.235136 x1, -1.187744 x1, -1.175364 x1, -1.154549 x1, -0.907298 x1, -0.874332 x1
+  T_lonshift_s1  40 distinct; top: -1.500000 x1, -1.327026 x1, -1.235136 x1, -1.175364 x1, -1.106426 x1, -1.054712 x1, -1.048830 x1, -0.978558 x1
