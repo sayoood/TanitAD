@@ -2712,7 +2712,22 @@ actually records it"* — violated inside the same file, in the same hour, by th
 buffer name is not its codec* (the `jpeg_buf`/`png` trap). ⭐ **The generalisation: when a record ships a
 field that DECLARES what each series means, reading that field is not optional diligence — it is the
 only admissible route, and any label taken from a name is INHERITED.**
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                an on **refcv3** — the model that carried **DiffusionDrive-v1's SKELETON WITHOUT ITS
+
+## M52. ⛔⛔ I LET AN RL REFUTATION ON **refcv3** STAND AS A PROGRAMME-LEVEL CONCLUSION — the PI caught it, and RULE ZERO exists to prevent exactly this
+
+### 1. The PI's correction
+
+> *"Did you give up the RL topic? This is not acceptable, because the diffusion paper v2 showed that
+> it improved the performance. And our plan is exactly to do this with refcv4b and refcv5 as they are
+> finished to train."*
+
+**He is right.** `H-RL-COLL-1` returned FAILURE, and I reported it in language
+(*"the RL campaign failed"*, *"the win contains no RL"*) that reads as a verdict on **the method**.
+It is a verdict on **one arm, on one model**.
+
+### 2. ⛔ Why the refutation does not transfer, and it is structural not rhetorical
+
+The arms ran on **refcv3** — the model that carried **DiffusionDrive-v1's SKELETON WITHOUT ITS
 MECHANISM**: no noise schedule, no anchored Gaussian, no DDIM, no sampling; its "ranking" read **t = 0
 confidence, unchanged on 201/201 windows**.
 
