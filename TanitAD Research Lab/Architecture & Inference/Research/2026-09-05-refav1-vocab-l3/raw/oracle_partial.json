@@ -2,10 +2,10 @@
  "dump": "C:/Users/Admin/refav1_drive/oracle/dump_oracle_s0",
  "cost": null,
  "goal_vocab": null,
- "n_windows": 10,
- "n_excluded_low_v0": 1,
+ "n_windows": 15,
+ "n_excluded_low_v0": 5,
  "kappa_threshold": 0.04,
- "n_turning": 3,
+ "n_turning": 4,
  "n_straight": 6,
  "ha0_ext_form": "INTEGRATOR (refav1_arm.hold_ext_controls), M11",
  "tier_note": "cl_oraclegoal and cl_oracleseed read the TRUE FUTURE => T0, diagnostics/bounds, never driving numbers (EVAL_DOCTRINE). cl / ha / ha0 / ha0_ext are T1.",
@@ -14,17 +14,17 @@
    "cl": {
     "expected": "tactical_imagined",
     "frac_matching": 1.0,
-    "n": 10
+    "n": 15
    },
    "cl_oraclegoal": {
     "expected": "supplied",
     "frac_matching": 1.0,
-    "n": 10
+    "n": 15
    },
    "cl_oracleseed": {
     "expected": "supplied+seed",
     "frac_matching": 1.0,
-    "n": 10
+    "n": 15
    }
   },
   "passes": true,
@@ -37,69 +37,69 @@
   "cl_lat_decode": {
    "LANE_KEEP": 3,
    "TURN_L": 4,
-   "TURN_R": 3
+   "TURN_R": 8
   },
   "why": "the goal must be the ONLY difference; a different decode would mean the head saw different inputs"
  },
  "ade": {
   "all_valid": {
    "cl": {
-    "n": 9,
-    "mean": 1.6550384759902954
+    "n": 10,
+    "mean": 1.515810251235962
    },
    "cl_oraclegoal": {
-    "n": 9,
-    "mean": 3.282707691192627
+    "n": 10,
+    "mean": 2.969611644744873
    },
    "cl_oracleseed": {
-    "n": 9,
-    "mean": 2.6388838291168213
+    "n": 10,
+    "mean": 2.3901703357696533
    },
    "ha": {
-    "n": 9,
-    "mean": 1.4939392805099487
+    "n": 10,
+    "mean": 1.355590581893921
    },
    "ha0": {
-    "n": 9,
-    "mean": 1.3308173418045044
+    "n": 10,
+    "mean": 1.2254664897918701
    },
    "ha0_ext": {
-    "n": 9,
-    "mean": 1.373345136642456
+    "n": 10,
+    "mean": 1.248291015625
    },
    "ol": {
-    "n": 9,
-    "mean": 1.1935702562332153
+    "n": 10,
+    "mean": 1.0859553813934326
    }
   },
   "turning": {
    "cl": {
-    "n": 3,
-    "mean": 0.9614165425300598
+    "n": 4,
+    "mean": 0.7867515683174133
    },
    "cl_oraclegoal": {
-    "n": 3,
-    "mean": 2.5475990772247314
+    "n": 4,
+    "mean": 1.948636531829834
    },
    "cl_oracleseed": {
-    "n": 3,
-    "mean": 2.5475990772247314
+    "n": 4,
+    "mean": 1.948636531829834
    },
    "ha": {
-    "n": 3,
-    "mean": 2.5560221672058105
+    "n": 4,
+    "mean": 1.9446296691894531
    },
    "ha0": {
-    "n": 3,
-    "mean": 1.7249406576156616
+    "n": 4,
+    "mean": 1.3630326986312866
    },
    "ha0_ext": {
-    "n": 3,
-    "mean": 2.4347074031829834
+    "n": 4,
+    "mean": 1.8567314147949219
    },
    "ol": {
-    "n": 3,
-    "mean": 2.4908134937286377
+    "n": 4,
+    "mean": 1.897465705871582
    }
   },
   "straight": {
@@ -134,24 +134,24 @@
   }
  },
  "HEADLINE_turning": {
-  "n": 3,
-  "cl_oracleseed": 2.5475990772247314,
-  "ha0_ext": 2.4347074031829834,
-  "ha": 2.5560221672058105,
-  "ratio_oracleseed_over_ha0ext": 1.0463676452636719,
+  "n": 4,
+  "cl_oracleseed": 1.948636531829834,
+  "ha0_ext": 1.8567314147949219,
+  "ha": 1.9446296691894531,
+  "ratio_oracleseed_over_ha0ext": 1.0494983196258545,
   "beats_ha0_ext": false,
-  "cl_ratio_over_ha0ext": 0.39487969875335693
+  "cl_ratio_over_ha0ext": 0.4237293303012848
  },
  "paired": {
   "cl_oracleseed_minus_cl": {
    "all_valid": {
-    "n": 9,
-    "mean": 0.9838454127311707,
+    "n": 10,
+    "mean": 0.8743600845336914,
     "n_exact_ties": 0
    },
    "turning": {
-    "n": 3,
-    "mean": 1.5861825942993164,
+    "n": 4,
+    "mean": 1.1618850231170654,
     "n_exact_ties": 0
    },
    "straight": {
@@ -162,13 +162,13 @@
   },
   "cl_oraclegoal_minus_cl": {
    "all_valid": {
-    "n": 9,
-    "mean": 1.6276689767837524,
+    "n": 10,
+    "mean": 1.4538013935089111,
     "n_exact_ties": 0
    },
    "turning": {
-    "n": 3,
-    "mean": 1.5861825942993164,
+    "n": 4,
+    "mean": 1.1618850231170654,
     "n_exact_ties": 0
    },
    "straight": {
@@ -179,14 +179,14 @@
   },
   "cl_oracleseed_minus_cl_oraclegoal": {
    "all_valid": {
-    "n": 9,
-    "mean": -0.6438237428665161,
-    "n_exact_ties": 5
+    "n": 10,
+    "mean": -0.5794413685798645,
+    "n_exact_ties": 6
    },
    "turning": {
-    "n": 3,
+    "n": 4,
     "mean": 0.0,
-    "n_exact_ties": 3
+    "n_exact_ties": 4
    },
    "straight": {
     "n": 6,
@@ -199,15 +199,15 @@
   "per_arm": {
    "cl": {
     "all_valid": {
-     "n": 9,
-     "frac_at_kappa_max": 0.1111111111111111,
+     "n": 10,
+     "frac_at_kappa_max": 0.1,
      "frac_at_a_max": 0.0,
-     "mean_max_abs_kappa": 0.09382839500904083,
-     "mean_max_abs_accel": 0.2600761950016022,
-     "frac_curvature_nonzero": 0.8888888888888888
+     "mean_max_abs_kappa": 0.09244555234909058,
+     "mean_max_abs_accel": 0.2340685874223709,
+     "frac_curvature_nonzero": 0.9
     },
     "turning": {
-     "n": 3,
+     "n": 4,
      "frac_at_kappa_max": 0.0,
      "frac_at_a_max": 0.0,
      "mean_max_abs_kappa": 0.07999999821186066,
@@ -225,19 +225,19 @@
    },
    "cl_oraclegoal": {
     "all_valid": {
-     "n": 9,
-     "frac_at_kappa_max": 0.5555555555555556,
-     "frac_at_a_max": 0.2222222222222222,
-     "mean_max_abs_kappa": 0.1820031851530075,
-     "mean_max_abs_accel": 2.3875133991241455,
+     "n": 10,
+     "frac_at_kappa_max": 0.5,
+     "frac_at_a_max": 0.2,
+     "mean_max_abs_kappa": 0.17929160594940186,
+     "mean_max_abs_accel": 2.363585948944092,
      "frac_curvature_nonzero": 1.0
     },
     "turning": {
-     "n": 3,
-     "frac_at_kappa_max": 0.3333333333333333,
+     "n": 4,
+     "frac_at_kappa_max": 0.25,
      "frac_at_a_max": 0.0,
-     "mean_max_abs_kappa": 0.15867187082767487,
-     "mean_max_abs_accel": 2.985116720199585,
+     "mean_max_abs_kappa": 0.1577257663011551,
+     "mean_max_abs_accel": 2.7758970260620117,
      "frac_curvature_nonzero": 1.0
     },
     "straight": {
@@ -251,19 +251,19 @@
    },
    "cl_oracleseed": {
     "all_valid": {
-     "n": 9,
-     "frac_at_kappa_max": 0.4444444444444444,
-     "frac_at_a_max": 0.1111111111111111,
-     "mean_max_abs_kappa": 0.16897553205490112,
-     "mean_max_abs_accel": 2.364076614379883,
+     "n": 10,
+     "frac_at_kappa_max": 0.4,
+     "frac_at_a_max": 0.1,
+     "mean_max_abs_kappa": 0.16756671667099,
+     "mean_max_abs_accel": 2.3424928188323975,
      "frac_curvature_nonzero": 1.0
     },
     "turning": {
-     "n": 3,
-     "frac_at_kappa_max": 0.3333333333333333,
+     "n": 4,
+     "frac_at_kappa_max": 0.25,
      "frac_at_a_max": 0.0,
-     "mean_max_abs_kappa": 0.15867187082767487,
-     "mean_max_abs_accel": 2.985116720199585,
+     "mean_max_abs_kappa": 0.1577257663011551,
+     "mean_max_abs_accel": 2.7758970260620117,
      "frac_curvature_nonzero": 1.0
     },
     "straight": {
@@ -440,14 +440,94 @@
    "ade_ha0": 1.5141217708587646,
    "ade_ha0_ext": 0.6939231753349304,
    "ade_ol": 0.3687460720539093
+  },
+  {
+   "i": 10,
+   "v0": 0.5481864809989929,
+   "gt_kappa": -0.2262704074382782,
+   "valid": false,
+   "turning": false,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 1.1983505487442017,
+   "ade_cl_oraclegoal": 1.6705213785171509,
+   "ade_cl_oracleseed": 1.6705213785171509,
+   "ade_ha": 1.220961332321167,
+   "ade_ha0": 1.197818636894226,
+   "ade_ha0_ext": 1.220961332321167,
+   "ade_ol": 1.1752480268478394
+  },
+  {
+   "i": 11,
+   "v0": 0.028090963140130043,
+   "gt_kappa": -0.020679155364632607,
+   "valid": false,
+   "turning": false,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.012762032449245453,
+   "ade_cl_oraclegoal": 0.6789323687553406,
+   "ade_cl_oracleseed": 0.6789323687553406,
+   "ade_ha": 0.018006227910518646,
+   "ade_ha0": 0.012762917205691338,
+   "ade_ha0_ext": 0.018006227910518646,
+   "ade_ol": 0.009293995797634125
+  },
+  {
+   "i": 12,
+   "v0": 0.4265778064727783,
+   "gt_kappa": -0.07972422242164612,
+   "valid": false,
+   "turning": false,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.31102895736694336,
+   "ade_cl_oraclegoal": 0.5719766616821289,
+   "ade_cl_oracleseed": 0.5719766616821289,
+   "ade_ha": 0.1409168839454651,
+   "ade_ha0": 0.3118586242198944,
+   "ade_ha0_ext": 0.1395268738269806,
+   "ade_ol": 0.07172372937202454
+  },
+  {
+   "i": 13,
+   "v0": 1.12041437625885,
+   "gt_kappa": -0.16747412085533142,
+   "valid": true,
+   "turning": true,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.2627566456794739,
+   "ade_cl_oraclegoal": 0.15174905955791473,
+   "ade_cl_oracleseed": 0.15174905955791473,
+   "ade_ha": 0.11045237630605698,
+   "ade_ha0": 0.27730900049209595,
+   "ade_ha0_ext": 0.1228034496307373,
+   "ade_ol": 0.11742238700389862
+  },
+  {
+   "i": 14,
+   "v0": 0.10443132370710373,
+   "gt_kappa": 0.1582934558391571,
+   "valid": false,
+   "turning": false,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.08910616487264633,
+   "ade_cl_oraclegoal": 0.0726020559668541,
+   "ade_cl_oracleseed": 0.0726020559668541,
+   "ade_ha": 0.008054697886109352,
+   "ade_ha0": 0.08910670876502991,
+   "ade_ha0_ext": 0.008054668083786964,
+   "ade_ol": 0.014579763635993004
   }
  ],
  "JOINT_tie_vs_decode": {
-  "n_tied": 5,
+  "n_tied": 10,
   "n_tied_that_are_LANE_KEEP": 1,
-  "n_turning": 3,
+  "n_turning": 4,
   "n_turning_that_are_LANE_KEEP": 0,
-  "n_turning_that_are_TURN": 3,
+  "n_turning_that_are_TURN": 4,
   "why": "the joint that refuted the 'ties are the zero-seed LANE_KEEP windows' story; a mechanism claim needs it"
  }
 }

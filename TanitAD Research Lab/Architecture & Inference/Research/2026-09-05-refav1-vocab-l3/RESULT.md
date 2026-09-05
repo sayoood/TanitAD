@@ -81,54 +81,57 @@ goal-margin stream's **independent** `cos` run over the **same p4 episodes at th
 mount an all-equal report is otherwise indistinguishable from reading nothing — a `0` from a file
 that could not be read looks exactly like a genuine `0`.)*
 
-### 1b. ⚠️ PARTIAL READ — 2 of 8 episodes, n = 9 valid windows. DIRECTIONAL ONLY, NO CLAIM
+### 1b. ⚠️ PARTIAL READ — 3 of 8 episodes, n = 10 valid windows. DIRECTIONAL ONLY, NO CLAIM
 
-The run is 2/8 done at hand-off. This is banked because the dumps must not be re-paid for and
+The run is 3/8 done at hand-off. This is banked because the dumps must not be re-paid for and
 because the saturation readout is already attributable; **it is not a result.** No interval, no
 bootstrap, no four-family table — those come from `refav1_arm.py --analyze-only` on the finished
-dump. 10 windows, **1 excluded** at v0 < 1 m/s, **3 turning** at |gt_κ| > 4e-2.
+dump. 15 windows, **5 excluded** at v0 < 1 m/s, **4 turning** and **6 straight** at
+|gt_κ| > 4e-2.
 
-⛔ **Both controls PASS on all 10 windows:** `goal_source` is `tactical_imagined` 10/10 (`cl`),
+⛔ **Both controls PASS on all 15 windows:** `goal_source` is `tactical_imagined` 10/10 (`cl`),
 `supplied` 10/10 (`cl_oraclegoal`), **`supplied+seed` 10/10** (`cl_oracleseed`); and the decoded
 (lat, lon) seed token is **identical** between `cl` and `cl_oracleseed` on every window. ⇒ the goal
 really is the only difference.
 
-| arm | tier | ALL (n = 9) | TURNING (n = 3) | STRAIGHT (n = 6) |
+| arm | tier | ALL (n = 10) | TURNING (n = 4) | STRAIGHT (n = 6) |
 |---|---|---|---|---|
-| `cl` (shipped) | T1 | **1.6550** | **0.9614** | 2.0018 |
-| `cl_oraclegoal` (CONFOUNDED — no seed) | T0 | 3.2827 | 2.5476 | 3.6503 |
-| ⭐ `cl_oracleseed` (DE-CONFOUNDED) | T0 | **2.6389** | **2.5476** | 2.6845 |
-| `ha` | T1 | 1.4939 | 2.5560 | 0.9629 |
-| `ha0` | T1 | 1.3308 | 1.7249 | 1.1338 |
-| **`ha0_ext`** (INTEGRATOR, M11) | T1 | 1.3733 | **2.4347** | 0.8427 |
-| `ol` | ⛔ T0 | 1.1936 | 2.4908 | 0.5449 |
+| `cl` (shipped) | T1 | **1.5158** | **0.7868** | 2.0018 |
+| `cl_oraclegoal` (CONFOUNDED — no seed) | T0 | 2.9696 | 1.9486 | 3.6503 |
+| ⭐ `cl_oracleseed` (DE-CONFOUNDED) | T0 | **2.3902** | **1.9486** | 2.6845 |
+| `ha` | T1 | 1.3556 | 1.9446 | 0.9629 |
+| `ha0` | T1 | 1.2255 | 1.3630 | 1.1338 |
+| **`ha0_ext`** (INTEGRATOR, M11) | T1 | 1.2483 | **1.8567** | 0.8427 |
+| `ol` | ⛔ T0 | 1.0860 | 1.8975 | 0.5449 |
 
-**On the headline question, so far and on n = 3 turning windows:** a perfect goal delivered
-honestly reads **2.5476** against the `ha0_ext` floor's **2.4347** — ratio **1.046**, it does
-**NOT** beat the floor — while the *shipped* arm reads **0.9614**, ratio **0.395**, and does.
-⛔ **n = 3. This is an anecdote, not an answer.**
+**On the headline question, so far and on n = 4 turning windows:** a perfect goal delivered
+honestly reads **1.9486** against the `ha0_ext` floor's **1.8567** — ratio **1.049**, it does
+**NOT** beat the floor — while the *shipped* arm reads **0.7868**, ratio **0.424**, and does.
+Paired against `cl` the perfect goal is worse **everywhere**: **+0.874** overall, **+1.162** on
+turning, **+0.683** on straight. ⛔ **n = 4. This is an anecdote, not an answer** — but it is the
+same anecdote at 2 and at 3 episodes (ratio 1.046 → 1.049), which is at least not noise chasing.
 
 ⭐⭐ **THE ATTRIBUTABLE PART — ERRATUM §E3's SATURATION READOUT, and it survives de-confounding.**
 Fraction of windows whose planned controls touch `kappa_max = 0.2`:
 
 | arm | ALL | TURNING | STRAIGHT | mean max \|accel\| (ALL) |
 |---|---|---|---|---|
-| `cl` | **0.111** | 0.000 | 0.167 | **0.260** |
-| `cl_oraclegoal` (confounded) | 0.556 | 0.333 | 0.667 | 2.388 |
-| `cl_oracleseed` (de-confounded) | **0.444** | 0.333 | 0.500 | **2.364** |
+| `cl` | **0.100** | 0.000 | 0.167 | **0.234** |
+| `cl_oraclegoal` (confounded) | 0.500 | 0.250 | 0.667 | 2.364 |
+| `cl_oracleseed` (de-confounded) | **0.400** | 0.250 | 0.500 | **2.342** |
 
 ⇒ **the saturation is caused by the GOAL FIELD, not by the missing seed.** Restoring the seed
-moves it 0.556 → 0.444 and leaves the acceleration channel essentially untouched (2.388 → 2.364,
-against the shipped arm's 0.260). `D-REFAV1-DRIVE-ORACLE`'s reading — *"an optimiser climbing a
+moves it 0.500 → 0.400 and leaves the acceleration channel essentially untouched (2.364 → 2.342,
+against the shipped arm's 0.234); on turning windows it does not move it **at all** (0.250 both). `D-REFAV1-DRIVE-ORACLE`'s reading — *"an optimiser climbing a
 cosine toward a target no control sequence can realise"* — is therefore **not** an artefact of the
 confound, which is the single most useful thing this partial says.
 
 ⛔⛔ **SELF-CORRECTION, SAME TURN — A MECHANISM I COMMITTED ONE COMMIT AGO IS WRONG.**
 Commit `0ac99f4` (and this document's first version) explained the exact ties between
 `cl_oracleseed` and `cl_oraclegoal` as *"precisely the `LANE_KEEP` decodes, where the restored seed
-is the all-zero profile"*. **The window-level data refutes it:** all **3** turning windows decode
-`TURN_*` (2 × `TURN_R`, 1 × `TURN_L`) and **0** decode `LANE_KEEP`; across all windows only **1 of
-the 5** tied windows is a `LANE_KEEP` decode. The story was plausible, fitted the first episode's
+is the all-zero profile"*. **The window-level data refutes it:** all **4** turning windows decode
+`TURN_*` and **0** decode `LANE_KEEP`; across all windows only **1 of the 10** tied windows is a
+`LANE_KEEP` decode. The story was plausible, fitted the first episode's
 5 windows, and was **not checked against the joint** before it was written.
 ⭐ **And the true reading is stronger than the false one:** on those turning windows the seed is a
 genuine, non-zero, correctly-signed `TURN_*` candidate — and **the plan comes out bit-identical
