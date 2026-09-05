@@ -310,7 +310,255 @@ Not to chase ADE. V2's published shape is the target: the raw fan's **floor** ro
 
 `H-RL-MIN-1` (`…/2026-09-05-refc-rl-readiness/`: driver `stack/scripts/rl_refcv3_min.py`, chain `launch_refcv3_rl_min.sh`, STAGE 0 PASS, four arms `base · rl · reg_echo · ctrl0`, verdict order VOID → FAIL-COLLAPSE → FAIL-GUARD → FAIL-FAN → PASS → SPLIT → REJECT-SELECTOR → NULL) is re-scoped as **E-DDA-3b**: base = the **refcv4b final** checkpoint (not refcv3) once it lands; the one-variable delta vs the surrogate per-coordinate version = the two code-only V2 ingredients (≥ GT bar + 2-scalar control-scale exploration); `reg_echo` (the GT future inside the advantage) **must FAIL the G-FAN gate or the run is VOID**; `ctrl0` (lr 0) must read Δ = 0 exactly. Outcomes committed in `H-DDA-5`: the along-track oracle gap shrinks with CI excluding 0 **and** fan-collision does not rise ⇒ the V2 lever transfers on the predicted axis, schedule E-DDA-3's chain; along shrinks but lateral worsens ⇒ scale-only exploration too coarse, stop; neither ⇒ V2's map half was load-bearing, park RL until a lane signal exists. Then **E-DDA-6** (grouping key) on the same rig. Cost ≈ 2.5–3 h of the 4060 serial per panel (MEASURED/ESTIMATED, `D-RL-READY-1`), 0 pod GPU. ⛔ **Launch is the Master Mind's / PI's call** (`LAUNCH_APPROVED=1`); this plan launches nothing.
 
-## §7 Implementation ladder `[PENDING]`
+## §7 Implementation ladder
+
+**The ordering principle.** The ladder is sorted by *what is free first*, not by what is most
+interesting. Every rung is **one lever**, pre-registered per `TanitAD_ValidateAIDesign` with a
+deliberate-regression arm and controls that must read known values, and validated on the **`tiny` rig
+rung** — `V3_RIG_SIZES = {"tiny": (32, (2, 2, 4, 2))}`, **16,989,725 params** MEASURED by building
+(`refc_v3.py:492-518`), deliberately outside `V3_SIZES` so `test_refc_v3_scale_matrix.py` keeps
+guarding the registered ladder. ⛔ **Nothing measured at the rig rung is a model claim** — it
+validates the *wiring and the gate*, never the architecture's quality, and no registry row may cite
+it (`refc_v3.py:511-514`).
+
+### 7.0 The two clocks — what starts NOW at zero GPU, and what waits for refcv4b
+
+refcv4b is 🟢 **TRAINING** on `tanitad-refcv3` (= `tanitad-a40`), 40,284 steps at **3.844 s/step**
+marginal median, ETA **~2026-09-06 08:00 UTC** (ESTIMATED, `MODEL_REGISTRY.md` §4.6 *Pace*). ⛔ Never
+eval on that pod while it trains; ⛔ never modify its run dir except to add a sidecar. That single
+fact partitions the ladder:
+
+| clock | rungs | why |
+|---|---|---|
+| ⭐ **NOW, ZERO GPU** (code, data, instruments, prereg) | **WP-0** instrument gaps · **WP-1** V5-VOCAB build · **WP-2** E-DDA-2 wiring · **WP-3** E-DDA-1 module · **WP-4** E-DDA-3 sampler · **WP-5** E-DDA-5 loss forms · **WP-6** E-AGT-1 head + join · **WP-7** E-DDA-2b selector module · **WP-8** nav wiring E15–E21 / S7 / S8 · **WP-11** LiDAR pilot scripts + rasteriser + tests | all are source changes, CPU-only artifact builds, or pre-registrations. None reads a refcv4b weight. |
+| **NOW, DEV-BOX GPU** (RTX 4060, 8,187 MiB; ⚠️ currently carrying the `H-EGO-LIT-4` panel — schedule serially) | the tiny-rig panels for WP-2…WP-8 as each module lands; **WP-10** `H-EGO-LIT-4` (running) | the rig rung fits the 4060 (~29 min/arm; ~17 min/arm on Thor). |
+| ⏳ **WAITS FOR A refcv4b CHECKPOINT** | **WP-9a** E-DDA-4 final read · **WP-9b** the post-training hierarchy ablation panel (`PREREG_REFCV4B_HIERARCHY_EVAL.md`, incl. the free `H-SEL-1` read of E-DDA-2) · **WP-12** E-DDA-2b selector *training* (frozen generator) · **WP-13** E-DDA-3b / E-DDA-6 RL (cold start = the refcv4b final) | each needs trained weights. ⭐ **E-DDA-4 does NOT have to wait for the FINAL**: `ckpt_step9500.pt` (1,285,301,425 B) is already on the dev box at `C:\Users\Admin\navcomp\ckpt\` and gives the readout *today* as an early-training diagnostic, exactly as `D-REFCV4B-EGODROP2` did. |
+| ⏳ **WAITS FOR THE PI** | **WP-11b** LiDAR corpus build + **E-LIDAR-1** (inference-input doctrine, `D-REFCV5-PLAN-7`) · **WP-14** the refcv5 A40 launch (`LAUNCH_APPROVED=1`) | §2 I3 and the never-launch rule. |
+
+⇒ **Ten of fourteen work packages start today at zero pod GPU.** The LiDAR build is deliberately
+*last* on the model critical path (§3.4) so it can never gate the launch.
+
+### 7.1 The work packages
+
+Param deltas are **ESTIMATED by arithmetic** from `DecoderConfig(d=384, n_heads=8, layers=4,
+ff_mult=4)` and `feat_dim = base_width·8 = 704` at `size base` (`refc.py:273, :291, :380-387`); each
+one is **counted by building** in its own WP and the launch preflight pins the delta the way
+`REGISTERED_DELTA_KEYS_V4` pins v4's (`refc_v3.py:527-536`) — an asserted delta, not a described one.
+
+| WP | delivers | primary files | arm | one variable | Δ params (EST) | box · cost | starts | blocked by |
+|---|---|---|---|---|---|---|---|---|
+| **WP-0** | the three instrument gaps that block reads, not runs | `taniteval/tools/refcv3_arm.py`, `taniteval/plan_fan.py`, `stack/tanitad/eval/echo_gate.py` | — | — | 0 | CPU · ~1 d | **NOW** | — |
+| **WP-1** | vocabulary **v5**: realised-speed κ clamp + build-time Kamm filter + the 13 × 11 grid | `stack/scripts/build_refc_anchors.py`, `stack/tanitad/refs/anchor_meta.py`, `stack/tanitad/instruments/flyability.py` | **V5-VOCAB** | the anchor family | 0 (a data artifact) | CPU · ~0.5 d | **NOW** | — |
+| **WP-2** | score the fan actually emitted (0 new params) | `refc.py` `SelectionConfig` (`:467-472`, `:1703-1710`), `refc_v3_train.py` | **E-DDA-2** | `sel.refined+score_emitted+sel_ce_reach` on/off | **0** | tiny rig · 4 arms ≈ 2 h | **NOW** | — |
+| **WP-3** | waypoint-indexed grid-sample cross-attention on the **PV** map | new `stack/tanitad/refs/refc_gridsample.py`, `refc.py::CrossAttnLayer` (`:1114-1131`), `stack/tanitad/data/calib.py` (read-only), `bev_raster.readout_column_index` | **E-DDA-1** | where the attention reads | ≈ **0.27 M** (one `Linear(704, 384)` sample projection + 4 zero-init gate scalars; ~0 if `feat_proj` is shared) | tiny rig · 4 arms ≈ 2 h | **NOW** | — |
+| **WP-4** | the **control-space** DDIM sampler (anchored Gaussian, x0, AdaLN, Fourier query init) | `refc.py` `DecoderConfig` / `AnchoredDiffusionDecoder` (`:1134-1260`, `:1541-1770`), `stack/tanitad/models/kinematic.py` (+`roll_controls`), `refc_v3_train.py::compute_losses_v3` (`:537-575`) | **E-DDA-3** | `sampler: "none" → "ddim"` | ≈ **1.67 M** (`time_mlp` 0.30 M + 4 × `time_mod` FiLM 1.18 M + `wp_embed` 0.20 M; `control_head` replaces `offset_head` at parity) | tiny rig · 5 arms ≈ 2.5 h | **NOW** (code) | E-DDA-4 for the *decision to train it* (§4.2 #2) |
+| **WP-5** | loss form: focal BCE score head; mean-L2 anchor assignment | `refc_v3_train.py`, `refc.py` score head | **E-DDA-5** | (a) CE → focal BCE; (c) assignment metric — **two separate arms, never bundled** | 0 | tiny rig · 4 arms ≈ 2 h | **NOW** | — |
+| **WP-6** | agent tokens: DETR head on `obstacle.offline` + `cross_agent` in every decoder layer | new `stack/tanitad/refs/refc_agents.py`, `refc.py` decoder, `stack/scripts/build_obstacle_join.py` (exists, pod-side), `stack/tanitad/data/bev_raster.py` | **E-AGT-1** | the second cross-attention | ≈ **6 M** (30 queries 11.5 k + 2 detection layers ≈ 3.5 M + 4 × `cross_agent` ≈ 2.4 M) | tiny rig · 4 arms ≈ 2.5 h | **NOW** (code); the **join must be run for B1** | the B1 obstacle join (pod-side, CPU) |
+| **WP-7** | the four-family coarse-to-fine sub-metric selector | new `stack/tanitad/refs/refc_selector.py`, new `stack/scripts/refc_selector_train.py`, `stack/tanitad/rl/rewards.py` (reused), `taniteval/tools/refcv3_arm.py` (`--selector`) | **E-DDA-2b** | the selector head, generator frozen | ≈ **3.5 M**, **outside the generator** (stage II) | 4060 · ≈ 3–5 h | module **NOW**; training after refcv4b | a refcv4b checkpoint's fan |
+| **WP-8** | nav / strategic wiring: E15, E16, E17, E18, E19, E20, E21 + selector gates S7 / S8 | `refc_v3.py` (`hook()`, `str_goal_head` `:655`, `:883`), `refc.py` selector (`:1639-1690`), `refc_v3_train.py` | **E15–E21, S7/S8** | **one edge per arm** (7 edges, all zero-init and individually gated) | **+7,682** total (INHERITED, `DESIGN_REFCV4_NAV_WIRING.md` §2.2) | tiny rig · 1 panel per edge ≈ 6 h total | **NOW** | — |
+| **WP-9a** | **E-DDA-4** — is the bank a prior? `‖offset‖` on the classifier pass, oracle-in-bank vs oracle-in-fan at equal N | `taniteval/tools/refcv3_arm.py`, `taniteval/plan_fan.py` | **E-DDA-4** | — (a readout, not an arm) | 0 | 4060 · ≈ 0.5 h | **NOW on `ckpt_step9500.pt`** (diagnostic); repeat on the final | — / the final ckpt for the decision |
+| **WP-9b** | the refcv4b post-training hierarchy ablation panel (12 arms) | `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3, `taniteval/tools/refcv3_arm.py` + WP-0 flags | H-NAVC-1..3, H-SEAM-1, H-H19-1, H-CONS-1, **H-SEL-1** | one ablation per arm | 0 | 4060 · ≈ 6–10 h | after refcv4b | ⛔ **WP-0** — the switches are not yet CLI flags |
+| **WP-10** | the withheld-bank panel (5 arms) | `refc.py::roll_bank` (`:1318-1368`) `ref_speed` switch; `--withheld-bank {fixed,pred,random,none}` | **H-EGO-LIT-4** | the bank's reference speed | 0 | 4060 · **RUNNING** | — | — |
+| **WP-11** | **WP-DE-BEV-1** (DataFlyWheel): LiDAR pilot → rasteriser → sidecar builder → loader → read-set declaration → corpus build | new `stack/tanitad/data/lidar_bev.py`, new `stack/scripts/v2_bev_sidecar.py`, `stack/tanitad/data/v2_dataset.py`, `stack/tests/test_physicalai_feature_readset.py` | — (a data WP) | — | 0 (data) | dev box pilot (10 clips) · then a pod, **≈ 3–8 h** streamed (ESTIMATED, §3.3) | pilot **NOW** | corpus build: HF quota + a non-training pod |
+| **WP-12** | camera BEV lift taught by LiDAR; LiDAR BEV as input | `refc.py` trunk + KV set, `refc_gridsample.py` (reused) | **E-BEV-1**, **E-LIDAR-1** | the BEV path | E-BEV-1 ≈ 2–4 M lift; E-LIDAR-1 + ≈ 2–4 M encoder | tiny rig · 4 arms ≈ 3 h each | after WP-11 | ⛔ **E-LIDAR-1 needs `D-REFCV5-PLAN-7`** |
+| **WP-13** | head-only scale-policy RL: the two V2 code ingredients, then the grouping key | `stack/tanitad/rl/refcv3_adapter.py::sample_offsets`, `advantage.py`, `rewards.py`, `stack/scripts/rl_refcv3_min.py`, `launch_refcv3_rl_min.sh` | **E-DDA-3b** → **E-DDA-6** | 3b: ≥ GT bar + 2-scalar control-scale exploration (a *pair*, see below) · 6: the grouping key | 0 (head-only; trainable **8.60 %**) | 4060 · ≈ 2.5–3 h per panel | after **G-REWARD** | ⛔ **G-REWARD** (§6.3) + a refcv4b final |
+| **WP-14** | refcv5 assembly, preflight, launch | `refc_v3_train.py`, `refc_v3.py` registered delta, `sup_refcv5*.sh` | — | — | sum of the passed levers | **A40, 40,284 steps ≈ 43 h at 3.844 s/step** | after refcv4b's verdict | ⛔ PI / Master Mind `LAUNCH_APPROVED=1` |
+
+⚠️ **WP-13's "one variable" is honestly a pair.** `H-RL-MIN-1`'s registered delta is *both* V2
+code-only ingredients (≥ GT bar **and** 2-scalar control-scale exploration) against the surrogate
+per-coordinate version. They are bundled on purpose — separately neither is V2's mechanism — so the
+outcome is attributable to *"V2's exploration+truncation pair"* and **not** to either half. Stated
+here rather than discovered later; if the pair separates, a follow-up single-lever panel splits it.
+
+### 7.2 The pre-registrations — one SPEC per rung
+
+Each rung gets `TanitAD Research Lab/Architecture & Inference/Research/<date>-<slug>/SPEC.md` in the
+skill's schema **before** any compute. The blocks below are the committed content; only `hypothesis`
+ids already in `GOALS_AND_CLAIMS.md` are used.
+
+```yaml
+# WP-2  E-DDA-2 — the ranked object becomes the emitted object
+hypothesis:   H-DDA-2
+one_variable: sel.refined && sel.score_emitted && sel_ce_reach     # 0 new params
+held_constant: [anchors, corpus, steps, batch, seed, lr, window, all other flags]
+success: "pick changes on >= 10 % of windows AND the selection gap (oracle_sel - os)
+          shrinks with a paired episode-cluster CI excluding 0, with no separated
+          loss on any of the four families"
+failure:  "pick unchanged on > 95 % of windows (the audit's 201/201 defect survives
+           the fix -> the flag is not the mechanism), OR the gap shrinks while
+           LONGITUDINAL or LATERAL degrades separated"
+controls: [all_off_paired_control,                 # today's decoder, same seed
+           unsupervised_refined_arm,               # E-SEL-0's known-worse reading
+           deliberate_regression: score_emitted_with_sel_ce_reach_OFF]
+splits:   {fit: B1 train, val: carved from FIT, test: the 141 EVAL clips, scored once}
+```
+
+```yaml
+# WP-3  E-DDA-1 — waypoint-indexed grid-sample attention on the PV map
+hypothesis:   H-DDA-1
+one_variable: attention_sampling_locations         # content-MHA -> candidate waypoints
+held_constant: [d, layers, heads, ff_mult, param_count_matched, anchors, corpus, seed]
+success: "TACTICAL and LONGITUDINAL improve with paired CIs excluding 0 AND the
+          candidate-conditional readout separates: the attention map moves when the
+          candidate moves (a permutation test over candidates within a window)"
+failure:  "no separated family gain, OR the attention map is candidate-invariant
+           (the module is a re-parameterised content MHA)"
+controls: [random_sampling_locations_at_equal_params,     # the floor
+           frozen_zero_init_gate,                          # must read delta == 0 exactly
+           projection_control: pinhole_formula_arm_must_MISPROJECT]   # the FOV trap, on purpose
+splits:   {fit: B1 train, val: carved from FIT, test: the 141 EVAL clips}
+notes: "cylindrical, f_ref 305.577, col = f_ref*phi + W/2. The pinhole arm exists to
+        prove the projection instrument can see a wrong projection (CLAUDE.md FOV trap)."
+```
+
+```yaml
+# WP-4  E-DDA-3 — the control-space DDIM sampler
+hypothesis:   H-DDA-3
+one_variable: DecoderConfig.sampler                # "none" -> "ddim"
+held_constant: [anchors, corpus, steps, batch, seed, lr, layers, d, heads]
+success: "diversity D (Eq. 3 of 2411.15139) rises AND oracle-in-fan at EQUAL N improves
+          with a paired CI excluding 0 AND the sampled fan's Kamm(mu=0.7) violation rate
+          does not rise above the deterministic fan's"
+failure:  "oracle-in-fan at equal N does not improve (the noise is not exploring the
+           right space), OR selected-trajectory jerk rises separated
+           (D-REFCV4B-EGODROP2 measured 2.42 m/s^3 vs the human's 0.86 -- we may not
+           make it worse)"
+controls: [sigma_zero_identity,          # MUST reproduce the deterministic decoder BIT-FOR-BIT
+           constant_u_roll_equals_roll_bank,    # a known value, to the bit
+           deliberate_regression: DD_literal_metre_space_norm_odo_sampler]
+splits:   {fit: B1 train, val: carved from FIT, test: the 141 EVAL clips}
+notes: "The deliberate-regression arm MUST fail the flyability gate. If it does not,
+        the flyability instrument cannot see what it is cited for and the panel is VOID."
+```
+
+```yaml
+# WP-6  E-AGT-1 — agent tokens
+hypothesis:   H-DDA-1                    # same audit family (#20); a sibling arm
+one_variable: cross_agent_layer          # present / absent (zero-init gate)
+held_constant: [d, layers, heads, anchors, corpus, seed, lr]
+success: "detection AP > prior AND > pixel floor (paired), AND the LONGITUDINAL family
+          (headway / time-gap / TTC) improves with a CI excluding 0"
+failure:  "AP at or below the prior floor (the head learned nothing), OR AP good and no
+           family moves (the tokens are produced but not read -- report the gate value)"
+controls: [zero_init_gate_reads_delta_zero,
+           shuffled_agent_tokens,          # across windows: the gain must vanish
+           constant_only_detection_control, raw_pixel_detection_floor,
+           printed_n_and_d]
+splits:   {fit: B1 train, val: carved from FIT, test: the 141 EVAL clips}
+notes: "obstacle.offline is a TRAIN-TIME label (I3). At inference the tokens come from
+        the trunk. An arm that reads the join at inference is refused, not fixed."
+```
+
+```yaml
+# WP-7  E-DDA-2b — the four-family sub-metric selector
+hypothesis:   H-DDA-7
+one_variable: selector                   # argmax(conf) -> SubMetricSelector
+held_constant: [generator weights FROZEN, fan, corpus, seed, windows]
+success: "the selection gap closes with a CI excluding 0 AND fan-collision-vs-replay
+          does NOT rise"
+failure:  "the gap closes and collision rises  -> V2 Tab. 9's hackish direction, REFUSE;
+           nothing changes                     -> selection is not binding at this fan
+                                                  quality, bank the negative"
+controls: [progress_only_head,     # the deliberate regression: MUST buy progress WITH
+                                   # collisions, else the collision readout is blind -> VOID
+           nav_shuffle_and_nav_zero_on_the_compliance_head,
+           per_head_calibration_ECE_reported]
+splits:   {fit: the 120-clip fit set, val: carved from FIT, test: the 141 EVAL clips}
+notes: "ADE-only reading refused in advance. Four families always."
+```
+
+```yaml
+# WP-13  E-DDA-3b — the head-only scale policy (V2's two code ingredients)
+hypothesis:   H-DDA-5                    # vehicle: H-RL-MIN-1
+one_variable: "the V2 pair: (>= GT bar) + (2-scalar control-scale exploration)"
+held_constant: [base ckpt = refcv4b FINAL, reward, fit clips, lr schedule, seed, steps]
+success: "the ALONG-TRACK oracle gap shrinks with a CI excluding 0 AND fan-collision
+          does not rise  -> the V2 lever transfers on the predicted axis (92.2 % of our
+          deficit, D-REFCV3-AXIS1); schedule E-DDA-3's chain"
+failure:  "along shrinks but lateral worsens -> scale-only exploration too coarse, stop;
+           neither moves                     -> V2's map half was load-bearing, park RL
+                                                until a lane signal exists"
+controls: [ctrl0_lr_zero_reads_delta_exactly_zero,
+           reg_echo_GT_future_in_the_advantage,   # MUST FAIL G-FAN or the run is VOID
+           G-REWARD_precondition]
+splits:   {fit: the 120-clip fit set, val: carved from FIT, test: the 141 EVAL clips}
+gate_before_any_arm: "G-REWARD -- hold-v0 >= human on <= 30 % of lead windows on the
+                      120-clip fit set (today: 78.3 %, D-RL-REWARD-FLOOR-1). A reward
+                      that fails G-REWARD may not train anything."
+```
+
+The remaining rungs (WP-1 V5-VOCAB, WP-5 E-DDA-5 a/c, WP-8's seven edges, WP-12 E-BEV-1 / E-LIDAR-1)
+take the same shape; WP-1's is **MODEL-FREE** and its gate is stamped so per
+`GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md` — ⛔ a raw-anchor ceiling is never compared to `ha`, `os` or
+`oracle_sel` (the scope error that nearly killed refcv4, `D-REFCV4-GATE1`).
+
+### 7.3 WP-0 in full — the three gaps that block *reads*, not runs
+
+These are cheap, they are on the critical path of two other packages, and each is a MEASURED absence.
+
+1. ⛔ **The eval-time ablation switches are not CLI flags.** `PREREG_REFCV4B_HIERARCHY_EVAL.md`
+   already carries this as **ESCALATED**: the twelve arms of §3 (nav-ZERO / SHUFFLE / FLIP, g_str-ZERO
+   / SHUFFLE, E7-OFF, E9-OFF, H19-OFF, EGO-ZERO, SEL-REFINED, the frame-blind deliberate regression)
+   need flags on `taniteval/tools/refcv3_arm.py`. **0 GPU, and it must precede the post-training run**
+   — WP-9b cannot start without it, and WP-9b is where E-DDA-2 gets its first free read.
+2. ⛔ **`ha0_ext` is not an arm of the REF-C harness.** MEASURED today: `refcv3_arm.py:961` is
+   `arms = ["os", "ha", "ha0"]` and `ARM_TIERS` (`:237-238`) has no `ha0_ext`; the banked
+   `refcv3-40284-openloop.ARM.json` carries `arm_keys = [os, ha, ha0, os_navshuf, os_navzero,
+   oracle_sel]` — **six arms, no `ha0_ext`**. The implementation exists
+   (`stack/tanitad/eval/echo_gate.py::ha0_ext`) and the *refav1* harness runs it
+   (`taniteval/tools/refav1_arm.py:639`, `t1_eval.py:162`). ⇒ **§8's bar — "beat both `ha` and
+   `ha0_ext`" — is not readable on the 4,823-window surface today.** Porting the arm is ~30 lines and
+   one shared call; ⛔ it must be the **same** `echo_gate.ha0_ext` (the docstring at `:180-183` says
+   why: a control re-implemented beside the thing it controls drifts, and then the gate measures the
+   drift). Until it lands, `ha0_ext` appears in §8 only on the **compliance** readout, where
+   `nav_compliance.py:1125` already computes it.
+3. **The fan readouts do not exist.** `fan_floor@k` (k = 1, 5, 10 — the k-th-best candidate's
+   four-family score), the fan-collision-vs-replay rate, DD's diversity score D, and the sampled-fan
+   Kamm violation rate. Without them **WP-4, WP-7 and WP-13 have no primary readout at all**: §6.1's
+   whole point is that V2's gain was a *floor* effect the top-1 number cannot see. Home:
+   `taniteval/plan_fan.py`, tests first, with a synthetic fan whose floor is known by construction.
+
+### 7.4 Cost, and the critical path
+
+**GPU budget (ESTIMATED; the rig figures are anchored on the skill's MEASURED ~29 min/arm on the
+4060, ~17 min/arm on Thor):**
+
+| box | packages | hours | note |
+|---|---|---|---|
+| dev-box RTX 4060 (8,187 MiB) | WP-2, 3, 4, 5, 6, 8 rig panels (≈ 21 arms) | **≈ 12–16 h** serial | ⚠️ shares the box with WP-10 (running) and WP-9a/9b; schedule serially and set `OMP_NUM_THREADS=6` before any multi-arm panel (CLAUDE.md: 7 concurrent arms sat at 0–6 % `sm` for 50 min) |
+| dev-box RTX 4060 | WP-9a (0.5 h) + WP-9b (6–10 h) + WP-7 training (3–5 h) + WP-13 (2.5–3 h × 2 panels) | **≈ 15–22 h** | all after a refcv4b checkpoint |
+| Jetson Thor | overflow rig panels; the §9 latency budget (WP-0 of the VLA plan) | **≈ 6 h** | ⚠️ `--batch 8` (20 SMs saturate there); only `torch.cuda.max_memory_allocated()` is admissible |
+| A40 pod (`tanitad-refcv3`) | **WP-14 refcv5**, 40,284 steps @ 3.844 s/step | **≈ 43 h** | ⛔ free only after refcv4b's ETA ~2026-09-06 08:00 UTC |
+| a non-training pod | WP-11 corpus build, streamed | **≈ 3–8 h** + ≈ 3.6 h transfer | ⛔ never the training pod; ⛔ `df` cannot see the ~466 GB MooseFS quota — use a `dd` write test |
+
+**The critical path to a refcv5 launch** (⇒ = "gates"):
+
+```
+refcv4b finishes (~2026-09-06 08:00 UTC)
+  => WP-9a E-DDA-4 final read      -> decides WHETHER the sampler is the fork at all (§4.2 #2)
+  => WP-9b hierarchy panel         -> decides which hierarchy edges survive into refcv5
+       ^-- requires WP-0.1 (flags), which requires NOTHING and must be done first
+  => WP-7 selector training + WP-13 RL   (both cold-start from the final checkpoint)
+
+in PARALLEL, off the critical path, starting today:
+  WP-0 -> WP-1 (V5-VOCAB) -> [MODEL-FREE gate]  ------------------\
+  WP-2, WP-3, WP-4, WP-5, WP-6, WP-8 rig panels ------------------ >-- WP-14 bundles ONLY
+  WP-11 pilot -> rasteriser -> (PI ruling) -> corpus -> WP-12 ----/     the levers that PASSED
+```
+
+⭐ **The bundling rule, stated before the fact.** refcv4b already forfeited attribution by carrying
+five levers at once (`MODEL_REGISTRY.md` §4.6, caveat 1). refcv5 must not repeat it *silently*: the
+launch bundles only levers whose rig arm passed, the registered delta is **pinned as a frozenset**
+the preflight refuses to deviate from, and the bundle is declared in the registry row as a bundle —
+so a refcv5-vs-refcv4b delta is an **arm** delta, never a lever attribution. ⚠️ Any lever whose rig
+arm has not run by the launch date is **left out**, not launched hopefully.
+
+**What is NOT on the path, and why that is deliberate:** the LiDAR/BEV work (WP-11/WP-12). §3.4's
+camera-only fallback — E-DDA-1 (no BEV at all), E-AGT-1 (the attention DD has and we lack), and
+E-BEV-1 taught by the **agent raster alone**, which `bev_raster.py` produces today from data we
+already hold — is a complete path to closing the cross-attention gap without a single byte of LiDAR.
+The LiDAR build raises the ceiling; it never blocks the launch.
+
 
 ## §8 What refcv5 claims, and what would refute it `[PENDING]`
 
