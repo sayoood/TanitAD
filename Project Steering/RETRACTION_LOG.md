@@ -12754,3 +12754,67 @@ the GROUND-TRUTH control read `envelope_rate 0.1000`, `max|kappa| 31.4015` (the
 as INADMISSIBLE and re-run at `v0 >= 2 m/s`, where the control reads exactly
 `0.0000 / 0.0000`. **A control that must read a known value is only useful if a
 failure actually voids the block.**
+
+---
+
+# 2026-09-05 (#31)
+
+**Retracted:** my own claim, made to the PI in chat and used to justify a direction —
+*"There was no collision headroom to win. An RL stage aimed at collisions could only trade ADE away
+for nothing."*
+
+**Corrected to (MEASURED 2026-09-05 on the banked fan, `…/2026-09-05-veto-only-fan-safety/raw/fan_bank_base_240w.npz`, 240 windows × 128 candidates, control `f_flagged` mean 0.8925 so the probe reads):**
+
+| | |
+|---|---|
+| colliding candidates the model EMITS | **764 / 30,720 = 2.487 %** |
+| windows carrying ≥ 1 collider | **19 / 240 = 7.9 %** |
+| **worst window** | **104 of 128 candidates collide = 81 %** |
+| `top32_contact` | **0.0330** |
+
+⭐ And the veto arm had **already moved it**: `top32_contact` **0.03299 → 0.02691 = −0.00729**,
+recorded in that package's own table as *"yes — the one gain."* I did not carry it forward.
+
+**What happened.** I read **`sel_contact` = 0.0000** — the contact rate of the **SELECTED** path —
+and concluded the model had no collisions to eliminate. ⛔ **`sel_contact` is the output of the
+SELECTOR, not of the GENERATOR.** The model emits colliding trajectories on 2.5 % of candidates and
+on 81 % of the worst window's fan; the scorer then puts only **3.47e-05** of its mass there, so the
+*selected* path is clean while the *distribution* is not.
+
+→ **Root-cause class: A DOWNSTREAM FILTER MAKES AN UPSTREAM DEFECT INVISIBLE TO THE METRIC YOU
+HAPPENED TO READ.** This is the "wrong object" family that ran through the whole day — a decode is
+not a goal state, a process is not an arm, an oracle is not a payoff — but with a specific and
+general form worth naming on its own: **in any generate-then-select pipeline, the selected output's
+quality is NOT the generator's quality, and reporting only the former hides exactly the failures the
+selector was added to hide.**
+
+→ **Why it mattered rather than being merely imprecise.** The claim was used **to argue against a
+direction the PI had explicitly asked for** — it read as a measurement and functioned as a decision.
+⭐ The PI overturned it from first principles without needing the data: *"our model is creating
+trajectories with collision, so RL must improve this and it can be measured, by punishing
+trajectories with collisions the quality of output trajectories must improve, it is not about
+assessing the gt trajectory."* He is right, and the arithmetic above is his sentence in numbers.
+
+→ **Also wrong in the same breath, and worth separating:** I supported the claim with
+`mass_rank_contact`'s base of **3.47e-05** being below its own separation floor. That number is a
+property of the **SCORER's mass allocation**, not of the generator's collision rate — the two differ
+by roughly **700×**, and only the second is what RL post-training acts on. **Two different objects,
+one sentence.**
+
+→ **Durable fixes:**
+1. ⛔ **For any generate-then-select pipeline, report BOTH rates**, always: the generator's
+   (`fan_*`) and the selected (`sel_*`). A `sel_*` metric may never stand alone as evidence of model
+   quality.
+2. ⛔ **Before declaring "no headroom", state WHICH object the headroom was measured on** — and
+   check that the metric's base value is above its own separation floor for that object, not for a
+   neighbouring one.
+3. **Carry a stream's own "one gain" forward.** The −0.00729 on `top32_contact` was measured,
+   labelled a gain, and dropped at the summary layer because I was reading a different row.
+
+→ **Pinned:** `raw/fan_bank_base_240w.npz`; `…/2026-09-05-refc-rl-readiness/RESULT.md` (the 9.74 %
+tail and the 3.47e-05 mass); `…/2026-09-05-veto-only-fan-safety/RESULT.md` (`top32_contact` −0.00729);
+successor package `…/Deployment & Optimization/Research/2026-09-05-rl-generator-collisions/`.
+
+⚠️ **Scope:** this retracts a DIRECTIONAL claim, not a result. The RL post-training campaign's own
+committed exits still **FAILED** (`M29`) and that stands. What is withdrawn is my reason for
+believing the direction was exhausted.
