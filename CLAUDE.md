@@ -1,5 +1,55 @@
 # TanitAD — working agreements
 
+## ⭐⭐⭐ RULE ZERO — A REFUTATION IS A WAYPOINT, NOT A DELIVERABLE (Sayed, 2026-09-05, HIGHEST PRIORITY)
+
+**Sayed, verbatim:** *"I dont need refutaions, I need xcellent results … so if the results are not
+enough continue automatically, detecting refutations is just not enough for this frontier
+programme."*
+
+And earlier the same day: *"our goals in TanitAD programme is not to refute hypotheses, its about
+achieving excellent results and really driving autonmously with a reference implementation. Why im
+saying this, we have too many refutes, and I have the feeling, we are satisfied sometimes if the
+hypotheses is refuted rathern than solving the problem."*
+
+⛔ **THIS RULE OUTRANKS EVERY OTHER PROCESS RULE IN THIS FILE.** The evidence rules below tell you
+how to be *right*; this one tells you what you are *for*.
+
+### The rule
+
+1. ⛔ **"X is refuted" is NEVER a finished turn.** The complete form is: **"X is refuted — Y is the
+   next lever — here is Y's RESULT"**, or, if Y truly cannot run, *"here is exactly what blocks Y."*
+   A turn that ends at the refutation has delivered a diagnosis and called it a product.
+2. ⭐ **WHEN AN ARM FAILS ITS BAR, CONTINUE AUTOMATICALLY.** Do not stop and report. Diagnose, pick
+   the next lever, and **execute it in the same run**. An agent that stops to ask permission to keep
+   working has spent its budget on the part that was already finished.
+3. **You are done when one of two things is true**, and you must say which:
+   * the result **clears its committed bar**, or
+   * **every remaining lever is blocked** — on compute, on a corpus that does not exist, or on a PI
+     decision — and you have **named each one and what would unblock it**.
+4. ⛔ **A failed arm must leave behind the NEXT arm, not just its own verdict.** Before you write the
+   verdict, answer: *what is the cheapest experiment that could still make this work, and did I run
+   it?* If it was cheap and you did not run it, the turn is not finished.
+5. **Prefer the lever with the largest measured effect, not the most interesting one.** Attribution
+   exists to rank levers. If the arithmetic says one term dominates, go there — even when a more
+   elegant hypothesis is available.
+
+### ⛔ What this rule does NOT license — read this before it is misused
+
+⚠️ **"I need excellent results" means BUILD until it works. It does NOT mean report good news.**
+This rule makes the *stopping condition* stricter, never the *evidence bar* lower. Specifically:
+
+* ⛔ **A committed criterion is still reported as written.** An arm that misses its pre-registered
+  bar **FAILED**, and you say so — then you keep going. *(MEASURED 2026-09-05: an RL arm's formal
+  exit was FAILURE on a separated `ade_m` +0.0362, and the correct behaviour was to report that
+  plainly **and** carry the zero-training gate it produced into validation.)*
+* ⛔ **Never move a goalpost after seeing the data**, never drop a control because it is
+  inconvenient, and never promote a post-hoc finding without its own pre-registration.
+* ⛔ **A refutation that ELIMINATES a candidate is real progress and must still be logged** — four
+  eliminations in one day (head, goal, vocabulary, reward) are what localised refav1's defect to the
+  cost geometry. The rule is not *"stop refuting"*; it is **"never stop AT a refutation."**
+* ⚠️ **If continuing would need compute, spend, or an architecture change the PI has not
+  authorised, STOP AND ASK** — that is a named blocker under (3), not a violation of this rule.
+
 ## ⭐⭐ PROGRAMME REDESIGN (PI, 2026-08-22) — READ THESE TWO FILES FIRST
 
 **`Project Steering/TANITAD_PROGRAMME.md` is the CONSTITUTION** — the 8 products,
