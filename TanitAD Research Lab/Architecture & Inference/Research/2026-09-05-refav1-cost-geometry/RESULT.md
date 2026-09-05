@@ -995,3 +995,134 @@ criterion moved, nothing had been observed about `best`, and the amendment is in
 | `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
 | arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
 | oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            rtion**
+  in the same row.
+* `wk15` / `wk151` are **non-degenerate but bought by not turning**: turn_left recall
+  **0.0000 of n_true = 11**, against a **0.0000 measured seed floor** on that per-class
+  statistic (`raw/seed_floor_ext_ccos.txt`).
+* ⭐ **`combined` is the only arm that reaches zero WHILE STILL TURNING** — recalls
+  0.3636 / 0.7500, identical to the uncapped `ccos_argmax`, at `peak_g` max 0.618
+  against its 3.262.
+
+**ROOT-CAUSE CLASS: a number quoted from a STALE GENERATION of a regenerated
+artifact.** The audit was regenerated under a **new name** — `feas_audit.txt` (19:43,
+two arms) became `feas_audit_all.txt` (22:28, ten arms) — and §7.8's table row was
+carried from the old one. **This file was finalised at 22:47, 19 minutes AFTER the
+artifact that refutes it was written, in the same directory.** Same family as
+`MODEL_REGISTRY.md`'s *“prose lied to us”*, with the object swapped: the right raw
+artifact, quoted at the wrong **generation**.
+
+⚠️ **Why the controls did not catch it.** The `0.0000` **was** bracketed — a GT
+control at the known value, three arms non-zero. That discipline is correct and stays.
+But a bracketing table answers *“is this zero real?”*, never *“is this zero unique?”*.
+**A superlative is a claim about the WHOLE PANEL, and one excluded row refutes it.**
+⇒ **A control set is not a census.** If the word is *first* / *only* / *best*, the
+table must contain **every** arm, and a cell reading *“(not run)”* **voids the
+superlative** until it is filled — that cell is the refutation waiting to happen.
+
+**Durable fix, shipped with this correction:** `raw/seed_floor_ext.py` prints the
+per-metric seed floor **and** the `assert_feasible` rows into **one** table, so the
+floor and the rate a claim rests on can no longer come from different generations of
+different files; and it adds the per-class recalls and the feasibility rows that
+`raw/seed_floor.py` lacked — the same gap that caused this package's earlier
+cousin-metric withdrawal.
+
+---
+
+## §8 — Deliverable manifest
+
+| artifact | where it lives |
+|---|---|
+| `PREREG_COST_GEOMETRY.md` | repo: this package |
+| `RESULT.md` (this file) | repo: this package |
+| `raw/cost_scale.py` / `.txt` | repo: this package |
+| `raw/kappa_by_goal.py` / `.txt` | repo: this package |
+| `raw/four_family_table.py` | repo: this package |
+| `ccosh` metric + `CCOS_HOLD_REL` | repo: `stack/tanitad/refs/refa_v1.py` |
+| `test_cost_ccosh.py` (new) | repo: `stack/tests/` |
+| `test_cost_ccos.py`, `test_cost_chord.py` (tuple pins updated) | repo: `stack/tests/` |
+| `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
+| arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
+| oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              2778 (7.5x) | **−0.3636 → EXACTLY 0** | **+0.0764 [+0.0135, +0.1453] WORSE** | **+0.0874 [+0.0122, +0.1763] WORSE** |
+| **cap** | −0.3039 (5.0x) | −0.2037 (5.5x) | **0.0000, IN FLOOR** | −0.0017 [−0.0078, +0.0034] | +0.0013 [−0.0035, +0.0064] |
+| ladder | every family row IN FLOOR except `kamm_over` −0.0617 (1.7x) | | | | |
+
+⇒ ⛔ **`D-REFAV1-CG-LEVER-SPLIT` IS WRONG AS A RANKING.** It reads `W_KAPPA` = *"the
+ACCURACY lever"* and cap+ladder = *"the SAFETY lever"*, as though they bought different
+things. **They buy the same two things and differ in what they CHARGE:** the cap costs
+nothing measurable, while `W_KAPPA` buys its extra ~0.10 m of ADE by **deleting a
+decision class** and pays a **9–14x-floor** longitudinal regression on top. Since
+**88.7 %** of the programme's oracle gap is longitudinal, that settles the ranking.
+
+#### 7.10c The mechanism: `W_KAPPA` does not change the DECISION, it refuses to EXECUTE it
+
+The **decoded goal mix is identical in every arm** — LANE_KEEP 18 / TURN_L 9 / TURN_R 13
+of 40 — because the goal decode is upstream of the cost and untouched. So every
+difference below is **execution of a fixed decision** (`raw/decode_vs_execute.md`):
+
+| arm | TURN_L med `\|k\|max` | TURN_L mean `k^2` | TURN_R mean `k^2` |
+|---|---|---|---|
+| `ccos_argmax` | 0.08000 | 0.006698 | 0.006400 |
+| `kamm07` (cap) | 0.08000 | 0.005830 (−13.0 %) | **0.006400 (−0.0 %)** |
+| **`combined`** (cap+ladder) | **0.08000** | 0.005797 (−13.5 %) | **0.006400 (−0.0 %)** |
+| `wk15` (`W_KAPPA`) | **0.02066** | **0.000136 (−98.0 %)** | 0.004617 (−27.9 %) |
+
+⇒ **The cap reaches its safety gain while preserving turn execution to six decimals on
+the right and 86.5 % on the left. `W_KAPPA` reaches the same zero by removing 98 % of
+the left-turn curvature it decoded.** `wk15`'s `lane_keep` recall rises to 1.0 not
+because it prefers lane-keeping but because it does nothing else — its LANE_KEEP `k^2`
+is **exactly 0.000000** against the baseline's corrective 0.002908 on 44 % of windows.
+⚠️ The suppression is **direction-asymmetric by 3.5x** although `k^2` is sign-symmetric;
+the cause is **not claimed** here and is a datum for the turn-asymmetry stream.
+
+#### 7.10d Two instrument findings that govern how any of this may be quoted
+
+1. ⛔ **The inference-seed replicate reads `separated` on 4 of 8 rows with zero levers
+   moved** (`raw/seed_separated.md`): `ade_m` +0.0607 [+0.0088, +0.1155], `fde_m`
+   +0.3439, `LAT_cross` +0.0710, `LAT_heading` +1.1180 — `H-ESTIM-SEED-1` measured on
+   **refav1 itself**. And separation and magnitude **disagree in both directions on one
+   panel**: the no-lever pair is separated at 1.0x its floor while the cap's −0.3344 is
+   **not** separated at **5.5x** the floor. ⇒ the admissible form is **BOTH** — a
+   separated interval **and** a delta beyond that metric's own floor.
+2. ⛔ **The superlative in §7.8 was withdrawn** (§7.8a): four arms read `kamm_over`
+   0.0000, and `combined`'s real distinction is reaching it **while still turning**.
+
+#### 7.10e ⛔ The panel's best-ADE arm executes ZERO turns
+
+`lonshift` (`W_KAPPA` + `a0_shift`, a sibling's arm) reads the best ADE in the panel —
+**0.7868 [0.6065, 0.9946]** — and beats `ha0_ext` on FDE with a separated interval,
+**while reading turn_left recall 0.0000 of 11, turn_right 0.0000 of 8, `TAC lat_kappa`
+0.0000, `max|kappa|` 0.0267 1/m, and GT-turn `dir_correct` 0.3684 — BELOW the base's
+0.5789** (`raw/lonshift_cannot_turn.md`).
+⭐ **Its lever attribution is still correct**: the a0_shift effect is measured against
+`wk15`, and *both* arms cannot turn, so "lateral untouched" is true. **The deletion is
+inherited from the `W_KAPPA` base.** ⚠️ A paired delta against a base that has already
+lost a capability cannot see that the capability is gone.
+⇒ ⛔ **On this 2 s panel ADE is nearly insensitive to whether the arm turns** — the best
+ADE belongs to the arm with the least curvature. *"ADE 0.7868, beats `ha0_ext` on FDE"*
+is true and is **not a description of driving**. This is the binding four-family rule
+earning its keep.
+⇒ ⭐ **THE NEXT ARM IS THEREFORE NOT `W_KAPPA` + `a0_shift`.** The cap buys ~74 % of
+`W_KAPPA`'s ADE and more of the safety at zero cost in turns and zero cost in the
+longitudinal family. **`--kamm-mu 0.7` + ladder + `a0_shift`, with `W_KAPPA = 0`**, is
+the arm that should keep the turns *and* the longitudinal gain. **UNRUN — one arm,
+named as the next experiment and not as a result.**
+
+---
+
+## §8 — Deliverable manifest
+
+| artifact | where it lives |
+|---|---|
+| `PREREG_COST_GEOMETRY.md` | repo: this package |
+| `RESULT.md` (this file) | repo: this package |
+| `raw/cost_scale.py` / `.txt` | repo: this package |
+| `raw/kappa_by_goal.py` / `.txt` | repo: this package |
+| `raw/four_family_table.py` | repo: this package |
+| `ccosh` metric + `CCOS_HOLD_REL` | repo: `stack/tanitad/refs/refa_v1.py` |
+| `test_cost_ccosh.py` (new) | repo: `stack/tests/` |
+| `test_cost_ccos.py`, `test_cost_chord.py` (tuple pins updated) | repo: `stack/tests/` |
+| `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
+| arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
+| oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
