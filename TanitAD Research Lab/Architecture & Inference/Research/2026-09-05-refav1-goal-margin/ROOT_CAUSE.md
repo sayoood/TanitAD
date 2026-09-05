@@ -188,3 +188,64 @@ assumed away.
   a `ccos` prerequisite for any lateral control.
 * ⚠️ **One checkpoint, one panel, n = 282, and the sharp bands are thin (n = 11 at `|κ| > 0.06`).**
   The dense panel (4786 windows) is banked to widen exactly those bands.
+
+---
+
+## 7. The DENSE panel — 4786 windows / 141 episodes, 17× the data
+
+The §3 and §4 tables rest on 282 windows, and their sharp bands were thin (n = 11 at
+`|κ| > 0.06`). The `intent` bank (`tools/extract_intent.py`, all four controls passed) re-runs
+the same forward pass on a stride-2 grid and gives **4786 windows over the same 141 episodes**.
+Every headline holds, and the controls get 12× stronger.
+
+### 7.1 The vocabulary result holds
+
+| `|κ|` band | radius | n | vocab-optimal is `LANE_KEEP` | head decodes `LANE_KEEP` |
+|---|---|---|---|---|
+| (0, 1e-3] | > 1000 m | 2464 | **1.0000** | 0.9387 |
+| (1e-3, 5e-3] | 1000–200 m | 1175 | **1.0000** | 0.8502 |
+| (5e-3, 1e-2] | 200–100 m | 369 | **1.0000** | 0.7724 |
+| (1e-2, 2e-2] | 100–50 m | 336 | **1.0000** | 0.8452 |
+| (2e-2, 4e-2] | 50–25 m | 156 | **1.0000** | 0.5897 |
+| (4e-2, 6e-2] | 25–16.7 m | 73 | 0.0000 | 0.2329 |
+| (6e-2, ∞) | < 16.7 m | 138 | 0.0000 | 0.2681 |
+
+* of GT-turn windows, vocab-optimal is `LANE_KEEP` on **0.9061** (282-panel: 0.9015)
+* over all windows, vocab-optimal `LANE_KEEP` **0.9559** vs the head's **0.8521**
+* ⛔ **C1 with 138 sharp windows instead of 11: `TURN_*` is the argmin on 138/138 = 1.0000**
+* ⛔ **C2: measured crossover 0.04101** against the analytic `GOAL_KAPPA_TURN/2 = 0.040` — the
+  agreement TIGHTENS with more data, which is what a real quantity does and an artefact does not
+
+### 7.2 The threshold family holds, and the well-powered row is the interesting one
+
+| turn threshold | radius | n turn | AUC | best bal-acc | argmax recall | argmax false | shuffled AUC |
+|---|---|---|---|---|---|---|---|
+| 1e-3 | 1000 m | 2247 | 0.7235 | 0.6886 | 0.2372 | 0.0689 | 0.4996 |
+| 5e-3 | 200 m | 1072 | 0.7682 | 0.7383 | 0.3330 | 0.0945 | 0.4999 |
+| 1e-2 | 100 m | 703 | 0.7970 | 0.7672 | 0.3883 | 0.1065 | 0.5036 |
+| 3e-2 | 33 m | 281 | 0.8602 | 0.7734 | 0.6512 | 0.1165 | 0.5008 |
+| ⭐ **4e-2** | **25 m** | **211** | **0.8806** | **0.8200** | **0.7441** | **0.1204** | 0.4983 |
+| 8e-2 | 12.5 m | 84 | 0.8457 | 0.7904 | 0.6786 | 0.1385 | 0.4975 |
+
+⭐⭐ **The `4e-2` row is the one that matters, and it is now well powered (n = 211).** `4e-2` is
+not a threshold chosen for a good number — it is the **measured vocabulary crossover (0.04101)**,
+the curvature above which `TURN` beats `LANE_KEEP` in the goal vocabulary. **At exactly the
+curvature where a `TURN` goal is the correct goal, the SHIPPED head already decodes a
+curvature-carrying token on 74.4 % of windows at a 12.0 % false-turn rate.**
+
+⇒ **Gate 1 is largely OPEN where it matters.** The 20.5 % "turn recall" that motivated the
+whole decision-rule programme is a statistic about **1000 m curves**, which the vocabulary
+cannot express anyway. ⇒ the binding constraint on *"does refav1 turn"* is **gate 2** — the
+cost metric, which under the shipped `cos` default refuses a correctly decoded turn on 38/38
+windows (`D-REFAV1-DRIVE-GATE2`, INHERITED) — and that is what P4 measures directly.
+
+### ⚠️ One control does NOT apply here, and it is reported rather than hidden
+
+`threshold_sweep.py`'s `CONTROL_reproduces_banked_at_1e-3` reads **`passes: false`** on this
+panel. That is **correct behaviour, not a failure**: the control asserts the banked
+**282-window** operating point (AUC 0.7120 / recall 0.2045 / false 0.0733), and the dense panel
+is a **different, 17× larger window set** (4786 windows on the same 141 episodes), which must
+not reproduce it. The control PASSES on the stride-40 panel it was written for
+(`raw/threshold_sweep_s40.json`, exact to 1e-9). ⛔ It is left in the output deliberately —
+a control silently disabled on the panel where it does not apply is how a real failure later
+goes unnoticed.

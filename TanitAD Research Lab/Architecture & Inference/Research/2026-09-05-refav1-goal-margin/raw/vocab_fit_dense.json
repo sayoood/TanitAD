@@ -1,0 +1,159 @@
+{
+ "source": "C:/Users/Admin/refav1_margin/intent_stride2.npz",
+ "n_windows": 4786,
+ "vocabulary": {
+  "GOAL_KAPPA_TURN": 0.08,
+  "turn_radius_m": 12.5,
+  "GOAL_TURN_S": 4.0,
+  "sustained_curvatures_available": [
+   0.0,
+   0.08
+  ],
+  "note": "NUDGE_* and LANE_CHANGE_* are S-CURVES (+kap then -kap): net heading change ZERO, so they cannot track a sustained curve however large their peak. The only SUSTAINED curvatures the vocabulary can command are 0 and 0.08.",
+  "source": "stack/tanitad/refs/refa_v1.py:118-123, :347-383"
+ },
+ "bands": [
+  {
+   "kappa_band": [
+    0.0,
+    0.001
+   ],
+   "radius_m": [
+    null,
+    1000.0
+   ],
+   "n": 2464,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "LANE_KEEP": 2464
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 1.0,
+   "frac_head_decodes_LANE_KEEP": 0.9387175324675324
+  },
+  {
+   "kappa_band": [
+    0.001,
+    0.005
+   ],
+   "radius_m": [
+    1000.0,
+    200.0
+   ],
+   "n": 1175,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "LANE_KEEP": 1175
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 1.0,
+   "frac_head_decodes_LANE_KEEP": 0.8502127659574468
+  },
+  {
+   "kappa_band": [
+    0.005,
+    0.01
+   ],
+   "radius_m": [
+    200.0,
+    100.0
+   ],
+   "n": 369,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "LANE_KEEP": 369
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 1.0,
+   "frac_head_decodes_LANE_KEEP": 0.7723577235772358
+  },
+  {
+   "kappa_band": [
+    0.01,
+    0.02
+   ],
+   "radius_m": [
+    100.0,
+    50.0
+   ],
+   "n": 336,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "LANE_KEEP": 336
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 1.0,
+   "frac_head_decodes_LANE_KEEP": 0.8452380952380952
+  },
+  {
+   "kappa_band": [
+    0.02,
+    0.04
+   ],
+   "radius_m": [
+    50.0,
+    25.0
+   ],
+   "n": 156,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "LANE_KEEP": 156
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 1.0,
+   "frac_head_decodes_LANE_KEEP": 0.5897435897435898
+  },
+  {
+   "kappa_band": [
+    0.04,
+    0.06
+   ],
+   "radius_m": [
+    25.0,
+    16.7
+   ],
+   "n": 73,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "TURN_L": 25,
+    "TURN_R": 48
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 0.0,
+   "frac_head_decodes_LANE_KEEP": 0.2328767123287671
+  },
+  {
+   "kappa_band": [
+    0.06,
+    null
+   ],
+   "radius_m": [
+    16.7,
+    null
+   ],
+   "n": 138,
+   "UNDERPOWERED_n_lt_10": false,
+   "vocab_argmin_hist": {
+    "TURN_L": 53,
+    "TURN_R": 85
+   },
+   "frac_vocab_argmin_is_LANE_KEEP": 0.0,
+   "frac_head_decodes_LANE_KEEP": 0.26811594202898553
+  }
+ ],
+ "crossover": {
+  "analytic_midpoint_GOAL_KAPPA_TURN_over_2": 0.04,
+  "measured_smallest_abs_kappa_where_TURN_wins": 0.04100870341062546
+ },
+ "headline": {
+  "n_gt_turn_kappa_gt_1e-3": 2247,
+  "of_those_frac_vocab_argmin_is_LANE_KEEP": 0.906097018246551,
+  "frac_of_ALL_windows_where_vocab_argmin_is_LANE_KEEP": 0.9559130798161304,
+  "frac_of_ALL_windows_head_decodes_LANE_KEEP": 0.8520685332218972,
+  "head_agrees_with_vocab_argmin": 0.869828666945257
+ },
+ "CONTROL_C1_sharp_windows_select_TURN": {
+  "n_sharp": 138,
+  "argmin_hist_on_sharp": {
+   "TURN_L": 53,
+   "TURN_R": 85
+  },
+  "frac_TURN_on_sharp": 1.0,
+  "passes": true
+ },
+ "verdict": "On 90.6% of GT-turn windows (|kappa|>1e-3) LANE_KEEP is the VOCABULARY-OPTIMAL token: no available token is closer to the road's curvature. The head emitting LANE_KEEP there is therefore NOT a decision error, and NO re-fit of the head can change it -- the binding constraint is that the vocabulary has no sustained curvature between 0 and 0.08 (R 12.5 m)."
+}
