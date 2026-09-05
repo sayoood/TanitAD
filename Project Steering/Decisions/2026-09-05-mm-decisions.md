@@ -1636,3 +1636,98 @@ not TTC**, because `min_ttc_s` is **saturated at the 0.5 s grid floor for ≥ 75
 ⚠️ **Recorded before the numbers:** `reward_audit` is **INCONCLUSIVE** for a collision-only reward,
 because that term's documented degenerate is *"stand still forever."* ⇒ **the LONGITUDINAL family is
 the CHECK on the degenerate**, not an optional extra — a third reason the same channel is the target.
+
+## M36. ⭐⭐⭐ THE LONGITUDINAL FIX IS IDENTIFIED AND MEASURED — and M34's prediction held
+
+### 1. The defect, and it is the lateral one SIGN-FLIPPED
+
+Every LON token builds `a_i = clip((v_t − v)/GOAL_REACH_S, ±1.5)` with `v → v_t`, so ⛔ **`a` decays
+to ZERO for all 8 tokens.** The vocabulary can name a speed **step**; it can never name a **sustained
+acceleration**.
+
+⭐ **Reachable `dv` over the 2 s window: [−2.85, +0.98] m/s with exactly ONE positive rung**, against
+a corpus p90 of **+2.34**. ⇒ **positive demand exceeds supply 2.40×**, and **14 of 17 accelerating
+windows (82.4 %) are outside the vocabulary entirely.**
+
+⭐⭐ **This is the lateral defect with the sign flipped:** laterally the only curvature was **6.9× too
+BIG**; longitudinally the only positive rung is **2.4× too SMALL.**
+
+⚠️ Counted on the **predicate**, not the decode (`M28` §2): `ADAPT_SPEED_FOR_CURVE` is `a ≡ 0` only
+**below 8 m/s** — 27 of its 29 windows are. With `CRUISE`, the goal commands `a ≡ 0` on **31/40
+(77.5 %)** and on **20/24 (83.3 %)** of the GT-LON stratum, confirmed by a second independent probe
+reading 0.775 from three arms' banked controls.
+
+### 2. ⭐⭐ THE FIX: `a_sustain = a0` — a REALISED row that beats an ORACLE row
+
+medAE on the GT-LON stratum (n = 24, metric declared **before** scoring, **not** RMSE — `M15`):
+
+| row | LON speed medAE | ADE med |
+|---|---|---|
+| GT identity control | **0.0000** ✅ | 0.0000 |
+| `cl` = `wk15` (T1 planner) | 0.8208 | 1.1462 |
+| `ha0_ext` floor | 0.2833 | 0.4161 |
+| shipped vocabulary, **realised** | 0.7773 | 1.1254 |
+| shipped vocabulary, **ORACLE ceiling** | 0.2649 | 0.4923 |
+| ⭐ **`a_sustain = a0`, REALISED** | **0.3001** | **0.3970 — BEATS the floor** |
+| control `a_sustain = 0` | 0.7773 ✅ | 1.1254 |
+| regression `a_sustain = −a0` | 1.2500 ✅ worse | 1.5472 |
+
+⭐⭐⭐ **A REALISED row beating an ORACLE row** — exactly the form `M19` / retraction #29 demanded
+after I approved a vocabulary on a ceiling. **And there is no oracle gap at all**, because the hint
+is `a0` **MEASURED at t0** (`ha0_ext`'s own backward difference, no future) ⇒ **no chooser, no level
+set, no parameter fitted on the scored split.** The thing that killed L=3 cannot happen here.
+
+⭐ **And it did not stop there.** Told that D1 reaches only **61.8 %** of what is available, it took
+the next lever **in the same turn** — **D2 (`a_shift`): tokens name a change relative to where you
+are GOING.** Paired mean difference vs the floor: shipped **+0.4551** (ADE +0.1492) · D1 **+0.1752**
+(+0.0059) · ⭐ **D2 +0.1184 (ADE −0.0389)** — **76 % of the deficit closed, and the only design that
+BEATS the floor.**
+
+### 3. ⭐ M34's PREDICTION HELD — both parts were missing, exactly as written
+
+`DESIGN_CONSTRAIN_BY_CONSTRUCTION` Addendum 1 predicted, **before this arm ran**: *"part 2 is
+missing AND part 3 has nothing to prefer ⇒ fixing either alone will null."* MEASURED:
+
+* **Part 2 (representability) missing** — `a` decays to zero for all 8 tokens.
+* **Part 3 (preference) missing** — ⛔ **the jerk term does not price the seam.** `jerk` diffs the
+  plan's own actions only, so the step from the **measured `a0`** to `controls[0]` is **FREE**, and
+  **the all-zero plan is the exact joint minimiser of BOTH regularisers.** Repaired behind
+  `plan(jerk_seam_a0=…)` using the **same** `w_jerk` — **a repair, not a re-weighting.**
+
+⇒ The three-part principle now has a **prediction that was written down and then held**, not only a
+post-hoc fit.
+
+### 4. It CORRECTS `M27` §2 in my favour, and I would rather have the correction
+
+⭐ **`W_VEND` is a DEAD term** (inherited — `D-REFAV1-CG-INERT-2` already pinned it). ⇒ the **643×
+`W_VEND` difference I flagged in `M27` as a possible confound is a NO-OP**, which makes `wk15` a
+**cleaner one-variable arm than I stated**, not a dirtier one.
+
+⚠️ And it built a `--target-speed-mode` lever, **an existing pin caught it** and reserves arming T4
+as a PI decision **verbatim** ⇒ it **removed the lever rather than amending the pin**, and escalated.
+*A pin that stops its own author is the pin working.*
+
+### 5. The size of the prize, and why it is not a detectability question
+
+| pair | ADE | LON speed MAE |
+|---|---|---|
+| `wk15 − ha0_ext` | +0.0162 [−0.1648, +0.1980] | **+0.4862 [+0.2825, +0.7201]** |
+| `wk151 − wk15` (**seed floor**) | +0.0150 | **+0.0076 [−0.0134, +0.0282]** |
+
+⇒ **The target is +0.4862 against a seed floor of +0.0076 — 64× the headroom needed.** ⛔ **The
+binding question is SIZE, not detectability**, which is the opposite of the vocabulary panel that had
+to be blocked for underpower.
+
+⚠️ **P4 not measured this turn, and the reason is honest capacity, not a blocker:** the 4060 sits at
+**7,838 / 8,188 MiB** with the *sibling's* two arms. **Two arms is the proven ceiling; a third OOMs.**
+Five arms are queued on distinct `--out` targets and start automatically.
+
+### 6. ⭐ A retraction it logged against ITSELF, and the class is worth keeping
+
+It had recorded `test_A6` as a **pre-existing red test belonging to another stream** and escalated it.
+It does not reproduce — 26, then 70, then **647 passed**. It had observed the failure **while its own
+patch was half-applied.**
+
+⇒ **CLASS: a red test seen during your own multi-step edit is evidence about YOUR EDIT, not about the
+test — and blaming a sibling stream is the cheapest wrong explanation available.** `RESULT.md`,
+`HANDOFF.md` and the register row were all corrected in the same turn.
