@@ -290,3 +290,70 @@ bit-identical to no-flag, pinned) — it is **not** a fix and must not be shippe
 2. ⛔ **Both A/B arms sit 3.6–5.9× BELOW the trivial floors on turning windows.** The vocabulary is
    a **necessary** fix; it is not shown to be sufficient, and the floor gap is a separate open item
    that no vocabulary change is entitled to claim.
+
+## M17. ⭐ RULING — `--agent-queries` becomes **100**, and the criterion is the DROP POLICY, not the distribution
+
+**The escalation.** `--agent-queries 32` was set from val40. MEASURED on the train corpus:
+
+| corpus | mean | p99 | **max** |
+|---|---|---|---|
+| val40 (the basis for 32) | 3.16 | 19 | **24** |
+| **train2400** | **4.39** | **30** | **94** |
+
+At N = 32 on train: **41,362 boxes (2.18 %) dropped across 3,250 frames, nearest sacrificed target
+at 13.1 m.** Zero-drop floor **94**; at N = 64 the nearest sacrificed target is 33.9 m.
+
+⇒ **DECISION: `--agent-queries = 100`.** Four reasons, and the second is the binding one.
+
+1. **The stream's own pre-committed rule was "a covering N with zero drop", explicitly chosen over
+   "use the p99".** Picking 64 now — after seeing that 94 is expensive — would be **selecting the
+   threshold on the data it is scored against**, which is the exact failure this programme keeps
+   paying for. A rule committed in advance is not renegotiated because its answer is inconvenient.
+2. ⛔ **`match_slots` keeps the NEAREST N, so a DROP IS BY CONSTRUCTION THE CLOSEST THING WE FAILED
+   TO SEE.** That inverts the usual reading of a truncation: this is not a long tail of distant
+   clutter being trimmed, it is the near field going unmodelled once a scene is dense enough.
+   **13.1 m is inside the braking envelope at any urban speed.** And **N = 64 does not fix it
+   either** — 33.9 m is still inside a comfortable-braking envelope at 15 m/s (≈ 1 s reaction plus
+   v²/2a at −4 m/s² ≈ 43 m). A safety-relevant truncation is not a hyper-parameter to be traded
+   against decoder cost.
+3. ⚠️ **94 is a MAX OVER A SAMPLE, NOT A BOUND.** 2,308 episodes are not every scene we will ever
+   meet, and setting N to the observed maximum guarantees truncation on the first denser frame.
+   **100** carries headroom over the sample and is a round, stable number that will not drift each
+   time the corpus grows.
+4. ⭐ **100 is the ORDINARY setting for this architecture, and 32 was the anomaly.** DETR's own
+   convention is ~100 queries against ~7 objects per image; ours is a mean of **4.39**. A decoder
+   whose surplus queries emit "no object" is the design working as intended, not waste.
+
+⚠️ **What must accompany it:** the decoder cost at N = 100 is **MEASURED and reported**, never
+assumed — step time and peak memory against N = 32, on the box the arm actually runs on. If that
+cost turns out to bind, the answer is a **different architecture for the near field**, not a
+silently smaller N. ⛔ And the flag's help text and docstring still assert the val40 claim; they are
+corrected in the same change, because the number was wrong in the place a reader would check it.
+
+## M18. ⛔ A HASH WITHOUT ITS ARTIFACT SCOPE IS NOT A VERIFICATION — a correct-looking checker refused a good file
+
+MEASURED by the DataFlyWheel stream: the two agent joins' sidecars record `md5` **over different
+artifacts** — val40's covers the **decompressed `.jsonl`**, train2400's covers the **compressed
+`.xz`**. The refcv5 density script's C5 integrity check, inherited from val40, therefore **REFUSES
+the train join**: a checker that is correct in every line, applied to a file it was never scoped
+for, rejecting a file that is perfectly good.
+
+⇒ **RULE: a recorded hash carries the ARTIFACT it was taken over — compressed or decompressed, and
+the exact filename — or it is not a verification, it is a number.** A consumer that cannot see that
+scope will either refuse a good file (here) or, worse, **accept the wrong one and report success**.
+
+⭐ **This is the anchor-units trap in a new costume**, and the third member of the family in two
+days: `control_units` on a `.pt` (`M11`'s neighbour, the 396 g / 0.31 g inversion), `corpus.labels`
+being a dict where a path was expected (`D-NAVCOMP-SHAPE-1`), and now an md5 whose subject is
+unstated. Each time the VALUE was right and its **scope** was missing, and each time the failure
+wore the costume of a working check. ⇒ The durable form is the one already adopted for anchors:
+**builders write the scope INTO the sidecar**, and a consumer that finds no declared scope
+**refuses rather than guessing**.
+
+⚠️ Two more from the same stream, both the same class and both open:
+* ⛔ **`--agent-w-project` / `--agent-w-ground` are SILENT NO-OPS** — `model._rig_camera` is set to
+  `None` and never assigned, so both loss terms are guarded out **while being stamped into
+  `config.json`**. The run record therefore states a training configuration that did not happen.
+  A flag that parses and does nothing is worse than a missing one; it must **REFUSE**.
+* **`w_agent` / `w_u0` are absent from `config.json` entirely** — a run cannot say what weight its
+  detector trained at, which makes any later comparison between arms unfalsifiable.
