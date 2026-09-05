@@ -519,15 +519,17 @@
     "diffusiondrive",
     "driving",
     "ego-input",
-    "input-pipeline"
+    "input-pipeline",
+    "rl-posttrain"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md"
    ]
   },
   "2603.14482": {
@@ -3770,13 +3772,15 @@
    "banked": "2026-08-29",
    "tags": [
     "diffusiondrive",
-    "refc-lineage"
+    "refc-lineage",
+    "rl-posttrain"
    ],
-   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan",
+   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md"
    ]
   },
   "2507.04049": {
@@ -3804,12 +3808,14 @@
    "banked": "2026-08-29",
    "tags": [
     "diffusiondrive",
-    "refc-lineage"
+    "refc-lineage",
+    "rl-posttrain"
    ],
-   "note": "DIVER: reinforced-diffusion successor; navtest PDMS 88.3 @R34 (DDv2 Tab.1 official same-backbone) | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
+   "note": "DIVER: reinforced-diffusion successor; navtest PDMS 88.3 @R34 (DDv2 Tab.1 official same-backbone) | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md"
    ]
   },
   "2504.19580": {
@@ -3895,10 +3901,11 @@
     "diffusiondrive",
     "rl-posttrain"
    ],
-   "note": "DPPO: the two-layer MDP that DDv2 cites (ref [38]) for treating the denoising chain as an MDP; diffusion-policy RL fine-tuning, PPO on the denoising MDP. | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
+   "note": "DPPO: the two-layer MDP that DDv2 cites (ref [38]) for treating the denoising chain as an MDP; diffusion-policy RL fine-tuning, PPO on the denoising MDP. | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-rl-posttrain-refcv4b-refcv5/RESULT.md"
    ]
   },
   "2305.13301": {
@@ -7801,15 +7808,17 @@
    "sha256": "2688b96a620ca7f9d4fc5c48fdef44a20bc2c157179a3825f8ccb73244bfde7e",
    "banked": "2026-08-31",
    "tags": [
+    "A2_jepa",
     "sota-2026-09-03",
     "sota-2026-09-03-action",
     "v7-gate"
    ],
-   "note": "ATM: action-consistency transfer matrix — a DIAGNOSTIC for latent WM action use (to verify) | READ IN FULL 2026-09-03: transfer matrix D_TT/D_TP/D_PT/D_PP with 2-layer MLP probes; rho(-L_pred,success) 0.4983 vs rho(-D_TT,success) 0.8130 on Cube; ranking 82.84% of pairs, 98.81% at >5% margin; AITS training LeWM 87/96/74 -> 92/100/84, Cube D_TT 36.65 -> 15.87; AITS-P on predicted transitions creates predicted-domain-specific action codes; 3-5 s per read",
+   "note": "ATM: action-consistency transfer matrix — a DIAGNOSTIC for latent WM action use (to verify) | READ IN FULL 2026-09-03: transfer matrix D_TT/D_TP/D_PT/D_PP with 2-layer MLP probes; rho(-L_pred,success) 0.4983 vs rho(-D_TT,success) 0.8130 on Cube; ranking 82.84% of pairs, 98.81% at >5% margin; AITS training LeWM 87/96/74 -> 92/100/84, Cube D_TT 36.65 -> 15.87; AITS-P on predicted transitions creates predicted-domain-specific action codes; 3-5 s per read | ATM: 2x2 action-consistency transfer matrix; off-diagonal T->P gap ranks WMs at >100x CEM speed; AITS inverse head is encoder-side",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
    ]
   },
   "2602.19634": {
@@ -11796,8 +11805,9 @@
     "vla",
     "vla-frontier-2026-09-05"
    ],
-   "note": "LaST-VLA: thinking in latent spatio-temporal space for driving VLA",
+   "note": "LaST-VLA: thinking in latent spatio-temporal space for driving VLA | LaST-VLA: latent spatio-temporal CoT, 91.3 PDMS NAVSIM v1; distils world-model foresight into the latent",
    "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
    ]
   },
@@ -12310,6 +12320,1401 @@
    "note": "Phase Matters: prefill vs decode characterisation of vision-language inference on a mobile SoC",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
+   ]
+  },
+  "2501.08118": {
+   "key": "2501.08118",
+   "kind": "arxiv",
+   "title": "Revisiting Birds Eye View Perception Models with Frozen Foundation Models: DINOv2 and Metric3Dv2",
+   "authors": [
+    "Seamie Hayes",
+    "Ganesh Sistu",
+    "Ciarán Eising"
+   ],
+   "published": "2025-01-14",
+   "abstract": "Birds Eye View perception models require extensive data to perform and generalize effectively. While traditional datasets often provide abundant driving scenes from diverse locations, this is not always the case. It is crucial to maximize the utility of the available training data. With the advent of large foundation models such as DINOv2 and Metric3Dv2, a pertinent question arises: can these models be integrated into existing model architectures to not only reduce the required training data but surpass the performance of current models? We choose two model architectures in the vehicle segmentation domain to alter: Lift-Splat-Shoot, and Simple-BEV. For Lift-Splat-Shoot, we explore the implementation of frozen DINOv2 for feature extraction and Metric3Dv2 for depth estimation, where we greatly exceed the baseline results by 7.4 IoU while utilizing only half the training data and iterations",
+   "url": "https://arxiv.org/abs/2501.08118",
+   "path": "TanitAD Research Lab/Library/papers/2501.08118_Revisiting-Birds-Eye-View-Perception-Models-with-Frozen-Foun.pdf",
+   "bytes": 18681510,
+   "sha256": "f9f063e4328c0610182d9d606541979776f887be23d2d8defcb99a3ca251cc3a",
+   "banked": "2026-09-05",
+   "tags": [
+    "A3_vision_encoders"
+   ],
+   "note": "Frozen DINOv2 + LSS beats BEV baseline by +7.4 IoU on half the data/iters; RESOLVES empty E1 at the 4th probe",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
+   ]
+  },
+  "2511.18729": {
+   "key": "2511.18729",
+   "kind": "arxiv",
+   "title": "GuideFlow: Constraint-Guided Flow Matching for Planning in End-to-End Autonomous Driving",
+   "authors": [
+    "Lin Liu",
+    "Caiyan Jia",
+    "Guanyi Yu",
+    "Ziying Song",
+    "JunQiao Li",
+    "Feiyang Jia",
+    "Peiliang Wu",
+    "Xiaoshuai Hao",
+    "Yadan Luo"
+   ],
+   "published": "2025-11-24",
+   "abstract": "Driving planning is a critical component of end-to-end (E2E) autonomous driving. However, prevailing Imitative E2E Planners often suffer from multimodal trajectory mode collapse, failing to produce diverse trajectory proposals. Meanwhile, Generative E2E Planners struggle to incorporate crucial safety and physical constraints directly into the generative process, necessitating an additional optimization stage to refine their outputs. In this paper, we propose \\textit{\\textbf{GuideFlow}}, a novel planning framework that leverages Constrained Flow Matching. Concretely, \\textit{\\textbf{GuideFlow}} explicitly models the flow matching process, which inherently mitigates mode collapse and allows for flexible guidance from various conditioning signals. Our core contribution lies in directly enforcing explicit constraints within the flow matching generation process, rather than relying on implici",
+   "url": "https://arxiv.org/abs/2511.18729",
+   "path": "TanitAD Research Lab/Library/papers/2511.18729_GuideFlow-Constraint-Guided-Flow-Matching-for-Planning-in-En.pdf",
+   "bytes": 10855931,
+   "sha256": "52e6f668a66237cf343f0918aae3174ad362337690d42512add43285eee1b024",
+   "banked": "2026-09-05",
+   "tags": [
+    "B7_diffusion"
+   ],
+   "note": "GuideFlow: constraint-guided flow matching; CF+RFE +4.0 EPDMS but the SCORER adds +15.9 (27.1 no-scorer -> 43.0) on navhard",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
+   ]
+  },
+  "2607.08072": {
+   "key": "2607.08072",
+   "kind": "arxiv",
+   "title": "Post-Training in End-to-End Autonomous Driving",
+   "authors": [
+    "Ruining Yang",
+    "Muxing Wang",
+    "Yixiao Chen",
+    "Tongfei Guo",
+    "Yi Xu",
+    "Can Cui",
+    "Zichong Yang",
+    "Yitian Zhang",
+    "Ziran Wang",
+    "Yun Fu",
+    "Lili Su"
+   ],
+   "published": "2026-07-09",
+   "abstract": "End-to-end models that map multimodal inputs directly to future trajectories/maneuvers have emerged as an increasingly prominent research paradigm in autonomous driving. This class of models includes both Vision-Language-Action models and trajectory-generative planners. Unlike classic machine learning applications, autonomous vehicles operate in safety-critical and interaction-intensive environments where traditional open-loop imitation of expert demonstrations is not sufficient to ensure reliability. In particular, small execution errors can accumulate over time, while recovery behaviors are scarce in training data. In addition, long-horizon objectives such as safety and driving comfort are not captured by pointwise labels either. These limitations have motivated a shift toward post-training techniques, which further refine driving policies beyond pure imitation. This survey presents a ",
+   "url": "https://arxiv.org/abs/2607.08072",
+   "path": "TanitAD Research Lab/Library/papers/2607.08072_Post-Training-in-End-to-End-Autonomous-Driving.pdf",
+   "bytes": 1108833,
+   "sha256": "cc8fba6507e44df731f49786d995b70b97bc0adb8f21d27479d87afa928daddb",
+   "banked": "2026-09-05",
+   "tags": [
+    "B5_post_training"
+   ],
+   "note": "Post-training in E2E AD unified view: scalar GRPO reward hides cross-dimension degradation; recommends localized event feedback",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
+   ]
+  },
+  "2403.16092": {
+   "key": "2403.16092",
+   "kind": "arxiv",
+   "title": "Are NeRFs ready for autonomous driving? Towards closing the real-to-simulation gap",
+   "authors": [
+    "Carl Lindström",
+    "Georg Hess",
+    "Adam Lilja",
+    "Maryam Fatemi",
+    "Lars Hammarstrand",
+    "Christoffer Petersson",
+    "Lennart Svensson"
+   ],
+   "published": "2024-03-24",
+   "abstract": "Neural Radiance Fields (NeRFs) have emerged as promising tools for advancing autonomous driving (AD) research, offering scalable closed-loop simulation and data augmentation capabilities. However, to trust the results achieved in simulation, one needs to ensure that AD systems perceive real and rendered data in the same way. Although the performance of rendering methods is increasing, many scenarios will remain inherently challenging to reconstruct faithfully. To this end, we propose a novel perspective for addressing the real-to-simulated data gap. Rather than solely focusing on improving rendering fidelity, we explore simple yet effective methods to enhance perception model robustness to NeRF artifacts without compromising performance on real data. Moreover, we conduct the first large-scale investigation into the real-to-simulated data gap in an AD setting using a state-of-the-art neur",
+   "url": "https://arxiv.org/abs/2403.16092",
+   "path": "TanitAD Research Lab/Library/papers/2403.16092_Are-NeRFs-ready-for-autonomous-driving-Towards-closing-the-r.pdf",
+   "bytes": 7438349,
+   "sha256": "13f3f4a11be082884dd6054eeca5b53ef931a56ffa6c9647c26588e39653d418",
+   "banked": "2026-09-05",
+   "tags": [
+    "D_opponent_counter"
+   ],
+   "note": "Are NeRFs ready for AD? real-to-sim gap must be MEASURED; FID/LPIPS correlate with it - the measurement GAIA-4's post does not report",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
+   ]
+  },
+  "2510.04871": {
+   "key": "2510.04871",
+   "kind": "arxiv",
+   "title": "Less is More: Recursive Reasoning with Tiny Networks",
+   "authors": [
+    "Alexia Jolicoeur-Martineau"
+   ],
+   "published": "2025-10-06",
+   "abstract": "Hierarchical Reasoning Model (HRM) is a novel approach using two small neural networks recursing at different frequencies. This biologically inspired method beats Large Language models (LLMs) on hard puzzle tasks such as Sudoku, Maze, and ARC-AGI while trained with small models (27M parameters) on small data (around 1000 examples). HRM holds great promise for solving hard problems with small networks, but it is not yet well understood and may be suboptimal. We propose Tiny Recursive Model (TRM), a much simpler recursive reasoning approach that achieves significantly higher generalization than HRM, while using a single tiny network with only 2 layers. With only 7M parameters, TRM obtains 45% test-accuracy on ARC-AGI-1 and 8% on ARC-AGI-2, higher than most LLMs (e.g., Deepseek R1, o3-mini, Gemini 2.5 Pro) with less than 0.01% of the parameters.",
+   "url": "https://arxiv.org/abs/2510.04871",
+   "path": "TanitAD Research Lab/Library/papers/2510.04871_Less-is-More-Recursive-Reasoning-with-Tiny-Networks.pdf",
+   "bytes": 427299,
+   "sha256": "c2b3ef5a8d6bc68e667aa01e8405dcfd9ebe88cfe1c6e58f04c5a6d652ce7af9",
+   "banked": "2026-09-05",
+   "tags": [
+    "trm"
+   ],
+   "note": "TRM: a 7M two-layer recursive net beats HRM on ARC-AGI-1 (45% vs 40.3%) — the z/y recursion TanitLang adopts",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2512.11847": {
+   "key": "2512.11847",
+   "kind": "arxiv",
+   "title": "Tiny Recursive Models on ARC-AGI-1: Inductive Biases, Identity Conditioning, and Test-Time Compute",
+   "authors": [
+    "Antonio Roye-Azar",
+    "Santiago Vargas-Naranjo",
+    "Dhruv Ghai",
+    "Nithin Balamurugan",
+    "Rayan Amir"
+   ],
+   "published": "2025-12-04",
+   "abstract": "Tiny Recursive Models (TRM) were proposed as a parameter-efficient alternative to large language models for solving Abstraction and Reasoning Corpus (ARC) style tasks. The original work reports strong performance and suggests that recursive latent updates enable non-trivial reasoning, but it remains unclear how much of this performance stems from architecture, test-time compute, or task-specific priors. In this technical note, we empirically analyze the ARC Prize TRM checkpoint on ARC-AGI-1 and report four behavioral findings and an efficiency comparison. First, we show that test-time augmentation and majority-vote ensembling account for a substantial fraction of reported performance: the 1000-sample voting pipeline improves Pass@1 by about 11 percentage points over single-pass canonical inference. Second, a puzzle-identity ablation reveals strict dependence on task identifiers: replacin",
+   "url": "https://arxiv.org/abs/2512.11847",
+   "path": "TanitAD Research Lab/Library/papers/2512.11847_Tiny-Recursive-Models-on-ARC-AGI-1-Inductive-Biases-Identity.pdf",
+   "bytes": 334921,
+   "sha256": "76958ae11d34801dcb437047b673fd2f67685b764a1b1111d39dd963768af1d4",
+   "banked": "2026-09-05",
+   "tags": [
+    "trm"
+   ],
+   "note": "TRM inductive biases: 94.4% of accuracy at recursion step 1, and puzzle-ID ablation yields ZERO accuracy",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2602.01148": {
+   "key": "2602.01148",
+   "kind": "arxiv",
+   "title": "Capabilities and Fundamental Limits of Latent Chain-of-Thought",
+   "authors": [
+    "Jiaxuan Zou",
+    "Yaozhong Xiong",
+    "Yong Liu"
+   ],
+   "published": "2026-02-01",
+   "abstract": "Latent Chain-of-Thought (Latent CoT) models promise efficient reasoning via continuous representations, yet exhibit puzzling performance inconsistencies: excelling at exploration (ProsQA: 97.0%) but failing at computation (GSM8K: 34.1%). We reveal that this trade-off is governed by decisional certainty. Our contributions are threefold: (1) We theoretically characterize the fundamental Exploration-Execution Trade-off, proving that high certainty enables precise execution but inhibits exploration, while low certainty facilitates search but causes error accumulation. (2) We introduce the Symbolic Index--quantifying decisional commitment--as the core mechanism governing this trade-off and establish its causal relationship with both execution stability and exploration capability. (3) We prove that curriculum learning is theoretically necessary, as direct training provably fails due to distrib",
+   "url": "https://arxiv.org/abs/2602.01148",
+   "path": "TanitAD Research Lab/Library/papers/2602.01148_Capabilities-and-Fundamental-Limits-of-Latent-Chain-of-Thoug.pdf",
+   "bytes": 765871,
+   "sha256": "98cff3866522023f5955644213b31e2d4fab7c79960027c2d23ff8bf87cd4e6e",
+   "banked": "2026-09-05",
+   "tags": [
+    "latent-cot"
+   ],
+   "note": "Latent CoT limits: strong at exploration (97.0% ProsQA), weak at execution (34.1% GSM8K); curriculum proven necessary",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2511.19418": {
+   "key": "2511.19418",
+   "kind": "arxiv",
+   "title": "Chain-of-Visual-Thought: Teaching VLMs to See and Think Better with Continuous Visual Tokens",
+   "authors": [
+    "Yiming Qin",
+    "Bomin Wei",
+    "Jiaxin Ge",
+    "Konstantinos Kallidromitis",
+    "Stephanie Fu",
+    "Trevor Darrell",
+    "XuDong Wang"
+   ],
+   "published": "2025-11-24",
+   "abstract": "Vision-Language Models (VLMs) excel at reasoning in linguistic space but struggle with perceptual understanding that requires dense visual perception, e.g., spatial reasoning and geometric awareness. This limitation stems from the fact that current VLMs have limited mechanisms to capture dense visual information across spatial dimensions. We introduce Chain-of-Visual-Thought (COVT), a framework that enables VLMs to reason not only in words but also through continuous visual tokens-compact latent representations that encode rich perceptual cues. Within a small budget of roughly 20 tokens, COVT distills knowledge from lightweight vision experts, capturing complementary properties such as 2D appearance, 3D geometry, spatial layout, and edge structure. During training, the VLM with COVT autoregressively predicts these visual tokens to reconstruct dense supervision signals (e.g., depth, segme",
+   "url": "https://arxiv.org/abs/2511.19418",
+   "path": "TanitAD Research Lab/Library/papers/2511.19418_Chain-of-Visual-Thought-Teaching-VLMs-to-See-and-Think-Bette.pdf",
+   "bytes": 5245562,
+   "sha256": "aa0ab5b6c006efa7e139ab722a34bdc002a55be58e4b3b0254398a6406c04bb8",
+   "banked": "2026-09-05",
+   "tags": [
+    "latent-cot"
+   ],
+   "note": "CoVT: continuous visual thought in ~20 tokens — the latent-CoT token budget that makes 300-500ms feasible",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2511.11266": {
+   "key": "2511.11266",
+   "kind": "arxiv",
+   "title": "GraphPilot: Grounded Scene Graph Conditioning for Language-Based Autonomous Driving",
+   "authors": [
+    "Fabian Schmidt",
+    "Markus Enzweiler",
+    "Abhinav Valada"
+   ],
+   "published": "2025-11-14",
+   "abstract": "Vision-language models have recently emerged as promising planners for autonomous driving, where success hinges on topology-aware reasoning over spatial structure and dynamic interactions from multimodal input. However, existing models are typically trained without supervision that explicitly encodes these relational dependencies, limiting their ability to infer how agents and other traffic entities influence one another from raw sensor data. In this work, we bridge this gap with a novel model-agnostic method that conditions language-based driving models on structured relational context in the form of traffic scene graphs. We serialize scene graphs at various abstraction levels and formats, and incorporate them into models via structured prompt templates, enabling systematic analysis of when and how relational supervision is most beneficial and computationally efficient. Extensive evalua",
+   "url": "https://arxiv.org/abs/2511.11266",
+   "path": "TanitAD Research Lab/Library/papers/2511.11266_GraphPilot-Grounded-Scene-Graph-Conditioning-for-Language-Ba.pdf",
+   "bytes": 3051321,
+   "sha256": "809f16ac42e6d9f4dc399dc77ec41937b3641dc24227a70e39440e3a040fa2d5",
+   "banked": "2026-09-05",
+   "tags": [
+    "scene-graph"
+   ],
+   "note": "GraphPilot: VLM planners fail from lack of supervision encoding RELATIONAL dependencies — the v6 argument",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2403.19098": {
+   "key": "2403.19098",
+   "kind": "arxiv",
+   "title": "GraphAD: Interaction Scene Graph for End-to-end Autonomous Driving",
+   "authors": [
+    "Yunpeng Zhang",
+    "Deheng Qian",
+    "Ding Li",
+    "Yifeng Pan",
+    "Yong Chen",
+    "Zhenbao Liang",
+    "Zhiyao Zhang",
+    "Shurui Zhang",
+    "Hongxu Li",
+    "Maolei Fu",
+    "Yun Ye",
+    "Zhujin Liang"
+   ],
+   "published": "2024-03-28",
+   "abstract": "Modeling complicated interactions among the ego-vehicle, road agents, and map elements has been a crucial part for safety-critical autonomous driving. Previous works on end-to-end autonomous driving rely on the attention mechanism for handling heterogeneous interactions, which fails to capture the geometric priors and is also computationally intensive. In this paper, we propose the Interaction Scene Graph (ISG) as a unified method to model the interactions among the ego-vehicle, road agents, and map elements. With the representation of the ISG, the driving agents aggregate essential information from the most influential elements, including the road agents with potential collisions and the map elements to follow. Since a mass of unnecessary interactions are omitted, the more efficient scene-graph-based framework is able to focus on indispensable connections and leads to better performance",
+   "url": "https://arxiv.org/abs/2403.19098",
+   "path": "TanitAD Research Lab/Library/papers/2403.19098_GraphAD-Interaction-Scene-Graph-for-End-to-end-Autonomous-Dr.pdf",
+   "bytes": 8469624,
+   "sha256": "36667d2cddcd4d02f9932e38bbd4157c16206aad81dfab95f9e9873035cf5d36",
+   "banked": "2026-09-05",
+   "tags": [
+    "scene-graph"
+   ],
+   "note": "GraphAD: Interaction Scene Graph over ego + agents + MAP elements — the three-way relation",
+   "cited_by": [
+    "Project Steering/TANITLANG_DESIGN_V6.md"
+   ]
+  },
+  "2305.20050": {
+   "key": "2305.20050",
+   "kind": "arxiv",
+   "title": "Let's Verify Step by Step",
+   "authors": [
+    "Hunter Lightman",
+    "Vineet Kosaraju",
+    "Yura Burda",
+    "Harri Edwards",
+    "Bowen Baker",
+    "Teddy Lee",
+    "Jan Leike",
+    "John Schulman",
+    "Ilya Sutskever",
+    "Karl Cobbe"
+   ],
+   "published": "2023-05-31",
+   "abstract": "In recent years, large language models have greatly improved in their ability to perform complex multi-step reasoning. However, even state-of-the-art models still regularly produce logical mistakes. To train more reliable models, we can turn either to outcome supervision, which provides feedback for a final result, or process supervision, which provides feedback for each intermediate reasoning step. Given the importance of training reliable models, and given the high cost of human feedback, it is important to carefully compare the both methods. Recent work has already begun this comparison, but many questions still remain. We conduct our own investigation, finding that process supervision significantly outperforms outcome supervision for training models to solve problems from the challenging MATH dataset. Our process-supervised model solves 78% of problems from a representative subset of",
+   "url": "https://arxiv.org/abs/2305.20050",
+   "path": "TanitAD Research Lab/Library/papers/2305.20050_Let-s-Verify-Step-by-Step.pdf",
+   "bytes": 4384742,
+   "sha256": "fbd170e2042c32950c3fe97d3a558d89e8a8dffaadc942e774ccb4b751abc123",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Let's Verify Step by Step: process supervision beats outcome supervision on MATH; PRM800K step-level labels",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2110.14168": {
+   "key": "2110.14168",
+   "kind": "arxiv",
+   "title": "Training Verifiers to Solve Math Word Problems",
+   "authors": [
+    "Karl Cobbe",
+    "Vineet Kosaraju",
+    "Mohammad Bavarian",
+    "Mark Chen",
+    "Heewoo Jun",
+    "Lukasz Kaiser",
+    "Matthias Plappert",
+    "Jerry Tworek",
+    "Jacob Hilton",
+    "Reiichiro Nakano",
+    "Christopher Hesse",
+    "John Schulman"
+   ],
+   "published": "2021-10-27",
+   "abstract": "State-of-the-art language models can match human performance on many tasks, but they still struggle to robustly perform multi-step mathematical reasoning. To diagnose the failures of current models and support research, we introduce GSM8K, a dataset of 8.5K high quality linguistically diverse grade school math word problems. We find that even the largest transformer models fail to achieve high test performance, despite the conceptual simplicity of this problem distribution. To increase performance, we propose training verifiers to judge the correctness of model completions. At test time, we generate many candidate solutions and select the one ranked highest by the verifier. We demonstrate that verification significantly improves performance on GSM8K, and we provide strong empirical evidence that verification scales more effectively with increased data than a finetuning baseline.",
+   "url": "https://arxiv.org/abs/2110.14168",
+   "path": "TanitAD Research Lab/Library/papers/2110.14168_Training-Verifiers-to-Solve-Math-Word-Problems.pdf",
+   "bytes": 2935719,
+   "sha256": "a52417d8fcd006de882e3b404850e2cc4246815828897c18c6ce6c7a448985a4",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Training Verifiers to Solve Math Word Problems: outcome verifier + best-of-N reranking; GSM8K",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2211.14275": {
+   "key": "2211.14275",
+   "kind": "arxiv",
+   "title": "Solving math word problems with process- and outcome-based feedback",
+   "authors": [
+    "Jonathan Uesato",
+    "Nate Kushman",
+    "Ramana Kumar",
+    "Francis Song",
+    "Noah Siegel",
+    "Lisa Wang",
+    "Antonia Creswell",
+    "Geoffrey Irving",
+    "Irina Higgins"
+   ],
+   "published": "2022-11-25",
+   "abstract": "Recent work has shown that asking language models to generate reasoning steps improves performance on many reasoning tasks. When moving beyond prompting, this raises the question of how we should supervise such models: outcome-based approaches which supervise the final result, or process-based approaches which supervise the reasoning process itself? Differences between these approaches might naturally be expected not just in final-answer errors but also in reasoning errors, which can be difficult to detect and are problematic in many real-world domains such as education. We run the first comprehensive comparison between process- and outcome-based approaches trained on a natural language task, GSM8K. We find that pure outcome-based supervision produces similar final-answer error rates with less label supervision. However, for correct reasoning steps we find it necessary to use process-bas",
+   "url": "https://arxiv.org/abs/2211.14275",
+   "path": "TanitAD Research Lab/Library/papers/2211.14275_Solving-math-word-problems-with-process-and-outcome-based-fe.pdf",
+   "bytes": 809384,
+   "sha256": "9849410fd9e6817db7fa1c8405d1ea742b2a861acbac21f913d5cca08b4df909",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Process- vs outcome-based feedback: process supervision gives better reasoning at equal final accuracy",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2312.08935": {
+   "key": "2312.08935",
+   "kind": "arxiv",
+   "title": "Math-Shepherd: Verify and Reinforce LLMs Step-by-step without Human Annotations",
+   "authors": [
+    "Peiyi Wang",
+    "Lei Li",
+    "Zhihong Shao",
+    "R. X. Xu",
+    "Damai Dai",
+    "Yifei Li",
+    "Deli Chen",
+    "Y. Wu",
+    "Zhifang Sui"
+   ],
+   "published": "2023-12-14",
+   "abstract": "In this paper, we present an innovative process-oriented math process reward model called \\textbf{Math-Shepherd}, which assigns a reward score to each step of math problem solutions. The training of Math-Shepherd is achieved using automatically constructed process-wise supervision data, breaking the bottleneck of heavy reliance on manual annotation in existing work. We explore the effectiveness of Math-Shepherd in two scenarios: 1) \\textit{Verification}: Math-Shepherd is utilized for reranking multiple outputs generated by Large Language Models (LLMs); 2) \\textit{Reinforcement Learning}: Math-Shepherd is employed to reinforce LLMs with step-by-step Proximal Policy Optimization (PPO). With Math-Shepherd, a series of open-source LLMs demonstrates exceptional performance. For instance, the step-by-step PPO with Math-Shepherd significantly improves the accuracy of Mistral-7B (77.9\\%$\\to$84.1",
+   "url": "https://arxiv.org/abs/2312.08935",
+   "path": "TanitAD Research Lab/Library/papers/2312.08935_Math-Shepherd-Verify-and-Reinforce-LLMs-Step-by-step-without.pdf",
+   "bytes": 827225,
+   "sha256": "980b2b6b9e0042f86c6b6e4120fd056d5f1885d71c9c1d32416bcef2692f978d",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Math-Shepherd: PRM labels from MC rollout completion rate, no human step labels",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2408.15240": {
+   "key": "2408.15240",
+   "kind": "arxiv",
+   "title": "Generative Verifiers: Reward Modeling as Next-Token Prediction",
+   "authors": [
+    "Lunjun Zhang",
+    "Arian Hosseini",
+    "Hritik Bansal",
+    "Mehran Kazemi",
+    "Aviral Kumar",
+    "Rishabh Agarwal"
+   ],
+   "published": "2024-08-27",
+   "abstract": "Verifiers or reward models are often used to enhance the reasoning performance of large language models (LLMs). A common approach is the Best-of-N method, where N candidate solutions generated by the LLM are ranked by a verifier, and the best one is selected. While LLM-based verifiers are typically trained as discriminative classifiers to score solutions, they do not utilize the text generation capabilities of pretrained LLMs. To overcome this limitation, we instead propose training verifiers using the ubiquitous next-token prediction objective, jointly on verification and solution generation. Compared to standard verifiers, such generative verifiers (GenRM) can benefit from several advantages of LLMs: they integrate seamlessly with instruction tuning, enable chain-of-thought reasoning, and can utilize additional test-time compute via majority voting for better verification. We demonstra",
+   "url": "https://arxiv.org/abs/2408.15240",
+   "path": "TanitAD Research Lab/Library/papers/2408.15240_Generative-Verifiers-Reward-Modeling-as-Next-Token-Predictio.pdf",
+   "bytes": 1015534,
+   "sha256": "0ca07ace7efe542a81ca5f58d10099011288f105aaba467b98b005ec5af918ec",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Generative Verifiers: verifier as next-token prediction, enables CoT-verification and majority voting over verifications",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2410.08146": {
+   "key": "2410.08146",
+   "kind": "arxiv",
+   "title": "Rewarding Progress: Scaling Automated Process Verifiers for LLM Reasoning",
+   "authors": [
+    "Amrith Setlur",
+    "Chirag Nagpal",
+    "Adam Fisch",
+    "Xinyang Geng",
+    "Jacob Eisenstein",
+    "Rishabh Agarwal",
+    "Alekh Agarwal",
+    "Jonathan Berant",
+    "Aviral Kumar"
+   ],
+   "published": "2024-10-10",
+   "abstract": "A promising approach for improving reasoning in large language models is to use process reward models (PRMs). PRMs provide feedback at each step of a multi-step reasoning trace, potentially improving credit assignment over outcome reward models (ORMs) that only provide feedback at the final step. However, collecting dense, per-step human labels is not scalable, and training PRMs from automatically-labeled data has thus far led to limited gains. To improve a base policy by running search against a PRM or using it as dense rewards for reinforcement learning (RL), we ask: \"How should we design process rewards?\". Our key insight is that, to be effective, the process reward for a step should measure progress: a change in the likelihood of producing a correct response in the future, before and after taking the step, corresponding to the notion of step-level advantages in RL. Crucially, this pr",
+   "url": "https://arxiv.org/abs/2410.08146",
+   "path": "TanitAD Research Lab/Library/papers/2410.08146_Rewarding-Progress-Scaling-Automated-Process-Verifiers-for-L.pdf",
+   "bytes": 1594782,
+   "sha256": "b6d4572d38985f10bfa418d8db857877a6800a5e85984642a525d60565364864",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Rewarding Progress: process advantage verifiers measure change in likelihood of success, not step correctness",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2412.01981": {
+   "key": "2412.01981",
+   "kind": "arxiv",
+   "title": "Free Process Rewards without Process Labels",
+   "authors": [
+    "Lifan Yuan",
+    "Wendi Li",
+    "Huayu Chen",
+    "Ganqu Cui",
+    "Ning Ding",
+    "Kaiyan Zhang",
+    "Bowen Zhou",
+    "Zhiyuan Liu",
+    "Hao Peng"
+   ],
+   "published": "2024-12-02",
+   "abstract": "Different from its counterpart outcome reward models (ORMs), which evaluate the entire responses, a process reward model (PRM) scores a reasoning trajectory step by step, providing denser and more fine grained rewards. However, training a PRM requires labels annotated at every intermediate step, presenting significant challenges for both manual and automatic data collection. This paper aims to address this challenge. Both theoretically and empirically, we show that an \\textit{implicit PRM} can be obtained at no additional cost, by simply training an ORM on the cheaper response-level labels. The only assumption is to parameterize the outcome reward as the log-likelihood ratios of the policy and reference models, which can be optimized regardless of the specific choice of loss objectives. In experiments, we instantiate our implicit PRMs with various objectives and evaluate their performanc",
+   "url": "https://arxiv.org/abs/2412.01981",
+   "path": "TanitAD Research Lab/Library/papers/2412.01981_Free-Process-Rewards-without-Process-Labels.pdf",
+   "bytes": 630170,
+   "sha256": "ac6f258abd4ec70f5132fba5edcf868ea3cb78f0d8697ac4afa8d6d01492616b",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Implicit PRM: process reward for free from an outcome-trained log-likelihood ratio",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2408.03314": {
+   "key": "2408.03314",
+   "kind": "arxiv",
+   "title": "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters",
+   "authors": [
+    "Charlie Snell",
+    "Jaehoon Lee",
+    "Kelvin Xu",
+    "Aviral Kumar"
+   ],
+   "published": "2024-08-06",
+   "abstract": "Enabling LLMs to improve their outputs by using more test-time computation is a critical step towards building generally self-improving agents that can operate on open-ended natural language. In this paper, we study the scaling of inference-time computation in LLMs, with a focus on answering the question: if an LLM is allowed to use a fixed but non-trivial amount of inference-time compute, how much can it improve its performance on a challenging prompt? Answering this question has implications not only on the achievable performance of LLMs, but also on the future of LLM pretraining and how one should tradeoff inference-time and pre-training compute. Despite its importance, little research attempted to understand the scaling behaviors of various test-time inference methods. Moreover, current work largely provides negative results for a number of these strategies. In this work, we analyze ",
+   "url": "https://arxiv.org/abs/2408.03314",
+   "path": "TanitAD Research Lab/Library/papers/2408.03314_Scaling-LLM-Test-Time-Compute-Optimally-can-be-More-Effectiv.pdf",
+   "bytes": 3870997,
+   "sha256": "ded7b20b51493258c5ce2a1a024cd33dd752de1fa3373d1207620da4cfe24545",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Scaling test-time compute optimally: verifier-guided search vs revision, compute-optimal per-prompt strategy",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2310.17022": {
+   "key": "2310.17022",
+   "kind": "arxiv",
+   "title": "Controlled Decoding from Language Models",
+   "authors": [
+    "Sidharth Mudgal",
+    "Jong Lee",
+    "Harish Ganapathy",
+    "YaGuang Li",
+    "Tao Wang",
+    "Yanping Huang",
+    "Zhifeng Chen",
+    "Heng-Tze Cheng",
+    "Michael Collins",
+    "Trevor Strohman",
+    "Jilin Chen",
+    "Alex Beutel"
+   ],
+   "published": "2023-10-25",
+   "abstract": "KL-regularized reinforcement learning (RL) is a popular alignment framework to control the language model responses towards high reward outcomes. We pose a tokenwise RL objective and propose a modular solver for it, called controlled decoding (CD). CD exerts control through a separate prefix scorer module, which is trained to learn a value function for the reward. The prefix scorer is used at inference time to control the generation from a frozen base model, provably sampling from a solution to the RL objective. We empirically demonstrate that CD is effective as a control mechanism on popular benchmarks. We also show that prefix scorers for multiple rewards may be combined at inference time, effectively solving a multi-objective RL problem with no additional training. We show that the benefits of applying CD transfer to an unseen base model with no further tuning as well. Finally, we sho",
+   "url": "https://arxiv.org/abs/2310.17022",
+   "path": "TanitAD Research Lab/Library/papers/2310.17022_Controlled-Decoding-from-Language-Models.pdf",
+   "bytes": 1133503,
+   "sha256": "4c4764830faadd0b89ff518e6b0677350b0153c3cdc73fe661535fcece600c91",
+   "banked": "2026-09-06",
+   "tags": [
+    "guided-decoding"
+   ],
+   "note": "Controlled Decoding: prefix scorer as value function steers a frozen LM token-by-token",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2510.08049": {
+   "key": "2510.08049",
+   "kind": "arxiv",
+   "title": "A Survey of Process Reward Models: From Outcome Signals to Process Supervisions for Large Language Models",
+   "authors": [
+    "Congmin Zheng",
+    "Jiachen Zhu",
+    "Zhuoying Ou",
+    "Yuxiang Chen",
+    "Kangning Zhang",
+    "Rong Shan",
+    "Zeyu Zheng",
+    "Mengyue Yang",
+    "Jianghao Lin",
+    "Yong Yu",
+    "Weinan Zhang"
+   ],
+   "published": "2025-10-09",
+   "abstract": "Although Large Language Models (LLMs) exhibit advanced reasoning ability, conventional alignment remains largely dominated by outcome reward models (ORMs) that judge only final answers. Process Reward Models(PRMs) address this gap by evaluating and guiding reasoning at the step or trajectory level. This survey provides a systematic overview of PRMs through the full loop: how to generate process data, build PRMs, and use PRMs for test-time scaling and reinforcement learning. We summarize applications across math, code, text, multimodal reasoning, robotics, and agents, and review emerging benchmarks. Our goal is to clarify design spaces, reveal open challenges, and guide future research toward fine-grained, robust reasoning alignment.",
+   "url": "https://arxiv.org/abs/2510.08049",
+   "path": "TanitAD Research Lab/Library/papers/2510.08049_A-Survey-of-Process-Reward-Models-From-Outcome-Signals-to-Pr.pdf",
+   "bytes": 1298940,
+   "sha256": "c8df080911c99607b94cce3433d6e37733e6cb40ffb559a089a31bcc746ff48e",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "Survey of Process Reward Models: outcome to process supervision taxonomy",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2504.16828": {
+   "key": "2504.16828",
+   "kind": "arxiv",
+   "title": "Process Reward Models That Think",
+   "authors": [
+    "Muhammad Khalifa",
+    "Rishabh Agarwal",
+    "Lajanugen Logeswaran",
+    "Jaekyeom Kim",
+    "Hao Peng",
+    "Moontae Lee",
+    "Honglak Lee",
+    "Lu Wang"
+   ],
+   "published": "2025-04-23",
+   "abstract": "Step-by-step verifiers -- also known as process reward models (PRMs) -- are a key ingredient for test-time scaling. PRMs require step-level supervision, making them expensive to train. This work aims to build data-efficient PRMs as verbalized step-wise reward models that verify every step in the solution by generating a verification chain-of-thought (CoT). We propose ThinkPRM, a long CoT verifier fine-tuned on orders of magnitude fewer process labels than those required by discriminative PRMs. Our approach capitalizes on the inherent reasoning abilities of long CoT models, and outperforms LLM-as-a-Judge and discriminative verifiers -- using only 1% of the process labels in PRM800K -- across several challenging benchmarks. Specifically, ThinkPRM beats the baselines on ProcessBench, MATH-500, and AIME '24 under best-of-N selection and reward-guided search. In an out-of-domain evaluation on",
+   "url": "https://arxiv.org/abs/2504.16828",
+   "path": "TanitAD Research Lab/Library/papers/2504.16828_Process-Reward-Models-That-Think.pdf",
+   "bytes": 928866,
+   "sha256": "7fbc6a3c177f974e6f71f23eb505819ca73fff89a17f1014ac380d062676edff",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "ThinkPRM: generative process reward model that verifies with its own CoT",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2503.08679": {
+   "key": "2503.08679",
+   "kind": "arxiv",
+   "title": "Chain-of-Thought Reasoning In The Wild Is Not Always Faithful",
+   "authors": [
+    "Iván Arcuschin",
+    "Jett Janiak",
+    "Robert Krzyzanowski",
+    "Senthooran Rajamanoharan",
+    "Neel Nanda",
+    "Arthur Conmy"
+   ],
+   "published": "2025-03-11",
+   "abstract": "Recent studies indicate that when faced with explicit biases in prompts, models often omit mentioning these biases in their Chain-of-Thought (CoT) output, revealing that verbalized reasoning can give an incorrect picture of how models arrive at conclusions (unfaithfulness). In this work, we show that unfaithful CoT also occurs on naturally worded, non-adversarial prompts without adding artificial biases or editing model outputs. We find that when separately presented with the questions \"Is X bigger than Y?\" and \"Is Y bigger than X?\", models sometimes produce superficially coherent arguments to justify systematically answering Yes to both or No to both, despite the contradiction. We present preliminary evidence that this is due to models' implicit biases towards Yes or No, labeling this Implicit Post-Hoc Rationalization. Our results reveal rates up to 13% for production models, and while ",
+   "url": "https://arxiv.org/abs/2503.08679",
+   "path": "TanitAD Research Lab/Library/papers/2503.08679_Chain-of-Thought-Reasoning-In-The-Wild-Is-Not-Always-Faithfu.pdf",
+   "bytes": 3416780,
+   "sha256": "68a5dea2cbb694ff25571289d06337611649181805e0d7d3a14f4d2a8ee987f4",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "CoT in the wild is not always faithful: implicit post-hoc rationalisation and restoration errors in frontier reasoning models",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2505.05410": {
+   "key": "2505.05410",
+   "kind": "arxiv",
+   "title": "Reasoning Models Don't Always Say What They Think",
+   "authors": [
+    "Yanda Chen",
+    "Joe Benton",
+    "Ansh Radhakrishnan",
+    "Jonathan Uesato",
+    "Carson Denison",
+    "John Schulman",
+    "Arushi Somani",
+    "Peter Hase",
+    "Misha Wagner",
+    "Fabien Roger",
+    "Vlad Mikulik",
+    "Samuel R. Bowman"
+   ],
+   "published": "2025-05-08",
+   "abstract": "Chain-of-thought (CoT) offers a potential boon for AI safety as it allows monitoring a model's CoT to try to understand its intentions and reasoning processes. However, the effectiveness of such monitoring hinges on CoTs faithfully representing models' actual reasoning processes. We evaluate CoT faithfulness of state-of-the-art reasoning models across 6 reasoning hints presented in the prompts and find: (1) for most settings and models tested, CoTs reveal their usage of hints in at least 1% of examples where they use the hint, but the reveal rate is often below 20%, (2) outcome-based reinforcement learning initially improves faithfulness but plateaus without saturating, and (3) when reinforcement learning increases how frequently hints are used (reward hacking), the propensity to verbalize them does not increase, even without training against a CoT monitor. These results suggest that CoT",
+   "url": "https://arxiv.org/abs/2505.05410",
+   "path": "TanitAD Research Lab/Library/papers/2505.05410_Reasoning-Models-Don-t-Always-Say-What-They-Think.pdf",
+   "bytes": 6178102,
+   "sha256": "546afa672e0c50d50b7c86b7dbacb6f51d200be74f33577012d98cb18eee7600",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Reasoning models do not always say what they think: CoTs reveal injected hints in a minority of cases even when the hint changes the answer",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2405.15092": {
+   "key": "2405.15092",
+   "kind": "arxiv",
+   "title": "Dissociation of Faithful and Unfaithful Reasoning in LLMs",
+   "authors": [
+    "Evelyn Yee",
+    "Alice Li",
+    "Chenyu Tang",
+    "Yeon Ho Jung",
+    "Ramamohan Paturi",
+    "Leon Bergen"
+   ],
+   "published": "2024-05-23",
+   "abstract": "Large language models (LLMs) often improve their performance in downstream tasks when they generate Chain of Thought reasoning text before producing an answer. We investigate how LLMs recover from errors in Chain of Thought. Through analysis of error recovery behaviors, we find evidence for unfaithfulness in Chain of Thought, which occurs when models arrive at the correct answer despite invalid reasoning text. We identify factors that shift LLM recovery behavior: LLMs recover more frequently from obvious errors and in contexts that provide more evidence for the correct answer. Critically, these factors have divergent effects on faithful and unfaithful recoveries. Our results indicate that there are distinct mechanisms driving faithful and unfaithful error recoveries. Selective targeting of these mechanisms may be able to drive down the rate of unfaithful reasoning and improve model inter",
+   "url": "https://arxiv.org/abs/2405.15092",
+   "path": "TanitAD Research Lab/Library/papers/2405.15092_Dissociation-of-Faithful-and-Unfaithful-Reasoning-in-LLMs.pdf",
+   "bytes": 2309279,
+   "sha256": "b27e1f89fda5cdc799b55aa42d11fb2fa5797820eac18b699699320c01f340a2",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Dissociation of faithful and unfaithful reasoning: separates cases where the CoT causes the answer from where it does not",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2402.13950": {
+   "key": "2402.13950",
+   "kind": "arxiv",
+   "title": "Making Reasoning Matter: Measuring and Improving Faithfulness of Chain-of-Thought Reasoning",
+   "authors": [
+    "Debjit Paul",
+    "Robert West",
+    "Antoine Bosselut",
+    "Boi Faltings"
+   ],
+   "published": "2024-02-21",
+   "abstract": "Large language models (LLMs) have been shown to perform better when asked to reason step-by-step before answering a question. However, it is unclear to what degree the model's final answer is faithful to the stated reasoning steps. In this paper, we perform a causal mediation analysis on twelve LLMs to examine how intermediate reasoning steps generated by the LLM influence the final outcome and find that LLMs do not reliably use their intermediate reasoning steps when generating an answer. To address this issue, we introduce FRODO, a framework to tailor small-sized LMs to generate correct reasoning steps and robustly reason over these steps. FRODO consists of an inference module that learns to generate correct reasoning steps using an implicit causal reward function and a reasoning module that learns to faithfully reason over these intermediate inferences using a counterfactual and causa",
+   "url": "https://arxiv.org/abs/2402.13950",
+   "path": "TanitAD Research Lab/Library/papers/2402.13950_Making-Reasoning-Matter-Measuring-and-Improving-Faithfulness.pdf",
+   "bytes": 1465647,
+   "sha256": "3b28db13e63132d271a7eae7ff8173418fba1d121546268e24a128fc101656b1",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Making Reasoning Matter: measuring and improving CoT faithfulness via causal mediation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2602.11201": {
+   "key": "2602.11201",
+   "kind": "arxiv",
+   "title": "Mechanistic Evidence for Faithfulness Decay in Chain-of-Thought Reasoning",
+   "authors": [
+    "Donald Ye",
+    "Max Loffgren",
+    "Om Kotadia",
+    "Linus Wong",
+    "Jonas Rohweder"
+   ],
+   "published": "2026-02-04",
+   "abstract": "Chain-of-Thought (CoT) explanations are widely used to interpret how language models solve complex problems, yet it remains unclear whether these step-by-step explanations reflect how the model actually reaches its answer, or merely post-hoc justifications. We propose Normalized Logit Difference Decay (NLDD), a metric that measures whether individual reasoning steps are faithful to the model's decision-making process. Our approach corrupts individual reasoning steps from the explanation and measures how much the model's confidence in its answer drops, to determine if a step is truly important. By standardizing these measurements, NLDD enables rigorous cross-model comparison across different architectures. Testing three model families across syntactic, logical, and arithmetic tasks, we discover a consistent Reasoning Horizon (k*) at 70--85% of chain length, beyond which reasoning tokens h",
+   "url": "https://arxiv.org/abs/2602.11201",
+   "path": "TanitAD Research Lab/Library/papers/2602.11201_Mechanistic-Evidence-for-Faithfulness-Decay-in-Chain-of-Thou.pdf",
+   "bytes": 642953,
+   "sha256": "b06ab2954091d3950e3cc25396857b094829fbaaaeff5ee7351c8e7fb29b41fc",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Mechanistic evidence for faithfulness decay: NLDD logit-margin change after step corruption, reasoning horizon at 70-85 percent of chain",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2603.22816": {
+   "key": "2603.22816",
+   "kind": "arxiv",
+   "title": "Measuring and curing reasoning rigidity: from decorative chain-of-thought to genuine faithfulness",
+   "authors": [
+    "Abhinaba Basu",
+    "Pavan Chakraborty"
+   ],
+   "published": "2026-03-24",
+   "abstract": "Language models increasingly show their work by writing step-by-step reasoning before answering. But are these steps genuinely used, or is the answer rigid - fixed before reasoning begins? We introduce the Step-Level Reasoning Capacity (SLRC) metric and prove it is a consistent causal estimator (Theorem 1). We propose LC-CoSR, a training method with Lyapunov stability guarantees that directly reduces rigidity. Evaluating 16 frontier models (o4-mini, GPT-5.4, Claude Opus, Grok-4, DeepSeek-R1, Gemini 2.5 Pro, and others) across six domains at N=133-500, we find reasoning falls into three modes. OpenAI's o4-mini shows 74-88% step necessity on five of six tasks (73.8-88.3%) - the highest SLRC in our study. The critical differentiator is RL-based reasoning training, not thinking tokens: Grok-4's reasoning mode shows lower faithfulness than its non-reasoning mode (1.4% vs 7.2% necessity). We d",
+   "url": "https://arxiv.org/abs/2603.22816",
+   "path": "TanitAD Research Lab/Library/papers/2603.22816_Measuring-and-curing-reasoning-rigidity-from-decorative-chai.pdf",
+   "bytes": 373031,
+   "sha256": "fbfd7d5c9c42e7ddfb9bb6299c7d8fda04cc662233e7f5a8261b513664f6e57a",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Measuring and curing reasoning rigidity: decorative CoT vs genuine faithfulness",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2507.02092": {
+   "key": "2507.02092",
+   "kind": "arxiv",
+   "title": "Energy-Based Transformers are Scalable Learners and Thinkers",
+   "authors": [
+    "Alexi Gladstone",
+    "Ganesh Nanduru",
+    "Md Mofijul Islam",
+    "Peixuan Han",
+    "Hyeonjeong Ha",
+    "Aman Chadha",
+    "Yilun Du",
+    "Heng Ji",
+    "Jundong Li",
+    "Tariq Iqbal"
+   ],
+   "published": "2025-07-02",
+   "abstract": "Inference-time computation techniques, analogous to human System 2 Thinking, have recently become popular for improving model performances. However, most existing approaches suffer from several limitations: they are modality-specific (e.g., working only in text), problem-specific (e.g., verifiable domains like math and coding), or require additional supervision/training on top of unsupervised pretraining (e.g., verifiers or verifiable rewards). In this paper, we ask the question \"Is it possible to generalize these System 2 Thinking approaches, and develop models that learn to think solely from unsupervised learning?\" Interestingly, we find the answer is yes, by learning to explicitly verify the compatibility between inputs and candidate-predictions, and then re-framing prediction problems as optimization with respect to this verifier. Specifically, we train Energy-Based Transformers (EBT",
+   "url": "https://arxiv.org/abs/2507.02092",
+   "path": "TanitAD Research Lab/Library/papers/2507.02092_Energy-Based-Transformers-are-Scalable-Learners-and-Thinkers.pdf",
+   "bytes": 19732872,
+   "sha256": "d65ff7e5a0fa59de08e1b1df5c3044f36681b4644c8bcee424978a49ac7336a3",
+   "banked": "2026-09-06",
+   "tags": [
+    "energy-verifier"
+   ],
+   "note": "Energy-Based Transformers: learn a scalar verifier E(context, candidate) and predict by gradient descent on it; System-2 thinking as optimisation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2109.00137": {
+   "key": "2109.00137",
+   "kind": "arxiv",
+   "title": "Implicit Behavioral Cloning",
+   "authors": [
+    "Pete Florence",
+    "Corey Lynch",
+    "Andy Zeng",
+    "Oscar Ramirez",
+    "Ayzaan Wahid",
+    "Laura Downs",
+    "Adrian Wong",
+    "Johnny Lee",
+    "Igor Mordatch",
+    "Jonathan Tompson"
+   ],
+   "published": "2021-09-01",
+   "abstract": "We find that across a wide range of robot policy learning scenarios, treating supervised policy learning with an implicit model generally performs better, on average, than commonly used explicit models. We present extensive experiments on this finding, and we provide both intuitive insight and theoretical arguments distinguishing the properties of implicit models compared to their explicit counterparts, particularly with respect to approximating complex, potentially discontinuous and multi-valued (set-valued) functions. On robotic policy learning tasks we show that implicit behavioral cloning policies with energy-based models (EBM) often outperform common explicit (Mean Square Error, or Mixture Density) behavioral cloning policies, including on tasks with high-dimensional action spaces and visual image inputs. We find these policies provide competitive results or outperform state-of-the-",
+   "url": "https://arxiv.org/abs/2109.00137",
+   "path": "TanitAD Research Lab/Library/papers/2109.00137_Implicit-Behavioral-Cloning.pdf",
+   "bytes": 7303107,
+   "sha256": "a4ad69d2cb46025c1aaf3c90e87a701e7b96f00f72684f02fb0ed696a7d1941b",
+   "banked": "2026-09-06",
+   "tags": [
+    "energy-verifier"
+   ],
+   "note": "Implicit BC: energy-based policy scores (obs, action) pairs, beats explicit regression on discontinuous multimodal action distributions",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "1912.03263": {
+   "key": "1912.03263",
+   "kind": "arxiv",
+   "title": "Your Classifier is Secretly an Energy Based Model and You Should Treat it Like One",
+   "authors": [
+    "Will Grathwohl",
+    "Kuan-Chieh Wang",
+    "Jörn-Henrik Jacobsen",
+    "David Duvenaud",
+    "Mohammad Norouzi",
+    "Kevin Swersky"
+   ],
+   "published": "2019-12-06",
+   "abstract": "We propose to reinterpret a standard discriminative classifier of p(y|x) as an energy based model for the joint distribution p(x,y). In this setting, the standard class probabilities can be easily computed as well as unnormalized values of p(x) and p(x|y). Within this framework, standard discriminative architectures may beused and the model can also be trained on unlabeled data. We demonstrate that energy based training of the joint distribution improves calibration, robustness, andout-of-distribution detection while also enabling our models to generate samplesrivaling the quality of recent GAN approaches. We improve upon recently proposed techniques for scaling up the training of energy based models and presentan approach which adds little overhead compared to standard classification training. Our approach is the first to achieve performance rivaling the state-of-the-artin both generati",
+   "url": "https://arxiv.org/abs/1912.03263",
+   "path": "TanitAD Research Lab/Library/papers/1912.03263_Your-Classifier-is-Secretly-an-Energy-Based-Model-and-You-Sh.pdf",
+   "bytes": 5022858,
+   "sha256": "7d95f89098157b38fc9faaa359527c8200e45062e37e01a1f25c21cb7509e49a",
+   "banked": "2026-09-06",
+   "tags": [
+    "energy-verifier"
+   ],
+   "note": "JEM: a classifier is secretly an energy-based model over (x,y); reinterprets logits as a joint energy",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2406.08862": {
+   "key": "2406.08862",
+   "kind": "arxiv",
+   "title": "Cognitively Inspired Energy-Based World Models",
+   "authors": [
+    "Alexi Gladstone",
+    "Ganesh Nanduru",
+    "Md Mofijul Islam",
+    "Aman Chadha",
+    "Jundong Li",
+    "Tariq Iqbal"
+   ],
+   "published": "2024-06-13",
+   "abstract": "One of the predominant methods for training world models is autoregressive prediction in the output space of the next element of a sequence. In Natural Language Processing (NLP), this takes the form of Large Language Models (LLMs) predicting the next token; in Computer Vision (CV), this takes the form of autoregressive models predicting the next frame/token/pixel. However, this approach differs from human cognition in several respects. First, human predictions about the future actively influence internal cognitive processes. Second, humans naturally evaluate the plausibility of predictions regarding future states. Based on this capability, and third, by assessing when predictions are sufficient, humans allocate a dynamic amount of time to make a prediction. This adaptive process is analogous to System 2 thinking in psychology. All these capabilities are fundamental to the success of huma",
+   "url": "https://arxiv.org/abs/2406.08862",
+   "path": "TanitAD Research Lab/Library/papers/2406.08862_Cognitively-Inspired-Energy-Based-World-Models.pdf",
+   "bytes": 3839666,
+   "sha256": "a23a90b1e6a5b2042330fc5881a8495cca446caa75c2147bc8ae582a50d7d5f6",
+   "banked": "2026-09-06",
+   "tags": [
+    "energy-verifier"
+   ],
+   "note": "Cognitively inspired energy-based world models: EBM predicts by verifying candidate futures rather than emitting them",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2303.01469": {
+   "key": "2303.01469",
+   "kind": "arxiv",
+   "title": "Consistency Models",
+   "authors": [
+    "Yang Song",
+    "Prafulla Dhariwal",
+    "Mark Chen",
+    "Ilya Sutskever"
+   ],
+   "published": "2023-03-02",
+   "abstract": "Diffusion models have significantly advanced the fields of image, audio, and video generation, but they depend on an iterative sampling process that causes slow generation. To overcome this limitation, we propose consistency models, a new family of models that generate high quality samples by directly mapping noise to data. They support fast one-step generation by design, while still allowing multistep sampling to trade compute for sample quality. They also support zero-shot data editing, such as image inpainting, colorization, and super-resolution, without requiring explicit training on these tasks. Consistency models can be trained either by distilling pre-trained diffusion models, or as standalone generative models altogether. Through extensive experiments, we demonstrate that they outperform existing distillation techniques for diffusion models in one- and few-step sampling, achievin",
+   "url": "https://arxiv.org/abs/2303.01469",
+   "path": "TanitAD Research Lab/Library/papers/2303.01469_Consistency-Models.pdf",
+   "bytes": 31529980,
+   "sha256": "b36df36eb96abcad5ad67173952258c34f2ba0624c15acaaf38bebf855074043",
+   "banked": "2026-09-06",
+   "tags": [
+    "energy-verifier"
+   ],
+   "note": "Consistency models: one-step map from any noise level to the data manifold, usable as a fast refiner",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2207.12598": {
+   "key": "2207.12598",
+   "kind": "arxiv",
+   "title": "Classifier-Free Diffusion Guidance",
+   "authors": [
+    "Jonathan Ho",
+    "Tim Salimans"
+   ],
+   "published": "2022-07-26",
+   "abstract": "Classifier guidance is a recently introduced method to trade off mode coverage and sample fidelity in conditional diffusion models post training, in the same spirit as low temperature sampling or truncation in other types of generative models. Classifier guidance combines the score estimate of a diffusion model with the gradient of an image classifier and thereby requires training an image classifier separate from the diffusion model. It also raises the question of whether guidance can be performed without a classifier. We show that guidance can be indeed performed by a pure generative model without such a classifier: in what we call classifier-free guidance, we jointly train a conditional and an unconditional diffusion model, and we combine the resulting conditional and unconditional score estimates to attain a trade-off between sample quality and diversity similar to that obtained usin",
+   "url": "https://arxiv.org/abs/2207.12598",
+   "path": "TanitAD Research Lab/Library/papers/2207.12598_Classifier-Free-Diffusion-Guidance.pdf",
+   "bytes": 3773509,
+   "sha256": "ccbdf2da65903ed579d35240165aba2d0e9ad6f015ade81af6e30823eb0a7f24",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "Classifier-free diffusion guidance: the original dual-pass conditional minus unconditional formulation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2211.15657": {
+   "key": "2211.15657",
+   "kind": "arxiv",
+   "title": "Is Conditional Generative Modeling all you need for Decision-Making?",
+   "authors": [
+    "Anurag Ajay",
+    "Yilun Du",
+    "Abhi Gupta",
+    "Joshua Tenenbaum",
+    "Tommi Jaakkola",
+    "Pulkit Agrawal"
+   ],
+   "published": "2022-11-28",
+   "abstract": "Recent improvements in conditional generative modeling have made it possible to generate high-quality images from language descriptions alone. We investigate whether these methods can directly address the problem of sequential decision-making. We view decision-making not through the lens of reinforcement learning (RL), but rather through conditional generative modeling. To our surprise, we find that our formulation leads to policies that can outperform existing offline RL approaches across standard benchmarks. By modeling a policy as a return-conditional diffusion model, we illustrate how we may circumvent the need for dynamic programming and subsequently eliminate many of the complexities that come with traditional offline RL. We further demonstrate the advantages of modeling policies as conditional diffusion models by considering two other conditioning variables: constraints and skills",
+   "url": "https://arxiv.org/abs/2211.15657",
+   "path": "TanitAD Research Lab/Library/papers/2211.15657_Is-Conditional-Generative-Modeling-all-you-need-for-Decision.pdf",
+   "bytes": 3194262,
+   "sha256": "73235755dccd3a4327315f282578d205225736b2f0e654dc3f26bc3871e9a4e3",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "Decision Diffuser: conditional generative modelling with classifier-free guidance for decision making, constraints and skills as conditions",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2205.09991": {
+   "key": "2205.09991",
+   "kind": "arxiv",
+   "title": "Planning with Diffusion for Flexible Behavior Synthesis",
+   "authors": [
+    "Michael Janner",
+    "Yilun Du",
+    "Joshua B. Tenenbaum",
+    "Sergey Levine"
+   ],
+   "published": "2022-05-20",
+   "abstract": "Model-based reinforcement learning methods often use learning only for the purpose of estimating an approximate dynamics model, offloading the rest of the decision-making work to classical trajectory optimizers. While conceptually simple, this combination has a number of empirical shortcomings, suggesting that learned models may not be well-suited to standard trajectory optimization. In this paper, we consider what it would look like to fold as much of the trajectory optimization pipeline as possible into the modeling problem, such that sampling from the model and planning with it become nearly identical. The core of our technical approach lies in a diffusion probabilistic model that plans by iteratively denoising trajectories. We show how classifier-guided sampling and image inpainting can be reinterpreted as coherent planning strategies, explore the unusual and useful properties of dif",
+   "url": "https://arxiv.org/abs/2205.09991",
+   "path": "TanitAD Research Lab/Library/papers/2205.09991_Planning-with-Diffusion-for-Flexible-Behavior-Synthesis.pdf",
+   "bytes": 10498721,
+   "sha256": "aafe149adb5476e8b8b061c02d26824c42fb14a71ce8ae37b1a0e375452d7a1f",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "Diffuser: planning as trajectory diffusion with classifier guidance from a learned value",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2503.00535": {
+   "key": "2503.00535",
+   "kind": "arxiv",
+   "title": "What Makes a Good Diffusion Planner for Decision Making?",
+   "authors": [
+    "Haofei Lu",
+    "Dongqi Han",
+    "Yifei Shen",
+    "Dongsheng Li"
+   ],
+   "published": "2025-03-01",
+   "abstract": "Diffusion models have recently shown significant potential in solving decision-making problems, particularly in generating behavior plans -- also known as diffusion planning. While numerous studies have demonstrated the impressive performance of diffusion planning, the mechanisms behind the key components of a good diffusion planner remain unclear and the design choices are highly inconsistent in existing studies. In this work, we address this issue through systematic empirical experiments on diffusion planning in an offline reinforcement learning (RL) setting, providing practical insights into the essential components of diffusion planning. We trained and evaluated over 6,000 diffusion models, identifying the critical components such as guided sampling, network architecture, action generation and planning strategy. We revealed that some design choices opposite to the common practice in ",
+   "url": "https://arxiv.org/abs/2503.00535",
+   "path": "TanitAD Research Lab/Library/papers/2503.00535_What-Makes-a-Good-Diffusion-Planner-for-Decision-Making.pdf",
+   "bytes": 9415299,
+   "sha256": "4dbe5a4456c2888e2249997c08ed611683fb9b1cf8bf499ed558d69dd41b4fca",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "What makes a good diffusion planner: large-scale ablation of design choices incl. guidance weight",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2408.09000": {
+   "key": "2408.09000",
+   "kind": "arxiv",
+   "title": "Classifier-Free Guidance is a Predictor-Corrector",
+   "authors": [
+    "Arwen Bradley",
+    "Preetum Nakkiran"
+   ],
+   "published": "2024-08-16",
+   "abstract": "We investigate the theoretical foundations of classifier-free guidance (CFG). CFG is the dominant method of conditional sampling for text-to-image diffusion models, yet unlike other aspects of diffusion, it remains on shaky theoretical footing. In this paper, we disprove common misconceptions, by showing that CFG interacts differently with DDPM (Ho et al., 2020) and DDIM (Song et al., 2021), and neither sampler with CFG generates the gamma-powered distribution $p(x|c)^γp(x)^{1-γ}$. Then, we clarify the behavior of CFG by showing that it is a kind of predictor-corrector method (Song et al., 2020) that alternates between denoising and sharpening, which we call predictor-corrector guidance (PCG). We prove that in the SDE limit, CFG is actually equivalent to combining a DDIM predictor for the conditional distribution together with a Langevin dynamics corrector for a gamma-powered distributio",
+   "url": "https://arxiv.org/abs/2408.09000",
+   "path": "TanitAD Research Lab/Library/papers/2408.09000_Classifier-Free-Guidance-is-a-Predictor-Corrector.pdf",
+   "bytes": 26231135,
+   "sha256": "4996614b6340c439307bd691b2fa7b2366e7459c72611fbfee67827bee4d1629",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "CFG is a predictor-corrector: the guidance delta has a precise sampling-theoretic meaning, not merely a heuristic knob",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2607.00399": {
+   "key": "2607.00399",
+   "kind": "arxiv",
+   "title": "DriveVer: Lightweight Trajectory Evaluator as Test-Time Verifier for Autonomous Driving",
+   "authors": [
+    "Chong He",
+    "Yuechen Luo",
+    "Fang Li",
+    "Shaoqing Xu",
+    "Fuxi Wen"
+   ],
+   "published": "2026-07-01",
+   "abstract": "End-to-end autonomous driving models often encounter performance bottlenecks, as training-time scaling leads to high computational costs and diminishing marginal returns. Existing planners typically adopt a one-shot generation paradigm, lacking secondary validation and active correction mechanisms to detect and revise suboptimal or unsafe trajectories during inference. To address this issue, we propose DriveVer, a lightweight, plug-and-play Test-Time Verifier that leverages the test-time scaling paradigm to enable autonomous driving systems to validate and refine trajectories without costly and heavy training. We construct a dedicated trajectory dataset based on the NAVSIM benchmark through condition-driven clustering and balanced sampling according to ego-vehicle states and navigation commands. Employing a dual-head architecture, DriveVer efficiently fuses candidate trajectories with mu",
+   "url": "https://arxiv.org/abs/2607.00399",
+   "path": "TanitAD Research Lab/Library/papers/2607.00399_DriveVer-Lightweight-Trajectory-Evaluator-as-Test-Time-Verif.pdf",
+   "bytes": 2330871,
+   "sha256": "6076c14e6654863c235a60270f99a738e4b3a2451473513e1046598f8853724e",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-verifier"
+   ],
+   "note": "DriveVer: lightweight test-time trajectory verifier for driving, dual head evaluation plus geometric refinement",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2606.08525": {
+   "key": "2606.08525",
+   "kind": "arxiv",
+   "title": "DriveReward: A Comprehensive Dataset and Generative Vision-Language Reward Model for Autonomous Driving",
+   "authors": [
+    "Qimao Chen",
+    "Fang Li",
+    "Yuechen Luo",
+    "Zehan Zhang",
+    "Haiyang Sun",
+    "Fangzhen Li",
+    "Bing Wang",
+    "Guang Chen",
+    "Yang Ji",
+    "Jiong Deng",
+    "Hongwei Xie",
+    "Hangjun Ye"
+   ],
+   "published": "2026-06-07",
+   "abstract": "Reward models play a pivotal role in reinforcement learning (RL) and multi-modal trajectory selection for autonomous driving. However, acquiring such rewards typically relies on hand-crafted rule-based objectives or perception ground truth, which hinders generalization for data-scaling. While Vision-Language Models (VLMs) have demonstrated feasibility as reward models in other domains, their effectiveness in driving tasks remains underexplored. In this work, we bridge this gap by (1) introducing DriveReward, a reasoning trajectory evaluation dataset rigorously labeled via temporally-grounded visual guidance, and augmented with counterfactual driving behaviors., (2) alongside a specialized Vision-Language Reward Model. To address the scarcity of failure cases in conventional datasets, we propose a counterfactual data annotation scheme to construct cases encompassing diverse driving styles",
+   "url": "https://arxiv.org/abs/2606.08525",
+   "path": "TanitAD Research Lab/Library/papers/2606.08525_DriveReward-A-Comprehensive-Dataset-and-Generative-Vision-La.pdf",
+   "bytes": 14330221,
+   "sha256": "16fdf0c22d51dd65c0b9cd2e44c29a519167ec47278e466c6b1c319d5a8b96c7",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-verifier"
+   ],
+   "note": "DriveReward: generative VLM reward model scoring multi-modal driving trajectories across dimensions, used for RL finetune and test-time selection",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2606.24231": {
+   "key": "2606.24231",
+   "kind": "arxiv",
+   "title": "FlowR2A: Learning Reward-to-Action Distribution for Multimodal Driving Planning",
+   "authors": [
+    "Xirui Li",
+    "Zhe Liu",
+    "Xiaoqing Ye",
+    "Wenhua Han",
+    "Yifeng Pan",
+    "Junyu Han",
+    "Hengshuang Zhao"
+   ],
+   "published": "2026-06-23",
+   "abstract": "Multimodal driving planning faces a long-standing tension between two paradigms: scoring-based methods benefit from dense reward supervision but are confined to a fixed action vocabulary, while anchor-based methods generate proposals dynamically yet suffer from sparse supervision constrained to a single ground-truth trajectory. In this work, we propose FlowR2A, which resolves this tension by reframing simulation-based rewards from discriminative targets into generative conditions. By learning the reward-conditioned action distribution from dense trajectory-reward pairs with a flow-matching decoder, FlowR2A unifies the dense supervision of scoring-based methods with the proposal generation of anchor-based methods in a single generative model, forcing the model to internalize the correlation between an action and its outcomes in safety, progress, comfort, and rule compliance. To balance ha",
+   "url": "https://arxiv.org/abs/2606.24231",
+   "path": "TanitAD Research Lab/Library/papers/2606.24231_FlowR2A-Learning-Reward-to-Action-Distribution-for-Multimoda.pdf",
+   "bytes": 36361780,
+   "sha256": "39bb6505b6a839197e21d6beec1ddd57b2da722b419b2e5bc6c7db2d3c7348cb",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-verifier"
+   ],
+   "note": "FlowR2A: learns a reward-conditioned action distribution over a dense driving action vocabulary from simulation rewards",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2512.21711": {
+   "key": "2512.21711",
+   "kind": "arxiv",
+   "title": "Do Latent Tokens Think? A Causal and Adversarial Analysis of Chain-of-Continuous-Thought",
+   "authors": [
+    "Yuyi Zhang",
+    "Boyu Tang",
+    "Tianjie Ju",
+    "Sufeng Duan",
+    "Gongshen Liu"
+   ],
+   "published": "2025-12-25",
+   "abstract": "Latent tokens are gaining attention for enhancing reasoning in large language models (LLMs), yet their internal mechanisms remain unclear. This paper examines the problem from a reliability perspective, uncovering fundamental weaknesses: latent tokens function as uninterpretable placeholders rather than encoding faithful reasoning. While resistant to perturbation, they promote shortcut usage over genuine reasoning. We focus on Chain-of-Continuous-Thought (COCONUT), which claims better efficiency and stability than explicit Chain-of-Thought (CoT) while maintaining performance. We investigate this through two complementary approaches. First, steering experiments perturb specific token subsets, namely COCONUT and explicit CoT. Unlike CoT tokens, COCONUT tokens show minimal sensitivity to steering and lack reasoning-critical information. Second, shortcut experiments evaluate models under bia",
+   "url": "https://arxiv.org/abs/2512.21711",
+   "path": "TanitAD Research Lab/Library/papers/2512.21711_Do-Latent-Tokens-Think-A-Causal-and-Adversarial-Analysis-of.pdf",
+   "bytes": 1773169,
+   "sha256": "d1b38c2eb057bb02df10e3780ca259489d051c5501d42d16aa9e200bf229f23a",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Do latent tokens think? causal and adversarial analysis of continuous thought tokens",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2605.04647": {
+   "key": "2605.04647",
+   "kind": "arxiv",
+   "title": "ReflectDrive-2: Reinforcement-Learning-Aligned Self-Editing for Discrete Diffusion Driving",
+   "authors": [
+    "Huimin Wang",
+    "Yue Wang",
+    "Bihao Cui",
+    "Pengxiang Li",
+    "Ben Lu",
+    "Mingqian Wang",
+    "Tong Wang",
+    "Chuan Tang",
+    "Teng Zhang",
+    "Kun Zhan"
+   ],
+   "published": "2026-05-06",
+   "abstract": "We introduce ReflectDrive-2, a masked discrete diffusion planner with separate action expert for autonomous driving that represents plans as discrete trajectory tokens and generates them through parallel masked decoding. This discrete token space enables in-place trajectory revision: AutoEdit rewrites selected tokens using the same model, without requiring an auxiliary refinement network. To train this capability, we use a two-stage procedure. First, we construct structure-aware perturbations of expert trajectories along longitudinal progress and lateral heading directions and supervise the model to recover the original expert trajectory. We then fine-tune the full decision--draft--reflect rollout with reinforcement learning (RL), assigning terminal driving reward to the final post-edit trajectory and propagating policy-gradient credit through full-rollout transitions. Full-rollout RL pr",
+   "url": "https://arxiv.org/abs/2605.04647",
+   "path": "TanitAD Research Lab/Library/papers/2605.04647_ReflectDrive-2-Reinforcement-Learning-Aligned-Self-Editing-f.pdf",
+   "bytes": 7496011,
+   "sha256": "09ea9783862cb6ed12117ea4b296624cf1a720ea7042a252d5be7629b92722ba",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-cot"
+   ],
+   "note": "ReflectDrive-2: goal-point hypotheses conditioning a discrete-diffusion decoder with token-space self-editing",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2505.16805": {
+   "key": "2505.16805",
+   "kind": "arxiv",
+   "title": "SOLVE: Synergy of Language-Vision and End-to-End Networks for Autonomous Driving",
+   "authors": [
+    "Xuesong Chen",
+    "Linjiang Huang",
+    "Tao Ma",
+    "Rongyao Fang",
+    "Shaoshuai Shi",
+    "Hongsheng Li"
+   ],
+   "published": "2025-05-22",
+   "abstract": "The integration of Vision-Language Models (VLMs) into autonomous driving systems has shown promise in addressing key challenges such as learning complexity, interpretability, and common-sense reasoning. However, existing approaches often struggle with efficient integration and realtime decision-making due to computational demands. In this paper, we introduce SOLVE, an innovative framework that synergizes VLMs with end-to-end (E2E) models to enhance autonomous vehicle planning. Our approach emphasizes knowledge sharing at the feature level through a shared visual encoder, enabling comprehensive interaction between VLM and E2E components. We propose a Trajectory Chain-of-Thought (T-CoT) paradigm, which progressively refines trajectory predictions, reducing uncertainty and improving accuracy. By employing a temporal decoupling strategy, SOLVE achieves efficient cooperation by aligning high-",
+   "url": "https://arxiv.org/abs/2505.16805",
+   "path": "TanitAD Research Lab/Library/papers/2505.16805_SOLVE-Synergy-of-Language-Vision-and-End-to-End-Networks-for.pdf",
+   "bytes": 1161243,
+   "sha256": "0a15d2c0aee4d76c15d1d568bd53da28a2a6b8839597059efa9c9ca42979ee74",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-cot"
+   ],
+   "note": "SOLVE: trajectory bank with k-means per nav command, select by similarity",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2507.15512": {
+   "key": "2507.15512",
+   "kind": "arxiv",
+   "title": "Step-level Verifier-guided Hybrid Test-Time Scaling for Large Language Models",
+   "authors": [
+    "Kaiyan Chang",
+    "Yonghao Shi",
+    "Chenglong Wang",
+    "Hang Zhou",
+    "Chi Hu",
+    "Xiaoqian Liu",
+    "Yingfeng Luo",
+    "Yuan Ge",
+    "Tong Xiao",
+    "Jingbo Zhu"
+   ],
+   "published": "2025-07-21",
+   "abstract": "Test-Time Scaling (TTS) is a promising approach to progressively elicit the model's intelligence during inference. Recently, training-based TTS methods, such as continued reinforcement learning (RL), have further surged in popularity, while training-free TTS methods are gradually fading from prominence. However, the additional computation overhead of training amplifies the burden on test-time scaling. In this paper, we focus on training-free TTS methods for reasoning. We first design Conditional Step-level Self-refinement, a fine-grained sequential scaling method guided by process verification. On top of its effectiveness, we further combine it with other classical parallel scaling methods at the step level, to introduce a novel inference paradigm called Hybrid Test-Time Scaling. Extensive experiments on five instruction-tuned LLMs across different scales (3B-14B) and families demonstrat",
+   "url": "https://arxiv.org/abs/2507.15512",
+   "path": "TanitAD Research Lab/Library/papers/2507.15512_Step-level-Verifier-guided-Hybrid-Test-Time-Scaling-for-Larg.pdf",
+   "bytes": 523571,
+   "sha256": "f733d2e5a3474283666b209a038eae755825dd395708745507cbd7ba3ff62e83",
+   "banked": "2026-09-06",
+   "tags": [
+    "guided-decoding"
+   ],
+   "note": "Step-level verifier-guided hybrid test-time scaling",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2412.06559": {
+   "key": "2412.06559",
+   "kind": "arxiv",
+   "title": "ProcessBench: Identifying Process Errors in Mathematical Reasoning",
+   "authors": [
+    "Chujie Zheng",
+    "Zhenru Zhang",
+    "Beichen Zhang",
+    "Runji Lin",
+    "Keming Lu",
+    "Bowen Yu",
+    "Dayiheng Liu",
+    "Jingren Zhou",
+    "Junyang Lin"
+   ],
+   "published": "2024-12-09",
+   "abstract": "As language models regularly make mistakes when solving math problems, automated identification of errors in the reasoning process becomes increasingly significant for their scalable oversight. In this paper, we introduce ProcessBench for measuring the ability to identify erroneous steps in mathematical reasoning. It consists of 3,400 test cases, primarily focused on competition- and Olympiad-level math problems. Each test case contains a step-by-step solution with error location annotated by human experts. Models are required to identify the earliest step that contains an error, or conclude that all steps are correct. We conduct extensive evaluation on ProcessBench, involving two types of models: process reward models (PRMs) and critic models, where for the latter we prompt general language models to critique each solution step by step. We draw two main observations: (1) Existing PRMs t",
+   "url": "https://arxiv.org/abs/2412.06559",
+   "path": "TanitAD Research Lab/Library/papers/2412.06559_ProcessBench-Identifying-Process-Errors-in-Mathematical-Reas.pdf",
+   "bytes": 740748,
+   "sha256": "30a74dc4ed897e077a243b82326df8529c037db0352b0ac35817dd29262ca653",
+   "banked": "2026-09-06",
+   "tags": [
+    "verifier-prm"
+   ],
+   "note": "ProcessBench: benchmark for identifying the first erroneous step, exposes PRM degeneracy",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2608.19504": {
+   "key": "2608.19504",
+   "kind": "arxiv",
+   "title": "A Plug-in Interpretation of Conditioning in Score-Based Diffusion Models",
+   "authors": [
+    "Libo Chen",
+    "Souvik Ghosh",
+    "Teo Deveney",
+    "Chris Budd",
+    "Vinay P. Namboodiri"
+   ],
+   "published": "2026-08-19",
+   "abstract": "We propose a conditioning mechanism for diffusion models based on multi-speed joint diffusion of the target and the condition. The mechanism learns an unconditional joint score network and enforces conditioning at inference via a plug-in correction term. The plug-in term separates the conditioning contribution from the learned unconditional dynamics, offering a transparent view of how the condition steers generation of the target distribution. Building on this, we derive explicit conditional reverse-time SDEs and approximate probability-flow ODEs, enabling principled and directly comparable conditional samplers. To reduce the induced ODE--SDE discrepancy, we introduce a log-Fokker--Planck residual regularization that improves ODE sampling quality. Experiments on conditional image generation tasks demonstrate competitive performance and support the effectiveness of the plug-in conditionin",
+   "url": "https://arxiv.org/abs/2608.19504",
+   "path": "TanitAD Research Lab/Library/papers/2608.19504_A-Plug-in-Interpretation-of-Conditioning-in-Score-Based-Diff.pdf",
+   "bytes": 7392677,
+   "sha256": "62cfb02a7984b4f127a7fd15ae8df14cc2b79418f3b2f0ce31bdc4d7e20c212e",
+   "banked": "2026-09-06",
+   "tags": [
+    "cfg-guidance"
+   ],
+   "note": "Plug-in interpretation of conditioning: the conditioning contribution is an explicit additive correction term separable from the unconditional dynamics",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2506.19143": {
+   "key": "2506.19143",
+   "kind": "arxiv",
+   "title": "Thought Anchors: Which LLM Reasoning Steps Matter?",
+   "authors": [
+    "Paul C. Bogdan",
+    "Uzay Macar",
+    "Neel Nanda",
+    "Arthur Conmy"
+   ],
+   "published": "2025-06-23",
+   "abstract": "Current frontier large-language models rely on reasoning to achieve state-of-the-art performance. Many existing interpretability are limited in this area, as standard methods have been designed to study single forward passes of a model rather than the multi-token computational steps that unfold during reasoning. We argue that analyzing reasoning traces at the sentence level is a promising approach to understanding reasoning processes. We introduce a black-box method that measures each sentence's counterfactual importance by repeatedly sampling replacement sentences from the model, filtering for semantically different ones, and continuing the chain of thought from that point onwards to quantify the sentence's impact on the distribution of final answers. We discover that certain sentences can have an outsized impact on the trajectory of the reasoning trace and final answer. We term these s",
+   "url": "https://arxiv.org/abs/2506.19143",
+   "path": "TanitAD Research Lab/Library/papers/2506.19143_Thought-Anchors-Which-LLM-Reasoning-Steps-Matter.pdf",
+   "bytes": 23147147,
+   "sha256": "7b2d6a4146d06fb7c6d1ca3a88a965bffe71c937f206d1ebed2c35692648d737",
+   "banked": "2026-09-06",
+   "tags": [
+    "cot-faithfulness"
+   ],
+   "note": "Thought Anchors: per-sentence counterfactual importance ranks which reasoning steps actually matter; plan-generation and backtracking sentences dominate",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2607.03182": {
+   "key": "2607.03182",
+   "kind": "arxiv",
+   "title": "AnchorVLA: Bridging Discrete Decisions and Continuous Trajectories for Vision-Language-Action Planning",
+   "authors": [
+    "Qi Liu",
+    "Yabei Li",
+    "Hongsong Wang",
+    "Heng Zhang",
+    "Lei He"
+   ],
+   "published": "2026-07-03",
+   "abstract": "Autonomous driving planning requires translating navigation intent, traffic rules, dynamic interactions, and language instructions into executable continuous trajectories. Vision-Language-Action models have been introduced into driving planning to improve long-tail generalization, commonsense reasoning, high-level semantic understanding, and explainability. However, existing VLA planners mainly follow planning-head-based trajectory prediction or full-trajectory autoregressive generation. The former only weakly constrains continuous trajectory generation with VLA reasoning, while the latter relies on long sequences of low-information-density coordinate tokens, making semantic-action alignment difficult and leading to discretization errors and inefficient inference. To address these limitations, we propose AnchorVLA, a hierarchical decision-anchored VLA planning framework that uses traject",
+   "url": "https://arxiv.org/abs/2607.03182",
+   "path": "TanitAD Research Lab/Library/papers/2607.03182_AnchorVLA-Bridging-Discrete-Decisions-and-Continuous-Traject.pdf",
+   "bytes": 4986377,
+   "sha256": "f91abd171bb422069126a0e7fe2276474ee4674c978b0e87b89e945fe5b2b7ba",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-cot"
+   ],
+   "note": "AnchorVLA: Decision-as-Anchor Representation, behaviour-level decisions as anchor tokens plus decision-anchored residual flow",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2512.24426": {
+   "key": "2512.24426",
+   "kind": "arxiv",
+   "title": "Counterfactual VLA: Self-Reflective Vision-Language-Action Model with Adaptive Reasoning",
+   "authors": [
+    "Zhenghao \"Mark\" Peng",
+    "Wenhao Ding",
+    "Yurong You",
+    "Yuxiao Chen",
+    "Wenjie Luo",
+    "Thomas Tian",
+    "Yulong Cao",
+    "Apoorva Sharma",
+    "Danfei Xu",
+    "Boris Ivanovic",
+    "Boyi Li",
+    "Bolei Zhou"
+   ],
+   "published": "2025-12-30",
+   "abstract": "Recent reasoning-augmented Vision-Language-Action (VLA) models have improved the interpretability of end-to-end autonomous driving by generating intermediate reasoning traces. Yet these models primarily describe what they perceive and intend to do, rarely questioning whether their planned actions are safe or appropriate. This work introduces Counterfactual VLA (CF-VLA), a self-reflective VLA framework that enables the model to reason about and revise its planned actions before execution. CF-VLA first generates time-segmented meta-actions that summarize driving intent, and then performs counterfactual reasoning conditioned on both the meta-actions and the visual context. This step simulates potential outcomes, identifies unsafe behaviors, and outputs corrected meta-actions that guide the final trajectory generation. To efficiently obtain such self-reflective capabilities, we propose a rol",
+   "url": "https://arxiv.org/abs/2512.24426",
+   "path": "TanitAD Research Lab/Library/papers/2512.24426_Counterfactual-VLA-Self-Reflective-Vision-Language-Action-Mo.pdf",
+   "bytes": 17406060,
+   "sha256": "3738448938f3f5843b5c3d9114c7098ec549bf94f58c5b2f0933276e9049d9ab",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-cot"
+   ],
+   "note": "Counterfactual VLA: self-reflective VLA that rolls out counterfactuals to refine its own action",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+   ]
+  },
+  "2608.09591": {
+   "key": "2608.09591",
+   "kind": "arxiv",
+   "title": "FactorDrive: Adaptive Multi-Step Reasoning Driven by Planning-Critical Factors for End-to-End Autonomous Driving",
+   "authors": [
+    "Guolei Huang",
+    "Tengfei She",
+    "Yuxuan Lu",
+    "Yao Huang",
+    "Yuqi Ye",
+    "Yongjun Shen"
+   ],
+   "published": "2026-08-10",
+   "abstract": "Vision-language models (VLMs) have advanced scene understanding and enabled explicit reasoning in end-to-end autonomous driving. However, existing methods insufficiently integrate spatial-physical evidence into planning reasoning, while reasoning adaptation remains coarse-grained and falls short of scene-specific planning demands. Furthermore, reasoning-path optimization for higher planning quality remains largely unexplored in autonomous-driving post-training. To address these limitations, we propose FactorDrive, an end-to-end autonomous driving framework for adaptive multi-step reasoning driven by planning-critical factors (PCFs). We first perform large-scale driving-domain instruction tuning to establish foundational driving knowledge. Building on this foundation, we construct PCF-CoT, a chain-of-thought (CoT) dataset that grounds planning reasoning in trajectory-relevant spatial-phys",
+   "url": "https://arxiv.org/abs/2608.09591",
+   "path": "TanitAD Research Lab/Library/papers/2608.09591_FactorDrive-Adaptive-Multi-Step-Reasoning-Driven-by-Planning.pdf",
+   "bytes": 8923361,
+   "sha256": "e4608bdcdc670b50e1a37079fae7e65bba92bfd05e17202825fcaacff703c955",
+   "banked": "2026-09-06",
+   "tags": [
+    "driving-cot"
+   ],
+   "note": "FactorDrive: adaptive multi-step reasoning driven by planning-critical factors",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
    ]
   }
  }
