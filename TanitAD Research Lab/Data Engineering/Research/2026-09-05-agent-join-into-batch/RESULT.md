@@ -160,6 +160,29 @@ not among them.** ⇒ **Escalated to the Master Mind** rather than silently re-d
   enum in `bev_raster` is the right one and the hand-written `bicycle/motorcycle/train` tuple the
   refcv5 docstring warns about would indeed have trained three impossible classes.
 
+### ⭐ The load-bearing number, reproduced by a SECOND implementation
+
+`--agent-queries` is a registered arm knob, so the number that refutes 32 must not rest on one
+script. `indep_max.py` re-derives it with **no numpy, no imported cut predicate and no shared code**
+with `measure_train_agent_density.py` — a plain Python loop over the raw jsonl
+(`raw/indep_max.out.txt`):
+
+```
+n_frames             433040    expect 433040    True
+n_boxes            12122129    expect 12122129  True
+visible_frac           0.4106  expect 0.4106
+infield_bevbox boxes  1899481  expect 1899481   True
+MAX per frame              94  expect 94        True
+frames > 32              3250  expect 3250      True
+frames > 24              8614  expect 8614      True
+nearest sacrificed target at N=32: 13.0897 m
+```
+
+⚠️ This is the check `CLAUDE.md` insists on and that repeated runs of ONE script cannot give: *"a
+second probe means a different mechanism, not the same command run again."* Two independent
+mechanisms agree to the last box, so **max 94** and **3,250 frames dropping at N = 32** are facts
+about the corpus, not about a script.
+
 ---
 
 ## P4 — `E-AGT-HEAD` reaches a checkpoint with a **real, moving** detector loss
