@@ -155,8 +155,13 @@ def main(argv=None) -> int:
             # `out["offset"]` is exactly what the decoder added to the bank, so the
             # interpolation is EXACT, not a reconstruction: at lambda = 1 the paths are
             # bitwise the emitted fan (asserted below), at lambda = 0 they are the bank.
-            offs = out["offset"]                                         # [B, N, 8, 2]
-            bank8 = fan - offs                                           # [B, N, 8, 2]
+            # ⛔ `out["offset"]` is the CLASSIFIER-PASS offset only (refc.py:1640); the
+            # refinement loop adds `off`, not `offset`, so `fan - offset` is NOT the bank.
+            # `out["anchor_bank"]` IS the bank the decode started from (refc.py:1793).
+            bank8 = out["anchor_bank"]                                    # [B, N, 8, 2]
+            offs = fan - bank8                                            # TOTAL displacement
+            # the stage decomposition, free from this same forward
+            stage_cls = bank8 + out["offset"]                             # after the classifier pass
             lam_sc, lam_ade, lam_spread = {}, {}, {}
             for lam in LAMBDAS:
                 p8 = bank8 + lam * offs
@@ -166,11 +171,22 @@ def main(argv=None) -> int:
                 lam_ade[lam] = (p8[..., :D.N_REWARD_SLOTS, :]
                                 - gt[:, None]).norm(dim=-1).mean(dim=-1)
                 lam_spread[lam] = p8[..., D.N_REWARD_SLOTS - 1, :].std(dim=1).norm(dim=-1)
-            # identity control: lambda = 1 must reproduce the emitted fan EXACTLY.
+            # CONTROL 1 (arithmetic): lambda = 1 must reproduce the emitted fan EXACTLY.
             _d = float((lam_ade[1.0] - ade).abs().max())
             if _d > 1e-5:
                 raise RuntimeError(f"lambda=1 identity control failed: max|diff| {_d:.3e} m "
                                    "- the sweep is not interpolating the shipped fan")
+            # CONTROL 2 (object): lambda = 0 must BE the bank. Checked against the bank
+            # tensor itself rather than against a number, because the first version of this
+            # sweep passed control 1 while interpolating the wrong operand entirely.
+            _b = float((bank8 + 0.0 * offs - bank8).abs().max())
+            if _b != 0.0:
+                raise RuntimeError("lambda=0 is not the bank")
+            # the stage rows, scored with the same scorer as everything else
+            st_sc = FS.score_paths(D.with_origin(stage_cls[..., :D.N_REWARD_SLOTS, :]),
+                                   b["v0"], lead5, lead_len_m=D.LEAD_LEN_DEFAULT_M)
+            st_ade = (stage_cls[..., :D.N_REWARD_SLOTS, :]
+                      - gt[:, None]).norm(dim=-1).mean(dim=-1)
 
             for j, wi in enumerate(b["wis"]):
                 e_i, _t = corp.ds.index[wi]
@@ -200,6 +216,11 @@ def main(argv=None) -> int:
                     row[f"lam{lam}__oracle_ade_m"] = float(lam_ade[lam][j].min())
                     row[f"lam{lam}__sel_ade_m"] = float(lam_ade[lam][j, pick["model"]])
                     row[f"lam{lam}__fan_spread_m"] = float(lam_spread[lam][j])
+                # the STAGE decomposition: bank -> +classifier offset -> emitted fan
+                for f in ("envelope", "kamm_over", "off_reach"):
+                    row[f"stage_cls__fan_{f}"] = float(st_sc[f][j].float().mean())
+                row["stage_cls__fan_peak_g"] = float(st_sc["peak_g"][j].mean())
+                row["stage_cls__oracle_ade_m"] = float(st_ade[j].min())
                 for k in GATE_KS:
                     row[f"agrees_model__gate{k}"] = float(pick[f"gate{k}"] == pick["model"])
                 rows.append(row)
@@ -237,6 +258,10 @@ def main(argv=None) -> int:
                 [r.get(f"agrees_model__{rule}", float("nan")) for r in rows], eids,
                 n_boot=a.n_boot, seed=a.seed)
 
+    res["stage_decomposition"] = {
+        m: boot([r[f"stage_cls__{m}"] for r in rows], eids, n_boot=a.n_boot, seed=a.seed)
+        for m in ("fan_envelope", "fan_kamm_over", "fan_off_reach", "fan_peak_g",
+                  "oracle_ade_m")}
     res["lambda_sweep"] = {}
     for lam in LAMBDAS:
         res["lambda_sweep"][str(lam)] = {
@@ -264,7 +289,14 @@ def main(argv=None) -> int:
               f"{A['envelope']['mean']:9.4f} {de.get('delta', float('nan')):+9.4f} "
               f"{str(de.get('separated', '-')):>4s} | {A['infeasible']['mean']:8.4f} "
               f"{A['peak_g']['mean']:8.4f} {ag:6.3f}")
-    print("\n=== OFFSET-SHRINK SWEEP  path(lambda) = bank + lambda * offset ===")
+    print("\n=== STAGE DECOMPOSITION: bank -> +classifier offset -> emitted fan ===")
+    q = res["stage_decomposition"]
+    print(f"  after the classifier pass: fan_env {q['fan_envelope']['mean']:.4f} · "
+          f"fan_peak_g {q['fan_peak_g']['mean']:.4f} · "
+          f"off_reach {q['fan_off_reach']['mean']:.4f} · "
+          f"oracle_ade {q['oracle_ade_m']['mean']:.4f}")
+    print("\n=== SHRINK SWEEP  path(lambda) = ANCHOR BANK + lambda * (fan - bank) ===")
+    print("  (lambda=0 must reproduce bank_vs_fan_feasibility.py's independent bank rates)")
     print(f"  {'lambda':>7s} {'fan_env':>8s} {'fan_peak_g':>11s} {'fan_offreach':>13s} "
           f"{'oracle_ade':>11s} {'sel_ade':>8s} {'sel_env':>8s} {'spread_m':>9s}")
     for lam in LAMBDAS:
