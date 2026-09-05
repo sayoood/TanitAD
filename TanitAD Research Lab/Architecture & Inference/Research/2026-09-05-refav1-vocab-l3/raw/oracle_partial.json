@@ -1,0 +1,453 @@
+{
+ "dump": "C:/Users/Admin/refav1_drive/oracle/dump_oracle_s0",
+ "cost": null,
+ "goal_vocab": null,
+ "n_windows": 10,
+ "n_excluded_low_v0": 1,
+ "kappa_threshold": 0.04,
+ "n_turning": 3,
+ "n_straight": 6,
+ "ha0_ext_form": "INTEGRATOR (refav1_arm.hold_ext_controls), M11",
+ "tier_note": "cl_oraclegoal and cl_oracleseed read the TRUE FUTURE => T0, diagnostics/bounds, never driving numbers (EVAL_DOCTRINE). cl / ha / ha0 / ha0_ext are T1.",
+ "CONTROL_goal_provenance": {
+  "per_arm": {
+   "cl": {
+    "expected": "tactical_imagined",
+    "frac_matching": 1.0,
+    "n": 10
+   },
+   "cl_oraclegoal": {
+    "expected": "supplied",
+    "frac_matching": 1.0,
+    "n": 10
+   },
+   "cl_oracleseed": {
+    "expected": "supplied+seed",
+    "frac_matching": 1.0,
+    "n": 10
+   }
+  },
+  "passes": true,
+  "why": "if cl is not tactical_imagined on every window it is not the shipped pipeline, and if cl_oracleseed is not supplied+seed the seed did NOT enter the pool and this is the CONFOUNDED arm"
+ },
+ "CONTROL_seed_token_identical": {
+  "lat_identical": true,
+  "lon_identical": true,
+  "passes": true,
+  "cl_lat_decode": {
+   "LANE_KEEP": 3,
+   "TURN_L": 4,
+   "TURN_R": 3
+  },
+  "why": "the goal must be the ONLY difference; a different decode would mean the head saw different inputs"
+ },
+ "ade": {
+  "all_valid": {
+   "cl": {
+    "n": 9,
+    "mean": 1.6550384759902954
+   },
+   "cl_oraclegoal": {
+    "n": 9,
+    "mean": 3.282707691192627
+   },
+   "cl_oracleseed": {
+    "n": 9,
+    "mean": 2.6388838291168213
+   },
+   "ha": {
+    "n": 9,
+    "mean": 1.4939392805099487
+   },
+   "ha0": {
+    "n": 9,
+    "mean": 1.3308173418045044
+   },
+   "ha0_ext": {
+    "n": 9,
+    "mean": 1.373345136642456
+   },
+   "ol": {
+    "n": 9,
+    "mean": 1.1935702562332153
+   }
+  },
+  "turning": {
+   "cl": {
+    "n": 3,
+    "mean": 0.9614165425300598
+   },
+   "cl_oraclegoal": {
+    "n": 3,
+    "mean": 2.5475990772247314
+   },
+   "cl_oracleseed": {
+    "n": 3,
+    "mean": 2.5475990772247314
+   },
+   "ha": {
+    "n": 3,
+    "mean": 2.5560221672058105
+   },
+   "ha0": {
+    "n": 3,
+    "mean": 1.7249406576156616
+   },
+   "ha0_ext": {
+    "n": 3,
+    "mean": 2.4347074031829834
+   },
+   "ol": {
+    "n": 3,
+    "mean": 2.4908134937286377
+   }
+  },
+  "straight": {
+   "cl": {
+    "n": 6,
+    "mean": 2.001849412918091
+   },
+   "cl_oraclegoal": {
+    "n": 6,
+    "mean": 3.650261640548706
+   },
+   "cl_oracleseed": {
+    "n": 6,
+    "mean": 2.6845264434814453
+   },
+   "ha": {
+    "n": 6,
+    "mean": 0.9628979563713074
+   },
+   "ha0": {
+    "n": 6,
+    "mean": 1.1337556838989258
+   },
+   "ha0_ext": {
+    "n": 6,
+    "mean": 0.8426640629768372
+   },
+   "ol": {
+    "n": 6,
+    "mean": 0.5449488759040833
+   }
+  }
+ },
+ "HEADLINE_turning": {
+  "n": 3,
+  "cl_oracleseed": 2.5475990772247314,
+  "ha0_ext": 2.4347074031829834,
+  "ha": 2.5560221672058105,
+  "ratio_oracleseed_over_ha0ext": 1.0463676452636719,
+  "beats_ha0_ext": false,
+  "cl_ratio_over_ha0ext": 0.39487969875335693
+ },
+ "paired": {
+  "cl_oracleseed_minus_cl": {
+   "all_valid": {
+    "n": 9,
+    "mean": 0.9838454127311707,
+    "n_exact_ties": 0
+   },
+   "turning": {
+    "n": 3,
+    "mean": 1.5861825942993164,
+    "n_exact_ties": 0
+   },
+   "straight": {
+    "n": 6,
+    "mean": 0.6826767325401306,
+    "n_exact_ties": 0
+   }
+  },
+  "cl_oraclegoal_minus_cl": {
+   "all_valid": {
+    "n": 9,
+    "mean": 1.6276689767837524,
+    "n_exact_ties": 0
+   },
+   "turning": {
+    "n": 3,
+    "mean": 1.5861825942993164,
+    "n_exact_ties": 0
+   },
+   "straight": {
+    "n": 6,
+    "mean": 1.6484123468399048,
+    "n_exact_ties": 0
+   }
+  },
+  "cl_oracleseed_minus_cl_oraclegoal": {
+   "all_valid": {
+    "n": 9,
+    "mean": -0.6438237428665161,
+    "n_exact_ties": 5
+   },
+   "turning": {
+    "n": 3,
+    "mean": 0.0,
+    "n_exact_ties": 3
+   },
+   "straight": {
+    "n": 6,
+    "mean": -0.9657356142997742,
+    "n_exact_ties": 2
+   }
+  }
+ },
+ "SATURATION_E3": {
+  "per_arm": {
+   "cl": {
+    "all_valid": {
+     "n": 9,
+     "frac_at_kappa_max": 0.1111111111111111,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.09382839500904083,
+     "mean_max_abs_accel": 0.2600761950016022,
+     "frac_curvature_nonzero": 0.8888888888888888
+    },
+    "turning": {
+     "n": 3,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.07999999821186066,
+     "mean_max_abs_accel": 0.0,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 6,
+     "frac_at_kappa_max": 0.16666666666666666,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.10074258595705032,
+     "mean_max_abs_accel": 0.39011430740356445,
+     "frac_curvature_nonzero": 0.8333333333333334
+    }
+   },
+   "cl_oraclegoal": {
+    "all_valid": {
+     "n": 9,
+     "frac_at_kappa_max": 0.5555555555555556,
+     "frac_at_a_max": 0.2222222222222222,
+     "mean_max_abs_kappa": 0.1820031851530075,
+     "mean_max_abs_accel": 2.3875133991241455,
+     "frac_curvature_nonzero": 1.0
+    },
+    "turning": {
+     "n": 3,
+     "frac_at_kappa_max": 0.3333333333333333,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.15867187082767487,
+     "mean_max_abs_accel": 2.985116720199585,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 6,
+     "frac_at_kappa_max": 0.6666666666666666,
+     "frac_at_a_max": 0.3333333333333333,
+     "mean_max_abs_kappa": 0.19366884231567383,
+     "mean_max_abs_accel": 2.088711738586426,
+     "frac_curvature_nonzero": 1.0
+    }
+   },
+   "cl_oracleseed": {
+    "all_valid": {
+     "n": 9,
+     "frac_at_kappa_max": 0.4444444444444444,
+     "frac_at_a_max": 0.1111111111111111,
+     "mean_max_abs_kappa": 0.16897553205490112,
+     "mean_max_abs_accel": 2.364076614379883,
+     "frac_curvature_nonzero": 1.0
+    },
+    "turning": {
+     "n": 3,
+     "frac_at_kappa_max": 0.3333333333333333,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.15867187082767487,
+     "mean_max_abs_accel": 2.985116720199585,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 6,
+     "frac_at_kappa_max": 0.5,
+     "frac_at_a_max": 0.16666666666666666,
+     "mean_max_abs_kappa": 0.17412734031677246,
+     "mean_max_abs_accel": 2.0535566806793213,
+     "frac_curvature_nonzero": 1.0
+    }
+   }
+  },
+  "kappa_max": 0.2,
+  "a_max": 4.0,
+  "reading": "deficit shrinks AND saturation falls => the named mechanism; deficit shrinks AND saturation stays pinned => something else did the work and the claim is NOT established"
+ },
+ "per_window": [
+  {
+   "i": 0,
+   "v0": 5.652282238006592,
+   "gt_kappa": 0.036059118807315826,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 3.0305776596069336,
+   "ade_cl_oraclegoal": 1.0492994785308838,
+   "ade_cl_oracleseed": 1.0492994785308838,
+   "ade_ha": 2.683384656906128,
+   "ade_ha0": 1.3704948425292969,
+   "ade_ha0_ext": 2.58428692817688,
+   "ade_ol": 2.085629940032959
+  },
+  {
+   "i": 1,
+   "v0": 7.509033679962158,
+   "gt_kappa": 0.0014981890562921762,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "LANE_KEEP",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.4626182019710541,
+   "ade_cl_oraclegoal": 1.2377915382385254,
+   "ade_cl_oracleseed": 1.2377915382385254,
+   "ade_ha": 0.2301914244890213,
+   "ade_ha0": 0.4626182019710541,
+   "ade_ha0_ext": 0.23012188076972961,
+   "ade_ol": 0.1499936282634735
+  },
+  {
+   "i": 2,
+   "v0": 8.563699722290039,
+   "gt_kappa": -2.8982160074519925e-05,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "LANE_KEEP",
+   "oracleseed_tied_with_oraclegoal": false,
+   "ade_cl": 0.9291559457778931,
+   "ade_cl_oraclegoal": 4.974968433380127,
+   "ade_cl_oracleseed": 0.5162904858589172,
+   "ade_ha": 0.13213472068309784,
+   "ade_ha0": 0.15171954035758972,
+   "ade_ha0_ext": 0.11037559807300568,
+   "ade_ol": 0.05600275844335556
+  },
+  {
+   "i": 3,
+   "v0": 6.378016471862793,
+   "gt_kappa": -0.049732185900211334,
+   "valid": true,
+   "turning": true,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 1.3017594814300537,
+   "ade_cl_oraclegoal": 1.4725911617279053,
+   "ade_cl_oracleseed": 1.4725911617279053,
+   "ade_ha": 0.24189910292625427,
+   "ade_ha0": 1.1246006488800049,
+   "ade_ha0_ext": 0.3564717173576355,
+   "ade_ol": 1.0004818439483643
+  },
+  {
+   "i": 4,
+   "v0": 5.484026908874512,
+   "gt_kappa": -0.053073108196258545,
+   "valid": true,
+   "turning": true,
+   "lat_decode": "TURN_R",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.6207472085952759,
+   "ade_cl_oraclegoal": 2.5021729469299316,
+   "ade_cl_oracleseed": 2.5021729469299316,
+   "ade_ha": 3.1736297607421875,
+   "ade_ha0": 1.9356701374053955,
+   "ade_ha0_ext": 3.181858539581299,
+   "ade_ol": 2.9338538646698
+  },
+  {
+   "i": 5,
+   "v0": 10.706905364990234,
+   "gt_kappa": -0.0032853735610842705,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "TURN_L",
+   "oracleseed_tied_with_oraclegoal": false,
+   "ade_cl": 2.996734142303467,
+   "ade_cl_oraclegoal": 4.242244243621826,
+   "ade_cl_oracleseed": 2.930697441101074,
+   "ade_ha": 0.6115652322769165,
+   "ade_ha0": 1.647905707359314,
+   "ade_ha0_ext": 0.6145414113998413,
+   "ade_ol": 0.37050309777259827
+  },
+  {
+   "i": 6,
+   "v0": 4.820247650146484,
+   "gt_kappa": 0.0007560611702501774,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "TURN_L",
+   "oracleseed_tied_with_oraclegoal": false,
+   "ade_cl": 1.859154462814331,
+   "ade_cl_oraclegoal": 1.2185337543487549,
+   "ade_cl_oracleseed": 1.3721269369125366,
+   "ade_ha": 0.8224858045578003,
+   "ade_ha0": 1.6556739807128906,
+   "ade_ha0_ext": 0.822735607624054,
+   "ade_ol": 0.23881752789020538
+  },
+  {
+   "i": 7,
+   "v0": 0.0,
+   "gt_kappa": 0.04808822646737099,
+   "valid": false,
+   "turning": false,
+   "lat_decode": "TURN_L",
+   "oracleseed_tied_with_oraclegoal": false,
+   "ade_cl": 0.24763445556163788,
+   "ade_cl_oraclegoal": 0.23942270874977112,
+   "ade_cl_oracleseed": 0.24763445556163788,
+   "ade_ha": 0.24763445556163788,
+   "ade_ha0": 0.24763445556163788,
+   "ade_ha0_ext": 0.24763445556163788,
+   "ade_ol": 0.0708923190832138
+  },
+  {
+   "i": 8,
+   "v0": 5.2660603523254395,
+   "gt_kappa": 0.06711709499359131,
+   "valid": true,
+   "turning": true,
+   "lat_decode": "TURN_L",
+   "oracleseed_tied_with_oraclegoal": true,
+   "ade_cl": 0.9617428779602051,
+   "ade_cl_oraclegoal": 3.6680328845977783,
+   "ade_cl_oracleseed": 3.6680328845977783,
+   "ade_ha": 4.252537727355957,
+   "ade_ha0": 2.114550828933716,
+   "ade_ha0_ext": 3.765791416168213,
+   "ade_ol": 3.53810453414917
+  },
+  {
+   "i": 9,
+   "v0": 10.544534683227539,
+   "gt_kappa": 0.00027978126308880746,
+   "valid": true,
+   "turning": false,
+   "lat_decode": "LANE_KEEP",
+   "oracleseed_tied_with_oraclegoal": false,
+   "ade_cl": 2.7328569889068604,
+   "ade_cl_oraclegoal": 9.178733825683594,
+   "ade_cl_oracleseed": 9.000951766967773,
+   "ade_ha": 1.2976257801055908,
+   "ade_ha0": 1.5141217708587646,
+   "ade_ha0_ext": 0.6939231753349304,
+   "ade_ol": 0.3687460720539093
+  }
+ ],
+ "JOINT_tie_vs_decode": {
+  "n_tied": 5,
+  "n_tied_that_are_LANE_KEEP": 1,
+  "n_turning": 3,
+  "n_turning_that_are_LANE_KEEP": 0,
+  "n_turning_that_are_TURN": 3,
+  "why": "the joint that refuted the 'ties are the zero-seed LANE_KEEP windows' story; a mechanism claim needs it"
+ }
+}

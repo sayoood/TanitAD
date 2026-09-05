@@ -81,42 +81,61 @@ goal-margin stream's **independent** `cos` run over the **same p4 episodes at th
 mount an all-equal report is otherwise indistinguishable from reading nothing — a `0` from a file
 that could not be read looks exactly like a genuine `0`.)*
 
-### 1b. ⚠️ FIRST-EPISODE PARTIAL READ — DIRECTIONAL ONLY, n = 5, NO CLAIM
+### 1b. ⚠️ PARTIAL READ — 2 of 8 episodes, n = 9 valid windows. DIRECTIONAL ONLY, NO CLAIM
 
-The run is ~1/8 done at hand-off. This is banked because the mechanism it shows is already
-informative and because the dumps must not be re-paid for; **it is not a result.** No interval, no
+The run is 2/8 done at hand-off. This is banked because the dumps must not be re-paid for and
+because the saturation readout is already attributable; **it is not a result.** No interval, no
 bootstrap, no four-family table — those come from `refav1_arm.py --analyze-only` on the finished
-dump.
+dump. 10 windows, **1 excluded** at v0 < 1 m/s, **3 turning** at |gt_κ| > 4e-2.
 
-⛔ **Both controls PASS on all 5 windows:** `goal_source` is `tactical_imagined` 5/5 (`cl`),
-`supplied` 5/5 (`cl_oraclegoal`), **`supplied+seed` 5/5** (`cl_oracleseed`); and the decoded
+⛔ **Both controls PASS on all 10 windows:** `goal_source` is `tactical_imagined` 10/10 (`cl`),
+`supplied` 10/10 (`cl_oraclegoal`), **`supplied+seed` 10/10** (`cl_oracleseed`); and the decoded
 (lat, lon) seed token is **identical** between `cl` and `cl_oracleseed` on every window. ⇒ the goal
 really is the only difference.
 
-| arm | ADE (n = 5) | |
-|---|---|---|
-| `cl` (shipped) | **1.2690** | T1 |
-| `cl_oraclegoal` (CONFOUNDED — no seed) | **2.2474** | T0 |
-| ⭐ `cl_oracleseed` (DE-CONFOUNDED) | **1.3556** | T0 |
-| `ha` / `ha0` / `ha0_ext` | 1.2922 / **1.0090** / 1.2926 | T1 floors |
+| arm | tier | ALL (n = 9) | TURNING (n = 3) | STRAIGHT (n = 6) |
+|---|---|---|---|---|
+| `cl` (shipped) | T1 | **1.6550** | **0.9614** | 2.0018 |
+| `cl_oraclegoal` (CONFOUNDED — no seed) | T0 | 3.2827 | 2.5476 | 3.6503 |
+| ⭐ `cl_oracleseed` (DE-CONFOUNDED) | T0 | **2.6389** | **2.5476** | 2.6845 |
+| `ha` | T1 | 1.4939 | 2.5560 | 0.9629 |
+| `ha0` | T1 | 1.3308 | 1.7249 | 1.1338 |
+| **`ha0_ext`** (INTEGRATOR, M11) | T1 | 1.3733 | **2.4347** | 0.8427 |
+| `ol` | ⛔ T0 | 1.1936 | 2.4908 | 0.5449 |
 
-⭐ **Two things this already suggests, both to be confirmed on the full panel:**
-1. **Most of the confounded arm's damage was the missing seed, not the goal** — de-confounding
-   moves it **2.2474 → 1.3556** (−0.892), back to the neighbourhood of `cl`. ⇒ `D-REFAV1-DRIVE-ORACLE`'s
-   *"a perfect goal makes refav1 4× worse"* looks, so far, like a statement about a **seed-less
-   pipeline** rather than about goal quality — which is exactly why the arm was called confounded.
-2. **A perfect goal, delivered honestly, does not help**: `cl_oracleseed − cl` = **+0.0867**.
-3. ⭐ **The mechanism is internally consistent**, which is the part that is hard to get by
-   accident: `cl_oracleseed` and `cl_oraclegoal` are **EXACTLY tied on the 2 GT-turning windows**
-   and differ by **−1.486** on the 3 straight ones. Those 2 turning windows are precisely the ones
-   the head decodes `LANE_KEEP` on, where the restored seed is the all-zero profile — a bit-for-bit
-   duplicate of the `cv` baseline already in the pool, so it *cannot* change anything. The seed
-   matters exactly where the seed is non-zero.
+**On the headline question, so far and on n = 3 turning windows:** a perfect goal delivered
+honestly reads **2.5476** against the `ha0_ext` floor's **2.4347** — ratio **1.046**, it does
+**NOT** beat the floor — while the *shipped* arm reads **0.9614**, ratio **0.395**, and does.
+⛔ **n = 3. This is an anecdote, not an answer.**
 
-⚠️ On these 2 turning windows `cl_oracleseed` reads **1.9874** against `ha0_ext` **1.7692**
-(ratio 1.123) — it does **not** beat the floor — while `cl` reads **0.9613** (ratio 0.543) and does.
-**n = 2. This is an anecdote, not an answer**, and the headline question stays open until the panel
-finishes.
+⭐⭐ **THE ATTRIBUTABLE PART — ERRATUM §E3's SATURATION READOUT, and it survives de-confounding.**
+Fraction of windows whose planned controls touch `kappa_max = 0.2`:
+
+| arm | ALL | TURNING | STRAIGHT | mean max \|accel\| (ALL) |
+|---|---|---|---|---|
+| `cl` | **0.111** | 0.000 | 0.167 | **0.260** |
+| `cl_oraclegoal` (confounded) | 0.556 | 0.333 | 0.667 | 2.388 |
+| `cl_oracleseed` (de-confounded) | **0.444** | 0.333 | 0.500 | **2.364** |
+
+⇒ **the saturation is caused by the GOAL FIELD, not by the missing seed.** Restoring the seed
+moves it 0.556 → 0.444 and leaves the acceleration channel essentially untouched (2.388 → 2.364,
+against the shipped arm's 0.260). `D-REFAV1-DRIVE-ORACLE`'s reading — *"an optimiser climbing a
+cosine toward a target no control sequence can realise"* — is therefore **not** an artefact of the
+confound, which is the single most useful thing this partial says.
+
+⛔⛔ **SELF-CORRECTION, SAME TURN — A MECHANISM I COMMITTED ONE COMMIT AGO IS WRONG.**
+Commit `0ac99f4` (and this document's first version) explained the exact ties between
+`cl_oracleseed` and `cl_oraclegoal` as *"precisely the `LANE_KEEP` decodes, where the restored seed
+is the all-zero profile"*. **The window-level data refutes it:** all **3** turning windows decode
+`TURN_*` (2 × `TURN_R`, 1 × `TURN_L`) and **0** decode `LANE_KEEP`; across all windows only **1 of
+the 5** tied windows is a `LANE_KEEP` decode. The story was plausible, fitted the first episode's
+5 windows, and was **not checked against the joint** before it was written.
+⭐ **And the true reading is stronger than the false one:** on those turning windows the seed is a
+genuine, non-zero, correctly-signed `TURN_*` candidate — and **the plan comes out bit-identical
+without it**, i.e. the canonical turn seed **loses** under an oracle goal field. That is the
+goal→plan pathway failing to consume a good goal, measured at the level of a single candidate.
+*(Class: a root cause derived from a handful of runs, which `CLAUDE.md` says not to do — three of
+its own readings were falsified the same way in one session.)*
 
 ## 2. ⛔ THE POWER CHECK — blocking, and it found more than low power
 

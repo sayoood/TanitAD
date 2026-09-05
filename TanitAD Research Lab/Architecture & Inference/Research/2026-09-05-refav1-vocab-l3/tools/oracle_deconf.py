@@ -223,11 +223,46 @@ def main() -> int:
                    "deficit shrinks AND saturation stays pinned => something "
                    "else did the work and the claim is NOT established"}
 
+    # ---- ⭐ THE PER-WINDOW TABLE, because an aggregate invites a story ---- #
+    # MEASURED 2026-09-05: an explanation of the exact ties ("they are the
+    # LANE_KEEP decodes, whose seed is all-zero") was written from a 5-window
+    # aggregate and REFUTED by this table -- all 3 turning windows decode TURN_*
+    # and only 1 of 5 tied windows is LANE_KEEP. A mechanism claim needs the
+    # JOINT, not the marginals.
+    rows = []
+    tie = None
+    if ("cl_oracleseed_controls" in dec and "cl_oraclegoal_controls" in dec):
+        cs, cg = dec["cl_oracleseed_controls"], dec["cl_oraclegoal_controls"]
+        tie = np.array([float(np.abs(cs[i] - cg[i]).max()) == 0.0
+                        for i in range(len(cs))])
+    for i in range(len(k)):
+        r = {"i": i, "v0": float(v0[i]), "gt_kappa": float(k[i]),
+             "valid": bool(ok[i]), "turning": bool(turn[i]),
+             "lat_decode": (LAT[int(dec["goal_lat_cl"][i])]
+                            if "goal_lat_cl" in dec else None)}
+        if tie is not None:
+            r["oracleseed_tied_with_oraclegoal"] = bool(tie[i])
+        for n_ in arms:
+            r[f"ade_{n_}"] = float(A[n_][i])
+        rows.append(r)
+    out["per_window"] = rows
+    if tie is not None and "goal_lat_cl" in dec:
+        lat_i = dec["goal_lat_cl"]
+        out["JOINT_tie_vs_decode"] = {
+            "n_tied": int(tie.sum()),
+            "n_tied_that_are_LANE_KEEP": int((tie & (lat_i == 0)).sum()),
+            "n_turning": int(turn.sum()),
+            "n_turning_that_are_LANE_KEEP": int((turn & (lat_i == 0)).sum()),
+            "n_turning_that_are_TURN": int((turn & (lat_i >= 6)).sum()),
+            "why": "the joint that refuted the 'ties are the zero-seed "
+                   "LANE_KEEP windows' story; a mechanism claim needs it"}
+
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=1)
     for key in ("CONTROL_goal_provenance", "CONTROL_seed_token_identical",
-                "ade", "HEADLINE_turning", "paired", "SATURATION_E3"):
+                "ade", "HEADLINE_turning", "paired", "SATURATION_E3",
+                "JOINT_tie_vs_decode"):
         if key in out:
             print(f"--- {key} ---")
             print(json.dumps(out[key], indent=1))
