@@ -159,7 +159,7 @@ trunk anchor. **The untested variable is the ORDER of staging**, where the field
 | **A3** | **tau-ramp** (`D-EMA-ADOPT`'s unmet condition) | the tau schedule only | ~8.6 h | **ramp >= fixed on prediction with drift not worse** ⇒ ship the ramp; **else** ship fixed tau as measured. ⛔ Neither outcome reopens the adoption. | GPU (Thor holds the `emao14_30k` baseline) |
 | **A4** | **staging-ORDER arm** + its **reversed-order deliberate-regression arm** | order of the staged curriculum | ~17 h (2 arms) | right order **> joint** and reversed order **< joint** ⇒ order is load-bearing; **regression arm does NOT fail** ⇒ the gate is vacuous and the result is void | after P1/P2 move |
 | **A5** | **the v7f flagship run itself** | scale-up on B1 | ⛔ unpriced — `PREREG_V7F` §9 still has `<one full epoch, D-ONE-EPOCH>` unfilled | — | ⛔ **the 2026-08-31 PI directive — PLUS four pieces of code that DO NOT EXIST** (§3.1: no DINOv3-init loader, the only seed is a refused ViT-L/16, **LDAD is unimplemented — `grep -ril ldad` → 0 files**, and a wrong flag spelling in the published launch line) |
-| **A6** | ⭐ **0-GPU, unblocked, do it now-ish: make `PREREG_V7F` §9's launch line EXECUTABLE** — fix `--enc-init-from` → `--init-encoder-from`, fill or strike `--w-ldad` (it does not exist), price `D-ONE-EPOCH`, and resolve the ViT-B/16-vs-ViT-L/16 seed pairing | none — a document and a cost | **0 GPU**, hours | the launch line **runs in `--dry-run`** ⇒ the prereg is executable; **it does not** ⇒ every remaining refusal is named with its file:line | none — this is the cheapest item on the board |
+| **A6** | ⭐ **0-GPU, unblocked, and I DID THE DIAGNOSTIC HALF THIS TURN (§3.2)** — remaining: strike or implement the LDAD triple, add `--horizons 1`, price `D-ONE-EPOCH`, resolve the ViT-B/16-vs-ViT-L/16 seed pairing | none — a document, a flag, and a cost | **0 GPU**, hours | ✅ **diagnostic half DONE**: the launch line is **one loss term and one flag** from argparse-clean, every other flag accepted, and the alleged `--enc-init-from` blocker is **refuted**. Remaining criterion: the corrected line reaches the corpus check | none — the cheapest item on the board |
 
 ### 3.1 ⭐ What it would take for v7f to produce a T1 four-family number
 
@@ -221,6 +221,38 @@ found **four more, all of them code that does not exist**. That is exactly why t
    the box holding the 178 GB B1 epcache. ⚠️ **Correctly scoped: I did NOT probe Thor** (out of
    bounds by brief), so its *current* occupancy is **UNVERIFIED**; what is MEASURED is that the
    job which committed it has finished. The A40 (`tanitad-refcv3`) is busy to ~2026-09-06.
+
+### 3.2 ⭐⭐ I RAN THE LAUNCH LINE. EXECUTION FOUND A DEFECT NO BLOCKER LIST HAD.
+
+⭐ **This is the part of the turn that is a measurement rather than a reading.** I executed
+`PREREG_V7F` §9's launch line through the **real argparse** (venv `C:/Users/Admin/venvs/tanitad`,
+torch 2.11.0+cu128, off-Drive from the mirror, `PYTHONPATH=<mirror>/stack`, `OMP_NUM_THREADS=6`,
+**0 GPU**), verifying the imported package with `tanitad.__file__`.
+Raw: `raw/v7f_launch_line_dryrun.json`.
+
+**Exactly TWO real defects. Every other flag in the launch line is accepted.**
+
+| # | defect | evidence |
+|---|---|---|
+| 1 | ⛔ **The LDAD triple does not exist** | `train_v6_staged.py: error: unrecognized arguments: --w-ldad 1.0 --ldad-target a_kappa --ldad-form delta_z` — **and these are the ONLY unrecognized flags in the whole line.** ⭐ **Two independent mechanisms agree**: the real argparse, and `grep -ril "ldad" stack/` → 0 files with a control reading 8. |
+| 2 | ⛔⛔ **`--horizons` is NEVER PASSED, and the trainer REFUSES the default — this was on NO prior blocker list, mine included** | `PREREG_V7F` contains **zero** occurrences of `--horizons`, so it defaults to `(1,2,4)`; the trainer refuses: *"declares [2, 4], which NO loss consumes … would take EXACTLY zero gradient and then feed initialisation noise to every probe that reads them — **this has already produced two retracted findings**"*. **Fix: pass `--horizons 1`** and keep the horizon on `--o5-k 60` (= 6.0 s). |
+
+⚠️ **Scope correction, stated rather than buried.** An earlier run of this probe *also* refused
+on `--nav-cond` and `--v2-cache`. **Those were artifacts of my truncated reconstruction, not
+defects** — §9 does contain `--v2-cache`, `--require-parity`, `--v2-lru`, `--s2-labels`,
+`--w-s2-goal`, `--nav-labels` and `--nav-cond` (grep: 2 hits each). I am not counting them.
+
+⚠️ **An argparse trap worth knowing, because it nearly produced the opposite conclusion:**
+**argparse reports MISSING-REQUIRED before UNRECOGNIZED.** Omitting `--stage`/`--out` masks the
+unrecognized list entirely and reads as *"every flag exists"*. Supply the required args first.
+
+⚠️ **An incidental defect found by running it:** `train_v6_staged.py:10371` prints refusals as
+`f"[v6] \u26d4 {p}"`. On a **cp1252** console that raises `UnicodeEncodeError`, so **the trainer
+crashes instead of printing the refusal** — hiding exactly the diagnostic a launch needs.
+Workaround `PYTHONIOENCODING=utf-8`; durable fix is ASCII refusal text or an explicit UTF-8 stream.
+
+⇒ **A6 is now half-done and much cheaper than it looked: the launch line is ONE loss term and
+ONE flag away from argparse-clean.**
 
 ⛔ **A REFUTED BLOCKER, removed rather than repeated.** A second probe reported *"a flag-name
 error: `--enc-init-from` is not the implemented spelling"*. **It is wrong, and I only found
