@@ -1323,3 +1323,79 @@ at the ladder optimum, a win on turns, and the **longitudinal family** still the
 blocker is now the *only* one, it has a named mechanism (`ADAPT_SPEED_FOR_CURVE`'s canonical control
 is `a == 0`), and the lever that fixes it is predicted by this same principle: **representability,
 not penalty.**
+
+## M32. ⛔⛔ `v7f` HAS NEVER BEEN TRAINED — and it is not blocked. It is UNATTENDED.
+
+**The PI observed that a whole day of planning omitted the flagship. The audit says the omission is
+older and larger than one day: the flagship has never run at all.**
+
+### 1. The finding, on three independent probes each with a same-breath control
+
+* `grep -c -i v7f MODEL_REGISTRY.md` = **0** — controls `flagship` **238**, `refcv3` **31**, so the
+  probe reads. ⚠️ **All 30 `v7` hits in the registry are the `v7.2` LABEL VOCABULARY**, not the model.
+* `V7_LAUNCH_GATE.md` carries a **binding PI directive of 2026-08-31**: *"we should not start
+  training of v7 until the remaining problems are solved."*
+* `PREREG_V7F` §9's launch line still holds **unfilled placeholders**.
+
+⇒ **No checkpoint, no run directory, no registry row.** ⭐ Everything the programme has been calling
+"the v7 result" is **v7-tiny** — ~19 M-param proxies at 2k–30k steps **with every planner objective
+at zero**. ⇒ The flagship section having no entry newer than 2026-08-09 is **not a banking failure.
+Nothing ran.**
+
+### 2. ⭐ Three of the four "blockers" are not blockers
+
+| row | verdict |
+|---|---|
+| **`D-CORPUS-B1`** | ✅ **NOT a blocker.** Built twice, byte-verified, **4,572 + 141 = 4,713 exactly**, and a **completed 40,284-step refcv3 run already trained on it**. `B1_TRAINING_PREP.md` is **stale by ~6 days** and is the sole source of the "waiting on Thor" premise. |
+| **`D-EMA-ADOPT`** | ⛔ UNMET — the arm never ran; the instrument is fully built (24 tests). ⚠️ **It is a τ-ramp (EMA decay), not "λ"** — my brief said λ and was wrong. |
+| **`D-V7-TRUNK-ANCHOR`** | ✅ engineering done · ⛔ unexercisable, and **worse than recorded**: the seed on the box is **ViT-L/16**, which `build_trunk_anchor` **refuses BY DESIGN** against the ViT-B/16 trunk. |
+| **`E-DEC-9b`** | ⛔ OPEN. The switched-off term is **O7 distillation** (`--w-o7-distill 0`, verified at source). ⭐ **But turning it on is measured NEGATIVE in v7f's form** — **−0.2553 co-trained vs +0.3274 pure**, with LayerLock showing both weight schedules collapsing. ⇒ **the remedy is staging ORDER, not a weight sweep.** |
+
+⚠️ **And the compute premise is stale too:** *"Thor is the only compute and it is committed"* —
+`refav1-b1-v72-ep3-speed` **completed 2026-09-04**, and **Thor holds the B1 epcache**. ⇒ **v7f is
+blocked by neither data nor (probably) GPU.**
+
+### 3. ⭐ The launch line is TWO DEFECTS from clean — and one "blocker" was false
+
+The stream **ran the launch line** rather than reading about it. Exactly two real defects: the LDAD
+triple does not exist (confirmed two ways — grep **and** real argparse), and — **on nobody's list,
+mine included** — **`--horizons` is never passed**, so it defaults to `(1,2,4)`, **which the trainer
+refuses**.
+
+⇒ **One loss term and one flag from argparse-clean.**
+
+⭐ **And it refuted a false blocker that would have cost a day:** `--enc-init-from` **is**
+implemented, as a registered alias at `:8759` — the claim came from a **docstring 832 lines
+earlier**. *A docstring is not the code it sits above.*
+
+### 4. ⛔ The uncomfortable transfer answer — and the one thing that DOES transfer
+
+**None** of today's four levers transfer to v7f: `feasible_decode`, `kamm_mu`, the top-2 gate and
+`W_KAPPA` are **all decoder-side levers over a control vocabulary v7f does not have**
+(`train_v6_staged.py` scores 0 for `feasible` / `kamm` / `anchor_meta`).
+
+⭐⭐ **What transfers is the PARAMETERISATION, and it is the same sentence as `M31`.** refcv4b's
+`(a_lon, a_lat)` is a **command channel with units**; v7f's `omega_accel_v` **has no units — it is
+realised motion played back**. `M31` measured that *"a constraint with units binds exactly where its
+physics says it should"* — the Kamm cap landed `peak_g` max on **μ to tolerance** precisely because
+its channel has units. **v7f cannot be given such a constraint until its command has units.**
+
+⇒ That turns `V7_LAUNCH_GATE` **P2(b)** from *"never tested"* into a **runnable arm**.
+
+### 5. The single next thing, and the decision it needs
+
+⭐ **Give v7f a real command — `(a_lon, a_lat)` — instead of `omega_accel_v`.** It is the only
+untested **P2** cause with an instrument already in hand, it is the **precondition for the
+counterfactual-target arm**, and it attacks **P1** — *no v7 arm has ever beaten its own hold-action
+control* — rather than the shipping configuration.
+
+⚠️ **The gating experiment is NOT the τ-ramp.** `D-EMA-ADOPT` (08-29) gates how v7f **ships**; the
+PI's directive (08-31, **two days later**) gates whether it **trains**. Those are different gates and
+the later one governs.
+
+⛔ **PI DECISION REQUIRED, and it is now a real choice rather than a hypothetical:** the 08-31
+directive says *do not start v7 training until the remaining problems are solved.* The audit shows
+the remaining problems are **two argparse defects, one unit-less command channel, and one staging
+question** — not a corpus, not compute. ⇒ **Either the directive is lifted for a scoped
+`(a_lon, a_lat)` arm, or it stands and v7f waits.** Both are defensible; what is not defensible is
+the status quo, in which nobody is working on the flagship and nobody decided that.
