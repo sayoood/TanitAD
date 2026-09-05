@@ -179,3 +179,35 @@ be run later; its absence is recorded, not hidden.
 same weights, same seed, same panel — because `canonical_controls` and the goal
 field are untouched. It is therefore NOT a vocabulary change and is comparable
 window-for-window; a `--goal-kappa-levels` arm would not be.
+
+---
+
+## 7. ARM-SET AMENDMENT #2 (2026-09-05T21:07Z) — the ladder is dropped from the synthesis arm
+
+⛔ **Recorded rather than applied silently, and made on a MEASUREMENT taken minutes
+earlier, before the amended arm produced any number.**
+
+`wk15_ladder` (RESULT.md §7.9) shows that a discrete rung set and a continuous
+quadratic penalty are **antagonistic**: with `W_KAPPA = 15.11245` the realised
+curvature set collapses from **15 distinct values to TWO** — `0.0000 x18` and
+`0.0020 x22` — because **22 of 40 windows snap EXACTLY onto the SMALLEST rung**, a
+quadratic penalty preferring the cheapest non-zero option available. Tactical
+lateral kappa falls **0.2611 -> 0.0000** and `turn_right` recall **0.50 -> 0.00**.
+
+The synthesis arm `best` had started at 21:05:11Z as `W_KAPPA` + `--kamm-mu 0.7` +
+**ladder**. On this measurement it would inherit the collapse and buy nothing, so it
+was **killed by explicit PID after ~1 minute** and relaunched at 21:07:25Z as
+**`W_KAPPA = 15.11245` + `--kamm-mu 0.7`, no ladder** (`raw/queueJ.sh`, which also
+deletes the partial dump so it cannot be mistaken for a panel). Its banner is
+verified: `W_KAPPA 15.11245`, `seed_kappa_ladder=None`.
+
+⚠️ **This is an ALLOCATION change on a measured mechanism, not a criterion change.**
+Nothing had been observed about `best`; no outcome definition in §3 moves; the arm
+is still ONE variable against `wk15` (the cap) and ONE against `kamm07` (the
+penalty), which is *cleaner* attribution than the three-variable version it
+replaces. Same class as the `wk1p5` -> `l3ladder` swap in §6.
+
+⭐ **The unrun arm is now `W_KAPPA` + cap + ladder, and it is predicted to collapse.**
+That prediction is registered here so that if anyone runs it, the outcome is
+already committed: the realised set should again be dominated by the smallest rung
+and the tactical lateral kappa should fall toward 0.

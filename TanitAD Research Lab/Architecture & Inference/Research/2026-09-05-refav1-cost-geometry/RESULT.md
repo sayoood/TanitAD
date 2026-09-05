@@ -920,6 +920,64 @@ longitudinal one and of turning in general); `cap + ladder` is the **safety** le
 decisions intact). They have never been run together — that is the next arm, and
 `wk15_ladder` is the half of it already on the GPU.
 
+
+### 7.9 ⛔⭐⭐ `wk15_ladder` — A DISCRETE RUNG SET AND A CONTINUOUS QUADRATIC PENALTY ARE **ANTAGONISTIC**
+
+`wk15_ladder` = `ccos` + `W_KAPPA = 15.11245` + the same five rungs; the candidate
+set is the only variable against `wk15`. This is the arm §7.7's null asked for —
+the rungs *plus* a cost with a reason to prefer them.
+
+**The rungs are chosen now, and that is the problem.**
+
+| arm | distinct realised `max\|kappa\|` | EXACTLY-constant | **windows landing EXACTLY on a rung** | realised set |
+|---|---|---|---|---|
+| `wk15` (penalty, no ladder) | **15** | 0.6750 | **0** | 0.0000 x18, then 0.0115 … 0.0530 (13 values), 0.0800 x9 |
+| `l3ladder` (ladder, no penalty) | 11 | 0.7750 | **0** | 0.0000 x10, 0.0800 x21, nine values above 0.10 |
+| **`wk15_ladder` (both)** | **2** | **1.0000** | **22** | **0.0000 x18, 0.0020 x22** |
+
+⇒ **22 of 40 windows snap EXACTLY onto the SMALLEST rung (0.002 = R 500 m), and the
+realised set collapses from 15 distinct curvatures to TWO.** The mechanism is
+immediate: a quadratic penalty always prefers the **cheapest non-zero option
+available**, so a discrete ladder converts "smallest expressible curvature" from a
+continuum the search can trade along into a **fixed floor it snaps to**. The
+continuous search was doing better precisely because nothing quantised it.
+
+**And the arm stops making lateral decisions** (deltas against `wk15`, each read
+against its OWN per-metric seed floor — the §7.7 lesson applied):
+
+| metric | `wk15` | `wk15_ladder` | delta | floor | ratio | verdict |
+|---|---|---|---|---|---|---|
+| **TAC lateral kappa** | 0.2611 | **0.0000** | **-0.2611** | 0.0973 | **2.7x** | **LEVER, worse** |
+| **TAC turn_right recall** | 0.50 | **0.00** | **-0.50** | 0.00 | — | **moved, floor is 0** |
+| LAT curvature MAE | 0.03098 | 0.03979 | +0.00881 | 0.00066 | **13.3x** | **LEVER, worse** |
+| LAT heading MAE deg | 15.2704 | 20.0999 | +4.8295 | 1.1458 | **4.2x** | **LEVER, worse** |
+| **LON speed MAE** | 0.7919 | **0.7609** | **-0.0310** | 0.0038 | **8.2x** | **LEVER, better** |
+| **LON accel MAE** | 0.8604 | **0.8159** | **-0.0445** | 0.0061 | **7.3x** | **LEVER, better** |
+| ADE m | 0.8934 | 0.9408 | +0.0474 | 0.0607 | 0.78 | inside floor |
+| LAT cross MAE | 0.3670 | 0.3646 | -0.0024 | 0.0710 | 0.03 | inside floor |
+| LAT yaw-rate MAE | 6.6750 | 7.0599 | +0.3849 | 0.5771 | 0.67 | inside floor |
+
+The longitudinal family *improves* — separated, 7–8x its floors — for the same
+reason the lateral one degrades: the plan stops spending its freedom on curvature.
+
+⭐⭐ **THE DESIGN LESSON, AND IT IS THE MOST TRANSFERABLE THING IN THIS PACKAGE:**
+**a PENALTY and a discrete candidate set are antagonistic; a CONSTRAINT and a
+discrete candidate set are complementary.** A constraint has no preference
+gradient — it forbids, it does not rank — so a ladder simply hands it feasible
+options, which is exactly why `combined` (cap + ladder) reached `kamm_over 0.0000`
+(§7.8). A penalty *does* rank, so a ladder replaces its continuum with a floor and
+the search collapses onto it. **This is why the two levers must be combined
+WITHOUT the ladder**, and it is a statement about optimiser design, not about
+refav1.
+
+⚠️ **ARM-SET CONSEQUENCE, recorded rather than applied silently.** The synthesis
+arm `best` had started 1 minute earlier carrying `W_KAPPA` + cap + **ladder**. On
+this measurement it would have inherited the collapse and bought nothing, so it was
+**killed by explicit PID and relaunched as `W_KAPPA` + cap ALONE** (`raw/queueJ.sh`,
+which also removes the partial dump so it cannot be mistaken for a panel). No
+criterion moved, nothing had been observed about `best`, and the amendment is in
+`PREREG_COST_GEOMETRY.md` §7 — the same class as the `wk1p5` -> `l3ladder` swap in §6.
+
 ---
 
 ## §8 — Deliverable manifest
