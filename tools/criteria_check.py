@@ -40,6 +40,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -342,15 +343,33 @@ def _check_forbidden_estimator(artifact: dict) -> tuple[str, str]:
     # holdout_se is NOT used" verbatim. Matching the bare token would flag exactly
     # those, so judge the surrounding text, normalised (an earlier list of literal
     # tokens missed "NOT used" because it only carried "not_used").
+    #
+    # ⚠️ FOUR RECURRENCES OF ONE CLASS, so the CLASS is fixed here rather than a
+    # fifth literal. MEASURED 2026-09-05 across the banked refav1 records, which
+    # disavow the estimator in four different wordings:
+    #     "overlapping_holdout_se is NOT used anywhere"      -> caught by "not used"
+    #     "overlapping_holdout_se is never used"             -> caught by "never used"
+    #     "⛔ NOT overlapping_holdout_se, which is …"        -> MISSED
+    #     "— NEVER overlapping_holdout_se"                  -> MISSED
+    # The two misses share a shape the literal list cannot express: the token is
+    # NEGATED DIRECTLY, with no "used" anywhere and no "is not" (the text reads
+    # "which is anti-conservative"). Adding literals one at a time is what let the
+    # same defect return three times, so the direct negation is matched as a
+    # pattern. It cannot exonerate a live use: a leaf that really carries
+    # `estimator: overlapping_holdout_se` has no negation before the token, and the
+    # judgement is per-LEAF, so a disavowing sibling never covers for it.
     def _norm(s: str) -> str:
         return "".join(c if c.isalnum() else " " for c in s.lower())
 
     exonerating = ("deprecated", "refused", "legacy", "not used", "never used",
                    "forbidden", "must not", "no longer", "is not", "banned")
+    # the token negated directly: "NOT overlapping_holdout_se", "NEVER …", "no …"
+    negated = re.compile(r"\b(?:not|never|no|nor|neither|without|excluding)"
+                         r"\s+overlapping\s+holdout")
     bad = []
     for path, val in hits:
         ctx = _norm(f"{path} {val}")
-        if not any(e in ctx for e in exonerating):
+        if not any(e in ctx for e in exonerating) and not negated.search(ctx):
             bad.append((path, val))
     if bad:
         return ABSENT, f"referenced with no disavowal/deprecation context at: {bad[0][0]}"

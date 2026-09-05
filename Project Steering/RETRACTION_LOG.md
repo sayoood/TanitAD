@@ -13664,3 +13664,73 @@ what you read about the program.**
 §4.2's second half), `raw/seedwin_probe.py` / `.txt`, `ta_wk15_s0.log`.
 Register: `D-REFAV1-TURNASYM-SEEDPOOL-REFUTED` **amended** by
 `D-REFAV1-TURNASYM-SEED-WINS`.
+---
+
+# 2026-09-05 — "Zero T1 driving artifacts exist" — WRONG WHEN WRITTEN, AND THEN WRONG BY 25 MORE (Benchmarks & Eval / criteria machinery)
+
+**The claim.** `.claude/skills/TanitAD_BenchmarkCriteria/SKILL.md` §Current state carried,
+as a standing fact: *"Tier stamps: 27 T0, 7 unstamped. **Zero T1 driving artifacts exist.**"*
+It was quoted onward as evidence that the programme had never produced a driving-tier eval.
+
+**What is true (MEASURED 2026-09-05, `tools/criteria_check.py --all taniteval/results/`).**
+
+1. **It was already false under the UNCHANGED registry.** Four T1 artifacts sit in
+   `taniteval/results/` and are stamped T1 by the v2.6.0 registry with no change at all:
+   `openloop-suite-DRYRUN-refcv3-fixture.json`, `openloop-suite-refav1-21109.json`,
+   `openloop-suite-refcv3-30k-ckpt30000.json`, `refcv3-40284-openloop.json`. The census
+   the line quotes was taken on 2026-08-23, before those were banked; the number was then
+   re-quoted for two weeks as if it were current.
+2. **It was false by a much larger margin for a second, independent reason.** Every
+   `refav1` record read `UNKNOWN_SCOPE: matches no in-scope or out-of-scope marker` —
+   they nest the four families PER ARM at `arms.<arm>.four_families.*`, and both the
+   in-scope marker and every criterion named top-level `four_families`. **25
+   refav1-shaped records are banked in-repo**, all T1, all carrying the four families.
+   The instrument could not see the artifacts it exists for.
+
+**After the fix (registry v2.7.0):** those 25 read IN_SCOPE / T1 / **0 violations**, with
+3–4 work items each (distance-keeping, and the three nav-compliance criteria the records
+decline in place with a reason and an n).
+
+## ROOT-CAUSE CLASS
+
+**Two classes, and the second is the one worth carrying.**
+
+- **C4 / C1 — a MEASURED number re-quoted past its measurement date.** The 2026-08-23
+  census was correct on 2026-08-23. Nothing marked it as a snapshot, so it aged into a
+  false standing claim. Same family as *"REF-B v2 died at 22,600"* (the log went stale,
+  the run did not). → **Durable fix: a census line carries its date AND its command, and
+  is re-run before it is quoted.** The replacement block says so explicitly.
+
+- ⭐ **NEW — AN INSTRUMENT'S OWN BLIND SPOT READ AS A FINDING ABOUT THE PROGRAMME.**
+  "Zero T1 artifacts exist" was not a fact about the corpus; it was a fact about what the
+  registry could PARSE. The three states the tool reports are PRESENT / REFUSED / ABSENT —
+  and a fourth, `UNKNOWN_SCOPE`, was being read as "not there" rather than "not read".
+  This is the `df` / Thor `free` / cgroup `usage_in_bytes` trap in its purest form: **a
+  probe reporting the wrong SCOPE, whose answer looks exactly like an answer.**
+  → **Durable fix: before reporting an absence from a census, read its UNKNOWN list.**
+  20 of 87 artifacts in that directory are still UNKNOWN; any absence claim that does not
+  account for them is a claim about the parser.
+
+## A SECOND, SHARPER LESSON FROM THE SAME WORK — the tempting half-fix
+
+The obvious repair is to add the in-scope marker. **That single change is WORSE than the
+gap it closes**: with the marker added and the criteria still pointing at top-level
+`four_families`, the record becomes IN_SCOPE and **all four families read ABSENT — 16
+manufactured violations per record** (MEASURED, mutation arm M2). An UNKNOWN scope is
+surfaced for a human; a false violation reads as a finding. → **A scope marker and the
+keys that make it meaningful ship in the same commit, with the half-fix pinned as a test.**
+
+## ALSO CAUGHT, same class, third and fourth recurrence
+
+`tools/criteria_check.py::_check_forbidden_estimator` flagged **disavowals** of
+`overlapping_holdout_se` as live uses, because the exoneration list was a growing pile of
+literals. Four wordings are banked; two were missed:
+`"⛔ NOT overlapping_holdout_se, which is anti-conservative"` and
+`"— NEVER overlapping_holdout_se"` — neither contains "used", and "which is
+anti-conservative" is not "is not". → **Fixed as a CLASS (direct negation of the token),
+not a fifth literal**, with all four wordings pinned and a live-use regression arm.
+
+→ **Pinned:** `products/P7-TanitEval/CRITERIA_REGISTRY.json` v2.7.0 (`arm_scoring`,
+`changelog`), `tools/criteria_check.py`, `tools/tests/test_criteria_check.py`
+(refav1 fixture + per-family deliberate-regression arm + arm-scoping arm),
+`.claude/skills/TanitAD_BenchmarkCriteria/SKILL.md` §Current state.

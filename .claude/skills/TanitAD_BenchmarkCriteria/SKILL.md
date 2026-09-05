@@ -98,18 +98,44 @@ number is *right* — only that the artifact reports what doctrine requires, sta
 its tier, names its estimator, and declares its gaps. Pair it with
 `/TanitAD_ValidateAIDesign` for the gates and `/TanitAD_RunEval` for the run itself.
 
-## Current state (MEASURED 2026-08-23, `tools/criteria_check.py --all`)
+## Current state (MEASURED 2026-09-05, `tools/criteria_check.py --all taniteval/results/`)
 
-Over 71 artifacts in `taniteval/results/` → 34 in scope, 25 out of scope, 12 UNKNOWN:
+Registry **v2.7.0**. 87 artifacts read → **39 in scope, 28 out of scope, 20 UNKNOWN**;
+**493 violations, 61 work items** over the 39.
 
-- **TACTICAL: 0/34 present, not refused** — silently absent everywhere.
-- **STRATEGIC: 0/34 present, not refused** — silently absent everywhere.
-- **LATERAL yaw-rate: 0/34, not refused** — silently absent everywhere.
-- LONGITUDINAL distance-keeping: refused with a reason in 27/27 complete artifacts
-  ("no lead-agent state exists") — a tracked work item, on the family that owns
-  ~88.7 % of the oracle gap.
-- LATERAL curvature magnitude: refused in 27/27; `curv_sign_agree` is a PARTIAL.
-- Tier stamps: 27 T0, 7 unstamped. **Zero T1 driving artifacts exist.**
+- TACTICAL: **5/39 present**, 34 missing (all three criteria).
+- STRATEGIC decision + route/goal: **4 present, 1 refused**, 34 missing.
+  nav-COMPLIANCE and its two controls: **0 present, 1 refused**, 38 missing.
+- LATERAL yaw-rate: **5 present**, 34 missing. Curvature: 5 present, 27 refused.
+- LONGITUDINAL distance-keeping: 4 present, **28 refused with a reason** — a tracked
+  work item on the family that owns ~88.7 % of the oracle gap.
+- Tier stamps: **27 T0, 7 UNSTAMPED, 5 T1**.
 
-⇒ Half the binding doctrine has never been instrumented. That is the backlog this
-skill exists to make impossible to forget.
+⚠️ **CORRECTION — the line this block used to carry, "Tier stamps: 27 T0, 7 unstamped.
+Zero T1 driving artifacts exist.", was wrong on BOTH counts and is retracted.**
+
+1. It was **already stale when written against the 2026-08-23 corpus**: four T1
+   artifacts sat in `taniteval/results/` under the *unchanged* registry
+   (`openloop-suite-DRYRUN-refcv3-fixture`, `openloop-suite-refav1-21109`,
+   `openloop-suite-refcv3-30k-ckpt30000`, `refcv3-40284-openloop` — 3 violations
+   each). The count came from a census taken before those were banked and was then
+   re-quoted as a standing fact. Root-cause class: **a measured number quoted past
+   its measurement date** — the same class as "REF-B v2 died at 22,600".
+2. It is **now wrong by a much larger margin**, because the registry could not SEE
+   the refav1 records at all: they nest the four families PER ARM at
+   `arms.<arm>.four_families.*`, matched no in-scope marker, and every one read
+   `UNKNOWN_SCOPE`. Fixed in registry v2.7.0.
+
+**MEASURED after the fix:** **25 refav1-shaped records banked in-repo** (under
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-*/raw/`
+plus `taniteval/results/refav1-21109-openloop.json`) — every one previously
+UNKNOWN, now **IN_SCOPE, stamped T1, with 0 violations** and 3–4 work items each
+(distance-keeping, and the three nav-compliance criteria the record declines with a
+reason). Only the **`cl` planner arm** is scored; `ha` / `ha0` / `ha0_ext` are
+controls and `ol` is T0. See `arm_scoring` in the registry.
+
+⇒ The instrumentation gap is real but **smaller than this block used to claim**, and
+its shape has changed: the four families ARE emitted by the refav1 path. What is
+still missing across the older corpus is what the counts above show — and
+**⛔ do not re-quote any of these numbers without re-running the census**, which is
+the mistake being retracted here.

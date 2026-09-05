@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2.6.0",
+ "version": "2.7.0",
  "created": "2026-08-23",
  "owner": "TanitAD_EvalFlyWheel",
  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
@@ -42,6 +42,11 @@
    {
     "kind": "key_present",
     "value": "four_families"
+   },
+   {
+    "kind": "key_present",
+    "value": "arms.cl.four_families",
+    "reason": "refav1 per-arm schema (taniteval/tools/refav1_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, so the top-level `four_families` marker never matched and every refav1 record read UNKNOWN_SCOPE — invisible to the census while carrying all four binding families. Only the `cl` planner arm is scored; see `arm_scoring`."
    }
   ],
   "out_of_scope_if_any": [
@@ -86,7 +91,9 @@
   "key_paths": [
    "block",
    "tier",
-   "protocol.tier"
+   "protocol.tier",
+   "arms.cl.four_families._tier",
+   "arms.cl.tier"
   ],
   "values": {
    "T0": {
@@ -113,7 +120,8 @@
     "is_driving_performance": true,
     "note": "re-perception sim."
    }
-  }
+  },
+  "key_paths_note": "Order matters: resolve_tier takes the FIRST path that yields a string. The refav1 paths are LAST so promoting them cannot change any other schema's stamp. Emitter: taniteval/taniteval/four_families.py:1811 (`fam[\"_tier\"] = tier`)."
  },
  "families": {
   "LONGITUDINAL": {
@@ -127,7 +135,10 @@
       "headline.speed_mae_mps",
       "headline.speed_bias_mps",
       "four_families.longitudinal.speed_mae_mps",
-      "four_families.longitudinal.target_speed_acc"
+      "four_families.longitudinal.target_speed_acc",
+      "arms.cl.four_families.longitudinal.speed_mae_mps",
+      "arms.cl.four_families.longitudinal.speed_bias_mps",
+      "arms.cl.four_families.longitudinal.target_speed_acc"
      ],
      "note": "MAE and signed bias; the bias is what exposes systematic over-prediction."
     },
@@ -139,7 +150,9 @@
       "headline.long_abs_2s_m",
       "headline.long_signed_2s_m",
       "four_families.longitudinal.along_mae_m",
-      "four_families.longitudinal.along_bias_m"
+      "four_families.longitudinal.along_bias_m",
+      "arms.cl.four_families.longitudinal.along_mae_m",
+      "arms.cl.four_families.longitudinal.along_bias_m"
      ]
     },
     {
@@ -149,7 +162,8 @@
      "keys": [
       "headline.progress_abs_err_m",
       "headline.progress_signed_err_m",
-      "four_families.longitudinal.ego_progress"
+      "four_families.longitudinal.ego_progress",
+      "arms.cl.four_families.longitudinal.ego_progress"
      ]
     },
     {
@@ -161,12 +175,15 @@
       "headline.time_gap_s",
       "headline.ttc_s",
       "longitudinal.distance_keeping",
-      "four_families.longitudinal.distance_keeping"
+      "four_families.longitudinal.distance_keeping",
+      "arms.cl.four_families.longitudinal.distance_keeping",
+      "refav1.distance_keeping"
      ],
      "refused_as": [
       "headway_ttc_distance_keeping"
      ],
-     "note": "MEASURED 2026-08-23: refused in 27/27 complete artifacts — 'no lead-agent state exists (lead_state is a None stub)'. Largest open criterion gap, on the family owning most of the oracle gap."
+     "note": "MEASURED 2026-08-23: refused in 27/27 complete artifacts — 'no lead-agent state exists (lead_state is a None stub)'. Largest open criterion gap, on the family owning most of the oracle gap.",
+     "refav1_note": "Both refav1 homes carry an inline {status, reason, n} — the per-arm one from four_families, the record-level one from refav1_arm.py::_distance_keeping_block when no --lead-block was passed. Either reads REFUSED-with-a-reason, i.e. a WORK ITEM."
     }
    ]
   },
@@ -181,7 +198,8 @@
       "headline.lat_abs_2s_m",
       "headline.lat_signed_2s_m",
       "headline.pathgeom_crosstrack_m",
-      "four_families.lateral.cross_mae_m"
+      "four_families.lateral.cross_mae_m",
+      "arms.cl.four_families.lateral.cross_mae_m"
      ]
     },
     {
@@ -192,7 +210,8 @@
       "headline.heading_mae_2s_deg",
       "headline.heading_med_2s_deg",
       "headline.heading_exceed_5deg",
-      "four_families.lateral.heading_mae_deg"
+      "four_families.lateral.heading_mae_deg",
+      "arms.cl.four_families.lateral.heading_mae_deg"
      ]
     },
     {
@@ -202,7 +221,8 @@
      "keys": [
       "headline.curv_mae_1_per_m",
       "headline.curvature_mae",
-      "four_families.lateral.curvature_mae_1pm"
+      "four_families.lateral.curvature_mae_1pm",
+      "arms.cl.four_families.lateral.curvature_mae_1pm"
      ],
      "partial_keys": [
       "headline.curv_sign_agree"
@@ -220,7 +240,8 @@
       "headline.yaw_rate_mae_dps",
       "headline.yawrate_mae",
       "lateral.yaw_rate",
-      "four_families.lateral.yaw_rate_mae_degps"
+      "four_families.lateral.yaw_rate_mae_degps",
+      "arms.cl.four_families.lateral.yaw_rate_mae_degps"
      ],
      "note": "MEASURED 2026-08-23: ABSENT in 71/71 artifacts and NOT in any refused block — a silent omission."
     }
@@ -239,7 +260,10 @@
       "headline.maneuver_acc",
       "four_families.tactical.lateral_decision",
       "four_families.tactical.longitudinal_decision",
-      "four_families.tactical.maneuver_5way_collapsed"
+      "four_families.tactical.maneuver_5way_collapsed",
+      "arms.cl.four_families.tactical.lateral_decision",
+      "arms.cl.four_families.tactical.longitudinal_decision",
+      "arms.cl.four_families.tactical.maneuver_5way_collapsed"
      ],
      "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
     },
@@ -251,7 +275,10 @@
       "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
       "four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
       "four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols",
-      "tactical.confusion_gt_rows_pred_cols"
+      "tactical.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols"
      ],
      "note": "MEASURED 2026-08-23: the emitter writes `confusion_gt_rows_pred_cols` (four_families.py:563), together with `per_class` recall/precision and `never_predicted`. An earlier registry looked for `confusion` and the census duly reported '0/135, silently absent everywhere' - a REGISTRY TYPO wearing a finding's clothes. See C133-b. `never_predicted` is the load-bearing field: the deployed arm emitted 0 of 881 'accelerate' decisions, which no accuracy scalar can show."
     },
@@ -263,7 +290,8 @@
       "tactical.anchor_selection",
       "tactical.goal_selection",
       "headline.anchor_top1",
-      "four_families.tactical.goal_setting"
+      "four_families.tactical.goal_setting",
+      "arms.cl.four_families.tactical.goal_setting"
      ]
     }
    ]
@@ -278,9 +306,12 @@
      "keys": [
       "strategic.decision_accuracy",
       "strategic.accuracy",
-      "four_families.strategic"
+      "four_families.strategic",
+      "refav1.strategic.conditionings.nav_true.accuracy",
+      "arms.cl.four_families.strategic"
      ],
-     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission.",
+     "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
     },
     {
      "id": "strat.route_goal",
@@ -290,10 +321,13 @@
       "strategic.route_quality",
       "strategic.goal_setting",
       "headline.route_acc",
-      "four_families.strategic"
+      "four_families.strategic",
+      "refav1.strategic.conditionings.nav_true.accuracy",
+      "arms.cl.four_families.strategic"
      ],
      "leak_guard": "route_head_echo",
-     "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test."
+     "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test.",
+     "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
     },
     {
      "id": "strat.nav_compliance",
@@ -302,7 +336,8 @@
      "keys": [
       "strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
       "refcv3.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
-      "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command"
+      "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "arms.cl.four_families.strategic"
      ],
      "partial_keys": [
       "strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
@@ -314,7 +349,8 @@
      ],
      "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm (via the refcv3_arm.py sidecar; standalone: taniteval/tools/nav_compliance_report.py)",
      "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-     "note": "Replaces the route metric that could not fail: D-REFAV1-ROUTE-LABEL-IS-THE-NAV MEASURED the route LABEL as an exact bijection of the fed nav token (141/141), so a head copying its input scored 1.0000 and NO behaviour could lower it. This criterion scores the emitted 6 s path (with g_str and the SELECTED anchor as sibling readouts) against the COMMAND on windows where the commanded turn lies inside the plan horizon, n always reported. ⛔ The RATE is NOT the result — it is admissible ONLY with strat.nav_compliance_ctrl_shuffle and _ctrl_zero on the SAME windows; a rate that does not drop under them is coincidence with the scene."
+     "note": "Replaces the route metric that could not fail: D-REFAV1-ROUTE-LABEL-IS-THE-NAV MEASURED the route LABEL as an exact bijection of the fed nav token (141/141), so a head copying its input scored 1.0000 and NO behaviour could lower it. This criterion scores the emitted 6 s path (with g_str and the SELECTED anchor as sibling readouts) against the COMMAND on windows where the commanded turn lies inside the plan horizon, n always reported. ⛔ The RATE is NOT the result — it is admissible ONLY with strat.nav_compliance_ctrl_shuffle and _ctrl_zero on the SAME windows; a rate that does not drop under them is coincidence with the scene.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
     },
     {
      "id": "strat.nav_compliance_ctrl_shuffle",
@@ -323,7 +359,8 @@
      "keys": [
       "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
       "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled"
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "arms.cl.four_families.strategic"
      ],
      "refused_as": [
       "nav_compliance_controls",
@@ -331,7 +368,8 @@
      ],
      "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_shuffled (taniteval.ci paired episode-cluster bootstrap)",
      "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-     "note": "If the model follows the command, compliance with the TRUE command must DROP when the token is permuted; the changed subset must follow the FED command. No drop = the high rate is scene coincidence. Known values on the panel: ha0 reads 0.0000 compliance exactly; every nav-blind control (ha, ha0_ext) reads a delta of exactly 0.0000."
+     "note": "If the model follows the command, compliance with the TRUE command must DROP when the token is permuted; the changed subset must follow the FED command. No drop = the high rate is scene coincidence. Known values on the panel: ha0 reads 0.0000 compliance exactly; every nav-blind control (ha, ha0_ext) reads a delta of exactly 0.0000.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
     },
     {
      "id": "strat.nav_compliance_ctrl_zero",
@@ -340,7 +378,8 @@
      "keys": [
       "strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
       "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
-      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero"
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "arms.cl.four_families.strategic"
      ],
      "refused_as": [
       "nav_compliance_controls",
@@ -348,7 +387,11 @@
      ],
      "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_zero",
      "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-     "note": "The robustness ablation (D-NAV-IS-GT: os is the deployment arm, os_navzero the ablation). nav_cmd=None collapses the core onto the follow embedding, so this is a LOWER bound on nav dependence; BACKLOG R39 binds it beside the shuffle, never instead."
+     "note": "The robustness ablation (D-NAV-IS-GT: os is the deployment arm, os_navzero the ablation). nav_cmd=None collapses the core onto the follow embedding, so this is a LOWER bound on nav dependence; BACKLOG R39 binds it beside the shuffle, never instead.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent. ⚠️ On the DORMANT partial_key: refav1 does roll a nav_zero conditioning (`refav1.strategic.conditionings.nav_zero.accuracy`) but banks no paired true-minus-zero delta, so the unpaired rate is registered as a partial_key. MEASURED: on today's records it never fires, because `classify` consults `keys` before `partial_keys` and the strategic declination above resolves first — the row reads REFUSED, not PARTIAL. It is kept for the record shape that HAS a strategic block and still lacks the paired delta; both states are work items, so neither can hide a gap.",
+     "partial_keys": [
+      "refav1.strategic.conditionings.nav_zero.accuracy"
+     ]
     }
    ]
   }
@@ -362,7 +405,11 @@
     "rule": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
     "keys": [
      "protocol.inference_inputs",
-     "protocol.vision_only"
+     "protocol.vision_only",
+     "refav1.protocol.inference_inputs",
+     "refav1.protocol.vision_only",
+     "arms.cl.four_families._protocol.inference_inputs",
+     "arms.cl.four_families._protocol.vision_only"
     ],
     "note": "An artifact must state what the model consumed at inference, or its number cannot be checked for this."
    },
@@ -371,7 +418,11 @@
     "required": true,
     "rule": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
     "keys": [
-     "protocol.goal_source"
+     "protocol.goal_source",
+     "refav1.protocol.goal_source",
+     "refav1.protocol.goal_situation_disjoint",
+     "arms.cl.four_families._protocol.goal_source",
+     "arms.cl.four_families._protocol.goal_situation_disjoint"
     ]
    },
    {
@@ -381,9 +432,12 @@
     "keys": [
      "strategic.echo_test",
      "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-     "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled"
+     "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+     "refav1.strategic.paired_true_minus_shuffled_accuracy",
+     "refav1.strategic._echo_caveat"
     ],
-    "note": "2026-09-05: the nav-compliance intervention pair (taniteval.nav_compliance) IS the behavioural echo test and satisfies this guard."
+    "note": "2026-09-05: the nav-compliance intervention pair (taniteval.nav_compliance) IS the behavioural echo test and satisfies this guard.",
+    "refav1_note": "⭐ This is where refav1's route-head intervention pair belongs — NOT on strat.nav_compliance_ctrl_shuffle, which is the control for a BEHAVIOUR rate the record does not emit. `paired_true_minus_shuffled_accuracy` (refav1_arm.py:2223, taniteval.ci paired episode-cluster bootstrap) is the echo test the strat.route_goal note demands, and `_echo_caveat` (refav1_arm.py:2184) states the bijection in the artifact itself."
    }
   ]
  },
@@ -404,7 +458,10 @@
      "estimator",
      "_estimator",
      "four_families.tactical._estimator",
-     "intervals.estimator"
+     "intervals.estimator",
+     "arms.cl.intervals.estimator",
+     "arms.cl.four_families.tactical._estimator",
+     "arms.cl.four_families.longitudinal.estimator"
     ]
    },
    {
@@ -414,7 +471,9 @@
     "keys": [
      "n_windows",
      "n_episodes",
-     "four_families.longitudinal.n_windows"
+     "four_families.longitudinal.n_windows",
+     "arms.cl.four_families.longitudinal.n_windows",
+     "refav1.n_windows"
     ]
    },
    {
@@ -432,9 +491,14 @@
      "protocol.corpus",
      "protocol.parity_key",
      "corpus",
-     "val_cache"
+     "val_cache",
+     "refav1.protocol.parity_key",
+     "refav1.protocol.corpus",
+     "arms.cl.four_families._protocol.parity_key",
+     "arms.cl.four_families._protocol.corpus"
     ],
-    "note": "Parity is sacred: the canonical train corpus is `physicalai-train-e438721ae894` (2376 episodes), skip-hash `f09e44db`. An artifact that does not record WHICH corpus it scored is not cross-arm comparable, and every delta computed against it is uninterpretable. Anything that re-selects episodes must be flagged NON-PARITY explicitly."
+    "note": "Parity is sacred: the canonical train corpus is `physicalai-train-e438721ae894` (2376 episodes), skip-hash `f09e44db`. An artifact that does not record WHICH corpus it scored is not cross-arm comparable, and every delta computed against it is uninterpretable. Anything that re-selects episodes must be flagged NON-PARITY explicitly.",
+    "refav1_note": "refav1 nests the protocol under the record-level `refav1` block and mirrors it into each arm's four_families `_protocol` (refav1_arm.py:2402-2405), so both homes are named."
    },
    {
     "id": "ctrl.floor_comparison",
@@ -445,9 +509,12 @@
      "floor_values",
      "vs_floor_paired",
      "controls",
-     "four_families.longitudinal.anti_echo"
+     "four_families.longitudinal.anti_echo",
+     "arms.cl.four_families.longitudinal.anti_echo",
+     "refav1.trivial_profile"
     ],
-    "note": "⭐ THE CRITERION THAT WOULD HAVE CAUGHT THE PROGRAMME'S LARGEST MISREAD. A model number without its control is unreadable: MEASURED 2026-08-23, the T1 `stage-a-repaired · cl` arm reads 9.3697 m while its own hold-action control reads 0.4246 m on the SAME windows — the trivial baseline beat the model 22×. An artifact reporting only the model's value looks like a result. Controls: hold-v0 (go straight at the observed entry speed) and constant velocity. ⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline won — render that as LOST, never as a tie."
+    "note": "⭐ THE CRITERION THAT WOULD HAVE CAUGHT THE PROGRAMME'S LARGEST MISREAD. A model number without its control is unreadable: MEASURED 2026-08-23, the T1 `stage-a-repaired · cl` arm reads 9.3697 m while its own hold-action control reads 0.4246 m on the SAME windows — the trivial baseline beat the model 22×. An artifact reporting only the model's value looks like a result. Controls: hold-v0 (go straight at the observed entry speed) and constant velocity. ⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline won — render that as LOST, never as a tie.",
+    "refav1_note": "The anti-echo block IS the floor comparison for a refav1 arm: it carries holdv0_baseline (the strongest trivial control) with its verdict, and `refav1.trivial_profile` reports what fraction of each arm's own windows are trivial."
    }
   ]
  },
@@ -879,7 +946,7 @@
    }
   }
  },
- "schema_note": "Two artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block) and `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}). Both refusal idioms are honest and both are read.",
+ "schema_note": "Three artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block); `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}); and `refav1` (rec_*.json from taniteval/tools/refav1_arm.py, which nests a full four_families block PER ARM at arms.<arm>.four_families.* and adds a record-level `refav1` block for the protocol, the strategic/tactical declared heads and the trivial profile). All three refusal idioms are honest and all three are read. The refav1 records are the programme's only T1 driving artifacts; see `arm_scoring` for which arm is scored and why the other four are not.",
  "registry_hygiene": {
   "why": "A criterion whose keys resolve in NO artifact anywhere is far more likely a REGISTRY TYPO than a universal absence. This happened twice on 2026-08-23 (tac.confusion), and the second time it was published to the PI as 'the surviving universal gap'. The checker therefore reports UNRESOLVABLE separately from ABSENT, and a test pins that every criterion resolves in at least one real artifact.",
   "rule": "Adding a criterion means naming the key the EMITTER actually writes. Read the producing code, do not guess the name. If a metric is genuinely not emitted anywhere yet, set `not_yet_emitted: true` so the intent is explicit and the audit stays green."
@@ -913,5 +980,29 @@
   ],
   "advisory_note_previous": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
   "exit_code_contract": "non-zero exit on any FAIL is RETAINED so automation can surface it; the exit code is information, not an authority to stop."
- }
+ },
+ "arm_scoring": {
+  "why": "A refav1 record holds FIVE arms on the same 40 windows. Scoring all five would multiply every criterion count by five and would present three trivial CONTROLS and one T0 diagnostic as if each were a driving eval. The record is therefore scored ONCE, on the arm a capability claim may rest on.",
+  "scored_arm": "cl",
+  "scored_arm_is": "the planner arm — plan() at t0 with the TRUE nav token; the predictor consumes the planner's OWN actions; trajectory = unicycle(controls, measured v0). This is the only arm whose number is a claim about the model.",
+  "not_scored": {
+   "ha": "CONTROL — hold the last OBSERVED (a, kappa) for K steps. A baseline, not a result.",
+   "ha0": "CONTROL — constant velocity (a=0, kappa=0) at the measured v0. The strongest trivial baseline.",
+   "ha0_ext": "CONTROL — the echo control (constant (a0, kappa0) from the measured t0 state).",
+   "ol": "⛔ T0. The RECORDED future integrated from v0 — the kinematic-contract control. NEVER driving performance (EVAL_DOCTRINE.md 2026-08-09), and reading it as such is the misread the tier stamp exists to prevent."
+  },
+  "consequence": "The controls are not invisible: ctrl.floor_comparison is answered by the arm's own anti-echo/holdv0 block, which IS the comparison against those baselines. They are simply not scored as separate driving artifacts.",
+  "if_the_scored_arm_changes": "Changing `scored_arm` means re-prefixing every `arms.cl.` key below. The prefix is duplicated deliberately rather than templated, because the checker resolves literal dotted paths and a template would be a second thing to keep in sync.",
+  "strategic_mapping": "⭐ The one non-obvious mapping, recorded so it is not re-derived: refav1's `refav1.strategic` block IS a strategic DECISION/ROUTE readout (route classification with confusion, per-class, kappa, CI, and nav_true / nav_shuffled / nav_zero interventions), so strat.decision and strat.route_goal read PRESENT from it. It is NOT nav-COMPLIANCE: that criterion scores emitted BEHAVIOUR against the command, and refav1 emits no such readout. Mapping route accuracy onto strat.nav_compliance would commit exactly the error that criterion was created to prevent — the route label is a bijection of the fed token (141/141) and cannot fail. The three nav_compliance criteria therefore resolve to the record's own strategic declination at `arms.cl.four_families.strategic` ({status: UNAVAILABLE, reason, n}) and read REFUSED — visible WORK ITEMS, not silent omissions and not false passes."
+ },
+ "changelog": [
+  {
+   "version": "2.7.0",
+   "date": "2026-09-05",
+   "change": "Recognise the refav1 per-arm schema. Adds the `arms.cl.four_families` in-scope marker, the `arms.cl.` key alternative for every criterion in all four families plus hygiene and the leak guards, the two refav1 tier paths, and the `arm_scoring` block recording that only the `cl` planner arm is scored.",
+   "why": "MEASURED: every refav1 record read UNKNOWN_SCOPE — 'matches no in-scope or out-of-scope marker'. They are the programme's only T1 driving artifacts and they carry all four binding families, so the completeness machinery was blind to exactly the artifacts it exists for. Root cause: the marker and the criteria both named top-level `four_families`, while refav1 nests it per arm.",
+   "ships_with": "tools/tests/test_criteria_check.py — refav1-shaped fixture with a deliberate-regression arm per family, plus the arm-scoping arm (deleting a family from a NON-scored arm must change nothing) and two-sided emitter pins. A guard that has never been shown to fail proves nothing.",
+   "also": "tools/criteria_check.py: the forbidden-estimator exoneration list missed the wording '⛔ NOT overlapping_holdout_se' (it carried 'not used' and 'is not' but no bare 'not <token>'), so a disavowal in anti_echo.holdv0_baseline.estimator read as a live use — a false violation on all 13 records. Same class as the earlier 'NOT used' miss recorded in that function."
+  }
+ ]
 }

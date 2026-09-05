@@ -755,10 +755,21 @@ def test_nav_compliance_criteria_exist_and_are_required(registry):
         assert ids[cid]["refused_as"], "must be refusable WITH a reason"
     assert "bijection" in ids["strat.nav_compliance"]["note"], \
         "keep the reason the criterion exists — the metric it replaces could not fail"
-    assert all(k.endswith("paired_true_minus_shuffled")
-               for k in ids["strat.nav_compliance_ctrl_shuffle"]["keys"])
-    assert all(k.endswith("paired_true_minus_zero")
-               for k in ids["strat.nav_compliance_ctrl_zero"]["keys"])
+    # The pin is that the registry names the stem the EMITTER writes, not a guess.
+    # Exactly ONE key per control is exempt: the refav1 records' own strategic
+    # DECLINATION ({status: UNAVAILABLE, reason, n}), which makes both controls read
+    # REFUSED - a work item - instead of ABSENT on a record that emits no
+    # behaviour-compliance readout at all. The exemption is read from the registry's
+    # `arm_scoring` block rather than hardcoded, so renaming the scored arm cannot
+    # leave behind a dead exemption that silently admits any key.
+    declination = f"arms.{registry['arm_scoring']['scored_arm']}.four_families.strategic"
+    for cid, stem in (("strat.nav_compliance_ctrl_shuffle", "paired_true_minus_shuffled"),
+                      ("strat.nav_compliance_ctrl_zero", "paired_true_minus_zero")):
+        keys = ids[cid]["keys"]
+        assert all(k.endswith(stem) or k == declination for k in keys), \
+            f"{cid} names a key that is neither the emitted stem nor the declination: {keys}"
+        assert any(k.endswith(stem) for k in keys), \
+            f"{cid} lost the emitted stem entirely - the pin would be vacuous"
 
 
 def test_nav_compliance_registry_keys_match_the_emitter():
@@ -833,3 +844,527 @@ def test_route_head_echo_guard_accepts_the_intervention_pair(registry):
     g = next(x for x in registry["leak_guards"]["guards"] if x["id"] == "route_head_echo")
     assert any("nav_compliance" in k for k in g["keys"])
 
+
+# ================= the refav1 per-arm schema (registry v2.7.0) ===============
+# MEASURED 2026-09-05: EVERY refav1 record read "UNKNOWN_SCOPE: matches no
+# in-scope or out-of-scope marker". They are the programme's only T1 driving
+# artifacts and they carry all four binding families, so the completeness
+# machinery was blind to exactly the artifacts it exists for. Root cause: the
+# in-scope marker and every criterion named top-level `four_families`, while
+# refav1 nests a FULL four_families block PER ARM at arms.<arm>.four_families.*.
+#
+# ⛔ THE MARKER ALONE WOULD HAVE BEEN WORSE THAN THE GAP. Promote the artifact to
+# IN_SCOPE while the keys still point at the top level and every family reads
+# ABSENT — a full set of false violations, which is the wrong-scope failure the
+# registry's own `why` block warns about (`df` on a pod, `free` on Thor, cgroup
+# `usage_in_bytes`). Marker and keys ship together; the arms below are what
+# prove they did.
+
+REFAV1_ARMS = ("cl", "ha", "ha0", "ha0_ext", "ol")
+
+
+def _refav1_families_block(tier: str = "T1") -> dict:
+    """ONE arm's four_families block, in the shape refav1_arm.py emits.
+
+    Hand-built, not loaded from a rec_*.json, for the same reason the `compliant`
+    fixture is: a fixture read from the corpus inherits the corpus's own gaps and
+    the regression arm would then have nothing to delete.
+    """
+    return {
+        "_tier": tier,
+        "longitudinal": {
+            "speed_mae_mps": 0.7327, "speed_bias_mps": 0.0218,
+            "target_speed_acc": {"within_0.5_mps": 0.5175, "within_1.0_mps": 0.7425},
+            "along_mae_m": 0.686, "along_bias_m": 0.191,
+            "ego_progress": {"status": "OK", "progress_ratio_mean": 0.79},
+            # The inline-refusal idiom, in the refav1 shape: declined in place,
+            # WITH a reason and its n. Admissible, and a visible work item.
+            "distance_keeping": {
+                "status": "UNAVAILABLE",
+                "reason": "no lead-agent track supplied — pass `lead=`", "n": 0},
+            # ⭐ The floor comparison for a refav1 arm IS its anti-echo block: the
+            # trivial hold-v0 control on the same windows, with its verdict.
+            "anti_echo": {"status": "OK", "flagged": True, "holdv0_baseline": {
+                "verdict": "NOT_SEPARATED",
+                "estimator": "paired_episode_cluster_bootstrap (taniteval.ci) — ⛔ NOT "
+                             "overlapping_holdout_se, which is anti-conservative AND "
+                             "biases the point estimate"}},
+            "n_windows": 40,
+            "estimator": "full_set pooled mean over windows (point); intervals under "
+                         "'intervals'",
+        },
+        "lateral": {"cross_mae_m": 0.5763, "heading_mae_deg": 21.3887,
+                    "curvature_mae_1pm": 0.046862, "yaw_rate_mae_degps": 11.8161},
+        "tactical": {
+            "status": "OK",
+            "lateral_decision": {"status": "OK", "accuracy": 0.62,
+                                 "confusion_gt_rows_pred_cols": [[1, 0], [0, 1]]},
+            "longitudinal_decision": {"status": "OK", "accuracy": 0.55,
+                                      "confusion_gt_rows_pred_cols": [[1, 0], [0, 1]]},
+            "maneuver_5way_collapsed": {"status": "OK", "accuracy": 0.48,
+                                        "confusion_gt_rows_pred_cols": [[1, 0], [0, 1]]},
+            # the dotted key name is kept: it is the field that broke _dig once
+            "goal_setting": {"status": "OK", "goal_point_error_m": 2.4753,
+                             "n_excluded_goal_below_0.5m": 3},
+            "_estimator": "full_set point estimate; episode-cluster bootstrap intervals "
+                          "(taniteval.ci). ⛔ overlapping_holdout_se is NOT used.",
+        },
+        # ⛔ Declined in place, with its reason and n=0 — NOT silently omitted.
+        "strategic": {
+            "status": "UNAVAILABLE",
+            "reason": "strategic decisions not present in the scored pass (missing "
+                      "['route_pred', 'route_gt']); a hierarchy-traversing eval is a "
+                      "WORK ITEM",
+            "n": 0},
+        "_protocol": {
+            "inference_inputs": "cached frozen DINOv3 patch features of the OBSERVED "
+                                "window (vision); measured v0 at t0",
+            "vision_only": "vision + v0(t0) + nav token; no ego state beyond v0, no future",
+            "goal_source": "cl: tactical_imagined 100.0 % [space tactical_query_field]",
+            "goal_situation_disjoint": "True by construction: nav is the labels blob's "
+                                       "nav_command token, not a situation classifier "
+                                       "output",
+            "corpus": "refav1 p4/fp8 cache",
+            "parity_key": "the v7.2 EVAL clip set, identified by the labels blob md5",
+        },
+    }
+
+
+@pytest.fixture
+def refav1() -> dict:
+    """A refav1 record: FIVE arms on the same 40 windows, one of them T0."""
+    protocol = dict(_refav1_families_block()["_protocol"])
+    return {
+        "tool": "taniteval/tools/refav1_arm.py",
+        "n_windows": 40, "n_episodes": 8,
+        "arm_keys": list(REFAV1_ARMS),
+        "tiers": {a: ("T0" if a == "ol" else "T1") for a in REFAV1_ARMS},
+        "_estimator": "point estimates are FULL-SET pooled means over windows; intervals "
+                      "are the episode-cluster bootstrap (taniteval.ci). ⛔ "
+                      "overlapping_holdout_se is NOT used anywhere.",
+        "arms": {a: {
+            "tier": "T0" if a == "ol" else "T1",
+            "four_families": _refav1_families_block("T0" if a == "ol" else "T1"),
+            "intervals": {"tier": "T0" if a == "ol" else "T1", "n": 40,
+                          "estimator": "episode_cluster_bootstrap (taniteval.ci)"},
+        } for a in REFAV1_ARMS},
+        "refav1": {
+            "n_windows": 40, "n_episodes": 8,
+            "trivial_profile": {"n_windows": 40, "arms": {a: {"trivial_frac": 0.0}
+                                                          for a in REFAV1_ARMS}},
+            "distance_keeping": {"status": "REFUSED",
+                                 "reason": "no lead block passed (--lead-block)", "n": 0},
+            "protocol": protocol,
+            # ⭐ The strategic DECISION/ROUTE readout. It lives at the RECORD level,
+            # not under arms.<arm>, because the decision heads read the OBSERVED
+            # window only — no rollout enters them, so it is arm-independent.
+            "strategic": {
+                "tier": "T1", "n_windows": 40, "n_route_labeled": 8,
+                "_echo_caveat": "route_label and nav_cmd derive from the SAME "
+                                "nav_command field, so under the TRUE nav route "
+                                "accuracy measures the nav echo",
+                "conditionings": {
+                    "nav_true": {"status": "OK", "n": 8, "accuracy": 1.0, "kappa": 1.0,
+                                 "confusion_gt_rows_pred_cols": [[2, 0, 0], [0, 2, 0],
+                                                                 [0, 0, 4]]},
+                    "nav_shuffled": {"status": "OK", "n": 8, "accuracy": 0.5},
+                    "nav_zero": {"status": "OK", "n": 8, "accuracy": 0.25}},
+                "paired_true_minus_shuffled_accuracy": {
+                    "delta": 0.5, "lo": 0.125, "hi": 0.875, "separated": True,
+                    "estimator": "paired_episode_cluster_bootstrap"},
+            },
+        },
+    }
+
+
+def _scored(registry) -> str:
+    return registry["arm_scoring"]["scored_arm"]
+
+
+def _strip_family_keys(art: dict, registry: dict, family: str) -> dict:
+    """Remove every key backing one family — the same stripping the top-of-file
+    regression arm does, reused so the two arms cannot drift apart."""
+    broken = copy.deepcopy(art)
+    for crit in registry["families"][family]["criteria"]:
+        for key in crit.get("keys", []) + crit.get("partial_keys", []):
+            parts = key.split(".")
+            cur = broken
+            for p in parts[:-1]:
+                cur = cur.get(p, {}) if isinstance(cur, dict) else {}
+            if isinstance(cur, dict):
+                cur.pop(parts[-1], None)
+    return broken
+
+
+# ------------------------------------------------------------------ scope ---
+def test_a_refav1_record_is_IN_SCOPE(refav1, registry):
+    """The defect itself, pinned. Before v2.7.0 this returned UNKNOWN_SCOPE and the
+    record — a T1 driving eval carrying all four families — was not counted at all."""
+    scope, why = cc.scope_of(refav1, registry)
+    assert scope == cc.IN_SCOPE, f"refav1 record is not in scope: {why}"
+    assert f"arms.{_scored(registry)}.four_families" in why
+
+
+def test_the_refav1_marker_names_the_scored_arm(registry):
+    """The marker and `arm_scoring` must agree, or the record is admitted by one
+    arm's presence and then scored on another."""
+    marker = f"arms.{_scored(registry)}.four_families"
+    values = [r.get("value") for r in registry["applicability"]["in_scope_if_any"]]
+    assert marker in values, f"no in-scope marker for the scored arm; have {values}"
+
+
+def test_DELIBERATE_REGRESSION_the_marker_without_the_keys_is_the_worse_failure(
+        refav1, registry):
+    """⭐ THE ARM THAT JUSTIFIES SHIPPING BOTH HALVES AT ONCE.
+
+    Reconstruct the tempting half-fix — the in-scope marker added, the per-arm key
+    alternatives NOT — and show it manufactures violations across every family. It
+    is not a smaller version of the fix; it is a worse state than the gap, because
+    an UNKNOWN scope is surfaced for a human while a false violation reads as a
+    finding.
+    """
+    half = copy.deepcopy(registry)
+    pfx = f"arms.{_scored(registry)}."
+    for spec in half["families"].values():
+        for crit in spec["criteria"]:
+            crit["keys"] = [k for k in crit.get("keys", [])
+                            if not k.startswith(pfx) and not k.startswith("refav1.")]
+            crit["partial_keys"] = [k for k in crit.get("partial_keys", [])
+                                    if not k.startswith(pfx)
+                                    and not k.startswith("refav1.")]
+
+    res = cc.check_artifact(refav1, half, )
+    assert res["scope"] == cc.IN_SCOPE
+    fams_hit = {f for f, rows in res["families"].items()
+                if any(r["state"] == cc.ABSENT for r in rows)}
+    assert fams_hit == {"LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"}, \
+        f"expected the half-fix to break all four families, broke {fams_hit}"
+
+    # ...and the shipped registry must not do that.
+    good = cc.check_artifact(refav1, registry)
+    assert good["n_violations"] == 0, \
+        f"the shipped registry manufactures violations: " \
+        f"{[(v['id'], v['detail']) for v in good['violations']]}"
+
+
+# ------------------------------------------------------------------- tiers ---
+def test_a_refav1_record_stamps_T1_from_the_scored_arm(refav1, registry):
+    """⛔ The record contains a T0 arm (`ol`, the recorded future integrated from
+    v0). The stamp must come from the SCORED arm, or a driving artifact reads as a
+    world-model diagnostic — or, far worse, the reverse."""
+    res = cc.check_artifact(refav1, registry)
+    assert res["tier"] == "T1"
+    assert res["tier_is_driving_performance"] is True
+    assert "hyg.tier_stamp" not in [v["id"] for v in res["violations"]]
+
+
+def test_DELIBERATE_REGRESSION_a_T0_scored_arm_is_never_driving_performance(
+        refav1, registry):
+    """Flip the SCORED arm's stamp to T0 and the driving-performance flag must go
+    false. T0 is a world-model diagnostic and is never quotable as driving."""
+    art = copy.deepcopy(refav1)
+    art["arms"][_scored(registry)]["four_families"]["_tier"] = "T0"
+    art["arms"][_scored(registry)]["tier"] = "T0"
+    res = cc.check_artifact(art, registry)
+    assert res["tier"] == "T0"
+    assert res["tier_is_driving_performance"] is False
+
+
+def test_the_refav1_tier_paths_are_LAST_so_no_other_schema_moves(registry):
+    """resolve_tier returns on the FIRST path that yields a string. The refav1
+    paths must stay at the end, or adding them could restamp an artifact of a
+    different schema that happens to carry an `arms` block."""
+    paths = registry["tiers"]["key_paths"]
+    first_refav1 = min(i for i, p in enumerate(paths) if p.startswith("arms."))
+    assert all(not p.startswith("arms.") for p in paths[:first_refav1])
+    assert all(p.startswith("arms.") for p in paths[first_refav1:])
+
+
+# ------------------------------------------------- the deliberate regression ---
+@pytest.mark.parametrize("family", ["LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"])
+def test_DELIBERATE_REGRESSION_deleting_a_family_from_a_refav1_record_is_caught(
+        refav1, registry, family):
+    """⭐ THE ARM THAT MAKES THE refav1 SUPPORT MEAN ANYTHING.
+
+    The top-of-file arm proves the checker catches a deleted family in the
+    `taniteval.driving` shape. It says NOTHING about this one — a registry that
+    admitted refav1 records and then resolved none of their keys would still pass
+    it. So the same regression is run again, per family, on the refav1 shape.
+    """
+    broken = _strip_family_keys(refav1, registry, family)
+    res = cc.check_artifact(broken, registry)
+    assert res["scope"] == cc.IN_SCOPE, "the record must stay in scope while broken"
+    hit = [r["id"] for r in res["violations"]]
+    assert hit, f"deleting {family} from a refav1 record produced NO violation — " \
+                f"the guard is vacuous"
+
+    fam_ids = {c["id"] for c in registry["families"][family]["criteria"]}
+    assert fam_ids & set(hit), f"{family} deleted but not flagged; flagged={hit}"
+
+    for other in registry["families"]:
+        if other == family:
+            continue
+        other_ids = {c["id"] for c in registry["families"][other]["criteria"]}
+        leaked = (other_ids & set(hit)) - fam_ids
+        assert not leaked, f"deleting {family} also flagged {other}: {leaked}"
+
+
+def test_DELIBERATE_REGRESSION_deleting_one_metric_is_caught(refav1, registry):
+    """The finer arm: a family is not all-or-nothing. Remove ONLY the yaw-rate
+    number — the metric CLAUDE.md names as where a smooth-but-wrong path hides —
+    and exactly that criterion must fire."""
+    broken = copy.deepcopy(refav1)
+    del broken["arms"][_scored(registry)]["four_families"]["lateral"]["yaw_rate_mae_degps"]
+    hit = [v["id"] for v in cc.check_artifact(broken, registry)["violations"]]
+    assert hit == ["lat.yaw_rate"], f"expected only lat.yaw_rate, got {hit}"
+
+
+# ------------------------------------------------------------ arm scoping ---
+def test_ONLY_the_scored_arm_is_read(refav1, registry):
+    """⛔ A refav1 record holds FIVE arms. Scoring all five would multiply every
+    count by five and would present three trivial CONTROLS and a T0 diagnostic as
+    driving evals. Gut every non-scored arm: the verdict must not move by one row.
+    """
+    before = cc.check_artifact(refav1, registry)
+    art = copy.deepcopy(refav1)
+    for arm in REFAV1_ARMS:
+        if arm != _scored(registry):
+            art["arms"][arm] = {}
+    after = cc.check_artifact(art, registry)
+    assert after == before, "a non-scored arm changed the verdict — scoring is not arm-scoped"
+
+
+def test_the_counts_are_not_multiplied_by_the_number_of_arms(refav1, registry):
+    """One record, one row per criterion — not one per arm."""
+    res = cc.check_artifact(refav1, registry)
+    for fam, rows in res["families"].items():
+        assert len(rows) == len(registry["families"][fam]["criteria"]), \
+            f"{fam} produced {len(rows)} rows for " \
+            f"{len(registry['families'][fam]['criteria'])} criteria"
+
+
+def test_deleting_the_SCORED_arm_is_caught_not_silently_excused(refav1, registry):
+    """The complement of the arm above: losing the scored arm must not quietly fall
+    back to a control arm's numbers. It leaves scope, which is surfaced."""
+    art = copy.deepcopy(refav1)
+    del art["arms"][_scored(registry)]
+    assert cc.scope_of(art, registry)[0] != cc.IN_SCOPE, \
+        "with the scored arm gone the record must NOT be scored on a control arm"
+
+
+def test_arm_scoring_records_why_each_other_arm_is_excluded(registry):
+    """The decision must be documented where the next reader looks, not inferred."""
+    a = registry["arm_scoring"]
+    assert a["scored_arm"] == "cl"
+    for arm in ("ha", "ha0", "ha0_ext", "ol"):
+        assert arm in a["not_scored"], f"{arm} excluded with no recorded reason"
+    assert "T0" in a["not_scored"]["ol"], "the T0 arm must be marked as such"
+    assert "CONTROL" in a["not_scored"]["ha0"]
+
+
+# ------------------------------------- the honest middle state, refav1 shape ---
+def test_refav1_inline_declinations_are_work_items_not_violations(refav1, registry):
+    """distance-keeping and the three nav-compliance criteria are declined IN PLACE
+    with a reason and an n. That is the state the instrument exists to distinguish
+    from a silent omission — it must read as WORK, never as a pass and never as a
+    violation."""
+    res = cc.check_artifact(refav1, registry)
+    work = {w["id"] for w in res["work_items"]}
+    assert {"long.distance_keeping", "strat.nav_compliance",
+            "strat.nav_compliance_ctrl_shuffle",
+            "strat.nav_compliance_ctrl_zero"} <= work, f"work items: {sorted(work)}"
+    assert res["n_violations"] == 0
+
+
+def test_DELIBERATE_REGRESSION_a_declination_with_no_reason_is_still_a_violation(
+        refav1, registry):
+    """A refusal without a reason is a shrug, not an acknowledgement — in this
+    schema too."""
+    art = copy.deepcopy(refav1)
+    art["arms"][_scored(registry)]["four_families"]["longitudinal"]["distance_keeping"] = \
+        {"status": "UNAVAILABLE", "n": 0}
+    art["refav1"]["distance_keeping"] = {"status": "REFUSED", "n": 0}
+    hit = [v["id"] for v in cc.check_artifact(art, registry)["violations"]]
+    assert "long.distance_keeping" in hit, hit
+
+
+def test_refav1_route_accuracy_is_NOT_read_as_nav_compliance(refav1, registry):
+    """⭐ THE MAPPING THAT WOULD HAVE BEEN THE EASY MISTAKE.
+
+    refav1's route readout scores 1.0000 because the route LABEL is a bijection of
+    the fed nav token (141/141) — the metric that CANNOT fail, and the exact reason
+    strat.nav_compliance was created. Mapping it onto the compliance criterion
+    would turn an echo into a capability claim, which is the defect the criterion
+    was built to end.
+    """
+    res = cc.check_artifact(refav1, registry)
+    rows = {r["id"]: r for r in res["families"]["STRATEGIC"]}
+    assert rows["strat.nav_compliance"]["state"] == cc.REFUSED, \
+        "the compliance RATE must not read PRESENT off a route-accuracy number"
+    for cid in ("strat.nav_compliance_ctrl_shuffle", "strat.nav_compliance_ctrl_zero"):
+        assert rows[cid]["state"] == cc.REFUSED, \
+            "a control for a rate that does not exist cannot be PRESENT"
+    # ...while the route readout the record DOES carry is not thrown away.
+    assert rows["strat.decision"]["state"] == cc.PRESENT
+    assert rows["strat.route_goal"]["state"] == cc.PRESENT
+    echo = next(g for g in res["leak_guards"] if g["id"] == "route_head_echo")
+    assert echo["state"] == cc.PRESENT, \
+        "the route-head echo test is where refav1's shuffle control belongs"
+
+
+def test_the_route_echo_guard_is_answered_by_the_intervention_pair(refav1, registry):
+    """DELIBERATE REGRESSION for the line above: drop the paired shuffle delta and
+    the echo guard must stop reading PRESENT. A route score near 1.0 with no echo
+    test is the flagship-v1 misread (369/369, scored 1.0000)."""
+    art = copy.deepcopy(refav1)
+    del art["refav1"]["strategic"]["paired_true_minus_shuffled_accuracy"]
+    del art["refav1"]["strategic"]["_echo_caveat"]
+    res = cc.check_artifact(art, registry)
+    echo = next(g for g in res["leak_guards"] if g["id"] == "route_head_echo")
+    assert echo["state"] == cc.ABSENT
+
+
+# ------------------------------------------- the forbidden-estimator wording ---
+def test_a_refav1_disavowal_of_the_forbidden_estimator_is_not_a_violation(refav1):
+    """⛔ MEASURED on the banked records: `anti_echo.holdv0_baseline.estimator`
+    reads "⛔ NOT overlapping_holdout_se, which is anti-conservative AND biases the
+    point estimate" — a disavowal in the clearest words available — and the
+    exoneration list flagged it as a LIVE USE. Every literal missed it: the text has
+    no "used", and "which is anti-conservative" is not "is not"."""
+    state, detail = cc._check_forbidden_estimator(refav1)
+    assert state == cc.PRESENT, f"a disavowal read as a live use: {detail}"
+
+
+@pytest.mark.parametrize("wording", [
+    # the two that the literal list already caught — kept so a rewrite of the
+    # matcher cannot quietly lose them while fixing the two below
+    "overlapping_holdout_se is NOT used anywhere: it biases the POINT ESTIMATE",
+    "⛔ overlapping_holdout_se is never used — it biases the POINT ESTIMATE",
+    # the two the literal list MISSED, both banked, both flagged as live use
+    "paired_episode_cluster_bootstrap (taniteval.ci) — ⛔ NOT overlapping_holdout_se, "
+    "which is anti-conservative AND biases the point estimate",
+    "episode_cluster_bootstrap (taniteval.ci) — NEVER overlapping_holdout_se",
+])
+def test_every_banked_disavowal_wording_is_exonerated(refav1, wording):
+    """⭐ FOUR wordings, one class: the token NEGATED DIRECTLY. Two of these were
+    read as live use and would each have become a false violation on every refav1
+    record. Adding literals one at a time is what let the defect return, so all four
+    banked wordings are pinned together — a fix for one that loses another fails
+    here."""
+    art = copy.deepcopy(refav1)
+    art["arms"]["cl"]["four_families"]["longitudinal"]["ci"] = {"estimator": wording}
+    state, detail = cc._check_forbidden_estimator(art)
+    assert state == cc.PRESENT, f"disavowal read as a live use: {detail}"
+
+
+@pytest.mark.parametrize("wording", [
+    "overlapping_holdout_se",
+    "8-split episode-disjoint jackknife (overlapping_holdout_se)",
+    "mean-of-split-means via overlapping_holdout_se",
+])
+def test_DELIBERATE_REGRESSION_negation_matching_does_not_admit_the_bare_token(
+        refav1, wording):
+    """The arm for the loosening: admitting "NOT <token>" must not admit the token
+    standing on its own, nor a mention that merely names the estimator it is used
+    through."""
+    art = copy.deepcopy(refav1)
+    art["arms"]["cl"]["four_families"]["longitudinal"]["ci"] = {"estimator": wording}
+    state, detail = cc._check_forbidden_estimator(art)
+    assert state == cc.ABSENT, f"live use went unflagged ({wording!r}): {detail}"
+
+
+def test_DELIBERATE_REGRESSION_a_refav1_LIVE_use_is_still_caught(refav1):
+    """The arm for the loosening above: admitting "NOT <token>" must not admit the
+    token itself. The judgement is per-LEAF, so a sibling that really uses it is
+    still its own hit."""
+    art = copy.deepcopy(refav1)
+    art["arms"]["cl"]["four_families"]["longitudinal"]["ci"] = {
+        "estimator": "overlapping_holdout_se"}
+    state, detail = cc._check_forbidden_estimator(art)
+    assert state == cc.ABSENT, f"live use went unflagged: {detail}"
+
+
+# ------------------------------------------------------ the two-sided pins ---
+# The tac.confusion lesson: pin the registry to the EMITTER on BOTH sides, so a
+# rename breaks a test instead of silently zeroing a family.
+
+def test_the_refav1_emitter_still_writes_the_shape_the_registry_expects():
+    src = (ROOT / "taniteval" / "tools" / "refav1_arm.py").read_text(
+        encoding="utf-8", errors="replace")
+    for token in ('rec["arms"][arm]["four_families"]',
+                  '"paired_true_minus_shuffled_accuracy"',
+                  '"_echo_caveat"', '"inference_inputs"', '"goal_source"',
+                  '"parity_key"', '"conditionings"'):
+        assert token in src, f"refav1_arm.py no longer writes {token} — update the registry"
+
+
+def test_the_per_arm_tier_stamp_still_comes_from_four_families():
+    """`_tier` is written by the shared emitter, not by refav1_arm.py."""
+    src = (ROOT / "taniteval" / "taniteval" / "four_families.py").read_text(
+        encoding="utf-8", errors="replace")
+    assert 'fam["_tier"]' in src, \
+        "four_families.py no longer stamps _tier — the refav1 tier path is dead"
+
+
+def test_every_refav1_key_in_the_registry_resolves_in_the_fixture(registry, refav1):
+    """⭐ The self-check applied to the new prefix. A key that resolves NOWHERE is a
+    typo far more often than a gap, and both print as '0 present' — that confusion
+    reached the PI once already as 'the surviving universal eval gap'."""
+    pfx = f"arms.{_scored(registry)}."
+    unresolved = []
+    containers = [c for spec in registry["families"].values() for c in spec["criteria"]]
+    containers += registry["artifact_hygiene"]["criteria"]
+    containers += registry["leak_guards"]["guards"]
+    for crit in containers:
+        for key in crit.get("keys", []) + crit.get("partial_keys", []):
+            if not (key.startswith(pfx) or key.startswith("refav1.")):
+                continue
+            found, val = cc._dig(refav1, key)
+            if not found or val is None:
+                unresolved.append((crit["id"], key))
+    assert not unresolved, f"registered refav1 keys that resolve nowhere: {unresolved}"
+
+
+def test_every_refav1_key_resolves_in_a_REAL_banked_record(registry):
+    """⭐ The fixture is mine; the record is the emitter's. A key can satisfy a
+    hand-built fixture and still be wrong about what the tool writes, so the same
+    keys are checked against a banked artifact. Narrow glob, so it stays fast on
+    the Drive mount."""
+    import glob
+    paths = glob.glob(str(ROOT / "taniteval" / "results" / "refav1-*.json"))
+    arts = [d for d in (cc._read_json(Path(p)) for p in paths)
+            if isinstance(d, dict) and cc._dig(d, f"arms.{_scored(registry)}.four_families")[0]]
+    if not arts:
+        pytest.skip("no banked refav1 record in this checkout")
+    pfx = f"arms.{_scored(registry)}."
+    containers = [c for spec in registry["families"].values() for c in spec["criteria"]]
+    containers += registry["artifact_hygiene"]["criteria"]
+    containers += registry["leak_guards"]["guards"]
+    unresolved = []
+    for crit in containers:
+        for key in crit.get("keys", []) + crit.get("partial_keys", []):
+            if not (key.startswith(pfx) or key.startswith("refav1.")):
+                continue
+            if not any(cc._dig(d, key)[0] and cc._dig(d, key)[1] is not None for d in arts):
+                unresolved.append((crit["id"], key))
+    assert not unresolved, \
+        f"registered against no real record ({len(arts)} read): {unresolved}"
+
+
+def test_a_banked_refav1_record_scores_with_no_violations(registry):
+    """The end-to-end statement, on a real artifact: in scope, T1, and the four
+    families either PRESENT or REFUSED-with-a-reason. If this ever fails, read the
+    detail before believing it — a false violation here is the failure this whole
+    block exists to prevent."""
+    import glob
+    paths = sorted(glob.glob(str(ROOT / "taniteval" / "results" / "refav1-*.json")))
+    arts = [d for d in (cc._read_json(Path(p)) for p in paths)
+            if isinstance(d, dict) and cc._dig(d, f"arms.{_scored(registry)}.four_families")[0]]
+    if not arts:
+        pytest.skip("no banked refav1 record in this checkout")
+    for art in arts:
+        res = cc.check_artifact(art, registry)
+        assert res["scope"] == cc.IN_SCOPE
+        assert res["tier"] in ("T1", "T2"), f"tier {res['tier']}"
+        assert res["n_violations"] == 0, \
+            [(v["id"], v["detail"][:120]) for v in res["violations"]]
