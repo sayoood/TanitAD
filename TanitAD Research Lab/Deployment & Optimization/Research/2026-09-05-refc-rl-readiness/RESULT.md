@@ -200,3 +200,139 @@ One variable (RL stage on/off on the frozen base), four arms (base = the banked 
 | STAGE 1–2 (I/O) | pending | `C:\Users\Admin\rl_refcv3_min\fit120\`, `fit120_lead_block.npz` |
 | arms + T1 + fan safety | pending — GPU-gated | `raw/run/<arm>/` |
 | verdict + register | pending | §11+, `GOALS_AND_CLAIMS.md` |
+
+---
+
+## 11. ⭐ THE RE-SCOPED RUN — RESULT (2026-09-05, Deploy FlyWheel, third agent on this package)
+
+**Exit: `4 FAIL-SAFETY`** — the V2-faithful RL stage makes refcv3's emitted fan **less** safe, and the
+constant-reward control proves the damage comes from **the reward**, not from V2's constraint
+mechanism. The committed prediction (**2 NULL-SAFETY, sub-case (i)** — "the fan is already safe,
+little room") was **WRONG in the informative direction**: there was ample room, and the stage moved
+into it backwards.
+
+All four arms ran on the dev-box RTX 4060 in **28 min 29 s total** (11:45:49Z → 12:14:18Z), after
+the sibling stream's withheld-bank panel released the GPU. ⛔ `tanitad-refcv3` (refcv4b-b1-v72-40k
+LIVE) was never touched.
+
+### 11.1 Validity gates first — two of the three moved, and both movements were informative
+
+| gate | result | what it means |
+|---|---|---|
+| **V1 `ctrl0`** (lr 0) | ✅ **PASS** | weights hash-identical (`weights_changed: False`); **0 of 57** fan-safety metrics separated; every R\* readout delta 1e-5…1e-8, none separated |
+| **V4 `ctrl_const`** (constant reward) | ⚠️ **FIRES** — re-read as an ATTRIBUTION INSTRUCTION | 14 of 57 separated. ⛔ Not a harness fault: `veto_rate_mean` **0.0897**, `final_loss` **−1.863**. The veto is applied outside the reward by design, so a constant reward gives a **veto-only** advantage, not a zero one. See RETRACTION #24 |
+| **V2 G-FAN** (`reg_echo`) | ⚠️ **INCONCLUSIVE** — the arm did not produce the regression it was designed to produce | R_FAN went **+44.03 %** (4.2947 → 6.1856), not −30 %. `reg_echo` did not COLLAPSE the fan onto the logged path; it **diverged**: R3 **+16.72 m**, R_ORACLE **+15.60**, R_REACH **+20.60**, all separated |
+
+⚠️ **On V2, stated plainly rather than argued around.** The gate exists to prove the readout can see
+fan collapse. It cannot be said to have done so, because the deliberate-regression arm never
+collapsed. What the run *does* establish is that the readout is not blind to a degenerate arm at all:
+it flagged `reg_echo` unmistakably and in the obviously-broken direction on R3, R_ORACLE, R_REACH and
+51 of 57 fan-safety metrics. ⇒ **Under SPEC §6 V2, no PASS would have been admissible from this
+panel. The headline result is a FAIL, so the gate does not rescue or invalidate it** — but a PASS, had
+one appeared, would have had to wait for a working collapse arm.
+
+⚠️ **Why `reg_echo` diverged instead of collapsing, and it is a design fault in the arm:** the SPEC
+gives it `w_anchor = 0.0`, i.e. **no trust region at all**, while `gt_similarity` is the only reward.
+With nothing anchoring the fan, the policy ran away — the same failure the P-RC21 pilot recorded
+(R3 1.97 m → 347.2 m, "every candidate left the road"). A collapse arm needs the trust region KEPT
+and only the reward swapped. Work item, not a result.
+
+### 11.2 The PRIMARY endpoint — fan safety, `rl` vs base
+
+T0 readout, 120 fixed EVAL windows (seed 1234), 79 episodes / 30 lead episodes, paired
+episode-cluster bootstrap n_boot 4,000. **Separation rule, applied identically to every arm:** CI
+**strictly** excludes 0 **AND** not all-zero **AND** |delta| ≥ **1e-4** — the floor stated rather than
+tuned, one conservative step above 1/(128 × 120) = 6.5e-5, the quantum of one candidate in one window.
+
+| metric | before | after | delta | separated |
+|---|---|---|---|---|
+| `sel_infeasible` | 0.13333 | **0.64167** | **+0.52743** | yes |
+| `sel_ttc_below` | 0.02778 | **0.13889** | **+0.13333** | yes |
+| `top32_infeasible` | 0.63385 | 0.71849 | +0.08979 | yes |
+| `mass_rank_ttc_below` | 0.04848 | 0.12232 | +0.08839 | yes |
+| `top32_envelope` | 0.63073 | 0.71068 | +0.08459 | yes |
+| `top32_kamm_over` | 0.49141 | 0.54714 | +0.06138 | yes |
+| `fan_infeasible` | 0.89453 | 0.91439 | +0.02034 | yes |
+| `top32_contact` | 0.03299 | 0.02691 | **−0.00729** | yes ← the one gain |
+| `mass_rank_contact` | 0.00003 | 0.00028 | +0.00029 | yes ← mass ON contact went UP |
+| `fan_peak_g_mean` | 4.18090 | 4.11416 | −0.07243 | yes |
+
+**The selected trajectory went from 13.3 % infeasible to 64.2 %**, and from following closer than the
+human's own 5th-percentile time gap on 2.8 % of lead windows to 13.9 %. Contact in the top-32 improved
+by 0.7 points; the confidence mass placed **on** contact candidates rose.
+
+Supporting T0 readouts, all separated: **R3 sel-ADE +0.4897 m WORSE** [+0.395, +0.590] · **R_ORACLE
+(oracle-in-fan — fan QUALITY) +0.1697 WORSE** · R_REACH +0.1945 · **R1 (the composed reward itself, on
+held-out EVAL windows) −0.0058** — the stage did not even improve its own objective out of sample.
+R_FAN +0.0132 **not** separated, so `rl` did not collapse the fan. Selector agreement with base
+**0.4083** — it changed its pick on 59 % of windows.
+
+### 11.3 ⭐⭐ The attribution — and it is the finding
+
+`ctrl_const` (veto only, reward identically 0.0) moved feasibility toward **BETTER**:
+`fan_kamm_over` −0.0048, `top32_infeasible` −0.0143, `fan_infeasible` −0.0026, `fan_peak_g_mean`
+−0.0859. The full arm moved it **WORSE**. So the two halves of the stage pull in opposite directions,
+and `rl` − base attributes nothing on its own.
+
+The contrast that isolates the reward differences the veto out. Both arms start from the same frozen
+base and their BEFORE readouts are **bit-identical (max abs diff 0.000e+00 over 120 windows, asserted
+in the artifact)**, so it is valid:
+
+| `rl` − `ctrl_const` (isolates REWARD + ≥GT bar) | delta | CI | separated |
+|---|---|---|---|
+| `sel_infeasible` | **+0.52743** | [+0.41139, +0.63924] | yes |
+| `sel_ttc_below` | **+0.13333** | [+0.03333, +0.26667] | yes |
+| `top32_infeasible` | +0.10410 | [+0.07720, +0.13199] | yes |
+| `top32_envelope` | +0.09738 | [+0.07015, +0.12553] | yes |
+| `top32_kamm_over` | +0.07397 | [+0.05281, +0.09586] | yes |
+| `fan_infeasible` | +0.02293 | [+0.01520, +0.03118] | yes |
+| `fan_off_reach` | −0.00330 | [−0.00582, −0.00099] | yes |
+
+⇒ **DiffusionDriveV2's CONSTRAINT mechanism transfers; our REWARD does not.** The veto —
+collision/TTC pinned at −1, V2's actual anti-collision device — improves the fan's feasibility on its
+own. The composed reward then pushes it back the other way and overwhelms the gain. Reading `rl`
+against `base` alone would have credited or blamed the wrong half; this is the C6-confound family,
+and the constant-only control is the only reason it is visible.
+
+### 11.4 Run facts that condition the reading
+
+`veto_rate_mean` 0.0975 · **`frac_above_bar_mean` 0.0456** — V2's ≥GT bar zeroed ~95 % of the positive
+advantage, which is the regime V2's own released code lives in, so the update was dominated by the
+veto's −1 plus a thin surviving positive mass · `use_gt_bar` True · `noise_mode` two_scalar ·
+components fired: progress 2000/2000, feasibility 2000/2000, comfort 2000/2000, headway 1014,
+collision 449 · 2,000 steps in **871 s**.
+
+⚠️ **A MECHANISM, OFFERED AS A HYPOTHESIS AND NOT AS A MEASURED CLAIM:** `progress` at weight 0.30
+with the reference `v0 × horizon` rewards covering ground, and the cheapest way to cover more ground
+in 2 s is to accelerate harder and close on the lead — which is exactly `envelope` and `ttc_below`
+going up. Testing it is a **weight ablation**, not another 2,000-step arm. It is consistent with
+`D-RL-REWARD-FLOOR-2` (the reward ranks the hold-v0 floor ≥ the human on 72.5 % of lead windows) but
+is **not** established by it, and it is not claimed here.
+
+### 11.5 Cost — MEASURED, and far under the SPEC's estimate
+
+| item | SPEC §5 estimate | MEASURED |
+|---|---|---|
+| `ctrl0` (200 steps) | 2.9 min | **2 min 04 s** |
+| `ctrl_const` (200 steps) | — (new arm) | **2 min 07 s** |
+| `rl` (2,000 steps) | 28.7 min | **15 min 09 s** |
+| `reg_echo` (2,000 steps) | 28.7 min | **9 min 09 s** |
+| all four arms incl. before/after readouts | ~63 min | **28 min 29 s** |
+
+0 pod-hours, 0 Thor GPU-hours, no training run disturbed.
+
+### 11.6 Stated limits — none silent
+
+1. **ONE SEED.** No replication. A single-seed negative is weaker than a single-seed positive would
+   have been suspicious, but it is still one seed.
+2. **NON-PARITY** fit corpus (120 train-split B1 v7.2 clips), as the base itself is.
+3. The primary endpoint is a **T0 readout on 120 windows** — the fan the model emits, never a driving
+   claim. The T1 four-family read is §11.7.
+4. `kamm_over` is a **LOWER bound**: the emitted fan is free waypoints, so the exact control-rolled
+   friction instrument cannot be applied and the finite difference used instead under-reports by
+   1.21–1.85× (`flyability.py`).
+5. Contact is a **sampled** check on 0.5 s waypoints; only the **lead** agent is replayed, so the
+   absolute contact level is a floor. Paired deltas are unaffected — the same object before and after.
+6. The **echo gate is INCONCLUSIVE** (§11.1). No PASS would have been admissible from this panel.
+7. `ctrl_const` is a veto-only arm by accident rather than by design; it happens to be exactly the
+   arm the attribution needed, but it was not pre-registered as such.
