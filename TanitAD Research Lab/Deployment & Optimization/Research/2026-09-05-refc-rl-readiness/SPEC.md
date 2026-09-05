@@ -129,3 +129,146 @@ Training: `steps × s/step` for `rl` (2,000) + `reg_echo` (2,000) + `ctrl0` (200
 ## 9. Stated limits (each declared, none silent)
 
 1. NON-PARITY fit corpus; only the paired margin over `ha0` is admissible cross-arm. 2. Surrogate Gaussian policy on the emitted offset — not a denoising density; DDv2-estimator parity UNVERIFIED (standing limit). 3. `logp` is summed over all 8 slots while the reward scores the 2 s prefix — unbiased (the extra dims are zero-mean in the score-function expectation) but higher variance. 4. Contact is a SAMPLED check on 0.5 s waypoints (r = 2 m): at 10 m/s a 5 m stride can step over a 2 m obstacle — the TTC veto is the continuous guard. 5. The lead track is privileged (other-agent future) and does not exist at inference. 6. STRATEGIC family refused (n = 0) on this eval path, as for the base. 7. Four eval waypoints ⇒ jerk from one sample; comfort is coarse. 8. One seed; a PASS needs replication before any claim.
+
+---
+
+## 10. ⭐ RE-SCOPE 2026-09-05 — the PI's correction. PRIMARY endpoint = FAN SAFETY
+
+> **The PI, verbatim:** *"Regarding RL, I don't agree you can do only what you stated, the paper is
+> talking about improving/eliminating trajectories leading to [collisions / infeasible outcomes]."*
+
+⛔ **§0–§9 above are KEPT UNCHANGED as the record.** This section supersedes the **primary
+endpoint**, the **arm definitions** and the **committed outcomes**; everything else in the SPEC —
+assets, corpus, gates, tiers, estimator, stated limits — stands verbatim. Dated so a reader can see
+which prediction was committed when.
+
+### 10.1 What was wrong with the original endpoint
+
+`H-RL-MIN-1`'s primary endpoint was the **four-family distance to the human**. Under the composed
+reward the constant-velocity floor (`ha0`, hold-v0-straight) already scores **≥ the human on 78.3 %
+of lead windows** (§3.2, MEASURED). A reward whose improvement direction points at the trivial floor
+cannot move an arm *toward* the human, which is exactly why the committed prediction was **NULL**.
+
+The PI's point is that this endpoint **cannot see V2's mechanism at all**. DiffusionDriveV2's RL
+stage does not exist to reduce distance-to-human; it exists to **push probability mass away from
+collision-prone and infeasible candidates**. Pinned from the released code
+(`hustvl/DiffusionDriveV2@1cd12a1`, PUBLISHED-CODE, read in full by
+`…/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md`, `D-DDV2-*`):
+
+| ingredient | code | what it does |
+|---|---|---|
+| collision → **−1**, pinned | `_model_rl.py:891-902` | a colliding candidate is a CONSTRAINT violation, not a low rank — no good behaviour elsewhere buys it back |
+| positive advantage **only above the ≥GT bar** | `_model_rl.py:891-893` | `reward > reward_gt − 1e-6`, then `clamp(min=0) * mask` — the GT scored under the SAME reward as a candidate |
+| **two-scalar** (along, lateral) noise | `_model_rl.py:646-654` | one longitudinal + one lateral scalar per trajectory, broadcast over waypoints; the additive DDPM term is ×0 at `:640/:666` |
+
+⇒ **Measuring an RL stage built for constraint-pruning by its distance to the human is measuring the
+wrong axis.** Both ingredients above are now IMPLEMENTED and pinned (`stack/tanitad/rl/advantage.py`
+`gt_bar`, `refcv3_adapter.py` `noise_mode="two_scalar"`, `stack/tests/test_rl_v2_faithful.py`,
+commit `62a014f`) and are part of the `rl` arm's definition below.
+
+### 10.2 The PRIMARY endpoint — fan safety on the EMITTED fan
+
+Scored on the **2 s prefix** (origin + slots 0.5/1.0/1.5/2.0 s — the same index-select the `2s` eval
+grid uses), on the **whole fan**, the **top-8** and **top-32** by the score the argmax actually uses,
+and the **selected** trajectory. Instrument: `taniteval/tools/fan_safety.py` (commit `aabb35a`),
+pinned by `stack/tests/test_fan_safety.py`.
+
+| # | metric | definition | population |
+|---|---|---|---|
+| **(a)** | `contact` | time-aligned centre distance < 2 m (ego 1 m + obstacle 1 m) against the lead agent's own replayed `obstacle.offline` track — `rewards._collision` moving-lead branch | lead windows |
+| **(b)** | `ttc_below` | TTC < **2.93 s** (`H-RL-THRESH-1` class — the HUMAN's own 5th-percentile time gap on the fit8 lead windows, so a candidate below it follows closer than the human ever does). `ttc_veto` at 1.5 s reported beside it | lead windows |
+| **(c)** | `infeasible` | `kamm_over` (friction load > μ 0.7) ∨ `envelope` (\|a\| > 4 m/s² ∨ \|κ\| > 0.2 1/m) ∨ `off_reach` (outside the S2 reach band refcv3 does NOT apply at inference). **Each reported separately as well as OR-ed** | all windows |
+| **(d)** | `mass_rank_*`, `mass_conf_*` | the probability `softmax(sel_score)` (the score the argmax uses, `reach_keep`-masked so excluded rows carry EXACTLY zero) and `softmax(anchor_logits)` (`conf_head`) put on each flag | as the flag |
+
+**Direction:** every one of (a)–(d) is **lower-is-better**. Read as the **paired episode-cluster
+bootstrap** (`taniteval/ci.py`, n_boot 2000, 141 clusters) of `arm − base` on the SAME windows, each
+on its own population with `n` printed. ⛔ Never `overlapping_holdout_se`.
+
+**The reference every "safer" claim is read against is the HUMAN's own rate** on the same windows
+(`fan_safety.py --dump`, arm `g`), with the `ha`/`ha0` trivial floors beside it. A fan that is
+already safer than the human has no room the RL stage could buy, and saying so requires the human's
+number in the table.
+
+### 10.3 Stated limits of the primary endpoint — declared here, not discovered later
+
+1. ⚠️ **`kamm_over` is a LOWER bound.** The emitted fan is FREE WAYPOINTS (bank + offset), so the
+   exact control-rolled `instruments/flyability.friction_load` cannot be applied and a finite
+   difference over the 0.5 s prefix is used. `flyability.py`'s own docstring MEASURES that finite
+   difference under-reporting by **1.21–1.85×**. Under-reporting is the dangerous direction; it is
+   declared and the rate is labelled a lower bound wherever it is quoted.
+2. Contact is a **SAMPLED** check on 0.5 s waypoints (§9.4 stands): at 10 m/s a 5 m stride can step
+   over a 2 m obstacle. The TTC family is the continuous guard.
+3. The lead track is **privileged** (another agent's future) and does not exist at inference. It is a
+   TRAINING and SCORING signal only — admissible under the binding label/inference split.
+4. Only the **lead** agent is replayed, not the full `obstacle.offline` scene, so (a) is a contact
+   rate against the lead, not against all traffic. It is the same object before and after, so the
+   paired delta is valid; the absolute level is a floor on true contact.
+5. `off_reach` measures candidates outside a band refcv3 **does not apply** (`sel_reach_clamp`
+   False). It is a property of the emitted fan, not a violated constraint.
+
+### 10.4 The arms — re-scoped
+
+| arm | reward | `use_gt_bar` | `noise_mode` | `w_anchor` | lr | steps | role |
+|---|---|---|---|---|---|---|---|
+| **base** | — | — | — | — | — | 0 | RL OFF: the banked 40,284 dump + its fan scored by `fan_safety` |
+| **rl** | `DEFAULT_WEIGHTS` | **True** | **two_scalar** | 1.0 | 1e-5 | 2000 | RL ON, **V2-faithful** — the one variable |
+| **reg_echo** | `{gt_similarity: 1.0}` INSIDE the advantage | False | two_scalar | 0.0 | 1e-5 | 2000 | ⛔ deliberate regression: the reward IS the echo. **G-FAN must fire** |
+| **ctrl0** | `DEFAULT_WEIGHTS` | True | two_scalar | 1.0 | **0.0** | 200 | reproduction control: weights hash-identical, every readout delta EXACTLY 0 |
+| **ctrl_const** | **all weights 0.0** | False | two_scalar | 1.0 | 1e-5 | 200 | ⭐ **constant-only control** |
+
+⭐ **`ctrl_const` is the control the probe-panel rule requires** (CLAUDE.md 2026-08-22: four probe
+failures in one afternoon, every one caught ONLY by a control that had to read a known value).
+Its reward is exactly `0.0` for every candidate — MEASURED, not asserted: `RewardSpec` over these
+weights returns a tensor whose unique value is `{0.0}` and whose std is `0.0`. A constant reward has
+an identically-zero group-relative advantage, so the only surviving gradient is the anchor trust
+region, itself zero while the live fan equals the frozen reference. ⇒ **it must read the
+no-information value exactly.** It differs from `ctrl0` in what it proves: `ctrl0` disables the
+OPTIMIZER (lr = 0); `ctrl_const` leaves the optimizer live and removes only the INFORMATION. **If
+`ctrl_const` moves, something other than the reward is driving the update and no `rl` result above it
+means anything.**
+
+**One variable.** Against `base`, the single change is *the RL stage*. The two V2-faithful
+ingredients are INSIDE the stage's definition (they are what makes it V2's stage rather than the
+predecessor's), and are named here so this arm can never be read as the earlier arm with a different
+result. `n` and `d` are printed for every panel row: `d` = **9,206,032 / 107,032,901 trainable params
+(8.60 %)**, `n` = windows and episodes per population.
+
+### 10.5 SECONDARY endpoint — the four families, prediction RETAINED
+
+The four binding families (LONGITUDINAL · LATERAL · TACTICAL · STRATEGIC) stay exactly as §5
+specifies, at **T1 (self-action open loop)**, paired over the shared `ha0` floor, criteria-checked.
+⛔ **Their committed prediction is UNCHANGED: NULL or FAIL-GUARD**, for the reason in §6 — the
+reward ranks `ha0` above the human on 78.3 % of lead windows, so its improvement direction is toward
+a floor the eval already ranks 0.2304 m worse. Retaining a prediction that a re-scope could have
+quietly dropped is the point: the four families are the guard that a safety gain was not bought with
+driving quality.
+
+### 10.6 ⛔ COMMITTED OUTCOMES — written before any arm ran
+
+Selected mechanically, first match in order. VOID gates V1–V3 from §6 still apply, **plus**:
+
+| # | condition | exit |
+|---|---|---|
+| **V4** | `ctrl_const` moved ANY fan-safety metric with paired separation | **VOID** — something other than the reward drives the update |
+| **V5** | the base fan's contact rate is **0.0000** on every population | **VOID-NOROOM** — the endpoint has no headroom on this corpus; report the human's rate and say the experiment could not have detected an improvement |
+| **1** | fan-safety mass **drops** (≥ 1 of (a)–(d) improves with paired separation, none worsens) **AND** every four-family metric stays inside its CI | **PASS — V2's mechanism TRANSFERS.** The RL stage prunes unsafe candidates on refcv3 without costing driving quality |
+| **2** | no fan-safety metric moves with separation | **NULL-SAFETY.** Report WHICH of the two causes holds, with the human's own contact rate as the reference: (i) **the fan was already safe** — base rates at or below the human's, no room; or (ii) **the reward cannot see the collisions** — base rates materially above the human's while the reward's collision term never fires (`audit.report_component_coverage`), i.e. the signal exists and the reward is blind to it |
+| **3** | fan safety improves with separation **AND** a four-family metric degrades beyond its CI | **TRADE-OFF.** Report both, per family, no single verdict. A safer fan bought with worse driving is a finding, not a pass |
+| **4** | fan safety **worsens** with separation | **FAIL-SAFETY** — the stage makes the fan less safe; the reward's direction is wrong on this base |
+
+**Committed PREDICTION for the PRIMARY endpoint (written before any arm):** outcome **2
+NULL-SAFETY, sub-case (i)** — the base fan is already at or below the human's contact rate, so there
+is little room. Basis: the `humanflag` probe MEASURED the human's own contact at **0.000** under both
+lead models on 318 fit8 lead windows, and refcv3's own eval has never shown a contact-rate defect.
+⚠️ This prediction is **falsifiable in a way the original was not**: if the base fan carries real
+contact mass on the 141 EVAL clips, outcome 1 or 4 is reachable and the experiment is informative
+either way. If V5 fires, the honest report is that the endpoint had no headroom — which is itself the
+answer to whether V2's mechanism has anything to prune here.
+
+**What each outcome decides.** PASS ⇒ the offset-head RL line stays open on refcv3 and earns a
+seed-replication plus a `w_anchor` ladder before any registry claim. NULL-SAFETY(i) ⇒ the fan is not
+where refcv3's problem is, and the money goes to `H-DDA-3` (the vocabulary/sampler). NULL-SAFETY(ii)
+⇒ the reward is the work item, not the policy surface. TRADE-OFF ⇒ the four families are the binding
+constraint and the reward needs a driving-quality term that is not `gt_similarity`. FAIL-SAFETY ⇒
+the line closes on this base.
+
