@@ -335,6 +335,25 @@ level, on the split arm, on a different corpus and instrument.
   kill-gate needs BOTH sets, so those arms have a **val-side reading only**. Closing it is one
   more cache pull + ~40 s/arm CPU. It does not change any verdict above, because an arm at or
   above baseline on val cannot be rejected by an `AND`.
+* ⛔ **P3 DID NOT RUN — both hosts were saturated for the entire session** (Thor 98 % with a
+  fresh three-arm `refav1_lon` batch under a sibling's `queueTHOR.sh`; dev-box 4060 100 %,
+  5,033/8,188 MiB, 7 compute apps — re-checked at the end of the turn, not assumed). Adding
+  load would have broken the never-load-a-busy-box rule **and** raced the sibling queue the
+  brief told me to coordinate with. **This is a named blocker, not an idle turn** — P1, P2 and
+  Row 6's L3 arm were all executed instead.
+* ⭐ **BUT ONE P3 CANDIDATE WAS ELIMINATED AT ZERO COST, AND IT IS THE ONE THE BOARD NAMED
+  FIRST.** The board proposes the ≈0-motion readout is *"the same family as the two banked
+  scale traps (`actdiv_thor.py:47` feeding `v/30` where arms trained on `v/10`)"*.
+  **MEASURED, file read:** `taniteval/rollout.py:71` reads `SPEED_SCALE = 10.0` — commented
+  *"matches every trainer"* — and applies it as `poses[last, 3:4] / SPEED_SCALE` at `:88`,
+  against `flagship_v15.py:85`'s trained contract `SPEED_SCALE = 10.0`. `t1_eval.py:1245,1398`
+  import that same constant. ⇒ **the `H-LEAK-1` v/30-vs-v/10 defect is NOT present on the T1
+  input path.** ⚠️ **Scope, stated:** this eliminates the *input* normalisation only. The
+  output path in `rollout.py` converts waypoints to speed by `norm(d)/dt`
+  (`dense_speed_profile:284`) with **no** scale multiplication, which points the remaining
+  suspicion at the **model's emitted displacement** rather than at a missing un-normalisation
+  in the harness — but that is a pointer, **not** a verdict, and it still needs the GPU probe.
+
 * ⭐ **The one thing on the board that genuinely needs a GPU is unchanged and is Row 3:** the
   **≈0-motion readout** speed-scale probe, ~15 min on a checkpoint we already hold. It gates
   every T1 number, and if it is a scale defect every T1 number is recoverable by re-analysis
