@@ -317,10 +317,180 @@ form, and it must be **measured with an intervention protocol**, because `2606.1
 and causal influence come apart.
 
 ## 2. Design options for OUR module (priced)
-### 2.a Pretrained small VLM + projector from `pooled`/`z_tac`/`ctx`
+
+### 2.0 The Thor latency model every option is priced against
+
+⛔ **No datacentre number appears in this section.** Two facts anchor it, both fetched from NVIDIA's own module pages
+on 2026-09-05 (`PUBLISHED-SECONDARY` — a vendor spec page, not a paper):
+
+| | Jetson AGX Thor (T5000) | Jetson AGX Orin (64 GB) | ratio |
+|---|---|---|---|
+| AI compute | **2070 TFLOPS FP4 (sparse)** | 275 TOPS INT8 class | ~7.5× (NVIDIA's own claim) |
+| memory | 128 GB 256-bit LPDDR5X | 64 GB 256-bit LPDDR5X | — |
+| **memory bandwidth** | **273 GB/s** | **204.8 GB/s** | **1.33×** |
+
+⭐⭐ **THE CENTRAL LATENCY FACT: autoregressive decode is WEIGHT-BANDWIDTH-BOUND, so Thor's 7.5× compute advantage
+does NOT transfer to it — the transferable ratio is 1.33×.** Every design decision below follows from this one line.
+Prefill and the vision trunk are compute-bound and *do* get the 7.5×; the CoT does not. This is the same family as the
+`step_s`/`df` scope traps: a true number (7.5×) quoted where it does not apply.
+
+**Calibrating the efficiency factor from the ONE published embedded measurement.** `2402.12289` Table 6 reports
+Qwen1.8B on OrinX at **79.6 tok/s (12.56 ms/token)** with a *"Model Size"* column of **3.7 GB** — which is the FP16
+weight size (1.8 B × 2 B). At FP16 the bandwidth floor would be 3.7 / 204.8 = **18.1 ms/token**, i.e. *slower than
+what was measured*, which is impossible. ⇒ **The table's own numbers prove the deployed weights are quantised**
+(consistent with its caption *"after quantization"* and with Table 9's `q4f16`). At 4-bit (~0.95 GB) the floor is
+**4.64 ms/token**, so the achieved efficiency is **η = 4.64 / 12.56 = 0.37** of the bandwidth roof. The same
+arithmetic on MobileLLaMA-1.4B (2.5 GB FP16 → ~0.63 GB at 4-bit, floor 3.08 ms, measured 8.52 ms) gives **η = 0.36**.
+Two independent rows, the same η — the derivation is at least self-consistent.
+
+**The resulting per-token cost model (ESTIMATED — derivation shown, `η = 0.37`, effective 101 GB/s on Thor):**
+
+| decoder | bf16 (2 B/param) | FP8 (1 B/param) | NVFP4 (0.5 B/param) |
+|---|---|---|---|
+| **0.8 B** (Qwen3.5-0.8B class) | 15.8 ms/tok | **7.9 ms/tok** | **4.0 ms/tok** |
+| **0.5 B** (SmolVLM-500M's LM class + heads) | 9.9 ms/tok | 4.9 ms/tok | 2.5 ms/tok |
+| **0.36 B** (SmolLM2-360M) | 7.1 ms/tok | **3.6 ms/tok** | 1.8 ms/tok |
+
+⚠️ Every cell is an **ESTIMATE from a spec sheet plus one published embedded calibration**, and it ignores the hybrid
+linear-attention advantage (`2604.15804`: a 3:1 Gated-DeltaNet stack reads a much smaller KV cache, which raises η at
+long context) and the INT4 dequantisation penalty MEASURED on Jetson by `2607.08029` (which *lowers* it). **These two
+push in opposite directions and neither is quantified for Thor. WP-0 replaces this whole table with a measurement**
+using `torch.cuda.max_memory_allocated()` — the only admissible memory probe on Thor — and a real token-rate timing.
+
+**The tact budget (ESTIMATED), for a 400 ms tact:**
+
+| stage | cost | basis |
+|---|---|---|
+| REF-C trunk + cascade + 117-anchor decoder | **UNMEASURED** — allowance 60 ms | ⛔ the first item of WP-0; there is no Thor inference number for REF-C anywhere in the programme |
+| projector `pooled` (160 tokens) → LM embedding | < 1 ms | one `Linear`, 160 × 512 × 1024 ≈ 84 MFLOP |
+| prefill ~230 tokens (160 vision + ~40 state/goal + ~30 query) | ~15 ms | Orin measured 4,709 tok/s prefill for Qwen1.8B (`2402.12289` Table 6) = 49 ms for 230 tokens; prefill is compute-bound, so Thor's 7.5× applies — 15 ms is deliberately conservative |
+| **decode — what is left** | **~325 ms** | ⇒ **41 tokens at 0.8 B FP8** · **81 at 0.8 B NVFP4** · **90 at 0.36 B FP8** |
+
+⭐ **41 tokens is exactly Alpamayo-R1's reasoning budget** (`2511.00088` Table 14: 70 ms for 40 tokens). Two
+independent routes to the same number is a good sign — and it is **an order of magnitude below FastDriveCoT's
+300–500-token template CoT** (`2602.02864`). ⇒ **A free-form prose CoT cannot be emitted every tact on Thor. This is a
+hard constraint, and it is what makes §2.c's two-rate design necessary rather than merely tidy.**
+
+### 2.a Pretrained small VLM + projector from `pooled` / `z_tac` / `ctx`
+
+**Shape.** Take SmolVLM-500M (`2504.05299`) or InternVL3-1B (`2504.10479`) whole — its own SigLIP/InternViT encoder
+included — feed it the camera image on its own path, and *additionally* project `pooled`, `z_tac` and `ctx` into its
+text-embedding space as extra prefix tokens (the OpenDriveVLA recipe, `2503.23463`, which projects 2-D and 3-D
+structured tokens into one semantic space).
+
+| | |
+|---|---|
+| **params** | 500 M (SmolVLM-500M) or ~1 B (InternVL3-1B) + projector ~1.6 M. **At the ceiling, not below it.** |
+| **Thor tact** | 0.5 B FP8 ≈ 4.9 ms/tok, but the **second vision encoder is an extra prefill and an extra weight stream**: SigLIP-B/16 at 512² emits **1,024 tokens before pixel-shuffle** (`2504.05299` §2.2); at r = 4 that is 64. Prefill roughly doubles. |
+| **training data** | it already speaks; only alignment + our CoT are needed. **Lowest data risk of the three.** |
+| **goal interface** | text in, text out; goals must be parsed out of strings, or extra heads bolted on. |
+| ⛔ **why it is the runner-up, not the choice** | It **violates the PI's "sharing the same embedding space as refc"** in the only sense that has teeth: two vision encoders means two scene representations, and nothing forces them to agree — the explanation can then be grounded in the VLM's *own* view of a scene the planner never saw. It is also the exact configuration `2504.05299` **Finding 1** measures as wasteful (a 428 M encoder next to a small LM buys +11.6 % for +66 % params), and `2607.08029` MEASURED that SigLIP encoders take a disproportionate INT8 latency hit on Jetson. |
+
 ### 2.b From-scratch small decoder on our corpus + distilled CoT
-### 2.c Hybrid — frozen small LM + LoRA, REF-C trunk as the ONLY vision encoder
-### 2.d Comparison table
+
+**Shape.** A 30–80 M transformer decoder trained from zero on our own `(pooled, ego, nav) → sentence` pairs.
+
+| | |
+|---|---|
+| **params** | 30–80 M — comfortably the smallest. |
+| **Thor tact** | ~0.7–1.6 ms/token at FP8: **essentially free**; hundreds of tokens per tact. |
+| **training data** | ⛔ **this is where it dies.** §0.2 MEASURED our corpus: **4,729 one-sentence CoTs, ~47 k words in total**, one instant per clip. That is roughly **five orders of magnitude** below what `2502.02737` (SmolLM2) needs for a 360 M model. A from-scratch decoder trained on 47 k words can reproduce the *template* and nothing else — no question answering, no unseen-object naming, no world knowledge, which are three of the four things the PI asked for. |
+| **verdict** | ⛔ **REFUSED as the language module** — but ⭐ **KEPT as the mandatory FLOOR ARM.** CLAUDE.md's probe rule ("a learned representation that does not beat raw input has added nothing") applies verbatim: a pretrained LM that does not beat a from-scratch template decoder on explanation faithfulness **has bought us nothing but parameters**. This arm is cheap and it is the control that makes the whole comparison admissible (`H-VLA-2`). |
+
+### 2.c ⭐ CHOSEN — hybrid: frozen small LM + LoRA, **REF-C's trunk as the ONLY vision encoder**
+
+**Shape (`TanitLang`).** No second ViT anywhere. The REF-C trunk's **160 perspective-view tokens** are the vision
+input, projected once into the LM's embedding space; a frozen pretrained LM supplies language; LoRA adapts it; and a
+small set of heads writes back into REF-C's own goal nodes.
+
+```
+  REF-C trunk (frozen, already running)  ──► pooled  [160 × feat_dim]
+                                                │
+                          proj_in: Linear(feat_dim → d_lm)          ─┐
+  ctx [256] · z_tac [512] · g_str [3] · v0 · nav one-hot [3+1]      ─┤  prefix tokens
+                          state_proj: MLP(→ d_lm), 4 tokens          │
+  question / system prompt (tokenised text)                         ─┘
+                                                │
+                                   ┌────────────▼────────────┐
+                                   │  frozen LM + LoRA r=16  │   0.36 B or 0.8 B
+                                   └────────────┬────────────┘
+                       ┌────────────────────────┼────────────────────────┐
+             XCoT head (2–6 exec. tokens)   goal heads (write-back)   text head (LM head)
+                  every tact                   every tact              ≤ 1 Hz / on demand
+```
+
+**Parameter budget (ESTIMATED, arithmetic shown):**
+
+| part | count |
+|---|---|
+| frozen LM — SmolLM2-360M (`2502.02737`) *or* Qwen3.5-0.8B | **362 M** or **800 M** |
+| `proj_in`: `Linear(feat_dim=512 → d_lm)` + 1 hidden layer | 512·1024 + 1024·1024 ≈ **1.6 M** |
+| `state_proj`: MLP over (`ctx` 256, `z_tac` 512, `g_str` 3, `v0`, nav 4) → 4 prefix tokens | ≈ **0.8 M** |
+| LoRA r = 16 on q/k/v/o + FFN, 24 layers, hidden 1024, FFN 3584 | ≈ **3.5 M** |
+| write-back heads: E19 strategic (23) + v7.2 lat/lon (8+8) + geometric goal point (3) + XCoT vocabulary (~64) | 1024 × 106 ≈ **0.11 M** |
+| **total resident** | **≈ 368 M** (SmolLM2-360M) or **≈ 806 M** (Qwen3.5-0.8B) — **both ≤ 1 B, the first well below it** |
+| **total trainable** | **≈ 6 M** — 0.7 % of the 0.8 B option; a dev-box-scale fine-tune, not a cluster job |
+
+**Why the trunk-as-only-encoder is the right call and not merely the cheap one.**
+1. It is the **only** reading of *"sharing the same embedding space as refc"* with a testable consequence: the language
+   module and the planner are looking at **the same tensor**, so a disagreement between explanation and plan is a
+   disagreement about *reasoning*, never about *perception*. With two encoders that distinction is unrecoverable.
+2. `2504.05299` **Finding 1** says a small LM prefers a small encoder — and our trunk is ~20 M, an excellent partner
+   for a 0.36 B LM. Adding SigLIP-SO400M (428 M) would more than double the module for a measured +11.6 %.
+3. Our trunk already emits **160 tokens**, which is exactly Alpamayo-R1's per-image tokenizer output
+   (`2511.00088` §3.2.1). **Zero additional vision parameters, zero additional vision latency** — the trunk runs for
+   REF-C anyway.
+4. It is the configuration the faithfulness literature demands: `2501.04003` (DriveBench) measures VLMs answering from
+   *textual cues rather than visual grounding*; the ablation that detects it is **corrupt the vision input and see
+   whether the text changes**. With one shared encoder that intervention is a single tensor swap (§3.4).
+
+**The two-rate emission — how the 41-token budget is actually spent.** ⛔ A prose CoT every tact is arithmetically
+impossible (§2.0). So the module runs **two clocks**:
+
+| clock | what is emitted | tokens | cost at 0.36 B FP8 |
+|---|---|---|---|
+| **every tact (300–500 ms)** | **XCoT-style executable tokens** (`2608.10976`) — 2–6 from a closed driving taxonomy — plus the goal write-back heads, which are **not decoded at all** (one forward pass, argmax/regression, ~0 tokens) | **2–6** | **7–22 ms** |
+| **≤ 1 Hz, or on demand ("why did you brake?")** | the prose explanation, from the *same* KV cache, rendered with FastDriveCoT-style field parallelism (`2602.02864`, 3.1–4.1×) over a template with a small vocabulary (`2402.12289` Table 9: 4.33× from a 1,024-word vocabulary) | 40–80 | 60–120 ms, **off the control path** |
+
+⭐ This is `2402.12289`'s deployed dual-clock architecture (OrinX-1 fast / OrinX-2 VLM at 410 ms, asynchronous) and
+`2607.12659`'s foresight-aligned asynchronous inference, applied inside one module instead of across two chips.
+⭐ And it is why the executable-token path is the **primary** interface: `2606.08684` (BLUE) MEASURED that language
+helps on only a small fraction of frames — so a per-frame prose budget is spent mostly on frames that do not need it.
+
+**The goal interface (both directions).** *"Process AND emit strategic and tactical goals"* means the projector is
+bidirectional, and both directions bind to nodes that already exist in `refc_v3.py`:
+
+| direction | node | mechanism |
+|---|---|---|
+| **reads** | `nav` (3-way v7.2 token + `nav_known`), `g_str` (3), `ctx` (256), `z_tac` (512), `pooled` (160 tokens), `v0` | prefix tokens via `proj_in` / `state_proj` |
+| **emits — strategic** | E19's surface: `g_str_geo` (3), `p_man` (4), `t_bin` (6) over `STRATEGIC_S = (8, 30) s`, `p_man2` (4), `t_bin2` (6) | a 23-wide head on the LM's last hidden state, **zero-init**, summed into `str_goal_head`'s output exactly as the existing FiLM edges are gated |
+| **emits — tactical** | the **v7.2 8-way factored** `lat_logits_tac` / `lon_logits_tac`, and a **geometric goal point** | zero-init residual heads; the geometric goal point is the lever the literature measures as the big one (§0: categorical command +0.2 PDMS vs goal point +4.7) |
+| **emits — explanation** | XCoT tokens every tact; prose at the slow clock | LM head over a restricted vocabulary |
+
+⛔ **Every emitted edge is zero-init and individually gated**, matching the seven existing cascade edges
+(`DESIGN_REFCV4_NAV_WIRING.md` §2.2, +7,682 params, all zero-init). A language module that cannot be switched off
+edge-by-edge cannot be ablated, and an un-ablatable module cannot be attributed.
+⛔ **The goal heads may NOT read the situation classifier's output** (PI 2026-08-03) — see §5.
+
+### 2.d Comparison
+
+| | **(a)** pretrained VLM + projector | **(b)** from scratch | **(c)** ⭐ frozen LM + LoRA, trunk-only vision |
+|---|---|---|---|
+| resident params | 0.5–1.0 B | 0.03–0.08 B | **0.37 B** / 0.81 B |
+| trainable params | 0.5–1.0 B (or LoRA) | all | **~6 M** |
+| vision encoders | **two** | one (ours) | **one (ours)** |
+| shares REF-C's space | partly (extra tokens) | yes | **yes, by construction** |
+| tokens per 400 ms tact | ~30 (0.5 B FP8, doubled prefill) | hundreds | **90 (0.36 B FP8)** — spends 2–6 |
+| language competence | **high** | ⛔ none (47 k words) | **high** (frozen pretrained LM) |
+| answers open questions | yes | no | yes |
+| faithfulness intervention | hard (two views of the scene) | easy | **easy (one tensor)** |
+| risk | parameter ceiling, encoder disagreement | data poverty | LoRA under-capacity for a new modality; projector cold-start |
+| **role** | runner-up; the fallback if (c)'s projector fails to align | **mandatory floor arm** | **CHOSEN** |
+
+⚠️ **(c)'s real risk, stated plainly:** a frozen LM has never seen a 160-token REF-C scene representation, and a
+~6 M-parameter adapter may be too small a bridge. The mitigation is a **staged unfreeze** (projector-only → +LoRA →
++top-k blocks) with the parameter count re-checked at every stage against the 1 B ceiling, and `H-VLA-1` is exactly the
+tiny-rig arm that answers it before any GPU-day is spent.
 
 ## 3. The grounding / consistency mechanism — the USP
 ### 3.1 Consistency losses text ↔ `g_tac` / selected anchor
