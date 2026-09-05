@@ -417,6 +417,17 @@ def _goal_term(zt: Tensor, g: Tensor, metric: str = "cos",
 #: decode `ADAPT_SPEED_FOR_CURVE` but only 27 of them sit below the 8 m/s cap
 #: and therefore actually command `a == 0`; the other 2 command a SUSTAINED
 #: BRAKE to 8 m/s, which is a different mechanism with the same token name.
+#: ⛔ WHICH LON TOKENS NAME A *RELATIVE* TARGET. `a_shift` may only move a
+#: target that is already expressed against the measured v0; `HOLD` (0 m/s),
+#: `CREEP` (GOAL_CREEP_MPS) and `ADAPT_SPEED_FOR_CURVE` above
+#: `GOAL_CURVE_VMAX_MPS` name a speed IN THE WORLD and are left alone.
+def _target_is_relative(lon: str, v0: float) -> bool:
+    if lon in GOAL_LON_DV_MPS:
+        return True
+    return (lon == "ADAPT_SPEED_FOR_CURVE"
+            and float(v0) <= GOAL_CURVE_VMAX_MPS)
+
+
 _MAINTAIN_EPS = 1e-9
 
 W_JERK = 0.02                                   #: comfort, on channel 0 only
@@ -427,9 +438,15 @@ W_VEND = 0.10                                   #: terminal speed vs target
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
                        op_dt: float, *,
                        kappa_turn: float | None = None,
-                       a_sustain: float | None = None) -> Tensor:
+                       a_sustain: float | None = None,
+                       a_shift: float | None = None) -> Tensor:
     """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
     the operative grid. Deterministic, future-free; see the table above."""
+    if a_sustain is not None and a_shift is not None:
+        raise ValueError(
+            "a_sustain and a_shift are two spellings of ONE lever (a_shift "
+            "reduces to a_sustain's a[0] on the maintain branch); passing both "
+            "would make an arm non-attributable. Pass exactly one.")
     a = torch.zeros(op_steps)
     k = torch.zeros(op_steps)
     # --- longitudinal: approach the token's target speed, then hold ------- #
@@ -441,6 +458,45 @@ def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
         v_t = min(float(v0), GOAL_CURVE_VMAX_MPS)
     else:
         v_t = max(0.0, float(v0) + GOAL_LON_DV_MPS.get(lon, 0.0))
+    if a_shift is not None and _target_is_relative(lon, v0):
+        # ⭐⭐ `a_shift` -- D2, AND IT DOMINATES `a_sustain` ON EVERY COLUMN.
+        # THE RULE IN ONE SENTENCE: *the LON tokens name a speed change
+        # relative to WHERE YOU ARE GOING, not relative to where you are.*
+        # `v_t` moves by the a0 extrapolation over the token's own reach time,
+        # so on the MAINTAIN branch `a[0]` is exactly a0 (i.e. `a_sustain` is
+        # this design's special case at the first step) and on every OTHER
+        # token the named `dv` is applied ON TOP of the motion already under
+        # way instead of pretending the car is coasting.
+        # MEASURED, mean paired difference against the `ha0_ext` floor over the
+        # same 40 windows (`raw/lon_designs.txt`; the `cl` row of that table
+        # reproduces the episode-cluster bootstrap's +0.4862 / +0.4117 /
+        # +0.0162 to four decimals, which is what makes the comparison
+        # admissible):
+        #     SHIPPED canonical      LON speed +0.4551   ADE +0.1492
+        #     `a_sustain` (D1)       LON speed +0.1752   ADE +0.0059
+        #     `a_shift`   (D2)       LON speed +0.1184   ADE **-0.0389**
+        # i.e. D2 closes **76 %** of the shipped vocabulary's longitudinal
+        # deficit and is the only design that goes NEGATIVE on ADE -- better
+        # than the floor -- at the expressivity level.
+        # ⚠ EXPRESSIVITY, NOT A PLANNER RESULT. Those rows roll a control
+        # profile through the unicycle integrator; whether the SEARCH emits
+        # them is the arm's question, and the reason to believe it might is
+        # `D-REFAV1-LON-PLAN-COPIES-VOCAB` (the emitted `a[0]` IS the decoded
+        # token's canonical rung on 27/40 windows).
+        # ⛔ ABSOLUTE TARGETS ARE NOT SHIFTED. `HOLD` (stop) and `CREEP`
+        # (1.5 m/s) name a speed IN THE WORLD, and so does
+        # `ADAPT_SPEED_FOR_CURVE` once `v0 > GOAL_CURVE_VMAX_MPS` (brake to
+        # 8 m/s). Shifting those would change what the token MEANS rather than
+        # what it is measured against. On the 40-window grid this predicate is
+        # numerically inert -- `HOLD`/`CREEP` decode 0/40 times -- so it costs
+        # nothing here and prevents a real error elsewhere.
+        # ⭐ The hint is the MEASURED a0 (backward difference of past speeds
+        # closing at t0), so there is no chooser to train and no free
+        # parameter fitted on the scored split.
+        # ⛔ `None` is the SHIPPED path: bit-identical to every pre-2026-09-05
+        # arm, and mutually exclusive with `a_sustain` (they are two spellings
+        # of one lever and combining them would make an arm non-attributable).
+        v_t = v_t + float(a_shift) * GOAL_REACH_S
     if a_sustain is not None and abs(v_t - float(v0)) < _MAINTAIN_EPS:
         # ⭐⭐ `a_sustain` -- THE LONGITUDINAL ANALOGUE OF `kappa_turn`
         # (D-REFAV1-LON-VOCAB, 2026-09-05). It touches ONLY the MAINTAIN
@@ -2088,7 +2144,8 @@ class RefAV1(nn.Module):
                                goal_kappa_turn: float | None = None,
                                goal_kappa_levels=None,
                                goal_kappa_hint=None,
-                               a_sustain=None
+                               a_sustain=None,
+                               a_shift=None
                                ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
@@ -2186,21 +2243,24 @@ class RefAV1(nn.Module):
             kt = [choose_kappa_level(goal_kappa_levels, h) for h in hint]
         # ⭐ `a_sustain` may be a SCALAR (one value for the batch) or one value
         # per row -- the per-row form is what a measured-a0 hint is.
-        if a_sustain is None:
-            asu = [None] * len(lat_i)
-        else:
-            asu = torch.as_tensor(a_sustain, dtype=torch.float32
-                                  ).reshape(-1).tolist()
-            if len(asu) == 1:
-                asu = asu * len(lat_i)
-            if len(asu) != len(lat_i):
-                raise ValueError(f"a_sustain carries {len(asu)} rows for a "
-                                 f"batch of {len(lat_i)}")
+        def _per_row(x, name):
+            if x is None:
+                return [None] * len(lat_i)
+            v = torch.as_tensor(x, dtype=torch.float32).reshape(-1).tolist()
+            if len(v) == 1:
+                v = v * len(lat_i)
+            if len(v) != len(lat_i):
+                raise ValueError(f"{name} carries {len(v)} rows for a batch "
+                                 f"of {len(lat_i)}")
+            return v
+
+        asu = _per_row(a_sustain, "a_sustain")
+        ash = _per_row(a_shift, "a_shift")
         ctrl = torch.stack([
             canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt,
-                               kappa_turn=k, a_sustain=s)
-            for i, j, v, k, s in zip(lat_i, lon_i, v0.tolist(), kt,
-                                     asu)]).to(last)
+                               kappa_turn=k, a_sustain=s, a_shift=q)
+            for i, j, v, k, s, q in zip(lat_i, lon_i, v0.tolist(), kt,
+                                        asu, ash)]).to(last)
         stride = self._stride(cfg.tac_dt)
         # ⭐ THE GOAL CROSSES INTO THE MODEL HERE — through the same boundary a
         # planner candidate crosses (`_model_actions`), so `units` cannot apply
@@ -2217,7 +2277,9 @@ class RefAV1(nn.Module):
                                           for k in kt],
                       "kappa_vocab": goal_kappa_vocab_id(goal_kappa_levels),
                       "a_sustain_used": [None if s is None else float(s)
-                                         for s in asu]}
+                                         for s in asu],
+                      "a_shift_used": [None if q is None else float(q)
+                                       for q in ash]}
 
     @torch.no_grad()
     def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
@@ -2264,6 +2326,7 @@ class RefAV1(nn.Module):
              goal_kappa_levels=None,
              goal_kappa_hint=None,
              a_sustain=None,
+             a_shift=None,
              jerk_seam_a0: float | None = None,
              goal_keeps_seed: bool = False):
         """One MPC tick for ONE window (B must be 1).
@@ -2469,7 +2532,7 @@ class RefAV1(nn.Module):
                 goal_kappa_turn=goal_kappa_turn,
                 goal_kappa_levels=goal_kappa_levels,
                 goal_kappa_hint=goal_kappa_hint,
-                a_sustain=a_sustain)
+                a_sustain=a_sustain, a_shift=a_shift)
             goal_t, goal_source = self._tac_field(goal_field), "supplied+seed"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0],
@@ -2486,7 +2549,7 @@ class RefAV1(nn.Module):
                 goal_kappa_turn=goal_kappa_turn,
                 goal_kappa_levels=goal_kappa_levels,
                 goal_kappa_hint=goal_kappa_hint,
-                a_sustain=a_sustain)
+                a_sustain=a_sustain, a_shift=a_shift)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0],
@@ -2745,6 +2808,8 @@ class RefAV1(nn.Module):
         res.a_sustain = (None if a_sustain is None else
                          [float(x) for x in
                           torch.as_tensor(a_sustain).flatten()])
+        res.a_shift = (None if a_shift is None else
+                       [float(x) for x in torch.as_tensor(a_shift).flatten()])
         res.jerk_seam_a0 = (None if jerk_seam_a0 is None
                             else float(jerk_seam_a0))
         res.target_speed = (None if target_speed is None

@@ -193,6 +193,75 @@ move the emitted plan on most of the 19 `a ≡ 0` windows. If it does **not**, t
 finding is that the cost overrides the goal longitudinally — which is
 `lonseam`'s question, and it is already queued.
 
+### 1.8 ⛔ D1 CAN ONLY REACH 61.8 % OF THE GAP — so I took the next lever in the same turn
+
+**Instrument:** `raw/lon_attribution.py` → `raw/lon_attribution.txt`.
+`a_sustain` acts only on the maintain branch, so the first question is how much
+of the deficit even *sits* there. Per-window paired `cl − ha0_ext`:
+
+| stratum | n | LON speed | LON accel | ADE |
+|---|---|---|---|---|
+| ALL windows | 40 | **+0.4862** | +0.4117 | +0.0162 |
+| MAINTAIN (D1 acts) | 31 | +0.3879 | +0.3058 | **−0.0728** |
+| NON-maintain (D1 inert) | 9 | **+0.8247** | +0.7767 | **+0.3228** |
+
+⇒ **only 61.8 % of the LON-speed deficit is addressable by D1**, and the
+9 non-maintain windows carry a **2.1× larger** per-window error and *all* of the
+ADE loss (refav1 already **beats** the floor on ADE by −0.0728 on the other 31).
+
+⭐ **The control that makes this attribution real rather than a stratum
+artifact:** `ha0_ext`'s own LON error is essentially the same on both branches
+(**0.3007** vs **0.3231**) — as it must be, since the floor knows nothing about
+the decoded token — while `cl`'s is **0.6886** vs **1.1478**. The split is a
+property of the **planner**, not of the windows.
+*(The `GOAL_A_MAX` clip on `a_sustain = a0` binds on only 3/31 maintain windows
+(9.7 %); median |a0| there is 0.527, so the clip is not a limitation.)*
+
+### 1.9 ⭐⭐ D2 — "the tokens name a change relative to WHERE YOU ARE GOING"
+
+**Instrument:** `raw/lon_designs.py` → `raw/lon_designs.txt`. Three designs, all
+hinted on the measured `a0`, all scored on the same windows with the decoded LAT
+token held constant.
+
+| design | rule |
+|---|---|
+| **D1** `a_sustain` | maintain branch → constant `a = a0` |
+| **D2** `a_shift` | **every RELATIVE target** → `v_t' = v_t + a0·GOAL_REACH_S` |
+| D3 | every token → constant `a = clip(a0 + a_token[0])` |
+
+**Mean paired difference against the `ha0_ext` floor** (negative = beats it):
+
+| design | Δ LON speed | Δ LON accel | Δ ADE |
+|---|---|---|---|
+| `cl` = `wk15` (T1 planner) | +0.4862 | +0.4117 | +0.0162 |
+| SHIPPED canon @ decoded | +0.4551 | +0.3672 | +0.1492 |
+| D1 `a_sustain` | +0.1752 | +0.1510 | +0.0059 |
+| **D2 `a_shift`** | **+0.1184** | **+0.0708** | **−0.0389** |
+| D3 | +0.1254 | +0.1031 | −0.0328 |
+
+⭐ **The cross-check that makes the table admissible:** the `cl` row reproduces
+the episode-cluster bootstrap's banked **+0.4862 / +0.4117 / +0.0162 to four
+decimals**, so this script and §4b's estimator are reading the same thing.
+
+⇒ **D2 closes 76 % of the shipped vocabulary's longitudinal deficit and is the
+only design that goes NEGATIVE on ADE.** It reduces to D1's `a[0]` on the
+maintain branch (so D1 is its special case at the first step) and, unlike D1, is
+not inert on the 9 windows that carry all the ADE loss.
+
+⛔ **Absolute targets are never shifted.** `HOLD` (stop), `CREEP` (1.5 m/s) and
+`ADAPT_SPEED_FOR_CURVE` above `GOAL_CURVE_VMAX_MPS` (brake to 8 m/s) name a
+speed **in the world**; shifting them would change what the token *means*. On
+this 40-window grid the predicate is numerically inert (`HOLD`/`CREEP` decode
+0/40), so it costs nothing here and prevents a real error elsewhere.
+
+⚠️ **Still expressivity, not a planner result.** The reason to expect the search
+to follow is §1.7: the emitted `a[0]` **is** the decoded token's canonical rung
+on 27/40 windows.
+
+**D2 is implemented (`canonical_controls(a_shift=...)`, `--a-sustain-mode
+a0_shift`), pinned by 5 more tests (14 total in that file), mutually exclusive
+with `a_sustain` by an explicit guard, and it is now the queue's FIRST arm.**
+
 ---
 
 ## 2. P2 — the cost side. Two missing terms, and the second is NOT mine to take
@@ -346,11 +415,12 @@ baseline **`wk15`** = `ccos`, `(W_JERK, W_KAPPA, W_VEND) =
 
 | # | arm | the one variable |
 |---|---|---|
-| 1 | `lonvocab` | `--a-sustain-mode a0` |
-| 2 | `lonseam` | `--jerk-seam a0` |
-| 3 | `lonvocab_s1` | `lonvocab` with `--plan-seed 1` — **the REPLICATE** |
-| 4 | `loncomb` | both levers |
-| 5 | *(withdrawn)* | `--target-speed-mode a0ext` — blocked by the `test_C1` pin, escalated |
+| 1 | **`lonshift`** | `--a-sustain-mode a0_shift` — **D2, the best measured design** |
+| 2 | `lonseam` | `--jerk-seam a0` — the COST lever, alone |
+| 3 | **`lonshift_s1`** | `lonshift` with `--plan-seed 1` — **the REPLICATE** |
+| 4 | `loncomb2` | D2 + the jerk seam |
+| 5 | `lonvocab` | `--a-sustain-mode a0` — D1, for ATTRIBUTION (is maintain-only enough?) |
+| — | *(withdrawn)* | `--target-speed-mode a0ext` — blocked by the `test_C1` pin, escalated |
 
 ⛔ **The bar, stated before the numbers.** `D-REFAV1-CG-SEEDFLOOR` measured
 `separated` on **4 of 10** paired family metrics between two arms differing
@@ -362,20 +432,24 @@ exists so `lonvocab`'s own noise floor is read on `lonvocab`'s own rig.
 
 **Committed outcomes:**
 
-* **If `lonvocab` improves the LONGITUDINAL family past the seed floor** — the
+* **If `lonshift` improves the LONGITUDINAL family past the seed floor** — the
   vocabulary was the blocker, §1.4 is the mechanism, and the next arm is
   `loncomb`.
-* **If `lonvocab` is a NULL** — then, exactly as with `ccosh`, the goal moved
+* **If `lonshift` is a NULL** — then, exactly as with `ccosh`, the goal moved
   but the *search* did not follow it, and the finding is that the longitudinal
   blocker is the **cost**, not the vocabulary. The same-breath control that
   makes such a null a measurement is already banked: `a_sustain = 0` is
   bit-identical while `a_sustain = 1.4` moves the emitted controls
   (`test_J2`), and `wk15` reads 15.08 m from `ccos_argmax` on the same rig.
-* **If `lonvocab` improves LON but ADE regresses** — report it as a trade and
+* **If `lonshift` improves LON but ADE regresses** — report it as a trade and
   do **not** call it a win; `M27` already showed seven separated family
   "improvements" produced by the planner *stopping*.
-* **If `lonseam` alone matches `lonvocab`** — the cost geometry, not the
-  vocabulary, is the lever, and `a_sustain` is redundant. Say so.
+* **If `lonseam` alone matches `lonshift`** — the cost geometry, not the
+  vocabulary, is the lever, and `a_sustain`/`a_shift` are redundant. Say so.
+* **If `lonshift` and `lonvocab` are indistinguishable** — the 9 non-maintain
+  windows were not where the planner could act after all, and §1.8's attribution
+  over-promised. Report the attribution as refuted at the ARM level even though
+  it holds at the expressivity level.
 
 **Reading instrument:** `taniteval/tools/refav1_paired_delta.py` (paired
 episode-cluster bootstrap, `n_boot 2000`, per family, never pooled;
@@ -411,5 +485,5 @@ the fourth is escalated.
 | `a_sustain` + `jerk_seam_a0` implementation | repo: `stack/tanitad/refs/refa_v1.py` |
 | arm flags + reached-it guards | repo: `taniteval/tools/refav1_arm.py` |
 | pins | repo: `stack/tests/test_refa_v1_a_sustain.py`, `stack/tests/test_refa_v1_lon_end_to_end.py` |
-| arm records + dumps (`lonvocab`, `lonseam`, `lonvocab_s1`, `loncomb`) | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO until they land; bank under `raw/arms/` as the cost-geometry package did** |
+| arm records + dumps (`lonshift`, `lonseam`, `lonshift_s1`, `loncomb2`, `lonvocab`) | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO until they land; bank under `raw/arms/` as the cost-geometry package did** |
 | the off-Drive clone the arms run from | `C:/Users/Admin/tanitad-wt` (synced from the repo, verified by marker) |

@@ -155,3 +155,78 @@ def test_i_w_vend_is_a_dead_term_unless_target_speed_is_armed():
     assert "if target_speed is not None:" in src
     assert "w_vend * (v_end - target_speed).pow(2)" in src
     assert inspect.signature(RefAV1.plan).parameters["target_speed"].default is None
+
+
+# =========================================================================== #
+# D2 -- `a_shift`: the tokens name a change relative to WHERE YOU ARE GOING
+# =========================================================================== #
+def test_k_a_shift_absent_is_bit_identical():
+    for lat in LATS:
+        for lon in MAINTAIN + NON_MAINTAIN:
+            base = canonical_controls(lat, lon, 5.0, OP, DT)
+            none = canonical_controls(lat, lon, 5.0, OP, DT, a_shift=None)
+            assert torch.equal(base, none), (lat, lon)
+    # SAME-BREATH CONTROL that must DIFFER
+    assert not torch.equal(
+        canonical_controls("LANE_KEEP", "CRUISE", 5.0, OP, DT),
+        canonical_controls("LANE_KEEP", "CRUISE", 5.0, OP, DT, a_shift=0.9))
+
+
+def test_l_a_shift_reduces_to_a_sustain_at_the_first_step_on_maintain():
+    """D2's defining property: `a[0]` is exactly the hint on the maintain
+    branch, so `a_sustain` is its special case at the first step. They must
+    then DIVERGE later (D1 holds, D2 decays) -- asserted, not assumed."""
+    for lon in MAINTAIN:
+        sh = canonical_controls("LANE_KEEP", lon, 6.0, OP, DT, a_shift=0.8)
+        su = canonical_controls("LANE_KEEP", lon, 6.0, OP, DT, a_sustain=0.8)
+        assert float(sh[0, 0]) == pytest.approx(0.8, abs=1e-6), lon
+        assert float(su[0, 0]) == pytest.approx(0.8, abs=1e-6), lon
+        # SAME-BREATH CONTROL: they are NOT the same design
+        assert not torch.equal(sh, su), lon
+        assert float(su[:, 0].std()) == pytest.approx(0.0, abs=1e-7)
+        assert float(sh[:, 0].std()) > 1e-3
+
+
+def test_m_a_shift_never_moves_an_ABSOLUTE_target():
+    """`HOLD` (stop) and `CREEP` (1.5 m/s) name a speed IN THE WORLD, and so
+    does `ADAPT_SPEED_FOR_CURVE` above GOAL_CURVE_VMAX_MPS. Shifting those
+    would change what the token MEANS."""
+    for lon in ("HOLD", "CREEP"):
+        assert torch.equal(
+            canonical_controls("LANE_KEEP", lon, 10.0, OP, DT),
+            canonical_controls("LANE_KEEP", lon, 10.0, OP, DT, a_shift=0.9)), lon
+    hi = 20.0                      # ADAPT above the cap = a brake to 8 m/s
+    assert hi > GOAL_CURVE_VMAX_MPS
+    assert torch.equal(
+        canonical_controls("LANE_KEEP", "ADAPT_SPEED_FOR_CURVE", hi, OP, DT),
+        canonical_controls("LANE_KEEP", "ADAPT_SPEED_FOR_CURVE", hi, OP, DT,
+                           a_shift=0.9))
+    # SAME-BREATH CONTROLS that must MOVE: every relative target
+    for lon in ("CRUISE", "FOLLOW", "ACCELERATE", "YIELD_MERGE", "BRAKE_TO"):
+        assert not torch.equal(
+            canonical_controls("LANE_KEEP", lon, 10.0, OP, DT),
+            canonical_controls("LANE_KEEP", lon, 10.0, OP, DT, a_shift=0.9)), lon
+    lo = 4.0                       # ADAPT below the cap IS relative (== v0)
+    assert not torch.equal(
+        canonical_controls("LANE_KEEP", "ADAPT_SPEED_FOR_CURVE", lo, OP, DT),
+        canonical_controls("LANE_KEEP", "ADAPT_SPEED_FOR_CURVE", lo, OP, DT,
+                           a_shift=0.9))
+
+
+def test_n_a_shift_and_a_sustain_are_mutually_exclusive():
+    with pytest.raises(ValueError, match="two spellings"):
+        canonical_controls("LANE_KEEP", "CRUISE", 5.0, OP, DT,
+                           a_sustain=0.5, a_shift=0.5)
+
+
+def test_o_a_shift_opens_the_positive_dv_on_EVERY_token_not_just_maintain():
+    """The reason D2 beats D1: D1 is inert on the 9 non-maintain windows."""
+    v0 = 10.0
+    for lon in ("ACCELERATE", "BRAKE_TO", "FOLLOW"):
+        base = float(canonical_controls("LANE_KEEP", lon, v0, OP, DT)[:K, 0].sum() * DT)
+        su = float(canonical_controls("LANE_KEEP", lon, v0, OP, DT,
+                                      a_sustain=1.2)[:K, 0].sum() * DT)
+        sh = float(canonical_controls("LANE_KEEP", lon, v0, OP, DT,
+                                      a_shift=1.2)[:K, 0].sum() * DT)
+        assert su == pytest.approx(base), (lon, "a_sustain must be INERT here")
+        assert sh > base + 1.0, (lon, "a_shift must move it")

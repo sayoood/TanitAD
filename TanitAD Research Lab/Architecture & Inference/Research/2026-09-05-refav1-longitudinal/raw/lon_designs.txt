@@ -1,0 +1,35 @@
+== GT-LON stratum (n=24) ==
+design                     LONspd medAE LONacc medAE     LONalong    ADE med  note
+----------------------------------------------------------------------------------
+GT identity control              0.0000       0.0000       0.0000     0.0000  must read EXACTLY 0
+cl = wk15 (T1 planner)           0.8208       0.8894       0.5927     1.1462  
+ha0_ext FLOOR                    0.2833       0.5435       0.3264     0.4161  
+SHIPPED canon @ decoded          0.7773       0.8805       0.5742     1.1254  
+D1 maintain -> const a0          0.3001       0.5435       0.2455     0.3970  implemented
+D2 v_t + a0*REACH_S              0.3300       0.5540       0.2742     0.4423  all tokens
+D3 const (a0 + a_token)          0.3001       0.5435       0.2455     0.3970  all tokens
+
+== ALL 40 windows ==
+design                     LONspd medAE LONacc medAE     LONalong    ADE med  note
+----------------------------------------------------------------------------------
+GT identity control              0.0000       0.0000       0.0000     0.0000  must read EXACTLY 0
+cl = wk15 (T1 planner)           0.5749       0.7123       0.3731     0.8059  
+ha0_ext FLOOR                    0.2313       0.3866       0.2572     0.3637  
+SHIPPED canon @ decoded          0.5753       0.6561       0.4595     0.6223  
+D1 maintain -> const a0          0.2446       0.4266       0.2455     0.3814  implemented
+D2 v_t + a0*REACH_S              0.2910       0.3882       0.2742     0.4274  all tokens
+D3 const (a0 + a_token)          0.2502       0.4266       0.2455     0.3970  all tokens
+
+== MEAN PAIRED difference vs the FLOOR (the arm-level statistic) ==
+design                        d LON speed    d LON accel        d ADE
+----------------------------------------------------------------------
+cl = wk15 (T1 planner)             0.4862         0.4117       0.0162
+ha0_ext FLOOR                      0.0000         0.0000       0.0000
+SHIPPED canon @ decoded            0.4551         0.3672       0.1492
+D1 maintain -> const a0            0.1752         0.1510       0.0059
+D2 v_t + a0*REACH_S                0.1184         0.0708      -0.0389
+D3 const (a0 + a_token)            0.1254         0.1031      -0.0328
+
+# negative = better than ha0_ext. The `cl` row must reproduce the banked
+# +0.4862 / +0.4117 / +0.0162 -- if it does not, this script and the
+# episode-cluster bootstrap are not reading the same thing.

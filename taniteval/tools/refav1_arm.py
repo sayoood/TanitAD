@@ -1026,8 +1026,9 @@ def run_dump(a) -> dict:
                     # strictly LESS information than `ha`, which holds the last
                     # observed ACTION.
                     _a0 = float(ext[0])
-                    a_sustain = (_a0 if getattr(a, "a_sustain_mode",
-                                              "none") == "a0" else None)
+                    _lm = getattr(a, "a_sustain_mode", "none")
+                    a_sustain = _a0 if _lm == "a0" else None
+                    a_shift = _a0 if _lm == "a0_shift" else None
                     jerk_seam = (_a0 if getattr(a, "jerk_seam", "off")
                                  == "a0" else None)
                     # ⭐ the planner->model crossing travels with the call:
@@ -1044,6 +1045,7 @@ def run_dump(a) -> dict:
                                      goal_kappa_levels=gk_levels,
                                      goal_kappa_hint=gkh,
                                      a_sustain=a_sustain,
+                                     a_shift=a_shift,
                                      jerk_seam_a0=jerk_seam,
                                      goal_keeps_seed=gks)
                     if t_plan_first is None:
@@ -1075,7 +1077,9 @@ def run_dump(a) -> dict:
                         # its absence is exactly what made the third weight a
                         # dead term unnoticed for the whole programme.
                         if getattr(a, "a_sustain_mode", "none") != "none":
-                            got_s = getattr(res, "a_sustain", "__absent__")
+                            got_s = getattr(
+                                res, "a_shift" if _lm == "a0_shift"
+                                else "a_sustain", "__absent__")
                             if got_s in ("__absent__", None):
                                 raise RuntimeError(
                                     "plan() returned a_sustain=%r for "
@@ -2548,7 +2552,8 @@ def main(argv=None):
                     help="speed (m/s) below which the constant kappa_max governs "
                          "(default 2.0); mu*g/v^2 exceeds the clip there anyway "
                          "and the division is ill-conditioned")
-    ap.add_argument("--a-sustain-mode", choices=("none", "a0"), default="none",
+    ap.add_argument("--a-sustain-mode", choices=("none", "a0", "a0_shift"),
+                    default="none",
                     help="THE LONGITUDINAL VOCABULARY LEVER (D-REFAV1-LON-VOCAB). "
                          "'none' is the shipped path, BIT-IDENTICAL to every arm "
                          "banked before 2026-09-05. 'a0' gives the goal's MAINTAIN "
@@ -2565,7 +2570,20 @@ def main(argv=None):
                          "outside it entirely. THIS IS A VOCABULARY CHANGE: it "
                          "moves the goal field the plan is scored against, so it is "
                          "NOT window-comparable with a shipped-vocabulary arm on "
-                         "the goal term -- it is comparable on the four families")
+                         "the goal term -- it is comparable on the four families. "
+                         "'a0_shift' is D2 and DOMINATES 'a0' on every measured "
+                         "column: instead of touching only the maintain branch it "
+                         "shifts EVERY relative target by the a0 extrapolation "
+                         "(v_t' = v_t + a0*GOAL_REACH_S), i.e. the tokens name a "
+                         "speed change relative to WHERE YOU ARE GOING rather than "
+                         "to where you are; it reduces to 'a0' at the first step on "
+                         "the maintain branch. MEASURED mean paired difference "
+                         "against the ha0_ext floor (raw/lon_designs.txt): shipped "
+                         "canonical LON speed +0.4551 / ADE +0.1492; 'a0' +0.1752 / "
+                         "+0.0059; 'a0_shift' +0.1184 / -0.0389 -- 76 %% of the "
+                         "deficit closed and the only design that goes NEGATIVE on "
+                         "ADE. Absolute targets (HOLD, CREEP, ADAPT above "
+                         "GOAL_CURVE_VMAX_MPS) are never shifted")
     ap.add_argument("--jerk-seam", choices=("off", "a0"), default="off",
                     help="PRICE THE JERK SEAM (D-REFAV1-LON-COST). The shipped "
                          "jerk term diffs the plan's OWN actions only, so the step "
