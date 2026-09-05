@@ -2257,3 +2257,72 @@ uses the corrected predicate rather than needing a later retraction.
 the corrected predicate**. No GPU queued beyond it. ⚠️ The mount is flapping (`not a git repository`
 is the transient signature) and the commit is retrying in background — to be confirmed by blob
 comparison when it settles.
+
+## M45. ⛔⛔ I RE-DERIVED A RETRACTION THAT WAS ALREADY BANKED — and shipped its false half into two live agent briefs
+
+### 1. What I claimed, and where I put it
+
+I told the PI, and wrote verbatim into **two agent briefs launched tonight** (the v7f status board and
+the refcv5 readiness build), that:
+
+> *"`mktree_commit.py` currently prints a failure and exits 0."*
+
+**MEASURED, just now, and it is false:**
+
+```
+python stack/scripts/mktree_commit.py            -> BARE_RC=1     (correct)
+python stack/scripts/mktree_commit.py 2>&1|tail  -> PIPE_RC=0     (the tail's code)
+```
+
+⇒ The script raises `SystemExit` and exits **1**, exactly as written. **The `0` I read was `tail`'s
+exit code**, because a shell pipeline returns the status of its LAST command. I invoked it that way,
+saw `mktree kept failing` next to a `0`, and attributed the mismatch to the tool.
+
+### 2. ⛔⛔ THE ACTUAL FAILURE IS NOT THE PIPELINE — IT IS THAT THIS WAS ALREADY IN THE LOG
+
+`RETRACTION_LOG.md` **already carries this exact retraction**, filed by a sibling stream, registered
+as **`D-SHELL-PIPEFAIL-1`**, pinned at commit **`964a888`** — down to the same self-observation
+(*"I append `| tail -N` to almost every command I run"*) and the same explicit conclusion:
+
+> *"No fix to `mktree_commit.py` is needed or will be made."*
+
+⇒ ⛔ **I asserted in a class the log had already closed, without reading it.** That is
+**operating-standard rule 4 verbatim** — *"`RETRACTION_LOG.md` is append-only and MUST BE READ
+before asserting in a known class"* — and it is the rule whose whole purpose is to stop a
+programme paying twice for one lesson. **We paid twice.**
+
+⭐ **And the second payment was more expensive than the first**, because between the sibling's
+correct entry and my re-derivation I wrote the false attribution into **two agent briefs launched
+tonight**. A banked retraction that is not read does not merely fail to help — it lets the retracted
+claim be re-issued **with fresh authority**, into work that has already started.
+
+⇒ **The durable consequence is a READ, not a rule.** The rule exists and is correct; what failed
+is that nothing forces the read at the moment of assertion. ⭐ The cheap fix is mechanical: before
+writing an instrument-defect warning into any brief, `grep` the retraction log for the instrument's
+name. Had I run `grep -n mktree_commit "Project Steering/RETRACTION_LOG.md"`, this entry would not
+exist and neither brief would carry the false line.
+
+⚠️ **The class itself is unchanged and correct** — *a wrapper's exit code read as the tool's*, a
+probe reporting the wrong scope. The B1 stream hit its mirror image within the same hour (its own
+`=== END ===` marker, printed by its own command, read as a completed job). **Three instances now**,
+which is why the sibling's `D-SHELL-PIPEFAIL-1` is the entry that should be cited, not this one.
+
+### 3. Blast radius, stated honestly
+
+**Low, and in the safe direction — but larger than the sibling's, because mine reached live work.** The false warning told agents to *distrust* a success and verify
+by blob comparison — which is the correct discipline regardless. It cannot have produced a wrong
+positive; at worst it cost redundant verification. ⚠️ **The two live agents carry the false line and
+cannot be corrected mid-flight** (no messaging tool in this session); their briefs' blob-verification
+instruction stands on its own merits.
+
+### 4. The one REAL defect found while checking, and why it is NOT being fixed now
+
+`main()` reads `sys.argv[1]` at line 134 **before** the usage guard at line 141, so a zero-argument
+call gives an `IndexError` traceback instead of the usage string. Real, and **cosmetic** — no caller
+invokes it with zero arguments.
+
+⛔ **Deliberately NOT patched in this turn: six agents are live and every one of them commits through
+this file.** A Python module is read whole at start-up, so an in-place edit has a millisecond window
+in which a concurrent invocation reads a truncated file — and the cost of corrupting a live commit
+path far exceeds the benefit of a better usage message. *(Same reasoning as the standing rule never to
+`sed -i` a supervisor script while it runs.)* Queued for the next quiet window.
