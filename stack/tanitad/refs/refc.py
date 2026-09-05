@@ -146,7 +146,16 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from tanitad.models.kinematic import rollout_unicycle
-from tanitad.refs import refc_sampler as _sampler
+from tanitad.refs import feasible_decode as _feas
+
+
+def _feas_with_origin(x: Tensor) -> Tensor:
+    """[..., S, 2] -> [..., S+1, 2] with the ego origin prepended. Same shape
+    contract as ``fan_safety.with_origin``; duplicated here only because
+    ``taniteval`` is a SIBLING of ``stack/`` and a hard import would make this
+    module un-importable on a pod."""
+    z = torch.zeros(*x.shape[:-2], 1, 2, dtype=x.dtype, device=x.device)
+    return torch.cat([z, x], dim=-2)
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
 
@@ -386,25 +395,22 @@ class DecoderConfig:
     aux_hidden: int = 384         # maneuver-head hidden
     diffusion_steps: int = 2      # truncated-denoise steps (0 == classifier)
     noise_std: float = 0.1        # train-time truncated-diffusion noise (metres)
-    # ---- refcv5 WP-6 (E-AGT-HEAD): the second cross-attention -------------
-    #: agent tokens reach every decoder layer through a zero-init gate. False
-    #: constructs nothing (bit-identical to refcv4b, RNG order included).
-    cross_agent: bool = False
-    # ---- refcv5 WP-4 (E-DDA-3): the control-space DDIM sampler ------------
-    #: "none" == today's decoder, byte-identical. "ddim" replaces the metre-
-    #: space truncated denoise with an anchored Gaussian in CONTROL space.
-    sampler: str = "none"
-    sampler_train_t_max: int = 50   # train timestep ~ U[0, t_max)
-    sampler_infer_t: int = 8        # eval starts here (DD's truncation point)
-    sampler_steps: int = 2          # DDIM steps at inference
-    sampler_groups: int = 1         # G samples per anchor
-    #: (a_lon, a_lat) normalisers — the vocabulary's OWN ranges, so [-1, 1]
-    #: means what the grid means. MODEL_REGISTRY §4.6.
-    control_norm: tuple[float, float] = (4.0, 3.0)
-    #: DELIBERATE-REGRESSION arm: noise the WAYPOINTS in metres like DD does.
-    #: Pre-registered to FAIL the flyability gate; if it does not, the
-    #: instrument cannot see what it is cited for and the arm is VOID.
-    sampler_space: str = "control"  # "control" | "metre"
+    # ---- THE FEASIBILITY-AWARE DECODE (default OFF, byte-identical when off) --
+    # MEASURED 2026-09-05: this decode emits a fan whose mean friction load is
+    # 4.18 g while the frozen vocabulary it started from is drivable at 0.48 g --
+    # an 8.6x blow-up manufactured DOWNSTREAM of the vocabulary, with 88.8 % of
+    # candidates outside the (a, kappa) envelope. A feasibility REWARD moves the
+    # ranking by 0.001 and a post-train VETO closed ~2.7 % of the gap while
+    # regressing T1 ade_m +0.0362 m. Both are soft: they penalise a path the
+    # decode can still emit. With this ON, an envelope- or Kamm-violating path is
+    # UNREPRESENTABLE, and the projection is applied at EVERY pass that moves a
+    # waypoint -- a penalty on `out["offset"]` reaches one of three.
+    feasible_decode: bool = False
+    feasible_mu: float = 0.7      # friction circle; None-like <= 0 disables it
+    feasible_entry: bool = False  # also bind the first step's speed to v0 +- a*dt
+    feasible_a_max: float = 4.0   # == rewards.A_MAX_MPS2 (the scorer's own)
+    feasible_kappa_max: float = 0.2
+    feasible_prefix_slots: int = 4  # the UNIFORM 2 s prefix the scorer differentiates
 
 
 @dataclass
@@ -487,20 +493,9 @@ class SelectionConfig:
     # ⛔ EXACTNESS RESTS ON ONE STRUCTURAL FACT, verified in source rather than
     # assumed: `CrossAttnLayer` cross-attends q->kv with NO self-attention over
     # the candidate axis, and its MLP/LayerNorm are per-token. Candidates are
-    # therefore INDEPENDENT and decoding a subset gives that subset the same
-    # answer. If a candidate-axis interaction is ever added to the decoder this
+    # therefore INDEPENDENT and decoding a subset is bit-identical for that
+    # subset. If a candidate-axis interaction is ever added to the decoder this
     # flag becomes UNSOUND and must be retired with it.
-    # ⚠️ CORRECTED 2026-09-05 (refcv5 build): this comment previously said
-    # "bit-identical for that subset". That is a FLOAT-PRECISION OVERSTATEMENT.
-    # MEASURED on the dev box (`tests/test_refc_agents.py::
-    # test_candidate_independence_survives_the_agent_branch`): a subset decode
-    # already disagrees with the full decode by ~1.19e-07 on conf and ~1.49e-07
-    # on offset WITH NO AGENT BRANCH AND NOTHING ELSE CHANGED, because a
-    # different candidate count selects a different GEMM reduction order. The
-    # STRUCTURAL claim (no candidate-axis mixing) stands and is what the flag
-    # needs; the claim the MEASUREMENT actually supports is the one this block
-    # already makes below — the SELECTION INDEX is identical on 881/881. Bit
-    # equality was never measured and is not true here.
     anchor_prefilter: bool = False    # S2b decode only reachable anchors
     anchor_prefilter_guard: bool = True   # verify the winner survived
     graft_cons: bool = False          # S3 consequence score reaches the ranking
@@ -533,12 +528,6 @@ class RefCConfig:
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
     lan: LanConfig = field(default_factory=LanConfig)
-    # ⭐ refcv5 WP-6 (E-AGT-HEAD): the monocular environment head and the agent
-    # tokens the decoder cross-attends. `agents.enable=False` (the default)
-    # constructs NOTHING, so a v5 build with the seam off is bit-identical to
-    # refcv4b. The type is `Any` in annotation terms only because importing
-    # refc_agents here would be circular; it is an `AgentSeamConfig`.
-    agents: "object | None" = None
     speed_hidden: int = 256       # refc1 target-speed class head width
     ego_dropout: float = 0.5      # per-sample Bernoulli zero of v0 (training)
     route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
@@ -1150,33 +1139,9 @@ class FiLM(nn.Module):
 
 class CrossAttnLayer(nn.Module):
     """Anchor-query cross-attention block: cross-attend the conv map, then a
-    FiLM(condition)-modulated MLP (pre-norm, residual).
+    FiLM(condition)-modulated MLP (pre-norm, residual)."""
 
-    ⭐ **refcv5 WP-6 (`E-AGT-HEAD`) — the SECOND cross-attention.**
-    DiffusionDrive attends **30 detection queries** in every decoder layer
-    (audit #20); refcv4b attends **none**, so its decoder has no surface on
-    which "there is a car 14 m ahead decelerating" can act. With
-    ``cross_agent=True`` this layer gains an agent branch whose output is
-    scaled by ``agent_gate``, a scalar **initialised to exactly 0**.
-
-    ⛔ **The parity contract, both halves:**
-      * ``cross_agent=False`` -> the branch is **not constructed**, so RNG draw
-        order is unchanged and a v5 build is *bit-identical* to refcv4b.
-      * ``cross_agent=True`` -> at step 0 ``agent_gate == 0`` so the forward
-        output is numerically identical to the agent-free layer, while
-        ``dL/d(agent_gate) != 0``. Gated, not dead — the ``ctx_to_cond`` /
-        ``lan_gate`` discipline.
-      * ``agents is None`` (an unlabelled window, or the seam simply not fed)
-        -> the branch is skipped entirely and costs nothing.
-
-    ⚠️ ``anchor_prefilter`` (S2b) rests on candidates being INDEPENDENT along
-    the candidate axis. The agent branch cross-attends q -> agent tokens with no
-    interaction *among* candidates, so that invariant survives. A self-attention
-    over candidates would break it and must retire the flag with it.
-    """
-
-    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int,
-                 cross_agent: bool = False):
+    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int):
         super().__init__()
         self.norm_q = nn.LayerNorm(d)
         self.cross = nn.MultiheadAttention(d, n_heads, batch_first=True)
@@ -1184,50 +1149,10 @@ class CrossAttnLayer(nn.Module):
         self.film = FiLM(cond_dim, d, zero_init=False)   # live core conditioning
         self.mlp = nn.Sequential(nn.Linear(d, ff_mult * d), nn.GELU(),
                                  nn.Linear(ff_mult * d, d))
-        # ⛔ CONSTRUCTED LAST AND ONLY WHEN ASKED FOR: anything built here
-        # consumes RNG, so building it unconditionally would change every
-        # subsequent layer's init and break the "bit-identical when off" claim.
-        self.norm_a: nn.LayerNorm | None = None
-        self.cross_agent: nn.MultiheadAttention | None = None
-        self.agent_gate: nn.Parameter | None = None
-        if cross_agent:
-            self.norm_a = nn.LayerNorm(d)
-            self.cross_agent = nn.MultiheadAttention(d, n_heads,
-                                                     batch_first=True)
-            self.agent_gate = nn.Parameter(torch.zeros(1))
 
-    def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
-                agents: Tensor | None = None,
-                agent_pad: Tensor | None = None) -> Tensor:
-        """``agents`` ``[B, K, d]`` agent tokens · ``agent_pad`` ``[B, K]``
-        bool, **True where the slot is PADDING** (torch's
-        ``key_padding_mask`` convention, stated because inverting it silently
-        attends to nothing and looks like a dead seam)."""
+    def forward(self, q: Tensor, kv: Tensor, cond: Tensor) -> Tensor:
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
-        if self.cross_agent is not None and agents is not None:
-            # ⛔ A FULLY-PADDED ROW IS A NaN FACTORY, AND IT NaNs THE BACKWARD
-            # EVEN IF THE FORWARD IS PATCHED. `key_padding_mask` all-True on a
-            # row makes the attention softmax normalise over all -inf; the
-            # output is NaN and `nan_to_num` fixes only the value, while the
-            # softmax backward still produces NaN that 0-gradient multiplication
-            # does not clear. A window with NO detected agents is NORMAL (an
-            # empty road), so this is a routine state, not an edge case.
-            # ⇒ un-mask such rows (their tokens are attended but the row-level
-            # `live` factor zeroes the contribution), which is NaN-free in both
-            # directions and costs no device sync.
-            pad = agent_pad
-            live = None
-            if pad is not None:
-                empty = pad.all(dim=1, keepdim=True)              # [B, 1]
-                pad = pad & ~empty
-                live = (~empty).to(q.dtype).unsqueeze(-1)         # [B, 1, 1]
-            a = self.norm_a(q)
-            att = self.cross_agent(a, agents, agents, key_padding_mask=pad,
-                                   need_weights=False)[0]
-            if live is not None:
-                att = att * live
-            q = q + self.agent_gate * att
         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
         return q
 
@@ -1308,38 +1233,11 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
         self.cond_proj = nn.Linear(d_meas, d)                 # measurement -> cond
         self.time_embed = nn.Embedding(cfg.diffusion_steps + 1, d)  # 0..steps
-        # WP-4 (E-DDA-3): the CONTINUOUS timestep embedding DD injects per
-        # layer. Constructed ONLY under `sampler == "ddim"`, so the default
-        # build's RNG order — and therefore every existing checkpoint — is
-        # untouched. `_decode` falls back to `time_embed` when it is None.
-        self.time_mlp: nn.Module | None = None
         self.layers = nn.ModuleList(
-            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult,
-                           cross_agent=bool(getattr(cfg, "cross_agent", False)))
+            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult)
             for _ in range(cfg.layers))
         self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
         self.offset_head = nn.Linear(d, n_steps * 2)          # per-anchor offset
-        # ---- WP-4 (E-DDA-3): the control-space sampler ---------------------
-        # ⛔ Built ONLY under `sampler == "ddim"`, and AFTER every pre-existing
-        # module, so the default build's RNG draw order — and therefore every
-        # checkpoint written before this line existed — is untouched.
-        self.sampler_kind = str(getattr(cfg, "sampler", "none"))
-        self.sampler_space = str(getattr(cfg, "sampler_space", "control"))
-        self.control_head: nn.Linear | None = None
-        self.sched: "_sampler.DDIMSchedule | None" = None
-        if self.sampler_kind == "ddim":
-            self.time_mlp = _sampler.build_time_mlp(d)
-            # Δu in NORMALISED control space. Zero-init on the output layer so
-            # the first refinement pass is the identity and the sampled fan
-            # starts exactly at the anchored Gaussian — the same discipline
-            # every graft seam in this class uses.
-            self.control_head = nn.Linear(d, n_steps * 2)
-            nn.init.zeros_(self.control_head.weight)
-            nn.init.zeros_(self.control_head.bias)
-            self.sched = _sampler.DDIMSchedule()
-        elif self.sampler_kind != "none":
-            raise ValueError(f"sampler {self.sampler_kind!r} not in "
-                             f"('none', 'ddim')")
         # Graft: strategic ctx -> condition (zero-init identity start).
         self.ctx_to_cond: nn.Linear | None = None
         if hierarchy:
@@ -1503,31 +1401,6 @@ class AnchoredDiffusionDecoder(nn.Module):
             return pool.reshape(-1)[idx].to(device=v.device, dtype=v.dtype)
         return torch.full_like(v, self.anchor_ref_speed)
 
-    def _bank_speed(self, v_ms: Tensor | None, ego_keep: Tensor | None,
-                    batch: int, withheld_speed: Tensor | None = None) -> Tensor:
-        """[B] float32 — THE speed the candidate geometry is rolled from.
-
-        ⭐ Extracted from :meth:`roll_bank` (2026-09-05, refcv5 WP-4) with its
-        logic byte-unchanged, because the CONTROL-SPACE SAMPLER must roll from
-        the *same* speed the vocabulary does. Two spellings of this would let
-        the sampler and the bank integrate different physics while every test
-        that looks at one of them passes.
-        """
-        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
-            raise ValueError(f"anchor_withheld_bank "
-                             f"{self.anchor_withheld_bank!r} not in "
-                             f"{WITHHELD_BANK_MODES}")
-        if v_ms is None or self.anchor_withheld_bank == "none":
-            # "none": the speed-blind vocabulary — every row, kept or withheld,
-            # train or eval, at the reference speed (the field's design).
-            return self.anchors.new_full((batch,), self.anchor_ref_speed,
-                                         dtype=torch.float32)
-        v = v_ms.reshape(-1).to(torch.float32)
-        if ego_keep is not None:
-            v = torch.where(ego_keep.reshape(-1),
-                            v, self._withheld_ref_speed(v, withheld_speed))
-        return v
-
     def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
                   batch: int, dtype: torch.dtype,
                   withheld_speed: Tensor | None = None) -> Tensor:
@@ -1554,7 +1427,19 @@ class AnchoredDiffusionDecoder(nn.Module):
         if not self.anchor_v0_cond:
             return self.anchors.to(dtype)[None].expand(
                 batch, n, self.n_steps, 2)
-        v = self._bank_speed(v_ms, ego_keep, batch, withheld_speed)
+        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank "
+                             f"{self.anchor_withheld_bank!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if v_ms is None or self.anchor_withheld_bank == "none":
+            # "none": the speed-blind vocabulary — every row, kept or withheld,
+            # train or eval, at the reference speed (the field's design).
+            v = self.anchors.new_full((batch,), self.anchor_ref_speed)
+        else:
+            v = v_ms.reshape(-1).to(torch.float32)
+            if ego_keep is not None:
+                v = torch.where(ego_keep.reshape(-1),
+                                v, self._withheld_ref_speed(v, withheld_speed))
         # ⚠️ rolled in float32 regardless of the AMP dtype: 60 sequential
         # integration steps in fp16 accumulate visible drift, and the bank is
         # the geometry every anchor target is measured against.
@@ -1564,13 +1449,9 @@ class AnchoredDiffusionDecoder(nn.Module):
             # kappa = a_lat / v^2, clamped. The floor keeps a standing-start
             # window from asking for an infinite curvature, and the cap is a
             # geometric bound (~8.3 m radius) that no road manoeuvre needs.
-            # ⭐ ONE SPELLING of this formula in the repo (refcv5 WP-4): the
-            # control-space sampler rolls through the same expression, and two
-            # copies is how the sampler and the vocabulary would silently
-            # integrate different physics. Arithmetic is unchanged.
-            kap = _sampler.alat_to_curvature(
-                ctrl[None, :, 1], v[:, None], self.anchor_alat_v_floor,
-                self.anchor_kappa_cap)                               # [B, N]
+            vv = v.clamp_min(self.anchor_alat_v_floor) ** 2          # [B]
+            kap = (ctrl[None, :, 1] / vv[:, None]).clamp(
+                -self.anchor_kappa_cap, self.anchor_kappa_cap)       # [B, N]
             ctrl = torch.stack(
                 [ctrl[None, :, 0].expand(batch, n), kap], dim=-1)    # [B, N, 2]
             ctrl = ctrl[:, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
@@ -1583,176 +1464,62 @@ class AnchoredDiffusionDecoder(nn.Module):
         return path[:, self.anchor_slots].reshape(
             batch, n, self.n_steps, 2).to(dtype)
 
-    def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
-                t_idx: int, agents: Tensor | None = None,
-                agent_pad: Tensor | None = None,
-                t_cont: Tensor | None = None,
-                control: bool = False) -> tuple[Tensor, Tensor]:
-        """One decoder pass: current trajectory estimate + timestep -> queries;
-        cross-attend the map (and, under WP-6, the agent tokens); emit
-        (conf [B, N], offset [B, N, S, 2]).
+    def _feasible(self, x: Tensor, v_ms: Tensor | None) -> Tensor:
+        """Project the emitted fan onto the friction-feasible set. No-op when
+        ``cfg.feasible_decode`` is False, and then it returns the SAME OBJECT.
 
-        ``t_cont`` [B] (WP-4 only) is the CONTINUOUS diffusion timestep. When
-        given it replaces the 3-row ``time_embed`` lookup with the sinusoidal
-        embedding DD injects per layer — retired under ``sampler == "none"``,
-        which keeps ``t_idx`` and is byte-identical to refcv4b.
+        ⛔ **The prefix dt is DERIVED from ``anchor_slots``, never assumed.** The
+        scorer differentiates the 2 s prefix on a uniform 0.5 s grid; our horizons
+        are ``[5, 10, 15, 20, 30, 40, 50, 60]`` ticks, i.e. uniform 0.5 s for the
+        first four and 1.0 s after. A projection run at the wrong dt is
+        *approximately* feasible and reports a residual that looks like noise --
+        the `df` / `step_s` family in a geometry costume. If the prefix is not
+        uniform this refuses rather than guessing.
 
-        ``control`` (WP-4 only) reads the second element off ``control_head``
-        instead of ``offset_head``, so it is a ``Δu`` in NORMALISED CONTROL
-        space rather than a metre offset. ⛔ The units differ, which is why this
-        is an explicit flag and not an implicit switch on which head exists: a
-        caller that gets metres where it expected controls sees numbers of a
-        plausible magnitude and no error at all.
-        """
-        b, n = x_est.shape[:2]
-        q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
-        if t_cont is not None and self.time_mlp is not None:
-            temb = self.time_mlp(t_cont.to(q.dtype))          # [B, d]
-            q = q + temb[:, None]
-        else:
-            q = q + self.time_embed.weight[t_idx][None, None]  # timestep bias
-        for layer in self.layers:
-            q = layer(q, kv, cond, agents=agents, agent_pad=agent_pad)
-        conf = self.conf_head(q).squeeze(-1)                  # [B, N]
-        if control:
-            if self.control_head is None:
-                raise RuntimeError(
-                    "_decode(control=True) needs `control_head`, which is only "
-                    "built under DecoderConfig.sampler == 'ddim'")
-            head = self.control_head
-        else:
-            head = self.offset_head
-        offset = head(q).reshape(b, n, self.n_steps, 2)
-        return conf, offset
-
-    def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
-        """``[B, N, S, 2]`` — the anchor bank AS A CONTROL SEQUENCE.
-
-        The vocabulary holds ONE ``(a_lon, a_lat)`` pair per anchor, held
-        constant over the horizon; the sampler's state is a per-slot sequence,
-        so the anchor is that pair repeated over the S slots. ⭐ This is the
-        ``mu`` of the anchored Gaussian, and it is why the sampler cannot drift
-        away from the vocabulary: at ``sigma -> 0`` it IS the vocabulary.
-        """
-        ctrl = self.anchor_controls.to(torch.float32)             # [N, 2]
-        return ctrl[None, :, None, :].expand(
-            batch, ctrl.shape[0], self.n_steps, 2).to(dtype)
-
-    def _sample_ddim(self, kv: Tensor, cond: Tensor, bank: Tensor,
-                     v_roll: Tensor, steps: int, terms: list[Tensor],
-                     conf: Tensor, agents: Tensor | None,
-                     agent_pad: Tensor | None
-                     ) -> tuple[Tensor, Tensor, Tensor, dict]:
-        """WP-4 ``E-DDA-3`` — the truncated DDIM sampler, in CONTROL space.
-
-        Returns ``(x, refined, u0_hat, tele)`` where ``x`` is the ROLLED fan
-        ``[B, N, S, 2]`` in metres and ``u0_hat`` is the predicted clean control
-        sequence in the vocabulary's own units (``[B, N, S, 2]``).
-
-        ⛔ **Noise is added in NORMALISED control space** (``a_lon / 4.0``,
-        ``a_lat / 3.0`` — the grid's own ranges), so ``[-1, 1]`` means what the
-        vocabulary means and DD's schedule constants transfer without a
-        re-derivation.
-
-        ⛔ **``u`` is DETACHED between passes** (DD detaches coordinates between
-        cascade layers). Without it the gradient path grows with the pass count
-        and the pass count silently becomes a capacity knob.
+        ⚠️ **SCOPE, STATED: only the uniform prefix is projected.** The 2-6 s tail
+        is rigidly TRANSLATED so the path stays C0-continuous at the seam and the
+        tail's own kinematics are unchanged. Velocity continuity across the seam
+        is NOT enforced, and projecting the tail on its own 1 s grid is a named
+        work item, not a silent omission.
         """
         cfg = self.cfg
-        sched = self.sched
-        b, n = bank.shape[0], bank.shape[1]
-        dev, dt = bank.device, bank.dtype
-        g = int(getattr(cfg, "sampler_groups", 1))
-        if g != 1:
-            raise NotImplementedError(
-                f"sampler_groups={g}: G > 1 emits a [B, G*N, S, 2] fan, and "
-                f"THREE consumers still assume N — `loss_cls`'s `a_star` "
-                f"(refc_v3_train.compute_losses_v3), the [B, N] prior `terms` "
-                f"built above, and every dump keyed on `sel_idx in [0, N)`. "
-                f"Widening the fan without widening those three would silently "
-                f"mis-index the anchor target. G = 1 is implemented and tested; "
-                f"G > 1 is a scoped change to those call sites, not a flag.")
-        norm = torch.tensor(getattr(cfg, "control_norm", (4.0, 3.0)),
-                            device=dev, dtype=torch.float32)
-        horizons = tuple(int(k) + 1 for k in self.anchor_slots.tolist())
-        tele: dict = {"sampler": self.sampler_kind,
-                      "sampler_space": self.sampler_space}
+        if not bool(getattr(cfg, "feasible_decode", False)):
+            return x
+        sl = self.anchor_slots.tolist()
+        k = int(getattr(cfg, "feasible_prefix_slots", 4))
+        k = min(k, len(sl))
+        steps = [sl[0] + 1] + [sl[i] - sl[i - 1] for i in range(1, k)]
+        if len(set(steps)) != 1:
+            raise ValueError(
+                f"feasible_decode needs a UNIFORM prefix grid; anchor_slots "
+                f"{sl[:k]} give tick spacings {steps}. Refusing rather than "
+                f"projecting at a dt the scorer does not use.")
+        dt = float(steps[0]) * float(self.anchor_dt)
+        pre = _feas.project_feasible(
+            _feas_with_origin(x[..., :k, :].float()),
+            None if v_ms is None else v_ms.float(),
+            dt=dt, a_max=float(cfg.feasible_a_max),
+            kappa_max=float(cfg.feasible_kappa_max),
+            mu=(float(cfg.feasible_mu) if float(cfg.feasible_mu) > 0 else None),
+            clamp_entry=bool(cfg.feasible_entry) and v_ms is not None,
+        )[..., 1:, :].to(x.dtype)
+        if x.shape[-2] == k:
+            return pre
+        shift = (pre[..., k - 1, :] - x[..., k - 1, :]).unsqueeze(-2)
+        return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
 
-        # ---- mu: the anchor, as a normalised control sequence ---------------
-        u_anchor = self.anchor_control_seq(b, torch.float32)       # [B,N,S,2]
-        un0 = u_anchor / norm
-
-        # ---- t: U[0, t_max) in training, the truncation point at eval -------
-        if self.training:
-            t = torch.randint(0, int(cfg.sampler_train_t_max), (b,),
-                              device=dev)
-        else:
-            t = torch.full((b,), int(cfg.sampler_infer_t), device=dev,
-                           dtype=torch.long)
-        tele["sampler_t_mean"] = round(float(t.to(torch.float32).mean()), 3)
-
-        eps = torch.randn(un0.shape, device=dev, dtype=torch.float32)
-        un_t = sched.add_noise(un0, eps, t)
-
-        # ⛔ THE DELIBERATE-REGRESSION ARM. DD noises the WAYPOINTS in metres.
-        # Pre-registered to FAIL the flyability gate; if it does not, the
-        # flyability instrument cannot see what it is cited for and the arm is
-        # VOID. It is a code path so the regression is RUNNABLE, not described.
-        metre_space = self.sampler_space == "metre"
-
-        # The DENOISE LADDER. At eval it is DD's truncated schedule ([10, 0] for
-        # the published t=8 / 2-step setting); in training there is ONE pass
-        # from the sampled t straight to 0, which is what an x0-parameterised
-        # objective needs — the loss is on the clean prediction, not on a
-        # trajectory through the ladder.
-        n_pass = max(int(steps), 1)
-        ladder = (sched.infer_timesteps(int(cfg.sampler_infer_t), n_pass)
-                  if not self.training else [])
-        tele["sampler_ladder"] = list(ladder)
-        refined = conf
-        u0n = un0
-        x = bank
-        for i in range(n_pass):
-            u_t = (un_t * norm).to(dt)
-            if metre_space:
-                # the DD-literal arm: the estimate handed to the decoder is the
-                # BANK plus metre-space noise, and no integrator is involved.
-                x_in = bank + (u_t[..., :2] * 0.0) + torch.randn_like(bank) \
-                    * float(cfg.noise_std)
-            else:
-                x_in = _sampler.roll_controls(
-                    u_t, v_roll, horizons,
-                    control_units=self.anchor_control_units,
-                    tick=self.anchor_dt,
-                    alat_v_floor=self.anchor_alat_v_floor,
-                    kappa_cap=self.anchor_kappa_cap)
-            r_conf, du = self._decode(kv, cond, x_in, 0, agents=agents,
-                                      agent_pad=agent_pad, t_cont=t,
-                                      control=True)
-            du = du.to(torch.float32)
-            # x0 ("sample") prediction: the head predicts the CORRECTION to the
-            # noisy control, exactly DD's `poses_reg = delta + noisy_input`.
-            u0n = un_t + du
-            # ⛔ DETACHED between passes (DD detaches coordinates between
-            # cascade layers). Without it the gradient path grows with the pass
-            # count and the pass count silently becomes a capacity knob — which
-            # is exactly the confound `D-REFC-DDAUDIT-2` already found once.
-            t_cur = torch.full_like(t, ladder[i]) if ladder else t
-            t_nxt = (torch.full_like(t, ladder[i + 1])
-                     if ladder and i + 1 < len(ladder)
-                     else torch.zeros_like(t))
-            un_t = sched.step(u0n, un_t, t_cur, t_nxt).detach()
-            refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
-                                            "refined", 0)
-        u0 = (u0n * norm).to(dt)
-        x = (bank + torch.zeros_like(bank)) if metre_space else \
-            _sampler.roll_controls(u0, v_roll, horizons,
-                                   control_units=self.anchor_control_units,
-                                   tick=self.anchor_dt,
-                                   alat_v_floor=self.anchor_alat_v_floor,
-                                   kappa_cap=self.anchor_kappa_cap)
-        tele["sampler_passes"] = n_pass
-        return x, refined, u0, tele
+    def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
+                t_idx: int) -> tuple[Tensor, Tensor]:
+        """One decoder pass: current trajectory estimate + timestep -> queries;
+        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2])."""
+        b, n = x_est.shape[:2]
+        q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
+        q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
+        for layer in self.layers:
+            q = layer(q, kv, cond)
+        conf = self.conf_head(q).squeeze(-1)                  # [B, N]
+        offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
+        return conf, offset
 
     def _lan_anchor_prior(self, lan_dir: Tensor,
                           bank: Tensor | None = None) -> Tensor:
@@ -1854,9 +1621,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
                 goal_dist_pref: Tensor | None = None,
-                withheld_speed: Tensor | None = None,
-                agent_tokens: Tensor | None = None,
-                agent_pad: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1927,9 +1692,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 took = pre_keep.gather(1, sub)                # [B, K] bool
                 xs = x0.gather(
                     1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
-                c_s, o_s = self._decode(kv, cond, xs, 0,
-                                        agents=agent_tokens,
-                                        agent_pad=agent_pad)
+                c_s, o_s = self._decode(kv, cond, xs, 0)
                 conf0 = x0.new_full((b, n), float("-inf"))
                 conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
                 offset = x0.new_zeros(b, n, self.n_steps, 2)
@@ -1939,15 +1702,12 @@ class AnchoredDiffusionDecoder(nn.Module):
                 pre_tele["prefilter_k"] = int(k)
                 pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
             else:                                 # nothing to save this batch
-                conf0, offset = self._decode(kv, cond, x0, 0,
-                                             agents=agent_tokens,
-                                             agent_pad=agent_pad)
+                conf0, offset = self._decode(kv, cond, x0, 0)
                 pre_tele["prefilter_k"] = int(n)
                 pre_tele["prefilter_speedup"] = 1.0
         else:
-            conf0, offset = self._decode(  # classifier pass
-                kv, cond, x0, 0, agents=agent_tokens, agent_pad=agent_pad)
-        x = bank + offset                                     # [B, N, S, 2]
+            conf0, offset = self._decode(kv, cond, x0, 0)     # classifier pass
+        x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
         terms: list[Tensor] = []
@@ -1977,34 +1737,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         # failure. ``steps == 0`` leaves ``refined is conf`` by construction, so
         # ``--mode classifier`` is provably unaffected by S1.
         refined = conf
-        u0_hat = None
-        # ---- WP-4 (E-DDA-3): the CONTROL-SPACE sampler replaces the loop -----
-        # ⛔ `sampler == "none"` skips this branch entirely, so the metre-space
-        # truncated denoise below is byte-identical to refcv4b.
-        if self.sampler_kind == "ddim" and steps > 0:
-            if not self.anchor_v0_cond:
-                raise ValueError(
-                    "sampler='ddim' needs a v0-CONDITIONED vocabulary: the "
-                    "sampler's state IS the control sequence, and a fixed-path "
-                    "bank carries `anchor_controls` of all zeros, so the "
-                    "anchored Gaussian would be centred on 'do nothing'. Build "
-                    "with v0_conditioned=True (refcv4-b onward).")
-            v_roll = self._bank_speed(v_ms, ego_keep, b,
-                                      withheld_speed=withheld_speed)
-            x, refined, u0_hat, s_tele = self._sample_ddim(
-                kv, cond, bank, v_roll, steps, terms, conf,
-                agent_tokens, agent_pad)
-            tele.update(s_tele)
-            steps = 0            # the loop below must not also run
         for i in range(steps):
             t_idx = min(i + 1, self.cfg.diffusion_steps)
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
             x_in = x + noise
-            r_conf, off = self._decode(kv, cond, x_in, t_idx,
-                                       agents=agent_tokens,
-                                       agent_pad=agent_pad)
-            x = x_in + off
+            r_conf, off = self._decode(kv, cond, x_in, t_idx)
+            # EVERY pass that moves a waypoint, not just the classifier pass.
+            x = self._feasible(x_in + off, v_ms)
             # The refined readout carries the SAME priors as the classifier
             # surface: switching the ranking to `refined` without them would
             # silently DELETE the H19 coupling from selection, which is a
@@ -2035,8 +1775,7 @@ class AnchoredDiffusionDecoder(nn.Module):
             t_e = (min(steps + 1, self.cfg.diffusion_steps)
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
-            e_conf, _ = self._decode(kv, cond, x, t_e, agents=agent_tokens,
-                                     agent_pad=agent_pad)
+            e_conf, _ = self._decode(kv, cond, x, t_e)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
@@ -2125,13 +1864,6 @@ class AnchoredDiffusionDecoder(nn.Module):
                "anchor_traj": x, "anchor_bank": bank,
                "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
-        if u0_hat is not None:
-            # WP-4: the predicted CLEAN control sequence, in the vocabulary's
-            # own units. The trainer's `loss_u0` is an L1 against
-            # `unicycle_controls_from_path_varstep(GT)` on this tensor — it is
-            # the x0 loss, and it is the one term that is NOT expressible in
-            # metres, so it must leave the decoder or it cannot be supervised.
-            out["u0_hat"] = u0_hat
         if cons_s is not None:
             out["cons_score"] = cons_s
         if prefinal is not None:
@@ -2291,24 +2023,6 @@ class RefCModel(nn.Module):
             control_units=cfg.anchors.control_units,
             alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
             kappa_cap=cfg.anchors.kappa_cap)
-        # ---- refcv5 WP-6: the monocular environment head + the token seam ----
-        # ⛔ Built LAST and only when asked for, so a build without agents keeps
-        # refcv4b's RNG draw order exactly. `agent_head` reads the conv map and
-        # NOTHING else — the vision-only rule enforced by the call, not a
-        # comment. The ORACLE path builds no detector at all: it embeds
-        # privileged boxes and is inadmissible as a capability claim.
-        self.agent_head = None
-        self.agent_embed = None
-        self.agent_oracle = None
-        acfg = getattr(cfg, "agents", None)
-        if acfg is not None and getattr(acfg, "enable", False):
-            from tanitad.refs import refc_agents as _ag     # local: cycle-free
-            gh, gw = cfg.encoder.grid_shape
-            if getattr(acfg, "oracle", False):
-                self.agent_oracle = _ag.OracleAgentEmbed(acfg)
-            else:
-                self.agent_head = _ag.build_agent_head(acfg, feat, gh * gw)
-            self.agent_embed = _ag.AgentTokenEmbed(cfg.decoder.d, acfg)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -2578,11 +2292,7 @@ class RefCModel(nn.Module):
                 nav_known: Tensor | None = None,
                 hierarchy_hook=None,
                 ego_keep: Tensor | None = None,
-                withheld_speed: Tensor | None = None,
-                agent_boxes: Tensor | None = None,
-                agent_yaw: Tensor | None = None,
-                agent_cls: Tensor | None = None,
-                agent_valid: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -2802,23 +2512,6 @@ class RefCModel(nn.Module):
             out_goal = {"goal_bearing": bearing, "goal_dist_pref": goal_dist_pref}
         else:
             out_goal = {}
-        # ---- refcv5 WP-6: environment extraction from the FRONT CAMERA -------
-        # ⛔ `self.agent_head(memory)` takes the conv map and NOTHING ELSE. There
-        # is no argument through which `obstacle.offline` could arrive, which is
-        # the vision-only rule enforced structurally. The ORACLE branch is the
-        # deliberate exception and is inadmissible as a capability claim; it is
-        # reachable only when the caller SUPPLIES boxes, so it cannot fire by
-        # accident on a normal forward.
-        agent_tokens = agent_pad = None
-        agent_slots = None
-        if self.agent_head is not None:
-            memory = fmap.flatten(2).transpose(1, 2)          # [B, gh*gw, F]
-            agent_slots = self.agent_head(memory)
-            agent_tokens, agent_pad = self.agent_embed(agent_slots)
-        elif self.agent_oracle is not None and agent_boxes is not None:
-            agent_slots = self.agent_oracle(
-                agent_boxes, agent_yaw, agent_cls, agent_valid)
-            agent_tokens, agent_pad = self.agent_embed(agent_slots)
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
@@ -2827,8 +2520,7 @@ class RefCModel(nn.Module):
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
                            goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
-                           withheld_speed=withheld_speed,
-                           agent_tokens=agent_tokens, agent_pad=agent_pad)
+                           withheld_speed=withheld_speed)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -2845,13 +2537,6 @@ class RefCModel(nn.Module):
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}
-        if agent_slots is not None:
-            # ⭐ The DETECTION output, exposed so `compute_losses_v3` can attach
-            # the GT-supervised set loss. It is an OUTPUT, never an input: the
-            # head above already ran on the conv map alone.
-            out["agent_slots"] = agent_slots
-        if "u0_hat" in dec:
-            out["u0_hat"] = dec["u0_hat"]
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
         for _k in ("prefinal_logits", "reach_keep"):
