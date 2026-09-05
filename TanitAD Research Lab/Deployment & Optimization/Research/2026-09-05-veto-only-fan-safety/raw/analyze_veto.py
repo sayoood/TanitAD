@@ -11,6 +11,21 @@ and this tool computes the sufficient form:
   lever(m, K)  = paired delta( veto_sK AFTER , base BEFORE )      # per seed K
   floor(m)     = | paired delta( veto_s0 AFTER , veto_s1 AFTER ) |  # SAME flags, seed apart
 
+⛔⛔ AND THERE IS A SECOND FLOOR, MEASURED HERE AND NOT ANTICIPATED BY THE SPEC.
+`ctrl_null` -- zero reward AND no veto, i.e. an advantage that is IDENTICALLY ZERO --
+still moved 35 of 57 fan-safety metrics with paired separation, and its weights moved on
+exactly the 71 trainable tensors with mean |dtheta| 3.1e-05 (max 5.7e-04) against a
+typical weight of 1.8e-02. The mechanism is not the reward and not the veto: the only
+surviving loss term is the ANCHOR TRUST REGION, whose divergence starts at ~1e-10 m^2 --
+and AdamW normalises by the gradient's own scale, so a numerically negligible gradient
+still produces a step of order `lr`. `final_loss` 0.0446 with `veto_rate_mean` EXACTLY
+0.0 is that drift, measured.
+=> On this rig, `ctrl0` (lr = 0) is the ONLY arm that cannot move. Any arm with a live
+optimizer and `w_anchor > 0` moves whatever its reward says, so `ctrl_null` is the
+ZERO-INFORMATION FLOOR every lever must also clear. This is a POST-HOC STRENGTHENING of
+the SPEC's acceptance rule (a stricter hurdle, never a looser one): both verdicts are
+reported, `quotable_as_lever` (the committed rule) and `quotable_strict` (+ this floor).
+
   QUOTABLE(m) iff  lever separated for BOTH seeds
               AND  same sign
               AND  min(|lever_s0|, |lever_s1|) > floor(m)
@@ -119,10 +134,14 @@ def main(argv=None) -> int:
 
     # ---- G1: the null must be an ACTUAL null ------------------------------- #
     nulls = {}
+    null_before = null_after = None
     for k in ("s0", "s1"):
         p = os.path.join(a.run_dir, k, a.null_arm, "arm_summary.json")
         if os.path.isfile(p):
             n = J(p)
+            if null_after is None:
+                null_before = J(os.path.join(a.run_dir, k, a.null_arm, "readout_before.json"))
+                null_after = J(os.path.join(a.run_dir, k, a.null_arm, "readout_after.json"))
             nulls[k] = {"veto_rate_mean": n.get("veto_rate_mean"),
                         "final_loss": n.get("final_loss"),
                         "weights_changed": n.get("weights_changed"),
@@ -154,7 +173,15 @@ def main(argv=None) -> int:
         B1, A1 = (sub(b1), sub(a1)) if lo_ else (b1, a1)
         lev0 = D.paired_delta(B0, A0, k, reps=a.n_boot, seed=a.seed)
         lev1 = D.paired_delta(B1, A1, k, reps=a.n_boot, seed=a.seed)
-        rep = D.paired_delta(A0, A1, k, reps=a.n_boot, seed=a.seed)   # the noise floor
+        rep = D.paired_delta(A0, A1, k, reps=a.n_boot, seed=a.seed)   # seed-replicate floor
+        # ZERO-INFORMATION floor: ctrl_null trains with NO reward and NO veto, so
+        # anything it moves is nuisance. MEASURED: it moves plenty (see the module
+        # docstring), because AdamW normalises by the gradient's own scale.
+        nul = ({"delta": 0.0, "lo": 0.0, "hi": 0.0, "n": 0, "sep": False}
+               if null_after is None else
+               D.paired_delta(sub(null_before) if lo_ else null_before,
+                              sub(null_after) if lo_ else null_after,
+                              k, reps=a.n_boot, seed=a.seed))
         fl = floor_of(k)
         base_val = float(b0["fan_safety"][k])
         undetectable_down = abs(base_val) < fl
@@ -162,9 +189,13 @@ def main(argv=None) -> int:
         both_sep = bool(lev0["sep"] and lev1["sep"])
         big_enough = min(abs(lev0["delta"]), abs(lev1["delta"])) >= fl
         clears_floor = min(abs(lev0["delta"]), abs(lev1["delta"])) > abs(rep["delta"])
+        clears_null = min(abs(lev0["delta"]), abs(lev1["delta"])) > abs(nul["delta"])
         quotable = bool(both_sep and same_sign and big_enough and clears_floor)
-        if quotable:
+        quotable_strict = bool(quotable and clears_null)
+        if quotable and clears_null:
             verdict = "IMPROVED" if lev0["delta"] < 0 else "WORSENED"
+        elif quotable and not clears_null:
+            verdict = "UNDER-ZERO-INFORMATION-FLOOR (ctrl_null moves it at least as much)"
         elif both_sep and same_sign and big_enough and not clears_floor:
             verdict = "WITHIN-NOISE (separated but under the seed-replicate floor)"
         elif undetectable_down and lev0["delta"] >= 0:
@@ -178,8 +209,10 @@ def main(argv=None) -> int:
             "lever_s0": lev0, "lever_s1": lev1, "replicate_floor": rep,
             "min_effect": fl, "both_separated": both_sep, "same_sign": bool(same_sign),
             "clears_replicate_floor": bool(clears_floor),
+            "zero_information_floor": nul, "clears_zero_information_floor": bool(clears_null),
             "undetectable_downward": bool(undetectable_down),
-            "quotable_as_lever": quotable, "verdict": verdict}
+            "quotable_as_lever": quotable,
+            "quotable_strict": quotable_strict, "verdict": verdict}
 
     # ---- the SPEC's acceptance -------------------------------------------- #
     m = out["metrics"]
@@ -189,6 +222,9 @@ def main(argv=None) -> int:
     out["acceptance"] = {
         "primary_metrics": list(PRIMARY),
         "improved_and_quotable": improved_primary,
+        "improved_and_quotable_strict": [k for k in PRIMARY
+                                         if m.get(k, {}).get("quotable_strict")
+                                         and m[k]["lever_s0"]["delta"] < 0],
         "fan_peak_g_mean_improved": bool(peak.get("quotable_as_lever")
                                          and peak.get("lever_s0", {}).get("delta", 1) < 0),
         "rule": ("SUCCESS needs fan_peak_g_mean NEGATIVE and quotable AND at least one of "
@@ -219,13 +255,14 @@ def main(argv=None) -> int:
     print(f"  G2 BEFORE bitwise ident. : {g2['identical']}  max|diff|={g2['max_abs_diff']:.3e} "
           f"over {g2['n_shared_windows']}w x {g2['n_metrics']} metrics")
     print(f"\n=== {a.arm}: LEVER vs BASE, READ AGAINST THE SEED-REPLICATE FLOOR ===")
-    hdr = f"  {'metric':26s} {'base':>9s} {'d_s0':>10s} {'d_s1':>10s} {'floor':>9s}  verdict"
-    print(hdr)
+    print(f"  {'metric':26s} {'base':>9s} {'d_s0':>10s} {'d_s1':>10s} {'seedfl':>9s} "
+          f"{'nullfl':>9s}  verdict")
     for k in list(PRIMARY) + [x for x in SUPPORT if x in m]:
         r = m[k]
         print(f"  {k:26s} {r['base']:9.5f} {r['lever_s0']['delta']:+10.5f} "
-              f"{r['lever_s1']['delta']:+10.5f} {abs(r['replicate_floor']['delta']):9.5f}  "
-              f"{r['verdict']}")
+              f"{r['lever_s1']['delta']:+10.5f} {abs(r['replicate_floor']['delta']):9.5f} "
+              f"{abs(r['zero_information_floor']['delta']):9.5f}  {r['verdict']}"
+              f"{'' if r['clears_zero_information_floor'] else '  [UNDER-NULL]'}")
     print(f"\n  PRIMARY (pending T1): {out['acceptance']['primary_verdict_pending_T1']}  "
           f"improved+quotable={improved_primary}")
     print(f"[veto] -> {a.out}")
