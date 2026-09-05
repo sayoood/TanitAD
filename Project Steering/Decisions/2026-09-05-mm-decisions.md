@@ -149,3 +149,72 @@ than scheduled, because the window is ~20 h and the work is free.
   figure silently becomes terabytes.
 * The study's manifest claims **11** `D-V5A-*` rows; the register holds **10**. Left as found —
   ⛔ adding a row to make a manifest agree is how a register stops being evidence.
+
+## M11. ⛔ TWO `ha0_ext` KINEMATICS EXIST AND DISAGREE BY MORE THAN THE MARGIN — the INTEGRATOR is canonical
+
+MEASURED by the Rung A1 stream and re-verified at source: the programme carries two
+implementations of the same control — `stack/tanitad/eval/echo_gate.py:171 ha0_ext(v0, a0, k0,
+taus_s)` (closed form) and `taniteval/tools/refav1_arm.py:407 hold_ext_controls(...)` (rolled
+through the integrator). They differ by **0.540642 m at 2 s** and **1.862923 m at 15 s**.
+
+⚠️ **That is LARGER THAN THE ENTIRE QUANTITY WE ARE MEASURING.** refcv3's gap to `ha` is
+**0.1423 m**. Which implementation the harness calls therefore decides the verdict, not merely
+its precision.
+
+⇒ **Decision: `refav1_arm.hold_ext_controls` — the INTEGRATOR — is canonical for every ARM.**
+Two reasons, the second binding:
+1. Every banked refav1 number is already published under it; switching would silently move a
+   published result.
+2. ⭐ **It is the same kinematic the candidate fan itself is built with.** The anchors roll
+   through `rollout_unicycle` (`refc.py::roll_bank`); a closed-form control would compare the
+   model's integrated candidates against a differently-derived baseline, and the difference
+   between two kinematics would be scored as model skill.
+
+The closed form stays for `echo_gate`'s internal use. ⛔ They may never be mixed inside one
+comparison, and no arm may quote `ha0_ext` without naming which derivation produced it.
+
+⚠️ **`D-REFCV5-LADDER-2` NEEDS AMENDING**: it instructs the port to "call the same
+`echo_gate.ha0_ext`". Followed literally that would have made the REF-C arm **incomparable with
+refav1's** — the exact failure it was written to prevent. The Rung A1 stream followed the
+brief's wording (the integrator), pinned the divergence with a test, and escalated rather than
+choosing silently. That was right.
+
+## M12. The prereg's `H19-OFF` ablation removes nothing — ERRATUM 1 issued
+
+`PREREG_REFCV4B_HIERARCHY_EVAL.md` §3 registers `H19-OFF` as
+`decoder.maneuver_to_anchor = None`. MEASURED at source: `refc.py:1237` initialises that
+attribute to `None`, `:1247` assigns a layer **only in the non-factored branch**, and every v3/v4
+build forces `factored_maneuver = True`. On refcv4b the attribute **is already `None`**; the live
+prior is `lat_to_anchor` + `lon_to_anchor`.
+
+⇒ The registered arm would have run, changed nothing, and been read as *"the H19 seam is
+inert"* — which §5 lists as a condition **refuting the hierarchy thesis**. An ablation that
+cannot fail, inside a panel whose whole purpose is to be able to fail. Fourth instance of that
+class this week.
+
+⇒ **`Project Steering/PREREG_REFCV4B_HIERARCHY_EVAL.ERRATUM-1.md`** issued as a SEPARATELY
+STAGED document — not edited into the prereg, whose falsifiable object is its staged blob id.
+The mechanism is corrected to remove what the build actually carries; `H-H19-1` and its committed
+outcomes are unchanged. No result is retracted — the panel has not run.
+
+## M13. Adopt `mktree_commit.py` as the default committer while the mount behaves this way
+
+`mm_commit.py` failed **25 consecutive attempts over ~40 min**, every one dead in `read-tree` (a
+full-tree walk across the mount), while `rev-parse` / `status` / `cat-file` returned 0 in the same
+seconds and six control reads of `CLAUDE.md` succeeded — so **not a wedge**, and no Drive
+restart was warranted. `stack/scripts/mktree_commit.py` rebuilds only the named paths' ancestor
+trees (`hash-object` + `ls-tree -z` + `mktree`), keeps the compare-and-swap, and asserts each path
+positively before and after. Four commits landed with it first time.
+
+⇒ Use it where `mm_commit.py` stalls in `read-tree`. ⛔ Both still verify by content
+afterwards; neither exit code is evidence.
+
+## M14. Carried, not decided
+
+* **E3** — the Lab tree has both `Benchmarks & Eval` (singular, where earlier packages sit) and
+  `Benchmarks & Evals` (plural, the PI-binding form). Rung A1 banked at the plural path and
+  flagged the conflict rather than guessing. A sweep is owed; nothing is lost meanwhile.
+* **E4** — the hierarchy panel must roll **FULL first**, because `gstr_shuffle` needs the bank.
+* `test_refav1_kin_contract::test_A6_adding_ha0_moves_no_existing_arm` fails **without** Rung A1
+  too (demonstrated on restored pre-patch files) — a work item for the refav1 stream, not a
+  regression from this rung.
