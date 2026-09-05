@@ -615,6 +615,69 @@ with a separated interval.
 3. The **remaining +0.2599** is the next lever's target. §1.8 says where it
    lives; `HANDOFF.md` §4 lists the order.
 
+### 6.5 ⭐⭐ THE NEXT LEVER, PRICED AND **DECLINED** — the oracle discount used prospectively
+
+`lonshift` leaves **+0.2599** against `ha0_ext`. Rather than pick the most
+interesting hypothesis, I attributed the residual first
+(`raw/lon_residual.py` → `raw/lon_residual.txt`, zero GPU, on `lonshift`'s own
+dump):
+
+| stratum | n | mean `cl − ha0_ext` | share of the residual | **floor's OWN error there** |
+|---|---|---|---|---|
+| ALL | 40 | +0.2599 | 100 % | 0.3058 |
+| **`\|a0\|` > `GOAL_A_MAX` (hint CLIPPED)** | **6** | **+0.8212** | **47.4 %** | **0.3526** |
+| `\|a0\|` <= `GOAL_A_MAX` | 34 | +0.1609 | 52.6 % | 0.2975 |
+| MAINTAIN branch | 31 | +0.1706 | 50.9 % | 0.3007 |
+| NON-maintain | 9 | +0.5676 | 49.1 % | 0.3231 |
+
+⭐ **15 % of the grid carries 47.4 % of what is left**, at **5.1×** the
+per-window error of the rest — while the FLOOR's own error on those same windows
+is only **1.19×** its error elsewhere. Same control as §1.8: **the split is a
+property of the PLANNER, not of the windows.**
+
+**And the mechanism is a constant.** `PlanConfig.a_max = 4.0` (the actuator box
+the search may use) against `GOAL_A_MAX = 1.5` (the goal's clip) — a **2.67×**
+gap — and `GOAL_A_MAX`'s own source comment calls it *"DV_BRAKE_MS/s; = the
+decel_1.5 floor"*, i.e. a **braking** constant used as a symmetric global clip on
+the goal's acceleration channel. The corpus reaches `\|accel\|` **p90 1.8443,
+max 3.4095** — inside the planner's box, outside the goal's.
+
+**So I measured the fix before building it** (`raw/lon_designs2.py` →
+`raw/lon_designs2.txt`), mean paired difference vs `ha0_ext`, negative = beats
+the floor:
+
+| design | Δ LON speed | Δ LON accel | Δ ADE | Δ LON **on the 6** |
+|---|---|---|---|---|
+| SHIPPED canonical | +0.4551 | +0.3672 | +0.1492 | +1.5469 |
+| **D2 `a_shift`, clip 1.5 (the LANDED arm)** | +0.1517 | +0.1031 | −0.0214 | +0.6752 |
+| D4b clip 2.5 | **+0.1310** | +0.0891 | −0.0365 | +0.5155 |
+| D4a clip 4.0 = the plan box | **+0.1310** | +0.0891 | −0.0365 | +0.5155 |
+| D5a shorter reach, τ = 1.0 s | +0.1552 **worse** | +0.1436 worse | −0.0111 worse | +0.5048 |
+| D5b τ = 0.6 s | +0.1825 **worse** | +0.1915 worse | +0.0010 worse | +0.4741 |
+| **D5c τ = 2.0 s — CONTROL** | **+0.1517** | **+0.1031** | **−0.0214** | **+0.6752** |
+
+**Two controls read exactly what they must:** `D5c` (τ = `GOAL_REACH_S`)
+reproduces D2 **to four decimals on every column**, so the τ harness provably
+reduces to the landed design; and **D4a ≡ D4b**, because `max\|a0\|` is 2.31 —
+raising the clip past ~2.5 buys nothing, which bounds the lever.
+
+⛔ **BOTH ARE DECLINED, and the arithmetic that declines D4 is the one M19/#29
+cost the programme once — used PROSPECTIVELY this time.** D2's own expressivity
+row predicted **+0.1517** and the LANDED arm realised **+0.2599**: the
+expressivity table **over-predicts by 1.71×**. Applying that measured discount to
+D4's expressivity gain (0.1517 → 0.1310, i.e. **13.6 %**) gives an expected
+REALISED gain of about **+0.012 on a +0.2599 gap ≈ 4.6 %** — **below what this
+rig can resolve against its own seed floor.** ⇒ **not worth a GPU hour.**
+**D5 is refuted outright:** it is worse than D2 on every headline column, and it
+helps the 6 clipped windows only by being a cruder version of D4.
+
+⭐ **The point is not that D4/D5 fail; it is that they were priced with a
+MEASURED discount from this very rig before any compute was spent.** The
+remaining +0.2599 is broad (84.3 % of it sits at `v0 >= 2 m/s`, 75.2 % on the
+GT-LON stratum), not concentrated in one constant ⇒ **the next lever is the COST
+side, which is already queued** (`lonseam`, then `loncomb2`), not a third
+vocabulary edit.
+
 ## 7. Deliverable manifest
 
 | artifact | where it lives |

@@ -1,0 +1,28 @@
+# arm lonshift   n = 40 windows
+# per-window paired `cl - ha0_ext` on LON_speed_mae; the panel mean is
+# the number the episode-cluster bootstrap reports.
+  PANEL MEAN = +0.2599  (median +0.0691)
+
+stratum                                    n      mean d     share %   floor own
+--------------------------------------------------------------------------------
+ALL                                       40      0.2599       100.0      0.3058
+MAINTAIN branch (a_shift acts)            31      0.1706        50.9      0.3007
+NON-maintain                               9      0.5676        49.1      0.3231
+|a0| > GOAL_A_MAX (hint clipped)           6      0.8212        47.4      0.3526
+|a0| <= GOAL_A_MAX                        34      0.1609        52.6      0.2975
+v0 < 2 m/s (near-stationary)              13      0.1258        15.7      0.1911
+v0 >= 2 m/s                               27      0.3245        84.3      0.3610
+plan SATURATES |a| = GOAL_A_MAX            3      0.1795         5.2      0.3995
+plan below the a_max clip                 37      0.2664        94.8      0.2982
+GT |dv| >= 1.0 (GT-LON stratum)           24      0.3260        75.2      0.3954
+GT |dv| <  1.0                            16      0.1608        24.8      0.1713
+
+# `floor own` is ha0_ext's OWN LON speed MAE on that stratum. It knows
+# nothing about the decoded token, so where IT splits the same way, the
+# split is a property of the DATA and no planner lever can address it.
+
+== the a_max ceiling, which is the one lever this table can price ==
+  windows whose plan saturates |a| = GOAL_A_MAX = 1.5 : 3 / 40 (7.5 %)
+  windows whose HINT a0 was clipped to GOAL_A_MAX     : 6 / 40 (15.0 %)
+  GT |accel| p90 over the horizon                     : 1.8443 m/s2
+  GT |accel| max                                      : 3.4095 m/s2
