@@ -575,3 +575,63 @@ shorter** whose commit would have silently reverted the `H-ESTIM-SEED-1` block.
 ⚠️ **The orphaned `git grep` (PID 24768, started 2026-09-04 07:54, parent gone) SURVIVES a
 `Stop-Process`** — almost certainly blocked on G: mount I/O, which is also why it outlived a day of
 outages. It does not hold the index lock and is not the cause; it is left alone and recorded.
+
+## M22. ⛔ THE L=3 CHOOSER IS DEFERRED, NOT BUILT — and `run_ab*.sh` passes `W_KAPPA = 0`, which scopes every arm banked through it
+
+### 1. The chooser: DEFERRED
+
+M15 approved a three-level vocabulary. The stream implemented it, validated it **against the
+approval rather than assuming it** (the constant reproduces the approved L=3 row at medAE
+**0.00420751** / expressible **1.0000**, and the shipped control reproduces **to every printed
+digit**), and then escalated correctly: ⛔ **M15 approved a vocabulary and no chooser.** The v7.0
+head has ONE `TURN_L`/`TURN_R` slot and `kappa_turn` never touches its logits.
+
+⇒ **Decision: do NOT build a chooser now.** Three reasons, and the second is decisive:
+
+1. **The goal side is now the least likely place to fix refav1.** A perfect goal delivered
+   honestly LOSES to `ha0_ext` on turns (1.9486 vs 1.8567) while the shipped arm WINS (0.7868), and
+   the `kappa_max` saturation **survives de-confounding** — it is the goal field, not a missing
+   seed. Building a chooser now optimises the lever we have the most evidence against.
+2. ⛔ **A 3-way chooser makes the binding term WORSE, not better.** `M19` measured *"turns goaled
+   correctly" = **0.2811** for every magnitude* — the head's **binary** decode already fails on
+   71.9 % of real turns. Splitting the same probability mass across three magnitudes makes that
+   decode harder, and with the cost saturating at `kappa_max` regardless **we would have no way to
+   read whether it helped.** An experiment that cannot fail informatively is not worth its GPU.
+3. The cheapest informative arm needs no chooser at all: **L=3 with an ORACLE κ hint, at T0.** It
+   bounds what a perfect chooser would buy, before anyone trains one.
+
+⭐ **The stream's implementation choice is ratified and is the right shape:** `goal_kappa_hint` is
+**REQUIRED, never defaulted** — *"a default would hide the tier."* An arm that silently supplies an
+oracle hint would be a **T0 ceiling wearing a T1 costume**, which is the exact confusion the tier
+stamps exist to prevent. ⇒ L=3 stays in the tree as a **parity-pinned instrument**, not a product;
+its zero-flag path is bit-identical and every arm stamps `goal_kappa_vocab`.
+
+### 2. ⛔ `run_ab.sh` / `run_ab_targeted.sh` pass `W_KAPPA = 0` — a scope caveat on banked arms
+
+MEASURED: both drivers pass the weight triple `(0, 0, 64.297)`, i.e. the **curvature penalty is
+exactly zero**. A planner with no curvature penalty has no reason not to saturate `kappa_max`, and
+the readout agrees — curvature is non-zero on **90.0 % of GT-STRAIGHT windows**, at the clip bound.
+
+⇒ **Every arm banked through those scripts sits on a planner that curves at the clip bound on
+straight road.** That is not a retraction: the arms are internally paired and their *contrasts*
+remain valid, because the penalty is zero in both. ⛔ **What is inadmissible is reading any of them
+as refav1's driving behaviour**, or comparing them to an arm with a non-zero penalty. Any such
+number carries `W_KAPPA` or it is not quotable — the same rule as *never quote an interval without
+its estimator*, with the object being a cost weight.
+
+⇒ **The one-variable `W_KAPPA` arm is the programme's next deciding measurement** (`M20`), it is
+**already queued** behind the running `ccos` arm, and its driver has been polling for it. Both
+outcomes are committed by the stream that queued it.
+
+### 3. What is now settled about refav1, and what is not
+
+**Settled (MEASURED):** it turns; it turns almost everywhere, at the clip bound, in the wrong
+direction about half the time; the head is not the binding constraint (**74.4 % recall at AUC
+0.8806** on expressible turns); the goal is not either (a perfect one is worse); the vocabulary
+explanation of the floor gap is **withdrawn at its premise** (the gap is equally present on
+straights).
+
+**Not settled:** whether a non-zero curvature penalty changes any of it. ⛔ **Until that arm reads
+out, "refav1 does not drive" is a statement about a planner whose curvature penalty was switched
+off** — which is worth saying plainly, because it is both the honest scope and the most hopeful
+open question the arm has.
