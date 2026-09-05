@@ -132,6 +132,62 @@ is `raw/displacement_frontier.py` and it runs in seconds.
 | `sel_ade` and `peak_g` fall/rise **together with no knee** | ⛔ **DO NOT build A on this vocabulary.** The friction cost is intrinsic; the work item becomes a **v0-conditioned / larger anchor vocabulary**, so the decode has less distance to cover |
 | `off_reach` rises as fast as `envelope` falls | ⛔ neither: the two failure modes are a single trade on this bank, and the vocabulary is the binding constraint |
 
+## 4b. ⭐⭐ THE EXPERIMENT WAS RUN (0 GPU) — AND IT REDIRECTS THE DESIGN
+
+MEASURED 2026-09-05, `raw/displacement_frontier.json`, **400 EVAL windows × 128 candidates**,
+`core.decoder.anchors` read straight out of the checkpoint, one already-banked forward.
+
+⭐ **Both controls pass, and C2 is the one that matters.** C1 (arithmetic) PASS. **C2 (OBJECT)
+PASS**: at λ = 0 this script reads `peak_g` **0.480782** and `envelope` **0.015625** against
+`bank_vs_fan_feasibility.json`'s **0.480782** and **0.015625** — a *different script*, on a
+*different window draw* (240 vs 400). The bank is a fixed path set, so those three flags are
+window-independent and must match; `off_reach` is not and is deliberately not asserted.
+
+| λ | mean disp (m) | `fan_envelope` | `fan_peak_g` (g) | `fan_off_reach` | `sel_ade` (m) |
+|---|---|---|---|---|---|
+| 0.00 | 0.000 | **0.0156** | **0.4808** | **0.7822** | **3.9824** |
+| 0.30 | 2.065 | 0.6782 | 0.9564 | 0.6984 | 2.8110 |
+| 0.50 | 3.441 | 0.7871 | 1.5234 | 0.5863 | 2.0420 |
+| 0.70 | 4.818 | 0.8417 | 2.5966 | 0.4035 | 1.2985 |
+| 0.90 | 6.195 | 0.8756 | 3.9007 | 0.1838 | 0.6347 |
+| 1.00 | 6.883 | 0.8879 | 4.1789 | 0.1094 | **0.4486** |
+
+⛔ **THERE IS NO KNEE.** ADE and feasibility trade monotonically and steeply across the whole
+range. Even the gentlest step off the shipped fan — λ = 0.9, giving back 10 % of the
+displacement — costs `sel_ade` **0.4486 → 0.6347 (+41 %)** to buy `fan_peak_g`
+**4.179 → 3.901 (−7 %)**. And `off_reach` rises as fast as `envelope` falls
+(**0.109 → 0.782** against **0.888 → 0.016**).
+
+⇒ **The committed decision rule fires on rows 2 AND 3 of §4's table:**
+
+> *"`sel_ade` and `peak_g` fall/rise together with no knee ⇒ DO NOT build A on this vocabulary
+> … the work item becomes a v0-conditioned / larger anchor vocabulary"*, and
+> *"`off_reach` rises as fast as `envelope` falls ⇒ the two failure modes are a single trade on
+> this bank, and the vocabulary is the binding constraint."*
+
+⚠️ **STATE THE FUNCTION CLASS, OR THE NEGATIVE OVERREACHES.** This sweep explores ONE
+one-dimensional family — the straight line between bank and fan. A trained control-space decode
+is **not** confined to that segment and could in principle find paths that are both feasible and
+close. The admissible conclusion is therefore: **the linear displacement family offers no free
+lunch on this vocabulary, and the reason is visible in the `off_reach` column** — the bank is
+**speed-blind**, so shrinking toward it is shrinking toward paths the ego cannot reach. Design A
+would be fighting that, not the envelope.
+
+⭐⭐ **⇒ THE DESIGN CHANGES: CONDITION THE VOCABULARY FIRST, THEN CONSTRAIN THE DECODE.** If the
+bank were rolled at the window's own `v0`, λ → 0 would be drivable **and** on-reach, and the
+trade might acquire the knee it does not have today. ⭐ **A sibling stream measured exactly this
+lever from the other side, independently**: `H-EGO-LIT-4` reads T0 oracle-in-vocabulary
+**4.6762 m (fixed bank) → 2.7873 m (own predicted-speed bank)**, paired
+**−1.8889 [−2.7307, −1.1304] SEPARATED** — ≈ 56 % of the way to the true-`v0` leak bound
+(1.2841 m) — and concludes *"the binding constraint at this rung is the SELECTION step, not the
+bank."* Two streams, two instruments, one conclusion: **the v0-conditioned bank is the
+prerequisite, and design A is its successor, not its substitute.**
+
+⇒ **REVISED ORDER OF WORK:** (1) v0-conditioned anchor vocabulary (already instrumented by
+`H-EGO-LIT-4`'s `--withheld-bank` switch and `roll_bank`); (2) re-run this λ frontier on the
+conditioned bank and look for the knee; (3) only then design A's control-space reparameterisation,
+with `off_reach` reported beside `envelope` in every arm.
+
 ## 5. What this successor is NOT
 
 1. ⛔ **It is not the gate, and the gate does not substitute for it.** MEASURED: a selection

@@ -112,7 +112,7 @@ def floor_of(metric: str) -> float:
 def bank_forward(model, corp, lead, wis, prov, device, batch, *, det_check: bool):
     """ONE forward per batch. Returns the banked per-window tensors + G-DET."""
     keys = ("fan8", "gt4", "sel_score", "reach", "sel_idx", "v0", "lead5", "lead_xy",
-            "route_logits", "nav_cmd", "has_lead", "eid", "wi")
+            "sel_score_v3", "route_logits", "nav_cmd", "has_lead", "eid", "wi")
     acc = {k: [] for k in keys}
     gdet = {"ran": False}
     t0 = time.time()
@@ -136,6 +136,7 @@ def bank_forward(model, corp, lead, wis, prov, device, batch, *, det_check: bool
                         bool(torch.equal(out["sel_score"], out2["sel_score"])),
                     "sel_idx_identical":
                         bool(torch.equal(out["sel_idx"], out2["sel_idx"])),
+                    "sel_score_v3_present": bool("sel_score_v3" in out),
                     "n_windows_checked": len(chunk),
                 }
             fan = out["anchor_traj"].detach().float().cpu()               # [B, N, 8, 2]
@@ -143,6 +144,10 @@ def bank_forward(model, corp, lead, wis, prov, device, batch, *, det_check: bool
             acc["fan8"].append(fan)
             acc["gt4"].append(b["gt_traj"].detach().float().cpu())        # [B, 4, 2]
             acc["sel_score"].append(out["sel_score"].detach().float().cpu())
+            sv3 = out.get("sel_score_v3")
+            acc["sel_score_v3"].append(
+                sv3.detach().float().cpu() if sv3 is not None
+                else out["sel_score"].detach().float().cpu())
             acc["reach"].append(rk.detach().bool().cpu() if rk is not None
                                 else torch.ones(fan.shape[:2], dtype=torch.bool))
             acc["sel_idx"].append(out["sel_idx"].detach().long().cpu())
@@ -177,10 +182,20 @@ def score_bank(bk):
     lead5 = bk["lead5"].reshape(-1, 1, len(FS.GRID_S), 2)
     sc = FS.score_paths(fan2, bk["v0"], lead5, lead_len_m=D.LEAD_LEN_DEFAULT_M)
     ade = (fan4 - bk["gt4"][:, None]).norm(dim=-1).mean(dim=-1)   # [W, N] 2 s ADE
-    rank = bk["sel_score"].clone().float()
-    rank = rank.masked_fill(~bk["reach"], float("-inf"))
+    # THE RANKING THE DEPLOYED MODEL ACTUALLY USES.
+    # refcv3 is the `hier` arm (config argv `--arm hier`), and refc.py:1763 argmaxes
+    # `rank`, which on that arm is `sel_score_v3` (the goal-seam-grafted score) masked
+    # by reach_keep -- NOT `sel_score`. MEASURED: reconstructing the ranking from
+    # `sel_score` disagrees with the model's own `sel_idx` on 35 of 400 windows
+    # (8.75 %), so a gate built on it ranks over a candidate set that does not contain
+    # the model's own pick on ~1 window in 11. `order` is the TRUE ranking; `order_ap`
+    # reproduces the as-published probe so the defect is measured, not asserted.
+    rank = bk["sel_score_v3"].clone().float().masked_fill(~bk["reach"], float("-inf"))
     order = rank.argsort(dim=1, descending=True)
+    rank_ap = bk["sel_score"].clone().float().masked_fill(~bk["reach"], float("-inf"))
+    order_ap = rank_ap.argsort(dim=1, descending=True)
     return {"fan2": fan2, "r_kin": r_kin, "sc": sc, "ade": ade, "order": order,
+            "order_ap": order_ap,
             "c_feas": comp["feasibility"], "c_comf": comp["comfort"]}
 
 
@@ -188,12 +203,13 @@ def pick_indices(bk, S):
     """Every selection rule -> a per-window candidate index. No model call."""
     W = bk["fan8"].shape[0]
     pick = {"model": bk["sel_idx"].clone()}
-    for k in GATE_KS:
-        idx = torch.empty(W, dtype=torch.long)
-        for j in range(W):
-            cand = S["order"][j, :min(k, S["order"].shape[1])]
-            idx[j] = cand[S["r_kin"][j][cand].argmax()]
-        pick["gate%d" % k] = idx
+    for tag, key in (("gate", "order"), ("gateAP", "order_ap")):
+        for k in GATE_KS:
+            idx = torch.empty(W, dtype=torch.long)
+            for j in range(W):
+                cand = S[key][j, :min(k, S[key].shape[1])]
+                idx[j] = cand[S["r_kin"][j][cand].argmax()]
+            pick["%s%d" % (tag, k)] = idx
     pick["kin_only"] = S["r_kin"].argmax(dim=1)
     pick["oracle"] = S["ade"].argmin(dim=1)
     return pick
@@ -294,21 +310,28 @@ def analyse_draw(bk, *, n_boot, seed, dt, tag):
     ar = torch.arange(bk["fan8"].shape[0])
 
     # ---- G-OFF: THE DELIBERATE-REGRESSION CONTROL ------------------------------
-    m_idx, g1_idx = pick["model"], pick["gate1"]
-    n_dis = int((m_idx != g1_idx).sum())
     metric_keys = ["ade_m", "ade8_m", "fde_m", "peak_g"] + list(FLAGS)
-    maxdiff = {k: float(np.abs(rows["gate1"][k] - rows["model"][k]).max())
-               for k in metric_keys}
-    goff = {
-        "object_assert_selected_index_identical": bool(n_dis == 0),
-        "n_windows_disagreeing_on_index": n_dis,
-        "n_windows": int(len(m_idx)),
-        "disagreement_rate": float(n_dis) / max(1, len(m_idx)),
-        "metrics_max_abs_diff": maxdiff,
-        "metrics_all_exactly_zero": bool(all(v == 0.0 for v in maxdiff.values())),
-    }
-    goff["PASS"] = bool(goff["object_assert_selected_index_identical"]
-                        and goff["metrics_all_exactly_zero"])
+    m_idx = pick["model"]
+
+    def _goff(name, ranking):
+        gi = pick[name]
+        nd = int((m_idx != gi).sum())
+        md = {k: float(np.abs(rows[name][k] - rows["model"][k]).max())
+              for k in metric_keys}
+        d = {"gate_off_arm": name, "ranking_used": ranking,
+             "object_assert_selected_index_identical": bool(nd == 0),
+             "n_windows_disagreeing_on_index": nd,
+             "n_windows": int(len(m_idx)),
+             "disagreement_rate": float(nd) / max(1, len(m_idx)),
+             "metrics_max_abs_diff": md,
+             "metrics_all_exactly_zero": bool(all(v == 0.0 for v in md.values()))}
+        d["PASS"] = bool(d["object_assert_selected_index_identical"]
+                         and d["metrics_all_exactly_zero"])
+        return d
+
+    goff = _goff("gate1", "sel_score_v3 (the ranking refc.py:1763 argmaxes)")
+    goff["as_published_control"] = _goff(
+        "gateAP1", "sel_score (the AS-PUBLISHED probe's ranking)")
 
     # ---- paired vs model, every rule, every metric ------------------------------
     res = {"abs": {}, "paired_vs_model": {}}
@@ -331,7 +354,7 @@ def analyse_draw(bk, *, n_boot, seed, dt, tag):
     # ---- the FOUR FAMILIES, per rule, per family, NEVER pooled ------------------
     lead_blk = None
     fam = {}
-    for rule in ("model", "gate1", "gate2", "gate4", "kin_only", "oracle"):
+    for rule in ("model", "gate1", "gate2", "gate4", "gateAP2", "kin_only", "oracle"):
         fam[rule] = families_for(rows[rule]["_sel8"], bk["gt4"], eid, dt,
                                  n_boot=max(500, n_boot // 4), seed=seed, lead=lead_blk)
 
@@ -339,7 +362,7 @@ def analyse_draw(bk, *, n_boot, seed, dt, tag):
     famdelta = {}
     NS = D.N_REWARD_SLOTS
     pm = D.with_origin(rows["model"]["_sel8"][:, :NS])          # [W, 5, 2]
-    for rule in ("gate1", "gate2", "gate4", "kin_only", "oracle"):
+    for rule in ("gate1", "gate2", "gate4", "gateAP2", "kin_only", "oracle"):
         pr = D.with_origin(rows[rule]["_sel8"][:, :NS])         # [W, 5, 2]
         d = {}
         gp = D.with_origin(bk["gt4"])                           # [W, 5, 2]
@@ -603,6 +626,11 @@ def main(argv=None) -> int:
                  g["object_assert_selected_index_identical"],
                  g["n_windows_disagreeing_on_index"], g["n_windows"],
                  g["metrics_all_exactly_zero"]))
+        ga = g["as_published_control"]
+        print("    as-published control (ranking = sel_score): %s  disagree=%d/%d (%.2f pct)"
+              % ("PASS" if ga["PASS"] else "FAIL",
+                 ga["n_windows_disagreeing_on_index"], ga["n_windows"],
+                 100.0 * ga["disagreement_rate"]))
         c = draws[tag]["G_CTRL"]
         print("  G-CTRL(%s) %s oracle d_ade=%+.4f sep=%s"
               % (tag, "PASS" if c["PASS"] else "FAIL", c["oracle_ade_delta"],
@@ -619,7 +647,8 @@ def main(argv=None) -> int:
         print("  %-10s %8s %9s %5s | %9s %9s %5s | %8s %8s %6s"
               % ("rule", "ade_m", "d_ade", "sep", "envelope", "d_env", "sep",
                  "peak_g", "d_pkg", "agree"))
-        for rule in ["model"] + ["gate%d" % k for k in GATE_KS] + ["kin_only", "oracle"]:
+        for rule in (["model"] + ["gate%d" % k for k in GATE_KS]
+                     + ["gateAP1", "gateAP2"] + ["kin_only", "oracle"]):
             R = d["results"]["abs"][rule]
             P = d["results"]["paired_vs_model"].get(rule, {})
             de = P.get("ade_m", {})
