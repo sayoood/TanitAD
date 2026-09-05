@@ -232,6 +232,24 @@ def furthest_point_sample(pool: Tensor, n: int, seed: int = 0) -> Tensor:
     return pool[torch.tensor(chosen, device=pool.device)]
 
 
+#: ⭐ H-EGO-LIT-4 (2026-09-05): the admissible SOURCES of the speed a WITHHELD
+#: row's anchor bank is rolled at. `AnchorDecoder.anchor_withheld_bank` holds
+#: one of these; the trainer's `--withheld-bank` flag sets it and STAMPS it.
+#:   fixed  — `anchor_ref_speed` (the shipped 10 m/s roll; the pre-flag
+#:            arithmetic, bit-identical)
+#:   pred   — the model's OWN detached, vision-only `g_tac` 2 s speed
+#:            (SparseDrive's pattern), clamped to [0, anchor_withheld_speed_max]
+#:   random — a draw from `anchor_random_speed_pool` (the training marginal of
+#:            v0): the right distribution and ZERO information — the blindness
+#:            CONTROL that must NOT gain if `pred` gains for the right reason
+#:   none   — EVERY row (kept, withheld, eval) at `anchor_ref_speed`: the
+#:            field's speed-blind fixed vocabulary
+#: ⛔ The measured v0 of a withheld row reaches NONE of them: a speed bucketed on
+#: it would put log2(k) bits of the withheld channel into the candidate
+#: geometry (D-EGOLIT-WITHHELD1, refused as designed).
+WITHHELD_BANK_MODES: tuple[str, ...] = ("fixed", "pred", "random", "none")
+
+
 def default_anchors(horizons: tuple[int, ...], n_anchors: int,
                     pool_size: int = 4096, seed: int = 0,
                     device: str = "cpu") -> Tensor:
@@ -1176,6 +1194,14 @@ class AnchoredDiffusionDecoder(nn.Module):
                              torch.tensor([k - 1 for k in _h],
                                           dtype=torch.long), persistent=False)
         self.anchor_roll_steps = int(max(_h))
+        # ⭐ H-EGO-LIT-4: what speed a WITHHELD row's bank is rolled at. Plain
+        # attributes, never buffers (no state_dict change, so every checkpoint
+        # before and after this flag loads strictly). See WITHHELD_BANK_MODES.
+        # Kept rows are untouched by every mode but "none"; at eval nothing
+        # is withheld, so "fixed"/"pred"/"random" leave eval byte-identical.
+        self.anchor_withheld_bank: str = "fixed"
+        self.anchor_withheld_speed_max: float = 35.0
+        self.anchor_random_speed_pool: Tensor | None = None
         d = cfg.d
         self.feat_proj = nn.Linear(feat_dim, d)               # conv map -> KV
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
@@ -1315,9 +1341,48 @@ class AnchoredDiffusionDecoder(nn.Module):
                 "restore the un-conditioned vocabulary this build exists to "
                 "replace.")
 
+    def _withheld_ref_speed(self, v: Tensor,
+                            withheld_speed: Tensor | None) -> Tensor:
+        """[B] the speed a WITHHELD row is rolled at, per ``anchor_withheld_bank``.
+
+        Under ``"fixed"`` this is exactly the pre-flag expression
+        ``torch.full_like(v, self.anchor_ref_speed)`` (pinned bit-identical by
+        ``tests/test_withheld_bank.py``). ``"pred"`` without a supplied speed
+        (warm-up, or a caller that has no goal head) falls back to the fixed
+        roll — the trainer logs which one was live on every step.
+        ``"random"`` without a pool is REFUSED: a silent fall-back would turn
+        the blindness control into a second copy of the fixed arm.
+        """
+        mode = self.anchor_withheld_bank
+        if mode not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank {mode!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if mode == "pred" and withheld_speed is not None:
+            # ⛔ DETACHED: the bank is geometry the anchor target is measured
+            # against; a gradient from the target into the speed head would
+            # let selection train the goal toward the fan (the SEL-1 refusal).
+            return withheld_speed.detach().reshape(-1).to(v.dtype).clamp(
+                0.0, self.anchor_withheld_speed_max)
+        if mode == "random":
+            pool = self.anchor_random_speed_pool
+            if pool is None or pool.numel() == 0:
+                raise ValueError(
+                    "anchor_withheld_bank='random' needs a non-empty "
+                    "anchor_random_speed_pool (the training marginal of v0); "
+                    "refusing to fall back to the fixed roll silently")
+            idx = torch.randint(pool.numel(), (v.shape[0],),
+                                device=pool.device)
+            return pool.reshape(-1)[idx].to(device=v.device, dtype=v.dtype)
+        return torch.full_like(v, self.anchor_ref_speed)
+
     def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
-                  batch: int, dtype: torch.dtype) -> Tensor:
+                  batch: int, dtype: torch.dtype,
+                  withheld_speed: Tensor | None = None) -> Tensor:
         """[B, N, S, 2] — the anchor bank THIS forward decodes.
+
+        ``withheld_speed`` [B] (optional) is the model's OWN predicted speed,
+        read only under ``anchor_withheld_bank == "pred"`` and only on rows
+        whose ego channel was withheld (H-EGO-LIT-4).
 
         Fixed builds expand the stored paths, which is byte-identical to the
         pre-2026-09-04 ``anchors[None].expand(...)``. v0-conditioned builds roll
@@ -1336,13 +1401,19 @@ class AnchoredDiffusionDecoder(nn.Module):
         if not self.anchor_v0_cond:
             return self.anchors.to(dtype)[None].expand(
                 batch, n, self.n_steps, 2)
-        if v_ms is None:
+        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank "
+                             f"{self.anchor_withheld_bank!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if v_ms is None or self.anchor_withheld_bank == "none":
+            # "none": the speed-blind vocabulary — every row, kept or withheld,
+            # train or eval, at the reference speed (the field's design).
             v = self.anchors.new_full((batch,), self.anchor_ref_speed)
         else:
             v = v_ms.reshape(-1).to(torch.float32)
             if ego_keep is not None:
                 v = torch.where(ego_keep.reshape(-1),
-                                v, torch.full_like(v, self.anchor_ref_speed))
+                                v, self._withheld_ref_speed(v, withheld_speed))
         # ⚠️ rolled in float32 regardless of the AMP dtype: 60 sequential
         # integration steps in fp16 accumulate visible drift, and the bank is
         # the geometry every anchor target is measured against.
@@ -1479,7 +1550,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 v_ms: Tensor | None = None,
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
-                goal_dist_pref: Tensor | None = None) -> dict:
+                goal_dist_pref: Tensor | None = None,
+                withheld_speed: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1515,7 +1587,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         # per-window roll. `bank` — not `anchors` — is the geometry every
         # consumer below must read, including the anchor target in the trainer,
         # which is why it is also returned.
-        bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype)
+        bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype,
+                              withheld_speed=withheld_speed)
         x0 = bank
         prior_bank = bank if self.anchor_v0_cond else None
 
@@ -2147,7 +2220,8 @@ class RefCModel(nn.Module):
                 lan: Tensor | None = None,
                 nav_known: Tensor | None = None,
                 hierarchy_hook=None,
-                ego_keep: Tensor | None = None) -> dict:
+                ego_keep: Tensor | None = None,
+                withheld_speed: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -2207,6 +2281,12 @@ class RefCModel(nn.Module):
                 maneuver_logits = hk.get("maneuver_logits")
             if target_latent is None:
                 target_latent = hk.get("target_latent")
+            # ⭐ H-EGO-LIT-4: the hook's OWN 2 s speed (detached) feeds the
+            # decoder's `pred` withheld-bank mode. An explicitly supplied
+            # `withheld_speed` wins (the eval-time SHUFFLE control passes a
+            # permuted copy), exactly like the two ports above.
+            if withheld_speed is None:
+                withheld_speed = hk.get("bank_speed_pred")
 
         # H15 belief field refines the conv-map tokens before the decoder (gated).
         imag_logvar = None
@@ -2368,7 +2448,8 @@ class RefCModel(nn.Module):
                            route_prior=route_prior, cons_head=cons_head,
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
-                           goal_dir=goal_dir, goal_dist_pref=goal_dist_pref)
+                           goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
+                           withheld_speed=withheld_speed)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))

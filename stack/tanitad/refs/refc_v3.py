@@ -969,6 +969,16 @@ class RefCV3Model(nn.Module):
             hook_out = {"target_latent": self.tac_latent_proj(z_up)}
             if man5 is not None:
                 hook_out["maneuver_logits"] = man5
+            # ⭐ H-EGO-LIT-4: the model's OWN 2 s speed, DETACHED, for the
+            # decoder's `pred` withheld-bank mode (`refc.py`). On a withheld
+            # row `g_tac` is a function of the image, nav and constants only:
+            # the ego block is multiplied by keep = 0 before `ego_inj` (above)
+            # and `tactical_speed_input` is False, so the measured v0 cannot
+            # reach the bank through it. Emitted on EVERY forward and stored
+            # in the output; the decoder ignores it unless its mode is "pred".
+            bank_speed_pred = g_tac[:, self._tau_slot_2s(), 3].detach()
+            cache["bank_speed_pred"] = bank_speed_pred
+            hook_out["bank_speed_pred"] = bank_speed_pred
             return hook_out
 
         return hook
@@ -977,7 +987,8 @@ class RefCV3Model(nn.Module):
                 v0: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
                 nav_known: Tensor | None = None,
-                ego_state: Tensor | None = None) -> dict:
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -1011,11 +1022,18 @@ class RefCV3Model(nn.Module):
             ego_keep = ego_state[:, 4]
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
-                             nav_known=nav_known, ego_keep=ego_keep)
+                             nav_known=nav_known, ego_keep=ego_keep,
+                             withheld_speed=withheld_speed)
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
-                        hierarchy_hook=self._hook(cache, nav_cmd, ego_state))
+                        hierarchy_hook=self._hook(cache, nav_cmd, ego_state),
+                        withheld_speed=withheld_speed)
+        # the per-row withholding draw, for diagnostics that split kept from
+        # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`
+        # below is its mean.
+        if ego_keep is not None:
+            out["ego_keep"] = ego_keep.detach()
         # ---- E9: goal selection over the emitted fan (post-decoder) --------
         fan = out["anchor_traj"]                                  # [B, N, S, 2]
         b = fan.shape[0]

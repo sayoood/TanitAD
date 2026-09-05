@@ -776,6 +776,23 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             extra["ego_injected"] = float(bool(out["ego_injected"]))
         if "ego_keep_frac" in out:
             extra["ego_keep_frac"] = out["ego_keep_frac"]
+    # ⭐ H-EGO-LIT-4 diagnostics: the model's OWN 2 s speed vs the GT 2 s
+    # speed, split by the withholding draw. `withheld_speed_mae` is the A0
+    # log the pre-registration reads the `pred` warm-up step N from ("the
+    # step at which the withheld-row speed MAE first drops below 2.5 m/s").
+    # A key is absent (not NaN) on a batch with no rows in that regime.
+    if "bank_speed_pred" in out and "ego_keep" in out:
+        _slot = model._tau_slot_2s()
+        _gv = goal_valid[:, _slot]
+        _err = (out["bank_speed_pred"].float()
+                - goal_tac[:, _slot, 3].float()).abs()
+        _keep = out["ego_keep"].float() > 0.5
+        for _tag, _m in (("withheld", (~_keep) & _gv), ("kept", _keep & _gv)):
+            _n = int(_m.sum())
+            extra[f"{_tag}_rows"] = float(_n)
+            if _n:
+                extra[f"{_tag}_speed_mae"] = _err[_m].mean().detach()
+        extra["bank_speed_pred_mean"] = out["bank_speed_pred"].float().mean()
 
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
@@ -971,7 +988,74 @@ def _seam_stamp(cfg, args) -> dict:
                            or getattr(args, "graft_lan", False)),
         "graft_lan": bool(core.graft_lan or getattr(args, "graft_lan", False)),
         "goal_str": bool(getattr(args, "goal_str", False)),
+        # ⭐ H-EGO-LIT-4 (2026-09-05): the withheld-row bank policy. A run that
+        # does not stamp it cannot say which of the four arms it was.
+        "withheld_bank": str(getattr(args, "withheld_bank", "fixed")),
+        "withheld_bank_warmup": int(getattr(args, "withheld_bank_warmup", 0)),
+        "withheld_speed_max_ms": float(getattr(args, "withheld_speed_max",
+                                               35.0)),
     }
+
+
+def _apply_withheld_bank(model, args, eps, device) -> dict:
+    """Install ``--withheld-bank`` on the decoder and return its config stamp.
+
+    ``pred``/``random``/``none`` need a v0-CONDITIONED vocabulary (there is
+    nothing to roll otherwise) and are refused without one; ``pred`` also
+    needs the hierarchy (the goal head is the speed source). ``random`` draws
+    from the TRAINING marginal of v0 — every frame's speed over the training
+    episodes, sub-sampled to <= 200k values — which is stamped by n / mean /
+    std so the control's distribution is on record. The mode itself goes live
+    in the train loop (warm-up), never here.
+    """
+    mode = str(getattr(args, "withheld_bank", "fixed"))
+    dec = model.core.decoder
+    stamp = {"mode": mode,
+             "warmup_steps": int(getattr(args, "withheld_bank_warmup", 0)),
+             "speed_max_ms": float(getattr(args, "withheld_speed_max", 35.0)),
+             "random_pool": None}
+    if mode != "fixed" and not getattr(dec, "anchor_v0_cond", False):
+        raise SystemExit(
+            f"[v3] ⛔ --withheld-bank {mode} needs a v0-CONDITIONED vocabulary "
+            f"(--anchor-v0-conditioned with a controls-carrying --anchors); a "
+            f"fixed-path vocabulary has no per-row roll to redirect.")
+    if mode == "pred" and not model.cfg.hier:
+        raise SystemExit("[v3] ⛔ --withheld-bank pred needs --arm hier: the "
+                         "goal head (g_tac) is the speed source.")
+    dec.anchor_withheld_speed_max = float(stamp["speed_max_ms"])
+    if mode == "random":
+        vals = []
+        for ep in eps:
+            po = getattr(ep, "poses", None)
+            if po is None:
+                continue
+            vals.append(torch.as_tensor(po)[:, 3].to(torch.float32)
+                        .reshape(-1).clone())
+        pool = torch.cat(vals) if vals else torch.zeros(0)
+        pool = pool[torch.isfinite(pool)].clamp_min(0.0)
+        if pool.numel() == 0:
+            raise SystemExit("[v3] ⛔ --withheld-bank random: no v0 values in "
+                             "the training episodes to draw from")
+        if pool.numel() > 200_000:
+            g = torch.Generator().manual_seed(int(args.seed))
+            pool = pool[torch.randperm(pool.numel(), generator=g)[:200_000]]
+        dec.anchor_random_speed_pool = pool.to(device)
+        stamp["random_pool"] = {
+            "n": int(pool.numel()), "mean_ms": round(float(pool.mean()), 4),
+            "std_ms": round(float(pool.std()), 4),
+            "p10_p50_p90_ms": [round(float(q), 3) for q in
+                               torch.quantile(pool, torch.tensor(
+                                   [0.1, 0.5, 0.9]))],
+            "source": "poses[:, 3] over every frame of the TRAINING episodes "
+                      "(the marginal the withheld row's bank is drawn from; "
+                      "independent of the row)"}
+    # the decoder starts on the FIXED roll; the train loop flips it at
+    # `warmup_steps` and logs `withheld_bank_active`.
+    dec.anchor_withheld_bank = "fixed" if stamp["warmup_steps"] > 0 else mode
+    print(f"[v3] withheld bank: mode={mode} warmup={stamp['warmup_steps']} "
+          f"speed_max={stamp['speed_max_ms']} m/s "
+          f"pool={stamp['random_pool']}", flush=True)
+    return stamp
 
 
 def _anchor_stamp(path, anchors, controls=None, units="kappa",
@@ -1499,6 +1583,8 @@ def train(args) -> dict:
         **pf,
         drop_last=True, persistent_workers=args.workers > 0)
 
+    withheld_stamp = _apply_withheld_bank(model, args, eps, device)
+
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
     sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \
         0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)
@@ -1545,6 +1631,9 @@ def train(args) -> dict:
         # so the live arm could not rebuild its own model config from its
         # own record. `_seam_stamp` names each one.
         "seams": _seam_stamp(cfg, args),
+        # ⭐ H-EGO-LIT-4: the withheld-row bank policy, with the random
+        # control's marginal on record.
+        "withheld_bank": withheld_stamp,
         "selection": {
             "sel_reach_clamp": bool(cfg.core.sel_reach_clamp),
             "sel_accel_max": float(cfg.core.sel_accel_max),
@@ -1621,8 +1710,15 @@ def train(args) -> dict:
             batch = next(it)
         for g in opt.param_groups:
             g["lr"] = args.lr * sched(step)
+        # ⭐ H-EGO-LIT-4: the withheld bank goes live after the warm-up. Set
+        # EVERY step (not once) so a resumed run lands in the right regime,
+        # and logged so the record says which bank each step trained on.
+        _wb_active = step >= args.withheld_bank_warmup
+        model.core.decoder.anchor_withheld_bank = (
+            args.withheld_bank if _wb_active else "fixed")
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames)
+        losses["withheld_bank_active"] = float(_wb_active)
         opt.zero_grad(set_to_none=True)
         losses["loss"].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
@@ -1899,6 +1995,26 @@ def build_parser() -> argparse.ArgumentParser:
                          "its true v0 would put the withheld channel into the "
                          "candidate GEOMETRY, which is a harder leak than the "
                          "ranking one S2 guards.")
+    ap.add_argument("--withheld-bank", default="fixed",
+                    choices=list(refc.WITHHELD_BANK_MODES),
+                    help="H-EGO-LIT-4: the speed a WITHHELD row's anchor bank "
+                         "is rolled at (v0-conditioned vocabularies only). "
+                         "fixed = --anchor-ref-speed (the shipped roll; "
+                         "bit-identical to the pre-flag trainer); pred = the "
+                         "model's OWN detached vision-only g_tac 2 s speed "
+                         "(SparseDrive's pattern), clamped to [0, "
+                         "--withheld-speed-max]; random = a draw from the "
+                         "TRAINING marginal of v0 (the blindness CONTROL); "
+                         "none = every row at the reference speed (the field's "
+                         "speed-blind vocabulary). Stamped in config.json "
+                         "under seams.withheld_bank and withheld_bank.")
+    ap.add_argument("--withheld-bank-warmup", type=int, default=0,
+                    help="steps trained on the FIXED withheld bank before "
+                         "--withheld-bank pred/random goes live (the goal "
+                         "head's speed is noise at step 0). Logged per step "
+                         "as withheld_bank_active.")
+    ap.add_argument("--withheld-speed-max", type=float, default=35.0,
+                    help="clamp for --withheld-bank pred, m/s.")
     ap.add_argument("--sel-accel-max", type=float, default=None,
                     help="S2 reach-clamp bound in m/s^2. RE-DERIVE IT FOR THE "
                          "HORIZON: `horizon_s` is max(horizons)*0.1, so the "

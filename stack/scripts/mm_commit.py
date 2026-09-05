@@ -40,6 +40,18 @@ def git(*a, env=None, check=True):
                            encoding="utf-8", errors="replace", env=env)
         if r.returncode == 0:
             return r.stdout.strip()
+        # A git child that died mid-command (the 0xC0000006 page-out below, or a
+        # mount drop) leaves OUR scratch index's `.lock` behind; the child has
+        # exited, so it is debris, and every retry would then fail with
+        # "Unable to create '<scratch>.lock': File exists". MEASURED 2026-09-05:
+        # one page-out on read-tree poisoned all 7 retries. Only THIS run's own
+        # scratch lock is touched -- never another agent's.
+        _idx = (env or {}).get("GIT_INDEX_FILE")
+        if _idx and os.path.exists(_idx + ".lock"):
+            try:
+                os.unlink(_idx + ".lock")
+            except OSError:
+                pass
         # 0xC0000006 STATUS_IN_PAGE_ERROR (and its signed form): the memory-mapped
         # read of a git object could not be paged in because the G: mount dropped
         # mid-read. It arrives as an EXIT CODE WITH EMPTY STDERR, so string matching

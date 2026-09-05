@@ -1,6 +1,6 @@
 # Withheld-bank panel on the v7-tiny rig (H-EGO-LIT-4) — RESULT
 
-status: IN PROGRESS — done: directory created, brief read / next: read H-EGO-LIT-4 as registered + ValidateAIDesign skill, implement `--withheld-bank {fixed,pred,random,none}` in `stack/scripts/refc_v3_train.py` + `stack/tanitad/refs/refc.py::_anchor_bank`, pin bit-identity of `fixed`, then A0..A4 on the RTX 4060 (one at a time), score with `echo_gate.py` + four families kept/withheld paired vs A0.
+status: IN PROGRESS — done: `--withheld-bank {fixed,pred,random,none}` implemented in `refc.py::roll_bank` / `refc_v3.py` (hook emits the detached `g_tac` 2 s speed) / `refc_v3_train.py` (flag, warm-up, random pool, stamps, `withheld_speed_mae` log); `stack/tests/test_withheld_bank.py` 12/12 pass; paired scoped suite WITH 569 passed / 17 failed vs BASE 557 / 17 — IDENTICAL failure sets (clone-environment), zero regressions; SPEC.md written; `raw/panel.sh` + `raw/warmup_from_log.py` banked / next: trainer smoke on the epcache, then A0..A5 on the RTX 4060 once the sibling refav1 eval releases it, then `raw/panel_score.py`.
 
 Owner: Architecture & Inference FlyWheel agent (Claude Fable 5.1), started 2026-09-05.
 Pre-registration: `H-EGO-LIT-4` in `Project Steering/GOALS_AND_CLAIMS.md` (both outcomes committed there before this panel ran).
