@@ -220,6 +220,79 @@ belong here because they bound what any wide-panel result can mean:
   in `RESULT.md` §4 — which is the same-breath control that this tool is reading
   the programme's estimator and not a re-implementation of it.
 
+### §3.13 ⛔⛔ AMENDMENT 2, 21:45 — THE BANKED SPLIT IS **STRUCTURALLY** UNATTRIBUTABLE, NOT MERELY THIN
+
+MEASURED, `raw/retain_drivers.py`: on the banked 40-window panel the decoded
+goal tokens live in **COMPLETELY DISJOINT EPISODES** —
+
+| decoded goal | n | episodes |
+|---|---|---|
+| `TURN_L` | 9 | **{1, 6}** |
+| `TURN_R` | 13 | **{0, 2, 4, 7}** |
+| **carrying BOTH** | — | ⛔ **NONE** |
+
+⇒ **On that panel, *"the goal is `TURN_L`"* and *"the window is in episode 1 or
+6"* are THE SAME VARIABLE.** The 0/9 vs 9/13 split is therefore *exactly* as
+consistent with **"episodes 1 and 6 are hard"** as with any left/right claim, and
+no estimator can separate them — the episode-cluster bootstrap least of all,
+since resampling episodes is precisely what it does. ⛔ **The design is
+DEGENERATE, not merely small**, and that is a stronger and more honest statement
+of the defect than "n is thin".
+
+⚠️ A single continuous variable — the goal cost of the full-`kappa` plan — splits
+retained from crushed at 0.8636 against direction's 0.8182, but the values are
+0.00001 on 20 of 22 windows and 0.00013 on 2, so that "threshold" is two points
+of overfit on 22 and **is not offered as a mechanism.** The episode confound
+above is structural; this one is arithmetic noise, and they must not be quoted
+with the same weight.
+
+⭐ **THE WIDE PANEL WAS ALREADY BUILT TO BREAK THIS, and the numbers say by how
+much.** Because §2's rule round-robins each stratum across every episode that
+carries it, **4 of the 8 episodes carry BOTH GT directions — {0, 2, 6, 7}, with
+20 `turn_left` and 18 `turn_right` windows inside them** (the banked stride-16
+panel manages 3 episodes with 3 + 4).
+
+> ⭐ **REGISTERED NOW, BEFORE THE RUN — the WITHIN-EPISODE contrast is the
+> primary attribution statistic**, computed only over the episodes carrying both
+> directions: `mean over those episodes of (recall_R − recall_L) INSIDE the
+> episode`, with the episode-cluster bootstrap over that episode set. It removes
+> the episode confound by construction, and a directional effect that survives it
+> is attributable to direction in a way that a pooled contrast never can be.
+> ⚠️ It is reported BESIDE the pooled contrast of §1, never instead of it, and
+> §5's outcome conditions are evaluated on **both**: if the pooled contrast and
+> the within-episode contrast disagree, the answer is **outcome B (NOT
+> ESTABLISHED)**, because a disagreement is the confound speaking.
+
+---
+
+### §3.14 AMENDMENT 3 — the ONE learned component inside the search, named from source
+
+The §3.1-4 audit covers everything **deterministic**. It leaves exactly one place
+a directional bias can genuinely live, and it is not the cost:
+
+* `refa_v1.py:2484-2485` — **`seed_pool = modes[1:]`**. The imitation
+  `proposal` head emits `cfg.proposal_k` modes; the score head ranks them,
+  mode 0 becomes the named `proposal` baseline and **every other mode is
+  injected into iCEM's ITERATION-0 population** (`refa_v1_plan.py:291-293`).
+  That pool is **learned**, so nothing forces it to be sign-balanced.
+* Everything else in iteration 0 is symmetric by construction: the mean starts
+  at **zero** (`prev_elites` is never passed by `refav1_arm.py`, so windows do
+  not inherit each other's mean — there is no ORDER effect), `init_var = 1.0`
+  on both channels, and `colored_noise` is zero-mean and sign-balanced (§3.4).
+
+⇒ **HYPOTHESIS, named before the run and NOT tested by this package:** *the
+proposal head's mode set is directionally biased, so at `W_KAPPA = 0` the goal
+term can still drive the CEM to either direction, while under a curvature charge
+only a direction already present in the seed pool survives the search.* It
+predicts exactly the observed pattern (symmetric at `W_KAPPA = 0`, split at
+15.11) without any asymmetric term in the cost.
+
+⚠️ **The instrument to settle it does not exist yet** — the seed pool's own
+signed curvature is not written to the decisions sidecar. ⛔ **Adding it now
+would edit `refa_v1.py` under a sibling stream's live arms, so it is registered
+as the next work item rather than hacked in mid-flight.** If §5 returns outcome
+A, this is the first thing to measure and it is a one-field dump change.
+
 ---
 
 ## §4 — THE ARMS, in priority order

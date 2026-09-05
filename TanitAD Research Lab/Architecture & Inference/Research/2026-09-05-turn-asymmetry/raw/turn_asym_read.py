@@ -97,6 +97,33 @@ def contrast_ci(hit, eid, mask_a, mask_b, n_boot=NB, seed=0):
     return pt, float(lo), float(hi), bool(lo > 0 or hi < 0), len(out)
 
 
+def within_episode_contrast(hit, eid, mask_a, mask_b, n_boot=NB, seed=0):
+    """⭐ THE PRIMARY ATTRIBUTION STATISTIC (SPEC section 3.13).
+
+    Mean, over the episodes carrying BOTH strata, of (mean(a) - mean(b)) INSIDE
+    that episode -- then an episode-cluster bootstrap over that episode set.
+
+    ⛔ WHY IT IS PRIMARY. On the banked panel the two goal tokens live in
+    COMPLETELY DISJOINT episodes, so "the goal is TURN_L" and "the window is in
+    episode 1 or 6" are the SAME VARIABLE and the pooled contrast cannot
+    attribute anything. Restricting to episodes that carry both removes the
+    confound by construction. Returns (point, lo, hi, separated, episodes_used).
+    """
+    hit = np.asarray(hit, float)
+    eid = np.asarray(eid)
+    eps = sorted(set(eid[mask_a].tolist()) & set(eid[mask_b].tolist()))
+    if not eps:
+        return float("nan"), float("nan"), float("nan"), False, []
+    per_ep = {e: float(hit[mask_a & (eid == e)].mean()
+                       - hit[mask_b & (eid == e)].mean()) for e in eps}
+    pt = float(np.mean([per_ep[e] for e in eps]))
+    rng = np.random.default_rng(seed)
+    draws = [float(np.mean([per_ep[e] for e in rng.choice(eps, len(eps))]))
+             for _ in range(n_boot)]
+    lo, hi = np.percentile(draws, [2.5, 97.5])
+    return pt, float(lo), float(hi), bool(lo > 0 or hi < 0), eps
+
+
 def main(tags):
     D = {t: load(t) for t in tags}
     ref = D[tags[0]]
@@ -155,6 +182,31 @@ def main(tags):
           "itself = %+0.4f"
           % (cluster_ci(hit[tags[0]][mL], eid[mL])[0]
              - cluster_ci(hit[tags[0]][mL], eid[mL])[0]))
+
+    print()
+    print("=" * 100)
+    print("1b. ⭐ WITHIN-EPISODE CONTRAST (SPEC 3.13) — the PRIMARY attribution "
+          "statistic")
+    print("=" * 100)
+    eps_both = sorted(set(eid[mL].tolist()) & set(eid[mR].tolist()))
+    print("  episodes carrying BOTH GT directions: %s  (%d left + %d right "
+          "windows inside them)"
+          % (eps_both, int((mL & np.isin(eid, eps_both)).sum()),
+             int((mR & np.isin(eid, eps_both)).sum())))
+    if not eps_both:
+        print("  ⛔ NONE — direction and episode are the SAME VARIABLE on this "
+              "panel; NOTHING is attributable to direction.")
+    win = {}
+    for t in list(tags) + ["ha0_ext", "ol"]:
+        p, lo, hi, sep, used = within_episode_contrast(hit[t], eid, mR, mL)
+        win[t] = (p, sep)
+        print("  %-14s within-episode (R - L) = %+6.4f [%+6.4f, %+6.4f] %s "
+              "over %d episodes%s"
+              % (t, p, lo, hi, "SEPARATED" if sep else "not sep",
+                 len(used), " (FLOOR)" if t in ("ha0_ext", "ol") else ""))
+    z, zlo, zhi, _, _ = within_episode_contrast(hit[tags[0]], eid, mR, mR)
+    print("  CONTROL, a stratum against ITSELF (must be exactly +0.0000): "
+          "%+0.4f [%+0.4f, %+0.4f]" % (z, zlo, zhi))
 
     print()
     print("=" * 100)
@@ -245,10 +297,23 @@ def main(tags):
     print("  cond 1 -- |gap| > floor at BOTH seeds : %s" % ("MET" if c1 else "NOT MET"))
     print("  cond 2 -- sign agrees across seeds    : %s" % ("MET" if c2 else "NOT MET"))
     print("  cond 3 -- n and cluster targets       : %s" % ("MET" if ok_n else "NOT MET"))
+    # SPEC 3.13: the pooled and within-episode contrasts must AGREE in sign, or
+    # the disagreement is the episode confound speaking and the answer is B.
+    wa, wb = win.get(a, (float("nan"), False))[0], win.get(b, (float("nan"), False))[0]
+    c4 = (np.sign(wa) == np.sign(gaps[a]) and np.sign(wb) == np.sign(gaps[b])
+          and abs(wa) > fl and abs(wb) > fl)
+    print("  cond 4 -- within-episode contrast agrees and clears the floor "
+          "(%+0.4f / %+0.4f vs floor %.4f): %s"
+          % (wa, wb, fl, "MET" if c4 else "NOT MET"))
     if not ok_n:
         print("\n  ==> OUTCOME C: UNDERPOWERED. Neither A nor B may be quoted.")
+    elif c1 and c2 and c4:
+        print("\n  ==> OUTCOME A: the asymmetry is REAL and is attributable to "
+              "DIRECTION (it survives the within-episode contrast).")
     elif c1 and c2:
-        print("\n  ==> OUTCOME A: the asymmetry is REAL.")
+        print("\n  ==> OUTCOME B: NOT ESTABLISHED -- the pooled gap clears the "
+              "floor but the WITHIN-EPISODE contrast does not, so the pooled "
+              "gap is the episode confound speaking (SPEC 3.13).")
     else:
         print("\n  ==> OUTCOME B: NOT ESTABLISHED at this n.")
 
