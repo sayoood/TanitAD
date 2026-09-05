@@ -678,6 +678,64 @@ GT-LON stratum), not concentrated in one constant ⇒ **the next lever is the CO
 side, which is already queued** (`lonseam`, then `loncomb2`), not a third
 vocabulary edit.
 
+### 6.6 ⛔⛔ MY OWN ERROR: `lonseam` WAS INERT BY CONSTRUCTION, and the guard that now refuses it
+
+**`lonseam` (`--jerk-seam a0`) landed 2026-09-05T21:53:28Z, exit 0, and read
+`+0.0000 [+0.0000, +0.0000]` on ALL TEN family metrics** against `wk15`, with
+emitted controls **bit-identical** (`mean\|a\|` 0.31305, `frac a ≡ 0` 0.475, the
+same 17 distinct `a[0]` values down to `−1.339849`).
+
+⛔ **That is not a null about the jerk seam. It is arithmetic.** The cost line
+is `c = c + w_jerk * jerk.pow(2).mean(-1)`, and the arm carried the `wk15`
+baseline triple `(0.0, 15.11245, 64.29715042415070)` — **`W_JERK = 0.0`.**
+Repairing `jerk` while `w_jerk` is zero **cannot change the objective by a single
+bit**. I designed the arm as "one variable against `wk15`" and did not check that
+the variable was multiplied by a live weight. **A GPU hour was spent on an
+experiment that was uninformative before it started.**
+
+⭐ **What the instrumentation DID get right, and why the diagnosis is certain
+rather than a guess:**
+
+* the **reached-it guard passed** and the record carries `jerk_seam: "a0"`, so
+  the flag **did** reach `plan()` — this was not a plumbing failure;
+* the **same-breath control** in the same table reads non-zero: `lonshift` on
+  the identical rig shows `mean\|a\|` 0.46552 / `frac a ≡ 0` 0.000 / 40 distinct
+  values. So the harness works and the zero is real;
+* which leaves exactly one explanation, and it is confirmed from the recorded
+  weights: **the term was switched off.**
+
+⚠ **ROOT-CAUSE CLASS: a lever multiplied by zero is not a null about the lever;
+it is a null about a term that was switched off.** Same family as M23 (4)
+(*"a NULL arm with a live optimiser is not a null"*) and as counting on the wrong
+predicate (M28 (2)) — the experiment was **uninformative before it ran**, and the
+only thing that catches that is a **refusal at flag-parse time**, not a careful
+reading afterwards.
+
+⭐ **THE DURABLE FIX, landed in the same turn.** `refav1_arm.py` now **REFUSES**
+`--jerk-seam` with `W_JERK == 0.0`, before the rollout, naming the arithmetic and
+the correct experimental form. **Both controls pass:** it fires on the exact
+combination that wasted the hour, and reads **0 refusals** on (a) a non-zero
+`W_JERK` with the seam ON and (b) `W_JERK = 0` with the seam OFF — so it is not
+an over-broad guard.
+
+⭐ **THE QUEUE IS CORRECTED** (`raw/queueLON3.sh`, live; `queueLON2.sh`
+superseded and its shells killed under a disjoint search token):
+
+| # | arm | triple | the one variable |
+|---|---|---|---|
+| 1 | `lonshift_s1` | `wk15` | `--plan-seed 1` — **the replicate D2 owes** |
+| 2 | `seambase` | **`(0.02, 15.11245, 64.297)`** | — the seam pair's own baseline |
+| 3 | `seamon` | **`(0.02, …)`** | `--jerk-seam a0` — **one variable vs `seambase`** |
+| 4 | `lonvocab` | `wk15` | `--a-sustain-mode a0` (D1, attribution) |
+| 5 | `loncomb3` | **`(0.02, …)`** | both levers, on a triple where **both can act** |
+
+⛔ **`loncomb2` is DROPPED**: it carried the same inert seam half, so it would
+have been `lonshift` re-run under a name claiming two levers — the worst of the
+three possible outcomes, because it would have looked like a result.
+
+⚠ **What this does NOT change:** `lonshift`'s result in §6.1–§6.3 is untouched.
+It carries no seam, its lever is the vocabulary, and its numbers stand.
+
 ## 7. Deliverable manifest
 
 | artifact | where it lives |
