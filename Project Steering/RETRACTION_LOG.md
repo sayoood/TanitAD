@@ -11939,3 +11939,39 @@ log), **24.375 %** (in-training eval), **23.9892 %** (banked dump) for the extra
 The original headline is false twice over: the denominator was another model's window
 grid, AND every refcv3 window carries a tactical label regardless. The only family
 genuinely at 0 % remains **strategic** (`goal_str`, 0 of 614 rows).
+
+
+# 2026-09-04 (#21) — "the world model contributes 1.63e-10 along the curvature axis", quoted for the step-21,109 checkpoint (`MODEL_REGISTRY.md` §2.4, `GOALS_AND_CLAIMS.md` `D-REFAV1-EPOCH-PLAN-VOID`, `PREREG_TACTICAL_DECODER.md:190,276`), and the reading that float32 *annihilates* the curvature signal
+
+*(Proposed by the Arch+Inference FlyWheel in `…/2026-09-04-refav1-cost-scale/PROPOSED_REGISTER_ROWS.md` §4;
+applied to the register 2026-09-05 together with the two rows and the `D-REFAV1-EPOCH-PLAN-VOID` amendment.)*
+
+**Corrected:** on step 21,109 the goal term's curvature-axis range is **median 1.99e-06** over 282 windows
+(mean 1.26e-05, p90 3.16e-05, max 1.26e-04) — **1.2 × 10⁴ ×** the quoted figure. `1.63e-10` is
+`D-REFAV1-COST-SURFACE`'s **`incumbent`** measurement; the same study's companion checkpoint read
+**5.82e-08**, a 357× spread inside its own table. The κ sub-box spans **33.3 ulp** and fits inside one ulp on
+**0.00 %** of windows; what float32 costs is **resolution** (the argmin over 10 curvature candidates is TIED on
+45.4 % of windows, and disagrees with float64 on 21.6 %), not the signal. MEASURED:
+`…/2026-09-04-refav1-cost-scale/RESULT.md` §0, `raw/cost_anatomy_full.json` (282 windows / 141 clusters, the
+same grid and checkpoint as `refav1-21109-openloop`; ⛔ open loop).
+
+**Root-cause class: A TRUE MEASUREMENT QUOTED OUTSIDE ITS SCOPE** — the `df` / Thor `free` / cgroup
+`usage_in_bytes` / `step_s` / epcache-artifact family, with the object being a **checkpoint**. The source study
+measured the quantity on TWO checkpoints and published BOTH; the downstream quote took one and dropped the
+qualifier. ⇒ **A quantity whose own source shows a 357× spread across checkpoints may never be quoted for a
+THIRD checkpoint without re-measuring it.** The registry rule "state the fit window / the estimator" gets its
+sibling: **state the CHECKPOINT, and re-measure before reusing.**
+
+**Second, subtler half:** *"99.5 % of the cost variation is the κ² penalty"* is TRUE of a candidate box of
+**constant-control** candidates — every one of which has zero jerk by construction — and **INVERTED** on the
+population iCEM actually searches, where **99.5 % of the penalty is JERK** (median penalty 0.362; `W_KAPPA = 0`
+leaves the plan flat, `W_JERK = 0` does not). Same class: a correct measurement whose **population** was not
+carried with it. ⇒ **A cost-surface statistic must name the population it was computed over, and a claim about
+what the SEARCH does must be computed over the SEARCH's own population.**
+
+**Cost:** the scope error made the defect look unfixable by any weight (*"a deletion, not a weight"*), and the
+population error pointed the repair at `W_KAPPA` when the binding term is `W_JERK`. Both were caught only by
+re-measuring on the live checkpoint and on the real proposal distribution. **What survives untouched:**
+`D-REFAV1-EPOCH-PLAN-VOID`'s verdict — the planner IS a trivial injected baseline on 282/282 (κ ≡ 0 on 282/282,
+2 distinct plans, re-derived independently) — and the flat plan is still a theorem about the COST
+(`D-REFAV1-COST-SCALE`), not about the weights.

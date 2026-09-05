@@ -276,6 +276,12 @@ the repaired cost to rank a correct turn in fewer than 13/25 windows, because th
 f64 κ-range (1.63e-10) is 1.2 × 10⁷ below the penalty's, and 2,008× of that gap is all the chord's
 √ can recover. If I am wrong I will say so in the RETRACTION_LOG.
 
+> ⚠️ **2026-09-05 (RETRACTION_LOG #21, `D-REFAV1-COST-SCALE`):** the *1.63e-10* premise above is
+> `D-REFAV1-COST-SURFACE`'s **incumbent**-checkpoint figure; at step 21,109 the same quantity reads a
+> **median 1.99e-06** (n = 282), and the binding penalty on the searched population is **jerk, not κ²**.
+> The registered prediction is left as written (its S3 outcome is recorded in `D-COST-CHORD`); only its
+> premise is corrected here.
+
 ⚠️ **AND THE PREDICTION IS ALREADY UNDER PRESSURE FROM A SOURCE I FOUND AFTER WRITING IT — recorded
 here rather than quietly folded in.** The steer-conversion package landed the same day
 (`4139203`) and its tiny-model evidence

@@ -2139,8 +2139,14 @@ the `decel_1.5` baseline winning instead of `cv`/`hold_v0`, not evidence of plan
 collapses onto. Every LATERAL and trajectory-TACTICAL `cl − ha0` delta is exactly 0.0000 with a
 zero-width interval. **MECHANISM** (source-grounded, `RESULT-refav1-21109-openloop.md` §1): the cost
 adds `W_JERK·jerk² + W_KAPPA·κ²`, which only the injected constant-accel straight lines pay zero of,
-while the world-model term varies by 1.63e-10 along κ against a float32 `1−cos` step of 5.96e-08
-(`D-REFAV1-COST-SURFACE`). **It is a property of the COST, not of the weights — so "it is early in
+while the world-model term varies along κ by a **median 1.99e-06 at THIS checkpoint** (mean 1.26e-05, p90
+3.16e-05, max 1.26e-04; n = 282 — `D-REFAV1-COST-SCALE`, MEASURED 2026-09-04). ⚠️ **AMENDED 2026-09-05
+(RETRACTION_LOG #21):** this clause used to quote *1.63e-10 against a float32 `1−cos` step of 5.96e-08* — that
+is `D-REFAV1-COST-SURFACE`'s **incumbent**-checkpoint figure (its companion checkpoint read 5.82e-08, a 357×
+spread inside that study's own table); float32 does NOT annihilate the signal (the κ sub-box spans 33.3 ulp;
+what float32 costs is RESOLUTION — the argmin over 10 κ candidates is TIED on 45.4 % of windows); and the
+binding penalty is **JERK, not κ²** (99.5 % of the median 0.362 penalty on the searched population;
+`W_KAPPA = 0` leaves the plan flat, `W_JERK = 0` does not). **It is a property of the COST, not of the weights — so "it is early in
 training" is refuted as an explanation and must not be offered again.**
 
 ⛔ **`planner.baseline_won_frac` UNDER-REPORTS this and must not be quoted.** It reads **0.6631**
