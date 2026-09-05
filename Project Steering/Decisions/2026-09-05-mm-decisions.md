@@ -2406,7 +2406,7 @@ artifacts `…/2026-09-05-refav1-cost-geometry/raw/arms/rec_*.json` (all 11 read
 | `l3ladder` | ladder only | **31/40** | 11/40 |
 | **`combined`** | **cap + ladder** | **31/40** | 11/40 |
 | `wk15` | `W_KAPPA` | **19/40** | 19/40 |
-| `wk151` | `W_KAPPA` (s1) | 18/40 | 26/40 |
+| `wk151` | `W_KAPPA` **x10 = 151.1245** *(corrected, see M49 — NOT a seed replicate)* | 18/40 | 26/40 |
 | `cos_wk` | — | **40/40** | 40/40 |
 
 ⇒ ⛔ **The cap and the ladder move longitudinal authority by EXACTLY ZERO** (31/40 → 31/40), and they
@@ -2519,3 +2519,53 @@ contradiction, and M47 stands** — but this is the *same* "two statistics, one 
 seed-floor withdrawal earlier in this very package (`TAC_traj_lat_correct`'s paired floor applied to
 `lane_keep` recall). ⇒ ⛔ **a "constant fraction" must name its AXIS, exactly as a floor must name its
 STATISTIC.**
+
+## M49. ⚠️ M47 label corrected — `wk151` is `W_KAPPA` ×10, NOT a seed replicate — and the correction carries a finding
+
+### 1. The error
+
+M47's table listed `wk151` as *"`W_KAPPA` (s1)"*, implying a **seed replicate**. **MEASURED from the
+records:** `wk15` has `W_KAPPA = 15.11245`, `wk151` has **`W_KAPPA = 151.1245`** — a **10× magnitude
+arm**. The row is corrected in place with a pointer here.
+
+⛔ **Why this label mattered more than most:** the programme's live question is whether every lever
+verdict rests on **one inference seed** (`H-ESTIM-SEED-1` + the third-variance rule). A row labelled
+"s1" **asserts a replicate exists**. It does not. ⇒ **`wk15` still has NO seed replicate**, and the
+`_s1` suffix convention is ambiguous across this package — `ccos_seed1` **is** a seed replicate,
+`wk151` is **not**. ⚠️ **A suffix is not provenance. Read the launched value.**
+
+⭐ Not in the PI-facing table: `wk151` was omitted there, so no external correction is owed.
+
+### 2. ⭐ The finding the correction exposes: `W_KAPPA`'s longitudinal side-effect SATURATES, its lateral effect does not
+
+| arm | `W_KAPPA` | const-speed | straight |
+|---|---|---|---|
+| `ccos_argmax` / **oracle** | 0 | **31/40** | **11/40** |
+| `wk15` | 15.11245 | **19/40** | 19/40 |
+| `wk151` | **151.1245 (10×)** | **18/40** | **26/40** |
+
+⇒ A **10× increase in the penalty moves longitudinal authority by ONE window (19 → 18)** while
+straightness keeps climbing (**19 → 26**). ⭐ **The κ penalty's longitudinal side-effect is essentially
+saturated by `W_KAPPA = 15`; its lateral effect is still on-scale at 151.**
+
+⇒ ⭐⭐ **This sharpens M48 and is directly actionable for the running `best` arm.** M47 established
+that `W_KAPPA` drags const-speed **31 → 19**, away from the oracle. This says that damage is **paid in
+full at 15 and does not worsen with more κ** — so the longitudinal cost of `W_KAPPA` is a **fixed
+entry price, not a dial**. ⛔ Consequently, **trading κ magnitude down will NOT buy longitudinal
+authority back** (19 → 18 across a 10× range); recovering the oracle's 31/40 requires a *different*
+lever, not a smaller one. That is a falsifiable prediction and the `best` arm will test it.
+
+### 3. ⚠️ The provenance trap that made this checkable at all
+
+The sibling turn-asymmetry stream found `plan_cfg.seed_kappa_ladder` reads **`None` even on arms that
+DID carry a ladder** — it is a `plan()` kwarg, not a `PlanConfig` field; the manifest carries it under
+**`goal_rule`**. ⇒ Reading `plan_cfg` alone would have said the ladder never applied on `l3ladder` and
+`combined`, **inverting M47's premise**. Verified at source: both carry
+`goal_rule.seed_kappa_ladder = [0.002, 0.005, 0.01, …]`, `combined` also `plan_cfg.kamm_mu = 0.7`,
+`kamm07` the cap alone, `ccos_argmax` and `oracle_s0` neither. ⭐ **M47's lever labels are CONFIRMED at
+source, and were INHERITED from agent prose when written** — this is the check that converted them.
+
+⇒ ⛔ **A lever's presence must be read from the field that actually records it, and one config
+namespace's silence is not absence.** Same family as the units rule (`M18`, the `anchors.pt`
+`control_units` case): **an artifact that does not state a fact in the place you look reads exactly
+like an artifact where the fact is false.**
