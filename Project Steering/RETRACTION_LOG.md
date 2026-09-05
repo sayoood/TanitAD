@@ -12017,3 +12017,31 @@ qualifier; `refc_v3_train.py`'s refusal now asks for 0.0 to be a NODE of both ax
 (comment-only — the script's md5 was `7119d4cffbad61ec8d17ce1bb0a85c25` before the edit; `KINVOCAB_PROBE.json`
 is untouched); `build_kinvocab6s.py:100-101` and `emit_anchors_alat.py` already asserted presence and are
 unchanged.
+
+# 2026-09-05 (#23) — "64 banked primaries are untracked and exist on one machine only" (the VLA stream's escalation, and mine in the same hour) — FALSE
+
+**Asserted by:** the VLA frontier-research stream (its report's escalation list: *"64 of 437 entries
+were untracked overall"*) and, independently and in the same hour, the Master Mind — who was one
+command away from re-committing 420 MB and reporting a fabricated integrity gap to the PI.
+
+**The correction, by positive assertion:** `git cat-file -e HEAD:<path>` succeeded on **64 of 64**.
+Every one of them is in HEAD. **Nothing was stranded.**
+
+**Root-cause CLASS — a cache read as the source of truth.** Both readers used `git ls-files`, which
+answers *"is this path in the SHARED INDEX?"*. On this mount the shared index goes stale and
+UNDER-REPORTS; the question that matters is *"does the repository hold this file?"*, and only HEAD
+answers it. `kb_add.py --verify` reported "0 orphans, 0 problems" throughout and was right — it
+hashes disk against the index and never claimed anything about HEAD.
+
+This is the same family as the already-logged `ls-tree -r` truncation and the "`--cached` is not
+enough for a modified tracked file" rule, with the object swapped: **a short or empty git result is
+indistinguishable from a failed query, so only POSITIVE assertions are admissible.** It is also the
+second time in one day that an empty git result was read as evidence of absence.
+
+**What made it visible:** `git add` staged the file and `git diff --cached HEAD` then reported **0
+changed paths** — staged yet identical to HEAD, which is only possible if HEAD already had it. The
+exit code said nothing; the content comparison said everything.
+
+⇒ **Pinned:** `tools/tests/test_library_tracking.py` now asks HEAD per file via `cat-file -e`, treats
+an undecidable file as INCONCLUSIVE rather than a pass, and prints the index-vs-HEAD lag as a
+diagnostic so the next reader meets the explanation before reaching for a re-commit.
