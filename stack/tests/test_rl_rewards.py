@@ -431,3 +431,33 @@ def test_proximity_gives_the_advantage_something_CONTINUOUS_to_rank():
         for x in lats]
     assert len(set(round(p, 4) for p in prox)) == len(lats), "proximity is flat"
     assert len(set(coll)) == 1, "collision was expected to be constant here"
+
+
+def test_collision_time_aligned_against_moving_lead():
+    """A STATIC lead flags a competent follower; a MOVING (time-aligned) lead does
+    not — and a genuinely too-close moving lead still fires. (2026-09-05: the
+    static-lead defect measured by `rl_refcv3_min.py --mode humanflag`.)"""
+    import torch
+    from tanitad.rl import rewards as R
+    dt, v = 0.5, 10.0
+    t = torch.arange(5, dtype=torch.float32) * dt
+    ego = torch.stack([v * t, torch.zeros_like(t)], dim=-1)              # [5, 2]
+    # lead 9 m ahead (centre-to-centre), same speed: the gap stays 9 m > r = 2 m.
+    # (9, not 8: the static check is SAMPLED at the waypoints 0/5/10/15/20 m, so
+    # the held-at-t0 lead must sit within r of a sample — 10 m hits 9 m by 1 m.)
+    lead_far = torch.stack([9.0 + v * t, torch.zeros_like(t)], dim=-1)
+    static_ctx = {"dt": dt, "obstacles": lead_far[:1].clone()}   # held at t0
+    moving_ctx = {"dt": dt, "lead_path": lead_far}
+    assert float(R.COMPONENTS["collision"](ego, static_ctx)) == -1.0
+    assert float(R.COMPONENTS["collision"](ego, moving_ctx)) == 0.0
+    # a moving lead only 1.5 m ahead (inside r = 2 m) DOES fire time-aligned
+    lead_close = torch.stack([1.5 + v * t, torch.zeros_like(t)], dim=-1)
+    assert float(R.COMPONENTS["collision"](ego, {"dt": dt, "lead_path": lead_close})) == -1.0
+    # the legacy path is untouched: obstacles present -> static semantics
+    both = {"dt": dt, "obstacles": lead_far[:1].clone(), "lead_path": lead_far}
+    assert float(R.COMPONENTS["collision"](ego, both)) == -1.0
+    # fan-shaped broadcasting: [B, N, G, S, 2] against a lead [B, 1, 1, S, 2]
+    fan = ego.reshape(1, 1, 1, 5, 2).expand(2, 3, 4, 5, 2).clone()
+    out = R.COMPONENTS["collision"](fan, {"dt": dt,
+                                          "lead_path": lead_far.reshape(1, 1, 1, 5, 2)})
+    assert tuple(out.shape) == (2, 3, 4) and float(out.abs().sum()) == 0.0

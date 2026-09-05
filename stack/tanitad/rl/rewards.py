@@ -237,6 +237,10 @@ def _progress(traj: Tensor, ctx: dict) -> Tensor:
 def _collision(traj: Tensor, ctx: dict) -> Tensor:
     """-1 if the path comes within (ego_r + obs_r) of any obstacle, else 0.
 
+    Two obstacle models: a STATIC set ``ctx["obstacles"]`` (every step against
+    every obstacle), or — when no static set is given — a MOVING
+    ``ctx["lead_path"]`` checked TIME-ALIGNED per step (see the branch below).
+
     Obstacles are ``ctx["obstacles"]`` ``[..., K, 2]`` ego-frame centres (a
     static snapshot; a moving-obstacle variant belongs with the agent-track
     join, not here). Absent obstacles -> 0 for every candidate, which is
@@ -245,9 +249,26 @@ def _collision(traj: Tensor, ctx: dict) -> Tensor:
     component that never fires is reported, not silently trusted.
     """
     obs = ctx.get("obstacles")
-    if obs is None or obs.numel() == 0:
-        return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
     r = float(ctx.get("ego_radius_m", 1.0)) + float(ctx.get("obs_radius_m", 1.0))
+    if obs is None or obs.numel() == 0:
+        # ⭐ MOVING-LEAD CONTACT (2026-09-05, REF-C RL-readiness WP). When no
+        # static obstacle set is supplied but a `lead_path [..., S, 2]` is, contact
+        # is TIME-ALIGNED: step s of the candidate against step s of the lead —
+        # the per-step convention `_headway` and `ttc_violation` already use.
+        # WHY: holding the lead STATIC at its first sample turns every competent
+        # follower into a "collision" — the ego reaches the lead's t0 position
+        # after one time-gap, so any human path with a time gap shorter than the
+        # horizon is flagged (the H-RL-THRESH-1 class: a safety term that fires
+        # on the demonstration). Measured on the refcv3 RL-fit clips by
+        # `rl_refcv3_min.py --mode humanflag`. Step 0 is skipped (the ego is at
+        # its own origin; the lead is ahead by construction).
+        lead = ctx.get("lead_path")
+        if lead is None:
+            return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
+        d = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)      # [..., S-1]
+        hit = (d < r).any(dim=-1)
+        return torch.where(hit, -torch.ones_like(hit, dtype=traj.dtype),
+                           torch.zeros_like(hit, dtype=traj.dtype))
     # traj [..., S, 2] vs obs [..., K, 2] -> pairwise [..., S, K]
     d = (traj.unsqueeze(-2) - obs.unsqueeze(-3)).norm(dim=-1)
     hit = (d < r).any(dim=-1).any(dim=-1)
