@@ -1,0 +1,46 @@
+=== (a) the robustness column ===
+ m=0.0: min clearance over LEAD windows 2.020119
+    d_out < 2.00: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 2.50: n=1126 rate_all=0.036654 rate_leadpop=0.135337
+    d_out < 3.00: n=1190 rate_all=0.038737 rate_leadpop=0.143029
+    d_out < 4.00: n=1343 rate_all=0.043717 rate_leadpop=0.161418
+    _collision at r=2.50: n=1126
+    _collision at r=4.00: n=1343
+ m=0.5: min clearance over LEAD windows 2.525060
+    d_out < 2.00: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 2.50: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 3.00: n=1190 rate_all=0.038737 rate_leadpop=0.143029
+    d_out < 4.00: n=1343 rate_all=0.043717 rate_leadpop=0.161418
+    _collision at r=2.50: n=0
+    _collision at r=4.00: n=1343
+ m=2.0: min clearance over LEAD windows 4.040000
+    d_out < 2.00: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 2.50: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 3.00: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    d_out < 4.00: n=0 rate_all=0.000000 rate_leadpop=0.000000
+    _collision at r=2.50: n=0
+    _collision at r=4.00: n=0
+
+=== (b) the 4 retracted non-colliders ===
+ n extra: 4  r_need = 2.02
+   row 44 cand 60: input clearance 2.008254 (scorer flags < 2.0); r_need 2.0200; in [r, r_need) = True; sigma 0.996094
+   row 132 cand 67: input clearance 2.014883 (scorer flags < 2.0); r_need 2.0200; in [r, r_need) = True; sigma 0.996094
+   row 204 cand 69: input clearance 2.007174 (scorer flags < 2.0); r_need 2.0200; in [r, r_need) = True; sigma 0.996094
+   row 226 cand 45: input clearance 2.000180 (scorer flags < 2.0); r_need 2.0200; in [r, r_need) = True; sigma 0.921875
+ ALL 4 lie in [r, r_need) : True
+ moved set == {clearance < r_need} : True | n_moved 1057 n_strict 1057
+
+=== (c) the EXACTLY-zero oracle / selected ADE delta ===
+ windows whose ORACLE candidate collides : 0 / 240
+ windows whose ORACLE candidate was moved: 0 / 240
+ windows whose SELECTED candidate collides: 0 / 240
+ windows whose SELECTED candidate was moved: 0 / 240
+ max |ade_out - ade_in| over UNMOVED candidates: 0.000e+00
+ ADE on the MOVED candidates: base mean 11.4878 -> proj mean 6.5298 (delta -4.9580, max +0.1170, min -18.3756)
+ of the moved, how many got CLOSER to the human: 1047 / 1057
+ oracle ADE on the 19 collider windows: base 0.1675 -> proj 0.1675
+ oracle ADE if the colliders had simply been DELETED (the veto's ceiling): 0.1675
+
+=== (d) off_reach direction: is the base fan too FAST or too SLOW? ===
+ base : above band 2151  below band 1159
+ proj : above band 1884  below band 1159
