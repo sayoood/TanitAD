@@ -109,10 +109,15 @@ that must read non-zero.
 
 ## 6. Housekeeping this turn exposed
 
-* `stack/tests/test_refav1_kin_contract.py::test_A6` is **RED and it is not this
-  stream's**: it asserts `manifest["tiers"]` as an exact dict that predates
-  `ha0_ext`'s registration (`refav1_arm.py:189, :672`). A stale exact-dict pin,
-  escalated to the kin-contract stream rather than edited mid-flight.
+* ⛔ **RETRACTED, in this same document, before it could mislead anyone:** I
+  first recorded `test_refav1_kin_contract.py::test_A6` as a PRE-EXISTING red
+  test belonging to the kin-contract stream. It **does not reproduce** — 26
+  passed alone, 70 passed in the identical five-file selection that failed, and
+  **647 passed / 1 skipped / 0 failed** over the whole blast radius. I had
+  observed it **while my own patch was half-applied**. ⇒ **a red test seen
+  during your own multi-step edit is evidence about your edit, not about the
+  test, and blaming a sibling stream is the cheapest wrong explanation
+  available.** Nothing is owed to the kin-contract stream.
 * **`robocopy` from the G: mount stalled past 120 s** on two files. The working
   route is to run the same anchored patcher against **both** trees — it is
   deterministic and idempotent, so the trees converge byte-for-byte (verified:

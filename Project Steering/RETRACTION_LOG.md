@@ -13023,3 +13023,75 @@ Register rows: `D-REFAV1-TURNASYM-RESOLUTION`, `D-REFAV1-TURNASYM-CLUSTERS`,
    can only **raise** the bar. → **ROOT-CAUSE CLASS: a noise floor estimated
    from one draw and used as if it were the floor's true value** — one seed pair
    agreeing is one sample, not a demonstration of zero.
+
+# 2026-09-05 — "test_A6 is a PRE-EXISTING red test belonging to the kin-contract stream" — IT DOES NOT REPRODUCE, and I observed it MID-EDIT (Arch+Inference FlyWheel, longitudinal stream)
+
+## 1. RETRACTED — the failure was mine, not a sibling's stale pin
+
+While landing the longitudinal levers I ran a five-file selection and recorded:
+
+> `stack/tests/test_refav1_kin_contract.py::test_A6_adding_ha0_moves_no_existing_arm`
+> asserts `manifest["tiers"] == {"cl","ha","ha0","ol"}` **exactly**, while the
+> live manifest also carries `ha0_ext` … a stale exact-dict pin, **escalated to
+> the kin-contract stream** rather than edited mid-flight.
+
+I wrote it into `RESULT.md` §3, into `HANDOFF.md` §6, and into
+`GOALS_AND_CLAIMS.md` as `D-REFAV1-KIN-A6-STALE`.
+
+**MEASURED, two independent re-runs, same day, same tree:**
+
+| probe | result |
+|---|---|
+| `tests/test_refav1_kin_contract.py` alone | **26 passed** |
+| the **IDENTICAL** five-file selection that had failed | **70 passed** |
+| the full blast radius — all 47 test files mentioning `refa_v1`, `refav1_arm` or `canonical_controls` | **647 passed, 1 skipped, 0 failed** (2 m 57 s) |
+
+⇒ `D-REFAV1-KIN-A6-STALE` is **REFUTED**. Nothing is owed to the kin-contract
+stream, and its pin is not stale.
+
+## 2. The mechanism, and why the reasoning felt sound at the time
+
+The observation was real — the selection *did* report `1 failed` with
+`{'ha0_ext': 'T1'}` as the extra key. What was wrong was the **attribution**.
+I made that observation **in the middle of my own multi-step edit of the very
+file the fixture executes**: `--target-speed-mode` had just been removed from
+`taniteval/tools/refav1_arm.py`, and the `getattr` fix for the hand-built
+`argparse.Namespace` (which `test_refav1_kin_contract.py` and
+`test_refav1_arm.py` both use) had **not yet landed**. The arm-roll fixture
+therefore took a code path belonging to **neither** the before state nor the
+after state, and its manifest was produced by a half-patched tool.
+
+The reasoning that led me astray was cheap and locally valid: the failing
+assertion mentioned `ha0_ext`, `ha0_ext` is a sibling stream's arm, its
+registration (`refav1_arm.py:189, :672`) genuinely predates my edits — I quoted
+those exact lines from the unpatched file earlier in the same session — and an
+exact-dict pin genuinely is the kind of thing that goes stale. Every link held;
+the conclusion was still wrong, because **all of it was consistent with a much
+simpler explanation I never tested: my own edit was half-applied.**
+
+## 3. → ROOT-CAUSE CLASS
+
+⛔ **A RED TEST OBSERVED DURING YOUR OWN MULTI-STEP EDIT IS EVIDENCE ABOUT YOUR
+EDIT, NOT ABOUT THE TEST — AND BLAMING A SIBLING STREAM IS THE CHEAPEST WRONG
+EXPLANATION AVAILABLE.**
+
+This is the same family as *"absence found at ONE location is not absence"*,
+with a **failing assertion** swapped in for a missing file, and with two
+aggravations that make it worse than the parent class:
+
+1. **The attribution is exculpatory**, so it is the explanation you are least
+   motivated to test. "Not mine" ends the investigation; "mine" starts one.
+2. **It creates work for another team** — an escalation, a register row and a
+   handoff bullet, all of which would have had to be un-done by someone who had
+   no way of knowing where the claim came from.
+
+⇒ **The rule: before attributing ANY test failure to another stream, re-run it
+from a QUIESCENT tree — no edit of yours in flight — and say in the claim which
+run you are quoting.** A single observation taken mid-edit is not admissible as
+evidence about anyone else's code. If a re-run is not possible, the finding is
+*"observed once, mid-edit, not reproduced"*, which is a note, not an escalation.
+
+⭐ **What worked:** the correction cost nothing because the full blast-radius
+suite was run before the report went out, and the retraction landed in the SAME
+turn — `RESULT.md` §3.1, `HANDOFF.md` §6 and the register row were all corrected
+before any of them were read by anyone else.

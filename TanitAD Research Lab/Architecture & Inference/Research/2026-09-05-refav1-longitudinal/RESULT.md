@@ -378,18 +378,33 @@ bit-identical **while `a_sustain = 1.4` moves them** — the `ccosh` lesson
 applied prospectively, so an arm-level null will be a measurement and not a
 dead pipe.
 
-Wider regression: `tests/test_refav1_arm.py` + `tests/test_refav1_lead_block.py`
-**26 passed**; `test_steer_conversion_complete.py` + `test_refav1_kin_contract.py`
-+ the two `goal_kappa` suites **64 passed, 1 failed**.
+**Wider regression: 647 passed, 1 skipped, 0 failed** over the FULL BLAST
+RADIUS — every test file in `stack/tests/` that mentions `refa_v1`,
+`refav1_arm` or `canonical_controls` (47 files), in 2 m 57 s.
 
-⚠️ **The 1 failure is PRE-EXISTING and is not mine:**
-`test_refav1_kin_contract.py::test_A6_adding_ha0_moves_no_existing_arm` asserts
-`manifest["tiers"] == {"cl","ha","ha0","ol"}` **exactly**, and the live manifest
-also carries `ha0_ext`. `ha0_ext` was registered by the sibling stream
-(`refav1_arm.py:189, :672`, both present *before* any edit of mine — quoted from
-the unpatched file earlier in this session). It is a stale exact-dict pin, it
-belongs to the kin-contract stream, and it is escalated rather than edited
-mid-flight by me.
+### ⛔ 3.1 A RETRACTION I OWE, CAUGHT BY MY OWN SECOND PROBE
+
+Earlier in this turn I recorded that
+`tests/test_refav1_kin_contract.py::test_A6_adding_ha0_moves_no_existing_arm`
+was a **PRE-EXISTING red test** belonging to the kin-contract stream (a stale
+exact-dict pin on `manifest["tiers"]` that predates `ha0_ext`'s registration),
+and I escalated it rather than touching it. **That was wrong and it is
+retracted.** Re-run alone: **26 passed.** Re-run in the *identical* five-file
+selection that produced the failure: **70 passed.** It does not reproduce.
+
+⚠️ **Root-cause class — and it is a new one worth naming:** I observed the
+failure **while my own patch was HALF-APPLIED** (`--target-speed-mode` had just
+been removed; the `getattr` fix for the hand-built `argparse.Namespace` had
+not yet landed), so the arm-roll fixture took a path that belonged to *neither*
+the before nor the after state. ⇒ **A red test observed during your own
+multi-step edit is evidence about your edit, not about the test — and it is
+certainly not evidence about another stream.** Same family as *"absence found
+at ONE location is not absence"*, with the object swapped from a missing file
+to a failing assertion, and aggravated by the fact that blaming a sibling
+stream is the cheapest available explanation.
+
+⇒ `D-REFAV1-KIN-A6-STALE` is **REFUTED**; no escalation to the kin-contract
+stream is owed.
 
 ---
 
