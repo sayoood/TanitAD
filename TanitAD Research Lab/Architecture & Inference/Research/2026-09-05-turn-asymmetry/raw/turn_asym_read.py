@@ -255,7 +255,13 @@ def main(tags):
         for nm, m in (("turn_left", mL), ("turn_right", mR)):
             r = _ci.paired_episode_cluster_bootstrap(hit[b][m], hit[a][m], eid[m],
                                                      n_boot=NB)
-            floors[(a, b, nm)] = abs(r["delta"])
+            # ⛔ SPEC amendment 0: the floor is the CI's reach, not the point.
+            # Two seeds agreeing exactly is ONE DRAW, not a demonstration that
+            # the true seed effect is zero -- and a zero floor would make the
+            # "clears the floor" condition satisfiable by any non-zero gap,
+            # which is the necessary-not-sufficient failure re-entering through
+            # the floor's own back door.
+            floors[(a, b, nm)] = max(abs(r["lo"]), abs(r["hi"]))
             print("    %-11s recall %.4f -> %.4f   delta %+0.4f [%+0.4f, %+0.4f] "
                   "separated=%s" % (nm, hit[a][m].mean(), hit[b][m].mean(),
                                     r["delta"], r["lo"], r["hi"], r["separated"]))
@@ -265,7 +271,7 @@ def main(tags):
             if not m.any():
                 continue
             r = _ci.paired_episode_cluster_bootstrap(kb[m], ka[m], eid[m], n_boot=NB)
-            floors[(a, b, nm)] = abs(r["delta"])
+            floors[(a, b, nm)] = max(abs(r["lo"]), abs(r["hi"]))
             print("    retain %-9s %.4f -> %.4f   delta %+0.4f [%+0.4f, %+0.4f] "
                   "separated=%s" % (nm, ka[m].mean(), kb[m].mean(), r["delta"],
                                     r["lo"], r["hi"], r["separated"]))
@@ -285,9 +291,13 @@ def main(tags):
         print("  INCONCLUSIVE -- fewer than two seeds of the same arm")
         return
     a, b = sorted(fam)[:2]
-    fl = max(floors.get((a, b, "turn_left"), 0.0),
-             floors.get((a, b, "turn_right"), 0.0))
-    print("  floor_dir (max |seed delta| over directions) = %.4f" % fl)
+    # SPEC amendment 0: the CI's reach, floored at the instrument's own step.
+    fl_seed = max(floors.get((a, b, "turn_left"), 0.0),
+                  floors.get((a, b, "turn_right"), 0.0))
+    step = max(1.0 / max(int(mL.sum()), 1), 1.0 / max(int(mR.sum()), 1))
+    fl = max(fl_seed, step)
+    print("  floor_used = max(seed CI reach %.4f, instrument step 1/n %.4f) "
+          "= %.4f" % (fl_seed, step, fl))
     ok_n = (mL.sum() >= 27 and mR.sum() >= 27
             and len(set(eid[mL].tolist())) >= 5 and len(set(eid[mR].tolist())) >= 5)
     gaps = {t: rec[t][1] - rec[t][0] for t in (a, b)}

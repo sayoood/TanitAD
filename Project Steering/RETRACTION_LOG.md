@@ -12909,3 +12909,117 @@ a CONSTANT-ONLY control that must read the no-information value exactly"*) earni
 — `SPEC.md` §0, `RESULT.md` §1, `raw/p2_feasible_vs_contact.json` (control C1b),
 `raw/p3_progress_binds.json` (controls K1/K2), `raw/p6_graded_term_headroom.json`.
 Register rows: `D-RL-TOP32-NOMOVE-1`, `D-RL-CONTACT-DEFN-1`, `D-RL-PROGRESS-COMPOSED-1`.
+
+---
+
+# 2026-09-05 — "`wk15`'s asymmetry is REAL" — the panel it was measured on has DIRECTION and EPISODE as the SAME VARIABLE (Arch+Inference FlyWheel, PI-requested)
+
+## 1. The sentence, and what is wrong with it
+
+`…/Research/2026-09-05-refav1-cost-geometry/RESULT.md` §7.5 states:
+
+> *"`wk15`'s asymmetry is **real** and is a work item: `turn_right` recall **0.5**
+> against `turn_left` **0.0**, on n = 8 right and n = 11 left GT turns."*
+
+⚠️ **`M30` §3 already caught half of this** — it walked "beats the floors on
+turns" back to "true on ADE over the GT-turn stratum" and forbade quoting `wk15`
+as a lateral fix. What neither document caught is that **the panel cannot
+support the word "real" at all**, for a reason that is structural rather than
+statistical.
+
+## 2. MEASURED — the design is degenerate, not merely small
+
+`…/Research/2026-09-05-turn-asymmetry/raw/retain_drivers.py`, on the banked
+40-window dumps:
+
+| decoded goal | n | episodes carrying it |
+|---|---|---|
+| `TURN_L` | 9 | **{1, 6}** |
+| `TURN_R` | 13 | **{0, 2, 4, 7}** |
+| **carrying BOTH** | — | ⛔ **NONE** |
+
+⇒ On that panel *"the goal is `TURN_L`"* and *"the window is in episode 1 or 6"*
+are **the same variable**. Every split between the two directions is exactly as
+consistent with *"episodes 1 and 6 are hard"*. ⛔ **And the estimator makes it
+worse, not better:** the decision-grade interval is the **episode-cluster
+bootstrap**, which resamples EPISODES — so the one thing it is built to protect
+against is precisely the thing that is perfectly aligned with the contrast.
+
+A second, independent expression of the same defect: **a recall on `n` trials
+moves in steps of `1/n`**, so `n_L = 11` resolves only to **0.0909** and
+`n_R = 8` to **0.1250** — **both coarser than the 0.0750 inference-seed floor
+they are being compared against.** An instrument whose smallest representable
+change exceeds the noise floor cannot resolve that floor **in either
+direction**, which is why *"the asymmetry is absent"* is equally inadmissible
+here.
+
+⚠️ **This also indicts my own most striking number in the same turn it was
+produced.** The retention split — `wk15` tracks the goal at full `|kappa|` on
+**0 of 9** `TURN_L`-goal windows against **9 of 13** `TURN_R`, with a perfect
+`9/9` and `13/13` control at `W_KAPPA = 0` — sits **entirely inside** that
+degeneracy, at an effective cluster n of **2 and 4**. It is a striking
+observation. It is not a decision-grade result, and I recorded that as an
+amendment to my own SPEC **before** the wide arms ran, not after seeing them.
+
+## 3. What replaces it
+
+* **Corrected statement:** *"`wk15`'s per-direction turn recall is 0.0 L / 0.5 R
+  on the banked panel, and that panel cannot attribute the difference to
+  direction — its two turn-goal strata are perfectly confounded with the episode
+  clusters the estimator resamples."*
+* The word **"real"** is withdrawn. `M30` §3's prohibition on quoting `wk15` as a
+  lateral fix **stands**, now for a stronger reason than thin n.
+* ⭐ **`wk15`'s ADE, curvature MAE (0.030982) and heading MAE (15.2704) are NOT
+  touched by this.** They are pooled over all 40 windows and do not rest on the
+  direction split. Nothing in the ladder's interior-optimum result moves.
+
+## 4. → ROOT-CAUSE CLASS
+
+**A CONTRAST WHOSE GROUPING VARIABLE IS PERFECTLY CONFOUNDED WITH THE CLUSTERS
+THE ESTIMATOR RESAMPLES.** New sub-class of the estimator family that already
+holds `overlapping_holdout_se` (a biased point estimate), `H-ESTIM-SEED-1` (a
+correct estimator answering a narrower question than the claim), and
+`RETRACTION_LOG` #17 (few clusters is a power limit, not a negative). Here the
+estimator is correct AND the question is right — and the **DESIGN** makes the
+answer unidentifiable. It is invisible to every check the programme runs: the CI
+is separated, the point estimate is large, the controls all pass, and the tables
+look exactly like a result.
+
+→ **DURABLE FIX, and it is one line of output, not a rule to remember:** any
+per-stratum contrast prints **the number of episode clusters carrying EACH
+stratum and the count carrying BOTH**, and a contrast with **zero** episodes
+carrying both is reported as **UNATTRIBUTABLE**, never as a delta.
+Implemented in `…/2026-09-05-turn-asymmetry/raw/turn_asym_read.py`, which prints
+clusters beside every rate and computes a **within-episode contrast** —
+restricted to the episodes carrying both strata — as the **primary attribution
+statistic**, beside the pooled one and never instead of it.
+
+→ **Pinned:** `…/Architecture & Inference/Research/2026-09-05-turn-asymmetry/` —
+`SPEC_TURN_ASYMMETRY.md` §1, §3.12–§3.14 and amendment 0; `RESULT.md` §1, §2,
+§5.2–§5.3; `raw/retain_drivers.txt`, `raw/turn_asym_read_banked40.txt`.
+Register rows: `D-REFAV1-TURNASYM-RESOLUTION`, `D-REFAV1-TURNASYM-CLUSTERS`,
+`H-REFAV1-TURNASYM-1`.
+
+## 5. Two more from the same turn, both mine, both caught by their own controls
+
+1. **A speed confound I proposed and refuted in the same turn.** GT-left turns
+   run at `v0` median **1.886 m/s** against right's **5.189** (MWU
+   p = **2.5e-06**), and because the turn gate is on `dyaw ≈ kappa·v·T`, a left
+   turn needs **3.62×** the curvature and pays **13.1×** the charge to be
+   *labelled* a turn. A complete, quantitative mechanism — **and wrong**: pooled
+   by speed band `wk15` reads SLOW **0.2000** / FAST **0.2222**, flat, while by
+   direction it reads 0.0000 / 0.5000, and inside the SLOW band right is 2/2
+   while left is 0/8. → **Nothing was retracted because the test that would
+   confirm it was run before it was asserted**, which is the whole argument for
+   writing the discriminating test into the hypothesis.
+2. **A hole in my own pre-registered decision rule, found by running the reader
+   on the banked seed pair and fixed BEFORE any wide arm ran.** The floor was
+   defined as the seed pair's **point** delta; on that pair the two seeds agree
+   **exactly**, so the floor read **0.0000** — and a zero floor makes *"the
+   lever's effect exceeds the floor"* satisfiable by **any** non-zero gap. That
+   is the *necessary-not-sufficient* failure this whole SPEC exists to prevent,
+   re-entering through the floor's own back door. → Fixed to the **CI's reach**
+   (`max(|lo|, |hi|)`), floored at the instrument's own step `1/n`. Both halves
+   can only **raise** the bar. → **ROOT-CAUSE CLASS: a noise floor estimated
+   from one draw and used as if it were the floor's true value** — one seed pair
+   agreeing is one sample, not a demonstration of zero.

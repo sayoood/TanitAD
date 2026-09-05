@@ -53,6 +53,27 @@ and `--plan-seed 1`:
 floor_dir = max over dir in {L, R} of | recall_dir(seed 0) - recall_dir(seed 1) |
 ```
 
+⛔ **AMENDMENT 0, written 21:50 BEFORE any wide arm ran, and it makes this test
+STRICTER, not weaker.** The form above has a hole I found by running the reader
+on the banked seed pair: the two seeds there agree **exactly** on both turn
+strata, so the measured `floor_dir` is **0.0000** — and a floor of zero makes
+condition 1 satisfiable by *any* non-zero gap, which is precisely the "a
+separated CI is necessary and not sufficient" failure this whole SPEC exists to
+avoid, re-entering through the floor's own back door. One seed pair agreeing is
+one draw, not a demonstration that the true floor is zero. ⇒ **The floor used in
+the decision is**
+
+```
+floor_dir = max over dir of max( |lo_dir| , |hi_dir| )      # the paired bootstrap's
+                                                            # CI, not its point
+floor_used = max( floor_dir , 1/n_L , 1/n_R )               # never finer than the
+                                                            # instrument's own step
+```
+
+i.e. *how large could the seed effect plausibly be*, floored at the smallest
+change the recall can even represent (**0.0333** at n = 30). Both halves can only
+raise the bar.
+
 **The asymmetry is REAL only if ALL THREE hold:**
 
 1. `|recall_R - recall_L| > floor_dir` at **BOTH** seeds;
