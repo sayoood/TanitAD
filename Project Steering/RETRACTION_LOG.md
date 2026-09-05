@@ -13238,7 +13238,38 @@ defect in the tool. No fix to `mktree_commit.py` is needed or will be made.
 
 → **Pinned:** `…/2026-09-05-rl-generator-collisions/raw/commit_until_verified.sh` (the
 content-verifying committer, which is the right pattern and is kept); commit `964a888`.
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 s: **every one inside the floor.** The ladder is inert
+Registered as `D-SHELL-PIPEFAIL-1`.
+
+⭐ **CONFIRMED ON THE TOOL ITSELF, not merely inferred from the construct.** The two probes
+above are synthetic `SystemExit` calls; a third ran `mktree_commit.py` for real against a
+non-existent path:
+
+```
+python mktree_commit.py <msg> "does/not/exist.py"                 -> raw exit code = 1
+python mktree_commit.py <msg> "does/not/exist.py" 2>&1 | tail -2  -> pipeline exit code = 0
+```
+
+⚠ Worth stating because the first two probes tested the LANGUAGE FEATURE and this one tests
+the ARTIFACT — and the whole retraction is about having reasoned from a construct instead of
+measuring the thing.
+
+---
+
+## 2026-09-05 (later, same turn) — "the seed ladder is not free": THE WRONG FLOOR, in the very rule that exists to prevent it
+
+*Architecture & Inference FlyWheel, `2026-09-05-refav1-cost-geometry`. Caught by a
+self-review under `TanitAD_Review` BEFORE the claim was quoted onward, and
+corrected in `RESULT.md` §7.7 and the `D-REFAV1-CG-L3-NULL` register row in the
+same turn.*
+
+**What I wrote.** *"The ladder is not free: `lane_keep` recall 0.7143 → 0.5714
+(~2× the 0.0750 floor) and goal FDE 2.9639 → 3.3200 — exactly what the
+`--seed-kappa-ladder` docstring warned before the arm ran."*
+
+**What is true.** `ccos_seed1` — the same flags, only `--plan-seed` differing —
+reads **lane_keep 0.5714** and **goal FDE 3.3079** *by itself*. `l3ladder`'s deltas
+are **0.1429 / 0.3561 / 0.0973** against seed floors of **0.1429 / 0.3440 /
+0.0973** on the same metrics: **every one inside the floor.** The ladder is inert
 on all four families — neither costly nor beneficial.
 
 **ROOT-CAUSE CLASS: STATISTIC AMBIGUITY — a floor borrowed from a COUSIN metric.**
