@@ -1,3 +1,27 @@
+# ⛔⛔ WITHDRAWN 2026-09-05 — DO NOT RUN. THE ARM ALREADY COMPLETED.
+
+**This SPEC would spend ~8.6 h of Thor re-running an arm that finished 2026-08-30.**
+
+VERIFIED AT SOURCE (`thor:/home/nvidia/v7tiny/emao14_30k_tauramp/config.json`, read
+2026-09-05 by the Master Mind): `ema_decay_ramp` = **`"cosine"`**, `o5_target` = `"ema"`,
+`ema_decay` 0.996, `steps` 30000, `summary.done` **True**. The run directory holds `ckpt.pt`
+(144,111,717 B), `metrics.json`, `stage_gate.json`, `train_log.jsonl`. Its `config.json`,
+`summary.json` and `stage_gate.json` are now **banked** under
+`.../Implementation/incoming/2026-08-30-t1-first-v7-read/raw/tauramp_*`.
+
+⭐ **WHY THE NEGATIVE LOOKED SOLID — and the lesson worth more than the arm:** the probe searched
+for the **FLAG** (`--ema-decay-ramp`) in configs and source, found it only in the instrument, and
+concluded "never launched". It never searched the **ARM NAME** (`emao14_30k_tauramp`), which returns
+the registry row, three program reports, the retraction log, the prereg's Stage-3 outcome and a
+banked 71 KB T1 artifact. ⛔ **SEARCHING FOR THE FLAG IS NOT SEARCHING FOR THE RUN.** A flag lives
+in source and config; a run lives under its NAME in registries, reports and artifacts — and
+`--save-every` overwrites the run dir to a single file, so the config corpus structurally cannot
+answer the question.
+
+See `Project Steering/Decisions/2026-09-05-mm-decisions.md` §M33 and retraction #32.
+
+---
+
 # SPEC — the tau-ramp arm (`D-EMA-ADOPT`'s unmet condition)
 
 **Status: PRE-REGISTERED, NOT RUN. Both outcomes committed below BEFORE any launch.**
