@@ -458,6 +458,77 @@ def test_ground_prior_is_zero_for_a_CONSISTENT_box():
     assert float(out["loss"]) < 1e-6
 
 
+def test_visibility_filter_drops_agents_OUTSIDE_the_camera_field():
+    """⛔⛔ FAILS WITHOUT THE FEATURE, and it is the most load-bearing test in
+    this file. MEASURED on the val40 join: `targets_from_join` marks EVERY
+    agent valid, and `match_slots` keeps the N NEAREST — so at n_queries = 16,
+    **61.8 % of kept targets are outside the 120 deg field** and 80.1 % are
+    outside the decode box. The nearest agents include cars BEHIND the ego.
+    Without this filter the head is trained to hallucinate on ~62 % of its
+    supervision, and its AP would measure how well it guesses the unobservable.
+    """
+    box = torch.tensor([[[20.0, 3.0, 4.5, 1.9],      # ahead, in field
+                         [-15.0, 0.0, 4.5, 1.9],     # BEHIND the ego
+                         [5.0, 30.0, 4.5, 1.9],      # 80 deg to the left
+                         [90.0, 0.0, 4.5, 1.9]]])    # beyond the decode range
+    tgt = {"box": box, "valid": torch.ones(1, 4, dtype=torch.bool)}
+    out = ra.visible_target_filter(tgt)
+    assert out["valid"].tolist() == [[True, False, False, False]]
+    # the caller's dict is NOT mutated
+    assert bool(tgt["valid"].all())
+
+
+def test_visibility_filter_uses_60_DEGREES_not_the_pinhole_half_angle():
+    """CONTROL that must read a KNOWN value. The AZIMUTH cut alone (no range
+    box) must sit at 60 deg — the rig's own `camera_front_wide_120fov`. If the
+    pinhole formula had been used the boundary would sit at 46.3 deg, and the
+    59 deg agent would be wrongly dropped.
+
+    ⚠️ Tested with `filter_targets_to_visible` and NOT `visible_target_filter`,
+    on purpose: the latter also applies the decode box, and an agent at 59 deg
+    and 20 m has |cy| = 17.1 m, so the BOX would drop it. Conflating the two
+    cuts would let a wrong azimuth pass unnoticed — which is exactly what the
+    first version of this test did.
+    """
+    import math as _m
+    r = 20.0
+    for deg, want in ((59.0, True), (61.0, False), (46.3, True),
+                      (0.0, True), (120.0, False)):
+        box = torch.tensor([[[r * _m.cos(_m.radians(deg)),
+                              r * _m.sin(_m.radians(deg)), 4.5, 1.9]]])
+        tgt = {"box": box, "valid": torch.ones(1, 1, dtype=torch.bool)}
+        got = bool(ra.filter_targets_to_visible(tgt)["valid"][0, 0])
+        assert got is want, f"{deg} deg -> {got}, expected {want}"
+    # ...and the decode box is a SEPARATE, additional cut
+    far_left = torch.tensor([[[10.3, 17.1, 4.5, 1.9]]])   # 59 deg, |cy| > 16
+    tgt = {"box": far_left, "valid": torch.ones(1, 1, dtype=torch.bool)}
+    assert bool(ra.filter_targets_to_visible(tgt)["valid"][0, 0]) is True
+    assert bool(ra.visible_target_filter(tgt)["valid"][0, 0]) is False
+
+
+def test_filter_is_ON_by_default_in_agent_losses_and_reports_BOTH_n():
+    """⛔ CONTROL. The filter must be the default, and the loss must report the
+    PRE-filter count too — a panel that reports only the post-filter n cannot
+    say how much supervision the filter removed, and that fraction is the whole
+    finding."""
+    cfg = ra.AgentSeamConfig(queries=8, d_model=64, depth=2,
+                             enforce_band=False)
+    head = ra.build_agent_head(cfg, d_memory=32, n_memory=15)
+    slots = head(torch.randn(1, 15, 32))
+    box = torch.tensor([[[20.0, 3.0, 4.5, 1.9], [-15.0, 0.0, 4.5, 1.9]]])
+    tgt = {"box": box, "yaw": torch.zeros(1, 2),
+           "cls": torch.tensor([[0, 0]]),
+           "valid": torch.ones(1, 2, dtype=torch.bool),
+           "occ": torch.full((1, 2), -1.0), "rates": torch.zeros(1, 2, 3),
+           "rates_mask": torch.zeros(1, 2, dtype=torch.bool)}
+    on = ra.agent_losses(slots, tgt, cfg)
+    assert on["filter_visible"] is True
+    assert on["n"]["target_prefilter"] == 2
+    assert on["n"]["target_visible"] == 1
+    off = ra.agent_losses(slots, tgt, cfg, filter_visible=False)
+    assert off["n"]["target_visible"] == 2       # the regression arm
+
+
 def test_agent_losses_report_n_PER_TERM():
     """⛔ The four-families sibling rule: per-term, never pooled, and every
     term carries the n it was computed over."""

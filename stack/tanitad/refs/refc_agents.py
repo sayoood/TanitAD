@@ -61,6 +61,7 @@ site chooses a formula.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import torch
@@ -78,8 +79,16 @@ __all__ = [
     "AGENT_CLASSES", "N_AGENT_CLASSES", "AgentSeamConfig", "AgentTokenEmbed",
     "OracleAgentEmbed", "build_agent_head", "degrade_boxes",
     "monocular_projection_loss", "ground_range_prior", "slot_pad_mask",
-    "TOKEN_FEAT_DIM",
+    "filter_targets_to_visible", "visible_target_filter", "TOKEN_FEAT_DIM",
+    "FOV_HALF_ANGLE_RAD",
 ]
+
+#: The rig's own horizontal half-field. The camera is `camera_front_wide_120fov`
+#: and the canonical frame is CYLINDRICAL, so the half-angle is exactly 60 deg.
+#: ⚠️ Do NOT recompute this with the pinhole formula: it gives 92.6 deg total
+#: here and looks entirely plausible.
+FOV_HALF_ANGLE_RAD: float = math.radians(60.0)
+_FOV_HALF = FOV_HALF_ANGLE_RAD
 
 #: 10 — imported, never re-listed. See the module docstring's ⚠️.
 N_AGENT_CLASSES = len(ALL_CLASSES)
@@ -111,12 +120,26 @@ class AgentSeamConfig:
     oracle_sigma_range_m: float = 0.0
     oracle_miss_rate: float = 0.0
 
-    #: ⚠️ ``agent_slots.N_QUERIES_DEFAULT`` is 16 and is a DECLARED PLACEHOLDER.
-    #: MEASURED on the val40 join: 195,805 boxes over 7,400 frames = **26.5
-    #: agents/frame MEAN**, so 16 makes ``match_slots`` drop targets on most
-    #: frames. 32 is this seam's default and the p99 must be measured with
-    #: ``scripts/measure_agent_density.py`` and recorded in the prereg before a
-    #: full-scale run. DD uses 30, so 32 also keeps the audit gap on its axis.
+    #: ⭐ **32 — and it is now MEASURED, not inherited.**
+    #: ``agent_slots.N_QUERIES_DEFAULT`` is 16 and its own docstring calls that
+    #: "A DECLARED PLACEHOLDER, NOT A FITTED VALUE". MEASURED 2026-09-05 on the
+    #: val40 join (195,805 boxes / 7,400 frames / 39 clips;
+    #: ``raw/agent_density.json``), over the only honestly-trainable target set
+    #: — **in-field ∩ decode box** — the per-frame count is mean **3.16**,
+    #: p99 **19**, **max 24**. So:
+    #:   * **32 drops ZERO targets** and costs 2,048 params (0.07 % of the
+    #:     2-4 M band), so there is no reason to sit at the tighter number;
+    #:   * **24** is the strict zero-drop floor;
+    #:   * ⛔ **16 is REFUTED** — it drops on 2.16 % of frames even on the
+    #:     tightest cut, and the nearest sacrificed target sits at **38.5 m**.
+    #: DD uses 30, so 32 also keeps the audit gap on its own axis.
+    #: ⚠️ **The docstring recipe "use the p99" is itself wrong** and is not
+    #: what was applied: p99 leaves 1 % of frames dropping, and that 1 % is not
+    #: random — it is exactly the crowded frames, which is the
+    #: flattering-on-hard-frames failure the recipe exists to prevent. The rule
+    #: used here is **a covering N with ZERO drop on the FILTERED set**.
+    #: ⚠️ Measured on **val40**, not on the 2,376-episode train corpus, which
+    #: has no join on this box — the train distribution is UNMEASURED.
     queries: int = 32
     d_model: int = 256
     depth: int = 3
@@ -248,6 +271,72 @@ class AgentTokenEmbed(nn.Module):
         # slots as padding.
         tok = tok * presence.unsqueeze(-1).to(tok.dtype)
         return tok, slot_pad_mask(slots)
+
+
+def filter_targets_to_visible(tgt: dict, half_angle_rad: float = _FOV_HALF,
+                              x_max_m: float | None = None,
+                              y_half_m: float | None = None,
+                              x_min_m: float = 0.0) -> dict:
+    """⛔⛔ **MANDATORY BEFORE ``match_slots`` FOR ANY CAMERA-ONLY HEAD.**
+    Narrow ``tgt["valid"]`` to the agents a FRONT CAMERA could actually see.
+
+    ⭐ **This function exists because of a MEASURED defect, not a worry.**
+    ``agent_slots.targets_from_join`` sets ``valid = True`` for **every** agent
+    in the join record — no azimuth filter, no range filter — and ``match_slots``
+    then keeps the ``n_queries`` **NEAREST** of that set. MEASURED on the val40
+    join (195,805 boxes / 7,400 frames / 39 clips,
+    ``raw/agent_density.json``), at ``n_queries = 16``: of the 82,247 targets
+    kept, **50,816 (61.8 %) are ``occ == 1`` — OUTSIDE the 120° field** — and
+    **65,884 (80.1 %) fall outside the decode box**. The nearest agents include
+    cars **BEHIND the ego**.
+
+    ⛔ **Raising ``n_queries`` makes this WORSE, not better** (61.8 % → 63.1 %
+    at N = 32). Without this filter a monocular head is trained to hallucinate
+    on ~62 % of its supervision, and the resulting AP would be a measure of how
+    well it guesses at the unobservable.
+
+    ``half_angle_rad`` defaults to the rig's own 120° (±60°) — the SAME
+    predicate ``bev_raster.fov_mask`` applies, and the same one the join's
+    ``occ`` flag records. ⚠️ It is **necessary, not sufficient**: it is
+    horizontal only, with no vertical, hood, or inter-agent occlusion.
+
+    ⚠️ **The encoder's field may be NARROWER than the sensor's** (a centred
+    sub-frame of the v5f run measured **117°**), so this is an UPPER BOUND on
+    what the model can see. Pass the encoder's own half-angle when it differs.
+
+    Returns a NEW dict sharing every tensor except ``valid``; the caller's
+    target dict is not mutated.
+    """
+    box = tgt["box"]
+    cx, cy = box[..., 0], box[..., 1]
+    keep = tgt["valid"] & (torch.atan2(cy.abs(), cx) <= float(half_angle_rad))
+    keep = keep & (cx >= float(x_min_m))
+    if x_max_m is not None:
+        keep = keep & (cx <= float(x_max_m))
+    if y_half_m is not None:
+        keep = keep & (cy.abs() <= float(y_half_m))
+    out = dict(tgt)
+    out["valid"] = keep
+    return out
+
+
+def visible_target_filter(tgt: dict, ranges: SlotDecodeRanges | None = None,
+                          half_angle_rad: float = _FOV_HALF) -> dict:
+    """:func:`filter_targets_to_visible` with the DECODE BOX as the range cut.
+
+    ⭐ The decode box is the honest bound: ``SlotDecodeRanges`` is what the head
+    can EXPRESS (``cx`` in ``[0, 60]``, ``|cy| <= 16``), so a target outside it
+    is one the architecture cannot represent at all — training against it adds
+    a loss the head can only reduce by being wrong somewhere it can reach.
+
+    MEASURED on that set (in-field ∩ decode box): mean **3.16** agents/frame,
+    p99 **19**, **max 24** — which is why ``AgentSeamConfig.queries = 32``
+    drops **zero** targets, and why ``N_QUERIES_DEFAULT = 16`` is REFUTED (it
+    drops on 2.16 % of frames, the nearest sacrificed target at **38.5 m**).
+    """
+    r = ranges or SlotDecodeRanges()
+    return filter_targets_to_visible(tgt, half_angle_rad=half_angle_rad,
+                                     x_max_m=r.x_fwd_m, y_half_m=r.y_half_m)
 
 
 def slot_pad_mask(slots: dict) -> Tensor:
@@ -449,12 +538,21 @@ def ground_range_prior(pred_box: Tensor, cam: RigCamera,
 # ---------------------------------------------------------------------------
 def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
                  cam: RigCamera | None = None,
-                 weights: dict | None = None) -> dict:
+                 weights: dict | None = None,
+                 filter_visible: bool = True) -> dict:
     """``slot_set_loss`` + the two monocular terms, per term, with their ``n``.
 
     ⛔ Per-term, never pooled into one score — the four-families discipline's
     sibling rule: a composite hides exactly the trade-off one wants to see.
     """
+    # ⛔ THE FILTER IS ON BY DEFAULT AND THAT IS THE POINT. Without it 61.8 %
+    # of the targets `match_slots` keeps are outside the camera's field
+    # (MEASURED, val40 join) and the head is trained to hallucinate. Turning it
+    # OFF is the deliberate-regression arm, and it must be asked for by name.
+    n_before = int(tgt["valid"].sum())
+    if filter_visible:
+        tgt = visible_target_filter(tgt)
+    n_after = int(tgt["valid"].sum())
     match = match_slots(slots, tgt)
     out = slot_set_loss(slots, tgt, match=match, weights=weights)
     total = out["total"]
@@ -472,4 +570,10 @@ def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
     out["total"] = total
     out["n_dropped"] = int(sum(match["n_dropped"]))
     out["n_target"] = int(sum(match["n_target"]))
+    # ⭐ Both counts, always: a panel that reports only the post-filter n cannot
+    # say how much supervision the filter removed, and that fraction is the
+    # whole finding.
+    out["n"]["target_prefilter"] = n_before
+    out["n"]["target_visible"] = n_after
+    out["filter_visible"] = bool(filter_visible)
     return out

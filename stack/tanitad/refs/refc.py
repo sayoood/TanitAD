@@ -533,6 +533,12 @@ class RefCConfig:
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
     lan: LanConfig = field(default_factory=LanConfig)
+    # ⭐ refcv5 WP-6 (E-AGT-HEAD): the monocular environment head and the agent
+    # tokens the decoder cross-attends. `agents.enable=False` (the default)
+    # constructs NOTHING, so a v5 build with the seam off is bit-identical to
+    # refcv4b. The type is `Any` in annotation terms only because importing
+    # refc_agents here would be circular; it is an `AgentSeamConfig`.
+    agents: "object | None" = None
     speed_hidden: int = 256       # refc1 target-speed class head width
     ego_dropout: float = 0.5      # per-sample Bernoulli zero of v0 (training)
     route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
@@ -2285,6 +2291,24 @@ class RefCModel(nn.Module):
             control_units=cfg.anchors.control_units,
             alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
             kappa_cap=cfg.anchors.kappa_cap)
+        # ---- refcv5 WP-6: the monocular environment head + the token seam ----
+        # ⛔ Built LAST and only when asked for, so a build without agents keeps
+        # refcv4b's RNG draw order exactly. `agent_head` reads the conv map and
+        # NOTHING else — the vision-only rule enforced by the call, not a
+        # comment. The ORACLE path builds no detector at all: it embeds
+        # privileged boxes and is inadmissible as a capability claim.
+        self.agent_head = None
+        self.agent_embed = None
+        self.agent_oracle = None
+        acfg = getattr(cfg, "agents", None)
+        if acfg is not None and getattr(acfg, "enable", False):
+            from tanitad.refs import refc_agents as _ag     # local: cycle-free
+            gh, gw = cfg.encoder.grid_shape
+            if getattr(acfg, "oracle", False):
+                self.agent_oracle = _ag.OracleAgentEmbed(acfg)
+            else:
+                self.agent_head = _ag.build_agent_head(acfg, feat, gh * gw)
+            self.agent_embed = _ag.AgentTokenEmbed(cfg.decoder.d, acfg)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -2554,7 +2578,11 @@ class RefCModel(nn.Module):
                 nav_known: Tensor | None = None,
                 hierarchy_hook=None,
                 ego_keep: Tensor | None = None,
-                withheld_speed: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None,
+                agent_boxes: Tensor | None = None,
+                agent_yaw: Tensor | None = None,
+                agent_cls: Tensor | None = None,
+                agent_valid: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -2774,6 +2802,23 @@ class RefCModel(nn.Module):
             out_goal = {"goal_bearing": bearing, "goal_dist_pref": goal_dist_pref}
         else:
             out_goal = {}
+        # ---- refcv5 WP-6: environment extraction from the FRONT CAMERA -------
+        # ⛔ `self.agent_head(memory)` takes the conv map and NOTHING ELSE. There
+        # is no argument through which `obstacle.offline` could arrive, which is
+        # the vision-only rule enforced structurally. The ORACLE branch is the
+        # deliberate exception and is inadmissible as a capability claim; it is
+        # reachable only when the caller SUPPLIES boxes, so it cannot fire by
+        # accident on a normal forward.
+        agent_tokens = agent_pad = None
+        agent_slots = None
+        if self.agent_head is not None:
+            memory = fmap.flatten(2).transpose(1, 2)          # [B, gh*gw, F]
+            agent_slots = self.agent_head(memory)
+            agent_tokens, agent_pad = self.agent_embed(agent_slots)
+        elif self.agent_oracle is not None and agent_boxes is not None:
+            agent_slots = self.agent_oracle(
+                agent_boxes, agent_yaw, agent_cls, agent_valid)
+            agent_tokens, agent_pad = self.agent_embed(agent_slots)
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
@@ -2782,7 +2827,8 @@ class RefCModel(nn.Module):
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
                            goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
-                           withheld_speed=withheld_speed)
+                           withheld_speed=withheld_speed,
+                           agent_tokens=agent_tokens, agent_pad=agent_pad)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -2799,6 +2845,13 @@ class RefCModel(nn.Module):
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}
+        if agent_slots is not None:
+            # ⭐ The DETECTION output, exposed so `compute_losses_v3` can attach
+            # the GT-supervised set loss. It is an OUTPUT, never an input: the
+            # head above already ran on the conv map alone.
+            out["agent_slots"] = agent_slots
+        if "u0_hat" in dec:
+            out["u0_hat"] = dec["u0_hat"]
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
         for _k in ("prefinal_logits", "reach_keep"):

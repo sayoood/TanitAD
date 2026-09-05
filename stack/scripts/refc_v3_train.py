@@ -86,6 +86,8 @@ from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
+from tanitad.refs import refc_agents as _refc_agents  # noqa: E402
+from tanitad.models import kinematic as kin  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
 #: tactical goal regression (E8) — sized with the route/maneuver aux family;
@@ -97,6 +99,17 @@ GOAL_STR_WEIGHT = ROUTE_WEIGHT
 #: survivor-set selection CE (E9) — parallel to ANCHOR_CLS_WEIGHT: it is the
 #: same "which candidate" question asked of the blended score.
 SEL_V3_WEIGHT = 1.0
+
+# ---- refcv5 weights (all default 0.0 -> the loss is bit-unchanged) --------
+# ⛔ EVERY ONE OF THESE IS A DECLARED DECISION, NOT A DEFAULT, and every one
+# defaults to 0.0 so that ADDING the seams to the code cannot change a run that
+# does not ask for them. `--w-agent` / `--w-u0` are the switches.
+#
+# ⚠️ The units differ per term BY CONSTRUCTION (metres, nats, m/s^2), which is
+# why they are named and stamped rather than folded into one number -- the same
+# rule `SLOT_LOSS_W` and `V6LossWeights.w_select` carry.
+AGENT_WEIGHT_DEFAULT = 0.0        # WP-6: the GT-supervised detection set loss
+U0_WEIGHT_DEFAULT = 0.0           # WP-4: the x0 loss, in CONTROL space
 #: the registered dominance lever set — build REFUSES any other delta (C122).
 REGISTERED_DELTA_KEYS = {"hier", "core.graft_target_latent"}
 #: ⭐ v4 adds its own lever set on top of the hier/flat pair. Both arms of a
@@ -232,7 +245,64 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
             cfg.core.anchors.kappa_cap = float(_am["kappa_cap"])
         if _am.get("alat_v_floor") is not None:
             cfg.core.anchors.alat_v_floor_ms = float(_am["alat_v_floor"])
+    _pin_refcv5_seams(cfg, args)
     return cfg
+
+
+def _pin_refcv5_seams(cfg, args) -> None:
+    """refcv5 WP-4 / WP-6 — install the sampler and the agent seam from argv.
+
+    ⛔ EVERY seam here is OFF by default, and OFF means NOT CONSTRUCTED. A run
+    that does not pass these flags builds a model that is bit-identical to
+    refcv4b, RNG draw order included, so an existing checkpoint keeps loading
+    strictly. That is checked by a test, not asserted here.
+    """
+    core = cfg.core
+    # --- WP-4: the control-space DDIM sampler ---------------------------- #
+    sampler = str(getattr(args, "sampler", "none"))
+    core.decoder.sampler = sampler
+    core.decoder.sampler_space = str(getattr(args, "sampler_space", "control"))
+    core.decoder.sampler_train_t_max = int(getattr(args, "sampler_train_t_max",
+                                                   50))
+    core.decoder.sampler_infer_t = int(getattr(args, "sampler_infer_t", 8))
+    core.decoder.sampler_steps = int(getattr(args, "sampler_steps", 2))
+    core.decoder.sampler_groups = int(getattr(args, "sampler_groups", 1))
+    if sampler == "ddim" and not core.anchors.v0_conditioned:
+        raise SystemExit(
+            "[v3] ⛔ --sampler ddim needs a v0-CONDITIONED vocabulary. The "
+            "sampler's state IS the control sequence; a fixed-path bank "
+            "carries anchor_controls of all zeros, so the anchored Gaussian "
+            "would be centred on 'do nothing' — a plausible-looking WRONG "
+            "experiment. Pass an --anchor-file built with controls.")
+    if sampler == "ddim" and float(getattr(args, "w_u0", 0.0)) <= 0.0:
+        raise SystemExit(
+            "[v3] ⛔ --sampler ddim with --w-u0 0 trains the sampler with NO "
+            "loss on its own prediction: `control_head` is zero-init, so it "
+            "would stay at exactly zero and the arm would silently be the "
+            "anchored Gaussian with no denoiser at all — and it would look "
+            "like a trained sampler in every log. Pass --w-u0 > 0, or run "
+            "--sampler none.")
+    # --- WP-6: the agent seam -------------------------------------------- #
+    if getattr(args, "agents", "off") != "off":
+        acfg = _refc_agents.AgentSeamConfig(
+            enable=True,
+            oracle=(args.agents == "oracle"),
+            oracle_sigma_range_m=float(getattr(args, "agent_sigma_range", 0.0)),
+            oracle_miss_rate=float(getattr(args, "agent_miss_rate", 0.0)),
+            queries=int(getattr(args, "agent_queries", 32)),
+            w_project=float(getattr(args, "agent_w_project", 0.0)),
+            w_ground=float(getattr(args, "agent_w_ground", 0.0)),
+            presence_hard=bool(getattr(args, "agent_presence_hard", False)))
+        core.agents = acfg
+        core.decoder.cross_agent = True
+        if args.agents == "head" and float(getattr(args, "w_agent", 0.0)) <= 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --agents head with --w-agent 0 builds a detector that "
+                "is never supervised. Its tokens would be noise, the "
+                "zero-init gate would have no reason to open, and the arm "
+                "would read as 'agent tokens do not help' — a REFUTATION "
+                "manufactured by a missing loss. Pass --w-agent > 0, or use "
+                "--agents oracle (which needs no detector loss).")
 
 
 # ============================================================================
@@ -794,6 +864,67 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 extra[f"{_tag}_speed_mae"] = _err[_m].mean().detach()
         extra["bank_speed_pred_mean"] = out["bank_speed_pred"].float().mean()
 
+    # ---- refcv5 WP-4: the x0 loss, in CONTROL space ----------------------
+    # ⭐ This is the ONE term that is not expressible in metres, which is why
+    # `u0_hat` has to leave the decoder at all. The target is the GT path's own
+    # control sequence through the programme's inverse map -- so the sampler is
+    # supervised in the space it samples in, not in the space it is read out in.
+    w_u0 = float(getattr(model, "_w_u0", 0.0))
+    if w_u0 > 0.0 and "u0_hat" in out:
+        u_gt = kin.unicycle_controls_from_path_varstep(
+            traj_tgt, kin.slot_dts(core.trajectory.horizons))       # [B, S, 2]
+        if core.anchors.control_units == "alat":
+            # ⛔ THE TARGET MUST BE IN THE VOCABULARY'S UNITS. The inverse map
+            # returns CURVATURE; the bank's controls are LATERAL ACCELERATION
+            # when `control_units == "alat"`. Comparing the two directly is the
+            # units error `anchor_meta.py` exists to prevent -- a_lat = v^2 k
+            # differs from k by a factor of ~1300 at 36 m/s, and BOTH tables
+            # look plausible.
+            v_ref = v0.clamp_min(core.anchors.alat_v_floor_ms) ** 2
+            u_gt = torch.stack([u_gt[..., 0], u_gt[..., 1] * v_ref[:, None]],
+                               dim=-1)
+        a_idx = a_star[:, None, None, None].expand(b, 1, u_gt.shape[1], 2)
+        u_sel = out["u0_hat"].gather(1, a_idx).squeeze(1)           # [B, S, 2]
+        norm = torch.tensor(core.decoder.control_norm, device=device,
+                            dtype=u_sel.dtype)
+        loss_u0 = (((u_sel - u_gt) / norm).abs().sum(-1) * sv).sum() / denom
+        loss = loss + w_u0 * loss_u0
+        extra["u0"] = loss_u0
+
+    # ---- refcv5 WP-6: the GT-supervised detection set loss ----------------
+    # ⛔ `obstacle.offline` is a TRAIN-TIME LABEL. It enters HERE, in the loss,
+    # and nowhere in the forward -- which is the vision-only rule enforced by
+    # where the tensor is read, not by a comment.
+    w_agent = float(getattr(model, "_w_agent", 0.0))
+    if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch:
+        tgt_ag = {"box": batch["agent_box"].to(device),
+                  "yaw": batch["agent_yaw"].to(device),
+                  "cls": batch["agent_cls"].to(device),
+                  "valid": batch["agent_valid"].to(device),
+                  "occ": batch.get("agent_occ",
+                                   torch.full_like(batch["agent_yaw"], -1.0)
+                                   ).to(device),
+                  "rates": batch.get(
+                      "agent_rates",
+                      torch.zeros(*batch["agent_yaw"].shape, 3)).to(device),
+                  "rates_mask": batch.get(
+                      "agent_rates_mask",
+                      torch.zeros_like(batch["agent_valid"])).to(device)}
+        ag = _refc_agents.agent_losses(out["agent_slots"], tgt_ag,
+                                       core.agents,
+                                       cam=getattr(model, "_rig_camera", None))
+        loss = loss + w_agent * ag["total"]
+        for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
+                     "ground"):
+            if f"loss_{k_ag}" in ag:
+                extra[f"agent_{k_ag}"] = ag[f"loss_{k_ag}"]
+        # ⭐ n PER TERM, in the log row. A detection number without its n is
+        # inadmissible, and `n_dropped` is how a too-small `n_queries` becomes
+        # VISIBLE instead of silently flattering the head on crowded frames.
+        extra["agent_n_target"] = float(ag["n"]["target"])
+        extra["agent_n_matched"] = float(ag["n"]["matched"])
+        extra["agent_n_dropped"] = float(ag["n"]["dropped"])
+
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
@@ -994,6 +1125,21 @@ def _seam_stamp(cfg, args) -> dict:
         "withheld_bank_warmup": int(getattr(args, "withheld_bank_warmup", 0)),
         "withheld_speed_max_ms": float(getattr(args, "withheld_speed_max",
                                                35.0)),
+        # ⭐ refcv5 (2026-09-05). A run that does not stamp these cannot say
+        # which arm it was -- the exact failure `SEAM_STATE.md` MEASURED for
+        # six pre-existing seams, where the live arm was reconstructible only
+        # by knowing what refc_v3.py forces.
+        "agents": (core.agents.as_dict()
+                   if getattr(core, "agents", None) is not None else None),
+        "cross_agent": bool(getattr(core.decoder, "cross_agent", False)),
+        "sampler": str(getattr(core.decoder, "sampler", "none")),
+        "sampler_space": str(getattr(core.decoder, "sampler_space", "control")),
+        "sampler_infer_t": int(getattr(core.decoder, "sampler_infer_t", 8)),
+        "sampler_steps": int(getattr(core.decoder, "sampler_steps", 2)),
+        "sampler_groups": int(getattr(core.decoder, "sampler_groups", 1)),
+        "control_norm": list(getattr(core.decoder, "control_norm", (4.0, 3.0))),
+        "w_agent": float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT)),
+        "w_u0": float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT)),
     }
 
 
@@ -1322,6 +1468,13 @@ def train(args) -> dict:
         cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
 
     model = v3.RefCV3Model(cfg).to(device)
+    # refcv5: the two loss weights travel ON the model, because
+    # `compute_losses_v3(model, batch, device, ...)` has no `args`. PLAIN
+    # attributes, never buffers -- they must not enter state_dict and change
+    # checkpoint compatibility (the `_seam_conf` discipline).
+    model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
+    model._w_u0 = float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT))
+    model._rig_camera = None
     # ⛔ THE ANCHOR VOCABULARY IS LOAD-BEARING AND ITS ABSENCE WAS SILENT.
     # refcv3 trained without `--anchors` and nobody noticed for the whole run,
     # because this branch printed nothing and recorded nothing. MEASURED cost:
@@ -1995,6 +2148,78 @@ def build_parser() -> argparse.ArgumentParser:
                          "its true v0 would put the withheld channel into the "
                          "candidate GEOMETRY, which is a harder leak than the "
                          "ranking one S2 guards.")
+    # ---- refcv5 WP-4 / WP-6 ----------------------------------------------
+    g5 = ap.add_argument_group(
+        "refcv5", "WP-4 (control-space sampler) and WP-6 (agent tokens). "
+        "EVERY flag here defaults to OFF, and OFF means NOT CONSTRUCTED: a "
+        "run that passes none of them is bit-identical to refcv4b.")
+    g5.add_argument("--sampler", default="none", choices=["none", "ddim"],
+                    help="E-DDA-3. 'ddim' replaces the metre-space truncated "
+                         "denoise with an anchored Gaussian in CONTROL space, "
+                         "so every sample re-rolls through the kinematic model "
+                         "and is flyable by construction. Needs a "
+                         "v0-conditioned vocabulary and --w-u0 > 0.")
+    g5.add_argument("--sampler-space", default="control",
+                    choices=["control", "metre"],
+                    help="DELIBERATE REGRESSION. 'metre' is the DD-literal "
+                         "arm that noises the WAYPOINTS; pre-registered to "
+                         "FAIL the flyability gate. If it does NOT fail, the "
+                         "instrument cannot see what it is cited for: VOID.")
+    g5.add_argument("--sampler-train-t-max", type=int, default=50,
+                    help="train timestep ~ U[0, t_max). DD uses 50.")
+    g5.add_argument("--sampler-infer-t", type=int, default=8,
+                    help="the truncation point at eval. DD uses 8.")
+    g5.add_argument("--sampler-steps", type=int, default=2,
+                    help="DDIM steps at inference. DD uses 2; "
+                         "D-REFC-DDAUDIT-2 MEASURED that passes beyond 2 "
+                         "collapse the fan spread 104 -> 42 m, so this is NOT "
+                         "a capacity knob.")
+    g5.add_argument("--sampler-groups", type=int, default=1,
+                    help="G samples per anchor. Only G=1 is implemented; G>1 "
+                         "refuses and names the three consumers that still "
+                         "assume an N-wide fan.")
+    g5.add_argument("--w-u0", type=float, default=U0_WEIGHT_DEFAULT,
+                    help="weight on the x0 loss, in CONTROL space -- the only "
+                         "term that supervises the sampler in the space it "
+                         "samples in.")
+    g5.add_argument("--agents", default="off",
+                    choices=["off", "head", "oracle"],
+                    help="E-AGT-*. 'head' = the LEARNED monocular 3D head "
+                         "(the deliverable arm; vision-only at inference, "
+                         "obstacle.offline as TRAIN-TIME labels). 'oracle' = "
+                         "GROUND-TRUTH boxes fed at inference: the CEILING, "
+                         "INADMISSIBLE as a capability claim, run ONCE to "
+                         "price the mechanism before any detector GPU-day. If "
+                         "the oracle does not separate on LONGITUDINAL AND "
+                         "TACTICAL the whole mechanism is refused.")
+    g5.add_argument("--w-agent", type=float, default=AGENT_WEIGHT_DEFAULT,
+                    help="weight on the GT-supervised detection set loss.")
+    g5.add_argument("--agent-queries", type=int, default=32,
+                    help="detection queries. 32 is MEASURED, not inherited: "
+                         "on the val40 join the in-field/decode-box per-frame "
+                         "count has max 24, so 32 drops ZERO targets; 16 "
+                         "(agent_slots' placeholder) drops on 2.16 pct of "
+                         "frames, nearest sacrificed target at 38.5 m.")
+    g5.add_argument("--agent-w-project", type=float, default=0.0,
+                    help="weight on the IMAGE-PLANE term. A monocular head "
+                         "supervised only in BEV metres is asked to regress "
+                         "the one axis it cannot directly see, with no term "
+                         "in the space it can.")
+    g5.add_argument("--agent-w-ground", type=float, default=0.0,
+                    help="weight on the road-plane range prior. Costs NO "
+                         "label (rig z=0 IS the road plane, MEASURED), so it "
+                         "also trains on the NO_LABEL frames past ~20 s.")
+    g5.add_argument("--agent-sigma-range", type=float, default=0.0,
+                    help="E-AGT-BUDGET: range-noise sigma (m) on the ORACLE "
+                         "boxes. The sigma where separation dies IS the "
+                         "detector specification.")
+    g5.add_argument("--agent-miss-rate", type=float, default=0.0,
+                    help="E-AGT-BUDGET: the miss rate on the ORACLE boxes.")
+    g5.add_argument("--agent-presence-hard", action="store_true",
+                    help="hard-mask sub-threshold slots instead of soft "
+                         "scaling. Soft is the default BECAUSE a hard mask has "
+                         "zero gradient to the presence head through the "
+                         "planner loss.")
     ap.add_argument("--withheld-bank", default="fixed",
                     choices=list(refc.WITHHELD_BANK_MODES),
                     help="H-EGO-LIT-4: the speed a WITHHELD row's anchor bank "
