@@ -67,6 +67,8 @@ import taniteval.ci as CI                                              # noqa: E
 
 TOOL = "stack/scripts/rl_fan_rerank_probe.py"
 GATE_KS = (2, 4, 8, 16, 32, 128)
+#: offset-shrink sweep. 1.0 is the shipped fan (identity control), 0.0 the raw bank.
+LAMBDAS = (0.0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0)
 REPORT = ("envelope", "kamm_over", "infeasible", "off_reach", "contact", "ttc_below",
           "flagged")
 
@@ -149,6 +151,26 @@ def main(argv=None) -> int:
             gt = b["gt_traj"]                                            # [B, 4, 2]
             ade = (fan4 - gt[:, None]).norm(dim=-1).mean(dim=-1)         # [B, N] per candidate
             order = rank.argsort(dim=1, descending=True)                 # [B, N]
+            # ---- the OFFSET-SHRINK sweep: path(lambda) = bank + lambda * offset ---- #
+            # `out["offset"]` is exactly what the decoder added to the bank, so the
+            # interpolation is EXACT, not a reconstruction: at lambda = 1 the paths are
+            # bitwise the emitted fan (asserted below), at lambda = 0 they are the bank.
+            offs = out["offset"]                                         # [B, N, 8, 2]
+            bank8 = fan - offs                                           # [B, N, 8, 2]
+            lam_sc, lam_ade, lam_spread = {}, {}, {}
+            for lam in LAMBDAS:
+                p8 = bank8 + lam * offs
+                p5 = D.with_origin(p8[..., :D.N_REWARD_SLOTS, :])
+                lam_sc[lam] = FS.score_paths(p5, b["v0"], lead5,
+                                             lead_len_m=D.LEAD_LEN_DEFAULT_M)
+                lam_ade[lam] = (p8[..., :D.N_REWARD_SLOTS, :]
+                                - gt[:, None]).norm(dim=-1).mean(dim=-1)
+                lam_spread[lam] = p8[..., D.N_REWARD_SLOTS - 1, :].std(dim=1).norm(dim=-1)
+            # identity control: lambda = 1 must reproduce the emitted fan EXACTLY.
+            _d = float((lam_ade[1.0] - ade).abs().max())
+            if _d > 1e-5:
+                raise RuntimeError(f"lambda=1 identity control failed: max|diff| {_d:.3e} m "
+                                   "- the sweep is not interpolating the shipped fan")
 
             for j, wi in enumerate(b["wis"]):
                 e_i, _t = corp.ds.index[wi]
@@ -167,6 +189,17 @@ def main(argv=None) -> int:
                         row[f"{rule}__{f}"] = float(sc[f][j, idx])
                     row[f"{rule}__idx"] = idx
                 row["agrees_model__kin_only"] = float(pick["kin_only"] == pick["model"])
+                # ---- the OFFSET-SHRINK sweep, same forward, no extra GPU ------- #
+                for lam in LAMBDAS:
+                    q = lam_sc[lam]
+                    for f in ("envelope", "kamm_over", "off_reach", "infeasible"):
+                        row[f"lam{lam}__fan_{f}"] = float(q[f][j].float().mean())
+                    row[f"lam{lam}__fan_peak_g"] = float(q["peak_g"][j].mean())
+                    row[f"lam{lam}__sel_envelope"] = float(q["envelope"][j, pick["model"]])
+                    row[f"lam{lam}__sel_peak_g"] = float(q["peak_g"][j, pick["model"]])
+                    row[f"lam{lam}__oracle_ade_m"] = float(lam_ade[lam][j].min())
+                    row[f"lam{lam}__sel_ade_m"] = float(lam_ade[lam][j, pick["model"]])
+                    row[f"lam{lam}__fan_spread_m"] = float(lam_spread[lam][j])
                 for k in GATE_KS:
                     row[f"agrees_model__gate{k}"] = float(pick[f"gate{k}"] == pick["model"])
                 rows.append(row)
@@ -204,6 +237,14 @@ def main(argv=None) -> int:
                 [r.get(f"agrees_model__{rule}", float("nan")) for r in rows], eids,
                 n_boot=a.n_boot, seed=a.seed)
 
+    res["lambda_sweep"] = {}
+    for lam in LAMBDAS:
+        res["lambda_sweep"][str(lam)] = {
+            m: boot([r[f"lam{lam}__{m}"] for r in rows], eids, n_boot=a.n_boot, seed=a.seed)
+            for m in ("fan_envelope", "fan_kamm_over", "fan_off_reach", "fan_infeasible",
+                      "fan_peak_g", "sel_envelope", "sel_peak_g", "oracle_ade_m",
+                      "sel_ade_m", "fan_spread_m")}
+
     os.makedirs(os.path.dirname(os.path.abspath(a.out)) or ".", exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as fh:
         json.dump(res, fh, indent=1)
@@ -223,6 +264,15 @@ def main(argv=None) -> int:
               f"{A['envelope']['mean']:9.4f} {de.get('delta', float('nan')):+9.4f} "
               f"{str(de.get('separated', '-')):>4s} | {A['infeasible']['mean']:8.4f} "
               f"{A['peak_g']['mean']:8.4f} {ag:6.3f}")
+    print("\n=== OFFSET-SHRINK SWEEP  path(lambda) = bank + lambda * offset ===")
+    print(f"  {'lambda':>7s} {'fan_env':>8s} {'fan_peak_g':>11s} {'fan_offreach':>13s} "
+          f"{'oracle_ade':>11s} {'sel_ade':>8s} {'sel_env':>8s} {'spread_m':>9s}")
+    for lam in LAMBDAS:
+        q = res["lambda_sweep"][str(lam)]
+        print(f"  {lam:7.2f} {q['fan_envelope']['mean']:8.4f} {q['fan_peak_g']['mean']:11.4f} "
+              f"{q['fan_off_reach']['mean']:13.4f} {q['oracle_ade_m']['mean']:11.4f} "
+              f"{q['sel_ade_m']['mean']:8.4f} {q['sel_envelope']['mean']:8.4f} "
+              f"{q['fan_spread_m']['mean']:9.4f}")
     print(f"[rerank] -> {a.out}")
     return 0
 

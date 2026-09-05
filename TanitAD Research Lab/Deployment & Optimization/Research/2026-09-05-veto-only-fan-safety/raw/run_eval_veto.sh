@@ -49,8 +49,8 @@ for spec in $ARMS; do
     # its analysis step reads like a total failure. Retry --analyze-only before re-rolling.
     if [ ! -s "$OUT/eval/refcv3-40284-$tag.json" ] && [ -s "$OUT/eval/${tag}_dump/manifest.json" ]; then
       echo "ZZANALYZEONLY-$tag-ZZ"
-      "$PY" -u "$REPO/taniteval/tools/openloop_suite.py" --analyze-only \
-         --dump-dir "$OUT/eval/${tag}_dump" --out-dir "$OUT/eval" \
+      "$PY" -u "$REPO/taniteval/tools/openloop_suite.py" \
+         --analyze-only "$OUT/eval/${tag}_dump" --out-dir "$OUT/eval" \
          --tag "refcv3-40284-$tag" --n-boot "$NBOOT" --seed "$SEED" \
          >> "$OUT/eval_$tag.log" 2>&1
       echo "ZZANALYZEONLY-$tag-rc$?-ZZ"
