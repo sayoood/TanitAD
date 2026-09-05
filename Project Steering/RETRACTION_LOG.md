@@ -13095,7 +13095,30 @@ evidence about anyone else's code. If a re-run is not possible, the finding is
 suite was run before the report went out, and the retraction landed in the SAME
 turn — `RESULT.md` §3.1, `HANDOFF.md` §6 and the register row were all corrected
 before any of them were read by anyone else.
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    the contact-projected fan, held-out episodes only
+
+---
+
+# 2026-09-05 — "the RL arm's objective is the 2.11x selection gap" — IT IS A BEST-OF-N STATISTIC, NOT A SKILL GAP (Arch+Inference FlyWheel, collision-projection stream)
+
+## 1. RETRACTED — in the same turn it was written, before it was quoted anywhere outside its package
+
+`RESULT.md` §8 of `…/2026-09-05-collision-projection/` and the register row
+`H-RL-OBJECTIVE-1` both stated, as the concrete redirect for the RL effort freed by
+the collision projection:
+
+> *"the residual handed to the RL brief is a SELECTION residual, and it is 0.2565 m
+> per window (0.4871 - 0.2306), 2.11x, on 240 windows / 121 episodes, unchanged by
+> everything a projection can do."*
+
+Every number in that sentence is correct. **The inference from it is not.** The
+quantity `oracle_in_fan` is `min ADE` over **N = 128** candidates — a **best-of-N
+statistic**, which falls with N whether or not any selector could have known which
+sample to take. Read as a *gap a better ranker could close*, it names a target that
+does not exist.
+
+## 2. The measurement that settles it, and it cost no GPU
+
+MEASURED 2026-09-05 on the contact-projected fan, held-out episodes only
 (103 windows / 48 episodes), random subsets of size `k`, 40 draws each
 (`…/2026-09-05-collision-projection/raw/panel4_selection.py`,
 `raw/selection_headroom.json`):
