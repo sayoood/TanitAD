@@ -300,6 +300,67 @@ worth its GPU.
 
 ---
 
+## §5.4 ⭐ THE REGISTERED FREE TEST RESOLVED — and it fired the branch I registered, for a reason I had not
+
+`wk15_ladder` = `wk15` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`, **same
+`W_KAPPA = 15.11245`, same `--plan-seed 0`, same 40 windows**. The prediction was
+written into `SPEC` §3.15 **before the record existed**.
+
+⭐ **The ladder is sign-symmetric, and the arm's OWN banner proves it applied** —
+verified from the log rather than from `plan_cfg`, which does not carry it
+(`seed_kappa_ladder` is a `plan()` kwarg, not a `PlanConfig` field, and reading
+`plan_cfg` alone would have said `None` and voided this whole section):
+
+```
+[seed-pool] seed_kappa_ladder=(0.002, 0.005, 0.01, 0.02, 0.04) 1/m
+            -> 10 EXTRA iteration-0 candidates (both signs).
+            Radii 500 m, 200 m, 100 m, 50 m, 25 m
+```
+
+| arm (all `ccos`, seed 0, 40 windows) | recall L | recall R | n_pred L | n_pred R | TAC lat kappa |
+|---|---|---|---|---|---|
+| `ccos_argmax` (`W_KAPPA` 0) | 0.3636 | 0.7500 | 9 | 9 | 0.3795 |
+| **`wk15`** (`W_KAPPA` 15.11) | **0.0000** | **0.5000** | 0 | 4 | 0.2611 |
+| **`wk15_ladder`** (+ 10 symmetric candidates) | **0.0000** | **0.0000** | **0** | **0** | **0.0000** |
+| `combined` (`W_KAPPA` 0 + `kamm_mu` 0.7) | 0.3636 | 0.7500 | 8 | 9 | 0.4148 |
+
+**REGISTERED PREDICTION:** *if the asymmetry is the SEARCH failing to find the
+left candidate, `turn_left` recall should RISE above 0.0; if it stays at 0.0 with
+symmetric candidates on the table, the search-failure explanation is WEAKENED.*
+
+⇒ **`turn_left` stayed at 0.0000, so the registered branch fired.** ⛔ **But it
+fired for a reason the prediction did not anticipate, and that weakens the
+inference — which I am reporting rather than banking the branch:** `turn_right`
+collapsed from 0.5000 to **0.0000** as well. **The arm emitted no turns in either
+direction** (confusion matrix entirely in the `lane_keep` column, `TAC lat kappa`
+exactly 0.0000). ⚠️ **An arm that never turns cannot tell you which direction it
+prefers**, so as a *directional* probe this test is largely VOID.
+
+⭐ **What it IS informative about is the COST, and there it is decisive and
+symmetric.** The ladder offered cheap sub-threshold curvature: at `kappa = 0.04`
+the charge is `15.11245 x 0.04^2 = 0.0242` against the full goal's `0.09672`, and
+at 0.02 it is `0.0060`. **The search took the cheap compromise on every window,
+in both directions**, and the `|dyaw| > 0.15` gate then reads the result as
+`lane_keep`. That is the cost-geometry reading confirmed — *the charge dominates
+the goal well below the goal's own curvature* — and it is **sign-neutral**.
+
+⭐⭐ **AND IT ADDS ONE GENUINELY NEW FACT, which is the most important line in
+this section:** `wk15`'s right-turn survival is **FRAGILE**. A third draw at the
+**same cost, same weights and the same plan seed**, differing only in the
+iteration-0 candidate set, moved the split from **0.0 / 0.5** to **0.0 / 0.0**.
+⇒ the "9 of 13 retained" is a property of **which candidates the search happened
+to have**, not a stable property of the direction — which is exactly the class of
+instability the two-seed pair was registered to measure, arriving from a third
+direction.
+
+⚠️ **Scope, as registered:** the ladder tops out at 0.04 against
+`GOAL_KAPPA_TURN = 0.08`, so it can never satisfy the `|kappa| > 0.06` retention
+criterion and this read is on **recall only**; and it is **one arm at one seed on
+the degenerate 40-window panel** (§2), so it is direction-of-travel and never the
+verdict. §5's outcomes remain decided on the wide panel alone.
+
+---
+
 ## §6 — THE WIDE PANEL, TWO SEEDS *(pending — this is the section that decides)*
 
 *To be filled from `rec_ta_wk15_s0.json` / `rec_ta_wk15_s1.json` (round 1) and
