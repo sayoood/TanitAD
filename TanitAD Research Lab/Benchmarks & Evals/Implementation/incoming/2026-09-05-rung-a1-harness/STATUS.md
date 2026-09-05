@@ -1,78 +1,52 @@
 # RUNG A1 — REF-C harness: `ha0_ext` port + the missing ablation CLI flags
 
-**Stream:** Benchmarks & Eval FlyWheel · **Opened:** 2026-09-05 (Europe/Berlin) · **GPU cost: ZERO**
+**Stream:** Benchmarks & Eval FlyWheel · **2026-09-05 (Europe/Berlin)** · **GPU cost: ZERO**
 **Branch:** `agent/arch-inf-20260803`
 **Package:** `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-09-05-rung-a1-harness/`
 
 ⛔ **`refcv4b-b1-v72-40k` is LIVE on pod `tanitad-refcv3` (ETA ~2026-09-06 08:00 UTC). Nothing in this
-rung touches it. No job is launched from this package.**
+rung touched it. No job was launched from this package.**
 
-⚠️ **PATH NOTE / ESCALATION (see §Escalations).** The brief named the **singular**
-`Benchmarks & Eval/…`. The binding PI directive of 2026-08-27 makes the **plural**
-`TanitAD Research Lab/Benchmarks & Evals/` the live spelling and calls the singular the dead one.
-This package therefore lands at the **plural** path. A *singular* `Benchmarks & Eval/` tree was
-created under the Lab at 2026-09-05 04:01 and is cited by `PREREG_REFCV4B_HIERARCHY_EVAL.md` §7 —
-that is a live drift, raised below rather than silently propagated.
-
----
-
-## STATUS — updated in place as the rung lands
-
-| # | deliverable | state |
-|---|---|---|
-| 0 | this STATUS header, banked before any work | ✅ committed |
-| 1 | `ha0_ext` ported into `taniteval/tools/refcv3_arm.py` as the SAME shared call `refav1_arm.py` makes; in `arms`, in `ARM_TIERS` (**T1**), in the analysis record beside `ha`/`ha0`; pinned by a cross-harness equality test | ⏳ not started |
-| 2 | the missing ablation CLI flags on `refcv3_arm.py` for every arm registered in `Project Steering/PREREG_REFCV4B_HIERARCHY_EVAL.md` §3, each **stamped into the arm's own record**; pinned by a test that every prereg arm has a flag AND that the flag changes the forward path | ⏳ not started |
+⚠️ **PATH NOTE / ESCALATION E3.** The brief named the **singular** `Benchmarks & Eval/…`. The binding
+PI directive of 2026-08-27 makes the **plural** `TanitAD Research Lab/Benchmarks & Evals/` the live
+spelling and calls the singular dead. This package therefore lands at the **plural** path. A
+*singular* tree was created under the Lab at 2026-09-05 04:01 and is cited by
+`PREREG_REFCV4B_HIERARCHY_EVAL.md` §7 — a live drift, raised rather than silently propagated.
 
 ---
 
-## The two MEASURED absences this rung closes
+## STATUS — ✅ BOTH DELIVERABLES LANDED AND VERIFIED IN `HEAD`
 
-Both re-verified with a **same-breath control** in the same command, per CLAUDE.md's false-absence
-rule (four false-absence claims were made on this mount on 2026-09-04).
+| # | deliverable | state | commit |
+|---|---|---|---|
+| 0 | this STATUS header, banked before any work | ✅ | `37af3bc` |
+| 1 | `ha0_ext` ported as the SAME shared call refav1 makes; in `arms`, `ARM_TIERS` (**T1**), `ARM_MEANING`, the manifest and two paired blocks; cross-harness equality pinned | ✅ **12 tests pass** | `5cd86fd` |
+| 2 | all twelve prereg §3 ablations runnable from the CLI, each stamped into the arm's own record; bijection + "the flag bites" pinned | ✅ **28 pass, 1 skip** | `0954934` |
+| 3 | register rows `D-RUNGA1-1..8`, byte-appended with read-back + sentinel re-assertion | ✅ 9,593 bytes; 870,628 → 880,221 | this package's commit |
+| 4 | `RESULT.md` + `raw/` (replayable patch scripts, the divergence measurement, both suite logs) | ✅ | this package's commit |
 
-**A1-a — `ha0_ext` is unreadable on the REF-C surface.**
-
-```
-grep -c 'ha0_ext'      taniteval/tools/refcv3_arm.py   ->  0     (the target)
-grep -c 'add_argument' taniteval/tools/refcv3_arm.py   -> 28     (SAME-BREATH CONTROL: the read works)
-grep -c 'ha0_ext'      taniteval/tools/refav1_arm.py   -> 12     (the sibling harness HAS it)
-```
-
-`MEASURED (ours, this session, 2026-09-05)`. The control reading 28 is what makes the 0 a fact about
-the file rather than about the mount. Consequence: **half of refcv5's acceptance bar — "beat both
-`ha` and `ha0_ext`" — cannot be read on the REF-C surface today**, because the harness that produces
-that surface never computes the control. `stack/tanitad/eval/echo_gate.py::ha0_ext` already exists
-and `taniteval/tools/t1_eval.py` already calls it; this is a **wiring gap, not a missing instrument**.
-
-**A1-b — most of the 12 registered ablations have no CLI flag.**
-
-The prereg's own §7 escalation says so verbatim: the switches *"are NOT yet implemented as CLI flags
-of `refcv3_arm.py`"*. ⚠️ **And that escalation list is itself incomplete** — it names seven
-(`gstr_zero, gstr_shuffle, e7_off, e9_off, h19_off, ego_zero, sel_refined`) and **omits the
-frame-blind deliberate regression**, which is the arm the panel's validity rests on: a gate that has
-never been shown to FAIL an image-blind arm certifies nothing (`H-ECHO-4`: an ADE-scored gate once
-passed an echoing arm). **The authoritative list is §3 of the prereg, not §7.**
+Every commit was verified in `HEAD` by a **length-guarded blob comparison per path**, not by `git log`.
 
 ---
 
-## Discipline carried
+## Headline findings
 
-* `Project Steering/AGENT_OPERATING_STANDARD.md`: stage, never push, never commit to `main`, never
-  `git add -A`; deliverable manifest; escalate integration; bank incrementally.
-* Commits ONLY via `python stack/scripts/mm_commit.py <msgfile> <path> [...]` (positional), verified
-  by a **length-guarded** blob comparison (both oids 40 chars, else INCONCLUSIVE).
-* Absence asserted only with a same-breath control; existence only by `git cat-file -e HEAD:<path>`.
-* Suite run from the off-Drive mirror `C:\Users\Admin\tanitad-wt` with `PYTHONPATH=<mirror>/stack`;
-  pre-existing failures demonstrated pre-existing on an **unpatched** copy before being reported as such.
-* `Project Steering/GOALS_AND_CLAIMS.md` updated in the same turn, by **byte append with read-back**,
-  never a str-split/rejoin (`insert_rows.py` was retired 2026-09-04 for exactly that bug).
+1. ⭐ **The acceptance bar is readable.** `grep -c ha0_ext refcv3_arm.py` was **0** (same-breath
+   control `add_argument` → **28**; sibling `refav1_arm.py` → **12**), so half of *"beat BOTH `ha` and
+   `ha0_ext`"* could not be computed on the REF-C surface. It now can.
+2. ⛔ **There are TWO `ha0_ext` kinematics in the programme and they differ by up to 1.862923 m over
+   6 s** (0.540642 m at 2 s on the worst state; exactly 0.000000 m on the degenerate one). That is the
+   same order as the whole model margin, so *"call the same shared kinematic"* has two readings and
+   only one preserves cross-harness comparability. **ESCALATION E1.**
+3. ⛔ **The prereg's registered `H19-OFF` mechanism removes nothing on the checkpoint it is registered
+   for** — every REF-C v3/v4 build is `factored_maneuver=True`, so `maneuver_to_anchor` is `None` and
+   the live prior is `lat_to_anchor` + `lon_to_anchor`. **ESCALATION E2: the prereg needs an erratum.**
+4. ⚠️ **The prereg's §7 escalation list omits the frame-blind deliberate regression** — the arm the
+   panel's validity depends on. §3 is authoritative.
+5. ✅ **Suite: 21 failed / 5,883 passed / 8 errors, and all 29 failures are PRE-EXISTING —
+   0 regressions**, demonstrated by re-running the same selection with the pre-Rung-A1 files restored.
+6. ⛔ **`mm_commit.py` could not land a commit tonight** (25 attempts, ~40 min, all dead at
+   `read-tree`). `stack/scripts/mktree_commit.py` — added here — landed both commits first time.
+   **ESCALATION: adopt it as the default committer while the mount behaves this way.**
 
-## Escalations
-
-1. **Lab-tree spelling drift (open).** Singular `Benchmarks & Eval/` exists under the Lab and is
-   cited by the staged prereg §7; the PI's 2026-08-27 directive makes the plural binding. Two
-   parallel trees is exactly the failure mode that memory entry was written about. Needs a Master
-   Mind decision: re-path the singular tree (and the prereg citation) to plural, or amend the
-   directive. **Do not resolve by size/count comparison — `Hub`/`Lab` and `Eval`/`Evals` renames are
-   near-byte-identical; diff CONTENT.**
+See `RESULT.md` for the evidence, the escalations E1–E4, and the deliverable manifest.
