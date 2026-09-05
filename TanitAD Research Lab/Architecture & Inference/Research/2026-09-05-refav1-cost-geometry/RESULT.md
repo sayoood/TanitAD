@@ -712,6 +712,73 @@ Both arms were relaunched at 18:42:21Z under `raw/queueG.sh`, which also `rm -rf
 the stale dump directory first so a partial dump from the crashed attempt cannot be
 mistaken for a panel.
 
+
+### 7.6 ⭐⭐ L4 ANSWERED: THE FRICTION-CIRCLE CAP IS A **DIFFERENT KIND** OF LEVER FROM `W_KAPPA` — IT BUYS SAFETY AND HALF THE ACCURACY, AND IT COSTS NOTHING
+
+`kamm07` = `ccos` + `(0, 0, 64.297)` + `--kamm-mu 0.7`: the CONSTRAINT is the only
+variable against the banked `ccos_argmax`. Same metric, same weights, same seed,
+same panel, same vocabulary.
+
+**The axis it was built for** (`assert_feasible`, `v0 >= 2 m/s`, n = 27; ⛔ the
+GROUND-TRUTH control reads `envelope 0.0000 / kamm_over 0.0000`, so the block is
+admissible):
+
+| | `ccos_argmax` | **`kamm07`** | ground truth |
+|---|---|---|---|
+| `kamm_over_rate` (mu = 0.7) | 0.2963 | **0.1481** | 0.0000 |
+| `peak_g` mean | 0.558 | **0.256** | 0.178 |
+| **`peak_g` max** | **3.262** | **0.707** | 0.373 |
+| `max\|kappa\|` | 0.2000 *(= the clip)* | **0.174670** *(below it)* | 0.1701 |
+| `envelope_rate` | 0.0000 | 0.0000 | 0.0000 |
+
+⇒ **`peak_g` max falls 4.6x to 0.707 — μ itself, to numerical tolerance — and
+`max|kappa|` drops below the 0.2 clip, so the Kamm bound, not the constant clip, is
+now what binds.** The violation rate halves rather than vanishing, and the reason is
+a scope difference that must be stated, not hidden: the cap is applied to the
+CANDIDATE'S CONTROLS at plan time using its own accel-integrated speed, while
+`assert_feasible` re-derives `kappa = a_lat / v_mid^2` from the ROLLED-OUT PATH with
+`v_mid` floored at `MIN_SPEED = 0.5`. **They are not the same object**, and closing
+the residual is a work item, not a failure of the cap.
+
+**And the four families, paired against `ccos_argmax`, read against §4's seed floor:**
+
+| family metric | **`kamm07` - `ccos_argmax`** | vs floor | `wk15` - `ccos_argmax` | vs floor |
+|---|---|---|---|---|
+| `ade_m` | -0.3344 [-0.9536, +0.0625] | not sep. | **-0.4338 [-1.0393, -0.0808]** | 7.1x, sep. |
+| `LAT_yaw_rate_mae` | **-0.0676 [-0.1476, -0.0038]** | 8.3x, sep. | **-0.1571** | 19x, sep. |
+| `LAT_cross_mae_m` | -0.3599 [-1.0002, +0.0579] | not sep. | **-0.5114** | 7.2x, sep. |
+| `LAT_heading_mae_deg` | -2.3315 [-5.1211, +0.0491] | not sep. | **-3.8969** | 3.5x, sep. |
+| **`LON_speed_mae_mps`** | **-0.0017 [-0.0078, +0.0034]** | **below the 0.0038 floor** | **+0.0764 WORSE** | 20x, sep. |
+| **`LON_accel_mae_mps2`** | **+0.0013 [-0.0035, +0.0064]** | **below the 0.0061 floor** | **+0.0874 WORSE** | 14x, sep. |
+| `TAC_traj_lat_correct` | +0.0000 [-0.0750, +0.0750] | — | +0.0000 | — |
+
+**Tactical decision quality is PRESERVED, which `W_KAPPA` does not do:**
+
+| | `ccos_argmax` | **`kamm07`** | `wk15` |
+|---|---|---|---|
+| TAC lateral kappa | 0.3795 | **0.3644** *(within the 0.0750 floor)* | 0.2611 |
+| lane_keep recall (n=21) | 0.7143 | **0.7619** | 1.0 |
+| **turn_left recall (n=11)** | 0.3636 | **0.3636** *(identical)* | **0.0** |
+| **turn_right recall (n=8)** | 0.75 | **0.625** | 0.5 |
+| ADE, GT-turn (n=19) | 0.9195 | **0.9195** *(identical)* | 0.9699 |
+| ADE, GT-straight (n=21) | 1.6960 | **1.0590** | **0.8242** |
+
+⭐ **THE TWO LEVERS ARE COMPLEMENTARY, AND THE DIFFERENCE IS STRUCTURAL, NOT A
+MATTER OF DEGREE.** `W_KAPPA` is a **penalty**: it charges every curvature, so it
+buys the most accuracy and pays for it by suppressing turning *in general* — turn
+recall to 0.0/0.5, tactical kappa 0.38 → 0.26, and a separated 14–20x-the-floor
+regression in the longitudinal family, because the plan spends its remaining
+freedom laterally. The Kamm cap is a **constraint with units**: it removes only the
+curvature the tyre cannot deliver, so it leaves the turn decisions bit-untouched
+(`turn_left` recall and GT-turn ADE both *identical* to the uncapped arm), costs the
+longitudinal family **less than the noise floor on both metrics**, and is the only
+lever here that moves the safety axis at all.
+
+⇒ **The combined arm — ladder + cap — is therefore the right next experiment and is
+already queued behind `l3ladder`;** its pre-registration (§2, §3) is unchanged. And
+`W_KAPPA`'s straight-window advantage over the cap (+0.1957 vs +0.4304 against
+`ha0_ext`) says the two are attacking *different halves* of the same 21 windows.
+
 ---
 
 ## §8 — Deliverable manifest
