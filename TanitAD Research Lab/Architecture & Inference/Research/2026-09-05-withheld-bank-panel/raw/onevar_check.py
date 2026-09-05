@@ -18,8 +18,20 @@ from pathlib import Path
 ARMS = Path(sys.argv[1] if len(sys.argv) > 1 else r"C:\Users\Admin\run_wbank\arms")
 A0 = "A0_fixed"
 
+# ⚠️ NOT levers: parameters that differ by construction and carry no experimental
+# meaning. `--out` is the arm's own output directory — every arm must have a distinct
+# one, and treating it as a moved lever makes every arm FAIL for the same vacuous
+# reason, which would train a reader to ignore this check. Nothing else belongs here:
+# an entry in this set is invisible to the audit, so it is the one place a real lever
+# could hide.
+NOT_LEVERS = {"--out"}
+
 # the lever each arm is ALLOWED to move, committed in SPEC.md before the panel ran
 EXPECTED = {
+    # A0b_replicate is A0 run a SECOND time — it must move NOTHING at all. That is the
+    # whole point: its delta vs A0 is the run-to-run noise floor, so any flag difference
+    # would contaminate the very number the floor is supposed to isolate.
+    "A0b_replicate": set(),
     "A1_pred":   {"--withheld-bank", "--withheld-bank-warmup"},
     "A2_random": {"--withheld-bank", "--withheld-bank-warmup"},
     "A3_drop25": {"--ego-dropout"},
@@ -71,7 +83,7 @@ def main():
             print(f"{n}: NO CONFIG (not run)")
             continue
         moved = set()
-        for k in set(base) | set(m):
+        for k in (set(base) | set(m)) - NOT_LEVERS:
             if base.get(k) != m.get(k):
                 moved.add(k)
         exp = EXPECTED.get(n, set())
@@ -98,7 +110,7 @@ def main():
     # A1 vs A2 must differ in EXACTLY the speed source
     a1, a2 = load("A1_pred"), load("A2_random")
     if a1 and a2:
-        d = {k for k in set(a1) | set(a2) if a1.get(k) != a2.get(k)}
+        d = {k for k in (set(a1) | set(a2)) - NOT_LEVERS if a1.get(k) != a2.get(k)}
         print(f"\n# A1 vs A2 (must be ONLY --withheld-bank): moved {sorted(d)} -> "
               f"{'PASS' if d == {'--withheld-bank'} else '⛔ FAIL'}")
         verdicts["A1_vs_A2"] = (d == {"--withheld-bank"})
