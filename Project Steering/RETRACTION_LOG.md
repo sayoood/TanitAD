@@ -13734,3 +13734,157 @@ not a fifth literal**, with all four wordings pinned and a live-use regression a
 `changelog`), `tools/criteria_check.py`, `tools/tests/test_criteria_check.py`
 (refav1 fixture + per-family deliberate-regression arm + arm-scoping arm),
 `.claude/skills/TanitAD_BenchmarkCriteria/SKILL.md` §Current state.
+
+---
+
+## 2026-09-06 — TRAIN-C13 · the LABEL'S FRAME was not the ARM'S FRAME
+
+**Class: a true quantity quoted outside its scope, where the scope is the FIELD OF VIEW.**
+Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` /
+cylindrical-FOV / anchor-`control_units` traps — ninth recurrence, new object.
+
+**What was wrong.** The `vru_ahead` target used by P4-3c, WP-H and WP-J is built from
+the agent join, whose `occ` visibility flag is computed at the **sensor's 120°**
+frustum. The encoder consuming those windows is fed the canonical square frame —
+`tanitad.data.physicalai.as_frame(None, 256, F_REF)` →
+`CanonicalFrame(height=256, width=256, f_ref=266.0, projection='pinhole')`, i.e. a
+half-angle of `atan(128/266) = 25.70°`, **HFOV 51.4°**.
+
+**MEASURED** (`…/2026-09-05-vla-design-dialogue/raw/fov_frame_audit.json`, 2,983 join
+lines / 15 clips): **48.5 %** of forward `automobile` and **46.7 %** of forward `person`
+cuboids lie **outside the encoder's field of view**. At window level, **30.4 %** of
+`vru<20m` positives and **8.5 %** of `vru<60m` positives are positives for an agent the
+encoder never saw.
+
+**Why it matters, and what it does and does not touch.** WP-H's discriminator assumed
+the NEAR band is *easier* (bigger agents). Geometrically the opposite also holds: at a
+fixed lateral gate `|cy| ≤ 4 m`, azimuth **grows as the agent gets closer**, so the NEAR
+band carries **3.6× more unanswerable label**. ⇒ WP-J's `NEAR − ALL = −0.0562` is a sum
+of a resolution effect and a frame-mismatch effect of unknown relative size and **cannot
+be read as evidence against the resolution hypothesis**. Status of that hypothesis:
+**NOT SUPPORTED, NOT REFUTED**, now for a second independent reason (the first was power).
+⚠️ **NOT retracted:** WP-J's trunk-vs-floor correction stands (matched 2×4 pooling: trunk
+0.6683 vs pixels 0.4758 near, 0.7245 vs 0.6951 all). Both arms saw the same frame and the
+same labels, so the mismatch is **common-mode** for that comparison.
+⚠️ **Now inadmissible until re-measured:** any P4-3c-sourced statement that the trunk is
+"at chance on `vru_ahead`".
+
+⭐ **The join's own docstring warned about exactly this**, verbatim: *"PASS THE ENCODER'S
+FRAME INSTEAD when the consumer was fed a centred sub-frame."* It was written for a
+**1.5°** annulus. Here the annulus is **68.6°** wide. A warning in a docstring is not a
+guard; the durable fix is that the target carries its frame.
+
+→ **Durable fix:** `wpi2_semantic_floor.py` reports every VRU target in BOTH forms (RAW
+and IN-FOV, gated on azimuth rather than on the rectangular `|cy|` predicate) and prints
+the per-arm FOV-gate effect, so the correction is a measured quantity in the panel rather
+than a claim in prose. Escalated as an integration item: `build_obstacle_join.py` should
+be run with `--hfov-deg 51.4` for any join whose consumer is the square 256 frame.
+
+### The generalisation, because this is the SEVENTH specification defect in one campaign
+
+| # | defect | the mismatched affordance |
+|---|---|---|
+| 1 | WP-B window-level features | identical across candidates ⇒ only the marginal was learnable |
+| 2 | WP-B control spec | shuffled arm judged against MAJORITY when a noise fit lands near UNIFORM |
+| 3 | WP-F run 1 | arms denied the rank information the baseline used |
+| 4 | WP-F validity/effect | the effect test placed inside the validity gate |
+| 5 | WP-H AUC ties | a constant predictor read 0.6765 instead of 0.5000 |
+| 6 | WP-H/J pooling | trunk pooled to one vector, pixels to a 4×8 grid |
+| 7 | **TRAIN-C13** | **the label's frame ≠ the arm's frame** |
+
+⇒ **Before comparing two things, enumerate every affordance — spatial structure,
+dimensionality, temporal extent, field of view, and the information the baseline is
+given — and assert parity on each. PROVENANCE PARITY IS NOT AFFORDANCE PARITY.**
+
+## 2026-09-06 — TRAIN-C14 · a POISONED ARM SCORES LIKE A FINDING (fp16 in a ViT-L teacher)
+
+**Class: the all-zero-floor trap** (`CLAUDE.md`: *"a decode that raises into a
+pre-allocated memmap leaves a full-size file of zeros — and the job can still exit 0"*),
+with the zeros replaced by NaNs and the memmap by a feature bank.
+
+**What happened.** WP-I v1 loaded the DINOv3 ViT-L/16 teacher in **fp16**. ViT-L's
+activations overflow that range: **3,686,400 of 3,686,400** pooled features were `NaN`.
+The arm did not crash. Ridge on NaN features produced ties, the tie-averaged AUC resolved
+them, and the arm scored **0.2740–0.4286 across every target — systematically below
+chance**. Read at face value that is the publishable finding *"a strong pretrained
+backbone is WORSE than raw pixels at driving semantics"*, which would have closed the
+PI's semantics-injection route on a dead arm.
+
+**What caught it.** Not inspection — a **feature-health line** (`std`, non-finite count,
+constant-column count printed per arm) that was added only because the arm's numbers were
+*suspiciously consistent* in the wrong direction. → **Durable fix:** bf16 (fp32 range)
+plus a hard per-window finiteness assertion that raises rather than accumulates, with the
+message stating why: *"a poisoned arm scores like a finding; refusing to continue."*
+
+## 2026-09-06 — TRAIN-C15 · a POOLED CROSS-VALIDATION SCORE THAT ENCODED FOLD IDENTITY
+
+**Class: an estimator whose question is narrower than the claim hung on it** — the
+`H-ESTIM-SEED-1` family, with the leak in the pooling rather than in the resampling.
+
+WP-I v1 pooled every leave-one-episode-out fold's raw score into one AUC. Each fold fits
+a different λ on a different training set, so its scores carry a fold-specific **offset
+and scale**; pooling them makes the ranking partly a comparison *between* episodes — a
+channel that encodes episode identity. **MEASURED: the shuffled-target control read
+0.7736** where it must read ~0.5000.
+
+→ Fix 1: standardise each fold's held-out scores by that fold's **training-prediction**
+mean and sd (statistics that never touch the held-out episode, so the calibration cannot
+leak). That cut it to 0.60–0.64.
+⚠️ → **Fix 2, and the real lesson: the gate itself was wrong.** `|x − 0.5| < 0.12` judges
+a statistic whose own uncertainty at n=150 with 18 positives is ≈ ±0.15 — **a control
+read without its interval**, which is the same error the programme banned for results.
+v2 replaces the point gate with a **permutation test** whose null is generated by the
+exact same pipeline (global and within-episode variants), so no estimator subtlety can
+leak into the comparison, and reports `p` rather than a pass/fail on a point value.
+
+---
+
+## 2026-09-06 — ARCH-C: A COMMIT VERIFIED BY BLOB-EQUALITY PASSED WHILE 1,467 BYTES OF THE FILE WERE NUL
+
+**ROOT-CAUSE CLASS: a verification whose two operands share the failure mode of the
+thing they are verifying.** Same family as the 2026-09-04 `INCONCLUSIVE` hole (both
+`git rev-parse` and `git hash-object` returning the empty string during a mount outage,
+so `[ "$a" = "$b" ]` read TRUE) — but one level worse, because here **both operands were
+40 characters, both were valid SHA-1s, and they were genuinely EQUAL. The check was
+working exactly as designed and still certified a corrupt file.**
+
+**WHAT HAPPENED.** Commit `d290cb9` staged `Project Steering/GOALS_AND_CLAIMS.md` after an
+append. `mktree_commit.py` hashed the file while the G: mount had not yet flushed the
+**leading 1,467 bytes** of the new write; those bytes read as NUL. The blob comparison
+`git rev-parse HEAD:<path>` vs `git hash-object <path>` **PASSED** — both sides read the
+same corrupt bytes through the same mount — and the tool's own
+`VERIFIED in HEAD by blob comparison` line printed.
+
+**WHAT CAUGHT IT.** Only the **content-marker** check: of ten named markers expected inside
+the committed blob, **three read 0**. Nothing else in the pipeline noticed. Byte count did
+not (the file was full length — the hole was NUL-padded, not truncated), `git log` did not,
+and the blob comparison actively certified it.
+
+**THE DIAGNOSIS IS EXACT, NOT INFERRED.** The NUL run starts at byte **1,325,637** — which
+is **exactly** the file's size before the append (measured minutes earlier as
+`target=1325637`). So the hole is precisely the leading extent of the new write, and every
+byte after it survived, which is why markers 4–10 were present and 1–3 were not.
+Confirmed through **three independent channels** — `git show | grep -cF`, `grep -cF` on a
+locally dumped copy (off the mount), and a byte-exact `bytes.count()` in python — all
+agreeing, with an **absent-marker control reading 0** and a **present-marker control
+reading 26**. ⚠️ Three probes were used deliberately because the `ls-tree` trap has already
+shown that repeating ONE probe is one sample.
+
+**⇒ THE RULE, sharpening the one already in `CLAUDE.md`.** The blob comparison answers
+*"is the file I have the file that got committed?"* It **cannot** answer *"is the file
+correct?"*, because a corrupt read corrupts both sides identically.
+⭐ **A commit is verified by asserting NAMED CONTENT inside the committed blob —
+`git show HEAD:<path> | grep -cF <marker>` — with a marker that must read NON-ZERO and a
+control marker that must read ZERO.** Blob hashes and byte counts are necessary and not
+sufficient. On a large file, assert a marker from the **beginning, middle and end** of what
+was written: this failure left the tail intact and ate the head, so a single tail marker
+would have passed.
+⚠️ **And the repair must not clobber.** Before re-committing the worktree, it was CHECKED
+rather than assumed to be a superset: 0 NUL bytes, every HEAD line present, and **strictly
+newer** on the one differing line (a sibling stream's `D-REFAV1-LON-T1` row, 2,472 chars
+against HEAD's 2,242). Repaired via a **fresh inode** from local disk — the documented
+un-poison — and re-verified with the marker+control check. Fixed in `d3a5251`.
+
+**Cost:** ~15 minutes, and it was caught in the same turn. Had the marker check not been
+run, three claims — including `D-REFAV1-KAPPA-UNDERTURN`, the package's headline — would
+have sat in a commit whose subject announced them while the register did not contain them.
