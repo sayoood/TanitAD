@@ -655,3 +655,50 @@ identified by THREE things: the metric, the statistic, and the rig.**
 **refav1 does NOT beat `ha0_ext` outright at T1.** But **`a_shift` is a real, REPLICATED,
 seed-floor-clearing LONGITUDINAL win that halves the programme's stated gap** — and that is the first
 replicated win in this package, against a night in which two headline zeros died to replication.
+
+## M62. ⛔ I REVERSE MY OWN M54 SCHEDULING RULING — the `ccos` arms answer an OPEN question; `lonshift_s1` confirms a REPORTED one
+
+### 1. The ruling, and why it cannot be delivered as written
+
+`M54` §4 ruled that **`lonshift_s1` takes the next free dev-box slot.** MEASURED tonight, that ruling
+would require an **intervention**, not merely a priority:
+
+* `ta_queue3.py`'s `PLAN` holds **four** arms — `ta_wk15_s0`, `ta_wk15_s1`, `ta_ccos_s0`, `ta_ccos_s1`;
+* its log shows it relaunching **one second** after a slot freed (`01:33:20 FINISHED ta_wk15_s0` ->
+  `01:33:21 LAUNCHED ta_ccos_s0`);
+* ⇒ **`queueLON4.sh` can never win a race against it**, even though `lonshift_s1` is correctly first in
+  its own list (line 69, verified).
+
+⇒ Delivering the ruling would mean **killing a sibling's live queue** — which risks cascading into two
+running arms, on a box whose 2-arm cap exists because a third is a **measured OOM risk**.
+
+### 2. ⭐ And the new information inverts the priority anyway
+
+I had assumed the remaining turn-panel arms were another exploratory round. **They are not.** The two
+`ccos` arms run at **`W_KAPPA` = 0**, and `M57` established that at `W_KAPPA` = 0 **the plan IS the
+goal's canonical seed on 21/22 turn-goal windows.** ⇒ ⭐⭐ **The `ccos` arms ARE the head-baseline that
+`M57`'s registered increment analysis requires** — the analysis whose whole point is
+
+```
+plan gap  −  head gap  =  INCREMENT      (the only part attributable to the COST)
+```
+
+**Without them, the cost's contribution to the left-turn deficit cannot be computed at all**, and that
+is the central open question of goal 5's lateral half (`M54`, `M57`, `M58`).
+
+⇒ ⛔ **`lonshift_s1` CONFIRMS a result already reported WITH its single-seed caveat. The `ccos` arms
+ANSWER a question that is open.** ⭐ **An open question outranks confirming a reported one.**
+
+### 3. The reversal, recorded rather than dropped
+
+⭐ **RULING REVERSED: the turn panel keeps both slots until its four arms complete (~2.5 h);
+`lonshift_s1` takes the first slot after that.** No process is killed and no gate is loosened.
+
+⚠️ **`M54` §4's REASONING was not wrong** — validating a landed result *does* outrank another
+exploratory arm; **its PREMISE was wrong**, because the competing arms were not exploratory. ⇒ ⭐ **The
+error to avoid was ruling on a stream's priority without reading what it was actually going to run** —
+the same shape as reading a name instead of the field that declares it (`M51`, `M53`) and a count
+instead of a capability (`M60`). **I classified a queue by its owner rather than by its contents.**
+
+⛔ **A reversed ruling must be RECORDED.** A ruling silently abandoned leaves the register asserting a
+priority that nothing is executing, and the next reader cannot tell a decision from a drift.
