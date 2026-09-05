@@ -291,7 +291,42 @@ def _check_goal_time_grid(grid: str) -> str:
 #: PRE-REGISTRATION ITEM belonging to the PI / Master Mind, deliberately NOT
 #: taken in this file. ⇒ ``"ccos"`` is an INSTRUMENTED OPTION, not a candidate
 #: default; `_check_cost_metric` accepts it and nothing selects it.
-COST_METRICS = ("cos", "chord", "ccos")
+#:
+#: ⭐⭐ ``"ccosh"`` -- ``ccos`` WITH THE HOLD BRANCH (2026-09-05,
+#: D-REFAV1-COST-GEOMETRY). Identical to ``"ccos"`` on every window whose goal
+#: is a real goal, and ``"chord"`` -- the DISTANCE form -- on the windows where
+#: the goal IS the hold field. It is the branch the ``"ccos"`` note above says
+#: is missing, taken as a SEPARATE metric so that no banked ``ccos`` number
+#: moves by a byte.
+#: ⛔ WHY IT IS NEEDED (MEASURED, `raw/cost_scale.txt`, n = 40 windows /
+#: 8 episodes, `dump_ccos_argmax`): under ``"ccos"`` the do-nothing candidate is
+#: ``z_ref`` itself, so its centred vector is the ZERO vector and its cost is
+#: ``1.0`` EXACTLY -- the observed median `basecost_cv` is **1.0** and the
+#: median winner cost is **3.11e-05**. On a hold goal ``||g - z_ref||`` is
+#: float32 rounding, so the direction the cosine compares against is NOISE and
+#: the do-nothing candidate is charged the worst-but-one value in the range for
+#: doing exactly what the goal asked. That is why curvature is non-zero on
+#: ~90 % of GT-STRAIGHT windows.
+#: ⭐ THE FALLBACK IS NOT A NEW FORM. On the hold branch the ideal terminal
+#: field IS the goal, so the cost is the chord ``||x_hat - y_hat||`` -- the
+#: existing, pinned ``"chord"`` expression, which exists precisely because it
+#: resolves at the DIFFERENCE's own scale instead of at 1.0's.
+#: ⚠️ IT IS NOT WEIGHT-NEUTRAL EITHER (the hold branch's magnitude is the
+#: field's own relative displacement, ~1e-2, not ~1e0), so an arm that selects
+#: it declares its weight triple in the same breath, like every other non-default
+#: form here.
+#: ⚠️ THE GATE IS A SCALE AND IS AUDITABLE: `CCOS_HOLD_REL`. It is not
+#: selected on any outcome -- the hold value is MEASURED at 4.18e-08 relative,
+#: i.e. at the float32 epsilon, and the default sits ~240x above it and orders
+#: below anything that could be a real direction. The CONTROL that must read a
+#: known value is the realised curvature on LANE_KEEP-decoded windows, which the
+#: `decisions` sidecar already carries (`goal_lat_cl`, `cl_controls`) -- so the
+#: branch is falsifiable post-hoc at zero GPU without instrumenting the planner.
+COST_METRICS = ("cos", "chord", "ccos", "ccosh")
+
+#: the ``"ccosh"`` hold gate: ``||g - z_ref|| <= CCOS_HOLD_REL * ||z_ref||``
+#: means the goal IS the hold field and the centred direction is noise.
+CCOS_HOLD_REL = 1e-5
 
 #: eps of `F.cosine_similarity`'s own default, applied per-vector here so a
 #: zero field cannot divide by zero. Never reached on a real rollout.
@@ -331,18 +366,35 @@ def _goal_term(zt: Tensor, g: Tensor, metric: str = "cos",
     y = g.flatten(1)
     if metric == "cos":
         return 1.0 - F.cosine_similarity(x, y, dim=-1)
-    if metric == "ccos":
+
+    def _chord() -> Tensor:
+        # the pinned distance form, computed as a NORM OF A DIFFERENCE so it
+        # resolves at the difference's own scale (see COST_METRICS)
+        xn = x / x.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
+        yn = y / y.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
+        return (xn - yn).norm(dim=-1)
+
+    if metric in ("ccos", "ccosh"):
         if z_ref is None:
             raise ValueError(
-                "cost_metric='ccos' needs z_ref: the ZERO-ACTION terminal "
+                f"cost_metric={metric!r} needs z_ref: the ZERO-ACTION terminal "
                 "field of this window. Centring on anything else (a batch "
                 "mean, a running average, the goal) is a different estimator "
                 "and would leak across candidates -- see COST_METRICS")
         r = z_ref.flatten(1)
-        return 1.0 - F.cosine_similarity(x - r, y - r, dim=-1)
-    xn = x / x.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
-    yn = y / y.norm(dim=-1, keepdim=True).clamp_min(_CHORD_EPS)
-    return (xn - yn).norm(dim=-1)
+        ccos = 1.0 - F.cosine_similarity(x - r, y - r, dim=-1)
+        if metric == "ccos":
+            return ccos
+        # ``"ccosh"``: on a HOLD goal the centred direction is float32 noise
+        # (see COST_METRICS), so fall back to the pinned chord -- the DISTANCE
+        # form, under which the do-nothing candidate correctly scores ~0
+        # instead of the ccos value 1.0 it earns BY CONSTRUCTION.
+        rn = r.norm(dim=-1).clamp_min(_CHORD_EPS)
+        hold = (y - r).norm(dim=-1) <= CCOS_HOLD_REL * rn
+        # no .any() short-circuit: that would be a DEVICE SYNC per cost chunk
+        # inside a 30-iteration iCEM loop, and the chord is only two norms.
+        return torch.where(hold, _chord(), ccos)
+    return _chord()
 
 
 #: ⭐ THE EXPLICIT COST WEIGHTS -- named so that L4 is addressable in ONE place.
@@ -2137,6 +2189,7 @@ class RefAV1(nn.Module):
     @torch.no_grad()
     def plan(self, feats: Tensor, *, v0: float, goal_field: Tensor | None = None,
              target_speed: float | None = None, nav_cmd: Tensor | None = None,
+             seed_kappa_ladder: tuple[float, ...] | None = None,
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
              cost_chunk: int = 64, model_action_units: str = "kappa",
              cost_time_grid: str = "dense", goal_time_grid: str = "full",
@@ -2414,6 +2467,56 @@ class RefAV1(nn.Module):
             seed_pool = (seed if seed_pool is None
                          else torch.cat([seed_pool, seed], dim=0))
 
+        # ⭐⭐ THE SUSTAINED-CURVATURE SEED LADDER (2026-09-05,
+        # D-REFAV1-COST-GEOMETRY / L3). OFF BY DEFAULT: `None` leaves
+        # `seed_pool` bit-identical to every arm banked before this date.
+        # ⛔ WHY IT EXISTS, MEASURED and banked BEFORE it was written
+        # (`raw/kappa_quantisation.txt`, n = 40 windows, ckpt 21,109, `ccos`):
+        # the winning plan's curvature series is EXACTLY CONSTANT on
+        # **31 of 40** windows, and of those **10 read exactly 0.000000 and 21
+        # exactly 0.080000** — `LANE_KEEP`'s canonical profile and
+        # `GOAL_KAPPA_TURN`. Reproduced bit-for-bit on the seed replicate. So on
+        # 77.5 % of windows the "planned" trajectory IS the decoded token's
+        # canonical control profile, and `D-REFAV1-DRIVE-GATE`'s mechanism is
+        # confirmed on REAL windows: `colored_noise` is zero-mean along time
+        # (`refa_v1_plan.py:157`), no injected baseline carries curvature
+        # (`:178-186`), so a SUSTAINED curvature can only enter through this
+        # pool — which offers `{0, ±0.08}` and nothing between. The corpus
+        # curves at R 100-1000 m, i.e. |kappa| ~ 0.001-0.01.
+        # ⚠️ THIS IS NOT A VOCABULARY CHANGE. `canonical_controls` is untouched,
+        # so the ACTION SPACE and the goal field are bit-identical; only the
+        # SEARCH's iteration-0 candidate set is widened, and the COST then
+        # decides. A vocabulary change (`--goal-kappa-levels`) moves the goal
+        # the plan is scored against and is NOT comparable across arms; this is.
+        # ⚠️ It is NOT weight-neutral in effect: with `W_KAPPA = 0` a wider
+        # curvature set can only add ways to be wrong. Declare the weight triple.
+        if seed_kappa_ladder:
+            ks = tuple(float(k) for k in seed_kappa_ladder)
+            if any((not math.isfinite(k)) or k <= 0.0 for k in ks):
+                raise ValueError(
+                    "seed_kappa_ladder entries must be finite and > 0 (1/m); "
+                    f"got {seed_kappa_ladder!r}. 0 is already the `cv` "
+                    "baseline and a negative magnitude is the sign, which "
+                    "this ladder adds for you")
+            if any(k > pc.kappa_max for k in ks):
+                raise ValueError(
+                    f"seed_kappa_ladder {ks!r} exceeds PlanConfig.kappa_max "
+                    f"{pc.kappa_max}; `_clip` would silently truncate it and "
+                    "the arm's record would name a magnitude it never searched")
+            base = (seed_pool[-1:].clone() if seed_pool is not None
+                    and seed_pool.numel() else
+                    torch.zeros(1, pc.horizon, cfg.a_dim,
+                                device=feats.device, dtype=torch.float32))
+            rungs = []
+            for k in ks:
+                for sgn in (1.0, -1.0):
+                    c = base.clone()
+                    c[..., 1] = sgn * k
+                    rungs.append(c)
+            extra = torch.cat(rungs, dim=0)
+            seed_pool = (extra if seed_pool is None
+                         else torch.cat([seed_pool, extra], dim=0))
+
         # ⭐ THE CENTRING REFERENCE for `cost_metric="ccos"` (D-REFAV1-COST-FORM).
         # The ZERO-ACTION (constant-velocity) terminal field of THIS window --
         # which is exactly the `cv` / `hold_v0` baseline's rollout
@@ -2483,7 +2586,7 @@ class RefAV1(nn.Module):
                 # point) and is not weight-neutral either -- see
                 # `COST_METRICS` / `W_KAPPA`.
                 z_ref = (_zero_action_ref(pred, z0)
-                         if cost_metric == "ccos" else None)
+                         if cost_metric in ("ccos", "ccosh") else None)
                 c = c + _goal_term(zt, g, cost_metric, z_ref)
             jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
             c = c + w_jerk * jerk.pow(2).mean(-1)                  # comfort
@@ -2544,6 +2647,8 @@ class RefAV1(nn.Module):
                                  else tuple(float(x) for x in goal_kappa_levels))
         res.cost_metric = cost_metric
         res.cost_weights = (w_jerk, w_kappa, w_vend)
+        res.seed_kappa_ladder = (tuple(float(k) for k in seed_kappa_ladder)
+                                 if seed_kappa_ladder else None)
         # ⭐ THE DECISION RULE TRAVELS TOO. `None` is plain argmax — the legacy
         # path — and anything else changed which token the goal (and therefore
         # the iCEM seed, and therefore whether a turn was reachable at all) was

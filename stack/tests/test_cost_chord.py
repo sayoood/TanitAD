@@ -447,8 +447,11 @@ def test_i_the_chord_is_not_weight_neutral():
 
 def test_j_the_metrics_tuple_is_exactly_the_supported_branches():
     # ("cos", "chord") until 2026-09-04; "ccos" (the centred cosine) joined in
-    # cee5d99 — see test_cost_ccos.py for its pins. A FOURTH entry must be
-    # registered here, with its weight statement, before it can be selected.
-    assert COST_METRICS == ("cos", "chord", "ccos")
+    # cee5d99 — see test_cost_ccos.py for its pins. "ccosh" (ccos + the HOLD
+    # BRANCH) joined 2026-09-05 under D-REFAV1-COST-GEOMETRY - see
+    # test_cost_ccosh.py for its pins and COST_METRICS for its weight
+    # statement. A FIFTH entry must be registered the same way before it can
+    # be selected.
+    assert COST_METRICS == ("cos", "chord", "ccos", "ccosh")
     for metric in COST_METRICS:
         assert _check_cost_metric(metric) == metric

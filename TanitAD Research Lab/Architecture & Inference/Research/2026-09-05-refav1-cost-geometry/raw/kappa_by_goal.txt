@@ -1,0 +1,55 @@
+# MEASURED 2026-09-05, zero GPU, from the BANKED decisions sidecars.
+# tool: raw/kappa_by_goal.py   vocabulary IMPORTED from tanitad.models.vocab_v7
+# (a hand-written LAT list had TURN_L/TURN_R at the wrong indices on the first pass)
+# GT split uses |kappa0| from ha0_ext_controls (the measured curvature at t0).
+# dir_correct is only meaningful on the GT-turn row: on a GT-straight window
+# the sign of a near-zero kappa0 carries no information.
+
+==== ccos_argmax_wk0   n_windows=40
+  by DECODED LATERAL GOAL TOKEN
+    token              n  med|k|max  frac k!=0   frac@cap   mean k^2
+    LANE_KEEP         18    0.00000     0.4444     0.0556   0.002908
+    TURN_L             9    0.08000     1.0000     0.1111   0.006698
+    TURN_R            13    0.08000     1.0000     0.0000   0.006400
+  by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
+    GT-straight       21  med|k|max 0.08000  frac k!=0 0.6667  frac@cap 0.0952  dir_correct 0.3810
+    GT-turn           19  med|k|max 0.08000  frac k!=0 0.8421  frac@cap 0.0000  dir_correct 0.5789
+  by DECODED LONGITUDINAL GOAL TOKEN
+    CRUISE                       4
+    BRAKE_TO                     4
+    ADAPT_SPEED_FOR_CURVE       29
+    ACCELERATE                   3
+  plan_source: cem 0.750  baseline 0.250
+
+==== cos_argmax_wk0   n_windows=40
+  by DECODED LATERAL GOAL TOKEN
+    token              n  med|k|max  frac k!=0   frac@cap   mean k^2
+    LANE_KEEP         18    0.15165     0.8333     0.2222   0.007682
+    TURN_L             9    0.14262     1.0000     0.0000   0.005789
+    TURN_R            13    0.13629     1.0000     0.0769   0.007506
+  by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
+    GT-straight       21  med|k|max 0.14262  frac k!=0 0.9048  frac@cap 0.1905  dir_correct 0.3810
+    GT-turn           19  med|k|max 0.14865  frac k!=0 0.9474  frac@cap 0.0526  dir_correct 0.5263
+  by DECODED LONGITUDINAL GOAL TOKEN
+    CRUISE                       4
+    BRAKE_TO                     4
+    ADAPT_SPEED_FOR_CURVE       29
+    ACCELERATE                   3
+  plan_source: cem 0.925  baseline 0.075
+
+==== ccos_seed1_wk0   n_windows=40
+  by DECODED LATERAL GOAL TOKEN
+    token              n  med|k|max  frac k!=0   frac@cap   mean k^2
+    LANE_KEEP         18    0.00000     0.4444     0.0000   0.002850
+    TURN_L             9    0.08000     1.0000     0.1111   0.006671
+    TURN_R            13    0.08000     1.0000     0.0000   0.006400
+  by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
+    GT-straight       21  med|k|max 0.08000  frac k!=0 0.6667  frac@cap 0.0476  dir_correct 0.3810
+    GT-turn           19  med|k|max 0.08000  frac k!=0 0.8421  frac@cap 0.0000  dir_correct 0.5789
+  by DECODED LONGITUDINAL GOAL TOKEN
+    CRUISE                       4
+    BRAKE_TO                     4
+    ADAPT_SPEED_FOR_CURVE       29
+    ACCELERATE                   3
+  plan_source: cem 0.750  baseline 0.250
+

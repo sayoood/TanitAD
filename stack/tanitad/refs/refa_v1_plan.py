@@ -95,6 +95,33 @@ class PlanConfig:
     shift_init: bool = True           # warm-start from the shifted last plan
     alpha: float = 0.1                # mean/var smoothing across iterations
 
+    # --- the KAMM (friction-circle) CURVATURE CAP (2026-09-05,
+    # D-REFAV1-COST-GEOMETRY / L4). ``None`` = OFF and BIT-IDENTICAL to every
+    # arm banked before that date.
+    # ⛔ WHY IT EXISTS, MEASURED: ``kappa_max`` is a CONSTANT, so the search
+    # is allowed the same curvature at 30 m/s as at 2 m/s. The tyre is not:
+    # ``a_lat = v^2 * kappa`` must stay inside ``mu * g``. Audited with the
+    # sibling stream's own scorer-derived instrument
+    # (``tanitad.refs.feasible_decode.assert_feasible``) over the banked p4
+    # dumps at ``v0 >= 2 m/s`` (n = 27; the GROUND-TRUTH control reads
+    # ``envelope_rate 0.0000`` and ``kamm_over_rate 0.0000``, so the block is
+    # admissible): refav1's plans are ENVELOPE-feasible by construction
+    # (``envelope_rate`` **0.0000**, ``max|kappa|`` exactly the 0.2 clip) yet
+    # **29.6 %** of them leave the ``mu = 0.7`` friction circle, rising to
+    # **42.1 %** at ``v0 >= 5 m/s``, with ``peak_g`` up to **3.262 g** against a
+    # ground truth of 0.373. Sustaining ``GOAL_KAPPA_TURN = 0.08`` at 20 m/s is
+    # ``0.08 * 400 = 32 m/s^2 = 3.26 g`` -- the observed maximum, recovered by an
+    # independent route.
+    # ⭐ The cap is ``mu * g / v^2`` evaluated on the CANDIDATE'S OWN speed
+    # (``v0`` integrated through its accel channel), so a plan that brakes into a
+    # curve is allowed the curvature its own braking earns. At 20 m/s and
+    # ``mu = 0.7`` that is **0.0172 1/m** -- 11.6x tighter than the constant clip
+    # and, unlike a quadratic ``W_KAPPA`` penalty, it is a CONSTRAINT with units.
+    kamm_mu: float | None = None
+    #: below this speed ``mu*g/v^2`` exceeds ``kappa_max`` anyway and the
+    #: division is ill-conditioned; the constant clip governs there.
+    kamm_v_floor: float = 2.0
+
     # --- the floor -------------------------------------------------------- #
     inject_baselines: bool = True
 
@@ -107,6 +134,11 @@ class PlanConfig:
             raise ValueError("horizon must be >= 1")
         if not (0.0 <= self.elite_memory < 1.0):
             raise ValueError("elite_memory must be in [0, 1)")
+        if self.kamm_mu is not None and not (self.kamm_mu > 0.0):
+            raise ValueError("kamm_mu must be > 0 (a friction coefficient) "
+                             "or None to disable the cap")
+        if self.kamm_v_floor <= 0.0:
+            raise ValueError("kamm_v_floor must be > 0 m/s")
 
 
 @dataclass
@@ -159,9 +191,28 @@ def colored_noise(shape: tuple[int, ...], beta: float, *,
     return (out / std).permute(0, 2, 1).contiguous()      # [n, H, A]
 
 
-def _clip(controls: Tensor, cfg: PlanConfig) -> Tensor:
+#: standard gravity, one spelling, matching `feasible_decode.G_MPS2`.
+G_MPS2 = 9.80665
+
+
+def _clip(controls: Tensor, cfg: PlanConfig, v0: float | None = None) -> Tensor:
+    """Clamp a candidate into the actuator box, and -- when ``cfg.kamm_mu`` is
+    set -- into the FRICTION CIRCLE as well.
+
+    The Kamm cap is ``mu * g / v^2`` on the candidate's OWN speed profile
+    (``v0`` integrated through its accel channel), so it is a per-step limit and
+    a plan that slows into a curve earns the curvature it paid for. ``v0=None``
+    or ``kamm_mu=None`` leaves this bit-identical to the pre-2026-09-05 clip.
+    """
     a = controls[..., 0].clamp(-cfg.a_max, cfg.a_max)
     k = controls[..., 1].clamp(-cfg.kappa_max, cfg.kappa_max)
+    if cfg.kamm_mu is not None and v0 is not None:
+        # the speed each step OPENS at: v0 for step 0, then v0 + cumsum(a)*dt
+        v = float(v0) + torch.cumsum(a, dim=-1) * cfg.dt - a * cfg.dt
+        v = v.clamp_min(float(cfg.kamm_v_floor))
+        cap = (float(cfg.kamm_mu) * G_MPS2) / v.pow(2)
+        cap = cap.clamp(max=float(cfg.kappa_max))
+        k = torch.maximum(torch.minimum(k, cap), -cap)
     return torch.stack([a, k], dim=-1)
 
 
@@ -178,7 +229,7 @@ def _baseline_controls(cfg: PlanConfig, v0: float, device,
     z = torch.zeros(cfg.horizon, 2, device=device)
     out = {"cv": z, "hold_v0": z.clone()}
     if proposal is not None:
-        out["proposal"] = _clip(proposal.to(device), cfg)
+        out["proposal"] = _clip(proposal.to(device), cfg, v0)
     # A gentle-decel candidate: the single most common correct action in dense
     # traffic, and the one a white-noise CEM population reliably misses.
     dec = z.clone()
@@ -227,7 +278,7 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
     for it in range(cfg.n_iters):
         n = max(cfg.min_samples, int(cfg.n_samples / (cfg.decay ** it)))
         noise = colored_noise((n, H, 2), cfg.beta, device=device, generator=gen)
-        samples = _clip(mean + noise * var.sqrt(), cfg)
+        samples = _clip(mean + noise * var.sqrt(), cfg, v0)
 
         # Elite memory: carry a fraction of the previous tick's elites in, so a
         # good plan found under one observation is not thrown away at the next.
@@ -238,7 +289,8 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
         # modes) that must ALL compete in iteration 0 — deliberately separate
         # from elite memory, whose [:keep] truncation would silently drop them.
         if it == 0 and seed_pool is not None and seed_pool.numel():
-            samples = torch.cat([samples, _clip(seed_pool.to(device), cfg)], 0)
+            samples = torch.cat(
+                [samples, _clip(seed_pool.to(device), cfg, v0)], 0)
         # The baselines compete INSIDE the loop too, so they can seed the mean.
         if base_stack.numel():
             samples = torch.cat([samples, base_stack], 0)

@@ -152,7 +152,10 @@ def test_a2_chord_is_still_bit_identical(shape):
 
 
 def test_b_the_tuple_and_the_validator_carry_the_third_branch():
-    assert COST_METRICS == ("cos", "chord", "ccos")
+    # "ccosh" (ccos + the hold branch, D-REFAV1-COST-GEOMETRY 2026-09-05) is
+    # the fourth entry; test_cost_ccosh.py pins that it leaves this branch
+    # bit-identical.
+    assert COST_METRICS == ("cos", "chord", "ccos", "ccosh")
     for metric in COST_METRICS:
         assert _check_cost_metric(metric) == metric
     with pytest.raises(ValueError, match="cost_metric must be one of"):

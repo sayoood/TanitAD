@@ -553,6 +553,17 @@ def _plan_cfg(cfg, a):
         v = getattr(a, f"plan_{name}", None)
         if v is not None:
             kw[name] = int(v)
+    mu = getattr(a, "kamm_mu", None)
+    if mu is not None:
+        import dataclasses as _dc
+        if "kamm_mu" not in {f.name for f in _dc.fields(PlanConfig)}:
+            raise SystemExit(
+                "[refav1_arm] --kamm-mu needs a PlanConfig with kamm_mu; "
+                "this stack predates the friction-circle cap")
+        kw["kamm_mu"] = float(mu)
+        vf = getattr(a, "kamm_v_floor", None)
+        if vf is not None:
+            kw["kamm_v_floor"] = float(vf)
     pc = PlanConfig(**kw)
     pc.sanity()
     return pc
@@ -792,6 +803,31 @@ def run_dump(a) -> dict:
     os.makedirs(a.dump_dir, exist_ok=True)
     os.makedirs(os.path.join(a.dump_dir, "decisions"), exist_ok=True)
 
+    # --- L3: the SUSTAINED-CURVATURE SEED LADDER (D-REFAV1-COST-GEOMETRY).
+    # NOT a vocabulary change: `canonical_controls` and the goal field are
+    # untouched, only the search's iteration-0 candidate set is widened.
+    skl_raw = getattr(a, "seed_kappa_ladder", None)
+    seed_kappa_ladder = None
+    if skl_raw:
+        if "seed_kappa_ladder" not in _inspect2.signature(_R.RefAV1.plan).parameters:
+            raise SystemExit(
+                "[refav1_arm] --seed-kappa-ladder needs a refa_v1.plan() that "
+                "accepts seed_kappa_ladder; this stack predates it")
+        seed_kappa_ladder = tuple(float(x) for x in str(skl_raw).split(","))
+        if any(not (0.0 < k <= float(_R.GOAL_KAPPA_MAX)) for k in seed_kappa_ladder):
+            raise SystemExit(
+                f"[refav1_arm] --seed-kappa-ladder {seed_kappa_ladder} must be "
+                f"finite, > 0 and <= kappa_max {_R.GOAL_KAPPA_MAX}")
+        _p(f"[seed-pool] seed_kappa_ladder={seed_kappa_ladder} 1/m -> "
+           f"{2 * len(seed_kappa_ladder)} EXTRA iteration-0 candidates "
+           f"(both signs). Radii "
+           + ", ".join(f"{1.0 / k:.0f} m" for k in seed_kappa_ladder))
+    else:
+        _p("[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool "
+           "(proposal modes + the decoded goal's canonical controls), "
+           "bit-identical to every arm banked before 2026-09-05")
+
+
     frozen = cfg.target_space == "frozen"
     ld._order = [0]
     ld._cursor = 0
@@ -928,6 +964,7 @@ def run_dump(a) -> dict:
                                      cost_weights=cost_weights,
                                      lat_logit_bias=lat_logit_bias,
                                      goal_kappa_turn=goal_kappa_turn,
+                                     seed_kappa_ladder=seed_kappa_ladder,
                                      goal_kappa_levels=gk_levels,
                                      goal_kappa_hint=gkh,
                                      goal_keeps_seed=gks)
@@ -1106,6 +1143,18 @@ def run_dump(a) -> dict:
                                else [float(x) for x in lat_logit_bias]),
             "source": ("CLI override (--lat-logit-bias)" if lat_logit_bias
                        is not None else "plain argmax (legacy path)"),
+            "kamm_mu": getattr(a, "kamm_mu", None),
+            "kamm_note": (
+                "speed-dependent curvature cap |kappa| <= mu*g/v^2 inside "
+                "_clip; None = the shipped CONSTANT kappa_max"),
+            "seed_kappa_ladder": (list(seed_kappa_ladder)
+                                  if seed_kappa_ladder else None),
+            "seed_kappa_ladder_note": (
+                "extra SUSTAINED-curvature candidates injected into iCEM's "
+                "iteration-0 pool, both signs, on the decoded goal seed's own "
+                "accel profile. NOT a vocabulary change: canonical_controls "
+                "and the goal field are untouched, so this IS comparable "
+                "across arms that share a vocabulary"),
             "goal_kappa_turn": goal_kappa_turn,
             "goal_kappa_turn_source": ("CLI override (--goal-kappa-turn)"
                                        if goal_kappa_turn is not None
@@ -2274,12 +2323,18 @@ def main(argv=None):
     ap.add_argument("--plan-n-iters", type=int, default=None)
     ap.add_argument("--plan-n-elites", type=int, default=None)
     ap.add_argument("--plan-seed", type=int, default=0)
-    ap.add_argument("--cost-metric", choices=("cos", "chord", "ccos"), default="cos",
+    ap.add_argument("--cost-metric", choices=("cos", "chord", "ccos", "ccosh"),
+                    default="cos",
                     help="the goal term's form (refa_v1.COST_METRICS). 'cos' = the "
                          "shipped default every banked number was produced under; "
                          "'chord' = monotone-equivalent, cannot re-rank; 'ccos' = "
                          "centred on the window's own zero-action terminal field, "
-                         "CAN re-rank. ⛔ neither non-default form is weight-neutral: "
+                         "CAN re-rank; 'ccosh' = ccos WITH THE HOLD BRANCH -- the "
+                         "pinned chord (distance) form on windows whose goal IS the "
+                         "hold field, where the centred direction is float32 noise "
+                         "and ccos charges the do-nothing candidate 1.0 EXACTLY for "
+                         "obeying the goal (MEASURED 40/40 windows; median "
+                         "basecost_cv = 1.0, raw/cost_scale.txt). ⛔ neither non-default form is weight-neutral: "
                          "declare --cost-weights in the same arm or the record "
                          "carries an implicit re-weighting")
     ap.add_argument("--cost-weights", default=None,
@@ -2304,6 +2359,37 @@ def main(argv=None):
                          "⛔ Needs --cost-metric ccos to reach the wheels: "
                          "under the shipped cos a decoded turn is refused on "
                          "38/38 windows (D-REFAV1-DRIVE-GATE2)")
+    ap.add_argument("--kamm-mu", type=float, default=None,
+                    help="friction coefficient for a SPEED-DEPENDENT curvature "
+                         "cap |kappa| <= mu*g/v^2 inside PlanConfig._clip, on the "
+                         "candidate's OWN speed profile. Omit for the shipped "
+                         "constant kappa_max = 0.2 (bit-identical to every "
+                         "pre-2026-09-05 arm). MEASURED reason "
+                         "(raw/feas_audit.txt, v0 >= 2 m/s, n = 27, GROUND-TRUTH "
+                         "control reads envelope 0.0000 / kamm_over 0.0000): "
+                         "refav1's plans are ENVELOPE-feasible by construction "
+                         "(envelope_rate 0.0000, max|kappa| exactly the clip) yet "
+                         "29.6 % leave the mu = 0.7 friction circle, 42.1 % at "
+                         "v0 >= 5 m/s, peak_g up to 3.262 against a ground truth "
+                         "of 0.373. mu = 0.7 is the programme's own MU_KAMM.")
+    ap.add_argument("--kamm-v-floor", type=float, default=None,
+                    help="speed (m/s) below which the constant kappa_max governs "
+                         "(default 2.0); mu*g/v^2 exceeds the clip there anyway "
+                         "and the division is ill-conditioned")
+    ap.add_argument("--seed-kappa-ladder", default=None,
+                    help="comma-separated SUSTAINED curvature magnitudes "
+                         "(1/m) to add to iCEM's iteration-0 candidate pool, "
+                         "both signs, on the decoded goal seed's own accel "
+                         "profile. MEASURED reason (raw/kappa_quantisation.txt, "
+                         "n = 40 windows, ckpt 21109, ccos): the winning plan's "
+                         "curvature series is EXACTLY CONSTANT on 31/40 windows "
+                         "and reads exactly 0.000000 (x10) or 0.080000 (x21) - "
+                         "i.e. the decoded token's canonical profile verbatim - "
+                         "because colored_noise is zero-mean along time and no "
+                         "baseline carries curvature, so the pool offers only "
+                         "{0, +-0.08} while the corpus curves at |kappa| "
+                         "0.001-0.01. Omit for the SHIPPED pool (bit-identical "
+                         "to every pre-2026-09-05 arm). NOT a vocabulary change.")
     ap.add_argument("--lat-logit-bias", default=None,
                     help="comma-separated additive bias on the LATERAL goal "
                          "logits, one value per lat token (8 for v7.0). This "

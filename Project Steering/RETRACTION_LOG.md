@@ -12663,3 +12663,94 @@ artifact. A 1 % margin removes it.
 consumer uses; `test_a_path_that_never_moves_keeps_its_exact_zeros` pins that the epsilon does not
 fabricate motion; `test_roundtrip_on_an_already_feasible_path_is_exact` is the control that caught
 the absolute-threshold regression.
+
+---
+
+## 2026-09-05 — refav1 COST GEOMETRY: two corrections in one turn, one of them mine, both in the same family
+
+*Architecture & Inference FlyWheel. Package:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-cost-geometry/`.
+Both were caught and corrected in the SAME turn, before either was quoted downstream.*
+
+### 1. "BOTH CLASSES SATURATE `kappa_max` = 0.2" — a MAXIMUM-OVER-STRATUM read as a TYPICAL VALUE
+
+**What travelled.** `D-REFAV1-P4-COS-THRASH` reports, per stratum, `|k| max 0.2000`
+for GT-turn **and** GT-straight, and summarises it as *"Both classes SATURATE
+`kappa_max = 0.2`"*. That summary reached this agent's own brief as
+*"curvature non-zero on 90.9 % … both saturating `kappa_max` = 0.2"*.
+
+**What is true.** The claim's OWN table also carries `|k| p50 0.1190`. MEASURED
+independently on the same dumps (n = 40, no near-stationary exclusion — a different
+denominator from THRASH's 31): the median per-window `max|kappa|` is **0.08000**
+under `ccos` and **0.144437** under `cos`; the fraction of windows TOUCHING the cap
+is **5.0 %** / **12.5 %** (0–19 % by stratum). **0.08000 is exactly
+`GOAL_KAPPA_TURN`.**
+
+⛔ **NOTHING IN `D-REFAV1-P4-COS-THRASH` IS RETRACTED.** Its numbers reproduce; its
+`max` is a `max`. What is retracted is the READING — and the reading is what set
+the lever.
+
+**ROOT-CAUSE CLASS: an ORDER STATISTIC quoted without its order.** A per-stratum
+maximum and a per-stratum median are different objects; "saturates" is a claim about
+the typical case and was supported only by the extreme one. Same family as the
+`df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` traps — **a true number
+quoted outside its scope** — with the scope being *which statistic*.
+
+⭐ **WHY IT MATTERED, not just that it was wrong.** "Runs away to the clip" and
+"faithfully tracks a goal token whose canonical curvature is R 12.5 m" prescribe
+OPPOSITE fixes: the first says clamp harder, the second says the candidate set and
+the goal magnitude are the constraint. The corrected reading is what led to the
+seed-pool quantisation measurement (**31/40 plans are the canonical profile
+verbatim**) and then to the friction-circle audit.
+
+→ **Pinned:** `raw/kappa_by_goal.py` prints the median, the non-zero fraction AND
+the cap-touch fraction side by side, and imports the vocabulary from
+`tanitad.models.vocab_v7` — a hand-written label list had `TURN_L`/`TURN_R` at the
+wrong indices on the first pass and would have mislabelled the table that carries
+the correction.
+
+### 2. MY OWN: "the sibling feasible-decode work does not exist" — TWO probes, ONE object
+
+**What I wrote.** `D-REFAV1-CG-L4-ABSENT`: two probes (a glob over
+`TanitAD Research Lab/*/Research/*feasible*`, and a direct listing of
+`Deployment & Optimization/Research/` which read non-empty as its own control) ⇒
+"the package does not exist yet, L4 is blocked on that stream".
+
+**What is true.** `stack/tanitad/refs/feasible_decode.py` (**18,135 B**;
+`project_feasible`, `recover_controls`, `assert_feasible`, `max_heading_step`) and
+`stack/tests/test_feasible_decode.py` are **in the repo**. A THIRD probe of a
+different mechanism — `RETRACTION_LOG.md`, opened for an unrelated reason — named
+the test file.
+
+⚠️ **The clone made it worse and is a real work item.** The module was **ABSENT
+from `C:/Users/Admin/tanitad-wt`**, the off-Drive clone the arms run from, so a
+clone-side grep genuinely found nothing; and `stack/tanitad/refs/refc.py` there is
+still stale (blob `82127563…` vs the repo's `0e6103e5…`), which fails
+`tests/test_feasible_decode.py` with
+`DecoderConfig.__init__() got an unexpected keyword argument 'feasible_decode'`.
+**That is CLONE staleness, not a repo failure** — the class
+`pod_currency_audit.py` exists for, on a dev-box clone nobody audits.
+
+**ROOT-CAUSE CLASS: "absence found at ONE location is not absence" — aggravated,
+because I ran TWO probes and thought that satisfied the rule.** Both probes asked
+about the same OBJECT (a research-package directory) rather than about the WORK.
+That is the *"multiple samples through one broken channel are one sample"* failure
+in a new costume: the channel here was not a broken mount but a **wrong noun**.
+
+⇒ **The rule needs the sharper form: a second probe must change the OBJECT, not
+only the path.** For "does X exist", probe the code, the tests, the register and the
+retraction log — not four spellings of one directory.
+
+⭐ **Consequence:** finding the instrument produced this package's headline —
+refav1's plans are actuator-box-feasible by construction (`envelope_rate` **0.0000**,
+`max|kappa|` exactly the clip) and yet leave the `mu = 0.7` friction circle on
+**29.6 %** of windows at `v0 >= 2 m/s` and **42.1 %** at `v0 >= 5 m/s`, `peak_g` up
+to **3.262** against a ground truth of **0.373**. The absence claim, had it stood,
+would have closed the lever that mattered most.
+
+⚠️ **And that audit's own first pass was inadmissible and said so:** at `vmin = 0`
+the GROUND-TRUTH control read `envelope_rate 0.1000`, `max|kappa| 31.4015` (the
+`kappa = a_lat/v^2` singularity on near-stationary windows). The block was reported
+as INADMISSIBLE and re-run at `v0 >= 2 m/s`, where the control reads exactly
+`0.0000 / 0.0000`. **A control that must read a known value is only useful if a
+failure actually voids the block.**
