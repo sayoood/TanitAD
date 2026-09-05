@@ -144,3 +144,70 @@ And `progress` is also the term that closes on the lead: ρ(progress, `ttc_below
 Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answering a narrower question than the claim hung on it** — with a new source of nuisance movement (the optimizer, not the sampler).
 
 ---
+
+## 4. Provenance — the exact code every arm ran, and one mid-session drift recorded rather than absorbed
+
+| item | value |
+|---|---|
+| base checkpoint | `ckpt_step40284_frozen.pt`, md5 `b1ed7075ff730d0993d2eaa3c86f6b56`, step asserted **40284** |
+| tree that RAN | `C:\Users\Admin\refcv4b_repo` (the off-Drive clone; G: cannot run the stack) |
+| `stack/tanitad/rl/rewards.py` in force | blob **`d9532aebe0b238d0d5f778b7560fbeaf3af78720`**, md5 `ae0ae5f1556ba5f597055206b7ae0790` |
+| `posttrain.py` / `config.py` / `rl_refcv3_min.py` / `fan_safety.py` | **bit-identical to repo HEAD** (blob comparison, all 40-char) |
+| fit corpus | 120 train-split B1 v7.2 clips, `fit120_lead_block.npz`, **NON-PARITY** (as the base is) |
+| readout | the same fixed **120 EVAL windows** (`random.Random(1234)`), 79 episodes, 36 lead windows, for every arm |
+
+⚠️ **A sibling stream changed `_collision` while this panel was running, and the panel was NOT re-synced.** Commit `9765634` (`…/2026-09-05-swept-collision/`) replaced the point-sampled contact test with a **swept-segment** one — *"it tested the waypoints, not the path between them"*. Every arm and both probes here ran the **pre-change, point-sampled** `_collision` (`d9532aeb…`), and the clone was deliberately left frozen for the rest of the panel so `s0` and `s1` remain comparable. ⇒ **What this scopes:** the `collision` reward component and the `contact` flag only. `envelope` / `kamm_over` / `off_reach` / `peak_g` — where every result below lives — do not call `_collision` at all. **What it predicts:** the swept test detects strictly more contacts, so the veto would fire *more* often under it; re-running this panel on the swept version should **increase** the veto's effect, not reverse it. Registered as the first follow-up in §9 rather than asserted here.
+
+---
+
+## 5. P3 — the veto-only arms at 200 steps, both seeds, against BOTH floors
+
+`veto200`: reward weights **all 0.0**, `veto_enabled=True`, `w_anchor` 1.0, lr 1e-5, 200 steps, `two_scalar` noise, G 4, batch 2. Seed 0 in **214.7 s**, seed 1 in **150.8 s**. `veto_rate_mean` **0.0897** (s0) / **0.0980** (s1) — the constraint channel really fired, and s0 reproduces the banked `ctrl_const` 0.0897 to four decimals, which is the point: the accident is now a configuration.
+
+**Guards.** G1 `ctrl_null` `veto_rate_mean` **0.0000** exactly ✅ · G2 every arm's BEFORE readout **bitwise identical**, max abs diff **0.000e+00** over 120 windows × 65 metrics ✅ · G3 both seeds present ✅.
+
+| metric | base | Δ s0 | Δ s1 | seed floor | `ctrl_null` drift | veto − null (s0) | verdict |
+|---|---|---|---|---|---|---|---|
+| **`fan_peak_g_mean`** (g) | 4.18090 | **−0.09285** | **−0.11577** | 0.02292 | **+0.13431** | **−0.22716** ✱ | ⭐ **IMPROVED** |
+| `top32_infeasible` | 0.63385 | −0.00640 | −0.00105 | 0.00534 | +0.00916 | −0.01556 ✱ | null |
+| `top8_kamm_over` | 0.14271 | −0.01055 | −0.00264 | 0.00791 | +0.00158 | −0.01213 ✱ | null |
+| `top32_envelope` | 0.63073 | −0.00620 | −0.00119 | 0.00501 | +0.00916 | −0.01536 ✱ | null |
+| `top32_kamm_over` | 0.49141 | −0.00409 | −0.00283 | 0.00125 | +0.01088 | −0.01497 ✱ | null |
+| `sel_infeasible` | 0.13333 | −0.00633 | −0.00633 | 0.00000 | −0.03165 | +0.02532 | null |
+| **`sel_peak_g`** (g) | 0.19465 | **+0.01547** | **+0.00802** | 0.00745 | −0.00071 | +0.01619 ✱ | ⛔ **WORSENED** |
+| `mass_rank_contact` | 3.47e-05 | 0 | 0 | 0 | 0 | 0 | **UNDETECTABLE-DOWNWARD** |
+
+*(✱ = the paired veto-minus-`ctrl_null` contrast excludes 0. Full 57-metric table in `raw/veto_verdict_veto200.json`.)*
+
+### 5.1 ⭐ What the replicate bought, stated plainly
+
+**`top32_infeasible` is the metric the previous package proposed shipping on.** Seed 0 reads **−0.0064**; seed 1 reads **−0.0011**; the seed-replicate floor is **0.0053**. The effect is **not reproducible across training runs**, and three more metrics (`top8_kamm_over`, `top32_envelope`, `top8_infeasible`) fail the same way. On one seed every one of them would have been reported as a separated improvement — which is `H-ESTIM-SEED-1` doing exactly the job it was registered for, on a rig where a *zero-information* arm separates 35 of 57 metrics.
+
+### 5.2 What survives, and what it costs
+
+**`fan_peak_g_mean` clears all three hurdles**: separated at both seeds, same sign, magnitude 4–5× the seed floor, and the zero-information arm drifts it **the other way** (+0.134) so the drift cannot be the explanation. The direct veto-vs-`ctrl_null` contrast is **−0.227 g**, separated. In level terms the fan's mean peak friction load falls **4.1809 → 4.088 (s0) / 4.065 (s1) g**, a **2.2–2.8 %** reduction, from a constraint channel carrying **no reward at all**.
+
+⛔ **And the cost is real and is reported, not buried.** `sel_peak_g` **WORSENED** and clears the same floors: **+0.0155 / +0.0080 g** against a seed floor of 0.0075, from a base of 0.1947 g — **+4 to +8 % on the path the car actually drives**, while the fan as a whole got blander. Selector agreement with base is **1.000 (s0) / 0.992 (s1)**: the fan moved under a selector that did not change its pick, so the selected candidate itself got slightly more aggressive. ⇒ **At 200 steps the veto buys fan-level feasibility and gives back a little selected-path feasibility.** A safety claim that quoted only `fan_peak_g_mean` would be true and misleading.
+
+⚠️ **Stated limit:** `ctrl_null` has **one** seed, so the zero-information floor is itself unreplicated. It is used as a *direction* and a *magnitude* check, never as an estimate with its own interval.
+
+---
+
+## 9. Escalations, follow-ups and stated limits
+
+**ESCALATIONS — raised here, in the report's own body, not written into a README for somebody to find.**
+
+1. ⭐ **`stack/tanitad/rl/rewards.py` moved under this panel and the panel was deliberately NOT re-synced** (§4). Commit `9765634` replaced the point-sampled `_collision` with a swept-segment test. **Owner: Master Mind / Training FlyWheel** — the veto arms should be re-run on the swept version, where the constraint channel will fire *more*; the prediction is that the veto's effect grows. This is the cheapest next experiment in the line (~5 min per 200-step arm).
+2. ⛔ **`readout()`'s `R1`/`R2` were a batch × batch outer product** (RETRACTION #26). Fixed here, but **any other consumer of `reward_ctx()` must be checked for its candidate rank** — the helper is shaped for `[B, N, G, S, 2]` and returns a plausible number for anything else. **Owner: whoever owns `rl_refcv3_min.py` next.**
+3. ⛔⛔ **AdamW converts a numerically-zero gradient into a full-size step** (RETRACTION #27). This is not specific to the RL line: **any experiment on this programme that uses a trust-region / regulariser loss and expects "no signal ⇒ no movement" is exposed.** `ctrl0` (lr = 0) is the only construction that cannot move. **Owner: Master Mind** — it belongs in `CLAUDE.md`'s estimator family beside `H-ESTIM-SEED-1`.
+4. **`strat.nav_compliance` still crashes** (`TypeError: _path_exists: path should be string`), taking out 3 of 3 STRATEGIC nav-compliance criteria rows on every refcv3 arm. Inherited, unfixed, re-confirmed here. **Owner: Benchmarks/Eval.**
+
+**LIMITS — none silent.**
+
+1. **NON-PARITY** fit corpus (120 train-split B1 v7.2 clips), as the base itself is.
+2. The PRIMARY endpoint is a **T0 readout on 120 windows** — the fan the model emits, never a driving claim. T1 is self-action **OPEN loop** (PI ruling 2026-09-02); no closed-loop claim is made anywhere in this package.
+3. `kamm_over` / `peak_g` are a **LOWER bound**: the emitted fan is free waypoints, so `flyability.friction_load` — the exact, control-rolled instrument — cannot be applied, and the finite difference under-reports by 1.21–1.85×. **Rank correlations (§1) are invariant to a monotone under-report; levels are not.**
+4. **`ctrl_null` has ONE seed**, so the zero-information floor is itself unreplicated. It is used as a direction and a magnitude check, never as an estimate with its own interval.
+5. Two seeds **bound** the rig's training noise; they do not make it small. `fan_peak_g_mean`'s seed-replicate floor is 0.0229 g against a lever of 0.093–0.116 g — a factor of 4–5, not a factor of 100.
+6. The P1 rank correlations for the `collision` component and the `contact` flag are computed under the **point-sampled** `_collision` (§4). The `envelope` / `kamm_over` / `off_reach` / `peak_g` results do not call it.
+7. `mass_rank_contact` is **UNDETECTABLE-DOWNWARD** on this rig: its base value (3.47e-05) sits below its own separation floor, so an improvement could not be reported even if it occurred. Stated rather than reported as a null.
