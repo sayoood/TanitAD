@@ -836,3 +836,51 @@ the floor win entirely — with a **tau = 2.0 control reproducing D2 to four dec
 is a measurement rather than a broken rig. ⭐ **It put the refutation in the COMMIT SUBJECT LINE
 (`e432341`), because a `git log` subject is what another agent actually reads.** That is the
 escalate-integration rule executed properly — not a note buried in a document nobody re-opens.
+
+## M65. ⭐ THE PRICING INSTRUMENT SAID *YES* — and the `lonshift_s1` ruling is MOOT, closed by evidence rather than abandoned
+
+### 1. ⭐⭐ An instrument that only ever says "no" is not discriminating
+
+The same 0-GPU cost-pricing that **declined D4** (~4.6 % of the gap, below the seed floor) and
+**refuted D5** (worse on every headline column, with a tau = 2.0 control reproducing D2 to four
+decimals) has now **approved** an arm. Priced from the banked plans exactly as `_cost_chunk` computes
+them:
+
+| arm | jerk term | **seam delta** | kappa term | goal term | seam / (goal+kappa) |
+|---|---|---|---|---|---|
+| `wk15` | 3.552e-02 | 7.403e-02 | 2.314e-02 | 2.646e-01 | **0.494** |
+| `lonshift` | 2.606e-02 | 2.786e-02 | 4.067e-03 | 6.975e-03 | **4.05** |
+
+⇒ The seam is **half** the size of everything it trades against on `wk15` and **4x larger** on
+`lonshift` — **first-order, so the pair earns its GPU.**
+
+⭐ **The check that made this non-trivial:** the obvious fix was a pair at the shipped
+`W_JERK = 0.02`, but `W_KAPPA` in the same triple is **756x larger**, so the pair could have been
+*technically live and practically inert* — **the same inert-arm trap one notch weaker, costing two more
+GPU hours to discover.** Pricing it first is what distinguished the two cases.
+
+⭐ **And the outcome was committed BEFORE the numbers:** at ratio 4.05 the seam could **dominate** D2's
+objective in `loncomb3` and undo the vocabulary win. ⛔ **If `loncomb3` is worse than `lonshift`, that
+IS the finding — not a reason to retune the weight.**
+
+### 2. The `lonshift_s1` ruling is MOOT, and that is recorded rather than dropped
+
+`M54` §4 ruled `lonshift_s1` takes the next free slot; `M62` reversed it because the competing `ccos`
+arms are the head-baseline the cost attribution needs. **Both are now overtaken by evidence:** the
+stream itself **moved `lonshift_s1` to LAST**, because Thor measured `a_shift`'s own seed floor and it
+**replicates across two GPUs to 0.002 m/s.** ⇒ the replicate it was competing for is **no longer the
+binding uncertainty**; it is kept only because `M61` established floors are rig-dependent.
+
+⇒ ⭐ **Neither ruling binds anything now, and the queue was re-ranked on evidence that arrived after
+both** — `lonvocab` dropped (Thor answered D1-vs-D2), `seambase`/`seamon` promoted to first as the only
+queued experiment testing a lever nobody has tested. ⛔ **Recorded because `M62`'s own rule requires
+it:** a ruling silently abandoned leaves the register asserting a priority nothing is executing, and a
+later reader cannot tell a decision from a drift. ⭐ **This one was not abandoned — it was retired by
+measurement, which is the outcome a ruling should have.**
+
+### 3. The transferable point
+
+⛔ **A pricing rule that has only ever refused arms is indistinguishable from a rule that refuses
+everything.** Its first APPROVAL is what makes its earlier refusals evidence rather than caution — and
+it arrived from the same instrument, on the same rig, with the same arithmetic. **Report an
+instrument's first pass as carefully as its refusals.**
