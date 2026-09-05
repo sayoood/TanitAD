@@ -13888,3 +13888,15 @@ un-poison — and re-verified with the marker+control check. Fixed in `d3a5251`.
 **Cost:** ~15 minutes, and it was caught in the same turn. Had the marker check not been
 run, three claims — including `D-REFAV1-KAPPA-UNDERTURN`, the package's headline — would
 have sat in a commit whose subject announced them while the register did not contain them.
+
+**ARCH-C addendum (same night, the repair itself):** the fresh-inode un-poison was applied as
+`rm` + `cp`, and the `cp` then failed **`Permission denied` / `Zugriff verweigert` on that ONE path**
+— including `Test-Path` — leaving the file **deleted**. ⚠️ **A same-breath control settled it in one
+command**: reading a sibling file in the same directory, writing a probe file there, and writing the
+same bytes under a **different name** ALL succeeded. So the **mount was healthy and only the NAME
+was wedged** by the Drive client holding the just-unlinked path. **`mv` onto the wedged name
+succeeded on the first attempt where `cp` had failed six times.**
+⇒ ⭐ **The fresh-inode recipe is WRITE-TO-A-TEMP-NAME-THEN-`mv`, never `rm`-then-`cp`.** The `rm`
+buys nothing (the `mv` replaces the inode anyway) and it opens a window in which the file does not
+exist and cannot be recreated. Same discrimination lesson as ARCH-C itself: a failure on one path is
+not a mount outage until a control on a *different* path in the *same breath* also fails.

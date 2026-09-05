@@ -201,3 +201,89 @@ A3 arms, ETA ~02:45 Berlin. Dev box 2/2 (6737/8188 MiB): the sibling's `ta_wk15_
 `raw/gap_queue3.py` **defers**: it launches only when a slot is free **and** `ta_queue3.py`'s
 launcher is gone, so the two queues can never take the same freed slot and place a third arm on a
 card with ~1.4 GB free. A failed probe is never read as "no arms".
+
+---
+
+## §E — ⭐⭐⭐ THE ATTRIBUTION, AND IT CORRECTS A3's OWN PREMISE (0 GPU, added 02:20)
+
+`raw/attribute.txt` — **paired, window by window, on the shared grid**, never a difference of two
+pooled means. **Grid control PASSED on all five pairs** (`ha`/`ha0`/`ha0_ext`/`ol`/`g` bit-identical,
+and the decoded goal identical on all 40 windows, so the split is well defined).
+
+### E1 — Where every lever's ADE gain is actually earned
+
+| lever | LANE_KEEP (n=18) delta | **share** | TURN_L (n=9) delta | TURN_R (n=13) delta | total |
+|---|---|---|---|---|---|
+| `ccos -> wk15` (penalty 15.11) | **−0.7765** | **80.6 %** | −0.2614 | −0.0785 | −0.4338 |
+| `ccos -> kamm07` (constraint) | −0.6632 | **89.2 %** | −0.1600 | **0.0000** | −0.3344 |
+| `ccos -> wk151` (penalty 151) | −0.7765 | 83.4 % | −0.3084 | +0.0001 | −0.4188 |
+| `wk15 -> lonshift` (longitudinal) | −0.1843 | 77.8 % | −0.0380 | −0.0465 | −0.1066 |
+
+⭐⭐ **EVERY lever earns 78–89 % of its ADE on windows whose goal already said `LANE_KEEP`.** That is
+the largest measured term in the whole cost geometry, and it is where spend belongs. ⭐ It also gives
+the constraint-vs-penalty result a second, independent route: `kamm07` earns **89.2 %** of its gain
+on LANE_KEEP and **exactly 0.0000** on TURN_R — it takes the free part and leaves turning alone.
+
+### E2 ⛔⛔ AND THE FINDING THAT CORRECTS A3: ON TURN WINDOWS, UNDER-TURNING **IMPROVES** ADE
+
+| arm on TURN_L windows (n=9) | ADE |
+|---|---|
+| `ccos_argmax` — turns at the commanded 0.08000 | **1.5043** |
+| `wk15` — under-turns to 0.02066 | **1.2429** |
+| `wk151` — under-turns to 0.00840 | **1.1959** |
+| ⛔ **`ha0` — CONSTANT VELOCITY, PERFECTLY STRAIGHT** | **1.4630** |
+
+**More penalty ⇒ less turning ⇒ better ADE, monotonically. And the STRAIGHT-LINE floor (1.4630)
+BEATS the faithfully-turning planner (1.5043).**
+⇒ ⛔ **THE GOAL'S COMMANDED CURVATURE OF 0.08 (R = 12.5 m) IS WORSE THAN DRIVING STRAIGHT ON THIS
+CORPUS.** The corpus curves at R 100–1000 m, so the command is ~6.9x too tight and **executing it
+faithfully drives you off the road.**
+⭐ This **independently reproduces `D-REFAV1-GOAL-MARGIN`** by a completely different route: that
+finding measured the *vocabulary's* expressivity; this one measures *the ADE the vocabulary buys*,
+from banked trajectories, with a straight-line control that must — and does — read a known value.
+
+### E3 — What that does to A3's committed prediction, stated plainly
+
+⛔ **A3's §3 prediction is now bounded, and part of it is refuted in advance by arithmetic.**
+A3 keeps the penalty where the goal says LANE_KEEP and removes it where the goal says TURN, so it can
+retain at most the LANE_KEEP contribution (**−0.3494 m**) and gives back the TURN contribution
+(**+0.0843 m**): **predicted ADE ≈ 0.9777**, against `wk15`'s 0.8934 and `kamm07`'s 0.9927.
+⇒ **A3 will recover turn recall and WORSEN ADE on turn windows — and that is not A3 failing. It is A3
+correctly obeying a goal whose magnitude is wrong.** The SPEC's §3 target of *"ADE in [0.90, 1.10]
+with turn_left ≥ 0.3636"* survives; its hope that A3 would recover *most* of `wk15`'s gain does not,
+and is **withdrawn here rather than after the arms land.**
+⇒ ⭐⭐ **A3 IS NECESSARY AND NOT SUFFICIENT.** A goal-conditioned cost lets the planner obey the
+tactical brain; it cannot fix a tactical brain whose only turn magnitude is 6.9x too tight.
+
+### E4 ⭐ THE NEXT LEVER, LAUNCHED IN THE SAME TURN — A4
+
+The pair that follows from E2–E3 is **goal-conditioned cost + a corrected turn magnitude**, and it
+is running on Thor behind the A3 arms (`raw/queueCTG2.sh`, gated on the 3-arm ceiling, counting arms
+by `--dump-dir` and never by process):
+
+| arm | flags added to the `T_wk15` command line | what it isolates |
+|---|---|---|
+| **`A4a_gk_kt02`** | `--w-kappa-by-goal 15.11245,0.0 --goal-kappa-turn 0.02` | ⭐ **the candidate that could both drive and turn** |
+| **`A4b_kt02`** | `--goal-kappa-turn 0.02` | the corrected magnitude **alone**, so A4a is attributable |
+
+**Attribution is exact by construction:** `T_wk15 -> A4b` is `kappa_turn` alone; `G_gkappa -> A4a` is
+`kappa_turn` alone; `A4b -> A4a` is the goal-conditioned cost alone. Three one-variable edges.
+⭐ **`--goal-kappa-turn 0.02` is a CONSTANT, not an oracle chooser**, so the arm stays **T1** and
+admissible. ⛔ The LEVEL-SET form (`goal_kappa_levels`) needs `goal_kappa_hint`, which the v7.0 head
+cannot supply — that route is an **ORACLE bound (T0)** and is deliberately **not** taken.
+**Banked justification for 0.02:** 100 % of real turns are expressible at 0.02 against **38.7 %** at
+0.08, with median curvature error on a turn falling **2.5x**.
+
+### E5 — Committed reading for A4, written before the arms exist
+
+| outcome | reading | consequence |
+|---|---|---|
+| ⭐ **DRIVES AND TURNS** | `A4a` `turn_left` recall **> 0.0000** AND ADE ≤ **0.8934** (`wk15`, the accuracy incumbent) | the PI's question is answered: refav1 has a configuration that is at least as accurate as its best turning-free arm **and still turns**. This becomes the shippable configuration. |
+| **PARTIAL** | `turn_left` > 0.0000 but ADE in (0.8934, 0.9927] | it turns, at a cost no worse than the constraint arm. Report both numbers; the next lever is `A4a + kamm_mu 0.7` (they are independent mechanisms and both earn on LANE_KEEP). |
+| ⛔ **REFUTED** | `turn_left` = 0.0000, **or** ADE > 0.9927 | the corrected magnitude does not rescue turning, and the defect is **upstream of the cost entirely** — in the lateral head's decode, not in what the planner does with it. The next lever is then `--lat-logit-bias`, not another cost term. |
+
+⚠️ **Floors, per statistic and per configuration** (§6.2): `turn_left` / `turn_right` recall floor is
+**0.00000** on all three replicate pairs, so the turning half of every verdict above is safe. The ADE
+half is **not**: A4a's configuration has no replicate, so its ADE bar is the **unconstrained**
+neighbour's **0.06070**, and a smaller margin is reported as NOT SEPARATED FROM SEED NOISE with the
+replicate named as the required next arm.
