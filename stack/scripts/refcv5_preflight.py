@@ -154,32 +154,59 @@ def check_query_budget(t):
         record("query budget covers the train corpus", None, str(ex))
         return
     # ⛔ A CONSTANT WITH TWO SPELLINGS DOES NOT MOVE WHEN YOU CHANGE ONE.
-    # `train_v6_staged.py` carries a HARDCODED 16 fallback that does not read
-    # N_QUERIES_DEFAULT at all, so correcting the constant would leave the v6
-    # trainer at 16 while every audit reported the new value. That is the
-    # `advect` precedent -- two implementations of one number -- and the only
-    # thing that catches it is grepping for the literal.
+    # Until 2026-09-05 `train_v6_staged.py` carried TWO hardcoded 16s that
+    # never read N_QUERIES_DEFAULT -- the `getattr` fallback AND the
+    # `--n-slot-queries` argparse default -- so correcting the constant
+    # alone would have left the v6 trainer at 16 while every audit reported
+    # the new value. That is the `advect` precedent: two implementations of
+    # one number.
+    # ⚠️ THE FIRST VERSION OF THIS CHECK ONLY KNEW THE `getattr` FORM and
+    # was blind to the argparse one, because an underscore grep does not
+    # find a dashed flag. Both spellings are scanned below, and each must
+    # resolve to the SYMBOL rather than to any literal.
+    import re
     dup = []
     try:
         src = (STACK / "scripts" / "train_v6_staged.py").read_text(
             encoding="utf-8", errors="replace")
-        ctl = src.count("n_slot_queries")
-        if 'getattr(a, "n_slot_queries", 16)' in src:
-            dup.append("train_v6_staged.py hardcodes 16 (does NOT read "
-                       "N_QUERIES_DEFAULT); control: %d n_slot_queries "
-                       "mentions read" % ctl)
-        elif ctl == 0:
-            dup.append("INCONCLUSIVE: read train_v6_staged.py but found no "
-                       "n_slot_queries at all -- suspect the read, not the file")
+        # SAME-BREATH CONTROL: a scan that finds nothing in a file it could
+        # not READ is indistinguishable from a clean file.
+        ctl = src.count("n_slot_queries") + src.count("n-slot-queries")
+        if ctl == 0 or len(src) < 100_000:
+            dup.append("INCONCLUSIVE: read %d bytes of train_v6_staged.py "
+                       "and found %d n_slot_queries mentions -- suspect the "
+                       "read, not the file" % (len(src), ctl))
+        else:
+            sites = {
+                "getattr fallback": re.findall(
+                    r"""getattr\(\s*a\s*,\s*["']n_slot_queries["']\s*,"""
+                    r"""\s*([^),]+?)\s*\)""", src),
+                "--n-slot-queries default": re.findall(
+                    r"""["']--n-slot-queries["'][^)]*?default\s*=\s*"""
+                    r"""([A-Za-z_0-9.]+)""", src)}
+            for name, found in sites.items():
+                if not found:
+                    dup.append("INCONCLUSIVE: 0 matches for the %s while "
+                               "%d mentions read -- suspect the pattern"
+                               % (name, ctl))
+                elif set(found) != {"N_QUERIES_DEFAULT"}:
+                    dup.append("%s is %s, not N_QUERIES_DEFAULT (control: "
+                               "%d mentions read)"
+                               % (name, sorted(set(found)), ctl))
     except OSError as ex:
         dup.append("INCONCLUSIVE: could not read train_v6_staged.py (%s)" % ex)
-    record("query budget covers the train corpus", n >= 94 and not dup,
+    up_ok = int(N_QUERIES_DEFAULT) >= 94
+    record("query budget covers the train corpus",
+           n >= 94 and up_ok and not dup,
            "--agent-queries default %d (train max 94, val40 max 24). "
-           "Upstream N_QUERIES_DEFAULT is still %d and is REFUTED; refcv5 is "
-           "NOT exposed (build_agent_head always passes n_queries "
-           "explicitly). Second spellings found: %s"
-           % (n, N_QUERIES_DEFAULT, dup or "none"),
+           "Upstream N_QUERIES_DEFAULT is %d (ruled M17; 16 was REFUTED at "
+           "11.17 pct of boxes dropped, nearest sacrificed target 7.3 m) "
+           "and covers the train max: %s. refcv5 is NOT exposed either way "
+           "(build_agent_head always passes n_queries explicitly). Second "
+           "spellings found: %s"
+           % (n, N_QUERIES_DEFAULT, up_ok, dup or "none"),
            {"agent_queries": n, "upstream_default": int(N_QUERIES_DEFAULT),
+            "upstream_covers_train_max": bool(up_ok),
             "duplicate_spellings": dup})
 
 

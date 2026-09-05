@@ -358,7 +358,10 @@ def visible_target_filter(tgt: dict, ranges: SlotDecodeRanges | None = None,
     p99 **30**, **max 94**, which is why ``AgentSeamConfig.queries`` is **100**
     (M17) and why **32 is REFUTED on train**: it drops 41,362 boxes (2.18 %)
     across 3,250 frames with the nearest sacrificed target at **13.1 m**,
-    inside the braking envelope. ``N_QUERIES_DEFAULT = 16`` remains REFUTED.
+    inside the braking envelope. ⭐ ``N_QUERIES_DEFAULT`` (the v6 upstream) was
+    **16 and REFUTED** — 11.17 % of boxes dropped, nearest sacrificed target at
+    **7.3 m** — and is now **100**, the same ruled value, so the two lines no
+    longer disagree about one number.
     ⚠️ A count measured on val40 is not a bound on train — that is the whole
     lesson of this correction.
     """

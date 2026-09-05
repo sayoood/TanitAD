@@ -118,6 +118,13 @@ sys.path.insert(1, str(Path(__file__).resolve().parents[1]))      # stack root
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
 from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
+# ⛔ ONE SPELLING OF THE SLOT-QUERY COUNT. This trainer used to carry TWO
+# hardcoded 16s — the argparse default and the build-time getattr fallback —
+# and NEITHER read the constant, so correcting N_QUERIES_DEFAULT alone would
+# have left the v6 trainer at 16 while every audit reported the new value.
+# That is the `advect` precedent: two implementations of one number. Pinned by
+# tests/test_v6_agent_slots.py::test_the_slot_query_default_has_exactly_one_spelling
+from tanitad.models.agent_slots import N_QUERIES_DEFAULT  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
     GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, O6_ADMISSIBLE_CEILING,
     PLAN_STEPS, STAGES,
@@ -5310,7 +5317,7 @@ def build_stack_from_args(a) -> V6Stack:
         # ladder stage; the flag exists so a checkpoint can CARRY it and a
         # frozen-trunk probe can read it.
         agent_slots=bool(getattr(a, "agent_slots", False)),
-        n_slot_queries=int(getattr(a, "n_slot_queries", 16)),
+        n_slot_queries=int(getattr(a, "n_slot_queries", N_QUERIES_DEFAULT)),
         slot_hidden=int(getattr(a, "slot_hidden", 256)),
         slot_depth=int(getattr(a, "slot_depth", 3)),
         slot_heads=int(getattr(a, "slot_heads", 8)),
@@ -9016,11 +9023,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "trains it — the v6 batch has no agent labels; a "
                          "frozen-trunk probe does. S-T may INTRODUCE it; "
                          "⛔ REFUSED in S-W (strict-resume break).")
-    ap.add_argument("--n-slot-queries", type=int, default=16,
-                    help="slot count. ⚠️ A DECLARED PLACEHOLDER — the right "
-                         "value is the join's measured per-frame agent-count "
-                         "distribution, which is UNMEASURED. Over-full frames "
-                         "drop their FARTHEST targets and COUNT the drop.")
+    ap.add_argument("--n-slot-queries", type=int, default=N_QUERIES_DEFAULT,
+                    help="slot count. ⭐ RULED 100 (mm-decisions M17), "
+                         "MEASURED on the 2,308-clip train join: mean 4.39, "
+                         "p99 30, MAX 94 per frame over 433,040 frames / "
+                         "12,122,129 boxes, so the zero-drop floor is 94 and "
+                         "100 is headroom over a max-over-a-sample. ⛔ 16 is "
+                         "REFUTED: it drops 212,224 boxes (11.17 pct) across "
+                         "23,103 frames, and match_slots keeps the NEAREST N, "
+                         "so the nearest SACRIFICED target sits at 7.3 m, "
+                         "inside the braking envelope. Over-full frames drop "
+                         "their FARTHEST targets and COUNT the drop. ⛔ The "
+                         "default is the imported N_QUERIES_DEFAULT, never a "
+                         "literal: two spellings do not move together.")
     ap.add_argument("--slot-hidden", type=int, default=256)
     ap.add_argument("--slot-depth", type=int, default=3)
     ap.add_argument("--slot-heads", type=int, default=8)

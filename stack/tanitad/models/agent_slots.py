@@ -130,10 +130,11 @@ FARTHEST targets are dropped (by range) and the drop is COUNTED and RETURNED
 (``n_target_dropped``) — never silently absorbed, because a head that quietly
 stops being scored on crowded frames would report its best numbers exactly
 where driving is hardest. ⚠️ The right ``n_queries`` is the join's measured
-per-frame agent-count distribution; that distribution is **UNMEASURED on this
-box** (no join file is in the repo — the artifacts live pod-side) and must be
-measured before the run. :data:`N_QUERIES_DEFAULT` is a declared placeholder,
-not a fitted value.
+per-frame agent-count distribution, and it has now been **MEASURED on the
+train corpus** — so :data:`N_QUERIES_DEFAULT` is a RULED value (mm-decisions
+M17), no longer a placeholder. ⚠️ It is the ONE spelling of that number:
+``train_v6_staged.py`` reads this symbol rather than carrying its own literal,
+because a constant with two spellings does not move when you change one.
 """
 from __future__ import annotations
 
@@ -192,11 +193,22 @@ SLOT_SLICES: dict[str, slice] = _slices()
 #: measuring its own capacity.
 PARAM_BAND: tuple[int, int] = (2_000_000, 4_000_000)
 
-#: ⚠️ A DECLARED PLACEHOLDER, NOT A FITTED VALUE. The right number is the
-#: per-frame agent-count distribution of the join (its 99th percentile), and
-#: that is UNMEASURED here — no join file exists in the repo. Measure it with
-#: ``JoinFileReader`` before the run and record the number in the prereg.
-N_QUERIES_DEFAULT: int = 16
+#: ⭐ A RULED VALUE, MEASURED — not a placeholder (mm-decisions M17).
+#: MEASURED on the 2,308-clip train join (433,040 frames / 12,122,129 boxes,
+#: ``Data Engineering/Research/2026-09-05-agent-join-into-batch/raw/``
+#: ``train_agent_density.json``) over the in-field ∩ decode-box target set:
+#: mean **4.39**, p99 **30**, **max 94** per frame — so the zero-drop floor is
+#: 94 and **100** carries headroom over what is a max-over-a-sample, not a
+#: bound. ⛔ **16 is REFUTED**: it drops 212,224 boxes (11.17 %) across 23,103
+#: frames, and because :func:`match_slots` keeps the NEAREST N, a drop is BY
+#: CONSTRUCTION the closest thing the head failed to see — the nearest
+#: sacrificed target sits at **7.3 m**, inside the braking envelope. (32 is
+#: refuted too, at 13.1 m.) ⚠️ A count measured on val40 (max 24) is not a
+#: bound on train; that mistake is what put 32 here before 16 was corrected.
+#: ⛔ THIS IS THE ONLY SPELLING. ``train_v6_staged.py`` imports it for both
+#: its argparse default and its ``getattr`` fallback, and
+#: ``tests/test_v6_agent_slots.py`` FAILS if either re-grows a literal.
+N_QUERIES_DEFAULT: int = 100
 
 #: Hungarian matching costs. DETR's shape (class prob + box L1), with the box
 #: term in METRES so the cost is interpretable rather than an arbitrary scale.

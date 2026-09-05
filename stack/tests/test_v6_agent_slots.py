@@ -94,11 +94,21 @@ HEAD_SMALL_PARAMS, HEAD_SMALL_KEYS = 611_293, 223
 HEAD_FULL_PARAMS, HEAD_FULL_KEYS = 87_893_449, 405
 CONFIG_E_PARAMS, CONFIG_E_KEYS = 336_542_025, 573
 
-#: MEASURED 2026-08-16 at the §6 PRODUCTION geometry: 16 queries x d_model 256
-#: x depth 3 x 8 heads, over the 16 readout cells of width 128. Inside the
-#: pre-registered 2–4 M band, which is the point of the number.
-PROD_SLOT_PARAMS = 3_207_445
-PROD_SLOT_KW = dict(n_queries=16, d_model=256, depth=3, n_heads=8)
+#: MEASURED 2026-09-05 at the §6 PRODUCTION geometry: ``N_QUERIES_DEFAULT``
+#: (**100**) queries x d_model 256 x depth 3 x 8 heads, over the 16 readout
+#: cells of width 128. Inside the pre-registered 2–4 M band, which is the
+#: point of the number.
+#: ⚠️ The geometry is pinned to the SYMBOL, never to a literal, because a
+#: band asserted at a query count nobody builds is a true measurement
+#: quoted outside its scope. The previous literal was **3_207_445 at 16
+#: queries** (MEASURED 2026-08-16) and this probe still reproduces that
+#: number exactly — that reproduction is the CONTROL saying the measurement
+#: moved because the GEOMETRY moved, not because the probe drifted. The
+#: delta is **+21,504 = 84 x 256**: only the query table scales with N, so
+#: the band is not a reason to keep N small.
+PROD_SLOT_PARAMS = 3_228_949
+PROD_SLOT_KW = dict(n_queries=N_QUERIES_DEFAULT, d_model=256, depth=3,
+                    n_heads=8)
 
 _SMALL_KW = dict(
     tac_vocab_version="v6.0",  # frame pin, see header
@@ -805,9 +815,104 @@ def test_the_decoder_refuses_a_memory_of_the_wrong_length():
         d(torch.randn(1, 5, 8))
 
 
-def test_the_defaults_are_the_declared_placeholders():
-    """⚠️ ``n_slot_queries`` is a DECLARED PLACEHOLDER, not a fitted value: the
-    right number is the join's measured per-frame agent-count distribution,
-    which is UNMEASURED (no join file lives in the repo). This test exists so
-    the placeholder cannot quietly become a claim."""
-    assert V6Config(tac_vocab_version="v6.0").n_slot_queries == N_QUERIES_DEFAULT == 16
+def test_the_slot_query_default_is_the_ruled_measured_value():
+    """⭐ ``n_slot_queries`` is NO LONGER a placeholder — it is **100**, RULED
+    by mm-decisions M17 on a MEASURED distribution, and this test exists so the
+    ruling cannot quietly drift back.
+
+    MEASURED on the 2,308-clip train join (433,040 frames / 12,122,129 boxes,
+    ``Data Engineering/Research/2026-09-05-agent-join-into-batch/raw/``
+    ``train_agent_density.json``) over the in-field ∩ decode-box target set:
+    mean 4.39, p99 30, **max 94** per frame ⇒ zero-drop floor 94, and 100 for
+    headroom over what is a max-over-a-sample rather than a bound.
+
+    ⛔ **16 is REFUTED**: 212,224 boxes (11.17 %) dropped across 23,103 frames,
+    and since :func:`match_slots` keeps the NEAREST N a drop is BY CONSTRUCTION
+    the closest thing the head failed to see — nearest sacrificed target at
+    **7.3 m**, inside the braking envelope.
+    """
+    assert V6Config(tac_vocab_version="v6.0").n_slot_queries \
+        == N_QUERIES_DEFAULT == 100
+
+
+def test_the_slot_query_default_has_exactly_one_spelling():
+    """⛔ THE TEST THAT FAILS IF THE TWO SITES EVER DIVERGE AGAIN.
+
+    A constant with two spellings does not move when you change one. Before
+    2026-09-05 ``train_v6_staged.py`` carried **two** hardcoded ``16``s — the
+    ``--n-slot-queries`` argparse default and the ``build_stack_from_args``
+    ``getattr`` fallback — and NEITHER read :data:`N_QUERIES_DEFAULT`, so
+    correcting the constant alone would have left the live v6 trainer at 16
+    **while every audit reported the new value**. That is the ``advect``
+    precedent: two implementations of one number.
+
+    ⚠️ The argparse default alone is not enough to check. The ``getattr``
+    fallback is the path taken when args arrive from a RECORDED namespace (an
+    old run's ``config.json['argv']``) that lacks the key — which the parser
+    never sees. So the fallback is checked at SOURCE, by TWO different
+    mechanisms: a raw file read and :func:`inspect.getsource` on the IMPORTED
+    module. Repeating one read is one sample; a second *mechanism* is a second
+    probe.
+
+    ⛔ SAME-BREATH CONTROL. A regex that finds no duplicate in a file it could
+    not READ is indistinguishable from a genuine absence — the ``grep -c``
+    hole. Every "no literal found" assertion below is therefore paired with a
+    mention count that MUST read non-zero, and a low count fails as
+    INCONCLUSIVE rather than passing as clean.
+    """
+    import re
+
+    src_path = _STACK / "scripts" / "train_v6_staged.py"
+    src = src_path.read_text(encoding="utf-8")
+
+    # ---- the control, FIRST: prove the READ worked ----------------------
+    mentions = src.count("n_slot_queries") + src.count("n-slot-queries")
+    assert len(src) > 100_000, (
+        "INCONCLUSIVE: read only %d bytes of %s — suspect the read, not the "
+        "file" % (len(src), src_path))
+    assert mentions >= 3, (
+        "INCONCLUSIVE: %d mentions of n_slot_queries in %s. A zero or low "
+        "count from an unreadable or renamed file must NOT pass as 'no "
+        "duplicate spelling'." % (mentions, src_path))
+
+    # ---- site 1: the getattr fallback, by raw file read -----------------
+    fallbacks = re.findall(
+        r"""getattr\(\s*a\s*,\s*["']n_slot_queries["']\s*,\s*([^),]+?)\s*\)""",
+        src)
+    assert fallbacks, (
+        "INCONCLUSIVE: 0 getattr fallbacks for n_slot_queries in %s while %d "
+        "mentions read — the pattern, not the file, is what changed."
+        % (src_path, mentions))
+    assert set(fallbacks) == {"N_QUERIES_DEFAULT"}, (
+        "SECOND SPELLING: build_stack_from_args falls back to %s instead of "
+        "N_QUERIES_DEFAULT. A literal here does not move when the constant "
+        "does — that is exactly the defect this test pins."
+        % sorted(set(fallbacks)))
+
+    # ---- site 2: the argparse default, by raw file read -----------------
+    argdefaults = re.findall(
+        r"""["']--n-slot-queries["'][^)]*?default\s*=\s*([A-Za-z_0-9.]+)""",
+        src)
+    assert argdefaults, (
+        "INCONCLUSIVE: 0 --n-slot-queries argparse defaults in %s while %d "
+        "mentions read — suspect the pattern." % (src_path, mentions))
+    assert set(argdefaults) == {"N_QUERIES_DEFAULT"}, (
+        "SECOND SPELLING: --n-slot-queries defaults to %s instead of "
+        "N_QUERIES_DEFAULT." % sorted(set(argdefaults)))
+
+    # ---- second MECHANISM: the module Python actually LOADED ------------
+    import train_v6_staged as tv6
+    loaded = inspect.getsource(tv6.build_stack_from_args)
+    assert "n_slot_queries" in loaded, (
+        "INCONCLUSIVE: the loaded build_stack_from_args carries no "
+        "n_slot_queries — suspect the introspection, not the wiring.")
+    assert 'getattr(a, "n_slot_queries", N_QUERIES_DEFAULT)' in loaded, (
+        "the LOADED build_stack_from_args does not read N_QUERIES_DEFAULT: %s"
+        % [ln.strip() for ln in loaded.splitlines() if "n_slot_queries" in ln])
+    assert tv6.N_QUERIES_DEFAULT is N_QUERIES_DEFAULT, (
+        "the trainer imported a DIFFERENT N_QUERIES_DEFAULT object than the "
+        "model package exports")
+
+    # ---- and the VALUE that actually reaches a run ----------------------
+    assert tv6.build_parser().get_default("n_slot_queries") \
+        == N_QUERIES_DEFAULT == 100

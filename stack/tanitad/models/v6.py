@@ -3957,12 +3957,15 @@ class V6Config:
     #: scalar parameter, and it is a parameter rather than a constant because a
     #: fixed temperature is a hyper-parameter nobody re-tunes.
     t2_tau: float = 0.1
-    #: number of slot queries. ⚠️ A DECLARED PLACEHOLDER, not a fitted value —
-    #: the right number is the join's measured per-frame agent-count
-    #: distribution and that is UNMEASURED (no join file lives in the repo).
-    #: Under-sizing it does not corrupt the loss (the farthest targets are
-    #: dropped and COUNTED, ``slot_set_loss``'s ``n["dropped"]``) but it does
-    #: cap what the head can express on crowded frames.
+    #: number of slot queries. ⭐ A RULED value — 100 (mm-decisions M17),
+    #: MEASURED on the 2,308-clip train join: mean 4.39, p99 30, **max 94**
+    #: per frame, so the zero-drop floor is 94 and 100 is headroom over a
+    #: max-over-a-sample. Under-sizing it does not corrupt the loss (the
+    #: farthest targets are dropped and COUNTED, ``slot_set_loss``'s
+    #: ``n["dropped"]``) but it does cap what the head can express on crowded
+    #: frames — and because ``match_slots`` keeps the NEAREST N, the cap bites
+    #: the NEAR field first: at 16 the nearest SACRIFICED target sat at 7.3 m,
+    #: inside the braking envelope, which is why 16 is REFUTED.
     n_slot_queries: int = N_QUERIES_DEFAULT
     slot_hidden: int = 256
     slot_depth: int = 3
