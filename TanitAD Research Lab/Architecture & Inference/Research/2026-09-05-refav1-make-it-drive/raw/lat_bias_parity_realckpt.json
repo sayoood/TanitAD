@@ -1,0 +1,27 @@
+{
+ "what": "zero lat_logit_bias vs NO flag, real 21109-step ckpt, ccos, StageB weights",
+ "n_windows": 1,
+ "bit_identical": {
+  "cl_controls": true,
+  "goal_lat_cl": true,
+  "goal_lon_cl": true,
+  "plan_cost_cl": true,
+  "plan_source_cl": true
+ },
+ "PASS": true,
+ "manifest_goal_rule": {
+  "lat_logit_bias": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "source": "CLI override (--lat-logit-bias)",
+  "site": "refa_v1._imagine_tactical_goal -> lat_head(intent).argmax",
+  "why_it_matters": "the decoded token's canonical profile is the planner's ONLY curvature-carrying candidate; a LANE_KEEP decode forces curvature EXACTLY 0 (MEASURED 244/244 windows, step 21109)"
+ }
+}

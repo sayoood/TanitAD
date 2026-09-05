@@ -688,6 +688,42 @@ def run_dump(a) -> dict:
     _p(f"[cost] metric={cost_metric} weights={used_w} "
        f"({'CLI override' if cost_weights else 'shipped module constants'}); "
        f"COST_METRICS={_R.COST_METRICS} from {_R.__file__}")
+
+    # ⭐⭐ THE GOAL-HEAD DECISION RULE (D-REFAV1-DRIVE-GATE, 2026-09-05).
+    # `--lat-logit-bias` is an additive vector on the lateral logits inside
+    # `_imagine_tactical_goal`, i.e. on the ONE decision that determines whether
+    # a turn is reachable by the planner at all: the decoded token's canonical
+    # profile is the population's only curvature-carrying candidate, so a
+    # LANE_KEEP decode forces curvature EXACTLY 0 (MEASURED 244/244 windows on
+    # the trained checkpoint). The whole decision-rule family is one vector —
+    # a class-prior correction is `-tau*log(prior)`, a commit threshold is a
+    # negative entry in one slot, and PLAIN ARGMAX IS None/zeros.
+    # ⛔ VERIFY-GATE, exactly as for cost_metric above: a stack that predates
+    # the parameter would silently ignore the flag and bank an argmax arm under
+    # a decision-rule name. Refuse up front, by signature.
+    lb_raw = getattr(a, "lat_logit_bias", None)
+    lat_logit_bias = None
+    if lb_raw:
+        import inspect as _inspect
+        if "lat_logit_bias" not in _inspect.signature(_R.RefAV1.plan).parameters:
+            raise SystemExit(
+                "[refav1_arm] ⛔ STALE STACK: --lat-logit-bias was given but "
+                f"{_R.__file__}'s plan() has no such parameter; refusing to "
+                "bank an argmax arm under a decision-rule name")
+        parts = [float(x) for x in str(lb_raw).split(",")]
+        if len(parts) != len(lat_names):
+            raise SystemExit(
+                f"[refav1_arm] --lat-logit-bias needs {len(lat_names)} "
+                f"comma-separated values for vocabulary {vv} "
+                f"({lat_names}), got {len(parts)}: {lb_raw!r}")
+        lat_logit_bias = torch.tensor(parts, dtype=torch.float32, device=dev)
+        _p(f"[goal-rule] lat_logit_bias="
+           f"{dict(zip(lat_names, parts))} "
+           f"(argmax == all zeros; non-zero CHANGES which token the goal and "
+           f"the iCEM seed are built from)")
+    else:
+        _p("[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, "
+           "bit-identical to pre-2026-09-05 arms)")
     _p(f"[grid] K={k} ({k * DT:.1f} s) K_wm={k_wm} stride={stride} "
        f"windows={len(sel)} arms={arms} plan={{samples {pc.n_samples}, iters "
        f"{pc.n_iters}, elites {pc.n_elites}, seed {pc.seed}}} nav_shuffle="
@@ -815,7 +851,8 @@ def run_dump(a) -> dict:
                                      goal_field=gf,
                                      model_action_units=rec_units,
                                      cost_metric=cost_metric,
-                                     cost_weights=cost_weights)
+                                     cost_weights=cost_weights,
+                                     lat_logit_bias=lat_logit_bias)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
                         # ⛔ the flag must have REACHED plan(): a result that
@@ -832,6 +869,18 @@ def run_dump(a) -> dict:
                         if got_w != want_w:
                             raise RuntimeError(f"plan() used cost_weights={got_w}, "
                                                f"asked for {want_w}")
+                        # ⛔ and the DECISION RULE must have reached plan() too:
+                        # a result that does not carry it back was produced by
+                        # an older plan() and would be banked under the wrong
+                        # arm name — the same trap as the cost flags above.
+                        got_b = getattr(res, "lat_logit_bias", "__absent__")
+                        want_b = (None if lat_logit_bias is None else
+                                  [float(x) for x in lat_logit_bias])
+                        if got_b == "__absent__" or got_b != want_b:
+                            raise RuntimeError(
+                                f"plan() returned lat_logit_bias={got_b!r}, "
+                                f"asked for {want_b!r}: the decision rule did "
+                                f"not reach it")
                     plans[arm] = res
             # -- bank the window ---------------------------------------------
             acc["g"].append(g.float().cpu().numpy())
@@ -949,6 +998,20 @@ def run_dump(a) -> dict:
         # ⭐ THE COST PROVENANCE (D-REFAV1-CCOS-EVAL): a dump produced under
         # `ccos` and one produced under `cos` are otherwise indistinguishable
         # after the fact. `weights` is the triple plan() ACTUALLY used.
+        # ⭐ THE DECISION-RULE PROVENANCE (D-REFAV1-DRIVE-GATE): two dumps that
+        # differ ONLY in the goal head's decision rule are otherwise
+        # indistinguishable after the fact, and that rule IS refav1's lateral
+        # policy. `null` means plain argmax.
+        "goal_rule": {
+            "lat_logit_bias": (None if lat_logit_bias is None
+                               else [float(x) for x in lat_logit_bias]),
+            "source": ("CLI override (--lat-logit-bias)" if lat_logit_bias
+                       is not None else "plain argmax (legacy path)"),
+            "site": "refa_v1._imagine_tactical_goal -> lat_head(intent).argmax",
+            "why_it_matters": ("the decoded token's canonical profile is the "
+                               "planner's ONLY curvature-carrying candidate; a "
+                               "LANE_KEEP decode forces curvature EXACTLY 0 "
+                               "(MEASURED 244/244 windows, step 21109)")},
         "cost": {"metric": cost_metric, "weights": used_w,
                  "weights_source": ("CLI override (--cost-weights)" if cost_weights
                                     else "shipped module constants"),
@@ -2106,6 +2169,18 @@ def main(argv=None):
                     help="'w_jerk,w_kappa,w_vend' passed to plan(cost_weights=); "
                          "default = the shipped module constants (0.02, 0.05, 0.10). "
                          "Banked in manifest['cost'] and the record")
+    ap.add_argument("--lat-logit-bias", default=None,
+                    help="comma-separated additive bias on the LATERAL goal "
+                         "logits, one value per lat token (8 for v7.0). This "
+                         "is the goal head's DECISION RULE and therefore "
+                         "refav1's lateral policy: the decoded token's "
+                         "canonical profile is the planner's only "
+                         "curvature-carrying candidate, so a LANE_KEEP decode "
+                         "forces curvature EXACTLY 0 (MEASURED 244/244 "
+                         "windows). Omit for plain argmax (bit-identical to "
+                         "pre-2026-09-05 arms). A class-prior correction is "
+                         "'-tau*log(prior)'; a commit threshold is a negative "
+                         "entry in the LANE_KEEP slot.")
     ap.add_argument("--nav-shuffle-seed", type=int, default=0)
     ap.add_argument("--no-navshuf", action="store_true",
                     help="skip the nav-shuffle T1 arm (⛔ then the record is "
