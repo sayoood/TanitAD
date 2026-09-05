@@ -36,3 +36,29 @@ again on its final checkpoint.
 Restored from HEAD and re-verified (`7d1f48f`). Every literature brief now carries the rule, and a
 0-byte `library.json` is to be read as the signature of an interrupted writer, never as an empty
 library.
+
+## M5. The three unapplied cost-repair rows are SUPERSEDED, not applied
+
+The units stream (commits `8cb69ac`…`1291bf5`) correctly refused to apply
+`…/2026-09-03-cost-repair/PROPOSED_REGISTER_ROWS.md` §2–4 (`H-COST-WEIGHTS-1`,
+`D-COST-ARGMIN-MOVES`, `D-COST-SURFACE-REPRODUCED`) and its §5 prediction-retraction: the
+register already frames `D-COST-CHORD` as FAILING its own pre-registered criterion (BACKLOG R41,
+R55/R56), and those three rows are intermediate findings of the chord experiment. The live
+hypothesis is no longer the chord (monotone-equivalent, cannot re-rank) but the centred cosine
+(`ccos`, commit `cee5d99`), whose panel — exclusion fraction, L/R share, distinct plans, κ ≡ 0,
+weight-neutrality factor, under `cos` / `chord` / `ccos` with constant-only and
+deliberate-regression controls — is running now and measures exactly what those rows claimed.
+
+⇒ **Decision:** none of the three is registered as written. `H-COST-WEIGHTS-1` is replaced by the
+`ccos` weight-compensated arm; `D-COST-ARGMIN-MOVES` and `D-COST-SURFACE-REPRODUCED` are re-read
+against the `ccos` panel when it lands and registered then, in whichever form survives it. The
+§5 retraction stays in the package file as the author's own record; nothing is lost.
+
+## M6. `H-EGO-LIT-4` gets an owner: the 5-arm withheld-bank panel runs on the v7-tiny rig now
+
+The literature stream escalated the discriminating experiment for `H-EGODROP-PRED` with no
+owner. It is the cheap pre-retrain validation the PI asked for, it needs no pod GPU, and both
+outcomes are already committed. Launched 2026-09-05 as its own stream: implement the stamped
+`--withheld-bank {fixed,pred,random,none}` trainer flag, run A0 fixed / A1 predicted / A2
+random-marginal control / A3 dropout 0.25 / A4 speed-blind vocabulary, score on the `H-ECHO-8`
+separation instrument and four families on kept AND withheld rows — never on ADE.
