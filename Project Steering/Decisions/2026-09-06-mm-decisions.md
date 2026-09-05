@@ -210,3 +210,84 @@ until it lands no strategic number from this rig is admissible beyond n = 8.
 2. ⛔ **No strategic claim from refav1 may be quoted without its n**, and on this slice that n is <= 8.
 3. ⭐ **A 0-GPU work item with a known recipe:** rebuild the refav1 eval slice's v7.2 labels to full
    parity coverage, then re-read the strategic family. **This is the cheapest remaining lever on goal 5.**
+
+## M56. ⛔⛔ RETRACTION — "the first zero-violation arm in the programme" DIES AT A SECOND INFERENCE SEED
+
+### 1. What I told the PI, and what the replicate says
+
+I reported `combined`'s `kamm_over_rate = 0.0000` as **the programme's first zero-violation arm**,
+bracketed by controls, free in ADE. **MEASURED at `--plan-seed 1`: `kamm_over` = 0.0741** (2 of 27
+windows), **`peak_g` max 0.702 — OVER the mu = 0.7 circle.** ⇒ **FAIL against a criterion committed
+before that arm existed.** ⛔ **The zero-violation headline is WITHDRAWN.**
+
+⇒ `best`'s own `kamm_over 0.0000` and `peak_g` 0.082/0.332 — which the stream had reported as
+*"smoother than the human"* — are **single-seed and unreplicated**, and **the one zero in this family
+that WAS replicated did not hold.** The admissible form is now: *"reduces the violation rate to a
+single-seed 0.0000, unreplicated."*
+
+### 2. ⭐ The doctrine predicted this exactly, and the test was commissioned FOR it
+
+`CLAUDE.md`'s third-variance rule: **refav1's planner SAMPLES (iCEM), so the same checkpoint evaluated
+twice does not give the same answer**, and a separated interval from a one-seed arm is **necessary, not
+sufficient**. I stated that risk when I reported the zero, and commissioned the inference-seed
+replicate for precisely this reason. ⇒ **The process worked. The claim did not.** That is the correct
+order of events, and it is the argument for budgeting a replicate into every arm from the start rather
+than adding one after a headline.
+
+⚠️ **Second instance in one turn** of the sufficiency rule catching this same package — the first was
+the wrong-floor withdrawal (a paired floor applied to a per-class recall).
+
+### 3. ⭐ What SURVIVES the refutation — scope it, do not over-retract
+
+* ⭐ **The constraint-vs-penalty principle (`M48`) STANDS.** It rests on **turn recalls**, and those were
+  **bit-identical across the seed pair**. The frontier reading — the Kamm **constraint** buys 77 % of the
+  **penalty's** ADE gain at zero turning cost — is unaffected by a safety-rate that moves with the seed.
+* ⭐ **The cost-is-the-defect finding (`M54`) STANDS** — it rests on baseline-fallback counts and the
+  oracle-goal arms, different data entirely, and is corroborated by a second stream.
+* ⭐ **`M55`'s nav-responsiveness STANDS** (23/40 shuffled, 30/40 zeroed).
+* ⛔ **What falls is exactly one thing: the SAFETY claim.** No arm in this programme has a replicated
+  zero friction-circle violation rate.
+
+### 4. `best` landed — the tightest parity yet, and it is PARITY, not a win
+
+`best` = `ccos` + `W_KAPPA 15.11245` + `--kamm-mu 0.7`, **no ladder** (removed on `M48`'s prediction):
+
+| metric | `ccos_argmax` | `wk15` | `kamm07` | **`best`** | floor |
+|---|---|---|---|---|---|
+| **ADE m** | 1.3272 | 0.8934 | 0.9927 | **0.8838** | 0.0607 |
+| LAT curvature MAE | 0.05537 | 0.03098 | 0.04846 | 0.03128 | 0.00066 |
+| LAT heading MAE | 23.4578 | 15.2704 | 21.0683 | 15.2975 | 1.1458 |
+
+**ADE 0.8838 is the best of all ten arms** — and against `ha0_ext`'s 0.8772 that is **+0.0066, 9.2x
+BELOW the seed floor** ⇒ ⛔ **PARITY, NOT A WIN, and it is reported as such.** ⭐ But it is **parity
+while ACTING**: 19 distinct realised curvatures (against `wk15_ladder`'s 2), `turn_right` recall 0.50,
+and better than the floor on the turn stratum (0.9742 vs 1.1521). It takes `wk15`'s whole lateral
+family at no cost and **gives back** part of the longitudinal damage (speed −0.0168, accel −0.0139,
+both separated).
+
+### 5. ⭐⭐ And the longitudinal blocker is now NAMED, and it is a SECOND, GOAL-SIDE defect
+
+`best` still reads LON speed MAE **0.7751 against `ha0_ext`'s 0.3058**, and the cause is measured:
+⛔ **the decoded LON token commands `a == 0` on 29 of 40 windows** — while the ground-truth arm (`ol`)
+is at constant speed on **0 of 40** (`M51`). **Untouched by every lever in this package.**
+
+⇒ ⭐ **This does NOT contradict `M54`; it complements it. There are TWO defects, on different paths:**
+* **LATERAL** — the **COST** is misspecified (`M54`): the search optimises better with a perfect goal
+  and drives worse; the correct turn candidate is injected and loses on cost.
+* **LONGITUDINAL** — the **GOAL TOKEN** is wrong: the decoder emits "maintain" on 29/40 windows where
+  the vehicle accelerates. ⭐ **That is why `lonshift` (`a0_shift`) produced a 29.8x-floor win** — it
+  changes what that token yields, and it drove `frac a == 0` from 0.475 to **0.000, exactly onto ground
+  truth.**
+⇒ ⛔ **Do not apply `M54`'s "deprioritise goal-setting" to the LONGITUDINAL path.** `M54`'s scope is the
+lateral/full goal field probed by `cl_oraclegoal`; the LON token is a separate, and demonstrably
+tractable, target.
+
+### 6. Consequences
+
+1. ⛔ **No safety claim from refav1 may be quoted.** Every zero in that family is single-seed; the one
+   that was replicated failed.
+2. ⭐ **A seed replicate is now MANDATORY in every refav1 arm's SPEC, budgeted at launch** — not added
+   after a headline. Two claims died to this rule in one turn.
+3. ⭐ **`best` + a seed replicate** is the next arm, and **`kamm07 + a0_shift`** (plan item A1 — the
+   constraint base plus the longitudinal fix, no penalty) remains unrun and is now the more interesting
+   of the two, because it attacks both named defects at once.
