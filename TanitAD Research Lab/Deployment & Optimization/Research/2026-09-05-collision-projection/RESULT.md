@@ -317,3 +317,99 @@ SELECTION residual, and it is 0.2565 m per window (0.4871 − 0.2306), 2.11×, o
 ⚠️ Nothing is stranded. The work directory `C:\Users\Admin\collproj` is a scratch clone; every
 deliverable above was copied to the repo and **md5-verified after the copy** (the G: mount
 threw `Errno 22` mid-read twice during this session).
+
+---
+
+## 11. ⛔⛔ SELF-CORRECTION, SAME TURN — `H-RL-OBJECTIVE-1` AS WRITTEN IN §8 IS WRONG, AND THE 0 GPU EXPERIMENT THAT REFUTES IT
+
+§8 named the RL arm's target as *"close the 0.2565 m / 2.11× gap between the fan's best member
+and the one the model picks"*. **That target is not a skill gap. It is a best-of-N statistic,
+and the experiment that says so cost no GPU and ran in the same turn.**
+(`raw/panel4_selection.py`, `raw/selection_headroom.json`; episode-DISJOINT split, 73 fit /
+**48 held-out** episodes, 137 / **103** windows, `d = 18` inference-available features,
+`n_fit_rows = 17,536`; every hyper-parameter chosen on an inner split of the FIT episodes.)
+
+### 11.1 First: no ranker over the fan's own features closes it
+
+| arm (held-out, 103 windows / 48 episodes) | ADE | paired vs model | separated | gap closed |
+|---|---|---|---|---|
+| **model argmax** (the deployed selector) | **0.4884** | — | — | — |
+| `conf` argmax (raw `anchor_logits`) | 0.4724 | −0.0160 [−0.0455, +0.0074] | **no** | +6.2 % |
+| **ridge re-rank**, 18 features, λ = 1e4 | 0.4825 | −0.0059 [−0.0498, +0.0402] | **no** | **+2.3 %** |
+| ridge, restricted to the model's top-32 | 0.4825 | −0.0059 | no | +2.3 % |
+| ridge, restricted to `reach_keep` | 0.4825 | −0.0059 | no | +2.3 % |
+| ⭐ **GBDT re-rank** (400 iters, nonlinear) | **0.5549** | **+0.0665** [−0.0031, +0.1374] | no | **−25.8 %** |
+| **C-ORACLE** (min ADE) | 0.2305 | −0.2579 [−0.3287, −0.2010] | yes | +100 % |
+| **C-RANDOM** (uniform, 20 seeds) | 4.5492 | +4.0608 | yes | — |
+| **C-CONST** (always index 0) | 5.6688 | +5.1804 | yes | — |
+| **C-SHUFFLE** (ridge, rows shuffled) | 4.7570 | +4.2686 | yes | — |
+| **C-SHUFFLE** (GBDT, rows shuffled) | 4.5838 | +4.0954 | yes | — |
+
+All controls pass: both shuffled arms collapse to chance (4.76 / 4.58 against a chance floor of
+4.55), so the probes **do** carry signal — they simply carry none about which candidate is
+closest to this human. ⚠️ **And the nonlinear arm is the one that matters**, because
+*"a negative from a linear probe is not a negative about learnability"*: a GBDT with 400 trees
+on 17,536 rows lands **worse than the model**. Two function classes, same answer.
+
+### 11.2 ⛔ And then the control that decides whether the target existed at all
+
+`oracle_in_fan` is **min ADE over N samples** — a best-of-N statistic that falls with N whether
+or not any selector could have known which sample to take. Measured on the held-out windows,
+random subsets, 40 draws each:
+
+| N | 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 |
+|---|---|---|---|---|---|---|---|---|
+| **random min-ADE (m)** | 5.1219 | 2.7608 | 1.5590 | 0.9549 | 0.6713 | **0.4440** | 0.3046 | **0.2305** |
+
+**Exponent −0.592, R² 0.990, n = 7, fit window N = 2…128** (quoted with its window, R² and n,
+per the programme's own rule). **No plateau anywhere.**
+
+⭐⭐⭐ **A RANDOM best-of-32 (0.4440 m) ALREADY BEATS THE TRAINED SELECTOR'S ARGMAX OVER ALL 128
+(0.4884 m).** ⇒ "oracle-in-fan" measures **fan DIVERSITY**, not achievable selection skill.
+Closing the gap to it would require the selector to guess which of 128 plausible futures happens
+to match *this* human — unpredictable in principle for a multimodal future, and therefore **not
+an objective.**
+
+### 11.3 What replaces it — the correct normaliser, and the corrected brief
+
+Read a selector against the **best-of-N curve**, not against the oracle. Its skill is the
+**effective N** it achieves (inverting `ADE ≈ a·N^−0.592`):
+
+| ranker | ADE | **effective N (of 128)** |
+|---|---|---|
+| model argmax (`sel_score_v3`) | 0.4884 | **≈ 27** |
+| `conf` argmax | 0.4724 | ≈ 29 |
+| ridge over 18 features | 0.4825 | ≈ 28 |
+| GBDT | 0.5549 | ≈ 21 |
+
+⇒ **every ranker we can build lands at N_eff ≈ 21–29 out of 128 — a tight cluster, with the
+shuffled controls at chance.** The available signal is saturated. **An RL selection stage over
+this information is refuted at 0 GPU, before a single GPU-hour was requested.**
+
+⭐ **THE CORRECTED REDIRECT — and it points at the FAN, not the selector.** If a random
+best-of-32 beats a trained argmax over 128, the fan's **diversity** is doing the work and the
+**ranking** is not. Two well-posed consequences, both cheap:
+
+1. ⭐ **Shrink the fan and raise its floor.** A 128-candidate fan whose members are individually
+   poor (random single candidate: **5.12 m**) needs an oracle to look good. The measured target
+   is the *typical* member, not the best one — and the contact projection already moved 1057 of
+   them from 11.49 m to 6.53 m without touching anything else. **Candidate quality, not
+   candidate count, is the lever.**
+2. ⛔ **Programme-wide metric hygiene: `oracle-in-fan ADE` must never be quoted as "what the
+   model could achieve".** It is a best-of-N statistic whose value is set by N and by fan
+   diversity. Any comparison of two arms on oracle-in-fan is only valid at **matched N and
+   matched diversity** — and the §6.2 displacement-frontier's *"+0.19 m oracle-in-fan ADE"*
+   trade, and `fan_rerank_base.json`'s oracle rows, are exposed to exactly this and need the
+   stamp.
+
+⚠️ **ROOT-CAUSE CLASS: a BEST-OF-N statistic read as a SKILL GAP.** Same family as
+`overlapping_holdout_se` biasing a point estimate and as the `df` / Thor `free` / cgroup
+`usage_in_bytes` traps — **a true quantity whose scope is narrower than the claim hung on it**.
+It is caught only by a control that must read a known value, and here the control is *"what does
+a RANDOM selector of the same N get?"*. **§8's version of `H-RL-OBJECTIVE-1` is retracted and
+replaced by §11.3, before it was quoted anywhere outside this package.**
+
+⭐ **What survives §8 untouched:** the projection's verdict, and the argument that the projection
+makes any future selection arm **safe to run** — a reward that cannot buy safety with ADE,
+because no unsafe candidate remains to move mass away from. That argument never depended on the
+size of the selection gap.

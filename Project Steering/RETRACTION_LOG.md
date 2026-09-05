@@ -13095,3 +13095,76 @@ evidence about anyone else's code. If a re-run is not possible, the finding is
 suite was run before the report went out, and the retraction landed in the SAME
 turn — `RESULT.md` §3.1, `HANDOFF.md` §6 and the register row were all corrected
 before any of them were read by anyone else.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    the contact-projected fan, held-out episodes only
+(103 windows / 48 episodes), random subsets of size `k`, 40 draws each
+(`…/2026-09-05-collision-projection/raw/panel4_selection.py`,
+`raw/selection_headroom.json`):
+
+| N | 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 |
+|---|---|---|---|---|---|---|---|---|
+| random min-ADE (m) | 5.1219 | 2.7608 | 1.5590 | 0.9549 | 0.6713 | **0.4440** | 0.3046 | 0.2305 |
+
+**Exponent -0.592, R2 0.990, n = 7, fit window N = 2..128** — quoted with its window,
+R2 and n, per the programme's own rule, and with **no plateau anywhere**.
+
+⭐⭐ **A RANDOM best-of-32 (0.4440 m) already BEATS the trained selector's argmax over
+all 128 (0.4884 m).** The "gap" is therefore substantially a property of **fan
+diversity**, not of ranking skill.
+
+Two independent probes agree, and the nonlinear one is the one that settles it,
+because *a negative from a linear probe is not a negative about learnability*:
+
+* **ridge** over 18 inference-available features (lambda chosen on an inner split of
+  the FIT episodes, held-out never tuned on): **0.4825 m, -0.0059 [-0.0498, +0.0402],
+  NOT separated — +2.3 % of the gap**;
+* **GBDT**, 400 trees, same split: **0.5549 m, +0.0665 — WORSE than the model**;
+* controls all pass: `C_CONST` 5.6688, `C_RANDOM` (20 seeds) 4.5492, and **both
+  shuffled-feature arms collapse to chance** (4.7570 / 4.5838), so the probes carry
+  real signal and simply carry none about which candidate matches this human.
+
+## 3. Why the wrong claim felt sound at the time
+
+The gap is real, large, and stable, and it is **exactly unchanged** by the projection
+(delta 0.0000, CI [0, 0]) — which is a genuine and correctly measured fact, and which
+made the quantity look like a residual waiting for a lever. Every element of the
+reasoning was checked except the one that mattered: **what a RANDOM selector of the
+same N would score.** No control asked that, so nothing could contradict it.
+
+## 4. -> ROOT-CAUSE CLASS
+
+⭐ **A BEST-OF-N STATISTIC READ AS A SKILL GAP** — a true quantity whose SCOPE is
+narrower than the claim hung on it. Same family as:
+
+* `overlapping_holdout_se` **biasing the point estimate** (a valid computation whose
+  central value answers a different question);
+* the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` / cylindrical-FOV traps
+  (a correct number quoted outside the scope it was measured in);
+* `H-ESTIM-SEED-1` (a correct estimator whose QUESTION is narrower than the claim).
+
+⇒ **THE RULE: any "headroom" or "oracle" quantity computed as a MIN OR MAX OVER N
+SAMPLES must be reported beside the same statistic from a RANDOM selector at the same
+N.** Without that control the number is not headroom; it is a measurement of N. The
+useful normaliser is the **effective N** a ranker achieves — measured here as
+**N_eff ~= 27 of 128** for the model's own argmax, 29 for `conf`, 28 for a ridge,
+21 for a GBDT: a tight cluster that says the available ranking signal is saturated.
+
+⚠️ **AND IT CHANGES A DECISION, which is why it is logged rather than noted.** The
+retracted framing would have opened an RL selection arm costing GPU-days against an
+unreachable target. The corrected reading (`H-FAN-QUALITY-1`) points at candidate
+QUALITY instead — a random single candidate scores **5.12 m**, and the contact
+projection alone moved 1057 of them from **11.49 m to 6.53 m**.
+
+## 5. A second correction from the same panel, caught the same way
+
+`rank` (= `sel_score_v3`) carries **`-inf` on 7,447 of 30,720 entries** — the
+`reach_keep` mask. Standardising that column produced NaN for every row, every ridge
+prediction became NaN, and `argmin` silently returned **index 0**, which is exactly
+the `C_CONST` control. `ridge_rerank`, `C_CONST_index0` and `C_SHUFFLE_features` all
+read **5.6688** to four decimals, **and that three-way tie is the only reason it was
+caught**. ROOT-CAUSE CLASS: **a sentinel value read as a number.** Fixed by carrying
+the mask as a separate binary feature and asserting the feature matrix is finite.
+
+⭐ **What worked, in both cases:** a control that must read a KNOWN value, placed
+where it could contradict the result. The panel was designed with `C_CONST`,
+`C_RANDOM` and `C_SHUFFLE` before any number existed, and both errors were caught by
+an arm reading the *same* value as a control rather than by inspection.
