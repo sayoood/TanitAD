@@ -153,12 +153,34 @@ def check_query_budget(t):
     except Exception as ex:                                   # noqa: BLE001
         record("query budget covers the train corpus", None, str(ex))
         return
-    record("query budget covers the train corpus", n >= 94,
+    # ⛔ A CONSTANT WITH TWO SPELLINGS DOES NOT MOVE WHEN YOU CHANGE ONE.
+    # `train_v6_staged.py` carries a HARDCODED 16 fallback that does not read
+    # N_QUERIES_DEFAULT at all, so correcting the constant would leave the v6
+    # trainer at 16 while every audit reported the new value. That is the
+    # `advect` precedent -- two implementations of one number -- and the only
+    # thing that catches it is grepping for the literal.
+    dup = []
+    try:
+        src = (STACK / "scripts" / "train_v6_staged.py").read_text(
+            encoding="utf-8", errors="replace")
+        ctl = src.count("n_slot_queries")
+        if 'getattr(a, "n_slot_queries", 16)' in src:
+            dup.append("train_v6_staged.py hardcodes 16 (does NOT read "
+                       "N_QUERIES_DEFAULT); control: %d n_slot_queries "
+                       "mentions read" % ctl)
+        elif ctl == 0:
+            dup.append("INCONCLUSIVE: read train_v6_staged.py but found no "
+                       "n_slot_queries at all -- suspect the read, not the file")
+    except OSError as ex:
+        dup.append("INCONCLUSIVE: could not read train_v6_staged.py (%s)" % ex)
+    record("query budget covers the train corpus", n >= 94 and not dup,
            "--agent-queries default %d (train max 94, val40 max 24). "
-           "Upstream N_QUERIES_DEFAULT is still %d and is REFUTED -- any "
-           "AgentSlotDecoder built without an explicit n_queries inherits it."
-           % (n, N_QUERIES_DEFAULT),
-           {"agent_queries": n, "upstream_default": int(N_QUERIES_DEFAULT)})
+           "Upstream N_QUERIES_DEFAULT is still %d and is REFUTED; refcv5 is "
+           "NOT exposed (build_agent_head always passes n_queries "
+           "explicitly). Second spellings found: %s"
+           % (n, N_QUERIES_DEFAULT, dup or "none"),
+           {"agent_queries": n, "upstream_default": int(N_QUERIES_DEFAULT),
+            "duplicate_spellings": dup})
 
 
 def check_gradient_reachability():

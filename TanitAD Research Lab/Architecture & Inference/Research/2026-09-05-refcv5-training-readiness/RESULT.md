@@ -231,7 +231,44 @@ All paths in the repo, branch `agent/arch-inf-20260803`, staged. Nothing lives o
 ## ⚠️ ESCALATIONS — for the Master Mind
 
 1. ⛔ **`ground_range_prior` needs an image-plane output to become real.** `AgentSlotDecoder` emits no pixel, so the prior has nothing independent to constrain. A per-slot foot-row head is `agent_slots.py` surgery plus a param-band change ⇒ prereg + ruling.
-2. ⛔ **`N_QUERIES_DEFAULT = 16` is refuted and still shipped** (`agent_slots.py:199`), pinned by `test_v6_agent_slots.py:813`, and stamped into every run record as `n_queries_default_upstream`. Changing it touches v6; leaving it is a trap for the next caller.
+2. ⛔ **`N_QUERIES_DEFAULT = 16` is refuted and still shipped — and the reason it cannot be fixed with one edit is now MEASURED.** The blast radius, by grep with a same-breath control:
+   * `agent_slots.py:199` the constant; `:274` the `AgentSlotDecoder.__init__` default;
+   * `v6.py:3966` `V6Config.n_slot_queries = N_QUERIES_DEFAULT`; `v6.py:4998` — the only production construction — passes `n_queries=cfg.n_slot_queries` **explicitly**;
+   * ⛔ **`train_v6_staged.py:5313` carries a SECOND SPELLING: `getattr(a, "n_slot_queries", 16)` — a hardcoded 16 that does not read `N_QUERIES_DEFAULT` at all.** Correcting the constant would leave the live v6 trainer at 16 while every audit reported the new value. That is the `advect` precedent — two implementations of one number — and only grepping the literal catches it.
+   * ✅ **refcv5 is NOT exposed**: `refc_agents.build_agent_head` always passes `n_queries=cfg.queries` (100).
+   ⇒ The fix is a **two-site** change touching the live v6 trainer, which is why it is escalated rather than done here. `refcv5_preflight.py` now FAILS on the duplicate spelling, so it cannot be forgotten.
 3. ⛔ **v7.2 supervision covers 7.92 % of parity.** Either a parity-scoped label build, or a PI ruling that the refcv5 parity arm runs on the kinematic 3×3 vocabulary. It cannot be decided inside this stream.
-4. ⚠️ **The decode box (60 m × ±16 m) and the 61.8 % out-of-field fraction are still val40-scale**, and both are hard predicates in the supervision path. The instrument to re-measure them on train exists (`measure_agent_density.py`) and the join is on this box — a same-day item for whoever takes it.
+4. ✅ **CLOSED BY MEASUREMENT, not escalated.** The out-of-field and decode-box fractions were val40-scale; they are now read on the whole **2,308-clip train join (12,122,129 boxes)** from the banked `…/2026-09-05-agent-join-into-batch/raw/train_agent_density.json`: in-field **4,977,314 = 41.06 % ⇒ 58.94 % OUT OF FIELD**, in-field ∩ decode box **1,899,481 = 15.67 % ⇒ 84.33 % OUTSIDE THE DECODE BOX** (val40, among kept targets at N = 16, read 61.8 % and 80.1 %). ⚠️ The denominators differ — val40's is *targets kept by* `match_slots`, train's is *every box in the join* — but the conclusion holds in both and the decode-box cut is **more** severe on train, so the filter's default-ON is now a train-corpus fact. Written into `refc_agents.filter_targets_to_visible`'s docstring beside the val40 numbers rather than replacing them.
+   ⚠️ **What remains open is narrower than the original escalation**: the decode box itself (60 m × ±16 m) still rests on "the P8 spec" with no corpus behind it, and the **nearest sacrificed range** at that cut is unmeasured — the same number that refuted `--agent-queries 32` at 13.1 m.
 5. ⚠️ **The live flagship `refcv4b-b1-v72-40k` trains off-parity** — B1 overlaps the parity corpus by **7.92 %**, by design of the B1 selection. Consistent with `parity.py`, but worth stating in one place, because a refcv5 parity arm and refcv4b are then **not** on the same corpus.
+6. ⚠️ **`stack/scripts/dinov3_fp8_encode_ship.py` writes a corpus artifact and
+   calls neither `parity.guard_corpus_build` nor carries a stated reason.**
+   `test_build_parity_guard.py::test_every_derived_corpus_writer_is_gated_or_classified`
+   names it, and it is **pre-existing and unrelated to this change** (it is not
+   in this commit and none of the tests reference any file touched here). A
+   corpus that becomes supervision must be checked against the deployed val
+   BEFORE it is built (`parity.py` §10c, RETRACTION_LOG C112/C113). Not this
+   stream's file → escalated rather than edited.
+
+---
+
+## Suite verdict, stated with its scope
+
+`1319 passed, 31 skipped` over the whole affected slice
+(`-k "refc or agent or rig or anchor or calib or bev or v4 or kinematic or parity"`),
+plus `207 passed` on a clean re-run of the nine directly touched modules.
+
+**Five non-passes, and NONE is caused by this change** — each classified rather
+than waved away:
+
+| non-pass | class | evidence |
+|---|---|---|
+| `test_bev_consumer_fov.py::…launch_chains`, `test_eval_contamination.py` (12 items) | **mirror-absence artifact** — both need files under `TanitAD Research Lab/` which the off-Drive mirror (`stack/` + `taniteval/` only) does not carry | `git cat-file -e HEAD:…/parity_ls.txt` reads **PRESENT**, with a passing control on `CLAUDE.md` |
+| `test_build_parity_guard.py::…gated_or_classified` | **pre-existing, unrelated** — `dinov3_fp8_encode_ship.py` is an unclassified corpus writer | not in this commit (`git show --stat HEAD \| grep -c dinov3` = **0**); the test references none of the files touched here |
+| `test_guard_mutation_audit.py` (3 items) | **transient contention** — a concurrent `guard_mutation_audit.py` run from another stream left `.guard_mutation_backup` in the tree mid-run; the directory does not exist now and all three pass cleanly | re-run in isolation: **31 passed** |
+| 3 refcv5 modules, in one interleaved run | **my own race** — I rewrote `refc_agents.py` while a background pytest was importing it (the "never edit a script while it runs" family) | each passes in isolation; the clean re-run reads 207 passed |
+
+⚠️ Reported this way on purpose: *"the suite is green apart from some
+unrelated failures"* is exactly the sentence that hides a real regression. Each
+of the five is named, classified, and given the positive assertion that places
+it outside this change.

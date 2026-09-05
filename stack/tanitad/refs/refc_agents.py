@@ -308,6 +308,17 @@ def filter_targets_to_visible(tgt: dict, half_angle_rad: float = _FOV_HALF,
     on ~62 % of its supervision, and the resulting AP would be a measure of how
     well it guesses at the unobservable.
 
+    ⭐ **AND IT HOLDS ON TRAIN, HARDER — MEASURED, so it is no longer a val40
+    claim.** Over the whole 2,308-clip train join (**12,122,129 boxes**,
+    ``…/2026-09-05-agent-join-into-batch/raw/train_agent_density.json``):
+    in-field **4,977,314 = 41.06 %** ⇒ **58.94 % are OUT OF FIELD**, and
+    in-field ∩ decode box **1,899,481 = 15.67 %** ⇒ **84.33 % fall OUTSIDE THE
+    DECODE BOX** (val40, among kept targets at N = 16, read 61.8 % and 80.1 %).
+    ⚠️ The two are not the same denominator — val40's is *targets kept by*
+    ``match_slots``, train's is *every box in the join* — but the conclusion is
+    the same in both and the decode-box cut is **more** severe on train, so the
+    filter's default-ON is a train-corpus fact and not an inherited one.
+
     ``half_angle_rad`` defaults to the rig's own 120° (±60°) — the SAME
     predicate ``bev_raster.fov_mask`` applies, and the same one the join's
     ``occ`` flag records. ⚠️ It is **necessary, not sufficient**: it is
