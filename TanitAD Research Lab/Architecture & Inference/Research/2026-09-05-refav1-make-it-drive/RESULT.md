@@ -110,6 +110,28 @@ was checked rather than assumed.
    exactly that state. Already parked as a pre-registration item; it should be prioritised.
 3. **The 59-setting cost-weight surface sweep needs no rerun** — two weights were zero, the
    third structurally inert, and its metric could not execute a turn regardless.
+4. ⭐ **THE CANDIDATE SET HAS A LONGITUDINAL ESCAPE HATCH AND NO LATERAL ONE — and that
+   asymmetry is the cleanest thing to fix.** MEASURED (`raw/gate_assert.json`,
+   `raw/shortcut_dump_ccos_comp.json`):
+
+   | | baselines carrying it | consequence: plans matching the token's canonical profile |
+   |---|---|---|
+   | **accel** | **1 of 3** (`decel_1.5` = 1.5) | **0.645** ⇒ the channel is genuinely searched |
+   | **curvature** | **0 of 3** | **0.950** (and **1.000** on LANE_KEEP) ⇒ the channel merely echoes the token |
+
+   `decel_1.5` exists because *"a gentle decel is the single most common correct action in
+   dense traffic, and the one a white-noise CEM population reliably misses"*
+   (`refa_v1_plan.py:182-183`). **The identical argument applies to a sustained turn**, and
+   no such candidate exists. ⇒ **Adding constant ±κ baselines would make turning reachable
+   INDEPENDENT of the goal head**, exactly as `decel_1.5` makes braking reachable
+   independent of the lon head — a ~3-line change to `_baseline_controls`.
+   ⛔ **Not implemented here, deliberately:** it changes the candidate set for *every* arm
+   and so breaks bit-parity with every banked refav1 number, which makes it a
+   pre-registration item rather than an edit. ⚠️ And it is **not obviously a win**: on a
+   LANE_KEEP goal under `ccos` the goal term is documented float32 rounding noise, so a turn
+   candidate there would win or lose essentially at random — it must be flag-gated and
+   measured, not assumed. It belongs beside the `ccos` hold-branch (item 2), which would
+   make it well-posed.
 
 ## Next, in order
 
