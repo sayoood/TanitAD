@@ -352,3 +352,33 @@ about the world model.**
    mix. **The predecessor's tool should be fixed or retired.**
 2. ⚠️ **A searched planner arm is a cross-box REPLICATE, not an identity** (§1). Any future arm
    comparison must use dumps from the SAME box, or state the cross-box delta.
+
+---
+
+## 4. The SCORE-half reference panel — computed NOW so Stage B slots straight into it
+
+Stage B runs on the **SCORE** half (71 episodes / 142 windows), while every banked arm runs the
+full 141/282 grid. `paired_delta_refav1.py` correctly **refuses** to pair dumps whose
+`ws`/`v0`/`g`/`clip_index` are not bit-exact, so the banked arms have been sliced to the same half
+in advance (`tools/slice_dump_to_split.py`; the only field rewritten is `clip_index`, renumbered
+0..70 to match a 71-episode loader, and the slice is stamped `sliced_from` in its manifest —
+trajectories, floors and decisions are the originals).
+
+**Result: the phase-1 conclusions reproduce on the held-out half.** Known-value control PASS;
+`raw/paired_SCORE_reference.json` / `.md`, n = 142 / 71, n_boot 2000.
+
+| pair (SCORE half) | ADE | LON speed | LAT cross | TAC lon |
+|---|---|---|---|---|
+| `ccos_comp − cos` | **+0.1860 [+0.1066, +0.2909]** | separated worse | **+0.0832 [+0.0150, +0.1732]** | separated worse |
+| `ccos_naive − ccos_comp` | **+0.2902 [+0.1061, +0.5111]** | — | **+0.3181 [+0.1342, +0.5430]** | — |
+| `cos − ha` | −0.0409 [−0.1259, +0.0377] | separated worse | **−0.1736 [−0.2536, −0.1088]** | separated worse |
+| `cos − ha0` | **+0.0169 [+0.0024, +0.0389]** | separated worse | **0.0000 [0, 0]** | straddles |
+| `cos − ha0_ext` | −0.0145 [−0.0866, +0.0593] | separated worse | **−0.1499 [−0.2123, −0.0979]** | separated worse |
+| `ccos_comp − ha0_ext` | (see raw) | separated worse | −0.0668 [−0.1665, +0.0423] | separated worse |
+
+⭐ **The lateral identity survives the split**: `cos − ha0` reads exactly **0.0000 with a zero-width
+interval** on all three lateral metrics on the held-out half as well. It is not a property of the
+particular 282 windows; it is what the shipped planner does.
+
+⇒ **B1 and B2 are compared against THIS table**, on the same windows, with the same estimator. The
+comparison is already set up; only the arm is missing.
