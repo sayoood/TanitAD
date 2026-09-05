@@ -246,6 +246,37 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 ⚠️ **Stated limits.** `peak_g` here is the finite-difference load on free waypoints and under-reports by 1.21–1.85× — *on both sides of the comparison*, so the **ratio** is the robust quantity and the levels are lower bounds. The bank's `envelope`/`kamm_over` rates are window-independent by construction (a fixed path set); `off_reach`, `contact` and `ttc_below` are not, and are averaged over the same 240 windows as the fan.
 
 
+### 6.1 ⭐⭐ WHICH stage — measured, not guessed: the CLASSIFIER PASS creates the blow-up and the REFINEMENT LOOP halves it back
+
+The corrected probe (`fan_rerank_base.json`, 480 windows / 138 episodes) decomposes the decode at zero extra cost, because `refc.py:1793` returns `anchor_bank` and `offset` beside `anchor_traj`:
+
+| stage | `fan_envelope` | `fan_peak_g` | `fan_off_reach` | oracle-in-fan ADE |
+|---|---|---|---|---|
+| **anchor bank** (`roll_bank`) | **0.0156** | **0.4808 g** | 0.7811 | 1.0978 m |
+| **+ classifier pass** (`x = bank + offset`, `:1640`) | **1.0000** | **9.1240 g** | 0.4226 | 2.1962 m |
+| **emitted fan** (after the refinement loop, `:1676`) | 0.8885 | **4.1734 g** | 0.0997 | **0.2227 m** |
+
+⭐⭐ **The single decode pass that creates the infeasibility is the FIRST one, and it overshoots by more than the fan ends up at: 0.48 → 9.12 → 4.17 g.** The refinement loop *halves the friction load back* while cutting oracle-in-fan ADE from 2.20 m to 0.22 m. ⇒ **the refinement loop is not the problem — it is already repairing feasibility**, and a feasibility-aware decode should be aimed at the classifier pass, which throws the fan 19× past the vocabulary's load and 2× past where the loop leaves it.
+
+⛔ **The λ = 0 row is an OBJECT control and it passes.** `fan_envelope` **0.0156** and `fan_peak_g` **0.4808** reproduce, to four decimals, the rates `bank_vs_fan_feasibility.py` computed **by a different route** (reading `core.decoder.anchors` straight out of the checkpoint, on a different window sample). That is the control RETRACTION #30 added after the first sweep's λ = 1 identity control passed while interpolating the wrong operand — and it is the reason these numbers are admissible where the withdrawn ones were not.
+
+### 6.2 The shrink curve — there IS a compressible direction, and it is priced
+
+`path(λ) = anchor_bank + λ · (emitted fan − anchor_bank)`, same forward, same windows:
+
+| λ | `fan_envelope` | `fan_peak_g` (g) | `fan_off_reach` | **oracle-in-fan ADE** (m) | endpoint spread (m) |
+|---|---|---|---|---|---|
+| 0.00 (bank) | 0.0156 | **0.4808** | 0.7811 | 1.0978 | 18.22 |
+| 0.25 | 0.6266 | 0.8309 | 0.7140 | 0.8523 | 14.39 |
+| 0.40 | 0.7448 | 1.2074 | 0.6456 | 0.7052 | 12.12 |
+| **0.55** | 0.8043 | **1.7031 (−59 %)** | 0.5432 | **0.5585 (+0.34)** | 9.90 |
+| **0.70** | 0.8438 | **2.5838 (−38 %)** | 0.3882 | **0.4173 (+0.19)** | 7.75 |
+| 0.85 | 0.8695 | 3.6387 | 0.2185 | 0.2885 | 5.76 |
+| 1.00 (shipped) | 0.8885 | 4.1734 | 0.0997 | **0.2227** | 4.21 |
+
+⇒ **The trade is smooth and it is favourable in the middle.** Giving back 30 % of the decode's displacement buys a **38 % cut in the fan's mean peak friction load** for **+0.19 m of oracle-in-fan ADE**; giving back 45 % buys **−59 %** for **+0.34 m**. There is no cliff, so a feasibility-aware decode is a **tuning problem with measured headroom**, not a gamble. ⚠️ This is a *fan-quality* curve (oracle-in-fan), not a driving curve: what the deployed selector would pick at each λ is a separate question, and `sel_ade` in the same table rises steeply (0.47 → 1.32 at λ = 0.70) because the model's ranking was trained on λ = 1 geometry. ⇒ **the shrink must be trained in, not applied post hoc** — which is exactly the §6 work item, now with its target stage and its price.
+
+
 ## 7. P3, the other dose — 2,000 steps LOSES the gain: a clean dose-response
 
 `veto2k`: identical to `veto200` in every respect but `steps` (200 → **2,000**; 2,133.6 s and 2,106.4 s). `veto_rate_mean` **0.0912 / 0.0916**, so the constraint fired at the same rate throughout. **Guards G1/G2/G3 all pass**, on the same 120 windows.
@@ -347,16 +378,35 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 |---|---|---|
 | the **emitted fan** | ⭐ **YES, replicated over three runs** | `fan_peak_g_mean` **4.1809 → 4.088 / 4.065 g** (−0.0859 / −0.0929 / −0.1158 across three runs), clearing the seed-replicate floor 4–5× against a zero-information arm that drifts it **+0.134 the other way** |
 | the **driven (selected) path** under the veto | ⛔ **NO** | `sel_peak_g` **+0.0155 / +0.0080 g** (T0); at T1, **7 of 11 non-structural rows are quotable regressions on BOTH seeds** — `ade_m` **+0.0362 / +0.0475**, `LON_accel_mae` +0.3349 / +0.2157, `TAC_traj_lon_correct` −0.0889 / −0.0651 |
-| the **driven path** under the **0-training gate2 re-rank** | ⭐⭐ **YES, and by more** | `sel_envelope` **0.1062 → 0.0729 (−31 %)**, `sel_peak_g` **0.1815 → 0.1459 g (−20 %)**, `ade_m` **+0.0037, NOT separated** |
+| the **driven path** under the **0-training gate2 re-rank on the UNMODIFIED base** | ⭐⭐ **YES, and by more** | `sel_envelope` **0.1062 → 0.0729 (−31 %)**, `sel_peak_g` **0.1815 → 0.1459 g (−20 %)**, `ade_m` **+0.0037, NOT separated** |
+| the two levers **combined** | ⛔ **they partially CANCEL** | `base + gate2` beats `veto + gate2` on all three axes (0.0729 vs 0.0896 · 0.1459 vs 0.1617 · 0.4705 vs 0.4834); the gate's own gain is 38 % smaller on the veto'd checkpoint (§8.1) |
 
 ⇒ ⭐⭐ **The deliverable is `gate2`, not the RL arm.** A top-2 kinematic gate over the model's own ranking makes the path the car drives measurably safer **today**, with **zero training, zero new parameters, zero new perception and no measurable ADE cost**. The veto-only arm is a real but small **fan-level** gain that the selector does not convert into a safer driven path — and §6 says why the ceiling is low: the veto moves `fan_peak_g_mean` by ~0.1 g against a **+3.63 g** blow-up the decode creates over its own vocabulary, i.e. it addresses **~2.7 %** of the available gap.
 
 **What to do next, in cost order:**
 
-1. ⭐ **Ship `gate2` behind a flag and measure it end-to-end** — it is a selection rule over an unchanged model, so it needs an inference-path change and no retraining. Its combined measurement with the veto'd checkpoint is queued (`raw/fan_rerank_veto200s0.json`).
-2. ⭐ **Open the feasibility-aware DECODE work item** (§6): the vocabulary is drivable at 0.48 g and the decode emits 4.11 g. That is where the 12.7× human-vs-refcv3 envelope gap actually lives, and no post-training of a constraint channel reaches it.
+1. ⭐ **Ship `gate2` behind a flag on the UNMODIFIED base** — a selection rule over an unchanged model, so it needs an inference-path change and no retraining. ⛔ **Do NOT ship it on top of the veto'd checkpoint**: §8.1 measured that the two levers partially cancel and `base + gate2` dominates on all three axes.
+2. ⭐ **Open the feasibility-aware DECODE work item, aimed at the CLASSIFIER PASS** (§6.1): the vocabulary is drivable at **0.48 g**, the first decode pass throws it to **9.12 g**, and the refinement loop already pulls it back to 4.17 g — so the loop is repairing, not causing, and the target is the first pass. §6.2 prices the headroom: giving back 30 % of the decode's displacement buys **−38 % fan peak-g** for **+0.19 m** oracle-in-fan ADE, with no cliff anywhere on the curve.
 3. **Re-run the veto arms on the swept-segment `_collision`** (§4 escalation 1): the constraint will fire more, and the prediction is the effect grows. ~5 min per arm.
 4. ⛔ **Do NOT spend more GPU on the composed reward at this surface.** P1 exonerated its *ranking* (ρ = −0.5367), so the failure is not "the reward wants infeasible paths" — but the 2,000-step dose shows the constraint channel exhausts itself, and §6 caps what any decoder post-train can recover.
+
+
+### 8.1 ⭐⭐ DO THE TWO LEVERS COMPOSE? MEASURED: **NO — they partially cancel, and BASE + gate2 dominates**
+
+The same probe on the **`veto200_s0` checkpoint's** fan, same 480 windows / 138 episodes, same rules:
+
+| | **BASE + gate2** | **veto200_s0 + gate2** | winner |
+|---|---|---|---|
+| `sel_envelope` | **0.0729** | 0.0896 | ⭐ base |
+| `sel_peak_g` (g) | **0.1459** | 0.1617 | ⭐ base |
+| `ade_m` | **0.4705** | 0.4834 | ⭐ base |
+| the gate's own gain (`Δenv` vs that checkpoint's model) | **+0.0333** | +0.0208 | ⭐ base |
+
+⇒ ⛔ **`base + gate2` beats `veto + gate2` on all three axes, and the gate's own effect is 38 % smaller on the veto'd checkpoint.** The veto has already spent part of the same headroom — it pushed the *fan* off the violating region (`fan_peak_g` at λ = 1: **4.0828** veto vs **4.1734** base, the §5 gain reappearing here independently) while leaving the *selected* path worse (`sel_envelope` 0.1104 vs 0.1062, `sel_peak_g` 0.2016 vs 0.1815, `ade_m` 0.4810 vs 0.4742). The gate then has less left to recover and starts from a worse point.
+
+⇒ ⭐⭐ **DEPLOYMENT ANSWER: ship `gate2` on the UNMODIFIED base. Do not ship the veto'd checkpoint.** This is the measurement that a one-lever-at-a-time panel could not have produced, and it reverses the intuition that a fan-level gain and a selection-level gain would add.
+
+⚠️ One seed on the veto side of this comparison (`veto200_s0` only), so the *magnitude* of the cancellation is one-seed; the *direction* is supported by three independent quantities moving together (envelope, peak_g, ADE) plus the checkpoint's own model row, and by §5/§11 measuring the same selected-path regression on both seeds. The stage decomposition also reproduces on the veto'd checkpoint (classifier pass **8.8146 g** vs base's 9.1240, i.e. the veto slightly reduces the first pass's overshoot) and the λ = 0 bank control reads **0.0156 / 0.4808** on both — the object check passing on an independently trained checkpoint.
 
 ---
 
@@ -415,12 +465,14 @@ Package root: `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-0
 | `Project Steering/GOALS_AND_CLAIMS.md` | repo | 9 rows added/updated |
 | `Project Steering/RETRACTION_LOG.md` | repo | **#26, #27, #30** |
 
-⚠️ **STILL RUNNING when this file was written** (self-driving, sequential on the dev-box 4060; nothing else is touched):
+⭐ **ALL THREE QUEUED RUNS LANDED, and the integration check with them.** After the last consumer finished, the frozen clone was synced to repo HEAD (`rewards.py` md5 `bab0469bbd013b71270caef779d23772`, the sibling's swept-segment `_collision`) and the suite re-run: **180 passed** across `test_rl_*` + `test_fan_safety` + the sibling's own `test_collision_swept_segment` — so P2's veto tests are green against the CURRENT collision definition, not only the one the panel ran on. `raw/chain_suite.sh` did the sync with an md5 check and is banked.
+
+⚠️ **What was still running when the first draft of this file was written** (all now complete) (self-driving, sequential on the dev-box 4060; nothing else is touched):
 
 | in flight | artifact it will produce | how to finish |
 |---|---|---|
 | ~~`s1/veto200` T1 rollout~~ | ✅ **LANDED 17:46 Z** — `raw/run/paired_s1-veto200_vs_base.json`, folded into §11 | done |
-| corrected re-rank on **base** | `raw/fan_rerank_base.json` | re-confirms §8's table and adds the λ = 0 bank control |
-| corrected re-rank on **veto200_s0** | `raw/fan_rerank_veto200s0.json` | ⭐ do the two levers COMPOSE or cancel — the deployment question |
+| ~~corrected re-rank on **base**~~ | ✅ **LANDED 17:52 Z** — `raw/fan_rerank_base.json`; §8's table reproduced exactly and the λ = 0 bank control passes (§6.1) | done |
+| ~~corrected re-rank on **veto200_s0**~~ | ✅ **LANDED 17:58 Z** — `raw/fan_rerank_veto200s0.json`; the answer is **they partially CANCEL** (§8.1) | done |
 
 ⭐ **Everything else is complete and banked.** The verdict in §12 does not depend on the three rows above: the committed exit is already **FAILURE** on two independent legs (`top32_infeasible` within-noise, `ade_m` separated-worse), and the shipping recommendation (`gate2`) rests on the 480-window measurement already in the repo.
