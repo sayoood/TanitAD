@@ -218,3 +218,75 @@ afterwards; neither exit code is evidence.
 * `test_refav1_kin_contract::test_A6_adding_ha0_moves_no_existing_arm` fails **without** Rung A1
   too (demonstrated on restored pre-patch files) — a work item for the refav1 stream, not a
   regression from this rung.
+
+## M15. ⭐ APPROVED — the lateral goal vocabulary gets THREE sustained curvature magnitudes, and the decision metric is medAE-on-turns, NOT RMSE
+
+**The escalation, and it is well made.** The refav1 goal-margin stream priced the fix before
+spending any GPU. Scoring gives each design an ORACLE token chooser, so the residual is the best
+*available* sustained curvature against the road — an upper bound on what any head could achieve
+with that vocabulary:
+
+| design | RMSE | medAE-on-turns | expressible |
+|---|---|---|---|
+| L=0, `LANE_KEEP` only | 0.01785 | 0.01942 | 0.0000 |
+| L=1, κ=0.02 | 0.01460 | 0.00609 | 1.0000 |
+| **L=1, κ=0.08 — SHIPPED** | **0.01015** | 0.01551 | 0.3866 |
+| **L=3 at the measured quantiles** | 0.01032 | **0.00421** | **1.0000** |
+| CONTINUOUS ceiling | 0 | 0 | 1.0000 |
+
+⇒ **L=3 is APPROVED.** 100 % of real turns become expressible instead of **38.7 %**, and the median
+curvature error on a turn falls **3.7×**, at **the same RMSE** (0.01032 vs 0.01015, +1.7 %).
+
+⭐⭐ **THE RULING THAT MATTERS MORE THAN THE APPROVAL: `RMSE` AND `medAE` RANK THESE DESIGNS
+DIFFERENTLY, AND RMSE PICKS THE VOCABULARY WE ALREADY KNOW IS BROKEN.** κ=0.08 has the **best**
+single-magnitude RMSE and nearly the **worst** medAE on turns — because RMSE is dominated by the
+**rare sharp** turn, which 0.08 serves, while the **median** turn is gentle and 0.08 serves it
+barely better than doing nothing. A design chosen on RMSE reproduces the shipped vocabulary that
+cannot express 61 % of turns.
+
+⇒ **For vocabulary design the decision metric is `medAE-on-turns`.** RMSE may be reported; it may
+not decide. ⚠️ **Same family as the two estimator rules in `CLAUDE.md`** — *never quote an interval
+without its estimator*, and *`overlapping_holdout_se` biases the point estimate* — with the object
+swapped again: here the statistic is computed correctly and **answers a narrower question than the
+claim being hung on it**. A summary statistic dominated by the tail cannot adjudicate a median
+failure mode.
+
+**Controls, checked before approving:** the CONTINUOUS ceiling reads **exactly 0.0**, the
+`LANE_KEEP`-only floor reads **exactly the road RMS curvature to 1e-12**, and the shipped row is
+present by assertion. A design table without a known-value row at each end is not admissible, and
+this one has both.
+
+## M16. ⛔ THE DECISION-RULE PROGRAMME FOR refav1 IS CLOSED — MEASURED WORSE, TWICE
+
+The A/B landed (**T1**, 14 episodes / 28 windows, `ccos` + Stage-B weights, step 21,109):
+`ADE` **1.6098 → 2.5025** (+0.8927), `FDE` +1.8712, cross-track +0.8232, heading
+**+9.07°**. ⭐ **Every family degrades EXCEPT longitudinal speed, which is unchanged (−0.005)** —
+exactly what a *lateral-only* bias should leave alone, so **the one channel the lever does not
+touch is the one channel that does not move.** That is a located effect, not a drift.
+
+The lever did precisely what it was designed to do: constant-velocity share **0.214 → 0.000**,
+straight-plan share **0.250 → 0.000**. **It turned more, and turning more made it worse** — which
+is what M15's table predicts, because the turns it forces cannot be rendered by a vocabulary with
+one sustained curvature at R 12.5 m.
+
+⭐ **And the dense panel removes the motivation entirely.** On the stride-2 grid (**4,786 windows,
+17× the original**, forward pass verified: banked `lat_logits` reproduced at max abs diff **0.0**,
+argmax 282/282), at |gt_κ| > 4e-2 — **R 25 m, the MEASURED vocabulary crossover, not a threshold
+picked for a good number** — the **shipped** head already decodes a curvature-carrying token on
+**74.4 %** of windows at a **12.0 %** false-turn rate, **AUC 0.8806**, with shuffled-label AUC flat
+at **0.498–0.504**. The measured crossover **0.04101** agrees with the analytic
+`GOAL_KAPPA_TURN/2 = 0.040`, and **the agreement TIGHTENS with more data — which is what a real
+quantity does and an artefact does not.**
+
+⇒ **GATE 1 IS LARGELY OPEN WHERE IT MATTERS.** The "20.5 % turn recall" that launched the
+decision-rule programme is a statistic about **R 1000 m** curves the vocabulary cannot express
+anyway. ⛔ `lat_logit_bias` stays in the tree as a **parameterised instrument** (zero-bias is
+bit-identical to no-flag, pinned) — it is **not** a fix and must not be shipped as one.
+
+⚠️ **Two things this does NOT settle, and they must travel with any refav1 claim:**
+1. **Parity.** Changing `canonical_controls` changes the ACTION SPACE, so **every banked refav1
+   number is under the OLD vocabulary.** New arms carry the vocabulary version explicitly, and a
+   cross-vocabulary comparison is inadmissible without saying so.
+2. ⛔ **Both A/B arms sit 3.6–5.9× BELOW the trivial floors on turning windows.** The vocabulary is
+   a **necessary** fix; it is not shown to be sufficient, and the floor gap is a separate open item
+   that no vocabulary change is entitled to claim.
