@@ -6,6 +6,38 @@
 
 ---
 
+## ⛔ SUPERSEDED IN ITS RECOMMENDATION — read this first (2026-09-05, same day)
+
+This file's **measurements stand**. Its **recommendation does not**, and it was wrong for a
+reason worth stating rather than quietly editing out.
+
+**1. The recall number was measuring the wrong target.** MEASURED by the Master Mind (M15/M16,
+commit `4013231`) on a dense panel: restricted to turns the goal vocabulary can actually
+*express* (**R ≤ 25 m**, the measured crossover **0.04101**, agreeing with the analytic 0.040),
+the shipped head already decodes a curvature-carrying token on **74.4 %** of windows at
+**12.0 %** false-turn, **AUC 0.8806**. ⇒ **the "20.5 % turn recall" that motivated this file is
+a statistic about R ≈ 1000 m curves that `GOAL_KAPPA_TURN = 0.08` (R 12.5 m) cannot express
+anyway.** The head was not failing to see them; the *action space* had no token for them.
+⚠️ This also explains why my own lever HURT (`AB_RESULT.md`): it forced κ = 0.08 onto windows
+whose true curvature was ~80× gentler. The extra turns were not merely wrong in direction —
+they were wrong in *magnitude*, by construction.
+
+**2. The pathway, not the head, is the binding constraint.** `ORACLE_GOAL.md`: a goal taken
+from the **true future** produces **ADE 7.4708**, saturating `kappa_max` and `a_max` on ~100 %
+of windows.
+
+⇒ **Do NOT launch "Step 2: fine-tune the goal head" on the strength of this file.** The
+margin-gap criterion it proposes (0.297 logits) is measured against a *mis-specified target*
+and would optimise a head to emit tokens the action space cannot use. The live rungs are the
+**vocabulary** (M15, approved) and the **goal→plan pathway** (`ORACLE_GOAL.md`).
+
+⭐ The general lesson, and it is the same family as the estimator rules in CLAUDE.md: **a
+recall number is a claim about a LABEL SET, and this one's label set contained events the
+model was never able to express.** Before quoting a recall, ask what the model would have had
+to emit to be scored correct — and whether it *can*.
+
+---
+
 ## The answer, in three lines
 
 | what | verdict |
