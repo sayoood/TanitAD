@@ -291,3 +291,137 @@ tractable, target.
 3. ⭐ **`best` + a seed replicate** is the next arm, and **`kamm07 + a0_shift`** (plan item A1 — the
    constraint base plus the longitudinal fix, no penalty) remains unrun and is now the more interesting
    of the two, because it attacks both named defects at once.
+
+## M57. ⭐⭐ THE GOAL HEAD IS ITSELF LEFT-BLIND — and the eval slice cannot resolve it. A CORPUS request, not a compute request.
+
+### 1. The head, decoded on CPU before any planner output existed
+
+The decoded goal token is an **input** to the planner (`lat_head(intent)`, identical across all seven
+banked arms **and across plan seeds**), so it can be read without running anything. 75 wide-panel
+windows, 6 episodes:
+
+| goal head ALONE (no planner, no cost) | value |
+|---|---|
+| goal recall **LEFT** | **0.3000** [0.0000, 0.6333] (n = 30) |
+| goal recall **RIGHT** | **0.6667** [0.3125, 0.9375] (n = 30) |
+| pooled R − L | +0.3667 [−0.3433, +0.8525] — **not separated** |
+| **wrong-direction** rate | GT-left **9/30** vs GT-right **2/30** = **4.50x** |
+
+⇒ ⛔ **Since at `W_KAPPA = 0` the plan IS the goal's canonical seed on 21/22 turn-goal windows
+(`M54` §2), THE PLAN'S TURN RECALL IS BOUNDED ABOVE BY THE HEAD'S.** A plan-recall gap is therefore
+**partly INHERITED**, and *"the penalty costs left turns first"* cannot be read off the plan's gap
+alone. ⭐ **Only the INCREMENT over the head is attributable to the cost** — and the stream registered
+that rule **before** any `cl` output existed.
+
+⚠️ **This qualifies `M54`, and I state the qualification rather than let it stand unmarked.**
+⭐ **What SURVIVES:** `M54`'s core contrast is **penalty-ON vs penalty-OFF against the SAME head**
+(`ccos_argmax` 8/9 left vs `wk15` 0/9 left). The head's asymmetry is **common to both arms**, so it
+cannot explain that delta — the cost still destroys what the head does get right. ⛔ **What must be
+withdrawn is any claim that the LEFT-TURN DEFICIT IS ENTIRELY THE COST'S.** It is at least two
+defects stacked: a left-blind head, and a cost that discards the correct candidate the head supplies.
+
+### 2. ⛔⛔ The cluster ceiling — and it is the CORPUS, not the panel size
+
+| episode | goal recall R | L | R − L |
+|---|---|---|---|
+| 0 | 0.8333 | 0.0000 | +0.8333 |
+| 2 | 1.0000 | 0.0000 | +1.0000 |
+| **6** | 0.0000 | 1.0000 | ⛔ **−1.0000** |
+| 7 | 1.0000 | 0.0000 | +1.0000 |
+| mean | — | — | **+0.4583 [−0.5000, +1.0000]** — not separated |
+
+⇒ ⛔ **On this eval slice, left/right turn behaviour varies MORE BETWEEN EPISODES than between
+DIRECTIONS.** Three episodes say right, one says left, and a bootstrap over four clusters cannot
+choose. ⭐ Raising n per direction from 11/8 to **30/30 did NOT raise the cluster count** — and the
+decision estimator (episode-cluster bootstrap) consumes **clusters**, not windows.
+
+⇒ ⭐⭐ **SETTLING THE TURN ASYMMETRY NEEDS MORE EPISODES, NOT MORE COMPUTE. This is a PI-level corpus
+request** — and it was registered **before** the result, so it cannot read as an excuse.
+⚠️ **It does not license reading a null as a result:** outcome C means *"this eval slice cannot resolve
+an effect of this size"*, **never** *"there is no asymmetry."*
+
+### 3. A structural unattributability, and an omission the stream registered against itself
+
+Decoded `TURN_L` occurs only in episodes {1, 6} and `TURN_R` only in {0, 2, 4, 7} — ⛔ **no episode
+carries both.** Not a sampling artefact: **the head only ever decodes `TURN_L` in the left-heavy
+episodes.** ⇒ the *retention* statistic is **unattributable on the wide panel too** and decides
+nothing. The *recall* statistic is unaffected (GT-defined strata; 4 episodes carry both).
+⭐ The stream also registered, unprompted, that its within-episode contrast has **4 clusters, below the
+>=5 it had set for the pooled strata and never set for this one** — so a failure to separate there is a
+**power limit, not a negative.**
+
+### 4. Consequence
+
+⭐ **Goal 5's lateral half now has three named, separable targets**, in order of measured size:
+1. **the COST** — discards the correct injected candidate (`M54`);
+2. **the GOAL HEAD** — left recall 0.3000 vs right 0.6667, wrong-direction 4.50x;
+3. **the EVAL SLICE** — cannot resolve direction effects at all; **more episodes required.**
+⛔ **No lateral-asymmetry claim may be quoted from this slice until (3) is fixed**, and any that is
+must report the head's recall **beside** the plan's on the same windows.
+
+## M58. ⭐⭐⭐ THE 2x2x2 FACTORIAL SETTLES IT — `W_KAPPA` IS THE TURN-KILLER, AND THE CAP IS INERT BEHIND IT. Carry the constraint, drop the penalty.
+
+### 1. The factorial splits perfectly — no interpretation required
+
+| condition | `turn_left` recall |
+|---|---|
+| **`W_KAPPA` = 0** | **0.3636 in ALL FOUR cells** |
+| **`W_KAPPA` on** | ⛔ **0.0000 in ALL FOUR cells** |
+
+⇒ ⛔ **`W_KAPPA` is the turn-killer, factorially, with the cap and the ladder varied across it.** No
+other lever moves the class. This is the strongest form the constraint-vs-penalty finding (`M48`) could
+take, and it arrived from a designed factorial rather than a frontier read.
+
+⭐ **And the cap is INERT BEHIND the penalty:** `best − wk15` ADE **−0.0096 [−0.0415, +0.0278]** (ns),
+TAC lateral **+0.0000 [0, 0]**; `bestlad − wk15_ladder` +0.0010. **Because `W_KAPPA` has already driven
+`max|kappa|` far inside the friction circle, there is nothing left for the cap to forbid.**
+
+⇒ ⭐⭐ **RULING: carry the CAP forward, drop `W_KAPPA`.** The cap buys **67 % of the ADE**, more of the
+safety, **at zero turn cost and no longitudinal cost**. The penalty buys the remaining third by
+deleting a manoeuvre class.
+
+### 2. ⭐⭐ The mechanism, stated exactly: the decision is CORRECT, the execution is SUPPRESSED
+
+MEASURED: under `W_KAPPA` the **decoded goal mix is IDENTICAL** (18 / 9 / 13) while **`TURN_L` mean
+`kappa^2` falls 98.0 %.** ⇒ ⛔ **`W_KAPPA` does not change the decision — it refuses to EXECUTE it.**
+
+⇒ ⭐ That is the same object `M54` identified from the cost side (the correct candidate is injected and
+**loses on cost**) and `M57` bounded from the head side (the head is left-blind upstream). **Three
+streams, three routes, one mechanism: the tactical decision survives and the cost discards it.**
+
+### 3. ⛔ A superlative of the predecessor's, refuted — and the root cause is new
+
+*"the only zero-violation arm"* was **FALSE: four arms read 0.0000**, and `wk15` reached it **by not
+turning.** ⛔ **Root cause: a number quoted from a STALE GENERATION of a REGENERATED artifact**
+(`feas_audit.txt` superseded by `feas_audit_all.txt`) — and the refuting file was written **19 minutes
+BEFORE** the report that contradicted it. ⇒ ⭐ **CLASS: *a control set is not a census.* Checking three
+arms and finding one zero does not establish uniqueness; enumerate the population.** Adjacent to the
+stale-read family but distinct: here both files were readable and correct, and the wrong one was read.
+
+### 4. ⭐ A gate design worth reusing: the VACUITY gate
+
+`bestlad`'s pre-committed gates read **S PASS · M FAIL · T FAIL · A FAIL**, and the **M** gate is the
+instructive one: `max|kappa|` **0.0049 < 0.02 ⇒ the zero-violation result is VACUOUS.** ⇒ ⭐⭐ **A safety
+zero only means something if the arm APPROACHES the limit.** An arm that never turns cannot violate a
+curvature constraint, and a gate that does not test for that will certify it as safe.
+⇒ **Adopt: every safety-rate gate ships with a magnitude gate beside it.** This is the general form of
+`M46`'s authority control, and it generalises past friction to every budget-shaped constraint.
+
+### 5. Three more, all consequential
+
+* ⭐ **The seed replicate reads `separated` on 4 of 8 rows with ZERO levers moved** — `H-ESTIM-SEED-1`
+  measured on refav1 itself, with **separation and magnitude disagreeing in BOTH directions.**
+  Confirms `M56`: a replicate is mandatory at launch, not after a headline.
+* ⛔ **STRATEGIC and distance-keeping read UNAVAILABLE, n = 0** (no route channel; no lead track) —
+  the same hole `M55` measured from the label side. **Two of the four binding families are structurally
+  unreported on refav1's rig**, and that is a work item, not an omission.
+* ⛔ **refav1's records are `UNKNOWN_SCOPE` to `criteria_check.py`** ⇒ **the programme's only T1 driving
+  artifacts are INVISIBLE to the completeness machinery.** The machinery has therefore never audited
+  the arms that matter most.
+
+### 6. The next arm, named and unrun
+
+⭐ **`cap + ladder + a0_shift`, `W_KAPPA = 0`** — the constraint (which preserves turns), the ladder
+(which a constraint can use, and a penalty cannot — `M48`), and the longitudinal token fix (`M56` §5).
+**It attacks all three named defects at once and carries no lever that deletes a manoeuvre class.**
+⇒ This supersedes plan item A1 and is the highest-priority refav1 arm.
