@@ -100,6 +100,34 @@ panel offers, and it is registered as the **primary attribution statistic**.
 40-window panel.** It is deliberately turn-enriched on a different window grid;
 only within-panel arm-to-arm deltas are quotable.
 
+### §3.1 ⭐ THE WIDE PANEL'S FLOOR BASELINE, MEASURED BEFORE ANY PLANNER RAN
+
+`ha`, `ha0`, `ha0_ext` and `ol` are **pure kinematics on the recorded actions** —
+no model, no GPU, no planner — so the panel's corpus-plus-labeller directional
+baseline can be fixed up front, and it cannot leak the outcome (nothing here
+reads `cl`). Tool `raw/floor_preview.py`, which calls the **arm tool's own**
+`hold_action_controls` / `hold_ext_controls` / `paths_from_controls` /
+`gt_waypoints` rather than a re-implementation.
+
+| arm (no planner) | recall LEFT | recall RIGHT | pooled R − L | **within-episode R − L** |
+|---|---|---|---|---|
+| `ha` | 0.7000 [0.5667, 0.8333] | 0.6667 [0.4231, 0.8571] | **−0.0333** | **−0.1917 [−0.4000, +0.0500]** |
+| `ha0` (constant velocity) | 0.0000 | 0.0000 | +0.0000 | +0.0000 |
+| **`ha0_ext`** (the M11 integrator floor) | **0.7333** [0.5667, 0.8667] | **0.7000** [0.4996, 0.8571] | **−0.0333** | **−0.1917 [−0.4000, +0.0500]** |
+| `ol` (T0) | 0.8333 [0.6333, 1.0000] | 0.9333 [0.7388, 1.0000] | +0.1000 | +0.0000 [−0.3000, +0.3000] |
+
+Controls, all in the same table: GT against itself reads **exactly 1.0000 /
+1.0000**; the panel's GT strata read **30 / 30 / 15**, matching the panel file
+exactly; and `ha0`'s **exactly 0.0000 / 0.0000** is a *structural* zero — a
+constant-velocity plan cannot turn — with `ha0_ext` reading **0.7333 / 0.7000**
+non-zero on the very same windows as its same-breath control.
+
+⇒ ⭐ **On this panel the corpus-plus-labeller baseline is ≈ 0 pooled and
+SLIGHTLY LEFT-FAVOURING within episodes.** So a POSITIVE `recall_R − recall_L`
+from a planner arm would be running **against** its own floor, not with it —
+which makes such a gap more notable, not less. ⚠️ And it settles in advance the
+objection *"the panel just has easier right turns"*: on the floors, it does not.
+
 ---
 
 ## §4 — THE MECHANISM AUDIT: NOTHING DETERMINISTIC CAN PRODUCE IT
@@ -144,13 +172,54 @@ mean starts at **zero** (`prev_elites` is never passed by `refav1_arm.py`, so
 there is **no window-order effect**), `init_var = 1.0` on both channels, and the
 noise is sign-balanced.
 
-⇒ **HYPOTHESIS, named before the run:** the proposal mode set is directionally
+**HYPOTHESIS, named before the run:** the proposal mode set is directionally
 biased, so at `W_KAPPA = 0` the goal term can still drive the CEM either way,
 while under a curvature charge only a direction already present in the seed pool
 survives. It predicts the observed pattern with **no asymmetric term anywhere in
-the cost**. ⛔ Its instrument does not exist yet (the seed pool's signed
-curvature is not dumped) and adding it would edit `refa_v1.py` under a sibling
-stream's live arms — registered as the next work item, a one-field dump change.
+the cost**.
+
+### §4.2 ⛔⛔ AND IT IS REFUTED — BY THE CHEAPEST POSSIBLE FACT, AT ZERO GPU
+
+I said the instrument did not exist. It did — the features are **cached**, so
+`encode` + the proposal head is a few small matmuls that run on **CPU**.
+`raw/seedpool_probe.py` runs the same three lines `plan()` runs, in the same
+order, over all 75 wide-panel windows:
+
+> ⛔ **`cfg.proposal_k = 1` on this checkpoint, so `modes[1:]` is EMPTY and the
+> seed pool is NEVER INJECTED.** `refa_v1.py:2485` reads
+> `seed_pool = modes[1:] if modes.shape[0] > 1 else None`; the guard fires,
+> iCEM receives `seed_pool=None`, and `refa_v1_plan.py:291` skips the injection
+> entirely. **A learned, possibly-biased candidate set cannot explain an
+> asymmetry it never contributes.**
+
+Control that this is a real read and not a dead probe: the mode-0 statistics
+below come from the **same `modes` tensor** and are non-degenerate, and
+`proposal_k` is printed from the loaded config. ⚠️ The vacuous pool sections are
+**skipped, not printed as zeros** — a 0.0000 from an empty array is the absence
+of a measurement, and printing it as a number is how an absent instrument gets
+quoted as a result.
+
+**And the one directional thing that IS in the search leans the WRONG WAY.**
+Mode 0 — the named `proposal` baseline, which competes but is not the pool:
+
+| GT stratum | mean signed peak `kappa` of the proposal | n |
+|---|---|---|
+| `turn_left` | **+0.07040** [−0.17710, +0.31790] | 30 |
+| `turn_right` | **+0.11740** [−0.09510, +0.27690] | 30 |
+| `lane_keep` | +0.12640 [−0.04790, +0.28400] | 15 |
+
+It leans **LEFT (+) on every stratum, including GT-right** — so it does not track
+the GT direction, and it points the **opposite** way to the right-favouring
+retention it would have to explain. ⚠️ Its median `|kappa|` is **0.32691**
+against `kappa_max = 0.2`, i.e. `_clip` clamps the proposal on most windows;
+sign balance n(+) **47** vs n(−) **28** of 75.
+
+⇒ ⭐⭐ **EVERY NAMED MECHANISM IS NOW REFUTED — the vocabulary, the cost, the
+clip, the Kamm cap, the noise pool, the labeller, the corpus/speed route, the
+goal term's scale, the seed pool (which does not exist) and the proposal's own
+lean (which is backwards).** What remains is **the stochastic search itself**,
+and that is exactly and only what the two-seed pair measures. §6 is therefore
+not a formality; it is the last standing explanation.
 
 ---
 
