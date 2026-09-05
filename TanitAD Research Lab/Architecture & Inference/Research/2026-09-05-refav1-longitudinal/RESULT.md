@@ -157,6 +157,42 @@ the last observed *action*. There is no chooser to train, no level set, and **no
 free parameter fitted on the scored split**. ⇒ **oracle column ≡ realised
 column.**
 
+### 1.7 ⭐⭐ THE PLAN COPIES THE VOCABULARY — measured on channel 0, and it is the diagnostic that says a goal change CAN move the plan
+
+**Instrument:** `raw/lon_emitted.py` → `raw/lon_emitted.txt`. Zero GPU, read
+straight out of the banked `cl_controls`.
+
+| arm | n | mean\|a\| | frac `a ≡ 0` | `a` constant | **`a[0] == a_goal[0]`** | cem frac |
+|---|---|---|---|---|---|---|
+| `wk15` (W_KAPPA 15.11) | 40 | 0.31305 | 0.475 | 0.475 | **0.675** | 0.750 |
+| `wk151` (seed 1) | 40 | 0.35681 | 0.425 | 0.450 | 0.625 | 0.725 |
+| `ccos_argmax` (W_KAPPA 0) | 40 | 0.05056 | **0.775** | 0.775 | 0.775 | 0.750 |
+| `kamm07` | 40 | 0.05315 | **0.775** | 0.775 | 0.775 | 0.750 |
+| `l3ladder` | 40 | 0.07467 | **0.775** | 0.775 | 0.775 | 0.750 |
+
+**The distinct emitted `a[0]` values on `wk15`:**
+`+0.000000 ×19`, `−1.500000 ×4`, `+0.750000 ×3`, then 14 singletons.
+
+⭐⭐ **Those three rungs are `CRUISE`/`ADAPT`'s 0, `BRAKE_TO`'s −1.5 and
+`ACCELERATE`'s +0.75 — the vocabulary's own canonical first accelerations, with
+the exact multiplicities of TABLE H's decode counts (4 `BRAKE_TO`, 3
+`ACCELERATE`).** On **27 of 40 windows the emitted acceleration IS the decoded
+token's canonical rung**: the planner is not choosing an acceleration, it is
+reproducing the token's. This is the longitudinal twin of the already-banked
+lateral finding (`kappa_quantisation.txt`: the winning curvature series is
+exactly constant on 31/40 and reads exactly 0.000000 or 0.080000).
+
+⭐ **And an independent confirmation of §1.3 by a different route:** on the three
+`W_KAPPA = 0` arms `frac a ≡ 0` is **0.775 = 31/40** — *exactly* the
+maintain-branch count measured from the source vocabulary. Two probes, two
+mechanisms (dump controls vs `canonical_controls`), one number.
+
+⇒ **MEASURED PREDICTION, recorded before the arm runs:** because the plan copies
+the goal's longitudinal rung on 67.5 % of windows, `--a-sustain-mode a0` should
+move the emitted plan on most of the 19 `a ≡ 0` windows. If it does **not**, the
+finding is that the cost overrides the goal longitudinally — which is
+`lonseam`'s question, and it is already queued.
+
 ---
 
 ## 2. P2 — the cost side. Two missing terms, and the second is NOT mine to take
@@ -268,6 +304,36 @@ mid-flight by me.
   both carrying the full command line, so a process gate can never open.
 * `OMP_NUM_THREADS=6`, off-Drive clone `C:/Users/Admin/tanitad-wt` with
   `PYTHONPATH=<clone>/stack;<clone>/taniteval`.
+
+---
+
+## 4b. ⭐ THE BASELINE PANEL — the number the new arms have to beat, measured
+
+**Instrument:** `taniteval/tools/refav1_paired_delta.py`, paired
+episode-cluster bootstrap, `n_boot 2000`, per family, never pooled.
+⛔ Not `overlapping_holdout_se`. Banked: `raw/pd_lonbase.md` / `.json`.
+**Known-value control `wk15.cl − wk15.cl` reads `+0.0000 [+0.0000, +0.0000]` on
+all ten metrics.** ✅
+
+| pair | ADE | **LON speed MAE** | LON accel MAE |
+|---|---|---|---|
+| `wk15.cl − ha0_ext` | +0.0162 [−0.1648, +0.1980] | **+0.4862 [+0.2825, +0.7201]** | **+0.4117 [+0.2232, +0.6451]** |
+| `wk15.cl − ha0` | −0.0317 [−0.1344, +0.0559] | **+0.0702 [+0.0011, +0.1501]** | +0.0838 [−0.0006, +0.1846] |
+| **`wk151.cl − wk15.cl` (SEED FLOOR)** | +0.0150 [−0.0288, +0.0817] | **+0.0076 [−0.0134, +0.0282]** | −0.0040 [−0.0206, +0.0098] |
+| `kamm07.cl − wk15.cl` | **+0.0993 [+0.0039, +0.2149]** worse | **−0.0781 [−0.1440, −0.0183]** better | **−0.0861 [−0.1747, −0.0114]** better |
+| `l3ladder.cl − wk15.cl` | **+0.4301 [+0.0556, +1.0860]** worse | **−0.0617 [−0.1183, −0.0108]** better | **−0.0708 [−0.1536, −0.0048]** better |
+
+⇒ **THE TARGET IS +0.4862 m/s.** That is the whole longitudinal gap to
+`ha0_ext`, and it is separated by a wide margin — this is not a marginal loss.
+The seed floor on the same metric is **+0.0076**, so a longitudinal lever has
+**64× the headroom it needs** to be distinguishable; the binding question is
+size, not detectability.
+
+⚠️ **Two sibling arms, harvested here (they landed 21:05 / 21:11 UTC) and read
+against the same baseline — both show the SAME trade:** `kamm07` and `l3ladder`
+each improve the longitudinal family (−0.078, −0.062) while making ADE
+separably **worse** (+0.099, +0.430). Neither closes the gap: together they
+cover ~16 % and ~13 % of +0.4862 at a real ADE cost.
 
 ---
 
