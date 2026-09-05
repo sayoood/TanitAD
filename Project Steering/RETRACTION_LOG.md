@@ -12355,3 +12355,86 @@ feature census (the retracted source); the v5a camera-ladder RESULT.md §1.4.
 ⚠️ **Scope, stated honestly:** this corrects a COST figure. It does not touch any model result, any
 tier-stamped number, or any acceptance bar — and it makes the surround-camera option **cheaper**,
 not dearer, so no decision taken under the old figure was made too permissive.
+
+---
+
+## 2026-09-05 — `median_margin_gap_logits` is not a decision quantity, and the goal-head re-fit it justified was the wrong fix
+
+**Retracted:** `D-REFAV1-DRIVE-CEILING`'s prescription — *"Step 2 is INDICATED and now precisely
+specified: fine-tune ONLY the goal head … the objective is a WIDER MARGIN GAP —
+`median_margin_gap_logits`, today 0.297, is the success criterion"* — in **both** halves.
+**Retracted by:** the Architecture & Inference FlyWheel, `…/2026-09-05-refav1-goal-margin/`.
+**Rows:** `D-REFAV1-MARGIN-SCALE`, `D-REFAV1-VOCAB-QUANT`, `D-REFAV1-TURN-THRESHOLD`.
+
+### 1. The criterion was scale-dependent
+
+`lat_head` is `LayerNorm → Linear` (`refa_v1.py:1218`). Scaling that `Linear`'s weight **and**
+bias by `c` multiplies every logit — and therefore the gap — by `c`, while the argmax, the ROC
+and the AUC are untouched. **MEASURED at `c = 3`: decode bit-identical 282/282, AUC unchanged
+to < 1e-12, Cohen's d unchanged, gap × 3.0000 exactly.**
+⇒ *"widen the margin gap in logits"* is satisfiable by scaling the head and changing nothing.
+
+→ **ROOT-CAUSE CLASS: a true quantity used outside the scope in which it means anything** — the
+`df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` / cylindrical-FOV / anchor-units family.
+Here the scope is **the units' invariance**: a logit difference is only comparable within one
+weight norm. The scale-free replacements are AUC, balanced accuracy and Cohen's d, all reported.
+
+### 2. The fix it pointed at could not have worked
+
+MEASURED on 4786 windows / 141 episodes: `canonical_controls` can command exactly **two
+SUSTAINED curvatures**, `0` and `±GOAL_KAPPA_TURN = 0.08` (R 12.5 m) — `NUDGE_*` and
+`LANE_CHANGE_*` are S-curves with **zero net heading change**. This corpus curves at
+**R 100–1000 m**. ⇒ on **90.6 %** of GT-turn windows `LANE_KEEP` is the **vocabulary-optimal**
+token, and the head emits it on **85.2 %** of windows against a vocabulary-optimal **95.6 %** —
+**the head already turns MORE than its vocabulary justifies.**
+⇒ **no re-fit of `lat_head` and no decision rule can track a normal road curve.** Two re-fit
+attempts were made anyway, with pre-registered criteria, and both FAILED their controls.
+
+→ **ROOT-CAUSE CLASS: attributing a capability gap to the component that is measured, rather
+than to the one that was never measured.** The gate-1 measurement (`LANE_KEEP ⇒ κ ≡ 0`,
+244/244) is CORRECT and is **not** retracted; what was wrong is the inference *"therefore the
+head is deciding badly"*. Nobody had asked the prior question — **given the tokens that exist,
+what SHOULD the head emit?** — and the answer is `LANE_KEEP`. Same shape as the C6 confound
+(a decoder judged on a marginal it was never given the input for).
+
+→ **The generalisable check:** before attributing a decision error to a policy, score the
+**best available action** against the target. If the optimal available action is the one the
+policy chose, the policy is not the defect.
+
+### 3. Two of my own verdict functions were wrong, and only the controls caught them
+
+Both Step-2 attempts had a `verdict` computed from a rule I wrote, and both returned
+`SUCCEEDS`. The **soft-posterior** arm was shrink-to-zero sitting on the *wrong side* of its own
+shuffled control (real `r = −0.0999`, shuffled `+0.0068 ± 0.0691`); the **ridge** arm beat a
+CONSTANT by +0.019 and lost **94.5 %** of its R² under a nav permutation. Both are logged as
+REFUTED.
+→ **CLASS: a summary statistic computed by the same author as the hypothesis.** A verdict rule
+is not evidence; the controls are. Keep verdict functions, and keep them subordinate.
+
+### 4. Two collateral defects found and fixed in the same pass
+
+* ⚠️ **`gt_kappa` is not a curvature below ~1 m/s.** It is
+  `yaw_rate.mean / speed.mean.clamp_min(0.5)`, so at low speed it divides by the **floor**:
+  **13 windows (0.27 %)** read `|κ| > 0.2`, **92.3 % of them at v0 < 1 m/s**, max
+  **3.565 1/m = R 0.28 m** — narrower than the car — and they carried the **entire** RMS
+  (0.15827 raw vs 0.02192 clipped). My first vocabulary-pricing table was meaningless because
+  of it. ⇒ **any `yaw_rate/speed` curvature metric needs a speed floor on the WINDOW**, not just
+  inside the ratio. Blast radius CHECKED, not assumed: every other result in the package is
+  rank-based or already clipped.
+* ⛔ **A bare `%` in an argparse `help=` string kills `--help`.** I shipped one
+  (`"… on 90.6 % of GT-turn windows …"`), argparse read `% o` as the `%o` conversion, and
+  `--help` died with `TypeError: %o format: an integer is required, not dict`. The RUN path was
+  fine, which is why it could have shipped. Fixed, and the **class** is pinned by
+  `stack/tests/test_argparse_help_percent.py` (static `ast` scan, plus a control that the
+  detector fires on the bad form and stays silent on `%%` and `%(default)s`).
+  → ⭐ **What caught it was a SAME-BREATH CONTROL, not the check.** Grepping the help output for
+  the new flag returned 0 — which reads exactly like *"my grep is wrong"* — until the control
+  grep for the sibling flag that had always been there **also** returned 0. Two zeros, one of
+  which had to be non-zero, is what turned "my grep is wrong" into "the whole help is missing".
+  *CLAUDE.md: a count of 0 from a channel that could itself have failed is not evidence.*
+
+⚠️ **Scope, stated honestly.** Nothing here retracts a tier-stamped driving number. Gate 1 and
+gate 2 both stand. What changes is **which component the gap is attributed to**, and therefore
+which work is worth doing — and the direction is favourable: the head is better than it looked
+(detects real turns at **AUC 0.88**, picks L vs R at **AUC 0.90**, neither a nav echo), and the
+fix is a constant rather than a training run.
