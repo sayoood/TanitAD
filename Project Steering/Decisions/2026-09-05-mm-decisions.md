@@ -1867,3 +1867,99 @@ rather than proceeding silently.**
 ⚠️ **The general rule this earns:** ⛔ **a floor must match the lever in DEFINITION, not only in
 dose.** A null banked under a superseded predicate is not a null — it is a different measurement
 wearing the right filename, and it would have made this lever's effect look **38 % larger** than it is.
+
+## M39. ⭐⭐⭐ A COLLIDING TRAJECTORY IS NOW UNREPRESENTABLE — 100 % of contact removed at +0.0000 m, zero GPU
+
+### 1. The result
+
+`H-PROJ-CONTACT-1` **SUPPORTED**, SPEC committed as `a6002d9` **before the projection existed**, with
+a third outcome (`PARTIAL`) declared in advance **so it could not be invented later**.
+
+| | |
+|---|---|
+| `fan_contact` | **3.4277 % → a STRUCTURAL 0.000000 %** at every margin 0–20 m |
+| oracle-in-fan ADE · selected-path ADE | **exactly 0.0000 m**, CI **[0, 0]**, against a 0.0163 m replicate floor |
+| `fan_off_reach` | **IMPROVES** 0.1077 → 0.0991 — it does not pay for the gain |
+
+⇒ **The RL veto bought ~2.7 % of the same gap at ADE +0.0362 separated WORSE. The projection buys
+100 % at +0.0000 m, at zero GPU.**
+
+**Six controls, all reading known values:** the disabled lever returns the input **object**; the
+**175 no-agent windows move by exactly 0.0**; ⭐ **the 19 collider windows are exactly the 19 that
+move — per-candidate, 1057 == 1057 exactly**; round-trip residual **7.41e-14 m** over 29,663
+untouched candidates; and **`peak_g` never increases anywhere (0.0 exactly)**.
+
+### 2. ⭐⭐ It repairs my design note's partial refutation — by COMPOSING
+
+`M35` measured the *friction* projection making contact slightly **worse** (the infeasible candidates
+were flying away from the lead; making them realizable pulled them back). ⇒ I concluded the two
+constraints were orthogonal and that composition was open.
+
+MEASURED: **composed with `feasible_decode`, contact, `envelope` and `kamm_over` are SIMULTANEOUSLY
+ZERO on one tensor, and oracle ADE IMPROVES −0.0168 m, separated.**
+
+⇒ **The orthogonality was real but not adversarial: the two projections compose, and the composition
+is better than either alone.** `DESIGN_CONSTRAIN_BY_CONSTRUCTION`'s core claim survives its own
+partial refutation, strengthened.
+
+⚠️ **Named, not hidden:** the composed decode's `off_reach` 0.1077 → **0.3117** is the **friction**
+stage's, not the contact stage's. ⇒ **the contact projection is clean alone and can ship today**;
+the friction stage's `off_reach` remains its own open item.
+
+### 3. What the margin buys, and what it cannot
+
+`m ≤ 2.0 m` is **free on every reading**; the knee is `m = 3 m`. ⭐ **A margin `m` is exact immunity
+to an agent POSITION error of `m`** — but a lead **0.5 s early** re-introduces contact at **2.86 %**
+(m=0) → **0.61 %** (m=2). ⇒ **TIMING error is the part a radius cannot buy**, and that is a precise
+statement of what remains after the projection.
+
+### 4. ⛔ DECISION on the escalation: `fan_contact` is NO LONGER the RL primary endpoint
+
+The stream asked one question: *is `fan_contact` still the RL primary endpoint?* — given that
+`coll200` moved it **−1.26 % of its own base** while making `peak_g` **+0.0253**, `sel_peak_g`
+**+0.0240** and `fan_infeasible` **+0.0022** worse, **all separated** — the veto arm's trade for the
+**third** time.
+
+⇒ **DECIDED: NO.** ⛔ **`fan_contact` is solved by construction to a structural zero at zero cost.
+An RL stage can only do worse on it**, and has now done so three times with the same trade signature.
+
+⭐ **The corrected RL objective is what the projection CANNOT constrain: robustness to agent-MOTION
+PREDICTION error.** The projection gives exact immunity to a position error of `m`; it gives none to
+a lead arriving **0.5 s early**, which re-introduces contact at 2.86 %. **That residual is learnable
+and is not removable by geometry** — which is exactly the shape of thing RL is for.
+
+⚠️ **The in-flight replicates FINISH.** They establish this rig's noise floor, which is reusable for
+every future arm. ⛔ And their absolute rates are **not** comparable to the projection's (0.134 vs
+0.034 — different populations, and their own floor definition is mid-match), so **only relative
+movement may be quoted from them.**
+
+### 5. ⭐ It refuted its OWN redirect in the same turn
+
+It proposed the freed effort go to the **2.11× selection gap** — then refuted that immediately:
+**a RANDOM best-of-32 (0.4440 m) already beats the trained argmax over all 128 (0.4884 m)**, and the
+best-of-N curve is `N^−0.592` (**R² 0.990**, n=7, window 2–128) **with no plateau**.
+
+⇒ **Oracle-in-fan measures FAN DIVERSITY, not selection skill.** A ridge closes +2.3 % (not
+separated); a GBDT is **−25.8 %, worse than the model**. ⇒ **An RL selection stage over this
+information is REFUTED before a GPU-hour was requested.** Corrected target: **candidate QUALITY, not
+count** (`H-FAN-QUALITY-1`). Class logged: ***a best-of-N statistic read as a skill gap.***
+
+### 6. Four findings nobody asked for, and one corruption
+
+* Every pre-`9765634` contact number is a **point-test lower bound**: **764 → 1053, +37.83 %**,
+  independently reproducing `D-SWEPT-1`'s +37.8 %.
+* ⭐ **`sel_contact = 0.0000` is ONE CHECKPOINT'S ARGMAX, not the generator** — **`top32_contact` is
+  0.03317**, and **32 is DiffusionDrive-v2's own selector top-k.** ⇒ retraction #31's lesson,
+  sharpened: the metric that matters is the one at the *deployed* selector's k.
+* ⛔ **`rewards._collision` never sweeps its FIRST segment** — a plan driving over a car parked 1.5 m
+  ahead reads **CLEAR**. Incidence here: 2 candidates, reported at its true size.
+* ⚠️ **Asking for more safety delivered LESS** until a margin ladder replaced the single-`r_need`
+  search — a monotonicity failure in the search, not in the physics.
+* One bug the controls caught pre-ship: the scan used `lat·σ²` while the emission used `κ·v_mid²` —
+  **retraction #30 verbatim**, caught only because the control re-derives from the **output** with
+  the scorer.
+
+⛔⛔ **AND A REAL CORRUPTION IN HEAD:** `RETRACTION_LOG.md`'s blob had **23 lines collapsed into a
+whitespace run**, repaired in `b90d92c`. ⚠️ **A `grep -c` on HEAD did NOT catch it, because the
+marker survived on one side of the collapse.** ⇒ **a marker count is not an integrity check** — the
+padding-run check that found it is now part of the end-of-turn verification.
