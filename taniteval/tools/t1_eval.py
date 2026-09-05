@@ -152,6 +152,14 @@ DEFAULT_TIERS = {
     # human drives straight, so an arm can beat `ha` by doing nothing at all.
     # MEASURED that day: refav1's closed loop IS this arm on 140/140 windows.
     "ha0": "T1",
+    # ⭐ ha0_ext (2026-09-05, D-REFAV1-CCOS-EVAL): the ECHO control of
+    # stack/tanitad/eval/echo_gate.py in refav1 form — constant (a0, kappa0) of
+    # the MEASURED t0 state held for K steps; a0 is the BACKWARD difference at
+    # t0 and kappa0 the recorded curvature AT t0, so nothing after t0 enters.
+    # T1 for the same reason as `ha` / `ha0`. Without this line the bare
+    # t1_eval CLI refused every refav1 dump AFTER the rollout (the same
+    # after-the-expensive-part failure D-HA0-TIER closed for `ha0`).
+    "ha0_ext": "T1",
     "ol": "T0", "o16": "T0", "o6": "T0",
 }
 _TIER_NOTE = {

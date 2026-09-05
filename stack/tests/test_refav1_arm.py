@@ -196,10 +196,13 @@ def test_dump_is_the_t1_contract_and_analyze_reads_it(e2e):
     for arm in ("cl", "ha", "ha0", "ol", "cl_navshuf", "cl_oraclegoal"):
         assert d[arm].shape == (N, 10, 2), arm
     assert d["v0"].shape == (N,) and d["eid"].tolist() == [0]
-    assert set(rec["arms"]) == {"cl", "ha", "ha0", "ol", "cl_navshuf",
+    # `ha0_ext` (2026-09-05, D-REFAV1-CCOS-EVAL): the ECHO control — constant
+    # (a0, kappa0) of the MEASURED t0 state, T1 like `ha` / `ha0` (no recorded
+    # future). ADDITIVE, like `ha0` before it.
+    assert set(rec["arms"]) == {"cl", "ha", "ha0", "ha0_ext", "ol", "cl_navshuf",
                                 "cl_oraclegoal"}
-    assert rec["tiers"] == {"cl": "T1", "ha": "T1", "ha0": "T1", "ol": "T0",
-                            "cl_navshuf": "T1", "cl_oraclegoal": "T0"}
+    assert rec["tiers"] == {"cl": "T1", "ha": "T1", "ha0": "T1", "ha0_ext": "T1",
+                            "ol": "T0", "cl_navshuf": "T1", "cl_oraclegoal": "T0"}
     assert rec["n_windows"] == manifest["grid"]["n_windows"] == 3 * N
     for arm, blk in rec["arms"].items():
         fam = blk["four_families"]

@@ -211,13 +211,13 @@ def test_a3_only_the_chord_reads_its_own_identity_control(d):
     """
     g = torch.Generator().manual_seed(13)
     zt = torch.randn(6, 1, d, generator=g)
-    # ⚠️ the two REFERENCE-FREE branches only. `"ccos"` (added 2026-09-04)
-    # requires a centring reference by construction and cannot be evaluated
-    # from (zt, g) alone; its own identity control -- which it PASSES exactly,
-    # for a different reason -- is
-    # `test_cost_ccos.py::test_c_identity_control_is_exactly_zero`.
-    err = {m: float(_goal_term(zt, zt.clone(), m).abs().max())
-           for m in ("cos", "chord")}
+    # `ccos` (cee5d99) REQUIRES a centring reference and raises without one;
+    # `cos` / `chord` ignore it bit-for-bit (test_cost_ccos.py::test_a_*), so
+    # passing one keeps this control exactly what it was for the two branches
+    # it pins. The ccos value is not asserted here (see test_cost_ccos.py::test_c).
+    z_ref = torch.randn(1, 1, d, generator=g)
+    err = {m: float(_goal_term(zt, zt.clone(), m, z_ref).abs().max())
+           for m in COST_METRICS}
     assert err["chord"] == 0.0, (
         f"d={d}: the chord must read EXACTLY 0.0 on identical fields, got "
         f"{err['chord']:.3e}")
@@ -446,11 +446,9 @@ def test_i_the_chord_is_not_weight_neutral():
 
 
 def test_j_the_metrics_tuple_is_exactly_the_supported_branches():
-    """⚠️ Extended 2026-09-04: `"ccos"` (centred cosine) is a THIRD branch and
-    is a different KIND of change from the chord -- it RE-RANKS, which the
-    chord provably cannot. `test_cost_ccos.py` owns its behaviour; this file
-    keeps owning the chord's, and the tuple is pinned here so a fourth branch
-    cannot arrive unannounced."""
+    # ("cos", "chord") until 2026-09-04; "ccos" (the centred cosine) joined in
+    # cee5d99 — see test_cost_ccos.py for its pins. A FOURTH entry must be
+    # registered here, with its weight statement, before it can be selected.
     assert COST_METRICS == ("cos", "chord", "ccos")
     for metric in COST_METRICS:
         assert _check_cost_metric(metric) == metric

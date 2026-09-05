@@ -1985,7 +1985,8 @@ class RefAV1(nn.Module):
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
              cost_chunk: int = 64, model_action_units: str = "kappa",
              cost_time_grid: str = "dense", goal_time_grid: str = "full",
-             cost_metric: str = "cos"):
+             cost_metric: str = "cos",
+             cost_weights: tuple[float, float, float] | None = None):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -2056,7 +2057,19 @@ class RefAV1(nn.Module):
         re-weighting. See `COST_METRICS` and `W_KAPPA`; never flip it without
         declaring the weight in the same arm.
 
-        ⚠️ All four are CALL-SITE arguments, not `RefAV1Config` fields, on
+        ⭐ ``cost_weights`` -- THE WEIGHT TRIPLE, DECLARED IN THE SAME BREATH
+        (D-REFAV1-CCOS-EVAL, 2026-09-05). ``None`` (DEFAULT) reads the module
+        constants ``(W_JERK, W_KAPPA, W_VEND)`` at CALL time -- bit-identical
+        to every earlier caller, and a test that monkeypatches `W_KAPPA`
+        still sees its patch. A tuple ``(w_jerk, w_kappa, w_vend)`` overrides
+        all three for THIS tick only, so an arm that flips ``cost_metric``
+        carries its compensating weights on the same call instead of
+        mutating module globals (which a concurrent arm in the same process
+        would inherit). The triple actually used is stamped on the result as
+        ``res.cost_weights``. `COST_METRICS` says why neither ``"chord"``
+        nor ``"ccos"`` may be flipped without one.
+
+        ⚠️ All five are CALL-SITE arguments, not `RefAV1Config` fields, on
         purpose: adding a config field would change every serialised config
         dict while a training run is live. Nothing on the training path can
         see them -- MEASURED 2026-09-03 with two differently-bound probes:
@@ -2088,6 +2101,13 @@ class RefAV1(nn.Module):
         _check_cost_time_grid(cost_time_grid)
         _check_goal_time_grid(goal_time_grid)
         _check_cost_metric(cost_metric)
+        if cost_weights is None:
+            w_jerk, w_kappa, w_vend = W_JERK, W_KAPPA, W_VEND
+        else:
+            if len(cost_weights) != 3:
+                raise ValueError("cost_weights must be (w_jerk, w_kappa, "
+                                 f"w_vend), got {cost_weights!r}")
+            w_jerk, w_kappa, w_vend = (float(x) for x in cost_weights)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -2266,11 +2286,11 @@ class RefAV1(nn.Module):
                          if cost_metric == "ccos" else None)
                 c = c + _goal_term(zt, g, cost_metric, z_ref)
             jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
-            c = c + W_JERK * jerk.pow(2).mean(-1)                  # comfort
-            c = c + W_KAPPA * controls[..., 1].pow(2).mean(-1)     # curvature
+            c = c + w_jerk * jerk.pow(2).mean(-1)                  # comfort
+            c = c + w_kappa * controls[..., 1].pow(2).mean(-1)     # curvature
             if target_speed is not None:
                 v_end = v0 + controls[..., 0].sum(-1) * pc.dt
-                c = c + W_VEND * (v_end - target_speed).pow(2)
+                c = c + w_vend * (v_end - target_speed).pow(2)
             return c
 
         def cost_fn(controls: Tensor) -> Tensor:
@@ -2316,6 +2336,7 @@ class RefAV1(nn.Module):
         res.cost_time_grid = cost_time_grid
         res.goal_time_grid = goal_time_grid
         res.cost_metric = cost_metric
+        res.cost_weights = (w_jerk, w_kappa, w_vend)
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the

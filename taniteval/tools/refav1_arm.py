@@ -185,7 +185,8 @@ t1 = _load_t1()
 DT = 0.2                 # refav1's operative tick (the loader REFUSES any other)
 K_TRAJ_DEFAULT = 10      # 2.0 s = cfg.plan_steps at defaults = t1_eval's 20 x 0.1 s
 ARM_TIERS = {"cl": "T1", "cl_navshuf": "T1", "cl_nonav": "T1",
-             "cl_oraclegoal": "T0", "ha": "T1", "ha0": "T1", "ol": "T0"}
+             "cl_oraclegoal": "T0", "ha": "T1", "ha0": "T1", "ha0_ext": "T1",
+             "ol": "T0"}
 ARM_MEANING = {
     "cl": "T1 — plan() at t0, TRUE nav; predictor consumes the planner's own "
           "actions; trajectory = unicycle(controls, measured v0)",
@@ -200,6 +201,16 @@ ARM_MEANING = {
            "straight line at constant speed. The STRONGEST TRIVIAL BASELINE and "
            "the echo test's real bar; consumes strictly less than ha (not even "
            "the last observed action)",
+    "ha0_ext": "T1 — THE ECHO CONTROL (stack/tanitad/eval/echo_gate.py::ha0_ext, "
+               "refav1 form): constant (a0, kappa0) from the MEASURED t0 state "
+               "held for K steps. a0 = (v[2t] - v[2t-2]) / 0.2 is the SAME "
+               "backward difference ha holds (the forward one reads v[2t+2], "
+               "the future); kappa0 = actions[2t, 0], the recorded curvature "
+               "AT t0, where ha reads it at t0-1 (echo_gate's named weakness "
+               "#2, closed). Same unicycle as every other arm. ⚠️ NOT the "
+               "corpus-ax form (echo_gate's weakness #1): the v2ep carries no "
+               "measured ax, so the sharper variant is not constructible from "
+               "these inputs — a WORK ITEM, stated, not hidden",
     "ol": "T0 — the RECORDED future (a, kappa) integrated from v0: the "
           "kinematic-contract control (must reproduce GT), NOT a WM diagnostic",
 }
@@ -391,6 +402,26 @@ def hold_action_controls(loader, v, kap, t: int):
     if t < 1:
         raise ValueError("hold-action needs t >= 1 (one closed action before t0)")
     return loader._kin_actions(v, kap, t - 1, 1)[0]              # [2]
+
+
+def hold_ext_controls(loader, v, kap, t: int, *, dt: float | None = None):
+    """``ha0_ext`` (refav1 form): the (a0, kappa0) of the MEASURED t0 state.
+
+    ``a0 = (v[2t] - v[2t-2]) / dt`` — the SAME backward difference
+    `hold_action_controls` holds (the forward one, ``v[2t+2]``, is future);
+    ``kappa0 = kap[2t]`` — the recorded curvature AT t0, where ``ha`` holds
+    ``kap[2t-2]`` (`echo_gate.ha_finite_diff_accel`'s "reads the steer at
+    t0-1" weakness, closed). Every index is <= 2t: nothing recorded after t0
+    enters. ⚠️ `echo_gate.ha0_ext`'s STRONGER form is built on the corpus's own
+    measured ``ax``; the v2ep carries none, so this is the sharpest ADMISSIBLE
+    form on these inputs, and `ARM_MEANING` names it as such.
+    """
+    if t < 1:
+        raise ValueError("ha0_ext needs t >= 1 (one closed step before t0)")
+    import torch
+    dt = float(dt if dt is not None else loader.dt)
+    a0 = (v[2 * t] - v[2 * t - 2]) / dt
+    return torch.stack([a0, kap[2 * t]]).float()                 # [2]
 
 
 def hold_v0_controls(k: int):
@@ -605,7 +636,7 @@ def run_dump(a) -> dict:
             nav_valid[i] = nid is not None
     nav_shuf, shuf_stats = shuffle_nav(nav_true, nav_valid, a.nav_shuffle_seed)
 
-    arms = ["cl", "ha", "ha0", "ol"]
+    arms = ["cl", "ha", "ha0", "ha0_ext", "ol"]
     if ld._nav_on and not a.no_navshuf:
         arms.append("cl_navshuf")
     if a.with_nonav_arm:
@@ -614,6 +645,34 @@ def run_dump(a) -> dict:
         arms.append("cl_oraclegoal")
     plan_arms = [x for x in arms if x.startswith("cl")]
     pc = _plan_cfg(cfg, a)
+    # ⭐ THE COST FLAGS (D-REFAV1-CCOS-EVAL). `cost_metric` selects the goal
+    # term's form (`refa_v1.COST_METRICS`); `cost_weights` is the declared
+    # (W_JERK, W_KAPPA, W_VEND) triple, None = the shipped module constants.
+    # ⛔ VERIFY-GATE: a stale stack that predates the branch under test would
+    # otherwise raise deep inside plan() after the model is loaded — or worse,
+    # silently score a differently-named metric. Refuse up front, by name.
+    from tanitad.refs import refa_v1 as _R
+    cost_metric = str(getattr(a, "cost_metric", None) or "cos")
+    if cost_metric not in getattr(_R, "COST_METRICS", ("cos",)):
+        raise SystemExit(f"[refav1_arm] ⛔ STALE STACK: cost_metric={cost_metric!r} "
+                         f"is not in COST_METRICS={getattr(_R, 'COST_METRICS', None)} "
+                         f"of {_R.__file__}; refusing to score a metric this "
+                         f"tree does not implement")
+    cw_raw = getattr(a, "cost_weights", None)
+    cost_weights = None
+    if cw_raw:
+        parts = [float(x) for x in str(cw_raw).split(",")]
+        if len(parts) != 3:
+            raise SystemExit("[refav1_arm] --cost-weights must be 'w_jerk,w_kappa,"
+                             f"w_vend', got {cw_raw!r}")
+        cost_weights = tuple(parts)
+    shipped_w = {"W_JERK": float(_R.W_JERK), "W_KAPPA": float(_R.W_KAPPA),
+                 "W_VEND": float(_R.W_VEND)}
+    used_w = (dict(zip(("W_JERK", "W_KAPPA", "W_VEND"), cost_weights))
+              if cost_weights else dict(shipped_w))
+    _p(f"[cost] metric={cost_metric} weights={used_w} "
+       f"({'CLI override' if cost_weights else 'shipped module constants'}); "
+       f"COST_METRICS={_R.COST_METRICS} from {_R.__file__}")
     _p(f"[grid] K={k} ({k * DT:.1f} s) K_wm={k_wm} stride={stride} "
        f"windows={len(sel)} arms={arms} plan={{samples {pc.n_samples}, iters "
        f"{pc.n_iters}, elites {pc.n_elites}, seed {pc.seed}}} nav_shuffle="
@@ -674,6 +733,11 @@ def run_dump(a) -> dict:
                 # ⭐ the constant-velocity floor: SAME integrator, SAME v0, zero
                 # controls — so any difference from `ha` is the held action alone.
                 ha0 = paths_from_controls(hold_v0_controls(k).to(dev), v0, DT, k)
+                # ⭐ the ECHO control (echo_gate.ha0_ext, refav1 form): the
+                # measured t0 state's (a0, kappa0) held — kappa read AT t0.
+                ext = hold_ext_controls(ld, v_ep, kap_ep, t).to(dev)
+                ha0_ext = paths_from_controls(ext[None].expand(k, 2), v0, DT, k,
+                                              action_units=rec_units)
                 # -- T0 WM diagnostic + true-nav decisions via forward() ------
                 # 2-wide controls + measured v0: the MODEL derives any speed
                 # channel (augment_actions) — never widened here.
@@ -734,15 +798,32 @@ def run_dump(a) -> dict:
                     # arctan(L_enc*kappa) when `rec_units == "steer"`.
                     res = model.plan(feats, v0=v0, nav_cmd=nv, plan_cfg=pc,
                                      goal_field=gf,
-                                     model_action_units=rec_units)
+                                     model_action_units=rec_units,
+                                     cost_metric=cost_metric,
+                                     cost_weights=cost_weights)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
+                        # ⛔ the flag must have REACHED plan(): a result that
+                        # does not carry it back was produced by an older
+                        # plan() and would be banked under the wrong name.
+                        if getattr(res, "cost_metric", None) != cost_metric:
+                            raise RuntimeError(
+                                f"plan() returned cost_metric="
+                                f"{getattr(res, 'cost_metric', None)!r}, asked "
+                                f"for {cost_metric!r}: the flag did not reach it")
+                        got_w = tuple(float(x) for x in
+                                      getattr(res, "cost_weights", ()))
+                        want_w = tuple(used_w.values())
+                        if got_w != want_w:
+                            raise RuntimeError(f"plan() used cost_weights={got_w}, "
+                                               f"asked for {want_w}")
                     plans[arm] = res
             # -- bank the window ---------------------------------------------
             acc["g"].append(g.float().cpu().numpy())
             acc["ol"].append(ol.float().cpu().numpy())
             acc["ha"].append(ha.float().cpu().numpy())
             acc["ha0"].append(ha0.float().cpu().numpy())
+            acc["ha0_ext"].append(ha0_ext.float().cpu().numpy())
             acc["v0"].append(np.array([v0], dtype=np.float32))
             for arm, res in plans.items():
                 ctrl = res.controls.detach()
@@ -755,6 +836,16 @@ def run_dump(a) -> dict:
                 dec.setdefault(f"plan_agree_{arm}", []).append(
                     -1 if res.coarse_fine_agree is None else int(res.coarse_fine_agree))
                 dec.setdefault(f"plan_neval_{arm}", []).append(int(res.n_evaluated))
+                # ⭐ THE INJECTED BASELINES' OWN COSTS and the coarse->fine re-score,
+                # per window (D-REFAV1-CCOS-EVAL). Under `ccos` the cv row's cost IS
+                # its goal term, and whether that reads the no-information 1.0 or an
+                # arbitrary value decided by batch-composition rounding is a property
+                # of the run that must be banked, not assumed (test_m of
+                # test_cost_ccos.py read 1.0531 on a tiny model).
+                for nm_, cv_ in (res.baseline_costs or {}).items():
+                    dec.setdefault(f"basecost_{nm_}_{arm}", []).append(float(cv_))
+                for nm_, cv_ in (res.fine_costs or {}).items():
+                    dec.setdefault(f"finecost_{nm_}_{arm}", []).append(float(cv_))
                 # GOAL PROVENANCE, read off the result (refa_v1.plan stamps
                 # goal_source / goal_space / goal_action since e609a98). An
                 # older model file carries no attribute and reads as "none" with
@@ -775,6 +866,8 @@ def run_dump(a) -> dict:
                     goal_space_seen.add(str(gsp))
             dec.setdefault("ha_controls", []).append(
                 hold[None].expand(k, 2).float().cpu().numpy()[None])
+            dec.setdefault("ha0_ext_controls", []).append(
+                ext[None].expand(k, 2).float().cpu().numpy()[None])
             dec.setdefault("wm_mse_model", []).append(mse_m.float().cpu().numpy()[None])
             dec.setdefault("wm_mse_const", []).append(mse_c.float().cpu().numpy()[None])
             dec.setdefault("wm_mse_zero", []).append(mse_z.float().cpu().numpy()[None])
@@ -838,6 +931,21 @@ def run_dump(a) -> dict:
         "arms": arms, "tiers": {x: ARM_TIERS[x] for x in arms},
         "arm_meaning": {x: ARM_MEANING[x] for x in arms},
         "plan_cfg": dataclasses.asdict(pc),
+        # ⭐ THE COST PROVENANCE (D-REFAV1-CCOS-EVAL): a dump produced under
+        # `ccos` and one produced under `cos` are otherwise indistinguishable
+        # after the fact. `weights` is the triple plan() ACTUALLY used.
+        "cost": {"metric": cost_metric, "weights": used_w,
+                 "weights_source": ("CLI override (--cost-weights)" if cost_weights
+                                    else "shipped module constants"),
+                 "shipped_weights": shipped_w,
+                 "cost_metrics_available": list(_R.COST_METRICS),
+                 "rule": ("cost_metric selects the goal term's form "
+                          "(refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped "
+                          "default; chord = ||z^-g^||, monotone-equivalent; ccos = "
+                          "1-cos(z-z_ref, g-z_ref) centred on the window's own "
+                          "zero-action terminal field). Neither non-default form "
+                          "is weight-neutral, so the weight triple is banked "
+                          "beside the metric, never assumed")},
         "plan_source_names": list(PLAN_SOURCE_NAMES),
         "nav_shuffle": shuf_stats,
         "speed_channel": {
@@ -1605,6 +1713,9 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         # ⭐ the echo test's REAL bar: cl against the constant-velocity straight line.
         # `cl - ha` alone let a straight-line plan read as lateral skill (2026-09-03).
         ("ha0", "cl", "paired_cl_minus_ha0"),
+        # ⭐ the ECHO control (echo_gate.ha0_ext, refav1 form) — the bar an arm
+        # must clear to claim it read the scene, not its own ego state.
+        ("ha0_ext", "cl", "paired_cl_minus_ha0ext"),
         ("cl_navshuf", "cl", "paired_cl_minus_navshuf"),
         ("cl_nonav", "cl", "paired_cl_minus_nonav"),
         ("cl_oraclegoal", "cl", "paired_cl_minus_oraclegoal"))
@@ -1651,6 +1762,9 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
            "_tier_doctrine": rec["_tier_doctrine"],
            # ⭐ banked FIRST in the record too, for the same reason it prints first.
            "trivial_profile": triv,
+           # the cost provenance the dump was produced under (None for a dump
+           # written before D-REFAV1-CCOS-EVAL = the shipped `cos` at shipped weights)
+           "cost": (manifest or {}).get("cost"),
            "families_paired": {nm: _paired_families(comps, x, y, eid_w, tiers, n_boot, seed)
                                for x, y, nm in pairs},
            "families_note": (
@@ -1965,6 +2079,18 @@ def main(argv=None):
     ap.add_argument("--plan-n-iters", type=int, default=None)
     ap.add_argument("--plan-n-elites", type=int, default=None)
     ap.add_argument("--plan-seed", type=int, default=0)
+    ap.add_argument("--cost-metric", choices=("cos", "chord", "ccos"), default="cos",
+                    help="the goal term's form (refa_v1.COST_METRICS). 'cos' = the "
+                         "shipped default every banked number was produced under; "
+                         "'chord' = monotone-equivalent, cannot re-rank; 'ccos' = "
+                         "centred on the window's own zero-action terminal field, "
+                         "CAN re-rank. ⛔ neither non-default form is weight-neutral: "
+                         "declare --cost-weights in the same arm or the record "
+                         "carries an implicit re-weighting")
+    ap.add_argument("--cost-weights", default=None,
+                    help="'w_jerk,w_kappa,w_vend' passed to plan(cost_weights=); "
+                         "default = the shipped module constants (0.02, 0.05, 0.10). "
+                         "Banked in manifest['cost'] and the record")
     ap.add_argument("--nav-shuffle-seed", type=int, default=0)
     ap.add_argument("--no-navshuf", action="store_true",
                     help="skip the nav-shuffle T1 arm (⛔ then the record is "
@@ -2019,6 +2145,9 @@ def main(argv=None):
     rec.update({"arm": a.arm, "ckpt": a.ckpt, "dump_dir": dump_dir,
                 "mode": "analyze-only" if a.analyze_only else "rollout+analyze",
                 "lead_block": lead_path,
+                # the cost provenance, promoted to the top level so a reader
+                # (and the suite) never has to guess which metric produced `cl`
+                "cost": (rec.get("refav1") or {}).get("cost"),
                 "_unverified": _UNVERIFIED_ON_REAL_CKPT})
     with open(a.out, "w", encoding="utf-8") as fh:
         json.dump(rec, fh, indent=1, default=str)
