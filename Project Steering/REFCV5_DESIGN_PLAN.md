@@ -564,28 +564,136 @@ The LiDAR build raises the ceiling; it never blocks the launch.
 
 ## §7A The reconciled release ladder (v5a / v5b)
 
-> ⚠️ **STATUS: SKELETON — 2026-09-05, Arch+Inference FlyWheel, integration task delegated by the
-> Master Mind. Parts 1–6 are being filled in and committed one at a time; a heading with no content
-> below it is NOT a finding, it is work in flight.** This section reconciles two completed documents
-> that describe overlapping work under two incompatible naming schemes:
-> **(A)** `Project Steering/REFCV5_DESIGN_PLAN.md` §7 (this file — the 14-package single-track ladder,
-> written *before* the PI's release split) and **(B)** `TanitAD Research Lab/Architecture &
-> Inference/Research/2026-09-05-vision-only-maximum/RESULT.md` (the ten-rung `WP-V5A-*` camera-only
-> ladder). ⛔ **Nothing here is new research.** The adjudication rule the Master Mind set, applied
-> throughout: **the vision study's evidence wins on the camera-only questions** (it measured the
-> inventory, the costs and the azimuth coverage); **§7's structure wins on everything else** (its
-> SPEC blocks, gates, claims and refutations are the programme's format). Where the two documents
-> conflict on a *fact* rather than a name, both readings are recorded with their evidence and the
-> conflict is escalated — it is not adjudicated here.
+> ⚠️ **STATUS: PART 1 of 6 LANDED — 2026-09-05, Arch+Inference FlyWheel, integration task delegated by
+> the Master Mind. Parts 2–6 are being filled in and committed one at a time; a heading with
+> `*(pending)*` under it is NOT a finding, it is work in flight.**
+
+This section reconciles two completed documents that describe overlapping work under two
+incompatible naming schemes:
+
+* **(A) `Project Steering/REFCV5_DESIGN_PLAN.md` §7** — this file, immediately above: the
+  **14-work-package ladder WP-0…WP-14** with file-level plans, param deltas, per-rung SPEC blocks,
+  GPU budgets and a critical path. It was written **before** the PI's release split and is therefore
+  **single-track**.
+* **(B) `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vision-only-maximum/RESULT.md`**
+  — the **ten-rung `WP-V5A-*` camera-only ladder** (≈ 13.4 rig-GPU-h, four rungs starting at zero pod
+  GPU), plus the v5a/v5b boundary stated as a decision rule, and 11 `D-V5A-*` + 8 `H-V5A-*` register
+  rows.
+
+⛔ **Nothing here is new research.** The adjudication rule the Master Mind set, applied throughout:
+**(B)'s evidence wins on the camera-only questions** — it measured the camera inventory, the bytes and
+the azimuth coverage; **(A)'s structure wins on everything else** — its SPEC blocks, gates, claims and
+refutations are the programme's format. Where the two conflict on a **fact** rather than a name, both
+readings are recorded with their evidence and the conflict is **escalated** (§7A.7), not adjudicated
+here.
 
 **Why this section exists (the PI's ruling, `Project Steering/Decisions/2026-09-05-mm-decisions.md`
 §M7, verbatim):** *"i prefer to do the environment extensions in two versions/steps, let start by
 pure vision and then add lidar. So check, what we can do maximally with vision, bev, und was else?"*
-§7 above predates that ruling and is therefore **single-track**. §7A imposes the split on it.
+
+**What §7 keeps.** §7 is **not rewritten**. Its per-WP detail — primary files, one-variable
+statements, param deltas, SPEC blocks, box-and-cost figures, the bundling rule — stands unchanged and
+is what §7A points back to. §7 is superseded **for ordering and for names only**, and it is preserved
+deliberately: it is the record of what was planned before the split.
 
 ### 7A.1 Crosswalk — every name in both documents, and the single canonical name
 
-*(pending)*
+**How to use it.** Take any name you have seen today, find its row, read the **CANONICAL** column.
+A name marked ⛔ **RETIRED** means two documents used it for two different arms; it is never quotable
+bare again.
+
+#### 7A.1.a ⛔ The one name that means two different things — `E-AGT-1`
+
+This is the collision the Master Mind flagged, and it is real:
+
+| the name `E-AGT-1` in… | means | evidence |
+|---|---|---|
+| **(A) §7.1 WP-6 / §3.4 / §1.3 #20** | the **whole agent-token mechanism in one arm**: a DETR-style head on `obstacle.offline` **plus** `cross_agent` in every decoder layer, ≈ 6 M params, one variable = "the second cross-attention" | plan §7.1 row WP-6; SPEC block `# WP-6 E-AGT-1 — agent tokens`, `one_variable: cross_agent_layer` |
+| **(B) §3.0 WP-V5A-2 / §3.3** | **only the accuracy-budget sweep**: range-noise σ ∈ {0, 0.5, 1, 2, 4} m + a separate miss-rate sweep applied to **oracle** boxes, 6 arms ≈ 2.9 h, one variable = σ | study §3.0 table; §3.3 `one_variable: the range-noise sigma applied to the oracle boxes` |
+
+⇒ **`E-AGT-1` is RETIRED.** The mechanism is (B)'s three-rung decomposition — which is the
+camera-only refinement, and (B) wins there — under three names that cannot be confused:
+
+| CANONICAL | what it is | was called |
+|---|---|---|
+| **`E-AGT-ORACLE`** | the **ceiling**: `cross_agent` wired and fed **ground-truth** boxes at inference. Deliberately inadmissible as a capability claim, run **once**. If it does not separate on LONGITUDINAL **and** TACTICAL, the whole mechanism is refused for **zero further GPU-days** | (B) `E-AGT-0` / `WP-V5A-1` · no counterpart in (A) |
+| **`E-AGT-BUDGET`** | the **derived accuracy bar**: degrade the oracle boxes with calibrated range noise σ and a miss rate, and read where the separation dies. **The σ that comes out is the detector specification** — and it is also the number that prices v5b (§7A.4) | (B) `E-AGT-1` / `WP-V5A-2` · no counterpart in (A) |
+| **`E-AGT-HEAD`** | the **deliverable arm**: tokens from a **learned** monocular 3D head (DETR-style, K = 30, Hungarian on the 10 dynamic classes) + `cross_agent` in every decoder layer, zero-init gated | (A) `E-AGT-1` / `WP-6` · (B) `E-AGT-2` / `WP-V5A-3` |
+
+⚠️ **The hypothesis ids also disagree and are canonicalised here.** (A)'s WP-6 SPEC block carries
+`hypothesis: H-DDA-1` with the note *"same audit family (#20); a sibling arm"* — but `H-DDA-1` is
+already the hypothesis of the **waypoint-sampling** arm `E-DDA-1`, so under (A) one id covers two
+different mechanisms. (B) registered `H-V5A-AGT-1/2/3` for exactly the three rungs above. ⇒
+**canonical: `H-V5A-AGT-1` → `E-AGT-ORACLE`, `H-V5A-AGT-2` → `E-AGT-BUDGET`, `H-V5A-AGT-3` →
+`E-AGT-HEAD`; `H-DDA-1` is reserved for `E-DDA-1` alone.** Both id sets are live in
+`GOALS_AND_CLAIMS.md`; this row is the mapping, not a deletion.
+
+#### 7A.1.b The second overlap the collision hid — the camera→BEV lift
+
+Not a name collision, a **scope** collision, and it is the one that actually straddles the release
+boundary:
+
+| | (A) `E-BEV-1` (WP-12) | (B) `E-BEVA-1` (WP-V5A-8) |
+|---|---|---|
+| what enters | a lift from the PV map to a metric BEV; grid-sample attention on the lifted BEV | an **LSS-style polar-native** lift from the stride-8 stage into an ego-frame grid, indexed directly by the fan |
+| **supervision** | **the LiDAR histogram + agent raster** as BEV-occupancy targets | **the agent raster ALONE** (zero new data) |
+| scheduled | §7.1: **after WP-11** (the LiDAR corpus build) | §3.0: **after WP-V5A-4 separates**, zero new bytes |
+| mandatory | — | ⛔ an explicit **`fov_mask` channel with every loss masked by it** (an out-of-frustum cell is UNOBSERVED, not free) |
+
+⭐ (A)'s own §3.4 already names the camera-only variant — *"E-BEV-1 with the **agent raster alone** as
+the BEV target (the P8 rasteriser exists today, zero new data)"* — but (A)'s §7.1 nevertheless
+schedules `E-BEV-1` **after WP-11**, i.e. behind the LiDAR build. **The split resolves that tension:**
+
+| CANONICAL | release | what it is |
+|---|---|---|
+| **`E-BEVA-1`** | **v5a** | the polar camera→BEV lift taught by the **agent raster alone**, `fov_mask` mandatory — **no LiDAR, no new bytes, not blocked by WP-11** |
+| **`E-BEV-1`** | **v5b** | the same lift taught by the **LiDAR histogram** — the strictly-later, strictly-better teacher |
+| **`E-LIDAR-1`** | **v5b** | LiDAR BEV as an **inference input** — additionally gated on `D-REFCV5-PLAN-7` (PI doctrine) |
+
+#### 7A.1.c The full crosswalk
+
+Every WP and experiment name that appears in either document. **"—" = no counterpart.**
+
+| name as written | in | counterpart in the other document | **CANONICAL** | release |
+|---|---|---|---|---|
+| `WP-0` (three instrument gaps) | A §7.1, §7.3 | — | **`WP-0.1` / `WP-0.2` / `WP-0.3`** (split; §7A.5) | v5a |
+| `WP-1` · `V5-VOCAB` | A §7.1 | — | **`WP-1` · `V5-VOCAB`** | v5a |
+| `WP-2` · `E-DDA-2` | A §7.1, §7.2 | — | **`WP-2` · `E-DDA-2`** | v5a |
+| `WP-3` · `E-DDA-1` | A §7.1, §7.2 | **`WP-V5A-4` · `E-DDA-1`** — same name, same arm | **`WP-3` · `E-DDA-1`** | v5a |
+| `WP-4` · `E-DDA-3` (sampler) | A §7.1, §7.2 | — | **`WP-4` · `E-DDA-3`** | v5a |
+| `WP-5` · `E-DDA-5` (loss form, arms a/c) | A §7.1 | — | **`WP-5` · `E-DDA-5`** | v5a |
+| `WP-6` · `E-AGT-1` | A §7.1, §7.2 | **`WP-V5A-3` · `E-AGT-2`** | ⛔ RETIRED ⇒ **`WP-6` · `E-AGT-HEAD`** | v5a |
+| `WP-7` · `E-DDA-2b` (selector) | A §7.1, §7.2 | — | **`WP-7` · `E-DDA-2b`** | v5a |
+| `WP-8` · `E15`–`E21`, `S7`/`S8` | A §7.1 | — | **`WP-8` · nav/strategic wiring** | v5a |
+| `WP-9a` · `E-DDA-4` | A §7.1 | — | **`WP-9a` · `E-DDA-4`** | v5a |
+| `WP-9b` · the hierarchy panel | A §7.1 | — | **`WP-9b` · the refcv4b hierarchy panel** | v5a |
+| `WP-10` · `H-EGO-LIT-4` | A §7.1 | — | **`WP-10` · `H-EGO-LIT-4`** (RUNNING) | v5a |
+| `WP-11` · `WP-DE-BEV-1` (LiDAR data) | A §3.3, §7.1 | — (⚠️ **not** `WP-V5A-9`, which is a *camera* pull) | **`WP-11a…d`** (pilot / rasteriser / sidecar+loader / corpus) | **v5b** |
+| `WP-12` · `E-BEV-1`, `E-LIDAR-1` | A §7.1 | **`WP-V5A-8` · `E-BEVA-1`** covers only the camera-taught half | **`WP-12a` · `E-BEV-1`** · **`WP-12b` · `E-LIDAR-1`** | **v5b** |
+| `WP-13` · `E-DDA-3b` → `E-DDA-6` (RL) | A §7.1, §7.2 | — | **`WP-13` · `E-DDA-3b`, `E-DDA-6`** | v5a |
+| `WP-14` · the refcv5 launch | A §7.1 | **`WP-V5A-F`** — the refcv5a full-scale run | **`WP-14a`** (v5a launch) · **`WP-14b`** (v5b launch) | both |
+| `WP-V5A-0` · `E-THOR-MV` | B §3.0, §3.1 | — | **`WP-V5A-0` · `E-THOR-MV`** | v5a |
+| `WP-V5A-1` · `E-AGT-0` | B §3.0, §3.2 | — | **`WP-V5A-1` · `E-AGT-ORACLE`** | v5a |
+| `WP-V5A-2` · `E-AGT-1` | B §3.0, §3.3 | — | ⛔ RETIRED ⇒ **`WP-V5A-2` · `E-AGT-BUDGET`** | v5a |
+| `WP-V5A-3` · `E-AGT-2` | B §3.0, §3.4 | **`WP-6` · `E-AGT-1`** | **`WP-6` · `E-AGT-HEAD`** | v5a |
+| `WP-V5A-4` · `E-DDA-1` | B §3.0, §3.5 | **`WP-3` · `E-DDA-1`** | **`WP-3` · `E-DDA-1`** | v5a |
+| `WP-V5A-5` · `E-DDA-1b` | B §3.0, §3.5 | — (the idea is inside A §3.4's `E-BEV-1` row, **not** a separate arm there) | **`WP-V5A-5` · `E-DDA-1b`** | v5a |
+| `WP-V5A-6` · `E-DEPTH-0` | B §3.0, §3.6 | — | **`WP-V5A-6` · `E-DEPTH-0`** | v5a |
+| `WP-V5A-7` · `E-CAM-1` | B §3.0, §3.7 | — | **`WP-V5A-7` · `E-CAM-1`** | v5a |
+| `WP-V5A-8` · `E-BEVA-1` | B §3.0, §3.8 | the camera-taught half of **`E-BEV-1`** | **`WP-V5A-8` · `E-BEVA-1`** | v5a |
+| `WP-V5A-9` · surround corpus pull | B §3.0, §3.7 | — (⚠️ **not** `WP-11`: different sensor, **shared fetcher**) | **`WP-V5A-9` · the surround corpus pull** | v5a |
+| `WP-V5A-F` · the refcv5a run | B §3.0 | **`WP-14`** | **`WP-14a`** | v5a |
+
+⚠️ **Two `WP-11`-shaped items are NOT the same work and must never be merged:** `WP-11` pulls
+**LiDAR** (≈ 1.53 TB transit for B1) and `WP-V5A-9` pulls **cameras** (149 GB cross pair / 429 GB all
+six). What they share is the **HTTP-range zip-member fetcher**, which is a HYPOTHESIS in (A) §3.1 and
+on v5b's critical path — and (B) §3.7 validates it on ≈ 3 GB of camera first. ⇒ **one shared
+component, two corpora** (escalation §7A.7 #4).
+
+⚠️ **An internal inconsistency inside (A), noted not fixed:** §7.0's clock table places
+*"**WP-12** E-DDA-2b selector *training*"* in the refcv4b-gated column, but §7.1 assigns `E-DDA-2b` to
+**WP-7** and `E-BEV-1`/`E-LIDAR-1` to **WP-12**. §7.1's own WP-7 row (*"module **NOW**; training after
+refcv4b"*) says what was meant. §7A reads it as **WP-7**. §7 is left as written.
 
 ### 7A.2 v5a — camera-only, ordered
 
@@ -604,6 +712,10 @@ pure vision and then add lidar. So check, what we can do maximally with vision, 
 *(pending)*
 
 ### 7A.6 The arithmetic that constrains the whole ladder
+
+*(pending)*
+
+### 7A.7 Conflicts recorded, not adjudicated — escalated to the Master Mind
 
 *(pending)*
 
