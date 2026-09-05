@@ -3766,6 +3766,30 @@ o1ctrl30k:    act_emb 0.3021 → film0 0.0144 (21.0× drop) → block0 0.0038  (
 
 ### `D-REFCV5-WP4-CONFIG-ONLY` — ⛔⛔⛔ **THE refcv5 SAMPLER AND AGENT SEAMS ARE NOT IN THE MODEL. `M25`'s "CODE-COMPLETE" is FALSE on this branch.**
 
+⭐⭐ **RESOLVED 2026-09-06 — THE SEAM IS BUILT, AND IT WAS AN ESCALATION-TO-MERGE, NOT A REWRITE.**
+
+Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refcv5-wp4-wp6-wiring/RESULT.md`.
+
+⭐ **The six probes above were CORRECT AND SCOPED TO `refc.py`.** Both leaf modules already existed, committed and unreferenced: `stack/tanitad/refs/refc_sampler.py` (**314 lines / 14 defs**, in `HEAD` at commit **`a5dbfbb`** *"refcv5 WP-4: the diffusion mechanism, in CONTROL space"*) and `stack/tanitad/refs/refc_agents.py` (**820 lines / 20 defs**). The **trainer seam was already complete too** (`_pin_refcv5_seams`, `_seam_stamp`, all flags, four refusals). ⇒ The missing layer was exactly the **trunk between them**: `refc.py` (`DecoderConfig`, `CrossAttnLayer`, `AnchoredDiffusionDecoder`, `RefCModel`) and `refc_v3.py` (`RefCV3Model.forward`). Leaves and trainer existed; nothing was rewritten.
+
+**Tests: `14 failed / 23 passed / 1 skipped` → `49 passed / 0 skipped`** — the 14 turned green, the skip was eliminated, and **11 tests were added**. ⛔ No test was weakened; the one instrument correction is declared separately below.
+
+⭐⭐ **THE LOAD-BEARING IDENTITY HOLDS EXACTLY.** `roll_controls(constant sequence)` vs `roll_bank` over **117 anchors × 8 slots × 5 speeds = 9,360 elements** (including a **standstill 0.0 m/s** and **36 m/s**): `torch.equal` **True** in BOTH unit systems, max |diff| **0.000e+00**, **0 differing float32 bit patterns**. The sampler and the vocabulary integrate the same physics.
+
+⭐ **The mechanism is real — refcv3's pathology does NOT reproduce.** refcv3's ranking was *unchanged on 201/201 windows*; here, adding a DDIM rung changes the output on **128/128 rows** (`[9]`→`[10,0]`: mean |Δ fan| **2.090 m**; `[10,0]`→`[11,6,0]`: **0.211 m**). At the zero-init `control_head`, `u0_hat` is exactly the noised anchor (mean |dev|/norm **0.02526**, max **0.12189**, against `sigma(8) = 0.03159`) — *"the vocabulary is the prior"* is true at step 0, not merely intended.
+
+⛔ **THE FALSE-PROVENANCE HOLE IS CLOSED, AND THE FIELD ALONE WAS NOT THE FIX.** `--sampler ddim` set an **ad-hoc attribute on an unfrozen dataclass**; both of `_pin_refcv5_seams`' guards read it back and PASSED, and `_seam_stamp` wrote it into `config.json` for a model with no denoiser. Declaring the field removes *this instance*, not the *class*: the stamp is built from the CONFIG (intent), and only the MODEL is fact. So `refc_v3_train.assert_seams_are_built(model, stamp)` now checks the record against the built modules, **bidirectionally** (a seam BUILT but NOT STAMPED is the `SEAM_STATE.md` failure), immediately before `config.json` is written. **SHOWN CAPABLE OF FAILING:** 2 honest controls PASS; 4 reintroduced defects REJECTED — the exact pre-fix state (stamp `ddim`, no denoiser: 4 findings), a live sampler stamped `none`, `agents` stamped with no head (3 findings), and `w_u0 = 1.0` with nothing to supervise. All six are permanent tests.
+
+**WP-6 verified as a RUNNING path**: oracle builds and forwards with `agent_slots` exported (4/4 layers carry `cross_agent`); an **empty scene** (every slot invalid — the *common* case on an empty road, and a fully-padded `key_padding_mask` returns **NaN, not zero**) produces **no NaN**; **zero-init parity** is **bit-identical** to the agent-free model (`traj` max |Δ| **0.0** over 293 shared tensors); and `∂loss/∂agent_gate` is non-zero on all four layers (**6.36e0, 7.54e0, 1.36e0, 1.14e0**) — gated, not dead.
+
+⚠ **DECLARED SEPARATELY — ONE INSTRUMENT WAS CORRECTED, AND IT HAD NEVER RUN.** `refc_sampler.assert_matches_diffusers` carried `atol = 1e-10` and **could never have passed**; it had never executed because `diffusers` was never installed beside it. Installed **diffusers 0.40.0** (`--no-deps`; torch verified unchanged at **2.11.0+cu128, `cuda True`, via a real CUDA `conv2d`**) and it raised at **1.689e-07** — a **DTYPE** comparison, not an error: `DDIMScheduler` builds its table in **float32**, `DDIMSchedule` in float64. MEASURED: ours-f32 vs diffusers-f32 **0.000e+00 (bit-equal)**; ours-f64 vs an exact f64 reference **6.939e-18**; **diffusers-f32 vs that reference 1.689e-07** — **ours is the more accurate of the two**. A tolerance below the reference's own epsilon is not a strict test but an **unrunnable** one, the mirror image of a guard that cannot fail. The replacement is **STRICTER**: it rebuilds our schedule at the reference's dtype and requires **BIT-EQUALITY** (passes, no tolerance), then bounds the f64 residual at `16 × eps` because a 1000-step `cumprod` accumulates (measured gap **1.42 × eps**). ⇒ The schedule is now **PRIMARY-verified against the published reference**.
+
+⛔ **A NEW VARIANCE OBLIGATION.** `_sample` draws fresh noise **at eval as well as training** — by design, because sampling is the mechanism. refcv5 is therefore a **STOCHASTIC PLANNER** and `D-REFAV1-SEED-GOAL-MISMATCH` binds: the same checkpoint evaluated twice does not give the same answer (that rig's inference-seed floor was **≈0.30 m ADE**). ⇒ **Any refcv5 sampler result needs INFERENCE-seed replicates**; the episode-cluster bootstrap is structurally blind to this. Written into the `_sample` docstring so it travels with the code.
+
+⚠ **A CONFIG DECISION THE TRAINING OWNER MUST MAKE, NOT A BUG.** `SelectionConfig.refined` defaults to **False**, so the ranked score is the CLASSIFIER surface — which the sampler deliberately does not touch. With it False the fan is **SAMPLED but RANKED by a head that never saw the sample**, which is the S1 defect one level up (measured there as a 45.4 %-of-windows ranking failure). **Stamped, not refused** — "improve the geometry, keep the ranking" is a legitimate arm — via the new telemetry key **`sampler_ranks_the_fan`**. ⇒ **An arm that wants the sampler to reach SELECTION must run `--sel-refined`.**
+
+⇒ **refcv5 is WIRED AND TRAINING-READY APART FROM A GPU.** The only remaining preconditions are corpus flags the trainer already refuses without: `--agents head` needs `--agent-join` (**`--agents oracle` is the rung that runs first and needs no detector**), and `--sampler ddim` needs an `--anchor-file` built with `controls` and a declared `control_units`. **This unblocks the PI's RL plan** — DD-v2 post-trains a *denoising trajectory*, which did not exist until now.
+
 
 
 Found while doing exactly what the brief asked — *"say what arm demonstrates the mechanism is live
@@ -4294,6 +4318,244 @@ blob and the units-declaring anchor bank are already **on Thor, md5-verified**, 
 
 
 
+
+
+### `D-REFCV5-REVIEW-2026-09-06` — ⭐ **INDEPENDENT REVIEW: every readiness claim SURVIVED; the guard that protects them does not**
+
+**Reviewer:** Architecture & Inference, adversarial half. CPU-only, isolated mirror, no GPU slot taken.
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refcv5-completeness-review/`
+**Evidence class:** MEASURED (ours) throughout except the Thor row. **No T-tier is claimed for any
+number in this row** — these are readiness/structural measurements, never driving performance.
+
+**RE-MEASURED and CONFIRMED** (each with its own control, none inherited):
+
+* ⭐ **parity labels 100.000 %** — recomputed with the **trainer's own arithmetic**
+  (`hit/len(eps)` over `stable_episode_id`): **2,400/2,400**, md5 `0d45b8d1344aa669c9d39e1ade2832fe`.
+  Same-breath control: the shipped blob reads **190/2,400 = 0.0792**, the value
+  `refc_v3_train.py:2626` names in its own comment. `raw/verify_coverage.out`.
+* ⭐ **anchors** — `control_units='alat'` and `controls_columns=['a_lon_ms2','a_lat_ms2']` **in the
+  file**; the Kamm control reproduces CLAUDE.md's documented trap to three digits: **0.306 g,
+  0/117** read correctly vs **396.3 g, 104/117** read as curvature. `raw/verify_anchors.out`.
+* ⭐ **geometry `max |Δ| = 0.0`** on `anchors` AND `controls` against **both** live copies
+  (md5 `297f6f1db52f6a56094846b0d7f71ed9`), with a **non-vacuous negative control** (a 1e-6
+  perturbation reads `9.54e-07`). ⇒ the vocabulary genuinely did not change. `raw/verify_geom.out`.
+* ⭐ **the units-stripped deliberate regression is REFUSED** (`AnchorUnitsMissing`) and the
+  **converse control is not refused** ⇒ that guard is proven able to fail.
+* **preflight** — my own run reads **11 PASS / 1 FAIL / 4 INCONCLUSIVE**; the three extra
+  INCONCLUSIVEs are inputs this box lacks (`--v2-cache`, `--agent-join`, `--smoke`), not
+  disagreements, and **the FAIL is the same one** (`agent_w_ground` grad **1.164e-10** DEAD vs
+  `agent_w_project` **1.462e-03** LIVE). `raw/preflight_REVIEWER.json`.
+* **WP-4/WP-6 model-side absence CONFIRMED** — `DecoderConfig(sampler='ddim')` raises `TypeError`;
+  `refc.py` (154,975 chars, **control 54 `def `**) contains `control_head`/`sampler`/`cross_agent`/
+  `agent_head`/`u0` **0 times each**; my own pytest reads **15 failed / 23 passed**.
+
+⇒ **`D-REFCV5-PARITY-LABELS` and `D-REFCV5-ANCHOR-UNITS` are INDEPENDENTLY CONFIRMED**, not merely
+un-refuted. `D-REFCV5-WP4-CONFIG-ONLY` is independently CONFIRMED and **generalised** (below).
+
+---
+
+### `D-REFCV5-PARITY-2400-VS-2376` — ✅ **RECONCILED: NOT a parity violation, and the delta is 24 episodes**
+
+MEASURED from `parity_manifest.json` (`raw/verify_2376.out`):
+
+```
+discovered 3000 - val 600  = 2400 train CLIPS
+2400 clips      - 24 skips = 2376 raw EPISODES   <- the CLAUDE.md invariant number
+the V2/w120 cache built ALL 2400 clips (skip_count 0) = 2400 v2 EPISODES
+```
+
+**Two registered corpora, not one re-selection:** `physicalai-train-e438721ae894` (`episode_count`
+**2376**, `skip_count` 24) and `physicalai-train-e438721ae894-w120-256x640cyl` (`episode_count`
+**2400**, `skip_count` 0), the latter with its own membership proof and a digest I recomputed
+independently as `e61a04553df5b9d5…` = **MATCH**. `clip_id_sha256_ordered == clip_id_sha256_sorted`,
+so the 24 skipped clips are nameable by sorted position — `c0af6273-…`, `c4803512-…`, `c50711e4-…`,
+`c512cadb-…`, `c5168845-…` (+19) — and **24/24 are labelled by the new parity blob**.
+
+⇒ ✅ **NO ESCALATION. Nothing re-selects episodes.** ⚠️ **One sentence is owed in every cross-arm
+table:** refcv5 trains **2,400** episodes; every raw-epcache arm trained **2,376** — a **24-episode
+= 1.00 %** difference, present in refcv5's training set and in no raw-epcache arm's.
+
+⚠️ **Two documents need a one-line fix.** The Architecture `RESULT.md` never names 2,376 at all;
+the DE sidecar names it but says *"the trainer corpus is 2,376 EPISODES"*, which is **wrong for
+refcv5** — its trainer corpus is the 2,400-episode v2 cache. *(Class: true-but-wrong-for-the-reader.)*
+⭐ `refcv5_preflight.py` already prints the reconciliation as its own control and is the correct model.
+
+---
+
+### `D-REFCV5-DEFECT-GATE-BLIND` — ⛔⛔ **THE STRATEGIC DEFECT GATE CANNOT FIRE ON THE DEFECT ITS OWN WRITER EMITS. PROVEN BY MUTATION.**
+
+`refcv3_arm.py` classifies a `TypeError` from our own module as a **DEFECT** (not a refusal) and
+collects it *"so a driver can exit non-zero instead of publishing a family-shaped hole"*.
+
+| | |
+|---|---|
+| **writer** | `taniteval/tools/refcv3_arm.py:2633` → `ref.setdefault("_defects", []).append(...)`, and `ref` becomes `rec["refcv3"]` (`:2445`, `:2712`) |
+| **reader** | `taniteval/tools/run_hierarchy_panel.py:71` → `rec.get("_defects")` — **TOP LEVEL** |
+
+**MUTATION PROOF** (`raw/prove_defect_blind.out`), three arms, both controls behaving:
+
+| arm | record shape | `record_ok()` |
+|---|---|---|
+| **A** | the defect where the writer **actually puts it** | ⛔ **`True` — "parses, no defects"** |
+| **B** *(control)* | the same defect at `rec["_defects"]` | ✅ `False` — caught |
+| **C** *(control)* | genuinely clean | ✅ `True` |
+
+⛔ **All three guards over it are blind, and two are source-string matches rather than behaviour:**
+`run_hierarchy_panel.record_ok` (wrong scope); `panel_preflight.check_defect_classifier` (asserts the
+**writer's text exists**, never that a reader reads that path); and
+`test_navcomp_labels_shape.py::test_the_record_marks_the_block_and_collects_it_at_the_top_level` —
+**the test's NAME asserts "at the top level"; its assertion is the same source string, which puts it
+one level down.** `refcv3_arm.py` itself never exits non-zero on `_defects`.
+
+⭐ **The measured consequence** (`raw/criteria_census.out`, `tools/criteria_check.py --all`,
+registry v2.7.0, 87 artifacts → **39 in scope**): the STRATEGIC behavioural family reads
+**0 present · 1 refused · 38 MISSING** on `nav_compliance` **and both of its controls** — it has
+**never once been produced**, and no gate ever stopped a panel over it. *(Corpus totals: 493 silent
+omissions, 61 work items, 7 UNSTAMPED tiers, 20 UNKNOWN scope.)*
+
+**Fix (one line + one test):**
+`defects = (rec.get("_defects") or []) + ((rec.get("refcv3") or {}).get("_defects") or [])`,
+plus a **behavioural** regression test that plants the defect **at the writer's path** and asserts
+`record_ok() is False`. *(Class: guards-need-mutation-not-inspection; and it fails by the SAME
+mechanism — a path/scope mismatch — as the `os.path.exists(<dict>)` bug it was written to prevent.)*
+
+---
+
+### `D-REFCV5-PHANTOM-SEAMS` — ⛔ **SEVEN phantom seam keys: the dead-flag defect is a CLASS, not one flag**
+
+`D-REFCV5-WP4-CONFIG-ONLY` found that `--sampler ddim` stamps a mechanism that does not exist.
+**Sweeping the whole argv→`config.json` path** (`_seam_stamp` AST-walked; every
+`getattr(core.decoder, "<name>", …)` checked against `DecoderConfig`'s real dataclass fields —
+`raw/sweep_phantom_stamps.out`):
+
+| stamped key | real `DecoderConfig` field? |
+|---|---|
+| `feasible_decode` · `feasible_mu` · `feasible_entry` · `feasible_a_max` · `feasible_kappa_max` · `feasible_prefix_slots` | ✅ **REAL** (6) — Stage 0's wiring is genuine |
+| `sampler` · `sampler_space` · `sampler_steps` · `sampler_infer_t` · `sampler_groups` · `cross_agent` · `control_norm` | ⛔ **PHANTOM** (7) |
+
+`DecoderConfig` is **not frozen**, so `setattr(dc, "sampler", "STAMPED_BUT_UNREAD")` is accepted for
+all seven: the pin creates an ad-hoc attribute, `_seam_stamp` reads it back, and `config.json`
+records a **truthful-looking provenance line for a mechanism with no code behind it**. Converse
+control: `feasible_decode` IS a declared field ⇒ the sweep is not vacuous.
+**Fix:** `@dataclass(frozen=True)` (or stamp only `dataclasses.fields()`), shipped with this sweep
+as its test, so an unknown seam raises at pin time.
+
+---
+
+### `D-REFCV5-SUPERVISION-N-IS-WINDOWS` — ⛔ **"n = 2,400 instead of n = 190" is a CLIP count; the CE is per WINDOW and the figure is 23.30 %**
+
+`v7_labels.window_in_band` admits a window only when `|t_now − t0| ≤ (hi−lo)/2`. With
+`bands.tactical_s = [2.0, 6.0]` and `t0_s = 8.0` on **all 2,400 records** (one label per clip), the
+admitted NOW is **[6.0, 10.0] s** of a ~20 s episode. MEASURED on the **real** local parity v2 cache
+through the trainer's own dataset arithmetic (`raw/inband_windows.out`; controls:
+`window_in_band(8.0)` **True**, `(0.0)` **False**):
+
+```
+windows/episode 176.0    in-band/episode 41.0
+TOTAL 16,893   SUPERVISED 3,936  = 23.30 %   (76.70 % carry IGNORE_ID -100)
+```
+
+⚠️ Scope: 96/2,400 clips are local (4.0 %); the figure is **structural, not sampled** — one `t0_s`,
+one band, episode length 198–200 frames.
+⭐ **The trainer already knows this distinction and applies it to the OTHER join** —
+`enable_agent_join` computes *"NOW-frame coverage over THIS dataset's own window index … Clip
+coverage is not supervision coverage"* (`refc_v3_train.py:885-888, 921-922`) — while the **v7 label
+join computes only clip coverage** and floors on that.
+✅ The `IGNORE_ID` design is **SOUND** (never clamps to a neutral class; half-width derived from the
+record's own bands, so the `HORIZON` derived-constant trap is handled correctly). The defect is only
+in **which number is published**. **Fix:** compute and stamp the NOW-frame coverage for `v7_by_sid`
+and quote *it* as the supervision `n`.
+
+---
+
+### `D-REFCV5-EVAL-LABEL-FLOOR-MISSING` — ⛔ **the eval-side label join has NO coverage floor**
+
+Exactly one floor exists in the trainer: `refc_v3_train.py:2632`, `if frac < 0.5: raise SystemExit`,
+on the **train** side. The `--eval-labels` block (`:2694-2701`) builds `e_ds.v7_by_sid` and
+**computes no coverage and applies no floor**. An eval-label blob covering ~0 % of the eval cache is
+accepted silently, and the in-training TACTICAL/STRATEGIC families would then be computed over almost
+no labelled windows while the run looked labelled — **the same hole the train-side floor exists to
+close, on the half that produces the numbers.** **Fix:** lift the identical four lines.
+
+---
+
+### `D-REFCV5-TURN-BOUND-DENOMINATOR` — ⛔ **the turn-suppression bound is quoted against the wrong denominator (8.2×)**
+
+MEASURED on the blob (`raw/turns_and_windows.out`): `TURN_L` **154** + `TURN_R` **139** = **293 turns
+of 2,400 = 12.21 %**. The ~30 potentially over-called turns are **all** in the turn class by
+construction, so:
+
+| statement | value |
+|---|---|
+| as published | 30/2,400 = **1.25 % of the CORPUS** |
+| what it is | 30/293 = **10.24 % of the TURN CLASS** |
+
+⚠️ **This matters precisely because turn recall has already collapsed to 0.0000 on another arm**: a
+~10 % label-noise rate concentrated in the minority class is a different object from "1.27 %".
+**Fix:** publish both denominators with the turn family's `n` (293). *(The estimate's arithmetic is
+otherwise sound and remains ESTIMATED.)*
+
+---
+
+### `D-REFCV5-PERCEPTION-ABSENCE-ENCODING` — ⚠️ **absence encoded as a truthy dict of nulls, defeating the sidecar's own instruction**
+
+The sidecar says *"A consumer MUST mask this layer rather than read its absence as a negative."*
+MEASURED (`raw/cot_and_window.out`) — the natural mask (`if rec.get(field)`) cannot do that for two
+of three fields: `cot_tokens` is honest (`None` on 2,199 ⇒ truthy on **201/2,400**), but `cot_source`
+is a **populated dict of nulls** and `alpamayo` a **populated dict** ⇒ both truthy on **2,400/2,400**
+against a declared perception coverage of **201/2,400**. ✅ **No current consumer is exposed** —
+`V7Label`'s parsed surface carries none of them — but Stage 2/3 contemplates the layer.
+**Fix:** emit `null` when absent, or add `perception_present: bool`. *(Class: content-vs-existence.)*
+⚠️ Also: `turn_suppression` is listed in `layers.kinematic.fields` (declared `coverage: 1.0`) but is
+present on **8/2,400** records.
+
+---
+
+### `D-REFCV5-DIFFUSERS-PIN-CANNOT-PASS` — ⛔ **the one independent check on WP-4's schedule math has never certified anything**
+
+The schedule math is reported as WP-4's sound half, *"its load-bearing identity pinned"*.
+`refc_sampler.assert_matches_diffusers` exists because *"a re-implementation that is never checked is
+just an unverified copy"*. MEASURED (`raw/diffusers_pin_rootcause.out`):
+
+| quantity | value |
+|---|---|
+| our `alphas_cumprod` dtype | **float64** |
+| `diffusers` `alphas_cumprod` dtype | **float32** |
+| measured disagreement | **1.689e-07** |
+| declared `atol` | **1e-10** |
+| float32 eps | **1.192e-07** ⇒ the error is **1.42× float32 eps** |
+
+⇒ a float64 table compared against a float32 table at a tolerance ~1,000× below float32's
+representable precision. It has exactly two outcomes, neither a certification: **SKIP** where
+`diffusers` is absent (how it has read as "passing") or **FAIL** where it is present (this box).
+⭐ Same family as `D-REFCV5-DEFECT-GATE-BLIND` — a control whose verdict is set by its configuration
+rather than by the thing it measures. **Fix:** compare in a common dtype and set `atol` reachable in
+the lower precision (~1e-6), naming the dtype in the message.
+
+---
+
+### `D-REFCV5-NQUERIES-ESCALATION-STALE` — ⚠️ **a live escalation is already CLOSED and should be struck**
+
+The Architecture `RESULT.md` escalation #2 says `N_QUERIES_DEFAULT = 16` is *"REFUTED and still
+shipped"* with a second spelling `getattr(a, "n_slot_queries", 16)` at `train_v6_staged.py:5313`
+needing a two-site fix. **MEASURED now:** `N_QUERIES_DEFAULT == 100`; `train_v6_staged.py:5320`
+reads `n_slot_queries=int(getattr(a, "n_slot_queries", N_QUERIES_DEFAULT))` and imports the constant
+at `:127`; `refcv5_preflight` reports *"Second spellings found: none"*. ⇒ **Strike it**, or a reader
+spends a turn re-fixing a closed item.
+
+⚠️ **Related, minor:** the new anchor artifact ships a `gate` block whose own `_scope` says *"re-run
+the gate before quoting it for a new file"*, while recording only the **old** file's sha. The
+no-re-validation argument is CORRECT (I verified `max |Δ| = 0.0`), but a reader cannot check it from
+the artifact. **Fix:** put `anchors_sha256`/`controls_sha256` **inside** the `gate` block.
+
+---
+
+⛔ **THE REVIEW'S ONE LINE — what would still be broken if refcv5 started training tomorrow morning:**
+**it would train a model with no sampler and no agent head, write a `config.json` asserting seven
+capabilities that have no code behind them, supervise 23.30 % of windows while the record says
+100 %, and be scored by a panel whose defect gate cannot fire on a STRATEGIC family that has never
+been produced in 39 artifacts.** The GPU is not the binding blocker; the unbuilt mechanism and the
+blind gates are.
 
 
 ### `D-REFAV1-SEED-GOAL-MISMATCH` — ⛔ **BLOCKING, and prior to both fixes R28 proposed**

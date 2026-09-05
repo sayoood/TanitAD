@@ -1,0 +1,13 @@
+keys: ['a_lat_grid_ms2', 'a_lat_max_ms2', 'a_lat_max_rationale', 'a_lon_grid_ms2', 'alat_v_floor', 'anchors', 'anchors_sha256', 'artifact_kind', 'asserted_zero_present', 'control_units', 'controls', 'controls_columns', 'controls_sha256', 'dt', 'gate', 'horizon_s', 'horizons_steps', 'integrator', 'kamm', 'kappa_cap', 'kappa_derivation', 'n_anchors', 'provenance', 'ref_speed_ms', 'schema', 'straight_ahead_control_index', 'straight_ahead_control_present', 'variant']
+anchors (117, 8, 2) torch.float32 controls (117, 2) torch.float32
+read_anchor_artifact -> AnchorArtifact
+  control_units = alat  source = None
+  declared: {'control_units': 'alat', 'horizon_s': 6.0, 'dt': 0.1, 'ref_speed_ms': 10.0, 'kappa_cap': 0.12, 'alat_v_floor': 4.0}
+  controls_columns (in file): ['a_lon_ms2', 'a_lat_ms2']
+  controls col0 range -4.0000..2.9167   col1 range -3.0000..3.0000
+  IF col1 is a_lat (m/s^2): peak 0.306 g   over mu=0.7: 0/117
+  IF col1 were curvature (1/m) at v=36: peak 396.3 g   over mu=0.7: 104/117
+
+DELIBERATE REGRESSION (units stripped, keys now: ['a_lat_grid_ms2', 'a_lat_max_ms2', 'a_lat_max_rationale', 'a_lon_grid_ms2', 'anchors', 'anchors_sha256', 'artifact_kind', 'asserted_zero_present', 'controls', 'controls_sha256', 'gate', 'horizons_steps', 'integrator', 'kamm', 'kappa_derivation', 'n_anchors', 'straight_ahead_control_index', 'straight_ahead_control_present', 'variant'])
+  ✅ REFUSED: AnchorUnitsMissing C:\Users\Admin\tanitad-review-20260906\art\_REGRESSION_units_stripped.pt carries `controls` (117, 2) but declares NO `control_units`, so column 1 cannot be told apart from a curvature: MEASURED 2026-09-04 on refcv4b's li
+  ✅ CONVERSE CONTROL: untouched file NOT refused (guard not over-broad)

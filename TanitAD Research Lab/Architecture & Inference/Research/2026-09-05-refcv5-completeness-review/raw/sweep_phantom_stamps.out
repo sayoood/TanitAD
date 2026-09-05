@@ -1,0 +1,31 @@
+CONTROL: refc_v3_train.py read, 206599 bytes, 33 'def ' (must be non-zero)
+DecoderConfig fields (13): ['aux_hidden', 'd', 'diffusion_steps', 'feasible_a_max', 'feasible_decode', 'feasible_entry', 'feasible_kappa_max', 'feasible_mu', 'feasible_prefix_slots', 'ff_mult', 'layers', 'n_heads', 'noise_std']
+
+read from          attribute              REAL?    verdict
+------------------------------------------------------------------------------
+core               agents                 None     unknown
+core.decoder       control_norm           False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       cross_agent            False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       feasible_a_max         True     REAL field
+core.decoder       feasible_decode        True     REAL field
+core.decoder       feasible_entry         True     REAL field
+core.decoder       feasible_kappa_max     True     REAL field
+core.decoder       feasible_mu            True     REAL field
+core.decoder       feasible_prefix_slots  True     REAL field
+core.decoder       sampler                False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       sampler_groups         False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       sampler_infer_t        False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       sampler_space          False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+core.decoder       sampler_steps          False    ⛔ PHANTOM — no such field; getattr falls back to an ad-hoc attr/default
+
+PHANTOM SEAM KEYS: 7 -> ['control_norm', 'cross_agent', 'sampler', 'sampler_groups', 'sampler_infer_t', 'sampler_space', 'sampler_steps']
+
+BEHAVIOURAL CHECK — set every phantom on a DecoderConfig instance:
+   control_norm       setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   cross_agent        setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   sampler            setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   sampler_groups     setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   sampler_infer_t    setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   sampler_space      setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   sampler_steps      setattr ACCEPTED (dataclass not frozen) -> value is stampable and nothing reads it
+   CONVERSE CONTROL feasible_decode in fields = True (a real seam exists, so the sweep is not vacuous)

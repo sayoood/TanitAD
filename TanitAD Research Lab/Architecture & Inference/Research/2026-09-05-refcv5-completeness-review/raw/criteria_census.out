@@ -1,0 +1,62 @@
+SCOPE OF THIS CENSUS: taniteval/results/ (NON-recursive — this directory only)
+A finding here is a finding ABOUT THIS SCOPE. Do not restate it as a repo-wide absence without re-running recursively.
+
+registry self-check: every criterion resolves in >=1 artifact.
+
+CRITERIA CENSUS (registry v2.7.0)
+==============================================================
+87 artifacts read -> 39 in scope (driving evals), 28 out of scope, 20 UNKNOWN
+
+UNKNOWN SCOPE — a human must classify these; they are NOT counted as compliant:
+   diagv2_summary.json
+   eff_levers_fan_flagship-30k.json
+   eff_levers_fan_sharedenc_flagship-30k.json
+   eff_levers_flagship-30k.json
+   eff_levers_tail_flagship-30k.json
+   eff_repeatability.json
+   estimator_closeout_ledger.json
+   paired-openloop-refav1-vs-refcv3-20260903T204638Z.json
+   planfan_clips_tactical_head_val.json
+   postmortem_b_egodropout_v3enc10k.json
+   refav1-21109-openloop-devbox-crosscheck.json
+   refav1-21109-openloop-extra.json
+   refav1-21109-openloop-identity.json
+   refcv3-30k-openloop-20260903-2004.json
+   refcv3-40284-openloop.ARM.json
+   refcv3-40284-stratified.json
+   scaleab_refc-base-30k_vs_refc-xl-30k.json
+   v1-validation.json
+   v1_g1_dryrun_gate.json
+   v1_g1_dryrun_gate_FIXED.json
+
+TIER STAMPS  (in-scope artifacts only)
+     27  T0
+      7  UNSTAMPED  <- unstamped: a number with no tier is not quotable
+      5  T1
+
+LONGITUDINAL
+   target-speed accuracy                                32 present, 7 MISSING
+   along-track displacement error                       32 present, 7 MISSING
+   ego progress                                         32 present, 7 MISSING
+   distance-keeping (headway / time-gap / TTC to the lead agent) 4 present, 28 refused, 7 MISSING
+
+LATERAL
+   cross-track error                                    32 present, 7 MISSING
+   heading error                                        32 present, 7 MISSING
+   curvature error                                      5 present, 27 refused, 7 MISSING
+   yaw-rate error                                       5 present, 34 MISSING
+
+TACTICAL
+   manoeuvre-decision quality (selected vs executed)    5 present, 34 MISSING
+   confusion over the manoeuvre classes                 5 present, 34 MISSING
+   tactical goal / anchor selection quality             5 present, 34 MISSING
+
+STRATEGIC
+   strategic decision quality                           4 present, 1 refused, 34 MISSING
+   strategic route / goal-setting quality               4 present, 1 refused, 34 MISSING
+   nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows) 0 present, 1 refused, 38 MISSING
+   nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows) 0 present, 1 refused, 38 MISSING
+   nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped) 0 present, 1 refused, 38 MISSING
+
+TOTAL violations (silent omissions), over 39 in-scope artifacts: 493
+TOTAL work items (refused with reason / partial): 61
