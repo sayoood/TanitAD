@@ -196,7 +196,13 @@ ARMS = {
     # ⛔ the deliberate regression: the ego GT future INSIDE the advantage. No bar
     # (the echo IS the objective) — G-FAN must fire on it or the panel is VOID.
     "reg_echo":   dict(weights={"gt_similarity": 1.0}, w_anchor=0.0, lr=1e-5, steps=2000,
-                       use_gt_bar=False, noise_mode="two_scalar"),
+                       use_gt_bar=False, noise_mode="two_scalar",
+                       # ⚠ REPRODUCIBILITY PIN. Under the OLD key-membership veto
+                       # (`"collision" in spec.weights`) this arm's weights carry no
+                       # "collision" key, so it ran with the COLLISION channel OFF and
+                       # the TTC channel ON. Stated explicitly so the banked arm still
+                       # reproduces after the veto became a config field.
+                       veto_collision=False, veto_ttc=True),
     # the reproduction control: lr 0, weights hash-identical, every readout delta
     # EXACTLY 0. Same ingredients as `rl` so it controls the arm that ran.
     "ctrl0":      dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=0.0, steps=200,
@@ -214,6 +220,30 @@ ARMS = {
     # driving the update, and no `rl` result above it means anything.
     "ctrl_const": dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
                        lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar"),
+    # ⭐⭐ THE VETO-ONLY PRODUCT (2026-09-05, Arch+Inference FlyWheel).
+    # `ctrl_const` above was an UNINTENTIONALLY EXACT veto-only arm - every reward
+    # weight 0.0 while `posttrain.py` keyed the veto on the reward's KEY SET - and it
+    # is the ONLY arm in the whole RL panel that moved refcv3's fan the RIGHT way
+    # (fan_peak_g_mean -0.0859 g, top32_infeasible -0.0143, top8_kamm_over -0.0137,
+    # in 200 steps / 2 min 07 s). The composed reward then overwhelmed that gain and
+    # drove the planner below the constant-velocity floor.
+    # => the veto is promoted from accident to product. The reward is still
+    # identically 0.0 (MEASURED, not asserted: RewardSpec over these weights returns a
+    # tensor whose unique value is {0.0}); the ONLY signal is DDv2's constraint
+    # channel, now keyed EXPLICITLY by `veto_enabled` rather than by a key set.
+    "veto200":    dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                       lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
+                       veto_enabled=True),
+    "veto2k":     dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                       lr=1e-5, steps=2000, use_gt_bar=False, noise_mode="two_scalar",
+                       veto_enabled=True),
+    # ⛔ THE ACTUAL NULL that `ctrl_const` was supposed to be: zero reward AND no
+    # veto, so the advantage is identically zero and `veto_rate` reads EXACTLY 0.0.
+    # It is the empirical proof that P2's fix works - a zero-weight control that is
+    # not a null is the false-green class wearing a control's clothes.
+    "ctrl_null":  dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                       lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
+                       veto_enabled=False),
 }
 
 
@@ -346,23 +376,45 @@ def with_origin(x: torch.Tensor) -> torch.Tensor:
     return torch.cat([z, x], dim=-2)
 
 
-def reward_ctx(batch: dict, *, S5: int, extras: dict | None = None) -> dict:
+def reward_ctx(batch: dict, *, S5: int, extras: dict | None = None,
+               cand_dims: int = 2) -> dict:
     """⛔ THE ONLY READER OF SCENE FACTS FOR THE REWARD. Reads v0 (t0) and the lead's
-    first sample. Nothing here touches a future_* field — proved by the preflight."""
+    first sample. Nothing here touches a future_* field — proved by the preflight.
+
+    ``cand_dims`` is the number of CANDIDATE axes in the trajectory this context will
+    be scored against: **2** for the training tensor ``[B, N, G, S, 2]`` (the default,
+    unchanged) and **1** for a readout fan ``[B, N, S, 2]``.
+
+    ⛔⛔ WHY THIS ARGUMENT EXISTS AND IS NOT COSMETIC. Every scene fact here is
+    reshaped to broadcast against the candidate axes. Hand a ``[B, N, S, 2]`` fan a
+    context built for ``[B, N, G, S, 2]`` and the leading ``B`` no longer lines up:
+    ``lead_path [B,1,1,S,2]`` against ``traj [B,N,S,2]`` right-aligns to
+    ``[B, B, N, S, 2]``, so **every window's fan is scored against every window's
+    lead**, and ``v0 [B,1,1]`` against ``along [B,N]`` does the same. The result has
+    the right dtype, no error, and one more axis than anybody looks at — MEASURED in
+    this repo: ``readout()``'s ``R1``/``R2`` were a B x B outer product for the whole
+    2026-09-05 RL panel (readout batch = 4). Training was never affected; its tensor
+    really does have three leading axes.
+    ⚠ A caller that gets this wrong gets a NUMBER, not an exception. That is why
+    ``readout`` now asserts the returned reward's shape against the fan's.
+    """
     B = batch["v0"].shape[0]
+    if cand_dims < 1:
+        raise ValueError(f"cand_dims must be >= 1, got {cand_dims}")
+    ones = (1,) * cand_dims
     lead = batch["lead_xy"]                                             # [B, 2]
     ctx = {"dt": DT_REWARD_S,
-           "v0": batch["v0"].reshape(B, 1, 1),                          # [B, 1, 1]
+           "v0": batch["v0"].reshape(B, *ones),                         # [B, 1(, 1)]
            "lead_len_m": LEAD_LEN_DEFAULT_M}
     if LEAD_MODE == "track":
         if S5 != len(GRID_S):
             raise ValueError(f"track mode scores the {len(GRID_S)}-point prefix, got S5={S5}")
         # MOVING lead, time-aligned; NO static `obstacles` key, so `collision`
         # takes rewards._collision's lead_path branch (per-step contact).
-        ctx["lead_path"] = batch["lead_track"].reshape(B, 1, 1, S5, 2)
+        ctx["lead_path"] = batch["lead_track"].reshape(B, *ones, S5, 2)
     else:
-        ctx["obstacles"] = lead.reshape(B, 1, 1, 1, 2)                   # [B,1,1,K=1,2]
-        ctx["lead_path"] = lead.reshape(B, 1, 1, 1, 2).expand(B, 1, 1, S5, 2)  # static
+        ctx["obstacles"] = lead.reshape(B, *ones, 1, 2)                  # [B,1(,1),K=1,2]
+        ctx["lead_path"] = lead.reshape(B, *ones, 1, 2).expand(B, *ones, S5, 2)  # static
     if extras:
         ctx.update(extras)
     return ctx
@@ -443,9 +495,21 @@ def readout(model, corp, lead, wis, device, *, decoder_steps: int, batch: int = 
         out = model(b["frames"], nav_cmd=b["nav_cmd"], v0=b["v0"], steps=decoder_steps)
         fan = out["anchor_traj"]                                        # [B, N, 8, 2]
         fan2 = with_origin(fan[..., :N_REWARD_SLOTS, :])                # [B, N, 5, 2]
-        ctx = reward_ctx(b, S5=fan2.shape[-2])
+        # ⭐ cand_dims=1: this is a [B, N, S, 2] FAN, not the [B, N, G, S, 2]
+        # training tensor. With the training rank the scene facts broadcast to a
+        # B x B outer product and every window is scored against every window's
+        # lead — MEASURED, it is what the 2026-09-05 panel's R1/R2 actually were.
+        ctx = reward_ctx(b, S5=fan2.shape[-2], cand_dims=1)
         r1 = spec(fan2, ctx)                                            # [B, N]
         coll = RW.COMPONENTS["collision"](fan2, ctx) < 0                # [B, N]
+        # ⛔ POSITIVE ASSERTION, not a comment. A rank mismatch here returns a
+        # NUMBER rather than raising, so the shape is checked rather than assumed.
+        if tuple(r1.shape) != tuple(fan.shape[:2]) or tuple(coll.shape) != tuple(fan.shape[:2]):
+            raise RuntimeError(
+                f"reward rank mismatch: r1 {tuple(r1.shape)} / collision "
+                f"{tuple(coll.shape)} vs fan {tuple(fan.shape[:2])} — the reward "
+                "context was built for a different candidate rank and the readout "
+                "would be a batch-mixed outer product")
         sel = out["sel_idx"]                                            # [B]
         gt = b["gt_traj"]                                               # [B, 4, 2]
         chosen = out["traj"][:, :N_REWARD_SLOTS]                        # [B, 4, 2]
@@ -563,6 +627,11 @@ def make_cfg(arm: str, a, prov, out_dir: str) -> PostTrainConfig:
         lr=float(spec["lr"]), seed=int(a.seed), dt=DT_REWARD_S,
         decoder_steps=int(prov["decoder_steps"]),
         reward_weights=dict(spec["weights"]), w_anchor=float(spec["w_anchor"]),
+        # ⭐ THE VETO, FROM THE ARM SPEC AND INTO `config.json`. Never from the
+        # reward's key set again (RESULT.md 12.1 / RETRACTION #24).
+        veto_enabled=bool(spec.get("veto_enabled", True)),
+        veto_collision=bool(spec.get("veto_collision", True)),
+        veto_ttc=bool(spec.get("veto_ttc", True)),
         anchor_form="l2", w_imitation=0.0, train_mode_forward=False,
         freeze_trunk=True, trainable_prefixes=TRAINABLE_PREFIXES,
         exclude_prefixes=EXCLUDE_PREFIXES, forbidden_prefixes=FORBIDDEN_PREFIXES,

@@ -88,6 +88,26 @@ class PostTrainConfig:
     ttc_min_s: float = 1.5
     veto_value: float = -1.0
 
+    #: THE VETO IS KEYED HERE, EXPLICITLY - NEVER ON THE REWARD'S KEY SET.
+    #: MEASURED 2026-09-05 (`.../2026-09-05-refc-rl-readiness/RESULT.md` §12.1):
+    #: `posttrain.rl_objective` used to read ``"collision" in spec.weights``, i.e.
+    #: KEY MEMBERSHIP, which is TRUE at weight 0.0, while the TTC channel read no
+    #: config at all. `advantage.truncated_inter_anchor_advantage` pins a vetoed
+    #: candidate at `veto_value` OUTSIDE the group-relative centring, so a
+    #: CONSTANT reward did not give a zero advantage - it gave a VETO-ONLY
+    #: advantage at FULL STRENGTH. The `ctrl_const` arm (every weight 0.0)
+    #: measured `veto_rate_mean` **0.0897**, `final_loss` **-1.863**, and moved
+    #: 14 of 57 fan-safety metrics. A zero-weight control that is not a null is
+    #: the false-green class wearing a control's clothes.
+    #: => `veto_enabled=False` makes a zero-weight spec an ACTUAL null (veto_rate
+    #: exactly 0.0); `veto_enabled=True` with zero weights is a deliberate
+    #: VETO-ONLY arm. Both are now things somebody TYPED, and `to_dict()` writes
+    #: them into the run record.
+    #: Pinned by `stack/tests/test_rl_veto_explicit.py`.
+    veto_enabled: bool = True
+    veto_collision: bool = True
+    veto_ttc: bool = True
+
     #: ⭐ THE >=GT POSITIVE MASK (V2's released code, `_model_rl.py:891-893`;
     #: added 2026-09-05, REF-C RL re-scope). When True the caller MUST supply a
     #: per-window `gt_bar` (the GT trajectory's reward under the same spec) to

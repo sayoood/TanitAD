@@ -167,6 +167,48 @@ def apply_exploration_noise(offset: Tensor, cfg: PostTrainConfig,
     return offset + cfg.noise_scale * eps
 
 
+def veto_mask(traj: Tensor, ctx: dict, cfg: PostTrainConfig) -> Tensor:
+    """The hard-constraint mask over ``traj [..., S, 2]`` -> bool, EXPLICITLY keyed.
+
+    ⛔⛔ WHY THIS FUNCTION EXISTS, AND WHY THE OLD TWO LINES WERE A DEFECT.
+    The veto used to be composed as::
+
+        if "collision" in spec.weights:            # KEY membership: TRUE at 0.0
+            veto = COMPONENTS["collision"](traj, ctx) < 0
+        ttc = ttc_violation(...)                   # read no config at all
+        veto = ttc if veto is None else (veto | ttc)
+
+    so a "constant reward" control with every weight at 0.0 still carried the FULL
+    veto. Because `advantage.truncated_inter_anchor_advantage` pins vetoed
+    candidates at `veto_value` OUTSIDE the group-relative centring, a constant
+    reward yields a VETO-ONLY advantage at full strength rather than a zero one.
+    MEASURED on `ctrl_const` (2026-09-05): `veto_rate_mean` **0.0897**,
+    `final_loss` **-1.863**, 14 of 57 fan-safety metrics moved — a control that
+    could not be a null, and a result that was read as a harness fault before the
+    mechanism was found.
+
+    => The channels are now three booleans somebody has to TYPE, and `to_dict()`
+    records them, so a run's own record says whether the constraint was in force.
+    Returns an all-False mask (never ``None``) when the veto is off, so the caller
+    always has a `veto_rate` to log — a channel that reports 0.0 is evidence; a
+    channel that reports nothing is not.
+
+    ⭐ This also makes VETO-ONLY a first-class arm rather than an accident: zero
+    reward weights with `veto_enabled=True` is DDv2's constraint mechanism with no
+    ranking term at all, which is the only half of the stage that improved
+    refcv3's fan feasibility.
+    """
+    off = torch.zeros(traj.shape[:-2], dtype=torch.bool, device=traj.device)
+    if not cfg.veto_enabled:
+        return off
+    veto = off
+    if cfg.veto_collision:
+        veto = veto | (R.COMPONENTS["collision"](traj, ctx) < 0)
+    if cfg.veto_ttc:
+        veto = veto | R.ttc_violation(traj, {**ctx, "ttc_min_s": cfg.ttc_min_s})
+    return veto
+
+
 def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
                  spec: R.RewardSpec, *, imitation_loss: Tensor | None = None,
                  anchor_pair: tuple[Tensor, Tensor] | None = None,
@@ -201,12 +243,10 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
                          f"{tuple(reward.shape[:-2])}")
     # ⛔ THE VETO CHANNEL — constraints, not ranking terms. Collision OR
     # TTC-imminent. Applied outside the group-relative centring so a vetoed
-    # candidate is PINNED, never merely ranked lower.
-    veto = None
-    if "collision" in spec.weights:
-        veto = R.COMPONENTS["collision"](traj, ctx) < 0
-    ttc = R.ttc_violation(traj, {**ctx, "ttc_min_s": cfg.ttc_min_s})
-    veto = ttc if veto is None else (veto | ttc)
+    # candidate is PINNED, never merely ranked lower. ⭐ Keyed on the
+    # CONFIG (`veto_enabled`/`veto_collision`/`veto_ttc`), NEVER on
+    # `spec.weights` — see `veto_mask` and config.py's `veto_enabled` note.
+    veto = veto_mask(traj, ctx, cfg)
 
     if cfg.method == "awr":
         # advantage-weighted regression: weight the imitation loss by exp(A/beta)
