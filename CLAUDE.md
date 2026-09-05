@@ -69,6 +69,31 @@ under-sampled). **Before trusting ANY pre-2026-07-25 number, check whether it is
 split-mean or the `full_set` mean — `MODEL_REGISTRY.md` publishes both and they differ.** Blast
 radius + per-arm corrections: `…/incoming/2026-07-25-jack-blast-radius/JACK_BLAST_RADIUS.md`.
 
+⛔⛔ **A SEPARATED INTERVAL FROM A ONE-SEED ARM IS NECESSARY, NOT SUFFICIENT — THE PAIRED
+BOOTSTRAP IS STRUCTURALLY BLIND TO TRAINING VARIANCE.** MEASURED 2026-09-05 on the v7-tiny rig
+by an arm no SPEC asked for: **`A0b_replicate`** — A0's flags, A0's **seed**, run again, **zero
+levers moved** (verified by argv audit) — produced **"separated" differences from A0 on 3 of 18
+family metrics**, a **~17 % false-positive rate for `separated`** on that rig. The mechanism is
+not a bug in `taniteval/ci.py`: the episode-cluster bootstrap resamples **EPISODES with the
+models held fixed**, so it estimates *"would another draw of episodes say this?"* and never
+*"would another training run say this?"*. Two runs differing in **nothing** cleared it.
+⇒ **For any claim that a LEVER moved a metric, a separated CI is a necessary condition and not
+a sufficient one.** The sufficient form needs a **replicate arm** (same flags, same or different
+seed) so the lever's effect is read against the rig's own run-to-run noise floor. On the tiny rig
+the cheapest next experiment is therefore **SEEDS, NOT WINDOWS** — more episodes narrow an
+interval that was already answering the wrong question.
+⚠️ **Scope it honestly, and do not blanket-void the register.** MEASURED: **8 rows** rest on a
+tiny-rig separated result. They are not equally exposed — a **structural zero** is not a noisy
+difference. `H-ECHO-4`'s deliberate-regression arm reads scene degradation **exactly +0.0000 with
+CI [0, 0]** because a constant-image arm *cannot* degrade under a scene intervention; that is an
+identity, not an estimate, and no seed changes it. The exposed claims are the ones asserting a
+**difference between two trained arms**. Each needs re-reading against a replicate before it is
+quoted as a lever effect; none is retracted by this rule alone.
+⭐ Same family as the two estimator rules above — *never quote an interval without its estimator*,
+and *`overlapping_holdout_se` biases the point estimate* — with the object swapped: here the
+estimator is correct and its **question** is narrower than the claim being hung on it. Registered
+as `H-ESTIM-SEED-1`; instrument `…/2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md`.
+
 ## Briefing a subagent — the contract
 
 Every subagent brief MUST carry the preamble in
