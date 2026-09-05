@@ -19,7 +19,10 @@ copy () {
   [ -f "$src" ] || { echo "MISSING $src"; return 1; }
   i=1
   while [ $i -le 6 ]; do
-    cp "$src" "$dst" 2>/dev/null
+    # ⚠️ `cp` onto this mount can fail with "cannot create regular file: File
+    # exists" for a path that DOES NOT EXIST (verified by ls). The redirect
+    # succeeds where cp does not, so copy by redirect and check the md5.
+    cat "$src" > "$dst" 2>/dev/null
     a=$(md5sum < "$src" | cut -d' ' -f1)
     b=$(md5sum < "$dst" 2>/dev/null | cut -d' ' -f1)
     if [ -n "$b" ] && [ "$a" = "$b" ]; then echo "OK   $(basename "$dst")  md5=$a  bytes=$(wc -c < "$dst")"; return 0; fi

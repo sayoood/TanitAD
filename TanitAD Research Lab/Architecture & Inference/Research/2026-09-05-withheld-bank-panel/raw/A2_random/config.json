@@ -1,0 +1,228 @@
+{
+ "arm": "hier",
+ "seed": 0,
+ "argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "tiny",
+  "--data-root",
+  "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache",
+  "--episodes",
+  "48",
+  "--steps",
+  "2000",
+  "--batch",
+  "12",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "250",
+  "--seed",
+  "0",
+  "--log-every",
+  "50",
+  "--save-every",
+  "2000",
+  "--device",
+  "cuda",
+  "--anchors",
+  "C:\\Users\\Admin\\run_wbank\\refc_anchors_6s_v0cond_alat_117.pt",
+  "--n-anchors",
+  "117",
+  "--anchor-v0-conditioned",
+  "--anchor-control-units",
+  "alat",
+  "--sel-accel-max",
+  "2.0",
+  "--ego-state-inject",
+  "--out",
+  "C:/Users/Admin/run_wbank/arms/A2_random",
+  "--ego-dropout",
+  "0.5",
+  "--withheld-bank",
+  "random",
+  "--withheld-bank-warmup",
+  "450"
+ ],
+ "registered_delta": {
+  "core.graft_target_latent": [
+   "True",
+   "False"
+  ],
+  "hier": [
+   "True",
+   "False"
+  ]
+ },
+ "param_breakdown": {
+  "core": 14951096,
+  "phi_tac": 1642752,
+  "str_goal_head": 771,
+  "gstr_cond": 66816,
+  "tac_heads": 9234,
+  "tac_latent_proj": 262656,
+  "scorer": 1145,
+  "ego_inject": 25536,
+  "nav_inject": 50176,
+  "total": 17010182
+ },
+ "goal_provenance": {
+  "inference_inputs": [
+   "pooled (mean-pooled conv features, last frame)"
+  ],
+  "contains_situation_classifier_output": false,
+  "situation_classifier_in_graph": false,
+  "shared_trunk_with": [
+   "route_head",
+   "maneuver_head/tactical_trunk"
+  ],
+  "shared_trunk_justification": "shared ENCODER, not a shared signal; attributability comes from the zero-init gates, and a shared trunk cannot launder a signal that is absent from the graph",
+  "form": "geometric (bearing + signed along-track preference)",
+  "supplied_or_predicted": "predicted",
+  "label_source": "tanitad.data.lan.lan_window_features (ego future path, arc-length resampled, leak-guarded) \u2014 TRAIN ONLY; never read at inference",
+  "admissibility_check": "could this goal have been computed from the situation classifier's output? NO \u2014 that output is not in the graph, is not a batch field, and is not a label source here."
+ },
+ "provenance_roles": {
+  "goal": [
+   "g_str",
+   "g_tac",
+   "goal_point_tac"
+  ],
+  "situation_output": [],
+  "inference_inputs_of_goals": [
+   "frames (via pooled_seq/ctx)",
+   "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) \u2014 MEASURED at the last OBSERVED frame (E11')"
+  ],
+  "required_live_edges": [
+   "ego_state -> {z_tac, g_str, g_tac}",
+   "frames -> every goal"
+  ],
+  "refused_edges": [
+   "lan -> inference (E12; label-only)",
+   "situation classifier output -> any goal node (PI 2026-08-03, UNCHANGED)",
+   "future_poses/future_actions -> any goal node (E11'; the PI's 'not the future one', pinned interventionally)"
+  ],
+  "shared_trunk": "encoder (common ancestor, declared; zero-init gates carry attributability)",
+  "_reads": "`required_live_edges` is not decoration: an arm where the SCENE edge does not fire is ECHOING, and an arm where the EGO edge does not fire is v3 wearing a v4 config. Both are failures and both are measured."
+ },
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "anchors": {
+  "path": "C:\\Users\\Admin\\run_wbank\\refc_anchors_6s_v0cond_alat_117.pt",
+  "shape": [
+   117,
+   8,
+   2
+  ],
+  "sha256_installed": "51f930dc6f3564ff8f21c9070ca97b805d4e82908e42d0ef1f99be9f5a3a66df",
+  "source": "file",
+  "controls_shape": [
+   117,
+   2
+  ],
+  "controls_sha256_installed": "b072f4c052331beb79bef117c7b233f702802b517429cc9157a841294e089664",
+  "v0_conditioned": true,
+  "control_units": "alat",
+  "straight_ahead_control_present": true,
+  "control_units_source": "cli-override-legacy-file",
+  "artifact_schema": null,
+  "artifact_declared": {
+   "control_units": null,
+   "horizon_s": null,
+   "dt": null,
+   "ref_speed_ms": null,
+   "kappa_cap": null,
+   "alat_v_floor": null
+  },
+  "artifact_provenance": null,
+  "file_sha256": "e86cf507d55a4585435025fe52f33817d08dab879e1f65ff6a1fc9b0eb81e8fb"
+ },
+ "seams": {
+  "hier": true,
+  "hierarchy": true,
+  "graft_maneuver": true,
+  "factored_maneuver": true,
+  "graft_prior_center": true,
+  "graft_target_latent": true,
+  "grounded_selector": false,
+  "graft_imagination": false,
+  "tactical_speed_input": false,
+  "lan_enable": false,
+  "graft_lan": false,
+  "goal_str": false,
+  "withheld_bank": "random",
+  "withheld_bank_warmup": 450,
+  "withheld_speed_max_ms": 35.0
+ },
+ "withheld_bank": {
+  "mode": "random",
+  "warmup_steps": 450,
+  "speed_max_ms": 35.0,
+  "random_pool": {
+   "n": 9543,
+   "mean_ms": 5.7998,
+   "std_ms": 4.0438,
+   "p10_p50_p90_ms": [
+    0.0,
+    5.763,
+    10.835
+   ],
+   "source": "poses[:, 3] over every frame of the TRAINING episodes (the marginal the withheld row's bank is drawn from; independent of the row)"
+  }
+ },
+ "selection": {
+  "sel_reach_clamp": true,
+  "sel_accel_max": 2.0,
+  "horizon_s": 6.0,
+  "band_ms": 12.0,
+  "note": "horizon_s is DERIVED from max(horizons); the 72.08 % / 77.28 % kill statistics quoted elsewhere are 2 s numbers and do NOT hold here (re-derived 2026-09-04)."
+ },
+ "goal_tau_steps": [
+  20,
+  40,
+  60
+ ],
+ "admission_sigma_m": 0.8,
+ "ego": {
+  "ego_state_inject": true,
+  "echo_base": false,
+  "ego_valid_channel": true,
+  "ego_dropout": 0.5,
+  "tactical_speed_input": false,
+  "channels": [
+   "v0",
+   "a_long",
+   "yaw_rate",
+   "curvature",
+   "keep"
+  ],
+  "derivation": "t0 = last OBSERVED frame; a_long = corpus ax (actions[:,-1,1]); curvature = tan(steer)/2.9 (actions[:,-1,0]); yaw_rate = v0*curvature. NO finite differencing, NO future read.",
+  "wheelbase_mode": "const2p9"
+ },
+ "size": "tiny",
+ "rig_rung": true,
+ "ablate_frames": false,
+ "image_hw": [
+  256,
+  256
+ ],
+ "tac_vocab_version": "kin3",
+ "v2_cache": null,
+ "require_parity": false,
+ "v2_parity": null,
+ "u8_batches": false,
+ "frame_batch_bytes_est": 792723456,
+ "nav_from_v7": false,
+ "nav_cmd_derivation": "refb_labels.nav_command (v1, unchanged)",
+ "nav_from_v7_stats": null,
+ "v7_labels": null
+}
