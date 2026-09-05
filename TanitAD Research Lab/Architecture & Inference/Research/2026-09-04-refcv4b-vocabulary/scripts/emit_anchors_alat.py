@@ -12,6 +12,19 @@ survives the reparameterisation.
 ⛔ THE REFERENCE-SPEED ROLL USES THE SAME DERIVATION as the decoder, or the
 checkpoint-visible `anchors` buffer would not be the family a withheld
 ego-dropout row actually decodes.
+
+⭐ SELF-DESCRIBING ARTIFACT (2026-09-05). The `.pt` this writes carries
+`control_units="alat"`, `horizon_s`, `dt`, `ref_speed_ms`, `kappa_cap`,
+`alat_v_floor` and a provenance stamp IN the file
+(`tanitad.refs.anchor_meta.build_anchor_artifact`). MEASURED 2026-09-04 on the
+LIVE artifact this script's previous version built (`anchors.pt`, sha256
+`e86cf507…e8fb`): it held exactly `anchors` + `controls`, and read as CURVATURE
+the same bytes gave 396 g at 36 m/s with 104/117 over mu = 0.7, against the
+true 0.31 g and 0/117. The run was never ambiguous (config.json['argv'] carries
+`--anchor-control-units alat`); the standalone file was. ⛔ The live
+`/workspace/experiments/refcv4b-b1-v72-40k/anchors.pt` is NOT rewritten -- the
+run is training against it and loads it through the explicit override; this
+version is for the NEXT build.
 """
 from __future__ import annotations
 
@@ -23,12 +36,27 @@ import sys
 import numpy as np
 import torch
 
-STACK = r"C:\Users\Admin\run_refcv4v\repo\stack"
-sys.path.insert(0, STACK)
+# the stack this script imports: an already-importable `tanitad` (PYTHONPATH,
+# the venv) WINS; only if none is importable do we guess -- the repo's own
+# stack/ first, then the dev-box rig the 2026-09-04 build ran from. The guess
+# must never shadow an explicit PYTHONPATH (the rig's stack predates
+# tanitad.refs.anchor_meta and would fail one line later).
+_HERE = os.path.dirname(os.path.abspath(__file__))
+try:
+    import tanitad                                                # noqa: F401
+except ImportError:
+    for _cand in (os.path.normpath(os.path.join(_HERE, *([".."] * 5), "stack")),
+                  r"C:\Users\Admin\run_refcv4v\repo\stack"):
+        if os.path.isdir(os.path.join(_cand, "tanitad")):
+            sys.path.insert(0, _cand)
+            break
+import tanitad                                                    # noqa: E402
+from tanitad.refs import anchor_meta                            # noqa: E402
+print("stack: %s" % os.path.dirname(os.path.abspath(tanitad.__file__)))
 from tanitad.refs.refa_v1_plan import unicycle_paths            # noqa: E402
 from tanitad.refs.refc_v3 import V3_HORIZONS                    # noqa: E402
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+OUT = os.path.join(_HERE, "out")
 os.makedirs(OUT, exist_ok=True)
 DT, H = 0.1, max(V3_HORIZONS)
 SLOTS = [k - 1 for k in V3_HORIZONS]
@@ -42,6 +70,9 @@ A_LAT_MAX = 3.0          # m/s^2 ~ 0.31 g -- the standard COMFORTABLE lateral
                          # gate separated, so the verdict does not depend on it.
 
 a_g = np.linspace(A_LO, A_HI, NA)
+# ⛔ RE-CENTRED so that 0.0 is a NODE. np.linspace(-4, 3, 13) has step 7/12 and
+# its nodes are ..., -0.5, +0.0833, ... -- an odd count does NOT put zero on an
+# asymmetric range (RETRACTION_LOG 2026-09-05). The assert below is the check.
 a_g = np.clip(a_g - a_g[np.abs(a_g).argmin()], A_LO, A_HI)
 c_g = np.linspace(-1.0, 1.0, NK) * A_LAT_MAX
 assert np.any(a_g == 0.0), "a_lon grid omits 0.0 EXACTLY: %s" % a_g
@@ -76,17 +107,9 @@ print("CONTROL    a_lat==0 anchors: %d, max |y| = %.3e m  (a_lat=0 <=> kappa=0)"
       % (int(straight.sum()), paths[straight, :, 1].abs().max().item()))
 assert paths[straight, :, 1].abs().max().item() < 1e-6
 
-art = {"anchors": paths, "controls": C}
-p = os.path.join(OUT, "refc_anchors_6s_v0cond_alat_%d.pt" % N)
-torch.save(art, p)
-sha = hashlib.sha256(open(p, "rb").read()).hexdigest()
-meta = {
+extra = {
     "artifact_kind": "tanitad.refc_anchor_vocabulary",
     "variant": "v0-CONDITIONED, SPEED-CLAMPED constant-(a_lon, a_lat)",
-    "control_units": "alat",
-    "n_anchors": N, "horizons_steps": list(V3_HORIZONS), "dt_s": DT,
-    "ref_speed_ms": REF_SPEED, "alat_v_floor_ms": V_FLOOR,
-    "kappa_cap_inv_m": KAPPA_CAP,
     "a_lon_grid_ms2": [float(x) for x in a_g],
     "a_lat_grid_ms2": [float(x) for x in c_g],
     "a_lat_max_ms2": A_LAT_MAX,
@@ -96,7 +119,7 @@ meta = {
                            "6.0} clears the gate SEPARATED at every value "
                            "(-0.1009 / -0.0900 / -0.0701), so the gate verdict "
                            "does not depend on this choice.",
-    "kappa_derivation": "kappa = clamp(a_lat / max(v0, alat_v_floor_ms)^2, "
+    "kappa_derivation": "kappa = clamp(a_lat / max(v0, alat_v_floor)^2, "
                         "-kappa_cap, +kappa_cap), per window, in the decoder's "
                         "`roll_bank`",
     "straight_ahead_control_index": zi,
@@ -111,16 +134,31 @@ meta = {
              "paired_delta_vs_ha": [-0.1009, -0.1213, -0.0813],
              "verdict": "BEATS ha (separated)",
              "estimator": "paired episode-cluster bootstrap, n_boot 2000, "
-                          "seed 0, cluster = episode"},
+                          "seed 0, cluster = episode",
+             "_scope": "MEASURED 2026-09-04 on the 2026-09-04 build of this "
+                       "grid (sha256 e86cf507...e8fb); a re-emitted file "
+                       "reproduces the grid, not the measurement -- re-run "
+                       "the gate before quoting it for a new file"},
     "kamm": {"over_mu_0.7_at_v0_27.27_ms": 0, "peak_g_at_v0_27.27_ms": 0.68,
              "over_mu_0.7_at_v0_10.09_ms": 12, "peak_g_at_v0_10.09_ms": 1.23,
              "flat_kappa_family_for_scale": {"over_mu_0.7_at_27.27": 104,
                                              "peak_g": 3.96}},
-    "file_sha256": sha,
-    "anchors_sha256": hashlib.sha256(paths.numpy().tobytes()).hexdigest(),
-    "controls_sha256": hashlib.sha256(C.numpy().tobytes()).hexdigest(),
 }
+art = anchor_meta.build_anchor_artifact(
+    paths, C, control_units="alat", horizons=V3_HORIZONS, dt=DT,
+    ref_speed_ms=REF_SPEED, kappa_cap=KAPPA_CAP, alat_v_floor=V_FLOOR,
+    builder=__file__, extra=extra)
+p = os.path.join(OUT, "refc_anchors_6s_v0cond_alat_%d.pt" % N)
+torch.save(art, p)
+sha = hashlib.sha256(open(p, "rb").read()).hexdigest()
+meta = {k: v for k, v in art.items() if k not in ("anchors", "controls")}
+meta["file_sha256"] = sha
 json.dump(meta, open(p + ".json", "w"), indent=1)
 print("\nwrote %s  (%d bytes)\n  file sha256 %s" % (p, os.path.getsize(p), sha))
-print("  anchors %s  controls %s (a_lon, a_lat)" % (tuple(paths.shape),
-                                                    tuple(C.shape)))
+print("  anchors %s  controls %s (a_lon, a_lat)  units=%s  horizon_s=%s"
+      % (tuple(paths.shape), tuple(C.shape), art["control_units"],
+         art["horizon_s"]))
+# read-back through the consumer's own resolver: no override needed any more
+_rb = anchor_meta.read_anchor_artifact(p)
+assert _rb.control_units == "alat" and _rb.control_units_source == "file", _rb
+print("  read-back: %s" % anchor_meta.describe(_rb))

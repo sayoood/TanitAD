@@ -60,6 +60,7 @@ import torch
 
 import refb_labels
 from refc_train import load_cached_episodes
+from tanitad.refs import anchor_meta
 from tanitad.refs.refc import (furthest_point_sample, synth_anchor_pool)
 
 
@@ -174,7 +175,16 @@ def main(argv=None) -> str:
                                   v2_cache=v2_cache)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"anchors": anchors, **meta}, out)
+    # ⭐ SELF-DESCRIBING ARTIFACT (2026-09-05). The file carries its units,
+    # horizon, dt and a provenance stamp IN the .pt -- a fixed-path vocabulary
+    # declares `control_units="paths"` and None for the re-roll constants it
+    # does not have. MEASURED 2026-09-04: a units-less controls file read as
+    # curvature gave 396 g where the truth was 0.31 g; see
+    # tanitad.refs.anchor_meta. The legacy keys (method/horizons/n_anchors/
+    # pool_size/source/seed) are kept alongside, so older readers still work.
+    torch.save(anchor_meta.build_anchor_artifact(
+        anchors, None, control_units=anchor_meta.PATHS_ONLY,
+        horizons=horizons, dt=0.1, builder=__file__, extra=meta), out)
     print(json.dumps({"saved": str(out), "shape": list(anchors.shape), **meta}),
           flush=True)
     return str(out)

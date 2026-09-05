@@ -209,8 +209,29 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
         cfg.core.anchors.v0_conditioned = True
         cfg.core.anchors.ref_speed_ms = float(
             getattr(args, "anchor_ref_speed", 10.0))
+        # ⛔ `--anchor-control-units` now DEFAULTS TO None: the artifact is the
+        # authority on what its own `controls` column MEANS, and the flag is
+        # an explicit OVERRIDE for a legacy file that declares nothing.
+        # `_read_anchor_artifact` resolves the two BEFORE this pin runs and
+        # writes the resolved value back into `args`; a None here means no
+        # artifact was read (a fixed-path build), where the value is inert.
+        # MEASURED 2026-09-04: the live refcv4b anchors.pt declares nothing,
+        # and the same bytes read as curvature give 396 g at 36 m/s (104/117
+        # over mu = 0.7) against the true 0.31 g (0/117) -- tanitad.refs.
+        # anchor_meta carries the incident and the rule.
         cfg.core.anchors.control_units = str(
-            getattr(args, "anchor_control_units", "kappa"))
+            getattr(args, "anchor_control_units", None) or "kappa")
+        # The artifact's own derivation constants travel with it: a file
+        # rolled under one kappa cap / speed floor must be re-rolled under the
+        # SAME ones by the decoder, or the checkpoint-visible `anchors` buffer
+        # and the per-window bank are two different vocabularies under one
+        # name. Adopted here (both arms, so the hier/flat delta is unchanged)
+        # and stamped into config.json by `_anchor_stamp`.
+        _am = getattr(args, "_anchor_artifact_meta", None) or {}
+        if _am.get("kappa_cap") is not None:
+            cfg.core.anchors.kappa_cap = float(_am["kappa_cap"])
+        if _am.get("alat_v_floor") is not None:
+            cfg.core.anchors.alat_v_floor_ms = float(_am["alat_v_floor"])
     return cfg
 
 
@@ -866,7 +887,95 @@ def _lan_arm_preflight(cfg, args) -> int:
 
 
 
-def _anchor_stamp(path, anchors, controls=None, units="kappa") -> dict:
+def _read_anchor_artifact(args):
+    """Read ``--anchors`` through :mod:`tanitad.refs.anchor_meta` and RESOLVE
+    its control units against the explicit ``--anchor-control-units`` override.
+
+    Returns ``None`` without ``--anchors``. Otherwise it (i) refuses -- before
+    any data or GPU work -- a ``controls``-carrying file that declares no
+    ``control_units`` unless the override is given (the LIVE refcv4b file is
+    exactly that case and keeps loading through ``--anchor-control-units
+    alat``), (ii) writes the resolved units back into
+    ``args.anchor_control_units`` so ``_pin_trainer_cfg`` sees ONE value, and
+    (iii) stashes the file's declared derivation constants in
+    ``args._anchor_artifact_meta`` for the pin to adopt.
+    """
+    if not getattr(args, "anchors", None):
+        return None
+    from tanitad.refs import anchor_meta
+    try:
+        art = anchor_meta.read_anchor_artifact(
+            args.anchors,
+            cli_control_units=getattr(args, "anchor_control_units", None))
+    except anchor_meta.AnchorUnitsError as e:
+        raise SystemExit(f"[v3] ⛔ anchors: {e}")
+    if art.controls is not None:
+        args.anchor_control_units = art.control_units
+    args._anchor_artifact_meta = dict(art.declared)
+    print(f"[v3] anchors: artifact {anchor_meta.describe(art)}", flush=True)
+    return art
+
+
+def _check_anchor_artifact_against_cfg(art, cfg, args) -> None:
+    """Refuse a file whose DECLARED horizon / dt / reference speed differ from
+    what the decoder built from ``cfg`` will use. Undeclared fields (a legacy
+    file) never fire; a declared one that differs is a second vocabulary
+    wearing the first one's name, so it is refused rather than reconciled."""
+    if art is None:
+        return
+    from tanitad.refs import anchor_meta
+    hz = tuple(cfg.core.trajectory.horizons)
+    bad = anchor_meta.mismatches(
+        art, horizon_s=max(hz) * 0.1, dt=0.1,
+        ref_speed_ms=(float(cfg.core.anchors.ref_speed_ms)
+                      if art.controls is not None else None),
+        kappa_cap=(float(cfg.core.anchors.kappa_cap)
+                   if art.controls is not None else None),
+        alat_v_floor=(float(cfg.core.anchors.alat_v_floor_ms)
+                      if art.controls is not None else None))
+    if bad:
+        raise SystemExit(
+            "[v3] ⛔ anchors: the artifact was built for different constants "
+            "than this decoder would re-roll it under -- " + "; ".join(bad)
+            + ". Rebuild the vocabulary for this trainer, or launch with the "
+              "matching flags (--anchor-ref-speed for ref_speed_ms; kappa_cap "
+              "and alat_v_floor are adopted from the file).")
+
+
+def _seam_stamp(cfg, args) -> dict:
+    """The hierarchy-seam booleans, serialised so a finished run can rebuild
+    its own model config from its own record.
+
+    MEASURED 2026-09-04 (`…/2026-09-04-refcv4b-seam-state/SEAM_STATE.md`):
+    `hierarchy`, `graft_maneuver`, `factored_maneuver`, `graft_prior_center`,
+    `lan_enable`, `goal_str` were absent from config.json at EVERY nesting
+    level; the live arm was reconstructible only by knowing that refc_v3.py
+    forces them. A run record that cannot rebuild its own model config is not
+    a run record. `lan_enable` is the LAN LABEL pathway (`--goal-str` or
+    `--graft-lan` builds it); `graft_lan` is the corridor as a MODEL INPUT,
+    refused by E12 for every registered arm and stamped separately so the two
+    can never be confused.
+    """
+    core = cfg.core
+    return {
+        "hier": bool(cfg.hier),
+        "hierarchy": bool(core.hierarchy),
+        "graft_maneuver": bool(core.graft_maneuver),
+        "factored_maneuver": bool(core.factored_maneuver),
+        "graft_prior_center": bool(core.graft_prior_center),
+        "graft_target_latent": bool(core.graft_target_latent),
+        "grounded_selector": bool(core.grounded_selector),
+        "graft_imagination": bool(core.graft_imagination),
+        "tactical_speed_input": bool(core.tactical_speed_input),
+        "lan_enable": bool(getattr(args, "goal_str", False)
+                           or getattr(args, "graft_lan", False)),
+        "graft_lan": bool(core.graft_lan or getattr(args, "graft_lan", False)),
+        "goal_str": bool(getattr(args, "goal_str", False)),
+    }
+
+
+def _anchor_stamp(path, anchors, controls=None, units="kappa",
+                  art=None) -> dict:
     """Record the anchor vocabulary BY CONTENT, not by the presence of a path.
 
     A run that was launched without ``--anchors`` silently carries
@@ -893,6 +1002,14 @@ def _anchor_stamp(path, anchors, controls=None, units="kappa") -> dict:
             ((c[:, 0] == 0) & (c[:, 1] == 0)).any())
     else:
         stamp["v0_conditioned"] = False
+    # ⭐ where the units CAME FROM, and what the file itself declares. For the
+    # live refcv4b file this reads `cli-override-legacy-file` with every
+    # declared field None -- the record says the operator supplied the units.
+    if art is not None:
+        stamp["control_units_source"] = art.control_units_source
+        stamp["artifact_schema"] = art.meta.get("schema")
+        stamp["artifact_declared"] = dict(art.declared)
+        stamp["artifact_provenance"] = art.meta.get("provenance")
     if path:
         try:
             stamp["file_sha256"] = hashlib.sha256(
@@ -904,6 +1021,7 @@ def _anchor_stamp(path, anchors, controls=None, units="kappa") -> dict:
 
 def preflight(args) -> int:
     _check_nav_from_v7_args(args)          # no-op unless --nav-from-v7
+    art = _read_anchor_artifact(args)      # None without --anchors
     print("[v3-preflight] building both arms + pinning the delta …")
     cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
     cfg_f = v3.refc_v3_sized_config(args.size, hier=False)
@@ -918,6 +1036,7 @@ def preflight(args) -> int:
               f"PREREG_REFC_V3.md BEFORE launch.")
         return 2
     cfg = cfg_h if args.arm == "hier" else cfg_f
+    _check_anchor_artifact_against_cfg(art, cfg, args)
     model = v3.RefCV3Model(cfg)
     bd = v3.param_breakdown_v3(model)
     print(f"[v3-preflight] arm={args.arm} params={bd}")
@@ -1079,6 +1198,11 @@ def train(args) -> dict:
     # data or GPU work; a no-op with the flag off.
     _check_nav_from_v7_args(args)
     nav_on = bool(getattr(args, "nav_from_v7", False))
+    # ⭐ THE ANCHOR ARTIFACT IS READ FIRST: a units-less legacy file is refused
+    # before any data or GPU work, the resolved units and the file's own
+    # derivation constants reach `_pin_trainer_cfg` below, and the decoder is
+    # BUILT under the constants the file was rolled with.
+    art = _read_anchor_artifact(args)
     # MEASURED on the A40 pod 2026-09-02: the FIRST real launch died within
     # seconds -- `DataLoader worker killed by signal: Bus error ... out of
     # shared memory`. B1 payloads are ~34 MB/clip and torch's DEFAULT tensor
@@ -1109,6 +1233,7 @@ def train(args) -> dict:
         raise SystemExit(f"[v3] ⛔ config delta {sorted(delta)} != registered "
                          f"{sorted(REGISTERED_DELTA_KEYS)} — amend the prereg "
                          f"first (C122).")
+    _check_anchor_artifact_against_cfg(art, cfg, args)
     if args.graft_lan or args.goal_str:
         cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
 
@@ -1123,10 +1248,9 @@ def train(args) -> dict:
     # one was not. Both branches now speak, and the default is a WARNING, not a
     # default. See RETRACTION_LOG and `.../2026-09-04-refcv3-smoothness/`.
     if args.anchors:
-        anc = torch.load(args.anchors, map_location=device,
-                         weights_only=True)
-        _ctrl = anc.get("controls") if isinstance(anc, dict) else None
-        anc = anc["anchors"] if isinstance(anc, dict) else anc
+        assert art is not None                       # read at the top of train()
+        anc = art.anchors.to(device)
+        _ctrl = None if art.controls is None else art.controls.to(device)
         # ⛔ BOTH DIRECTIONS ARE REFUSED, LOUDLY. A v0-conditioned build given a
         # controls-free file would silently fall back to fixed paths — the exact
         # vocabulary this arm exists to replace — and a fixed build given a
@@ -1159,19 +1283,29 @@ def train(args) -> dict:
               f"(sha256 {_sha})", flush=True)
         if _ctrl is not None:
             _ok = bool(((_ctrl[:, 0] == 0) & (_ctrl[:, 1] == 0)).any())
-            _u = getattr(args, "anchor_control_units", "kappa")
+            _u = art.control_units
             print(f"[v3] anchors: v0-CONDITIONED, controls {tuple(_ctrl.shape)} "
                   f"(accel, {'lateral accel' if _u == 'alat' else 'curvature'}), "
-                  f"units={_u}, rolled per window; withheld rows at "
+                  f"units={_u} (source: {art.control_units_source}), rolled "
+                  f"per window; withheld rows at "
                   f"{getattr(args, 'anchor_ref_speed', 10.0)} m/s. "
                   f"straight-ahead control present: {_ok}", flush=True)
             if not _ok:
+                # ⚠️ RETRACTED 2026-09-05 (RETRACTION_LOG): this message used
+                # to say "Rebuild with odd counts". An odd count is neither
+                # necessary nor sufficient -- np.linspace(-4, 3, 13) has 13
+                # nodes and NO zero (step 7/12: ..., -0.5, +0.0833, ...); only
+                # a SYMMETRIC odd grid, or a re-centred one, contains 0.0.
                 raise SystemExit(
                     "[v3] ⛔ the control grid does not contain {a=0, kappa=0} "
-                    "EXACTLY. An even-count linspace omits it and the set then "
-                    "reads 1.2768 m oracle-in-vocabulary against 0.2610 — a "
-                    "4.9x artifact that looks exactly like a resolution "
-                    "finding. Rebuild with odd counts.")
+                    "EXACTLY. A linspace that does not pass through 0.0 -- an "
+                    "even count on a symmetric range, or ANY count on an "
+                    "asymmetric one such as np.linspace(-4, 3, 13) -- omits "
+                    "it, and the set then reads 1.2768 m oracle-in-vocabulary "
+                    "against 0.2610 — a 4.9x artifact that looks exactly like "
+                    "a resolution finding. Rebuild so that 0.0 is a node of "
+                    "BOTH axes (assert `np.any(grid == 0.0)`; re-centre if "
+                    "the range is asymmetric).")
     else:
         print("[v3] ⛔ anchors: NO --anchors GIVEN — using the SYNTHETIC "
               "`default_anchors` fallback. Its oracle-in-vocabulary ADE was MEASURED "
@@ -1404,7 +1538,13 @@ def train(args) -> dict:
             getattr(args, "anchors", None), model.core.decoder.anchors,
             model.core.decoder.anchor_controls
             if getattr(model.core.decoder, "anchor_v0_cond", False) else None,
-            getattr(args, "anchor_control_units", "kappa")),
+            getattr(args, "anchor_control_units", None) or "kappa",
+            art=art),
+        # ⭐⭐ THE SEAM STAMP (2026-09-05). MEASURED 2026-09-04: none of the
+        # hierarchy-seam booleans were in config.json at any nesting level,
+        # so the live arm could not rebuild its own model config from its
+        # own record. `_seam_stamp` names each one.
+        "seams": _seam_stamp(cfg, args),
         "selection": {
             "sel_reach_clamp": bool(cfg.core.sel_reach_clamp),
             "sel_accel_max": float(cfg.core.sel_accel_max),
@@ -1729,9 +1869,20 @@ def build_parser() -> argparse.ArgumentParser:
                          "v0-conditioned family at 117 candidates reads 0.2610 "
                          "(-0.0387 [-0.0652, -0.0104] BEATS ha). Requires a "
                          "`controls` entry in --anchors; refused without one.")
-    ap.add_argument("--anchor-control-units", default="kappa",
+    ap.add_argument("--anchor-control-units", default=None,
                     choices=["kappa", "alat"],
-                    help="what channel 1 of the anchor controls MEANS. "
+                    help="⛔ EXPLICIT OVERRIDE ONLY (default None): the anchor "
+                         "artifact is the authority on what its own `controls` "
+                         "column MEANS, and a controls-carrying file that "
+                         "declares no `control_units` is REFUSED unless this "
+                         "flag names them (recorded in config.json as "
+                         "control_units_source='cli-override-legacy-file'); "
+                         "a file that declares a different unit than this "
+                         "flag is refused too. MEASURED 2026-09-04: the live "
+                         "refcv4b anchors.pt declared nothing, and its "
+                         "lateral column read as curvature gives 396 g at "
+                         "36 m/s against the true 0.31 g. "
+                         "What channel 1 of the anchor controls MEANS. "
                          "'kappa' = curvature 1/m, integrated as supplied. "
                          "'alat' = LATERAL ACCELERATION m/s^2, with curvature "
                          "DERIVED per window as a_lat / max(v0, 4.0)^2 and "

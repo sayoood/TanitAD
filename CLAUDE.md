@@ -465,6 +465,26 @@ Every subagent brief MUST carry the preamble in
   v1's window count; refcv3's is **805,687** — a 4.77x error — because the two arms window
   the SAME episodes at 170.9 vs 36.9 windows/episode. The vector was one word: "corpus"
   means the CLIP SET, which they share; the WINDOW GRID is not shared.)*
+- ⛔ **A CORRECT FORMULA APPLIED UNDER THE WRONG UNITS READS EXACTLY LIKE AN ANSWER — AND AN
+  ARTIFACT THAT DOES NOT NAME ITS UNITS INVITES IT.** MEASURED 2026-09-04: refcv4b's live
+  `anchors.pt` is a dict of exactly `anchors [117,8,2]` + `controls [117,2]`; column 1 of
+  `controls` is LATERAL ACCELERATION (m/s²), and nothing in the file says so. Read as
+  CURVATURE (1/m), `a_lat = v²κ = 36² × 3.0 = 3,888 m/s²` = **396 g at 36 m/s, with 104/117
+  anchors over a μ = 0.7 friction circle**; read correctly, `3.0 m/s²` = **0.31 g, 0/117**. Both
+  tables look plausible, the Kamm arithmetic is right in both, and the 396 g one was produced
+  first — from the shipped file. The RUN record was complete (`config.json['argv']` carries
+  `--anchor-control-units alat`); the standalone artifact was not, and an artifact is opened in
+  isolation far more often than its run record. ⇒ **Before applying any formula to a tensor,
+  find the line that states its units — in the FILE, not in your memory of the builder. If the
+  file does not carry them, the number you are about to compute is inadmissible until it does.**
+  Durable fix (2026-09-05): builders write `control_units` / `horizon_s` / `dt` / `ref_speed_ms` /
+  `kappa_cap` / `alat_v_floor` + provenance INTO the `.pt` (`stack/tanitad/refs/anchor_meta.py`),
+  and `refc_v3_train.py` REFUSES a `controls`-carrying file that declares nothing unless
+  `--anchor-control-units` is passed explicitly — recorded in `config.json` as
+  `control_units_source: cli-override-legacy-file`, so the record says the units came from the
+  operator, not the artifact. *(Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` /
+  `step_s` / cylindrical-FOV traps — a true quantity quoted outside its scope — with the scope
+  being the UNIT.)*
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts. ⚠️ **But see the `ls-tree` trap above: repeated
   samples through ONE broken channel are one sample.** A second *probe* means a different
