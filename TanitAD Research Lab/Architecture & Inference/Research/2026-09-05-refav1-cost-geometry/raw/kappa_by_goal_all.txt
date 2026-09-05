@@ -146,16 +146,19 @@
     ACCELERATE                   3
   plan_source: cem 0.750  baseline 0.250
 
-==== combined   n_windows=5
+==== combined   n_windows=40
   by DECODED LATERAL GOAL TOKEN
     token              n  med|k|max  frac k!=0   frac@cap   mean k^2
-    LANE_KEEP          2    0.02000     0.5000     0.0000   0.000800
-    TURN_R             3    0.08000     1.0000     0.0000   0.006400
+    LANE_KEEP         18    0.00000     0.4444     0.0000   0.001161
+    TURN_L             9    0.08000     1.0000     0.0000   0.005797
+    TURN_R            13    0.08000     1.0000     0.0000   0.006400
   by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
-    GT-straight        2  med|k|max 0.02000  frac k!=0 0.5000  frac@cap 0.0000  dir_correct 0.5000
-    GT-turn            3  med|k|max 0.08000  frac k!=0 1.0000  frac@cap 0.0000  dir_correct 0.6667
+    GT-straight       21  med|k|max 0.04000  frac k!=0 0.6667  frac@cap 0.0000  dir_correct 0.3810
+    GT-turn           19  med|k|max 0.08000  frac k!=0 0.8421  frac@cap 0.0000  dir_correct 0.5789
   by DECODED LONGITUDINAL GOAL TOKEN
-    CRUISE                       1
-    ADAPT_SPEED_FOR_CURVE        4
-  plan_source: cem 0.800  baseline 0.200
+    CRUISE                       4
+    BRAKE_TO                     4
+    ADAPT_SPEED_FOR_CURVE       29
+    ACCELERATE                   3
+  plan_source: cem 0.750  baseline 0.250
 

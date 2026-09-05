@@ -833,6 +833,71 @@ make a rung *attractive*. That arm (`wk15_ladder`: `ccos`, `W_KAPPA = 15.11245`,
 the same five rungs) was queued the moment this null landed and is one variable
 against `wk15`.
 
+
+### 7.8 ⭐⭐⭐ `combined` — THE FIRST refav1 ARM WITH **ZERO** FRICTION-CIRCLE VIOLATIONS, AND THE LADDER'S REAL ROLE
+
+`combined` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`
++ `--kamm-mu 0.7`. Three variables against `ccos_argmax`, **one** against `kamm07`:
+the candidate set.
+
+**The safety axis closes completely** (`assert_feasible`, `v0 >= 2 m/s`, n = 27):
+
+| arm | `kamm_over_rate` (mu = 0.7) | `peak_g` max | `max\|kappa\|` | role |
+|---|---|---|---|---|
+| `g` ground truth | **0.0000** | 0.373 | 0.1701 | CONTROL — must be 0 |
+| **`combined`** | **0.0000** | **0.618** | 0.1505 | — |
+| `kamm07` (cap only) | 0.1481 | 0.707 | 0.174670 | CONTROL — must be NON-zero |
+| `ccos_argmax` (neither) | 0.2963 | **3.262** | 0.2000 | CONTROL — must be NON-zero |
+| `ha0_ext` floor | 0.1852 | 1.436 | 0.7672 | CONTROL — must be NON-zero |
+
+⛔ **The `0.0000` is bracketed on both sides:** the ground-truth control reads the
+same known value, and three arms in the same table read non-zero — so it is a
+measurement, not an unevaluated branch. **This is the first refav1 arm in the
+programme whose plans are entirely inside the tyre's friction circle**, and it
+closes the residual §7.6 flagged as a work item on the cap alone (0.1481 → 0.0000)
+**in the same turn it was raised**.
+
+**And it is free in ADE terms.** Paired against `kamm07`, the cap-only arm:
+`ade_m` **+0.0577 [-0.0369, +0.1589]**, not separated — and **below the 0.0607
+inference-seed floor**. `LAT cross` +0.0578 (n.s.), `LAT heading` +0.3126 (n.s.),
+`LAT yaw_rate` -0.0145 (n.s.). The one separated row is
+`LON_accel_mae` **+0.0176 [+0.0013, +0.0415]** — 2.9x its floor, a small real cost.
+
+**Why the ladder matters here and not on its own.** §7.7's null stands unchanged:
+with `W_KAPPA = 0` and no cap, not one window of 40 chose a rung. Under the cap the
+picture inverts — `combined` is **4.434113e+00 m** from `kamm07` (control:
+1.359604e+01 m from `ccos_argmax`), so the extra candidates *do* change plans, and
+the realised set now contains **0.0198, 0.0216, 0.0374, 0.0400, 0.0500, 0.0559,
+0.0827** including the rung value **0.0400 exactly**. ⇒ **the ladder's role is not
+to be preferred, it is to give the CAP something feasible to select** instead of
+clipping a candidate whose rolled-out path then still violates. A constraint plus a
+feasible candidate set reaches zero; either alone does not.
+
+**Four families, and the honest limits:**
+
+| | `ccos_argmax` | `kamm07` | **`combined`** | `wk15` | `ha0_ext` |
+|---|---|---|---|---|---|
+| ADE m | 1.3272 | **0.9927** | 1.0504 | **0.8934** | **0.8772** |
+| curvature MAE | 0.055369 | 0.048462 | 0.046862 | **0.030982** | 0.077298 |
+| TAC lateral kappa | 0.3795 | 0.3644 | **0.4148** | 0.2611 | 0.6277 |
+| turn recall L / R | 0.3636 / 0.75 | 0.3636 / 0.625 | **0.3636 / 0.75** | 0.0 / 0.5 | — |
+| GT-turn ADE | 0.9195 | 0.9195 | 0.9258 | 0.9699 | 1.1521 |
+| GT-straight ADE | 1.6960 | 1.0590 | 1.1632 | **0.8242** | 0.6285 |
+| `kamm_over_rate` | 0.2963 | 0.1481 | **0.0000** | *(not run)* | 0.1852 |
+
+⚠️ **`combined` has the highest tactical lateral kappa of any arm (0.4148) and keeps
+both turn recalls at the uncapped arm's values — but 0.4148 - 0.3795 = 0.0353 is
+BELOW the 0.0973 seed floor on that metric, so "best tactical" is NOT established
+and is not claimed.** What is established is that the safety repair costs neither
+the turn decisions nor, beyond one small separated accel row, the families.
+
+⇒ **The package's two working levers are now cleanly separated by what they buy:**
+`W_KAPPA` is the **accuracy** lever (best ADE and lateral family, at the cost of the
+longitudinal one and of turning in general); `cap + ladder` is the **safety** lever
+(the only zero-violation arm, at no ADE cost against the cap alone and with the turn
+decisions intact). They have never been run together — that is the next arm, and
+`wk15_ladder` is the half of it already on the GPU.
+
 ---
 
 ## §8 — Deliverable manifest
