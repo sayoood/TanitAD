@@ -1,0 +1,556 @@
+{
+ "why": "does the prereg's motivating floor gap survive a representative panel and the MEASURED crossover?",
+ "thresholds": [
+  0.001,
+  0.01,
+  0.04
+ ],
+ "v0_floor_mps": 1.0,
+ "ha0_ext_form": "INTEGRATOR (refav1_arm.hold_ext_controls), M11",
+ "kappa_recipe": "yaw_rate.mean(1)/speed.mean(1).clamp_min(0.5) on the dump's own GT waypoints \u2014 the same recipe as tools/gt_kappa.py, so the split joins the banked decode statistics",
+ "panels": {
+  "repr282_ccos": {
+   "dump": "C:/Users/Admin/refav1_sweep/dumps/dump_ccos_comp",
+   "cost": {
+    "metric": "ccos",
+    "weights": {
+     "W_JERK": 12.859430084830139,
+     "W_KAPPA": 32.14857521207535,
+     "W_VEND": 64.2971504241507
+    },
+    "weights_source": "CLI override (--cost-weights)",
+    "shipped_weights": {
+     "W_JERK": 0.02,
+     "W_KAPPA": 0.05,
+     "W_VEND": 0.1
+    },
+    "cost_metrics_available": [
+     "cos",
+     "chord",
+     "ccos"
+    ],
+    "rule": "cost_metric selects the goal term's form (refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped default; chord = ||z^-g^||, monotone-equivalent; ccos = 1-cos(z-z_ref, g-z_ref) centred on the window's own zero-action terminal field). Neither non-default form is weight-neutral, so the weight triple is banked beside the metric, never assumed"
+   },
+   "n_windows": 282,
+   "n_excluded_low_v0": 16,
+   "kappa_abs_quantiles": {
+    "0.5": 0.0008482860866934061,
+    "0.75": 0.0037468436639755964,
+    "0.9": 0.014448507688939571,
+    "0.95": 0.03585633635520935,
+    "0.99": 0.20307956635951996,
+    "1.0": 3.45231032371521
+   },
+   "v0_filtered": {
+    "thr_0.001": {
+     "n_turning": 124,
+     "n_straight": 142,
+     "turning": {
+      "cl": 0.9785924553871155,
+      "ha": 0.8447957634925842,
+      "ha0": 0.7429726719856262,
+      "ha0_ext": 0.8355040550231934,
+      "ol": 0.7210497856140137,
+      "deficit_cl_minus_ha0ext": 0.14308838546276093,
+      "ratio_cl_over_ha0ext": 1.1712599992752075,
+      "ratio_cl_over_ha": 1.1583775281906128
+     },
+     "straight": {
+      "cl": 0.5218070149421692,
+      "ha": 0.30457985401153564,
+      "ha0": 0.36793169379234314,
+      "ha0_ext": 0.27615445852279663,
+      "ol": 0.18663403391838074,
+      "deficit_cl_minus_ha0ext": 0.24565258622169495,
+      "ratio_cl_over_ha0ext": 1.8895477056503296,
+      "ratio_cl_over_ha": 1.713202714920044
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 34,
+     "n_straight": 232,
+     "turning": {
+      "cl": 1.308030128479004,
+      "ha": 1.3093805313110352,
+      "ha0": 1.170108437538147,
+      "ha0_ext": 1.321091651916504,
+      "ol": 1.3440189361572266,
+      "deficit_cl_minus_ha0ext": -0.01306147687137127,
+      "ratio_cl_over_ha0ext": 0.9901130795478821,
+      "ratio_cl_over_ha": 0.9989686608314514
+     },
+     "straight": {
+      "cl": 0.6507285833358765,
+      "ha": 0.4460606276988983,
+      "ha0": 0.45082414150238037,
+      "ha0_ext": 0.42197978496551514,
+      "ol": 0.3026532530784607,
+      "deficit_cl_minus_ha0ext": 0.22874878346920013,
+      "ratio_cl_over_ha0ext": 1.5420846939086914,
+      "ratio_cl_over_ha": 1.4588344097137451
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 10,
+     "n_straight": 256,
+     "turning": {
+      "cl": 0.8884850740432739,
+      "ha": 0.8767070770263672,
+      "ha0": 1.0859529972076416,
+      "ha0_ext": 0.9512676000595093,
+      "ol": 1.1279791593551636,
+      "deficit_cl_minus_ha0ext": -0.06278257071971893,
+      "ratio_cl_over_ha0ext": 0.9340012073516846,
+      "ratio_cl_over_ha": 1.0134344100952148
+     },
+     "straight": {
+      "cl": 0.7287390828132629,
+      "ha": 0.5438982248306274,
+      "ha0": 0.5215444564819336,
+      "ha0_ext": 0.5207177996635437,
+      "ol": 0.40872034430503845,
+      "deficit_cl_minus_ha0ext": 0.20802129805088043,
+      "ratio_cl_over_ha0ext": 1.3994895219802856,
+      "ratio_cl_over_ha": 1.3398445844650269
+     }
+    }
+   },
+   "unfiltered": {
+    "thr_0.001": {
+     "n_turning": 132,
+     "n_straight": 150,
+     "turning": {
+      "cl": 0.9460663795471191,
+      "ha": 0.82037353515625,
+      "ha0": 0.7306604385375977,
+      "ha0_ext": 0.8116440773010254,
+      "ol": 0.702996551990509,
+      "deficit_cl_minus_ha0ext": 0.13442227244377136,
+      "ratio_cl_over_ha0ext": 1.1656173467636108,
+      "ratio_cl_over_ha": 1.1532142162322998
+     },
+     "straight": {
+      "cl": 0.5052611231803894,
+      "ha": 0.291546106338501,
+      "ha0": 0.356423944234848,
+      "ha0_ext": 0.26463669538497925,
+      "ol": 0.1778780072927475,
+      "deficit_cl_minus_ha0ext": 0.24062438309192657,
+      "ratio_cl_over_ha0ext": 1.909263253211975,
+      "ratio_cl_over_ha": 1.7330402135849
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 38,
+     "n_straight": 244,
+     "turning": {
+      "cl": 1.208403468132019,
+      "ha": 1.2099277973175049,
+      "ha0": 1.0907156467437744,
+      "ha0_ext": 1.2204058170318604,
+      "ol": 1.2397303581237793,
+      "deficit_cl_minus_ha0ext": -0.012002382427453995,
+      "ratio_cl_over_ha0ext": 0.9901652932167053,
+      "ratio_cl_over_ha": 0.9987401366233826
+     },
+     "straight": {
+      "cl": 0.6342238187789917,
+      "ha": 0.4346064031124115,
+      "ha0": 0.44452279806137085,
+      "ha0_ext": 0.4117094576358795,
+      "ol": 0.29658809304237366,
+      "deficit_cl_minus_ha0ext": 0.2225143313407898,
+      "ratio_cl_over_ha0ext": 1.5404645204544067,
+      "ratio_cl_over_ha": 1.459306240081787
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 13,
+     "n_straight": 269,
+     "turning": {
+      "cl": 0.7908338904380798,
+      "ha": 0.7849656343460083,
+      "ha0": 0.9594399333000183,
+      "ha0_ext": 0.8423196077346802,
+      "ol": 0.9759179353713989,
+      "deficit_cl_minus_ha0ext": -0.05148570239543915,
+      "ratio_cl_over_ha0ext": 0.9388762712478638,
+      "ratio_cl_over_ha": 1.0074758529663086
+     },
+     "straight": {
+      "cl": 0.7077661752700806,
+      "ha": 0.5271995067596436,
+      "ha0": 0.5109221339225769,
+      "ha0_ext": 0.5051389932632446,
+      "ol": 0.396990031003952,
+      "deficit_cl_minus_ha0ext": 0.20262718200683594,
+      "ratio_cl_over_ha0ext": 1.401131510734558,
+      "ratio_cl_over_ha": 1.3425016403198242
+     }
+    }
+   }
+  },
+  "abt28_argmax": {
+   "dump": "C:/Users/Admin/refav1_drive/abt/dump_argmax",
+   "cost": {
+    "metric": "ccos",
+    "weights": {
+     "W_JERK": 0.0,
+     "W_KAPPA": 0.0,
+     "W_VEND": 64.2971504241507
+    },
+    "weights_source": "CLI override (--cost-weights)",
+    "shipped_weights": {
+     "W_JERK": 0.02,
+     "W_KAPPA": 0.05,
+     "W_VEND": 0.1
+    },
+    "cost_metrics_available": [
+     "cos",
+     "chord",
+     "ccos"
+    ],
+    "rule": "cost_metric selects the goal term's form (refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped default; chord = ||z^-g^||, monotone-equivalent; ccos = 1-cos(z-z_ref, g-z_ref) centred on the window's own zero-action terminal field). Neither non-default form is weight-neutral, so the weight triple is banked beside the metric, never assumed"
+   },
+   "n_windows": 28,
+   "n_excluded_low_v0": 1,
+   "kappa_abs_quantiles": {
+    "0.5": 0.00187386991456151,
+    "0.75": 0.004989393521100283,
+    "0.9": 0.017159923911094666,
+    "0.95": 0.029410218819975853,
+    "0.99": 0.06396342068910599,
+    "1.0": 0.07578422129154205
+   },
+   "v0_filtered": {
+    "thr_0.001": {
+     "n_turning": 18,
+     "n_straight": 9,
+     "turning": {
+      "cl": 1.5627537965774536,
+      "ha": 0.4863210916519165,
+      "ha0": 0.5199124217033386,
+      "ha0_ext": 0.48032474517822266,
+      "ol": 0.3901018500328064,
+      "deficit_cl_minus_ha0ext": 1.0824291706085205,
+      "ratio_cl_over_ha0ext": 3.2535359859466553,
+      "ratio_cl_over_ha": 3.2134196758270264
+     },
+     "straight": {
+      "cl": 1.8510205745697021,
+      "ha": 0.3968890607357025,
+      "ha0": 0.28690406680107117,
+      "ha0_ext": 0.3609297275543213,
+      "ol": 0.1923551708459854,
+      "deficit_cl_minus_ha0ext": 1.4900908470153809,
+      "ratio_cl_over_ha0ext": 5.12847900390625,
+      "ratio_cl_over_ha": 4.66382360458374
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 4,
+     "n_straight": 23,
+     "turning": {
+      "cl": 1.088573694229126,
+      "ha": 0.41487592458724976,
+      "ha0": 0.7561032772064209,
+      "ha0_ext": 0.345733642578125,
+      "ol": 0.6927614808082581,
+      "deficit_cl_minus_ha0ext": 0.7428401112556458,
+      "ratio_cl_over_ha0ext": 3.148590564727783,
+      "ratio_cl_over_ha": 2.6238536834716797
+     },
+     "straight": {
+      "cl": 1.7580198049545288,
+      "ha": 0.4637512266635895,
+      "ha0": 0.38765856623649597,
+      "ha0_ext": 0.4570120871067047,
+      "ol": 0.2600862383842468,
+      "deficit_cl_minus_ha0ext": 1.301007866859436,
+      "ratio_cl_over_ha0ext": 3.846768617630005,
+      "ratio_cl_over_ha": 3.7908682823181152
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 1,
+     "n_straight": 26,
+     "turning": {
+      "cl": 0.9357919692993164,
+      "ha": 0.330758661031723,
+      "ha0": 0.9357919692993164,
+      "ha0_ext": 0.24979081749916077,
+      "ol": 1.0796040296554565,
+      "deficit_cl_minus_ha0ext": 0.686001181602478,
+      "ratio_cl_over_ha0ext": 3.746302604675293,
+      "ratio_cl_over_ha": 2.8292288780212402
+     },
+     "straight": {
+      "cl": 1.6866523027420044,
+      "ha": 0.4613470435142517,
+      "ha0": 0.42326027154922485,
+      "ha0_ext": 0.4478624165058136,
+      "ol": 0.29513177275657654,
+      "deficit_cl_minus_ha0ext": 1.2387899160385132,
+      "ratio_cl_over_ha0ext": 3.766005516052246,
+      "ratio_cl_over_ha": 3.6559295654296875
+     }
+    }
+   },
+   "unfiltered": {
+    "thr_0.001": {
+     "n_turning": 19,
+     "n_straight": 9,
+     "turning": {
+      "cl": 1.4955766201019287,
+      "ha": 0.46295568346977234,
+      "ha0": 0.5066424012184143,
+      "ha0_ext": 0.4572749435901642,
+      "ol": 0.37192586064338684,
+      "deficit_cl_minus_ha0ext": 1.038301706314087,
+      "ratio_cl_over_ha0ext": 3.2706289291381836,
+      "ratio_cl_over_ha": 3.230496406555176
+     },
+     "straight": {
+      "cl": 1.8510205745697021,
+      "ha": 0.3968890607357025,
+      "ha0": 0.28690406680107117,
+      "ha0_ext": 0.3609297275543213,
+      "ol": 0.1923551708459854,
+      "deficit_cl_minus_ha0ext": 1.4900908470153809,
+      "ratio_cl_over_ha0ext": 5.12847900390625,
+      "ratio_cl_over_ha": 4.66382360458374
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 4,
+     "n_straight": 24,
+     "turning": {
+      "cl": 1.088573694229126,
+      "ha": 0.41487592458724976,
+      "ha0": 0.7561032772064209,
+      "ha0_ext": 0.345733642578125,
+      "ol": 0.6927614808082581,
+      "deficit_cl_minus_ha0ext": 0.7428401112556458,
+      "ratio_cl_over_ha0ext": 3.148590564727783,
+      "ratio_cl_over_ha": 2.6238536834716797
+     },
+     "straight": {
+      "cl": 1.696702003479004,
+      "ha": 0.44619402289390564,
+      "ha0": 0.38266369700431824,
+      "ha0_ext": 0.43973568081855774,
+      "ol": 0.25111424922943115,
+      "deficit_cl_minus_ha0ext": 1.256966233253479,
+      "ratio_cl_over_ha0ext": 3.8584587574005127,
+      "ratio_cl_over_ha": 3.802610397338867
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 1,
+     "n_straight": 27,
+     "turning": {
+      "cl": 0.9357919692993164,
+      "ha": 0.330758661031723,
+      "ha0": 0.9357919692993164,
+      "ha0_ext": 0.24979081749916077,
+      "ol": 1.0796040296554565,
+      "deficit_cl_minus_ha0ext": 0.686001181602478,
+      "ratio_cl_over_ha0ext": 3.746302604675293,
+      "ratio_cl_over_ha": 2.8292288780212402
+     },
+     "straight": {
+      "cl": 1.6347906589508057,
+      "ha": 0.4458296597003937,
+      "ha0": 0.417501837015152,
+      "ha0_ext": 0.43284448981285095,
+      "ol": 0.2858586609363556,
+      "deficit_cl_minus_ha0ext": 1.2019461393356323,
+      "ratio_cl_over_ha0ext": 3.7768545150756836,
+      "ratio_cl_over_ha": 3.6668503284454346
+     }
+    }
+   }
+  },
+  "abt28_prior050": {
+   "dump": "C:/Users/Admin/refav1_drive/abt/dump_prior050",
+   "cost": {
+    "metric": "ccos",
+    "weights": {
+     "W_JERK": 0.0,
+     "W_KAPPA": 0.0,
+     "W_VEND": 64.2971504241507
+    },
+    "weights_source": "CLI override (--cost-weights)",
+    "shipped_weights": {
+     "W_JERK": 0.02,
+     "W_KAPPA": 0.05,
+     "W_VEND": 0.1
+    },
+    "cost_metrics_available": [
+     "cos",
+     "chord",
+     "ccos"
+    ],
+    "rule": "cost_metric selects the goal term's form (refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped default; chord = ||z^-g^||, monotone-equivalent; ccos = 1-cos(z-z_ref, g-z_ref) centred on the window's own zero-action terminal field). Neither non-default form is weight-neutral, so the weight triple is banked beside the metric, never assumed"
+   },
+   "n_windows": 28,
+   "n_excluded_low_v0": 1,
+   "kappa_abs_quantiles": {
+    "0.5": 0.00187386991456151,
+    "0.75": 0.004989393521100283,
+    "0.9": 0.017159923911094666,
+    "0.95": 0.029410218819975853,
+    "0.99": 0.06396342068910599,
+    "1.0": 0.07578422129154205
+   },
+   "v0_filtered": {
+    "thr_0.001": {
+     "n_turning": 18,
+     "n_straight": 9,
+     "turning": {
+      "cl": 2.7581005096435547,
+      "ha": 0.4863210916519165,
+      "ha0": 0.5199124217033386,
+      "ha0_ext": 0.48032474517822266,
+      "ol": 0.3901018500328064,
+      "deficit_cl_minus_ha0ext": 2.277775764465332,
+      "ratio_cl_over_ha0ext": 5.742157936096191,
+      "ratio_cl_over_ha": 5.671357154846191
+     },
+     "straight": {
+      "cl": 2.2374913692474365,
+      "ha": 0.3968890607357025,
+      "ha0": 0.28690406680107117,
+      "ha0_ext": 0.3609297275543213,
+      "ol": 0.1923551708459854,
+      "deficit_cl_minus_ha0ext": 1.8765616416931152,
+      "ratio_cl_over_ha0ext": 6.199243545532227,
+      "ratio_cl_over_ha": 5.637573719024658
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 4,
+     "n_straight": 23,
+     "turning": {
+      "cl": 1.5995672941207886,
+      "ha": 0.41487592458724976,
+      "ha0": 0.7561032772064209,
+      "ha0_ext": 0.345733642578125,
+      "ol": 0.6927614808082581,
+      "deficit_cl_minus_ha0ext": 1.2538337707519531,
+      "ratio_cl_over_ha0ext": 4.626588344573975,
+      "ratio_cl_over_ha": 3.855531692504883
+     },
+     "straight": {
+      "cl": 2.7558681964874268,
+      "ha": 0.4637512266635895,
+      "ha0": 0.38765856623649597,
+      "ha0_ext": 0.4570120871067047,
+      "ol": 0.2600862383842468,
+      "deficit_cl_minus_ha0ext": 2.298855781555176,
+      "ratio_cl_over_ha0ext": 6.030186653137207,
+      "ratio_cl_over_ha": 5.942557334899902
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 1,
+     "n_straight": 26,
+     "turning": {
+      "cl": 2.085549831390381,
+      "ha": 0.330758661031723,
+      "ha0": 0.9357919692993164,
+      "ha0_ext": 0.24979081749916077,
+      "ol": 1.0796040296554565,
+      "deficit_cl_minus_ha0ext": 1.8357590436935425,
+      "ratio_cl_over_ha0ext": 8.3491849899292,
+      "ratio_cl_over_ha": 6.305352210998535
+     },
+     "straight": {
+      "cl": 2.603757381439209,
+      "ha": 0.4613470435142517,
+      "ha0": 0.42326027154922485,
+      "ha0_ext": 0.4478624165058136,
+      "ol": 0.29513177275657654,
+      "deficit_cl_minus_ha0ext": 2.1558947563171387,
+      "ratio_cl_over_ha0ext": 5.813744068145752,
+      "ratio_cl_over_ha": 5.643815040588379
+     }
+    }
+   },
+   "unfiltered": {
+    "thr_0.001": {
+     "n_turning": 19,
+     "n_straight": 9,
+     "turning": {
+      "cl": 2.6280105113983154,
+      "ha": 0.46295568346977234,
+      "ha0": 0.5066424012184143,
+      "ha0_ext": 0.4572749435901642,
+      "ol": 0.37192586064338684,
+      "deficit_cl_minus_ha0ext": 2.1707355976104736,
+      "ratio_cl_over_ha0ext": 5.747112274169922,
+      "ratio_cl_over_ha": 5.676591873168945
+     },
+     "straight": {
+      "cl": 2.2374913692474365,
+      "ha": 0.3968890607357025,
+      "ha0": 0.28690406680107117,
+      "ha0_ext": 0.3609297275543213,
+      "ol": 0.1923551708459854,
+      "deficit_cl_minus_ha0ext": 1.8765616416931152,
+      "ratio_cl_over_ha0ext": 6.199243545532227,
+      "ratio_cl_over_ha": 5.637573719024658
+     }
+    },
+    "thr_0.01": {
+     "n_turning": 4,
+     "n_straight": 24,
+     "turning": {
+      "cl": 1.5995672941207886,
+      "ha": 0.41487592458724976,
+      "ha0": 0.7561032772064209,
+      "ha0_ext": 0.345733642578125,
+      "ol": 0.6927614808082581,
+      "deficit_cl_minus_ha0ext": 1.2538337707519531,
+      "ratio_cl_over_ha0ext": 4.626588344573975,
+      "ratio_cl_over_ha": 3.855531692504883
+     },
+     "straight": {
+      "cl": 2.652972936630249,
+      "ha": 0.44619402289390564,
+      "ha0": 0.38266369700431824,
+      "ha0_ext": 0.43973568081855774,
+      "ol": 0.25111424922943115,
+      "deficit_cl_minus_ha0ext": 2.2132375240325928,
+      "ratio_cl_over_ha0ext": 6.033108234405518,
+      "ratio_cl_over_ha": 5.9457831382751465
+     }
+    },
+    "thr_0.04": {
+     "n_turning": 1,
+     "n_straight": 27,
+     "turning": {
+      "cl": 2.085549831390381,
+      "ha": 0.330758661031723,
+      "ha0": 0.9357919692993164,
+      "ha0_ext": 0.24979081749916077,
+      "ol": 1.0796040296554565,
+      "deficit_cl_minus_ha0ext": 1.8357590436935425,
+      "ratio_cl_over_ha0ext": 8.3491849899292,
+      "ratio_cl_over_ha": 6.305352210998535
+     },
+     "straight": {
+      "cl": 2.5179286003112793,
+      "ha": 0.4458296597003937,
+      "ha0": 0.417501837015152,
+      "ha0_ext": 0.43284448981285095,
+      "ol": 0.2858586609363556,
+      "deficit_cl_minus_ha0ext": 2.0850841999053955,
+      "ratio_cl_over_ha0ext": 5.817166805267334,
+      "ratio_cl_over_ha": 5.6477370262146
+     }
+    }
+   }
+  }
+ }
+}
