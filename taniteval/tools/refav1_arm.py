@@ -185,7 +185,8 @@ t1 = _load_t1()
 DT = 0.2                 # refav1's operative tick (the loader REFUSES any other)
 K_TRAJ_DEFAULT = 10      # 2.0 s = cfg.plan_steps at defaults = t1_eval's 20 x 0.1 s
 ARM_TIERS = {"cl": "T1", "cl_navshuf": "T1", "cl_nonav": "T1",
-             "cl_oraclegoal": "T0", "ha": "T1", "ha0": "T1", "ha0_ext": "T1",
+             "cl_oraclegoal": "T0", "cl_oracleseed": "T0",
+             "ha": "T1", "ha0": "T1", "ha0_ext": "T1",
              "ol": "T0"}
 ARM_MEANING = {
     "cl": "T1 — plan() at t0, TRUE nav; predictor consumes the planner's own "
@@ -195,6 +196,12 @@ ARM_MEANING = {
     "cl_nonav": "T1 — as cl with nav_cmd=None (index 0 'follow')",
     "cl_oraclegoal": "T0 — as cl with the TRUE future field as goal_field "
                      "(future information => T0; search-vs-goal attribution)",
+    "cl_oracleseed": "T0 — ⭐ THE DE-CONFOUNDED ORACLE (D-REFAV1-ORACLE-DECONF): "
+                     "the TRUE future field as goal_field WITH the head's own "
+                     "canonical seed still in the pool (plan(goal_keeps_seed="
+                     "True)). ⛔ `cl_oraclegoal` differs from `cl` in TWO "
+                     "things — the goal AND the missing seed — so it bounds "
+                     "nothing; THIS arm differs in the goal alone",
     "ha": "T1 — hold the last OBSERVED (a, kappa) (closes at t0) for K steps; "
           "consumes no recorded future",
     "ha0": "T1 — CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a "
@@ -219,7 +226,7 @@ PLAN_SOURCE_NAMES = ["cem", "baseline:cv", "baseline:hold_v0",
                      "baseline:proposal", "baseline:decel_1.5"]
 #: ``PlanResult.goal_source`` values (refa_v1.plan, e609a98); index 0 is what an
 #: OLDER model file (no attribute) reads as — never inferred from anything else.
-GOAL_SOURCE_NAMES = ["none", "supplied", "tactical_imagined"]
+GOAL_SOURCE_NAMES = ["none", "supplied", "tactical_imagined", "supplied+seed"]
 #: the banked B1 EVAL lead block (backlog R1): one row per (clip, RAW 10 Hz frame)
 #: for the 147 v7.2 EVAL clips, built by ``tools/build_lead_block_b1.py``.
 LEAD_BLOCK_DEFAULT = os.path.join(
@@ -658,6 +665,8 @@ def run_dump(a) -> dict:
         arms.append("cl_nonav")
     if a.with_oracle_goal_arm:
         arms.append("cl_oraclegoal")
+    if getattr(a, "with_oracle_seed_arm", False):
+        arms.append("cl_oracleseed")
     plan_arms = [x for x in arms if x.startswith("cl")]
     pc = _plan_cfg(cfg, a)
     # ⭐ THE COST FLAGS (D-REFAV1-CCOS-EVAL). `cost_metric` selects the goal
@@ -667,6 +676,27 @@ def run_dump(a) -> dict:
     # otherwise raise deep inside plan() after the model is loaded — or worse,
     # silently score a differently-named metric. Refuse up front, by name.
     from tanitad.refs import refa_v1 as _R
+    from taniteval import four_families as _ff
+    # ⭐ M15's LEVEL SET, resolved once. ⛔ STALE-STACK GATE: a stack that
+    # predates the level set has no `GOAL_KAPPA_TURN_LEVELS`, and `plan()` would
+    # SILENTLY IGNORE the kwarg (it is keyword-only with a default) and bank an
+    # L1 arm under an L3 name.
+    gk_levels = getattr(a, "goal_kappa_levels", None)
+    if gk_levels is not None:
+        if not hasattr(_R, "GOAL_KAPPA_TURN_LEVELS"):
+            raise SystemExit("[refav1_arm] ⛔ STALE STACK: --goal-kappa-levels "
+                             "asked for but refa_v1 has no level set")
+        gk_levels = (tuple(_R.GOAL_KAPPA_TURN_LEVELS)
+                     if str(gk_levels).strip().lower() == "m15"
+                     else tuple(float(x) for x in str(gk_levels).split(",")))
+        if getattr(a, "goal_kappa_hint", None) is None:
+            raise SystemExit(
+                "[refav1_arm] ⛔ --goal-kappa-levels needs --goal-kappa-hint: "
+                "the v7.0 head has ONE TURN slot per direction and cannot "
+                "select a magnitude, so the chooser must be named and its TIER "
+                "declared ('gt' => T0)")
+    gk_vocab = _R.goal_kappa_vocab_id(gk_levels) if hasattr(
+        _R, "goal_kappa_vocab_id") else "L1-0.08"
     cost_metric = str(getattr(a, "cost_metric", None) or "cos")
     if cost_metric not in getattr(_R, "COST_METRICS", ("cos",)):
         raise SystemExit(f"[refav1_arm] ⛔ STALE STACK: cost_metric={cost_metric!r} "
@@ -866,14 +896,27 @@ def run_dump(a) -> dict:
                                            "decode under the same nav — drift")
                 # -- the planning arms ----------------------------------------
                 goal_oracle = None
-                if "cl_oraclegoal" in arms:
+                if "cl_oraclegoal" in arms or "cl_oracleseed" in arms:
                     hp = cfg.plan_steps
                     goal_oracle = model.adapter(model.std(fut[:, :hp]))[:, hp - 1]
                 plans = {}
                 for arm in plan_arms:
                     nv = {"cl": nav_t, "cl_navshuf": nav_s, "cl_nonav": None,
-                          "cl_oraclegoal": nav_t}[arm]
-                    gf = goal_oracle if arm == "cl_oraclegoal" else None
+                          "cl_oraclegoal": nav_t, "cl_oracleseed": nav_t}[arm]
+                    gf = (goal_oracle
+                          if arm in ("cl_oraclegoal", "cl_oracleseed") else None)
+                    # ⭐ the ONE difference between `cl_oracleseed` and `cl`:
+                    # the goal field. The seed stays (goal_keeps_seed=True).
+                    gks = arm == "cl_oracleseed"
+                    # ⛔ T0 WHEN IT IS `gt`: the hint is the window's own true
+                    # curvature, computed from the SAME `g` the dump banks and
+                    # by the SAME recipe as `tools/gt_kappa.py`
+                    # (yaw_rate.mean / speed.mean.clamp_min(0.5)).
+                    gkh = None
+                    if gk_levels is not None:
+                        _G = _ff._seq_geometry(g.float().cpu(), DT)
+                        gkh = float(_G["yaw_rate"].mean(1)
+                                    / _G["speed"].mean(1).clamp_min(0.5))
                     tp = time.time()
                     # ⭐ the planner->model crossing travels with the call:
                     # the candidate stays curvature, the MODEL is fed
@@ -884,7 +927,10 @@ def run_dump(a) -> dict:
                                      cost_metric=cost_metric,
                                      cost_weights=cost_weights,
                                      lat_logit_bias=lat_logit_bias,
-                                     goal_kappa_turn=goal_kappa_turn)
+                                     goal_kappa_turn=goal_kappa_turn,
+                                     goal_kappa_levels=gk_levels,
+                                     goal_kappa_hint=gkh,
+                                     goal_keeps_seed=gks)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
                         # ⛔ the flag must have REACHED plan(): a result that
@@ -949,6 +995,27 @@ def run_dump(a) -> dict:
                 # SELECTED manoeuvre the TACTICAL family names (decoded by the
                 # factored heads under this arm's nav), banked per window.
                 gs = getattr(res, "goal_source", None) or "none"
+                # ⛔ VERIFY-GATE, PER WINDOW: a stale stack whose `plan()`
+                # predates `goal_keeps_seed` SILENTLY IGNORES the kwarg (it is
+                # keyword-only with a default) and produces the CONFOUNDED
+                # seed-less arm under the de-confounded arm's name — which is
+                # the exact error this arm exists to correct. The stamp is the
+                # only positive evidence the branch ran.
+                if arm == "cl_oracleseed" and str(gs) != "supplied+seed":
+                    raise RuntimeError(
+                        f"[refav1_arm] ⛔ cl_oracleseed got goal_source={gs!r}, "
+                        f"expected 'supplied+seed': the seed did NOT enter the "
+                        f"pool and this arm is the CONFOUNDED one. Stale stack?")
+                if getattr(res, "goal_kappa_vocab", None) != gk_vocab:
+                    raise RuntimeError(
+                        f"[refav1_arm] ⛔ plan() reports vocabulary "
+                        f"{getattr(res, 'goal_kappa_vocab', None)!r}, asked for "
+                        f"{gk_vocab!r}: the level set did not reach it and this "
+                        f"arm would be banked under the wrong action space")
+                if arm == "cl" and str(gs) != "tactical_imagined":
+                    raise RuntimeError(
+                        f"[refav1_arm] ⛔ control arm cl got goal_source={gs!r}: "
+                        f"the paired control is not the shipped pipeline")
                 ga = getattr(res, "goal_action", None)
                 dec.setdefault(f"goal_source_{arm}", []).append(_goal_code(str(gs)))
                 dec.setdefault(f"goal_lat_{arm}", []).append(
@@ -1048,6 +1115,19 @@ def run_dump(a) -> dict:
                                "planner's ONLY curvature-carrying candidate; a "
                                "LANE_KEEP decode forces curvature EXACTLY 0 "
                                "(MEASURED 244/244 windows, step 21109)")},
+        # ⚠️ THE PARITY STAMP (M16 (1) / PREREG_D-VOCAB-L3 §4). Changing the
+        # sustained-curvature level set changes the ACTION SPACE; every refav1
+        # number banked before 2026-09-05 is under `L1-0.08`, and a
+        # cross-vocabulary comparison is INADMISSIBLE unless it says so. The
+        # stamp is read back off `plan()` per window, not asserted here.
+        "goal_vocab": {
+            "kappa_vocab": gk_vocab,
+            "kappa_levels": (None if gk_levels is None else list(gk_levels)),
+            "kappa_level_chooser": getattr(a, "goal_kappa_hint", None),
+            "tier_note": ("goal_kappa_hint='gt' reads the window's TRUE "
+                          "curvature => the arm is T0, a vocabulary-adequacy "
+                          "BOUND and never a driving number (EVAL_DOCTRINE)"),
+            "shipped": "L1-0.08 (GOAL_KAPPA_TURN = 0.08, R 12.5 m)"},
         "cost": {"metric": cost_metric, "weights": used_w,
                  "weights_source": ("CLI override (--cost-weights)" if cost_weights
                                     else "shipped module constants"),
@@ -1554,7 +1634,7 @@ def _distance_keeping_block(rec, info, lead, arms, P_cat, pairs, eid_w, dt,
 # the analysis (CPU)                                                            #
 # --------------------------------------------------------------------------- #
 _GOAL_COND = {"cl": "nav_true", "cl_navshuf": "nav_shuffled", "cl_nonav": "nav_zero",
-              "cl_oraclegoal": "nav_true"}
+              "cl_oraclegoal": "nav_true", "cl_oracleseed": "nav_true"}
 
 
 def _goal_provenance(dec, arm, N, names, space, lat_names, lon_names) -> dict:
@@ -1832,7 +1912,8 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         ("ha0_ext", "cl", "paired_cl_minus_ha0ext"),
         ("cl_navshuf", "cl", "paired_cl_minus_navshuf"),
         ("cl_nonav", "cl", "paired_cl_minus_nonav"),
-        ("cl_oraclegoal", "cl", "paired_cl_minus_oraclegoal"))
+        ("cl_oraclegoal", "cl", "paired_cl_minus_oraclegoal"),
+        ("cl_oracleseed", "cl", "paired_cl_minus_oracleseed"))
         if x in arms and y in arms]
     # ---- ⭐ THE TRIVIAL-PROFILE INSTRUMENT, BEFORE ANY FAMILY ROW -------------
     # It runs here, not later, ON PURPOSE: a reader who sees the family table
@@ -2243,6 +2324,24 @@ def main(argv=None):
     ap.add_argument("--with-oracle-goal-arm", action="store_true",
                     help="ALSO roll cl_oraclegoal (T0: the true future field as "
                          "the planning goal)")
+    ap.add_argument("--goal-kappa-levels", default=None,
+                    help="M15's L=3 lateral vocabulary: 'm15' for the measured "
+                         "corpus quantiles, or a comma list of magnitudes (1/m). "
+                         "⚠️ THIS CHANGES THE ACTION SPACE — every banked refav1 "
+                         "number is under L1-0.08 and a cross-vocabulary "
+                         "comparison is inadmissible unless it says so. Requires "
+                         "--goal-kappa-hint.")
+    ap.add_argument("--goal-kappa-hint", default=None, choices=(None, "gt"),
+                    help="the level CHOOSER. 'gt' = the window's TRUE curvature "
+                         "=> ⛔ T0, a vocabulary-adequacy BOUND, never a driving "
+                         "number. The v7.0 head cannot choose a magnitude, so a "
+                         "level set without this is refused rather than "
+                         "defaulted (which would hide the tier).")
+    ap.add_argument("--with-oracle-seed-arm", action="store_true",
+                    help="ALSO roll cl_oracleseed (T0: the DE-CONFOUNDED "
+                         "oracle — the true future field as the goal WITH the "
+                         "head's own canonical seed retained, so the goal is "
+                         "the only difference from cl)")
     ap.add_argument("--allow-nonstrict", action="store_true")
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)

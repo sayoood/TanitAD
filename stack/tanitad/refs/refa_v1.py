@@ -117,6 +117,24 @@ GOAL_REACH_S = 2.0                #: s  — s2_geom_emit_v7.TACTICAL_S[0]
 GOAL_A_MAX = 1.5                  #: m/s^2 — DV_BRAKE_MS/s; = the decel_1.5 floor
 GOAL_KAPPA_MAX = 0.2              #: 1/m — PlanConfig.kappa_max
 GOAL_KAPPA_TURN = 0.08            #: 1/m — R 12.5 m (emitter's measured 12.2 m)
+#: ⭐⭐ M15 (2026-09-05) — THE LATERAL GOAL VOCABULARY'S THREE SUSTAINED
+#: CURVATURE MAGNITUDES, sited at the corpus's own |kappa| quantiles among real
+#: turns so the sizing is DERIVED from the road and not chosen. MEASURED on the
+#: dense bank (4,520 windows / 141 episodes, 644 real turns) by
+#: `.../2026-09-05-refav1-goal-margin/tools/vocab_design.py`
+#: (`raw/vocab_design.json`, row "L=3 at corpus quantiles"): against the shipped
+#: single magnitude the ORACLE-chooser table reads expressible turns
+#: 0.3866 -> 1.0000 and medAE-on-turns 0.01551 -> 0.00421 (3.7x) at the same
+#: RMSE (0.01032 vs 0.01015).
+#: ⛔ M15 IS BINDING ON THE METRIC TOO: for vocabulary design `medAE-on-turns`
+#: decides and RMSE may not, because RMSE is dominated by the rare sharp turn
+#: and ranks 0.08 — the vocabulary we know is broken — first.
+GOAL_KAPPA_TURN_LEVELS: tuple[float, ...] = (0.01155, 0.01942, 0.05805)
+#: The stamp that travels on every result and every dump. ⚠️ CHANGING THE LEVEL
+#: SET CHANGES THE ACTION SPACE: every refav1 number banked before 2026-09-05 is
+#: under `L1-0.08`, and a cross-vocabulary comparison is INADMISSIBLE unless it
+#: says so (M16 (1) / `PREREG_D-VOCAB-L3_FLOOR_GAP` §4).
+GOAL_KAPPA_VOCAB_SHIPPED = "L1-0.08"
 GOAL_TURN_S = 4.0                 #: s — TACTICAL_S[1] - TACTICAL_S[0]
 GOAL_LANE_CHANGE = (2.0, 1.75)    #: (half-duration s, half-offset m: 3.5 m lane)
 GOAL_NUDGE = (1.0, 0.5)           #: (half-duration s, half-offset m: 1 m shift)
@@ -399,6 +417,56 @@ def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
     elif lat.startswith("NUDGE_"):
         _s_curve(*GOAL_NUDGE)
     return torch.stack([a, k], dim=-1)
+
+
+def goal_kappa_vocab_id(levels) -> str:
+    """The vocabulary stamp for a level set. `None` is the SHIPPED single
+    magnitude and must keep its own id, or a parity claim cannot be checked
+    from a dump."""
+    if levels is None:
+        return GOAL_KAPPA_VOCAB_SHIPPED
+    lv = tuple(float(x) for x in levels)
+    return f"L{len(lv)}-" + ",".join(f"{x:g}" for x in lv)
+
+
+def choose_kappa_level(levels, kappa_hint: float) -> float:
+    """⭐ THE CHOOSER, MADE EXPLICIT — nearest level by MAGNITUDE.
+
+    ⛔⛔ A VOCABULARY WITH THREE MAGNITUDES NEEDS SOMETHING TO PICK ONE, AND THE
+    TRAINED HEAD CANNOT: the v7.0 lateral vocabulary has ONE `TURN_L` and ONE
+    `TURN_R` slot, `kappa_turn` does not touch the head's logits at all, and the
+    goal-margin stream MEASURED that `turns goaled correctly` is **0.2811 for
+    EVERY `kappa_turn`** for exactly that reason (`ESCALATION.md` §4). So the
+    M15 table's payoff is an ORACLE-CHOOSER bound, and an arm that realises it
+    must say WHERE its hint came from:
+
+    * the TRUE |kappa| of the window  -> **T0**, a diagnostic bound, never a
+      driving number (EVAL_DOCTRINE);
+    * a predictor of kappa from vision -> T1, and then the predictor's own error
+      composes with this table and must be reported beside it.
+
+    Passing a hint is therefore mandatory under a level set — there is no
+    defensible default, and inventing one would hide the tier."""
+    lv = [float(x) for x in levels]
+    if not lv:
+        raise ValueError("goal_kappa_levels must carry at least one magnitude")
+    k = abs(float(kappa_hint))
+    return min(lv, key=lambda x: abs(abs(x) - k))
+
+
+def canonical_controls_levels(lat: str, lon: str, v0: float, op_steps: int,
+                              op_dt: float, levels) -> Tensor:
+    """``[L, op_steps, 2]`` — the token's control profile at EVERY magnitude in
+    the level set. This is the surface M15 approved ("`canonical_controls` gains
+    three sustained curvature magnitudes"); the choice among the rows is made by
+    `choose_kappa_level`, never here.
+
+    ⚠️ For a NON-`TURN_` token every row is identical, because only `TURN_`
+    reads `kappa_turn` — asserted by the tests rather than assumed, since a
+    silent per-level difference on `LANE_KEEP` would make the level set a second
+    lever."""
+    return torch.stack([canonical_controls(lat, lon, v0, op_steps, op_dt,
+                                           kappa_turn=k) for k in levels])
 
 
 @dataclass
@@ -1917,7 +1985,9 @@ class RefAV1(nn.Module):
     def _imagine_tactical_goal(self, last: Tensor, brains: dict, v0: Tensor,
                                *, units: str = "kappa",
                                lat_logit_bias: Tensor | None = None,
-                               goal_kappa_turn: float | None = None
+                               goal_kappa_turn: float | None = None,
+                               goal_kappa_levels=None,
+                               goal_kappa_hint=None
                                ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
@@ -1987,10 +2057,36 @@ class RefAV1(nn.Module):
         if v0.shape[0] != last.shape[0]:
             raise ValueError(f"v0 carries {v0.shape[0]} rows for a batch of "
                              f"{last.shape[0]}")
+        # ⭐ M15's LEVEL SET. `goal_kappa_levels=None` is the SHIPPED path and
+        # skips every line below, so an arm that does not ask for it is
+        # BIT-IDENTICAL to the pre-2026-09-05 expression — asserted by
+        # `tests/test_refa_v1_kappa_levels.py::test_a_*`, each with a
+        # same-breath control that must differ.
+        if goal_kappa_levels is None:
+            kt = [goal_kappa_turn] * len(lat_i)
+        else:
+            if goal_kappa_turn is not None:
+                raise ValueError("goal_kappa_turn and goal_kappa_levels are "
+                                 "mutually exclusive: a level set already "
+                                 "names every magnitude the goal may command")
+            if goal_kappa_hint is None:
+                raise ValueError(
+                    "goal_kappa_levels needs goal_kappa_hint: the v7.0 head has "
+                    "ONE TURN slot per direction and cannot select a magnitude "
+                    "(`turns goaled correctly` is 0.2811 for every kappa_turn), "
+                    "so the chooser must be supplied and its TIER declared")
+            hint = torch.as_tensor(goal_kappa_hint, dtype=torch.float32
+                                   ).reshape(-1).tolist()
+            if len(hint) == 1:
+                hint = hint * len(lat_i)
+            if len(hint) != len(lat_i):
+                raise ValueError(f"goal_kappa_hint carries {len(hint)} rows for "
+                                 f"a batch of {len(lat_i)}")
+            kt = [choose_kappa_level(goal_kappa_levels, h) for h in hint]
         ctrl = torch.stack([
             canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt,
-                               kappa_turn=goal_kappa_turn)
-            for i, j, v in zip(lat_i, lon_i, v0.tolist())]).to(last)   # [B,K,2]
+                               kappa_turn=k)
+            for i, j, v, k in zip(lat_i, lon_i, v0.tolist(), kt)]).to(last)
         stride = self._stride(cfg.tac_dt)
         # ⭐ THE GOAL CROSSES INTO THE MODEL HERE — through the same boundary a
         # planner candidate crosses (`_model_actions`), so `units` cannot apply
@@ -2002,7 +2098,10 @@ class RefAV1(nn.Module):
         goal = self.tactical.rollout(self._tac_field(last), acts, intent=intent,
                                      last_only=True)                  # [B,Q,d]
         return goal, {"lat": [lat_v[i] for i in lat_i],
-                      "lon": [lon_v[j] for j in lon_i], "controls": ctrl}
+                      "lon": [lon_v[j] for j in lon_i], "controls": ctrl,
+                      "kappa_turn_used": [None if k is None else float(k)
+                                          for k in kt],
+                      "kappa_vocab": goal_kappa_vocab_id(goal_kappa_levels)}
 
     @torch.no_grad()
     def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
@@ -2044,7 +2143,10 @@ class RefAV1(nn.Module):
              cost_metric: str = "cos",
              cost_weights: tuple[float, float, float] | None = None,
              lat_logit_bias: Tensor | None = None,
-             goal_kappa_turn: float | None = None):
+             goal_kappa_turn: float | None = None,
+             goal_kappa_levels=None,
+             goal_kappa_hint=None,
+             goal_keeps_seed: bool = False):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -2158,6 +2260,14 @@ class RefAV1(nn.Module):
         _check_units(model_action_units)
         _check_cost_time_grid(cost_time_grid)
         _check_goal_time_grid(goal_time_grid)
+        if goal_keeps_seed and goal_time_grid == "plan":
+            # the "plan" grid re-rolls the goal FROM the seed, which would
+            # overwrite the supplied field and silently produce a non-oracle
+            # arm under an oracle arm's name.
+            raise ValueError(
+                "goal_keeps_seed=True is incompatible with "
+                "goal_time_grid='plan': the goal would be re-rolled from the "
+                "seed and the supplied field discarded")
         _check_cost_metric(cost_metric)
         if cost_weights is None:
             w_jerk, w_kappa, w_vend = W_JERK, W_KAPPA, W_VEND
@@ -2219,7 +2329,33 @@ class RefAV1(nn.Module):
         # ⭐ THE GOAL, IN ONE SPACE (docstring). Supplied -> pooled; absent ->
         # the tactical brain's own imagination; no hierarchy -> goal-free.
         goal_action = None
-        if goal_field is not None:
+        if goal_field is not None and goal_keeps_seed and brains is not None:
+            # ⛔⛔ THE DE-CONFOUNDED SUPPLIED-GOAL PATH (D-REFAV1-ORACLE-DECONF,
+            # 2026-09-05). The plain `supplied` branch below leaves
+            # `goal_action = None`, so the canonical seed NEVER ENTERS THE POOL
+            # -- MEASURED on the Stage-B oracle arm as `goal_source` `supplied`
+            # 142/142 against `tactical_imagined` 142/142 for the shipped arm.
+            # That arm therefore differs from `cl` in TWO things (the goal AND
+            # the seed) and its ADE 7.4708 bounds nothing.
+            # ⇒ Under this flag the head still runs and still builds the seed --
+            # bit-identical to the shipped arm's seed, same `lat_logit_bias`,
+            # same `goal_kappa_turn` -- and ONLY `goal_t` is replaced by the
+            # supplied field. The goal is then the single difference from `cl`.
+            # ⚠️ `goal_time_grid="plan"` would RE-ROLL the goal from that seed
+            # and so DESTROY the supplied field; it is refused below rather
+            # than silently producing a non-oracle arm.
+            _, ga = self._imagine_tactical_goal(
+                last, brains, v0_t, units=model_action_units,
+                lat_logit_bias=lat_logit_bias,
+                goal_kappa_turn=goal_kappa_turn,
+                goal_kappa_levels=goal_kappa_levels,
+                goal_kappa_hint=goal_kappa_hint)
+            goal_t, goal_source = self._tac_field(goal_field), "supplied+seed"
+            goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
+                           "controls": ga["controls"][0],
+                           "kappa_turn_used": ga["kappa_turn_used"][0],
+                           "kappa_vocab": ga["kappa_vocab"]}
+        elif goal_field is not None:
             goal_t, goal_source = self._tac_field(goal_field), "supplied"
         elif brains is not None:
             # ⭐ the crossing travels to the GOAL too (R26): one spelling on
@@ -2227,10 +2363,14 @@ class RefAV1(nn.Module):
             goal_t, ga = self._imagine_tactical_goal(
                 last, brains, v0_t, units=model_action_units,
                 lat_logit_bias=lat_logit_bias,
-                goal_kappa_turn=goal_kappa_turn)
+                goal_kappa_turn=goal_kappa_turn,
+                goal_kappa_levels=goal_kappa_levels,
+                goal_kappa_hint=goal_kappa_hint)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
-                           "controls": ga["controls"][0]}
+                           "controls": ga["controls"][0],
+                           "kappa_turn_used": ga["kappa_turn_used"][0],
+                           "kappa_vocab": ga["kappa_vocab"]}
         else:
             goal_t, goal_source = None, "none"
 
@@ -2395,6 +2535,13 @@ class RefAV1(nn.Module):
         res.model_action_units = model_action_units
         res.cost_time_grid = cost_time_grid
         res.goal_time_grid = goal_time_grid
+        res.goal_keeps_seed = bool(goal_keeps_seed)
+        # ⚠️ THE PARITY STAMP. A dump that does not name its action space cannot
+        # be compared with one that does; M16 (1) makes the cross-vocabulary
+        # comparison inadmissible without it.
+        res.goal_kappa_vocab = goal_kappa_vocab_id(goal_kappa_levels)
+        res.goal_kappa_levels = (None if goal_kappa_levels is None
+                                 else tuple(float(x) for x in goal_kappa_levels))
         res.cost_metric = cost_metric
         res.cost_weights = (w_jerk, w_kappa, w_vend)
         # ⭐ THE DECISION RULE TRAVELS TOO. `None` is plain argmax — the legacy

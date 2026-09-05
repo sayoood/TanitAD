@@ -229,7 +229,15 @@ def test_e_goal_provenance_is_stamped_on_the_result():
     feats, v0, nav = _windows(c, 1)[0]
     res = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c))
     assert res.goal_source == "tactical_imagined"
-    assert set(res.goal_action) == {"lat", "lon", "controls"}
+    # ⭐ `kappa_turn_used` / `kappa_vocab` joined the dict with M15's level set
+    # (2026-09-05). Kept as an EXACT set on purpose: a dump reader indexes these
+    # keys, and a silent addition is how a provenance field starts being
+    # inferred instead of read.
+    assert set(res.goal_action) == {"lat", "lon", "controls",
+                                    "kappa_turn_used", "kappa_vocab"}
+    # the SHIPPED path names the shipped action space and commands no level
+    assert res.goal_action["kappa_vocab"] == "L1-0.08"
+    assert res.goal_action["kappa_turn_used"] is None
     assert res.goal_action["controls"].shape == (c.op_steps, 2)
     g_a = torch.randn(1, c.n_tokens, c.d_state)          # operative-space goal
     sup = m.plan(feats, v0=v0, nav_cmd=nav, plan_cfg=_pc(c), goal_field=g_a)
