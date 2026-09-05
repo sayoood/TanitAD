@@ -11975,3 +11975,45 @@ re-measuring on the live checkpoint and on the real proposal distribution. **Wha
 `D-REFAV1-EPOCH-PLAN-VOID`'s verdict — the planner IS a trivial injected baseline on 282/282 (κ ≡ 0 on 282/282,
 2 distinct plans, re-derived independently) — and the flat plan is still a theorem about the COST
 (`D-REFAV1-COST-SCALE`), not about the weights.
+
+
+# 2026-09-05 (#22) — "Every grid in the table above contains `a = 0` and `κ = 0` exactly" (`…/2026-09-04-refcv4-gate-validation/RESULT.md` §3.5; echoed by `D-REFCV4-KINVOCAB1` and by the trainer's own refusal text "Rebuild with odd counts")
+
+**Retracted.** The accel axis of EVERY grid in that table was `np.linspace(-4.0, 3.0, na)`
+(`raw/scripts/kinvocab_probe.py:102`), whose step is `7/(na−1)`; for na ∈ {7, 9, 11, 13, 17} it contains
+**no** `0.0` (nearest node −0.5, +0.375, +0.2, +0.0833, −0.0625 — MEASURED 2026-09-05, numpy). Only the κ
+axis, `np.linspace(−0.06, 0.06, nk)` with odd nk, was symmetric-and-odd and contained zero. The one control
+that must read a known value — the 1-point `{a=0, κ=0}` grid reproducing `ha0` at 0.672288 — was a SEPARATE
+grid (`kinvocab_probe.py:85`), so it read correctly while the sentence about the table was false. ⇒
+**0.2572 / 0.2610 / 0.2666 / 0.2759 / 0.3487 are numbers for grids WITHOUT the constant-velocity control.**
+The direction of `D-REFCV4-KINVOCAB1` (a v0-conditioned kinematic family beats `ha`) is unaffected:
+`PREREG_REFC_V4.md` §A10.2 re-measured a RE-CENTRED 13 × 9 (0.0 asserted as a node) at **0.2610**, and the
+live `alat` 117 family reads **0.1987**, both with the assertion printed — and §A10.2 already carried a
+*"CORRECTION TO THE PRIOR PASS"* naming this defect on 2026-09-04, without a retraction-log entry and without
+fixing the origin or the text that had copied it.
+
+**Where it came from, and where it went.** The κ-axis finding was real (an even count on a symmetric range
+omits zero: 16 × 8 read 1.2768 m against 0.2608). The author then wrote *"EVERY grid contains kappa = 0 and
+accel = 0 EXACTLY (odd counts)"* (`kinvocab_probe.py:92`) — generalising a property checked on the axis that
+had just failed to the axis that had not, and extracting a RULE ("odd counts") that holds only for symmetric
+ranges. The rule then travelled: the trainer's refusal for a grid without `{a=0, κ=0}` prescribed *"Rebuild
+with odd counts"* (`refc_v3_train.py`, via `…/2026-09-04-refcv4b-vocabulary/scripts/patch_trainer.py:124`) — a
+prescription that would NOT have fixed the very grid it was written from. Nothing launched carried the
+defect, because the trainer and both vocabulary builders assert PRESENCE by content (`np.any(grid == 0.0)`,
+`straight_ahead_control_present`) rather than parity, and `emit_anchors_alat.py` re-centres the accel axis so
+0.0 is node 7 of 13 (`anchors.build.json`: control index 67 of 117).
+
+**Root-cause class: A PROPERTY ASSERTED OF A FAMILY OF GRIDS FROM INSPECTING ONE MEMBER — ABOUT THE ZERO
+ELEMENT EVERY NO-ACTION CONTROL DEPENDS ON.** Recognition signal: a sentence of the form *"every X contains
+Z"* where Z was checked on the axis that had just bitten, plus a rule extracted from the fix ("odd counts")
+that names a proxy (parity) instead of the property (0.0 is a node). Mirror image of C2 (absence from one
+probe): PRESENCE from one probe. The zero element is the worst place for it, because every control — `ha0`,
+`cv`, hold-action — IS the zero of the control space, and a vocabulary that lacks it scores 4.9× worse in a way
+that looks exactly like a resolution finding.
+
+**Fixed 2026-09-05:** `RESULT.md` §3.5 carries a dated correction block; `D-REFCV4-KINVOCAB1` carries the
+qualifier; `refc_v3_train.py`'s refusal now asks for 0.0 to be a NODE of both axes and names
+`linspace(-4, 3, 13)` (pinned by `stack/tests/test_anchor_meta.py`); `kinvocab_probe.py:92-95` is annotated
+(comment-only — the script's md5 was `7119d4cffbad61ec8d17ce1bb0a85c25` before the edit; `KINVOCAB_PROBE.json`
+is untouched); `build_kinvocab6s.py:100-101` and `emit_anchors_alat.py` already asserted presence and are
+unchanged.

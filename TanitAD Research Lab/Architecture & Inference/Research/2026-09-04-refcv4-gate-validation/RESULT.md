@@ -258,6 +258,19 @@ otherwise-comparable grid containing zero — a **4.9×** difference that looks 
 like a resolution finding and is not one. Every grid in the table above contains
 `a = 0` and `κ = 0` exactly.
 
+> ⛔⛔ **RETRACTED 2026-09-05 (RETRACTION_LOG #22) — the last sentence is FALSE for the accel axis.**
+> Every grid in the table above used `np.linspace(-4.0, 3.0, na)` (`raw/scripts/kinvocab_probe.py:102`),
+> whose step is `7/(na−1)`; for na ∈ {7, 9, 11, 13, 17} it contains **no** `0.0` (nearest node −0.5,
+> +0.375, +0.2, **+0.0833**, −0.0625 — MEASURED, numpy). Only the κ axis, `np.linspace(−0.06, 0.06, nk)`
+> with odd nk, was symmetric-and-odd and contained zero. The 1-point `{a=0, κ=0}` control was a SEPARATE
+> grid (`kinvocab_probe.py:85`), which is why it read the right value while this sentence did not hold.
+> ⇒ **0.2572 / 0.2610 / 0.2666 / 0.2759 / 0.3487 are numbers for grids WITHOUT the constant-velocity
+> control**, and "odd counts" is not the rule — *0.0 is a node of BOTH axes* is (assert it, or re-centre an
+> asymmetric range as `emit_anchors_alat.py` does). The verdict of §3.5 survives in direction:
+> `PREREG_REFC_V4.md` §A10.2 re-measured a RE-CENTRED 13 × 9 (zero asserted as a node) at **0.2610** and the
+> live `alat` 117 family reads **0.1987**, both separated below `ha`. The trainer's refusal text that
+> inherited "Rebuild with odd counts" from this paragraph is corrected in `refc_v3_train.py`.
+
 ⚠️ **Scope:** constant `(a, κ)` held for **2 s**, scored at 0–2 s, because that is
 where `ha` = 0.2996 was measured. The run plans **6 s**; a constant-control family
 will be weaker there and this does **not** transfer to the 6 s horizon unmeasured.

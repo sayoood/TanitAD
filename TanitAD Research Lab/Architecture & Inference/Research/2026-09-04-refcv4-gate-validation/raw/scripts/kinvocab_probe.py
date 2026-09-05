@@ -89,6 +89,16 @@ print(f"    -> {z.mean():.6f}   published ha0 = 0.6723   "
 print("\n=== THE PROBE — v0-conditioned (accel, curvature) vocabularies ===")
 ha_pw = np.linalg.norm(HA - G, axis=-1).mean(1)
 res = {}
+# ⛔⛔ RETRACTED 2026-09-05 (RETRACTION_LOG #22): the comment below is FALSE for
+# the accel axis. np.linspace(-4.0, 3.0, na) has step 7/(na-1) and contains 0.0
+# for NONE of na in {7, 9, 11, 13, 17} (nearest -0.5, +0.375, +0.2, +0.0833,
+# -0.0625); only the kappa axis (symmetric range, odd count) contains 0.0. Every
+# accel grid scored below therefore LACKED the constant-velocity control; the
+# 1-point control above is a separate grid and read correctly. Odd count is
+# neither necessary nor sufficient -- 0.0 must be a NODE (assert it, or
+# re-centre the range, as emit_anchors_alat.py does). Comment-only edit: the
+# banked KINVOCAB_PROBE.json is unchanged and its numbers stand as numbers for
+# grids WITHOUT a = 0. (script md5 before this edit: 7119d4cffbad61ec8d17ce1bb0a85c25)
 # ⛔ EVERY grid contains kappa = 0 and accel = 0 EXACTLY (odd counts). A grid
 # built with an even count omits the straight-ahead control, and since most
 # driving is straight that alone costs ~1 m of lateral error -- an artefact of
