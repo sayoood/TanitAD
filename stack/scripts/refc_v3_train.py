@@ -112,6 +112,29 @@ SEL_V3_WEIGHT = 1.0
 # rule `SLOT_LOSS_W` and `V6LossWeights.w_select` carry.
 AGENT_WEIGHT_DEFAULT = 0.0        # WP-6: the GT-supervised detection set loss
 U0_WEIGHT_DEFAULT = 0.0           # WP-4: the x0 loss, in CONTROL space
+
+# ---- ⭐ M17 (2026-09-05): the detection query budget ----------------------
+#: Detection queries. **100**, ruled by the Master Mind (`Decisions/
+#: 2026-09-05-mm-decisions.md` §M17) after the train-corpus density was
+#: MEASURED. The previous 32 was set from **val40** (max 24) and is REFUTED on
+#: train: over 433,040 frames / 12,122,129 boxes / 2,308 clips the in-field ∩
+#: decode-box count has mean **4.39**, p99 **30**, **max 94**, so N = 32 drops
+#: **41,362 boxes (2.18 %) on 3,250 frames (0.75 %)** and the **nearest
+#: sacrificed target sits at 13.1 m**.
+#:
+#: ⛔ ``match_slots`` keeps the **NEAREST** N, so a drop is by construction the
+#: CLOSEST thing the head failed to see — not a long tail of distant clutter.
+#: 13.1 m is inside the braking envelope at any urban speed, and N = 64 does
+#: not fix it either (nearest sacrifice 33.9 m, still inside ≈ 43 m of
+#: comfortable braking at 15 m/s). 94 is a MAX OVER A SAMPLE, not a bound, so
+#: the setting carries headroom over it; 100 is also DETR's ordinary budget
+#: (~100 queries against ~7 objects/image) against our mean of 4.39, i.e. 32
+#: was the anomaly and surplus "no object" queries are the design working.
+#:
+#: MEASURED by two independent implementations (``measure_train_agent_density
+#: .py`` and a numpy-free ``indep_max.py``), agreeing box for box:
+#: `…/Data Engineering/Research/2026-09-05-agent-join-into-batch/RESULT.md` §P3.
+AGENT_QUERIES_DEFAULT = 100
 #: the registered dominance lever set — build REFUSES any other delta (C122).
 REGISTERED_DELTA_KEYS = {"hier", "core.graft_target_latent"}
 #: ⭐ v4 adds its own lever set on top of the hier/flat pair. Both arms of a
@@ -291,12 +314,18 @@ def _pin_refcv5_seams(cfg, args) -> None:
             oracle=(args.agents == "oracle"),
             oracle_sigma_range_m=float(getattr(args, "agent_sigma_range", 0.0)),
             oracle_miss_rate=float(getattr(args, "agent_miss_rate", 0.0)),
-            queries=int(getattr(args, "agent_queries", 32)),
+            queries=int(getattr(args, "agent_queries",
+                                AGENT_QUERIES_DEFAULT)),
             w_project=float(getattr(args, "agent_w_project", 0.0)),
             w_ground=float(getattr(args, "agent_w_ground", 0.0)),
             presence_hard=bool(getattr(args, "agent_presence_hard", False)))
         core.agents = acfg
         core.decoder.cross_agent = True
+        # ⛔⛔ THE CAMERA IS BUILT HERE, AT PIN TIME, SO A CAMERA THAT CANNOT
+        # BE BUILT FAILS BEFORE THE GPU AND NOT AT THE FIRST LOSS CALL.
+        # `_build_rig_camera` REFUSES every configuration in which a non-zero
+        # `--agent-w-project` / `--agent-w-ground` could not be computed.
+        _build_rig_camera(cfg, args)
         if args.agents == "head" and float(getattr(args, "w_agent", 0.0)) <= 0.0:
             raise SystemExit(
                 "[v3] ⛔ --agents head with --w-agent 0 builds a detector that "
@@ -315,6 +344,198 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "the GPU, rather than at the first batch. Pass --agent-join "
                 "(HF Sayood/tanitad-ph0-aug120 -> "
                 "joins/train2400_agents.jsonl.xz), or --agents oracle.")
+    elif str(getattr(args, "agent_rig_camera", "off")) != "off":
+        raise SystemExit(
+            "[v3] ⛔ --agent-rig-camera "
+            f"{getattr(args, 'agent_rig_camera')} with --agents off. The "
+            "camera is consumed ONLY by `refc_agents.agent_losses`, which is "
+            "not called without an agent seam, so this camera would be built "
+            "and never used -- a flag that parses and does nothing, which is "
+            "the exact defect this switch exists to remove. Pass --agents "
+            "head/oracle, or --agent-rig-camera off.")
+
+
+# ============================================================================
+# ⛔⛔ THE RIG CAMERA — the flag that used to PARSE, STAMP AND DO NOTHING
+# ============================================================================
+
+#: ``--agent-rig-camera`` sources. ``off`` = no camera (and then a non-zero
+#: image-plane / ground weight REFUSES); ``nominal`` = boresight-forward mount,
+#: NO pitch, admissible only where the caller records that; ``extrinsics`` =
+#: the corpus constructor, from a ``sensor_extrinsics`` quaternion on file.
+AGENT_RIG_CAMERA_SOURCES = ("off", "nominal", "extrinsics")
+
+#: ``_build_rig_camera`` is called at pin time (three times, via the config
+#: delta), at model setup and at stamp time — deliberately, so a camera that
+#: cannot be built refuses at the earliest of them. Its human-facing lines are
+#: printed ONCE: a warning repeated five times reads as five warnings.
+_RIG_CAM_ANNOUNCED: set = set()
+
+#: ``(height, width) -> CanonicalFrame`` for every geometry the corpus is
+#: resampled into. ⛔ A frame is NOT its pixel count: it also carries ``f_ref``
+#: and the PROJECTION, and this corpus is **cylindrical**, where the column is
+#: LINEAR IN AZIMUTH. Applying the pinhole formula to it reads 92.6° for a
+#: 120° camera and looks entirely plausible (`CLAUDE.md`, the cylindrical-FOV
+#: trap), so an unknown geometry is REFUSED rather than given an invented
+#: ``f_ref``.
+def _agent_cam_frames() -> dict:
+    from tanitad.data import calib as _calib
+    return {(256, 640): _calib.PHYSICALAI_WIDE120_256x640,
+            (176, 624): _calib.PHYSICALAI_RIG_CLEAN_176x624,
+            (128, 576): _calib.PHYSICALAI_RIG_CLEAN_128x576}
+
+
+def _read_rig_extrinsics(path: str):
+    """A ``FrontWideExtrinsics``-shaped JSON: ``qx qy qz qw`` (+ ``x y z``).
+
+    The quaternion is ``rotation_cam_to_vehicle`` — the dataset's own
+    ``calibration/sensor_extrinsics`` convention (``physicalai
+    .FrontWideExtrinsics``). ⚠️ Read from a FILE, never guessed: the mount
+    pitch is what puts the horizon on the right row, and it is the whole
+    difference between :meth:`RigCamera.nominal` and the corpus camera.
+    """
+    from tanitad.data.physicalai import FrontWideExtrinsics
+    with open(path, "r", encoding="utf-8") as fh:
+        d = json.load(fh)
+    if not isinstance(d, dict):
+        raise SystemExit(f"[v3] ⛔ {path} is not a JSON object.")
+    d = d.get("front_wide", d) if "front_wide" in d else d
+    miss = [k for k in ("qx", "qy", "qz", "qw") if k not in d]
+    if miss:
+        raise SystemExit(
+            f"[v3] ⛔ --agent-rig-extrinsics {path} declares no {miss}. The "
+            "file must carry the sensor_extrinsics quaternion "
+            "(rotation_cam_to_vehicle) as qx/qy/qz/qw, plus optional x/y/z "
+            "[m] in the rig frame. A camera whose MOUNT POSE is guessed "
+            "biases `ground_range_prior` directly (it back-projects through "
+            "the road plane), so it is read from the file or refused.")
+    return FrontWideExtrinsics(
+        qx=float(d["qx"]), qy=float(d["qy"]), qz=float(d["qz"]),
+        qw=float(d["qw"]), x=float(d.get("x", 0.0)),
+        y=float(d.get("y", 0.0)), z=float(d.get("z", 1.5)))
+
+
+def _build_rig_camera(cfg, args):
+    """Build ``model._rig_camera`` — or REFUSE. Returns ``(cam, stamp)``.
+
+    ⛔⛔ **WHY THIS FUNCTION EXISTS.** MEASURED 2026-09-05 (`Decisions/
+    2026-09-05-mm-decisions.md` §M18, DataFlyWheel escalation #2):
+    ``refc_v3_train.py`` set ``model._rig_camera = None`` and **never assigned
+    it**, while ``refc_agents.agent_losses`` guards both monocular terms on
+    ``cam is not None``. So a run could pass ``--agent-w-project 0.2``, have it
+    written into ``config.json``, and **compute nothing** — the run record
+    stating a training configuration that did not happen. That is worse than a
+    missing flag: it makes every later comparison between arms unfalsifiable,
+    because the record lies about the arms.
+
+    ⛔ **There is no third state.** Either a camera is built and the terms
+    compute, or the non-zero weight REFUSES here, at pin time, before the GPU.
+    A weight that silently no-ops is not reachable from any argv.
+
+    ⚠️ **The mount pose carries its provenance**, exactly as
+    ``anchor_meta.control_units_source`` does for the anchor artifact: a
+    ``nominal`` camera is stamped ``mount_pose = "NOMINAL-no-pitch"`` and says
+    so in the log, because ``ground_range_prior`` back-projects through the
+    road plane and a wrong pitch biases its range directly (the projection
+    term is a DIFFERENCE of two projections and cancels a common mount error
+    to first order; the ground term does not).
+    """
+    src = str(getattr(args, "agent_rig_camera", "off"))
+    if src not in AGENT_RIG_CAMERA_SOURCES:
+        raise SystemExit(f"[v3] ⛔ --agent-rig-camera {src!r} not in "
+                         f"{AGENT_RIG_CAMERA_SOURCES}.")
+    w_pj = float(getattr(args, "agent_w_project", 0.0))
+    w_gr = float(getattr(args, "agent_w_ground", 0.0))
+    if src == "off":
+        if w_pj > 0.0 or w_gr > 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --agent-w-project "
+                f"{w_pj} / --agent-w-ground {w_gr} > 0 with "
+                "--agent-rig-camera off. Both terms are computed by "
+                "`refc_agents.agent_losses` ONLY when a RigCamera is passed, "
+                "so this run would stamp the weights into config.json and "
+                "train NEITHER term -- a run record that states a "
+                "configuration that did not happen, which makes every later "
+                "comparison between arms unfalsifiable. MEASURED as a live "
+                "defect 2026-09-05 (mm-decisions M18); it now REFUSES rather "
+                "than no-ops. Pass --agent-rig-camera nominal (declares a "
+                "pitch-free mount) or --agent-rig-camera extrinsics "
+                "--agent-rig-extrinsics <sensor_extrinsics.json> (the "
+                "corpus constructor), or set both weights to 0.")
+        return None, {"source": "off", "reason": "not requested",
+                      "w_project": w_pj, "w_ground": w_gr}
+    from tanitad.data.rig_projection import CAM_HEIGHT_RANGE_M, RigCamera
+    hw = tuple(int(v) for v in cfg.core.encoder.image_hw())
+    frames = _agent_cam_frames()
+    frame = frames.get(hw)
+    if frame is None:
+        raise SystemExit(
+            f"[v3] ⛔ --agent-rig-camera {src} at image_hw {hw}: no canonical "
+            "frame is DECLARED for that geometry, and one cannot be invented. "
+            "A CanonicalFrame is not its pixel count -- it also carries f_ref "
+            "and the PROJECTION, and this corpus is CYLINDRICAL (the column "
+            "is linear in azimuth). Guessing an f_ref, or applying the "
+            "pinhole formula, reads 92.6 deg for a 120 deg camera and looks "
+            "entirely plausible. Declared geometries: "
+            f"{sorted(frames)}. To train the monocular terms at another "
+            "geometry, add its CanonicalFrame to `tanitad.data.calib` (with "
+            "its f_ref and projection) and register it here.")
+    if src == "nominal":
+        h_m = float(getattr(args, "agent_cam_height", 1.5))
+        lo, hi = CAM_HEIGHT_RANGE_M
+        if not (0.5 <= h_m <= 3.0):
+            raise SystemExit(
+                f"[v3] ⛔ --agent-cam-height {h_m} m is not a plausible "
+                f"front-wide mount (MEASURED corpus range {lo}-{hi} m).")
+        cam = RigCamera.nominal(frame, height_m=h_m)
+        stamp = {"source": "nominal", "mount_pose": "NOMINAL-no-pitch",
+                 "height_m": h_m, "extrinsics_path": None,
+                 "in_measured_height_band": bool(lo <= h_m <= hi)}
+        _say = ("nominal", hw, h_m) not in _RIG_CAM_ANNOUNCED
+        _RIG_CAM_ANNOUNCED.add(("nominal", hw, h_m))
+        if _say and not (lo <= h_m <= hi):
+            print(f"[v3] ⚠️ --agent-cam-height {h_m} m is outside the "
+                  f"MEASURED corpus band {lo}-{hi} m.", flush=True)
+        if _say:
+            print("[v3] ⚠️ rig camera = NOMINAL (boresight forward, NO mount "
+                  "pitch). `ground_range_prior` back-projects through the "
+                  "road plane, so any real mount pitch biases its range "
+                  "DIRECTLY; `monocular_projection_loss` is a difference of "
+                  "two projections and cancels a common mount error to first "
+                  "order. Use --agent-rig-camera extrinsics for corpus "
+                  "work.", flush=True)
+    else:
+        path = getattr(args, "agent_rig_extrinsics", None)
+        if not path:
+            raise SystemExit(
+                "[v3] ⛔ --agent-rig-camera extrinsics needs "
+                "--agent-rig-extrinsics <sensor_extrinsics.json>. "
+                "`RigCamera.from_extrinsics` is the ONLY admissible "
+                "constructor for corpus work -- the per-clip mount pitch is "
+                "what puts the horizon on the right row.")
+        extr = _read_rig_extrinsics(path)
+        cam = RigCamera.from_extrinsics(extr, frame)
+        stamp = {"source": "extrinsics", "mount_pose": "from-sensor_extrinsics",
+                 "height_m": float(extr.z), "extrinsics_path": str(path),
+                 "optical_axis_pitch_rad": float(extr.optical_axis_pitch_rad()),
+                 "quat_cam_to_vehicle": [extr.qx, extr.qy, extr.qz, extr.qw]}
+        if ("extrinsics", hw, str(path)) not in _RIG_CAM_ANNOUNCED:
+            _RIG_CAM_ANNOUNCED.add(("extrinsics", hw, str(path)))
+            print(f"[v3] rig camera = EXTRINSICS from {path} (pitch "
+                  f"{stamp['optical_axis_pitch_rad']:+.4f} rad, z "
+                  f"{stamp['height_m']:.3f} m)", flush=True)
+    stamp.update({"frame": frame.to_dict() if hasattr(frame, "to_dict") else
+                  {"height": frame.height, "width": frame.width,
+                   "f_ref": float(frame.f_ref),
+                   "projection": frame.projection},
+                  "image_hw": list(hw), "w_project": w_pj, "w_ground": w_gr})
+    if w_pj <= 0.0 and w_gr <= 0.0 and ("zero", hw) not in _RIG_CAM_ANNOUNCED:
+        _RIG_CAM_ANNOUNCED.add(("zero", hw))
+        print("[v3] ⚠️ a rig camera is built but --agent-w-project and "
+              "--agent-w-ground are both 0: neither monocular term "
+              "contributes. That is a legal ablation baseline and the stamp "
+              "records it, but it is not a projection arm.", flush=True)
+    return cam, stamp
 
 
 # ============================================================================
@@ -1383,7 +1604,144 @@ def _seam_stamp(cfg, args) -> dict:
         "control_norm": list(getattr(core.decoder, "control_norm", (4.0, 3.0))),
         "w_agent": float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT)),
         "w_u0": float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT)),
+        # ⛔ M18: the camera the two monocular weights are computed against —
+        # or the reason there is none. Without this a reader cannot tell a run
+        # that trained `loss_project` from one that stamped its weight and
+        # computed nothing, which is the defect this stamp exists to close.
+        "agent_rig_camera": _build_rig_camera(cfg, args)[1],
+        # ⭐⭐ EVERY `--agent-*` / `--w-*` KNOB, DERIVED FROM THE PARSER
+        # ITSELF. See `agent_knob_dests`: a knob added to `build_parser`
+        # tomorrow is stamped tomorrow, with no list here to rot.
+        "agent_knobs": agent_knob_stamp(args),
     }
+
+
+# ---------------------------------------------------------------------------
+# ⭐ THE PROVENANCE CLOSURE — every knob reaches the record, BY CONSTRUCTION
+# ---------------------------------------------------------------------------
+
+def agent_knob_dests(parser: argparse.ArgumentParser | None = None
+                     ) -> tuple[str, ...]:
+    """Every ``--agent-*`` / ``--w-*`` option's ``dest``, **read off the
+    parser**, sorted.
+
+    ⛔ **DERIVED, NEVER LISTED.** MEASURED 2026-09-05 (mm-decisions M18,
+    escalation #3): ``w_agent`` and ``w_u0`` were reported absent from
+    ``config.json`` — a run that could not say what weight its detector
+    trained at, which makes any later comparison between arms unfalsifiable.
+    A hand-written list of knobs to stamp is the same defect deferred: it is
+    correct the day it is written and wrong the day a knob is added. This
+    function asks argparse, so the stamp cannot fall behind the CLI.
+    """
+    ap = parser if parser is not None else build_parser()
+    return tuple(sorted({
+        a.dest for a in ap._actions
+        if a.dest and a.dest != argparse.SUPPRESS
+        and any(o.startswith("--agent") or o.startswith("--w-")
+                for o in a.option_strings)}))
+
+
+def agent_knob_stamp(args, parser: argparse.ArgumentParser | None = None
+                     ) -> dict:
+    """``{dest: value}`` for every knob :func:`agent_knob_dests` names.
+
+    A dest the namespace does not carry is recorded as ``"<UNSET>"`` rather
+    than dropped — an absent knob must be visible in the record, not silently
+    equal to a default.
+    """
+    out = {}
+    for d in agent_knob_dests(parser):
+        v = getattr(args, d, "<UNSET>")
+        out[d] = v if isinstance(v, (int, float, str, bool, type(None))) \
+            else (list(v) if isinstance(v, (list, tuple)) else repr(v))
+    return out
+
+
+def assert_knobs_stamped(args, stamp: dict,
+                         parser: argparse.ArgumentParser | None = None) -> None:
+    """REFUSE to start a run whose own record cannot state its knobs.
+
+    Checked against the VALUE, not the key name: every knob's value must be
+    recoverable from ``stamp``. Called from :func:`train` immediately before
+    ``config.json`` is written, so the failure is a refusal at startup rather
+    than an unanswerable question months later.
+    """
+    want = agent_knob_stamp(args, parser)
+    got = (stamp or {}).get("agent_knobs")
+    if not isinstance(got, dict):
+        raise SystemExit(
+            "[v3] ⛔ the seam stamp carries no `agent_knobs` block, so this "
+            "run's config.json could not state the weights it trained at "
+            "(mm-decisions M18). This is a code defect, not an argv one.")
+    missing = {k: v for k, v in want.items() if k not in got or got[k] != v}
+    if missing:
+        raise SystemExit(
+            f"[v3] ⛔ {len(missing)} --agent-*/--w-* knob(s) do NOT reach "
+            f"config.json: {sorted(missing)}. A run that cannot state its own "
+            "weights makes every later comparison between arms unfalsifiable "
+            "(mm-decisions M18).")
+
+
+def _verify_agent_join(args) -> dict | None:
+    """Check ``--agent-join`` against its sidecar's **declared** digest scope.
+
+    ⛔⛔ **WHY (mm-decisions M18, MEASURED 2026-09-05).** The two joins'
+    sidecars record ``summary.md5`` over DIFFERENT artifacts — train2400's
+    over the compressed ``.xz`` (re-verified here:
+    ``24cbdca8c3b23aafc2fb17e6bf99cf76``), val40's over the decompressed
+    ``.jsonl`` — and neither says so. A checker inherited from one REFUSES the
+    other's perfectly good file, and the same ambiguity in the other direction
+    would **accept the wrong file and report success**.
+
+    ⛔ **A sidecar that declares no scope REFUSES, it does not guess.** The
+    guess everyone reaches for — read the extension off ``summary.out`` — is
+    MEASURED wrong: val40's ``.xz``-side sidecar names the ``.jsonl`` there.
+    :func:`tanitad.data.join_meta.backfill` is the migration: it MEASURES
+    which artifact the recorded digest covers by hashing both.
+
+    ⚠️ A join with NO sidecar at all warns rather than refuses — an absent
+    sidecar is a missing check, not a lying one — and the run records which
+    of the two it was, so no reader has to assume.
+    """
+    path = getattr(args, "agent_join", None)
+    if not path:
+        return None
+    mode = str(getattr(args, "agent_join_verify", "auto"))
+    if mode == "off":
+        print("[v3] ⚠️ --agent-join-verify off: the join's digest is NOT "
+              "checked; config.json records that the operator turned it off.",
+              flush=True)
+        return {"verified": False, "mode": "off",
+                "reason": "operator passed --agent-join-verify off"}
+    from tanitad.data import join_meta as _jm
+    side = _jm.sidecar_path(path)
+    if side is None:
+        print(f"[v3] ⚠️ no sidecar beside {path} (probed <file>.meta.json, "
+              "the .xz-stripped form and <stem>.meta.json): the join's "
+              "digest is UNVERIFIED and config.json says so.", flush=True)
+        return {"verified": False, "mode": mode, "sidecar": None,
+                "reason": "no sidecar found beside the join"}
+    try:
+        with open(side, "r", encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except Exception as e:                     # a broken sidecar is not a pass
+        raise SystemExit(f"[v3] ⛔ {side} could not be read as JSON ({e}). An "
+                         "unreadable sidecar is not an absent one.")
+    try:
+        ev = _jm.verify(path, meta, where=str(side))
+    except _jm.JoinDigestScopeMissing as e:
+        raise SystemExit(
+            f"[v3] ⛔ {e}"
+            "  ||  MIGRATION (one command): python -m "
+            f"tanitad.data.join_meta {path!r} --write  ||  or pass "
+            "--agent-join-verify off to record that this run checked "
+            "nothing.")
+    except _jm.JoinDigestMismatch as e:
+        raise SystemExit(f"[v3] ⛔ agent join integrity: {e}")
+    print(f"[v3] agent join verified: {ev['algo']}({ev['scope']} of "
+          f"{ev['filename']}) = {ev['digest']}", flush=True)
+    ev.update({"mode": mode, "sidecar": str(side)})
+    return ev
 
 
 def _apply_withheld_bank(model, args, eps, device) -> dict:
@@ -1717,7 +2075,13 @@ def train(args) -> dict:
     # checkpoint compatibility (the `_seam_conf` discipline).
     model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
     model._w_u0 = float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT))
-    model._rig_camera = None
+    # ⛔ WIRED, not `= None`. Until 2026-09-05 this line read `= None` and the
+    # attribute was never assigned, so `--agent-w-project` / `--agent-w-ground`
+    # were SILENT NO-OPS while being stamped into config.json (mm-decisions
+    # M18). `_build_rig_camera` REFUSES at pin time when a non-zero weight has
+    # no camera, so reaching this line with a weight > 0 and `cam is None` is
+    # now unreachable from any argv.
+    model._rig_camera, _cam_stamp = _build_rig_camera(cfg, args)
     # ⛔ THE ANCHOR VOCABULARY IS LOAD-BEARING AND ITS ABSENCE WAS SILENT.
     # refcv3 trained without `--anchors` and nobody noticed for the whole run,
     # because this branch printed nothing and recorded nothing. MEASURED cost:
@@ -1894,6 +2258,7 @@ def train(args) -> dict:
     # 2026-09-05); a tiny rig must not pay that, and a run must not silently
     # hold a corpus it is not training on.
     agent_stats = eval_agent_stats = None
+    join_digest = _verify_agent_join(args)
     if getattr(args, "agent_join", None):
         from train_p8_occupancy import JoinFileReader
         _t_join = time.time()
@@ -2029,6 +2394,10 @@ def train(args) -> dict:
         opt.load_state_dict(state["opt"])
         step = int(state["step"])
         print(f"[v3] resumed {args.arm} at step {step}")
+    # ⛔ M18: the record is CHECKED before it is written. A knob that does not
+    # reach config.json refuses the run here, not in an audit months later.
+    _seams = _seam_stamp(cfg, args)
+    assert_knobs_stamped(args, _seams)
     (out_dir / "config.json").write_text(json.dumps({
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
         "registered_delta": {k: [repr(a), repr(b)]
@@ -2059,7 +2428,7 @@ def train(args) -> dict:
         # hierarchy-seam booleans were in config.json at any nesting level,
         # so the live arm could not rebuild its own model config from its
         # own record. `_seam_stamp` names each one.
-        "seams": _seam_stamp(cfg, args),
+        "seams": _seams,
         # ⭐ H-EGO-LIT-4: the withheld-row bank policy, with the random
         # control's marginal on record.
         "withheld_bank": withheld_stamp,
@@ -2131,6 +2500,11 @@ def train(args) -> dict:
         # cannot say whether its detector was supervised on 100 % or 3 % of
         # its windows -- and those are different experiments.
         "agent_join": str(getattr(args, "agent_join", None) or "") or None,
+        # ⛔ M18: WHICH artifact the join's digest covers, and whether this run
+        # actually checked it. A hash without its artifact scope is a number,
+        # not a verification, so the run records the scope it verified under
+        # -- or the reason it verified nothing.
+        "agent_join_digest": join_digest,
         "agent_join_stats": ({"train": agent_stats, "eval": eval_agent_stats}
                              if agent_stats is not None else None),
     }, indent=1), encoding="utf-8")
@@ -2477,21 +2851,53 @@ def build_parser() -> argparse.ArgumentParser:
                          "TACTICAL the whole mechanism is refused.")
     g5.add_argument("--w-agent", type=float, default=AGENT_WEIGHT_DEFAULT,
                     help="weight on the GT-supervised detection set loss.")
-    g5.add_argument("--agent-queries", type=int, default=32,
-                    help="detection queries. 32 is MEASURED, not inherited: "
-                         "on the val40 join the in-field/decode-box per-frame "
-                         "count has max 24, so 32 drops ZERO targets; 16 "
-                         "(agent_slots' placeholder) drops on 2.16 pct of "
-                         "frames, nearest sacrificed target at 38.5 m.")
+    g5.add_argument("--agent-queries", type=int,
+                    default=AGENT_QUERIES_DEFAULT,
+                    help="detection queries. 100, ruled by the Master Mind "
+                         "(mm-decisions M17) on the TRAIN corpus: mean 4.39, "
+                         "p99 30, MAX 94 over 433,040 frames / 12,122,129 "
+                         "boxes / 2,308 clips. The previous 32 came from "
+                         "val40 (max 24) and is REFUTED on train -- it drops "
+                         "41,362 boxes (2.18 pct) on 3,250 frames and "
+                         "match_slots keeps the NEAREST N, so the nearest "
+                         "SACRIFICED target sits at 13.1 m, inside the "
+                         "braking envelope. N=64 does not fix it either "
+                         "(33.9 m). 94 is a max over a SAMPLE, not a bound; "
+                         "100 carries headroom and is DETR's ordinary budget.")
     g5.add_argument("--agent-w-project", type=float, default=0.0,
                     help="weight on the IMAGE-PLANE term. A monocular head "
                          "supervised only in BEV metres is asked to regress "
                          "the one axis it cannot directly see, with no term "
-                         "in the space it can.")
+                         "in the space it can. NEEDS --agent-rig-camera: a "
+                         "non-zero weight with no camera REFUSES (it used to "
+                         "no-op while being stamped -- mm-decisions M18).")
     g5.add_argument("--agent-w-ground", type=float, default=0.0,
                     help="weight on the road-plane range prior. Costs NO "
                          "label (rig z=0 IS the road plane, MEASURED), so it "
-                         "also trains on the NO_LABEL frames past ~20 s.")
+                         "also trains on the NO_LABEL frames past ~20 s. "
+                         "NEEDS --agent-rig-camera, and prefers "
+                         "'extrinsics': it back-projects through the road "
+                         "plane, so a NOMINAL (pitch-free) mount biases its "
+                         "range directly.")
+    g5.add_argument("--agent-rig-camera", default="off",
+                    choices=list(AGENT_RIG_CAMERA_SOURCES),
+                    help="the RigCamera the two monocular terms are computed "
+                         "against. 'off' = none, and then a non-zero "
+                         "--agent-w-project/--agent-w-ground REFUSES at "
+                         "startup. 'nominal' = boresight-forward mount with "
+                         "NO pitch (stamped as such). 'extrinsics' = built "
+                         "from a sensor_extrinsics quaternion on file -- the "
+                         "only admissible constructor for corpus work.")
+    g5.add_argument("--agent-rig-extrinsics", default=None,
+                    help="JSON with the front-wide sensor_extrinsics "
+                         "quaternion (qx/qy/qz/qw = rotation_cam_to_vehicle) "
+                         "and optional x/y/z [m] in the rig frame. Required "
+                         "by --agent-rig-camera extrinsics.")
+    g5.add_argument("--agent-cam-height", type=float, default=1.5,
+                    help="mount height [m] for --agent-rig-camera nominal. "
+                         "The MEASURED corpus band is 1.43-1.56 m; outside "
+                         "it the run warns, and outside 0.5-3.0 m it "
+                         "refuses.")
     g5.add_argument("--agent-sigma-range", type=float, default=0.0,
                     help="E-AGT-BUDGET: range-noise sigma (m) on the ORACLE "
                          "boxes. The sigma where separation dies IS the "
@@ -2521,6 +2927,16 @@ def build_parser() -> argparse.ArgumentParser:
                          "SAYS SO -- but v_rel_x is what the LONGITUDINAL "
                          "family (closing speed, TTC) is built from, so the "
                          "default computes them.")
+    g5.add_argument("--agent-join-verify", default="auto",
+                    choices=["auto", "off"],
+                    help="check --agent-join against its sidecar's DECLARED "
+                         "digest scope (mm-decisions M18). 'auto': verify if "
+                         "a sidecar exists; REFUSE if it exists and declares "
+                         "no scope (the two joins' md5s cover DIFFERENT "
+                         "artifacts -- train's the .xz, val40's the .jsonl -- "
+                         "and guessing from the filename is MEASURED wrong); "
+                         "warn if there is no sidecar at all. 'off' records "
+                         "in config.json that the operator checked nothing.")
     g5.add_argument("--agent-join-allow-legacy-ids", action="store_true",
                     help="accept a join that matches this corpus ONLY through "
                          "the LEGACY 16-bit episode id. That key is the first "
