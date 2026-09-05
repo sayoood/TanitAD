@@ -195,3 +195,49 @@ partial dumps are at `C:/Users/Admin/refav1_drive/ab/dump_argmax` and are recove
 | six register rows | `repo:Project Steering/GOALS_AND_CLAIMS.md` |
 | ⚠️ **`intent_stride2.npz` (48 MB) and the P4 dumps** | **`C:/Users/Admin/refav1_margin/` — DEV BOX ONLY, in ONE place** |
 | ⛔ `kappa_head.pt` | dev box; **NOT deployable**, retained only as the artefact the FAILS verdict refers to |
+
+---
+
+## ⚠️ ADDENDUM — the banked `cos` dump does not record its cost weights
+
+**Row:** `D-REFAV1-COS-WEIGHTS-UNRECORDED` · **Class:** MEASURED (a provenance fact)
+
+`D-REFAV1-DRIVE-GATE2`'s headline — *"under `--cost-metric cos` a correctly decoded TURN is
+executed on **0 of 38** windows, while `ccos` executes 63.2 %"* — compares two banked dumps.
+Reading their manifests:
+
+| dump | `cost` block in `manifest.json` |
+|---|---|
+| `refav1_sweep/dumps/dump_cos_ext` | ⛔ **absent — there is no `cost` key at all.** Its top-level keys are `action_units, arm_meaning, arms, corpus, episodes, first_plan_s, floors_added_post_hoc, goal, grid, hold_action_rule, hold_v0_rule, model, nav_shuffle, plan_cfg, plan_source_names, speed_channel, tiers, tool, wallclock_s` |
+| `refav1_sweep/dumps/dump_ccos_comp` | `metric ccos`, weights **`{W_JERK 12.859, W_KAPPA 32.149, W_VEND 64.297}`**, `weights_source "CLI override"`, `shipped_weights {0.02, 0.05, 0.1}` |
+| `refav1_sweep/dumps/dump_ccos_naive` | `metric ccos`, weights **`{0.02, 0.05, 0.1}`** — the shipped triple |
+
+⇒ **The `cos` arm predates the cost-provenance stamping and cannot be shown, from the record,
+to have run the same weights as the `ccos` arm it is compared against.** And the two `ccos`
+dumps differ in `W_KAPPA` by a factor of **643** (32.149 vs 0.05), so the weights on this
+surface are demonstrably not a constant across banked dumps.
+
+⚠️ **`W_KAPPA` is the curvature penalty.** A comparison that concludes *"the metric refuses
+turns"* between one arm with an unrecorded curvature penalty and one with a recorded one is,
+on the record alone, **confounded between the metric and the penalty**.
+
+### ⛔ What this does and does NOT retract
+
+* It does **NOT** retract gate 2. `D-REFAV1-DRIVE-GATE2` is **also** supported by
+  `tools/assert_metric_gate.py`, a controlled comparison inside ONE script on a tiny real
+  `RefAV1` at four search sizes (`cos` 0/12, `ccos` 8/12 at every size). That arm is
+  weight-matched by construction and is unaffected by this.
+* It **does** attach a caveat to the specific **0/38 dump number**: its cost configuration is
+  not in the record, so it should not be quoted as a weight-matched `cos`-vs-`ccos` contrast.
+* ⚠️ **And it is a live question, not a bookkeeping one.** This package's own `cos` arm runs
+  with the weights **explicitly recorded** as `{0.0, 0.0, 64.297}` — i.e. **`W_KAPPA` exactly
+  zero** — and on the first 5 windows executed non-zero curvature on 2/2 GT-turn windows with
+  `|κ|` up to **0.149**. ⛔ **n = 2: nothing is claimed.** The full 40-window arm is the
+  measurement, and it is the first `cos` arm whose weights are in its own manifest.
+
+⭐ **The durable fix is already in the code** — `refav1_arm.py` now stamps
+`manifest["cost"]` with metric, weights, weights_source and the shipped triple, and
+`manifest["goal_rule"]` with `lat_logit_bias` and `goal_kappa_turn`. Every arm banked from here
+carries its own configuration. *Same family as the anchor-units trap: an artifact opened in
+isolation must state what it was made under, because it is opened in isolation far more often
+than its run record is.*
