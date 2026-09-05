@@ -2712,3 +2712,57 @@ actually records it"* — violated inside the same file, in the same hour, by th
 buffer name is not its codec* (the `jpeg_buf`/`png` trap). ⭐ **The generalisation: when a record ships a
 field that DECLARES what each series means, reading that field is not optional diligence — it is the
 only admissible route, and any label taken from a name is INHERITED.**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                an on **refcv3** — the model that carried **DiffusionDrive-v1's SKELETON WITHOUT ITS
+MECHANISM**: no noise schedule, no anchored Gaussian, no DDIM, no sampling; its "ranking" read **t = 0
+confidence, unchanged on 201/201 windows**.
+
+⇒ ⛔ **DD-v2 post-trains a diffusion policy's DENOISING TRAJECTORY. refcv3 HAS NO DENOISER TO
+POST-TRAIN.** A null from post-training a model that lacks the mechanism being post-trained is **not
+evidence about the method** — it is evidence that the mechanism was absent, which we already knew and
+had already written down.
+
+⚠️ **And the base model had almost no headroom where the reward was first aimed:** `sel_contact` = 0.0
+and `top8_contact` = 0.0 — **UNDETECTABLE-DOWNWARD**, i.e. the selector already emitted no colliding
+choice. That is why the campaign redirected to the generator mid-flight. **A reward aimed at a term
+already at its floor cannot show a gain, on any method.**
+
+### 3. What the refcv3 campaign DID establish — carry these, do not re-derive them
+
+* The collision reward **did move the generator**: `fan_contact` **−0.002734 [−0.005339, −0.000781]**,
+  separated **against a dose-matched null** — ⚠️ but **not replicated across seeds**.
+* Its apparent friction/feasibility **costs are NOT separable from the optimizer's own drift** (the
+  zero-information null drifted the same way, `ns` on the direct contrast). ⇒ **do not budget them as
+  known costs.**
+* ⭐ **Contact on the fan is closed BY CONSTRUCTION** — `contact_projection.py`, **3.4277 % →
+  0.000000 %** at **+0.0000 m** ADE, zero GPU. ⇒ that removes **ONE REWARD TERM**, not RL.
+
+### 4. ⭐ Where the RL reward must aim, and the shape is the argument
+
+A constraint **forbids** but cannot **rank**, so RL's target is the residual a constraint provably
+cannot discharge. **MEASURED:** contact under **agent-motion prediction error** rises **0.034277
+(dt = 0) → 0.066243 (dt = −1.0 s = the lead EARLIER along its own path, i.e. CLOSER to a following
+ego)** — **monotone over −1.0…+2.0 s and roughly linear, with NO THRESHOLD to sit below.**
+⇒ A residual with a knee can be widened away; **a smooth monotone one cannot**, and that is precisely
+what a learned policy is for. ⚠️ State the sign as **geometry**, never as the adjective *"early"* —
+the other reading inverts the table.
+
+### 5. ⛔ The class, and it is the night's recurring one
+
+**A TRUE MEASUREMENT QUOTED OUTSIDE ITS SCOPE.** Same family as the `df` / Thor `free` / cgroup
+`usage_in_bytes` / `step_s` / cylindrical-FOV / `anchors.pt`-units traps — with the scope being
+**THE MODEL THE RESULT WAS MEASURED ON**. ⚠️ Tonight alone I did this with an **exit code** (`M45`),
+a **regex** (`M50`), an **arm's identity** (`M51`) and now a **model**. The constant is not the object;
+it is **quoting a result outside the thing it was measured on.**
+
+⛔ **And RULE ZERO is written against exactly this**: *"'X is refuted' is NEVER a finished turn"* and
+*"a failed arm must leave behind the NEXT arm, not just its own verdict."* I left behind a verdict.
+⭐ **The PI supplied the next arm — refcv4b and refcv5 — which is the orchestrator's job, not his.**
+
+### 6. State
+
+`refcv4b-b1-v72-40k` is **🟢 TRAINING** (launched 2026-09-04 11:40:23 UTC; **no checkpoint evaluated —
+the only number in its registry row is a model-free vocabulary ceiling and is not driving
+performance**). refcv5 follows. ⇒ **The RL post-training stage is not BLOCKED, it is UNBUILT.** A
+dedicated stream now owns building it — pre-registered, with a veto-only control, a dose-matched null,
+a deliberate-regression arm and a **seed replicate budgeted from the start** — so it fires the moment a
+checkpoint lands rather than being designed then.
