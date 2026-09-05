@@ -891,3 +891,92 @@ committed guard, which needs to be a decision and not a default.
 ⚠️ **Operational note worth keeping:** a docstring edit was **silently reverted between writing and
 committing**, caught only by the end-of-turn marker check whose control read 6. That is the
 *"a commit is not a latch"* class, observed live again.
+
+## M26. ⭐⭐⭐ THE RESULT: refcv3's driven path is measurably safer at **T1**, and the whole cost is **1.2 mm**
+
+### 1. The number
+
+**T1**, 4,823 windows / 141 episodes, paired episode-cluster bootstrap, `void: false`:
+
+| | before | after |
+|---|---|---|
+| envelope-violation rate | 0.0865 | **0.0000** — a *structural zero*, not a small number |
+| yaw-rate error | 0.2176 rad/s | **0.0427 rad/s** — **−80.4 %**, separated |
+| friction load | — | **−9.6 %** |
+| **total cost** | — | **`ade_0_2s` +0.0012 m** |
+
+⇒ **1.2 millimetres.** The RL stage this replaces failed at **+0.0362 m separated** *while making the
+fan less safe*: **30× more ADE for a worse outcome.**
+
+⭐ And the LATERAL family carries the headline in the strongest possible form: yaw-rate goes from
+**worse than a constant-velocity straight line** to **better than it**.
+
+### 2. Why it works — and the finding that reframes the whole offset-head line
+
+`stack/tanitad/refs/feasible_decode.py` is a **control-space projection that inverts the EXACT
+finite-difference map `fan_safety.score_paths` uses**, clamps to the box + Kamm disc, and
+re-integrates sequentially. ⇒ **an envelope- or Kamm-violating path becomes UNREPRESENTABLE** — an
+identity, and ⭐ **asserted through the CONSUMER rather than our own bookkeeping**, which is the
+discipline that has caught three defects today.
+
+Fan: `envelope` **0.8879 → 0.0000**, `kamm_over` **0.8408 → 0.0000**, `peak_g` **4.1789 → 0.5964 g**
+⇒ **96.87 % of the gap, 8.69× → 1.24×.** The pre-registered `+entry` variant drives
+`fan_infeasible` **0.8916 → 0.0000 exactly** across all **51,200** candidates.
+
+⭐⭐ **THE REFRAME: at MATCHED `fan_peak_g` the projection costs −0.0103 m of oracle-ADE, where an
+isotropic shrink costs +0.7680 m. It costs NEGATIVE.** ⇒ **The infeasible component of the offset
+head's 9.29 m displacement was WASTE, not a trade against accuracy.** Every previous reading of that
+displacement — including my own in `M23` — implicitly assumed it was buying something. It was not.
+
+⇒ This also settles the question **I** framed badly: I asked how much of the **8.56×** a *selection
+rule* closes (answer: 0 %, structurally). The right instrument was never a selection rule; it is the
+decode, and it closes **96.87 %**.
+
+### 3. What FAILED, reported as written
+
+* ⛔ **`progress` FAILED its committed criterion.** `progress_v2` clears the ranking bar
+  (ρ vs `peak_g` **+0.2900 → −0.5897**; `ttc_below` +0.4697 → −0.1820; composed reward
+  −0.4603 → −0.6898) and **fails the progress bar at 0.7123 against the committed 0.95**.
+  `progress_v3` fails *worse* on both draws (+0.5042 / +0.5135) — because `along` is net +x and the
+  projection **straightens** the swinging candidates.
+  ⭐ **Then the question DISSOLVES:** on a feasibility-aware decode, ρ vs `envelope` is **UNDEFINED
+  on 400/400 windows** — there are no violations left to correlate with. A comfort-grade preference
+  survives (ρ = +0.3232) and a reward change is still owed; **the safety-grade defect is gone.**
+* ⛔ **`P2-C4` FAILED as committed** — `off_reach` **+0.2311** on the headline arm; only the
+  `+entry` variant removes it. Stated, not buried.
+
+### 4. The floor, and why it is stronger than `ctrl0`
+
+⭐ **The lever takes ZERO gradient steps**, so `ctrl0` is not the right floor — the *disabled-lever
+arm* is, and it is **bit-identical on 4,823/4,823 windows, max |Δ| = 0.0**, independently confirmed
+by the harness's own degeneracy profile. ⚠️ Scope stated by the stream itself: **that retires
+training variance for THIS ARM ONLY.** TACTICAL and STRATEGIC read exact zeros **by construction**
+(those heads are never touched) — said out loud so nobody reads a structural zero as evidence of
+safety.
+
+### 5. Two self-corrections, both caught in-turn by controls
+
+1. Its SPEC claimed *"monotone renormalisation is a no-op"* — **exact for the unclamped ratio and
+   FALSE for the clamped component**, because ties move a Spearman.
+2. *"The residual is a scorer artifact, not a leak"* — ⭐ **refuted by a second IMPLEMENTATION
+   reading the same 0.3396.** It was a **real leak** (a stopped path read as a hard turn), now fixed
+   and **0/51,200 exact**. ⚠️ And the fix itself was wrong **twice in the same scope-error family**
+   (float64 exactness ≠ the fp32 consumer's reading; an absolute threshold where the quantity is
+   relative).
+
+⇒ **A second implementation beat a second look, again.** That is the `ls-tree` lesson in a new
+costume: repeating a probe through one channel is one sample.
+
+### 6. Status and what is owed
+
+**Default OFF**, disabled path returns the same object, 15 pins in
+`stack/tests/test_feasible_decode.py`, 37/37 paths blob-verified.
+
+⛔ **Owed, and named rather than assumed:** the **in-decoder** arm — the confidence head ranking
+*projected* geometry — needs **one ~1.5 h GPU forward**, and the 4060 is saturated by refav1 plus
+the sibling panel. **Not-yet-run, not not-possible.** Until it runs, this result is the projection
+applied to a fan the model ranked *before* projection.
+
+⇒ **This is the deploy-side answer to `M23`'s "the real work item is a feasibility-aware decode",
+and it arrived within the same day.** ⚠️ It is a **decoder option**, not a new model version, so it
+takes no `MODEL_REGISTRY` row until an arm ships with it ON.
