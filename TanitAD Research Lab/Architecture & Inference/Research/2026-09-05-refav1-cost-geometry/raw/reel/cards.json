@@ -1,0 +1,164 @@
+{
+ "intro": {
+  "title": "refav1's planner, watched: four cost geometries, one scene",
+  "lines": [
+   [
+    "Every frame below shows the SAME moment of the SAME drive, planned FOUR ways. One checkpoint (step 21,109), one world model, one set of decision heads - the arms differ ONLY in what the planner's cost charges for.",
+    "body"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "WHAT THE COLOURS MEAN",
+    "h2"
+   ],
+   [
+    "GREEN   the GROUND TRUTH - what the human actually drove.",
+    "ok"
+   ],
+   [
+    "WHITE   the ha0_ext FLOOR - do nothing: hold the measured speed and curvature. This is the line to beat, and it is drawn WIDE and UNDERNEATH, so an arm that sits on it shows the white as a halo.",
+    "body"
+   ],
+   [
+    "MAGENTA ccos_argmax - no curvature charge at all. It is the arm that TURNS.",
+    "body"
+   ],
+   [
+    "CYAN    combined - the same cost, plus a physics cap: |kappa| <= mu*g/v^2 at mu = 0.7, the friction circle.",
+    "body"
+   ],
+   [
+    "ORANGE  wk15 - a curvature CHARGE in the cost (W_KAPPA 15.11).",
+    "body"
+   ],
+   [
+    "VIOLET  best - that charge AND the physics cap together.",
+    "body"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "WHAT TO WATCH FOR",
+    "h2"
+   ],
+   [
+    "On a bending road the magenta line swings across the lane; the cyan one bends less; the orange and violet ones barely leave the white floor. The green ground truth goes round the corner without any of them.",
+    "warn"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "MEASURED on this panel: 8 episodes, 40 scored windows, dt 0.2 s, K = 10 (a 2.0 s plan). Feasibility on the 27 windows at v0 >= 2 m/s - the same exclusion raw/feas_audit.py uses, because below it kappa = a_lat/v^2 is ill-conditioned and even the ground truth reads max|kappa| 31.4.",
+    "dim"
+   ],
+   [
+    "OPEN LOOP throughout (PI ruling 2026-09-02): the model controls nothing; the ego data keeps arriving from the recording.",
+    "dim"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE FOUR ARMS DRAWN, MEASURED OVER ALL 40 WINDOWS",
+    "h2"
+   ],
+   [
+    "arm            cost geometry                          ADE m   max|kappa|   outside the circle   straight plans",
+    "body"
+   ],
+   [
+    "ccos_argmax    ccos W_KAPPA 0                         1.3272     0.2000           29.6 %         27.5 %",
+    "bad"
+   ],
+   [
+    "combined       ccos W_KAPPA 0 + Kamm cap mu=0.7 + seed ladder 1.0504     0.1505            0.0 %         27.5 %",
+    "body"
+   ],
+   [
+    "wk15           ccos W_KAPPA 15.1125                   0.8934     0.0800            0.0 %         47.5 %",
+    "body"
+   ],
+   [
+    "best           ccos W_KAPPA 15.1125 + Kamm cap mu=0.7 0.8838     0.0800            0.0 %         37.5 %",
+    "body"
+   ],
+   [
+    "ha0_ext FLOOR  do nothing                             0.8772          -           18.5 %            -",
+    "ok"
+   ],
+   [
+    "GROUND TRUTH   the human                              0.0000     0.1701            0.0 %            -      <- the CONTROL: must read 0.0 %",
+    "ok"
+   ]
+  ]
+ },
+ "outro": {
+  "title": "What the reel showed",
+  "lines": [
+   [
+    "THE PLANNER",
+    "h2"
+   ],
+   [
+    "1. THE ARM THAT TURNS DRIVES WORST. ccos_argmax reaches |kappa| 0.2000 1/m - exactly the 0.2 clip - and scores ADE 1.3272 m, the worst of the four. It leaves the friction circle on 29.6 % of windows, peaking at 3.262 g - a turn no tyre can take.",
+    "bad"
+   ],
+   [
+    "2. PHYSICS FIXES THE SAFETY WITHOUT KILLING THE TURN. combined keeps the same cost and adds the Kamm cap: max|kappa| 0.1505, ADE 1.0504 m, and 0.0 % outside the circle - peak 0.618 g. It still turns (72 % of its plans are not straight); it just cannot turn impossibly.",
+    "body"
+   ],
+   [
+    "3. CHARGING FOR CURVATURE BUYS ACCURACY BY NOT STEERING. wk15 scores ADE 0.8934 m and best 0.8838 m - the two best in the panel - and they get there with max|kappa| 0.0800 and 47.5 % of plans DEAD STRAIGHT, against 27.5 % for the arm that turns.",
+    "body"
+   ],
+   [
+    "This panel carries only 2 GT-left and 2 GT-right windows - far too few to quote a turn recall, and none is quoted here. The powered turn-recall numbers live on the stratified --window-list panel in RESULT.md 7.5.",
+    "dim"
+   ],
+   [
+    "4. AND THE DO-NOTHING FLOOR BEATS ALL FOUR. ha0_ext - hold the measured speed and curvature, no search, no model - scores ADE 0.8772 m against the best arm's 0.8838 m. The planner has not yet earned its compute.",
+    "bad"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE WORLD MODEL - AND THIS PART IS WORKING",
+    "h2"
+   ],
+   [
+    "Over all 40 windows the predictor beats the persistence control on 28/30 of its 0.2 s steps: it LOSES by 0.0809 at 0.2 s and WINS by 0.3168 at 6.0 s, monotonically. The defect this reel shows is in the PLANNER's cost geometry, not in the model's ability to predict the world.",
+    "ok"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "THE CONTROL THAT LICENSES EVERY FRAME",
+    "h2"
+   ],
+   [
+    "The recorded actions, integrated through the SAME unicycle every arm was rolled through, land on the dumped ground truth to 0.1552 m mean (median 0.1512, max 0.2981) over the 27 admissible windows - while the same actions under the legacy KAPPA unit reading miss by 0.8727 m, a 5.62x separation. Both halves are required: without the second, a loose tolerance would pass anything. See the _GT_CONTROL.png beside this file.",
+    "dim"
+   ],
+   [
+    "",
+    "gap"
+   ],
+   [
+    "MEASURED 2026-09-05/06 from ...Research/2026-09-05-refav1-cost-geometry/raw/arms/. Tier T1 (self-action open loop). n = 40 windows / 8 episode clusters - too few for a decision-grade interval, and no interval is claimed here: this reel is a PICTURE of a banked panel, not a new result.",
+    "dim"
+   ]
+  ]
+ }
+}
