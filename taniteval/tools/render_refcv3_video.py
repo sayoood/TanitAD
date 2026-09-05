@@ -741,6 +741,27 @@ def main(argv=None):
                          "Copy it to an immutable name, then pass the step you "
                          "believe you copied. VERIFIED BY CONTENT, from ck['step'].")
     ap.add_argument("--keep-frames", action="store_true")
+    ap.add_argument("--run-label", default=None,
+                    help="⛔ the NAME burned into the banner and the legend. "
+                         "Defaults to the basename of the checkpoint's own run "
+                         "directory, because this renderer draws every REF-C "
+                         "v3/v4 build and the string was hard-coded 'refcv3': "
+                         "MEASURED 2026-09-06, a refcv4b reel came out titled "
+                         "'refcv3 (REF-C v3, hier)' with '128 anchors' in the "
+                         "sub-banner while its own BEV panel read 117. A reel "
+                         "that names the wrong model is worse than no reel.")
+    ap.add_argument("--nav-shuffle-note", default=None,
+                    help="⛔ a run-SPECIFIC measured nav-sensitivity statement "
+                         "to append to the strategic panel's nav caption, e.g. "
+                         "'(+0.0000 true-shuffled, MEASURED @ step 30 000.)'. "
+                         "It is NOT defaulted, because the number belongs to "
+                         "ONE checkpoint and this renderer draws many: the old "
+                         "hard-coded refcv3 step-30,000 value was printed on a "
+                         "refcv4b frame on 2026-09-06. Omit it and the frame "
+                         "says the quantity is not measured for this step, "
+                         "which is the honest reading; the ARCHITECTURAL claim "
+                         "(the route head reads pooled vision, not this token) "
+                         "is a file:line fact and is always printed.")
     a = ap.parse_args(argv)
     if os.path.isdir(a.out):
         sys.exit(f"--out must be a FILE, got a directory: {a.out}")
@@ -771,6 +792,12 @@ def main(argv=None):
                  f"indistinguishable from the real one except by this check. "
                  f"Refusing before the GPU is spent.")
     hier = bool(cfg.hier)
+    # ⛔ THE REEL MUST NAME THE MODEL IT DRAWS. The run directory is the one
+    # identifier that is always right and always present, because the
+    # checkpoint was written into it by that run.
+    RUN_LABEL = a.run_label or os.path.basename(
+        os.path.dirname(os.path.abspath(a.ckpt))) or "REF-C"
+    N_ANCH = int(prov["n_anchors"])
     grid = arm.grid_slots(cfg.core.trajectory.horizons, a.grid)
     eps, files, clip_ids, ds, lman, join, nav_src, raw_off = arm.build_corpus(
         a, cfg, prov)
@@ -962,7 +989,7 @@ def main(argv=None):
                            "sensor_extrinsics) on item['frames'][-1][-3:]",
                     kind="derived"),
                 VizElement.present(
-                    "bev", f"fan 128×8 + selection (anchor #{sel_idx})",
+                    "bev", f"fan {N_ANCH}×8 + selection (anchor #{sel_idx})",
                     source="out['anchor_traj'], out['sel_score_v3'], "
                            "out['traj']", kind="model_output"),
                 VizElement.present(
@@ -1162,14 +1189,43 @@ def main(argv=None):
             # silent truncation does not merely shorten a caption; it deletes
             # the part that bounds the claim, and the frame still looks
             # finished. So the cap now REFUSES rather than trims.
+            # ⛔⛔ AND THE MEASUREMENT IS NO LONGER HARD-CODED, BECAUSE IT
+            # BELONGS TO ONE CHECKPOINT AND THIS FILE RENDERS MANY. MEASURED
+            # 2026-09-06: rendering **refcv4b** with the old text put
+            # *"+0.0000 true−shuffled, MEASURED @ step 30 000"* — a **refcv3**
+            # number — on a refcv4b frame, where it would read as measured on
+            # the model being drawn. That is the `df` / `step_s` / cylindrical-
+            # FOV family in a caption: a true quantity quoted outside its
+            # scope, and a frame is exactly where such a quote is trusted
+            # without its artifact. ⇒ the run-specific measurement now arrives
+            # via `--nav-shuffle-note` and the DEFAULT asserts only the
+            # ARCHITECTURAL claim, which is a file:line fact and carries to any
+            # checkpoint. A reel with no note says the number is not measured
+            # here rather than borrowing a neighbour's.
+            #
+            # ⚠️ The old text also wrapped to SEVEN lines under the pod's
+            # DejaVu while fitting on the dev box's Segoe — so the cap is
+            # FONT-DEPENDENT and the refusal below is what caught it.
+            # ⛔ AND "make it fit" IS NOT THE FIX — "for this step" -> "at this
+            # step" also fits, at **3.2 px of 330 = 0.5 characters** of slack,
+            # which is a refusal waiting for the next font. MEASURED on the
+            # pod's DejaVuSans 13 px (`raw/capwrap.py`, with a control string
+            # that must and does wrap to 15): the default below leaves
+            # **87 px ~ 13 characters**. The panel cannot simply be raised
+            # instead: six lines end at Y_STR+147 against H_STR = 152, so a
+            # seventh overflows, and H_STR feeds H_BEV and H_TOT — i.e. it
+            # would change the 1920x1122 canvas the banked refcv3 reel was
+            # rendered at.
             NAV_CAP = 6
             nav_lines = wrap(
                 d, "GIVEN INPUT, not a prediction — the clip's v7.2 "
                    "nav_command (ego-future); an ORACLE absent at deployment. "
                    "Both heads are WIRED to it (E13), but the route head is "
                    "nav-INSENSITIVE BY CONSTRUCTION: it reads pooled VISION, "
-                   "not this token. (+0.0000 true−shuffled, MEASURED @ step "
-                   "30 000.)",
+                   "not this token."
+                   + (" " + a.nav_shuffle_note
+                      if getattr(a, "nav_shuffle_note", None)
+                      else " (true−shuffled NOT measured.)"),
                 F["tiny"], 330)
             if len(nav_lines) > NAV_CAP:
                 sys.exit(f"[render_refcv3] ⛔ the nav caption wraps to "
@@ -1210,7 +1266,7 @@ def main(argv=None):
             # ---- banner ------------------------------------------------------ #
             d.rectangle([0, Y_BAN, W_TOT, Y_BAN + H_BAN], fill=(15, 20, 28))
             d.text((PAD, Y_BAN + 6),
-                   fit(d, f"refcv3 (REF-C v3, {prov['arm']}) · ckpt step "
+                   fit(d, f"{RUN_LABEL} (REF-C, {prov['arm']}) · ckpt step "
                           f"{prov['step']} · clip {cid} · frame {t0:03d} "
                           f"= t {t0 * DT_FRAME:.1f} s  ({k_i + 1}/{len(wins)})",
                        F["ban"], W_TOT - 2 * PAD), fill=C_FG, font=F["ban"])
@@ -1219,8 +1275,8 @@ def main(argv=None):
                        "the window origin consumes the observed frames, the "
                        "v7.2 nav token and the measured v0 — no actions, "
                        "no loop, no future information. The drawn path is the "
-                       "model's OWN sel_score_v3 choice among its 128 anchors "
-                       "(out['traj']), NEVER the GT-nearest anchor.",
+                       f"model's OWN sel_score_v3 choice among its {N_ANCH} "
+                       "anchors (out['traj']), NEVER the GT-nearest anchor.",
                     F["tiny"], W_TOT - 2 * PAD)[:2]):
                 d.text((PAD, Y_BAN + 38 + li * 16), ln, fill=C_WARN,
                        font=F["tiny"])
@@ -1235,13 +1291,14 @@ def main(argv=None):
                    f"     ADE(sel, {a.grid}) {ade:.3f} m"
                    f"     clip-mean {np.mean(ades):.3f} m",
                    fill=C_FG, font=F["hud"])
-            leg = [("GT (green)", C_GT), ("refcv3 SELECTION (orange)", C_SEL)]
+            leg = [("GT (green)", C_GT),
+                   (f"{RUN_LABEL} SELECTION (orange)", C_SEL)]
             if a.with_oracle:
                 leg.append(("a_star ORACLE ceiling, NOT the model's choice "
                             "(violet)", C_ORACLE))
             leg.append(("GIVEN INPUT (amber)", C_GIVEN))
-            leg.append(("the 128-anchor fan: dim→cyan by sel_score_v3 RANK; "
-                        "dull red = killed by reach_keep", C_FAN_HI))
+            leg.append((f"the {N_ANCH}-anchor fan: dim→cyan by sel_score_v3 "
+                        "RANK; dull red = killed by reach_keep", C_FAN_HI))
             xx = PAD
             for txt, col in leg:
                 d.rectangle([xx, Y_HUD + 32, xx + 22, Y_HUD + 44], fill=col)
@@ -1297,14 +1354,17 @@ def main(argv=None):
         "max_frames_per_ep": int(a.max_frames_per_ep) or "all",
         "per_clip": per_ep,
         "viz_standard_elements": viz_rows,
+        "run_label": RUN_LABEL,
+        "n_anchors": N_ANCH,
         "what_is_drawn": (
-            "The path is out['traj'] — refcv3's OWN sel_score_v3-ranked choice "
-            "among its 128 anchors (refc_v3.py:509-527). It is NOT a_star, the "
+            f"The path is out['traj'] — {RUN_LABEL}'s OWN sel_score_v3-ranked "
+            f"choice among its {N_ANCH} anchors (refc_v3.py:509-527). It is "
+            "NOT a_star, the "
             "GT-nearest anchor, which appears only under --with-oracle and is "
             "labelled ORACLE wherever it is drawn."),
         "what_this_is_not": (
-            "NOT a rollout and NOT closed-loop driving: refcv3 consumes no "
-            "actions and has no loop to close (REFCV3_ARM.md §2.4). One forward "
+            f"NOT a rollout and NOT closed-loop driving: {RUN_LABEL} consumes "
+            "no actions and has no loop to close (REFCV3_ARM.md §2.4). One forward "
             "pass emits the whole 6 s path. The ADE shown is the deployed "
             "selection's, on the arm's own grid, recomputed from the path — "
             "never converted from the trainer's mean-L1 eval_traj."),
