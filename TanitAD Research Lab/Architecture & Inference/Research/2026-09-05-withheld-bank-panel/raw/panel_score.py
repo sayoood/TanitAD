@@ -53,6 +53,14 @@ from taniteval import ci as CI                         # noqa: E402
 import refav1_arm as ra                                # noqa: E402
 
 W = Path(os.environ.get("WB_ROOT", r"C:\Users\Admin\run_wbank"))
+CORPUS = {
+    "val_cache": "physicalai-val-bb543bdf7836 (epcache, 256x256, 40 episode-disjoint val episodes)",
+    "train_subset": "physicalai-train-14231cd29c74[:48] -- a NON-parity RIG subset (48 of 401 cached "
+                    "episodes); the parity corpus is physicalai-train-e438721ae894 (2376 ep, skip-hash "
+                    "f09e44db) and is NOT what these arms trained on",
+    "parity": "NOT the parity corpus (rig); cross-arm comparability holds because every arm "
+              "trained on the identical 48-episode subset and is scored on the identical 640 windows",
+}
 EPCACHE = os.environ.get("WB_EPCACHE", r"C:\Users\Admin\tanitad-data\physicalai\_epcache")
 ARMS = Path(os.environ.get("ARMS_DIR", str(W / "arms")))
 OUT = Path(os.environ.get("PANEL_OUT", str(W / "panel_report.json")))
@@ -178,7 +186,7 @@ def batches(ds, perm):
 
 def gt_tensors(ds, perm, cfg0):
     """GT for the shared windows: goal rows, 8-slot waypoints + validity, ids, last frame."""
-    T, V, E, FR, PL, FX, AC, WP, SV = [], [], [], [], [], [], [], [], []
+    T, V, E, FR, PL, FX, AC, WP, SV, RT, NV = [], [], [], [], [], [], [], [], [], [], []
     hz = cfg0.core.trajectory.horizons
     for b in batches(ds, perm):
         T.append(b["goal_tac"].float()); V.append(b["goal_tac_valid"])
@@ -190,9 +198,11 @@ def gt_tensors(ds, perm, cfg0):
                                           b["future_poses_ext"].float(), hz)
         WP.append(wp.float())
         SV.append(torch.stack([b["future_valid_ext"][:, h - 1] for h in hz], dim=1))
+        RT.append(b["route_target"].reshape(-1).long()); NV.append(b["nav_valid"].reshape(-1).bool())
     return {"goal": torch.cat(T), "gval": torch.cat(V), "eid": torch.cat(E),
             "frlast": torch.cat(FR), "pose_last": torch.cat(PL), "fx": torch.cat(FX),
-            "wp": torch.cat(WP), "sv": torch.cat(SV)}
+            "wp": torch.cat(WP), "sv": torch.cat(SV), "route_target": torch.cat(RT),
+            "nav_valid": torch.cat(NV)}
 
 
 # --------------------------------------------------------------------------- #
@@ -208,7 +218,7 @@ def forward_regime(model, cfg, ds, perm, regime: str, bank_mode: str,
     dec.anchor_withheld_bank = bank_mode
     torch.manual_seed(seed)
     R = {k: [] for k in ("g_tac", "traj", "sel_idx", "bank", "bsp", "lat", "lon",
-                         "keep")}
+                         "keep", "route")}
     for b in batches(ds, perm):
         fr = b["frames"].to(DEV)
         if ablate:
@@ -238,6 +248,7 @@ def forward_regime(model, cfg, ds, perm, regime: str, bank_mode: str,
         R["lat"].append(out["lat_logits_tac"].float().cpu())
         R["lon"].append(out["lon_logits_tac"].float().cpu())
         R["keep"].append(out["ego_keep"].float().cpu())
+        R["route"].append(out["route_logits"].float().cpu())
     return {k: torch.cat(v) for k, v in R.items()}
 
 
@@ -271,6 +282,118 @@ def by_band(v0, fn):
             continue
         rows.append({"v0_band_ms": [lo, hi], "n": int(m.sum()), **fn(m)})
     return rows
+
+
+# --------------------------------------------------------------------------- #
+# the four-families artifact, one per arm x regime, in the registry's shape    #
+# --------------------------------------------------------------------------- #
+def _decision(pt, gt, dt):
+    """trajectory-derived lat/lon decisions via the canonical labeller."""
+    from taniteval import four_families as ff
+    from tanitad.refs.refc_tactical import factor_from_kinematics
+    dy_p, dv_p, v0p, v1p, _ = ff.maneuver_kinematics(pt, dt)
+    dy_g, dv_g, v0g, v1g, _ = ff.maneuver_kinematics(gt, dt)
+    lat_p, lon_p = factor_from_kinematics(dy_p, dv_p, v0p, v1p)
+    lat_g, lon_g = factor_from_kinematics(dy_g, dv_g, v0g, v1g)
+    return lat_p.long(), lon_p.long(), lat_g.long(), lon_g.long()
+
+
+def _dec_block(pred, gt):
+    k = int(max(int(pred.max()), int(gt.max()))) + 1
+    conf = torch.zeros(k, k, dtype=torch.long)
+    for g_, p_ in zip(gt.tolist(), pred.tolist()):
+        conf[g_, p_] += 1
+    cnt = torch.bincount(gt, minlength=k).float()
+    return {"accuracy": float((pred == gt).float().mean()), "n": int(gt.numel()),
+            "majority_class_control": float(cnt.max() / cnt.sum()),
+            "confusion_gt_rows_pred_cols": conf.tolist()}
+
+
+def write_family_artifact(path, arm, tag, comps2, P2, G2, r, Gt, eid, sel, a_star,
+                          controls=None, corpus=None):
+    """`four_families.*` in the CRITERIA_REGISTRY.json key layout, so
+    `tools/criteria_check.py` can score PRESENT / REFUSED / ABSENT on it."""
+    from taniteval import four_families as ff
+    pt, gt = torch.as_tensor(P2).float(), torch.as_tensor(G2).float()
+    Pg, Gg = ff._seq_geometry(pt, 0.5), ff._seq_geometry(gt, 0.5)
+    prog = (Pg["along"][:, -1] - Gg["along"][:, -1]).abs().numpy()   # 2 s endpoint
+    lat_p, lon_p, lat_g, lon_g = _decision(pt, gt, 0.5)
+    rt, nv = Gt["route_target"], Gt["nav_valid"]
+    rp = r["route"].argmax(-1)
+    m = nv & (rt >= 0)
+    strat = ({"decision_accuracy": float((rp[m] == rt[m]).float().mean()), "n": int(m.sum()),
+              "majority_class_control": float(torch.bincount(rt[m]).float().max() / m.sum()),
+              "_is": "3-way route head (v2.1 route target from nav) on nav-valid windows -- "
+                     "the ONLY strategic label the epcache rig carries; g_str is unsupervised here"}
+             if int(m.sum()) >= 32 else {"status": "TOO_FEW_LABELLED", "n": int(m.sum())})
+    art = {
+        "block": "taniteval.driving/tier1", "tier": "T1",
+        "scope": "RIG (tiny rung, 48 non-parity train episodes, 2,000 steps, 1 seed) -- never a "
+                 "model claim (H-SCALE-2); T1-style self-action open loop on the selected plan",
+        "arm": arm, "regime": tag, "n_windows": int(len(eid)), "n_episodes": int(len(set(eid.tolist()))),
+        "estimator": "paired_episode_cluster_bootstrap",
+        "corpus": corpus or {},
+        # ctrl.floor_comparison: every family metric paired against the trivial
+        # controls on the SAME windows (negative delta = the arm beats the control)
+        "controls": controls or {},
+        # leak guards, stated for THIS regime rather than assumed
+        "protocol": {
+            "inference_inputs": (["frames (9-ch window)", "nav_cmd (v1 derivation)",
+                                  "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep=1) "
+                                  "-- E11' (PI 2026-09-03), guarded by ego_dropout 0.5 + X15 + "
+                                  "the anti-echo gate"] if tag == "k" else
+                                 ["frames (9-ch window)", "nav_cmd (v1 derivation)",
+                                  "ego_state WITHHELD (keep=0, values zeroed): vision + nav only"]),
+            "vision_only": (tag != "k"),
+            "vision_only_note": ("kept regime: the measured ego block at t0 is an admitted "
+                                 "inference input under E11' (PI 2026-09-03); withheld regime: "
+                                 "no ego channel reaches any node"),
+            "goal_source": ("g_str / g_tac / goal_point_tac read from pooled frames (+ nav, + the "
+                            "ego block at t0 in the kept regime); no situation-classifier output "
+                            "enters any goal (RefCV3Model.provenance_roles: situation_output = [])"),
+            "corpus": (corpus or {}).get("val_cache"),
+        },
+        "strategic": {
+            "echo_test": {
+                "route_target_is_a_function_of_the_nav_input": True,
+                "reading": ("the v2.1 route target is DERIVED from nav_cmd (v1), so a route-head "
+                            "accuracy near 1.0 here would be an echo of its own input (C6); the "
+                            "strategic family above is read against the majority-class control "
+                            "only and is not a strategic capability claim"),
+            }
+        },
+        "four_families": {
+            "longitudinal": {"speed_mae_mps": level(comps2["LON_speed_mae_mps"], eid),
+                             "along_mae_m": level(comps2["LON_along_mae_m"], eid),
+                             "accel_mae_mps2": level(comps2["LON_accel_mae_mps2"], eid),
+                             "ego_progress": level(prog, eid)},
+            "lateral": {"cross_mae_m": level(comps2["LAT_cross_mae_m"], eid),
+                        "heading_mae_deg": level(comps2["LAT_heading_mae_deg"], eid),
+                        "yaw_rate_mae_degps": level(comps2["LAT_yaw_rate_mae_radps"] * 180.0 / math.pi, eid)},
+            "tactical": {"lateral_decision": _dec_block(lat_p, lat_g),
+                         "longitudinal_decision": _dec_block(lon_p, lon_g),
+                         "goal_setting": {"agrees_with_own_oracle_frac": float((sel == a_star).mean()),
+                                          "straight_ahead_idx67_frac": float((sel == STRAIGHT_IDX).mean()),
+                                          "n": int(sel.size)}},
+            "strategic": strat,
+        },
+        "refused": {
+            "headway_ttc_distance_keeping": {
+                "reason": "no lead-agent join on the epcache rig: obstacle.offline is a pod-side join "
+                          "and b1_eval_lead_block.npz covers the B1 eval corpus, not the val epcache "
+                          "windows", "n": 0},
+            "curvature_mae_at_this_resolution": {
+                "reason": "the 2 s grid is 4 slots at dt 0.5 s; a finite-difference curvature on 4 "
+                          "points is noise -- heading and yaw-rate carry the lateral family here",
+                "n": int(len(eid))},
+            "nav_compliance": {
+                "reason": "no nav-shuffle / nav-zero control on this rig (v1 nav derivation, "
+                          "`follow` + invalid on most windows); the route-head accuracy above is "
+                          "the only strategic readout", "n": int(m.sum())},
+        },
+    }
+    Path(path).write_text(json.dumps(art, indent=1, default=float), encoding="utf-8")
+    return art
 
 
 # --------------------------------------------------------------------------- #
@@ -534,6 +657,16 @@ def main() -> int:
                 "n_distinct_selected": int(len(set(sel.tolist()))),
                 "astar_straight_frac": float((a_star.numpy() == STRAIGHT_IDX).mean()),
                 "agrees_with_own_oracle_frac": float((sel == a_star.numpy()).mean())}
+            fam_dir = DUMPS / "families"; fam_dir.mkdir(parents=True, exist_ok=True)
+            rec["four_families_artifact"] = str(fam_dir / f"{ad.name}__{tag}.json")
+            write_family_artifact(rec["four_families_artifact"], ad.name, tag, comps["arm"],
+                                  P[:, SLOTS2S].numpy(), wp[:, SLOTS2S].numpy(), r, G, eid,
+                                  sel, a_star.numpy(),
+                                  controls={"ha": rec["plan_2s_families"]["paired_arm_minus_ha"],
+                                            "ha0_ext": rec["plan_2s_families"]["paired_arm_minus_ha0_ext"],
+                                            "_direction": "arm minus control; negative = arm better",
+                                            "constant_only_goal_rows": report["controls"]["goal_rows_by_slot"]},
+                                  corpus=CORPUS)
             rec["oiv_decoded_bank_m"] = level(o_dec.numpy(), eid)
             rec["oiv_decoded_bank_by_v0_band"] = by_band(
                 v0.numpy(), lambda m: {"oiv_m": float(o_dec.numpy()[m].mean())})
