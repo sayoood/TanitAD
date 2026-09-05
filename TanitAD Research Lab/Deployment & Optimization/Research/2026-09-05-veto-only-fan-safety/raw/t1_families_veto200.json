@@ -1,0 +1,634 @@
+{
+ "_tool": "read_t1_families.py",
+ "_tier": "T1 \u2014 self-action OPEN loop (PI ruling 2026-09-02); never a closed-loop claim",
+ "_evidence_class": "MEASURED (ours)",
+ "s0_record": "C:/Users/Admin/veto_run/run/paired_s0-veto200_vs_base.json",
+ "s1_record": "C:/Users/Admin/veto_run/run/paired_s1-veto200_vs_base.json",
+ "replicate_present": false,
+ "void_s0": false,
+ "void_s1": null,
+ "gates_s0": {
+  "G2_oracle_arm_refused": {
+   "pass": true,
+   "checked": [
+    "os",
+    "os"
+   ],
+   "rule": "refcv3's `a_star`/`oracle_sel` picks the anchor nearest the GT; refav1's `cl_oraclegoal` reads the true future field as its goal. Neither may be a model arm here."
+  },
+  "G3_same_tier": {
+   "A": {
+    "arm": "os",
+    "tier": "T1"
+   },
+   "B": {
+    "arm": "os",
+    "tier": "T1"
+   },
+   "pass": true,
+   "rule": "a cross-tier comparison is inadmissible (D-HF-COMPARABILITY condition 3)",
+   "open_ruling": {
+    "arm": "os",
+    "stamped": "T1",
+    "status": "UNRULED",
+    "decided_by": "PI / Master Mind \u2014 NOT a FlyWheel",
+    "question": "does EVAL_DOCTRINE admit as T1 a model that consumes NO actions at all? Its T1 row reads 'the predictor consumes the decoder/planner's own actions', which does not literally cover refcv3.",
+    "benchmarks_recommendation": "ADMIT IT, flagged as a recommendation: the doctrine's PURPOSE is to keep future information out of inference, and a correctly-gated refcv3 forward pass (frames <= t0, nav token, measured v0, selection by sel_score_v3 and never by a_star) admits none \u2014 but keep the DISTINCT arm name `os` so no reader believes two `cl` columns describe the same procedure.",
+    "why_the_numbers_are_valid_either_way": "every headline statistic here is a MARGIN over `ha0` measured on the same windows with the same instrument (`os - ha0`), so the ruling changes the LABEL on the row, never the arithmetic in it."
+   }
+  },
+  "G5_action_units": {
+   "A": {
+    "recorded": "steer",
+    "applies_to": [
+     "ha"
+    ]
+   },
+   "B": {
+    "recorded": "steer",
+    "applies_to": [
+     "ha"
+    ]
+   },
+   "pass": true,
+   "note": "`actions[:,0]` in the corpus is a ROAD-WHEEL STEER ANGLE (physicalai.py:621), not a curvature. The unit affects the `ha` control only. \u2b50 It CANNOT affect this table's floor: `ha0` is exactly zero, which is 0 in either unit \u2014 that is precisely what makes `ha0` the bit-comparable arm. A dump with `recorded == 'kappa'` carries the C-REFCV3-ARM-SAME-DEFECT over-rotation in its `ha` row and nowhere else.",
+   "a_arm_affected": false,
+   "b_arm_affected": false
+  },
+  "G1_common_grid": {
+   "A_raw_frame_offsets": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "B_raw_frame_offsets": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "common_raw_frame_offsets": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "common_instants_s": [
+    0.5,
+    1.0,
+    1.5,
+    2.0
+   ],
+   "A_slots_selected": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "B_slots_selected": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "A_slots_dropped": [],
+   "B_slots_dropped": [],
+   "pass": true,
+   "rule": "the grids are matched in INTEGER RAW FRAMES, then index-selected on both sides. \u26d4 There is no resampling and no interpolation.",
+   "cost": "the common grid is COARSER than either dump's own. Every LON/LAT rate below is computed on it for BOTH arms and for GT, so the comparison is fair \u2014 but the LEVELS are not comparable to a finer-grid read of the same arm.",
+   "common_dt_s": 0.5,
+   "uniform": true,
+   "first_step_equals_spacing": true,
+   "geometry_note": "`four_families._seq_geometry` PREPENDS the ego origin as step 0, so a grid whose first instant differs from its spacing makes step 0 span a different time from the rest. Here: first=0.5s, spacing=0.5s."
+  },
+  "G6_shared_floor": {
+   "floor_arm": "ha0",
+   "source": {
+    "A": "DUMPED \u2014 the `ha0` arm written by taniteval/tools/refcv3_arm.py",
+    "B": "DUMPED \u2014 the `ha0` arm written by taniteval/tools/refcv3_arm.py"
+   },
+   "pass": true,
+   "rule": "both arms must report against the SAME trivial floor on the SAME windows (D-HF-COMPARABILITY condition 6)"
+  },
+  "G4_profiles_non_degenerate": {
+   "pass": true,
+   "degenerate_trivial": [
+    "shared:ha0"
+   ],
+   "degenerate_selection": [],
+   "rule": "a degenerate arm makes the read VOID, not negative (D-HF-COMPARABILITY condition 4)"
+  }
+ },
+ "power_s0": {
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "min_episodes_for_power": 10,
+  "adequate": true,
+  "note": "the episode-cluster bootstrap can only ever resample the 141 distinct episodes present. Below 10 the interval is dominated by which episodes happen to be here, and a 'not separated' row is UNDERPOWERED \u2014 it is not evidence of no effect."
+ },
+ "intersection_s0": {
+  "key": "(clip_id, RAW 10 Hz frame index of the window origin t0)",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "A_windows_available": 4823,
+  "B_windows_available": 4823,
+  "A_clips": 141,
+  "B_clips": 141,
+  "A_windows_dropped": 0,
+  "B_windows_dropped": 0,
+  "clips": [
+   "01be5919-6e61-45ba-a193-5f447efb4b51",
+   "060531e1-9935-482e-8c25-2abf37bdc41b",
+   "0fa2b231-435e-4700-9138-30f333dc5d6e",
+   "10804db8-d070-444e-a1f1-89c1871588d5",
+   "11e40da1-3d9e-4ee6-8406-8db2eed4a594",
+   "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+   "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+   "14157960-84db-4f4e-84f1-a4664086c6f8",
+   "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+   "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+   "16d89725-2f31-4a12-9244-658d2b83994c",
+   "17775e74-2d89-4c4f-9347-c58cea5585cb",
+   "18b72291-84f4-45e0-a736-908fc303020e",
+   "1bd040a8-1828-4f1f-933e-20fd53c45641",
+   "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+   "204b15b4-bd0a-4155-b01e-572c55197d0e",
+   "2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8",
+   "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "2602baaa-4364-4c50-8fb5-a27254c77cb3",
+   "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc",
+   "269478eb-2da4-42cb-bfd3-3ad9b024d88b",
+   "27f44280-3e5a-4b2f-9420-f38b9210bee4",
+   "2cd0f4e4-dce0-4c02-904e-8045ffe3da7e",
+   "2e8a2df2-3f74-448e-9781-0739328ab42e",
+   "316f3c56-9142-4c97-95e8-29fe6f1f2108",
+   "31d0adc4-4e87-4ecd-920c-80a51afb3dbd",
+   "32f9b6b2-edc6-4cad-b383-1e2b3a55871b",
+   "330b4626-96d0-46fd-a10b-3532f389bd34",
+   "34a1e12e-95cb-4a6c-bbcf-20356f0d364e",
+   "37e61793-36e9-426a-b257-23e684ba18b6",
+   "38fe80c1-caf1-45ea-810b-2681ea488c6d",
+   "3971a8c6-0c53-4c0f-a06d-69fbd817a180",
+   "39bf584e-5bb5-43fb-93ab-c8cec7efbf01",
+   "3ef3dcc8-7fd8-44df-837e-2820e969e691",
+   "3ff11411-fa2f-4815-acc1-0a18d124861f",
+   "42745b48-a015-4a7d-9ae0-a4f6986f918e",
+   "45358841-6928-4d33-9166-1432d9d550dd",
+   "45a9f7ec-991f-4bf1-ae0e-41d9a233853e",
+   "45aea78c-7762-4e46-aef1-e9e22602b8fd",
+   "47241da8-c00e-4d4d-ae12-8cc51b7d09f6",
+   "480d7910-cece-47a0-9910-c279daa09e95",
+   "4c5264dd-9110-46d4-88e7-693ffde925e5",
+   "4ee70f88-f036-4029-adc6-f93fb5e22f0a",
+   "50caa2df-cf8f-44fb-b0fc-8f72c2fdeb29",
+   "51c01ba4-9000-4370-8abb-9fd22b397d05",
+   "5271d125-6137-4ece-92b9-d58f29eb2420",
+   "52ddcaaf-06cb-4654-894f-962f27c2bb34",
+   "565b6ff0-c9f6-46f6-8acf-3ec383beb3dc",
+   "5716299c-a9e7-4d83-9c76-55fb3900a146",
+   "59c25a0f-d4b8-4cfe-9213-d1502554b001",
+   "5b4df66c-31a2-4ad1-8d3e-bc3162d03d1c",
+   "5d39a1de-bd2e-4652-8777-00f3e7a1108d",
+   "5d94cbbb-55eb-4642-add5-054b9c47ccf3",
+   "5f86e111-b219-4a6e-ab95-8675ee598084",
+   "62f3222e-9aa8-4520-b025-0166b36f5054",
+   "63434e0b-8cd2-4e1f-9526-8a06bd7f4b0d",
+   "66e4d574-2b35-4b55-a13d-905d9b6ecc2b",
+   "672d70d8-812c-4174-b134-3024707dcf39",
+   "6908302e-14b7-4463-b86b-f33232bc3e11",
+   "695081db-4312-44bc-95d6-4d5f509180fa",
+   "6a89cca3-64e9-49fd-ae34-9c5a636981b4",
+   "6b3e802e-ea88-48c8-aa13-3e072c8c1409",
+   "6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc",
+   "73e750eb-684f-4aa1-953e-eb0f671a86b7",
+   "7526e299-0404-407e-bf63-39901ba08ff2",
+   "77a247be-ad56-4712-8e16-5d4acc5c241d",
+   "79e30ac2-c619-4d61-98a3-1007037b4d05",
+   "80b890fc-1140-4ea2-a4da-267580ff82f8",
+   "80fcd92f-7bb3-430a-835e-ac72e8ffdda7",
+   "826cd25c-fa4a-4e7d-9fbb-f64486fe3712",
+   "829320e2-ba11-48e9-8196-1247e5709b5f",
+   "84952a7e-a54b-4453-9ad4-2b6c0bc240a8",
+   "85a47aa1-1465-4b72-aaac-bcddb2decfdd",
+   "8d610d87-8170-41c1-bc61-c771a9500322",
+   "8df0cb04-8b64-42de-97b9-ce57df3908f4",
+   "8f1baf35-90f6-4a03-ad23-f461d98ef393",
+   "8fe27d99-23e7-4f0f-bacb-f42b055ba2c7",
+   "91929cea-f8d5-4ed7-bbb7-e39f644f10ca",
+   "91e90a95-a129-486a-a1d4-cc1a2915793f",
+   "9370d445-320d-41f5-bde5-66659ae974c7",
+   "93854321-c881-4263-9312-252e04934898",
+   "998310a5-2773-40f8-9752-e588e5b400b7",
+   "9b4347d2-fdcb-4232-93db-acc6b1e3d5c7",
+   "9c50f803-c78c-4b69-8a83-443ad312553e",
+   "9d3d1cd1-ce59-46e1-a85b-02131b07a69c",
+   "9fc24b6e-3ece-4a3b-bb00-eb3454b1eabb",
+   "a0d95df6-499b-45ee-a424-5954f6e65f77",
+   "a459164a-0c6c-4a3b-9963-0d5deacacb4f",
+   "a6b2719b-7712-41be-9032-43216f52f516",
+   "a7e15877-9469-4b98-b633-f1a32722aecf",
+   "aa00f477-540e-4b04-aaa9-948c5b227a65",
+   "aa594aa8-bc96-40d1-80f3-a6bc12855766",
+   "ac81f868-f505-4268-bfeb-c58c0a0a1605",
+   "acf8e77f-7d54-49ac-a9a4-dea836784513",
+   "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "afe44776-866c-4425-b792-1a6c3ce6c48c",
+   "b0252ad5-8cdf-45f3-abf8-df22fb4a72b0",
+   "b05195bf-36d7-4233-87bf-518708baa307",
+   "b19eb35f-3966-4513-adaa-ba26d492caf2",
+   "b62be3fa-4fbb-4998-a5c9-b0318db9b4d6",
+   "b99058dc-6802-4f77-af28-a363b5701ab3",
+   "c0142275-d0c7-4a5f-a1a3-ac15c6d7add9",
+   "c08bebe5-c3fc-424f-ab7c-75d019e9035e",
+   "c1cb24d2-0afe-4fff-914f-d6220c4d733d",
+   "c84ea182-972e-4c4e-9be6-9a1bba5908e2",
+   "c8a39711-ce08-421f-b675-6533f89ad8a3",
+   "ca11a2a2-1021-475c-9907-e6dbe658ad12",
+   "caf90ce8-c1c4-4c2a-a781-c129b262b89c",
+   "d1d382aa-035a-4da8-a7c5-d06ec97f0fcd",
+   "d217b78a-0dab-447b-8940-cd0c58b942d2",
+   "d4729053-1eb7-4973-a13d-84ecf4874b74",
+   "d571e998-57d4-44d1-971d-4afffae6321b",
+   "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+   "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "dca157a0-20a9-464b-a74c-084b678e7be1",
+   "e0e6b875-eb14-41ba-8988-884da8624b34",
+   "e319062b-3760-4803-bf19-414bbb2a3383",
+   "e66979e0-6f5a-4e27-b497-c4e8a6d26534",
+   "e6cb7cd4-8349-4b9d-9674-e3ebf789e611",
+   "e7ada9bb-f5f4-4623-9713-71baa917dc59",
+   "e8ace736-b9b3-4f0b-a9bd-88b7161fc550",
+   "ea019ab7-bd2d-41b1-b35e-37bbfb578c4b",
+   "eabb9abf-06ae-4fd6-8141-a1d6e6ca4351",
+   "eb96a48b-db1a-49d3-8377-54be35a514d0",
+   "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "ed09262b-3ac0-41df-a68b-1314eb2ec92d",
+   "ed87040c-cf3c-4fe4-9a95-50c1114f0d38",
+   "edd5d17b-1bea-402f-ad02-7fec082a7f2e",
+   "f14ae2d2-7bfe-4bea-a388-b0eea17709d3",
+   "f19cffbf-5621-4be5-83a4-7a096f6b7c39",
+   "f1a94fee-838c-400a-a603-32c40540068b",
+   "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "f26af403-f548-4485-a118-09d6753a7bb8",
+   "f4226f59-077b-494e-a866-30eff5e47d57",
+   "f4740120-50c2-4ed6-a270-cf7ddbc299df",
+   "f6e7827e-fd46-4e02-9a42-f7fabe3e036c",
+   "f901e9e6-cc3a-4af4-8461-a6c6a6f3d6d2",
+   "fb8e8200-bde1-4caa-9265-12535e1506c2",
+   "fe764229-15df-4506-b7e4-2977fd78e834",
+   "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "ffcd075e-c256-4c8f-af98-b83e86ce51a9"
+  ],
+  "note": "the bootstrap resamples EPISODES (clips), because windows inside one clip are strongly dependent. n_episodes, not n_windows, is the sample size that matters.",
+  "ws_to_raw": {
+   "A": "RAW frame = ws + 2 \u2014 the manifest's own corpus.frames.provider_to_raw_frame_offset (v2_dataset.py:36-38, the provider stores poses[n_stack-1:])",
+   "B": "RAW frame = ws + 2 \u2014 the manifest's own corpus.frames.provider_to_raw_frame_offset (v2_dataset.py:36-38, the provider stores poses[n_stack-1:])"
+  }
+ },
+ "estimator": {
+  "point": "FULL-SET pooled mean over the shared windows",
+  "interval": "taniteval.ci.episode_cluster_bootstrap (single arm) / paired_episode_cluster_bootstrap (every difference)",
+  "cluster": "the CLIP \u2014 windows inside one clip are strongly dependent",
+  "n_boot": 2000,
+  "seed": 0,
+  "forbidden": "overlapping_holdout_se appears nowhere; it biases the POINT ESTIMATE bidirectionally (-6.67% to +11.69%), up to a sign flip",
+  "reading_rule": "\u26d4 two overlapping single-arm CIs are NOT a null result and two disjoint ones are NOT the paired test. Only the paired difference interval decides."
+ },
+ "families": {
+  "ADE": {
+   "ade_m": {
+    "lever_s0": {
+     "delta": 0.0362,
+     "lo": 0.0261,
+     "hi": 0.046,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.2304,
+     "A_separated": true,
+     "B_margin": -0.1942,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   },
+   "fde_m": {
+    "lever_s0": {
+     "delta": 0.0623,
+     "lo": 0.0401,
+     "hi": 0.0837,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.4741,
+     "A_separated": true,
+     "B_margin": -0.4118,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   }
+  },
+  "LONGITUDINAL": {
+   "LON_accel_mae_mps2": {
+    "lever_s0": {
+     "delta": 0.3349,
+     "lo": 0.2719,
+     "hi": 0.4052,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": 0.202,
+     "A_separated": true,
+     "B_margin": 0.5369,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   },
+   "LON_along_mae_m": {
+    "lever_s0": {
+     "delta": 0.029,
+     "lo": 0.0188,
+     "hi": 0.0392,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.0674,
+     "A_separated": true,
+     "B_margin": -0.0384,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   },
+   "LON_speed_mae_mps": {
+    "lever_s0": {
+     "delta": 0.0779,
+     "lo": 0.0616,
+     "hi": 0.0955,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.0364,
+     "A_separated": true,
+     "B_margin": 0.0415,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   }
+  },
+  "LATERAL": {
+   "LAT_cross_mae_m": {
+    "lever_s0": {
+     "delta": 0.0154,
+     "lo": 0.0111,
+     "hi": 0.02,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.2048,
+     "A_separated": true,
+     "B_margin": -0.1894,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   },
+   "LAT_heading_mae_deg": {
+    "lever_s0": {
+     "delta": 0.2912,
+     "lo": 0.2312,
+     "hi": 0.3591,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -1.3741,
+     "A_separated": true,
+     "B_margin": -1.0829,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   },
+   "LAT_yaw_rate_mae_radps": {
+    "lever_s0": {
+     "delta": 0.0191,
+     "lo": 0.006,
+     "hi": 0.0316,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": 0.17,
+     "A_separated": true,
+     "B_margin": 0.1891,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   }
+  },
+  "TACTICAL": {
+   "TAC_declared_lat_correct": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0346,
+     "A_separated": false,
+     "B_margin": 0.0346,
+     "B_separated": false
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_declared_lat_correct_navshuf": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0104,
+     "A_separated": false,
+     "B_margin": 0.0104,
+     "B_separated": false
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_declared_lat_correct_navzero": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0052,
+     "A_separated": false,
+     "B_margin": 0.0052,
+     "B_separated": false
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_declared_lon_correct": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.2152,
+     "A_separated": true,
+     "B_margin": 0.2152,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_declared_lon_correct_navshuf": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.2005,
+     "A_separated": true,
+     "B_margin": 0.2005,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_declared_lon_correct_navzero": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.1971,
+     "A_separated": true,
+     "B_margin": 0.1971,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "TAC_traj_lat_correct": {
+    "lever_s0": {
+     "delta": -0.0025,
+     "lo": -0.0066,
+     "hi": 0.0015,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0881,
+     "A_separated": true,
+     "B_margin": 0.0856,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ns"
+   },
+   "TAC_traj_lon_correct": {
+    "lever_s0": {
+     "delta": -0.0889,
+     "lo": -0.1145,
+     "hi": -0.0655,
+     "separated": true,
+     "verdict": "base:os has the better margin",
+     "A_margin": -0.01,
+     "A_separated": false,
+     "B_margin": -0.0989,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": false,
+    "verdict": "ONE SEED \u2014 necessary, not sufficient"
+   }
+  },
+  "STRATEGIC": {
+   "STR_route_correct": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0925,
+     "A_separated": true,
+     "B_margin": 0.0925,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "STR_route_correct_navshuf": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0925,
+     "A_separated": true,
+     "B_margin": 0.0925,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   },
+   "STR_route_correct_navzero": {
+    "lever_s0": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false,
+     "verdict": "not separated",
+     "A_margin": 0.0925,
+     "A_separated": true,
+     "B_margin": 0.0925,
+     "B_separated": true
+    },
+    "lever_s1": null,
+    "seed_replicate_floor": NaN,
+    "structural": true,
+    "verdict": "STRUCTURAL ZERO (frozen head \u2014 identity, not an estimate)"
+   }
+  }
+ },
+ "_LIMIT": "NO REPLICATE: every row below is a ONE-SEED result and is NECESSARY-NOT-SUFFICIENT under H-ESTIM-SEED-1. Re-run with --s1."
+}

@@ -303,6 +303,60 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 
 ⚠️ **Scope of the withdrawal in §6/RETRACTION #30.** The artifact these numbers come from also carried a shrink sweep built on the wrong operand, and **only that block is withdrawn**. The selection-rule numbers use `score_paths`, the kinematic components, `sel_score` and the per-candidate ADE — none of which touch `out["offset"]` — so they are unaffected; they are quoted from the quarantined artifact and re-confirmed by the corrected re-run (`raw/fan_rerank_base.json`). ⛔ Stating this explicitly rather than re-quoting a "clean" file is the point: a withdrawal that is not scoped is either too wide or too narrow, and both are wrong.
 
+
+## 11. P4 — the SECONDARY endpoint: the FOUR FAMILIES at T1, per family, never pooled
+
+`taniteval/tools/paired_openloop.py`, **T1 (self-action OPEN loop — never a closed-loop claim)**, `s0/veto200` vs the banked base over the shared `ha0` floor. **`void: false`**, all six gates pass (`G1_common_grid`, `G2_oracle_arm_refused`, `G3_same_tier`, `G4_profiles_non_degenerate`, `G5_action_units`, `G6_shared_floor`), **4,823 shared windows / 141 episodes, 0 windows dropped on either side**. Estimator: paired episode-cluster bootstrap (cluster = clip), n_boot 2,000, seed 0. Power: adequate (141 ≫ 10). A **positive** delta means the arm is **worse** than base.
+
+| family | metric | delta | 95 % CI | separated |
+|---|---|---|---|---|
+| **ADE** | `ade_m` | **+0.0362** | [+0.0261, +0.0460] | **yes** |
+| **ADE** | `fde_m` | +0.0623 | [+0.0401, +0.0837] | yes |
+| **LONGITUDINAL** | `LON_accel_mae_mps2` | **+0.3349** | [+0.2719, +0.4052] | **yes** |
+| **LONGITUDINAL** | `LON_speed_mae_mps` | +0.0779 | [+0.0616, +0.0955] | yes |
+| **LONGITUDINAL** | `LON_along_mae_m` | +0.0290 | [+0.0188, +0.0392] | yes |
+| **LATERAL** | `LAT_heading_mae_deg` | +0.2912 | [+0.2312, +0.3591] | yes |
+| **LATERAL** | `LAT_yaw_rate_mae_radps` | +0.0191 | [+0.0060, +0.0316] | yes |
+| **LATERAL** | `LAT_cross_mae_m` | +0.0154 | [+0.0111, +0.0200] | yes |
+| **TACTICAL** | `TAC_traj_lon_correct` (acc ↑) | **−0.0889** | [−0.1145, −0.0655] | **yes** |
+| **TACTICAL** | `TAC_traj_lat_correct` (acc ↑) | −0.0025 | [−0.0066, +0.0015] | no |
+| **TACTICAL** | `TAC_declared_*` (6 rows) | **0.0000** | [0, 0] | **STRUCTURAL** |
+| **STRATEGIC** | `STR_route_correct` (3 rows) | **0.0000** | [0, 0] | **STRUCTURAL** |
+
+⚠️ **The `0.0000 [0, 0]` rows are STRUCTURAL ZEROS and must never be read as "no harm".** The arm trains `core.decoder` **only** (9,206,032 / 107,032,901 = 8.60 %); `core.maneuver`, `core.route`, `tac_goal_head`, `str_goal_head` and `conf_head` are in `forbidden_prefixes` and were frozen. Identical inputs through frozen heads give identical outputs — an **identity, not an estimate** (`H-ECHO-4` class). ⇒ the SECONDARY guard is informative on the trajectory-derived rows and **silent** on the declared-tactical and strategic rows.
+
+⇒ **The ADE guard FAILS: `ade_m` regresses +0.0362 m, separated.** Set in proportion: base 0.4419 → ≈0.478, a **+8.2 %** regression — against the full composed-reward arm's **+0.5014 m (+113 %)**. **The veto is ~14× gentler than the reward stage, and it is still a regression.** `LON_accel_mae` +0.3349 on a base of 0.6806 (**+49 %**) is the largest single movement, which is the same axis the T0 readout flagged (`sel_peak_g` up while the fan's mean came down): a constraint pushed off the violating region takes the *selected* path with it.
+
+⚠️ **ONE SEED at T1, and it is stamped as such in the artifact.** `s1/veto200`'s T1 rollout was still running when this section was written, so every row above is **necessary, not sufficient** under `H-ESTIM-SEED-1`, and `raw/t1_families_veto200.json` carries an explicit `_LIMIT` field saying so. ⭐ **The T0 evidence says a T1 replicate matters here:** the same arm's T0 sel-ADE (`R3`) reads **+0.00328 (s0, not separated)** and **+0.01817 (s1, separated)** — a seed-replicate floor of **0.0149** on a *different tier*, so it cannot be transferred, but it does establish that this arm's ADE effect is seed-sensitive. ⇒ **Finish with one command** once `paired_s1-veto200_vs_base.json` lands:
+```
+python .../raw/read_t1_families.py --s0 .../paired_s0-veto200_vs_base.json                                    --s1 .../paired_s1-veto200_vs_base.json                                    --out .../raw/t1_families_veto200.json
+```
+
+---
+
+## 12. ⭐⭐ THE VERDICT, written against the committed text — and the answer to *"is refcv3's fan safer than it was this morning?"*
+
+**FORMAL EXIT against SPEC §7, first-match, no softening:**
+
+> ⛔ **FAILURE.** SUCCESS required a negative, quotable `fan_peak_g_mean` **AND** at least one of `top32_infeasible` / `sel_infeasible` **AND** no `ade_m` regression beyond the replicate floor. Only the first holds. At 200 steps `top32_infeasible` is **WITHIN-NOISE** (−0.0064 / −0.0011 against a 0.0053 seed floor) and `ade_m` at T1 regresses **+0.0362 m, separated**. At 2,000 steps nothing is quotable at all.
+
+**And the honest answer to the brief's question, in three lines, because the axes disagree and pooling them would hide it:**
+
+| object | is it safer than this morning? | number |
+|---|---|---|
+| the **emitted fan** | ⭐ **YES, replicated over three runs** | `fan_peak_g_mean` **4.1809 → 4.088 / 4.065 g** (−0.0859 / −0.0929 / −0.1158 across three runs), clearing the seed-replicate floor 4–5× against a zero-information arm that drifts it **+0.134 the other way** |
+| the **driven (selected) path** under the veto | ⛔ **NO** | `sel_peak_g` **+0.0155 / +0.0080 g** (T0) and every trajectory-derived T1 family separated worse, `ade_m` **+0.0362 m** |
+| the **driven path** under the **0-training gate2 re-rank** | ⭐⭐ **YES, and by more** | `sel_envelope` **0.1062 → 0.0729 (−31 %)**, `sel_peak_g` **0.1815 → 0.1459 g (−20 %)**, `ade_m` **+0.0037, NOT separated** |
+
+⇒ ⭐⭐ **The deliverable is `gate2`, not the RL arm.** A top-2 kinematic gate over the model's own ranking makes the path the car drives measurably safer **today**, with **zero training, zero new parameters, zero new perception and no measurable ADE cost**. The veto-only arm is a real but small **fan-level** gain that the selector does not convert into a safer driven path — and §6 says why the ceiling is low: the veto moves `fan_peak_g_mean` by ~0.1 g against a **+3.63 g** blow-up the decode creates over its own vocabulary, i.e. it addresses **~2.7 %** of the available gap.
+
+**What to do next, in cost order:**
+
+1. ⭐ **Ship `gate2` behind a flag and measure it end-to-end** — it is a selection rule over an unchanged model, so it needs an inference-path change and no retraining. Its combined measurement with the veto'd checkpoint is queued (`raw/fan_rerank_veto200s0.json`).
+2. ⭐ **Open the feasibility-aware DECODE work item** (§6): the vocabulary is drivable at 0.48 g and the decode emits 4.11 g. That is where the 12.7× human-vs-refcv3 envelope gap actually lives, and no post-training of a constraint channel reaches it.
+3. **Re-run the veto arms on the swept-segment `_collision`** (§4 escalation 1): the constraint will fire more, and the prediction is the effect grows. ~5 min per arm.
+4. ⛔ **Do NOT spend more GPU on the composed reward at this surface.** P1 exonerated its *ranking* (ρ = −0.5367), so the failure is not "the reward wants infeasible paths" — but the 2,000-step dose shows the constraint channel exhausts itself, and §6 caps what any decoder post-train can recover.
+
 ---
 
 ## 9. Escalations, follow-ups and stated limits
@@ -323,3 +377,49 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 5. Two seeds **bound** the rig's training noise; they do not make it small. `fan_peak_g_mean`'s seed-replicate floor is 0.0229 g against a lever of 0.093–0.116 g — a factor of 4–5, not a factor of 100.
 6. The P1 rank correlations for the `collision` component and the `contact` flag are computed under the **point-sampled** `_collision` (§4). The `envelope` / `kamm_over` / `off_reach` / `peak_g` results do not call it.
 7. `mass_rank_contact` is **UNDETECTABLE-DOWNWARD** on this rig: its base value (3.47e-05) sits below its own separation floor, so an improvement could not be reported even if it occurred. Stated rather than reported as a null.
+
+---
+
+## 10. DELIVERABLE MANIFEST — every artifact and WHERE IT LIVES
+
+Package root: `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-veto-only-fan-safety/`. **Everything below is `repo:` — committed and blob-verified in HEAD. Nothing in this package lives in only one place.**
+
+| artifact | where | what it is |
+|---|---|---|
+| `SPEC.md` | repo | both outcomes, both floors, the five arms — banked **before** any arm ran |
+| `RESULT.md` | repo | this file |
+| **code — new** | | |
+| `stack/scripts/rl_reward_envelope_rank.py` | repo | P1: ρ(reward, envelope) over candidates, 3 controls, weight panel, banks the fan |
+| `stack/scripts/rl_fan_rerank_probe.py` | repo | §8: selection rules priced in ADE + the corrected shrink sweep + stage decomposition |
+| `stack/scripts/bank_vs_fan_feasibility.py` | repo | §6: anchor bank vs emitted fan, 0 GPU |
+| `stack/tests/test_rl_veto_explicit.py` | repo | P2's 8 pinning tests (RL suite **172 passed**) |
+| **code — changed** | | |
+| `stack/tanitad/rl/config.py` | repo | `veto_enabled` / `veto_collision` / `veto_ttc` |
+| `stack/tanitad/rl/posttrain.py` | repo | `veto_mask()`; the veto no longer reads `spec.weights` |
+| `stack/scripts/rl_refcv3_min.py` | repo | new arms; `reward_ctx(cand_dims=)` + the readout shape assertion |
+| **measurements** | | |
+| `raw/reward_envelope_rank.{json,log}` | repo | P1, 240 windows / 121 episodes / 30,720 candidate scores |
+| `raw/fan_bank_base_240w.npz` | repo | ⭐ the 240 × 128 fan + every component + every flag — **any future reward design is scorable at 0 GPU** |
+| `raw/bank_vs_fan_feasibility.json` | repo | §6 |
+| `raw/veto_verdict_veto200.json` / `_veto2k.json` | repo | all 57 metrics × both seeds × both floors × the contrast |
+| `raw/run/s{0,1}/{ctrl_null,veto200,veto2k}/arm_summary.json` | repo | the five arms |
+| `raw/run/paired_s0-veto200_vs_base.{json,md}` | repo | T1 four families, seed 0 |
+| `raw/run/eval/refcv3-40284-s0-veto200.{json,md}` | repo | the T1 suite record |
+| `raw/t1_families_veto200.json` | repo | the four-family read with its `_LIMIT` field |
+| `raw/fan_rerank_WITHDRAWN_wrong_lambda_operand.{json,log}` | repo | ⛔ quarantined, not deleted (RETRACTION #30) — its selection-rule block is what §8 quotes |
+| **tooling / provenance** | | |
+| `raw/analyze_veto.py`, `raw/read_t1_families.py` | repo | the two floors; the four-family reader |
+| `raw/patch_*.py` (9), `raw/insert_register_rows_*.py` (3), `raw/append_retraction*.py` (2) | repo | every edit reproducible from a script, not hand-applied |
+| `raw/run_veto_arms.sh`, `raw/run_eval_veto.sh`, `raw/chain_*.sh` (5) | repo | the run chains, including the two replacements and **why** they replaced |
+| `Project Steering/GOALS_AND_CLAIMS.md` | repo | 9 rows added/updated |
+| `Project Steering/RETRACTION_LOG.md` | repo | **#26, #27, #30** |
+
+⚠️ **STILL RUNNING when this file was written** (self-driving, sequential on the dev-box 4060; nothing else is touched):
+
+| in flight | artifact it will produce | how to finish |
+|---|---|---|
+| `s1/veto200` T1 rollout | `raw/run/paired_s1-veto200_vs_base.json` | `python raw/read_t1_families.py --s0 … --s1 … --out raw/t1_families_veto200.json` — one command, 0 GPU |
+| corrected re-rank on **base** | `raw/fan_rerank_base.json` | re-confirms §8's table and adds the λ = 0 bank control |
+| corrected re-rank on **veto200_s0** | `raw/fan_rerank_veto200s0.json` | ⭐ do the two levers COMPOSE or cancel — the deployment question |
+
+⭐ **Everything else is complete and banked.** The verdict in §12 does not depend on the three rows above: the committed exit is already **FAILURE** on two independent legs (`top32_infeasible` within-noise, `ade_m` separated-worse), and the shipping recommendation (`gate2`) rests on the 480-window measurement already in the repo.
