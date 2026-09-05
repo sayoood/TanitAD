@@ -242,3 +242,50 @@ def test_the_shared_kinematic_module_the_provenance_names_really_exists():
     out = ha0_ext(torch.tensor([10.0]), torch.tensor([0.5]),
                   torch.tensor([0.01]), [1.0, 2.0])
     assert out.shape[0] == 1 and out.shape[1] == 2
+
+
+# =========================================================================== #
+# ⛔⛔ WHY THE PORT CALLS refav1's DERIVATION AND **NOT** echo_gate.ha0_ext      #
+# =========================================================================== #
+def test_the_two_shared_kinematics_disagree_by_metres_so_the_choice_is_material():
+    """⛔ THERE ARE **TWO** ``ha0_ext`` KINEMATICS IN THE PROGRAMME AND THEY ARE
+    NOT INTERCHANGEABLE — MEASURED HERE, NOT ASSERTED.
+
+    * ``tanitad.eval.echo_gate.ha0_ext`` → ``refc_v3.kinematic_goal_extrapolation``
+      is the CLOSED FORM: constant ``a0``/``k0`` integrated exactly, in the goal
+      label's frame. It is the right object for the GOAL LABEL, which is what it
+      was built for.
+    * ``refav1_arm.paths_from_controls`` → ``refa_v1_plan.unicycle_paths`` is the
+      DISCRETE 0.1 s unicycle. It is what ``ha``, ``ha0`` and refav1's own
+      ``ha0_ext`` are integrated through, and therefore what an arm on this dump
+      grid must use.
+
+    On plausible ego states they differ by up to **~1.9 m at 6 s** — the same
+    order as the whole model margin. So "call the same shared kinematic" has two
+    readings, and picking the wrong one would have made the REF-C ``ha0_ext``
+    incomparable with refav1's while looking like the more principled choice.
+    The port uses the harness integrator; this test exists so nobody
+    "simplifies" it to the other one, and so the size of the gap is on record.
+    """
+    from tanitad.eval.echo_gate import ha0_ext as closed_form
+    n = 60
+    taus = [round(rc.DT_FRAME * (i + 1), 3) for i in range(n)]
+    worst = 0.0
+    for v0, a0, k0 in [(10.0, 0.0, 0.0), (10.0, 0.5, 0.01), (8.0, -0.4, 0.03),
+                       (15.0, 1.0, -0.02), (5.0, 0.0, 0.05)]:
+        P = closed_form(torch.tensor([v0]), torch.tensor([a0]),
+                        torch.tensor([k0]), taus)[0, :, :2]
+        ctrl = torch.tensor([[a0, k0]]).expand(n, 2)
+        Q = ra.paths_from_controls(ctrl, v0, rc.DT_FRAME, n,
+                                   action_units="kappa")[0]
+        d = float((P - Q).norm(dim=-1).max())
+        worst = max(worst, d)
+        if a0 == 0.0 and k0 == 0.0:
+            assert d < 1e-5, ("the two integrators must agree exactly on the "
+                              "degenerate straight-constant-speed case; if "
+                              "they do not, one of them is broken")
+    assert worst > 0.5, (
+        f"the two kinematics now agree to {worst:.4f} m over 6 s. That is a "
+        f"CHANGE worth knowing about — re-read which one the harness should "
+        f"call rather than deleting this test.")
+    print(f"[measured] closed-form vs discrete ha0_ext: max {worst:.4f} m @6 s")
