@@ -13,13 +13,23 @@ clone `C:/Users/Admin/tanitad-wt` with `PYTHONPATH=<clone>/stack;<clone>/tanitev
 at ~200 MiB free). Records land in `C:/Users/Admin/refav1_margin/p4out/rec_<tag>.json`
 with a `dump_<tag>/` beside them.
 
-| lane | script (scratchpad) | arm | waits for |
-|---|---|---|---|
-| A | `queueA.sh` | `wk15` -> `wk151` | (running) |
-| B2 | `queueB2.sh` | `ccosh_w000` | the `cos_wk` PIDs (done) |
-| D | `queueD.sh` | `l3ladder` | `ZZQUEUEA-DONE` |
-| E | `queueE.sh` | `kamm07` | `ZZQUEUEB2-DONE` |
-| F | `queueF.sh` | `combined` | `ZZQUEUED-DONE` |
+| lane | script (scratchpad) | arm | waits for | state at handoff |
+|---|---|---|---|---|
+| A | `queueA.sh` | `wk15` -> `wk151` | — | `wk15` LANDED; `wk151` running |
+| B2 | `queueB2.sh` | `ccosh_w000` | the `cos_wk` PIDs | **LANDED** (a clean null, RESULT.md §7.4) |
+| **Dv2** | `queueDv2.sh` | `l3ladder` | `ZZQUEUEA-DONE` in `queueA.log` | waiting |
+| **Ev2** | `queueEv2.sh` | `kamm07` | `ZZQUEUEB2-DONE` in `queueB2.log` | **running** since 18:33:59Z |
+| **Fv3** | `queueFv3.sh` | `combined` | `ZZQUEUED-DONE` in **`queueDv2.log`** | waiting |
+
+⛔ **THE v2/v3 SUFFIXES ARE A BUG FIX, NOT HOUSEKEEPING — do not resurrect the
+originals.** The first versions gated on `live python arm processes <= 1`, but
+**one arm is TWO `python.exe` processes** (a parent and its child, both carrying
+the full command line). The gate could therefore never open while any arm ran, so
+the lanes silently serialised to one arm at a time instead of the intended two.
+`v2` gates on `<= 2`. `Fv3` additionally points at `queueDv2.log`, because the
+marker it waits for is now written there and never to the dead `queueD.log`.
+⚠️ The scripts were **replaced under new filenames, never edited in place** —
+bash reads a running script lazily by byte offset.
 
 Each lane polls for the **ABSENCE** of `python.exe` processes whose command line
 names the arm tool — never for a success marker, and never with a shell whose own
