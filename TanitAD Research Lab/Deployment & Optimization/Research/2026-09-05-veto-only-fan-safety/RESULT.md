@@ -272,6 +272,37 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 
 ⚠️ **Stated honestly: the 2,000-step arm's WORSENINGS are NOT attributable.** The dose-matched zero-information control (`ctrl_null` at 2,000 steps) was **queued and then deliberately dropped** when `veto2k_s0` landed with no separated improvement — a floor is a hurdle for a *positive* claim and cannot make an unseparated delta quotable, so the 36 GPU-minutes went to the T1 four-family read instead (a committed deliverable). ⇒ `sel_peak_g` +0.0105/+0.0343 and `R3` +0.0121/+0.0136 at 2 k **cannot be split between the veto and the optimizer's own drift**, and are reported as unattributed rather than as veto effects. The decision and its consequence are recorded in `raw/chain_after_arms2.sh`, not left as a gap.
 
+
+## 8. ⭐⭐ THE 0-TRAINING PRODUCT — a top-2 kinematic gate makes the DRIVEN path 31 % less envelope-violating at no measurable ADE cost
+
+§1.3 measured that the rule reward's own argmax picks an envelope-violating candidate on **5.4 %** of windows against refcv3's trained selector's **10.8 %** — the scorer is a better feasibility ranker than the network. `stack/scripts/rl_fan_rerank_probe.py` turns that into a product by re-ranking the SAME 128 emitted candidates under several rules and pricing each in the ADE it gives up. **The model is never retrained.** 480 EVAL windows / 138 episodes (139 lead windows), paired episode-cluster bootstrap n_boot 4,000. Deltas below are **model − rule**, so a positive `Δenv` means the rule is *safer* and a negative `Δade` means the rule is *worse on ADE*.
+
+| rule | `ade_m` | Δade vs model | sep | `sel_envelope` | Δenv | sep | `sel_peak_g` | agrees with model |
+|---|---|---|---|---|---|---|---|---|
+| **model** (deployed) | 0.4742 | — | — | 0.1062 | — | — | 0.1815 | 1.000 |
+| ⭐ **gate2** | **0.4705** | **+0.0037** | **no** | **0.0729** | **+0.0333** | **yes** | **0.1459** | 0.523 |
+| **gate4** | 0.4972 | −0.0230 | **no** | 0.0625 | +0.0437 | yes | 0.1255 | 0.317 |
+| gate8 | 0.5194 | −0.0452 | yes | 0.0583 | +0.0479 | yes | 0.1163 | 0.231 |
+| gate16 / gate32 / gate128 | 0.5328–0.5397 | −0.059…−0.066 | yes | 0.0583 | +0.0479 | yes | 0.1146–0.1150 | ~0.21 |
+| `kin_only` (no model ranking at all) | 0.5397 | −0.0655 | yes | 0.0583 | +0.0479 | yes | 0.1147 | 0.212 |
+| `reward_full` (needs the lead track) | 0.9474 | −0.4732 | yes | 0.0542 | +0.0521 | yes | 0.3612 | — |
+| `oracle` (best-ADE, T0 ceiling) | 0.2227 | +0.2515 | yes | **0.1437** | −0.0375 | yes | 0.2029 | — |
+
+⭐⭐ **`gate2` is close to a free lunch and it is the deliverable.** Keep the model's own top-2 by `sel_score` — so the semantic and tactical ranking the network learned is preserved — and pick between those two by `feasibility + comfort`:
+
+* selected-path `envelope` **0.1062 → 0.0729**, a **−31 %** relative fall, **separated**;
+* selected-path `peak_g` **0.1815 → 0.1459 g**, **−20 %**;
+* `ade_m` **0.4742 → 0.4705** — **+0.0037 in the model's favour and NOT separated**, i.e. **no measurable ADE cost**;
+* it changes the pick on **48 %** of windows, so the effect is not a rounding artifact of rarely intervening.
+
+⛔ **The kinematic score reads NO SCENE INPUT.** `feasibility` and `comfort` are functions of the candidate's own waypoints only — no lead, no obstacle track, no ego state — so the gate is admissible under the **vision-only-at-inference** rule with **zero new perception** and zero new parameters. `reward_full` is reported for contrast precisely because it is *not*: it needs the lead track, and it also destroys ADE (0.9474) while chasing feasibility.
+
+⭐ **The `oracle` row is the finding that explains why this works.** The fan's best-ADE candidate is the **least** drivable one — `sel_envelope` **0.1437** against the model's 0.1062 and the gate's 0.0729. Matching the human's path most closely and being drivable are in tension in this fan (`D-RL-FANSAFE-1`, now reproduced from the other side), which is exactly why a small, ADE-neutral gate can buy feasibility: it is trading away candidates that were never worth their ADE.
+
+⚠️ **Set against the RL result honestly.** The veto at 200 steps moved the *fan's* mean peak-g by **−0.098 g** and made the *selected* path slightly worse (`sel_peak_g` +0.0155/+0.0080). The gate moves the *selected* path by **−0.036 g** and **−31 % envelope** with no ADE cost, at **zero training**. **They act on different objects and can be combined** — the combined measurement (the gate applied to the veto'd checkpoint's fan) is `raw/fan_rerank_veto200s0.json`, queued behind the T1 evals.
+
+⚠️ **Scope of the withdrawal in §6/RETRACTION #30.** The artifact these numbers come from also carried a shrink sweep built on the wrong operand, and **only that block is withdrawn**. The selection-rule numbers use `score_paths`, the kinematic components, `sel_score` and the per-candidate ADE — none of which touch `out["offset"]` — so they are unaffected; they are quoted from the quarantined artifact and re-confirmed by the corrected re-run (`raw/fan_rerank_base.json`). ⛔ Stating this explicitly rather than re-quoting a "clean" file is the point: a withdrawal that is not scoped is either too wide or too narrow, and both are wrong.
+
 ---
 
 ## 9. Escalations, follow-ups and stated limits
