@@ -1,12 +1,6 @@
 # H-REFAV1-SURFACE-1 — the paired delta and the cost-surface weight sweep
 
-**status: IN PROGRESS — done: PHASE 1 LANDED (§1) — the decision-grade four-family paired
-episode-cluster bootstrap over the three banked Thor dumps, n = 282 windows / 141 clusters,
-n_boot 2000, known-value control PASS, floors bit-identical across dumps, LONGITUDINAL
-distance-keeping present (n = 90 LEAD windows), STRATEGIC unavailable with reason. THE
-REFUTATION SURVIVES, and it hardens: `ccos` compensated is separated WORSE than `cos` on ADE and
-on every metric of three families. / next: the GT distance-keeping reference (§1d), then PHASE 2
-`SPEC.md` (pre-registered) and the weight + goal-source arms.**
+**status: IN PROGRESS — done: PHASE 1 (§1) the decision-grade four-family paired bootstrap (refutation UPHELD; the cos planner's lateral row is a WINDOW-LEVEL identity with constant velocity); PHASE 2 SPEC pre-registered with the SELECT/SCORE split banked before any weight was computed; PHASE 2 STAGE A (§2) the 59-setting exhaustive screen at zero GPU — W_JERK is INERT on 24 of 26 candidates and functions only as a switch that turns the SEARCH off; the decoded goal is DIRECTIONALLY RIGHT (0.778 [0.625, 0.923], excludes chance) but commits to a turn on only 0.205 [0.128, 0.293] of the windows where GT turns; cv's argmin share is 0.507 at ALL 59 settings, so half the grid is unreachable by any re-weighting. / next: STAGE B (B1 pure-goal weights + B2 the T0 oracle-goal discriminator) — prepared, SCORE-only views built on Thor, BLOCKED ON GPU ONLY (Thor is running the chord regression arm, the dev box a sibling's panel; neither displaced).**
 
 Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step **21,109** ·
 **T1** (self-action open loop) for every planner arm; **T0** for `ol` (world-model diagnostic only).
@@ -157,4 +151,111 @@ controls by **being** one of them.
 
 ---
 
-*(§2 — phase 2 pre-registration and arms — lands next)*
+*(§2 lands below; Stage B arms follow when GPU frees)*
+
+---
+
+## 2. PHASE 2, Stage A — the exhaustive weight screen (zero GPU) and the goal-quality read
+
+**Pre-registered in `SPEC.md` before this ran; the SELECT/SCORE split was banked in the same
+commit.** Instrument `tools/surface_screen2.py`, raw `raw/screen_stageA2.json` /
+`raw/screen_stageA2.md`, `raw/goal_quality_ci.json`.
+
+The planner's own closure `total(n) = goal(n) + W_JERK·jerk_raw(n) + W_KAPPA·kap_raw(n)`
+reproduces on the banked box panel to **1.6e-08**, so `argmin_n total(n)` at any weight triple is
+exact arithmetic on already-measured fields. **59 weight settings** were evaluated (two
+one-variable log sweeps ×{0, 1e-6, 1e-4, 1e-2, 1e-1, 1, 10, 1e3, 1e6}, a 5×5 joint grid, shipped,
+compensated, and the regression arm) at **zero GPU cost**.
+
+⛔ **What Stage A may not conclude, stated in the SPEC and repeated here:** the box is **26**
+injected/seeded candidates while the real planner searches **300 samples × 30 iterations**. This is
+a SCREEN. The committed outcomes are decided by Stage B.
+
+### 2a. ⛔ THE DELIBERATE REGRESSION FAILED FIRST — and the reason is a finding
+
+The pre-registered regression arm was `W_JERK × 1e4`, expected to force `cv` on ~100 % of windows.
+**It did not move a single decision.** The reason, MEASURED:
+
+> **24 of the 26 candidates have `jerk_raw` identically 0.** Only `seed0` (median 0, max 0.280) and
+> `proposal` (median **2.471**, max 6.197) carry any jerk at all.
+
+⇒ **`W_JERK` cannot re-rank 24 of the 26 candidates, at any magnitude.** Its ONLY function on this
+surface is to penalise the **iCEM proposal** — the *searched* plan — and, weakly, the seed. At the
+compensated `W_JERK` = 12.86 the proposal's median penalty is **31.8**, against a goal term whose
+whole range is [0, 2]. At the *shipped* 0.02 it is 0.049, against a `cos` goal term of ~1e-7.
+
+⭐ **This re-reads the ranked suspect in `H-REFAV1-SURFACE-1`.** `W_JERK` is not "dominating a goal
+term that can now compete" across the candidate set — it is a **switch that turns the SEARCH off**.
+The `proposal` wins **0.0 %** of windows at every setting tested except the fully unpenalised corner
+(2.1 %). ⚠️ Correspondingly, *no* value of `W_JERK` was found that lets the search win.
+
+The regression arm was re-designed for this instrument (`W_KAPPA × 1e6`, which must drive κ ≡ 0) and
+**PASSES**: `frac_plan_turns` **0.0000**. *(Both the failure and the re-design are recorded rather
+than quietly swapped: the original arm was mis-specified for the box, and finding that out is what
+the control is for.)*
+
+### 2b. ⭐⭐ THE GOAL IS PRECISE AND HAS ALMOST NO RECALL — and no weight can fix that
+
+This block involves **no weights at all**. It compares the decoded goal's own canonical curvature
+(`seed0`'s κ, i.e. what the tactical head asks for) against the GT trajectory's curvature.
+Episode-cluster bootstrap, n_boot 2000.
+
+| quantity | value [95 % CI] | n windows / clusters |
+|---|---|---|
+| GT is actually turning | 0.4681 [0.4043, 0.5355] | 282 / 141 |
+| **the decoded goal proposes a turn WHEN GT TURNS** | **0.2045 [0.1280, 0.2932]** | 132 / 92 |
+| the decoded goal proposes a turn when GT is straight | 0.0733 [0.0347, 0.1169] | 150 / 101 |
+| **the goal's DIRECTION is correct, given both turn** | **0.7778 [0.6249, 0.9231]** | 27 / 21 |
+
+⇒ **When the goal commits to a turn it is right — 77.8 %, and the interval excludes chance (0.5).
+But it commits on only 20.5 % of the windows where the car actually turns.** The failure is
+**recall, not direction**. On the other ~79 % the goal *is* the straight/zero-action rollout, and
+there the cost comparison has nothing to prefer: `cv`'s share of the argmin is **0.507 at every one
+of the 59 weight settings**, unchanged from zero penalty to 1e6× — because on the HOLD stratum every
+candidate scores exactly 1.0 (banked: ptp 0.0 on 133/133).
+
+⛔ **Half of the grid is unreachable by ANY re-weighting, by construction.** That is not a
+hypothesis; it is arithmetic on the banked panel.
+
+### 2c. The weight screen — what the surface can and cannot buy
+
+Selected rows (SELECT half, n = 140; the full 59-row table is in `raw/screen_stageA2.md`):
+
+| setting | W_JERK | W_KAPPA | plan turns | turns when GT turns | sign correct given both turn (n) | follows goal sign | `proposal` share |
+|---|---|---|---|---|---|---|---|
+| shipped | 0.02 | 0.05 | 0.186 | 0.271 | 0.579 (19) | 0.864 | 0.000 |
+| compensated | 12.86 | 32.15 | 0.129 | 0.186 | 0.846 (13) | 0.818 | 0.000 |
+| `W_KAPPA` → 0 | 12.86 | 0 | 0.293 | 0.400 | 0.571 (28) | 0.864 | 0.000 |
+| **both → 0 (pure goal)** | **0** | **0** | **0.300** | **0.414** | **0.586 (29)** | **0.909** | **0.021** |
+| regression `W_KAPPA` × 1e6 ⛔ | 12.86 | 3.2e7 | 0.000 | 0.000 | — (0) | 0.000 | 0.000 |
+
+Three things this says, none of which needed a GPU:
+
+1. **The weights trade turn RATE against turn CORRECTNESS, and the product barely moves.** The rate
+   of *correct* turns on GT-turning windows (`turns when GT turns` × `sign correct`) is **0.157** at
+   shipped, **0.157** at compensated, and **0.243** at zero penalty. Removing the entire penalty
+   budget buys **0.157 → 0.243**; it never approaches 1.
+2. **The `W_JERK` axis is flat.** Nine settings spanning **1e13** in magnitude give an identical
+   turn rate (0.129) and identical sign correctness (0.846). Only its effect on `seed0`'s share
+   (0.171 → 0.000) moves at all.
+3. **`W_KAPPA` is the only live axis, and only below ~0.3.** Between 0.32 and 3.2e4 nothing changes;
+   above that everything is straight; below it the extra turns bought are mostly the *wrong*
+   direction (sign correctness falls 0.846 → 0.571).
+
+### 2d. What Stage A hands to Stage B
+
+The SPEC's selection rule (maximise turn-goal κ-sign agreement on SELECT, subject to
+`frac_nontrivial ≥ 0.10`) picks **`W_JERK = 0, W_KAPPA = 0`** — the **pure-goal surface**, agreement
+**0.909** on SELECT. That is also the setting maximising the correct-turn rate, so the rule and the
+alternative reading agree.
+
+⚠️ **A zero-penalty arm is not obviously safe in the REAL planner**, and that is precisely why it
+must be run rather than assumed: the box holds only tame designed candidates, while the live search
+draws 300 coloured-noise samples per iteration with nothing penalising them. Stage B measures what
+that does to the four families. ⛔ The screen cannot answer it.
+
+**Stage B is prepared and blocked on GPU only** — Thor is running the `chord` deliberate-regression
+arm (B3, 42 min in of ~3 h at the time of writing) and the dev-box RTX 4060 is running a sibling's
+withheld-bank panel. Neither is displaced. The SCORE-only episode and cache views
+(`/home/nvidia/refav1_ccos/score_{eps,cache}`, 71 + 71 symlinks, verified) are already built so B1
+and B2 start the moment Thor frees.
