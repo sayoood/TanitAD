@@ -59,10 +59,36 @@ going 77.5 % zero — the bar was fixed in §2c BEFORE the numbers existed.
 refav1 is now **0.158 m BETTER than the floor on ADE**. The residual sits in the **9
 non-maintain windows**, whose ADE deficit `a_shift` still more than halves.
 
-⚠️ **Two rows are NOT quoted as lever effects** (see §3b.5): `curvature` (+0.0115, only
-1.2x the baseline's own seed sensitivity) and `TAC_traj_lat_correct` (-0.1000 = exactly
--4/40 windows). Both are **pending the in-rig baseline seed replicate `T_wk15_s1`**,
-which is running.
+⭐ **THE FULL PANEL LANDED, and it changed three things (§3c):**
+
+1. ⛔⛔ **`T_lonseam` is EXACTLY inert — `+0.0000 [0,0]` on ALL ELEVEN metrics**, and its
+   floor comparison is bit-identical to the baseline's. Every arm carries `W_JERK = 0.0`,
+   so repairing the jerk seam **cannot change the objective by one bit**. This CONFIRMS on
+   a second GPU a diagnosis the sibling stream reached independently (`32698bd`). It is a
+   null about **a term that was switched OFF**, never about the jerk seam — and it means
+   **P4's first named successor is BLOCKED BY CONSTRUCTION at these weights**, promoting
+   `goal_reach_s` to the live next lever. (Same-breath non-zero control: `T_lonshift` on
+   the same panel reads −0.2283.)
+2. ⛔ **The pre-registered "D2 and D1 are indistinguishable" outcome LARGELY FIRES.**
+   `T_lonshift − T_lonvocab` straddles zero on LON speed (−0.0549 [−0.1248, **+0.0068**]),
+   along and ADE, and separates on ONE metric of eleven (accel −0.0704) at only **2.1×**
+   the seed floor. The expressivity table's *"D2 dominates on every column"* **does not
+   transfer to the planner** — reported as refuted at the ARM level, as pre-registered.
+   Both designs are nonetheless real levers: D1 closes **36.0 %** of the LON-speed gap,
+   D2 **47.4 %**.
+3. ⭐ **RETRACTING MY OWN EARLIER READING.** I had called curvature and tactical-lat "not
+   established" using the DEV-BOX baseline seed floor. The **in-rig** floors
+   (`T_wk15_s1 − T_wk15`) are ~7× smaller — +0.0010 and **+0.0000** — so on Thor both ARE
+   attributable: `a_shift` carries a **real small curvature cost** (+0.0115, 11.5× floor)
+   and a **real tactical-lat cost** (−0.1000 = 4 windows of 40). ⚠️ And the seed floor is
+   **RIG-DEPENDENT** — the same baseline pair reads −0.1000 on the dev box and +0.0000 on
+   Thor — so a seed floor must be quoted **with its rig and its arm**, never as a
+   programme constant.
+
+⭐ **And against the WEAKER floor `ha0`, `a_shift` WINS the longitudinal family outright**
+(speed −0.1624 [−0.2676, −0.0557], along −0.1601, accel −0.1357, all separated) where the
+shipped arm LOST it (+0.0659, separated). ⚠️ `ha0` is constant-velocity on 100 % of
+windows, so its LATERAL rows are a control, never planning skill.
 
 ---
 
@@ -409,6 +435,136 @@ than halves (+0.3228 → +0.1486).
   seed sensitivities differ, so the attribution is **pending `T_wk15_s1`**.
 ⭐ Both are named as pending rather than reported either way — that is what the
 seed-floor rule is for, and it is doing real work here rather than being recited.
+
+---
+
+## 3c. ⭐⭐⭐ THE FULL THOR PANEL — D1 vs D2, the inert seam, and the in-rig baseline floor
+
+Batch 2 landed 23:13 UTC (all EXIT-0): `T_lonvocab` (D1 `a_sustain`), `T_wk15_s1`
+(the in-rig BASELINE seed replicate) and `T_lonseam` (the jerk seam).
+
+### 3c.1 ⛔⛔ `T_lonseam` IS EXACTLY INERT — confirmed independently on a SECOND rig
+
+| `T_lonseam.cl − T_wk15.cl` | value |
+|---|---|
+| `ade_m`, `fde_m` | **+0.0000 [+0.0000, +0.0000]** |
+| all three `LON_*` | **+0.0000 [+0.0000, +0.0000]** |
+| all three `LAT_*` | **+0.0000 [+0.0000, +0.0000]** |
+| both `TAC_*` | **+0.0000 [+0.0000, +0.0000]** |
+| `curvature_mae_1pm` | **+0.000000 [+0.000000, +0.000000]** |
+| `T_lonseam.cl − ha0_ext` | **+0.4818 / −0.0226 / +0.4079** — IDENTICAL to the baseline's |
+
+⚠️ **Every "exactly 0.0" here carries its same-breath NON-ZERO control**: on the SAME
+panel, SAME rig, SAME windows, `T_lonshift.cl − T_wk15.cl` reads **−0.2283** on LON
+speed and **+0.0115** on curvature, and `T_lonseam.cl` mean curvature is **0.032817**,
+bit-identical to `T_wk15.cl`'s **0.032817**. So the zero is arithmetic, not a dead
+harness.
+
+⭐ **This CONFIRMS, on a second GPU, a diagnosis the sibling stream reached independently
+and committed as `32698bd`:** the cost is `c + w_jerk·mean(jerk²)` and every arm in this
+panel carries the `wk15` triple `(0.0, 15.11245, 64.297)` — **`W_JERK = 0.0`** — so
+repairing the jerk seam **cannot change the objective by a single bit**.
+⇒ **This is a null about a term that was switched OFF, NOT a null about the jerk seam**,
+and it must never be quoted as "the cost is not the longitudinal blocker".
+⛔ **CONSEQUENCE FOR P4:** the brief's first named successor — *the jerk-seam repair* —
+is **BLOCKED BY CONSTRUCTION at these weights.** Making it live requires `W_JERK > 0`,
+which is a WEIGHT CHANGE, not a one-variable lever against `wk15`, and would need its
+own pre-registration. `goal_reach_s` therefore becomes the live next lever.
+⭐ It also makes **`T_loncomb` (D2 + seam) a free, unplanned REPLICATE of `T_lonshift`** —
+the seam contributes nothing, so any difference between them is pure inference noise.
+
+### 3c.2 The in-rig BASELINE seed floor settles both pending rows
+
+`T_wk15_s1` is `T_wk15` with `--plan-seed 0 → 1` and nothing else.
+
+| metric | `T_wk15_s1 − T_wk15` | separated |
+|---|---|---|
+| `ade_m` | −0.0047 [−0.0215, +0.0117] | no |
+| `LON_speed_mae_mps` | −0.0069 [−0.0227, +0.0018] | no |
+| `LON_accel_mae_mps2` | **−0.0132 [−0.0284, −0.0018]** | **yes** |
+| `LAT_yaw_rate_mae_radps` | **+0.0016 [+0.0001, +0.0038]** | **yes** |
+| `TAC_traj_lat_correct` | **+0.0000 [+0.0000, +0.0000]** | no |
+| `curvature_mae_1pm` | +0.0010 [−0.0000, +0.0027] | no |
+
+⇒ **RETRACTION OF MY OWN EARLIER READING (§3b.5), made before the arm existed.** I called
+curvature and tactical-lat "not established" using the DEV-BOX baseline seed floor
+(+0.0093 curvature, −0.1000 TAC-lat). The **in-rig** floors are ~7× smaller
+(+0.0010 / +0.0000), so on Thor **both effects ARE attributable**:
+
+| metric | lever (`T_lonshift − T_wk15`) | in-rig baseline floor | ratio | verdict |
+|---|---|---|---|---|
+| `curvature_mae_1pm` | +0.0115 | +0.0010 | **11.5×** | ✅ REAL, a small curvature COST |
+| `TAC_traj_lat_correct` | −0.1000 | +0.0000 | — | ✅ REAL, a tactical COST |
+
+⚠️ **And the seed floor is RIG-DEPENDENT, which is itself the finding.** The same
+baseline seed pair reads −0.1000 on tactical-lat on the dev box and **+0.0000** on Thor.
+`TAC_traj_lat_correct` is a fraction over 40 windows (granularity 1/40), so −0.1000 is
+exactly **4 windows** — at that granularity a metric can be seed-stable on one rig and
+move a whole 4 windows on another. ⇒ **quote a seed floor with its RIG and its ARM**,
+never as a programme constant.
+
+### 3c.3 ⛔ D2 vs D1 — the pre-registered "indistinguishable" outcome LARGELY FIRES
+
+`RESULT.md` §5 of the predecessor committed, before any number existed: *"If `lonshift`
+and `lonvocab` are indistinguishable — … report the attribution as refuted at the ARM
+level even though it holds at the expressivity level."*
+
+| metric | `T_lonshift − T_lonvocab` (D2 − D1) | seed floor | verdict |
+|---|---|---|---|
+| `LON_speed_mae_mps` | −0.0549 [−0.1248, **+0.0068**] | −0.0190 | ⛔ **straddles — NOT distinguishable** |
+| `LON_along_mae_m` | −0.0228 [−0.0808, +0.0297] | −0.0133 | straddles |
+| `LON_accel_mae_mps2` | **−0.0704 [−0.1232, −0.0242]** | −0.0329 | separated, but only **2.1×** |
+| `ade_m` | −0.0236 [−0.0824, +0.0322] | −0.0089 | straddles |
+| `TAC_traj_lat_correct` | +0.0000 [0, 0] | — | identical |
+
+⇒ **At the ARM level D2 does NOT dominate D1.** They differ separably on ONE metric of
+eleven (`LON accel`), at ~2× the seed floor. The expressivity table's *"D2 dominates
+`a_sustain` on every column"* **does not transfer to the planner**, and per the
+pre-registration that is reported as the attribution being **refuted at the arm level
+while holding at the expressivity level** — not quietly dropped.
+
+⭐ **What DOES survive:** both designs are real longitudinal levers, and D2 closes more
+of the gap than D1 in absolute terms.
+
+| arm | `cl − ha0_ext` LON speed | gap closed | `cl − ha0_ext` LON accel | gap closed |
+|---|---|---|---|---|
+| `T_wk15` (shipped) | +0.4818 | — | +0.4079 | — |
+| `T_lonseam` (INERT) | +0.4818 | **0.0 %** | +0.4079 | 0.0 % |
+| `T_lonvocab` (D1 `a_sustain`) | +0.3084 | **36.0 %** | +0.2626 | 35.6 % |
+| ⭐ `T_lonshift` (D2 `a_shift`) | **+0.2535** | **47.4 %** | **+0.1922** | **52.9 %** |
+| `T_lonshift_s1` (D2, seed 1) | +0.2345 | 51.3 % | +0.1593 | 60.9 % |
+
+### 3c.4 The four-family table the brief asked for — shipped vs `a_sustain` vs `a_shift`
+
+Against **both** floors, Thor rig, paired episode-cluster bootstrap (negative = refav1
+better, except `TAC_*_correct` where higher is better):
+
+| family | metric | shipped `T_wk15` − `ha0_ext` | `a_sustain` − `ha0_ext` | `a_shift` − `ha0_ext` | shipped − `ha0` | `a_shift` − `ha0` |
+|---|---|---|---|---|---|---|
+| ADE | `ade_m` | +0.0138 | −0.0653 | **−0.0889** | −0.0341 | **−0.1368** ✅sep |
+| ADE | `fde_m` | −0.1070 | −0.3074 | **−0.3706** ✅sep | −0.0990 | **−0.3626** ✅sep |
+| LON | `speed_mae_mps` | **+0.4818** ✅sep | **+0.3084** ✅sep | **+0.2535** ✅sep | +0.0659 ✅sep | **−0.1624** ✅sep |
+| LON | `along_mae_m` | −0.0226 | −0.1403 | −0.1632 | −0.0195 | **−0.1601** ✅sep |
+| LON | `accel_mae_mps2` | **+0.4079** ✅sep | **+0.2626** ✅sep | **+0.1922** ✅sep | +0.0800 | **−0.1357** ✅sep |
+| LON | distance-keeping | n = 4 / 1 / 4 — ⛔ UNDERPOWERED, reported with its n, not quotable |
+| LAT | `cross_mae_m` | −0.0347 | −0.0190 | −0.0100 | +0.0029 | **+0.0275** ✅sep |
+| LAT | `heading_mae_deg` | **−4.5659** ✅sep | **−3.5763** ✅sep | **−3.5545** ✅sep | −0.6360 | +0.2854 |
+| LAT | `yaw_rate_mae_radps` | **−0.1155** ✅sep | **−0.1027** ✅sep | **−0.0998** ✅sep | −0.0084 | **+0.0073** ✅sep |
+| LAT | `curvature_mae_1pm` | **−0.0503** ✅sep | **−0.0405** ✅sep | **−0.0401** ✅sep | −0.0090 ✅sep | **+0.0025** ✅sep |
+| TAC | `lat_correct` | −0.1500 | **−0.2500** ✅sep | **−0.2500** ✅sep | **+0.1000** ✅sep | +0.0000 |
+| TAC | `lon_correct` | **−0.2750** ✅sep | **−0.2000** ✅sep | **−0.2750** ✅sep | +0.0250 | +0.0250 |
+| STRAT | — | UNAVAILABLE (n = 0), reason recorded — a WORK ITEM, not a pass |
+
+⚠️ Every cell above is READ from `raw/thor/pd_thor.md` / `lat_curv_thor_full.json`. An
+earlier draft of this table carried a DERIVED `a_sustain − ha0_ext` ADE of −0.0554; the
+measured value is **−0.0653 [−0.2095, +0.0644]** and the derived one was replaced before
+this file was banked.
+
+⭐ **Against the WEAKER floor `ha0` (constant velocity), `a_shift` now WINS the
+longitudinal family outright** — speed **−0.1624 [−0.2676, −0.0557]**, along −0.1601,
+accel −0.1357, all separated — where the shipped arm LOST it (+0.0659 ✅sep).
+⚠️ `ha0` is CONSTANT-VELOCITY on 100 % of windows and its LATERAL rows are a control,
+never planning skill (the arm's own trivial-profile instrument says so).
 
 ---
 
