@@ -59,6 +59,23 @@ ABLATIONS = [
 ]
 
 
+def collect_defects(rec):
+    """Every `_defects` list in the record, top level AND one level down.
+
+    ⛔ The writer puts them INSIDE the arm block — `refcv3_arm.py` appends to
+    `rec["refcv3"]["_defects"]` while its own comment claims they are "collected at
+    the top level".  A reader that checks only `rec["_defects"]` therefore returns
+    ok=True for a record carrying a real defect, which is how the STRATEGIC family
+    stayed silently absent.  Scanning both levels fixes the gate for the records that
+    ALREADY EXIST, not merely for future ones.
+    """
+    found = list(rec.get("_defects") or [])
+    for value in rec.values():
+        if isinstance(value, dict):
+            found.extend(value.get("_defects") or [])
+    return found
+
+
 def record_ok(path: str):
     """(ok, why). ⛔ Existence is not production: it must parse and be defect-free."""
     if not os.path.isfile(path) or os.path.getsize(path) == 0:
@@ -68,7 +85,7 @@ def record_ok(path: str):
             rec = json.load(fh)
     except Exception as ex:                                     # noqa: BLE001
         return False, f"unparseable ({type(ex).__name__})"
-    defects = rec.get("_defects") or []
+    defects = collect_defects(rec)
     if defects:
         return False, f"carries {len(defects)} DEFECT(s): {defects[:2]}"
     return True, "parses, no defects"

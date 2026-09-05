@@ -702,3 +702,55 @@ instead of a capability (`M60`). **I classified a queue by its owner rather than
 
 ⛔ **A reversed ruling must be RECORDED.** A ruling silently abandoned leaves the register asserting a
 priority that nothing is executing, and the next reader cannot tell a decision from a drift.
+
+## M63. ⭐ THE HIERARCHY PANEL'S DEFECT GATE COULD NOT FIRE — fixed reader-side, and my own mutation proof was under-mutated
+
+### 1. The defect, confirmed at source
+
+* **writer** — `taniteval/tools/refcv3_arm.py:2633`: `ref.setdefault("_defects", []).append(...)`,
+  where `ref` is `rec["refcv3"]`;
+* **reader** — `taniteval/tools/run_hierarchy_panel.py:71`: `rec.get("_defects")`.
+
+⛔ **The reader looks at the top level; the writer files one level down.** And the writer's OWN comment
+claims otherwise — *"recorded ON the block AND collected at the top level, so a driver can exit
+non-zero instead of publishing a family-shaped hole."* ⇒ ⭐ **the code contradicts its own documented
+intent, which is why three separate guards over it were all blind** (two source-string matches and a
+test whose NAME asserts "at the top level" while its assertion does not).
+
+⇒ **A record carrying a real defect returned `ok=True`**, and the panel published a family-shaped hole
+as a result. **This is how the STRATEGIC family stayed silently absent from every refcv3 eval.**
+
+### 2. Fixed on the READER, deliberately
+
+`collect_defects()` scans the top level **and one level down**. ⭐ **Reader-side because it rescues the
+records that ALREADY EXIST** — a writer-side fix would only help future runs, and every banked refcv3
+record files its defects under `refcv3`. ⚠️ **Urgency was real, not theoretical: refcv4b's landing
+panel runs this driver in ~6 hours.**
+
+**Pinned by `stack/tests/test_hierarchy_panel_defect_gate.py` — 5 passed.**
+
+### 3. ⭐⭐ The lesson is about the PROOF, not the fix: my mutation was INCOMPLETE
+
+I reverted the **call** (`defects = collect_defects(rec)` -> `rec.get("_defects")`) and left the helper
+**defined**. The proof then reported only **1 of 3** cases discriminating, and its own `>= 2` threshold
+**failed the run** — which is what exposed it.
+
+⛔ **The "both levels" case is a poor discriminator for `record_ok` anyway**: that record also carries a
+top-level `_defects`, which the OLD reader already caught, so it reads `ok=False` on both trees. It
+discriminates only through `collect_defects` being **absent** — which an under-mutation restores.
+
+⇒ ⭐ **CLASS: A MUTATION THAT DOES NOT FULLY REINTRODUCE THE DEFECT UNDERSTATES THE TEST'S POWER.**
+This is the exact mirror of the rule it serves — *a test that cannot fail on the defect it names is
+decoration* — and it is the same failure one level up: **the mutation must restore the pre-fix tree,
+not merely the pre-fix line.** After removing the helper too: **2 of 3 discriminate**, with the
+**clean-record control passing on BOTH**, so the tests cannot be satisfied by a gate that always
+returns `False`.
+
+⭐ **What made this catchable was a threshold that could fail.** A proof script that merely *printed* a
+table would have shown "1 of 3" and been read as success.
+
+### 4. Still open, and NOT fixed here
+
+⛔ The **writer's** comment remains wrong and its placement remains misleading — `refcv3_arm.py` is
+being edited by sibling streams, so it is left alone deliberately rather than raced. ⚠️ **The reader
+fix makes the gate correct regardless**, but the comment should be corrected when that file is quiet.
