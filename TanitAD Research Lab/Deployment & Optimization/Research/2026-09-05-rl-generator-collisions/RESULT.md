@@ -216,6 +216,34 @@ from the other side.
 
 Registered as `D-RL-COLL-PRICE-1`. Artifact: `raw/p5_collision_price.json`.
 
+### 5.1 ⭐ Successor S2 is worth building — and the brief's proposed grading is the wrong one
+
+`rewards._collision` returns **−1 or 0**. Inside a GRPO group every colliding candidate therefore
+gets the **same** value: the term can say *"these are bad"* but never *"this one is worse"*, so it
+supplies **no direction within the colliding set**. Control **G1** measures rather than assumes
+this: within-colliders **std = 0.000e+00**, one distinct value (−1.0). ✅
+
+Severity, though, varies a great deal:
+
+| grading candidate | spread among colliders | usable? |
+|---|---|---|
+| **penetration depth** into the 2 m disc | p10 **0.190 m** → p90 **1.536 m** = **8.09×**; mean 0.842, std 0.495 | ⭐ **yes** |
+| `min_ttc_s` | **p0 = p25 = p50 = 0.5000 s** — saturated at the 0.5 s grid floor for ≥ 75 % of colliders | ⛔ **no** |
+
+And the quantity a group-relative advantage can actually use — the **within-window** spread — is
+**non-degenerate in 19 / 19 mixed windows** (mean range **1.47 m**, mean std 0.43 m).
+
+⇒ **S2 is worth building, graded by PENETRATION DEPTH, not by time-to-contact.** The brief
+proposed *"weight it by time-to-contact rather than a binary"*; MEASURED, a TTC-weighted term
+would be **nearly as flat as the binary it replaces**, because TTC on the 0.5 s grid is quantised
+to its floor for three quarters of colliders. This refines the successor rather than adopting it.
+
+⭐ **An internal cross-check that two independent derivations agree exactly:** **289 of 1,053
+colliders (27.4 %) are SWEPT-ONLY** — no sampled point lies inside the disc, they cross between
+samples — and **1,053 − 764 = 289** is precisely the swept-vs-point gap §1.2 measured by a
+completely different route. Registered as `D-RL-GRADED-TERM-1`.
+Artifact: `raw/p6_graded_term_headroom.json`.
+
 ---
 
 ## 6. P4 — the collision lever at 200 steps, against BOTH floors
