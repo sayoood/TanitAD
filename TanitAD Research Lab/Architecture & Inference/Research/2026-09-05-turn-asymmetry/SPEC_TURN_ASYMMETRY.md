@@ -343,6 +343,85 @@ goal's `GOAL_KAPPA_TURN = 0.08`, so a ladder-seeded plan cannot satisfy the
 it is a **direction-of-travel** reading and can never be the verdict. §5's
 outcomes remain decided on the wide panel alone.
 
+### §3.16 ⛔⛔ AMENDMENT 4, written 00:55 WHILE THE ARMS RAN AND BEFORE ANY `cl` OUTPUT EXISTED — the eval slice's CLUSTER CEILING, and a baseline the recall must be read against
+
+The decoded goal token is an **INPUT** to the planner — `lat_head(intent)` from
+vision + nav + `v0`, identical across all seven banked arms (40/40) **including
+across plan seeds**. Reading it is panel characterisation of exactly the kind
+§1's cluster criterion demands; nothing here touches `cl`, a cost or a plan.
+Tool `raw/goaldecode_probe.py`, CPU only.
+
+**1. ⛔ THE RETENTION STATISTIC (§1.1) IS UNATTRIBUTABLE ON THE WIDE PANEL TOO.**
+
+| decoded goal | n | episodes |
+|---|---|---|
+| `TURN_L` | 13 | **{1, 6}** |
+| `TURN_R` | 35 | **{0, 2, 4, 7}** |
+| carrying **both** | — | ⛔ **NONE** |
+
+The degeneracy of §3.13 **reproduces**, and it is not an artefact of my sampling:
+**the head only ever decodes `TURN_L` in the left-heavy episodes 1 and 6.**
+⇒ §1.1's retention read is **reported as UNATTRIBUTABLE on this panel and not
+used to decide anything.** ⭐ The RECALL statistic is unaffected — its strata are
+GT-defined and **4 episodes carry both directions**.
+
+**2. ⛔ THE WITHIN-EPISODE CONTRAST HAS 4 CLUSTERS, BELOW §1's `>= 5` TARGET —
+and I never set a cluster target for it, which was an omission.** Registering it
+now: **if the within-episode contrast fails to separate, that is a POWER LIMIT,
+not a negative** (`RETRACTION_LOG` #17).
+
+**3. ⭐⭐ THE GOAL HEAD IS ITSELF ASYMMETRIC, AND IT IS UPSTREAM OF THE PENALTY.**
+
+| goal head alone, wide panel | value |
+|---|---|
+| goal recall **LEFT** | **0.3000** [0.0000, 0.6333], n = 30 / 6 eps |
+| goal recall **RIGHT** | **0.6667** [0.3125, 0.9375], n = 30 / 6 eps |
+| pooled contrast R − L | **+0.3667 [−0.3433, +0.8525]** — **NOT separated** |
+| wrong-DIRECTION rate | GT-left **9/30 = 0.3000** vs GT-right **2/30 = 0.0667** — **4.50x** |
+
+*(Control: a stratum against itself reads exactly +0.0000. Control: the GT strata
+on the selected windows read 30 / 30 / 15, matching the panel file.)*
+
+⛔ **This matters for attribution: at `W_KAPPA = 0` the plan IS the goal's
+canonical seed on 21/22 turn-goal windows (§4.3), so the plan's turn recall is
+BOUNDED ABOVE by the head's.** A plan-recall gap is therefore **partly
+INHERITED**, and "the penalty costs LEFT turns first" cannot be read off the
+plan's gap alone.
+
+> ⭐ **REGISTERED, before any `cl` output exists:** the plan's per-direction
+> recall is reported **beside the goal head's** on the same windows, and only the
+> INCREMENT over the head is attributed to the cost. If the plan's contrast
+> separates while the head's does not, that increment is the cost's; if neither
+> separates, the panel is **cluster-limited** and the answer is **outcome C**.
+
+**4. ⛔⛔ THE CEILING, AND IT IS THE CORPUS — NOT THE PANEL SIZE.** The
+within-episode breakdown shows *why* nothing separates:
+
+| episode | goal recall R | goal recall L | R − L |
+|---|---|---|---|
+| 0 | 0.8333 (n=6) | 0.0000 (n=5) | **+0.8333** |
+| 2 | 1.0000 (n=5) | 0.0000 (n=5) | **+1.0000** |
+| **6** | 0.0000 (n=2) | 1.0000 (n=5) | ⛔ **−1.0000** |
+| 7 | 1.0000 (n=5) | 0.0000 (n=5) | **+1.0000** |
+| **mean** | — | — | **+0.4583 [−0.5000, +1.0000]**, not separated |
+
+**Three episodes say right, one says left, and the bootstrap over four clusters
+cannot choose.** ⇒ **On this eval slice, left/right turn behaviour varies MORE
+BETWEEN EPISODES than between directions**, and *every* per-direction contrast —
+the head's, the plan's, anything's — is bounded by 8 episodes of which 4 carry
+both directions and one flips sign.
+
+> ⛔ **CONSEQUENCE, stated before the result so it cannot be read as an excuse:
+> settling the left/right asymmetry needs MORE EPISODES, not more windows.** I
+> raised n per direction from 11/8 to 30/30 and it did not raise the number of
+> CLUSTERS, which is what the decision estimator actually consumes. That is a
+> corpus request, not a compute request, and it is the honest unblock.
+
+⚠️ **This does NOT license reading a null as a result.** If §6 returns
+**outcome C**, the correct report is *"the eval slice cannot resolve an effect of
+this size"* — with this section as the reason — and **not** *"there is no
+asymmetry"*.
+
 ---
 
 ## §4 — THE ARMS, in priority order
