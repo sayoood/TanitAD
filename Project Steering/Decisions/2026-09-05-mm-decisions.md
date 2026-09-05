@@ -2326,3 +2326,64 @@ this file.** A Python module is read whole at start-up, so an in-place edit has 
 in which a concurrent invocation reads a truncated file — and the cost of corrupting a live commit
 path far exceeds the benefit of a better usage message. *(Same reasoning as the standing rule never to
 `sed -i` a supervisor script while it runs.)* Queued for the next quiet window.
+
+## M46. ⛔⛔ THE ZERO-VIOLATION ARM MAY BE SPENDING LESS FRICTION, NOT CHOOSING BETTER PATHS — and the fingerprint was in the table I already quoted
+
+### 1. The confound, stated as physics
+
+The friction circle is `sqrt(a_lat^2 + a_lon^2) <= mu*g`. It is a **budget over TWO axes.** ⇒ an arm
+that stops using the **longitudinal** axis hands its whole budget to the lateral one and satisfies the
+constraint **without improving a single trajectory choice.**
+
+⇒ ⛔ **`kamm_over_rate = 0.0000` is therefore NOT self-interpreting.** It has two mechanisms:
+* **(a) the one we want** — the constraint plus a feasible candidate set selects paths that respect the circle;
+* **(b) the degenerate one** — the planner suppresses longitudinal authority and coasts.
+
+### 2. ⭐ Mechanism (b) is MEASURED on `combined`'s own two ingredients, not hypothesised
+
+The `lonshift` stream quantified the `M27` paradox: **`kamm07` and `l3ladder` improve longitudinal
+metrics by making the planner stop accelerating** — `mean|a|` **0.313 -> 0.05**, zero-acceleration
+windows **47.5 % -> 77.5 %**. Those two arms are exactly the **cap** and the **ladder**, i.e. **both
+non-`ccos` ingredients of `combined`.**
+
+### 3. ⛔ AND THE FINGERPRINT WAS ALREADY IN THE TABLE I REPORTED TO THE PI
+
+I quoted `combined`'s cost as *"the only separated row is `LON accel_mae` +0.0176"* and presented it as
+a small price. ⭐ **It is not a price, it is the signature.** A planner that suppresses acceleration
+must score WORSE on acceleration error against a ground truth that does accelerate — **a separated
+longitudinal-accuracy regression is precisely what mechanism (b) predicts**, and it is the only
+separated row in the table.
+
+⚠️ **I had the predicted observation in hand and read it as an unrelated cost.** Class: *a true number
+quoted outside the mechanism that produced it* — the `df`/`free`/`step_s`/cylindrical-FOV family, with
+the scope being **the causal story**, not the unit.
+
+### 4. What is NOT retracted, and this matters
+
+⛔ Mechanism (b) does **not** make the zero false, and the arm is **not** merely stopped:
+* `peak_g` max **0.618** (ground truth 0.373) — it is still cornering hard, well above a coasting floor;
+* `ade_m` vs `kamm07` **+0.0577 [-0.0369, +0.1589]**, not separated and **below the 0.0607 seed floor**
+  — a genuinely stopped planner cannot track a moving ground truth to within its seed noise;
+* the ground-truth control reads **0.0000** and three controls read non-zero, so the zero is bracketed.
+
+⇒ **The zero is real. Its ATTRIBUTION is open.** The open question is what FRACTION of it is (a).
+
+### 5. ⭐ The discriminating control, and it is cheap
+
+Report, for every arm in the `best` panel, the **longitudinal-authority distribution beside the safety
+number**: `mean|a_lon|`, the zero-acceleration fraction, and the **lateral/longitudinal split of
+`peak_g`** — each against the **ground-truth** arm, which is the only arm that is both safe and
+genuinely driving.
+
+* If `combined`/`best` reach 0.0000 with `mean|a_lon|` and the zero-fraction **near ground truth**, the
+  zero is mechanism **(a)** and the result is what I claimed.
+* If they reach it with `a_lon` collapsed toward `l3ladder`'s 0.05 / 77.5 %, the zero is substantially
+  mechanism **(b)** — ⛔ **a safety metric satisfied by declining to use an axis**, which is the classic
+  degenerate solution a constraint invites, and it must be reported that way.
+
+⇒ ⛔ **A safety constraint over a multi-axis budget REQUIRES an authority control.** Without one,
+"zero violations" and "stopped using half the actuator" are the same number. Generalises beyond Kamm to
+every budget-shaped constraint we impose.
+
+⚠️ **Reported to the PI as a qualification on the headline in the same turn it was found**; the
+`best` panel is running and its brief predates this entry, so the control is applied at synthesis.
