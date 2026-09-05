@@ -385,6 +385,25 @@ class DecoderConfig:
     aux_hidden: int = 384         # maneuver-head hidden
     diffusion_steps: int = 2      # truncated-denoise steps (0 == classifier)
     noise_std: float = 0.1        # train-time truncated-diffusion noise (metres)
+    # ---- refcv5 WP-6 (E-AGT-HEAD): the second cross-attention -------------
+    #: agent tokens reach every decoder layer through a zero-init gate. False
+    #: constructs nothing (bit-identical to refcv4b, RNG order included).
+    cross_agent: bool = False
+    # ---- refcv5 WP-4 (E-DDA-3): the control-space DDIM sampler ------------
+    #: "none" == today's decoder, byte-identical. "ddim" replaces the metre-
+    #: space truncated denoise with an anchored Gaussian in CONTROL space.
+    sampler: str = "none"
+    sampler_train_t_max: int = 50   # train timestep ~ U[0, t_max)
+    sampler_infer_t: int = 8        # eval starts here (DD's truncation point)
+    sampler_steps: int = 2          # DDIM steps at inference
+    sampler_groups: int = 1         # G samples per anchor
+    #: (a_lon, a_lat) normalisers — the vocabulary's OWN ranges, so [-1, 1]
+    #: means what the grid means. MODEL_REGISTRY §4.6.
+    control_norm: tuple[float, float] = (4.0, 3.0)
+    #: DELIBERATE-REGRESSION arm: noise the WAYPOINTS in metres like DD does.
+    #: Pre-registered to FAIL the flyability gate; if it does not, the
+    #: instrument cannot see what it is cited for and the arm is VOID.
+    sampler_space: str = "control"  # "control" | "metre"
 
 
 @dataclass
@@ -467,9 +486,20 @@ class SelectionConfig:
     # ⛔ EXACTNESS RESTS ON ONE STRUCTURAL FACT, verified in source rather than
     # assumed: `CrossAttnLayer` cross-attends q->kv with NO self-attention over
     # the candidate axis, and its MLP/LayerNorm are per-token. Candidates are
-    # therefore INDEPENDENT and decoding a subset is bit-identical for that
-    # subset. If a candidate-axis interaction is ever added to the decoder this
+    # therefore INDEPENDENT and decoding a subset gives that subset the same
+    # answer. If a candidate-axis interaction is ever added to the decoder this
     # flag becomes UNSOUND and must be retired with it.
+    # ⚠️ CORRECTED 2026-09-05 (refcv5 build): this comment previously said
+    # "bit-identical for that subset". That is a FLOAT-PRECISION OVERSTATEMENT.
+    # MEASURED on the dev box (`tests/test_refc_agents.py::
+    # test_candidate_independence_survives_the_agent_branch`): a subset decode
+    # already disagrees with the full decode by ~1.19e-07 on conf and ~1.49e-07
+    # on offset WITH NO AGENT BRANCH AND NOTHING ELSE CHANGED, because a
+    # different candidate count selects a different GEMM reduction order. The
+    # STRUCTURAL claim (no candidate-axis mixing) stands and is what the flag
+    # needs; the claim the MEASUREMENT actually supports is the one this block
+    # already makes below — the SELECTION INDEX is identical on 881/881. Bit
+    # equality was never measured and is not true here.
     anchor_prefilter: bool = False    # S2b decode only reachable anchors
     anchor_prefilter_guard: bool = True   # verify the winner survived
     graft_cons: bool = False          # S3 consequence score reaches the ranking
@@ -1113,9 +1143,33 @@ class FiLM(nn.Module):
 
 class CrossAttnLayer(nn.Module):
     """Anchor-query cross-attention block: cross-attend the conv map, then a
-    FiLM(condition)-modulated MLP (pre-norm, residual)."""
+    FiLM(condition)-modulated MLP (pre-norm, residual).
 
-    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int):
+    ⭐ **refcv5 WP-6 (`E-AGT-HEAD`) — the SECOND cross-attention.**
+    DiffusionDrive attends **30 detection queries** in every decoder layer
+    (audit #20); refcv4b attends **none**, so its decoder has no surface on
+    which "there is a car 14 m ahead decelerating" can act. With
+    ``cross_agent=True`` this layer gains an agent branch whose output is
+    scaled by ``agent_gate``, a scalar **initialised to exactly 0**.
+
+    ⛔ **The parity contract, both halves:**
+      * ``cross_agent=False`` -> the branch is **not constructed**, so RNG draw
+        order is unchanged and a v5 build is *bit-identical* to refcv4b.
+      * ``cross_agent=True`` -> at step 0 ``agent_gate == 0`` so the forward
+        output is numerically identical to the agent-free layer, while
+        ``dL/d(agent_gate) != 0``. Gated, not dead — the ``ctx_to_cond`` /
+        ``lan_gate`` discipline.
+      * ``agents is None`` (an unlabelled window, or the seam simply not fed)
+        -> the branch is skipped entirely and costs nothing.
+
+    ⚠️ ``anchor_prefilter`` (S2b) rests on candidates being INDEPENDENT along
+    the candidate axis. The agent branch cross-attends q -> agent tokens with no
+    interaction *among* candidates, so that invariant survives. A self-attention
+    over candidates would break it and must retire the flag with it.
+    """
+
+    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int,
+                 cross_agent: bool = False):
         super().__init__()
         self.norm_q = nn.LayerNorm(d)
         self.cross = nn.MultiheadAttention(d, n_heads, batch_first=True)
@@ -1123,10 +1177,50 @@ class CrossAttnLayer(nn.Module):
         self.film = FiLM(cond_dim, d, zero_init=False)   # live core conditioning
         self.mlp = nn.Sequential(nn.Linear(d, ff_mult * d), nn.GELU(),
                                  nn.Linear(ff_mult * d, d))
+        # ⛔ CONSTRUCTED LAST AND ONLY WHEN ASKED FOR: anything built here
+        # consumes RNG, so building it unconditionally would change every
+        # subsequent layer's init and break the "bit-identical when off" claim.
+        self.norm_a: nn.LayerNorm | None = None
+        self.cross_agent: nn.MultiheadAttention | None = None
+        self.agent_gate: nn.Parameter | None = None
+        if cross_agent:
+            self.norm_a = nn.LayerNorm(d)
+            self.cross_agent = nn.MultiheadAttention(d, n_heads,
+                                                     batch_first=True)
+            self.agent_gate = nn.Parameter(torch.zeros(1))
 
-    def forward(self, q: Tensor, kv: Tensor, cond: Tensor) -> Tensor:
+    def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
+                agents: Tensor | None = None,
+                agent_pad: Tensor | None = None) -> Tensor:
+        """``agents`` ``[B, K, d]`` agent tokens · ``agent_pad`` ``[B, K]``
+        bool, **True where the slot is PADDING** (torch's
+        ``key_padding_mask`` convention, stated because inverting it silently
+        attends to nothing and looks like a dead seam)."""
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
+        if self.cross_agent is not None and agents is not None:
+            # ⛔ A FULLY-PADDED ROW IS A NaN FACTORY, AND IT NaNs THE BACKWARD
+            # EVEN IF THE FORWARD IS PATCHED. `key_padding_mask` all-True on a
+            # row makes the attention softmax normalise over all -inf; the
+            # output is NaN and `nan_to_num` fixes only the value, while the
+            # softmax backward still produces NaN that 0-gradient multiplication
+            # does not clear. A window with NO detected agents is NORMAL (an
+            # empty road), so this is a routine state, not an edge case.
+            # ⇒ un-mask such rows (their tokens are attended but the row-level
+            # `live` factor zeroes the contribution), which is NaN-free in both
+            # directions and costs no device sync.
+            pad = agent_pad
+            live = None
+            if pad is not None:
+                empty = pad.all(dim=1, keepdim=True)              # [B, 1]
+                pad = pad & ~empty
+                live = (~empty).to(q.dtype).unsqueeze(-1)         # [B, 1, 1]
+            a = self.norm_a(q)
+            att = self.cross_agent(a, agents, agents, key_padding_mask=pad,
+                                   need_weights=False)[0]
+            if live is not None:
+                att = att * live
+            q = q + self.agent_gate * att
         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
         return q
 
@@ -1207,8 +1301,14 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
         self.cond_proj = nn.Linear(d_meas, d)                 # measurement -> cond
         self.time_embed = nn.Embedding(cfg.diffusion_steps + 1, d)  # 0..steps
+        # WP-4 (E-DDA-3): the CONTINUOUS timestep embedding DD injects per
+        # layer. Constructed ONLY under `sampler == "ddim"`, so the default
+        # build's RNG order — and therefore every existing checkpoint — is
+        # untouched. `_decode` falls back to `time_embed` when it is None.
+        self.time_mlp: nn.Module | None = None
         self.layers = nn.ModuleList(
-            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult)
+            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult,
+                           cross_agent=bool(getattr(cfg, "cross_agent", False)))
             for _ in range(cfg.layers))
         self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
         self.offset_head = nn.Linear(d, n_steps * 2)          # per-anchor offset
@@ -1439,14 +1539,27 @@ class AnchoredDiffusionDecoder(nn.Module):
             batch, n, self.n_steps, 2).to(dtype)
 
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
-                t_idx: int) -> tuple[Tensor, Tensor]:
+                t_idx: int, agents: Tensor | None = None,
+                agent_pad: Tensor | None = None,
+                t_cont: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """One decoder pass: current trajectory estimate + timestep -> queries;
-        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2])."""
+        cross-attend the map (and, under WP-6, the agent tokens); emit
+        (conf [B, N], offset [B, N, S, 2]).
+
+        ``t_cont`` [B] (WP-4 only) is the CONTINUOUS diffusion timestep. When
+        given it replaces the 3-row ``time_embed`` lookup with the sinusoidal
+        embedding DD injects per layer — retired under ``sampler == "none"``,
+        which keeps ``t_idx`` and is byte-identical to refcv4b.
+        """
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
-        q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
+        if t_cont is not None and self.time_mlp is not None:
+            temb = self.time_mlp(t_cont.to(q.dtype))          # [B, d]
+            q = q + temb[:, None]
+        else:
+            q = q + self.time_embed.weight[t_idx][None, None]  # timestep bias
         for layer in self.layers:
-            q = layer(q, kv, cond)
+            q = layer(q, kv, cond, agents=agents, agent_pad=agent_pad)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
@@ -1551,7 +1664,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
                 goal_dist_pref: Tensor | None = None,
-                withheld_speed: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None,
+                agent_tokens: Tensor | None = None,
+                agent_pad: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1622,7 +1737,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 took = pre_keep.gather(1, sub)                # [B, K] bool
                 xs = x0.gather(
                     1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
-                c_s, o_s = self._decode(kv, cond, xs, 0)
+                c_s, o_s = self._decode(kv, cond, xs, 0,
+                                        agents=agent_tokens,
+                                        agent_pad=agent_pad)
                 conf0 = x0.new_full((b, n), float("-inf"))
                 conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
                 offset = x0.new_zeros(b, n, self.n_steps, 2)
@@ -1632,11 +1749,14 @@ class AnchoredDiffusionDecoder(nn.Module):
                 pre_tele["prefilter_k"] = int(k)
                 pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
             else:                                 # nothing to save this batch
-                conf0, offset = self._decode(kv, cond, x0, 0)
+                conf0, offset = self._decode(kv, cond, x0, 0,
+                                             agents=agent_tokens,
+                                             agent_pad=agent_pad)
                 pre_tele["prefilter_k"] = int(n)
                 pre_tele["prefilter_speedup"] = 1.0
         else:
-            conf0, offset = self._decode(kv, cond, x0, 0)     # classifier pass
+            conf0, offset = self._decode(  # classifier pass
+                kv, cond, x0, 0, agents=agent_tokens, agent_pad=agent_pad)
         x = bank + offset                                     # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
@@ -1672,7 +1792,9 @@ class AnchoredDiffusionDecoder(nn.Module):
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
             x_in = x + noise
-            r_conf, off = self._decode(kv, cond, x_in, t_idx)
+            r_conf, off = self._decode(kv, cond, x_in, t_idx,
+                                       agents=agent_tokens,
+                                       agent_pad=agent_pad)
             x = x_in + off
             # The refined readout carries the SAME priors as the classifier
             # surface: switching the ranking to `refined` without them would
@@ -1704,7 +1826,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             t_e = (min(steps + 1, self.cfg.diffusion_steps)
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
-            e_conf, _ = self._decode(kv, cond, x, t_e)
+            e_conf, _ = self._decode(kv, cond, x, t_e, agents=agent_tokens,
+                                     agent_pad=agent_pad)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
