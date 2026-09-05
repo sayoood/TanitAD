@@ -1,6 +1,6 @@
 # refcv5 — Design Plan: closing the DiffusionDrive gaps without giving up the hierarchy
 
-**status: IN PROGRESS — done: skeleton, §0 summary, §1 gap table, §2 invariants, §3 BEV/LiDAR, §4 diffusion mechanism, §5 selection, §6 RL / next: §7 ladder, §8 claims, §9 VLA interface, §10 register rows, manifest**
+**status: COMPLETE — §0 summary · §1 gap table · §2 invariants · §3 BEV/LiDAR · §4 diffusion mechanism · §5 selection · §6 RL · §7 implementation ladder · §8 claims and refutations · §9 the VLA contract · §10 registered decisions · manifest. ⛔ Nothing here is a result: it is a design with pre-registrations, and it launches nothing.**
 **author:** Architecture & Inference FlyWheel · **date:** 2026-09-05 · **branch:** `agent/arch-inf-20260803`
 **GPU spent by this document:** 0 (design synthesis; every number is cited to its artifact)
 **Owner for integration:** Master Mind. **Sibling streams:** `Project Steering/REFCV5_VLA_EXTENSION_PLAN.md` (VLA, §9 interface; not yet present in HEAD at the time of writing), DataFlyWheel (§3 work package), `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-refc-rl-readiness/` (§6 vehicle), `…/Architecture & Inference/Research/2026-09-05-withheld-bank-panel/` (§2, pending panel).
@@ -923,6 +923,110 @@ from `[B, N, S, 2]` to `[B, G·N, S, 2]` (WP-4, changes `sel_idx`'s meaning); an
 to the decoder KV set (WP-12).
 
 
-## §10 Registered decisions `[PENDING]`
+## §10 Registered decisions
 
-## Manifest `[PENDING]`
+The rows below are appended to `Project Steering/GOALS_AND_CLAIMS.md` in the same turn as this
+document, under the heading **`D-REFCV5-PLAN` — the refcv5 design plan (2026-09-05, Arch+Inference)**.
+⛔ **This table is a mirror for readability. The register is the source**; where they disagree, the
+register wins and this table is fixed.
+
+| id | decision | status | where it is argued |
+|---|---|---|---|
+| **D-REFCV5-PLAN-1** | The DiffusionDrive gap table is **closed out**: 43 audited components → **19 IMPLEMENT · 9 ADAPT · 9 KEEP OURS · 5 SKIP**, each with its reason, carried by **10 pre-registered one-lever arms**. No component is left "to be decided" | **DECIDED** | §1 |
+| **D-REFCV5-PLAN-2** | The six USP invariants **I1–I6** are **refusal conditions, not trade-offs**: an adopted mechanism that violates one is refused, not negotiated. Every DD mechanism in §1 is checked against them individually | **DECIDED** | §2 |
+| **D-REFCV5-PLAN-3** | ⭐ **PhysicalAI-AV carries LiDAR** — 128-row spinning, 10 Hz, ~200 spins/clip, **97.44 % coverage**, 99.6 TB = 68 % of the dataset by bytes — and the artifact we build from it is a **DD-faithful 256 × 256 @ 0.25 m/px, ±32 m, 2-height-bin BEV histogram** shipped as a **PNG sidecar `<clip>.v2bev.pt`** beside the existing `*.v2ep.pt`, so the 161 GB camera cache is not rewritten and frames stay byte-identical (I6) | **SUPPORTED (MEASURED, three independent probes)** — build = **WP-DE-BEV-1**, owner DataFlyWheel | §3 |
+| **D-REFCV5-PLAN-4** | ⭐ **The diffusion noise lives in CONTROL space, not metre space**: `ε` on `(a_lon, a_lat)` normalised by the grid's own ranges `(4.0, 3.0)`, re-rolled through `rollout_unicycle_varstep`, so **every sample is flyable by construction** and the v0-conditioned vocabulary stays the prior. DD's metre-space normaliser is kept as the **deliberate-regression arm that must FAIL flyability** | **DECIDED**, with both outcomes committed | §4.2 |
+| **D-REFCV5-PLAN-5** | **The ranked object becomes the emitted object.** `sel_refined + sel_score_emitted + sel_ce_reach` (0 new params, flags already in source) replaces ranking a fan two passes staler than the one emitted (`sel_idx_base` unchanged on **201/201** windows). The four-family sub-metric selector (§5.2) is the second step, with **no PDM and no map**, and `DAC` is refused as unconstructible on PhysicalAI | **DECIDED** | §5 |
+| **D-REFCV5-PLAN-6** | ⭐ **The RL stage's job is the fan's FLOOR, not ADE**: V2's published shape is PDMS@10 +9.1 with @1 +1.4 and diversity −28 %. The vehicle is a **head-only scale policy** (trainable 8.60 %); **`G-REWARD` is a precondition, not a milestone** — hold-v0 must beat the human on **≤ 30 %** of lead windows (today **78.3 %**), and a reward that fails it may not train anything | **DECIDED** | §6 |
+| ⛔ **D-REFCV5-PLAN-7** | **PI DECISION REQUIRED — is LiDAR an INFERENCE INPUT or a TRAINING-TIME TEACHER?** The constitution's literal wording is *vision-only*; the Mission Plan (`:181`) and ROADMAP L4 foresee LiDAR/radar fusion. **Default = teacher** (camera-only inference, E-BEV-1); the input arm (**E-LIDAR-1**) is built and pre-registered but **not run** without the ruling. Either way the data is built once and the two arms are paired on the same windows, so *what the sensor buys beyond what the camera can be taught* is the measured quantity | **OPEN — PI** | §2 I3, §3.4 |
+| **D-REFCV5-PLAN-8** | The ladder is ordered by **what is free first**: **10 of 14 work packages start today at zero pod GPU**, four need a refcv4b checkpoint, and the **LiDAR build is deliberately OFF the model critical path** — the camera-only closure (E-DDA-1 + E-AGT-1 + E-BEV-1 on the agent raster alone) is complete without a single byte of LiDAR | **DECIDED** | §7.0, §7.4 |
+| ⛔ **D-REFCV5-PLAN-9** | **THREE INSTRUMENT GAPS BLOCK READS, NOT RUNS — each MEASURED, all ESCALATED.** (1) the 12 eval-time ablation switches of `PREREG_REFCV4B_HIERARCHY_EVAL.md` are **still not CLI flags** of `refcv3_arm.py`, so the post-training hierarchy panel cannot start; (2) **`ha0_ext` is NOT an arm of the REF-C harness** — `refcv3_arm.py:961` is `arms = ["os","ha","ha0"]`, `ARM_TIERS` has no `ha0_ext`, and the banked ARM JSON's six `arm_keys` do not include it, while the implementation exists (`stack/tanitad/eval/echo_gate.py::ha0_ext`) and the **refav1** harness runs it ⇒ **the refcv5 acceptance bar "beat both `ha` and `ha0_ext`" is unreadable on the 4,823-window surface today**; (3) `fan_floor@k`, fan-collision-vs-replay, diversity D and the sampled-fan Kamm rate **do not exist**, so the sampler, selector and RL rungs have **no primary readout at all** | **ESCALATED — 0 GPU, must precede WP-9b, WP-4, WP-7, WP-13** | §7.3 |
+| ⭐ **D-REFCV5-PLAN-10** | **THE DEFICIT IS IN THE FAN, NOT IN SELECTION AND NOT IN ROUTING** — arithmetic on banked numbers: `oracle_sel − os` = **−0.0751** [−0.0884, −0.0618] and `os − os_navzero` = **−0.0239** [−0.0428, −0.0089], so **perfect selection plus the oracle route is 0.099 m against a 0.1423 m gap to `ha`**. ⇒ any refcv5 claim built only on the selector or on nav wiring is, by arithmetic, incapable of clearing the bar | **SUPPORTED (MEASURED, `refcv3-40284-openloop.ARM.json`)** | §8.0 |
+| **D-REFCV5-PLAN-11** | The acceptance bar is a **conjunction**: **C1 ∧ C2 ∧ C3 ∧ C6** for capability and **C7 ∧ C8** for the hierarchy thesis, with all nine refutations committed in advance. **Four ways to post a good headline and still be REFUSED** are named, each already MEASURED here: the echoing arm (`H-ECHO-8`), the jerk purchase (`D-REFCV4B-EGODROP2`), the selection result mislabelled as driving (D-REFCV5-PLAN-10), and the pooled win that hides a family (`D-REFCV3-40284b`, 2.87× on manoeuvre windows) | **DECIDED — pre-registered, both outcomes committed** | §8.1, §8.2 |
+| **D-REFCV5-PLAN-12** | ⭐ **The VLA mounts on `hierarchy_hook`, which already exists and is unfilled.** `hook(pooled_seq, ctx) -> dict` fills ports **only where the caller passed `None`**; `maneuver_logits [B, 5]` reweights the H19 anchor prior with **zero new wiring**. Contract terms: **no second vision encoder** (the encoder is ~90 % of a tick); ≤ ~40 tokens per tact or a latent/executable output; every new write edge zero-init, individually gated, and carrying its eval-time switch; and the module's **information state at explanation time must be DECLARED** — **PROPOSER** (consistency is a measurement) vs **DESCRIBER** (consistency ≈ 1.0 by construction and is **not a result**) | **DECIDED — the contract; the module's design stays with the VLA stream** | §9 |
+| **D-REFCV5-PLAN-13** | **refcv5 bundles ONLY levers whose one-lever rig arm PASSED**, the bundle is pinned as a **frozenset the preflight refuses to deviate from**, and the registry row declares it a bundle. A lever whose arm has not run by the launch date is **left out, not launched hopefully**. *(refcv4b already forfeited attribution with five levers in one arm; refcv5 may repeat that only deliberately and in writing.)* | **DECIDED** | §7.4 |
+
+
+## Manifest
+
+**GPU spent by this document: 0.** Every number carries its evidence class; nothing here was measured
+by running a model.
+
+### Deliverables
+
+| artifact | where it lives | state |
+|---|---|---|
+| `Project Steering/REFCV5_DESIGN_PLAN.md` — this document, §0–§10 + Manifest | **repo**, branch `agent/arch-inf-20260803` | committed across `cc3c57f` (§1–§3), `ee459a6` (§4–§6), then §7 · §8 · §9 · §10+Manifest, each verified in HEAD by a length-guarded blob comparison |
+| `Project Steering/GOALS_AND_CLAIMS.md` — the `D-REFCV5-PLAN-1..13` block | **repo**, same branch | appended (INSERT, never rewrite) in the same turn; the six sibling rows of today (`D-REFCV4B-EGODROP2`, `H-EGO-LIT-4`, `D-REFC-DDAUDIT-1`, `D-DDV2-CODE-1`, `D-NAVCOMP-1`, `D-RL-READY-1`) verified present before and after |
+| the §7 ladder as a work-package list (WP-0 … WP-14) | inside this document | ⛔ **not yet mirrored into `Project Steering/BACKLOG.md`** — a Master Mind action, see Escalations |
+
+**Nothing produced by this stream lives in only one place.** No pod was touched; no worktree was used;
+no file was left off-repo.
+
+### Escalations — integration the Master Mind must schedule, not read about
+
+| # | what | why it cannot wait |
+|---|---|---|
+| **E1** | ⛔ **WP-0.1 — the 12 eval-time ablation switches are still not CLI flags of `taniteval/tools/refcv3_arm.py`.** Already ESCALATED inside `PREREG_REFCV4B_HIERARCHY_EVAL.md`; repeated here because it now blocks a second thing | refcv4b's ETA is **~2026-09-06 08:00 UTC**. The post-training hierarchy panel — and with it E-DDA-2's first free read (`H-SEL-1`) — **cannot start** without it. 0 GPU, ~1 day |
+| **E2** | ⛔ **WP-0.2 — `ha0_ext` is not an arm of the REF-C harness.** MEASURED today: `refcv3_arm.py:961` = `arms = ["os","ha","ha0"]`; `ARM_TIERS` (`:237-238`) has no `ha0_ext`; the banked `refcv3-40284-openloop.ARM.json` lists six `arm_keys`, none of them `ha0_ext`. The implementation exists (`stack/tanitad/eval/echo_gate.py::ha0_ext`) and `taniteval/tools/refav1_arm.py:639` + `t1_eval.py:162` already run it | **The refcv5 acceptance bar in every steering document says "beat both `ha` and `ha0_ext`" — and on the 4,823-window surface that bar is currently UNREADABLE.** ⛔ It must be ported as the **same shared call**, per `echo_gate.ha0_ext`'s own docstring (a control re-implemented beside the thing it controls drifts, and then the gate measures the drift) |
+| **E3** | ⛔ **WP-0.3 — the fan readouts do not exist**: `fan_floor@k` (k = 1, 5, 10), fan-collision-vs-replay, DD's diversity D, the sampled-fan Kamm rate. Home: `taniteval/plan_fan.py` | Without them **WP-4 (sampler), WP-7 (selector) and WP-13 (RL) have no primary readout at all** — §6.1's whole point is that V2's gain was a *floor* effect a top-1 number cannot see |
+| **E4** | ⛔ **`D-REFCV5-PLAN-7` is a PI decision**: LiDAR as inference input vs training-time teacher | It gates **E-LIDAR-1** only. It does **not** gate the LiDAR data build, E-BEV-1, or anything else — the plan is written so the ruling can arrive late |
+| **E5** | **WP-DE-BEV-1 belongs to the DataFlyWheel**, with Arch+Inference as consumer. §3.3's seven steps and their content gates are the brief | The pilot (10 clips, dev box) turns every ESTIMATE in §3.3 into a MEASURED figure **before** any corpus build is scheduled. ⛔ Never on the training pod; ⛔ `df` cannot see the ~466 GB MooseFS quota |
+| **E6** | **The §7 ladder should become `BACKLOG.md` pull-items**, so a gated turn can pull a rung | Ten of fourteen WPs are zero-GPU and independent — exactly the shape the ≥ 5-parallel-streams rule wants |
+
+### Primaries this document needs but did NOT bank
+
+⛔ **This stream did not run `tools/kb_add.py`** — the VLA/library stream owns the writer today, and
+two agents writing `library.json` is how a generated index gets corrupted. Listed here so the banking
+is a work item and not an omission:
+
+| needed for | primary | arXiv |
+|---|---|---|
+| §3.4 E-BEV-1 (camera → BEV lift) | *Lift, Splat, Shoot* — Philion & Fidler 2020 | `2008.05711` |
+| §3.4 E-BEV-1 (the simpler baseline lift) | *SimpleBEV* — Harley et al. 2022 | `2206.07959` |
+| §3.3 (LiDAR encoder alternative to the histogram) | *PointPillars* — Lang et al. 2019 | `1812.05784` |
+
+**Already banked and cited by this document** (library keys): TransFuser `2205.15997` · BEVFormer
+`2203.17270` · DiffusionDrive `2411.15139` · DiffusionDriveV2 `2512.07745` · GTRS `2506.06664` ·
+DriveSuprim `2506.06659` · DIVER `2507.04049` · DPPO `2409.00588`.
+
+### Evidence this document rests on (all banked, none re-measured here)
+
+| package | path |
+|---|---|
+| the REF-C vs DiffusionDrive audit (`D-REFC-DDAUDIT-1..6`, `H-DDA-1..4`) | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/` |
+| the DiffusionDriveV2 code+paper analysis (`D-DDV2-*`, `H-DDA-5..7`) | `…/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/` |
+| the ego-dropout burden on the trained model (`D-REFCV4B-EGODROP2`, `H-EGODROP-PRED`) | `…/Architecture & Inference/Research/2026-09-05-refcv4b-egodrop-burden/` |
+| the ego-input literature panel (`H-EGO-LIT-1..4`) | `…/Architecture & Inference/Research/2026-09-05-ego-input-literature/` |
+| RL readiness and the reward-floor defect (`D-RL-READY-1`, `D-RL-REWARD-FLOOR-1`) | `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-refc-rl-readiness/` |
+| the nav-compliance metric (`D-NAVCOMP-1..3`) | `…/Benchmarks & Eval` stream + `taniteval/taniteval/nav_compliance.py`, `products/P7-TanitEval/CRITERIA_REGISTRY.json` v2.6.0 |
+| the vocabulary and its gates (`D-REFCV4-VOCAB1`, `D-REFCV4-GATE1`, `D-REFCV4B-FLYLOW1`, `D-REFCV4B-TURNCOV1`) | `…/2026-09-04-refcv4b-vocabulary/`, `…/2026-09-04-refcv4-gate-validation/`, `…/2026-09-04-refcv4b-turn-coverage/` |
+| the headline surface (`D-REFCV3-40284`, `D-REFCV3-40284b`, `D-REFCV3-AXIS1`) | `taniteval/results/refcv3-40284-openloop.ARM.json`, `…-stratified.json`, `MODEL_REGISTRY.md` §4.5 |
+| the nav wiring design (E13–E21, S7/S8) | `Project Steering/DESIGN_REFCV4_NAV_WIRING.md`, `…/2026-09-04-refcv4b-seam-state/SEAM_STATE.md` |
+| the PhysicalAI feature probe (LiDAR, `obstacle.offline`) | `…/Data Engineering/Implementation/incoming/2026-07-26-physicalai-feature-probe/` |
+| the hierarchy eval pre-registration | `Project Steering/PREREG_REFCV4B_HIERARCHY_EVAL.md` |
+
+### Sibling streams this document is bound to
+
+| stream | artifact | relation |
+|---|---|---|
+| **VLA extension** | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md`; `Project Steering/REFCV5_VLA_EXTENSION_PLAN.md` | ⭐ §9 is **the contract**; that plan is the module. Where they disagree about a **port**, §9 wins and the disagreement is escalated; where they disagree about the **module**, that plan wins |
+| **DataFlyWheel** | WP-DE-BEV-1 (§3.3) | owner of the LiDAR/BEV build; Arch+Inference is the consumer |
+| **Deployment & Optimization** | `…/2026-09-05-refc-rl-readiness/` | owner of the RL vehicle (`rl_refcv3_min.py`, `launch_refcv3_rl_min.sh`); §6 re-scopes it as E-DDA-3b |
+| **Benchmarks & Eval** | `nav_compliance.py`, `CRITERIA_REGISTRY.json` v2.6.0 | owns the compliance instrument every C7/C8 claim is read on |
+| **Master Mind** | `MODEL_REGISTRY.md`, the launch decision | ⛔ **this plan launches nothing** |
+
+### Honest scope
+
+- **Nothing here is a result.** It is a design with pre-registrations; the first refcv5 number does not
+  exist and will not until the ladder runs.
+- **T1 is self-action open loop.** No claim in §8 is a *driving* claim; closed loop needs AlpaSim or a
+  vehicle (the standing PI ruling).
+- **Line numbers were read from the worktree on 2026-09-05 and drift.** Every reference also names its
+  function or attribute; the function name is the stable one, and §9.8 says so explicitly for the
+  contract.
+- **Parameter deltas in §7.1 are ESTIMATED by arithmetic**, not counted by building. Each WP counts its
+  own, and the preflight pins the total.
+- **The `ha0_ext` clauses of §8 are claims we cannot yet read** (E2). Stating that is part of the
+  pre-registration, not a footnote to it.
+
