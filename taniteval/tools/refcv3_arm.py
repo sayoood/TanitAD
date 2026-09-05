@@ -614,6 +614,15 @@ def _p(*a):
     print(*a, flush=True)
 
 
+#: ⛔ Exceptions that mean OUR CODE IS WRONG, never "the input was absent".
+#: An `except Exception` that converts these into a polite refusal is how a
+#: BINDING metric family goes missing from every eval without anything failing.
+#: (`ValueError` is deliberately NOT here — it is the honest way a loader says
+#: "this file is not what you said it was".)
+DEFECT_EXCEPTIONS = (TypeError, AttributeError, NameError, IndexError,
+                     UnboundLocalError, ZeroDivisionError)
+
+
 def _refused(reason, tier, n=0):
     """The binding shape for a family/metric whose INPUTS are missing here."""
     return {"status": "REFUSED", "reason": reason, "n": int(n), "tier": tier,
@@ -2601,10 +2610,30 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         from taniteval import nav_compliance as _nc
         strat["nav_compliance"] = _nc.from_refcv3_dump(
             dump_dir, labels_path=labels, n_boot=n_boot, seed=seed)
-    except Exception as ex:      # noqa: BLE001 — a refusal, not a crash
+    except Exception as ex:      # noqa: BLE001 — a refusal, OR a defect
+        #: ⛔ THE TWO KINDS OF "IT DID NOT RUN" MUST NOT LOOK ALIKE.
+        #: A missing labels blob or a pre-sidecar dump is a legitimate REFUSAL
+        #: and the four-families rule allows dropping the family WITH ITS
+        #: REASON. A `TypeError` from our own module is a DEFECT — and one of
+        #: those (`os.path.exists(<dict>)`) silently removed the STRATEGIC
+        #: nav-compliance family from EVERY refcv3 arm for its whole life while
+        #: the other three families reported normally and no run ever failed.
+        _defect = isinstance(ex, DEFECT_EXCEPTIONS)
         _why = f"nav_compliance did not run: {type(ex).__name__}: {str(ex)[:300]}"
-        strat["nav_compliance"] = (_nc.unavailable_block(_why, N) if _nc is not None
-                                   else _refused(_why, "T1", N))
+        if _defect:
+            _why = ("⛔ DEFECT (not a refusal) — this is a bug in our own "
+                    "code, not a missing input: " + _why)
+        _blk = (_nc.unavailable_block(_why, N) if _nc is not None
+                else _refused(_why, "T1", N))
+        if _defect:
+            #: recorded ON the block AND collected at the top level, so a driver
+            #: can exit non-zero instead of publishing a family-shaped hole.
+            _blk["defect"] = True
+            _blk["defect_type"] = type(ex).__name__
+            ref.setdefault("_defects", []).append(
+                {"where": "strategic.nav_compliance",
+                 "type": type(ex).__name__, "detail": str(ex)[:300]})
+        strat["nav_compliance"] = _blk
     ref["strategic"] = strat
 
     # ---- the E9 goal gate: the value AND the scale it multiplies ------------- #

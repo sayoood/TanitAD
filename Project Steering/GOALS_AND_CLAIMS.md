@@ -2959,3 +2959,13 @@ the banked fan does not carry.
 `repo:stack/scripts/refc_v3_train.py` (`V3Dataset.enable_agent_join` / `_agent_item`, four flags,
 the preflight label guard, NO_LABEL row selection, `agent_join_stats` in `config.json`) ·
 `repo:stack/tests/test_refc_v3_agent_join.py` (**19 tests, all green**).
+
+| id | claim | status | evidence |
+|---|---|---|---|
+| D-NAVCOMP-SHAPE-4 | ⭐ **THE DURABLE FIX IS NOT THE PATH BUG — IT IS THAT "WE COULD NOT" AND "WE ARE BROKEN" LOOKED IDENTICAL IN THE RECORD.** `refcv3_arm.py`'s `except Exception` converted **any** failure of `nav_compliance` into a polite UNAVAILABLE block. That is correct for a MISSING INPUT (no labels blob, a pre-sidecar dump) — the four-families rule explicitly permits dropping a family *with its reason* — and wrong for a bug in our own code. ⇒ `DEFECT_EXCEPTIONS = (TypeError, AttributeError, NameError, IndexError, UnboundLocalError, ZeroDivisionError)` now classifies the two: a defect stamps `defect: True` + `defect_type` **on the block** and appends to a top-level **`_defects`** list, so a driver can exit non-zero instead of publishing a family-shaped hole; the reason text itself begins **"⛔ DEFECT (not a refusal)"**. ⚠️ `ValueError` and `KeyError` are deliberately EXCLUDED — they are the honest way a loader says *"this file is not what you said it was"*, and classifying them as defects would destroy the distinction in the other direction | **SUPPORTED (MEASURED 2026-09-05, harness-level)** | `repo:taniteval/tools/refcv3_arm.py::DEFECT_EXCEPTIONS`; pin `repo:stack/tests/test_navcomp_labels_shape.py` (**12 passed**) |
+
+⚠️ **Why this belongs beside `D-NAVCOMP-SHAPE-1` rather than under it.** The path bug was one instance;
+the *mechanism* was an error path that reports failure **in the shape the reader expects for success**.
+Same family as the trainer log that went stale while the run was healthy, the memmap of zeros that
+exited 0, and the search tool that reported "no matches" for files it could not open. ⛔ **A `TypeError`
+raised inside our own module is never a refusal, and a record that cannot say so will hide the next one.**

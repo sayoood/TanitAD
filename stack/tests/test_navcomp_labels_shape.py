@@ -102,3 +102,52 @@ def test_join_still_carries_the_provenance_block_under_labels():
     """The dict is not a bug — it is the richer record, and the reader now reads it."""
     src = _read(ARM)
     assert 'join = {"labels": {"path": a.labels' in src
+
+
+# ------------------------------------------ a defect must not look like a refusal
+
+
+def _arm_defect_tuple():
+    """`DEFECT_EXCEPTIONS` evaluated from source.
+
+    Importing `refcv3_arm` runs a preflight that can `sys.exit`, so the constant is
+    read the same way `resolve_labels_path` is: compiled out of the module, not
+    imported.
+    """
+    tree = ast.parse(_read(ARM))
+    for n in tree.body:
+        if isinstance(n, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "DEFECT_EXCEPTIONS"
+                for t in n.targets):
+            return eval(compile(ast.Expression(n.value), ARM, "eval"))  # noqa: S307
+    raise AssertionError("DEFECT_EXCEPTIONS is gone from refcv3_arm.py")
+
+
+def test_a_typeerror_from_our_own_code_is_classified_as_a_defect():
+    """The exact exception that removed the STRATEGIC family from every arm."""
+    assert isinstance(TypeError("x"), _arm_defect_tuple())
+
+
+def test_a_missing_input_is_NOT_a_defect_so_honest_refusals_still_refuse():
+    """⛔ The four-families rule permits dropping a family that genuinely cannot
+    be computed, WITH its reason. Classifying those as defects would make the
+    distinction useless in the other direction."""
+    d = _arm_defect_tuple()
+    assert not isinstance(FileNotFoundError("no labels"), d)
+    assert not isinstance(ValueError("this file is not what you said it was"), d)
+    assert not isinstance(KeyError("absent"), d)
+
+
+def test_the_record_marks_the_block_and_collects_it_at_the_top_level():
+    """A driver must be able to exit non-zero rather than publish a
+    family-shaped hole; that needs the flag ON the block and a list beside it."""
+    src = _read(ARM)
+    assert '_blk["defect"] = True' in src
+    assert 'ref.setdefault("_defects", [])' in src
+    assert '"defect_type"' in src
+
+
+def test_the_defect_reason_says_defect_so_a_reader_cannot_miss_it():
+    src = _read(ARM)
+    assert "DEFECT (not a refusal)" in src, \
+        "the reason text must name it — the old one read like an ordinary refusal"
