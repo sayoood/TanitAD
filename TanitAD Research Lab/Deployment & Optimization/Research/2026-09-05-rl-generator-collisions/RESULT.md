@@ -1,0 +1,259 @@
+# RESULT — RL AGAINST THE GENERATOR'S COLLISIONS
+
+**status: BANKED INCREMENTALLY WHILE THE ARMS RUN.** §0–§4 are complete and their artifacts are
+in `raw/`. §5 (the `coll200` arms against both floors) and §6 (T1, four families) are filled in as
+each lands; this header names what is missing so a killed session leaves no silent gap.
+
+Package: `TanitAD Research Lab/Deployment & Optimization/Research/2026-09-05-rl-generator-collisions/`
+SPEC (pre-registered, both outcomes committed before any arm): `SPEC.md`
+Tier: **T0** on the emitted fan for every `fan_*` number — a generator diagnostic, **never a
+driving claim**. Evidence class: **MEASURED (ours)** unless stated.
+
+---
+
+## 0. The headline, in one line
+
+**The PI is right: refcv3's generator emits colliding trajectories — 37.8 % more of them than the
+brief stated — and a perfectly collision-free fan is available for 0.196 m of amortised
+displacement and ZERO cost on the driven path. Neither the veto nor the feasible decode delivers
+it, and the reason is not the reward's direction but its SIGNAL DENSITY: 92 % of windows carry no
+collision gradient at all.**
+
+---
+
+## 1. ⛔ Two corrections that had to land before anything could be committed
+
+### 1.1 The brief's motivating gain does not exist in any banked artifact
+
+The brief stated *"the veto arm shifted `top32_contact` 0.03299 → 0.02691 = −0.00729 … the one
+gain."* **MEASURED** in `…/2026-09-05-veto-only-fan-safety/raw/veto_verdict_veto200.json` and
+`…/veto_verdict_veto2k.json`:
+
+| arm | `top32_contact` base | after s0 | after s1 | Δ s0 |
+|---|---|---|---|---|
+| `veto200` | 0.03298611 | 0.03298611 | 0.03298611 | **+0.000000, CI [0, 0]** |
+| `veto2k` | 0.03298611 | 0.03298611 | 0.03298611 | **+0.000000, CI [0, 0]** |
+
+`fan_contact` moved the **wrong way** at both doses: **+0.000391** (200 steps), **+0.001693**
+(2 000 steps), neither separated.
+
+The strings `0.02691`, `0.0269` and `0.00729` appear **nowhere** in that package's `RESULT.md`,
+searched in bare **and comma-grouped** form. `0.0269` occurs once in
+`raw/fan_rerank_veto200s0.json`, whose `*__contact` entries are **all 0.0 for every selection
+rule** — those are **selected-path** metrics, so that file cannot be the source of a *fan* number.
+
+⇒ **No RL arm has ever moved the generator's collision rate.** Root-cause class: **a number
+quoted without its arm and its artifact path**. Registered as `D-RL-TOP32-NOMOVE-1`.
+⭐ The PI's underlying point is untouched, and §2 makes it larger.
+
+### 1.2 The banked collision flag uses a superseded definition — every prior `contact` number is 37.8 % low
+
+`rewards._collision` is **SWEPT in the relative frame** (a segment crossing the 2 m disc counts
+even when neither endpoint is inside). `fan_bank_base_240w.npz`'s `f_contact` predates it.
+
+**POSITIVELY IDENTIFIED, not inferred** (control C1b, `raw/p2_feasible_vs_contact.json`): the
+per-step **POINT** test reproduces the banked flag with **0 disagreements over 30,720
+candidates**, while every structural flag (`kamm_over`, `envelope`, `off_reach`, `infeasible`)
+reproduces **exactly** under the current scorer and only `contact` differs, **one-sidedly** (289
+extra, 0 fewer).
+
+| | POINT (banked, superseded) | **SWEPT (current)** |
+|---|---|---|
+| `fan_contact`, all 240 windows | 0.024870 (764 / 30,720) | **0.034277 (1,053 / 30,720)** |
+| `fan_contact`, 65 lead windows | 0.095673 | **0.126562** |
+
+⭐ **Corroborated by an independent route**: `_swept_hit` landed in commit `9765634`, which
+`…/veto-only-fan-safety/raw/chain_suite.sh` records as arriving **after** the s0/s1 arms were
+frozen. ⇒ **State the collision definition beside any `contact` number, or it is not quotable** —
+the same family as the `control_units` trap. Registered as `D-RL-CONTACT-DEFN-1`.
+
+⚠️ **Verified for this panel**: the run clone `/c/Users/Admin/refcv4b_repo` carries `rewards.py`,
+`fan_safety.py` and `posttrain.py` **md5-identical to the Drive**, and its `rewards.py` contains
+`_swept_hit` (3 hits, against a same-breath control that reads 1). **These arms run and report
+under the swept definition.**
+
+---
+
+## 2. ⭐ The defect, quantified (the PI's point, made larger)
+
+**MEASURED, 0 GPU**, current swept scorer, `raw/p2_feasible_vs_contact.json`:
+
+| | value |
+|---|---|
+| `fan_contact`, all 240 windows | **0.034277** (1,053 / 30,720) |
+| `fan_contact`, 65 lead-bearing windows | **0.126562** |
+| windows carrying ≥ 1 collider | **19 / 240 = 7.92 %** (29.2 % of lead windows) |
+| worst window | **104 of 128 candidates collide (81.2 %)** |
+| worst 5 windows | **54.7 % of all colliders** |
+| `sel_contact` | **0.0000 — a STRUCTURAL zero** |
+
+⛔ **`sel_contact = 0` measures the SELECTOR, not the model.** The selector picks a non-colliding
+candidate in **240 / 240** windows. A model that depends on a downstream filter is not the model
+to ship — which is precisely the PI's argument, and the reason the primary endpoint is
+`fan_contact`. Registered as `D-RL-GEN-COLLIDES-1`.
+
+---
+
+## 3. ⭐⭐ WHY nothing has moved it: the collision gradient is absent in 92 % of windows
+
+The optimiser is GRPO-style — the advantage is **group-relative across one window's candidates**.
+A window in which *every* candidate collides, or *none* does, contributes an **identically zero**
+collision advantage.
+
+| | count | share |
+|---|---|---|
+| windows with ≥1 collider **and** ≥1 non-collider (can carry a collision advantage) | **19 / 240** | **7.92 %** |
+| windows contributing exactly zero collision gradient | 221 / 240 | **92.08 %** |
+| episodes containing any such window | **14 / 121** | 11.6 % |
+
+⭐ **CORROBORATED BY TWO FURTHER, INDEPENDENT PROBES** — and this matters, because the `ls-tree`
+lesson is that repeated samples through one channel are one sample. The figure above is an
+**eval-side window count**; the trainer's own **train-side counter** is a different mechanism:
+
+`arm_summary.json::counters.components_fired` reads **`collision = 41`** against **`comfort` 200,
+`feasibility` 200, `progress` 200** over 200 optimizer steps — **20.5 % vs 100 %** — and it reads
+**41 in `ctrl_null` (collision weight 0.0) and 41 in `coll200` (collision weight 1.0), identically**.
+⇒ The sparsity is a property of the **data**, not of the arm.
+
+Registered as `D-RL-COLL-SPARSE-1`. This is the **pre-registered** explanation for any null in
+§5, committed in `SPEC.md` §2 before the arms ran.
+
+---
+
+## 4. P2 and P3 — the two levers the brief proposed, both measured at 0 GPU
+
+### 4.1 The feasible decode fixes feasibility completely and does NOT fix collisions
+
+`project_feasible` defaults (`mu = 0.7`, `clamp_entry = False`), **both sides re-scored with the
+current swept scorer**, paired episode-cluster bootstrap. Controls: **C1a** structural flags
+reproduce the bank exactly ✅ · **C1b** bank definition identified ✅ · **C2** `enabled=False`
+bit-identical (0.000e+00) ✅ · **C3** round-trip fixed point (2.13e-14) ✅ · **C4** the projection
+ran (27,431 / 30,720 = **89.29 %** of candidates moved) ✅.
+
+| metric (240 windows) | OFF | ON | Δ [CI] | separated |
+|---|---|---|---|---|
+| **`fan_contact`** | 0.034277 | 0.036230 | **+0.001953** [−0.000034, +0.003992] | no |
+| `top32_contact` | 0.008984 | 0.013672 | **+0.004687** [+0.001260, +0.009333] | ⛔ **yes, WORSE** |
+| `fan_kamm_over` | 0.840625 | **0.000000** | −0.840625 | yes |
+| `fan_envelope` | 0.887728 | **0.000000** | −0.887728 | yes |
+| `fan_infeasible` | 0.891960 | 0.333301 | −0.558659 | yes |
+| `fan_unsafe` | 0.110319 | 0.098210 | −0.012109 | yes, better |
+
+**Mechanism:** infeasible candidates were flying into geometry no vehicle can reach — frequently
+*away* from the lead. Making them realizable pulls them back into the reachable set, which is
+where the lead is. The residual `infeasible` 0.333 is `off_reach`, untargeted at
+`clamp_entry = False`.
+
+⇒ ⛔ **"Run the RL collision stage on top of the projection" cannot by itself be the fix.** The
+projection is a clean **substrate** — it removes the feasibility confound entirely — but
+collisions are **orthogonal** and it mildly worsens them. Registered as
+`D-RL-FEASDECODE-CONTACT-1`.
+
+### 4.2 `progress` binds in isolation and NOT in the composed reward
+
+Tie-safe **AUC** = P(score of a collider > score of a non-collider), ties 0.5. **0.5 = no
+information; > 0.5 = the term ranks colliders higher, i.e. it BINDS.**
+
+| term | AUC (unprojected) | AUC (projected) | reading |
+|---|---|---|---|
+| **`progress`** | **0.8947** [0.8514, 0.9354] sep | **0.7206** [0.6541, 0.7907] sep | ⛔ **BINDS strongly** |
+| `feasibility` | 0.5084 [0.3550, 0.6606] | 0.5192 [0.5063, 0.5336] sep | marginal |
+| `headway` | 0.1406 sep | 0.1487 sep | already disprefers colliders |
+| `comfort` | 0.0261 sep | 0.0788 sep | already disprefers colliders |
+| **`_composed_default`** | **0.0000** | **0.0000** | ⭐ **already perfect** |
+| `_composed_default` − `progress` | 0.0000 | 0.0000 | unchanged by removing progress |
+
+⚠️ **A first implementation FAILED both controls and would have shipped a false positive.** Using
+`argsort(argsort(·))` ordinal ranks, the **constant** control read **+0.6464** instead of 0 and the
+**oracle** read **+0.0810** instead of −1 — because the flag is ~97 % ties and `np.argsort` is
+stable, so a constant score received ranks 0…K−1 in index order. It would have reported `progress`
+at +0.49 from a broken probe. Both controls **PASS exactly** after the switch to AUC. *(This is
+the CLAUDE.md probe-panel rule earning its place a fifth time.)*
+
+⭐ **THE ANSWER: `progress` binds in isolation (AUC 0.89) but is completely dominated in the
+composed reward** — with `collision` at 1.00 no colliding candidate ever outscores a
+non-colliding one (**AUC 0.0000, a structural zero**), and **deleting `progress` changes that by
+exactly nothing**. ⇒ **Repairing `progress` is NOT the lever.** The reward's *ranking* is already
+correct; what is missing is *signal density* (§3). Registered as `D-RL-PROGRESS-COMPOSED-1`.
+
+---
+
+## 5. ⭐⭐ THE PRICE OF A COLLISION-FREE FAN — measured without training anything
+
+`fan_contact` is a property of the candidate **set**, not of the ranking, so no re-weighting can
+change it: the generator has to **move** the paths. Contact is with a time-aligned **lead** and
+92.2 % of the programme's measured deficit is along-track, so the minimal physically meaningful
+fix is *"travel less far along your own path"* — the path scaled toward the ego origin by
+`s ∈ [0, 1]`, shape preserved.
+
+Controls: **Q1** `s = 1.0` reproduces the fan's contact exactly (0 disagreements) ✅ · **Q2**
+`s = 0.0` clears contact for **every** candidate, so no window is unfixable-by-braking ✅ ·
+**Q3** 9 non-monotone re-entries out of 1,053 × 101 grid evaluations, reported not hidden.
+
+| | value |
+|---|---|
+| colliding candidates | **1,053** |
+| fixable by braking alone | **1,053 (100.0 %)** |
+| displacement to clear, per collider | mean **5.73 m**, median 4.84 m, p90 11.69 m |
+| retreat fraction needed | mean **42 %** of path length |
+| **amortised over every emitted candidate** | **0.196 m** [0.077, 0.346] |
+| ⇒ resulting `fan_contact` | **0.034277 → 0.000000** |
+| ⭐ **cost on the DRIVEN path** | **0.000 m — the selector already picks a non-collider in 240/240 windows** |
+
+⭐⭐ **THE TRADE IS FAVOURABLE AND THE BRIEF'S CLOSING QUESTION IS ANSWERED AT THE CEILING: a
+structurally collision-free fan costs 0.196 m of amortised fan displacement and NOTHING on the
+path the car actually drives.** That is the target any collision objective is aiming at, and it is
+an **upper bound on the cost** (a lateral evasion could be cheaper) and a **lower bound on the
+achievable rate** (0.000000) for this family of fixes.
+
+⚠️ **Stated honestly:** 0.196 m is **fan-wide mean displacement**, not a T1 ADE delta on the
+selected path — different objects, and the two must never be compared directly. It is quoted as
+the size of the geometric change required, which is what "at what ADE cost" is asking at the
+generator level. ⚠️ Braking does **not** repair feasibility (`fan_infeasible` 0.891960 →
+0.891960): only 3.4 % of candidates move and ~89 % were already infeasible, so this is a
+**collision** fix and not a feasibility one. The two defects are orthogonal, exactly as §4.1 found
+from the other side.
+
+Registered as `D-RL-COLL-PRICE-1`. Artifact: `raw/p5_collision_price.json`.
+
+---
+
+## 6. P4 — the collision lever at 200 steps, against BOTH floors
+
+⏳ **PENDING — arms running.** `coll200` s0 (trained, in AFTER readout), `coll200` s1, `ctrl0`
+(lr = 0, the zero-lever floor), `ctrl_null` s1 (zero-information).
+
+**One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
+`coll200` differs from the already-banked `ctrl_null` in **the collision weight alone,
+0.0 → 1.0** — same `w_anchor` 1.0, lr 1e-5, 200 steps, `two_scalar`, `use_gt_bar=False`,
+`veto_enabled=False`.
+
+Training-side facts already banked for `coll200` s0: `veto_rate_mean` **0.0** exactly (the veto
+really is off), `final_loss` **0.02588** vs `ctrl_null`'s **0.04459** (the reward really is
+different), `components_fired.collision` **41 / 200**.
+
+⚠️ **A caveat the audit itself raises, recorded now rather than after the numbers:**
+`reward_audit.verdict` is **INCONCLUSIVE** for this arm, with every degenerate-policy score at
+0.0. That is correct behaviour, not a bug — the `collision` component's documented degenerate is
+**"stand still forever (never collides)"**, and a collision-only reward assigns 0 to every
+degenerate policy that does not collide, so the audit cannot discriminate. The only thing
+preventing the stand-still solution is the **`w_anchor` 1.0 trust region**. ⇒ **the four-family
+LONGITUDINAL read is not optional here — it is the check on the degenerate**, and any
+`fan_contact` win accompanied by a speed collapse is a reward hack, not a result.
+
+---
+
+## 7. Deliverable manifest
+
+| artifact | where it lives | what it carries |
+|---|---|---|
+| `SPEC.md` | repo (this package) | pre-registration, both outcomes, the blocking floor check — banked **before** any arm ran |
+| `raw/p2_feasible_vs_contact.py` / `.json` | repo | §1.2, §2, §4.1 — decode ON/OFF + the 4 controls |
+| `raw/p3_progress_binds.py` / `.json` | repo | §4.2 — AUC panel + the K1/K2 controls |
+| `raw/p5_collision_price.py` / `.json` | repo | §5 — the price of a collision-free fan + Q1/Q2/Q3 |
+| `raw/patch_add_coll_arms.py` | repo | the `coll200`/`coll2k` arms + the ONE_VARIABLE assertion |
+| `raw/run_coll_arms.sh` | repo | the arm panel, priority-ordered, with a stale-driver verify gate |
+| `raw/insert_claims_rows.py` | repo | the `GOALS_AND_CLAIMS.md` rows + per-id content verification |
+| `stack/scripts/rl_refcv3_min.py` | repo (modified) | `ARMS` now carries `coll200` and `coll2k` |
+| `Project Steering/GOALS_AND_CLAIMS.md` | repo (modified) | 7 new rows, inserted and content-verified |
+| arm outputs | **`C:/Users/Admin/veto_run/run/s{0,1}/{coll200,ctrl0,ctrl_null}/`** (dev box, off-Drive) | ⚠️ **checkpoints are 428 MB each and are NOT banked to the repo**; the summaries and readouts are what the analysis consumes |

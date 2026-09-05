@@ -244,6 +244,31 @@ ARMS = {
     "ctrl_null":  dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
                        lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
                        veto_enabled=False),
+    # ⭐⭐ THE COLLISION LEVER (2026-09-05, PI instruction: "our model is creating
+    # trajectories with collision, so RL must improve this ... by punishing trajectories
+    # with collisions the quality of output trajectories must improve").
+    #
+    # ⛔ NO ARM IN THIS PANEL HAS EVER RUN A COLLISION-PUNISHING REWARD IN ISOLATION.
+    # `rl` carries collision at 1.00 but CONFOUNDED with progress 0.30 / headway 0.30 /
+    # feasibility 0.50 / comfort 0.20; every `ctrl_*`/`veto*` arm has EVERY weight 0.0.
+    #
+    # ⭐ ONE-VARIABLE, and the contrast is already banked: `ctrl_null` above is this
+    # arm with the collision weight at 0.0 and NOTHING else different -- same w_anchor,
+    # same lr, same steps, same noise_mode, same use_gt_bar, same veto_enabled=False.
+    # The ONLY moving part is `collision` 0.0 -> 1.0.
+    #
+    # ⚠ PRE-REGISTERED EXPECTATION (SPEC §2, MEASURED 0-GPU before this ran): the
+    # advantage is GROUP-RELATIVE across one window's candidates, and only 7.92 % of
+    # windows contain BOTH a colliding and a non-colliding candidate. 92.08 % therefore
+    # contribute an identically ZERO collision advantage. A null here is DIAGNOSTIC of
+    # signal density, not of the reward's direction -- the composed reward already ranks
+    # colliders last perfectly (AUC 0.0000).
+    "coll200":    dict(weights={**{k: 0.0 for k in DEFAULT_WEIGHTS}, "collision": 1.0},
+                       w_anchor=1.0, lr=1e-5, steps=200, use_gt_bar=False,
+                       noise_mode="two_scalar", veto_enabled=False),
+    "coll2k":     dict(weights={**{k: 0.0 for k in DEFAULT_WEIGHTS}, "collision": 1.0},
+                       w_anchor=1.0, lr=1e-5, steps=2000, use_gt_bar=False,
+                       noise_mode="two_scalar", veto_enabled=False),
 }
 
 

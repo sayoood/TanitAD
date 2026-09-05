@@ -1,0 +1,181 @@
+{
+ "_tool": "p3_progress_binds.py",
+ "_tier": "T0 ranking readout on the EMITTED fan (never a driving claim)",
+ "_evidence_class": "MEASURED (ours)",
+ "bank": "raw/fan_bank_base_240w.npz",
+ "W": 240,
+ "K": 128,
+ "default_weights": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ },
+ "estimator": "episode-cluster bootstrap over per-window tie-safe AUC",
+ "n_boot": 4000,
+ "seed": 11,
+ "reading": "AUC = P(score of a collider > score of a non-collider), ties 0.5. 0.5 = no information; >0.5 means the term ranks COLLIDERS HIGHER, i.e. it fights a collision objective and BINDS; <0.5 means it already disprefers colliders.",
+ "results": {
+  "unprojected": {
+   "contact_rate": 0.03427734375,
+   "n_mixed_windows": 19,
+   "auc": {
+    "progress": {
+     "rho": 0.8947105949330737,
+     "lo": 0.8514093648025648,
+     "hi": 0.9354353531617973,
+     "sep": true,
+     "n_windows": 19
+    },
+    "collision": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 19
+    },
+    "headway": {
+     "rho": 0.1405683726063398,
+     "lo": 0.1061915633721982,
+     "hi": 0.17740712865266597,
+     "sep": true,
+     "n_windows": 19
+    },
+    "feasibility": {
+     "rho": 0.5084048902693369,
+     "lo": 0.35495547155599577,
+     "hi": 0.6605739921666839,
+     "sep": true,
+     "n_windows": 19
+    },
+    "comfort": {
+     "rho": 0.026141631196243107,
+     "lo": 0.011483665527441733,
+     "hi": 0.049391034654568525,
+     "sep": true,
+     "n_windows": 19
+    },
+    "_composed_default": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 19
+    },
+    "_default_minus_progress": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 19
+    },
+    "_K1_constant": {
+     "rho": 0.5,
+     "lo": 0.5,
+     "hi": 0.5,
+     "sep": true,
+     "n_windows": 19
+    },
+    "_K2_oracle": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 19
+    }
+   },
+   "controls": {
+    "K1_constant": {
+     "auc": 0.5,
+     "pass": true
+    },
+    "K2_oracle": {
+     "auc": 0.0,
+     "pass": true
+    }
+   },
+   "controls_pass": true
+  },
+  "projected": {
+   "contact_rate": 0.03623046875,
+   "n_mixed_windows": 21,
+   "auc": {
+    "progress": {
+     "rho": 0.7206375943588236,
+     "lo": 0.6541418706235248,
+     "hi": 0.7907427714002714,
+     "sep": true,
+     "n_windows": 21
+    },
+    "collision": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 21
+    },
+    "headway": {
+     "rho": 0.1487008388803766,
+     "lo": 0.10765865368368575,
+     "hi": 0.19617420016641082,
+     "sep": true,
+     "n_windows": 21
+    },
+    "feasibility": {
+     "rho": 0.5192257595908711,
+     "lo": 0.5063043344637841,
+     "hi": 0.5336455966900613,
+     "sep": true,
+     "n_windows": 21
+    },
+    "comfort": {
+     "rho": 0.07881378423949485,
+     "lo": 0.059119454079817606,
+     "hi": 0.10097809598633173,
+     "sep": true,
+     "n_windows": 21
+    },
+    "_composed_default": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 21
+    },
+    "_default_minus_progress": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 21
+    },
+    "_K1_constant": {
+     "rho": 0.5,
+     "lo": 0.5,
+     "hi": 0.5,
+     "sep": true,
+     "n_windows": 21
+    },
+    "_K2_oracle": {
+     "rho": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "sep": false,
+     "n_windows": 21
+    }
+   },
+   "controls": {
+    "K1_constant": {
+     "auc": 0.5,
+     "pass": true
+    },
+    "K2_oracle": {
+     "auc": 0.0,
+     "pass": true
+    }
+   },
+   "controls_pass": true
+  }
+ }
+}
