@@ -464,7 +464,11 @@ def readout(model, corp, lead, wis, device, *, decoder_steps: int, batch: int = 
         # ⚠️ lead5 is [B,1,5,2] and broadcasts over N: contact and TTC are
         # TIME-ALIGNED against the lead's own track, never a static snapshot.
         lead5 = b["lead_track"].reshape(-1, 1, len(GRID_S), 2)
-        has_lead = b["has_lead"].reshape(-1)
+        # ⚠️ build_batch stores has_lead as a python LIST of bools, not a tensor
+        # (`"has_lead": list(has)`), so it is indexed, never reshaped. The first
+        # version of this line called .reshape and died on the FIRST readout —
+        # before any training compute, which is the only reason it was cheap.
+        has_lead = list(b["has_lead"])
         sc = FS.score_paths(fan2, b["v0"], lead5, lead_len_m=LEAD_LEN_DEFAULT_M)
         rank = out["sel_score"].detach().float()                        # [B, N]
         if "reach_keep" in out and out["reach_keep"] is not None:
@@ -494,7 +498,11 @@ def readout(model, corp, lead, wis, device, *, decoder_steps: int, batch: int = 
     # would then carry the improvement.
     lead_rows = [r for r in rows if r["has_lead"]]
     fan_agg, fan_n = {}, {}
-    for k in (kk for kk in rows[0] if kk.split("_", 1)[-1] in FS.FLAGS
+    # ⚠️ the key test is a SUFFIX match, not `split("_", 1)`. The first version
+    # split once and compared the tail, which silently DROPPED every
+    # `mass_rank_*` / `mass_conf_*` key ("rank_contact" is not a flag name) —
+    # i.e. it dropped endpoint (d), the confidence mass, without any error.
+    for k in (kk for kk in rows[0] if any(kk.endswith("_" + f) for f in FS.FLAGS)
               or kk in ("fan_peak_g_mean", "sel_peak_g", "fan_v_mean_2s_spread")):
         pop = lead_rows if any(f in k for f in FS.LEAD_ONLY) else rows
         fan_agg[k] = float(np.mean([r[k] for r in pop])) if pop else float("nan")
@@ -851,7 +859,7 @@ def mode_arm(a) -> int:
     # on its own population. `paired_delta` clusters by EPISODE, so a lead-only
     # key is restricted to lead windows first or its zeros dilute the estimate.
     fan_keys = [k for k in before["per_window"][0]
-                if k.split("_", 1)[-1] in FS.FLAGS
+                if any(k.endswith("_" + f) for f in FS.FLAGS)
                 or k in ("fan_peak_g_mean", "sel_peak_g", "fan_v_mean_2s_spread")]
     fan_deltas = {}
     for k in fan_keys:
