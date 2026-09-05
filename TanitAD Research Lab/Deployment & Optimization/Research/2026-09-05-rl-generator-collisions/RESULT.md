@@ -435,6 +435,41 @@ support-identical to the stock term. Both modes pass all five controls, and the 
 gains **exactly 2** candidates — independently matching p7's count from a separately written
 probe.
 
+### 6.8 ⭐ THE NEW ENDPOINT'S SURFACE, measured on the raw fan
+
+M39's corrected objective is robustness to agent-**motion-prediction** error, quoting **2.86 %**
+at a 0.5 s shift **on the projected fan**. Their number prices the residual their projection
+leaves; this is the **raw-fan baseline it has to be read against** — a different object,
+deliberately, because quoting either alone answers half the question.
+
+Controls: **T1** `dt = 0` reproduces the base contact with **0 disagreements** ✅ · **T2**
+`dt = +0.5 s` from the interpolator equals a pure index shift computed **without** the
+interpolator, **0 disagreements** ✅ · **T3** extrapolated grid points disclosed per row.
+
+⚠️ **Sign semantics stated as GEOMETRY, not as a label**, because *"early"* is ambiguous about
+which way risk runs: **`dt < 0` places the lead EARLIER along its own path — i.e. CLOSER to a
+following ego — and that is the risk direction.**
+
+| `dt` (s) | raw fan | friction-projected | × base |
+|---|---|---|---|
+| **−1.00** (closer) | **0.066243** | 0.066211 | **1.93×** |
+| **−0.50** (closer) | **0.039811** | 0.041699 | **1.16×** |
+| −0.25 | 0.036654 | 0.038184 | 1.07× |
+| **0.00** | **0.034277** | 0.036230 | 1.00× |
+| +0.50 (further) | 0.031413 | 0.033594 | 0.92× |
+| +2.00 (further) | 0.026400 | 0.029167 | 0.77× |
+
+⭐ **The surface is MONOTONE across the whole −1.0…+2.0 s sweep and roughly linear, so there is
+no threshold to sit safely below** — which is precisely the shape that makes this a *learnable*
+objective rather than something a constraint can discharge, and it supports M39's redirect on
+independent evidence.
+
+⭐ **And §4.1 holds under perturbation:** the friction projection is worse than raw at every
+shift (0.041699 vs 0.039811 at the risk end), converging only at `dt = −1.0` where the scene
+dominates. The finding was not an artefact of the unperturbed operating point.
+
+Registered as `D-RL-TIMING-SURFACE-1`. Artifact: `raw/p8_timing_error_surface.json`.
+
 ### 6.7 Still pending
 
 **One-variable, asserted mechanically** (`raw/patch_add_coll_arms.py`, `ONE_VARIABLE=PASS`):
