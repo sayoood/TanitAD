@@ -107,3 +107,45 @@ either surround cameras (a lift) or v5b.
 
 ⇒ **Decision:** v5a is maximised and shipped first. v5b is judged on what gap remains AFTER v5a, not
 on its own merits.
+
+## M8. `E-DDA-1` runs the PLAN's four-arm form with its three controls — not the study's two-arm form
+
+The reconciliation surfaced a genuine conflict of FACT (not naming) and correctly refused to
+adjudicate it: `E-DDA-1` (waypoint-indexed sampling in perspective view) is **4 arms ≈ 2 h with
+three named controls** in `REFCV5_DESIGN_PLAN.md` §7, and **2 arms ≈ 1.0 h with none listed** in
+`…/2026-09-05-vision-only-maximum/RESULT.md`.
+
+⇒ **Decision: the four-arm form.** The hour saved buys nothing; the control it drops is the
+**projection control** — the arm that proves the instrument can SEE a wrong projection. Without
+it a null result is uninterpretable (the sampler may be reading the wrong pixels and we could not
+tell), and a positive result is unfalsifiable. This programme has paid for that lesson twice this
+week: the anti-echo gate is only meaningful because a deliberately image-blind arm FAILS it
+(`H-ECHO-4`), and the refcv3 route metric scored 1.0000 while measuring nothing because no
+intervention control existed. ⛔ A control that must read a known value is not an optional cost line.
+
+⚠️ Corollary recorded so the cheaper number does not leak into a plan: the reconciled v5a total is
+**≈ 29–38 rig-GPU-h (the union of both ladders)**, NOT the study's ≈ 13.4 h. Quote the union.
+
+## M9. Rung A1 is launched now, ahead of refcv4b's finish
+
+`ha0_ext` is absent from the REF-C harness (0 occurrences in `refcv3_arm.py` against 12 in
+`refav1_arm.py`, same-breath control 28 `add_argument` calls — the file reads fine), so half the
+refcv5 acceptance bar is unreadable; and **8 of the 12** registered hierarchy ablations have no CLI
+flag. The eighth missing one is the **frame-blind deliberate regression** (`--ablate-frames`), which
+the prereg's own escalation omits and on which the panel's validity depends — a gate never shown to
+FAIL an image-blind arm certifies nothing.
+
+Both are zero-GPU harness work and both block the post-training hierarchy panel, which becomes
+runnable when refcv4b finishes (~2026-09-06 08:00 UTC). Launched 2026-09-05 as its own stream rather
+than scheduled, because the window is ~20 h and the work is free.
+
+## M10. Open, carried, NOT decided
+
+* `D-V5A-CAM3` is a **retraction-log candidate** — a banked DataFlyWheel camera figure is
+  ×1.39–1.58 high. Nobody has written it to `RETRACTION_LOG.md`; it needs the same treatment as
+  #23.
+* The **B1 chunk spread is unbanked** and BOTH ladders rest on it — a one-query readout for the
+  DataFlyWheel. If the build pulls whole chunks rather than per-clip ranges, the 429 GB camera
+  figure silently becomes terabytes.
+* The study's manifest claims **11** `D-V5A-*` rows; the register holds **10**. Left as found —
+  ⛔ adding a row to make a manifest agree is how a register stops being evidence.
