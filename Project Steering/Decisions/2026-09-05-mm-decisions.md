@@ -2388,6 +2388,8 @@ every budget-shaped constraint we impose.
 ⚠️ **Reported to the PI as a qualification on the headline in the same turn it was found**; the
 `best` panel is running and its brief predates this entry, so the control is applied at synthesis.
 
+## M47. ⛔⛔ **RETRACTED BY M51 — THIS ENTRY COMPARED A PLANNER ARM TO A PLANNER ARM AND CALLED ONE "GROUND TRUTH". The true GT arm (`ol`) reads 0/40, not 31/40. Read M51 before quoting anything below.**
+
 ## M47. ⛔ M46 IS REFUTED BY ITS OWN CONTROL, WITHIN THE HOUR — and the concern belongs to the OTHER lever
 
 ### 1. I ran M46's control on banked data and it says the opposite
@@ -2632,3 +2634,81 @@ all reached for the mount first.** That is not three coincidences; it is the ali
 ⇒ **Adds to the family in `CLAUDE.md`:** *"0 hits is a claim about the SEARCH, not the CONTENT"* now
 carries a second half — ⭐ **"…and when the search is broken, it is at least as likely to be YOUR
 PATTERN as the mount. Prove the channel with a literal before blaming the environment."**
+
+## M51. ⛔⛔ RETRACTION — M47 COMPARED A PLANNER ARM TO A PLANNER ARM AND CALLED ONE "GROUND TRUTH". M46 is reinstated; M49's direction is inverted.
+
+### 1. The error
+
+M47 refuted M46 on the grounds that `combined` = `ccos_argmax` = **"oracle"** = 31/40 const-speed, and
+concluded *"31 of 40 windows are genuinely constant-speed in the ORACLE, so a planner reading 31/40 is
+correct, not degenerate."*
+
+⛔ **I read `trivial_profile.arms['cl']` from the run NAMED `oracle_s0` and called it ground truth.**
+Every record's own `arm_meaning` field says otherwise:
+
+| key | what it is |
+|---|---|
+| `cl` | **T1 — the PLANNER.** `plan()` at t0, predictor consumes the planner's own actions |
+| `ha0` | T1 — constant velocity by construction (the strong baseline) |
+| **`ol`** | ⭐ **T0 — the RECORDED FUTURE integrated from v0: "the kinematic-contract control (must reproduce GT)"** |
+
+⇒ **`oracle_s0`'s `cl` is a T1 planner run whose GOAL is oracle-derived — not the ground-truth
+trajectory.** The ground-truth arm is **`ol`**, and I never read it.
+
+### 2. ⛔ The measurement I should have made, and it inverts the verdict
+
+**MEASURED**, `const_speed_frac`, same 40 windows, all 8 banked runs:
+
+| arm | `cl` (planner) | **`ol` (GROUND TRUTH, T0)** |
+|---|---|---|
+| `ccos_argmax` / `kamm07` / `l3ladder` / **`combined`** | **31/40 = 0.775** | **0/40 = 0.000** |
+| `wk15` | 19/40 = 0.475 | 0.000 |
+| `wk151` | 18/40 = 0.450 | 0.000 |
+| `cos_wk` | 40/40 = 1.000 | 0.000 |
+
+⭐ **Invariance check passed:** `ol` is the same recorded future in every run and reads **0.000 in all
+eight**, so the statistic is live and the value is real. `ha0` reads **1.000** everywhere, as it must.
+
+⇒ ⛔⛔ **THE REAL CAR IS NEVER AT CONSTANT SPEED — 0 of 40 windows.** A planner at **31/40** is
+emitting a do-nothing longitudinal plan on **31 windows where the vehicle actually accelerates.**
+
+### 3. What this does to M46, M47 and M49
+
+* ⭐ **SURVIVES (and is the one genuinely useful thing M47 established):** `combined` and `ccos_argmax`
+  read **identically** 31/40. ⇒ **the cap and the ladder do NOT CAUSE the passivity** — one variable,
+  zero movement. That attribution is unaffected by the reference error.
+* ⛔ **RETRACTED:** *"31/40 is correct because the oracle says so."* It is not correct; it is **maximally
+  wrong on that axis except for `cos_wk`.**
+* ⛔ **M46 IS REINSTATED, with its mechanism relocated:** `combined` **is** longitudinally passive on
+  77.5 % of windows, so it **does** hand most of the two-axis friction budget to the lateral axis.
+  ⭐ **The passivity is INHERITED FROM THE BASELINE PLANNER, not created by the levers** — which is a
+  sharper and more useful statement than either M46 or M47 made.
+* ⛔ **M49's direction is INVERTED.** I wrote that `W_KAPPA` drags const-speed *"31 → 19, AWAY from the
+  oracle"* and priced it as damage. **19 is CLOSER to ground truth (0) than 31 is.** `W_KAPPA` moves the
+  planner **TOWARD** the real car on this axis. ⚠️ M49's **saturation** observation stands untouched
+  (19 → 18 across a 10× range); only its **sign of merit** was wrong.
+
+### 4. ⭐ It explains the night's biggest win mechanistically
+
+`lonshift` drives `frac a == 0` from `wk15`'s **0.475 to 0.000** — i.e. **exactly onto ground truth** —
+and posts LON speed **−0.2263 [−0.3173, −0.1411], 29.8× the seed floor**. ⇒ that is not a mysterious
+gain; it is **a passivity defect being removed**, and the size follows from how far 31/40 was from 0/40.
+⭐ **The corrected reference turns two separate results into one account.**
+
+### 5. Effect on the zero-violation headline, stated plainly
+
+The zero is still **real** — bracketed by controls, `peak_g` max 0.618 vs `ol`-consistent motion, ADE
+within the seed floor of `kamm07`. ⛔ **But its ATTRIBUTION is materially weaker than M47 claimed:** a
+planner that does nothing longitudinally on 77.5 % of windows has a structurally easier time satisfying
+a two-axis budget. **The honest statement is that `combined` achieves zero violations while inheriting a
+large longitudinal passivity it did not create, and the remedy is `lonshift`'s lever, not the cap's.**
+
+### 6. ⛔ Root cause, and it is a rule I banked MYSELF one hour earlier
+
+**I inferred an arm's semantics from its NAME (`oracle_s0`) instead of reading the field that DEFINES
+it (`arm_meaning`).** That is `M49` §3 verbatim — *"a lever's presence must be read from the field that
+actually records it"* — violated inside the same file, in the same hour, by the person who wrote it.
+⚠️ **A name is not provenance**, exactly as *a suffix is not provenance* (`M49`) and *an artifact's
+buffer name is not its codec* (the `jpeg_buf`/`png` trap). ⭐ **The generalisation: when a record ships a
+field that DECLARES what each series means, reading that field is not optional diligence — it is the
+only admissible route, and any label taken from a name is INHERITED.**
