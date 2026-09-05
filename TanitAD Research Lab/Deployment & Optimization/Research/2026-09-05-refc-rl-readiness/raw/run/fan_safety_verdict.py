@@ -79,7 +79,7 @@ def paired(before_rows, after_rows, key, lead_only, n_boot=N_BOOT, seed=SEED):
     bs = np.array([d[rng.integers(0, d.size, d.size)].mean() for _ in range(n_boot)])
     lo, hi = (float(x) for x in np.percentile(bs, [2.5, 97.5]))
     delta = float(d.mean())
-    ci_excludes_zero = bool((lo > 0) == (hi > 0)) and not (lo == 0.0 and hi == 0.0)
+    ci_excludes_zero = bool(lo > 0.0 or hi < 0.0)
     return {"delta": delta, "lo": lo, "hi": hi,
             "n_episodes": int(d.size), "n_windows": int(n_win),
             "all_zero": all_zero,
