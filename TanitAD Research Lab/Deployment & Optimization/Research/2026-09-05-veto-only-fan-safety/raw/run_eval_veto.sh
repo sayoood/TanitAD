@@ -71,6 +71,13 @@ for spec in $ARMS; do
        --lead-block "$EVAL_LEAD" --n-boot "$NBOOT" --seed "$SEED" \
        --out "$OUT/eval/fan_safety_${tag}.json" >> "$OUT/eval_$tag.log" 2>&1
     echo "ZZFANSAFE-$tag-rc$?-ZZ"
+    # The FOUR-FAMILIES rule is BINDING and machine-checked here, not asserted in
+    # prose: a missing family is a WORK ITEM, and the checker NAMES it rather than
+    # letting it be absent from a table nobody diffed.
+    "$PY" -u "$REPO/tools/criteria_check.py" "$OUT/eval/refcv3-40284-$tag.json" \
+       --registry "$REPO/products/P7-TanitEval/CRITERIA_REGISTRY.json" \
+       --json "$OUT/eval/criteria_${tag}.json" >> "$OUT/eval_$tag.log" 2>&1
+    echo "ZZCRITERIA-$tag-rc$?-ZZ"
   fi
 done
 echo "ZZEVAL-COMPLETE-$(date -u +%H:%M:%S)Z-ZZ"

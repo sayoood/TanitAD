@@ -191,6 +191,48 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 
 ⚠️ **Stated limit:** `ctrl_null` has **one** seed, so the zero-information floor is itself unreplicated. It is used as a *direction* and a *magnitude* check, never as an estimate with its own interval.
 
+### 5.3 ⭐ A THIRD run of the same arm was already banked — and it makes the noise floor worse, not better
+
+`ctrl_const` (2026-09-05 morning, the accidental veto-only arm) is the **same configuration at the same seed** as `veto200_s0`, run in a different working directory hours earlier and before P2 existed. Its veto fired at `veto_rate_mean` **0.0896826171875** against `veto200_s0`'s **0.0896923828125** — agreeing to four decimals and **not identical**, which is GPU non-determinism, not a configuration difference. That makes it a **same-seed replicate**, and the three runs read:
+
+| metric | `ctrl_const` (seed 0, morning) | `veto200_s0` (seed 0) | `veto200_s1` (seed 1) |
+|---|---|---|---|
+| **`fan_peak_g_mean`** | **−0.08587** | **−0.09285** | **−0.11577** |
+| `top32_infeasible` | −0.01431 | −0.00640 | −0.00105 |
+| `top8_kamm_over` | −0.01371 | −0.01055 | −0.00264 |
+| `sel_peak_g` | +0.01314 | +0.01547 | +0.00802 |
+
+⛔ **`top32_infeasible` spans −0.01431 to −0.00105 across three runs — a 13.6× range, and two of them share a seed.** So the rig's run-to-run noise is not only a *seed* effect; **two runs of the identical command differ by 2.2× on that metric.** `H-ESTIM-SEED-1` says a separated one-seed CI is necessary and not sufficient; this says the same-seed replicate is not sufficient either, and the floor has to be measured from *runs*, however they differ.
+
+⭐ **And the same table is the strongest evidence in the package for the one surviving claim.** `fan_peak_g_mean` reads **−0.0859 / −0.0929 / −0.1158** across three independent runs — every one negative, mean ≈ **−0.098 g**, spread 0.030 g — while the zero-information arm pushes it **+0.134** the other way. A metric that survives three runs, two floors and a sign-reversed nuisance drift is as replicated as anything this rig currently produces.
+
+
+## 6. ⭐⭐ WHERE THE INFEASIBILITY ACTUALLY COMES FROM — and it is not the vocabulary
+
+**MEASURED, 0 GPU** (`stack/scripts/bank_vs_fan_feasibility.py`, `raw/bank_vs_fan_feasibility.json`): the frozen ANCHOR BANK (`core.decoder.anchors`, a **fixed** `[128, 8, 2]` path set read straight out of the checkpoint) scored by the SAME `fan_safety.score_paths`, on the SAME 240 windows, with the same `v0` and lead track as the emitted fan.
+
+| flag (mean over 240 × 128) | **anchor bank** | **emitted fan** | delta |
+|---|---|---|---|
+| `envelope` | **0.0156** | **0.8877** | **+0.8721** |
+| `kamm_over` | 0.1953 | 0.8406 | +0.6453 |
+| **`peak_g`** (g) | **0.4808** | **4.1131** | **+3.6323** (**8.56×**) |
+| `off_reach` | 0.7783 | 0.1077 | **−0.6705** |
+| `infeasible` (the OR) | 0.8037 | 0.8920 | +0.0883 |
+| `contact` | 0.0239 | 0.0249 | +0.0009 |
+| mean \|emitted − bank\| per waypoint, 2 s prefix | — | — | **9.29 m** |
+
+⇒ ⭐⭐ **The vocabulary is almost entirely drivable — 1.6 % envelope violation at 0.48 g — and the decoder's OFFSET HEAD manufactures the other 87 points, an 8.56× blow-up in peak friction load, by displacing every waypoint a mean of 9.29 m.** The fan refcv3 emits bears little geometric relation to the anchors it is nominally built from.
+
+**Read the `off_reach` row before drawing the wrong conclusion.** The bank is **77.8 %** off-reach and the emitted fan only **10.8 %** — because the bank is a FIXED path set that mostly does not match the window's own speed, and adapting it to the window is precisely the offset head's job. The 9.29 m displacement is not gratuitous; it is what makes the fan speed-appropriate. **The finding is that the adaptation is paid for in the friction envelope, at 8.56×.**
+
+⭐ **What this means for the programme, and it re-prices everything above.** The veto moves `fan_peak_g_mean` by **−0.10 g** against a blow-up of **+3.63 g** — it addresses **≈ 2.7 %** of the gap between the vocabulary's feasibility and the fan's. So:
+
+1. ⛔ **RL post-training of the offset head is the right SURFACE and the wrong SIZE of instrument.** The lever is in the correct place (`core.decoder` is exactly what the stage trains) but a constraint channel nudging a 4.11 g fan cannot recover a 0.48 g one.
+2. ⭐ **The high-value build is a feasibility-aware OFFSET**, not a bigger reward: a reparameterisation or penalty that keeps the *rolled* path inside the envelope, applied where the offset is produced rather than after it. That is an architecture change owned by this FlyWheel, and §6 is the measurement that justifies opening it.
+3. This also explains, without needing the RL panel at all, why `oracle_sel` (the best-ADE candidate) is the **least** drivable one (`D-RL-FANSAFE-1`: 0.1105 vs `os` 0.0865): matching the human's path closely is exactly what the large offsets buy, and the friction cost rises with the offset.
+
+⚠️ **Stated limits.** `peak_g` here is the finite-difference load on free waypoints and under-reports by 1.21–1.85× — *on both sides of the comparison*, so the **ratio** is the robust quantity and the levels are lower bounds. The bank's `envelope`/`kamm_over` rates are window-independent by construction (a fixed path set); `off_reach`, `contact` and `ttc_below` are not, and are averaged over the same 240 windows as the fan.
+
 ---
 
 ## 9. Escalations, follow-ups and stated limits
