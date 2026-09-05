@@ -1,6 +1,6 @@
 # What is maximally achievable with cameras alone — the v5a (pure-vision) study
 
-**status: IN PROGRESS — done: §0 reading guide, §1 camera inventory (four probes, three run today), §2 the six mechanisms priced and ranked / next: §3 the v5a ladder, §4 the v5a/v5b boundary, §5 manifest + register rows**
+**status: IN PROGRESS — done: §0–§4 (inventory, mechanisms, the ten-rung v5a ladder, the v5a/v5b decision) / next: §5 manifest + the D-V5A-* / H-V5A-* register rows in GOALS_AND_CLAIMS.md**
 
 - **Agent:** TanitAD Architecture & Inference FlyWheel · **date:** 2026-09-05 · **branch:** `agent/arch-inf-20260803`
 - **GPU spent by this document:** **0** (two network probes on the dev box, no CUDA; `nvidia-smi` showed the 4060 at 52 % / 4,610 MiB from sibling streams and was not touched)
@@ -337,11 +337,242 @@ third on evidence. None of them needs LiDAR.**
 
 ## §3 The v5a ladder
 
-*(to be filled)*
+Every rung is a **one-lever, pre-registered** work package in the `TanitAD_ValidateAIDesign` form:
+one variable, everything else held constant; a **deliberate-regression arm**; **controls that must
+read known values**; both outcomes committed **before** the run; hyper-parameters fitted on the FIT
+split only; four families with the paired episode-cluster bootstrap; T-tier stamped. A rung that
+does not separate is a **refusal that saves the next rung's compute** — that is the point of the
+ordering, not a consolation.
+
+**Rig cost anchor:** one v7-tiny arm ≈ **29 min on the dev-box 4060 / ≈ 17 min on Thor** (INHERITED,
+`REFCV5_DESIGN_PLAN.md` §7). ⚠️ Both are contended by three sibling streams; the ladder is
+**serial**, and no arm in this document has been launched.
+
+### 3.0 The ladder at a glance
+
+| WP | arm | one variable | gate on | rig GPU | starts |
+|---|---|---|---|---:|---|
+| **WP-V5A-0** | `E-THOR-MV` | views batched through the trunk (1 / 2 / 3 / 6) | — | ~0 (inference only, ≈ 20 min Thor) | ⭐ **now, zero training GPU** |
+| **WP-V5A-1** | `E-AGT-0` | `cross_agent` present, fed **oracle** boxes | — | 4 arms ≈ **2.0 h** | ⭐ **now** |
+| **WP-V5A-2** | `E-AGT-1` | oracle-box **noise σ** (0 / 0.5 / 1 / 2 / 4 m + miss rate) | WP-V5A-1 separates | 6 arms ≈ **2.9 h** | after 1 |
+| **WP-V5A-3** | `E-AGT-2` | tokens from a **learned** monocular 3D head vs oracle | WP-V5A-2 says the bar is reachable | 3 arms ≈ **3.0 h** | after 2 |
+| **WP-V5A-4** | `E-DDA-1` (= `H-DDA-1`, already pre-registered) | waypoint-indexed sampling on the 8 × 20 PV map | — | 2 arms ≈ **1.0 h** | ⭐ **now** |
+| **WP-V5A-5** | `E-DDA-1b` | **which feature stage** is sampled (8 × 20 vs stride-8 32 × 80) | WP-V5A-4 separates | 2 arms ≈ **1.0 h** | after 4 |
+| **WP-V5A-6** | `E-DEPTH-0` | monocular depth head present (measured against label ranges) | — | 2 arms ≈ **1.0 h** | ⭐ **now** |
+| **WP-V5A-7** | `E-CAM-1` | the **cross pair** present as trunk input (100-clip pilot, ≈ 3 GB) | WP-V5A-0 | 2 arms ≈ **1.0 h** | after 0 |
+| **WP-V5A-8** | `E-BEVA-1` | a polar camera→BEV lift with `fov_mask`, agent-raster target | WP-V5A-4 separates | 3 arms ≈ **1.5 h** | after 4 |
+| **WP-V5A-9** | corpus pull + cache build (149 GB or 429 GB) | — (engineering, not an arm) | WP-V5A-7 separates | 0 | after 7 |
+| **WP-V5A-F** | the **refcv5a full-scale run** — only levers that passed their rung | — | ⛔ **refcv4b's final eval frees the A40** | 1 refcv4b-class slot | after refcv4b |
+
+**Total ladder ≈ 13.4 rig-GPU-hours**, serial, on hardware we already have. ⭐ **Four rungs
+(WP-V5A-0, -1, -4, -6) start today at zero pod GPU and zero new bytes**, and between them they
+decide the two highest-value mechanisms in §2.
+
+### 3.1 WP-V5A-0 · `E-THOR-MV` — does a second camera cost 54 ms or nothing?
+
+```yaml
+hypothesis: H-V5A-THOR          # register row below
+one_variable: n_views batched through the vision trunk in a single forward (1, 2, 3, 6)
+held_constant: [weights, precision(bf16), input HxW, warmup, batch of the fan, engine]
+success: "p50 trunk latency at 3 views <= 1.30x the 1-view p50 => surround cameras are an
+          affordable INFERENCE INPUT within the 100 ms tact"
+failure: "p50 at 3 views >= 2.0x the 1-view p50 => surround is a TRAINING-TIME TEACHER only;
+          WP-V5A-7 changes from an input arm to a distillation arm"
+controls:
+  - known_value: "1-view end-to-end tick must reproduce 60.3 ms p50 / 63.1 ms p95 within noise
+                  (MEASURED, PROGRAM_OVERVIEW 5.0.2); if it does not, the rig is wrong and the
+                  sweep is inadmissible"
+  - deliberate_regression: "6 views -- must be visibly slower than 3; a flat 1..6 curve means the
+                            timer is not measuring the trunk"
+```
+* **Why it is first:** it is the only *cheap* measurement that changes a *design*, and it is the
+  single UNMEASURED number §2.2 hangs on.
+* **Instrument rules:** ⛔ on Thor only in-process `torch.cuda.max_memory_allocated()` is admissible
+  for memory; latency is wall-clock p50/p95 over ≥ 200 warmed iterations. ⛔ Never quote an A40
+  number for this. ⚠️ Check Thor is free of sibling load first.
+* **Files:** a standalone probe under `…/2026-09-05-vision-only-maximum/code/`; **no stack change.**
+
+### 3.2 WP-V5A-1 · `E-AGT-0` — the oracle agent-token ceiling ⭐
+
+```yaml
+hypothesis: H-V5A-AGT-1
+one_variable: cross_agent attention present in every decoder layer, fed K=30 oracle boxes
+held_constant: [corpus, seed, steps, batch, window, vocabulary, selection flags, nav wiring]
+success: "oracle-token arm beats the no-token control on the LONGITUDINAL family
+          (headway / time-gap / TTC vs the obstacle.offline replay) AND on TACTICAL
+          (manoeuvre-decision quality), paired episode-cluster bootstrap CI excluding 0"
+failure: "no separation on either family => NO detector accuracy can help; the whole agent-token
+          mechanism (WP-V5A-2, -3) is REFUSED for zero further GPU-days"
+controls:
+  - constant_only:  "a fixed learned token set, identical every frame -- must read the
+                     no-information value; it measures added capacity, not agents"
+  - no_token:       "today's arm, byte-identical (zero-init gate at step 0)"
+  - deliberate_regression: "TEMPORALLY SHUFFLED boxes (from a random other frame of the same
+                     clip). It must LOSE. If shuffled agents help, the head is reading capacity."
+splits: {fit: v7-tiny train, val: carved from FIT, test: the 141 EVAL clips, scored never tuned}
+```
+* **The design point:** the oracle arm is **deliberately inadmissible as a capability claim** (it
+  feeds a label at inference, violating I3) and is run **once, as a ceiling**. That is what makes
+  the mechanism refusable **before** a detector exists. It also answers the PI-relevant question
+  *"what accuracy do the agent tokens need?"* — see WP-V5A-2, where the bar becomes a **derived**
+  number instead of a borrowed literature figure.
+* **Files / parameter delta:**
+  * `stack/tanitad/refs/refc.py` — `CrossAttnLayer` gains `cross_agent(q, a, a)` behind
+    `DecoderConfig.agent_tokens: bool = False`, **zero-init output projection** ⇒ the arm is
+    bit-identical to refcv4b at step 0 (pin it with a parity test in the shape of
+    `tests/test_refc_v4.py::test_v3_parity`). **+≈ 0.3 M / layer, ≈ +1.2 M over 4** (+0.5 %).
+  * `stack/tanitad/refs/refc_v3_train.py` — `V3Dataset.__getitem__` emits
+    `item["agent_boxes"] [K, 8]` (centre xyz, size xyz, sin/cos yaw) + `item["agent_mask"] [K]`
+    from the existing pod-side join (`stack/scripts/build_obstacle_join.py`).
+  * ⛔ **Leak guard:** the loader path that supplies oracle boxes is behind an explicit
+    `AGENT_ORACLE=1` env flag that the deployable config can never set, and the flag is asserted
+    OFF by a test. `obstacle.offline` stays a train-time label everywhere else.
+* **Tiny-rig gate:** `G-DRIVE` only (this is a planner change, not a representation change) — but
+  the run still prints `n` and the per-family CIs, and a family with no lead agent in frame is
+  reported **per family with its reason and its n**, never silently dropped.
+
+### 3.3 WP-V5A-2 · `E-AGT-1` — the accuracy budget, derived not borrowed
+
+```yaml
+hypothesis: H-V5A-AGT-2
+one_variable: the range-noise sigma applied to the oracle boxes (0, 0.5, 1, 2, 4 m), plus a
+              separate miss-rate sweep (0, 10, 25, 50 %) run as its own one-variable panel
+success: "the separation from WP-V5A-1 survives to at least sigma = 1 m => a monocular detector
+          in the published accuracy band is enough, and WP-V5A-3 is worth building"
+failure: "separation dies below sigma = 0.5 m => the mechanism needs LiDAR-grade range and is a
+          v5b item, not a v5a item -- a clean, quantitative v5a/v5b boundary"
+controls: [same as WP-V5A-1, plus sigma=0 which must reproduce WP-V5A-1 exactly]
+```
+⭐ **This rung is the reason §4 can be written honestly**: it converts *"how much would LiDAR
+help?"* from an opinion into **the σ at which our own separation dies**, measured on our own corpus,
+for the cost of six tiny arms and zero new bytes.
+
+### 3.4 WP-V5A-3 · `E-AGT-2` — the monocular 3D detector head
+
+One variable: **the token source** (learned head vs the WP-V5A-1 oracle vs no-token). DETR-style,
+K = 30 queries, Hungarian matching, box + class heads on `obstacle.offline`'s 10 dynamic classes,
+trained as an **auxiliary head on the shared trunk** (no separate run). **+2–4 M params.**
+Readouts: the four families **and** the detector's own range error vs distance (which feeds §4).
+**Deliberate regression:** the detector head trained with **shuffled** labels — its tokens must not
+help. **Bar:** the learned arm must land inside the σ budget WP-V5A-2 derived, or the shortfall is
+reported **as the v5b case**, not as a failure to be re-tuned.
+
+### 3.5 WP-V5A-4 / -5 · `E-DDA-1`, `E-DDA-1b` — grounded spatial attention
+
+`E-DDA-1` is **already pre-registered as `H-DDA-1`** and is not re-litigated here; §2.1 adds two
+implementation facts it must carry: the **cylindrical** projection (`col = f_ref·φ + W/2`, ⛔ never
+a pinhole `K`) and the **6.0°/column** resolution ceiling. `E-DDA-1b` is the **separate** arm that
+changes only **which feature stage is sampled** (8 × 20 → the stride-8 32 × 80 stage, 1.5°/column);
+⛔ it is a distinct arm precisely because bundling it into `E-DDA-1` would make the result
+non-attributable — the `--v2` conflation failure again.
+
+### 3.6 WP-V5A-6 · `E-DEPTH-0` — depth measured before it is used
+
+One variable: a self-supervised monocular depth head on the shared trunk. **Its readout is not a
+driving metric** — it is **range error at the `obstacle.offline` box centres, as a function of
+distance**, which is the number §4 needs. **Two controls, both of which must agree**: the
+**camera-height** scale (1.43–1.56 m, §1.7) and the **ego-speed** scale (PackNet-SfM velocity
+supervision, exact here because `v0` is measured). **A disagreement of more than a few percent
+means the depth is wrong and says so.** ⚠️ A raw-input floor is mandatory: a depth head that does
+not beat "predict the corpus-median range for that image row" has added nothing.
+
+### 3.7 WP-V5A-7 / -9 · `E-CAM-1` — the surround pilot, then the corpus
+
+One variable: **the cross pair present as trunk input** (shared trunk + view embedding), on a
+**100-clip pilot (≈ 3 GB)** fetched by **HTTP range reads of zip members**, not whole chunks.
+⭐ Validating the range-read fetcher on cameras is **3–4× cheaper than on LiDAR and de-risks v5b for
+free**. If WP-V5A-0 returned the *linear* answer, this rung inverts into a **distillation** arm: the
+cross pair supervises a 360° agent-presence target that the **front-only** trunk must predict, and
+the tick is unchanged. **Both variants are pre-registered; WP-V5A-0 selects which one runs.**
+⚠️ `n = 100` clips is small — the failure branch reports **underpowered with its n**, never "no
+effect" (CLAUDE.md: `n ≪ d` is underpowered *by construction*).
+
+### 3.8 WP-V5A-8 · `E-BEVA-1` — the lift, gated and masked
+
+One variable: an **LSS-style polar-native lift** from the stride-8 stage into an ego-frame grid,
+with the fan indexing it directly (no projection — both are rig-frame). ⛔ **Non-negotiable:** an
+explicit `fov_mask` channel and **every loss masked by it**, because an out-of-frustum cell is
+**UNOBSERVED, not free** — reuse `bev_raster.py`'s existing `fov_mask` / `fov_census`. **Target for
+the first arm = the agent raster only** (zero new data), so the arm measures whether a *metric
+frame* helps before anything is spent on *depth*. **Deliberate regression:** the same lift with the
+`fov_mask` removed (out-of-frustum = free) — it must be **caught**, i.e. score better on a naive
+occupancy metric and worse on the families. If the masked and unmasked arms are indistinguishable,
+the occupancy readout is not measuring occupancy.
+
+### 3.9 What v5a recovers, and what genuinely needs v5b
+
+| DiffusionDrive's grounded attention | v5a? | how |
+|---|---|---|
+| **waypoint-indexed spatial** (`GridSampleCrossBEVAttention`) | ✅ **recovered** | WP-V5A-4 in PV today; WP-V5A-8 in a camera-lifted BEV. The *mechanism* is recovered; a LiDAR BEV would improve the *map it samples*, not the attention |
+| **agent cross-attention** (30 detection queries) | ✅ **recovered** | WP-V5A-1 → -3: `obstacle.offline` as **labels**, a monocular detector at inference. This is the one the audit called MISSING and it needs **no new sensor** |
+| **ego-query attention** | ⛔ **deliberately refused** | our FiLM + `ego_dropout 0.5` + X15 is the one design MEASURED to make an arm read the scene (`H-ECHO-8`); DD's ego query is an unguarded echo channel |
+| *(their LiDAR BEV encoder branch)* | ❌ | **v5b** — and §4 prices what it actually buys |
+
+---
 
 ## §4 The v5a/v5b boundary, stated as a decision
 
-*(to be filled)*
+### 4.1 What LiDAR adds **on top of a maximised v5a** — four things, and only four
+
+| # | what v5b adds | how big, honestly | class |
+|---|---|---|---|
+| **1** | **Metric range without a learned prior.** Everything else in this table is downstream of this one | ⭐ **This is the whole case**, and §3 makes it a *measured* quantity rather than an argument: `E-DEPTH-0` reports our monocular range error vs distance, and `E-AGT-1` reports the σ at which our own separation dies. **v5a produces the number that prices v5b.** | the decision |
+| **2** | **The unknown-object class.** LiDAR returns points regardless of semantics; a detector trained on 10 dynamic classes cannot flag an object it has no class for | ⭐ **The strongest safety argument for v5b**, and it is *structural* — no amount of v5a training removes it. It is also the hardest to quantify on this corpus, because the labels themselves are the 10 classes | safety |
+| **3** | **Night and adverse weather.** MEASURED: **15.41 % of the corpus is night** (14.4 % of our own r0 selection) — `our_corpus_profile.json` | a real, bounded slice; the right readout is a **night-stratified** four-family table on any v5a arm, which costs nothing extra | bounded |
+| **4** | **Static geometry** (kerbs, poles, structures) | ⚠️ **Much less than it sounds.** LiDAR gives *occupied volume*, **not lane semantics**: PhysicalAI-AV has **no map, lane graph, junction annotation or traffic-light feature**, and `egomotion` carries no lat/lon, so even *with* LiDAR we cannot compute a NAVSIM-style **DAC**. ⛔ **The PI should not expect drivable-area compliance from v5b** | over-claimed elsewhere |
+
+### 4.2 What v5a already closes — the honest expectation
+
+* **Coverage: fully.** 7 cameras reach **100 % azimuth** (MEASURED §1.2). LiDAR adds **no azimuth**.
+* **The two missing DD attentions: fully.** The audit's finding was *"we have 0 of the 3 grounded
+  attentions"* (`D-REFC-DDAUDIT-4`); v5a recovers **2** and refuses the 3rd on evidence (§3.9).
+  **None of that recovery needs LiDAR.**
+* **The lead vehicle — probably most of it.** Our measured deficit is **92.2 % along-track**
+  (`D-REFCV3-AXIS1`), and the LONGITUDINAL family is dominated by the **lead vehicle**, which is
+  **close, large and centred** — the regime where monocular range is *most* accurate. ⇒ the honest
+  expectation is that **v5b's marginal value concentrates on far, lateral, occluded and night
+  agents**, not on the headway signal we most need. ⚠️ **HYPOTHESIS, and `E-DEPTH-0` refutes or
+  supports it for the price of two tiny arms.**
+* **Occlusion: not at all, for either release.** LiDAR does not see through a van. A frequent
+  over-estimate of the LiDAR gain comes from crediting it with occlusion reasoning it does not have.
+
+### 4.3 What v5a can **never** do
+
+1. Give **range on an object it has no prior for** — the monocular failure mode is *confident* and
+   *silent*, which is worse than a gap.
+2. Produce a **measurement** rather than an **inference**. There is no physically-grounded
+   uncertainty; a v5a depth or box carries a learned confidence, and a learned confidence is exactly
+   what a distribution shift breaks.
+3. See in **darkness beyond the headlights**, or through heavy rain/fog, at the same accuracy.
+4. Provide **any** static/structural occupancy — no LiDAR, no map, no static labels (§2.6).
+5. Detect the **unclassed obstacle** (4.1 #2).
+
+### 4.4 The decision, stated so the PI can take it
+
+> **Run v5a to completion first — and let v5a produce the number that prices v5b.**
+
+| | v5a (pure vision) | v5b (LiDAR on top) |
+|---|---|---|
+| **new bytes** | **0** for four of the six mechanisms; **149 GB** (cross pair) or **429 GB** (all six) if `E-CAM-1` separates — **MEASURED** | **≈ 1.57 TB** transit for B1 (MEASURED-derived from the 99.60 TB corpus total ÷ 298,326 covered clips), plus a **Draco decode + rasterise + sidecar** pipeline, plus **14–38 GB** of PNG sidecar (ESTIMATED, `REFCV5_DESIGN_PLAN.md` §3.3) |
+| **episodes lost** | **0** — all 7 cameras are at **100.00 %** coverage | **2.56 %** — LiDAR is 97.44 % |
+| **new engineering** | a `cross_agent` MHA, a grid-sample module, an LSS lift, a view embedding — all inside `refc.py` / the loader | a new codec path, a new cache format, a streamed corpus build on a pod whose quota `df` cannot see, **and a doctrine ruling** on whether LiDAR may be an *inference* input at all (`D-REFCV5-PLAN-7`, unresolved) |
+| **rig GPU** | **≈ 13.4 h**, serial, on hardware we own | on top of v5a's, not instead of it |
+| **buys** | 2 of DD's 3 grounded attentions · 33.4 % → 100 % azimuth · a metric BEV · agent tokens | **range accuracy at distance/night** and **the unclassed object** |
+| **risk** | the Thor tick (WP-V5A-0 settles it in 20 min) | 1.57 TB moved before the first arm can say whether it was worth it |
+
+**The rule that makes this a decision rather than a preference:** every v5b argument reduces to
+*"how much range accuracy are we missing?"*, and **two v5a rungs measure exactly that at zero new
+bytes** — `E-DEPTH-0` (range error vs distance against the label boxes) and `E-AGT-1` (the σ at
+which our own separation dies). ⇒ **v5b is scheduled if and only if `E-AGT-1`'s σ bar lands below
+what `E-DEPTH-0`/`E-AGT-2` achieve.** If they land above it, LiDAR is a *safety* investment
+(4.1 #2) to be argued on its own terms, not a *performance* one — and that is a much better
+conversation to have with a number in hand.
+
+⚠️ **One thing v5a should do for v5b regardless of the verdict:** WP-V5A-7 validates the
+**HTTP-range zip-member fetcher** on cameras. That mechanism is a HYPOTHESIS in the LiDAR plan
+(`REFCV5_DESIGN_PLAN.md` §3.1) and it is on v5b's critical path. Proving it on 3 GB of camera is
+strictly cheaper than discovering it fails on 1.57 TB of LiDAR.
+
 
 ## §5 Deliverable manifest, primaries to bank, integration escalations
 
