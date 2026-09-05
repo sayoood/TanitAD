@@ -1897,7 +1897,8 @@ class RefAV1(nn.Module):
 
     # -- the imagined goal: the tactical brain's own 6 s field --------------- #
     def _imagine_tactical_goal(self, last: Tensor, brains: dict, v0: Tensor,
-                               *, units: str = "kappa"
+                               *, units: str = "kappa",
+                               lat_logit_bias: Tensor | None = None
                                ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
@@ -1930,7 +1931,38 @@ class RefAV1(nn.Module):
         intent = brains["intent"]
         vv = getattr(cfg, "tac_vocab_version", "v6.0")
         lat_v, lon_v = tactical_lat_actions(vv), tactical_lon_actions_v(vv)
-        lat_i = self.lat_head(intent).argmax(-1).tolist()
+        # ⭐⭐ THE ONE SITE THAT DECIDES WHETHER refav1 CAN TURN AT ALL
+        # (D-REFAV1-DRIVE-GATE, 2026-09-05). `canonical_controls` writes the
+        # curvature column ONLY for TURN_/LANE_CHANGE_/NUDGE_ tokens, this
+        # control profile is the planner's only curvature-carrying candidate
+        # (`refa_v1_plan._baseline_controls` has none and `colored_noise` is
+        # zero-mean along time), so a LANE_KEEP decode here makes a turn
+        # UNREACHABLE by the whole iCEM population. MEASURED on the trained
+        # 21,109-step checkpoint: 244/244 LANE_KEEP windows planned curvature
+        # EXACTLY 0.0 (`.../2026-09-05-refav1-make-it-drive/GATE_ON_REAL_MODEL.md`).
+        #
+        # ⭐ `lat_logit_bias` — an ADDITIVE 8-vector on the lateral logits, the
+        # single parameterisation of the whole decision-rule family: a
+        # class-prior correction is `-tau * log(prior)`; a commit threshold on
+        # LANE_KEEP is a negative entry in that one slot; plain argmax is the
+        # ZERO vector. ⛔ It is `None` by default and `None` skips the add
+        # entirely, so an arm that does not ask for it is BIT-IDENTICAL to the
+        # pre-2026-09-05 expression — asserted by
+        # `tests/test_refa_v1_lat_bias.py::test_a_*`, not assumed.
+        # ⚠️ It biases the GOAL, which moves the goal field AND the iCEM seed
+        # together. That coupling is the point: injecting a turn seed while the
+        # goal field still says LANE_KEEP would score the seed against a hold
+        # goal, which under `ccos` is float32 rounding noise (see COST_METRICS).
+        lat_logits = self.lat_head(intent)
+        if lat_logit_bias is not None:
+            b = torch.as_tensor(lat_logit_bias, dtype=lat_logits.dtype,
+                                device=lat_logits.device)
+            if b.shape[-1] != lat_logits.shape[-1]:
+                raise ValueError(
+                    f"lat_logit_bias carries {b.shape[-1]} entries for a "
+                    f"{lat_logits.shape[-1]}-token lateral vocabulary")
+            lat_logits = lat_logits + b
+        lat_i = lat_logits.argmax(-1).tolist()
         lon_i = self.lon_head(intent).argmax(-1).tolist()
         v0 = torch.as_tensor(v0, dtype=last.dtype, device=last.device).reshape(-1)
         if v0.shape[0] != last.shape[0]:
@@ -1954,7 +1986,8 @@ class RefAV1(nn.Module):
 
     @torch.no_grad()
     def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
-                      model_action_units: str = "kappa"
+                      model_action_units: str = "kappa",
+                      lat_logit_bias: Tensor | None = None
                       ) -> tuple[Tensor, dict]:
         """`_imagine_tactical_goal` from raw inputs — what `plan()` uses when no
         goal is supplied. ``(goal [B, Q, d], {"lat", "lon", "controls"})``.
@@ -1976,7 +2009,8 @@ class RefAV1(nn.Module):
         if v0_t.numel() == 1 and feats.shape[0] > 1:
             v0_t = v0_t.expand(feats.shape[0])
         return self._imagine_tactical_goal(last, brains, v0_t,
-                                           units=model_action_units)
+                                           units=model_action_units,
+                                           lat_logit_bias=lat_logit_bias)
 
     # -- deployment: behaviour by PLANNING, not regression ----------------- #
     @torch.no_grad()
@@ -1986,7 +2020,8 @@ class RefAV1(nn.Module):
              cost_chunk: int = 64, model_action_units: str = "kappa",
              cost_time_grid: str = "dense", goal_time_grid: str = "full",
              cost_metric: str = "cos",
-             cost_weights: tuple[float, float, float] | None = None):
+             cost_weights: tuple[float, float, float] | None = None,
+             lat_logit_bias: Tensor | None = None):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -2167,7 +2202,8 @@ class RefAV1(nn.Module):
             # ⭐ the crossing travels to the GOAL too (R26): one spelling on
             # both sides of the cosine, or the comparison is across conventions.
             goal_t, ga = self._imagine_tactical_goal(
-                last, brains, v0_t, units=model_action_units)
+                last, brains, v0_t, units=model_action_units,
+                lat_logit_bias=lat_logit_bias)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0]}
@@ -2337,6 +2373,14 @@ class RefAV1(nn.Module):
         res.goal_time_grid = goal_time_grid
         res.cost_metric = cost_metric
         res.cost_weights = (w_jerk, w_kappa, w_vend)
+        # ⭐ THE DECISION RULE TRAVELS TOO. `None` is plain argmax — the legacy
+        # path — and anything else changed which token the goal (and therefore
+        # the iCEM seed, and therefore whether a turn was reachable at all) was
+        # built from. A banked window must say so, or two arms that differ ONLY
+        # in this are indistinguishable in their dumps.
+        res.lat_logit_bias = (None if lat_logit_bias is None
+                              else [float(x) for x in
+                                    torch.as_tensor(lat_logit_bias).flatten()])
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the
