@@ -236,9 +236,9 @@ ARTIFACTS: list[Artifact] = [
         kind="anchors",
         desc="refc_anchors_small64.pt — REF-C small anchor set",
         candidates=[
-            ("repo", "TanitAD Research Lab/Benchmarks & Eval/Implementation/"
+            ("repo", "TanitAD Research Lab/Benchmarks & Evals/Implementation/"
                      "incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt"),
-            ("github", "TanitAD Research Lab/Benchmarks & Eval/Implementation/"
+            ("github", "TanitAD Research Lab/Benchmarks & Evals/Implementation/"
                        "incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt"),
             ("pod5", "/workspace/experiments/refc_anchors_small64.pt"),
             ("thor", "/home/nvidia/models/refc_anchors_small64.pt"),

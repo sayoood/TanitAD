@@ -197,7 +197,7 @@ discharged **without any pod**: the label parquets were local all along.
 PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
 PP="C:/Users/Admin/wt-tanitad-local/taniteval;C:/Users/Admin/wt-tanitad-local/stack;C:/Users/Admin/wt-tanitad-local/stack/scripts"
 cd /c/Users/Admin/wt-tanitad-local
-IN="TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-val40-lead-join"
+IN="TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-val40-lead-join"
 
 # 1. UUID recovery + 16-check verification (writes clipmap + verify jsons)
 PYTHONUTF8=1 $PY "$IN/code/recover_val40_uuids.py" --out-dir "$IN/raw"

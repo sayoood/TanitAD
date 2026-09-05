@@ -410,7 +410,7 @@ alongside a sibling's work; the remaining edits are staged in the working tree.
 
 | # | artifact | where it lives | note |
 |---|---|---|---|
-| 1 | `HEADING_DEFAULT.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-heading-default/` | this file |
+| 1 | `HEADING_DEFAULT.md` | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-heading-default/` | this file |
 | 2 | `code/heading_default_demo.py` | same dir | produces (3) by RUNNING the shipped guard |
 | 3 | `raw/heading_default_guard.json` | same dir | every §2 number: the defect reproduced, every refusal, the cache keys, the reproducibility pin |
 | 4 | `code/rescore_idm_head_v1_comma.py` | same dir | the re-score; md5-pinned, resumable, ~10 min on the dev box |

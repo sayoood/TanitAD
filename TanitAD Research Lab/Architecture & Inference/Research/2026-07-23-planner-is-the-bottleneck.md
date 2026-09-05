@@ -31,7 +31,7 @@ ceiling, both of which have cheap discriminating experiments below.
 
 ### 1.1 AlpaSim n=12 paired closed-loop — flagship v1's tactical head LOSES to REF-C base (MEASURED)
 
-Artifact: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/flagship_vs_refc_suite_{NOTE.md,results.json}`.
+Artifact: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/flagship_vs_refc_suite_{NOTE.md,results.json}`.
 On the same 12 `public_2601` scenes, both models fed identical NuRec renders (f-theta canon verified per
 run), one rollout each, only `policy.plan()` differs:
 
@@ -87,7 +87,7 @@ v4.1 over-corrected. Note: the design's own R1 fallback intended *"λ_plan cappe
 
 ### 1.3 Imagination-in-the-loop — real but weak, and a DIFFERENT comparison (MEASURED)
 
-Artifact: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-imagination-closedloop-proof/`.
+Artifact: `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-22-imagination-closedloop-proof/`.
 Flagship v1 WM, n=265 windows / 12 held-out val eps, local 4060, wall **32.4 s**. Paired, byte-identical at
 tick 0, only what happens after differs:
 
@@ -323,7 +323,7 @@ branch pre-committed in §4.1.
 
 | artifact | where | status |
 |---|---|---|
-| this synthesis | `TanitAD Research Hub/Architecture & Inference/Research/2026-07-23-planner-is-the-bottleneck.md` | **STAGED** (git add, not committed, not pushed) |
+| this synthesis | `TanitAD Research Lab/Architecture & Inference/Research/2026-07-23-planner-is-the-bottleneck.md` | **STAGED** (git add, not committed, not pushed) |
 
 **Inputs read (all in-repo, not modified):** `Project Steering/RETRACTION_LOG.md`;
 `…/incoming/2026-07-22-alpasim-closedloop-evalpod/flagship_vs_refc_suite_{NOTE.md,results.json}`;

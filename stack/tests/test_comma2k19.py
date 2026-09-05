@@ -89,7 +89,7 @@ def test_actions_and_poses_math(tmp_path):
 # HONESTY CONDITION: the repair fixes the TAIL and the summary statistic, not    #
 # typical accuracy -- comma-only MAE -42.5 % but medAE only -1.1 % and nMedAE    #
 # 8.0 % WORSE.  Inventory of every affected published number:                    #
-# "TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/               #
+# "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/               #
 #  2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md".                           #
 # --------------------------------------------------------------------------- #
 def test_hold_heading_repairs_standstill_and_is_wrap_safe():

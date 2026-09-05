@@ -16,7 +16,7 @@ nothing is pushed** (agent contract). Nothing lives only on a pod or only in a w
 
 ## Experiment — this results directory
 
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-idm-accel-recoverability/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-03-idm-accel-recoverability/`
 
 | path | what | staged |
 |---|---|---|

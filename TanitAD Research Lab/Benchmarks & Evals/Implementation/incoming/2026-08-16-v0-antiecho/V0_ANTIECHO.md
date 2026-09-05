@@ -342,7 +342,7 @@ All paths relative to the repo root, all **staged in the working tree, NOT commi
 | `stack/scripts/e_ag1_anchor_floor.py` | modified | E-AG3 `PENDING_PI_ADJUDICATION` → `ADJUDICATED`; keys on `any_measured_present` |
 | `stack/tests/test_e_ag1_anchor_floor.py` | modified | 2 tests **superseded** (§6.1) + the supersession-discipline banner |
 | `taniteval/tools/ff_rescore.py` | modified | carries `v0` (`rollout.collect`'s `speed`) through `load_dump` → `score_arm` → the win dict, so the controls fire on **already-banked** dumps |
-| `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-v0-antiecho/V0_ANTIECHO.md` | **NEW** | this document |
+| `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-16-v0-antiecho/V0_ANTIECHO.md` | **NEW** | this document |
 
 **Nothing is stranded**: no pod, no worktree, no agent context. Every artifact is in the repo.
 

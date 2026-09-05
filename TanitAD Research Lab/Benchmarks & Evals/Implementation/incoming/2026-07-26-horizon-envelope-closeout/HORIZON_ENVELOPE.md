@@ -196,7 +196,7 @@ MEASURED, on pod2's own interpreter as well: `ratio_arr(3 m) = ratio_arr(30 m) =
 
 ### 3.2 The blast radius — every committed OOD node, re-adjudicated
 
-`scripts/ood_blast_radius.py` re-adjudicates every OOD node in `TanitAD Research Hub/**/*.json` with
+`scripts/ood_blast_radius.py` re-adjudicates every OOD node in `TanitAD Research Lab/**/*.json` with
 `taniteval.ood.readjudicate` (the packaged rule — no second implementation).
 
 | | |
@@ -722,7 +722,7 @@ NOT pushed**. Anything that exists in only ONE place is marked ⚠️.
 
 | artifact | where it lives | what it is |
 |---|---|---|
-| `HORIZON_ENVELOPE.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-horizon-envelope-closeout/` | this report |
+| `HORIZON_ENVELOPE.md` | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-horizon-envelope-closeout/` | this report |
 | `scripts/k_sweep_envelope.py` | repo (same dir) · `pod2:/root/taniteval/_ksweep.py` | the K-sweep driver (uses `taniteval.clhorizon` + `taniteval.ood`, the packaged modules — §9.8's integration) |
 | `scripts/ood_blast_radius.py` | repo (same dir) | the supremum proof + repo-wide re-adjudication; runs on the dev box, no GPU |
 | `scripts/s3_bar_pinning.py` | repo (same dir) · `pod2:/root/s3pin/_s3pin.py` | T3: mine-once / fit-many, `mine` · `fit` · `sweep` phases |

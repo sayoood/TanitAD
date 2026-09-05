@@ -3,7 +3,7 @@ import json, os, re, datetime
 
 SP = os.path.dirname(os.path.abspath(__file__))
 ROOT = r"G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD"
-OUT = os.path.join(ROOT, "TanitAD Research Hub", "Benchmarks & Eval", "Implementation",
+OUT = os.path.join(ROOT, "TanitAD Research Lab", "Benchmarks & Eval", "Implementation",
                    "incoming", "2026-07-26-program-harvest")
 
 proj = json.load(open(os.path.join(SP, "h1_projected.json"), encoding="utf-8"))
@@ -37,7 +37,7 @@ fw.sort(key=lambda r: -(r["proximity"] or 0))
 index = {
   "schema_version": 1,
   "generated": "2026-07-26",
-  "generator": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+  "generator": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                "2026-07-26-program-harvest/artifacts/{h1_sweep,h1_rank,h1_project,build_index}.py",
   "task": "program-wide harvest of all agent deliverables, feeding Project Steering/BOOST_PROGRAM.md",
   "commissioned_by": "Sayed, 2026-07-26",
@@ -107,7 +107,7 @@ index = {
     {"rank": 1, "finding": "Argoverse 2 is credential-free and its lane graph is byte-verified "
                            "(successors/predecessors/neighbours/is_intersection on 7692 segments "
                            "across 85 maps, 100% field presence; anonymous s3 GET HTTP 200)",
-     "source": "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
                "2026-07-26-credential-free-lanegraph/LANEGRAPH_ALTERNATIVES.md",
      "answers": "Q-TOPO: the strategic-brain topology must come from AlpaSim or an external corpus",
      "answering_stream": "Data Engineering / lane-graph alternatives",
@@ -122,9 +122,9 @@ index = {
     {"rank": 2, "finding": "AlpaSim scenes embed trajdata.VectorMap (130-472 lane polygons, "
                            "130-393 road edges, wait-lines per scene) and trafficsim (SMART/CAT-K, "
                            "Apache-2.0) is in-tree on the pod and has NEVER been enabled",
-     "source": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                "2026-07-26-alpasim-consolidation/ALPASIM_STATE.md ; "
-               "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+               "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
                "2026-07-26-4brain-dominance-program/4BRAIN_DOMINANCE_PROGRAM.md",
      "answers": "Q-TOPO and Q-HP4 simultaneously, plus tactical gates T1-T4",
      "cost_to_connect": "~1h read-only VectorMap connectivity probe on the (free) eval pod; "
@@ -134,7 +134,7 @@ index = {
      "class": "INHERITED", "tier": "PROVISIONAL"},
     {"rank": 3, "finding": "the deployed tick is 74.24 GFLOP (not 401.9) and its DRAM bytes are "
                            "95.5% rollout, so every FLOP-trading lever is worth ~0%",
-     "source": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
                "2026-07-26-orin-thor-optimization/ORIN_THOR_STATE_AND_PLAN.md",
      "answers": "the H2 sensor-attention cost model (84.8-85.6% encoder-compute saving) is priced "
                 "in the wrong currency for the deployment target",
@@ -148,7 +148,7 @@ index = {
                            "line -- in-domain rig-A speed R2 ~0.80-0.85 collapses cross-rig, and "
                            "data-diversity was REFUTED as the cause (the deficit is REPRESENTATIONAL)",
      "source": "Project Steering/RETRACTION_LOG.md 2026-07-26 C14 ; "
-               "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+               "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
                "2026-07-22-own-dynamics-encoder/RESULTS_camcond.md",
      "answers": "Q-BarB -- wm_canary_ade_2s must fall 2.07x and has NO identified lever, UNOWNED",
      "why_missed": "the dynenc stream is filed as REFUTED; its NEGATIVE result is a POSITIVE "
@@ -159,11 +159,11 @@ index = {
                            "TRAINER-LOG number; the eval-grade pair is 2.0739@15k -> 1.1409@30k = "
                            "-45.0% per 15k, and the trainer series reads 1.4900 at step 8-10k, "
                            "i.e. LOWER at an EARLIER step -- they are not the same statistic",
-     "source": ["TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+     "source": ["TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                 "2026-07-26-v4-restart-lever/raw/lambda_verdict.json",
-                "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+                "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                 "2026-07-25-flagship-v4-midtrain-eval/flagship-v4-fromscratch-15k.json",
-                "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+                "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                 "2026-07-26-v4-30k-gate/raw/flagship-v4-fromscratch-30k-oracle.json"],
      "answers": "Q-BarB's difficulty estimate, which underwrites the recommendation not to restart v4",
      "retraction_classes": ["C1 -- only eval_*.py output is quotable",
@@ -175,7 +175,7 @@ index = {
      "class": "MEASURED (mine, three raw JSONs)", "tier": "CONFIRMED"},
     {"rank": 6, "finding": "HP-4 is ~17 scenes away, not a corpus rebuild away (0 of 23 topology "
                            "classes reach the >=40-cluster bar; best S|S at 38 scenes)",
-     "source": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
                "2026-07-26-vectormap-corridor/VECTORMAP_CORRIDOR.md",
      "answers": "Q-HP4; converts an 'impossible' into a procurement item and justifies BOOST 5.6",
      "class": "INHERITED", "tier": "PROVISIONAL (the 17 is ESTIMATED in its own source)"},
@@ -183,7 +183,7 @@ index = {
                            "dynamic classes) was refused on a gate that tested EGO 2s along-track "
                            "prediction (+1.16% [-0.92,+3.19]) -- a different quantity from "
                            "world-model fidelity",
-     "source": "TanitAD Research Hub/Data Engineering/Research/2026-07-21-lead-state-gate.md",
+     "source": "TanitAD Research Lab/Data Engineering/Research/2026-07-21-lead-state-gate.md",
      "answers": "Q-BarB -- wm_canary is scene-latent fidelity, not ego waypoint accuracy",
      "retraction_class": "C12 -- a composite null blamed on the wrong half, at capability level",
      "explicit_non_claim": "do NOT re-ingest on this reasoning alone; that is the "
@@ -193,7 +193,7 @@ index = {
      "class": "INHERITED (the gate); the re-scoping is inference", "tier": "PROVISIONAL"},
     {"rank": 8, "finding": "the n=600 re-scoring path is already built and proven (RESULT_v1_600ep "
                            "exists; the 600 build is a MEASURED order-preserving superset of the 40)",
-     "source": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/"
                "2026-07-26-pod2-eval-host/artifacts/RESULT_v1_600ep.json",
      "answers": "all of H1 -- the 789-null backlog is blocked on nothing but eval-pod time",
      "class": "MEASURED", "tier": "CONFIRMED"},
@@ -206,7 +206,7 @@ index = {
      "class": "INHERITED", "tier": "PROVISIONAL"},
     {"rank": 10, "finding": "PC3 is unblocked in code (corridor.from_windows) but unmeasured on any "
                             "real arm, because no archived arm has pred_dense",
-     "source": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+     "source": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
                "2026-07-26-4brain-dominance-program/4BRAIN_DOMINANCE_PROGRAM.md",
      "answers": "Q-CL -- closed-loop measurability (stream S-1), the program's #1 blocker",
      "cost_to_connect": "one flag on the next eval run",

@@ -47,11 +47,11 @@ which exists so this can be re-run and *diffed* rather than re-argued.**
 
 | what | how |
 |---|---|
-| corpus swept | **135** dirs under `TanitAD Research Hub/*/Implementation/incoming/*/` + `*/Research/` + `Project Steering/` + `Reviews/` + `taniteval/results/` — ⚠️ **the count is moving under us and nobody's number is wrong**: `BOOST_PROGRAM.md` says **134**, I counted **135** at sweep start, the H3 agent counted **136** mid-sweep, and a recount at write-up reads **137** (this harvest dir + `…/2026-07-26-publishable-corpus-hunt/`, which appeared at 19:39 today). **That is itself a datum about the harvest problem** — the corpus grows faster than any single read of it. |
+| corpus swept | **135** dirs under `TanitAD Research Lab/*/Implementation/incoming/*/` + `*/Research/` + `Project Steering/` + `Reviews/` + `taniteval/results/` — ⚠️ **the count is moving under us and nobody's number is wrong**: `BOOST_PROGRAM.md` says **134**, I counted **135** at sweep start, the H3 agent counted **136** mid-sweep, and a recount at write-up reads **137** (this harvest dir + `…/2026-07-26-publishable-corpus-hunt/`, which appeared at 19:39 today). **That is itself a datum about the harvest problem** — the corpus grows faster than any single read of it. |
 | files | **642 JSON parsed** · 222 `.md` (3.19 MB) grepped · 373 `.py` |
 | H1 instrument | `scratchpad/h1_sweep.py` → `h1_rank.py` → `h1_project.py` (recursive walk, every node carrying `separated: false`, sibling effect + CI + n extracted, `\|effect\|/half-width` computed). **Staged as `artifacts/h1_sweep.py` etc.** so this is re-runnable and diffable. |
 | **evidence class of this document** | The *sweep statistics* (counts, proximities, projections) are **MEASURED (ours, `harvest_index.json`)** — I computed them from the raw JSON, not from prose. The *claims the artifacts make* are **INHERITED** and marked so per row. |
-| **tier** | The sweep is **PROVISIONAL** — one path, one agent. **Exception, and it is the load-bearing count:** the headline `separated: false` total was re-derived by an **independent tool** (`grep -rc '"separated": false'`) giving **2050** in `TanitAD Research Hub` + `taniteval` and **1** in `Project Steering` + `Reviews` = **2051**, matching the parser exactly ⇒ **that count is CONFIRMED.** Everything derived from it (bucketing, proximity, projection) remains PROVISIONAL. **Nothing here is DECISION-GRADE.** |
+| **tier** | The sweep is **PROVISIONAL** — one path, one agent. **Exception, and it is the load-bearing count:** the headline `separated: false` total was re-derived by an **independent tool** (`grep -rc '"separated": false'`) giving **2050** in `TanitAD Research Lab` + `taniteval` and **1** in `Project Steering` + `Reviews` = **2051**, matching the parser exactly ⇒ **that count is CONFIRMED.** Everything derived from it (bucketing, proximity, projection) remains PROVISIONAL. **Nothing here is DECISION-GRADE.** |
 | ⚠️ estimator hygiene | Nodes produced by `overlapping_holdout_se` / `_jack` are **excluded from the results tables and listed separately as needing re-estimation** (it biases point estimates −6.67 %…+11.69 %, up to ×−4.15 with sign flips). |
 | 🔒 | No clip UUIDs or PhysicalAI raw content appear in any artifact here. |
 
@@ -786,7 +786,7 @@ lane graph at all** (retracted 07-26).
 
 | # | artifact | where it lives | only ONE place? | produced by |
 |---|---|---|---|---|
-| 1 | **`PROGRAM_HARVEST.md`** — the five inventories + live findings + top-10 + this manifest | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-program-harvest/` | **no** — derived from repo content that is itself committed | harvest orchestrator |
+| 1 | **`PROGRAM_HARVEST.md`** — the five inventories + live findings + top-10 + this manifest | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-program-harvest/` | **no** — derived from repo content that is itself committed | harvest orchestrator |
 | 2 | **`harvest_index.json`** (~1.1 MB) — machine-readable H1 + H5 + checkpoint availability; **re-runnable and diffable** | same dir | no | orchestrator |
 | 3 | `artifacts/h1_sweep.py` · `h1_rank.py` · `h1_project.py` · `build_index.py` — the H1 instrument, staged so the sweep is reproducible | same dir | no | orchestrator |
 | 4 | **`H2_UNUSED_CAPABILITIES.md`** + `h2_unused_capabilities.json` — 38 capabilities ranked by value/effort | same dir | no | H2 subagent |

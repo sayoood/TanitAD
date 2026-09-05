@@ -27,11 +27,11 @@ import json
 import os
 
 LADDER = (
-    "TanitAD Research Hub/Architecture & Inference/Implementation/"
+    "TanitAD Research Lab/Architecture & Inference/Implementation/"
     "incoming/2026-08-18-ladder-3seed/raw"
 )
 OUT = (
-    "TanitAD Research Hub/Benchmarks & Eval/Implementation/"
+    "TanitAD Research Lab/Benchmarks & Evals/Implementation/"
     "incoming/2026-08-18-citation-sweep/raw/canonical_requote_table.json"
 )
 

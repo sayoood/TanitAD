@@ -436,7 +436,7 @@ or in a worktree. 35 modified + 3 new files, **+824 / −69 lines**.
 | `taniteval/tests/test_val_parity.py` | 37 tests — the chokepoint, the guard API, the premise pins, per-module routing |
 | `taniteval/tests/test_runner_gate_print.py` | 11 tests — the gate-print migration + the quarantine |
 | `stack/tests/test_val_parity_evaluators.py` | 57 tests — per-evaluator wiring, the leaky-default family, functional end-to-end refusals |
-| `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-val-parity-integrity/VAL_PARITY_REPORT.md` | this report |
+| `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-val-parity-integrity/VAL_PARITY_REPORT.md` | this report |
 
 **Modified — `stack/`**
 

@@ -249,7 +249,7 @@ correction inside the arm's own registry entry. **Master Mind decision.** ⚠️
 object is its **git blob id at staging time**, so an erratum must be a NEW, separately-staged
 statement — never a silent edit of the staged file.
 
-**E3 — Lab-tree spelling drift.** A **singular** `TanitAD Research Lab/Benchmarks & Eval/` tree was
+**E3 — Lab-tree spelling drift.** A **singular** `TanitAD Research Lab/Benchmarks & Evals/` tree was
 created at 2026-09-05 04:01 and is cited by `PREREG_REFCV4B_HIERARCHY_EVAL.md` §7, while the PI's
 binding directive of 2026-08-27 makes the **plural** `Benchmarks & Evals` the live spelling and calls
 the singular dead. This package therefore lands at the plural path. Two parallel trees is precisely

@@ -495,7 +495,7 @@ Everything is in the repo working tree, **staged, never pushed**. Nothing is str
 
 | artifact | path |
 |---|---|
-| **This report** | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md` |
+| **This report** | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md` |
 | ⭐ **The val40 lead block** (28 KB; makes any banked dump re-scorable with **zero** label I/O) | `…/raw/val40_lead_block.npz` |
 | Four-family panel, all arms, paired + stratified | `…/raw/four_family_panel_val40.json` |
 | Scorer output, per arm | `…/raw/lead_refc-base-30k.json`, `…/raw/lead_flagship-30k.json`, `…/raw/lead_cv-canonical.json` |

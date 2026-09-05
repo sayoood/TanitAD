@@ -4,7 +4,7 @@
 
 ## Method, and its limits — read before quoting anything below
 
-**What was swept.** All **137** agent deliverable directories under `TanitAD Research Hub/*/Implementation/incoming/` (Architecture & Inference 43, Benchmarks & Eval 49, Data Engineering 26, Opponent Analyzer 3, Production & Optimization 7, Tools&DevEnv 4), plus `Project Steering/` (`MODEL_REGISTRY.md`, `RETRACTION_LOG.md`, `LOOP_STATE.md`, `GATE_PROTOCOL.md`, `CLAUDE.md`, and the independent chief-scientist review under `Reviews/`), `Paper/TANITAD_PAPER.md`, `Benchmarks & Eval/LEADERBOARD.md`, `TanitAD Research Hub/HYPOTHESIS_LEDGER.md`, and `taniteval/results/` (raw JSON, opened directly for the highest-stakes rows).
+**What was swept.** All **137** agent deliverable directories under `TanitAD Research Lab/*/Implementation/incoming/` (Architecture & Inference 43, Benchmarks & Eval 49, Data Engineering 26, Opponent Analyzer 3, Production & Optimization 7, Tools&DevEnv 4), plus `Project Steering/` (`MODEL_REGISTRY.md`, `RETRACTION_LOG.md`, `LOOP_STATE.md`, `GATE_PROTOCOL.md`, `CLAUDE.md`, and the independent chief-scientist review under `Reviews/`), `Paper/TANITAD_PAPER.md`, `Benchmarks & Eval/LEADERBOARD.md`, `TanitAD Research Lab/HYPOTHESIS_LEDGER.md`, and `taniteval/results/` (raw JSON, opened directly for the highest-stakes rows).
 
 **How.** Six parallel read-only extraction passes (one per hub-category/date-slice) each built a claim index — quantity, value, exact path, date, evidence class — from primary sources (their own `.md` reports plus the raw JSON each one cites), and flagged internal candidate contradictions. I independently re-verified the highest-stakes candidates myself by opening the cited raw files directly (upgrading them from INHERITED to MEASURED), cross-checked every candidate against `RETRACTION_LOG.md`, `MODEL_REGISTRY.md`'s own self-corrections, and `HYPOTHESIS_LEDGER.md` to exclude anything already resolved, and ranked what remained by blast radius (whose live decision or widely-read document rests on the weaker side).
 
@@ -61,8 +61,8 @@ Per the brief's instruction not to re-report settled items, the following were t
 
 | artifact | location |
 |---|---|
-| `H4_CONTRADICTIONS.md` (this file) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-program-harvest/H4_CONTRADICTIONS.md` |
-| `h4_contradictions.json` (machine-readable, same 13 rows) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-program-harvest/h4_contradictions.json` |
+| `H4_CONTRADICTIONS.md` (this file) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-program-harvest/H4_CONTRADICTIONS.md` |
+| `h4_contradictions.json` (machine-readable, same 13 rows) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-program-harvest/h4_contradictions.json` |
 | 6 claim-index scratchpads (extraction working files, full long-tail of candidates, not part of the deliverable but referenced above) | `scratchpad:claims_arch_early.md`, `claims_arch_late.md`, `claims_bench_early.md`, `claims_bench_late.md`, `claims_dataeng.md`, `claims_smallhubs.md` — session-local scratchpad, not in the repo |
 
 **Read-only guarantee:** no file outside this directory was written or edited; no pod was contacted; no GPU was used.

@@ -24,7 +24,7 @@ disagreement is **recorded, not smoothed**.
 
 ## 1. THE HIERARCHY VOCABULARY — the actual token sets, their sizes, and how they bind to v6
 
-**Owner:** `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/HIERARCHY_VOCABULARY.md`
+**Owner:** `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/HIERARCHY_VOCABULARY.md`
 (the handover cites it without a path; it is in the `2026-08-07-hierarchical-wm-redesign` folder,
 alongside `HIERARCHICAL_WM_REDESIGN.md`). Evidence class: **DESIGN — a PI-directed specification**,
 not a measurement. The doc's own header calls it "vocabulary v0 = THIS DOC".
@@ -216,7 +216,7 @@ args — and §1.9 below shows a 34 B production system already factorises this 
 
 ## 2. ALPAMAYO-2 SUPER — QUANTIZATION AND INFERENCE
 
-**Owners:** `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`
+**Owners:** `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`
 (the campaign's single richest result document, 764 lines, and **not referenced by path anywhere in
 the handover** — the handover points only at "chronicle rows in `PROJECT_STATE.md`", where **no A2
 rows exist**; see §2.6) + `…/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/DESIGN.md`
@@ -494,7 +494,7 @@ are ⛔ **not comparable to the published minADE₆ 0.911 m** for the same three
 - It also says the strategy is in **`DataEng/DATA_STRATEGY.md`**. **That file is the v1.0 of
   2026-07-06** (`git log`: last touched by `47a89c4`, the D-014 MetaDrive retirement) and **contains
   no Alpamayo content at all**. See §3.1.
-- The A2 work's actual home is `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-05-alpamayo2-super/`
+- The A2 work's actual home is `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-05-alpamayo2-super/`
   (analysis, 764 lines) and `…/2026-08-06-alpamayo-augmentation/DESIGN.md` (the dataset design).
 - `alpamayo_vs_flagship` and the `retime` arms are named in the handover as pod-side products in
   `a2_batch_out/`. **The pods are dead.** What survived into the repo is the §2.3/§2.4 comparison
@@ -1545,7 +1545,7 @@ T1 harness adapter whose staging is flagged in `V6_TRAINER_DESIGN.md` §7 as a *
 **`Project Steering/eval_corpus/{README.md, V2EP_FORMAT_SPEC.md}`.** The eval-corpus format spec — the
 contract any future corpus build (including the 4,472-clip job) must satisfy.
 
-**`TanitAD Research Hub/Evaluation/Videos/*` (6 READMEs + `INDEX.md`).** The video deliverables incl.
+**`TanitAD Research Lab/Evaluation/Videos/*` (6 READMEs + `INDEX.md`).** The video deliverables incl.
 `v1arch-oodval-openloop-2026-08-05/READ_THIS_TOO-the-ranked-reels-are-a-speed-split.md` — a titled
 warning that the ranked reels are a **speed split**, not a quality ranking. ⚠️ Per the standing note,
 `*.mp4` is gitignored: the READMEs are in the repo, **the videos need `git add -f`** or they live only

@@ -8,7 +8,7 @@ Repo HEAD `a186204`. **Staged, never pushed, never committed.** No branch switch
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| `PARITY_LEAK_CHECK.md` — pre-registration, method, controls, verdict, `ci.py` verdict, escalations | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-parity-leak-check/` | no (repo) |
+| `PARITY_LEAK_CHECK.md` — pre-registration, method, controls, verdict, `ci.py` verdict, escalations | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-parity-leak-check/` | no (repo) |
 | `MANIFEST.md` (this file) | same | no (repo) |
 
 ## Code — all staged, all reproduce a staged number

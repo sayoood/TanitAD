@@ -600,7 +600,7 @@ surface is quoted above.
 
 ## 11. DELIVERABLE MANIFEST
 
-**Repo** — `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-v4-30k-gate/`
+**Repo** — `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-v4-30k-gate/`
 (**not** `git add`ed, per the brief):
 
 | file | what |

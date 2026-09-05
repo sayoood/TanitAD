@@ -813,7 +813,7 @@ Artifacts: `artifacts/RESULT_v1_600ep.json`, `artifacts/v1_40_vs_600.json`.
 ## 8. Deliverable manifest
 
 All paths relative to
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-pod2-eval-host/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-pod2-eval-host/`
 in the **repo working tree on the dev box**. ⛔ **Nothing was `git add`-ed, committed or pushed.**
 
 | file | what |

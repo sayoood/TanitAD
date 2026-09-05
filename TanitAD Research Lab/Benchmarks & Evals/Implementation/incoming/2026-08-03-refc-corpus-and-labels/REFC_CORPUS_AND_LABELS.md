@@ -45,7 +45,7 @@ do not.
 Median clip 19.9 s (min 19.7, max 20.5), 99,477 frames, 0 skip markers. Episode record:
 `{frames_u8 [199, 9, 256, 256] uint8, actions [199, 2], poses [199, 4], episode_id, maneuvers [199]}`.
 
-Run directory: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-refc-corpus-and-labels/`
+Run directory: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-03-refc-corpus-and-labels/`
 · raw results in `results/`.
 
 ---

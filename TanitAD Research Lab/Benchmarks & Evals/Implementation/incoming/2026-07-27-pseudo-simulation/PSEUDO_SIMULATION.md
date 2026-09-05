@@ -532,7 +532,7 @@ head would immediately get a longer-horizon MEASUREMENT out of this harness with
 
 All repo paths relative to the working tree on the dev box; everything **`git add`-ed, NOT committed,
 NOT pushed**. Anything living in only ONE place is marked ⚠️.
-Repo dir: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudo-simulation/`
+Repo dir: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-pseudo-simulation/`
 
 | artifact | where it lives | md5-verified | what it is |
 |---|---|:--:|---|

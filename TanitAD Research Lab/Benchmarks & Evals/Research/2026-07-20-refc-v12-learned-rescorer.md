@@ -422,8 +422,8 @@ python3 scripts/refc_v12_eval.py --head /root/models/refc-v12/head.pt \
 | Head-only trainer + sweep driver | repo `stack/scripts/refc_v12_train.py` | in `3d41bd0` * |
 | TanitEval-compatible eval adapter (+ paired bootstrap) | repo `stack/scripts/refc_v12_eval.py` | in `3d41bd0` * |
 | Contract tests (25, suite green at 611) | repo `stack/tests/test_refc_rescorer.py` | in `3d41bd0` * |
-| This note | repo `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-v12-learned-rescorer.md` | staged |
-| All 8 sweep summaries + `BEST.json` + 3 raw eval JSONs | repo `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-20-refc-v12/` | staged |
+| This note | repo `TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-20-refc-v12-learned-rescorer.md` | staged |
+| All 8 sweep summaries + `BEST.json` + 3 raw eval JSONs | repo `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-20-refc-v12/` | staged |
 | **Head `kall-soft-τ0.4`** (the `refc-v12` arm) | `tanitad-pod3:/workspace/experiments/refc-v12/head.pt` · `tanitad-eval:/root/models/refc-v12/head.pt` · local scratchpad | **3** |
 | **Head `k16-regress`** (post-hoc arm) | `tanitad-pod3:/workspace/experiments/refc-v12/head_k16-regress.pt` · `tanitad-eval:/root/models/refc-v12-k16reg/head.pt` · local scratchpad | **3** |
 | Raw results in the harness | `tanitad-eval:/root/taniteval/results/refc-v12{,-k16reg,-identity}.json` + `windows_*.pt` | 1 pod + repo mirror of the JSON |

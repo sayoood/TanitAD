@@ -457,7 +457,7 @@ score. The effects above are separated; they are also small.
 
 ## 7. Deliverable manifest
 
-Repo dir: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-pseudosim-arm-panel/`
+Repo dir: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-pseudosim-arm-panel/`
 Everything `git add`-ed, **NOT committed, NOT pushed**. ⚠️ marks anything in only ONE place.
 
 | artifact | where it lives | what it is |

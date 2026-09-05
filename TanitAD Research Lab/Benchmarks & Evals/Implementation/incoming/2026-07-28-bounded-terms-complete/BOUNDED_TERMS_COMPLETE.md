@@ -612,7 +612,7 @@ artifact — counts only.
 ## 13. Deliverable manifest
 
 Repo dir:
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-bounded-terms-complete/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-bounded-terms-complete/`
 Everything `git add`-ed into the working tree. ⛔ **I did not commit and did not push.**
 ⚠️ marks anything living in only ONE place — **there is nothing in that state.**
 

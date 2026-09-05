@@ -8,7 +8,7 @@ WHAT THIS ANSWERS
     negative controls.
 
 SUBSTRATE — all local, 0 pod GPU-h
-    head    <repo>/TanitAD Research Hub/Benchmarks & Eval/Implementation/
+    head    <repo>/TanitAD Research Lab/Benchmarks & Evals/Implementation/
             incoming/2026-07-27-fleet-sync-idm-steer/idm_head_v4_steer_ens3.pt
     encoder C:/Users/Admin/tanitad-data/eval/v1_speedjerk_ckpt.pt   (flagship v1)
     frames  C:/Users/Admin/tanitad-data/eval/comma2k19-val-61c46fca8f7f
@@ -45,7 +45,7 @@ sys.path.insert(0, str(REPO / "stack"))
 sys.path.insert(0, str(REPO / "stack" / "scripts"))
 sys.path.insert(0, str(REPO / "taniteval"))
 
-HUB = REPO / "TanitAD Research Hub"
+HUB = REPO / "TanitAD Research Lab"
 HEAD_CKPT = (HUB / "Benchmarks & Eval/Implementation/incoming"
              / "2026-07-27-fleet-sync-idm-steer/idm_head_v4_steer_ens3.pt")
 ANCHOR = (HUB / "Benchmarks & Eval/Implementation/incoming"

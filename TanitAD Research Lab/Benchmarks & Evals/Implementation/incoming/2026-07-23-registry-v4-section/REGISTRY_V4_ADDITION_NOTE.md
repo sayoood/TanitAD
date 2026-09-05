@@ -134,14 +134,14 @@ on single pod disks, not HF-backed. Class: MEASURED — `…/incoming/2026-07-23
 | artifact | where | status |
 |---|---|---|
 | edited registry (new §1.5 v4 line; old variants → §1.6) | `repo:Project Steering/MODEL_REGISTRY.md` | **STAGED** (git add; NOT committed, NOT pushed) |
-| this addition note | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-registry-v4-section/REGISTRY_V4_ADDITION_NOTE.md` | **STAGED** |
+| this addition note | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-23-registry-v4-section/REGISTRY_V4_ADDITION_NOTE.md` | **STAGED** |
 
 **Primary sources consumed (all already in-repo, read-only):** `taniteval/results/flagship-v4.1-10k.json`,
 `taniteval/results/flagship-v4.2-step4000.json`, `Project Steering/Gates/flagship-v4-gate-10k-2026-07-23.json`,
 `Project Steering/Gates/flagship-v4.card.json`, `taniteval/results/trainlogs/flagship-v4.{1-10k,2-step4000}_config.json`,
 `…/incoming/2026-07-23-v41-10k-gate/{v4.1_train.log,v41_step10000_inloop_health.json,STATUS_BLOCKED.md}`,
 `…/incoming/2026-07-23-v4-eval-harness/STATUS.md`, `…/incoming/2026-07-23-v4-fromscratch/V4_FROMSCRATCH_LAUNCH.md`,
-`TanitAD Research Hub/Architecture & Inference/V4_FLAGSHIP_DESIGN.md` §3.1/§17.
+`TanitAD Research Lab/Architecture & Inference/V4_FLAGSHIP_DESIGN.md` §3.1/§17.
 
 **Escalations (surfaced, not acted on):**
 - The v4 line does **not** touch `Project Steering/Mission Plan.md` (agents never edit it).

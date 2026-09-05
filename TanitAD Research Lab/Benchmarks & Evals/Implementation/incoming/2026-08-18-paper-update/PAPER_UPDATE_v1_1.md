@@ -209,7 +209,7 @@ Per the binding rule, each family with its reason and `n` where it does not appl
 | artifact | path | what it is |
 |---|---|---|
 | the paper | `repo:Paper/TANITAD_PAPER.md` | **modified**: v1.1 — new §5.8, §7.19, §9.4 audit block, §10 items 10/13/14, §10.1 decisions 6–7, §3.10 + §7.14 in-place status, abstract + changelog |
-| this record | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-paper-update/PAPER_UPDATE_v1_1.md` | provenance table, gate-bar audit, four families, escalations |
+| this record | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-paper-update/PAPER_UPDATE_v1_1.md` | provenance table, gate-bar audit, four families, escalations |
 
 **Inputs read and NOT copied** (all already banked in-repo by their producing streams):
 `…/incoming/2026-08-18-pooling-ladder-ER10/raw/**` · `…/Research/2026-08-18-encoder-experiments/raw/**` ·

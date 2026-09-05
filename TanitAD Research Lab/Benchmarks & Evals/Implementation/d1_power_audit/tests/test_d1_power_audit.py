@@ -1,6 +1,6 @@
 """Sanity tests for the D1 ADE power audit (G-B2: analytic/synthetic ground truth).
 
-Run: pytest "TanitAD Research Hub/Benchmarks & Eval/Implementation/d1_power_audit/tests"
+Run: pytest "TanitAD Research Lab/Benchmarks & Evals/Implementation/d1_power_audit/tests"
 The tests exercise the pure statistics (bootstrap CI, ego rotation, per-episode
 aggregation) with KNOWN ground truth — no checkpoint / CUDA required.
 """

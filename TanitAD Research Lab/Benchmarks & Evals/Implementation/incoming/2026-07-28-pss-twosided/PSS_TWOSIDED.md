@@ -523,7 +523,7 @@ identity is *asserted*, not assumed. No clip UUID or raw PhysicalAI content appe
 
 ## 11. Deliverable manifest
 
-Repo dir: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-pss-twosided/`
+Repo dir: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-pss-twosided/`
 Everything `git add`-ed into the working tree. ⛔ **I did not commit and did not push.**
 ⚠️ marks anything living in only ONE place — **there is nothing in that state.**
 

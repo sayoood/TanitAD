@@ -70,7 +70,7 @@ no `windows_*.pt` in the repo"*.
 
 | artifact | repo path | what it is |
 |---|---|---|
-| published P2 JSON | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-closedloop-artifact-rerun/_pod_pulled/planner_p2_flagship-30k.json` | the artifact behind the registry's P2 row |
+| published P2 JSON | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-closedloop-artifact-rerun/_pod_pulled/planner_p2_flagship-30k.json` | the artifact behind the registry's P2 row |
 | planner closed-loop windows | `…/2026-07-26-closedloop-artifact-rerun/raw_windows/p2win_flagship-30k.pt` | 221 win / 20 ep, stride 16 |
 | head-baseline closed-loop windows | `…/2026-07-26-closedloop-artifact-rerun/raw_windows/clwin_flagship-30k.pt` | 881 win / 40 ep, stride 8 — **and its `plan_direct` is the G1 tactical-head arm** |
 | open-loop operative + CV windows | `taniteval/results/windows_flagship-30k.pt` | 881 win / 40 ep — **the identical window set** (`gt` and `eid` bit-equal to `clwin`) |
@@ -254,7 +254,7 @@ estimator beside it (`taniteval/taniteval/{bench,closedloop,hierarchy,planner_p2
 `taniteval/recompute_ci.py`, the three `taniteval/tests/*`, and two re-drive scripts). **One had no
 decision-grade estimator anywhere** and is now marked in place:
 
-* `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/closedloop.py`
+* `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/closedloop.py`
   — the frozen 2026-07-19 predecessor of `taniteval/closedloop.py`. Given a header banner:
   *"SUPERSEDED ARTIFACT — EVERY NUMBER THIS FILE EMITS IS `overlapping_holdout_se`… do NOT promote
   any number from here into a decision"*, pointing at
@@ -340,7 +340,7 @@ The 228 DEAD Python files break down as:
 
 | artifact | repo path |
 |---|---|
-| this writeup | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md` |
+| this writeup | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md` |
 | dual-estimator re-decision (raw) | `…/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json` |
 | unbounded site inventory (raw) | `…/2026-08-16-jack-in-gates/raw/jack_site_inventory.json` |
 | re-decision script (CPU) | `…/2026-08-16-jack-in-gates/code/recompute_g1_g4.py` |
@@ -348,7 +348,7 @@ The 228 DEAD Python files break down as:
 | **migrated deciding sites** | `taniteval/taniteval/planner_p2.py` |
 | **AST gate guard** | `taniteval/taniteval/gate_guard.py` |
 | **guard test (16 tests, 6 negative + 3 false-positive controls)** | `taniteval/tests/test_no_jack_in_gates.py` |
-| REPORTS-only marking | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/closedloop.py` |
+| REPORTS-only marking | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-19-alpasim-closedloop-v1/closedloop.py` |
 
 **Suites (MEASURED, this task, CPU):**
 

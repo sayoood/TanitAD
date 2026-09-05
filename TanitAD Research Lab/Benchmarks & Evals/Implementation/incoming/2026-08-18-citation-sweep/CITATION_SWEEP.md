@@ -151,7 +151,7 @@ git grep -n -I -E "\+1\.580|1\.562|\+0\.159|\+0\.052|n_agents_all[^0-9]{0,40}0\.
 ```
 
 ⚠️ **`git grep` was used rather than a shell loop precisely because of C107's finding**: this repo's paths
-contain spaces (`TanitAD Research Hub`, `Architecture & Inference`), and an unquoted/word-split
+contain spaces (`TanitAD Research Lab`, `Architecture & Inference`), and an unquoted/word-split
 verification degenerates into comparing empty-to-empty and reports success — *"360 files, 0 mismatches"*.
 **Every path handled in this sweep was passed `-z`-safe or fully quoted, and the staging check is a blob
 comparison, not an exit code.**
@@ -290,7 +290,7 @@ compares empty-to-empty and reports success.
 
 | artifact | path | what it is |
 |---|---|---|
-| **this sweep record** | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md` | the findings, the canonical table, the not-touched list |
+| **this sweep record** | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md` | the findings, the canonical table, the not-touched list |
 | ⭐ **the re-derivation** | `repo:…/2026-08-18-citation-sweep/raw/canonical_requote_table.json` | every number in §1, opened from the banked per-seed JSON (not copied from a retraction) |
 | **the extractor** | `repo:…/2026-08-18-citation-sweep/code/build_requote_table.py` | reads `…/2026-08-18-ladder-3seed/raw/reread_{unpen,centred}/ll3_*.json`; computes nothing about the model |
 | correction block | `repo:…/Architecture & Inference/Research/2026-08-18-pooling-bottleneck-R1R2/POOLING_BOTTLENECK_R1R2.md` | top banner + §1.5 + §1.7 |

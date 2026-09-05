@@ -27,7 +27,7 @@ find actions that exploit a predictor that demonstrably works."*
 > manoeuvre class, and the cost carries **no route/goal term**. Distance-keeping/TTC uncomputable —
 > no lead-agent track.
 
-**Eval JSON — `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json`** **[M, read directly]**, key `4_closedloop_planner_vs_cv_NEW`:
+**Eval JSON — `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json`** **[M, read directly]**, key `4_closedloop_planner_vs_cv_NEW`:
 - `_tier` = `"T1 (action-closed loop: the model is conditioned on its OWN actions)"`
 - `paired_planner_minus_cv`: delta **0.2585**, lo **0.0869**, hi **0.4309**, ci95 **0.172**, `p_delta_gt0` **0.9975**, separated **true**, n_windows **221**, n_episodes **20**, n_boot **2000**, estimator `paired_episode_cluster_bootstrap`
 - `paired_operative_minus_cv`: delta **−0.3151** [−0.6277, −0.0602], ci95 0.2838, `p_delta_gt0` **0.008**, separated **true**
@@ -170,7 +170,7 @@ classes at `:41-56`; VISION-ONLY measured not asserted, `:58-66` (`v6.py:4045-40
 `--vision-only-control` default ON, permutes `v0` **and** `actions`, requires bit-identical
 latents; failure = `instrument_fail`). Second dead-gate coupling at `:30-38`
 (`e_wc2_sigma_star.py:799-810`, `:443-449`, `:800-806`).
-Package **`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-18-sw-latent-dumper/SW_LATENT_DUMPER.md`**, `:11` **[M]** — end-to-end join on a **planted σ at all three
+Package **`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-18-sw-latent-dumper/SW_LATENT_DUMPER.md`**, `:11` **[M]** — end-to-end join on a **planted σ at all three
 verdicts**: *"planted 0.30 → recovered **0.3046** → **FUNDED** and the selector launch is ADMITTED;
 1.10 → **1.1274** → **INCONCLUSIVE**; 2.00 → **1.9856** → **REFUSED**. The script existing is not
 the dump existing."*
@@ -190,7 +190,7 @@ FUNDED"*), `stack/scripts/e_ag1_anchor_floor.py:5-29`, `stack/tests/test_e_wc2_s
 
 ## 4. C121 — F-9's gate, band edges, pooled P7
 
-**`RETRACTION_LOG.md:6729-6805`.** Package **`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-p7-per-stratum/`** (commit `a6039363`). **[M]**
+**`RETRACTION_LOG.md:6729-6805`.** Package **`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-p7-per-stratum/`** (commit `a6039363`). **[M]**
 
 `:6733-6738` — `refc-xl-30k` / selector entropy, **881 windows / 40 episodes, T0**:
 
@@ -230,7 +230,7 @@ episodes. Code/artifacts: `taniteval/taniteval/p7_strata.py`, `taniteval/tools/p
 
 ## 5. C122 — distance-keeping, lead attach, tier0 collision (commit `d2ede52b`)
 
-**`RETRACTION_LOG.md:6809-6891`**; package **`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-refa-reconciliation/`**.
+**`RETRACTION_LOG.md:6809-6891`**; package **`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-refa-reconciliation/`**.
 
 **The three metrics (distance-keeping), `REFA_RECONCILIATION.md:238-244` — [metric-suite tier T0],
 paired episode-cluster bootstrap, n_used ≈ 218–240 windows in 19 episode clusters:**
@@ -370,7 +370,7 @@ causal** (cuboids ≤ t0 only). Constants `:53-60`: `WINDOW = 8`, `K_MAX = 20`, 
 `:120`, `register_poses_to_time` `:131`, `select_lead_causal` `:235`, `lead_track_in_window`
 `:274`, `lead_block` `:329`.
 
-**Obstacle join — 12.1 M boxes.** `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-17-train-obstacle-join/TRAIN_OBSTACLE_JOIN.md:1` — *"The train-corpus obstacle join exists —
+**Obstacle join — 12.1 M boxes.** `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-17-train-obstacle-join/TRAIN_OBSTACLE_JOIN.md:1` — *"The train-corpus obstacle join exists —
 2,308 episodes, 12.1 M agent boxes, verified by its own consumer"*; `:12` `n_agent_boxes
 12,122,129`. Corroborated: `…/2026-08-17-slot-probe-parity/SLOT_PROBE_PARITY.md:77`
 (**12 122 129**); `Project Steering/Reports/2026-08-17-2319-program-report.md:83` (**2,308 eps /
@@ -427,7 +427,7 @@ manoeuvre head's label `dv = v(t+2 s) − v(t)`.
 
 ## 9. F-cells — definitions and current status
 
-Canonical definitions: **`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md`**.
+Canonical definitions: **`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md`**.
 
 | cell | prio | definition (verbatim) | line | status |
 |---|---|---|---|---|

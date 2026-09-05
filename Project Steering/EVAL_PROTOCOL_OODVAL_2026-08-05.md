@@ -150,7 +150,7 @@ not the files.** A whole-file diff over-reports (comments, unrelated helpers) an
 > stale ⛔ here makes real numbers get skipped. **Both halves of the original reason are wrong.**
 >
 > **1. It has been measured on THIS corpus (MEASURED).**
-> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
+> `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
 > — arm `flagship-v1arch-v2bal-30k`, corpus **`physicalai-oodval-6f4b94e4c7ce-q90`** (the corpus this
 > protocol governs), `n_windows` **6382**. Inside it:
 > `four_families._families_unavailable` = **`[]`**, and
@@ -167,7 +167,7 @@ not the files.** A whole-file diff over-reports (comments, unrelated helpers) an
 > `taniteval/tools/build_lead_block.py`, the pure join as `taniteval/taniteval/lead_source.py`, and the
 > metric as `taniteval/taniteval/lead_metrics.py` (+ `taniteval/tests/test_lead_metrics.py`,
 > `test_lead_source.py`, `test_lead_strata.py`). Durability run:
-> `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
+> `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
 > — `n_episodes 40`, `canonical_881 true`, registration `n_ok 40 / n_failed 0`, counts
 > **LEAD 270 / NO_LEAD 551 / NO_LABEL 60**. ⚠️ `build_lead_tracks.py` (the reader this row names)
 > hardcodes a Windows data root and **cannot run on a pod** — `build_lead_block.py` is the pod-side

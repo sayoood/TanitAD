@@ -2,7 +2,7 @@
 
 WHAT THIS IS
 ------------
-The executable form of ``TanitAD Research Hub/Benchmarks & Eval/
+The executable form of ``TanitAD Research Lab/Benchmarks & Evals/
 TANITEVAL_V2_METRIC_SUITE.md`` tier-0 set: every driving-capability metric that
 is computable **today, on CPU, from an already-persisted
 ``results/windows_<arm>.pt``** — no GPU, no pod, no re-run, no new logging.
@@ -107,7 +107,7 @@ RES = Path("/root/taniteval/results")
 # --------------------------------------------------------------------------- #
 BLOCK = "taniteval.driving/tier0"
 VERSION = "2.0.0"
-SPEC = ("TanitAD Research Hub/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md"
+SPEC = ("TanitAD Research Lab/Benchmarks & Evals/TANITEVAL_V2_METRIC_SUITE.md"
         " (v1, 2026-07-21)")
 
 # --------------------------------------------------------------------------- #

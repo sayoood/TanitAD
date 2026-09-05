@@ -1,7 +1,7 @@
 # STREAM D — is `long_accel` UNRECOVERABLE from the frozen v1 latents, or merely UNRECOVERED?
 
 **Date** 2026-08-03 · **Substrate** dev box (RTX 4060), **0 pod GPU-h** · **Run directory**
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-idm-accel-recoverability/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-03-idm-accel-recoverability/`
 · **Primary artifact** `results_accel_recoverability.json` (B=2000) · **substrate check**
 `raw/substrate_verification.json` · **mechanism** `raw/speed_error_mechanism.json` · **log**
 `raw/run_log.txt`

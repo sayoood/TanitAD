@@ -53,7 +53,7 @@ import torch
 os.environ.setdefault("OMP_NUM_THREADS", "6")
 torch.set_num_threads(int(os.environ["OMP_NUM_THREADS"]))
 
-PREREG = ("TanitAD Research Hub/Architecture & Inference/Implementation/"
+PREREG = ("TanitAD Research Lab/Architecture & Inference/Implementation/"
           "incoming/2026-08-04-fan-width/PREREG_FAN_WIDTH.md")
 PREREG_BLOB_AT_WRITE = "1bffa9db6a6047325dceff1ef787d67ab2fd5152"
 ACCEL_MAX, HORIZON_S = 2.5, 2.0
@@ -333,7 +333,7 @@ def main(argv=None) -> int:
     banks = {
         "refc-base-30k": str(repo / "taniteval/results/fan_refc-base-30k.pt"),
         "refc-xl-30k": str(repo / "taniteval/results/fan_refc-xl-30k.pt"),
-        "refc-small-30k": str(repo / "TanitAD Research Hub/Benchmarks & Eval/"
+        "refc-small-30k": str(repo / "TanitAD Research Lab/Benchmarks & Evals/"
                               "Implementation/incoming/2026-07-22-refc-small-30k/"
                               "fan_refc-small-30k.pt"),
     }

@@ -12,7 +12,7 @@ this pass ran entirely on the dev box and required no GPU.
 
 | # | artifact | where it lives | note |
 |---|---|---|---|
-| 1 | `COMMA_YAW_REISSUE.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-comma-yaw-reissue/` | **the deliverable** — inventory, corrections, stale-pending list, escalations |
+| 1 | `COMMA_YAW_REISSUE.md` | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-comma-yaw-reissue/` | **the deliverable** — inventory, corrections, stale-pending list, escalations |
 | 2 | `raw/comma_yaw_inventory.json` | same dir | machine-readable inventory: **75 locations**, each with file, line/JSON path, corpus scope, `heading_repair`, `v_min`, verdict, and what was done |
 | 3 | `raw/comma_yaw_anchor.json` | same dir | the anchor measurement + the **honesty condition**, per corpus; also carries the speed-bin defect table and the repair audit, read verbatim from the v3 artifacts |
 | 4 | `MANIFEST.md` | same dir | this file |

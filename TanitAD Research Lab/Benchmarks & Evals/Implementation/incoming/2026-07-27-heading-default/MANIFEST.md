@@ -19,7 +19,7 @@ path, cache key or episode selection was modified, and `test_wheelbase_regime.py
 
 | # | artifact | where it lives | note |
 |---|---|---|---|
-| 1 | `HEADING_DEFAULT.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-heading-default/` | **the deliverable** — the choice + reasoning, the guard with its demonstrated failure, the reproducibility pin, the re-score per corpus, stale-pending resolution, escalations |
+| 1 | `HEADING_DEFAULT.md` | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-heading-default/` | **the deliverable** — the choice + reasoning, the guard with its demonstrated failure, the reproducibility pin, the re-score per corpus, stale-pending resolution, escalations |
 | 2 | `MANIFEST.md` | same dir | this file |
 | 3 | `code/heading_default_demo.py` | same dir | produces (4) by RUNNING the shipped guard — every refusal exercised on the input that must trigger it |
 | 4 | `raw/heading_default_guard.json` | same dir | raw JSON for every §2/§3 number: the defect reproduced (61.78 → 0.0 rad/s), 7 refusals, the cache keys, the bit-identical pin |

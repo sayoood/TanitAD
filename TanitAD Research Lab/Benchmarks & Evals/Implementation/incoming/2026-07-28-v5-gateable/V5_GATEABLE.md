@@ -720,7 +720,7 @@ New tests: `test_preflight_parity.py` (**9**) + `test_accum_effective_batch.py` 
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| `V5_GATEABLE.md` (this) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-v5-gateable/` | no |
+| `V5_GATEABLE.md` (this) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-v5-gateable/` | no |
 | ⭐ **`stack/scripts/train_flagship_v4.py`** — `preflight_parity_problems` + its call site | `repo:stack/` (staged) + `pod2:/workspace/v5gate/stack/` | no |
 | ⭐ **`stack/tests/test_preflight_parity.py`** — 9 tests | `repo:stack/` (staged) + `pod2:` | no |
 | ⭐ **`stack/tests/test_accum_effective_batch.py`** — 11 tests | `repo:stack/` (staged) + `pod2:` | no |

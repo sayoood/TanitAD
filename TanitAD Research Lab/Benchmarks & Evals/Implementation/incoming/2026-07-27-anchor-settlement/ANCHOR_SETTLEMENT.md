@@ -412,7 +412,7 @@ irrelevant; *"bit-identical"* is a claim with a definite meaning, and it is pinn
 
 | # | artifact | where it lives | note |
 |---|---|---|---|
-| 1 | `ANCHOR_SETTLEMENT.md` | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/` | this file |
+| 1 | `ANCHOR_SETTLEMENT.md` | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-anchor-settlement/` | this file |
 | 2 | `code/fingerprint_comma_cache.py` | same dir | content fingerprints; run on **both** hosts |
 | 3 | `code/intersect_by_content.py` | same dir | the overlap, the hash-family agreement, the duplicate and self-overlap checks |
 | 4 | `code/resettle_anchor.py` | same dir | the anchor re-measured; also `/root/resettle_anchor.py` on `tanitad-eval` |

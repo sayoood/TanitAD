@@ -242,7 +242,7 @@ The 12 citations, resolved:
 | ✅ | `Architecture & Inference/Implementation/belief_rollout_diagnostic/` | 675 |
 | ✅ | `taniteval/generalization.py` | 702 |
 | ✅ | `taniteval/pathspeed.py` | 778 |
-| ✅ | `TanitAD Research Hub/INITIAL_RESEARCH_SYNTHESIS.md` | 1308 |
+| ✅ | `TanitAD Research Lab/INITIAL_RESEARCH_SYNTHESIS.md` | 1308 |
 | ✅ | `Ressources/AD_TRANSFER_RESEARCH.md` | 1315 |
 
 ### The paper's decision-grade / headline numbers, with provenance
@@ -418,7 +418,7 @@ delete the >2× projection. Same edit removes the `GATE_PROTOCOL:96-97` void fie
    rule it exists to enforce.
 3. **`tools/registry_lint.py` scans one file.** All three retracted-still-standing findings live outside its
    scan set. **Extend the file list to `Paper/TANITAD_PAPER.md`, `Project Steering/GATE_PROTOCOL.md`,
-   `TanitAD Research Hub/HYPOTHESIS_LEDGER.md`, `Project Steering/PROGRAM_OVERVIEW.md`,
+   `TanitAD Research Lab/HYPOTHESIS_LEDGER.md`, `Project Steering/PROGRAM_OVERVIEW.md`,
    `Benchmarks & Eval/LEADERBOARD.md`** — cheapest structural fix available, and it would have caught S1–S3.
 4. **P2's evidence is stranded** (no JSON, no windows dump in-repo) and it is the basis of the v3 pivot.
 5. **`MODEL_REGISTRY.md:63`, the definitional statistic line, carries the retracted label.** Every reader who
@@ -430,7 +430,7 @@ delete the >2× projection. Same edit removes the `GATE_PROTOCOL:96-97` void fie
 
 | artifact | location | exists elsewhere? |
 |---|---|---|
-| `PUBLISHED_NUMBER_PROVENANCE.md` (this file) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-published-number-provenance/` | **ONE PLACE ONLY** |
+| `PUBLISHED_NUMBER_PROVENANCE.md` (this file) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-published-number-provenance/` | **ONE PLACE ONLY** |
 | `published_numbers.jsonl` (188 rows, machine-readable) | same folder | **ONE PLACE ONLY** |
 | generator script | `scratchpad:gen_provenance.py` (transient; the JSONL is the artifact) | — |
 

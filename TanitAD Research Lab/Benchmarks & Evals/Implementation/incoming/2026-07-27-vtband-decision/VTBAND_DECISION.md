@@ -410,7 +410,7 @@ been an `importorskip` is deliberately a hard import, because it is load-bearing
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| `VTBAND_DECISION.md` (this) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-vtband-decision/` | no |
+| `VTBAND_DECISION.md` (this) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-vtband-decision/` | no |
 | ⭐ **`stack/tanitad/train/heldout_goal.py`** — the priced option registry (**inert; nothing imports it in the shipped path**) | `repo:stack/` (staged) + `pod2:/workspace/v5gate/stack/` + `eval:/root/vtband/stack/` | no |
 | ⭐ **`stack/tests/test_vtband_options.py`** — 20 tests, 0 skips | `repo:stack/` (staged) + `pod2:` + `eval:` | no |
 | `code/vtband_probe.py` — the measurement driver | `repo:…/code/` (staged) + `pod2:/workspace/vtband/code/` + `eval:/root/vtband/` | no |

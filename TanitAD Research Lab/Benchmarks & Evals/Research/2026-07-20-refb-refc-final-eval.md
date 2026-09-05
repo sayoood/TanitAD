@@ -182,7 +182,7 @@ Filenames follow `<arm>_step<step>_physicalai_ep<NN>_<regime>.mp4`. Clip-mean AD
 **REF-C wins every regime clip**, including both required failure/curve cases — consistent with
 the uniform stratum win in §4.
 
-**Copied into the repo** (`TanitAD Research Hub/Benchmarks & Eval/Research/videos-2026-07-20/`) —
+**Copied into the repo** (`TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/`) —
 the 3 required regimes × both arms, same clips, so they can be watched side by side:
 `{refb-v2-30k_step29999,refc-xl-live_step28000}_physicalai_ep{31_highspeed-straight,03_sharpturn,11_failure-worstwindow}.mp4`
 
@@ -282,7 +282,7 @@ All numbers above are **open-loop / weak** claims. Per the closed-loop gap alrea
 **Repo:**
 - `taniteval/taniteval/direct_overlay.py` — **new**, direct-head video renderer
 - `taniteval/taniteval/registry.py` — **modified**, adds the `refc-xl-live` entry
-- `TanitAD Research Hub/Benchmarks & Eval/Research/videos-2026-07-20/` — the 6 headline clips
+- `TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/` — the 6 headline clips
 - this report
 
 Both code files are byte-identical to what ran on the eval pod (md5-verified both ways).

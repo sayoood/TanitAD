@@ -90,7 +90,7 @@ PYTHONPATH=/workspace/TanitAD/stack /usr/bin/python3 scripts/train_flagship_v4.p
 
 | artifact | where it lives |
 |---|---|
-| this note | `repo: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-v4-launch/LAUNCH_NOTE.md` (STAGED) |
+| this note | `repo: TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-v4-launch/LAUNCH_NOTE.md` (STAGED) |
 | exact launch/preflight/smoke script | `repo: …/2026-07-22-v4-launch/run_v4_launch.sh` (STAGED) **and** `pod2:/workspace/run_v4_launch.sh` |
 | training process | `pod2` PID 75844 (detached, nohup) — ONLY on pod2 (a run, not a file) |
 | train log + pid | `pod2:/workspace/experiments/flagship-v4-30k/{train.log,train.pid}` — ONLY on pod2 (grows) |

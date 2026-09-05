@@ -230,7 +230,7 @@ Also refuses to commit on `main` (`--allow-main` to override) and never passes
 python tools/registry_lint.py                       # the standard sweep
 python tools/registry_lint.py --strict               # body + boilerplate hits also fail
 python tools/registry_lint.py --self-test            # 5 red/green falsifiers
-python tools/registry_lint.py --file "TanitAD Research Lab/Benchmarks & Eval/LEADERBOARD.md"
+python tools/registry_lint.py --file "TanitAD Research Lab/Benchmarks & Evals/LEADERBOARD.md"
 python tools/registry_lint.py --json lint.json
 ```
 

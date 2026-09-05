@@ -126,7 +126,7 @@ Every one carries `estimator: "episode_cluster_bootstrap"`, `n_windows 881`, `n_
 `n_boot 2000`.
 
 `refc-small-30k` **0.5261 [0.4295, 0.6262]** — verified from
-`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/refc-small-30k.json`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-refc-small-30k/refc-small-30k.json`
 → `driving.headline.ade_0_2s`. ⚠️ **It has no `taniteval/results/driving_refc-small-30k.json`** — the
 only §1-ranked arm whose scored block lives outside `taniteval/results/`. Noted, not a mismatch.
 

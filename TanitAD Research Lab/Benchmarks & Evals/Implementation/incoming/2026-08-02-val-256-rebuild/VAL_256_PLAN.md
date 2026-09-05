@@ -431,7 +431,7 @@ quotable.
 
 ## 8. Deliverable manifest
 
-**Repo** — `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-02-val-256-rebuild/`
+**Repo** — `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-02-val-256-rebuild/`
 
 | file | what |
 |---|---|

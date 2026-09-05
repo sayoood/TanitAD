@@ -137,7 +137,7 @@ two-way ✅/✗ and printed **✗ for two arms the raw JSON calls `tie`** (`refb
 
 MEASURED. Rows 1–2 from `taniteval/results/driving_flagship-30k.json → floor_values` (re-read
 2026-08-23, exact); rows 3–4 recomputed 2026-08-02 on these exact windows —
-`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-02-ctrv-floor/raw/ctrv_readjudication.json`.
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-02-ctrv-floor/raw/ctrv_readjudication.json`.
 
 | floor | ADE@2s m | FDE@2s m | miss@2m | speed MAE m/s | \|along\| m | \|cross\| m | heading° | κ-sign | wins/881 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -288,7 +288,7 @@ is retro-filled: an unmeasured cell stays unmeasured.***
 **episode-cluster bootstrap** (B = 2000, 40 clusters); cross-arm deltas are the **paired** form.
 `overlapping_holdout_se` is used nowhere in this block. **Evidence class: MEASURED (ours).**
 Artifacts, all banked in-repo and md5-verified against the release manifest:
-`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json`
 (+ `ff_comparison.full.json`); registry anchor **MODEL_REGISTRY §1.14**.*
 
 **Three surfaces per arm.** `cl` = action-closed loop (**T1**) · `ol` = teacher-forced (**T0**, a WM
@@ -780,7 +780,7 @@ directs that **107,032,901** be quoted.
 *MEASURED 2026-07-21, `python -m taniteval.runner driving-all`, CPU-only over the committed
 `windows_<key>.pt`. Every interval is an **episode-cluster bootstrap** (B = 2000, 40 episodes);
 every win/tie/LOST is a **paired** episode-cluster test against a trivial floor. Spec:
-`TanitAD Research Lab/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md`. Artifacts:
+`TanitAD Research Lab/Benchmarks & Evals/TANITEVAL_V2_METRIC_SUITE.md`. Artifacts:
 `taniteval/results/driving_<key>.json`. ⛔ **T0 — prediction quality, not driving.** The section
 heading that stood here until 2026-08-23 was "Driving capability … the standard read"; that framing
 is retracted, the numbers are unchanged.*

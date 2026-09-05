@@ -306,7 +306,7 @@ python -m taniteval.planner_p2 --arm flagship-30k --episodes 40 --device cuda
 
 | artifact | where it lives | notes |
 |---|---|---|
-| `REDRIVE.md` (this file) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-planner-beats-cv-redrive/REDRIVE.md` | staged |
+| `REDRIVE.md` (this file) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-planner-beats-cv-redrive/REDRIVE.md` | staged |
 | `code/redrive_planner_vs_cv.py` | same dir, `code/` | the whole analysis; re-runnable on CPU in ~40 s |
 | `code/scan_pt.py` | same dir, `code/` | the exhaustive `.pt` walk behind the absence claim |
 | `raw/planner_beats_cv_banked_analysis.json` | same dir, `raw/` | every number above, machine-readable |

@@ -423,7 +423,7 @@ access); and arm A NaN → NOT-MEASURED rather than a zero-filled A/B.
 
 | path | what |
 |---|---|
-| `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-instrument-fixes/INSTRUMENT_FIXES.md` | this report |
+| `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-instrument-fixes/INSTRUMENT_FIXES.md` | this report |
 | `…/2026-07-26-instrument-fixes/sweep_ood_verdicts.py` | the D2 sweep (reuses `fix_ood_verdict.py`'s re-emission) |
 | `…/2026-07-26-instrument-fixes/ood_sweep.json`, `ood_sweep.log` | the sweep result, 194 nodes / 14 artifacts |
 | `…/2026-07-26-instrument-fixes/GATE_30K_verdict_FIXEDTOOL.json`, `GATE_30K_rerender.log` | the 30 k gate re-rendered through the FIXED tool |
@@ -449,7 +449,7 @@ cd stack      && python -m pytest -q      # 1053 passed, 3 skipped
 cd ../taniteval && python -m pytest -q    # 401 passed
 
 # the OOD sweep (arithmetic only, no GPU)
-python "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-instrument-fixes/sweep_ood_verdicts.py" \
+python "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-instrument-fixes/sweep_ood_verdicts.py" \
     --repo . --json ood_sweep.json
 
 # the 30 k gate through the fixed tool (train_log.jsonl from HF Sayood/flagship-v4-fromscratch)

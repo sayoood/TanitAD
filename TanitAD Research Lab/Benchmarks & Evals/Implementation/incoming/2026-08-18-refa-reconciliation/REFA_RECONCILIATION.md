@@ -512,7 +512,7 @@ flag** — the same class the `CLAUDE.md` absence rule exists for.
 
 | artifact | where it lives | notes |
 |---|---|---|
-| `REFA_RECONCILIATION.md` (this) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-18-refa-reconciliation/` | — |
+| `REFA_RECONCILIATION.md` (this) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-18-refa-reconciliation/` | — |
 | `code/refa_vs_flagship_families.py` | same, `code/` | the paired four-family instrument; alignment + reproduction gates |
 | `code/refa_lead_rung.py` | same, `code/` | E-RECON-1; **pre-registration in the docstring, written before the run** |
 | `raw/refa_vs_flagship_families.json` | same, `raw/` | §4.1–4.2, plus lead/speed strata |

@@ -225,7 +225,7 @@ MEASURED (ours): `stack/experiments/alpasim-gsplat/results/2026-08-03-rolling-sh
 `…/results/render-quality/{panel6_chosen.report.json, diagnose_f0.json, diagnose_f150.json}` ·
 `stack/experiments/alpasim-gsplat/{gsplat_renderer.py, render_quality.py, overlay_video.py}` ·
 `stack/experiments/nurec-gsplat/{nurec_loader.py, render_probe.py}` · commit `c9926e6` ·
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-alpasim-consolidation/ALPASIM_STATE.md` ·
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-alpasim-consolidation/ALPASIM_STATE.md` ·
 `…/2026-07-22-alpasim-closedloop-evalpod/REFC_openloop_diagnostic.json`.
 
 PUBLISHED: [PhysicalAI-AV-NuRec dataset card](https://huggingface.co/datasets/nvidia/PhysicalAI-Autonomous-Vehicles-NuRec)

@@ -346,7 +346,7 @@ jackknife**, compared against **REF-C-XL final `0.458 ± 0.057` ADE@2s** (`resul
 | Artifact | Location | Copies |
 |---|---|---|
 | `--labels v21` wiring + `RouteV21Dataset` + masked route CE + milestone archiving | `stack/scripts/refc_train.py` (staged) | repo + pod3 |
-| This note | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` | repo |
+| This note | `TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-20-refc-medium-scaling.md` | repo |
 | 128-anchor FPS vocabulary (prefix subset of XL's 256) | `tanitad-pod3:/workspace/experiments/refc_anchors_base128.pt` | ⚠️ **single copy (pod-only)** |
 | Run dir (`config.json` w/ label provenance + measured params, `ckpt.pt`, milestones, `metrics.json`) | `tanitad-pod3:/workspace/experiments/refc-diffusion-base-v21-30k/` | pod3 + **final `ckpt.pt`/`config.json`/`metrics.json` mirrored to `tanitad-eval:/root/models/refc-base-30k/`** (md5 `8f10d6f934f4199e11ddc7352e074939`); the 5 k/15 k/20 k milestones remain ⚠️ **pod3-only** |
 | Eval artifacts (2026-07-21) — canonical row, per-window predictions, full 128-proposal fan, scale A/B | `taniteval/results/{refc-base-30k.json, windows_refc-base-30k.pt, fan_refc-base-30k.pt, scaleab_refc-base-30k_vs_refc-xl-30k.json, eff_refc-base-30k.json}` | repo + eval pod |

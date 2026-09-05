@@ -1,7 +1,7 @@
 # P9 — the IDM's `long_accel` channel: a fix, its REFUTATION, and the better diagnosis the refutation bought
 
 **Date** 2026-08-03 · **Substrate** dev box (RTX 4060), **0 pod GPU-h** · **Run directory**
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-idm-derived-accel/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-03-idm-derived-accel/`
 · **Primary artifact** `results_idm_derived_accel.json` (B=2000) · **log** `run_log.txt`
 
 ---

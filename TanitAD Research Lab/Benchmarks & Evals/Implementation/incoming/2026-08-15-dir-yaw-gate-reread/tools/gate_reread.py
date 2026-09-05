@@ -75,9 +75,9 @@ def _load_json(path):
 # 1. Inventory every banked panel that carries a gate-dependent kappa          #
 # --------------------------------------------------------------------------- #
 def inventory_panels(repo):
-    pats = ["TanitAD Research Hub/**/hier*.json", "TanitAD Research Hub/**/hier*.json.xz",
-            "TanitAD Research Hub/**/hierarchy_*.json", "TanitAD Research Hub/**/*4fam*.json",
-            "TanitAD Research Hub/**/fourfam*.json", "stack/experiments/**/hier*.json"]
+    pats = ["TanitAD Research Lab/**/hier*.json", "TanitAD Research Lab/**/hier*.json.xz",
+            "TanitAD Research Lab/**/hierarchy_*.json", "TanitAD Research Lab/**/*4fam*.json",
+            "TanitAD Research Lab/**/fourfam*.json", "stack/experiments/**/hier*.json"]
     out, seen = [], set()
     for pat in pats:
         for p in sorted(glob.glob(os.path.join(repo, pat), recursive=True)):
@@ -214,7 +214,7 @@ def crosscheck(repo, dumps):
 # --------------------------------------------------------------------------- #
 # 4. The OTHER swept artifact — the Alpamayo comparison (not a `hier` panel)   #
 # --------------------------------------------------------------------------- #
-A2_AUDIT = ("TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-05-alpamayo2-super/"
+A2_AUDIT = ("TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-05-alpamayo2-super/"
             "comparison/a2_gate_audit.json")
 A2_SERIES = {
     "alpamayo_declared_lateral": "vs_driven_kappa",

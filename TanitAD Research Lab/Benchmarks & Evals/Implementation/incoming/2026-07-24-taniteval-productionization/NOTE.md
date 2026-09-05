@@ -111,7 +111,7 @@ allow_leaky / other-corpora / constants / runner-exposes-closedloop).
 | closed-loop wired into the one CLI | `taniteval/taniteval/runner.py` | staged (my edit atop prior sweep) |
 | canonical entrypoint docs (NEW) | `taniteval/README.md` | staged |
 | guard + wiring tests (NEW) | `taniteval/tests/test_productionization.py` | staged |
-| this note | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-taniteval-productionization/NOTE.md` | staged |
+| this note | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-24-taniteval-productionization/NOTE.md` | staged |
 
 Nothing lives in only one place. No file outside `taniteval/` (+ the incoming
 NOTE) was touched — sibling territory (`stack/tanitad/eval/scenarios/`,

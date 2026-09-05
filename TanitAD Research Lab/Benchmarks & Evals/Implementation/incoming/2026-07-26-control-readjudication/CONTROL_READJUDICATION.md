@@ -591,7 +591,7 @@ cheapest structural item in this report.
 
 | # | artifact | what it is | where it lives | only ONE copy? |
 |---|---|---|---|:--:|
-| 1 | `CONTROL_READJUDICATION.md` | this document — frozen list, results, chains, retraction drafts | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-control-readjudication/` | ❌ |
+| 1 | `CONTROL_READJUDICATION.md` | this document — frozen list, results, chains, retraction drafts | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-control-readjudication/` | ❌ |
 | 2 | `raw/frozen_list.json` | the **75-row frozen list**, with family, n, prox and MDE per row | same dir | ❌ |
 | 3 | `raw/readjudication.json` | per-row original → re-adjudicated verdicts, all four families, with power gain, sign-flip and VOID flags | same dir | ❌ |
 | 4 | `raw/s3_two_run_repro.json` · `raw/s3_three_run_repro.json` | the independent-run agreement checks — **3 runs, 2 pods, 6/6 verdicts** | same dir | ❌ |

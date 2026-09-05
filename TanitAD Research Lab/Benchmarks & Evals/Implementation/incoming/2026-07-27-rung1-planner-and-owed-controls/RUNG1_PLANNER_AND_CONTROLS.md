@@ -798,7 +798,7 @@ root-cause class per operating-standard rule 4.
 # 11. DELIVERABLE MANIFEST
 
 **Everything is in the repo working tree and STAGED (`git add`). Nothing was committed or pushed.**
-Path: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-rung1-planner-and-owed-controls/`
+Path: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-rung1-planner-and-owed-controls/`
 
 | # | artifact | what it is | where it lives | only ONE copy? |
 |---|---|---|---|:--:|

@@ -605,7 +605,7 @@ and pod3 were never contacted** — not even read-only. No `stack/` file in the 
 ## 10. DELIVERABLE MANIFEST
 
 Repo root: `G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD`.
-Folder: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-bar-a-selector/`.
+Folder: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-bar-a-selector/`.
 **All STAGED (`git add`). Nothing committed. Nothing pushed. No branch switched.**
 
 | artifact | where it lives | also elsewhere? |

@@ -646,7 +646,7 @@ it in an audit.
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| `RENDERER_GEOMETRY.md` (this) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-renderer-geometry/` | no |
+| `RENDERER_GEOMETRY.md` (this) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-renderer-geometry/` | no |
 | ⭐ **`taniteval/taniteval/clhorizon.py`** — `_WarpFrame` / `as_warp_frame` / `assert_warp_frame` / `sampling_source_grid` / `warp_batch_grid` / `warp_frames` / `LEGACY_WARP` / `WarpFrameRefused`, + `corridor_rollout(frame=…)` | `repo:taniteval/` (staged) + `pod2:/workspace/v5gate/taniteval/` | no |
 | ⭐ **`taniteval/taniteval/pseudosim.py`** — `pseudo_evaluate(frame=…)`, the pre-model geometry assertion, the emitted `warp` node | `repo:taniteval/` (staged) + `pod2:` | no |
 | ⭐ **`stack/tanitad/train/heldout_gate.py`** — `HeldoutGateConfig.frame`, `HeldoutGate.probe(frame=…)`, `pseudosim.warp` in the record | `repo:stack/` (staged) + `pod2:` | no |

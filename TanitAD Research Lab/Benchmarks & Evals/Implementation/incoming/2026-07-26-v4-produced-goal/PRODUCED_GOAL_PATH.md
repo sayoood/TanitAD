@@ -463,7 +463,7 @@ working tree, so nothing is stranded on a pod.
 
 ### Repo — deliverables
 
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-v4-produced-goal/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-v4-produced-goal/`
 
 | file | what |
 |---|---|

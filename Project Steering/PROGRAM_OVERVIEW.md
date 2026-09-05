@@ -568,7 +568,7 @@ absence, the cheapest metric-or-power check *before* declaring closure.
   > ALREADY EXIST in this repo (MEASURED).** On the **x86 A40 eval pod**, 2026-07-22, all of
   > `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` imported and a full bare topology ran
   > (renderer :6011 · physics :6006 · controller-MPC :6007 · driver :6789 · runtime) —
-  > `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
+  > `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
   > The banked result summaries in that same directory carry **`scene_score_enabled: true`** and real
   > safety fields: `M2_results-summary.json` → `collision_any 0.0`, `collision_at_fault 0.0`,
   > `offroad 0.0`, `offroad_or_collision 0.0`, `min_distance_to_obstacle_m 1.4279`,

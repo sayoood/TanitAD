@@ -81,7 +81,7 @@ world**: which external closed-loop benchmark we adopt, and how we raise *and pr
 
 | artifact | where it lives | state |
 |---|---|---|
-| `README.md` (this file) | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-03-benchmarks-and-render-plan/` | repo, **staged, not committed** |
+| `README.md` (this file) | `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-03-benchmarks-and-render-plan/` | repo, **staged, not committed** |
 | `Q1_CLOSED_LOOP_BENCHMARKS.md` | same directory | repo, **staged, not committed** |
 | `Q2_RENDER_FIDELITY_PLAN.md` | same directory | repo, **staged, not committed** |
 | `bench_geometry_check.py` | same directory | repo, **staged, not committed** — runs anywhere with python3, no deps |

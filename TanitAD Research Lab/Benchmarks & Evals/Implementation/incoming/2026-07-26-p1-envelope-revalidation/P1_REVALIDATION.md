@@ -607,7 +607,7 @@ it modified no renderer code. ✅ **No licence issue arises, and none was worked
 
 All repo paths are relative to the working tree on the dev box, all **`git add`-ed, NOT committed, NOT
 pushed**. Anything existing in only ONE place is marked ⚠️. Repo dir:
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-p1-envelope-revalidation/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-p1-envelope-revalidation/`
 
 | artifact | where it lives | what it is |
 |---|---|---|

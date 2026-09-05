@@ -20,7 +20,7 @@ were not contacted. · **Nothing staged, committed or pushed** (`git add` delibe
 |---|---|---|---|
 | T1 | `Project Steering/MODEL_REGISTRY.md` §6 | rank table **re-emitted** on full-set means + episode-cluster bootstrap; legacy column kept and labelled; **13 inline drift pointers** added; narrowing band widened | MEASURED |
 | T2 | `MODEL_REGISTRY.md` §1.4b | v1.6/v1 partition caveat — **mechanism corrected** (conclusion kept) | MEASURED |
-| T3 | `TanitAD Research Hub/HYPOTHESIS_LEDGER.md` H26/:628 + H18/:110 | retracted `ctx→tactical +0.044` swept; H18 corrected **upward** | MEASURED |
+| T3 | `TanitAD Research Lab/HYPOTHESIS_LEDGER.md` H26/:628 + H18/:110 | retracted `ctx→tactical +0.044` swept; H18 corrected **upward** | MEASURED |
 | T4 | `Paper/TANITAD_PAPER.md` | four flagged inconsistencies fixed (CTRV · param count · 4th tick · I-JEPA leak) | MEASURED |
 | +  | `MODEL_REGISTRY.md` §0.3 + §1.2 + §1.3 | definitional statistic line de-retracted; the 4th decision tick given a registry row; floor comparison made like-for-like | MEASURED |
 | +  | `Project Steering/PROGRAM_OVERVIEW.md` §5.1 | mirrored rank table brought into line with the re-emitted §6 | MEASURED |
@@ -221,7 +221,7 @@ arm is matched to is 261 M, D-008)"**; §3.1 *"The instantiated budget is 261 M"
 ### (c) The fourth decision-tick value, 14.331 ms — **TRACED, not unsourced**
 
 Found at
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 (`exp: sc14-P2-real-tms-cnce-log-replay`, `latency.decision_tick_p50_ms = 14.331`, = encode 9.273 +
 select_K9 5.058 — matches the paper digit-for-digit). Generator `real_telemetry_tms_cnce.py`.
 
@@ -371,10 +371,10 @@ machine-verified against their raw JSONs rather than eyeballed.
 
 | artifact | location | exists elsewhere? |
 |---|---|---|
-| `DOC_CORRECTION_SWEEP.md` (this file) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-doc-correction-sweep/` | **ONE PLACE ONLY** |
+| `DOC_CORRECTION_SWEEP.md` (this file) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-doc-correction-sweep/` | **ONE PLACE ONLY** |
 | re-emitted §6 rank table + §0.3/§1.2/§1.3/§1.4b corrections | `repo:Project Steering/MODEL_REGISTRY.md` (working tree, **unstaged**) | — |
 | four paper fixes + the C1 sweep | `repo:Paper/TANITAD_PAPER.md` (working tree, **unstaged**) | — |
-| H26/H18 corrections | `repo:TanitAD Research Hub/HYPOTHESIS_LEDGER.md` (working tree, **unstaged**) | — |
+| H26/H18 corrections | `repo:TanitAD Research Lab/HYPOTHESIS_LEDGER.md` (working tree, **unstaged**) | — |
 | mirrored rank table | `repo:Project Steering/PROGRAM_OVERVIEW.md` (working tree, **unstaged**) | — |
 | `lint-ok` marker | `repo:Benchmarks & Eval/LEADERBOARD.md` (working tree, **unstaged**) | — |
 | pointer migration | `repo:tools/registry_pointers.jsonl` (working tree, **unstaged**) | — |

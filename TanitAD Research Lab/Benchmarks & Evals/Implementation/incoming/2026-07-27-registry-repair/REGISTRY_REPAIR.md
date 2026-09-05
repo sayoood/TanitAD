@@ -367,7 +367,7 @@ files, two standalone analysis scripts in this directory, and their JSON outputs
 
 | # | artifact | where | note |
 |---|---|---|---|
-| 1 | `REGISTRY_REPAIR.md` (this file) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-registry-repair/` | |
+| 1 | `REGISTRY_REPAIR.md` (this file) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-registry-repair/` | |
 | 2 | `raw/pod2_v4fromscratch_artifacts_2026-07-27.txt` | same | ⭐ verbatim pod2 capture — the §1 evidence |
 | 3 | `raw/pod2_v4fromscratch_config.json` | same | the run's own `config.json`, byte-for-byte (8 233 B) |
 | 4 | `raw/hf_flagship-v4-fromscratch_2026-07-27.json` | same | HF API read (§1.7) |

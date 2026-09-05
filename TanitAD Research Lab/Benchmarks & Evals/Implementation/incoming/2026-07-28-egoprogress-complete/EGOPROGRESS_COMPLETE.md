@@ -585,7 +585,7 @@ item 1 is the reason.**
 ## 15. Deliverable manifest
 
 Repo dir:
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-egoprogress-complete/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-egoprogress-complete/`
 Everything `git add`-ed into the working tree and verified with `git ls-files --cached`.
 ⛔ **I did not commit and did not push.**
 ⚠️ marks anything living in only ONE place — **there is nothing in that state.**

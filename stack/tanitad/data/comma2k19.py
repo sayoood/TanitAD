@@ -85,7 +85,7 @@ WHEEL_TO_RAD = math.pi / 180.0
 # comma2k19 alone MAE falls 42.5 %, but medAE moves only -1.1 % and nMedAE gets
 # 8.0 % WORSE, with Spearman rho flat (+0.001).
 # See `…/incoming/2026-07-27-idm-v3/IDM_V3.md` §4 and the inventory of every
-# affected published number in `TanitAD Research Lab/Benchmarks & Eval/
+# affected published number in `TanitAD Research Lab/Benchmarks & Evals/
 # Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
 #
 # PUBLISHED precedent: comma.ai's own `calib_challenge` **discards every frame

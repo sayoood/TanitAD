@@ -9,7 +9,7 @@
 > routing).
 
 **Legend (file abbreviations used in "traces to" columns):**
-`T&D`=`TanitAD Research Hub/Tools&DevEnv/BACKLOG.md` · `DE`=`.../Data Engineering/BACKLOG.md` ·
+`T&D`=`TanitAD Research Lab/Tools&DevEnv/BACKLOG.md` · `DE`=`.../Data Engineering/BACKLOG.md` ·
 `AI`=`.../Architecture & Inference/BACKLOG.md` · `BE`=`.../Benchmarks & Eval/BACKLOG.md` ·
 `OA`=`.../Opponent Analyzer/BACKLOG.md` · `PO`=`.../Production & Optimization/BACKLOG.md` ·
 `DIAG`=`Benchmarks & Eval/DRIVING_DIAGNOSTIC_FRAMEWORK.md` · `LB`=`Benchmarks & Eval/LEADERBOARD.md` ·
@@ -115,7 +115,7 @@ classic backlog in practice.
 > **And the capability the dry-run was wanted FOR has since been obtained on a different substrate,
 > twice (MEASURED):** (1) AlpaSim ran closed-loop **bare on the A40 eval pod** with real frames —
 > `img_is_black 0`, score 0.6637, collision/offroad/wrong_lane 0 (`Project Steering/LOOP_STATE.md:991`,
-> recipe `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`);
+> recipe `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`);
 > (2) gsplat renders NuRec natively on aarch64 Thor (`Project Steering/PROGRAM_OVERVIEW.md` §5.0.3).
 > NuRec renders via CUDA/gsplat/OptiX, so **the Vulkan wall never applied to it**.
 > ⚠️ **NOT cleared for CARLA itself.** `Project Steering/MODEL_REGISTRY.md:2707` (source of truth)

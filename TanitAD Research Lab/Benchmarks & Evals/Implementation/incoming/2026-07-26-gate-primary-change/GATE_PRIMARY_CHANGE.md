@@ -29,9 +29,9 @@ read needs a **closed-loop rollout on GPU**.
 
 | Claim | Class | Artifact |
 |---|---|---|
-| CDR@1.75 m: 0.0035 (K=20) → 0.5877 (K=185); junction 0.025 → 0.8414; peak XTE 0.35 → 38.94 m; paired Δ +0.5842 [0.5071, 0.6565] separated, p=1.0; ADE@2s Δ 0.0109 [−0.0, 0.0312] **not** separated | **MEASURED** | `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44_K185.json` (`paired_common_start`, 43 windows, `episode_cluster_bootstrap` B=2000) |
+| CDR@1.75 m: 0.0035 (K=20) → 0.5877 (K=185); junction 0.025 → 0.8414; peak XTE 0.35 → 38.94 m; paired Δ +0.5842 [0.5071, 0.6565] separated, p=1.0; ADE@2s Δ 0.0109 [−0.0, 0.0312] **not** separated | **MEASURED** | `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44_K185.json` (`paired_common_start`, 43 windows, `episode_cluster_bootstrap` B=2000) |
 | Structural horizon ceiling K=190 (19.0 s); clips 190–199 frames; K=200 impossible | **MEASURED** | same file, `_horizon_ceiling_note`, `episode_T_min/max`; `taniteval/taniteval/corridor.py::horizon_ceiling` |
-| **0 of 30 committed `windows_*.pt` carry `pred_dense`/`gt_dense`; all have `wp_steps=[5,10,15,20]`** | **MEASURED (ours, this task)** | sweep over `taniteval/results/windows_*.pt` + `TanitAD Research Hub/**/windows_*.pt`; reproduced by `regate/…` and by `gate_emitters.py corridor --windows` |
+| **0 of 30 committed `windows_*.pt` carry `pred_dense`/`gt_dense`; all have `wp_steps=[5,10,15,20]`** | **MEASURED (ours, this task)** | sweep over `taniteval/results/windows_*.pt` + `TanitAD Research Lab/**/windows_*.pt`; reproduced by `regate/…` and by `gate_emitters.py corridor --windows` |
 | REF-C base-30k ADE@2s = 0.4728 [0.3835, 0.5699], `episode_cluster_bootstrap`, 881 win / 40 eps | **MEASURED** | `taniteval/results/driving_refc-base-30k.json::headline.ade_0_2s` |
 | v3enc@10k ADE@2s 1.9654 [1.6556, 2.2859]; probe R² 0.393; overshoot 2.195 | MEASURED / **INHERITED** (secondaries re-supplied from the 2026-07-21 gate JSON, not re-measured) | `taniteval/results/flagship-v3enc-10k.json`; `Project Steering/Gates/flagship-v3enc-gate-10k-2026-07-21.json` |
 | v4.1@10k ADE@2s 0.8522 [0.7468, 0.98]; oracle_in_fan 0.4838; miss@2m 0.2486 | MEASURED / **INHERITED** (secondaries re-supplied from the 2026-07-23 gate JSON) | `taniteval/results/flagship-v4.1-10k.json`; `Project Steering/Gates/flagship-v4-gate-10k-2026-07-23.json` |
@@ -280,7 +280,7 @@ rather than left in a README:
 | `stack/scripts/gate_emitters.py` | **MODIFIED** — corridor co-primary emitter + `corridor` subcommand |
 | `stack/tests/test_run_gate_corridor.py` | **NEW** — 41 tests |
 | `Project Steering/GATE_PROTOCOL.md` | **MODIFIED** — §0, §1, §2, §4b, §5, §6, §7 |
-| `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-gate-primary-change/GATE_PRIMARY_CHANGE.md` | **NEW** — this file |
+| `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-gate-primary-change/GATE_PRIMARY_CHANGE.md` | **NEW** — this file |
 | `…/2026-07-26-gate-primary-change/regate/flagship-v3enc-REGATE.card.json` | **NEW** — post-hoc re-gate card |
 | `…/regate/flagship-v3enc-regate-2026-07-26.json` | **NEW** — `INCOMPLETE` |
 | `…/regate/flagship-v3enc-ORIGINALCARD-rerender-2026-07-26.json` | **NEW** — `RESTART`, `horizon_honest: false` |

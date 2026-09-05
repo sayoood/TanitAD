@@ -78,7 +78,7 @@ range is printed in the HUD.
 REUSE: the same renderer is the v3/P2 CEM-candidate view — feed candidate
 rollouts + planning COST instead of anchors + confidence and invert the
 normalisation (low cost = bright). See
-"TanitAD Research Hub/Benchmarks & Eval/PLANNER_VIZ_CONCEPT.md".
+"TanitAD Research Lab/Benchmarks & Evals/PLANNER_VIZ_CONCEPT.md".
 
 Usage (eval pod):
   PYTHONPATH=/root/taniteval:/root/TanitAD/stack \

@@ -199,7 +199,7 @@ transplanted onto the canonical-val panels; the 15 unswept κ genuinely need the
 
 | artifact | where it lives | state |
 |---|---|---|
-| `DIR_YAW_GATE_REREAD.md` (this file) | repo `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-15-dir-yaw-gate-reread/` | staged |
+| `DIR_YAW_GATE_REREAD.md` (this file) | repo `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-15-dir-yaw-gate-reread/` | staged |
 | `tools/gate_reread.py` (0-GPU re-read + bit-exact cross-check) | same dir | staged |
 | `results/gate_reread.json` (every number above, machine-readable) | same dir | staged |
 

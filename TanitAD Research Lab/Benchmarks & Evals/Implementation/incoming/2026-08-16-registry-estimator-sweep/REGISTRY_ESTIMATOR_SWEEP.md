@@ -192,7 +192,7 @@ measurement justifies.
 | site | number | why not fixed here |
 |---|---|---|
 | `Project Steering/360_REVIEW_2026-07-20.md:38,137,219,314,738` | the full set incl. `[2.447, 2.798]` | **dated review** — an archival snapshot of what was believed on 2026-07-20; rewriting it rewrites history |
-| `TanitAD Research Hub/Architecture & Inference/V35_DESIGN.md:90,91` | *1.685 ± 0.098, 22.2 %*; the P2 framing | live design doc, another stream's file |
+| `TanitAD Research Lab/Architecture & Inference/V35_DESIGN.md:90,91` | *1.685 ± 0.098, 22.2 %*; the P2 framing | live design doc, another stream's file |
 | `…/Architecture & Inference/ARCHITECTURE_WIRING_COMPARISON.md:212` | *3.38 (3.150 in the P2 pass)* | ditto |
 | `…/Architecture & Inference/V4_FLAGSHIP_DESIGN.md:339` | *3.1501* | ditto |
 | `…/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md:53` | *0.4522 → 1.685 ± 0.098; 22.2 %* — **cites MODEL_REGISTRY §1.2, which I just corrected** | ditto — but it now contradicts its own source |
@@ -257,7 +257,7 @@ The registry is mostly disciplined — §0.3 states the rule and most rows print
 
 | artifact | repo path | state |
 |---|---|---|
-| this writeup | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-registry-estimator-sweep/REGISTRY_ESTIMATOR_SWEEP.md` | staged |
+| this writeup | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-16-registry-estimator-sweep/REGISTRY_ESTIMATOR_SWEEP.md` | staged |
 | registry — §1.2, §1.3, §2, §5, §6, §8 corrections + **new §11.1a** (Alpamayo-2) | `Project Steering/MODEL_REGISTRY.md` | staged |
 | overview — P2 row + the P2 narrative | `Project Steering/PROGRAM_OVERVIEW.md` | staged |
 | leaderboard — the open⊥closed footnote, P2 row, known-gaps block | `Benchmarks & Eval/LEADERBOARD.md` | staged |

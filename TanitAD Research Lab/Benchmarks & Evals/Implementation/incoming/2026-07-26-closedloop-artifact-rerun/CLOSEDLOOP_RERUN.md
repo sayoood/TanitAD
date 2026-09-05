@@ -418,7 +418,7 @@ unaffected by this task.** Only the arm's own number moved against them.
 
 ## 8. Deliverable manifest
 
-All under `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-closedloop-artifact-rerun/` (repo working tree, **NOT staged**):
+All under `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-closedloop-artifact-rerun/` (repo working tree, **NOT staged**):
 
 | file | what |
 |--|--|

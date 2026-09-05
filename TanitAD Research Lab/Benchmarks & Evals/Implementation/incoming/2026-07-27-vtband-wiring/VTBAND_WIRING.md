@@ -463,7 +463,7 @@ command changes.** The string `GOAL_OPTION_PROVENANCE` says so in the trainer's 
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| `VTBAND_WIRING.md` (this) | `repo:TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-vtband-wiring/` (staged) | no |
+| `VTBAND_WIRING.md` (this) | `repo:TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-27-vtband-wiring/` (staged) | no |
 | ⭐ `stack/tanitad/train/heldout_gate.py` — the wiring: `(states, v0)` protocol, `goal_option`, `probe` builds the fn | `repo:stack/` (staged) + `pod2:/workspace/v5gate/stack/` | no |
 | ⭐ `stack/scripts/train_flagship_v4.py` — `--heldout-goal`, `goal_head` forwarded, preflight blocks, `--print-launch` | `repo:stack/` (staged) + `pod2:/workspace/v5gate/stack/` | no |
 | `stack/tanitad/train/heldout_goal.py` — no longer inert; scoped `dropped` refusal; shim | `repo:stack/` (staged) + `pod2:` | no |

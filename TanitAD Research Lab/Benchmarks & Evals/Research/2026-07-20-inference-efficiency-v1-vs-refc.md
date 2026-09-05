@@ -31,7 +31,7 @@ not published (§9.2).
 ---
 
 > **Downstream consumer (already live).** The Production & Optimization agent's
-> `TanitAD Research Hub/Production & Optimization/FLAGSHIP_V1_INFERENCE_OPTIMIZATION.md` consumes this
+> `TanitAD Research Lab/Production & Optimization/FLAGSHIP_V1_INFERENCE_OPTIMIZATION.md` consumes this
 > measurement as its `M-OURS` baseline (identical figures: 103.42 / 146.60 ms, encoder 27.91,
 > rollout 90.37 = 83.7 %, 3.72 TFLOP/s) and extends `taniteval.efficiency` with a CUDA-graph /
 > `torch.compile` / fp16 / encoder-cache **lever ladder**. The two documents do not overlap: this one
@@ -497,7 +497,7 @@ carries a measured DINOv2-B/14 and I-JEPA-H/14 cost that can be added.
 | 2 | `taniteval/taniteval/runner.py` — `efficiency.quick()` inside `run_one`; `efficiency` + `eff-all` subcommands | **repo** + pod (identical) | **staged** |
 | 3 | `taniteval/taniteval/report.py` — dashboard panel **04b** + call site | **repo**; pod patched **in place** (`report.py.bak-efficiency-20260720`) to avoid clobbering a concurrent agent's edits | **staged** |
 | 4 | `taniteval/tests/test_efficiency.py` — 15 tests, 15/15 pass | **repo** + `tanitad-eval:/root/taniteval/tests/` | **staged** |
-| 5 | This note | **repo** `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-inference-efficiency-v1-vs-refc.md` | **staged** |
+| 5 | This note | **repo** `TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-20-inference-efficiency-v1-vs-refc.md` | **staged** |
 | 6 | `eff_flagship-30k.json`, `eff_refc-xl-30k.json` — raw measurements | `tanitad-eval:/root/taniteval/results/` (copies in the agent scratchpad, incl. the pre-fix run 1) | pod artifact |
 | 7 | `eff_repeatability.json` — repeat probe; **REF-C half contaminated** | `tanitad-eval:/root/taniteval/results/` | pod artifact, quarantined |
 | 8 | `dashboard.html` — rebuilt with panel 04b (202,746 bytes, both rows render) | `tanitad-eval:/root/taniteval/results/dashboard.html` | build artifact |

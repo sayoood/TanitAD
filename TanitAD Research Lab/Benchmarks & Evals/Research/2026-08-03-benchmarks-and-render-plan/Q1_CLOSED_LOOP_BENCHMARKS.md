@@ -124,7 +124,7 @@ Targets: **v5f** = 120° cylindrical 256×640 (model sees the 176×624 sub-frame
 
 ## 4. ⭐ Could each score have detected what our four families detected?
 
-The PI's test case, MEASURED, from `TanitAD Research Hub/Evaluation/Videos/alpasim-openloop-thor-2026-08-03/README.md`
+The PI's test case, MEASURED, from `TanitAD Research Lab/Evaluation/Videos/alpasim-openloop-thor-2026-08-03/README.md`
 (paired episode-cluster bootstrap over 9 disjoint segments of one clip; the estimator and its unit are
 named on the page):
 
@@ -298,9 +298,9 @@ PUBLISHED, external: [navsim metrics](https://github.com/autonomousvision/navsim
 [HiDrive (arXiv 2605.09972)](https://arxiv.org/abs/2605.09972) ·
 [Bench2Drive-Robust (arXiv 2605.18059)](https://arxiv.org/abs/2605.18059)
 
-MEASURED, ours (repo paths): `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/REFC_suite_base_results.json` ·
+MEASURED, ours (repo paths): `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/REFC_suite_base_results.json` ·
 `…/REFC_openloop_diagnostic.json` · `…/2026-07-26-alpasim-consolidation/ALPASIM_STATE.md` ·
-`TanitAD Research Hub/Evaluation/Videos/alpasim-openloop-thor-2026-08-03/README.md` ·
+`TanitAD Research Lab/Evaluation/Videos/alpasim-openloop-thor-2026-08-03/README.md` ·
 `Project Steering/MODEL_REGISTRY.md` §4.4 · `Project Steering/V5_FLAGSHIP_DEEP_REVIEW.md` ·
 `Project Steering/Reports/2026-08-03-1300-program-report.md` · and this directory's
 `bench_geometry_check.py` / `bench_geometry.json`.

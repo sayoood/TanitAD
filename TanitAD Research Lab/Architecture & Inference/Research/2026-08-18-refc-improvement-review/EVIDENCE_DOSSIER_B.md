@@ -16,7 +16,7 @@ re-derived here). This file is the verbatim agent report, banked for provenance.
 
 ## 1. Alpamayo tactical validation package (2026-08-16-tactical-labels)
 
-Package: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-tactical-labels/`
+Package: `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-tactical-labels/`
 — `TACTICAL_LABEL_VALIDATION.md` (665 lines) + `code/` (5 scripts) + `raw/` (7 artifacts:
 `a1_alpamayo_taxonomy.json` + per-clip jsonl, `a2_reasoning_legs.json`,
 `a3_three_leg_agreement.json` + per-clip jsonl, `a4_horizon_sweep.json`,
@@ -145,7 +145,7 @@ MEASURED, mean chunk size ESTIMATED), deferred by PI 2026-08-17; densest-first t
 
 ### 2.1 PUBLISHED (NVIDIA card / `config.json` / GitHub README, quoted in our banked notes)
 
-Source: `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`
+Source: `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`
 (+ `raw/hf_card.md`, `raw/gh_readme.md`), retrieved 2026-08-05; re-quoted
 `Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md:985-1010`.
 

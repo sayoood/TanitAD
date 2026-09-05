@@ -1839,7 +1839,7 @@ increasing order of what they license:
    > ⭐ **Stated against interest:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and
    > nMedAE gets 8.0 % WORSE** (Spearman ρ flat, +0.001). **The repair fixes the tail and the summary
    > statistic, not typical accuracy.** The three-measurement argument of this paragraph is unchanged —
-   > it never rested on the yaw channel. Inventory: `TanitAD Research Lab/Benchmarks & Eval/
+   > it never rested on the yaw channel. Inventory: `TanitAD Research Lab/Benchmarks & Evals/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN.** *(Block
    > above keeps its text and date.)* Settled BY CONTENT — sha256 of the raw `poses` float32 bytes
@@ -1901,7 +1901,7 @@ simulator needed for rendered occlusion and signal geometry was confirmed absent
 > 🔧 **CONDITIONS, ADDED 2026-07-26 — and a correction to what was measured.** This paragraph previously
 > attributed these numbers to *"the deployed 262.8 M architecture."* **Neither half was right.** Traced
 > to its artifact,
-> `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+> `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 > (`exp: sc14-P2-real-tms-cnce-log-replay`; generator `real_telemetry_tms_cnce.py:109`), the measurement
 > is on a **`base250cam` WorldModel, `params_billions` 0.2628 → 262.8 M**, instantiated fresh — **not the
 > deployed flagship v1**, which measures **263,442,838 (263.4 M)**. Latency and the CNCE parameter term

@@ -10,7 +10,7 @@
 [TanitEval v2](../../Benchmarks%20&%20Eval/TANITEVAL_V2_METRIC_SUITE.md) §3.5 says have no ground truth today.
 **Anchors:** [head-to-head](2026-07-20-cosmos-reason1-vs-reason2-headtohead.md) · [TANITDATASET_V1_STRATEGY](../TANITDATASET_V1_STRATEGY.md) ·
 [V3 goal vocabulary](../../Architecture%20&%20Inference/V3_GOAL_VOCABULARY_V1.md)
-**Artifacts:** `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic/`
+**Artifacts:** `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic/`
 · harness `stack/scripts/vlm_semantic_labels.py` · scorer `stack/scripts/vlm_semantic_score.py` · tests `stack/tests/test_vlm_semantic.py`
 
 ---
@@ -199,9 +199,9 @@ measurement on a fourth window set: 78.6 %** (`as_written`, 200 held-out windows
 | the circulating figure | — | 89.3 % ❌ not reproducible |
 
 Three measurements on three window sets cluster at **77–81 %**; none approaches 89.3 %. **Two live documents still
-quote it** — `TanitAD Research Hub/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md` §2.3 (*"A VLM may be used to
+quote it** — `TanitAD Research Lab/Benchmarks & Evals/TANITEVAL_V2_METRIC_SUITE.md` §2.3 (*"A VLM may be used to
 DETECT that a route event occurred (89.3 % agreement)"*) and
-`TanitAD Research Hub/Architecture & Inference/V35_DESIGN.md` C5 (*"IS-A-TURN 89.3 % is a good event detector"*).
+`TanitAD Research Lab/Architecture & Inference/V35_DESIGN.md` C5 (*"IS-A-TURN 89.3 % is a good event detector"*).
 **Both should be corrected to ~78 % (range 77–81 % across three measurements).** Flagged rather than edited: both
 are other agents' live documents. The *qualitative* claim they rest on — that the VLM is a competent event
 detector and an incompetent direction reader — survives unchanged.
@@ -750,7 +750,7 @@ the probe verdict above was recomputed from the repo alone (200 windows / 40 epi
 0.6667, recall-on-right 0.2069 in both arms).
 
 ```bash
-D="TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic"
+D="TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic"
 
 # §1 the enum-order probe verdict
 python stack/scripts/vlm_compare_score.py --out "$D" \
@@ -816,7 +816,7 @@ reproduces it exactly, which is what makes every arm paired.
 | `vlm_labels_to_lake.py` — per-window strata rows + episode sidecars + the salvage parser | `repo:stack/scripts/` | stdlib only; the metric-field refusal lives here |
 | `pull_vlm_records.sh` — one-command rescue from the pod | `repo:stack/scripts/pod_ops/` | idempotent, safe mid-run |
 | `test_vlm_semantic.py` — **26 tests**, the suite's first VLM coverage | `repo:stack/tests/` | full suite **637 passed / 2 skipped**, green |
-| This note | `repo:TanitAD Research Hub/Data Engineering/Research/` | |
+| This note | `repo:TanitAD Research Lab/Data Engineering/Research/` | |
 | Records, manifests, scored JSON, prompts, episode map, `INTAKE.md` | `repo:…/Implementation/incoming/2026-07-21-vlm-production-semantic/` | see `INTAKE.md` for the file-by-file guide |
 | `train_candidate_census.json` — kinematic stratum census of all **21,393** candidate windows over the canonical 2,376-episode train corpus | same directory | makes re-sampling the train draw a pod-free operation |
 | **Rescued** legacy corpus (400 Pass-A + 160 Pass-B) that had lived **only** on `tanitad-pod3:/workspace` | same directory | different schema (no inline kinematic GT, no token counts) — kept because a pod is not storage |

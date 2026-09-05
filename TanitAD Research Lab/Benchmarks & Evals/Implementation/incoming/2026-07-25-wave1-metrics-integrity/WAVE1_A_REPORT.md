@@ -257,7 +257,7 @@ All in the working tree, **unstaged** (orchestrator to stage and commit):
 | utf-8 encoding fix | `taniteval/closedloop_report.py` |
 | CI migration tests (14, new) | `taniteval/tests/test_closedloop_ci.py` |
 | dense-path tests (10, new) | `taniteval/tests/test_rollout_dense.py` |
-| this report | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-wave1-metrics-integrity/WAVE1_A_REPORT.md` |
+| this report | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-wave1-metrics-integrity/WAVE1_A_REPORT.md` |
 
 Nothing is stranded on a pod or in a worktree. `pytest -q` → **177 passed**.
 

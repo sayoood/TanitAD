@@ -9,7 +9,7 @@
 
 | # | artifact | where it lives | exists in >1 place? | status |
 |:--:|---|---|:--:|---|
-| 1 | `PREREGISTRATION.md` — the four repair-conditions (R1–R4) + adopt-conditions (A1–A3), the C13 self-gate, and four falsifiable predictions, **written and staged before any source was read** | `repo:TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-27-closedloop-eval-without-renderer/PREREGISTRATION.md` | repo only ✅ (git-tracked) | **staged** |
+| 1 | `PREREGISTRATION.md` — the four repair-conditions (R1–R4) + adopt-conditions (A1–A3), the C13 self-gate, and four falsifiable predictions, **written and staged before any source was read** | `repo:TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-27-closedloop-eval-without-renderer/PREREGISTRATION.md` | repo only ✅ (git-tracked) | **staged** |
 | 2 | `CLOSEDLOOP_EVAL_RESEARCH.md` — headline, pre-registration verdict, the pseudo-simulation finding, the NAVSIM correlation question, the replay-validity literature, per-benchmark table, reactive agents, metrics, **the ranked recommendation**, escalations, self-refutations | `repo:…/2026-07-27-closedloop-eval-without-renderer/CLOSEDLOOP_EVAL_RESEARCH.md` | repo only ✅ | **staged** |
 | 3 | `CITATIONS.md` — 16 works + 12 licence documents (code and data as separate fields) + 5 internal primary sources + an explicit "could not verify" list | `repo:…/2026-07-27-closedloop-eval-without-renderer/CITATIONS.md` | repo only ✅ | **staged** |
 | 4 | `MANIFEST.md` — this file | `repo:…/2026-07-27-closedloop-eval-without-renderer/MANIFEST.md` | repo only ✅ | **staged** |
@@ -42,7 +42,7 @@ Escalated here **and** in `CLOSEDLOOP_EVAL_RESEARCH.md` §9 headline, per operat
 ## Verification
 
 - `git status --short` for this directory shows 4 added files, all under
-  `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-27-closedloop-eval-without-renderer/`.
+  `TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-27-closedloop-eval-without-renderer/`.
 - No foreign staged entries were disturbed. Sibling agents' staged work in the index
   (`2026-07-26-situation-classifier`, `2026-07-26-trafficsim-wheelbase`, `2026-07-25-tanitdataset-hf-push`)
   was **left exactly as found** — nothing was committed, so nothing could be swept in.

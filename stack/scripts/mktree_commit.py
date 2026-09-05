@@ -63,6 +63,15 @@ def git(*a, binary_in=None, attempts=30, sleep_s=6.0):
     raise SystemExit(f"git {a[0]} kept failing: {last}")
 
 
+class _Remove:
+    """Sentinel: this path is DELETED in the new tree."""
+    def __repr__(self):
+        return "<REMOVE>"
+
+
+REMOVE = _Remove()
+
+
 def ls_tree(tree: str) -> dict:
     """``name -> (mode, type, sha)`` for ONE directory. ``-z`` so names with
     spaces need no quoting — `TanitAD Research Lab/...` has three of them."""
@@ -89,8 +98,18 @@ def update(tree: str, spec: dict, path_so_far: str = "") -> str:
     entries = ls_tree(tree) if tree else {}
     n_before = len(entries)
     existing = set(entries)          # captured BEFORE mutation, read once
+    removed = set()
     for name, val in spec.items():
         here = f"{path_so_far}/{name}" if path_so_far else name
+        if val is REMOVE:
+            #: ⛔ A REMOVE of a path that is not there is a REFUSAL, not a
+            #: no-op: silently accepting it is how a typo'd rename ships as a
+            #: successful commit that removed nothing.
+            if name not in entries:
+                raise SystemExit(f"cannot remove {here}: not in HEAD")
+            del entries[name]
+            removed.add(name)
+            continue
         if isinstance(val, dict):
             sub = entries.get(name)
             if sub is not None and sub[1] != "tree":
@@ -103,17 +122,24 @@ def update(tree: str, spec: dict, path_so_far: str = "") -> str:
                 raise SystemExit(f"{here} is a {entries[name][1]}, not a blob")
             entries[name] = (mode, "blob", val)
     # POSITIVE guard: rebuilding a directory must never LOSE a sibling.
-    new_names = set(spec) - existing
-    if len(entries) != n_before + len(new_names):
+    new_names = set(spec) - existing - removed
+    if len(entries) != n_before + len(new_names) - len(removed):
         raise SystemExit(f"sibling count moved in {path_so_far or '<root>'}: "
-                         f"{n_before} -> {len(entries)} (+{len(new_names)} new)")
+                         f"{n_before} -> {len(entries)} (+{len(new_names)} new, "
+                         f"-{len(removed)} removed)")
     return mktree(entries)
 
 
 def main():
-    msgfile, paths = sys.argv[1], sys.argv[2:]
-    if not paths:
-        raise SystemExit("usage: mktree_commit.py <msgfile> <path> [<path> ...]")
+    msgfile, rest = sys.argv[1], sys.argv[2:]
+    if "--rm" in rest:
+        i = rest.index("--rm")
+        paths, removals = rest[:i], rest[i + 1:]
+    else:
+        paths, removals = rest, []
+    if not paths and not removals:
+        raise SystemExit("usage: mktree_commit.py <msgfile> [<path> ...] "
+                         "[--rm <path-to-delete> ...]")
     head = git("rev-parse", "HEAD").strip()
     print(f"[mktree] HEAD = {head[:9]}", flush=True)
 
@@ -129,6 +155,13 @@ def main():
         for seg in parts[:-1]:
             node = node.setdefault(seg, {})
         node[parts[-1]] = sha
+    for p in removals:
+        parts = p.split("/")
+        node = spec
+        for seg in parts[:-1]:
+            node = node.setdefault(seg, {})
+        node[parts[-1]] = REMOVE
+        print(f"  REMOVE  {p}", flush=True)
 
     root_tree = git("rev-parse", f"{head}^{{tree}}").strip()
     new_tree = update(root_tree, spec)
@@ -142,7 +175,16 @@ def main():
         got = git("rev-parse", f"{new_tree}:{p}").strip()
         if got != sha:
             raise SystemExit(f"new tree has {got[:9]} at {p}, expected {sha[:9]}")
-    print("[mktree] all named paths verified in the new tree", flush=True)
+    #: ⛔ POSITIVE guard for removals too: `rev-parse <tree>:<path>` must
+    #: FAIL. Trusting that the delete happened is the same error as trusting a
+    #: `git add` exit code.
+    for p in removals:
+        chk = subprocess.run([*GIT, "rev-parse", f"{new_tree}:{p}"],
+                             capture_output=True, text=True)
+        if chk.returncode == 0:
+            raise SystemExit(f"removal did not take: {p} still resolves in the new tree")
+    print(f"[mktree] all named paths verified in the new tree "
+          f"({len(blobs)} added/changed, {len(removals)} removed)", flush=True)
 
     now = git("rev-parse", "HEAD").strip()
     if now != head:
@@ -161,7 +203,13 @@ def main():
             bad.append((p, f"{a[:9]} != {sha[:9]}"))
     if bad:
         raise SystemExit(f"POST-COMMIT VERIFICATION FAILED: {bad}")
-    print(f"VERIFIED in HEAD by blob comparison: {len(blobs)} path(s)")
+    for p in removals:
+        chk = subprocess.run([*GIT, "rev-parse", f"HEAD:{p}"],
+                             capture_output=True, text=True)
+        if chk.returncode == 0:
+            raise SystemExit(f"POST-COMMIT: {p} still resolves in HEAD")
+    print(f"VERIFIED in HEAD by blob comparison: {len(blobs)} path(s); "
+          f"{len(removals)} removal(s) verified absent")
     print(git("log", "--oneline", "-1").strip())
     return 0
 

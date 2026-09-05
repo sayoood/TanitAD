@@ -763,7 +763,7 @@ unaffected.
 ## 11. DELIVERABLE MANIFEST
 
 Repo root: `G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD`.
-Folder: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-26-v4-restart-lever/`.
+Folder: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-26-v4-restart-lever/`.
 **All STAGED (`git add`). Nothing committed. Nothing pushed. No branch switched.**
 
 | artifact | where it lives | also exists elsewhere? |

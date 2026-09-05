@@ -370,7 +370,7 @@ host, one batch size, and **not** something I chased further.
 ## 4. ⭐ INDEPENDENT CORROBORATION — and a duplication to resolve
 
 While staging I found **another agent's work already in the index**:
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-04-distance-keeping-arms/`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-04-distance-keeping-arms/`
 (incl. `code/build_val40_lead_block.py`, `code/thor_extract_poses.py`). It builds the **same**
 val40 → `win["lead"]` join, independently.
 

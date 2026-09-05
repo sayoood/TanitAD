@@ -170,7 +170,7 @@ selected on any model number.
 | the harness additions | `repo:taniteval/tools/refcv3_arm.py` (additive: ego-state on v4 builds, sidecar keys, `--with-navflip`, the analysis block) |
 | the standalone report | `repo:taniteval/tools/nav_compliance_report.py` |
 | the registry criteria | `repo:products/P7-TanitEval/CRITERIA_REGISTRY.json` v2.6.0 + `repo:tools/tests/test_criteria_check.py` |
-| the smoke evidence | `repo:TanitAD Research Lab/Benchmarks & Eval/Research/2026-09-05-nav-compliance-metric/` (RESULT.md + raw/) |
+| the smoke evidence | `repo:TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-05-nav-compliance-metric/` (RESULT.md + raw/) |
 
 ⚠️ **Escalation:** the ablation switches for `g_str`-zero/shuffle, E7-off, H19-off and SEL-refined are
 described here as eval-time hooks; they are ONE function each on `RefCV3Model` / the decoder and are

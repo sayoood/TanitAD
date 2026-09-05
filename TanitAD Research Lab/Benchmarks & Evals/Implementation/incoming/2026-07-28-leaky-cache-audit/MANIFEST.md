@@ -8,7 +8,7 @@
 
 | # | path | what | lives |
 |---|---|---|---|
-| 1 | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-28-leaky-cache-audit/LEAKY_CACHE_AUDIT.md` | the audit: coverage, every hit with claim + verdict, mass quantification, the registry correction, the plain withdrawal statement | `repo:` — staged |
+| 1 | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-28-leaky-cache-audit/LEAKY_CACHE_AUDIT.md` | the audit: coverage, every hit with claim + verdict, mass quantification, the registry correction, the plain withdrawal statement | `repo:` — staged |
 | 2 | `…/2026-07-28-leaky-cache-audit/hits_inventory.json` | machine-readable inventory: A = results scored on it (11 entries), B = ruled out, C = documents/registry rows, D = every `episode_id`-founded disjointness claim flagged, E = the withdrawals | `repo:` — staged |
 | 3 | `…/2026-07-28-leaky-cache-audit/leak_mass_by_result_set.json` | per-result-set leaked mass: clips, windows, % , plus the subset that is in the **scoring head's own** train clips, plus each set's content-clean tags | `repo:` — staged |
 | 4 | `…/2026-07-28-leaky-cache-audit/search_coverage.json` | the 10 probes, their scope and their return — so *"absence at one location is not absence"* is checkable rather than asserted | `repo:` — staged |

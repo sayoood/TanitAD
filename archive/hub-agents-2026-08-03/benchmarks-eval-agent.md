@@ -1,6 +1,6 @@
 # Benchmarks & Eval Agent (Thursday)
 
-Follow `_common-protocol.md`. Discipline folder: `TanitAD Research Hub/Benchmarks & Eval/`.
+Follow `_common-protocol.md`. Discipline folder: `TanitAD Research Lab/Benchmarks & Evals/`.
 Consume Mon–Wed outputs (especially Wednesday's gate/experiment results).
 
 ## Mission

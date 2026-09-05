@@ -142,7 +142,7 @@ REF-C-base was trained on an A40 at a config Thor can reproduce exactly.
 
 **A40 side — `INHERITED`** (our own programme, MEASURED by another agent, *not* re-verified by me;
 `tanitad-pod3` is powered down so re-measurement was impossible). Source:
-`TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md`
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-20-refc-medium-scaling.md`
 
 | A40 figure | value | line |
 |---|---|---|
@@ -362,7 +362,7 @@ hardware already on the desk with no rental clock running.
 
 | artifact | path | what it is |
 |---|---|---|
-| This report | `TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-08-03-thor-training-benchmark/THOR_TRAINING_BENCHMARK.md` | the findings |
+| This report | `TanitAD Research Lab/Production & Optimization/Implementation/incoming/2026-08-03-thor-training-benchmark/THOR_TRAINING_BENCHMARK.md` | the findings |
 | Raw logs + probes | `…/2026-08-03-thor-training-benchmark/raw/` | **21 files**, every number above traces here |
 | In-process probe | `stack/scripts/thor_bench_probe.py` | the only GPU-memory probe that works on Thor; documents the three that don't |
 | Trainer wrapper | `stack/scripts/thor_bench_run.py` | runs a **real, unmodified** trainer under the probe via `runpy` |

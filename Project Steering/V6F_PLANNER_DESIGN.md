@@ -607,9 +607,9 @@ corpus; we read 4 of 36 features) is the highest-value 0-GPU prerequisite of thi
 > The "highest-value 0-GPU prerequisite" named here is **done**: ingest `taniteval/tools/build_lead_block.py`,
 > pure join `taniteval/taniteval/lead_source.py`, metric `taniteval/taniteval/lead_metrics.py`
 > (+ three test modules under `taniteval/tests/`).
-> Measured through it (MEASURED): `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
+> Measured through it (MEASURED): `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
 > — `distance_keeping.status "OK"`, **n 2846** of 6382 windows, `_families_unavailable []`; and the
-> durability run `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
+> durability run `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
 > — `n_episodes 40`, `canonical_881 true`, registration `n_ok 40 / n_failed 0`, counts
 > **LEAD 270 / NO_LEAD 551 / NO_LABEL 60**.
 > ⚠️ **"we read 4 of 36 features" is wrong, and the subject "we" was never defined** — that ambiguity
@@ -636,7 +636,7 @@ Cost: ~1 minute of CPU on a fan already in the repo. Reproduce with:
 
 ```
 python stack/scripts/sel_winners_curse_law.py \
-  --fan "TanitAD Research Hub/.../2026-08-03-esel-verdict/raw/fan_refined_refc-xl-30k.pt" \
+  --fan "TanitAD Research Lab/.../2026-08-03-esel-verdict/raw/fan_refined_refc-xl-30k.pt" \
   --out .../ewc_law_refc-xl.json
 ```
 

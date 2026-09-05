@@ -103,7 +103,7 @@ GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/NVlabs/alpasim.git
 
 # 2.2  Copy our two setup files onto the pod, then run the setup detached.
 #      Both are committed at:
-#        TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+#        TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/
 #          2026-07-22-alpasim-closedloop-evalpod/{alpasim_setup.sh,pyproject_pared.toml}
 scp alpasim_setup.sh pyproject_pared.toml tanitad-eval:/workspace/
 ssh -f tanitad-eval 'bash /workspace/alpasim_setup.sh > /workspace/setup.log 2>&1'

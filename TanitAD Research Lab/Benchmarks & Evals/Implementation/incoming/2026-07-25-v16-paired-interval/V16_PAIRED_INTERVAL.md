@@ -259,7 +259,7 @@ and (b) be MULTILINE.** |
  ```
 +
 +*Re-derived independently 2026-07-25 from the persisted window dumps — reproduces exactly.
-+Raw artifact: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/`
++Raw artifact: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/`
 +`2026-07-25-v16-paired-interval/v16_vs_v1_paired_bootstrap.json`.*
 ```
 
@@ -304,14 +304,14 @@ direction.** Worth noting: the derived, agent-maintained document out-discipline
 ```bash
 # CPU-only, no pod, no GPU, ~10 s. Refuses to run if the arms are not aligned.
 /c/Users/Admin/venvs/tanitad/Scripts/python.exe \
-  "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v16-paired-interval/verify_v16_paired.py"
+  "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-v16-paired-interval/verify_v16_paired.py"
 ```
 
 ## 7. Deliverable manifest
 
 | artifact | where it lives | status |
 |---|---|---|
-| `V16_PAIRED_INTERVAL.md` (this file) | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v16-paired-interval/` | ✅ repo, staged |
+| `V16_PAIRED_INTERVAL.md` (this file) | `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-v16-paired-interval/` | ✅ repo, staged |
 | `v16_vs_v1_paired_bootstrap.json` (raw result) | same dir | ✅ repo, staged |
 | `verify_v16_paired.py` (reproducer) | same dir | ✅ repo, staged |
 | §5 correction text for `MODEL_REGISTRY.md` §1.4b | §5.1–5.5 above | 🟡 **PROPOSED — not applied** |

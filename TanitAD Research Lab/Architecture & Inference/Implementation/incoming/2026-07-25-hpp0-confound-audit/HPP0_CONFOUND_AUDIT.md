@@ -151,7 +151,7 @@ Two definitions exist and they agree:
 | flagship v1 30k (earlier 72-window run) | **1.0000** | 0.7083 | 0.7083 | **0.0000** | L 0 / **S 72** / R 0 | 72 |
 | flagship v4.2b step-4000 (`hierarchy_flagship-v4.2b-dryrun.json`) | **1.0000** | 0.6708 | 0.6708 | **0.0000** | L 0 / **S 240** / R 0 | 240 |
 
-`MEASURED` — `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-{30k,v4.2b-dryrun}.json` and
+`MEASURED` — `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-{30k,v4.2b-dryrun}.json` and
 `…/2026-07-23-v4-gate-emitters/artifacts/hierarchy_flagship-30k_v1.json`, key
 `seam_nav_to_strategic`.
 
@@ -391,7 +391,7 @@ decision stratum today is **n ≈ 13**.
 
 ### 4.2 Train corpora — the v2 balanced corpus is a real improvement, and it is not enough
 
-`MEASURED` — `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-25-v2-corpus-qa/v2_corpus_qa.json`
+`MEASURED` — `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-25-v2-corpus-qa/v2_corpus_qa.json`
 (`P2_distribution`; 9 000 clips / 49.74 h scanned, integrity 9 000/9 000 loadable):
 
 | quantity | v1 parity `physicalai-train-e438721ae894` (2 376 eps, 13.13 h) | v2 balanced `physicalai-v2bal-4b7eeeac222d` (9 000 clips, 49.74 h) |
@@ -522,7 +522,7 @@ Ordered so that a killed agent still yields value; every item is file-level.
 
 | Artifact | Where it lives |
 |---|---|
-| **This audit** | `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md` (repo working tree, **not** staged — orchestrator stages) |
+| **This audit** | `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md` (repo working tree, **not** staged — orchestrator stages) |
 | Primary code evidence read (unmodified) | `stack/tanitad/models/metric_dynamics.py`, `stack/tanitad/models/fourbrain.py`, `stack/tanitad/models/flagship_v15.py`, `stack/tanitad/models/strategic_goal.py`, `stack/tanitad/refs/refc.py`, `stack/tanitad/train/flagship_losses.py`, `stack/scripts/{refb_labels,train_flagship4b,train_flagship_v4,v4_labels,flagship_v4_data,gate_emitters,eval_flagship_v4,eval_flagship_v15,eval_flagship_v16,eval_grounded_rollout_4b}.py`, `taniteval/taniteval/{rollout,bench,driving,closedloop,hierarchy,planning,refc_eval,refc_rerank,plan_fan,planner_p2}.py` |
 | Primary raw artifacts read | `…/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-{30k,v4.2b-dryrun}.json`; `…/2026-07-23-v4-gate-emitters/artifacts/hierarchy_flagship-30k_v1.json`; `…/2026-07-25-v2-corpus-qa/v2_corpus_qa.json`; `…/2026-07-22-v4-labels/labels_{train,val}_v4_provenance.json`; `…/2026-07-25-closedloop-horizon-and-shift/e1a_horizon_heldout44_K185.json`; `taniteval/results/trainlogs/{v1-speedjerk,v2,v3enc,nospeed-phase0,expA-nodrop}_{train_log.jsonl,config.json}` |
 | Nothing staged, nothing committed, nothing pushed | ✅ per brief |

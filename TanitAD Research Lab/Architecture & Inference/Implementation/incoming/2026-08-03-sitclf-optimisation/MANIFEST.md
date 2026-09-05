@@ -23,7 +23,7 @@ staging verified with `git ls-files --cached`, never with an exit code.
 
 ---
 
-## P8 — scenario classifier · `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-sitclf-optimisation/`
+## P8 — scenario classifier · `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-03-sitclf-optimisation/`
 
 | file | what |
 |---|---|
@@ -38,7 +38,7 @@ staging verified with `git ls-files --cached`, never with an exit code.
 
 ---
 
-## P9 — IDM · `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-03-idm-four-families/`
+## P9 — IDM · `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-03-idm-four-families/`
 
 | file | what |
 |---|---|

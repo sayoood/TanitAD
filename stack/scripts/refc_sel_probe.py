@@ -162,7 +162,7 @@ PUBLISHED = {
     "refc-small-30k": {"selected_ade2s": 0.5261, "oracle_ade2s": 0.2213,
                        "frac_sel_2x_worse": 0.3825, "sel_gap": 0.3048,
                        "n_anchors": 64,
-                       "source": ("TanitAD Research Hub/Benchmarks & Eval/"
+                       "source": ("TanitAD Research Lab/Benchmarks & Evals/"
                                   "Implementation/incoming/2026-07-22-refc-small-30k/"
                                   "scaleab_refc-small-30k_vs_refc-base-30k.json")},
 }
