@@ -12438,3 +12438,50 @@ gate 2 both stand. What changes is **which component the gap is attributed to**,
 which work is worth doing — and the direction is favourable: the head is better than it looked
 (detects real turns at **AUC 0.88**, picks L vs R at **AUC 0.90**, neither a nav echo), and the
 fix is a constant rather than a training run.
+
+---
+
+# 2026-09-05 (#29)
+
+**Retracted:** my own decision **M15**'s operative sentence — *"⇒ L=3 is APPROVED. 100 % of real
+turns become expressible instead of 38.7 %, and the median curvature error on a turn falls
+**3.7×**."* — insofar as the **3.7×** was read as the expected payoff of the change.
+
+**Corrected to (MEASURED 2026-09-05, `realised_kappa.py`, 4,520 windows / 141 episodes, 644 real
+turns):** tuning the curvature magnitude buys **2.3 %** realised (medAE-on-turns 0.01775 →
+0.01734). The **entire** shipped lateral goal is worth **8.6 %** against a never-turn floor.
+
+**What happened.** The design table was scored with an **ORACLE token chooser**, and M15 said so
+one line above. I then used its headline in the sentence that granted the approval. ⛔ **A number
+correctly labelled as a ceiling is still a ceiling when it is quoted as a gain** — the label does
+not travel with the number into the next sentence, and mine did not.
+
+→ **Root-cause class: MODEL-FREE vs MODEL-INCLUSIVE — never compare a ceiling to an achievement.**
+The programme already carries this rule and I broke it *inside a decision*, which is the worst
+place for it: a decision is quoted forward as settled and is not re-derived by the next reader.
+⭐ Its close relative is `D-REFAV1-DRIVE-GATE`'s original framing — an oracle-optimal token count
+read as a head defect — so the same programme made the same class of error twice in one day, once
+in an agent's analysis and once in my own ruling.
+
+→ **Why it mattered rather than merely being imprecise.** The realised table's *"turns goaled
+correctly"* column reads **0.2811 for every magnitude**, because `κ_turn` does not touch the head
+logits. ⇒ **the binding term is the head's RECALL at the crossover, not the magnitude** — so the
+approved change addresses a term that is nearly inert, and an L=3 vocabulary shipped **without** a
+head able to select among its tokens is expected to be **worse** than L=1, not better, because it
+splits the same probability mass across more classes.
+
+→ **Durable fixes:**
+1. ⛔ **An ORACLE row may not appear in the sentence that approves something.** Cite the realised
+   number there, or state explicitly that no realised number exists yet and the approval is
+   provisional on measuring one.
+2. **A design table carries a REALISED column beside its oracle column**, produced by composing the
+   design with the *actual* decoder — which is what caught this, and which nobody had asked for.
+3. **Amendment issued as `M19`, not as an edit to M15**, so the original decision and its error stay
+   readable.
+
+→ **Pinned:** `Decisions/2026-09-05-mm-decisions.md` §M15 (the error) and §M19 (the amendment);
+register rows `D-MM-VOCAB-1`, `D-REFAV1-VOCAB-REALISED`; `realised_kappa.py` in the refav1 package.
+
+⚠️ **Scope, stated honestly:** M15's ruling on the METRIC (`medAE-on-turns` decides, RMSE may not)
+**stands and is reinforced** — the realised table is read on medAE too, which is what made 2.3 %
+visible. **M16 stands.** No model result is retracted; what is retracted is a projected payoff.

@@ -357,3 +357,66 @@ wore the costume of a working check. ⇒ The durable form is the one already ado
   A flag that parses and does nothing is worse than a missing one; it must **REFUSE**.
 * **`w_agent` / `w_u0` are absent from `config.json` entirely** — a run cannot say what weight its
   detector trained at, which makes any later comparison between arms unfalsifiable.
+
+## M19. ⛔ AMENDS M15 — I APPROVED ON A CEILING AND QUOTED IT AS A PAYOFF. The binding term is HEAD RECALL, not magnitude.
+
+**My error, stated first.** M15's operative sentence reads *"⇒ **L=3 is APPROVED.** 100 % of real
+turns become expressible instead of 38.7 %, and the median curvature error on a turn falls
+**3.7×**."* The table above it says, correctly, that each row is scored with an **ORACLE token
+chooser**. ⛔ **I labelled it a ceiling and then used it as the expected gain in the sentence that
+decided.** That is the programme's own *model-free vs model-inclusive* rule — **never compare a
+ceiling to an achievement** — broken inside a decision.
+
+**What the realised number actually is.** MEASURED by the refav1 stream (`realised_kappa.py`,
+**4,520 windows / 141 episodes, 644 real turns**), composing the vocabulary with the **SHIPPED
+head's actual argmax decode** and the real `canonical_controls` profile:
+
+| arm | medAE-on-turns | turns goaled correctly |
+|---|---|---|
+| ZERO floor (the goal never turns) | 0.01942 | — |
+| realised κ_turn = 0.02 | 0.01831 | **0.2811** |
+| realised κ_turn = 0.04 (best) | **0.01734** | **0.2811** |
+| realised κ_turn = 0.08 — SHIPPED | 0.01775 | **0.2811** |
+
+⇒ Tuning the magnitude **alone** buys **2.3 %** (0.01775 → 0.01734), not 3.7×. Against the
+never-turn floor the **entire** shipped lateral goal is worth **8.6 %**, and the best reachable
+constant **10.7 %**.
+
+⭐⭐ **THE WHOLE ANSWER IS IN ONE COLUMN, AND IT IS CONSTANT.** *"Turns goaled correctly"* reads
+**0.2811 for every κ_turn**, because **κ_turn does not touch the head logits**: the decode is
+unchanged, and only **28.1 %** of real turns receive a correctly-signed sustained goal *whatever
+magnitude is commanded*. ⇒ **THE BINDING TERM IS THE HEAD'S RECALL AT THE CROSSOVER, NOT THE
+MAGNITUDE.** A vocabulary that can express a turn does nothing for a turn the head does not call.
+
+### What this changes in M15
+
+1. ⛔ **The "3.7×" must not be quoted as a payoff anywhere.** It is an oracle ceiling. The realised
+   figure for magnitude tuning is **2.3 %**, and it is the one that belongs in a plan.
+2. ⚠️ **The APPROVAL OF L=3 IS NOW CONDITIONAL, AND THE CONDITION IS NOT COSMETIC.** The oracle
+   table assumes a chooser that picks correctly among **three** tokens. Today's head cannot choose
+   among three — it is not trained to, and the realised table shows its *binary* decode already
+   fails on 71.9 % of real turns. **Adding tokens a head cannot select between is strictly worse
+   than one token it can**, because it splits the same probability mass across more classes.
+   ⇒ **L=3 ships ONLY together with a head able to select among the new tokens.** A vocabulary-only
+   arm is now a **deliberate-regression control**, not the product.
+3. ⚠️ **The two levers fight, and that must be designed for rather than discovered.** Lowering
+   κ_turn lowers the crossover, making more road expressible **while asking the head to make a
+   harder decision on gentler curves**. Expressibility and decodability move in opposite
+   directions; the design point is a trade, not a maximum.
+
+### What this does NOT change
+
+* **M15's ruling on the METRIC stands, and is reinforced.** `medAE-on-turns` still decides and RMSE
+  still may not — and note that the realised table is *also* read on medAE, which is what let the
+  2.3 % be seen at all.
+* **M16 stands.** The decision-rule programme is still closed: the lever made driving worse at
+  11.2× the seed floor, independently measured.
+* **`PREREG_D-VOCAB-L3_FLOOR_GAP` stands, and its REFUTED branch is now MORE likely** — which is
+  the point of having written it before the fix. ⚠️ Its arms must be re-read in light of item 2: a
+  vocabulary-only L=3 arm is now expected to be flat or worse, and if it is, **that is the
+  pre-registered REFUTED outcome arriving on schedule, not a surprise.**
+
+⭐ **Why the stream deserves credit rather than a correction.** It priced the fix, escalated, got an
+approval, and then **kept measuring and refuted its own escalation's headline** — composing the
+oracle with the real decode is work nobody asked for. That is the behaviour the programme wants,
+and it caught a Master Mind error that would otherwise have shipped as an approved plan.
