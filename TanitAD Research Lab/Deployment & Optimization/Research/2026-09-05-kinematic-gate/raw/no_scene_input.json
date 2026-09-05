@@ -1,0 +1,96 @@
+{
+  "probe": "verify_no_scene_input",
+  "repo": "C:/Users/Admin/refcv4b_repo",
+  "probe_A_ast": {
+    "reachable_functions": [
+      "_comfort",
+      "_kinematic_feasibility",
+      "_motion_gate",
+      "kinematics"
+    ],
+    "ctx_keys_read": [
+      "a_max",
+      "dt",
+      "jerk_max",
+      "kappa_max",
+      "lat_acc_max",
+      "min_motion_m"
+    ],
+    "ctx_keys_scene": [],
+    "ctx_keys_const": [
+      "a_max",
+      "dt",
+      "jerk_max",
+      "kappa_max",
+      "lat_acc_max",
+      "min_motion_m"
+    ],
+    "ctx_keys_unclassified": [],
+    "dynamic_ctx_access": [],
+    "control_scene_readers_keys": [
+      "dt",
+      "ego_radius_m",
+      "headway_dawdle_penalty",
+      "headway_far_mult",
+      "headway_tailgate_exp",
+      "lead_len_m",
+      "lead_path",
+      "obs_radius_m",
+      "obstacles",
+      "target_time_gap_s"
+    ],
+    "control_reads_scene": true
+  },
+  "probe_A_gate_expression": {
+    "r_kin_rhs": "comp['feasibility'] + comp['comfort']",
+    "rank_src": "out['sel_score'].detach().float()",
+    "gate_expr": "int(cand[r_kin[j][cand].argmax()])",
+    "gate_ks": "(2, 4, 8, 16, 32, 128)",
+    "reach_mask": "rank.masked_fill(~out['reach_keep'].bool(), float('-inf'))"
+  },
+  "probe_B_permutation": {
+    "feasibility": {
+      "bitwise_identical_under_scene_garble": true,
+      "max_abs_diff": 0.0,
+      "mean_true": 0.022229621186852455
+    },
+    "comfort": {
+      "bitwise_identical_under_scene_garble": true,
+      "max_abs_diff": 0.0,
+      "mean_true": 0.00021860342530999333
+    },
+    "headway": {
+      "bitwise_identical_under_scene_garble": false,
+      "max_abs_diff": 0.75,
+      "mean_true": 0.011940982192754745
+    },
+    "collision": {
+      "bitwise_identical_under_scene_garble": false,
+      "max_abs_diff": 1.0,
+      "mean_true": -0.0833333358168602
+    },
+    "progress": {
+      "bitwise_identical_under_scene_garble": false,
+      "max_abs_diff": 3.0631513595581055,
+      "mean_true": 0.02844412624835968
+    },
+    "GATE_SCORE_r_kin": {
+      "bitwise_identical_under_scene_garble": true,
+      "max_abs_diff": 0.0
+    },
+    "GATE_ARGMAX": {
+      "identical": true,
+      "max_abs_diff": 0.0
+    }
+  },
+  "verdict": {
+    "A_no_scene_ctx_key_read": true,
+    "A_no_unclassified_key": true,
+    "A_no_dynamic_ctx_access": true,
+    "A_positive_control_reads_scene": true,
+    "B_gate_score_invariant": true,
+    "B_positive_control_headway_moved": true,
+    "B_positive_control_collision_moved": true,
+    "NO_SCENE_INPUT_HOLDS": true
+  }
+}
