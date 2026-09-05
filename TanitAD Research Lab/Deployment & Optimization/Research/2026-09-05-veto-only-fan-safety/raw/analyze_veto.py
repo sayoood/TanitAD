@@ -112,6 +112,10 @@ def main(argv=None) -> int:
     ap.add_argument("--run-dir", required=True, help="dir holding s0/ and s1/")
     ap.add_argument("--arm", required=True, help="veto200 | veto2k")
     ap.add_argument("--null-arm", default="ctrl_null")
+    ap.add_argument("--null-dir", default=None,
+                    help="full path to the zero-information arm dir. Use the MATCHED DOSE: "
+                         "a 200-step null cannot floor a 2,000-step lever, because the "
+                         "nuisance drift documented above accumulates with steps.")
     ap.add_argument("--n-boot", type=int, default=4000)
     ap.add_argument("--seed", type=int, default=11)
     ap.add_argument("--out", required=True)
@@ -135,25 +139,34 @@ def main(argv=None) -> int:
     # ---- G1: the null must be an ACTUAL null ------------------------------- #
     nulls = {}
     null_before = null_after = None
-    for k in ("s0", "s1"):
-        p = os.path.join(a.run_dir, k, a.null_arm, "arm_summary.json")
+    null_dirs = ([a.null_dir] if a.null_dir else
+                 [os.path.join(a.run_dir, k, a.null_arm) for k in ("s0", "s1")])
+    for d_ in null_dirs:
+        p = os.path.join(d_, "arm_summary.json")
+        k = os.path.relpath(d_, a.run_dir).replace(os.sep, "/")
         if os.path.isfile(p):
             n = J(p)
             if null_after is None:
-                null_before = J(os.path.join(a.run_dir, k, a.null_arm, "readout_before.json"))
-                null_after = J(os.path.join(a.run_dir, k, a.null_arm, "readout_after.json"))
+                null_before = J(os.path.join(d_, "readout_before.json"))
+                null_after = J(os.path.join(d_, "readout_after.json"))
+                nulls_steps = n.get("steps")
             nulls[k] = {"veto_rate_mean": n.get("veto_rate_mean"),
                         "final_loss": n.get("final_loss"),
                         "weights_changed": n.get("weights_changed"),
+                        "steps": n.get("steps"),
                         "n_separated_fan_metrics": sum(
                             1 for v in (n.get("fan_safety_deltas_paired") or {}).values()
                             if v.get("sep"))}
     g1_ok = bool(nulls) and all(v["veto_rate_mean"] == 0.0 for v in nulls.values())
     out["guards"]["G1_ctrl_null_is_an_actual_null"] = {
         "pass": g1_ok, "arms": nulls,
+        "null_dirs": null_dirs,
+        "dose_matched": (nulls and sum0.get("steps") in
+                         [v.get("steps") for v in nulls.values()]),
         "rule": "veto_rate_mean must be EXACTLY 0.0 with the veto off; the previous "
                 "panel's zero-weight control read 0.0897 because the veto was keyed on "
-                "the reward's KEY SET"}
+                "the reward's KEY SET. The floor must be DOSE-MATCHED: nuisance drift "
+                "accumulates with steps, so a 200-step null cannot floor a 2,000-step lever."}
 
     # ---- G2: identical BEFORE readouts ------------------------------------- #
     out["guards"]["G2_before_readouts_bitwise_identical"] = bitwise_identical(b0, b1)
@@ -189,13 +202,31 @@ def main(argv=None) -> int:
         both_sep = bool(lev0["sep"] and lev1["sep"])
         big_enough = min(abs(lev0["delta"]), abs(lev1["delta"])) >= fl
         clears_floor = min(abs(lev0["delta"]), abs(lev1["delta"])) > abs(rep["delta"])
-        clears_null = min(abs(lev0["delta"]), abs(lev1["delta"])) > abs(nul["delta"])
+        # ⛔ SIGN-AWARE, and the naive magnitude test was WRONG. If the zero-information
+        # arm drifts the metric the OTHER way, it cannot be the explanation for a movement
+        # in the opposite direction — demanding |lever| > |null| there would reject a real
+        # effect for being smaller than a drift that points away from it. So: opposite
+        # signs clear trivially; the same sign must be beaten in magnitude. The decisive
+        # number either way is `contrast_vs_null`, the PAIRED delta between the two AFTER
+        # readouts on the same windows, which isolates the lever from the drift directly.
+        same_dir_as_null = (lev0["delta"] * nul["delta"]) > 0
+        clears_null = ((not same_dir_as_null and abs(nul["delta"]) >= 0.0)
+                       or min(abs(lev0["delta"]), abs(lev1["delta"])) > abs(nul["delta"]))
+        con0 = ({"delta": float("nan"), "lo": float("nan"), "hi": float("nan"), "sep": False}
+                if null_after is None else
+                D.paired_delta(sub(null_after) if lo_ else null_after, A0, k,
+                               reps=a.n_boot, seed=a.seed))
+        con1 = ({"delta": float("nan"), "lo": float("nan"), "hi": float("nan"), "sep": False}
+                if null_after is None else
+                D.paired_delta(sub(null_after) if lo_ else null_after, A1, k,
+                               reps=a.n_boot, seed=a.seed))
         quotable = bool(both_sep and same_sign and big_enough and clears_floor)
         quotable_strict = bool(quotable and clears_null)
         if quotable and clears_null:
             verdict = "IMPROVED" if lev0["delta"] < 0 else "WORSENED"
         elif quotable and not clears_null:
-            verdict = "UNDER-ZERO-INFORMATION-FLOOR (ctrl_null moves it at least as much)"
+            verdict = ("UNDER-ZERO-INFORMATION-FLOOR (ctrl_null drifts it the SAME way "
+                       "by at least as much)")
         elif both_sep and same_sign and big_enough and not clears_floor:
             verdict = "WITHIN-NOISE (separated but under the seed-replicate floor)"
         elif undetectable_down and lev0["delta"] >= 0:
@@ -210,6 +241,8 @@ def main(argv=None) -> int:
             "min_effect": fl, "both_separated": both_sep, "same_sign": bool(same_sign),
             "clears_replicate_floor": bool(clears_floor),
             "zero_information_floor": nul, "clears_zero_information_floor": bool(clears_null),
+            "null_drifts_same_direction": bool(same_dir_as_null),
+            "contrast_vs_null_s0": con0, "contrast_vs_null_s1": con1,
             "undetectable_downward": bool(undetectable_down),
             "quotable_as_lever": quotable,
             "quotable_strict": quotable_strict, "verdict": verdict}
@@ -256,12 +289,14 @@ def main(argv=None) -> int:
           f"over {g2['n_shared_windows']}w x {g2['n_metrics']} metrics")
     print(f"\n=== {a.arm}: LEVER vs BASE, READ AGAINST THE SEED-REPLICATE FLOOR ===")
     print(f"  {'metric':26s} {'base':>9s} {'d_s0':>10s} {'d_s1':>10s} {'seedfl':>9s} "
-          f"{'nullfl':>9s}  verdict")
+          f"{'nulldrift':>9s} {'vs_null_s0':>11s} verdict   (* = contrast separated)")
     for k in list(PRIMARY) + [x for x in SUPPORT if x in m]:
         r = m[k]
         print(f"  {k:26s} {r['base']:9.5f} {r['lever_s0']['delta']:+10.5f} "
               f"{r['lever_s1']['delta']:+10.5f} {abs(r['replicate_floor']['delta']):9.5f} "
-              f"{abs(r['zero_information_floor']['delta']):9.5f}  {r['verdict']}"
+              f"{r['zero_information_floor']['delta']:+9.5f} "
+              f"{r['contrast_vs_null_s0']['delta']:+10.5f}"
+              f"{'*' if r['contrast_vs_null_s0'].get('sep') else ' '} {r['verdict']}"
               f"{'' if r['clears_zero_information_floor'] else '  [UNDER-NULL]'}")
     print(f"\n  PRIMARY (pending T1): {out['acceptance']['primary_verdict_pending_T1']}  "
           f"improved+quotable={improved_primary}")
