@@ -367,6 +367,48 @@ verdict. §5's outcomes remain decided on the wide panel alone.
 `rec_ta_ccos_s0/s1.json` (round 2), read by `raw/turn_asym_read.py`, which prints
 the verdict against SPEC §1's four conditions mechanically.*
 
+### §6.0 THE BLOCKER, NAMED — GPU SLOTS, NOT COMPUTE
+
+⛔ **The arms are built, validated and queued; they are waiting on a contended
+dev-box GPU, and I am not entitled to preempt it.** The measured ceiling is
+**two concurrent arms** (a third OOM-risks and would kill a sibling's run as well
+as mine), and a **second, active stream** — the longitudinal successor line — is
+launching arms continuously: `combined` → `wk15_ladder` → `lonshift` → `lonseam`,
+alongside `best`. At 23:21 both slots were held by that stream with **3.5 GB
+free**, which is not enough for a third arm.
+
+**What I did about it, rather than waiting on a gate that could never open:**
+
+1. `raw/ta_queue.py` (v1) gated on the **absence of every foreign arm** and then
+   launched two of mine. ⛔ Against a stream that re-fills a freed slot within
+   seconds, that gate can **starve indefinitely while the box is half loaded**.
+2. `raw/ta_queue2.py` (v2) gates on **SLOTS**: at most `MAX_ARMS = 2` arms on the
+   box, counted as **ARMS (dump dirs), never processes** — one arm is 2-4
+   `python.exe` entries, and a gate on processes can never open. It launches
+   **one of mine per free slot**, in priority order, so a killed run still yields
+   `ta_wk15_s0` — the arm that answers the PI's question on its own.
+3. `raw/ta_queue3.py` (v3) tightens the poll from 120 s to **15 s**, because the
+   sibling re-fills a freed slot faster than a two-minute poll can see it, and
+   de-duplicates the status line so a 15 s poll does not spam its log.
+
+⚠️ Each version is a **NEW FILE**, never an edit of the running one, and the old
+queue is killed **by explicit PID** — both are documented traps in this
+programme. After each start the launcher is **asserted to be alive** by process
+count, because every failure in this family reports success and leaves nothing
+running.
+
+⇒ **This is a named blocker under Rule Zero clause 3, not an idle wait: the
+lever is built and armed; what it needs is a free slot.** ⭐ Nothing else in this
+package waits on it — every other question was answered at zero GPU, which is why
+§1-§5 are complete.
+
+⚠️ **And the evidence that has accumulated while waiting all points the same
+way** — the banked panel is structurally unattributable (§2), the retention split
+is fragile to the candidate set at fixed cost and fixed seed (§5.4), and every
+deterministic mechanism is refuted (§4). ⛔ **That is a PRIOR, not a result.**
+§5's outcomes are decided by the arms in this section and by nothing else, and
+until they land the answer is **outcome C — INCONCLUSIVE**.
+
 ---
 
 ## §7 — INSTRUMENT WORK, all default-identical
