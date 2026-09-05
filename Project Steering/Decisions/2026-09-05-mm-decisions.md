@@ -2098,3 +2098,65 @@ retired endpoint **stay cancelled**.
 
 ⇒ **The RL line is not dead; it is re-aimed.** Contact is solved by construction at zero cost;
 what remains is a smooth monotone residual under prediction error, and that is the objective.
+
+## M42. ⛔⛔ `sep=True` IS REPORTED FOR A DELTA OF EXACTLY ZERO — every separation count on this rig is inflated, mine included
+
+### 1. The tool quirk, and the correction it forces on ME
+
+A delta of **exactly 0.0 with CI [0, 0]** is reported **`sep=True`**, though **[0, 0] plainly does
+not exclude 0**.
+
+| arm | `sep=True` | of which **Δ == 0** | **REAL** | largest real \|Δ\| |
+|---|---|---|---|---|
+| `ctrl0` (**weights bitwise frozen**) | 40/57 | **36** | **4** | 1.03e-08 |
+| `ctrl_null` (zero reward, weights moved) | 35/57 | **11** | **24** | **0.134314** |
+
+⛔ **I quoted "a zero-information arm separated 35 of 57 metrics" to the PI twice — in `M23` and
+`M29`. The honest number is 24 of 57.** Inflated by 11, and I passed it forward without checking the
+deltas behind the flag.
+
+⚠️ **The substance STANDS and is not weakened**: those **24 are real**, and `fan_peak_g_mean` drifts
+**+0.134** on an arm carrying **no reward at all** — which is the whole point of that control.
+
+### 2. ⭐⭐ And the deeper finding: the floor of "separated" is ~1e-8
+
+`ctrl0` runs with **`weights_changed = False` — the weights are BITWISE FROZEN.** And still:
+**21 of 57 metrics move** (max |Δ| **1.16e-07**, GPU float non-determinism in the readout), and the
+bootstrap calls **4 of them separated** — `mass_conf_unsafe` **−1.025e-08, CI [−2.162e-08,
+−1.235e-09]**, plus three siblings.
+
+⇒ ⭐ **This is `H-ESTIM-SEED-1` demonstrated STRONGER than the case that established it.**
+`A0b_replicate` was a *real training run with a real seed* separating 3 of 18. Here **nothing
+changed at all** — and four metrics still separate.
+
+⇒ ⛔⛔ **`sep` IS A CLAIM ABOUT AN INTERVAL AND CARRIES NO MAGNITUDE INFORMATION WHATEVER.** A
+separated result at 1e-8 and a separated result at 0.134 are the same flag. **The flag is not the
+finding; the delta against a floor is.**
+
+### 3. The two durable consequences
+
+1. ⛔ **NEVER COUNT `sep` WITHOUT READING THE DELTA.** ⭐ This is also why
+   `top32_contact`'s *"+0.000000, CI [0, 0], sep=True"* is a **non-result** — and why the stream
+   quoted it by **delta and interval** rather than by the flag when it appeared in a retraction.
+2. **`analyze_veto.py`'s `sep` must require a non-zero delta.** A separation predicate that fires on
+   an identity is not a predicate.
+
+⚠️ **Scope, stated honestly:** every separation COUNT computed with this tool on this rig may be
+inflated. ⛔ But every number I have reported with **its delta and CI attached** is unaffected — the
+decode's *"exactly 0.0000 m, CI [0,0]"*, the 1.2 mm cost, `fan_contact` → 0.000000, the `W_KAPPA`
+table, `a_sustain`'s 0.3001 — all were quoted **as deltas**, not as flags. **The defect bites counts,
+not measurements**, which is exactly why the house style of quoting the number rather than the verdict
+is load-bearing rather than pedantic.
+
+### 4. ⭐ A guard that mattered passed — and a self-caught error in the checking of it
+
+`ctrl0`'s BEFORE readout is **bitwise identical** to `coll200`'s (**103/768 on both**) ⇒ the
+zero-lever floor **is definition-matched to the lever**, unlike the banked `ctrl_null` whose
+POINT-vs-SWEPT mismatch `M38` caught.
+
+⚠️ An earlier check printed a spurious mismatch there. **The cause was the stream's own truncated
+float literal, not the data** — and it **recorded that rather than quietly fixing it**, which is the
+only reason the guard's pass is trustworthy now.
+
+⇒ **State:** `ctrl_null` s1 — the last arm — started 20:25:52Z; when it lands, the CPU-only two-floor
+verdict banks automatically. **No GPU is queued beyond it.**
