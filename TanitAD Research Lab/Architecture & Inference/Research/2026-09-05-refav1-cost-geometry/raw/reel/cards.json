@@ -71,31 +71,27 @@
     "h2"
    ],
    [
-    "arm            cost geometry                          ADE m   max|kappa|   outside the circle   straight plans",
-    "body"
-   ],
-   [
-    "ccos_argmax    ccos W_KAPPA 0                         1.3272     0.2000           29.6 %         27.5 %",
+    "ccos_argmax (ccos W_KAPPA 0):   ADE 1.3272 m   \u00b7   max|kappa| 0.2000 1/m   \u00b7   29.6 % of windows OUTSIDE the friction circle (peak 3.262 g)   \u00b7   27.5 % of plans dead straight",
     "bad"
    ],
    [
-    "combined       ccos W_KAPPA 0 + Kamm cap mu=0.7 + seed ladder 1.0504     0.1505            0.0 %         27.5 %",
+    "combined (ccos W_KAPPA 0 + Kamm cap mu=0.7 + seed ladder):   ADE 1.0504 m   \u00b7   max|kappa| 0.1505 1/m   \u00b7   0.0 % of windows OUTSIDE the friction circle (peak 0.618 g)   \u00b7   27.5 % of plans dead straight",
     "body"
    ],
    [
-    "wk15           ccos W_KAPPA 15.1125                   0.8934     0.0800            0.0 %         47.5 %",
+    "wk15 (ccos W_KAPPA 15.1125):   ADE 0.8934 m   \u00b7   max|kappa| 0.0800 1/m   \u00b7   0.0 % of windows OUTSIDE the friction circle (peak 0.332 g)   \u00b7   47.5 % of plans dead straight",
     "body"
    ],
    [
-    "best           ccos W_KAPPA 15.1125 + Kamm cap mu=0.7 0.8838     0.0800            0.0 %         37.5 %",
+    "best (ccos W_KAPPA 15.1125 + Kamm cap mu=0.7):   ADE 0.8838 m   \u00b7   max|kappa| 0.0800 1/m   \u00b7   0.0 % of windows OUTSIDE the friction circle (peak 0.332 g)   \u00b7   37.5 % of plans dead straight",
     "body"
    ],
    [
-    "ha0_ext FLOOR  do nothing                             0.8772          -           18.5 %            -",
+    "ha0_ext FLOOR (do nothing - hold the measured speed and curvature):   ADE 0.8772 m   \u00b7   it BEATS all four, and it is itself outside the circle on 18.5 % of windows (it holds a MEASURED curvature, which is noisy)",
     "ok"
    ],
    [
-    "GROUND TRUTH   the human                              0.0000     0.1701            0.0 %            -      <- the CONTROL: must read 0.0 %",
+    "GROUND TRUTH (the human):   ADE 0.0000 m by definition   \u00b7   max|kappa| 0.1701 1/m   \u00b7   0.0 % outside the circle   <- THE CONTROL: a real vehicle's recorded motion MUST read 0.0 %, and it does",
     "ok"
    ]
   ]

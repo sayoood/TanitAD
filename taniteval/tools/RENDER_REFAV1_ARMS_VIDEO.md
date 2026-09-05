@@ -33,7 +33,7 @@ trade-off cannot be seen one arm at a time. So this reel puts several arms on
 | `combined` | + Kamm cap `mu` 0.7 + seed ladder | 1.0504 | 0.1505 | **0.0 %**, peak 0.618 g | 27.5 % |
 | `wk15` | `ccos`, `W_KAPPA` 15.11 | 0.8934 | 0.0800 | 0.0 %, peak 0.332 g | **47.5 %** |
 | `best` | `W_KAPPA` 15.11 + Kamm cap | **0.8838** | 0.0800 | 0.0 %, peak 0.332 g | 37.5 % |
-| **`ha0_ext` FLOOR** | **do nothing** | **0.8772** | — | — | — |
+| **`ha0_ext` FLOOR** | **do nothing** | **0.8772** | — | 18.5 %, peak 1.436 g | — |
 | `g` **(CONTROL)** | the human | 0.0000 | 0.1701 | **0.0000** | — |
 
 ⇒ **the arm that TURNS drives WORST, and the do-nothing floor beats all four.**

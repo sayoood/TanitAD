@@ -139,21 +139,28 @@ intro = {"title": "refav1's planner, watched: four cost geometries, one scene",
        "nothing; the ego data keeps arriving from the recording."),
 ]}
 
-panel = [("THE FOUR ARMS DRAWN, MEASURED OVER ALL 40 WINDOWS", "h2"),
-         B("arm            cost geometry                          ADE m   "
-           "max|kappa|   outside the circle   straight plans")]
+# ⛔ NOT A MONOSPACED TABLE. `draw_card` paints with a PROPORTIONAL face and
+# wraps, so column padding collapses into run-on text -- MEASURED on the first
+# card render, where the panel read as one grey paragraph. Each row is a
+# SENTENCE with its numbers labelled, which survives any face and any wrap.
+panel = [("THE FOUR ARMS DRAWN, MEASURED OVER ALL 40 WINDOWS", "h2")]
 for r in drawn:
-    panel.append((f"{r['arm']:<14s} {r['geom']:<38s} {r['ade']:6.4f}   "
-                  f"{r['maxk']:8.4f}   {r['kamm']*100:12.1f} %   "
-                  f"{r['straight']*100:10.1f} %",
+    panel.append((f"{r['arm']} ({r['geom']}):   ADE {r['ade']:.4f} m   ·   "
+                  f"max|kappa| {r['maxk']:.4f} 1/m   ·   "
+                  f"{r['kamm']*100:.1f} % of windows OUTSIDE the friction "
+                  f"circle (peak {r['peak']:.3f} g)   ·   "
+                  f"{r['straight']*100:.1f} % of plans dead straight",
                   "bad" if r["kamm"] > 0 else "body"))
-panel.append(OK(f"{'ha0_ext FLOOR':<14s} {'do nothing':<38s} "
-                f"{floor_ade:6.4f}   {'-':>8s}   "
-                f"{fl_r['kamm_over_rate']*100:12.1f} %   {'-':>10s}"))
-panel.append(OK(f"{'GROUND TRUTH':<14s} {'the human':<38s} {0.0:6.4f}   "
-                f"{gt_r['max_abs_kappa']:8.4f}   "
-                f"{gt_r['kamm_over_rate']*100:12.1f} %   {'-':>10s}"
-                f"      <- the CONTROL: must read 0.0 %"))
+panel.append(OK(f"ha0_ext FLOOR (do nothing - hold the measured speed and "
+                f"curvature):   ADE {floor_ade:.4f} m   ·   it BEATS all four, "
+                f"and it is itself outside the circle on "
+                f"{fl_r['kamm_over_rate']*100:.1f} % of windows (it holds a "
+                f"MEASURED curvature, which is noisy)"))
+panel.append(OK(f"GROUND TRUTH (the human):   ADE 0.0000 m by definition   ·   "
+                f"max|kappa| {gt_r['max_abs_kappa']:.4f} 1/m   ·   "
+                f"{gt_r['kamm_over_rate']*100:.1f} % outside the circle   <- "
+                f"THE CONTROL: a real vehicle's recorded motion MUST read 0.0 %, "
+                f"and it does"))
 
 outro = {"title": "What the reel showed", "lines": [
     ("THE PLANNER", "h2"),
