@@ -602,6 +602,49 @@ written for:** not *"can the pool express an intermediate curvature at all"* (it
 but *"does supplying the intermediate rungs directly beat letting the search find
 them"*. Both outcomes remain committed; the arm is unchanged.
 
+
+### 7.4 ⛔ L2 ANSWERED — A CLEAN NULL: THE HOLD BRANCH REPAIRS THE COST ON 25 % OF WINDOWS AND CHANGES NOT ONE PLAN
+
+`ccosh_w000` = `ccosh` + `(0, 0, 64.297)`, the **metric is the only variable**
+against the banked `ccos_argmax`: same weights, same seed, same panel, same
+vocabulary. Artifact `raw/ccosh_null.txt`.
+
+**THE PLAN.** `cl` trajectories against `ccos_argmax`: **max abs diff
+0.000000e+00, BIT-IDENTICAL on all 40 windows.** Every four-family number is
+therefore identical to the digit — ADE **1.3272**, speed MAE 0.7155, curvature MAE
+0.055369, cross MAE 0.8784, heading 23.4578, lane-keep recall 0.7143, turn recalls
+0.3636 / 0.75.
+⛔ **SAME-BREATH CONTROL THAT MUST DIFFER, and does:** `wk15` against the same
+baseline reads **1.508402e+01 m** apart. The comparison is live; the null is a
+measurement, not a broken pipe.
+
+**THE COST.** The branch fired exactly where it was designed to:
+
+| | `basecost_cv` frac == **1.0** | min | median | median `plan_cost` | `cem` frac |
+|---|---|---|---|---|---|
+| `ccos_argmax` | **0.2500** | 0.884896 | 1.0 | 3.10838e-05 | 0.750 |
+| `ccosh_w000` | **0.0000** | **3.9105e-08** | 0.967232 | 9.26852e-06 | 0.925 |
+
+⇒ **the degeneracy is real, it is confined to the 25 % of windows whose goal IS the
+hold field, and removing it is behaviourally inert on this panel.** The `cem`
+fraction rising 0.750 → 0.925 while the emitted controls stay bit-identical is the
+mechanism in one number: on those windows the CEM's own best sample was *already*
+the all-zero plan, so making `cv` cheap merely re-labelled which of two identical
+control sequences won the argmin.
+
+⚠️ **AND IT CORRECTS A FIGURE THIS PACKAGE INHERITED.** The brief and
+`COST_METRICS` put the affected population at **86.5 %** of the eval grid. On this
+panel the goal is the hold field on **25.0 %** of windows — LANE_KEEP is *decoded*
+on 45.0 %, but on most of those the LON token still commands a non-zero
+acceleration, so `g ≠ z_ref` and the branch correctly does not fire. **A LANE_KEEP
+decode is not a hold goal.** The 86.5 % figure belongs to a different grid and must
+carry it.
+
+⇒ **L2 is not the lever.** Under the standing instruction the next lever was already
+running when this landed; `ccosh` stays in the tree as a pinned, non-default,
+*correct* instrument — its value is that it makes the cost defined where it was not,
+which matters for any future arm in which `cv` is not already the winner.
+
 ---
 
 ## §8 — Deliverable manifest

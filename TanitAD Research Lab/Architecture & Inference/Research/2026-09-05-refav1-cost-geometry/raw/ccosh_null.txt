@@ -1,0 +1,15 @@
+# MEASURED 2026-09-05: L2 - does the ccosh HOLD BRANCH change any PLAN?
+# ccosh_w000 vs ccos_argmax: same weights (0,0,64.297), same seed, same panel;
+# the METRIC is the only variable.
+
+PLAN: ccosh vs ccos  cl trajectories max abs diff 0.000000e+00  BIT-IDENTICAL=True  (n=40 windows)
+CONTROL that MUST differ: wk15 vs ccos  max abs diff 1.508402e+01  bit-identical=False
+
+COST: the branch DID fire.
+  ccos_argmax  basecost_cv frac==1.0 0.2500  min 0.884896  median 1 | plan_cost median 3.10838e-05 | cem frac 0.750 | LANE_KEEP frac 0.4500
+  ccosh_w000   basecost_cv frac==1.0 0.0000  min 3.9105e-08  median 0.967232 | plan_cost median 9.26852e-06 | cem frac 0.925 | LANE_KEEP frac 0.4500
+
+=> the ccos degeneracy is real on the 25 %% of windows whose goal IS the hold field
+   (basecost_cv exactly 1.0), the branch removes it (min 0.884896 -> 3.9105e-08),
+   and NOT ONE PLAN CHANGES: on those windows the search had already converged to
+   the do-nothing plan, so the mis-ranking had no behavioural consequence here.
