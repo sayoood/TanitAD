@@ -299,6 +299,79 @@ stroller (2), bus (3), other_vehicle (3)**; `rider` (8) and `protruding_object`
 
 ---
 
+## The tiny-rig smoke — four arms, each reaching a checkpoint
+
+MEASURED 2026-09-05, CPU, off-Drive mirror. Every arm ran to `summary.json`.
+The v0-conditioned bank is built by `make_smoke_anchors.py` (⛔ **CI-ONLY**, a
+coarse grid, never a registered arm).
+
+```
+# the CI-only bank the sampler needs (a fixed-path bank has zero controls)
+python make_smoke_anchors.py /tmp/anchors20.pt --n-lon 5 --n-lat 4
+
+# (a) baseline, every seam off
+python stack/scripts/refc_v3_train.py --arm hier --out OUT --smoke --steps 3 \
+  --device cpu --synth-episodes 4
+
+# (b) agent tokens, ORACLE (needs no detector loss — the rung that runs FIRST)
+  ... --agents oracle --agent-queries 8
+
+# (c) the CONTROL-SPACE SAMPLER
+  ... --anchors /tmp/anchors20.pt --anchor-v0-conditioned \
+      --anchor-control-units alat --sampler ddim --w-u0 0.5
+
+# (d) both together
+  ... (c) --agents head --w-agent 1.0 --agent-queries 8 \
+          --agent-w-project 0.2 --agent-w-ground 0.1
+```
+
+Arm (c)'s log row carries the new term live: `loss 29.0148 traj 1.2182
+cls 8.5347 **u0 0.5004**`, and its `config.json['seams']` reads
+`sampler: ddim · sampler_space: control · sampler_infer_t: 8 · sampler_steps: 2 ·
+sampler_groups: 1 · control_norm: [4.0, 3.0] · w_u0: 0.5`.
+
+### ⛔⛔ TWO DEFECTS THE SMOKE CAUGHT — both of the "runs fine, means nothing" family
+
+**1. The trainer's own guard refused MY anchor builder, and was right to.** My
+first `make_smoke_anchors.py` used `torch.linspace` over the asymmetric a_lon
+range (−4.0 … +2.9167), which **does not pass through 0.0** — so the vocabulary
+could not express *"hold speed, go straight"*. The trainer's existing check
+states the cost: such a set reads **1.2768 m** oracle-in-vocabulary against
+**0.2610 m** — a **4.9× artifact that looks exactly like a resolution finding**.
+Fixed with `grid_through_zero`, which asserts 0.0 is a node on both axes.
+⭐ Recorded as a class: **a refusal at wiring time beat a warning**, and it is
+the only point at which this was cheap to catch.
+
+**2. `--agents head --w-agent 1.0` TRAINED NO DETECTOR AND SAID NOTHING.** The
+detection-loss branch was guarded `... and "agent_box" in batch`, and the
+synthetic corpus carries no `obstacle.offline` join — so the run trained,
+converged, wrote a checkpoint, and **stamped `w_agent: 1.0` in `config.json`
+while the detector was never supervised**. The head would have been shaped only
+by the planner loss through its token gate, and the arm would have read as *"the
+learned agent head does not help"*.
+⭐ **This is the SAME failure my own `--w-agent 0` guard refuses, one level
+down** — there the loss weight is missing, here the **labels** are, and a guard
+on the flag alone cannot see it because the flag was set correctly.
+⇒ Now **refuses loudly** and names the wiring it needs. Verified by run: arm (d)
+above now exits with that message, while `--agents oracle` still reaches a
+checkpoint.
+
+### ⚠️ THE HONEST GAP THIS LEAVES — the dataset side is NOT wired
+
+`V3Dataset` does **not** load `obstacle.offline` into the batch. So today:
+
+| arm | state |
+|---|---|
+| `--agents oracle` (`E-AGT-ORACLE` / `E-AGT-BUDGET`) | **model side complete**; still needs boxes fed per window |
+| `--agents head` (`E-AGT-HEAD`) | **REFUSES** until the join is wired — correctly |
+
+⇒ **The next rung is dataset work, not model work**: a `JoinFileReader` per
+episode + `agent_slots.targets_from_join` + the visibility filter, emitting
+`agent_box / agent_yaw / agent_cls / agent_valid` per window. Every consumer of
+those keys is written, tested and waiting. ⚠️ And there is **no join file for
+the 2,376-episode train corpus** on this box — only val40 — so that build is a
+DataFlyWheel prerequisite, not a same-turn fix.
+
 ## Verification
 
 | suite | result |
@@ -347,6 +420,7 @@ blob-verified via `mktree_commit.py`). Nothing is stranded on a pod or a worktre
 | `stack/tests/test_refc_v3_refcv5_wiring.py` | 11 tests |
 | `…/2026-09-05-refcv5-build/measure_agent_density.py` | the density instrument |
 | `…/2026-09-05-refcv5-build/raw/agent_density.json` | its output (distributions, decision tables, class histograms) |
+| `…/2026-09-05-refcv5-build/make_smoke_anchors.py` | ⛔ CI-ONLY v0-conditioned bank so the sampler can smoke end to end |
 
 ## ⚠️ ESCALATIONS — for the Master Mind, not for a reader to find later
 
@@ -364,6 +438,11 @@ blob-verified via `mktree_commit.py`). Nothing is stranded on a pod or a worktre
    The plan should be corrected.
 5. **`refc_selector_train.py` and `refcv3_arm.py --selector` are NOT written** —
    WP-7's frozen-generator trainer and its dump path remain open.
+7. ⛔ **THE NEXT RUNG IS DATASET WORK: wire `obstacle.offline` into the batch.**
+   `V3Dataset` emits no `agent_box`, so `--agents head` correctly REFUSES and
+   `E-AGT-HEAD` cannot train. Everything downstream of those keys is written and
+   tested. Needs a train-corpus join (only val40 exists on this box) — a
+   **DataFlyWheel prerequisite**, and it gates the PI's named priority.
 6. **The selector's compliance τ has no default** (must come from
    `nav_compliance.derive_tolerance`, else the head is omitted), and the tactical
    head's **2 s label vs 6 s candidate** horizon mismatch is recorded in

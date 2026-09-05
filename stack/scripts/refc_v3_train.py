@@ -896,6 +896,27 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # and nowhere in the forward -- which is the vision-only rule enforced by
     # where the tensor is read, not by a comment.
     w_agent = float(getattr(model, "_w_agent", 0.0))
+    if w_agent > 0.0 and "agent_box" not in batch:
+        # ⛔⛔ REFUSE, DO NOT SKIP. MEASURED on the tiny rig 2026-09-05: with
+        # `--agents head --w-agent 1.0` on a dataset that carries no
+        # `obstacle.offline` join, this branch was a silent `and "agent_box" in
+        # batch` no-op -- the run trained, converged, wrote a checkpoint, and
+        # stamped `w_agent: 1.0` in config.json while THE DETECTOR WAS NEVER
+        # SUPERVISED. The head would have been shaped only by the planner loss
+        # through its token gate, and the arm would have read as "the learned
+        # agent head does not help".
+        # ⭐ This is the SAME failure the --w-agent 0 guard in
+        # `_pin_refcv5_seams` refuses, one level down: there the loss weight is
+        # missing, here the LABELS are. A guard on the flag alone is not
+        # enough, because the flag was set correctly.
+        raise SystemExit(
+            "[v3] ⛔ --w-agent > 0 but the batch carries no `agent_box`: this "
+            "dataset has no obstacle.offline join wired, so the detection loss "
+            "would be SILENTLY SKIPPED and the run would stamp w_agent > 0 "
+            "while training no detector. Wire the join into the dataset (see "
+            "`train_p8_occupancy.JoinFileReader` + "
+            "`agent_slots.targets_from_join`), or run --agents oracle / "
+            "--w-agent 0.")
     if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch:
         tgt_ag = {"box": batch["agent_box"].to(device),
                   "yaw": batch["agent_yaw"].to(device),
