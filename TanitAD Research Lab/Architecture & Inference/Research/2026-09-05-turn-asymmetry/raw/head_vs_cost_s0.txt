@@ -1,0 +1,21 @@
+================================================================================================
+ARM ta_wk15_s0  (n=75 windows / 8 episodes)
+================================================================================================
+  ep | GT L | head L | plan L || GT R | head R | plan R
+   0 |    5 |   0/5  |   0/5  ||    6 |   5/6  |   3/6 
+   1 |    5 |   4/5  |   0/5  ||    0 |    -   |    -  
+   2 |    5 |   0/5  |   0/5  ||    5 |   5/5  |   2/5 
+   3 |    0 |    -   |    -   ||    6 |   0/6  |   0/6 
+   4 |    0 |    -   |    -   ||    6 |   5/6  |   4/6 
+   5 |    5 |   0/5  |   0/5  ||    0 |    -   |    -  
+   6 |    5 |   5/5  |   0/5  ||    2 |   0/2  |   0/2 
+   7 |    5 |   0/5  |   0/5  ||    5 |   5/5  |   4/5 
+
+  ** THE DECISIVE CELL — windows where the HEAD decoded the CORRECT turn token **
+  stratum      n  clusters | plan recall            | realised peak kappa     
+  GT-LEFT      9  2 **<5** | 0/9 = 0.0000 [0.0000, 0.0000] | median +0.02066, full |k|>0.06 on 0/9
+  GT-RIGHT    20  4 **<5** | 13/20 = 0.6500 [0.5000, 0.8000] | median -0.08000, full |k|>0.06 on 18/20
+  ⇒ a plan that fails where the head is RIGHT cannot be blamed on the head; the loss is in the COST comparison.
+  ⚠️ read the cluster column: a cell below 5 clusters is a POWER LIMIT, not a negative.
+  CONTROL: GOAL_KAPPA_TURN = 0.08000 imported from source; the floor `ha0_ext` recall on the same windows is L 0.7333 / R 0.7000
+

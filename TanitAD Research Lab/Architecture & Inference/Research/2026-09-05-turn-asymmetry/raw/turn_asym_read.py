@@ -159,6 +159,16 @@ def main(tags):
     hit["ha0_ext"] = (lab(ref["ha0_ext"]) == lat_g).astype(float)
     hit["ol"] = (lab(ref["ol"]) == lat_g).astype(float)
     hit["ha"] = (lab(ref["ha"]) == lat_g).astype(float)
+    # ⭐ THE GOAL-HEAD BASELINE (SPEC section 3.16, registered before any `cl`
+    # output existed). At W_KAPPA = 0 the plan IS the goal's canonical seed on
+    # 21/22 turn-goal windows, so the plan's turn recall is BOUNDED ABOVE by the
+    # head's: a plan-recall gap is PARTLY INHERITED and only the INCREMENT over
+    # the head is attributable to the cost. The decoded goal is an INPUT and is
+    # identical across arms and across plan seeds, so one column serves all.
+    gl0 = D[tags[0]]["goal_lat_cl"]
+    hit["GOAL_HEAD"] = np.where(lat_g == 1, gl0 == I_TL,
+                                np.where(lat_g == 2, gl0 == I_TR,
+                                         False)).astype(float)
 
     print()
     print("=" * 100)
@@ -167,17 +177,28 @@ def main(tags):
     print("  %-14s | %-26s | %-26s | %s"
           % ("arm", "recall LEFT  [95% CI]", "recall RIGHT [95% CI]", "R - L  [95% CI]  sep?"))
     rec = {}
-    for t in list(tags) + ["ha0_ext", "ha", "ol"]:
+    for t in list(tags) + ["GOAL_HEAD", "ha0_ext", "ha", "ol"]:
         h = hit[t]
         lm, ll, lh = cluster_ci(h[mL], eid[mL])
         rm, rl, rh = cluster_ci(h[mR], eid[mR])
         d, dl, dh, sep, nd = contrast_ci(h, eid, mR, mL)
         rec[t] = (lm, rm, d, sep)
-        star = " (FLOOR, no planner)" if t in ("ha0_ext", "ha", "ol") else ""
+        star = (" (FLOOR, no planner)" if t in ("ha0_ext", "ha", "ol")
+                else "  <-- BASELINE: the decoded goal, an INPUT (SPEC 3.16)"
+                if t == "GOAL_HEAD" else "")
         print("  %-14s | %6.4f [%6.4f, %6.4f] | %6.4f [%6.4f, %6.4f] | %+6.4f "
               "[%+6.4f, %+6.4f] %s%s"
               % (t, lm, ll, lh, rm, rl, rh, d, dl, dh,
                  "YES" if sep else "no ", star))
+    print()
+    print("  ⭐ THE INCREMENT OVER THE GOAL HEAD (SPEC 3.16) — the only part of a")
+    print("     plan-recall gap that is attributable to the COST:")
+    gh = rec["GOAL_HEAD"][2]
+    for t in tags:
+        print("     %-14s plan gap %+0.4f  -  head gap %+0.4f  =  INCREMENT %+0.4f"
+              % (t, rec[t][2], gh, rec[t][2] - gh))
+    print("     (a plan gap no larger than the head's is INHERITED, not caused by")
+    print("      W_KAPPA; the head is identical across arms and across plan seeds.)")
     print("  CONTROL (must read exactly +0.0000): an arm's LEFT recall against "
           "itself = %+0.4f"
           % (cluster_ci(hit[tags[0]][mL], eid[mL])[0]

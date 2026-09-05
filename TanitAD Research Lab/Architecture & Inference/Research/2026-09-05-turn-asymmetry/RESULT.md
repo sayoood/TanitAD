@@ -1,10 +1,11 @@
 # RESULT — is refav1's left/right turn asymmetry real?
 
-**STATUS: PART 1 (zero GPU) COMPLETE AND BANKED. PART 2 (the wide panel, two
-inference seeds) is RUNNING.** ⛔ **Until §6 is filled, the answer to the PI's
-question is OUTCOME C — INCONCLUSIVE — and neither "real" nor "not real" may be
-quoted.** `SPEC_TURN_ASYMMETRY.md` §5 makes that a legitimate result of this
-package, not a failure of it.
+**STATUS: ROUND 1 LANDED. ⭐⭐ THE VERDICT IS OUTCOME A — THE ASYMMETRY IS REAL**
+(§6, all four pre-registered conditions met, both inference seeds).
+⛔ **But the CAUSAL half is still open:** the increment over the goal-head
+baseline does not clear this panel's own seed floor, so *"the curvature penalty
+causes it"* is NOT yet established. Round 2 (`ta_ccos_s0/s1`, `W_KAPPA = 0`, the
+same 75 windows) is RUNNING and is the arm that adjudicates it — see §6.5.
 
 *Read `SPEC_TURN_ASYMMETRY.md` first: it carries the power derivation, the panel
 rule, the three amendments I wrote against myself before the run, and BOTH
@@ -425,53 +426,154 @@ verdict. §5's outcomes remain decided on the wide panel alone.
 
 ---
 
-## §6 — THE WIDE PANEL, TWO SEEDS *(pending — this is the section that decides)*
+## §6 — THE WIDE PANEL, TWO SEEDS — ⭐⭐ **OUTCOME A: THE ASYMMETRY IS REAL**
 
-*To be filled from `rec_ta_wk15_s0.json` / `rec_ta_wk15_s1.json` (round 1) and
-`rec_ta_ccos_s0/s1.json` (round 2), read by `raw/turn_asym_read.py`, which prints
-the verdict against SPEC §1's four conditions mechanically.*
+**All four pre-registered conditions MET.** Reader `raw/turn_asym_read.py`, which
+prints the verdict mechanically; raw at `raw/turn_asym_read_round1.txt`, records
+and logs at `raw/arms/`.
 
-### §6.0 THE BLOCKER, NAMED — GPU SLOTS, NOT COMPUTE
+### 6.1 The numbers
 
-⛔ **The arms are built, validated and queued; they are waiting on a contended
-dev-box GPU, and I am not entitled to preempt it.** The measured ceiling is
-**two concurrent arms** (a third OOM-risks and would kill a sibling's run as well
-as mine), and a **second, active stream** — the longitudinal successor line — is
-launching arms continuously: `combined` → `wk15_ladder` → `lonshift` → `lonseam`,
-alongside `best`. At 23:21 both slots were held by that stream with **3.5 GB
-free**, which is not enough for a third arm.
+**Power (SPEC §1): `turn_left` n = 30 / 6 clusters, `turn_right` n = 30 /
+6 clusters, granularity 0.0333 — ALL MET.**
 
-**What I did about it, rather than waiting on a gate that could never open:**
+| arm | recall LEFT | recall RIGHT | **R − L** | sep? |
+|---|---|---|---|---|
+| **`ta_wk15_s0`** (`--plan-seed 0`) | **0.0000** [0.0000, 0.0000] | 0.4333 [0.1934, 0.6552] | **+0.4333 [+0.1667, +0.6539]** | **YES** |
+| **`ta_wk15_s1`** (`--plan-seed 1`) | **0.0000** [0.0000, 0.0000] | 0.5000 [0.2219, 0.7419] | **+0.5000 [+0.1874, +0.7407]** | **YES** |
+| `GOAL_HEAD` (baseline, an INPUT) | 0.3000 [0.0000, 0.6333] | 0.6667 [0.3125, 0.9375] | +0.3667 [−0.3297, +0.8377] | no |
+| `ha0_ext` (FLOOR, no planner) | 0.7333 | 0.7000 | **−0.0333** | no |
+| `ha` (FLOOR) | 0.7000 | 0.6667 | −0.0333 | no |
+| `ol` (FLOOR, T0) | 0.8333 | 0.9333 | +0.1000 | no |
 
-1. `raw/ta_queue.py` (v1) gated on the **absence of every foreign arm** and then
-   launched two of mine. ⛔ Against a stream that re-fills a freed slot within
-   seconds, that gate can **starve indefinitely while the box is half loaded**.
-2. `raw/ta_queue2.py` (v2) gates on **SLOTS**: at most `MAX_ARMS = 2` arms on the
-   box, counted as **ARMS (dump dirs), never processes** — one arm is 2-4
-   `python.exe` entries, and a gate on processes can never open. It launches
-   **one of mine per free slot**, in priority order, so a killed run still yields
-   `ta_wk15_s0` — the arm that answers the PI's question on its own.
-3. `raw/ta_queue3.py` (v3) tightens the poll from 120 s to **15 s**, because the
-   sibling re-fills a freed slot faster than a two-minute poll can see it, and
-   de-duplicates the status line so a 15 s poll does not spam its log.
+**The panel's own seed floor** (paired, same windows, `s0` vs `s1`):
+`turn_left` **+0.0000 [+0.0000, +0.0000]**, `turn_right` +0.0667 [+0.0000,
++0.1935]. Per amendment 0 the floor used is the CI's **reach**, floored at the
+instrument's step: **`floor_used = max(0.1935, 0.0333) = 0.1935`.**
+*(Control: the pooled `TAC_traj_lat_correct` seed delta reads +0.0267 [+0.0000,
++0.0741], consistent with the banked 0.0750. Control: an arm against itself reads
+exactly +0.0000.)*
 
-⚠️ Each version is a **NEW FILE**, never an edit of the running one, and the old
-queue is killed **by explicit PID** — both are documented traps in this
-programme. After each start the launcher is **asserted to be alive** by process
-count, because every failure in this family reports success and leaves nothing
-running.
+| SPEC §1 condition | result |
+|---|---|
+| 1 — `\|gap\| > floor` at **both** seeds | **MET** — 2.24× and 2.58× the floor |
+| 2 — **sign agrees** across seeds | **MET** — both `+` |
+| 3 — n and cluster targets | **MET** — 30/30, 6/6 |
+| 4 — **within-episode** contrast agrees and clears the floor | **MET** |
 
-⇒ **This is a named blocker under Rule Zero clause 3, not an idle wait: the
-lever is built and armed; what it needs is a free slot.** ⭐ Nothing else in this
-package waits on it — every other question was answered at zero GPU, which is why
-§1-§5 are complete.
+### 6.2 ⭐ It survives the confound that killed the banked panel
 
-⚠️ **And the evidence that has accumulated while waiting all points the same
-way** — the banked panel is structurally unattributable (§2), the retention split
-is fragile to the candidate set at fixed cost and fixed seed (§5.4), and every
-deterministic mechanism is refuted (§4). ⛔ **That is a PRIOR, not a result.**
-§5's outcomes are decided by the arms in this section and by nothing else, and
-until they land the answer is **outcome C — INCONCLUSIVE**.
+The within-episode contrast (SPEC §3.13), over the **4 episodes carrying both GT
+directions**, 20 left + 18 right windows inside them:
+
+| arm | within-episode R − L |
+|---|---|
+| **`ta_wk15_s0`** | **+0.4250 [+0.1250, +0.7000] SEPARATED** |
+| **`ta_wk15_s1`** | **+0.5083 [+0.2000, +0.8167] SEPARATED** |
+| `ha0_ext` (FLOOR) | **−0.1917** [−0.4000, +0.0500] |
+| `ol` (FLOOR) | +0.0000 [−0.3000, +0.3000] |
+
+⇒ **The plan's gap runs AGAINST its own floor, not with it** — the floors lean
+slightly *left*-favouring within episodes. ⛔ The banked panel could not do this:
+its two turn-goal strata were episode-disjoint (§2). *(Control: a stratum against
+itself reads exactly +0.0000.)*
+
+### 6.3 ⭐⭐ AND THE LEFT RECALL IS A STRUCTURAL ZERO
+
+`turn_left` recall is **0.0000 at BOTH seeds**, `n_pred = 0`, `never_predicted:
+["turn_left"]` — **the planner does not emit a single left turn on any of the 75
+windows**, across all **6** left-carrying episodes. The GT-left row of the
+confusion matrix is `[30, 0, 0]`: every one of the 30 left windows is planned as
+`lane_keep`. ⚠️ That is why the seed floor on left is exactly 0.0000 and why no
+seed can move it — it is a structural zero with full cluster support, not a noisy
+rate.
+
+### 6.4 The decisive cell: it is the COST, not the goal head
+
+`raw/head_vs_cost.py` / `_s0.txt` / `_s1.txt`. Restricted to windows where the
+head decoded the **correct** turn token:
+
+| seed | stratum | n | clusters | plan recall | median realised `kappa` | full `\|k\| > 0.06` |
+|---|---|---|---|---|---|---|
+| s0 | **GT-LEFT** | 9 | ⚠️ **2** | **0/9 = 0.0000** | **+0.02066** | **0/9** |
+| s0 | GT-RIGHT | 20 | ⚠️ 4 | 13/20 = 0.6500 | −0.08000 | 18/20 |
+| s1 | **GT-LEFT** | 9 | ⚠️ **2** | **0/9 = 0.0000** | **+0.02496** | **0/9** |
+| s1 | GT-RIGHT | 20 | ⚠️ 4 | 15/20 = 0.7500 | −0.08000 | 19/20 |
+
+Per episode, `ta_wk15_s0`: the head decodes left correctly in episodes **1
+(4/5)** and **6 (5/5)**, and in **both** the plan produces **0/5**.
+⇒ **Where the head is right about the direction, the plan still loses every left
+turn and keeps 18–19 of 20 right turns.** Combined with §4.3 — the full `+0.08`
+candidate is *handed* to the search and loses on cost — the loss is in the
+**cost comparison**.
+
+⚠️ **Both cells sit at 2 and 4 clusters, below §1's `>= 5` target**, and are
+reported with that stated rather than discovered afterwards. The part with full
+cluster support is §6.3's structural zero.
+
+### 6.5 ⛔ WHAT IS **NOT** ESTABLISHED — the causal half, and it is still open
+
+**The pre-registered claim that was tested is *"the asymmetry is real"*. It is.
+The claim that the CURVATURE PENALTY causes it is a DIFFERENT claim and this
+panel does not settle it.**
+
+The increment over the goal head (SPEC §3.16 — the only part attributable to the
+cost on the pooled statistic):
+
+| seed | plan gap | head gap | **increment** | vs `floor_used` 0.1935 |
+|---|---|---|---|---|
+| s0 | +0.4333 | +0.3667 | **+0.0667** | ⛔ **below** |
+| s1 | +0.5000 | +0.3667 | **+0.1333** | ⛔ **below** |
+
+⇒ **On the pooled statistic the increment does NOT clear the floor.** §6.4's cell
+says the cost is doing the work and §6.5's arithmetic says the pooled evidence
+cannot separate the cost's contribution from the head's. ⭐ **Those two readings
+are in tension, and the arm that adjudicates them is round 2** — `ta_ccos_s0/s1`,
+`W_KAPPA = 0` on the same 75 windows, launched 01:33 and 01:43. If `ccos` reads
+symmetric there, the penalty causes it; if `ccos` reads the same 0.0 / high split,
+the penalty does **not**, and the defect is upstream.
+
+⚠️ **The RETENTION statistic (§1.1) is NOT used.** It reads 0/13 vs 0.8000 (s0)
+and 0.8286 (s1), separated — but its strata are the **episode-degenerate decoded
+goal tokens** (`TURN_L` 13 windows / **2** episodes, `TURN_R` 35 / 4), exactly as
+amendment 4 registered before the run. It is reported and decides nothing.
+*(Control: **57/57** retained plans across both seeds curve the way their goal
+asked — the sign is never wrong; the failure is magnitude.)*
+
+### 6.6 The four families, both seeds (the binding rule)
+
+⛔ Not comparable to the banked 40-window panel — a different, turn-enriched
+window grid (§3).
+
+| arm | LON speed MAE | LON along MAE | LAT heading MAE | LAT curv MAE | LAT cross MAE | TAC lat kappa | TAC lon kappa |
+|---|---|---|---|---|---|---|---|
+| `cl` s0 | 0.9527 | 0.8217 | **20.5113** | **0.041744** | 0.6718 | **0.1404** | −0.0806 |
+| `cl` s1 | 0.9499 | 0.8112 | **19.4058** | **0.040262** | 0.6481 | — | −0.0243 |
+| `ha0_ext` | **0.3312** | 0.8994 | 31.9865 | 0.100662 | 0.6765 | — | — |
+| `ol` (T0) | 0.0895 | 0.7460 | 30.1803 | 0.107853 | 0.6518 | — | — |
+
+⭐ **`wk15` still wins the LATERAL family outright on this panel** — heading MAE
+**19.4–20.5** against the floor's **31.99**, curvature MAE **0.0403–0.0417**
+against **0.1007** — and still loses the **LONGITUDINAL** family outright
+(**0.95** against **0.33**), which is `M27` §5's named blocker, unchanged.
+⚠️ **STRATEGIC: UNAVAILABLE** (no route label on this slice) and
+**distance-keeping: REFUSED** (no lead block passed), each declared with its
+reason and n rather than silently dropped. **TAC longitudinal recall is
+`accelerate` 0.0000 at both seeds** — the longitudinal vocabulary defect, again.
+
+### 6.7 ⛔ THE CONSEQUENCE, per SPEC §5 outcome A
+
+* **`wk15` may be quoted as a lateral fix on ADE, curvature MAE and heading MAE
+  ONLY — and the per-direction recall must be stated beside it, every time.**
+* **`M30` §3's caveat STANDS and HARDENS into a named defect:**
+  ⛔ **refav1's planner emits ZERO left turns. Not "fewer" — zero, on 30 GT-left
+  windows across 6 episodes, at both inference seeds, while emitting 13–15 right
+  turns on the matched stratum.**
+* ⛔ **The next lever is NOT a direction-aware seed pool** — that is refuted
+  (§4.3): the goal's own canonical `+0.08` control is already in the iteration-0
+  population on every left-goal window, and it **loses on cost**. The lever is
+  the **cost comparison itself**, and round 2 says whether `W_KAPPA` is the term
+  responsible.
 
 ---
 
