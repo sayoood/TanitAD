@@ -980,3 +980,85 @@ applied to a fan the model ranked *before* projection.
 ⇒ **This is the deploy-side answer to `M23`'s "the real work item is a feasibility-aware decode",
 and it arrived within the same day.** ⚠️ It is a **decoder option**, not a new model version, so it
 takes no `MODEL_REGISTRY` row until an arm ships with it ON.
+
+## M27. refav1 reaches **PARITY** with the trivial floors and **BEATS** them on turns — and the remaining blocker is now named exactly
+
+### 1. The number. `W_KAPPA` is a real lever, and it is large.
+
+**T1**, 40 windows / 8 episodes, ckpt 21,109, every arm carrying its `(metric, W_JERK, W_KAPPA, W_VEND)`:
+
+| arm | ADE | curv MAE | heading MAE | cross MAE | goal FDE |
+|---|---|---|---|---|---|
+| `ccos` **W_KAPPA 0** (the banked A/B setting) | 1.3272 | 0.055369 | 23.4578 | 0.8784 | 2.9639 |
+| **`ccos` W_KAPPA 15.11245** | **0.8934** | **0.030982** | **15.2704** | 0.3670 | **2.1628** |
+| `ha0_ext` floor | 0.8772 | 0.077298 | 27.7357 | 0.4018 | 2.2693 |
+
+⇒ **ADE 1.3272 → 0.8934, −33 %**, and the paired gap to `ha0_ext` moves from **+0.4500** to
+**+0.0162 [−0.1648, +0.1980]** — *smaller than this rig's own **0.0607** inference-seed floor*.
+⭐ **Against the floors that is PARITY, reached while the planner is genuinely acting** — and on the
+**GT-turn stratum it BEATS `ha0_ext`, 0.9699 vs 1.1521** (`frac better` 0.53).
+
+**Each row against the inference-seed floor** (so each is a lever effect, not noise): ade −0.4338
+(**7.1×**), fde −0.8012 (2.3×), cross −0.5114 (7.2×), heading −3.8969 (3.5×), yaw-rate −0.1571
+(**19×**) all better; **speed_mae +0.0764 (20×) and accel_mae +0.0874 (14×) WORSE**. All seven clear
+the floor.
+
+### 2. ⭐⭐ The shipped configuration is the do-nothing plan — CONFIRMED TWICE, INDEPENDENTLY
+
+I measured it from the dumps (`|cl − ha0| = 0.000e+00` on 40/40, control `|cl − ha| = 10.99 m`);
+the stream measured it from the record (`paired ADE +0.0000 [0, 0]`, control `ccos_argmax` 15.08 m
+apart) and added what I could not see: the control tensor is **exactly zero on 40/40**, and
+⭐ **it reaches that BY SEARCH** (`plan_source` cem 0.425). ⇒ **The shipped cost's optimum IS the
+do-nothing plan.** Not a degenerate fallback — the optimiser looked and chose nothing.
+
+⇒ **This reverses my own framing in `M22`.** I wrote that arms banked at `W_KAPPA = 0` sat on a
+planner curving at the clip bound, as though zero were an oversight. MEASURED: **at the shipped
+triple the planner does not curve at all**, and `W_KAPPA = 0` is the setting at which it acts.
+⚠️ And the collapse is **not attributable to `W_KAPPA` alone** — the shipped triple also drops
+`W_VEND` **64.297 → 0.1**, a 643× cut in the goal-endpoint weight. The clean one-variable arm is
+`wk15`, and that is the one in the table above.
+
+### 3. What each lever did, and what it did not
+
+* **`W_KAPPA`** — the whole lateral family, plus straight-window damage **5.5× smaller**
+  (+1.0675 → +0.1957) with the turn-window win kept. ⛔ Did **not** fix longitudinal (made it
+  separably worse) and did **not** move the tactical decision metrics at all (+0.0000).
+* **`ccosh` hold branch (L2)** — the gate **fires** (`basecost_cv` exactly-1.0 fraction 0.20 → 0.00),
+  but realised curvature is unchanged on matched episodes. ⚠️ **And my brief's number was wrong for
+  this grid**: its addressable population is **~20 %** of windows, not the **86.5 %** I quoted — that
+  figure came from a different grid. *A count carries its grid, or it is not a count.*
+* **Seed pool (L3)** — ⛔ its own pre-registered premise **refuted**: `wk15` realises **15 distinct
+  curvatures including R 19–87 m**, so the gate decides whether curvature is *seeded*, not whether
+  the search can *modulate* it. `D-REFAV1-DRIVE-GATE` stands (LANE_KEEP still yields exactly 0 on
+  18/18).
+* **Feasible decode (L4)** — ⭐ **reused the sibling's module rather than rebuilding it**, and it paid
+  immediately: refav1 **never leaves the actuator box** (`envelope_rate 0.0000`) but leaves the
+  **μ = 0.7 friction circle on 29.6 % of windows at v0 ≥ 2 m/s, 42.1 % at ≥ 5 m/s, peak 3.262 g**
+  against ground truth **0.373** — **because `kappa_max` is a CONSTANT.** `PlanConfig.kamm_mu`
+  (|κ| ≤ μg/v² on the candidate's own speed) implemented, 15 pinned controls, arm queued.
+* **Retrain the goal head (L5)** — **not taken, and the evidence says do not**: the now-complete
+  8-episode de-confounded oracle reads `cl − cl_oracleseed` ADE **−1.2181 [−2.3250, −0.3862]**,
+  **20× the seed floor**. A perfect goal is worse, and that is now well-powered.
+
+### 4. ⭐ `H-ESTIM-SEED-1` reproduces on the INFERENCE rig
+
+Two arms differing **only** in `--plan-seed` read **`separated` on 4 of 10** paired family metrics.
+⇒ the THIRD-VARIANCE block added to `CLAUDE.md` today is not a theoretical worry; it is a **40 %
+false-positive rate** on this rig, measured the same day it was written.
+
+### 5. ⛔ The blocker, named exactly — and it is the next work
+
+**refav1 does not beat the floors; it reaches parity and wins on turns.** The gap is the
+**LONGITUDINAL family**, which **no lever in this package touches**.
+
+MEASURED mechanism: **29 of 40 windows decode `ADAPT_SPEED_FOR_CURVE`, whose canonical control is
+`a == 0`** — so the plan holds **constant acceleration** while `ha0_ext` holds the **measured a₀**.
+That is why `speed_mae` sits at 0.79 against the floor's 0.31 while every lateral metric wins.
+
+⇒ **The next arm is the LONGITUDINAL ANALOGUE of this package's levers** — a longitudinal vocabulary
+whose canonical control is not identically zero. It is **unblocked, unbuilt, and next**, and it is
+the first time refav1's remaining gap has had a single named mechanism rather than a list of
+suspects.
+
+⚠️ Three levers (`ccosh`, seed pool, `kamm_mu`) are implemented, pinned, and **OFF by default**;
+making any of them the default is a PI/Master Mind decision, as `COST_METRICS` itself requires.
