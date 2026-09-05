@@ -86,7 +86,10 @@ def main():
     lead5 = bk["lead5"].reshape(-1, 1, len(FS.GRID_S), 2)
     sc = FS.score_paths(fan2, bk["v0"], lead5, lead_len_m=D.LEAD_LEN_DEFAULT_M)
     ade = (fan4 - bk["gt4"][:, None]).norm(dim=-1).mean(dim=-1)
-    rank = bk["sel_score"].float().masked_fill(~bk["reach"].bool(), float("-inf"))
+    # THE RANKING THE DEPLOYED MODEL ACTUALLY USES: on the `hier` arm refc.py:1763
+    # argmaxes `sel_score_v3` (goal-seam-grafted) masked by reach_keep, NOT `sel_score`.
+    _rk = "sel_score_v3" if "sel_score_v3" in bk else "sel_score"
+    rank = bk[_rk].float().masked_fill(~bk["reach"].bool(), float("-inf"))
     order = rank.argsort(dim=1, descending=True)
 
     ar = torch.arange(W)
@@ -163,12 +166,19 @@ def main():
         "model_sel_peak_g_vs_bank_ratio": (float(bvf["bank"]["peak_g"]) / m_pg)
                                           if m_pg else float("nan"),
         "rules": rows,
+        "ranking_key_used": _rk,
+        "gate1_equals_model_by_construction":
+            bool(int((pick["gate1"] != pick["model"]).sum()) == 0),
+        "gate1_index_disagreements": int((pick["gate1"] != pick["model"]).sum()),
     }
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
 
     print("=== P4: WHAT SHARE OF THE 8.56x DOES THE GATE CLOSE? (T0, %dw/%dep) ==="
           % (W, out["n_episodes"]))
+    print("  ranking used: %s   gate1==model on all windows: %s (disagree %d)"
+          % (_rk, out["gate1_equals_model_by_construction"],
+             out["gate1_index_disagreements"]))
     print("  the 8.56x is a FAN property: bank %.4f g -> emitted fan %.4f g (D1 = %.4f g)"
           % (out["bank_peak_g"], out["emitted_fan_peak_g"], D1))
     print("  fan_peak_g_mean on THIS bank            : %.4f g" % fan_pg_mean)

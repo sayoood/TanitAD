@@ -9,6 +9,8 @@
   "grid": "0, 0.5, 1.0, 1.5, 2.0 s (the reward grid = the path grid)",
   "no_lead_masked_to_nan": true,
   "npz": "kingate_bank_drawA.npz",
+  "ranking_key_used": "sel_score_v3",
+  "gate1_index_disagreements": 0,
   "abs": {
     "model": {
       "headway_min_m": 27.7532,
@@ -22,9 +24,9 @@
       "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper"
     },
     "gate1": {
-      "headway_min_m": 27.7718,
-      "time_gap_min_s": 4.5679,
-      "min_ttc_s": 21.8911,
+      "headway_min_m": 27.7532,
+      "time_gap_min_s": 4.5659,
+      "min_ttc_s": 21.9181,
       "n": 134,
       "n_closing": 69,
       "n_time_gap": 117,
@@ -33,20 +35,20 @@
       "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper"
     },
     "gate2": {
-      "headway_min_m": 27.7476,
-      "time_gap_min_s": 4.5661,
-      "min_ttc_s": 21.644,
+      "headway_min_m": 27.7525,
+      "time_gap_min_s": 4.5671,
+      "min_ttc_s": 21.6313,
       "n": 134,
-      "n_closing": 66,
+      "n_closing": 67,
       "n_time_gap": 117,
       "status": "OK",
-      "censoring_note": "68 of 134 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+      "censoring_note": "67 of 134 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
       "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper"
     },
     "gate4": {
-      "headway_min_m": 27.7755,
+      "headway_min_m": 27.7762,
       "time_gap_min_s": 4.5726,
-      "min_ttc_s": 21.7169,
+      "min_ttc_s": 21.719,
       "n": 134,
       "n_closing": 65,
       "n_time_gap": 117,
@@ -55,9 +57,9 @@
       "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper"
     },
     "gate8": {
-      "headway_min_m": 27.7543,
-      "time_gap_min_s": 4.575,
-      "min_ttc_s": 21.019,
+      "headway_min_m": 27.7577,
+      "time_gap_min_s": 4.5752,
+      "min_ttc_s": 21.0231,
       "n": 134,
       "n_closing": 70,
       "n_time_gap": 117,
@@ -135,24 +137,24 @@
   "paired_vs_model": {
     "gate1": {
       "headway_min_m": {
-        "delta": 0.0185,
-        "lo": -0.0137,
-        "hi": 0.0719,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
       },
       "time_gap_min_s": {
-        "delta": 0.0021,
-        "lo": -0.0019,
-        "hi": 0.0083,
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
         "separated": false,
         "n_windows": 117,
         "n_episodes": 32
       },
       "min_ttc_s": {
-        "delta": -0.027,
-        "lo": -0.0861,
+        "delta": 0.0,
+        "lo": 0.0,
         "hi": 0.0,
         "separated": false,
         "n_windows": 134,
@@ -161,25 +163,25 @@
     },
     "gate2": {
       "headway_min_m": {
-        "delta": -0.0056,
-        "lo": -0.0861,
-        "hi": 0.0685,
+        "delta": -0.0008,
+        "lo": -0.0745,
+        "hi": 0.0699,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
       },
       "time_gap_min_s": {
-        "delta": 0.0002,
-        "lo": -0.0097,
-        "hi": 0.0089,
+        "delta": 0.0012,
+        "lo": -0.007,
+        "hi": 0.0093,
         "separated": false,
         "n_windows": 117,
         "n_episodes": 32
       },
       "min_ttc_s": {
-        "delta": -0.2741,
-        "lo": -0.8032,
-        "hi": 0.3145,
+        "delta": -0.2868,
+        "lo": -0.8136,
+        "hi": 0.3047,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
@@ -187,9 +189,9 @@
     },
     "gate4": {
       "headway_min_m": {
-        "delta": 0.0222,
-        "lo": -0.0711,
-        "hi": 0.1031,
+        "delta": 0.0229,
+        "lo": -0.0705,
+        "hi": 0.1039,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
@@ -203,9 +205,9 @@
         "n_episodes": 32
       },
       "min_ttc_s": {
-        "delta": -0.2012,
-        "lo": -0.7742,
-        "hi": 0.3319,
+        "delta": -0.199,
+        "lo": -0.7699,
+        "hi": 0.3333,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
@@ -213,25 +215,25 @@
     },
     "gate8": {
       "headway_min_m": {
-        "delta": 0.001,
-        "lo": -0.0992,
-        "hi": 0.0987,
+        "delta": 0.0044,
+        "lo": -0.0964,
+        "hi": 0.1023,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33
       },
       "time_gap_min_s": {
-        "delta": 0.0091,
-        "lo": -0.0024,
-        "hi": 0.0241,
+        "delta": 0.0093,
+        "lo": -0.0022,
+        "hi": 0.0242,
         "separated": false,
         "n_windows": 117,
         "n_episodes": 32
       },
       "min_ttc_s": {
-        "delta": -0.8991,
-        "lo": -2.1558,
-        "hi": 0.1264,
+        "delta": -0.895,
+        "lo": -2.1555,
+        "hi": 0.1304,
         "separated": false,
         "n_windows": 134,
         "n_episodes": 33

@@ -84,7 +84,10 @@ def main():
     b = {"v0": bk["v0"], "lead_track": bk["lead5"], "lead_xy": bk["lead_xy"]}
     ctx = D.reward_ctx(b, S5=fan2.shape[-2], cand_dims=1)
     r_kin = (RW.COMPONENTS["feasibility"](fan2, ctx) + RW.COMPONENTS["comfort"](fan2, ctx))
-    rank = bk["sel_score"].float().masked_fill(~bk["reach"].bool(), float("-inf"))
+    # THE RANKING THE DEPLOYED MODEL ACTUALLY USES: on the `hier` arm refc.py:1763
+    # argmaxes `sel_score_v3` (goal-seam-grafted) masked by reach_keep, NOT `sel_score`.
+    _rk = "sel_score_v3" if "sel_score_v3" in bk else "sel_score"
+    rank = bk[_rk].float().masked_fill(~bk["reach"].bool(), float("-inf"))
     order = rank.argsort(dim=1, descending=True)
 
     pick = {"model": bk["sel_idx"].long()}
@@ -134,6 +137,8 @@ def main():
            "n_lead_episodes": int(len(set(eid[has].tolist()))),
            "dt_s": 0.5, "grid": "0, 0.5, 1.0, 1.5, 2.0 s (the reward grid = the path grid)",
            "no_lead_masked_to_nan": True, "npz": a.npz,
+           "ranking_key_used": _rk,
+           "gate1_index_disagreements": int((pick["gate1"] != pick["model"]).sum()),
            "abs": res, "paired_vs_model": paired,
            "keys_present": sorted(set().union(*[set(v.keys()) for v in per.values()]))}
     with open(a.out, "w", encoding="utf-8") as f:
@@ -142,6 +147,8 @@ def main():
     print("=== LONGITUDINAL / DISTANCE KEEPING on the selected path (T0) ===")
     print("  lead windows %d of %d (%d episodes); dt 0.50 s; no-lead windows masked to NaN"
           % (out["n_lead_windows"], W, out["n_lead_episodes"]))
+    print("  ranking used: %s ; gate1 index disagreements with model: %d"
+          % (_rk, out["gate1_index_disagreements"]))
     print("  %-12s %12s %12s %12s %8s %8s" % ("rule", "headway_min_m",
                                                 "time_gap_min_s", "min_ttc_s", "n",
                                                 "n_closng"))
