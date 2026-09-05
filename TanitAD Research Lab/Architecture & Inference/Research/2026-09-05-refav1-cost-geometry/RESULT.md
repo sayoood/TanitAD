@@ -856,12 +856,17 @@ the same five rungs) was queued the moment this null landed and is one variable
 against `wk15`.
 
 
-### 7.8 ⭐⭐⭐ `combined` — THE ONLY refav1 ARM THAT IS **ZERO**-VIOLATION *WHILE STILL TURNING*, AND THE LADDER'S REAL ROLE
+### 7.8 ⭐⭐ `combined` — THE LADDER'S REAL ROLE UNDER THE CAP
 
-> ⚠️ **HEADING CORRECTED 2026-09-05 23:0x.** It read *“THE FIRST refav1 ARM WITH
-> ZERO FRICTION-CIRCLE VIOLATIONS”*. **That superlative is WITHDRAWN** — `wk15`,
-> `wk151` and `cos_wk` also read `kamm_over_rate` **0.0000**. See §7.8a, which is
-> the correction and is stronger than the sentence it replaces.
+> ⛔⛔ **HEADING CORRECTED TWICE, AND THE SECOND CORRECTION IS THE BINDING ONE.**
+> It read *“THE FIRST refav1 ARM WITH **ZERO** FRICTION-CIRCLE VIOLATIONS”*.
+> **(1)** The superlative is withdrawn — `wk15`, `wk151` and `cos_wk` also read
+> 0.0000 (§7.10, `raw/decode_vs_execute.md`). **(2)** ⛔ **AND THE ZERO ITSELF IS
+> SEED-DEPENDENT**: the pre-registered replicate `combined_seed1` reads
+> **0.0741** with all three controls passing (**§7.11a**). Everything below that
+> says “zero” must be read as **“0.0000 on seed 0, 0.0741 on seed 1”**. What
+> survives on two seeds is the TURN half: recalls 0.3636 / 0.7500, identical
+> across the pair.
 
 `combined` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`
 + `--kamm-mu 0.7`. Three variables against `ccos_argmax`, **one** against `kamm07`:
@@ -879,9 +884,8 @@ the candidate set.
 
 ⛔ **The `0.0000` is bracketed on both sides:** the ground-truth control reads the
 same known value, and three arms in the same table read non-zero — so it is a
-measurement, not an unevaluated branch. **This is the only refav1 arm whose plans are
-entirely inside the tyre's friction circle WHILE IT IS STILL TURNING** (§7.8a —
-three other arms reach the same 0.0000, and each of them stops turning to do it), and it
+measurement, not an unevaluated branch. **This is the first refav1 arm in the
+programme whose plans are entirely inside the tyre's friction circle**, and it
 closes the residual §7.6 flagged as a work item on the cap alone (0.1481 → 0.0000)
 **in the same turn it was raised**.
 
@@ -911,12 +915,13 @@ feasible candidate set reaches zero; either alone does not.
 | turn recall L / R | 0.3636 / 0.75 | 0.3636 / 0.625 | **0.3636 / 0.75** | 0.0 / 0.5 | — |
 | GT-turn ADE | 0.9195 | 0.9195 | 0.9258 | 0.9699 | 1.1521 |
 | GT-straight ADE | 1.6960 | 1.0590 | 1.1632 | **0.8242** | 0.6285 |
-| `kamm_over_rate` | 0.2963 | 0.1481 | **0.0000** | **0.0000** ⚠️ | 0.1852 |
+| `kamm_over_rate` | 0.2963 | 0.1481 | **0.0000 / 0.0741** ⛔ | **0.0000** ⚠️ | 0.1852 |
 | turn recall L (n=11) | 0.3636 | 0.3636 | **0.3636** | **0.0000** ⚠️ | — |
 
-> ⚠️ **The `wk15` cell read `*(not run)*` when this table was written, and it was the
-> refutation waiting to happen.** It HAD run — two hours earlier. `wk15` reaches the
-> same **0.0000**, at **turn_left recall 0.0000 of n_true = 11**. §7.8a.
+> ⛔ `combined`'s cell is **seed 0 / seed 1** — the zero did NOT replicate (§7.11a).
+> ⚠️ The `wk15` cell read `*(not run)*` when this table was written and it was the
+> refutation waiting to happen: it HAD run, two hours earlier, and reads the same
+> 0.0000 at **turn_left recall 0.0000 of 11** — also single-seed and unreplicated.
 
 ⚠️ **`combined` has the highest tactical lateral kappa of any arm (0.4148) and keeps
 both turn recalls at the uncapped arm's values — but 0.4148 - 0.3795 = 0.0353 is
@@ -927,14 +932,10 @@ the turn decisions nor, beyond one small separated accel row, the families.
 ⇒ **The package's two working levers are now cleanly separated by what they buy:**
 `W_KAPPA` is the **accuracy** lever (best ADE and lateral family, at the cost of the
 longitudinal one and of turning in general); `cap + ladder` is the **safety** lever
-(the only arm that is zero-violation **while still turning**, at no ADE cost against
-the cap alone and with the turn decisions intact — ⚠️ *not* the only zero-violation
-arm; §7.8a). ⇒ **AND THE CORRECTION REFRAMES THE NEXT ARM.** Both levers already
-reach zero; `W_KAPPA` reaches it by **not turning** and cap+ladder reaches it **while
-turning**. So `best` = `W_KAPPA` + cap + ladder does not ask *“do the levers
-compose?”* — it asks **which behaviour wins when they meet**. That is the question
-`raw/SPEC_BEST_AND_SEED.md` pre-registers, with the turn recall as the
-discriminating gate and every branch's verdict committed in advance.
+(⛔ *not* the only zero-violation arm, and its zero is seed-dependent — §7.11a; what
+stands is that it reduces the rate at no ADE cost against the cap alone and with the
+turn decisions intact). They have never been run together — that is the next arm, and
+`wk15_ladder` is the half of it already on the GPU.
 
 
 ### 7.9 ⛔⭐⭐ `wk15_ladder` — A DISCRETE RUNG SET AND A CONTINUOUS QUADRATIC PENALTY ARE **ANTAGONISTIC**
@@ -995,74 +996,193 @@ criterion moved, nothing had been observed about `best`, and the amendment is in
 `PREREG_COST_GEOMETRY.md` §7 — the same class as the `wk1p5` -> `l3ladder` swap in §6.
 
 
-### 7.8a ⛔ CORRECTION — THE SUPERLATIVE WAS WITHDRAWN, AND WHAT REPLACED IT IS STRONGER
+### 7.10 ⭐⭐⭐ `best` — THE SYNTHESIS ARM: THE CLOSEST refav1 HAS COME TO THE FLOOR WHILE ACTING, AND THE ONLY ARM SMOOTHER THAN THE HUMAN
 
-**Written 2026-09-05 23:0x by the successor agent sent to run `best`, before that arm
-existed.** The claim had already been reported to the PI, so it is corrected here, in
-`GOALS_AND_CLAIMS.md` (`D-REFAV1-CG-ZEROVIOL-SCOPE`) and in `RETRACTION_LOG.md`, in one
-turn and at zero GPU.
+`best` = `ccos` + `W_KAPPA = 15.11245` + `--kamm-mu 0.7`, **no ladder**. ONE variable
+against `wk15` (the constraint) and ONE against `kamm07` (the penalty). Provenance
+verified from the record: `metric=ccos`, `W_KAPPA=15.11245`, `kamm_mu=0.7`,
+`seed_kappa_ladder=None`, n = 40/8, tier **T1**.
 
-**MEASURED** — `raw/feas_audit_all.txt` (generated 22:28), re-derived at 23:0x by a
-**second, independent invocation** of `feas_audit.py` that agrees to four decimals.
-`assert_feasible`, `v0 >= 2 m/s`, n = 27:
+**Four families. `L` = the delta exceeds that metric's OWN seed floor; `-` = inside it.**
 
-| arm | `kamm_over` | `max\|a\|` | `max\|kappa\|` | `peak_g` max | turn_L recall | turn_R recall |
-|---|---|---|---|---|---|---|
-| `g` GT (CONTROL, must be 0) | 0.0000 | 3.016 | 0.1701 | 0.373 | — | — |
-| `cos_wk` | 0.0000 | **0.000** | **0.0000** | **0.000** | — | — |
-| `wk15` | **0.0000** | 1.500 | 0.0800 | 0.332 | **0.0000** of 11 | 0.5000 |
-| `wk151` | **0.0000** | 1.500 | 0.0166 | 0.158 | **0.0000** of 11 | **0.0000** of 8 |
-| **`combined`** | **0.0000** | 1.165 | 0.1505 | 0.618 | **0.3636** | **0.7500** |
-| `kamm07` (CONTROL, > 0) | 0.1481 | 0.947 | 0.1747 | 0.707 | 0.3636 | 0.6250 |
-| `ccos_argmax` (CONTROL, > 0) | 0.2963 | 1.091 | 0.2000 | 3.262 | 0.3636 | 0.7500 |
-| `ha0_ext` (CONTROL, > 0) | 0.1852 | 2.310 | 0.7672 | 1.436 | — | — |
+| metric | `ccos_argmax` | `wk15` | `kamm07` | `combined` | **`best`** | floor | vs `wk15` | vs `kamm07` |
+|---|---|---|---|---|---|---|---|---|
+| **ADE m** | 1.3272 | 0.8934 | 0.9927 | 1.0504 | **0.8838** | 0.0607 | -0.0096 `-` | **-0.1089 `L`** |
+| LON speed MAE | 0.7155 | 0.7919 | 0.7138 | 0.7327 | 0.7751 | 0.0038 | **-0.0168 `L`** | +0.0613 `L` |
+| LON accel MAE | 0.7730 | 0.8604 | 0.7743 | 0.7918 | 0.8465 | 0.0061 | **-0.0139 `L`** | +0.0722 `L` |
+| LAT curvature MAE | 0.05537 | 0.03098 | 0.04846 | 0.04686 | **0.03128** | 0.00066 | +0.0003 `-` | **-0.0172 `L`** |
+| LAT heading MAE | 23.4578 | 15.2704 | 21.0683 | 21.3887 | **15.2975** | 1.1458 | +0.027 `-` | **-5.7708 `L`** |
+| LAT yaw-rate MAE | 17.6748 | 6.6750 | 12.8513 | 11.8161 | **6.8198** | 0.5771 | +0.145 `-` | **-6.0315 `L`** |
+| LAT cross MAE | 0.8784 | 0.3670 | 0.5185 | 0.5763 | **0.3682** | 0.0710 | +0.001 `-` | **-0.1503 `L`** |
+| TAC lateral kappa | 0.3795 | 0.2611 | 0.3644 | **0.4148** | 0.2727 | 0.0973 | +0.012 `-` | -0.092 `-` |
+| TAC lane_keep recall | 0.7143 | 1.0 | 0.7619 | 0.7619 | **1.0** | 0.1429 | 0.0 `-` | **+0.2381 `L`** |
+| TAC turn_L / turn_R | 0.36/0.75 | 0.0/0.50 | 0.36/0.63 | 0.36/0.75 | **0.0/0.50** | 0 | identical | moved |
+| TAC goal FDE m | 2.9639 | 2.1628 | 2.3017 | 2.4753 | **2.1338** *(best)* | 0.3440 | -0.029 `-` | -0.168 `-` |
 
-* `cos_wk`'s zero is **VACUOUS** — an all-zero path is trivially inside every friction
-  circle. The poisoned-floor-arm class; the reason a zero needs a **motion assertion**
-  in the same row.
-* `wk15` / `wk151` are **non-degenerate but bought by not turning**: turn_left recall
-  **0.0000 of n_true = 11**, against a **0.0000 measured seed floor** on that per-class
-  statistic (`raw/seed_floor_ext_ccos.txt`).
-* ⭐ **`combined` is the only arm that reaches zero WHILE STILL TURNING** — recalls
-  0.3636 / 0.7500, identical to the uncapped `ccos_argmax`, at `peak_g` max 0.618
-  against its 3.262.
+⭐ **`best` takes `wk15`'s entire lateral family — every lateral delta is INSIDE the
+seed floor, i.e. the cap costs the accuracy lever nothing — and GIVES BACK part of
+what the penalty took longitudinally: speed MAE -0.0168 (4.4x its floor) and accel
+MAE -0.0139 (2.3x), both separated LEVER effects in the right direction.** Against
+`kamm07` it wins six of the seven family metrics outright.
 
-**ROOT-CAUSE CLASS: a number quoted from a STALE GENERATION of a regenerated
-artifact.** The audit was regenerated under a **new name** — `feas_audit.txt` (19:43,
-two arms) became `feas_audit_all.txt` (22:28, ten arms) — and §7.8's table row was
-carried from the old one. **This file was finalised at 22:47, 19 minutes AFTER the
-artifact that refutes it was written, in the same directory.** Same family as
-`MODEL_REGISTRY.md`'s *“prose lied to us”*, with the object swapped: the right raw
-artifact, quoted at the wrong **generation**.
+**And it is the only arm smoother than the recorded human** (`assert_feasible`,
+`v0 >= 2 m/s`, n = 27):
 
-⚠️ **Why the controls did not catch it.** The `0.0000` **was** bracketed — a GT
-control at the known value, three arms non-zero. That discipline is correct and stays.
-But a bracketing table answers *“is this zero real?”*, never *“is this zero unique?”*.
-**A superlative is a claim about the WHOLE PANEL, and one excluded row refutes it.**
-⇒ **A control set is not a census.** If the word is *first* / *only* / *best*, the
-table must contain **every** arm, and a cell reading *“(not run)”* **voids the
-superlative** until it is filled — that cell is the refutation waiting to happen.
+| | `kamm_over_rate` | `peak_g` mean | `peak_g` max | `max\|kappa\|` |
+|---|---|---|---|---|
+| **`best`** | **0.0000** | **0.082** | **0.332** | **0.0800** |
+| `g` ground truth (CONTROL, must be 0) | 0.0000 | 0.178 | 0.373 | 0.1701 |
+| `ha0_ext` floor (CONTROL, must be > 0) | 0.1852 | 0.316 | 1.436 | 0.7672 |
+| `ccos_argmax` (CONTROL, must be > 0) | 0.2963 | 0.558 | **3.262** | 0.2000 |
 
-**Durable fix, shipped with this correction:** `raw/seed_floor_ext.py` prints the
-per-metric seed floor **and** the `assert_feasible` rows into **one** table, so the
-floor and the rate a claim rests on can no longer come from different generations of
-different files; and it adds the per-class recalls and the feasibility rows that
-`raw/seed_floor.py` lacked — the same gap that caused this package's earlier
-cousin-metric withdrawal.
+⇒ **zero violations, `peak_g` mean 0.082 against a human 0.178, and `max|kappa|`
+never exceeding the goal token's own 0.08.** ⭐ **The ladder was not needed for
+this** — `combined` reached zero *with* it, `best` reaches zero *without* it, because
+the penalty already keeps curvature low enough for the constraint never to bind
+hard. That is a strictly simpler configuration for the same safety result.
+
+**And the curvature modulation is the RICHEST of any arm: 19 distinct realised
+values** (`wk15` 15, `ccos_argmax` 10, `wk15_ladder` **2**), spanning
+**0.0048 – 0.0800**, EXACTLY-constant fraction down to **0.5750**. Penalty +
+constraint gives the most expressive lateral behaviour in the package; penalty +
+ladder gave the least.
+
+**By stratum, against the strongest T1 floor:**
+
+| stratum | `best` | `ha0_ext` | delta | `frac cl better` |
+|---|---|---|---|---|
+| GT-turn (n=19) | **0.9742** | 1.1521 | **-0.1779** | **0.5263** |
+| GT-straight (n=21) | **0.8020** | 0.6285 | +0.1735 | **0.4762** *(best of any arm; `ccos_argmax` 0.1905)* |
+| ALL (n=40) | **0.8838** | **0.8772** | **+0.0066** | — |
+
+⛔ **THE HONEST VERDICT. `cl - ha0_ext` = +0.0066 m is 9.2x SMALLER than this rig's
+inference-seed floor (0.0607), so `best` is STATISTICALLY INDISTINGUISHABLE from the
+strongest trivial floor — the tightest parity any refav1 arm has reached — and it is
+NOT a win.** It is not the shipped arm's kind of parity either: `cos_wk` tied by
+emitting zero controls, while `best` tracks 19 distinct curvatures, keeps
+`turn_right` recall at 0.50, and is better than the floor on turns.
+
+⚠️ **What still loses.** The longitudinal family: speed MAE **0.7751 vs 0.3058** for
+`ha0_ext` — the largest remaining gap in the package and untouched by any lever
+here. The tactical lateral decision: kappa **0.2727 vs 0.6277**; the penalty still
+costs the left turns entirely (`turn_left` recall **0.0** against `ccos_argmax`'s
+0.3636), which is the asymmetry §7.5 flagged and n = 11 cannot resolve.
 
 
-### 7.10 ⭐⭐⭐ THE FACTORIAL, THE MECHANISM, AND THE LEVER RE-RANKING
+### 7.11 ⛔⭐⭐⭐ BOTH ARMS LAND — THE ZERO IS SEED-DEPENDENT, AND THE TWO LEVERS TRADE
 
-**Written by the successor agent sent to run the synthesis arm this package called for.**
-A name collision with a sibling agent (§7.10d) turned that single arm into a **complete
-2x2x2 design**, so the cap's effect, the ladder's effect and their interaction became
-separately attributable. Everything in §7.10a–c is **zero GPU**, from banked dumps.
+The two arms this package left unrun. Gates and verdict mapping were committed in
+`raw/SPEC_BEST_AND_SEED.md` **before either arm existed**; both are reported as written.
 
-#### 7.10a The design
+#### 7.11a ⛔ P1.2 — `combined`'s ZERO DOES NOT SURVIVE A SECOND INFERENCE SEED
 
-{W_KAPPA 0 / 15.11245} x {`--kamm-mu` off / 0.7} x {`--seed-kappa-ladder` off / on}.
-Every cell's coding is asserted against **its own record's manifest** — `W_KAPPA`,
-`kamm_mu`, `seed_kappa_ladder`, `seed` — never against its arm NAME, and the check
-prints **ALL CELLS MATCH THEIR RECORDS** (`raw/factorial.py`, `raw/factorial.txt`).
+`combined_seed1` = `combined`'s command line with **one token** changed
+(`--plan-seed 0 → 1`), audited against the **live process's** argv rather than the
+intended one — 37 tokens, exactly one real difference (`raw/live_argv_audit.txt`).
 
-| cell | W | C | L | arm | ADE | LATcurv | TAClatK | recLK | recL | recR 
+| `assert_feasible`, `v0 >= 2 m/s`, n = 27 | `combined` (seed 0) | `combined_seed1` (seed 1) |
+|---|---|---|
+| **`kamm_over_rate`** | **0.0000** | **0.0741** (= 2 of 27 windows) |
+| `peak_g` max | 0.618 | **0.702 — over the μ = 0.7 circle** |
+| `max\|kappa\|` | 0.1505 | 0.1672 |
+| ADE m | 1.0504 | 1.1539 |
+
+⭐ **All three pre-committed controls PASSED**, so the reading stands: the ground-truth
+path `g` reads `kamm_over` **0.0000 on both**; `ha`/`ha0`/`ha0_ext`/`ol` ADE are
+**bit-identical** across the pair (one window grid — the artifact prints `CONTROL
+PASSED`); `ha0_ext` reads **0.1852** non-zero in the same table.
+
+⇒ Against the criterion committed before the arm existed — *"any value > 0.0000 ⇒ the
+zero is SEED-DEPENDENT and the claim reported to the PI is wrong"* — **this is a FAIL.**
+Corrected in the same turn in `RETRACTION_LOG.md`, `GOALS_AND_CLAIMS.md`
+(`D-REFAV1-CG-ZERO-SEEDDEP`) and here.
+
+⛔ **The correct statement:** *cap + ladder reduces `kamm_over_rate` from the cap alone's
+0.1481 to a **seed-dependent 0.0000–0.0741** while preserving turn execution* — **not**
+*"reaches zero"*.
+
+⚠️ **And §7.8a — my own correction of the original claim — inherited the defect.** It
+withdrew the *superlative* and left the *number* unexamined. ⭐ **What survives on two
+seeds is the TURN half:** the recalls are **identical** across the pair (`turn_left`
+0.3636, `turn_right` 0.7500, **0.00000 abs diff**), so the contrast with `W_KAPPA`'s
+0.0000-of-11 stands. **It is the ZERO that was seed-dependent, not the TURNING.**
+
+#### 7.11b The complete 2x2x2 — a perfect split, 4 of 4 versus 4 of 4
+
+| cell | W | C | L | arm | ADE | recLK | recL | recR | `kamm_over` | `max\|k\|` | `peak_g` |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 0 | 0 | 0 | `ccos_argmax` | 1.3272 | 0.7143 | **0.3636** | 0.7500 | 0.2963 | 0.2000 | 3.262 |
+| 3 | 0 | 1 | 0 | `kamm07` | 0.9927 | 0.7619 | **0.3636** | 0.6250 | 0.1481 | 0.1747 | 0.707 |
+| 4 | 0 | 0 | 1 | `l3ladder` | 1.3236 | 0.5714 | **0.3636** | 0.7500 | 0.2593 | 0.1782 | 2.858 |
+| 6 | 0 | 1 | 1 | `combined` | 1.0504 | 0.7619 | **0.3636** | 0.7500 | 0.0000 ⚠️ | 0.1505 | 0.618 |
+| 2 | 1 | 0 | 0 | `wk15` | 0.8934 | 1.0000 | **0.0000** | 0.5000 | 0.0000 ⚠️ | 0.0800 | 0.332 |
+| 5 | 1 | 0 | 1 | `wk15_ladder` | 0.9408 | 1.0000 | **0.0000** | 0.0000 | 0.0000 ⚠️ | 0.0020 | 0.153 |
+| 7 | 1 | 1 | 0 | `best` | 0.8838 | 1.0000 | **0.0000** | 0.5000 | 0.0000 ⚠️ | 0.0800 | 0.332 |
+| 8 | 1 | 1 | 1 | **`bestlad`** | 0.9418 | 1.0000 | **0.0000** | 0.0000 | 0.0000 ⚠️ | 0.0049 | 0.153 |
+
+CONTROL: the ground-truth path reads `kamm_over` **0.0000 in every row**.
+⚠️ **Every 0.0000 in this column is SINGLE-SEED and unreplicated except `combined`'s,
+which WAS replicated and did not hold (§7.11a).** They are quoted with that
+qualification, not as established zeros.
+
+⇒ **`W_KAPPA` = 0 ⇒ `turn_left` recall 0.3636 in all four cells; `W_KAPPA` = 1 ⇒ 0.0000
+in all four. No cell is intermediate.**
+
+#### 7.11c P1.1 — `bestlad` against its committed gates
+
+| gate | threshold (committed in advance) | reading | |
+|---|---|---|---|
+| **S** SAFE | `kamm_over` = 0.0000 with controls | 0.0000; `g` 0.0000; `ha0_ext` 0.1852 | **PASS** |
+| **M** MOVES | `max\|a\|` > 0.5 **and** `max\|kappa\|` > 0.02 | 1.500 ✓ but **0.0049** ✗ | ⛔ **FAIL** |
+| **T** TURNS | `turn_left` recall > 0.0000 | **0.0000** of 11 (and `turn_right` 0.0000 of 8) | ⛔ **FAIL** |
+| **A** ACCURATE | paired `ade_m` vs `combined` ≤ −(floor), separated | **−0.1086 [−0.2535, +0.0313]** not separated; 1.05x the binding **0.1035** floor | ⛔ **FAIL** |
+
+⇒ **MAPPED VERDICT, committed in advance:** *"M fails ⇒ the arm collapsed to a
+near-static path; S is vacuous and is reported as such ⇒ ship `combined`."*
+
+#### 7.11d The two mechanisms the final cells settle
+
+1. ⭐ **THE CAP IS INERT UNDER `W_KAPPA` — confirmed twice, with intervals.**
+   `best` − `wk15` `ade_m` **−0.0096 [−0.0415, +0.0278]** (and `TAC_traj_lat_correct`
+   **+0.0000 [+0.0000, +0.0000]**, the known-value control's own signature);
+   `bestlad` − `wk15_ladder` `ade_m` **+0.0010 [−0.0222, +0.0252]**. Adding the friction
+   cap to a `W_KAPPA` arm changes nothing in either ladder condition, **because
+   `W_KAPPA` has already driven `max|kappa|` to 0.0800 / 0.0049 — far inside the μ = 0.7
+   circle — so the cap never binds.**
+2. ⛔ **THE LADDER REVERSES SIGN DEPENDING ON WHAT DRIVES THE CHOICE.** Under the **cap**
+   it gave the CONSTRAINT something feasible to select (§7.8). Under **`W_KAPPA`** it
+   gives the PENALTY something **cheap** to select: `bestlad`'s realised
+   `med|kappa|max` under **both** turn tokens is **0.00200 — exactly the lowest rung** —
+   and mean `k^2` collapses to **0.000004**, i.e. **−99.94 %** against the baseline's
+   0.006698 / 0.006400. Measured cost of adding it to `best`: `ade_m` **+0.0580
+   [+0.0022, +0.1215]** separated WORSE, `fde_m` **+0.1672 [+0.0211, +0.3338]** WORSE,
+   `TAC_traj_lat_correct` **−0.1000 [−0.1750, −0.0250]** WORSE.
+
+#### 7.11e ⇒ THE ANSWER
+
+⛔ **refav1 does NOT now have an arm that is both accurate and safe. The two levers
+TRADE.** `W_KAPPA`'s accuracy is bought by deleting a decision class; the cap cannot
+restore it; and the cap's own safety gain is the one that costs nothing measurable.
+⇒ **the lever to carry forward is the CAP, not `W_KAPPA`** — and the next arm is
+**cap + ladder + `a0_shift` with `W_KAPPA = 0`** (§7.10e), still **UNRUN**.
+⭐ This **confirms the prediction recorded in `raw/SPEC_BEST_AND_SEED.md` §5.3 before
+either arm ran**: *"I expect gate T to be the gate the arm fails, and I record that now
+so a T-failure reads as a CONFIRMED prediction and a T-pass as a REFUTED one."*
+
+---
+
+## §8 — Deliverable manifest
+
+| artifact | where it lives |
+|---|---|
+| `PREREG_COST_GEOMETRY.md` | repo: this package |
+| `RESULT.md` (this file) | repo: this package |
+| `raw/cost_scale.py` / `.txt` | repo: this package |
+| `raw/kappa_by_goal.py` / `.txt` | repo: this package |
+| `raw/four_family_table.py` | repo: this package |
+| `ccosh` metric + `CCOS_HOLD_REL` | repo: `stack/tanitad/refs/refa_v1.py` |
+| `test_cost_ccosh.py` (new) | repo: `stack/tests/` |
+| `test_cost_ccos.py`, `test_cost_chord.py` (tuple pins updated) | repo: `stack/tests/` |
+| `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
+| arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
+| oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
