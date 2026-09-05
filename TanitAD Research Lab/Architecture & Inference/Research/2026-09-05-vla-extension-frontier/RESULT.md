@@ -699,3 +699,52 @@ module. A design review of any VLA arm checks this list before it checks the res
 | extracted paper text used for the load-bearing tables (Alpamayo-R1 Table 14, DriveVLM Tables 6/8/9, SmolVLM §2–3, XCoT-VLA §3, FastDriveCoT §1/§4) | scratchpad only — **derivable from the banked PDFs with `pdftotext`**; nothing load-bearing lives only there | not banked (intentionally: the PDFs are the artifact) |
 
 **Nothing in this deliverable exists only on one disk or only in one agent's context.**
+
+## 7. Reconciliation with the contract (`REFCV5_DESIGN_PLAN.md` §9), and three corrections to §2
+
+§9 landed in HEAD **after** §2 of this file was written. It is *the contract* (§9.0: where the two disagree about a
+**port**, §9 wins). The design survives unchanged — §9.1's contract term is the same conclusion §2.c reached
+independently — but three statements above need correcting, and one addition is load-bearing.
+
+**C1 — `pooled` is a VECTOR; the 160 tokens are `fmap`.** §9.2 separates them: `pooled [B, feat_dim]` is the pooled
+feature at t0, `pooled_seq [B, 8, feat_dim]` is the hook's first argument, and the **160 perspective-view tokens** are
+`fmap [B, feat_dim, 8, 20]`, consumed by the decoder's `feat_proj`. ⇒ **Everywhere §2.c says the module reads
+"`pooled`'s 160 tokens", read `fmap`** (with `pooled_seq` as the temporal context). The design is unaffected; the
+port name was wrong.
+
+**C2 — `feat_dim` is 704 at `size base`, not 512, and it must never be hardcoded.** §9.2/§9.8: `feat_dim =
+base_width · 8 = 704` at base, **256** at the `tiny` rig rung, and *"the VLA must read them from the built model,
+never hardcode 704 / 512 / 256"*. ⇒ `proj_in` is `Linear(feat_dim → d_lm)` with `feat_dim` read at construction;
+§2.c's ≈ 1.6 M projector estimate becomes ≈ **1.4 M** at 704 → 960 → 960 and the ≈ 368 M / ≈ 6 M totals are unchanged
+at this precision.
+
+**C3 — the geometric goal port is `g_tac [B, 12]`, not a single point.** §9.2: `GOAL_DIMS = 4`, layout
+`(x, y, heading, speed)` per τ ∈ **{2.0, 4.0, 6.0} s**, ego frame x forward / y left / z up. ⇒ the write head is
+12-wide, and `goal_consistency` is measured **per τ**.
+
+**A1 — ⭐ the mount point already exists, and one write port is LIVE.** §9.1: `RefCModel.forward(...,
+hierarchy_hook=...)` is called as `hook(pooled_seq, ctx) -> dict` and fills ports **only where the caller passed
+`None`**, so *"an explicitly supplied port always wins"*. `maneuver_logits [B, 5]` reweights the anchor prior (H19)
+and is **never filled today** — *"an outside tactical brain speaking the 5-way surface"*. ⇒ **the first mode-I edge
+costs zero new wiring**, and it is the cheapest possible causal test of the whole thesis (plan WP-8a). And §9.1's
+docstring supplies the latency argument in advance: the hook exists so an external hierarchy can read the window
+*without encoding the frames a second time*, because **the encoder is ~90 % of a REF-C tick**.
+
+**A2 — the information-state declaration, sharpened.** §9.7 splits arms into **PROPOSER** (does not see the pick;
+consistency is a real measurement) and **DESCRIBER** (sees `sel_idx`/`g_tac`; consistency ≈ 1.0 *by construction* and
+is **not a result**). Our §3.0 modes M/I are about **write-back**; §9.7's regimes are about **read-access**. They are
+**orthogonal and both required**, so the plan declares three read tiers — **P0** scene-only · **P1** scene + cascade
+state *upstream of the pick* (the headline) · **D** describer — and every table naming `tac_consistency` states its
+tier. ⚠️ A P1 number and a D number are not comparable.
+
+**A3 — the constant control's known value is now a NUMBER.** §9.7: the corpus is **86.59 % `lane_keep`, 75.76 %
+`steady`, 67.18 % both** ⇒ a module that always says `(LANE_KEEP, CRUISE)` reads ≈ **0.67**, and **any F1 below 0.67
+is worse than a constant**. That converts C-A from "must read the prior" into a pre-registered threshold.
+
+**A4 — two refusals §9 adds that §5 did not have.** (i) `ctx` **already contains nav** (`ctx = ctx + nav_s`), so a
+module reading `ctx` may not claim a vision-only reading — it carries the nav controls instead. (ii) A **question**
+is admissible as an input to the module only; **its answer may not route into a write port in the same tick**, or a
+question becomes a control channel and the goal path stops being information-disjoint from the situation path.
+
+**Library verification (MEASURED, 2026-09-05):** `python tools/kb_add.py --verify` →
+**`verified 437 entries, 0 orphan(s), 0 problem(s)`** — every banked PDF re-hashed against `library.json`.
