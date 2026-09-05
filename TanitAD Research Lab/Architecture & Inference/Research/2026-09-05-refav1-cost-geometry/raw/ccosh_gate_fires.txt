@@ -1,0 +1,18 @@
+# MEASURED 2026-09-05: DOES THE ccosh HOLD BRANCH FIRE ON REAL WINDOWS?
+# basecost_cv is the do-nothing candidate cost. Under ccos it is 1.0 EXACTLY whenever
+# g != z_ref (cosine of a zero vector), and the branch replaces that with the chord.
+# PARTIAL: ccosh had 5 of 8 episodes when this was taken -> BEHAVIOUR ONLY, the first 5
+# episodes of each arm are matched window-for-window; NOT a panel comparison.
+
+ccosh_w000   n=25  basecost_cv median 0.977084  frac EXACTLY 1.0 0.0000  min 4.10129e-08  max 1.11658
+             LANE_KEEP n=12: basecost_cv median 0.978658 frac==1.0 0.0000 | realised frac k!=0 0.5833
+             TURN      n=13: realised frac k!=0 1.0000  med|k| 0.08000
+
+ccos_argmax  n=25  basecost_cv median 1  frac EXACTLY 1.0 0.2000  min 0.908392  max 1.11658
+             LANE_KEEP n=12: basecost_cv median 1 frac==1.0 0.4167 | realised frac k!=0 0.5833
+             TURN      n=13: realised frac k!=0 1.0000  med|k| 0.08000
+
+wk15         n=25  basecost_cv median 1  frac EXACTLY 1.0 0.2000  min 0.908392  max 1.11658
+             LANE_KEEP n=12: basecost_cv median 1 frac==1.0 0.4167 | realised frac k!=0 0.0000
+             TURN      n=13: realised frac k!=0 1.0000  med|k| 0.08000
+

@@ -10,7 +10,7 @@ export PYTHONPATH="C:/Users/Admin/tanitad-wt/stack;C:/Users/Admin/tanitad-wt/tan
 export PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4
 
-ARMS="ccos_argmax ccos_seed1 cos_argmax cos_wk wk15 wk151 ccosh_w000 l3ladder kamm07"
+ARMS="ccos_argmax ccos_seed1 cos_argmax cos_wk wk15 wk151 ccosh_w000 l3ladder kamm07 combined"
 
 # ---- 1. four families, per arm ------------------------------------------- #
 {
@@ -84,11 +84,18 @@ PYEOF
 } > "$SP/feas_audit_all.txt" 2>&1
 
 # ---- 5. the PAIRED cross-arm deltas, four families ------------------------ #
+# ⛔ ONLY COMPLETE ARMS MAY BE PAIRED. A dump with fewer than 8 episode files is a
+# DIFFERENT PANEL, and pairing it against a full arm compares two window grids.
 dumps=""
 pairs=""
-for a in $ARMS; do [ -d "$P/dump_$a/decisions" ] && dumps="$dumps --dump $a=$P/dump_$a"; done
-for a in cos_wk wk15 wk151 ccosh_w000 l3ladder kamm07 ccos_seed1 cos_argmax; do
-  [ -d "$P/dump_$a/decisions" ] && pairs="$pairs --pair $a-ccos_argmax"
+for a in $ARMS; do
+  n=$(ls "$P/dump_$a"/ep*.npz 2>/dev/null | wc -l)
+  if [ "${n:-0}" -eq 8 ]; then dumps="$dumps --dump $a=$P/dump_$a"
+  else echo "PAIRING SKIPS $a (n_ep=${n:-0}, not 8)"; fi
+done
+for a in cos_wk wk15 wk151 ccosh_w000 l3ladder kamm07 combined ccos_seed1 cos_argmax; do
+  n=$(ls "$P/dump_$a"/ep*.npz 2>/dev/null | wc -l)
+  [ "${n:-0}" -eq 8 ] && pairs="$pairs --pair $a-ccos_argmax"
 done
 # shellcheck disable=SC2086
 "$PY" "$SP/gm_paired_delta.py" $dumps $pairs \

@@ -66,25 +66,39 @@
     ACCELERATE                   3
   plan_source: cem 0.425  baseline 0.575
 
-==== wk15   n_windows=20
+==== wk15   n_windows=40
   by DECODED LATERAL GOAL TOKEN
     token              n  med|k|max  frac k!=0   frac@cap   mean k^2
-    LANE_KEEP          8    0.00000     0.0000     0.0000   0.000000
-    TURN_L             4    0.01298     1.0000     0.0000   0.000066
-    TURN_R             8    0.08000     1.0000     0.0000   0.004948
+    LANE_KEEP         18    0.00000     0.0000     0.0000   0.000000
+    TURN_L             9    0.02066     1.0000     0.0000   0.000136
+    TURN_R            13    0.08000     1.0000     0.0000   0.004617
   by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
-    GT-straight       10  med|k|max 0.00000  frac k!=0 0.3000  frac@cap 0.0000  dir_correct 0.2000
+    GT-straight       21  med|k|max 0.00000  frac k!=0 0.3333  frac@cap 0.0000  dir_correct 0.2381
+    GT-turn           19  med|k|max 0.04894  frac k!=0 0.7895  frac@cap 0.0000  dir_correct 0.5789
+  by DECODED LONGITUDINAL GOAL TOKEN
+    CRUISE                       4
+    BRAKE_TO                     4
+    ADAPT_SPEED_FOR_CURVE       29
+    ACCELERATE                   3
+  plan_source: cem 0.750  baseline 0.250
+
+NO DECISIONS in C:/Users/Admin/refav1_margin/p4out/dump_wk151
+
+==== ccosh_w000   n_windows=20
+  by DECODED LATERAL GOAL TOKEN
+    token              n  med|k|max  frac k!=0   frac@cap   mean k^2
+    LANE_KEEP          8    0.08274     0.6250     0.0000   0.002433
+    TURN_L             4    0.08000     1.0000     0.2500   0.007070
+    TURN_R             8    0.08000     1.0000     0.0000   0.006400
+  by GROUND TRUTH (|kappa0| from ha0_ext, threshold 0.04)
+    GT-straight       10  med|k|max 0.08442  frac k!=0 0.8000  frac@cap 0.1000  dir_correct 0.4000
     GT-turn           10  med|k|max 0.08000  frac k!=0 0.9000  frac@cap 0.0000  dir_correct 0.6000
   by DECODED LONGITUDINAL GOAL TOKEN
     CRUISE                       2
     BRAKE_TO                     1
     ADAPT_SPEED_FOR_CURVE       14
     ACCELERATE                   3
-  plan_source: cem 0.850  baseline 0.150
-
-== wk151 -- DUMP ABSENT
-
-NO DECISIONS in C:/Users/Admin/refav1_margin/p4out/dump_ccosh_w000
+  plan_source: cem 0.950  baseline 0.050
 
 == l3ladder -- DUMP ABSENT
 

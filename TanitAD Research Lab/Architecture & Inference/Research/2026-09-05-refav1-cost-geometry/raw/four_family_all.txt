@@ -206,7 +206,56 @@ ARM refav1-21109-p4-cos_shippedweights  n_windows=40 n_episodes=8
     cl - ha0_ext               ade_m            delta= +0.0479 [ -0.0889,  +0.1923] separated=False
     cl - ha0_ext               speed_mae_mps    delta= +0.4159 [ +0.2351,  +0.6440] separated=True
 
-ARM wk15  -- RECORD ABSENT (not run, or still running)
+====================================================================================================
+ARM refav1-21109-p4-wk15                n_windows=40 n_episodes=8
+  cost: metric=ccos  W_JERK=0          W_KAPPA=15.11245     W_VEND=64.2972     source=CLI override (--cost-weights)
+  record: C:/Users/Admin/refav1_margin/p4out/rec_wk15.json
+----------------------------------------------------------------------------------------------------
+  arm       tier | ADE_m (episode-cluster CI) | speed_MAE  along_MAE  tsa<1.0    | curv_MAE 
+  cl        T1   | 0.8934 [0.6517, 1.1348]  | 0.7919     0.6630     0.7075     | 0.030982 
+  ha        T1   | 0.8888 [0.6026, 1.1928]  | 0.3058     0.6923     0.9275     | 0.076005 
+  ha0       T1   | 0.9251 [0.7024, 1.1783]  | 0.7217     0.6788     0.7500     | 0.040083 
+  ha0_ext   T1   | 0.8772 [0.6195, 1.1437]  | 0.3058     0.6819     0.9275     | 0.077298 
+  ol        T0   | 0.8052 [0.5787, 1.0577]  | 0.0906     0.5927     1.0000     | 0.082614 
+
+  LONGITUDINAL (binding family 1)
+    arm       speed_MAE   speed_bias  speed_RMSE  along_MAE   accel_MAE   tsa<0.5    
+    cl        0.7919      -0.1146     1.2105      0.6630      0.8604      0.5050     
+    ha        0.3058      -0.0048     0.5104      0.6923      0.4487      0.8150     
+    ha0       0.7217      0.0685      1.1119      0.6788      0.7766      0.5275     
+    ha0_ext   0.3058      -0.0048     0.5104      0.6819      0.4487      0.8150     
+    ol        0.0906      -0.0324     0.1182      0.5927      0.1064      1.0000     
+    distance_keeping: UNAVAILABLE  (n=0)  reason=no lead-agent track supplied — pass `lead=` (see this function's caller docstr
+
+  LATERAL (binding family 2)
+    arm       head_MAE_d  yawrate_MAE   curv_MAE_1pm  curv_bias_1pm cross_MAE   crossfin_MAE
+    cl        15.2704     6.6750        0.030982      -0.007148     0.3670      0.9634     
+    ha        27.6171     13.9120       0.076005      0.021166      0.4055      0.9430     
+    ha0       20.1374     7.0932        0.040083      0.001770      0.3642      0.9575     
+    ha0_ext   27.7357     13.9710       0.077298      0.019120      0.4018      0.9251     
+    ol        27.1975     13.3175       0.082614      0.018067      0.4199      0.9972     
+
+  TACTICAL (binding family 3) -- decision quality + goal setting
+    arm       lat_acc  lat_kap  lon_acc  lon_kap  m5_acc   goalFDE_m  goalbear_d
+    cl        0.6250   0.2611   0.4250   0.0612   0.4000   2.1628     24.4830   
+    ha        0.7250   0.5510   0.7250   0.5639   0.6000   2.3164     27.9790   
+    ha0       0.5250   0.0000   0.4250   0.0000   0.2500   2.2613     24.7612   
+    ha0_ext   0.7750   0.6277   0.7250   0.5639   0.6500   2.2693     27.9992   
+    ol        0.8250   0.7172   0.9000   0.8456   0.7750   1.9942     28.2263   
+    cl lateral per-class: lane_keep n_true=21 recall=1.0  turn_left n_true=11 recall=0.0  turn_right n_true=8 recall=0.5
+
+  STRATEGIC (binding family 4)
+    status=UNAVAILABLE n=0  reason=strategic decisions not present in the scored pass (missing ['route_pred', 'rout
+
+  PAIRED (episode-cluster bootstrap, the decision-grade estimator)
+    cl - ol                    ade_m            delta= +0.0882 [ -0.0981,  +0.2874] separated=False
+    cl - ol                    speed_mae_mps    delta= +0.7014 [ +0.4584,  +0.9862] separated=True
+    cl - ha                    ade_m            delta= +0.0047 [ -0.1735,  +0.2125] separated=False
+    cl - ha                    speed_mae_mps    delta= +0.4862 [ +0.2825,  +0.7201] separated=True
+    cl - ha0                   ade_m            delta= -0.0317 [ -0.1344,  +0.0559] separated=False
+    cl - ha0                   speed_mae_mps    delta= +0.0702 [ +0.0011,  +0.1501] separated=True
+    cl - ha0_ext               ade_m            delta= +0.0162 [ -0.1648,  +0.1980] separated=False
+    cl - ha0_ext               speed_mae_mps    delta= +0.4862 [ +0.2825,  +0.7201] separated=True
 
 ARM wk151  -- RECORD ABSENT (not run, or still running)
 

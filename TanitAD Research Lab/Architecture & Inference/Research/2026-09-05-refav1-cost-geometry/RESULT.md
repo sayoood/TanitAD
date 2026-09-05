@@ -412,12 +412,195 @@ refusing to act, and it loses the longitudinal family outright. Its lateral-deci
 kappa is **0.0000** (turn recall **0/11 left, 0/8 right**, lane-keep recall **1.0**),
 which is the signature of a constant predictor, not of a driver.
 
+**The paired four-family delta of the weights themselves** — `cos_shippedweights`
+against `cos_argmax`, the SAME metric, the SAME seed, the SAME panel, with only
+`(W_JERK, W_KAPPA)` moving from `(0, 0)` to `(0.02, 0.05)`
+(`raw/pd_shipped.md`; the known-value control, an arm against itself, reads
+`+0.0000 [+0.0000, +0.0000]` on every metric):
+
+| family metric | `cos_shippedweights.cl - cos_argmax.cl` | separated | direction |
+|---|---|---|---|
+| `ade_m` | **-0.9692 [-2.0210, -0.1751]** | YES | better |
+| `fde_m` | **-2.1027 [-4.3280, -0.3603]** | YES | better |
+| `LON_along_mae_m` | **-0.2410 [-0.6177, -0.0127]** | YES | better |
+| `LON_accel_mae_mps2` | **-0.0428 [-0.1058, -0.0011]** | YES | better |
+| `LON_speed_mae_mps` | -0.0056 [-0.0157, +0.0064] | no | — |
+| `LAT_cross_mae_m` | **-1.0322 [-2.0533, -0.2393]** | YES | better |
+| `LAT_heading_mae_deg` | **-9.1286 [-15.5752, -2.8652]** (n=33) | YES | better |
+| `LAT_yaw_rate_mae_radps` | **-0.2852 [-0.4691, -0.1239]** | YES | better |
+| `TAC_traj_lat_correct` | +0.1500 [+0.0000, +0.3000] | boundary | better |
+| `TAC_traj_lon_correct` | +0.0000 [+0.0000, +0.0000] | — | — |
+| `cl - ha0` (bit-identity check) | **+0.0000 [+0.0000, +0.0000]** | — | identical |
+
+⇒ **Restoring the shipped curvature and jerk weights improves SEVEN of ten paired
+family metrics, every one of them separated — and it does so by making the planner
+STOP.** Every delta above is the cost of the motion the zeroed-triple arm was
+emitting, not the value of motion it learned to emit. ⚠️ **That is exactly why the
+four families are binding and why ADE alone would have been read as progress here.**
+
 ⇒ **The honest statement of the objective is now sharper than "refav1 does not beat
 the floors":** as shipped it *is* a floor, bit-identically; and every configuration
 in which it actually plans (`cos`/`ccos` with the zeroed triple) is **worse** than
 the floors. The lever set in §3/§5/§6 exists precisely to make it act *and* be right.
 
 *(filled in as they land; see `raw/` for the four-family tables and the records)*
+
+
+### 7.2 ⭐⭐ WHERE THE DEFICIT ACTUALLY IS: refav1 ALREADY BEATS THE FLOOR ON TURNS AND DESTROYS ITSELF ON STRAIGHTS
+
+MEASURED zero GPU from the dumps, per-window ADE split by `|kappa0|` (the measured
+curvature at t0, from `ha0_ext_controls`) at the programme's crossover **4e-2**.
+⛔ CONTROL: `g` against itself reads **exactly 0.000000**.
+Artifact `raw/ade_by_stratum.txt`, tool `raw/ade_by_stratum.py`.
+n = 21 GT-straight / 19 GT-turn of 40.
+
+| arm | ALL | **GT-straight (n=21)** | **GT-turn (n=19)** |
+|---|---|---|---|
+| `cl` `ccos_argmax` | 1.3272 | **1.6960** | **0.9195** |
+| `cl` `ccos_seed1` (seed replicate) | 1.3879 | 1.8078 | **0.9238** |
+| `cl` `cos_argmax` | 1.8944 | 2.5998 | 1.1146 |
+| `cl` `cos_shippedweights` (= `ha0`) | 0.9251 | 0.8862 | 0.9682 |
+| `ha` | 0.8888 | 0.6792 | 1.1204 |
+| `ha0` | 0.9251 | 0.8862 | 0.9682 |
+| **`ha0_ext`** (the strongest T1 floor) | **0.8772** | **0.6285** | **1.1521** |
+| `ol` (T0) | 0.8052 | 0.4913 | 1.1521 |
+
+⭐ **ON TURNS, refav1's centred-goal planner BEATS THE STRONGEST T1 FLOOR:**
+`ccos_argmax` **0.9195** against `ha0_ext` **1.1521** — a mean per-window advantage
+of **−0.2326 m**. **It survives the inference-seed floor by a wide margin:** the
+replicate reads **0.9238**, a difference of **0.0043 m**, so the win is **54x** the
+run-to-run noise on that stratum. The shipped-weights arm, which does nothing, reads
+**0.9682** on the same windows — i.e. **acting is worth 0.049 m on turns and the
+centred goal is worth another 0.047**.
+
+⛔ **AND THE WHOLE DEFICIT IS ON STRAIGHT ROAD:** `ccos_argmax` **1.6960** against
+`ha0_ext` **0.6285** — **+1.0675 m**. The damage is a TAIL, not a shift: the MEDIAN
+per-window delta is only **+0.1933** while the MEAN is **+1.0675**, and `cl` is
+better on **19.0 %** of straight windows. A minority of straight windows in which the
+planner commits a hard turn accounts for essentially all of it — which is precisely
+the population §6 measured leaving the friction circle at up to **3.262 g**.
+
+⇒ **THE OBJECTIVE IS NOW A ONE-SENTENCE ENGINEERING PROBLEM:** *suppress spurious
+curvature on straight windows without suppressing it on turns.* That is exactly what
+the three levers this package built are for, and they attack it from three different
+directions — the hold branch (§3) removes the noise-driven direction where the goal
+IS "hold"; the friction-circle cap (§6) removes the high-speed hard turns, and
+straights are the fast windows; the seed ladder (§5) supplies the intermediate
+curvature the corpus actually needs so a turn need not be all-or-nothing.
+
+⚠️ **And it re-reads §7.1's paradox.** The shipped weights "improve seven family
+metrics" by trading a **0.049 m turn-window advantage** for a **0.810 m
+straight-window repair**. On this turn-DENSE panel that is a net win; on a corpus
+with the real straight/turn mix it would be a larger one — **and it is still not
+driving.**
+
+⚠️ *Bookkeeping:* on GT-turn, `ol` (1.152107) and `ha0_ext` (1.152063) agree to four
+decimals **by coincidence** — their trajectories differ by up to **2.42 m**. Not
+duplication; checked because equal-looking floors are how harness bugs hide.
+
+
+### 7.3 ⭐⭐ L1's CORE ARM: A CURVATURE PENALTY AT THE MEASURED SCALE BRINGS refav1 TO ADE PARITY WITH THE STRONGEST T1 FLOOR — WHILE IT IS STILL ACTING
+
+`wk15` = `ccos` + `(W_JERK, W_KAPPA, W_VEND) = (0, **15.11245**, 64.297)`, one
+variable against the banked `ccos_argmax` (`W_KAPPA = 0`): same metric, same seed,
+same panel, same vocabulary. The rung is **10 % of the measured goal decision at the
+realised curvature** — `0.10 × 0.967197 / 0.0064` — fixed by §1 before any arm ran.
+
+**Four families, T1, n = 40 windows / 8 episodes** (`raw/four_family_all.txt`):
+
+| metric | `ccos_argmax` (W_KAPPA 0) | **`wk15` (W_KAPPA 15.11)** | `ha0_ext` floor | `ha0` floor |
+|---|---|---|---|---|
+| **ADE m** | 1.3272 [0.7750, 1.9915] | **0.8934 [0.6517, 1.1348]** | **0.8772** | 0.9251 |
+| LON speed MAE | 0.7155 | 0.7919 | **0.3058** | 0.7217 |
+| LON along MAE | 0.7304 | **0.6630** | 0.6819 | 0.6788 |
+| LAT heading MAE deg | 23.4578 | **15.2704** *(best of all arms)* | 27.7357 | 20.1374 |
+| LAT yaw-rate MAE | 17.6748 | **6.6750** *(best)* | 13.9710 | 7.0932 |
+| LAT curvature MAE 1/m | 0.055369 | **0.030982** *(best)* | 0.077298 | 0.040083 |
+| LAT cross MAE m | 0.8784 | **0.3670** | 0.4018 | 0.3642 |
+| TAC lat acc / kappa | 0.6250 / 0.3795 | 0.6250 / 0.2611 | 0.7750 / 0.6277 | 0.5250 / 0.0000 |
+| TAC goal FDE m | 2.9639 | **2.1628** *(best T1)* | 2.2693 | 2.2613 |
+
+Paired against the floors (episode-cluster bootstrap):
+`cl - ha0_ext` **ADE +0.0162 [-0.1648, +0.1980]**, not separated — against
+**+0.4500** for `ccos_argmax`. `cl - ha0` ADE **-0.0317 [-0.1344, +0.0559]**.
+⚠️ **+0.0162 is SMALLER than this rig's own inference-seed floor (§4: 0.0607), so
+the honest word is PARITY, not "beats".** The longitudinal family is where it still
+loses outright: `speed_mae` **+0.4862 [+0.2825, +0.7201] separated worse**.
+
+**By stratum** (`raw/ade_by_stratum.txt`), against `ha0_ext`:
+
+| stratum | `ccos_argmax` | **`wk15`** | `ha0_ext` |
+|---|---|---|---|
+| GT-turn (n=19) | 0.9195 (**-0.2326**) | **0.9699 (-0.1822**, `frac cl better` **0.5263**) | 1.1521 |
+| GT-straight (n=21) | 1.6960 (**+1.0675**) | **0.8242 (+0.1957**, `frac cl better` **0.4286**) | 0.6285 |
+
+⇒ **the straight-window damage falls 5.5x (+1.0675 -> +0.1957) while the turn-window
+advantage is kept** (-0.1822 against -0.2326, a change of 0.05 against a
+turn-stratum seed floor of 0.0043 — so the small loss on turns is real but tiny).
+Non-zero curvature on GT-straight windows falls **0.6667 -> 0.3333**.
+
+### 7.3.2 THE PAIRED FOUR-FAMILY DELTA OF `W_KAPPA` ITSELF, AGAINST THE SEED FLOOR
+
+`wk15.cl - ccos_argmax.cl`, paired episode-cluster bootstrap, n = 40 windows /
+8 clusters, n_boot 2000; the known-value control (an arm against itself) reads
+`+0.0000 [+0.0000, +0.0000]` on every metric (`raw/pd_all.md`).
+⛔ **Each row is read against §4's inference-seed floor on the SAME metric**, because
+a separated CI is necessary and not sufficient on this rig.
+
+| family metric | delta (W_KAPPA 0 -> 15.11245) | separated | **seed floor (§4)** | **ratio** | verdict |
+|---|---|---|---|---|---|
+| `ade_m` | **-0.4338 [-1.0393, -0.0808]** | YES | 0.0607 | **7.1x** | LEVER, better |
+| `fde_m` | **-0.8012 [-1.7932, -0.1711]** | YES | 0.3439 | **2.3x** | LEVER, better |
+| `LAT_cross_mae_m` | **-0.5114 [-1.1777, -0.0685]** | YES | 0.0710 | **7.2x** | LEVER, better |
+| `LAT_heading_mae_deg` | **-3.8969 [-7.0911, -0.7589]** | YES | 1.1180 | **3.5x** | LEVER, better |
+| `LAT_yaw_rate_mae_radps` | **-0.1571 [-0.2579, -0.0670]** | YES | 0.0081 | **19x** | LEVER, better |
+| `LON_speed_mae_mps` | **+0.0764 [+0.0135, +0.1453]** | YES | 0.0038 | **20x** | LEVER, **worse** |
+| `LON_accel_mae_mps2` | **+0.0874 [+0.0122, +0.1763]** | YES | 0.0061 | **14x** | LEVER, **worse** |
+| `LON_along_mae_m` | -0.0674 [-0.2103, +0.0707] | no | 0.0002 | — | — |
+| `TAC_traj_lat_correct` | +0.0000 [-0.2000, +0.2000] | no | 0.0750 | — | — |
+| `TAC_traj_lon_correct` | +0.0000 [-0.1000, +0.1250] | no | 0.0000 | — | — |
+
+⇒ **Every separated delta clears the seed floor by 2.3x to 20x, so all seven are
+LEVER effects and not inference noise.** The curvature penalty buys the entire
+lateral family and the trajectory error, and it **costs** the longitudinal family:
+speed MAE and accel MAE both degrade, separated and 14-20x the floor.
+
+⭐ **That trade is the next work item, and it is NOT a `W_KAPPA` question.** §2
+showed the longitudinal deficit is the decoded LON token commanding `a == 0`
+(29/40 windows decode `ADAPT_SPEED_FOR_CURVE`); a curvature penalty makes the
+planner spend its remaining freedom on the lateral channel, which is why the speed
+channel drifts. The longitudinal analogue of this package's levers has not been
+built.
+
+### 7.3.1 ⛔ MY OWN PRE-REGISTERED PREDICTION (P1) IS REFUTED — AND P3 IS WHAT HAPPENED
+
+`PREREG_COST_GEOMETRY.md` §5 registered, before this arm ran and before the seed
+ladder was written: *"(P1) the realised curvature must move DISCRETELY from 0.08 to
+0.0 … with no new mass at intermediate magnitudes"*, and *"(P3) if instead
+intermediate magnitudes appear, the seed pool is richer than `D-REFAV1-DRIVE-GATE`
+says and that claim needs re-reading."*
+
+MEASURED on `wk15` (`raw/kappa_quantisation_all.txt`): **15 distinct realised
+`max|kappa|` values** against `ccos_argmax`'s 10, and the new mass is exactly where
+P1 said it could not be — **0.011507, 0.011993, 0.013975, 0.018027, 0.020659,
+0.024702, 0.028205, 0.030590, 0.032682, 0.033837, 0.044389, 0.048942, 0.052956** —
+i.e. **R 19–87 m, squarely inside the corpus's own band and nowhere near either
+canonical value**. The EXACTLY-constant-series fraction falls **0.7750 -> 0.6750**;
+`TURN_L`-decoded windows now realise a median `max|kappa|` of **0.02066** instead of
+0.08000.
+
+⇒ **P3 holds. The gate decides whether curvature is SEEDED; the search can then
+MODULATE its magnitude once the cost gives it a reason to.** With `W_KAPPA = 0`
+there was no reason, so every plan sat at its seed's own value and looked quantised.
+`D-REFAV1-DRIVE-GATE` is **not retracted** — a `LANE_KEEP` decode still yields
+exactly zero curvature on 18/18 windows here — but its consequence *"a turn is
+unreachable by the entire iCEM population"* must be read as **"unreachable when the
+cost is indifferent"**, which is a materially weaker and more actionable statement.
+
+⚠️ **This also means the `l3ladder` arm is now testing a sharper question than it was
+written for:** not *"can the pool express an intermediate curvature at all"* (it can)
+but *"does supplying the intermediate rungs directly beat letting the search find
+them"*. Both outcomes remain committed; the arm is unchanged.
 
 ---
 

@@ -76,28 +76,45 @@
   LANE_KEEP decode frac (goal_lat==0): 0.4500
   plan_source: cem 0.425  baseline 0.575
 
-==== wk15  (n_windows=20, K=10)
+==== wk15  (n_windows=40, K=10)
   GOAL TERM (= the whole cost in this arm)
-    winner  plan_cost : median 0.0589981  mean 0.190981  max 1
-    cv      basecost  : median 0.996764  mean 0.994423  min 0.908392
-    GAP cv - winner   : median 0.90811  mean 0.803441  p10 0  p90 1.01475
-    spread over the 3 named baselines: median 0.962898 mean 0.910951
+    winner  plan_cost : median 0.0673009  mean 0.287732  max 1
+    cv      basecost  : median 1  mean 0.997217  min 0.884896
+    GAP cv - winner   : median 0.895041  mean 0.709485  p10 0  p90 1.01475
+    spread over the 3 named baselines: median 0.94021 mean 0.832294
   REALISED CURVATURE
-    max|kappa| per window: median 0.0129839  frac at cap(0.2) 0.0000  frac >0 0.6000
-    mean(kappa^2)        : median 6.96165e-05  mean 0.00199226  max 0.0064
-  PENALTY AT A GIVEN W_KAPPA vs the MEDIAN goal gap 0.90811
+    max|kappa| per window: median 0.0129839  frac at cap(0.2) 0.0000  frac >0 0.5500
+    mean(kappa^2)        : median 6.96165e-05  mean 0.0015311  max 0.0064
+  PENALTY AT A GIVEN W_KAPPA vs the MEDIAN goal gap 0.895041
     W_KAPPA=0.05        charge@cap 0.002  charge@realised 3.4808e-06  charge@R100m 5e-06
     W_KAPPA=0.5         charge@cap 0.02  charge@realised 3.4808e-05  charge@R100m 5e-05
     W_KAPPA=2           charge@cap 0.08  charge@realised 0.00013923  charge@R100m 0.0002
     W_KAPPA=10          charge@cap 0.4  charge@realised 0.00069616  charge@R100m 0.001
     W_KAPPA=32.15       charge@cap 1.2859  charge@realised 0.0022381  charge@R100m 0.0032149
     W_KAPPA=64.3        charge@cap 2.5719  charge@realised 0.0044761  charge@R100m 0.0064297
+  LANE_KEEP decode frac (goal_lat==0): 0.4500
+  plan_source: cem 0.750  baseline 0.250
+
+NO DECISIONS in C:/Users/Admin/refav1_margin/p4out/dump_wk151
+
+==== ccosh_w000  (n_windows=20, K=10)
+  GOAL TERM (= the whole cost in this arm)
+    winner  plan_cost : median 2.20239e-05  mean 2.79745e-05  max 0.000129759
+    cv      basecost  : median 0.97839  mean 0.844423  min 4.25862e-08
+    GAP cv - winner   : median 0.9783  mean 0.844395  p10 4.33043e-08  p90 1.04544
+    spread over the 3 named baselines: median 0.917123 mean 0.794372
+  REALISED CURVATURE
+    max|kappa| per window: median 0.08  frac at cap(0.2) 0.0500  frac >0 0.8500
+    mean(kappa^2)        : median 0.0064  mean 0.00494731  max 0.00908069
+  PENALTY AT A GIVEN W_KAPPA vs the MEDIAN goal gap 0.9783
+    W_KAPPA=0.05        charge@cap 0.002  charge@realised 0.00032  charge@R100m 5e-06
+    W_KAPPA=0.5         charge@cap 0.02  charge@realised 0.0032  charge@R100m 5e-05
+    W_KAPPA=2           charge@cap 0.08  charge@realised 0.0128  charge@R100m 0.0002
+    W_KAPPA=10          charge@cap 0.4  charge@realised 0.064  charge@R100m 0.001
+    W_KAPPA=32.15       charge@cap 1.2859  charge@realised 0.20575  charge@R100m 0.0032149
+    W_KAPPA=64.3        charge@cap 2.5719  charge@realised 0.4115  charge@R100m 0.0064297
   LANE_KEEP decode frac (goal_lat==0): 0.4000
-  plan_source: cem 0.850  baseline 0.150
-
-== wk151 -- DUMP ABSENT
-
-NO DECISIONS in C:/Users/Admin/refav1_margin/p4out/dump_ccosh_w000
+  plan_source: cem 0.950  baseline 0.050
 
 == l3ladder -- DUMP ABSENT
 
