@@ -2856,3 +2856,21 @@ claims of `D-REFCV5-PLAN-9` and `D-REFCV4-*` remain exactly as open as they were
 ⛔ **Two conflicts are RECORDED AND NOT ADJUDICATED** (`D-RUNGA1-2` vs `D-REFCV5-LADDER-2`'s wording
 *"must call the same `echo_gate.ha0_ext`"*, and `D-RUNGA1-5`'s prereg erratum). Both are Master Mind
 decisions. No document was silently edited to make them agree.
+
+---
+
+### 2026-09-05 — MASTER MIND ADJUDICATION of the two conflicts Rung A1 escalated
+
+⭐ Rung A1 did the right thing twice: it found that following a written instruction literally
+would have **broken the comparison the instruction exists to protect**, and it **escalated
+instead of choosing silently**. Both are now decided. Decision record:
+`Project Steering/Decisions/2026-09-05-mm-decisions.md` §M11, §M12.
+
+| id | claim / decision | status | evidence |
+|---|---|---|---|
+| D-MM-ADJ-1 | ⛔ **`D-REFCV5-LADDER-2`'s wording *"it must call the same `echo_gate.ha0_ext`"* IS AMENDED — the canonical `ha0_ext` for EVERY ARM is the INTEGRATOR, `taniteval/tools/refav1_arm.py::hold_ext_controls`.** The instruction's INTENT was right (*a control re-implemented beside the thing it controls drifts, and then the gate measures the drift*) and its NAMED TARGET was wrong. `D-RUNGA1-2` MEASURED the two derivations disagreeing by **0.540642 m at 2 s** and **1.862923 m at 15 s** against a total refcv3-to-`ha` gap of **0.1423 m** — so the choice decides the verdict, not its precision. The integrator wins on two grounds, the second binding: (1) every banked refav1 number is already published under it, so switching would silently move a published result; (2) ⭐ **it is the same kinematic the candidate fan itself is rolled through** (`refc.py::roll_bank` → `rollout_unicycle`), so a closed-form control would compare the model's INTEGRATED candidates against a DIFFERENTLY-DERIVED baseline and score the difference between two kinematics as model skill. The closed form (`stack/tanitad/eval/echo_gate.py:171`) stays for `echo_gate`'s internal use. ⛔ The two may never be mixed inside one comparison, and no arm may quote `ha0_ext` without naming which derivation produced it | **DECIDED (Master Mind, 2026-09-05) — supersedes `D-REFCV5-LADDER-2`'s named target, not its reasoning** | `Decisions/2026-09-05-mm-decisions.md` §M11; `D-RUNGA1-1`, `D-RUNGA1-2`; pin `repo:stack/tests/test_refcv3_ha0_ext_shared.py` |
+| D-MM-ADJ-2 | ⭐ **`PREREG_REFCV4B_HIERARCHY_EVAL.ERRATUM-1.md` IS ISSUED** — a SEPARATELY STAGED document, not an edit, because the prereg's falsifiable object is its staged blob id. `D-RUNGA1-5` MEASURED that §3's registered `H19-OFF` mechanism (`decoder.maneuver_to_anchor = None`) is **already the state of every factored v3/v4 build**, `refcv4b` included. ⛔ **The registered arm would have run, changed nothing, and been read as "the H19 seam is inert" — which §5 lists as a condition REFUTING the hierarchy thesis.** An ablation that cannot fail, inside a panel whose entire purpose is to be able to fail; fourth instance of that class this week. The corrected mechanism removes whichever anchor-prior heads the build actually carries and REFUSES when there are none. ⛔ **`H-H19-1` and its pre-committed outcomes are UNCHANGED, and NO result is retracted — the panel has not run** | **DECIDED (Master Mind, 2026-09-05)** | `Project Steering/PREREG_REFCV4B_HIERARCHY_EVAL.ERRATUM-1.md`; `Decisions/…-mm-decisions.md` §M12; `D-RUNGA1-5`; `repo:stack/tanitad/refs/refc.py:1214-1221,1572-1581` |
+
+⚠️ **Neither adjudication produces a model number, and neither moves an acceptance bar.** They fix
+*which control the bar is read against* and *which ablation the panel runs*. `D-REFCV5-PLAN-9`'s
+and `D-REFCV4-*`'s claims remain exactly as open as before.
