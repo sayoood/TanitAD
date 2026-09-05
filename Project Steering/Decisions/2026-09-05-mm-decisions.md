@@ -1731,3 +1731,79 @@ patch was half-applied.**
 ⇒ **CLASS: a red test seen during your own multi-step edit is evidence about YOUR EDIT, not about the
 test — and blaming a sibling stream is the cheapest wrong explanation available.** `RESULT.md`,
 `HANDOFF.md` and the register row were all corrected in the same turn.
+
+## M37. ⛔⛔ THE TURN ASYMMETRY IS STRUCTURALLY UNATTRIBUTABLE ON THE BANKED PANEL — a fourth member of the estimator family
+
+### 1. Two independent reasons the banked panel cannot answer it
+
+**(a) The instrument is coarser than the floor it is compared against.** A recall on `n` trials moves
+in steps of **1/n**. The banked panel has `n_L = 11` ⇒ granularity **0.0909**, and `n_R = 8` ⇒
+**0.1250** — ⛔ **both COARSER than the 0.0750 seed floor.**
+
+⭐ **An instrument whose smallest representable change exceeds the noise floor cannot resolve that
+floor in EITHER direction.** *"Real"* and *"not real"* are both inadmissible — stronger than the
+*"too thin to call"* I recorded in `M30`. Target derived from `2/n ≤ 0.0750`: **n ≥ 27 per
+direction, ≥ 5 episode clusters.**
+
+**(b) ⛔⛔ THE CONTRAST IS PERFECTLY CONFOUNDED WITH THE CLUSTERS THE ESTIMATOR RESAMPLES.** On the
+banked panel, decoded `TURN_L` lives in episodes **{1, 6}** and `TURN_R` in **{0, 2, 4, 7}** — **no
+episode carries both.** ⇒ *"the goal is `TURN_L`"* and *"the window is in episode 1 or 6"* are **the
+same variable**, and the paired **episode-cluster** bootstrap resamples exactly those episodes.
+Effective cluster n of **2 and 4**.
+
+⭐ **This is a FOURTH member of the estimator family**, beside *never quote an interval without its
+estimator*, *`overlapping_holdout_se` biases the point estimate*, and the *three variances*:
+**a contrast whose grouping variable is perfectly confounded with the units the estimator resamples
+is not a weak measurement — it is not a measurement.** The CI would be computed correctly and would
+mean nothing.
+
+⇒ ⛔ **`wk15` may NOT be quoted as a lateral fix on turn recall.** `M30` §3's caveat **stands and now
+rests on a stronger reason.** ⚠️ Its **ADE, curvature MAE (0.030982) and heading MAE (15.2704) are
+untouched and remain quotable** — those are not per-direction contrasts.
+
+### 2. ⭐ The panel that CAN answer it is built, and its design targets the degeneracy
+
+Parity untouched — **same 8 episodes**, stratified over the loader's own 535-window grid:
+**30 `turn_left` + 30 `turn_right` + 15 `lane_keep`**, 6 clusters per direction, granularity
+**0.0333** (now finer than the floor). The census **reproduces the banked panel exactly**
+(LK 21 / TL 11 / TR 8) — the control that says the new grid is the same corpus.
+
+⭐ **4 episodes carry BOTH directions (20 L + 18 R inside them)**, against the banked panel's 3 with
+3 + 4 ⇒ the **within-episode contrast — registered as the PRIMARY attribution statistic — has 5× the
+data**, and it is the one statistic the degeneracy cannot touch.
+
+⚠️ **Floor baseline fixed BEFORE any planner ran:** `ha0_ext` reads **0.7333 L / 0.7000 R**, pooled
+−0.0333, within-episode **−0.1917**. ⇒ **the panel leans slightly LEFT-favouring, so a positive
+planner gap runs AGAINST its own floor** — the harder direction, declared in advance.
+
+### 3. Every named mechanism refuted — including its own best hypothesis
+
+Vocabulary, curvature charge, `_clip`, the Kamm cap, the iCEM noise pool, the labeller: **all exactly
+symmetric**, 22 assertions each with a same-breath control. The goal term's scale is symmetric
+(ratio **1.002**).
+
+⭐ It proposed a **speed confound** — left turns are **2.75× slower**, so **13.1×** the charge to be
+*labelled* a turn — and then **refuted it with its own test** (SLOW 0.2000 / FAST 0.2222, flat).
+
+⭐⭐ **And it found the instrument it had declared missing.** It named the proposal-mode seed pool as
+the leading mechanism and said no instrument existed. **It did: `cfg.proposal_k = 1`, so `modes[1:]`
+is empty and the pool is NEVER INJECTED** — and mode 0 leans **left** on every stratum (+0.0704
+GT-left, +0.1174 GT-right), i.e. **backwards** from the observed effect.
+
+⇒ **What remains is the stochastic search itself** — precisely what the queued seed pair measures.
+The observed effect is curvature **retention** (`0/9` on `TURN_L` goals vs `9/13` on `TURN_R`, with a
+perfect `9/9` and `13/13` control at `W_KAPPA = 0`), and it sits **inside** the degeneracy, so it is
+a hypothesis and not yet a finding.
+
+### 4. Discipline worth copying
+
+⭐ It **hardened its own decision rule before any data landed**: the floor is the seed CI's *reach*,
+**floored at 1/n** — because *a measured floor of exactly 0.0 would have made "clears the floor"
+trivially true.* A rule written after seeing a zero would have shipped a false positive.
+
+⚠️ And it repaired `test_refav1_kin_contract.py`, which was **red on a clean HEAD checkout** — a
+pre-existing failure established **by checkout**, not asserted.
+
+⇒ **`ta_wk15_s0/s1` and `ta_ccos_s0/s1` are queued** behind the two sibling arms, gated on **arm
+count, not process count** (`M28` §3), with `raw/turn_asym_read.py` printing the verdict against four
+committed conditions mechanically.
