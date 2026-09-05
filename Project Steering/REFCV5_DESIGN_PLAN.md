@@ -560,7 +560,122 @@ already hold — is a complete path to closing the cross-attention gap without a
 The LiDAR build raises the ceiling; it never blocks the launch.
 
 
-## §8 What refcv5 claims, and what would refute it `[PENDING]`
+## §8 What refcv5 claims, and what would refute it
+
+### 8.0 The shape of every claim in this section
+
+A refcv5 claim is admissible only in this form: **a named quantity · at a named tier · on the named
+surface · against a named control · with a paired episode-cluster CI · in its metric family**. The
+doctrine is not restated here (`EVAL_DOCTRINE.md`, CLAUDE.md, §2 I5); what follows is the *content*
+of the claims, with their refutations committed **now**, before any refcv5 weight exists.
+
+**The surface.** n = **4,823 windows / 141 episodes** of the v7.2 EVAL split (labels md5
+`aa12c948f062181c3297265b51526ec5`), grid `2s`, dt 0.5 s, 4 horizon steps; estimator = episode-cluster
+bootstrap **B = 2,000, seed 0, paired for every delta** (`MODEL_REGISTRY.md` §4.5). ⛔ The corpus is
+**NON-PARITY** (`v2_parity.parity false`), so refcv5 is comparable to **refcv4b and refcv3** (same
+`/root/data`) and to the shared floors — **never** to `refc-base` / `refc-xl`.
+
+**The bar, quoted from the artifact, not from prose** (MEASURED, `taniteval/results/refcv3-40284-openloop.ARM.json`,
+md5 of the JSON `5cfe3258c18871218bd85d691904eb20`; `D-REFCV3-40284`):
+
+| arm | ADE 0–2 s (m) | FDE (m) | what it is |
+|---|---|---|---|
+| ⭐ **`ha`** | **0.2996** [0.2755, 0.3278] | 0.6588 [0.6044, 0.7192] | hold-action: the `(a, steer)` closing at t0, held — **the bar** |
+| `oracle_sel` (T0) | 0.3668 [0.3437, 0.3914] | 0.7770 | GT-nearest anchor's refinement — a ceiling, not an arm |
+| `os` (refcv3 @ 40,284) | 0.4419 [0.4098, 0.4743] | 0.9288 | the model, own choice, oracle nav |
+| `os_navzero` | 0.4659 [0.4310, 0.5010] | 0.9655 | **the deployment condition** |
+| `ha0` | 0.6723 [0.6007, 0.7469] | 1.4029 | constant velocity — beating it is **necessary, not sufficient** |
+
+⛔ **`ha0_ext` is not yet readable on this surface** — WP-0.2 (§7.3): `refcv3_arm.py:961` is
+`arms = ["os", "ha", "ha0"]`, and the banked ARM JSON's `arm_keys` has six entries, none of them
+`ha0_ext`. **Until WP-0.2 lands, every `ha0_ext` clause below is a claim we cannot yet read**, and
+saying so is part of the pre-registration. On the *compliance* readout `ha0_ext` already exists
+(`nav_compliance.py:1125`) and binds today.
+
+⭐⭐ **The one framing fact that decides what refcv5 may claim at all.** On this surface
+`oracle_sel − os` = **−0.0751** [−0.0884, −0.0618] and `os − os_navzero` = **−0.0239**
+[−0.0428, −0.0089]. **Perfect selection plus the oracle route is 0.099 m — the gap to `ha` is
+0.1423 m.** ⇒ **The deficit is in the FAN, not in selection and not in routing.** Any refcv5 claim
+built only on §5's selector or on nav wiring is, by arithmetic, incapable of clearing the bar; the
+fan levers (§4 sampler, §1.2 #13/#14 vocabulary, §1.3 #19/#20 grounding) are the ones that can. This
+is also why §7 puts the *free* selection work first and still calls the sampler and the grounding the
+load-bearing rungs.
+
+### 8.1 The claims, with their refutations
+
+| id | CLAIM (both outcomes committed now) | REFUTED IF | ties to |
+|---|---|---|---|
+| **C1 — the headline** | refcv5's `os` **beats `ha`** on ADE 0–2 s with a paired CI **excluding 0 in the right direction**, on the 4,823-window surface — the bar refcv3 never cleared (+0.1423 [+0.1187, +0.1658] the wrong way at 40,284, and +0.1803 at 30,000: 10,284 further steps closed **21 %** and did not close it) | `os − ha` ≥ 0 with a separated CI, **or** unseparated (a tie with a trivial control is not a capability claim). ⚠️ A win on ADE alone does **not** establish C1: it must hold **jointly with C2** | `D-REFCV3-40284`, `H-ECHO-1` |
+| **C2 — the four families** | at **T1**, refcv5 beats `ha` on **LONGITUDINAL** (target-speed accuracy, headway / time-gap / TTC to the lead) and **LATERAL** (heading, curvature, yaw-rate, cross-track), **each family separately, never pooled**, and is not separated-worse on any family | any family separated-worse than `ha`, **or** the LONGITUDINAL family unimproved — 92.2 % of the deficit is along-track (`D-REFCV3-AXIS1`) and 88.7 % of the oracle gap is longitudinal, so a refcv5 that improves only cross-track has not addressed its own defect | §2 I5, `D-REFCV3-AXIS1` |
+| **C3 — the echo gate** | the deployed arm reads **`READS_BOTH`** on `stack/tanitad/eval/echo_gate.py` — scene degradation **and** ego degradation both separated, the `H-ECHO-8` signature | `ECHOING` (ego separated, scene not) ⇒ ⛔ **the arm is refused whatever its ADE**. MEASURED precedent: `ego_dropout 0.0` reads `ECHOING` *and* is the best 6 s displacement arm (13.27 m vs the `READS_BOTH` arm's 17.86) — **an ADE-scored gate would have selected the echoing arm** | `H-ECHO-8`, `H-EGO-LIT-4` |
+| **C4 — the fan, not the pick** | refcv5's **oracle-in-fan at equal N** improves separated vs refcv4b's, and `fan_floor@k` (k = 1, 5, 10) rises without the fan-collision-vs-replay rate rising | oracle-in-fan flat ⇒ the sampler/vocabulary levers bought coverage nowhere and C1 (if it happened) came from selection — which §8.0's arithmetic says cannot reach the bar; report it as such | `H-DDA-3`, `H-DDA-4`, `D-REFCV4-VOCAB1` |
+| **C5 — the mechanism is a sampler** | with `sampler="ddim"` the decoder is a **diffusion model by its own definition**: a noise schedule exists, two calls at different seeds differ, diversity D rises, and `σ ≡ 0, t = 0` reproduces the deterministic decoder **bit-for-bit** | the σ ≡ 0 identity fails ⇒ the implementation is wrong, not the idea; two seeds identical ⇒ the sampler is inert and `D-REFC-DDAUDIT-1`'s verdict ("an unrolled 3-pass anchor-refinement regressor") still stands for refcv5 and the registry must keep saying so | `D-REFC-DDAUDIT-1`, `H-DDA-3` |
+| **C6 — flyability is not traded away** | the sampled fan's Kamm(μ = 0.7) violation rate does not exceed the deterministic fan's, and **selected-trajectory jerk does not rise** above refcv4b's | jerk rises separated. Context: refcv4b @ 9,500 already reads **2.42 m/s³** kept / **3.65** withheld against the human's **0.86** and `ha`'s **0.03** (`D-REFCV4B-EGODROP2`). A sampler that buys ADE with jerk is buying the wrong thing | §2 I4, `D-REFCV4B-FLYLOW1`, `D-REFCV4B-EGODROP2` |
+| **C7 — the hierarchy is live, not a training-time story** | the post-training ablation panel of `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3–§4, run on refcv5: **H-NAVC-1 AND H-NAVC-2 AND H-SEAM-1**, with the deliberate-regression (frame-blind) arm **FAILED by the echo gate** | any of the named failure modes: **PATH_FOLLOWS_WITHOUT_GOAL** (H-NAVC-1 ✓, H-NAVC-2 ✗ — nav reaches the operative layer through `m` and *not* the strategic decision, which is what refcv4b reads at step 9,500 and what refcv3 measured); **SEAM_FAILURE_RIGHT_GOAL_WRONG_PATH**; or E7-off / E9-off / H19-off **all** unseparated ⇒ the seams are inert at eval and **the registry may not call the hierarchy "live"** | `D-NAVCOMP-1..3`, `H-NAVC-1..3`, `H-SEAM-1`, `H-H19-1`, `H-CONS-1`, `H-SEL-1`, `D-REFCV4-NAV-WIRING` |
+| **C8 — compliance clears its nav-blind floor** | plan-compliance with the TRUE command drops ≥ **0.10 absolute** under **both** nav-SHUFFLE and nav-ZERO (separated, paired), the changed subset follows the **FED** command under nav-FLIP, and the rate clears **`ha0_ext`** on the same windows (H-NAVC-3) | the shuffle/zero deltas unseparated ⇒ the `nav_true` rate is scene coincidence and may not be cited; compliance below `ha0_ext` ⇒ refcv5 follows nav **less often than a constant-curvature extrapolation of its own state complies by coincidence** — nav-following exists and is weak (refcv4b @ 9,500: **0.390 vs 0.418**, i.e. H-NAVC-3 **FALSE** at 23 % of training) | `D-NAVCOMP-3`, `H-NAVC-3` |
+| **C9 — each adopted mechanism earned its place** | every lever in the refcv5 bundle passed its own **one-lever rig arm** (§7.2), and the bundle equals a **pinned frozenset** the preflight refuses to deviate from | a lever is in the bundle without a passed arm ⇒ the run is an unattributable bundle like refcv4b's five-lever arm, and its registry row must say so in the *Role* field rather than in a caveat | §7.4, `REGISTERED_DELTA_KEYS_V4` precedent |
+
+**Margins, fixed here and not renegotiable afterwards:** 0.10 absolute on compliance deltas; 2 %
+relative on ADE@6 s; family deltas separated. **A separated CI on a smaller margin is a real but
+unusable difference and is reported as such** — never rounded up into support
+(`PREREG_REFCV4B_HIERARCHY_EVAL.md` §4).
+
+### 8.2 The conjunction — and the four ways refcv5 can "win" and still be refused
+
+⭐ **C1 alone is not the claim.** The claim is **C1 ∧ C2 ∧ C3 ∧ C6** for capability, and
+**C7 ∧ C8** for the hierarchy thesis. The programme has already measured all four ways an arm can
+post a good headline and still be wrong, so each is named as a refusal, not a caveat:
+
+1. **The ADE win with an echoing arm.** MEASURED (`H-ECHO-8`): the `ego_dropout 0.0` arm is the best
+   6 s displacement arm in its panel *and* reads `ECHOING`. ⇒ **C3 refuses it.**
+2. **The ADE win bought with jerk.** MEASURED (`D-REFCV4B-EGODROP2`): jerk 2.42 / 3.65 vs the human's
+   0.86. ⇒ **C6 refuses it.**
+3. **The ADE win from selection.** By §8.0's arithmetic, selection + oracle nav cannot span the
+   0.1423 m gap; an ADE win with a flat oracle-in-fan is a *selection* result mislabelled. ⇒ **C4
+   catches it, and the registry row must say "selection", not "driving".**
+4. **The pooled win that hides a family.** ⇒ **C2 refuses it.** And `D-REFCV3-40284b` is the
+   precedent: the pooled +0.1423 is the model's *best* case — the loss is **2.87× larger** on
+   manoeuvre windows, worst on `brake_stop` (2.31×, +0.4930 on 13.08 % of windows). **refcv5's
+   headline must be reported stratified**, or it repeats a reading that was already corrected once.
+
+### 8.3 What would refute the *programme's* thesis, not just this arm
+
+These are the sharper statements, and they are worth more than C1.
+
+| # | refutation of the thesis | the reading that establishes it | consequence |
+|---|---|---|---|
+| **R1** | **The hierarchy conditions nothing.** E7-off, E9-off, g_str-ZERO, g_str-SHUFFLE and H19-off are **all** unseparated on every family and on compliance, on a fully-trained refcv5 with the seams open | `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3, run on refcv5 | the three-level hierarchy is a training-time regulariser at best. `PROGRAM_OVERVIEW.md` and the paper must say so; the USP claim (§2 I1) is withdrawn, not softened |
+| **R2** | **The anchored-vocabulary class is the ceiling.** refcv5 clears `ha0` and loses to `ha` *again*, with oracle-in-fan improved and `oracle_sel` still above 0.2996 | C1 fails **while** C4 succeeds | the fan can be made to cover the answer and the model still cannot pick or refine to it ⇒ the binding constraint is **perception**, not vocabulary (the residual risk `D-REFCV4-GATE1` already named: `os` 0.4419 and `oracle_sel` 0.3668 differ by only 0.0751 off a 1.0838 m raw anchor) |
+| **R3** | **Diffusion adds nothing here.** C5 holds (the sampler is real) and C4 fails (oracle-in-fan at equal N flat, diversity up) | `H-DDA-3`'s committed failure branch | truncated diffusion is a *diversity* mechanism whose diversity we cannot cash; keep the deterministic refiner and **rename it honestly** in the registry. This is a publishable negative about DD's transfer to a control-space vocabulary |
+| **R4** | **The grounding gap was not the gap.** E-DDA-1 and E-AGT-1 both unseparated on the LONGITUDINAL family at the rig, and E-BEV-1 too after WP-11 | `H-DDA-1`'s failure branch, twice | the PV tokens already carry the geometry; the cross-attention deficit the audit found is real in *source* and inert in *behaviour*. ⇒ do not spend on BEV lifting, and say so |
+| **R5** | **Vision-only at this scale cannot beat a hold-action control on this corpus.** C1 fails across refcv3, refcv4b and refcv5 while C3 holds (`READS_BOTH`) and every fan/selection lever is exhausted | three arms, one bar | this is the honest form of the programme's hardest possible negative, and it is a *result*: a sub-300 M vision-only planner on 4,572 clips of PhysicalAI-AV does not clear a trivial dynamics extrapolation at 2 s. It would redirect the programme to data scale, to closed loop (AlpaSim), or to the VLA extension (§9) — and it is why `ha`/`ha0`/`ha0_ext` are recomputed on every arm rather than being quoted from this document |
+
+### 8.4 What may NOT be cited as support for any refcv5 claim
+
+Carried from `PREREG_REFCV4B_HIERARCHY_EVAL.md` §5, `EVAL_DOCTRINE.md`, and this programme's own
+retractions:
+
+- ⛔ **T0 numbers as capability.** `oracle_sel`, oracle-in-fan and oracle-in-vocabulary are **ceilings**;
+  `anchor_acc`, `goal_str` and any `metrics.jsonl` value are **T0 loss-surface diagnostics** (C1).
+- ⛔ **MODEL-FREE gates compared to achievements.** A raw-anchor ceiling is never set against `ha`,
+  `os` or `oracle_sel` (`GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md`; the error that nearly killed refcv4).
+- ⛔ **A high `nav_true` compliance rate on its own** — without its shuffle **and** zero controls it is
+  two named criteria violations (registry v2.6.0), and it can be scene coincidence.
+- ⛔ **The RL reward as a result.** The reward is a training signal; the claim is T1 on the four
+  families (§6.1).
+- ⛔ **A rig-rung number as a model claim** (`refc_v3.py:511-514`).
+- ⛔ **`overlapping_holdout_se`** in any form — it biases the point estimate as well as the interval.
+- ⛔ **A learning-curve exponent** without its fit window, R² and n; and never as a restart argument.
+- ⚠️ **Any refcv4b number from the unpatched `refcv3_arm.py`** (`D-NAVCOMP-2`: `run_dump` passed no
+  `ego_state`, starving an `ego_state_inject` model's goal path). refcv5 inherits E11' and therefore
+  inherits this trap; the manifest field `ego_state_fed` must read true on every refcv5 dump.
+
+### 8.5 The claim register
+
+Each row above is registered in `GOALS_AND_CLAIMS.md` (§10) as `D-REFCV5-PLAN-*` with status
+**OPEN — pre-registered, both outcomes committed**, and is closed by the artifact named in its row —
+not by a summary, a report, or this document.
+
 
 ## §9 Interface for the VLA extension (sibling stream) `[PENDING]`
 
