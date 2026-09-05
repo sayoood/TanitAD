@@ -1,6 +1,6 @@
 # H-REFAV1-SURFACE-1 — the paired delta and the cost-surface weight sweep
 
-**status: IN PROGRESS — done: PHASE 1 (§1) the decision-grade four-family paired bootstrap (refutation UPHELD; the cos planner's lateral row is a WINDOW-LEVEL identity with constant velocity); PHASE 2 SPEC pre-registered with the SELECT/SCORE split banked before any weight was computed; PHASE 2 STAGE A (§2) the 59-setting exhaustive screen at zero GPU — W_JERK is INERT on 24 of 26 candidates and functions only as a switch that turns the SEARCH off; the decoded goal is DIRECTIONALLY RIGHT (0.778 [0.625, 0.923], excludes chance) but commits to a turn on only 0.205 [0.128, 0.293] of the windows where GT turns; cv's argmin share is 0.507 at ALL 59 settings, so half the grid is unreachable by any re-weighting. / next: STAGE B (B1 pure-goal weights + B2 the T0 oracle-goal discriminator) — prepared, SCORE-only views built on Thor, BLOCKED ON GPU ONLY (Thor is running the chord regression arm, the dev box a sibling's panel; neither displaced).**
+**status: PHASE 1 DELIVERED · PHASE 2 STAGE A DELIVERED · STAGE B ARMED AND SELF-COMPLETING — done: (§1) the decision-grade four-family paired bootstrap — the ccos refutation is UPHELD and the shipped cos planner's lateral row is a WINDOW-LEVEL identity with constant velocity; (SPEC) phase 2 pre-registered with the SELECT/SCORE split banked before any weight was computed; (§2) the 59-setting exhaustive screen at ZERO GPU — W_JERK is inert on 24 of 26 candidates and functions only as a switch that turns the SEARCH off, the decoded goal is directionally right (0.778 [0.625, 0.923], excludes chance) but commits to a turn on only 0.205 [0.128, 0.293] of the windows where GT turns, and cv wins the argmin on 0.507 of windows at ALL 59 settings so half the grid is unreachable by any re-weighting; (§3) Stage B armed on Thor behind the running chord regression arm, with the finishing sequence written out. / next: pull `dump_B1_puregoal` when `B1.DONE` appears (~3 h after the chord arm ends), run §3c, and read the answer against the outcomes committed in SPEC.md §5.**
 
 Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step **21,109** ·
 **T1** (self-action open loop) for every planner arm; **T0** for `ol` (world-model diagnostic only).
@@ -259,3 +259,96 @@ arm (B3, 42 min in of ~3 h at the time of writing) and the dev-box RTX 4060 is r
 withheld-bank panel. Neither is displaced. The SCORE-only episode and cache views
 (`/home/nvidia/refav1_ccos/score_{eps,cache}`, 71 + 71 symlinks, verified) are already built so B1
 and B2 start the moment Thor frees.
+
+---
+
+## 3. HANDOFF — Stage B is armed on Thor and finishes without this session
+
+⭐ **Nothing below needs re-deriving. The launcher is running; a successor pulls and analyses.**
+
+### 3a. What is running right now
+
+| what | where | state at hand-off |
+|---|---|---|
+| **B3 `chord_shipped`** ⛔ deliberate regression | Thor, PID 3052445 | 47/141 episodes at 59 min ⇒ ~3 h total. Writes `/home/nvidia/refav1_ccos/{dump_chord_shipped, rec_chord_shipped.json}` |
+| **B1 + B2 launcher** | Thor, PID 3058070, `thor_stageB.sh` (md5 `a3d47399e6f07c11b6477a1eecc0d70c`, verified both ends, `bash -n` clean) | waiting on PID 3052445 **by explicit PID** — never `pgrep -f`, which self-matches. Log `/home/nvidia/refav1_ccos/stageB.log` |
+| sibling panel | dev-box RTX 4060 | not displaced |
+
+**The launcher's own guards:** it sleeps 60 s after the chord PID disappears, then counts live arms
+with a bracketed pattern and emits an **opaque marker** (`ZZOTHERARMS-<n>ZZ`) so a client-side
+filter can never match its own command text; it **refuses (exit 3)** if any arm is running.
+
+### 3b. What B1/B2 is
+
+One pass, `--with-oracle-goal-arm`, so both arms come out of it:
+
+* **B1 `cl`** — **T1** — `--cost-metric ccos --cost-weights 0.0,0.0,64.29715042415070`, the
+  pure-goal surface chosen by the SPEC's pre-registered rule on the SELECT half.
+* **B2 `cl_oraclegoal`** — ⛔ **T0 ORACLE**, the true future field as the planning goal, stamped
+  T0 by the tool itself (`refav1_arm.py:188`). **An upper bound. Never a deployable arm.**
+* Run on the **SCORE half only** — `/home/nvidia/refav1_ccos/score_{cache,eps}`, **71 + 71**
+  symlinks built and verified (`ZZ71-71ZZ`), plus `index.json`. The weights were chosen on
+  SELECT, so this is the held-out read the SPEC committed to.
+* Outputs `/home/nvidia/refav1_ccos/{dump_B1_puregoal, rec_B1_puregoal.json, B1.EXIT, B1.DONE}`.
+
+⚠️ **Expect ~3 h** (71 episodes × 2 plan arms ≈ one full-grid single-arm run).
+
+### 3c. The exact finishing sequence (zero GPU, ~10 min)
+
+```bash
+# 1. is it done?  (opaque markers; never grep the raw stream for your own pattern)
+ssh -n tanitad-thor 'echo "ZZ$(cat /home/nvidia/refav1_ccos/B1.EXIT 2>/dev/null)ZZ"; \
+  echo "ZZEPS-$(ls /home/nvidia/refav1_ccos/dump_B1_puregoal/ep*.npz 2>/dev/null | wc -l)ZZ"'
+
+# 2. pull (tiny — the ccos dumps were 2.3 MB each)
+cd C:/Users/Admin/refav1_sweep/dumps
+ssh -n tanitad-thor 'cd /home/nvidia/refav1_ccos && tar cf - dump_B1_puregoal | gzip -1' > b1.tgz
+tar xzf b1.tgz
+ssh -n tanitad-thor 'cat /home/nvidia/refav1_ccos/rec_B1_puregoal.json' > ../rec/rec_B1_puregoal.json
+
+# 3. the four families, paired, against the banked floors AND against cos, on the SCORE windows
+#    (the tool refuses unless ws/v0/g/clip_index are bit-exact, so it will REFUSE a cos dump on
+#    the full grid — slice cos to the SCORE episodes first, or pair only inside the B1 dump,
+#    which already carries ha / ha0 / ha0_ext / ol on those same windows)
+python "<repo>/TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-surface-sweep/tools/paired_delta_refav1.py" \
+  --dump B1=C:/Users/Admin/refav1_sweep/dumps/dump_B1_puregoal \
+  --arm cl --lead-block C:/Users/Admin/refav1_sweep/b1_eval_lead_block.npz \
+  --stack C:/Users/Admin/tanitad-wt/stack --taniteval C:/Users/Admin/tanitad-wt/taniteval \
+  --n-boot 2000 --out raw/paired_B1.json --md raw/paired_B1.md
+#    …then again with --arm cl_oraclegoal for B2 (⛔ stamp every B2 number T0).
+
+# 4. echo gate 1 + criteria checker on the record
+python "<ccos-eval>/tools/run_echo_gate.py"   # references ha, ha0_ext (required), ha0
+python "<repo>/tools/criteria_check.py" raw/rec_B1_puregoal.json
+```
+
+### 3d. How to read the answer — the outcomes were committed in `SPEC.md` §5, before the data
+
+| what B1/B2 shows on the SCORE half | the committed verdict |
+|---|---|
+| B1's four families beat `ha0_ext` paired-separated, echo gate holds | **the surface IS the lever** — report the setting |
+| B1 does not, **but the T0 oracle-goal B2 does** | **the GOAL, not the weights, is binding** — refutes `H-REFAV1-SURFACE-1`, and the next work is the goal source |
+| **neither** | ⛔ **the iCEM planner over this world model is not repairable by re-weighting or re-goaling — the line closes.** State it plainly; it is a real result about the PLANNER, and the world model underneath it is sound |
+| B1 wins some families and loses others | ⛔ **NOT a success.** Pre-declared in `SPEC.md` §5 so it cannot be reported as one |
+
+⭐ **Stage A already tilts this**, without spending the GPU: the goal commits to a turn on only
+**20.5 %** of the windows where the car turns, and `cv` wins the argmin on **50.7 %** of windows at
+**every one of the 59** weight settings. If that survives into B1's four families while B2's oracle
+goal moves them, the answer is outcome 2 — and the programme's next question is the tactical head's
+goal recall, not the cost weights.
+
+⚠️ **And the standing scope statement applies to whatever comes out:** this is the PLANNER over the
+world model. The world model responds correctly to turn actions (TURN_L +0.502 [+0.383, +0.579],
+TURN_R −0.387 [−0.498, −0.267], separated, banked). **No verdict here may be restated as a verdict
+about the world model.**
+
+### 3e. Two defects found in passing, escalated rather than worked around
+
+1. ⛔ **`Research/2026-09-05-refav1-ccos-eval/tools/insert_rows.py` can MANGLE
+   `GOALS_AND_CLAIMS.md`.** It picks its line ending with `"\r\n" if "\r\n" in s else "\n"`. The
+   register is **MIXED** — MEASURED 2026-09-05: **2,776 LF and 24 CR** — so the test is True and the
+   split yields **25 "lines"** for a 2,776-line file; a write would re-join the whole register on
+   CRLF. `tools/register_insert.py` here splits on LF only, which round-trips the bytes whatever the
+   mix. **The predecessor's tool should be fixed or retired.**
+2. ⚠️ **A searched planner arm is a cross-box REPLICATE, not an identity** (§1). Any future arm
+   comparison must use dumps from the SAME box, or state the cross-box delta.
