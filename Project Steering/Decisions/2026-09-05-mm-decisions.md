@@ -635,3 +635,85 @@ straights).
 out, "refav1 does not drive" is a statement about a planner whose curvature penalty was switched
 off** — which is worth saying plainly, because it is both the honest scope and the most hopeful
 open question the arm has.
+
+## M23. The RL exit is FAILURE as committed — and the product is the thing that fell out of it: a ZERO-TRAINING kinematic gate
+
+### 1. The formal exit stands: FAILURE
+
+SPEC 7's committed SUCCESS text required feasibility to improve **and** ADE not to regress past the
+replicate floor. MEASURED at **T1** (4,823 windows / 141 episodes, `void: false`, 0 dropped):
+`ade_m` **+0.0362 [+0.0261, +0.0460] separated** ⇒ **the ADE guard fails.** ⛔ The committed rule is
+reported as written and the exit is **FAILURE**. *(It is 14× gentler than the composed-reward arm's
++0.5014 m, which is context, not a pass.)*
+
+⭐ **And the replicate did its job again:** it killed **four** metrics a single seed would have
+shipped — including `top32_infeasible`, the metric the *previous* package proposed shipping on,
+which spans **13.6× across three runs, two of which share a seed**. Only `fan_peak_g_mean` survives:
+**−0.0929 / −0.1158** against a **0.0229** seed floor, with `ctrl_null` drifting **+0.1343 the other
+way**, and three independent runs all negative.
+
+### 2. ⭐⭐ THE PRODUCT — and it is not the veto
+
+Split by object, because the axes disagree: the **emitted fan** is safer (−0.098 g, three runs,
+clears both floors); the **driven path is not** (`sel_peak_g` WORSENED, +0.0155/+0.0080 against a
+0.0075 floor).
+
+⇒ **But the driven path IS safer under a top-2 KINEMATIC GATE that requires no training at all:**
+`sel_envelope` **0.1062 → 0.0729 (−31 %)**, `sel_peak_g` **−20 %**, and `ade_m` **+0.0037, NOT
+separated** — using **only the candidate's own waypoints**: no scene input, no new perception, no
+gradient step.
+
+⇒ **Decision: PROMOTE it to a pre-registered arm, do NOT ship it.** It was found **post-hoc**, by a
+stream that was not looking for it, and this programme has a standing rule that a separated result
+from one seed is necessary and not sufficient. ⛔ Its own SPEC must be banked **before** the
+validating arm runs, carrying: both outcomes committed, an **inference-seed replicate**, the
+four families, and a **deliberate-regression control** (the gate disabled must reproduce the
+ungated numbers bit-identically). ⚠️ A post-hoc finding promoted without that ceremony is exactly
+how `top32_infeasible` nearly shipped.
+
+### 3. The reward is NOT disqualified, and the attribution names one term
+
+P1's disqualification branch did **not** fire. MEASURED over **30,720 candidate scores** (240
+windows / 121 episodes), per-window Spearman, episode-cluster bootstrap:
+**ρ(default reward, envelope) = −0.5367 [−0.5581, −0.5138]**, `kamm_over` −0.5790, `contact`
+−0.6326 — **all negative, all separated** ⇒ the reward ranks violating candidates **lower**, which
+is the direction we want. Controls read their known values (self **+1.0000**, constant UNDEFINED
+240/240, random **−0.0138** = the probe's own bias floor).
+
+⭐ **`progress` is the ONLY positive term** — ρ(progress, `peak_g`) **+0.2900**, `ttc_below`
+**+0.4697**, `contact` **+0.3286**. And the arithmetic prices the obvious fix at zero: **`feasibility`
+×4 moves ρ(envelope) by 0.001; deleting `progress` moves ρ(`peak_g`) by 0.27.** ⇒ **Turning the
+feasibility weight up is a 270× worse lever than touching the term that actually rewards violation**
+— which is why `M20`-era instinct ("add a feasibility term") was wrong, and why the arm that had
+`feasibility: 0.5` got worse.
+
+### 4. ⛔ A "NULL" ARM WITH A LIVE OPTIMISER IS NOT A NULL — AdamW normalises the gradient away
+
+MEASURED: with the veto now explicit, `ctrl_null` reads `veto_rate_mean` **0.0000 exactly** (it read
+0.0897 this morning) — and it **still moved all 71 trainable tensors** (mean |Δθ| 3.1e-05) and
+**separated 35 of 57 metrics**, more than the 14/57 that fired the previous VOID gate.
+
+⇒ The mechanism: the only live loss is the trust region at ~**1e-10 m²**, and **AdamW normalises by
+the gradient's own scale**, so a vanishing loss still produces unit-scale updates. ⛔ **`ctrl0`
+(lr = 0) is the ONLY arm that cannot move**, and it is therefore the only admissible zero-lever
+floor on this rig.
+
+⭐ **The general rule, which belongs beside the estimator family:** *a control defined by zeroing a
+LOSS is not a null under an adaptive optimiser; only a control that zeroes the UPDATE is.* Same
+shape as the three variance questions riding on one interval — the arm is arithmetically what it
+claims and answers a different question than the one being asked of it.
+
+### 5. What the veto is actually worth, and the real work item
+
+⛔ **The veto addresses ~2.7 % of the gap.** MEASURED: the frozen anchor vocabulary is drivable at
+**0.48 g** while the decode emits **4.11 g** — **8.56×** — so the infeasibility is manufactured
+downstream of the vocabulary. ⇒ **The real work item is a FEASIBILITY-AWARE DECODE**, not a better
+reward and not a bigger veto. That is now the deploy-side successor to this line.
+
+### 6. Retractions this stream logged against itself: #26, #27, #30
+
+⭐ **#30 is the one worth carrying:** a λ-sweep's identity control **passed while interpolating the
+wrong tensor** — *the control checked the arithmetic, not the object.* ⇒ **A control must assert
+WHICH object it operated on, not only that the operation was self-consistent.** This programme's
+controls have caught many things today; this is the first time a control was itself the defect, and
+it generalises to every identity/parity check we run.
