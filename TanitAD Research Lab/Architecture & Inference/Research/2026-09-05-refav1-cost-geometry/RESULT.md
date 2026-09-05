@@ -779,6 +779,60 @@ already queued behind `l3ladder`;** its pre-registration (§2, §3) is unchanged
 `W_KAPPA`'s straight-window advantage over the cap (+0.1957 vs +0.4304 against
 `ha0_ext`) says the two are attacking *different halves* of the same 21 windows.
 
+
+### 7.7 ⛔⭐ L3 ANSWERED — A NULL THAT SETTLES THE QUESTION: THE CANDIDATE SET WAS NEVER THE BINDING CONSTRAINT, THE COST WAS
+
+`l3ladder` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`
+— **10 extra iteration-0 candidates at R 500 / 200 / 100 / 50 / 25 m**, both signs,
+the candidate set the only variable against `ccos_argmax`. `canonical_controls` and
+the goal field are untouched, so the arms are comparable window-for-window.
+
+| | `ccos_argmax` | **`l3ladder`** | seed floor (§4) |
+|---|---|---|---|
+| ADE m | 1.3272 | **1.3236** | 0.0607 — **the delta is 0.0036, 17x BELOW it** |
+| curvature MAE 1/m | 0.055369 | 0.053726 | — |
+| EXACTLY-constant series | 0.7750 | **0.7750** *(unchanged)* | — |
+| turn recall L / R | 0.3636 / 0.75 | **0.3636 / 0.75** *(identical)* | — |
+| GT-turn ADE | 0.9195 | 0.9258 | — |
+| GT-straight ADE | 1.6960 | 1.6835 | — |
+
+⛔ **AND THE DECISIVE ROW IS THE HISTOGRAM: NOT ONE WINDOW OF 40 REALISES A RUNG.**
+
+```
+l3ladder     0.0000 x10  0.0800 x21  0.1009  0.1189  0.1253  0.1270  0.1274  0.1505  0.1508  0.1686  0.1782
+ccos_argmax  0.0000 x10  0.0800 x21  0.0766  0.0888  0.1031  0.1406  0.1414  0.1747  0.1909  0.2000 x2
+wk15         0.0000 x18  0.0800 x9   0.0115  0.0120  0.0140  0.0180  0.0207  0.0247  0.0282  0.0306  0.0327  0.0338  0.0444  0.0489  0.0530
+```
+
+The rungs are **0.002, 0.005, 0.01, 0.02, 0.04**. `l3ladder` realises **nothing
+below 0.08** except the ten exact zeros — its extra mass is all *above* 0.10. The
+`0.0000 x10 / 0.0800 x21` spine is bit-for-bit the uncapped arm's.
+
+⭐ **PUT IT BESIDE §7.3.1 AND THE ANSWER IS COMPLETE.** `wk15` produced intermediate
+curvatures **0.0115–0.0530 — exactly the band the rungs occupy — with NO LADDER AT
+ALL**, purely because the penalty gave the search a reason to prefer them.
+`l3ladder` hands the search those very magnitudes and it **never picks one**,
+because with `W_KAPPA = 0` the cost is indifferent between a rung and the
+goal-aligned canonical seed, and the seed wins on goal alignment.
+
+⇒ **The binding constraint was never the candidate set. It is the cost.** That
+retires L3 as a lever in its own right and confirms the §7.3.1 re-reading of
+`D-REFAV1-DRIVE-GATE` from the other direction: the gate is not a wall around the
+reachable set, it is an absence of preference.
+
+⚠️ **And the ladder is not free.** The tactical rows move the wrong way — `lane_keep`
+recall **0.7143 → 0.5714** (~2x the 0.0750 floor) and goal FDE **2.9639 → 3.3200**
+— which is exactly what this package's own `--seed-kappa-ladder` docstring warned
+before the arm ran: *"with `W_KAPPA = 0` a wider curvature set can only add ways to
+be wrong."* A warning that survives its own experiment is worth more than one that
+was never tested.
+
+⇒ **The informative combination is therefore `ladder + W_KAPPA`, not `ladder`
+alone and not `ladder + a CONSTRAINT`** — a cap can forbid a curvature but cannot
+make a rung *attractive*. That arm (`wk15_ladder`: `ccos`, `W_KAPPA = 15.11245`,
+the same five rungs) was queued the moment this null landed and is one variable
+against `wk15`.
+
 ---
 
 ## §8 — Deliverable manifest
