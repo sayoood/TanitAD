@@ -1875,6 +1875,103 @@ o1ctrl30k:    act_emb 0.3021 → film0 0.0144 (21.0× drop) → block0 0.0038  (
 
 ## New DECIDED / MEASURED rows
 
+### `D-REFCV5-WP4-CONFIG-ONLY` — ⛔⛔⛔ **THE refcv5 SAMPLER AND AGENT SEAMS ARE NOT IN THE MODEL. `M25`'s "CODE-COMPLETE" is FALSE on this branch.**
+
+Found while doing exactly what the brief asked — *"say what arm demonstrates the mechanism is live
+and not a skeleton again"*. **It is not live.**
+
+**MEASURED 2026-09-05 on `agent/arch-inf-20260803`, six independent probes, each with a
+same-breath control** (`raw/wp4_absence_probe.txt`):
+
+| probe | result |
+|---|---|
+| `refc.DecoderConfig(sampler="ddim")` | ⛔ `TypeError: DecoderConfig.__init__() got an unexpected keyword argument 'sampler'` (CONTROL: the same call **without** `sampler=` builds fine) |
+| `stack/tanitad/refs/refc.py`, 154,975 B (**CONTROL: 54 `def ` — the file WAS read**) | `control_head` **0** · `sampler` **0** · `cross_agent` **0** · `agent_head` **0** · `u0` **0** · `feasible_decode` **5** |
+| `HEAD:stack/tanitad/refs/refc.py` (**CONTROL: 2,629 lines read**) | `control_head` **0** |
+| the BUILT model, seams OFF **and** under `--sampler ddim --w-u0 1.0` | `core.agent_head` / `core.agent_embed` / `core.agents` / `decoder.control_head` / `layer.cross_agent` **all ABSENT in both** (CONTROL: `core.decoder` present) |
+| `stack/scripts/refc_v3_train.py` | `control_head` appears **only inside an error-message string**; `cross_agent` only as a config **set** and a **stamp**; `refc_sampler` and `build_agent_head` are **never called** |
+| the programme's OWN tests | `test_refc_sampler.py` **12 failed / 14 passed**; `test_refc_v3_refcv5_wiring.py` **2 failed / 9 passed** |
+| **7 copies of `refc.py`** across every local tree (`tanitad-wt`, `_runstack`, `tanitad-mirror`, `refcv4b_repo`, `navcomp/wt`, `run_refcv4v/repo`, `tanitad-det`) | `control_head` **0 in all 7** |
+
+⇒ **`core.decoder.sampler = "ddim"` succeeds only because `DecoderConfig` is not frozen** — it
+creates an **ad-hoc attribute that nothing reads**. `_seam_stamp` reads it straight back, so
+`config.json` records `sampler: "ddim"`, `sampler_space: "control"`, `sampler_steps: 2` **for a model
+with no denoiser**, and the four argparse guards fire correctly, which makes the seam *look*
+rigorously defended.
+
+⇒ **Launching the DD-v1 arm today would train refcv4b and file a `config.json` claiming a
+control-space DDIM sampler** — precisely the *"plausible-looking WRONG experiment"* the trainer's own
+guard text warns about, three lines above the guard that cannot see this.
+
+⭐⭐ **ROOT-CAUSE CLASS: the dead-flag family, at WORK-PACKAGE scale.** The four earlier members were
+*a flag guarded out* (catchable by inspecting the guard); `--agent-w-ground` was *a term that computes
+and cancels* (catchable only by a gradient probe). **This one parses, validates, refuses its own
+misuse, and stamps a truthful-looking provenance record for a mechanism that does not exist.**
+⇒ **Every structural check the programme owns passes on it.** Flag audits, config-provenance
+assertions, argparse-derived stamps and the 16-row preflight all read GREEN. Only **running the
+model's own tests** finds it — and they were red and unrun.
+
+⚠️ **SCOPE, STATED — this is an ESCALATION, not a rewrite request.** Verified on this branch and in
+every tree reachable from this box. Reads of `refc.py` from *other* branches returned **0 lines**,
+which on this mount is **INCONCLUSIVE, not absence** ⇒ the admissible claim is **"not present in any
+tree reachable from here"**, never *"never written"*. **If WP-4's model code exists in someone's
+worktree or branch it must be MERGED before it is re-implemented** — the same stranding class that
+cost LAL-v2 12 days, an orthogonality instrument 10 days, and REF-B v2 its architecture.
+
+⭐ **The acceptance criteria already exist and are already written**: `stack/tests/test_refc_sampler.py`
+(14 red) and `stack/tests/test_refc_v3_refcv5_wiring.py` (2 red). **14 red tests are a specification,
+not a chore.**
+
+⇒ **The durable guard this earns:** a seam that stamps `config.json` must ASSERT ITS MODULE EXISTS at
+startup — `assert getattr(model.core.decoder, "control_head", None) is not None` under
+`--sampler ddim`. **A config that records a seam the model does not have is worse than a crash.**
+
+### `D-REFCV5-STAGE0-WIRED` — ⭐ **DONE: the constrain-by-construction assets are now REACHABLE**
+
+**BEFORE, MEASURED with two probes across two trees:** `stack/scripts/refc_v3_train.py` contained the
+string `feasible` **ZERO times** (199,298 B read; CONTROL: 33 `def ` — the file *was* read), while
+`DecoderConfig.feasible_decode` and its projection had been built, validated and banked, and
+`stack/tanitad/refs/contact_projection.py` (28,418 B) was referenced by **nothing** in `stack/`
+outside its tests.
+
+⇒ **`feasible_decode` — `envelope` 0.8879 → 0.0000, `kamm_over` 0.8408 → 0.0000, 96.87 % of the
+feasibility gap, **−0.0103 m** of oracle-ADE at matched `peak_g` — and `contact_projection` —
+`fan_contact` 3.4277 % → structural **0.000000 %** at **+0.0000 m** — were BUILT, VALIDATED, and
+UNREACHABLE from any training or eval launch.** ⭐ That is
+`DESIGN_CONSTRAIN_BY_CONSTRUCTION.md`'s own **part (2)** biting the programme that wrote it down:
+*make the good representable — ALONE IT DOES NOTHING.* The mechanism existed and the search had no
+way to reach it.
+
+**AFTER (this turn):** six flags on `refc_v3_train.py` (`--feasible-decode`, `--feasible-mu`,
+`--feasible-entry`, `--feasible-a-max`, `--feasible-kappa-max`, `--feasible-prefix-slots`), pinned
+onto `core.decoder.*`, with **six keys stamped into `config.json`'s `seams` block** — because a
+projected fan reads `envelope 0.0000` as an **IDENTITY**, which in a metrics table is
+indistinguishable from a model that learned to be safe, and the record must say which one it is.
+
+**All five wiring checks PASS, each with its converse control:**
+* default **OFF**, and OFF **returns the SAME OBJECT** (asserted by identity, not by comparison);
+* **ON** returns a new object that actually moves the fan — `max |Δ| = 10.16 m` on random input, so
+  the projection is not inert;
+* the flag reaches `core.decoder` and all six values round-trip;
+* **both startup refusals fire** — a non-uniform prefix grid, and `--feasible-entry` without a
+  v0-conditioned bank (with no v0 there is no entry speed, so the clamp would be a stamped no-op and
+  the arm would read as the `+entry` variant while being the plain one);
+* ⭐ **both converse controls do NOT refuse** — a plain `--feasible-decode` on the uniform 4-slot
+  prefix, and no flag at all — so the guard is not over-broad.
+
+⛔ **Refused at STARTUP, not at the first forward.** `refc.py::_feasible` raises correctly on a
+non-uniform prefix, but that raise arrives after the model is built and the corpus is loaded — the
+same class as the analysis-time import that died *after* both arms had rolled all 40 episodes.
+
+⚠️ **`test_refc_v3_refcv5_wiring.py`'s 2 failures are PRE-EXISTING, not caused by this patch** —
+PROVEN by re-running the identical tests against the **unpatched** trainer (`feasible` count 0), where
+they fail the same way. They are row 19/20 of `D-REFCV5-WP4-CONFIG-ONLY` above.
+
+Artifacts: `stack/scripts/refc_v3_train.py` (blob `f4a1b68a0b7c21b1a9aefa674eb7d782d6a5245b`),
+`…/2026-09-05-refcv5-labels-and-strategy/code/test_feasible_flag.py`,
+`…/raw/wp4_absence_probe.txt`.
+
+
 ### `D-REFCV5-PARITY-LABELS` — ⭐ **DECIDED + MEASURED: parity tactical/strategic supervision goes 7.917 % → 100.000 %**
 
 **PI 2026-09-05:** *"follow your recommendation regarding 2 (refcv5) and build."* Built.
@@ -3303,6 +3400,7 @@ Trigger: PI 2026-09-05, verbatim — *"I dont need refutaions, I need xcellent r
 | D-REFAV1-CG-LEVER-SPLIT | ⭐ **THE PACKAGE'S TWO WORKING LEVERS ARE SEPARATED BY WHAT THEY BUY, AND THEY HAVE NEVER BEEN RUN TOGETHER.** `W_KAPPA` = the **ACCURACY** lever: ADE **0.8934** (best), curvature MAE **0.030982** / heading **15.2704** / yaw-rate **6.6750** (all best of any arm), GT-straight **0.8242** — paid for with a separated 14–20×-floor regression in the longitudinal family and with turning suppressed *in general* (lat kappa 0.3795 → 0.2611, turn recall → **0.0**/0.5). `--kamm-mu` + the seed ladder = the **SAFETY** lever — ⚠️ **and see `D-REFAV1-CG-FACTORIAL`: as a RANKING this split is WRONG, because the factorial shows the two levers buy the SAME things and differ in what they COST** — the only arm that is zero-violation **while still turning** (⚠️ CORRECTED — `wk15` reads 0.0000 too, at turn_left recall **0.0000 of n_true = 11**; `D-REFAV1-CG-ZEROVIOL-SCOPE`), `peak_g` max 3.262 → **0.618**, at **no ADE cost against the cap alone** and with the turn decisions intact (0.3636 / 0.75, GT-turn ADE within noise of the uncapped arm). ⇒ **they are complementary rather than competing, and the arm that combines them (`wk15` + cap + ladder) is unrun.** `wk15_ladder` (`W_KAPPA` + ladder, no cap) is the half already on the GPU and is one variable against `wk15` | **MEASURED 2026-09-05 — a synthesis of `D-REFAV1-CG-WK15`, `D-REFAV1-CG-KAMM-ARM` and `D-REFAV1-CG-ZEROVIOL`; the combination itself is UNMEASURED and is named as the next arm, not claimed** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.8, `HANDOFF.md` §7 |
 | D-REFAV1-CG-ZEROVIOL-SCOPE | ⛔⛔ **THE “FIRST / ONLY ZERO-VIOLATION ARM” CLAIM IS WITHDRAWN: `W_KAPPA` ALONE ALSO REACHES `kamm_over_rate` 0.0000, AND IT BUYS IT BY NOT TURNING.** MEASURED (`raw/feas_audit_all.txt`, generated 22:28; re-derived independently at 23:0x by a second invocation of `feas_audit.py` — both agree), `assert_feasible`, `v0 >= 2 m/s`, n = 27: **four** arms read `kamm_over_rate` **0.0000** — `cos_wk`, **`wk15`**, **`wk151`**, `combined` — not one. ⛔ `cos_wk`'s zero is **VACUOUS**: an all-zero path (`max|a|` **0.000**, `max|kappa|` **0.0000**, `peak_g` **0.000**) is trivially inside every friction circle — the poisoned-floor-arm class, and the reason a zero needs a MOTION assertion beside it. ⚠️ `wk15` / `wk151` are **non-degenerate** (`max|a|` 1.500, `max|kappa|` 0.0800 / 0.0166, `peak_g` max 0.332 / 0.158) but reach the zero by **suppressing turns**: turn_left recall **0.0000 of n_true = 11** (`wk151` also turn_right **0.0000 of 8**), against a **0.0000 MEASURED seed floor** on that per-class statistic (`raw/seed_floor_ext_ccos.txt`) — so the suppression is real, not noise. ⭐ **THE SURVIVING CLAIM IS STRONGER THAN THE WITHDRAWN ONE:** `combined` is the **only** arm that reaches zero **while still turning** — turn recalls 0.3636 / 0.7500, identical to the uncapped `ccos_argmax`, at `peak_g` max 0.618 vs its 3.262. ⛔ **ROOT-CAUSE CLASS: a number quoted from a STALE GENERATION of a regenerated artifact.** The audit was regenerated under a NEW NAME — `feas_audit.txt` (19:43, two arms) became `feas_audit_all.txt` (22:28, ten arms) — and §7.8's table row was carried from the old one, which is why it printed `wk15 kamm_over_rate (not run)` about an arm that had run two hours earlier. `RESULT.md` was finalised at 22:47, **19 minutes AFTER** the artifact that refutes it was written. Same family as `MODEL_REGISTRY.md`'s “prose lied to us”: a true measurement, quoted from the wrong artifact GENERATION. ⇒ **Durable fix:** `raw/seed_floor_ext.py` regenerates the per-metric floor AND the feasibility rows into ONE table, so the floor and the rate a claim rests on cannot come from different generations | **CORRECTS `D-REFAV1-CG-ZEROVIOL` AND `D-REFAV1-CG-LEVER-SPLIT` — MEASURED 2026-09-05, T1, n = 27 windows after the near-stationary cut, `assert_feasible` (`tanitad.refs.feasible_decode`), GT control `g` = 0.0000 and `ha0_ext` = 0.1852 non-zero in the same table** | `…/2026-09-05-refav1-cost-geometry/raw/feas_audit_all.txt`, `raw/seed_floor_ext_ccos.txt`, `raw/SPEC_BEST_AND_SEED.md` §0 |
 | D-REFAV1-CG-FACTORIAL | ⭐⭐⭐ **THE 2x2x2 FACTORIAL RE-RANKS THE TWO LEVERS: THE KAMM CAP **DOMINATES** `W_KAPPA` — IT BUYS 74 % OF THE ADE AND MORE OF THE SAFETY, AND IT COSTS NEITHER THE TURNS NOR THE LONGITUDINAL FAMILY.** A complete design over {`W_KAPPA` 0 / 15.11245} x {`--kamm-mu` off / 0.7} x {`--seed-kappa-ladder` off / on}; **6 of 8 cells MEASURED**, cell 7 (`best`, a sibling agent's arm) running and cell 8 (`bestlad`, mine) queued. Every cell's coding is asserted against its OWN record's manifest — `W_KAPPA`, `kamm_mu`, `seed_kappa_ladder`, `seed` — never against its arm NAME, and the check prints **ALL CELLS MATCH THEIR RECORDS**. MAIN EFFECTS (marginal contrasts, **2/4 pairs** for `W_KAPPA` and the cap, 3/4 for the ladder — the design is NOT yet balanced), each against its **own** per-metric inference-seed floor: **`W_KAPPA`** ADE **−0.4083** (6.7x floor), `kamm_over` **−0.2778** (7.5x), but `turn_left` recall **−0.3636 → EXACTLY 0.0000 of n_true = 11 in BOTH its cells**, `turn_right` **−0.5000**, `lane_keep` **+0.3572** (2.5x), `LON speed_mae` **+0.0535 (14.1x floor, WORSE)**, `LON accel_mae` **+0.0569 (9.3x, WORSE)**, `TAC lat_kappa` **−0.2003 (2.1x, WORSE)**. **cap** ADE **−0.3039** (5.0x), `kamm_over` **−0.2037** (5.5x), `turn_left` recall **0.0000 IN FLOOR**, `LON speed_mae` **+0.00035 IN FLOOR**, `LON accel_mae` **+0.00175 IN FLOOR**, `TAC lat_kappa` **+0.0588 IN FLOOR**. **ladder** — every family row IN FLOOR except `kamm_over` −0.0617 (1.7x), consistent with `D-REFAV1-CG-L3-NULL`. ⇒ **`D-REFAV1-CG-LEVER-SPLIT` IS WRONG AS A RANKING.** It reads `W_KAPPA` = *“the ACCURACY lever”* and cap+ladder = *“the SAFETY lever”*, as though they bought different things. They buy **the same two things** and differ in what they **charge**: the cap costs nothing measurable, while `W_KAPPA` buys its extra ~0.10 m of ADE by **DELETING A DECISION CLASS** and pays a 9–14x-floor longitudinal regression on top. ⚠️ **HONEST LIMITS, in the artifact and not only here:** 2 of 4 pairs on the two interesting levers, so the marginals are over a SUBSET of the design; they are **point estimates with NO interval** (decision-grade intervals = the paired episode-cluster bootstrap, run when cells 7–8 land); and **every floor comes from ONE seed pair**, so a floor of 0.00000 means *“that pair agreed exactly”*, NOT *“this statistic is noiseless”* — the `recL`/`recR` effects are quotable because 0.3636 → 0.0000 is a whole class disappearing with a mechanism, not because their floor reads zero | **PARTIAL — MEASURED 2026-09-05, T1, 6/8 cells, n = 40 windows / 8 episode clusters (27 after the near-stationary cut), GT control `kamm_over` 0.0000 in EVERY row; TO BE COMPLETED when cells 7–8 land** | `…/2026-09-05-refav1-cost-geometry/raw/factorial.py`, `raw/factorial.txt`, `raw/seed_floor_ext_ccos.txt` |
+| D-REFAV1-CG-SEED-SEPARATED | ⛔⛔ **THE INFERENCE-SEED REPLICATE READS `separated` ON FOUR OF EIGHT ROWS WITH ZERO LEVERS MOVED — `H-ESTIM-SEED-1` NOW MEASURED ON refav1 ITSELF, NOT INHERITED FROM THE v7-TINY RIG.** `ccos_seed1` is `ccos_argmax` with ONE token changed (`--plan-seed 0 → 1`): same checkpoint, same windows, same cost, same vocabulary. Paired episode-cluster bootstrap, n = 40 windows / 8 clusters, `n_boot` 2000; the known-value control (an arm against itself) reads **+0.0000 [+0.0000, +0.0000]** on every metric, so the estimator is behaving. **SEPARATED: `ade_m` +0.0607 [+0.0088, +0.1155]; `fde_m` +0.3439 [+0.0230, +0.7906]; `LAT_cross` +0.0710 [+0.0101, +0.1412]; `LAT_heading` +1.1180 [+0.3304, +2.0778] (n=33).** NOT separated: `LON_speed` +0.0038, `LON_accel` +0.0061, `LAT_yaw_rate` +0.0081, `TAC_traj_lat` −0.0750. ⭐ **AND SEPARATION AND MAGNITUDE DISAGREE IN BOTH DIRECTIONS ON ONE PANEL:** the no-lever seed pair is **separated** at exactly 1.0x its own floor, while the cap (`kamm07` − `ccos_argmax`, `ade_m` −0.3344 [−0.9536, +0.0625]) is **NOT separated at 5.5x the floor**, and `combined` − `ccos_argmax` (−0.2768) is not separated at 4.6x. ⇒ **a rule of “report what is separated” would have BANKED THE SEED DIFFERENCE AND DISCARDED THE CAP'S EFFECT.** Separation without magnitude admits noise; magnitude without an interval admits one lucky draw. **The admissible form on this rig is BOTH — a separated interval AND a delta exceeding that metric's OWN measured seed floor** — which is what `raw/SPEC_BEST_AND_SEED.md` gate **A** committed to before these numbers existed. ⚠️ **And the floor is PER-METRIC**: `LAT_heading` moves **1.1180 deg** under a seed change alone while `LON_speed` moves **0.0038 m/s** — one remembered scalar cannot serve both, the failure this package already retracted once. ⭐ **THE SUBSTANTIVE CONSEQUENCE, now interval-backed:** `W_KAPPA` is **separated-WORSE** on both longitudinal metrics (`LON_speed` **+0.0764 [+0.0135, +0.1453]**, `LON_accel` **+0.0874 [+0.0122, +0.1763]**) while the cap costs the family **nothing** (−0.0017 [−0.0078, +0.0034] and +0.0013 [−0.0035, +0.0064], intervals tight enough to exclude any meaningful cost). Since **88.7 %** of the programme's oracle gap is longitudinal, that is why the cap outranks `W_KAPPA` as the lever to carry forward, and it now rests on the PAIRED estimator rather than on the factorial's point marginals | **SUPPORTED — MEASURED 2026-09-05, T1, n = 40 windows / 8 episode clusters, paired episode-cluster bootstrap `n_boot` 2000, known-value control PASS; SHARPENS `D-REFAV1-CG-SEEDFLOOR` and instantiates `H-ESTIM-SEED-1` on this rig** | `…/2026-09-05-refav1-cost-geometry/raw/seed_separated.md`, `raw/pd_fact.md`, `raw/pd_fact.json`, `raw/gm_paired_delta.py` |
 | D-REFAV1-CG-CLI-DEFECTS | ⚠️ **TWO DEFECTS I INTRODUCED IN `refav1_arm.py`, BOTH CAUGHT BEFORE THEY COST GPU, LOGGED BECAUSE THE SECOND IS INVISIBLE TO EVERY ARM THAT RUNS.** (1) `UnboundLocalError: _inspect2` killed `l3ladder` and `combined` at startup (18:39:32Z / 18:39:56Z): `inspect` is imported INSIDE the `--goal-kappa-turn` branch and my seed-ladder block referenced it from a sibling branch, so any arm passing `--seed-kappa-ladder` WITHOUT `--goal-kappa-turn` died. ⭐ **Zero GPU wasted — the tool raised in `run_dump` BEFORE the rollout**, which is exactly what its preflight-import design exists for. (2) A **bare `%`** in the `--kamm-mu` help text broke `--help` itself with `TypeError: must be real number, not dict`, because argparse `%`-formats help strings; the file's own convention (`--goal-kappa-turn` writes `100 %%`) was the thing I broke. **This one never affects a running arm and surfaces only when an operator asks for help or makes a CLI typo — the worst moment to hand someone a traceback.** Both fixed; `--help` now exits 0 and lists all three new flags. Relaunched under `raw/queueG.sh`, which `rm -rf`s the stale dump first so a partial dump cannot be mistaken for a panel. **ROOT-CAUSE CLASS: a conditional import is not a module import, and a help string is CODE** | **MEASURED and REPAIRED 2026-09-05, same turn** | `…/2026-09-05-refav1-cost-geometry/RESULT.md` §7.5.1; `taniteval/tools/refav1_arm.py` |
 
 
