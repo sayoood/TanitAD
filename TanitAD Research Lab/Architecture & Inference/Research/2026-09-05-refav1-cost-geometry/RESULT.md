@@ -856,7 +856,12 @@ the same five rungs) was queued the moment this null landed and is one variable
 against `wk15`.
 
 
-### 7.8 ⭐⭐⭐ `combined` — THE FIRST refav1 ARM WITH **ZERO** FRICTION-CIRCLE VIOLATIONS, AND THE LADDER'S REAL ROLE
+### 7.8 ⭐⭐⭐ `combined` — THE ONLY refav1 ARM THAT IS **ZERO**-VIOLATION *WHILE STILL TURNING*, AND THE LADDER'S REAL ROLE
+
+> ⚠️ **HEADING CORRECTED 2026-09-05 23:0x.** It read *“THE FIRST refav1 ARM WITH
+> ZERO FRICTION-CIRCLE VIOLATIONS”*. **That superlative is WITHDRAWN** — `wk15`,
+> `wk151` and `cos_wk` also read `kamm_over_rate` **0.0000**. See §7.8a, which is
+> the correction and is stronger than the sentence it replaces.
 
 `combined` = `ccos` + `(0, 0, 64.297)` + `--seed-kappa-ladder 0.002,0.005,0.01,0.02,0.04`
 + `--kamm-mu 0.7`. Three variables against `ccos_argmax`, **one** against `kamm07`:
@@ -874,8 +879,9 @@ the candidate set.
 
 ⛔ **The `0.0000` is bracketed on both sides:** the ground-truth control reads the
 same known value, and three arms in the same table read non-zero — so it is a
-measurement, not an unevaluated branch. **This is the first refav1 arm in the
-programme whose plans are entirely inside the tyre's friction circle**, and it
+measurement, not an unevaluated branch. **This is the only refav1 arm whose plans are
+entirely inside the tyre's friction circle WHILE IT IS STILL TURNING** (§7.8a —
+three other arms reach the same 0.0000, and each of them stops turning to do it), and it
 closes the residual §7.6 flagged as a work item on the cap alone (0.1481 → 0.0000)
 **in the same turn it was raised**.
 
@@ -905,7 +911,12 @@ feasible candidate set reaches zero; either alone does not.
 | turn recall L / R | 0.3636 / 0.75 | 0.3636 / 0.625 | **0.3636 / 0.75** | 0.0 / 0.5 | — |
 | GT-turn ADE | 0.9195 | 0.9195 | 0.9258 | 0.9699 | 1.1521 |
 | GT-straight ADE | 1.6960 | 1.0590 | 1.1632 | **0.8242** | 0.6285 |
-| `kamm_over_rate` | 0.2963 | 0.1481 | **0.0000** | *(not run)* | 0.1852 |
+| `kamm_over_rate` | 0.2963 | 0.1481 | **0.0000** | **0.0000** ⚠️ | 0.1852 |
+| turn recall L (n=11) | 0.3636 | 0.3636 | **0.3636** | **0.0000** ⚠️ | — |
+
+> ⚠️ **The `wk15` cell read `*(not run)*` when this table was written, and it was the
+> refutation waiting to happen.** It HAD run — two hours earlier. `wk15` reaches the
+> same **0.0000**, at **turn_left recall 0.0000 of n_true = 11**. §7.8a.
 
 ⚠️ **`combined` has the highest tactical lateral kappa of any arm (0.4148) and keeps
 both turn recalls at the uncapped arm's values — but 0.4148 - 0.3795 = 0.0353 is
@@ -916,9 +927,14 @@ the turn decisions nor, beyond one small separated accel row, the families.
 ⇒ **The package's two working levers are now cleanly separated by what they buy:**
 `W_KAPPA` is the **accuracy** lever (best ADE and lateral family, at the cost of the
 longitudinal one and of turning in general); `cap + ladder` is the **safety** lever
-(the only zero-violation arm, at no ADE cost against the cap alone and with the turn
-decisions intact). They have never been run together — that is the next arm, and
-`wk15_ladder` is the half of it already on the GPU.
+(the only arm that is zero-violation **while still turning**, at no ADE cost against
+the cap alone and with the turn decisions intact — ⚠️ *not* the only zero-violation
+arm; §7.8a). ⇒ **AND THE CORRECTION REFRAMES THE NEXT ARM.** Both levers already
+reach zero; `W_KAPPA` reaches it by **not turning** and cap+ladder reaches it **while
+turning**. So `best` = `W_KAPPA` + cap + ladder does not ask *“do the levers
+compose?”* — it asks **which behaviour wins when they meet**. That is the question
+`raw/SPEC_BEST_AND_SEED.md` pre-registers, with the turn recall as the
+discriminating gate and every branch's verdict committed in advance.
 
 
 ### 7.9 ⛔⭐⭐ `wk15_ladder` — A DISCRETE RUNG SET AND A CONTINUOUS QUADRATIC PENALTY ARE **ANTAGONISTIC**
@@ -978,24 +994,31 @@ which also removes the partial dump so it cannot be mistaken for a panel). No
 criterion moved, nothing had been observed about `best`, and the amendment is in
 `PREREG_COST_GEOMETRY.md` §7 — the same class as the `wk1p5` -> `l3ladder` swap in §6.
 
----
 
-## §8 — Deliverable manifest
+### 7.8a ⛔ CORRECTION — THE SUPERLATIVE WAS WITHDRAWN, AND WHAT REPLACED IT IS STRONGER
 
-| artifact | where it lives |
-|---|---|
-| `PREREG_COST_GEOMETRY.md` | repo: this package |
-| `RESULT.md` (this file) | repo: this package |
-| `raw/cost_scale.py` / `.txt` | repo: this package |
-| `raw/kappa_by_goal.py` / `.txt` | repo: this package |
-| `raw/four_family_table.py` | repo: this package |
-| `ccosh` metric + `CCOS_HOLD_REL` | repo: `stack/tanitad/refs/refa_v1.py` |
-| `test_cost_ccosh.py` (new) | repo: `stack/tests/` |
-| `test_cost_ccos.py`, `test_cost_chord.py` (tuple pins updated) | repo: `stack/tests/` |
-| `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
-| arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
-| oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            rtion**
+**Written 2026-09-05 23:0x by the successor agent sent to run `best`, before that arm
+existed.** The claim had already been reported to the PI, so it is corrected here, in
+`GOALS_AND_CLAIMS.md` (`D-REFAV1-CG-ZEROVIOL-SCOPE`) and in `RETRACTION_LOG.md`, in one
+turn and at zero GPU.
+
+**MEASURED** — `raw/feas_audit_all.txt` (generated 22:28), re-derived at 23:0x by a
+**second, independent invocation** of `feas_audit.py` that agrees to four decimals.
+`assert_feasible`, `v0 >= 2 m/s`, n = 27:
+
+| arm | `kamm_over` | `max\|a\|` | `max\|kappa\|` | `peak_g` max | turn_L recall | turn_R recall |
+|---|---|---|---|---|---|---|
+| `g` GT (CONTROL, must be 0) | 0.0000 | 3.016 | 0.1701 | 0.373 | — | — |
+| `cos_wk` | 0.0000 | **0.000** | **0.0000** | **0.000** | — | — |
+| `wk15` | **0.0000** | 1.500 | 0.0800 | 0.332 | **0.0000** of 11 | 0.5000 |
+| `wk151` | **0.0000** | 1.500 | 0.0166 | 0.158 | **0.0000** of 11 | **0.0000** of 8 |
+| **`combined`** | **0.0000** | 1.165 | 0.1505 | 0.618 | **0.3636** | **0.7500** |
+| `kamm07` (CONTROL, > 0) | 0.1481 | 0.947 | 0.1747 | 0.707 | 0.3636 | 0.6250 |
+| `ccos_argmax` (CONTROL, > 0) | 0.2963 | 1.091 | 0.2000 | 3.262 | 0.3636 | 0.7500 |
+| `ha0_ext` (CONTROL, > 0) | 0.1852 | 2.310 | 0.7672 | 1.436 | — | — |
+
+* `cos_wk`'s zero is **VACUOUS** — an all-zero path is trivially inside every friction
+  circle. The poisoned-floor-arm class; the reason a zero needs a **motion assertion**
   in the same row.
 * `wk15` / `wk151` are **non-degenerate but bought by not turning**: turn_left recall
   **0.0000 of n_true = 11**, against a **0.0000 measured seed floor** on that per-class
@@ -1027,24 +1050,41 @@ different files; and it adds the per-class recalls and the feasibility rows that
 `raw/seed_floor.py` lacked — the same gap that caused this package's earlier
 cousin-metric withdrawal.
 
----
 
-## §8 — Deliverable manifest
+### 7.10 ⭐⭐⭐ THE FACTORIAL, THE MECHANISM, AND THE LEVER RE-RANKING
 
-| artifact | where it lives |
-|---|---|
-| `PREREG_COST_GEOMETRY.md` | repo: this package |
-| `RESULT.md` (this file) | repo: this package |
-| `raw/cost_scale.py` / `.txt` | repo: this package |
-| `raw/kappa_by_goal.py` / `.txt` | repo: this package |
-| `raw/four_family_table.py` | repo: this package |
-| `ccosh` metric + `CCOS_HOLD_REL` | repo: `stack/tanitad/refs/refa_v1.py` |
-| `test_cost_ccosh.py` (new) | repo: `stack/tests/` |
-| `test_cost_ccos.py`, `test_cost_chord.py` (tuple pins updated) | repo: `stack/tests/` |
-| `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
-| arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
-| oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              2778 (7.5x) | **−0.3636 → EXACTLY 0** | **+0.0764 [+0.0135, +0.1453] WORSE** | **+0.0874 [+0.0122, +0.1763] WORSE** |
+**Written by the successor agent sent to run the synthesis arm this package called for.**
+A name collision with a sibling agent (§7.10d) turned that single arm into a **complete
+2x2x2 design**, so the cap's effect, the ladder's effect and their interaction became
+separately attributable. Everything in §7.10a–c is **zero GPU**, from banked dumps.
+
+#### 7.10a The design
+
+{W_KAPPA 0 / 15.11245} x {`--kamm-mu` off / 0.7} x {`--seed-kappa-ladder` off / on}.
+Every cell's coding is asserted against **its own record's manifest** — `W_KAPPA`,
+`kamm_mu`, `seed_kappa_ladder`, `seed` — never against its arm NAME, and the check
+prints **ALL CELLS MATCH THEIR RECORDS** (`raw/factorial.py`, `raw/factorial.txt`).
+
+| cell | W | C | L | arm | ADE | LATcurv | TAClatK | recLK | recL | recR | `kamm_over` |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 0 | 0 | 0 | `ccos_argmax` | 1.3272 | 0.05537 | 0.3795 | 0.7143 | 0.3636 | 0.7500 | 0.2963 |
+| 2 | 1 | 0 | 0 | `wk15` | 0.8934 | 0.03098 | 0.2611 | 1.0000 | **0.0000** | 0.5000 | 0.0000 |
+| 3 | 0 | 1 | 0 | `kamm07` | 0.9927 | 0.04846 | 0.3644 | 0.7619 | 0.3636 | 0.6250 | 0.1481 |
+| 4 | 0 | 0 | 1 | `l3ladder` | 1.3236 | 0.05373 | 0.2822 | 0.5714 | 0.3636 | 0.7500 | 0.2593 |
+| 5 | 1 | 0 | 1 | `wk15_ladder` | 0.9408 | 0.03979 | **0.0000** | 1.0000 | **0.0000** | **0.0000** | 0.0000 |
+| 6 | 0 | 1 | 1 | **`combined`** | 1.0504 | 0.04686 | 0.4148 | 0.7619 | **0.3636** | **0.7500** | **0.0000** |
+
+CONTROL: the ground-truth path reads `kamm_over` **0.0000** in every row.
+
+#### 7.10b The lever re-ranking — the cap DOMINATES `W_KAPPA`
+
+Marginal contrasts, each against its **own** per-metric inference-seed floor
+(`raw/seed_floor_ext_ccos.txt`), and then confirmed on the **paired episode-cluster
+bootstrap** (`raw/pd_fact.md`, known-value control +0.0000 [0,0] on every metric):
+
+| lever | ADE | `kamm_over` | turn_left recall | `LON_speed` | `LON_accel` |
+|---|---|---|---|---|---|
+| **`W_KAPPA`** | −0.4083 (6.7x floor) | −0.2778 (7.5x) | **−0.3636 → EXACTLY 0** | **+0.0764 [+0.0135, +0.1453] WORSE** | **+0.0874 [+0.0122, +0.1763] WORSE** |
 | **cap** | −0.3039 (5.0x) | −0.2037 (5.5x) | **0.0000, IN FLOOR** | −0.0017 [−0.0078, +0.0034] | +0.0013 [−0.0035, +0.0064] |
 | ladder | every family row IN FLOOR except `kamm_over` −0.0617 (1.7x) | | | | |
 
@@ -1126,4 +1166,3 @@ named as the next experiment and not as a result.**
 | `--cost-metric ccosh` | repo: `taniteval/tools/refav1_arm.py` |
 | arm records `rec_*.json` + dumps | **`C:/Users/Admin/refav1_margin/p4out/` — OFF-REPO, SINGLE COPY** |
 | oracle dumps `dump_oracle_s0` | **`C:/Users/Admin/refav1_drive/oracle/` — OFF-REPO, SINGLE COPY** |
- 
