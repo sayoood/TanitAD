@@ -1183,3 +1183,67 @@ implies the wrong cause.**
 ⇒ **RULE ZERO in its exact intended form: the campaign was refuted, it did not stop there, and its
 successor — which is not RL — is the result.** ⛔ But *"the RL post-training campaign succeeded"* is
 **false**, and no report may say it.
+
+## M30. The `W_KAPPA` ladder is CLOSED at an interior optimum — and the rung DEFINITION is what makes it evidence
+
+### 1. The ladder, T1, 40 windows
+
+| arm (metric, `W_KAPPA`) | ADE | curv MAE | heading | TAC lat kappa | turn recall L / R |
+|---|---|---|---|---|---|
+| `cos` + 0 | 1.8944 | 0.080478 | 29.5086 | **−0.1249** *(below chance)* | 0.0 / 0.25 |
+| `ccos` + 0 | 1.3272 | 0.055369 | 23.4578 | 0.3795 | 0.3636 / 0.75 |
+| ⭐ **`ccos` + 15.11 (10 %)** | **0.8934** | **0.030982** | **15.2704** | 0.2611 | 0.0 / 0.5 |
+| `ccos` + 151.12 (100 %) | 0.9084 | 0.038019 | 15.3785 | **0.0000** | **0.0 / 0.0** |
+| `cos` + SHIPPED 0.05 | 0.9251 | 0.040083 | 20.1374 | **0.0000** | 0.0 / 0.0 |
+| `ha0_ext` floor | **0.8772** | 0.077298 | 27.7357 | 0.6277 | — |
+
+⇒ **An interior optimum at the 10 % rung, with BOTH neighbours worse.** The ladder is **exhausted as
+a lever**.
+
+⭐ **The collapse is monotone and comes from the arm tool's OWN trivial-profile probe** (not a
+re-implementation): plans bit-`identical_to ha0` climb **3/40 → 11/40 → 10/40 → 17/40 → 40/40**, and
+`CONSTANT-VELOCITY` **0.0750 → 0.2750 → 0.2500 → 0.4250 → 1.0000**.
+
+### 2. ⭐⭐ The rung DEFINITION is the methodological result
+
+**"100 %" was fixed from banked data BEFORE any arm ran** — defined as *the curvature charge equalling
+the whole goal decision*. And that is **precisely where both turn recalls hit 0.0 and the arm becomes
+the do-nothing plan.** ⇒ The scale **predicted the collapse point**, which is what makes the interior
+optimum evidence rather than a lucky pick.
+
+⚠️ **A sweep chosen by eye had no way to know the interesting range was `0 < W_KAPPA < 151`** — the
+shipped 0.05 and the "obvious" large values both sit in the dead zone. Same family as `M15`'s ruling
+that the *metric* decides: here the **parameterisation** decides, and defining it from the physics
+before looking is what kept the sweep honest.
+
+### 3. ⚠️ A CAVEAT ON A CLAIM I HAVE BEEN REPORTING
+
+I have been telling the PI that `wk15` **"beats the floors on turns."** That is true **on ADE over
+the GT-turn stratum** (0.9699 vs 1.1521) and it stands. ⛔ **But the turn RECALL is asymmetric and
+thin:** **0.5 right (n = 8) vs 0.0 LEFT (n = 11)**, where `W_KAPPA = 0` reads **0.75 / 0.3636**.
+⇒ **the penalty costs LEFT turns first.**
+
+Against the measured tactical seed floor (**0.0750 absolute**) an 11-window recall is **far too thin
+to call**. ⇒ **`wk15` must not be quoted as a lateral FIX until a wider panel exists** — ADE on a
+stratum and per-direction recall are different claims, and I had been letting the first carry the
+second.
+
+### 4. Two defects introduced and caught before they cost GPU
+
+* `l3ladder` / `combined` died at startup on an **`UnboundLocalError`**: `inspect` is imported
+  *inside* the `--goal-kappa-turn` branch and the new seed-ladder block referenced it from a sibling
+  branch. ⭐ **Zero GPU wasted** — the tool raised in `run_dump` **before the rollout**, which is
+  exactly what its preflight-import design exists for (the 2026-08-11 lesson, working).
+* A **bare `%`** in the `--kamm-mu` help text broke **`--help` itself** — argparse `%`-formats help
+  strings, and the file's own convention is `100 %%`. Invisible to every running arm; it surfaces
+  only when an operator asks for help.
+
+⇒ **Class logged: a conditional import is not a module import, and a help string is CODE.**
+
+### 5. Standing
+
+⛔ **refav1 does not beat the trivial floors at T1.** It reaches **parity** at the ladder's interior
+optimum while genuinely acting, and wins the turn stratum on ADE. **The lateral side is now
+exhausted**; the blocker is the **LONGITUDINAL family**, which no arm in this package addresses and
+which is the subject of the successor brief. `kamm07` (L4) at 3/8, `l3ladder` running, `combined`
+queued, with `HANDOFF.md` + `raw/finalize.sh` sufficient to land them.
