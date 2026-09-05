@@ -1,0 +1,128 @@
+======================================================================================================================
+DEV-BOX p4 PANEL (40 windows / 8 episodes, stride 16, ccos, T1 'cl')
+======================================================================================================================
+arm              metric     W_KAPPA     ADE_m   curvMAE    turnL    turnR    laneK   spdMAE  headMAE
+----------------------------------------------------------------------------------------------------
+kamm07           ccos           0.0    0.9927   0.04846   0.3636   0.6250   0.7619   0.7138    21.07
+combined         ccos           0.0    1.0504   0.04686   0.3636   0.7500   0.7619   0.7327    21.39
+combined_seed1   ccos           0.0    1.1539   0.04886   0.3636   0.7500   0.6667   0.7315    21.91
+l3ladder         ccos           0.0    1.3236   0.05373   0.3636   0.7500   0.5714   0.7303    24.25
+ccos_argmax      ccos           0.0    1.3272   0.05537   0.3636   0.7500   0.7143   0.7155    23.46
+ccosh_w000       ccosh          0.0    1.3272   0.05537   0.3636   0.7500   0.7143   0.7155    23.46
+ccos_seed1       ccos           0.0    1.3879   0.05603   0.3636   0.7500   0.5714   0.7193    24.60
+cos_argmax       cos            0.0    1.8944   0.08048   0.0000   0.2500   0.6190   0.7274    29.51
+cos_wk           cos           0.05    0.9251   0.04008   0.0000   0.0000   1.0000   0.7217    20.14
+lonshift         ccos      15.11245    0.7868   0.04116   0.0000   0.0000   1.0000   0.5657    16.86
+best             ccos      15.11245    0.8838   0.03128   0.0000   0.5000   1.0000   0.7751    15.30
+lonseam          ccos      15.11245    0.8934   0.03098   0.0000   0.5000   1.0000   0.7919    15.27
+wk15             ccos      15.11245    0.8934   0.03098   0.0000   0.5000   1.0000   0.7919    15.27
+wk15_ladder      ccos      15.11245    0.9408   0.03979   0.0000   0.0000   1.0000   0.7609    20.10
+bestlad          ccos      15.11245    0.9418   0.03989   0.0000   0.0000   1.0000   0.7601    20.12
+wk151            ccos      151.1245    0.9084   0.03802   0.0000   0.0000   1.0000   0.7995    15.38
+
+  n_true(turn_left)=[11]  n_true(turn_right)=[8]  n_true(lane_keep)=[21]
+  GRID CONTROL (must be constant across every row):
+    ADE_ha       [0.8888]  OK
+    ADE_ha0      [0.9251]  OK
+    ADE_ha0_ext  [0.8772]  OK
+    ADE_ol       [0.8052]  OK
+
+======================================================================================================================
+SEED FLOOR: ccos_argmax vs ccos_seed1 (W_KAPPA=0, no cap)
+  A = refav1-21109-p4-ccos_argmax   B = refav1-21109-p4-ccos_seed1
+======================================================================================================================
+  CONTROL - the non-planner arms MUST be identical (same grid):
+    ha       0.8888 vs 0.8888  identical=True
+    ha0      0.9251 vs 0.9251  identical=True
+    ha0_ext  0.8772 vs 0.8772  identical=True
+    ol       0.8052 vs 0.8052  identical=True
+    CONTROL PASSED
+
+    statistic                  seed A     seed B   abs diff
+    ADE_m                     1.32720    1.38790    0.06070
+    LAT curv_MAE              0.05537    0.05603    0.00066
+    LAT heading_MAE          23.45780   24.60360    1.14580
+    LAT cross_MAE             0.87840    0.94940    0.07100
+    LON speed_MAE             0.71550    0.71930    0.00380
+    TACpc lane_keep_rec       0.71430    0.57140    0.14290
+    TACpc turn_left_rec       0.36360    0.36360    0.00000
+    TACpc turn_right_rec      0.75000    0.75000    0.00000
+
+======================================================================================================================
+SEED FLOOR: combined vs combined_seed1 (cap + ladder)
+  A = refav1-21109-p4-combined   B = refav1-21109-p4-combined_seed1
+======================================================================================================================
+  CONTROL - the non-planner arms MUST be identical (same grid):
+    ha       0.8888 vs 0.8888  identical=True
+    ha0      0.9251 vs 0.9251  identical=True
+    ha0_ext  0.8772 vs 0.8772  identical=True
+    ol       0.8052 vs 0.8052  identical=True
+    CONTROL PASSED
+
+    statistic                  seed A     seed B   abs diff
+    ADE_m                     1.05040    1.15390    0.10350
+    LAT curv_MAE              0.04686    0.04886    0.00200
+    LAT heading_MAE          21.38870   21.91110    0.52240
+    LAT cross_MAE             0.57630    0.68740    0.11110
+    LON speed_MAE             0.73270    0.73150    0.00120
+    TACpc lane_keep_rec       0.76190    0.66670    0.09520
+    TACpc turn_left_rec       0.36360    0.36360    0.00000
+    TACpc turn_right_rec      0.75000    0.75000    0.00000
+
+======================================================================================================================
+THOR p4 PANEL -- same ckpt/labels/episodes/grid, DIFFERENT GPU. ⛔ CEM is not bit-reproducible across GPUs: pair WITHIN this table only.
+======================================================================================================================
+arm              metric     W_KAPPA     ADE_m   curvMAE    turnL    turnR    laneK   spdMAE  headMAE
+----------------------------------------------------------------------------------------------------
+T_lonshift_s1    ccos      15.11245    0.7794   0.04140   0.0000   0.0000   1.0000   0.5403    18.04
+T_lonshift       ccos      15.11245    0.7883   0.04174   0.0000   0.0000   1.0000   0.5593    16.92
+T_lonvocab       ccos      15.11245    0.8119   0.03761   0.0000   0.0000   1.0000   0.6142    19.56
+T_wk15_s1        ccos      15.11245    0.8863   0.03061   0.0000   0.5000   1.0000   0.7808    14.86
+T_lonseam        ccos      15.11245    0.8910   0.03042   0.0000   0.5000   1.0000   0.7876    15.29
+T_wk15           ccos      15.11245    0.8910   0.03042   0.0000   0.5000   1.0000   0.7876    15.29
+
+  n_true(turn_left)=[11]  n_true(turn_right)=[8]  n_true(lane_keep)=[21]
+  GRID CONTROL (must be constant across every row):
+    ADE_ha       [0.8888]  OK
+    ADE_ha0      [0.9251]  OK
+    ADE_ha0_ext  [0.8772]  OK
+    ADE_ol       [0.8052]  OK
+
+======================================================================================================================
+SEED FLOOR: T_wk15 vs T_wk15_s1 (THOR-LOCAL, the A3 pair's floor)
+  A = refav1-21109-thor-T_wk15   B = refav1-21109-thor-T_wk15_s1
+======================================================================================================================
+  CONTROL - the non-planner arms MUST be identical (same grid):
+    ha       0.8888 vs 0.8888  identical=True
+    ha0      0.9251 vs 0.9251  identical=True
+    ha0_ext  0.8772 vs 0.8772  identical=True
+    ol       0.8052 vs 0.8052  identical=True
+    CONTROL PASSED
+
+    statistic                  seed A     seed B   abs diff
+    ADE_m                     0.89100    0.88630    0.00470
+    LAT curv_MAE              0.03042    0.03061    0.00019
+    LAT heading_MAE          15.28960   14.86120    0.42840
+    LAT cross_MAE             0.36710    0.36700    0.00010
+    LON speed_MAE             0.78760    0.78080    0.00680
+    TACpc lane_keep_rec       1.00000    1.00000    0.00000
+    TACpc turn_left_rec       0.00000    0.00000    0.00000
+    TACpc turn_right_rec      0.50000    0.50000    0.00000
+
+======================================================================================================================
+BINDING PER-METRIC FLOOR = max over the available replicate pairs
+======================================================================================================================
+    statistic                      ccos    combined   thor_wk15    BINDING
+    ADE_m                       0.06070     0.10350     0.00470    0.10350
+    LAT cross_MAE               0.07100     0.11110     0.00010    0.11110
+    LAT curv_MAE                0.00066     0.00200     0.00019    0.00200
+    LAT heading_MAE             1.14580     0.52240     0.42840    1.14580
+    LON speed_MAE               0.00380     0.00120     0.00680    0.00680
+    TACpc lane_keep_rec         0.14290     0.09520     0.00000    0.14290
+    TACpc turn_left_rec         0.00000     0.00000     0.00000    0.00000
+    TACpc turn_right_rec        0.00000     0.00000     0.00000    0.00000
+
+  ⭐ turn_left / turn_right recall floors of EXACTLY 0.00000 mean both
+     replicates reproduced the recall to four decimals => ANY turn-recall
+     change on this rig is above its own inference-seed noise floor.
+  ⛔ A floor is quoted for the exact STATISTIC, never for the family.

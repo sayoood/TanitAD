@@ -575,6 +575,83 @@ def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
     return torch.stack([a, k], dim=-1)
 
 
+#: ⭐⭐ THE GOAL CLASSES THE LATERAL COST MAY BE CONDITIONED ON
+#: (D-REFAV1-GOAL-KAPPA-COST, 2026-09-06). Three classes, because the v7.0
+#: lateral vocabulary has exactly three curvature SHAPES and `canonical_controls`
+#: is the authority on which is which:
+#:   * ``lane_keep`` -- the goal writes NO curvature at all (``k`` stays 0), so
+#:     any curvature the search emits here is unrequested;
+#:   * ``turn``      -- ``TURN_*``: the vocabulary's ONLY SUSTAINED curvature,
+#:     i.e. the one shape whose whole purpose is a net heading change;
+#:   * ``shift``     -- ``LANE_CHANGE_*`` / ``NUDGE_*`` / ``ABORT_LC``: S-curves
+#:     with ZERO net heading change (`_s_curve`: ``+kap`` then ``-kap``).
+GOAL_KAPPA_COST_CLASSES: tuple[str, ...] = ("lane_keep", "turn", "shift")
+
+
+def _parse_w_kappa_by_goal(spec) -> dict | None:
+    """``None`` | 2/3-tuple | dict -> a full ``{class: weight}`` map or ``None``.
+
+    ⛔ ``None`` returns ``None`` and the caller then leaves the scalar weight
+    untouched, so an arm that does not ask for this flag is BIT-IDENTICAL to
+    every arm banked before 2026-09-06. That property is asserted by
+    `tests/test_refa_v1_goal_kappa_cost.py::test_a_off_is_bit_identical`, with
+    a same-breath control that must differ -- not assumed from this sentence.
+
+    A 2-tuple ``(lane_keep, turn)`` sets ``shift`` to the LANE_KEEP weight: a
+    lane change is a manoeuvre whose net heading change is ZERO, so the cheap
+    default is to keep charging it like a straight and to make any other choice
+    explicit with a 3-tuple.
+    """
+    if spec is None:
+        return None
+    if isinstance(spec, dict):
+        unknown = set(spec) - set(GOAL_KAPPA_COST_CLASSES)
+        if unknown:
+            raise ValueError(
+                f"w_kappa_by_goal has unknown goal classes {sorted(unknown)}; "
+                f"valid classes are {GOAL_KAPPA_COST_CLASSES}")
+        if "lane_keep" not in spec or "turn" not in spec:
+            raise ValueError("w_kappa_by_goal must name at least 'lane_keep' "
+                             "and 'turn' -- a partial map would silently fall "
+                             "back to the scalar weight on the missing class")
+        out = {k: float(v) for k, v in spec.items()}
+        out.setdefault("shift", out["lane_keep"])
+    else:
+        vals = [float(x) for x in spec]
+        if len(vals) not in (2, 3):
+            raise ValueError("w_kappa_by_goal as a sequence must be "
+                             "(lane_keep, turn) or (lane_keep, turn, shift), "
+                             f"got {len(vals)} entries")
+        out = dict(zip(GOAL_KAPPA_COST_CLASSES, vals))
+        out.setdefault("shift", out["lane_keep"])
+    for k, v in out.items():
+        if v < 0.0:
+            raise ValueError(f"w_kappa_by_goal[{k!r}] = {v} is negative: a "
+                             "negative curvature weight REWARDS curvature and "
+                             "makes the cost unbounded below on the kappa box")
+    return out
+
+
+def goal_lat_cost_class(lat_token: str) -> str:
+    """Which `GOAL_KAPPA_COST_CLASSES` bucket a v7 lateral token falls in.
+
+    ⛔ The buckets are read off `canonical_controls`' OWN branch structure --
+    ``lat.startswith("TURN_")`` / ``LANE_CHANGE_`` / ``NUDGE_`` -- and not
+    transcribed from a remembered vocabulary order, because a hand-written
+    token list already put ``TURN_L``/``TURN_R`` at the wrong indices once
+    (`raw/kappa_by_goal.py`'s own note). ``ABORT_LC`` writes no curvature and
+    is filed with the shifts rather than with ``lane_keep`` on purpose: it is a
+    LATERAL manoeuvre token, and grouping it with the do-nothing class would
+    make the class name a lie the first time the head emits it.
+    """
+    t = str(lat_token)
+    if t.startswith("TURN_"):
+        return "turn"
+    if t.startswith(("LANE_CHANGE_", "NUDGE_")) or t == "ABORT_LC":
+        return "shift"
+    return "lane_keep"
+
+
 def goal_kappa_vocab_id(levels) -> str:
     """The vocabulary stamp for a level set. `None` is the SHIPPED single
     magnitude and must keep its own id, or a parity claim cannot be checked
@@ -2328,6 +2405,7 @@ class RefAV1(nn.Module):
              a_sustain=None,
              a_shift=None,
              jerk_seam_a0: float | None = None,
+             w_kappa_by_goal: dict | tuple | None = None,
              goal_keeps_seed: bool = False):
         """One MPC tick for ONE window (B must be 1).
 
@@ -2411,6 +2489,18 @@ class RefAV1(nn.Module):
         ``res.cost_weights``. `COST_METRICS` says why neither ``"chord"``
         nor ``"ccos"`` may be flipped without one.
 
+        ⭐⭐ ``w_kappa_by_goal`` -- THE LATERAL COST, CONDITIONED ON THE DECODED
+        TACTICAL GOAL (D-REFAV1-GOAL-KAPPA-COST, 2026-09-06). ``None`` is the
+        SHIPPED path and leaves the scalar ``w_kappa`` alone, BIT-IDENTICAL to
+        every arm banked before that date. A ``(lane_keep, turn)`` /
+        ``(lane_keep, turn, shift)`` tuple, or a dict over
+        `GOAL_KAPPA_COST_CLASSES`, selects the curvature weight from
+        `goal_lat_cost_class(goal_action["lat"])`. See the application site
+        below for the MEASURED defect it closes (a 3.9x under-turn on TURN_L
+        windows at ``W_KAPPA = 15.11245``) and for the admissibility argument
+        that the conditioning signal carries no situation-classifier output and
+        adds no information the cost did not already consume.
+
         ⚠️ All five are CALL-SITE arguments, not `RefAV1Config` fields, on
         purpose: adding a config field would change every serialised config
         dict while a training run is live. Nothing on the training path can
@@ -2458,6 +2548,11 @@ class RefAV1(nn.Module):
                 raise ValueError("cost_weights must be (w_jerk, w_kappa, "
                                  f"w_vend), got {cost_weights!r}")
             w_jerk, w_kappa, w_vend = (float(x) for x in cost_weights)
+        # ⭐⭐ THE GOAL-CONDITIONED LATERAL WEIGHT (D-REFAV1-GOAL-KAPPA-COST,
+        # 2026-09-06). Parsed here, APPLIED after the goal is decoded (below);
+        # `None` is the SHIPPED path and leaves `w_kappa` the scalar it has
+        # always been, bit-identical to every arm banked before this date.
+        w_kappa_goal_map = _parse_w_kappa_by_goal(w_kappa_by_goal)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -2557,6 +2652,60 @@ class RefAV1(nn.Module):
                            "kappa_vocab": ga["kappa_vocab"]}
         else:
             goal_t, goal_source = None, "none"
+
+        # ⭐⭐ THE LATERAL COST BECOMES GOAL-CONDITIONED HERE, AND NOWHERE ELSE
+        # (D-REFAV1-GOAL-KAPPA-COST, 2026-09-06).
+        #
+        # ⛔ THE DEFECT THIS CLOSES, MEASURED, NOT HYPOTHESISED. The shipped
+        # term is `w_kappa * controls[...,1]^2` -- ONE scalar charged on every
+        # window regardless of what the tactical brain decoded. On the p4 panel
+        # (n = 40, ckpt 21,109; `.../2026-09-05-refav1-cost-geometry/raw/
+        # kappa_by_goal_all.txt`) raising it from 0 to 15.11245 does this:
+        #     LANE_KEEP goal (n=18): mean k^2  0.002908 -> 0.000000   (intended)
+        #     TURN_L    goal (n= 9): med|k|max 0.08000  -> 0.02066    (⛔ 3.9x
+        #                            UNDER-TURN, frac k!=0 still 1.0000)
+        #     TURN_R    goal (n=13): med|k|max 0.08000  -> 0.08000    (untouched)
+        # i.e. the plan still turns where the goal says TURN_L, at **26 % of the
+        # commanded curvature** -- under the trajectory labeller's turn gate, so
+        # `turn_left` recall reads 0.3636 -> 0.0000 while the arm's ADE improves.
+        # ⇒ **THE HIERARCHY WAS FIGHTING ITSELF**: the tactical brain commands
+        # TURN_L and the operative cost fines the planner for obeying it. That
+        # is `M48` on the frontier -- a penalty RANKS, so a quadratic curvature
+        # penalty always prefers the cheapest non-zero curvature and under-turns
+        # everywhere, INCLUDING where turning is correct. A CONSTRAINT
+        # (`PlanConfig.kamm_mu`) forbids without ranking; this makes the penalty
+        # stop ranking where the goal already said curvature is the point.
+        #
+        # ⛔ ADMISSIBILITY -- the binding 2026-08-03 check, answered before this
+        # was written. The conditioning signal is `goal_action["lat"]`, the
+        # model's own decoded tactical lateral ACTION token from
+        # `_imagine_tactical_goal`. (1) It is NOT the situation classifier's
+        # output in any form: `stack/tanitad/data/situations.py` emits
+        # lane_change / intersection / roundabout, a DIFFERENT label family;
+        # `lat_head` is supervised by `lat_label` over `TACTICAL_LAT_ACTIONS_V7`.
+        # (2) ⭐ It adds NO INFORMATION AT ALL -- that token already builds
+        # `goal_t` (the goal term itself) and already seeds iCEM below, so this
+        # opens no new channel and there is nothing it could smuggle.
+        # (3) Inference stays VISION-ONLY: `intent` comes from
+        # `_run_brains(pooled_win, nav_cmd)`; the only ego quantity in the path
+        # is `v0` measured at t0, legal under the PI ruling of 2026-09-02.
+        #
+        # ⚠️ WHEN THE GOAL CANNOT SUPPLY A CLASS the scalar weight governs, and
+        # the RESULT SAYS SO (`w_kappa_goal_class = None`) -- a fallback that
+        # does not record itself is indistinguishable from the lever binding.
+        w_kappa_goal_class = None
+        w_kappa_effective = w_kappa
+        if w_kappa_goal_map is not None:
+            if goal_action is None:
+                # `goal_source` is "supplied" or "none": there is no decoded
+                # token, so there is nothing to condition ON. Refusing here
+                # would kill the goal-free ablations; falling back silently
+                # would manufacture an arm. Fall back, and record it.
+                pass
+            else:
+                w_kappa_goal_class = goal_lat_cost_class(goal_action["lat"])
+                w_kappa_effective = float(w_kappa_goal_map[w_kappa_goal_class])
+        w_kappa = w_kappa_effective
 
         # ⭐ THE DECODED ACTION ALSO SEEDS THE SEARCH (GPC: proposes, never
         # disposes). MEASURED 2026-09-02 on a random-init tiny model: without
@@ -2822,7 +2971,19 @@ class RefAV1(nn.Module):
         res.goal_kappa_levels = (None if goal_kappa_levels is None
                                  else tuple(float(x) for x in goal_kappa_levels))
         res.cost_metric = cost_metric
+        # ⚠️ `w_kappa` here is the EFFECTIVE weight this window was scored with.
+        # Under `w_kappa_by_goal` it is the class's weight, not the CLI scalar,
+        # so `cost_weights` keeps meaning "what actually priced this plan" --
+        # the three fields below say how it got that value.
         res.cost_weights = (w_jerk, w_kappa, w_vend)
+        # ⭐ THE GOAL-CONDITIONED LATERAL WEIGHT TRAVELS ON THE RESULT. A dump
+        # that records only the effective scalar cannot be told apart from a
+        # plain `--cost-weights` arm at the same number, and the whole claim is
+        # about WHICH WINDOWS got WHICH weight.
+        res.w_kappa_by_goal = (None if w_kappa_goal_map is None
+                               else dict(w_kappa_goal_map))
+        res.w_kappa_goal_class = w_kappa_goal_class
+        res.w_kappa_effective = float(w_kappa)
         res.seed_kappa_ladder = (tuple(float(k) for k in seed_kappa_ladder)
                                  if seed_kappa_ladder else None)
         # ⭐ THE DECISION RULE TRAVELS TOO. `None` is plain argmax — the legacy

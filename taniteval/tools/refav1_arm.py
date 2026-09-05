@@ -815,6 +815,47 @@ def run_dump(a) -> dict:
             "one variable). Refusing before the rollout rather than after it."
             % getattr(a, "jerk_seam", "off"))
 
+    # ⭐⭐ THE GOAL-CONDITIONED LATERAL COST (D-REFAV1-GOAL-KAPPA-COST,
+    # 2026-09-06). Parsed here, forwarded to `plan()`, and VERIFY-GATED by
+    # signature for the same reason `--lat-logit-bias` is below: a stack that
+    # predates the parameter would silently ignore the flag and bank a plain
+    # `--cost-weights` arm under a goal-conditioned name -- which is exactly
+    # the failure the `--jerk-seam` refusal above exists to prevent, one flag
+    # over.
+    wkg_raw = getattr(a, "w_kappa_by_goal", None)
+    w_kappa_by_goal = None
+    if wkg_raw:
+        import inspect as _inspect
+        if "w_kappa_by_goal" not in _inspect.signature(_R.RefAV1.plan).parameters:
+            raise SystemExit(
+                "[refav1_arm] ⛔ STALE STACK: --w-kappa-by-goal was given but "
+                f"{_R.__file__}'s plan() has no such parameter; refusing to "
+                "bank a scalar-W_KAPPA arm under a goal-conditioned name")
+        parts = [float(x) for x in str(wkg_raw).split(",")]
+        if len(parts) not in (2, 3):
+            raise SystemExit(
+                "[refav1_arm] --w-kappa-by-goal needs 2 or 3 comma-separated "
+                "values '<w_lane_keep>,<w_turn>[,<w_shift>]', got "
+                f"{len(parts)}: {wkg_raw!r}")
+        w_kappa_by_goal = _R._parse_w_kappa_by_goal(tuple(parts))
+        # ⛔ AN ALL-EQUAL MAP IS INERT BY CONSTRUCTION -- the `--jerk-seam`
+        # refusal in this same function, generalised. If every class carries
+        # the same weight the term is the shipped scalar and the arm would
+        # bank a guaranteed +0.0000 under a lever's name. The ONE exception is
+        # the deliberate CONTROL that must reproduce a known scalar arm, and it
+        # is spelled by omitting the flag, not by passing a constant map.
+        if len(set(w_kappa_by_goal.values())) == 1:
+            raise SystemExit(
+                "[refav1_arm] ⛔ --w-kappa-by-goal %s gives every goal class "
+                "the SAME weight, which is bit-identical to --cost-weights "
+                "with that W_KAPPA: the arm is INERT BY CONSTRUCTION and would "
+                "bank a meaningless null under a goal-conditioned name. To run "
+                "the scalar control, OMIT this flag." % (wkg_raw,))
+        _p("[cost-goal] w_kappa_by_goal=%s  (per-window curvature weight from "
+           "the DECODED tactical lateral goal; the W_KAPPA in --cost-weights "
+           "now governs ONLY windows with no decoded goal)"
+           % (w_kappa_by_goal,))
+
     # ⭐⭐ THE GOAL-HEAD DECISION RULE (D-REFAV1-DRIVE-GATE, 2026-09-05).
     # `--lat-logit-bias` is an additive vector on the lateral logits inside
     # `_imagine_tactical_goal`, i.e. on the ONE decision that determines whether
@@ -1076,6 +1117,7 @@ def run_dump(a) -> dict:
                                      a_sustain=a_sustain,
                                      a_shift=a_shift,
                                      jerk_seam_a0=jerk_seam,
+                                     w_kappa_by_goal=w_kappa_by_goal,
                                      goal_keeps_seed=gks)
                     if t_plan_first is None:
                         t_plan_first = time.time() - tp
@@ -1090,9 +1132,39 @@ def run_dump(a) -> dict:
                         got_w = tuple(float(x) for x in
                                       getattr(res, "cost_weights", ()))
                         want_w = tuple(used_w.values())
-                        if got_w != want_w:
-                            raise RuntimeError(f"plan() used cost_weights={got_w}, "
-                                               f"asked for {want_w}")
+                        if w_kappa_by_goal is None:
+                            if got_w != want_w:
+                                raise RuntimeError(
+                                    f"plan() used cost_weights={got_w}, "
+                                    f"asked for {want_w}")
+                        else:
+                            # ⚠️ UNDER THE GOAL-CONDITIONED COST, `cost_weights`
+                            # carries the EFFECTIVE per-window W_KAPPA, so a
+                            # bare equality check would fire on a correct arm.
+                            # The two facts that must still hold are (a) jerk
+                            # and vend are untouched, and (b) the effective
+                            # W_KAPPA is one of the MAP's values -- never the
+                            # CLI scalar, which under this flag governs only
+                            # goal-free windows.
+                            got_map = getattr(res, "w_kappa_by_goal",
+                                              "__absent__")
+                            if got_map in ("__absent__", None):
+                                raise RuntimeError(
+                                    "plan() returned w_kappa_by_goal=%r for "
+                                    "--w-kappa-by-goal %s: the flag did not "
+                                    "reach it (stale stack)"
+                                    % (got_map, wkg_raw))
+                            if (got_w[0], got_w[2]) != (want_w[0], want_w[2]):
+                                raise RuntimeError(
+                                    "plan() changed W_JERK/W_VEND under "
+                                    f"--w-kappa-by-goal: got {got_w}, asked "
+                                    f"for {want_w}")
+                            if got_w[1] not in set(w_kappa_by_goal.values()):
+                                raise RuntimeError(
+                                    "plan() scored with W_KAPPA=%r, which is "
+                                    "not a value of the goal map %s: the "
+                                    "conditioning did not bind"
+                                    % (got_w[1], w_kappa_by_goal))
                         # ⛔ and the DECISION RULE must have reached plan() too:
                         # a result that does not carry it back was produced by
                         # an older plan() and would be banked under the wrong
@@ -1216,6 +1288,20 @@ def run_dump(a) -> dict:
                 gsp = getattr(res, "goal_space", None)
                 if gsp is not None:
                     goal_space_seen.add(str(gsp))
+                # ⭐ THE REALISED PER-WINDOW CURVATURE WEIGHT AND ITS GOAL CLASS
+                # (D-REFAV1-GOAL-KAPPA-COST). Banked ALWAYS, not only under the
+                # flag: with the flag off `w_kappa_eff` is the scalar every
+                # window used, which is the control column the goal-conditioned
+                # arms are read against. The class is -1 when there was no
+                # decoded goal to condition on, so a silent scalar fallback is
+                # visible in the dump rather than inferred from its absence.
+                _wkc = getattr(res, "w_kappa_goal_class", None)
+                dec.setdefault(f"w_kappa_class_{arm}", []).append(
+                    _R.GOAL_KAPPA_COST_CLASSES.index(_wkc)
+                    if _wkc in _R.GOAL_KAPPA_COST_CLASSES else -1)
+                dec.setdefault(f"w_kappa_eff_{arm}", []).append(
+                    float(getattr(res, "w_kappa_effective",
+                                  float(used_w["W_KAPPA"]))))
             dec.setdefault("ha_controls", []).append(
                 hold[None].expand(k, 2).float().cpu().numpy()[None])
             dec.setdefault("ha0_ext_controls", []).append(
@@ -1342,6 +1428,25 @@ def run_dump(a) -> dict:
         "cost": {"metric": cost_metric, "weights": used_w,
                  "weights_source": ("CLI override (--cost-weights)" if cost_weights
                                     else "shipped module constants"),
+                 # ⭐ THE GOAL-CONDITIONED LATERAL WEIGHT, BANKED BESIDE THE
+                 # SCALAR. `None` says the arm used one W_KAPPA everywhere;
+                 # a map says W_KAPPA was chosen per window from the decoded
+                 # tactical lateral goal, and `used_w["W_KAPPA"]` then governs
+                 # ONLY the goal-free windows. Reading the scalar alone would
+                 # make a goal-conditioned arm indistinguishable from a plain
+                 # `--cost-weights` one, which is the whole claim.
+                 "w_kappa_by_goal": w_kappa_by_goal,
+                 "w_kappa_by_goal_note": (
+                     "per-window W_KAPPA selected by "
+                     "refa_v1.goal_lat_cost_class(goal_action['lat']); the "
+                     "realised per-window class and weight are in the "
+                     "decisions sidecar as w_kappa_class_cl / w_kappa_eff_cl. "
+                     "ADMISSIBILITY: the conditioning signal is the model's "
+                     "own decoded tactical lateral ACTION token, carries NO "
+                     "situation-classifier output (a different label family), "
+                     "and adds no information the cost did not already consume "
+                     "-- that token already builds the goal field and the iCEM "
+                     "seed. Inference stays vision-only (v0 at t0 only)."),
                  "shipped_weights": shipped_w,
                  "cost_metrics_available": list(_R.COST_METRICS),
                  "rule": ("cost_metric selects the goal term's form "
@@ -2650,6 +2755,23 @@ def main(argv=None):
                          "pre-2026-09-05 arms). A class-prior correction is "
                          "'-tau*log(prior)'; a commit threshold is a negative "
                          "entry in the LANE_KEEP slot.")
+    ap.add_argument("--w-kappa-by-goal", default=None,
+                    help="THE GOAL-CONDITIONED LATERAL COST "
+                         "(D-REFAV1-GOAL-KAPPA-COST). Comma-separated "
+                         "'<w_lane_keep>,<w_turn>[,<w_shift>]': the curvature "
+                         "weight is chosen per window from the DECODED "
+                         "tactical lateral goal token instead of being one "
+                         "scalar everywhere. MEASURED defect it closes (p4 "
+                         "n=40, ckpt 21109, kappa_by_goal_all.txt): raising "
+                         "W_KAPPA 0 -> 15.11245 takes TURN_L-goal windows from "
+                         "med|k|max 0.08000 to 0.02066 -- the plan still turns "
+                         "(frac k!=0 1.0000) but at 26 %% of what the tactical "
+                         "brain commanded, under the labeller's turn gate, so "
+                         "turn_left recall reads 0.3636 -> 0.0000. The "
+                         "hierarchy was fighting itself. Omit for the SHIPPED "
+                         "scalar (bit-identical to every pre-2026-09-06 arm). "
+                         "Overrides the W_KAPPA in --cost-weights, which then "
+                         "governs only windows with no decoded goal.")
     ap.add_argument("--nav-shuffle-seed", type=int, default=0)
     ap.add_argument("--no-navshuf", action="store_true",
                     help="skip the nav-shuffle T1 arm (⛔ then the record is "
