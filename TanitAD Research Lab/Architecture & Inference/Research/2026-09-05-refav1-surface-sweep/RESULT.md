@@ -1,6 +1,6 @@
 # H-REFAV1-SURFACE-1 — the paired delta and the cost-surface weight sweep
 
-**status: PHASE 1 DELIVERED · PHASE 2 STAGE A DELIVERED · STAGE B ARMED AND SELF-COMPLETING — done: (§1) the decision-grade four-family paired bootstrap — the ccos refutation is UPHELD and the shipped cos planner's lateral row is a WINDOW-LEVEL identity with constant velocity; (SPEC) phase 2 pre-registered with the SELECT/SCORE split banked before any weight was computed; (§2) the 59-setting exhaustive screen at ZERO GPU — W_JERK is inert on 24 of 26 candidates and functions only as a switch that turns the SEARCH off, the decoded goal is directionally right (0.778 [0.625, 0.923], excludes chance) but commits to a turn on only 0.205 [0.128, 0.293] of the windows where GT turns, and cv wins the argmin on 0.507 of windows at ALL 59 settings so half the grid is unreachable by any re-weighting; (§3) Stage B armed on Thor behind the running chord regression arm, with the finishing sequence written out. / next: pull `dump_B1_puregoal` when `B1.DONE` appears (~3 h after the chord arm ends), run §3c, and read the answer against the outcomes committed in SPEC.md §5.**
+**status: PHASE 1 DELIVERED · PHASE 2 STAGE A DELIVERED · STAGE B ARMED AND SELF-COMPLETING — done: (§1) the decision-grade four-family paired bootstrap — the ccos refutation is UPHELD and the shipped cos planner's lateral row is a WINDOW-LEVEL identity with constant velocity; (SPEC) phase 2 pre-registered with the SELECT/SCORE split banked before any weight was computed; (§2) the 59-setting exhaustive screen at ZERO GPU — W_JERK is inert on 24 of 26 candidates and functions only as a switch that turns the SEARCH off, the decoded goal is directionally right (0.778 [0.625, 0.923], excludes chance) but commits to a turn on only 0.205 [0.128, 0.293] of the windows where GT turns, and cv wins the argmin on 0.507 of windows at ALL 59 settings so half the grid is unreachable by any re-weighting; (§3) Stage B armed on Thor behind the running chord regression arm, with the finishing sequence written out; (§4) the SCORE-half reference panel precomputed so the arm slots straight in; (§5) a second independent probe of the goal-recall finding — the goal head emits only 3 of its 8 lateral tokens and TURN_R 4.4x more often than TURN_L. / next: pull `dump_B1_puregoal` when `B1.DONE` appears (~3 h after the chord arm ends), run §3c, and read the answer against the outcomes committed in SPEC.md §5.**
 
 Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step **21,109** ·
 **T1** (self-action open loop) for every planner arm; **T0** for `ol` (world-model diagnostic only).
@@ -382,3 +382,44 @@ particular 282 windows; it is what the shipped planner does.
 
 ⇒ **B1 and B2 are compared against THIS table**, on the same windows, with the same estimator. The
 comparison is already set up; only the arm is missing.
+
+---
+
+## 5. ⭐ The goal head's lateral vocabulary is three tokens wide, and lopsided
+
+A **second, independent probe** of §2b's goal-recall finding — a different mechanism, as the
+absence rule requires: §2b read the goal's own *canonical control* (`seed0`'s κ from the box
+panel); this reads the **decoded token** in the arm's `decisions/*.npz`. They agree exactly
+(**38** turn goals by both routes), and the token histogram adds something the κ probe could not
+see.
+
+Over all 282 windows, `goal_lat_cl` (the goal the planner was actually given; `goal_source_cl` is
+**`tactical_imagined` on 282/282**, i.e. every goal is the tactical head's imagination):
+
+| token | v7.2 lateral vocabulary (`TACTICAL_LAT_ACTIONS_V7`) | count |
+|---|---|---|
+| 0 | `LANE_KEEP` | **244** |
+| 6 | `TURN_L` | **7** |
+| 7 | `TURN_R` | **31** |
+| 1–5 | `LANE_CHANGE_L`, `LANE_CHANGE_R`, `ABORT_LC`, `NUDGE_L`, `NUDGE_R` | **0** |
+
+Two things follow, neither of which any cost weight can touch:
+
+1. **Five of the eight lateral tokens are never emitted at all** on this grid — including both
+   lane-change tokens and both nudges. The goal head's effective lateral vocabulary is
+   `{LANE_KEEP, TURN_L, TURN_R}`.
+2. ⚠️ **`TURN_R` is emitted 4.4× more often than `TURN_L`** (31 vs 7). GT turns on 132 of 282
+   windows, so this is not a corpus in which right turns outnumber left ones 4:1. Combined with
+   §2b — the goal is *directionally right* 0.7778 [0.6249, 0.9231] when both turn, on n = 27 — the
+   honest reading is that the direction signal is real but the emission is **both sparse and
+   skewed**, and the n available to test the skew is small.
+
+⇒ **This is where the next work is**, and it is a statement about the **goal head**, not the cost
+surface and not the world model. It is exactly what Stage B's T0 oracle-goal arm is pre-registered
+to bound: if replacing the goal moves the four families while the whole 59-setting weight grid does
+not, the binding constraint is the goal's recall and its lateral vocabulary collapse.
+
+⚠️ **Evidence class:** MEASURED (ours), T1 grid, artifact
+`dumps/dump_cos_ext/decisions/ep*.npz` and `raw/screen_stageA2.json`. Token names resolved from
+`stack/tanitad/models/vocab_v7.py:290` — index 6 `TURN_L`, index 7 `TURN_R`, matching the
+`refav1_stratified_read.py` convention this stream inherited.
