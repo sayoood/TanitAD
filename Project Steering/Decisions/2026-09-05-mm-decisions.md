@@ -2034,3 +2034,67 @@ parked obstacle** it would not be, and the fix ships **default OFF** rather than
   "already there and stale"** — and it passed a **stale `RESULT.md`**. Re-banked with **md5 content
   verification**. ⇒ same family as *a marker count is not an integrity check* (`M39` §6): **a size
   check is a claim about the file's existence, not about its content.**
+
+## M41. `H-RL-COLL-1` RESOLVED-FAILURE — and the new endpoint is confirmed LEARNABLE by its shape
+
+### 1. The verdict, as committed
+
+`H-RL-COLL-1` required `fan_contact` to decrease **separated at BOTH seeds**. Separated on **s0
+only**; `top32_contact` and `fan_unsafe` **disagree in sign** across seeds. ⇒ **FAILURE**, register
+row updated to RESOLVED-FAILURE with the reasoning, not a status flip.
+
+⭐ **The gain is not replicated; the COSTS are** — `fan_peak_g_mean` (+0.0253 / +0.0407) and
+`fan_infeasible` (+0.0022 / +0.0025) clear at both seeds, same sign, **larger on the second**.
+**Third instance of the veto arm's trade signature.**
+
+### 2. ⭐⭐ It measured the NEW endpoint rather than accepting the redirect on trust
+
+`M39` retired `fan_contact` and named **robustness to agent-motion-prediction error**, quoting
+**2.86 %** at a 0.5 s shift *on the projected fan*. This stream measured the same surface on the
+**RAW** fan — the baseline that number has to be read against:
+
+| `dt` (s) | raw fan | friction-projected | × base |
+|---|---|---|---|
+| **−1.00 (closer)** | 0.066243 | 0.066211 | **1.93×** |
+| **−0.50 (closer)** | 0.039811 | 0.041699 | **1.16×** |
+| 0.00 | 0.034277 | 0.036230 | 1.00× |
+| +0.50 (further) | 0.031413 | 0.033594 | 0.92× |
+
+⭐⭐⭐ **Monotone across the whole −1.0 … +2.0 s sweep and roughly LINEAR — there is NO THRESHOLD TO
+SIT SAFELY BELOW.**
+
+⇒ **That shape is the argument.** A residual with a knee could be discharged by widening a margin;
+a **smooth, thresholdless, monotone** residual cannot — **it is exactly what a learned policy is
+for.** ⇒ `M39`'s redirect is now supported by **independent evidence from a stream whose own arm it
+had just retired**, rather than by deference.
+
+⚠️ **And the sign is stated as GEOMETRY, not as a label.** *"Early"* is ambiguous about which way
+risk runs: `dt < 0` puts the lead **earlier along its own path**, i.e. **CLOSER** to a following ego
+— that is the risk direction. ⛔ **Reading it the other way inverts the entire table.** *A signed
+axis needs its physical direction written down, not its adjective.*
+
+### 3. ⭐ And `M39`'s uncomfortable §4.1 survives perturbation
+
+The friction projection is **worse than raw at EVERY shift** (0.041699 vs 0.039811 at the risk end),
+converging only at −1.0 s where the scene dominates. ⇒ **that finding was not an artefact of the
+unperturbed operating point** — which is the check that turns a single-point oddity into a property.
+
+**Controls:** `dt = 0` reproduces the base **exactly**; ⭐ **the interpolator at +0.5 s equals a pure
+index shift computed WITHOUT it (0 disagreements)** — the arithmetic checked against a route that
+does not use it, which is the `#30` discipline applied prospectively; extrapolated grid points
+disclosed **per row**.
+
+### 4. Two of its own bugs, both already-documented kinds
+
+A non-ASCII `⇒` in `print()` — **fatal on this cp1252 box** — and an `[S]` tensor indexed as
+`[W, S]` in its first extrapolation disclosure. **Both caught immediately; neither reached an
+artifact.**
+
+### 5. State
+
+`ctrl0` trains, then `ctrl_null` s1, then the CPU-only **two-floor verdict banks automatically**.
+⛔ **No GPU is queued beyond the arms already running** — the ~40 GPU-min of T1 evals against the
+retired endpoint **stay cancelled**.
+
+⇒ **The RL line is not dead; it is re-aimed.** Contact is solved by construction at zero cost;
+what remains is a smooth monotone residual under prediction error, and that is the objective.
