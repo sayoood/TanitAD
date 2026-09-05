@@ -2160,3 +2160,33 @@ only reason the guard's pass is trustworthy now.
 
 ⇒ **State:** `ctrl_null` s1 — the last arm — started 20:25:52Z; when it lands, the CPU-only two-floor
 verdict banks automatically. **No GPU is queued beyond it.**
+
+## M43. ⭐ ALL THREE SEARCH-GEOMETRY LEVERS SHOW THE IDENTICAL TRADE — the longitudinal blocker is not where the search can reach
+
+The sibling's third arm (`combined`) landed and completes the panel. Paired against `wk15`:
+
+| arm − `wk15` | ADE | LON speed MAE |
+|---|---|---|
+| `kamm07` (constraint) | **+0.0993 [+0.0039, +0.2149] worse** | −0.0781 better |
+| `l3ladder` (candidates) | **+0.4301 [+0.0556, +1.0860] worse** | −0.0617 better |
+| `combined` (both) | **+0.1570 [+0.0276, +0.2788] worse** | −0.0592 better |
+
+⭐ **Every search-geometry lever buys ~12–16 % of the +0.4862 gap and pays SEPARATED ADE for it**,
+and `combined` still sits **+0.4269 [+0.2428, +0.6559]** from `ha0_ext`. ⚠️ Note `combined` is
+**worse than `kamm07` alone** (+0.1570 vs +0.0993) — the ladder **adds damage**, exactly as `M34`
+predicted when it established that a *constraint* cannot make a rung attractive.
+
+⇒ **A THIRD independent argument that the longitudinal blocker is not reachable by the SEARCH.**
+⭐⭐ **And the mechanism is now explicit: the emitted `a[0]` IS the decoded token's canonical rung on
+27 of 40 windows.** The search does not explore the longitudinal dimension — **it COPIES the
+token** — so no amount of better geometry, wider candidates or tighter constraint can help. It is
+the **vocabulary the search copies**, plus **the cost that lets it copy nothing** (`M36` §3: the jerk
+term does not price the seam, so the all-zero plan is the joint minimiser).
+
+⇒ That is the three-part principle's parts **2 and 3** again, and it is why `lonshift` — which
+changes the *vocabulary*, not the search — is the right arm.
+
+**`lonshift` running:** launched 20:25:33Z, **argv-audited to exactly one variable** against `wk15`
+(`--a-sustain-mode a0_shift`; same `ccos`, same `(0.0, 15.11245, 64.297)`, same seed, same ckpt
+21,109, same 40 windows). ⭐ **The lever provably reached `plan()`** — a reached-it guard raises on
+window 1 if `res.a_shift` returns `None`, and the first plan completed in 69 s. ETA ~1–1.5 h.
