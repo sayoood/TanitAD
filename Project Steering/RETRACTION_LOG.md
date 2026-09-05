@@ -12301,3 +12301,57 @@ because someone else asserted a null without measuring it.
 → **Pinned:** `.../2026-09-05-veto-only-fan-safety/RESULT.md` §3, `raw/analyze_veto.py`,
 `raw/run/s0/ctrl_null/arm_summary.json`, `raw/run/n2k/ctrl_null/arm_summary.json`; register row
 `D-RL-VETO-EXPLICIT-1` (the fix) and `H-VETO-FAN-1` (the two floors in force).
+
+---
+
+# 2026-09-05 (#28)
+
+**Retracted:** the 2026-07-26 feature census's CAMERA byte figures — "**40.7 TB** for the six
+unread cameras", "**21.1 MB**/clip/camera", "**301 GB** for 2,376 clips × 6 cameras".
+
+**Corrected to (MEASURED 2026-09-05):** **27.85 TB** · **13.35 MB** (front-wide) / **14.90 MB**
+(7-camera mean) · **216 GB**. The banked figures are high by **×1.39–1.58**.
+
+**What happened.** The census priced every feature as `chunk_0000 × 3,146`. For LiDAR that is
+near-exact — **×1.02**, 101.74 TB extrapolated against **99.60 TB** measured — because a spin is a
+near-constant size. Video is not: its bitrate is scene-dependent, so a single chunk is a draw, not
+a unit.
+
+→ **Root-cause class — and it is a NEW variant of one this log already carries.** The familiar
+form is *a true measurement quoted outside its scope* (the `df` / Thor `free` / cgroup
+`usage_in_bytes` / `step_s` / cylindrical-FOV family). The new part is the **validation**:
+
+⭐ **THE EXTRAPOLATION WAS CHECKED, AND THE CHECK IS WHAT MADE IT TRUSTWORTHY.** It was validated
+against LiDAR, where it landed at ×1.02 — and that agreement is precisely why nobody re-derived it
+for video. ⛔ **A validation performed on the artifact where the assumption HOLDS certifies nothing
+about the artifact where it does not.** The assumption being tested was never "is `× 3,146`
+arithmetically right" — it was **"is this feature's per-chunk size near-constant?"**, which is TRUE
+for a lidar spin and FALSE for encoded video. Checking it only where it is true is not a control;
+it is a confirmation.
+
+→ **The direction matters, and it is the uncomfortable one.** The stale figure was **pessimistic**:
+it inflated by ~46 % exactly the number the surround-camera decision turns on. A stale pessimistic
+figure blocks a capability we want as effectively as an optimistic one green-lights work we should
+not do — and it is harder to catch, because nobody audits a number that argues for caution.
+*(Same shape as the "our pods cannot render" absence claim that blocked AlpaSim + CARLA for 12
+days, and the `obstacle.offline` "does not exist" that stood for days over a feature present on
+97.44 % of the corpus.)*
+
+→ **Durable fixes:**
+1. ⛔ **An extrapolation must state the property it assumes, not just the factor.** `× N chunks`
+   assumes per-chunk homogeneity; write that assumption down beside the number, and the reader can
+   see it is false for video without re-measuring.
+2. ⛔ **Validate an extrapolation on the artifact class you are going to APPLY it to** — or, when
+   one validation must cover several, validate on the one where the assumption is WEAKEST. A check
+   run where the assumption is strongest is a confirmation, not a control. Same family as the
+   deliberate-regression arm: *a gate never shown to FAIL certifies nothing.*
+3. **The old figures must not be re-quoted.** ⚠️ Search **both comma forms** when sweeping for them
+   (`40.7` and `40,7`) — a 2026-09-04 retraction took three revisions because every `\b45456\b`
+   probe missed a prose `45,456`.
+
+→ **Pinned:** register row `D-V5A-CAM3`; `TanitAD Research Lab/Data Engineering/…` 2026-07-26
+feature census (the retracted source); the v5a camera-ladder RESULT.md §1.4.
+
+⚠️ **Scope, stated honestly:** this corrects a COST figure. It does not touch any model result, any
+tier-stamped number, or any acceptance bar — and it makes the surround-camera option **cheaper**,
+not dearer, so no decision taken under the old figure was made too permissive.
