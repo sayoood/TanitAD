@@ -420,3 +420,78 @@ MAGNITUDE.** A vocabulary that can express a turn does nothing for a turn the he
 approval, and then **kept measuring and refuted its own escalation's headline** — composing the
 oracle with the real decode is work nobody asked for. That is the behaviour the programme wants,
 and it caught a Master Mind error that would otherwise have shipped as an approved plan.
+
+## M20. ⛔ THE OBJECTIVE I SET WAS ILL-POSED — a raw-logit margin is a property of the weight norm; and the priority reorders to CURVATURE DISCIPLINE first
+
+### 1. My error, with its mechanism
+
+I briefed the goal-margin stream that the binding quantity was *"the margin gap: only 0.297
+logits"* and that widening it was the objective. ⛔ **That objective is VOIDED, and not by taste.**
+MEASURED: `lat_head` is `LayerNorm → Linear`, so scaling its weights by *c* multiplies
+`median_margin_gap_logits` by *c* **exactly** — at c = 3 the decode is **bit-identical 282/282**,
+AUC unchanged to **< 1e-12**, and the gap moves **×3.0000**.
+
+⇒ **A raw-logit margin can be made arbitrarily large without changing a single decision.** It is a
+property of the weight norm, not of the model's discriminability. An objective defined on it is
+optimisable to any value and means nothing.
+
+⭐ **The scale-free quantities are the ones that should have been in the brief**, and the stream
+supplied them: **AUC 0.7120** (shuffled 0.5055 ± 0.0336), **Cohen's d 0.5902**, **overlap
+coefficient 0.5845** — and the 0.297 gap is **0.329 pooled SD**, which is the honest way to say it.
+⚠️ **Class: a quantity quoted without the transformation it is invariant under** — the same family
+as the units and estimator traps, with "scope" replaced by "scale". ⇒ **Before setting an objective
+on a scalar, ask what transformation leaves the model unchanged but moves the scalar.**
+
+⚠️ **Second, related:** the calibration-vs-separability verdict **flips with the turn definition**,
+and the stream's own pre-registration failed to pin it — which it *named* rather than exploited. At
+the inherited |κ| > 1e-3 (**R 1000 m**) it reads SEPARABILITY (balanced accuracy 0.6886); at the
+curvature the token actually commands (0.08) it reads CALIBRATION (0.8339). **Same data, opposite
+diagnosis, and only the threshold moved.**
+
+### 2. ⛔ THE PRIORITY REORDERS: curvature discipline FIRST, vocabulary SECOND
+
+MEASURED on the shipped `cos` arm + argmax (40 windows): executed curvature is non-zero on
+**0.9091** of GT-**turn** windows — **and on 0.9000 of GT-STRAIGHT windows**, both **saturating
+`kappa_max` = 0.2**, with direction correct only **0.4545**. Four families at **T1**: planner
+**ADE 1.8944 [1.0547, 2.9504]** against `ha0_ext` **0.8772** — **2.16× worse than holding the
+measured state, and it chose those plans** (`baseline_won_frac` 0.075).
+
+⇒ **refav1 turns. It turns almost everywhere, at the clip bound, in the wrong direction half the
+time.** ⭐ **And the uncontrolled variable is `W_KAPPA` — the curvature penalty — which is EXACTLY
+ZERO in the `{0.0, 0.0, 64.297}` triple that BOTH of the predecessor's A/B scripts pass.** A
+planner with no curvature penalty has no reason not to saturate `kappa_max`, and that is what the
+readout shows.
+
+⇒ **This sits UPSTREAM of both M15 and M19.** If the executed curvature saturates at 0.2 regardless
+of a goal that commands 0.08, then the goal vocabulary is not what is binding — the **cost** is.
+**Ordering, revised: (1) the one-variable `W_KAPPA` arm, both outcomes committed; (2) head recall
+at the crossover (`M19`); (3) the vocabulary (`M15`, already conditional).** ⛔ The vocabulary work
+does not stop, but **no vocabulary claim may be made until the curvature penalty is controlled** —
+a comparison across arms whose curvature penalty differs by construction is confounded between the
+vocabulary and the cost.
+
+### 3. ⭐ What went RIGHT, and should be copied
+
+* **The controls beat the stream's own verdict function, twice.** A re-fit was attempted twice and
+  failed twice: the zero-parameter soft posterior shrank to zero with its real correlation **on the
+  wrong side of its shuffled control**, and the trained ridge beat a constant by +0.019 while losing
+  **94.5 % of its R² under nav permutation** — *it reads the route, not the road*. In both cases the
+  stream's own verdict function said SUCCEEDS and its controls said FAILS. **The controls won.**
+* ⭐ **The PI's vision-only rule is now VERIFIED at source rather than assumed.** `plan()` builds the
+  goal input with `ego=None` ⇒ vision + nav only; the situation classifier enters **nowhere**; and
+  nav-only AUC **0.5967** against the head's **0.7120** detection and **0.9043** direction ⇒
+  detection and direction are **not** nav echoes. That closes the admissibility check the binding
+  ruling requires, in the direction we wanted.
+* **A shipped bug was found and fixed by a same-breath control** — a bare `%` in argparse help kills
+  `--help`, caught only because the control read 0 as well.
+
+### 4. Housekeeping that is not housekeeping
+
+⚠️ **`intent_stride2.npz` (the 4,786 × 256 goal-head input bank) and the P4 dumps live ONLY on the
+dev box** at `C:/Users/Admin/refav1_margin/`. That is the stranding failure the operating standard
+exists to prevent — banked analysis is re-runnable, the inputs are not. **Ship or re-derivable, in
+the next turn that touches this package.**
+
+⚠️ **2 of 41 paths did not blob-verify** because `refa_v1.py` / `refav1_arm.py` carry a sibling's
+uncommitted M15 work on top. ⛔ **Not lost, and correctly NOT swept into another agent's commits** —
+the right call, and the reason it is visible here rather than discovered in an audit.
