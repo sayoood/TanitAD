@@ -155,3 +155,58 @@ launching another exploratory arm** — our own estimator doctrine says a one-se
 not sufficient*, and refav1's planner **samples**, so the inference-seed replicate is the specific
 control that makes the +0.2263 [−0.3173, −0.1411] longitudinal win admissible. The gate is behaving
 correctly and must NOT be loosened; this is a priority decision, not a capacity one.
+
+## M55. ⭐ THE STRATEGIC HEAD DOES USE NAV — and refav1's eval slice cannot score whether it uses it CORRECTLY
+
+### 1. Two probes of mine withdrawn before they became results
+
+* ⛔ **Withdrawn:** *"world-model error vs tactical-decision correctness"*, which split 40 windows into
+  **3 correct / 37 wrong** and returned p = 0.70. **The grouping variable was invalid.** `lat_label` is
+  **`-100` (PyTorch `ignore_index`) on 32 of 40 windows** — I compared a decoder prediction against an
+  ignore token. ⭐ **Caught by implausibility, not by the p-value:** the tactical family's own recalls
+  (0.7143 / 0.3636 / 0.7500) imply ~25 correct, not 3. **A p-value computed on a broken grouping is not
+  a negative result; it is nothing.**
+* ⛔ **Withdrawn:** *"the route head is an exact nav echo"*, raised because `route_pred_nav_true` and
+  `nav_cmd` have **identical histograms** ({0:10, 1:10, 2:20}). **Per-window they agree on only 20/40.**
+  ⭐ The `M40` rule — *an implausibly exact agreement points at a shared denominator, not a shared
+  effect* — fired correctly and **REFUTED** the hypothesis instead of confirming it. Identical marginals
+  are not identity.
+
+### 2. ⭐ The real result: nav-responsiveness, MEASURED
+
+`dump_ccos_argmax`, 40 windows, control `nav_cmd` non-constant ({0:10, 1:10, 2:20}):
+
+| probe | result |
+|---|---|
+| `route_pred` **changes** when nav is SHUFFLED | **23/40** |
+| `route_pred` **changes** when nav is ZEROED | **30/40** |
+| `route_pred == nav_cmd`: true / shuffled / zero | 20 / 13 / 10 of 40 |
+| `lat_pred` changes under shuffle / zero | 15/40 · 22/40 |
+
+⇒ ⭐ **The strategic head genuinely CONSUMES the nav command** — its output moves on 23 of 40 windows
+when the command is corrupted and 30 of 40 when it is removed — **and it is NOT an echo** (20/40, not
+40/40). ⛔ **This is NOT the flagship-v1 defect** (whose route head was an exact bijection of its own
+nav input, 369/369 and 81/81, scoring 1.0000). **That is the first half of the PI's goal 5
+(*"follow nav command"*) answered affirmatively, on evidence.**
+
+### 3. ⛔ The gap: whether it follows nav CORRECTLY is UNSCORABLE on this slice
+
+`route_label` is **`-100` on 32 of 40 windows**; so are `lat_label` and `lon_label`. ⇒ **the STRATEGIC
+family is scorable on n <= 8 here**, and every strategic claim about refav1 currently rests on eight
+windows. ⚠️ **This is also why the tactical family uses a TRAJECTORY-DERIVED labeller**
+(`refc_tactical.factor_from_kinematics`) rather than these labels — a workaround whose existence should
+have told us the supervised labels were mostly absent, and did not, because nobody read their values.
+
+⇒ ⭐⭐ **refav1's eval slice has exactly the disease the refcv5 stream cured tonight** — parity label
+coverage **7.917 % -> 100.000 %** (2,400/2,400) built with the trainer's own arithmetic, zero GPU,
+13.5 s. **Apply the same build to refav1's eval episodes.** It is cheap, it is already implemented, and
+until it lands no strategic number from this rig is admissible beyond n = 8.
+
+### 4. Consequences
+
+1. ⭐ **Goal 5 splits cleanly now.** *Lateral/longitudinal driving* — the defect is the **COST** (`M54`,
+   two independent streams). *Nav-following* — the head **does** consume nav; its **accuracy** is
+   unmeasured for want of labels, not for want of capability.
+2. ⛔ **No strategic claim from refav1 may be quoted without its n**, and on this slice that n is <= 8.
+3. ⭐ **A 0-GPU work item with a known recipe:** rebuild the refav1 eval slice's v7.2 labels to full
+   parity coverage, then re-read the strategic family. **This is the cheapest remaining lever on goal 5.**
