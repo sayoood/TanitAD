@@ -120,27 +120,40 @@ class AgentSeamConfig:
     oracle_sigma_range_m: float = 0.0
     oracle_miss_rate: float = 0.0
 
-    #: ⭐ **32 — and it is now MEASURED, not inherited.**
-    #: ``agent_slots.N_QUERIES_DEFAULT`` is 16 and its own docstring calls that
-    #: "A DECLARED PLACEHOLDER, NOT A FITTED VALUE". MEASURED 2026-09-05 on the
-    #: val40 join (195,805 boxes / 7,400 frames / 39 clips;
-    #: ``raw/agent_density.json``), over the only honestly-trainable target set
-    #: — **in-field ∩ decode box** — the per-frame count is mean **3.16**,
-    #: p99 **19**, **max 24**. So:
-    #:   * **32 drops ZERO targets** and costs 2,048 params (0.07 % of the
-    #:     2-4 M band), so there is no reason to sit at the tighter number;
-    #:   * **24** is the strict zero-drop floor;
-    #:   * ⛔ **16 is REFUTED** — it drops on 2.16 % of frames even on the
-    #:     tightest cut, and the nearest sacrificed target sits at **38.5 m**.
-    #: DD uses 30, so 32 also keeps the audit gap on its own axis.
-    #: ⚠️ **The docstring recipe "use the p99" is itself wrong** and is not
-    #: what was applied: p99 leaves 1 % of frames dropping, and that 1 % is not
-    #: random — it is exactly the crowded frames, which is the
-    #: flattering-on-hard-frames failure the recipe exists to prevent. The rule
-    #: used here is **a covering N with ZERO drop on the FILTERED set**.
-    #: ⚠️ Measured on **val40**, not on the 2,376-episode train corpus, which
-    #: has no join on this box — the train distribution is UNMEASURED.
-    queries: int = 32
+    #: ⭐ **100 — RULED BY THE MASTER MIND (M17, 2026-09-05), AND THE CRITERION IS
+    #: THE DROP POLICY, NOT THE DISTRIBUTION.**
+    #: The previous value 32 was fitted on **val40** and its own note said the
+    #: train distribution was UNMEASURED. It has now been measured on the
+    #: 2,308-episode train join (433,040 frames / 12,122,129 boxes):
+    #:
+    #:   corpus       mean   p99    max
+    #:   val40        3.16    19     24     <- the basis for 32
+    #:   train2400    4.39    30   **94**
+    #:
+    #: At N = 32 on train: **41,362 boxes (2.18 %) dropped across 3,250 frames,
+    #: nearest sacrificed target at 13.1 m**.
+    #: ⛔ ``match_slots`` keeps the **NEAREST** N, so **a drop is by construction
+    #: the CLOSEST thing we failed to see** — this is not distant clutter being
+    #: trimmed, it is the near field going unmodelled once a scene is dense.
+    #: 13.1 m is inside the braking envelope at any urban speed, and **N = 64
+    #: does not fix it either** (33.9 m, still inside comfortable braking at
+    #: 15 m/s). A safety-relevant truncation is not a knob to trade against cost.
+    #: ⚠️ **94 is a MAX OVER A SAMPLE, not a bound** — setting N to the observed
+    #: maximum guarantees truncation on the first denser frame. 100 carries
+    #: headroom and does not drift each time the corpus grows.
+    #: ⭐ **100 is the ORDINARY setting for this architecture and 32 was the
+    #: anomaly**: DETR uses ~100 queries against ~7 objects per image; ours
+    #: averages 4.39. Surplus queries emitting "no object" is the design working.
+    #: ⭐ **The cost is MEASURED, not assumed** (each arm run twice, 256x640,
+    #: n_pad 94): step **3.346 -> 3.622 s = +8.2 %** with non-overlapping
+    #: medians; params **+17,408 = 68 x 256 exactly = +0.077 %**; peak memory
+    #: **no detectable difference** (analytic activation delta ~8.1 MiB against a
+    #: ~500 MB step). ⚠️ Scope: dev-box CPU; a pod-side re-measure is owed.
+    #: ⚠️ **The rule that survives from the old note**: a covering N with **ZERO
+    #: DROP**, never "use the p99" — p99 leaves 1 % of frames dropping and that
+    #: 1 % is exactly the crowded frames, which is the flattering-on-hard-frames
+    #: failure the recipe exists to prevent.
+    queries: int = 100
     d_model: int = 256
     depth: int = 3
     n_heads: int = 8
@@ -330,9 +343,13 @@ def visible_target_filter(tgt: dict, ranges: SlotDecodeRanges | None = None,
     a loss the head can only reduce by being wrong somewhere it can reach.
 
     MEASURED on that set (in-field ∩ decode box): mean **3.16** agents/frame,
-    p99 **19**, **max 24** — which is why ``AgentSeamConfig.queries = 32``
-    drops **zero** targets, and why ``N_QUERIES_DEFAULT = 16`` is REFUTED (it
-    drops on 2.16 % of frames, the nearest sacrificed target at **38.5 m**).
+    p99 **19**, **max 24** on VAL40 — but the train corpus reads mean **4.39**,
+    p99 **30**, **max 94**, which is why ``AgentSeamConfig.queries`` is **100**
+    (M17) and why **32 is REFUTED on train**: it drops 41,362 boxes (2.18 %)
+    across 3,250 frames with the nearest sacrificed target at **13.1 m**,
+    inside the braking envelope. ``N_QUERIES_DEFAULT = 16`` remains REFUTED.
+    ⚠️ A count measured on val40 is not a bound on train — that is the whole
+    lesson of this correction.
     """
     r = ranges or SlotDecodeRanges()
     return filter_targets_to_visible(tgt, half_angle_rad=half_angle_rad,
