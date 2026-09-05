@@ -2387,3 +2387,69 @@ every budget-shaped constraint we impose.
 
 ⚠️ **Reported to the PI as a qualification on the headline in the same turn it was found**; the
 `best` panel is running and its brief predates this entry, so the control is applied at synthesis.
+
+## M47. ⛔ M46 IS REFUTED BY ITS OWN CONTROL, WITHIN THE HOUR — and the concern belongs to the OTHER lever
+
+### 1. I ran M46's control on banked data and it says the opposite
+
+M46 hypothesised that `combined`'s `kamm_over_rate = 0.0000` might be bought by **suppressing
+longitudinal authority** (the two-axis friction budget handed to the lateral axis). The instrument
+already existed — `refav1.trivial_profile` in every banked `rec_*.json`, where `const_speed_frac` is
+exactly the zero-longitudinal-acceleration fraction. **MEASURED**, n = 40 windows, planner arm `cl`,
+artifacts `…/2026-09-05-refav1-cost-geometry/raw/arms/rec_*.json` (all 11 read from HEAD):
+
+| arm | levers | const-speed | straight |
+|---|---|---|---|
+| **`oracle_s0`** | **ground truth** | **31/40** | **11/40** |
+| `ccos_argmax` | none | **31/40** | 11/40 |
+| `kamm07` | cap only | **31/40** | 11/40 |
+| `l3ladder` | ladder only | **31/40** | 11/40 |
+| **`combined`** | **cap + ladder** | **31/40** | 11/40 |
+| `wk15` | `W_KAPPA` | **19/40** | 19/40 |
+| `wk151` | `W_KAPPA` (s1) | 18/40 | 26/40 |
+| `cos_wk` | — | **40/40** | 40/40 |
+
+⇒ ⛔ **The cap and the ladder move longitudinal authority by EXACTLY ZERO** (31/40 → 31/40), and they
+sit **on the ground truth's own value**. ⭐ **31 of these 40 windows are genuinely constant-speed in
+the ORACLE** — a planner reading 31/40 is *correct*, not degenerate. **M46 §2 and §3 are withdrawn.**
+
+⚠️ **The controls are what settled it, both of them.** `ha0` (pure constant-velocity) reads **1.000 on
+every row**, so the statistic is live; and the **oracle** supplies the value that distinguishes
+*degenerate* from *correct* — without it, 0.775 looks alarming. **M46 was right to demand a
+ground-truth comparison and wrong about which way it would point.**
+
+### 2. ⛔ I read "47.5 % → 77.5 %" in the wrong direction, and that was the whole error
+
+The `lonshift` stream's pair is **`wk15` 19/40 vs `kamm07`/`l3ladder` 31/40**. I read it as *the cap
+and ladder raise the constant-speed fraction to 77.5 %*. **It is the reverse:** 31/40 is the baseline
+**and the oracle**; **`W_KAPPA` DRIVES THE PLANNER DOWN TO 19/40**, i.e. it induces **excess**
+acceleration relative to ground truth on ~12 windows.
+
+⇒ ⭐ **The authority concern is real but belongs to `W_KAPPA`, and points the other way — excess, not
+suppression.** ⛔ **This matters for the `best` arm now running, which is `W_KAPPA` + cap + ladder:**
+its longitudinal-authority row must be read against the oracle's **31/40**, and a drop toward 19/40 is
+`W_KAPPA`'s signature, not a safety artefact.
+
+### 3. What of M46 survives
+
+⭐ **The RULE survives and is strengthened**: a safety metric over a multi-axis budget requires an
+**authority control read against the ground truth**. It just returned a clean acquittal instead of a
+conviction. ⛔ **The `LON accel_mae +0.0176` "fingerprint" reading is WITHDRAWN** — a planner that does
+not suppress acceleration cannot have that as its suppression signature; the cost is a real cost with
+another cause, still unexplained.
+
+⚠️ **Stated limitation, not glossed:** `const_speed_frac` is a **binary per-window test** at a 1e-4 m
+threshold. It refutes *"the levers suppress acceleration"* decisively — a zero change cannot be a
+suppression — but it does **not** measure `mean|a_lon|` magnitude on the 9 non-constant windows. That
+magnitude row is still owed.
+
+### 4. ⭐ A separate defect the same table exposes, unasked
+
+**`cos_wk` reads 40/40 straight AND 40/40 constant-speed — it emits the constant-velocity plan on
+EVERY window and is identical to the degenerate `ha0` baseline.** Per `trivial_profile`'s own note,
+that arm's **LATERAL rows are a property of the baseline, not of planning**, and any lateral win it
+shows over `ha` is not evidence of lateral skill. ⇒ **Any claim resting on `cos_wk` must be re-read.**
+
+⇒ **Net effect on the headline: the zero-violation result is STRONGER than when I qualified it.**
+Its attribution to genuine path selection is now supported by an oracle-anchored control rather than
+merely unrefuted.
