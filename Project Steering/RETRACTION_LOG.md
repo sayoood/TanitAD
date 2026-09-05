@@ -12045,3 +12045,147 @@ exit code said nothing; the content comparison said everything.
 ⇒ **Pinned:** `tools/tests/test_library_tracking.py` now asks HEAD per file via `cat-file -e`, treats
 an undecidable file as INCONCLUSIVE rather than a pass, and prints the index-vs-HEAD lag as a
 diagnostic so the next reader meets the explanation before reaching for a re-commit.
+
+# 2026-09-05 (#24) — "a constant reward yields an identically-zero advantage, so `ctrl_const` must read the no-information value exactly" (my own pre-registration, SPEC §10.4) — FALSE
+
+**Asserted by:** me (Deployment & Optimization FlyWheel), in `SPEC.md` §10.4 of the REF-C RL
+re-scope, written *before* the arms ran — which is the right time to write a prediction and the
+wrong time to state a mechanism you have not measured.
+
+**The claim:** `ctrl_const` sets every reward component weight to 0.0, so the reward is exactly
+`0.0` for every candidate; a constant reward has an identically-zero group-relative advantage;
+therefore the only surviving gradient is the anchor trust region, itself zero while the live fan
+equals the frozen reference; therefore the arm "must read the no-information value exactly".
+
+**The correction, MEASURED by the run's own counters:** `veto_rate_mean = 0.0897`,
+`final_loss = -1.863`, and 15 fan-safety metrics moved with genuine separation — `fan_peak_g_mean`
+**−0.0859 g** [−0.106, −0.067], `top32_infeasible` −0.0143, `top8_kamm_over` −0.0137. The advantage
+is **not** zero under a constant reward, because the **VETO channel is applied AFTER the bar and
+OUTSIDE the reward** — deliberately, since it is a constraint rather than a ranking signal
+(`advantage.truncated_inter_anchor_advantage`, whose docstring says exactly this). It pins advantage
+at **−1** on 9.0 % of candidates whatever the reward says. A constant reward does not give a zero
+advantage; it gives a **veto-only** advantage.
+
+**Root-cause CLASS — reasoning about a code path from its description rather than from its code.**
+I derived the advantage algebra from the intra/inter formulas and did not follow the same function to
+its veto branch, which the docstring three lines further down describes in full. Same family as the
+already-logged *"an analysis reads a key its producer never writes"* (the verdict reader) and the
+`step_s` / `df` scope errors: a statement true of part of the object, quoted about the whole of it.
+⚠️ The aggravating feature here is that it was written INTO A PRE-REGISTRATION, where an unmeasured
+mechanism acquires the authority of a committed prediction.
+
+**The alternative hypothesis was tested and REFUTED before this one was accepted.** AdamW is
+constructed as `torch.optim.AdamW(params, lr=cfg.lr)` with no `weight_decay`, so PyTorch's default
+0.01 applies and would shrink the trainable decoder by 0.99998 over 200 steps at lr 1e-5. MEASURED
+shrink: **0.99999996** — 500× smaller than decay predicts — and only **47/72** tensors shrank rather
+than all of them. Weight decay is not the mechanism. The real per-tensor change reaches **6.6e-3
+relative** on `tgt_film.to_scale_shift` / `ctx_to_cond` / the cross-attention biases, across exactly
+the 71 trainable tensors.
+
+⇒ **What it changes, and why the control still did its job.** `ctrl_const` is not broken; it is an
+unintentionally perfect **veto-only arm**, isolating DiffusionDriveV2's collision-pinning mechanism
+from V2's reward ranking. The committed gate V4 ("`ctrl_const` moved ⇒ VOID") is therefore re-read as
+an **attribution instruction**, not a failure:
+
+| comparison | isolates |
+|---|---|
+| `ctrl_const` − base | THE VETO (constraint pinning alone) |
+| `rl` − `ctrl_const` | THE REWARD + the ≥GT bar |
+| `rl` − base | both together — **attributes nothing** |
+
+Reading `rl` against `base` alone would have credited the reward with work the veto did. That is the
+C6-confound family, and it is precisely what a constant-only control exists to prevent — so the rule
+that produced this retraction (CLAUDE.md 2026-08-22: *every probe panel carries a constant-only
+control that must read the no-information value*) is **vindicated, not weakened**. What needs fixing
+is not the control but the sentence I wrote about what it would read.
+
+**A second defect surfaced in the same hour, by the OTHER control.** `ctrl0` (lr = 0,
+`weights_changed: False`, hash-identical weights) reported **40 of 57 fan-safety metrics as
+SEPARATED**, because the inherited rule `sep = (lo > 0) == (hi > 0)` evaluates `False == False` →
+**True** when every paired delta is exactly 0.0 and the CI is degenerate — *"nothing moved"* read as
+*"separated"*. It also promoted a delta of **−8.2e-09** probability mass to a separated finding, a
+correct interval with no effect size. ⇒ `raw/run/fan_safety_verdict.py` re-derives every arm from the
+banked per-window rows under one rule — **separated = CI excludes 0 AND not all-zero AND
+|delta| ≥ 1e-4**, the floor stated as one conservative step above 1/(128×120) = 6.5e-5, the quantum
+of one candidate in one window — under which `ctrl0` reads **0 of 57** and gate V1 passes. Class:
+the CLAUDE.md 2026-08-22 probe trap #3 verbatim (a zero-width CI at exactly 0.0000 beating every
+noisy estimate), met in a new costume.
+
+⇒ **Pinned:** `stack/tests/test_fan_safety.py` (the tool's geometry, the zero-path control, the
+time-aligned contact assertion and its non-vacuousness guard); the separation rule and its effect
+floor live in one place, `fan_safety_verdict.py`, and are applied to every arm identically rather
+than per-arm by whichever driver revision produced it.
+
+---
+
+# 2026-09-05 (#25) — "Exit: 4 FAIL-SAFETY" for the re-scoped REF-C RL run — WITHDRAWN as a label; an outcome was selected PAST a fired VOID gate
+
+**Asserted by:** me (Deployment & Optimization FlyWheel, third agent on the package), in
+`…/2026-09-05-refc-rl-readiness/RESULT.md` §11, headline sentence.
+
+**The claim:** *"Exit: `4 FAIL-SAFETY` — the V2-faithful RL stage makes refcv3's emitted fan less
+safe"*, supported by a `rl` − **base** fan-safety table (§11.2), and committed to the repository in
+two commit subjects (`0762b0d`, `86f8f92`).
+
+**The correction.** `SPEC.md` §10.6 states its exits are *"selected mechanically, first match in
+order"*, and lists `V4` — *"`ctrl_const` moved ANY fan-safety metric with paired separation ⇒
+**VOID**"* — **above** outcomes 1–4. `V4` fired: 14 of 57 metrics separated (RETRACTION #24, same
+day, which correctly diagnosed the *mechanism* as the veto channel). Diagnosing a gate's failure as
+*informative* is not the same as the gate not having fired. **The formal exit is `V4` → VOID**, and
+§11.2's `rl`-vs-base table is not admissible as lever evidence: `V4`'s own stated rationale —
+*"something other than the reward drives the update and no `rl` result above it means anything"* — is
+not merely triggered here, it is **substantively correct**, because the veto and the reward move
+feasibility in **opposite** directions (§11.3), so `rl` − base sums two levers and attributes
+neither.
+
+**What survives, and it is most of the substance.** The distinction that resolves it is between two
+kinds of claim, and only one of them is void:
+
+| claim | status |
+|---|---|
+| *"the REWARD moved fan safety by X"* (`rl` − base) | ⛔ VOID — two channels, opposite signs |
+| *"the reward, veto held fixed, moved X"* (`rl` − `ctrl_const`) | ⚠️ admissible but **POST-HOC** |
+| *"this stage produced a worse planner"* (`rl` − base at **T1**) | ✅ **not void** — no attribution needed |
+
+The third row is what makes the withdrawal cheap: the SECONDARY endpoint (four families, T1, 4,823
+shared windows / 141 episodes, `void: false`) shows every trajectory-derived metric degraded with
+separation and the planner left **worse than the constant-velocity floor** (`ade_m` 0.9433 vs `ha0`
+0.6723). *Whether* the stage is harmful never needed the attribution; only *which half of it* is.
+
+**Root-cause CLASS — an exit selected past its own gate because the gate's failure was interesting.**
+The gate failed, the failure turned out to be a genuinely valuable finding (a veto-only arm nobody
+had designed), and the value of the finding was silently allowed to substitute for the gate's
+verdict. This is the **motivated-reinterpretation** family, and it is more dangerous than an ordinary
+error because the reinterpretation was *correct on its own terms* — RETRACTION #24 is right about the
+mechanism. A pre-registration only constrains anything if a fired gate still fires when its firing is
+explicable. ⚠️ Aggravating feature: the label reached **two commit subjects**, i.e. the repository's
+own history, before any reader could check it against §10.6.
+
+⇒ **Two durable fixes, both in the pre-registration machinery rather than in anyone's care:**
+1. **A VOID gate is evaluated before, and independently of, any explanation of why it fired.** If the
+   explanation changes what should have been asked, that is a finding *and* a new pre-registration —
+   never a re-reading of the old one.
+2. **`V4`'s wording is the actual defect.** *"moved ANY fan-safety metric"* cannot be true of a
+   zero-weight control the moment a constraint channel sits outside the reward **by design** — which
+   this codebase does deliberately (`advantage.truncated_inter_anchor_advantage`, docstring). The
+   gate must read **"moved by a path OTHER THAN THE VETO"**, and must print `veto_rate_mean` beside
+   its verdict: a gate that reports its own mechanism's firing rate cannot be surprised by it.
+
+⚠️ **A third defect found in the same pass, same family, and it silently protected a null:** `V5`
+(VOID-NOROOM) requires the base contact rate to be `0.0000` on **every** population. MEASURED base:
+`sel` **0.0000** · `top8` **0.0000** · `top32` 0.0330 · `fan` 0.0974 — so `V5` did **not** fire
+literally, while firing completely in substance on the only populations the car acts on. A
+no-headroom endpoint passed a no-headroom gate on a wording technicality. ⇒ **gates must test the
+populations the system ACTS ON, not a universally-quantified list.**
+
+⚠️ **And a fourth, of the units family:** the separation floor `MIN_EFFECT = 1e-4` was derived as a
+**rate** quantum (`1/(128×120) = 6.5e-5`) and then applied to `fan_peak_g_mean` (units **g**) and
+`fan_v_mean_2s_spread` (units **m/s**), where it means nothing — 2 of the 14 metrics that fired `V4`.
+Worse, `mass_rank_contact`'s **base value is 3.470e-05 = 0.347× its own floor**, so on that metric an
+improvement could never have been reported as separated and only a worsening could. ⇒ **derive the
+floor per metric from that metric's own quantum and units, and stamp any metric whose base sits below
+its own floor `UNDETECTABLE-DOWNWARD` rather than reporting it as a null.**
+
+⇒ **Pinned:** `RESULT.md` §12.1 (the adjudication), §12.4 (the one-sided floor), §12.7 (the
+correction as banked); register rows `D-RL-FANSAFE-2` (VOID + the attribution split),
+`D-RL-FANSAFE-3` (the no-headroom quantification), `D-RL-FANSAFE-4` (the T1 four families).
