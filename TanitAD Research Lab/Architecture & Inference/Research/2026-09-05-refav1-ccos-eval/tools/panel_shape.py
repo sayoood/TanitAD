@@ -113,6 +113,36 @@ def shape(man, E, D, arm="cl", stack=None, lat_vocab=None):
                 "sign_agree_frac_over_goal_turn_windows": float(((gL & turnL) | (gR & turnR)).sum() / max(1, (gL | gR).sum())),
                 "plan_turns_on_goal_turn_frac": float(((gL | gR) & (turnL | turnR)).sum() / max(1, (gL | gR).sum())),
                 "plan_turns_on_goal_nonturn_frac": float((~(gL | gR) & (turnL | turnR)).sum() / max(1, (~(gL | gR)).sum()))}
+    # ⭐ THE SEED CHANNEL: is the emitted plan bit-exact the decoded goal's CANONICAL control
+    # (`canonical_controls(lat, lon, v0)[:K]`, the seed plan() injects)? A plan that IS the seed is
+    # goal-FOLLOWING (the tactical decoder's control won the cost comparison), not a searched plan.
+    gl_key, gn_key = f"goal_lat_{arm}", f"goal_lon_{arm}"
+    if stack and all(gl_key in D[k] and gn_key in D[k] for k in keys):
+        try:
+            import sys, torch
+            sys.path.insert(0, stack)
+            from tanitad.refs.refa_v1 import canonical_controls
+            from tanitad.models.vocab_v7 import TACTICAL_LAT_ACTIONS_V7 as LATV, TACTICAL_LON_ACTIONS_V7 as LONV
+            mc = (man.get("model") or {}).get("cfg") or {}
+            op_steps, op_dt = int(mc.get("op_steps", 30)), float(mc.get("op_dt", 0.2))
+            gl = np.concatenate([D[k][gl_key] for k in keys]); gn = np.concatenate([D[k][gn_key] for k in keys])
+            seed_exact = np.zeros(N, bool); seed_kappa = np.zeros(N, bool); seed_nz = np.zeros(N, bool)
+            for i in range(N):
+                if gl[i] < 0 or gn[i] < 0:
+                    continue
+                sd = canonical_controls(LATV[int(gl[i])], LONV[int(gn[i])], float(v0[i]), op_steps, op_dt)[:K].numpy().astype(np.float32)
+                seed_exact[i] = np.array_equal(ctrl[i], sd); seed_kappa[i] = np.array_equal(ctrl[i][:, 1], sd[:, 1])
+                seed_nz[i] = bool(np.any(sd != 0))
+            searched = ~(zeros | decel | seed_exact)
+            out["c_seed_channel"] = {
+                "plan_bit_exact_seed": int(seed_exact.sum()), "plan_kappa_channel_equals_seed": int(seed_kappa.sum()),
+                "seed_is_nonzero_on_windows": int(seed_nz.sum()),
+                "plan_bit_exact_seed_on_turning_plans": int((seed_exact & (turnL | turnR)).sum()),
+                "plans_neither_baseline_nor_seed (searched)": int(searched.sum()),
+                "searched_and_turning": int((searched & (turnL | turnR)).sum()),
+                "rule": "seed = canonical_controls(decoded lat, decoded lon, measured v0)[:K]; bit-exact over [K, 2]"}
+        except Exception as ex:                                 # pragma: no cover
+            out["c_seed_channel"] = {"error": repr(ex)}
     # the injected baselines' own costs under the run's metric, per window (D-REFAV1-CCOS-EVAL banking)
     bc = {}
     for k in keys:
@@ -167,6 +197,11 @@ def main(argv=None):
               f"distinct={s['c_distinct_plans']}  bit-exact zeros={s['c_bit_exact_injected_baseline']['zeros_cv_or_hold_v0']} "
               f"decel={s['c_bit_exact_injected_baseline']['decel_1.5']} (frac {s['c_bit_exact_injected_baseline']['frac_zeros_or_decel']:.4f})  "
               f"kappa==0 frac={s['d_kappa_identically_zero_frac']:.4f}  a-const frac={s['d_accel_constant_in_time_frac']:.4f}")
+        if "c_seed_channel" in s and "error" not in s["c_seed_channel"]:
+            c = s["c_seed_channel"]
+            print(f"   SEED channel: plan bit-exact seed {c['plan_bit_exact_seed']} (on turning plans {c['plan_bit_exact_seed_on_turning_plans']}), "
+                  f"kappa==seed {c['plan_kappa_channel_equals_seed']}, searched (neither baseline nor seed) {c['plans_neither_baseline_nor_seed (searched)']} "
+                  f"of which turning {c['searched_and_turning']}; seed nonzero on {c['seed_is_nonzero_on_windows']} windows")
         if "goal_turn_agreement" in s:
             g = s["goal_turn_agreement"]
             print(f"   goal-turn windows {g['n_goal_turn']}: plan turns on {g['plan_turns_on_goal_turn_frac']:.3f}, sign agrees {g['sign_agree_frac_over_goal_turn_windows']:.3f}; plan turns on non-turn goals {g['plan_turns_on_goal_nonturn_frac']:.3f}")

@@ -1,6 +1,6 @@
 # D-REFAV1-CCOS-EVAL — the centred-cosine fix MEASURED on the real implementation, and refav1 re-evaluated with it
 
-**status: IN PROGRESS — done: predecessor's uncommitted ccos plumbing rescued, tests made true (62 green) and COMMITTED (`044eafc`); the REAL-implementation goal-term panel on the full 282-window grid (§1, both probes, controls); the weight-neutrality factor and compensated triple (§2); the `cos` arm re-analysed with the `ha0_ext` echo control (§4); criteria checker on the `cos` record: 0 violations / 0 work items / const0 OK; echo gate 1 on the `cos` arm: FAIL (§4); the cross-dump paired tool passes its known-value control (exactly 0.0000 [0, 0] on all 10 metrics × 2 strata). RUNNING: Thor chain (ccos naive → ccos compensated → chord, `/home/nvidia/refav1_ccos/`, launched 02:18Z, ~3.5 h per arm) and dev-box chain (chord → ccos compensated, `C:\Users\Admin\ccos_eval\devbox\`, ~2 h per arm). next: when `dump_ccos_naive` completes → analyse (`refav1_arm.py --analyze-only`) → shape panel (§1b–d) → suite + criteria → paired ccos-vs-cos on the same windows → echo gate → register rows.**
+**status: IN PROGRESS — done: predecessor's uncommitted ccos plumbing rescued, tests made true (62 green) and COMMITTED (`044eafc`); the REAL-implementation goal-term panel on the full 282-window grid (§1, both probes, controls); the weight-neutrality factor and compensated triple (§2); the `cos` arm re-analysed with the `ha0_ext` echo control (§4); criteria checker on the `cos` record: 0 violations / 0 work items / const0 OK; echo gate 1 on the `cos` arm: FAIL (§4); the cross-dump paired tool passes its known-value control (exactly 0.0000 [0, 0] on all 10 metrics × 2 strata); THE SEED CHANNEL measured (§1e): every turn on this model is the decoded goal's canonical control winning against cv, and the pre-registered predictions for the compensated and chord arms are REVISED accordingly (timestamped, before their data). RUNNING: Thor chain (ccos naive → ccos compensated → chord, `/home/nvidia/refav1_ccos/`, launched 02:18Z, ~3.5 h per arm) and dev-box chain (chord → ccos compensated, `C:\Users\Admin\ccos_eval\devbox\`, ~2 h per arm). next: when `dump_ccos_naive` completes → analyse (`refav1_arm.py --analyze-only`) → shape panel (§1b–d) → suite + criteria → paired ccos-vs-cos on the same windows → echo gate → register rows.**
 
 Arch+Inference FlyWheel · 2026-09-05 · checkpoint `refav1-b1-v72-ep3-speed/ckpt.pt` step **21,109** (strict load, `missing_keys: []`; md5 `1189bc020018c2c67ce03d566c390285`, 2,122,997,633 B — identical on Thor and the dev box) · **OPEN LOOP** (PI ruling 2026-09-02): every planner arm is **T1** (self-action open loop: the predictor consumes the planner's own actions); the WM diagnostic is T0. Nothing here is driving performance.
 
@@ -36,7 +36,7 @@ Closed-form bound (`analyse8_exclusion.py`'s rule, unchanged): the goal term is 
 |---|---|---|---|---|---|---|
 | `cos` (shipped) | 1.19e-07 [5.96e-08, 1.79e-07] | 5.58e-04 | 95 / 0 | 2.42e-03 | 31.3 % [30.5, 38.4] *(ulp-quantised: the term is a handful of 2⁻²⁴ steps)* | **100.00 % / 100.00 %** |
 | `chord` (deliberate regression) | 3.63e-04 [9.5e-08, 5.5e-04] | 3.34e-02 | 0 / 0 | 6.84e-02 | 8.5 % [0.8, 15.6] | **100.00 % / 100.00 %** ✅ *fails, as it must* |
-| `ccos` | 1.0 [1, 1] | 1.177 | 0 / 133 | 1.95 | 189 % [0, 191] | **1.67 % / 0.33 %** |
+| `ccos` | 1.0 [1, 1] | 1.177 | 0 / 133 | 1.95 | 189 % [0, 191] | **1.67 % / 0.33 %** (4.0 % with the tighter `goal(cv) − min_n goal(n)` bound) |
 
 By stratum (`raw/panel_282_strata.json`; HOLD = `‖g − z_ref‖/‖z_ref‖ < 1e-6`, i.e. the decoded goal's canonical controls are zero):
 
@@ -47,6 +47,20 @@ By stratum (`raw/panel_282_strata.json`; HOLD = `‖g − z_ref‖/‖z_ref‖ <
 
 **Controls, real function, real fields:** zero-model ptp (all candidates = the cv field) = **0.0 exactly** for all three metrics on 282/282; identity control `chord` = 0.0 exactly (Sterbenz), `cos` ≤ 2.38e-07 and `ccos` = 0.0 on non-HOLD windows (the float32 cosine of identical vectors, as `test_c` now states); float64 cross-check max |ccos32 − ccos64| = 2.49e-07; the second probe agrees on `cos`/`chord` to ≤ 2.2e-07 on every cell, on `ccos` to ≤ 8.8e-06 on every non-cv row, and differs on the **cv row by up to 0.031** — exactly the batch-composition residual (its box has a different size), which is the mechanism of §0's `ccos(cv)` finding, reproduced by two tools.
 
+### 1e. ⭐ THE SEED CHANNEL — what "the planner turns" actually means on this model
+
+`plan()` seeds iCEM with the decoded tactical goal's **canonical control** (`canonical_controls(lat, lon, v0)[:plan_steps]`, `refa_v1.py:2188`): for a TURN token that is κ = ±`GOAL_KAPPA_TURN` = ±0.08 held for 10 steps at zero jerk, i.e. a candidate whose penalty is `0.05 × 0.08² = 3.2e-04` — **inside the population's exclusion bound by 300×**. The bound (§1a) covers the RANDOM population only. On the one window where both smokes turned (clip 01be5919, t = 43, goal TURN_R × ADAPT_SPEED_FOR_CURVE, v0 7.73), the emitted plan is **bit-exact the seed** under `ccos` AND under `chord` (`raw/shape_cos_and_smoke.json` `c_seed_channel`). So on this model a turn is **goal-FOLLOWING** — the tactical decoder's own control winning the total-cost comparison against cv — and the world model's role is to accept or reject that seed, not to search.
+
+Measured on the panel's `seed0` / `proposal` rows (`raw/panel_seed_channel.json`; the closure's total cost equals goal + shipped penalty to ≤ 2.1e-07 on every cell, so the accounting is the planner's own):
+
+| metric | seed beats cv @ shipped (of 282) | … on the 38 TURN-goal windows | proposal beats cv | seed beats cv @ compensated ×643 | … on TURN-goal windows |
+|---|---|---|---|---|---|
+| `cos` | 7 (all non-HOLD; 0 HOLD) | **0 / 38** | 0 | 7 | 0 |
+| `chord` | 67 | **5 / 38** | 0 | 7 | 0 |
+| `ccos` | **149 = every non-HOLD window** | **38 / 38** | 75 | **91** | **32 / 38** |
+
+Seed penalty median 7.67e-05, max 5.59e-03 (the seed is non-zero on 149 windows: κ on 38, accel profile on 120). ⇒ under `ccos` the seed wins wherever the goal direction is real; under `cos` the goal advantage (≤ 5.6e-04) never covers even the seed's 3.2e-04 on a TURN window. **This is the mechanism of every turn the arms will show, and it is why "monotone-equivalent" did not protect the chord: the equivalence is of the goal term alone, and the total cost adds the penalty on a fixed scale.** The banked `cos` dump reads consistently: 140/282 plans are bit-exact the seed, all of them the ZERO seed (133 HOLD windows) or a saturated BRAKE_TO seed that coincides with the decel block (7); 0 searched plans.
+
 ### 1b–1d. Shape of the emitted plans — `cos` banked; `ccos` / `chord` arms RUNNING
 
 | arm (n = 282 / 141 unless stated) | L / R / straight | distinct plans | bit-exact to an injected baseline (zeros ∪ decel_1.5) | κ ≡ 0 | plan turns on the 38 TURN_L/R-goal windows (sign agrees) |
@@ -54,8 +68,8 @@ By stratum (`raw/panel_282_strata.json`; HOLD = `‖g − z_ref‖/‖z_ref‖ <
 | `cos` @ shipped (banked 2026-09-04, re-read by content) | 0 / 0 / 282 | **2** | 270 + 12 = **282/282** | **1.0000** | 0/38 (—) |
 | `ccos` @ shipped — NAIVE (smoke, n = 2 / 1) | 0 / 1 / 1 | 2 | 1/2 (decel) | 0.5000 | 1/1 (1/1) |
 | `ccos` @ shipped — NAIVE, full grid | *running on Thor* | | | | |
-| `ccos` @ compensated (12.859, 32.149, 64.297) | *queued (Thor arm 2 / dev box arm 2)* — **PRE-REGISTERED PREDICTION: κ ≡ 0 on ~100 %, 2 distinct plans** (100 % iteration-0 exclusion by the bound) | | | | |
-| `chord` @ shipped (deliberate regression, full grid) | *running on the dev box* — **PRE-REGISTERED PREDICTION: κ ≡ 0 on 100 %** (24-window sweep S6 of 2026-09-04 read 100 %) | | | | |
+| `ccos` @ compensated (12.859, 32.149, 64.297) | *queued (Thor arm 2 / dev box arm 2)* — **PRE-REGISTERED PREDICTIONS, with their revision history kept visible.** *(02:50Z, first version)* (P1) κ ≡ 0 on ~100 % and only zero-penalty plans (100 % iteration-0 exclusion by the bound); (P2) the cv-vs-decel split becomes goal-correlated. ⚠️ **REVISED 03:00Z — still before any compensated window existed — after the seed channel was measured (§1e): the bound covers the RANDOM population only; the injected canonical goal SEED carries zero jerk and ≤ 3.2e-04 of κ penalty and beats cv on 91/282 windows at ×643 (32 of the 38 TURN-goal windows). ⇒ (P1′) the compensated arm is NOT flat: it emits the seed on up to 91 windows (κ ≠ 0 on ≤ 32, all of them TURN-goal, sign = the decoded goal's), zeros/decel elsewhere, and NO searched plan (the population stays 100 % excluded). (P2) unchanged.** | | | | |
+| `chord` @ shipped (deliberate regression, full grid) | *running on the dev box* — **PRE-REGISTERED PREDICTION (first version): κ ≡ 0 on 100 %** (24-window sweep S6 of 2026-09-04 read 100 %). ⚠️ **REVISED 03:00Z, before the arm had produced more than 14 windows: the chord cannot re-rank the GOAL TERM, but the TOTAL cost adds the penalty on a fixed scale, so a 28× decision-leverage re-weight opens the seed channel — the seed beats cv on 67/282 windows under `chord` at shipped weights, on 5 of the 38 TURN-goal windows (§1e). ⇒ (C′) κ ≠ 0 on ≤ 5 windows, every one of them the seed (goal-following), none searched; the smoke already showed one (t = 43 of clip 01be5919, bit-exact seed).** | | | | |
 
 ---
 
@@ -92,3 +106,5 @@ Stratified paired reads on the SAME windows (`raw/paired_control_cos_vs_cosext.j
 | Thor tree | `/home/nvidia/refav1_ccos/repo/` = `evalstack_ccos.tgz` md5 `cfc43a35fe0289b7616586c47a459a7c` built from the mirror; `refa_v1.py` md5 `c3dab40241be4830c27c447f46e00946`, `refav1_arm.py` `4ac869ee0c92a5be49e4f5150dee5491`, `t1_eval.py` `d944a5fb4197acce9861c076ac42e47f` — verified on both ends |
 | dev-box inputs | `C:\Users\Admin\refav1_eval_full\{fp8 (8.7 GB, 142 files), eps (5.1 GB, 141)}` pulled from Thor by tar stream; labels md5 `aa12c948f062181c3297265b51526ec5` (identical to the banked run) |
 | estimator | episode-cluster / paired episode-cluster bootstrap, n_boot 2000 |
+| cross-box control | Thor (torch 2.13.0+cu130) vs dev box (2.11.0+cu128), same clip / windows (01be5919, t = 3, 43): GT, `ha`, `ha0`, `ha0_ext`, `ol` **bit-identical (max\|Δ\| = 0.0)**; forward-pass WM error max\|Δ\| 2.98e-07; every head decode (lat/lon/route under nav_true, decoded goal tokens) identical. Cross-box differences are ulp-level. |
+| pipeline dry-run | `tools/finalize_arm.sh` on the 282-window `cos`+`ha0_ext` dump (`final/cos_ext_dryrun/`): analyze → suite (0 violations / 0 work items, const0 OK) → `tools/criteria_check.py` → shape → paired-vs-cos (exactly 0.0000 [0, 0] on every metric, the known-value control) → echo gate 1 (FAIL, as §4) — 4 min, zero GPU |

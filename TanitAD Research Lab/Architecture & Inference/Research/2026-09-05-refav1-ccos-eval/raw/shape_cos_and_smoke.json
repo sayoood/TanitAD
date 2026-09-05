@@ -69,6 +69,15 @@
    "plan_turns_on_goal_turn_frac": 0.0,
    "plan_turns_on_goal_nonturn_frac": 0.0
   },
+  "c_seed_channel": {
+   "plan_bit_exact_seed": 140,
+   "plan_kappa_channel_equals_seed": 244,
+   "seed_is_nonzero_on_windows": 149,
+   "plan_bit_exact_seed_on_turning_plans": 0,
+   "plans_neither_baseline_nor_seed (searched)": 0,
+   "searched_and_turning": 0,
+   "rule": "seed = canonical_controls(decoded lat, decoded lon, measured v0)[:K]; bit-exact over [K, 2]"
+  },
   "plan_cost": {
    "median": 5.960464477539063e-08,
    "min": -1.1920928955078125e-07,
@@ -158,6 +167,15 @@
    "plan_turns_on_goal_turn_frac": 1.0,
    "plan_turns_on_goal_nonturn_frac": 0.0
   },
+  "c_seed_channel": {
+   "plan_bit_exact_seed": 1,
+   "plan_kappa_channel_equals_seed": 2,
+   "seed_is_nonzero_on_windows": 2,
+   "plan_bit_exact_seed_on_turning_plans": 1,
+   "plans_neither_baseline_nor_seed (searched)": 0,
+   "searched_and_turning": 0,
+   "rule": "seed = canonical_controls(decoded lat, decoded lon, measured v0)[:K]; bit-exact over [K, 2]"
+  },
   "basecosts": {
    "basecost_cv_cl": {
     "median": 0.9960052669048309,
@@ -199,8 +217,145 @@
   },
   "path": "thor/dumps/dump_smoke"
  },
+ "smoke_chord": {
+  "arm": "cl",
+  "n_windows": 2,
+  "n_episodes": 1,
+  "K": 10,
+  "cost": {
+   "metric": "chord",
+   "weights": {
+    "W_JERK": 0.02,
+    "W_KAPPA": 0.05,
+    "W_VEND": 0.1
+   },
+   "weights_source": "shipped module constants",
+   "shipped_weights": {
+    "W_JERK": 0.02,
+    "W_KAPPA": 0.05,
+    "W_VEND": 0.1
+   },
+   "cost_metrics_available": [
+    "cos",
+    "chord",
+    "ccos"
+   ],
+   "rule": "cost_metric selects the goal term's form (refa_v1.COST_METRICS: cos = 1-cos(z,g), the shipped default; chord = ||z^-g^||, monotone-equivalent; ccos = 1-cos(z-z_ref, g-z_ref) centred on the window's own zero-action terminal field). Neither non-default form is weight-neutral, so the weight triple is banked beside the metric, never assumed"
+  },
+  "b_share": {
+   "L": 0.0,
+   "R": 0.5,
+   "straight": 0.5,
+   "n_L": 0,
+   "n_R": 1,
+   "n_straight": 1,
+   "rule": "sign of the plan's mean curvature; |mean kappa| <= 1e-6 = straight"
+  },
+  "c_distinct_plans": 2,
+  "c_bit_exact_injected_baseline": {
+   "zeros_cv_or_hold_v0": 1,
+   "decel_1.5": 0,
+   "frac_zeros_or_decel": 0.5,
+   "straight_constant_accel_any_a": 1,
+   "frac_straight_constant_accel": 0.5
+  },
+  "d_kappa_identically_zero_frac": 0.5,
+  "d_accel_constant_in_time_frac": 1.0,
+  "kappa_abs_max_over_plans": 0.07999999821186066,
+  "kappa_mean_abs_median_over_turning": 0.07999999821186066,
+  "plan_source_label_hist": {
+   "cem": 1,
+   "baseline:hold_v0": 1
+  },
+  "label_vs_content": {
+   "labelled_cem": 1,
+   "labelled_cem_but_bit_exact_zeros_or_decel": 0,
+   "baseline_won_frac_by_label": 0.5,
+   "trivial_by_content_zeros_or_decel": 0.5
+  },
+  "by_decoded_goal_lat": {
+   "LANE_KEEP": {
+    "n": 1,
+    "plan_L": 0,
+    "plan_R": 0,
+    "plan_straight": 1
+   },
+   "TURN_R": {
+    "n": 1,
+    "plan_L": 0,
+    "plan_R": 1,
+    "plan_straight": 0
+   }
+  },
+  "goal_turn_agreement": {
+   "n_goal_TURN_L": 0,
+   "plan_L_on_goal_L": 0,
+   "plan_R_on_goal_L": 0,
+   "n_goal_TURN_R": 1,
+   "plan_R_on_goal_R": 1,
+   "plan_L_on_goal_R": 0,
+   "n_goal_turn": 1,
+   "sign_agree_frac_over_goal_turn_windows": 1.0,
+   "plan_turns_on_goal_turn_frac": 1.0,
+   "plan_turns_on_goal_nonturn_frac": 0.0
+  },
+  "c_seed_channel": {
+   "plan_bit_exact_seed": 1,
+   "plan_kappa_channel_equals_seed": 2,
+   "seed_is_nonzero_on_windows": 2,
+   "plan_bit_exact_seed_on_turning_plans": 1,
+   "plans_neither_baseline_nor_seed (searched)": 0,
+   "searched_and_turning": 0,
+   "rule": "seed = canonical_controls(decoded lat, decoded lon, measured v0)[:K]; bit-exact over [K, 2]"
+  },
+  "basecosts": {
+   "basecost_cv_cl": {
+    "median": 0.004880595486611128,
+    "min": 0.00058035459369421,
+    "max": 0.009180836379528046,
+    "n_exactly_1": 0,
+    "n_exactly_0": 0,
+    "abs_dev_from_1_median": 0.9951194045133889
+   },
+   "basecost_hold_v0_cl": {
+    "median": 0.004880595486611128,
+    "min": 0.00058035459369421,
+    "max": 0.009180836379528046,
+    "n_exactly_1": 0,
+    "n_exactly_0": 0,
+    "abs_dev_from_1_median": 0.9951194045133889
+   },
+   "basecost_proposal_cl": {
+    "median": 0.033679839223623276,
+    "min": 0.028899576514959335,
+    "max": 0.038460101932287216,
+    "n_exactly_1": 0,
+    "n_exactly_0": 0,
+    "abs_dev_from_1_median": 0.9663201607763767
+   },
+   "basecost_decel_1.5_cl": {
+    "median": 0.01925663510337472,
+    "min": 0.014230740256607533,
+    "max": 0.024282529950141907,
+    "n_exactly_1": 0,
+    "n_exactly_0": 0,
+    "abs_dev_from_1_median": 0.9807433648966253
+   }
+  },
+  "plan_cost": {
+   "median": 0.004868568415986374,
+   "min": 0.0005563004524447024,
+   "max": 0.009180836379528046
+  },
+  "path": "devbox/dump_smoke_chord"
+ },
  "_cross": {
   "cos_banked_vs_smoke_ccos": {
+   "same_windows_asserted": false,
+   "n_compared": 2,
+   "cl_bit_identical_frac": null
+  },
+  "cos_banked_vs_smoke_chord": {
    "same_windows_asserted": false,
    "n_compared": 2,
    "cl_bit_identical_frac": null
