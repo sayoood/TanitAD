@@ -62,3 +62,48 @@ outcomes are already committed. Launched 2026-09-05 as its own stream: implement
 `--withheld-bank {fixed,pred,random,none}` trainer flag, run A0 fixed / A1 predicted / A2
 random-marginal control / A3 dropout 0.25 / A4 speed-blind vocabulary, score on the `H-ECHO-8`
 separation instrument and four families on kept AND withheld rows — never on ADE.
+
+## M7. ⭐ PI RULING — the environment extension ships in TWO releases: v5a pure vision, then v5b LiDAR
+
+**PI, verbatim (2026-09-05):** *"i prefer to do the environment extensions in two versions/steps, let
+start by pure vision and then add lidar. So check, what we can do maximally with vision, bev, und was
+else?"*
+
+⇒ `REFCV5_DESIGN_PLAN.md` §3/§7 were written on a single-track assumption and must be restructured
+into **v5a (camera-only, maximised)** and **v5b (LiDAR BEV)**. The §7 ladder its author is writing now
+is still valid as a set of work packages; only the release boundary changes. A dedicated study is
+running: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vision-only-maximum/`.
+
+**The inventory that makes v5a large, MEASURED** (`…/Data Engineering/Implementation/incoming/
+2026-07-26-physicalai-feature-probe/PHYSICALAI_FEATURE_PROBE.md`, the dataset's own 36-row
+`features.csv`: 7 camera + 6 calibration + 3 label + 1 lidar + 19 radar):
+
+* **We read ONE of SEVEN cameras.** `camera_front_wide_120fov` only (`physicalai.py:232`, pinned at
+  2 / 5 / 6 features by layer in `test_physicalai_feature_readset.py`). Unread: `front_tele_30fov`,
+  `cross_left_120fov`, `cross_right_120fov`, `rear_left_70fov`, `rear_right_70fov`,
+  `rear_tele_30fov` — each 1.6–2.5 GB/chunk, 5.1–7.9 TB total. ⭐ **This is the single biggest
+  vision-only lever and it needs no new sensor modality.**
+* **`camera_intrinsics` already covers all 7 cameras at 100 %** and we already read it; the rig
+  transform for every sensor is in `sensor_extrinsics`, also already read. Adding a camera is a
+  DECLARATION change in the episode build, not a new calibration problem.
+* **`camera_intrinsics.offline` carries `ego_mask_image_png`** (97.44 %, 0.2 MB/chunk, unread) — a
+  free ego-occlusion mask.
+* ⚠️ **A third option the two-release framing does not cover: RADAR.** 19 radar features in three
+  mutually-exclusive rig configurations on **160,761 clips (52.49 %)**; the probe's own words:
+  *"the whole radar suite is cheaper than one camera."* Radar gives measured RANGE-RATE directly —
+  the LONGITUDINAL family is where 88.7 % of our oracle gap lives. It is neither vision nor LiDAR,
+  and it is the cheapest sensor in the dataset. **Flagged to the PI as a possible v5a-plus or v5b
+  alternative; no decision taken.**
+* LiDAR for comparison: **32,340 MB/chunk, 101.7 TB**, 97.44 % coverage (this census; §3 of the plan
+  read 99.6 TB from the HF blob listing — same order, two probes).
+
+**What v5a can recover of DiffusionDrive's three grounded attentions** (to be settled by the study,
+stated here as the question): waypoint-indexed sampling in PERSPECTIVE view needs no BEV at all
+(`H-DDA-1`, already pre-registered); agent cross-attention is reachable from cameras because
+`obstacle.offline` supplies 3D cuboids as **LABELS** on 97.44 % of the corpus and the binding rule is
+*labels may use privileged signals, inference is vision-only* — so a monocular 3D detector trained on
+them yields agent tokens at inference without LiDAR; a metric BEV is the one that genuinely wants
+either surround cameras (a lift) or v5b.
+
+⇒ **Decision:** v5a is maximised and shipped first. v5b is judged on what gap remains AFTER v5a, not
+on its own merits.
