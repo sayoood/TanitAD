@@ -235,7 +235,8 @@ DT_FRAME = 0.1           # the 10 Hz corpus tick (the v2ep provider's own grid)
 #: ``--grid`` -> (dt_s, K). Both are index-selects of V3_HORIZONS; nothing else is.
 GRIDS = {"2s": (0.5, 4), "6s": (1.0, 6)}
 ARM_TIERS = {"os": "T1", "os_navshuf": "T1", "os_navzero": "T1", "ha": "T1",
-             "ha0": "T1", "oracle_sel": "T0", "os_navflip": "T1"}
+             "ha0": "T1", "ha0_ext": "T1", "oracle_sel": "T0",
+             "os_navflip": "T1"}
 #: ⛔ THE NAV NULL, DERIVED FROM SOURCE — not invented, and not ``nav_known``.
 #: The question asked was whether ``RefCV3Model.forward``'s ``nav_known``
 #: argument gives a principled null. MEASURED: it does NOT.
@@ -348,9 +349,20 @@ ARM_MEANING = {
           "the horizon. Consumes no recorded future. NOT the floor — a held "
           "noisy steer drifts, so this arm can be WORSE than trivial.",
     "ha0": "T1 — ⭐ CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. "
-           "a straight line at constant speed. The STRONGEST TRIVIAL BASELINE, "
-           "the echo test's real bar, and the ONLY arm bit-comparable with "
-           "refav1's (zero is zero in either action unit).",
+           "a straight line at constant speed. The STRONGEST TRIVIAL BASELINE "
+           "and the ONLY arm bit-comparable with refav1's (zero is zero in "
+           "either action unit). ⛔ NOT 'the echo test's real bar' — that line "
+           "stood here and stack/tanitad/eval/echo_gate.py RETRACTS it by name: "
+           "`ha` is 2.2x harder, and the bar is `ha` AND `ha0_ext` TOGETHER.",
+    "ha0_ext": "T1 — ⭐⭐ THE ECHO CONTROL: constant a0 AND constant curvature "
+               "k0, both read at the MEASURED t0 (a0 the backward difference "
+               "of v, k0 the recorded channel AT t0 — where `ha` holds the one "
+               "at t0-1). The SHARPENED form of `ha`, and the OTHER HALF of the "
+               "acceptance bar: beating `ha` while TYING `ha0_ext` means the "
+               "gain is echo, and the gate reads it that way "
+               "(stack/tanitad/eval/echo_gate.py::ha0_ext). Derived by the ONE "
+               "shared implementation refav1_arm.hold_ext_controls, called here "
+               "with stride=1 — never re-derived (Rung A1, 2026-09-05).",
     "oracle_sel": "T0 — the a_star-selected anchor's refinement: a_star is the "
                   "GT-NEAREST anchor (refc_v3_train.py:460), so this is the "
                   "CEILING, not a driveable arm. Never compared to a T1 number.",
@@ -958,7 +970,10 @@ def run_dump(a) -> dict:
             nav_valid[i] = nid is not None
     nav_shuf, shuf_stats = ra.shuffle_nav(nav_true, nav_valid, a.nav_shuffle_seed)
 
-    arms = ["os", "ha", "ha0"]
+    # ⭐ `ha0_ext` is NOT optional: refcv5's acceptance bar is "beat BOTH `ha`
+    # AND `ha0_ext`", and until Rung A1 this harness computed neither the arm
+    # nor the number, so half the bar was unreadable on the REF-C surface.
+    arms = ["os", "ha", "ha0", "ha0_ext"]
     if nav_on and not a.no_navshuf:
         arms.append("os_navshuf")
     # ⭐ THE NAV-ZERO TRAJECTORY ARM (BACKLOG R39). Shuffle and zero are NOT
@@ -1074,6 +1089,18 @@ def run_dump(a) -> dict:
             # either unit (hence bit-comparable across models).
             ha0 = integrate_select(hold_v0_controls(n_f), v0, grid,
                                    action_units=units)
+            # ⭐⭐ ha0_ext: THE ECHO CONTROL, and the other half of the bar.
+            # ⛔ The (a0, k0) derivation is NOT written here. It is
+            # `refav1_arm.hold_ext_controls` — the SAME call the refav1 harness
+            # makes — invoked at this corpus's native 0.1 s tick (stride=1);
+            # `loader=None` because that argument is read only for its `dt`,
+            # which is passed explicitly. A second implementation of a shared
+            # kinematic is how two "independent" checks come to agree on a
+            # wrong answer (echo_gate.ha0_ext's own docstring).
+            ext = ra.hold_ext_controls(None, v_ep, kap_ep, t0,
+                                       dt=DT_FRAME, stride=1)
+            ha0_ext = integrate_select(ext[None].expand(n_f, 2), v0, grid,
+                                       action_units=units)
             # -- the model, one batched forward over the nav conditionings -----
             fr = tr.frames_to_device(item["frames"][None], dev)   # [1, W, C, H, W]
             b = len(conds_fed)
@@ -1143,6 +1170,7 @@ def run_dump(a) -> dict:
             acc["g"].append(g)
             acc["ha"].append(ha)
             acc["ha0"].append(ha0)
+            acc["ha0_ext"].append(ha0_ext)
             acc["v0"].append(np.array([v0], dtype=np.float32))
             # -- the sidecar ---------------------------------------------------
             sel_idx = int(out["sel_idx"][0])
@@ -1338,7 +1366,9 @@ def run_dump(a) -> dict:
         "absent_arms": ABSENT_ARMS,
         "action_units": {
             "recorded": units, "L_enc_m": ra.STEER_WHEELBASE_M,
-            "applies_to": ["ha"],
+            # `ha0_ext` holds a RECORDED channel-1 value too, so the unit
+            # conversion applies to it exactly as it does to `ha`.
+            "applies_to": ["ha", "ha0_ext"],
             "does_not_apply_to": ["os", "os_navshuf", "oracle_sel (the model "
                                   "emits a PATH, not a control — there is no "
                                   "channel to convert)",
@@ -1351,6 +1381,14 @@ def run_dump(a) -> dict:
                      "the C-REFCV3-ARM-SAME-DEFECT over-rotation. NOT comparable.")},
         "hold_action_rule": hold_controls.__doc__,
         "hold_v0_rule": hold_v0_controls.__doc__,
+        # ⭐ the SHARED derivation's own docstring, not a paraphrase — so the
+        # record names the one implementation both harnesses call.
+        "ha0_ext_rule": ra.hold_ext_controls.__doc__,
+        "ha0_ext_call": ("refav1_arm.hold_ext_controls(None, v_ep, kap_ep, t0, "
+                         "dt=0.1, stride=1) -> integrate_select — the SAME "
+                         "function refav1_arm.py calls at stride=2; pinned "
+                         "bit-equal by "
+                         "stack/tests/test_refcv3_ha0_ext_shared.py"),
         "nav_shuffle": shuf_stats,
         "nav_null": (dict(NAV_NULL, emitted=bool(do_navzero))
                      if do_navzero else
@@ -1713,6 +1751,12 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         ("ha0", "os_navzero", "paired_os_navzero_minus_ha0"),
         ("os_navzero", "os", "paired_os_minus_navzero"),
         ("ha0", "ha", "paired_ha_minus_ha0"),
+        # ⭐⭐ THE OTHER HALF OF refcv5's ACCEPTANCE BAR. `os - ha0_ext` is the
+        # margin over the ego-extrapolation echo; an arm that beats `ha` while
+        # TYING this one has echoed, not driven (echo_gate.ha0_ext). The
+        # nav-zero pairing is the DEPLOYMENT-relevant form of the same read.
+        ("ha0_ext", "os", "paired_os_minus_ha0ext"),
+        ("ha0_ext", "os_navzero", "paired_os_navzero_minus_ha0ext"),
         ("os", "oracle_sel", "paired_oraclesel_minus_os"))
         if x in arms and y in arms]
 
@@ -1727,10 +1771,36 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
     # tool fire every time and be learned as noise — so the VOID-RISK line names
     # only the arms whose degeneracy is a FINDING.
     triv["degenerate_arms_excluding_floor"] = [
-        x for x in triv["degenerate_arms"] if x != "ha0"]
-    triv["_floor_note"] = ("`ha0` is expected in degenerate_arms — it IS the "
-                           "constant-velocity plan. VOID-RISK is raised only on "
-                           "degenerate_arms_excluding_floor.")
+        x for x in triv["degenerate_arms"] if x not in ("ha0", "ha0_ext")]
+    triv["_floor_note"] = (
+        "`ha0` is expected in degenerate_arms — it IS the constant-velocity "
+        "plan. `ha0_ext` is excluded for a DIFFERENT reason: it is a "
+        "constant-(a0, k0) extrapolation, so its trivial fraction is a "
+        "property of HOW STRAIGHT AND STEADY THE EGO WAS AT t0 on this corpus, "
+        "not a defect of the arm — escalating on it would make the loudest "
+        "warning in this tool fire on a control and be learned as noise. Both "
+        "stay IN degenerate_arms and are read through `ha0_ext_vs_ha0` below. "
+        "VOID-RISK is raised only on degenerate_arms_excluding_floor.")
+    # ⭐ THE READ THAT MATTERS FOR THE BAR: if `ha0_ext` is bit-identical to
+    # `ha0` on most windows then "beat BOTH `ha` and `ha0_ext`" has collapsed
+    # into "beat `ha0`", and the echo control is adding nothing on this surface.
+    # Say so as a number rather than letting a reader assume two controls.
+    _ext = (triv["arms"].get("ha0_ext") or {})
+    _ext_vs_ha0 = (_ext.get("identical_to") or {}).get("ha0")
+    triv["ha0_ext_vs_ha0"] = {
+        "identical_frac": (None if _ext_vs_ha0 is None
+                           else float(_ext_vs_ha0["frac"])),
+        "n_identical": None if _ext_vs_ha0 is None else int(_ext_vs_ha0["n"]),
+        "n": _ext.get("n"),
+        "means": ("the ECHO control and the CONSTANT-VELOCITY floor are the "
+                  "same path on that fraction of windows; on those windows the "
+                  "acceptance bar has ONE control in it, not two"),
+    }
+    if _ext_vs_ha0 is not None:
+        _p(f"  ha0_ext ≡ ha0 on {_ext_vs_ha0['n']}/{_ext.get('n')} windows "
+           f"({_ext_vs_ha0['frac']:.2%}) — on those the echo control adds "
+           f"nothing beyond the constant-velocity floor, and 'beat BOTH' "
+           f"collapses to 'beat ha0'.")
     if triv["degenerate_arms_excluding_floor"]:
         _p(f"  ⛔ VOID-RISK: {triv['degenerate_arms_excluding_floor']} are the "
            f"CONSTANT-VELOCITY plan on > 50 % of windows. A read whose arm is "

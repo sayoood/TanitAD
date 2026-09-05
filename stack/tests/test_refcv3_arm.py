@@ -236,15 +236,20 @@ def test_dump_is_the_t1_contract_and_analyze_reads_it(e2e):
     N = d["g"].shape[0]
     assert N > 0
     assert d["g"].shape == (N, 4, 2) and d["g"].dtype == np.float32
-    for arm in ("os", "ha", "ha0", "os_navshuf", "os_navzero", "oracle_sel"):
+    # ⭐ `ha0_ext` JOINED THIS LIST AT RUNG A1 (2026-09-05) and it is NOT
+    # optional: refcv5's acceptance bar is "beat BOTH `ha` and `ha0_ext`", and
+    # before the port this harness computed neither, so half the bar was
+    # unreadable on the whole REF-C surface.
+    for arm in ("os", "ha", "ha0", "ha0_ext", "os_navshuf", "os_navzero",
+                "oracle_sel"):
         assert d[arm].shape == (N, 4, 2), arm
     # ⛔ the dump's key space IS the arm space: metadata must not be an arm
     assert d["v0"].shape == (N,) and d["eid"].tolist() == [0]
-    assert set(rec["arms"]) == {"os", "ha", "ha0", "os_navshuf", "os_navzero",
-                                "oracle_sel"}
+    assert set(rec["arms"]) == {"os", "ha", "ha0", "ha0_ext", "os_navshuf",
+                                "os_navzero", "oracle_sel"}
     assert rec["tiers"] == {"os": "T1", "ha": "T1", "ha0": "T1",
-                            "os_navshuf": "T1", "os_navzero": "T1",
-                            "oracle_sel": "T0"}
+                            "ha0_ext": "T1", "os_navshuf": "T1",
+                            "os_navzero": "T1", "oracle_sel": "T0"}
     assert rec["n_windows"] == manifest["grid"]["n_windows"]
     assert manifest["grid"]["instants_s"] == [0.5, 1.0, 1.5, 2.0]
     assert manifest["grid"]["slots"] == [0, 1, 2, 3]
@@ -306,6 +311,15 @@ def test_paired_blocks_are_the_margin_over_the_shared_floor(e2e):
     # oracle nav is worth). Neither is answerable from the shuffle.
     assert "paired_os_navzero_minus_ha0" in fp
     assert "paired_os_minus_navzero" in fp
+    # ⭐⭐ RUNG A1: THE OTHER HALF OF refcv5's ACCEPTANCE BAR. `ha0` alone is
+    # not the bar — stack/tanitad/eval/echo_gate.py retracts that reading by
+    # name. An arm that beats `ha` while TYING `ha0_ext` has echoed its own
+    # ego state, not read the scene, and only this block can see it.
+    assert "paired_os_minus_ha0ext" in fp, (
+        "the os - ha0_ext margin is half of refcv5's acceptance bar")
+    assert "paired_os_navzero_minus_ha0ext" in fp, (
+        "the DEPLOYMENT-relevant form of the same read (no oracle nav)")
+    assert fp["paired_os_minus_ha0ext"]["direction"] == "os - ha0_ext"
     hl = rec["refcv3"]["headline"]
     assert hl["floor_arm"] == "ha0"
     assert hl["deployment_margin_block"] == \
@@ -653,7 +667,11 @@ def test_manifest_states_the_unit_and_what_it_applies_to(e2e):
     au = manifest["action_units"]
     assert au["recorded"] == "steer"
     assert au["L_enc_m"] == STEER_WHEELBASE_M
-    assert au["applies_to"] == ["ha"]
+    # ⭐ `ha0_ext` holds a RECORDED channel-1 value, so the steer->kappa
+    # conversion applies to it exactly as it does to `ha`. `ha0` is exactly
+    # zero and is therefore unit-free — that is what makes it, and only it,
+    # bit-comparable across refav1 and refcv3.
+    assert au["applies_to"] == ["ha", "ha0_ext"]
     assert any("ha0" in s for s in au["does_not_apply_to"])
     assert "physicalai.py:621" in au["rule"]
 

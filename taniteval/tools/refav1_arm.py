@@ -404,24 +404,39 @@ def hold_action_controls(loader, v, kap, t: int):
     return loader._kin_actions(v, kap, t - 1, 1)[0]              # [2]
 
 
-def hold_ext_controls(loader, v, kap, t: int, *, dt: float | None = None):
+def hold_ext_controls(loader, v, kap, t: int, *, dt: float | None = None,
+                      stride: int = 2):
     """``ha0_ext`` (refav1 form): the (a0, kappa0) of the MEASURED t0 state.
 
-    ``a0 = (v[2t] - v[2t-2]) / dt`` — the SAME backward difference
-    `hold_action_controls` holds (the forward one, ``v[2t+2]``, is future);
-    ``kappa0 = kap[2t]`` — the recorded curvature AT t0, where ``ha`` holds
-    ``kap[2t-2]`` (`echo_gate.ha_finite_diff_accel`'s "reads the steer at
-    t0-1" weakness, closed). Every index is <= 2t: nothing recorded after t0
+    ``a0 = (v[i0] - v[i0-stride]) / dt`` — the SAME backward difference
+    `hold_action_controls` holds (the forward one, ``v[i0+stride]``, is future);
+    ``kappa0 = kap[i0]`` — the recorded curvature AT t0, where ``ha`` holds
+    ``kap[i0-stride]`` (`echo_gate.ha_finite_diff_accel`'s "reads the steer at
+    t0-1" weakness, closed). Every index is <= i0: nothing recorded after t0
     enters. ⚠️ `echo_gate.ha0_ext`'s STRONGER form is built on the corpus's own
     measured ``ax``; the v2ep carries none, so this is the sharpest ADMISSIBLE
     form on these inputs, and `ARM_MEANING` names it as such.
+
+    ⭐ ``stride`` EXISTS SO THERE IS ONE IMPLEMENTATION, NOT TWO (Rung A1,
+    2026-09-05). refav1 windows a 0.1 s pose array on its own 0.2 s operative
+    tick, so its origin is ``i0 = 2t`` — the DEFAULT, and with it this function
+    is bit-identical to the pre-Rung-A1 file. ``refcv3_arm.py`` indexes the same
+    array at the native 0.1 s tick and calls this with ``stride=1, dt=0.1``,
+    passing ``loader=None`` (the loader is read ONLY for its ``dt``). A control
+    re-implemented beside the harness that uses it is a control that can drift
+    away from it, and then the gate measures the drift instead of the model —
+    `echo_gate.ha0_ext`'s own docstring says exactly this about its shared base.
+    Pinned by ``stack/tests/test_refcv3_ha0_ext_shared.py``.
     """
-    if t < 1:
-        raise ValueError("ha0_ext needs t >= 1 (one closed step before t0)")
+    stride = int(stride)
+    i0 = stride * int(t)
+    if i0 < stride:
+        raise ValueError("ha0_ext needs one closed step before t0 "
+                         f"(stride={stride}, t={t} -> i0={i0})")
     import torch
     dt = float(dt if dt is not None else loader.dt)
-    a0 = (v[2 * t] - v[2 * t - 2]) / dt
-    return torch.stack([a0, kap[2 * t]]).float()                 # [2]
+    a0 = (v[i0] - v[i0 - stride]) / dt
+    return torch.stack([a0, kap[i0]]).float()                    # [2]
 
 
 def hold_v0_controls(k: int):
