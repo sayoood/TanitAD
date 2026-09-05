@@ -13238,4 +13238,39 @@ defect in the tool. No fix to `mktree_commit.py` is needed or will be made.
 
 → **Pinned:** `…/2026-09-05-rl-generator-collisions/raw/commit_until_verified.sh` (the
 content-verifying committer, which is the right pattern and is kept); commit `964a888`.
-                                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 s: **every one inside the floor.** The ladder is inert
+on all four families — neither costly nor beneficial.
+
+**ROOT-CAUSE CLASS: STATISTIC AMBIGUITY — a floor borrowed from a COUSIN metric.**
+0.0750 is the floor of the *paired* `TAC_traj_lat_correct`; the metric I applied it
+to was the *per-class* `lane_keep` recall, whose own seed variation is **0.1429**.
+Two different statistics, one loose noun ("the tactical floor"). Same family as
+σ vs σ² (C132) and as the `heldout`-vs-`full_set` point estimate: **two
+normalisations sharing one name.**
+
+⚠️ **The aggravation, and the reason this belongs in the log rather than a
+footnote:** the rule I violated is the one THIS PACKAGE ESTABLISHED HOURS EARLIER
+— `D-REFAV1-CG-SEEDFLOOR`, *"a separated CI is necessary and not sufficient; the
+lever's delta must exceed the seed pair's delta on the same metric."* I wrote the
+rule, then applied it with the wrong operand. **A sufficiency rule is only as good
+as the precision of "the same metric", and "the same metric" means the same
+STATISTIC, not the same family.**
+
+⇒ **The durable fix, and it is cheap:** the floor is a per-metric TABLE, not a
+number. `raw/seed_floor.txt` already prints all fifteen; the failure was reaching
+for a remembered scalar instead of the table that was already banked. **Quote the
+floor from the artifact, per metric, or do not invoke the rule.**
+
+⭐ **Direction of the correction:** it makes the L3 null **stronger, not weaker** —
+the ladder is inert rather than mildly harmful — and it demotes the
+`--seed-kappa-ladder` docstring's warning from "confirmed" to **UNTESTED on this
+panel**, which is the honest status of a prediction the panel is not powered to
+see.
+
+⚠️ **A second candidate finding in the same review was RETRACTED BEFORE
+ASSERTION** and is logged for the near-miss: a probe reading `d["refav1"]` reported
+`kamm_mu` / `seed_kappa_ladder` as missing from **every** record, which would have
+made three arms unquotable. A second probe over the whole record found them at
+`refav1.manifest.plan_cfg.kamm_mu` and `…goal_rule.seed_kappa_ladder`; provenance
+is complete. **Class: absence at one location** — the same class this package
+retracted earlier the same day, which is precisely why the second probe was run.

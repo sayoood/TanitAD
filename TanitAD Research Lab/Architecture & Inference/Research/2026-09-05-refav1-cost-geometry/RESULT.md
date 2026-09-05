@@ -820,12 +820,34 @@ retires L3 as a lever in its own right and confirms the §7.3.1 re-reading of
 `D-REFAV1-DRIVE-GATE` from the other direction: the gate is not a wall around the
 reachable set, it is an absence of preference.
 
-⚠️ **And the ladder is not free.** The tactical rows move the wrong way — `lane_keep`
-recall **0.7143 → 0.5714** (~2x the 0.0750 floor) and goal FDE **2.9639 → 3.3200**
-— which is exactly what this package's own `--seed-kappa-ladder` docstring warned
-before the arm ran: *"with `W_KAPPA = 0` a wider curvature set can only add ways to
-be wrong."* A warning that survives its own experiment is worth more than one that
-was never tested.
+⛔⛔ **SELF-CORRECTION, SAME TURN, CAUGHT BY THIS PACKAGE'S OWN RULE.** An earlier
+draft of this section read: *"the ladder is not free — `lane_keep` recall
+0.7143 → 0.5714 (~2x the 0.0750 floor) and goal FDE 2.9639 → 3.3200 — exactly what
+the `--seed-kappa-ladder` docstring warned."* **That claim is NOT SUPPORTED and is
+withdrawn.** The `ccos_seed1` replicate — same flags, only `--plan-seed` differs —
+reads **lane_keep recall 0.5714** and **goal FDE 3.3079** on its own, i.e. the
+*identical* movement with **no lever at all**:
+
+| tactical metric | `ccos_argmax` | seed replicate (NO lever) | `l3ladder` | verdict |
+|---|---|---|---|---|
+| `lane_keep` recall | 0.7143 | **0.5714** (floor 0.1429) | **0.5714** (delta 0.1429) | **inside the floor** |
+| goal FDE m | 2.9639 | 3.3079 (floor 0.3440) | 3.3200 (delta 0.3561) | **inside the floor** |
+| TAC lateral kappa | 0.3795 | 0.2822 (floor 0.0973) | 0.2822 (delta 0.0973) | **inside the floor** |
+
+**The error was using the WRONG FLOOR:** 0.0750 is the paired
+`TAC_traj_lat_correct` floor, not the per-class `lane_keep` recall's own, which is
+**0.1429**. ⇒ **every tactical movement in `l3ladder` is inference-seed noise, and
+the ladder is neither costly nor beneficial here — it is inert on all four
+families.** That strengthens the section's conclusion rather than weakening it: the
+null is total.
+
+⚠️ **The docstring's warning ("with `W_KAPPA = 0` a wider curvature set can only add
+ways to be wrong") is therefore UNTESTED on this panel, not confirmed** — it
+predicted a cost this panel is not powered to see. Recorded as an open prediction,
+not a vindicated one. ⭐ This is exactly the sufficiency rule of §4 turned on my own
+claim: *a difference is only a lever effect if it exceeds the seed pair's
+difference on the SAME metric*, and "the same metric" means the same statistic,
+not a cousin of it.
 
 ⇒ **The informative combination is therefore `ladder + W_KAPPA`, not `ladder`
 alone and not `ladder + a CONSTRAINT`** — a cap can forbid a curvature but cannot
