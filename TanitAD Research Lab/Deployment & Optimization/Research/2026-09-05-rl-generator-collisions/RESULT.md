@@ -518,6 +518,44 @@ definition-matched to the lever — unlike the banked `ctrl_null` of §6.2. *(An
 mine printed a spurious mismatch here; the cause was my own truncated float literal in the
 comparison, not the data, and it is recorded rather than quietly fixed.)*
 
+**(c) ⭐ THE DEFECT IS FIXED, NOT JUST REPORTED — and it was worse than a quirk.** Located at
+`stack/scripts/rl_refcv3_min.py`, in the **shared** `paired_delta` every arm on this rig uses:
+
+```python
+"sep": bool((lo > 0) == (hi > 0))      # asks: do the endpoints AGREE about being positive?
+"sep": bool(lo > 0 or hi < 0)          # means: does the interval EXCLUDE zero?   <- the fix
+```
+
+| `lo` | `hi` | buggy | correct | |
+|---|---|---|---|---|
+| 0.0 | 0.0 | **True** | False | an exactly-zero interval, read as separated |
+| −1.0 | 0.0 | **True** | False | touches zero **from below**, read as separated |
+| 0.0 | 1.0 | False | False | touches zero **from above**, correctly not separated |
+
+⛔ **The asymmetry is the serious half, and it was not visible from the exact-zero rows alone.**
+An interval touching zero from below is called separated while its mirror image is not — and on
+this rig's safety metrics **negative means better**, so the defect **systematically favoured
+reporting improvements**.
+
+Pinned by `stack/tests/test_rl_paired_delta_sep.py` (5 tests). ⭐ **The test was verified to
+actually detect the defect**, not merely to pass: against the unfixed tree it **fails 3 of 5**;
+against the fixed tree it passes all 5. Full suite **200 passed** (195 + these 5).
+
+⚠️ **And the test itself needed a correction, recorded rather than quietly rewritten.** My first
+asymmetry test drove the case through `paired_delta` and **passed on the buggy tree** —
+bootstrapped percentiles essentially never land exactly on zero, so the `[-1, 0]` case was never
+constructed and the test was not pinning what its name claimed. *A test that cannot fail on the
+defect it names is decoration.* It now evaluates the predicate directly on synthetic endpoints.
+⚠️ A second self-inflicted one: my first verification asserted the buggy string was absent from
+the **whole file** — and the fix's own comment deliberately *quotes* that string, so the check
+failed on my own text. That is the **self-match trap** the monitor rule warns about, wearing a
+verification costume.
+
+**Applied to the run clone before `chain4` computed the verdict**, so the banked verdict uses the
+corrected predicate; the arm summaries' stored `sep` flags predate it and are the buggy ones —
+stated here because the two artifacts will disagree on the structural-zero rows and that
+disagreement is intended, not drift.
+
 Registered as `D-RL-CTRL0-SEPFLOOR-1`.
 
 ### 6.7 Still pending

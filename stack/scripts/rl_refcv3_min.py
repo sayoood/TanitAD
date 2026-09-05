@@ -620,7 +620,16 @@ def paired_delta(before: dict, after: dict, key: str, reps: int = 4000, seed: in
     bs = np.array([d[rng.integers(0, d.size, d.size)].mean() for _ in range(reps)])
     lo, hi = np.percentile(bs, [2.5, 97.5])
     return {"delta": float(d.mean()), "lo": float(lo), "hi": float(hi), "n": int(d.size),
-            "sep": bool((lo > 0) == (hi > 0)), "_estimator": "paired episode-cluster bootstrap"}
+            #: ⛔ `sep` means THE INTERVAL EXCLUDES ZERO, and nothing else. It was written
+            #: `bool((lo > 0) == (hi > 0))`, which asks whether the endpoints AGREE about being
+            #: strictly positive -- a different question, wrong on two cases and ASYMMETRICALLY
+            #: so: `[0, 0]` and `[-1, 0]` both read True while their mirror `[0, 1]` reads
+            #: False. On this rig's safety metrics NEGATIVE means BETTER, so the defect
+            #: systematically favoured reporting IMPROVEMENTS. MEASURED 2026-09-05: it
+            #: mislabelled 36 of `ctrl0`'s 40 `sep=True` rows (a FROZEN-WEIGHT arm) and 11 of
+            #: `ctrl_null`'s 35 -- the circulating "a zero-information arm separates 35 of 57"
+            #: is 24 of 57. Pinned by `stack/tests/test_rl_paired_delta_sep.py`.
+            "sep": bool(lo > 0 or hi < 0), "_estimator": "paired episode-cluster bootstrap"}
 
 
 # --------------------------------------------------------------------------- #
