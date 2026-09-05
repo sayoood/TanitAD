@@ -146,6 +146,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from tanitad.models.kinematic import rollout_unicycle
+from tanitad.refs import refc_sampler as _sampler
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
 
@@ -1312,6 +1313,27 @@ class AnchoredDiffusionDecoder(nn.Module):
             for _ in range(cfg.layers))
         self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
         self.offset_head = nn.Linear(d, n_steps * 2)          # per-anchor offset
+        # ---- WP-4 (E-DDA-3): the control-space sampler ---------------------
+        # ⛔ Built ONLY under `sampler == "ddim"`, and AFTER every pre-existing
+        # module, so the default build's RNG draw order — and therefore every
+        # checkpoint written before this line existed — is untouched.
+        self.sampler_kind = str(getattr(cfg, "sampler", "none"))
+        self.sampler_space = str(getattr(cfg, "sampler_space", "control"))
+        self.control_head: nn.Linear | None = None
+        self.sched: "_sampler.DDIMSchedule | None" = None
+        if self.sampler_kind == "ddim":
+            self.time_mlp = _sampler.build_time_mlp(d)
+            # Δu in NORMALISED control space. Zero-init on the output layer so
+            # the first refinement pass is the identity and the sampled fan
+            # starts exactly at the anchored Gaussian — the same discipline
+            # every graft seam in this class uses.
+            self.control_head = nn.Linear(d, n_steps * 2)
+            nn.init.zeros_(self.control_head.weight)
+            nn.init.zeros_(self.control_head.bias)
+            self.sched = _sampler.DDIMSchedule()
+        elif self.sampler_kind != "none":
+            raise ValueError(f"sampler {self.sampler_kind!r} not in "
+                             f"('none', 'ddim')")
         # Graft: strategic ctx -> condition (zero-init identity start).
         self.ctx_to_cond: nn.Linear | None = None
         if hierarchy:
@@ -1475,6 +1497,31 @@ class AnchoredDiffusionDecoder(nn.Module):
             return pool.reshape(-1)[idx].to(device=v.device, dtype=v.dtype)
         return torch.full_like(v, self.anchor_ref_speed)
 
+    def _bank_speed(self, v_ms: Tensor | None, ego_keep: Tensor | None,
+                    batch: int, withheld_speed: Tensor | None = None) -> Tensor:
+        """[B] float32 — THE speed the candidate geometry is rolled from.
+
+        ⭐ Extracted from :meth:`roll_bank` (2026-09-05, refcv5 WP-4) with its
+        logic byte-unchanged, because the CONTROL-SPACE SAMPLER must roll from
+        the *same* speed the vocabulary does. Two spellings of this would let
+        the sampler and the bank integrate different physics while every test
+        that looks at one of them passes.
+        """
+        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
+            raise ValueError(f"anchor_withheld_bank "
+                             f"{self.anchor_withheld_bank!r} not in "
+                             f"{WITHHELD_BANK_MODES}")
+        if v_ms is None or self.anchor_withheld_bank == "none":
+            # "none": the speed-blind vocabulary — every row, kept or withheld,
+            # train or eval, at the reference speed (the field's design).
+            return self.anchors.new_full((batch,), self.anchor_ref_speed,
+                                         dtype=torch.float32)
+        v = v_ms.reshape(-1).to(torch.float32)
+        if ego_keep is not None:
+            v = torch.where(ego_keep.reshape(-1),
+                            v, self._withheld_ref_speed(v, withheld_speed))
+        return v
+
     def roll_bank(self, v_ms: Tensor | None, ego_keep: Tensor | None,
                   batch: int, dtype: torch.dtype,
                   withheld_speed: Tensor | None = None) -> Tensor:
@@ -1501,19 +1548,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         if not self.anchor_v0_cond:
             return self.anchors.to(dtype)[None].expand(
                 batch, n, self.n_steps, 2)
-        if self.anchor_withheld_bank not in WITHHELD_BANK_MODES:
-            raise ValueError(f"anchor_withheld_bank "
-                             f"{self.anchor_withheld_bank!r} not in "
-                             f"{WITHHELD_BANK_MODES}")
-        if v_ms is None or self.anchor_withheld_bank == "none":
-            # "none": the speed-blind vocabulary — every row, kept or withheld,
-            # train or eval, at the reference speed (the field's design).
-            v = self.anchors.new_full((batch,), self.anchor_ref_speed)
-        else:
-            v = v_ms.reshape(-1).to(torch.float32)
-            if ego_keep is not None:
-                v = torch.where(ego_keep.reshape(-1),
-                                v, self._withheld_ref_speed(v, withheld_speed))
+        v = self._bank_speed(v_ms, ego_keep, batch, withheld_speed)
         # ⚠️ rolled in float32 regardless of the AMP dtype: 60 sequential
         # integration steps in fp16 accumulate visible drift, and the bank is
         # the geometry every anchor target is measured against.
@@ -1523,9 +1558,13 @@ class AnchoredDiffusionDecoder(nn.Module):
             # kappa = a_lat / v^2, clamped. The floor keeps a standing-start
             # window from asking for an infinite curvature, and the cap is a
             # geometric bound (~8.3 m radius) that no road manoeuvre needs.
-            vv = v.clamp_min(self.anchor_alat_v_floor) ** 2          # [B]
-            kap = (ctrl[None, :, 1] / vv[:, None]).clamp(
-                -self.anchor_kappa_cap, self.anchor_kappa_cap)       # [B, N]
+            # ⭐ ONE SPELLING of this formula in the repo (refcv5 WP-4): the
+            # control-space sampler rolls through the same expression, and two
+            # copies is how the sampler and the vocabulary would silently
+            # integrate different physics. Arithmetic is unchanged.
+            kap = _sampler.alat_to_curvature(
+                ctrl[None, :, 1], v[:, None], self.anchor_alat_v_floor,
+                self.anchor_kappa_cap)                               # [B, N]
             ctrl = torch.stack(
                 [ctrl[None, :, 0].expand(batch, n), kap], dim=-1)    # [B, N, 2]
             ctrl = ctrl[:, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
@@ -1541,7 +1580,8 @@ class AnchoredDiffusionDecoder(nn.Module):
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
                 t_idx: int, agents: Tensor | None = None,
                 agent_pad: Tensor | None = None,
-                t_cont: Tensor | None = None) -> tuple[Tensor, Tensor]:
+                t_cont: Tensor | None = None,
+                control: bool = False) -> tuple[Tensor, Tensor]:
         """One decoder pass: current trajectory estimate + timestep -> queries;
         cross-attend the map (and, under WP-6, the agent tokens); emit
         (conf [B, N], offset [B, N, S, 2]).
@@ -1550,6 +1590,13 @@ class AnchoredDiffusionDecoder(nn.Module):
         given it replaces the 3-row ``time_embed`` lookup with the sinusoidal
         embedding DD injects per layer — retired under ``sampler == "none"``,
         which keeps ``t_idx`` and is byte-identical to refcv4b.
+
+        ``control`` (WP-4 only) reads the second element off ``control_head``
+        instead of ``offset_head``, so it is a ``Δu`` in NORMALISED CONTROL
+        space rather than a metre offset. ⛔ The units differ, which is why this
+        is an explicit flag and not an implicit switch on which head exists: a
+        caller that gets metres where it expected controls sees numbers of a
+        plausible magnitude and no error at all.
         """
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
@@ -1561,8 +1608,145 @@ class AnchoredDiffusionDecoder(nn.Module):
         for layer in self.layers:
             q = layer(q, kv, cond, agents=agents, agent_pad=agent_pad)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
-        offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
+        if control:
+            if self.control_head is None:
+                raise RuntimeError(
+                    "_decode(control=True) needs `control_head`, which is only "
+                    "built under DecoderConfig.sampler == 'ddim'")
+            head = self.control_head
+        else:
+            head = self.offset_head
+        offset = head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
+
+    def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
+        """``[B, N, S, 2]`` — the anchor bank AS A CONTROL SEQUENCE.
+
+        The vocabulary holds ONE ``(a_lon, a_lat)`` pair per anchor, held
+        constant over the horizon; the sampler's state is a per-slot sequence,
+        so the anchor is that pair repeated over the S slots. ⭐ This is the
+        ``mu`` of the anchored Gaussian, and it is why the sampler cannot drift
+        away from the vocabulary: at ``sigma -> 0`` it IS the vocabulary.
+        """
+        ctrl = self.anchor_controls.to(torch.float32)             # [N, 2]
+        return ctrl[None, :, None, :].expand(
+            batch, ctrl.shape[0], self.n_steps, 2).to(dtype)
+
+    def _sample_ddim(self, kv: Tensor, cond: Tensor, bank: Tensor,
+                     v_roll: Tensor, steps: int, terms: list[Tensor],
+                     conf: Tensor, agents: Tensor | None,
+                     agent_pad: Tensor | None
+                     ) -> tuple[Tensor, Tensor, Tensor, dict]:
+        """WP-4 ``E-DDA-3`` — the truncated DDIM sampler, in CONTROL space.
+
+        Returns ``(x, refined, u0_hat, tele)`` where ``x`` is the ROLLED fan
+        ``[B, N, S, 2]`` in metres and ``u0_hat`` is the predicted clean control
+        sequence in the vocabulary's own units (``[B, N, S, 2]``).
+
+        ⛔ **Noise is added in NORMALISED control space** (``a_lon / 4.0``,
+        ``a_lat / 3.0`` — the grid's own ranges), so ``[-1, 1]`` means what the
+        vocabulary means and DD's schedule constants transfer without a
+        re-derivation.
+
+        ⛔ **``u`` is DETACHED between passes** (DD detaches coordinates between
+        cascade layers). Without it the gradient path grows with the pass count
+        and the pass count silently becomes a capacity knob.
+        """
+        cfg = self.cfg
+        sched = self.sched
+        b, n = bank.shape[0], bank.shape[1]
+        dev, dt = bank.device, bank.dtype
+        g = int(getattr(cfg, "sampler_groups", 1))
+        if g != 1:
+            raise NotImplementedError(
+                f"sampler_groups={g}: G > 1 emits a [B, G*N, S, 2] fan, and "
+                f"THREE consumers still assume N — `loss_cls`'s `a_star` "
+                f"(refc_v3_train.compute_losses_v3), the [B, N] prior `terms` "
+                f"built above, and every dump keyed on `sel_idx in [0, N)`. "
+                f"Widening the fan without widening those three would silently "
+                f"mis-index the anchor target. G = 1 is implemented and tested; "
+                f"G > 1 is a scoped change to those call sites, not a flag.")
+        norm = torch.tensor(getattr(cfg, "control_norm", (4.0, 3.0)),
+                            device=dev, dtype=torch.float32)
+        horizons = tuple(int(k) + 1 for k in self.anchor_slots.tolist())
+        tele: dict = {"sampler": self.sampler_kind,
+                      "sampler_space": self.sampler_space}
+
+        # ---- mu: the anchor, as a normalised control sequence ---------------
+        u_anchor = self.anchor_control_seq(b, torch.float32)       # [B,N,S,2]
+        un0 = u_anchor / norm
+
+        # ---- t: U[0, t_max) in training, the truncation point at eval -------
+        if self.training:
+            t = torch.randint(0, int(cfg.sampler_train_t_max), (b,),
+                              device=dev)
+        else:
+            t = torch.full((b,), int(cfg.sampler_infer_t), device=dev,
+                           dtype=torch.long)
+        tele["sampler_t_mean"] = round(float(t.to(torch.float32).mean()), 3)
+
+        eps = torch.randn(un0.shape, device=dev, dtype=torch.float32)
+        un_t = sched.add_noise(un0, eps, t)
+
+        # ⛔ THE DELIBERATE-REGRESSION ARM. DD noises the WAYPOINTS in metres.
+        # Pre-registered to FAIL the flyability gate; if it does not, the
+        # flyability instrument cannot see what it is cited for and the arm is
+        # VOID. It is a code path so the regression is RUNNABLE, not described.
+        metre_space = self.sampler_space == "metre"
+
+        # The DENOISE LADDER. At eval it is DD's truncated schedule ([10, 0] for
+        # the published t=8 / 2-step setting); in training there is ONE pass
+        # from the sampled t straight to 0, which is what an x0-parameterised
+        # objective needs — the loss is on the clean prediction, not on a
+        # trajectory through the ladder.
+        n_pass = max(int(steps), 1)
+        ladder = (sched.infer_timesteps(int(cfg.sampler_infer_t), n_pass)
+                  if not self.training else [])
+        tele["sampler_ladder"] = list(ladder)
+        refined = conf
+        u0n = un0
+        x = bank
+        for i in range(n_pass):
+            u_t = (un_t * norm).to(dt)
+            if metre_space:
+                # the DD-literal arm: the estimate handed to the decoder is the
+                # BANK plus metre-space noise, and no integrator is involved.
+                x_in = bank + (u_t[..., :2] * 0.0) + torch.randn_like(bank) \
+                    * float(cfg.noise_std)
+            else:
+                x_in = _sampler.roll_controls(
+                    u_t, v_roll, horizons,
+                    control_units=self.anchor_control_units,
+                    tick=self.anchor_dt,
+                    alat_v_floor=self.anchor_alat_v_floor,
+                    kappa_cap=self.anchor_kappa_cap)
+            r_conf, du = self._decode(kv, cond, x_in, 0, agents=agents,
+                                      agent_pad=agent_pad, t_cont=t,
+                                      control=True)
+            du = du.to(torch.float32)
+            # x0 ("sample") prediction: the head predicts the CORRECTION to the
+            # noisy control, exactly DD's `poses_reg = delta + noisy_input`.
+            u0n = un_t + du
+            # ⛔ DETACHED between passes (DD detaches coordinates between
+            # cascade layers). Without it the gradient path grows with the pass
+            # count and the pass count silently becomes a capacity knob — which
+            # is exactly the confound `D-REFC-DDAUDIT-2` already found once.
+            t_cur = torch.full_like(t, ladder[i]) if ladder else t
+            t_nxt = (torch.full_like(t, ladder[i + 1])
+                     if ladder and i + 1 < len(ladder)
+                     else torch.zeros_like(t))
+            un_t = sched.step(u0n, un_t, t_cur, t_nxt).detach()
+            refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
+                                            "refined", 0)
+        u0 = (u0n * norm).to(dt)
+        x = (bank + torch.zeros_like(bank)) if metre_space else \
+            _sampler.roll_controls(u0, v_roll, horizons,
+                                   control_units=self.anchor_control_units,
+                                   tick=self.anchor_dt,
+                                   alat_v_floor=self.anchor_alat_v_floor,
+                                   kappa_cap=self.anchor_kappa_cap)
+        tele["sampler_passes"] = n_pass
+        return x, refined, u0, tele
 
     def _lan_anchor_prior(self, lan_dir: Tensor,
                           bank: Tensor | None = None) -> Tensor:
@@ -1787,6 +1971,25 @@ class AnchoredDiffusionDecoder(nn.Module):
         # failure. ``steps == 0`` leaves ``refined is conf`` by construction, so
         # ``--mode classifier`` is provably unaffected by S1.
         refined = conf
+        u0_hat = None
+        # ---- WP-4 (E-DDA-3): the CONTROL-SPACE sampler replaces the loop -----
+        # ⛔ `sampler == "none"` skips this branch entirely, so the metre-space
+        # truncated denoise below is byte-identical to refcv4b.
+        if self.sampler_kind == "ddim" and steps > 0:
+            if not self.anchor_v0_cond:
+                raise ValueError(
+                    "sampler='ddim' needs a v0-CONDITIONED vocabulary: the "
+                    "sampler's state IS the control sequence, and a fixed-path "
+                    "bank carries `anchor_controls` of all zeros, so the "
+                    "anchored Gaussian would be centred on 'do nothing'. Build "
+                    "with v0_conditioned=True (refcv4-b onward).")
+            v_roll = self._bank_speed(v_ms, ego_keep, b,
+                                      withheld_speed=withheld_speed)
+            x, refined, u0_hat, s_tele = self._sample_ddim(
+                kv, cond, bank, v_roll, steps, terms, conf,
+                agent_tokens, agent_pad)
+            tele.update(s_tele)
+            steps = 0            # the loop below must not also run
         for i in range(steps):
             t_idx = min(i + 1, self.cfg.diffusion_steps)
             noise = (torch.randn_like(x) * self.cfg.noise_std
@@ -1916,6 +2119,13 @@ class AnchoredDiffusionDecoder(nn.Module):
                "anchor_traj": x, "anchor_bank": bank,
                "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        if u0_hat is not None:
+            # WP-4: the predicted CLEAN control sequence, in the vocabulary's
+            # own units. The trainer's `loss_u0` is an L1 against
+            # `unicycle_controls_from_path_varstep(GT)` on this tensor — it is
+            # the x0 loss, and it is the one term that is NOT expressible in
+            # metres, so it must leave the decoder or it cannot be supervised.
+            out["u0_hat"] = u0_hat
         if cons_s is not None:
             out["cons_score"] = cons_s
         if prefinal is not None:
