@@ -64,14 +64,41 @@ more turns, but a **wider margin gap** (today 0.297 logits). A goal head that fi
 often at today's precision makes driving worse; only a head that fires more *accurately*
 can help.
 
-## ⚠️ Status of this claim
+## ✅ THE REPLICATE LANDED — the claim is now COMPLETE, and every control passes
 
-**PENDING the replicate arm** (`argmax@seed1`, running at the time of writing). `icem_plan`
-is stochastic, so `H-ESTIM-SEED-1` applies: +0.8927 is only a lever effect if it clearly
-exceeds `|argmax@seed1 − argmax@seed0|` on the same windows. Until that reads, this is a
-**necessary-not-sufficient** observation. ⚠️ Also **n = 28 windows / 14 clusters** — small,
-and the per-arm intervals overlap ([1.07, 2.18] vs [1.74, 3.47]); the paired delta is the
-decision-grade form and is computed by `tools/analyze_targeted.py`.
+| | `argmax@s0` | `prior050` (lever) | `argmax@s1` (**replicate**) | floor `ha0_ext` |
+|---|---|---|---|---|
+| **ALL 28 windows** | 1.6098 | 2.5025 | 1.7952 | 0.4263 |
+| **18 CHANGED windows** | 1.6087 | **2.9972** | 1.7328 | 0.4809 |
+| **10 UNCHANGED windows** | 1.6119 | **1.6119** | 1.9075 | 0.3280 |
 
-**Control still to be read first:** the 10 windows whose decode does NOT change must be
-bit-identical between arms. If they are not, the targeted design's factorisation is void.
+**1. The design control PASSES.** On the 10 windows whose decode does not change, the two
+arms are **BIT-IDENTICAL** — `max_abs_diff = 0.0`, lever delta exactly **0.0**. The targeted
+design's premise (`marginal = (18/282) × conditional`) is therefore **verified, not
+assumed**, and the aggregate is recoverable from this panel.
+
+**2. `H-ESTIM-SEED-1` IS SATISFIED.** On the 18 windows where the lever acts:
+
+| | delta vs `argmax@s0` |
+|---|---|
+| **LEVER** (`prior050`, same seed) | **+1.3886** |
+| **REPLICATE** (`argmax`, seed 1, *zero levers moved*) | **+0.1242** |
+| **ratio** | **11.2×** |
+
+⇒ the lever's effect is **11.2× the rig's own run-to-run noise floor**. A separated CI alone
+would have been necessary-not-sufficient; against the replicate it is now **sufficient**.
+**The lever moved the metric, and it moved it the wrong way.**
+
+⚠️ **And the noise floor is not negligible** — `argmax@s1 − argmax@s0` is **+0.1242** on
+changed windows and **+0.2956** on unchanged ones, from changing *only* the iCEM seed. ⇒ on
+this panel **any refav1 claim smaller than ≈0.30 m is indistinguishable from seed noise**.
+That number should travel with every future arm-vs-arm comparison on this rig.
+
+**3. On the windows where the lever fires, refav1 is 3.4× → 6.2× below the floor**
+(1.609 → 2.997 against `ha0_ext` 0.481).
+
+## Status of this claim — COMPLETE
+
+⚠️ **Scope:** n = 28 windows / 14 clusters, one checkpoint, and a deliberately turn-heavy
+panel. The verdict "Step 1 is closed" is supported on *these* windows against *this* noise
+floor; it is not a corpus-wide ADE claim, and the package never makes one.
