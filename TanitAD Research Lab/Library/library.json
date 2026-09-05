@@ -521,12 +521,13 @@
     "ego-input",
     "input-pipeline"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train)",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md"
    ]
   },
   "2603.14482": {
@@ -3771,10 +3772,11 @@
     "diffusiondrive",
     "refc-lineage"
    ],
-   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report",
+   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc-vs-diffusiondrive-audit/RESULT.md"
    ]
   },
   "2507.04049": {
