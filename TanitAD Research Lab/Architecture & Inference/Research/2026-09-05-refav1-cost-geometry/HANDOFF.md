@@ -176,3 +176,42 @@ that must read non-zero.
 * **A conditional import is not a module import, and an argparse help string is
   CODE.** Both defects I introduced in `refav1_arm.py` are recorded in
   `RESULT.md` §7.5.1 with their root-cause class.
+
+
+---
+
+## 9. FINAL STATE 2026-09-05T21:50Z — ALL TEN ARMS LANDED, NOTHING LEFT RUNNING
+
+| arm | metric / `W_KAPPA` / cap / ladder | ADE | `kamm_over` | verdict |
+|---|---|---|---|---|
+| **`best`** | ccos / **15.11245** / **0.7** / no | **0.8838** | **0.0000** | **the arm to quote** — parity with `ha0_ext` (+0.0066, 9.2x below the seed floor) while acting; `peak_g` 0.082 mean, better than the human's 0.178 |
+| `wk15` | ccos / 15.11245 / no / no | 0.8934 | *(not run)* | the accuracy lever's optimum |
+| `kamm07` | ccos / 0 / 0.7 / no | 0.9927 | 0.1481 | the safety lever alone |
+| `combined` | ccos / 0 / 0.7 / yes | 1.0504 | **0.0000** | zero violations, but the ladder is unnecessary once the penalty is present |
+| `cos_wk` (**SHIPPED**) | cos / 0.05 / no / no | 0.9251 | — | **bit-identical to `ha0`** on 40/40 |
+| `wk151` | ccos / 151.1245 / no / no | 0.9084 | — | past the optimum, collapsing |
+| `wk15_ladder` | ccos / 15.11245 / no / yes | 0.9408 | — | **penalty + ladder collapse to 2 curvatures** |
+| `l3ladder` | ccos / 0 / no / yes | 1.3236 | — | null: no rung ever chosen |
+| `ccosh_w000` | ccosh / 0 / no / no | 1.3272 | — | null: **bit-identical plans** |
+| `ccos_argmax` / `ccos_seed1` | ccos / 0 | 1.3272 / 1.3879 | 0.2963 | the baseline and its **inference-seed replicate** |
+
+**The GPU is free of my arms.** A sibling agent's `lonshift` arm — on the
+longitudinal blocker — may still be running; it was never mine to touch.
+
+**What to run next, in order:**
+
+1. **A seed replicate of `best`** (`--plan-seed 1`, nothing else). Every verdict in
+   this package rests on ONE inference seed plus a floor measured on one pair. This
+   is the cheapest thing that makes `best` quotable as a lever effect.
+2. **`best` on the full 282-window v7.2 EVAL grid**, so the result stops being
+   conditional on a turn-DENSE panel.
+3. **The LONGITUDINAL analogue**, which does not exist. `best` still reads speed MAE
+   **0.7751 vs 0.3058** for `ha0_ext` — the largest remaining gap, untouched by every
+   lever here, and caused by the decoded LON token commanding `a == 0` on 29/40
+   windows. A sibling stream is on it (`lonshift`).
+4. **The left-turn asymmetry.** `turn_left` recall is **0.0** under any non-zero
+   `W_KAPPA` against `ccos_argmax`'s 0.3636. n = 11 cannot resolve it; a wider panel
+   can.
+5. ⛔ **DO NOT run `W_KAPPA` + cap + ladder** — §7.9 registers the prediction that it
+   collapses to the smallest rung, and §7.10 shows the ladder buys nothing once the
+   penalty is present.
