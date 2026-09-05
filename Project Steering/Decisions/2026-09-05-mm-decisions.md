@@ -1062,3 +1062,124 @@ suspects.
 
 ⚠️ Three levers (`ccosh`, seed pool, `kamm_mu`) are implemented, pinned, and **OFF by default**;
 making any of them the default is a PI/Master Mind decision, as `COST_METRICS` itself requires.
+
+## M28. L2 is a CLEAN NULL with a mechanism — and a process-counting error that halved a queue and inflated my own reports
+
+### 1. `ccosh` (the hold branch): the cost is repaired, and not one plan moves
+
+`ccosh_w000` = `ccosh` + `(0, 0, 64.297)` — **the metric is the only variable** against banked
+`ccos_argmax`.
+
+* **Plans bit-identical:** `cl` trajectories max abs diff **0.000000e+00** over 40 windows; the
+  paired episode-cluster bootstrap reads **`+0.0000 [+0.0000, +0.0000]` on all ten family metrics**.
+* ⭐ **Same-breath control that must read non-zero, and does:** `wk15` against the same baseline is
+  **1.508402e+01 m** apart with seven separated deltas. ⇒ **the zero is a measurement, not a dead
+  pipe** — which is the whole difference between a null and a broken harness.
+* **The cost genuinely changed:** `basecost_cv` frac == 1.0 **0.2500 → 0.0000**, min
+  **0.884896 → 3.9105e-08**, median `plan_cost` **3.10838e-05 → 9.26852e-06**.
+
+⭐⭐ **And one number is the mechanism:** the `cem` win fraction rose **0.750 → 0.925** *while the
+emitted controls stayed bit-identical*. ⇒ **On the affected windows the CEM's own best sample was
+ALREADY the all-zero plan**, so making `cv` cheap only re-labelled which of two *identical* control
+sequences won the argmin. A repaired cost cannot move a plan that was already the optimum.
+
+⇒ `ccosh` stays a **pinned, non-default, CORRECT instrument** — it makes the cost defined where it
+was not, which will matter in any arm where `cv` is not already the winner.
+
+### 2. ⛔ "A LANE_KEEP decode is not a hold goal" — the 86.5 % figure, corrected twice and now explained
+
+`COST_METRICS` and my brief put the affected population at **86.5 %** of the grid. An earlier pass
+corrected it to ~20 %. MEASURED here, with the mechanism: **the goal IS the hold field on 25.0 % of
+windows.** LANE_KEEP is decoded on **45.0 %**, but on most of those **the LON token still commands
+non-zero acceleration**, so `g ≠ z_ref` and the branch **correctly does not fire**.
+
+⇒ **A decode is not a goal state.** The lateral token being `LANE_KEEP` says nothing about whether
+the *goal vector* equals the hold field, because the longitudinal token is still free. ⚠️ Same
+family as the units and grid traps: a population counted on the wrong predicate.
+
+### 3. ⛔⛔ A PROCESS COUNT THAT COUNTS PARENTS AND CHILDREN — it halved a queue, and it inflated MY reports
+
+MEASURED: the queue lanes gated on *"live arm processes ≤ 1"*, but **one arm is a parent and its
+child — two `python.exe` entries, BOTH carrying the full command line** — so the gate **could never
+open while any arm ran**, and each lane's log looked like a perfectly normal wait. Fixed by gating
+on ≤ 2 under **new filenames** (⚠️ never edited in place: bash reads a running script lazily by byte
+offset).
+
+⛔ **And I made the same error in every fleet report this evening.** I quoted *"8 arms"*, *"11
+procs"*, *"20 compute procs"* from a raw process count. Re-measured just now: **10 processes, 2
+distinct `--out` targets**, with the tree running **2–4 deep** (`22708 → 13332 → 24904 → 23444`).
+⇒ **I over-reported concurrency by 2.5–5×.**
+
+⭐ **The rule:** count the **ARTIFACT**, not the process — distinct `--out` targets, distinct dump
+dirs, distinct records. A process count is a claim about the scheduler; an artifact count is a claim
+about the work. ⚠️ Third member of this family today, after the waiter that watched the wrong
+directory and the `k = 1` identity control that was never in its own tuple — **all three are a
+monitor measuring something adjacent to what it claims.**
+
+### 4. Lever scoreboard
+
+| lever | status | changed | did NOT change |
+|---|---|---|---|
+| **L1 `W_KAPPA`** | **LANDED, large** | ADE −33 %, whole lateral family (all ≥ 2.3× the seed floor), straight-window damage 5.5× smaller | longitudinal (separably worse), tactical decisions (+0.0000) |
+| L1b shipped weights | LANDED | everything → bit-identical `ha0`, reached **by search** | did not make it drive |
+| **L2 `ccosh`** | **LANDED, NULL** | the cost on 25 % of windows | ⛔ **not one plan**, structurally |
+| L3 seed ladder | queued | its own P1 already refuted — the search *can* modulate curvature | — |
+| **L4 Kamm cap** | **running** (18:33:59Z) | audit: 29.6–42.1 % of plans outside μ = 0.7, peak **3.262 g** | — |
+| L5 retrain head | not taken, correctly last | — | a perfect goal is **worse**, −1.2181 separated |
+
+⇒ **Verdict unchanged: refav1 does not yet beat the trivial floors at T1.** It reaches statistical
+*parity* while genuinely acting and **beats them on the GT-turn stratum**. ⭐ **L2's null NARROWS the
+search rather than ending it** — the hold branch is not the longitudinal blocker, and the named
+mechanism (`ADAPT_SPEED_FOR_CURVE`'s canonical control being `a == 0`) still stands as next.
+
+⚠️ Nothing is blocked on another stream: `wk151`, `l3ladder`, `kamm07` and `combined` carry a
+`HANDOFF.md` and a `raw/finalize.sh` sufficient to land them **without re-deriving anything** — the
+stranding rule applied prospectively rather than after the fact.
+
+## M29. ⛔ THE RL POST-TRAINING CAMPAIGN FAILED. The win that came out of that stream contains NO RL.
+
+**The PI asked directly: *"Are you saying the RL postrain campaign was successful?"* The answer is
+NO, and the question exposes a framing error of mine that needed correcting.**
+
+### What RL actually did — two arms, two committed FAILURES
+
+| arm | committed exit | result |
+|---|---|---|
+| the **V2-faithful RL stage** | ADE must not regress past the replicate floor | ⛔ **FAILED** — `ade_m` **+0.0362 [+0.0261, +0.0460] separated**, **7 of 11** non-structural T1 rows quotable **regressions**, and the fan came out **LESS safe** |
+| the **veto-only** arm | feasibility improves AND ADE holds | ⛔ **FAILED** — the replicate killed **four of five** metrics a single seed would have shipped; only `fan_peak_g_mean` survived, and `sel_peak_g` **WORSENED** |
+
+⛔ **And the two RL-derived levers partially CANCEL:** `base + gate2` beats `veto + gate2` on all
+three axes (0.0729 vs 0.0896 · 0.1459 vs 0.1617 · 0.4705 vs 0.4834). ⇒ **ship the gate on the
+UNMODIFIED base; do not ship the veto'd checkpoint.**
+
+### What actually produced the win — and it has zero gradient steps
+
+* **`feasible_decode`** — a **control-space projection** that inverts the scorer's own
+  finite-difference map. **No training. No reward. No policy.** ⭐ Its floor is a *bit-identical
+  disabled-lever arm* rather than `ctrl0` **precisely because nothing trains**.
+* **the top-2 kinematic gate** — a **re-ranking rule** over already-emitted candidates. No training,
+  no new parameters, no new perception.
+
+⇒ **The 1.2 mm result is a deterministic geometry fix, not an RL outcome.**
+
+### ⚠️ My framing error, stated plainly
+
+I reported M26 under the heading of the stream tasked with *"prove RL efficiency"* and let that
+banner carry a non-RL result. The stream itself never claimed otherwise — it reported its RL exit as
+**FAILURE** as written. **The conflation was mine, in the summary layer**, and it is the same class
+as quoting an oracle ceiling as a payoff (#29): **a true number presented under a heading that
+implies the wrong cause.**
+
+### What the RL campaign WAS worth — diagnostic, and it was decisive
+
+⭐ It is the reason we looked at the decode at all:
+* ρ(reward, envelope) **−0.5367**, all terms separated ⇒ **the reward is NOT broken** — a
+  disqualification branch that did not fire, which stopped us "fixing" the wrong thing;
+* **`progress` is the only positive term**, and deleting it moves ρ by **0.27** while `feasibility`
+  ×4 moves it by **0.001** ⇒ a 270× lever-ranking that redirected the work;
+* the anchor bank is drivable at **0.48 g** while the decode emits **4.11 g** ⇒ **the infeasibility
+  is manufactured DOWNSTREAM**, which is the sentence the projection was built from.
+
+⇒ **RULE ZERO in its exact intended form: the campaign was refuted, it did not stop there, and its
+successor — which is not RL — is the result.** ⛔ But *"the RL post-training campaign succeeded"* is
+**false**, and no report may say it.
