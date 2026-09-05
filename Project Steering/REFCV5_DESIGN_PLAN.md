@@ -312,6 +312,8 @@ Not to chase ADE. V2's published shape is the target: the raw fan's **floor** ro
 
 ## §7 Implementation ladder
 
+> ⚠️ **SUPERSEDED FOR ORDERING BY §7A** — the PI's 2026-09-05 release split (pure vision first, then LiDAR) postdates this section, so §7 below is single-track; **§7A is the ordering of record** and carries the canonical names, while every per-WP detail, SPEC block, param delta and cost figure in §7 stands unchanged and is what §7A points back to.
+
 **The ordering principle.** The ladder is sorted by *what is free first*, not by what is most
 interesting. Every rung is **one lever**, pre-registered per `TanitAD_ValidateAIDesign` with a
 deliberate-regression arm and controls that must read known values, and validated on the **`tiny` rig
@@ -559,6 +561,51 @@ E-BEV-1 taught by the **agent raster alone**, which `bev_raster.py` produces tod
 already hold — is a complete path to closing the cross-attention gap without a single byte of LiDAR.
 The LiDAR build raises the ceiling; it never blocks the launch.
 
+
+## §7A The reconciled release ladder (v5a / v5b)
+
+> ⚠️ **STATUS: SKELETON — 2026-09-05, Arch+Inference FlyWheel, integration task delegated by the
+> Master Mind. Parts 1–6 are being filled in and committed one at a time; a heading with no content
+> below it is NOT a finding, it is work in flight.** This section reconciles two completed documents
+> that describe overlapping work under two incompatible naming schemes:
+> **(A)** `Project Steering/REFCV5_DESIGN_PLAN.md` §7 (this file — the 14-package single-track ladder,
+> written *before* the PI's release split) and **(B)** `TanitAD Research Lab/Architecture &
+> Inference/Research/2026-09-05-vision-only-maximum/RESULT.md` (the ten-rung `WP-V5A-*` camera-only
+> ladder). ⛔ **Nothing here is new research.** The adjudication rule the Master Mind set, applied
+> throughout: **the vision study's evidence wins on the camera-only questions** (it measured the
+> inventory, the costs and the azimuth coverage); **§7's structure wins on everything else** (its
+> SPEC blocks, gates, claims and refutations are the programme's format). Where the two documents
+> conflict on a *fact* rather than a name, both readings are recorded with their evidence and the
+> conflict is escalated — it is not adjudicated here.
+
+**Why this section exists (the PI's ruling, `Project Steering/Decisions/2026-09-05-mm-decisions.md`
+§M7, verbatim):** *"i prefer to do the environment extensions in two versions/steps, let start by
+pure vision and then add lidar. So check, what we can do maximally with vision, bev, und was else?"*
+§7 above predates that ruling and is therefore **single-track**. §7A imposes the split on it.
+
+### 7A.1 Crosswalk — every name in both documents, and the single canonical name
+
+*(pending)*
+
+### 7A.2 v5a — camera-only, ordered
+
+*(pending)*
+
+### 7A.3 v5b — LiDAR, ordered, off the model critical path
+
+*(pending)*
+
+### 7A.4 The release boundary as a decision rule, not a date
+
+*(pending)*
+
+### 7A.5 The two blockers, carried into the ladder as rungs
+
+*(pending)*
+
+### 7A.6 The arithmetic that constrains the whole ladder
+
+*(pending)*
 
 ## §8 What refcv5 claims, and what would refute it
 
