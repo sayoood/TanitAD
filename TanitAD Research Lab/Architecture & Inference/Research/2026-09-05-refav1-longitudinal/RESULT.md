@@ -13,11 +13,41 @@ expressivity* row — those are labelled and are NOT planner results.
 
 ## 0. The one-line answer
 
-**P1/P2 are MEASURED and the mechanism is now fully named and instrumented.
-P3 is RUNNING. As of this writing the answer to P4 — *does refav1 BEAT
-`ha0_ext`* — is NOT YET MEASURED for the new arms**; the last measured verdict
-stands at **PARITY** (`M27`). Everything in §1–§4 is measured; §5 is
-pre-registered with both outcomes committed in advance; §6 is what landed.
+**P4 — does refav1 BEAT `ha0_ext`? NOT YET, and not measurable this turn: the
+answer is GATED ON COMPUTE, and the blocker is named and measured.** The last
+standing verdict is `M27`'s **PARITY**.
+
+What this turn did produce, all MEASURED:
+
+1. **P1 is complete.** The longitudinal vocabulary can command **no sustained
+   acceleration at all**, its reachable `dv` over the plan window has **exactly
+   one positive rung (+0.977 m/s)** against a corpus p90 of **+2.342**, and
+   **82.4 % of the accelerating windows are outside it entirely**. The goal
+   commands `a ≡ 0` on **31/40** windows and **20/24** of the GT-LON stratum.
+2. **P2 is complete.** The jerk term **does not price the seam** between the
+   measured `a0` and `controls[0]`, so the all-zero plan is the exact joint
+   minimiser of both regularisers; and the third cost weight has never been
+   evaluated (INHERITED — already pinned; the new part is that it **corrects
+   `M27 §2`**: the 643× `W_VEND` difference is a **no-op**, not a confound).
+3. **Two levers implemented, pinned OFF-by-default and bit-identical when off**
+   (`a_shift`/`a_sustain`, `jerk_seam_a0`), plus **reached-it guards** so a
+   stale stack cannot bank a shipped-vocabulary arm under a lever's name. A
+   third (`W_VEND`) was built, **caught by an existing pin that reserves it as a
+   PI decision, and REMOVED rather than the pin amended**.
+4. **The design was changed on measurement, mid-turn, before any GPU was
+   spent**: D1 could reach only **61.8 %** of the deficit, so D2 was derived,
+   measured, implemented and promoted to the queue's first arm — at the
+   expressivity level it closes **76 %** of the deficit and is the only design
+   that goes **negative on ADE** (−0.0389, i.e. better than the floor).
+
+⛔ **THE BLOCKER, NAMED AND MEASURED.** The dev-box 4060 is at **7,755 / 8,188
+MiB with the SIBLING stream's two arms** (`combined`, `wk15_ladder`, both at
+episode 3/8 and slowed to ~1,000–1,500 s/episode). Two concurrent arms is the
+proven ceiling; a third OOMs. My five arms are **queued, gated on distinct
+`--out` targets < 2, and will start automatically**; `raw/HANDOFF.md` +
+`raw/finalize_lon.sh` land them without re-deriving anything. Everything in
+§1–§4b is measured; §5 is pre-registered with **both outcomes committed before
+the numbers exist**.
 
 ---
 
