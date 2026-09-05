@@ -1399,3 +1399,72 @@ the remaining problems are **two argparse defects, one unit-less command channel
 question** — not a corpus, not compute. ⇒ **Either the directive is lifted for a scoped
 `(a_lon, a_lat)` arm, or it stands and v7f waits.** Both are defensible; what is not defensible is
 the status quo, in which nobody is working on the flagship and nobody decided that.
+
+## M33. ⛔ CORRECTION — the τ-ramp arm DID run. `D-EMA-ADOPT`'s condition is MET.
+
+**I told the PI, one message ago, that `D-EMA-ADOPT`'s conditional arm had never run. That is
+FALSE.** A fourth probe — which the v7f audit predicted *"can only corroborate"* — refuted it, and I
+then settled it **at source** rather than by document triangulation.
+
+### 1. Read from Thor's own run directory, not from a document
+
+`thor:/home/nvidia/v7tiny/emao14_30k_tauramp/` holds `ckpt.pt` (144,111,717 B), `config.json`,
+`metrics.json` (415,493 B), `stage_gate.json`, `summary.json`, `train_log.jsonl` (1,609,183 B).
+Its `config.json` reads:
+
+| field | value |
+|---|---|
+| `ema_decay_ramp` | ⭐ **`"cosine"`** |
+| `o5_target` | `"ema"` |
+| `ema_decay` | 0.996 |
+| `steps` | 30000 |
+| `summary.done` | **True** |
+
+⇒ **The arm ran with the ramp on, to 30,000 steps, and completed 2026-08-30 ~06:1x UTC.**
+⇒ **`D-EMA-ADOPT`'s stated condition is MET, and `D-V7F-TAU-RAMP-UNRUN` is RETRACTED.**
+
+### 2. ⭐⭐ Why the negative was believable — and it is a systematic auditing hazard
+
+`BINDING_TRAINING_IMPROVEMENTS.md` (B3): **`--save-every` OVERWRITES `ckpt.pt`**, and the banked 30k
+run dirs *"contain exactly ONE file each."* The run directory lived **only on Thor**; the **config
+was never banked.**
+
+⇒ **A `config.json`-based audit SYSTEMATICALLY UNDER-REPORTS WHICH ARMS RAN.** Searching all **95**
+banked `config.json` files for `--ema-decay-ramp` returns nothing **even though the run happened** —
+the corpus being searched structurally cannot contain the evidence.
+
+⛔ **And the register row was stamped `MEASURED (source + git)` while its evidence column cited only
+the INSTRUMENT being built** (`train_v6_staged.py:9300`, the 24 tests). **It cites no probe that
+searched for run artifacts.** ⇒ **an unverified negative wearing a MEASURED stamp** — the most
+expensive kind, because the stamp is what stops the next reader checking.
+
+⭐ Same family as the day's other absence errors (`ls-tree` truncation, the `.claude/worktrees`
+non-hydration, the comma-formatted numbers), with a new and general form worth naming:
+**when an artifact class is known to be overwritten or unbanked, its absence is not evidence — and
+the audit must say which corpus it searched and whether that corpus could contain the answer.**
+
+### 3. ⛔ What STANDS, because they are different claims
+
+`D-V7F-NEVER-TRAINED` is **unaffected and still MEASURED**: every arm found — `emao14_30k_tauramp`,
+`emao14_30k`, `o14fut30k`, the P0 2k bake-off, MM-E19 K60/K8 — is **v7-tiny (~19 M params, planner
+objectives at zero)**. ⇒ **The v7f FLAGSHIP has still never been trained.**
+
+⇒ Two claims were bundled and only one was wrong: *"the τ-ramp never ran"* (**false**) and *"the
+flagship never trained"* (**true**). ⚠️ I stated them in one breath, which is how the correct one
+lent credibility to the incorrect one.
+
+### 4. ⭐ And the plan is UNCHANGED — for a better reason than before
+
+I wrote that *"the gating experiment is NOT the τ-ramp."* That was right, and is now **better
+supported**: the τ-ramp is not the gate **because it already ran and cleared**, not because it was
+pending. ⇒ **The gate remains P1 — no v7 arm has ever beaten its own hold-action control** — and the
+single next thing is still **giving v7f a command channel with units (`a_lon, a_lat`) instead of
+`omega_accel_v`.**
+
+### 5. Closed at source, so it cannot recur for this arm
+
+`config.json`, `summary.json` and `stage_gate.json` are **pulled from Thor and banked** into
+`…/2026-08-30-t1-first-v7-read/raw/`. ⚠️ **The `MODEL_REGISTRY.md:4156` raws it cites
+(`tau_drift.json`, `tau_nrmse.json`, `tau_absorb.json`) still do not exist in the repo** — confirmed
+by two independent methods. That is a remaining provenance gap on a **completed** arm, and it is the
+same stranding that produced this correction.
