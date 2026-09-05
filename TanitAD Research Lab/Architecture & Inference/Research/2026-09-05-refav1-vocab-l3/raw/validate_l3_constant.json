@@ -1,0 +1,136 @@
+{
+ "panel": "C:/Users/Admin/refav1_margin/intent_stride2.npz",
+ "n_windows_total": 4786,
+ "n_excluded_low_v0": 266,
+ "duty_cycle": 0.6666666666666666,
+ "turn_threshold": 0.01,
+ "code_constant": {
+  "GOAL_KAPPA_TURN": 0.08,
+  "GOAL_KAPPA_TURN_LEVELS": [
+   0.01155,
+   0.01942,
+   0.05805
+  ],
+  "vocab_id": "L3-0.01155,0.01942,0.05805"
+ },
+ "scored": {
+  "L3_from_code": {
+   "design": "L=3 from refa_v1 constant",
+   "levels": [
+    0.01155,
+    0.01942,
+    0.05805
+   ],
+   "n": 4520,
+   "n_turns": 644,
+   "medae_on_turns": 0.004207307440141838,
+   "rmse_all": 0.010322145716774863,
+   "frac_turns_expressible": 1.0
+  },
+  "L1_shipped_CONTROL": {
+   "design": "L=1 shipped (CONTROL)",
+   "levels": [
+    0.08
+   ],
+   "n": 4520,
+   "n_turns": 644,
+   "medae_on_turns": 0.015511059667915106,
+   "rmse_all": 0.010147439766972017,
+   "frac_turns_expressible": 0.38664596273291924
+  }
+ },
+ "CONTROL_floor_L0": {
+  "rmse_all": 0.017845826964937063,
+  "road_rms_kappa": 0.017845826964937063,
+  "equal_to_1e-12": true,
+  "frac_expressible": 0.0,
+  "why": "with no level the best available token is LANE_KEEP, so the residual IS the road's curvature \u2014 if these differ the scorer is not measuring what it claims"
+ },
+ "CONTROL_ceiling_continuous": {
+  "rmse_all": 0.0,
+  "is_exactly_zero": true
+ },
+ "A_vs_banked_approval": {
+  "L3": {
+   "medae_on_turns": {
+    "mine": 0.004207307440141838,
+    "banked": 0.00420751391599576,
+    "match": true
+   },
+   "rmse_all": {
+    "mine": 0.010322145716774863,
+    "banked": 0.010322499332671847,
+    "match": true
+   },
+   "frac_turns_expressible": {
+    "mine": 1.0,
+    "banked": 1.0,
+    "match": true
+   },
+   "levels_match": true
+  },
+  "L1_shipped": {
+   "medae_on_turns": {
+    "mine": 0.015511059667915106,
+    "banked": 0.015511059667915106,
+    "match": true
+   },
+   "rmse_all": {
+    "mine": 0.010147439766972017,
+    "banked": 0.010147439766972017,
+    "match": true
+   },
+   "frac_turns_expressible": {
+    "mine": 0.38664596273291924,
+    "banked": 0.38664596273291924,
+    "match": true
+   },
+   "levels_match": true
+  }
+ },
+ "A_passes": true,
+ "B_code_path": {
+  "rows": [
+   {
+    "level": 0.01155,
+    "sustained_magnitude": 0.011549999937415123,
+    "magnitude_matches": true,
+    "n_steps_nonzero": 20,
+    "n_steps": 30,
+    "measured_duty": 0.6666666666666666,
+    "duty_matches_analytic": true,
+    "mean_effective_kappa": 0.007699999492615461,
+    "effective_matches_level_times_duty": true
+   },
+   {
+    "level": 0.01942,
+    "sustained_magnitude": 0.019419999793171883,
+    "magnitude_matches": true,
+    "n_steps_nonzero": 20,
+    "n_steps": 30,
+    "measured_duty": 0.6666666666666666,
+    "duty_matches_analytic": true,
+    "mean_effective_kappa": 0.012946667149662971,
+    "effective_matches_level_times_duty": true
+   },
+   {
+    "level": 0.05805,
+    "sustained_magnitude": 0.0580499991774559,
+    "magnitude_matches": true,
+    "n_steps_nonzero": 20,
+    "n_steps": 30,
+    "measured_duty": 0.6666666666666666,
+    "duty_matches_analytic": true,
+    "mean_effective_kappa": 0.03869999945163727,
+    "effective_matches_level_times_duty": true
+   }
+  ],
+  "passes": true,
+  "why": "the approval was scored on an ANALYTIC profile; this asserts the shipped `canonical_controls_levels` produces exactly that profile, so the approved table describes the code that runs"
+ },
+ "VERDICT": {
+  "constant_reproduces_the_approved_row": true,
+  "code_path_realises_the_scored_profile": true,
+  "controls_pass": true
+ }
+}

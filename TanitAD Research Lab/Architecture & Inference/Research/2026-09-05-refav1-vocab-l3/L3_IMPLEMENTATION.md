@@ -41,6 +41,37 @@ number banked before 2026-09-05 is under the single shipped magnitude. So:
 `test_refa_v1_plan_goal.py::test_e_*` pinned `goal_action`'s key set exactly; it now pins the two
 new provenance keys **and their shipped values**, still as an exact set.
 
+## §2b ⭐ THE CONSTANT IN CODE **IS** THE DESIGN THAT WAS APPROVED — CHECKED, NOT ASSUMED
+
+An approval is worthless if the shipped constant is not the one that was scored.
+`tools/validate_l3_constant.py` closes that loop against the banked
+`vocab_design.json` on the same dense panel (`intent_stride2.npz`, 4,786 windows,
+**16 excluded** at v0 < 1 m/s, duty **0.6667**, turns at |κ| > 1e-2):
+
+| row | medAE-on-turns | RMSE all | expressible |
+|---|---|---|---|
+| `L=3` from `refa_v1.GOAL_KAPPA_TURN_LEVELS` | **0.00420751** | 0.01032215 | **1.0000** |
+| `L=3` banked in `vocab_design.json` | **0.00420751** | 0.01032250 | **1.0000** |
+| `L=1` shipped, from code (**CONTROL**) | **0.01551106** | 0.01014744 | **0.38664596** |
+| `L=1` shipped, banked (**CONTROL**) | **0.01551106** | 0.01014744 | **0.38664596** |
+
+⭐ **The shipped control reproduces to every printed digit**, which is what makes the L=3 row
+credible rather than merely close: same panel, same scorer, same filters. (The L=3 `rmse_all`
+differs in the 7th decimal only, because the constant in code is the 5-dp rounded quantile while
+the banked row scored the unrounded one — a difference of **3.5e-7**, stated rather than hidden.)
+
+⭐⭐ **AND THE CODE PATH, NOT ONLY THE CONSTANT.** The approval was scored on an *analytic*
+profile — "hold the level for `GOAL_TURN_S`, then nothing". `canonical_controls_levels` is what
+the planner actually calls, so the check measures the profile **off the returned tensor**: at each
+of the three levels the sustained magnitude matches to **1e-6**, the duty cycle is **20/30 =
+0.66667** exactly as assumed, and the mean effective curvature equals `level × duty` to **1e-7**.
+⇒ the approved table describes the code that ships. *(This is the `anchors.pt` units trap
+prevented rather than repeated: an artifact must state — and here prove — what it is.)*
+
+**Controls, both known-value, both passed:** the `L=0` floor reads the road's own RMS curvature to
+**1e-12** (with no level the best token is `LANE_KEEP`, so the residual IS the road), and the
+CONTINUOUS ceiling reads **exactly 0.0**.
+
 ## §3 ⛔⛔ THE GAP M15 DOES NOT CLOSE: A VOCABULARY WITH THREE MAGNITUDES NEEDS A CHOOSER, AND THE TRAINED HEAD CANNOT BE ONE
 
 M15's table gives every design an **ORACLE** token chooser. That is the right way to bound a
