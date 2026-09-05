@@ -1,0 +1,51 @@
+# guard_mutation_audit.py -- full run
+# 2026-09-05, dev box, C:/Users/Admin/tanitad-wt (off-Drive mirror)
+# python: C:/Users/Admin/venvs/tanitad/Scripts/python.exe   OMP_NUM_THREADS=6
+# repo HEAD at time of run: 49c3aa5
+
+anchors: 9/9 present exactly once
+baseline: rc=0  77 passed, 2 skipped, 1 warning in 24.85s
+
+CAUGHT       rig_camera_none
+             1 failed, 76 passed, 2 skipped, 1 warning in 19.09s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera <-- named
+
+CAUGHT       off_camera_refusal_removed
+             2 failed, 75 passed, 2 skipped, 1 warning in 18.36s
+             tests/test_refc_v3_agent_provenance.py::test_P1_weight_without_a_camera_REFUSES[--agent-w-ground] <-- named
+             tests/test_refc_v3_agent_provenance.py::test_P1_weight_without_a_camera_REFUSES[--agent-w-project] <-- named
+
+CAUGHT       monocular_terms_skipped
+             1 failed, 76 passed, 2 skipped, 1 warning in 19.22s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_camera_the_TRAINER_builds_makes_the_terms_COMPUTE <-- named
+
+CAUGHT       ground_term_skipped
+             1 failed, 76 passed, 2 skipped, 1 warning in 21.83s
+             tests/test_refc_v3_agent_provenance.py::test_P1_the_camera_the_TRAINER_builds_makes_the_terms_COMPUTE <-- named
+
+CAUGHT       unsupervised_detector_allowed
+             1 failed, 76 passed, 2 skipped, 1 warning in 19.73s
+             tests/test_refc_v3_refcv5_wiring.py::test_agent_head_without_its_LOSS_REFUSES <-- named
+
+CAUGHT       weights_absent_from_config
+             2 failed, 75 passed, 2 skipped, 1 warning in 19.39s
+             tests/test_refc_v3_refcv5_wiring.py::test_seam_stamp_carries_every_refcv5_lever <-- named
+             tests/test_refc_v3_refcv5_wiring.py::test_seam_stamp_on_a_DEFAULT_run_says_off 
+
+CAUGHT       registry_anchor_rotted
+             1 failed, 76 passed, 2 skipped, 1 warning in 17.63s
+             tests/test_guard_mutation_audit.py::test_every_anchor_is_present_in_the_shipped_source_exactly_once <-- named
+
+CAUGHT       registry_names_a_dead_guard
+             1 failed, 76 passed, 2 skipped, 1 warning in 17.04s
+             tests/test_guard_mutation_audit.py::test_every_named_guard_actually_exists <-- named
+
+CAUGHT       knob_stamp_emptied
+             2 failed, 75 passed, 2 skipped, 1 warning in 18.10s
+             tests/test_refc_v3_agent_provenance.py::test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob 
+             tests/test_refc_v3_agent_provenance.py::test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE <-- named
+
+=== 9/9 defects CAUGHT by the named guard ===
+tree restored and verified by sha256.
+
+# exit code: 0  (0 = every defect CAUGHT by its named guard)

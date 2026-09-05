@@ -1,0 +1,211 @@
+# THE REFUTED INSTRUMENT -- an AST census of build_parser, run on BOTH trainers
+# 2026-09-05, dev box, repo HEAD 49c3aa5
+# The census asks: is every CLI dest read somewhere other than the parser and the stamps?
+# The census source and this driver are reproduced at the end of the file.
+
+========================================================================
+ARM A -- the FIXED trainer (repo HEAD 49c3aa5)
+========================================================================
+71 CLI dests parsed from build_parser
+
+=== 0 dest(s) with NO read outside the parser/stamps ===
+
+=== stamped-and-used (healthy), first 12 of 71 ===
+  ablate_frames                      3 effective read(s), e.g. train:2554
+  agent_cam_height                   1 effective read(s), e.g. _build_rig_camera:508
+  agent_join                         7 effective read(s), e.g. _verify_agent_join:1730
+  agent_join_allow_legacy_ids        2 effective read(s), e.g. train:2298
+  agent_join_no_rates                2 effective read(s), e.g. train:2292
+  agent_join_verify                  1 effective read(s), e.g. _verify_agent_join:1733
+  agent_miss_rate                    1 effective read(s), e.g. _pin_refcv5_seams:316
+  agent_pad                          1 effective read(s), e.g. train:2297
+  agent_presence_hard                1 effective read(s), e.g. _pin_refcv5_seams:321
+  agent_queries                      1 effective read(s), e.g. _pin_refcv5_seams:317
+  agent_rig_camera                   2 effective read(s), e.g. _build_rig_camera:467
+  agent_rig_extrinsics               1 effective read(s), e.g. _build_rig_camera:532
+
+========================================================================
+ARM B -- the SAME trainer with the ORIGINAL M18 defect
+         re-installed: `model._rig_camera = None`, never
+         assigned. `--agent-w-project 0.2` now parses, is
+         stamped into config.json, and computes NOTHING.
+========================================================================
+71 CLI dests parsed from build_parser
+
+=== 0 dest(s) with NO read outside the parser/stamps ===
+
+=== stamped-and-used (healthy), first 12 of 71 ===
+  ablate_frames                      3 effective read(s), e.g. train:2555
+  agent_cam_height                   1 effective read(s), e.g. _build_rig_camera:508
+  agent_join                         7 effective read(s), e.g. _verify_agent_join:1730
+  agent_join_allow_legacy_ids        2 effective read(s), e.g. train:2299
+  agent_join_no_rates                2 effective read(s), e.g. train:2293
+  agent_join_verify                  1 effective read(s), e.g. _verify_agent_join:1733
+  agent_miss_rate                    1 effective read(s), e.g. _pin_refcv5_seams:316
+  agent_pad                          1 effective read(s), e.g. train:2298
+  agent_presence_hard                1 effective read(s), e.g. _pin_refcv5_seams:321
+  agent_queries                      1 effective read(s), e.g. _pin_refcv5_seams:317
+  agent_rig_camera                   2 effective read(s), e.g. _build_rig_camera:467
+  agent_rig_extrinsics               1 effective read(s), e.g. _build_rig_camera:532
+
+========================================================================
+VERDICT
+========================================================================
+Both arms read 0 suspects of 71 dests. The census cannot see the
+defect: `--agent-w-project` IS read -- it reaches
+`cfg.core.agents.w_project` and dies against a `cam is not None`
+guard that is always False. Reachability of the FLAG is not
+reachability of the TERM. Only RUNNING the thing separates them,
+which is why guard_mutation_audit.py exists and this does not.
+
+=== census.py (the refuted instrument, scratchpad only -- NOT shipped) ===
+"""Census: which of the trainer's CLI knobs are PARSED AND STAMPED ONLY?
+
+The M18 defect class in its general form. A dest whose ONLY read sites are the
+parser that defines it and the stamp that serialises it cannot change what the
+run computes -- it can only change what the run's record CLAIMS.
+"""
+import ast
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+SRC = Path(r"C:/Users/Admin/tanitad-wt/stack/scripts/refc_v3_train.py")
+tree = ast.parse(SRC.read_text(encoding="utf-8"))
+
+# --- 1. every add_argument -> dest ---------------------------------------
+dests = {}
+for node in ast.walk(tree):
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+            and node.func.attr == "add_argument":
+        opts = [a.value for a in node.args
+                if isinstance(a, ast.Constant) and isinstance(a.value, str)]
+        d = None
+        for kw in node.keywords:
+            if kw.arg == "dest" and isinstance(kw.value, ast.Constant):
+                d = kw.value.value
+        if d is None:
+            longs = [o for o in opts if o.startswith("--")]
+            if not longs:
+                continue
+            d = max(longs, key=len)[2:].replace("-", "_")
+        dests[d] = (node.lineno, sorted(opts))
+
+# --- 2. enclosing-function map -------------------------------------------
+owner = {}
+for fn in ast.walk(tree):
+    if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        for sub in ast.walk(fn):
+            owner.setdefault(id(sub), fn.name)
+
+def fn_of(node):
+    return owner.get(id(node), "<module>")
+
+# --- 3. read sites --------------------------------------------------------
+reads = defaultdict(list)
+for node in ast.walk(tree):
+    # args.<dest>
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) \
+            and node.value.id in ("args", "a", "ns"):
+        if node.attr in dests:
+            reads[node.attr].append((node.lineno, fn_of(node)))
+    # getattr(args, "<dest>", ...)
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) \
+            and node.func.id == "getattr" and node.args:
+        if len(node.args) >= 2 and isinstance(node.args[1], ast.Constant) \
+                and node.args[1].value in dests:
+            reads[node.args[1].value].append((node.lineno, fn_of(node)))
+
+STAMPY = ("stamp", "_manifest", "_record", "as_dict", "_provenance")
+def is_stampy(name):
+    return any(s in name for s in STAMPY)
+
+PARSERY = ("build_parser", "_add_", "main", "<module>")
+
+rows = []
+for d, (ln, opts) in sorted(dests.items()):
+    sites = reads.get(d, [])
+    eff = [(l, f) for (l, f) in sites
+           if not is_stampy(f) and f not in ("build_parser",)]
+    stamp_only = [(l, f) for (l, f) in sites if is_stampy(f)]
+    rows.append((d, ln, opts, sites, eff, stamp_only))
+
+print(f"{len(dests)} CLI dests parsed from build_parser\n")
+
+suspect = [r for r in rows if not r[4]]
+print(f"=== {len(suspect)} dest(s) with NO read outside the parser/stamps ===")
+for d, ln, opts, sites, eff, so in suspect:
+    where = ", ".join(f"{f}:{l}" for l, f in so) or "NOWHERE"
+    print(f"  {d:34s} {'/'.join(opts):42s} declared L{ln}  read: {where}")
+
+print(f"\n=== stamped-and-used (healthy), first 12 of {len(rows)-len(suspect)} ===")
+for d, ln, opts, sites, eff, so in [r for r in rows if r[4]][:12]:
+    print(f"  {d:34s} {len(eff)} effective read(s), e.g. {eff[0][1]}:{eff[0][0]}")
+
+=== census_blindspot_run.py (this driver) ===
+"""Run the AST census on the FIXED trainer and on the DEFECTIVE one.
+
+The point is the pair, not either number: an instrument that returns the same
+answer on both cannot be evidence about the thing that differs between them.
+"""
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+SCR = Path(__file__).parent
+STACK = Path(r"C:/Users/Admin/tanitad-wt/stack")
+TRAIN = STACK / "scripts" / "refc_v3_train.py"
+PY = r"C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
+
+OLD = "    model._rig_camera, _cam_stamp = _build_rig_camera(cfg, args)"
+NEW = ("    model._rig_camera = None\n"
+       "    _cam_stamp = _build_rig_camera(cfg, args)[1]")
+
+
+def census() -> str:
+    r = subprocess.run([PY, str(SCR / "census.py")], capture_output=True,
+                       text=True)
+    return r.stdout
+
+
+def main() -> int:
+    backup = SCR / "_census_train.bak"
+    shutil.copyfile(TRAIN, backup)
+    try:
+        print("=" * 72)
+        print("ARM A -- the FIXED trainer (repo HEAD 49c3aa5)")
+        print("=" * 72)
+        print(census())
+
+        data = TRAIN.read_bytes()
+        nl = b"\r\n" if b"\r\n" in data else b"\n"
+        old = OLD.replace("\n", nl.decode()).encode()
+        new = NEW.replace("\n", nl.decode()).encode()
+        assert data.count(old) == 1
+        TRAIN.write_bytes(data.replace(old, new, 1))
+
+        print("=" * 72)
+        print("ARM B -- the SAME trainer with the ORIGINAL M18 defect")
+        print("         re-installed: `model._rig_camera = None`, never")
+        print("         assigned. `--agent-w-project 0.2` now parses, is")
+        print("         stamped into config.json, and computes NOTHING.")
+        print("=" * 72)
+        print(census())
+    finally:
+        shutil.copyfile(backup, TRAIN)
+        backup.unlink()
+
+    print("=" * 72)
+    print("VERDICT")
+    print("=" * 72)
+    print("Both arms read 0 suspects of 71 dests. The census cannot see the")
+    print("defect: `--agent-w-project` IS read -- it reaches")
+    print("`cfg.core.agents.w_project` and dies against a `cam is not None`")
+    print("guard that is always False. Reachability of the FLAG is not")
+    print("reachability of the TERM. Only RUNNING the thing separates them,")
+    print("which is why guard_mutation_audit.py exists and this does not.")
+    return 0
+
+
+sys.exit(main())

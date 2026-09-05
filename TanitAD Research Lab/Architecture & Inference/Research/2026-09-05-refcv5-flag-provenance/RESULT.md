@@ -452,3 +452,180 @@ a claim about the SEARCH"*.
 | backfilled sidecar (box only) | `devbox:C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl.xz.meta.json` (`.bak` kept) — **exists in ONE place**, and is a local convenience, not a deliverable |
 
 Nothing else lives in only one place.
+
+---
+
+# ADDENDUM (2026-09-05, later the same day) — "every gate shown to FAIL its defect" is now a COMMAND, not a claim
+
+**Scope:** this section adds no fix. Both items of the incoming brief were **already landed** and are
+re-verified here by content; what was missing was *evidence that the guards work*, and that is what
+this addendum builds.
+
+## 0. The brief was stale, and the first duty was to say so
+
+The brief asked for one of two fixes to `--agent-w-project` / `--agent-w-ground`, plus `w_agent` /
+`w_u0` in `_seam_stamp`. **All three already exist at `HEAD` (`49c3aa5`)**, landed by `93bcdd7` and
+`606d938` — the work described in the sections above. Verified by content, not by changelog:
+
+| brief item | state at `HEAD` | evidence |
+|---|---|---|
+| the two monocular flags are silent no-ops | **FIXED, and by BOTH routes** — the camera is built *and* an unbuildable one refuses | `refc_v3_train.py:442` `_build_rig_camera`; `:2108` `model._rig_camera, _cam_stamp = _build_rig_camera(cfg, args)` |
+| `model._rig_camera = None`, never assigned | **gone**; a constant-`None` assignment is refused by a parsed (not grepped) test | `test_refc_v3_agent_provenance.py::test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera` |
+| `w_agent` / `w_u0` absent from `config.json` | **stamped at the top level of `_seam_stamp`**, plus the derived `agent_knobs` closure | `refc_v3_train.py:1629-1630`, `:1640` |
+
+⇒ **Nothing in the brief needed writing.** Reporting that and stopping would have been a report, not
+work — so the question became the one the brief itself poses: *is a guard that cannot fail evidence?*
+
+## 1. The claim that needed testing was OUR OWN
+
+`test_refc_v3_agent_provenance.py` opens with the right doctrine — *"every gate here is shown to FAIL
+the defect: a control that has never read the wrong value certifies nothing"* — and the report above
+says **"38 new tests, every gate shown to FAIL its defect."**
+
+**That showing was done once, by hand, and lived only in a transcript.** A static assertion cannot
+demonstrate it, and the next refactor of `_build_rig_camera` can turn all 38 into tautologies while
+the suite still reads green. The claim was true and **unreproducible** — the same shape as a headline
+number with no artifact behind it.
+
+## 2. ⛔ THE OBVIOUS INSTRUMENT IS BLIND — MEASURED, AND IT WOULD HAVE PASSED THE BUG
+
+Before writing the audit, the natural tool was built first: an AST census over `build_parser` asking
+*"is every CLI dest read somewhere other than the parser and the stamps?"* — the general form of
+"a flag that parses and does nothing".
+
+| trainer under test | census verdict |
+|---|---|
+| `HEAD` (fixed) | **0 suspects** of 71 dests |
+| `HEAD` + the ORIGINAL M18 defect re-installed (`model._rig_camera = None`) | **0 suspects** of 71 dests |
+
+⇒ **The census reads identically on the fixed and the broken trainer.** It cannot see the defect,
+because `--agent-w-project` **was** read: it reached `cfg.core.agents.w_project` and then died against
+a `cam is not None` guard that was always False. **Reachability of the FLAG is not reachability of the
+TERM.** Same family as `df` hiding the MooseFS quota and Thor's `free`: a probe answering the adjacent
+question, in a voice indistinguishable from the right one. The census is **refuted and not shipped**;
+its refutation is recorded in the audit's docstring so it is not rebuilt in six months.
+
+## 3. What was built instead — `stack/scripts/guard_mutation_audit.py`
+
+Nine MEASURED defects, each **reintroduced into the working tree**, each naming the guard that must
+catch it. Three verdicts: `CAUGHT` (the named test failed — the guard is load-bearing), `ESCAPED`
+(the suite stayed green — **the guard is decorative**), `MISCREDITED` (red, but via some other test —
+the guard credited is not the guard holding). Non-zero exit on anything but `CAUGHT`.
+
+```
+python stack/scripts/guard_mutation_audit.py            # the audit (~2 min)
+python stack/scripts/guard_mutation_audit.py --list     # the registry
+python stack/scripts/guard_mutation_audit.py --check-anchors   # fast, no pytest
+```
+
+### The result: **9 / 9 CAUGHT by the named guard**
+
+| mutation | reintroduces | caught by |
+|---|---|---|
+| `rig_camera_none` | `model._rig_camera = None` — the literal 2026-09-05 defect | `…provenance.py::test_P1_the_trainer_never_assigns_a_CONSTANT_None_rig_camera` |
+| `off_camera_refusal_removed` | the pin-time refusal deleted, so an argv exists that stamps a weight it never trains | `…::test_P1_weight_without_a_camera_REFUSES` (both params) |
+| `monocular_terms_skipped` | `agent_losses` drops the projection term | `…::test_P1_the_camera_the_TRAINER_builds_makes_the_terms_COMPUTE` |
+| `ground_term_skipped` | …and the ground-range prior, **registered separately** so one guard cannot certify both addends for free | same |
+| `unsupervised_detector_allowed` | `--agents head --w-agent 0` — the fourth dead flag | `…wiring.py::test_agent_head_without_its_LOSS_REFUSES` |
+| `weights_absent_from_config` | `w_agent`/`w_u0` dropped from `_seam_stamp` | `…wiring.py::test_seam_stamp_carries_every_refcv5_lever` |
+| `knob_stamp_emptied` | the derived `agent_knobs` closure defeated | `…::test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE` |
+| `registry_anchor_rotted` | **the audit's own anchors rotted** against a refactor | `test_guard_mutation_audit.py::test_every_anchor_is_present_…` |
+| `registry_names_a_dead_guard` | **the audit names a renamed/deleted test** | `test_guard_mutation_audit.py::test_every_named_guard_actually_exists` |
+
+The last two are the recursive pair: they mutate the audit file itself, which the pytest subprocess
+re-imports from disk while the parent keeps its own in-memory registry. **The audit rots itself,
+watches the rot check catch it, and puts itself back** — because the rot check is the single thing
+standing between this tool and silent vacuity, and it too had never been seen to fail.
+
+## 4. ⛔⛔ TWO DEFECTS IN THE INSTRUMENT ITSELF, BOTH IN THE BRANCH THAT MATTERS MOST
+
+Neither would have been found by reading the code, and both sat in `ESCAPED` — the verdict that fires
+least often and says the most.
+
+**(a) `9/9 CAUGHT` was, for one iteration, produced by a tool that COULD NOT SAY ANYTHING ELSE.**
+The rot check ran inside every mutation run, and the applied mutation's own anchor is — correctly —
+absent while it is applied. So that test went red on *every* mutation, `named` was never the only
+failure, and **`ESCAPED` became unreachable by construction**: a decorative guard would have read
+`MISCREDITED`. Fixed by passing the applied mutation's **key** (not a boolean) into the subprocess and
+excluding exactly that one anchor; every other anchor is still checked, which is what catches
+`registry_anchor_rotted`. **This is the audited defect class occurring inside the audit** — an
+instrument whose only reachable answer is the reassuring one.
+
+**(b) the `ESCAPED` message crashed the tool.** This console is cp1252; `print("⛔ the suite stayed
+GREEN …")` raised `UnicodeEncodeError` on `U+26D4`. The single most important sentence this tool can
+emit — *your guard is decorative* — **died instead of being read**, on the branch that had never once
+been exercised. Every literal reaching stdout is ASCII now, `_harden_streams()` is the backstop for
+prose that is not ours, and both are pinned by tests.
+
+**(c) and a third, on the DECODE side, found by the repo's own standard.** The audit reads pytest's
+output with `subprocess.run(..., text=True)` and no `encoding=`, which decodes with the locale codec.
+The text being decoded is pytest's failure summary — and the assertion messages of *the very guards
+under audit* contain `U+26D4`. So the **first genuinely-caught defect** would have surfaced as
+`UnicodeDecodeError` inside the audit instead of as a verdict. Caught by
+`tests/test_text_encoding_is_explicit.py::test_subprocess_text_mode_always_names_its_encoding`, which
+is **already red at baseline on nine pre-existing offenders** — this file is not among them; it was
+fixed before landing.
+
+⇒ **Three encoding defects in one instrument, all on the failure path**: encode on the way out (b),
+decode on the way in (c), and the verdict-collapse (a) that hid both by making the failure path
+unreachable. The repo's text-encoding sweep and its `test_the_guard_can_actually_fail` were doing
+exactly their job.
+
+⭐ **The crash paid for a safety proof.** It aborted mid-mutation, and the `finally` restore returned
+both files to byte-identical (`md5` match against the repo) and removed the snapshot directory. The
+in-place mutation design was **shown** safe under a real crash, not argued to be.
+
+## 5. All three verdicts are reachable — validated, not assumed
+
+`9/9 CAUGHT` is worthless from an instrument that can only say `CAUGHT`. Two synthetic mutations
+(not committed) were run against the shipped audit:
+
+| synthetic mutation | expected | got |
+|---|---|---|
+| an **inert** edit (a comment reworded), declared as guarded by a real test | `ESCAPED` | **`ESCAPED`**, with the "the guard is decorative" line |
+| the **real** `rig_camera_none` defect, credited to a real test that does not fail | `MISCREDITED` | **`MISCREDITED`**, naming the guard that did not hold |
+| audit exit code | non-zero | **1** |
+
+## 6. Manifest (addendum)
+
+| artifact | lives at |
+|---|---|
+| the audit (9 mutations, ~2 min) | `repo:stack/scripts/guard_mutation_audit.py` |
+| the guard-for-the-guards (11 tests, 0.15 s) | `repo:stack/tests/test_guard_mutation_audit.py` |
+| audit output, 9/9 CAUGHT | `repo:…/raw/guard_mutation_audit_2026-09-05.txt` |
+| verdict-reachability validation (ESCAPED + MISCREDITED) | `repo:…/raw/verdict_reachability_2026-09-05.txt` |
+| the refuted census, both trainers | `repo:…/raw/census_blind_spot_2026-09-05.txt` |
+
+Nothing in this addendum exists in only one place.
+
+## 7. Open, named rather than silently accepted
+
+1. ⚠️ **The audit covers four test files and nine defects — not the whole suite.** A guard outside
+   `TEST_FILES` is still an unmeasured guard. Extending the registry is cheap; the anchor discipline
+   (exactly one occurrence) is what keeps it honest.
+2. ⚠️ **It mutates the working tree in place.** That is documented, snapshot-backed, sha256-verified
+   and crash-recovering, but it is not safe to run two copies at once, and it refuses nothing today
+   if a mutated path carries uncommitted edits — the snapshot would faithfully restore *those*, which
+   is correct, but the run would be measuring an untracked tree. **Named, not fixed.**
+3. ⚠️ **`ESCAPED` and `MISCREDITED` are validated by a throwaway script, not by the committed suite.**
+   Committing them would mean shipping a deliberately decorative guard, which is worse; the
+   validation script's content is reproduced in
+   `raw/verdict_reachability_2026-09-05.txt` so the check can be repeated.
+
+## 8. ⛔ ESCALATION — this wants a line in the standing cadence, and I did not take it
+
+`Project Steering/AGENT_OPERATING_STANDARD.md` already runs three drift checks on a cadence, on the
+stated principle that *"presence proves transfer, md5 proves bytes, a successful import proves
+loading — none of them proves currency."* **This audit is the fourth rung of that same ladder: none
+of the three proves a guard still guards.**
+
+It belongs beside them under *Standing cadence*, run when the refcv5 surface is touched:
+
+```
+python stack/scripts/guard_mutation_audit.py   # non-zero if any guard is decorative
+```
+
+**I did not make that edit.** The file carries another stream's uncommitted changes right now
+(` M` in `git status`), and editing a shared steering doc under someone else's in-flight edit is how
+work gets silently reverted. **Raised here rather than written into a README** — per rule 3 of the
+standard, which exists because "please merge this" in a README went unread for ten days.
