@@ -809,7 +809,14 @@ def run_dump(a) -> dict:
     skl_raw = getattr(a, "seed_kappa_ladder", None)
     seed_kappa_ladder = None
     if skl_raw:
-        if "seed_kappa_ladder" not in _inspect2.signature(_R.RefAV1.plan).parameters:
+        # ⛔ import HERE, not inherited: `_inspect2` is bound inside the
+        # `--goal-kappa-turn` branch above, so referencing it from this block
+        # raises UnboundLocalError on any arm that passes the ladder WITHOUT
+        # also passing --goal-kappa-turn. MEASURED 2026-09-05: it killed
+        # `l3ladder` and `combined` at startup (no GPU wasted - the tool fails
+        # before the rollout, which is what its preflight design is for).
+        import inspect as _inspect3
+        if "seed_kappa_ladder" not in _inspect3.signature(_R.RefAV1.plan).parameters:
             raise SystemExit(
                 "[refav1_arm] --seed-kappa-ladder needs a refa_v1.plan() that "
                 "accepts seed_kappa_ladder; this stack predates it")
@@ -2369,7 +2376,7 @@ def main(argv=None):
                          "control reads envelope 0.0000 / kamm_over 0.0000): "
                          "refav1's plans are ENVELOPE-feasible by construction "
                          "(envelope_rate 0.0000, max|kappa| exactly the clip) yet "
-                         "29.6 % leave the mu = 0.7 friction circle, 42.1 % at "
+                         "29.6 %% leave the mu = 0.7 friction circle, 42.1 %% at "
                          "v0 >= 5 m/s, peak_g up to 3.262 against a ground truth "
                          "of 0.373. mu = 0.7 is the programme's own MU_KAMM.")
     ap.add_argument("--kamm-v-floor", type=float, default=None,

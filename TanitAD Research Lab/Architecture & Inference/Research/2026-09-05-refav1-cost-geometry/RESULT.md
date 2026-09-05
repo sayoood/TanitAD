@@ -645,6 +645,73 @@ running when this landed; `ccosh` stays in the tree as a pinned, non-default,
 *correct* instrument — its value is that it makes the cost defined where it was not,
 which matters for any future arm in which `cv` is not already the winner.
 
+
+### 7.5 ⭐⭐ THE LADDER CLOSES: A CLEAN INTERIOR OPTIMUM, EXACTLY WHERE §1'S SCALE SAID IT WOULD BE
+
+`wk151` = `ccos` + `(0, **151.1245**, 64.297)` — the **100 %** rung, i.e. the
+curvature charge at the realised curvature equals the ENTIRE measured goal
+decision. It landed at ADE **0.9084 [0.7134, 1.1132]**, *worse* than the 10 % rung
+and past the optimum. The full dose-response (`raw/wkappa_dose.txt`):
+
+| arm (metric, `W_KAPPA`) | ADE m | curv MAE 1/m | heading MAE deg | TAC lat kappa | turn recall L / R |
+|---|---|---|---|---|---|
+| `cos_argmax` (`cos`, 0) | 1.8944 | 0.080478 | 29.5086 | **-0.1249** *(below chance)* | 0.0 / 0.25 |
+| `ccos_argmax` (`ccos`, 0) | 1.3272 | 0.055369 | 23.4578 | **0.3795** | 0.3636 / 0.75 |
+| `ccosh_w000` (`ccosh`, 0) | 1.3272 | 0.055369 | 23.4578 | 0.3795 | 0.3636 / 0.75 |
+| **`wk15` (`ccos`, 15.11245 = 10 %)** | **0.8934** | **0.030982** | **15.2704** | 0.2611 | 0.0 / **0.5** |
+| `wk151` (`ccos`, 151.1245 = 100 %) | 0.9084 | 0.038019 | 15.3785 | **0.0000** | 0.0 / 0.0 |
+| `cos_wk` (`cos`, **the SHIPPED 0.05**) | 0.9251 | 0.040083 | 20.1374 | **0.0000** | 0.0 / 0.0 |
+| `ha0_ext` floor | **0.8772** | 0.077298 | 27.7357 | 0.6277 | — |
+
+**And the collapse is visible in one column — the ARM TOOL'S OWN trivial-profile
+probe** (`refav1_arm.py [trivial-profile]`, not a re-implementation; `straight` is
+`|y| < 1e-06 m`, `const_speed` spread `< 0.0001 m`):
+
+| arm | `straight` | `CONSTANT-VELOCITY` | **`identical_to ha0`** |
+|---|---|---|---|
+| `cos_argmax` (`cos`, 0) | 0.0750 | 0.0750 | 3/40 |
+| `ccos_argmax` / `ccosh_w000` (0) | 0.2750 | 0.2750 | 11/40 |
+| **`wk15` (10 %)** | 0.4750 | **0.2500** | **10/40** |
+| `wk151` (100 %) | 0.6500 | 0.4250 | 17/40 |
+| `cos_wk` (SHIPPED) | **1.0000** | **1.0000** | **40/40** |
+
+⇒ **The ladder has a clean interior optimum at the 10 % rung, and the 100 % rung is
+already on the way to the do-nothing plan** — `identical_to ha0` climbs
+11 → 10 → 17 → 40 and both turn recalls fall to **0.0** at 100 %, exactly as they
+are at the shipped weights. **This validates the rung definition itself:** §1 fixed
+"100 %" as *the curvature charge equalling the whole goal decision*, from banked
+data and before any arm ran, and that is precisely where the planner stops
+choosing to turn. A weight sweep chosen by eye would have had no way to know that
+the interesting range was `0 < W_KAPPA < 151`.
+
+⚠️ **`wk15`'s asymmetry is real and is a work item:** `turn_right` recall **0.5**
+against `turn_left` **0.0**, on n = 8 right and n = 11 left GT turns. The
+`W_KAPPA = 0` arm reads 0.75 / 0.3636, so the penalty costs the left turns first.
+With the tactical-decision seed floor at 0.0750 absolute (§4) an 11-window recall
+is far too thin to call, but the direction is consistent across two rungs and it
+should be checked on a wider panel before `wk15` is quoted as a lateral fix.
+
+### 7.5.1 TWO DEFECTS I INTRODUCED, BOTH CAUGHT BEFORE THEY COST GPU
+
+1. **`UnboundLocalError: _inspect2`** killed `l3ladder` and `combined` at startup
+   (18:39:32Z / 18:39:56Z). `inspect` was imported INSIDE the `--goal-kappa-turn`
+   branch, and my seed-ladder block referenced it from a sibling branch — so any
+   arm passing `--seed-kappa-ladder` *without* `--goal-kappa-turn` died. Fixed by
+   importing it in the block that uses it. ⭐ **Zero GPU was wasted: the tool
+   raised at `run_dump` before the rollout**, which is exactly what its
+   preflight-import design exists for (`[preflight] 11 analysis imports OK` — the
+   probe that exists "because a 3.0 h rollout once died in analyze()").
+2. **A bare `%` in the `--kamm-mu` help string broke `--help` itself** with
+   `TypeError: must be real number, not dict`, because argparse `%`-formats help
+   text. The file's own convention (`--goal-kappa-turn` writes `100 %%`) was the
+   thing I broke. ⚠️ This one is invisible to every arm that runs and appears only
+   when an operator asks for help or makes a CLI typo — the worst time to hand
+   someone a traceback. Escaped; `--help` now exits 0 and lists all three new flags.
+
+Both arms were relaunched at 18:42:21Z under `raw/queueG.sh`, which also `rm -rf`s
+the stale dump directory first so a partial dump from the crashed attempt cannot be
+mistaken for a panel.
+
 ---
 
 ## §8 — Deliverable manifest
