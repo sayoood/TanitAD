@@ -107,3 +107,57 @@ turn** (floor 0.01942 → shipped 0.01551, against a ceiling of 0). That is the 
   wheels.** The two must land together.
 * One checkpoint, one corpus. The level siting is fitted to **this** corpus's curvature
   distribution and must be re-derived, not copied, for another.
+
+---
+
+## §4 ⛔⛔ SELF-CORRECTION: the REALISED payoff is 2.3 %, not 3.7× — the oracle bound is not the expected gain
+
+**Instrument:** `tools/realised_kappa.py` · **Raw:** `raw/realised_kappa.json`
+**Same panel:** 4520 windows / 141 episodes, 644 real turns (`|κ| > 1e-2`).
+
+§1's table is an **ORACLE** bound and is labelled as one — but a reader will take
+*"100 % expressible, median error −3.7×"* as the payoff, and **it is not.** The oracle never
+picks the wrong token. The shipped head does. This composes them: for each candidate `κ_turn`,
+apply the **SHIPPED head's ACTUAL argmax decode**, push it through the real
+`canonical_controls` profile, and score the goal curvature the planner would actually be given.
+
+| design | crossover | **medAE on turns** | RMSE all | **turns goaled correctly** | straights given κ |
+|---|---|---|---|---|---|
+| **ZERO — the goal never turns (FLOOR)** | — | **0.01942** | 0.01785 | 0.0000 | 0.0000 |
+| realised, κ_turn = 0.02 | 0.0100 | 0.01831 | 0.01709 | **0.2811** | 0.0965 |
+| ⭐ realised, κ_turn = **0.04** (best) | 0.0200 | **0.01734** | 0.01767 | **0.2811** | 0.0965 |
+| ⛔ realised, κ_turn = **0.08 (SHIPPED)** | 0.0400 | **0.01775** | 0.02219 | **0.2811** | 0.0965 |
+| realised, κ_turn = 0.12 | 0.0600 | 0.01942 | 0.02931 | 0.2811 | 0.0965 |
+
+⛔ **Controls, all passed:** the ZERO floor is in the table (an oracle can never show that a
+vocabulary is worse than never turning — only a realised decode can); the SHIPPED row is
+asserted present; and a **RANDOM-DECODE control** with the same marginal rate is worse than the
+real head at both magnitudes (**0.02035 ± 0.00047 vs 0.01831** at 0.02; **0.02199 ± 0.00058 vs
+0.01775** at 0.08), so the head IS using information.
+
+### What this changes
+
+1. ⛔ **Tuning `κ_turn` ALONE buys 2.3 %** (0.01775 → 0.01734), not 3.7×. Against the
+   never-turn floor the entire shipped lateral goal is worth **8.6 %**, and the best reachable
+   constant **10.7 %**.
+2. ⭐ **The reason is visible in one column: `turns goaled correctly` is 0.2811 for EVERY
+   `κ_turn`.** `κ_turn` does not touch the head's logits, so the decode is unchanged; only
+   **28.1 %** of real turns receive a correctly-signed sustained goal whatever magnitude is
+   commanded. **The binding term is the head's RECALL at the crossover, not the magnitude.**
+3. ⚠️ **And the two levers fight each other.** Lowering `κ_turn` lowers the crossover, which
+   makes more road expressible but asks the head to decide where it is weaker: argmax recall is
+   **0.744 @ false 0.120** at crossover 0.040, and **0.388 @ 0.107** at crossover 0.010. That is
+   why the realised optimum (0.04) sits well above the oracle optimum (0.02) — and why neither
+   table alone can choose the constant.
+
+⇒ **The escalation stands but its framing is corrected: a finer sustained curvature is
+NECESSARY (it removes a ceiling that no head can beat) and NOT SUFFICIENT (the head only goals
+28.1 % of real turns correctly).** Both must move. The ordering is still vocabulary-first,
+because until the ceiling is removed a better head has nothing to command — but nobody should
+expect the constant alone to make refav1 drive.
+
+⚠️ **Recorded as a self-correction rather than quietly folded in.** §1 was banked (commit
+`e0b1276`) before this table existed, and its oracle numbers are correct as an upper bound; what
+was missing was the composition with the head's own selection. *Same class as the retraction
+this package already logged — a true number whose implication is wrong because a second factor
+was never multiplied in.*
