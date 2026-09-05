@@ -425,3 +425,90 @@ curvature constraint, and a gate that does not test for that will certify it as 
 (which a constraint can use, and a penalty cannot — `M48`), and the longitudinal token fix (`M56` §5).
 **It attacks all three named defects at once and carries no lever that deletes a manoeuvre class.**
 ⇒ This supersedes plan item A1 and is the highest-priority refav1 arm.
+
+## M59. ⛔⛔ TWO RETRACTIONS THAT BOTH POINT THE SAME WAY — refcv5 AND the RL plan are FURTHER ALONG than I told the PI
+
+### 1. RETRACTED — "refcv5's WP-4 sampler and WP-6 agent seam are not in the model"
+
+I reported to the PI that `refc.py` contained `control_head` / `sampler` / `cross_agent` **0 / 0 / 0**
+against a 54-`def` control, that 14 tests were red, and that **"this is the refcv3 defect repeating —
+skeleton without mechanism."**
+
+**MEASURED just now, with a passing control (59 `def` in the same read):**
+
+| symbol | occurrences in `stack/tanitad/refs/refc.py` |
+|---|---|
+| `sampler` | **49** |
+| `control_head` | **12** |
+| `cross_agent` | **11** |
+| `agent_gate` | **4** |
+
+And the provenance is unambiguous: **`a5dbfbb`, 2026-09-05 14:57:05 +0200**, subject
+***"refcv5 WP-4: the diffusion mechanism, in CONTROL space"*** — **committed hours BEFORE tonight's
+session and before the report that said it was absent.**
+
+⇒ ⛔ **The absence claim was FALSE, and I relayed it to the PI without verifying it.** Class: `M45`
+exactly — **an INHERITED claim reported as MEASURED** — compounded by `M50`, *a search result trusted
+without proving its channel*. ⚠️ The originating report also claimed **"7 of 7 local `refc.py` copies
+read zero"**, which cannot be reconciled with a live file reading 49; **that report's grep, not the
+repository, is what needs explaining.**
+
+⭐ **What is NOT retracted:** whether the 14 tests pass is a separate question — tests can fail against
+a module that exists. The wiring stream owns that and will report it. ⛔ **But "refcv5 has no
+mechanism" is withdrawn**, and with it the claim that refcv5 was repeating refcv3's defect.
+
+### 2. RETRACTED — my own mechanism argument in `M52`
+
+`M52` said: *"DD-v2 post-trains a diffusion policy's DENOISING trajectory. refcv3 has no denoiser to
+post-train."* **PUBLISHED-PRIMARY (banked `2512.07745` + released code at `1cd12a1`) refutes the
+premise:** the released RL stage sets **`std_dev_t_add = 0.0`** and forms
+`prev_sample = mean * eps_mul + 0 * eps_add` — ⇒ **it never uses the denoising chain's randomness at
+all.** The only stochasticity is **two multiplicative scalars per trajectory** at a 4 % floor, and the
+trained parameters are **`_trajectory_head` only** (everything else frozen and `.eval()`).
+
+⇒ ⭐⭐ **A DETERMINISTIC FAN CARRIES THE PUBLISHED MECHANISM FAITHFULLY.** Therefore *"no denoiser"*
+**does not block RL post-training on refcv4b**, and my reason for saying the refcv3 null carried no
+information was **the wrong reason**.
+
+⭐ **`M52`'s CONCLUSION stands on a better argument**, which the same work supplies: the refcv3 arm was
+uninformative because **the reward had no headroom** — `sel_contact` and `top8_contact` both **0.0,
+UNDETECTABLE-DOWNWARD** — and because the estimator's advantage is **identically zero in 92 % of
+windows** (`D-RL-COLL-SPARSE-1`). **A reward aimed at a term already at its floor cannot show a gain
+under any method.** That was always the load-bearing half; I led with the wrong half.
+
+⇒ ⭐ **Both retractions point the same way: the PI was right to push, and we are further along than I
+said. RL post-training can run on refcv4b as it is.**
+
+### 3. ⛔ `G-REWARD` CANNOT BE PASSED AS WRITTEN — and the ceiling, not the reward, is what is wrong
+
+`D-REFCV5-PLAN-6` makes `G-REWARD` a **hard precondition** (*"a reward that fails it may not train
+anything"*), and **nobody had ever scored it.** Scored now, 0 GPU, **6,089 lead windows / 73 episodes**,
+channel control exact (`err = 0.000e+00`):
+
+* over **2,400 admissible weightings the MINIMUM is 0.3840** against a **<= 0.30** ceiling ⇒ **the gate
+  is unreachable by construction**;
+* the safety terms fire on **1.03 %** and **0.13 %** of windows while **progress and comfort fire on
+  95.7 %** ⇒ ⛔ **the gate's POPULATION is wrong, not its threshold**;
+* independently corroborated by the advantage being identically zero in 92 % of windows;
+* **`comfort` is the entire defect and `feasibility` is inert** — removing feasibility alone moves
+  0.7249 -> 0.7247 (a no-op); removing comfort delivers the whole move to 0.4419. ⭐ **A
+  constant-velocity path has zero jerk and zero lateral acceleration, so it scores comfort EXACTLY
+  1.0** — the same *"win a metric by declining to act"* pattern as `M46`/`M58`'s vacuity gate, now in
+  the reward.
+
+⇒ ⛔ **MASTER-MIND RULING: `G-REWARD` is RE-SPECIFIED to score on the SIGNAL-BEARING population
+(lead-present windows), not on all windows.** A gate whose terms fire on ~1 % of its population is
+measuring the population, not the reward. ⛔ **Until that re-specification lands, "G-REWARD fails" may
+NOT be quoted as evidence that the reward is bad** — that is the agent's own caution and it is correct.
+⭐ **`robust_contact` is built and scored** on the residual a projection provably cannot discharge: it
+widens the human's advantage **1.89x -> 2.53x**, and on the signal-bearing population reads
+**0.0635 [0.0000, 0.3158]** against the default's **0.8413**. ⚠️ **n = 63 windows / 6 episodes, CI
+straddles the ceiling, and the restriction is post-hoc ⇒ necessary, not sufficient.**
+
+### 4. A silent launch-blocker removed, and it is worth naming
+
+The RL adapter passed **5 of the 8 parameters `forward` accepts**. refcv4b trains **with
+`--ego-state-inject`**, so omitting `ego_state` **returns a well-formed fan from a DIFFERENTLY
+CONDITIONED policy, with nothing raising.** ⇒ ⭐ **the arm would have run, produced numbers, and
+measured a different model** — the most dangerous shape of defect this programme has, because its
+output is indistinguishable from a result.
