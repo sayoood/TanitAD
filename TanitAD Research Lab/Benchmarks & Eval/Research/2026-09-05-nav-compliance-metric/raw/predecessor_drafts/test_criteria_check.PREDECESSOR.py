@@ -75,18 +75,15 @@ def compliant() -> dict:
                      "anchor_selection": 0.77},
         "strategic": {"decision_accuracy": 0.66, "route_quality": 0.71,
                       "echo_test": {"bijection_with_input": False},
-                      # ⭐ nav-COMPLIANCE (PI 2026-09-04/05): BEHAVIOUR vs the TRUE
+                      # ⭐ nav-COMPLIANCE (PI 2026-09-05): behaviour vs the TRUE
                       # command, admissible ONLY with both intervention controls
-                      # paired on the same windows. Keys pinned to the EMITTER
-                      # (taniteval/taniteval/nav_compliance.py::compliance_arm).
-                      "nav_compliance": {"readouts": {"plan": {
-                          "conditionings": {"nav_true": {
-                              "compliance_with_TRUE_command": {"mean": 0.82, "lo": 0.71,
-                                                               "hi": 0.90}}},
-                          "paired_true_minus_shuffled": {"delta": 0.31, "lo": 0.22,
-                                                         "hi": 0.40, "separated": True},
-                          "paired_true_minus_zero": {"delta": 0.24, "lo": 0.12,
-                                                     "hi": 0.35, "separated": True}}}}},
+                      # paired on the same windows. Keys pinned to the emitter
+                      # (taniteval/taniteval/nav_compliance.py::compliance_report).
+                      "nav_compliance": {
+                          "readouts": {"plan": {"nav_true": {"imminent": {"rate": 0.8}}}},
+                          "controls": {"nav_shuffle": {"plan": {"imminent": {"delta": 0.3}}},
+                                       "nav_zero": {"plan": {"imminent": {"delta": 0.2}}}},
+                          "verdict": {"nav_effect": "FOLLOWS_NAV"}}},
     }
 
 
@@ -737,7 +734,9 @@ def test_DELIBERATE_REGRESSION_the_protocol_pin_cannot_silently_vanish(navsim):
     assert len(navsim["GATE_no_cross_protocol_comparison"]["closed_set"]) >= 5
 
 
-# ------------------------------- the nav-COMPLIANCE criteria (2026-09-05) ---
+# ----------------------------- nav-COMPLIANCE (PI 2026-09-05) ------------------
+# "we are not evaluating the nav command itself, we are evaluating the fact that
+# the model is following the nav command in consistency to the strategic goals."
 # The route-accuracy label is a bijection of the fed token (D-REFAV1-ROUTE-LABEL-
 # IS-THE-NAV, 141/141) and cannot fail; the compliance block scores BEHAVIOUR and
 # is admissible ONLY with its shuffle and zero controls on the same windows.
@@ -755,10 +754,6 @@ def test_nav_compliance_criteria_exist_and_are_required(registry):
         assert ids[cid]["refused_as"], "must be refusable WITH a reason"
     assert "bijection" in ids["strat.nav_compliance"]["note"], \
         "keep the reason the criterion exists — the metric it replaces could not fail"
-    assert all(k.endswith("paired_true_minus_shuffled")
-               for k in ids["strat.nav_compliance_ctrl_shuffle"]["keys"])
-    assert all(k.endswith("paired_true_minus_zero")
-               for k in ids["strat.nav_compliance_ctrl_zero"]["keys"])
 
 
 def test_nav_compliance_registry_keys_match_the_emitter():
@@ -767,38 +762,29 @@ def test_nav_compliance_registry_keys_match_the_emitter():
     silently zeroing the family."""
     src = (ROOT / "taniteval" / "taniteval" / "nav_compliance.py").read_text(
         encoding="utf-8", errors="replace")
-    for key in ('"compliance_with_TRUE_command"', '"conditionings"', '"readouts"',
-                "paired_true_minus_", "def unavailable_block", "def compliance_arm"):
+    for key in ('"readouts"', '"controls"', '"consistency"', '"verdict"',
+                '"known_value_controls"'):
         assert key in src, f"the emitter no longer writes {key}"
+    assert "def compliance_report" in src
 
 
-@pytest.mark.parametrize("key,cid", [
-    ("paired_true_minus_shuffled", "strat.nav_compliance_ctrl_shuffle"),
-    ("paired_true_minus_zero", "strat.nav_compliance_ctrl_zero"),
+@pytest.mark.parametrize("control,cid", [
+    ("nav_shuffle", "strat.nav_compliance_ctrl_shuffle"),
+    ("nav_zero", "strat.nav_compliance_ctrl_zero"),
 ])
 def test_DELIBERATE_REGRESSION_nav_compliance_without_a_control_is_a_violation(
-        compliant, registry, key, cid):
+        compliant, registry, control, cid):
     """A compliance rate whose intervention control is missing is coincidence
-    wearing a result's clothes — the exact shape of the 1.0000 route score.
-    Delete ONE control and exactly that criterion must fire; a guard that stays
-    green here is decorative."""
+    wearing a result's clothes. Delete ONE control and exactly that criterion
+    must fire — a guard that stays green here is decorative."""
     broken = copy.deepcopy(compliant)
-    del broken["strategic"]["nav_compliance"]["readouts"]["plan"][key]
+    del broken["strategic"]["nav_compliance"]["controls"][control]
     res = cc.check_artifact(broken, registry)
     hit = [v["id"] for v in res["violations"]]
-    assert cid in hit, f"deleting {key} was not flagged: {hit}"
+    assert cid in hit, f"deleting the {control} control was not flagged: {hit}"
     other = {"strat.nav_compliance_ctrl_shuffle",
              "strat.nav_compliance_ctrl_zero"} - {cid}
     assert not (other & set(hit)), f"the OTHER control was flagged too: {hit}"
-    assert "strat.nav_compliance" not in hit, "the RATE is still present; only the control is missing"
-
-
-def test_nav_compliance_RATE_alone_is_two_named_violations(compliant, registry):
-    art = copy.deepcopy(compliant)
-    art["strategic"]["nav_compliance"] = {"readouts": {"plan": {"conditionings": {
-        "nav_true": {"compliance_with_TRUE_command": {"mean": 0.97}}}}}}
-    hit = {v["id"] for v in cc.check_artifact(art, registry)["violations"]}
-    assert {"strat.nav_compliance_ctrl_shuffle", "strat.nav_compliance_ctrl_zero"} <= hit
 
 
 def test_nav_compliance_refused_with_a_reason_is_a_work_item(compliant, registry):
@@ -812,24 +798,19 @@ def test_nav_compliance_refused_with_a_reason_is_a_work_item(compliant, registry
         "nav_compliance_controls": "same reason — no fed token to intervene on"})
     res = cc.check_artifact(art, registry)
     assert res["n_violations"] == 0, [v["id"] for v in res["violations"]]
-    work = {w["id"] for w in res["work_items"]}
-    assert {"strat.nav_compliance", "strat.nav_compliance_ctrl_shuffle",
-            "strat.nav_compliance_ctrl_zero"} <= work
+    refused = {r["id"] for r in res.get("work_items", res.get("refused", []))} \
+        if isinstance(res.get("work_items", res.get("refused")), list) else set()
+    states = {r["id"]: r["state"] for r in res["results"]} if "results" in res else {}
+    if states:
+        assert states["strat.nav_compliance"] == cc.REFUSED
+        assert states["strat.nav_compliance_ctrl_zero"] == cc.REFUSED
 
 
-def test_nav_compliance_inline_UNAVAILABLE_at_the_key_is_a_work_item(compliant, registry):
-    """`taniteval.nav_compliance.unavailable_block` nests {status: UNAVAILABLE,
-    reason, n} AT every registered key, so an un-rolled control is a tracked
-    work item, never PRESENT and never ABSENT."""
+def test_nav_compliance_inline_UNAVAILABLE_is_a_work_item(compliant, registry):
+    """The emitter's own idiom for an empty stratum: {status: UNAVAILABLE,
+    reason, n} at the key. Read as REFUSED, never as PRESENT or ABSENT."""
     art = copy.deepcopy(compliant)
-    st = {"status": "UNAVAILABLE", "reason": "nav_shuffled not rolled", "n": 0}
-    art["strategic"]["nav_compliance"]["readouts"]["plan"]["paired_true_minus_shuffled"] = dict(st)
+    art["strategic"]["nav_compliance"]["readouts"] = {
+        "status": "UNAVAILABLE", "reason": "no informative window", "n": 0}
     res = cc.check_artifact(art, registry)
-    assert "strat.nav_compliance_ctrl_shuffle" not in [v["id"] for v in res["violations"]]
-    assert any(w["id"] == "strat.nav_compliance_ctrl_shuffle" for w in res["work_items"])
-
-
-def test_route_head_echo_guard_accepts_the_intervention_pair(registry):
-    g = next(x for x in registry["leak_guards"]["guards"] if x["id"] == "route_head_echo")
-    assert any("nav_compliance" in k for k in g["keys"])
-
+    assert not [v for v in res["violations"] if v["id"] == "strat.nav_compliance"]

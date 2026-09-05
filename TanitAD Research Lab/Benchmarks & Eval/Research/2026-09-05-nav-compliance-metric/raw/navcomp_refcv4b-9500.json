@@ -1,0 +1,1658 @@
+{
+ "block": "taniteval.driving/tier1",
+ "tier": "T1",
+ "arm": "refcv4b-9500",
+ "tag": "EARLY-TRAINING DIAGNOSTIC (step 9,500 of 40,284; stride 10; grid 6s)",
+ "tool": "taniteval/tools/nav_compliance_report.py",
+ "companion_record": "refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+ "n_windows": 1860,
+ "n_episodes": 141,
+ "estimator": {
+  "interval": "episode_cluster_bootstrap",
+  "paired": "paired_episode_cluster_bootstrap",
+  "deprecated_and_refused": "overlapping_holdout_se"
+ },
+ "protocol": {
+  "inference_inputs": "the OBSERVED window's frames; the MEASURED ego state at t0 (v0, a_long, yaw_rate, curvature \u2014 PI 2026-09-02/03); the clip's v7.2 nav token under nav_true / permuted under nav_shuffled / withheld under nav_zero / left<->right under nav_flipped",
+  "vision_only": "vision + ego(t0) + nav token; no future",
+  "goal_source": "g_str is the model's own strategic head; the plan is the model's own selection; nothing here reads a label at inference",
+  "goal_situation_disjoint": true,
+  "corpus": "C:/Users/Admin/navcomp/data/s2_labels_v7.2_eval.jsonl.gz",
+  "parity_key": "the v7.2 EVAL clip set (labels blob md5 in the companion record)",
+  "tier": "T1"
+ },
+ "floors": {
+  "ha0": {
+   "plan_compliance": 0.0,
+   "_is": "nav-blind: the straight line"
+  },
+  "ha0_ext": {
+   "plan_compliance": 0.4184,
+   "_is": "nav-blind: constant-(a, kappa) extrapolation of the measured t0 state"
+  },
+  "ha": {
+   "plan_compliance": 0.3901,
+   "_is": "nav-blind: the held action closing at t0"
+  }
+ },
+ "vs_floor_paired": {
+  "ha0": {
+   "plan_compliance": {
+    "delta_model_minus_floor": 0.3901,
+    "model_ci_lo_above_floor": true,
+    "favours": "model",
+    "_note": "the floor is deterministic given the windows; 'model' requires the model's CI lower bound to clear it"
+   }
+  },
+  "ha0_ext": {
+   "plan_compliance": {
+    "delta_model_minus_floor": -0.0283,
+    "model_ci_lo_above_floor": false,
+    "favours": "tie",
+    "_note": "the floor is deterministic given the windows; 'model' requires the model's CI lower bound to clear it"
+   }
+  },
+  "ha": {
+   "plan_compliance": {
+    "delta_model_minus_floor": 0.0,
+    "model_ci_lo_above_floor": false,
+    "favours": "tie",
+    "_note": "the floor is deterministic given the windows; 'model' requires the model's CI lower bound to clear it"
+   }
+  }
+ },
+ "strategic": {
+  "nav_compliance": {
+   "tier": "T1",
+   "tag": "EARLY-TRAINING DIAGNOSTIC (step 9,500 of 40,284; stride 10; grid 6s)",
+   "n_windows": 1860,
+   "n_episodes": 141,
+   "n_nav_valid": 1860,
+   "n_true_left": 170,
+   "n_true_right": 499,
+   "n_follow": 1191,
+   "informative": {
+    "plan": {
+     "n_windows": 141,
+     "n_episodes": 22,
+     "rule": "true command left/right, token valid, commanded turn overlaps [t_now, t_now + 6 s] by \u2265 1 s"
+    },
+    "gstr": {
+     "n_windows": 485,
+     "n_episodes": 43,
+     "rule": "commanded turn starts within 160 m of arc length (LAN's farthest anchor) and has not ended"
+    }
+   },
+   "tolerance": {
+    "values": {
+     "plan": 0.260753,
+     "gstr": 0.054949,
+     "anchor": 0.260753,
+     "plan_bearing": 0.054949,
+     "plan_lateral": 1.0
+    },
+    "units": {
+     "plan": "rad (terminal heading)",
+     "gstr": "rad (bearing)",
+     "anchor": "rad",
+     "plan_bearing": "rad",
+     "plan_lateral": "m"
+    },
+    "derived": {
+     "plan": {
+      "tau": 0.2607534158043563,
+      "youden_j": 0.8095,
+      "tpr_informative": 0.9858,
+      "fpr_follow": 0.1763,
+      "unit": "rad",
+      "n_pos": 141,
+      "n_neg": 1191,
+      "p10_informative": 0.4124,
+      "p50_informative": 0.8233,
+      "p50_follow": 0.0335,
+      "p90_follow": 0.567,
+      "status": "OK",
+      "rule": "argmax over the grid of TPR(informative |GT| >= tau) - FPR(follow |GT| >= tau); derived from GT + label only"
+     },
+     "gstr": {
+      "tau": 0.05494902121873427,
+      "youden_j": 0.185,
+      "tpr_informative": 0.4722,
+      "fpr_follow": 0.2872,
+      "unit": "rad",
+      "n_pos": 485,
+      "n_neg": 1191,
+      "p10_informative": 0.0027,
+      "p50_informative": 0.0426,
+      "p50_follow": 0.0195,
+      "p90_follow": 0.2749,
+      "status": "OK",
+      "rule": "argmax over the grid of TPR(informative |GT| >= tau) - FPR(follow |GT| >= tau); derived from GT + label only"
+     }
+    },
+    "rule": "Youden-J over the GT signal on informative vs follow windows (GT + label only, never a model output); fallbacks 15 deg (is_turn's MIN dyaw) / 5 deg stated"
+   },
+   "readouts": {
+    "plan": {
+     "n_informative_windows": 141,
+     "n_informative_episodes": 22,
+     "tau": 0.2607534158043563,
+     "estimator": "episode_cluster_bootstrap / paired",
+     "n_boot": 2000,
+     "seed": 0,
+     "conditionings": {
+      "nav_true": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.3901,
+        "lo": 0.303,
+        "hi": 0.4718,
+        "ci95": 0.0844,
+        "se": 0.0433,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_shuffled": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.2908,
+        "lo": 0.2296,
+        "hi": 0.3507,
+        "ci95": 0.0605,
+        "se": 0.0301,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_zero": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.2979,
+        "lo": 0.226,
+        "hi": 0.3716,
+        "ci95": 0.0728,
+        "se": 0.0374,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      }
+     },
+     "powered": true,
+     "paired_true_minus_shuffled": {
+      "delta": 0.0993,
+      "lo": 0.0405,
+      "hi": 0.1667,
+      "ci95": 0.0631,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0922,
+      "lo": 0.027,
+      "hi": 0.1689,
+      "ci95": 0.071,
+      "p_delta_gt0": 0.9975,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "changed_subset": {
+      "n_changed": 118,
+      "n_changed_fed_a_turn": 19,
+      "n_changed_fed_follow": 99,
+      "follows_FED_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2941,
+       "ci95": 0.1471,
+       "se": 0.0761,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "follows_TRUE_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2353,
+       "ci95": 0.1176,
+       "se": 0.0626,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "_reading": "on windows fed a DIFFERENT turn than the truth, FED and TRUE compliance are mutually exclusive by construction: a follower reads follows_FED high / follows_TRUE low; a scene-driven arm reads follows_TRUE \u2248 its nav_true rate regardless of the token"
+     },
+     "always_commanded_ceiling": {
+      "compliance_nav_true": 1.0,
+      "compliance_nav_shuffled": 0.1631,
+      "delta_true_minus_shuffled": 0.8369,
+      "_is": "a policy that turns exactly as commanded scores 1.0 under the true token and, under the shuffle, only where the fed side equals the true side \u2014 its delta is the LARGEST shuffle drop any follower can show on these windows"
+     },
+     "_reads": "compliance_with_TRUE_command under nav_true is NOT the result; the paired_true_minus_shuffled and paired_true_minus_zero deltas are. A rate that does not drop under either intervention is coincidence with the scene, however high it reads."
+    },
+    "gstr": {
+     "n_informative_windows": 485,
+     "n_informative_episodes": 43,
+     "tau": 0.05494902121873427,
+     "estimator": "episode_cluster_bootstrap / paired",
+     "n_boot": 2000,
+     "seed": 0,
+     "conditionings": {
+      "nav_true": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.7918,
+        "lo": 0.6596,
+        "hi": 0.9142,
+        "ci95": 0.1273,
+        "se": 0.0654,
+        "reducer": "mean",
+        "n_windows": 485,
+        "n_episodes": 43,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 485
+      },
+      "nav_shuffled": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.7918,
+        "lo": 0.6596,
+        "hi": 0.9142,
+        "ci95": 0.1273,
+        "se": 0.0654,
+        "reducer": "mean",
+        "n_windows": 485,
+        "n_episodes": 43,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 485
+      },
+      "nav_zero": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.7918,
+        "lo": 0.6596,
+        "hi": 0.9142,
+        "ci95": 0.1273,
+        "se": 0.0654,
+        "reducer": "mean",
+        "n_windows": 485,
+        "n_episodes": 43,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 485
+      }
+     },
+     "powered": true,
+     "paired_true_minus_shuffled": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 485,
+      "n_episodes": 43,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 485,
+      "n_episodes": 43,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "changed_subset": {
+      "n_changed": 385,
+      "n_changed_fed_a_turn": 63,
+      "n_changed_fed_follow": 322,
+      "follows_FED_command": {
+       "mean": 0.4286,
+       "lo": 0.1967,
+       "hi": 0.6145,
+       "ci95": 0.2089,
+       "se": 0.108,
+       "reducer": "mean",
+       "n_windows": 63,
+       "n_episodes": 35,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "follows_TRUE_command": {
+       "mean": 0.5714,
+       "lo": 0.3855,
+       "hi": 0.8033,
+       "ci95": 0.2089,
+       "se": 0.108,
+       "reducer": "mean",
+       "n_windows": 63,
+       "n_episodes": 35,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "_reading": "on windows fed a DIFFERENT turn than the truth, FED and TRUE compliance are mutually exclusive by construction: a follower reads follows_FED high / follows_TRUE low; a scene-driven arm reads follows_TRUE \u2248 its nav_true rate regardless of the token"
+     },
+     "always_commanded_ceiling": {
+      "compliance_nav_true": 1.0,
+      "compliance_nav_shuffled": 0.2062,
+      "delta_true_minus_shuffled": 0.7938,
+      "_is": "a policy that turns exactly as commanded scores 1.0 under the true token and, under the shuffle, only where the fed side equals the true side \u2014 its delta is the LARGEST shuffle drop any follower can show on these windows"
+     },
+     "_reads": "compliance_with_TRUE_command under nav_true is NOT the result; the paired_true_minus_shuffled and paired_true_minus_zero deltas are. A rate that does not drop under either intervention is coincidence with the scene, however high it reads."
+    },
+    "anchor": {
+     "n_informative_windows": 141,
+     "n_informative_episodes": 22,
+     "tau": 0.2607534158043563,
+     "estimator": "episode_cluster_bootstrap / paired",
+     "n_boot": 2000,
+     "seed": 0,
+     "conditionings": {
+      "nav_true": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.383,
+        "lo": 0.296,
+        "hi": 0.4694,
+        "ci95": 0.0867,
+        "se": 0.0447,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_shuffled": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.2766,
+        "lo": 0.2149,
+        "hi": 0.3287,
+        "ci95": 0.0569,
+        "se": 0.0291,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_zero": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.2837,
+        "lo": 0.2205,
+        "hi": 0.34,
+        "ci95": 0.0598,
+        "se": 0.0302,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      }
+     },
+     "powered": true,
+     "paired_true_minus_shuffled": {
+      "delta": 0.1064,
+      "lo": 0.0489,
+      "hi": 0.1702,
+      "ci95": 0.0606,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.0993,
+      "lo": 0.0406,
+      "hi": 0.1635,
+      "ci95": 0.0614,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "changed_subset": {
+      "n_changed": 118,
+      "n_changed_fed_a_turn": 19,
+      "n_changed_fed_follow": 99,
+      "follows_FED_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2941,
+       "ci95": 0.1471,
+       "se": 0.0761,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "follows_TRUE_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2353,
+       "ci95": 0.1176,
+       "se": 0.0626,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "_reading": "on windows fed a DIFFERENT turn than the truth, FED and TRUE compliance are mutually exclusive by construction: a follower reads follows_FED high / follows_TRUE low; a scene-driven arm reads follows_TRUE \u2248 its nav_true rate regardless of the token"
+     },
+     "always_commanded_ceiling": {
+      "compliance_nav_true": 1.0,
+      "compliance_nav_shuffled": 0.1631,
+      "delta_true_minus_shuffled": 0.8369,
+      "_is": "a policy that turns exactly as commanded scores 1.0 under the true token and, under the shuffle, only where the fed side equals the true side \u2014 its delta is the LARGEST shuffle drop any follower can show on these windows"
+     },
+     "_reads": "compliance_with_TRUE_command under nav_true is NOT the result; the paired_true_minus_shuffled and paired_true_minus_zero deltas are. A rate that does not drop under either intervention is coincidence with the scene, however high it reads."
+    },
+    "plan_bearing": {
+     "n_informative_windows": 141,
+     "n_informative_episodes": 22,
+     "tau": 0.05494902121873427,
+     "estimator": "episode_cluster_bootstrap / paired",
+     "n_boot": 2000,
+     "seed": 0,
+     "conditionings": {
+      "nav_true": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.4184,
+        "lo": 0.3333,
+        "hi": 0.5,
+        "ci95": 0.0833,
+        "se": 0.0428,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_shuffled": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.3262,
+        "lo": 0.2556,
+        "hi": 0.3885,
+        "ci95": 0.0664,
+        "se": 0.0343,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_zero": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.3404,
+        "lo": 0.2573,
+        "hi": 0.4269,
+        "ci95": 0.0848,
+        "se": 0.0429,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      }
+     },
+     "powered": true,
+     "paired_true_minus_shuffled": {
+      "delta": 0.0922,
+      "lo": 0.0518,
+      "hi": 0.1408,
+      "ci95": 0.0445,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.078,
+      "lo": 0.0194,
+      "hi": 0.1438,
+      "ci95": 0.0622,
+      "p_delta_gt0": 0.992,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "changed_subset": {
+      "n_changed": 118,
+      "n_changed_fed_a_turn": 19,
+      "n_changed_fed_follow": 99,
+      "follows_FED_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2941,
+       "ci95": 0.1471,
+       "se": 0.0761,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "follows_TRUE_command": {
+       "mean": 0.1579,
+       "lo": 0.0,
+       "hi": 0.3333,
+       "ci95": 0.1667,
+       "se": 0.0774,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "_reading": "on windows fed a DIFFERENT turn than the truth, FED and TRUE compliance are mutually exclusive by construction: a follower reads follows_FED high / follows_TRUE low; a scene-driven arm reads follows_TRUE \u2248 its nav_true rate regardless of the token"
+     },
+     "always_commanded_ceiling": {
+      "compliance_nav_true": 1.0,
+      "compliance_nav_shuffled": 0.1631,
+      "delta_true_minus_shuffled": 0.8369,
+      "_is": "a policy that turns exactly as commanded scores 1.0 under the true token and, under the shuffle, only where the fed side equals the true side \u2014 its delta is the LARGEST shuffle drop any follower can show on these windows"
+     },
+     "_reads": "compliance_with_TRUE_command under nav_true is NOT the result; the paired_true_minus_shuffled and paired_true_minus_zero deltas are. A rate that does not drop under either intervention is coincidence with the scene, however high it reads."
+    },
+    "plan_lateral": {
+     "n_informative_windows": 141,
+     "n_informative_episodes": 22,
+     "tau": 1.0,
+     "estimator": "episode_cluster_bootstrap / paired",
+     "n_boot": 2000,
+     "seed": 0,
+     "conditionings": {
+      "nav_true": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.4681,
+        "lo": 0.3876,
+        "hi": 0.5423,
+        "ci95": 0.0773,
+        "se": 0.0403,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_shuffled": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.3475,
+        "lo": 0.2857,
+        "hi": 0.4026,
+        "ci95": 0.0585,
+        "se": 0.0309,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      },
+      "nav_zero": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.3262,
+        "lo": 0.2619,
+        "hi": 0.3818,
+        "ci95": 0.06,
+        "se": 0.0311,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141
+      }
+     },
+     "powered": true,
+     "paired_true_minus_shuffled": {
+      "delta": 0.1206,
+      "lo": 0.0725,
+      "hi": 0.1678,
+      "ci95": 0.0477,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "paired_true_minus_zero": {
+      "delta": 0.1418,
+      "lo": 0.0915,
+      "hi": 0.1929,
+      "ci95": 0.0507,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "changed_subset": {
+      "n_changed": 118,
+      "n_changed_fed_a_turn": 19,
+      "n_changed_fed_follow": 99,
+      "follows_FED_command": {
+       "mean": 0.1053,
+       "lo": 0.0,
+       "hi": 0.2941,
+       "ci95": 0.1471,
+       "se": 0.0761,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "follows_TRUE_command": {
+       "mean": 0.2105,
+       "lo": 0.0556,
+       "hi": 0.4,
+       "ci95": 0.1722,
+       "se": 0.0896,
+       "reducer": "mean",
+       "n_windows": 19,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "_reading": "on windows fed a DIFFERENT turn than the truth, FED and TRUE compliance are mutually exclusive by construction: a follower reads follows_FED high / follows_TRUE low; a scene-driven arm reads follows_TRUE \u2248 its nav_true rate regardless of the token"
+     },
+     "always_commanded_ceiling": {
+      "compliance_nav_true": 1.0,
+      "compliance_nav_shuffled": 0.1631,
+      "delta_true_minus_shuffled": 0.8369,
+      "_is": "a policy that turns exactly as commanded scores 1.0 under the true token and, under the shuffle, only where the fed side equals the true side \u2014 its delta is the LARGEST shuffle drop any follower can show on these windows"
+     },
+     "_reads": "compliance_with_TRUE_command under nav_true is NOT the result; the paired_true_minus_shuffled and paired_true_minus_zero deltas are. A rate that does not drop under either intervention is coincidence with the scene, however high it reads."
+    }
+   },
+   "controls": {
+    "ha0": {
+     "compliance_with_TRUE_command": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 141,
+     "expect": "zero",
+     "delta_true_minus_shuffled": 0.0,
+     "delta_true_minus_zero": 0.0,
+     "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken. This control is the straight line: compliance must read 0.0000 EXACTLY.",
+     "reads_known_value": true,
+     "per_readout": {
+      "plan_bearing": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "zero",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken. This control is the straight line: compliance must read 0.0000 EXACTLY.",
+       "reads_known_value": true
+      },
+      "plan_lateral": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "se": 0.0,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "zero",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken. This control is the straight line: compliance must read 0.0000 EXACTLY.",
+       "reads_known_value": true
+      }
+     },
+     "_scored_with": "the plan (terminal-heading) signal and tau; per_readout blocks use each readout's own signal and tau"
+    },
+    "ha0_ext": {
+     "compliance_with_TRUE_command": {
+      "mean": 0.4184,
+      "lo": 0.3606,
+      "hi": 0.4671,
+      "ci95": 0.0532,
+      "se": 0.0277,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 141,
+     "expect": "nav_blind",
+     "delta_true_minus_shuffled": 0.0,
+     "delta_true_minus_zero": 0.0,
+     "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken.",
+     "per_readout": {
+      "plan_bearing": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.5106,
+        "lo": 0.4341,
+        "hi": 0.5779,
+        "ci95": 0.0719,
+        "se": 0.037,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "nav_blind",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken."
+      },
+      "plan_lateral": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.4468,
+        "lo": 0.368,
+        "hi": 0.5197,
+        "ci95": 0.0759,
+        "se": 0.0391,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "nav_blind",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken."
+      }
+     },
+     "_scored_with": "the plan (terminal-heading) signal and tau; per_readout blocks use each readout's own signal and tau"
+    },
+    "ha": {
+     "compliance_with_TRUE_command": {
+      "mean": 0.3901,
+      "lo": 0.3231,
+      "hi": 0.4474,
+      "ci95": 0.0622,
+      "se": 0.0321,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 141,
+     "expect": "nav_blind",
+     "delta_true_minus_shuffled": 0.0,
+     "delta_true_minus_zero": 0.0,
+     "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken.",
+     "per_readout": {
+      "plan_bearing": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.4823,
+        "lo": 0.41,
+        "hi": 0.5482,
+        "ci95": 0.0691,
+        "se": 0.0359,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "nav_blind",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken."
+      },
+      "plan_lateral": {
+       "compliance_with_TRUE_command": {
+        "mean": 0.4326,
+        "lo": 0.3565,
+        "hi": 0.5,
+        "ci95": 0.0717,
+        "se": 0.0366,
+        "reducer": "mean",
+        "n_windows": 141,
+        "n_episodes": 22,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+       },
+       "n": 141,
+       "expect": "nav_blind",
+       "delta_true_minus_shuffled": 0.0,
+       "delta_true_minus_zero": 0.0,
+       "_known_value": "nav-blind by construction: both deltas are identically 0.0000. A non-zero value here means the CONTROL saw nav and the panel is broken."
+      }
+     },
+     "_scored_with": "the plan (terminal-heading) signal and tau; per_readout blocks use each readout's own signal and tau"
+    },
+    "gt": {
+     "compliance_with_TRUE_command": {
+      "mean": 0.9858,
+      "lo": 0.9657,
+      "hi": 1.0,
+      "ci95": 0.0171,
+      "se": 0.0093,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "n": 141,
+     "expect": "label_consistency",
+     "delta_true_minus_shuffled": 0.0,
+     "delta_true_minus_zero": 0.0,
+     "_known_value": "the recorded future on the informative windows: \u2248 1 by construction of the tolerance; a low value means the window selection or the time base is wrong, and the block is then not about the model"
+    }
+   },
+   "verdicts": {
+    "plan": {
+     "verdict": "FOLLOWS_NAV",
+     "reason": "compliance drops separated under BOTH shuffle and zero",
+     "delta_shuffle": 0.0993,
+     "delta_shuffle_ci": [
+      0.0405,
+      0.1667
+     ],
+     "delta_zero": 0.0922,
+     "delta_zero_ci": [
+      0.027,
+      0.1689
+     ],
+     "rate_nav_true": 0.3901,
+     "above_nav_blind_floor": false,
+     "min_delta_required": 0.0
+    },
+    "gstr": {
+     "verdict": "NAV_BLIND",
+     "reason": "no separated drop under either intervention",
+     "delta_shuffle": 0.0,
+     "delta_shuffle_ci": [
+      0.0,
+      0.0
+     ],
+     "delta_zero": 0.0,
+     "delta_zero_ci": [
+      0.0,
+      0.0
+     ],
+     "rate_nav_true": 0.7918,
+     "above_nav_blind_floor": null,
+     "min_delta_required": 0.0,
+     "_floor_note": "no nav-blind kinematic floor at the strategic horizon: a constant-curvature extrapolation to 160 m is not a control. The follow-window rate of the same readout is the coincidence reference"
+    },
+    "anchor": {
+     "verdict": "FOLLOWS_NAV",
+     "reason": "compliance drops separated under BOTH shuffle and zero",
+     "delta_shuffle": 0.1064,
+     "delta_shuffle_ci": [
+      0.0489,
+      0.1702
+     ],
+     "delta_zero": 0.0993,
+     "delta_zero_ci": [
+      0.0406,
+      0.1635
+     ],
+     "rate_nav_true": 0.383,
+     "above_nav_blind_floor": false,
+     "min_delta_required": 0.0
+    },
+    "plan_bearing": {
+     "verdict": "FOLLOWS_NAV",
+     "reason": "compliance drops separated under BOTH shuffle and zero",
+     "delta_shuffle": 0.0922,
+     "delta_shuffle_ci": [
+      0.0518,
+      0.1408
+     ],
+     "delta_zero": 0.078,
+     "delta_zero_ci": [
+      0.0194,
+      0.1438
+     ],
+     "rate_nav_true": 0.4184,
+     "above_nav_blind_floor": false,
+     "min_delta_required": 0.0
+    },
+    "plan_lateral": {
+     "verdict": "FOLLOWS_NAV",
+     "reason": "compliance drops separated under BOTH shuffle and zero",
+     "delta_shuffle": 0.1206,
+     "delta_shuffle_ci": [
+      0.0725,
+      0.1678
+     ],
+     "delta_zero": 0.1418,
+     "delta_zero_ci": [
+      0.0915,
+      0.1929
+     ],
+     "rate_nav_true": 0.4681,
+     "above_nav_blind_floor": false,
+     "min_delta_required": 0.0
+    }
+   },
+   "falsifiability": "The old strategic metric scored a HEAD against a LABEL that is a bijection of the nav token fed at inference (141/141 MEASURED): copying the input scores 1.0000 and no behaviour can lower it. This metric scores the BEHAVIOUR (emitted path / selected anchor / goal bearing) against the command, and it is decided by the INTERVENTION PAIR, not by the rate: compliance with the TRUE command must DROP under nav-SHUFFLE and nav-ZERO on the same windows (paired episode-cluster bootstrap), and on the changed subset the behaviour must follow the FED command. A rate that does not drop is coincidence with the scene, and the nav-blind controls (ha0_ext) measure exactly that floor on the same windows. Nothing here can be satisfied by echoing a token, because a path is not a token.",
+   "fan_coverage": {
+    "nav_true": {
+     "fan_has_compliant_candidate": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "compliant_candidates_mean": 47.071,
+     "_reads": "< 1.0 means the vocabulary (after the reach mask) cannot express the commanded turn on some windows \u2014 a coverage limit, not a selection failure"
+    },
+    "nav_shuffled": {
+     "fan_has_compliant_candidate": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "compliant_candidates_mean": 47.22,
+     "_reads": "< 1.0 means the vocabulary (after the reach mask) cannot express the commanded turn on some windows \u2014 a coverage limit, not a selection failure"
+    },
+    "nav_zero": {
+     "fan_has_compliant_candidate": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 141,
+      "n_episodes": 22,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "compliant_candidates_mean": 47.113,
+     "_reads": "< 1.0 means the vocabulary (after the reach mask) cannot express the commanded turn on some windows \u2014 a coverage limit, not a selection failure"
+    }
+   },
+   "strata": {
+    "census": {
+     "imminent": 139,
+     "deferred": 478,
+     "stale": 16,
+     "conflict": 0,
+     "ambiguous": 36,
+     "follow": 1191,
+     "unlabeled": 0
+    },
+    "primary_is": "label-timing informative (see informative.plan.rule); imminent = that set gated by the GT executing the commanded turn; conflict/ambiguous/stale are its complement and are COUNTED, never scored"
+   },
+   "consistency_deferred": {
+    "n_windows": 310,
+    "n_episodes": 43,
+    "rule": "commanded turn starts beyond the 6 s plan but within 160 m: the plan must HOLD (|terminal heading| < tau_plan) while g_str points the commanded way (|bearing| >= tau_gstr, right sign)",
+    "powered": true,
+    "conditionings": {
+     "nav_true": {
+      "plan_holds": {
+       "mean": 0.9258,
+       "lo": 0.8846,
+       "hi": 0.9586,
+       "ci95": 0.037,
+       "se": 0.0187,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "gstr_points_commanded_way": {
+       "mean": 0.8161,
+       "lo": 0.674,
+       "hi": 0.9326,
+       "ci95": 0.1293,
+       "se": 0.0664,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "consistent_hold_and_point": {
+       "mean": 0.7581,
+       "lo": 0.6232,
+       "hi": 0.8707,
+       "ci95": 0.1238,
+       "se": 0.0645,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "nav_shuffled": {
+      "plan_holds": {
+       "mean": 0.8935,
+       "lo": 0.8328,
+       "hi": 0.9406,
+       "ci95": 0.0539,
+       "se": 0.0269,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "gstr_points_commanded_way": {
+       "mean": 0.8161,
+       "lo": 0.674,
+       "hi": 0.9326,
+       "ci95": 0.1293,
+       "se": 0.0664,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "consistent_hold_and_point": {
+       "mean": 0.7355,
+       "lo": 0.6021,
+       "hi": 0.85,
+       "ci95": 0.1239,
+       "se": 0.0649,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     },
+     "nav_zero": {
+      "plan_holds": {
+       "mean": 0.8871,
+       "lo": 0.8274,
+       "hi": 0.9371,
+       "ci95": 0.0549,
+       "se": 0.0275,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "gstr_points_commanded_way": {
+       "mean": 0.8161,
+       "lo": 0.674,
+       "hi": 0.9326,
+       "ci95": 0.1293,
+       "se": 0.0664,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      },
+      "consistent_hold_and_point": {
+       "mean": 0.7258,
+       "lo": 0.5909,
+       "hi": 0.842,
+       "ci95": 0.1255,
+       "se": 0.0642,
+       "reducer": "mean",
+       "n_windows": 310,
+       "n_episodes": 43,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap"
+      }
+     }
+    },
+    "gstr_paired_true_minus_shuffled": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 310,
+     "n_episodes": 43,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "gstr_paired_true_minus_zero": {
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "ci95": 0.0,
+     "p_delta_gt0": 0.0,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 310,
+     "n_episodes": 43,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "_reads": "gstr_points is intervention-decided like the primary; plan_holds is expected INVARIANT under the interventions for a well-behaved follower (holding is right whatever the token says while the turn is beyond the plan)"
+   },
+   "seam": {
+    "reading": "PATH_FOLLOWS_WITHOUT_GOAL",
+    "plan": "FOLLOWS_NAV",
+    "gstr": "NAV_BLIND",
+    "anchor": "FOLLOWS_NAV",
+    "_reads": "the path follows nav while g_str does not: nav reaches the operative layer (measurement encoder \u2192 decoder) without the strategic decision \u2014 the inversion D-REFCV4-NAV-WIRING measured in refcv3"
+   },
+   "panel_ok": true,
+   "time_base_control": {
+    "status": "OK",
+    "chosen": "relative",
+    "hypotheses": {
+     "relative": {
+      "n": 23,
+      "match": 22,
+      "frac": 0.9565
+     },
+     "absolute": {
+      "n": 39,
+      "match": 1,
+      "frac": 0.0256
+     }
+    },
+    "n_clips_tested": 51,
+    "per_clip": [
+     {
+      "clip": "01be5919-6e61-45ba-a193-5f447efb4b51",
+      "dyaw_deg": -64.9,
+      "relative": -64.6,
+      "absolute": 0.82
+     },
+     {
+      "clip": "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+      "dyaw_deg": -44.1,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+      "dyaw_deg": -69.9,
+      "relative": null,
+      "absolute": 0.0
+     },
+     {
+      "clip": "18b72291-84f4-45e0-a736-908fc303020e",
+      "dyaw_deg": -97.1,
+      "relative": -97.45,
+      "absolute": 6.01
+     },
+     {
+      "clip": "1bd040a8-1828-4f1f-933e-20fd53c45641",
+      "dyaw_deg": -27.0,
+      "relative": null,
+      "absolute": 0.51
+     },
+     {
+      "clip": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+      "dyaw_deg": 82.7,
+      "relative": 82.79,
+      "absolute": -2.02
+     },
+     {
+      "clip": "2cd0f4e4-dce0-4c02-904e-8045ffe3da7e",
+      "dyaw_deg": -21.6,
+      "relative": -20.55,
+      "absolute": -1.24
+     },
+     {
+      "clip": "2e8a2df2-3f74-448e-9781-0739328ab42e",
+      "dyaw_deg": -85.9,
+      "relative": -18.41,
+      "absolute": 1.54
+     },
+     {
+      "clip": "34a1e12e-95cb-4a6c-bbcf-20356f0d364e",
+      "dyaw_deg": -68.3,
+      "relative": null,
+      "absolute": 0.2
+     },
+     {
+      "clip": "37e61793-36e9-426a-b257-23e684ba18b6",
+      "dyaw_deg": -48.4,
+      "relative": -45.85,
+      "absolute": -0.32
+     },
+     {
+      "clip": "47241da8-c00e-4d4d-ae12-8cc51b7d09f6",
+      "dyaw_deg": -93.1,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "5716299c-a9e7-4d83-9c76-55fb3900a146",
+      "dyaw_deg": 72.5,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "5b4df66c-31a2-4ad1-8d3e-bc3162d03d1c",
+      "dyaw_deg": 67.7,
+      "relative": null,
+      "absolute": 0.9
+     },
+     {
+      "clip": "5d39a1de-bd2e-4652-8777-00f3e7a1108d",
+      "dyaw_deg": -66.1,
+      "relative": -62.59,
+      "absolute": 7.3
+     },
+     {
+      "clip": "5d94cbbb-55eb-4642-add5-054b9c47ccf3",
+      "dyaw_deg": -24.6,
+      "relative": -24.66,
+      "absolute": 0.86
+     },
+     {
+      "clip": "5f86e111-b219-4a6e-ab95-8675ee598084",
+      "dyaw_deg": -83.3,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "62f3222e-9aa8-4520-b025-0166b36f5054",
+      "dyaw_deg": -33.2,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "6908302e-14b7-4463-b86b-f33232bc3e11",
+      "dyaw_deg": -75.2,
+      "relative": null,
+      "absolute": -0.18
+     },
+     {
+      "clip": "695081db-4312-44bc-95d6-4d5f509180fa",
+      "dyaw_deg": -76.0,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "6b3e802e-ea88-48c8-aa13-3e072c8c1409",
+      "dyaw_deg": -26.5,
+      "relative": null,
+      "absolute": -0.03
+     },
+     {
+      "clip": "77a247be-ad56-4712-8e16-5d4acc5c241d",
+      "dyaw_deg": -22.8,
+      "relative": -23.27,
+      "absolute": -0.9
+     },
+     {
+      "clip": "79e30ac2-c619-4d61-98a3-1007037b4d05",
+      "dyaw_deg": -89.5,
+      "relative": -89.73,
+      "absolute": 3.5
+     },
+     {
+      "clip": "80fcd92f-7bb3-430a-835e-ac72e8ffdda7",
+      "dyaw_deg": -83.9,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "826cd25c-fa4a-4e7d-9fbb-f64486fe3712",
+      "dyaw_deg": -23.0,
+      "relative": -23.22,
+      "absolute": 0.24
+     },
+     {
+      "clip": "84952a7e-a54b-4453-9ad4-2b6c0bc240a8",
+      "dyaw_deg": -76.4,
+      "relative": -47.09,
+      "absolute": 1.76
+     },
+     {
+      "clip": "85a47aa1-1465-4b72-aaac-bcddb2decfdd",
+      "dyaw_deg": -57.8,
+      "relative": null,
+      "absolute": 1.24
+     },
+     {
+      "clip": "91e90a95-a129-486a-a1d4-cc1a2915793f",
+      "dyaw_deg": -67.6,
+      "relative": null,
+      "absolute": -0.0
+     },
+     {
+      "clip": "9370d445-320d-41f5-bde5-66659ae974c7",
+      "dyaw_deg": -21.8,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "93854321-c881-4263-9312-252e04934898",
+      "dyaw_deg": -83.4,
+      "relative": null,
+      "absolute": 0.0
+     },
+     {
+      "clip": "998310a5-2773-40f8-9752-e588e5b400b7",
+      "dyaw_deg": -73.5,
+      "relative": null,
+      "absolute": -4.89
+     },
+     {
+      "clip": "9b4347d2-fdcb-4232-93db-acc6b1e3d5c7",
+      "dyaw_deg": -72.0,
+      "relative": -71.45,
+      "absolute": 0.37
+     },
+     {
+      "clip": "9d3d1cd1-ce59-46e1-a85b-02131b07a69c",
+      "dyaw_deg": -67.1,
+      "relative": null,
+      "absolute": -10.11
+     },
+     {
+      "clip": "a0d95df6-499b-45ee-a424-5954f6e65f77",
+      "dyaw_deg": 70.0,
+      "relative": null,
+      "absolute": -0.02
+     },
+     {
+      "clip": "aa594aa8-bc96-40d1-80f3-a6bc12855766",
+      "dyaw_deg": -21.5,
+      "relative": -21.96,
+      "absolute": -0.81
+     },
+     {
+      "clip": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+      "dyaw_deg": -21.3,
+      "relative": -21.64,
+      "absolute": -11.11
+     },
+     {
+      "clip": "b05195bf-36d7-4233-87bf-518708baa307",
+      "dyaw_deg": 86.6,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "b19eb35f-3966-4513-adaa-ba26d492caf2",
+      "dyaw_deg": 56.7,
+      "relative": 56.53,
+      "absolute": 1.79
+     },
+     {
+      "clip": "b62be3fa-4fbb-4998-a5c9-b0318db9b4d6",
+      "dyaw_deg": 121.6,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "c08bebe5-c3fc-424f-ab7c-75d019e9035e",
+      "dyaw_deg": 56.9,
+      "relative": 56.21,
+      "absolute": -0.01
+     },
+     {
+      "clip": "c84ea182-972e-4c4e-9be6-9a1bba5908e2",
+      "dyaw_deg": 80.8,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "ca11a2a2-1021-475c-9907-e6dbe658ad12",
+      "dyaw_deg": 92.9,
+      "relative": 93.68,
+      "absolute": -0.45
+     },
+     {
+      "clip": "caf90ce8-c1c4-4c2a-a781-c129b262b89c",
+      "dyaw_deg": -86.4,
+      "relative": null,
+      "absolute": 7.41
+     },
+     {
+      "clip": "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+      "dyaw_deg": -83.3,
+      "relative": -82.84,
+      "absolute": 6.92
+     },
+     {
+      "clip": "e319062b-3760-4803-bf19-414bbb2a3383",
+      "dyaw_deg": 112.8,
+      "relative": null,
+      "absolute": null
+     },
+     {
+      "clip": "e6cb7cd4-8349-4b9d-9674-e3ebf789e611",
+      "dyaw_deg": -31.0,
+      "relative": null,
+      "absolute": -0.34
+     },
+     {
+      "clip": "e7ada9bb-f5f4-4623-9713-71baa917dc59",
+      "dyaw_deg": -26.0,
+      "relative": null,
+      "absolute": -3.52
+     },
+     {
+      "clip": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+      "dyaw_deg": -87.8,
+      "relative": -87.45,
+      "absolute": -0.05
+     },
+     {
+      "clip": "ed87040c-cf3c-4fe4-9a95-50c1114f0d38",
+      "dyaw_deg": -48.5,
+      "relative": -48.28,
+      "absolute": -11.65
+     },
+     {
+      "clip": "f19cffbf-5621-4be5-83a4-7a096f6b7c39",
+      "dyaw_deg": 89.2,
+      "relative": null,
+      "absolute": 3.62
+     },
+     {
+      "clip": "fe764229-15df-4506-b7e4-2977fd78e834",
+      "dyaw_deg": 46.6,
+      "relative": 46.96,
+      "absolute": -0.19
+     },
+     {
+      "clip": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+      "dyaw_deg": -82.7,
+      "relative": -81.18,
+      "absolute": -12.21
+     }
+    ],
+    "_reads": "the label's manoeuvre times are integrated against the recorded yaw under both time bases; the winner reproduces dyaw_deg on more clips. BROKEN \u21d2 every informative mask below is void"
+   },
+   "join": {
+    "labels": "C:/Users/Admin/navcomp/data/s2_labels_v7.2_eval.jsonl.gz",
+    "n_windows_with_record": 1860,
+    "n_windows_with_commanded_turn": 669,
+    "n_gt_6s_end_clamped": 0,
+    "provider_to_raw_frame_offset": 2,
+    "t_now_rule": "t_now = (ws + provider_to_raw_frame_offset) * 0.1 s"
+   },
+   "dump_dir": "C:/Users/Admin/navcomp/dump9500",
+   "ckpt": "C:/Users/Admin/navcomp/ckpt/ckpt_step9500.pt",
+   "step": 9500,
+   "ego_state_fed": true
+  },
+  "echo_test": {
+   "kind": "intervention pair (nav_shuffled + nav_zero [+ nav_flipped])",
+   "bijection_with_input": false,
+   "_reads": "The old strategic metric scored a HEAD against a LABEL that is a bijection of the nav token fed at inference (141/141 MEASURED): copying the input scores 1.0000 and no behaviour can lower it. This metric scores the BEHAVIOUR (emitted path / selected anchor / goal bearing) against the command, and it is decided by the INTERVENTION PAIR, not by the rate: compliance with the TRUE command must DROP under nav-SHUFFLE and nav-ZERO on the same windows (paired episode-cluster bootstrap), and on the changed subset the behaviour must follow the FED command. A rate that does not drop is coincidence with the scene, and the nav-blind controls (ha0_ext) measure exactly that floor on the same windows. Nothing here can be satisfied by echoing a token, because a path is not a token."
+  },
+  "decision_accuracy": {
+   "status": "UNAVAILABLE",
+   "reason": "the route/decision label is a bijection of the fed nav token (D-REFAV1-ROUTE-LABEL-IS-THE-NAV, 141/141): the head metric cannot be falsified and is superseded by strategic.nav_compliance; the old block remains in refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump) as an echo diagnostic",
+   "n": 1860
+  },
+  "route_quality": {
+   "status": "UNAVAILABLE",
+   "reason": "the route/decision label is a bijection of the fed nav token (D-REFAV1-ROUTE-LABEL-IS-THE-NAV, 141/141): the head metric cannot be falsified and is superseded by strategic.nav_compliance; the old block remains in refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump) as an echo diagnostic",
+   "n": 1860
+  }
+ },
+ "headline": {
+  "speed_mae_mps": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "long_abs_2s_m": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "progress_abs_err_m": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "headway_m": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "lat_abs_2s_m": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "heading_mae_2s_deg": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "curv_mae_1_per_m": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "yaw_rate_mae_dps": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  }
+ },
+ "tactical": {
+  "manoeuvre_accuracy": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "confusion_gt_rows_pred_cols": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  },
+  "anchor_selection": {
+   "status": "UNAVAILABLE",
+   "reason": "not this artifact's family \u2014 this artifact carries the STRATEGIC nav-compliance block only; the four families on the SAME dump and windows live in the companion record refcv4b-9500.ARM.json (refcv3_arm.py record on the SAME dump)",
+   "n": 1860
+  }
+ }
+}

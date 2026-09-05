@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2.5.0",
+ "version": "2.6.0",
  "created": "2026-08-23",
  "owner": "TanitAD_EvalFlyWheel",
  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
@@ -294,6 +294,61 @@
      ],
      "leak_guard": "route_head_echo",
      "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test."
+    },
+    {
+     "id": "strat.nav_compliance",
+     "required": true,
+     "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "refcv3.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command"
+     ],
+     "partial_keys": [
+      "strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
+      "refcv3.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
+      "four_families.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command"
+     ],
+     "refused_as": [
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm (via the refcv3_arm.py sidecar; standalone: taniteval/tools/nav_compliance_report.py)",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "Replaces the route metric that could not fail: D-REFAV1-ROUTE-LABEL-IS-THE-NAV MEASURED the route LABEL as an exact bijection of the fed nav token (141/141), so a head copying its input scored 1.0000 and NO behaviour could lower it. This criterion scores the emitted 6 s path (with g_str and the SELECTED anchor as sibling readouts) against the COMMAND on windows where the commanded turn lies inside the plan horizon, n always reported. ⛔ The RATE is NOT the result — it is admissible ONLY with strat.nav_compliance_ctrl_shuffle and _ctrl_zero on the SAME windows; a rate that does not drop under them is coincidence with the scene."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_shuffle",
+     "required": true,
+     "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled"
+     ],
+     "refused_as": [
+      "nav_compliance_controls",
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_shuffled (taniteval.ci paired episode-cluster bootstrap)",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "If the model follows the command, compliance with the TRUE command must DROP when the token is permuted; the changed subset must follow the FED command. No drop = the high rate is scene coincidence. Known values on the panel: ha0 reads 0.0000 compliance exactly; every nav-blind control (ha, ha0_ext) reads a delta of exactly 0.0000."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_zero",
+     "required": true,
+     "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero"
+     ],
+     "refused_as": [
+      "nav_compliance_controls",
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_zero",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "The robustness ablation (D-NAV-IS-GT: os is the deployment arm, os_navzero the ablation). nav_cmd=None collapses the core onto the follow embedding, so this is a LOWER bound on nav dependence; BACKLOG R39 binds it beside the shuffle, never instead."
     }
    ]
   }
@@ -324,8 +379,11 @@
     "required": false,
     "rule": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
     "keys": [
-     "strategic.echo_test"
-    ]
+     "strategic.echo_test",
+     "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+     "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled"
+    ],
+    "note": "2026-09-05: the nav-compliance intervention pair (taniteval.nav_compliance) IS the behavioural echo test and satisfies this guard."
    }
   ]
  },
