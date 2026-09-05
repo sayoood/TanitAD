@@ -1,0 +1,282 @@
+{
+ "dump": "C:/Users/Admin/refav1_drive/oracle/dump_oracle_s0",
+ "cost": null,
+ "goal_vocab": null,
+ "n_windows": 5,
+ "n_excluded_low_v0": 0,
+ "kappa_threshold": 0.04,
+ "n_turning": 2,
+ "n_straight": 3,
+ "ha0_ext_form": "INTEGRATOR (refav1_arm.hold_ext_controls), M11",
+ "tier_note": "cl_oraclegoal and cl_oracleseed read the TRUE FUTURE => T0, diagnostics/bounds, never driving numbers (EVAL_DOCTRINE). cl / ha / ha0 / ha0_ext are T1.",
+ "CONTROL_goal_provenance": {
+  "per_arm": {
+   "cl": {
+    "expected": "tactical_imagined",
+    "frac_matching": 1.0,
+    "n": 5
+   },
+   "cl_oraclegoal": {
+    "expected": "supplied",
+    "frac_matching": 1.0,
+    "n": 5
+   },
+   "cl_oracleseed": {
+    "expected": "supplied+seed",
+    "frac_matching": 1.0,
+    "n": 5
+   }
+  },
+  "passes": true,
+  "why": "if cl is not tactical_imagined on every window it is not the shipped pipeline, and if cl_oracleseed is not supplied+seed the seed did NOT enter the pool and this is the CONFOUNDED arm"
+ },
+ "CONTROL_seed_token_identical": {
+  "lat_identical": true,
+  "lon_identical": true,
+  "passes": true,
+  "cl_lat_decode": {
+   "LANE_KEEP": 2,
+   "TURN_R": 3
+  },
+  "why": "the goal must be the ONLY difference; a different decode would mean the head saw different inputs"
+ },
+ "ade": {
+  "all_valid": {
+   "cl": {
+    "n": 5,
+    "mean": 1.2689716815948486
+   },
+   "cl_oraclegoal": {
+    "n": 5,
+    "mean": 2.2473647594451904
+   },
+   "cl_oracleseed": {
+    "n": 5,
+    "mean": 1.3556290864944458
+   },
+   "ha": {
+    "n": 5,
+    "mean": 1.292248010635376
+   },
+   "ha0": {
+    "n": 5,
+    "mean": 1.0090205669403076
+   },
+   "ha0_ext": {
+    "n": 5,
+    "mean": 1.2926229238510132
+   },
+   "ol": {
+    "n": 5,
+    "mean": 1.2451924085617065
+   }
+  },
+  "turning": {
+   "cl": {
+    "n": 2,
+    "mean": 0.9612533450126648
+   },
+   "cl_oraclegoal": {
+    "n": 2,
+    "mean": 1.9873820543289185
+   },
+   "cl_oracleseed": {
+    "n": 2,
+    "mean": 1.9873820543289185
+   },
+   "ha": {
+    "n": 2,
+    "mean": 1.7077643871307373
+   },
+   "ha0": {
+    "n": 2,
+    "mean": 1.5301353931427002
+   },
+   "ha0_ext": {
+    "n": 2,
+    "mean": 1.7691651582717896
+   },
+   "ol": {
+    "n": 2,
+    "mean": 1.967167854309082
+   }
+  },
+  "straight": {
+   "cl": {
+    "n": 3,
+    "mean": 1.4741172790527344
+   },
+   "cl_oraclegoal": {
+    "n": 3,
+    "mean": 2.4206864833831787
+   },
+   "cl_oracleseed": {
+    "n": 3,
+    "mean": 0.934460461139679
+   },
+   "ha": {
+    "n": 3,
+    "mean": 1.0152369737625122
+   },
+   "ha0": {
+    "n": 3,
+    "mean": 0.6616109013557434
+   },
+   "ha0_ext": {
+    "n": 3,
+    "mean": 0.9749281406402588
+   },
+   "ol": {
+    "n": 3,
+    "mean": 0.7638754844665527
+   }
+  }
+ },
+ "HEADLINE_turning": {
+  "n": 2,
+  "cl_oracleseed": 1.9873820543289185,
+  "ha0_ext": 1.7691651582717896,
+  "ha": 1.7077643871307373,
+  "ratio_oracleseed_over_ha0ext": 1.1233445405960083,
+  "beats_ha0_ext": false,
+  "cl_ratio_over_ha0ext": 0.5433372855186462
+ },
+ "paired": {
+  "cl_oracleseed_minus_cl": {
+   "all_valid": {
+    "n": 5,
+    "mean": 0.08665740489959717,
+    "n_exact_ties": 0
+   },
+   "turning": {
+    "n": 2,
+    "mean": 1.0261287689208984,
+    "n_exact_ties": 0
+   },
+   "straight": {
+    "n": 3,
+    "mean": -0.5396568179130554,
+    "n_exact_ties": 0
+   }
+  },
+  "cl_oraclegoal_minus_cl": {
+   "all_valid": {
+    "n": 5,
+    "mean": 0.9783930778503418,
+    "n_exact_ties": 0
+   },
+   "turning": {
+    "n": 2,
+    "mean": 1.0261287689208984,
+    "n_exact_ties": 0
+   },
+   "straight": {
+    "n": 3,
+    "mean": 0.9465692639350891,
+    "n_exact_ties": 0
+   }
+  },
+  "cl_oracleseed_minus_cl_oraclegoal": {
+   "all_valid": {
+    "n": 5,
+    "mean": -0.8917355537414551,
+    "n_exact_ties": 4
+   },
+   "turning": {
+    "n": 2,
+    "mean": 0.0,
+    "n_exact_ties": 2
+   },
+   "straight": {
+    "n": 3,
+    "mean": -1.486225962638855,
+    "n_exact_ties": 2
+   }
+  }
+ },
+ "SATURATION_E3": {
+  "per_arm": {
+   "cl": {
+    "all_valid": {
+     "n": 5,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.06861522048711777,
+     "mean_max_abs_accel": 0.06428655982017517,
+     "frac_curvature_nonzero": 0.8
+    },
+    "turning": {
+     "n": 2,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.07999999821186066,
+     "mean_max_abs_accel": 0.0,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 3,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.06102536618709564,
+     "mean_max_abs_accel": 0.10714426636695862,
+     "frac_curvature_nonzero": 0.6666666666666666
+    }
+   },
+   "cl_oraclegoal": {
+    "all_valid": {
+     "n": 5,
+     "frac_at_kappa_max": 0.6,
+     "frac_at_a_max": 0.2,
+     "mean_max_abs_kappa": 0.1752031296491623,
+     "mean_max_abs_accel": 2.167130708694458,
+     "frac_curvature_nonzero": 1.0
+    },
+    "turning": {
+     "n": 2,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.13800781965255737,
+     "mean_max_abs_accel": 2.725069522857666,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 3,
+     "frac_at_kappa_max": 1.0,
+     "frac_at_a_max": 0.3333333333333333,
+     "mean_max_abs_kappa": 0.20000000298023224,
+     "mean_max_abs_accel": 1.7951712608337402,
+     "frac_curvature_nonzero": 1.0
+    }
+   },
+   "cl_oracleseed": {
+    "all_valid": {
+     "n": 5,
+     "frac_at_kappa_max": 0.4,
+     "frac_at_a_max": 0.2,
+     "mean_max_abs_kappa": 0.163212850689888,
+     "mean_max_abs_accel": 2.3698997497558594,
+     "frac_curvature_nonzero": 1.0
+    },
+    "turning": {
+     "n": 2,
+     "frac_at_kappa_max": 0.0,
+     "frac_at_a_max": 0.0,
+     "mean_max_abs_kappa": 0.13800781965255737,
+     "mean_max_abs_accel": 2.725069522857666,
+     "frac_curvature_nonzero": 1.0
+    },
+    "straight": {
+     "n": 3,
+     "frac_at_kappa_max": 0.6666666666666666,
+     "frac_at_a_max": 0.3333333333333333,
+     "mean_max_abs_kappa": 0.18001620471477509,
+     "mean_max_abs_accel": 2.133119821548462,
+     "frac_curvature_nonzero": 1.0
+    }
+   }
+  },
+  "kappa_max": 0.2,
+  "a_max": 4.0,
+  "reading": "deficit shrinks AND saturation falls => the named mechanism; deficit shrinks AND saturation stays pinned => something else did the work and the claim is NOT established"
+ }
+}
