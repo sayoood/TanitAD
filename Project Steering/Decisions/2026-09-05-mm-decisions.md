@@ -495,3 +495,83 @@ the next turn that touches this package.**
 ⚠️ **2 of 41 paths did not blob-verify** because `refa_v1.py` / `refav1_arm.py` carry a sibling's
 uncommitted M15 work on top. ⛔ **Not lost, and correctly NOT swept into another agent's commits** —
 the right call, and the reason it is visible here rather than discovered in an audit.
+
+## M21. ⛔ CORRECTS M18 — I wrote an INHERITED claim as MEASURED; plus a fourth dead flag, and M17's cost measured
+
+### 1. My error: M18's third bullet is retracted
+
+M18 stated *"`w_agent` / `w_u0` are absent from `config.json` entirely — a run cannot say what
+weight its detector trained at."* ⛔ **FALSE.** MEASURED on the escalating run's own banked
+artifact: `seams.w_agent = 1.0`, `seams.w_u0 = 0.5`, **present since `3fd2291`**. They were absent
+from the **top level**, which is where the escalation looked.
+
+⇒ **I took an agent's escalation and wrote it into a decision as fact without re-verifying it.**
+The operating standard is explicit — `MEASURED` · `PUBLISHED` · `INHERITED` · `ESTIMATED` — and
+*"a claim that decides a GPU-day must be MEASURED or PUBLISHED, never INHERITED."* An escalation is
+INHERITED by definition; promoting one to a ruling without a second read is how a wrong fact
+acquires authority. **Second evidence-class failure of mine today**, after quoting an oracle
+ceiling as a payoff (`M19` / retraction #29).
+
+⭐ **There WAS a real defect underneath, and it is now fixed properly:** the stamp was a
+**hand-written dict**, so any new knob silently failed to be recorded. `agent_knob_dests(parser)`
+now reads all **17** `--agent-*` / `--w-*` dests **off argparse**, and `assert_knobs_stamped` runs
+immediately before the config write — **a run whose record cannot state its weights refuses to
+start.** The test asserts **by VALUE** over the argparse-derived set, so it survives key renames
+and cannot be satisfied by a rotted list, with a same-breath control that ≥ 12 knobs were probed.
+
+### 2. ⛔ A FOURTH dead flag, and it is the worst of the four
+
+`--agents off --w-agent 1.0 --agent-join <file>` **PASSES** the existing loss-time guard — which
+fires only when `agent_box` is *absent*, and the join puts it there — falls through
+`"agent_slots" in out`, computes **nothing**, and stamps **`w_agent: 1.0`**.
+
+⇒ **That configuration manufactures *"the agent head does not help"* from a seam that was never
+built.** It is the silent-no-op class with the sign flipped: not a missing capability reported as
+present, but **a null result produced by a switch that was off**, carrying a record that says it
+was on. ⚠️ No banked run is affected. Now refused at startup.
+
+### 3. `_rig_camera` is WIRED, not removed — and the third state is gone
+
+The projection and ground terms answer the one axis a monocular head cannot see, so deleting the
+flags would have removed **capability** to tidy a defect. `--agent-rig-camera {off,nominal,extrinsics}`
+now exists and every failure is a **startup refusal, before a model and before the GPU**: a weight
+> 0 with the camera off refuses (the deliberate-regression control), a camera set with `--agents off`
+refuses (the mirror image), and ⭐ **geometry with no DECLARED `CanonicalFrame` refuses rather than
+inventing an `f_ref`** — *a frame is not its pixel count, and this corpus is cylindrical.* Both
+weights zero + camera off leaves every banked arm bit-identical. An AST pin forbids
+`model._rig_camera = None` ever returning.
+
+⭐ **The self-catch worth copying:** the first proof draft used a random head and read **exactly 0.0
+over n = 0** — the no-information value, which would have "passed". The shipped proof requires
+**n > 0** and a perfect prediction reading exactly 0.0 *over that n*.
+
+### 4. M17's cost is MEASURED, and it does not bind
+
+`--agent-queries` 32 → 100, shipped path, 256×640 (160 memory tokens), `n_pad 94`, **each arm run
+twice**: step time **3.346 → 3.622 s = +8.2 %** (replicate spread 3.8 % / 1.9 %; the arms' medians
+**do not overlap**, 3.4096 < 3.5878); parameters **+17,408 = 68 × 256 exactly = +0.077 %**; peak
+memory **no detectable difference** — and the analytic activation delta of **≈ 8.1 MiB** against a
+~500 MB step is *why* the null, which is the difference between a measured null and an absent
+measurement.
+
+⇒ **M17 stands, now with a number instead of an assumption.** ⚠️ **Scope: dev-box CPU** — the GPU
+was occupied by another stream throughout, so none was added. The ratio and the
+parameter/activation accounting transfer; **the absolute does not**, and a pod-side re-measure is
+owed.
+
+### 5. The repo hazard is resolved
+
+Two streams independently flagged it. MEASURED and cleared: `.git/index.lock` had stood since
+**15:15** and blocked every index write. ⭐ **The safe test is that on Windows, deleting a file
+another process holds open FAILS** — so attempting the removal *is* the check, unlike POSIX where
+`unlink` succeeds regardless. It removed cleanly ⇒ nothing held it. Index backed up first
+(1,694,353 B) and verified intact after (**9,935 files**, control read OK).
+
+Then **151 staged deletions classified 151/151 PHANTOM** (present in HEAD *and* non-empty on disk,
+0 genuine) and cleared index-only in batches of 30, worktree untouched — and the `CLAUDE.md`
+landmine is **REPAIRED**: its index entry now matches HEAD, where before it was a blob **5,353 B
+shorter** whose commit would have silently reverted the `H-ESTIM-SEED-1` block.
+
+⚠️ **The orphaned `git grep` (PID 24768, started 2026-09-04 07:54, parent gone) SURVIVES a
+`Stop-Process`** — almost certainly blocked on G: mount I/O, which is also why it outlived a day of
+outages. It does not hold the index lock and is not the cause; it is left alone and recorded.
