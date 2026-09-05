@@ -233,6 +233,33 @@ Root-cause class: the same family as `H-ESTIM-SEED-1` — **an estimator answeri
 
 ⚠️ **Stated limits.** `peak_g` here is the finite-difference load on free waypoints and under-reports by 1.21–1.85× — *on both sides of the comparison*, so the **ratio** is the robust quantity and the levels are lower bounds. The bank's `envelope`/`kamm_over` rates are window-independent by construction (a fixed path set); `off_reach`, `contact` and `ttc_below` are not, and are averaged over the same 240 windows as the fan.
 
+
+## 7. P3, the other dose — 2,000 steps LOSES the gain: a clean dose-response
+
+`veto2k`: identical to `veto200` in every respect but `steps` (200 → **2,000**; 2,133.6 s and 2,106.4 s). `veto_rate_mean` **0.0912 / 0.0916**, so the constraint fired at the same rate throughout. **Guards G1/G2/G3 all pass**, on the same 120 windows.
+
+| metric | base | Δ s0 | Δ s1 | seed floor | verdict |
+|---|---|---|---|---|---|
+| `fan_peak_g_mean` | 4.18090 | −0.00777 | −0.04843 | **0.04066** | **null** |
+| `top32_infeasible` | 0.63385 | −0.00475 | −0.00079 | 0.00396 | null |
+| `fan_envelope` | 0.89023 | −0.00346 | −0.00152 | 0.00194 | null |
+| `sel_infeasible` | 0.13333 | **+0.01266** | +0.00000 | 0.01266 | null |
+| `sel_peak_g` | 0.19465 | +0.01046 | +0.03430 | 0.02384 | WITHIN-NOISE |
+| `mass_rank_infeasible` | 0.17887 | **+0.01287** | **+0.01545** | 0.00258 | (worse; see below) |
+
+⇒ **PRIMARY-FAIL, and nothing at all is quotable as a lever.** Set beside the 200-step arm the picture is a **dose-response, not a null**:
+
+| | `fan_peak_g_mean` Δ (s0 / s1) | seed floor | quotable |
+|---|---|---|---|
+| **200 steps** | **−0.0929 / −0.1158** | 0.0229 | ⭐ **yes — IMPROVED** |
+| **2,000 steps** | −0.0078 / −0.0484 | 0.0407 | no |
+
+**The gain is a short-dose effect and it decays.** The supporting T0 readouts say the same thing in a second voice: at 2,000 steps `R3` (sel-ADE 2 s) is **+0.0121 / +0.0136 separated** and `R_ORACLE` (oracle-in-fan — fan QUALITY) **+0.0178 / +0.0207 separated**, i.e. the fan is getting *worse at containing a good path*, while at 200 steps `R3` was **+0.0033, not separated**. Confidence mass on infeasible candidates also rises consistently (`mass_rank_infeasible` +0.0129 / +0.0155 against a 0.0026 floor).
+
+⭐ **Read as a control law rather than as a disappointment:** a pure constraint channel has **no ranking term to trade against**, so once it has pushed the fan off the violating region there is nothing left for the gradient to optimise and the trust region plus the optimizer's own drift take over. That is why the SPEC committed to **both** doses in advance — running one would have produced either an unrepeatable win or an unexplained null. **The deliverable is `veto200`.**
+
+⚠️ **Stated honestly: the 2,000-step arm's WORSENINGS are NOT attributable.** The dose-matched zero-information control (`ctrl_null` at 2,000 steps) was **queued and then deliberately dropped** when `veto2k_s0` landed with no separated improvement — a floor is a hurdle for a *positive* claim and cannot make an unseparated delta quotable, so the 36 GPU-minutes went to the T1 four-family read instead (a committed deliverable). ⇒ `sel_peak_g` +0.0105/+0.0343 and `R3` +0.0121/+0.0136 at 2 k **cannot be split between the veto and the optimizer's own drift**, and are reported as unattributed rather than as veto effects. The decision and its consequence are recorded in `raw/chain_after_arms2.sh`, not left as a gap.
+
 ---
 
 ## 9. Escalations, follow-ups and stated limits
