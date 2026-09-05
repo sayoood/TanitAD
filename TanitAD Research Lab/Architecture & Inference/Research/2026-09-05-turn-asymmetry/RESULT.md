@@ -216,10 +216,74 @@ sign balance n(+) **47** vs n(−) **28** of 75.
 
 ⇒ ⭐⭐ **EVERY NAMED MECHANISM IS NOW REFUTED — the vocabulary, the cost, the
 clip, the Kamm cap, the noise pool, the labeller, the corpus/speed route, the
-goal term's scale, the seed pool (which does not exist) and the proposal's own
-lean (which is backwards).** What remains is **the stochastic search itself**,
-and that is exactly and only what the two-seed pair measures. §6 is therefore
-not a formality; it is the last standing explanation.
+goal term's scale, the PROPOSAL-MODE seed pool (which does not exist) and the
+proposal's own lean (which is backwards).**
+
+### §4.3 ⛔⛔ CORRECTION TO §4.2, FOUND BY THE LAUNCHED ARM'S OWN BANNER — AND IT MAKES THE CONCLUSION STRONGER
+
+⚠️ **I wrote "the seed pool is EMPTY". That is true of `modes[1:]` and FALSE of
+`seed_pool`: I read ONE contributor to a variable and reported the variable.**
+The correction came from the very next arm's startup line:
+
+```
+[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool
+            (proposal modes + THE DECODED GOAL'S CANONICAL CONTROLS)
+```
+
+`refa_v1.py:2571-2599` seeds the **decoded goal's own canonical control** into
+iteration 0 on every window, unconditionally — and the source says why, from a
+measurement:
+
+> *"MEASURED 2026-09-02: without this the planner returned `hold_v0` on 24/24
+> windows against a TURN goal at BOTH residual-init scales. `colored_noise` is
+> zero-mean over time and its mean is seeded only by the injected candidates, so
+> a SUSTAINED curvature is unreachable unless some candidate carries it — and no
+> baseline carries curvature."*
+
+⇒ **On every `TURN_L`-goal window a full `kappa = +0.08` candidate IS in the
+iteration-0 population, by construction. The search does not have to find it —
+it is handed it.**
+
+**MEASURED confirmation, zero GPU, banked dumps** — `|kappa|` realised EXACTLY
+0.080000 (= `GOAL_KAPPA_TURN`) over the 22 turn-goal windows:
+
+| arm | exact 0.080000 | `TURN_L` | `TURN_R` |
+|---|---|---|---|
+| `ccos_argmax` (`W_KAPPA` 0) | **21 / 22** | **8 / 9** | **13 / 13** |
+| `ccos_seed1` (the seed replicate) | **21 / 22** | **8 / 9** | **13 / 13** |
+| **`wk15`** | 9 / 22 | **0 / 9** | 9 / 13 |
+| `wk151` | 1 / 22 | 0 / 9 | 1 / 13 |
+| `cos_wk` (shipped) | 0 / 22 | 0 / 9 | 0 / 13 |
+
+Control that 0.08 is not an argmax artefact: across all `ccos_argmax` turn
+windows the realised `|max kappa|` takes exactly **two** distinct values —
+**0.0800** and **0.2000** (the clip). At zero charge **the plan simply IS the
+canonical goal seed**, in both directions and identically under both plan seeds.
+
+⛔⛔ **THIS KILLS "THE SEARCH FAILED TO FIND THE LEFT CANDIDATE" OUTRIGHT.** On
+all 9 `TURN_L`-goal windows the full `+0.08` candidate was **in the population
+and LOST ON COST** — `wk15` evaluated it and preferred a cheaper one. The
+mechanism is the **cost comparison**, on a cost that is provably sign-symmetric
+(§4 table) with a symmetric goal decision range (ratio **1.002**, §5.2).
+
+⇒ ⭐ **The last standing explanation is therefore NARROWER and SHARPER than
+"the stochastic search":** on those particular windows the *modelled rollout* of
+a crushed candidate lands closer, in centred cosine, to the imagined goal than
+the curvature differential costs — **a PER-WINDOW property of the world model's
+latent geometry, not a per-direction one.** Whether that per-window set splits by
+direction beyond chance is exactly what §6 measures.
+
+⚠️ **And it re-reads §5.4.** The ladder did not "help the search find" anything:
+it **added cheaper candidates to a comparison that was already being lost**,
+which is precisely why it removed the right turns too.
+
+→ **ROOT-CAUSE CLASS of my error: a true statement about ONE CONTRIBUTOR to a
+variable, reported as a statement about the variable.** Same family as the
+`df` / cgroup / `step_s` traps — a correct reading quoted outside its scope —
+with the scope being *which assignment site you looked at*. ⭐ What caught it was
+**reading the launched arm's own banner instead of trusting my source walk** —
+the same discipline that saved §5.4, where `plan_cfg` said `None` while the
+banner said the ladder had run.
 
 ---
 

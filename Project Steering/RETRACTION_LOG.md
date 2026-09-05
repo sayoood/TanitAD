@@ -13391,7 +13391,81 @@ place), `D-REFAV1-CG-LEVER-SPLIT` (*"the only zero-violation arm"* corrected), a
 `0.0000` itself reproduces, the ADE-freeness against `kamm07` is untouched, the L3-null
 explanation is untouched, and `D-REFAV1-CG-WK15` already recorded `wk15`'s turn
 suppression — the two facts had simply never been put in one table.
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            non-zero `W_JERK` + seam ON and
+
+# 2026-09-05 — I SPENT A GPU HOUR ON AN ARM THAT WAS INERT BY CONSTRUCTION: a lever multiplied by zero (Arch+Inference FlyWheel, longitudinal stream)
+
+## 1. What happened
+
+I implemented a repair to refav1's jerk term — the shipped `jerk` diffs only the
+plan's own actions, so the step from the car's **measured** `a0` to
+`controls[0]` is never priced — and queued `lonseam` to measure it as **one
+variable against the banked `wk15`**.
+
+`wk15`'s cost triple is `(W_JERK, W_KAPPA, W_VEND) =
+(0.0, 15.11245, 64.29715042415070)`.
+
+The cost line is:
+
+```
+c = c + w_jerk * jerk.pow(2).mean(-1)
+```
+
+**With `w_jerk = 0.0`, repairing `jerk` cannot change the objective by a single
+bit.** The arm ran the full 40 windows, exited 0, and banked
+**`+0.0000 [+0.0000, +0.0000]` on all ten family metrics**, with emitted
+controls bit-identical to `wk15` down to the 17 distinct `a[0]` values.
+
+## 2. Why the diagnosis is certain rather than a guess
+
+Three probes, and they exclude every alternative:
+
+1. **The flag reached `plan()`.** The reached-it guard raises on window 1 if
+   `res.jerk_seam_a0` returns `None`; the arm completed, and the banked record
+   carries `jerk_seam: "a0"`. Not a plumbing failure.
+2. **The harness works.** The same-breath control in the same table — `lonshift`
+   on the identical rig — reads `mean|a|` **0.46552**, `frac a ≡ 0` **0.000**,
+   **40** distinct `a[0]`. So a zero here is a real zero, not a dead pipe.
+3. **The weights are recorded.** `W_JERK = 0.0` is in the arm's own `[cost]`
+   line and in the record.
+
+⇒ the term was switched off, and the arm was **uninformative before it started**.
+
+## 3. → ROOT-CAUSE CLASS
+
+⛔ **A LEVER MULTIPLIED BY ZERO IS NOT A NULL ABOUT THE LEVER — IT IS A NULL
+ABOUT A TERM THAT WAS SWITCHED OFF.**
+
+Same family as **M23 §4** (*"a NULL arm with a live optimiser is not a null —
+AdamW normalises the gradient away"*) and as **M28 §2** (*"a decode is not a goal
+state — count on the predicate you mean"*), with the object swapped for a cost
+weight. It is also adjacent to `D-REFAV1-CG-INERT-2`: **the same repo had already
+established that `W_VEND` is a dead term because `target_speed` is never passed,
+and I did not apply the same question to `W_JERK` in the triple I was
+inheriting.** The knowledge existed; the check did not.
+
+⚠️ **What makes this class dangerous is that the output looks like a result.**
+A `+0.0000 [0, 0]` with a working same-breath control is exactly the shape of a
+*clean null*, which the programme has correctly learned to value (`ccosh`, M28
+§1). Had I not read the weights, `lonseam` would have been banked as *"the jerk
+seam is a clean null — the cost is not the longitudinal blocker"*, and that
+sentence would have been **false and load-bearing**: it would have removed the
+cost side from the lever list on the strength of an experiment that never
+tested it.
+
+⇒ **THE RULE: before an arm runs, assert that every lever it names is multiplied
+by a LIVE coefficient in the configuration that arm will actually use.** A lever
+whose weight is zero, whose input is never passed, or whose branch predicate is
+never true must be **REFUSED at flag-parse time**, not discovered afterwards.
+The correct experimental form is a **pair that shares the live weight and
+differs only in the lever**.
+
+## 4. The durable fix, landed in the same turn
+
+* `taniteval/tools/refav1_arm.py` now **REFUSES** `--jerk-seam` when
+  `W_JERK == 0.0`, **before the rollout**, and its message names the arithmetic
+  and the correct paired form.
+* **Both controls pass:** the guard fires on the exact combination that wasted
+  the hour, and reads **0 refusals** on (a) non-zero `W_JERK` + seam ON and
   (b) `W_JERK = 0` + seam OFF — so it is not over-broad.
 * The queue was rebuilt (`queueLON3.sh`): the seam is now measured as
   **`seambase` vs `seamon`, both at `W_JERK = 0.02`, the seam the only
@@ -13402,3 +13476,191 @@ suppression — the two facts had simply never been put in one table.
 ⭐ **What this does NOT touch:** `lonshift`'s result stands. It carries no seam,
 its lever is the vocabulary, and its numbers were produced by a lever that
 provably acted (`frac a ≡ 0` 0.475 → 0.000).
+
+---
+
+## 2026-09-06 — "`combined` reaches ZERO friction-circle violations": THE ZERO IS SEED-DEPENDENT, AND MY OWN CORRECTION INHERITED THE DEFECT
+
+**RETRACTED by the pre-registered replicate that was written to test exactly this, and
+reported in the same turn it was found. The claim had already gone to the PI.**
+
+### What was claimed, in two generations
+
+1. **The original** (`RESULT.md` §7.8, `D-REFAV1-CG-ZEROVIOL`): *"`combined` is the FIRST
+   refav1 arm whose plans are entirely inside the tyre's friction circle —
+   `kamm_over_rate` EXACTLY 0.0000."*
+2. **My own correction of it** (§7.8a, `D-REFAV1-CG-ZEROVIOL-SCOPE`, banked hours
+   earlier this same turn): the superlative *"first / only"* was withdrawn because
+   `wk15`, `wk151` and `cos_wk` also read 0.0000, and I replaced it with *"`combined` is
+   the only refav1 arm that reaches **zero** while still turning."*
+
+⛔ **BOTH ARE WRONG, AND THEY ARE WRONG IN THE SAME PLACE: THE WORD "ZERO".** I fixed the
+*superlative* and left the *number* unexamined — while the arm that would test the
+number was already pre-registered in my own SPEC.
+
+### The measurement
+
+`combined_seed1` is `combined`'s command line with **one token changed**,
+`--plan-seed 0 -> 1`. Verified against the **live process's** argv, not the intended one
+(`raw/live_argv_audit.txt`): 37 tokens, exactly one real difference.
+`assert_feasible`, `v0 >= 2 m/s`, n = 27 (`raw/seed_floor_ext_combined.txt`):
+
+| | `combined` (seed 0) | `combined_seed1` (seed 1) |
+|---|---|---|
+| **`kamm_over_rate`** | **0.0000** | **0.0741** (= 2 of 27 windows) |
+| `peak_g` max | 0.618 | **0.702 — over the μ = 0.7 circle** |
+| `max\|kappa\|` | 0.1505 | 0.1672 |
+| `max\|a\|` | 1.165 | 1.072 |
+| ADE m | 1.0504 | 1.1539 |
+
+**ALL THREE PRE-COMMITTED CONTROLS PASSED**, so the reading stands:
+1. the ground-truth path `g` reads `kamm_over` **0.0000 on both** arms;
+2. `ha`, `ha0`, `ha0_ext`, `ol` ADE are **bit-identical** across the pair — the two arms
+   are on one window grid (`CONTROL PASSED` in the artifact);
+3. `ha0_ext` reads **0.1852**, non-zero, in the same table.
+
+### The correct statement
+
+⛔ **NOT** *"`combined` reaches zero friction-circle violations."*
+✅ **"`combined` reads `kamm_over_rate` 0.0000 on one of two inference seeds and 0.0741
+on the other. Cap + ladder reduces the rate from the cap alone's 0.1481 to a
+seed-dependent 0.0000–0.0741, while preserving turn recalls."**
+
+⭐ **What SURVIVES, and it is the half that was mine:** the turn recalls are **identical
+across the seed pair** — `turn_left` 0.3636 and `turn_right` 0.7500 on **both** seeds
+(and `TACpc turn_left_rec` / `turn_right_rec` both read **0.00000 abs diff** in the floor
+table). So *"cap + ladder preserves turn execution"* is unaffected, and the contrast with
+`W_KAPPA`'s **0.0000 of 11** stands on two seeds. **It is the ZERO that was
+seed-dependent, not the TURNING.**
+
+### ROOT-CAUSE CLASS
+
+**A STRUCTURAL-LOOKING ZERO THAT WAS ACTUALLY A SAMPLE.** `CLAUDE.md` already carries the
+rule and even carries the exemption I mis-applied: *"a **structural zero** is not a noisy
+difference — `H-ECHO-4`'s constant-image arm reads exactly +0.0000 with CI [0, 0] because
+a constant-image arm **cannot** degrade; that is an identity, not an estimate."* A
+friction-circle rate of exactly 0.0000 **looks** like that kind of identity — it is a
+count of zero violating windows, and a count cannot be noisy — but the count is taken
+over **paths a stochastic planner sampled**. The zero was a property of *the plans seed 0
+happened to draw*, not of the configuration.
+
+⇒ **THE DISCRIMINATOR, stated so it is reusable:** a zero is structural only when the
+mechanism **forbids** a non-zero. Ask *"what would have to happen for this to be
+non-zero, and is it possible?"* Here the answer was *"iCEM draws a different elite set"*
+— entirely possible, and it happened on the very next seed. A zero produced by a
+**sampler** is never structural, however exact it looks.
+
+⚠️ **The aggravating detail, and the reason this belongs in the log rather than a
+footnote:** the very same package already carries `D-REFAV1-CG-SEED-SEPARATED`, banked by
+me hours earlier, showing this rig's seed replicate moves `kamm_over_rate` **0.2963 →
+0.2593** with no lever at all. I had **measured that the metric moves under a seed
+change** and still let its zero stand un-replicated for the length of a turn. The SPEC's
+own §1 says it: *"a rate that moves by 0.037 under a seed change is a rate whose zero
+must be re-measured before it is claimed."* I wrote that sentence and then reported the
+zero anyway, in the corrected form.
+
+⇒ **DURABLE FIX:** `raw/seed_floor_ext.py` now prints the `assert_feasible` rows **inside
+the seed-floor table**, so any future claim about `kamm_over_rate` meets its own seed
+sensitivity in the same artifact. And the general rule: **an exact 0.0000 from a
+sampling procedure is a HYPOTHESIS until a second seed agrees** — it does not get the
+structural-zero exemption.
+
+### Blast radius, bounded and named
+
+`D-REFAV1-CG-ZEROVIOL` (headline), `D-REFAV1-CG-ZEROVIOL-SCOPE` (my own correction's
+headline), `D-REFAV1-CG-LEVERS-TRADE` (quotes `combined`'s 0.0000 as the comparison
+point), `RESULT.md` §7.8 / §7.8a / §7.10. **Nothing else moves:** the cap-alone 0.1481,
+the `W_KAPPA` 0.0000-by-not-turning finding (that arm's zero is *also* single-seed and is
+now labelled as such), the turn-recall contrasts, the factorial's lever ranking, and the
+`best − wk15` inertness result are all untouched by this — none of them rests on
+`combined`'s zero.
+⚠️ **One honest extension:** `wk15`'s and `best`'s `kamm_over` 0.0000 are **also
+single-seed** and have **not** been replicated. They are now quoted with that
+qualification, not as established zeros.
+
+---
+
+# 2026-09-06 — MINE, corrected within the hour: "the seed pool is EMPTY" — true of `modes[1:]`, FALSE of `seed_pool`
+
+## 1. The claim, as banked
+
+`…/2026-09-05-turn-asymmetry/RESULT.md` §4.2 and register row
+`D-REFAV1-TURNASYM-SEEDPOOL-REFUTED` (commit `893bd4e71`) stated:
+
+> *"`cfg.proposal_k = 1` on this checkpoint, so `modes[1:]` is EMPTY and the seed
+> pool is NEVER INJECTED. A learned, possibly-biased candidate set cannot explain
+> an asymmetry it never contributes."*
+
+**The first half is correct and remains so.** `proposal_k` IS 1 and `modes[1:]`
+IS empty. ⛔ **The second half is wrong: `seed_pool` has a SECOND assignment site
+that I did not read.**
+
+## 2. What is actually there
+
+`refa_v1.py:2571-2599` — **the decoded goal's own canonical control is appended to
+`seed_pool` on every window, unconditionally** — and the source records the
+measurement that put it there:
+
+> *"MEASURED 2026-09-02: without this the planner returned `hold_v0` on 24/24
+> windows against a TURN goal at BOTH residual-init scales. `colored_noise` is
+> zero-mean over time and its mean is seeded only by the injected candidates, so
+> a SUSTAINED curvature is unreachable unless some candidate carries it — and no
+> baseline carries curvature."*
+
+⇒ On every `TURN_L`-goal window a full `kappa = +0.08` candidate **is in the
+iteration-0 population by construction.**
+
+## 3. ⭐ THE CORRECTION STRENGTHENS THE CONCLUSION IT WAS SUPPORTING
+
+MEASURED, zero GPU, banked dumps (`raw/seedwin_probe.py` / `.txt`;
+`GOAL_KAPPA_TURN` imported from source, never hand-written) — realised `|kappa|`
+EXACTLY 0.080000 over the 22 turn-goal windows:
+
+| arm | exact | `TURN_L` | `TURN_R` |
+|---|---|---|---|
+| `ccos_argmax` (`W_KAPPA` 0) | **21/22** | **8/9** | **13/13** |
+| `ccos_seed1` (seed replicate) | **21/22** | **8/9** | **13/13** |
+| `wk15` | 9/22 | **0/9** | 9/13 |
+| `wk151` | 1/22 | 0/9 | 1/13 |
+
+Control: across all `ccos_argmax` turn windows the realised `|max kappa|` takes
+exactly **two** distinct values — **0.0800** and **0.2000** (the clip). At zero
+charge the plan simply **IS** the canonical goal seed, in both directions and
+identically under both plan seeds.
+
+⛔⛔ **So the correction kills "the search failed to find the left candidate"
+OUTRIGHT — which the erroneous version could only weaken.** On all 9
+`TURN_L`-goal windows the full `+0.08` candidate was **present and LOST ON
+COST**. The mechanism is the cost COMPARISON, on a cost asserted bit-exactly
+sign-symmetric with a goal decision range symmetric to a ratio of 1.002.
+⇒ the last standing explanation is **a per-window property of the world model's
+latent geometry**, not a per-direction one — narrower and sharper than what the
+wrong claim supported.
+
+## 4. → ROOT-CAUSE CLASS
+
+**A TRUE STATEMENT ABOUT ONE CONTRIBUTOR TO A VARIABLE, REPORTED AS A STATEMENT
+ABOUT THE VARIABLE.** Same family as the `df` / cgroup `usage_in_bytes` /
+`step_s` / cylindrical-FOV / `control_units` traps — a correct reading quoted
+outside its scope — with the scope being **which assignment site you read**. It
+is invisible to every check that was run: the grep found the site I quoted, the
+code at that site says exactly what I said it says, and the probe I wrote to test
+it reported `pool size per window = 0` **truthfully**, because it only ever
+looked at `modes`.
+
+→ **DURABLE FIX: for any claim that a variable is empty, unset or inert,
+enumerate EVERY assignment site and state how many there are.** A single-site
+read is a claim about that site and must be worded as one.
+
+→ ⭐ **What actually caught it, within the hour and before it decided anything:
+the launched arm's OWN STARTUP BANNER**, which prints `[seed-pool] … the SHIPPED
+pool (proposal modes + the decoded goal's canonical controls)` — the running
+program contradicting my source walk in one line. The same discipline saved the
+ladder read the same night, where `plan_cfg` said `None` while the banner said
+the ladder had run. **Read what the program says about itself before trusting
+what you read about the program.**
+
+→ **Pinned:** `…/2026-09-05-turn-asymmetry/RESULT.md` §4.3 (which supersedes
+§4.2's second half), `raw/seedwin_probe.py` / `.txt`, `ta_wk15_s0.log`.
+Register: `D-REFAV1-TURNASYM-SEEDPOOL-REFUTED` **amended** by
+`D-REFAV1-TURNASYM-SEED-WINS`.
