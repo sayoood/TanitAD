@@ -564,10 +564,13 @@ The LiDAR build raises the ceiling; it never blocks the launch.
 
 ## §7A The reconciled release ladder (v5a / v5b)
 
-> ⚠️ **STATUS: PARTS 1–3 LANDED (crosswalk · v5a ladder · v5b ladder) — 2026-09-05, Arch+Inference
-> FlyWheel, integration task delegated by the Master Mind. Parts 4–7 are being filled in and
-> committed one at a time; a heading with `*(pending)*` under it is NOT a finding, it is work in
-> flight.**
+> **STATUS: COMPLETE — 2026-09-05, Arch+Inference FlyWheel, integration task delegated by the Master
+> Mind.** All seven parts landed: §7A.1 crosswalk · §7A.2 the v5a ladder · §7A.3 the v5b ladder ·
+> §7A.4 the release boundary as a decision rule · §7A.5 the two blockers as rungs · §7A.6 the
+> arithmetic that constrains the order · §7A.7 the conflicts, recorded and escalated.
+> ⛔ **Nothing here is new research and nothing here is a result** — it is a reconciliation, and its
+> value is that **one ordered ladder exists instead of two**. `D-REFCV5-LADDER-1` registers it in
+> `Project Steering/GOALS_AND_CLAIMS.md`.
 
 This section reconciles two completed documents that describe overlapping work under two
 incompatible naming schemes:
@@ -816,19 +819,202 @@ lost; §7 already contained exactly that edge for `E-BEV-1`, and §7A.1.b is whe
 
 ### 7A.4 The release boundary as a decision rule, not a date
 
-*(pending)*
+⛔ **v5b is not scheduled by a calendar and not by a preference. It is scheduled by a number that
+v5a itself produces.** This is (B) §4.4's formulation, adopted unchanged because it is the one thing
+that turns *"how much would LiDAR help?"* from an opinion into a measurement:
 
-### 7A.5 The two blockers, carried into the ladder as rungs
+> **Run v5a to completion first — and let v5a produce the number that prices v5b.**
 
-*(pending)*
+**The rule, stated so it can be executed:**
+
+> **v5b is scheduled if and only if the range accuracy the mechanism REQUIRES lands BELOW the range
+> accuracy vision ACHIEVES.** If the requirement lands *above* what vision achieves, LiDAR is a
+> **safety** investment — the unclassed object, §7A.4.c #2 — to be argued on its own terms, and **not
+> a performance one**.
+
+#### 7A.4.a The number that will be read, and where it comes from
+
+| | quantity | produced by | how it is read |
+|---|---|---|---|
+| **the REQUIREMENT** | **σ\*** — the range-noise standard deviation, in **metres of range error on the agent boxes**, at which the `E-AGT-ORACLE` separation **dies** | **`WP-V5A-2` · `E-AGT-BUDGET`** (Phase C, rung C1) | sweep σ ∈ **{0, 0.5, 1, 2, 4} m** on the oracle boxes, plus a **separate** miss-rate panel over **{0, 10, 25, 50 %}**; read on the **LONGITUDINAL and TACTICAL** families with the paired episode-cluster bootstrap; control `σ = 0` must reproduce `E-AGT-ORACLE` **exactly** |
+| **the ACHIEVEMENT** | our **monocular range error as a function of distance** | **`WP-V5A-6` · `E-DEPTH-0`** (rung B6), and later **`WP-6` · `E-AGT-HEAD`**'s own range error | `E-DEPTH-0` scores predicted range **at the `obstacle.offline` box centres** against the label range, binned by distance. **Two scale anchors that must agree** are its control: camera height **1.43–1.56 m** and PackNet-SfM velocity supervision on the measured `v0` |
+
+**Both inputs cost zero new bytes and run on the tiny rig.** `E-AGT-BUDGET` is 6 arms ≈ 2.9 h;
+`E-DEPTH-0` is 2 arms ≈ 1.0 h. ⇒ **the boundary decision is ≈ 4 rig-GPU-hours away, and it is
+reachable before any refcv4b checkpoint exists.**
+
+#### 7A.4.b The branches, committed in advance (from (B) §3.3, unchanged)
+
+| reading | verdict |
+|---|---|
+| separation **survives to σ ≥ 1 m** | a monocular detector in the published accuracy band is enough ⇒ **build `E-AGT-HEAD`**; **v5b is not required on performance grounds** for this mechanism |
+| separation **dies below σ = 0.5 m** | the mechanism needs **LiDAR-grade range** ⇒ it is a **v5b item, not a v5a item**. This is the clean, quantitative v5a/v5b boundary |
+| `E-AGT-ORACLE` **does not separate at all** (rung B5) | ⛔ **no detector accuracy can help** — the agent-token mechanism is refused for **zero further GPU-days**, and σ\* is never computed because there is nothing to price |
+| `E-AGT-HEAD` lands **outside** the σ\* budget | ⛔ the shortfall is **reported as the v5b case**, not re-tuned into a pass |
+
+#### 7A.4.c The four honesty items that travel with the decision
+
+Named here because they are where a LiDAR investment is routinely over-sold, and because two of them
+belong to the still-open `D-REFCV5-PLAN-7`:
+
+1. **LiDAR adds RANGE, not AZIMUTH.** Seven cameras reach **100.00 %** of the circle (MEASURED,
+   (B) §1.2). Coverage is not a LiDAR argument.
+2. **The unclassed object is the strongest v5b argument, and it is structural.** A detector trained
+   on **10 all-dynamic classes** cannot flag an object it has no class for; no amount of v5a training
+   removes that. ⚠️ It is also the hardest to quantify on this corpus, because the labels *are* the
+   ten classes.
+3. **Occlusion is closed by NEITHER release.** LiDAR does not see through a van. Crediting v5b with
+   occlusion reasoning is a frequent over-estimate.
+4. ⛔ **Even WITH LiDAR there is no NAVSIM-style DAC on this corpus.** LiDAR gives *occupied volume*,
+   not lane semantics; PhysicalAI-AV ships no map, lane graph, junction annotation, traffic-light
+   feature or route/goal signal, and `egomotion` carries no lat/lon. **The PI should not expect
+   drivable-area compliance from v5b.**
+
+⚠️ **And one thing v5a owes v5b regardless of the verdict:** rung **C5** validates the **HTTP-range
+zip-member fetcher** on **≈ 3 GB of camera**. That mechanism is a **HYPOTHESIS** in (A) §3.1 and it
+is on **v5b's critical path** (rung L4 moves ≈ 1.53 TB). Proving it on 3 GB is strictly cheaper than
+discovering it fails on 1.53 TB — which is why C5 is in v5a and the fetcher is one shared component
+(§7A.7 #4).
+
+**The asymmetry, stated once:** cameras cost **0 episodes** (all seven at **100.00 %** coverage) and
+**0 new calibration** (the other six extrinsics rows sit in the 41 KB parquet we already download —
+one changed filter at `physicalai.py:317-324`). LiDAR costs **2.56 %** of episodes (97.44 % coverage)
+and a new codec path, a new cache format and a streamed corpus build.
+
+### 7A.5 The two blockers, carried into the ladder as rungs — not as footnotes
+
+⛔ **Both are MEASURED absences that make results UNREADABLE while they persist, and both are
+0 GPU.** They are rungs **A1** and **A2** of §7A.2, at the very top of the ladder, because a rung
+that cannot be read is a rung that has not run.
+
+#### 7A.5.a ⛔ `ha0_ext` is not an arm of the REF-C harness — VERIFIED AT SOURCE 2026-09-05
+
+(A) §7.3.2 / `D-REFCV5-PLAN-9` / escalation E2 state this. **Re-verified independently for this
+reconciliation, with a same-breath control so a "0 hits" reading is a claim about the CONTENT and not
+about the search:**
+
+| probe | reading |
+|---|---|
+| `taniteval/tools/refcv3_arm.py` — **read OK, 2,273 lines, 27 `def`, 27 `--` CLI flags enumerated** | occurrences of `ha0_ext`: **0** |
+| **same-breath CONTROL** — `taniteval/tools/refav1_arm.py`, read OK, 2,184 lines | occurrences of `ha0_ext`: **12** |
+| `refcv3_arm.py:961`, quoted verbatim | `    arms = ["os", "ha", "ha0"]` |
+| the implementation | `stack/tanitad/eval/echo_gate.py:171` — `def ha0_ext(v0, a0, k0, taus_s: Sequence[float])`, **23** occurrences in that file |
+| the compliance readout, where it **does** bind today | `taniteval/taniteval/nav_compliance.py` — read OK, 1,147 lines, **7** occurrences |
+
+⇒ **The claim is confirmed, and the consequence is precise: §8's acceptance bar — "beat BOTH `ha`
+and `ha0_ext`" — is HALF UNREADABLE on the 4,823-window surface today.** Every `ha0_ext` clause in
+§8.1 is a claim we cannot currently read, and (A) says so in its own Honest Scope.
+
+**Carried into the ladder as rung `A2` / `WP-0.2`:** ~30 lines and one shared call, **0 GPU, ~0.5 d**.
+⛔ **It must call the SAME `echo_gate.ha0_ext`** the refav1 harness calls — never a re-implementation
+beside it. `echo_gate.py`'s own docstring is the reason: *a control re-implemented beside the thing
+it controls drifts, and then the gate measures the drift.*
+
+#### 7A.5.b ⛔ The eval-time ablation switches are not CLI flags — and it is **8 of the 12 arms**, VERIFIED
+
+(A) §7.3.1 says *"the twelve arms … need flags on `taniteval/tools/refcv3_arm.py`"*. That is right in
+substance and imprecise in count. **Measured at source for this reconciliation** (same file, same
+readable-file control as above; `add_argument` reads **28** as the positive control):
+
+| the 12 arms of `PREREG_REFCV4B_HIERARCHY_EVAL.md` §3 | switch today |
+|---|---|
+| **FULL** | needs none (the reference arm) |
+| **nav-ZERO** | ✅ `--with-navzero` / `--no-navzero` (the existing `os_navzero` arm) |
+| **nav-SHUFFLE** | ✅ `--no-navshuf` / `--nav-shuffle-seed` (the existing `os_navshuf` arm) |
+| **nav-FLIP** | ✅ `--with-navflip` |
+| **g_str-ZERO** · **g_str-SHUFFLE** · **E7-OFF** · **E9-OFF** · **H19-OFF** · **EGO-ZERO** · **SEL-REFINED** | ⛔ **ABSENT** — `gstr` / `e7-off` / `e9-off` / `h19-off` / `ego-zero` / `sel-refined` / `ablate` each read **0** in a file that read fine |
+| **DELIBERATE REGRESSION** (frame-blind, the prereg's `--ablate-frames` regime) | ⛔ **ABSENT — and absent at a SECOND and THIRD path too**: `ablate` reads 0 in `refcv3_arm.py` (2,273 lines), `refav1_arm.py` (2,184), **and** `t1_eval.py` (1,650), all three read OK with non-zero `def` controls |
+
+⇒ **8 of the 12 arms have no switch; 3 have one; 1 needs none.** ⚠️ The prereg's own escalation
+(lines 175–179) names **seven** — `--ablate {gstr_zero,gstr_shuffle,e7_off,e9_off,h19_off,ego_zero,
+sel_refined}` — and **omits the frame-blind deliberate regression**, which is the eighth and is the
+arm the panel's validity depends on: `PREREG_REFCV4B_HIERARCHY_EVAL.md` §4 requires the
+deliberate-regression arm to be **FAILED by the echo gate**, and (A) §8.1 C7 restates that as part of
+the claim. **A panel whose deliberate regression cannot be rolled cannot be read.**
+
+**Carried into the ladder as rung `A1` / `WP-0.1`**, at the top, **0 GPU, ~1 d** — and ⛔ **it blocks
+`WP-9b` (rung D2), which is where `E-DDA-2` gets its first FREE read (`H-SEL-1`)**. refcv4b's ETA is
+~2026-09-06 08:00 UTC; A1 has no dependency of its own and must land before then.
 
 ### 7A.6 The arithmetic that constrains the whole ladder
 
-*(pending)*
+**The framing fact, from (A) §8.0 and registered as `D-REFCV5-PLAN-10` (status SUPPORTED, MEASURED),
+on the 4,823-window / 141-episode v7.2 EVAL surface, episode-cluster bootstrap B = 2,000, seed 0,
+paired** — artifact `taniteval/results/refcv3-40284-openloop.ARM.json`, JSON md5
+`5cfe3258c18871218bd85d691904eb20`:
+
+| quantity | value | what it is |
+|---|---:|---|
+| `oracle_sel − os` | **−0.0751** m [−0.0884, −0.0618] | everything **perfect selection** could buy |
+| `os − os_navzero` | **−0.0239** m [−0.0428, −0.0089] | everything the **oracle route** could buy |
+| **their sum** | **0.0990 m** | perfect selection **plus** the oracle route |
+| `os − ha` (refcv3 @ 40,284) | **0.1423 m** [+0.1187, +0.1658] | **the gap to the bar** (`os` 0.4419 vs `ha` 0.2996) |
+| **residual** | **0.0433 m** | arithmetic on the two rows above — **what must come from the FAN, and can come from nowhere else** |
+
+⇒ **THE DEFICIT IS IN THE FAN, NOT IN SELECTION AND NOT IN ROUTING.** Any refcv5 claim built only on
+the selector or on the nav wiring is, **by arithmetic**, incapable of clearing the bar.
+
+**What that does to the ORDER — the ladder is arranged so the fan work is never optional:**
+
+| | rungs | status in the ladder |
+|---|---|---|
+| ⭐ **FAN rungs — these can span the gap** | **B2** `V5-VOCAB` · **B4** `E-DDA-1` · **B5/C1/C3** `E-AGT-ORACLE` → `E-AGT-BUDGET` → `E-AGT-HEAD` · **B7** `E-DDA-3` (the sampler) · **B8** `E-DDA-5` (the assignment metric changes *which* anchors are supervised) · **C2** `E-DDA-1b` · **C4** `E-BEVA-1` · **C5/C6** the surround coverage lever · **D4** the RL floor policy | ⛔ **LOAD-BEARING. Not optional.** `D-REFCV5-PLAN-6` is explicit that the RL stage's job is **the fan's FLOOR, not ADE** |
+| **SELECTION / ROUTING rungs — arithmetically incapable ALONE** | **B3** `E-DDA-2` · **D3** `E-DDA-2b` · **B9** the nav/strategic wiring E15–E21, S7/S8 | run **early because they are FREE**, never because they are load-bearing. ⛔ **No v5a capability claim may rest on these alone** |
+
+**Three consequences that are already written into §7A.2 and are restated here so the ordering is not
+re-derived by someone reading only this section:**
+
+1. ⛔ **Rung `A3` (`WP-0.3`, the fan readouts) is a PRECONDITION for reading any fan rung at all.**
+   `fan_floor@k`, fan-collision-vs-replay, diversity D and the sampled-fan Kamm rate **do not exist**.
+   Without them **B7 (sampler), D3 (selector) and D4 (RL) have no primary readout** — a top-1 number
+   cannot see a floor effect, which is the whole point of (A) §6.1. That is why A3 is in Phase A next
+   to the two blockers and not somewhere convenient.
+2. **`C4` of (A) §8.1 — "the fan, not the pick" — is the claim this arithmetic protects.** An ADE win
+   with a **flat oracle-in-fan** is a *selection* result mislabelled, and it is one of the four named
+   ways refcv5 can post a good headline and still be **REFUSED** ((A) §8.2 #3). The registry row must
+   then say **"selection"**, not **"driving"**.
+3. **The free rungs stay first, and their honesty label changes.** B3 and B9 are still at the top of
+   Phase B — they cost nothing and B3's first read is free inside D2 — but they are now labelled as
+   what they are: **cheap, worth doing, and incapable of carrying the headline.**
+
+⚠️ **On additivity:** the two deltas are separate paired quantities on the same surface, and
+`D-REFCV5-PLAN-10` combines them as stated above. That combination is (A)'s registered framing, quoted
+here as registered; the 0.0433 m residual is arithmetic on its own two published rows and adds no new
+measurement.
 
 ### 7A.7 Conflicts recorded, not adjudicated — escalated to the Master Mind
 
-*(pending)*
+⚠️ **These are places the two documents disagree on a FACT, or where a load-bearing number is
+unbanked. Per the brief, each is recorded with both readings and its evidence, and NONE is
+adjudicated here.**
+
+| # | item | reading (A) `REFCV5_DESIGN_PLAN.md` | reading (B) the vision study | why it matters |
+|---|---|---|---|---|
+| **1** | ⚠️ **`E-DDA-1`'s arm count** — the *same* arm under the *same* name | §7.1 WP-3: **4 arms ≈ 2 h** on the tiny rig. Its SPEC block names **three controls**: random sampling locations at equal params · a frozen zero-init gate that must read delta == 0 exactly · **a pinhole-formula arm that must MISPROJECT** | §3.0 WP-V5A-4: **2 arms ≈ 1.0 h**. §3.5 adds two implementation facts but lists no control set for the rung | Both are internally consistent with the shared ≈ 29 min/arm anchor, so the disagreement is purely **how many controls the panel carries**. Taking (B)'s count drops two of (A)'s three controls — **including the projection control that exists precisely to prove the instrument can SEE a wrong projection** (the CLAUDE.md cylindrical-FOV trap's own guard). §7A.2 rung **B4** carries both figures rather than picking |
+| **2** | ⚠️ **`E-AGT-HEAD`'s arm count and cost** | §7.1 WP-6: **4 arms ≈ 2.5 h** — but that row prices the **whole mechanism in one arm** | §3.0 WP-V5A-3: **3 arms ≈ 3.0 h** — and it assumes `E-AGT-ORACLE` and `E-AGT-BUDGET` have already run | Likely a **re-scoping rather than a conflict**, since the two rows price different things after the §7A.1.a decomposition. Recorded so it is not read as an arithmetic error. §7A.2 rung **C3** carries both |
+| **3** | ⛔ **The B1 corpus's CHUNK SPREAD is not banked — and a 429 GB plan silently becomes a multi-TB plan without it** | §3.1 states the same risk for LiDAR: *"the B1 selection's chunk spread is not banked"*; whole-chunk pulls cost `n_chunks × 31.7 GB` | §1.3 / escalation #3: the **429 GB** (all six cameras) and **149 GB** (cross pair) figures assume **per-clip HTTP range reads of zip members**; whole-chunk pulls cost `n_chunks × 6 × ≈ 1.3 GB` | **Both ladders rest on it** (rungs C6 and L4). The settling number — how many of the 3,146 chunks B1's 4,713 clips touch — is a **one-query readout** from the r0/B1 selection tables. ⇒ **DataFlyWheel** |
+| **4** | ⭐ **The HTTP-range zip-member fetcher is one component, needed twice** | §3.1 carries it as a **HYPOTHESIS** on v5b's critical path (≈ 1.53 TB) | §3.7 / escalation #4: validate it on **≈ 3 GB of camera** in rung C5, then reuse | ⇒ **make it a shared component, not a camera-specific script.** Proving it on 3 GB de-risks 1.53 TB for free. ⇒ **DataFlyWheel** |
+| **5** | ⚠️ **LiDAR transit for B1: 1.53 TB vs 1.57 TB** | §3.1: **≈ 1.53 TB**, derived from the chunk mean (306,152 clips / 3,146 chunks ⇒ ≈ 325 MB/clip × 4,713) | §1.3 / §4.4: **≈ 1.57 TB** (1,574 GB), derived from the **99.60 TB corpus total ÷ 298,326 covered clips** | A ~3 % difference from **two different derivations**, both labelled ESTIMATED/derived. It changes no decision, but the two must not be averaged or quoted interchangeably without their derivation |
+| **6** | ⛔ **A banked DataFlyWheel figure is corrected by (B), and it is a RETRACTION-LOG CANDIDATE** | (A) does **not** quote the old camera figures — it prices only the LiDAR side, so this document is **not contaminated** | §1.4 / `D-V5A-CAM3` / escalation #2: the 2026-07-26 census priced every feature as `chunk_0000 × 3,146`; for **cameras** that is **×1.39–1.58 HIGH** (the 6 unread cameras: **40.7 TB banked → 27.85 TB MEASURED**; per clip **21.1 MB → 13.35 MB**). Root-cause class: *a true measurement quoted outside its scope* — a one-draw extrapolation presented as a corpus figure | ⛔ **I have NOT written to `RETRACTION_LOG.md`.** The old figures are exactly what a *"can we afford surround cameras?"* decision would be taken on, and they are ~46 % high — **the correction makes the answer EASIER, not harder**, which is why it must be stated rather than quietly used. ⇒ **the Master Mind decides whether it rises to an entry** |
+| **7** | ⚠️ **An internal inconsistency inside (A), left as written** | §7.0's clock table places *"**WP-12** E-DDA-2b selector training"* in the refcv4b-gated column; §7.1 assigns `E-DDA-2b` to **WP-7** and `E-BEV-1`/`E-LIDAR-1` to **WP-12** | — | §7.1's own WP-7 row (*"module NOW; training after refcv4b"*) says what was meant. §7A reads it as **WP-7** and does not edit §7 |
+| **8** | ⚠️ **A naming decision I took that the Master Mind should ratify** | (A) WP-6's SPEC carries `hypothesis: H-DDA-1` — an id already held by `E-DDA-1`, so one id covers two mechanisms | (B) registered `H-V5A-AGT-1/2/3` for the three agent rungs | §7A.1.a makes `H-V5A-AGT-1/2/3` canonical and reserves `H-DDA-1` for `E-DDA-1`. **Both id sets are live in `GOALS_AND_CLAIMS.md`**, so this is a mapping, not a deletion — but it is a decision, and it is flagged as one |
+| **9** | ⚠️ **"12 switches" is imprecise in both documents** | §7.3.1: *"the twelve arms … need flags"* | — (the prereg's own escalation names **seven** and omits the frame-blind arm) | MEASURED for this reconciliation: **8 of the 12 arms lack a switch, 3 have one, 1 needs none** — and the missing eighth is the **deliberate-regression** arm the panel's validity depends on (§7A.5.b) |
+| **10** | ⚠️ **The v5a GPU total is ≈ 29–38 rig-h here, not (B)'s ≈ 13.4 h** | §7.4 prices its own 14 packages across four boxes | §3.0 prices its own ten rungs at **≈ 13.4 rig-GPU-h** | **Neither is wrong — they count different SETS.** §7A.2's figure is the **union**, and it carries (A)'s sampler, selector, loss-form, nav-wiring, RL and hierarchy rungs that (B) never priced. Stated so the smaller number is not quoted as the reconciled one |
+
+**Integration the Master Mind must schedule, not read about** (this is the escalation, in the report's
+headline as well as here):
+
+1. ⛔ **Rung A1 (`WP-0.1`) must land before refcv4b's ETA of ~2026-09-06 08:00 UTC** — it is 0 GPU, it
+   has no dependency, and it blocks the entire post-training hierarchy panel (D2) and with it
+   `E-DDA-2`'s first free read.
+2. ⛔ **Rung A2 (`WP-0.2`, `ha0_ext`)** — half the published acceptance bar is unreadable until it
+   lands. 0 GPU, ~0.5 d.
+3. ⛔ **`D-REFCV5-PLAN-7` remains an OPEN PI decision** and now gates exactly one rung, **L6
+   (`E-LIDAR-1`)**. It gates nothing in v5a and nothing else in v5b — the split makes that visible.
+4. **Items 3, 4 and 6 above go to the DataFlyWheel and to the retraction judgement respectively.**
+5. **`Project Steering/BACKLOG.md` should carry §7A.2's Phase A + Phase B as pull-items** — eleven
+   independent zero-pod-GPU rungs is exactly the shape the ≥ 5-parallel-streams rule wants, and (A)'s
+   own escalation E6 already asked for it.
 
 ## §8 What refcv5 claims, and what would refute it
 
