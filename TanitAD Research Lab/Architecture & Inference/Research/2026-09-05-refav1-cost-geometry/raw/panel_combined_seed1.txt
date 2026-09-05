@@ -1,0 +1,62 @@
+====================================================================================================
+ARM refav1-21109-p4-combined_seed1      n_windows=40 n_episodes=8
+  cost: metric=ccos  W_JERK=0          W_KAPPA=0            W_VEND=64.2972     source=CLI override (--cost-weights)
+  record: C:/Users/Admin/refav1_margin/p4out/rec_combined_seed1.json
+----------------------------------------------------------------------------------------------------
+  arm       tier | ADE_m (episode-cluster CI) | speed_MAE  along_MAE  tsa<1.0    | curv_MAE 
+  cl        T1   | 1.1539 [0.8034, 1.4940]  | 0.7315     0.6878     0.7450     | 0.048864 
+  ha        T1   | 0.8888 [0.6026, 1.1928]  | 0.3058     0.6923     0.9275     | 0.076005 
+  ha0       T1   | 0.9251 [0.7024, 1.1783]  | 0.7217     0.6788     0.7500     | 0.040083 
+  ha0_ext   T1   | 0.8772 [0.6195, 1.1437]  | 0.3058     0.6819     0.9275     | 0.077298 
+  ol        T0   | 0.8052 [0.5787, 1.0577]  | 0.0906     0.5927     1.0000     | 0.082614 
+
+  LONGITUDINAL (binding family 1)
+    arm       speed_MAE   speed_bias  speed_RMSE  along_MAE   accel_MAE   tsa<0.5    
+    cl        0.7315      0.0183      1.1291      0.6878      0.7901      0.5275     
+    ha        0.3058      -0.0048     0.5104      0.6923      0.4487      0.8150     
+    ha0       0.7217      0.0685      1.1119      0.6788      0.7766      0.5275     
+    ha0_ext   0.3058      -0.0048     0.5104      0.6819      0.4487      0.8150     
+    ol        0.0906      -0.0324     0.1182      0.5927      0.1064      1.0000     
+    distance_keeping: UNAVAILABLE  (n=0)  reason=no lead-agent track supplied — pass `lead=` (see this function's caller docstr
+
+  LATERAL (binding family 2)
+    arm       head_MAE_d  yawrate_MAE   curv_MAE_1pm  curv_bias_1pm cross_MAE   crossfin_MAE
+    cl        21.9111     13.5406       0.048864      -0.003857     0.6874      1.6236     
+    ha        27.6171     13.9120       0.076005      0.021166      0.4055      0.9430     
+    ha0       20.1374     7.0932        0.040083      0.001770      0.3642      0.9575     
+    ha0_ext   27.7357     13.9710       0.077298      0.019120      0.4018      0.9251     
+    ol        27.1975     13.3175       0.082614      0.018067      0.4199      0.9972     
+
+  TACTICAL (binding family 3) -- decision quality + goal setting
+    arm       lat_acc  lat_kap  lon_acc  lon_kap  m5_acc   goalFDE_m  goalbear_d
+    cl        0.6000   0.3555   0.4250   0.0000   0.4000   2.6701     26.0460   
+    ha        0.7250   0.5510   0.7250   0.5639   0.6000   2.3164     27.9790   
+    ha0       0.5250   0.0000   0.4250   0.0000   0.2500   2.2613     24.7612   
+    ha0_ext   0.7750   0.6277   0.7250   0.5639   0.6500   2.2693     27.9992   
+    ol        0.8250   0.7172   0.9000   0.8456   0.7750   1.9942     28.2263   
+    cl lateral per-class: lane_keep n_true=21 recall=0.6667  turn_left n_true=11 recall=0.3636  turn_right n_true=8 recall=0.75
+
+  STRATEGIC (binding family 4)
+    status=UNAVAILABLE n=0  reason=strategic decisions not present in the scored pass (missing ['route_pred', 'rout
+
+  PAIRED (episode-cluster bootstrap, the decision-grade estimator)
+    cl - ol                    ade_m            delta= +0.3487 [ +0.1026,  +0.6315] separated=True
+    cl - ol                    speed_mae_mps    delta= +0.6409 [ +0.4169,  +0.9257] separated=True
+    cl - ha                    ade_m            delta= +0.2652 [ +0.0078,  +0.5922] separated=True
+    cl - ha                    speed_mae_mps    delta= +0.4257 [ +0.2412,  +0.6560] separated=True
+    cl - ha0                   ade_m            delta= +0.2288 [ -0.0255,  +0.5491] separated=False
+    cl - ha0                   speed_mae_mps    delta= +0.0097 [ -0.0198,  +0.0470] separated=False
+    cl - ha0_ext               ade_m            delta= +0.2767 [ +0.0258,  +0.5837] separated=True
+    cl - ha0_ext               speed_mae_mps    delta= +0.4257 [ +0.2412,  +0.6560] separated=True
+
+constants: A_MAX 4.000  KAPPA_MAX 0.200  MU_KAMM 0.700  dt used 0.20 s
+
+==== combined_seed1   (v0 >= 2.0 m/s)
+   g        n=27 envelope_rate 0.0000  kamm_over 0.0000  max|a| 3.016  max|kappa| 0.1701  peak_g mean 0.178 max 0.373 <- CONTROL, must be ~0
+   cl       n=27 envelope_rate 0.0000  kamm_over 0.0741  max|a| 1.072  max|kappa| 0.1672  peak_g mean 0.271 max 0.702
+   ha0_ext  n=27 envelope_rate 0.1852  kamm_over 0.1852  max|a| 2.310  max|kappa| 0.7672  peak_g mean 0.316 max 1.436
+   ha       n=27 envelope_rate 0.1481  kamm_over 0.1481  max|a| 2.310  max|kappa| 0.6211  peak_g mean 0.316 max 1.595
+   ol       n=27 envelope_rate 0.2963  kamm_over 0.1111  max|a| 2.973  max|kappa| 0.4400  peak_g mean 0.343 max 1.016
+
+
+# FEASIBILITY (assert_feasible, v0>=2). CONTROL g must be 0.0000.
