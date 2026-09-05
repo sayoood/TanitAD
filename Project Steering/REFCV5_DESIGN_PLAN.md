@@ -677,7 +677,251 @@ Each row above is registered in `GOALS_AND_CLAIMS.md` (§10) as `D-REFCV5-PLAN-*
 not by a summary, a report, or this document.
 
 
-## §9 Interface for the VLA extension (sibling stream) `[PENDING]`
+## §9 Interface for the VLA extension (sibling stream)
+
+### 9.0 What this section is, and what it is not
+
+This is **the contract the language module codes against** — the ports, their shapes, the vocabularies,
+the budget and the one measurement that makes the extension a USP rather than a caption generator.
+⛔ **It does not design the VLA.** The design lives with the sibling stream:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md`
+(§0 banked at commit `7d4b0b7`; §1–§6 in progress) and `Project Steering/REFCV5_VLA_EXTENSION_PLAN.md`
+(not yet in HEAD at the time of writing). Where the two disagree about a *port*, this section wins and
+the disagreement is escalated to the Master Mind; where they disagree about the *module*, that stream
+wins.
+
+⚠️ **The first constraint, stated before any port.** The whole cascade above the trunk is **≈ 2.15 M
+parameters** (MEASURED, registry §4.5: `phi_tac` 1,757,440 · `tac_latent_proj` 262,656 · `gstr_cond`
+66,816 · `nav_inject` 50,176 · `tac_heads` 14,364 · `scorer` 1,156 · `str_goal_head` 771). A ≤ 1 B
+language module is **100–400× larger than the layers it complements**. It may **read and propose
+into** the cascade's decisions; it may **not replace** them, because a module that large will win any
+gradient competition it is allowed to enter, and the hierarchy's attributability (§2 I1) dies with it.
+
+### 9.1 The mount point — `hierarchy_hook`, the port that already exists
+
+⭐ **REF-C already has a documented external-brain port, and it is unfilled.**
+`RefCModel.forward(..., hierarchy_hook=...)` (`stack/tanitad/refs/refc.py`, the `hierarchy_hook` block
+at `:2268-2300`, docstring `:2230-2255`) is called as
+
+```
+hook(pooled_seq: Tensor[B, W, F], ctx: Tensor[B, d_ctx]) -> dict
+```
+
+and its returned `"maneuver_logits"`, `"target_latent"` and `"bank_speed_pred"` entries **fill the
+model's ports ONLY where the caller passed `None`** — *"an explicitly supplied port always wins, so
+the hook can never silently override an experiment's input"* (`refc.py:2241-2243`). REF-C v3's own
+hierarchy is supplied through exactly this hook (`refc_v3.py`), so the VLA is not a new mechanism: it
+is a **second supplier on an existing, gated, experiment-safe seam**.
+
+⭐⭐ **And the docstring names the reason it exists, which is the VLA's latency argument in advance:**
+*a hierarchy built outside the class can read the window it is conditioning on* **without encoding the
+frames a second time** *— the encoder is ~90 % of the tick, and a cached one would be a stale-latent
+hazard* (`refc.py:2236-2240`). ⇒ **The language module must consume REF-C's trunk tokens. It must not
+run a second vision encoder.** That is a contract term, not a preference — it is where the 300–500 ms
+budget of §9.6 is won or lost.
+
+⛔ **One port is live and one is not, and the difference matters.** `maneuver_logits [B, 5]` reaches
+`refc.py:1645-1647` and reweights the anchor prior (H19) — *"an outside tactical brain speaking the
+5-way surface"*, and it is **never filled today** (`D-REFCV4-NAV-WIRING`, VLA RESULT §0.1). It is the
+**only** port through which an external module already changes behaviour with zero new wiring. Every
+other write below needs a new, zero-init, individually-gated edge (§2 I2).
+
+### 9.2 READ ports — what the module may consume
+
+Widths are for `size base` (`V3_SIZES["base"] = (88, (3, 6, 16, 6))`, `feat_dim = base_width · 8 =
+704`, `refc.py:273, :291`); at the `tiny` rig rung `feat_dim = 256`. ⚠️ **Line numbers drift — the
+function/attribute name is the stable reference.**
+
+| port | shape | where | what it is | notes for the module |
+|---|---|---|---|---|
+| `pooled` | `[B, 704]` (`feat_dim`) | `RefCModel.forward`, `refc.py::forward` hierarchy branch | the trunk's pooled features at t0 | the *pooled* vector, not the map |
+| `pooled_seq` | `[B, W=8, 704]` | same, `pooled_all.reshape(b, w, -1)` | the same over the 8-frame window | ⭐ **the hook's first argument** — the module's primary visual input |
+| `fmap` (PV token map) | `[B, 704, 8, 20]` → 160 tokens | `refc.py::forward`; consumed by `feat_proj: Linear(feat_dim, d)` (`:1206`) | the **8 × 20 = 160 perspective-view tokens**, 256 × 640 **cylindrical**, `f_ref` 305.577, HFOV **120.0°** | ⛔ the pinhole formula gives 92.6° and is **wrong** here (§3.2); use `calib.CanonicalFrame(projection="cylindrical")` and `bev_raster.readout_column_index` for any token↔azimuth mapping |
+| `ctx` | `[B, 256]` (`StrategicCtxConfig(hidden=512, d_ctx=256)`) | `refc_v3.py::StrategicCtx`, supplied as the hook's **second argument** | strategic GRU context over the window; `ctx = ctx + nav_s` inside `hook()` (zero-init `nav_to_str`) | already carries nav — see §9.5 before treating it as vision-only |
+| `g_str` | `[B, 3]` → `[B, 23]` under E19 | `refc_v3.py::str_goal_head` | `(cos, sin)` route bearing + `tanh` along-track preference; E19 widens to `g_str_geo(3) + p_man(4) + t_bin(6) + p_man2(4) + t_bin2(6)` | ⚠️ **NAV_BLIND today** (nav-compliance Δ_shuffle = 0.0000). Do not build on it without checking `H-NAVC-2`'s outcome |
+| `z_tac` | `[B, 512]` (`d_tac`) | `refc_v3.py::phi_tac`, FiLM'd by `g_str` (zero-init `gstr_film`) | the tactical latent; input to the scorer and to `target_latent` | the natural conditioning vector for a tactical language head |
+| `lat_logits_tac` / `lon_logits_tac` | `[B, 8]` each | `refc_v3.py::lat_head_tac`, `lon_head_tac` | the **v7.2 8-way factored tactical heads** | reach the decoder only through E7/E9 (`SEAM_STATE.md`) |
+| `g_tac` | `[B, k·4]`, k = 3 taus `(20, 40, 60)` → **12**; layout `(x, y, heading, speed)@τ` (`GOAL_DIMS = 4`, `models/tactical.py:78`) | `refc_v3.py::tac_goal_head` | tactical **geometric goal points**; E14 echo-quotiented form = `ha0_ext + zero-init residual` | ⭐ **this is the geometric goal port** the module must read and may propose into |
+| the fan | `anchor_traj [B, N, n_steps, 2]`, `anchor_logits [B, N]`, `offset`, `sel_idx [B]` | `RefCModel.forward` return dict (`refc.py:2247-2250`) | the 117 emitted candidates, their scores, and the pick | ⭐ **the object the consistency constraint (§9.7) is measured against** |
+| `m` (measurement) | `[B, d_m]` | `refc.py` measurement encoder | `v0` (+ E11' ego channels, per-sample withholding 0.5 + the **X15 presence bit**) ⊕ nav one-hot | ⛔ **read-only, and see §9.5** |
+
+### 9.3 WRITE ports — what the module may emit, and where it lands
+
+| port | shape | lands in | gate | status |
+|---|---|---|---|---|
+| `maneuver_logits` | `[B, 5]` (log-probs over the kin3-derived 5-way surface) | `refc.py:1645-1647` — reweights the **anchor prior** (H19) | already gated: fills only when the caller passed `None`; `maneuver_to_anchor` must be present | ⭐ **LIVE, unfilled, zero new wiring** |
+| `target_latent` | `[B, d_tac]` | the decoder's `tgt_film` (E7) | as above | LIVE, filled today by `refc_v3`; a VLA arm must **replace or blend**, and say which |
+| `g_tac_proposal` | `[B, k·4]` = `[B, 12]` | a **new** zero-init residual edge into `tac_goal_head`'s output | **new edge — must be zero-init and individually switchable** (§2 I2) | to be added by the VLA stream |
+| `p_man` / `t_bin` proposal | `[B, 4]` / `[B, 6]` (E19's layout) | a **new** zero-init residual edge into `str_goal_head`'s E19 slots | as above | needs E19 first (WP-8) |
+| `selector_prior` | `[B, N]` additive log-prior on the fan | `refc.py:1677-1683`, beside the H19 / factored / LAN / goal priors | as above | a natural port for a "which of these 117 do you endorse" reading |
+| `text` (the explanation) | tokens | **no model node** | — | ⛔ **the explanation must not close a loop into the planner.** It is scored (§9.7), never consumed |
+
+**Every write port ships with its eval-time switch**, so the post-training ablation table of
+`PREREG_REFCV4B_HIERARCHY_EVAL.md` extends by one row per VLA edge (§2 I2). An edge without a switch
+is not admissible.
+
+### 9.4 The vocabularies the module must speak — verbatim, from source
+
+⛔ **These are pinned constants (`stack/tanitad/models/vocab_v7.py`), not descriptions.** A module
+that emits a token outside them is emitting an unlabelled string, and no consistency metric can score
+it.
+
+**Time bands** (`stack/scripts/s2_geom_emit_v7.py:50-59`): `OPERATIVE_S = (0.0, 2.0)` ·
+`TACTICAL_S = (2.0, 6.0)` · `GAP_S = (6.0, 8.0)` — **belongs to no layer, deliberately** ·
+`STRATEGIC_S = (8.0, 30.0)` · `LOOKAHEAD_S = 30.0`.
+
+**Strategic (the `STRATEGIC_S = (8, 30)` event vocabulary), 8 goals + 7 actions + 2 arg slots:**
+
+```
+STRATEGIC_GOAL_TOKENS_V7  = (FOLLOW_ROUTE, TURN_LEFT_FOLLOW_ROUTE, TURN_RIGHT_FOLLOW_ROUTE,
+                             STOP_AT_FOLLOW_ROUTE, EXIT_LEFT_FOLLOW_ROUTE, EXIT_RIGHT_FOLLOW_ROUTE,
+                             LANE_CHANGE_L_FOLLOW_ROUTE, LANE_CHANGE_R_FOLLOW_ROUTE)
+STRATEGIC_ACTION_TOKENS_V7 = (HOLD_MAIN_ROAD, PREPARE_TURN_L_FOLLOW_ROUTE,
+                             PREPARE_TURN_R_FOLLOW_ROUTE, PREPARE_STOP_FOLLOW_ROUTE,
+                             PREPARE_EXIT_FOLLOW_ROUTE, PREPARE_LANE_CHANGE_FOLLOW_ROUTE,
+                             RESUME_CRUISE_FOLLOW_ROUTE)
+STRATEGIC_ARG_SLOTS       = ("within_m", "by_time_s")     # a token WITHOUT these is ambiguous
+```
+
+⚠️ The arg slots are **not optional**: the PI's own counter-example (`01bee851`, three manoeuvres
++76° / −43° / +69°) is distinguishable only by distance and time. E19's `t_bin` bins over `[0, 30]` s
+are `(0-2, 2-5, 5-9, 9-14, 14-21, 21-30)`. Band census (train): **1,882** manoeuvres start in
+`[8, 30)`, 463 in `[2, 6)`, 687 in `[0, 2)`, 256 beyond 30 s.
+
+**Tactical — the 8-way v7.2 factored classes** (this is *the* pair the module's tactical claim is
+scored on):
+
+```
+TACTICAL_LAT_ACTIONS_V7 = (LANE_KEEP, LANE_CHANGE_L, LANE_CHANGE_R, ABORT_LC,
+                           NUDGE_L, NUDGE_R, TURN_L, TURN_R)
+TACTICAL_LON_ACTIONS_V7 = (FOLLOW, CRUISE, YIELD_MERGE, BRAKE_TO, CREEP, HOLD,
+                           ADAPT_SPEED_FOR_CURVE, ACCELERATE)
+LAT_ACTION_ARG_SLOTS = ("within_m",)   LON_ACTION_ARG_SLOTS = ("v_target_ms", "within_m")
+```
+
+plus the **24 `TACTICAL_GOAL_TOKENS_V7`** (a *set*, expressed against the anchor reference:
+`FOLLOW_LANE`, `TURN_L/R`, `YIELD*`, `STOP_POINT`, `SPEED_BAND` — **always present** —,
+`CORRIDOR_OFFSET`, `EVADE_IN_CORRIDOR`, `OVERTAKE_VEHICLE`, `MERGE`, `GAP_TARGET`,
+`REACT_ON_ONCOMING`, `TAKE_EXIT_L/R`, `TRAFFIC_LIGHT_REACT{,_RED,_YELLOW,_GREEN}`,
+`LANE_CHANGE_L/R`) with `ANCHOR_ARG_SLOTS = ("goal_x_m", "goal_y_m", "t_reach_s", …)`, and the
+admissibility maps `GOAL_ADMISSIBLE_LAT` / `GOAL_ADMISSIBLE_LON` — **an emitted (goal, action) pair
+that violates them is a contract violation the module must not produce.** ⚠️ `OVERTAKE_VEHICLE` vs
+`EVADE_IN_CORRIDOR` is about the **object** (moving vs static/VRU), not the manoeuvre; they share the
+verb, and conflating them files 419 parked-car evasions with 13 real overtakes.
+
+**Nav (input):** `NAV_COMMAND_TOKENS = (NAV_FOLLOW_ROAD, NAV_TURN_L, NAV_TURN_R)`,
+`NAV_ARG_SLOTS = ("distance_m", "time_s")`, `NAV_PROVENANCE = ("nav-system", "ego-future")`, plus the
+`nav_known` bit (E21). ⚠️ On PhysicalAI the provenance is **`ego-future`** — an oracle, and a
+**per-clip constant** (train `follow 2,897 / left 811 / right 864`). ⇒ Every VLA number conditioned on
+nav carries the **shuffle and zero controls**, exactly like every other nav number here.
+
+**Geometric goal points:** `GOAL_DIMS = 4`, layout `(x, y, heading, speed)` per τ, τ ∈ `(20, 40, 60)`
+decisteps = **2.0 / 4.0 / 6.0 s**, ego frame **x forward, y left, z up** (the rig frame
+`obstacle.offline` uses; MEASURED by the parked-car experiment, 7.4× over the nearest alternative).
+
+**Question input.** A question/instruction port is admissible **as an input to the language module
+only**. ⛔ It may not reach any planner goal node, and the module's answer to a question may not be
+routed into a write port of §9.3 in the same tick — otherwise a question becomes a control channel and
+the goal path stops being information-disjoint from the situation path (PI, 2026-08-03). The CoT/VQA
+material we hold is described in the sibling's §0.2 (23,644 rows / 4,729 clips; `t0_us` = 5,100,000
+against our 8.0 s anchor ⇒ **every join is 2.9 s off unless re-anchored**).
+
+### 9.5 What the module may NOT read at inference — the invariants, restated as port rules
+
+1. ⛔ **No ego state beyond the measured `v0` at t0**, and no future of any kind (§2 I3; PI 2026-09-02
+   allows measured velocity at cycle time and nothing more). The five E11' channels reach `m` under
+   `ego_dropout 0.5` + the X15 presence bit; a VLA that reads `m` **must honour the same withholding
+   draw** — `ego_keep` is a caller-supplied port precisely so the two paths are withheld *together*
+   (`refc.py` E11' comment: "a second, unsynchronised dropout" is the defect it prevents).
+2. ⛔ **No situation-classifier output in any goal input**, in any form — posterior, argmax, embedding,
+   or anything derived from them (PI 2026-08-03). The admissibility check is literal: *"could this have
+   been computed from the situation classifier's output?"* If yes, inadmissible until shown otherwise.
+3. ⛔ **No label at inference.** `obstacle.offline`, the v7.2 labels and the Alpamayo CoT are
+   **train-time** material. A grounding token that resolves against the join at inference is a leak,
+   not a feature.
+4. ⚠️ **`ctx` already contains nav** (`ctx = ctx + nav_s`). A module reading `ctx` and claiming a
+   vision-only reading is wrong about its own inputs; either read `pooled_seq` or state that nav is in
+   the path and carry the controls.
+5. ⚠️ **LiDAR at inference is unresolved doctrine** (`D-REFCV5-PLAN-7`, §2 I3). The VLA plan must not
+   assume it.
+
+### 9.6 The budget — 300–500 ms per tact on Thor
+
+The tact is the **whole** tick: trunk + cascade + decoder + selector + the language module. The module
+gets what is left, not the whole budget.
+
+| item | figure | class |
+|---|---|---|
+| REF-C trunk inference latency on Thor | ⛔ **UNMEASURED** — and it is *the* number that sets the module's share. First item of the VLA plan's WP-0 | — |
+| the encoder's share of a REF-C tick | **~90 %** (`refc.py:2238`) — which is why §9.1 forbids a second vision encoder | INHERITED (source comment) |
+| Thor batching | 20 SMs **saturate at batch 8**; throughput flat 12.3–14.1 windows/s across a 6× batch range | MEASURED (CLAUDE.md, a *training* step on a different trunk — quoted for the saturation point only) |
+| Thor memory probes | ⛔ only in-process `torch.cuda.max_memory_allocated()` is admissible; `mem_get_info`, `free`, `tegrastats` and `VmRSS` all lie, in both directions | MEASURED (CLAUDE.md) |
+| decode floor for a 0.8 B model | `bytes(weights)/bandwidth` ⇒ **~5–6 ms/token bf16 · ~3 ms FP8 · ~1.5 ms NVFP4** | ESTIMATED (spec floor; VLA RESULT §0.3) |
+| ⇒ tokens affordable in 300–500 ms **if the module owned the whole tact** | ≈ **40–70 bf16**, **100–150 FP8** — and it does not own it | ESTIMATED |
+
+⇒ **Two contract terms follow.** (a) The emitted per-tact output is **short and structured
+(≤ ~40 tokens)**, or it is **latent/executable** with prose rendered asynchronously at a lower rate.
+(b) The module's write ports (§9.3) must be producible **without** generating prose — a `p_man` vector
+or a `[B, 5]` log-prob costs one forward, not forty decode steps. ⛔ **A design in which the planner
+waits on text is refused at the interface, not at the eval.**
+
+### 9.7 The consistency constraint — the USP, and the one way it can be faked
+
+**The requirement.** The module's explanation must be **consistent with the trajectory hypotheses the
+planner actually emits** — concretely, with (i) `g_tac`'s geometric goal points `(x, y, heading,
+speed)@τ` and (ii) the **v7.2 factored class of the SELECTED anchor**, obtained by mapping the winner's
+`(a_lon, a_lat)` cell through `refc_tactical.factor_from_kinematics` — the same stratifier
+`D-REFCV3-40284b` used, so the mapping is already exercised and tested.
+
+**The readout** — a **fifth metric family** beside the four (§2 I5), reported per-family and never
+pooled into them:
+
+| readout | definition | must-read control |
+|---|---|---|
+| `tac_consistency` | agreement rate between the module's stated (LAT, LON) pair and the selected anchor's cell class | **constant-only**: a module that always says `(LANE_KEEP, CRUISE)` must read the class **prior** — our corpus is 86.59 % `lane_keep`, 75.76 % `steady`, 67.18 % both, so the prior is ≈ 0.67 and any consistency below it is worse than a constant |
+| `goal_consistency` | distance between a named goal point and `g_tac`'s `(x, y)@τ`, per τ | **shuffle**: the module's output paired with a *different* window's plan must read the marginal |
+| `contradiction_rate` | emitted (goal, action) pairs violating `GOAL_ADMISSIBLE_LAT/LON` | must read **0** on a compliant module — a known value |
+| `fan_endorsement` | does the module's endorsed candidate survive the reach band and the Kamm filter? | a **random-candidate** control must read the fan's own survival rate |
+
+⛔⛔ **THE FAKE, NAMED IN ADVANCE — AND IT IS THE ECHO FAMILY AGAIN.** If the module can **see**
+`sel_idx` / `g_tac` when it explains, then **consistency is satisfiable by description** and the
+number measures nothing: a post-hoc describer scores ≈ 1.0 by construction, exactly as flagship v1's
+route head scored 1.0000 by echoing its own nav input (369/369 and 81/81), and exactly as
+`D-NAVCOMP-1` refused the old route metric for being a bijection of the fed token. ⇒ **The contract
+requires the module's information state at explanation time to be declared, and the two regimes to be
+reported separately:**
+
+| regime | sees the plan? | what consistency means | what must be reported instead |
+|---|---|---|---|
+| **PROPOSER** | ⛔ no — it emits before/independently of the pick | a **real** measurement: two systems agreeing from the same scene | consistency is the headline; the shuffle control must drop it |
+| **DESCRIBER** | ✅ yes | ≈ 1.0 **by construction — not a result** | the headline becomes **faithfulness to the SCENE** (does the named object exist? `grounding_via_vqa`'s 2-D boxes are the only channel that lets a CoT token be checked against image space), never agreement with the plan |
+
+⚠️ And the sharper form of the same rule: **a consistency loss trained into the planner makes the
+planner explainable-by-construction and unfalsifiable at the same time.** If text conditions the
+trajectory *and* is scored against it, the pair is a loop — the C6 confound in language costume. If
+such a loss is used, the eval must include an arm with the loss **off at inference**, and the
+deliberate-regression arm is a module fed **shuffled scenes** whose consistency must collapse. If it
+does not collapse, the instrument cannot see what it is cited for and the panel is **VOID**.
+
+⚠️ **Do not build the consistency claim on `g_str`.** It is **NAV_BLIND** today (Δ_shuffle = 0.0000),
+and `H-NAVC-2` is open. A strategic-consistency readout is admissible but must be reported as
+*conditional on `H-NAVC-2`*, or the module inherits an unfalsifiable seam (the sibling's §0.1 makes
+the same point).
+
+### 9.8 Contract versioning
+
+The contract is **the source**, not this table: `refc.py::RefCModel.forward` (ports and return dict),
+`refc_v3.py` (`StrategicCtx`, `phi_tac`, `str_goal_head`, `tac_goal_head`, `lat_head_tac`,
+`lon_head_tac`), `stack/tanitad/models/vocab_v7.py` (vocabularies), `stack/scripts/s2_geom_emit_v7.py`
+(bands), `stack/tanitad/models/tactical.py` (`GOAL_DIMS`). **Widths change with `size`**; the VLA must
+read them from the built model, never hardcode 704 / 512 / 256.
+
+**What breaks the contract, and therefore needs a note to the Master Mind rather than a local fix:**
+E19 widening `str_goal_head` 3 → 23 (WP-8); the vocabulary v5 rebuild changing the anchor grid
+13 × 9 → 13 × 11 (WP-1, changes the selected-anchor class mapping); the §4 sampler changing the fan
+from `[B, N, S, 2]` to `[B, G·N, S, 2]` (WP-4, changes `sel_idx`'s meaning); and any BEV token added
+to the decoder KV set (WP-12).
+
 
 ## §10 Registered decisions `[PENDING]`
 
