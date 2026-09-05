@@ -179,3 +179,24 @@ One variable (RL stage on/off on the frozen base), four arms (base = the banked 
 | the RL-fit data (8 clips 304 MB, lead block, obstacle parquets, fitlist) | `C:\Users\Admin\rl_refcv3_min\` — dev box only (regenerable: Thor cache + `build_lead_block_b1.py --pull`) |
 | the base checkpoint copy | `C:\Users\Admin\rl_refcv3_min\base\ckpt_step40284_frozen.pt` (md5-verified copy of `run_refcv3_viz/ckpt/`; HF `Sayood/tanitad-refc-v3`) |
 | ⛔ NOT produced | any trained arm, any checkpoint, any T1 number — the chain was not launched |
+
+---
+
+## 10. RE-SCOPE 2026-09-05 (the PI's correction) — STATUS HEADER, rewritten as each arm lands
+
+**status (2026-09-05 09:12 local / 07:12Z): RE-SCOPE STARTED — nothing run yet; this header is banked FIRST (the API limit killed three agents in 36 h).** Deploy FlyWheel, third agent on this package (`a642249` = the readiness package, IN HEAD, verified by `git cat-file -e` on all five paths). ⛔ `tanitad-refcv3` (refcv4b-b1-v72-40k LIVE) never touched. GPUs at start: dev-box 4060 **100 % busy** (the withheld-bank panel, another stream) · Thor `refav1_arm.py` **running 1h46m at 97 %** (expected done ~09:00Z). Rule in force: use whichever frees FIRST, never both; poll ≤ every 5 min; launch only after a real `utilization.gpu` idle reading.
+
+**The PI's correction, verbatim:** *"Regarding RL, I don't agree you can do only what you stated, the paper is talking about improving/eliminating trajectories leading to [collisions / infeasible outcomes]."*
+
+**What it changes.** `H-RL-MIN-1`'s primary endpoint was the four-family distance to the human, under which the constant-velocity floor already beats the human on 78.3 % of lead windows (§3.3) — so the committed prediction was NULL. That endpoint cannot see V2's mechanism. DiffusionDriveV2's RL exists to push probability mass AWAY from collision-prone and infeasible candidates: the collision-truncated advantage (collision → −1; positive advantage only for samples above the ≥GT bar), pinned from the code in `…/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md` (`D-DDV2-*`). **The primary endpoint is therefore FAN SAFETY** on the EMITTED fan (top-k and the selected trajectory), before vs after RL on the frozen base: (a) time-aligned contact against the replayed `obstacle.offline` lead track; (b) TTC-below-threshold rate (2.93 s, the `H-RL-THRESH-1` class); (c) infeasible / off-reach fraction (reach band + Kamm load, `stack/tanitad/instruments/flyability.py`); (d) the confidence-head probability mass on (a)–(c). The four families stay as the SECONDARY endpoint with the original prediction retained.
+
+**Plan (each step banked + committed as it lands):** (1) `SPEC.md` §10 re-scope, dated, original kept — with both outcomes committed in advance; (2) code: `advantage.py` gains the ≥GT mask (positive inter-anchor advantage only above the human's own reward on the same window; collision stays pinned −1), `refcv3_adapter.py` gains the two-scalar (along, lateral) noise-scale policy, the driver passes the GT bar and a `fan_safety` readout, a new analysis tool scores (a)–(d) on any `openloop_suite` dump; tests pinned; (3) STAGE 1–2 (clip pull from Thor over the LAN, fit lead block) — I/O only; (4) arms `ctrl0` → `rl` → `reg_echo` on the first free GPU, T1 evals paired against the banked refcv3-40284 dump, fan-safety scored on base and every arm; (5) verdict per the committed outcomes; register rows in the same turn.
+
+| step | state | artifact |
+|---|---|---|
+| STATUS header banked | **done** (this section) | this file, commit id in the final report |
+| SPEC §10 re-scope | pending | `SPEC.md` |
+| code + tests | pending | `stack/tanitad/rl/{advantage,refcv3_adapter}.py`, `stack/scripts/rl_refcv3_min.py`, `taniteval/tools/fan_safety.py`, `stack/tests/` |
+| STAGE 1–2 (I/O) | pending | `C:\Users\Admin\rl_refcv3_min\fit120\`, `fit120_lead_block.npz` |
+| arms + T1 + fan safety | pending — GPU-gated | `raw/run/<arm>/` |
+| verdict + register | pending | §11+, `GOALS_AND_CLAIMS.md` |
