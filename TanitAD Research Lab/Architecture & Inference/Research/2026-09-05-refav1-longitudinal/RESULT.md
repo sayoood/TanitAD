@@ -443,11 +443,23 @@ The seed floor on the same metric is **+0.0076**, so a longitudinal lever has
 **64× the headroom it needs** to be distinguishable; the binding question is
 size, not detectability.
 
-⚠️ **Two sibling arms, harvested here (they landed 21:05 / 21:11 UTC) and read
-against the same baseline — both show the SAME trade:** `kamm07` and `l3ladder`
-each improve the longitudinal family (−0.078, −0.062) while making ADE
-separably **worse** (+0.099, +0.430). Neither closes the gap: together they
-cover ~16 % and ~13 % of +0.4862 at a real ADE cost.
+⚠️ **ALL THREE sibling arms, harvested here rather than left for later (their
+own `HANDOFF.md` asked for exactly this), read against the same baseline — and
+all three show the IDENTICAL trade.** `raw/pd_lonbase.md` (first two) and
+`raw/pd_lonbase2.md` (all three):
+
+| arm − `wk15` | ADE | LON speed MAE |
+|---|---|---|
+| `kamm07` (Kamm cap) | **+0.0993 [+0.0039, +0.2149]** worse | −0.0781 [−0.1440, −0.0183] better |
+| `l3ladder` (seed ladder) | **+0.4301 [+0.0556, +1.0860]** worse | −0.0617 [−0.1183, −0.0108] better |
+| `combined` (ladder + Kamm) | **+0.1570 [+0.0276, +0.2788]** worse | −0.0592 [−0.1112, −0.0100] better |
+
+⇒ **Every SEARCH-GEOMETRY lever buys ~12–16 % of the longitudinal gap and pays
+for it with separated ADE damage.** `combined` still sits **+0.4269 [+0.2428,
++0.6559]** from `ha0_ext` on LON speed. ⭐ That is a third independent argument
+that the longitudinal blocker is **not** where the search can reach: it is the
+vocabulary the search is copying (§1.7) and the cost that lets it copy nothing
+(§2).
 
 ---
 
