@@ -150,19 +150,44 @@ required before any "the lever moved it" claim is quotable.
 
 ## Deliverable manifest
 
-| artifact | location | status |
-|---|---|---|
-| `GATE_MECHANISM.md` | this package | banked `b90ed1f` |
-| `GATE_ON_REAL_MODEL.md` | this package | banked `ae34ee5` |
-| `TWO_GATES.md` | this package | banked `6753674` |
-| `RESULT.md` (this file) | this package | banked |
-| `tools/assert_gate.py`, `assert_plan_gate.py`, `assert_metric_gate.py` | this package | banked |
-| `tools/validate_shortcut.py`, `turn_execution.py`, `bias_ladder.py`, `run_ab.sh` | this package | banked |
-| `raw/*.json` (11 files) | this package | banked |
-| **`stack/tanitad/refs/refa_v1.py`** (the lever) | repo | banked `6753674` |
-| **`stack/tests/test_refa_v1_lat_bias.py`** | repo | banked `6753674` |
-| **`taniteval/tools/refav1_arm.py`** (`--lat-logit-bias`) | repo | banked `87a56c4` |
-| A/B dumps + records | `C:/Users/Admin/refav1_drive/ab/` (dev box, **off-repo**) | running |
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-make-it-drive/`
 
-⚠️ The A/B outputs are on the dev box only. When they land they must be banked into
-`raw/` — dumps are large, so bank the **records** and the analysis, and note the dump path.
+| document | what it establishes |
+|---|---|
+| `GATE_MECHANISM.md` | gate 1 from source, link by link |
+| `GATE_ON_REAL_MODEL.md` | gate 1 as an identity on the trained ckpt; the inert weights; ⛔ the shortcut that does **not** generalise |
+| `TWO_GATES.md` | ⭐ gate 2 — `cos` refuses a correct turn — and the reconciliation with `D-REFAV1-CCOS-ARMS` |
+| `MUST_WE_RETRAIN.md` | ⭐ the PI's question answered: the ROC ceiling of Step 1 and the 0.297-logit margin gap |
+| `RESULT.md` | this file — the synthesis, the escalations, the next steps |
+
+| instrument (`tools/`) | asserts / produces | control that had to fail |
+|---|---|---|
+| `assert_gate.py` | gate 1 component-wise | TURN_L/TURN_R non-zero; decel accel non-zero; noise std 1.0 |
+| `assert_plan_gate.py` | gate 1 through the real `plan()`; W_VEND inert | W_VEND active with `target_speed`; `W_KAPPA=1e3` moves the plan |
+| `turn_execution.py` | ⭐ gate 2 on the trained ckpt | `ha0_ext` curvature 98.9 % non-zero ⇒ the column is live |
+| `assert_metric_gate.py` | gate 2 across 4 search sizes | `ccos` turns on the same windows |
+| `validate_shortcut.py` | planner-vs-canonical, per channel | shifted-token match 0.35–8.5 % |
+| `decision_ceiling.py` | ⭐ the ROC ceiling + margin gap | shuffled-label AUC 0.5055 ± 0.0336 |
+| `bias_ladder.py` | the decision-rule ladder, exact, zero GPU | `b=0` reproduces the banked decode |
+| `assert_stride5.py` | anchors the 1974-window panel | shifted join must not match |
+| `goalhead_confusion.py` | **FIXED**: 6-token lon vocab dropped 133/282 | `hist()` now asserts totals reconcile |
+| `run_ab_targeted.sh` · `analyze_targeted.py` | the 3-arm A/B and its analysis | unchanged windows must be bit-identical |
+| `run_replicate.sh` | the seed replicate (`H-ESTIM-SEED-1`) | — |
+| `paired_delta_refav1.py` · `analyze_ab.sh` | decision-grade paired estimator | `argmax-argmax` must read exactly 0 |
+
+**Raw:** 21 JSON in `raw/` + `raw/logits/` (the extraction inputs, sha256-verified, 183 KB —
+so every ladder number is reproducible from the repo, not from one machine's scratch dir).
+
+| code, in the repo proper | change |
+|---|---|
+| `stack/tanitad/refs/refa_v1.py` | `lat_logit_bias` at the gate-1 site, threaded through `plan()`/`imagined_goal()`, stamped on the result |
+| `stack/tests/test_refa_v1_lat_bias.py` | 8/8 — parity pinned bit-for-bit; `test_d_*` pins gate 2 so it cannot rot |
+| `taniteval/tools/refav1_arm.py` | `--lat-logit-bias` + stale-stack verify-gate + reached-`plan()` check + `manifest["goal_rule"]` |
+
+**Suite:** 278 passed, 1 skipped (`refa_v1`\|`cost_ccos`\|`cost_chord`\|`ego_plan`).
+
+⚠️ **OFF-REPO, and the only thing not banked:** the A/B dumps and records at
+`C:/Users/Admin/refav1_drive/abt/` on the **dev box** (dumps are large). Recover with
+`refav1_arm.py --analyze-only <dump>` — the GPU is already paid — then
+`tools/analyze_targeted.py`. The filtered episode view is `C:/Users/Admin/refav1_drive/tgt/`
+(hardlinks, rebuildable from `raw/logits/logits_stride40.npz`).
