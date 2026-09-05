@@ -15,7 +15,7 @@ export PYTHONIOENCODING=utf-8
 export OMP_NUM_THREADS=4
 
 BASE="wk15"
-NEW="lonvocab lonseam lonvocab_s1 loncomb"
+NEW="lonshift lonseam lonshift_s1 seambase seamon lonvocab loncomb3"
 
 # ---- 0. say what landed and what did not --------------------------------- #
 {
