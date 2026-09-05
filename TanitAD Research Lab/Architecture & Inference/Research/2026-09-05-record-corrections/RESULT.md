@@ -7,7 +7,7 @@
 | 1 | register `refcv4b-b1-v72-40k` in `MODEL_REGISTRY.md` (TRAINING row, MODEL-FREE gate figure) | ✅ landed | `8cb69ac` | `### 4.6 REF-C **v4b**` ×1; blob index = worktree |
 | 2 | apply the queued register rows (`D-REFAV1-COST-SCALE`, `D-REFAV1-COST-FORM`) + the `D-REFAV1-EPOCH-PLAN-VOID` mechanism amendment + RETRACTION_LOG #21 | ✅ landed | `7fce999` | rows ×2/×1, `# 2026-09-04 (#21)` ×1, registry §2.4 amendment ×1, PREREG note ×1; 4/4 blobs verified; TURNCOV1 / FLYLOW1 / DDAUDIT-1 / NAV-WIRING survived (1/1/2/1) |
 | 3 | retract *"every grid contains `a = 0` exactly"* (`2026-09-04-refcv4-gate-validation/RESULT.md` §3.5) + downstream fixes, RETRACTION_LOG #22 | ✅ landed | `8ee4549` | `# 2026-09-05 (#22)` ×1, RESULT.md correction ×1, KINVOCAB1 qualifier ×1, probe annotation ×1; 4/4 blobs verified; `KINVOCAB_PROBE.json` untouched (md5 `bae65bb401a07607cc0a5406b3e8339e`) |
-| 4 | self-describing anchor artifact: builders write units/provenance, loader REQUIRES `control_units`, trainer stamps the seam booleans, 15 tests, CLAUDE.md trap | ✅ landed | the commit that carries this file (id in the report) | markers asserted in HEAD for all 7 paths (see the manifest) |
+| 4 | self-describing anchor artifact: builders write units/provenance, loader REQUIRES `control_units`, trainer stamps the seam booleans, 15 tests, CLAUDE.md trap | ✅ landed | `6dd5042` (this file's own id stamped in the follow-up commit) | markers asserted in HEAD for all 7 paths (see the manifest) |
 
 Predecessor on this task died twice at the API limit before landing anything; hence the per-item banking.
 
@@ -93,7 +93,7 @@ and four caveats (attribution forfeited; seam booleans absent from ITS config.js
   content (`np.any(grid == 0.0)`); `patch_trainer.py:124` is the historical patch that carried the wording
   into the trainer — a banked raw script, cited in the entry rather than rewritten.
 
-## Item 4 — the anchor artifact carries its own units (the commit that carries this file)
+## Item 4 — the anchor artifact carries its own units (commit `6dd5042`)
 
 | file | change |
 |---|---|
@@ -128,9 +128,13 @@ weights-only-safe — `provenance_stamp` records `str(torch.__version__)`.
 | PREREG note | `repo:Project Steering/PREREG_TACTICAL_DECODER.md` (`7fce999`) |
 | retractions #21, #22 | `repo:Project Steering/RETRACTION_LOG.md` (`7fce999`, `8ee4549`) |
 | §3.5 correction + probe annotation | `repo:TanitAD Research Lab/Architecture & Inference/Research/2026-09-04-refcv4-gate-validation/{RESULT.md, raw/scripts/kinvocab_probe.py}` (`8ee4549`) |
-| `anchor_meta.py`, trainer, FPS builder, tests, alat builder, CLAUDE.md bullet, this file | `repo:` paths in the item-4 table (item-4 commit) — also mirrored in `C:\Users\Admin\refcv4b_suite\stack` (tests ran there) |
+| `anchor_meta.py`, trainer, FPS builder, tests, alat builder, CLAUDE.md bullet, this file | `repo:` paths in the item-4 table (commit `6dd5042`; 7/7 blobs verified, markers asserted in HEAD) — also mirrored in `C:\Users\Admin\refcv4b_suite\stack` (tests ran there) |
 | the edit tools (re-runnable, exact anchors) | `devbox:…\scratchpad\{apply_docs.py, patch_item4.py}` — session scratch, not banked (the edits they made are in the commits) |
 | pre-patch comparison tree | `devbox:C:\Users\Admin\refcv4b_suite_orig\stack` (disposable) |
 
 Nothing is stranded on a pod. No file was shipped to `tanitad-refcv3`; the live run and its `anchors.pt`
 are untouched.
+
+## End-of-turn re-verification (2026-09-05, after all four commits)
+
+Every path from the four commits compared `git rev-parse HEAD:<path>` against `git hash-object <path>` (both 40 chars): 13/13 VERIFIED except `GOALS_AND_CLAIMS.md`, whose worktree copy carries a sibling's UNCOMMITTED edit on top of HEAD (HEAD still holds `D-REFAV1-COST-SCALE`, `D-REFAV1-COST-FORM`, the `#21` amendment and the `#22` qualifier — asserted positively by `git show HEAD:` grep, and the same rows are present in the worktree copy). The mount wedged three times during the task (04:05, ~04:45, ~05:00 local); each time the Drive client was restarted under the PI's standing authorisation and returned within 5–120 s. ⚠️ A `git show` that returns EMPTY during a wedge is not content: the first item-4 attempt read an empty `HEAD:CLAUDE.md`, diffed it against the worktree and reported 873 "foreign" lines — the whole file. The check now refuses to conclude anything from an empty or short `git show` (`check_claude.py`, exit 3 = no conclusion).
