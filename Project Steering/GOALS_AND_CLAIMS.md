@@ -2913,3 +2913,17 @@ fewer than four families is INCOMPLETE. Same family as the trainer log that went
 healthy, and the memmap of zeros that exited 0 — **an error path that reports success in the shape the
 reader expects.** ⇒ A refusal reason that names a `TypeError` from our own module is a BUG, never a
 refusal, and should be re-raised.
+
+---
+
+### 2026-09-05 — the collision term could not see a car it drove through
+
+| id | claim | status | evidence |
+|---|---|---|---|
+| D-SWEPT-1 | ⛔ **`rl/rewards.py::_collision` TESTED THE SAMPLED WAYPOINTS, NOT THE PATH BETWEEN THEM** — a candidate whose consecutive waypoints straddle an obstacle was scored **safe**. MEASURED on the banked base fan (240 windows × 128 candidates × 5 steps, `r = 2.0 m`): waypoint spacing **median 6.628 m / p95 13.381 m / max 46.160 m**, so the undetected corridor (`spacing − 2r`) at p95 is **+9.381 m — longer than the vehicle.** On the 8,320 pairs with a lead the point test fires on **9.1827 %** and the swept test on **12.6562 %**: **289 newly-caught straddling candidates (+37.8 % relative)**, and **18 of 65 lead windows (27.7 %)** contained at least one candidate that drove through the lead undetected | **SUPPORTED (MEASURED 2026-09-05, instrument tier — ⛔ NOT T0/T1, no arm ranked)** | `…/Deployment & Optimization/Research/2026-09-05-swept-collision/RESULT.md`; `raw/swept_vs_point.json`; `repo:stack/tanitad/rl/rewards.py::segment_point_distance`; pin `repo:stack/tests/test_collision_swept_segment.py` (**11 passed**, incl. a deliberate-regression control asserting the PRE-FIX expression passes the straddling fixture) |
+| D-SWEPT-2 | ⚠️ **THE SWEPT FORM IS A STRICT SUPERSET, SO EVERY CONTACT NUMBER BANKED UNDER THE POINT TEST IS A LOWER BOUND — NOT A NUMBER TO BE REGRESSED AGAINST.** `lost = 0` on the real bank and over 5 random seeds: every waypoint is an endpoint of some segment and the clamp includes `t ∈ {0,1}`. ⇒ the RL panel's human contact **0.0000**, refcv3's **0.0007**, and the identically-zero `sel_contact`/`top8_contact` columns are all lower bounds under a weaker predicate. ⛔ **A swept re-read is a DIFFERENT measurement and must be labelled with which predicate produced it; it is not a regression.** ⭐ Same direction for the veto arm: a veto keyed on this predicate was letting straddling candidates through, so its measured feasibility gain is a lower bound too — the fix can only reveal more to veto, never less | **SUPPORTED (MEASURED 2026-09-05)** | same pins |
+| D-SWEPT-3 | ⭐ **THE TIME-ALIGNED LEAD GUARD SURVIVES THE FIX** — the moving branch is swept in the **RELATIVE frame** (`lead_s − traj_s` against the origin), so the lead's own motion over the step is accounted for. Sweeping the ego path against a **static** lead would have re-introduced `H-RL-THRESH-1` (*a safety term that fires on the demonstration*: holding the lead at its t0 sample flags every competent follower). Pinned by a test that a 2 s-gap follower is NOT flagged, with a same-breath **positive control** — a stopped lead IS flagged — so the branch cannot pass by being inert | **SUPPORTED (MEASURED 2026-09-05)** | same pins |
+
+⚠️ **Open, and owed:** the **static**-obstacle branch's fire-rate change is unmeasured — the banked fan
+carries `lead5` but no static obstacle set. It becomes readable once the agent-track join is wired
+into the batch, and the same before/after belongs in that package.

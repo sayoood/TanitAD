@@ -234,6 +234,49 @@ def _progress(traj: Tensor, ctx: dict) -> Tensor:
     return kin.along / ref
 
 
+def segment_point_distance(p0: Tensor, p1: Tensor, q: Tensor) -> Tensor:
+    """Min distance from each point ``q`` to each SEGMENT ``p0 -> p1``.
+
+    ``p0``, ``p1`` ``[..., S, 2]``; ``q`` ``[..., K, 2]``; returns ``[..., S, K]``.
+
+    ⛔ **This exists because the point test has a hole with a SIZE.** Sampled
+    waypoints are ``v*dt`` apart; with a combined radius ``r`` an obstacle sitting
+    more than ``r`` from BOTH endpoints but inside the segment is invisible to a
+    point test, so the undetected corridor per segment is ``v*dt - 2r`` — metres
+    on our grid, not a rounding concern. A finer time grid costs compute forever
+    and still leaves a smaller hole; the segment test closes it exactly.
+
+    A degenerate (zero-length) segment — a stopped ego — falls back to the point
+    test by construction: the numerator is then exactly 0, so ``t = 0`` and the
+    closest point is ``p0``. The clamp of the denominator only avoids 0/0.
+    """
+    d = p1 - p0                                       # [..., S, 2]
+    qq = q.unsqueeze(-3)                              # [..., 1, K, 2]
+    p0e = p0.unsqueeze(-2)                            # [..., S, 1, 2]
+    de = d.unsqueeze(-2)                              # [..., S, 1, 2]
+    denom = (de * de).sum(-1).clamp_min(1e-12)        # [..., S, 1]
+    t = (((qq - p0e) * de).sum(-1) / denom).clamp(0.0, 1.0).unsqueeze(-1)
+    return (qq - (p0e + t * de)).norm(dim=-1)         # [..., S, K]
+
+
+def _swept_hit(path: Tensor, obs: Tensor, r: float) -> Tensor:
+    """``[...]`` bool: does the swept path come within ``r`` of any obstacle?
+
+    ORs the segment test with the point test. The segment test already covers
+    every waypoint (each is an endpoint of some segment, and ``t`` includes 0 and
+    1), so the OR is a belt-and-braces guarantee that the swept form can NEVER
+    detect LESS than the form it replaces — which is what makes the banked
+    numbers a lower bound rather than an incomparable measurement. With fewer
+    than two waypoints there is no segment and the point test is all there is.
+    """
+    pt = (path.unsqueeze(-2) - obs.unsqueeze(-3)).norm(dim=-1) < r      # [...,S,K]
+    hit = pt.any(dim=-1).any(dim=-1)
+    if path.shape[-2] >= 2:
+        seg = segment_point_distance(path[..., :-1, :], path[..., 1:, :], obs) < r
+        hit = hit | seg.any(dim=-1).any(dim=-1)
+    return hit
+
+
 def _collision(traj: Tensor, ctx: dict) -> Tensor:
     """-1 if the path comes within (ego_r + obs_r) of any obstacle, else 0.
 
@@ -265,13 +308,20 @@ def _collision(traj: Tensor, ctx: dict) -> Tensor:
         lead = ctx.get("lead_path")
         if lead is None:
             return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
-        d = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)      # [..., S-1]
-        hit = (d < r).any(dim=-1)
+        #: ⭐ SWEPT, and swept in the RELATIVE frame so the time alignment
+        #: survives: contact is |lead_s - traj_s| < r, i.e. the relative path
+        #: entering a disc of radius r about the ORIGIN. Sweeping the relative
+        #: segment therefore accounts for the lead's own motion over the step;
+        #: sweeping the ego path against a STATIC lead would re-introduce the
+        #: H-RL-THRESH-1 failure the docstring above exists to prevent.
+        rel = lead[..., 1:, :] - traj[..., 1:, :]                   # [..., S-1, 2]
+        origin = torch.zeros_like(rel[..., :1, :])                  # [..., 1, 2]
+        hit = _swept_hit(rel, origin, r)
         return torch.where(hit, -torch.ones_like(hit, dtype=traj.dtype),
                            torch.zeros_like(hit, dtype=traj.dtype))
-    # traj [..., S, 2] vs obs [..., K, 2] -> pairwise [..., S, K]
-    d = (traj.unsqueeze(-2) - obs.unsqueeze(-3)).norm(dim=-1)
-    hit = (d < r).any(dim=-1).any(dim=-1)
+    #: traj [..., S, 2] vs obs [..., K, 2]. ⭐ SWEPT: the point test missed any
+    #: obstacle more than r from both endpoints of a segment it sits inside.
+    hit = _swept_hit(traj, obs, r)
     return torch.where(hit, -torch.ones_like(hit, dtype=traj.dtype),
                        torch.zeros_like(hit, dtype=traj.dtype))
 
