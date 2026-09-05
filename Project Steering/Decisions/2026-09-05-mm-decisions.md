@@ -1963,3 +1963,74 @@ count** (`H-FAN-QUALITY-1`). Class logged: ***a best-of-N statistic read as a sk
 whitespace run**, repaired in `b90d92c`. ⚠️ **A `grep -c` on HEAD did NOT catch it, because the
 marker survived on one side of the collapse.** ⇒ **a marker count is not an integrity check** — the
 padding-run check that found it is now part of the end-of-turn verification.
+
+## M40. `coll200` FAILS its committed criterion — the gain did not replicate, the COSTS did, and a 12-decimal coincidence was correctly refused
+
+### 1. The verdict, against SPEC §6 as written
+
+`fan_contact` is separated on **s0 only** (−0.001693 **sep** / −0.001693 **ns**, same sign);
+`top32_contact` and `fan_unsafe` **disagree in SIGN** across seeds. SPEC §6 required separation at
+**both**. ⇒ **FAILURE**, reported as written.
+
+⭐⭐ **And the asymmetry is the finding: the GAIN did not replicate while the COSTS did.**
+`fan_peak_g_mean` **+0.0253 / +0.0407** and `fan_infeasible` **+0.0022 / +0.0025** are separated at
+**both** seeds, **same sign**, and **larger on the second**.
+
+⇒ In the stream's own words: ***"quoting only s0's `fan_contact` would have been true and
+misleading."*** That is `H-ESTIM-SEED-1` doing precisely the job it was written for — and note that a
+one-seed report here would have been a *positive* headline.
+
+### 2. ⭐⭐ A TWELVE-DECIMAL AGREEMENT, CORRECTLY REFUSED
+
+Both seeds reported an episode-clustered delta of **−0.001692708333 to twelve decimals**. That is the
+most convincing replication signal a reader could be shown.
+
+⛔ **It is an artefact.** Their AFTER states genuinely differ — **611/4608 vs 613/4608** — and their
+**full-population** changes are **−0.001519 vs −0.001085**, i.e. **1.4× apart**. The clustered
+agreement is a **cluster-weighting** coincidence, not a stable effect.
+
+⇒ **CLASS, and it is new: an implausibly exact agreement between two arms is evidence of a shared
+DENOMINATOR, not of a shared effect.** ⭐ The discriminator is to read the **raw counts and the
+unclustered change** beside the clustered delta — which is a cheap check that no estimator rule so
+far demanded. *A number too good to be noise is usually not a number about what you think.*
+
+### 3. ⭐ A sibling retired its endpoint mid-run — it verified, accepted, and STOPPED ITS OWN SPEND
+
+`M39` took `fan_contact` to a **structural zero at +0.0000 m, zero GPU**, and the escalation named
+this running arm. The stream read both **on their merits** rather than defending its own:
+
+* ⭐ **Their result CONFIRMS its P2 rather than contradicting it** — it had measured the *friction*
+  projection making contact worse; they built a separate *contact* stage and say so explicitly.
+* They **independently reproduce its swept/point correction** (**+37.83 %** vs **+37.8 %**), derived
+  from **opposite directions**.
+* ⭐ **It reconciled the population discrepancy from the ARTIFACT, not by inference**
+  (`fan_safety_n["fan_contact"] = 36`): its base is **618/4,608 over 36 lead windows**; the banked
+  fan's **0.034277** is the **all-windows** rate whose **lead-only** counterpart is **0.126562**.
+  ⇒ 0.134115 vs 0.126562, **both lead-only, both swept, 5.97 % apart — reconciled, not flagged.**
+
+⇒ **It cancelled its own T1 four-family evals (~40 GPU-min against a retired endpoint), and recorded
+the reason IN THE FILE THAT WOULD HAVE RUN THEM.** The in-flight arms finish because they cost no
+further GPU and establish the noise floor. ⭐ **That is the collaboration working: a stream killed its
+own headline experiment on a sibling's evidence, and freed the scarcest resource we have.**
+
+### 4. It sized the defect `M39` named but did not measure
+
+`_collision` never sweeps the **t0→t1** segment. **MEASURED: it hides 2 of 1,053 colliders
+(+0.19 %), 0 new windows, and 0/65 leads sit within 2 m at t0.** Control: a reimplementation
+restricted to segments 1–3 reproduces the stock flag with **0 disagreements**, so the difference is
+attributable to the first segment **alone**.
+
+⇒ **Real, and immaterial HERE — and immaterial only here.** ⚠️ On a corpus with **close cut-ins or a
+parked obstacle** it would not be, and the fix ships **default OFF** rather than being dismissed.
+
+### 5. Two errors it caught in itself
+
+* ⛔ **A `one_variable` violation, caught by its own controls.** It first folded the segment fix into
+  the S2 graded component; **S1 and S3 failed immediately** because the change moved the term's
+  **SUPPORT** as well as its **GRADING** — two levers in one arm. Now a separate switch, default OFF,
+  so S2 stays **support-identical** to the stock term. Fix-ON gains **exactly 2** candidates,
+  matching an independently written probe.
+* ⚠️ **Its banking check used a `size > 200` threshold, which cannot distinguish "copied" from
+  "already there and stale"** — and it passed a **stale `RESULT.md`**. Re-banked with **md5 content
+  verification**. ⇒ same family as *a marker count is not an integrity check* (`M39` §6): **a size
+  check is a claim about the file's existence, not about its content.**
