@@ -326,6 +326,21 @@ P2(b) has been missing.** *"We have never given this model a command, only a des
 what it already did"* stops being a design complaint and becomes a **runnable arm (A1)**,
 using an artifact the programme already owns and validated.
 
+⭐⭐ **AND TWO SIBLING RESULTS THAT LANDED WHILE THIS WAS BEING WRITTEN MAKE THE POINT MORE
+SHARPLY THAN I DID** (`3f4028d` L4, `d0a5c9c` M31, both 2026-09-05, `--kamm-mu 0.7`):
+*"a penalty strong enough to prevent bad behaviour also prevents GOOD behaviour, while a
+projection deletes the infeasible turn and leaves the feasible one untouched"*, and
+**peak_g MAX 3.262 → 0.707 — `mu` itself, to numerical tolerance**, with the turn decisions
+preserved bit-for-bit. Their conclusion: ***"a constraint with units binds exactly where its
+physics says it should, which is the signature of a constraint rather than a tuned penalty."***
+
+⛔ **That sentence is the indictment of v7f's action channel, stated in someone else's words.**
+A constraint needs **units**; v7f's `omega_accel_v` has no commanded units at all — it is the
+ego's realised `[yaw_rate, a_long, v]` played back. ⇒ the reference line has just demonstrated,
+on the safety axis, that **the whole class of levers that works requires the very
+parameterisation v7f does not have.** That is the strongest available argument for A1, and it
+did not come from me.
+
 ### 4.2 ⭐ A second, smaller transfer — priced today, 0 GPU, and it corrects the gate doc
 
 `V7_LAUNCH_GATE` leaves the O11 same-clip-negatives control scoped as *"neither is small"*,
