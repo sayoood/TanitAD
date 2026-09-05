@@ -336,3 +336,304 @@ is **not** established by it, and it is not claimed here.
 6. The **echo gate is INCONCLUSIVE** (§11.1). No PASS would have been admissible from this panel.
 7. `ctrl_const` is a veto-only arm by accident rather than by design; it happens to be exactly the
    arm the attribution needed, but it was not pre-registered as such.
+
+---
+
+## 12. ⭐⭐ THE FINISHED VERDICT (2026-09-05, Deploy FlyWheel, fourth agent on this package)
+
+**What §12 adds to §11.** §11 banked the arms and the attribution. Three things were missing and are
+supplied here: **(1)** an adjudication of the pre-registered `V4` VOID gate — §11 selected outcome
+`4 FAIL-SAFETY` *past* a fired VOID gate, which SPEC §10.6's "first match in order" does not permit,
+and the correction changes which comparison is quotable; **(2)** the verdict written against the
+**committed** outcome text, with the all-zero contact rows QUANTIFIED rather than asserted; **(3)**
+the SECONDARY endpoint — the four families at **T1** — which §11.6 forward-referenced as "§11.7" and
+which did not exist. It is now measured, over the **full** corpus, at **zero GPU**.
+
+### 12.1 `V4` — the mechanism, and exactly what it does and does not void
+
+**MEASURED, and the mechanism is in the source, not inferred from it.** `ctrl_const` sets every
+reward weight to `0.0`, and its weights nevertheless moved (`weights_changed: true`,
+`veto_rate_mean` **0.0897**, `final_loss` **−1.863** — not the `0.0` a zero advantage would give).
+The cause is two lines that consult the reward's **key set, never its values**:
+
+```
+stack/tanitad/rl/posttrain.py:205-209
+    veto = None
+    if "collision" in spec.weights:                    # KEY membership — true at weight 0.0
+        veto = R.COMPONENTS["collision"](traj, ctx) < 0
+    ttc = R.ttc_violation(traj, {**ctx, "ttc_min_s": cfg.ttc_min_s})   # never reads weights at all
+    veto = ttc if veto is None else (veto | ttc)
+```
+
+`advantage.py:136` then centres the reward (identically `0.0` ⇒ advantage `0.0`), and `:146` pins
+vetoed candidates at `veto_value = −1.0` **after** the bar, outside the centring — deliberately,
+because a constraint pins where a ranking term orders. ⇒ **a constant reward does not give a zero
+advantage; it gives a *veto-only* advantage at full strength.** `ctrl_const` is not a broken control;
+it is an unintentionally exact **veto-only arm**. Already logged as **RETRACTION #24**, which also
+tested and REFUTED the competing explanation (AdamW decoupled weight decay: predicted shrink 0.99998,
+MEASURED 0.99999996, and only 47/72 tensors shrank — not the mechanism).
+
+**Does the panel stand? It stands in part, and the split is not negotiable.** The distinction that
+settles it is between an **attribution** claim and an **effect** claim:
+
+| claim | status | why |
+|---|---|---|
+| *"the REWARD moved fan safety by X"* (`rl` − base) | ⛔ **VOID** — `V4`, as pre-registered | Two channels moved in **opposite** directions (§11.3): the veto improved feasibility, the reward worsened it. `rl` − base sums them and attributes nothing. `V4`'s stated consequence — *"no `rl` result above it means anything"* — is not merely triggered, it is **substantively correct**. §11.2's `rl`-vs-base table is therefore **not** quotable as a lever effect, and the exit label `4 FAIL-SAFETY` selected past it is withdrawn (see §12.7). |
+| *"the reward, with the veto held fixed, moved X"* (`rl` − `ctrl_const`) | ⚠️ **ADMISSIBLE but POST-HOC** | Not pre-registered. Its validity conditions are met and re-verified by me: the four arms' BEFORE readouts are **bitwise identical** (max abs diff **0.000e+00** across all 120 windows × 57 metrics — I re-checked, I did not inherit it), same windows, same estimator. It is the correct analysis of the structure that was discovered; it is not the analysis that was promised. |
+| *"this stage, as configured, produced a worse planner"* (`rl` − base at T1) | ✅ **NOT VOID** | `V4` is about which **internal channel** caused a fan-safety change. It says nothing about whether the **resulting checkpoint** drives worse. That is a before/after on a fixed pipeline, and §12.5 answers it with no attribution surgery required. |
+
+⇒ **The panel does not need re-running for the attribution.** What it needs before any row is quoted
+as a *lever* effect is a **replicate** — `H-ESTIM-SEED-1`: none of these three comparisons is
+controlled for training variance, because `ctrl0` has `lr = 0` and never trains at all.
+
+⚠️ **`V4`'s wording is the defect to fix, not the control.** *"moved ANY fan-safety metric"* is
+untrue of the arm's purpose the moment a constraint channel sits outside the reward by design. The
+repair for the next pre-registration is to scope the gate to what it was protecting:
+**"`ctrl_const` moved any metric BY A PATH OTHER THAN THE VETO"**, with `veto_rate_mean` printed
+beside it — a gate that reads its own mechanism's firing rate cannot be surprised by it.
+
+### 12.2 The verdict, written against the committed outcome text — and it SPLITS by family
+
+SPEC §10.6 is mechanical and first-match, so the formal exit is stated first and without softening:
+
+> ⛔ **FORMAL EXIT: `V4` → VOID.** The constant-reward control moved 14 of 57 fan-safety metrics with
+> paired separation. Every downstream fan-safety exit (1 PASS / 2 NULL / 3 TRADE-OFF / 4 FAIL) is
+> reached only *after* `V4`, and `V4` fired.
+
+`V5` (VOID-NOROOM) is then reported for completeness because it is the gate that *should* have fired
+and its wording stopped it: it requires contact **`0.0000` on EVERY population**. MEASURED base:
+`sel_contact` **0.0000** · `top8_contact` **0.0000** · `top32_contact` **0.0330** · `fan_contact`
+**0.0974**. Two populations are zero and two are not, so `V5` did not fire **literally** — while
+firing completely **in substance** on the only populations the car acts on. §12.3 quantifies that.
+
+**What the evidence supports, per family, once the admissible comparisons are used** (post-hoc where
+marked; `rl` − `ctrl_const` isolates reward + ≥GT bar; T0 readout, 120 windows / 79 episodes /
+36 lead windows / 30 lead episodes; paired episode-cluster bootstrap, n_boot 4000, seed 11):
+
+| family | outcome | evidence |
+|---|---|---|
+| **(a) contact** | **2 NULL-SAFETY, sub-case (i)** — *the fan was already safe*. The committed prediction was **RIGHT** | `sel_contact` and `top8_contact` are **identically 0.0000 in every arm, before and after** — 0 of 36 lead windows. `fan_contact` −0.0082 **ns**, `top32_contact` −0.0073 **ns**. §12.3 |
+| **(b) TTC** | **worse, separated** | `sel_ttc_below` **+0.1333** [+0.0333, +0.2667]; `mass_rank_ttc_below` +0.0883 [+0.0009, +0.1998]. `fan_ttc_below` +0.0029 ns |
+| **(c) infeasible** | **worse, separated, and large** | `sel_infeasible` **+0.5274** [+0.4114, +0.6392] — the selected path goes **13.3 % → 64.2 % infeasible**; `top32_infeasible` +0.1041; `fan_infeasible` +0.0229 |
+| **(d) mass** | **worse on contact, but ONE-SIDED BY CONSTRUCTION** | `mass_rank_contact` **+2.877e-04** [+2.4e-08, +8.0e-04]. §12.4 — this metric could not have registered an improvement |
+
+⇒ **Sub-case (i), not (ii), and the discriminator is measured rather than argued.** Outcome 2's
+sub-case (ii) is *"the reward cannot see the collisions"*. It is **REFUTED**: the collision component
+**fired** — `components_fired.collision` **449 / 2000** steps in `rl`, **41 / 200** in each control,
+and `veto_rate_mean` 0.0897–0.0975. The reward sees collisions perfectly well. There were none to
+prune on the emitted path.
+
+### 12.3 The contact axis, QUANTIFIED — RL had nothing to grip, and this was known before the arms
+
+**The human's own rate is the reference the outcome text demands.** MEASURED on the banked
+refcv3-40284 dump over the **full** EVAL corpus — 4,823 windows / 141 episodes, **1,466 lead windows
+/ 78 lead episodes** (`raw/run/base/fan_safety_dump.summary.json`, 0 GPU):
+
+| selected-path contact | rate | vs human |
+|---|---|---|
+| **`g` — the HUMAN** | **0.0000** [0.0000, 0.0000] | — |
+| **`os` — refcv3's deployed selection** | **0.0007** [0.0000, 0.0024] | `os − g` = **+0.0007**, **NOT separated** |
+| `ha` (hold-action floor) | 0.0000 | — |
+| `ha0` (hold-v0-straight floor) | 0.0055 | 8× the model |
+
+⭐ **refcv3's selected trajectory is statistically indistinguishable from the human on collisions**,
+over 1,466 lead windows and 78 episodes. The base model had already solved the problem V2's RL stage
+exists to solve.
+
+**The failure DOES exist in the fan — the ranking already excludes it.** Over the 36 lead windows of
+the RL readout:
+
+| | value |
+|---|---|
+| lead windows with **any** contacting candidate in the 128-fan | **10 / 36 (27.8 %)** |
+| lead windows with a contacting candidate in the **top-32** | **3 / 36 (8.3 %)** |
+| lead windows with a contacting candidate in the **top-8** | **0 / 36 (0.0 %)** |
+| lead windows where the **selected** path contacts | **0 / 36 (0.0 %)** |
+| candidates in contact per lead window (of 128) | mean **12.5**, median **0**, max **104** |
+| probability mass the model puts on contact (`mass_rank_contact`) | **3.470e-05** = **0.0035 %** |
+
+⇒ **The fan carries contact mass in its tail (9.74 % of candidates) and the model's own scorer
+already assigns it 0.0035 % of the probability and never selects it.** A reward whose job is to push
+mass away from collision arrived to find the mass already at 3.5e-05. There was nothing to buy.
+
+⚠️ **This was registered BEFORE the arms ran** (`D-RL-FANSAFE-1`, verbatim: *"the re-scoped
+endpoint's headroom is in (c) infeasible and (b) TTC, **not** (a) contact — stated BEFORE the arms so
+it cannot be presented as a prediction afterwards"*). The honest reading is therefore not that we
+discovered the null; it is that **the endpoint was chosen after its own headroom had been measured
+away, and the arms were run anyway.** That is the process defect worth more than the result.
+
+### 12.4 The two separated mass metrics — REAL, not the `H-ESTIM-SEED-1` noise floor, but one-sided
+
+The brief asks whether `mass_rank/conf_contact` at **±0.0003** against a `1e-4` floor on 30 episodes
+is an effect or the same one-seed artifact `H-ESTIM-SEED-1` documents. **Measured with `ctrl0`, and
+the answer is: real, with a caveat that matters more than the significance.**
+
+| probe | `mass_rank_contact` delta | reading |
+|---|---|---|
+| **`ctrl0`** (zero lever: `lr = 0`, weights hash-identical) | **−3.6e-11** [−1.1e-10, +1.7e-14] | the measurement noise floor is **~1e-10** |
+| **`ctrl_const`** (trains, 200 steps, no reward information) | +1.4e-06, **ns** | |
+| **`rl`** | **+2.890e-04** [+2.4e-08, +8.1e-04], separated | **~7 × 10⁶ × the noise floor** |
+
+⇒ **Not an estimator artifact.** In relative terms the mass on contacting candidates went
+**3.47e-05 → 2.76e-04, a 7.9× increase**. "A hair above the quantum" understates it: the *absolute*
+number is tiny because the *base* is tiny.
+
+⛔ **But the metric is one-sided by construction, and that is the finding.** `MIN_EFFECT = 1e-4` was
+derived as a **rate** quantum — one candidate in one window, `1/(128 × 120) = 6.5e-5`. The base value
+of `mass_rank_contact` is **3.470e-05**, i.e. **0.347 × the floor**. A decrease is bounded below by
+zero, so the largest possible improvement is `−3.47e-05` — **2.9× smaller than the threshold that
+would let it be called separated.** ⇒ **On this metric an improvement could never have been
+detected and only a worsening could.** The one contact-family signal the panel was able to report was
+the only direction it was able to report.
+
+⚠️ Same family as the CLAUDE.md units trap: a floor correctly derived for one quantity, applied to
+quantities it does not fit. It also mis-fits `fan_peak_g_mean` (units **g**) and
+`fan_v_mean_2s_spread` (units **m/s**), where a `1e-4` rate quantum has no meaning at all — 2 of the
+14 metrics that fired `V4`. ⇒ **A separation floor must be derived per-metric from that metric's own
+quantum and units, and a metric whose base value sits below its own floor must be declared
+UNDETECTABLE-DOWNWARD rather than reported as null.**
+
+⚠️ **`H-ESTIM-SEED-1` still binds.** `ctrl0` bounds *measurement* noise, not *training* noise — it
+never trains. No replicate arm exists. The separated rows here are **necessary, not sufficient**.
+
+### 12.5 SECONDARY endpoint — the four families at **T1**, paired, per family, never pooled
+
+⭐ **Recovered at ZERO GPU.** The T1 rollout **completed** (141/141 clips, `manifest.json` written)
+and then died in its **analysis** step — the exact CLAUDE.md trap ("an analysis-time failure after a
+completed rollout reads like a total failure while the expensive part is already paid for"). Its own
+documented fix, `--analyze-only`, recovered every number without touching a GPU. ⚠️ I first counted
+**127** clips from one `ls` and nearly banked "127 of 141"; two positive probes (`find`, and the
+tool's own window count matching base exactly) and the completion marker `manifest.json` show the
+dump is **complete**. A short count from one probe is not evidence.
+
+`taniteval/tools/paired_openloop.py`, **T1 (self-action OPEN loop — never a driving claim)**, `rl` vs
+`base` over the shared `ha0` floor. **`void: false`**, gates `G2`/`G3` pass, **4,823 shared windows /
+141 episodes, 0 windows dropped on either side**, pairing controls exact (window-key GT max|A−B|
+**0.000e+00** m, floor bit-comparability **0.000e+00**). Estimator: FULL-SET pooled mean, paired
+episode-cluster bootstrap (cluster = clip), n_boot 2000, seed 0. Power: adequate (141 ≫ 10).
+
+| family | metric | unit | base | **rl** | `ha0` floor | delta [95 % CI] | separated |
+|---|---|---|---|---|---|---|---|
+| **ADE** | `ade_m` | m | 0.4419 | **0.9433** | 0.6723 | **+0.5014** [+0.4572, +0.5464] | **yes** |
+| **ADE** | `fde_m` | m | 0.9288 | **1.3477** | 1.4029 | +0.4189 [+0.3530, +0.4870] | **yes** |
+| **LONGITUDINAL** | `LON_speed_mae_mps` | m/s | 0.4516 | **1.3160** | 0.4880 | **+0.8643** [+0.7975, +0.9356] | **yes** |
+| **LONGITUDINAL** | `LON_along_mae_m` | m | 0.4030 | **0.8467** | 0.4705 | +0.4436 [+0.3993, +0.4906] | **yes** |
+| **LONGITUDINAL** | `LON_accel_mae_mps2` | m/s² | 0.6806 | **3.2793** | 0.4786 | **+2.5987** [+2.4310, +2.7768] | **yes** |
+| **LATERAL** | `LAT_cross_mae_m` | m | 0.1084 | **0.2795** | 0.3132 | +0.1711 [+0.1589, +0.1842] | **yes** |
+| **LATERAL** | `LAT_heading_mae_deg` | deg | 1.3591 | **7.6017** | 2.8715 | **+5.6507** [+4.4727, +6.9142] | **yes** |
+| **LATERAL** | `LAT_yaw_rate_mae_radps` | rad/s | 0.2176 | **0.5013** | 0.0476 | +0.2836 [+0.2231, +0.3516] | **yes** |
+| **TACTICAL** | `TAC_traj_lat_correct` | acc ↑ | 0.9540 | **0.7730** | 0.8659 | **−0.1810** [−0.2195, −0.1459] | **yes** |
+| **TACTICAL** | `TAC_traj_lon_correct` | acc ↑ | 0.7477 | **0.3838** | 0.7576 | **−0.3639** [−0.4015, −0.3278] | **yes** |
+| **TACTICAL** | `TAC_declared_*` (6 rows) | acc ↑ | 0.7105 / 0.5134 … | identical | — | **0.0000 [0, 0]** | no — **STRUCTURAL** |
+| **STRATEGIC** | `STR_route_correct` (3 rows) | acc ↑ | 0.7667 | identical | 0.6742 | **0.0000 [0, 0]** | no — **STRUCTURAL** |
+
+⛔ **The committed SECONDARY prediction was NULL **or** FAIL-GUARD. The result is FAIL-GUARD, on
+every trajectory-derived metric, without exception.**
+
+⭐⭐ **And the magnitude is the headline: the RL'd planner is now WORSE THAN THE TRIVIAL
+CONSTANT-VELOCITY FLOOR.** `ade_m` **0.9433 vs `ha0` 0.6723**; `LON_speed_mae` **1.3160 vs 0.4880**;
+`LON_accel_mae` **3.2793 vs 0.4786** (**6.9×** the floor); `LAT_heading` **7.6017° vs 2.8715°**.
+A stage that leaves the planner behind hold-v0-straight has not degraded a model, it has **destroyed**
+one. ADE +113 %, speed MAE +191 %, accel MAE +382 %, heading +416 %, longitudinal manoeuvre
+correctness −49 %.
+
+⚠️ **The `0.0000 [0, 0]` rows are STRUCTURAL ZEROS and must never be read as "no harm".** The RL
+trained `core.decoder` **only** (9,206,032 / 107,032,901 = 8.60 %); `core.maneuver`, `core.route`,
+`tac_goal_head`, `str_goal_head` and `conf_head` are in `forbidden_prefixes` and were **frozen**.
+Identical inputs through frozen heads give identical outputs — an **identity, not an estimate**
+(CLAUDE.md's `H-ECHO-4` class). ⇒ the SECONDARY guard is informative on the trajectory-derived rows
+and **silent** on the declared-tactical and strategic rows.
+
+⭐ **Independent corroboration from the selector, which was never trained.** Anchor-selection profile,
+base → `rl`: distinct anchors **50 → 37**, modal share **0.1482 → 0.3054**, entropy **2.8425 → 2.3241**
+nats, and **agreement with the oracle-best anchor 0.5652 → 0.1702 (a 3.3× fall)**. The decoder moved
+the fan so far that the *unchanged* selector now picks a near-worst candidate — which is exactly the
+`sel_infeasible` 13.3 % → 64.2 % of §12.2 seen from the other side.
+
+**Criteria checker** (`TanitAD_BenchmarkCriteria`, registry **v2.6.0**, run on the artifact):
+**IN_SCOPE**, tier **T1**, **0 violations**, **3 work items** — all three the same root cause,
+`strat.nav_compliance` and its two controls **REFUSED** with a reason
+(`TypeError: _path_exists: path should be string`), not silently absent. It refuses identically on
+both arms, so it does not bias the comparison. **Escalated in §12.7.**
+
+### 12.6 ⭐⭐ WHAT TO DO — the deliverable, per the PI's standing correction
+
+> *"our goals in TanitAD programme is not to refute hypotheses, it's about achieving excellent results
+> and really driving autonomously … we have too many refutes"* (PI, 2026-09-05)
+
+A null on contact plus a catastrophe on driving is not a deliverable. **The same panel contains the
+positive result, and it has been sitting inside the control arm all along.**
+
+**1. ⭐ PROMOTE THE VETO-ONLY ARM FROM CONTROL TO PRODUCT — it is the only arm that moved the fan the
+right way.** `ctrl_const` — reward identically `0.0`, veto alone — improved feasibility **with no
+reward at all**: `fan_peak_g_mean` **−0.0859 g**, `top32_infeasible` **−0.0143**, `top8_kamm_over`
+−0.0137, `fan_kamm_over` −0.0048, `fan_infeasible` −0.0026, in **200 steps / 2 min 07 s**. That is
+DiffusionDriveV2's actual anti-collision device (collision/TTC pinned at −1, outside the ranking),
+and **it transfers**. The composed reward then overwhelms it and drives the planner below the
+constant-velocity floor. ⇒ **Next arm: veto only, `w_anchor` kept, 2,000 steps, no composed reward.**
+Same driver, one flag set, **~15 min on the dev-box 4060, 0 pod-hours.** Committed outcomes and a
+**seed replicate** in the same launch, because `H-ESTIM-SEED-1` binds.
+
+**2. Aim the reward where the headroom actually is — MEASURED, on the same corpus, vs the human:**
+
+| selected-path metric | human `g` | refcv3 `os` | gap |
+|---|---|---|---|
+| `contact` | 0.0000 | 0.0007 | **ns — no headroom** |
+| `envelope` (\|a\| > 4 m/s² ∨ \|κ\| > 0.2) | 0.0068 | **0.0865** | **12.7×**, separated |
+| `flagged` (any) | 0.0272 | **0.1101** | **4.0×**, separated |
+| `ttc_below` (2.93 s) | 0.0668 | **0.0866** | +0.0198, separated |
+| `kamm_over` | 0.0000 | 0.0021 | separated |
+
+⇒ **refcv3's deployed plan is flagged 4.0× more often than the human and leaves the comfort/dynamics
+envelope 12.7× more often. That is the un-exploited gap, and it is feasibility, not collision.**
+
+**3. ⛔ Do NOT simply add a feasibility term — this arm already had `feasibility: 0.5` and made
+feasibility WORSE.** §11.4's hypothesis (`progress` at 0.30 rewards covering ground ⇒ accelerate
+harder ⇒ exactly the `envelope` and `ttc_below` rises observed) is **consistent with `LON_accel_mae`
+0.6806 → 3.2793 m/s², a 4.8× acceleration blow-up** — the strongest corroboration yet, and still a
+hypothesis. ⭐ **The cheapest discriminating experiment needs NO training and NO GPU:** score the
+banked fan's 128 candidates under `RewardSpec` and measure the **rank correlation between reward and
+`envelope` violation** on the banked dump. If the reward ranks envelope-violating candidates *higher*,
+the reward is disqualified at its source and no amount of RL repairs it. **Minutes, on data already
+on disk.** Run this **before** any further arm.
+
+**4. Fix the pre-registration machinery — three defects, each cheap and each caused a wrong reading
+here.** (a) `V4` must be scoped to *"moved by a path other than the veto"* with `veto_rate_mean`
+printed beside it. (b) `V5` must test the populations the car **acts on** (`sel`, `top8`), not "every
+population" — its literal wording let a no-headroom endpoint through. (c) The separation floor must be
+derived **per metric from its own quantum and units**, and any metric whose base value is below its
+own floor must be stamped **UNDETECTABLE-DOWNWARD** (§12.4).
+
+**5. Where this lever belongs in the programme: AFTER the fan work, not before it.** The endpoint has
+no contact headroom, the reward is disqualified until (3) clears it, and the one component that works
+(the veto) needs no reward. This is `H-DDA-3`'s territory — the vocabulary/sampler — exactly as
+`D-RL-FANSAFE-1` said before the arms ran. **Recommendation to the Master Mind: run (1) and (3), both
+0-pod-hour and ~15 min combined, then close the composed-reward line on refcv3 unless (3) clears it.**
+
+### 12.7 Corrections, escalations, limits
+
+**CORRECTION to §11 (this file), banked rather than silently edited.** §11's headline
+*"Exit: `4 FAIL-SAFETY`"* selected an outcome-table exit **past a fired VOID gate**, which SPEC
+§10.6's "first match in order" does not permit. **The formal exit is `V4` → VOID** (§12.1). The
+*substance* of §11's finding survives on the admissible comparisons — the stage as configured is
+harmful, and §12.5's T1 four-family read establishes that **without needing the attribution at all** —
+but the exit **label** and the `rl`-vs-base fan-safety table of §11.2 are withdrawn as lever
+evidence. Root-cause class: *an outcome selected past its own gate because the gate's failure was
+diagnosed as informative* — informative it is (RETRACTION #24), and it still fired. → drafted for
+`RETRACTION_LOG.md` as **#25**.
+
+**ESCALATIONS** (raised here, not written into a doc for someone to find):
+1. **`taniteval` instrument bug — `strat.nav_compliance` crashes** with
+   `TypeError: _path_exists: path should be string`, taking out **3 of 3** STRATEGIC nav-compliance
+   criteria rows on **every** refcv3 arm, not just this one. The STRATEGIC family is the programme's
+   thesis and is currently unmeasurable through this path. **Owner: Benchmarks/Eval.**
+2. **`posttrain.py:206` keys the veto on `"collision" in spec.weights`** — key membership, not weight
+   value. Any future zero-weight control inherits `V4`'s failure. **Owner: Training FlyWheel.**
+3. **The T1 eval chain has no `--analyze-only` retry**, so a completed 141-clip rollout was reported
+   as a dead run. `run_eval.sh` should fall back to `--analyze-only` when a dump exists.
+
+**LIMITS — none silent.** §11.6's seven stand, plus: **(8)** the T1 read is `rl` only — `reg_echo` and
+`ctrl0` were never T1-evaluated, so the four families have no arm-internal control (they do have the
+`ha0` floor and the frozen-head structural zeros). **(9)** `rl` − `ctrl_const` is **POST-HOC**.
+**(10)** No replicate on any arm ⇒ `H-ESTIM-SEED-1`: separated is necessary, not sufficient.
+**(11)** T1 is self-action **OPEN loop** — no closed-loop claim is made anywhere here.
