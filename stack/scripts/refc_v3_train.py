@@ -383,6 +383,28 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
                 "e.g. under --goal-point-inject) would be a silently inert "
                 "flag. Refusing.")
         cfg.nav_args_inject = True
+    # ---- ⛔ D-TACGOAL-1 / D-ROLL-1h: the tactical-goal SET head ----- #
+    # OPT-IN, RECORDED IN ARGV. Building this head on the vocabulary alone
+    # made refcv4b, three refcv3 checkpoints and the LIVE refcv5 run
+    # unrollable, because its 11,286 params are absent from every recorded
+    # `param_breakdown` and `cross_check_config` correctly refuses.
+    # ⚠ The vocabulary REMAINS NECESSARY (refc_v3.py gates on
+    # `_vv != "kin3" AND cfg.tac_goal_tok_head`); this only moves the
+    # DECISION to an explicit lever. Asking for the head without the
+    # vocabulary that has one is REFUSED here rather than silently
+    # ignored -- the dead-flag class this trainer already refuses four
+    # times (`--w-agent` under `--agents off`, `--nav-args` without
+    # `--nav-from-v7`, and both halves of the P14 selection split).
+    if getattr(args, "tac_goal_tok_head", False):
+        if str(getattr(cfg, "tac_vocab_version", "")) == "kin3":
+            raise SystemExit(
+                "[v3] REFUSED: --tac-goal-tok-head with the kin3 "
+                "vocabulary. kin3 is the 3x3 KINEMATIC derivation and "
+                "has no tactical-goal token set, so refc_v3.py would "
+                "build nothing and the flag would be silently inert. "
+                "Pass --v7-labels (which pins tac_vocab_version=v7.0), "
+                "or drop --tac-goal-tok-head.")
+        cfg.tac_goal_tok_head = True
     return cfg
 
 
@@ -2430,6 +2452,31 @@ def _seam_stamp(cfg, args) -> dict:
                 "(k = round(t/dt) - 1). TRAIN ONLY."),
             "provenance": gpm.goal_point_provenance(cfg.goal_point_cfg),
         } if getattr(cfg, "goal_point_inject", False) else None,
+        # ⭐⭐ D-TACGOAL-1 / D-ROLL-1h (2026-09-06) — THE TACTICAL-GOAL
+        # SET HEAD, STAMPED AS THREE SEPARATE FACTS.
+        #
+        # ⛔ `requested` is what ARGV ASKED FOR, `cfg` is what the pin
+        # PUT ON THE CONFIG, and `built` is what the MODEL HAS. They are
+        # deliberately NOT one re-derived key: a second copy of the build
+        # condition (`_vv != "kin3" and cfg.tac_goal_tok_head`) is exactly
+        # how `refcv3_arm`'s `a_star` comment drifted from the trainer and
+        # cost a contaminated metric family. `param_breakdown_v3` already
+        # reports its ledger line by reading the BUILT OBJECT for the same
+        # reason; this stamp follows it rather than inventing a rival
+        # convention.
+        #
+        # `built` is filled in from the constructed model at the call site
+        # (the `agent_rig_camera` idiom), and `assert_seams_are_built`
+        # REFUSES if the record and the weights disagree -- the D-ROLL-1
+        # regression is precisely a 11,286-parameter disagreement between
+        # a recorded ledger and a rebuilt model.
+        "tac_goal_tok_head": {
+            "requested": bool(getattr(args, "tac_goal_tok_head", False)),
+            "cfg": bool(getattr(cfg, "tac_goal_tok_head", False)),
+            "tac_vocab_version": str(getattr(cfg, "tac_vocab_version",
+                                             "")),
+            "built": None,      # ← the MODEL fills this; see `train`
+        },
         # ⛔ M18: the camera the two monocular weights are computed against —
         # or the reason there is none. Without this a reader cannot tell a run
         # that trained `loss_project` from one that stamped its weight and
@@ -2761,6 +2808,36 @@ def assert_seams_are_built(model, stamp: dict) -> None:
                 "stamp carries no goal_point block but decoder.gp_point_gate "
                 "WAS BUILT -- a live S7 selection seam absent from the record")
 
+    # --- D-TACGOAL-1 / D-ROLL-1h: the tactical-goal SET head ------------- #
+    # ⛔ BIDIRECTIONAL, like the three above, and it is the check whose
+    # ABSENCE was the D-ROLL-1 regression: 11,286 params in the model that
+    # no recorded `param_breakdown` names makes the checkpoint unloadable,
+    # and 11,286 params in the record that the weights lack is the mirror
+    # image. The stamp's `built` is read off the module; `cfg` is intent.
+    tg = stamp.get("tac_goal_tok_head")
+    tg_built = _mod(model, "tac_goal_tok_head") is not None
+    if isinstance(tg, dict):
+        if tg.get("built") is not None and bool(tg["built"]) != tg_built:
+            bad.append(
+                f"stamp says tac_goal_tok_head.built={tg['built']!r} but "
+                f"model.tac_goal_tok_head is "
+                f"{'BUILT' if tg_built else 'None'} -- the record and the "
+                f"weights disagree about 11,286 parameters, which is the "
+                f"D-ROLL-1 rollability defect exactly")
+        if bool(tg.get("cfg", False)) and not tg_built:
+            bad.append(
+                "stamp says tac_goal_tok_head was pinned onto the config "
+                "but model.tac_goal_tok_head is None -- the record would "
+                "claim a supervised head the weights do not contain")
+        if not bool(tg.get("cfg", False)) and tg_built:
+            bad.append(
+                "model.tac_goal_tok_head WAS BUILT but the run record does "
+                "not ask for it -- 11,286 parameters absent from the "
+                "record, which is what makes a checkpoint unrollable")
+    elif tg_built:
+        bad.append(
+            "the seam stamp carries no `tac_goal_tok_head` block but the "
+            "head WAS BUILT -- a live seam absent from the run record")
 
     if bad:
         raise SystemExit(
@@ -3567,6 +3644,11 @@ def train(args) -> dict:
     _seams["agent_rig_camera"].update(
         assert_rig_camera_covers(model, ds, args))
     _seams["agent_ground_prior_probe"] = _ground_probe
+    # ⭐ D-TACGOAL-1 / D-ROLL-1h: the record states the FACT, read off the
+    # constructed module -- never re-derived from the config, which is
+    # intent. Same idiom as `agent_rig_camera` two lines up.
+    _seams["tac_goal_tok_head"]["built"] = (
+        getattr(model, "tac_goal_tok_head", None) is not None)
     assert_knobs_stamped(args, _seams)
     # ⛔ ...and the record is checked against the MODEL, not only against
     # the config that produced it. A config is intent; only the built
@@ -3945,6 +4027,21 @@ def build_parser() -> argparse.ArgumentParser:
                          "to v7.0; without it the trainer derives kin3 (3x3) "
                          "from poses. Coverage is PRINTED and a run below "
                          "50 %% is REFUSED.")
+    # ---- D-TACGOAL-1 / D-ROLL-1h: THE TACTICAL-GOAL SET HEAD ------- #
+    # ⛔ OPT-IN, AND THE DEFAULT IS LOAD-BEARING. Building this head on
+    # the vocabulary alone (D-ROLL-1) added 11,286 params to every rebuild
+    # of a checkpoint trained before it existed, so refcv4b, three refcv3
+    # checkpoints and the LIVE refcv5 run all stopped loading -- refcv5 was
+    # unRESUMABLE, not merely unrollable. A default-OFF switch is what lets
+    # a pre-drift `argv` (which cannot mention a flag that did not exist)
+    # rebuild the parameter set it was trained with.
+    ap.add_argument("--tac-goal-tok-head", action="store_true",
+                    help="D-TACGOAL-1: build the 22-token tactical-goal "
+                         "SET head (+11,286 params at d_tac 512). "
+                         "Requires --v7-labels; kin3 has no tactical goal "
+                         "vocabulary and refuses it. OFF by default so a "
+                         "banked checkpoint rebuilds with the parameter "
+                         "set it was trained with (D-ROLL-1).")
     ap.add_argument("--v2-lru", type=int, default=6,
                     help="per-process LRU of decoded-payload clips for "
                          "--v2-cache. ⚠️ B1 payloads are ~34 MB/clip "
