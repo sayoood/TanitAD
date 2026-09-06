@@ -287,3 +287,51 @@ is worse than either.
 
 **Related, non-blocking:** `stack/tanitad/refs/refc_selector.py` (WP-7, **4,530,444** params)
 *is* committed and is wired to nothing but an import probe.
+
+
+---
+
+## ⛔ D-ROLL-1h — WIRE THE `--tac-goal-tok-head` TRAINER FLAG (owner of `stack/scripts/refc_v3_train.py`)
+
+**Blocks:** launching the **D-TACGOAL-1 arm at all.** The 22-token tactical-goal SET head exists,
+is tested (17 tests) and is correct — but as of 2026-09-06 it is **OPT-IN and has no CLI flag**, so
+**no training command line can switch it on.**
+
+**Why it is opt-in** (D-ROLL-1, `…/Research/2026-09-06-rollability/RESULT.md`): built on the
+vocabulary alone it added **11,286 params** to every rebuild of a checkpoint trained before it
+existed — params absent from every recorded `param_breakdown` — so
+`refcv3_arm.cross_check_config` REFUSED, and refcv4b@40284, three local refcv3 checkpoints **and
+the LIVE refcv5 A40 run** became unrollable (refcv5 also **unresumable**, since a supervisor
+relaunch rebuilds through the same file). ⛔ The guard was right; the construction was wrong.
+`RefCV3Config.tac_goal_tok_head: bool = False` now gates it, and all six local checkpoints load
+**0 unexpected keys** again.
+
+**The exact diff** (two hunks, both in `stack/scripts/refc_v3_train.py`):
+
+```diff
+@@ in build_parser() @@
++    ap.add_argument("--tac-goal-tok-head", action="store_true",
++                    help="D-TACGOAL-1: build the 22-token tactical-goal SET head "
++                         "(+11,286 params at d_tac 512). Requires --v7-labels; "
++                         "kin3 has no tactical goal vocabulary and refuses it. "
++                         "OFF by default so a banked checkpoint rebuilds with the "
++                         "parameter set it was trained with (D-ROLL-1).")
+
+@@ in _pin_trainer_cfg(cfg, args) @@
++    # D-ROLL-1: OPT-IN, recorded in argv. Building this head on the vocabulary
++    # alone made refcv4b, three refcv3 checkpoints and the LIVE refcv5 run
++    # unrollable, because its 11,286 params are absent from every recorded
++    # param_breakdown and cross_check_config correctly refuses.
++    if getattr(args, "tac_goal_tok_head", False):
++        cfg.tac_goal_tok_head = True
+```
+
+⚠️ **Do NOT instead revert the gate.** `stack/tests/test_refc_v3_rollability.py` (11 tests) pins
+the contract, including the real recorded `argv` + `param_breakdown` of refcv4b, refcv3-b1-v72 and
+the live refcv5 — the rollability bar, in CI, without the 1.3 GB weights. A two-sided mutation
+proof (`…/raw/run_mutation_proof.py`) shows the defect REFUSES the real refcv4b checkpoint and the
+suite goes RED, and the fix makes both PASS.
+
+⭐ **The current state is the SAFE failure direction:** with no CLI flag, no new arm can
+accidentally train the head and no banked arm can lose rollability. This is a capability gap, not a
+hazard — but D-TACGOAL-1's arm cannot run until it is closed.
