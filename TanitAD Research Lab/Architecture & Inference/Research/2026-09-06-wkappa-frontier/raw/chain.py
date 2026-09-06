@@ -76,9 +76,15 @@ def run_batch(name, specs):
 
 
 if __name__ == "__main__":
+    # ⛔ ORDER SWAPPED (measured): at 4-way concurrency the arms serialise on the
+    # single 8 GB GPU -- ~0.97 CPU each, 100 % util, ~2.3 h per batch -- so the
+    # chain may not reach its third batch. The EPISODE replication (BATCH3) is
+    # the more valuable half, because RESULT.md §4 measured the episode interval
+    # to be the binding one, so it now runs SECOND and the goal-conditioned seed
+    # replicates run last. Priority order, not queue order.
     wait_idle("b1")
-    run_batch("batch2", BATCH2)
+    run_batch("batch_episodes", BATCH3)
     wait_idle("b2")
-    run_batch("batch3", BATCH3)
+    run_batch("batch_bygoal_seeds", BATCH2)
     print("ZZCHAINDONE-ZZ", flush=True)
     sys.exit(0)
