@@ -85,6 +85,7 @@ from tanitad.refs import refc_tactical as tac  # noqa: E402
 from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
 from tanitad.refs import goal_point as gpm  # noqa: E402  — E15 (GP-2)
+from tanitad import effective_weights as _ew  # noqa: E402
 from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
@@ -816,6 +817,148 @@ def _check_nav_from_v7_args(args) -> None:
                          "against the v1 derivation.")
 
 
+# ============================================================================
+# ⭐⭐ THE EFFECTIVE-WEIGHT AUDIT — `_check_goal_point_args` MADE GENERAL
+# ============================================================================
+#
+# `_check_goal_point_args` below refuses `--goal-point-inject --goal-point-w 0`
+# because it would "build a head, stamp the edge, and train it on nothing".
+# That judgement is right and it is PER-FLAG. This is the same judgement as a
+# CONTRACT over every weight the parser accepts.
+#
+# ⚠ HONEST SCOPE, MEASURED 2026-09-06: this trainer has FIVE weight-like
+# flags -- `--w-u0`, `--w-agent`, `--agent-w-project`, `--agent-w-ground`,
+# `--goal-point-w` -- and ALL FIVE ARE ALREADY GATED by hand-written refusals.
+# So this layer is NOT plugging a live hole in refc the way it is in
+# `train_v6_staged.py`, and saying otherwise would be manufacturing a defect.
+# It earns its place three other ways:
+#   1. it FAILS EARLIER. `w_u0 > 0` with no `control_head` is caught today by
+#      `assert_seams_are_built`, which runs AFTER the corpus mounts and the
+#      model is built; this catches it in the preflight, in milliseconds -- the
+#      `--gate-probes` lesson;
+#   2. it makes the run record AUDITABLE. `config.json` stamps `w_agent` and
+#      `w_u0` as NUMBERS today, with nothing saying whether the operator typed
+#      them or whether the term builds a graph at all;
+#   3. ⛔ it is EXHAUSTIVE OVER THE PARSER. `REFC_WEIGHT_GATES` must cover
+#      every weight-like flag, and `tests/test_v6_effective_weights.py` fails
+#      if a new one is added without a gate -- so the NEXT `--w-*` cannot ship
+#      ungated. That contract is the durable half; the refusals are the cheap
+#      half.
+#
+# ⛔ refc has NO stage layer, so the v6 `DISCARDED` verdict (an explicitly
+# passed weight zeroed by `for_stage`) cannot arise here. The verdict that does
+# arise is `NO_GRAPH`: a weight whose MODE GATE was never opened.
+
+#: ⛔ EXHAUSTIVENESS CONTRACT — every weight-like flag, with the gate that
+#: decides whether its loss term is ever reached, and the guard that already
+#: covers it. ``gate`` returns ``(met, why-not)``.
+REFC_WEIGHT_GATES: dict[str, dict] = {
+    "w_u0": {
+        "flag": "--w-u0", "term": "u0 control-space x0 loss (WP-4)",
+        # `refc.py`: `control_head` is built IFF `sampler == "ddim"` (a
+        # zero-init `nn.Linear(d, n_steps * 2)`); with `--sampler none` there
+        # is no `u0_hat` in `out` and `compute_losses_v3` skips the term.
+        "gate": lambda a: (str(getattr(a, "sampler", "none")) == "ddim",
+                           "--sampler none: `control_head` is built only for "
+                           "--sampler ddim, so `u0_hat` is absent from `out` "
+                           "and the term is skipped"),
+        "mask": None,
+        "already": "assert_seams_are_built (w_u0>0 + no control_head) and "
+                   "_pin_refcv5_seams (ddim + w_u0<=0) -- but both AFTER the "
+                   "model build",
+    },
+    "w_agent": {
+        "flag": "--w-agent", "term": "GT-supervised detection set loss (WP-6)",
+        "gate": lambda a: (str(getattr(a, "agents", "off")) == "head"
+                           and bool(getattr(a, "agent_join", None)),
+                           "--w-agent needs `--agents head` AND `--agent-join` "
+                           "(no seam => no `agent_slots` in `out`; no join => "
+                           "no labels)"),
+        "mask": None,
+        "already": "_pin_refcv5_seams: the `--agents off` branch and the "
+                   "`--agents head` w_agent/agent_join refusals",
+    },
+    "agent_w_project": {
+        "flag": "--agent-w-project", "term": "agent projection consistency",
+        "gate": lambda a: (str(getattr(a, "agents", "off")) != "off",
+                           "--agents off: no AgentSeamConfig is built, so "
+                           "`refc_agents.agent_losses` is never called"),
+        "mask": None,
+        "already": "_pin_refcv5_seams `--agents off` branch + _build_rig_camera",
+    },
+    "agent_w_ground": {
+        "flag": "--agent-w-ground", "term": "agent ground-plane prior",
+        "gate": lambda a: (str(getattr(a, "agents", "off")) != "off",
+                           "--agents off: no AgentSeamConfig is built, so "
+                           "`refc_agents.agent_losses` is never called"),
+        "mask": None,
+        "already": "_pin_refcv5_seams `--agents off` branch + _build_rig_camera",
+    },
+    "goal_point_w": {
+        "flag": "--goal-point-w", "term": "E15 geometric goal point (GP-2)",
+        "gate": lambda a: (bool(getattr(a, "goal_point_inject", False)),
+                           "no --goal-point-inject: the head that predicts the "
+                           "point is never built"),
+        "mask": None,
+        "already": "_check_goal_point_args (both directions)",
+    },
+}
+
+
+def refc_weight_specs(args) -> list[_ew.TermSpec]:
+    """Every weight-like flag: declared -> gate -> effective."""
+    specs: list[_ew.TermSpec] = []
+    for dest, g in REFC_WEIGHT_GATES.items():
+        w = float(getattr(args, dest, 0.0) or 0.0)
+        met, why = g["gate"](args)
+        specs.append(_ew.TermSpec(
+            term=g["term"], flag=g["flag"], dest=dest,
+            # ⛔ every refc weight defaults to 0.0 ON PURPOSE, so that adding a
+            # seam to the code cannot change a run that does not ask for it.
+            declared=0.0, requested=w, effective=w, layer=None,
+            needs=(met, why), mask=g["mask"]))
+    return specs
+
+
+def effective_weight_rows_v3(args) -> tuple[list[_ew.WeightRow], str]:
+    explicit = _ew.explicit_dests(getattr(args, "_ew_parser", None),
+                                 getattr(args, "_ew_argv", None))
+    src = _ew.SRC_ARGV if explicit is not None else _ew.SRC_UNAVAILABLE
+    return _ew.classify_all(refc_weight_specs(args), explicit), src
+
+
+def check_effective_weights(args) -> None:
+    """⛔ REFUSE, AT START, a weight whose loss term can never be reached.
+
+    ⚠ Called from BOTH :func:`preflight` and :func:`train`, which is this
+    file's established idiom (`_check_nav_from_v7_args`, `_check_goal_point_args`
+    and `_read_anchor_artifact` are all double-called) and NOT belt-and-braces:
+    ``main`` runs ``preflight`` only under ``--preflight`` and otherwise goes
+    straight to ``train``, so a guard called from ``preflight`` alone is wired
+    into ONE launch path of two. Pinned by
+    ``tests/test_v6_effective_weights.py::test_refc_guard_is_on_the_real_path``.
+    """
+    rows, _src = effective_weight_rows_v3(args)
+    problems = _ew.refusals(rows, where="this arm")
+    if problems:
+        # ⚠ ASCII: a SystemExit message is written to stderr, and non-ASCII
+        # is fatal on the cp1252 dev box -- a guard that crashes on its own
+        # refusal text has refused nothing legible.
+        raise SystemExit("[v3] REFUSED (effective-weight audit): "
+                         + " | ".join(problems))
+
+
+def effective_weights_stamp_v3(args, *, echo: bool = False) -> dict:
+    """The ``config.json`` block; ``echo`` prints the table at launch."""
+    rows, src = effective_weight_rows_v3(args)
+    if echo:
+        warn = _ew.unknown_explicitness_warning(rows)
+        if warn:
+            print(f"[v3] WARNING: {warn}", flush=True)
+        print(_ew.render_table(rows, where="this arm", tag="v3"), flush=True)
+    return _ew.stamp(rows, where="this arm", explicit_source=src)
+
+
 def _check_goal_point_args(args) -> None:
     """⭐⭐ E15 (GP-2): refuse AT START a goal-point launch that would train,
     converge, and mean nothing.
@@ -904,6 +1047,16 @@ class V3Dataset(RouteV21Dataset):
     v7_manifest = None
     _nav_by_sid: dict | None = None
     nav_from_v7_stats: dict | None = None
+    #: --nav-args (D-GSTR-1 P3): the nav token's CONTINUOUS ARGS, which this
+    #: loader has never read. ``_nav_args_by_sid[sid] = (distance_m, time_s,
+    #: valid)`` in RAW UNITS (metres, seconds); ``nav_arg_stats`` is the
+    #: FIT-SPLIT normaliser and MUST be handed to the eval dataset from the
+    #: TRAIN one — fitting it on the scored split is the 2026-08-22 ridge
+    #: failure in a new costume.
+    nav_args_enabled: bool = False
+    _nav_args_by_sid: dict | None = None
+    nav_arg_stats = None
+    nav_args_report: dict | None = None
     #: ``obstacle.offline`` agent join (refcv5 WP-6 / ``E-AGT-HEAD``), set by
     #: :meth:`enable_agent_join`. While it is None the batch carries NO
     #: ``agent_box`` and ``--w-agent > 0`` REFUSES in ``compute_losses_v3`` --
@@ -2640,6 +2793,7 @@ def _anchor_stamp(path, anchors, controls=None, units="kappa",
 def preflight(args) -> int:
     _check_nav_from_v7_args(args)          # no-op unless --nav-from-v7
     _check_goal_point_args(args)           # no-op unless --goal-point-*
+    check_effective_weights(args)          # a weight whose gate is shut
     art = _read_anchor_artifact(args)      # None without --anchors
     print("[v3-preflight] building both arms + pinning the delta …")
     cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
@@ -2846,6 +3000,10 @@ def train(args) -> dict:
     # data or GPU work; a no-op with the flag off.
     _check_nav_from_v7_args(args)
     _check_goal_point_args(args)           # E15 (GP-2); no-op with the flags off
+    # ⛔ NOT REDUNDANT WITH THE `preflight` CALL. `main` runs `preflight`
+    # ONLY under `--preflight` and otherwise calls `train` directly, so a
+    # guard wired into `preflight` alone covers one launch path of two.
+    check_effective_weights(args)
     nav_on = bool(getattr(args, "nav_from_v7", False))
     # ⭐ THE ANCHOR ARTIFACT IS READ FIRST: a units-less legacy file is refused
     # before any data or GPU work, the resolved units and the file's own
@@ -3233,6 +3391,11 @@ def train(args) -> dict:
     assert_seams_are_built(model, _seams)
     (out_dir / "config.json").write_text(json.dumps({
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
+        # ⛔ `argv` records what was TYPED and the seam stamps record what
+        # was BUILT; neither says whether each weight's loss term is
+        # actually reached. A run record that does not carry its effective
+        # weights cannot be audited afterwards.
+        "effective_weights": effective_weights_stamp_v3(args, echo=True),
         "registered_delta": {k: [repr(a), repr(b)]
                              for k, (a, b) in delta.items()},
         "param_breakdown": v3.param_breakdown_v3(model),
@@ -4018,7 +4181,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    # ⛔ The audit needs the COMMAND LINE, not the namespace: 'did the
+    # operator ask for this weight?' cannot be read off a value, because
+    # an operator may legitimately pass the default. Absent these the
+    # audit reports explicit_source: unavailable rather than guessing.
+    args._ew_parser = ap
+    args._ew_argv = list(sys.argv[1:] if argv is None else argv)
     if args.preflight:
         raise SystemExit(preflight(args))
     train(args)

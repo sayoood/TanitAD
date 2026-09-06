@@ -95,7 +95,7 @@ import random
 import sys
 import time
 from collections import deque
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, fields, replace
 from pathlib import Path
 
 # ⛔ P4-9 — THIS MUST PRECEDE `import torch`. torch reads OMP_NUM_THREADS when it
@@ -154,6 +154,7 @@ from tanitad.models.v6 import (  # noqa: E402
     DOMAIN_MIX_MIN_STRATUM_EPISODES,
     stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
+from tanitad import effective_weights as _ew  # noqa: E402
 
 # O1 — IMPORTED, never re-implemented: the response-form L_ctrl and its
 # counterfactual machinery are the stage-A artifacts that PASSED the W3 gate.
@@ -5569,12 +5570,21 @@ GRADREACH_EVAL_HAZARDS: dict[str, str] = {
         "this is the METRIC TRAJECTORY READOUT (latent transition -> per-step "
         "Δpose). It is reached ONLY by O1 (`v6_loss_step` guards the block on "
         "`if w.o1_ctrl or w.o1_fact or w.o1_scene`), so at O1 = 0 it stays at "
-        "RANDOM INIT for the whole run — while `V6Stack.roll_consistency`, "
-        "`tanitad/eval/v6_probe_trunk.py` and `scripts/probe_saliency_p9.py` "
-        "all decode through the checkpoint's OWN copy of it. Any metric decode "
-        "from this run is a random projection, not a readout. Either switch O1 "
-        "on, or fit a readout at eval time and SAY SO, or do not report a "
-        "metric decode from this arm."),
+        "RANDOM INIT for the whole run — while FIVE production sites decode "
+        "through the checkpoint's OWN copy of it: `V6Stack.roll_consistency`, "
+        "`tanitad/eval/v6_probe_trunk.py::V6Grounding.step['op']`, and "
+        "through THAT seam `taniteval/tools/t1_eval.py --grounding-readout` "
+        "and `scripts/stage_a_probes.py`, plus `scripts/probe_saliency_p9.py` "
+        "directly. (MEASURED 2026-09-06 by tracing every caller; the earlier "
+        "list of three missed t1_eval and stage_a_probes, which are exactly "
+        "the two that PUBLISHED numbers — 7 banked T1 JSONs record "
+        "`decoder = grounding.step['op']`.) Any metric decode from this run "
+        "is a random projection, not a readout. ⭐ SINCE 2026-09-06 THOSE "
+        "SITES REFUSE rather than emitting plausible metres "
+        "(`models/v6.py::assert_metric_readout_trained`), and the opt-in "
+        "`--allow-untrained-readout` records the verdict in the artifact. "
+        "Either switch O1 on, or fit a readout at eval time and SAY SO, or do "
+        "not report a metric decode from this arm."),
     "masked_cells": (
         "O3's masked-cell predictor. Untrained it is inert rather than "
         "hazardous (no eval consumer), but it is counted in the parameter "
@@ -6326,6 +6336,13 @@ def _run_config(a, stack: V6Stack, freeze: dict,
         "loss_weights": asdict(_weights_from_args(a)),
         "loss_weights_in_force": asdict(_weights_from_args(a)
                                         .for_stage(a.stage)),
+        # ⛔ A RUN RECORD THAT DOES NOT CARRY ITS EFFECTIVE WEIGHTS
+        # CANNOT BE AUDITED AFTERWARDS, and three arm-substitutions have
+        # already been found in this programme. `loss_weights` above is
+        # what was ASKED FOR and `loss_weights_in_force` what survived --
+        # neither says which of them the OPERATOR typed, nor whether the
+        # term builds an autograd graph at all. This does.
+        "effective_weights": effective_weights_stamp(a, echo=True),
         "freeze": freeze,
         # the preflight's own audit, so config.json records that the
         # declarations were CHECKED and not merely made (2026-09-06).
@@ -6340,8 +6357,18 @@ def _run_config(a, stack: V6Stack, freeze: dict,
         #: to be reconstructed from the launch script. An env-var input that
         #: changes the model is a RUN FACT and belongs beside the run.
         "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
+        # ⛔ `_ew_*` ARE CARRIERS, NOT ARGS, AND ONE OF THEM IS AN
+        # ArgumentParser. `main` attaches the parser and the argv to the
+        # namespace so the effective-weight audit can answer "did the
+        # operator ASK for this weight?" from argv rather than from the
+        # value. Both must be stripped here: `json.dumps` raises
+        # `TypeError: Object of type ArgumentParser is not JSON
+        # serializable`, which would kill the run AT THE config.json
+        # WRITE -- after the model is built and the corpus is mounted.
+        # The argv itself is not lost: `provenance` records the command.
         "args": {k: (list(v) if isinstance(v, tuple) else v)
-                 for k, v in vars(a).items()},
+                 for k, v in vars(a).items()
+                 if not k.startswith("_ew_")},
         "horizon_spec": {
             "plan_steps": stack.cfg.plan_steps, "dt": stack.cfg.dt,
             "horizon_s": stack.cfg.horizon_s,
@@ -9535,6 +9562,17 @@ def build_parser() -> argparse.ArgumentParser:
                          "check is corpus-side: `reachable_strategic_ticks` on "
                          "the SHORTEST episode, which also refuses any K that "
                          "would drop an episode to zero windows.")
+    # ---- the effective-weight audit ------------------------------------
+    ap.add_argument("--allow-discarded-weights", action="store_true",
+                    help="acknowledge that an EXPLICITLY PASSED weight is "
+                         "zeroed by `V6LossWeights.for_stage(stage)` and run "
+                         "anyway. \u26d4 The refusal ships WITH this flag on "
+                         "purpose: `--refuse-unreached` taught us that a bare "
+                         "refusal firing on honest launches gets deleted. The "
+                         "override does NOT hide the finding -- it is stamped "
+                         "into config.json as acknowledged_discarded: true, so "
+                         "a run that overrode the guard says so in its own "
+                         "artifacts.")
     # ---- F-9 / catalog T3 — THE INTERACTION CURRICULUM ---------------------
     ap.add_argument("--t3-scores", type=str, default="",
                     help="path to the per-window T3 score artifact (a torch "
@@ -10039,6 +10077,204 @@ def _launch_line(a) -> str:
     argv = " ".join(sys.argv[1:]).replace(" --print-launch", "")
     return ("PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 "
             f"python3 scripts/train_v6_staged.py {argv}")
+
+
+# ============================================================================
+# ⛔⛔ THE EFFECTIVE WEIGHT IS NOT THE ARGPARSE DEFAULT (2026-09-06)
+# ============================================================================
+#
+# `V6LossWeights.for_stage(stage)` REWRITES the argparse defaults per stage, so
+# `--stage S-T --w-o5 1.0` TRAINS NOTHING ON O5 while stamping `w_o5: 1.0` into
+# config.json. ⭐ That is the mechanism behind the already-measured v7f defect:
+# 42 of 138 optimizer tensors received no gradient (5,305,667 params = 52.2 % of
+# a declared trainable budget), because a zero-weighted term is GUARDED OUT of
+# the loss (`if w.seam_op:`) and its modules never enter the autograd graph.
+#
+# ⚠ The hand-written guards below already cover FIVE (stage, term) pairs
+# (w_t2_contrast, w_t5_consist, w_s1_multi, w_select, w_anchor). This is the
+# same judgement made GENERAL and, crucially, made NON-STALING: the zeroing
+# table is DERIVED from `for_stage` itself, so editing `for_stage` moves the
+# guard with it. A hand-copied list is a second source of truth that rots.
+
+#: Every FLOAT term of :class:`V6LossWeights`, discovered from the dataclass so
+#: a term cannot be added to the loss without appearing in the audit.
+_W_FLOAT_TERMS: tuple[str, ...] = tuple(
+    f.name for f in fields(V6LossWeights)
+    if isinstance(getattr(V6LossWeights(), f.name), float))
+
+
+def stage_zeroed_terms(stage: str) -> frozenset[str]:
+    """⭐ The terms ``for_stage`` zeroes — DERIVED FROM ``for_stage`` ITSELF.
+
+    A probe whose every float term is 1.0 goes through the real
+    :meth:`V6LossWeights.for_stage`; whatever comes back 0.0 was zeroed by the
+    stage. ⛔ This is deliberately not a hand-maintained table: a copied list
+    is a second source of truth, and the one thing this programme has measured
+    repeatedly is that the copy goes stale (the "2 of 36 features" count rotted
+    four times, inside the very rule warning about stale counts).
+    """
+    probe = V6LossWeights(**{n: 1.0 for n in _W_FLOAT_TERMS})
+    after = probe.for_stage(stage)
+    return frozenset(n for n in _W_FLOAT_TERMS
+                     if float(getattr(after, n)) == 0.0)
+
+
+#: term -> (operator-facing flag, argparse dest).
+#: ⚠ ``seam_op`` has NO FLAG: ``_weights_from_args`` never sets it, so it is
+#: always the dataclass 1.0 and then zeroed in S-W/S-S. It is listed with a
+#: ``None`` dest rather than omitted, because a term absent from the table
+#: reads as a term that does not exist — and the whole point of the table is
+#: that nothing is invisible. Pinned by tests/test_v6_effective_weights.py.
+W_TERM_FLAGS: dict[str, tuple[str, str | None]] = {
+    "o1_ctrl": ("--w-o1-ctrl", "w_o1_ctrl"),
+    "o1_fact": ("--w-o1-fact", "w_o1_fact"),
+    "o1_scene": ("--w-o1-scene", "w_o1_scene"),
+    "o2_nearfield": ("--w-o2", "w_o2"),
+    "o3_masked": ("--w-o3", "w_o3"),
+    "o5_rollout": ("--w-o5", "w_o5"),
+    "o6_sigreg": ("--w-o6", "w_o6"),
+    "o11_cf": ("--w-o11-cf", "w_o11_cf"),
+    "o13_ego": ("--w-o13-ego", "w_o13_ego"),
+    "o14_fut": ("--w-o14", "w_o14"),
+    "t1_latent": ("--w-t1", "w_t1"),
+    "s1_latent": ("--w-s1", "w_s1"),
+    "lambda_plan": ("--lambda-plan", "lambda_plan"),
+    "seam_op": ("(no flag: dataclass default)", None),
+    "w_select": ("--w-select", "w_select"),
+    "w_anchor": ("--w-anchor", "w_anchor"),
+    "w_s2_goal": ("--w-s2-goal", "w_s2_goal"),
+    "w_t2_contrast": ("--w-t2-contrast", "w_t2_contrast"),
+    "w_t5_consist": ("--w-t5-consist", "w_t5_consist"),
+    "w_s1_multi": ("--w-s1-multi", "w_s1_multi"),
+}
+
+
+def _term_precondition(term: str, a) -> tuple[bool, str] | None:
+    """A STRUCTURAL precondition, as ``(met, what-is-missing)``.
+
+    ⛔ This is the "stamped but untrainable" axis, and it is a DIFFERENT
+    question from the weight: ``--goal-point-inject --goal-point-w 0`` builds a
+    head and supervises it with nothing, while ``--w-select 1 --selector none``
+    supervises a scorer that was never built. Both end at zero gradient and
+    neither is visible in the weight.
+    """
+    if term == "w_select":
+        ok = str(getattr(a, "selector", "none")) != "none"
+        return (ok, "--selector none: there is no scorer to train")
+    if term == "w_anchor":
+        ok = str(getattr(a, "anchor_goal", "none")) != "none"
+        return (ok, "--anchor-goal none: there is no anchor objective")
+    if term == "w_t2_contrast":
+        ok = bool(getattr(a, "t2_contrastive", False))
+        return (ok, "no --t2-contrastive: the projector is never built")
+    if term == "w_t5_consist":
+        ok = bool(getattr(a, "t5_pairs", False))
+        return (ok, "no --t5-pairs: windows are drawn INDEPENDENTLY, so the "
+                    "consistency term would compare unrelated episodes")
+    if term == "w_s2_goal":
+        ok = bool(getattr(a, "s2_labels", None))
+        return (ok, "no --s2-labels: the CE/L1 has no target")
+    return None
+
+
+#: Terms whose loss rides a PER-BATCH VALIDITY MASK.
+#: ⚠⚠ THIS COLUMN IS WHAT STOPS THE TABLE MANUFACTURING FALSE ALARMS.
+#: MEASURED this week: the route head's apparent zero gradient was a validity
+#: mask, NOT a dead head — forcing ``route_valid=True`` moved the loss
+#: 0.0 -> 0.687 and produced gradient. A zero loss can come from a weight, a
+#: stage override, a missing precondition, OR an all-invalid batch, and a table
+#: that cannot tell them apart is worse than the silence it replaces.
+W_TERM_MASKS: dict[str, str] = {
+    # `s2_valid`, plus the per-family `g_str_valid`/`a_str_valid`. And on the
+    # v7.2 schema the ARG L1 is masked ALL-ZERO by construction
+    # (`V72_ARGS_SUPERVISED = False`) -- exactly zero gradient on that half,
+    # which config.json already records as `args_supervised: false`.
+    "w_s2_goal": "s2_valid (+ g_str_valid/a_str_valid; v7.2 arg L1 is "
+                 "ALL-ZERO masked by V72_ARGS_SUPERVISED=False)",
+}
+
+
+def v6_weight_specs(a) -> list[_ew.TermSpec]:
+    """Every weighted term: argparse default -> later layers -> effective."""
+    declared = V6LossWeights()
+    requested = _weights_from_args(a)
+    in_force = requested.for_stage(a.stage)
+    zeroed = stage_zeroed_terms(a.stage)
+    specs: list[_ew.TermSpec] = []
+    for term, (flag, dest) in W_TERM_FLAGS.items():
+        req = float(getattr(requested, term))
+        eff = float(getattr(in_force, term))
+        if term == "lambda_plan":
+            # ⚠ lambda_plan has THREE layers, not two: argparse default is
+            # None, `resolve_lambda_plan` substitutes STAGE_LAMBDA_PLAN[stage],
+            # and only then does `for_stage` run. The table names whichever
+            # layer actually moved the number.
+            layer = (f"for_stage({a.stage!r})" if term in zeroed
+                     else (None if getattr(a, "lambda_plan", None) is not None
+                           else f"STAGE_LAMBDA_PLAN[{a.stage!r}]"))
+            dec = float(STAGE_LAMBDA_PLAN[a.stage])
+        else:
+            layer = f"for_stage({a.stage!r})" if term in zeroed else None
+            dec = float(getattr(declared, term))
+        specs.append(_ew.TermSpec(
+            term=term, flag=flag, dest=dest or f"__noflag__{term}",
+            declared=dec, requested=req, effective=eff, layer=layer,
+            needs=_term_precondition(term, a), mask=W_TERM_MASKS.get(term)))
+    # O10-PSG is NOT a `V6LossWeights` field -- it is its own argparse weight
+    # with its own label precondition and its own per-clip validity mask. It
+    # belongs in the audit for exactly the reason the audit exists.
+    w_psg = float(getattr(a, "w_o10_psg", 0.0))
+    specs.append(_ew.TermSpec(
+        term="o10_psg", flag="--w-o10-psg", dest="w_o10_psg",
+        declared=0.0, requested=w_psg, effective=w_psg, layer=None,
+        needs=(bool(getattr(a, "psg_labels", None)),
+               "no --psg-labels: the physical-state head has no target"),
+        mask="psg_valid (per-clip: 1.0 only for clips in the train join)"))
+    return specs
+
+
+def effective_weight_rows(a) -> tuple[list[_ew.WeightRow], str]:
+    """The audit rows + how 'did the operator ask for this?' was answered.
+
+    ⛔ The explicit/default distinction is drawn from ARGV, never from the
+    value: an operator may legitimately pass the default, and a default that is
+    0.0 is FINE (the zero defaults exist so that adding a seam to the code
+    cannot change a run that does not ask for it). What must be refused is a
+    value the operator ASKED FOR being silently discarded.
+    """
+    explicit = _ew.explicit_dests(getattr(a, "_ew_parser", None),
+                                  getattr(a, "_ew_argv", None))
+    src = _ew.SRC_ARGV if explicit is not None else _ew.SRC_UNAVAILABLE
+    return _ew.classify_all(v6_weight_specs(a), explicit), src
+
+
+def _preflight_effective_weights(a) -> list[str]:
+    """⛔ REFUSE a launch whose operator-supplied weight the stage discards."""
+    rows, _src = effective_weight_rows(a)
+    if bool(getattr(a, "allow_discarded_weights", False)):
+        rows = [r for r in rows if r.status != _ew.DISCARDED]
+    return _ew.refusals(rows, where=f"--stage {getattr(a, 'stage', '?')}")
+
+
+def effective_weights_stamp(a, *, echo: bool = False) -> dict:
+    """The ``config.json`` block; ``echo`` also prints the table at launch.
+
+    Called from :func:`_run_config`, which is the ONE builder both the dry-run
+    and the real training path use — so the table and the stamp cannot be
+    present on one path and missing on the other. That is deliberate: a guard
+    written, working when called, and called from one launch path of two is a
+    failure this programme has already measured.
+    """
+    rows, src = effective_weight_rows(a)
+    where = f"--stage {getattr(a, 'stage', '?')}"
+    if echo:
+        warn = _ew.unknown_explicitness_warning(rows)
+        if warn:
+            print(f"[v6] WARNING: {warn}", flush=True)
+        print(_ew.render_table(rows, where=where, tag="v6"), flush=True)
+    return _ew.stamp(rows, where=where, explicit_source=src,
+                     acknowledged=bool(getattr(a, "allow_discarded_weights",
+                                               False)))
 
 
 def preflight(a) -> list[str]:
@@ -10616,6 +10852,7 @@ def preflight(a) -> list[str]:
     problems += _preflight_eval_exclusion(a)
     problems += _preflight_subframe(a)
     problems += _preflight_seam_dump(a)
+    problems += _preflight_effective_weights(a)
     return problems
 
 
@@ -10735,6 +10972,14 @@ def main(argv=None) -> int:
     ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
                     dest="control_arm_ack", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
+    # ⛔ THE EFFECTIVE-WEIGHT AUDIT NEEDS THE COMMAND LINE, NOT THE
+    # NAMESPACE. 'did the operator ask for this weight?' cannot be read
+    # off a value -- an operator may legitimately pass the default -- so
+    # the parser and the argv are carried to `preflight`, which re-parses
+    # them against sentinel defaults. Absent them the audit reports
+    # explicit_source: unavailable rather than guessing.
+    a._ew_parser = ap
+    a._ew_argv = list(sys.argv[1:] if argv is None else argv)
     # (P4-9) OMP_NUM_THREADS moved to the module header, BEFORE `import torch`.
     # Setting it here was too late to size torch's thread pool.
     if a.print_launch:
