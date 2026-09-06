@@ -201,6 +201,57 @@ was added** — a flag that can never fire is not a feature.
 
 ---
 
+## 6.1 ⛔⛔ A REFUSAL THAT CANNOT BE PRINTED HAS REFUSED NOTHING
+
+MEASURED 2026-09-06, and found only because the suite was run as a controlled comparison rather
+than trusted: on the **cp1252 dev box every preflight refusal in `train_v6_staged.py` died inside
+its own `print`** --
+
+```
+UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4'
+```
+
+-- so the process exited **1 with a traceback** instead of **2 with the reason**. The guard was
+correct, reached, and **mute**. ⚠ **Confirmed PRE-EXISTING**: the identical argv fails
+byte-identically on the pre-change trainer, so this is not a regression. But it made **every**
+refusal in the file invisible exactly where an operator meets it -- the new effective-weight one
+included, which is the entire deliverable.
+
+⚠ **And fixing the leading glyph alone was NOT enough.** With the marker made conditional the
+very next run died on `'\u21d2'` **at position 322 -- inside another guard's message body**. The
+messages in this file are full of arrows and warning signs, so the fix cannot be to sanitise
+content one glyph at a time; it has to be **at the write**. `_print_refusal` now degrades to
+backslash escapes instead of raising: the reason always reaches the operator and the exit code
+stays **2**. Verified end-to-end through `main()` on cp1252 -- `rc=2`, four refusals printed,
+**stderr empty**, including
+`REFUSED: --w-o5 1 in --stage S-T: for_stage('S-T') forces the effective weight to 0.0 ...`.
+
+⭐ Same family as `--refuse-unreached`: an instrument is not finished when it is *correct*, only
+when it *lands*.
+
+---
+
+## 6.2 The suite, as a controlled comparison
+
+⛔ **Nine failures appeared alongside `test_v6_effective_weights.py`'s 39 green. Exactly ONE was
+mine, and I fixed it.** Each was classified against evidence, not assumed:
+
+| failing test(s) | verdict | how it was settled |
+|---|---|---|
+| `test_v6_s2_loss::test_preflight_refuses_weight_without_labels_on_a_REAL_run` | ⛔ **MINE -- FIXED** | its second half asserts the OPPOSITE for a dry run (*"a dry-run may smoke the loss on synthetic keys without labels"*); my label precondition fired there |
+| `test_v6_chain` × 2 | **pre-existing** | a **both-directions failure-ID diff** loading the pre- and post-change trainers side by side and comparing `preflight()` on the chain's own argv: **ADDED=0, REMOVED=0 on all four stages** -- both refuse on `--horizons (1, 2)` |
+| `test_refc_v3` × 3 (param counts) | **pre-existing** | import-graph proof: a fresh interpreter importing exactly what that test imports leaves BOTH `tanitad.effective_weights` and `refc_v3_train` absent from `sys.modules`, with a same-breath control asserting `tanitad.refs.refc_v3` **is** loaded |
+| `test_v6_st_launch_fixes` E4/E5, `test_v6_s2_loss::test_the_80_ex_lane_change_rows` | **G: mount flap** | `OSError: [Errno 22] Invalid argument` raised inside `importlib`/`pathlib`/the label reader -- the documented mount failure, not an assertion |
+
+⭐ **THE ONE THAT WAS MINE IS THE INTERESTING ONE, AND IT SHARPENED THE DESIGN.** A **module**
+precondition (`--selector none`: the scorer was never built) is a structural absence in **every**
+mode. A **label** precondition (`--w-s2-goal` without `--s2-labels`) binds only on a run that
+**trains** -- a dry run legitimately smokes the loss on synthetic keys. Conflating them is exactly
+the false alarm §4 warns about, one level up. Pinned by
+`test_a_LABEL_precondition_is_exempt_under_dry_run_but_a_MODULE_one_is_not`.
+
+---
+
 ## 7. ⛔ No weight was changed
 
 Flipping a default silently changes the recipe every banked arm was trained under, and the arms are
@@ -275,7 +326,7 @@ whoever owns `refa_v1_train.py`.
 | the engine | `stack/tanitad/effective_weights.py` *(new)* |
 | v6 audit + refusal + `--allow-discarded-weights` | `stack/scripts/train_v6_staged.py` |
 | refc audit + refusal + `REFC_WEIGHT_GATES` | `stack/scripts/refc_v3_train.py` |
-| 35 tests incl. both wiring tests | `stack/tests/test_v6_effective_weights.py` *(new)* |
+| 39 tests incl. both wiring tests | `stack/tests/test_v6_effective_weights.py` *(new)* |
 | this note | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-effective-weights/EFFECTIVE_WEIGHTS.md` |
 
 **The stamp.** `config.json` now carries `effective_weights`: per term the argparse default, what

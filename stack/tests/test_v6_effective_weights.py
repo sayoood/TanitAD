@@ -246,6 +246,38 @@ def test_a_stamped_but_untrainable_head_is_refused():
     assert not any("no scorer" in g for g in ok), ok
 
 
+def test_a_LABEL_precondition_is_exempt_under_dry_run_but_a_MODULE_one_is_not():
+    """⛔ THE FALSE REFUSAL THIS GUARD ACTUALLY PRODUCED, PINNED.
+
+    MEASURED 2026-09-06: the first version refused `--w-s2-goal 1` with no
+    `--s2-labels` unconditionally and broke
+    `test_v6_s2_loss.py::test_preflight_refuses_weight_without_labels_on_a_REAL_run`,
+    whose second half asserts the OPPOSITE for a dry run -- *"a dry-run may
+    smoke the loss on synthetic keys without labels"*.
+
+    ⚠ The distinction is real, not a test quirk: a **module** precondition
+    (`--selector none`) is a structural absence in every mode, while a **label**
+    precondition only binds on a run that trains. ⭐ A guard that fires on an
+    honest launch gets deleted -- caught here by an existing test, which is what
+    the suite is for.
+    """
+    base = ["--stage", "S-S", "--out", "/tmp/run", "--init-from", "/tmp/p.pt"]
+    # LABEL precondition: refuses on a real run...
+    assert any("--s2-labels" in p
+               for p in _v6_problems(base + ["--w-s2-goal", "1"]))
+    # ...and is silent on a dry run.
+    assert not any("--s2-labels" in p
+                   for p in _v6_problems(base + ["--w-s2-goal", "1",
+                                                 "--dry-run"]))
+    # MODULE precondition: binding in BOTH modes -- a scorer that was never
+    # built is absent from the dry run too.
+    for extra in ([], ["--dry-run"]):
+        got = _v6_problems(["--stage", "S-J", "--out", "/tmp/run",
+                            "--init-from", "/tmp/p.pt", "--w-select", "1.0",
+                            *extra])
+        assert any("selector" in p for p in got), (extra, got)
+
+
 def test_the_stamp_carries_the_evidence_a_later_audit_needs():
     stamp = V6.effective_weights_stamp(_v6(_st("--w-o5", "1.0")))
     assert stamp["explicit_source"] == ew.SRC_ARGV
@@ -348,6 +380,54 @@ def test_run_config_stays_JSON_SERIALISABLE_with_the_argv_carriers(monkeypatch):
     o5 = [t for t in cfg_json["effective_weights"]["terms"]
           if t["term"] == "o5_rollout"][0]
     assert o5["status"] == ew.DISCARDED and o5["builds_graph"] is False
+
+
+def test_a_refusal_that_cannot_be_PRINTED_has_refused_nothing(monkeypatch):
+    """⛔⛔ MEASURED 2026-09-06 on the cp1252 dev box: EVERY preflight
+    refusal in this trainer died inside its own `print` --
+
+        UnicodeEncodeError: 'charmap' codec can't encode character '\\u26d4'
+
+    -- so the process exited **1 with a traceback** instead of **2 with the
+    reason**. The guard was correct, reached, and MUTE. ⚠ Confirmed
+    PRE-EXISTING (the same argv fails identically on the pre-change trainer),
+    but it made the new effective-weight refusal invisible exactly where an
+    operator meets it, which is the whole deliverable.
+
+    ⚠ And fixing the leading glyph alone was NOT enough: the next run died
+    on `'\\u21d2'` at position 322, inside another guard's message body. The
+    fix has to be at the WRITE, not in the content.
+    """
+    import io
+
+    class _Cp1252Out(io.TextIOWrapper):
+        pass
+
+    buf = io.BytesIO()
+    stream = _Cp1252Out(buf, encoding="cp1252", errors="strict",
+                        write_through=True)
+    monkeypatch.setattr(sys, "stdout", stream)
+
+    # a message carrying BOTH offenders: the marker and a body arrow.
+    V6._print_refusal("--w-o5 1 in --stage S-T \u21d2 the term is removed")
+    stream.flush()
+    out = buf.getvalue().decode("cp1252")
+
+    assert "--w-o5 1 in --stage S-T" in out, out      # the reason survived
+    assert "the term is removed" in out, out          # ...including past the arrow
+    assert "REFUSED:" in out                          # ASCII marker on a legacy codepage
+
+
+def test_the_refusal_marker_keeps_the_house_glyph_on_utf8(monkeypatch):
+    """The degrade is conditional, not a blanket downgrade: a UTF-8 console
+    still gets the marker every other refusal in this repo uses."""
+    import io
+    buf = io.BytesIO()
+    stream = io.TextIOWrapper(buf, encoding="utf-8", write_through=True)
+    monkeypatch.setattr(sys, "stdout", stream)
+    V6._print_refusal("plain ascii problem")
+    stream.flush()
+    assert "\u26d4" in buf.getvalue().decode("utf-8")
 
 
 # ---------------------------------------------------------------------------

@@ -10171,7 +10171,22 @@ def _term_precondition(term: str, a) -> tuple[bool, str] | None:
         ok = bool(getattr(a, "t5_pairs", False))
         return (ok, "no --t5-pairs: windows are drawn INDEPENDENTLY, so the "
                     "consistency term would compare unrelated episodes")
+    # ⛔⛔ A LABEL PRECONDITION IS EXEMPT UNDER `--dry-run`, AND LEARNING
+    # THAT COST A FALSE REFUSAL. MEASURED 2026-09-06: this function first
+    # refused `--w-s2-goal 1` with no `--s2-labels` unconditionally, which broke
+    # `test_v6_s2_loss.py::test_preflight_refuses_weight_without_labels_on_a_
+    # REAL_run` -- a test whose second half asserts the OPPOSITE for a dry run,
+    # because "a dry-run may smoke the loss on synthetic keys without labels".
+    # ⚠ The distinction is real and not a test quirk: a MODULE precondition
+    # (`--selector none`, no `--t2-contrastive`) is a structural absence in every
+    # mode, while a LABEL precondition is only binding on a run that trains.
+    # ⭐ This is the failure the flag-design rule warns about -- a guard
+    # firing on an honest launch -- caught by an existing test rather than in
+    # production, which is what the suite is for.
+    _dry = bool(getattr(a, "dry_run", False))
     if term == "w_s2_goal":
+        if _dry:
+            return None
         ok = bool(getattr(a, "s2_labels", None))
         return (ok, "no --s2-labels: the CE/L1 has no target")
     return None
@@ -10227,7 +10242,10 @@ def v6_weight_specs(a) -> list[_ew.TermSpec]:
     specs.append(_ew.TermSpec(
         term="o10_psg", flag="--w-o10-psg", dest="w_o10_psg",
         declared=0.0, requested=w_psg, effective=w_psg, layer=None,
-        needs=(bool(getattr(a, "psg_labels", None)),
+        # same label-vs-module distinction as `_term_precondition`: a dry run
+        # smokes the head on synthetic keys, so the label is not binding there.
+        needs=(bool(getattr(a, "psg_labels", None))
+               or bool(getattr(a, "dry_run", False)),
                "no --psg-labels: the physical-state head has no target"),
         mask="psg_valid (per-clip: 1.0 only for clips in the train join)"))
     return specs
@@ -10967,6 +10985,42 @@ def _preflight_seam_dump(a) -> list[str]:
             f"--dump-seam-plan and accept that X2_seam reads 'not-run'."]
 
 
+def _print_refusal(problem: str) -> None:
+    """⛔⛔ A REFUSAL THAT CANNOT BE PRINTED HAS REFUSED NOTHING.
+
+    MEASURED 2026-09-06 on the cp1252 dev box: every preflight refusal died in
+    its own `print` --
+
+        UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4'
+
+    -- so the process exited **1 with a traceback** instead of **2 with the
+    reason**, and the operator saw a codec error where the diagnosis should
+    have been. It is why `test_v6_chain`'s ladder stops at its first refusing
+    stage. ⚠ Confirmed PRE-EXISTING by running the same argv through the
+    pre-change trainer: byte-identical failure, so this is not a regression --
+    but it makes every refusal in this file, the new effective-weight one
+    included, invisible exactly where an operator would meet it.
+
+    ⚠ FIXING THE MARKER ALONE WAS NOT ENOUGH, AND THAT IS THE LESSON.
+    With the leading glyph made conditional the very next run died on
+    `'\u21d2'` at position 322 -- inside the PROBLEM TEXT, written by some
+    other guard. The messages in this file are full of arrows and warning
+    signs, so the fix cannot be to sanitise content one glyph at a time; it has
+    to be at the WRITE. This degrades to backslash escapes rather than raising:
+    the reason always reaches the operator, and the exit code stays 2.
+    """
+    enc = (getattr(sys.stdout, "encoding", None) or "").lower()
+    mark = "⛔" if "utf" in enc else "REFUSED:"
+    line = f"[v6] {mark} {problem}"
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        raw = line.encode(getattr(sys.stdout, "encoding", None) or "utf-8",
+                          "backslashreplace")
+        sys.stdout.buffer.write(raw + b"\n")
+        sys.stdout.flush()
+
+
 def main(argv=None) -> int:
     ap = build_parser()
     ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
@@ -10990,7 +11044,7 @@ def main(argv=None) -> int:
         problems = [p for p in problems if not p.startswith("⚠️ ISOLATION")]
     if problems:
         for p in problems:
-            print(f"[v6] ⛔ {p}", flush=True)
+            _print_refusal(p)
         return 2
     if a.dry_run:
         dry_run(a)
