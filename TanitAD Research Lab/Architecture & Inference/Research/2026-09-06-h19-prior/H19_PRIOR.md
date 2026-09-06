@@ -102,10 +102,23 @@ replicate arm changes it, so `H-ESTIM-SEED-1` does not apply to this row.
 | any `h19_*` field | ⛔ **NONE** — `param_breakdown` (10 keys), `registered_delta`, and no H19 line | same |
 
 ⚠️ **There is no `--tac-vocab-version` CLI flag** (positive assertion: `grep
-add_argument … | grep -i vocab` returns nothing against a same-breath control of
-**88** `add_argument` calls). The vocabulary follows `--v7-labels`. The brief's
-phrasing "refcv4b ran `--tac-vocab-version v7.0`" names a flag that does not
-exist; the *conclusion* (refcv4b is non-kin3) is nonetheless correct.
+add_argument … | grep -i vocab` returns nothing, twice, through two channels).
+The vocabulary follows `--v7-labels`. The brief's phrasing "refcv4b ran
+`--tac-vocab-version v7.0`" names a flag that does not exist; the *conclusion*
+(refcv4b is non-`kin3`) is nonetheless correct.
+
+⭐ **AND THE CONTROL ITSELF MOVED MID-TURN — 88 → 89 — WHICH IS WHY IT IS
+REPORTED WITH ITS MOMENT.** The same-breath `add_argument` control read **88**
+when the assertion was first made and **89** on an independent re-measurement
+through the *other* channel (G: mount direct, vs. the local mirror) ~40 minutes
+later. ⛔ It is **not** a mount artifact and **not** a disagreeing probe: the two
+channels agree exactly on the other two controls (`grep -c "def " v6.py` =
+**142**, `grep -c import refc_v3.py` = **21**). `refc_v3_train.py` is **`MM`** and
+a sibling added the 89th line — **`--tac-goal-tok-head`**, the D-ROLL-1 opt-in,
+verified by diffing the `add_argument` lines against `git show HEAD:…`.
+⇒ **The claim is UNAFFECTED** (still no vocab-named flag, re-asserted after the
+change), but a control quoted without its moment rots against a live sibling —
+so it carries one here.
 
 ⚠️ **The five banked local v4-design arms (`A_v3`, `B_v4_noguard`, `C_v4_drop`,
 `D_v4_full`, `E_regress`) all ran `kin3` with `v7_labels: null`** — so the
