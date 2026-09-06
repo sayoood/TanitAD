@@ -30,6 +30,32 @@ sentence is a generative claim; this is image-space evidence.
 is asked on only **1,165 of 4,729** clips, and **3,246 clips with boxes were
 never asked about pedestrians at all**.
 
+⛔⛔ **CORRECTED 2026-09-06 — 10 OF THAT "318 CARRY NONE" ARE A PARSE
+FAILURE, NOT AN ABSENCE, AND THE PERCEPTION IS RECOVERABLE.** MEASURED over the
+4,728 `grounding_via_vqa` rows: **4,411 box payloads parse, 10 do NOT (0.212 %),
+307 genuinely carry none** (4,411 + 10 + 307 = 4,728). All ten fail the same
+way — the payload has lost its leading `[{"bbox_2d": ` and begins mid-object,
+e.g. `[325, 653, 491, 756], "label": "Bus"}]`. **Prepending that prefix recovers
+10 of 10**; a deliberately WRONG prefix recovers 0 of 10 (the control).
+Recovered labels: Truck 3 - car 2 - lead vehicle 2 - Bus 1 - Car 1 - Bike with
+rider 1.
+
+⚠️ **WHY IT IS NOT COSMETIC:** this module's own rule is that grounding can
+CONFIRM a token and can NEVER REFUTE one, because a missing box overwhelmingly
+means the question was not asked. A box row that FAILED TO PARSE is
+indistinguishable from that ⇒ a dropped row silently converts *perception we
+hold* into *perception we were never offered*, on exactly the clips where a
+vehicle WAS boxed.
+
+⭐ **FOUND BY THE `box_json_failed` COUNTER ADDED THE SAME DAY**, which is the
+argument for the counters: the `except: arr = []` branch had been dropping these
+ten since the module was written and nothing could see it. ⛔ **NO REPAIR IS
+SHIPPED HERE** — patching a truncated generative output is a corpus-owner
+decision, not a loader's, and inventing one would manufacture labels. The shape,
+the recipe and the control are banked at
+`—/Research/2026-09-06-cot-loader/raw/box_drop_probe.json` +
+`box_recovery.json`; the fix belongs upstream in the export.
+
 ⇒ **Grounding can CONFIRM a token. It can NEVER REFUTE one.** A missing box of
 kind X overwhelmingly means the question about X was not asked, not that X is
 absent. I first wrote a `contradicted` state for "has boxes, none of kind X" —
@@ -42,17 +68,82 @@ s2 label anchor is `RAW_T0_S = 8.0`. Alpamayo describes the scene 2.9 s EARLIER
 than our labels do — at 10 m/s, 29 m apart. Any agreement statistic computed
 without `ALPAMAYO_T0_S` is comparing two different moments, and every such
 number I published before today did exactly that.
+
+⛔⛔ **AND UNTIL 2026-09-06 THE LOADER ANSWERED A MISSING SOURCE FILE
+WITH `return {}` — SO EVERY CoT TOKEN VANISHED WITH NO ERROR.** On any
+machine without the hard-coded local `RECORDS` path the augmentation read as
+legitimately empty, and downstream *"this corpus states no speed limit"* and
+*"the records file was not there"* were INDISTINGUISHABLE.
+
+⭐ That is this programme's dominant failure class in a loader costume:
+a search tool reporting *"no matches"* for files it could not open, a
+`grep -c` returning 0 from an unreadable file, a committer exiting 0 having
+committed nothing. In every one the EMPTY RESULT READS AS AN ANSWER.
+⇒ **`_load()` now RAISES `AlpamayoRecordsUnavailable`.** The only empty is
+the explicit, STAMPED opt-in (`TANITAD_ALPAMAYO_RECORDS_OPTIONAL=1`), which
+warns and is reported by `load_report()` / `coverage()['records_available']`.
 """
 from __future__ import annotations
 
 import json
 import os
 import re
+import warnings
 from dataclasses import dataclass, field
 from functools import lru_cache
 
 RECORDS = "C:/Users/Admin/tanitad-data/alpamayo/records.parquet"
 MANIFEST = "C:/Users/Admin/tanitad-data/alpamayo/selection_manifest.json"
+
+#: md5 of the parquet this module was written against — MEASURED 2026-09-06
+#: on the local mirror and independently against HF snapshot `cedbf57c…`:
+#: 25,970,018 B, 23,644 rows, 4,729 distinct clips. Quoted in the failure
+#: message so an operator can tell a MISSING file from a DIFFERENT one.
+RECORDS_MD5 = "9f13474723b880eec7fcc09a7be478d8"
+
+#: Point the loader elsewhere (a pod, an off-Drive clone, a test). Read at
+#: CALL time, never at import time, so a test can set it and `cache_clear()`.
+RECORDS_ENV = "TANITAD_ALPAMAYO_RECORDS"
+#: ⚠️ The ONLY route to an empty result, and it is STAMPED rather than
+#: silent: `_load()` warns, and `load_report()` / `coverage()` report
+#: `records_available: False` with the path that was tried. A SILENT opt-out
+#: would simply reinstate the defect this module exists to have removed.
+RECORDS_OPTIONAL_ENV = "TANITAD_ALPAMAYO_RECORDS_OPTIONAL"
+
+
+class AlpamayoRecordsUnavailable(RuntimeError):
+    """The source parquet could not be read. ⛔ NEVER answered with `{}`.
+
+    ⛔ An empty mapping here is INDISTINGUISHABLE from a corpus that
+    genuinely carries no CoT, no boxes and no `meta_action`. The honest
+    output of a failed read is INCONCLUSIVE, never ABSENT — so it raises.
+
+    ⚠️ Callers that legitimately tolerate the empty case must opt in
+    explicitly via `RECORDS_OPTIONAL_ENV`, which is warned and stamped.
+    """
+
+
+#: What the last `_load()` actually did — populated on EVERY path, the
+#: failing one included, so a consumer can always tell an empty result apart
+#: from an unread one. See `load_report()`.
+_LOAD_REPORT: dict = {}
+
+
+def records_path() -> str:
+    """The parquet this module will read, `RECORDS_ENV` override honoured."""
+    return os.environ.get(RECORDS_ENV) or RECORDS
+
+
+def load_report() -> dict:
+    """Provenance of the last load: path, availability, rows/clips, and the
+    per-reason SWALLOW COUNTS.
+
+    ⭐ The counters exist because a per-row `except: continue` is the
+    same defect at row scale: a corrupted parquet would yield FEWER clips with
+    no error at all. They are counted and stamped rather than thresholded —
+    inventing a tolerance here would be the uncalibrated-threshold defect.
+    """
+    return dict(_LOAD_REPORT)
 
 #: Alpamayo's own anchor on the raw clip timeline. NOT our 8.0 s s2 anchor.
 ALPAMAYO_T0_S = 5.1
@@ -202,11 +293,46 @@ def _parse_meta(s: str | None) -> dict[str, str]:
 
 @lru_cache(maxsize=1)
 def _load() -> dict[str, AlpamayoClip]:
+    """Every clip in the augmentation. ⛔ RAISES rather than returning `{}`.
+
+    ⛔⛔ THE PRE-2026-09-06 BODY WAS `if not os.path.exists(RECORDS):
+    return {}`. It turned a missing FILE into a negative FINDING, silently, on
+    every downstream token. See `AlpamayoRecordsUnavailable`.
+
+    ⚠️ `lru_cache` does not memoise exceptions, so a failing load
+    re-raises on every call; a SUCCESSFUL load is cached, so a test that
+    repoints `RECORDS_ENV` must call `_load.cache_clear()`.
+    """
     import pandas as pd
 
-    if not os.path.exists(RECORDS):
-        return {}
-    df = pd.read_parquet(RECORDS)
+    path = records_path()
+    _LOAD_REPORT.clear()
+    _LOAD_REPORT.update(records_path=path, records_available=False,
+                        rows=0, clips=0, optional_opt_out=False,
+                        row_json_failed=0, auto_labeling_json_failed=0,
+                        box_json_failed=0, meta_action_unparsed=0)
+    if not os.path.exists(path):
+        if os.environ.get(RECORDS_OPTIONAL_ENV) == "1":
+            _LOAD_REPORT["optional_opt_out"] = True
+            warnings.warn(
+                "%s=1 and %r is absent: the Alpamayo augmentation is EMPTY "
+                "for this process. Every CoT token, box and meta_action will "
+                "be missing. This is an OPT-IN, STAMPED empty "
+                "(see load_report()), not a negative finding."
+                % (RECORDS_OPTIONAL_ENV, path), RuntimeWarning, stacklevel=2)
+            return {}
+        raise AlpamayoRecordsUnavailable(
+            "Alpamayo records parquet not found: %r. Set %s to the parquet "
+            "(expected md5 %s), or set %s=1 to opt in to a STAMPED empty "
+            "result. Returning an empty mapping here would make 'the file is "
+            "missing' indistinguishable from 'this corpus carries no CoT'."
+            % (path, RECORDS_ENV, RECORDS_MD5, RECORDS_OPTIONAL_ENV))
+    try:
+        df = pd.read_parquet(path)
+    except Exception as exc:               # unreadable is not the same as empty
+        raise AlpamayoRecordsUnavailable(
+            "Alpamayo records parquet at %r could not be read: %s: %s"
+            % (path, type(exc).__name__, exc)) from exc
     out: dict[str, AlpamayoClip] = {}
 
     def get(cid: str) -> AlpamayoClip:
@@ -219,12 +345,15 @@ def _load() -> dict[str, AlpamayoClip]:
         try:
             d = json.loads(row.raw_json)
         except Exception:
+            _LOAD_REPORT["row_json_failed"] += 1      # counted, not silent
             continue
         c = get(cid)
         task = row.task
 
         if task == "meta_action":
             c.meta_action = _parse_meta(_first(d.get("meta_action")))
+            if not c.meta_action:
+                _LOAD_REPORT["meta_action_unparsed"] += 1
             c.cot = _first(d.get("cot"))
 
         elif task == "auto_labeling":
@@ -232,6 +361,7 @@ def _load() -> dict[str, AlpamayoClip]:
             try:
                 a = json.loads(raw) if raw else {}
             except Exception:
+                _LOAD_REPORT["auto_labeling_json_failed"] += 1
                 a = {}
             c.chain_of_causation = a.get("chain_of_causation") or None
             c.components_analysis = a.get("critical_components_analysis") or None
@@ -247,6 +377,7 @@ def _load() -> dict[str, AlpamayoClip]:
             try:
                 arr = json.loads(raw) if raw else []
             except Exception:
+                _LOAD_REPORT["box_json_failed"] += 1
                 arr = []
             for b in arr if isinstance(arr, list) else []:
                 if isinstance(b, dict) and "bbox_2d" in b:
@@ -261,6 +392,33 @@ def _load() -> dict[str, AlpamayoClip]:
                 elif isinstance(v, (int, float)):
                     setattr(c, dst, float(v))
 
+    if not out:
+        # ⛔ A readable file that yields NOTHING is still an unusable
+        # source, and it is exactly as indistinguishable from a real absence
+        # as a missing file is. Same verdict.
+        raise AlpamayoRecordsUnavailable(
+            "Alpamayo records parquet at %r was read (%d rows) but produced "
+            "ZERO clips. Expected md5 %s (23,644 rows / 4,729 clips)."
+            % (path, len(df), RECORDS_MD5))
+    _LOAD_REPORT.update(records_available=True, rows=int(len(df)),
+                        clips=len(out))
+    # ⛔ A COUNTER NOTHING READS IS STILL A SILENT SWALLOW. The per-row
+    # `except` branches above drop content without failing, so any nonzero
+    # count is surfaced HERE rather than left for a caller that never asks.
+    # ⭐ A WARNING IS NOT A THRESHOLD. MEASURED 2026-09-06: 0 of 23,644 rows
+    # fail to parse on the canonical artifact, so any failure at all is an
+    # anomaly FOR THAT FILE — but another source could legitimately carry a
+    # few, and inventing a tolerance would be the uncalibrated-threshold
+    # defect. So: never silent, never refused on a guessed number.
+    swallowed = {k: v for k, v in _LOAD_REPORT.items()
+                 if k.endswith(("_failed", "_unparsed")) and v}
+    if swallowed:
+        warnings.warn(
+            "Alpamayo records at %r: %d rows -> %d clips, but content was "
+            "DROPPED without failing: %s. These are counted, not tolerated: "
+            "decide whether the build is still admissible (load_report())."
+            % (path, len(df), len(out), swallowed),
+            RuntimeWarning, stacklevel=2)
     return out
 
 
@@ -274,12 +432,26 @@ def get(clip_id: str) -> AlpamayoClip | None:
 
 
 def coverage() -> dict:
-    """What the corpus actually holds — for a report that must not guess."""
+    """What the corpus actually holds — for a report that must not guess.
+
+    ⛔ `records_available` and `records_path` are present on EVERY return,
+    the empty one included, so a consumer can never read `clips: 0` as *"the
+    corpus is empty"* when it means *"the file was not there"*. That empty
+    return is now reachable only under the stamped opt-out.
+    """
     d = _load()
     n = len(d)
+    rep = load_report()
+    stamp = {
+        "records_available": bool(rep.get("records_available")),
+        "records_path": rep.get("records_path"),
+        "optional_opt_out": bool(rep.get("optional_opt_out")),
+        "row_json_failed": rep.get("row_json_failed", 0),
+    }
     if not n:
-        return {"clips": 0}
+        return dict(stamp, clips=0)
     return {
+        **stamp,
         "clips": n,
         "hours": round(n * 20.0 / 3600.0, 1),
         "with_meta_action": sum(1 for c in d.values() if c.meta_action),

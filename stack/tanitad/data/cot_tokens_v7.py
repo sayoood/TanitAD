@@ -4,14 +4,32 @@ Every result carries `provenance="vlm-cot"` and stays `disputed` — the CoT is 
 generative model's claim (temperature 0.6, ONE draw per clip), measured at
 3 correct / 2 wrong on visually checkable statements (RETRACTION_LOG C136/C139).
 
-⚠️ WHAT IS AND IS NOT AVAILABLE. Alpamayo's raw records carry
-`answer|box|cot|cot_auto_labeling|meta_action|raw_outputs`, but only
-**`cot`, `lane`, `lateral`, `longitudinal`** were exported per clip.
-`meta_action` is NOT reachable locally — using it needs the source parquet. All
-extraction here is therefore from the CoT sentence alone.
+⛔ RETRACTED 2026-08-23 (C142). The sentence *"`meta_action` is NOT reachable
+locally — using it needs the source parquet"* was WRONG and is kept here only
+so it cannot come back: the source parquet IS local (`alpamayo_records.RECORDS`,
+md5 `9f13474723b880eec7fcc09a7be478d8`) and `alpamayo_records.py` reads all
+FIVE tasks — `meta_action`, `trajectory`, `auto_labeling`, `vqa`,
+`grounding_via_vqa` — over 23,644 rows / 4,729 clips.
 
-⭐ MEASURED YIELDS over the 4,729-clip corpus (this is what each token can
-actually be populated from):
+⛔⛔ THE YIELD TABLE BELOW IS SCOPED TO ONE TEXT FIELD, AND ITS SCOPE WAS
+NOT STATED — WHICH MADE ITS SPEED-LIMIT ROW READ 5.3x SMALLER THAN THE CORPUS.
+MEASURED 2026-09-06 (n = 4,729 clips, `records.parquet` md5
+`9f13474723b880eec7fcc09a7be478d8`): every row below is the **`cot` field of
+the `meta_action` task ALONE** — the two are the same text, `AR.get(cid).cot`.
+Across all five tasks the same phrases occur far more often:
+`speed limit` 41 ⇒ **219**, `pedestrian` 278 ⇒ 2,115, `traffic light` 636
+⇒ 2,032, `yield` 400 ⇒ 688. ⇒ **Read every row as "of the `meta_action` CoT
+sentence", never as "of everything we hold".** Same family as the `df` / Thor
+`free` / `step_s` traps: a true measurement quoted outside its scope.
+
+⚠️ AND 219 IS THE COUNT OF CLIPS WHERE ALPAMAYO *STATES* THE PHRASE. A
+further 40 clips carry it only in the QUESTION PUT TO THE MODEL (the sampled
+VQA bank); 219 stated + 16 question-only = the **235** a sibling report
+published as the corpus figure. **Being ASKED about a speed limit is not the
+corpus stating one**, so 219 is the number a label pipeline can act on.
+
+⭐ MEASURED YIELDS, **`meta_action` CoT sentence**, n = 4,729 clips (this is
+what each token can be populated from FROM THIS FIELD):
 
     yield                400  8.5 %   "yield due to pedestrians in the crosswalk"
     parked               419  8.9 %   -> EVADE (static obstacle)
@@ -22,11 +40,16 @@ actually be populated from):
     cyclist               64  1.4 %
     slower traffic        56  1.2 %   -> OVERTAKE (moving obstacle)
     merge                 45  1.0 %
-    speed limit           41  0.9 %
+    speed limit           41  0.9 %   ⛔ THIS FIELD ONLY. Corpus-wide 219
+                                      STATED (4.63 %) / 235 stated-or-asked;
+                                      **57 carry a VALUE** — see
+                                      `speed_limit_reading`.
     ramp                  26  0.5 %
     exit                  17  0.4 %
     overtake (explicit)   13  0.3 %
     open door              0  0.0 %   ⚠️ the PI's door case does NOT occur
+                                      in this field (3 clips across all five
+                                      tasks, so it is rare, not absent)
 """
 from __future__ import annotations
 
@@ -110,7 +133,139 @@ _EVADE_OBJ = (("STOPPED_VEHICLE", re.compile(
               ("PEDESTRIAN", re.compile(r"\bpedestrian")),
               ("DOOR", re.compile(r"\b(?:open |car )?door\b")),
               ("ONCOMING", re.compile(r"\boncoming\b")))
+#: ⛔⛔ A DEAD BOOLEAN THAT THREW AWAY FREE DATA. Until 2026-09-06
+#: `CotTokens.speed_limit` was a `bool`, this pattern had NO CAPTURING GROUP,
+#: and `goals_from_cot` emitted nothing for it — so every posted-limit VALUE
+#: the CoT contains was matched and discarded at the regex. MEASURED over the
+#: 4,729 clips of `Sayood/tanitad-alpamayo2-augmentation`: **57 clips state a
+#: value read off a sign**, unhedged and un-negated.
+#: ⚠️ The boolean's own semantics are UNCHANGED (presence, on the
+#: negation-stripped text), because every banked label was built with them.
+#: The value is captured ALONGSIDE it, never instead of it.
 _SPEED_LIMIT = re.compile(r"\bspeed limit\b")
+
+#: ⛔ A VALUE ASSERTED AS READ OFF A SIGN / GANTRY. Same definition as
+#: `—/2026-09-06-speed-limit-source/code/classify_limits.py`, so the two
+#: agree clip-for-clip; the harness in this package asserts that they do.
+_SPEED_LIMIT_READ = re.compile(
+    r"(?:speed[\s\-]?limit\s+sign|limit\s+sign|gantry\s+signs?|sign)\s*"
+    r"(?:[a-z,\s]{0,40}?)(?:indicat\w+|display\w*|read\w*|shows?|of|is|posted|:)?\s*"
+    r"(\d{1,3})\s*(km/?h|kph|mph)?"
+    r"|(?:a|an)\s+(\d{1,3})\s*(km/?h|kph|mph)?\s*speed[\s\-]?limit\s+sign"
+    r"|speed[\s\-]?limit\s+(?:of|is|at)\s+(\d{1,3})\s*(km/?h|kph|mph)?", re.I)
+
+#: ⚠️ HEDGING marks a LANGUAGE PRIOR, not a reading. Admitting
+#: *"residential areas typically have 25-30 mph"* would be the `road_class`
+#: circularity in a new costume, so it is classified and EXCLUDED, not dropped
+#: silently.
+_SPEED_LIMIT_HEDGE = re.compile(
+    r"\btypically\b|\busually\b|\bgenerally\b|\boften\b|\blikely\b|\bprobabl\w+"
+    r"|\bcould\s+(?:range|be)\b|\bwould\s+(?:be|likely)\b|\bapproximately\b"
+    r"|\bestimate\w*\b|\bassum\w+|\bif\s+not\b|\bdepending\s+on\s+local\b"
+    r"|\bnot\s+visible\b|\bnot\s+observed\b|\bexact\s+speed", re.I)
+
+_SPEED_LIMIT_NEG = re.compile(
+    r"\b(?:no|not)\b[^.]{0,40}?speed[\s\-]?limit"
+    r"|speed[\s\-]?limit[^.]{0,40}?\bnot\s+(?:visible|observed|present|shown)",
+    re.I)
+
+#: ⛔ 1 mph = 0.44704 m/s exactly; 1 km/h = 1/3.6 m/s exactly.
+#: MEASURED: 70 km/h = 19.44 m/s, 70 mph = 31.29 m/s — a **1.61x** spread,
+#: which is why a unit-less reading may NEVER be converted.
+_SPEED_LIMIT_MS = {"kph": 1.0 / 3.6, "mph": 0.44704}
+
+
+def _norm_speed_unit(u: str | None) -> str | None:
+    """`km/h`|`kmh`|`kph` -> `kph`; `mph` -> `mph`; anything else -> None."""
+    if not u:
+        return None
+    u = u.strip().lower().replace("/", "")
+    if u in ("kmh", "kph"):
+        return "kph"
+    return "mph" if u == "mph" else None
+
+
+@dataclass
+class SpeedLimitReading:
+    """One posted-speed-limit claim, with the unit it was stated in.
+
+    ⛔ **A NUMBER WITHOUT ITS UNIT IS INADMISSIBLE**, so `unit_missing` is
+    carried explicitly and `value_ms` is **None** whenever it is True. MEASURED
+    2026-09-06 over the 4,729-clip corpus: **18 of the 57 clip-level readings
+    (31.6 %) state a bare number** with no unit at all. Guessing km/h for them
+    would be a 1.61x error on a third of the set — the same class as the
+    `anchors.pt` control-units trap, where a correct formula under the wrong
+    unit produced 396 g of lateral acceleration and looked like an answer.
+
+    `state` is one of:
+      `READ`    a value asserted as read off a sign, unhedged and un-negated
+      `HEDGED`  a language prior ("residential areas typically have 25-30 mph")
+      `NEGATED` an explicit absence ("the speed limit sign is not visible")
+      `MENTION` the phrase occurs but carries no value and is neither of those
+
+    ⚠️ ONLY `READ` carries a value. The other three carry the state and
+    nothing else, so a consumer cannot mistake a prior for a perception.
+    """
+
+    state: str
+    value: int | None = None
+    unit: str | None = None          # "kph" | "mph" | None
+    unit_missing: bool = False
+    value_ms: float | None = None
+    text: str = ""
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+def speed_limit_reading(text: str | None) -> SpeedLimitReading | None:
+    """The posted speed limit this text claims, or None if it claims none.
+
+    ⭐ Takes RAW text, not negation-stripped text: the negation and hedging
+    are part of the CLASSIFICATION here, not noise to be removed before it.
+
+    ⛔ This function does not decide anything. It captures and labels. The
+    extract-vs-supply decision is the PI's and is OPEN, and these labels are
+    ego-coupled (median ratio limit/ego **1.01**, grounded **0 of 57**), so no
+    token is emitted and nothing reaches inference. See
+    `—/Research/2026-09-06-speed-limit-source/RESULT.md`.
+    """
+    if not text:
+        return None
+    low = text.lower()
+    if "speed limit" not in low and "speed-limit" not in low:
+        return None
+    neg = bool(_SPEED_LIMIT_NEG.search(text))
+    hed = bool(_SPEED_LIMIT_HEDGE.search(text))
+    m = _SPEED_LIMIT_READ.search(text)
+    val = unit = None
+    span = ""
+    if m:
+        span = m.group(0)[:160]
+        digits = [g for g in m.groups() if g and g.isdigit()]
+        units = [g for g in m.groups() if g and not g.isdigit()]
+        if digits:
+            val = int(digits[0])
+        if units:
+            unit = _norm_speed_unit(units[0])
+    # ⛔ PRECEDENCE IS LOAD-BEARING and matches the sibling's classifier: a
+    # blob that is BOTH hedged and negated is HEDGED, and a READ requires a
+    # value that is neither.
+    if val is not None and not hed and not neg:
+        state = "READ"
+    elif hed:
+        state = "HEDGED"
+    elif neg:
+        state = "NEGATED"
+    else:
+        state = "MENTION"
+    if state != "READ":
+        return SpeedLimitReading(state=state, text=span)
+    missing = unit is None
+    return SpeedLimitReading(
+        state=state, value=val, unit=unit, unit_missing=missing,
+        value_ms=(None if missing else round(val * _SPEED_LIMIT_MS[unit], 4)),
+        text=span)
 
 # --- corridor offset: a HELD in-lane bias, PI-designed extraction 2026-08-28 --
 #: ⭐ TWO PATTERN CLASSES WITH OPPOSITE SIGN RULES — the subtlety that makes
@@ -181,6 +336,15 @@ class CotTokens:
     overtake: bool = False
     evade_obj: str | None = None         # PARKED|CYCLIST|PEDESTRIAN|DOOR|ONCOMING
     speed_limit: bool = False
+    #: ⛔ THE VALUE THE OLD REGEX THREW AWAY. `speed_limit` above stays a
+    #: presence flag with its original semantics; these five carry what it
+    #: discarded. `speed_limit_ms` is **None whenever the unit is missing** —
+    #: a number without its unit may not be converted, at any cost.
+    speed_limit_state: str | None = None   # READ|HEDGED|NEGATED|MENTION
+    speed_limit_value: int | None = None
+    speed_limit_unit: str | None = None    # "kph" | "mph" | None
+    speed_limit_unit_missing: bool = False
+    speed_limit_ms: float | None = None
     evidence: str = ""
 
     def as_dict(self) -> dict:
@@ -236,6 +400,16 @@ def extract(cot: str | None) -> CotTokens:
                 c.evade_obj = name
                 break
     c.speed_limit = bool(_SPEED_LIMIT.search(t))
+    # ⭐ Read from the RAW `cot`, not the negation-stripped `t`: the reading
+    # classifier does its own negation and hedging, and stripping first would
+    # hide the very state it is there to record.
+    r = speed_limit_reading(cot)
+    if r is not None:
+        c.speed_limit_state = r.state
+        c.speed_limit_value = r.value
+        c.speed_limit_unit = r.unit
+        c.speed_limit_unit_missing = r.unit_missing
+        c.speed_limit_ms = r.value_ms
     return c
 
 
@@ -283,4 +457,17 @@ def goals_from_cot(cot: str | None) -> dict[str, dict]:
     side = offset_side(NEG.strip_negated((cot or "").lower()))
     if side:
         out["CORRIDOR_OFFSET"] = {"side": side}
+    # ⛔ NO SPEED-LIMIT TOKEN IS EMITTED, DELIBERATELY. The value is now
+    # CAPTURED on `CotTokens` (and lands in the banked label record), but it
+    # does not become a goal and it does not reach inference. Three reasons,
+    # all MEASURED over the 4,729-clip corpus:
+    #   1. coverage is 57 clips (1.21 %) — not a training set;
+    #   2. GROUNDED SHARE IS 0/57 — the `grounding_via_vqa` box census has no
+    #      sign class at all and 0 of 4,728 questions mention a sign, so not one
+    #      reading is corroborable in image space;
+    #   3. the readings are EGO-COUPLED (median ratio limit/ego 1.01), so a
+    #      supplied channel would be the nav-echo defect and a fitted head could
+    #      score well by predicting `v0`.
+    # ⇒ EXTRACT-vs-SUPPLY IS AN OPEN PI DECISION. Capturing the data is the
+    # whole scope; `—/Research/2026-09-06-speed-limit-source/RESULT.md` Sec 5.
     return out
