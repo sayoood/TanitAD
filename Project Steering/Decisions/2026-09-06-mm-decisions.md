@@ -2210,3 +2210,118 @@ adapter to read the join rather than raw zips — **named, not claimed as done**
    outcome I predicted would be valuable even if it were the negative branch.
 3. ⭐ **`lead_gap_m` decoding also supplies the LEAD TRACK**, which unblocks the **distance-keeping**
    metric the four-families rule requires and that refav1 has never been able to report (`n = 0`).
+
+## M85. ⭐⭐ refcv4b LANDED AND EVALUATED — it beats refcv3 cleanly, ties the trivial controls, and LOSES without the oracle nav
+
+### 1. The headline, T1, paired episode-cluster bootstrap, 4,823 windows
+
+| comparison | delta | verdict |
+|---|---|---|
+| **refcv4b − refcv3** | **−0.1444 m [−0.1647, −0.1227]** | ⭐ **separated BETTER** |
+| `os − ha` (echo control) | −0.0021 [−0.0178, +0.0154] | tie |
+| `os − ha0_ext` (extrapolation floor) | +0.0101 [−0.0050, +0.0273] | tie |
+| **`os_navzero − ha0_ext`** | **+0.1054 [+0.0874, +0.1241]** | ⛔ **separated WORSE** |
+
+Arms: `os` **0.2975** · `ha0_ext` **0.2874** · `ha` **0.2996** · `ha0` **0.6723** ·
+`os_navzero` **0.3928** · `os_navshuf` **0.3013**.
+
+⭐ **Internal control PASSES:** paired `ha` against itself reads **0.0000000000**, CI **[0, 0]**,
+**0 of 4,823** windows differing. The rig was live while returning those ties — which is what makes
+the ties admissible rather than a suspicion about the instrument.
+
+⇒ ⭐⭐ **refcv4b beats refcv3 and ties the trivial controls — but ONLY while holding the oracle nav.**
+⛔ **Strip it and it loses by 0.1054 m, separated.** ⚠️ Our only route supplier on PhysicalAI is the
+ego's own future path, so a supplied route is **optimistic by construction**. ⇒ **that 0.1054 m is the
+size of the DEPLOYMENT GAP**, and it is the sharpest number the landing produced.
+
+### 2. ⛔ Two corrections to what I had already reported to the PI
+
+1. ⛔ **The vision-only collapse was OVERSTATED ~4×.** I reported longitudinal κ falling
+   **0.5782 → 0.0653** ("near chance") under `ego_zero`. On the full grid it reads
+   **0.2473 (47.8 % retained)** — comparable to refcv3's κ *with* ego. ⭐ The conclusion survives
+   (`ego_zero` ADE **1.1310** vs `os` **0.2975**, so the win is genuinely not vision-only); the
+   **magnitude does not**. Source of the error: **20 clips**, quoted as if it were the grid.
+   ⇒ **The same lesson as the exponent rule — a number carries its `n`, and a preliminary is not a
+   result.**
+2. ⛔ **`oracle_sel` (1.2154), `anchor_acc` (0.0993) and `sel_agrees_oracle` (0.0993) are INVALID on
+   refcv4b.** `refcv3_arm.py` binds `anchors_bank = model.core.decoder.anchors` for the `a_star`
+   argmin, which `refc_v3_train.py` **explicitly forbids** for a v0-conditioned vocabulary. ⭐ **The
+   control is the argv**: refcv4b ran `--anchor-v0-conditioned` **True**, refcv3 **False**.
+   ⇒ It explains an inversion that would otherwise read as a **model regression** (refcv3's
+   `oracle_sel` 0.3668 was a working ceiling below its `os` 0.4419). **Headline untouched.**
+   ⛔ Do not use `anchor_acc` as a selector metric, a reward, or a diagnostic on refcv4b.
+
+### 3. ⭐⭐ STRATEGIC — the one genuinely good surprise, and it makes the fix HALF-BUILT
+
+Route κ **0.4852 [0.4057, 0.5671]**, and the head is **structurally nav-independent and NOT an echo**:
+on the **1,736 windows where nav CHANGED**, it follows the **true** label at **0.7437** against
+shuffled nav at **0.2264**.
+
+⇒ ⭐ **That is exactly the property flagship v1's route head FAILED** — an exact bijection of its own
+nav input (369/369 and 81/81) scoring **1.0000**, an echo read as skill.
+⇒ ⭐⭐ **So the thing that makes refcv4b's tie hollow is an ORACLE INPUT the model already predicts
+from vision.** One eval roll (`os_navpred`) prices how much of the 0.1054 m it recovers. **Launched.**
+
+### 4. ⛔ A second instrument defect — every refcv3/refcv4b eval was invisible to the completeness census
+
+Every one of them read `UNKNOWN_SCOPE` to the criteria census: the four-families completeness checker
+**was not seeing them at all**. Registry → **v2.9.0** with **10 regression tests, all 10 proven to FAIL
+on v2.8.0 and pass on v2.9.0** — mutation-proven, not merely written. Suite **120 passed**.
+
+⇒ ⭐ Same family as `M82`'s fix: **the answer to a recurring blindness is an INSTRUMENT, not more care.**
+
+### 5. Banked
+
+Commit **`b01cc14`**, **21 paths verified**; `MODEL_REGISTRY.md` §4.6 moved **TRAINING → COMPLETE +
+EVALUATED**. Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-landing/`.
+Training: step **40,284**, **44.6 h**, `summary.json {"done": true}` written by the trainer itself.
+⚠️ Stated deviation: the 44-file `stack/` sync was **not** shipped (logged as W-8).
+
+### 6. ⭐ The ranked refcv5 levers this produced
+
+1. ⭐⭐ **Encode CLOSING RATE** (`M84`) — corroborated three independent ways.
+2. ⭐⭐ **Replace the oracle nav with the predicted route** — worth **0.1054 m separated**, and
+   **half-built already** (§3). Cheapest step: one `os_navpred` eval roll.
+3. **Train the selector (WP-7)** — ⛔ do NOT flip `--sel-refined` (`M72`: 0.0259 m separated worse).
+4. **Curvature shaping** — `os` curvature **0.008097** is *worse* than `ha0`'s **0.006802** while its
+   cross-track **0.0979 m** is the best of any arm ⇒ a **SHAPE** defect, not a positional one.
+5. **The longitudinal kin3 head is 0.1669 nats WORSE than its own eval-set prior** — a real defect.
+6. **H19 — de-prioritise.**
+
+
+## M86. ⛔ A WRAPPER'S EXIT STATUS IS NOT THE JOB'S — a client-side timeout read as a failed run
+
+### 1. What happened
+
+An eval wrapper printed `LAUNCHED_PID=2526152` and the ssh client then held the connection open until
+**my own client-side `timeout 7200`** reaped it. ⇒ **exit 124.** That was read as *the eval died*.
+
+⛔ **It did not.** The pod-side process was `nohup`-detached and **ran to completion.** Proof, by
+content rather than by status:
+* `refcv4b_t1.json` on the pod still reads md5 **`d755f034d68084f1790dc2c584a94c9e`** — **byte-identical**
+  to the copy pulled, analysed and banked, and verified in HEAD under `b01cc14`;
+* the dump holds **all 141** episode files;
+* the log's final line is the **completed tactical summary**, not a truncation.
+
+### 2. ⭐ Why this is the same family, in a third costume
+
+⇒ **`exit 124` was a true fact about the WRONG PROCESS.** The status belonged to the **ssh client**;
+the question was about the **detached job**. Identical in shape to:
+* `pgrep -f <trainer>` **self-matching your own ssh command**;
+* the polling monitor whose **filter contained the pattern it searched for**, so the PTY's echo of the
+  command line produced a **false failure that never happened**;
+* `df` reporting the cluster and hiding the pod quota; Thor's `free`/`tegrastats`; the cgroup's
+  `usage_in_bytes`; `step_s` divided twice.
+
+⇒ ⭐⭐ **THE RULE, stated once for the whole family: an exit code, a counter or a probe answers about
+the SCOPE IT OBSERVES. Name that scope before reading it as an answer.** ⛔ For a detached job the
+admissible evidence is its **artifact** — md5, file count, the log's final line — **never the
+launcher's status**, because the launcher's status is a fact about the launcher.
+
+### 3. What it cost, and what it did not
+
+⭐ **Nothing was redone.** The check that settled it in one pass was a **content assertion with a known
+expected value** (the banked md5), which is the same instrument that catches the committer's
+"exited 0, committed nothing" and the poisoned-memmap floor arm. ⚠️ Had the wrapper been re-run instead,
+the cost would have been a full **~11 min/arm × 2 arms** rollout for a run that was already complete —
+exactly the loss the `--analyze-only` rule exists to prevent.
