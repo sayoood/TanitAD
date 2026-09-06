@@ -1581,3 +1581,84 @@ Quoting a remembered scalar is inadmissible — read `raw/seed_floor*.txt` for t
    human scores 3/9 on the same gate.
 3. ⭐ **`wk15` may now be quoted as a lateral fix — on curvature MAE, with the straight floor beside
    it** — which is the opposite of `M64` §P5's ruling, and for a better reason.
+
+## M75. ⭐⭐⭐ THE REFAV1 LATERAL THREAD CLOSES — the asymmetry is real, the penalty causes it, and "zero left turns" means REDUCED MAGNITUDE
+
+### 1. The causal result, complete and well-powered
+
+All four arms of the 2×2 (`W_KAPPA` ∈ {0, 15.11245} × seed ∈ {0, 1}) landed. Paired, same 75 windows,
+one variable:
+
+| seed | `turn_left` | `turn_right` |
+|---|---|---|
+| s0 | 0.3667 → **0.0000** · **−0.3667 [−0.6333, −0.1000] SEPARATED** | −0.1333 separated |
+| s1 | 0.3667 → **0.0000** · **−0.3667 [−0.6333, −0.1000] SEPARATED** | −0.0667 **not** separated |
+
+⭐ **The left effect is IDENTICAL and separated at both seeds; the right effect is marginal.**
+
+⭐⭐ **And the control is what converts this from an observation into a mechanism: at `W_KAPPA = 0`
+there is NO measurable asymmetry** — pooled +0.2000 not separated, within-episode +0.1583 not
+separated, and **retention 1.0000 / 1.0000 with the difference EXACTLY +0.0000**: the plan tracks the
+goal at **full ±0.08 on every turn-goal window in both directions.**
+
+⇒ ⛔ **The asymmetry is NOT a property of refav1's planner. It is a property of refav1's planner UNDER
+A CURVATURE PENALTY.**
+
+### 2. ⭐⭐⭐ THE RECONCILING FACT — and it closes `M74` and this stream into one account
+
+**153/153 retained plans across all four arms curve the way their goal asked. THE SIGN IS NEVER WRONG;
+THE FAILURE IS MAGNITUDE.**
+
+⇒ That single control dissolves the apparent contradiction between this stream and `M74`:
+
+1. `W_KAPPA` **reduces turn MAGNITUDE** — never direction (153/153);
+2. the `|dyaw| > 0.15` gate reads reduced magnitude as **"zero turns"**;
+3. ⛔ **the HUMAN's own magnitude is also below that gate** — she passes **3 of 9** (median dyaw 0.0431);
+4. ⭐ and **curvature MAE says the reduced magnitude is CLOSER to the human**: `wk15` **0.04578** vs the
+   straight floor's 0.05936 (−23 %), while the unpenalised `ccos_argmax` reads **0.07935 — worse than
+   driving straight.**
+
+⇒ ⭐⭐ **THE COMPLETE ACCOUNT: the asymmetry is real and the penalty causes it. Whether that is a
+DEFECT depends on whether the reduced magnitude lands closer to or further from the human — and the
+reachable metric says CLOSER.** ⛔ **"Zero left turns" is therefore a statement about the RECALL
+METRIC, not about driving**, and it must never be quoted without the curvature MAE beside it.
+
+⚠️ **What is NOT resolved by this**: the asymmetry itself. Even if reduced magnitude is *better*, the
+penalty reduces it **2.75× harder on the left**, on a cost that is **bit-exactly sign-symmetric**.
+**That remains unexplained and is the real open question.**
+
+### 3. Where the defect is NOT — four candidates closed
+
+* ⛔ **not the search** — the goal's `+0.08` candidate is **handed** to iCEM on every left-goal window
+  and **loses on cost**;
+* ⛔ **not the goal head** — where it decodes left correctly, the plan still produces **0/5**;
+* ⛔ **not a direction-aware seed pool** — refuted; that candidate is already there;
+* ⛔ **not another weight** — the ladder is closed, and the cost is **bit-exactly sign-symmetric**.
+
+⇒ ⭐ **The named next instrument is cheap and is NOT another arm: a goal-latent COSINE LANDSCAPE SWEEP
+over κ for matched left/right windows — a forward pass, not a planner run.** If the latent cost
+surface is itself asymmetric in κ for matched geometry, that is the answer; if it is symmetric, the
+asymmetry lives in the rollout.
+
+### 4. The methodological work that made the answer trustworthy
+
+* ⭐ **A power target derived BEFORE looking**: `2/n <= 0.0750` ⇒ n ≥ 27 per direction, ≥ 5 clusters.
+  ⛔ The banked panel's 11/8 resolved only to **0.0909 / 0.1250 — coarser than the floor it was being
+  compared against.** **It could never have decided anything, and nobody had checked.**
+* ⛔ **The banked panel was structurally UNATTRIBUTABLE, not merely thin** — its two turn-goal strata
+  occupied **disjoint episodes**, making direction and episode the same variable. New retraction class
+  with a durable fix.
+* ⭐ **Two `ccos` arms read EXACTLY identical** — the signature of a duplicated arm (`M40`). Verified
+  genuine three ways: their **trajectories differ by 7.75 m on 14/75 windows** and simply never cross a
+  turn-label boundary. **The suspicious identity was real and benign, and it was checked rather than
+  assumed.**
+* ⭐ **A refutation re-run because its evidence was inadmissible**: the speed confound had been refuted
+  on the panel later proved degenerate. Re-run at n=30/30 it **holds** — left is **0/17 slow and 0/13
+  fast**, zero in *both* bands ⇒ **direction, not speed.**
+
+### 5. ⚠️ The remaining ceiling is the corpus
+
+**8 episodes, 4 carrying both directions, one flipping sign.** Raising n from 11/8 to 30/30 **did not
+raise the cluster count**, which is what the decision estimator consumes. ⇒ **Sharpening further needs
+more EPISODES, not more windows or more compute** — the narrowed corpus request from `M64` §4, now
+confirmed on a completed 2×2 rather than a partial read.
