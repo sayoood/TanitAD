@@ -142,7 +142,9 @@ command it was given. The PI's video is not a cherry-pick; it is the typical cas
 
 ### 2.3 ⛔⛔ R2 is DEGENERATE — and that voids its half of the table
 
-`g_str`'s lateral component is **negative on 4,823/4,823 windows** (max **-0.1022**, min -0.9711):
+*Artifact: `raw/GSTR_CENSUS.json`. Evidence class MEASURED (ours), tier T1.*
+
+`g_str`'s lateral component is **negative on 4,823/4,823 windows** (**0** LEFT-pointing; max **-0.1022**, min -0.9711, range 0.8689):
 **it never points left, on any window, ever** — while the ground truth turns left on **1,597**
 windows (33.1 %). Its direction *class* is constant RIGHT.
 
@@ -157,13 +159,13 @@ CI [0,0]** — an identity, not an estimate.
 
 ### 2.4 The presence-vs-content mechanism, reproduced at the strategic head
 
-MEASURED on the banked dump, mean relative movement of `g_str`:
+*Artifact: `raw/GSTR_CENSUS.json`, n = 4,823 windows / 141 episodes.* **The statistic is the MEAN over windows of the RELATIVE L2 displacement of the `g_str` 3-vector** -- normalisation-dependent, so it is quoted with that definition or not at all:
 
 | intervention | move | |
 |---|---|---|
 | nav **value** changed (flip) | **0.0098** | |
 | nav shuffled | 0.0207 | |
-| nav **removed** (zero) | **0.4018** | **40.9x the value change** |
+| nav **removed** (zero) | **0.4018** | **41.0x the value change** |
 
 And at the plan itself, terminal displacement: navflip **mean 1.1226 m but MEDIAN 0.0000 m** —
 on most windows, inverting the command changes the emitted plan by **exactly nothing**; navzero
@@ -171,7 +173,7 @@ mean 1.8644 m, median 0.4901 m.
 
 ⇒ **The nav edge is gated on PRESENCE, not CONTENT**, and this reproduces at the strategic head,
 not merely at the planner. *(Confirms the programme's earlier 97.7 % / 2.3 % reading with an
-independent statistic; the brief's 18.6x becomes 40.9x on this normalisation.)*
+independent statistic; the brief's 18.6x becomes 41.0x on this normalisation.)*
 
 ---
 
@@ -196,6 +198,7 @@ bootstrap, 2,000 resamples, seed 0. Join key is the **clip index**, never the fi
 | `nav_SHUFFLE` — another clip's command | 1.6417 | [1.1908, 2.1377] | 0.0000 | 0.526 |
 | `nav_ZERO` — command withheld | 1.9006 | [1.3428, 2.5020] | 0.4561 | 0.000 |
 | ⭐ **`gstr_ZERO`** — strategic goal replaced by straight-ahead | **3.3130** | **[2.8950, 3.7743]** | **1.3046** | 0.000 |
+| ⭐ **`gstr_SHUFFLE`** — another window's goal | **3.3196** | [2.6339, 4.0829] | 0.6437 | 0.000 |
 
 ⭐⭐ **THE STRATEGIC GOAL MOVES THE PLAN MORE THAN THE COMMAND DOES.** `gstr_ZERO`'s interval
 **[2.8950, 3.7743] does not overlap** `nav_ZERO`'s **[1.3428, 2.5020]**: removing `g_str` moves the
@@ -204,6 +207,22 @@ plan **1.74x** more than removing the nav command entirely, and **2.69x** more t
 ⛔ **The `plan UNCHANGED` column is the sharpest fact in this file: inverting the commanded route
 changes the emitted plan by EXACTLY ZERO on 69.0 % of windows** (shuffling it, 52.6 %), while
 perturbing `g_str` changes it on **100 %**.
+
+⭐ **`gstr_SHUFFLE` completes the pre-registered panel and sharpens the reading.** Feeding the
+model **another window's** `g_str` moves the plan **3.3196 m [2.6339, 4.0829]** — statistically
+indistinguishable from replacing it with a straight-ahead constant (3.3130 m; the intervals
+overlap almost entirely). ⇒ **`g_str`'s authority is not merely its PRESENCE — its per-window
+CONTENT drives the plan**, because serving a *different but equally valid* goal is as disruptive
+as removing the goal altogether. ⛔ **This is the exact opposite of what the nav command shows**,
+where shuffling leaves 52.6 % of plans bit-identical and flipping leaves 69.0 %.
+
+⚠️ **Read the medians, not only the means.** `gstr_ZERO` median **1.3046 m** vs `gstr_SHUFFLE`
+**0.6437 m**: the *typical* window moves about 2x more under zeroing, and `gstr_SHUFFLE`'s equal
+mean is carried by a heavier tail. Both are ~33,000x the replicate floor, so the conclusion is
+unaffected — but the two interventions are not interchangeable, and the means alone would hide it.
+*(Mechanically consistent with §2.3: every window's `g_str` points right, so a shuffle swaps one
+right-pointing bearing for another — a smaller directional change than zeroing, which is why its
+median is lower while its tail is longer.)*
 
 ⚠️ **Which variance this answers.** The replicate row answers the **run-to-run** question directly
 and reads **0.0001 m** — this rig is effectively deterministic (refcv4b selects by argmax over a

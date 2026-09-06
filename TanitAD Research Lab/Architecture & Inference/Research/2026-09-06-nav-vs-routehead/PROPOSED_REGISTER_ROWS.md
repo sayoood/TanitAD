@@ -8,7 +8,7 @@ final report.
 
 Artifacts: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-nav-vs-routehead/`
 (`PREREG.md`, `RESULT.md`, `raw/CONTINGENCY.json`, `raw/NAV_ARGS_CENSUS.json`,
-`raw/GSTR_INTERVENTION.json`).
+`raw/MATCHED_PANEL.json`, `raw/GSTR_CENSUS.json`).
 
 ---
 
@@ -69,12 +69,47 @@ cannot express "left" cannot be steering the planner into left turns.
 **Status: SUPPORTED (MEASURED, ours).** **Tier: T1.**
 
 Mean relative movement of `g_str`: nav **value** changed **0.0098**, shuffled 0.0207, nav
-**removed 0.4018** — **40.9x**. At the plan, terminal displacement under navflip is
+**removed 0.4018** — **41.0x**. At the plan, terminal displacement under navflip is
 **mean 1.1226 m but MEDIAN 0.0000 m** (inverting the command changes most plans by *exactly
 nothing*); under navzero mean 1.8644 m, median 0.4901 m.
 ⚠️ **Supersedes the bare "18.6x"** figure with a stated normalisation (mean relative movement over
 4,823 windows) — the ratio's direction is confirmed, its magnitude is normalisation-dependent, and
 it should be quoted with the normalisation or not at all.
+
+### D-NAVROUTE-6 — the strategic goal has 1.74x the planner authority of the nav command
+**Status: SUPPORTED (MEASURED, ours).** **Tier: T1.** ⭐ **This is the causal half, and the
+answer to the PI's hypothesis.** Artifact `raw/MATCHED_PANEL.json`.
+
+Intervention panel, **993 matched windows / 29 episodes**, ONE surface, ONE checkpoint
+(refcv4b `ckpt_40284_FINAL.pt`), ablation applied and verified by `ABLATION.txt` per arm plus the
+tool's own `g_str injection VERIFIED` line (err 6e-08). Metric: plan TERMINAL displacement (m) at
+6 s. Paired episode-cluster bootstrap, 2,000 resamples, seed 0.
+
+| row | mean (m) | CI95 | median | plan UNCHANGED |
+|---|---|---|---|---|
+| replicate (NOISE FLOOR) | 0.0001 | [0.0001, 0.0001] | 0.0001 | 0.000 |
+| `nav_FLIP` | 1.2334 | [0.4812, 2.1418] | 0.0000 | **0.690** |
+| `nav_SHUFFLE` | 1.6417 | [1.1908, 2.1377] | 0.0000 | **0.526** |
+| `nav_ZERO` | 1.9006 | [1.3428, 2.5020] | 0.4561 | 0.000 |
+| **`gstr_ZERO`** | **3.3130** | **[2.8950, 3.7743]** | 1.3046 | 0.000 |
+| **`gstr_SHUFFLE`** | **3.3196** | [2.6339, 4.0829] | 0.6437 | 0.000 |
+| `frames_blind` (DELIBERATE REGRESSION) | 14.9837 | [13.0869, 16.8071] | 15.0759 | 0.000 |
+
+Removing the strategic goal moves the plan **1.74x** more than removing the nav command, with
+**non-overlapping** intervals. ⭐ **`gstr_SHUFFLE` ~= `gstr_ZERO`** ⇒ `g_str`'s authority is its
+per-window **CONTENT**, not merely its presence — the opposite of the nav command, which leaves
+**52.6 %** of plans bit-identical under shuffle and **69.0 %** under flip.
+⚠️ Read the medians too (1.3046 vs 0.6437): the two `g_str` interventions have equal means but
+different distributions and are not interchangeable.
+⭐ **Scale reference from the deliberate regression:** vision 14.9837 m (100 %), strategic goal
+3.3130 m (**22.1 %**), nav command 1.9006 m (**12.7 %**), run-to-run noise 0.0001 m. **The planner
+is vision-dominated, the strategic goal is a distant second, the commanded route is last.**
+⚠️ **Which variance:** the replicate row answers **run-to-run** directly and reads 0.0001 m (this
+rig is deterministic — argmax over a fixed anchor bank, no sampling planner), so the separated CIs
+are backed by a MEASURED replicate rather than asserted against the 14.3 % one-seed false-positive
+rate. The bootstrap answers **episode draw**. ⚠️ n = 993/29, not the full 4,823/141.
+⚠️ **NOT scored in this panel:** the tactical and longitudinal families (work items, §3.1 of
+`RESULT.md`), and `gstr_SHUFFLE`'s permutation pool is the full 141-episode bank.
 
 ### D-ESTIM-SHARED-SCRATCHPAD-1 — a bare `RESULT.md` in the shared scratchpad is not yours
 **Status: SUPPORTED (MEASURED, ours — this session).** **Class: mis-scoped artifact.**
