@@ -48,6 +48,7 @@ import refb_labels  # noqa: E402  (scripts/refb_labels.py)
 from tanitad.models import tactical as mtac  # noqa: E402
 from tanitad.refs import refc  # noqa: E402
 from tanitad.refs import refc_v3 as v3  # noqa: E402
+from tanitad.data import v7_labels as v7l  # noqa: E402
 
 
 def _frames(cfg: refc.RefCConfig, b: int = 2, seed: int = 0) -> torch.Tensor:
@@ -349,10 +350,27 @@ def test_the_two_size_rungs_build_and_measure():
     # The mandate's measured cost: v7.0 heads (8x8 vs 3x3) add exactly 5,130
     # params at BOTH rungs — head-only, so the rung identity is otherwise
     # unchanged and the hierarchy-cost invariant below is version-independent.
+    #
+    # ⭐ D-TACGOAL-1 (2026-09-06) adds a SECOND v7.0-only head — the 22-token
+    # tactical goal SET — and it is pinned as its OWN term rather than folded
+    # into the 5,130. ⚠️ Folding it in would silently re-date the v7.0 vocabulary
+    # cost, which is the MM-C1 class this test's own comment above warns about.
+    # ⛔ DERIVED, never typed: 22 tokens x (d_tac + 1). `d_tac` is shared across
+    # rungs, so the cost is IDENTICAL at both — asserted below, not assumed.
+    TACGOAL = len(v7l.TAC_GOAL_TOKENS) * (refc_v3_small_config().d_tac + 1)
+    assert TACGOAL == 11_286, TACGOAL
+    assert refc_v3_xl_config().d_tac == refc_v3_small_config().d_tac
     assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))["total"] \
-        == 62_930_419 + NAV + STR + 5_130
+        == 62_930_419 + NAV + STR + 5_130 + TACGOAL
     assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
-        == 217_760_775 + NAV + STR + 5_130
+        == 217_760_775 + NAV + STR + 5_130 + TACGOAL
+    # and it carries its OWN ledger line rather than hiding inside `tac_heads`,
+    # because the arm's whole question is what the goal-SET head buys
+    assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))[
+        "tac_goal_tok_head"] == TACGOAL
+    # ⛔ CONTROL, same breath: under kin3 the head does not exist at all, so the
+    # line is ABSENT rather than zero — a zero would mean "built and empty".
+    assert "tac_goal_tok_head" not in small
     # ⭐ BASE is now a TRAINED rung (PI override 2026-09-02 for the B1+v7.2
     # launch), so it is pinned like the others. MEASURED: 106,847,621 with the
     # v7.0 heads and nav. ⚠️ It exceeds the design's "<= 80 M hard" budget by
@@ -364,7 +382,12 @@ def test_the_two_size_rungs_build_and_measure():
     # 106,847,621 before the 2026-09-02 hierarchy rebalance (d_ctx 64 -> 256,
     # matching flagship v7 d_str and refav1 d_ctx); +185,280 for the wider
     # strategic context and its goal head (195 -> 771 params).
-    assert base["total"] == 107_032_901, base["total"]
+    # ⭐ + D-TACGOAL-1's goal-SET head (2026-09-06), the SAME derived TACGOAL as
+    # at the small/xl rungs because d_tac is shared — so the rung identity is
+    # again otherwise unchanged, and the added capacity is one named term rather
+    # than a re-pinned magic number.
+    assert base["total"] == 107_032_901 + TACGOAL, base["total"]
+    assert base["tac_goal_tok_head"] == TACGOAL
     assert base["nav_inject"] == NAV
     # and the hierarchy stays ~2.1 M at every rung: at base it is a SMALLER
     # fraction of the model, which is what makes the dominance read harder

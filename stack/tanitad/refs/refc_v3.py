@@ -828,6 +828,31 @@ class RefCV3Model(nn.Module):
         self.tac_vocab_version = _vv
         self.lat_head_tac = nn.Linear(cfg.d_tac, _nlat)
         self.lon_head_tac = nn.Linear(cfg.d_tac, _nlon)
+        # ⭐⭐ D-TACGOAL-1 — THE TACTICAL GOAL *TOKEN* HEAD (2026-09-06).
+        # The v7 emitter mints a 22-token tactical goal SET on every clip
+        # — including the traffic-light COLOUR — and until now nothing
+        # was sized on it, so no gradient could reach it. That structural
+        # absence is why the model never brakes for a red light and why
+        # lane changes never activate: the labels existed, nothing taught
+        # them (audit `2026-09-06-label-vocab-audit/AUDIT_RESULT.json`).
+        #
+        # ⚠️ NOT `tac_goal_head` — that name is TAKEN, by the GEOMETRIC
+        # goal regressor two lines below. Two different objects called
+        # "the tactical goal head" is how one arm's number gets quoted
+        # for the other.
+        #
+        # ⚠️ It exists ONLY under a v7 vocabulary. `kin3` has no tactical
+        # goal vocabulary at all, so building it there would be 22 dead
+        # logits that can never be supervised — the same defect
+        # `effective_mask` exists to prevent one layer down.
+        self.tac_goal_tok_head = None
+        if _vv != "kin3":
+            from tanitad.models.v6 import TACTICAL_GOAL_VOCAB_VERSIONS
+            from tanitad.refs.tac_goal_head import TacGoalTokenHead
+            _goal_toks = TACTICAL_GOAL_VOCAB_VERSIONS[_vv]
+            self.tac_goal_tok_head = TacGoalTokenHead(
+                cfg.d_tac, n_tokens=len(_goal_toks))
+            self.tac_goal_tokens = tuple(_goal_toks)
         # E8 — tactical geometric goals, E4.1 layout (x, y, heading, speed)@tau.
         self.tac_goal_head = nn.Linear(cfg.d_tac, k * GOAL_DIMS)
         # ⭐ E14 — under `echo_base` this head predicts the RESIDUAL over the
@@ -1063,6 +1088,11 @@ class RefCV3Model(nn.Module):
                 g_tac = echo_base + g_delta
             else:
                 g_tac = g_delta
+            # ⭐ D-TACGOAL-1: the 22-token goal-SET logits ride the same
+            # `z_tac` the two action heads read, so a goal and the action
+            # that serves it are predicted from ONE tactical latent.
+            if self.tac_goal_tok_head is not None:
+                cache["tac_goal_logits"] = self.tac_goal_tok_head(z_tac)
             cache.update(z_tac=z_tac, g_str=g_str, g_str_raw=g,
                          lat_logits_tac=lat, lon_logits_tac=lon,
                          g_tac=g_tac, g_tac_delta=g_delta,
@@ -1333,6 +1363,16 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
         if model.nav_inj is not None:
             out["nav_inject"] = (cnt(model.nav_inj) + cnt(model.nav_to_tac)
                                  + cnt(model.nav_to_str))
+        # ⭐ D-TACGOAL-1 — the 22-token goal-SET head, accounted EXPLICITLY and
+        # SEPARATELY from `tac_heads`. ⚠️ It is deliberately its own line: the
+        # prereg quotes this ledger as the arm's capacity cost, and the arm's
+        # whole question is what the goal-SET head buys, so folding it into the
+        # ACTION heads' line would hide exactly the number being tested.
+        # ⛔ `test_param_breakdown_smoke_sums` fired the moment these parameters
+        # existed without a line — as it did for E11' and E13 before them — and
+        # that is the check working, not a nuisance.
+        if getattr(model, "tac_goal_tok_head", None) is not None:
+            out["tac_goal_tok_head"] = cnt(model.tac_goal_tok_head)
     out["total"] = cnt(model)
     return out
 

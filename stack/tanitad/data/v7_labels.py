@@ -74,14 +74,20 @@ from tanitad.models.nav_conditioning import NavTokenMissing
 from tanitad.models.vocab_v7 import (NAV_COMMAND_TOKENS as NAV_TOKENS,
                                      NOT_YET_EXTRACTABLE, STRATEGIC_ACTION_TOKENS_V7,
                                      STRATEGIC_GOAL_TOKENS_V7,
+                                     TACTICAL_GOAL_EXCLUSIVE,
+                                     TACTICAL_GOAL_NEEDS_PERCEPTION,
+                                     TACTICAL_GOAL_TOKENS_V7,
                                      TACTICAL_LAT_ACTIONS_V7,
                                      TACTICAL_LON_ACTIONS_V7)
 
-__all__ = ["HEADS", "LabelManifest", "V7Label", "assert_mask_matches_presence",
+__all__ = ["HEADS", "IGNORE_W", "LabelManifest", "TAC_GOAL_HEAD",
+           "TAC_GOAL_TOKENS", "TacGoalEmitter", "V7Label",
+           "assert_mask_matches_presence",
            "class_weights", "effective_mask", "flatten_tactical_actions",
-           "head_mask", "is_oracle_nav", "load_v7_labels", "NavEmitter",
+           "goal_pos_weight", "goal_supervision_census", "head_mask",
+           "is_oracle_nav", "load_v7_labels", "NavEmitter",
            "NavTokenMissing",
-           "oracle_nav"]
+           "oracle_nav", "tactical_goal_targets"]
 
 #: The four supervised heads. ⛔ ``tac_lat`` and ``tac_lon`` are SEPARATE by
 #: design (condition 2) — never merge them into one 25-way or 64-way head.
@@ -114,6 +120,18 @@ class V7Label:
     bands: dict[str, Any]
     t0_s: float
     horizon: dict[str, Any]
+    #: ⭐⭐ THE 22-TOKEN TACTICAL GOAL SET — minted on every clip since
+    #: v7.0 and, until 2026-09-06, read into ``audit`` only and therefore
+    #: trained by nothing. It is MULTI-LABEL (2–7 tokens/record, mean
+    #: 2.751 MEASURED on the v7.2 train blob), so it is a SET, never a
+    #: class. ⚠️ It is a TARGET. Feeding it back as a model INPUT would
+    #: be the situation-classifier back door the PI ruled out on
+    #: 2026-08-03 — state what a goal input is computed from, and this
+    #: is computed from the label.
+    tac_goals: frozenset[str] = field(default_factory=frozenset)
+    #: per-token ``provenance``/``time_basis``/``state`` as EMITTED. The
+    #: negative policy is derived from this rather than from a constant.
+    tac_goal_meta: dict[str, Any] = field(default_factory=dict)
     #: audit-only, NEVER a training input (spec §6)
     audit: dict[str, Any] = field(default_factory=dict)
     _oracle: dict[str, Any] = field(default_factory=dict, repr=False)
@@ -214,6 +232,10 @@ def load_v7_labels(path: str | Path, *, allow_oracle_nav: bool = False,
             str_action=(r.get("a_str") or {}).get("token"),
             str_goal=(r.get("g_str") or {}).get("token"),
             tac_anchor=g_tac.get("anchor"),
+            tac_goals=frozenset(g_tac.get("goals") or {}),
+            tac_goal_meta={k: v for k, v in
+                           (g_tac.get("goals") or {}).items()
+                           if isinstance(v, dict)},
             bands=r.get("bands") or {},
             t0_s=float(r.get("t0_s", float("nan"))),
             horizon=r.get("horizon") or {},
@@ -234,6 +256,24 @@ def load_v7_labels(path: str | Path, *, allow_oracle_nav: bool = False,
             },
             _oracle={"nav_command": r.get("nav_command")},
         ))
+
+    # ⭐⭐ THE NEGATIVE POLICY IS DERIVED FROM THE BLOB, NOT DECLARED.
+    # A token whose annotations are ALL geometry-emitted is exhaustively
+    # labelled, so its absence is a true negative. A token with ANY
+    # ``vlm-cot`` annotation is a per-clip TEXT claim, and its absence
+    # means only that the caption stayed silent. ⚠️ MEASURED on the v7.2
+    # train blob, the frozen ``TACTICAL_GOAL_NEEDS_PERCEPTION``
+    # DECLARATION and the DATA disagree on four tokens — ``YIELD`` (609),
+    # ``EVADE_IN_CORRIDOR`` (238), ``LANE_CHANGE_L`` (23), ``LANE_CHANGE_R``
+    # (15) are CoT-sourced in the blob while absent from the declared set —
+    # so trusting the declaration would supervise 4,534 unknowable
+    # lane-change negatives as true.
+    global _MEASURED_GEOMETRY_TOKENS
+    _cot_backed = {t for lb in labels for t, m in lb.tac_goal_meta.items()
+                   if m.get("provenance") == "vlm-cot"}
+    _MEASURED_GEOMETRY_TOKENS = frozenset(
+        t for t in TACTICAL_GOAL_TOKENS_V7
+        if t not in _cot_backed and t not in TACTICAL_GOAL_NEEDS_PERCEPTION)
 
     return labels, LabelManifest(
         path=str(p), md5=md5, n_records=len(recs),
@@ -467,6 +507,285 @@ def flatten_tactical_actions(labels: Sequence[V7Label]) -> list[str]:
         "REFUSED. That is the 5-way-softmax defect (0/881 accelerate, the "
         "speed-fan) rebuilt in the labels. Use two heads: HEADS['tac_lat'] and "
         "HEADS['tac_lon'].")
+
+
+
+
+# ---------------------------------------------------------------------------
+# TACTICAL GOAL SET — the 22-token vocabulary that was minted and never trained
+# ---------------------------------------------------------------------------
+#: ⭐ THE GAP THIS CLOSES (audit 2026-09-06, ``AUDIT_RESULT.json``). The v7
+#: emitter mints a 22-token tactical goal set on EVERY one of 4,572 training
+#: clips — including a ground-truth traffic-light COLOUR — and until now no head
+#: was sized on it, no loss referenced it and no gradient could reach it. It is
+#: a STRUCTURAL absence, not a zero weight, and it is the mechanism behind two
+#: PI observations on the refcv4b video: *the model never brakes for a red
+#: light*, and *lane changes never activate*.
+#:
+#: ⛔ THIS IS A SEPARATE SURFACE FROM :data:`HEADS`, ON PURPOSE. ``HEADS`` is the
+#: four SOFTMAX action/strategy heads; a clip carries EXACTLY ONE class of each.
+#: The goal set is **MULTI-LABEL** — MEASURED on the v7.2 train blob, 2 to 7
+#: tokens per record, mean 2.751 — so it is 22 independent sigmoids under BCE,
+#: never a softmax. Merging it into ``HEADS`` would make a set look like a
+#: choice, which is the 5-way-softmax defect wearing a new costume.
+TAC_GOAL_HEAD = "tac_goal"
+TAC_GOAL_TOKENS: tuple[str, ...] = tuple(TACTICAL_GOAL_TOKENS_V7)
+
+#: Per-element target marker: this (record, token) cell carries NO evidence and
+#: must not train either way. Mirrors :data:`IGNORE_ID`'s role for the softmax
+#: heads — an unlabelled cell must never train a wrong one.
+IGNORE_W = 0.0
+
+
+#: ``token -> the tokens whose PRESENCE makes it FALSE``, built from the
+#: frozen exclusion table. ⭐ This is the ENTAILED-NEGATIVE source and it
+#: is what makes the traffic-light and lane-change tokens trainable at all:
+#: they are 100 % CoT-backed, so the provenance policy alone leaves them
+#: with ZERO supervised negatives and a BCE head that can only learn
+#: "always 1". ⚠️ The entailment is the emitter's OWN invariant — every
+#: record is validated against this table by ``V7.validate_goal_set`` — so
+#: reading a negative off it assumes nothing about caption completeness.
+_EXCLUDED_BY: dict[str, frozenset[str]] = {
+    t: frozenset(b for a, b in
+                 [(x, y) for x, y in TACTICAL_GOAL_EXCLUSIVE]
+                 + [(y, x) for x, y in TACTICAL_GOAL_EXCLUSIVE]
+                 if a == t)
+    for t in TACTICAL_GOAL_TOKENS_V7}
+
+
+def entailed_false(present) -> frozenset[str]:
+    """Tokens the present set makes FALSE by the frozen exclusion table."""
+    out: set[str] = set()
+    for t in present:
+        out |= _EXCLUDED_BY.get(t, frozenset())
+    return frozenset(out) - set(present)
+
+
+def _goal_provenance(label: "V7Label", token: str) -> str | None:
+    """The MEASURED provenance of one goal annotation, or None if absent."""
+    rec = (label.tac_goal_meta or {}).get(token)
+    return (rec or {}).get("provenance") if isinstance(rec, dict) else None
+
+
+def tactical_goal_targets(label: "V7Label", t_now_s: float, *,
+                          negatives: str = "measured",
+                          ) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """``(y, w)`` for one window: 22 targets and 22 per-class loss weights.
+
+    ``y[i]`` is 1.0 when token ``i`` is in this clip's goal set, else 0.0.
+    ``w[i]`` is 1.0 when that cell carries EVIDENCE and :data:`IGNORE_W` when it
+    does not. Outside the record's band every ``w`` is :data:`IGNORE_W` — the
+    same rule :func:`tactical_class_ids` applies, derived from the record's own
+    bands rather than hardcoded.
+
+    ⛔⛔ WHY ABSENCE IS NOT A NEGATIVE FOR EVERY TOKEN — MEASURED, and it decides
+    whether this head learns a fact or a labelling artefact. The goal set has two
+    provenances in the released blob and they differ in what an ABSENT token
+    means:
+
+    ``geometry`` (9,106 annotations over 9 tokens)
+        The ego-geometry emitter is EXHAUSTIVE — it inspects every clip and
+        writes the token when the geometry holds. Absence therefore IS a
+        negative, and is supervised as one.
+
+    ``vlm-cot`` (3,472 annotations over 15 tokens — every traffic-light and
+    every lane-change token)
+        The token exists only because a per-clip TEXT happened to mention it.
+        Absence means *"the caption did not say so"*, which is not *"it did not
+        happen"*. MEASURED on the same blob: **692 clips carry a VISIBLE
+        traffic-light box and no traffic-light token**, and of the 4,572 clips
+        only **998 were asked the traffic-light grounding question at all** —
+        the other 3,574 were asked about a pedestrian, a vehicle, or nothing, so
+        their ``scene.traffic_light_visible == False`` is NOT-PROBED, not
+        absent. Supervising those 3,574 cells as negatives would teach the head
+        that ~78 % of the corpus has no traffic light, on no evidence.
+
+    ⇒ ``negatives="measured"`` (the default) reads the provenance PER TOKEN FROM
+    THE LOADED SPLIT, exactly as :func:`effective_mask` reads presence, and
+    supervises a negative only for tokens this blob actually emits from
+    geometry. ⚠️ It deliberately does NOT use
+    :data:`~tanitad.models.vocab_v7.TACTICAL_GOAL_NEEDS_PERCEPTION`: MEASURED,
+    the declared set and the blob DISAGREE on four tokens — ``YIELD`` (609),
+    ``EVADE_IN_CORRIDOR`` (238), ``LANE_CHANGE_L`` (23) and ``LANE_CHANGE_R``
+    (15) are all CoT-sourced in the data while absent from the frozen
+    perception set. Trusting the declaration would supervise 4,534 unknowable
+    lane-change negatives as true.
+
+    ``negatives="all"`` supervises every absent cell as a negative. It is the
+    cheap arm and it is offered only so the two can be COMPARED; it is not the
+    default, and an arm using it must say so.
+
+    ``negatives="geometry"`` uses the frozen ``TACTICAL_GOAL_NEEDS_PERCEPTION``
+    declaration instead of the blob. Kept so the declaration/data divergence
+    above is measurable rather than argued.
+    """
+    n = len(TAC_GOAL_TOKENS)
+    present = label.tac_goals or frozenset()
+    if not window_in_band(label, t_now_s):
+        return (0.0,) * n, (IGNORE_W,) * n
+    entailed = entailed_false(present)
+    y, w = [], []
+    for tok in TAC_GOAL_TOKENS:
+        hit = tok in present
+        y.append(1.0 if hit else 0.0)
+        if hit:
+            w.append(1.0)                       # a POSITIVE is always evidence
+        elif tok in entailed:
+            # ⭐ ENTAILED FALSE by a token that IS present. Admissible for
+            # every provenance, because it is a consequence of the label
+            # rather than a claim about what the caption omitted.
+            w.append(1.0)
+        elif negatives == "all":
+            w.append(1.0)
+        elif negatives == "geometry":
+            w.append(IGNORE_W if tok in TACTICAL_GOAL_NEEDS_PERCEPTION else 1.0)
+        elif negatives == "measured":
+            w.append(1.0 if tok in _MEASURED_GEOMETRY_TOKENS else IGNORE_W)
+        else:
+            raise ValueError(
+                f"[v7_labels] unknown negatives policy {negatives!r}; "
+                f"expected 'measured' | 'geometry' | 'all'")
+    return tuple(y), tuple(w)
+
+
+#: Filled by :func:`load_v7_labels` from the blob it actually read. ⛔ Module
+#: state is normally a smell; here it is the point — the negative policy must be
+#: a property of THE LOADED SPLIT, never of a constant that outlives it. It
+#: starts EMPTY so a consumer that never loaded a blob supervises NOTHING rather
+#: than silently supervising everything.
+_MEASURED_GEOMETRY_TOKENS: frozenset[str] = frozenset()
+
+
+def goal_supervision_census(labels: Sequence["V7Label"]) -> dict[str, Any]:
+    """What the goal head will actually be trained on. Goes into ``config.json``.
+
+    ⛔ Reports POSITIVES, NEGATIVES and IGNORED per token. A head reported only
+    by its positive count hides the class-imbalance trap: ``LANE_CHANGE_R`` at
+    15 of 4,572 is 0.33 %, and any unweighted objective predicts it never while
+    scoring 99.67 % 'accuracy'.
+    """
+    out: dict[str, Any] = {}
+    for i, tok in enumerate(TAC_GOAL_TOKENS):
+        pos = neg = ign = 0
+        for lb in labels:
+            _, w = tactical_goal_targets(lb, lb.t0_s)
+            if tok in (lb.tac_goals or frozenset()):
+                pos += 1
+            elif w[i] > 0.0:
+                neg += 1
+            else:
+                ign += 1
+        out[tok] = {"pos": pos, "neg": neg, "ignored": ign,
+                    "prevalence": pos / max(len(labels), 1),
+                    "provenance": sorted({p for lb in labels
+                                          if (p := _goal_provenance(lb, tok))}),
+                    "supervised_negative": tok in _MEASURED_GEOMETRY_TOKENS,
+                    "entailed_false_by": sorted(_EXCLUDED_BY.get(tok, ()))}
+    return out
+
+
+def goal_pos_weight(labels: Sequence["V7Label"], *,
+                    cap: float = 50.0) -> tuple[float, ...]:
+    """Per-class ``pos_weight`` for ``BCEWithLogitsLoss``, FROM THE SPLIT.
+
+    ``pos_weight[i] = n_neg / n_pos`` over the cells this policy actually
+    supervises, capped at ``cap``.
+
+    ⛔ NEVER HARDCODE THESE. ``HOLD_MAIN_ROAD`` is 52.3 % of ``str_action`` in
+    this blob and a hardcoded weight silently mis-weights the next one — the
+    derived-constant trap that moved ``HORIZON`` 7 -> 8 and turned a
+    reproduction into a different experiment.
+
+    ⚠️ THE CAP IS NOT COSMETIC. Uncapped, ``LANE_CHANGE_R`` (15 pos) would take
+    ``pos_weight`` ~304 and a single positive would dominate the batch gradient.
+    ⛔ A class with ZERO supervised positives gets 0.0 and MUST also be masked —
+    a pos_weight on an empty class is a weight on nothing.
+    """
+    n = len(TAC_GOAL_TOKENS)
+    pos = [0] * n
+    neg = [0] * n
+    for lb in labels:
+        y, w = tactical_goal_targets(lb, lb.t0_s)
+        for i in range(n):
+            if w[i] <= 0.0:
+                continue
+            if y[i] > 0.5:
+                pos[i] += 1
+            else:
+                neg[i] += 1
+    return tuple(0.0 if pos[i] == 0 else min(cap, neg[i] / pos[i])
+                 for i in range(n))
+
+
+class TacGoalEmitter:
+    """``ep_idx`` -> per-window ``(y, w)`` targets. The join, mirroring
+    :class:`NavEmitter` deliberately.
+
+    ⛔ It RAISES on an unmapped episode for the same reason ``NavEmitter`` does:
+    a default would attach one clip's goal set to another clip's windows and
+    train on a plausible wrong signal, which is worse than a crash.
+
+    ⭐ It is a TARGET emitter, so it needs no oracle stamp — ``g_tac.goals`` is a
+    label, not an input. ⚠️ That is exactly why it must never be read back into
+    the model's input path: the PI's 2026-08-03 ruling is that a goal INPUT may
+    not carry the situation classifier's output, and by the same argument a goal
+    TARGET may not re-enter as a feature.
+    """
+
+    def __init__(self, labels: Sequence["V7Label"],
+                 clip_id_by_ep_idx: dict[int, str], *,
+                 negatives: str = "measured"):
+        if negatives not in ("measured", "geometry", "all"):
+            raise ValueError(f"[tac_goal] unknown negatives {negatives!r}")
+        self.negatives = negatives
+        self.clip_id_by_ep_idx = dict(clip_id_by_ep_idx)
+        self._by_clip = {x.clip_id: x for x in labels}
+        self.n_tokens = len(TAC_GOAL_TOKENS)
+
+    def __call__(self, ep_idx, t_now_s=None, dt: float = 0.1):
+        """``(y [B, 22] float32, w [B, 22] float32)``.
+
+        ``t_now_s`` is the window's NOW in RAW CLIP SECONDS. Pass it, or every
+        window is scored at the record's own anchor and the band test becomes a
+        tautology.
+        """
+        import torch
+        idx = [int(i) for i in (ep_idx.tolist() if hasattr(ep_idx, "tolist")
+                                else ep_idx)]
+        if t_now_s is None:
+            times = [None] * len(idx)
+        else:
+            times = [float(x) for x in (t_now_s.tolist()
+                     if hasattr(t_now_s, "tolist") else t_now_s)]
+        ys, ws = [], []
+        for e, t in zip(idx, times):
+            clip = self.clip_id_by_ep_idx.get(e)
+            if clip is None:
+                raise NavTokenMissing(
+                    f"[tac_goal] ⛔ ep_idx {e} has no clip_id mapping. Refusing "
+                    f"rather than defaulting: a default would attach another "
+                    f"clip's goal set to this window.")
+            rec = self._by_clip.get(clip)
+            if rec is None:
+                raise NavTokenMissing(
+                    f"[tac_goal] ⛔ clip {clip!r} (ep_idx {e}) has no label "
+                    f"record.")
+            y, w = tactical_goal_targets(
+                rec, rec.t0_s if t is None else t, negatives=self.negatives)
+            ys.append(list(y))
+            ws.append(list(w))
+        return (torch.tensor(ys, dtype=torch.float32),
+                torch.tensor(ws, dtype=torch.float32))
+
+    def provenance(self) -> dict[str, Any]:
+        """Goes into ``config.json`` beside the label manifest."""
+        return {"tac_goal_negatives": self.negatives,
+                "tac_goal_tokens": list(TAC_GOAL_TOKENS),
+                "tac_goal_n_tokens": self.n_tokens,
+                "n_clips_mapped": len(self.clip_id_by_ep_idx),
+                "n_label_records": len(self._by_clip),
+                "supervised_negative_tokens":
+                    sorted(_MEASURED_GEOMETRY_TOKENS)}
 
 
 # ---------------------------------------------------------------------------

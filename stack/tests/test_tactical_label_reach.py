@@ -17,7 +17,8 @@ published PhysicalAI-AV features **absent** -- the card says "we do not include 
                                  agent classes
 augmented v7.x label release     **PRESENT, with the colour** -- 779/4,572 records in
                                  ``s2_labels_v7.2_train.jsonl.gz``
-supervised training targets      **ABSENT** -- and this is the finding that matters
+supervised training targets      **PRESENT since 2026-09-06 (D-TACGOAL-1)** -- it was
+                                 ABSENT, and that was the finding that mattered
 ===============================  =========================================================
 
 A layer-1 fact was quoted to settle a layer-3 question. The programme's own rule --
@@ -46,13 +47,24 @@ THE MECHANISM (what this test pins)
 2. ``v7_labels.HEADS`` -- the supervised heads -- is ``tac_lat``, ``tac_lon``,
    ``str_action``, ``str_goal``. **None of them is sized on
    ``TACTICAL_GOAL_TOKENS_V7``.** There is no tactical-GOAL head at all.
-3. ``load_v7_labels`` reads ``g_tac.goals`` **only** into ``V7Label.audit["goal_flags"]``,
+3. ``load_v7_labels`` read ``g_tac.goals`` **only** into ``V7Label.audit["goal_flags"]``,
    and the module declares ``audit`` *"audit-only, NEVER a training input"*.
 
-⭐ THIS TEST IS A GAP PIN, NOT AN APPROVAL. It asserts the CURRENT wiring so that the
-day someone supervises the tactical goal set, the build breaks and the documents below
-get updated in the same commit -- instead of the gap silently reopening or the fix
-silently landing while the docs still describe the gap.
+⭐⭐ GAP CLOSED 2026-09-06 -- D-TACGOAL-1. This file DID its job: the pin below fired
+the moment the goal set reached the consumer, and this docstring is that update.
+
+What changed: ``V7Label`` now carries ``tac_goals`` (the SET) and ``tac_goal_meta``
+(its per-token provenance), ``v7_labels.tactical_goal_targets`` projects them into
+``(y, w)`` per window, and ``tanitad.refs.tac_goal_head`` is a supervised 22-way
+MULTI-LABEL head on ``RefCV3Model``. Mechanism items 1 and 2 above are UNCHANGED and
+still pinned: the goal set is a SET (2-7 tokens/record, mean 2.751), so it lives on
+its own surface and never inside ``HEADS``, which is four SINGLE-label softmaxes.
+
+⚠️ TWO THINGS REMAIN TRUE AND MUST NOT BE READ AWAY:
+  * ``audit`` is still *"NEVER a training input"* -- the goal set reaches training
+    through ``tac_goals``, a PROJECTED target, not through the audit block.
+  * the traffic-light colour is still PERCEPTION-ONLY and must never be emitted from
+    ego geometry. The head PREDICTS it from vision; the emitter may not invent it.
 """
 
 from __future__ import annotations
@@ -176,15 +188,46 @@ def test_no_supervised_head_is_sized_on_the_tactical_goal_vocabulary() -> None:
         f"unexpected head/goal name overlap: {offenders}")
 
 
-def test_v7label_exposes_no_tactical_goal_set_field() -> None:
-    """The loader surfaces the goal POINT, never the goal SET."""
+def test_v7label_now_exposes_the_tactical_goal_set_as_a_TARGET() -> None:
+    """GAP CLOSED 2026-09-06 (D-TACGOAL-1) -- this pin is INVERTED, on purpose.
+
+    ⭐ This function previously asserted that ``V7Label`` carried NO goal-set
+    field, and its own failure message said: *"That is the gap closing -- update
+    the docs."* It fired, and this is that update. The goal SET now reaches the
+    consumer as ``V7Label.tac_goals`` and feeds a supervised multi-label head
+    (``tanitad.refs.tac_goal_head``); the pin therefore flips from *"it must not
+    be here"* to *"it must be here, AND it must stay a TARGET"*.
+
+    ⛔ WHAT DID **NOT** CHANGE, and is still pinned by the tests either side:
+    ``v7_labels.HEADS`` is still exactly the FOUR softmax heads, and no head is
+    sized on ``TACTICAL_GOAL_TOKENS_V7``. The goal set is MULTI-LABEL (2-7
+    tokens/record, mean 2.751 MEASURED), so it lives on its own surface --
+    ``TAC_GOAL_TOKENS`` -- rather than inside ``HEADS``, where ``head_mask``,
+    ``class_weights`` and ``assert_mask_matches_presence`` all index a
+    SINGLE-label vocabulary.
+
+    ⚠️ ``tac_anchor`` (the geometric goal POINT) is unchanged and still the
+    admissible goal INPUT. The goal SET is an OUTPUT only.
+    """
     fields = {f.name for f in dataclasses.fields(V7L.V7Label)}
     assert "tac_anchor" in fields, _msg(
         "V7Label lost tac_anchor -- the ADMISSIBLE goal signal")
-    for forbidden in ("tac_goals", "g_tac", "goals", "tac_goal_set"):
+    assert "tac_goals" in fields, _msg(
+        "V7Label lost tac_goals -- the tactical goal SET no longer reaches the "
+        "consumer, so D-TACGOAL-1's head has nothing to train on. The gap has "
+        "REOPENED.")
+    assert "tac_goal_meta" in fields, _msg(
+        "V7Label lost tac_goal_meta -- the per-token provenance the negative "
+        "policy is DERIVED from. Without it the policy silently falls back to "
+        "a declaration the blob disagrees with on four tokens.")
+    # ⛔ still forbidden: a RAW passthrough of the emitter's nested block. The
+    # loader must project, not forward, or every audit-only field (`disputed`,
+    # `grounding`, the CoT text) becomes reachable as a training input.
+    for forbidden in ("g_tac", "goals", "tac_goal_set", "cot_source"):
         assert forbidden not in fields, _msg(
-            f"V7Label gained {forbidden!r}: the tactical goal SET now reaches "
-            f"the consumer. That is the gap closing -- update the docs.")
+            f"V7Label gained {forbidden!r} -- that is a RAW passthrough of the "
+            f"emitter block, not a projected target. Audit-only fields would "
+            f"become reachable as inputs and the leak rules must be re-checked.")
 
 
 def test_goal_set_is_routed_to_audit_only() -> None:
