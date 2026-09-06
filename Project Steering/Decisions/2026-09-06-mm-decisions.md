@@ -2125,3 +2125,88 @@ nothing moves.
 this rig labels are largely near-stationary, which is *why* the `|dyaw| > 0.15` gate was unreachable
 and why the human failed it 3/9. **The reel now shows the limitation instead of hiding it**, and every
 frame carries the panel footer so the finding cannot be cherry-picked by pausing.
+
+## M84. ⭐⭐⭐ THE PERCEPTION PROBE SPLITS THE ANSWER — position is PLANNER, closing rate is PERCEPTION
+
+### 1. The measurement, with every control reading its known value
+
+Frozen trunk (**407 tensors, 0 sha256 mismatches, max |delta| = 0 EXACTLY**), head only, ridge
+(LINEAR, d = 128) carrying the verdict; RFF/RBF (d = 1024) reported with its n and d beside it.
+
+**TARGET A — `lead_gap_m` (<= 30 m), n = 1,586 rows / 42 bootstrap clusters:**
+
+| arm | skill |
+|---|---|
+| **`field`** (refav1's latent) | **+0.3632 [+0.2069, +0.5088]** |
+| raw-pixel floor | **−0.0513** |
+| constant-only control | ⭐ **exactly +0.000000** — reads its known value |
+| **paired `field − pix`** | ⭐ **+0.4145 [+0.2018, +0.6120] — EXCLUDES ZERO. Pre-registered PASS.** |
+| within-clip skill vs shuffle | **+0.3995** vs **−0.0013** |
+
+⇒ ⭐⭐ **The lead's longitudinal POSITION is in the latent the iCEM cost is evaluated over, and it
+tracks the lead AS IT MOVES** (the within-clip contrast rules out clip identity). ⇒ **A cost in this
+space CAN express "keep distance". That defect is PLANNER-SIDE.**
+
+**TARGET B — the CLOSING RATE: a clean null on every arm.** `field` **+0.0061** · DINOv3 **+0.0114** ·
+pixels **−0.0001** · nonlinear included. ⭐ **And it is a null about the REPRESENTATION, not a noisy
+label:** the rate's **lag-1 autocorrelation is +0.7836**, where a finite difference of white noise
+reads **−0.5**. ⇒ ⛔ **PERCEPTION DEFECT.**
+
+### 2. ⭐⭐ It ran the next lever instead of stopping at the null
+
+The null had two causes differing **~100x in cost**: **(A)** the trunk cannot represent relative
+motion, or **(B)** `_last_state` merely discards it when collapsing its 4-frame window.
+**Handing the head an explicit temporal difference recovers NOTHING** — `field_diff` **+0.0052**,
+`field_pair` **+0.0145**, all spanning zero. ⇒ ⛔ **(B) is REFUTED; it is (A).**
+
+⭐ **And the same-breath non-zero control proves the rig was live while returning that null:** on the
+**gap** target the *same* `field_diff` arm reads **+0.0004** against `field_t`'s **+0.3647**
+(paired **−0.3644**, excludes 0). ⇒ **the machinery works; the information is absent.**
+⇒ ⛔ **The next work item is a REPRESENTATION change, NOT a cost re-weighting.**
+
+### 3. ⭐⭐⭐ Why the split explains the longitudinal blocker
+
+refav1's whole remaining gap is longitudinal (**+0.2599** to `ha0_ext`), and longitudinal driving is
+distance-keeping. ⇒ ⭐ **You cannot keep distance from position alone.** Position says where the lead
+IS; **rate says whether you are closing on it.** A planner with position and no rate **can only react,
+never anticipate** — which is exactly the behaviour measured: the decoded LON token commands
+**`a == 0` on 29/40 windows** while the ground truth is at constant speed on **0 of 40** (`M51`).
+
+⇒ ⭐⭐ **This unifies `M53`/`M54` with the blocker.** A *perfect goal* made the planner **2.03x worse**
+and the search optimised *better* while driving worse ⇒ the cost is misspecified. **Now we know in
+which coordinate:** the cost can express *"be at distance d"* and **cannot express *"stop closing"***.
+⛔ **No re-weighting of a cost over that latent can fix it.**
+
+### 4. ⭐ Two things the controls caught before publication
+
+* ⛔ **`n_agents` is MOSTLY CLIP IDENTITY.** `field` **+0.5726** looks strong, but the **within-clip
+  shuffle reads +0.4958** and **every arm's within-clip skill is NEGATIVE.** ⇒ that headline would have
+  been a scene-recognition result reported as environment understanding.
+* ⛔ **Nonlinearly, frozen DINOv3 BEATS refav1's field** — **+0.5883 vs +0.4411**, paired **−0.1472**,
+  excludes 0 — the **pre-registered third outcome**. ⇒ ⭐ **the adapter made lead information more
+  LINEARLY accessible while RETAINING LESS OF IT overall.** That is a real cost of the adaptation and it
+  belongs beside the PASS.
+
+### 5. Scope, stated by the stream itself
+
+⚠️ **This is a REPRESENTATION diagnostic, not T0/T1** — **decodability is NECESSARY, NOT SUFFICIENT**
+(`C131`: the flagship v1-era had the programme's highest measured rank and no environment
+interpretation). ⭐ The stream also **self-reviewed and found three defects in its own write-up**, fixed
+separately: a **scope error** (quoting the split's 77 scored clips where the cell has **42 clusters**),
+a shuffle control called *"~0"* whose **CI excludes zero** (correct reading: TRUE − SHUFFLED =
+**+0.3325**), and a wrong artifact path.
+
+⭐ **Also recovered:** the **433,040-record / 2,308-clip agent join** an audit had found lost to a dead
+scratchpad — re-pulled from HF, md5 matching the banked expected value. With egomotion present for all
+55 chunks, **both inputs `build_lead_tracks.py` needs now exist on one box** (the builder needs a small
+adapter to read the join rather than raw zips — **named, not claimed as done**).
+
+### 6. What this changes for the plan
+
+1. ⭐ **Distance-keeping via POSITION is a planner/cost work item** — the latent supports it, so the
+   Tier-2 longitudinal levers remain worth composing.
+2. ⛔ **Closing rate is a REPRESENTATION work item** and belongs to refcv5 / v7f, not to refav1's cost.
+   **This is the concrete answer to *"what must the next world model encode?"*** — and it is exactly the
+   outcome I predicted would be valuable even if it were the negative branch.
+3. ⭐ **`lead_gap_m` decoding also supplies the LEAD TRACK**, which unblocks the **distance-keeping**
+   metric the four-families rule requires and that refav1 has never been able to report (`n = 0`).
