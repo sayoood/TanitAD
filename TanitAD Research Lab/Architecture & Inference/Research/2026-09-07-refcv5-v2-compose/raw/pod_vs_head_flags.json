@@ -1,0 +1,48 @@
+{
+  "measured_utc": "2026-09-06T22:0xZ",
+  "probe": "grep -o '\"--[a-z0-9-]*\"' <trainer> | sort -u, three surfaces compared",
+  "surfaces": {
+    "pod:/workspace/TanitAD/stack/scripts/refc_v3_train.py": {
+      "lines": 3634,
+      "md5": "acad9ae6e336e52d1b61a314f93a39fa",
+      "mtime_utc": "2026-09-05T23:38:02Z",
+      "add_argument_count": 79,
+      "distinct_long_flags": 80,
+      "sel_refined_hits": 0,
+      "sel_score_emitted_hits": 0,
+      "tac_goal_tok_head_hits": 0,
+      "control_sel_underscore_hits": 8
+    },
+    "repo:HEAD(52ca682) stack/scripts/refc_v3_train.py": {
+      "lines": 4479,
+      "add_argument_count": 88,
+      "distinct_long_flags": 89,
+      "sel_refined_hits": 6,
+      "sel_score_emitted_hits": 16,
+      "tac_goal_tok_head_hits": 0,
+      "control_sel_underscore_hits": 33
+    },
+    "repo:INDEX stack/scripts/refc_v3_train.py": {
+      "lines": 4028,
+      "note": "STALE and SMALLER than HEAD - `git checkout -- <path>` here would REGRESS the file",
+      "sel_refined_hits": 0,
+      "sel_score_emitted_hits": 0
+    },
+    "repo:WORKTREE stack/scripts/refc_v3_train.py": {
+      "lines": 4576,
+      "md5": "321573ae3c9712c8bdbec5c8cae1dbb0",
+      "add_argument_count": 89,
+      "distinct_long_flags": 90,
+      "tac_goal_tok_head_hits": 20,
+      "note": "a sibling is mid-edit; --tac-goal-tok-head exists ONLY here"
+    }
+  },
+  "flags_in_HEAD_missing_on_POD": [
+    "--goal-point-geo-prior", "--goal-point-inject", "--goal-point-t",
+    "--goal-point-w", "--nav-args", "--no-strategic", "--sel-refined",
+    "--sel-score-emitted", "--sel-score-emitted-t"
+  ],
+  "flags_on_POD_not_in_HEAD": [],
+  "verdict": "POD-BEHIND (clean, not diverged). The pod cannot accept a single lever the refcv5-v2 composition depends on.",
+  "why_the_plan_read_zero": "REFCV5_MISSING_PIECES_PLAN.md section 8 P14 records `sel_refined`/`sel_score_emitted` at 0 occurrences with a control of `sel_` = 8. That control value is the POD's (8), not HEAD's (33). The measurement was taken against the deployed copy; the fix HAS landed in the repo at commit c8601d0 and has never been shipped to the box."
+}
