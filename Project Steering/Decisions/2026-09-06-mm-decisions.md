@@ -1662,3 +1662,59 @@ asymmetry lives in the rollout.
 raise the cluster count**, which is what the decision estimator consumes. ⇒ **Sharpening further needs
 more EPISODES, not more windows or more compute** — the narrowed corpus request from `M64` §4, now
 confirmed on a completed 2×2 rather than a partial read.
+
+
+## M76. ⛔ SESSION API LIMIT HIT ~02:10 BERLIN — read this FIRST after the 04:20 reset
+
+### 1. What happened
+
+Four agents terminated with **HTTP 429, session limit, resets 04:20 Europe/Berlin**: the refav1
+make-it-drive stream, the refav1 gap-closing stream, the refav1 longitudinal stream, and an E-DDA-4
+probe. ⭐ **No GPU work was affected** — every arm is a host-side process on Thor / the A40 / the
+dev box and does not touch the API, and the host-side finishers (`finalize_thor.sh`,
+`finalize_lon.sh`, `queueK.sh`, `queueLON4.sh`) are shell scripts that keep running.
+
+⛔ **What died is the AGENT-SIDE READING of results that land between ~02:10 and 04:20.** The arms
+will finish and write their records; nothing will interpret them until the loop resumes.
+
+### 2. ⭐ READ THESE FIRST after the reset — in this order
+
+1. **`seambase` / `seamon`** (dev box, `W_JERK = 0.02` LIVE, ETA was ~50 min from 02:00) — the
+   **first arm the cost-pricing instrument ever APPROVED** (`M65`). ⛔ **A null here is now a REAL
+   answer about the cost side**, not arithmetic, because the weight is live. Read via
+   `finalize_lon.sh`; committed outcomes are in `raw/queueLON4.sh`'s header.
+2. **`best_seed1`** (dev box) — the inference-seed replicate of `best`'s `kamm_over 0.0000`.
+   ⛔ **`combined`'s identical zero DIED at seed 1** (`M56`), so this is the test that decides whether
+   `best`'s safety number is a property or a draw. Both outcomes pre-committed in `raw/queueK.sh`.
+3. **Thor's `goal_reach_s` panel** (`T_grsCTL` / `T_grs1` / `T_grs8` / `T_grs1_s1`) — ⛔ **READ
+   `T_grsCTL` FIRST: if it does not reproduce `T_lonshift`, every other arm in that panel is VOID.**
+   `bash /home/nvidia/refav1_lon/finalize_thor.sh` lands it.
+4. **`A4a_gk_kt02` / `A4b_kt02`** (Thor) — the goal-conditioned lateral cost at
+   `--goal-kappa-turn 0.02`. Its refutation branch is committed: **if it fails, the defect is upstream
+   of the cost and the next lever is `--lat-logit-bias`, not another cost term.**
+5. **refcv4b** — step ~33,350/40,284 at 00:38 UTC, **ETA ~08:20 UTC**, watcher armed and proven to
+   fire on completion, failure AND channel death. Its landing sequence is preflighted to a single
+   changed argument.
+
+### 3. ⚠️ Read these BEFORE quoting anything that lands
+
+* ⛔ **`M74`/`M75`: the `|dyaw| > 0.15` turn gate is UNREACHABLE and the HUMAN fails it 3/9.** Any
+  turn-RECALL number is a statement about the metric. Quote **curvature MAE with the straight-line
+  floor beside it** instead.
+* ⛔ **`M70`: the shared committer is running WITHOUT its name-preservation guards.** Verify every
+  commit by a **content marker inside the committed blob** with a non-zero control. Three commits
+  tonight exited 0 and landed nothing.
+* ⛔ **A floor is identified by FOUR things** — metric, statistic, **rig** (`M61`) and **arm**
+  (22× spread on one model, one panel). Never quote a remembered scalar.
+* ⭐ **`M73`: the ego-channel question is a POLICY call with a recommended default (admit all five)**,
+  not an open evidence question — no channel reads the future.
+
+### 4. Do NOT do these
+
+⛔ **Do not spawn agents before 04:20** — they will 429 and burn budget.
+⛔ **Do not repair `mktree_commit.py` or reflow `GOALS_AND_CLAIMS.md`** while streams are live
+(`M70`, `M72`) — both are queued for a genuinely quiet window.
+⛔ **Do not launch refcv5 training** until the A40 frees AND the corpus-flag preconditions are met
+(`--agents oracle` is the first rung and needs no detector; `--sampler ddim` needs an `--anchor-file`
+with declared `control_units`). ⚠️ **Do NOT set `--sel-refined` on the first arm** — measured
+**0.0259 m separated WORSE** (`M72`): the ranking head was never trained.
