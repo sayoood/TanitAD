@@ -1,0 +1,77 @@
+{
+ "tool": "D-NAVROUTE-1 matched intervention panel",
+ "tier": "T1 (self-action OPEN loop, 2026-09-02 ruling)",
+ "estimator": "paired episode-cluster bootstrap, 2000 resamples, seed 0",
+ "metric": "plan TERMINAL displacement (m) at the 6 s point vs the banked unablated `os` arm, same ckpt/config/grid",
+ "ckpt": "refcv4b ckpt_40284_FINAL.pt (step 40,284)",
+ "n_matched_windows": 993,
+ "n_matched_episodes": 29,
+ "arms_present": [
+  "GZERO",
+  "BLIND"
+ ],
+ "rows": {
+  "NOISE_FLOOR_replicate": {
+   "mean_m": 0.0001,
+   "lo": 0.0001,
+   "hi": 0.0001,
+   "median_m": 0.0001,
+   "max_m": 0.0005,
+   "frac_plan_UNCHANGED": 0.0,
+   "n_windows": 993,
+   "n_episodes": 29,
+   "_is": "REPL: the same flags and the same seed, run again. THE FLOOR. An effect at or below this is not an effect."
+  },
+  "nav_FLIP": {
+   "mean_m": 1.2334,
+   "lo": 0.4812,
+   "hi": 2.1418,
+   "median_m": 0.0,
+   "max_m": 42.9229,
+   "frac_plan_UNCHANGED": 0.6898,
+   "n_windows": 993,
+   "n_episodes": 29
+  },
+  "nav_ZERO": {
+   "mean_m": 1.9006,
+   "lo": 1.3428,
+   "hi": 2.502,
+   "median_m": 0.4561,
+   "max_m": 35.6551,
+   "frac_plan_UNCHANGED": 0.0,
+   "n_windows": 993,
+   "n_episodes": 29
+  },
+  "nav_SHUFFLE": {
+   "mean_m": 1.6417,
+   "lo": 1.1908,
+   "hi": 2.1377,
+   "median_m": 0.0,
+   "max_m": 47.7485,
+   "frac_plan_UNCHANGED": 0.5257,
+   "n_windows": 993,
+   "n_episodes": 29
+  },
+  "GZERO": {
+   "mean_m": 3.313,
+   "lo": 2.895,
+   "hi": 3.7743,
+   "median_m": 1.3046,
+   "max_m": 27.3617,
+   "frac_plan_UNCHANGED": 0.0,
+   "n_windows": 993,
+   "n_episodes": 29
+  },
+  "BLIND": {
+   "mean_m": 14.9837,
+   "lo": 13.0869,
+   "hi": 16.8071,
+   "median_m": 15.0759,
+   "max_m": 49.0262,
+   "frac_plan_UNCHANGED": 0.0,
+   "n_windows": 993,
+   "n_episodes": 29
+  }
+ },
+ "rows_note": "the g_str arms are differenced against REPL (their own surface); the nav rows against the banked `os` in the SAME file. The replicate row shows the two baselines agree to 1e-4 m, so the comparison is admissible."
+}
