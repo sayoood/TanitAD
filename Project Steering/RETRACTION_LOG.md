@@ -14356,3 +14356,64 @@ different roll is exactly the kind of number a later reader compounds.
 source-of-truth rule.
 
 <!-- RETRACTION-REGISTER-REPAIR-2026-09-06 -->
+
+
+## 2026-09-06 — "175 GROUNDED / 604 DISPUTED": THE SECOND TERM ASSERTS AN OBSERVATION THAT NEVER HAPPENED
+
+**Root-cause class: a STATUS WORD THAT ASSERTS AN OBSERVATION, APPLIED TO RECORDS NOTHING
+OBSERVED.** Recognition signal: **a two-term count whose second term names a VERDICT
+("disputed", "failed", "unverified") when the underlying process never ran on those records.**
+Siblings: `_unverified` reading identically on every arm; an anchor column declaring no units.
+
+**What was published, and what I did with it:** the traffic-light grounding precedent was carried
+through this programme as **"175 grounded / 604 disputed"**. ⛔ I did not merely repeat it — **I
+wrote it into the P3 brief of the DataFlyWheel stream**, i.e. I pushed an inherited number at the
+one stream best placed to disprove it, as though it were established. It is only because that
+stream MEASURED rather than inherited that it was caught.
+
+⛔ **WHAT THE ARTIFACT SAYS** (MEASURED, v8 train+eval, n = 4,719 clips, all four traffic-light
+tokens pooled, **805 emissions**):
+
+| state | n | share |
+|---|---|---|
+| GROUNDED (`box:traffic_light`) | **182** | 22.6 % |
+| ⛔ **NOT_CHECKED** — the clip's ONE grounding question asked about something else | **601** | 74.7 % |
+| NO_QUESTION on this clip | **22** | 2.7 % |
+
+Per token: RED 384 → 91 (23.7 %) · GREEN 378 → 80 (21.2 %) · YELLOW 25 → 8 (32.0 %) · bare
+REACT 18 → 3 (16.7 %). **CONTRADICTED: 0.**
+
+⭐ **THE NUMBERS BARELY MOVED AND THE VERDICT INVERTED.** 175→182 and 604→601 are within noise of
+each other, which is exactly why the error survived — it *reconciled*. But **"disputed" means the
+grounding LOOKED AND CONTRADICTED**, and nothing contradicted anything: only ONE grounding question
+is asked per clip, and on those 601 it asked about a pedestrian, a lead vehicle or an adjacent
+vehicle instead. ⇒ **Disputed retires 601 correct labels. Not-checked retires none and instead
+indicts the QUESTION BUDGET.** Opposite actions from a number that looked the same.
+
+⭐ **AND THERE ARE THREE KINDS OF "NOT GROUNDED", NOT ONE** — the same shape as the vocabulary
+census's three kinds of zero, one layer down. **NOT_APPLICABLE** (no box class is defined for the
+token) covers **100 % of every GEOMETRIC token**: SPEED_BAND 4,719/4,719, FOLLOW_LANE 3,748/3,748,
+STOP_POINT 336/336, TURN_L 280/280. ⛔ A consumer computing a single "grounded rate" across
+`g_tac.goals` would report those at **0 % grounded** and conclude the corpus is ungrounded — when
+grounding is simply not the right question for a pose-derived label.
+
+⛔⛔ **THE LIVE CONSEQUENCE, AND IT IS LARGER THAN THE RETRACTION.** `grounded: true` means a
+traffic-light **BOX EXISTS** on that clip. It does **NOT** verify the **COLOUR**. The PI's standing
+belief is specifically that *"our data set includes gt traffic light as part of the tactical goals
+with the detected colour"*. ⇒ On the evidence as it stands the honest statement is: **we have
+PARTIALLY-GROUNDED PRESENCE and ZERO GROUNDED COLOUR.** ⚠️ The RED/GREEN split is **384/378, near
+1:1** — which is what a model *describing what a traffic light can be* would produce, not what a
+camera on a moving car sees, since real driving is green-dominated (a driver passes through greens
+continuously and only queues at reds). **Commissioned, with the expectation committed before the
+number: does RED track the ego actually DECELERATING, against GREEN as the paired control on the
+same clips?** If not, the colour is a VLM prior rather than an observation.
+
+⭐ **THE GENERALISATION, ADOPTED AS A STANDING TEST** (the DataFlyWheel's sentence, kept verbatim
+because it is the whole of it): *"a box proves a light was visible, not that it was red."*
+⇒ **For any "grounded" claim: NAME THE QUANTITY THE GROUNDING ACTUALLY MEASURED, AND CHECK IT IS
+THE QUANTITY BEING ASSERTED.** It applies wherever the grounding channel and the asserted attribute
+are different quantities — which is most of them.
+
+**Corrected 2026-09-06 (late). Registered as `D-TLGROUND-DISPUTED`.** The measurement wins over the
+inherited phrasing, per the source-of-truth rule; and per the two-mechanism rule, the count that
+stands is the one taken from the artifact, not the one that had been relayed.
