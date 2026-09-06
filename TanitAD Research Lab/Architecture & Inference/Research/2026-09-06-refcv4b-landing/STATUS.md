@@ -228,3 +228,68 @@ At n = 5 this is not evidence; it is the **first thing the landing eval must res
 and the loss is **2.87× larger on manoeuvre windows**.
 Source: `MODEL_REGISTRY.md` §4.5 lines 2742-2759, raw
 `taniteval/results/refcv3-40284-openloop.json`.
+
+---
+
+## 6. The FULL eval chain is preflighted, and it already closes 3 of refcv3's criteria violations
+
+The landing chain is **two** commands, not one, and both have now been run end to end on
+`ckpt_30000.pt`:
+
+```
+refcv3_arm.py  --dump-dir D --out A.json          # the arm record + the dump
+openloop_suite.py --arm-json A.json --dump-dir D  # the CRITERIA-CHECKABLE artifact (ZERO GPU)
+```
+
+⛔ **The second command is not optional, and finding that out was the point of preflighting it.**
+`tools/criteria_check.py` on the `refcv3_arm.py` record alone returns
+
+> `UNKNOWN_SCOPE: matches no in-scope or out-of-scope marker — the driving criteria do not apply
+> to this artifact — not scored.`
+
+⇒ a refcv4b record in that shape would have **silently escaped the binding completeness check**,
+and `UNKNOWN` *is never counted as compliant*. This is the same failure the criteria skill already
+retracts for the refav1 shape ("matched no in-scope marker, and every one read `UNKNOWN_SCOPE`").
+The `openloop_suite` shape **is** in scope, and it is how `refcv3-40284-openloop.json` was made.
+
+**MEASURED, both under registry v2.8.0:**
+
+| artifact | violations | work items |
+|---|---|---|
+| `taniteval/results/refcv3-40284-openloop.json` (the incumbent baseline) | **3** | 0 |
+| refcv4b preflight, same chain | **0** | 1 |
+
+refcv3's three violations are **exactly the nav-compliance block** — the criterion and its two
+controls (paired drop under nav-SHUFFLE, paired drop under nav-ZERO). They are absent there because
+that record predates the module; my taniteval sync ships it, and the preflight produces it
+populated. ⇒ **the refcv4b record will be the first REF-C record with zero criteria violations**,
+and that is attributable to the sync, not to the model.
+
+⚠️ **Two invocation traps the preflight caught, both silent:**
+1. **`--dump-dir` must be passed ALONGSIDE `--arm-json`.** Without it the suite refuses the
+   `const0` constant-only control and prints *"⛔ THE HARNESS IS WRONG, NOT THE MODEL"* — which
+   reads like a defect and is actually a missing flag. With it: **`constant-only control: OK`**,
+   i.e. all three exact checks pass (paired-against-itself bit-exactly 0/0/0; `const0`'s ADE equals
+   the mean GT displacement recomputed independently in float64 numpy; its speed MAE equals the
+   mean GT speed). That control is the only thing that catches a metric whose normalisation is
+   wrong, so a suite without it has no check that the pipeline reads a KNOWN value.
+2. **The pod's criteria registry was v2.5.0 against the repo's v2.8.0.** Shipped and md5-verified
+   (`c4b5f4932ab247def1addc1f13d76371`), along with `tools/criteria_check.py`.
+
+**The one remaining WORK ITEM — reported, not papered over:** `hyg.inference_seed`
+(*"stochastic planner: inference-seed replicate + the seed floor"*, `required: false`,
+`applies_when: the scored arm's planner SAMPLES at inference`). refcv4b's decoder is
+**deterministic at eval** — `refc.py:1596` uses `zeros_like` for the noise when not training, and
+the DiffusionDrive audit measured `eval_deterministic_steps0/2: true` — so the criterion does not
+apply and the admissible state is **REFUSED with that reason**, not ABSENT.
+⇒ **Work item for the Eval FlyWheel** (whose instrument this is): emit
+`refused["inference_seed_replicate"]` with the determinism reason when the decoder's eval noise is
+`zeros_like`. I am not editing another FlyWheel's working instrument to move a `required: false`
+counter; this is escalated in the report instead of being written into a README nobody re-reads.
+
+## 7. The reel is bigger than planned, because its stated constraint was false
+
+See `RUNBOOK.md` §4. Short form: the calibration bound was not real, the reel is selected by a
+**rule** over all 141 held-out clips rather than by which 9 happened to have extrinsics, and it
+lands at **15 clips / 2,571 frames / 257.1 s — 4.95× the banked refcv3 reel**, with 5 net-left and
+6 net-right clips, 7 reaching a full stop and 6 exceeding 15 m/s.
