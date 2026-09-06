@@ -1300,8 +1300,20 @@ a probe like this: **it corroborates the board rather than adding a mystery.**
 `step_readout_op.net.1` and `.3` **DID train** (std 0.0090 and 0.0256) while `.0` — the LayerNorm
 *between them and the input* — did not. Gradient reaching `.1` must pass through `.0`. ⇒ **the most
 likely account is an optimizer PARAM-GROUP split** (norm affine params excluded outside the encoder),
-not a dead path. ⛔ **That is a one-line check against the trainer's param-group construction, and it is
-owed before any v7f launch** — because if it is *not* a deliberate group, then every non-encoder norm
+not a dead path.
+⭐⭐ **REFUTED BY SOURCE, in the same session — and the question is now SHARPER, not answered.**
+`train_v6_staged.py:8165` is `torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)` — **a SINGLE
+param group**, no `no_decay` split, no norm-affine exclusion (control: 151 `def` in the same read).
+The only freezes are `--freeze-encoder` (`:6574`) and `--freeze-readout` (`:6581`), **both
+flag-gated** — and `champ30k`'s encoder norms **MOVED**, so `freeze_encoder` was OFF.
+⇒ ⛔ **Neither an optimizer group nor either available freeze explains 25 norm weights sitting at
+EXACTLY 1.0 through 30,000 AdamW steps.** ⭐ And with a non-zero `weight_decay`, a parameter that is
+IN the optimizer drifts even at zero gradient — decoupled decay shrinks it. **Staying bit-exactly at
+1.0 therefore implies those params are NOT IN `trainable` at all**, by a route not in the two blocks
+above (`trainable = [p for p in stack.parameters() if p.requires_grad]`, `:5638`/`:6596`).
+⇒ ⛔ **OPEN, and it is now MORE important, because v7f inherits this trainer:** find what clears
+`requires_grad` on those modules, or show `wd == 0` makes the inference unsound. **This is owed
+before any v7f launch** — because if it is *not* a deliberate group, then every non-encoder norm
 in v7f will also fail to adapt.
 
 ### 3. What this does to Row 3
