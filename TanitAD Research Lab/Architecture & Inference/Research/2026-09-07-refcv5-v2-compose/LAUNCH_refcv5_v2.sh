@@ -134,6 +134,24 @@ ARGS=(
   --goal-str
 )
 
+# ---- ⛔⛔ THE TACTICAL VOCABULARY DOES NOT TRAIN WITHOUT THIS FLAG -------- #
+# refc_v3.py:948 gates the head on `_vv != "kin3" AND cfg.tac_goal_tok_head`.
+# Without it `self.tac_goal_tok_head = None`, `tac_goal_logits` is never
+# written (:1236-1237), and the 22 tactical tokens are supervised by NOTHING —
+# so the arm would load the v7.2 vocabulary and then train against no head.
+# ⛔ The flag is NOT in HEAD as of 52ca682: it exists only in a sibling's
+# worktree edit (20 hits there, 0 in HEAD, 0 in the index). Set TACGOAL=1 ONLY
+# once it has LANDED — asking for the head without the vocabulary is refused,
+# and asking for it on a trainer that lacks the flag is an argparse error.
+if [ "${TACGOAL:-0}" = 1 ]; then
+  ARGS+=(--tac-goal-tok-head)
+else
+  echo "⚠️  TACGOAL=0: the 22 tactical tokens will be supervised by NOTHING." >&2
+  echo "   The 15 strategic tokens have no head at all (P4 unwired)." >&2
+  echo "   => this arm does NOT satisfy 'use the whole tactical and strategic" >&2
+  echo "      vocabulary'. Proceeding only because the flag is not in HEAD." >&2
+fi
+
 # ⭐ THE STRATEGIC LAYER'S CONDITIONING STAYS ON. --no-strategic is the
 # ABLATION arm and is deliberately absent here: the PI asked for the vocabulary
 # to be USED; the ablation answers a different question (plan §0.1).

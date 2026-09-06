@@ -22,6 +22,13 @@ on, so the true blocker is an unperformed **ship step**. Beyond that: **P4 canno
 enter** (its module is wired to nothing), **D-TRISEG cannot enter** (the decoder
 refuses the shape), and **9 of the PI's 12 video observations will not move.**
 
+⛔⛔ **AND THE ONE THE PI WILL CARE ABOUT MOST:** as HEAD stands,
+refcv5-v2 would train **NEITHER** the tactical nor the strategic vocabulary
+(§4.1) — the tactical head is gated behind a flag that is still in a sibling's
+worktree, and the strategic head has no call site at all. The arm would **load**
+the v7.2 vocabulary and train against **no head**. The tactical half is **one
+commit** away; the strategic half is **not written**.
+
 ---
 
 ## 1. ⛔⛔ THE FINDING THAT CHANGES THE PLAN: the box is not running the repo
@@ -236,7 +243,39 @@ asserts the forward signature exposes no `tac_goal*` target channel at all.
 | **P4** 15-token strategic vocabulary | ⛔ **CANNOT ENTER as a trained head — WIRED TO NOTHING** | `refc_strategic.py` is imported by exactly **one** file, `stack/tests/test_p4_p13_p14_wiring.py:36` — a test. `str_goal_tok_head` = **1 hit**, in its own docstring (`:17`). **Zero** references from `refc_v3.py` or `refc_v3_train.py`; **no CLI flag**. Two independent probes, live control `tac_goal_tok_head` = **107** occurrences. The class is `StrategicTokenHead` (`:151`) and is complete — heads, loss, majority control, off-vocabulary refusal — but nothing calls it. Same failure mode as P6's 4,530,444-param selector. |
 | **P13** DD `t`-draw | ⛔ does not enter (mechanism PASS, benefit not established) | ⚠️ **record correction:** refcv5 trained at **t ∈ {10, 0}**, **not t = 8** — a live spy on the real `_sample` showed the realised timesteps are the *inference ladder*, identical under `t_max = 50` and `t_max = 1`. |
 | **D-TRISEG** three-segment anchors | ⛔ **CANNOT ENTER — the consumer refuses the shape** | `build_twoseg_anchors.py:55-58`: *"`refc.py::AnchoredDiffusionDecoder.roll_bank` rolls `anchor_controls` as a constant and its shape checks REFUSE a `[N, 3]` or `[N, 4]` bank (loudly, which is correct). `tanitad.refs.anchor_twoseg.roll_bank` is the drop-in reference the decoder needs; **wiring it is a named hand-off**."* Corroborated verbatim at `anchor_twoseg.py:94-101`. The measurement (nine bars PASS, +0.2133 m) stands; the **wiring does not exist**, and no 3- or 4-column bank exists on the pod. |
-| **`--tac-goal-tok-head`** | ⛔ **not in HEAD** | 20 hits in the **worktree**, **0** in HEAD, **0** in the index. Per the brief's rule, not composed against. It is one commit away and carries a complete guard; if it lands before launch, add the flag (it **requires `--v7-labels`**, which this arm already passes). |
+| **`--tac-goal-tok-head`** | ⛔ **not in HEAD** — and ⛔⛔ **its absence silences the TACTICAL vocabulary too** | 20 hits in the **worktree**, **0** in HEAD, **0** in the index. ⇒ not composed against, per the brief's rule. **But see §4.1 — this is not a nice-to-have.** |
+
+### 4.1 ⛔⛔ WITHOUT `--tac-goal-tok-head`, refcv5-v2 TRAINS **NEITHER** VOCABULARY
+
+`refc_v3.py:948` is the gate:
+
+```python
+if _vv != "kin3" and bool(getattr(cfg, "tac_goal_tok_head", False)):
+    self.tac_goal_tok_head = TacGoalTokenHead(...)
+```
+
+Without the flag, `self.tac_goal_tok_head = None`, so `tac_goal_logits` is never
+written (`:1236-1237`) and the **22 tactical tokens are supervised by nothing**.
+The **15 strategic tokens** have no head in the model at all (§4, P4).
+
+⇒ **As HEAD stands today, the composed arm satisfies the PI's *"use the whole
+tactical and strategic vocabulary"* on NEITHER half.** The `--v7-labels`
+vocabulary would be loaded and joined — and then trained against by no head.
+
+**What it takes to honour the instruction:**
+
+| half | what is needed | distance |
+|---|---|---|
+| **tactical (22)** | the sibling lands `--tac-goal-tok-head`; the arm passes it (it **requires `--v7-labels`**, which this arm already passes) | **one commit** — the code is written and guarded in the worktree |
+| **strategic (15)** | a call site for `refc_strategic.StrategicTokenHead` in `refc_v3.py`, a loss hook in `refc_v3_train.py`, and a `--str-goal-tok-head` flag | **not written** — the module is complete and referenced by nothing but a test |
+
+⚠️ And even fully wired, the honest ceiling holds: **88.13 %** of the usable
+horizon carries no v7 tactical GT, and only **6 of 15** strategic tokens are
+populated (**11.43 %** of the horizon supervisable). ⛔ `SPEED_BAND` is
+supervised **degenerately** — present on 4,572/4,572 and inside
+`_MEASURED_GEOMETRY_TOKENS`, so every cell gets weight 1.0 and target 1.0: a
+constant-1 BCE target with **zero negatives**. It cannot teach; it can only
+saturate a logit while contributing loss.
 | **P2** geometric goal point | ⛔ **mutually exclusive with the nav-command INPUT** | `--goal-point-inject` sets `nav_inject → False` **by pre-registration** (`refc_v3_train.py:4513`), and `--nav-args` refuses when `nav_inject` is off (`:381-384`). The PI names the nav command as an INPUT ⇒ goal-point stays OFF. |
 | **P11** `--nav-args` | ⛔ **feeds an INADMISSIBLE channel** | `NAV_ARG_DIMS = 3` = `(distance_norm, time_norm, args_valid)` (`refc_v3.py:167`); batch built at `refc_v3_train.py:1543`; passed to forward at `:1715`. Plan §8 P11 rules **`time_s` NOT admissible** — it is the ego's own future speed profile inverted. **There is no distance-only mode**: `refc_v3_train.py:1200` requires *both* slots, and `refc_v3.py:837` projects both through one `Linear(NAV_ARG_DIMS, d_nav)`. ⇒ enabling it would put a future-ego longitudinal oracle into a model whose gap is **88.7 % longitudinal** — it would manufacture exactly the win we are trying to measure. |
 | **P15** max speed | slot left, no flag | see Finding M. A sibling owns the channel. |
