@@ -21,7 +21,10 @@ Primary artifact: `raw/panel_report.json` (671,770 B). Tables `raw/TABLES.md`, m
 
 `A0b_replicate` is A0's flags and A0's seed, **run a second time** — it moves zero levers by audit. It was added mid-panel (⚠️ **not** in the original pre-registration) because the panel's estimator resamples *episodes with the trained models held fixed*, and so cannot see training nondeterminism at all.
 
-**Two runs that differ in nothing produced "separated" differences on 3 of 18 family metrics:**
+**Two runs that differ in nothing produced "separated" differences on 6 of 42 bootstrapped cells = 14.3 %:**
+
+⛔ **CORRECTED 2026-09-06 by the register-repair agent — the figure originally published here was "3 of 18" and it reproduces at NO scoping.** Recursing `arms.A0b_replicate.paired_vs_A0` in `raw/panel_report.json` gives **42 cells, 6 separated = 14.3 %**: `LAT_yaw_rate_mae_radps` separated in **3 of its 4** (regime x horizon) cells, `LON_accel_mae_mps2` in 2, `LON_along_mae_m` in 1. The five-row table below is the **2 s horizon** view; the panel's own `VERDICT.md` tabulates seven family rows at that horizon, where it is **3 of 14 = 21.4 %**. Re-derivation with both its controls: `…/2026-09-06-register-repair/raw/replicate_fp_rate.py` -> `raw/replicate_fp_rate.txt`. ⚠️ **`raw/NOISE_FLOOR.md` was NOT the source of either figure** — that artifact crashed mid-write on a cp1252 `UnicodeEncodeError` and carried no numbers at all; it has been repaired and now emits a completion marker (`I21`).
+
 
 | A0b − A0 (identical config) | withheld regime | kept regime |
 |---|---|---|
@@ -31,7 +34,7 @@ Primary artifact: `raw/panel_report.json` (671,770 B). Tables `raw/TABLES.md`, m
 | LAT yaw-rate MAE (rad/s) | **+0.0759 [+0.0164, +0.1473] SEP** | −0.0075 [−0.1351, +0.0988] ns |
 | ADE (m) | +0.0180 [−0.4164, +0.4331] ns | +0.0502 [−0.0447, +0.1509] ns |
 
-⛔ **That is a ~17 % false-positive rate for "separated", measured on this rig with this estimator, between two runs of the same configuration.** It is not an estimator bug — the bootstrap answers the question it is asked (*"would this delta survive on other windows?"*) — it is that the question is the *wrong one* for a single-seed panel, where the dominant variance is run-to-run and sits entirely outside the interval. The train-log half of the same finding: over the 450 steps where A1 *is* A0's configuration, 66/72 logged differences are non-zero and |Δ `withheld_speed_mae`| reaches **0.701 m/s**, amplifying from 0.00007 at step 50.
+⛔ **That is a 14.3 % false-positive rate for "separated" (6 of 42 bootstrapped cells; 3 of 14 = 21.4 % restricted to the 2 s family rows), measured on this rig with this estimator, between two runs of the same configuration** *(CORRECTED 2026-09-06 by the register-repair agent; published here as "~17 %")*. It is not an estimator bug — the bootstrap answers the question it is asked (*"would this delta survive on other windows?"*) — it is that the question is the *wrong one* for a single-seed panel, where the dominant variance is run-to-run and sits entirely outside the interval. The train-log half of the same finding: over the 450 steps where A1 *is* A0's configuration, 66/72 logged differences are non-zero and |Δ `withheld_speed_mae`| reaches **0.701 m/s**, amplifying from 0.00007 at step 50.
 
 ⇒ **A separated CI from a one-seed arm is necessary, not sufficient.** Every delta below is read against this floor.
 
@@ -105,7 +108,7 @@ Withheld-row oracle-in-vocabulary (**T0, model-free**, the ceiling of the bank a
 
 ## 8. Verdict
 
-**Do not adopt `pred` for refcv5 on this evidence, and do not refuse it.** The pre-registered ADOPT criterion is not met: the withheld-row longitudinal family does not separate from A0. But the lever is not refuted and is the only one in the panel that moves the model off the echo — and the panel's own replicate shows this rig manufactures "separated" readings on ~17 % of metrics between identical runs, so a single-seed non-result on a 0.17 m/s effect is **underpowered, not negative** (the standing rule: a negative from an underpowered probe is a statement about the probe).
+**Do not adopt `pred` for refcv5 on this evidence, and do not refuse it.** The pre-registered ADOPT criterion is not met: the withheld-row longitudinal family does not separate from A0. But the lever is not refuted and is the only one in the panel that moves the model off the echo — and the panel's own replicate shows this rig manufactures "separated" readings on **14.3 %** of bootstrapped cells between identical runs *(CORRECTED 2026-09-06 by the register-repair agent)*, so a single-seed non-result on a 0.17 m/s effect is **underpowered, not negative** (the standing rule: a negative from an underpowered probe is a statement about the probe).
 
 Two conclusions **are** licensed at rig scope:
 

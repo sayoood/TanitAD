@@ -14179,3 +14179,180 @@ cap-OFF column**, computed with the same code on the same day.
 **Durable lesson:** a control whose target value is a *banked number* silently becomes a
 control against a *past version of the code*. State the code version beside the target, or
 recompute the target in the same run — which is what the repair package does.
+
+
+---
+
+## 2026-09-06 — "the v7.2 nav is an ORACLE and +0.1054 m is THE DEPLOYMENT GAP": A FRAMING TAKEN FROM A BRIEFING INSTEAD OF FROM THE REGISTER
+
+**Root-cause class: ⭐ NEW — `C1` WITH THE OBJECT BEING A WORD.** `C1` is *"a faster-moving
+source than the harness"*: quoting a trainer log as an eval result. This is the same defect with
+the quoted object being a **FRAMING** rather than a **VALUE** — a phrase inherited from a
+Master-Mind briefing and propagated as though it had come from the register. ⛔ **It is worse than
+`C1` in one specific way: no numeric check can catch it.** Every number was right at every site.
+Recognition signal: **a load-bearing adjective or noun that no `VOCABULARY.md` entry licenses**,
+travelling with a correct measurement.
+
+**What was published, at five sites.** `os_navzero` was called *"the deployment arm"*, the v7.2
+nav command *"an ORACLE nav token"*, and `os_navzero − ha0_ext` = **+0.1054 [+0.0874, +0.1241]**
+*"the size of the DEPLOYMENT GAP"*.
+
+⛔ **WHAT THE BINDING RULING SAYS.** `Project Steering/VOCABULARY.md`, PI ruling **2026-09-04** —
+two days before every one of those sites was written: the v7.2 nav command is **GROUND TRUTH and a
+FIRST-CLASS ROUTE INPUT**, the signal a map router supplies at deployment, and **not** ego-future
+leakage. *"⛔ Do NOT stamp it 'oracle', do NOT call it 'absent at deployment', and do NOT treat
+`os_navzero` as the deployment arm: **`os` (nav fed) is the deployment-relevant arm; `os_navzero`
+is a ROBUSTNESS ABLATION.**"*
+
+⭐ **THE MEASUREMENT IS NOT RETRACTED AND WAS NOT WRONG.** +0.1054 m is real, separated, and
+reproduces (+0.1052 [+0.0876, +0.1246] on the navpred roll's own surface). It is a
+**ROBUSTNESS-ABLATION MARGIN**, and its admissible reading is *"refcv4b has NO route-free
+fallback — strip the signal entirely and it is worse than holding an action."* ⚠️ The nuance the
+ruling requires, wherever the ablation is quoted against published work: our route signal is
+derived from the ego's own future path, so it is **noiseless and perfectly timed** where a real
+router is coarser — a **CLEAN** version of a deployment signal, not an absent one.
+
+⚠️ **And a second reading was wrong for an independent reason.** `H-NAVPRED-1`'s gating control
+measured that **95.7 % of what `os_navzero` removes is the E13 conditioning vector's PRESENCE and
+4.3 % its CONTENT** (`nav_cmd=None` skips the whole E13 injection). So +0.1054 m is a **PATHWAY**
+margin, not an **INFORMATION** one — the *"entire margin is supplied by an oracle input"* sentence
+was wrong twice over, in vocabulary and in mechanism.
+
+**Corrected at five sites, 2026-09-06** (measurements untouched, framings replaced, corrections
+marked inline): `Decisions/2026-09-06-mm-decisions.md` M85 heading + verdict + §3 + lever 2 —
+**the origin**; `MODEL_REGISTRY.md` §4.6; `GOALS_AND_CLAIMS.md` `D-REFCV4B-LANDING`,
+`D-REFCV5-LEVERS`, `H-NAVPRED-1`. `Paper/TANITAD_PAPER.md` had already self-corrected in v1.4 —
+which is how the violation was found.
+
+**Durable lesson.** ⛔ **A briefing is a SUMMARY, and the summary rule applies to its words as well
+as to its numbers.** Before a framing is reused, check it against `VOCABULARY.md` — the register is
+the source of truth for what things are CALLED, exactly as `MODEL_REGISTRY.md` is for what they
+MEASURE. The check is cheap: *"which register entry licenses this word?"*
+
+---
+
+## 2026-09-06 — "the programme's first replicated, NON-VACUOUS safety result": THE ZERO IS BOUGHT BY NOT TURNING, AND THE VACUITY GATE DID NOT CATCH IT
+
+**Root-cause class: ⭐ NEW — A GATE THAT IS NECESSARY AND NOT SUFFICIENT, TRUSTED AS SUFFICIENT.**
+Adjacent to `C6` (confounded comparison) but distinct: nothing here is confounded and every control
+passed. The defect is that the **vacuity gate tests the wrong sub-population**. Recognition signal:
+**a safety metric read as a pass while the arm declines the manoeuvre class in which that metric
+can fail.**
+
+**What was published** (`M77`, and carried into `M79` §4): *"`best`'s zero-violation result
+replicates — the programme's first replicated, NON-VACUOUS safety result"*, argued NOT-vacuous
+because `best` clears `M58`'s magnitude gate (`max|kappa| >= 0.02`) at **4×** and runs at **89 %**
+of the recorded human's peak lateral load.
+
+⛔ **WHAT IS MEASURED (2026-09-06, re-run of the same instrument on the same banked dumps, all
+controls passing).**
+
+1. **The zero is not rare.** **SIX** distinct configurations read `kamm_over` **0.0000** at
+   `v0 >= 2`, n = 27 — `cos_wk`, `wk15`, `wk151`, `combined`, `best`, `bestlad`. **THREE FAIL the
+   `M58` magnitude gate**: `cos_wk` **0.0000** (an all-zero path), `bestlad` **0.0049**, `wk151`
+   **0.0166**. **One more is SEED-DEPENDENT**: `combined` 0.0000 → **0.0741**. ⚠️ The previously
+   published *"four arms reach zero"* was itself scoped to a single artifact
+   (`feas_audit_all.txt`, ten arms) — **`C2` in miniature, and I repeated it while correcting it.**
+2. ⛔⛔ **`best`'s zero is BOUGHT: `turn_left` recall is EXACTLY 0.0000 of n_true = 11 at BOTH
+   inference seeds**, against a **0.00000 measured recall seed floor**. ⇒ **That is not a safety
+   result. It is a refusal to execute a manoeuvre, read on the safety axis.**
+3. ⭐ **THE MECHANISM THE GATE MISSES.** `M58`'s gate catches the **stopped** arm — it asks *"did
+   this arm move at all?"* `best` moves normally: `max|a|` 1.500, 19 distinct realised curvatures,
+   `peak_g` 0.332. What it does not do is **turn left**, and a friction-circle violation is
+   overwhelmingly a *turning* event. ⇒ **an arm can pass a motion assertion and still never
+   approach the limit, because it declines the class in which the limit binds.**
+   ⇒ **RULE `I22`: state the sub-population the safety metric is about, and assert the arm ACTS
+   IN IT.** A motion assertion is necessary and not sufficient.
+
+⭐ **WHAT SURVIVES, re-verified against the artifacts this turn and NOT retracted:** `best` is the
+**only** arm that is simultaneously zero, non-vacuous **and** replicated across inference seeds;
+`max|kappa|` **0.0800 = 4.0× the vacuity threshold** at both seeds; `peak_g` max **0.332 against
+the recorded human's 0.373 (89 %)** at both seeds; the ground-truth control reads 0.0000 and three
+trivial arms non-zero **in the same table**. **Both surviving numbers hold exactly.**
+
+⇒ **The admissible sentence:** *"`best` is the only refav1 arm whose zero friction-circle
+violation rate replicates across inference seeds while remaining non-vacuous by the motion test —
+and it reaches that zero with `turn_left` recall 0.0000, so on this rig safety and turn execution
+are traded, not composed."*
+
+**Corrected at three sites:** `Decisions/2026-09-06-mm-decisions.md` M77 heading + §2 and M79 §4;
+registered as `D-REFAV1-CG-BEST-SEED-REPLICATE` and `I22` in `GOALS_AND_CLAIMS.md`. Artifacts
+(previously prose only): `…/2026-09-06-register-repair/raw/BEST_FEASIBILITY_SEEDS.md`,
+`raw/feas_audit_best_seeds.txt`, `raw/rec_best.json`, `raw/rec_best_seed1.json`.
+
+---
+
+## 2026-09-06 — "3 of 18 family metrics, a ~17 % false-positive rate": A FIGURE THAT REPRODUCES AT NO SCOPING, SOURCED TO A CRASHED ARTIFACT
+
+**Root-cause class: ⭐ NEW — `C4`/"verify by content" WITH A THIRD FAILURE SHAPE: THE TRUNCATED
+ARTIFACT THAT READS LIKE A COMPLETE ONE.** Not a missing file (`C2`) and not a wrong file: a file
+that OPENS correctly — real title, two paragraphs of correct methodology, a real section heading —
+and then **stops**, because its generator died mid-write. `ls` reports a plausible size and a
+reader skims a real header. Recognition signal: **an artifact cited for a number that is not in
+it, whose byte count looks reasonable.**
+
+**What was published,** in `CLAUDE.md`'s own trap rule and in three register rows: the
+`A0b_replicate` zero-lever replicate produced *"'separated' differences from A0 on **3 of 18**
+family metrics, a **~17 %** false-positive rate"*, evidence path
+`…/2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md`.
+
+⛔ **WHAT IS MEASURED (2026-09-06).** Recursing `arms.A0b_replicate.paired_vs_A0` in
+`raw/panel_report.json` gives **42 bootstrapped cells, 6 separated = 14.3 %** —
+`LAT_yaw_rate_mae_radps` in **3 of its 4** (regime × horizon) cells, `LON_accel_mae_mps2` in 2,
+`LON_along_mae_m` in 1. The restricted view the panel's own `VERDICT.md` tabulates (7 family rows
+at the 2 s horizon, both regimes) is **3 of 14 = 21.4 %**. ⛔ **"3 of 18" reproduces at NO
+scoping** — 18 is not a cell count this report produces — and **~17 %** is neither 14.3 % nor
+21.4 %.
+
+⛔⛔ **AND THE CITED ARTIFACT COULD NOT HAVE BEEN THE SOURCE.** `raw/NOISE_FLOOR.md` is **1,128
+bytes** (md5 `fe792081be4938c7a82c39569243f26b`) whose tail is a Python traceback: the generator
+died on a **cp1252 `UnicodeEncodeError`** printing `⇒` to a cp1252 stdout, after the header had
+already been flushed. **It carries no numbers at all.** The crash was reproduced exactly this turn
+by re-running the unmodified script under `PYTHONIOENCODING=cp1252`.
+
+⭐ **FIXED, not merely noted.** (a) The generator is repaired — every non-ASCII character removed
+from every `print()`, which is the dev box's standing rule and the exact bug here; the artifact is
+**regenerated with its real numbers** (`A1_pred` vs `A0_fixed`: **66/72** non-zero differences,
+`|Δ withheld_speed_mae|` mean 0.194 max **0.701**; `A2_random`: 69/72, max 1.088). (b) The crashed
+bytes are preserved. (c) **The guard that would have caught it exists and is mutation-proven per
+`I19`**: `assert_complete.py` requires `<!-- ARTIFACT-COMPLETE: … -->` as the artifact's last line,
+reports `INCOMPLETE` on the preserved crashed copy, `COMPLETE` on the repair, `UNREADABLE` on a
+missing file, and detects a crash **by SHAPE** (traceback header at column 0 plus a `File "…",
+line N` frame) so an artifact that *documents* a crash is not flagged.
+
+**Corrected at five sites:** `CLAUDE.md` (the trap rule itself — the stale figure was living
+inside the rule that warns about stale figures, for the second time in this file's history);
+`GOALS_AND_CLAIMS.md` `H-ESTIM-SEED-1` (×2), `D-RL-CTRL0-SEPFLOOR-1`, and the three-variances row.
+Registered as `D-REPLICATE-FPRATE` and `I21`.
+
+**Durable lesson.** ⛔ **An artifact's SIZE and its OPENING are not evidence that it finished.**
+Assert a completion marker before quoting any number from a generated file — and put the marker
+emission on the generator, so the assertion has something to find.
+
+---
+
+## 2026-09-06 — `os_navpred`'s CI: THE RIGHT MEASUREMENT QUOTED FROM THE WRONG ROLL
+
+**Root-cause class: `I20` / the `MODEL_REGISTRY` "prose lied to us" family, WITH THE OBJECT BEING
+AN INTERVAL.** Recognition signal: **a table whose means come from one artifact and whose intervals
+come from another.**
+
+**What was published:** `H-NAVPRED-1`'s arm table in `GOALS_AND_CLAIMS.md` gave `os_navpred`
+**0.3012 [0.2744, 0.3318]**.
+
+⛔ **WHAT THE ARTIFACT SAYS:** `…/2026-09-06-refcv4b-navpred/raw/paired_navpred.json → ade` gives
+**[0.2721, 0.3314]**, and the package's own `RESULT.md` §1 already printed that. **All seven rows**
+of the register's table carried the **landing** roll's intervals beside the **navpred** roll's
+means: `ha0_ext` [0.2649, 0.3137] → **[0.2646, 0.3137]**; `os` [0.2697, 0.3280] → **[0.2682,
+0.3272]**; `ha` [0.2755, 0.3278] → **[0.2749, 0.3280]**; `os_navshuf` [0.2738, 0.3310] →
+**[0.2722, 0.3301]**; `os_navzero` [0.3660, 0.4225] → **[0.3652, 0.4212]**; `ha0` [0.6007, 0.7469]
+→ **[0.6017, 0.7437]**.
+
+⭐ **Scope: no MEAN moved and no PAIRED MARGIN moved.** The decision-grade deltas were always read
+from the same JSON, so no conclusion is exposed — but a published interval that belongs to a
+different roll is exactly the kind of number a later reader compounds.
+
+**Corrected 2026-09-06.** Registered as `D-NAVPRED-CI-JSON`. **JSON wins over prose**, per the
+source-of-truth rule.
+
+<!-- RETRACTION-REGISTER-REPAIR-2026-09-06 -->

@@ -1720,7 +1720,14 @@ with declared `control_units`). ⚠️ **Do NOT set `--sel-refined` on the first
 **0.0259 m separated WORSE** (`M72`): the ranking head was never trained.
 
 
-## M77. ⭐⭐⭐ `best`'s ZERO-VIOLATION RESULT REPLICATES — the programme's first replicated, NON-VACUOUS safety result
+## M77. ⭐⭐ `best`'s ZERO-VIOLATION RESULT REPLICATES — AND SO DOES ITS REFUSAL TO TURN LEFT
+
+⛔⛔ **SUPERLATIVE WITHDRAWN 2026-09-06 (register-repair agent). The heading previously read *"the programme's first replicated, NON-VACUOUS safety result"*. THE MEASUREMENTS BELOW ARE UNTOUCHED AND TWO OF THEM WERE RE-VERIFIED AGAINST THEIR ARTIFACTS THIS TURN; THE CLAIM BUILT ON THEM WAS NOT SUPPORTED.**
+* ⛔ **The zero is not rare: SIX distinct configurations read `kamm_over` 0.0000** at `v0 >= 2`, n = 27 — `cos_wk`, `wk15`, `wk151`, `combined`, `best`, `bestlad`. **THREE of them FAIL the `M58` magnitude (vacuity) gate** `max|kappa| >= 0.02`: `cos_wk` **0.0000** (an all-zero path), `bestlad` **0.0049**, `wk151` **0.0166**. **One more, `combined`, is SEED-DEPENDENT** (0.0000 → 0.0741).
+* ⛔⛔ **AND `best`'s ZERO IS BOUGHT BY NOT TURNING: `turn_left` recall is EXACTLY 0.0000 of n_true = 11 at BOTH seeds**, against a **0.00000 measured recall seed floor**. ⇒ ⭐ **That is not a safety result. It is a refusal to execute a manoeuvre, read on the safety axis.** The vacuity gate exists for exactly this and it fires one level up: an arm need not be *stopped* to be vacuous — it is enough that it declines the manoeuvre class in which the limit binds. **A motion assertion is necessary and NOT sufficient; the sufficient form asserts motion IN THE REGIME THE SAFETY METRIC IS ABOUT** (registered `I22`).
+* ⭐ **WHAT SURVIVES, re-verified 2026-09-06 against `…/2026-09-06-register-repair/raw/feas_audit_best_seeds.txt`:** `best` is the **only** arm that is simultaneously zero, non-vacuous **and** replicated across inference seeds — `max|kappa|` **0.0800 = 4.0× the 0.02 vacuity threshold** at both seeds, `peak_g` max **0.332 vs the recorded human's 0.373 (89 %)** at both seeds, with the ground-truth control at 0.0000 and three trivial arms non-zero in the same table. **Both numbers hold.**
+* ⇒ **The admissible sentence:** *"`best` is the only refav1 arm whose zero friction-circle violation rate replicates across inference seeds while remaining non-vacuous by the motion test — and it reaches that zero with `turn_left` recall 0.0000, so on this rig safety and turn execution are traded, not composed."*
+* ⭐ **Now BANKED** (they were prose here and nowhere else): `…/2026-09-06-register-repair/raw/BEST_FEASIBILITY_SEEDS.md` + `raw/feas_audit_best_seeds.txt` + `raw/rec_best.json` + `raw/rec_best_seed1.json`.
 
 ### 1. The measurement, with every control passing
 
@@ -1745,7 +1752,8 @@ recorded motion is feasible by construction), and the **known-value control repr
 a replicated zero friction-circle violation rate."* THAT IS NOW FALSE: `best` has one.**
 
 ⭐ **And it is NOT VACUOUS by `M58`'s own gate.** That gate failed `bestlad` on **max|kappa| 0.0049 <
-0.02**; `best` reads **0.0800 — 4x the threshold** — and runs at **89 % of the human's peak lateral
+0.02** *(re-measured 2026-09-06 in the same table as the zeros it disqualifies, so it is no longer
+an inherited number)*; `best` reads **0.0800 — 4x the threshold** — and runs at **89 % of the human's peak lateral
 load** (0.332 vs 0.373). ⇒ **It is not a stopped arm buying safety by declining to act**, which is the
 degenerate solution this programme has caught three separate times tonight.
 
@@ -1836,7 +1844,15 @@ construction and whose floor is a **perfectly straight plan**.
 | `wk7` | 7 | 0.8935 | 0.03352 | 19.084 | 0.2727 |
 | ⭐ **`wk15`** | 15.11245 | **0.8934** | ⭐ **0.03098** | **15.270** | 0.0000 |
 | `wk151` | 151.1245 | 0.9084 | 0.03802 | 15.379 | 0.0000 |
-| **FLOOR `ha0`** (perfectly straight) | — | — | **0.040083** | 20.137 | — |
+| **FLOOR `ha0`** (perfectly straight) | 0.9251 | — | **0.040083** | 20.137 | — |
+
+⭐ **BANKED 2026-09-06.** The `wk1` / `wk3` / `wk7` rungs existed ONLY in this document; they are now real
+artifacts at `…/2026-09-06-register-repair/raw/A2_WKAPPA_SWEEP_RUNGS.md` with their four families, their
+records (`raw/rec_wk1.json`, `rec_wk3.json`, `rec_wk7.json`) and the model-free identity control that
+proves one surface. Every value above reproduced exactly. ⛔ **One correction the banking forces:** the
+`wk1` → `wk3` curvature step is **0.00067, BELOW the 0.00200 binding inference-seed floor**, so those two
+rungs are **not distinguishable** on this panel and the "monotone 0 -> 1 -> 3" limb rests on a step
+smaller than the noise. `wk3` -> `wk7` (2.6x) and `wk7` -> `wk15` (1.3x) do clear it.
 
 ### 2. ⭐⭐ What it establishes
 
@@ -1863,8 +1879,11 @@ curvature **0.03098 vs 0.03352**, heading **15.270 vs 19.084**, ADE tied.
 
 **"Is there an arm that both drives accurately and tracks the road?" — YES: `wk15`.**
 ADE **0.8934** (best in the sweep) with curvature MAE **23 % better than a perfectly straight plan**,
-and — with `M77` — a **replicated, non-vacuous zero friction-circle violation rate** at 89 % of the
-human's peak lateral load.
+and — with `M77` — a **zero friction-circle violation rate that replicates across inference seeds and
+passes the motion (vacuity) test**, at 89 % of the human's peak lateral load. ⛔ **But read `M77`'s
+2026-09-06 withdrawal with it: the zero is not rare (six configurations reach it, three vacuously),
+and `wk15`/`best` buy it with `turn_left` recall EXACTLY 0.0000 of 11.** ⇒ **"tracks the road" and
+"executes turns" are different claims here, and only the first is supported.**
 ⛔ **What it still is NOT:** better than `ha0_ext` on the longitudinal family, and `M66` warns that
 `ha0_ext` is itself infeasible on 18.5 % of windows, so that comparison needs its feasibility rate
 stated. **Lateral and safety are established; longitudinal is the open blocker.**
@@ -2211,7 +2230,9 @@ adapter to read the join rather than raw zips — **named, not claimed as done**
 3. ⭐ **`lead_gap_m` decoding also supplies the LEAD TRACK**, which unblocks the **distance-keeping**
    metric the four-families rule requires and that refav1 has never been able to report (`n = 0`).
 
-## M85. ⭐⭐ refcv4b LANDED AND EVALUATED — it beats refcv3 cleanly, ties the trivial controls, and LOSES without the oracle nav
+## M85. ⭐⭐ refcv4b LANDED AND EVALUATED — it beats refcv3 cleanly, ties the trivial controls, and LOSES with its ROUTE INPUT REMOVED
+
+⛔⛔ **VOCABULARY CORRECTED 2026-09-06 (register-repair agent). THE MEASUREMENTS BELOW ARE UNTOUCHED; THE FRAMING WAS WRONG, AND THIS BRIEFING IS WHERE IT ENTERED THE PROGRAMME.** The binding PI ruling of **2026-09-04** (`Project Steering/VOCABULARY.md`) says the v7.2 nav command is **ground truth and a FIRST-CLASS ROUTE INPUT** — the signal a map router supplies at deployment — and forbids stamping it *"oracle"*; **`os` (nav fed) is the deployment-relevant arm and `os_navzero` is a ROBUSTNESS ABLATION.** ⇒ **+0.1054 m is a ROBUSTNESS-ABLATION MARGIN, not "the size of the DEPLOYMENT GAP".** ⭐ **Root-cause class: A FRAMING INHERITED FROM A BRIEFING RATHER THAN FROM THE REGISTER** — the same family as quoting a number from a faster-moving source than the harness, with the object being a WORD instead of a value. The corrections are marked inline below; nothing is deleted.
 
 ### 1. The headline, T1, paired episode-cluster bootstrap, 4,823 windows
 
@@ -2229,10 +2250,15 @@ Arms: `os` **0.2975** · `ha0_ext` **0.2874** · `ha` **0.2996** · `ha0` **0.67
 **0 of 4,823** windows differing. The rig was live while returning those ties — which is what makes
 the ties admissible rather than a suspicion about the instrument.
 
-⇒ ⭐⭐ **refcv4b beats refcv3 and ties the trivial controls — but ONLY while holding the oracle nav.**
-⛔ **Strip it and it loses by 0.1054 m, separated.** ⚠️ Our only route supplier on PhysicalAI is the
-ego's own future path, so a supplied route is **optimistic by construction**. ⇒ **that 0.1054 m is the
-size of the DEPLOYMENT GAP**, and it is the sharpest number the landing produced.
+⇒ ⭐⭐ **refcv4b beats refcv3 and ties the trivial controls — while being fed the v7.2 ROUTE token,
+which is a first-class input it is entitled to.**
+⛔ **Remove that input entirely and it loses by 0.1054 m, separated** ⇒ **refcv4b has NO ROUTE-FREE FALLBACK.**
+⚠️ **CORRECTED 2026-09-06:** the original text read *"ONLY while holding the oracle nav … that 0.1054 m
+is the size of the DEPLOYMENT GAP"*. **Both halves are withdrawn** under the PI ruling of 2026-09-04:
+the token is not an oracle and this is not a deployment gap — it is a **ROBUSTNESS-ABLATION MARGIN**,
+and it is the sharpest number the landing produced *about robustness*. ⚠️ The nuance that does travel:
+ours is derived from the ego's own future path, so it is **noiseless and perfectly timed** where a real
+router is coarser — a CLEAN version of a deployment signal, not an absent one.
 
 ### 2. ⛔ Two corrections to what I had already reported to the PI
 
@@ -2259,8 +2285,12 @@ shuffled nav at **0.2264**.
 
 ⇒ ⭐ **That is exactly the property flagship v1's route head FAILED** — an exact bijection of its own
 nav input (369/369 and 81/81) scoring **1.0000**, an echo read as skill.
-⇒ ⭐⭐ **So the thing that makes refcv4b's tie hollow is an ORACLE INPUT the model already predicts
-from vision.** One eval roll (`os_navpred`) prices how much of the 0.1054 m it recovers. **Launched.**
+⇒ ⭐⭐ **So the input that carries refcv4b's tie is a ROUTE SIGNAL the model already predicts from
+vision** — which makes a route-free fallback cheap to build, not which makes the tie illegitimate.
+One eval roll (`os_navpred`) prices how much of the 0.1054 m it recovers. **Launched.**
+⚠️ *(Corrected 2026-09-06 from "an ORACLE INPUT … makes refcv4b's tie hollow" — PI ruling 2026-09-04.
+The roll has since landed: `H-NAVPRED-1` recovers 0.0914 m of it, and its gating control shows
+**95.7 % of the margin is the conditioning vector's PRESENCE, 4.3 % its CONTENT**.)*
 
 ### 4. ⛔ A second instrument defect — every refcv3/refcv4b eval was invisible to the completeness census
 
@@ -2280,7 +2310,7 @@ Training: step **40,284**, **44.6 h**, `summary.json {"done": true}` written by 
 ### 6. ⭐ The ranked refcv5 levers this produced
 
 1. ⭐⭐ **Encode CLOSING RATE** (`M84`) — corroborated three independent ways.
-2. ⭐⭐ **Replace the oracle nav with the predicted route** — worth **0.1054 m separated**, and
+2. ⭐⭐ **Add a route-free fallback: feed the predicted route when the supplied v7.2 ROUTE token is absent** — the route-removal robustness margin is **0.1054 m separated** *(vocabulary corrected 2026-09-06: not an "oracle")*, and
    **half-built already** (§3). Cheapest step: one `os_navpred` eval roll.
 3. **Train the selector (WP-7)** — ⛔ do NOT flip `--sel-refined` (`M72`: 0.0259 m separated worse).
 4. **Curvature shaping** — `os` curvature **0.008097** is *worse* than `ha0`'s **0.006802** while its

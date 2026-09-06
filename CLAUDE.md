@@ -122,8 +122,13 @@ radius + per-arm corrections: `…/incoming/2026-07-25-jack-blast-radius/JACK_BL
 ⛔⛔ **A SEPARATED INTERVAL FROM A ONE-SEED ARM IS NECESSARY, NOT SUFFICIENT — THE PAIRED
 BOOTSTRAP IS STRUCTURALLY BLIND TO TRAINING VARIANCE.** MEASURED 2026-09-05 on the v7-tiny rig
 by an arm no SPEC asked for: **`A0b_replicate`** — A0's flags, A0's **seed**, run again, **zero
-levers moved** (verified by argv audit) — produced **"separated" differences from A0 on 3 of 18
-family metrics**, a **~17 % false-positive rate for `separated`** on that rig. The mechanism is
+levers moved** (verified by argv audit) — produced **"separated" differences from A0 on 6 of 42
+family cells**, a **14.3 % false-positive rate for `separated`** on that rig
+(re-derived 2026-09-06 from `panel_report.json` by recursing `A0b_replicate.paired_vs_A0`;
+restricted to the seven family rows the panel's `VERDICT.md` tabulates at 2 s it is 3 of 14.
+⚠️ The earlier "3 of 18 / ~17 %" form does NOT reproduce at any scoping, and `raw/NOISE_FLOOR.md`
+cannot be its source: that artifact CRASHED mid-write on a cp1252 `UnicodeEncodeError` and carries
+no numbers at all — a TRUNCATED artifact that reads like a complete one). The mechanism is
 not a bug in `taniteval/ci.py`: the episode-cluster bootstrap resamples **EPISODES with the
 models held fixed**, so it estimates *"would another draw of episodes say this?"* and never
 *"would another training run say this?"*. Two runs differing in **nothing** cleared it.

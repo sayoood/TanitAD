@@ -3800,6 +3800,20 @@ Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refc
 
 ⛔⛔ **CORRECTION 2026-09-06 — the parenthesis that stood here, *“`--agents oracle` is the rung that runs first and needs no detector”*, is REFUTED and has been removed from the sentence above.** It is true about the **detector** and false about the **join**: the oracle's tokens ARE the ground-truth boxes, so with no `--agent-join` the forward raises — `ValueError: this build is --agents oracle but no agent_gt reached the forward`. MEASURED by the refcv5 preflight's 2-step arm on 2026-09-06 (`D-REFCV5-LAUNCH-1`), not reasoned. The practical consequence is a CORPUS-SCOPE block, not a missing file: no agent join exists on the A40, and the only one the programme holds is **parity**-scoped (`train2400_agents.jsonl.xz`, 2,308 clips), covering ~4 % of the B1 corpus refcv5 trains on. ⇒ **WP-6 is deferred behind a B1-scoped `obstacle.offline` join (DataFlyWheel); WP-4 launched alone**, which makes attribution cleaner rather than worse.
 
+### `D-B1-AGENT-JOIN-1` — ⭐ **the B1-scoped agent join EXISTS: 139/141 B1 EVAL clips, alignment PROVEN (2026-09-06, B1 agent-join agent)**
+
+| | |
+|---|---|
+| **Claim** | The `obstacle.offline` → agent join scoped to the **B1 v7.2 EVAL split** is built and verified through both real consumers. **139 / 141** clips, **26,394** labelled frames, **905,512** agent boxes, `visible_frac` **0.4078**. Artifact `…/2026-09-06-b1-agent-join/raw/b1eval_agents.jsonl.xz`, md5 **`3ddb42ecbd3926066795a94587af2aed`** (scope: **compressed**), 9,960,084 B |
+| **Evidence class** | **MEASURED (ours)**, dev-box CPU, 52.7 s, **zero GPU** — the A40 refcv5 run was never touched |
+| **The blocker, as a fraction with the corpus named** | Prior coverage of B1 by every join the programme held: **199 / 4,719 = 4.22 %** (train2400 **193**, val40 **6**, lead130 **12**) — and on the eval split that every v7 T1/val number is computed over, **11 / 141**. ⛔ B1 and parity are largely disjoint: `\|TRAIN2308 ∩ B1\| = 193`, so `train2400_agents.jsonl.xz` was never a candidate |
+| **⛔ The index-space trap it closes** | `build_obstacle_join.py` emits `frame_idx` **post-`n_stack`-trim**; the B1 EVAL lead block emits `frame` in the **RAW v2ep index**. At `n_stack 3` that is **2 frames ≈ 0.2 s ≈ 2.7 m of lead displacement at 13.6 m/s**. ⭐ This artifact emits **BOTH** keys, so `train_p8_occupancy.JoinFileReader` (which `refc_v3_train.py --agent-join` uses) and the refav1/lead-block adapter each read their own space and **neither guesses** |
+| **Alignment PROVEN, not asserted** | Gate = ego-speed agreement at the same `(clip_id, frame)`, **independent of the registration fit**: TRUE `max\|Δv\|` **1.472e-04 m/s** vs tolerance **1.0e-03** (adopted verbatim from `refav1_arm.py:238` `LEAD_SPEED_TOL_MPS`), mis-join(+1) control **2.129e-02 m/s** ⇒ **144.6× separation**. Guards proven by **mutation**: empty join, duplicate keys and +1-shifted frames each REFUSED, with a valid-join control that PASSES |
+| **⚠️ A gate I moved, and why it is not a moved goalpost** | A first cut gated on `\|Δt\| ≤ 5e-3 s` and refused the build on ONE clip (`fe764229`, 1.04e-02 s). That clip registers on **23 probes** vs 96, so its fitted time *offset* is imprecise — a smooth ~7 ms bias, **not** a frame step; its speed agreement is 2.25e-05 m/s, **44× inside** tolerance, and `lead_source`'s documented accuracy is *"worst 25.9 ms over 500 clips"*. **The 5e-3 s figure was invented here and measured registration PRECISION while the question was KEY CORRECTNESS.** The gate moved to the correct statistic; it was not loosened on the one it was failing |
+| **Not covered — the named next lever** | This is **EVAL** (141 clips). **Agent conditioning during TRAINING needs the B1 TRAIN split (4,572 clips), which does not exist.** Full-chunk pull priced from the consumer's loader ≈ **121 GB** (1,411 chunks; obstacle 44.2 MB/chunk MEASURED 2.57 GB/58, egomotion 41.5 MB MEASURED 8.18 GB/197) for ~3.3 B1 clips per chunk. ⭐ The cheap route exists: `build_lead_block_b1.pull_obstacle_offline` is an **HTTP range-request reader** that pulls individual per-clip members out of a remote zip — how the 145 eval parquets were obtained. I/O-bound, does not contend with refcv5 |
+| **⚠️ Flag, unresolved** | The class histogram carries **11** distinct labels, not the "10 classes" the register quotes (`D-V5A-GROUND1`, `D-V5A-OCC-LIMIT`): automobile 676,084 · person 164,275 · rider 22,977 · heavy_truck 18,300 · bus 8,440 · trailer 7,514 · protruding_object 3,534 · other_vehicle 3,136 · stroller 723 · animal 460 · train_or_tram_car 69. `protruding_object` is also not obviously *dynamic* — and `D-V5A-GROUND1` itself uses it as the control that must NOT touch the road |
+| **Artifacts** | `stack/scripts/build_b1_agent_join.py` · `stack/tests/test_b1_agent_join.py` · `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-06-b1-agent-join/{README.md,raw/}` |
+
 ### `D-REFCV5-LAUNCH-1` — ⭐ **refcv5 IS TRAINING: the WP-4 diffusion rung launched 2026-09-06 10:13:52 UTC**
 
 ⛔⛔ **NO RESULT EXISTS YET.** This row records a LAUNCH — preconditions, argv, liveness —
@@ -8616,3 +8630,266 @@ tree was blob-verified against HEAD before use (`v6.py` `e9d733d0…`, `train_v6
 | **D-GOALPOINT-LEAK-GUARD-IS-LOAD-BEARING** | ⛔ **A LEAK THAT LOOKED EXACTLY LIKE A FINDING.** Unguarded, the arc sweep read *"the shorter the arc, the better the goal"* — 70.2 % recovery at 15 m falling to 11.2 % at 60 m. The 2 s ground-truth path at the corpus mean speed covers ~22.7 m, so **a 15–20 m goal is INSIDE the scored horizon and IS the answer**. With the programme's own guard applied (`lan.horizon_lead_m` = `max(2 s GT arc, v0·2) + 5 m`; guard mean **28.23 m**, p95 59.96) the advantage largely disappears. ⇒ `GoalPointConfig` **REFUSES `t_goal_s <= t_pred_s` at construction**, so no arm that leaks the scored horizon can be built at all. | ⭐ **MEASURED (ours)** | `raw/GP_LATERAL_AXIS_s{15,20,30,40,60}.json` vs `raw/GP_LATERAL_GUARDED_s{20,40,60,80}.json` |
 | **D-REFCV4B-ALAT-UNITS-REVALIDATED** | ⭐ **THE `alat` CONTROL UNITS ARE RE-VALIDATED INDEPENDENTLY, by a probe that had to rebuild the fan to work at all.** Rebuilding the v0-conditioned 117-anchor bank through `tanitad.models.kinematic.rollout_unicycle` with `control_units='alat'`, `alat_v_floor 4.0`, `kappa_cap 0.12`, `ref_speed 10.0` reproduces the banked `sel_bank_nav_true` to **1.53e-05 m** on all 4,823 windows, while the FIXED `anchors` table read at the same index is **157.62 m** off — a same-breath negative control that must not match, and does not. | ⭐ **MEASURED (ours)** | `raw/GP_SELECTION_CEILING.json` (K2 / K2ⁿ) |
 | **GP-1 / GP-2** | ⛔ **BLOCKERS, ESCALATED, NOT WRITTEN INTO A README.** `gp_geo` needs **~6 lines** in `refc.py`'s ranked-score block (one gated `r_terms` entry + a zero-init `gp_point_gate`) and four flags in `scripts/refc_v3_train.py`. **Neither file is the goal-point agent's.** `refc_v3.py` already emits `hook_out["goal_point"]` (landed this turn) so the patch needs no second forward. The exact diff is in `PREREG.md` §8; the launch command is §9. | ⛔ **OPEN — named with its owner and its exact patch** | `PREREG.md` §8–§9 |
+
+
+---
+
+## ⭐⭐ REGISTER REPAIR (2026-09-06, register-repair agent) — I17–I22, four escalated corrections, and two result sets banked
+
+`Marker: REGISTER-REPAIR-2026-09-06. This section is IDEMPOTENT — it is appended once and its`
+`presence is the re-run guard. Package:`
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-register-repair/`
+
+⭐ **Why these rows exist.** `Paper/TANITAD_PAPER.md` v1.4 asserts four instrument rules the
+register did not carry, and the constitution requires the register to move in the same turn as any
+asserted claim. The paper stream escalated that it owns the paper file only. **Registered here.**
+Two more rules (`I21`, `I22`) were earned by this turn's own work and are registered with them.
+
+### The instrument rules the paper asserts (§17), now in the register
+
+| id | rule | status | evidence |
+|---|---|---|---|
+| **I17** | ⛔⛔ **NAME WHICH VARIANCE YOUR INTERVAL PRICED.** A CI prices exactly one source of variation, and there are four. **V1 episode draw** — *would another sample of held-out clips say this?* — is what the paired episode-cluster bootstrap answers, and the only one it answers. **V2 training run** — priced only by a REPLICATE ARM (same flags, same or different seed). **V3 inference run** — priced only by ≥2 INFERENCE-SEED replicates, and it is non-trivial for any sampling planner (iCEM). **V4 the rig** — priced only by a scale rung; nothing on a tiny rig can answer it. ⇒ **For any claim that a LEVER moved a metric, a separated CI is NECESSARY and NOT SUFFICIENT** | **ADOPTED — MEASURED on both faces.** V2: `A0b_replicate` (A0's flags, A0's seed, zero levers moved by argv audit) reads **6 separated cells of 42 = 14.3 %** against A0. V3: two arms differing only in `--plan-seed` give ADE \|Δ\| **0.0607** (dev box) / **0.0047** (Thor), binding per-metric floors ADE 0.1035 · cross-track 0.1111 · curvature 0.0020 · heading 1.1458 · speed 0.0068 | `…/2026-09-05-withheld-bank-panel/raw/panel_report.json`; **re-derived this turn** by `…/2026-09-06-register-repair/raw/replicate_fp_rate.py` → `raw/replicate_fp_rate.txt`; `…/2026-09-05-refav1-close-the-gaps/raw/frontier.txt`; paper §17.1 |
+| **I18** | ⛔ **EVERY PROBE PANEL CARRIES THREE THINGS, or its numbers are not admissible:** (a) a **constant-only control** that must read the no-information value **exactly**, (b) a **raw-input floor** — a learned representation that does not beat raw input has added nothing — and (c) its **n and d printed on every row**. Every hyper-parameter (λ, PCA basis) is fitted on the FIT split only; the scored split is scored, never tuned on | **ADOPTED — earned by four distinct estimator failures in ONE afternoon on one ridge probe, each producing a confident publishable number, each caught ONLY by a control reading the same value as the thing being measured.** The positive exemplar is the refav1 perception probe: constant arm **+0.000000 exactly (d = 0)**, pixel floor **−0.0513** on the gap and **−0.0001** on the closing rate, n/d on every row (1,586/128 and 1,586/1024) | `CLAUDE.md` traps preflight; `…/2026-09-06-refav1-perception-probe/raw/probe_results.json`; paper §17.2, §13.2 |
+| **I19** | ⛔ **A GATE THAT CANNOT FAIL MEASURES NOTHING — MUTATION, NOT INSPECTION.** A gate asserts a *counterfactual*: that had the defect been present, it would have fired. Only reintroducing the defect can establish that. ⇒ **every gate ships with a deliberate-regression arm it must FAIL.** An AST census, a static audit or a count of suspicious call sites is **not** a gate — each reads the same value on a fixed system and on a broken one | **ADOPTED — three measured instances, two of them gates that looked correct and were inert:** a replicate audit reading `manifest["model"]["argv"]` on manifests that carry **no `argv` anywhere** (it would have printed `INCONCLUSIVE` forever while looking like a working gate); a gradient guard rolled up with `any(...)` at default loss weights that passed while **52.2 %** of a declared trainable budget received no gradient; and the positive form — the route/nav index repair, **5/5 pass on the fixed file, 4/5 FAIL on the pre-fix file** | paper §17.3; `…/2026-09-06-p1-grad-reach/`; `…/2026-09-06-refcv4b-navpred/raw/test_refcv3_route_nav_alignment.py` |
+| **I20** | ⛔ **EVERY QUANTITY CARRIES THE SCOPE IT WAS MEASURED IN, AND THE SCOPE IS PART OF THE NUMBER.** The programme's single most productive failure class, and it recurs *because the failing number is correct*. A **result** carries its arm; a **floor** its rig and arm; a **lever** its operating point; a **threshold** its regime; a **gate row** its arm; a **tensor** its units; an **artifact's cost** its consumer's loader; an **exit code** the process it describes. ⚠️ Most dangerous costume: **an absence claim** — a `0` is a claim about the SEARCH, not about the CONTENT, unless the read is also asserted | **ADOPTED — every clause has a measured instance**, from an anchor column read as curvature instead of lateral acceleration (**396 g** vs **0.31 g**) to a **1.38 TB** capacity wall that was **161 GB** when the consumer's loader was opened | paper §17.4; `RETRACTION_LOG.md` root-cause classes; `CLAUDE.md` traps preflight |
+| ⭐ **I21** | ⛔ **A COMPLETION MARKER, ASSERTED ON READ — `verify by CONTENT` has a THIRD failure shape: the TRUNCATED artifact that reads like a complete one.** Not a missing file and not a wrong file: a file that OPENS correctly — real title, real methodology, real section heading — and then stops, because its generator died mid-write. `ls` reports a plausible size and a reader skims a real header. ⇒ **every generated text artifact emits `<!-- ARTIFACT-COMPLETE: <NAME> -->` as its LAST line, and every reader asserts it before quoting any number** | **ADOPTED — MEASURED 2026-09-06.** `…/2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md` is **1,128 bytes** of which the tail is a Python traceback: the generator died on a **cp1252 `UnicodeEncodeError`** printing `⇒` to a cp1252 stdout. It carries **NO NUMBERS AT ALL**, and it was cited in this register as an evidence path for a false-positive rate that does not appear in it. **REPAIRED** (regenerated, ASCII-only prints, marker emitted last); crashed bytes preserved, md5 `fe792081be4938c7a82c39569243f26b`. The guard is **mutation-proven per `I19`**: `INCOMPLETE` on the preserved crashed copy, `COMPLETE` on the repair, `UNREADABLE` on a missing file, and it detects a crash **by SHAPE** (traceback header at column 0 + a `File "…", line N` frame) so an artifact that *documents* a crash is not flagged | `…/2026-09-06-register-repair/raw/assert_complete.py`, `raw/noise_floor.py`, `raw/NOISE_FLOOR.CRASHED.orig.md`, `raw/NOISE_FLOOR.md` |
+| ⭐ **I22** | ⛔⛔ **A SAFETY ZERO NEEDS A MOTION ASSERTION *IN THE REGIME THE METRIC IS ABOUT* — THE VACUITY GATE IS NECESSARY AND NOT SUFFICIENT.** `M58`'s gate (`max\|kappa\| >= 0.02`) catches the **stopped** arm. It does **not** catch the arm that moves normally and simply **declines the manoeuvre class in which the limit binds**. Such an arm passes the magnitude gate on lane-keeping curvature while never approaching the friction circle, because approaching it requires turning. ⇒ **state the sub-population the safety metric is about, and assert the arm ACTS in it** | **SUPPORTED — MEASURED 2026-09-06.** `best` passes the magnitude gate at **4.0×** (max\|kappa\| 0.0800 vs 0.02) and runs at **89 %** of the recorded human's peak lateral load (`peak_g` max 0.332 vs 0.373) — **and reads `turn_left` recall EXACTLY 0.0000 of n_true = 11 at BOTH inference seeds**, against a **0.00000 measured recall seed floor**. A zero-violation rate earned by declining every left turn is not a safety result | `…/2026-09-06-register-repair/raw/BEST_FEASIBILITY_SEEDS.md`, `raw/feas_audit_best_seeds.txt`, `raw/ff_a2_rungs_and_best_seeds.txt` |
+
+⚠️ **What I17–I22 do NOT establish.** They change what may be **claimed** from a measurement; they
+change no measurement. **I17's 14.3 % is a property of ONE rig** (~19 M params, 48 non-parity
+training episodes, 2,000 steps, 640 windows over 40 val episodes) — it bounds what a *tiny-rig*
+separated result is worth and says nothing about corpus scale, which has not been measured because
+it costs a replicate training run. **V2 is priced NOWHERE at corpus scale** and is carried as a
+named blocker. And none of these rules retracts an earlier result: a **structural zero** is an
+identity, not an estimate, and no seed changes it.
+
+### The four escalated corrections
+
+| id | claim | status | evidence |
+|---|---|---|---|
+| ⛔⛔ **D-VOCAB-NAV-FRAMING** | **THE v7.2 NAV COMMAND WAS FRAMED AS AN "ORACLE" AND `os_navzero − ha0_ext` = +0.1054 m AS "THE DEPLOYMENT GAP", CONTRARY TO A BINDING PI RULING — AND THE FRAMING CAME FROM A BRIEFING, NOT FROM THE REGISTER.** `VOCABULARY.md` (PI, **2026-09-04**) rules that the nav command is **ground truth and a FIRST-CLASS ROUTE INPUT** — the signal a map router supplies at deployment — that **`os` (nav fed) is the deployment-relevant arm**, and that **`os_navzero` is a ROBUSTNESS ABLATION**; it explicitly forbids the word "oracle" for it. ⛔ **The MEASUREMENT is untouched: +0.1054 [+0.0874, +0.1241] is real and separated.** It is a **ROBUSTNESS-ABLATION MARGIN**, and its admissible reading is *"refcv4b has NO route-free fallback"*. ⚠️ The one nuance that must travel to any published comparison: ours is derived from the ego's own future path, so it is **noiseless and perfectly timed** where a real router is coarser — a CLEAN version of a deployment signal, not an absent one. ⚠️ And `H-NAVPRED-1` sharpens it further: **95.7 % of what `os_navzero` removes is the E13 conditioning vector's PRESENCE and 4.3 % its CONTENT**, so it is a PATHWAY margin, not an information one. ⭐ **ROOT-CAUSE CLASS: A FRAMING INHERITED FROM A BRIEFING RATHER THAN FROM THE REGISTER** — the same family as quoting a number from a faster-moving source than the harness, with the object being a **WORD** instead of a value, which is why no numeric check caught it | **CORRECTED at 5 sites, 2026-09-06** — `Decisions/2026-09-06-mm-decisions.md` M85 (heading, verdict, §3, lever 2 — **the origin**), `MODEL_REGISTRY.md` §4.6, `GOALS_AND_CLAIMS.md` `D-REFCV4B-LANDING` + `D-REFCV5-LEVERS` + `H-NAVPRED-1`. The paper had already self-corrected | `Project Steering/VOCABULARY.md` (PI ruling 2026-09-04); `RETRACTION_LOG.md` 2026-09-06; `…/2026-09-06-register-repair/RESULT.md` §1 |
+| ⛔⛔ **D-REFAV1-CG-BEST-SEED-REPLICATE** | **`best`'s ZERO-VIOLATION RESULT REPLICATES ACROSS INFERENCE SEEDS — AND SO DOES ITS REFUSAL TO TURN LEFT. THE SUPERLATIVE IS WITHDRAWN; TWO MEASUREMENTS SURVIVE AND ARE RE-VERIFIED.** ⛔ *"`best` carries the programme's only replicated, non-vacuous zero friction-circle violation rate"* is **NOT SUPPORTED as a safety result**. **SIX distinct configurations** read `kamm_over` **0.0000** at `v0 >= 2`, n = 27: `cos_wk`, `wk15`, `wk151`, `combined`, `best`, `bestlad` — **three FAIL the `M58` magnitude (vacuity) gate** `max\|kappa\| >= 0.02` (`cos_wk` **0.0000**, an all-zero path; `bestlad` **0.0049**; `wk151` **0.0166**) and **one more is SEED-DEPENDENT** (`combined` 0.0000 → **0.0741**). ⛔⛔ **`best`'s zero is BOUGHT: `turn_left` recall EXACTLY 0.0000 of n_true = 11 at BOTH seeds**, against a 0.00000 measured recall seed floor ⇒ **a refusal to execute a manoeuvre, read on the safety axis** (`I22`). ⭐ **WHAT SURVIVES, re-verified against the artifacts this turn:** `max\|kappa\|` **0.0800 = 4.0× the vacuity threshold** and `peak_g` max **0.332 vs the human's 0.373 (89 %)**, at **both** seeds; the ground-truth control reads 0.0000 and three trivial arms non-zero in the **same** table; and `best` is the **only** arm that is simultaneously zero, non-vacuous **and** replicated. ⇒ **the admissible sentence:** *"on this rig safety and turn execution are traded, not composed"* | **PARTIALLY SUPPORTED — MEASURED 2026-09-06, T1, n = 27 windows at `v0 >= 2` (8 episodes, 40 windows before the near-stationary cut the GT control forces).** ⛔ `kamm_over_rate` is a **COUNT**, quoted with its n and never with a CI it does not have. **CORRECTS the superlative in `M77`, `M79` §4** | `…/2026-09-06-register-repair/raw/BEST_FEASIBILITY_SEEDS.md`; `raw/feas_audit_best_seeds.txt`; `raw/rec_best.json`, `raw/rec_best_seed1.json`; `raw/ff_a2_rungs_and_best_seeds.txt`; `…/2026-09-05-refav1-cost-geometry/raw/feas_audit_all.txt`, `raw/panel_best.txt` |
+| ⛔ **D-REPLICATE-FPRATE** | **THE REPLICATE FALSE-POSITIVE RATE IS `6 / 42 = 14.3 %`, NOT `3 of 18 ≈ 17 %` — AND THE ARTIFACT IT WAS ATTRIBUTED TO IS A CRASHED FILE.** Recursing `arms.A0b_replicate.paired_vs_A0` gives **42 bootstrapped cells, 6 separated**: `LAT_yaw_rate_mae_radps` in **3 of the 4** (regime × horizon) cells, `LON_accel_mae_mps2` in 2, `LON_along_mae_m` in 1. The restricted view the panel's own `VERDICT.md` tabulates (7 family rows at the 2 s horizon, both regimes) is **3 of 14 = 21.4 %**. ⛔ **"3 of 18" reproduces at NO scoping** — 18 is not a cell count this report produces. ⚠️ **And `raw/NOISE_FLOOR.md` could not have been its source: that artifact CRASHED mid-write and carries no numbers at all** (`I21`) | **SUPPORTED (MEASURED 2026-09-06, re-derived from `panel_report.json` with both controls passing: C1 the block is non-empty, 42 cells; C2 the other five arms read 8 / 16 / 18 / 39 / 40 separated, so the walker is not returning a constant).** **CORRECTED at 5 sites**: `CLAUDE.md` (the trap rule itself), `GOALS_AND_CLAIMS.md` `H-ESTIM-SEED-1` ×2, `D-RL-CTRL0-SEPFLOOR-1`, the three-variances row | `…/2026-09-06-register-repair/raw/replicate_fp_rate.py`, `raw/replicate_fp_rate.txt`; `…/2026-09-05-withheld-bank-panel/raw/panel_report.json`, `raw/VERDICT.md` |
+| ⭐ **D-A2-RUNGS-BANKED** | **THE `wk1` / `wk3` / `wk7` SWEEP RUNGS ARE BANKED, AND THE BANKING FOUND A DEFECT IN THE CLAIM THEY SUPPORTED.** They existed **only as prose** in the decisions file; `wkappa_dose.txt` carries four arms and not these three. All rows reproduce exactly from the run records (`wk1` ADE 0.9388 / curv 0.039406 / head 20.3732; `wk3` 0.9301 / 0.038737 / 20.1946; `wk7` 0.8935 / 0.033522 / 19.0845), with all four families, and the four model-free arms are **bit-identical across all five records read** ⇒ **one surface**. ⛔ **The defect:** the `wk1` → `wk3` curvature step is **0.00067, BELOW the 0.00200 binding inference-seed floor** ⇒ those two rungs are **NOT distinguishable** on this panel and the "monotone 0 → 1 → 3 → 7 → 15" limb rests in part on a step smaller than the noise. `wk3` → `wk7` (2.6×) and `wk7` → `wk15` (1.3×) do clear it, the second only barely — so **`wk15`'s advantage over `wk7` rests on HEADING (3.3× its floor), not on curvature** | **SUPPORTED (MEASURED 2026-09-06, T1, n = 40 windows / 8 episodes, ckpt 21,109, episode-cluster bootstrap).** ⚠️ **STRATEGIC and distance-keeping are UNAVAILABLE with n = 0 on this panel and the reasons are printed** (no route head in the refav1 arm tool; no lead-agent track supplied) — stated per clause 5, not dropped | `…/2026-09-06-register-repair/raw/A2_WKAPPA_SWEEP_RUNGS.md`; `raw/ff_a2_rungs_and_best_seeds.txt`; `raw/rec_wk1.json`, `raw/rec_wk3.json`, `raw/rec_wk7.json`; floor from `…/2026-09-05-refav1-close-the-gaps/raw/frontier.txt` |
+| ⚠️ **D-NAVPRED-CI-JSON** | **`os_navpred`'s CI IS `[0.2721, 0.3314]`, NOT `[0.2744, 0.3318]` — AND THE WHOLE CI COLUMN WAS FROM THE WRONG ROLL.** The register's `H-NAVPRED-1` arm table carried **this** roll's MEANS beside the **landing** roll's INTERVALS. Corrected to `paired_navpred.json`'s own `ade` block for all seven arms: `ha0_ext` [0.2646, 0.3137] · `os` [0.2682, 0.3272] · `ha` [0.2749, 0.3280] · `os_navshuf` [0.2722, 0.3301] · **`os_navpred` [0.2721, 0.3314]** · `os_navzero` [0.3652, 0.4212] · `ha0` [0.6017, 0.7437]. ⭐ **No mean moved and no paired margin moved** — the deltas were always read from the same JSON. **CLASS: a number quoted from the right measurement and the WRONG ROLL** (`I20`, with the object being an INTERVAL) | **CORRECTED 2026-09-06 — JSON wins over prose, per the `MODEL_REGISTRY` source-of-truth rule** | `…/2026-09-06-refcv4b-navpred/raw/paired_navpred.json`; the package's own `RESULT.md` §1 already carried the correct values |
+
+### The two refav1 claims the paper tightens (§16.3, §16.4)
+
+| id | claim | status | evidence |
+|---|---|---|---|
+| ⛔ **D-REFAV1-CG-TURNSUPPRESSION-CAVEAT** | **BINDING CAVEAT ON THE WHOLE `D-REFAV1-CG-*` FAMILY: at `W_KAPPA = 15.11245` the arm reads `turn_left` recall EXACTLY 0.0000 of n_true = 11, at BOTH inference seeds, against a 0.00000 measured recall seed floor.** ⇒ **`wk15`/`best` are the programme's best lateral TRACKERS and among its worst lateral ACTORS, and both halves are the same number.** ⛔ **No `D-REFAV1-CG-*` row may be quoted for its curvature, heading or safety result without this caveat attached** — the turn suppression is not a side-note, it is half the result. ⛔⛔ **AND THE BANKING OF THE A2 RUNGS SHARPENS THE CAVEAT BY REFUTING ITS UNRESTRICTED FORM.** *"Every `W_KAPPA` cell reads turn_left 0.0000; every non-`W_KAPPA` cell reads 0.3636"* is true of the **2×2×2 FACTORIAL**, whose `W_KAPPA`-on cells are **all at 15.11245**. It is **FALSE of the DOSE SWEEP**: `wk1` (`W_KAPPA` 1) and `wk3` (3) read **0.3636**, `wk7` reads **0.2727**, and only `wk15`/`wk151` read 0.0000 — so the collapse is **DOSE-DEPENDENT with an intermediate rung**, not a binary property of the term. (`cos_argmax`, a `W_KAPPA = 0` cell, reads **0.0** for an unrelated reason — the `cos` metric — which is a second way the unrestricted form fails.) ⭐ **CLASS: `I20` — a FACTORIAL CELL's claim quoted about a SWEEP; a gate row carries its arm, and here the arm was one dose.** ⚠️ The sweep is read on **curvature MAE** and not on turn recall because the ground truth itself fails the recall gate (`D-TURNGATE`, 3 of 9) — which makes the recall column unusable as a *criterion* and entirely usable as a *description of what changed* | **ADOPTED as a quoting rule — MEASURED, T1, n = 40 / 8** (recall) and n = 27 (safety). Attaches to `D-REFAV1-CG-WK15`, `-DOSE`, `-BEST`, `-ZEROVIOL`, `-ZEROVIOL-SCOPE`, `-ZERO-SEEDDEP`, `-LEVER-SPLIT` | paper §16.3; `…/2026-09-05-refav1-cost-geometry/raw/wkappa_dose.txt`, `raw/panel_best.txt`; `…/2026-09-06-register-repair/raw/ff_a2_rungs_and_best_seeds.txt` (the rung recalls), `raw/A2_WKAPPA_SWEEP_RUNGS.md` |
+| ⚠️ **D-REFAV1-PROBE-TIER-AND-SUFFICIENCY** | **THE FROZEN-TRUNK PERCEPTION PROBE CARRIES NO T-TIER, AND ITS PASS LICENSES BUILDING A COST TERM — NOT CLAIMING AN IMPROVEMENT.** (a) ⚠️ **NONE of T0/T1/T2 applies**: a decodability probe is not a driving evaluation and no number in it is a driving claim; a register or report row that stamps it T1 is wrong. (b) ⛔ **Decodability is NECESSARY, NOT SUFFICIENT**: the lead's position being in the latent does **not** establish that a cost term reading it will drive better — the programme holds the counter-example, a *perfect* goal that made one planner **2.03× worse**. (c) ⚠️ **A linear NEGATIVE is a negative about LINEARITY only** — the closing-rate null is quotable **only** because it holds under a nonlinear RFF arm, under an explicit temporal-difference arm, and against a differencing operator **proven to work** on the sibling target (gap +0.3647 → +0.0004, paired −0.3644 excluding zero). (d) ⚠️ **On the whole set the defensible readable quantity is `true − shuffled` = +0.3326**, not the raw +0.3632, because the shuffle arm's whole-set R² is small but non-zero (+0.0307 [+0.0018, +0.0643]). (e) ⚠️ The lag-1 autocorrelation **+0.7836** is **INHERITED** from the package `RESULT.md`, not re-derived from a banked array | **ADOPTED as a quoting rule — the underlying measurements are unchanged and remain SUPPORTED** | paper §16.4, §17.5; `…/2026-09-06-refav1-perception-probe/raw/probe_results.json`, `raw/motion_probe.json`, `raw/bank_meta.json` |
+
+⭐ **Escalation from the paper stream: CLOSED.** `Paper/TANITAD_PAPER.md` §17's request — *"register
+I17–I20 (or rule that method rows live only in the paper), and attach §16.3's turn-suppression
+caveat to the `D-REFAV1-CG-*` family"* — is discharged by the two tables above. **Ruling: method
+rows live in BOTH.** The paper states them as method; the register carries them as quoting rules
+with their measured instance, because a rule that exists only in a paper section is not something a
+fresh context reads before acting.
+
+<!-- REGISTER-REPAIR-2026-09-06 -->
+
+---
+
+## `D-REFAV1-DK-DECODED` / `H-REFAV1-DK-DECODED-1` — ⛔ **THE VISION-ONLY GAP HEAD: DECODE PASSES, THE COST BUILT ON IT DOES NOT RE-RANK — `C131` IN ITS PUREST FORM** (2026-09-06)
+
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refav1-decoded-gap/`
+(`SPEC.md`, `RESULT.md`, `raw/decode_panel.json`, `raw/reprice_oracle_only.json`,
+`raw/reprice_decoded.json`, `raw/diagnosis_recalibration.json`,
+`raw/operating_point_sweep.json`, `raw/near_range_lever.json`, `raw/bar3_ladder.json`,
+`raw/bank_meta.json`, `code/`).
+**Code:** `stack/tanitad/refs/refav1_lon_cost.py` (closed gap-source vocabulary +
+`GapHeadProvenance`) · `stack/tests/test_refav1_dk_gap_source.py` (**26 tests, every guard
+proven by MUTATION**, new) · `taniteval/tools/refav1_arm.py`
+(`--dk-gap-head` / `--dk-present-thr`, the in-loop decode, `decoded_gap`/`decoded` sources).
+**Pre-registration:** `SPEC.md`, committed **`c9f736a`** with all four bars and both outcomes
+**before any head was fit**.
+
+⛔ **TIER.** Decode panel and re-pricings: representation / label arithmetic, **no tier**.
+The A/B ladder: **T1** (self-action open loop), n = 29 windows / 17 episodes.
+**Rig: dev-box RTX 4060 only** — neither named GPU touched (A40 on refcv5's training, Thor on
+a sibling's eval).
+
+### ⭐ BAR-1 — DECODE: **PASS**
+
+5-fold **cross-fitting** over the 141-clip v7.2 EVAL corpus, clip-disjoint, label-free fold
+assignment (sha256 of `clip_id`); stage-A PCA, stage-B PCA, ridge λ and the fit-mean all fit
+**inside the training folds only**, every scored prediction **out-of-fold**. Bank: 141 clips /
+**14,237 rows / 3,991 LEAD rows**; freeze **407 tensors, 0 sha mismatches, max |Δ| = 0
+exactly**; label-free alignment true join **3.20e-05 m/s** against a deliberate **one-step
+mis-join control at 1.24 m/s max / 0.095 m/s mean**.
+
+| cell | n / **clusters** | ⭐ `field` | 95 % CI | `pix` FLOOR | `constant` | within-clip shuffle | **paired `field − pix`** |
+|---|---|---|---|---|---|---|---|
+| `gap_all_lead` | 3,991 / **85** | **+0.4040** | [+0.2481, +0.5183] | **−0.0335** | **+0.000000** | +0.1542 | **+0.4375 [+0.2639, +0.5815] EXCLUDES 0** |
+| `gap ≤ 30 m` | 2,383 / **64** | **+0.6586** | [+0.5621, +0.7298] | −0.0568 | **+0.000000** | **−0.0066** | **+0.7154 [+0.6096, +0.8209] EXCLUDES 0** |
+| `present` | 7,120 / **128** | +0.1894 | [+0.0627, +0.3044] | −0.1393 | **+0.000000** | **+0.1702** | +0.3287 [+0.1844, +0.4831] EXCLUDES 0 |
+
+⭐ The `≤ 30 m` cell — the one M84 measured on the TRAIN corpus at +0.3632 — reads **+0.6586**
+here, with **within-clip +0.7199 against a within-clip shuffle of −0.0066**: it tracks the lead
+**as it moves**, essentially none of it is clip identity. ⚠️ On `gap_all_lead` the shuffle is
+**not** zero, so the honest readable quantity there is **TRUE − SHUFFLED = +0.2498**.
+⛔⛔ **THE PRESENCE HEAD IS ALMOST ALL CLIP IDENTITY** — within-clip skill **NEGATIVE
+(−0.1787)**, shuffle **+0.1702**, so **TRUE − SHUFFLED = +0.0192**. The vision-only ARMING GATE
+is therefore weak, and every claim resting on it is weak with it. *(The M84 agent-count lesson,
+repeating.)*
+⭐ The head **collapses exactly to one dot product** `gap_hat = (pool(_last_state)·V).sum() + b`
+per fold; the collapse is **checked numerically on every fold — max relative error 2.74e-07 over
+15 folds** — and a relative error > 1e-4 is a refusal.
+
+### ⛔ BAR-2 — RE-RANKING REPRODUCTION: **FAIL**
+
+**Oracle reproduction control passes exactly first: 90 LEAD windows, 21 violating, 21/21 flips
+(`reproduces_published: true`)**, recovering `D-REFAV1-DK-COST`'s published counts.
+
+| | committed bar | ⭐ PRE-REGISTERED head | best POST-HOC | |
+|---|---|---|---|---|
+| SENSITIVITY | ≥ 0.80 (≥ 17/21) | **12/21 = 0.5714** | 16/21 = 0.7619 | ⛔ **MISS, both** |
+| SPECIFICITY | ≥ 0.70 (≥ 49/69) | 62/69 = 0.8986 | 61/69 = 0.8841 | ✔ pass, both |
+
+⇒ ⛔ **DECODABILITY WAS NECESSARY AND NOT SUFFICIENT (`C131`)**, in exactly the words the SPEC
+committed. ⚠️ The **pre-registered** arm is the 12/21 column; the 16/21 is the same head after a
+training-fold-only median bias correction derived **after** seeing the failure, quoted as the
+honest best this head can do and labelled post-hoc. Neither clears the bar.
+
+### ⛔⛔ THE CONTROL THAT CHANGED THE CEILING'S INTERPRETATION — and it is the finding
+
+**A gap predictor with NO PERCEPTION AT ALL reproduces 11 of the oracle's 21 flips.** The
+barrier is `gap < d0 + tau·v0`, so a constant gap makes the firing decision a pure **speed
+threshold**, and the violating windows are the fast ones (16.44 m/s vs 8.00 m/s).
+
+| arm (identical procedure) | sensitivity | specificity |
+|---|---|---|
+| `oracle_label` (CEILING) | 21/21 = 1.0000 | 69/69 = 1.0000 |
+| ⭐ `field` decoded | **16/21 = 0.7619** | 61/69 = 0.8841 |
+| `pix` raw-pixel floor | 13/21 = 0.6190 | 61/69 = 0.8841 |
+| ⛔ `constant` — no perception | **11/21 = 0.5238** | 64/69 = 0.9275 |
+
+⇒ **"the term re-ranks 21/21" is a correct statement about the term that is roughly half a
+statement about `v0`.** The CEILING's arithmetic is unchanged and reproduces exactly; its
+*interpretation* is corrected. ⭐ And at **matched specificity 0.8841** the decode is worth
+**+3 windows over raw pixels and +5 over no perception** — the information is real.
+
+### ⭐ THE TRADE-OFF CURVE, and why no single point is quoted
+
+Offsets fit as the `q`-quantile of the **training-fold** residual; every arm swept identically.
+⛔ **NO arm clears BAR-2 at ANY operating point** — not `field`, not `pix`, not `constant`.
+⭐ `field` − `constant` at **matched specificity**: **+0.3333** (at 0.9855), ⭐ **+0.3810** (at
+0.8841), +0.1905 (at 0.5942), **+0.0000** (at 0.3623 — once everything fires, the decode is
+worth nothing). ⚠️ Choosing an operating point needs a safety criterion the programme has not
+committed to; picking the one that clears a bar after seeing the data is a goalpost move.
+
+### ⭐ THE MECHANISM, AND THE NEXT LEVER — run, not named
+
+**Shrinkage:** `truth = 1.362 + 0.896·pred`, spread ratio **0.724**; ⛔ **bias +8.36 m on gaps
+< 30 m** (thinks the lead is further than it is ⇒ **under-fires** — the unsafe half) against
+−7.61 m on gaps ≥ 30 m. A per-fold recalibration fit on **training folds only** moved
+sensitivity 12/21 → 14/21 → 16/21 (median debias) at unchanged specificity, costing R²
+(0.4040 → 0.3925) exactly as trading squared error for spread should. **It does not clear the
+bar.**
+⛔ **THE ONE NUMBER THAT IS THE WHOLE REMAINING GAP: the head's error (MAE 11.13 m) EXCEEDS the
+decision it feeds (mean shortfall 9.10 m).** On the near range where the barrier lives the same
+head reads **MAE 3.41 m**.
+⛔⛔ **AND THE OBVIOUS TWO-STAGE FIX IS *NOT* ESTABLISHED.** A perfectly gated near-range head
+scores 14/16 = 0.8750 at spec 0.7436 and *would* clear BAR-2 — **but the RAW-PIXEL FLOOR clears
+it too (13/16 = 0.8125 at the same 0.7436) and the constant nearly does (12/16 at 0.7692).**
+⇒ **on the ≤ 30 m subset the bar is not a discriminating instrument**, because restricting to
+near range removes exactly the windows a constant gets wrong. A subset can be easy the same way
+an operating point can be.
+
+### ⭐ BAR-3 — THE PLANNER A/B ON THE REAL CHECKPOINT: **PASS**
+
+Step-21,109, **same seed, same 29-window list (the ORACLE's own LEAD windows in the 17 episodes
+carrying a violating one — identical for every arm), `--dk-gap-source` the ONLY flag moved.**
+
+| arm | gate / gap | `cl` bit-identical to `ha0` | **Δ vs control** | LATERAL bit-identical |
+|---|---|---|---|---|
+| `off` (`w_dk = 0`) PARITY CONTROL | — | **26/29 = 0.8966** | — | — |
+| `oracle_label` CEILING | ORACLE / ORACLE | **16/29 = 0.5517** | ⭐ **−10** | ✔ |
+| `decoded_gap` | ORACLE / **DECODED** | **20/29 = 0.6897** | ⭐ **−6** | ✔ |
+| ⭐ `decoded` VISION-ONLY | **DECODED / DECODED** | **23/29 = 0.7931** | ⭐ **−3** | ✔ |
+
+⭐ **PASS on both committed criteria** — every armed arm moves below the unarmed control and the
+LATERAL family is bit-identical throughout (`ha0`, which does not plan, unchanged).
+⚠️ The SPEC's *"moves off 1.0000"* was the predecessor's control value on a 4-window slice; on
+this 29-window panel the control is **0.8966**, so the criterion is read in its intended form
+with **both** counts stated — the control's value is reported, not assumed.
+⭐⭐ **MONOTONE AND ATTRIBUTABLE, one variable per step:** swapping the ORACLE GAP for the vision
+head costs **4 of 10 windows**; swapping the ORACLE GATE costs **3 more**. ⇒ **the fully
+vision-only arm retains 3 of the oracle's 10 structural effects — 30 % of the ceiling — and the
+GATE costs proportionally more than the GAP.**
+⛔ **The gate's failure mode is MEASURED:** the `decoded` arm armed **19 of 29** windows with
+**`gate_fp` = 0 and `gate_fn` = 10** — the vision presence head never armed on a non-lead and
+**missed 10 of 29 real leads**, which is the `present` cell's clip-identity problem showing up
+operationally.
+⭐ **END-TO-END CROSS-CHECK — the planner's head IS the scored head.** The arm re-encodes
+`feats` in the window loop; the bank read the fp8 cache in a separate process. On all **29**
+windows of both decoded arms the gaps agree to **max |Δ| = 8.141e-04 m**.
+⛔⛔ **NO ADE/headway/TTC claim** — n = 29 windows / 17 episodes, planner samples, seed floor
+≈0.30 m ADE, no ≥3-seed replicates. Only exact-equality counts are quoted, and they are not
+comparable to the banked 282-window panel (a subset consumes the sampler's RNG differently),
+which is why all four arms were re-run.
+
+### ⭐ BAR-4 — THE PROVENANCE GUARD: **PASS, PROVEN BY MUTATION**
+
+The gap-source field was a **free-form string**: any value was accepted and stamped into the
+dump verbatim, so a typo or an optimistic label would have been **banked as fact**. ⛔ The fix
+for *"the decoded head does not exist yet"* was never to relax the refusal — the vocabulary is
+now **CLOSED** (`oracle_label` · `decoded_gap` · `decoded` · `unit-test` · `unset`), each member
+stamped with `gate` / `gap` / `vision_only` / `is_ceiling` / `needs_head`, and an unrecognised
+source **raises**. `GapHeadProvenance` (head sha256, version, ckpt sha256 + step, fit corpus,
+fit scheme, n rows/clips, pooling geometry) is **mandatory for a decoded source and FORBIDDEN
+for an oracle one** — the second direction matters more, because an oracle arm stamped with a
+head reads like a vision result.
+**26 tests, each guard in a PAIR**: the bad input raises, *and* with the guard's own datum
+mutated the same input is accepted — which is what proves the refusal came from the guard under
+test. *(An AST census once read 0 suspects on BOTH the fixed and the broken trainer.)* The arm
+additionally refuses a head whose `ckpt_sha256`/step/`d_state`/geometry disagree with the running
+checkpoint, and refuses a clip with **no out-of-fold head** rather than guessing a fold.
+
+### ⛔ THE ADMISSIBILITY CHECK, ANSWERED IN BOTH HALVES
+
+The head's only inference input is `model._last_state(model.encode(feats))` — the cached DINOv3
+patch-token window, **camera pixels and nothing else**, taken from the **same `feats` tensor the
+next line hands to `plan()`**. The label `gap0_m` derives from `obstacle.offline` **3-D cuboid
+tracks**, which are **not an input to the trunk at any stage** ⇒ the head cannot be reading its
+label's own source. ⛔ **BUT THE SECOND HALF: `oracle_label` and `decoded_gap` take their
+LEAD/NO_LEAD ARMING GATE from the label and are NOT vision-only, however good their gap is.**
+Only `decoded` is, and the module stamps exactly that. ⚠️ `v0` enters the **cost** (not the
+head) and is admissible under the PI's binding ruling of 2026-09-02 — named explicitly here
+because the constant control shows how much of the firing decision it carries. ⛔ **No closing
+rate was smuggled in**: the head predicts gap and presence only.
+
+### Suite — a CONTROLLED comparison
+
+The identical 35-file `refa_v1*`/`refav1*` subset, same box, differing only in which source
+files were on disk: **BASELINE (the predecessor's staged pre-edit files, restored from their
+INDEX BLOBS) 403 passed / 1 skipped / 0 failed** → **POST-EDIT 429 passed / 1 skipped / 0
+failed**. **403 + 26 new = 429 exactly** ⇒ no pre-existing test changed status.
+⚠️ Four tests DID fail on the first post-edit run and that was **correct**: an armed
+`DistanceKeepingSpec` with an undeclared source now raises (BAR-4 guard #2); the four arithmetic
+call sites now declare `gap_source="unit-test"`, itself stamped **non-deployable**.
+⚠️ **The predecessor's three DK files are STAGED BUT NOT IN `HEAD`** (correct under *stage,
+never commit*), so `git show HEAD:<path>` returns *"exists on disk, but not in 'HEAD'"* for all
+three — which reads exactly like a lost commit and is not one. The baseline had to be
+reconstructed from index blobs.
+
+### ⛔ Open, with what unblocks each
+
+1. **MAE 11.13 m vs a 9.10 m decision margin** — the whole gap to the ceiling.
+2. ⚠️ **THE OBVIOUS "FINER POOLING" LEVER WAS WEAKENED BY A ZERO-GPU CONTROL.** The bank
+   pools 16×40 → **8×20**, halving the VERTICAL resolution, so "re-bank at 16×20" looked
+   obvious. ⛔ But the gap head's vertical energy profile and the PRESENCE head's — whose
+   decode is almost entirely clip identity — have **cosine 0.9870**, so the vertical
+   structure is *where vehicles sit in this rig's frame*, not a range cue. ⭐ **AZIMUTH is
+   where the gap head is distinctive** (peak 3.68× uniform vs 2.32×; centre two bins 0.327 vs
+   0.231). If a finer pooling is tried, the evidence points at AZIMUTH; either way it needs
+   its own pre-registration. (`raw/head_weight_structure.json`, descriptive only.)
+3. **The vision-only arming gate is weak** (+0.0192 after the shuffle) — needs a real detection
+   head, not a ridge on pooled tokens.
+4. **Closing rate still absent** (M84 §4/§4b) — a representation work item a sibling owns.
+5. **The head is fit inside the EVAL corpus** (cross-fitting makes it admissible; a deployed
+   head wants the TRAIN corpus, whose fp8 cache is not on this box).
+6. ⛔ **NO ADE CLAIM IS MADE** — refav1's planner samples, seed floor **≈0.30 m ADE**, and
+   nothing was run at ≥ 3 inference seeds. Only exact-equality counts are quoted.
