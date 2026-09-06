@@ -130,13 +130,66 @@ core's aux labels are never dumped, which is why they must be recomputed.
 
 ---
 
-## 4. The reel — 9 clips, ~2.9× the refcv3 one
+## 4. The reel — 15 clips, 2,571 frames, **257.1 s = 4.95× the refcv3 reel**
 
-The camera panel needs **MEASURED per-clip extrinsics**; PhysicalAI-AV is gated and the parquet is
-not on the pod, so the reel is bounded by the banked extrinsics. The union of the two banked files
-(the refcv3 reel's 3 + the refav1 reel's 8) is **9 distinct clips, and all 9 are present in the
-141-clip eval cache** (checked one by one). At stride 1 that is ~169 frames/clip ≈ **1,520 frames /
-152 s at 10 fps**, against the banked refcv3 reel's **519 frames / 51.90 s**.
+### 4.0 The calibration constraint, and why it turned out not to bind
+
+The camera panel needs **MEASURED per-clip extrinsics** and PhysicalAI-AV is gated, so the first
+plan was bounded by the two banked extrinsics files (the refcv3 reel's 3 clips + the refav1 reel's
+8 = 9 distinct, all 9 present in the eval cache). ⭐ **That constraint was false:** the calibration
+source is on the dev box at `C:/Users/Admin/tanitad-data/physicalai/` (`clip_index.parquet` +
+`calibration/sensor_extrinsics`), so `pai_extrinsics_table.py` builds the table for **all 141
+eval clips** — `raw/extrinsics141.json`, shipped to `pod:/workspace/eval/extrinsics141.json`
+(md5 `795d09cd32f52c74f6ab2ca2739e9a3b`).
+
+**CONTROL, and it is what makes the new table trustworthy:** on the **9** clips the two banked
+files also cover, the newly built table reproduces every one of `x, y, z, qx, qy, qz, qw` to
+< 1e-6 — **0 field mismatches over 9 shared clips** (the count of compared clips is printed, so a
+vacuous "0 mismatches" from an empty intersection is excluded). Camera height over the 141 spans
+**1.213–1.662 m, median 1.316** — consistent with the 1.245–1.607/1.306 measured over a different
+40-clip set, and it re-confirms that the three constants circulating in this repo (1.22, 1.43, 1.5)
+are all wrong as a constant; 1.22 is below the observed minimum.
+
+### 4.1 ⭐ THE CLIP SELECTION IS A RULE, NOT A PICK
+
+The banked refcv3 reel carries the caveat *"this is a hand-picked reel and it must never be quoted
+as a representative one."* The only way to drop that caveat is a criterion that is **measured,
+stated in advance, and computed from ego kinematics alone — never from how the model does.**
+
+> **THE RULE:** from the 141 held-out eval clips, take the **top 8 by `abs_turn_deg`** (total
+> absolute yaw turned over the clip) **∪** the **top 8 by `v_span`** (speed range, `v_max − v_min`).
+
+The two lists share one clip (`ed87040c`), so the union is **15 clips**. Computed by
+`raw/clip_profile.py`, which reads **only poses** out of each `*.v2ep.pt` — no frames, no model, no
+GPU — and is banked as `raw/clip_profile.json`.
+
+| | |
+|---|---|
+| clips | **15** |
+| windows at `--stride 1` | **2,571** (`n_frames − (n_stack−1) − window − max_horizon`) |
+| duration @ 10 fps | **257.1 s = 4 min 17 s** |
+| vs the banked refcv3 reel | **4.95×** (519 frames / 51.90 s) |
+| vs the refav1 `dense8` reel | **1.64×** (1,564 frames / 156.40 s) |
+| lateral coverage | **5** clips net-left (> +15°), **6** net-right (< −15°); max ±199.8° turned |
+| longitudinal coverage | **7** clips reach a full stop (`v_min` < 1 m/s), **6** exceed 15 m/s; max `v_span` 16.2 m/s |
+
+⇒ both lateral directions and both longitudinal signs are exercised by construction, which is what
+makes the reel readable against the four binding families rather than a highlight tape.
+
+```
+--clips "6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc,63434e0b-8cd2-4e1f-9526-8a06bd7f4b0d,\
+73e750eb-684f-4aa1-953e-eb0f671a86b7,9c50f803-c78c-4b69-8a83-443ad312553e,\
+ed87040c-cf3c-4fe4-9a95-50c1114f0d38,77a247be-ad56-4712-8e16-5d4acc5c241d,\
+3ef3dcc8-7fd8-44df-837e-2820e969e691,ca11a2a2-1021-475c-9907-e6dbe658ad12,\
+24fee8a5-9ccc-4610-b27b-560f08fd46c8,14bc9fcf-c048-42c3-b35d-0fc13b8ddc04,\
+a0d95df6-499b-45ee-a424-5954f6e65f77,91e90a95-a129-486a-a1d4-cc1a2915793f,\
+4c5264dd-9110-46d4-88e7-693ffde925e5,330b4626-96d0-46fd-a10b-3532f389bd34,\
+c8a39711-ce08-421f-b675-6533f89ad8a3"
+```
+
+⚠️ The reel is a **stress set**, not a random sample — it over-represents turning and speed change
+on purpose, and the per-clip ADE in the sidecar must never be averaged into a headline. The
+representative read is the 4,823-window four-family panel in §3.
 
 ```bash
 ssh -n tanitad-refcv3 'cd /workspace/TanitAD && OMP_NUM_THREADS=6 \
@@ -146,7 +199,7 @@ ssh -n tanitad-refcv3 'cd /workspace/TanitAD && OMP_NUM_THREADS=6 \
   --config /workspace/experiments/refcv4b-b1-v72-40k/config.json \
   --episodes /root/data/eval \
   --labels /workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz \
-  --extrinsics /workspace/eval/extrinsics_union9.json \
+  --extrinsics /workspace/eval/extrinsics141.json \
   --nav-source v72 --grid 2s --action-units steer --device cuda \
   --stride 1 --fps 10 --with-oracle --expect-step 40284 --keep-frames \
   --clips "d85682b8-...,ca11a2a2-...,6ed4ef7a-...,142a3a72-...,1c3a2c7c-...,24fee8a5-...,c8a39711-...,ed87040c-...,f6e7827e-..." \
