@@ -424,10 +424,26 @@ no result.
 
 ## 6. Suite state — a CONTROLLED comparison, and the one failure is the MOUNT
 
-* ⭐ **RL suite: 289 passed, 1 failed** (284 plus the 5 new `test_rl_gate_statistic.py`) across every `stack/tests/test_rl_*.py` (17 files),
+* ⭐ **RL suite: 289 passed, 1 failed** across every `stack/tests/test_rl_*.py` (18 files), including the 5 new `test_rl_gate_statistic.py`. ⚠️ **The one failure is not the same test in both runs** — see the two bullets below. across every `stack/tests/test_rl_*.py` (17 files),
   up from the predecessor's 254 because 31 tests were added since and none regressed.
-* ⛔ **The single failure is `test_rl_veto_explicit.py::test_driver_arm_table_declares_the_veto`,
-  and it is a MOUNT failure, not a code failure.** Its traceback ends at
+* ⛔⛔ **CORRECTION TO MY OWN FIRST READING, AND IT MATTERS: THERE ARE TWO DISTINCT
+  FAILURES, AND ONLY ONE OF THEM IS THE MOUNT.** My first run showed exactly one failure and
+  I read it as "the mount". A second run of the same 18 files showed **a different single
+  failure**, which is precisely what a flapping mount does and precisely what a code defect
+  does not — so the first reading was **incomplete**, not wrong.
+  * ⚠️ **`test_rl_veto_explicit.py::test_driver_arm_table_declares_the_veto` — MOUNT,
+    INCONCLUSIVE.** It dies at `OSError: [Errno 22] Invalid argument` reading
+    `stack/tanitad/eval/echo_gate.py` on the G: mount. Ten same-file retries over ~70 s all
+    failed in the first window; **it PASSED in the second run**. ⛔ Reported INCONCLUSIVE
+    rather than green. It touches no file I wrote.
+  * ⛔⭐ **`test_rl_refc_adapter_robust.py::test_forward_kwargs_plumbs_every_channel_the_forward_accepts`
+    — A REAL, PRE-EXISTING CROSS-STREAM DRIFT, and the test is doing its job.**
+    `refc_adapter.FORWARD_KEYS` carries 7 channels; `RefCV3Model.forward` now accepts **9**.
+    The two missing ones are **`gp_point` and `gp_valid`** — the goal-point channels a
+    sibling stream has landed on the model since the adapter was last touched. ⛔ **An RL
+    arm launched right now would be silently GOAL-BLIND**: `kw = {k: batch.get(k) for k in
+    FORWARD_KEYS}` simply never passes them. ⛔ **I have NOT fixed it** — see §7.6.
+ Its traceback ends at
   `OSError: [Errno 22] Invalid argument` reading
   `G:\…\stack\tanitad\eval\echo_gate.py` — the documented G:-mount hard-failure mode.
   ⚠️ **Reported INCONCLUSIVE, not passing:** ten consecutive retries on the SAME file over
@@ -477,6 +493,17 @@ no result.
    not on bit-identity. ⇒ If the criterion is to bind future candidates it should be
    restated as *"must move by at least its own bootstrap SD, in the right direction"*.
    **Owner: PI / Master Mind** (it is a change to the ruling's own wording).
+6. ⛔⛔ **`refc_adapter.FORWARD_KEYS` HAS DRIFTED BEHIND `RefCV3Model.forward` — AN RL
+   ARM WOULD RUN GOAL-BLIND.** The model now accepts **`gp_point` and `gp_valid`**; the RL
+   adapter plumbs neither, so `kw = {k: batch.get(k) for k in FORWARD_KEYS}` drops them
+   silently. ⛔ **Pre-existing and not mine**, and I have deliberately **not** added the two
+   keys: whether the goal point should reach an RL arm at all is the goal-point stream's
+   design call, and it sits under the BINDING ruling that a goal input is admissible but
+   **must not carry the situation classifier's output**. A one-line plumbing fix that
+   quietly changes what an RL arm conditions on is exactly the kind of change that should be
+   made deliberately. **Owner: the goal-point stream, with this stream at launch. 0 GPU.**
+   ⭐ `stack/tests/test_rl_refc_adapter_robust.py` already pins it against the real
+   signature and is failing loudly, which is the guard working.
 5. ⚠️ **ONE RL TEST CANNOT BE SHOWN GREEN AND I DO NOT CLAIM IT.**
    `test_rl_veto_explicit.py::test_driver_arm_table_declares_the_veto` dies at
    `OSError: [Errno 22]` reading `stack/tanitad/eval/echo_gate.py` **on the G: mount** —
