@@ -334,8 +334,34 @@ Nothing is stranded on a pod or a worktree. All work is in the repo tree and sta
    ⇒ **Run any commit tool with its output on local disk, and verify by content
    markers afterwards — never by the exit code, and never only by the tool's own
    self-report.** (Same class as the `robocopy` failure above and as `git ls-tree`
-   truncating while exiting 0; `test_mktree_commit.py` itself has **6 pre-existing
-   failures**, which is its own warning.)
+   truncating while exiting 0.)
+
+   ⛔⛔ **AND THE 6 `test_mktree_commit.py` FAILURES HAVE ONE CAUSE, WHICH IS WORSE
+   THAN THE OUTAGE.** All six raise `AttributeError: module
+   'mktree_commit_under_test' has no attribute 'read_tree_entries'`. MEASURED by
+   positive assertion, each with a same-breath control `def main` reading **1**:
+
+   | commit | `assert_names_preserved` | `read_tree_entries` |
+   |---|---|---|
+   | `e685d90` | **3** | **6** |
+   | `2c47dc9` *"…the committer that could land a commit tonight when mm_commit could not"* | **0** | **0** |
+   | `HEAD` | **0** | **0** |
+
+   ⇒ A rewrite **DELETED the tool's name-preservation guards**, and the six tests
+   written for them have been red ever since — on the tool **every agent commits
+   with**. The deleted guards are precisely the ones that refuse **a lost tree entry**
+   and **a CR-mangled name**: the failure modes `CLAUDE.md` documents at length, where
+   a commit's subject sits in the log while its content is gone from `HEAD`. **A guard
+   that has never been shown to fail proves nothing; a guard that has been DELETED
+   while its tests still name it is worse, because the test file still reads like
+   coverage.**
+   ⚠ Not repaired here — rewriting the shared commit path while ~8 agents commit
+   concurrently is how a sibling's work disappears. Filed as its own task with the
+   recovery source (`git show e685d90:stack/scripts/mktree_commit.py`); the current
+   version's compare-and-swap must be KEPT rather than reverted.
+   ⚠ `git log -- stack/scripts/mktree_commit.py` returned **empty** on this mount while
+   the file demonstrably has history, so the two commits above are what the positive
+   probes found, **not** a complete history.
 3. **AN UNRUNNABLE PIN READ AS A PASSING ONE.** `assert_matches_diffusers` reported a
    *skip* for as long as `diffusers` was absent, and the moment it ran it could not pass
    (§4). A guard that has never executed is not a guard — the same rule as *"a guard must
