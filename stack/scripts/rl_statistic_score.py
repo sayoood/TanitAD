@@ -118,13 +118,21 @@ def main(argv=None):
                          # every other candidate too -- reported, never the verdict
                          "others": {c: CANDIDATES[c][0](g[m]) for c in CANDIDATES}}
 
-    # ⭐ CHANNEL CONTROL -- the primary cell must BE the cell G-REWARD scored:
-    # the retired RATE over ALL windows must reproduce the banked value.
-    g_all = gaps(rows_all, pre["cell"])
-    chan_rate = CANDIDATES["S1_rate"][0](g_all)
-    channel = {"all_window_rate": chan_rate, "banked": BANKED_ALL_RATE,
+    # ⭐ CHANNEL CONTROL -- ⛔ PINNED TO `nopert_min`, NOT to the scored cell.
+    # The banked 0.441780259484316 was measured on the PRE-REPAIR reward, so anchoring
+    # it to whatever cell is being scored asks the wrong question and reads FAIL on a
+    # healthy panel. (MEASURED 2026-09-06: the first version did exactly that and read
+    # err 1.322e-01 on cell `ship` -- a defect in the CONTROL, found by running it.)
+    # The scored cell's own retired-rate value is reported beside it as a DIAGNOSTIC.
+    g_pin = gaps(rows_all, "nopert_min")
+    chan_rate = CANDIDATES["S1_rate"][0](g_pin)
+    channel = {"pinned_cell": "nopert_min",
+               "all_window_rate": chan_rate, "banked": BANKED_ALL_RATE,
                "abs_err": abs(chan_rate - BANKED_ALL_RATE),
                "pass": bool(abs(chan_rate - BANKED_ALL_RATE) <= 1e-12),
+               "scored_cell": pre["cell"],
+               "scored_cell_all_window_rate": CANDIDATES["S1_rate"][0](
+                   gaps(rows_all, pre["cell"])),
                "n_windows_all": len(rows_all),
                "note": "the banked composed MEAN is a STALE baseline "
                        "(rewards._collision changed after the 2026-09-05 bank) and is "
@@ -183,9 +191,12 @@ def main(argv=None):
         json.dump(out, fh, indent=1)
 
     print("== CONTROLS (must read known values)")
-    print("   CHANNEL  all-window RATE on cell %s: %.15f  banked %.15f  err %.3e  pass=%s"
-          % (pre["cell"], channel["all_window_rate"], channel["banked"],
+    print("   CHANNEL  all-window RATE on PINNED cell %s: %.15f  banked %.15f  "
+          "err %.3e  pass=%s"
+          % (channel["pinned_cell"], channel["all_window_rate"], channel["banked"],
              channel["abs_err"], channel["pass"]))
+    print("   (diagnostic) the SCORED cell %s reads retired-rate %.15f"
+          % (pre["cell"], channel["scored_cell_all_window_rate"]))
     print("   SPLIT    select %d / score %d  overlap %d  union==panel %s  pass=%s"
           % (split_ctrl["n_select"], split_ctrl["n_score"], split_ctrl["overlap"],
              split_ctrl["union_equals_panel"], split_ctrl["pass"]))
