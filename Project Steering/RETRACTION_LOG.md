@@ -14417,3 +14417,70 @@ are different quantities — which is most of them.
 **Corrected 2026-09-06 (late). Registered as `D-TLGROUND-DISPUTED`.** The measurement wins over the
 inherited phrasing, per the source-of-truth rule; and per the two-mechanism rule, the count that
 stands is the one taken from the artifact, not the one that had been relayed.
+
+
+## 2026-09-07 — RESOLUTION of `D-TLGROUND-DISPUTED`: THE COLOUR IS OBSERVED, AND MY OWN SUSPICION WAS THE THING THAT WAS WRONG
+
+⛔ **THIS AMENDS THE ENTRY DIRECTLY ABOVE.** `D-TLGROUND-DISPUTED` states *"PARTIALLY-GROUNDED
+PRESENCE and ZERO GROUNDED COLOUR"* and carries the VLM-prior hypothesis as live. **The commissioned
+test ran and refuted it.** An unamended retraction is the next stale precedent somebody inherits —
+which is precisely the failure that entry was written about, so it is corrected here rather than
+left to age.
+
+⭐ **THE TEST WAS PRE-REGISTERED WITH A NUMERIC BAR BEFORE ANY NUMBER EXISTED** (in the module
+docstring of `code/tl_colour_test.py`, with both outcomes): **>=2.0x stop-rate ratio = observed;
+<1.5x = prior; between = inconclusive.**
+
+**MEASURED** — window anchor (8.0 s) + [2, 6] s, on the CORRECTED timeline offset:
+
+| | n | v0 | v_min | median drop | STOPPED |
+|---|---|---|---|---|---|
+| RED | 384 | **3.01** m/s | 1.84 | 0.37 | **39.3 %** |
+| GREEN | 378 | **7.55** m/s | 6.96 | 0.00 | **2.1 %** |
+
+**stop-rate ratio RED/GREEN = 18.58x**, against a committed bar of 2.0x — **nine times the
+threshold.** ⇒ **THE COLOUR IS OBSERVED.** The PI's standing belief that the dataset carries a real
+detected colour is **SUPPORTED** on this evidence.
+
+⛔ **AND THE 1:1 SPLIT I FLAGGED AS SUSPICIOUS HAD A BENIGN EXPLANATION I MISSED.** The token is
+emitted only when the ego is **REACTING** to a light — a driver cruising through a green at
+7.55 m/s often triggers no `TRAFFIC_LIGHT_REACT` at all. So the 384/378 balance is an artefact of
+the **EMISSION CONDITION**, not evidence of a prior. ⭐ Root-cause class, and it is the night's most
+repeated one: **a denominator that is not the population you think it is.** I endorsed the suspicion
+in writing before it was tested, so this half is mine, not only the label owner's.
+
+⭐ **WHAT SURVIVES FROM THE ORIGINAL ENTRY, AND IT IS NOT NOTHING.** ⛔ **NO INDEPENDENT CHANNEL
+CARRIES THE COLOUR**, established by two mechanisms: grounding box labels mentioning traffic resolve
+to exactly `['traffic light']`, and boxes carrying ANY colour attribute (red/green/yellow/amber, any
+field) number **0**. The box is label-only; **colour exists ONLY in the VLM's text.** So "zero
+grounded colour" was *right about the grounding channel* and *wrong as a verdict on the label*.
+
+⚠️⚠️ **THE SHARPER CAVEAT, WHICH THE STANDING TEST CAUGHT ONE LEVEL DOWN.** The 18.58x proves the
+colour label **correlates with the ego's KINEMATICS**. It does **NOT** prove the VLM **READ THE
+LAMP** — the CoT also describes the ego's motion, so the model may have inferred "red" from seeing
+the car decelerate. Under the binding rule (**labels may use ego; inference is vision-only**) that
+is fine *for a label* and does not weaken the supervision. ⛔ **But it means a vision-only head
+trained on it is being asked to predict from pixels something the teacher may have read from
+motion.** That is a different risk from "the label is wrong", and a larger one.
+
+⛔ **STANDING REQUIREMENT ADOPTED:** any traffic-light head **MUST** be scored against an
+**EGO-ONLY CONTROL** — a head given `v0` and the speed trace alone. If the ego-only control matches
+the vision head, the head learned the teacher's shortcut rather than the lamp, and the arm is dead
+**regardless of how good the label is**. Same shape as the ego-only control on the max-speed channel.
+
+⭐ **COMMISSIONED, with the shape to be committed before the number: YELLOW BIMODALITY.** The
+originally proposed discriminator — "does the colour hold where the ego does NOT react" — is rare
+**by construction** and cannot reach significance. **YELLOW (n = 25) is the class where the two
+hypotheses make OPPOSITE predictions:** a yellow light does not map to a kinematic state (a driver
+either accelerates through or brakes hard, depending on distance and speed, not on the lamp). ⇒ a
+**BIMODAL** kinematic signature on YELLOW is positive evidence the lamp was seen, because motion
+cannot determine yellow; a uniform deceleration matching RED leaves the motion-inference hypothesis
+alive. ⚠️ n = 25 carries no tight interval and that must be stated — **the value is LOGICAL, not
+statistical.**
+
+⭐ **THE STANDING TEST EARNED ITS KEEP TWICE IN ONE RUN** — *"name the quantity the grounding
+actually measured, and check it is the quantity being asserted."* It separated PRESENCE from COLOUR,
+and then caught that the kinematic corroboration measures **REACTION**, not **PERCEPTION**.
+
+**Registered as `D-TLGROUND-COLOUR-RESOLVED`.** Artifacts: `code/tl_colour_test.py` (carries the
+pre-registration) and `raw/tl_colour_test.json`, sha256-verified by the label owner.
