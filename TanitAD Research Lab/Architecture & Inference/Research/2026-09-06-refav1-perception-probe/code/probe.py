@@ -292,6 +292,26 @@ def main():
 
     gap_unc = cat("gap_unc")
     lat_unc = cat("lat_unc")
+
+    # ---- closing rate: d(gap)/dt for the SAME track, consecutive rows ------
+    # Distance-keeping needs the RATE as well as the gap; this is the second
+    # half of the quantity the four-families rule calls LONGITUDINAL. Defined
+    # only where the track ID is unchanged AND the two feature rows really are
+    # adjacent on the 0.2 s grid -- a track switch or a row gap is NOT a
+    # closing rate, and silently differencing across one would manufacture
+    # huge spurious values.
+    closing = np.full(len(gap_unc), np.nan)
+    pos = 0
+    for z in data:
+        n = len(z["gap_unc"])
+        g = z["gap_unc"].astype(np.float64)
+        rw = z["rows"].astype(np.int64)
+        tk = np.asarray(z["trk"]).astype(str)
+        same = (tk[1:] == tk[:-1]) & (tk[1:] != "") & (rw[1:] - rw[:-1] == 1)
+        d = np.full(n, np.nan)
+        d[1:] = np.where(same, (g[1:] - g[:-1]) / 0.2, np.nan)
+        closing[pos:pos + n] = d
+        pos += n
     # ⚠️ counts are log1p'd (the convention in spatialenv.py): raw agent counts
     # are heavy-tailed, and on the raw scale a handful of dense clips dominate
     # the SSE so every interval blows up. MEASURED on the 30-clip smoke: raw
@@ -300,6 +320,8 @@ def main():
         "lead_gap_m_cap30": (gap_unc, np.isfinite(gap_unc) & (gap_unc <= 30.0)),
         "lead_gap_m_cap80": (gap_unc, np.isfinite(gap_unc) & (gap_unc <= 80.0)),
         "lead_lat_m_cap30": (lat_unc, np.isfinite(gap_unc) & (gap_unc <= 30.0)),
+        "lead_closing_mps_cap30": (closing, np.isfinite(closing)
+                                   & np.isfinite(gap_unc) & (gap_unc <= 30.0)),
         "log1p_n_agents_visible": (np.log1p(cat("n_vis")),
                                    np.ones(len(gap_unc), bool)),
         "lead_present_cap30": (np.isfinite(gap_unc) & (gap_unc <= 30.0),
