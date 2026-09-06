@@ -12,20 +12,33 @@ is the QUESTION:
     cannot be seen one arm at a time.
 
 ⭐ **THE ONE THING THIS REEL EXISTS TO MAKE VISIBLE** (MEASURED, this panel,
-n = 40 windows / 8 episodes; `…/2026-09-05-refav1-cost-geometry/raw/arms/`):
+n = 40 windows / 8 episodes; `…/2026-09-05-refav1-cost-geometry/raw/arms/`,
+computed here by `taniteval.four_families.lateral` — the EVAL'S OWN function):
 
-    arm            ADE m   max|kappa|   outside the friction circle   straight
-    ccos_argmax    1.3272    0.2000        29.6 % (peak 3.262 g)       0.2750
-    combined       1.0504    0.1505         0.0 % (peak 0.618 g)       0.2750
-    wk15           0.8934    0.0800         0.0 % (peak 0.332 g)       0.4750
-    best           0.8838    0.0800         0.0 % (peak 0.332 g)       0.3750
-    ha0_ext FLOOR  0.8772         —              —                     —
+    arm                          curvature MAE 1/m   ADE m   reading
+    wk15   (W_KAPPA 15.11)            0.030982       0.8934  best in the programme
+    best   (+ Kamm cap mu 0.7)        0.031281       0.8838  -22 % vs the floor
+    ha0    THE STRAIGHT FLOOR         0.040083       0.9251  a plan that never steers
+    ccos_argmax (W_KAPPA 0)           0.055369       1.3272  WORSE THAN STRAIGHT
+    ha0_ext  the ECHO control         0.077298       0.8772  holds a MEASURED kappa
 
-⇒ **the arm that TURNS drives WORST, and the do-nothing floor beats all four.**
-The ranking is a picture, not a table: on a bending road the magenta arm swings
-across the lane, the cyan one bends inside the friction circle, the orange one
-barely leaves the white floor — and the green ground truth goes round the corner
-without any of them.
+⇒ ⛔ **THE UNPENALISED ARM TRACKS THE ROAD WORSE THAN A PERFECTLY STRAIGHT
+PLAN**, and ⭐ **`wk15` beats that straight floor by 23 %.** That is a picture,
+not a table: on a window where the road does NOT bend, the magenta arm swings
+0.08 1/m of curvature into a straight road while the orange and violet ones lie
+exactly on the white straight line — and so does the green ground truth.
+
+⛔ **THIS REEL SUPERSEDES ITS OWN FIRST CUT, AND THE CORRECTION IS THE FLOOR.**
+The first render drew **`ha0_ext`** — the ECHO control, which holds the MEASURED
+curvature and reaches **8.21 m** of lateral swing — as the white "floor", and
+called `ccos_argmax` *"the arm that turns"*. Both readings are refuted
+(`M74`/`M75`/`M77`/`M79`, `Project Steering/Decisions/2026-09-06-mm-decisions.md`):
+the turn-recall gate `|dyaw| > 0.15` rad is **UNREACHABLE at this panel's speeds
+and the HUMAN fails it 3 of 9**, so "it turns" had to be re-read on curvature
+MAE — a metric the human passes by construction — against the only floor that
+makes the sentence checkable: **`ha0`, the perfectly straight plan** (MEASURED
+max |y| **0.000000 m** over all 40 windows). ⇒ **A comparison is only as good as
+the floor it is drawn against, and the floor must be the one the CLAIM names.**
 
 WHAT THIS TOOL DOES AND DOES NOT DO
 ===================================
@@ -33,9 +46,19 @@ It draws pixels. It **invents no number and runs no model**: every trajectory,
 every head argmax and every planner provenance field is read out of dumps written
 by `taniteval/tools/refav1_arm.py`, the tool that produced the scored records.
 The only quantities computed here are (a) per-window ADE, a mean of norms over
-arrays the dump carries, and (b) the per-window feasibility flags, which are
-delegated to `tanitad.refs.feasible_decode.assert_feasible` — the SCORER'S OWN
-envelope — never re-derived.
+arrays the dump carries, (b) the per-window feasibility flags, delegated to
+`tanitad.refs.feasible_decode.assert_feasible` — the SCORER'S OWN envelope — and
+(c) the per-window **curvature MAE**, delegated to
+`taniteval.four_families.lateral` — the EVAL'S OWN function. Neither (b) nor (c)
+is re-typed here: a re-typed rule drifts from the one the banked numbers were
+computed under, and the frame would then contradict the record it illustrates.
+
+⭐ **AND (c) CARRIES ITS OWN CONTROL.** `--expect-curv-mae` re-computes the
+PANEL aggregate for each drawn series and REFUSES if it misses the banked value
+in `raw/four_family_all.txt`. MEASURED: the reel's own instrument reproduces
+`wk15` 0.030982 / `best` 0.031281 / `ha0` 0.040083 / `ccos_argmax` 0.055369 /
+`ha0_ext` 0.077298 exactly. A per-frame number that cannot reproduce the banked
+panel is a different metric wearing its name.
 
 ⭐ **THE ARMS ARE VERIFIED TO SHARE EVERYTHING BUT THE PLANNER.** Before a frame
 is drawn, this tool asserts that every rendered dump carries bit-identical
@@ -81,9 +104,11 @@ factor, so no viewer can mistake it for the vehicle's real speed.
 USAGE
 =====
     python taniteval/tools/render_refav1_arms_video.py \\
-        --arms-dir  <dir of dump_<arm>/ >  --arms ccos_argmax,combined,wk15,best \\
+        --arms-dir  <dir of dump_<arm>/ >  --arms ccos_argmax,best,wk15 \\
+        --arm-colours ccos_argmax=magenta,best=violet,wk15=orange \\
         --episodes  <dir of *.v2ep.pt>     --extrinsics extrinsics.json \\
-        --out reel.mp4 --fps 10 --slowmo 3 --gt-control
+        --expect-curv-mae ha0=0.040083,wk15=0.030982,ccos_argmax=0.055369 \\
+        --out reel.mp4 --fps 10 --slowmo 6 --gt-control
 
 Verify the result with `taniteval/tools/verify_mp4.py`, which DECODES IT BACK.
 ASCII only in every print(): this box is cp1252.
@@ -138,6 +163,32 @@ from tanitad.refs.refb import NAV_COMMANDS, ROUTE_CLASSES          # noqa: E402
 from tanitad.refs import feasible_decode as FD                     # noqa: E402
 from tanitad.viz_standard import VizElement, check_frame           # noqa: E402
 
+
+def _import_four_families():
+    """`taniteval.four_families`, past the NAMESPACE-PACKAGE SHADOW.
+
+    ⚠ The repo's OUTER `taniteval/` carries no `__init__.py`, so an `import
+    taniteval` resolved from the repo root binds a NAMESPACE package that has no
+    `four_families` in it — and the failure reads `cannot import name
+    'four_families' from 'taniteval' (unknown location)`, which looks exactly
+    like a missing module rather than a shadow. The REAL package is the INNER
+    `taniteval/taniteval/`, whose parent is this file's own grandparent."""
+    parent = os.path.dirname(_HERE)                       # <repo>/taniteval
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+    for k in [k for k in list(sys.modules)
+              if k == "taniteval" or k.startswith("taniteval.")]:
+        if getattr(sys.modules[k], "__file__", None) is None:
+            del sys.modules[k]                            # drop the shadow
+    from taniteval import four_families as _ff
+    if not hasattr(_ff, "lateral"):
+        sys.exit("[arms-reel] imported a taniteval without `lateral` — the "
+                 "namespace shadow is still in front of the real package")
+    return _ff
+
+
+FF = _import_four_families()
+
 CylProjector = rv.CylProjector
 polyline, densify, font, fit, wrap = rv.polyline, rv.densify, rv.font, rv.fit, rv.wrap
 load_extrinsics = rv.load_extrinsics
@@ -153,7 +204,15 @@ WM_DT = 0.2             # the world-model diagnostic tick
 # COLOUR SEMANTICS — one meaning per colour, in EVERY panel                    #
 # --------------------------------------------------------------------------- #
 C_GT = (110, 231, 138)          # GROUND TRUTH — green, everywhere, always
-C_FLOOR = (236, 240, 246)       # the TRIVIAL FLOOR ha0_ext — white, wide, under
+#: ⛔ THE WHITE IS `ha0`, THE PERFECTLY STRAIGHT PLAN — NOT `ha0_ext`, AND THE
+#: SWAP IS THE WHOLE POINT OF THIS CUT. The claim the reel now makes is
+#: *"`ccos_argmax` tracks the road WORSE THAN A STRAIGHT LINE"*, and that
+#: sentence is only CHECKABLE with the straight line drawn. `ha0` is
+#: `a = 0, kappa = 0` at the measured v0 (MEASURED max |y| 0.000000 m over all
+#: 40 windows); `ha0_ext` holds the MEASURED (a0, kappa0) and swings up to
+#: 8.21 m, so it is a floor for ADE and NOT for road-tracking.
+C_FLOOR = (236, 240, 246)       # the STRAIGHT FLOOR ha0 — white, wide, under
+C_ECHO = (120, 130, 148)        # the ECHO control ha0_ext — thin, dim, beneath
 C_GIVEN = (240, 190, 90)        # a GIVEN INPUT (the nav token) — amber
 #: the arm palette, in the order arms are drawn. Four hues no viewer confuses,
 #: none of them green (ground truth), white (the floor) or amber (a given input).
@@ -171,6 +230,14 @@ ARM_COLOURS = [(244, 114, 182),      # magenta
                (167, 139, 250),      # violet
                (163, 230, 53),       # lime (a 5th, if ever asked for)
                (45, 212, 191)]       # teal (a 6th)
+#: ⭐ THE SAME SIX, BY NAME, so `--arm-colours` can pin a hue to an ARM rather
+#: than to its position in `--arms`. A reel whose colours move when the arm
+#: ORDER moves cannot be compared with the cut before it, and the previous cut
+#: drew `ccos_argmax` magenta / `wk15` orange / `best` violet at positions
+#: 1 / 3 / 4. Dropping one arm would have silently recoloured the other three.
+NAMED_COLOURS = {"magenta": (244, 114, 182), "cyan": (56, 189, 248),
+                 "orange": (249, 115, 22), "violet": (167, 139, 250),
+                 "lime": (163, 230, 53), "teal": (45, 212, 191)}
 C_BG = (9, 12, 17)
 C_PANEL = (16, 21, 29)
 C_GRID = (34, 42, 53)
@@ -215,16 +282,71 @@ def _p(*a):
     print(*a, flush=True)
 
 
+#: the colours no arm may wear, because each already MEANS something on every
+#: frame of every reel in this programme.
+RESERVED_COLOURS = (("ground truth", C_GT), ("floor ha0", C_FLOOR),
+                    ("echo ha0_ext", C_ECHO), ("given input", C_GIVEN))
+#: the minimum L1 distance an arm colour must keep from each of them. A viewer
+#: scanning ONE frame cannot be asked to hold a smaller distinction; MEASURED,
+#: the sibling reel's orange (255, 158, 61) sits L1 76 from the given-input
+#: amber and had to be moved.
+MIN_COLOUR_L1 = 90
+
+
+def resolve_arm_colours(order, spec=None):
+    """-> {arm: rgb}. Positional by default; pinned by name when `spec` is given.
+
+    ⛔ IT REFUSES three ways, and each has cost something somewhere: an unknown
+    arm or colour name (a typo silently drawing the default palette), two arms
+    on one hue (two lines a viewer reads as one), and any arm within
+    :data:`MIN_COLOUR_L1` of a RESERVED colour (an arm read as the thing it is
+    being compared against). The rule is EXECUTED here rather than only asserted
+    in a test, so `--arm-colours` cannot walk around it."""
+    colours = {n: ARM_COLOURS[i] for i, n in enumerate(order)}
+    if spec:
+        want = {}
+        for tok in str(spec).split(","):
+            nm, _, cn = tok.strip().partition("=")
+            if nm not in order:
+                sys.exit(f"[arms-reel] --arm-colours names {nm!r}, not in --arms")
+            if cn not in NAMED_COLOURS:
+                sys.exit(f"[arms-reel] --arm-colours: {cn!r} is not one of "
+                         f"{', '.join(sorted(NAMED_COLOURS))}")
+            want[nm] = NAMED_COLOURS[cn]
+        if len(set(map(tuple, want.values()))) != len(want):
+            sys.exit("[arms-reel] --arm-colours assigns one hue to two arms")
+        colours.update(want)
+    if len(set(map(tuple, colours.values()))) != len(colours):
+        sys.exit("[arms-reel] two arms would be drawn in the same colour")
+    for n, c in colours.items():
+        for rn, rc in RESERVED_COLOURS:
+            dist = sum(abs(int(x) - int(y)) for x, y in zip(c, rc))
+            if dist <= MIN_COLOUR_L1:
+                sys.exit(f"[arms-reel] arm {n}'s colour {tuple(c)} sits L1 "
+                         f"{dist} from the RESERVED {rn} colour {tuple(rc)}. "
+                         f"Refusing a palette a viewer cannot read.")
+    return colours
+
+
 # =========================================================================== #
 # THE DUMPS — read once, and VERIFIED to share everything but the planner      #
 # =========================================================================== #
 #: read from every dump and asserted BIT-IDENTICAL across arms. If any of these
 #: moved, the arms would not be on the same scene and the whole overlay would be
 #: comparing two things at once.
-SHARED_KEYS = ("ws", "v0", "g", "ha0_ext")
+#: ⛔ `ha0` JOINS THE SHARED SET, and it is not decoration: it is the floor the
+#: reel's central claim is measured against, so it must be asserted BIT-IDENTICAL
+#: across arms exactly as the scene and the echo control are. A floor that
+#: differed between arms would make the comparison meaningless in the one panel
+#: that carries the argument.
+SHARED_KEYS = ("ws", "v0", "g", "ha0", "ha0_ext")
 SHARED_DEC = ("wm_mse_model", "wm_mse_const", "wm_mse_zero", "wm_tgt_std",
               "lat_label", "lon_label", "route_label", "nav_cmd", "nav_valid",
-              "lat_pred_nav_true", "lon_pred_nav_true", "route_pred_nav_true")
+              "lat_pred_nav_true", "lon_pred_nav_true", "route_pred_nav_true",
+              # the echo control's COMMANDED (a, kappa) — so the floor rows in
+              # the arms table quote the same quantity the arm rows do
+              # (commanded curvature), never a path-derived one beside it.
+              "ha0_ext_controls")
 #: read per arm — these are what the cost geometry actually moves.
 ARM_KEYS = ("cl",)
 ARM_DEC = ("cl_controls", "plan_source_cl", "plan_cost_cl", "plan_neval_cl",
@@ -327,6 +449,98 @@ def window_feasibility(path_xy: np.ndarray, dt: float = DT_CACHE) -> dict:
             "envelope_over": float(r["envelope_rate"]) > 0.0,
             "peak_g": float(r["peak_g_max"]),
             "max_kappa": float(r["max_abs_kappa"])}
+
+
+# =========================================================================== #
+# CURVATURE — THE EVAL'S OWN REDUCTION, CALLED, NEVER RE-TYPED                 #
+# =========================================================================== #
+#: the band inside which a per-window curvature error is a TIE with the floor.
+#: It is the arms table's own display precision, so the colour can never
+#: contradict the digits printed next to it.
+CURV_TIE = 1e-5
+
+
+def curv_colour(v: float, floor: float):
+    """green BELOW the straight floor, red ABOVE it, neutral on a TIE."""
+    if v != v or floor != floor:              # NaN
+        return C_FG
+    if v < floor - CURV_TIE:
+        return C_OK
+    if v > floor + CURV_TIE:
+        return C_BAD
+    return C_FG
+
+def curvature_mae(pred, gt, dt: float = DT_CACHE):
+    """-> (per-window array, POOLED float, n valid steps).
+
+    ⛔ THE POOLED VALUE IS A RATIO OF SUMS OVER VALID STEPS, WHICH IS NOT THE
+    MEAN OF THE PER-WINDOW MEANS, and the difference is large enough to miss the
+    banked number. MEASURED on this panel: `ccos_argmax` reads **0.055369**
+    pooled — the value `raw/four_family_all.txt` prints — and **0.056726** as a
+    mean of window means. `four_families.lateral` reduces it the first way
+    (`_masked`, and `_lateral_ci` says so in its own docstring), so this
+    function does too and the `--expect-curv-mae` control checks it.
+
+    ⚠ The mask is `pair_valid`, of shape [n, H-1], NOT the per-step `valid` of
+    shape [n, H]: curvature is a PAIR quantity and masking it with `valid`
+    mis-aligns rather than being merely imprecise."""
+    P = FF._seq_geometry(torch.as_tensor(np.asarray(pred)).float(), dt)
+    G = FF._seq_geometry(torch.as_tensor(np.asarray(gt)).float(), dt)
+    both = P["pair_valid"] & G["pair_valid"]
+    err = (P["curvature"] - G["curvature"]).abs()
+    if err.shape != both.shape:
+        sys.exit(f"[arms-reel] curvature {tuple(err.shape)} vs mask "
+                 f"{tuple(both.shape)} — refusing to reduce a mis-aligned mask")
+    cnt = both.sum(1)
+    per = torch.where(cnt > 0, (err * both).sum(1) / cnt.clamp_min(1),
+                      torch.full_like(cnt, float("nan"), dtype=err.dtype))
+    pooled, n = FF._masked(err, both)
+    #: ⭐ A SELF-CHECK THAT COSTS NOTHING: the step-count-weighted mean of the
+    #: per-window values MUST reproduce the pooled value. If it does not, the two
+    #: numbers on the frame (per window) and in the banner (per panel) are
+    #: different statistics and one of them is lying.
+    if n:
+        c = cnt.numpy().astype(np.float64)
+        p = per.numpy().astype(np.float64)
+        recon = float(np.nansum(np.where(c > 0, p, 0.0) * c) / c.sum())
+        if abs(recon - pooled) > 1e-6:
+            sys.exit(f"[arms-reel] curvature reduction is inconsistent: "
+                     f"per-window recombines to {recon:.9f}, pooled {pooled:.9f}")
+    return per.numpy().astype(np.float64), float(pooled), int(n)
+
+
+def curvature_control(panel: dict, expect: dict) -> dict:
+    """⛔ REFUSE unless the reel's own instrument reproduces the BANKED panel.
+
+    ⭐ This is the control that makes the reel's central sentence checkable. A
+    per-frame curvature number that cannot reproduce `raw/four_family_all.txt`
+    is a different metric wearing the same name, and the frame would then
+    contradict the record it claims to illustrate."""
+    rep = {"expected": dict(expect), "got": {}, "tol": 1.5e-6, "checked": 0}
+    if not expect:
+        _p("[curv  ] ⚠ NO --expect-curv-mae given — the panel aggregate is "
+           "UNCHECKED against the banked table. Pass it.")
+        rep["unchecked"] = True
+        return rep
+    bad = []
+    for k, want in expect.items():
+        if k not in panel:
+            sys.exit(f"[arms-reel] --expect-curv-mae names {k!r}, which is not "
+                     f"a drawn series ({', '.join(sorted(panel))})")
+        got = float(panel[k]["pooled"])
+        rep["got"][k] = got
+        rep["checked"] += 1
+        ok = abs(got - want) <= rep["tol"]
+        _p(f"[curv  ] CONTROL {k:12s} banked {want:.6f}  measured {got:.6f}  "
+           f"n_steps {panel[k]['n_steps']:4d}  {'MATCH' if ok else 'MISMATCH'}")
+        if not ok:
+            bad.append(k)
+    if bad:
+        sys.exit(f"[arms-reel] REFUSING to render: the curvature instrument "
+                 f"misses the banked panel on {bad}. Every curvature number the "
+                 f"reel would print is inadmissible.")
+    rep["pass"] = True
+    return rep
 
 
 # =========================================================================== #
@@ -465,19 +679,32 @@ def draw_wm(size, model, const, zero, F, mark_s=None):
     return im
 
 
-def draw_arms_table(size, rows, F, hdr):
-    """One row per arm: what the cost geometry bought and what it cost.
+def draw_arms_table(size, rows, F, hdr, foot=None):
+    """One row per arm AND one per FLOOR: what the cost geometry bought.
 
     Every column is either read from the dump or computed here from arrays the
-    dump carries; the friction column is the SCORER'S OWN flag."""
+    dump carries; the friction column is the SCORER'S OWN flag and the curvature
+    column is the EVAL'S OWN reduction (:func:`curvature_mae`).
+
+    ⭐ THE FLOOR ROWS ARE IN THE SAME TABLE ON PURPOSE. The finding this reel
+    exists to show is a COMPARISON WITH A FLOOR — *"the unpenalised arm tracks
+    the road worse than a plan that never steers"* — and a floor quoted in a
+    caption while the arms sit in a table is a claim the viewer has to take on
+    trust. `is_floor` only changes the label, never the columns: every row's
+    `max|k|` is the COMMANDED curvature and every row's curvature MAE is
+    computed by the same function, so the rows are comparable by construction.
+
+    ⚠ `foot` carries the PANEL aggregate. A per-window number can always be
+    cherry-picked by pausing; the panel line is on every frame so it cannot be."""
     w, h = size
     im = Image.new("RGB", (w, h), C_PANEL)
     d = ImageDraw.Draw(im)
-    d.text((14, 8), hdr, fill=C_FG, font=F["small"])
-    cols = [(14, "arm"), (206, "cost geometry"), (470, "ADE m"),
-            (562, "max|k| 1/m"), (676, "a m/s2"), (766, "plan source"),
-            (924, "peak lat g"), (1042, "friction circle")]
-    y = 34
+    for j, ln in enumerate(wrap(d, hdr, F["small"], w - 28)[:2]):
+        d.text((14, 8 + 18 * j), ln, fill=C_FG, font=F["small"])
+    cols = [(14, "arm / floor"), (190, "cost geometry"), (424, "ADE m"),
+            (506, "curv MAE 1/m"), (614, "max|k| 1/m"), (712, "a m/s2"),
+            (786, "plan source"), (920, "peak lat g"), (1030, "friction circle")]
+    y = 46
     for x, t in cols:
         d.text((x, y), t, fill=C_DIM, font=F["micro"])
     y += 20
@@ -485,18 +712,30 @@ def draw_arms_table(size, rows, F, hdr):
     y += 6
     for r in rows:
         col = r["colour"]
-        d.rectangle([14, y + 5, 30, y + 15], fill=col)
+        if r.get("is_floor"):
+            d.rectangle([14, y + 7, 30, y + 13], fill=col)
+        else:
+            d.rectangle([14, y + 5, 30, y + 15], fill=col)
         d.text((38, y), r["arm"], fill=col, font=F["small"])
-        d.text((206, y + 1), fit(d, r["geom"], F["micro"], 250), fill=C_DIM,
+        d.text((190, y + 1), fit(d, r["geom"], F["micro"], 226), fill=C_DIM,
                font=F["micro"])
-        d.text((470, y + 1), r["ade"], fill=C_FG, font=F["mono"])
-        d.text((562, y + 1), r["kap"], fill=C_FG, font=F["mono"])
-        d.text((676, y + 1), r["acc"], fill=C_FG, font=F["mono"])
-        d.text((766, y + 1), fit(d, r["src"], F["micro"], 150), fill=C_DIM,
+        d.text((424, y + 1), r["ade"], fill=C_FG, font=F["mono"])
+        d.text((506, y + 1), r["curv"], fill=r.get("curv_col", C_FG),
+               font=F["mono"])
+        d.text((614, y + 1), r["kap"], fill=C_FG, font=F["mono"])
+        d.text((712, y + 1), r["acc"], fill=C_FG, font=F["mono"])
+        d.text((786, y + 1), fit(d, r["src"], F["micro"], 128), fill=C_DIM,
                font=F["micro"])
-        d.text((924, y + 1), r["pg"], fill=r["pg_col"], font=F["mono"])
-        d.text((1042, y + 1), r["feas"], fill=r["feas_col"], font=F["micro"])
+        d.text((920, y + 1), r["pg"], fill=r["pg_col"], font=F["mono"])
+        d.text((1030, y + 1), r["feas"], fill=r["feas_col"], font=F["micro"])
         y += 24
+    if foot:
+        y += 4
+        d.line([(14, y), (w - 14, y)], fill=C_GRID, width=1)
+        y += 6
+        for ln in wrap(d, foot, F["micro"], w - 28)[:3]:
+            d.text((14, y), ln, fill=C_WARN, font=F["micro"])
+            y += 17
     return im
 
 
@@ -842,6 +1081,38 @@ def main(argv=None):
     ap.add_argument("--frames-dir", default=None)
     ap.add_argument("--max-frames", type=int, default=0)
     ap.add_argument("--no-small", action="store_true")
+    ap.add_argument("--crf", type=int, default=20,
+                    help="x264 quality for the FULL copy. \u26a0 30 MiB is a "
+                         "DELIVERY GATE, not a preference (verify_mp4.py: a "
+                         "38.74 MiB reel was REFUSED by the PI's channel), and "
+                         "at 10 fps a longer reel crosses it. Raising this by 1 "
+                         "is the cheapest way back under the line; the small "
+                         "copy is always re-encoded from the ORIGINAL frames.")
+    ap.add_argument("--arm-colours", default=None,
+                    help="pin a hue to an ARM rather than to its position in "
+                         "--arms, e.g. ccos_argmax=magenta,wk15=orange,"
+                         "best=violet. Without it the colours move when the arm "
+                         "ORDER moves, and two cuts of the same reel stop being "
+                         "comparable. Names: " + ", ".join(sorted(NAMED_COLOURS)))
+    ap.add_argument("--expect-curv-mae", default=None,
+                    help="THE CONTENT CONTROL for the curvature story, e.g. "
+                         "ha0=0.040083,wk15=0.030982,ccos_argmax=0.055369. Each "
+                         "named series' PANEL aggregate is recomputed here by "
+                         "taniteval.four_families and must reproduce the banked "
+                         "value in raw/four_family_all.txt, or the render is "
+                         "REFUSED. A per-frame curvature that cannot reproduce "
+                         "the banked panel is a different metric wearing its name.")
+    ap.add_argument("--slowmo-turn", type=int, default=0,
+                    help="hold a window whose v7.2 lateral LABEL is a turn this "
+                         "many times longer (0 = use --slowmo). The turn windows "
+                         "are where the curvature story lives, and they are "
+                         "selected by the GROUND-TRUTH LABEL alone -- never by "
+                         "where the arms happen to differ.")
+    ap.add_argument("--no-echo", action="store_true",
+                    help="drop the ha0_ext echo control from the overlay. The "
+                         "FLOOR this reel argues against is ha0 (perfectly "
+                         "straight); ha0_ext is drawn thin and dim beneath it as "
+                         "the ADE floor, and can be dropped if it clutters.")
     a = ap.parse_args(argv)
 
     order = [x.strip() for x in a.arms.split(",") if x.strip()]
@@ -852,7 +1123,7 @@ def main(argv=None):
                  f"distinguishable colours this reel defines. More lines than a "
                  f"viewer can tell apart is not more information.")
     arms = {n: read_arm(a.arms_dir, n) for n in order}
-    colours = {n: ARM_COLOURS[i] for i, n in enumerate(order)}
+    colours = resolve_arm_colours(order, a.arm_colours)
     shared = verify_shared(arms, order)
     _p(f"[verify] {len(order)} arms share {len(shared['shared_keys_checked'])} "
        f"arrays bit-identically over {shared['n_windows']} windows; "
@@ -893,12 +1164,61 @@ def main(argv=None):
     extr = load_extrinsics(a.extrinsics, names)
     _p(f"[calib ] per-clip extrinsics for {len(extr)}/{len(names)} clips")
 
+    # ---- CURVATURE: per window for the frames, POOLED for the control ----- #
+    #: ⭐ THE ONE NUMBER THIS CUT EXISTS TO PUT ON SCREEN. The previous cut drew
+    #: `ha0_ext` as "the floor" and called `ccos_argmax` "the arm that turns";
+    #: both readings are refuted (M74/M75/M77/M79). The reachable metric — one
+    #: the human passes BY CONSTRUCTION, unlike the |dyaw| > 0.15 turn gate she
+    #: fails 3 of 9 — is curvature MAE against a PERFECTLY STRAIGHT floor.
+    echo_on = not a.no_echo
+    ref_eps = arms[order[0]]["eps"]
+    floors = ["ha0"] + (["ha0_ext"] if echo_on else [])
+    series_of = {n: {e: arms[n]["eps"][e]["cl"] for e in names} for n in order}
+    for fl in floors:
+        series_of[fl] = {e: ref_eps[e][fl] for e in names}
+    G_by_ep = {e: ref_eps[e]["g"] for e in names}
+    G_all = np.concatenate([G_by_ep[e] for e in names], 0)
+
+    curv_pw, curv_panel = {}, {}
+    for k, by_ep in series_of.items():
+        curv_pw[k] = {e: curvature_mae(by_ep[e], G_by_ep[e])[0] for e in names}
+        _, pooled, nst = curvature_mae(
+            np.concatenate([by_ep[e] for e in names], 0), G_all)
+        curv_panel[k] = {"pooled": pooled, "n_steps": nst,
+                         "n_windows": int(G_all.shape[0])}
+    expect = {}
+    if a.expect_curv_mae:
+        for tok in a.expect_curv_mae.split(","):
+            kk, _, vv = tok.strip().partition("=")
+            expect[kk] = float(vv)
+    curv_rep = curvature_control(curv_panel, expect)
+    rank = sorted(curv_panel, key=lambda k: curv_panel[k]["pooled"])
+    curv_foot = ("PANEL, n=" + str(int(G_all.shape[0])) + " windows / "
+                 + str(len(names)) + " episodes, curvature MAE 1/m pooled over "
+                 "valid steps (taniteval.four_families): "
+                 + "  <  ".join(f"{k} {curv_panel[k]['pooled']:.6f}" for k in rank)
+                 + "   ->   an arm ABOVE ha0 tracks the road WORSE THAN A PLAN "
+                   "THAT NEVER STEERS.")
+    _p("[curv  ] " + curv_foot)
+
     F = {"h1": font(30, True), "h2": font(21, True), "body": font(18),
          "small": font(16, True), "micro": font(14), "mono": font(15)}
     LAT = list(tactical_lat_actions("v7.0"))
     LON = list(tactical_lon_actions_v("v7.0"))
     ROUTE, NAVN = list(ROUTE_CLASSES), list(NAV_COMMANDS)
     turn_ids = {i for i, s in enumerate(LAT) if s in TURN_TOKENS}
+    #: ⭐ THE TURN WINDOWS ARE ENUMERATED UP FRONT AND NAMED ON THE FRAME. They
+    #: are selected by the v7.2 GROUND-TRUTH LABEL alone, before any arm is read,
+    #: so "more screen time for the turns" cannot become "more screen time where
+    #: my arm wins". Each frame prints which turn window it is, out of how many.
+    turn_windows = [(e, int(wi), LAT[int(l)])
+                    for e in names
+                    for wi, l in enumerate(ref_eps[e]["lat_label"].tolist())
+                    if 0 <= int(l) < len(LAT) and LAT[int(l)] in TURN_TOKENS]
+    turn_rank = {(e, wi): (i + 1, len(turn_windows))
+                 for i, (e, wi, _) in enumerate(turn_windows)}
+    _p(f"[turns ] {len(turn_windows)} GT-LABELLED turn windows: "
+       + ", ".join(f"{e[:8]}#{wi} {tok}" for e, wi, tok in turn_windows))
 
     frames_dir = a.frames_dir or (os.path.splitext(a.out)[0] + "_frames")
     os.makedirs(frames_dir, exist_ok=True)
@@ -942,7 +1262,12 @@ def main(argv=None):
     index: list[dict] = []
     stats = dict(frames=0, clips=0, scored=0, slowed=0, skipped_stale=0,
                  cam_on=0, cam_off=0, lum_sum=0.0, lum_n=0, lum_min=1e9,
-                 lum_max=-1e9, decoded=0, cam_stub=0)
+                 lum_max=-1e9, decoded=0, cam_stub=0,
+                 #: ⚠ `slowed` counts every frame held MORE THAN ONCE, which with
+                 #: --base-hold 2 is every clip frame and therefore says nothing.
+                 #: `turn_frames` is the number that answers "did the turns get
+                 #: more screen time", so it is counted separately.
+                 turn_windows=0, turn_frames=0)
     t_start = time.time()
 
     def emit(im, meta):
@@ -1008,11 +1333,18 @@ def main(argv=None):
             by_label = lat_lab in turn_ids
             by_geom = gt_lat >= float(a.slowmo_lat_m)
             is_turn = bool(by_label or by_geom)
-            hold = max(1, a.slowmo if is_turn else a.base_hold)
+            #: ⭐ A LABELLED TURN GETS ITS OWN, LONGER HOLD. The curvature story
+            #: is decided on the windows where the road actually bends, and at
+            #: 10 fps a 2.0 s plan is 20 frames -- long enough to miss.
+            hold = max(1, (a.slowmo_turn or a.slowmo) if by_label
+                       else (a.slowmo if is_turn else a.base_hold))
+            trank = turn_rank.get((name, wi))
             age_cap = min(float(a.max_plan_age), horizon_s - DT_FRAME)
             f_last = min(2 * t_w + int(round(age_cap / DT_FRAME)),
                          poses.shape[0] - 1)
             stats["scored"] += 1
+            if by_label:
+                stats["turn_windows"] += 1
 
             # ⭐ THE BEV RANGE IS FIXED FOR THE WHOLE WINDOW, and it is
             # MEASURED from the paths this window will actually draw — at its
@@ -1021,7 +1353,7 @@ def main(argv=None):
             # makes the grid crawl and two moments incomparable by eye; a range
             # guessed from v0 * age wastes half the panel on empty road, which
             # is how a 1 m lateral difference ends up invisible.
-            _paths0 = [ref["g"][wi], ref["ha0_ext"][wi]] + \
+            _paths0 = [ref["g"][wi]] + [ref[fl][wi] for fl in floors] + \
                       [arms[n]["eps"][name]["cl"][wi] for n in order]
             _pf, _pl = poses[2 * t_w], poses[min(f_last, poses.shape[0] - 1)]
             _pathsL = [se2_carry(Q, _pf, _pl) for Q in _paths0]
@@ -1032,26 +1364,71 @@ def main(argv=None):
 
             # ---- per-arm, per-window quantities: read, or the scorer's own -- #
             rows, goal_of = [], {}
+            #: the straight floor's own curvature error on THIS window — the bar
+            #: every arm row is coloured against, so the comparison is IN the
+            #: table rather than in a caption the viewer has to remember.
+            c_floor = float(curv_pw["ha0"][name][wi])
             for arm in order:
                 r = arms[arm]["eps"][name]
                 cl, ctrl = r["cl"][wi], r["cl_controls"][wi]
                 fe = window_feasibility(cl)
                 ade = float(np.linalg.norm(cl - r["g"][wi], axis=1).mean())
+                cvw = float(curv_pw[arm][name][wi])
                 si = int(r["plan_source_cl"][wi])
                 src = (PLAN_SOURCE_NAMES[si] if 0 <= si < len(PLAN_SOURCE_NAMES)
                        else f"idx{si}")
                 rows.append(dict(
                     arm=arm, colour=colours[arm], geom=geom[arm],
-                    ade=f"{ade:6.3f}", kap=f"{np.abs(ctrl[:, 1]).max():7.4f}",
+                    ade=f"{ade:6.3f}",
+                    curv="   n/a " if np.isnan(cvw) else f"{cvw:8.5f}",
+                    #: ⚠ A TIE IS NOT A FAILURE. On a window where the road
+                    #: does not bend, an arm that lies exactly on the straight
+                    #: floor has the floor's error, and coloring that RED would
+                    #: report the correct behaviour as a defect. The band is the
+                    #: DISPLAY precision (%8.5f), so the colour never contradicts
+                    #: the number printed beside it.
+                    curv_col=curv_colour(cvw, c_floor),
+                    kap=f"{np.abs(ctrl[:, 1]).max():7.4f}",
                     acc=f"{ctrl[0, 0]:+6.2f}", src=src,
                     pg=f"{fe['peak_g']:6.3f}",
                     pg_col=C_BAD if fe["kamm_over"] else C_FG,
                     feas="OUTSIDE (mu=0.7)" if fe["kamm_over"] else "inside",
                     feas_col=C_BAD if fe["kamm_over"] else C_OK,
-                    _ade=ade, _kamm=fe["kamm_over"]))
+                    _ade=ade, _kamm=fe["kamm_over"], _curv=cvw))
                 gl, gn = int(r["goal_lat_cl"][wi]), int(r["goal_lon_cl"][wi])
                 goal_of[arm] = (f"{LAT[gl] if 0 <= gl < len(LAT) else '--'}"
                                 f" / {LON[gn] if 0 <= gn < len(LON) else '--'}")
+            #: ⛔ THE FLOOR ROWS. `ha0` is the bar the reel's claim names; its
+            #: commanded curvature is EXACTLY 0 by construction, so its `max|k|`
+            #: is a constant and not a measurement. `ha0_ext` carries its own
+            #: COMMANDED controls in the dump, so both floor rows quote the same
+            #: quantity the arm rows do.
+            for fl in floors:
+                fp = ref_eps[name][fl][wi]
+                ffe = window_feasibility(fp)
+                fade = float(np.linalg.norm(fp - ref_eps[name]["g"][wi],
+                                            axis=1).mean())
+                fcv = float(curv_pw[fl][name][wi])
+                if fl == "ha0":
+                    fkap, facc = " 0.0000", " +0.00"
+                    fgeom = "FLOOR: do nothing (a=0, kappa=0 at v0)"
+                    fcol, fsrc = C_FLOOR, "no planner"
+                else:
+                    fc = ref_eps[name]["ha0_ext_controls"][wi]
+                    fkap = f"{np.abs(np.atleast_2d(fc)[:, 1]).max():7.4f}"
+                    facc = f"{np.atleast_2d(fc)[0, 0]:+6.2f}"
+                    fgeom = "ECHO: hold the MEASURED (a0, kappa0)"
+                    fcol, fsrc = C_ECHO, "no planner"
+                rows.append(dict(
+                    arm=fl, colour=fcol, geom=fgeom, is_floor=True,
+                    ade=f"{fade:6.3f}",
+                    curv="   n/a " if np.isnan(fcv) else f"{fcv:8.5f}",
+                    curv_col=C_FG, kap=fkap, acc=facc, src=fsrc,
+                    pg=f"{ffe['peak_g']:6.3f}",
+                    pg_col=C_BAD if ffe["kamm_over"] else C_FG,
+                    feas="OUTSIDE (mu=0.7)" if ffe["kamm_over"] else "inside",
+                    feas_col=C_BAD if ffe["kamm_over"] else C_OK,
+                    _ade=fade, _kamm=ffe["kamm_over"], _curv=fcv))
 
             for f in range(2 * t_w, f_last + 1):
                 plan_age_s = (f - 2 * t_w) * DT_FRAME
@@ -1061,7 +1438,8 @@ def main(argv=None):
                 p_from, p_to = poses[2 * t_w], poses[f]
                 carry = lambda P: se2_carry(P, p_from, p_to)      # noqa: E731
                 g_c = carry(ref["g"][wi])
-                fl_c = carry(ref["ha0_ext"][wi])
+                fl_c = carry(ref["ha0"][wi])          # THE STRAIGHT FLOOR
+                ec_c = carry(ref["ha0_ext"][wi]) if echo_on else None
                 arm_c = {n: carry(arms[n]["eps"][name]["cl"][wi]) for n in order}
 
                 im = Image.new("RGB", (W_TOT, H_TOT), C_BG)
@@ -1075,7 +1453,7 @@ def main(argv=None):
                        f"  ·  t = {t_w * DT_CACHE:5.1f} s  ·  window {wi+1}/{len(ws)}"
                        f"  ·  plan age {plan_age_s:.1f} s",
                        fill=C_FG, font=F["h2"])
-                d.text((PAD + 6, Y_BAN + 36),
+                d.text((PAD + 6, Y_BAN + 40),
                        fit(d, f"{len(order)} planner arms, ONE checkpoint, ONE "
                               f"scene - they differ ONLY in the cost geometry."
                               f"  ·  {'STRICT load' if strict else 'NON-STRICT LOAD'}"
@@ -1083,15 +1461,26 @@ def main(argv=None):
                               f"iters {plan_cfg.get('n_iters')}}}"
                               f"  ·  every line is READ from a banked dump - no "
                               f"model runs in this renderer",
-                           F["micro"], W_TOT - 2 * PAD - 340),
+                           F["micro"], W_TOT - 2 * PAD - 600),
                        fill=C_DIM, font=F["micro"])
+                #: ⭐ THE TURN BADGE IS ITS OWN LINE AND IT NAMES THE WINDOW.
+                #: "give the turns more screen time" is only honest if the viewer
+                #: can SEE which windows those are and count them; the badge says
+                #: which labelled turn this is, out of how many on the panel.
+                right = []
+                if trank:
+                    right.append((f"GT {LAT[lat_lab]}  -  LABELLED TURN WINDOW "
+                                  f"{trank[0]} of {trank[1]}", C_WARN, F["h2"]))
                 if hold > 1:
                     why = ([] if not by_label else [f"GT {LAT[lat_lab]}"]) + \
                           ([] if not by_geom else [f"GT swings {gt_lat:.1f} m"])
                     tag = (f"SLOW MOTION 1/{hold}"
                            + (f"  -  {' + '.join(why)}" if why else ""))
-                    d.text((W_TOT - 12 - int(d.textlength(tag, font=F["h2"])),
-                            Y_BAN + 10), tag, fill=C_WARN, font=F["h2"])
+                    right.append((tag, C_DIM if trank else C_WARN,
+                                  F["small"] if trank else F["h2"]))
+                for _j, (_t, _c, _f) in enumerate(right[:2]):
+                    d.text((W_TOT - 12 - int(d.textlength(_t, font=_f)),
+                            Y_BAN + 6 + 30 * _j), _t, fill=_c, font=_f)
 
                 # ---- camera
                 if cam_on:
@@ -1132,7 +1521,9 @@ def main(argv=None):
                     # floor: drawn underneath a 13 px white line it disappeared
                     # entirely on every straight window, and a reel whose
                     # reference line is invisible is worse than no reel.
-                    polyline(dc, proj_to(fl_c), C_FLOOR, 13)   # floor, wide, under
+                    polyline(dc, proj_to(fl_c), C_FLOOR, 13)   # STRAIGHT floor
+                    if ec_c is not None:
+                        polyline(dc, proj_to(ec_c), C_ECHO, 3)  # echo, thin
                     polyline(dc, proj_to(g_c), C_GT, 8)        # GT, never hidden
                     n_vis = {}
                     for n in order:
@@ -1161,8 +1552,11 @@ def main(argv=None):
                     dc.rectangle([0, H_CAM - 30, W_LEFT, H_CAM - 1],
                                  fill=(10, 13, 19))
                     lx, ly = 12, H_CAM - 26
-                    for lab, col in ([("GROUND TRUTH (what the human did)", C_GT),
-                                      ("ha0_ext FLOOR (do nothing)", C_FLOOR)]
+                    for lab, col in ([("GROUND TRUTH (the human)", C_GT),
+                                      ("ha0 STRAIGHT FLOOR (never steers)",
+                                       C_FLOOR)]
+                                     + ([("ha0_ext echo control", C_ECHO)]
+                                        if echo_on else [])
                                      + [(n, colours[n]) for n in order]):
                         dc.line([(lx, ly + 8), (lx + 24, ly + 8)], fill=col, width=5)
                         dc.text((lx + 30, ly), lab, fill=col, font=F["micro"])
@@ -1170,10 +1564,12 @@ def main(argv=None):
                     im.paste(cam, (PAD, Y_CAM))
                     elements.append(VizElement(
                         "camera", "present", kind="derived",
-                        value=f"GT + ha0_ext floor + {len(order)} arms projected, "
-                              f"plan age {plan_age_s:.1f} s",
+                        value=f"GT + ha0 STRAIGHT floor"
+                              + (" + ha0_ext echo" if echo_on else "")
+                              + f" + {len(order)} arms projected, "
+                                f"plan age {plan_age_s:.1f} s",
                         source="CylProjector(v2ep['frame'], per-clip "
-                               "sensor_extrinsics) on the dumps' g/ha0_ext/cl, "
+                               "sensor_extrinsics) on the dumps' g/ha0/ha0_ext/cl, "
                                f"drawn on the v2ep PNG at raw index {f}"))
                 else:
                     d.rectangle([PAD, Y_CAM, PAD + W_LEFT, Y_CAM + H_CAM],
@@ -1193,40 +1589,60 @@ def main(argv=None):
                             outline=C_GRID, width=1)
 
                 # ---- BEV
-                n_out_circle = sum(1 for r in rows if r["_kamm"])
-                best = min(rows, key=lambda r: r["_ade"])
+                arm_rows = [r for r in rows if not r.get("is_floor")]
+                n_out_circle = sum(1 for r in arm_rows if r["_kamm"])
+                #: ⛔ THE NOTE REPORTS CURVATURE, NOT ADE, AND IT NAMES THE
+                #: FLOOR. "best ADE here" was the previous cut's headline and it
+                #: is the wrong question: the floor wins ADE on this panel while
+                #: tracking the road worse, which is exactly the confusion this
+                #: re-render exists to remove.
+                _cv = [r for r in arm_rows if not np.isnan(r["_curv"])]
+                _bc = min(_cv, key=lambda r: r["_curv"]) if _cv else None
+                note = (("closest to the human's CURVATURE: "
+                         f"{_bc['arm']} {_bc['_curv']:.5f}"
+                         if _bc else "curvature undefined here (ds too small)")
+                        + (f"  ·  STRAIGHT FLOOR ha0 {c_floor:.5f}"
+                           if not np.isnan(c_floor) else "")
+                        + (f"  ·  {n_out_circle}/{len(arm_rows)} arms LEAVE the "
+                           f"friction circle" if n_out_circle else
+                           "  ·  all arms inside the friction circle"))
                 bev = draw_bev(
                     (W_RIGHT, H_CAM),
-                    [(fl_c, C_FLOOR, 13, True), (g_c, C_GT, 8, False)]
+                    [(fl_c, C_FLOOR, 13, True)]
+                    + ([(ec_c, C_ECHO, 3, False)] if ec_c is not None else [])
+                    + [(g_c, C_GT, 8, False)]
                     + [(arm_c[n], colours[n], 4, False) for n in order],
-                    bev_lo, bev_hi,
-                    (f"best ADE here: {best['arm']} {best['ade'].strip()} m"
-                     + (f"  ·  {n_out_circle}/{len(order)} arms LEAVE the "
-                        f"friction circle" if n_out_circle else
-                        "  ·  all arms inside the friction circle")),
-                    F, float(ref["v0"][wi]))
+                    bev_lo, bev_hi, note, F, float(ref["v0"][wi]))
                 im.paste(bev, (X_RIGHT, Y_CAM))
                 elements.append(VizElement(
                     "bev", "present", kind="derived",
-                    value=f"GT / ha0_ext / {len(order)} arms, "
-                          f"x {bev_lo:.0f} to {bev_hi:.0f} m",
+                    value=f"GT / ha0 STRAIGHT floor"
+                          + (" / ha0_ext echo" if echo_on else "")
+                          + f" / {len(order)} arms, "
+                            f"x {bev_lo:.0f} to {bev_hi:.0f} m",
                     source="the dumps' own arrays, carried into the current ego "
                            "frame by a rigid SE(2) transform of the RECORDED poses"))
 
                 # ---- arms table (the ADE slot: this reel's ADE is PER ARM)
                 im.paste(draw_arms_table(
                     (W_LEFT, H_MID), rows, F,
-                    "THE PLANNER ARMS on THIS window - ADE is over the K=10 "
-                    "waypoints; the friction column is the SCORER'S OWN "
-                    "assert_feasible (mu 0.7)"), (PAD, Y_MID))
+                    "THE PLANNER ARMS on THIS window, against the FLOORS - ADE "
+                    "over the K=10 waypoints; curv MAE is |plan curvature - the "
+                    "human's| (green = better than the straight floor, red = "
+                    "worse); the friction column is the SCORER'S OWN "
+                    "assert_feasible (mu 0.7)", foot=curv_foot), (PAD, Y_MID))
                 elements.append(VizElement(
                     "ade", "present", kind="derived",
-                    value="; ".join(f"{r['arm']} {r['ade'].strip()} m"
-                                    for r in rows),
+                    value="; ".join(f"{r['arm']} {r['ade'].strip()} m "
+                                    f"curv {r['curv'].strip()}" for r in rows),
                     source="mean ||cl - g||_2 over the K=10 waypoints of this "
                            "window at dt 0.2 s, from each arm's own ep*.npz; the "
-                           "friction column is tanitad.refs.feasible_decode."
-                           "assert_feasible (A_MAX 4.0, KAPPA_MAX 0.2, mu 0.7)"))
+                           "curvature column is taniteval.four_families "
+                           "(_seq_geometry dh/ds, masked by pair_valid), the "
+                           "EVAL'S OWN reduction, controlled against the banked "
+                           "panel by --expect-curv-mae; the friction column is "
+                           "tanitad.refs.feasible_decode.assert_feasible "
+                           "(A_MAX 4.0, KAPPA_MAX 0.2, mu 0.7)"))
 
                 # ---- world model
                 #: ⚠️ NOT declared as a viz element: `world_model` is not in the
@@ -1298,7 +1714,7 @@ def main(argv=None):
 
                 check_frame(elements, where=f"render_refav1_arms:{cid}:{f}")
                 assert_frame_content(
-                    im, [("g", g_c), ("ha0_ext", fl_c)]
+                    im, [("g", g_c), ("ha0", fl_c), ("ha0_ext", ec_c)]
                     + [(n, arm_c[n]) for n in order],
                     f"{cid}:{f}", stats)
 
@@ -1312,11 +1728,19 @@ def main(argv=None):
                         "slowmo_by_geometry": by_geom, "camera": bool(cam_on),
                         "gt_lat_extent_m": round(float(np.abs(g_c[:, 1]).max()), 3),
                         "v0_mps": round(float(ref["v0"][wi]), 3),
-                        "arms": {r["arm"]: {"ade_m": round(r["_ade"], 4),
-                                            "kamm_over": r["_kamm"]} for r in rows}}
+                        "turn_window": None if not trank else
+                        {"rank": trank[0], "of": trank[1], "token": LAT[lat_lab]},
+                        "arms": {r["arm"]: {
+                            "ade_m": round(r["_ade"], 4),
+                            "curv_mae_1pm": (None if np.isnan(r["_curv"])
+                                             else round(r["_curv"], 6)),
+                            "is_floor": bool(r.get("is_floor")),
+                            "kamm_over": r["_kamm"]} for r in rows}}
                 for _ in range(hold):
                     emit(im, meta)
                     stats["frames"] += 1
+                    if by_label:
+                        stats["turn_frames"] += 1
                     if hold > 1:
                         stats["slowed"] += 1
                 if a.max_frames and n_out >= a.max_frames:
@@ -1346,8 +1770,15 @@ def main(argv=None):
         json.dump({"tool": "render_refav1_arms_video.py", "step": step,
                    "fps": a.fps, "n_frames": n_out, "ckpt": ckpt,
                    "arms": order, "arm_geometry": geom,
+                   "arm_colours": {k: list(v) for k, v in colours.items()},
+                   "floors_drawn": floors,
                    "arms_dir": os.path.abspath(a.arms_dir),
                    "shared_verification": shared, "gt_control": control,
+                   "curvature_panel": curv_panel,
+                   "curvature_control": curv_rep,
+                   "curvature_footer": curv_foot,
+                   "turn_windows": [{"episode": e, "window": w, "token": t}
+                                    for e, w, t in turn_windows],
                    "stats": stats, "frames": index}, fh, indent=1)
     _p(f"[index ] {idx}")
     _p(f"[frames] {n_out} written in {time.time() - t_start:.0f} s  "
@@ -1355,6 +1786,11 @@ def main(argv=None):
        f"decoded camera frames {stats['decoded']}, frames past the plan-age cap "
        f"skipped {stats['skipped_stale']}, frames whose plans project under the "
        f"hood {stats['cam_stub']})")
+    _p(f"[turns ] {stats['turn_windows']} GT-labelled turn windows drawn over "
+       f"{stats['turn_frames']} frames "
+       f"({100.0 * stats['turn_frames'] / max(stats['frames'], 1):.1f} % of the "
+       f"clip footage, from {100.0 * stats['turn_windows'] / max(stats['scored'], 1):.1f} % "
+       f"of the windows)")
     _p(f"[content] mean luminance {stats['lum_mean']:.2f} "
        f"(min {stats['lum_min']:.2f}, max {stats['lum_max']:.2f}) — asserted "
        f"non-black on EVERY frame")
@@ -1362,7 +1798,7 @@ def main(argv=None):
     ff = "ffmpeg"
     pat = os.path.join(frames_dir, "f_%06d.png")
     jobs = [([ff, "-y", "-v", "error", "-framerate", str(a.fps), "-i", pat,
-              "-c:v", "libx264", "-preset", "slow", "-crf", "20",
+              "-c:v", "libx264", "-preset", "slow", "-crf", str(a.crf),
               "-pix_fmt", "yuv420p", "-movflags", "+faststart", a.out], "full")]
     if not a.no_small:
         small = os.path.splitext(a.out)[0] + "_small.mp4"

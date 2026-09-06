@@ -5,7 +5,8 @@
 `render_refav1_video.py` (the decode, the SE(2) carry, the cards),
 `refav1_arm.py` (the integrator wrapper) ·
 **tests:** `stack/tests/test_render_refav1_arms.py` ·
-**verifier:** `taniteval/tools/verify_mp4.py` · **written:** 2026-09-06
+**verifier:** `taniteval/tools/verify_mp4.py` · **written:** 2026-09-06 ·
+**re-cut:** 2026-09-06 (the STRAIGHT floor, `M74`/`M75`/`M77`/`M79`)
 
 > ⛔ **READ `taniteval/tools/RENDER_REFAV1_VIDEO.md` FIRST.** This file is its
 > sibling and inherits every refusal in it. It draws pixels; it **invents no
@@ -23,30 +24,66 @@ panel's finding is different in kind: it is a **trade-off between arms**, and a
 trade-off cannot be seen one arm at a time. So this reel puts several arms on
 **the same window**, in the same image.
 
+### 1b. ⛔⛔ THE 2026-09-06 RE-CUT — THIS REEL SUPERSEDES ITS OWN FIRST CUT
+
+The first cut drew **`ha0_ext`** as "the floor" and called `ccos_argmax` **"the
+arm that TURNS"** and `wk15` **"accurate because it does not turn."** ⛔ **Both
+readings are refuted** (`M74`, `M75`, `M77`, `M79` in
+`Project Steering/Decisions/2026-09-06-mm-decisions.md`):
+
+1. ⛔ the turn-recall gate `|dyaw| > 0.15` rad is **UNREACHABLE at those
+   windows' speeds and THE HUMAN FAILS IT** — she passes **3 of 9** TURN_L
+   windows (median dyaw **0.0431**) while `ccos_argmax` passes **6 of 9, twice
+   as often**. *A gate the ground truth fails is not measuring skill; it is
+   measuring the gate.*
+2. ⭐ re-read on **curvature MAE** — which the human passes by construction —
+   **the ranking INVERTS**, and the unpenalised arm lands **worse than a plan
+   that never steers**.
+
+⭐ **THE ONE CHANGE THAT CARRIES THE ARGUMENT: the white floor is now `ha0`,
+the PERFECTLY STRAIGHT plan** (`a = 0, kappa = 0` at the measured `v0`;
+MEASURED max `|y|` **0.000000 m** over all 40 windows). The sentence
+*"`ccos_argmax` tracks the road worse than a straight line"* is only
+**checkable** with the straight line on screen. `ha0_ext` stays as a **thin,
+dim** fifth line — it is an **ADE** floor, not a road-tracking one: it holds
+the **MEASURED** curvature, swings up to **8.21 m** and leaves the friction
+circle on **18.5 %** of windows.
+
 ⭐ **The one thing it exists to make visible** (MEASURED over the panel's own
 40 windows / 8 episodes; source
-`TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-cost-geometry/raw/arms/`):
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-refav1-cost-geometry/raw/arms/`
+and `raw/four_family_all.txt`; **curvature MAE pooled over valid steps by
+`taniteval.four_families.lateral`**, reproduced by the renderer's own control):
 
-| arm | cost geometry | ADE m | max\|kappa\| 1/m | outside the friction circle | straight plans |
+| arm | cost geometry | **curv MAE 1/m** | n_steps | ADE m | outside the friction circle |
 |---|---|---|---|---|---|
-| `ccos_argmax` | `ccos`, `W_KAPPA` 0 | 1.3272 | **0.2000** (= the clip) | **29.6 %**, peak **3.262 g** | 27.5 % |
-| `combined` | + Kamm cap `mu` 0.7 + seed ladder | 1.0504 | 0.1505 | **0.0 %**, peak 0.618 g | 27.5 % |
-| `wk15` | `ccos`, `W_KAPPA` 15.11 | 0.8934 | 0.0800 | 0.0 %, peak 0.332 g | **47.5 %** |
-| `best` | `W_KAPPA` 15.11 + Kamm cap | **0.8838** | 0.0800 | 0.0 %, peak 0.332 g | 37.5 % |
-| **`ha0_ext` FLOOR** | **do nothing** | **0.8772** | — | 18.5 %, peak 1.436 g | — |
-| `g` **(CONTROL)** | the human | 0.0000 | 0.1701 | **0.0000** | — |
+| **`wk15`** | `ccos`, `W_KAPPA` 15.11 | **0.030982** ⭐ **−23 % vs the straight floor** | 271 | 0.8934 | 0.0 %, peak 0.332 g |
+| **`best`** | `W_KAPPA` 15.11 + Kamm cap `mu` 0.7 | **0.031281** (−22 %) | 271 | **0.8838** | **0.0 %** at BOTH seeds, peak 0.332 g |
+| **`ha0` STRAIGHT FLOOR** | **a plan that never steers** | **0.040083** ⭐ **the bar** | 289 | 0.9251 | 0.0 %, peak 0.000 |
+| `ccos_argmax` | `ccos`, `W_KAPPA` 0 | ⛔ **0.055369 — WORSE THAN DRIVING STRAIGHT** | 289 | 1.3272 | **29.6 %**, peak **3.262 g** |
+| `ha0_ext` echo control | hold the MEASURED (a0, kappa0) | 0.077298 | 300 | **0.8772** | 18.5 %, peak 1.436 g |
+| `g` **(CONTROL)** | the human | 0.000000 | — | 0.0000 | **0.0000** |
 
-⇒ **the arm that TURNS drives WORST, and the do-nothing floor beats all four.**
-Feasibility is on the **27 windows at `v0 >= 2 m/s`** — the exclusion
-`raw/feas_audit.py` already uses on this rig, because below it
-`kappa = a_lat / v^2` is ill-conditioned and even the ground truth reads
-`max|kappa|` 31.4.
+⇒ ⛔ **THE UNPENALISED ARM DOES NOT TRACK THE ROAD — IT OVER-TURNS**, and
+⭐ **`wk15` beats a perfectly straight plan by 23 %.** ⭐ `best` additionally
+carries the programme's **only REPLICATED, non-vacuous zero friction-circle
+violation rate** — `kamm_over` **0.0000 at both inference seeds**, at
+`max|kappa|` **0.0800** and **89 %** of the human's own peak lateral load
+(0.332 vs her 0.373) — so it is not a stopped arm buying safety by declining to
+act (`M77`).
+
+⭐ **And the failure is MAGNITUDE, never direction: 153 of 153 retained plans
+across the 2x2 curve the way their goal asked** (`M75`). Feasibility is on the
+**27 windows at `v0 >= 2 m/s`** — the exclusion `raw/feas_audit.py` already uses
+on this rig, because below it `kappa = a_lat / v^2` is ill-conditioned and even
+the ground truth reads `max|kappa|` 31.4.
 
 ⚠️ **`n = 40` windows / 8 episode clusters is a PICTURE OF A BANKED PANEL, not a
 new result.** No interval is computed here and none is claimed. The panel
 carries only **2 GT-left and 2 GT-right** windows, so **no turn recall is
-quotable from it**; the powered recall numbers live on the stratified
-`--window-list` panel in that package's `RESULT.md` §7.5.
+quotable from it — and none is quoted**; the 3-of-9 human gate figure and the
+153/153 sign control come from the **stratified** turn panel (`M74`/`M75`), not
+from these 40 windows.
 
 ---
 
@@ -54,9 +91,9 @@ quotable from it**; the powered recall numbers live on the stratified
 
 | # | panel | what is drawn | source |
 |---|---|---|---|
-| **1** | **FRONT CAMERA** (top-left, 1280×512) | GT (**green**), the `ha0_ext` floor (**white, wide, underneath**) and each arm's plan, projected cylindrically; a legend naming every line; the horizon **falsifier** | `CylProjector(v2ep['frame'], per-clip `sensor_extrinsics`)` on `ep*.npz` `g`/`ha0_ext`/`cl` |
+| **1** | **FRONT CAMERA** (top-left, 1280×512) | GT (**green**), the **`ha0` STRAIGHT floor** (**white, wide, underneath**), the `ha0_ext` **echo** (thin, dim) and each arm's plan, projected cylindrically; a legend naming every line; the horizon **falsifier**; and, on a **GT-LABELLED TURN WINDOW**, a badge naming the token and *which* turn window it is out of how many | `CylProjector(v2ep['frame'], per-clip `sensor_extrinsics`)` on `ep*.npz` `g`/`ha0`/`ha0_ext`/`cl` |
 | **2** | **METRIC BEV** (top-right, 604 px) | the same paths in metres, on a fixed per-window range that **starts behind the ego** | the same arrays, carried by a rigid SE(2) of the RECORDED poses |
-| **3** | **ARMS TABLE** (mid-left) | per arm: its cost geometry, this window's ADE, `max\|kappa\|`, `a`, the plan source, the **peak lateral g** and the friction-circle verdict | ADE from the dump's arrays; the friction column from `tanitad.refs.feasible_decode.assert_feasible` — the **scorer's own** envelope |
+| **3** | **ARMS TABLE** (mid-left) | per arm **AND per FLOOR**: cost geometry, this window's ADE, its **curvature MAE against the human** (green below the straight floor, red above, neutral on a tie), `max\|kappa\|`, `a`, the plan source, the **peak lateral g** and the friction-circle verdict — plus a **PANEL FOOTER** carrying the whole-panel curvature ranking on every frame | ADE from the dump's arrays; the friction column from `tanitad.refs.feasible_decode.assert_feasible` — the **scorer's own** envelope; the curvature column from `taniteval.four_families` — the **eval's own** reduction |
 | **4** | **WORLD MODEL** (mid-right) | `wm_mse_model` against the **persistence** and **zero** controls over 6.0 s, with the current step marked | `decisions/ep*.npz` — a **T0 diagnostic**, and the panel says so |
 | **5** | **DECISIONS** (bottom, full width) | tactical lat/lon and strategic route argmax **by NAME** against the v7.2 labels, the nav token in its own slot, and the planner's decoded goal per arm | `decisions/ep*.npz` `*_pred_nav_true`, `*_label`, `nav_cmd`, `goal_{lat,lon}_cl` |
 
@@ -90,12 +127,18 @@ leave the viewer with the wrong impression of the system.
 | colour | meaning |
 |---|---|
 | **green** `(110,231,138)` | **GROUND TRUTH**, everywhere, always |
-| **white** `(236,240,246)` | the **FLOOR** `ha0_ext` — do nothing |
-| **magenta** `(244,114,182)` | arm 1 (`ccos_argmax`) |
-| **cyan** `(56,189,248)` | arm 2 (`combined`) |
-| **orange** `(249,115,22)` | arm 3 (`wk15`) |
-| **violet** `(167,139,250)` | arm 4 (`best`) |
+| **white** `(236,240,246)` | the **STRAIGHT FLOOR** `ha0` — a plan that never steers |
+| **grey** `(120,130,148)` | the **ECHO control** `ha0_ext` — thin, dim, beneath |
+| **magenta** `(244,114,182)` | `ccos_argmax` |
+| **orange** `(249,115,22)` | `wk15` |
+| **violet** `(167,139,250)` | `best` |
 | **amber** `(240,190,90)` | a **GIVEN INPUT** — here only the nav token |
+
+⭐ **The hue is pinned to the ARM, not to its position** (`--arm-colours`), and
+`resolve_arm_colours` **refuses** an unknown name, two arms on one hue, or any
+arm within **L1 90** of a reserved colour. That rule is now **EXECUTED by the
+tool**, not only asserted in a test — a guard reachable only by inspection
+cannot be told from a dead one.
 
 ⛔ **The orange is `(249,115,22)`, NOT the sibling reel's `(255,158,61)`.** That
 one sits an L1 distance of **76** from the given-input amber, and a viewer
@@ -103,12 +146,13 @@ scanning one frame cannot be asked to hold a 76-unit distinction. The palette
 test requires **> 90** from every reserved colour and **failed on the original**;
 that is what the test is for.
 
-⛔ **DRAW ORDER IS LOAD-BEARING, AND IT COST A RENDER TO GET RIGHT.** The floor
-goes down **first and WIDE**, so an arm that coincides with it shows the white as
-a halo and the viewer reads *"these are the same path"* rather than *"one is
-missing"*. But the **ground truth goes ON TOP of the floor**: drawn underneath a
-13 px white line it disappeared entirely on every straight window, and a reel
-whose reference line is invisible is worse than no reel.
+⛔ **DRAW ORDER IS LOAD-BEARING, AND IT COST A RENDER TO GET RIGHT.** The
+straight floor goes down **first and WIDE** (13 px), then the echo **thin**
+(3 px), so an arm that coincides with the floor shows the white as a halo and the
+viewer reads *"these are the same path"* rather than *"one is missing"*. But the
+**ground truth goes ON TOP of both**: drawn underneath a 13 px white line it
+disappeared entirely on every straight window, and a reel whose reference line is
+invisible is worse than no reel. Pinned by an index-order assertion in the tests.
 
 ---
 
@@ -120,6 +164,19 @@ is drawn, the tool asserts that every rendered dump carries bit-identical `ws`,
 **refuses otherwise**. That is what licenses drawing them on one image and saying
 the difference is the cost geometry. ⭐ It also asserts the **converse**: at least
 one arm must differ on `cl`, or the reel would draw one line under four names.
+
+**(a2) ⭐ THE CURVATURE INSTRUMENT MUST REPRODUCE THE BANKED PANEL.**
+`--expect-curv-mae` recomputes each drawn series' PANEL aggregate through
+`taniteval.four_families` and **REFUSES** if it misses `raw/four_family_all.txt`.
+MEASURED: all five reproduce exactly — `ha0` 0.040083, `wk15` 0.030982, `best`
+0.031281, `ccos_argmax` 0.055369, `ha0_ext` 0.077298. *A per-frame number that
+cannot reproduce the banked panel is a different metric wearing its name.*
+⚠️ **The reduction is load-bearing and was MEASURED to matter:** `four_families`
+pools curvature over **valid steps** (a ratio of sums); a **mean of per-window
+means** reads `ccos_argmax` **0.056726** where the banked table says **0.055369**
+— past the control's tolerance. `curvature_mae` therefore also asserts that its
+per-window values **recombine** to its pooled value, and a deliberate regression
+to the macro form was run end-to-end and **REFUSED before a single frame**.
 
 **(b) The codec is read from the `codec` FIELD, never the buffer's NAME**
 (inherited: the buffer is `jpeg_buf` and the codec says `png`).
@@ -174,7 +231,13 @@ control **aborts the render**.
 ## 6. Slow motion — a MEASURED criterion, said on the frame
 
 A window is held `--slowmo`× longer when its v7.2 lateral label is a turn **OR**
-its **ground-truth** lateral extent reaches `--slowmo-lat-m` (default 1.0 m).
+its **ground-truth** lateral extent reaches `--slowmo-lat-m` (default 1.0 m), and
+a **GT-LABELLED** turn is held `--slowmo-turn`× — longer still, because that is
+where the curvature story lives. MEASURED on the shipped cut: **4 labelled turn
+windows = 10.0 % of the windows draw 26.7 % of the clip footage**, and each of
+those frames carries a badge naming the token and its rank (*"GT TURN_L —
+LABELLED TURN WINDOW 2 of 4"*), so *"more screen time for the turns"* is
+something a viewer can count rather than take on trust.
 ⛔ Both halves are properties of the **ground truth alone**, fixed before any arm
 is read — never *"the windows where the arms differ most"*, which would be
 choosing the evidence by the answer. MEASURED on this panel the two halves select
@@ -195,11 +258,15 @@ python taniteval/tools/pai_extrinsics_table.py \
     --root <physicalai root> --clips <cid,...> --out extrinsics.json
 
 python taniteval/tools/render_refav1_arms_video.py \
-    --arms-dir  <.../raw/arms>  --arms ccos_argmax,combined,wk15,best \
+    --arms-dir  <.../raw/arms>  --arms ccos_argmax,wk15,best \
+    --arm-colours ccos_argmax=magenta,wk15=orange,best=violet \
     --episodes  <dir of *.v2ep.pt>  --extrinsics extrinsics.json \
     --cards cards.json --notes notes.json \
+    --expect-curv-mae ha0=0.040083,wk15=0.030982,ccos_argmax=0.055369,\
+best=0.031281,ha0_ext=0.077298 \
     --out reel.mp4 --expect-step 21109 --gt-control \
-    --fps 10 --base-hold 2 --slowmo 5 --slowmo-lat-m 1.0 --max-plan-age 1.4
+    --fps 10 --base-hold 2 --slowmo 5 --slowmo-turn 9 --slowmo-lat-m 1.0 \
+    --max-plan-age 1.4 --crf 21
 
 python taniteval/tools/verify_mp4.py reel.mp4 reel_small.mp4
 ```
