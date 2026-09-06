@@ -1999,3 +1999,65 @@ possible failure and still cost a re-derivation.
 levers — an ARM delta on a subset, never a lever attribution and never a registry-grade level"*, and
 ⛔ **`--ablate ego_zero` reads 1.1137 m (kappa 0.5782 → 0.0653), so the win is NOT vision-only.**
 ⛔ **Both trivial controls still beat it** (`os` 0.3055 vs `ha` 0.2860, `ha0_ext` 0.2769).
+
+
+## M82. ⭐⭐ THE FOURTH WRONG "NOT IN HEAD" ON THE SAME FILES — fixed with an INSTRUMENT, not more care
+
+### 1. The claim, and it does not reproduce
+
+The Training FlyWheel escalated: *"refcv5's model seams are not in `HEAD` — a fresh clone cannot build
+refcv5. This blocks Stage A and the agent-token arm."* ⭐ It correctly **escalated to `BACKLOG.md`
+rather than sweeping Architecture & Inference's in-progress code into its own commit** — exactly what
+the operating standard asks for.
+
+**MEASURED, behind a control that read 960 lines:**
+
+| file | in HEAD |
+|---|---|
+| `stack/tanitad/refs/refc_sampler.py` | **389 lines** |
+| `stack/tanitad/refs/refc_agents.py` | **820 lines** |
+| `stack/tanitad/refs/refc.py` | **3,095 lines** (`def` x59, `sampler` x54) |
+
+⇒ ⛔ **Everything is in HEAD. No commit was needed and none was made.** The FlyWheel read during a
+mount flap.
+
+### 2. ⛔ FOURTH wrong answer, same files, same mechanism
+
+`M59` (mine), `M60` (mine, blaming a stale mirror), the refcv5 completeness review, and now the
+FlyWheel — **four independent readers, one question, four "not in HEAD" answers, all wrong.**
+⭐ **The mechanism is not carelessness.** On this mount `git show HEAD:<path>` returns **empty stdout
+and non-zero exit** for BOTH a failed read and a genuine absence, while `git rev-parse` says *"fatal:
+not a git repository"* with `.git/HEAD` reading fine at 40 bytes. **The two outcomes are byte-identical
+to the caller.**
+
+⇒ ⛔ **A rule ("prove the channel first") has now failed four times. That is evidence the rule is not
+the fix.**
+
+### 3. ⭐⭐ The fix: a THIRD OUTCOME, in a tool
+
+`stack/scripts/in_head.py` — the only admissible way to ask *"is this in HEAD?"* on this mount:
+
+* proves the channel with a **control that must read >= 100 lines in the same breath**;
+* returns **three** codes: **0 all present · 1 genuinely absent (channel proven) · 3 INCONCLUSIVE**;
+* `--wait N` to ride out a flap.
+
+⭐ **The whole design point is that INCONCLUSIVE is a distinct exit code from ABSENT.** Every one of
+the four wrong answers collapsed those two states into one.
+
+**Pinned by `stack/tests/test_in_head.py`, 5 passed.** ⭐ `test_dead_channel_is_inconclusive_not_absent`
+**fails on any implementation that omits the control** — which is precisely what all four readers did
+— and the three known-value controls stop a checker that simply always returns INCONCLUSIVE from
+passing it. **Live run on the three disputed files: ALL PRESENT, 3 of 3, control 960.**
+
+### 4. ⭐ Why this is the right shape of fix
+
+`M50` established that a known-flaky component is an **alibi generator**, and prescribed *"prove the
+channel with an exact literal"*. ⛔ **That prescription was correct and was still not followed**, by me
+twice and by two other readers. ⇒ **When a discipline fails repeatedly across independent actors, the
+answer is to make the wrong thing HARD, not to restate the discipline.** *(Same reasoning as the
+constraint-vs-penalty finding: make the bad unrepresentable rather than merely discouraged.)*
+
+⇒ **The FlyWheel is UNBLOCKED**: refcv5's seams are in HEAD, a fresh clone can build refcv5, and Stage
+A and the agent-token arm are not gated on this. ⭐ **And its escalation was right even though its
+reading was wrong** — it declined to commit another team's code, which is the behaviour we want
+regardless of what the check said.
