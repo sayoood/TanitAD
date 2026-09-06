@@ -293,3 +293,35 @@ See `RUNBOOK.md` §4. Short form: the calibration bound was not real, the reel i
 **rule** over all 141 held-out clips rather than by which 9 happened to have extrinsics, and it
 lands at **15 clips / 2,571 frames / 257.1 s — 4.95× the banked refcv3 reel**, with 5 net-left and
 6 net-right clips, 7 reaching a full stop and 6 exceeding 15 m/s.
+
+---
+
+## 8. DELIVERABLE MANIFEST (AGENT_OPERATING_STANDARD rule 2)
+
+⭐ **Nothing here lives in only one place except the pod-side dumps, which are named as such.**
+
+| artifact | where | note |
+|---|---|---|
+| `STATUS.md`, `RUNBOOK.md`, `PREREG_ABLATION_PANEL.md`, `PRELIM_CPU_PANEL.md` | **repo**, this package | committed + blob-verified |
+| `raw/REFCV3_BASELINE_REANALYZED.{md,json}` | **repo** | the refcv3 baseline re-analysis |
+| `raw/refcv4b_metrics_31700.jsonl` + `curve.py` / `evalcurve.py` | **repo** | the training-curve read |
+| `raw/paired_ablate.py` + `paired_{h19,selref,egozero,blind,v3_vs_v4b}.json` | **repo** | the ablation panel, paired, with its controls |
+| `raw/clip_profile.py` / `clip_profile.json` / `extrinsics141.json` | **repo** | the reel's selection rule and its calibration |
+| `raw/kin3_marginal.py`, `capwrap.py`, `stage_stack.sh`, `watch_refcv4b.sh`, `refcv4b_probe.sh`, `land_gate0.sh`, `retry_commit.sh` | **repo** | the instruments |
+| `taniteval/tools/render_refcv3_video.py` (identity fix) | **repo** | + 3 regression tests, each proven to fail on the defect |
+| `taniteval/tests/test_render_refcv3_video.py` | **repo** | 29 passed |
+| `Project Steering/GOALS_AND_CLAIMS.md` (9 rows), `MODEL_REGISTRY.md` §4.6 note | **repo** | both blob-verified in HEAD |
+| `pod:/workspace/land_gate0.sh`, `refcv4b_probe.sh`, `eval/extrinsics141.json`, `eval/b1_eval_lead_block.npz`, `eval/kin3_marginal.py`, `eval/paired_ablate.py`, `eval/clip_profile.py` | **pod**, md5-verified | copies of repo artifacts |
+| `pod:/workspace/eval/ab20/**` (5 arm JSONs + `REFCV3.json` + 6 dumps) | ⚠️ **POD ONLY** | the paired JSONs and every number read from them ARE banked; the raw per-window dumps are not (they are re-derivable from the checkpoints, which are themselves banked) |
+| `pod:/workspace/taniteval.BAK-20260906` | ⚠️ **POD ONLY** | pre-sync backup, deliberately not banked |
+
+## 9. WHAT IS BLOCKED, AND ON WHAT
+
+| item | blocker | what unblocks it |
+|---|---|---|
+| the four-family T1 read at n = 4,823 | ⏳ **wall-clock** — the run reaches step 40,284 at **≈08:20 UTC** | GATE 0, then §2–§3 of `RUNBOOK.md`. Armed, preflighted to one argument. |
+| the 15-clip / 257 s reel | same | `RUNBOOK.md` §4; renderer fixed, tested, extrinsics shipped |
+| the `stack/` 44-file sync + its A/B | ⛔ **must not ship a trainer file mid-run** | GATE 0 (trainer dead) |
+| a like-for-like refcv3 **nav-compliance** row | ⛔ needs a refcv3 GPU **re-roll** — the banked dumps lack 6 sidecar keys and no re-analysis can recover them | the A40 after the landing, ~1 eval pass |
+| which ego channels are admissible at inference | ⛔ **PI decision** (§7 of `PRELIM_CPU_PANEL.md`) | a ruling; both arms are reported either way |
+| `hyg.inference_seed` reported as REFUSED not ABSENT | ⛔ another FlyWheel's instrument | a one-line change in `openloop_suite.py` by the Eval FlyWheel |
