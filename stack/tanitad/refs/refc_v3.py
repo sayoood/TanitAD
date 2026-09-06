@@ -1188,6 +1188,23 @@ class RefCV3Model(nn.Module):
             # input rather than adding an unvalidated mapping.
             man5 = (tac.derive_man5_logprobs(lat, lon)
                     if self.tac_vocab_version == "kin3" else None)
+            # ⭐⭐ THE STAMP, ON THE FORWARD PATH ITSELF (2026-09-06). The guard
+            # above is silent by construction, so until now NOTHING in a run's
+            # artifacts recorded which side of it that run took — a v7.0 arm and
+            # a kin3 arm were indistinguishable on this axis. A bool, in the
+            # SAME cache and the same style as `ego_injected`/`nav_injected`
+            # three statements below, so it reaches `out` through the existing
+            # `out.update(cache)` and no consumer meets a new value type.
+            # ⛔ IT MUST BE EMITTED HERE, NOT IN `preflight`. MEASURED the same
+            # night on the sibling D-ROLL-1 defect: `refc_v3_train.main` runs
+            # `preflight` ONLY under `--preflight` and otherwise calls `train()`
+            # directly, so a stamp wired into preflight alone covers one launch
+            # path of two. `h19_prior_stamp()` is the record-level companion;
+            # this is the one that cannot be bypassed by an entry point.
+            # ⚠️ `False` here does NOT mean the H19 prior is off — `refc.py`
+            # falls back to the CORE's own 5-way, so the prior stays live and
+            # only the TACTICAL feed is cut. See `h19_prior_stamp`.
+            cache["h19_tactical_feed"] = man5 is not None
             g_delta = self.tac_goal_head(z_tac).reshape(
                 b, cfg.n_goal_taus, GOAL_DIMS)
             # ⭐⭐ E14 — ECHO-QUOTIENTED GOAL SUPERVISION. The head predicts the
@@ -1526,6 +1543,109 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
             out["tac_goal_tok_head"] = cnt(model.tac_goal_tok_head)
     out["total"] = cnt(model)
     return out
+
+
+#: ⛔ THE REASON, quoted once so the stamp and the guard cannot drift apart.
+#: `refc_tactical.derive_man5_logprobs` is DEFINED on [B, 3] x [B, 3] and indexes
+#: the LAT_/LON_ constants POSITIONALLY, so an 8-wide v7 head fed to it does not
+#: raise — it silently reads the WRONG classes (D-REFCV4-DEFECTA1). The guard in
+#: `_hook` therefore calls it ONLY under `kin3`.
+H19_DROP_REASON = ("tac_vocab_version={v!r}: derive_man5_logprobs is a "
+                   "[B,3]x[B,3] POSITIONAL contract and cannot read a "
+                   "{w}-wide head (D-REFCV4-DEFECTA1)")
+
+
+def h19_prior_stamp(model: RefCV3Model) -> dict[str, object]:
+    """⭐⭐ WHAT FED THE H19 ANCHOR PRIOR ON THIS BUILD — the record a run must
+    carry so a v7.0 arm is distinguishable from a kin3 one on this axis.
+
+    ⛔ THE DEFECT THIS EXISTS FOR. ``_hook`` sets ``man5 = None`` under any
+    non-``kin3`` tactical vocabulary. It is GUARDED, so it never errors, and
+    nothing downstream complains — ``refc.py``'s ``reweight = maneuver_logits if
+    maneuver_logits is not None else man_logits`` quietly substitutes the CORE's
+    own aux head. The prior stays live; the TACTICAL BRAIN stops reaching it;
+    and until this function existed no artifact said so.
+
+    ⭐ WHAT IS AND IS NOT LOST — MEASURED 2026-09-06, CPU smoke rung, zero GPU
+    (``Research/2026-09-06-h19-prior/raw/h19_blast_radius.py``). Perturbing ONLY
+    ``lat_head_tac``/``lon_head_tac`` and reading the tensors the DECODER
+    receives:
+
+    ==========================  ==================  ==================
+    moved by the z_tac heads?   ``kin3``            ``v7.0``
+    ==========================  ==================  ==================
+    decoder maneuver_logits     MOVED  24.4632      **UNCHANGED 0.0**
+    decoder lat_prior (D-TAC1)  MOVED  21.8972      **UNCHANGED 0.0**
+    anchor_logits               MOVED  18.0365      **UNCHANGED 0.0**
+    ==========================  ==================  ==================
+
+    ⇒ ⛔ **"H19 is dropped" is the WRONG headline and this function must not
+    imply it.** The decoder receives a valid ``maneuver_logits [B, 5]`` under
+    BOTH vocabularies. What is dropped is the TACTICAL feed, and the loss is an
+    EXACT ZERO rather than a degradation: under ``v7.0`` the 8-wide v7 action
+    heads are trained by CE and have **no inference-time influence on the
+    trajectory decoder at all** — they reach it only through E7
+    (``target_latent``) and E9 (goal selection), never through the anchor prior.
+
+    ⚠️ AND IT IS THREE PRIORS, NOT ONE. Under ``kin3`` the hook's 5-way is also
+    inverted back into ``lat_prior``/``lon_prior`` (``refc.py``'s
+    ``invert_man5`` branch), so the tactical brain drives the D-TAC1 grafts too.
+    A stamp naming only "the H19 lateral prior" would under-report the seam.
+
+    ⭐ ONE PREDICATE, ONE CONSUMER — the rule ``RefCV3Config`` states for
+    ``tac_goal_tok_head`` and ``param_breakdown_v3`` implements: every field
+    below is read off the BUILT OBJECT (``model.tac_vocab_version``, the
+    decoder's actual graft modules), never re-derived from a config condition
+    that is free to drift from the constructor.
+
+    Keys — ``h19_prior`` is the ``applied | dropped(reason) | n/a(reason)``
+    field, ``h19_prior_source`` names what DOES feed the prior (so the record
+    can never be misread as "the prior is off"), and ``h19_graft`` names the
+    module that carries it.
+    """
+    core = model.core
+    dec = getattr(core, "decoder", None)
+    # The graft that carries H19, read off the built decoder. D-TAC1 splits the
+    # one rank-5 graft into two rank-3 grafts, and `lat_to_anchor` is the one
+    # that "inherits the LIVE H19 role" (refc.py) — so a factored build has
+    # `maneuver_to_anchor is None` and H19 is emphatically still live.
+    if dec is None:
+        graft = "unknown(no decoder)"
+    elif getattr(dec, "lat_to_anchor", None) is not None:
+        graft = "lat_to_anchor+lon_to_anchor(factored)"
+    elif getattr(dec, "maneuver_to_anchor", None) is not None:
+        graft = "maneuver_to_anchor(5way)"
+    else:
+        graft = "none(graft_maneuver=False)"
+
+    # ⚠️ `self.tac_vocab_version` is assigned inside the HIER construction block
+    # (beside the z_tac head sizing), so it does NOT exist on a flat build —
+    # found by this function's own flat-arm test, and a miniature of the family
+    # this whole stamp is about: an attribute that exists on one arm only. Read
+    # the built object where it has one, the config where it does not.
+    vv = getattr(model, "tac_vocab_version", None)
+    if vv is None:
+        vv = getattr(model.cfg, "tac_vocab_version", "kin3")
+
+    if not model.cfg.hier:
+        # ⭐ NOT a drop: a flat arm has no tactical brain, so there is no
+        # tactical feed to lose. Stamped distinctly so "n/a" can never be read
+        # as "dropped" — the two have different remedies.
+        return {"h19_prior": "n/a(flat arm: no tactical cascade)",
+                "h19_prior_source": "core_aux",
+                "h19_graft": graft,
+                "h19_tac_vocab_version": vv}
+
+    if vv == "kin3":
+        return {"h19_prior": "applied",
+                "h19_prior_source": "tactical_z_tac_via_man5",
+                "h19_graft": graft,
+                "h19_tac_vocab_version": vv}
+    width = getattr(getattr(model, "lat_head_tac", None), "out_features", "?")
+    return {"h19_prior": "dropped(" + H19_DROP_REASON.format(v=vv, w=width) + ")",
+            "h19_prior_source": "core_aux_kin3",
+            "h19_graft": graft,
+            "h19_tac_vocab_version": vv}
 
 
 # ============================================================================

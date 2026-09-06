@@ -1,0 +1,15 @@
+==========================================================================
+H19-STAMP-1 MUTATION PROOF (source-level, mirror, zero GPU)
+==========================================================================
+  M0 pristine (CONTROL)              -> suite PASS  [want PASS]  OK
+       .........                                                                [100%] | 9 passed in 1.73s
+  M1 guard removed (man5 always)     -> suite FAIL  [want FAIL]  OK
+       FAILED stack\tests\test_h19_prior_stamp.py::test_h19_prior_is_live_under_both_vocabularies[v7.0] | FAILED stack\tests\test_h19_prior_stamp.py::test_tactical_heads_reach_the_anchor_
+  M2 stamp hardcoded 'applied'       -> suite FAIL  [want FAIL]  OK
+       FAILED stack\tests\test_h19_prior_stamp.py::test_flat_arm_is_stamped_n_a_and_never_dropped | FAILED stack\tests\test_h19_prior_stamp.py::test_the_runtime_flag_and_the_record_stamp_
+  M3 runtime flag hardcoded True     -> suite FAIL  [want FAIL]  OK
+       FAILED stack\tests\test_h19_prior_stamp.py::test_the_flag_reaches_a_real_forward[v7.0] | FAILED stack\tests\test_h19_prior_stamp.py::test_the_runtime_flag_and_the_record_stamp_cann
+
+==========================================================================
+MUTATION PROOF: 4/4 as expected -- the instrument's failure branches are REACHABLE
+==========================================================================
