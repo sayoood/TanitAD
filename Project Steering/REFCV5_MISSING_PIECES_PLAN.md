@@ -249,3 +249,149 @@ section for state; read §1 for how a piece earns entry.**
 P14 earns entry; P4 enters restricted; P13 does not enter. That is **three of fifteen resolved**, and §4 still binds: **the composed arm does not launch until P1 is either IN or explicitly declared OUT by the PI.** The B1 join opening P1's gate is a *necessary* condition, not the arm.
 
 ⚠️ **AND THE HONEST CEILING IN §6 STILL CAPS ALL OF IT.** Nothing validated tonight touches the vocabulary-resolution gap; P14's gain is longitudinal, and REF-C remains **~84× worse on curvature than a plan that never steers** (0.02737 vs 2.30973) — a finding that survives the honest raw-input floor.
+
+### 8.3 ⛔ CORRECTION TO THE P14 ROW ABOVE — its control was measured on a DIFFERENT SURFACE than the claim it certifies
+
+⚠️ **Appended 2026-09-06 late, not edited in place.** The §8 P14 row stays exactly as
+committed at `52ca682`: the record of what was believed is load-bearing, and §8 is a
+superseding section for precisely this reason. Read the row for what was believed; read
+this for what is true.
+
+**THE ROW SAYS** (P14, §8, verbatim): *"The defect was PLUMBING not architecture:
+`sel_refined`/`sel_score_emitted` appear **0 times** in `refc_v3_train.py` (control: `sel_`
+reads 8)."*
+
+⛔ **THE CONTROL VALUE 8 IS THE POD'S, NOT HEAD'S. HEAD READS 33.** MEASURED both ends on
+2026-09-06, `grep -c` (matching LINES, the same unit the row used):
+
+| surface | lines | md5 | `sel_` | `sel_refined` | `sel_score_emitted` | `add_argument` |
+|---|---|---|---|---|---|---|
+| `tanitad-a40` deployed, pre-ship (mtime 2026-09-05 23:38Z) | 3,634 | `acad9ae6e336e52d1b61a314f93a39fa` | **8** | 0 | 0 | 79 |
+| repo HEAD `52ca682` — *the commit that wrote the row* | 4,479 | `cee9196b5406608136a0ccbc0987c404` | **33** | 6 | 16 | 88 |
+
+⇒ **P14's plumbing HAD ALREADY LANDED. It was never shipped.** The row tells a reader the
+code is MISSING when it was merely UNDEPLOYED — and those have opposite remedies: "write the
+plumbing" versus "run `scp`". Hours of A40 idle time sat behind the wrong one.
+
+⭐ **THE LANDING COMMIT IS `c8601d0`** ("The steering signal's teacher is fine and its student
+is not", Sun 2026-09-06 20:38 +0200). Bisected on the trainer blob itself:
+
+    c8601d0^ : sel_refined 0 · sel_score_emitted 0 · sel_  8
+    c8601d0  : sel_refined 6 · sel_score_emitted 16 · sel_ 33
+
+⭐⭐ **AND THE 8 IS NOT MERELY "THE POD'S" — IT IS `c8601d0^`'s.** The pod was carrying the
+trainer from *immediately before* the plumbing commit, which is why the two numbers agree to
+the digit. That pins the surface exactly, rather than leaving it as "some older copy".
+
+⛔⛔ **THE SHARPEST FORM OF THE DEFECT: `52ca682`'s OWN TREE CONTRADICTED THE ROW IT
+COMMITTED.** At `52ca682` the trainer already read `sel_ = 33` over 4,479 lines. So the census
+was not merely stale relative to a later HEAD — it disagreed with the working tree of the very
+commit that carried it. A reader checking the claim against the commit it lives in would have
+found it false immediately.
+
+⛔ **ROOT-CAUSE CLASS — A CONTROL MEASURED ON A DIFFERENT SURFACE THAN THE CLAIM IT
+CERTIFIES.** The control did its job: it read non-zero (8), proving the probe worked and the
+mount had not flapped. What it did not, and structurally could not, establish is *which file
+it read*. A same-breath non-zero control defends against a broken instrument; it does not
+defend against a correctly-working instrument pointed at the wrong surface. Same family as:
+
+* the **A40-vs-Thor quotability inversion** — a real throughput number, attributed to the
+  wrong host;
+* the **175/604 propagation** — a real count, propagated past the corpus it was counted on.
+
+In all three the number was REAL and the SURFACE was not the one stated. **Remedy, now
+standing: every census that certifies a claim about a deployed artifact must name its surface
+in the same breath as its value** — `host:path@mtime` or `commit:path` — and a claim about a
+POD must be measured on the POD, never on a repo checkout that resembles it (and vice versa).
+
+⭐ **STATE NOW: SHIPPED AND PROVEN, BY CONTENT AND BY BEHAVIOUR.** `stack/tanitad` +
+`stack/scripts` were shipped from HEAD to `tanitad-a40` on 2026-09-06 (`git archive HEAD`, so
+blobs, never a flapping worktree). At the final ship, **HEAD `78d2fb8`**: **449/449 files
+byte-identical HEAD→pod**; trainer md5 `7f3043782a32456c95dc8f1d3b709761` on both ends, 4,576
+lines. `--help` **run on the pod** exits 0 with empty stderr (35,446 B of output) and lists all
+nine flags — `--sel-refined` 3, `--sel-score-emitted` 4, `--sel-score-emitted-t` 2 (P14),
+`--no-strategic` 2 (P8), `--goal-point-inject` 3 / `-geo-prior` 2 / `-t` 2 / `-w` 2 (P2),
+`--nav-args` 2 (P11) — against negative controls reading absent (`--max-speed-input` 0,
+`--str-goal-tok-head` 0, `--strategic-tokens` 0, `--p4-strategic` 0) and four
+must-read-non-zero controls firing (`usage:` 1, `--agents` 3, `--anchors` 3, `--steps` 2).
+
+⚠️⚠️ **AND §8.3's OWN DEFECT REPEATED ITSELF INSIDE THIS ONE SESSION — WHICH IS THE BEST
+EVIDENCE THE CLASS IS REAL.** The ship was first made at HEAD `be8c665` (trainer
+`cee9196b5406608136a0ccbc0987c404`, 4,479 lines), where **`--tac-goal-tok-head` read 0 and was
+a VALID negative control**. A sibling then committed it: at `78d2fb8` the trainer is 4,576 lines
+and `--tac-goal-tok-head` reads **2 — PRESENT**. ⛔ **That control is now RETIRED**; quoting it
+as "absent" against any commit from `78d2fb8` on would be false. ⭐ **A control's validity is
+scoped to the surface it was measured on, and on a branch several agents commit to, that surface
+moves in minutes.** Every number in this section is therefore stamped with its commit. The ship
+is idempotent and costs ~30 s, so **the protocol is to re-run `ship_and_gate.sh` immediately
+before launch** rather than to trust any earlier receipt, this one included.
+
+### 8.4 ⛔ HEAD ITSELF DID NOT PARSE — a committed import of an UNCOMMITTED module
+
+The ship's md5 check PASSED and the source census PASSED, and the trainer still could not
+start. `--help` on the pod raised, at import time:
+
+    ImportError: cannot import name 'goal_point' from 'tanitad.refs'
+      refc_v3_train.py:75 -> refc_train.py:67 -> tanitad/refs/refc.py:156
+
+`stack/tanitad/refs/goal_point.py` was **staged and never committed** (`A `, index blob
+`2b7a69fd`) while three HEAD files imported it **unconditionally at module level**
+(`refc_v3_train.py:87`, `refc.py:156`, `refc_v3.py:100`). `goal_point` is referenced on 59
+lines of the HEAD trainer, 24 of `refc_v3.py`, 40 of `models/v6.py` — it is the whole P2 lever.
+**So this was not a currency defect and not a pod defect: the REF was broken, for everyone.**
+Committed as `d1c929c` (worktree == index, byte-verified). Of the four staged-but-uncommitted
+source modules, `goal_point` was the ONLY one any HEAD file imported — `refav1_lon_cost`,
+`rl/fan_floor` and `scripts/rl_fan_floor` have zero HEAD importers (control: `refc_sampler`,
+known present, lists 2) — so exactly one file was committed.
+
+⛔ **THE LESSON IS THE ONE THE MD5 GATE CANNOT TEACH.** Presence proves transfer; md5 proves
+bytes; a passing grep census proves text. **None of them proves the program runs.** Every
+content check in this ship passed against a trainer that could not be imported. The only
+probe that caught it was `--help` **on the pod** — and it caught it only because its
+must-read-NON-ZERO control (`usage:`) read **0**, which correctly marked the whole flag census
+**INCONCLUSIVE** instead of letting nine zeros be reported as nine absences. Without that
+control this ship would have been filed as "nine flags confirmed absent" — the exact inversion
+of the truth.
+
+⚠️ **DEFECT IN `ship_and_gate.sh`, MEASURED AND ROUTED AROUND.** Its step 1 runs plain `git
+archive HEAD`. On this dev box `core.autocrlf=true`, and `git archive` honours it: the packed
+trainer came out **270,331 B / md5 `30889783c803ff87f76ac95f833a311a`** against the blob's
+265,852 B — exactly **+4,479 bytes, one CR per line**. Its own step-2 md5 gate would then have
+failed (correctly, and confusingly). The ship was run with `-c core.autocrlf=false -c
+core.eol=lf`, after which packed md5 == blob md5 exactly. ⚠️ The pod still carries **174 files
+whose only difference from HEAD was CRLF**, evidence that an earlier ship ran without the pin;
+they are now normalised to LF, so a whole-subtree md5 gate is usable on this box for the first
+time.
+
+### 8.5 ⛔ WHAT CANNOT ENTER refcv5-v2 AS BUILT — each with its evidence, re-verified at HEAD `be8c665`
+
+⚠️ A plan that lists a piece as *pending* when it is *structurally blocked* is worse than
+silent: it invites someone to wait for a thing that is not coming. These are not "not yet" —
+they are "not as built".
+
+| piece | verdict | evidence, measured at HEAD `be8c665` |
+|---|---|---|
+| **P4** — 15 strategic tokens | ⛔ **WIRED TO NOTHING** | `refc_strategic.py` is referenced by exactly one code file, and it is a **test** (`stack/tests/test_p4_p13_p14_wiring.py`; the only other hit is an incidental string in a results JSON). `str_goal_tok_head` has **1** hit repo-wide — its own docstring, inside `refc_strategic.py`. No `--str*` / `--strategic*` CLI flag exists in the trainer. **Live control: `tac_goal_tok_head` is non-zero across 5 files (13 hits in `refc_v3.py` alone)**, so the probe reads real wiring when real wiring exists. ⚠️ §8's P4 row says *"Enters ONLY in the restricted form"* — **it cannot enter in any form**: the head exists as a module and nothing constructs it. |
+| **D-TRISEG** — 3-segment anchors | ⛔ **DECODER REFUSES THE BANK** | `refc.py::AnchoredDiffusionDecoder.roll_bank` hard-codes a **2-column** control tensor — three separate `.expand(batch, n, h, 2)` calls plus `ctrl[..., 0]` / `ctrl[..., 1]` indexing. `anchor_twoseg.py`'s own docstring states it: *"a `[N, 3]` or `[N, 4]` bank is **refused** by those shape checks (loudly, which is correct)"*, and titles its own status **"CONSUMER STATUS — a named hand-off, not an omission."** Its `roll_bank` is the drop-in the decoder needs and is not called by it. |
+| **`--nav-args`** (P11) | ⛔ **INADMISSIBLE AS BUILT** | `NAV_ARG_DIMS = 3` (`refc_v3.py:176`) and the flag is `action="store_true"` — a **boolean with no distance-only mode**. Its own help text: it feeds `distance_m` **and `time_s`** plus a validity bit, as model INPUTS. §8's P11 ruling makes **time inadmissible** (it is the ego's own future speed profile inverted). Distance alone is admissible; **the flag cannot supply distance alone**, so it cannot enter until a distance-only mode is built. |
+| **P2 `--goal-point-inject` + `--nav-args` together** | ⛔ **THE TRAINER HARD-REFUSES THE PAIR** | Stronger than "mutually exclusive": `--goal-point-inject` sets `cfg.nav_inject = False` (`refc_v3_train.py:262`, pre-registered, stamped as `goal_point.replaces_nav_inject`), and `refc_v3_train.py:380-384` then **raises `SystemExit`**: *"`--nav-args` with the nav path OFF (`nav_inject=False`, e.g. under `--goal-point-inject`) would be a silently inert flag. Refusing."* ⇒ the composed arm **cannot carry both**; the launch line must choose, and the refusal is at startup, not at step 1. |
+
+⛔ **CORRECTION, SAME NIGHT, TO A CLAIM IN MY OWN BRIEF — AND IT IS THE SAME DEFECT AS §8.3.**
+The brief I carried states *"`max_speed_input.py` exists and is DEAD CODE — zero consumers, no
+flag, and the test its own docstring cites does not exist."* **At HEAD `be8c665` that is
+false.** `stack/tanitad/refs/max_speed_input.py` has a real non-test consumer,
+`stack/tanitad/eval/speed_limit_scoring.py`, and its cited test
+`stack/tests/test_max_speed_input.py` **exists**. Both landed in `6ae8acf` ("arch-inf:
+max-speed input — pinned quantizer, OFF proof, output-scored constraint"), which is *newer
+than the surface the dead-code claim was measured on*. ⭐ **Only one half survives: the
+`--max-speed-input` FLAG is still absent from the trainer** (measured 0 in HEAD's source and 0
+in the pod's `--help` at `78d2fb8`, against four non-zero controls). ⚠️ A sibling is actively
+building this channel — flagged, not edited.
+
+⛔ **ONE CONSTRAINT THE LAUNCH LINE MUST HONOUR, AND IT IS ENFORCED AT STARTUP.**
+`--goal-point-inject` and `--nav-args` **cannot both be passed.** The first sets
+`cfg.nav_inject = False` (`refc_v3_train.py:262`, pre-registered, stamped as
+`goal_point.replaces_nav_inject`); the second then raises `SystemExit` at
+`refc_v3_train.py:380-384` — *"`--nav-args` with the nav path OFF (`nav_inject=False`, e.g.
+under `--goal-point-inject`) would be a silently inert flag. Refusing."* The refusal is correct
+and it fires **before step 1**, so a composed arm carrying both dies at launch, not at hour six.

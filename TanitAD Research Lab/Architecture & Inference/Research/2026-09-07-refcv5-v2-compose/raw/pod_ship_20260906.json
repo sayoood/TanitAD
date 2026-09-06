@@ -1,0 +1,201 @@
+{
+  "_evidence_class": "MEASURED (ours; every value below was read back from the surface it names)",
+  "task": "Ship the refcv5-v2 trainer surface to tanitad-a40 and prove arrival by CONTENT and by BEHAVIOUR",
+  "date": "2026-09-06",
+  "host": "tanitad-a40",
+  "pod_stack": "/workspace/TanitAD/stack",
+  "gpu_touched": false,
+  "training_launched": false,
+  "trainer_before_ship": {
+    "surface": "tanitad-a40:/workspace/TanitAD/stack/scripts/refc_v3_train.py",
+    "mtime_utc": "2026-09-05T23:38Z",
+    "bytes": 213535,
+    "lines": 3634,
+    "md5": "acad9ae6e336e52d1b61a314f93a39fa",
+    "census_grep_c_lines": {
+      "sel_": 8,
+      "sel_refined": 0,
+      "sel_score_emitted": 0,
+      "add_argument": 79,
+      "tac_goal_tok_head": 0
+    },
+    "identified_as": "c8601d0^ -- the trainer immediately BEFORE the P14 plumbing commit; its sel_ census is 8, matching the pod digit for digit",
+    "backed_up_to": "/workspace/TanitAD/stack/scripts/refc_v3_train.py.PRE_SHIP_20260906"
+  },
+  "trainer_after_ship": {
+    "surface": "tanitad-a40:/workspace/TanitAD/stack/scripts/refc_v3_train.py",
+    "shipped_from_commit": "78d2fb8",
+    "bytes": 271928,
+    "lines": 4576,
+    "md5": "7f3043782a32456c95dc8f1d3b709761",
+    "repo_head_blob_md5": "7f3043782a32456c95dc8f1d3b709761",
+    "md5_match": true,
+    "both_digests_are_32_hex": true,
+    "not_the_empty_digest": "d41d8cd98f00b204e9800998ecf8427e was explicitly excluded"
+  },
+  "ship_method": {
+    "tool": "git archive HEAD stack/tanitad stack/scripts (blobs, never the worktree)",
+    "shipped_head": "78d2fb8",
+    "why_not_worktree": "stack/scripts/refc_v3_train.py was MM (a sibling mid-edit, 4576 lines); git archive reads blobs so worktree dirt cannot contaminate the shipment",
+    "deviation_from_ship_and_gate_sh": [
+      "step 0's dirty-worktree REFUSAL was bypassed deliberately: it guards against shipping a worktree, but step 1 ships HEAD's blobs, and HEAD's blob md5 is the declared target",
+      "step 1 was run with -c core.autocrlf=false -c core.eol=lf; see crlf_defect below",
+      "steps 3 (pod_currency_audit) and 4 (refcv5_preflight) were NOT run -- out of scope for a ship-and-stop, and the P1 gate belongs to a sibling"
+    ],
+    "tarball_md5_local": "b6c0802fe8792d08f03efa876a25439e",
+    "tarball_md5_pod": "b6c0802fe8792d08f03efa876a25439e",
+    "tarball_bytes": 3366068,
+    "files_in_archive": 449
+  },
+  "crlf_defect_in_ship_and_gate_sh": {
+    "symptom": "plain `git archive HEAD` on this dev box packs CRLF because core.autocrlf=true, and git archive honours it",
+    "measured_packed_bytes": 270331,
+    "measured_packed_md5": "30889783c803ff87f76ac95f833a311a",
+    "blob_bytes": 265852,
+    "blob_md5": "cee9196b5406608136a0ccbc0987c404",
+    "delta_bytes": 4479,
+    "delta_explanation": "exactly one CR per line (4,479 lines)",
+    "consequence": "the script's own step-2 md5 gate would have failed (correctly, but for a reason that reads as a transfer fault)",
+    "fix": "git -c core.autocrlf=false -c core.eol=lf archive ...",
+    "collateral_evidence": "174 files on the pod differed from HEAD by line endings ONLY, proving an earlier ship ran without the pin; all are now normalised to LF"
+  },
+  "currency_audit_whole_subtree": {
+    "scope": "stack/tanitad + stack/scripts",
+    "files_compared": 449,
+    "byte_identical_head_to_pod": 449,
+    "differs": 0,
+    "absent_on_pod": 0,
+    "verdict": "POD == HEAD 78d2fb8 on the shipped surface",
+    "pod_only_files_left_untouched": 82,
+    "pod_only_breakdown": "67 __pycache__, 8 explicit .NEW/.PRE_* backups, 4 other pod-local; tar extract overwrites only archived paths and deletes nothing"
+  },
+  "drift_that_was_closed": {
+    "byte_identical_before": 222,
+    "eol_only_before": 174,
+    "real_content_drift_before": 32,
+    "absent_on_pod_before": 18,
+    "note": "the substantive gap was 50 files (32 drifted + 18 absent), not the 206 a raw md5 diff reports; the other 174 were line endings"
+  },
+  "behaviour_proof": {
+    "probe": "python3 refc_v3_train.py --help RUN ON THE POD, CUDA_VISIBLE_DEVICES=''",
+    "exit_code": 0,
+    "stderr": "",
+    "stdout_bytes": 35446,
+    "stdout_lines": 533,
+    "nine_flags_present": {
+      "--sel-refined": 3,
+      "--sel-score-emitted": 4,
+      "--sel-score-emitted-t": 2,
+      "--no-strategic": 2,
+      "--goal-point-inject": 3,
+      "--goal-point-geo-prior": 2,
+      "--goal-point-t": 2,
+      "--goal-point-w": 2,
+      "--nav-args": 2
+    },
+    "negative_controls_must_be_zero": {
+      "--max-speed-input": 0,
+      "--str-goal-tok-head": 0,
+      "--strategic-tokens": 0,
+      "--p4-strategic": 0
+    },
+    "probe_is_working_controls_must_be_nonzero": {
+      "usage:": 1,
+      "--agents": 3,
+      "--anchors": 3,
+      "--steps": 2
+    },
+    "why_the_nonzero_controls_matter": "on the FIRST attempt all four read 0 because the trainer raised ImportError; that correctly marked the nine-flag census INCONCLUSIVE rather than reporting nine flags ABSENT -- the exact inversion of the truth",
+    "shipped_from_commit": "78d2fb8"
+  },
+  "head_was_broken": {
+    "error": "ImportError: cannot import name 'goal_point' from 'tanitad.refs'",
+    "chain": "refc_v3_train.py:75 -> refc_train.py:67 -> tanitad/refs/refc.py:156",
+    "cause": "stack/tanitad/refs/goal_point.py was STAGED (index blob 2b7a69fd) and never committed, while three HEAD files imported it unconditionally at module level",
+    "head_importers": [
+      "stack/scripts/refc_v3_train.py:87",
+      "stack/tanitad/refs/refc.py:156",
+      "stack/tanitad/refs/refc_v3.py:100"
+    ],
+    "fixed_by_commit": "d1c929c",
+    "committed_blob_md5": "2d85d8d2fe45ddcc6912cb6b08ab6ad2",
+    "minimality_control": "of 4 staged-but-uncommitted source modules, goal_point is the ONLY one any HEAD file imports; refav1_lon_cost, rl/fan_floor and scripts/rl_fan_floor have zero HEAD importers (control: refc_sampler, known present, lists 2)"
+  },
+  "b1_train_agent_join": {
+    "filename": "b1train_agents.jsonl.xz",
+    "bytes": 317028572,
+    "md5": "1c985e6d6ad34e605c4ebd30cb353558",
+    "digest_scope": "compressed",
+    "n_lines": 849263,
+    "n_clips_joined": 4427,
+    "n_clips_offered": 4572,
+    "build_wall_s": 1806.1,
+    "IN_GIT": false,
+    "locations": [
+      {
+        "host": "dev box",
+        "path": "C:\\Users\\Admin\\tanitad-caches\\b1-train-join-20260906\\b1train_agents.jsonl.xz",
+        "md5_verified": "1c985e6d6ad34e605c4ebd30cb353558"
+      },
+      {
+        "host": "tanitad-a40",
+        "path": "/workspace/TanitAD/data/joins/b1train_agents.jsonl.xz",
+        "md5_verified": "1c985e6d6ad34e605c4ebd30cb353558"
+      }
+    ],
+    "committed_sidecar": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-06-b1-train-join/raw/b1train_agents.jsonl.xz.meta.json",
+    "sidecar_omits": "the artifact's BYTE SIZE (it records md5 and n_lines only); recorded here as 317,028,572",
+    "builder": "stack/scripts/build_b1_agent_join.py",
+    "build_argv": [
+      "--pose-source",
+      "reconstruct",
+      "--ts-dir",
+      "C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov",
+      "--clips",
+      "b1_train_clips.json",
+      "--n-stack",
+      "3",
+      "--ego-dir",
+      "C:/Users/Admin/tanitad-data/physicalai/labels/egomotion_alpamayo",
+      "--obstacle-dir",
+      "C:/Users/Admin/tanitad-data/physicalai/labels/obstacle_offline_b1train",
+      "--out",
+      "C:/Users/Admin/tanitad-caches/b1-train-join-20260906/b1train_agents.jsonl.xz"
+    ],
+    "reproducibility_verdict": {
+      "eval_join_byte_identity": "MEASURED. The same builder on the 141-clip EVAL set with ONLY --pose-source changed (v2ep -> reconstruct) produced md5 3ddb42ecbd3926066795a94587af2aed / 10,012,564 bytes from BOTH pose sources: identical_md5 true, identical_bytes true (reconstruct_byte_identity.json).",
+      "train_join_byte_identity": "INFERRED, NOT MEASURED. The TRAIN join was only ever built with --pose-source reconstruct; no v2ep-built TRAIN counterpart exists (that was the point -- the ~161 GB TRAIN epcache lives on Thor). Byte-for-byte reproduction of THIS file from the recorded argv is expected but has not been demonstrated.",
+      "what_would_settle_it": "re-run the recorded argv on the dev box (~30 min wall, zero GPU) and compare md5 against 1c985e6d6ad34e605c4ebd30cb353558",
+      "upstream_pose_proof": "grid_crosscheck.json: reconstructed vs banked v2ep poses are float32-identical on 20/20 clips (max_dxy_m 0.0, max_dyaw_deg 0.0, max_dv_mps 0.0)"
+    }
+  },
+  "surface_moved_mid_session": {
+    "_why_this_block_exists": "the plan's section 8.3 defect -- a control measured on a different surface than the claim it certifies -- reproduced INSIDE the session that documented it",
+    "commits_that_landed_during_the_ship": [
+      "be8c665",
+      "d1c929c",
+      "78d2fb8"
+    ],
+    "first_ship": {
+      "commit": "be8c665",
+      "trainer_md5": "cee9196b5406608136a0ccbc0987c404",
+      "trainer_lines": 4479,
+      "tac_goal_tok_head_in_help": 0,
+      "note": "at this commit --tac-goal-tok-head was a VALID negative control"
+    },
+    "final_ship": {
+      "commit": "78d2fb8",
+      "trainer_md5": "7f3043782a32456c95dc8f1d3b709761",
+      "trainer_lines": 4576,
+      "tac_goal_tok_head_in_help": 2,
+      "note": "a sibling committed the flag; the control is RETIRED from 78d2fb8 on"
+    },
+    "standing_rule": "a control's validity is scoped to the surface it was measured on; the ship is idempotent and costs ~30 s, so re-run ship_and_gate.sh immediately before launch rather than trusting any receipt"
+  },
+  "launch_constraint_enforced_at_startup": {
+    "rule": "--goal-point-inject and --nav-args cannot both be passed",
+    "mechanism": "--goal-point-inject sets cfg.nav_inject = False (refc_v3_train.py:262); --nav-args then raises SystemExit (refc_v3_train.py:380-384)",
+    "quote": "--nav-args with the nav path OFF (nav_inject=False, e.g. under --goal-point-inject) would be a silently inert flag. Refusing.",
+    "when_it_fires": "at startup, before step 1"
+  }
+}

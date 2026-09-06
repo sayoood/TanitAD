@@ -63,7 +63,13 @@ fi
 # ---------------------------------------------------------------------------
 say "1. ship stack/ from HEAD"
 TGZ=/tmp/stack_refcv5_v2.tgz
-git --no-optional-locks archive HEAD stack/tanitad stack/scripts -o "$TGZ"
+# ⛔ MEASURED 2026-09-06: `core.autocrlf=true` on this dev box and `git archive`
+#    HONOURS it. The packed trainer came out 270,331 B / md5 30889783... against the
+#    blob's 265,852 B / cee9196b... -- exactly +4,479 bytes, ONE CR PER LINE. Step 2
+#    then compares the pod against `git show | md5sum` (an LF blob) and FAILS, with a
+#    signature that reads like a transfer fault. Without this pin the script cannot
+#    pass its own gate on this box.
+git --no-optional-locks -c core.autocrlf=false -c core.eol=lf archive HEAD stack/tanitad stack/scripts -o "$TGZ"
 ls -la "$TGZ"
 scp -o Compression=no "$TGZ" "$HOST":/workspace/stack_refcv5_v2.tgz
 ssh -n "$HOST" 'cd /workspace/TanitAD && tar -xzf /workspace/stack_refcv5_v2.tgz && echo EXTRACT-OK'
@@ -86,6 +92,51 @@ ssh -n "$HOST" "F=$POD_STACK/scripts/refc_v3_train.py; \
   echo \"sel_score_emitted  : \$(grep -c sel_score_emitted \$F)  (must be > 0)\"; \
   echo \"CONTROL sel_       : \$(grep -c sel_ \$F)               (must be ~33, NOT 8)\"; \
   echo \"add_argument       : \$(grep -c add_argument \$F)       (must be >= 88)\""
+
+say "2c. BEHAVIOUR: --help ON THE POD -- the step that actually catches a dead trainer"
+# ⛔⛔ THIS STEP EXISTS BECAUSE 2 AND 2b PASSED ON A TRAINER THAT COULD NOT START.
+# MEASURED 2026-09-06: the shipped md5 matched HEAD's blob EXACTLY and the marker
+# census read sel_ 33 / sel_refined 6 / add_argument 88 -- and `--help` raised
+#     ImportError: cannot import name 'goal_point' from 'tanitad.refs'
+# because a HEAD file imported a module that was STAGED AND NEVER COMMITTED.
+# Presence proves transfer; md5 proves bytes; a grep census proves text. NONE of
+# them proves the program RUNS.
+#
+# ⚠️ THE must-read-NON-ZERO CONTROLS BELOW ARE LOAD-BEARING. When the trainer
+# raises, --help writes nothing and EVERY grep reads 0 -- so nine zeros would be
+# filed as "nine flags ABSENT", the exact inversion of the truth. If any control
+# reads 0 the flag census is INCONCLUSIVE, not negative. Ship it back to a human.
+cat > /tmp/refcv5_help_gate.sh <<'GATE'
+set -u
+STACK=/workspace/TanitAD/stack
+export CUDA_VISIBLE_DEVICES=''
+export PYTHONPATH=$STACK
+python3 $STACK/scripts/refc_v3_train.py --help > /tmp/pod_help.txt 2>/tmp/pod_help.err
+RC=$?
+echo "HELP_RC=$RC   (must be 0)"
+echo "help bytes: $(wc -c < /tmp/pod_help.txt)   (0 means it did NOT parse)"
+echo '--- stderr (must be empty) ---'
+head -20 /tmp/pod_help.err
+echo '--- NINE FLAGS (each must be >= 1) ---'
+for f in --sel-refined --sel-score-emitted --sel-score-emitted-t --no-strategic \
+         --goal-point-inject --goal-point-geo-prior --goal-point-t \
+         --goal-point-w --nav-args; do
+  printf '  %-26s %s\n' "$f" "$(grep -c -- "$f" /tmp/pod_help.txt)"
+done
+echo '--- NEGATIVE CONTROLS (each must be 0) ---'
+for f in --max-speed-input --tac-goal-tok-head --str-goal-tok-head; do
+  printf '  %-26s %s\n' "$f" "$(grep -c -- "$f" /tmp/pod_help.txt)"
+done
+echo '--- PROBE-IS-WORKING CONTROLS (each must be > 0, else INCONCLUSIVE) ---'
+for f in usage: --agents --anchors --steps; do
+  printf '  %-26s %s\n' "$f" "$(grep -c -- "$f" /tmp/pod_help.txt)"
+done
+test $RC -eq 0
+GATE
+scp -q /tmp/refcv5_help_gate.sh "$HOST":/tmp/refcv5_help_gate.sh
+ssh -n "$HOST" 'bash /tmp/refcv5_help_gate.sh' || {
+  echo "⛔ THE TRAINER DID NOT PARSE ON THE POD. The bytes arrived; the program is dead." >&2
+  exit 6; }
 
 # ---------------------------------------------------------------------------
 # 3. THE WHOLE-SUBTREE CURRENCY AUDIT — the rung md5-on-one-file cannot reach.
