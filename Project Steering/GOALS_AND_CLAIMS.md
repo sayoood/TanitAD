@@ -9702,3 +9702,228 @@ md5-verified LOCAL COPY of `stack/` returns `LANE_CHANGE_L` in 20+ files. The re
 The emitter claim in D-SELQ-LC-LABEL-2 does not rest on it: it rests on a direct read of
 `tactical_actions()`'s body and an enumeration of every `lat = ` assignment site in that file — a
 positive assertion, which is the admissible form.
+
+
+### ⭐ D-REFCV4B-ASTAR-GEOMETRY-FIX-1 — the `a_star` binding is FIXED in the shipped instrument, and the corrected ceiling is a CEILING
+**Status: RESOLVED (MEASURED, ours + INHERITED cross-check).** **Tier: T0.**
+**Closes the instrument half of `D-REFCV4B-ASTAR-GEOMETRY`; quantified by `D-SELQ-ASTAR-10`.**
+
+`taniteval/tools/refcv3_arm.py` no longer binds `model.core.decoder.anchors`. `a_star` is now taken
+**per window** from the forward's own `anchor_bank` (row 0 — the row `anchor_traj` is read back
+from), mirroring the trainer's `compute_losses_v3`. The hoisted binding is deleted, the two
+byte-identical branches are collapsed into ONE unconditional computation (`anchor_acc` and
+`sel_agrees_oracle` consume `a_star` on **every** roll, not only under `--with-oracle-sel`), and two
+named helpers now carry the convention: `_decoded_bank`, which **REFUSES** when `anchor_bank` is
+absent rather than falling back — a silent fallback *is* the defect — and `_oracle_anchor_index`.
+**AST-verified: zero executable `.decoder.anchors` sites remain.**
+
+⭐ **The pre-registered assertion HOLDS.** `D-SELQ-ASTAR-10` (INHERITED, 24,114 windows) measures
+the corrected binding's best-in-fan at **0.1993 m** against `os` **0.2970 m** — at or below the arm
+it bounds, the definitional test — where the defect binding read **1.4491 m**, i.e. *above* it.
+
+**MEASURED (ours), the real `refcv4b@40284` checkpoint + real B1 eval windows**
+(`…/Research/2026-09-06-astar-geometry/raw/real_arm_astar.json`, **n = 168 windows / 12 episodes**,
+stride 10 — ⚠️ NOT the 4,823-window grid and NOT comparable to the 24,114-window figures above,
+which use a different selection objective and grid):
+`anchors == roll_bank(ref_speed)` **max|Δ| = 0 exactly** (so the checkpoint buffer IS the
+reference-speed family, confirming the mechanism at source); `a_star` changed on **162/168 =
+96.43 %**; anchor error at 2 s **0.6732 m** corrected vs **3.7174 m** defect, paired episode-cluster
+bootstrap **[+2.3139, +3.7673]**, separated, **162 worse / 0 better** — one-signed.
+
+**TWO-SIDED MUTATION PROOF** (`taniteval/tests/test_refcv3_arm_astar_geometry.py`, 5 tests;
+harness `…/raw/run_mutation_proof.py`): corrected **5/5 PASS**; defect re-introduced → **RED**;
+⭐ and on a **FIXED** vocabulary the same mutation is **INVISIBLE** (green) — which is both why the
+defect survived review on refcv3 and why the fix provably cannot move refcv3's numbers
+(`roll_bank` returns `self.anchors[None].expand(...)` there: the same storage, asserted with
+`torch.equal`, not trusted). Regression: `stack/tests/test_refcv3_arm.py` **20 passed**.
+
+⚠️ **STILL OPEN — the `oracle_sel` ARM's own headline figure is NOT re-measured.** It is the
+a_star anchor's **learned refinement** and needs a forward pass. ⛔ **BLOCKER (new, and NOT this
+defect): every pre-drift v7-vocabulary checkpoint is currently UNROLLABLE by this instrument.**
+`refc_v3.py` builds `tac_goal_tok_head` unconditionally whenever `tac_vocab_version != "kin3"`, so
+the rebuilt model carries 11,286 params absent from the recorded `param_breakdown` and the config
+cross-check correctly refuses. refcv4b **and all three local refcv3 checkpoints** are `v7.0`. The
+head is **provably inert here** — `tac_goal_logits` is written once and read nowhere in
+`refc_v3.py` / `refc.py` / `refc_v3_train.py` / `refcv3_arm.py` (verified with a same-breath
+non-zero read control). ⚠️ The drift is **RECENT**: `D-SELQ-XVAL-14` records a successful local
+refcv4b roll, so this is a new regression against a previously working path.
+⇒ **ESCALATED** to the owner of `refc_v3.py`: gate the head on an explicit config flag so a
+pre-drift checkpoint rebuilds identically. ⛔ I did **not** loosen my own tool's cross-check to let
+my own arm through; a narrowly-scoped, opt-in, recorded tolerance in `refcv3_arm.py` is the
+alternative and is available **on request**.
+⇒ **`C3_os_reproduction` is therefore NOT settled**, and both refcv4b number families stay
+unquotable until the paired re-roll runs on one surface in one process.
+
+**UNBLOCKED by this fix:** WP-7 selector scoring, a valid regret metric on the four families built
+on `_decoded_bank`, and `anchor_acc` / `sel_agrees_oracle` — every past refcv4b value of which is
+contaminated regardless of `--with-oracle-sel`. ⛔ No selector was built (sibling scope; WP-7 is
+DD's deep supervision — `(reg, cls)` at every cascade layer, summed, gradient-detached between
+layers, sigmoid focal γ=2.0 α=0.25; REF-C has neither half).
+
+---
+
+## D-GSTR-1 — the steering signal `g_str`: a sound teacher, a failing student, and a certified loss fix (2026-09-06, steering-signal agent)
+
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-steering-signal/`
+(`PREREG.md` written before any refit ran; `RESULT.md`; `raw/`). **Commit `c8601d0c1`.**
+**Evidence class MEASURED (ours). Tier T1** (self-action OPEN loop) for every model number; the LAN
+corridor is a **LABEL** and carries no tier. **Estimator:** paired episode-cluster bootstrap,
+2,000 resamples, seed 0. ⛔ No `overlapping_holdout_se`. **One surface** (Thor, refcv4b
+`ckpt_40284_FINAL.pt`), the banked 141-episode `navflip_dump`, re-read; no arm re-rolled.
+
+### D-GSTR-SIGN-1 — SUPPORTED. `g_str`'s TARGET is two-sided; its OUTPUT is not.
+Same 4,823 windows / 141 episodes, deadband `tau_g = 0.10`, `+y` LEFT
+(`raw/GSTR_SIGN_CENSUS.json`):
+
+| | LEFT | STRAIGHT | RIGHT |
+|---|---|---|---|
+| TARGET (LAN corridor label, valid n = 3,970) | **268** | 3,230 | **472** |
+| OUTPUT `g_str` (deployed head) | **0** | **0** | **4,823** |
+
+⇒ ⛔ **Four candidate mechanisms are REFUTED and must not be re-proposed**: a sign/absolute-value
+defect, a coordinate-frame or handedness error, a parameterisation that cannot represent
+negative-to-positive lateral, and a one-sided LABEL. Controls that read their known values:
+index resolution 4,823/4,823 (offset 0); a world-`y` mirror flips the target's sign on all 3,970
+non-zero rows; a synthetic straight path reads lateral EXACTLY 0.0; and the census reproduces the
+antecedent's GT histogram **1,597 / 981 / 2,245 exactly**.
+
+### D-GSTR-ROT-2 — SUPPORTED. The defect is a RIGID −29.008 deg ROTATION, not a collapse.
+Model bearing angle p5/median/p95 **−48.233 / −29.995 / −11.311 deg** against the target's
+**−15.949 / −0.144 / +8.676 deg**. The spread is comparable (~37 vs ~25 deg); the whole range simply
+sits right of zero, with `|lateral| >= 0.1022` on every window. `gstr_nav_true[:, :2]` has norm
+**1.000000** everywhere (it IS the unit bearing) and `cos > 0` on 100 %.
+
+### D-GSTR-FLOOR-3 — SUPPORTED. ⛔ The head LOSES TO A CONSTANT, on its own training data too.
+`l_bear` **0.1500 [0.1313, 0.1689]** vs a constant straight-ahead floor **0.0119 [0.0080, 0.0164]**
+— **model − floor +0.1381 [+0.1197, +0.1558], SEPARATED**. `l_dist` 0.5046 vs the L1-optimal
+constant 0.3266. Total 0.6546 vs 0.3385 (**1.93x**). The loss-optimal constant bearing is −1.04 deg;
+the head sits at −30 deg.
+⚠️ **Not overfitting and not distribution shift**: the trainer's own `goal_str` on TRAIN
+(`refcv4b_metrics_31700.jsonl`, 634 rows) is **0.98** over steps 0–2 k, RISES to **1.18** at 2–4 k
+and decays only to **0.84** at 30–32 k — worse on its training data than on held-out eval.
+⚠️ **Not frozen and not a bias**: the checkpoint's Adam state shows **step 40,127–40,284**, and
+`||bias[:2]|| = 0.003377` against weight-row norms 0.6879 / 0.4798 / 0.4501, so the constant
+direction is produced by `W · ctx`.
+
+### ⭐ D-GSTR-CTX-4 — SUPPORTED. The context CARRIES the route topology; the head throws it away.
+Episode-disjoint (fit 99 ep / 3,464 win; scored 42 ep / 1,463 win; `d = 256`; lambda on a
+fit-INTERNAL validation split). On the **216 scored windows where the LAN route actually turns**:
+
+| arm | turn-direction accuracy |
+|---|---|
+| ridge on the SAME `ctx` | **0.8981 [0.8333, 0.9555]** |
+| CONTROL majority class | 0.5139 |
+| live `g_str` | **0.4861** (below the control) |
+
+⇒ **OPTIMISATION failure, not representation failure.** Full-set `oracle − constant`
+**−0.0080 [−0.0142, −0.0033] SEPARATED**; the nav-token one-hot floor reads 0.0140, i.e. the token
+alone carries **nothing** about the bearing.
+
+### ⚠️ D-GSTR-PROBE-RETRACT-5 — a RETRACTION inside this package, logged as one.
+The first version of that ridge had **no intercept**, so its degenerate limit was the **zero
+vector** rather than the constant; it scored **+0.6738 WORSE than its own control** and would have
+published the opposite conclusion. **Root-cause class: C-PROBE-DEGENERATE-LIMIT** — the same family
+as the 2026-08-22 ridge failures: *a probe whose no-information limit is not the control it is
+compared against.* ⛔ Fixed with a CONTROL, not a patch: the shipped tool asserts
+`l_bear(lambda=1e12) == l_bear(constant)` (**0.014024 vs 0.014024, PASS**) and refuses a verdict
+otherwise.
+
+### D-GSTR-FIX-6 — the pre-registered gates. ⛔ One arm CERTIFIED, one arm FAILED.
+Gates (fixed before any arm ran): **G1** lateral positive on >= 15.0 % of scored windows · **G2**
+non-negative on >= 30.0 % of GT-left (6 s) windows · **G3** `l_bear` <= the constant floor's upper
+CI (0.0237). Frozen-trunk refit of the SAME `Linear(256, 3)`; scored 1,463 windows / 42 episodes,
+GT-left n = 294.
+
+| arm | G1 | G2 | G3 | turn-sign (POST-HOC) | verdict |
+|---|---|---|---|---|---|
+| LIVE refcv4b | 0.0000 fail | 0.0000 fail | 0.1321 fail | 0.4861 | **FAILED** |
+| ONESIDED (deliberate regression) | 0.0000 fail | 0.0000 fail | 0.0143 pass | 0.4861 | **FAILED — as required** |
+| B refit seed 0 | 0.3684 pass | 0.3197 pass | 0.0144 pass | 0.4491 | PASS |
+| C REPLICATE seed 1 | 0.2379 pass | **0.2347 fail** | 0.0144 pass | 0.4491 | ⛔ **FAILED** |
+| ⭐ E turn-weighted s0 | 0.2454 pass | 0.4966 pass | 0.0116 pass | **0.8935** | **PASS** |
+| ⭐ E2 turn-weighted s1 | 0.2297 pass | 0.4762 pass | 0.0113 pass | **0.8843** | **PASS** |
+
+⭐ **E is certified on BOTH seeds** and recovers essentially all of what `ctx` linearly contains,
+while `l_bear` **improves past** the constant floor — the left turns are not bought with accuracy.
+The lever is one line: weight `strategic_goal_loss` by the label's own `|lateral|`
+(`w = 1 + 20*|sin_target|`) — the cosine loss is **81 % near-straight rows**, so the turns carried
+almost no gradient. ⛔ **B is NOT certified**: its replicate misses G2 (`H-ESTIM-SEED-1`).
+
+### ⚠️ D-GSTR-GATE-7 — a finding about the INSTRUMENT: G1–G3 are necessary, NOT sufficient.
+Arm B cleared all three gates while its turn-direction accuracy was **0.4491 — worse than the live
+model (0.4861) and worse than the 0.5139 majority control**. A head can satisfy "takes both signs"
+and "matches the constant's accuracy" while knowing nothing about which way the route goes.
+⛔ `turn_sign_accuracy` is **POST-HOC** (added after D-GSTR-CTX-4) and decides nothing yet; using it
+as a gate requires its own pre-registration.
+
+### D-GSTR-NAVARGS-8 — SUPPORTED + LANDED. The nav args are wired, with validity and units.
+`stack/tanitad/refs/refc_v3.py` + `stack/scripts/refc_v3_train.py` +
+`stack/tests/test_refc_v3_nav_args.py` (**21 tests, all passing**, every guard proven by MUTATION);
+**default OFF**, bit-identical at step 0, `--nav-args`, refused without `--nav-from-v7` and refused
+when `--goal-point-inject` has switched the nav path off. Block is
+**`[B, 3] = (distance_norm, time_norm, args_valid)`**; the bit is read from **the KEY'S PRESENCE**,
+never the value, and the MODEL re-applies it (X15). **UNITS: metres and seconds**
+(`NAV_ARG_UNITS`), stamped into `config.json` with the `t0_constant` semantics and the
+**fit-split-only** `NavArgStats`.
+⭐ MEASURED coverage (`raw/NAVARGS_CENSUS.json`): **every TURN record carries args** (811/811
+`NAV_TURN_L`, 864/864 `NAV_TURN_R` train; 13/13, 38/38 eval) and **every `NAV_FOLLOW_ROAD` record
+carries none** (0/2,897 train, 0/96 eval). Per-record **0.3664 train / 0.3469 eval**; ⭐ **per-WINDOW
+0.3623 (1,785 / 4,927 windows, 51 / 141 clips)** on eval. Mean real distance **71.7 m / 10.1 s**
+(train), **102.3 m / 13.1 s** (eval).
+⚠️ **Scope, stated because it bounds the claim:** on this corpus `args_valid` is an EXACT function
+of the token, so the BIT adds no information the token lacks — it is a **safety** channel that makes
+the silent-zero lie impossible. The **information is the VALUE on the ~36 % of windows that are
+turns**, which are exactly the windows D-GSTR-CTX-4 shows the steering signal is wrong on.
+
+### ⛔ D-GSTR-TURNLEFT-9 — NOT CLAIMED, and the blocker is named.
+`turn_left` recall **0.0000 of 11** is **NOT moved by this work and is not shown to be caused by the
+`g_str` defect**. It is a **TACTICAL** head metric and `g_str` reaches the tactical state only
+through the zero-init E4 FiLM, so a broken strategic goal is **necessary-not-sufficient**.
+⛔ **The discriminating experiment is a ~40 k-step RETRAIN with the turn-weighted
+`strategic_goal_loss`** (ideally with `--nav-args` on). **BLOCKER: compute + a PI decision on an arm
+slot.** ⛔ If the sign is fixed and left-turn recall stays at zero, the mechanism was NOT the cause
+and the next candidate is the **E4 FiLM gate** — whether `g_str` reaches `z_tac` with any magnitude
+at all.
+
+⚠️ Everything in D-GSTR-FIX-6 is a **FROZEN-TRUNK** refit and is never quoted as a retrained arm.
+⛔ `route_logits` untouched (the arm's config records `"graft_route": false`); no zero-weight
+default flipped; no banked arm's recipe changed.
+
+
+### D-NAVROUTE-6 (merged by the Master Mind, APPENDED)
+
+### D-NAVROUTE-6 — the strategic goal has 1.74x the planner authority of the nav command
+**Status: SUPPORTED (MEASURED, ours).** **Tier: T1.** ⭐ **This is the causal half, and the
+answer to the PI's hypothesis.** Artifact `raw/MATCHED_PANEL.json`.
+
+Intervention panel, **993 matched windows / 29 episodes**, ONE surface, ONE checkpoint
+(refcv4b `ckpt_40284_FINAL.pt`), ablation applied and verified by `ABLATION.txt` per arm plus the
+tool's own `g_str injection VERIFIED` line (err 6e-08). Metric: plan TERMINAL displacement (m) at
+6 s. Paired episode-cluster bootstrap, 2,000 resamples, seed 0.
+
+| row | mean (m) | CI95 | median | plan UNCHANGED |
+|---|---|---|---|---|
+| replicate (NOISE FLOOR) | 0.0001 | [0.0001, 0.0001] | 0.0001 | 0.000 |
+| `nav_FLIP` | 1.2334 | [0.4812, 2.1418] | 0.0000 | **0.690** |
+| `nav_SHUFFLE` | 1.6417 | [1.1908, 2.1377] | 0.0000 | **0.526** |
+| `nav_ZERO` | 1.9006 | [1.3428, 2.5020] | 0.4561 | 0.000 |
+| **`gstr_ZERO`** | **3.3130** | **[2.8950, 3.7743]** | 1.3046 | 0.000 |
+| **`gstr_SHUFFLE`** | **3.3196** | [2.6339, 4.0829] | 0.6437 | 0.000 |
+| `frames_blind` (DELIBERATE REGRESSION) | 14.9837 | [13.0869, 16.8071] | 15.0759 | 0.000 |
+
+Removing the strategic goal moves the plan **1.74x** more than removing the nav command, with
+**non-overlapping** intervals. ⭐ **`gstr_SHUFFLE` ~= `gstr_ZERO`** ⇒ `g_str`'s authority is its
+per-window **CONTENT**, not merely its presence — the opposite of the nav command, which leaves
+**52.6 %** of plans bit-identical under shuffle and **69.0 %** under flip.
+⚠️ Read the medians too (1.3046 vs 0.6437): the two `g_str` interventions have equal means but
+different distributions and are not interchangeable.
+⭐ **Scale reference from the deliberate regression:** vision 14.9837 m (100 %), strategic goal
+3.3130 m (**22.1 %**), nav command 1.9006 m (**12.7 %**), run-to-run noise 0.0001 m. **The planner
+is vision-dominated, the strategic goal is a distant second, the commanded route is last.**
+⚠️ **Which variance:** the replicate row answers **run-to-run** directly and reads 0.0001 m (this
+rig is deterministic — argmax over a fixed anchor bank, no sampling planner), so the separated CIs
+are backed by a MEASURED replicate rather than asserted against the 14.3 % one-seed false-positive
+rate. The bootstrap answers **episode draw**. ⚠️ n = 993/29, not the full 4,823/141.
+⚠️ **NOT scored in this panel:** the tactical and longitudinal families (work items, §3.1 of
+`RESULT.md`), and `gstr_SHUFFLE`'s permutation pool is the full 141-episode bank.
+
