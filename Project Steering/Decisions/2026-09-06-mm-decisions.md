@@ -1271,3 +1271,52 @@ pre-existing"*; **none had read what the N were.**
 
 ⚠️ This is the same family as `M63`'s under-mutated proof and the reel's *"exit code 0 while every frame
 was stretched 3.9 %"*: **an artifact that reports its own health in a form nobody parses.**
+
+## M71. ⭐ THE AT-INIT NORM LAYERS ARE THE FINGERPRINT OF v7-tiny's ZEROED PLANNER OBJECTIVES — Row 3's last thread closed
+
+### 1. The measurement, with its control
+
+`M69` flagged that `step_readout_op.net.0` (LayerNorm, 4096) sat at **exactly** initialisation after
+30,000 steps and asked whether it was frozen by design or gradient-starved. The discriminator is
+whether **other** norm layers did the same. MEASURED, zero GPU, `champ30k/ckpt.pt`, control **39 1-D
+`.weight` tensors found**:
+
+| group | count | examples |
+|---|---|---|
+| ⛔ **EXACTLY at init** (std **0.000000**, mean 1.0) | **25 / 39** | `vocab_str`, `vocab_tac`, `vocab_a_str`, `vocab_a_lat`, `vocab_a_lon`, `cond_op.vocab.norm`, `cond_tac.vocab.norm`, `adapter_tac.3`, `predictor_tac.blocks.{0,1,2}.0`, **`step_readout_op.net.0`** |
+| ⭐ **MOVED from init** | **14 / 39** | **every one is `encoder.blocks.N.norm{1,2}`** — std 0.0111–0.0195 |
+
+⇒ ⭐⭐ **The split is clean and structural: the ENCODER's norms trained; the VOCABULARY, CONDITIONING,
+TACTICAL-PREDICTOR and READOUT norms did not.** Not one layer — an entire half of the model.
+
+### 2. ⭐ It is a CONSISTENCY CONFIRMATION, not a new defect
+
+The v7f status board already established that **v7-tiny ran with the planner objectives at ZERO**
+(19.3 M params = 6.5 % of budget). ⇒ **The modules those objectives would have trained are exactly the
+25 at-init norms.** The fingerprint matches the known configuration, which is the outcome you want from
+a probe like this: **it corroborates the board rather than adding a mystery.**
+
+⚠️ **One residual that is genuinely odd and is NOT explained by the zeroed objectives:**
+`step_readout_op.net.1` and `.3` **DID train** (std 0.0090 and 0.0256) while `.0` — the LayerNorm
+*between them and the input* — did not. Gradient reaching `.1` must pass through `.0`. ⇒ **the most
+likely account is an optimizer PARAM-GROUP split** (norm affine params excluded outside the encoder),
+not a dead path. ⛔ **That is a one-line check against the trainer's param-group construction, and it is
+owed before any v7f launch** — because if it is *not* a deliberate group, then every non-encoder norm
+in v7f will also fail to adapt.
+
+### 3. What this does to Row 3
+
+⭐ **Row 3's chain is now complete and consistent:**
+1. the eval **harness** carries no multiplicative constant (gate stream, independent);
+2. the emission head's **weights are not dead** — std ratio **0.5347** against a working head, and the
+   checkpoint is **not quantised** (100.0 % unique, no grid, control identical);
+3. its input **norm never trained**, along with 24 others, **because the objectives that would have
+   trained them were off.**
+
+⇒ ⛔ **The ~0-motion readout is a property of what v7-tiny was TRAINED to do, not of a broken head or a
+broken harness.** ⭐ **And that is exactly why it cannot be read as a v7f defect:** the board's first
+row already says all six problems are measured on an arm whose planner objectives were zero. **Row 3
+does not gate v7f; it gates any claim made FROM v7-tiny.**
+
+⇒ ⭐ **The cheapest remaining v7f question is therefore not Row 3 at all** — it is whether the
+param-group split is deliberate, which is a source read, not an experiment.
