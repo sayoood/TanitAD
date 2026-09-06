@@ -10,12 +10,58 @@ is worth nothing if the right path does not run.
 
 Also enumerates every arm and builds + validates its `PostTrainConfig`, so a
 config error surfaces here rather than after minutes of paid start-up.
+
+⛔ AND IT REFUSES ON CONDITIONING-CHANNEL DRIFT, BEFORE ANYTHING ELSE RUNS.
+`refc_adapter.forward_kwargs` builds its kwargs by iterating `FORWARD_KEYS`, so a
+channel absent from that tuple is never passed at all -- no error, no warning --
+and the arm is silently blind to it. MEASURED 2026-09-06: the live
+`RefCV3Model.forward` accepts 9 optional channels, the worktree tuple carried 7
+(missing `gp_point` / `gp_valid`, so an arm would run GOAL-BLIND) and HEAD's blob
+carried 6 (also missing `agent_gt`). The HEAD regression arrived under a commit
+whose subject was *"make the suite carry the FORWARD_KEYS drift"* -- its tree
+predated the `agent_gt` addition -- which is why a green suite at review time is
+NOT evidence about the tuple at LAUNCH time. The check is therefore made here, in
+the process that is about to spend GPU, and it is DERIVED from the signature
+rather than compared against a second hand-written list.
+
+⛔ This preflight does not FIX the drift: `refc_adapter.py` belongs to another
+stream. It refuses to launch on top of it.
 """
 import importlib.util
 import json
 import os
 import sys
 from types import SimpleNamespace
+
+# --------------------------------------------------------------------------- #
+# ⭐ CHECK ZERO -- THE CONDITIONING-CHANNEL REFUSAL, BEFORE ANY OTHER WORK.       #
+# It costs ONE import of the model module -- no corpus, no batch, no GPU -- and    #
+# it is the only thing standing between a drifted                                 #
+# adapter and an arm that trains blind to a channel it was supposed to condition  #
+# on. Set TANITAD_RL_ALLOW_CHANNEL_DRIFT=1 to DOWNGRADE it to a loud warning --   #
+# an escape hatch that must be typed deliberately and is recorded in the output.  #
+# --------------------------------------------------------------------------- #
+from tanitad.rl.channel_guard import (                             # noqa: E402
+    ChannelDriftError, assert_forward_channels_complete, forward_channel_report)
+
+_chan = forward_channel_report()
+print("== CHECK 0 -- CONDITIONING CHANNELS (refuses on drift)")
+print("   forward accepts %d optional channels: %s"
+      % (_chan["n_signature_channels"], ", ".join(_chan["signature_channels"])))
+print("   adapter plumbs  %d: %s"
+      % (_chan["n_adapter_keys"], ", ".join(_chan["adapter_forward_keys"])))
+_override = os.environ.get("TANITAD_RL_ALLOW_CHANNEL_DRIFT") == "1"
+try:
+    assert_forward_channels_complete()
+    print("   => COMPLETE")
+except ChannelDriftError as _e:
+    if not _override:
+        print("   => REFUSED")
+        raise SystemExit("[cs-smoke] %s" % _e)
+    print("   => DRIFTED, and TANITAD_RL_ALLOW_CHANNEL_DRIFT=1 downgraded the "
+          "refusal to a warning. THE ARM WOULD RUN BLIND TO: %s"
+          % ", ".join(_chan["missing_from_adapter"]))
+_chan["override_used"] = bool(_override)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.environ["TANITAD_REPO"]
@@ -111,6 +157,7 @@ print("   metre-space `reg_metre` envelope_violation = %.6f (the regression need
       % out["reg_metre"]["envelope_violation_max"])
 print("   => %s" % ("PREFLIGHT PASS" if ok else "PREFLIGHT FAIL"))
 out["_verdict"] = "PASS" if ok else "FAIL"
+out["channel_guard"] = _chan
 out["_what"] = ("preflight smoke of the wired control-space sampler on the real model; "
                 "NOT an arm launch -- no optimizer, no step, no checkpoint, no result")
 out["_tier"] = "T0 preflight"
