@@ -1,0 +1,831 @@
+{
+ "_what": "does the v7.2 strata cell (country x road_class) explain realised free-flow speed well enough to carry a MAX-SPEED ceiling? Observed speed = SPEED_BAND.v_hi_ms.",
+ "_evidence_class": "MEASURED (ours; artifact = this json + blob md5)",
+ "_no_model_was_run": true,
+ "_cannot_answer": "whether any ceiling is CORRECT -- we hold no posted speed limit to check against. This measures only how much speed variation the cell explains.",
+ "_observed_speed_is_an_ego_statistic": "v_hi_ms = max ego speed over [t0+2s, t0+6s]. Admissible for a CORPUS property, INADMISSIBLE as a supplied model input.",
+ "blob_md5": "0ff902130ce76886b8a925eceed9e3a5",
+ "n_clips": 4572,
+ "min_clips_for_a_cell": 30,
+ "explained_variance_fraction": {
+  "country": 0.0605,
+  "road_class": 0.5794,
+  "country_x_road_class": 0.6129,
+  "strata_cell_full": 0.6218,
+  "CONTROL_shuffled_cell": 0.0311,
+  "_reads": "the shuffled control MUST read ~0. If the real cell and the shuffled cell score alike, the grouping is noise and no ceiling can be hung on it."
+ },
+ "n_cells": {
+  "country": 25,
+  "road_class": 3,
+  "country_x_road_class": 75,
+  "strata_cell_full": 148
+ },
+ "by_road_class": {
+  "urban": {
+   "n_clips": 2965,
+   "mean_ms": 10.134,
+   "p50_ms": 9.88,
+   "p85_ms": 14.61,
+   "p95_ms": 17.6,
+   "p95_kmh": 63.4,
+   "sd_ms": 4.241
+  },
+  "intersection": {
+   "n_clips": 861,
+   "mean_ms": 5.888,
+   "p50_ms": 5.81,
+   "p85_ms": 9.84,
+   "p95_ms": 12.23,
+   "p95_kmh": 44.0,
+   "sd_ms": 3.786
+  },
+  "highway": {
+   "n_clips": 746,
+   "mean_ms": 23.843,
+   "p50_ms": 23.91,
+   "p85_ms": 31.87,
+   "p95_ms": 35.77,
+   "p95_kmh": 128.8,
+   "sd_ms": 7.371
+  }
+ },
+ "by_country": {
+  "United States": {
+   "n_clips": 289,
+   "mean_ms": 11.648,
+   "p50_ms": 11.32,
+   "p85_ms": 19.49,
+   "p95_ms": 26.36,
+   "p95_kmh": 94.9,
+   "sd_ms": 7.804
+  },
+  "Germany": {
+   "n_clips": 287,
+   "mean_ms": 12.134,
+   "p50_ms": 9.86,
+   "p85_ms": 21.68,
+   "p95_ms": 30.86,
+   "p95_kmh": 111.1,
+   "sd_ms": 8.368
+  },
+  "France": {
+   "n_clips": 281,
+   "mean_ms": 9.04,
+   "p50_ms": 7.89,
+   "p85_ms": 14.45,
+   "p95_ms": 20.53,
+   "p95_kmh": 73.9,
+   "sd_ms": 5.956
+  },
+  "Denmark": {
+   "n_clips": 281,
+   "mean_ms": 11.468,
+   "p50_ms": 10.06,
+   "p85_ms": 16.33,
+   "p95_ms": 29.45,
+   "p95_kmh": 106.0,
+   "sd_ms": 7.112
+  },
+  "Sweden": {
+   "n_clips": 278,
+   "mean_ms": 9.033,
+   "p50_ms": 8.07,
+   "p85_ms": 13.66,
+   "p95_ms": 21.25,
+   "p95_kmh": 76.5,
+   "sd_ms": 5.801
+  },
+  "Italy": {
+   "n_clips": 278,
+   "mean_ms": 10.588,
+   "p50_ms": 9.27,
+   "p85_ms": 15.26,
+   "p95_ms": 25.88,
+   "p95_kmh": 93.2,
+   "sd_ms": 6.519
+  },
+  "Spain": {
+   "n_clips": 257,
+   "mean_ms": 10.252,
+   "p50_ms": 8.81,
+   "p85_ms": 15.49,
+   "p95_ms": 29.91,
+   "p95_kmh": 107.7,
+   "sd_ms": 7.608
+  },
+  "Austria": {
+   "n_clips": 252,
+   "mean_ms": 12.319,
+   "p50_ms": 10.86,
+   "p85_ms": 19.88,
+   "p95_ms": 27.49,
+   "p95_kmh": 99.0,
+   "sd_ms": 7.097
+  },
+  "Belgium": {
+   "n_clips": 246,
+   "mean_ms": 11.118,
+   "p50_ms": 8.5,
+   "p85_ms": 18.17,
+   "p95_ms": 30.73,
+   "p95_kmh": 110.6,
+   "sd_ms": 8.087
+  },
+  "Portugal": {
+   "n_clips": 239,
+   "mean_ms": 10.904,
+   "p50_ms": 9.9,
+   "p85_ms": 16.43,
+   "p95_ms": 23.11,
+   "p95_kmh": 83.2,
+   "sd_ms": 6.289
+  },
+  "Finland": {
+   "n_clips": 220,
+   "mean_ms": 10.087,
+   "p50_ms": 8.77,
+   "p85_ms": 15.68,
+   "p95_ms": 21.9,
+   "p95_kmh": 78.8,
+   "sd_ms": 5.793
+  },
+  "Netherlands": {
+   "n_clips": 216,
+   "mean_ms": 11.498,
+   "p50_ms": 8.92,
+   "p85_ms": 21.36,
+   "p95_ms": 27.73,
+   "p95_kmh": 99.8,
+   "sd_ms": 7.827
+  },
+  "Poland": {
+   "n_clips": 209,
+   "mean_ms": 11.838,
+   "p50_ms": 10.17,
+   "p85_ms": 20.14,
+   "p95_ms": 27.41,
+   "p95_kmh": 98.7,
+   "sd_ms": 7.556
+  },
+  "Czechia": {
+   "n_clips": 155,
+   "mean_ms": 10.793,
+   "p50_ms": 10.76,
+   "p85_ms": 14.22,
+   "p95_ms": 19.8,
+   "p95_kmh": 71.3,
+   "sd_ms": 5.58
+  },
+  "Luxembourg": {
+   "n_clips": 142,
+   "mean_ms": 11.472,
+   "p50_ms": 11.38,
+   "p85_ms": 17.06,
+   "p95_ms": 21.45,
+   "p95_kmh": 77.2,
+   "sd_ms": 5.734
+  },
+  "Latvia": {
+   "n_clips": 125,
+   "mean_ms": 12.175,
+   "p50_ms": 10.64,
+   "p85_ms": 19.23,
+   "p95_ms": 24.86,
+   "p95_kmh": 89.5,
+   "sd_ms": 6.456
+  },
+  "Romania": {
+   "n_clips": 115,
+   "mean_ms": 12.937,
+   "p50_ms": 12.09,
+   "p85_ms": 18.59,
+   "p95_ms": 24.83,
+   "p95_kmh": 89.4,
+   "sd_ms": 6.975
+  },
+  "Greece": {
+   "n_clips": 112,
+   "mean_ms": 12.805,
+   "p50_ms": 11.59,
+   "p85_ms": 19.52,
+   "p95_ms": 29.08,
+   "p95_kmh": 104.7,
+   "sd_ms": 7.464
+  },
+  "Hungary": {
+   "n_clips": 102,
+   "mean_ms": 14.688,
+   "p50_ms": 13.22,
+   "p85_ms": 24.29,
+   "p95_ms": 27.48,
+   "p95_kmh": 98.9,
+   "sd_ms": 8.052
+  },
+  "Estonia": {
+   "n_clips": 96,
+   "mean_ms": 12.416,
+   "p50_ms": 10.21,
+   "p85_ms": 18.87,
+   "p95_ms": 25.24,
+   "p95_kmh": 90.9,
+   "sd_ms": 6.663
+  },
+  "Croatia": {
+   "n_clips": 92,
+   "mean_ms": 16.456,
+   "p50_ms": 13.28,
+   "p85_ms": 36.15,
+   "p95_ms": 36.22,
+   "p95_kmh": 130.4,
+   "sd_ms": 10.535
+  },
+  "Lithuania": {
+   "n_clips": 85,
+   "mean_ms": 18.54,
+   "p50_ms": 17.92,
+   "p85_ms": 27.96,
+   "p95_ms": 35.55,
+   "p95_kmh": 128.0,
+   "sd_ms": 9.097
+  },
+  "Slovakia": {
+   "n_clips": 73,
+   "mean_ms": 15.145,
+   "p50_ms": 13.36,
+   "p85_ms": 21.83,
+   "p95_ms": 29.77,
+   "p95_kmh": 107.2,
+   "sd_ms": 7.634
+  },
+  "Slovenia": {
+   "n_clips": 71,
+   "mean_ms": 15.721,
+   "p50_ms": 13.04,
+   "p85_ms": 25.99,
+   "p95_ms": 36.18,
+   "p95_kmh": 130.2,
+   "sd_ms": 9.299
+  },
+  "Bulgaria": {
+   "n_clips": 71,
+   "mean_ms": 11.753,
+   "p50_ms": 10.84,
+   "p85_ms": 16.89,
+   "p95_ms": 30.2,
+   "p95_kmh": 108.7,
+   "sd_ms": 6.966
+  }
+ },
+ "by_country_x_road_class": {
+  "Italy|urban": {
+   "n_clips": 194,
+   "mean_ms": 9.58,
+   "p50_ms": 9.27,
+   "p85_ms": 13.67,
+   "p95_ms": 16.67,
+   "p95_kmh": 60.0,
+   "sd_ms": 4.063
+  },
+  "Denmark|urban": {
+   "n_clips": 188,
+   "mean_ms": 10.243,
+   "p50_ms": 9.75,
+   "p85_ms": 13.99,
+   "p95_ms": 16.33,
+   "p95_kmh": 58.8,
+   "sd_ms": 3.64
+  },
+  "France|urban": {
+   "n_clips": 185,
+   "mean_ms": 8.931,
+   "p50_ms": 8.49,
+   "p85_ms": 12.87,
+   "p95_ms": 17.41,
+   "p95_kmh": 62.7,
+   "sd_ms": 4.253
+  },
+  "Sweden|urban": {
+   "n_clips": 184,
+   "mean_ms": 8.146,
+   "p50_ms": 8.08,
+   "p85_ms": 11.45,
+   "p95_ms": 15.46,
+   "p95_kmh": 55.7,
+   "sd_ms": 3.793
+  },
+  "Portugal|urban": {
+   "n_clips": 183,
+   "mean_ms": 10.364,
+   "p50_ms": 9.94,
+   "p85_ms": 14.82,
+   "p95_ms": 17.34,
+   "p95_kmh": 62.4,
+   "sd_ms": 4.471
+  },
+  "Germany|urban": {
+   "n_clips": 166,
+   "mean_ms": 9.599,
+   "p50_ms": 9.33,
+   "p85_ms": 13.36,
+   "p95_ms": 16.09,
+   "p95_kmh": 57.9,
+   "sd_ms": 3.878
+  },
+  "Austria|urban": {
+   "n_clips": 165,
+   "mean_ms": 10.653,
+   "p50_ms": 10.21,
+   "p85_ms": 14.88,
+   "p95_ms": 18.29,
+   "p95_kmh": 65.8,
+   "sd_ms": 4.15
+  },
+  "Belgium|urban": {
+   "n_clips": 160,
+   "mean_ms": 9.155,
+   "p50_ms": 8.48,
+   "p85_ms": 13.37,
+   "p95_ms": 17.47,
+   "p95_kmh": 62.9,
+   "sd_ms": 4.164
+  },
+  "Spain|urban": {
+   "n_clips": 155,
+   "mean_ms": 9.288,
+   "p50_ms": 8.94,
+   "p85_ms": 13.39,
+   "p95_ms": 16.24,
+   "p95_kmh": 58.5,
+   "sd_ms": 4.009
+  },
+  "United States|urban": {
+   "n_clips": 153,
+   "mean_ms": 11.388,
+   "p50_ms": 11.96,
+   "p85_ms": 16.86,
+   "p95_ms": 18.66,
+   "p95_kmh": 67.2,
+   "sd_ms": 5.178
+  },
+  "Finland|urban": {
+   "n_clips": 143,
+   "mean_ms": 9.977,
+   "p50_ms": 9.16,
+   "p85_ms": 14.11,
+   "p95_ms": 17.61,
+   "p95_kmh": 63.4,
+   "sd_ms": 3.831
+  },
+  "Netherlands|urban": {
+   "n_clips": 138,
+   "mean_ms": 9.281,
+   "p50_ms": 8.57,
+   "p85_ms": 13.6,
+   "p95_ms": 16.47,
+   "p95_kmh": 59.3,
+   "sd_ms": 4.044
+  },
+  "Poland|urban": {
+   "n_clips": 131,
+   "mean_ms": 10.477,
+   "p50_ms": 10.25,
+   "p85_ms": 14.67,
+   "p95_ms": 17.74,
+   "p95_kmh": 63.9,
+   "sd_ms": 4.169
+  },
+  "Czechia|urban": {
+   "n_clips": 117,
+   "mean_ms": 10.383,
+   "p50_ms": 10.77,
+   "p85_ms": 13.97,
+   "p95_ms": 15.86,
+   "p95_kmh": 57.1,
+   "sd_ms": 3.579
+  },
+  "Luxembourg|urban": {
+   "n_clips": 99,
+   "mean_ms": 11.281,
+   "p50_ms": 11.98,
+   "p85_ms": 15.41,
+   "p95_ms": 17.47,
+   "p95_kmh": 62.9,
+   "sd_ms": 4.203
+  },
+  "Latvia|urban": {
+   "n_clips": 89,
+   "mean_ms": 10.36,
+   "p50_ms": 9.96,
+   "p85_ms": 15.03,
+   "p95_ms": 17.79,
+   "p95_kmh": 64.0,
+   "sd_ms": 4.106
+  },
+  "United States|intersection": {
+   "n_clips": 84,
+   "mean_ms": 5.405,
+   "p50_ms": 5.11,
+   "p85_ms": 9.85,
+   "p95_ms": 13.34,
+   "p95_kmh": 48.0,
+   "sd_ms": 4.42
+  },
+  "Romania|urban": {
+   "n_clips": 79,
+   "mean_ms": 12.035,
+   "p50_ms": 12.23,
+   "p85_ms": 16.66,
+   "p95_ms": 18.75,
+   "p95_kmh": 67.5,
+   "sd_ms": 4.104
+  },
+  "France|intersection": {
+   "n_clips": 71,
+   "mean_ms": 5.041,
+   "p50_ms": 4.94,
+   "p85_ms": 8.06,
+   "p95_ms": 9.6,
+   "p95_kmh": 34.6,
+   "sd_ms": 3.496
+  },
+  "Greece|urban": {
+   "n_clips": 69,
+   "mean_ms": 11.233,
+   "p50_ms": 11.34,
+   "p85_ms": 15.99,
+   "p95_ms": 16.9,
+   "p95_kmh": 60.8,
+   "sd_ms": 4.518
+  },
+  "Estonia|urban": {
+   "n_clips": 67,
+   "mean_ms": 10.471,
+   "p50_ms": 9.75,
+   "p85_ms": 15.12,
+   "p95_ms": 17.72,
+   "p95_kmh": 63.8,
+   "sd_ms": 4.211
+  },
+  "Spain|intersection": {
+   "n_clips": 63,
+   "mean_ms": 4.947,
+   "p50_ms": 4.82,
+   "p85_ms": 8.11,
+   "p95_ms": 10.99,
+   "p95_kmh": 39.6,
+   "sd_ms": 3.673
+  },
+  "Germany|intersection": {
+   "n_clips": 61,
+   "mean_ms": 6.371,
+   "p50_ms": 6.48,
+   "p85_ms": 10.33,
+   "p95_ms": 11.5,
+   "p95_kmh": 41.4,
+   "sd_ms": 4.487
+  },
+  "Germany|highway": {
+   "n_clips": 60,
+   "mean_ms": 25.004,
+   "p50_ms": 25.99,
+   "p85_ms": 32.19,
+   "p95_ms": 35.46,
+   "p95_kmh": 127.7,
+   "sd_ms": 7.461
+  },
+  "Sweden|intersection": {
+   "n_clips": 60,
+   "mean_ms": 5.821,
+   "p50_ms": 5.39,
+   "p85_ms": 9.44,
+   "p95_ms": 10.42,
+   "p95_kmh": 37.5,
+   "sd_ms": 3.24
+  },
+  "Bulgaria|urban": {
+   "n_clips": 56,
+   "mean_ms": 9.786,
+   "p50_ms": 9.89,
+   "p85_ms": 13.47,
+   "p95_ms": 16.86,
+   "p95_kmh": 60.7,
+   "sd_ms": 4.06
+  },
+  "Croatia|urban": {
+   "n_clips": 56,
+   "mean_ms": 11.798,
+   "p50_ms": 12.39,
+   "p85_ms": 15.39,
+   "p95_ms": 17.67,
+   "p95_kmh": 63.6,
+   "sd_ms": 3.794
+  },
+  "Hungary|urban": {
+   "n_clips": 54,
+   "mean_ms": 11.41,
+   "p50_ms": 12.59,
+   "p85_ms": 15.08,
+   "p95_ms": 16.89,
+   "p95_kmh": 60.8,
+   "sd_ms": 3.892
+  },
+  "Finland|intersection": {
+   "n_clips": 53,
+   "mean_ms": 5.657,
+   "p50_ms": 5.69,
+   "p85_ms": 8.93,
+   "p95_ms": 10.03,
+   "p95_kmh": 36.1,
+   "sd_ms": 3.113
+  },
+  "Italy|intersection": {
+   "n_clips": 53,
+   "mean_ms": 6.631,
+   "p50_ms": 6.78,
+   "p85_ms": 11.02,
+   "p95_ms": 11.57,
+   "p95_kmh": 41.7,
+   "sd_ms": 3.71
+  },
+  "United States|highway": {
+   "n_clips": 52,
+   "mean_ms": 22.496,
+   "p50_ms": 22.95,
+   "p85_ms": 29.69,
+   "p95_ms": 32.16,
+   "p95_kmh": 115.8,
+   "sd_ms": 6.873
+  },
+  "Denmark|intersection": {
+   "n_clips": 52,
+   "mean_ms": 6.514,
+   "p50_ms": 6.76,
+   "p85_ms": 11.07,
+   "p95_ms": 13.18,
+   "p95_kmh": 47.4,
+   "sd_ms": 4.44
+  },
+  "Slovakia|urban": {
+   "n_clips": 51,
+   "mean_ms": 11.653,
+   "p50_ms": 12.77,
+   "p85_ms": 15.53,
+   "p95_ms": 16.24,
+   "p95_kmh": 58.5,
+   "sd_ms": 3.895
+  },
+  "Austria|highway": {
+   "n_clips": 49,
+   "mean_ms": 23.156,
+   "p50_ms": 23.54,
+   "p85_ms": 28.27,
+   "p95_ms": 30.14,
+   "p95_kmh": 108.5,
+   "sd_ms": 5.699
+  },
+  "Belgium|intersection": {
+   "n_clips": 48,
+   "mean_ms": 5.448,
+   "p50_ms": 4.96,
+   "p85_ms": 8.34,
+   "p95_ms": 10.24,
+   "p95_kmh": 36.9,
+   "sd_ms": 3.062
+  },
+  "Netherlands|highway": {
+   "n_clips": 43,
+   "mean_ms": 24.093,
+   "p50_ms": 26.58,
+   "p85_ms": 28.31,
+   "p95_ms": 31.25,
+   "p95_kmh": 112.5,
+   "sd_ms": 6.021
+  },
+  "Slovenia|urban": {
+   "n_clips": 43,
+   "mean_ms": 12.252,
+   "p50_ms": 12.9,
+   "p85_ms": 15.91,
+   "p95_ms": 17.1,
+   "p95_kmh": 61.6,
+   "sd_ms": 4.402
+  },
+  "Poland|intersection": {
+   "n_clips": 42,
+   "mean_ms": 5.243,
+   "p50_ms": 6.03,
+   "p85_ms": 8.83,
+   "p95_ms": 10.17,
+   "p95_kmh": 36.6,
+   "sd_ms": 3.62
+  },
+  "Denmark|highway": {
+   "n_clips": 41,
+   "mean_ms": 23.371,
+   "p50_ms": 22.66,
+   "p85_ms": 34.98,
+   "p95_ms": 35.87,
+   "p95_kmh": 129.1,
+   "sd_ms": 9.014
+  },
+  "Lithuania|urban": {
+   "n_clips": 40,
+   "mean_ms": 12.79,
+   "p50_ms": 13.11,
+   "p85_ms": 17.77,
+   "p95_ms": 19.55,
+   "p95_kmh": 70.4,
+   "sd_ms": 4.091
+  },
+  "Spain|highway": {
+   "n_clips": 39,
+   "mean_ms": 22.655,
+   "p50_ms": 21.96,
+   "p85_ms": 33.12,
+   "p95_ms": 35.69,
+   "p95_kmh": 128.5,
+   "sd_ms": 9.629
+  },
+  "Lithuania|highway": {
+   "n_clips": 39,
+   "mean_ms": 26.359,
+   "p50_ms": 24.56,
+   "p85_ms": 35.13,
+   "p95_ms": 35.77,
+   "p95_kmh": 128.8,
+   "sd_ms": 6.394
+  },
+  "Belgium|highway": {
+   "n_clips": 38,
+   "mean_ms": 26.544,
+   "p50_ms": 29.32,
+   "p85_ms": 31.83,
+   "p95_ms": 34.55,
+   "p95_kmh": 124.4,
+   "sd_ms": 6.611
+  },
+  "Austria|intersection": {
+   "n_clips": 38,
+   "mean_ms": 5.577,
+   "p50_ms": 5.61,
+   "p85_ms": 7.77,
+   "p95_ms": 9.35,
+   "p95_kmh": 33.7,
+   "sd_ms": 2.91
+  },
+  "Poland|highway": {
+   "n_clips": 36,
+   "mean_ms": 24.484,
+   "p50_ms": 25.66,
+   "p85_ms": 30.02,
+   "p95_ms": 32.13,
+   "p95_kmh": 115.7,
+   "sd_ms": 5.962
+  },
+  "Netherlands|intersection": {
+   "n_clips": 35,
+   "mean_ms": 4.764,
+   "p50_ms": 4.32,
+   "p85_ms": 7.53,
+   "p95_ms": 9.58,
+   "p95_kmh": 34.5,
+   "sd_ms": 3.071
+  },
+  "Sweden|highway": {
+   "n_clips": 34,
+   "mean_ms": 19.504,
+   "p50_ms": 20.87,
+   "p85_ms": 25.94,
+   "p95_ms": 29.76,
+   "p95_kmh": 107.1,
+   "sd_ms": 6.83
+  },
+  "Portugal|intersection": {
+   "n_clips": 34,
+   "mean_ms": 5.678,
+   "p50_ms": 5.55,
+   "p85_ms": 8.92,
+   "p95_ms": 10.24,
+   "p95_kmh": 36.9,
+   "sd_ms": 3.024
+  },
+  "Italy|highway": {
+   "n_clips": 31,
+   "mean_ms": 23.666,
+   "p50_ms": 25.22,
+   "p85_ms": 30.71,
+   "p95_ms": 33.24,
+   "p95_kmh": 119.7,
+   "sd_ms": 7.08
+  },
+  "Hungary|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 29
+  },
+  "Luxembourg|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 26
+  },
+  "Latvia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 25
+  },
+  "France|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 25
+  },
+  "Czechia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 24
+  },
+  "Finland|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 24
+  },
+  "Croatia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 24
+  },
+  "Greece|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 23
+  },
+  "Portugal|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 22
+  },
+  "Greece|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 20
+  },
+  "Romania|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 20
+  },
+  "Slovakia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 20
+  },
+  "Hungary|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 19
+  },
+  "Estonia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 19
+  },
+  "Slovenia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 17
+  },
+  "Luxembourg|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 17
+  },
+  "Romania|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 16
+  },
+  "Czechia|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 14
+  },
+  "Bulgaria|highway": {
+   "status": "UNPOWERED",
+   "n_clips": 12
+  },
+  "Croatia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 12
+  },
+  "Slovenia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 11
+  },
+  "Latvia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 11
+  },
+  "Estonia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 10
+  },
+  "Lithuania|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 6
+  },
+  "Bulgaria|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 3
+  },
+  "Slovakia|intersection": {
+   "status": "UNPOWERED",
+   "n_clips": 2
+  }
+ },
+ "pooled": {
+  "v_hi_mean_ms": 11.572,
+  "v_hi_sd_ms": 7.431
+ }
+}
