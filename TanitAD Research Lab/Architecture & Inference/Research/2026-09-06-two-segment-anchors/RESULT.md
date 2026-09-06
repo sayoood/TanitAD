@@ -433,13 +433,14 @@ it is not presented as one.
 | `stack/tanitad/refs/anchor_twoseg.py` | repo (NEW) — the family, the integrator, the Kamm report |
 | `stack/tanitad/refs/anchor_meta.py` | repo (EDITED, additive) — `control_schedule`, `AnchorScheduleMissing/Conflict` |
 | `stack/scripts/build_twoseg_anchors.py` | repo (NEW) — the builder, `--two-segment` default OFF |
-| `stack/tests/test_anchor_twoseg.py` | repo (NEW) — 18 tests, all green |
+| `stack/tests/test_anchor_twoseg.py` | repo (NEW) — 19 tests, all green |
 | `PREREG_TWO_SEGMENT_ANCHORS.md` | this directory |
 | `RESULT.md` | this directory |
 | `raw/v0_repro.py`, `raw/p1…p4*.py`, `raw/out_*.json` | this directory |
 | `anchors_117_parity.pt`, `anchors_123_twoseg.pt` | `C:/Users/Admin/tanitad-twoseg-20260906/raw/` (**local disk only** — anchor `.pt` files are build outputs, reproducible from the builder + the checkpoint in one command) |
 
-**Suite:** `tests/test_anchor_twoseg.py` **18 passed**; the anchor regression set
-(`test_anchor_meta`, `test_anchor_flyability`, `test_withheld_bank`,
-`test_anchor_tactical`, `test_anchor_prefilter`, `test_v6_anchor_loss`)
-**41 + 76 passed, 17 skipped** with the edited `anchor_meta.py`.
+**Suite:** `tests/test_anchor_twoseg.py` **19 passed**; run together with the
+anchor regression set (`test_anchor_meta`, `test_anchor_flyability`,
+`test_withheld_bank`, `test_anchor_tactical`, `test_anchor_prefilter`,
+`test_v6_anchor_loss`) the copied `stack/tests` reads **118 passed, 17 skipped**
+with the edited `anchor_meta.py`.

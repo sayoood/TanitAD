@@ -10546,3 +10546,21 @@ the 396 g / 0.31 g rule, one column to the right. There is **no CLI override** f
 legacy 3-column file exists, so a guess would invent one. A 2-column file reads `constant`, which is a
 fact about the shape rather than a default; all pre-existing 2-column artifacts are untouched and the
 anchor regression suites stay green.
+
+---
+
+### ⚠️ D-TWOSEG-1c (CORRECTION, appended) — the test count is 19, not 18, and a FIXED-PATH artifact declares NO schedule.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** ·
+`stack/tests/test_anchor_twoseg.py`, commit `8c9d01c`.
+
+D-TWOSEG-1 says *"18 tests, green"*. A 19th was added in the same turn:
+`build_anchor_artifact` had been writing `control_schedule = "constant"` onto a **FIXED-PATH**
+artifact (no `controls`) — and `scripts/build_refc_anchors.py` writes exactly such a file. ⛔ That is a
+statement about a tensor the file does not hold, i.e. the very shape of error the module exists to
+prevent, so the field now follows the same discipline as `ref_speed_ms` / `kappa_cap` /
+`alat_v_floor`: **present-but-None where it does not apply**. `read_anchor_artifact` REFUSES a
+fixed-path file that declares one (`AnchorScheduleConflict`), symmetric to the units check already on
+that branch, and `describe` omits the field when there are no controls.
+
+**Suite after the fix:** `stack/tests` (twoseg + the anchor regression set) **118 passed, 17 skipped**.
+This row APPENDS the correction rather than rewriting D-TWOSEG-1.
