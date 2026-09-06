@@ -88,3 +88,75 @@ vs a prior-predictor floor of 0.8964).
 * **turn recall per class beside ADE** — a ranking change that improves ADE by picking straighter
   paths is a regression wearing a win;
 * the eval-set kin3 marginal, which converts §2's floor from a TRAIN EMA to a measured one.
+
+---
+
+## 4. ⭐⭐ `sel_refined` — SEPARATED, and it is WORSE. The pre-registered SUPPORTED branch is REFUTED.
+
+This was the lever I expected most from: **zero parameters**, and the DiffusionDrive audit had
+already measured that refcv3's ranking reads the **t = 0** confidence, *unchanged on 201/201
+windows for every `steps` value* — naming the selection surface as "the lever the implementation
+audit named". Turning it on:
+
+| | |
+|---|---|
+| BASE `os` | 0.3055 m |
+| `sel_refined` `os` | **0.3314 m** |
+| paired delta | **−0.0259 m, CI [−0.0505, −0.0033], `separated: TRUE`**, `p_delta_gt0` 0.017 |
+| estimator | `paired_episode_cluster_bootstrap`, n_boot 2000, seed 0, same asserted grid |
+| selection flips | **51/171 = 29.82 %** — ⛔ **not a no-op**; it bites on nearly a third of windows |
+| distinct anchors used | 18 → **16** (the ranking COLLAPSES the fan, it does not spread it) |
+| ⛔ CONTROL A-vs-A | 0.0000000000 / 0 / 0 / `separated: false` |
+
+### 4.1 And the per-class read says the same thing, which is what makes it unambiguous
+
+My own pre-registration required turn recall beside ADE, *"because a ranking change that improves
+ADE by picking straighter paths is a regression wearing a win."* Here ADE got **worse**, so the
+inverse question had to be asked — and the answer is that it got worse **while also getting more
+timid**:
+
+| | BASE | `sel_refined` |
+|---|---|---|
+| LATERAL decision acc / κ | 0.9591 / 0.7039 | **0.9591 / 0.7039 — IDENTICAL** |
+| `turn_left` recall (n_true 4) | 1.0000 | 1.0000 |
+| `turn_right` recall (n_true 8) | 0.6250 | 0.6250 |
+| LONGITUDINAL decision acc / κ | 0.8363 / 0.5782 | **0.8538** / 0.5899 |
+| `steady` recall (n_true 130) | 0.8923 | **0.9385** |
+| `brake_stop` recall (n_true 14) | **0.6429** | **0.5714** |
+| `accelerate` recall (n_true 27) | **0.6667** | **0.5926** |
+| `steady` n_pred | 130 | **139** |
+
+⇒ **51 selection flips changed NO lateral manoeuvre decision at all** — they are within-manoeuvre
+reshuffles — and they pushed the longitudinal decision toward the **majority class**.
+
+⛔⛔ **AND THIS IS A TEXTBOOK CASE FOR THE PER-CLASS RULE: longitudinal ACCURACY went UP
+(0.8363 → 0.8538) while BOTH minority recalls went DOWN.** `steady` is 130 of 171 windows (76 %),
+so predicting it more often buys accuracy and loses the two decisions that matter. An accuracy-only
+report would have called this an improvement. It is a regression on the family that owns
+**88.7 %** of the oracle gap, and ADE agrees.
+
+### 4.2 The mechanism, and the refcv5 consequence — which is the opposite of "flip the flag"
+
+The ablation registry states it: `sel_refined` is `seen_in_training: **no**`. The refined-confidence
+head was **never trained to rank**; `refc.py:1630` gates `score_emitted` on `steps > 0` and the
+training objective never scores the refined estimate. So switching the ranking to it at eval time
+is an **out-of-distribution use of an untrained head** — and that is exactly what a separated
+regression looks like.
+
+⇒ ⭐ **You cannot buy DiffusionDrive's selection mechanism by flipping a flag.** The audit is right
+that refcv3/v4 ship the skeleton without the mechanism, but the missing part is **training the
+selector**, not wiring it. **This is the measurement that motivates refcv5 WP-7 (`E-DDA-2b`
+selector training) and de-motivates the zero-cost shortcut** — and it is worth having *before* the
+GPU is spent, because the shortcut is the thing a hurried reading of the audit would try first.
+
+⚠️ n = 171 / 20, `ckpt_30000.pt`, a 20-clip subset. The landing panel re-runs it at 4,823 / 141.
+This is an **eval-time** intervention on **one** checkpoint, so `H-ESTIM-SEED-1`'s training-run
+variance does not enter; the admissible claim form is *"this switch moves this metric on this
+checkpoint"*, never *"this lever is worth X in refcv5"*.
+
+## 5. `h19_off`, the per-class read
+
+Lateral κ **0.7039 → 0.6738** and lateral accuracy 0.9591 → 0.9532 — i.e. removing the anchor prior
+costs a little lateral decision quality while ADE is unchanged (§2). Longitudinal is essentially
+flat (κ 0.5782 → 0.5671). ⇒ another reason the lever is low value: it is not free to remove, and it
+is not worth repairing.
