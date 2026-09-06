@@ -41,11 +41,11 @@ boot_stat = _m.boot_stat
 
 #: ⛔ the pre-registration must carry these two machine-readable lines, so the bar this
 #: tool applies is the bar that was COMMITTED, not one supplied at run time.
-RE_STAT = re.compile(r"^PREREG_STATISTIC:\s*(\S+)\s*$", re.M)
-RE_BAR = re.compile(r"^PREREG_BAR:\s*(\S+)\s*(<=|>=)\s*([-+0-9.eE]+)\s*$", re.M)
-RE_ID = re.compile(r"^PREREG_HYPOTHESIS_ID:\s*(\S+)\s*$", re.M)
-RE_RUNG = re.compile(r"^PREREG_RUNG:\s*(\S+)\s*$", re.M)
-RE_CELL = re.compile(r"^PREREG_CELL:\s*(\S+)\s*$", re.M)
+RE_STAT = re.compile(r"^[ 	]*PREREG_STATISTIC:\s*(\S+)\s*$", re.M)
+RE_BAR = re.compile(r"^[ 	]*PREREG_BAR:\s*(\S+)\s*(<=|>=)\s*([-+0-9.eE]+)\s*$", re.M)
+RE_ID = re.compile(r"^[ 	]*PREREG_HYPOTHESIS_ID:\s*(\S+)\s*$", re.M)
+RE_RUNG = re.compile(r"^[ 	]*PREREG_RUNG:\s*(\S+)\s*$", re.M)
+RE_CELL = re.compile(r"^[ 	]*PREREG_CELL:\s*(\S+)\s*$", re.M)
 #: the banked G-REWARD all-window RATE on the pre-repair reward. ⭐ The CHANNEL control.
 #: ⚠️ The banked composed MEAN is a STALE baseline (rewards._collision changed after the
 #: 2026-09-05 bank) and is deliberately NOT used as a control.

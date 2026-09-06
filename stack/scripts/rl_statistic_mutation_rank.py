@@ -75,6 +75,16 @@ CELLS = (
     ("nopert_cap", (),                0.0,  "q0.25", "lead"),
     ("p5_cap",    PERT_IDX,           5.0,  "q0.25", "lead"),
     ("p5end_cap", PERT_IDX_ENDPOINT,  5.0,  "q0.25", "lead"),
+    # ⭐ UNPERTURBED REWARD CONFIGURATIONS, added for `H-RL-GATE-STAT-2`. They take no
+    # part in the mutation ranking (which reads `nopert`/`p5`/`p15` only) and exist so a
+    # gate statistic can be read on the reward an arm would ACTUALLY train on.
+    #   `ship`     -- the SHIPPED defaults: progress_lead_cap True -> "achievable",
+    #                 headway_reduce "min"
+    #   `lead_min` -- the sensitivity variant of the cap, legacy reduction
+    #   `both_lq`  -- both 2026-09-06 repairs together
+    ("ship",      (),                 0.0,  "min",   "achievable"),
+    ("lead_min",  (),                 0.0,  "min",   "lead"),
+    ("both_lq",   (),                 0.0,  "q0.25", "lead"),
 )
 LADDER = (float("inf"), 5.0, 4.0, 3.0, 2.5, 2.0, 1.5, 1.0)
 WEIGHTS = {"progress": 0.3, "collision": 1.0, "headway": 0.3}
