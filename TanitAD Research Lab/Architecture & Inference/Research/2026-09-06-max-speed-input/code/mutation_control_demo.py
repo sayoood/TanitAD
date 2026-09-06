@@ -41,14 +41,21 @@ def _run(tag):
 
 
 def main() -> int:
-    src = MOD.read_text(encoding="utf-8")
-    zero_init = """        for lin in (self.to_tac, self.to_str):
+    # ⛔ BYTES, NOT TEXT. MEASURED 2026-09-07: an earlier version of this script
+    # round-tripped the module through `read_text`/`write_text`, which strips CR
+    # on read and re-adds os.linesep on write. The "restore" therefore rewrote a
+    # 17,764-byte LF file as 18,114 bytes of CRLF -- content identical, md5
+    # different -- and a currency audit comparing the box against the ref's blob
+    # would have called it DIVERGED. A restore that does not restore the bytes is
+    # not a restore.
+    src = MOD.read_bytes()
+    zero_init = b"""        for lin in (self.to_tac, self.to_str):
             nn.init.zeros_(lin.weight)
             nn.init.zeros_(lin.bias)"""
     assert zero_init in src, ("the zero-init block moved -- this demo would "
                               "have silently mutated nothing, which is exactly "
                               "the vacuous-control failure it exists to rule out")
-    mutated = """        for lin in (self.to_tac, self.to_str):
+    mutated = b"""        for lin in (self.to_tac, self.to_str):
             nn.init.normal_(lin.weight, std=0.5)   # MUTATION: NOT zero-init
             nn.init.normal_(lin.bias, std=0.5)"""
 
@@ -57,22 +64,26 @@ def main() -> int:
     rc0, _ = _run("baseline")
 
     print("STEP 2  MUTATION (zero-init removed) -- they must now FAIL")
-    MOD.write_text(src.replace(zero_init, mutated), encoding="utf-8")
+    MOD.write_bytes(src.replace(zero_init, mutated))
     try:
         rc1, out1 = _run("mutated")
     finally:
-        MOD.write_text(src, encoding="utf-8")
+        MOD.write_bytes(src)
 
     print("STEP 3  RESTORED -- green again, so the mutation was the only change")
     rc2, _ = _run("restored")
+    # ⛔ CONTENT ASSERTION ON THE RESTORE ITSELF, not just on the test result.
+    restored_ok = MOD.read_bytes() == src
+    print("        bytes restored EXACTLY: %s" % restored_ok)
 
     print()
     print("=" * 74)
     hit = [t for t in PARITY if re.search(r"%s\b" % t, out1)]
-    ok = (rc0 == 0 and rc1 != 0 and rc2 == 0 and hit)
+    ok = (rc0 == 0 and rc1 != 0 and rc2 == 0 and hit and restored_ok)
     print("baseline PASS   : %s" % (rc0 == 0))
     print("mutated  FAIL   : %s" % (rc1 != 0))
     print("restored PASS   : %s" % (rc2 == 0))
+    print("bytes restored  : %s" % restored_ok)
     print("parity tests that went RED under the mutation: %s" % (hit or "NONE"))
     print()
     print("VERDICT: %s" % ("the bit-identity assertions HAVE TEETH -- an "

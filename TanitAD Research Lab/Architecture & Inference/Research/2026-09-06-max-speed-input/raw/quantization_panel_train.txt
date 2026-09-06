@@ -1,0 +1,46 @@
+==============================================================================
+LADDER SELECTION (the evidence that PINS the step set)   n=4572
+ladder               k  H(bits)   maxbin   slack50   slack95    over% R2(q,v0)
+L4_PI_start          4    1.841    0.381     10.4k     25.3k    4.90%   0.9293
+L5_PI_plus_130       5    1.969    0.381     11.1k     26.3k    0.61%   0.9436
+L8_PINNED            8    2.480    0.349      8.1k     19.3k    0.61%   0.9631
+L10_plus_90_110     10    2.559    0.349      7.5k     19.2k    0.61%   0.9640
+L13_every_10        13    3.203    0.204      4.9k      9.7k    0.61%   0.9884
+
+==============================================================================
+(i) EGO COUPLING -- raw vs quantized
+  v_hi RAW             corr(v0)=0.9375  -v0 mean=+1.135 med=+0.401 p95=+6.443  >1m/s=52.7%  below v0=34.8%
+  quantize_up(v_hi)    corr(v0)=0.9167  -v0 mean=+3.598 med=+3.160 p95=+9.259  >1m/s=83.7%  below v0=8.4%
+
+==============================================================================
+(ii) RECOVERABILITY -- v_hi_raw <- ?   (5-fold OUT-OF-FOLD)
+  CONTROL_vhi_from_vhi_must_be_1         R2= 1.0000 rmse= 0.000 m/s   (in-sample R2= 1.0000)
+  CONTROL_vhi_from_v0_alone              R2= 0.8789 rmse= 2.586 m/s   (in-sample R2= 0.8789)
+  CONTROL_vhi_from_shuffled_q_and_v0     R2= 0.8789 rmse= 2.586 m/s   (in-sample R2= 0.8789)
+  vhi_from_q_alone                       R2= 0.9513 rmse= 1.640 m/s   (in-sample R2= 0.9514)
+  vhi_from_q_and_v0_linear               R2= 0.9631 rmse= 1.428 m/s   (in-sample R2= 0.9631)
+  vhi_from_q_and_v0_PERBIN               R2= 0.9702 rmse= 1.282 m/s   (in-sample R2= 0.9706)
+  REFERENCE_vhi_from_RAW_and_v0          R2= 1.0000 rmse= 0.000 m/s   (in-sample R2= 1.0000)
+  ---- HEADLINE ----
+  v0 alone            R2=0.8789  rmse=2.586 m/s
+  bin + v0 (best)     R2=0.9702  rmse=1.282 m/s
+  delta R2 (leak)     +0.0913      rmse cut 1.304 m/s
+  UNRECOVERED share   0.0298
+  bin readable off v0: oof acc 0.5840 vs majority 0.3486
+
+==============================================================================
+(iii) BIN OCCUPANCY  H=2.480 / 3.000 bits max   maxbin=0.349 at 50 km/h   8/8 bins used
+     20 km/h  n=  809   17.70%  ##########
+     30 km/h  n=  932   20.39%  ############
+     50 km/h  n= 1594   34.86%  ####################
+     70 km/h  n=  619   13.54%  ########
+     80 km/h  n=  165    3.61%  ##
+    100 km/h  n=  229    5.01%  ###
+    120 km/h  n=  138    3.02%  #
+    130 km/h  n=   86    1.88%  #
+
+OVER-CEILING (quantized): n=28  0.61%   [raw: 0 by construction]
+LOW-SPEED DISTORTION: 38.1% of clips get a ceiling <= 30 km/h; 8.0% have a stop in band
+    highway        n= 746  ceiling<=30km/h on   2.7%  median ceiling 100 km/h
+    intersection   n= 861  ceiling<=30km/h on  75.0%  median ceiling 30 km/h
+    urban          n=2965  ceiling<=30km/h on  36.3%  median ceiling 50 km/h
