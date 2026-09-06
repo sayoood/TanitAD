@@ -10946,3 +10946,83 @@ prior** — no crash, no message. ⚠️ **The v7.2 arm already pays this today 
 nowhere.** ⇒ the change must stamp `man5_active` into `config.json`, or it becomes the
 effective-weight failure (*an operator types a weight a later layer zeroes*) wearing a vocabulary
 costume.
+
+
+---
+
+### ⭐⭐ D-ROLL-1j — C3 IS RE-ROLLED, AND A THIRD SURFACE REPRODUCES THE **THOR** FAMILY, NOT THE A40's. NO VERDICT MOVES.
+**Date** 2026-09-06 · **Stream** Architecture & Inference (rollability) · **Evidence MEASURED
+(ours)** · **Tier T1** (self-action open loop, ruling OPEN) · **Estimator** paired episode-cluster
+bootstrap (`taniteval/ci.py`), `n_boot` 2000, seed 0 · **ONE surface, ONE process** (dev-box RTX
+4060, x86_64, torch 2.11.0+cu128), **4,823 windows / 141 episodes, 0 skipped** — the published grid
+exactly · `refcv4b@40284` md5 `99b573e8277d94a5e3bfbf630cb4d751` · 1,609 s of rolling ·
+⛔ the A40 was **not** touched · `…/2026-09-06-rollability/RESULT.md` §12,
+`raw/refcv4b_c3_devbox.json`, `raw/refcv4b_c3_devbox_dump.tgz`.
+
+**This is the item D-ROLL-1 gated, run the moment the gate was lifted.**
+
+⭐ **THE GRID IS THE SAME GRID — the model-free arms are the control that proves it before any
+model number is read:** `ha` **0.2996**, `ha0` **0.6723**, `ha0_ext` **0.2874**, each reproducing the
+A40 landing read **exactly at published precision**. Lead block 141/141 episodes OK, speed-check max
+**2.6e-05 m/s**.
+
+⛔⛔ **AND EVERY MODEL-DEPENDENT ARM LANDS ON THOR's VALUES:**
+
+| arm | **dev box (this roll)** | A40 (landing) | Thor (navpred) | reproduces |
+|---|---|---|---|---|
+| `os` | **0.2965** [0.2697, 0.3280] | 0.2975 | **0.2965** | **THOR** |
+| `os_navshuf` | **0.3006** | 0.3013 | **0.3006** | **THOR** |
+| `os_navzero` | **0.3926** [0.3660, 0.4225] | 0.3928 | **0.3926** | **THOR** |
+
+— three for three, and the selection profile agrees: **`n_distinct` = 51**, the value the register
+attributes to *Thor* (the A40's is 50).
+
+⛔ **THIS INVERTS `D-BANK-TEMP-1a`'s READING, and the correction is appended rather than applied by
+rewrite.** That row concluded *"the A40 family IS quotable; the Thor family is not"*, attributing the
+0.001031 FAIL to Thor's **aarch64 / torch 2.13.0+cu130** stack. This surface is **x86_64 /
+torch 2.11.0+cu128** — it shares the A40's architecture and CUDA minor, differs from Thor in almost
+everything — and reproduces **Thor**. ⇒ **the discriminator is NOT the CPU architecture**, and
+**2 of 3 independent surfaces agree on 0.2965**, making the A40's 0.2975 the outlier.
+⚠️ **What this does NOT establish, stated rather than glossed:** it does not make the A40 number
+*wrong*, and it does not name the mechanism. The surfaces differ in torch version (2.8 / 2.11 /
+2.13) and in GPU, and a **1.0e-3 m** shift on an argmax-selected anchor is exactly the size a
+tie-break flip produces. The mechanism needs a **same-box, two-torch-build sweep** — one cheap
+experiment, **named here, not run**.
+
+⭐⭐ **NO VERDICT MOVES, which is the part that matters:**
+
+| paired delta | dev box | A40 (landing) | verdict |
+|---|---|---|---|
+| `os − ha` | −0.0032 [−0.0185, +0.0142] | −0.0021 [−0.0178, +0.0154] | **NOT separated** — both |
+| `os − ha0_ext` | +0.0091 [−0.0059, +0.0260] | +0.0101 [−0.0050, +0.0273] | **NOT separated** — both |
+| `os_navzero − ha0_ext` | **+0.1052 [+0.0876, +0.1238]** | +0.1054 [+0.0874, +0.1241] | **SEPARATED WORSE** — both |
+
+⇒ refcv4b still fails to separate from the hold-action and echo controls, and still falls
+**separated worse** than the echo control with its route input withheld. ⛔ `C3_os_reproduction`
+against the **A40** banked value would FAIL from this surface too (|Δ| ≈ 0.0010 at a 0.001
+tolerance, the same boundary Thor recorded at 0.001031) — **a reproducibility fact about a 1.0e-3 m
+point estimate, not a reason any conclusion moves.**
+
+⭐ **BONUS — the first FULL-GRID `anchor_acc` under the CORRECTED `a_star` binding:** **0.5275**
+(chance 0.008547), `sel_agrees_oracle` **0.5244**, `n_distinct_selected` 51, modal anchor #67 at
+0.4889. ⛔ `MODEL_REGISTRY.md` §4.6 carries **0.0993** for this arm and marks it NOT VALID — the
+contaminated pre-fix `.decoder.anchors` value. This roll consumed the sibling's corrected
+`_decoded_bank` binding, so **0.5275 is the first admissible full-grid value**, a **5.3x**
+correction. ⚠️ The correction is the **sibling's**; the registry row is theirs to amend.
+
+⛔ **INSTRUMENT WARNINGS CARRIED, NOT DROPPED.** **VOID-RISK:** `os` is **bit-identical to
+`os_navshuf` on 2,417/4,823 windows (50.11 %)**, so `os − os_navshuf` (−0.0041 [−0.0078,
+−0.0004], separated) is read on an effective half-grid. `os_navzero` is a **cross-call** arm with a
+~6e-7 m float32 batching floor beneath it. `ha0` is CONSTANT-VELOCITY on 100 % of windows and
+`ha0_ext ≡ ha0` on 149/4,823 (3.09 %). ⛔⛔ **`strategic` is `families_unavailable` on every arm
+here, so this is a THREE-family read, not four** — stated per the binding rule with its reason (no
+route label plumbed through this invocation), never silently dropped; the strategic family for this
+arm is in the landing read (route acc 0.7786, kappa 0.4852).
+
+⛔ **Vocabulary:** the nav command is an **INPUT simulating the vehicle's nav system**; `os` is the
+deployment-relevant arm and `os_navzero` a **robustness ablation**. Never "oracle nav", never
+"deployment gap". ⛔ No label set was emitted, rebuilt or regenerated. ⚠️ **Single-seed arm:**
+every margin answers *"would another draw of EPISODES say this?"* only (`H-ESTIM-SEED-1` OPEN);
+refcv4b is deterministic at inference (`refc.py` zeroes the decoder noise outside training), so the
+INFERENCE-seed question is closed by construction and the cross-surface delta above is **not**
+inference noise.

@@ -291,3 +291,104 @@ arms, so no replicate arm is owed.
 
 ⛔ Nothing is stranded on a single disk: every artifact above is in the repo working tree and
 staged.
+
+
+---
+
+## 12. ⭐⭐ C3 RE-ROLLED — AND A THIRD SURFACE SAYS THE **THOR** FAMILY IS THE REPRODUCIBLE ONE
+
+**MEASURED (ours) 2026-09-06** · `raw/refcv4b_c3_devbox.json`, `raw/refcv4b_c3_devbox_dump.tgz`
+(141 npz + manifest) · dev-box RTX 4060, **ONE surface, ONE process**, 1,609 s of rolling ·
+`refcv4b@40284` md5 `99b573e8277d94a5e3bfbf630cb4d751` · **T1** (self-action open loop, ruling OPEN)
+· paired episode-cluster bootstrap, `n_boot` 2000, seed 0 · **4,823 windows / 141 episodes, 0
+skipped** — the published grid exactly.
+⛔ The A40 was **not** touched. This was the item the regression gated, and it ran the moment the
+gate was lifted.
+
+### 12.1 The grid is THE SAME grid — the model-free arms are the control that proves it
+
+| arm | **dev box (this roll)** | A40 (landing) | Thor (navpred) |
+|---|---|---|---|
+| `ha` | **0.2996** | 0.2996 | — |
+| `ha0` | **0.6723** | 0.6723 | — |
+| `ha0_ext` | **0.2874** | 0.2874 | — |
+
+⭐ All three **model-free** arms reproduce the A40's published values **exactly at published
+precision**. They are functions of the corpus and the window grid alone, so this is the control
+that rules out a different grid, a different episode set or a different label join *before* any
+model-dependent number is read. Lead block: 141/141 episodes OK, speed-check max **2.6e-05 m/s**.
+
+### 12.2 ⛔ And every MODEL-dependent arm lands on THOR's values, not the A40's
+
+| arm | **dev box** | A40 (landing) | Thor (navpred) | dev box reproduces |
+|---|---|---|---|---|
+| `os` | **0.2965** [0.2697, 0.3280] | 0.2975 | **0.2965** | **THOR** |
+| `os_navshuf` | **0.3006** | 0.3013 | **0.3006** | **THOR** |
+| `os_navzero` | **0.3926** [0.3660, 0.4225] | 0.3928 | **0.3926** | **THOR** |
+
+⭐⭐ **Three for three, to the precision both families are published at.** And the selection
+profile agrees too: **`n_distinct` = 51**, which is the value the register attributes to *Thor*
+(the A40's is 50).
+
+⛔⛔ **THIS INVERTS THE STANDING READING.** `D-BANK-TEMP-1a` concluded *"the A40 family IS
+quotable; the Thor family is not"*, attributing the 0.001031 FAIL to Thor's
+**aarch64 / torch 2.13.0+cu130** stack. But this surface is **x86_64, torch 2.11.0+cu128, RTX
+4060** — it shares the A40's *architecture* and CUDA minor and differs from Thor in almost
+everything — and it reproduces **Thor**. ⇒ **The discriminator is NOT the CPU architecture**, and
+**2 of 3 independent surfaces now agree on 0.2965**, which makes the A40's 0.2975 the outlier
+rather than Thor's 0.2965.
+⚠️ **What this does NOT establish.** It does not say the A40 number is *wrong*, and it does not
+identify the mechanism. The surfaces differ in torch version (2.8 vs 2.11 vs 2.13) and in GPU, and
+a **1.0e-3 m** shift on an argmax-selected anchor is exactly the size a tie-break flip produces.
+Naming the cause needs a controlled sweep (same box, two torch builds), which is one clean
+experiment and is **not** run here.
+
+### 12.3 ⭐ NO VERDICT MOVES — which is the part that actually matters
+
+| paired delta (dev box) | value | A40 (landing) | verdict |
+|---|---|---|---|
+| `os − ha` | −0.0032 [−0.0185, +0.0142] | −0.0021 [−0.0178, +0.0154] | **NOT separated** — both |
+| `os − ha0_ext` | +0.0091 [−0.0059, +0.0260] | +0.0101 [−0.0050, +0.0273] | **NOT separated** — both |
+| `os_navzero − ha0_ext` | **+0.1052 [+0.0876, +0.1238]** | +0.1054 [+0.0874, +0.1241] | **SEPARATED WORSE** — both |
+| `os − ha0` | −0.3758 [−0.4331, −0.3212] | — | separated |
+| `os − os_navzero` | −0.0961 [−0.1102, −0.0813] | — | separated |
+
+⇒ **The cross-surface disagreement is ~0.001 m in a point estimate and changes NOTHING.** refcv4b
+still fails to separate from the hold-action and echo controls, and still falls **separated worse**
+than the echo control once the route input is withheld. ⛔ So `C3_os_reproduction` against the A40
+banked value would FAIL from this surface too (|Δ| ≈ 0.0010 at a 0.001 tolerance, the same boundary
+the Thor roll recorded at 0.001031) — **and that failure is a reproducibility fact about a
+1.0e-3 m point estimate, not a reason any conclusion moves.**
+
+### 12.4 ⭐ BONUS — the first FULL-GRID `anchor_acc` under the CORRECTED `a_star` binding
+
+`anchor_acc` **0.5275** (chance 0.008547), `sel_agrees_oracle` **0.5244**, `n_distinct_selected` 51,
+modal anchor #67 at 0.4889, entropy 2.1535/4.7622 nats.
+⛔ `MODEL_REGISTRY.md` §4.6 carries **0.0993** for this arm and marks it **NOT VALID** — that is the
+contaminated value from the pre-fix `.decoder.anchors` binding. This roll used the sibling's
+corrected `_decoded_bank` per-window binding, so **0.5275 is the first full-grid value that is
+admissible at all**, a **5.3x** correction. ⚠️ It is **INHERITED-adjacent**: the correction is the
+sibling's and this roll merely consumed it; the registry row is theirs to amend.
+
+### 12.5 ⛔ Instrument warnings carried, not dropped
+
+* **VOID-RISK:** `os` is **bit-identical to `os_navshuf` on 2,417/4,823 windows (50.11 %)** — on
+  those windows the instrument saw ONE arm, not two, so `os − os_navshuf` (−0.0041
+  [−0.0078, −0.0004], separated) is read on an effective half-grid.
+* `os_navzero` is a **cross-call** arm (`nav_cmd=None` gates E13 for the whole call), so a float32
+  batching floor of ~6e-7 m sits under it and `identical_to` at 1e-09 m cannot resolve it.
+* `ha0` is **CONSTANT-VELOCITY on 100 %** of windows — its LATERAL rows are a control, never
+  planning skill; and `ha0_ext ≡ ha0` on 149/4,823 (3.09 %).
+* **`strategic` is `families_unavailable`** on every arm in this roll (no route label plumbed
+  through this invocation), so ⛔ **this is a THREE-family read, not four** — stated per the binding
+  rule rather than silently dropped. The strategic family for this arm is published in the landing
+  read (`route acc 0.7786`, `kappa 0.4852`).
+
+### 12.6 Answer to the question that was asked
+
+**Can `C3_os_reproduction` be re-run? YES — and it HAS been, on one surface in one process.** What
+it returns is that the reproducibility question is **wider than "Thor is the odd one out"**: a third
+surface reproduces Thor, the model-free controls are identical everywhere, and no verdict in the
+four-family read depends on the 0.001 m that separates the families. The remaining open item is
+**mechanism** — a same-box, two-torch-build sweep — which is cheap and is named here rather than
+run.
