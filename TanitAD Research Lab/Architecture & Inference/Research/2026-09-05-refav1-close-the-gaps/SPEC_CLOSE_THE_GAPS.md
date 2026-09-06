@@ -317,3 +317,57 @@ arm with a live optimiser is not a null*). The real-rig effect can only come fro
 windows where the penalty was making a **different** candidate win, and
 `kappa_by_goal_all.txt` says those exist: `wk15` drove TURN_L to med|k|max 0.02066
 against the seed's own 0.08000, so on those windows the seed was NOT winning.
+
+---
+
+## §7 — AMENDMENT 02:50: AN ANALYTIC, COMMITTED PREDICTION FOR A2 (still before A2 runs)
+
+`raw/knee.txt` — computable with **0 GPU** because `W_JERK = 0` and `W_VEND` is a **DEAD TERM**
+(`refav1_arm.py` never passes `target_speed`), so every candidate's cost is exactly
+`goal_term + W_KAPPA * mean(kappa^2)` and the do-nothing candidate's cost (`basecost_cv`) is
+**independent of `W_KAPPA`**.
+
+### §7.1 ⭐ THE TURN DOES NOT DIE BY FLIPPING TO STRAIGHT — a second, independent proof
+
+The weight at which the full-magnitude turn loses to **doing nothing** is
+`W_flip = (basecost_cv - plan_cost) / mean(kappa^2)`. MEASURED over the banked `ccos_argmax` dump:
+
+| goal token | n (non-straight) | mean k² | median `W_flip` | p25–p75 |
+|---|---|---|---|---|
+| LANE_KEEP | 8 (+10 already straight) | 0.006543 | 184.3 | 108.6 – 367.9 |
+| **TURN_L** | 9 | 0.006698 | **153.4** | 144.8 – 161.9 |
+| TURN_R | 13 | 0.006400 | 153.1 | 148.9 – 157.4 |
+
+⇒ **A full-magnitude turn only loses to doing nothing at `W_KAPPA ≈ 153` — yet `turn_left` recall
+is already 0.0000 at 15.11.** The two-candidate bound over-estimates by **~10x**, and *that gap is
+the finding*: **the turn dies by MAGNITUDE REDUCTION, not by the seed losing the argmin.**
+⭐ This confirms `D-REFAV1-KAPPA-UNDERTURN` from the **cost columns**, an entirely different route
+from the trajectory-derived `kappa_by_goal_all.txt` that first showed it.
+
+### §7.2 ⛔ COMMITTED PREDICTION FOR A2 — both outcomes, before the arms exist
+
+Fitting `k*(W) = k0 / (1 + W/W0)` on the **single** measured point W=15.11245 gives **W0 = 5.2616**;
+checked on the held-out W=151.1245 point it predicts 0.00269 against a measured 0.00840, i.e. it
+**over**-predicts collapse at large W, so its {1,3,7} numbers are if anything **pessimistic**.
+
+| `W_KAPPA` | predicted TURN_L med\|k\|max | measured |
+|---|---|---|
+| 0 | 0.08000 | **0.08000** (fit anchor) |
+| **1** | **0.06722** | — (A2) |
+| **3** | **0.05095** | — (A2) |
+| **7** | **0.03433** | — (A2) |
+| 15.11245 | 0.02066 | **0.02066** (fit anchor) |
+| 151.1245 | 0.00269 | **0.00840** (held out — model over-predicts) |
+
+⭐ **PREDICTED:** W = 1 and W = 3 hold TURN_L magnitude at 0.051–0.067, well above the 0.02066 at
+which recall was measured 0.0000 ⇒ **`turn_left` recall SURVIVES at W = 1 and W = 3**. W = 7 lands
+at ~0.034, between the surviving 0.08 and the dead 0.02066 ⇒ **THE KNEE IS PREDICTED IN (3, 15.11],
+most likely near W = 7.**
+⛔ **REFUTATION CONDITION, written now:** if `turn_left` recall is **0.0000 already at W = 1**, the
+magnitude model is refuted and the collapse is *not* a smooth cost balance — it would be the goal
+seed losing the argmin outright, which the `W_flip ≈ 153` bound says must not happen until W ≈ 150.
+**Either result is informative, and both are recorded here before the arms run.**
+⚠️ This also **sharpens §2's outcome N**: "the penalty is retired" now requires turning to die
+*before* the knee this arithmetic predicts. If a usable knee exists near W = 7, outcome **K** fires
+and the penalty is a tunable lever after all — at a weight **2.2x smaller** than the one every
+banked `W_KAPPA > 0` arm used.
