@@ -160,3 +160,76 @@ Lateral κ **0.7039 → 0.6738** and lateral accuracy 0.9591 → 0.9532 — i.e.
 costs a little lateral decision quality while ADE is unchanged (§2). Longitudinal is essentially
 flat (κ 0.5782 → 0.5671). ⇒ another reason the lever is low value: it is not free to remove, and it
 is not worth repairing.
+
+---
+
+## 6. ⭐⭐ refcv4b @30,000 vs refcv3 @40,284 ON ONE SURFACE — and the win is LONGITUDINAL
+
+Both models rolled through the **same adapter, same 20 clips, same stride, same grid, same labels,
+same action units**, and the pairing is asserted element-wise (`ws` + episode ids) before anything
+is computed. refcv3's checkpoint is `ckpt_step40284_frozen.pt`, md5 **`b1ed7075ff730d0993d2eaa3c86f6b56`**
+— verified against `MODEL_REGISTRY.md` §4.5 rather than trusted by filename.
+
+⭐ **THE INTERNAL CONTROL THAT MAKES THE COMPARISON VALID:** the model-free arms read
+**bit-identically** across both runs — `ha` 0.2860, `ha0` 0.6542, `ha0_ext` 0.2769 — so the two
+models are being scored on **one surface**, not two.
+
+| arm | refcv3 @40,284 | refcv4b @30,000 |
+|---|---|---|
+| `os` ADE (m) | **0.4707** | **0.3055** |
+| paired `refcv4b − refcv3` | **−0.1652 m, CI [−0.2318, −0.1090], `separated: TRUE`**, p 1.0, 171/171 windows differ | |
+| relative | **−35.1 %** | |
+| ⛔ CONTROL A-vs-A | 0.0000000000 / 0 / 0 / `separated false` | |
+
+⇒ **refcv4b beats refcv3 by 0.1652 m, separated — while 10,284 steps LESS trained.** ⚠️ n = 171 / 20
+and both are single-seed arms of **different training runs**, so `H-ESTIM-SEED-1` applies in full:
+this interval answers *"would another draw of EPISODES say this?"*, never *"would another TRAINING
+RUN say this?"*. And five levers moved at once — this is an **ARM delta, never a lever attribution**.
+
+### 6.1 The gain is concentrated in the family that owns 88.7 % of the oracle gap
+
+| tactical decision | refcv3 @40,284 | refcv4b @30,000 |
+|---|---|---|
+| LATERAL acc / **κ** | 0.9649 / **0.7554** | 0.9591 / **0.7039** |
+| `turn_left` recall (n_true 4) | 1.0000 | 1.0000 |
+| `turn_right` recall (n_true 8) | **0.7500** | 0.6250 |
+| LONGITUDINAL acc / **κ** | 0.6842 / **0.2037** | **0.8363 / 0.5782** |
+| `brake_stop` recall (n_true 14) | 0.3571 | **0.6429** |
+| `accelerate` recall (n_true 27) | 0.3704 | **0.6667** |
+
+⇒ refcv4b is **2.84× better on longitudinal decision κ** (0.2037 → 0.5782), nearly doubles both
+minority recalls, and is **slightly WORSE laterally** (κ 0.7554 → 0.7039, `turn_right` 0.75 → 0.625).
+⚠️ Those turn recalls rest on **n_true 4 and 8** — far too few to claim a lateral regression; the
+landing read has 141 episodes.
+
+### 6.2 ⛔ And the mechanism is confirmed by REMOVING it — `ego_zero`
+
+| | |
+|---|---|
+| refcv4b `os` | 0.3055 m |
+| `--ablate ego_zero` (keep = 0 **and** `v0 = None` at the core) | **1.1137 m** |
+| paired | **−0.8082 m, CI [−0.9985, −0.6239], `separated: TRUE`**, p 0.0 |
+| LONGITUDINAL κ | 0.5782 → **0.0653** — collapsed to near chance |
+| `brake_stop` recall | 0.6429 → **0.1429** |
+| LATERAL κ | 0.7039 → 0.6738 — **largely intact** |
+
+⇒ **Two independent measurements agree on one mechanism.** Adding the measured ego block moves the
+LONGITUDINAL family (refcv3 → refcv4b, κ 0.2037 → 0.5782); withholding it collapses the LONGITUDINAL
+family and leaves the lateral one standing (κ 0.5782 → 0.0653 vs 0.7039 → 0.6738). The lever and its
+ablation point at the same axis, which is what makes this an attribution rather than a coincidence —
+even though the arm as a whole moved five levers at once.
+
+### 6.3 ⛔ THE HONEST BOUND ON THE WIN
+
+1. **refcv4b still LOSES to the trivial controls:** `os` 0.3055 against `ha` 0.2860 and `ha0_ext`
+   **0.2769**. It has closed most of refcv3's deficit (`os − ha`: refcv3 **+0.1847** here,
+   refcv4b **+0.0195** — 9.5× smaller on this surface) but has **not crossed the bar**, at step
+   30,000 on 20 clips.
+2. **The win is not vision-only.** `ego_zero` is the conservative reading of the PI's binding rule
+   (*"for inference only vision"*, tempered by the 2026-09-02 ruling that measured `v0` at t0 is a
+   legal initial state). At **1.1137 m** the ego-withheld arm is **3.65× worse** than the kept arm
+   and worse than `ha0` (0.6542). ⇒ **whatever refcv4b has learned longitudinally, it has learned
+   to lean on the measured ego block to express it**, and `--ego-dropout 0.5` has not bought a
+   vision-only arm by step 30,000.
+3. `frames_blind` — the panel's VOID gate — was still running when this was written; **the panel is
+   not admissible until it is read**.
