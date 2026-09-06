@@ -1413,3 +1413,61 @@ artifacts — the **4,823-window** four-family read and the reel (**15 clips / 2
 4.95x the refcv3 reel**) — are gated on wall-clock and nothing else; the landing sequence is
 preflighted to a single changed argument. ⭐ The watcher exits on **completion, failure AND channel
 death**, and its failure detector was **proved to read non-zero** rather than assumed.
+
+## M73. ⭐⭐ THE EGO-CHANNEL ESCALATION WAS A FACT, NOT A DECISION — no channel reads the future
+
+### 1. I escalated without a default, and then found the answer in source
+
+`M72` escalated *"which ego channels are admissible at inference"* as a PI ruling worth a **3.6x swing**
+(0.3055 m vs 1.1137 m) — ⛔ **and I sent it up without a recommended default, which our own
+program-report standard forbids.** Going back for one resolved most of the question.
+
+**`refc_v3_train.py:2966` stamps the derivation into every run's `config.json`:**
+
+> *"t0 = last OBSERVED frame; `a_long` = corpus ax (`actions[:,-1,1]`); `curvature` = tan(steer)/2.9
+> (`actions[:,-1,0]`); `yaw_rate` = v0*curvature. **NO finite differencing, NO future read.**"*
+
+| channel | what it is | future-derived? |
+|---|---|---|
+| `v0` | speed at t0 | **no** — already PI-ruled admissible (2026-09-02) |
+| `a_long` | the **observed** longitudinal action at t0 | **no** |
+| `curvature` | `tan(steer)/2.9` — the **observed** steering angle at t0 | **no** |
+| `yaw_rate` | `v0 * curvature` — a product of two t0 quantities | **no** |
+| `keep` | the validity mask | **no** |
+
+⇒ ⭐⭐ **ALL FIVE are onboard PROPRIOCEPTION at t0.** Steering-wheel angle and longitudinal
+acceleration are exactly what a real vehicle's own sensors report at cycle time. ⛔ **None of them
+reads the future, and the trainer says so explicitly in the artifact rather than in someone's memory** —
+which is the `M18`/`anchors.pt` units lesson applied correctly, for once, by the code that wrote it.
+
+### 2. ⭐ What that does to the escalation
+
+⛔ **The LEAK question is ANSWERED: there is none.** The vision-only rule's own test — *"does an input
+at inference contain something the thing being measured also produces?"* — reads **no** on all five.
+These are t0 measurements, not future-derived labels, and they are not the situation classifier's
+output either.
+
+⇒ **What remains is a much narrower POLICY question, and it is genuinely the PI's:** the binding rule
+says *"for inference only vision"*, and the 2026-09-02 ruling carved out `v0`. **Whether the carve-out
+extends to three more t0 proprioceptive channels is a decision about the deployable spec, not about
+evidence.**
+
+⭐ **RECOMMENDED DEFAULT: admit all five.** They are onboard-measurable at cycle time, carry no future
+information, and rest on the **same principle** that admitted `v0` — a real car knows its own speed,
+steering angle and longitudinal acceleration at the instant it plans. ⇒ On that default the headline is
+**0.3055 m** and refcv4b's 35 % win stands as a deployable number.
+
+⚠️ **One caveat that must travel with it:** `curvature = tan(steer)/2.9` uses a **CONSTANT WHEELBASE**
+(`wheelbase_mode: const2p9`). That is a **modelling assumption, not a measurement** — harmless for a
+single vehicle, but it hard-codes 2.9 m into a channel we are about to declare deployable.
+
+### 3. ⭐ The transferable lesson, and it is about me
+
+⛔ **I escalated a question I had not tried to answer.** The provenance was **stamped in the config the
+run itself writes**, three lines of source away, and finding it converted *"a PI ruling worth a 3.6x
+swing"* into *"a fact plus a narrow policy call with a recommended default."*
+⇒ ⭐ **Before escalating, read the artifact that would settle it.** An escalation that could have been a
+source read spends the PI's attention on work the orchestrator owed — and it is the mirror of the
+night's other recurring error, **a blocker that dissolves on a second probe** (four times tonight).
+⚠️ **`M72`'s escalation is not withdrawn — it is narrowed**, and it now carries the default our own
+standard required in the first place.
