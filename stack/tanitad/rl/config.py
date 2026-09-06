@@ -54,6 +54,60 @@ REQUIREMENTS: dict[str, dict] = {
 }
 
 
+#: The two legal exploration spaces. See ``PostTrainConfig.sample_space``.
+SAMPLE_SPACES = ("control", "metre")
+
+
+class SampleSpaceRefusal(ValueError):
+    """Raised when an arm's declared exploration space makes its run dishonest."""
+
+
+def assert_arm_sample_space(arm: str, spec: dict) -> tuple:
+    """⛔⛔ REFUSE, BEFORE ANY COMPUTE, an arm that would run the DELIBERATE
+    REGRESSION UNDER THE HYPOTHESIS' NAME. Returns ``(sample_space, hypothesis_arm)``.
+
+    MEASURED 2026-09-06 by reading the shipped code: ``refcv3_adapter.sample_offsets``
+    scales the emitted OFFSET WAYPOINTS and has no control space at all, while
+    `E-DDA-3c` §4 pre-registers METRE-SPACE NOISE as the deliberate regression
+    ``reg_metre`` that must FAIL flyability. ⇒ every arm in the table was
+    metre-space, so launching ``rl`` executed ``reg_metre`` and its table would
+    have read as the hypothesis.
+
+    ⛔ THE THREE REFUSALS, each reachable by mutation and each pinned by a test:
+      1. an arm that DECLARES NOTHING -- a new arm may not inherit a default,
+         because the default is the regression;
+      2. an unknown value;
+      3. a HYPOTHESIS arm declaring ``"metre"``.
+    ⭐ It is NOT a blanket ban on metre space: ``reg_metre`` and every already-banked
+    metre arm declare ``hypothesis_arm=False`` and are allowed, which is what makes
+    the guard discriminating rather than a tautology.
+
+    This lives in the library, beside the field, so every launcher inherits it
+    rather than re-implementing it.
+    """
+    if "sample_space" not in spec or "hypothesis_arm" not in spec:
+        raise SampleSpaceRefusal(
+            f"arm {arm!r} does not DECLARE `sample_space` and `hypothesis_arm`. "
+            "A new arm may not inherit a default: metre-space noise is "
+            "`E-DDA-3c`'s deliberate regression `reg_metre`, and an undeclared "
+            "arm is exactly how it runs under the hypothesis' name.")
+    space = str(spec["sample_space"])
+    hyp = bool(spec["hypothesis_arm"])
+    if space not in SAMPLE_SPACES:
+        raise SampleSpaceRefusal(
+            f"arm {arm!r} declares sample_space={space!r}; must be one of "
+            f"{SAMPLE_SPACES}")
+    if hyp and space == "metre":
+        raise SampleSpaceRefusal(
+            f"REFUSING TO LAUNCH {arm!r}: it is declared a HYPOTHESIS arm but "
+            "explores in METRE space, which is `E-DDA-3c` section 4's "
+            "pre-registered DELIBERATE REGRESSION `reg_metre` (it must FAIL "
+            "flyability). Running it would table the regression as the "
+            "hypothesis. Declare sample_space='control', or rename the arm to "
+            "the regression it is.")
+    return space, hyp
+
+
 @dataclass(frozen=True)
 class PostTrainConfig:
     """Every knob of an RL post-training run."""
@@ -79,6 +133,22 @@ class PostTrainConfig:
     #: DDPM term there is multiplied by zero). See refcv3_adapter.sample_offsets.
     noise_mode: str = "multiplicative"
     noise_scale: float = 0.1
+
+    #: ⛔⛔ WHICH SPACE THE EXPLORATION ACTS IN, DECLARED AND RECORDED.
+    #:   "metre"   -- scale the emitted OFFSET WAYPOINTS (`refcv3_adapter.
+    #:                sample_offsets`). ⛔ This is `E-DDA-3c`'s pre-registered
+    #:                DELIBERATE REGRESSION `reg_metre`, which must FAIL
+    #:                flyability. It is the DEFAULT only because every banked arm
+    #:                ran it; a run that means to be the hypothesis must say so.
+    #:   "control" -- scale the implied (accel, curvature) CONTROLS and re-roll
+    #:                through the programme's single `rollout_unicycle`, so every
+    #:                explored candidate is flyable by construction
+    #:                (`tanitad.rl.control_space`).
+    #: MEASURED 2026-09-06: `sample_offsets` has NO control space at all, so
+    #: before this field existed an `rl` arm silently executed `reg_metre` under
+    #: the hypothesis' name. The launcher REFUSES a hypothesis arm that declares
+    #: "metre"; see `rl_refcv3_min.assert_sample_space`.
+    sample_space: str = "metre"
 
     # --- hard safety VETO (a CONSTRAINT, applied OUTSIDE the advantage) -----
     #: ⛔ Separated from the `headway` RANKING term on the Master Mind's design
@@ -218,6 +288,12 @@ class PostTrainConfig:
         if self.noise_mode not in ("multiplicative", "additive", "two_scalar"):
             raise ValueError(f"noise_mode must be 'multiplicative'|'additive'|"
                              f"'two_scalar', got {self.noise_mode!r}")
+        if self.sample_space not in ("metre", "control"):
+            raise ValueError(
+                f"sample_space must be 'metre'|'control', got "
+                f"{self.sample_space!r}. 'metre' is E-DDA-3c's DELIBERATE "
+                "REGRESSION `reg_metre`; an arm that means to be the hypothesis "
+                "must declare 'control'.")
         if not self.freeze_trunk:
             # allowed, but it must be a decision someone typed
             pass

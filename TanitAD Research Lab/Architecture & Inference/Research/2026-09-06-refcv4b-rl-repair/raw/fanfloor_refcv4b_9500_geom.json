@@ -1,0 +1,52 @@
+{
+ "tool": "stack/scripts/rl_fan_floor.py",
+ "tier": "T0-fan",
+ "evidence_class": "MEASURED (ours)",
+ "bank": "C:/Users/Admin/fanbank/fan_bank_refcv4b_9500_240w.npz",
+ "quality": "geom_feasibility",
+ "quality_provenance": "CONTROL-ONLY: -max(|a|/4.0, |kappa|/0.20) from fan2 at dt=0.50 s",
+ "collision_flag": null,
+ "n_windows": 240,
+ "n_candidates": 117,
+ "arm": {
+  "fan_floor@1": -0.336620574320356,
+  "fan_floor@5": -0.6373288138459127,
+  "fan_floor@8": -1.0350188643982012,
+  "fan_floor@10": -1.2156522896140813,
+  "fan_floor@32": -3.26260106228292,
+  "fan_floor@64": -6.161204659442107,
+  "fan_floor@117": -18.62715579966704,
+  "rand_best@1": -6.175715114837512,
+  "rand_best@5": -2.046696755051768,
+  "rand_best@8": -1.4104986193341513,
+  "rand_best@10": -1.1917008169111796,
+  "rand_best@32": -0.5577943167711298,
+  "rand_best@64": -0.40753828729968516,
+  "rand_best@117": -0.336620574320356,
+  "fan_q0.00": -0.336620574320356,
+  "fan_q0.25": -3.074160673469305,
+  "fan_q0.50": -5.440143582721551,
+  "fan_q0.75": -8.495887290438016,
+  "fan_diversity": 2.5650579169340295,
+  "fan_endpoint_std": 3.733774840523684
+ },
+ "notes": [
+  "fan_floor@k is an ORDER STATISTIC over K: not comparable across different K, and MAXIMISED BY MODE COLLAPSE. Read it beside fan_diversity, always.",
+  "rand_best@k is E[max over a random k-subset] - what a no-skill selector reaches. Any 'headroom' reading of @k must be quoted beside it (2026-09-05 retraction: a best-of-N statistic read as a skill gap).",
+  "fan_diversity is OUR definition; DDv2's 42.3->30.3 levels are NOT comparable, only the direction."
+ ],
+ "self_test": {
+  "verdict": "COLLAPSE-SUSPECT",
+  "k": 117,
+  "d_floor": 13.602342409392197,
+  "d_rand_best": -0.5112443398684263,
+  "d_diversity": -2.3085521252406265,
+  "rel_diversity": -0.8999999999999999,
+  "base_floor": -18.62715579966704,
+  "arm_floor": -5.024813390274843,
+  "base_diversity": 2.5650579169340295,
+  "note": "point deltas only; the decision-grade statistic is the paired episode-cluster bootstrap, and one seed is necessary-not-sufficient (H-ESTIM-SEED-1)",
+  "div_half": "FIRED",
+  "floor_half": "FIRED"
+ }
+}

@@ -110,8 +110,11 @@ from tanitad.rl import (HACKABLE_WEIGHTS, DEFAULT_WEIGHTS,           # noqa: E40
                         PostTrainConfig, RewardSpec, audit as AUD,
                         rewards as RW)
 from tanitad.rl.anchor import ReferencePolicy, trajectory_divergence  # noqa: E402
+from tanitad.rl.config import (SAMPLE_SPACES, SampleSpaceRefusal,     # noqa: E402
+                               assert_arm_sample_space)
 from tanitad.rl.posttrain import run_posttrain, select_trainable     # noqa: E402
 from tanitad.rl.refcv3_adapter import sample_offsets                 # noqa: E402
+from tanitad.rl import control_space as CS                           # noqa: E402
 
 ARM = _load_by_path("refcv3_arm_for_rl", os.path.join(_TE_TOOLS, "refcv3_arm.py"))
 PAIRED = _load_by_path("paired_openloop_for_rl",
@@ -189,10 +192,86 @@ FORBIDDEN_FUTURE_CTX = frozenset({"gt_traj", "future_poses", "future_poses_ext",
 #: ⚠️ The one variable against `base` is still THE RL STAGE (on/off). These two
 #: are INSIDE the stage's definition, named here so the arm cannot be read as the
 #: predecessor's arm with a different result.
+#: ⛔⛔ THE FIELD THAT MAKES THE DANGEROUS RUN IMPOSSIBLE (2026-09-06).
+#: MEASURED by reading the shipped code: `refcv3_adapter.sample_offsets` scales the
+#: emitted OFFSET WAYPOINTS and has NO control space -- `control`, `rollout_unicycle`,
+#: `a_lon`, `alat` appear ZERO times in that file. `E-DDA-3c` §4 pre-registers
+#: METRE-SPACE NOISE as the DELIBERATE REGRESSION `reg_metre`, which must FAIL
+#: flyability. ⇒ before this field existed, launching `rl` executed `reg_metre`
+#: UNDER THE HYPOTHESIS' NAME and would have tabled it as the result.
+#:
+#: Every arm now declares BOTH of:
+#:   `sample_space`   "control" | "metre"      -- recorded into config.json
+#:   `hypothesis_arm` True for an arm whose result is read AS the hypothesis
+#: and `assert_sample_space` REFUSES, before any compute:
+#:   * an arm with no declaration (a new arm cannot inherit a default);
+#:   * an unknown value;
+#:   * ⛔ a HYPOTHESIS arm declaring "metre" -- that is the regression, by name.
+#: ⚠️ The already-banked 2026-09-05 arms declare "metre" because that is what they
+#: RAN. Their reproduction is therefore preserved and the record becomes honest;
+#: ⛔ under `E-DDA-3c`'s arm table the banked `rl` result IS `reg_metre` and may
+#: never be quoted as `E-DDA-3c`'s `rl`.
+def assert_sample_space(arm: str) -> tuple:
+    """(sample_space, hypothesis_arm) or a REFUSAL, before any compute.
+
+    ⛔ The rule itself lives in `tanitad.rl.config.assert_arm_sample_space`, beside
+    the field it guards, so every launcher inherits it instead of re-deriving it.
+    This wrapper only turns the library refusal into the launcher's SystemExit."""
+    try:
+        return assert_arm_sample_space(arm, ARMS[arm])
+    except SampleSpaceRefusal as e:
+        raise SystemExit(f"[rl-min] ⛔⛔ {e}")
+
+
 ARMS = {
-    # name: reward weights, w_anchor, lr, steps, use_gt_bar, noise_mode
+    # name: reward weights, w_anchor, lr, steps, use_gt_bar, noise_mode,
+    #       sample_space, hypothesis_arm
+    # ⭐ THE HYPOTHESIS, and it is now CONTROL-SPACE (E-DDA-3c §4 / §8.1).
     "rl":         dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=1e-5, steps=2000,
-                       use_gt_bar=True, noise_mode="two_scalar"),
+                       use_gt_bar=True, noise_mode="two_scalar",
+                       sample_space="control", hypothesis_arm=True),
+    # ⭐ THE SEED REPLICATE, budgeted from the start. `H-ESTIM-SEED-1`: a
+    # separated CI at ONE seed is NECESSARY, NOT SUFFICIENT -- a zero-lever
+    # replicate produced "separated" on 3 of 18 family metrics. Identical flags;
+    # only --seed differs.
+    "rl_s1":      dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=1e-5, steps=2000,
+                       use_gt_bar=True, noise_mode="two_scalar",
+                       sample_space="control", hypothesis_arm=True),
+    # ⛔ THE CONTROL-SPACE CONTROLS. A control that does not share the arm's
+    # INGREDIENTS is not a control: `E-DDA-3c` §4's exit order makes the panel VOID
+    # if `ctrl0` moves or `reg_echo` fails to collapse, and those verdicts must be
+    # about the CONTROL-SPACE stage. The legacy `ctrl0` / `reg_echo` / `ctrl_null`
+    # entries below stay METRE because that is what the banked 2026-09-05 runs
+    # actually executed -- renaming their space would make those results
+    # irreproducible under their own names.
+    "ctrl0_cs":   dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=0.0, steps=200,
+                       use_gt_bar=True, noise_mode="two_scalar",
+                       sample_space="control", hypothesis_arm=False),
+    "reg_echo_cs": dict(weights={"gt_similarity": 1.0}, w_anchor=0.0, lr=1e-5,
+                        steps=2000, use_gt_bar=False, noise_mode="two_scalar",
+                        veto_collision=False, veto_ttc=True,
+                        sample_space="control", hypothesis_arm=False),
+    "ctrl_null_cs": dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                         lr=1e-5, steps=200, use_gt_bar=False,
+                         noise_mode="two_scalar", veto_enabled=False,
+                         sample_space="control", hypothesis_arm=False),
+    # ⛔ DELIBERATE REGRESSION #2 (E-DDA-3c §4): metre-space noise instead of
+    # control-space. Identical in every other respect to `rl`, so the ONE
+    # variable is the SPACE. It must FAIL flyability.
+    "reg_metre":  dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=1e-5, steps=2000,
+                       use_gt_bar=True, noise_mode="two_scalar",
+                       sample_space="metre", hypothesis_arm=False),
+    # ⛔ MANDATORY ATTRIBUTION (E-DDA-3c §4): the veto with the reward identically
+    # 0.0, at the hypothesis' dose. Without it an `rl` gain is not attributable to
+    # the reward -- `veto200` was the only refcv3 arm that ever moved the fan the
+    # right way.
+    "veto_only":  dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                       lr=1e-5, steps=2000, use_gt_bar=False, noise_mode="two_scalar",
+                       veto_enabled=True, sample_space="control", hypothesis_arm=False),
+    # the DOSE-MATCHED drift control: same steps, same lr, no information at all.
+    "dose_null":  dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
+                       lr=1e-5, steps=2000, use_gt_bar=False, noise_mode="two_scalar",
+                       veto_enabled=False, sample_space="control", hypothesis_arm=False),
     # ⛔ the deliberate regression: the ego GT future INSIDE the advantage. No bar
     # (the echo IS the objective) — G-FAN must fire on it or the panel is VOID.
     "reg_echo":   dict(weights={"gt_similarity": 1.0}, w_anchor=0.0, lr=1e-5, steps=2000,
@@ -202,11 +281,13 @@ ARMS = {
                        # "collision" key, so it ran with the COLLISION channel OFF and
                        # the TTC channel ON. Stated explicitly so the banked arm still
                        # reproduces after the veto became a config field.
-                       veto_collision=False, veto_ttc=True),
+                       veto_collision=False, veto_ttc=True,
+                       sample_space="metre", hypothesis_arm=False),
     # the reproduction control: lr 0, weights hash-identical, every readout delta
     # EXACTLY 0. Same ingredients as `rl` so it controls the arm that ran.
     "ctrl0":      dict(weights=dict(DEFAULT_WEIGHTS), w_anchor=1.0, lr=0.0, steps=200,
-                       use_gt_bar=True, noise_mode="two_scalar"),
+                       use_gt_bar=True, noise_mode="two_scalar",
+                       sample_space="metre", hypothesis_arm=False),
     # ⭐ the CONSTANT-ONLY control (the probe-panel rule, CLAUDE.md 2026-08-22):
     # EVERY component weight is 0.0, so the reward is exactly 0.0 for every
     # candidate — MEASURED, not asserted: RewardSpec over these weights returns a
@@ -219,7 +300,8 @@ ARMS = {
     # the INFORMATION. If ctrl_const moves, something other than the reward is
     # driving the update, and no `rl` result above it means anything.
     "ctrl_const": dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
-                       lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar"),
+                       lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
+                       sample_space="metre", hypothesis_arm=False),
     # ⭐⭐ THE VETO-ONLY PRODUCT (2026-09-05, Arch+Inference FlyWheel).
     # `ctrl_const` above was an UNINTENTIONALLY EXACT veto-only arm - every reward
     # weight 0.0 while `posttrain.py` keyed the veto on the reward's KEY SET - and it
@@ -233,17 +315,20 @@ ARMS = {
     # channel, now keyed EXPLICITLY by `veto_enabled` rather than by a key set.
     "veto200":    dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
                        lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
-                       veto_enabled=True),
+                       veto_enabled=True,
+                       sample_space="metre", hypothesis_arm=False),
     "veto2k":     dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
                        lr=1e-5, steps=2000, use_gt_bar=False, noise_mode="two_scalar",
-                       veto_enabled=True),
+                       veto_enabled=True,
+                       sample_space="metre", hypothesis_arm=False),
     # ⛔ THE ACTUAL NULL that `ctrl_const` was supposed to be: zero reward AND no
     # veto, so the advantage is identically zero and `veto_rate` reads EXACTLY 0.0.
     # It is the empirical proof that P2's fix works - a zero-weight control that is
     # not a null is the false-green class wearing a control's clothes.
     "ctrl_null":  dict(weights={k: 0.0 for k in DEFAULT_WEIGHTS}, w_anchor=1.0,
                        lr=1e-5, steps=200, use_gt_bar=False, noise_mode="two_scalar",
-                       veto_enabled=False),
+                       veto_enabled=False,
+                       sample_space="metre", hypothesis_arm=False),
     # ⭐⭐ THE COLLISION LEVER (2026-09-05, PI instruction: "our model is creating
     # trajectories with collision, so RL must improve this ... by punishing trajectories
     # with collisions the quality of output trajectories must improve").
@@ -265,10 +350,12 @@ ARMS = {
     # colliders last perfectly (AUC 0.0000).
     "coll200":    dict(weights={**{k: 0.0 for k in DEFAULT_WEIGHTS}, "collision": 1.0},
                        w_anchor=1.0, lr=1e-5, steps=200, use_gt_bar=False,
-                       noise_mode="two_scalar", veto_enabled=False),
+                       noise_mode="two_scalar", veto_enabled=False,
+                       sample_space="metre", hypothesis_arm=False),
     "coll2k":     dict(weights={**{k: 0.0 for k in DEFAULT_WEIGHTS}, "collision": 1.0},
                        w_anchor=1.0, lr=1e-5, steps=2000, use_gt_bar=False,
-                       noise_mode="two_scalar", veto_enabled=False),
+                       noise_mode="two_scalar", veto_enabled=False,
+                       sample_space="metre", hypothesis_arm=False),
 }
 
 
@@ -470,9 +557,36 @@ def make_sample_fn(model, reference, *, echo_reward: bool, gt_bar: bool = False)
         anchor_traj = out["anchor_traj"]                                # [B, N, 8, 2]
         offset = out["offset"]                                          # [B, N, 8, 2]
         base = anchor_traj - offset
-        off_g, logp = sample_offsets(offset, cfg)
-        traj = base.unsqueeze(2) + off_g                                # [B, N, G, 8, 2]
-        traj2 = with_origin(traj[..., :N_REWARD_SLOTS, :])              # [B, N, G, 5, 2]
+        if str(getattr(cfg, "sample_space", "metre")) == "control":
+            # ⭐ CONTROL SPACE. The deterministic fan's 2 s PREFIX is inverted to
+            # (accel, curvature) through the programme's SINGLE inverse map, the
+            # two DD-v2 scalars scale THOSE, the result is clamped to the envelope
+            # and re-rolled through `rollout_unicycle` -- so every explored
+            # candidate is flyable BY CONSTRUCTION.
+            # ⛔ THE PREFIX, NOT THE FULL FAN, AND THAT IS NOT A SHORTCUT: the
+            # inverse map assumes a UNIFORM dt, and only slots 0-3 of
+            # ARM_HORIZONS are uniform (5,10,15,20 frames = 0.5 s). It is also
+            # exactly the span the reward scores.
+            path4 = anchor_traj[..., :N_REWARD_SLOTS, :]                # [B, N, 4, 2]
+            ctl0 = CS.controls_from_path(path4, dt=DT_REWARD_S)         # [B, N, 4, 2]
+            st0 = torch.stack([torch.zeros_like(batch["v0"]),
+                               torch.zeros_like(batch["v0"]),
+                               torch.zeros_like(batch["v0"]),
+                               batch["v0"]], dim=-1)                    # [B, 4]
+            traj4, logp, ctl = CS.sample_control_space(
+                st0, ctl0, group=int(cfg.group_size), dt=DT_REWARD_S,
+                sigma=float(cfg.noise_scale), logp_mode="policy")
+            # ⛔ POSITIVE ASSERTION, every step: a detached logp makes the
+            # REINFORCE term identically zero and the arm a SILENT NO-OP.
+            # MEASURED 2026-09-06 that the module's scalar-density logp is
+            # exactly that, so this is a live failure mode and not a formality.
+            CS.assert_carries_policy_gradient(logp, "control-space logp")
+            traj2 = with_origin(traj4)                                  # [B, N, G, 5, 2]
+            traj = traj4
+        else:
+            off_g, logp = sample_offsets(offset, cfg)
+            traj = base.unsqueeze(2) + off_g                            # [B, N, G, 8, 2]
+            traj2 = with_origin(traj[..., :N_REWARD_SLOTS, :])          # [B, N, G, 5, 2]
         ctx = reward_ctx(batch, S5=traj2.shape[-2])
         if echo_reward:
             # ⛔ DELIBERATE REGRESSION ONLY: the logged ego future INSIDE the advantage.
@@ -655,6 +769,10 @@ def make_cfg(arm: str, a, prov, out_dir: str) -> PostTrainConfig:
         # ⭐ from the ARM SPEC, not from a flag default: the arm's definition is
         # what the record must show, and `to_dict()` writes both into config.json.
         noise_mode=str(spec.get("noise_mode", "multiplicative")),
+        # ⛔ NOT `.get(..., default)`. `assert_sample_space` has already refused an
+        # arm that does not declare one; a default here would re-open the exact
+        # hole this field closes.
+        sample_space=assert_sample_space(arm)[0],
         use_gt_bar=bool(spec.get("use_gt_bar", False)),
         noise_scale=float(a.noise),
         steps=int(a.steps if a.steps else spec["steps"]), batch=int(a.batch),
@@ -906,6 +1024,11 @@ def mode_arm(a) -> int:
     if os.environ.get("LAUNCH_APPROVED") != "1":
         raise SystemExit("[rl-min] ⛔ NOT LAUNCHED: --mode arm requires LAUNCH_APPROVED=1 in the "
                          "environment (Master Mind / PI approval of the SPEC's cost).")
+    # ⛔ THE REFUSAL RUNS FIRST -- before the checkpoint, the corpus or a single
+    # GPU second. An arm that would execute the deliberate regression under the
+    # hypothesis' name must die here, not after minutes of paid start-up.
+    _space, _hyp = assert_sample_space(a.arm)
+    _p(f"[arm {a.arm}] sample_space={_space} hypothesis_arm={_hyp}")
     device = a.device if torch.cuda.is_available() else "cpu"
     model, cfg, targs, prov = load(a, device)
     run = os.path.join(a.out_dir, a.arm)
@@ -1112,6 +1235,102 @@ def mode_humanflag(a) -> int:
     return 0 if out["PASS"] else 1
 
 
+@torch.no_grad()
+def mode_fanbank(a) -> int:
+    """⭐ B6: bank the DETERMINISTIC fan in the schema `rl_fan_floor.py` consumes.
+
+    ⛔ WHY IT DID NOT EXIST. `B6` of `E-DDA-3c`: every banked refcv4b artifact
+    carries the SELECTED paths only (`g`, `os`, `ha`, `ha0`, ...), with no
+    candidate axis, so the RL rung's PRIMARY readout had no input. `fan_safety.py`
+    has no `--bank-fan` path and `rl_refcv3_min.py` had no fan/bank/dump flag at
+    all -- 0 of 26.
+
+    Writes `fan2 [W, K, 5, 2]` (the 2 s prefix, ORIGIN-PREPENDED, on the 0.5 s
+    grid), `eid [W]` (the bootstrap's cluster key), `has_lead [W]`, `dt_s`, and
+    the per-candidate reward components `c_progress c_headway c_collision
+    c_comfort c_feasibility [W, K]` from which `--quality composed` is built.
+
+    ⛔ THE QUALITY COLUMNS ARE BANKED **AND** THE GEOMETRY IS BANKED, on purpose.
+    `E-DDA-3c` §3 records that on a bank whose quality columns are PRECOMPUTED the
+    collapse control's FLOOR half reads INERT -- collapsing the geometry cannot
+    move a column computed before the collapse -- so the complete control needs a
+    quality recomputed from the waypoints (`--quality geom_feasibility`). Banking
+    `fan2` is what makes that recomputation possible.
+
+    ⛔ NO EGO FUTURE IS READ. `build_batch(..., with_gt=False)`; the reward ctx is
+    the same `reward_ctx` every arm uses, and `FORBIDDEN_FUTURE_CTX` is asserted.
+    Tier: T0 / fan-level. Evidence class: MEASURED (ours)."""
+    device = a.device if torch.cuda.is_available() else "cpu"
+    model, cfg, targs, prov = load(a, device)
+    corp = open_corpus(a.episodes, a.labels, cfg, prov, a.lru)
+    lead, _lm, _li = load_lead_block(a.lead_block)
+    wis_all = scoreable_windows(corp, lead)
+    n = int(a.bank_windows) if a.bank_windows else len(wis_all)
+    rng = random.Random(int(a.seed))
+    wis = sorted(rng.sample(wis_all, min(len(wis_all), n)))
+    spec = RewardSpec(weights=dict(DEFAULT_WEIGHTS), dt=DT_REWARD_S)
+    fans, eids, hasl, comps = [], [], [], {}
+    t0 = time.time()
+    for i in range(0, len(wis), int(a.batch)):
+        chunk = wis[i:i + int(a.batch)]
+        batch = build_batch(corp, lead, chunk, device, with_gt=False)
+        out = model(batch["frames"], nav_cmd=batch["nav_cmd"], v0=batch["v0"],
+                    steps=int(prov["decoder_steps"]))
+        fan5 = with_origin(out["anchor_traj"][..., :N_REWARD_SLOTS, :])   # [B, N, 5, 2]
+        ctx = reward_ctx(batch, S5=fan5.shape[-2], cand_dims=1)
+        bad = FORBIDDEN_FUTURE_CTX & set(ctx)
+        if bad:
+            raise RuntimeError(f"FUTURE LEAK into the fan-bank ctx: {sorted(bad)}")
+        parts = spec.per_component(fan5, ctx)
+        for k, v in parts.items():
+            if tuple(v.shape) != tuple(fan5.shape[:-2]):
+                raise RuntimeError(
+                    f"component {k} came back {tuple(v.shape)} against a fan "
+                    f"{tuple(fan5.shape[:-2])} -- the B x B outer-product trap")
+            comps.setdefault("c_" + k, []).append(v.detach().float().cpu().numpy())
+        fans.append(fan5.detach().float().cpu().numpy())
+        for wi in chunk:
+            e_i, _t = corp.ds.index[wi]
+            eids.append(int(e_i))
+            hasl.append(bool(lead_row(corp, lead, wi)[0]))
+        if (i // max(int(a.batch), 1)) % 20 == 0:
+            _p(f"[fanbank] {i + len(chunk)}/{len(wis)} windows "
+               f"({time.time() - t0:.0f}s)")
+    fan2 = np.concatenate(fans, axis=0)
+    out_npz = {"fan2": fan2, "eid": np.asarray(eids, dtype=np.int64),
+               "has_lead": np.asarray(hasl, dtype=bool),
+               "dt_s": np.asarray(DT_REWARD_S, dtype=np.float64)}
+    for k, v in comps.items():
+        out_npz[k] = np.concatenate(v, axis=0)
+    os.makedirs(os.path.dirname(os.path.abspath(a.bank_fan)), exist_ok=True)
+    np.savez_compressed(a.bank_fan, **out_npz)
+    # ⛔ VERIFY BY CONTENT, NEVER BY EXIT CODE. A pre-allocated array that a
+    # failed decode left as zeros reads as a valid file of the right size and
+    # scores every arm above it -- the E-DETECT-1 all-zero-floor class.
+    z = np.load(a.bank_fan)
+    got = z["fan2"]
+    if got.shape != fan2.shape or not np.isfinite(got).all():
+        raise SystemExit("[fanbank] ⛔ the written bank does not read back")
+    if float(np.abs(got).max()) == 0.0:
+        raise SystemExit("[fanbank] ⛔ the banked fan is ALL ZEROS")
+    rep = {"_what": "banked deterministic fan, 2 s prefix on the 0.5 s grid",
+           "_tier": "T0 / fan-level", "_evidence_class": "MEASURED (ours)",
+           "ckpt": a.ckpt, "step": int(prov["step"]),
+           "n_windows": int(fan2.shape[0]), "n_candidates": int(fan2.shape[1]),
+           "n_slots": int(fan2.shape[2]), "dt_s": DT_REWARD_S,
+           "n_episodes": int(len(set(eids))),
+           "lead_windows": int(sum(hasl)), "lead_mode": LEAD_MODE,
+           "components": sorted(comps), "wallclock_s": round(time.time() - t0, 1),
+           "fan_abs_max": float(np.abs(got).max()),
+           "fan_abs_mean": float(np.abs(got).mean())}
+    with open(a.bank_fan + ".report.json", "w", encoding="utf-8") as fh:
+        json.dump(rep, fh, indent=1)
+    _p(f"[fanbank] {rep['n_windows']} x {rep['n_candidates']} x {rep['n_slots']} "
+       f"({rep['n_episodes']} episodes, {rep['lead_windows']} with a lead) -> "
+       f"{a.bank_fan}")
+    return 0
+
+
 def _fam_rows(rec: dict) -> dict:
     """paired_openloop.py's record -> {metric_key: {family, delta, lo, hi, separated,
     lower_is_better}}. The record's shape is rec['families'][FAMILY]['metrics'][KEY]
@@ -1217,7 +1436,12 @@ def mode_verdict(a) -> int:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mode", required=True,
-                    choices=("preflight", "fitlist", "arm", "verdict", "humanflag"))
+                    choices=("preflight", "fitlist", "arm", "verdict", "humanflag",
+                             "fanbank"))
+    ap.add_argument("--bank-fan", default=None,
+                    help="--mode fanbank: write the banked fan .npz here")
+    ap.add_argument("--bank-windows", type=int, default=0,
+                    help="--mode fanbank: how many windows to bank (0 = all)")
     ap.add_argument("--lead-mode", choices=("track", "static"), default="track",
                     help="how the lead enters the reward ctx (see LEAD_MODE)")
     ap.add_argument("--human-flag-max", type=float, default=0.15,
@@ -1244,7 +1468,7 @@ def main(argv=None) -> int:
     torch.manual_seed(int(a.seed))
     return {"preflight": mode_preflight, "fitlist": mode_fitlist,
             "arm": mode_arm, "verdict": mode_verdict,
-            "humanflag": mode_humanflag}[a.mode](a)
+            "humanflag": mode_humanflag, "fanbank": mode_fanbank}[a.mode](a)
 
 
 if __name__ == "__main__":

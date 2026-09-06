@@ -1,0 +1,53 @@
+{
+ "tool": "stack/scripts/rl_fan_floor.py",
+ "tier": "T0-fan",
+ "evidence_class": "MEASURED (ours)",
+ "bank": "C:/Users/Admin/fanbank/fan_bank_refcv4b_9500_240w.npz",
+ "quality": "reward_composed",
+ "quality_provenance": "c_progress*5.0+c_headway*5.0+c_comfort*2.0+c_collision*12.0+c_feasibility*12.0",
+ "collision_flag": null,
+ "n_windows": 240,
+ "n_candidates": 117,
+ "arm": {
+  "fan_floor@1": 0.5895037839877962,
+  "fan_floor@5": 0.571105886435998,
+  "fan_floor@8": 0.5643209899357918,
+  "fan_floor@10": 0.5608724791135821,
+  "fan_floor@32": 0.5246896532978161,
+  "fan_floor@64": 0.4502289217048162,
+  "fan_floor@117": 0.20069810065119692,
+  "rand_best@1": 0.4361547347317728,
+  "rand_best@5": 0.5446182534325804,
+  "rand_best@8": 0.5582741877311721,
+  "rand_best@10": 0.5624756502156086,
+  "rand_best@32": 0.5781021706547349,
+  "rand_best@64": 0.584501041937356,
+  "rand_best@117": 0.5895037839877963,
+  "fan_q0.00": 0.5895037839877962,
+  "fan_q0.25": 0.5280736036341211,
+  "fan_q0.50": 0.46663975789434003,
+  "fan_q0.75": 0.35944687497553035,
+  "fan_diversity": 2.5650579169340295,
+  "fan_endpoint_std": 3.733774840523684
+ },
+ "notes": [
+  "fan_floor@k is an ORDER STATISTIC over K: not comparable across different K, and MAXIMISED BY MODE COLLAPSE. Read it beside fan_diversity, always.",
+  "rand_best@k is E[max over a random k-subset] - what a no-skill selector reaches. Any 'headroom' reading of @k must be quoted beside it (2026-09-05 retraction: a best-of-N statistic read as a skill gap).",
+  "fan_diversity is OUR definition; DDv2's 42.3->30.3 levels are NOT comparable, only the direction."
+ ],
+ "self_test": {
+  "verdict": "NO-GAIN",
+  "k": 117,
+  "d_floor": 0.0,
+  "d_rand_best": 0.0,
+  "d_diversity": -2.3085521252406265,
+  "rel_diversity": -0.8999999999999999,
+  "base_floor": 0.20069810065119692,
+  "arm_floor": 0.20069810065119692,
+  "base_diversity": 2.5650579169340295,
+  "note": "point deltas only; the decision-grade statistic is the paired episode-cluster bootstrap, and one seed is necessary-not-sufficient (H-ESTIM-SEED-1)",
+  "div_half": "FIRED",
+  "floor_half": "INERT",
+  "limit": "PARTIAL: the floor half is INERT because --quality 'composed' reads PRECOMPUTED per-candidate columns, which do not change when the GEOMETRY is collapsed. Only the diversity half was exercised here. Re-run with --quality geom_feasibility to exercise both."
+ }
+}

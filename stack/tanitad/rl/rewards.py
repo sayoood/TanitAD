@@ -217,12 +217,37 @@ def _progress(traj: Tensor, ctx: dict) -> Tensor:
     ⚠️ Falls back to a FIXED reference when ``v0`` is absent from the context.
     That is a degraded mode: it restores the saturation A0 measured, so callers
     should supply ``v0``.
+
+    ⭐⭐ LEAD CAP, ADDED 2026-09-06 (`H-RL-PROGRESS-LEADCAP-1`, pre-registered in
+    `.../Research/2026-09-06-refcv4b-rl-repair/PREREG.md` and committed BEFORE
+    this change). ⛔ THE DEFECT IT REPAIRS IS MEASURED, NOT ARGUED: on 6,089
+    RL-fit windows / 73 episodes the per-term weighted mean gap
+    ``hold_v0 - human`` for THIS TERM **FLIPS SIGN** as the scene tightens --
+    -0.005600 over all windows, **+0.003593** at a <= 3.0 s human time gap,
+    **+0.006368** at <= 2.0 s, **+0.008251** at <= 1.5 s. In close following the
+    human slows for the lead and a constant-velocity path does not, so an
+    UNCAPPED along-track reference **PAYS THE TRIVIAL PATH FOR NOT SLOWING
+    DOWN**, precisely where the safety question is live. `progress` is the only
+    one of the three ranking terms that changes sign.
+
+    The numerator is therefore capped at what is ACHIEVABLE given the lead's own
+    recorded position at the horizon end (:func:`achievable_along_ref`), behind
+    ``ctx["progress_lead_cap"]`` (default ``True``). ⛔ It is **inert without a
+    lead**, so the no-lead population is unchanged BY CONSTRUCTION rather than by
+    luck, and ``progress_lead_cap=False`` restores the exact pre-repair term for
+    reproducing any banked number.
+
+    ⛔ WHAT IT IS NOT. DD-v2's ``EP = progress_i / max(progress_GT, progress_i)``
+    caps at the HUMAN'S OWN progress. That is the human's SHAPE inside a RANK
+    term and is inadmissible here (`E-DDA-3c` §6.1: the bar may use the human's
+    SCORE, never their SHAPE). This cap comes from the LEAD AGENT'S recorded
+    track, which §6.1 already admits into the RANK channel.
     """
     kin = kinematics(traj, ctx.get("dt", DT_S))
     v0 = ctx.get("v0")
     if v0 is None:
         ref = float(ctx.get("progress_ref_m", 30.0))
-        return kin.along / max(ref, EPS)
+        return _apply_lead_cap(kin.along, max(ref, EPS), ctx)
     horizon_s = (traj.shape[-2] - 1) * float(ctx.get("dt", DT_S))
     min_ref = float(ctx.get("progress_min_ref_m", 5.0))
     if isinstance(v0, Tensor):
@@ -231,7 +256,102 @@ def _progress(traj: Tensor, ctx: dict) -> Tensor:
             ref = ref.unsqueeze(-1)
     else:
         ref = max(float(v0) * horizon_s, min_ref)
-    return kin.along / ref
+    return _apply_lead_cap(kin.along, ref, ctx)
+
+
+#: The legal values of ``ctx["progress_lead_cap"]``.
+#:   "achievable" (default, and ``True``) -- the PRE-REGISTERED form:
+#:        ref_ach = clamp(min(ref_free, lead_x[-1] - standoff), min_ref)
+#:   "lead"  -- the SENSITIVITY variant: cap at the lead-imposed bound ONLY, so a
+#:        candidate may still earn progress above ``v0 * H`` when the lead is far.
+#:        Kept because the pre-registered form carries a SECOND cap (at ref_free)
+#:        that was not the stated intent, and a difference that is priced is worth
+#:        more than one that is hidden.
+#:   "off" (and ``False``) -- the exact pre-repair term, bit-identical.
+PROGRESS_LEAD_CAP_MODES = ("achievable", "lead", "off")
+
+
+def _progress_cap_mode(ctx: dict) -> str:
+    m = ctx.get("progress_lead_cap", True)
+    if m is True:
+        return "achievable"
+    if m is False or m is None:
+        return "off"
+    m = str(m)
+    if m not in PROGRESS_LEAD_CAP_MODES:
+        raise ValueError(
+            f"progress_lead_cap must be one of {PROGRESS_LEAD_CAP_MODES} "
+            f"(or a bool), got {m!r}")
+    return m
+
+
+def achievable_along_ref(ctx: dict, ref_free):
+    """The ACHIEVABLE along-track reference given the LEAD'S OWN RECORDED POSITION.
+
+    Returns ``None`` when the cap is inert -- no lead, or the mode is ``off`` --
+    in which case ``_progress`` takes the byte-identical pre-repair path.
+
+    ⛔⛔ COORDINATE DISCIPLINE, AND IT IS THE REASON THIS FUNCTION LOOKS THE WAY
+    IT DOES. Every quantity here is a **POSITION QUERY** on the lead's recorded
+    track (``lead_path[..., -1, 0]`` -- the lead's x at the END of the horizon)
+    or a **scene scalar measured at t0** (``v0``, ``lead_len_m``,
+    ``target_time_gap_s``). ⛔ **NO CLOSING RATE APPEARS ANYWHERE.** `M84`
+    MEASURED that refcv4b-lineage latents decode the lead's POSITION (paired vs
+    pixels +0.4145 [+0.2018, +0.6120], constant control exactly +0.000000) while
+    its CLOSING RATE is a clean null on every arm (+0.0061, and an explicit
+    temporal difference recovers nothing). A RANK term whose ORDERING rested on
+    that rate would inherit a coordinate the latent does not carry -- which is
+    exactly why TTC stays a VETO and is not graded into the ranking.
+    ⇒ A consequence that is TESTED, not asserted: perturbing the lead's
+    INTERMEDIATE track samples while holding its endpoint fixed must leave this
+    reference EXACTLY unchanged (``test_rl_progress_leadcap.py``). A rate-based
+    reference could not pass that test.
+
+    ⛔ THE CAP IS A PROPERTY OF THE SCENE, NOT OF THE CANDIDATE -- identical for
+    every candidate in a window -- so it cannot rank on anything the reward is
+    not allowed to see. And it uses NO NEW CONSTANT: ``lead_len_m`` and
+    ``target_time_gap_s`` are the same two ``_headway`` already consumes and
+    ``THRESHOLD_CALIBRATION`` already carries. A standoff with a free knob in it
+    could have been tuned until the answer came out right; this one cannot.
+    """
+    if _progress_cap_mode(ctx) == "off":
+        return None
+    lead = ctx.get("lead_path")
+    if lead is None:
+        return None                      # ABSENCE MEANS NO CONSTRAINT (the neutral rule)
+    lead_end_x = lead[..., -1, 0]                                  # POSITION at t = H
+    v0 = ctx.get("v0")
+    t_star = float(ctx.get("target_time_gap_s", 2.0))
+    lead_len = float(ctx.get("lead_len_m", 4.5))
+    if isinstance(v0, Tensor):
+        standoff = lead_len + t_star * v0
+        while standoff.dim() < lead_end_x.dim():
+            standoff = standoff.unsqueeze(-1)
+    else:
+        standoff = lead_len + t_star * (0.0 if v0 is None else float(v0))
+    ref_lead = lead_end_x - standoff
+    min_ref = float(ctx.get("progress_min_ref_m", 5.0))
+    if _progress_cap_mode(ctx) == "achievable":
+        ref_free_t = (ref_free if isinstance(ref_free, Tensor)
+                      else torch.as_tensor(float(ref_free), dtype=ref_lead.dtype,
+                                           device=ref_lead.device))
+        ref_lead = torch.minimum(ref_free_t, ref_lead)
+    return ref_lead.clamp_min(min_ref)
+
+
+def _apply_lead_cap(along: Tensor, ref_free, ctx: dict) -> Tensor:
+    """``along / ref_free``, with the numerator CAPPED at the achievable bound.
+
+    ⭐ IT REMOVES A PAYMENT; IT DOES NOT ADD A PENALTY. Exceeding the achievable
+    bound earns nothing further, and the floor is the cap, never a negative
+    value: going too fast is ALREADY punished by ``headway`` (MEASURED weighted
+    mean gap -0.015899 at a <= 2.0 s human time gap) and by the collision and TTC
+    channels, and a second penalty for one fact is double-dipping.
+    """
+    ref_ach = achievable_along_ref(ctx, ref_free)
+    if ref_ach is None:
+        return along / ref_free
+    return torch.minimum(along, ref_ach) / ref_free
 
 
 def segment_point_distance(p0: Tensor, p1: Tensor, q: Tensor) -> Tensor:
@@ -326,6 +446,49 @@ def _collision(traj: Tensor, ctx: dict) -> Tensor:
                        torch.zeros_like(hit, dtype=traj.dtype))
 
 
+def _reduce_time_gap(tg_steps: Tensor, ctx: dict) -> Tensor:
+    """Reduce the per-step time gaps to ONE number. ``ctx["headway_reduce"]``.
+
+    ⛔⛔ WHY THIS IS A KNOB AND NOT A CONSTANT — `H-RL-HEADWAY-QUANTILE-1`,
+    pre-registered in `.../2026-09-06-refcv4b-rl-repair/PREREG_HEADWAY.md` and
+    committed BEFORE this change.
+
+    ``"min"`` (the DEFAULT, and BIT-IDENTICAL to the pre-2026-09-06 term) is
+    ``amin`` — a **MIN-OVER-N ORDER STATISTIC** over the horizon's steps. A
+    minimum fires on the single worst step, so the term is **RARE AND LARGE**:
+    silent in most windows and very loud in a few. MEASURED 2026-09-06: with
+    `progress` repaired, `headway` carries essentially the whole `hold_v0 −
+    human` gap at the conflict rungs (**−0.015899 at a ≤ 2.0 s human time gap,
+    142× `progress`'s +0.000112**) while the RATE still reads 0.5546 — i.e. the
+    rate/mean divergence with one term left holding it.
+    ⭐ MEASURED in a unit test rather than argued
+    (`test_rl_progress_leadcap.py::test_headway_is_blind_to_this_perturbation…`):
+    moving three of five lead samples by up to 5 m leaves this term
+    **bit-identical**, because the worst step is elsewhere — while a quantile
+    over the same per-step gaps does move.
+    ⭐ Same family as `fan_floor@k` read alone: a min/max-over-N quantity
+    answering a narrower question than the one it is quoted for.
+
+    ``"q<Q>"`` takes the Q-quantile instead, e.g. ``"q0.25"``. ⛔ Every step is a
+    POSITION query on the lead's recorded track; no closing rate enters the
+    ranking, so the coordinate discipline of `M84` is unchanged and TTC stays a
+    VETO.
+    """
+    mode = str(ctx.get("headway_reduce", "min"))
+    if mode == "min":
+        return tg_steps.amin(dim=-1)
+    if mode.startswith("q"):
+        try:
+            q = float(mode[1:])
+        except ValueError:
+            raise ValueError(f"headway_reduce {mode!r}: expected 'q<float>'")
+        if not (0.0 <= q <= 1.0):
+            raise ValueError(f"headway_reduce quantile must be in [0, 1], got {q}")
+        return torch.quantile(tg_steps.to(torch.float32), q, dim=-1).to(tg_steps.dtype)
+    raise ValueError(
+        f"headway_reduce must be 'min' or 'q<float>', got {mode!r}")
+
+
 def _headway(traj: Tensor, ctx: dict) -> Tensor:
     """GRADED, ASYMMETRIC time-gap reward. Peaks at the target gap T*.
 
@@ -370,7 +533,7 @@ def _headway(traj: Tensor, ctx: dict) -> Tensor:
     kin = kinematics(traj, ctx.get("dt", DT_S))
     gap = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)     # [..., S-1]
     gap = (gap - float(ctx.get("lead_len_m", 4.5))).clamp_min(0.0)
-    tg = (gap / kin.speed.clamp_min(0.5)).amin(dim=-1)           # worst step
+    tg = _reduce_time_gap(gap / kin.speed.clamp_min(0.5), ctx)
 
     ratio = tg / max(t_star, EPS)
     below = ratio.clamp(0.0, 1.0).pow(k)                          # steep
@@ -553,7 +716,9 @@ COMPONENTS: dict[str, RewardComponent] = {
     c.name: c for c in (
         RewardComponent("progress", _progress, -1.0, 1.5,
                         degenerate="straight-line max-speed through obstacles "
-                                   "(now: 1.5x the current speed)",
+                                   "(now: 1.5x the current speed; with the lead "
+                                   "cap on, no further payment above the "
+                                   "lead-achievable bound)",
                         grounded="rule-based", hackable_alone=True,
                         neutral=0.0),
         RewardComponent("proximity", _proximity, -1.0, 0.0,
