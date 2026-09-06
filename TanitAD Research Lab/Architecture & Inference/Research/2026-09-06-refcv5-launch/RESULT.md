@@ -12,7 +12,7 @@ records a *launch* — preconditions, argv, liveness. **No result exists yet.**
 
 | | |
 |---|---|
-| **L1** | ⭐ **refcv5 is TRAINING on the A40** as `refcv5-ddim-b1-v72-40k`, supervisor pid **2530709**, trainer pid **2530863**, GPU **43,421 MiB / 46,068 at 100 %**, target **40,284** steps, **3.938 s/step ⇒ ETA ≈ 2026-09-08 06:20 UTC**. |
+| **L1** | ⭐ **refcv5 is TRAINING on the A40** as `refcv5-ddim-b1-v72-40k`, supervisor pid **2530709**, trainer pid **2530863**, GPU **43,421 MiB / 46,068 at 100 %**, target **40,284** steps, **4.046 s/step ⇒ ETA ≈ 2026-09-08 07:33 UTC**. |
 | **L2** | ⛔⛔ **THE BRIEF'S FIRST-RUNG PRECONDITION IS REFUTED.** *"`--agents oracle` is the FIRST RUNG and needs no detector"* is true about the **detector** and **false about the JOIN**: the oracle's tokens **are** the GT boxes, so with no `--agent-join` the forward raises. MEASURED, not reasoned — the preflight's 2-step arm died on it. |
 | **L3** | ⛔ **The pod's stack was STALE and the launch would have run refcv4b's code under refcv5's name.** `refc_sampler.py` and `refc_agents.py` were **ABSENT**; `refc_v3_train.py` read **1,846** lines against HEAD's **3,634**. Shipped md5-exact and content-verified. |
 | **L4** | ⛔ **The anchor bank does NOT declare its units** — the brief said it had been rebuilt; on the pod all three banks read `control_units = <<ABSENT>>`. Resolved by the *sanctioned* route (`--anchor-control-units alat`), grounded because the file is **byte-identical** to the bank refcv4b trained 40,284 steps on. |
@@ -260,16 +260,21 @@ Loss is falling: **61.1346 → 57.7430 → 28.1739**.
 
 ### Pace and ETA
 
-**3.938 s/step** steady-state, measured over steps **100 → 150** so model build and the
-4,572-episode enumeration are excluded ⇒ **~43.9 h remaining**, **~44.1 h total**, landing
-**≈ 2026-09-08 06:20 UTC (08:20 Berlin)**.
+**4.046 s/step** steady-state over **34 intervals, steps 100 → 1,750** — model build
+and the 4,572-episode enumeration excluded ⇒ **~43.3 h remaining**, **~45.3 h total**, landing
+**≈ 2026-09-08 07:33 UTC (09:33 Berlin)**.
+
+⚠️ **CORRECTED at step 1,750.** The launch record first said **3.938 s/step / ETA 06:20**,
+read from a **single interval** (steps 100 → 150). That is a rate quoted without its
+**n and window** — the family this programme already has a rule about — and it was **2.7 %**
+optimistic. Both figures are shown so the correction is auditable rather than silent.
 
 ⚠️ **`elapsed_s` is CUMULATIVE and this trainer logs no `step_s`** — the number above is a
 **difference between two rows**, never a division. (Dividing by `--log-every` is the
 documented `step_s` scope trap; the registry says the same for refcv4b.)
 
 ⭐ **The DDIM sampler is nearly free in wall-clock**: refcv4b ran at **3.844 s/step**
-marginal median on this same pod / cache / batch / workers / LRU, so WP-4 costs **+2.4 %**.
+marginal median on this same pod / cache / batch / workers / LRU, so WP-4 costs **+5.3 %**.
 A 44 h budget was already the plan.
 
 ---

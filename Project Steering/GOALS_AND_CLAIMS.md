@@ -3809,7 +3809,7 @@ and nothing in it is a capability number. Registry row `MODEL_REGISTRY.md` § 4.
 | | |
 |---|---|
 | **Claim** | `refcv5-ddim-b1-v72-40k` is training on `tanitad-a40`: **one lever vs refcv4b** (`--sampler ddim --w-u0 0.5`, the anchored Gaussian in CONTROL space), refcv4b's argv otherwise byte for byte, same corpus / labels / anchors / seed / step target ⇒ a matched comparison in which exactly one mechanism moved |
-| **Evidence class** | **MEASURED (ours), 2026-09-06.** Supervisor pid 2530709, trainer pid 2530863, GPU 43,421 MiB / 46,068 at 100 %, steps 50/100/150 in `metrics.jsonl`, stderr empty. **3.938 s/step** steady-state (differenced over steps 100→150; `elapsed_s` is CUMULATIVE and this trainer logs no `step_s`) ⇒ ETA ≈ **2026-09-08 06:20 UTC** |
+| **Evidence class** | **MEASURED (ours), 2026-09-06.** Supervisor pid 2530709, trainer pid 2530863, GPU 43,421 MiB / 46,068 at 100 %, steps 50/100/150 in `metrics.jsonl`, stderr empty. **4.046 s/step** steady-state (34 intervals, steps 100→1,750; `elapsed_s` is CUMULATIVE and this trainer logs no `step_s`) ⇒ ETA ≈ **2026-09-08 07:33 UTC** (⚠️ corrected at step 1,750 from a single-interval 3.938 s/step ⇒ 06:20) |
 | ⭐ **The lever is LIVE, not merely stamped** | `u0` reads **0.27576 / 0.18663 / 0.32519** at steps 50/100/150 — non-zero at every logged step. *A weight that reaches `config.json` and adds zero to the total is the M18 dead-flag defect (`agent_w_ground`'s 1.16e-10 is a live example on this very preflight); this one is measured.* |
 | ⛔ **Scope — NON-PARITY** | B1 (4,572 clips), the same corpus refcv4b trained on, deliberately. The trainer flags it itself. ⇒ a refcv5-vs-refcv4b delta will be a valid **ARM** delta; a **LEVEL** against any parity arm is invalid |
 | ⛔⛔ **A variance obligation this arm INHERITS** | refcv5 is a **STOCHASTIC PLANNER**: `refc.py`'s anchored-Gaussian block draws fresh noise **at eval**, under a comment saying so *by design*. refcv4b was deterministic outside training, so its single-seed separated CIs closed the inference question by construction; **refcv5's cannot**. ⇒ the landing read needs **INFERENCE-seed replicates** (`H-ESTIM-SEED-1`; refav1's measured floor ≈ 0.30 m ADE), and a pre-registration saying so is **owed before the run lands** |
@@ -8438,7 +8438,7 @@ would misdescribe its input.
 ## ⭐ H-REFCV5-DDIM-1 — **PRE-REGISTERED, NOT RUN: the WP-4 control-space DDIM sampler, with the INFERENCE-seed replicate the rig demands** (2026-09-06, Arch+Inference FlyWheel, 0 GPU)
 
 ⛔⛔ **NO refcv5 RESULT EXISTS.** `refcv5-ddim-b1-v72-40k` is training on `tanitad-a40`
-(launched 2026-09-06 10:13:52 UTC, 3.938 s/step, ETA ≈ 2026-09-08 06:20 UTC, `D-REFCV5-LAUNCH-1`).
+(launched 2026-09-06 10:13:52 UTC, 4.046 s/step over 34 intervals, ETA ≈ 2026-09-08 07:33 UTC, `D-REFCV5-LAUNCH-1`; ⚠ the launch record's single-interval 3.938 s/step ⇒ 06:20 UTC is SUPERSEDED).
 This row registers the hypothesis and its **committed** PASS/FAIL criteria **before the data
 exists**, which is the only moment a pre-registration is worth anything.
 **SPEC:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv5-landing-prereg/SPEC.md`
