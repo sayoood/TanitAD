@@ -1,0 +1,31 @@
+﻿mu = 0.700 (feasible_decode.MU_KAMM), g = 9.81, vocabulary kappa = 0.0800
+BREAK-EVEN SPEED for the vocabulary's own turn curvature:
+  a_lat = v^2 * kappa = mu*g  ->  v = sqrt(0.700*9.81/0.0800) = 9.265 m/s
+  => below 9.26 m/s, an arm capped at |kappa| <= 0.0800 is INSIDE the
+     friction circle BY CONSTRUCTION, whatever its cost weights are.
+
+arm             n_steps max|kappa|      max v  max a_lat      max g
+wk1:cl              243     0.0800     15.853      3.500      0.357   max v where|k|>=.05   6.378
+wk1:g               243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+wk1:ha0             243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
+wk7:cl              243     0.0800     15.853      3.254      0.332   max v where|k|>=.05   6.378
+wk7:g               243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+wk7:ha0             243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
+wk15:cl             243     0.0800     15.853      3.254      0.332   max v where|k|>=.05   6.378
+wk15:g              243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+wk15:ha0            243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
+best:cl             243     0.0800     15.603      3.254      0.332   max v where|k|>=.05   6.378
+best:g              243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+best:ha0            243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
+ccos_argmax:cl      243     0.2006     15.116     31.958      3.258   max v where|k|>=.05  15.087
+ccos_argmax:g       243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+ccos_argmax:ha0      243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
+gkappa:cl           243     0.2006     15.853     21.277      2.169   max v where|k|>=.05  10.579
+gkappa:g            243     0.1797     15.091      3.199      0.326   max v where|k|>=.05   7.436  <- CONTROL: a real vehicle, must EXCEED the vocab cap
+gkappa:ha0          243     0.0000     14.967      0.000      0.000   max v where|k|>=.05     nan  <- CONTROL: straight line, must read max|kappa| 0.0000
+
