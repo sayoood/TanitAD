@@ -2061,3 +2061,67 @@ constraint-vs-penalty finding: make the bad unrepresentable rather than merely d
 A and the agent-token arm are not gated on this. ⭐ **And its escalation was right even though its
 reading was wrong** — it declined to commit another team's code, which is the behaviour we want
 regardless of what the check said.
+
+## M83. ⭐ THE CORRECTED REEL LANDED — and a THIRD, distinct committer failure mode: the SCRIPT ITSELF read empty
+
+### 1. ⛔⛔ A new mechanism, and it is the worst of the three
+
+`mktree_commit.py` **invoked from its path on G:** exited **0, printed NOTHING, and committed
+nothing** during a mount outage. ⭐ **Cause: an empty read of the SCRIPT ITSELF.** Python was handed a
+zero-byte file, ran it, and exited 0 — **correctly**. Re-running from an **md5- and size-verified
+LOCAL copy** worked immediately.
+
+⇒ **Three distinct mechanisms now produce "exited 0, committed nothing":**
+1. ⛔ the pipeline (`D-SHELL-PIPEFAIL-1`) — `| tail` returns *tail's* 0. **My error, not the tool's.**
+2. ⛔ the early `return 0` on *"nothing to commit (tree identical to HEAD)"* — correct in principle,
+   **indistinguishable from a stale cached read of the target files** (`M70`).
+3. ⭐ **NEW: the interpreter reads the SCRIPT as empty.** ⛔ **No guard inside the tool can ever catch
+   this** — the tool never runs. `M70`'s content-marker check is what catches it, from outside.
+
+⇒ ⭐⭐ **ADOPTED: invoke `mktree_commit.py` from a size-verified LOCAL copy, not from its G: path.**
+Same class as the `robocopy /MIR` that reported success and copied nothing: **on this mount, an
+executable is as unreliable as the data it operates on.**
+
+### 2. ⚠️ 41 phantom staged deletions — 25 of them the agent's OWN just-banked files
+
+Classified **41 of 41 phantom** (present in HEAD *and* non-empty on disk, **0 genuine**), repaired with
+`git reset --` index-only in two batches, HEAD and worktree re-verified after. ⭐ **The generator
+targets freshly-committed paths**, which is why a pathspec-free commit is banned rather than merely
+discouraged.
+
+### 3. The reel, verified
+
+**2,313 frames · 1920x1122 · 10 fps · 231.30 s (3:51) · 27.36 MiB.** Repo:
+`taniteval/results/videos/refav1_arms_curvature_step21109/`; local deliverable in
+`C:/Users/Admin/refcv4b_viz/…`. Commit **`d293cf2c4`**, 28 paths, 28/28 blob-verified plus 4 content
+markers each with a same-breath negative control, re-verified after two later commits landed on top.
+⭐ `SUPERSEDED.md` added to the OLD reel's directory **so its refuted cards cannot be re-quoted.**
+
+⭐⭐ **The geometry probe the last cut lacked now EXISTS AND IS PROVEN CAPABLE OF FAILING:** 7 decoded
+frames correlate with their source PNGs at **>= 0.999572**, while the same probe against a deliberately
+**3.9 %-stretched** copy reads **0.1438**. ⇒ **it can tell a stretch from an original, which the
+previous cut's exit codes could not** — that stretch shipped undetected.
+
+⭐ **A real reduction defect caught by its own control:** the five drawn series must reproduce
+`raw/four_family_all.txt` exactly (`ha0` 0.040083 · `wk15` 0.030982 · `best` 0.031281 ·
+`ccos_argmax` 0.055369 · `ha0_ext` 0.077298). ⛔ **A mean-of-window-means reads `ccos_argmax`
+0.056726 — past tolerance.** ⇒ **pooled vs macro is not cosmetic here**, and `curvature_mae` now calls
+`four_families` and asserts the per-window values recombine to the pooled one. ⭐ **`ha0` was verified
+perfectly straight: max |y| = 0.000000 m over all 40 windows** — the floor is a floor by measurement,
+not by name.
+
+**GT control PASS, both halves:** STEER ADE **0.1552 m** vs the legacy KAPPA reading's **0.8727 m** =
+**5.62x separation**, n = 27 admissible of 40 (13 excluded, counted and printed on the control frame).
+
+### 4. ⭐⭐ The honest answer to "does it read without a caption?"
+
+**Yes on the moving windows — decisively; NO on the near-stationary ones, and the frame SAYS SO.**
+⭐ In `99_worse_than_straight.png` (v0 **10.71 m/s**) the magenta line swings across the lane while the
+human, the white straight floor and the orange/violet arms all run straight. ⛔ But **2 of the 4
+labelled turn windows sit at v0 0.00–1.50 m/s**, where curvature is undefined (`ds too small`) and
+nothing moves.
+
+⇒ ⭐⭐ **That is `M74`'s own finding rendered honestly rather than papered over** — the turn windows
+this rig labels are largely near-stationary, which is *why* the `|dyaw| > 0.15` gate was unreachable
+and why the human failed it 3/9. **The reel now shows the limitation instead of hiding it**, and every
+frame carries the panel footer so the finding cannot be cherry-picked by pausing.
