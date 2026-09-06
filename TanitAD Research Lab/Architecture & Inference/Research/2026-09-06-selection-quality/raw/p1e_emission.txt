@@ -1,0 +1,61 @@
+[dump] C:/Users/Admin/tanitad-selq-20260906/out/refcv4b_t1_s1_dump   141 episodes, 24114 windows
+
+=== v7.2 TACTICAL LATERAL HEAD ===
+  windows with a valid label: 5781 / 24114 (23.97 %)  (IGNORE_ID -100 elsewhere)
+  EMISSION over ALL 24114 windows (label or not):
+    LANE_KEEP           20276 / 24114   84.0839 %
+    LANE_CHANGE_L           0 / 24114    0.0000 %   <== LANE CHANGE
+    LANE_CHANGE_R           0 / 24114    0.0000 %   <== LANE CHANGE
+    ABORT_LC                0 / 24114    0.0000 %   <== LANE CHANGE
+    NUDGE_L               819 / 24114    3.3964 %
+    NUDGE_R              1622 / 24114    6.7264 %
+    TURN_L                351 / 24114    1.4556 %
+    TURN_R               1046 / 24114    4.3377 %
+
+  AGREEMENT on the 5781 labelled windows
+    class              n_true   n_pred   recall  precision
+    LANE_KEEP            3895     4918   0.9340     0.7397
+    LANE_CHANGE_L           0        0      nan        nan   <==
+    LANE_CHANGE_R           0        0      nan        nan   <==
+    ABORT_LC                0        0      nan        nan   <==
+    NUDGE_L               533      166   0.1839     0.5904
+    NUDGE_R               820      324   0.2585     0.6543
+    TURN_L                205      139   0.5463     0.8058
+    TURN_R                328      234   0.3598     0.5043
+    [read-control] classes with n_true > 0: 5 / 8;  with n_pred > 0: 5 / 8
+
+=== v7.2 TACTICAL LONGITUDINAL HEAD ===
+  windows with a valid label: 5781 / 24114 (23.97 %)  (IGNORE_ID -100 elsewhere)
+  EMISSION over ALL 24114 windows (label or not):
+    FOLLOW                  0 / 24114    0.0000 %
+    CRUISE              10852 / 24114   45.0029 %
+    YIELD_MERGE             0 / 24114    0.0000 %
+    BRAKE_TO             3308 / 24114   13.7182 %
+    CREEP                 171 / 24114    0.7091 %
+    HOLD                 1010 / 24114    4.1884 %
+    ADAPT_SPEED_FOR_CURVE     4773 / 24114   19.7935 %
+    ACCELERATE           4000 / 24114   16.5879 %
+
+  AGREEMENT on the 5781 labelled windows
+    class              n_true   n_pred   recall  precision
+    FOLLOW                410        0   0.0000        nan
+    CRUISE               1722     2517   0.7863     0.5379
+    YIELD_MERGE             0        0      nan        nan   <==
+    BRAKE_TO              902      961   0.4579     0.4298
+    CREEP                 246       72   0.0203     0.0694
+    HOLD                   82       92   0.7683     0.6848
+    ADAPT_SPEED_FOR_CURVE      902     1028   0.6064     0.5321
+    ACCELERATE           1517     1111   0.5214     0.7120
+    [read-control] classes with n_true > 0: 7 / 8;  with n_pred > 0: 6 / 8
+
+=== windows whose CLIP the VLM CoT / goal layer flags as a LANE CHANGE ===
+  855 windows over 5 clips of the 141 in this eval set
+  the model's LATERAL emission there: {'LANE_KEEP': 810, 'NUDGE_L': 42, 'NUDGE_R': 3}
+  the v7.2 LABEL there:               {'IGNORE': 650, 'LANE_KEEP': 164, 'NUDGE_L': 41}
+
+=== DETERMINISM REPLICATE (2 episodes, 342 windows, a SEPARATE process, same flags, same seed) ===
+  sel_idx bit-identical            : True
+  lat_pred_nav_true bit-identical  : True
+  => inference-run variance on this arm is EXACTLY ZERO on these windows, so every switch measured below is the model reacting to its input, not a sampler
+
+wrote out_p1e_emission.json

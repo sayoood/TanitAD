@@ -9376,3 +9376,260 @@ the blocker says a speed-limit prior *needs* `kind == "speed"` and `text` — an
 **no HuggingFace pull** (the source parquet was already on local disk, so no quota was consumed).
 
 <!-- SPEED-LIMIT-SOURCE-SL-SRC-1-2026-09-06 -->
+
+### D-SELQ-DUMP-1 — the "banked refcv4b T1 dump" on local disk is **refcv3**, not refcv4b
+**Status: SUPPORTED (MEASURED, ours).** **Class: mis-attributed artifact.**
+
+`.../8e7cfa33-.../dump40284/refcv3_40284_dump` (the dump `taniteval/results/
+refcv3-40284-stratified.json` points at) is `refcv3-b1-v72-30k` @ step 40284, and the published
+refcv4b T1 record's dump lives only at `pod:/workspace/eval/refcv4b_t1_dump`. Both are 4,823
+windows / 141 episodes at step 40,284, which is why the two are confusable by name.
+**The discriminator is a positive content assertion, not a filename:** recomputing the kin3
+tactical confusion from the local dump's own `g`/`os` with the labeller the published block names
+reproduces the GROUND-TRUTH row sums **exactly** (4176 / 251 / 396 lateral) — same windows, same
+corpus — while the PREDICTED columns differ (accuracy 0.9540 vs the published 0.9583; longitudinal
+0.7477 vs 0.8258). ⇒ same grid, different checkpoint.
+⭐ **Recovered, not blocked:** the refcv4b checkpoint IS local
+(`C:/Users/Admin/refcv4b_final/ckpt_40284_FINAL.pt`, md5 `99b573e8277d94a5e3bfbf630cb4d751`,
+matching the pod's own md5 file and `LANDING_RESULT.md`), the 141-episode v2 cache is local, and the
+arm was re-rolled on the dev-box 4060 in ~62 min at **stride 1** (24,114 windows). ⛔ The A40
+(refcv5) was not touched.
+
+### D-SELQ-LC-LABEL-2 — the lane-change absence is a **LABEL** defect: 0 / 4,572 positives, and the emitter has no branch that can produce one
+**Status: SUPPORTED (MEASURED, ours — labels + source).** **Answers PI observation (12).**
+
+`a_tac.lat` — the target of the v7.2 8-way tactical LATERAL head — is `LANE_CHANGE_L` on
+**0 / 4,572** train clips and **0 / 147** eval clips; `LANE_CHANGE_R` **0 / 4,572**; `ABORT_LC`
+**0 / 4,572**. Read-control: the other five classes read 259–2,958, so the field was really read.
+**Mechanism, from source:** `stack/scripts/s2_geom_emit_v7.py::tactical_actions()` has four
+assignment sites and a reachable set of exactly
+`{LANE_KEEP, NUDGE_L, NUDGE_R, TURN_L, TURN_R}` — **five of the eight frozen tokens**. No input can
+make it emit a lane change. `stack/tanitad/data/ego_manoeuvre.py` says so itself: NUDGE fires at
+`|lat_peak_m| >= 1.0 m` with **no upper bound**, and its own docstring calls `lat_peak_m` *"the only
+field that can distinguish a 1 m wobble from an absorbed lane change."*
+**The corpus is not empty of lane changes — three layers disagree:** VLM CoT
+`cot_tokens.lane_change` non-null on **167 / 4,572**; the tactical GOAL set carries
+`LANE_CHANGE_L` **23** + `LANE_CHANGE_R` **15** = **38 / 4,572**; the tactical ACTION carries
+**0**. On those 38 clips the emitted action is `NUDGE_L` **15** / `NUDGE_R` **23** — **38 of 38
+NUDGE**. (Goal read-control: all 22 goal tokens non-zero.)
+
+### D-SELQ-LC-HEAD-3 — the three lane-change logits received NO GRADIENT, and a fourth class in a different head predicts the same signature
+**Status: SUPPORTED (MEASURED, ours — checkpoint + optimizer state).** **Tier: n/a (parameters).**
+
+Predicted from the label census BEFORE the weights were opened. In `refcv4b`'s
+`ckpt_40284_FINAL.pt` (AdamW, step 40,127) the per-row `sum(exp_avg_sq)` of
+`lat_head_tac.weight` is **4.3e-15 … 1.1e-14** for rows 1, 2, 3 =
+`LANE_CHANGE_L / LANE_CHANGE_R / ABORT_LC` against **4.5e-04 … 8.5e-03** for the five occurring
+classes — a ratio of ~10¹¹–10¹². The **independent control** is a different head and a different
+class named in advance: `lon_head_tac.weight` row 2 = `YIELD_MERGE` (also 0 / 4,572 in the labels)
+reads **1.2e-15** against 3.9e-05 … 1.2e-02. Both bias tensors show the same split (1e-17/1e-18 vs
+1e-7). Weight-row norms separate perfectly too: **4 of 4** zero-positive classes at 1.546–1.570,
+**12 of 12** occurring classes at 0.628–0.845, no overlap.
+⇒ **`p.grad` was effectively `None` for exactly the four classes the labels never contain and for
+no others.** ⛔ This RULES OUT the "the loss never weights it" candidate: there was nothing to
+weight. It also rules out a learning failure — the head was never shown one example.
+
+### D-SELQ-LC-VOCAB-4 — the 117-candidate vocabulary is MONOTONE IN YAW on 100.0000 % of pairs, so it cannot express a completed lane change
+**Status: SUPPORTED (MEASURED, ours — model-free).** ⛔ A SUPPLY/CEILING statement; never to be
+compared against an achievement.
+
+`refc.py::RefCDecoder._anchor_bank` holds `(a_lon, kappa)` CONSTANT for the whole rollout, with
+`kappa = clamp(a_lat / max(v0, 4.0)^2, ±0.12)` and `yaw_{k+1} = yaw_k + v_k·kappa·dt`. Over the
+4,823-window grid × 117 candidates = 564,291 pairs, the fraction whose yaw is monotone over 0–6 s
+is **1.000000**. A lane change is non-monotone in heading by definition, so **no candidate is an
+S-shape**. `anchor_controls` was read out of the checkpoint
+(`model:core.decoder.anchor_controls`) and is **byte-identical** to the sibling turn-coverage
+package's banked `anchors_live_refcv4b.pt['controls']`; grid 13 `a_lon` × 9 `a_lat` = 117.
+Controls: the straight candidate reads `max|y(6 s)| = 0.000e+00` and `max|dyaw(6 s)| = 0.000e+00`
+exactly; the closed form for `a_lat = −3.0` at `v0 = 10 m/s` predicts 103.132° and the integrator
+returns 103.132°.
+⚠️ **The honest refinement, which is weaker than "impossible":** a *shallow arc* CAN place the
+vehicle a lane width across — 5,648 / 564,291 pairs sit in `|lat(6 s)| ∈ [2.5, 5.0) m` with
+`|dyaw| ≤ 10°`, reaching **1,748 / 4,823 windows (36.2 %)** — but among **every** pair that reaches
+≥ 2.5 m of lateral offset the **minimum** residual heading is **4.80°** (p05 11.00°, median
+44.36°). The vocabulary can approximate the displacement, always as an arc still turning at the
+end, and 63.8 % of windows have no candidate that can do even that.
+
+### D-SELQ-LATPEAK-5 — the persisted `a_tac.lat_args.lat_peak_m` is WHOLE-HORIZON and sign-inconsistent: INCONCLUSIVE, not evidence
+**Status: OPEN (work item).** **Class: a true quantity persisted outside its scope.**
+
+It looked like the way to size "how much NUDGE mass sits at a lane width". It is not usable: values
+run to **±305 m**, and on `NUDGE_L` clips it carries the WRONG SIGN (e.g. `−24.517`), contradicting
+the class rule `NUDGE_{L if lat>0 else R}` that `ego_manoeuvre.py` decides on. The blob's
+`horizon.available_s` is **35.0 s**, so the persisted value is a whole-horizon lateral excursion,
+not the per-decision band value the NUDGE gate uses. Two probes for the writer (a `lat_peak_m` grep
+across `stack/scripts`, `stack/tanitad/data`, `stack/tanitad/lake`; and the current emitter's own
+`lat_args` construction, which is `{"within_m": …}` only) found **no site in the present tree that
+writes it**. ⇒ **Do not quote it**, and the fix is to persist the band-scoped value beside the
+class it decided. Same family as the units/scope traps: a correct quantity read outside its scope.
+
+### D-SELQ-ROADMARK-6 — "the selected path cuts road marks" CANNOT be measured on this corpus
+**Status: SUPPORTED (MEASURED, ours — three probes).** **Answers the environmental half of PI
+observation (2).**
+
+(1) The episode artifact the planner consumes (`*.v2ep.pt`) has 14 keys —
+`jpeg_buf, jpeg_len, actions, poses, n_stack, image_size, episode_id, clip_id, quality, image_h,
+image_w, frame, projection_mode, codec` — and **none** matches
+`lane|map|road_edge|boundary|marking|polyline|centerline|drivable|curb|xodr|graph`.
+(2) The v7.2 label record (22 top-level keys) matches that pattern in exactly three places, and all
+three are LANGUAGE: `cot_source.meta_action.lane = "Lane Keep"`, the nullable text flag
+`cot_tokens.lane_change`, and the goal token `FOLLOW_LANE`. No geometry.
+(3) The pinned read-set (`stack/tests/test_physicalai_feature_readset.py`) is 2 / 5 / 6 features by
+layer, none of them a lane, map, road-edge or drivable-area feature; `obstacle.offline`'s enum is
+10 DYNAMIC AGENT classes.
+⇒ The only environmental signal that exists is dynamic agents, which supports headway/collision
+terms and **cannot see a painted line**. ⛔ **No proxy was invented.** Scoring the PI's specific
+complaint needs a lane-geometry source this corpus does not have (AlpaSim's `map.xodr`, or an
+external corpus) — a named blocker, not a pass.
+
+### D-SELQ-LC-EMIT-7 — refcv4b emits ZERO lane changes on 24,114 windows, and their logits sit 33 below the argmax
+**Status: SUPPORTED (MEASURED, ours).** **Tier: T1.** **Completes D-SELQ-LC-LABEL-2 on the model
+side.**
+
+Local stride-1 roll of `refcv4b-b1-v72-40k` @ 40284 (24,114 windows / 141 episodes):
+`LANE_CHANGE_L`, `LANE_CHANGE_R` and `ABORT_LC` are emitted **0 / 24,114 (0.0000 %)** each, while
+LANE_KEEP 20,276 / NUDGE_R 1,622 / TURN_R 1,046 / NUDGE_L 819 / TURN_L 351.
+⛔ **Their recall is UNDEFINED, not zero** — on the 5,781 labelled windows `n_true = 0` for all
+three, so there is no denominator, and a "0.0000 recall" line for them would be a category error.
+Read-control: 5 of 8 classes have `n_true > 0`, 5 of 8 have `n_pred > 0`, and they are the SAME five.
+**The margin settles the "never argmax" candidate.** Raw logits captured with a forward hook on the
+unmodified pipeline (n = 855 rows): `LANE_CHANGE_L` **−31.5622**, `LANE_CHANGE_R` **−31.3805**,
+`ABORT_LC` **−31.3355**, **best rank ever 6 of 8**, mean margin to the argmax **≈ 33**. The
+independent control `YIELD_MERGE` reads **−30.8959, best rank 8 — always last**. Every OCCURRING
+class sits between −8.90 and +1.71. ⇒ they are not narrowly losing an argmax; they are 33 logits
+away and never enter the top five. **"Present but never argmax" is REFUTED for the lane-change
+classes.**
+⚠️ **It is TRUE for a different class and that is a SEPARATE defect:** `FOLLOW` has **410 true**
+labels, is emitted **0 / 24,114**, recall **0.0000**, mean logit **−0.0072**, **best rank 3**, mean
+margin **2.70** — the classic minority-class argmax failure (`refc_tactical`'s own F3), whose fix
+(`logit_adjust`, prior-corrected decoding) already exists. Do not conflate the two.
+
+### D-SELQ-LC-DEMAND-8 — the corpus DEMANDS a lane change on 6.97 % of windows and in 79 of 141 clips
+**Status: SUPPORTED (MEASURED, ours — model-free).** ⭐ **This is the number that sizes the fix.**
+
+Read straight off the recorded ego poses over 0–6 s, no label pipeline and no checkpoint in the
+path. `RETURNS` ⇔ `|dyaw(6 s)| ≤ 10°` AND `max|dyaw(t)| ≥ 3°` — the non-monotone shape
+D-SELQ-LC-VOCAB-4 proved no candidate has. Over **18,615** windows with a full 6 s of recorded
+future (5,499 of 24,114 excluded for being short — counted, never truncated):
+heading LEAVES AND RETURNS **4,615 (24.79 %)**; **LANE CHANGE strict** (`|lat| ∈ [2.5, 5.0) m` ∧
+RETURNS) **1,297 (6.97 %)**; relaxed (`|lat| ≥ 2.5 m` ∧ RETURNS) **2,363 (12.69 %)**; **79 / 141
+clips** contain at least one. Control: the TURN box (`|dyaw| ≥ 30°`) reads **2,602 (13.98 %)**,
+non-zero; `max|dump v0 − poses[ws+2, 3]| = 0.000e+00`.
+⇒ the behaviour is present at a rate comparable to turning, the label pipeline records **zero** of
+it, and the vocabulary can express **none** of it. Repairing this is not a marginal cleanup.
+⛔ **Blocked on:** an emitter fix + a label rebuild + a retrain (A40 busy to 2026-09-08) — a PI /
+compute decision, named rather than waited on.
+
+### D-SELQ-STAB-9 — TEMPORAL SELECTION STABILITY, measured for the first time: median dwell 0.2 s, 38.8 % single-frame
+**Status: SUPPORTED (MEASURED, ours).** **Tier: T1.** **Answers PI observation (6).**
+**Instrument: `…/2026-09-06-selection-quality/raw/selstab.py` + `p2p3_run.py` (new).**
+
+⛔ Determinism established FIRST, two ways, because jitter from a sampler is not a model defect.
+SOURCE: `refc.py`'s refinement loop is `noise = randn_like(x)*noise_std if self.training else
+zeros_like(x)`, and the stochastic WP-4 sampler is gated OFF for this build
+(`_loop_steps = 0 if self.control_head is not None`). MEASURED: two separate processes, same flags,
+same seed → `sel_idx`, `lat_pred_nav_true` and the full `os` waypoint array **bit-identical,
+max|diff| = 0.0**. ⇒ inference-run variance on this arm is EXACTLY ZERO.
+
+Definition: over consecutive windows of the same clip on a **stride-1 (0.1 s)** grid, the fraction
+of adjacent pairs at which the quantity changes. n = 23,973 pairs / 141 episodes.
+**refcv4b 0.1552 [0.1416, 0.1686]** · **reference (the GT's own best-in-fan choice, on the SAME
+v0-conditioned fan) 0.0806 [0.0732, 0.0885]** · FLOOR-A (the arm's picks shuffled in time)
+**0.5736** · FLOOR-B (uniform pick from the 117-fan) **0.9907**.
+Waypoint disagreement under the exact rigid transform: **0.1302 m [0.1219, 0.1384]** against a GT
+self-consistency **CEILING of 0.0145 m** and a random-candidate FLOOR of **2.7142 m**.
+⇒ the arm switches **1.93×** as often as the right answer changes, and its plan moves **9.0×** as
+much frame-to-frame as the GT path does — **4.29 %** of the way from ceiling to floor.
+**Dwell times, which is the PI's observation quantified:** 3,861 runs, mean 6.25 frames (0.62 s),
+**median 2 frames = 0.2 s**, **38.80 % last a single frame**, 54.65 % are gone within 0.2 s.
+⇒ *"the trajectory selection is jumping between consecutive frames"* is the MEDIAN behaviour; the
+PI's clip `73e750eb` frames 032/034 are not an outlier.
+**Decomposition of the 3,720 switches:** 692 (**18.60 %**) also move a tactical token; 3,028 are
+waypoint-only; and **1,785** token changes occur with NO selection switch — the tactical head and
+the selector are not synchronised.
+⚠️ The published 4,823-window grid is stride 5 (0.5 s) and **structurally cannot see a 0.2 s jump**;
+this is why the arm was re-rolled at stride 1.
+
+### D-SELQ-ASTAR-10 — the dumped `a_star` "ceiling" scores 1.4491 m, WORSE than the arm it bounds, and agrees with a valid ceiling on 9.52 %
+**Status: SUPPORTED (MEASURED, ours).** ⛔ **`oracle_sel` / `anchor_acc` / `sel_agrees_oracle`
+remain inadmissible; this quantifies why.**
+
+`refcv3_arm.py` binds `a_star` against `anchors_bank = model.core.decoder.anchors` — the FIXED bank
+rolled once at `ref_speed_ms` — which is the binding the trainer forbids for a v0-conditioned
+vocabulary. Binding instead against the **per-window v0-conditioned emitted fan** (rebuilt
+model-free from `anchor_controls` + `v0` through the programme's own integrator) gives, over
+24,114 windows: `a_star` candidate ADE **1.4491 m**; SELECTED candidate **0.4252 m**; **valid
+best-in-fan 0.1993 m**; uniform random candidate 2.3399 m; the refined output `os` 0.2970 m.
+The two argmins are identical on **only 9.52 %** of windows. ⇒ the two are different objects, the
+`a_star` one is **7.3× worse than the valid ceiling and worse than the arm it bounds**, and the
+valid one is ≤ every arm it bounds — the definitional test. Index-mapping control:
+`ADE(F[sel_idx]) = 0.4252` vs `ADE(F[random]) = 2.3399`, so `sel_idx` does index
+`anchor_controls`'s ordering.
+
+### D-SELQ-REGRET-11 — the selection regret is REAL and it is LONGITUDINAL: `a_lon` alone carries 74.2 % of it
+**Status: SUPPORTED (MEASURED, ours).** **Tier: T1.** **Answers PI observation (2).**
+**Four families, never pooled.**
+
+`regret = cost(selected candidate) − cost(best candidate in the SAME emitted fan)`, 24,114 windows.
+LONGITUDINAL `along_mae_m` 0.3368 → 0.0713, regret **0.2655**; `speed_mae_mps` 0.3462 → 0.1573,
+regret **0.1890**. LATERAL `cross_mae_m` 0.1725 → 0.0544, regret **0.1181**; `curv_mae_1pm`
+0.0042 → 0.0022, regret **0.0020** (n = 22,944); `heading_mae_deg` 1.9737 → 1.2238, regret
+**0.7499**. ADE beside them: 0.4252 → 0.1993, regret 0.2259, **frac exactly optimal 0.4713**,
+**p50 0.0273, p90 0.6398, p99 1.6227**, uniform-random-pick floor 2.1406.
+⇒ **the distribution is the finding, not the mean:** the selector is exactly optimal on 47 % of
+windows, and on roughly one in ten the fan held a candidate more than 0.64 m better.
+**TACTICAL** (⛔ read on the **v2 CURVATURE gate**, never `|dyaw| > 0.15`; the v1 read is given
+beside it only for comparability with the published block): the selected candidate carries the
+WRONG lateral class on **3.82 %** and the wrong longitudinal class on **18.05 %** of windows, while
+the fan contained a correct candidate on **99.96 % / 99.99 %** — i.e. **910** and **4,350** windows
+are wrong ALTHOUGH a correct candidate was available, with a median of 77 and 27 correct candidates
+present. STRATEGIC and DISTANCE-KEEPING are declared **UNAVAILABLE with their reason and n = 0**.
+⭐ **THE LEVER RANKING.** The 117 candidates are a 13 × 9 `(a_lon, a_lat)` grid. The selector is
+exactly right on `a_lon` **54.66 %** of the time and on `a_lat` **81.26 %**. An `a_lon` oracle with
+the chosen `a_lat` scores **0.2577 m**; an `a_lat` oracle with the chosen `a_lon` scores **0.3780 m**
+⇒ fixing `a_lon` alone recovers **74.2 %** of the regret and `a_lat` alone **20.9 %**.
+**WP-7 should train the ranker on the LONGITUDINAL axis first.**
+
+### D-SELQ-DEADBAND-12 — a selection deadband is REFUTED: the frame-to-frame movement is not free noise
+**Status: REFUTED (MEASURED, ours, pre-registered).** **Tier: T1.**
+
+Pre-registered with both outcomes committed: *if the small moves are noise, holding the previous
+pick LOWERS every family; if they are the model tracking the scene, it RAISES them.* The rule is
+deployable by construction (reads only the arm's own selection history and the grid coordinates,
+never the ground truth): hold the previous pick while the new one is within K grid steps on both
+axes. K = 1 cuts the switch rate 0.1552 → **0.0242** (below the 0.0806 reference) and is
+**separated WORSE on every family**: ADE +0.0486 [+0.0324, +0.0655], along +0.0307, cross +0.0255,
+speed +0.0366, heading +0.1224. K = 2 is worse still (ADE +0.1350).
+⇒ **hysteresis on the SELECTION is not the fix for observation (6).** The 0.1552 switch rate buys
+something real even though it is 1.93× the reference.
+
+### D-SELQ-SMOOTH-13 — an OUTPUT smoothing filter is a separated LATERAL gain at alpha = 0.25, and a trade above it
+**Status: SUPPORTED (MEASURED, ours, pre-registered).** **Tier: T1.** **Zero GPU.**
+**The lever that survives after D-SELQ-DEADBAND-12.**
+
+`os_a(t) = (1−a)·os(t) + a·T[os(t−1)]` with T the exact rigid transform into frame t; paired
+episode-cluster bootstrap, n = 24,114. At **a = 0.25**: curvature **−0.0011 [−0.0016, −0.0008]
+separated BETTER**, heading **−0.1166 deg separated BETTER**, speed **−0.0028 separated BETTER**,
+cross **+0.0009 separated WORSE**, ADE +0.0008 **not separated**. At a = 0.50 curvature −0.0020 and
+heading −0.1492 remain separated BETTER but ADE +0.0080 / along +0.0057 / cross +0.0034 turn
+separated WORSE.
+⛔ **On the programme's own lateral estimator, with the straight-line floor beside it:** `ha0`
+**0.006841** · `os` **0.008024** · `os` smoothed a=0.25 **0.007391** · a=0.50 **0.006882**. So
+a = 0.25 closes **53 %** of the gap from the arm to the straight-line floor for +0.0009 m of
+cross-track and no separated ADE change; a = 0.50 reaches the floor but costs a separated
++0.0080 m ADE. **A knob for the PI, not a free win.**
+⚠️ **Attribution:** a sibling traced the curvature over-shoot to the decoder's FREE-WAYPOINT
+REFINEMENT (it halves ADE and doubles curvature error). This filter partially undoes that
+refinement's lateral cost; the credit belongs there, **not to selection**.
+⚠️ `H-ESTIM-SEED-1` does not bite on this comparison — both arms are deterministic post-hoc
+transforms of ONE checkpoint's bit-reproducible output, so there is no training or inference
+variance between them. What is NOT established is generalisation to another training seed.
+
+### D-SELQ-XVAL-14 — the locally re-rolled refcv4b reproduces the published T1 lateral headline to 1.5 %
+**Status: SUPPORTED (MEASURED, ours).** **Class: reproduction control.**
+
+Restricting the stride-1 roll to `ws % 5 == 2` recovers the published stride-5 grid (4,927 windows
+here vs 4,823 published — this roll skips fewer edge windows). `curvature_mae_1pm`: `os` local
+**0.007975** vs published **0.008097** (delta **−0.000122**, −1.5 %); `ha0` local **0.006846** vs
+published **0.006802** (delta +0.000044). ⇒ the dev-box roll IS the arm in the PI's video, and every
+number in D-SELQ-LC-EMIT-7 / STAB-9 / ASTAR-10 / REGRET-11 / DEADBAND-12 / SMOOTH-13 is about it.

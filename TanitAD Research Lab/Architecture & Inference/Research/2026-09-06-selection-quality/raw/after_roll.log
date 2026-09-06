@@ -1,0 +1,283 @@
+########## 1. P1e  LC EMISSION + RECALL + DETERMINISM ##########
+[dump] C:/Users/Admin/tanitad-selq-20260906/out/refcv4b_t1_s1_dump   141 episodes, 24114 windows
+
+=== v7.2 TACTICAL LATERAL HEAD ===
+  windows with a valid label: 5781 / 24114 (23.97 %)  (IGNORE_ID -100 elsewhere)
+  EMISSION over ALL 24114 windows (label or not):
+    LANE_KEEP           20276 / 24114   84.0839 %
+    LANE_CHANGE_L           0 / 24114    0.0000 %   <== LANE CHANGE
+    LANE_CHANGE_R           0 / 24114    0.0000 %   <== LANE CHANGE
+    ABORT_LC                0 / 24114    0.0000 %   <== LANE CHANGE
+    NUDGE_L               819 / 24114    3.3964 %
+    NUDGE_R              1622 / 24114    6.7264 %
+    TURN_L                351 / 24114    1.4556 %
+    TURN_R               1046 / 24114    4.3377 %
+
+  AGREEMENT on the 5781 labelled windows
+    class              n_true   n_pred   recall  precision
+    LANE_KEEP            3895     4918   0.9340     0.7397
+    LANE_CHANGE_L           0        0      nan        nan   <==
+    LANE_CHANGE_R           0        0      nan        nan   <==
+    ABORT_LC                0        0      nan        nan   <==
+    NUDGE_L               533      166   0.1839     0.5904
+    NUDGE_R               820      324   0.2585     0.6543
+    TURN_L                205      139   0.5463     0.8058
+    TURN_R                328      234   0.3598     0.5043
+    [read-control] classes with n_true > 0: 5 / 8;  with n_pred > 0: 5 / 8
+
+=== v7.2 TACTICAL LONGITUDINAL HEAD ===
+  windows with a valid label: 5781 / 24114 (23.97 %)  (IGNORE_ID -100 elsewhere)
+  EMISSION over ALL 24114 windows (label or not):
+    FOLLOW                  0 / 24114    0.0000 %
+    CRUISE              10852 / 24114   45.0029 %
+    YIELD_MERGE             0 / 24114    0.0000 %
+    BRAKE_TO             3308 / 24114   13.7182 %
+    CREEP                 171 / 24114    0.7091 %
+    HOLD                 1010 / 24114    4.1884 %
+    ADAPT_SPEED_FOR_CURVE     4773 / 24114   19.7935 %
+    ACCELERATE           4000 / 24114   16.5879 %
+
+  AGREEMENT on the 5781 labelled windows
+    class              n_true   n_pred   recall  precision
+    FOLLOW                410        0   0.0000        nan
+    CRUISE               1722     2517   0.7863     0.5379
+    YIELD_MERGE             0        0      nan        nan   <==
+    BRAKE_TO              902      961   0.4579     0.4298
+    CREEP                 246       72   0.0203     0.0694
+    HOLD                   82       92   0.7683     0.6848
+    ADAPT_SPEED_FOR_CURVE      902     1028   0.6064     0.5321
+    ACCELERATE           1517     1111   0.5214     0.7120
+    [read-control] classes with n_true > 0: 7 / 8;  with n_pred > 0: 6 / 8
+
+=== windows whose CLIP the VLM CoT / goal layer flags as a LANE CHANGE ===
+  855 windows over 5 clips of the 141 in this eval set
+  the model's LATERAL emission there: {'LANE_KEEP': 810, 'NUDGE_L': 42, 'NUDGE_R': 3}
+  the v7.2 LABEL there:               {'IGNORE': 650, 'LANE_KEEP': 164, 'NUDGE_L': 41}
+
+=== DETERMINISM REPLICATE (2 episodes, 342 windows, a SEPARATE process, same flags, same seed) ===
+  sel_idx bit-identical            : True
+  lat_pred_nav_true bit-identical  : True
+  => inference-run variance on this arm is EXACTLY ZERO on these windows, so every switch measured below is the model reacting to its input, not a sampler
+
+wrote out_p1e_emission.json
+
+########## 2. P1g  LANE-CHANGE DEMAND (model-free) ##########
+[C-poses] max|dump v0 - poses[ws+2, 3]| = 0.000e+00
+[C-cover] windows with a full 6.0 s of recorded future: 18615 / 24114   (excluded, too short: 5499)
+
+GT DEMAND over 18615 windows / 141 clips
+  heading LEAVES AND RETURNS (non-monotone)        : 4615 / 18615  (24.79 %)
+  LANE CHANGE strict  |lat| in [2.5,5.0) + RETURNS : 1297 / 18615  (6.97 %)
+  LANE CHANGE relaxed |lat| >= 2.5 + RETURNS            : 2363 / 18615  (12.69 %)
+  TURN box |dyaw| >= 30.0 deg [CONTROL, must be non-zero]: 2602 / 18615  (13.98 %)
+  clips containing >= 1 relaxed lane-change window : 79 / 141
+    10804db8  15 windows
+    11e40da1  132 windows
+    126b3a97  26 windows
+    13c95b6a  3 windows
+    14157960  132 windows
+    142a3a72  74 windows
+    14bc9fcf  21 windows
+    17775e74  65 windows
+    18b72291  7 windows
+    1bd040a8  14 windows
+    1c3a2c7c  28 windows
+    2172a5a3  9 windows
+    24fee8a5  7 windows
+    2602baaa  132 windows
+    262b900f  19 windows
+
+wrote out_p1g_lc_demand.json
+
+########## 3. P2 + P3  STABILITY AND REGRET ##########
+C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\f407bc82-7969-457c-a947-6be2014fee89\scratchpad\sel\p2p3_run.py:143: RuntimeWarning: invalid value encountered in subtract
+  regret[f] = np.where(ok, sel_cost[f] - best_cost[f], np.nan)
+C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\f407bc82-7969-457c-a947-6be2014fee89\scratchpad\sel\p2p3_run.py:184: RuntimeWarning: invalid value encountered in subtract
+  rf = c[np.arange(N), rnd] - best_cost[f]
+[dump] C:/Users/Admin/tanitad-selq-20260906/out/refcv4b_t1_s1_dump
+[dump] provider->raw frame offset = 2 (read from the run's own manifest, never assumed)
+[dump] 141 episodes, 24114 windows, anchor_controls from core.decoder.anchor_controls n=117
+[C2] v0 round-trip max|dump v0 - poses[ws+2, 3]| = 0.000e+00  (must be < 1e-5)
+[fan] emitted fan rebuilt model-free: (24114, 117, 4, 2)
+[C1] straight candidate #4: max|y| over all windows/slots = 0.000e+00 m (must be 0)
+
+[P3 ceiling proof] argmin over the PER-WINDOW v0-conditioned fan vs the dumped `a_star` (argmin over model.core.decoder.anchors, the FIXED ref-speed bank): identical on 9.52 % of 24114 windows
+[P3 ceiling proof] ADE of the a_star candidate  1.4491 m
+[P3 ceiling proof] ADE of OUR best-in-fan       0.1993 m  (a valid ceiling must be <= every arm it bounds)
+[P3 ceiling proof] ADE of the SELECTED candidate 0.4252 m
+[P3 ceiling proof] ADE of the model's REFINED output `os` 0.2970 m  (refinement sits on top of the selection)
+
+[C5] index-mapping control: ADE(F[sel_idx]) = 0.4252 m  vs  ADE(F[random]) = 2.3399 m  vs  ADE(F[best]) = 0.1993 m  -- a wrong mapping would read as the random draw
+
+[P3] SELECTION REGRET  = cost(selected candidate) - cost(best candidate in the SAME emitted fan), per family
+  family                  n   selected  best-in-fan    regret      p50      p90      p99   frac=0  RND floor
+  ade_m               24114     0.4252       0.1993    0.2259   0.0273   0.6398   1.6227   0.4713     2.1406
+  along_mae_m         24114     0.3368       0.0713    0.2655   0.1589   0.6288   1.5911   0.1272     1.5814
+  cross_mae_m         24114     0.1725       0.0544    0.1181   0.0215   0.3795   1.1457   0.0443     1.2170
+  speed_mae_mps       24114     0.3462       0.1573    0.1890   0.0044   0.5542   1.5644   0.3043     1.6479
+  curv_mae_1pm        22944     0.0042       0.0022    0.0020   0.0000   0.0029   0.0443   0.6450     0.0269
+  heading_mae_deg     24114     1.9737       1.2238    0.7499   0.0000   2.2746  10.7753   0.6659     8.3204
+
+[gate] TACTICAL read on the v2 CURVATURE gate (|kappa| >= 1/60). GT lateral class counts v2 [22208, 686, 1220] vs v1 (the published block's gate, NOT used for decisions here) [20880, 1252, 1982]
+
+[P3 TACTICAL] tac_lat_wrong: the SELECTED candidate is WRONG on 3.82 % of windows; the fan contained a CORRECT candidate on 99.96 %; WRONG ALTHOUGH a correct one was available: 910 / 24114 (3.77 %)
+              median number of the 117 candidates carrying the correct class: 77
+
+[P3 TACTICAL] tac_lon_wrong: the SELECTED candidate is WRONG on 18.05 % of windows; the fan contained a CORRECT candidate on 99.99 %; WRONG ALTHOUGH a correct one was available: 4350 / 24114 (18.04 %)
+              median number of the 117 candidates carrying the correct class: 27
+
+[P3 TACTICAL] tac_lat_wrong_v1gate: the SELECTED candidate is WRONG on 6.27 % of windows; the fan contained a CORRECT candidate on 100.00 %; WRONG ALTHOUGH a correct one was available: 1512 / 24114 (6.27 %)
+              median number of the 117 candidates carrying the correct class: 41
+
+[P3 TACTICAL] tac_lon_wrong_v1gate: the SELECTED candidate is WRONG on 18.05 % of windows; the fan contained a CORRECT candidate on 99.99 %; WRONG ALTHOUGH a correct one was available: 4350 / 24114 (18.04 %)
+              median number of the 117 candidates carrying the correct class: 27
+
+[P2] TEMPORAL SELECTION STABILITY
+  DEFINITION: over CONSECUTIVE windows of the same clip (stride 1 = 0.1 s apart), the fraction of adjacent pairs at which the quantity CHANGES.  Lower is more stable.
+  SELECTION switch rate  -- refcv4b (the arm)             0.1552  [0.1416, 0.1686]  n=23973
+     CEILING: the GT's own best-in-fan choice             0.0806  [0.0732, 0.0885]  n=23973
+     FLOOR-A: the arm's own picks SHUFFLED in time        0.5736  [0.5319, 0.6154]  n=23973
+     FLOOR-B: a uniform random pick from the fan          0.9907  [0.9894, 0.9919]  n=23973
+  TACTICAL LATERAL token switch rate                      0.0282  [0.0227, 0.0343]  n=23973
+  TACTICAL LONGITUDINAL token switch rate                 0.0779  [0.0682, 0.0881]  n=23973
+  WAYPOINT disagreement, refcv4b                          0.1302 m  [0.1219, 0.1384]  n=23973
+     CEILING/C3: the GT path against itself               0.0145 m  [0.0129, 0.0161]  n=23973
+     FLOOR: an independent random candidate each frame    2.7142 m  [2.6350, 2.7866]  n=23973
+
+  SELECTION DWELL TIMES (consecutive frames holding one candidate), n_runs=3861
+    mean 6.25 frames = 0.62 s   median 2   p90 14   max 172
+    runs of <=  1 frames (0.1 s): 1498 / 3861  (38.80 %)
+    runs of <=  2 frames (0.2 s): 2110 / 3861  (54.65 %)
+    runs of <=  3 frames (0.3 s): 2454 / 3861  (63.56 %)
+    runs of <=  5 frames (0.5 s): 2897 / 3861  (75.03 %)
+    runs of <= 10 frames (1.0 s): 3328 / 3861  (86.20 %)
+
+  DECOMPOSITION of the 3720 selection switches:
+    move a TACTICAL TOKEN too : 692 (18.60 % of switches)
+    waypoints only            : 3028
+    token moved with NO selection switch: 1785
+
+  ADE of `os` at a window that SWITCHED its selection: 0.3903 m (n=3720)  vs one that HELD: 0.2800 m (n=20253)
+  SELECTION REGRET (ADE) at a switching window: 0.3534 m  vs at a holding window: 0.2029 m
+
+[P3b] WHICH AXIS OF THE 13 x 9 (a_lon x a_lat) GRID IS MISSED?
+  mean |grid steps| off the best candidate: a_lon 0.675 of 12 max, a_lat 0.264 of 8 max
+  exactly right on a_lon: 13181 / 24114 (54.66 %)   on a_lat: 19596 / 24114 (81.26 %)   on BOTH: 11366 / 24114 (47.13 %)
+  ADE if the a_lon index were ORACLE and a_lat kept: 0.2577 m
+  ADE if the a_lat index were ORACLE and a_lon kept: 0.3780 m
+  ADE selected 0.4252 m -> best-in-fan 0.1993 m
+
+[P2c] SELECTION DEADBAND (deployable, no GT): hold the previous pick while the new one is within K grid steps on both axes
+  K=1: selection switch rate 0.0242 (baseline 0.1552, GT ceiling 0.0806); changed the pick on 10263 / 24114 windows
+      ade_m                 0.4738 vs    0.4252  delta +0.0486 [+0.0324, +0.0655]  separated=True  WORSE
+      along_mae_m           0.3675 vs    0.3368  delta +0.0307 [+0.0180, +0.0433]  separated=True  WORSE
+      cross_mae_m           0.1980 vs    0.1725  delta +0.0255 [+0.0114, +0.0414]  separated=True  WORSE
+      speed_mae_mps         0.3828 vs    0.3462  delta +0.0366 [+0.0230, +0.0499]  separated=True  WORSE
+      heading_mae_deg       2.0961 vs    1.9737  delta +0.1224 [+0.0540, +0.1966]  separated=True  WORSE
+  K=2: selection switch rate 0.0106 (baseline 0.1552, GT ceiling 0.0806); changed the pick on 12239 / 24114 windows
+      ade_m                 0.5602 vs    0.4252  delta +0.1350 [+0.1095, +0.1622]  separated=True  WORSE
+      along_mae_m           0.4186 vs    0.3368  delta +0.0818 [+0.0620, +0.1032]  separated=True  WORSE
+      cross_mae_m           0.2522 vs    0.1725  delta +0.0797 [+0.0555, +0.1068]  separated=True  WORSE
+      speed_mae_mps         0.4401 vs    0.3462  delta +0.0939 [+0.0719, +0.1167]  separated=True  WORSE
+      heading_mae_deg       2.5177 vs    1.9737  delta +0.5440 [+0.3761, +0.7233]  separated=True  WORSE
+
+[P2b] NEXT LEVER (pre-registered, zero GPU): blend the PREVIOUS plan forward into the current frame, os_a = (1-alpha)*os(t) + alpha*T[os(t-1)]
+    alpha=0.25  ade_m                 0.2978 vs    0.2970  delta +0.0008 [-0.0006, +0.0022]  separated=False  WORSE
+    alpha=0.25  along_mae_m           0.2558 vs    0.2559  delta -0.0001 [-0.0017, +0.0014]  separated=False  BETTER
+    alpha=0.25  cross_mae_m           0.0958 vs    0.0949  delta +0.0009 [+0.0005, +0.0013]  separated=True  WORSE
+    alpha=0.25  speed_mae_mps         0.2873 vs    0.2902  delta -0.0028 [-0.0042, -0.0016]  separated=True  BETTER
+    alpha=0.25  curv_mae_1pm          0.0108 vs    0.0119  delta -0.0011 [-0.0016, -0.0008]  separated=True  BETTER
+    alpha=0.25  heading_mae_deg       4.9756 vs    5.0922  delta -0.1166 [-0.1660, -0.0690]  separated=True  BETTER
+    alpha=0.5  ade_m                 0.3050 vs    0.2970  delta +0.0080 [+0.0057, +0.0104]  separated=True  WORSE
+    alpha=0.5  along_mae_m           0.2616 vs    0.2559  delta +0.0057 [+0.0031, +0.0083]  separated=True  WORSE
+    alpha=0.5  cross_mae_m           0.0983 vs    0.0949  delta +0.0034 [+0.0027, +0.0043]  separated=True  WORSE
+    alpha=0.5  speed_mae_mps         0.2905 vs    0.2902  delta +0.0003 [-0.0019, +0.0024]  separated=False  WORSE
+    alpha=0.5  curv_mae_1pm          0.0099 vs    0.0119  delta -0.0020 [-0.0028, -0.0014]  separated=True  BETTER
+    alpha=0.5  heading_mae_deg       4.9431 vs    5.0922  delta -0.1492 [-0.2235, -0.0777]  separated=True  BETTER
+    alpha=0.75  ade_m                 0.3186 vs    0.2970  delta +0.0215 [+0.0186, +0.0246]  separated=True  WORSE
+    alpha=0.75  along_mae_m           0.2736 vs    0.2559  delta +0.0177 [+0.0148, +0.0208]  separated=True  WORSE
+    alpha=0.75  cross_mae_m           0.1023 vs    0.0949  delta +0.0074 [+0.0062, +0.0088]  separated=True  WORSE
+    alpha=0.75  speed_mae_mps         0.2999 vs    0.2902  delta +0.0097 [+0.0073, +0.0123]  separated=True  WORSE
+    alpha=0.75  curv_mae_1pm          0.0091 vs    0.0117  delta -0.0026 [-0.0037, -0.0018]  separated=True  BETTER
+    alpha=0.75  heading_mae_deg       4.9725 vs    5.0922  delta -0.1197 [-0.1995, -0.0402]  separated=True  BETTER
+
+[P2b/LATERAL on the PROGRAMME'S estimator, with its floor]
+  ha0 (straight-line FLOOR)  curvature_mae 0.006841  heading 2.8066 deg  cross 0.3133 m  n_steps_curv 67582
+  os  (the arm)              curvature_mae 0.008024  heading 1.3198 deg  cross 0.0979 m  n_steps_curv 67792
+  os smoothed alpha=0.25     curvature_mae 0.007391  heading 1.3081 deg  cross 0.0988 m  n_steps_curv 67800
+  os smoothed alpha=0.5      curvature_mae 0.006882  heading 1.3088 deg  cross 0.1014 m  n_steps_curv 67792
+
+[X-VAL vs the PUBLISHED refcv4b T1 record] stride-5 subset: 4927 windows (published grid = 4823)
+  os   curvature_mae_1pm  local 0.007975   published 0.008097   delta -0.000122
+  ha0  curvature_mae_1pm  local 0.006846   published 0.006802   delta +0.000044
+
+wrote out_p2p3.json
+AFTER_ROLL_EXIT=0
+
+########## 4. P1f  LOGIT RANK of the lane-change classes (GPU, ~2 min) ##########
+[p1f] forward hooks attached to lat_head_tac / lon_head_tac
+[ego] ego_state_inject build: feeding the MEASURED ego block (v0, a_long, yaw_rate, curvature, keep=1) at t0 to every forward — refc_v3.ego_state_from_batch, the trainer's own entry
+[v3] nav_from_v7: follow 4 / left 0 / right 1, missing 0 (of 5 clips; md5=aa12c948f062181c3297265b51526ec5)
+[model] C:/Users/Admin/refcv4b_final/ckpt_40284_FINAL.pt step=40284 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-config.json[argv] -> refc_v3_train.build_parser + _pin_trainer_cfg (the trainer's own build path)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 855 windows / 5 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext'] · fed conditionings=['nav_true'] · nav_shuffle changed 260/855
+[cost] first forward (1 fed row(s), 1 rows total) took 0.40 s -> ESTIMATED 0.10 h for 855 windows (forward only; IO/analysis extra)
+  [1/5] 01be5919-6e6 171 windows 31s
+  [2/5] 060531e1-993 171 windows 56s
+  [3/5] 0fa2b231-435 171 windows 79s
+  [4/5] 10804db8-d07 171 windows 102s
+  [5/5] 11e40da1-3d9 171 windows 124s
+[dump] 855 windows over 5 episodes (0 skipped: none)
+REFCV3_DUMP_DONE
+[trivial-profile] 855 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  os             n= 855 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha             n= 855 straight=0.0164 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: ha0_ext=11/855
+  ha0            n= 855 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000
+  ha0_ext        n= 855 straight=0.0152 const_speed=0.0000 CONSTANT-VELOCITY=0.0000  identical_to: ha=11/855
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['ha0'] — read their LATERAL rows as a control, never as planning skill
+[selection-profile] 855 windows over 117 anchors — the model's OWN choice, before any family row
+  n_distinct=  16  modal=#67 (0.6784)  entropy=1.2280/4.7622 nats (ratio 0.2579)  agrees_with_oracle=0.0129
+[out] C:/Users/Admin/tanitad-selq-20260906/out/logitrank.json
+  os           tier=T1*  ADE=0.2183 [0.1671, 0.2861]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha           tier=T1   ADE=0.2153 [0.1782, 0.2807]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0          tier=T1   ADE=0.3902 [0.181, 0.5753]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  ha0_ext      tier=T1   ADE=0.209 [0.1751, 0.2634]  families_unavailable=['strategic']  distance_keeping=REFUSED
+  * = tier stamped T1 with the ruling OPEN (does EVAL_DOCTRINE admit as T1 a model that consumes NO acti…)
+  paired_os_minus_ha0          ADE delta=-0.1718 [-0.3137, 0.0241] separated=False n_win=855 n_ep=5
+  paired_os_minus_ha           ADE delta=0.003 [-0.0301, 0.0563] separated=False n_win=855 n_ep=5
+  paired_ha_minus_ha0          ADE delta=-0.1748 [-0.2974, 0.002] separated=False n_win=855 n_ep=5
+  paired_os_minus_ha0ext       ADE delta=0.0093 [-0.0273, 0.0596] separated=False n_win=855 n_ep=5
+  ⚠️ nav-zero arm ABSENT: --no-navzero, or nav source 'none' (in which case `os` already IS the nav-zero arm) — ⛔ BACKLOG R39 requires it beside the shuffle for any nav-conditioned claim
+  ABSENT: ol — `ol` is 'the RECORDED future (a, steer) integrated from v0'. refcv3 CONSUMES NO ACTIONS (r…
+  strategic nav_valid_frac=1.0 n_labeled=763 changed_subset_n=None
+  tactical anchor_acc=0.0129 (chance 0.008547) n_distinct_selected=16
+
+=== LATERAL logits, n = 855 forward rows, 8 classes ===
+  class               mean logit  argmax n  mean rank  best rank  mean margin
+  LANE_KEEP               1.6489       805       1.06          1       0.0416
+  LANE_CHANGE_L         -31.5622         0       7.59          6      33.2526  <== 0 POSITIVES IN THE CORPUS
+  LANE_CHANGE_R         -31.3805         0       6.81          6      33.0710  <== 0 POSITIVES IN THE CORPUS
+  ABORT_LC              -31.3355         0       6.60          6      33.0260  <== 0 POSITIVES IN THE CORPUS
+  NUDGE_L                -1.0014         1       3.09          1       2.6919
+  NUDGE_R                 0.0390        13       2.32          1       1.6515
+  TURN_L                 -5.1831         0       4.57          3       6.8736
+  TURN_R                 -4.6781        36       3.96          1       6.3685
+  [read-control] classes that are argmax at least once: 4 / 8
+
+=== LONGITUDINAL logits, n = 855 forward rows, 8 classes ===
+  class               mean logit  argmax n  mean rank  best rank  mean margin
+  FOLLOW                 -0.0072         0       4.85          3       2.7014
+  CRUISE                  1.5763       357       2.51          1       1.1180
+  YIELD_MERGE           -30.8959         0       8.00          8      33.5902  <== 0 POSITIVES IN THE CORPUS
+  BRAKE_TO                1.5533       124       2.42          1       1.1410
+  CREEP                  -4.0887        12       5.25          1       6.7830
+  HOLD                   -8.9024        11       6.66          1      11.5967
+  ADAPT_SPEED_FOR_CURVE      0.4690        82       3.92          1       2.2253
+  ACCELERATE              1.7056       269       2.39          1       0.9887
+  [read-control] classes that are argmax at least once: 6 / 8
+
+wrote out_p1f_logit_rank.json
+P1F_EXIT=0
