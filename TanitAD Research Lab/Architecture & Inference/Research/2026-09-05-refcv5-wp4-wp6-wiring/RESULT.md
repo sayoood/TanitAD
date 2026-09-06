@@ -319,7 +319,24 @@ Nothing is stranded on a pod or a worktree. All work is in the repo tree and sta
    now `code/`-adjacent `sync.py`, which copies and **verifies by sha256**, requires both
    digests to be 64 chars, and clears stale `__pycache__`. **A copy tool's exit code is
    not evidence.**
-2. **AN UNRUNNABLE PIN READ AS A PASSING ONE.** `assert_matches_diffusers` reported a
+2. **`mktree_commit.py` EXITED 0, PRINTED NOTHING, AND COMMITTED NOTHING.** The tool
+   prints `[mktree] HEAD = ...` unconditionally and ends with a blob-verified
+   `VERIFIED in HEAD` line, so **no output is impossible for a real run** — yet the
+   shell reported `MKTREE_EXIT=0`. In the same minutes, `head -20` on that same file
+   returned `Invalid request code` and `sed -n '1,45p'` returned empty: the G: mount
+   was in an outage window and the invocation was swallowed whole. ⛔ **Nothing in the
+   exit code distinguished that from success**, and had I trusted it the entire seam
+   would have stayed in the worktree while I reported it committed. Caught by the
+   content-marker check with controls: 10 of 11 markers read **MISSING** against
+   controls reading 1–95, and `git log` showed a **sibling's** commit at HEAD with my
+   subject absent (0 occurrences over a 40-line log that read 40 lines). Re-run with
+   stdout redirected to **local disk**, it worked and printed all 22 lines.
+   ⇒ **Run any commit tool with its output on local disk, and verify by content
+   markers afterwards — never by the exit code, and never only by the tool's own
+   self-report.** (Same class as the `robocopy` failure above and as `git ls-tree`
+   truncating while exiting 0; `test_mktree_commit.py` itself has **6 pre-existing
+   failures**, which is its own warning.)
+3. **AN UNRUNNABLE PIN READ AS A PASSING ONE.** `assert_matches_diffusers` reported a
    *skip* for as long as `diffusers` was absent, and the moment it ran it could not pass
    (§4). A guard that has never executed is not a guard — the same rule as *"a guard must
    be shown capable of failing"*, with the failure mode inverted: **shown capable of
