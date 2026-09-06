@@ -41,7 +41,7 @@ label, and it is named in §5.
    **0 of its questions mention a sign**. Not one reading can be corroborated in
    image space. *(Precedent: traffic lights got 175 grounded / 604 disputed.
    Here it is 0 grounded / 57 disputed.)*
-5. ⛔ **35.1 % OF THE READINGS CARRY NO UNIT** — 18/57 state a bare number
+5. ⛔ **31.6 % OF THE READINGS CARRY NO UNIT** — 18/57 state a bare number
    (*"a 70 speed limit sign"*). 70 km/h = 19.44 m/s, 70 mph = 31.29 m/s, a
    **1.61×** spread. Under the units rule those 18 are inadmissible as they
    stand.
@@ -153,7 +153,20 @@ being quoted against another.
 `trajectory` 15, `meta_action` 15 (77 clip-rows over 57 distinct clips —
 the tasks corroborate each other on the same clip).
 
-**Units on the 57:** `km/h` **37** · `mph` **2** · ⛔ **none stated 18 (35.1 %)**.
+**Units on the 57:** `km/h` **37** · `mph` **2** · ⛔ **none stated 18 (31.6 %)**.
+
+⚠️ **CORRECTION, mine, same turn (2026-09-06).** This figure first read **35.1 %**
+in the first committed version of this document. **35.1 % is 20/57 — the *suspicious*
+count (value ≤ 15 **OR** no unit) — not the no-unit count.** The two extra rows
+(`42f52617` 10 **mph**, `74808e88` 15 **km/h**) both state a unit, so the sentence
+contradicted its own numerator; **18 was correct everywhere it appeared.**
+⭐ **ROOT-CAUSE CLASS: a percentage carried over from a DIFFERENT query than its
+numerator** — the *"a number carries its ARM and its ARTIFACT PATH, and PERCENTAGES
+are the worst offenders"* rule in its narrowest form.
+⛔ **It did NOT propagate**: a sibling (`…/Research/2026-09-06-cot-loader/`)
+independently recomputed **31.6 %** from `raw/limits_classified.json` rather than
+copying my prose. Re-verified against the artifact: unit census
+`{NONE: 18, km/h: 37, mph: 2}`, 18/57 = 0.3158.
 
 **Values (57/57 are legal posted-limit round numbers):**
 10, 15, 20, 30, 35, 40, 50, 60, 70, 80, 100, 120 — with **30 the mode**.

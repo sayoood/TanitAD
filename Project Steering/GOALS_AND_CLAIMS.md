@@ -9342,10 +9342,19 @@ consumes this label, not the audit of it.
 | ⛔⛔ **SL-SRC-GROUNDED-ZERO** | ⛔⛔ **THE GROUNDED SHARE IS 0 / 57 — AND STRUCTURALLY SO, BECAUSE THE GROUNDING TASK WAS NEVER ASKED ABOUT A SIGN.** MEASURED over all **4,728** `grounding_via_vqa` rows: the box-label census is `Car` 9,172 · `Pedestrian` 4,516 · `traffic light` 3,587 · `Truck` 712 · `Bike with rider` 588 · `Bus` 164 · `lead vehicle` 56 · `Motorcycle with rider` 44 — ⛔ **no sign class of any kind**, and ⛔ **0 of 4,728 questions mention a sign**. ⇒ all 57 readings are permanently `disputed` under the current export. ⚠️ Per `alpamayo_records.py`'s own rule, grounding can CONFIRM but **never REFUTE** — so this is *"0 of 57 are corroborable"*, **not** *"the 57 are wrong"*. **Precedent for scale: traffic lights got 175 grounded / 604 disputed; this channel gets 0 / 57.** ⛔ Supervising on this without a grounding pass teaches noise. | **MEASURED (ours)** | `…/2026-09-06-speed-limit-source/raw/limits_classified.json` |
 | ⛔ **SL-SRC-DEAD-BOOLEAN** | ⛔ **THE VALUE IS DISCARDED AT THE REGEX AND THE FIELD IS NEVER READ.** `CotTokens.speed_limit` is a **`bool`**, declared at `cot_tokens_v7.py:183` and assigned at `:238` from `_SPEED_LIMIT = re.compile(r"\bspeed limit\b")` — **a pattern with no capturing group** — and those are its **only two occurrences in the file**; `goals_from_cot` emits a token for eight of the other nine `CotTokens` fields and **none** for this one. ⇒ all 57 numbers were reachable at zero cost and were thrown away. ⚠️ **AND THE MODULE'S OWN PUBLISHED YIELD IS A 5.7× UNDER-COUNT**: the docstring states `speed limit 41 0.9 %` as a corpus figure; that is the **`meta_action` task ALONE** (`meta_action=41` reproduces **exactly**), while the corpus figure is **235/4,729**. ⭐ **ROOT-CAUSE CLASS: a true measurement quoted outside its scope** — the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` family, here with the scope being **which task was searched**. ⛔ Escalated to the v7 label owners; **I did not edit the file** (a sibling may own it). | **MEASURED (ours), established from source with the count reproduced** | `…/2026-09-06-speed-limit-source/RESULT.md` §1.4 |
 | ⭐ **SL-SRC-DIRECT-ASK-IS-0-OF-9** | ⭐ **ASKED DIRECTLY WHAT THE SIGN SAYS, ALPAMAYO RETURNS A NUMBER 0 TIMES OUT OF 9 — every numeric reading in this programme comes from the UNPROMPTED CoT.** The `vqa` task samples **one** question per clip from a **506-question bank over 21 categories**, and four are dedicated to speed limits: *"What does the nearest speed limit sign say or indicate?"* asked on **9** clips, **0** answered with a digit; *"Is there a speed limit sign applicable to the ego lane within 100 metres?"* **16** clips, **yes=0 / no=16**; *"Are there speed limit signs visible in the scene, and where?"* **6** clips, yes=1/no=5; *"What is the state or condition of the speed limit sign nearest the ego?"* **9** clips, 0 digits. ⇒ **the prompt designed to elicit the value is the one that never produces it.** ⚠️ **9 samples cannot separate a PROMPT failure from a CAPABILITY failure** — that is precisely what the costed re-ask below buys, and it is the most suspicious fact in the audit. ⛔ A neighbouring family (*"What is a safe maximum speed for this &lt;road-type&gt;…"*, **107** clips) is the **road-type language prior** and is excluded from every count. | **MEASURED (ours)** | `…/2026-09-06-speed-limit-source/raw/speedlimit_probe.json` |
-| ⛔ **SL-SRC-UNITLESS-35PCT** | ⛔ **18 of 57 READINGS (35.1 %) STATE NO UNIT** — *"a 70 speed limit sign"*, *"gantry signs display 120"*. 70 km/h = **19.44 m/s**, 70 mph = **31.29 m/s**, a **1.61×** spread. ⭐ **Exactly the `anchors.pt` units trap** (a correct formula under the wrong units reads exactly like an answer; 3.0 read as curvature vs lateral acceleration gave 396 g vs 0.31 g). Units on the 57: `km/h` **37** · `mph` **2** · **none 18**. ⇒ under the units rule those 18 are **inadmissible as they stand**, and no builder can repair them without the frames. | **MEASURED (ours)** | `…/2026-09-06-speed-limit-source/raw/limits_classified.json` |
+| ⛔ **SL-SRC-UNITLESS-35PCT** | ⛔ **18 of 57 READINGS (31.6 %) STATE NO UNIT** — *"a 70 speed limit sign"*, *"gantry signs display 120"*. 70 km/h = **19.44 m/s**, 70 mph = **31.29 m/s**, a **1.61×** spread. ⭐ **Exactly the `anchors.pt` units trap** (a correct formula under the wrong units reads exactly like an answer; 3.0 read as curvature vs lateral acceleration gave 396 g vs 0.31 g). Units on the 57: `km/h` **37** · `mph` **2** · **none 18**. ⇒ under the units rule those 18 are **inadmissible as they stand**, and no builder can repair them without the frames. | **MEASURED (ours)** | `…/2026-09-06-speed-limit-source/raw/limits_classified.json` |
 | ⭐ **SL-SRC-COSTED-RE-ASK** | ⭐ **THE CHEAPEST EXPERIMENT THAT CHANGES THE ANSWER IS 10.8 h ON HARDWARE WE OWN, WITH NO HF PULL AND NO SPEND — priced from the CONSUMER'S OWN RECORD, not from a file found on disk.** The `wall_s` column of the artifact the pipeline actually produced gives MEASURED medians s/clip: `vqa` **8.2** · `trajectory` 9.5 · `meta_action` 10.0 · `grounding_via_vqa` **10.1** · `auto_labeling` 18.1; the full 23,644-row build cost **282,090 s = 78.4 h = 3.26 GPU-days**. ⇒ **(6.1)** re-run `vqa` **pinned** to the speed-limit questions on all 4,729 clips = **4,729 × 8.2 s = 10.8 h**, which also settles `SL-SRC-DIRECT-ASK-IS-0-OF-9`; **(6.2)** add a sign class to the grounding pass = **13.3 h**, the only route to a non-zero grounded share; ⭐ **together 24.1 h ≈ 1.0 GPU-day** for a *value + unit + box* triple. ⚠️ **Risk stated in advance**: the export is `NF4-backbone-4bit-UNVALIDATED` and 4-bit quantisation is what degrades small-glyph OCR; the 48-clip pilot already measured this model **fabricating band edges on 48 % of clips**. ⛔ **NOT STARTED — it needs GPU the PI has reserved.** ⛔ External-corpus and human-annotation routes are named but **deliberately NOT costed**: costing them honestly needs a licence read and a pilot, and inventing a rate here would be the estimate-without-a-consumer error. | **MEASURED (ours)** for the two re-ask routes; the other two **deliberately uncosted** | `…/2026-09-06-speed-limit-source/RESULT.md` §6 |
 | 🔴 **SL-SRC-PI-DECISION-EXTRACT-VS-SUPPLY** | 🔴 **OPEN — A PI DECISION, DELIBERATELY NOT TAKEN BY ME.** Two binding rulings point opposite ways: *"the Alpamayo labels … are GT labels **to train the models to extract them from vision**"* → **(a) EXTRACT**; *"the nav command is NOT a training signal — it is an **INPUT** simulating the nav system"* → a posted limit is arguably the same → **(b) SUPPLY**. ⛔ **(a)** buys a leak-free design by construction but rests on **57 positives, 0 grounded, 18 unit-less, and ego-coupled** targets — a head fit to them can score by predicting ego speed, the `SPEED_BAND` defect one level up; ⭐ **it therefore requires an EGO-SPEED-ONLY control arm that must be beaten, and that control is the whole experiment, not an extra.** ⛔ **(b)** is realistic and makes the under-driving side immediately scoreable, but on THIS corpus the only available value is the **ratio-1.01 ego-coupled reading** ⇒ supplying it is the **nav-echo defect with no horizon guard**, and **98.79 % of clips would need a fill value that then becomes the actual signal**. ⭐ **Invariant under either ruling — the sibling's principle holds: the constraint is SCORED ON THE OUTPUT** (*"an input that does not exist cannot echo"*), via `stack/tanitad/eval/constraints.py`, which already fires in both directions. ⇒ **Recommendation offered as INPUT, not as a decision: neither is fundable on 57 ego-coupled labels; authorise `SL-SRC-COSTED-RE-ASK` first.** | 🔴 **OPEN — escalated to the PI in the turn report** | `…/2026-09-06-speed-limit-source/RESULT.md` §5 |
 | ⚠️ **SL-SRC-SILENT-ABSENCE-TRAP** | ⚠️ **`alpamayo_records._load()` RETURNS `{}` SILENTLY WHEN ITS HARD-CODED LOCAL PATH IS MISSING** (`if not os.path.exists(RECORDS): return {}`, ~`:207`; `RECORDS = "C:/Users/Admin/tanitad-data/alpamayo/records.parquet"` at `:54`). On any machine without that off-Drive path **every CoT token vanishes with no error**, and the labels read as legitimately empty rather than as a broken load. ⛔ Same family as the mount rule *"0 hits is a claim about the SEARCH, not the CONTENT"* — an absence produced by a failed read, indistinguishable from a real one. Wants a loud failure. Escalated, **not edited**. | **MEASURED (ours)**, established from source and corroborated by an independent agent | `…/2026-09-06-speed-limit-source/RESULT.md` §7.4 |
+
+⚠️ **CORRECTION, mine, same turn.** `SL-SRC-UNITLESS-35PCT` first read **35.1 %**; the
+correct figure is **31.6 %** (18/57 = 0.3158) and the row and its ID now carry it. 35.1 % is
+**20/57**, the *suspicious* count (value ≤ 15 **OR** no unit), which includes two rows that DO
+state a unit (`42f52617` 10 mph, `74808e88` 15 km/h). The numerator 18 was right everywhere, so
+the claim contradicted itself. ⭐ **ROOT-CAUSE CLASS: a percentage carried over from a DIFFERENT
+query than its numerator.** ⛔ It did **not** propagate — a sibling
+(`…/Research/2026-09-06-cot-loader/`) recomputed 31.6 % from the artifact rather than copying
+the prose, which is the behaviour that caught it.
 
 ⚠️ **SCOPE AND WHAT IS *NOT* CLAIMED.** ⛔ I did **not** open the camera frames, so no individual
 reading is certified as a real sign, a dashboard, or a hallucination — only the **statistics of the
@@ -9956,3 +9965,247 @@ no reason to learn a direction-sensitive mapping.
 ⚠️ **It is a LOWER BOUND on a retrain, NOT evidence that a retrain would fail** — a retrained arm
 moves the FiLM and the goal together, which an inference-time patch cannot do. This does not change
 D-GSTR-TURNLEFT-9's blocker; it sharpens what the retrain must be watched for.
+
+
+### ⭐⭐ D-COT-LOADER-1 — SUPPORTED. A loader answered a MISSING FILE with `{}`, so every CoT token vanished as a NEGATIVE FINDING. Fixed, and the loud path is mutation-proven REACHED from all nine public routes.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** ·
+**GPU-days 0** (no arm, no pod, the A40 untouched, no HF pull) ·
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-cot-loader/` (PREREG + RESULT).
+
+⛔ `alpamayo_records._load()` opened `if not os.path.exists(RECORDS): return {}` on a **hard-coded
+local path**. On any machine without it — a pod, an off-Drive clone, a fresh checkout — every CoT
+token, box and `meta_action` vanished with **no error**, and *"this corpus states no speed limit"*
+was **indistinguishable** from *"the records file was not there"*. ⭐ The night's dominant failure
+class in a loader costume: the same shape as a search tool reporting *"no matches"* for files it
+could not open, a `grep -c` returning 0 from an unreadable file, and a committer exiting 0 having
+committed nothing.
+
+⭐ **THE MUTATION PROOF, RUN LIVE, BOTH DIRECTIONS.** One line re-introduced (not a file revert —
+that would have failed on missing scaffolding and proven nothing about the DEFECT):
+
+| `alpamayo_records.py` | md5 | result |
+|---|---|---|
+| fixed | `82dba13f274300aa8ec7948bb5d155a5` | **17 passed** |
+| defect re-introduced (1 line) | `73617a396074628624df8dc08bac0839` | **12 failed / 5 passed** |
+| restored | `82dba13f274300aa8ec7948bb5d155a5` | **17 passed** |
+
+⭐ **All NINE reachability arms are among the twelve** — `available` · `get` · `coverage` ·
+`structured.coverage` · `structured.motion_segments` · `structured.critical_component` ·
+`fusion.cot_text` · `fusion.ground_tokens` · `fusion.lateral_concordance`. *Correctness and wiring
+are different claims;* the mutation run is the evidence this suite tests the **second**.
+⭐ **The five that still pass are exactly the five that should** — the two present-source arms, the
+unreadable-file arm, the static route census, and the stamped opt-out. **A guard that refused
+everything would have failed the present-source arms.** Real corpus still loads **4,729 clips**.
+⚠️ **Residual, stated not hidden:** a per-ROW `json.loads` failure still drops content silently; it
+is now **COUNTED** (`load_report()`), reads **0** on the live corpus, and is not thresholded because
+inventing a tolerance would be the uncalibrated-threshold defect.
+
+### ⭐ D-COT-LOADER-2 — SUPPORTED. A dead boolean discarded 57 posted speed-limit VALUES at the regex; captured now, with units, and NOTHING reaches inference.
+`CotTokens.speed_limit` was a `bool`, assigned once and **read nowhere**, and `_SPEED_LIMIT` had
+**no capturing group**. **MEASURED over the 4,729 clips of `Sayood/tanitad-alpamayo2-augmentation`**
+(`records.parquet` md5 `9f13474723b880eec7fcc09a7be478d8`; ⛔ **not** the 2,376-episode parity set,
+**not** B1's 4,572): **57 READ / 66 HEDGED / 26 NEGATED**, reproducing the independently-written
+`…/2026-09-06-speed-limit-source/code/classify_limits.py` **clip-for-clip — id sets identical,
+values identical.**
+⛔ **NO TOKEN IS EMITTED AND NOTHING REACHES INFERENCE, PROVEN NOT PROMISED:** `goals_from_cot()`
+over all 4,729 clips is **byte-identical** before and after — md5 `01d9cf407cde33fd45d23dcd9095e4cc`,
+639,553 B. Coverage is 1.21 %, grounded share **0/57**, and the readings are ego-coupled (median
+ratio limit/ego 1.01, INHERITED); **extract-vs-supply remains an OPEN PI decision.**
+⛔ **A number without its unit is REFUSED a metric value by construction**: `speed_limit_ms` is
+`None` whenever the unit is missing — **0 of the unit-less readings carry one**. 1 mph / 1 km/h =
+**1.609344** (70 km/h = 19.4444 m/s, 70 mph = 31.2928 m/s). Same family as the `anchors.pt`
+control-units trap.
+
+### ⛔ D-COT-LOADER-3 — REFUTES the published `35.1 % (18/57)`. The fraction is arithmetically impossible; the true figures are 18/57 = 31.58 % (clip) and 32/77 = 41.56 % (row).
+`…/2026-09-06-speed-limit-source/RESULT.md` §0.5/§2 states *"35.1 % OF THE READINGS CARRY NO UNIT —
+18/57"*. ⛔ **18/57 = 31.58 %.** MEASURED, both denominators, each with its `n`: **clip level 18/57 =
+31.58 %**; **row level 32/77 = 41.56 %**. ⭐ **35.1 % matches NEITHER** — this is the *"a percentage
+alone is inadmissible, two different fractions round to the same one"* rule firing **inside the
+report that states it**, and rounding to a **third** value belonging to neither. **The `18` is
+correct.** Units on the 57: km/h **37** · mph **2** · none **18**. ⚠️ Escalated with exact
+replacement text; the sibling's file was NOT edited.
+
+### ⛔ D-COT-LOADER-4 — REFUTES the corpus figure `235/4,729`. It conflates what Alpamayo STATES with what it was ASKED. The number a label pipeline can act on is 219.
+The docstring of `cot_tokens_v7.py` published `speed limit 41 0.9 %` as a corpus-wide yield.
+⭐ **The 41 reproduces EXACTLY** as the `cot` field of the `meta_action` task alone — the diagnosis
+(*a true measurement quoted outside its scope, the `df`/`step_s` family*) is **confirmed**, and 7 of
+9 probed rows reproduce exactly on the same field (the other two are pattern, not scope,
+differences: `traffic light` 638 = the module's own `_LIGHT`, `merge` 45 = the loose stem `\bmerg`).
+⛔ **But the published corpus figure is itself scoped wrong.** `probe_speedlimit.py` searches
+`raw_json_text + question`; `classify_limits.py` searches the text alone. MEASURED, **resolved to
+the clip**: **219 clips (4.63 %) where Alpamayo STATES the phrase**, **40** where it appears only in
+the QUESTION PUT TO THE MODEL, **16** of those never in any answer — **219 + 16 = 235**.
+⭐ **CONTROL: two independently-written regexes return 219 = 219 on the same text**, isolating the
+question column as the whole difference. ⇒ **Being ASKED about a speed limit is not the corpus
+STATING one**; the under-count is **5.3×**, not 5.7×, and **219** is the actionable denominator.
+⭐ A second stale-absence claim was corrected in the same edit, unprompted: the file still asserted
+*"`meta_action` is NOT reachable locally"*, **retracted as C142 on 2026-08-23** and never propagated
+— the same rot the feature-count test was pinned for, in a neighbouring file.
+
+### ⭐ D-COT-LOADER-5 — SUPPORTED. NO banked result was produced through the silent path.
+⛔ Checked **positively**, never by *"it looks complete"* — an artifact built on an empty dict looks
+entirely complete, which is the defect. Six banked label artifacts opened: **4 CLEAN** with real
+Alpamayo content (`s2_labels_v7.jsonl.gz` 4,000/4,001 · `s2_labels_v7.2_train` 4,000/4,001 ·
+`s2_labels_v7.2_eval` 147/147 · `products/…/labels_v7` 257/801), **2 NOT Alpamayo-dependent**
+(geometry-only s2 v1/v3 schema: `clip_id · t0_s · g_str · a_str · disjointness`), **0 EXPOSED,
+0 UNREADABLE**. ⚠️ The 257/801 is not a gap: `null` there means that clip's `cot` was empty, and
+under the silent path **all 801** would be `null` — **one positive proves the source was live; no
+number of nulls would have proven it was not.** ⛔ An unreadable file would have been reported
+**INCONCLUSIVE**, never clean.
+
+### ⭐ D-P14-RANK-1 — SUPPORTED. The refcv5 sampler ranks a fan it never scored, and the trainer could not arm the fix.
+⛔ MEASURED: `sel_refined` / `sel_score_emitted` appear **0 times** in `refc_v3_train.py` (control:
+`sel_` reads **8**, so the zero is about those names, not a broken probe), while
+`AnchoredDiffusionDecoder` implements emitted-fan scoring, `RefCConfig.selection()` already reads
+those fields, and `refc_train.py` (v1.2) already carries both flags. ⇒ refcv5 shipped
+`sampler_ranks_the_fan: False` — the fan is SAMPLED, then ranked by the CLASSIFIER surface, a score
+computed **before any sample was drawn**. ⇒ **P14 is PLUMBING, not architecture.**
+⭐ **THE CEILING, banked fan, ZERO GPU** (n = 881 windows / 40 episodes, d = 128/256, paired
+episode-cluster bootstrap): base-30k ADE **0.4728 → 0.1914 m**, gap **+0.2813**, CI
+**[+0.2127, +0.3543]**, separated; xl-30k **+0.3075**, CI **[+0.2397, +0.3778]**. A >2×-better
+trajectory sits IN THE FAN on **41.09 %** (base) / **45.40 %** (XL) of windows.
+⭐ **INDEPENDENT REPRODUCTION**: 41.09 % is the plan's own figure and 45.40 % is `refc.py`'s quoted
+"45.4 %-of-windows ranking failure" — both re-derived from the raw fans without being given either.
+⛔ **DELIBERATE-REGRESSION ARM VALID**: `rank_shuffled` is **+13.7598 m** worse, CI
+**[+12.6282, +15.0243]**, separated ⇒ the gate can fail a knowingly-broken ranking.
+⭐ CONTROLS AT KNOWN VALUES: shipped ranking reproduced **0/881 mismatch**; oracle = per-window fan
+minimum to **0.000e+00**; shuffled picks the fan-best anchor **0.68 %** against the no-information
+**1/K = 0.78 %**; CV raw-input floor **0.8377 m** (the learned ranking beats it).
+⛔ VACUITY GATE PASSES: oracle manoeuvre rate **22.25 %** vs shipped **21.91 %** (GT 25.09 %) — the
+win is **not** bought by refusing to steer.
+⚠️ **THE INTERVAL ANSWERS THE EPISODE DRAW ONLY**, and here that is the whole question: both arms are
+the SAME checkpoint and the SAME fan, so training and inference variance are zero by construction.
+⛔ This does NOT transfer to the composed arm, where P14 becomes a difference between two trained,
+SAMPLING arms and owes both a training replicate and an INFERENCE-seed replicate.
+Artifacts: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-p4-p13-p14-validation/raw/p14_fan_base30k.json` + `p14_fan_xl30k.json`.
+
+### ⛔ D-P14-RANK-2 — The P14 gain is ~99 % LONGITUDINAL, and curvature is NOT separated.
+Of the +0.2813 m ceiling, **+0.2781 m (98.9 %) is along-track**; cross-track +0.0334 m; curvature MAE
+**NOT separated** (base −0.0114, CI [−0.0327, +0.0005]; XL +0.1524, CI [−0.1679, +0.4739]).
+⇒ **P14 is a longitudinal lever and must be reported as one.** Calling it "better trajectory
+selection" would over-claim the lateral half it does not buy.
+
+### ⛔⛔ D-CURV-FLOOR-1 — NEW. REF-C is ~84× WORSE ON CURVATURE than a plan that never steers.
+MEASURED on the banked fan: straight-line floor curvature MAE **0.02737** against the model's
+**2.30973** (base) / 1.58320 (XL). This is exactly the failure the four-families rule demands LATERAL
+be read for — *an arm can win ADE while tracking the road worse than a plan that never steers* — at
+two orders of magnitude. ⚠️ SCOPED HONESTLY: the straight floor borrows the GT's own along-track
+profile, so it is a DIAGNOSTIC floor; the honest raw-input floor is **`cv_floor`**, which the model
+beats on ADE (0.4728 vs 0.8377) and **loses to on curvature by the same 84×** (0.02737). The finding
+survives the correct floor. ⛔ Not P14's to fix; no P14 number is quotable without it.
+
+### ⭐ D-P13-TDRAW-1 — SUPPORTED by LIVE MUTATION. `--sampler-train-t-max` had no consumer.
+⛔ A spy on the real `AnchoredDiffusionDecoder._sample` in `.train()` mode: realised timesteps are
+**{0, 10}** and are **IDENTICAL under `t_max = 50` and `t_max = 1`** (mean 5.000, var 25.0000, n = 640
+both). The repaired path responds (mean 24.163, var 204.98 vs constant 0). ⛔ Guards need mutation,
+not inspection — an AST census once read 0 suspects on both the fixed and the broken trainer.
+⚠️ **CORRECTION TO THE PRIOR STATEMENT**: refcv5 did **not** train at `t = 8`; it trains at
+**t ∈ {10, 0}**, the inference ladder `infer_timesteps(8, 2)`. 8 is the truncation POINT, not a
+consumed timestep. Same defect, different value.
+⭐ CONTROLS: `sigma(0) = 1.000e-02` (**> 0** — `steps_offset = 1` means t = 0 is NOT zero noise);
+`sigma(8) = 0.031588` = the published **0.0316**; schedule pinned **bit-equal** to `diffusers` 0.40.0;
+draw mean **24.431** vs expected 24.5 over n = 20,000, max **49** (bound EXCLUSIVE).
+⛔ REGRESSION ARM VALID: `t_max = 1` gives variance **exactly 0.0000**, distinguishable from DD's.
+⛔⛔ **BENEFIT IS NOT ESTABLISHED.** Paper-faithfulness is not the bar. P13 is
+**MECHANISM-VALIDATED, UNVALIDATED-FOR-BENEFIT** and does NOT enter the composed arm until a tiny-rig
+arm with a replicate clears its committed bar. DD-v1 `2411.15139` VERIFIED BY CONTENT (sha256
+`6ad4f8a3…2b8600` recomputed from the 26,370,647-byte banked PDF — MATCH).
+Artifact: `…/2026-09-06-p4-p13-p14-validation/raw/p13_mutation.json`.
+
+### ⛔ D-P4-STRAT-1 — FAILS ITS PRE-REGISTERED SUPPORT BAR. "The whole strategic vocab" is 6 of 15 tokens.
+Bar: ≥ 6/8 goal and ≥ 5/7 action classes at ≥ 1 % support. MEASURED (n = 801 banked v7 clips,
+d = 8 / 7): **3 of 8 goal** (`FOLLOW_ROUTE` 68.539 %, `TURN_RIGHT` 16.479 %, `TURN_LEFT` 14.981 %)
+and **3 of 7 action** populated. ⇒ **FAIL AS WRITTEN.**
+⚠️ RECONCILES with "4 of 8 populated": **4** goal tokens are *declared extractable* (8 minus the 4 in
+`NOT_YET_EXTRACTABLE`); only **3** carry *support* here — `STOP_AT_FOLLOW_ROUTE` is extractable but
+absent from this split. ⛔ "Unpopulated" hides two problems with different fixes (a detector work item
+vs a sampling artifact) and they are now separated per class by `refc_strategic.support_report`.
+⭐ PROVENANCE **`geometry` on 801/801** ⇒ the 175-grounded / 604-disputed traffic-light problem does
+**NOT** apply to the strategic tokens. Control: `a_tac.lat` read on 801/801 of the same rows.
+⛔ BAND: one record per clip, **all at `t0_s = 8.0`**, ±2.0 s of a median 35.0 s horizon ⇒
+**11.43 % supervisable, 88.57 % carries no strategic GT** — the strategic tokens DO share the
+tactical band limit.
+⭐ FAIL-CLAUSE DELIVERABLE (pre-committed): the RESTRICTED vocabulary, **6 of 15 tokens**. The other 9
+are blocked on the CORPUS, not on any head — 6 declared non-extractable, 2 absent, 1 off-vocabulary.
+Artifact: `…/2026-09-06-p4-p13-p14-validation/raw/p4_label_coverage.txt`.
+
+### ⛔⛔ D-P4-STRAT-2 — NEW BLOCKER. An 11.24 % off-vocabulary hole in `a_str` that `ignore_index` would have swallowed.
+MEASURED: **`REDUCE_TO_FOLLOW_ROUTE` on 90 of 801 `a_str` records (11.236 %)** and it is **NOT in**
+`STRATEGIC_ACTION_TOKENS_V7` — the absence is deliberate and PINNED by `test_vocab_v7_frozen`. ⇒ the
+label writer and the vocabulary disagree. ⛔ A `dict.get(tok, -1)` encoder returns −1, `ignore_index`
+swallows it, and **11.24 % of the action supervision is deleted while every log says the head is
+trained**. `refc_strategic.encode_targets` therefore RAISES, naming the token; the silent-delete path
+survives only as an explicit `strict=False` audit option. Both branches proven reachable.
+⚠️ SCOPE: measured on **v7**; the live arm trains on **v7.2**, unreadable from this dev box. The
+refusal makes the difference visible on the first batch instead of after 40k steps. ⇒ WORK ITEM for
+the label owner: does v7.2 still emit it?
+
+### ⛔ D-P4-NAVECHO-1 — CONDITIONAL. 53.1 % of the strategic goal label is already in the nav command.
+The flagship route head was an exact bijection of its own nav input (369/369, scored 1.0000). Nav is a
+LEGITIMATE inference input, which is why this had to be measured. MEASURED (n = 801):
+`nav → g_str` determinism **0.8302**, mutual information **0.6444 bits of H = 1.2125** ⇒ **53.1 %**;
+`a_str` 0.7253 / **39.7 %**. ⇒ Not a bijection, but a MAJORITY: **a nav-fed strategic goal head would
+report half its own input back as skill.** ⇒ `StrategicTokenHead.forward(self, ctx)` takes ONE tensor
+and has no `nav` parameter and no `**kwargs`; a nav-fed arm is a separate named experiment owing a
+**nav-ablated control** before any number is quotable. Pinned by a signature test.
+
+### ⭐ D-P4-STRAT-3 — The P4 head's controls all read their KNOWN values, and the regression arm caught MY OWN leaking probe.
+⭐ Majority-class macro recall **exactly 1/8 = 0.1250** (full vocab) and **1/3 = 0.3333** (supported);
+a CONSTANT head scores **0.6854 pooled** — which would read as a working head — against **0.3333**
+macro, the no-information value ⇒ **pooled accuracy is inadmissible for this head**. A class with no
+support reports recall **`None`, never 0.0**. Gradient at weight **0.0** is non-None and all-zero on
+**6/6** tensors ⇒ `p.grad is None` still means NOT WIRED. An all-ignored batch (the 88.57 % band)
+gives a **finite 0.0** with `n_supervised = 0` ⇒ reads as *nothing in band*, not *head broken*.
+⛔⛔ **THE REGRESSION ARM FIRED ON MY OWN PROBE FIRST, AND THAT IS THE FINDING.** Version 1 fit and
+scored the SAME 801 rows: REAL and SHUFFLED **both read macro recall 1.0000** — a 2-layer MLP
+memorises 801 shuffled labels — and the gate correctly reported **VOID**. With a held-out split:
+REAL **1.0000**, SHUFFLED **0.3044** against chance **0.3333** ⇒ **VALID**. Logged because a probe
+that had reported only the REAL arm's 1.0000 would have looked like a triumph.
+
+### ⭐ D-P14-WIRE-1 — SUPPORTED. The P14 fix is armable, moves the ranking, and leaves the fan bit-identical.
+`refc_v3_train.py` gains `--sel-refined` / `--sel-score-emitted` / `--sel-score-emitted-t`, a PAIRED
+REFUSAL (either alone exits non-zero, naming why), an auto-correction of `sel_score_emitted_t`
+−1 → **0** on a `ddim` arm (the emitted fan IS the denoised state; −1 indexes the refinement loop's
+`nn.Embedding`), stamped as `sel_score_emitted_t_source: auto-zero-on-ddim`, and a
+`selection.sampler_ranks_the_fan` key in `config.json`.
+⭐ MUTATION-PROVEN on the live decoder: OFF → `False`, ON → `True`; ranked score moves (max abs Δ
+**0.008557**, so not inert); ⛔ **`anchor_traj` BIT-IDENTICAL between OFF and ON** — the extra pass
+keeps its confidence and discards its offset, so every banked oracle-in-fan contrast stays paired.
+⚠️ The pair is ENFORCED because `--sel-refined` alone is the MEASURED-HARMFUL lever (0.0259 m
+separated WORSE, 29.82 % of picks flipped) and `--sel-score-emitted` alone is INERT.
+⇒ **No `refc.py` edit was required for P14.** P13's training branch DOES need one — escalated as an
+exact diff in `RESULT.md` §4.1, deliberately NOT landed, because landing it changes the recipe every
+banked sampler arm was trained under and its benefit bar has not run.
+Pins: `stack/tests/test_p4_p13_p14_wiring.py` (17 tests, all mutation-proven).
+
+### ⭐⭐ D-COT-LOADER-6 — SUPPORTED, and it REFUTES both a docstring claim and one of MY OWN. 10 grounding rows have been silently dropped since the module was written; 10 of 10 are recoverable.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** · **GPU-days 0** ·
+`…/Research/2026-09-06-cot-loader/` (`code/box_drop_probe.py`, `raw/box_drop_probe.json`,
+`raw/box_recovery.json`).
+
+⭐ **FOUND BY WIRING D-COT-LOADER-1's SWALLOW COUNTERS TO A WARNING — the cheapest possible next
+experiment, run in the SAME turn rather than logged as a next lever.** ⛔ **It immediately refuted my
+own claim.** RESULT.md's first draft said *"all four swallow counters read 0 … instrumentation for a
+future corruption, not a live defect."* **False.** I had read `row_json_failed` — the one counter
+`coverage()` happens to expose — and generalised. **Absence found at ONE location is not absence**,
+broken by me, *inside the instrument built to enforce it*.
+
+**MEASURED over all 4,728 `grounding_via_vqa` rows:** box payload parses **4,411** · ⛔ **UNPARSEABLE
+10 (0.212 %)** · genuinely none **307** (4,411 + 10 + 307 = 4,728).
+⭐ **All ten fail identically** — the payload lost its leading `[{"bbox_2d": ` and begins mid-object,
+e.g. `[325, 653, 491, 756], "label": "Bus"}]`. **Prepending it recovers 10/10**; ⛔ **a deliberately
+WRONG prefix recovers 0/10** — the control that makes the 10/10 mean something. Labels recovered:
+Truck 3 · car 2 · lead vehicle 2 · Bus 1 · Car 1 · Bike with rider 1 — **real boxed vehicles.**
+
+⛔ **THIS ALSO REFUTES `alpamayo_records.py`'s OWN DOCSTRING:** *"4,411 clips carry ONE distinct
+question; 318 carry none"* — **10 of that 318 are a PARSE FAILURE, not an absence.** The module's
+governing rule is that grounding can CONFIRM a token and can **NEVER REFUTE** one, because a missing
+box overwhelmingly means the question was not asked. ⇒ **a row that failed to parse is
+indistinguishable from that**, so the drop silently converted *perception we hold* into *perception we
+were never offered*, on exactly the clips where a vehicle **was** boxed. Docstring corrected to
+**4,411 / 10 / 307** with the shape, the recipe and the control.
+
+⛔ **NO REPAIR IS SHIPPED.** Patching a truncated generative output is a corpus-owner decision, not a
+loader's; inventing one would manufacture labels. Escalated to the DataFlyWheel with all ten clip ids
+and the exact recipe; the fix belongs upstream in the export, and any in-repo repair must be
+pre-registered as a corpus change with its own control.
