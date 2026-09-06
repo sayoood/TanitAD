@@ -1776,3 +1776,45 @@ the env var **`FEAS_VMIN`** (default 0) where the banked run used **2.0**.
 ⇒ ⭐ **Had I omitted the `combined` control I would have read six ABSENTs and concluded the dumps were
 bad.** *A probe whose known-value control fails is inadmissible — and it is the cheapest possible
 protection against reading one's own argument order as a finding.*
+
+
+## M78. ⭐⭐ THE JERK SEAM IS FIRST-ORDER WHEN ITS COEFFICIENT IS LIVE — the pricing instrument's approval was right
+
+### 1. The pair, one variable, `W_JERK = 0.02` LIVE
+
+| arm | `W_JERK` | seam | ADE | LON spd | LON accel | LON along | LAT curv | LAT head |
+|---|---|---|---|---|---|---|---|---|
+| `seambase` | 0.02 | off | 0.9085 | 0.8183 | 0.8871 | 0.6769 | 0.03500 | 15.125 |
+| `seamon` | 0.02 | **a0** | 0.8148 | 0.5823 | 0.6848 | 0.5386 | 0.03792 | 19.830 |
+| `lonshift` | 0.0 | off | 0.7868 | 0.5657 | 0.6526 | 0.5232 | 0.04116 | 16.856 |
+| **`loncomb3`** | 0.02 | a0 | **0.7739** | **0.4665** | **0.5698** | **0.4159** | 0.04117 | 16.501 |
+
+**SEAM EFFECT (`seamon` − `seambase`), the clean one-variable contrast:**
+**LON speed −0.2360 · accel −0.2023 · along −0.1383 · ADE −0.0937**, against
+**LAT heading +4.705 deg · curvature +0.0029.**
+
+### 2. ⭐⭐ The pricing instrument was RIGHT, and that closes its validation
+
+`M65` approved this pair on a 0-GPU cost pricing: the seam delta was **0.494** of everything it trades
+against on `wk15` and **4.05** on `lonshift` — *"first-order, the pair earns its GPU."* ⇒ **It
+delivered a first-order longitudinal effect.** ⭐ The same instrument **declined D4** (~4.6 % of the
+gap) and **refuted D5**; this is its first approval and it was correct. ⇒ **`M65`'s claim that the
+instrument is DISCRIMINATING rather than merely conservative is now established on both sides.**
+
+### 3. ⭐ It closes the inert-arm lesson POSITIVELY
+
+The seam read **`+0.0000` on all eleven metrics at `W_JERK = 0.0`**, confirmed on two rigs. ⛔ That was
+never a null about the seam — it was a null about a term switched off. **With the coefficient live the
+same lever is first-order.** ⇒ *A lever multiplied by a zero coefficient is not a null about the
+lever* is now demonstrated in **both** directions, which is what makes it a rule rather than an excuse.
+
+### 4. ⚠️ What is NOT claimed
+
+* ⛔ **These are POINT ESTIMATES. No paired interval, no seed replicate.** `M61`/`M56` bind: a delta
+  without its interval is not a separated result, and the floor is **arm- and rig-dependent**. **The
+  paired bootstrap and a seed replicate are owed before any of this is quoted as a lever effect.**
+* ⚠️ **The seam trades LON for LAT** — heading +4.705 deg is a real cost and the four families are
+  **never pooled**. ⚠️ Note it does NOT reproduce in `loncomb3` vs `lonshift` (16.501 vs 16.856), but
+  that contrast moves **two** variables (`W_JERK` and the seam) and is therefore **not attributable**.
+* ⭐ `loncomb3`'s committed branch — *"if `loncomb3` is worse than `lonshift`, report it; do not retune
+  the weight to rescue it"* — **did not fire**: it is better on every longitudinal metric.
