@@ -71,3 +71,37 @@ differ). ⛔ **If both columns differ, or neither does, the A3 reading is VOID.*
 * ⚠️ `distance_keeping` **UNAVAILABLE** (no lead block on this panel) and `strategic`
   **UNAVAILABLE** (no route label) — stated per family with the reason, and both are work items,
   not passes.
+
+## TWO OPS FACTS MEASURED WHILE THE ARMS RAN — both cost someone time tonight
+
+### 1. ⭐ THOR SUSTAINS **SIX** CONCURRENT refav1 ARMS, NOT THREE — throughput +30 %
+
+`queueTHOR.sh` uses `MAXJ=3` and my queues copied it. MEASURED 2026-09-06 00:29–00:31Z when a
+sibling stream added three arms on top of my three, taking the box to **six**:
+
+| state | s/episode/arm | arms | episodes/s | note |
+|---|---|---|---|---|
+| 3 arms | ~620 | 3 | 0.00484 | the assumed ceiling |
+| **6 arms** | ~951 | 6 | **0.00631** | **+30 % net throughput** |
+
+**It is not thrashing, and that was checked rather than assumed** — a two-sample CPU-time probe 90 s
+apart showed **all six** counters advancing (mine 1492->1519 and 1488->1517; the newest 246->306),
+memory **29 GB used of 122** with 93 GB available, GPU **98 %**. ⚠️ Approximate: the 951 s episode
+spans the interval in which arms were being added, so it is an upper bound on the slowdown and the
++30 % is therefore a lower bound. ⇒ **`MAXJ=3` / `MAXARMS=3` is conservative and is costing the
+programme eval throughput.** Worth re-measuring deliberately before raising it in the queues.
+
+### 2. ⛔ `mktree_commit.py` EXITS 1 ON A SUCCESSFUL COMMIT WHEN THE SUBJECT HAS NON-ASCII
+
+MEASURED on commit `ac16b45`: the tool created the commit, printed
+`VERIFIED in HEAD by blob comparison: 5 path(s)`, and **then died** at its last line —
+`print(git("log", "--oneline", "-1"))` — with `UnicodeEncodeError: 'charmap' codec` because the
+commit **subject** began with `⛔⛔` and this box is cp1252. **The commit had already landed.**
+⇒ A non-zero exit from this tool is **not** evidence the commit failed, and a zero exit was never
+evidence it succeeded — which is exactly why the standing rule is to verify by a **content marker
+inside the committed blob** with a control that must read zero. That check is what settled it here.
+⚠️ **Not fixed by me on purpose:** `stack/scripts/mktree_commit.py` is being actively edited by the
+refcv5 stream (`81bc9c8` restores guards it says were deleted), and racing them on one file is how
+work disappears. **The fix is one line** — wrap that final `print` (or set
+`PYTHONIOENCODING=utf-8` in the tool's own environment). **Escalated here rather than written into
+a doc nobody re-reads.**
