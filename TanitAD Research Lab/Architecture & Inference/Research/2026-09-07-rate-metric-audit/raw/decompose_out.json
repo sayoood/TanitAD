@@ -1,0 +1,104 @@
+{
+ "grid": {
+  "wp_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "ts0_s": [
+   0.0,
+   0.5,
+   1.0,
+   1.5,
+   2.0
+  ],
+  "uniform": true,
+  "grid_dt_s": 0.5,
+  "min_ds_gate_m": 0.25
+ },
+ "n_windows": 881,
+ "n_episodes": 40,
+ "cells": {
+  "rank_shipped": {
+   "p14_nomask_MEAN": 2.30973482131958,
+   "p14_masked_MEAN": 0.004291720688343048,
+   "seq_nomask_MEAN": 41.08334732055664,
+   "seq_masked_MEAN": 0.0077111623249948025,
+   "p14_frac_masked": 0.05039727582292852,
+   "seq_frac_masked": 0.052591751797200104
+  },
+  "rank_oracle": {
+   "p14_nomask_MEAN": 2.3211424350738525,
+   "p14_masked_MEAN": 0.005780781153589487,
+   "seq_nomask_MEAN": 41.10808563232422,
+   "seq_masked_MEAN": 0.009196498431265354,
+   "p14_frac_masked": 0.0488081725312145,
+   "seq_frac_masked": 0.05069996216420736
+  },
+  "cv_floor": {
+   "p14_nomask_MEAN": 0.027366388589143753,
+   "p14_masked_MEAN": 0.008468053303658962,
+   "seq_nomask_MEAN": 37.13087844848633,
+   "seq_masked_MEAN": 0.011723428033292294,
+   "p14_frac_masked": 0.05221339387060164,
+   "seq_frac_masked": 0.05410518350359439
+  },
+  "straight_floor": {
+   "p14_nomask_MEAN": 0.027366388589143753,
+   "p14_masked_MEAN": 0.00875439215451479,
+   "seq_nomask_MEAN": 11.319841384887695,
+   "seq_masked_MEAN": 0.01211285125464201,
+   "p14_frac_masked": 0.04494892167990916,
+   "seq_frac_masked": 0.04805145667801736
+  }
+ },
+ "ratios_shipped_over_straight": {
+  "p14_nomask": 84.40042476908523,
+  "p14_masked": 0.4902362851234319,
+  "seq_nomask": 3.6293218185374982,
+  "seq_masked": 0.6366100072466137
+ },
+ "contrast_shipped_minus_straight": {
+  "p14_nomask_PUBLISHED": {
+   "delta": 2.2823684215545654,
+   "lo": 0.5178045630455017,
+   "hi": 4.576737642288208,
+   "separated": true
+  },
+  "p14_masked": {
+   "delta": -0.004211098421365023,
+   "lo": -0.006690081092528999,
+   "hi": -0.002044400025624782,
+   "separated": true
+  },
+  "seq_masked_CANONICAL": {
+   "delta": -0.003897189861163497,
+   "lo": -0.007083382050041109,
+   "hi": -0.0010021278110798474,
+   "separated": true
+  }
+ },
+ "deliberate_regression_v0_split": {
+  "ALL windows (as published)": {
+   "n": 881,
+   "shipped": 2.30973482131958,
+   "straight_floor": 0.027366388589143753,
+   "ratio": 84.40042114257812
+  },
+  "MOVING only (v0 > 0.5 m/s)": {
+   "n": 838,
+   "shipped": 0.005219200626015663,
+   "straight_floor": 0.009263662621378899,
+   "ratio": 0.5634057521820068
+  },
+  "STOPPED only (v0 <= 0.5 m/s)": {
+   "n": 43,
+   "shipped": 47.220985412597656,
+   "straight_floor": 0.38015902042388916,
+   "ratio": 124.2137680053711
+  }
+ },
+ "n_stopped_windows": 43,
+ "frac_stopped": 0.04880817253121453
+}
