@@ -56,6 +56,23 @@ CONTROL_UNITS = ("kappa", "alat")
 #: are ego-frame metres, x along-track / y lateral, and nothing is re-rolled.
 PATHS_ONLY = "paths"
 
+#: ⭐ WHAT THE OPTIONAL THIRD COLUMN OF ``controls`` MEANS (2026-09-06).
+#: ``constant`` — ``controls`` is [N, 2] and one (a_lon, a_lat|kappa) pair is
+#: held for the whole horizon; this is the incumbent and the DEFAULT.
+#: ``two_segment_alat_flip`` — ``controls`` is [N, 3] and column 2 is
+#: ``t_split_s``, the time (SECONDS) at which the LATERAL channel's sign flips;
+#: ``t_split_s >= horizon_s`` means it never flips, i.e. exactly ``constant``
+#: (``tanitad.refs.anchor_twoseg.roll_bank``, bit-identical in that limit).
+#: ⛔ A [N, 3] file that declares NO schedule is REFUSED for the same reason a
+#: units-less [N, 2] file is: an undeclared column read as the wrong quantity
+#: produces a table that looks exactly like an answer (:data:`INCIDENT`).
+CONSTANT_SCHEDULE = "constant"
+TWO_SEGMENT_SCHEDULE = "two_segment_alat_flip"
+CONTROL_SCHEDULES = (CONSTANT_SCHEDULE, TWO_SEGMENT_SCHEDULE)
+
+#: how many ``controls`` columns each schedule has.
+SCHEDULE_NCOL = {CONSTANT_SCHEDULE: 2, TWO_SEGMENT_SCHEDULE: 3}
+
 #: the fields every artifact carries — present-but-``None`` where a field does
 #: not apply (a fixed-path file has no reference speed), never absent.
 REQUIRED_META = ("control_units", "horizon_s", "dt", "ref_speed_ms",
@@ -84,6 +101,18 @@ class AnchorUnitsConflict(AnchorUnitsError):
     """The artifact declares one unit and the operator passed another."""
 
 
+class AnchorScheduleMissing(AnchorUnitsError):
+    """A ``controls`` tensor with a THIRD column that declares no
+    ``control_schedule``. Same family as :class:`AnchorUnitsMissing`, one column
+    to the right: nothing in the file says the column is a split TIME, and read
+    as anything else it silently emits a different vocabulary."""
+
+
+class AnchorScheduleConflict(AnchorUnitsError):
+    """The declared ``control_schedule`` does not match the number of
+    ``controls`` columns the file actually carries."""
+
+
 @dataclass
 class AnchorArtifact:
     """What :func:`read_anchor_artifact` hands back.
@@ -100,6 +129,11 @@ class AnchorArtifact:
     control_units_source: str
     meta: dict[str, Any] = field(default_factory=dict)
     path: str | None = None
+    #: ⭐ RESOLVED control schedule (2026-09-06). A 2-column file that declares
+    #: nothing is ``constant`` — that is the incumbent and is not a guess, it is
+    #: the only thing a 2-column tensor CAN be. A 3-column file that declares
+    #: nothing is REFUSED (:class:`AnchorScheduleMissing`).
+    control_schedule: str = CONSTANT_SCHEDULE
 
     @property
     def declared(self) -> dict[str, Any]:
@@ -153,6 +187,7 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
                           ref_speed_ms: float | None = None,
                           kappa_cap: float | None = None,
                           alat_v_floor: float | None = None,
+                          control_schedule: str = CONSTANT_SCHEDULE,
                           builder: str | os.PathLike | None,
                           extra: dict[str, Any] | None = None
                           ) -> dict[str, Any]:
@@ -176,11 +211,16 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
     if len(hz) != a.shape[1]:
         raise ValueError(f"{len(hz)} horizons declared for anchors with "
                          f"{a.shape[1]} slots")
+    if control_schedule not in CONTROL_SCHEDULES:
+        raise ValueError(f"control_schedule {control_schedule!r} must be one of "
+                         f"{CONTROL_SCHEDULES}")
+    ncol = SCHEDULE_NCOL[control_schedule]
     c = None
     if controls is not None:
         c = controls.detach().to("cpu", torch.float32).contiguous()
-        if tuple(c.shape) != (a.shape[0], 2):
-            raise ValueError(f"controls must be [{a.shape[0]}, 2]; got "
+        if tuple(c.shape) != (a.shape[0], ncol):
+            raise ValueError(f"controls must be [{a.shape[0]}, {ncol}] for "
+                             f"control_schedule={control_schedule!r}; got "
                              f"{tuple(c.shape)}")
         if control_units not in CONTROL_UNITS:
             raise ValueError(f"control_units {control_units!r} must be one of "
@@ -208,16 +248,29 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
         "kappa_cap": None if kappa_cap is None else float(kappa_cap),
         "alat_v_floor": None if alat_v_floor is None else float(alat_v_floor),
         "anchors_sha256": sha256_of_tensor(a),
+        "control_schedule": control_schedule,
         "provenance": provenance_stamp(builder),
     }
     if c is not None:
+        cols = (["a_lon_ms2", "a_lat_ms2"] if control_units == "alat"
+                else ["a_lon_ms2", "kappa_inv_m"])
+        if control_schedule == TWO_SEGMENT_SCHEDULE:
+            cols = cols + ["t_split_s"]
         art["controls"] = c
-        art["controls_columns"] = (["a_lon_ms2", "a_lat_ms2"]
-                                   if control_units == "alat"
-                                   else ["a_lon_ms2", "kappa_inv_m"])
+        art["controls_columns"] = cols
         art["controls_sha256"] = sha256_of_tensor(c)
         art["straight_ahead_control_present"] = bool(
             ((c[:, 0] == 0) & (c[:, 1] == 0)).any())
+        if control_schedule == TWO_SEGMENT_SCHEDULE:
+            # ⭐ A row whose split is at or beyond the horizon NEVER flips and is
+            # therefore a `constant` candidate living in a 3-column tensor. The
+            # counts are declared so a reader does not have to re-derive which
+            # rows are which -- the same reason the units are declared.
+            flips = c[:, 2] < float(art["horizon_s"]) - 1e-9
+            art["n_two_segment"] = int(flips.sum())
+            art["n_constant"] = int((~flips).sum())
+            art["t_split_s_values"] = sorted(
+                {round(float(x), 6) for x in c[flips, 2]})
     else:
         art["path_units"] = "m, ego frame at t0: x along-track, y lateral"
     if extra:
@@ -229,6 +282,43 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
 
 
 # ------------------------------------------------------------------ read -----
+def _resolve_schedule(controls: Tensor, meta: dict[str, Any],
+                      where: str) -> str:
+    """The RESOLVED ``control_schedule`` of a ``controls``-carrying artifact.
+
+    ⛔ There is no override here on purpose. Units were overridable because a
+    LEGACY file existed whose units were known from its run record; no legacy
+    3-column file exists, so a 3-column tensor with no declaration is a file
+    nobody can read, and guessing is exactly the failure this module was written
+    after. A 2-column tensor is ``constant`` by construction — that is a fact
+    about the shape, not a default.
+    """
+    ncol = int(controls.shape[-1])
+    declared = meta.get("control_schedule")
+    if declared is not None and declared not in CONTROL_SCHEDULES:
+        raise AnchorScheduleConflict(
+            f"{where} declares control_schedule={declared!r}, not one of "
+            f"{CONTROL_SCHEDULES}")
+    if declared is None:
+        if ncol == 2:
+            return CONSTANT_SCHEDULE
+        raise AnchorScheduleMissing(
+            f"{where} carries `controls` {tuple(controls.shape)} with {ncol} "
+            f"columns but declares NO `control_schedule`, so column 2 cannot "
+            f"be told apart from anything else a third number could mean. "
+            f"Rebuild it with build_anchor_artifact("
+            f"control_schedule='{TWO_SEGMENT_SCHEDULE}'). This is the same "
+            f"failure as the units one, one column to the right: {INCIDENT}")
+    want = SCHEDULE_NCOL[declared]
+    if ncol != want:
+        raise AnchorScheduleConflict(
+            f"{where} declares control_schedule={declared!r}, which is "
+            f"[N, {want}], but carries controls {tuple(controls.shape)}. A "
+            f"schedule that does not match the tensor is a vocabulary nobody "
+            f"can re-roll faithfully.")
+    return declared
+
+
 def read_anchor_artifact(src, *, cli_control_units: str | None = None,
                          map_location="cpu") -> AnchorArtifact:
     """Load an anchor artifact and RESOLVE its control units.
@@ -276,6 +366,7 @@ def read_anchor_artifact(src, *, cli_control_units: str | None = None,
                 f"`controls` -- a fixed-path artifact declares {PATHS_ONLY!r}")
         return AnchorArtifact(anchors, None, PATHS_ONLY, "n/a-fixed-paths",
                               meta, path)
+    sched = _resolve_schedule(controls, meta, where)
     declared = meta.get("control_units")
     if declared is not None and declared not in CONTROL_UNITS:
         raise AnchorUnitsConflict(
@@ -293,9 +384,11 @@ def read_anchor_artifact(src, *, cli_control_units: str | None = None,
             f"(control_units_source='cli-override-legacy-file').")
     if declared is None:
         return AnchorArtifact(anchors, controls, cli_control_units,
-                              "cli-override-legacy-file", meta, path)
+                              "cli-override-legacy-file", meta, path,
+                              control_schedule=sched)
     if cli_control_units is None:
-        return AnchorArtifact(anchors, controls, declared, "file", meta, path)
+        return AnchorArtifact(anchors, controls, declared, "file", meta, path,
+                              control_schedule=sched)
     if cli_control_units != declared:
         raise AnchorUnitsConflict(
             f"{where} declares control_units={declared!r} but "
@@ -303,7 +396,8 @@ def read_anchor_artifact(src, *, cli_control_units: str | None = None,
             f"artifact is the authority on what its own column means; drop the "
             f"flag, or rebuild the artifact if it is the file that is wrong. "
             f"({INCIDENT})")
-    return AnchorArtifact(anchors, controls, declared, "file+cli", meta, path)
+    return AnchorArtifact(anchors, controls, declared, "file+cli", meta, path,
+                          control_schedule=sched)
 
 
 def mismatches(art: AnchorArtifact, *, horizon_s: float | None = None,
@@ -337,6 +431,7 @@ def describe(art: AnchorArtifact) -> str:
             + (f", controls {tuple(art.controls.shape)}"
                if art.controls is not None else "")
             + f", units={art.control_units} ({art.control_units_source})"
+            + f", schedule={art.control_schedule}"
             + f", horizon_s={d['horizon_s']}, dt={d['dt']}, "
               f"ref_speed_ms={d['ref_speed_ms']}, kappa_cap={d['kappa_cap']}, "
               f"alat_v_floor={d['alat_v_floor']}, "
