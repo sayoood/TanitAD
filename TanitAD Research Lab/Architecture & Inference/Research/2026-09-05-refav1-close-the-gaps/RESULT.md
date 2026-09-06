@@ -359,3 +359,62 @@ labeller** — so unless its windows were speed-filtered, they carry the same de
 `turn_left` / `turn_right` recalls measure the same thing. **That stream should check its own
 panel's `v0` distribution against `kappa_min = 0.15/(v0*T)` before reading its result.** Flagged
 here; not diagnosed for them.
+
+---
+
+## §G — ⭐⭐⭐ THE ANSWER, UNDER THE CORRECTED CRITERION: **YES — AND IT IS THE ARM THE RECALL METRIC CONDEMNED**
+
+`raw/corrected.txt`, 0 GPU, TURN-goal windows n = 22, criterion pre-registered in §F4 **before the
+A4 arm landed**. Both controls hold: **`g` (GT) reads kappa MAE exactly 0.00000** by construction,
+and **`ha0` (constant velocity, perfectly straight) is the no-turn floor at 0.05936**.
+
+| arm | ADE (turn windows) | **kappa MAE vs human** | vs straight floor | v2 gate | v1 gate | signed dyaw |
+|---|---|---|---|---|---|---|
+| ⛔ `g` GROUND TRUTH (control) | 0.0000 | **0.00000** | — | 16/22 | 12/22 | +0.0000 |
+| ⛔ `ha0` STRAIGHT (floor) | 1.1096 | **0.05936** | — | 0/22 | 0/22 | +0.0229 |
+| `ccos_argmax` (recall 0.3636) | 1.1410 | **0.07935** | ⛔ **+0.01999 WORSE** | 21/22 | 12/22 | −0.0014 |
+| `kamm07` | 1.0755 | 0.07227 | ⛔ +0.01291 worse | 21/22 | 11/22 | −0.0014 |
+| `combined` | 1.0687 | 0.07227 | ⛔ +0.01291 worse | 21/22 | 11/22 | −0.0014 |
+| ⭐ **`wk15`** (recall **0.0000**) | **0.9877** | ⭐ **0.04578** | ⭐ **−0.01358 BETTER** | 12/22 | 3/22 | +0.0008 |
+| ⭐ `best` | 0.9937 | 0.04901 | ⭐ −0.01035 better | 12/22 | 4/22 | +0.0008 |
+| `wk151` | 1.0149 | 0.06131 | +0.00195 worse | 2/22 | 0/22 | +0.0308 |
+| `lonshift` | **0.9446** | 0.06252 | +0.00316 worse | 2/22 | 0/22 | +0.0381 |
+| `bestlad` | 1.0738 | 0.05936 | −0.00000 (**IS** the straight arm) | 0/22 | 0/22 | +0.0321 |
+
+### G1 ⭐⭐ THE RANKING INVERTS
+
+**`wk15` — the arm this whole campaign called *"accurate because it does not turn"* — is the arm
+that tracks the human's curvature BEST**, and the only one (with `best`) that **beats driving
+perfectly straight**. `ccos_argmax`, the arm with recall 0.3636, has kappa MAE **0.07935 — WORSE
+than a perfectly straight line.** It does not track the road; **it over-turns**, and the v1 gate
+rewarded it for exactly that.
+⇒ ⭐ **ANSWER TO THE PI's QUESTION: yes, there is an arm that drives accurately AND turns — it is
+`wk15` (ADE 0.9877 on turn windows, kappa MAE 0.04578, −23 % against the straight-line floor), and
+`best` is second. They were mislabelled as non-turning by a gate the ground truth itself fails.**
+
+### G2 ⚠️ WHAT THIS DOES **NOT** SAY — three limits, stated before anyone quotes the table
+
+1. ⛔ **`ccos_argmax` emits turn-magnitude curvature far more OFTEN** (v2 gate 21/22 vs `wk15`'s
+   12/22). The two columns answer different questions: *how often is there a turn-sized curvature*
+   versus *how close is the curvature to the human's*. `wk15` wins the second and loses the first.
+   **Both are reported; neither alone is "does it turn".**
+2. ⚠️ **The bar is low.** Beating a straight line by 0.0136 1/m on a corpus that curves at
+   R 100–1000 m is a **modest** improvement, not a driving result. `g` reads 0.00000 by
+   construction and every arm is far from it.
+3. ⛔ **No seed floor exists for THIS statistic.** The banked `LAT curv_MAE` floors (0.00066 /
+   0.00200) are over **all** windows; this is TURN-goal windows only, n = 22. The differences here
+   (0.0136 and 0.0336) are **an order of magnitude larger** than those floors, so they are very
+   unlikely to be seed noise — but that is an inference, not a measurement, and **a replicate of
+   `wk15` on this statistic is the required next arm** before it is quoted as a lever effect.
+
+### G3 — WHAT THIS DOES TO THE PACKAGE'S OWN EARLIER CLAIMS
+
+| claim | verdict |
+|---|---|
+| `D-REFAV1-KAPPA-UNDERTURN` — the 3.9x magnitude collapse | ⭐ **STANDS** (curvature-measured), **but its VALENCE flips**: the "under-turn" moves the plan **toward** the human, not away. The 0.08 command was the error; the penalty was accidentally correcting it. |
+| `D-REFAV1-TURN-CMD-WRONG` | ⭐ **STANDS and is now the load-bearing claim** — it predicted exactly this. |
+| ⛔ *"the penalty defeats the hierarchy"* (§A, §B1) | ⛔ **WITHDRAWN AS STATED.** The penalty does fight the decoded goal — but **the decoded goal was wrong**, so fighting it improved curvature tracking. The hierarchy conflict is real; calling it a defect of the COST was the error. **The defect is in the GOAL VOCABULARY.** |
+| `H-REFAV1-GOALKAPPA` (A3 will help) | ⚠️ **DOWNGRADED.** A3 makes the planner obey the goal **more** faithfully — and on this panel that is the **wrong direction**. A3 remains the right mechanism *once the goal magnitude is fixed*, which is precisely what A4 tests. |
+
+⇒ ⭐ **A4 (`--goal-kappa-turn 0.02` + goal-conditioned cost) is now the single most important arm in
+the package**, because §G says the whole gap is the goal's commanded magnitude. It is running.
