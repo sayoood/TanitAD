@@ -295,6 +295,18 @@ The 53 shared failures/29 errors are identical in both runs and untouched by thi
 (missing `.git` hooks, run directories, checkpoints). ⛔ They are reported as a **shared
 baseline**, not claimed as clean, and not claimed as mine.
 
+### 5.4 ⭐ RE-VERIFIED AFTER THE REPO ADVANCED UNDER THIS TURN
+
+`stack/tanitad/refs/refc_v3.py` — a dependency of every test here — was changed by a sibling
+(`ead4be9`, H19-STAMP-1) **after** this stream's off-Drive copy was taken, so the suite above ran
+against a stale copy of it. The trees were re-synced (parity re-asserted by `git hash-object` on
+`refc_v3.py`, `refcv3_arm.py`, `refav1_arm.py` and both test files) and the affected suites
+re-run against the CURRENT sibling code:
+
+`test_refcv3_arm.py` + `test_refcv3_ablations.py` + `test_h19_prior_stamp.py` (the sibling's own
+new test) + `test_refc_v3.py` + `test_refc_v3_rollability.py` + `test_refcv3_ha0_ext_shared.py`
+— **113 passed, 0 failed.**
+
 ---
 
 ## 6. What was deliberately NOT touched
