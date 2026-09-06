@@ -244,7 +244,32 @@ defect**:
 | ⭐ control-space draw at **25×** the published σ | `envelope_violation` **exactly 0.0** |
 | ⭐ metre-space draw on the same fan | **violates** — so "flyable by construction" is discriminating, not a tautology |
 
-### 3.4 ⇒ CAN AN RL ARM NOW RUN WITHOUT EXECUTING THE DELIBERATE REGRESSION?
+### 3.4 ⭐⭐ AND THE WIRED PATH ACTUALLY RUNS — PREFLIGHT ON THE REAL MODEL
+
+⛔ A guard that refuses the wrong path is worth nothing if the right path does not run, so
+the mutation proofs are not the last word. `stack/scripts/rl_control_space_preflight.py`
+runs the wired sampler on the **real refcv3 checkpoint at step 40,284**, on a **real batch of
+2 windows**, and takes a real `backward()`. ⛔ **It is NOT an arm launch**: no optimizer is
+constructed, no `step()` is taken, no checkpoint is written, no result is produced.
+
+MEASURED 2026-09-06, dev-box RTX 4060 (`raw/cs_preflight.json`):
+
+| | `rl` (**control** space) | `reg_metre` (**metre** space) |
+|---|---|---|
+| sampled fan | `[2, 128, 4, 5, 2]` | `[2, 128, 4, 5, 2]` |
+| `logp` | `[2, 128, 4]`, `grad_fn` present | `[2, 128, 4]`, `grad_fn` present |
+| trainable tensors receiving a **non-zero** gradient | **71 / 71** | 71 / 71 |
+| Σ\|grad\| | 4.070923e+05 | 9.546053e+07 |
+| ⭐ `envelope_violation` of the **explored** fan | ⭐ **exactly 0.000000** | ⛔ **36.096268** |
+
+⇒ ⭐ **the gradient reaches the decoder** through the control-space `logp` — the silent
+no-op is gone — **and every explored candidate is flyable by construction**, while the
+pre-registered regression leaves the envelope by 36× on the same model and the same batch.
+**"Flyable by construction" is discriminating on the real model, not only on a fixture.**
+⭐ All **16 arms** also build and validate their `PostTrainConfig` in the same preflight, so
+a config error surfaces at 0 GPU rather than after minutes of paid start-up.
+
+### 3.5 ⇒ CAN AN RL ARM NOW RUN WITHOUT EXECUTING THE DELIBERATE REGRESSION?
 
 > ⭐ **YES** — for the sampler. `rl` and `rl_s1` are declared `sample_space="control"`,
 > route through `control_space`, and a mutated or undeclared arm is REFUSED before any
@@ -341,15 +366,29 @@ carry this correction.
 * ⭐ **The whole RL suite: 254/254 green** (every `stack/tests/test_rl_*.py`), up from the
   predecessor's 106 + 46 — nothing I changed broke a sibling's RL test.
 * ⛔ **The full `pytest -q stack/` on this shared branch is NOT green and I do not imply
-  otherwise.** The predecessor MEASURED **171 failed · 6,446 passed · 28 errors** as
-  pre-existing, established positively (content-verified import isolation; **0 of 199**
-  failure lines matching its modules). ⚠️ That figure is **INHERITED** here, not re-derived
-  from a full run of my own; the modules I touched (`rewards`, `config`, `control_space`,
-  `rl_refcv3_min`) are covered by the 254 green RL tests above.
-* ⚠️ Four sibling test files also fail **collection** in the off-Drive clone
-  (`test_closedloop_floor`, `test_frame_align`, `test_render_quality_alignment_gate`,
-  `test_xodr_junction_probe` — missing sibling modules on the clone's path). Not mine, and
-  named so nobody re-discovers them as new.
+  otherwise — but I re-measured it rather than inheriting a figure.** MEASURED 2026-09-06,
+  off-Drive clone, 784 s: **17 failed · 5,917 passed · 73 skipped · 2 xfailed**, with four
+  sibling files excluded because they fail **collection** (`test_closedloop_floor`,
+  `test_frame_align`, `test_render_quality_alignment_gate`, `test_xodr_junction_probe` —
+  sibling modules absent from the clone's path). ⚠️ Not comparable to the predecessor's
+  **171 failed / 6,446 passed / 28 errors**: different day, a branch that has moved, and a
+  different exclusion set.
+* ⭐ **NONE of the 17 is mine, and that is established POSITIVELY, not by an absence.**
+  The failures fall in **11 unrelated files** (`test_cost_chord` ×4, `test_v6_chain` ×2,
+  `test_runbook_commands` ×2, `test_ref_offset_repo_wide` ×2, `test_text_encoding_is_explicit`,
+  `test_speed_band_derivation_blocker`, `test_secret_scan`, `test_refav1_kin_contract`,
+  `test_refav1_arm`, `test_nav_known_channel`, `test_build_parity_guard`) — three siblings'
+  live streams. **0 of 17** name a `test_rl_` file, and `control_space`, `progress_lead_cap`,
+  `sample_space`, `_reduce_time_gap` and `achievable_along_ref` appear **0 times** anywhere
+  in the output.
+  ⚠️ **That last "0" is only admissible because it is paired with a positive assertion that
+  my tests actually RAN in this invocation** — a zero from a file that was never collected is
+  indistinguishable from a genuine absence. `--collect-only` reports
+  `test_rl_progress_leadcap.py: 17` and `test_rl_sample_space_guard.py: 14`, and the
+  collected total **6,009** equals **17 + 5,917 + 73 + 2 = 6,009** exactly. ⇒ all 31 of my
+  tests were collected and passed inside the full run.
+* **Clone identity checked by md5** against the repo for all six changed files, so the suite
+  ran the code that was committed.
 
 ---
 
@@ -367,6 +406,7 @@ carry this correction.
 | ⭐ the A/B probe (5 columns, one variable each) | `stack/scripts/rl_progress_leadcap_ab.py` (repo) |
 | ⭐ tests, 17/17 | `stack/tests/test_rl_progress_leadcap.py` (repo) |
 | ⭐ mutation proofs, 14/14 | `stack/tests/test_rl_sample_space_guard.py` (repo) |
+| ⭐ the control-space preflight (⛔ not an arm launch) + its artifact | `stack/scripts/rl_control_space_preflight.py`, `…/raw/cs_preflight.json` (repo) |
 | the A/B panel + its log + the tie control | `…/raw/leadcap_ab.json`, `leadcap_ab.log`, `tie_control.json` (repo) |
 | ⭐ the refcv4b fan bank (B6) + its report | `…/raw/fan_bank_refcv4b_9500_240w.npz` (+`.report.json`) (repo) |
 | the primary readout + the complete collapse control | `…/raw/fanfloor_refcv4b_9500_composed.json`, `…_geom.json` (repo) |

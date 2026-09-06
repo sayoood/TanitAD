@@ -14039,3 +14039,143 @@ itself**, made by a different mechanism than the one that produced it.
 ended, leaving a 0-byte log for 75 minutes; a `ps` check finding no PID then read as
 confirmation the suite had died. It had not — it completed 6,507 passed / 52 failed.
 **Never pipe a long run through `tail`; redirect to a log and poll the log.**
+
+---
+
+## 2026-09-06 — ⛔ TWO PUBLISHED refcv4b STRATEGIC NUMBERS ARE TYPE ERRORS: `route_pred` (3-wide) WAS COMPARED DIRECTLY AGAINST A NAV TOKEN (4-wide)
+
+**Retracted:** the refcv4b @40,284 landing record's **`nav echo index` 0.1621** and its
+**`route_follows_SHUFFLED_NAV_under_shuffle` 0.2264**.
+**Correct values, MEASURED on the same banked dump, same windows, zero GPU:**
+**0.6405** (n = 3,622) and **0.3370** (n = 1,736).
+
+**Mechanism.** `taniteval/tools/refcv3_arm.py` computed both statistics by comparing
+`route_pred` — a **`ROUTE_CLASSES`** index — directly against `nav_cmd` / `nav_cmd_shuf`,
+which are **`NAV_COMMANDS`** indices. The tool carried a comment asserting the two are
+*"both 3-wide and index-aligned in refb"*. **Both halves of that sentence are false at
+source:** `refb.py:64` is `("follow","left","right","straight")` — **four** wide — and
+`refb.py:68` is `("route_left","route_straight","route_right")` — three. The mapping is
+stated in `stack/scripts/refb_labels.py:483-484` (`_ROUTE_TO_NAV`) and `:77-78`
+(`_NAV_TO_ROUTE`): **`{0:1, 1:0, 2:2}` — not the identity.** Under the uncorrected form
+`route_left` was matched against `follow` and `route_straight` against `left`.
+
+⭐ **ROOT-CAUSE CLASS: A CONTROL RE-IMPLEMENTED BESIDE THE HARNESS IT CONTROLS, AND DRIFTED
+— here into a REGRESSION AGAINST A CORRECT SIBLING.** `taniteval/tools/refav1_arm.py:2308`
+has always derived the map (`nav_id_to_route_id()`) and compared in ROUTE space
+(`:2341`, `:2363`). `refcv3_arm.py` re-wrote the same statistic from scratch and dropped
+the map. **Every refav1 strategic number is unaffected**; the defect is refcv3/refcv4b only.
+This is the class `stack/tanitad/eval/echo_gate.py`'s own docstring already names — *"a
+control re-implemented beside the thing it controls can drift away from it, and then the
+gate measures the drift instead of the model"* — and the aggravating factor is that a
+**correct implementation already existed in the sibling file**.
+
+⚠️ **A THIRD DEFECT IN THE SAME BLOCK, ALSO MEASURED FALSE.** The tool's `_reading` stated
+that on the changed subset *"the label route and the shuffled-nav route are different
+classes **by construction**, so the two rates are mutually exclusive."* They are not:
+`route_label` is a **per-window** target from `route_from_future`, while `nav_cmd` is a
+**per-clip** token over a 25 s horizon — two different derivations. MEASURED: on
+**357 of 1,736** changed windows (20.6 %) the label equals the shuffled token's implied
+route, and the two "mutually exclusive" rates sum to **1.0806**. ⇒ a "by construction"
+claim that was never checked against the two derivations it spans.
+
+⭐⭐ **WHAT DOES *NOT* CHANGE, AND WHY.** The finding these numbers were quoted for —
+*refcv4b's route head is genuine vision-side route prediction, not a nav echo* — **STANDS**,
+because it never rested on the index arithmetic. It rests on a **structural identity**: the
+head's output is bit-identical under `nav_true` and `nav_shuffled` (**4,823/4,823**) and
+under `nav_zero` (**4,822/4,823**, the single deviation being the documented ~6e-7 m
+cross-call float32 batching floor, `D-REFCV3-NAVZERO`). **A function that does not read the
+nav input cannot echo it, whatever index arithmetic is applied downstream.**
+⭐ Corrected, the anti-echo read is **sharper**, not weaker. On the subset where the two
+hypotheses genuinely are exclusive (**n = 1,311**): follows **LABEL 0.7124** vs follows
+**SHUFFLED NAV 0.1739**.
+
+**Durable fix (staged this turn).** `taniteval/tools/refcv3_arm.py` now maps through
+`refb_labels._NAV_TO_ROUTE` / `._ROUTE_TO_NAV`, **imported, never hand-typed**, keeps both
+uncorrected forms under explicit `*_RAW_INDEX_LEGACY` keys so an old record can be
+reconciled rather than silently contradicted, emits `changed_exclusive_subset` as the
+quotable form, and deletes the refuted comment. Pinned by
+`stack/tests/test_refcv3_route_nav_alignment.py`, whose **deliberate-regression arm** is a
+route head that is a *perfect* echo of its nav input: the corrected index must read **exactly
+1.0** and the legacy raw-index form **must fail to see it** (< 0.45). A gate that cannot fail
+the defect it was written for certifies nothing.
+
+**Artifacts:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-navpred/raw/ECHO_INDEX_CORRECTION.json`
+(carries a reproduction control: it re-derives the landing read's 1,736 / 0.7437 / 0.2264
+**exactly** before correcting them, so it is demonstrably re-reading the same object).
+
+
+---
+
+## 2026-09-06 — `control_space.sample_control_space`'s `logp` CARRIES NO POLICY GRADIENT
+
+**Root-cause class: ⭐ A SHAPE-AND-FINITENESS TEST DOES NOT TEST A GRADIENT — the same
+family as this repo's own `refcv3_adapter` correction, *"a nonzero gradient is not a correct
+gradient"*, with the object weakened from "wrong" to "absent".**
+
+**What was published (2026-09-06, `…/2026-09-06-refcv4b-rl/RESULT.md` §6.2):**
+`stack/tanitad/rl/control_space.py` *"implements the DD-v2 two-scalar policy in control
+space … 15/15 green"*, and the escalation was stated as **"now one wiring line: call
+`control_space.sample_control_space` from the RL stage's sampling path."**
+
+⛔ **WHAT IS MEASURED (2026-09-06, by running it rather than reading it).** The `logp` that
+function returns is the density of the **two scalars**, i.e. a function of the **DRAW
+ALONE**: `logp.requires_grad` is **False**, `logp.grad_fn` is **None**, and
+`(-(logp * advantage).sum()).backward()` raises **`RuntimeError: element 0 of tensors does
+not require grad and does not have a grad_fn`**. ⇒ **the "one wiring line" would have
+produced either a crash at the first backward or — summed with any term that does carry
+grad — a policy gradient that is IDENTICALLY ZERO: a SILENT NO-OP ARM wearing the
+hypothesis' name.** The module's *sampling* half was correct; its *estimator* half could not
+train anything.
+
+⭐ **WHY THE 15 TESTS DID NOT CATCH IT, and this is the transferable part.** The only test
+touching that `logp` asserted it was **finite and correctly shaped**
+(`test_logp_is_finite_and_shaped_per_group_member`). A constant is finite and correctly
+shaped. The claim the module makes is about a **GRADIENT REACHING THE POLICY**, and no test
+asserted that — exactly the gap `refcv3_adapter.py` already carries a comment about, having
+paid for it once with a collapsed planner (fan R3 1.97 m → 347.2 m).
+
+**Durable fix (this turn).** `logp_mode="policy"` is now the DEFAULT and computes the
+score-function density of the **drawn controls** with the sample detached and the density's
+parameters live; `"scalar"` remains reachable and is documented as a **diagnostic that
+carries no policy gradient**. `assert_carries_policy_gradient` **refuses** a detached `logp`,
+and `rl_refcv3_min.make_sample_fn` calls it on **every step** of the control-space path.
+Pinned by `stack/tests/test_rl_sample_space_guard.py`, whose tests **reintroduce the
+defect**: the scalar form must raise on `backward()` **and** be refused by the guard, and the
+policy form must put a **non-zero** gradient on the policy. ⭐ Confirmed end to end on the
+real refcv3 checkpoint at step 40,284: **71 of 71 trainable tensors receive a non-zero
+gradient**, and the explored fan's `envelope_violation` is **exactly 0.000000** against the
+metre-space regression's **36.096268** on the same batch
+(`…/2026-09-06-refcv4b-rl-repair/raw/cs_preflight.json`).
+
+---
+
+## 2026-09-06 — the banked `G-REWARD` COMPOSED MEAN GAP is a STALE BASELINE
+
+**Root-cause class: ⭐ AN INHERITED BASELINE THAT MOVED UNDER A CODE CHANGE NOBODY RE-RAN THE
+CONTROL AGAINST** — the "`INHERITED` is not `MEASURED`" rule with the object being a
+*control's target value* rather than a claim.
+
+**What was published:** the all-window composed mean gap `hold_v0 − human` =
+**−0.011239379601720929**, quoted as a channel-control target
+(`…/2026-09-06-refcv4b-rl/raw/greward_rate_vs_mean.json`, `D-RL-GREWARD-STATISTIC-1`).
+
+⛔ **WHAT IS MEASURED (2026-09-06):** a re-run of the identical computation on the identical
+rows reads **−0.011732071340923**, err **4.927e-04**. The **RATE** reproduces **EXACTLY**
+(0.441780259484316, err 0.000e+00), which is why nothing looked wrong.
+
+⭐ **CAUSE, IDENTIFIED TO THE LAST DIGIT rather than waved at.** A per-window comparison of
+all five reward components across all three scored paths — **18,267 evaluations** — finds
+`progress`, `headway`, `feasibility` and `comfort` identical to **exactly 0.0**, and
+`collision` differing on **13 of 18,267**, each by a full **1.0**, all in the same direction
+(the term now FIRES where it did not), inside **2 episodes**. **3 of those 13 fall on
+`hold_v0` alone**, and **3 / 6089 = 4.927e-04 — the discrepancy exactly.**
+⇒ `rewards._collision` changed after the 2026-09-05 bank was written.
+
+**Scope, so this is not over-read:** the banked **rate** and every rate-derived conclusion
+are unaffected; only the **composed MEAN gap** moved, and by less than the width of its own
+interval. Every comparator in `…/2026-09-06-refcv4b-rl-repair/` is that package's **own
+cap-OFF column**, computed with the same code on the same day.
+
+**Durable lesson:** a control whose target value is a *banked number* silently becomes a
+control against a *past version of the code*. State the code version beside the target, or
+recompute the target in the same run — which is what the repair package does.
