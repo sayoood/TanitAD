@@ -955,3 +955,143 @@ rescales to the first frame); the **ground truth drawn underneath the floor line
 invisible on straight windows; and the camera overlay **escaping its pane** into the arms table.
 ⇒ **A render that reports success is not a render that is correct**, and the only check that found
 these was reading the artifact back.
+
+## M67. ⛔ A CROSS-STREAM GPU COLLISION IS LIVE — Thor is armed to run a lever that was refuted 0-GPU four hours earlier
+
+### 1. The collision
+
+* **Thor stream:** *"The `goal_reach_s` panel is shipped, verified and syntax-checked on Thor, ready to
+  launch the moment the rig frees."*
+* **Dev-box stream, commit `e432341` (2026-09-06 01:47), SUBJECT LINE:**
+  ***"STOP -- goal_reach_s is ALREADY REFUTED 0-GPU (do not spend the arm)"*** — with the refutation
+  written into `GOALS_AND_CLAIMS.md` (7 insertions).
+
+**The refutation, MEASURED 0-GPU:** tau = 1.0 gives LON speed **+0.1552** against D2's **+0.1517**;
+tau = 0.6 gives **+0.1825** and **loses the floor win entirely**; and a **tau = 2.0 control reproduces
+D2 to four decimals**, so the negative is a measurement rather than a broken rig. It helps only the 6
+clip-bound windows, as a cruder D4.
+
+### 2. ⭐ Does `M61`'s rig-dependence rescue the Thor run? — I checked, and NO
+
+`M61` established seed floors are **rig-dependent**, and Thor's are **~7x tighter**. ⚠️ That is a real
+reason to ask whether a dev-box negative transfers. **It does not rescue this one:** the refutation is
+a **DELTA in the wrong direction** (+0.1552 vs +0.1517 — *worse*), not a null. ⇒ **A tighter floor makes
+a wrong-direction delta MORE clearly separated, not less** — it would confirm the negative with more
+confidence, at the cost of a GPU arm.
+
+⚠️ **The one caveat I cannot resolve from here:** if the Thor panel composes `goal_reach_s` with
+something else rather than substituting it for D2, it is a different experiment and the refutation does
+not bind. **That is the stream's to determine — and it is exactly the question `e432341` should prompt
+it to ask.**
+
+### 3. ⭐ The escalation mechanism worked; the question is whether it is READ
+
+⭐ The refuting stream did **everything right**: it put the STOP in the **commit subject line** because
+*"a `git log` subject is what another agent actually reads"*, and it wrote the finding into
+**`GOALS_AND_CLAIMS.md`**, which the operating standard requires a fresh context to read **before
+acting**. ⇒ **The channel exists and is correct. This entry exists so the next loop tick checks whether
+it was used** — and, if Thor launches anyway, so the failure is attributed to the READ and not to the
+escalation.
+
+⛔ **Master-Mind position: do not unilaterally block another stream's queue.** The register carries the
+refutation; the stream owns the launch decision and may have a composition the refutation does not
+cover. ⭐ **What I own is making sure the collision is visible** — no agent can see a sibling in real
+time, and the orchestrator is the only party who can.
+
+### 4. ⚠️ And a third stream has hit the committer's silent-success path
+
+A refcv5 wiring commit subject reads: ***"log the commit tool that exited 0, printed nothing, and
+committed nothing."*** ⇒ **third independent occurrence tonight**, after my own stale-cached-read empty
+commit and the earlier pipeline misattribution.
+
+⭐ **The mechanism is now identified and it is NOT the pipeline** (that was `D-SHELL-PIPEFAIL-1`, and it
+was my error): `mktree_commit.py`'s `main()` has an **early `return 0` on
+`"nothing to commit (tree identical to HEAD)"`** — a **success exit that commits nothing**. It is
+correct when the content really is identical, ⛔ **but on a caching mount a STALE READ makes the
+rebuilt tree equal HEAD's while the file on disk has new content** — and the message reads reassuring.
+⇒ ⭐ **This is why the content-marker-inside-the-blob check is not optional**: it is the only check that
+separates "nothing to commit" from "I read the wrong bytes." ⚠️ A distinct exit code for that path
+would be the durable fix; it is deliberately **not** applied while agents are committing through the
+file every few minutes.
+
+## M68. ⭐⭐⭐ refcv5 IS TRAINING-READY — and M59/M60 were half-wrong: the leaves existed, the TRUNK did not
+
+### 1. ⛔ The correction I owe, third-order and final
+
+**M59** retracted the *"WP-4/WP-6 are missing"* report as FALSE. **M60** went further and blamed a
+stale mirror for *"two independent reviews converging on a false conclusion."* **Both were half-wrong,
+and the wiring stream's account is the authoritative one:**
+
+| | truth |
+|---|---|
+| the `0/0/0` count | ⭐ **CORRECT — but scoped to `refc.py`** |
+| the implementations | **existed in HEAD, committed and UNREFERENCED**: `refc_sampler.py` (314 lines / 14 defs, `a5dbfbb`) and `refc_agents.py` (820 lines / 20 defs) |
+| the trainer seam | **already complete** (`_pin_refcv5_seams`, `_seam_stamp`, all flags, 4 refusals) |
+| what was actually missing | ⛔ **the TRUNK** — `refc.py`'s `CrossAttnLayer` / `AnchoredDiffusionDecoder` / `RefCModel` and `refc_v3.py`'s `RefCV3Model.forward` |
+
+⇒ ⭐ **It WAS an escalation-to-merge, exactly as the report framed it — and nothing was rewritten.**
+⛔ **My error: I measured the CONFIG SURFACE in `refc.py` (fields, flags, ~46 mentions at `a5dbfbb`)
+and concluded "the mechanism is there."** A dataclass field that constructs is not a module that runs.
+⇒ **"A count is not a capability" — which I wrote in `M60` §2 about someone else's error, and then
+committed myself in the same entry.** The reachability test I ran (`DecoderConfig(sampler='ddim')`
+constructing) probed the **config**, not the **model**, and I read it as settling the model.
+
+⚠️ **What `M60` still gets right** and should not be discarded: two reviews are not independent if they
+read the same tree, and an absence claim must print its resolved path and provenance. ⛔ **What is
+withdrawn is its verdict that the reports were false and its stale-mirror explanation.**
+
+### 2. ⭐⭐ THE HEADLINE: refcv5 is wired, guarded, tested — the ONLY blocker is a GPU
+
+* **20 red tests, not 14.** A **third** pre-existing spec (`test_refc_agents.py`, 6 tests) was found
+  only by running the full suite — ⭐ and the stream **conformed its own API to the existing names**
+  (`agent_tokens`/`agents`, not its `agent_tok`), **never the reverse. No test weakened.**
+  **14 failed / 23 passed → 81 passed / 0 skipped**; **215 passed** across the 41-module blast radius.
+* ⭐⭐ **The `roll_bank` bit-identity is EXACT**: 117 anchors x 8 slots x 5 speeds x 2 coords =
+  **9,360 float32 scalars**, from **standstill (0.0 m/s) to 36 m/s**, `torch.equal` **True**, max |diff|
+  **0.000e+00**, **0 differing bit patterns, in BOTH unit systems.**
+* ⭐⭐⭐ **The mechanism is REAL and refcv3's pathology does not reproduce.** refcv3's ranking was
+  *"unchanged on 201/201 windows"*; adding a DDIM rung here **moves the output on 128/128 rows.**
+* **Full suite 35 failed / 6359 passed — all 42 pre-existing** (HEAD baseline on the same 13 files =
+  40, identical). **The change fixes 6 and introduces 0.**
+
+⇒ ⭐ **GOAL 3 IS COMPLETE. GOAL 7 is gated only on the A40 freeing (~08:05 UTC).** The two remaining
+preconditions are corpus flags the trainer already **refuses** without: `--agents head` needs
+`--agent-join` (⭐ **`--agents oracle` is the first rung and needs no detector**), and `--sampler ddim`
+needs an `--anchor-file` carrying `controls` + declared `control_units`.
+
+### 3. ⭐ Four guards fixed, each shown capable of failing
+
+* **False provenance CLOSED, and the dataclass field alone was not the fix** — the stamp is built from
+  the **config** (intent) while only the **model** is fact. `assert_seams_are_built(model, stamp)`
+  checks **bidirectionally** before `config.json` is written. **4 reintroduced defects rejected, 2
+  honest controls pass.**
+* ⛔ **`assert_matches_diffusers` had NEVER RUN** — diffusers was never installed, so its impossible
+  `atol=1e-10` was masked by a SKIP. Measured: ours-f32 vs diffusers **0.000e+00 (bit-equal)**; against
+  an exact f64 reference **ours 6.939e-18, diffusers 1.689e-07**. Replacement is **stricter**; skip
+  count now **0**. ⇒ ⭐ *`M60` listed this as "can only SKIP or FAIL" — the truth is worse: it had never
+  executed at all.*
+* ⛔ **Its own deliberate-regression arm COULD NOT HAVE FAILED** — the metre arm divided by
+  `metre_sigma_m`, **31.7x too gentle**, so the DD-literal arm would have *passed* the gate it exists to
+  fail. Fixed: control **0.53 m/s², 0.0000 over mu=0.7** vs metre **5.29 m/s², 0.3333 over** — matching
+  the design plan's predicted ~5.8. ⭐ **A deliberate regression that passes is worse than no control.**
+* **`CRITERIA_REGISTRY` v2.7.0 -> v2.8.0 adds `hyg.inference_seed`** + regression arm + control
+  (`tools/tests` **110 passed**). ⭐ **The WP-4 sampler draws fresh noise at eval BY DESIGN, so refcv5
+  is the refc line's first STOCHASTIC planner** — the registry could not express that requirement
+  before (7 probes read 0 against a control of 46). ⇒ **`M56`/`M61`'s inference-seed doctrine is now
+  machine-enforced for refcv5 from its first arm**, rather than learned after a headline dies.
+
+### 4. ⚠️ A config decision that must be made, not a bug
+
+**`SelectionConfig.refined` defaults `False`**, so **the fan is SAMPLED but RANKED BY A HEAD THAT NEVER
+SAW THE SAMPLE.** Stamped via new telemetry `sampler_ranks_the_fan`. ⛔ **An arm that wants the sampler
+to reach selection must pass `--sel-refined`** — otherwise refcv5 ships a diffusion sampler whose output
+the selector ignores, which is refcv3's defect wearing a working denoiser.
+
+### 5. Two process failures worth carrying
+
+* ⛔ **`robocopy /MIR` reported SUCCESS and silently did not copy the changed file** — the tests then
+  reproduced the old failures verbatim. *Same family as every "reported success" trap tonight.*
+* ⛔ **`mktree_commit.py` exited 0, printed nothing, and committed nothing** during a G: outage —
+  caught **only** because 10 of 11 content markers read MISSING against controls reading 1–95. ⇒ **the
+  content-marker check is what stands between us and silent data loss**, and this is its third
+  independent save tonight.
