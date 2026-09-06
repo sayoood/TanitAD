@@ -17,8 +17,21 @@ HERE = r"C:\Users\Admin\wkfront"
 PY = r"C:\Users\Admin\venvs\tanitad\Scripts\python.exe"
 MAX_WAIT_S = 5400          # 1.5 h per batch, then advance regardless
 
+# Batch 2 completes the goal-conditioned curve at seed 1 and gives both of its
+# endpoints a second inference seed.
 BATCH2 = ["t5_s1:5.03748:1", "t10_s1:10.07497:1", "t0_s1:0.0:1", "t15_s1:SCALAR:1"]
-BATCH3 = ["t5_s2:5.03748:2", "t10_s2:10.07497:2", "t0_s2:0.0:2", "t15_s2:SCALAR:2"]
+# ⭐ Batch 3 was re-planned after the mechanism read: `wk3` is the arm that turns
+# MOST (recall 0.3636 = 4 of 11) while still reading kamm_over 0.0000
+# non-vacuously, so it BRACKETS the frontier on the recall side and its
+# replication is worth more than a third seed for the endpoints.
+# ⭐⭐ Batch 3 was re-planned a second time, after the paired curvature read
+# measured that the BINDING interval for the curvature claim is the EPISODE one
+# (RESULT.md §4) -- so the cheapest experiment that can move it is INDEPENDENT
+# EPISODES, not a third seed. `wk7` is run on two EPISODE-DISJOINT 8-episode
+# draws (dA, dB), giving three independent episode draws of the wk7-vs-ha0
+# comparison; `wk3` keeps its replicate because it brackets the frontier on the
+# recall side. The by-goal rungs therefore stop at two seeds, and that is stated.
+BATCH3 = ["wk7_dA:S7.0:0:dA", "wk7_dB:S7.0:0:dB", "wk3_s1:S3.0:1", "wk3_s2:S3.0:2"]
 
 
 def n_arms():

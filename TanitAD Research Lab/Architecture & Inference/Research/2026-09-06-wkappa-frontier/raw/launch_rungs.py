@@ -30,7 +30,19 @@ W_LANE = "15.11245"
 COST_W = "0.0,15.11245,64.29715042415070"   # W_JERK, W_KAPPA(no-goal fallback), W_VEND
 
 
-def argv_for(tag, w_turn, seed):
+CORPORA = {
+    # the banked p4 panel every earlier arm was run on -- turn-ENRICHED
+    # (selected at kappa_thr 0.04 for 17 real turns in 40 windows)
+    "p4": ("C:/Users/Admin/refav1_margin/p4/fp8",
+           "C:/Users/Admin/refav1_margin/p4/eps"),
+    # ⭐ EPISODE-DISJOINT draws for the curvature claim's episode replication --
+    # NOT turn-enriched, so a fairer curvature test and a weaker recall test.
+    "dA": ("C:/Users/Admin/wkfront/dA/fp8", "C:/Users/Admin/wkfront/dA/eps"),
+    "dB": ("C:/Users/Admin/wkfront/dB/fp8", "C:/Users/Admin/wkfront/dB/eps"),
+}
+
+
+def argv_for(tag, w_turn, seed, corpus="p4"):
     # MODE spelling:
     #   "<float>"  -> by-goal arm, --w-kappa-by-goal W_LANE,<float>
     #   "S<float>" -> plain SCALAR arm at that W_KAPPA, flag OMITTED.
@@ -43,8 +55,8 @@ def argv_for(tag, w_turn, seed):
         PY, TOOL,
         "--ckpt", CKPT,
         "--config", CFG,
-        "--cache", CACHE,
-        "--episodes", EPS,
+        "--cache", CORPORA[corpus][0],
+        "--episodes", CORPORA[corpus][1],
         "--labels", LABELS,
         "--nav", LABELS,
         "--arm", "refav1-21109-wkf-%s" % tag,
@@ -81,17 +93,19 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     jobs = []
     for spec in sys.argv[1:]:
-        tag, w_turn, seed = spec.split(":")
-        jobs.append((tag, w_turn, int(seed)))
+        parts = spec.split(":")
+        tag, w_turn, seed = parts[0], parts[1], int(parts[2])
+        corpus = parts[3] if len(parts) > 3 else "p4"
+        jobs.append((tag, w_turn, seed, corpus))
     env = dict(os.environ)
     env["PYTHONPATH"] = os.path.join(CTG, "stack")
     env["OMP_NUM_THREADS"] = "6"
     env["PYTHONIOENCODING"] = "utf-8"
     procs = []
-    for tag, w_turn, seed in jobs:
+    for tag, w_turn, seed, corpus in jobs:
         log = open(os.path.join(OUT, "%s.log" % tag), "w", encoding="utf-8")
-        a = argv_for(tag, w_turn, seed)
-        print("[launch] %s w_turn=%s seed=%d" % (tag, w_turn, seed))
+        a = argv_for(tag, w_turn, seed, corpus)
+        print("[launch] %s w_turn=%s seed=%d corpus=%s" % (tag, w_turn, seed, corpus))
         print("[argv  ] %s" % " ".join(a))
         p = subprocess.Popen(a, cwd=CTG, env=env, stdout=log,
                              stderr=subprocess.STDOUT)
