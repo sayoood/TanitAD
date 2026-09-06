@@ -717,6 +717,24 @@ enum over **87,481 cuboids is 10 classes, all dynamic agents**. Stop re-asking; 
 topology must come from AlpaSim or an external corpus. *(Also settled: `egomotion` carries **no
 lat/lon/GNSS** — coordinates are clip-local metres, so **OSM map-matching on our traces is impossible**.)*
 
+⛔⛔ **AND THAT PARAGRAPH IS A LAYER-1 FACT THAT HAS ALREADY BEEN QUOTED TO SETTLE A
+LAYER-3 QUESTION.** It is true of the **published PhysicalAI-AV feature set** and SILENT about our
+own **AUGMENTED v7.x label release**. MEASURED 2026-09-06 on
+`…/incoming/2026-09-04-v72-label-release/raw/s2_labels_v7.2_train.jsonl.gz` (schema
+`s2-geom-v7`, vocab `v7`, **4,572 records, one per clip**): **779/4,572 records carry a GT
+traffic-light tactical goal WITH THE COLOUR ATTACHED** — `g_tac.goals.TRAFFIC_LIGHT_REACT_RED`
+**376/4,572**, `_GREEN` **363/4,572**, `_YELLOW` **22/4,572**, colourless `TRAFFIC_LIGHT_REACT`
+**18/4,572** — each carrying `state`, `object_kind: "traffic_light"` and `provenance:
+"vlm-cot"`, extracted from the Alpamayo CoT by `stack/tanitad/data/alpamayo_semantics.py` and
+frozen into the vocabulary by `stack/tanitad/models/vocab_v7.py`. ⇒ **"PhysicalAI-AV publishes no
+traffic-light feature" is TRUE; "the programme has no traffic-light label" is FALSE.** The PI
+corrected exactly this conflation on 2026-09-06.
+⚠ **So state the LAYER here too** — published corpus / episode build / **augmented v7.x label
+release** — exactly as the feature-count table above forces for the read-set. This is the same
+rot the pinning test was built for, one table down. *(What IS true, measured the same day and far
+more damaging: that label **never reaches training** — `D-TLIGHT-1`, and
+`stack/tests/test_tactical_label_reach.py` now pins it.)*
+
 **3. Finish before you start. An artifact on one disk or in one agent's context is NOT done.**
 Definition of done = **in the repo, staged, with its provenance**. *(LAL-v2 anticipation: implemented,
 tested, **unmerged 12 days**. An orthogonality instrument: **10 days**. TanitEval, REF-B v2's

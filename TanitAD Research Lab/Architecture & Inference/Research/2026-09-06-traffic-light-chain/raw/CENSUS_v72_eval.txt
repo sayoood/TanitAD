@@ -1,0 +1,70 @@
+==============================================================================
+TACTICAL LABEL CENSUS
+==============================================================================
+blob        : C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\f407bc82-7969-457c-a947-6be2014fee89\scratchpad\blobs\s2_labels_v7.2_eval.jsonl.gz
+n_records   : 147
+schema      : {'s2-geom-v7': 147}
+vocab       : {'v7': 147}
+supervised heads: {'tac_lat': 8, 'tac_lon': 8, 'str_action': 7, 'str_goal': 8}
+
+------------------------------------------------------------------------------
+TACTICAL FIELD                         IN BLOB     SURFACED BY LOADER        
+------------------------------------------------------------------------------
+a_tac.lat                              147/147     V7Label.tac_lat           
+a_tac.lat_args                         147/147     V7Label.audit['a_tac_args']
+a_tac.lon                              147/147     V7Label.tac_lon           
+a_tac.lon_args                         147/147     V7Label.audit['a_tac_args']
+a_tac.serves_goals                     147/147     V7Label.audit['serves_goals']
+a_tac.truncated                        147/147     V7Label.audit['a_tac_truncated']
+g_tac.anchor                           147/147     V7Label.tac_anchor        
+g_tac.goals                            147/147     V7Label.audit['goal_flags']  (AUDIT ONLY)
+g_tac.violations                       147/147     V7Label.audit['g_tac_violations']
+
+------------------------------------------------------------------------------
+TACTICAL GOAL TOKEN                IN BLOB     IN VOCAB  SUPERVISED?       
+------------------------------------------------------------------------------
+SPEED_BAND                         147/147     yes       NO                
+FOLLOW_LANE                        119/147     yes       NO                
+CORRIDOR_OFFSET                    25/147      yes       NO                
+YIELD                              17/147      yes       NO                
+TRAFFIC_LIGHT_REACT_GREEN          15/147      yes       NO                
+GAP_TARGET                         14/147      yes       NO                
+REACT_ON_ONCOMING                  11/147      yes       NO                
+STOP_POINT                         9/147       yes       NO                
+TURN_R                             8/147       yes       NO (name also a tac_lat ACTION class)
+TRAFFIC_LIGHT_REACT_RED            8/147       yes       NO                
+EVADE_IN_CORRIDOR                  6/147       yes       NO                
+MERGE                              5/147       yes       NO                
+TAKE_EXIT_R                        5/147       yes       NO                
+TURN_L                             5/147       yes       NO (name also a tac_lat ACTION class)
+TRAFFIC_LIGHT_REACT_YELLOW         3/147       yes       NO                
+YIELD_FOR_TURN_L                   2/147       yes       NO                
+LANE_CHANGE_R                      1/147       yes       NO (name also a tac_lat ACTION class)
+OVERTAKE_VEHICLE                   1/147       yes       NO                
+
+  NOTE read the last column carefully: NO tactical GOAL is supervised as
+    a goal. Rows marked '(name also a tac_lat ACTION class)' share a
+    STRING with the lateral-action vocabulary; the GOAL is still
+    unsupervised. No head is sized on TACTICAL_GOAL_TOKENS_V7.
+
+------------------------------------------------------------------------------
+TRAFFIC LIGHT (the worked example)
+------------------------------------------------------------------------------
+  any TRAFFIC_LIGHT_* goal : 26/147 records
+    TRAFFIC_LIGHT_REACT_GREEN        15/147
+    TRAFFIC_LIGHT_REACT_RED          8/147
+    TRAFFIC_LIGHT_REACT_YELLOW       3/147
+  state       : {'green': 15, 'yellow': 3, 'red': 8}
+  provenance  : {'vlm-cot': 26}
+  disputed    : {True: 19, False: 7}
+  time_basis  : {'untimed': 22, 'segment': 4}
+  SUPERVISED  : NO -- no head in v7_labels.HEADS carries these classes
+
+------------------------------------------------------------------------------
+BAND COVERAGE (why the GT is absent at most scored frames)
+------------------------------------------------------------------------------
+  distinct clips 147 ; max records per clip 1
+  t0_s          : {8.0: 147}
+  tactical band vs FULL RECORDING : 588.0 s / 16840.5 s = 3.49 %
+  tactical band vs USABLE HORIZON : 588.0 s / 5009.6 s = 11.74 %
+  => a scored frame outside that band has NO v7 tactical GT.
