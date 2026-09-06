@@ -71,6 +71,7 @@ from tanitad.models.kinematic import rollout_unicycle
 __all__ = [
     "DDIMSchedule", "SinusoidalPosEmb", "build_time_mlp", "roll_controls",
     "controls_to_ticks", "alat_to_curvature", "assert_matches_diffusers",
+    "draw_train_timesteps", "train_noise",
     "BETA_START", "BETA_END", "N_TRAIN_TIMESTEPS",
 ]
 
@@ -387,3 +388,106 @@ def roll_controls(u: Tensor, v0: Tensor, horizons: tuple[int, ...],
     idx = torch.tensor([int(k) - 1 for k in horizons], device=u.device,
                        dtype=torch.long)
     return path.index_select(1, idx).reshape(b, n, s, 2).to(out_dtype)
+
+
+# ---------------------------------------------------------------------------
+# refcv5 P13 -- DD's TRAINING-TIME timestep draw, `t ~ U[0, t_max)`
+# ---------------------------------------------------------------------------
+#
+# ⛔⛔ WHY THIS FUNCTION EXISTS AT ALL: `--sampler-train-t-max` WAS A DEAD FLAG.
+# MEASURED 2026-09-06, two independent mechanisms (a scoped source grep, and
+# reading `AnchoredDiffusionDecoder._sample` directly): the flag is parsed by
+# `refc_v3_train.py`, assigned onto `core.decoder.sampler_train_t_max`, stamped
+# into `config.json` as `sampler_train_t_max: 50` -- and READ BY NOTHING.
+# `_sample()` starts at `cfg.sampler_infer_t` (= 8) in TRAINING and INFERENCE
+# alike, so refcv5 trained the sampler at the CONSTANT t = 8 while its own
+# launch record celebrated passing the dead-flag check.
+#
+# ⭐ WHAT DD ACTUALLY SPECIFIES, and where it is read from. The 17-page paper
+# does NOT state the training draw in its text -- it is read from the released
+# code (`hustvl/DiffusionDrive@9b52ed0`), the same precedent as DD-v2's reward,
+# which is undefined in the paper and had to be read from source. The banked
+# primary is `2411.15139` (sha256 6ad4f8a3…, VERIFIED against disk by content).
+# Training draws ONE timestep per sample from `U[0, 50)`, noises the clean
+# target once at that t, and asks the network to predict x0 -- a SINGLE pass,
+# not a ladder. The truncated ladder `[10, 0]` is an INFERENCE-only object.
+#
+# ⛔ WHY A CONSTANT t = 8 IS NOT A HARMLESS SIMPLIFICATION. The network sees
+# exactly one noise level in training and is then asked, at inference, to
+# denoise from t = 10 down through t = 0 -- two levels it was never trained on.
+# `time_mlp` is a CONTINUOUS embedding, so nothing crashes; the model simply
+# has no signal about what any other t means, and the second DDIM step operates
+# on an input distribution outside its training support.
+#
+# ⚠️ BENEFIT IS NOT ASSUMED HERE. PREREG P13-B3 is explicit: paper-faithfulness
+# is NOT the bar. This function makes the mechanism EXIST and be MUTATION-
+# PROVABLE (B1/B2); whether the draw helps is a tiny-rig question with its own
+# committed bar and a replicate arm.
+
+
+def draw_train_timesteps(batch: int, t_max: int, device,
+                         generator: torch.Generator | None = None) -> Tensor:
+    """DD's training draw: ``t ~ U[0, t_max)``, ONE per sample. -> [B] int64.
+
+    ⛔ **The bound is EXCLUSIVE and that is load-bearing.** ``t_max = 50``
+    draws from ``{0 … 49}``, which is what ``torch.randint(0, 50, …)`` gives
+    and what the released DD code does. An inclusive reading would put mass on
+    a timestep outside the published range.
+
+    ⛔ **``t_max = 1`` is the DELIBERATE-REGRESSION arm (PREREG P13-R)**, not a
+    degenerate input to reject: it draws the constant ``t = 0``, i.e. the
+    schedule's FIRST entry -- which is *not* zero noise (``steps_offset = 1``
+    means ``abar_0 < 1``), and the pre-registered check is that this arm is
+    DISTINGUISHABLE from ``t_max = 50``. A gate that cannot separate a
+    no-noise draw from DD's is blind, so this function must accept it.
+
+    ``generator`` is threaded so a test can pin the draw. ⚠️ A ``Generator``
+    must live on the same device as the tensor being filled, so the draw is
+    made on the generator's own device and moved -- passing a CPU generator
+    with a CUDA ``device`` is the classic silent failure here, and it raises
+    rather than silently ignoring the generator.
+    """
+    if int(t_max) < 1:
+        raise ValueError(
+            f"sampler_train_t_max must be >= 1, got {t_max}. 0 would make the "
+            f"draw empty; 1 is the pre-registered zero-noise regression arm.")
+    if int(batch) < 1:
+        raise ValueError(f"batch must be >= 1, got {batch}")
+    if generator is None:
+        return torch.randint(0, int(t_max), (int(batch),), device=device,
+                             dtype=torch.long)
+    t = torch.randint(0, int(t_max), (int(batch),),
+                      generator=generator, device=generator.device,
+                      dtype=torch.long)
+    return t.to(device)
+
+
+def train_noise(sched: "DDIMSchedule", x0_n: Tensor, t: Tensor,
+                generator: torch.Generator | None = None
+                ) -> tuple[Tensor, Tensor]:
+    """One DD training corruption. -> ``(x_t, eps)``.
+
+    ``x0_n`` is the NORMALISED clean state ``[B, N, S, 2]``; ``t`` is ``[B]``
+    from :func:`draw_train_timesteps`. The per-sample ``t`` broadcasts against
+    the leading dim -- :meth:`DDIMSchedule.add_noise` unsqueezes the trailing
+    dims, which is why the timestep must be ``[B]`` and never ``[B, 1, 1, 1]``.
+
+    ⭐ ``eps`` is returned so a caller can compute an eps-parameterised loss if
+    it ever wants one. refcv5's loss is on **x0** (``prediction_type="sample"``,
+    DD's choice), so today only ``x_t`` is consumed -- returning both keeps the
+    parameterisation a caller decision rather than a hidden one.
+
+    ⛔ The schedule's alpha table must already be on ``x0_n``'s device;
+    :meth:`DDIMSchedule.to` is a no-op when it is, and a CPU table meeting a
+    CUDA ``x0`` raises rather than silently upcasting.
+    """
+    if t.ndim != 1 or t.shape[0] != x0_n.shape[0]:
+        raise ValueError(
+            f"train_noise needs one timestep per sample: t {tuple(t.shape)} "
+            f"against x0 {tuple(x0_n.shape)} -- a [B,1,1,1] t would broadcast "
+            f"silently and noise every candidate at a different level")
+    sched.to(x0_n.device)
+    eps = (torch.randn(x0_n.shape, device=x0_n.device, dtype=x0_n.dtype,
+                       generator=generator)
+           if generator is not None else torch.randn_like(x0_n))
+    return sched.add_noise(x0_n, eps, t), eps
