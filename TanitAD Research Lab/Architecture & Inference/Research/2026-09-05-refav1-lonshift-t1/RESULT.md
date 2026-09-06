@@ -568,6 +568,80 @@ never planning skill (the arm's own trivial-profile instrument says so).
 
 ---
 
+## 3d. ⭐⭐ A FALSIFIABLE PREDICTION, STATED BEFORE THE ARM LANDED, THAT HELD TO BIT-IDENTITY
+
+Once §3c.1 established `W_JERK = 0.0` makes the jerk seam arithmetically inert, the
+7th arm's outcome became **predictable in advance**: `T_loncomb` is `a_shift` **+** an
+inert seam at the **same seed**, so it must be not merely similar to `T_lonshift` but
+**bit-identical**. That was written down before it finished. MEASURED:
+
+| `T_loncomb.cl − T_lonshift.cl` | value |
+|---|---|
+| `ade_m`, `fde_m` | **+0.0000 [+0.0000, +0.0000]** |
+| all three `LON_*` | **+0.0000 [+0.0000, +0.0000]** |
+| all three `LAT_*` | **+0.0000 [+0.0000, +0.0000]** (n = 34) |
+| both `TAC_*` | **+0.0000 [+0.0000, +0.0000]** |
+| emitted mean \|a\| | **0.46910 vs 0.46910** — identical |
+| frac a==0 / ==a_goal / cem frac | 0.000 / 0.050 / 1.000 — identical |
+
+⚠️ Same-breath NON-ZERO control, same panel and windows: `T_lonshift − T_wk15` reads
+**−0.2283** on LON speed, and the emitted table separates `T_lonshift`/`T_loncomb`
+(0.46910) from `T_wk15` (0.31402). So the zeros are the mechanism, not a dead pipe.
+
+⭐ This is the form the programme asks for: a mechanism (`cost = c + w_jerk·mean(jerk²)`,
+`w_jerk = 0`) that yields a **prediction written before the data**, which then holds
+exactly. It also means the 7-arm panel contains **six distinct experiments**, not seven —
+`T_lonseam` ≡ `T_wk15` and `T_loncomb` ≡ `T_lonshift`, both by construction.
+
+---
+
+## 3e. ⭐ P4 EXECUTED: the `goal_reach_s` lever is implemented, PROVED DEFAULT-SAFE, and RUNNING
+
+With the jerk seam blocked by construction, `goal_reach_s` became the live successor and
+was taken **in the same turn** rather than named and deferred.
+
+### 3e.1 The patch, and why it is default-safe BEFORE any GPU
+
+`raw/patch_goal_reach_full.py` threads `goal_reach_s` through
+`canonical_controls` → `_imagine_tactical_goal` → `RefAV1.plan` → `--goal-reach-s`.
+It **refuses** unless every anchor occurs exactly once.
+⚠️ It is newline-aware: these sources are **CRLF**, so multi-line anchors written with
+`\n` match ZERO times while single-line ones still match — a failure that reads exactly
+like *"the code moved"* rather than *"my anchor is wrong"*. MEASURED 2026-09-06.
+
+⭐ **The default-path proof is a UNIT test, not an inference from an arm** (zero GPU):
+
+| check | result |
+|---|---|
+| `goal_reach_s=None` == omitted | **True** |
+| `goal_reach_s=2.0` == omitted (2.0 IS the module default) | **True** |
+| `goal_reach_s=1.0` != omitted (the lever moves) | **True** |
+| default profile `a[:3]` | `[0.75, 0.675, 0.6075]` |
+| `reach=1.0` profile `a[:3]` | `[1.5, 1.2, 0.96]` — **exactly 2×** |
+
+The 2× is the mechanism showing itself: `a_i = (v_t − v)/reach`, so halving the reach
+doubles the opening acceleration. ⇒ **every pre-existing arm is provably unaffected.**
+
+### 3e.2 The queued panel — the CONTROL runs FIRST on purpose
+
+`raw/queueGRS.sh`, launched 00:18 UTC on the now-free Thor (3 distinct `--out` targets
+verified live). All arms carry `--a-sustain-mode a0_shift` (i.e. D2 + the reach lever).
+
+| # | arm | the one variable | why |
+|---|---|---|---|
+| 1 | `T_grsCTL` | `--goal-reach-s 2.0` | ⛔ **the CONTROL** — the module default, so it must reproduce `T_lonshift`. If it does not, the patch changed the default path and **every other arm here is VOID**. Never read a lever before its control. |
+| 2 | `T_grs1` | `--goal-reach-s 1.0` | **the LEVER** — a token delivers its own `dv` inside the optimised window |
+| 3 | `T_grs8` | `--goal-reach-s 8.0` | **the DELIBERATE REGRESSION** — a LONGER reach delivers even less inside the window, so it MUST be worse on LON speed, or the knob is not doing what the mechanism claims |
+| 4 | `T_grs1_s1` | `T_grs1` + `--plan-seed 1` | the **inference-seed replicate**, mandatory: on this rig `--plan-seed` alone is `separated` on all three longitudinal metrics |
+
+⛔ **STANDING WARNING for whoever reads this panel:** `GOAL_REACH_S = TACTICAL_S[0]`, the
+vocabulary's own 2 s tactical band. Overriding it **DECOUPLES the goal profile from the
+band the tokens are defined on** — an arm using it is NOT "the same vocabulary" and must
+say so. These arms MEASURE a candidate; they do not authorise a default. Making
+`goal_reach_s` a default is a PI decision, exactly as `a_shift` and `W_VEND` are.
+
+---
+
 ## 4. ⭐ An instrument gap closed in passing: curvature had no PAIRED interval
 
 ⚠️ **Scoped precisely, because the loose claim is false.** `four_families` already
