@@ -50,11 +50,25 @@ assert d['straight_ahead_control_present'] is True
 print('[gate] anchors OK:',d['controls'].shape,'units',d['control_units'])"
 
 if [ "$P1" = in ]; then
-  JOIN=$DATA/joins/b1train_agents.jsonl.xz
-  [ -s "$JOIN" ] || { echo "⛔ agent join missing: $JOIN" >&2; exit 4; }
-  # md5 is the artifact's identity; the join was built dev-box CPU, zero GPU.
-  echo "1c985e6d6ad34e605c4ebd30cb353558  $JOIN" | md5sum -c - \
-    || { echo "⛔ agent join md5 MISMATCH" >&2; exit 5; }
+  # ⛔⛔ THE COMBINED JOIN, NOT THE TRAIN JOIN. refc_v3_train.py:3560 applies the
+  # SAME --agent-join to the EVAL dataset restricted to the eval episode ids,
+  # and the B1 TRAIN join has ZERO clip overlap with the 141-episode EVAL grid
+  # (MEASURED: 141 eval / 4,572 train / intersection 0). With the train join
+  # alone, enable_agent_join reads n_stable = 0 and raises at :1349 --
+  # "REFUSING: the agent join covers ZERO of 141 episodes" -- BEFORE step 1.
+  # xz is multi-stream and JoinFileReader opens with lzma.open (train_p8_
+  # occupancy.py:333), so the two joins concatenate into one readable file:
+  #   train 849,263 rows (md5 1c985e6d...3558, 317,028,572 B)
+  # + eval   26,394 rows (md5 3ddb42ec...2aed,  10,012,564 B, 139/141 clips)
+  # = 875,657 rows                                327,041,136 B
+  JOIN=$DATA/joins/b1_train_plus_eval_agents.jsonl.xz
+  [ -s "$JOIN" ] || { echo "⛔ combined agent join missing: $JOIN" >&2; exit 4; }
+  PYTHONPATH="$STACK" python3 - "$JOIN" <<'PY' || exit 5
+import lzma, sys
+n = sum(1 for _ in lzma.open(sys.argv[1], "rt", encoding="utf-8"))
+assert n == 875657, f"combined join has {n} rows, expected 875657 (849263+26394)"
+print(f"[gate] agent join OK: {n} rows, both streams readable")
+PY
 fi
 
 # --------------------------------------------------------------------------- #

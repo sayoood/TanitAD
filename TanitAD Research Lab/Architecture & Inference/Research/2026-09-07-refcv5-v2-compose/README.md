@@ -10,14 +10,17 @@ launch instant the moment that gate clears; it does not clear it.
 
 ## 0. ONE LINE
 
-⭐ **READY:** the P1 data blocker is gone (317 MB agent join staged and
-md5-verified on the A40, which is idle at 0 MiB / 0 %), both launch commands are
-written with every flag traced to a plan row, and the comparison protocol is
+⭐ **READY:** both launch commands are written, **verified by execution** (38/38
+flags, both guard families mutation-proven, a full smoke run stamping
+`sampler_ranks_the_fan: True`); the A40 is **idle at 0 MiB / 0 %**; all agent-join
+data is staged and md5-verified on the pod; and the comparison protocol is
 pre-registered with its trivial-control bar.
-⛔ **MISSING:** the pod is running a trainer **845 lines and nine flags behind
-HEAD** and cannot accept a single lever this composition depends on — so the
-real blocker is a **ship step**, not P1; and **P4 cannot enter as a trained
-head** because its module is wired to nothing.
+
+⛔ **MISSING — and it is NOT P1:** the pod runs a trainer **845 lines and nine
+flags behind HEAD** and cannot accept a **single lever** this composition depends
+on, so the true blocker is an unperformed **ship step**. Beyond that: **P4 cannot
+enter** (its module is wired to nothing), **D-TRISEG cannot enter** (the decoder
+refuses the shape), and **9 of the PI's 12 video observations will not move.**
 
 ---
 
@@ -119,10 +122,50 @@ Full runnable scripts: `LAUNCH_refcv5_v2.sh` (both arms), gated by
 ⭐ **P1's data blocker is CLEARED.** `b1train_agents.jsonl.xz`, **317,028,572 B**,
 md5 **`1c985e6d6ad34e605c4ebd30cb353558`** — staged to
 `/workspace/TanitAD/data/joins/`, **md5 byte-identical on the pod**, decompresses
-to valid JSONL. It had existed in exactly **one** place
+to valid JSONL (**849,263 rows**, matching the plan's count exactly). It had
+existed in exactly **one** place
 (`C:\Users\Admin\tanitad-caches\b1-train-join-20260906\`): **not** in the repo
 (only its `.meta.json` is committed) and **not** on the pod. Transfer 343 s @
 899 KB/s.
+
+### 2.4 ⛔⛔ SECOND P1-IN BLOCKER, FOUND BY READING THE EVAL PATH
+
+**The train join alone makes `--agents head` REFUSE AT STARTUP.**
+
+`refc_v3_train.py:3560` applies the **same** `--agent-join` file to the **eval**
+dataset, restricted to the eval episode ids. And the B1 TRAIN join and the
+141-episode EVAL grid have **ZERO clip overlap** — MEASURED: 141 eval clips,
+4,572 train clips, **intersection = 0**.
+
+⇒ `enable_agent_join` computes `n_stable = 0`, `n_legacy = 0`, and raises at
+`refc_v3_train.py:1349`:
+
+> `[v3] REFUSING: the agent join covers ZERO of 141 episodes … That is the wrong
+> join for this corpus — a run would stamp the flag and train no detector.`
+
+⇒ **P1-IN with `--eval-every 500` would die before the first step.** This is the
+refusal working correctly; it is not a bug.
+
+⭐ **THE FIX, PREPARED.** The **B1 EVAL join already exists** as
+`CONTROL_b1eval_recon.jsonl.xz` (10,012,564 B, md5
+`3ddb42ecbd3926066795a94587af2aed`, **139/141 clips**, 26,394 rows, built with
+`--pose-source reconstruct`; the 2 misses are `no_obstacle`). The trainer takes
+**one** `--agent-join`, so the two must be **one file**. `xz` is a multi-stream
+format and `JoinFileReader` opens with `lzma.open(p, "rt")`
+(`train_p8_occupancy.py:333`), which reads across concatenated streams:
+
+```
+cat b1train_agents.jsonl.xz CONTROL_b1eval_recon.jsonl.xz \
+  > b1_train_plus_eval_agents.jsonl.xz     # 327,041,136 B = 317,028,572 + 10,012,564
+```
+
+⭐ **VERIFIED THROUGH THE TRAINER'S OWN CODE PATH**, not asserted:
+`lzma.open(combined, "rt")` reads **875,657** rows = **849,263 + 26,394**,
+exactly the sum. Both streams are visible to the reader.
+
+⇒ **`--agent-join` for the P1-IN arm must point at the COMBINED file**, not the
+train join. `LAUNCH_refcv5_v2.sh` uses the combined path and gates on the row
+count before launching.
 
 ---
 
@@ -351,6 +394,45 @@ box; the real launch passes it and must print `v7.0`. **Check that line.**
 
 ## 7. THE PI'S VIDEO FEEDBACK — mapped, with an honest "will not move" column
 
+⛔⛔ **PROVENANCE FINDING: the 12 observations are NOT IN THE REPO.** They exist
+only in the Claude session transcript
+(`C:\Users\Admin\.claude\projects\G--Meine-…-TanitAD\57b6753a-…jsonl:131387`,
+`ts 2026-09-06T15:22:05Z`, plus two forked copies). A scan of **10,076**
+working-tree files and **11,420** tracked files found **no repo file carrying the
+list verbatim** — the repo refers to them only *by number*. ⇒ **The PI's own
+words are stranded outside git**, which is precisely the failure the
+`AGENT_OPERATING_STANDARD.md` exists to prevent. **Recommend banking them.**
+
+⚠️ **And the numbering is only half-anchored:** just **6 of 12** carry an
+explicit numbered back-reference in the repo — (1), (2), (6), (8), (10), (12).
+The rest are topic-matched. Marked below.
+
+| # | the PI's observation (abridged; typos are his) | what addresses it | ⭐ **will refcv5-v2 move it?** |
+|---|---|---|---|
+| **1** ✅ | *"missing … the contraints of startegic and tacticals goals and actions … estimate the right contsriants like position and time"* | `C-ENV-1`, `stack/tanitad/eval/constraints.py` | ⛔ **NO.** Eval-side scoring only. P4's strategic head is **wired to nothing** (§4), and the tactical vocabulary is supervisable on **11.43 %** of the horizon. |
+| **2** ✅ | *"The selector is not choosing the right trajectory … better ones are included"* | ⭐ **P14** | ⭐ **PARTIALLY — the one genuine win.** Ceiling **+0.2813 m [+0.2127, +0.3543]**, a >2×-better path in the fan on 41.09 % of windows. ⚠️ **98.9 % ALONG-TRACK; curvature NOT separated.** The road-mark half of his remark is **NOT MEASURABLE**, and the measured defect is **longitudinal** (`a_lon` oracle recovers 74.2 %). **This is not a steering fix and must not be sold as one.** |
+| **3** ⚠️ | *"you wrote the mode is not reading the nav token at inbference … Is it true?"* | direct question to us | ⭐ **ANSWERED — and the overlay was wrong.** The nav token **IS** consumed, at train **and** eval (`refc_v3.py:1277`; `--nav-from-v7`). ⛔ **But the honest answer has a second half:** its provenance is `ego-future` on **4,719/4,719** records, so what the model reads is an **ORACLE**, not the production nav command (§3, Finding N). |
+| **4** ⚠️ | *"the model is not … following the nav commands as stated in the roadabout example"* | P10 `g_str` sign | ⛔ **NO.** The repo's own verdict is **"the PI is right"** and *"not a cherry-pick; it is the typical case"*. The repaired steering signal turns left and **the plan does not follow it** — converting it needs a ~40k retrain, a **PI spend decision**. |
+| **5** ⚠️ | *"Why does the gt trajectory in the roaubout expample is not smooth … the gradiant is not continious"* | — | ⛔ **NO — and there is NO refcv4b-scoped answer anywhere.** The only prior art is **refcv3**-scoped `D-REFCV3-SMOOTH4` (part rendering artefact ×7.44, part real defect). ⇒ **an open GAP.** |
+| **6** ✅ | *"The trajectory selection is jumoping between consecutive frames"* | `D-SELQ-STAB-9`; deadband **REFUTED** | ⛔ **NO.** Nothing in this composition targets temporal stability of the pick. |
+| **7** ⚠️ | *"the spped of refcv4b is overshooting and very wrong, this must be fixed"* | ⛔ **no repo stream claims (7)** | ⛔ **NO.** ⚠️ **Correcting the brief:** the repo binds **P15 to instruction (10), not (7)**. The nearest instrument is `frac_over` / `frac_under_when_allowed` in `constraints.py` — **eval-side scoring, not a training lever.** |
+| **8** ✅ | *"not learning to avoid collisions or keeping enough dspace to the infrastructuire"* | **P1** (agents) + P7 (unported) | ⚠️ **P1-IN ONLY, and only half.** Agent conditioning is the environment link and computes `v_rel_x`. ⛔ **Infrastructure clearance is NOT MEASURABLE AT ALL** (`D-CLEARANCE-IS-AGENT-NOT-INFRA-1`): the 11th obstacle class is `train_or_tram_car`, and `protruding_object` is overhead (bottom face +1.68 m) while the join **drops `z`**. P7's distance-keeping cost is still unported. **P1-OUT moves this by nothing.** |
+| **9** ⚠️ | *"the output trahjectory are not smooth, I thought we are forcing this by conctrsuction"* | P5 (already landed) | ⛔ **NO NEW MOVEMENT.** P5 landed **before** this arm: curvature **−26 %** on a held-out split, ADE not separated. ⚠️ *"halves the ADE"* was an overstatement propagated into four artifacts — it is **−30.7 %**. ⛔ And REF-C remains **~84× worse on curvature than a plan that never steers** (0.02737 vs 2.30973). **Smoothness is not addressed by refcv5-v2.** |
+| **10** ✅ | *"max speed … the model muist learn to adapt it speed … and reach the max speed when the situation allows"* | **P15** | ⛔ **NO — the channel is DEAD CODE.** `max_speed_input.py` has **zero consumers**, no CLI flag, and the test its own docstring cites **does not exist** (§3, Finding M). The slot is left and the flag is absent, as briefed. |
+| **11** ⚠️ | *"The model is not reactiong to traffic light by braking"* | `D-TLIGHT-1` | ⛔ **NO.** The label exists and **reaches nothing**. Of 779 records only **175 are `grounded`, 604 `disputed`**; `traffic_light_visible = False` elsewhere is **not-probed, not absent** (the question was asked on 998/4,572 clips). Slot left; dependency flagged. |
+| **12** ✅ | *"compltelty ignroing or not activating lane changes, checvk this if there is a systematic error"* | root cause **FOUND** | ⛔ **NO.** The emitter reaches **5 of 8** lateral actions; `LANE_CHANGE_L`/`LANE_CHANGE_R`/`ABORT_LC` are structurally unreachable (`s2_geom_emit_v7.py:446/:449/:452`, verified). Text-side supply ceiling **105 clips ≈ 2.2 %** — a **CORPUS** fact ⇒ repairing the emitter makes the class **expressible, not supplied**. |
+
+### ⭐ The honest total
+
+**Of 12 observations, refcv5-v2 as composed moves ONE (#2, and only its
+longitudinal half), answers ONE (#3, with a correction the PI will want), and
+half-moves ONE (#8, P1-IN only). NINE will not move.**
+
+⇒ **This arm is a selection-ranking and environment-conditioning arm. It is not
+a smoothness arm, not a lane-change arm, not a traffic-light arm, and not a
+speed-limit arm.** Reporting it as *"addresses the video feedback"* would be
+false.
+
 ---
 
 ## 8. DELIVERABLE MANIFEST
@@ -361,4 +443,39 @@ box; the real launch passes it and must print `v7.0`. **Check that line.**
 | `ship_and_gate.sh` | same dir | no |
 | `LAUNCH_refcv5_v2.sh` | same dir | no |
 | `raw/pod_vs_head_flags.json` | same dir | no |
-| **`b1train_agents.jsonl.xz`** 317,028,572 B md5 `1c985e6d…3558` | `devbox:C:\Users\Admin\tanitad-caches\b1-train-join-20260906\` **+** `tanitad-a40:/workspace/TanitAD/data/joins/` | ⚠️ **NOT IN GIT** — only its `.meta.json` is committed. Two disks now, neither of them the repo. |
+| **`b1train_agents.jsonl.xz`** 317,028,572 B md5 `1c985e6d…3558`, 849,263 rows | `devbox:C:\Users\Admin\tanitad-caches\b1-train-join-20260906\` **+** `tanitad-a40:/workspace/TanitAD/data/joins/` | ⚠️ **NOT IN GIT** — only its `.meta.json` is committed. Two disks now, neither of them the repo. |
+| **`CONTROL_b1eval_recon.jsonl.xz`** 10,012,564 B md5 `3ddb42ec…2aed`, 26,394 rows, 139/141 clips | `devbox:C:\Users\Admin\tanitad-caches\b1-train-join-20260906\` | ⛔ **ONE PLACE ONLY, and NOT IN GIT.** |
+| **`b1_train_plus_eval_agents.jsonl.xz`** 327,041,136 B, 875,657 rows — *the file `--agents head` must use* | `devbox:scratchpad` **+** `tanitad-a40:/workspace/TanitAD/data/joins/` | ⚠️ **NOT IN GIT** (derived: `cat train eval`, reproducible in one command). |
+
+### ⛔ ESCALATION — integration needed, and it will otherwise sit unread
+
+1. **Ship `stack/` to `tanitad-a40`** once the sibling's trainer edits land.
+   Until then **no composed arm can carry a single one of its levers.**
+   `ship_and_gate.sh` does it and verifies by content with a live control.
+2. **Bank the PI's 12 video observations into the repo.** They exist only in a
+   session transcript (§7). The programme has been answering them by number for
+   a day against a source that is not under version control.
+3. **Bank the three agent-join artifacts** (or record them in
+   `ASSET_INVENTORY.md` with their md5s and build commands). Two of the three
+   live on exactly one disk each.
+4. **P4 needs wiring**, not building. `refc_strategic.py` is complete and
+   unreferenced; a `--str-goal-tok-head` flag plus a call site would let the
+   15-token vocabulary actually train. Until then the PI's *"use the whole
+   tactical and strategic vocab"* is met on the tactical half only.
+5. **D-TRISEG needs its named hand-off closed** — substitute
+   `anchor_twoseg.roll_bank` into `AnchoredDiffusionDecoder.roll_bank`. The
+   measurement passed nine bars; the decoder still refuses the shape.
+
+### Verification status
+
+| check | result |
+|---|---|
+| pod trainer flag census | ⭐ **MEASURED** (md5 + flag diff + control) |
+| 38/38 launch flags in HEAD `--help` | ⭐ **PASS**, 3 negative controls correct |
+| P14 paired guard, both directions + control | ⭐ **PASS** (mutation, not inspection) |
+| P1 agent guards, both + control | ⭐ **PASS** (mutation) |
+| composed P1-OUT end-to-end smoke | ⭐ **PASS**, `sampler_ranks_the_fan: True` |
+| combined join readable by `lzma.open` | ⭐ **PASS**, 875,657 rows |
+| agent join md5 on pod | ⭐ **PASS**, byte-identical |
+| `pod_currency_audit.py --host tanitad-a40` | ⛔ **INCONCLUSIVE** — started, produced no output in ~50 min (history-walk over a flapping mount). ⛔ Per `refcv5_preflight.py`'s own rule, **INCONCLUSIVE counts as a FAILURE, never a pass.** Must be re-run and must pass as part of `ship_and_gate.sh`. |
+| `refcv5_preflight.py` on the pod | ⛔ **NOT RUN** — it must run *after* the ship step, against the shipped code. |
