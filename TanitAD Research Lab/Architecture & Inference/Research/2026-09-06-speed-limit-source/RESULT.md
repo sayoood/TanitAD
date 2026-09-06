@@ -259,9 +259,13 @@ I do not claim to know.**
   instrument for option (a) is already WRITTEN.** Its own docstring records the
   48-clip pilot measuring the model **fabricating band edges on 48 % of clips**,
   which is why VTARGET was left kinematic. ⚠️ I found **no banked output** of
-  either script carrying populated `sign_reads`; that absence is
-  **INCONCLUSIVE, not established** — a repo-wide search times out on this
-  mount and I scoped mine to `stack/`.
+  either script carrying populated `sign_reads`. ⛔ **That absence is
+  INCONCLUSIVE, not established.** A repo-wide `find` by name completed
+  (exit 0) and returned no output directory — but that is **not evidence**:
+  the script's own usage writes to `--out /workspace/vlm_route` **on pod3**,
+  i.e. **off-repo by design**. The only in-repo trace is
+  `Project Steering/G1_SIGN_OCR_GRADING_SHEET.md`. Settling it needs a pod
+  probe, which I did not run.
 * **`g_tac.goals.SPEED_BAND` / `a_tac.lon_args.v_target_ms`** — ego-future,
   already refuted by the sibling. Not revisited.
 * **`strata.road_class`** — circular. Not revisited.
