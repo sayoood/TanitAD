@@ -10564,3 +10564,283 @@ that branch, and `describe` omits the field when there are no controls.
 
 **Suite after the fix:** `stack/tests` (twoseg + the anchor regression set) **118 passed, 17 skipped**.
 This row APPENDS the correction rather than rewriting D-TWOSEG-1.
+
+
+### ⚠️ D-COT-LOADER-1 · UPDATE — the mutation proof was RE-RUN on the SHIPPED bytes, because the file was edited twice after the first run.
+**Appended (not rewritten) 2026-09-06.** ⛔ **A proof run against a file you then edit is a proof
+about a file that no longer exists.** After D-COT-LOADER-1's first mutation run,
+`alpamayo_records.py` gained two further edits — the swallow warning (which produced
+D-COT-LOADER-6) and the `318 carry none` docstring correction — so the proof was re-run against the
+bytes actually shipped.
+
+| state of `alpamayo_records.py` | md5 | result |
+|---|---|---|
+| ⭐ **SHIPPED, fixed** | `cf1f5f7d87b86c9706fb6e0dda99d1a1` | ⭐ **19 passed** |
+| ⭐ **SHIPPED, defect re-introduced (1 line)** | `fe3af15ef1bf10e1b18df3f242d6e80d` | ⛔ **12 failed, 7 passed** |
+| ⭐ **SHIPPED, restored** | `cf1f5f7d87b86c9706fb6e0dda99d1a1` (identical to the pre-mutation backup) | ⭐ **19 passed** |
+| *(the earlier run, superseded)* | `82dba13f…` / `73617a39…` / `82dba13f…` | 17 passed / **12 failed, 5 passed** / 17 passed |
+
+⭐ **The SAME TWELVE fail in both runs**, all nine reachability arms among them. The passing count
+moves 5 → 7 for the obvious reason: the two swallow tests added in between both use a source that is
+PRESENT, so the mutation cannot reach them. ⭐ **Independent cross-check that the guard code itself
+never moved:** the entire mutated path (`path = records_path()` through `read_parquet`) is
+**byte-identical between the two runs — 1,615 characters each**. The two later edits touch a
+docstring and a warning emitted *after* a successful load; neither is on the missing-path branch.
+
+
+---
+
+## ⛔⛔ D-ROLL-1 — EVERY BANKED v7.0 CHECKPOINT WAS UNROLLABLE (AND THE LIVE refcv5 RUN UNRESUMABLE) FOR ~90 MINUTES; THE CONSTRUCTION IS FIXED AND PROVEN ON THE REAL WEIGHTS (2026-09-06, rollability agent)
+
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-rollability/`
+(`RESULT.md`, `raw/`). **Evidence class MEASURED (ours). 0 GPU for the fix and every proof.**
+**Surface:** dev box, one process. ⛔ The A40 was not touched (reserved for refcv5).
+
+### D-ROLL-1a — SUPPORTED. The head was built on the VOCABULARY ALONE, and five records prove it could not be.
+`RefCV3Model.__init__` (commit `ee70bdb`) built `tac_goal_tok_head` under
+`if _vv != "kin3":`, and `_pin_trainer_cfg` pins `tac_vocab_version = "v7.0"` for **any** run
+launched with `--v7-labels` — i.e. every current arm. A rebuild therefore carried **11,286 params**
+(22 tokens x (d_tac + 1)) that no recorded `param_breakdown` names, and
+`refcv3_arm.cross_check_config` REFUSED, naming both ledgers. **MEASURED, five run records, none of
+which carries a `tac_goal_tok_head` line:** `refcv4b@40284` (total **107,058,488**),
+`refcv3-rlmin@40284` / `refcv3-ol@30000` / `refcv3-viz@40284` (**107,032,901**), and
+⛔⛔ **`refcv5-ddim-b1-v72-40k`, the LIVE A40 RUN (108,246,216)** — which rebuilds through this same
+file on every supervisor relaunch, so the regression made a **running training unresumable**, not
+merely a checkpoint unrollable. ⭐ That is also what settles the default: **ON would have broken it.**
+
+### D-ROLL-1b — SUPPORTED. The fix is an OPT-IN config flag, default OFF, and the guard was never touched.
+`RefCV3Config.tac_goal_tok_head: bool = False`; the gate becomes
+`if _vv != "kin3" and bool(getattr(cfg, "tac_goal_tok_head", False)):`. ⛔ **No cross-check was
+loosened and the head was NOT deleted** — only the decision to build it moved from the vocabulary to
+an explicit lever. ⭐ It is the rule `RefCV3Config` already states twice: `nav_args_inject`
+(*"Default OFF: no banked arm's recipe changes"*) and the v4 pins (*"a default that moved would
+silently change a training in flight"*). ⚠️ The vocabulary stays **NECESSARY**: `kin3` refuses the
+head even when the flag is True, and that control is now **stronger** than before (it asks for the
+head, so it tests the vocabulary rather than the flag's default).
+
+### D-ROLL-1c — ⛔⛔ THE BAR: SUPPORTED on REAL weights through `refcv3_arm.load_model`, the function that refused.
+`raw/roll_loadmodel.json`, `raw/roll_proof.json`. **`n_refused = 0` of 4.**
+
+| checkpoint | step | missing | unexpected | rebuilt total | recorded total | cross-check |
+|---|---|---|---|---|---|---|
+| `refcv4b@40284` (md5 `99b573e8277d94a5e3bfbf630cb4d751`) | 40,284 | **0** | **0** | 107,058,488 | 107,058,488 | **PASS** |
+| `refcv3-rlmin@40284` | 40,284 | 1 *(inert)* -> **0** | **0** | 107,032,901 | 107,032,901 | **PASS** |
+| `refcv3-ol@30000` | 30,000 | 1 *(inert)* -> **0** | **0** | 107,032,901 | 107,032,901 | **PASS** |
+| `refcv3-viz@40284` | 40,284 | 1 *(inert)* -> **0** | **0** | 107,032,901 | 107,032,901 | **PASS** |
+
+⚠️ **The single missing key on the three refcv3 rows is NAMED, not glossed:**
+`core.decoder.anchor_controls`, the **pre-existing, documented INERT-BUFFER tolerance banked
+2026-09-05** — it predates this regression, `load_model` was already built to accept it, and it is
+recorded in the provenance. After it: **0/0 on all four.** ⭐ **Same-breath non-zero controls:**
+551/544/544/544 checkpoint tensors read, 107,058,488 / 107,032,901 live parameters returned.
+
+### D-ROLL-1d — SUPPORTED. TWO-SIDED MUTATION PROOF at the SOURCE, on the real refcv4b weights.
+`raw/run_mutation_proof.py` -> `raw/mutation_proof.json`. Mutates the **off-Drive mirror only** and
+restores in a `finally` with a **shape-asserted** md5 compare (two empty strings compare equal).
+
+| state | `load_model(refcv4b@40284)` | `test_refc_v3_rollability.py` |
+|---|---|---|
+| **FIXED** (`7aeed46252c26876c1f9e769028a997f`) | **LOADED** 0/0, total 107,058,488 | ⭐ **GREEN** — 11 passed |
+| **DEFECT** (`55ecdab097a86f8837013e72ddc82b95`) | ⛔ **REFUSED** — `tac_goal_tok_head: 11286`, total 107,069,774 | ⛔ **RED** — 1 failed |
+
+**RESTORE VERIFIED** to the fixed hash. **`TWO_SIDED_PROOF: PASS`.**
+
+### D-ROLL-1e — SUPPORTED. The gate is REACHED on every entry point, not merely correct when called.
+The rule this programme earned today: *correctness and wiring are different claims, and only the
+first was ever tested* — `refc_v3_train.main` runs `preflight` **only under `--preflight`**, so a
+guard wired there covers one launch path of two. Two tests in
+`stack/tests/test_refc_v3_rollability.py`: **(structural)** AST over all of `stack/tanitad/` —
+`TacGoalTokenHead` has **exactly ONE** instantiation site and it is inside `RefCV3Model.__init__`
+under the gate's exact text, so **there is no second path to cover**; the scan asserts it **READ**
+its files (`scanned > 50`, `unreadable == []`), because 0 hits from an unopenable file is a claim
+about the SEARCH. **(empirical)** AST proves `preflight` and `train` both build through ONE helper
+(`_pin_trainer_cfg`), then a counter on the head's `__init__` measures the gate on a config **that
+helper actually produced** from a real recorded `argv`: **0 heads by default, exactly 1 when the
+flag flips** — the second half being the control against a counter that never increments.
+⚠️ **A third construction site is NAMED rather than hidden:** `_lan_arm_preflight` builds a
+`RefCV3Model` without `_pin_trainer_cfg`; it is unaffected precisely because the gate lives in
+`__init__` and not in a launch path.
+
+### D-ROLL-1f — SUPPORTED. A SECOND STALE CONSUMER was prevented by not creating one.
+Root-cause class cited: *the eval arm claimed it computed `a_star` "exactly as the trainer computes
+it" — true until the trainer was corrected on 2026-09-04, never updated.* **Two consumers, one
+convention, one stale.** `param_breakdown_v3` reports the ledger line by reading the **BUILT
+OBJECT** (`model.tac_goal_tok_head is not None`) and **never** re-derives
+`_vv != "kin3" and cfg.tac_goal_tok_head`, so it cannot disagree with the constructor — it is not
+making an independent judgement. Pinned by `test_ledger_line_tracks_the_built_object` over all four
+(vocabulary x flag) combinations, plus sum-equals-total in **both** states.
+
+### D-ROLL-1g — test fallout: every sibling assertion preserved, suite green.
+Two sibling files pinned the unconditional construction (7 + 1 failures). Updated **minimally** —
+only the BUILD states the lever; **no assertion changed, relaxed or removed**, and one control
+**strengthened**. `test_tac_goal_wiring.py` 17 passed · `test_refc_v3.py` 20 passed · **new**
+`test_refc_v3_rollability.py` 11 passed · combined with `test_refc_v4.py` and
+`test_goal_point_trainer_flags.py`: **103 passed**. ⭐
+`test_banked_records_rebuild_to_their_recorded_param_breakdown` carries the **real recorded `argv`
+and `param_breakdown`** of refcv4b, refcv3-b1-v72 and the **live refcv5** as fixtures and rebuilds
+each through the trainer's own parser — the rollability bar, **in CI, without the 1.3 GB weights**.
+
+### D-ROLL-1h — ⛔ ESCALATION: the trainer opt-in flag (`refc_v3_train.py` is a sibling's file).
+The config field exists; the CLI flag does not. Exact diff in `RESULT.md` §8
+(`--tac-goal-tok-head` + a two-line pin in `_pin_trainer_cfg`). ⚠️ **Until it lands the head can
+only be switched on programmatically** — so no new arm can accidentally train it and no banked arm
+can lose rollability. That is the safe failure direction.
+
+### D-ROLL-1i — `C3_os_reproduction` CAN be re-run, and one blocking claim is SUPERSEDED.
+⭐ The instrument-level blocker is gone: `refcv4b@40284` loads 0/0 on this box in one process, and a
+**full four-family roll now completes end-to-end** here (2-clip cost probe, 69 windows, `os` ADE
+0.2363, all four families present, `raw/c3_cost_probe.json`) — which could not happen 90 minutes ago.
+⚠️ **The escalation's *"both refcv4b number families are unquotable"* is TOO STRONG and is corrected
+rather than quietly dropped:** `D-BANK-TEMP-1a` (appended earlier today) MEASURED
+`C3_os_reproduction` **PASS** on the banked A40 dump (0.2975 vs 0.2975, `abs_diff` 2.6e-05 against a
+0.001 tolerance). ⛔ **The A40 family (`os` 0.2975, `os_navzero` 0.3928) IS quotable; the Thor family
+(0.2965 / 0.3926) is not**, and the 0.001031 FAIL is the **cross-hardware** roll only. ⇒ What is
+genuinely open is the **cross-hardware disagreement**, whose decisive form is every arm rolled **on
+ONE surface in ONE process** — now possible locally: the 141-clip eval cache (14 GB / 142 files),
+the v7.2 eval labels and the B1 lead block are all on this box. **MEASURED cost: ~10.7 s/episode
+=> ~25 min of rolling for the full 141-clip / 4,823-window grid.** That is cheap, and the roll is
+launched.
+
+⛔ **Vocabulary:** the nav command is an **INPUT simulating the vehicle's nav system**, never an
+oracle. ⛔ **No label set was emitted, rebuilt or regenerated.** ⚠️ `H-ESTIM-SEED-1` does not bite
+on D-ROLL-1a..g: these are **structural identities** (a module exists or it does not; a key count is
+0 or it is not), not differences between trained arms, so no replicate arm is owed.
+
+### D-B1TRAIN-JOIN-1 — the B1 TRAIN agent join EXISTS: 4,427 / 4,572 clips, 849,263 labelled frames, 28,053,187 boxes
+**Status: SUPPORTED (MEASURED, ours).** **Class: label artifact (Tier N/A — not an eval result).**
+
+WP-6 agent conditioning was blocked on a B1 **TRAIN**-scoped `obstacle.offline` join; the B1 EVAL
+package named it as its own next lever. It now exists: `b1train_agents.jsonl.xz`, md5
+**`1c985e6d6ad34e605c4ebd30cb353558`** (scope compressed), **317,028,572 B**, built dev-box CPU in **30.1 min**, **zero GPU**
+(the A40 was left to `refcv5-cap-b1-v72-40k`).
+⛔ **Name the corpus.** B1 TRAIN = `r0_selection.parquet` (4,719) − the 147 EVAL clips = **exactly
+4,572**. The pre-existing `train2400_agents.jsonl.xz` covers **182 / 4,572 = 3.98 %** of it — a
+*different* corpus, which is why "the train join does not exist" and "we have a train join" were
+both true and both misleading.
+Coverage: **4,440 / 4,572 = 97.11 %** of clips have an `obstacle.offline` member
+(132 have none — the dataset card's own 97.44 % is the cross-check; **NO_LABEL, never
+"road clear"**). Consumer-verified by LOADING, not inspecting: `JoinFileReader` reports
+`n_records=849,263 n_clips=4,427 max_agents_per_frame=397`, `lookup(uid, 10)`
+**HIT**, `lookup(uid, 100000)` **None** (must-miss control).
+⛔ **The reader must get STABLE ids:** the 63-bit uid is unique **4,572/4,572**, but the 16-bit
+legacy id puts **258 clips (5.6 %)** in colliding groups ⇒ never `--agent-join-allow-legacy-ids`.
+
+### D-B1TRAIN-POSE-2 — the 161 GB epcache blocker DISSOLVED: reconstructed poses reproduce the EVAL join BYTE FOR BYTE
+**Status: SUPPORTED (MEASURED, ours).** **Class: instrument / cost correction.**
+
+The builder read poses from `*.v2ep.pt`; the B1 TRAIN epcache is **~161 GB** and lives on Thor,
+while the join reads exactly one `[T, 4]` array (~6 KB) per 34 MB record. Rebuilding the poses from
+`{clip}.timestamps.parquet` + egomotion (`episode_grid` → `episode_poses`, the same two functions
+`physicalai.build_episode` uses) and re-running the **141 EVAL clips** reproduces the banked
+v2ep-built artifact at md5 **`3ddb42ecbd3926066795a94587af2aed`**, **10,012,564 B** — identical.
+⭐ The pose source changed and the output did not; the upstream per-clip proof
+(`grid_crosscheck.json`: `max_dxy_m 0.0`, `max_dyaw_deg 0.0`, `max_dv_mps 0.0` on 20/20) is thereby
+confirmed end to end on the real product rather than on a proxy statistic.
+⚠️ Same class as DE-C152: **price what the CONSUMER reads, not the file you found on disk.**
+
+### D-B1TRAIN-GATE-3 — the EVAL speed gate is NOT reconstructible on TRAIN, and the first replacement was refuted by its own control
+**Status: SUPPORTED (MEASURED, ours).** **Class: instrument.**
+
+The EVAL gate needs two *independently produced* speed arrays indexed by the same frame. B1 TRAIN
+has neither (no lead block; the poses are built on the camera grid, so `poses[:,3]` **is** the
+reference's own speeds). ⛔ Manufacturing a difference by re-sampling one side at the *registered*
+times reads, on the 141 EVAL clips, **true 1.191e-01 m/s vs mis-join(+1) 2.134e-02 m/s — the
+CONTROL SMALLER THAN THE TRUE VALUE, separation 0×**: it had become a registration-PRECISION
+statistic, the same confusion the EVAL package diagnosed for its invented 5e-3 s time gate,
+re-introduced one package later.
+⭐ The gate now asks the key-correctness question in **frames** (a frame index is an integer, so the
+boundary is 0.5; thresholds ≤ 0.25 true and ≥ 0.75 control sit a 2× margin either side, and the
+control must read a **known ≈ 1.0**). MEASURED on kept clips: **true 0.1872, control
+0.8193, 4.4×**; corpus median/p95/p99 **0.0032 / 0.0103 / 0.0317** frames.
+⭐ The gate is applied **PER CLIP** — a failing clip is EXCLUDED and NAMED, which is **stricter**
+than the global max (that would pass a corpus containing a clip at 0.24 frames) — with a corpus
+bound of 0.5 % so "exclude the failures" cannot absorb a systematic defect. Excluded here:
+**7 of 4,434 = 0.158 %**.
+
+### D-B1TRAIN-REGUNDER-4 — `register_poses_to_time` is UNDER-DETERMINED on near-stationary clips, and its own floor admits the failures
+**Status: SUPPORTED (MEASURED, ours — 7 offenders vs 6 controls, no overlap).** **Class: instrument defect.**
+
+| group | n moving poses | `n_probe` | mean speed | frame error |
+|---|---|---|---|---|
+| **7 offenders** | 9–22 of ~200 | **9–22** | 0.148–0.524 m/s | **0.2506–1.0506** |
+| **6 controls** | 152–201 | **96** (cap) | 2.52–29.04 m/s | **0.0020–0.0075** |
+
+Mechanism, exactly: probes are restricted to poses whose **central-difference** neighbour distance
+exceeds `MIN_PROBE_MOVE_M = 0.30 m`; the floor to attempt a fit is `MIN_MOVING_PROBES = 8` and the
+cap is `n_probe = 96`. A near-stationary clip fits `t = a + b·i` from a 9-point lever arm and
+**extrapolates the intercept across ~200 frames**.
+⛔ **The cliff edge:** `065482b3` has **9** moving poses — **one above the floor of 8** — so it did
+*not* raise `RegistrationError`; it returned a confident fit **1.0506 frames wrong**. *A guard that
+refuses at 8 returns a wrong answer at 9.* (Its EVAL sibling `af6f5964` had 0 and was correctly
+rescued.) The error is monotone in the probe count, and the two groups do not overlap on either axis.
+⭐ **Named lever, not run:** the camera timestamp grid is **constitutive** —
+`physicalai.build_episode` *defines* frame time as `linspace(t_cam[0], t_cam[-1], n_target)`, so the
+registration only *recovers* what the grid *is*. Falling back to the grid when **`n_probe < 32`**
+(a pre-fit criterion, never selected on the resulting error) recovers every excluded clip. Not run:
+a ~40 min rebuild to recover 0.158 % of clips whose ego mean speed is **< 0.53 m/s**, i.e.
+clips contributing essentially nothing to a **closing-rate** representation.
+
+### D-B1TRAIN-WIRE-5 — the pull's published 2.3 GB was the WRONG QUANTITY; MEASURED wire is 2.673 GB
+**Status: SUPPORTED (MEASURED, ours).** **Class: cost correction.**
+
+The plan of record carried **2.3 GB**, ESTIMATED as `505 KB × 4,572` from **one** datum with no
+receipt — and that anchor measures **extracted parquet bytes on disk**, not **HTTP range-request
+wire volume**: the 256 KiB zip tail is read once per chunk, **1,387 times**, and the anchor prices
+it zero. MEASURED with a byte counter separating the per-chunk FIXED phase (**262,146 B**) from the
+per-clip MEMBER phase: **2.673 GB over 17,391 range requests in 18.5 min**, against
+**2.311 GB** extracted — the wire figure is **15.7 % above** the disk figure.
+⚠️ **Report the miss:** a 40-chunk sample predicted **3.107 GB, 95 % CI [2.665, 3.549]** — the
+interval covered the truth but the point estimate was **1.16× high**, because the sample drew
+heavier-than-average members (619,875 B/clip vs the corpus's 517,098 B). Under-powered and
+said so.
+⚠️ **And 2.300 GB looks nearly right for the wrong reason:** extracted came in at 2.311 GB
+because **two errors cancelled** — the estimate counted 4,572 clips when only **4,440** have a
+member, and under-counted bytes per clip.
+⭐ **Quota (read BEFORE any byte moved):** account `Sayood`, `isPro: true`, period ends 2026-10-01;
+owned HF storage **≥ 761.625 GiB**; ZeroGPU Space **SLEEPING, `hardware.current = None`**. The pull
+is a **READ** of the public `nvidia/PhysicalAI-Autonomous-Vehicles` writing to local disk, so it adds
+**0 B** of storage and **0 s** of GPU. ⚠️ `GET /api/models?author=Sayood&full=true` reports
+`usedStorage: 0` for **all 46** owned repos — a field it does not populate, not a real zero.
+
+### D-B1TRAIN-SIDECAR-6 — both B1 agent joins were UNLOADABLE by the trainer: the digest scope was declared where no consumer reads it
+**Status: SUPPORTED (MEASURED, ours) — FIXED at source and migrated.** **Class: instrument defect.**
+
+`refc_v3_train.py --agent-join-verify auto` calls `join_meta.read_digest_scope`, which requires a
+**top-level `digest_scope` block** and **REFUSES** a sidecar declaring nothing — deliberately, with
+no fallback. `build_b1_agent_join.py` wrote only **`summary.digest_scope`, a STRING nested inside
+`summary`**, which that reader never looks at ⇒ both the B1 **EVAL** and B1 **TRAIN** joins would
+have killed a train run at startup with `JoinDigestScopeMissing`, on files that were themselves
+perfectly good.
+⚠️ **A second, independent defect in the same field:** the builder emitted `"plain"` for a non-`.xz`
+output while `ARTIFACT_SCOPES` is `("compressed", "decompressed")` — a value that raises even if a
+reader found it.
+⭐ **Found only by reading the CONSUMER.** Nothing in the builder, the sidecar or the join looks
+wrong on its own; the defect exists only in the contract between them. Same family as DE-C152
+(*price what the consumer reads*) with the object swapped from bytes to schema.
+⭐ **Fixed and migrated:** the builder now calls `join_meta.attach(...)` and REFUSES to publish
+without the declaration; the two built sidecars were migrated with `join_meta.backfill`, which
+MEASURES which artifact the digest covers — B1 EVAL resolved unambiguously to `compressed`
+(`3ddb42ecbd3926066795a94587af2aed` vs decompressed `51551ca060d95946f8a25ad59466924a`) — and the
+consumer's own `join_meta.verify` now passes on both. Pinned by two mutation tests.
+
+### D-B1TRAIN-XCHECK-7 — 99.88 % of 1,063,192 shared agent boxes are BIT-EQUAL to an independently built join
+**Status: SUPPORTED (MEASURED, ours — with a mis-join(+1) control).** **Class: independent cross-check.**
+
+The frame gate proves the join's time base; it does not prove the AGENT GEOMETRY.
+`train2400_agents.jsonl` was built by **`build_obstacle_join.py`** from the **parity corpus's v2ep
+epcache** — a different builder, a different pose source, a different corpus — and **182** of its
+clips are in B1 TRAIN. Both key `frame_idx` in the same post-trim space (its `n_frames` 199 = 201 − 2
+confirms n_stack 3).
+
+| | shared boxes | `|Δcx|` exactly 0 | `|Δcx| > 0.05 m` | median `|Δcx|` |
+|---|---|---|---|---|
+| **TRUE** (same `frame_idx`) | 1,063,192 | **1,061,921 = 99.8805 %** | 495 = 0.0466 % | **0.0000 m** |
+| **CONTROL** mis-join(+1) | 1,036,188 | 691 = **0.0667 %** | 938,935 = 90.6143 % | **0.6954 m** |
+
+**Separation 1,497.5×** on exact agreement.
+⚠️ **A ratio deliberately NOT quoted:** median `|Δcx|` control/true computes to **695,400,000×**
+because the TRUE median is **exactly 0.0** — a division by zero in the shape of a spectacular
+result. Retracted inside the banked JSON (not deleted) and replaced by the exact-agreement
+fraction, which is bounded in [0, 1].
+⭐ A third, free consistency check: `visible_frac` is **0.4018** here, **0.4078** on B1 EVAL and
+**0.4106** on train2400 — three joins over **disjoint** clip sets within 0.009 of each other.

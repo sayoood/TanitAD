@@ -1,0 +1,5673 @@
+{
+ "task": "B1 EVAL obstacle.offline -> agent join (WP-6 agent conditioning)",
+ "_evidence_class": "MEASURED (ours; artifact = the jsonl + this meta)",
+ "builder": "stack/scripts/build_b1_agent_join.py",
+ "corpus": {
+  "name": "B1 v7.2 EVAL split",
+  "eps_dir": "C:\\Users\\Admin\\tanitad-data\\refav1-eval141\\eps",
+  "n_v2ep_records": 141,
+  "note": "B1 = the 4,719-clip v7 corpus (4,713 built after the parity gate drops 6 val40 clips); the v7.2 release splits it 4,572 TRAIN / 147 EVAL; 141 of the 147 have pixels in the built B1 epcache and are what refav1 scores on."
+ },
+ "key": {
+  "fields": [
+   "clip_id",
+   "frame"
+  ],
+  "frame_index_space": "RAW v2ep index i in [0, n_target) -- NO n_stack trim; identical to b1_eval_lead_block.npz's `frame`, and DIFFERENT from build_obstacle_join's post-trim `frame_idx` (i - (n_stack - 1))",
+  "why_renamed": "the key is `frame`, not `frame_idx`, so the two index spaces cannot be silently confused"
+ },
+ "args": {
+  "eps_dir": "C:\\Users\\Admin\\tanitad-data\\refav1-eval141\\eps",
+  "ego_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\labels\\egomotion_alpamayo",
+  "obstacle_dir": "C:\\Users\\Admin\\tanitad-data\\physicalai\\labels\\obstacle_offline_b1eval",
+  "lead_block": "C:\\Users\\Admin\\dkhead_run\\inputs\\b1_eval_lead_block.npz",
+  "out": "C:\\Users\\Admin\\tanitad-caches\\b1-agent-join-20260906\\b1eval_agents.jsonl.xz",
+  "tol_s": 0.06,
+  "hfov_deg": 120.0
+ },
+ "summary": {
+  "n_clips_joined": 139,
+  "n_clips_offered": 141,
+  "n_lines": 26394,
+  "wall_s": 52.7,
+  "md5": "3ddb42ecbd3926066795a94587af2aed",
+  "digest_scope": "compressed",
+  "skipped": {
+   "no_obstacle": [
+    "204b15b4-bd0a-4155-b01e-572c55197d0e",
+    "38fe80c1-caf1-45ea-810b-2681ea488c6d"
+   ],
+   "no_egomotion": [],
+   "error": []
+  }
+ },
+ "content_assertion": {
+  "n_lines": 26394,
+  "n_clips": 139,
+  "n_agent_boxes": 905512,
+  "n_visible_boxes": 369310,
+  "visible_frac": 0.4078,
+  "mean_abs_cx_m": 49.2272,
+  "mean_abs_cy_m": 23.4184,
+  "unique_keys": 26394
+ },
+ "alignment_proof": {
+  "n_clips_probed": 139,
+  "gate": {
+   "statistic": "max |v2ep poses[:,3] - block speeds| at the SAME (clip_id, frame)",
+   "why": "both are egomotion interpolated at that frame, so agreement proves the join hit the right clip AND frame; INDEPENDENT of the registration fit",
+   "tol_mps": 0.001,
+   "tol_source": "refav1_arm.py:238 LEAD_SPEED_TOL_MPS",
+   "true_max_dv_mps": 0.00014724284876500848,
+   "misjoin1_min_dv_mps": 0.021294331555569812,
+   "separation_x": 144.6,
+   "min_separation_required": 20.0,
+   "passed": true
+  },
+  "reported_only": {
+   "statistic": "max |recovered t_s - block t0_s|",
+   "true_max_dt_s": 0.010398699604738604,
+   "misjoin1_max_dt_s": 0.10713075347826617,
+   "worst_clip_dt_s": 0.010398699604738604,
+   "n_clips_noncircular": 138,
+   "n_clips_circular_excluded": 1,
+   "instrument_documented_worst_s": 0.0259,
+   "note": "registration PRECISION, not key correctness -- a clip with few registration probes carries a smooth time bias while its frame index is exactly right"
+  },
+  "key": "(clip_id, frame) with frame = RAW v2ep index",
+  "control": "mis-join(+1): frame i+1 read against block frame i, on the SAME statistic as the gate",
+  "passed": true
+ },
+ "conventions": {
+  "frame": "per-frame EGO frame, +x fwd +y LEFT (refb_labels.ego_frame via bev_raster.ego_frame_agents)",
+  "composition": "rig@sample -> world at the sample's OWN timestamp -> ego@frame",
+  "time": "recovered per clip by lead_source.register_poses_to_time over the RAW pose array (grid ~0.1007 s, not 0.1)",
+  "NO_LABEL": "absent (clip, frame) line -- outside the obstacle span; an EMPTY agents list IS a label (labelled clear)",
+  "occ": "0 = agent centre inside the 120 deg front-camera field, 1 = outside while the track continues; IS bev_raster.fov_mask at agent-centre granularity (P4_PREDICATE_IDENTITY), not an independent occlusion label",
+  "sizes": "l = size_x, w = size_y"
+ },
+ "per_clip": [
+  {
+   "clip_id": "01be5919-6e61-45ba-a193-5f447efb4b51",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2394,
+   "n_visible_boxes": 577,
+   "visible_frac": 0.241,
+   "n_tracks": 54,
+   "label_span_s": [
+    0.002,
+    19.995
+   ],
+   "cls_hist": {
+    "automobile": 408,
+    "heavy_truck": 707,
+    "trailer": 718,
+    "other_vehicle": 285,
+    "person": 25,
+    "protruding_object": 131,
+    "rider": 120
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.014121,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00023,
+     "p95": 0.00083,
+     "max": 0.00096
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 9.191754224957549e-05,
+    "misjoin1_max_dt_s": 0.10070327952640155,
+    "speed_max_dv_mps": 1.0957546441758836e-05,
+    "speed_misjoin1_max_dv_mps": 0.14534704519656927,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "060531e1-9935-482e-8c25-2abf37bdc41b",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 10924,
+   "n_visible_boxes": 5697,
+   "visible_frac": 0.5215,
+   "n_tracks": 154,
+   "label_span_s": [
+    0.015,
+    19.998
+   ],
+   "cls_hist": {
+    "trailer": 389,
+    "person": 6189,
+    "bus": 717,
+    "automobile": 2574,
+    "heavy_truck": 254,
+    "rider": 801
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.07606,
+    "b": 0.100663,
+    "residual_m": {
+     "median": 0.00047,
+     "p95": 0.00236,
+     "max": 0.00243
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0006046675539330693,
+    "misjoin1_max_dt_s": 0.10092335262851829,
+    "speed_max_dv_mps": 3.168906833828089e-06,
+    "speed_misjoin1_max_dv_mps": 0.23820910904943204,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "0fa2b231-435e-4700-9138-30f333dc5d6e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1829,
+   "n_visible_boxes": 866,
+   "visible_frac": 0.4735,
+   "n_tracks": 34,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 260,
+    "rider": 1066,
+    "automobile": 503
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.082944,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00155,
+     "p95": 0.00297,
+     "max": 0.00321
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00023893715764344847,
+    "misjoin1_max_dt_s": 0.10090585215764492,
+    "speed_max_dv_mps": 2.5933264815591883e-06,
+    "speed_misjoin1_max_dv_mps": 0.11063383113414105,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "10804db8-d070-444e-a1f1-89c1871588d5",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 3598,
+   "n_visible_boxes": 1040,
+   "visible_frac": 0.289,
+   "n_tracks": 35,
+   "label_span_s": [
+    0.018,
+    19.972
+   ],
+   "cls_hist": {
+    "automobile": 3255,
+    "protruding_object": 200,
+    "person": 139,
+    "rider": 4
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.155729,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00015,
+     "p95": 0.00037,
+     "max": 0.00039
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 8.513831937664862e-05,
+    "misjoin1_max_dt_s": 0.10068710097753808,
+    "speed_max_dv_mps": 6.668706586943074e-06,
+    "speed_misjoin1_max_dv_mps": 0.07927560202662054,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "11e40da1-3d9e-4ee6-8406-8db2eed4a594",
+   "n_frames": 201,
+   "n_labelled": 133,
+   "n_agent_boxes": 548,
+   "n_visible_boxes": 395,
+   "visible_frac": 0.7208,
+   "n_tracks": 17,
+   "label_span_s": [
+    6.699,
+    19.993
+   ],
+   "cls_hist": {
+    "automobile": 364,
+    "other_vehicle": 13,
+    "trailer": 124,
+    "heavy_truck": 47
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.114433,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00201,
+     "p95": 0.00334,
+     "max": 0.00357
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0001980030753223616,
+    "misjoin1_max_dt_s": 0.10086469807532339,
+    "speed_max_dv_mps": 1.0056403851876894e-06,
+    "speed_misjoin1_max_dv_mps": 0.03473478160461596,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "126b3a97-0879-4ff3-9f4a-ea846f8a70ef",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2785,
+   "n_visible_boxes": 586,
+   "visible_frac": 0.2104,
+   "n_tracks": 71,
+   "label_span_s": [
+    0.003,
+    19.993
+   ],
+   "cls_hist": {
+    "automobile": 2360,
+    "person": 302,
+    "heavy_truck": 120,
+    "animal": 3
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.033109,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00099,
+     "p95": 0.0027,
+     "max": 0.00322
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003515672873035669,
+    "misjoin1_max_dt_s": 0.10084541554904801,
+    "speed_max_dv_mps": 3.014882846485989e-06,
+    "speed_misjoin1_max_dv_mps": 0.2216154963378667,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "13c95b6a-5d18-4267-8943-1ddb8fe85008",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 30989,
+   "n_visible_boxes": 11221,
+   "visible_frac": 0.3621,
+   "n_tracks": 409,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 10428,
+    "bus": 2665,
+    "person": 15992,
+    "trailer": 34,
+    "rider": 1826,
+    "protruding_object": 44
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.118602,
+    "b": 0.10049,
+    "residual_m": {
+     "median": 0.00153,
+     "p95": 0.00268,
+     "max": 0.00297
+    },
+    "n_inlier": 90,
+    "n_probe": 90
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.001823988047902958,
+    "misjoin1_max_dt_s": 0.10084036171543599,
+    "speed_max_dv_mps": 9.652599802123518e-06,
+    "speed_misjoin1_max_dv_mps": 0.2124292980046496,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "14157960-84db-4f4e-84f1-a4664086c6f8",
+   "n_frames": 201,
+   "n_labelled": 198,
+   "n_agent_boxes": 478,
+   "n_visible_boxes": 237,
+   "visible_frac": 0.4958,
+   "n_tracks": 12,
+   "label_span_s": [
+    0.108,
+    19.962
+   ],
+   "cls_hist": {
+    "rider": 58,
+    "automobile": 420
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.074164,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00192,
+     "p95": 0.004,
+     "max": 0.00422
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00017007393601471688,
+    "misjoin1_max_dt_s": 0.10068308256021652,
+    "speed_max_dv_mps": 2.910840212422272e-06,
+    "speed_misjoin1_max_dv_mps": 0.09243349115114796,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "142a3a72-6cd4-4056-bb66-c9098f54b7fa",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 410,
+   "n_visible_boxes": 159,
+   "visible_frac": 0.3878,
+   "n_tracks": 13,
+   "label_span_s": [
+    0.043,
+    19.949
+   ],
+   "cls_hist": {
+    "automobile": 403,
+    "other_vehicle": 7
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.023875,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00488,
+     "p95": 0.00664,
+     "max": 0.00686
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00028743083129728966,
+    "misjoin1_max_dt_s": 0.10054338240898275,
+    "speed_max_dv_mps": 3.925875940780088e-06,
+    "speed_misjoin1_max_dv_mps": 0.13919052826147293,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "14bc9fcf-c048-42c3-b35d-0fc13b8ddc04",
+   "n_frames": 201,
+   "n_labelled": 195,
+   "n_agent_boxes": 260,
+   "n_visible_boxes": 112,
+   "visible_frac": 0.4308,
+   "n_tracks": 10,
+   "label_span_s": [
+    0.431,
+    19.904
+   ],
+   "cls_hist": {
+    "heavy_truck": 85,
+    "automobile": 175
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.119258,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00455,
+     "p95": 0.01089,
+     "max": 0.01229
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000388759075828915,
+    "misjoin1_max_dt_s": 0.10105531907582588,
+    "speed_max_dv_mps": 2.352044955244992e-06,
+    "speed_misjoin1_max_dv_mps": 0.14928061142806826,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "16d89725-2f31-4a12-9244-658d2b83994c",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 546,
+   "n_visible_boxes": 324,
+   "visible_frac": 0.5934,
+   "n_tracks": 11,
+   "label_span_s": [
+    0.067,
+    19.995
+   ],
+   "cls_hist": {
+    "automobile": 521,
+    "trailer": 25
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.024688,
+    "b": 0.100503,
+    "residual_m": {
+     "median": 0.00088,
+     "p95": 0.00157,
+     "max": 0.00184
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00042215101960019555,
+    "misjoin1_max_dt_s": 0.1007655269972858,
+    "speed_max_dv_mps": 6.751839909391322e-07,
+    "speed_misjoin1_max_dv_mps": 0.18742104337857102,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "17775e74-2d89-4c4f-9347-c58cea5585cb",
+   "n_frames": 202,
+   "n_labelled": 201,
+   "n_agent_boxes": 18054,
+   "n_visible_boxes": 10241,
+   "visible_frac": 0.5672,
+   "n_tracks": 356,
+   "label_span_s": [
+    0.001,
+    19.997
+   ],
+   "cls_hist": {
+    "heavy_truck": 751,
+    "person": 9739,
+    "automobile": 4939,
+    "trailer": 8,
+    "rider": 2336,
+    "other_vehicle": 182,
+    "protruding_object": 84,
+    "bus": 15
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.041839,
+    "b": 0.100492,
+    "residual_m": {
+     "median": 0.00205,
+     "p95": 0.00362,
+     "max": 0.00374
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 202,
+    "true_max_dt_s": 0.000642646407294313,
+    "misjoin1_max_dt_s": 0.10113496168121366,
+    "speed_max_dv_mps": 1.3817346991018553e-06,
+    "speed_misjoin1_max_dv_mps": 0.1949766588025037,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "18b72291-84f4-45e0-a736-908fc303020e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 7430,
+   "n_visible_boxes": 3899,
+   "visible_frac": 0.5248,
+   "n_tracks": 121,
+   "label_span_s": [
+    0.003,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 5839,
+    "rider": 594,
+    "person": 830,
+    "trailer": 144,
+    "bus": 23
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.074598,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00083,
+     "p95": 0.00347,
+     "max": 0.00383
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00038523328721140615,
+    "misjoin1_max_dt_s": 0.10105227328721256,
+    "speed_max_dv_mps": 2.171423735308764e-05,
+    "speed_misjoin1_max_dv_mps": 0.14408614099685568,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "1bd040a8-1828-4f1f-933e-20fd53c45641",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 6074,
+   "n_visible_boxes": 2183,
+   "visible_frac": 0.3594,
+   "n_tracks": 126,
+   "label_span_s": [
+    0.003,
+    19.989
+   ],
+   "cls_hist": {
+    "automobile": 5255,
+    "person": 599,
+    "rider": 85,
+    "other_vehicle": 92,
+    "trailer": 11,
+    "heavy_truck": 9,
+    "protruding_object": 23
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.151361,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00207,
+     "p95": 0.00243,
+     "max": 0.00244
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002852616865884616,
+    "misjoin1_max_dt_s": 0.10043407019279371,
+    "speed_max_dv_mps": 1.825145782419213e-05,
+    "speed_misjoin1_max_dv_mps": 0.16667510010382713,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "1c3a2c7c-7e82-4c22-92ad-59a5823b3c5f",
+   "n_frames": 199,
+   "n_labelled": 199,
+   "n_agent_boxes": 9502,
+   "n_visible_boxes": 4911,
+   "visible_frac": 0.5168,
+   "n_tracks": 228,
+   "label_span_s": [
+    0.001,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 6216,
+    "person": 1137,
+    "rider": 1452,
+    "heavy_truck": 362,
+    "trailer": 50,
+    "bus": 178,
+    "other_vehicle": 41,
+    "protruding_object": 66
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.000132,
+    "b": 0.100842,
+    "residual_m": {
+     "median": 0.00039,
+     "p95": 0.00123,
+     "max": 0.00138
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 199,
+    "true_max_dt_s": 0.00010524862455696393,
+    "misjoin1_max_dt_s": 0.1008763343497525,
+    "speed_max_dv_mps": 4.0322773884327034e-06,
+    "speed_misjoin1_max_dv_mps": 0.23193593945976065,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "2172a5a3-8a1d-4458-8aa7-b86ca16eb2d8",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 6141,
+   "n_visible_boxes": 2861,
+   "visible_frac": 0.4659,
+   "n_tracks": 180,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 4566,
+    "heavy_truck": 1399,
+    "trailer": 176
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.112787,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00374,
+     "p95": 0.00468,
+     "max": 0.00472
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002695480907704134,
+    "misjoin1_max_dt_s": 0.1005871851737794,
+    "speed_max_dv_mps": 9.48331798866775e-07,
+    "speed_misjoin1_max_dv_mps": 0.2133263197326194,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "24fee8a5-9ccc-4610-b27b-560f08fd46c8",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3845,
+   "n_visible_boxes": 338,
+   "visible_frac": 0.0879,
+   "n_tracks": 59,
+   "label_span_s": [
+    0.003,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 2820,
+    "person": 268,
+    "heavy_truck": 567,
+    "bus": 5,
+    "trailer": 185
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.027247,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00071,
+     "p95": 0.00149,
+     "max": 0.00152
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0001474894275048655,
+    "misjoin1_max_dt_s": 0.10078406620455745,
+    "speed_max_dv_mps": 2.1377230486230303e-05,
+    "speed_misjoin1_max_dv_mps": 0.35759804852966326,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "2602baaa-4364-4c50-8fb5-a27254c77cb3",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5609,
+   "n_visible_boxes": 2088,
+   "visible_frac": 0.3723,
+   "n_tracks": 260,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 5068,
+    "heavy_truck": 288,
+    "trailer": 253
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.083484,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00735,
+     "p95": 0.00934,
+     "max": 0.00956
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00035142455479919565,
+    "misjoin1_max_dt_s": 0.10047258632715739,
+    "speed_max_dv_mps": 1.0264392749093076e-06,
+    "speed_misjoin1_max_dv_mps": 0.047103195135470344,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "262b900f-2cff-4ddf-a95e-2aaa5eaff9bc",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3711,
+   "n_visible_boxes": 1284,
+   "visible_frac": 0.346,
+   "n_tracks": 117,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 3498,
+    "trailer": 189,
+    "person": 24
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.07794,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00386,
+     "p95": 0.00399,
+     "max": 0.004
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002496009402328525,
+    "misjoin1_max_dt_s": 0.10091718594023291,
+    "speed_max_dv_mps": 6.012985382497504e-06,
+    "speed_misjoin1_max_dv_mps": 0.3041155402028899,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "269478eb-2da4-42cb-bfd3-3ad9b024d88b",
+   "n_frames": 207,
+   "n_labelled": 200,
+   "n_agent_boxes": 19382,
+   "n_visible_boxes": 6601,
+   "visible_frac": 0.3406,
+   "n_tracks": 249,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "heavy_truck": 622,
+    "automobile": 13826,
+    "other_vehicle": 201,
+    "person": 2660,
+    "rider": 1460,
+    "bus": 398,
+    "protruding_object": 193,
+    "trailer": 6,
+    "animal": 16
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.287374,
+    "b": 0.100647,
+    "residual_m": {
+     "median": 0.00026,
+     "p95": 0.00047,
+     "max": 0.00048
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 207,
+    "true_max_dt_s": 5.695598952115688e-05,
+    "misjoin1_max_dt_s": 0.10060743286973603,
+    "speed_max_dv_mps": 1.2424609924011065e-05,
+    "speed_misjoin1_max_dv_mps": 0.23508512538566784,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "27f44280-3e5a-4b2f-9420-f38b9210bee4",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 14052,
+   "n_visible_boxes": 6399,
+   "visible_frac": 0.4554,
+   "n_tracks": 307,
+   "label_span_s": [
+    0.028,
+    19.995
+   ],
+   "cls_hist": {
+    "person": 2111,
+    "automobile": 11309,
+    "bus": 10,
+    "other_vehicle": 244,
+    "protruding_object": 16,
+    "rider": 198,
+    "stroller": 85,
+    "heavy_truck": 69,
+    "trailer": 10
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.029259,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00387,
+     "p95": 0.00581,
+     "max": 0.00599
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004908495034321447,
+    "misjoin1_max_dt_s": 0.10052606775043404,
+    "speed_max_dv_mps": 9.427216145496686e-07,
+    "speed_misjoin1_max_dv_mps": 0.053765037398957105,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "2cd0f4e4-dce0-4c02-904e-8045ffe3da7e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5626,
+   "n_visible_boxes": 3047,
+   "visible_frac": 0.5416,
+   "n_tracks": 127,
+   "label_span_s": [
+    0.002,
+    20.0
+   ],
+   "cls_hist": {
+    "rider": 417,
+    "automobile": 4845,
+    "person": 359,
+    "heavy_truck": 5
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.009963,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00062,
+     "p95": 0.0023,
+     "max": 0.00259
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00036168176254914447,
+    "misjoin1_max_dt_s": 0.10070830238092299,
+    "speed_max_dv_mps": 7.733770281959096e-06,
+    "speed_misjoin1_max_dv_mps": 0.15244458640133463,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "2e8a2df2-3f74-448e-9781-0739328ab42e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5893,
+   "n_visible_boxes": 1956,
+   "visible_frac": 0.3319,
+   "n_tracks": 99,
+   "label_span_s": [
+    0.003,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 4367,
+    "person": 906,
+    "rider": 42,
+    "other_vehicle": 264,
+    "protruding_object": 251,
+    "stroller": 27,
+    "bus": 36
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.135879,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00054,
+     "p95": 0.0007,
+     "max": 0.00071
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 8.209696051450499e-05,
+    "misjoin1_max_dt_s": 0.1007483597392277,
+    "speed_max_dv_mps": 3.2735794297522602e-06,
+    "speed_misjoin1_max_dv_mps": 0.25213120233466846,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "316f3c56-9142-4c97-95e8-29fe6f1f2108",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2541,
+   "n_visible_boxes": 940,
+   "visible_frac": 0.3699,
+   "n_tracks": 44,
+   "label_span_s": [
+    0.005,
+    19.985
+   ],
+   "cls_hist": {
+    "heavy_truck": 132,
+    "automobile": 2155,
+    "person": 216,
+    "protruding_object": 36,
+    "stroller": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.09928,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00378,
+     "p95": 0.00472,
+     "max": 0.00476
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0005936856467433915,
+    "misjoin1_max_dt_s": 0.10125935934406546,
+    "speed_max_dv_mps": 8.00607157991351e-06,
+    "speed_misjoin1_max_dv_mps": 0.205561129240742,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "31d0adc4-4e87-4ecd-920c-80a51afb3dbd",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 23678,
+   "n_visible_boxes": 8452,
+   "visible_frac": 0.357,
+   "n_tracks": 305,
+   "label_span_s": [
+    0.004,
+    19.989
+   ],
+   "cls_hist": {
+    "person": 3992,
+    "protruding_object": 432,
+    "automobile": 17455,
+    "heavy_truck": 1037,
+    "other_vehicle": 425,
+    "rider": 151,
+    "bus": 70,
+    "trailer": 116
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.066646,
+    "b": 0.100501,
+    "residual_m": {
+     "median": 0.00076,
+     "p95": 0.00196,
+     "max": 0.00215
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00024151242370962223,
+    "misjoin1_max_dt_s": 0.1007415774237117,
+    "speed_max_dv_mps": 1.2874896038184147e-06,
+    "speed_misjoin1_max_dv_mps": 0.10298323940295795,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "32f9b6b2-edc6-4cad-b383-1e2b3a55871b",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 835,
+   "n_visible_boxes": 292,
+   "visible_frac": 0.3497,
+   "n_tracks": 27,
+   "label_span_s": [
+    0.048,
+    19.901
+   ],
+   "cls_hist": {
+    "automobile": 835
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.075379,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00248,
+     "p95": 0.0051,
+     "max": 0.00557
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003101013035120559,
+    "misjoin1_max_dt_s": 0.10097698130351063,
+    "speed_max_dv_mps": 7.599741914887659e-06,
+    "speed_misjoin1_max_dv_mps": 0.2724675470456681,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "330b4626-96d0-46fd-a10b-3532f389bd34",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 5873,
+   "n_visible_boxes": 2480,
+   "visible_frac": 0.4223,
+   "n_tracks": 141,
+   "label_span_s": [
+    0.024,
+    19.987
+   ],
+   "cls_hist": {
+    "automobile": 5247,
+    "heavy_truck": 383,
+    "rider": 56,
+    "trailer": 187
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.043253,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00198,
+     "p95": 0.00318,
+     "max": 0.00356
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00023659651898452067,
+    "misjoin1_max_dt_s": 0.10079934105186439,
+    "speed_max_dv_mps": 1.0902291691650134e-06,
+    "speed_misjoin1_max_dv_mps": 0.18871524132513962,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "34a1e12e-95cb-4a6c-bbcf-20356f0d364e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 17665,
+   "n_visible_boxes": 3877,
+   "visible_frac": 0.2195,
+   "n_tracks": 354,
+   "label_span_s": [
+    0.014,
+    19.992
+   ],
+   "cls_hist": {
+    "automobile": 17189,
+    "person": 438,
+    "rider": 38
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.085603,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00218,
+     "p95": 0.00292,
+     "max": 0.00297
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00034672251633033335,
+    "misjoin1_max_dt_s": 0.10101283090339805,
+    "speed_max_dv_mps": 9.153453408572432e-07,
+    "speed_misjoin1_max_dv_mps": 0.18700594359417622,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "37e61793-36e9-426a-b257-23e684ba18b6",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 14895,
+   "n_visible_boxes": 6622,
+   "visible_frac": 0.4446,
+   "n_tracks": 240,
+   "label_span_s": [
+    0.006,
+    19.995
+   ],
+   "cls_hist": {
+    "automobile": 14248,
+    "trailer": 10,
+    "protruding_object": 237,
+    "rider": 14,
+    "person": 361,
+    "animal": 25
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.079544,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00056,
+     "p95": 0.00211,
+     "max": 0.00216
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00024868150672714695,
+    "misjoin1_max_dt_s": 0.10091335339919769,
+    "speed_max_dv_mps": 5.540661099256994e-06,
+    "speed_misjoin1_max_dv_mps": 0.2675376454679501,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "3971a8c6-0c53-4c0f-a06d-69fbd817a180",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 20277,
+   "n_visible_boxes": 10153,
+   "visible_frac": 0.5007,
+   "n_tracks": 345,
+   "label_span_s": [
+    0.001,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 3128,
+    "automobile": 16318,
+    "bus": 331,
+    "rider": 340,
+    "stroller": 150,
+    "trailer": 10
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.136875,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00183,
+     "p95": 0.00311,
+     "max": 0.00326
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00026439073271256053,
+    "misjoin1_max_dt_s": 0.1006465644730703,
+    "speed_max_dv_mps": 4.118187570512077e-06,
+    "speed_misjoin1_max_dv_mps": 0.22972059979304005,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "39bf584e-5bb5-43fb-93ab-c8cec7efbf01",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 4436,
+   "n_visible_boxes": 1769,
+   "visible_frac": 0.3988,
+   "n_tracks": 97,
+   "label_span_s": [
+    0.001,
+    19.989
+   ],
+   "cls_hist": {
+    "automobile": 4359,
+    "bus": 77
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.023364,
+    "b": 0.101005,
+    "residual_m": {
+     "median": 0.0005,
+     "p95": 0.00106,
+     "max": 0.00117
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 5.2827038977909524e-05,
+    "misjoin1_max_dt_s": 0.10105766623495427,
+    "speed_max_dv_mps": 8.328684014458076e-06,
+    "speed_misjoin1_max_dv_mps": 0.09429912955637931,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "3ef3dcc8-7fd8-44df-837e-2820e969e691",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1691,
+   "n_visible_boxes": 720,
+   "visible_frac": 0.4258,
+   "n_tracks": 39,
+   "label_span_s": [
+    0.007,
+    19.994
+   ],
+   "cls_hist": {
+    "automobile": 1624,
+    "person": 10,
+    "protruding_object": 36,
+    "other_vehicle": 21
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.062186,
+    "b": 0.100661,
+    "residual_m": {
+     "median": 0.00164,
+     "p95": 0.00255,
+     "max": 0.00257
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000729790327971408,
+    "misjoin1_max_dt_s": 0.10139111868559249,
+    "speed_max_dv_mps": 8.965570393204558e-06,
+    "speed_misjoin1_max_dv_mps": 0.15458805546666055,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "3ff11411-fa2f-4815-acc1-0a18d124861f",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3387,
+   "n_visible_boxes": 1254,
+   "visible_frac": 0.3702,
+   "n_tracks": 44,
+   "label_span_s": [
+    0.029,
+    19.977
+   ],
+   "cls_hist": {
+    "rider": 467,
+    "automobile": 2541,
+    "person": 250,
+    "heavy_truck": 127,
+    "other_vehicle": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.015732,
+    "b": 0.100511,
+    "residual_m": {
+     "median": 0.00229,
+     "p95": 0.00364,
+     "max": 0.00381
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003636418602255276,
+    "misjoin1_max_dt_s": 0.10087320186022453,
+    "speed_max_dv_mps": 2.357217402604306e-06,
+    "speed_misjoin1_max_dv_mps": 0.16646714921584227,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "42745b48-a015-4a7d-9ae0-a4f6986f918e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5281,
+   "n_visible_boxes": 2851,
+   "visible_frac": 0.5399,
+   "n_tracks": 83,
+   "label_span_s": [
+    0.02,
+    19.986
+   ],
+   "cls_hist": {
+    "automobile": 4595,
+    "trailer": 217,
+    "heavy_truck": 469
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.014714,
+    "b": 0.1005,
+    "residual_m": {
+     "median": 0.00162,
+     "p95": 0.00225,
+     "max": 0.00236
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00022770204260780247,
+    "misjoin1_max_dt_s": 0.10039910666893083,
+    "speed_max_dv_mps": 2.7365304103632582e-05,
+    "speed_misjoin1_max_dv_mps": 0.1663651402739621,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "45358841-6928-4d33-9166-1432d9d550dd",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1264,
+   "n_visible_boxes": 792,
+   "visible_frac": 0.6266,
+   "n_tracks": 56,
+   "label_span_s": [
+    0.097,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 1062,
+    "animal": 13,
+    "heavy_truck": 78,
+    "trailer": 89,
+    "other_vehicle": 22
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.128341,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.0021,
+     "p95": 0.00602,
+     "max": 0.00652
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002926476966448044,
+    "misjoin1_max_dt_s": 0.10095761575746343,
+    "speed_max_dv_mps": 1.5120614200725413e-06,
+    "speed_misjoin1_max_dv_mps": 0.10490778006244739,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "45a9f7ec-991f-4bf1-ae0e-41d9a233853e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 6302,
+   "n_visible_boxes": 2967,
+   "visible_frac": 0.4708,
+   "n_tracks": 294,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 5921,
+    "person": 204,
+    "bus": 141,
+    "rider": 14,
+    "heavy_truck": 22
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.012331,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00282,
+     "p95": 0.00581,
+     "max": 0.00597
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00041286922649112594,
+    "misjoin1_max_dt_s": 0.1006946160271518,
+    "speed_max_dv_mps": 4.632012132077534e-06,
+    "speed_misjoin1_max_dv_mps": 0.21761127438379724,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "45aea78c-7762-4e46-aef1-e9e22602b8fd",
+   "n_frames": 201,
+   "n_labelled": 198,
+   "n_agent_boxes": 996,
+   "n_visible_boxes": 313,
+   "visible_frac": 0.3143,
+   "n_tracks": 46,
+   "label_span_s": [
+    0.037,
+    19.935
+   ],
+   "cls_hist": {
+    "automobile": 894,
+    "person": 52,
+    "heavy_truck": 40,
+    "other_vehicle": 6,
+    "protruding_object": 4
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.13129,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.0025,
+     "p95": 0.00588,
+     "max": 0.00605
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004446652215150948,
+    "misjoin1_max_dt_s": 0.1011113352215176,
+    "speed_max_dv_mps": 1.3036603926153134e-05,
+    "speed_misjoin1_max_dv_mps": 0.27233000954995035,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "47241da8-c00e-4d4d-ae12-8cc51b7d09f6",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1774,
+   "n_visible_boxes": 787,
+   "visible_frac": 0.4436,
+   "n_tracks": 73,
+   "label_span_s": [
+    0.035,
+    19.979
+   ],
+   "cls_hist": {
+    "person": 519,
+    "rider": 334,
+    "automobile": 921
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.088042,
+    "b": 0.1005,
+    "residual_m": {
+     "median": 0.00299,
+     "p95": 0.00505,
+     "max": 0.00522
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000473877186121921,
+    "misjoin1_max_dt_s": 0.10097349997943768,
+    "speed_max_dv_mps": 2.923151171785321e-06,
+    "speed_misjoin1_max_dv_mps": 0.06031010649048518,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "480d7910-cece-47a0-9910-c279daa09e95",
+   "n_frames": 201,
+   "n_labelled": 140,
+   "n_agent_boxes": 79,
+   "n_visible_boxes": 41,
+   "visible_frac": 0.519,
+   "n_tracks": 3,
+   "label_span_s": [
+    6.048,
+    19.976
+   ],
+   "cls_hist": {
+    "automobile": 79
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.010291,
+    "b": 0.100504,
+    "residual_m": {
+     "median": 0.005,
+     "p95": 0.01228,
+     "max": 0.01338
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000419359180881429,
+    "misjoin1_max_dt_s": 0.10091980418088298,
+    "speed_max_dv_mps": 1.0784038693145703e-06,
+    "speed_misjoin1_max_dv_mps": 0.02405663595046903,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "4c5264dd-9110-46d4-88e7-693ffde925e5",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2065,
+   "n_visible_boxes": 910,
+   "visible_frac": 0.4407,
+   "n_tracks": 33,
+   "label_span_s": [
+    0.032,
+    19.995
+   ],
+   "cls_hist": {
+    "automobile": 2062,
+    "stroller": 3
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.006098,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.0023,
+     "p95": 0.00262,
+     "max": 0.00264
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00020407626422525027,
+    "misjoin1_max_dt_s": 0.10087062126422452,
+    "speed_max_dv_mps": 2.075221031461183e-06,
+    "speed_misjoin1_max_dv_mps": 0.26228332650693353,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "4ee70f88-f036-4029-adc6-f93fb5e22f0a",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 438,
+   "n_visible_boxes": 232,
+   "visible_frac": 0.5297,
+   "n_tracks": 7,
+   "label_span_s": [
+    0.008,
+    19.958
+   ],
+   "cls_hist": {
+    "automobile": 420,
+    "rider": 18
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.103126,
+    "b": 0.100498,
+    "residual_m": {
+     "median": 0.00312,
+     "p95": 0.00817,
+     "max": 0.00915
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00046685170671878495,
+    "misjoin1_max_dt_s": 0.10062022304757158,
+    "speed_max_dv_mps": 3.978428978257398e-06,
+    "speed_misjoin1_max_dv_mps": 0.09173447192484474,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "50caa2df-cf8f-44fb-b0fc-8f72c2fdeb29",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1385,
+   "n_visible_boxes": 228,
+   "visible_frac": 0.1646,
+   "n_tracks": 41,
+   "label_span_s": [
+    0.043,
+    19.917
+   ],
+   "cls_hist": {
+    "automobile": 1319,
+    "person": 66
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.093216,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00067,
+     "p95": 0.00407,
+     "max": 0.0045
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00031640419008738263,
+    "misjoin1_max_dt_s": 0.10098299419008683,
+    "speed_max_dv_mps": 1.766851539652947e-05,
+    "speed_misjoin1_max_dv_mps": 0.20305718281828788,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "51c01ba4-9000-4370-8abb-9fd22b397d05",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1057,
+   "n_visible_boxes": 638,
+   "visible_frac": 0.6036,
+   "n_tracks": 18,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 1046,
+    "heavy_truck": 4,
+    "other_vehicle": 7
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.017797,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00248,
+     "p95": 0.00743,
+     "max": 0.00792
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00035967195437213925,
+    "misjoin1_max_dt_s": 0.10076932703818642,
+    "speed_max_dv_mps": 1.4162720560761954e-06,
+    "speed_misjoin1_max_dv_mps": 0.12228347729869071,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5271d125-6137-4ece-92b9-d58f29eb2420",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 7431,
+   "n_visible_boxes": 3681,
+   "visible_frac": 0.4954,
+   "n_tracks": 89,
+   "label_span_s": [
+    0.001,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 6365,
+    "heavy_truck": 436,
+    "trailer": 134,
+    "person": 290,
+    "rider": 206
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.022493,
+    "b": 0.100494,
+    "residual_m": {
+     "median": 0.0016,
+     "p95": 0.00219,
+     "max": 0.0022
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0010194760738428954,
+    "misjoin1_max_dt_s": 0.10069907503581027,
+    "speed_max_dv_mps": 5.545363677583737e-06,
+    "speed_misjoin1_max_dv_mps": 0.17944869636395655,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "52ddcaaf-06cb-4654-894f-962f27c2bb34",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1133,
+   "n_visible_boxes": 529,
+   "visible_frac": 0.4669,
+   "n_tracks": 25,
+   "label_span_s": [
+    0.006,
+    19.958
+   ],
+   "cls_hist": {
+    "bus": 31,
+    "automobile": 679,
+    "person": 423
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.036232,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00215,
+     "p95": 0.00278,
+     "max": 0.00287
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00016135682989085187,
+    "misjoin1_max_dt_s": 0.100565036938697,
+    "speed_max_dv_mps": 1.1105084389839703e-06,
+    "speed_misjoin1_max_dv_mps": 0.051923531301653725,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "565b6ff0-c9f6-46f6-8acf-3ec383beb3dc",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 2455,
+   "n_visible_boxes": 1514,
+   "visible_frac": 0.6167,
+   "n_tracks": 64,
+   "label_span_s": [
+    0.098,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 2224,
+    "heavy_truck": 9,
+    "protruding_object": 63,
+    "other_vehicle": 82,
+    "person": 42,
+    "trailer": 35
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.114912,
+    "b": 0.100503,
+    "residual_m": {
+     "median": 0.00107,
+     "p95": 0.00233,
+     "max": 0.00267
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00024714235733114265,
+    "misjoin1_max_dt_s": 0.10074809235732829,
+    "speed_max_dv_mps": 1.0924389197697337e-06,
+    "speed_misjoin1_max_dv_mps": 0.06271460128074935,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5716299c-a9e7-4d83-9c76-55fb3900a146",
+   "n_frames": 201,
+   "n_labelled": 5,
+   "n_agent_boxes": 5,
+   "n_visible_boxes": 5,
+   "visible_frac": 1.0,
+   "n_tracks": 1,
+   "label_span_s": [
+    8.539,
+    8.938
+   ],
+   "cls_hist": {
+    "automobile": 5
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.157253,
+    "b": 0.100661,
+    "residual_m": {
+     "median": 0.00481,
+     "p95": 0.01109,
+     "max": 0.01226
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0006723617883699351,
+    "misjoin1_max_dt_s": 0.10133310969714189,
+    "speed_max_dv_mps": 9.851989979381415e-07,
+    "speed_misjoin1_max_dv_mps": 0.1502789291449389,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "59c25a0f-d4b8-4cfe-9213-d1502554b001",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 359,
+   "n_visible_boxes": 47,
+   "visible_frac": 0.1309,
+   "n_tracks": 18,
+   "label_span_s": [
+    0.01,
+    19.966
+   ],
+   "cls_hist": {
+    "automobile": 359
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.162921,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00547,
+     "p95": 0.00584,
+     "max": 0.00591
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00016829413013752514,
+    "misjoin1_max_dt_s": 0.10052653117438708,
+    "speed_max_dv_mps": 1.9151690864305237e-06,
+    "speed_misjoin1_max_dv_mps": 0.05196540157820806,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5b4df66c-31a2-4ad1-8d3e-bc3162d03d1c",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 547,
+   "n_visible_boxes": 282,
+   "visible_frac": 0.5155,
+   "n_tracks": 20,
+   "label_span_s": [
+    0.01,
+    19.94
+   ],
+   "cls_hist": {
+    "person": 97,
+    "automobile": 217,
+    "other_vehicle": 169,
+    "trailer": 32,
+    "bus": 32
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.094913,
+    "b": 0.100502,
+    "residual_m": {
+     "median": 0.0004,
+     "p95": 0.00136,
+     "max": 0.00153
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00015341803297490297,
+    "misjoin1_max_dt_s": 0.1005729595241256,
+    "speed_max_dv_mps": 2.396442869923021e-06,
+    "speed_misjoin1_max_dv_mps": 0.29578597299768283,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5d39a1de-bd2e-4652-8777-00f3e7a1108d",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5089,
+   "n_visible_boxes": 386,
+   "visible_frac": 0.0758,
+   "n_tracks": 131,
+   "label_span_s": [
+    0.004,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 490,
+    "automobile": 4161,
+    "heavy_truck": 337,
+    "trailer": 25,
+    "bus": 66,
+    "rider": 10
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.11922,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00019,
+     "p95": 0.00037,
+     "max": 0.00044
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00012438315900098473,
+    "misjoin1_max_dt_s": 0.10069599681710584,
+    "speed_max_dv_mps": 2.0310238453724594e-05,
+    "speed_misjoin1_max_dv_mps": 0.17924683635341676,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5d94cbbb-55eb-4642-add5-054b9c47ccf3",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1105,
+   "n_visible_boxes": 364,
+   "visible_frac": 0.3294,
+   "n_tracks": 26,
+   "label_span_s": [
+    0.009,
+    19.976
+   ],
+   "cls_hist": {
+    "automobile": 1051,
+    "rider": 54
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.158731,
+    "b": 0.100675,
+    "residual_m": {
+     "median": 0.00368,
+     "p95": 0.00574,
+     "max": 0.00582
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000818251062842279,
+    "misjoin1_max_dt_s": 0.10148583106283837,
+    "speed_max_dv_mps": 2.0143927866200784e-05,
+    "speed_misjoin1_max_dv_mps": 0.227516161303285,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "5f86e111-b219-4a6e-ab95-8675ee598084",
+   "n_frames": 201,
+   "n_labelled": 139,
+   "n_agent_boxes": 308,
+   "n_visible_boxes": 259,
+   "visible_frac": 0.8409,
+   "n_tracks": 27,
+   "label_span_s": [
+    6.049,
+    19.954
+   ],
+   "cls_hist": {
+    "person": 10,
+    "automobile": 298
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.071143,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00196,
+     "p95": 0.0053,
+     "max": 0.00561
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00037671958679644235,
+    "misjoin1_max_dt_s": 0.10076595693245594,
+    "speed_max_dv_mps": 7.877377008469466e-07,
+    "speed_misjoin1_max_dv_mps": 0.0516110242947736,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "62f3222e-9aa8-4520-b025-0166b36f5054",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 19167,
+   "n_visible_boxes": 7937,
+   "visible_frac": 0.4141,
+   "n_tracks": 284,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 12423,
+    "person": 5789,
+    "protruding_object": 224,
+    "heavy_truck": 198,
+    "other_vehicle": 199,
+    "stroller": 73,
+    "bus": 179,
+    "rider": 82
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.16479,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00122,
+     "p95": 0.00143,
+     "max": 0.00152
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000214745958405399,
+    "misjoin1_max_dt_s": 0.10052680303918393,
+    "speed_max_dv_mps": 5.787075551211274e-06,
+    "speed_misjoin1_max_dv_mps": 0.27556848560455904,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "63434e0b-8cd2-4e1f-9526-8a06bd7f4b0d",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 97,
+   "n_visible_boxes": 51,
+   "visible_frac": 0.5258,
+   "n_tracks": 10,
+   "label_span_s": [
+    0.098,
+    19.938
+   ],
+   "cls_hist": {
+    "automobile": 88,
+    "heavy_truck": 9
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.160198,
+    "b": 0.100671,
+    "residual_m": {
+     "median": 0.00175,
+     "p95": 0.00352,
+     "max": 0.00391
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00032217793155522867,
+    "misjoin1_max_dt_s": 0.1009043333437809,
+    "speed_max_dv_mps": 8.266760611164159e-06,
+    "speed_misjoin1_max_dv_mps": 0.1769734337036013,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "66e4d574-2b35-4b55-a13d-905d9b6ecc2b",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 13788,
+   "n_visible_boxes": 7758,
+   "visible_frac": 0.5627,
+   "n_tracks": 165,
+   "label_span_s": [
+    0.005,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 13527,
+    "person": 229,
+    "rider": 32
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.087305,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00259,
+     "p95": 0.00274,
+     "max": 0.00274
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00025120407020295943,
+    "misjoin1_max_dt_s": 0.10046965712718811,
+    "speed_max_dv_mps": 6.689679157290129e-07,
+    "speed_misjoin1_max_dv_mps": 0.2371445497808229,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "672d70d8-812c-4174-b134-3024707dcf39",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 1197,
+   "n_visible_boxes": 511,
+   "visible_frac": 0.4269,
+   "n_tracks": 28,
+   "label_span_s": [
+    0.049,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 997,
+    "trailer": 55,
+    "heavy_truck": 145
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.060467,
+    "b": 0.101001,
+    "residual_m": {
+     "median": 0.00342,
+     "p95": 0.00632,
+     "max": 0.00684
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.00042621374036144744,
+    "misjoin1_max_dt_s": 0.1013983886949703,
+    "speed_max_dv_mps": 2.372395211835965e-06,
+    "speed_misjoin1_max_dv_mps": 0.07192629454248767,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "6908302e-14b7-4463-b86b-f33232bc3e11",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 17324,
+   "n_visible_boxes": 6043,
+   "visible_frac": 0.3488,
+   "n_tracks": 222,
+   "label_span_s": [
+    0.001,
+    19.987
+   ],
+   "cls_hist": {
+    "automobile": 16991,
+    "stroller": 4,
+    "person": 324,
+    "heavy_truck": 5
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.126665,
+    "b": 0.100501,
+    "residual_m": {
+     "median": 0.00035,
+     "p95": 0.00054,
+     "max": 0.00076
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00014081683732650174,
+    "misjoin1_max_dt_s": 0.10064147078280421,
+    "speed_max_dv_mps": 1.596012006110925e-06,
+    "speed_misjoin1_max_dv_mps": 0.21103218544493663,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "695081db-4312-44bc-95d6-4d5f509180fa",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 17722,
+   "n_visible_boxes": 8955,
+   "visible_frac": 0.5053,
+   "n_tracks": 363,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 17388,
+    "person": 135,
+    "heavy_truck": 142,
+    "protruding_object": 57
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.003788,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00081,
+     "p95": 0.00097,
+     "max": 0.00098
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00012132597504645138,
+    "misjoin1_max_dt_s": 0.10057619908207371,
+    "speed_max_dv_mps": 1.3736173665179763e-06,
+    "speed_misjoin1_max_dv_mps": 0.11070781675128583,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "6a89cca3-64e9-49fd-ae34-9c5a636981b4",
+   "n_frames": 201,
+   "n_labelled": 81,
+   "n_agent_boxes": 96,
+   "n_visible_boxes": 41,
+   "visible_frac": 0.4271,
+   "n_tracks": 5,
+   "label_span_s": [
+    10.35,
+    18.397
+   ],
+   "cls_hist": {
+    "automobile": 96
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.140512,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00142,
+     "p95": 0.00358,
+     "max": 0.00386
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002026626516737906,
+    "misjoin1_max_dt_s": 0.10087029265167047,
+    "speed_max_dv_mps": 1.1718633423640767e-06,
+    "speed_misjoin1_max_dv_mps": 0.03708057253867736,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "6b3e802e-ea88-48c8-aa13-3e072c8c1409",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 4523,
+   "n_visible_boxes": 1931,
+   "visible_frac": 0.4269,
+   "n_tracks": 57,
+   "label_span_s": [
+    0.008,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 3136,
+    "other_vehicle": 252,
+    "trailer": 79,
+    "protruding_object": 267,
+    "person": 653,
+    "rider": 114,
+    "heavy_truck": 22
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.024746,
+    "b": 0.100664,
+    "residual_m": {
+     "median": 0.0014,
+     "p95": 0.00266,
+     "max": 0.00267
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00041675848820332817,
+    "misjoin1_max_dt_s": 0.10089658336339102,
+    "speed_max_dv_mps": 6.327246833137679e-07,
+    "speed_misjoin1_max_dv_mps": 0.31764696730034814,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "6ed4ef7a-1a70-48c5-8dc1-3c6a48ec3ecc",
+   "n_frames": 201,
+   "n_labelled": 122,
+   "n_agent_boxes": 512,
+   "n_visible_boxes": 235,
+   "visible_frac": 0.459,
+   "n_tracks": 21,
+   "label_span_s": [
+    0.05,
+    12.186
+   ],
+   "cls_hist": {
+    "automobile": 482,
+    "heavy_truck": 30
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.044005,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00526,
+     "p95": 0.00666,
+     "max": 0.00734
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00041099879523057853,
+    "misjoin1_max_dt_s": 0.10107850356923972,
+    "speed_max_dv_mps": 1.559176866727796e-05,
+    "speed_misjoin1_max_dv_mps": 0.18175477204858836,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "73e750eb-684f-4aa1-953e-eb0f671a86b7",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2968,
+   "n_visible_boxes": 1170,
+   "visible_frac": 0.3942,
+   "n_tracks": 50,
+   "label_span_s": [
+    0.013,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 2968
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.145236,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00171,
+     "p95": 0.0035,
+     "max": 0.00384
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003073149959256227,
+    "misjoin1_max_dt_s": 0.10057860461860067,
+    "speed_max_dv_mps": 1.2642490268888196e-05,
+    "speed_misjoin1_max_dv_mps": 0.13722166271167957,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "7526e299-0404-407e-bf63-39901ba08ff2",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 558,
+   "n_visible_boxes": 318,
+   "visible_frac": 0.5699,
+   "n_tracks": 16,
+   "label_span_s": [
+    0.061,
+    19.961
+   ],
+   "cls_hist": {
+    "automobile": 502,
+    "person": 11,
+    "heavy_truck": 6,
+    "trailer": 39
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.120653,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00728,
+     "p95": 0.00888,
+     "max": 0.00896
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00039202911875690916,
+    "misjoin1_max_dt_s": 0.10037352435814541,
+    "speed_max_dv_mps": 2.2564038637540307e-06,
+    "speed_misjoin1_max_dv_mps": 0.050439497485573526,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "77a247be-ad56-4712-8e16-5d4acc5c241d",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5308,
+   "n_visible_boxes": 2357,
+   "visible_frac": 0.444,
+   "n_tracks": 112,
+   "label_span_s": [
+    0.0,
+    19.992
+   ],
+   "cls_hist": {
+    "automobile": 4737,
+    "person": 431,
+    "rider": 68,
+    "protruding_object": 72
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.124505,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00173,
+     "p95": 0.00368,
+     "max": 0.004
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004237693451474289,
+    "misjoin1_max_dt_s": 0.10066738025472688,
+    "speed_max_dv_mps": 1.0039960553154259e-05,
+    "speed_misjoin1_max_dv_mps": 0.24885028580681556,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "79e30ac2-c619-4d61-98a3-1007037b4d05",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 5545,
+   "n_visible_boxes": 1994,
+   "visible_frac": 0.3596,
+   "n_tracks": 110,
+   "label_span_s": [
+    0.023,
+    19.987
+   ],
+   "cls_hist": {
+    "automobile": 4542,
+    "person": 773,
+    "heavy_truck": 224,
+    "trailer": 6
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.139882,
+    "b": 0.100662,
+    "residual_m": {
+     "median": 0.00205,
+     "p95": 0.00409,
+     "max": 0.00447
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00044150417249985696,
+    "misjoin1_max_dt_s": 0.10110397132053124,
+    "speed_max_dv_mps": 2.6704628566243116e-05,
+    "speed_misjoin1_max_dv_mps": 0.13234160051402188,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "80b890fc-1140-4ea2-a4da-267580ff82f8",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 11002,
+   "n_visible_boxes": 4427,
+   "visible_frac": 0.4024,
+   "n_tracks": 176,
+   "label_span_s": [
+    0.002,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 9493,
+    "rider": 295,
+    "person": 510,
+    "heavy_truck": 689,
+    "other_vehicle": 4,
+    "bus": 11
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.124107,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00275,
+     "p95": 0.0036,
+     "max": 0.00367
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00026082328469456684,
+    "misjoin1_max_dt_s": 0.10092749328469708,
+    "speed_max_dv_mps": 5.802622258244128e-07,
+    "speed_misjoin1_max_dv_mps": 0.057743106520780074,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "80fcd92f-7bb3-430a-835e-ac72e8ffdda7",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 18357,
+   "n_visible_boxes": 8642,
+   "visible_frac": 0.4708,
+   "n_tracks": 386,
+   "label_span_s": [
+    0.01,
+    20.0
+   ],
+   "cls_hist": {
+    "person": 10302,
+    "automobile": 7093,
+    "heavy_truck": 384,
+    "rider": 211,
+    "bus": 353,
+    "animal": 14
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.120748,
+    "b": 0.1005,
+    "residual_m": {
+     "median": 0.00121,
+     "p95": 0.00164,
+     "max": 0.00165
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00038389563613408506,
+    "misjoin1_max_dt_s": 0.10088367556890261,
+    "speed_max_dv_mps": 4.440897685142886e-07,
+    "speed_misjoin1_max_dv_mps": 0.13281879535122415,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "826cd25c-fa4a-4e7d-9fbb-f64486fe3712",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 20670,
+   "n_visible_boxes": 8568,
+   "visible_frac": 0.4145,
+   "n_tracks": 348,
+   "label_span_s": [
+    0.002,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 6968,
+    "automobile": 13341,
+    "stroller": 98,
+    "heavy_truck": 68,
+    "rider": 162,
+    "animal": 26,
+    "bus": 7
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.119471,
+    "b": 0.100664,
+    "residual_m": {
+     "median": 0.00067,
+     "p95": 0.00143,
+     "max": 0.00149
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00043308439845499147,
+    "misjoin1_max_dt_s": 0.10109709938624255,
+    "speed_max_dv_mps": 1.1293246899413134e-05,
+    "speed_misjoin1_max_dv_mps": 0.1444542033011853,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "829320e2-ba11-48e9-8196-1247e5709b5f",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 8220,
+   "n_visible_boxes": 3874,
+   "visible_frac": 0.4713,
+   "n_tracks": 116,
+   "label_span_s": [
+    0.0,
+    19.991
+   ],
+   "cls_hist": {
+    "automobile": 7746,
+    "person": 437,
+    "protruding_object": 37
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.119051,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00075,
+     "p95": 0.00146,
+     "max": 0.00156
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00017892753194459488,
+    "misjoin1_max_dt_s": 0.1008460825319446,
+    "speed_max_dv_mps": 1.6652068294931155e-05,
+    "speed_misjoin1_max_dv_mps": 0.1465019778399732,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "84952a7e-a54b-4453-9ad4-2b6c0bc240a8",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 5524,
+   "n_visible_boxes": 3665,
+   "visible_frac": 0.6635,
+   "n_tracks": 92,
+   "label_span_s": [
+    0.033,
+    19.992
+   ],
+   "cls_hist": {
+    "person": 250,
+    "automobile": 4672,
+    "other_vehicle": 65,
+    "rider": 2,
+    "trailer": 535
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.079058,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00061,
+     "p95": 0.00203,
+     "max": 0.00212
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00019498955308014376,
+    "misjoin1_max_dt_s": 0.10062884936265704,
+    "speed_max_dv_mps": 4.13488245656346e-05,
+    "speed_misjoin1_max_dv_mps": 0.18664517310325035,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "85a47aa1-1465-4b72-aaac-bcddb2decfdd",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3921,
+   "n_visible_boxes": 1776,
+   "visible_frac": 0.4529,
+   "n_tracks": 96,
+   "label_span_s": [
+    0.0,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 3593,
+    "heavy_truck": 180,
+    "trailer": 148
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.029961,
+    "b": 0.100495,
+    "residual_m": {
+     "median": 0.00046,
+     "p95": 0.00255,
+     "max": 0.00282
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0007408243836344135,
+    "misjoin1_max_dt_s": 0.10123579266950697,
+    "speed_max_dv_mps": 1.3036004191668837e-06,
+    "speed_misjoin1_max_dv_mps": 0.12000974123997388,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "8d610d87-8170-41c1-bc61-c771a9500322",
+   "n_frames": 201,
+   "n_labelled": 194,
+   "n_agent_boxes": 354,
+   "n_visible_boxes": 143,
+   "visible_frac": 0.404,
+   "n_tracks": 16,
+   "label_span_s": [
+    0.008,
+    19.468
+   ],
+   "cls_hist": {
+    "automobile": 354
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.093916,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00779,
+     "p95": 0.00888,
+     "max": 0.00903
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003173695688687417,
+    "misjoin1_max_dt_s": 0.1009840795688639,
+    "speed_max_dv_mps": 1.827434328305344e-06,
+    "speed_misjoin1_max_dv_mps": 0.07332992213235201,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "8df0cb04-8b64-42de-97b9-ce57df3908f4",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3522,
+   "n_visible_boxes": 1890,
+   "visible_frac": 0.5366,
+   "n_tracks": 45,
+   "label_span_s": [
+    0.007,
+    19.984
+   ],
+   "cls_hist": {
+    "automobile": 2719,
+    "rider": 67,
+    "person": 406,
+    "heavy_truck": 161,
+    "bus": 114,
+    "trailer": 37,
+    "train_or_tram_car": 18
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.099944,
+    "b": 0.100499,
+    "residual_m": {
+     "median": 0.0004,
+     "p95": 0.00374,
+     "max": 0.00475
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003677096197236551,
+    "misjoin1_max_dt_s": 0.10053848636362883,
+    "speed_max_dv_mps": 3.2453741383164925e-06,
+    "speed_misjoin1_max_dv_mps": 0.62395506510925,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "8f1baf35-90f6-4a03-ad23-f461d98ef393",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 6644,
+   "n_visible_boxes": 1390,
+   "visible_frac": 0.2092,
+   "n_tracks": 171,
+   "label_span_s": [
+    0.001,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 5008,
+    "rider": 377,
+    "person": 1124,
+    "train_or_tram_car": 44,
+    "protruding_object": 78,
+    "heavy_truck": 2,
+    "stroller": 3,
+    "bus": 3,
+    "trailer": 5
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.091176,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00067,
+     "p95": 0.00132,
+     "max": 0.00143
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00014562391074335324,
+    "misjoin1_max_dt_s": 0.10066991369327769,
+    "speed_max_dv_mps": 1.2417272472475815e-06,
+    "speed_misjoin1_max_dv_mps": 0.069342325167284,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "8fe27d99-23e7-4f0f-bacb-f42b055ba2c7",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 14390,
+   "n_visible_boxes": 5814,
+   "visible_frac": 0.404,
+   "n_tracks": 277,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 13049,
+    "person": 759,
+    "rider": 582
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.033069,
+    "b": 0.101003,
+    "residual_m": {
+     "median": 0.00114,
+     "p95": 0.00226,
+     "max": 0.00256
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.00028084515913917585,
+    "misjoin1_max_dt_s": 0.10111705626651349,
+    "speed_max_dv_mps": 8.9278593495834e-06,
+    "speed_misjoin1_max_dv_mps": 0.1832284448000827,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "91929cea-f8d5-4ed7-bbb7-e39f644f10ca",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 3797,
+   "n_visible_boxes": 1319,
+   "visible_frac": 0.3474,
+   "n_tracks": 66,
+   "label_span_s": [
+    0.002,
+    19.991
+   ],
+   "cls_hist": {
+    "automobile": 3138,
+    "rider": 26,
+    "train_or_tram_car": 7,
+    "person": 551,
+    "trailer": 73,
+    "stroller": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.121516,
+    "b": 0.101005,
+    "residual_m": {
+     "median": 0.00011,
+     "p95": 0.00032,
+     "max": 0.00035
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 3.949237231318237e-05,
+    "misjoin1_max_dt_s": 0.10101651217004814,
+    "speed_max_dv_mps": 1.070451345341894e-06,
+    "speed_misjoin1_max_dv_mps": 0.04476167741474413,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "91e90a95-a129-486a-a1d4-cc1a2915793f",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 9040,
+   "n_visible_boxes": 2210,
+   "visible_frac": 0.2445,
+   "n_tracks": 146,
+   "label_span_s": [
+    0.004,
+    19.998
+   ],
+   "cls_hist": {
+    "person": 1780,
+    "automobile": 7160,
+    "bus": 57,
+    "protruding_object": 13,
+    "stroller": 28,
+    "rider": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.141797,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00262,
+     "p95": 0.00404,
+     "max": 0.00417
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002846373448981421,
+    "misjoin1_max_dt_s": 0.10067685489731915,
+    "speed_max_dv_mps": 3.294556840671703e-06,
+    "speed_misjoin1_max_dv_mps": 0.24138369213907573,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "9370d445-320d-41f5-bde5-66659ae974c7",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2412,
+   "n_visible_boxes": 1003,
+   "visible_frac": 0.4158,
+   "n_tracks": 75,
+   "label_span_s": [
+    0.002,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 361,
+    "automobile": 1861,
+    "rider": 190
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.020798,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00267,
+     "p95": 0.00336,
+     "max": 0.00343
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000289401169258241,
+    "misjoin1_max_dt_s": 0.1009569111692592,
+    "speed_max_dv_mps": 1.7881916297923794e-05,
+    "speed_misjoin1_max_dv_mps": 0.10904240963325584,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "93854321-c881-4263-9312-252e04934898",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 16004,
+   "n_visible_boxes": 7191,
+   "visible_frac": 0.4493,
+   "n_tracks": 275,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 14436,
+    "person": 1510,
+    "bus": 13,
+    "protruding_object": 45
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.087375,
+    "b": 0.100501,
+    "residual_m": {
+     "median": 0.00041,
+     "p95": 0.00052,
+     "max": 0.00057
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 5.2149754541597204e-05,
+    "misjoin1_max_dt_s": 0.10045165322946659,
+    "speed_max_dv_mps": 2.2269595817192567e-05,
+    "speed_misjoin1_max_dv_mps": 0.26633452599491303,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "998310a5-2773-40f8-9752-e588e5b400b7",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 11979,
+   "n_visible_boxes": 5798,
+   "visible_frac": 0.484,
+   "n_tracks": 209,
+   "label_span_s": [
+    0.002,
+    19.999
+   ],
+   "cls_hist": {
+    "rider": 516,
+    "automobile": 10456,
+    "person": 855,
+    "trailer": 63,
+    "heavy_truck": 89
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.080515,
+    "b": 0.101007,
+    "residual_m": {
+     "median": 0.00084,
+     "p95": 0.003,
+     "max": 0.00323
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.00025522861144840203,
+    "misjoin1_max_dt_s": 0.10108349467950362,
+    "speed_max_dv_mps": 3.581496908822146e-06,
+    "speed_misjoin1_max_dv_mps": 0.2238996142361973,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "9b4347d2-fdcb-4232-93db-acc6b1e3d5c7",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1728,
+   "n_visible_boxes": 886,
+   "visible_frac": 0.5127,
+   "n_tracks": 38,
+   "label_span_s": [
+    0.001,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 1271,
+    "rider": 20,
+    "trailer": 50,
+    "person": 286,
+    "protruding_object": 101
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.034754,
+    "b": 0.100502,
+    "residual_m": {
+     "median": 0.00134,
+     "p95": 0.002,
+     "max": 0.00203
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00017849208973532565,
+    "misjoin1_max_dt_s": 0.1004141445426967,
+    "speed_max_dv_mps": 2.6242784824326293e-05,
+    "speed_misjoin1_max_dv_mps": 0.20464468652597745,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "9c50f803-c78c-4b69-8a83-443ad312553e",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 255,
+   "n_visible_boxes": 225,
+   "visible_frac": 0.8824,
+   "n_tracks": 3,
+   "label_span_s": [
+    0.049,
+    19.95
+   ],
+   "cls_hist": {
+    "automobile": 255
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.057979,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.0036,
+     "p95": 0.00558,
+     "max": 0.00595
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0005133993371515544,
+    "misjoin1_max_dt_s": 0.10056022833904209,
+    "speed_max_dv_mps": 1.6904737096368194e-05,
+    "speed_misjoin1_max_dv_mps": 0.1784657645973411,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "9d3d1cd1-ce59-46e1-a85b-02131b07a69c",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 5829,
+   "n_visible_boxes": 1855,
+   "visible_frac": 0.3182,
+   "n_tracks": 114,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 4347,
+    "other_vehicle": 34,
+    "person": 879,
+    "heavy_truck": 141,
+    "trailer": 131,
+    "rider": 297
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.003504,
+    "b": 0.100671,
+    "residual_m": {
+     "median": 0.00135,
+     "p95": 0.00454,
+     "max": 0.00492
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00045362553888932556,
+    "misjoin1_max_dt_s": 0.10110565267430616,
+    "speed_max_dv_mps": 1.1485788657950025e-06,
+    "speed_misjoin1_max_dv_mps": 0.2737200621268494,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "9fc24b6e-3ece-4a3b-bb00-eb3454b1eabb",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 2588,
+   "n_visible_boxes": 1795,
+   "visible_frac": 0.6936,
+   "n_tracks": 22,
+   "label_span_s": [
+    0.027,
+    19.99
+   ],
+   "cls_hist": {
+    "automobile": 2585,
+    "bus": 3
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.124452,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00038,
+     "p95": 0.00164,
+     "max": 0.0018
+    },
+    "n_inlier": 59,
+    "n_probe": 59
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0005296268848695718,
+    "misjoin1_max_dt_s": 0.10119628188487084,
+    "speed_max_dv_mps": 4.051412538785826e-07,
+    "speed_misjoin1_max_dv_mps": 0.2050981746219822,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "a0d95df6-499b-45ee-a424-5954f6e65f77",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 11068,
+   "n_visible_boxes": 5004,
+   "visible_frac": 0.4521,
+   "n_tracks": 151,
+   "label_span_s": [
+    0.015,
+    19.986
+   ],
+   "cls_hist": {
+    "automobile": 10227,
+    "rider": 332,
+    "trailer": 197,
+    "heavy_truck": 155,
+    "person": 157
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.072491,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00282,
+     "p95": 0.00335,
+     "max": 0.00337
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00027681919146828327,
+    "misjoin1_max_dt_s": 0.10094246234625498,
+    "speed_max_dv_mps": 2.3977600172031543e-06,
+    "speed_misjoin1_max_dv_mps": 0.31945993481754575,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "a459164a-0c6c-4a3b-9963-0d5deacacb4f",
+   "n_frames": 201,
+   "n_labelled": 20,
+   "n_agent_boxes": 31,
+   "n_visible_boxes": 0,
+   "visible_frac": 0.0,
+   "n_tracks": 2,
+   "label_span_s": [
+    11.163,
+    13.046
+   ],
+   "cls_hist": {
+    "automobile": 20,
+    "protruding_object": 11
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.094819,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00162,
+     "p95": 0.00405,
+     "max": 0.00433
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002964211426004226,
+    "misjoin1_max_dt_s": 0.1006398366602174,
+    "speed_max_dv_mps": 1.4697785958972531e-05,
+    "speed_misjoin1_max_dv_mps": 0.26013316153048294,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "a6b2719b-7712-41be-9032-43216f52f516",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3484,
+   "n_visible_boxes": 1061,
+   "visible_frac": 0.3045,
+   "n_tracks": 80,
+   "label_span_s": [
+    0.002,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 3276,
+    "person": 196,
+    "stroller": 12
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.15408,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00335,
+     "p95": 0.00578,
+     "max": 0.00611
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0005406014393402048,
+    "misjoin1_max_dt_s": 0.10120567713393186,
+    "speed_max_dv_mps": 8.790498089439325e-07,
+    "speed_misjoin1_max_dv_mps": 0.03778100617008384,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "a7e15877-9469-4b98-b633-f1a32722aecf",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 16818,
+   "n_visible_boxes": 6417,
+   "visible_frac": 0.3816,
+   "n_tracks": 294,
+   "label_span_s": [
+    0.0,
+    19.992
+   ],
+   "cls_hist": {
+    "automobile": 16789,
+    "other_vehicle": 7,
+    "person": 22
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.100127,
+    "b": 0.100503,
+    "residual_m": {
+     "median": 0.00108,
+     "p95": 0.003,
+     "max": 0.00326
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002428219566219525,
+    "misjoin1_max_dt_s": 0.10074368195662231,
+    "speed_max_dv_mps": 5.750797633652383e-07,
+    "speed_misjoin1_max_dv_mps": 0.08427852046021833,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "aa00f477-540e-4b04-aaa9-948c5b227a65",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 8009,
+   "n_visible_boxes": 6119,
+   "visible_frac": 0.764,
+   "n_tracks": 86,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "person": 1094,
+    "rider": 356,
+    "automobile": 6559
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.111179,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00062,
+     "p95": 0.00094,
+     "max": 0.00096
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00018670881503268788,
+    "misjoin1_max_dt_s": 0.10085349881503802,
+    "speed_max_dv_mps": 1.8104772809834913e-06,
+    "speed_misjoin1_max_dv_mps": 0.16305111318869536,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "aa594aa8-bc96-40d1-80f3-a6bc12855766",
+   "n_frames": 201,
+   "n_labelled": 90,
+   "n_agent_boxes": 197,
+   "n_visible_boxes": 189,
+   "visible_frac": 0.9594,
+   "n_tracks": 7,
+   "label_span_s": [
+    11.074,
+    19.97
+   ],
+   "cls_hist": {
+    "automobile": 125,
+    "rider": 35,
+    "person": 37
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.140151,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00242,
+     "p95": 0.00311,
+     "max": 0.00313
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0006247646763214987,
+    "misjoin1_max_dt_s": 0.1004765735757509,
+    "speed_max_dv_mps": 5.037038157240659e-06,
+    "speed_misjoin1_max_dv_mps": 0.15822960347666815,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ac81f868-f505-4268-bfeb-c58c0a0a1605",
+   "n_frames": 201,
+   "n_labelled": 116,
+   "n_agent_boxes": 145,
+   "n_visible_boxes": 66,
+   "visible_frac": 0.4552,
+   "n_tracks": 8,
+   "label_span_s": [
+    5.451,
+    16.999
+   ],
+   "cls_hist": {
+    "automobile": 75,
+    "bus": 70
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.075055,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00188,
+     "p95": 0.00367,
+     "max": 0.00391
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00011819697303394605,
+    "misjoin1_max_dt_s": 0.10078588697303559,
+    "speed_max_dv_mps": 1.822636498616248e-06,
+    "speed_misjoin1_max_dv_mps": 0.05421924203810846,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "acf8e77f-7d54-49ac-a9a4-dea836784513",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1493,
+   "n_visible_boxes": 339,
+   "visible_frac": 0.2271,
+   "n_tracks": 40,
+   "label_span_s": [
+    0.003,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 1305,
+    "heavy_truck": 97,
+    "trailer": 89,
+    "other_vehicle": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.063142,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.002,
+     "p95": 0.00232,
+     "max": 0.00235
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0001596153483234275,
+    "misjoin1_max_dt_s": 0.10055079446135547,
+    "speed_max_dv_mps": 5.550591364311686e-07,
+    "speed_misjoin1_max_dv_mps": 0.029992954117290083,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "af6f5964-2634-46e3-bbb1-ac2b194aec5f",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 16594,
+   "n_visible_boxes": 1062,
+   "visible_frac": 0.064,
+   "n_tracks": 105,
+   "label_span_s": [
+    0.001,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 15922,
+    "person": 374,
+    "bus": 103,
+    "protruding_object": 195
+   },
+   "time_source": "lead_block_t0_s",
+   "registration": {
+    "a": NaN,
+    "b": NaN,
+    "residual_m": null,
+    "n_inlier": 0,
+    "n_probe": 0
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0,
+    "misjoin1_max_dt_s": 0.10066727000000597,
+    "speed_max_dv_mps": 5.876049621244758e-07,
+    "speed_misjoin1_max_dv_mps": 0.06641360170056987,
+    "time_circular": true
+   }
+  },
+  {
+   "clip_id": "afe44776-866c-4425-b792-1a6c3ce6c48c",
+   "n_frames": 199,
+   "n_labelled": 199,
+   "n_agent_boxes": 3008,
+   "n_visible_boxes": 1235,
+   "visible_frac": 0.4106,
+   "n_tracks": 99,
+   "label_span_s": [
+    0.029,
+    19.986
+   ],
+   "cls_hist": {
+    "automobile": 2914,
+    "heavy_truck": 61,
+    "trailer": 33
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.033503,
+    "b": 0.100675,
+    "residual_m": {
+     "median": 0.00234,
+     "p95": 0.00618,
+     "max": 0.00659
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 199,
+    "true_max_dt_s": 0.000211459460548645,
+    "misjoin1_max_dt_s": 0.10088603182935353,
+    "speed_max_dv_mps": 9.820832254092693e-07,
+    "speed_misjoin1_max_dv_mps": 0.021294331555569812,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "b0252ad5-8cdf-45f3-abf8-df22fb4a72b0",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 3350,
+   "n_visible_boxes": 1289,
+   "visible_frac": 0.3848,
+   "n_tracks": 49,
+   "label_span_s": [
+    0.01,
+    19.968
+   ],
+   "cls_hist": {
+    "automobile": 3348,
+    "heavy_truck": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.003937,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.0025,
+     "p95": 0.0062,
+     "max": 0.00663
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00047557981238099956,
+    "misjoin1_max_dt_s": 0.10114213981238152,
+    "speed_max_dv_mps": 5.884470901662553e-07,
+    "speed_misjoin1_max_dv_mps": 0.11723993386460663,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "b05195bf-36d7-4233-87bf-518708baa307",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 11006,
+   "n_visible_boxes": 4959,
+   "visible_frac": 0.4506,
+   "n_tracks": 107,
+   "label_span_s": [
+    0.002,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 10981,
+    "person": 10,
+    "heavy_truck": 15
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.039146,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00144,
+     "p95": 0.00172,
+     "max": 0.00173
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00023197210693126635,
+    "misjoin1_max_dt_s": 0.10047802711219321,
+    "speed_max_dv_mps": 1.8005669000231705e-06,
+    "speed_misjoin1_max_dv_mps": 0.3298332393169403,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "b19eb35f-3966-4513-adaa-ba26d492caf2",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 10054,
+   "n_visible_boxes": 3277,
+   "visible_frac": 0.3259,
+   "n_tracks": 210,
+   "label_span_s": [
+    0.001,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 8100,
+    "person": 1429,
+    "rider": 168,
+    "bus": 161,
+    "trailer": 71,
+    "heavy_truck": 125
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.014279,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00052,
+     "p95": 0.00114,
+     "max": 0.00116
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00013580642597251294,
+    "misjoin1_max_dt_s": 0.10080331333693544,
+    "speed_max_dv_mps": 1.1444677627814315e-05,
+    "speed_misjoin1_max_dv_mps": 0.18127599841257602,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "b62be3fa-4fbb-4998-a5c9-b0318db9b4d6",
+   "n_frames": 201,
+   "n_labelled": 192,
+   "n_agent_boxes": 130,
+   "n_visible_boxes": 48,
+   "visible_frac": 0.3692,
+   "n_tracks": 8,
+   "label_span_s": [
+    0.771,
+    19.947
+   ],
+   "cls_hist": {
+    "trailer": 7,
+    "automobile": 123
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.076055,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00219,
+     "p95": 0.00477,
+     "max": 0.00494
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004281467213292922,
+    "misjoin1_max_dt_s": 0.10070095413680491,
+    "speed_max_dv_mps": 3.208462388215594e-06,
+    "speed_misjoin1_max_dv_mps": 0.10099607549163991,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "b99058dc-6802-4f77-af28-a363b5701ab3",
+   "n_frames": 202,
+   "n_labelled": 200,
+   "n_agent_boxes": 12009,
+   "n_visible_boxes": 4301,
+   "visible_frac": 0.3581,
+   "n_tracks": 249,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "rider": 2111,
+    "person": 4883,
+    "heavy_truck": 367,
+    "automobile": 4565,
+    "stroller": 27,
+    "other_vehicle": 11,
+    "protruding_object": 45
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.01528,
+    "b": 0.100659,
+    "residual_m": {
+     "median": 0.00176,
+     "p95": 0.00569,
+     "max": 0.00593
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 202,
+    "true_max_dt_s": 0.0005996172008089218,
+    "misjoin1_max_dt_s": 0.10093295115973738,
+    "speed_max_dv_mps": 1.464255806205017e-05,
+    "speed_misjoin1_max_dv_mps": 0.06374942582333532,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "c0142275-d0c7-4a5f-a1a3-ac15c6d7add9",
+   "n_frames": 201,
+   "n_labelled": 16,
+   "n_agent_boxes": 115,
+   "n_visible_boxes": 0,
+   "visible_frac": 0.0,
+   "n_tracks": 9,
+   "label_span_s": [
+    0.087,
+    1.594
+   ],
+   "cls_hist": {
+    "animal": 115
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.085247,
+    "b": 0.100498,
+    "residual_m": {
+     "median": 0.00287,
+     "p95": 0.00775,
+     "max": 0.00816
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004482153946767653,
+    "misjoin1_max_dt_s": 0.1006387949630102,
+    "speed_max_dv_mps": 4.773670408297903e-06,
+    "speed_misjoin1_max_dv_mps": 0.09825923364321199,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "c08bebe5-c3fc-424f-ab7c-75d019e9035e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 14741,
+   "n_visible_boxes": 3932,
+   "visible_frac": 0.2667,
+   "n_tracks": 222,
+   "label_span_s": [
+    0.003,
+    19.963
+   ],
+   "cls_hist": {
+    "trailer": 138,
+    "automobile": 12487,
+    "person": 979,
+    "bus": 403,
+    "rider": 280,
+    "stroller": 77,
+    "heavy_truck": 377
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.0191,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00061,
+     "p95": 0.00226,
+     "max": 0.00249
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000288817284651393,
+    "misjoin1_max_dt_s": 0.1008802475189654,
+    "speed_max_dv_mps": 2.1974221151133122e-05,
+    "speed_misjoin1_max_dv_mps": 0.355963433184753,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "c1cb24d2-0afe-4fff-914f-d6220c4d733d",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 2878,
+   "n_visible_boxes": 1340,
+   "visible_frac": 0.4656,
+   "n_tracks": 95,
+   "label_span_s": [
+    0.0,
+    19.965
+   ],
+   "cls_hist": {
+    "heavy_truck": 872,
+    "automobile": 1396,
+    "trailer": 470,
+    "bus": 9,
+    "person": 77,
+    "rider": 39,
+    "other_vehicle": 15
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.10472,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00115,
+     "p95": 0.00319,
+     "max": 0.00342
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00015882911663922528,
+    "misjoin1_max_dt_s": 0.10082551911663984,
+    "speed_max_dv_mps": 1.3005075381045117e-06,
+    "speed_misjoin1_max_dv_mps": 0.06835843948076814,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "c84ea182-972e-4c4e-9be6-9a1bba5908e2",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 11665,
+   "n_visible_boxes": 3541,
+   "visible_frac": 0.3036,
+   "n_tracks": 199,
+   "label_span_s": [
+    0.001,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 10966,
+    "person": 542,
+    "rider": 136,
+    "trailer": 21
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.093753,
+    "b": 0.100502,
+    "residual_m": {
+     "median": 0.00088,
+     "p95": 0.00164,
+     "max": 0.00178
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00016825270322885777,
+    "misjoin1_max_dt_s": 0.1006339711012636,
+    "speed_max_dv_mps": 1.0401968317808041e-06,
+    "speed_misjoin1_max_dv_mps": 0.03540751226555727,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "c8a39711-ce08-421f-b675-6533f89ad8a3",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 8397,
+   "n_visible_boxes": 5426,
+   "visible_frac": 0.6462,
+   "n_tracks": 169,
+   "label_span_s": [
+    0.002,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 8081,
+    "trailer": 9,
+    "person": 298,
+    "other_vehicle": 9
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.166373,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.00048,
+     "p95": 0.00249,
+     "max": 0.0027
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00027587032585074667,
+    "misjoin1_max_dt_s": 0.10094338532585212,
+    "speed_max_dv_mps": 3.6201171536021093e-06,
+    "speed_misjoin1_max_dv_mps": 0.37552819630419165,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ca11a2a2-1021-475c-9907-e6dbe658ad12",
+   "n_frames": 207,
+   "n_labelled": 200,
+   "n_agent_boxes": 15746,
+   "n_visible_boxes": 5654,
+   "visible_frac": 0.3591,
+   "n_tracks": 209,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "person": 3057,
+    "automobile": 11356,
+    "heavy_truck": 98,
+    "rider": 1147,
+    "trailer": 88
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.325689,
+    "b": 0.100799,
+    "residual_m": {
+     "median": 0.00362,
+     "p95": 0.01168,
+     "max": 0.01206
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 207,
+    "true_max_dt_s": 0.0013165752350345339,
+    "misjoin1_max_dt_s": 0.1021158225167097,
+    "speed_max_dv_mps": 0.00014724284876500848,
+    "speed_misjoin1_max_dv_mps": 0.3142072762687045,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "caf90ce8-c1c4-4c2a-a781-c129b262b89c",
+   "n_frames": 201,
+   "n_labelled": 153,
+   "n_agent_boxes": 204,
+   "n_visible_boxes": 35,
+   "visible_frac": 0.1716,
+   "n_tracks": 6,
+   "label_span_s": [
+    4.594,
+    19.907
+   ],
+   "cls_hist": {
+    "protruding_object": 57,
+    "other_vehicle": 70,
+    "automobile": 77
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.057747,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00268,
+     "p95": 0.00464,
+     "max": 0.00492
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003815044474969262,
+    "misjoin1_max_dt_s": 0.10104642224687319,
+    "speed_max_dv_mps": 1.0514671409111997e-06,
+    "speed_misjoin1_max_dv_mps": 0.0759587440449625,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "d1d382aa-035a-4da8-a7c5-d06ec97f0fcd",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 3205,
+   "n_visible_boxes": 978,
+   "visible_frac": 0.3051,
+   "n_tracks": 123,
+   "label_span_s": [
+    0.001,
+    19.982
+   ],
+   "cls_hist": {
+    "automobile": 1768,
+    "person": 1368,
+    "other_vehicle": 7,
+    "stroller": 2,
+    "trailer": 60
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.041754,
+    "b": 0.101006,
+    "residual_m": {
+     "median": 0.00251,
+     "p95": 0.00555,
+     "max": 0.00584
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.00038271861746775465,
+    "misjoin1_max_dt_s": 0.10105912797591543,
+    "speed_max_dv_mps": 3.481117136772127e-06,
+    "speed_misjoin1_max_dv_mps": 0.08377583686771928,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "d217b78a-0dab-447b-8940-cd0c58b942d2",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 349,
+   "n_visible_boxes": 58,
+   "visible_frac": 0.1662,
+   "n_tracks": 12,
+   "label_span_s": [
+    0.028,
+    19.992
+   ],
+   "cls_hist": {
+    "automobile": 349
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.01068,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.0007,
+     "p95": 0.00117,
+     "max": 0.00125
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 8.935807453624989e-05,
+    "misjoin1_max_dt_s": 0.10065171488098056,
+    "speed_max_dv_mps": 1.7779390615757507e-05,
+    "speed_misjoin1_max_dv_mps": 0.11311587489254649,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "d4729053-1eb7-4973-a13d-84ecf4874b74",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 10876,
+   "n_visible_boxes": 5604,
+   "visible_frac": 0.5153,
+   "n_tracks": 191,
+   "label_span_s": [
+    0.003,
+    19.957
+   ],
+   "cls_hist": {
+    "automobile": 9143,
+    "heavy_truck": 737,
+    "bus": 200,
+    "person": 658,
+    "protruding_object": 16,
+    "trailer": 122
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.000354,
+    "b": 0.100508,
+    "residual_m": {
+     "median": 0.00188,
+     "p95": 0.00402,
+     "max": 0.00463
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0011782906344848243,
+    "misjoin1_max_dt_s": 0.10167841563448476,
+    "speed_max_dv_mps": 1.9713942730703593e-05,
+    "speed_misjoin1_max_dv_mps": 0.25627389097927544,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "d571e998-57d4-44d1-971d-4afffae6321b",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 9616,
+   "n_visible_boxes": 3654,
+   "visible_frac": 0.38,
+   "n_tracks": 108,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 7003,
+    "person": 1797,
+    "heavy_truck": 316,
+    "rider": 82,
+    "bus": 279,
+    "protruding_object": 45,
+    "trailer": 94
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.14887,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00042,
+     "p95": 0.00086,
+     "max": 0.00093
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004077872415503281,
+    "misjoin1_max_dt_s": 0.1007879979691424,
+    "speed_max_dv_mps": 7.408831059763088e-07,
+    "speed_misjoin1_max_dv_mps": 0.1733278051744076,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "d85682b8-f612-4aa3-90a2-ee2bb86151e6",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 27143,
+   "n_visible_boxes": 8769,
+   "visible_frac": 0.3231,
+   "n_tracks": 503,
+   "label_span_s": [
+    0.0,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 23061,
+    "person": 3170,
+    "heavy_truck": 307,
+    "rider": 427,
+    "bus": 98,
+    "protruding_object": 80
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.100346,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00208,
+     "p95": 0.00294,
+     "max": 0.00307
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00034582913084423017,
+    "misjoin1_max_dt_s": 0.10051370247691693,
+    "speed_max_dv_mps": 1.3899834031327885e-05,
+    "speed_misjoin1_max_dv_mps": 0.3500951021921086,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "dbad28c2-dfc1-4860-8c45-bd51760bc969",
+   "n_frames": 200,
+   "n_labelled": 179,
+   "n_agent_boxes": 148,
+   "n_visible_boxes": 77,
+   "visible_frac": 0.5203,
+   "n_tracks": 17,
+   "label_span_s": [
+    1.906,
+    19.938
+   ],
+   "cls_hist": {
+    "automobile": 135,
+    "heavy_truck": 7,
+    "trailer": 6
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.018519,
+    "b": 0.101006,
+    "residual_m": {
+     "median": 0.00151,
+     "p95": 0.00369,
+     "max": 0.00385
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.0002588317231341092,
+    "misjoin1_max_dt_s": 0.10098169996238227,
+    "speed_max_dv_mps": 1.6076511474949484e-05,
+    "speed_misjoin1_max_dv_mps": 0.25142715317531916,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "dca157a0-20a9-464b-a74c-084b678e7be1",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 4569,
+   "n_visible_boxes": 1534,
+   "visible_frac": 0.3357,
+   "n_tracks": 143,
+   "label_span_s": [
+    0.041,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 4252,
+    "trailer": 156,
+    "heavy_truck": 161
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.000696,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.0067,
+     "p95": 0.00862,
+     "max": 0.00884
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00033235064175918185,
+    "misjoin1_max_dt_s": 0.10099815727058085,
+    "speed_max_dv_mps": 1.080282633125762e-06,
+    "speed_misjoin1_max_dv_mps": 0.02560578839519323,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e0e6b875-eb14-41ba-8988-884da8624b34",
+   "n_frames": 200,
+   "n_labelled": 199,
+   "n_agent_boxes": 9747,
+   "n_visible_boxes": 3683,
+   "visible_frac": 0.3779,
+   "n_tracks": 140,
+   "label_span_s": [
+    0.013,
+    19.996
+   ],
+   "cls_hist": {
+    "automobile": 8933,
+    "trailer": 553,
+    "person": 185,
+    "rider": 76
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 3e-05,
+    "b": 0.101004,
+    "residual_m": {
+     "median": 5e-05,
+     "p95": 0.00017,
+     "max": 0.00017
+    },
+    "n_inlier": 66,
+    "n_probe": 66
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 200,
+    "true_max_dt_s": 0.00010410058580134773,
+    "misjoin1_max_dt_s": 0.10103391537023985,
+    "speed_max_dv_mps": 2.2606059379981502e-07,
+    "speed_misjoin1_max_dv_mps": 0.1511808861849666,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e319062b-3760-4803-bf19-414bbb2a3383",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 593,
+   "n_visible_boxes": 158,
+   "visible_frac": 0.2664,
+   "n_tracks": 16,
+   "label_span_s": [
+    0.0,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 488,
+    "heavy_truck": 105
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.132332,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00506,
+     "p95": 0.00855,
+     "max": 0.00884
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004314327004273366,
+    "misjoin1_max_dt_s": 0.10063670833730223,
+    "speed_max_dv_mps": 9.491806842731876e-07,
+    "speed_misjoin1_max_dv_mps": 0.06005220503789843,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e66979e0-6f5a-4e27-b497-c4e8a6d26534",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 4529,
+   "n_visible_boxes": 1776,
+   "visible_frac": 0.3921,
+   "n_tracks": 57,
+   "label_span_s": [
+    0.032,
+    19.99
+   ],
+   "cls_hist": {
+    "automobile": 2668,
+    "bus": 242,
+    "person": 937,
+    "heavy_truck": 286,
+    "other_vehicle": 396
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.109424,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00129,
+     "p95": 0.00196,
+     "max": 0.00197
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002682464121619432,
+    "misjoin1_max_dt_s": 0.1004964018163158,
+    "speed_max_dv_mps": 3.939253545581778e-07,
+    "speed_misjoin1_max_dv_mps": 0.1675585407983038,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e6cb7cd4-8349-4b9d-9674-e3ebf789e611",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 45084,
+   "n_visible_boxes": 21081,
+   "visible_frac": 0.4676,
+   "n_tracks": 1024,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "person": 38818,
+    "automobile": 4140,
+    "rider": 1283,
+    "heavy_truck": 199,
+    "bus": 593,
+    "trailer": 51
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.115577,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00055,
+     "p95": 0.00085,
+     "max": 0.00088
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 9.558116647928605e-05,
+    "misjoin1_max_dt_s": 0.10057362813115844,
+    "speed_max_dv_mps": 1.7129593139486587e-06,
+    "speed_misjoin1_max_dv_mps": 0.29110227643003395,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e7ada9bb-f5f4-4623-9713-71baa917dc59",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 10156,
+   "n_visible_boxes": 4830,
+   "visible_frac": 0.4756,
+   "n_tracks": 186,
+   "label_span_s": [
+    0.011,
+    19.99
+   ],
+   "cls_hist": {
+    "automobile": 7950,
+    "person": 2147,
+    "rider": 51,
+    "stroller": 5,
+    "heavy_truck": 3
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.048209,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00142,
+     "p95": 0.00188,
+     "max": 0.00189
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0003789404861080925,
+    "misjoin1_max_dt_s": 0.10104557548610771,
+    "speed_max_dv_mps": 1.1004448903229047e-06,
+    "speed_misjoin1_max_dv_mps": 0.16137296188248484,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "e8ace736-b9b3-4f0b-a9bd-88b7161fc550",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 2053,
+   "n_visible_boxes": 362,
+   "visible_frac": 0.1763,
+   "n_tracks": 65,
+   "label_span_s": [
+    0.002,
+    19.942
+   ],
+   "cls_hist": {
+    "heavy_truck": 483,
+    "automobile": 1333,
+    "protruding_object": 11,
+    "trailer": 216,
+    "bus": 10
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.059045,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00193,
+     "p95": 0.00246,
+     "max": 0.00248
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00014139939504800164,
+    "misjoin1_max_dt_s": 0.10080796555497212,
+    "speed_max_dv_mps": 1.5526478947869293e-05,
+    "speed_misjoin1_max_dv_mps": 0.2781403707330945,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ea019ab7-bd2d-41b1-b35e-37bbfb578c4b",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 199,
+   "n_visible_boxes": 199,
+   "visible_frac": 1.0,
+   "n_tracks": 1,
+   "label_span_s": [
+    0.02,
+    19.916
+   ],
+   "cls_hist": {
+    "automobile": 199
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.07478,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00111,
+     "p95": 0.00216,
+     "max": 0.00235
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 9.014092207593194e-05,
+    "misjoin1_max_dt_s": 0.1007567609220743,
+    "speed_max_dv_mps": 1.8676781508020213e-06,
+    "speed_misjoin1_max_dv_mps": 0.11867106745147993,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "eabb9abf-06ae-4fd6-8141-a1d6e6ca4351",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 3592,
+   "n_visible_boxes": 2087,
+   "visible_frac": 0.581,
+   "n_tracks": 65,
+   "label_span_s": [
+    0.029,
+    19.978
+   ],
+   "cls_hist": {
+    "automobile": 3058,
+    "bus": 323,
+    "person": 191,
+    "heavy_truck": 20
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.059134,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00122,
+     "p95": 0.00163,
+     "max": 0.00167
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0001478896276196906,
+    "misjoin1_max_dt_s": 0.10081446462762145,
+    "speed_max_dv_mps": 9.296631198196792e-07,
+    "speed_misjoin1_max_dv_mps": 0.21626355849532963,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "eb96a48b-db1a-49d3-8377-54be35a514d0",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 4409,
+   "n_visible_boxes": 1398,
+   "visible_frac": 0.3171,
+   "n_tracks": 49,
+   "label_span_s": [
+    0.0,
+    19.994
+   ],
+   "cls_hist": {
+    "automobile": 4167,
+    "heavy_truck": 125,
+    "person": 117
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.070136,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00065,
+     "p95": 0.00099,
+     "max": 0.00101
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002570317419454682,
+    "misjoin1_max_dt_s": 0.10067707341935203,
+    "speed_max_dv_mps": 3.2033060393565904e-05,
+    "speed_misjoin1_max_dv_mps": 0.2278188249772617,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ebd51f52-29f6-4422-b9da-1a90cbbb48f2",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1525,
+   "n_visible_boxes": 298,
+   "visible_frac": 0.1954,
+   "n_tracks": 53,
+   "label_span_s": [
+    0.056,
+    19.993
+   ],
+   "cls_hist": {
+    "automobile": 1340,
+    "person": 78,
+    "heavy_truck": 40,
+    "rider": 67
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.050643,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00168,
+     "p95": 0.00194,
+     "max": 0.00197
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00033560060846582473,
+    "misjoin1_max_dt_s": 0.1005278631576387,
+    "speed_max_dv_mps": 1.0699876576758527e-05,
+    "speed_misjoin1_max_dv_mps": 0.1646580659160204,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ed09262b-3ac0-41df-a68b-1314eb2ec92d",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 6052,
+   "n_visible_boxes": 3051,
+   "visible_frac": 0.5041,
+   "n_tracks": 76,
+   "label_span_s": [
+    0.009,
+    19.998
+   ],
+   "cls_hist": {
+    "automobile": 1439,
+    "bus": 197,
+    "person": 4232,
+    "rider": 184
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.075141,
+    "b": 0.100663,
+    "residual_m": {
+     "median": 0.00039,
+     "p95": 0.00211,
+     "max": 0.00231
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00046997483293606535,
+    "misjoin1_max_dt_s": 0.10113314898904696,
+    "speed_max_dv_mps": 4.995996949475057e-07,
+    "speed_misjoin1_max_dv_mps": 0.3146325154635985,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ed87040c-cf3c-4fe4-9a95-50c1114f0d38",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1120,
+   "n_visible_boxes": 530,
+   "visible_frac": 0.4732,
+   "n_tracks": 18,
+   "label_span_s": [
+    0.049,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 458,
+    "person": 100,
+    "animal": 206,
+    "rider": 124,
+    "trailer": 102,
+    "heavy_truck": 130
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.162159,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00082,
+     "p95": 0.0048,
+     "max": 0.00496
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00027867609744447464,
+    "misjoin1_max_dt_s": 0.10094507609744596,
+    "speed_max_dv_mps": 2.5280962566043286e-05,
+    "speed_misjoin1_max_dv_mps": 0.2901840413617176,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "edd5d17b-1bea-402f-ad02-7fec082a7f2e",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 8110,
+   "n_visible_boxes": 3205,
+   "visible_frac": 0.3952,
+   "n_tracks": 226,
+   "label_span_s": [
+    0.005,
+    19.999
+   ],
+   "cls_hist": {
+    "automobile": 7099,
+    "person": 653,
+    "heavy_truck": 152,
+    "trailer": 182,
+    "protruding_object": 24
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.123811,
+    "b": 0.100496,
+    "residual_m": {
+     "median": 0.00412,
+     "p95": 0.00949,
+     "max": 0.00997
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0007103222934315145,
+    "misjoin1_max_dt_s": 0.10120652920707153,
+    "speed_max_dv_mps": 5.157239575837025e-06,
+    "speed_misjoin1_max_dv_mps": 0.06959813520397518,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f14ae2d2-7bfe-4bea-a388-b0eea17709d3",
+   "n_frames": 202,
+   "n_labelled": 199,
+   "n_agent_boxes": 1590,
+   "n_visible_boxes": 581,
+   "visible_frac": 0.3654,
+   "n_tracks": 25,
+   "label_span_s": [
+    0.007,
+    19.96
+   ],
+   "cls_hist": {
+    "rider": 189,
+    "automobile": 1288,
+    "person": 113
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.070204,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00119,
+     "p95": 0.0026,
+     "max": 0.00281
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 202,
+    "true_max_dt_s": 0.00021981489836510326,
+    "misjoin1_max_dt_s": 0.10080854544813889,
+    "speed_max_dv_mps": 1.489596691328643e-06,
+    "speed_misjoin1_max_dv_mps": 0.04290146480813384,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f19cffbf-5621-4be5-83a4-7a096f6b7c39",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 9121,
+   "n_visible_boxes": 4645,
+   "visible_frac": 0.5093,
+   "n_tracks": 109,
+   "label_span_s": [
+    0.007,
+    19.996
+   ],
+   "cls_hist": {
+    "automobile": 8101,
+    "protruding_object": 212,
+    "person": 797,
+    "stroller": 2,
+    "rider": 7,
+    "other_vehicle": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": 0.024395,
+    "b": 0.1005,
+    "residual_m": {
+     "median": 0.00066,
+     "p95": 0.00077,
+     "max": 0.00078
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000145744099742922,
+    "misjoin1_max_dt_s": 0.10064549340025833,
+    "speed_max_dv_mps": 1.2191803380190436e-06,
+    "speed_misjoin1_max_dv_mps": 0.17557135848197447,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f1a94fee-838c-400a-a603-32c40540068b",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 15662,
+   "n_visible_boxes": 7567,
+   "visible_frac": 0.4831,
+   "n_tracks": 181,
+   "label_span_s": [
+    0.0,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 11316,
+    "protruding_object": 93,
+    "person": 3912,
+    "rider": 188,
+    "heavy_truck": 45,
+    "stroller": 108
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.065241,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00081,
+     "p95": 0.00116,
+     "max": 0.00124
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00017536328248368704,
+    "misjoin1_max_dt_s": 0.10084179828248452,
+    "speed_max_dv_mps": 3.1946085377043687e-06,
+    "speed_misjoin1_max_dv_mps": 0.15203158498483127,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f1e1536b-1e23-4d73-bbf9-492a54358d10",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 3637,
+   "n_visible_boxes": 1495,
+   "visible_frac": 0.4111,
+   "n_tracks": 50,
+   "label_span_s": [
+    0.017,
+    20.0
+   ],
+   "cls_hist": {
+    "person": 2232,
+    "bus": 217,
+    "automobile": 974,
+    "rider": 200,
+    "trailer": 14
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.139634,
+    "b": 0.100669,
+    "residual_m": {
+     "median": 0.00029,
+     "p95": 0.00098,
+     "max": 0.00099
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002007717555575772,
+    "misjoin1_max_dt_s": 0.1007035411267907,
+    "speed_max_dv_mps": 1.173020370170974e-05,
+    "speed_misjoin1_max_dv_mps": 0.29958978522678226,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f26af403-f548-4485-a118-09d6753a7bb8",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 11395,
+   "n_visible_boxes": 3788,
+   "visible_frac": 0.3324,
+   "n_tracks": 188,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 10973,
+    "person": 357,
+    "trailer": 38,
+    "rider": 27
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.074099,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00506,
+     "p95": 0.00585,
+     "max": 0.00603
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0005765427302401177,
+    "misjoin1_max_dt_s": 0.10124227696523717,
+    "speed_max_dv_mps": 1.1750744235428101e-06,
+    "speed_misjoin1_max_dv_mps": 0.23595862724747452,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f4226f59-077b-494e-a866-30eff5e47d57",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 3381,
+   "n_visible_boxes": 1242,
+   "visible_frac": 0.3673,
+   "n_tracks": 109,
+   "label_span_s": [
+    0.043,
+    19.996
+   ],
+   "cls_hist": {
+    "heavy_truck": 509,
+    "automobile": 2794,
+    "trailer": 76,
+    "person": 2
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.144587,
+    "b": 0.10067,
+    "residual_m": {
+     "median": 0.0021,
+     "p95": 0.00548,
+     "max": 0.00572
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000526336065547639,
+    "misjoin1_max_dt_s": 0.10119300106555329,
+    "speed_max_dv_mps": 5.674540712874432e-07,
+    "speed_misjoin1_max_dv_mps": 0.1770002968163169,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f4740120-50c2-4ed6-a270-cf7ddbc299df",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 7154,
+   "n_visible_boxes": 3305,
+   "visible_frac": 0.462,
+   "n_tracks": 70,
+   "label_span_s": [
+    0.001,
+    20.0
+   ],
+   "cls_hist": {
+    "automobile": 5307,
+    "rider": 220,
+    "person": 1570,
+    "stroller": 15,
+    "animal": 42
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.151971,
+    "b": 0.100665,
+    "residual_m": {
+     "median": 0.00084,
+     "p95": 0.00148,
+     "max": 0.00151
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0004992934063423604,
+    "misjoin1_max_dt_s": 0.10061072506686024,
+    "speed_max_dv_mps": 2.3246064158044533e-06,
+    "speed_misjoin1_max_dv_mps": 0.09721589180829682,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f6e7827e-fd46-4e02-9a42-f7fabe3e036c",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 981,
+   "n_visible_boxes": 128,
+   "visible_frac": 0.1305,
+   "n_tracks": 43,
+   "label_span_s": [
+    0.014,
+    19.925
+   ],
+   "cls_hist": {
+    "heavy_truck": 391,
+    "rider": 44,
+    "automobile": 534,
+    "trailer": 12
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.132401,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00046,
+     "p95": 0.00199,
+     "max": 0.00226
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0001271175352607068,
+    "misjoin1_max_dt_s": 0.10079278835855894,
+    "speed_max_dv_mps": 5.367457942995202e-06,
+    "speed_misjoin1_max_dv_mps": 0.2991585784915891,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "f901e9e6-cc3a-4af4-8461-a6c6a6f3d6d2",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1456,
+   "n_visible_boxes": 1008,
+   "visible_frac": 0.6923,
+   "n_tracks": 37,
+   "label_span_s": [
+    0.039,
+    19.981
+   ],
+   "cls_hist": {
+    "automobile": 777,
+    "trailer": 125,
+    "heavy_truck": 529,
+    "protruding_object": 25
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.130654,
+    "b": 0.100663,
+    "residual_m": {
+     "median": 0.00564,
+     "p95": 0.01425,
+     "max": 0.01517
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.000561451465156626,
+    "misjoin1_max_dt_s": 0.10122430920030522,
+    "speed_max_dv_mps": 9.66718392447774e-07,
+    "speed_misjoin1_max_dv_mps": 0.10436006700850342,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "fb8e8200-bde1-4caa-9265-12535e1506c2",
+   "n_frames": 201,
+   "n_labelled": 66,
+   "n_agent_boxes": 480,
+   "n_visible_boxes": 0,
+   "visible_frac": 0.0,
+   "n_tracks": 21,
+   "label_span_s": [
+    0.082,
+    6.594
+   ],
+   "cls_hist": {
+    "automobile": 448,
+    "trailer": 32
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.109758,
+    "b": 0.100667,
+    "residual_m": {
+     "median": 0.00258,
+     "p95": 0.00267,
+     "max": 0.00269
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00011648990989313046,
+    "misjoin1_max_dt_s": 0.10055185561808955,
+    "speed_max_dv_mps": 9.673690080092001e-07,
+    "speed_misjoin1_max_dv_mps": 0.08898904583301714,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "fe764229-15df-4506-b7e4-2977fd78e834",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 13914,
+   "n_visible_boxes": 2938,
+   "visible_frac": 0.2112,
+   "n_tracks": 107,
+   "label_span_s": [
+    0.011,
+    19.997
+   ],
+   "cls_hist": {
+    "automobile": 13832,
+    "person": 72,
+    "protruding_object": 10
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.142053,
+    "b": 0.100751,
+    "residual_m": {
+     "median": 0.00082,
+     "p95": 0.00136,
+     "max": 0.00145
+    },
+    "n_inlier": 23,
+    "n_probe": 23
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.010398699604738604,
+    "misjoin1_max_dt_s": 0.10713075347826617,
+    "speed_max_dv_mps": 2.2466312459096423e-05,
+    "speed_misjoin1_max_dv_mps": 0.13790178298950195,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "fe83e06e-3c2c-46a6-8b08-9f1a547cba1f",
+   "n_frames": 201,
+   "n_labelled": 199,
+   "n_agent_boxes": 1381,
+   "n_visible_boxes": 1034,
+   "visible_frac": 0.7487,
+   "n_tracks": 22,
+   "label_span_s": [
+    0.072,
+    19.974
+   ],
+   "cls_hist": {
+    "automobile": 1218,
+    "person": 163
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.06543,
+    "b": 0.100666,
+    "residual_m": {
+     "median": 0.00106,
+     "p95": 0.00196,
+     "max": 0.00198
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.0002864834146407702,
+    "misjoin1_max_dt_s": 0.1003870697651126,
+    "speed_max_dv_mps": 1.989042790206952e-05,
+    "speed_misjoin1_max_dv_mps": 0.2678793030695461,
+    "time_circular": false
+   }
+  },
+  {
+   "clip_id": "ffcd075e-c256-4c8f-af98-b83e86ce51a9",
+   "n_frames": 201,
+   "n_labelled": 200,
+   "n_agent_boxes": 1671,
+   "n_visible_boxes": 774,
+   "visible_frac": 0.4632,
+   "n_tracks": 67,
+   "label_span_s": [
+    0.005,
+    19.972
+   ],
+   "cls_hist": {
+    "automobile": 785,
+    "heavy_truck": 732,
+    "trailer": 154
+   },
+   "time_source": "register_poses_to_time",
+   "registration": {
+    "a": -0.152811,
+    "b": 0.100668,
+    "residual_m": {
+     "median": 0.00212,
+     "p95": 0.00271,
+     "max": 0.00278
+    },
+    "n_inlier": 96,
+    "n_probe": 96
+   },
+   "n_stack": 3,
+   "alignment": {
+    "n": 201,
+    "true_max_dt_s": 0.00018750608708018035,
+    "misjoin1_max_dt_s": 0.10085464608707895,
+    "speed_max_dv_mps": 1.0734323385719335e-06,
+    "speed_misjoin1_max_dv_mps": 0.05985987866231035,
+    "time_circular": false
+   }
+  }
+ ],
+ "digest_scope": {
+  "algo": "md5",
+  "digest": "3ddb42ecbd3926066795a94587af2aed",
+  "scope": "compressed",
+  "filename": "b1eval_agents.jsonl.xz",
+  "declared_by": "backfill-MEASURED",
+  "note": "scope MEASURED by hashing both artifacts of b1eval_agents.jsonl.xz; the other candidate was 51551ca060d95946f8a25ad59466924a",
+  "schema": "tanitad.join_digest_scope/1"
+ }
+}
