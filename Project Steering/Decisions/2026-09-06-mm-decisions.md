@@ -1471,3 +1471,113 @@ source read spends the PI's attention on work the orchestrator owed — and it i
 night's other recurring error, **a blocker that dissolves on a second probe** (four times tonight).
 ⚠️ **`M72`'s escalation is not withdrawn — it is narrowed**, and it now carries the default our own
 standard required in the first place.
+
+## M74. ⛔⛔⛔ THE TURN GATE IS UNREACHABLE AND THE GROUND TRUTH FAILS IT — M64's named defect is a metric artefact, and the answer INVERTS
+
+### 1. The measurement that breaks the night's headline
+
+The eval's v1 lateral gate is **`|dyaw| > 0.15` rad**. Scored through it on the TURN_L-goal windows:
+
+| arm | passes the turn gate |
+|---|---|
+| ⛔ **the HUMAN's own recorded driving** | **3 of 9** (median dyaw **0.0431**) |
+| `ccos_argmax` | **6 of 9 — TWICE AS OFTEN AS THE HUMAN** |
+
+The windows are near-stationary (**v0 median 1.40 m/s**), so the gate demands
+`kappa >= 0.15/(v0*T) = 0.0536 1/m` — **a 19 m radius**. ⇒ **3/9 windows demand MORE than the shipped
+`GOAL_KAPPA_TURN = 0.08`; 6/9 demand more than the corrected 0.02.** **A yaw gate calibrated for
+junction turns is unreachable at walking pace.**
+
+⇒ ⛔⛔ **`M64`'s named defect — "refav1's planner emits ZERO left turns" — and every turn-recall number
+in `M57`, `M58`, `M64` and `M69`, is measured through a gate the GROUND TRUTH FAILS TWO-THIRDS OF THE
+TIME.** ⚠️ The stream that produced `M64` is independently flagged as **likely sharing the defect**.
+
+### 2. ⭐⭐ Under a reachable criterion the answer INVERTS — and it is a YES
+
+| arm | curvature MAE on turn windows | reading |
+|---|---|---|
+| **`wk15`** | **0.04578** | ⭐ **best of every banked arm, −23 % vs the straight floor** |
+| perfectly-straight floor | 0.05936 | the bar |
+| `ccos_argmax` (recall 0.3636) | ⛔ **0.07935** | **WORSE THAN DRIVING IN A STRAIGHT LINE** |
+
+⇒ ⭐⭐⭐ **THERE IS AN ARM THAT BOTH DRIVES ACCURATELY AND TURNS: `wk15`** — at ADE **0.9877** on turn
+windows — **and it is the arm this entire campaign called "accurate because it does not turn."**
+⛔ **`ccos_argmax` does not track the road; it OVER-TURNS, and the recall gate rewarded it for that.**
+
+### 3. ⭐ CLASS `ARCH-D` — and it completes the night's family
+
+⛔ **A METRIC WITH A THRESHOLD CARRIES THE REGIME IT WAS CALIBRATED FOR, AND THE GROUND TRUTH MUST BE
+SCORED THROUGH THE SAME GATE BEFORE ANY ARM IS.** **One line would have caught it** — and nobody ran it,
+through four separate packages.
+
+⇒ This is the **fourth** member of tonight's scope family, and the sharpest:
+* `M52` — a result carries its **MODEL**;
+* `M61` — a floor carries its **RIG**;
+* `M69` — a lever carries its **OPERATING POINT**;
+* **`M74` — a threshold carries its REGIME.**
+⭐ **The general form: score the ground truth through every gate before scoring an arm.** A gate the
+human fails is not measuring skill; it is measuring the gate.
+
+### 4. ⛔ "The penalty defeats the hierarchy" is WITHDRAWN — the defect is the GOAL VOCABULARY
+
+The originating stream withdrew its own hypothesis: **the penalty does fight the goal — but the goal
+commands ~5x the human's heading change, so fighting it moved the plan TOWARD the human.**
+
+⇒ ⭐ **This converges with `M69`**, which measured the same thing from the corpus side (`0.08` = R 12.5 m
+on a corpus curving at R 100–1000 m, where obeying is worse than driving straight). ⇒ ⛔ **The defect is
+the GOAL VOCABULARY, not the cost** — which **qualifies `M54`/`M58`/`M64`'s "the cost is the defect."**
+The cost does discard the commanded candidate; **the commanded candidate was wrong, and discarding it
+was right.**
+
+⚠️ **What survives from `M54`:** the *search* is still exonerated (it optimises better with a perfect
+goal and drives worse), and the factorial's `W_KAPPA` → `turn_left` 0.0000 in all four cells is still a
+true statement **about the recall metric** — which we now know is the broken one.
+
+### 4b. ⭐⭐⭐ THE TWO STREAMS DO NOT CONFLICT — THEY COMPOSE, and the synthesis is the real result
+
+The turn-asymmetry stream landed the **causal** half at seed 0, paired on the **same 75 windows**, one
+variable (`W_KAPPA` 0 → 15.11245, same plan seed):
+
+| | recall | delta | separated |
+|---|---|---|---|
+| **`turn_left`** | 0.3667 → **0.0000** | **−0.3667 [−0.6333, −0.1000]** | **YES** |
+| `turn_right` | 0.5667 → 0.4333 | **−0.1333 [−0.2286, −0.0357]** | **YES** |
+
+⭐ And the mechanism, in one cell — on windows where the head decoded the **correct** token:
+`W_KAPPA = 0` tracks the goal at **full ±0.08 on 29 of 29** and turns **SYMMETRICALLY** (left 7/9 =
+0.7778 vs right 16/20 = 0.8000); with the penalty, the 11 windows losing full curvature are **all 9
+left plus 2 right**. ⛔ **At `W_KAPPA = 0` the L/R gap is NOT separated** ⇒ *without the penalty the
+planner is not measurably asymmetric.*
+
+⇒ ⭐⭐ **RECONCILED: the `ccos` arm clears the unreachable gate PRECISELY BECAUSE it emits the full
+0.08 — a 12.5 m radius — while the human turns at median dyaw 0.0431.** ⇒ **BOTH are true:**
+1. ⭐ **the penalty genuinely removes turns, asymmetrically, and that is now well-powered** (30/30, 6
+   clusters, separated in both directions, with the speed confound re-refuted at n=30/30 — left is
+   **0/17 SLOW and 0/13 FAST**, zero in *both* bands ⇒ **direction, not speed**);
+2. ⛔ **what it removes is an OVER-TURN that tracks the road WORSE THAN A STRAIGHT LINE**
+   (`ccos_argmax` curvature MAE **0.07935** vs the straight floor's 0.05936).
+
+⇒ ⛔ **So the CAUSAL claim STANDS and is well-powered. What is withdrawn is the VALUE reading: that
+suppressing those turns is a DEFECT.** `W_KAPPA` is suppressing a **wrong command**, and the recall
+gate scored it as a loss because the gate rewards emitting 0.08.
+
+⚠️ ⭐ **This is why "the cost discards the correct candidate" must be restated**: the cost discards the
+**commanded** candidate, and the commanded candidate is **not the correct one.**
+
+### 5. ⭐ And the seed floor is a property of the ARM, not only the rig — amends M61
+
+MEASURED: a **22x spread** — **0.0047 / 0.0607 / 0.1035** — **across configurations of ONE model on ONE
+panel.** ⇒ `M61` established floors are **rig**-dependent; this adds that they are **arm**-dependent too.
+⛔ **A floor is therefore identified by FOUR things: the metric, the statistic, the rig, and the ARM.**
+Quoting a remembered scalar is inadmissible — read `raw/seed_floor*.txt` for the exact configuration.
+
+### 6. What must now be re-read
+
+1. ⛔ **Every turn-recall claim in `M57`, `M58`, `M64`, `M69`** — re-score with the ground truth passed
+   through the same gate, or replace recall with **curvature MAE against the straight-line floor**,
+   which is reachable and which the human passes by construction.
+2. ⛔ **`M64`'s "OUTCOME A, the asymmetry is real"** — the *separation* may survive (it was measured
+   consistently across arms), but **"zero left turns" as a capability claim does not**, because the
+   human scores 3/9 on the same gate.
+3. ⭐ **`wk15` may now be quoted as a lateral fix — on curvature MAE, with the straight floor beside
+   it** — which is the opposite of `M64` §P5's ruling, and for a better reason.
