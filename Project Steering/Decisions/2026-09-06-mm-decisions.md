@@ -884,3 +884,74 @@ measurement, which is the outcome a ruling should have.**
 everything.** Its first APPROVAL is what makes its earlier refusals evidence rather than caution — and
 it arrived from the same instrument, on the same rig, with the same arithmetic. **Report an
 instrument's first pass as carefully as its refusals.**
+
+## M66. ⛔⛔ THE FLOOR WE MEASURE EVERYTHING AGAINST IS NOT DRIVABLE — `ha0_ext` violates the friction circle on 18.5 % of windows
+
+### 1. The finding, and it reframes every refav1 comparison in the programme
+
+**MEASURED** while rendering the arms reel: **`ha0_ext` is outside the friction circle on 18.5 % of
+windows, peaking at 1.436 g.** It holds a **noisy MEASURED curvature** from t0, and that is exactly why
+it beats every planner arm on ADE (**0.8772 m**).
+
+⇒ ⛔⛔ **`ha0_ext` is a HARD-TO-BEAT REFERENCE, NOT A FEASIBLE ONE.** Every *"parity with `ha0_ext`"*
+statement this programme has made — including tonight's headline that `best` reaches **+0.0066, 9.2x
+below the seed floor** — is **parity with a trajectory a real car could not execute on nearly a fifth
+of the windows.**
+
+⇒ ⭐ **This does NOT make the comparisons wrong; it makes them incomplete.** `ha0_ext` remains the right
+**echo control** — its whole purpose is to show what "just hold the initial action" achieves, and that
+is a legitimate and demanding bar. ⛔ **But it is not a target**, and an arm that matched it exactly
+would inherit an infeasible plan on 18.5 % of windows. ⇒ **Every `ha0_ext` comparison must now carry
+its feasibility rate**, exactly as every interval carries its estimator.
+
+⚠️ ⭐ **And it explains a puzzle from `M53`:** `ol` (the T0 kinematic contract) reads ADE **0.8052** and
+`ha0_ext` **0.8772** — both far better than any planner. Part of that margin is bought with
+**physically inadmissible curvature**, which no feasibility-respecting planner can or should match.
+
+### 2. The zero-violation superlative, enumerated properly — third confirmation
+
+⛔ **Six arms read `kamm_over_rate` 0.0 %**, not one: `combined`, `wk15`, `best`, `wk151`,
+`wk15_ladder`, `cos_wk`. ⭐ **What is unique to `combined` is zero violations WHILE KEEPING CURVATURE**
+(max|kappa| **0.1505**, and the same 27.5 % straight-plan rate as `ccos_argmax`) — the others reach zero
+by not turning, `cos_wk` at **100 % straight**.
+
+⇒ This is the **third independent confirmation** of `M58` §3's retraction, now with the **full
+population** rather than a control set. ⭐ *A control set is not a census* — and the census is what
+turns "the only arm" into the correct and much more interesting claim: **the only arm that is both safe
+and still curving.** ⛔ And `M56` still stands over all of it: `combined`'s zero **dies at seed 1**.
+
+### 3. ⚠️ A "correction" I am NOT accepting, because it is scoped to a different panel
+
+The reel's stream noted *"no arm in the 13-arm panel has max|kappa| 0.0267"*. **True of ITS panel, and
+it does not touch the figure I reported.** **VERIFIED at source:** `raw/lonshift_cannot_turn.md:25`
+gives `max|kappa|` over 27 windows as **0.0267 1/m** for **`lonshift`** — an arm from the longitudinal
+package that **is not in the reel's panel at all.**
+⇒ ⭐ *A true statement about one population, read as a statement about another* — the night's most
+frequent error, and it is worth recording that it also runs in this direction: **an agent's correction
+must be scoped before it is accepted.**
+
+### 4. ⭐⭐ What the video shows that no table could
+
+**The planner's failure is not a slightly-worse number — it is a car leaving the road.** On clip
+`dbad28c2` at 14.97 m/s the road is **dead straight**; the human, the floor, `wk15` and `best` all go
+straight; **`ccos_argmax` swings hard right into the trees — ADE 9.113 m against `best`'s 0.139 m, at
+3.262 g lateral.** ⛔ **A "1.3272 vs 0.8838" ADE column cannot show that one of those arms is a crash.**
+
+⭐ And on `24fee8a5`'s left turn **the ordering inverts, visibly**: the physics-capped `combined` tracks
+the human round the ramp while the curvature-charged `best` goes almost straight. ⇒ **The arms are not
+better or worse than one another — they FAIL IN DIFFERENT DIRECTIONS, and the cost geometry picks
+which.** That is `M54`/`M58`'s conclusion made watchable.
+
+### 5. The GT control passed, and both halves were required
+
+Recorded actions fed through the planner's **own** integrator over all 40 windows: **STEER reads ADE
+0.1552 m** (median 0.1512) against the legacy **KAPPA at 0.8727 m** — **5.62x separation**, 8.57x on
+turning windows. ⭐ **Both halves are required: a passing arm alone cannot distinguish a right
+integrator from a loose tolerance.**
+
+⭐ **Three defects were caught by decoding the output back rather than by exit codes** — a **3.9 %
+vertical stretch on every frame while every exit code read 0** (ffmpeg's image demuxer silently
+rescales to the first frame); the **ground truth drawn underneath the floor line** and therefore
+invisible on straight windows; and the camera overlay **escaping its pane** into the arms table.
+⇒ **A render that reports success is not a render that is correct**, and the only check that found
+these was reading the artifact back.
