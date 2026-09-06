@@ -450,3 +450,84 @@ def test_the_route_head_insensitivity_is_never_called_a_defect():
     assert "TACTICAL heads are a different" in s, (
         "route-head insensitivity must not be generalised to the tactical heads, "
         "which are separated on the longitudinal factor")
+
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE REEL MUST NAME THE MODEL IT DRAWS — added 2026-09-06 after a refcv4b   #
+#    reel came out titled "refcv3 (REF-C v3, hier)" with "128 anchors" in the  #
+#    sub-banner while its own BEV panel read 117.                              #
+# --------------------------------------------------------------------------- #
+class _DropArgparseHelp(ast.NodeTransformer):
+    """Remove `ap.add_argument(...)` calls from the tree.
+
+    ⚠️ THIS EXCLUSION IS LOAD-BEARING AND WAS FOUND BY THE TEST FAILING. The
+    first version of `_drawn_strings` scanned the whole module and fired on the
+    `--run-label` HELP TEXT, which DOCUMENTS the defect by quoting it. Help text
+    is CLI output, never frame text, and a test that cannot tell the difference
+    would forbid describing the bug it exists to prevent."""
+
+    def visit_Call(self, node):                       # noqa: N802
+        f = node.func
+        if isinstance(f, ast.Attribute) and f.attr == "add_argument":
+            return ast.Constant(value=None)
+        return self.generic_visit(node)
+
+
+def _drawn_strings(src: str) -> str:
+    """Everything the renderer can put on a FRAME or in the sidecar: the module
+    minus its comments (``ast.unparse`` drops those) and minus its argparse help.
+    A literal that survives this round-trip is a literal that can be DRAWN."""
+    tree = _DropArgparseHelp().visit(ast.parse(src))
+    ast.fix_missing_locations(tree)
+    return ast.unparse(tree)
+
+
+def test_the_banner_names_the_run_and_never_hard_codes_refcv3():
+    """MEASURED 2026-09-06: the banner read `refcv3 (REF-C v3, {arm})` for every
+    checkpoint this tool renders, so a refcv4b reel announced itself as refcv3.
+    Identity must be DERIVED (``--run-label``, defaulting to the checkpoint's own
+    run directory), never asserted."""
+    drawn = _drawn_strings(_src())
+    assert "refcv3 (REF-C v3" not in drawn, (
+        "the banner hard-codes 'refcv3 (REF-C v3' — this renderer draws every "
+        "REF-C v3/v4 build and a reel that names the wrong model is worse than "
+        "no reel.")
+    assert "--run-label" in _src(), "the --run-label escape hatch is missing"
+    assert "RUN_LABEL" in drawn, "the banner must interpolate a derived label"
+
+
+def test_the_anchor_count_is_read_from_the_checkpoint_never_hard_coded():
+    """The fan size is a property of the build (refcv3 128, refcv4b 117) and the
+    BEV panel already reads it from ``prov['n_anchors']``. Every OTHER place that
+    states it — sub-banner, legend, viz-element record, sidecar — must read the
+    same source, or one panel contradicts another on the same frame."""
+    drawn = _drawn_strings(_src())
+    for bad in ("128 anchors", "128-anchor", "fan 128"):
+        assert bad not in drawn, (
+            f"{bad!r} is hard-coded in drawn text while the BEV panel reads "
+            f"prov['n_anchors']; on a 117-anchor build the frame contradicts "
+            f"itself.")
+    assert "N_ANCH" in drawn, "the anchor count must come from a derived name"
+
+
+def test_the_nav_caption_default_borrows_no_other_checkpoints_measurement():
+    """⛔ The DRAWN caption may not carry a measured nav-sensitivity number that
+    belongs to a different checkpoint. The old default printed refcv3's
+    ``+0.0000 true-shuffled, MEASURED @ step 30 000`` on any reel, where it reads
+    as measured on the model being drawn — the `df` / `step_s` / cylindrical-FOV
+    scope error in a caption. The run-specific value now arrives via
+    ``--nav-shuffle-note``; the default says the quantity is not measured.
+
+    ⚠️ Scope: this is about the caption WRAPPED FOR THE FRAME. The sidecar's
+    ``nav_is_an_oracle`` prose keeps the number *with its step and its artifact
+    path*, which is admissible and is asserted by its own test above."""
+    src = _src()
+    assert "--nav-shuffle-note" in src, "the run-specific note has no way in"
+    i = src.index("NAV_CAP = 6")
+    j = src.index('F["tiny"], 330)', i)
+    caption = src[i:j]
+    assert "30 000" not in caption and "30000" not in caption, (
+        "the DRAWN nav caption hard-codes a step-30 000 measurement; on any "
+        "other checkpoint it reads as measured there.")
+    assert "nav_shuffle_note" in caption, (
+        "the caption must consult --nav-shuffle-note for a run-specific number")
