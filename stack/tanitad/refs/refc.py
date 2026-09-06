@@ -147,6 +147,13 @@ from torch import Tensor, nn
 
 from tanitad.models.kinematic import rollout_unicycle
 from tanitad.refs import feasible_decode as _feas
+# ⭐ S7 / E15 — the param-free metric-goal-point compatibility. Imported, NEVER
+# re-derived beside the thing it scores: a guard/score re-implemented next to
+# its own consumer is the exact defect the navpred RESULT retracted two
+# published numbers for. `goal_point` imports `tanitad.data.lan` and (lazily,
+# inside one function) `refc_v3` — so there is no module-level cycle with this
+# file, which `refc_v3` imports.
+from tanitad.refs import goal_point as gpm
 # refcv5 WP-4. Cheap and cycle-free: `refc_sampler` imports only
 # `tanitad.models.kinematic`, which this module already imports. WP-6's
 # `refc_agents` is imported LAZILY inside `RefCModel.__init__` instead --
@@ -554,6 +561,29 @@ class SelectionConfig:
     graft_route: bool = False         # S5 route readout reaches the ranking
     graft_goal: bool = False          # S6 predicted GEOMETRIC goal (bearing +
     #                                   along-track), two independent gates
+    # ⭐⭐ S7 / E15 (GP-1, 2026-09-06): the PREDICTED METRIC GOAL POINT reaches
+    # the ranked score through a PARAM-FREE geometric compatibility at a fixed
+    # TIME slot (`goal_point.anchor_goal_prior_at_time`), behind ONE zero-init
+    # gate. Registered in `…/Research/2026-09-06-goal-point/PREREG.md` §8.
+    #
+    # ⛔ WHY IT IS A SEPARATE SEAM FROM S6 AND NOT A THIRD S6 GATE. S6's two
+    # terms are a BEARING (`_lan_anchor_prior`, terminal-direction cosine) and
+    # an ALONG-TRACK PREFERENCE (`_goal_along_prior`, z-scored terminal reach).
+    # MEASURED (PREREG §0): on the lateral axis a point and a bearing TIE TO
+    # FOUR DECIMALS — an identity, because anchors compared at the same ARC all
+    # sit at ~the same range — while at a fixed TIME the candidates differ in
+    # RANGE, and the range half is separated WORSE by +2.3632 m when stripped.
+    # A metric point at a fixed time is therefore a DIFFERENT quantity from
+    # either S6 term, and mixing it into their gates would make the pre-
+    # registered ablation ("set THIS gate to 0") unreadable.
+    graft_gp_point: bool = False      # S7 the E15 metric goal point ranks
+    gp_slot: int = -1                 # ...bank slot whose time == t_goal_s;
+    #                                   DERIVED by goal_point.goal_slot_index,
+    #                                   never typed (a wrong slot compares the
+    #                                   goal at one time to the anchor at
+    #                                   another and still trains)
+    gp_scale_m: float = 40.0          # ...GoalPointConfig.range_norm_m, so the
+    #                                   score is metres/metres = scale-free
     seam_clamp: float = 0.0           # S4 norm cap on the total graft (<=0 off)
     seam_fail: float = 1.5
     seam_fail_frac: float = 0.75
@@ -564,6 +594,7 @@ class SelectionConfig:
     def any_on(self) -> bool:
         return bool(self.refined or self.score_emitted or self.reach_clamp
                     or self.graft_cons or self.graft_route or self.graft_goal
+                    or self.graft_gp_point
                     or self.seam_clamp > 0.0)
 
 
@@ -593,6 +624,43 @@ class RefCConfig:
     ego_dropout: float = 0.5      # per-sample Bernoulli zero of v0 (training)
     route_dropout: float = 0.5    # per-sample Bernoulli mask of the LAN route
     hierarchy: bool = True        # strategic ctx -> decoder condition (graft)
+    # ⭐⭐ STRATEGIC BYPASS (`--no-strategic`, PI 2026-09-06, BINDING):
+    #   *"remove the strategic layer in the next experiments, feed the nav
+    #   command to tactical and operative planning, solve the driving task,
+    #   then add the strategic layer. Include a flag to ignore the strategic
+    #   layer in the next iterations."*
+    #
+    # ⛔ IT BYPASSES, IT NEVER DELETES. `hierarchy` stays True, so
+    # `StrategicCtx`, `ctx_to_cond` and every strategic parameter are STILL
+    # CONSTRUCTED and STILL IN `state_dict`. An ON build and an OFF build have
+    # BIT-IDENTICAL state_dict KEYS AND SHAPES, so every banked checkpoint
+    # loads strictly into both and no arm is stranded. That is the documented
+    # precedent: a dead 1.57 M-param tensor was declared and kept in
+    # `state_dict` because deleting it broke strict loads on 11/11 banked
+    # checkpoints with exactly 6 unexpected keys. Setting `hierarchy=False`
+    # would REMOVE keys and reintroduce exactly that failure -- it is NOT the
+    # bypass and must never be used as one.
+    #
+    # ⛔ IT ADDS NO PARAMETER EITHER. The flag is a pure FORWARD gate: it
+    # can only remove a term from a sum, never introduce one. That is what
+    # makes "OFF is byte-identical to today" provable rather than asserted.
+    #
+    # The two seams it closes IN THIS FILE (the third is E4 in `refc_v3.py`):
+    #   S-BYPASS-1  OPERATIVE: `ctx` is not handed to the decoder, so
+    #               `cond = cond_proj(m)` alone. The nav command STILL reaches
+    #               the operative planner -- it is INSIDE `m` (`meas_in`
+    #               carries the nav one-hot), which is the whole point of the
+    #               PI's staging: the route reaches the planner DIRECTLY
+    #               instead of through a strategic goal.
+    #   S-BYPASS-3  SELECTION: `route_prior` (S5 `graft_route`) is forced to
+    #               None, so the strategic route READOUT cannot re-rank the fan.
+    #
+    # ⚠ WHAT IT DOES NOT TOUCH: `route_head` keeps running and
+    # `route_logits` keeps being emitted, because that is the STRATEGIC family
+    # metric every eval must report (route acc / kappa). With `graft_route`
+    # False it is a pure READOUT with no path into the emitted plan -- which
+    # the mutation proof ASSERTS rather than assumes.
+    no_strategic: bool = False    # bypass the strategic layer (never delete it)
     graft_maneuver: bool = True   # maneuver logits reweight anchor priors (H19)
     # --- D-TAC1: the factorised tactical head (three INDEPENDENT ablations) ---
     factored_maneuver: bool = False   # F2 STRUCTURE: lat(3) x lon(3) heads +
@@ -739,6 +807,16 @@ class RefCConfig:
     #                                   supplied, and it must not carry the
     #                                   situation classifier's output in any
     #                                   form. See RefCModel.goal_provenance().
+    # ⭐⭐ S7 / E15 (GP-1): the PREDICTED METRIC GOAL POINT reaches the ranked
+    # score. The VALUE arrives from the REF-C v3 hierarchy hook
+    # (`hook_out["goal_point"]`, emitted by `refc_v3.py`) or from an explicit
+    # `gp_point=` argument to `forward` — which is what the pre-registered
+    # eval-time interventions (mirror / range x0.5 / straight / shuffle /
+    # withheld) use, so the whole §2 panel rolls in ONE process on ONE surface.
+    # `gp_slot` / `gp_scale_m` are set by the trainer from `GoalPointConfig`.
+    graft_gp_point: bool = False
+    gp_slot: int = -1
+    gp_scale_m: float = 40.0
     seam_clamp: float = 0.0           # S4 in-graph norm cap on the TOTAL graft
     #                                   per surface, as a multiple of the base
     #                                   score norm. <=0 disables; below the cap
@@ -793,6 +871,8 @@ class RefCConfig:
             graft_cons=self.graft_cons,
             cons_detach=self.cons_detach, graft_route=self.graft_route,
             graft_goal=self.graft_goal,
+            graft_gp_point=self.graft_gp_point,
+            gp_slot=self.gp_slot, gp_scale_m=self.gp_scale_m,
             seam_clamp=self.seam_clamp, seam_fail=self.seam_fail,
             seam_fail_frac=self.seam_fail_frac,
             seam_fail_patience=self.seam_fail_patience,
@@ -1450,6 +1530,37 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.sel.graft_goal:
             self.goal_gate = nn.Parameter(torch.zeros(1))
             self.goal_dist_gate = nn.Parameter(torch.zeros(1))
+        # ⭐⭐ S7 / E15 (GP-1, 2026-09-06) — THE METRIC GOAL POINT ON THE RANKED
+        # SCORE. ONE zero-init scalar, so the ranked score is BIT-IDENTICAL to
+        # the goal-free baseline at step 0 and the exact ablation is "set the
+        # gate to 0". The score it multiplies costs ZERO parameters
+        # (`goal_point.anchor_goal_prior_at_time` is param-free), so the whole
+        # seam is +1 parameter — the same discipline as `cons_gate`.
+        #
+        # ⛔ THE SLOT IS REFUSED AT BUILD, NOT CLAMPED AT RUN. Comparing the
+        # goal at t = 4 s against the anchor at some other slot is a
+        # plausible-looking WRONG experiment that trains and converges — the
+        # derived-constant trap (`HORIZON = round(6.0*10/STRIDE)`) in geometry
+        # costume. `goal_slot_index` derives the slot from the model horizons;
+        # this asserts the decoder it landed on actually HAS that slot.
+        self.gp_point_gate: nn.Parameter | None = None
+        self.gp_slot = int(self.sel.gp_slot)
+        self.gp_scale_m = float(self.sel.gp_scale_m)
+        if self.sel.graft_gp_point:
+            if not (0 <= self.gp_slot < self.n_steps):
+                raise ValueError(
+                    f"S7/E15: gp_slot {self.gp_slot} is not a slot of this "
+                    f"decoder's {self.n_steps}-step bank. The goal point and "
+                    f"the anchor must be compared AT THE SAME TIME; a slot "
+                    f"outside the bank means the seam would either crash or "
+                    f"(clamped) silently score a different horizon. Derive it "
+                    f"with goal_point.goal_slot_index(t_goal_s, horizons).")
+            if self.gp_scale_m <= 0.0:
+                raise ValueError(
+                    f"S7/E15: gp_scale_m must be positive, got "
+                    f"{self.gp_scale_m} — it is GoalPointConfig.range_norm_m "
+                    f"and it is what makes the score scale-free.")
+            self.gp_point_gate = nn.Parameter(torch.zeros(1))
         # ---- refcv5 WP-4: THE DENOISER ------------------------------------ #
         #
         # ⭐ THE MECHANISM, WHICH IS WHAT refcv3 DID NOT HAVE. refcv3 carried
@@ -1949,6 +2060,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
                 goal_dist_pref: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
                 withheld_speed: Tensor | None = None,
                 agent_tokens: Tensor | None = None,
                 agent_pad: Tensor | None = None) -> dict:
@@ -2185,6 +2298,46 @@ class AnchoredDiffusionDecoder(nn.Module):
             r_terms.append(self.goal_dist_gate
                            * self._goal_along_prior(goal_dist_pref,
                                                     prior_bank))
+        # ⭐⭐ S7 / E15 (GP-1) — THE METRIC GOAL POINT REACHES SELECTION.
+        #
+        # `-||bank[:, :, slot] - goal|| / scale_m`, param-free, times ONE
+        # zero-init gate. Moving the goal moves the ranking BY CONSTRUCTION:
+        # there is no between-row variance that can shrink to zero while a
+        # useful mean survives, which is precisely the degree of freedom E13's
+        # `Embedding(4) -> Linear -> add` collapsed into (content 2.3 %,
+        # presence 97.7 %). ⛔ The GATE is still free to go to zero — that is
+        # why value-sensitivity is a pre-registered GATE (PREREG §4, V1-V3)
+        # with a committed minimum degradation under a corrupted goal, and not
+        # an architectural promise.
+        #
+        # ⛔⛔ UNITS. The head emits a NORMALISED point (x/scale, y/scale) —
+        # that is what the loss supervises — while `anchor_goal_prior_at_time`
+        # compares against `bank`, which is in METRES.
+        # `anchor_goal_prior_at_time_from_norm` is the ONE place the conversion
+        # lives, and it is named for it. MEASURED 2026-09-06: without it a
+        # 24 m goal enters as a 2.5 m one, the term stays finite and the seam
+        # trains, and a MIRRORED goal moved the ranked score by 7.7e-4 and
+        # flipped 0 of 4 picks on a rig whose anchors span ±66–82 m laterally
+        # — i.e. the PREREG §4 value-sensitivity gate would have failed for a
+        # UNITS reason and read as "the geometric prior ignores the goal".
+        #
+        # ⚠️ DEVIATION FROM PREREG §8's DRAFT, STATED RATHER THAN SILENT: the
+        # draft passed `prior_bank`, which is `None` on a FIXED (non-v0-
+        # conditioned) vocabulary — there it is the legacy bit-exactness path
+        # for the two S6 terms, and `anchor_goal_prior_at_time` would raise on
+        # it. `bank` is [B, N, S, 2] on BOTH paths and is EXACTLY `prior_bank`
+        # in the registered arm (`--anchor-v0-conditioned`), so this is
+        # identical where the arm is defined and functional where the draft
+        # would have crashed. There is no pre-S7 checkpoint to stay bit-exact
+        # against, so the legacy fallback has nothing to preserve here.
+        if self.gp_point_gate is not None and gp_point is not None:
+            gv = (torch.ones(gp_point.shape[0], device=gp_point.device,
+                             dtype=gp_point.dtype)
+                  if gp_valid is None else gp_valid)
+            r_terms.append(self.gp_point_gate
+                           * gpm.anchor_goal_prior_at_time_from_norm(
+                               gp_point.to(bank.dtype), gv, bank,
+                               self.gp_slot, self.gp_scale_m))
         if (self.cons_gate is not None and cons_head is not None
                 and cons_ctx is not None):
             cons_s = sl.consequence_scores(x, cons_ctx, cons_head,
@@ -2723,6 +2876,8 @@ class RefCModel(nn.Module):
                 hierarchy_hook=None,
                 ego_keep: Tensor | None = None,
                 withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
                 agent_gt: dict | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
@@ -2789,6 +2944,20 @@ class RefCModel(nn.Module):
             # permuted copy), exactly like the two ports above.
             if withheld_speed is None:
                 withheld_speed = hk.get("bank_speed_pred")
+            # ⭐⭐ S7 / E15 (GP-1): the PREDICTED METRIC GOAL POINT, emitted by
+            # `refc_v3.py`'s hook. NO SECOND FORWARD — the value already exists
+            # in that graph and the whole point of shipping it through the hook
+            # was that this patch needs no extra encode.
+            #
+            # ⛔ AN EXPLICITLY SUPPLIED `gp_point` WINS, exactly like the two
+            # ports above and `withheld_speed`. That is not symmetry for its own
+            # sake: it is what makes PREREG §2's five eval-time interventions
+            # (mirror / range x0.5 / straight / shuffle / withheld) run as ONE
+            # process on ONE surface, which is the discipline a recent
+            # cross-hardware reproduction violated and paid two argmax
+            # tie-breaks and two missed controls for.
+            if gp_point is None:
+                gp_point = hk.get("goal_point")
 
         # H15 belief field refines the conv-map tokens before the decoder (gated).
         imag_logvar = None
@@ -2921,7 +3090,8 @@ class RefCModel(nn.Module):
         #       IS the consequence predictor; `pooled` is its context.
         #   S2  the RAW speed and the ego-dropout keep-mask.
         route_prior = torch.log_softmax(route_logits, dim=-1) \
-            if self.cfg.graft_route else None
+            if (self.cfg.graft_route and not self.cfg.no_strategic) \
+            else None
         cons_head = self.law_head if self.cfg.graft_cons else None
         cons_ctx = pooled if self.cfg.graft_cons else None
         v_ms = (v0.to(pooled.dtype) if (self.cfg.sel_reach_clamp
@@ -2969,7 +3139,16 @@ class RefCModel(nn.Module):
                 agent_slots = self.agent_head(
                     fmap.flatten(2).transpose(1, 2))          # [B, M, F]
             agent_tokens, agent_pad = self.agent_embed(agent_slots)
-        dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
+        # ⭐⭐ S-BYPASS-1 -- THE OPERATIVE SEAM. `ctx_to_cond` is skipped by
+        # the decoder itself when `ctx is None` (its `cond` block reads
+        # `ctx is not None`), so the bypass needs NO branch inside the decoder
+        # and adds NO parameter.
+        # ⛔ `ctx` ITSELF IS STILL COMPUTED AND STILL EMITTED in `out` -- the
+        # strategic token stays a READABLE DIAGNOSTIC, it simply stops being an
+        # INPUT to the plan. With the flag OFF `ctx_dec is ctx` exactly, so this
+        # line cannot perturb a today-arm.
+        ctx_dec = None if self.cfg.no_strategic else ctx
+        dec = self.decoder(fmap, m, ctx=ctx_dec, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
                            lat_prior=lat_prior, lon_prior=lon_prior,
@@ -2977,6 +3156,7 @@ class RefCModel(nn.Module):
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
                            goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
+                           gp_point=gp_point, gp_valid=gp_valid,
                            withheld_speed=withheld_speed,
                            agent_tokens=agent_tokens, agent_pad=agent_pad)
         traj = dec["traj"]
@@ -2995,6 +3175,27 @@ class RefCModel(nn.Module):
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}
+        # ⭐ S7 / E15 CAVEAT-B INSTRUMENTATION. The gate is zero-init and must
+        # LEARN to open; a 0.0000 reading at 40 k must be a LOGGED fact, not a
+        # conclusion inferred from an eval three days later — that inference is
+        # what produced Caveat-B. The gate ALONE cannot distinguish "has not
+        # opened YET" from "will never open", so the score scale it multiplies
+        # is emitted beside it. Both are detached diagnostics.
+        if self.decoder.gp_point_gate is not None:
+            out["gp_point_gate_value"] = self.decoder.gp_point_gate.detach()
+            out["gp_point_injected"] = gp_point is not None
+            if gp_point is not None:
+                with torch.no_grad():
+                    out["gp_point_score_absmean"] = (
+                        gpm.anchor_goal_prior_at_time_from_norm(
+                            gp_point.to(dec["anchor_bank"].dtype),
+                            (torch.ones(gp_point.shape[0],
+                                        device=gp_point.device,
+                                        dtype=dec["anchor_bank"].dtype)
+                             if gp_valid is None
+                             else gp_valid.to(dec["anchor_bank"].dtype)),
+                            dec["anchor_bank"], self.decoder.gp_slot,
+                            self.decoder.gp_scale_m).abs().mean())
         if agent_slots is not None:
             # ⛔ The detection loss is guarded on `"agent_slots" in out`. With
             # the seam built but this key absent, `--w-agent 1.0` would parse,
@@ -3071,7 +3272,14 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
     n_sel = ((cnt(dec.route_to_anchor) if dec.route_to_anchor is not None else 0)
              + (dec.cons_gate.numel() if dec.cons_gate is not None else 0)
              + (dec.goal_gate.numel() + dec.goal_dist_gate.numel()
-                if dec.goal_gate is not None else 0))
+                if dec.goal_gate is not None else 0)
+             # S7/E15: +1 parameter. The score it multiplies is param-free
+             # (`goal_point.anchor_goal_prior_at_time`), so the entire metric-
+             # goal-point selection seam costs ONE scalar — carved out of
+             # `decoder` here for the same reason every other D-SEL gate is:
+             # the breakdown must keep summing to `total` exactly.
+             + (dec.gp_point_gate.numel()
+                if getattr(dec, "gp_point_gate", None) is not None else 0))
     # S6's head is a MODEL-level input head (like `lan_enc`), reported on its own
     # line: the goal is the lever under the PI's admissibility ruling and its
     # cost must be readable without unpicking a 40 M-parameter decoder row.

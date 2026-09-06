@@ -84,6 +84,8 @@ from tanitad.refs import refc  # noqa: E402
 from tanitad.refs import refc_tactical as tac  # noqa: E402
 from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
+from tanitad.refs import goal_point as gpm  # noqa: E402  — E15 (GP-2)
+from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
 from tanitad.refs import refc_agents as _refc_agents  # noqa: E402
@@ -112,6 +114,18 @@ SEL_V3_WEIGHT = 1.0
 # rule `SLOT_LOSS_W` and `V6LossWeights.w_select` carry.
 AGENT_WEIGHT_DEFAULT = 0.0        # WP-6: the GT-supervised detection set loss
 U0_WEIGHT_DEFAULT = 0.0           # WP-4: the x0 loss, in CONTROL space
+
+# ---- ⭐⭐ E15 (GP-2, 2026-09-06): the METRIC GOAL POINT ---------------------
+#: Smooth-L1 on the NORMALISED goal point (`goal_point.goal_point_loss`).
+#: 1.0 is the PRE-REGISTERED launch value (`…/2026-09-06-goal-point/PREREG.md`
+#: §9, `--goal-point-w 1.0`). The default here is **0.0** for the same reason
+#: every refcv5 weight is: ADDING the seam to the code must not change a run
+#: that does not ask for it, and the live 40 k refcv5 resumes through this file.
+#: ⛔ `--goal-point-inject` with `--goal-point-w 0` is REFUSED (see
+#: `_check_goal_point_args`): it builds a head, stamps the edge, and trains it
+#: on nothing — the `--w-agent 0` failure, which manufactures "the goal point
+#: does not help" out of a missing loss rather than out of evidence.
+GOAL_POINT_WEIGHT_DEFAULT = 0.0
 
 # ---- ⭐ M17 (2026-09-05): the detection query budget ----------------------
 #: Detection queries. **100**, ruled by the Master Mind (`Decisions/
@@ -209,6 +223,11 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # `config_delta` stays the derived instrument it is: the v4 lever set is
     # registered in REGISTERED_DELTA_KEYS_V4 and checked against the SAME
     # helper's output, never against a hand-written list of intentions.
+    # ⭐⭐ STRATEGIC BYPASS. Pinned onto the CORE config so `refc.py` and
+    # `refc_v3.py` read ONE field, and applied to BOTH arms identically so
+    # `config_delta` (hier vs flat) stays the derived instrument it is -- the
+    # flag is equal on both sides and therefore never enters the delta.
+    cfg.core.no_strategic = bool(getattr(args, "no_strategic", False))
     if getattr(args, "ego_state_inject", False):
         cfg.ego_state_inject = True
         cfg.core.ego_valid_channel = True     # precondition, not an option
@@ -218,6 +237,40 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
         cfg.core.ego_valid_channel = True
     if getattr(args, "ego_dropout", None) is not None:
         cfg.core.ego_dropout = float(args.ego_dropout)
+    # ---- ⭐⭐ E15 (GP-2): THE PREDICTED METRIC GOAL POINT ------------------
+    # Applied to BOTH arms identically, exactly like every other pin here, so
+    # `config_delta` (hier vs flat) stays the derived instrument it is.
+    #
+    # ⛔⛔ `--goal-point-inject` TURNS `nav_inject` OFF. That is the
+    # PRE-REGISTRATION, not a side effect: PREREG §2 defines `gp_cond` as
+    # "vs `base`: the TYPE of the route conditioning signal — E13's
+    # `Embedding(4)->Linear->add` REPLACED by `GoalPointConditioning`
+    # (`nav_inject=False`)". Running both would make the arm a two-variable
+    # experiment whose result is non-attributable — the `--v2` conflation
+    # failure (ten levers on two axes, result non-attributable). The swap is
+    # stamped in `config.json` under `goal_point.replaces_nav_inject`, so a
+    # reader never has to know this line exists.
+    if getattr(args, "goal_point_inject", False):
+        cfg.goal_point_inject = True
+        # frozen dataclass -> `replace`, never mutation: the config object is
+        # also the thing `goal_point_provenance()` is derived from, and a
+        # provenance derived from a half-mutated config is worse than none.
+        cfg.goal_point_cfg = _dc_replace(
+            cfg.goal_point_cfg, t_goal_s=float(getattr(args, "goal_point_t",
+                                                       4.0)))
+        cfg.nav_inject = False
+        # DERIVED HERE, at CONFIG time, not as a constructor side effect.
+        # `RefCV3Model.__init__` derives the same two values from the same two
+        # inputs (idempotent), but the RECORD is written from the CONFIG, and a
+        # record field that only exists once a model has been built stamps
+        # `gp_slot: -1` for any consumer that stamps first -- a run whose
+        # artifact says it compared the goal against slot -1 while the weights
+        # used slot 5. MEASURED by tests/test_goal_point_trainer_flags.py.
+        cfg.core.gp_slot = gpm.goal_slot_index(
+            cfg.goal_point_cfg.t_goal_s, cfg.core.trajectory.horizons)
+        cfg.core.gp_scale_m = float(cfg.goal_point_cfg.range_norm_m)
+        if getattr(args, "goal_point_geo_prior", False):
+            cfg.core.graft_gp_point = True
     # ---- ⛔ S2 REACH CLAMP, RE-DERIVED FOR THE HORIZON ACTUALLY PLANNED OVER
     # `refc.py:652` DERIVES `horizon_s` from `max(trajectory.horizons)`, so at
     # V3_HORIZONS the band is a*6.0, not a*2.0. The inherited `sel_accel_max =
@@ -761,6 +814,79 @@ def _check_nav_from_v7_args(args) -> None:
                          "--eval-labels: the eval dataset must see the SAME "
                          "nav source as training, or every eval row compares "
                          "against the v1 derivation.")
+
+
+def _check_goal_point_args(args) -> None:
+    """⭐⭐ E15 (GP-2): refuse AT START a goal-point launch that would train,
+    converge, and mean nothing.
+
+    Four refusals, each naming the arm it would have manufactured:
+
+    * ``--goal-point-geo-prior`` without ``--goal-point-inject`` — the S7 gate
+      would be built with nothing to feed it (the head that predicts the point
+      lives behind ``--goal-point-inject``), the ``r_terms`` entry would be
+      skipped on every forward, and the arm would report **"the geometric goal
+      prior is inert"** while never having had a goal. Same class as
+      ``--agents head --w-agent 0``.
+    * ``--goal-point-inject`` with ``--goal-point-w <= 0`` — a head that is
+      built, stamped, and **supervised by nothing**. Its prediction would be
+      whatever the zero-init projections drift to, and the pre-registered HEAD
+      GATE (PREREG §5: RMS lateral <= 1.0 m, RMS range <= 2.0 m) would fail for
+      a reason that is not about the goal form. A failure that is not about the
+      lever is worse than no run.
+    * ``--goal-point-t`` at or inside the scored horizon — this is the LEAK
+      GUARD, and it is enforced STRUCTURALLY in
+      ``GoalPointConfig.__post_init__``, which RAISES. It is re-checked here
+      only so the message names the flag instead of surfacing as a dataclass
+      traceback 400 lines later; the refusal itself is the constructor's.
+    * ``--goal-point-w > 0`` without ``--goal-point-inject`` — a stamped weight
+      whose loss term is silently skipped (the ``w_agent`` defect verbatim).
+
+    ``getattr`` throughout: test rigs build partial Namespaces.
+    """
+    inject = bool(getattr(args, "goal_point_inject", False))
+    geo = bool(getattr(args, "goal_point_geo_prior", False))
+    w = float(getattr(args, "goal_point_w", GOAL_POINT_WEIGHT_DEFAULT))
+    if geo and not inject:
+        raise SystemExit(
+            "[v3] ⛔ --goal-point-geo-prior needs --goal-point-inject: the S7 "
+            "ranking term is fed by the E15 head's own prediction. Without "
+            "the head the gate is built, the term is never appended, and the "
+            "run would report the geometric seam as inert while it was never "
+            "wired.")
+    if w > 0.0 and not inject:
+        raise SystemExit(
+            f"[v3] ⛔ --goal-point-w {w} without --goal-point-inject: the "
+            f"weight would be STAMPED in config.json while the loss term is "
+            f"silently skipped, which is the `w_agent` defect verbatim.")
+    if not inject:
+        return
+    if w <= 0.0:
+        raise SystemExit(
+            "[v3] ⛔ --goal-point-inject with --goal-point-w 0: this builds "
+            "the E15 head, stamps the edge, and SUPERVISES IT WITH NOTHING. "
+            "The head gate (PREREG §5: <= 1.0 m lateral / <= 2.0 m range RMS) "
+            "would then fail for a reason that is not about the goal FORM, "
+            "and PREREG §5 says a head-gate failure is NOT evidence about the "
+            "form. Pass --goal-point-w 1.0 (the pre-registered value).")
+    # The leak guard, surfaced with the flag's name on it. The REFUSAL lives in
+    # GoalPointConfig.__post_init__ — this raises the same way, earlier.
+    t_goal = float(getattr(args, "goal_point_t", 4.0))
+    t_pred = float(gpm.GoalPointConfig().t_pred_s)
+    if t_goal <= t_pred:
+        raise SystemExit(
+            f"[v3] ⛔⛔ --goal-point-t {t_goal} is at or inside the scored "
+            f"horizon ({t_pred} s). A goal point inside the horizon IS THE "
+            f"ANSWER, not a route signal. Refused here and refused again by "
+            f"GoalPointConfig, so no arm that leaks the scored horizon can be "
+            f"built at all.")
+    try:
+        gpm.goal_slot_index(t_goal, v3.V3_HORIZONS)
+    except ValueError as e:
+        raise SystemExit(
+            f"[v3] ⛔ --goal-point-t {t_goal}: {e}. The goal and the anchor "
+            f"must be compared AT THE SAME TIME; an approximate slot compares "
+            f"two different horizons and still trains.") from e
 
 
 class V3Dataset(RouteV21Dataset):
@@ -1414,7 +1540,16 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             extra["goal2s_err_m"] = (e2[m2].mean() if bool(m2.any())
                                      else torch.zeros((), device=device))
         # E3 — strategic goal off the leak-guarded LAN label (train-only, E12).
-        if lan is not None:
+        # ⭐⭐ STRATEGIC BYPASS: with `--no-strategic` the E4 FiLM is skipped,
+        # so `g_str` has NO in-graph consumer at all. Supervising it anyway
+        # would push gradient through `str_goal_head` -> `StrategicCtx` -> the
+        # SHARED ENCODER, i.e. the strategic layer would still shape the trunk
+        # that produces the plan. That is a SECOND variable inside a
+        # one-variable arm, so the term is dropped and `config.json` says so
+        # (`goal_str_loss_applied`). `--goal-str` may still be passed -- it
+        # keeps the LAN LABEL pathway, and with it the dataloader, byte-for-byte
+        # identical to refcv4b's, which is what makes the comparison matched.
+        if lan is not None and not bool(getattr(core, "no_strategic", False)):
             bearing_t, dist_t, valid_t = refc.RefCModel.goal_targets(
                 lan, core.lan.k)
             loss_gstr = v3.strategic_goal_loss(out["g_str"], bearing_t,
@@ -1439,6 +1574,68 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             extra["goal_score_absmean"] = out["goal_score_absmean"]
         if model.goal_gate.grad is not None:
             extra["goal_gate_grad"] = model.goal_gate.grad.detach().abs()
+        # ⭐⭐ E15 (GP-2) — THE METRIC GOAL POINT'S SUPERVISION AND ITS
+        # PRE-REGISTERED HEAD READOUTS.
+        #
+        # ⛔ THE LABEL IS `traj_tgt` AT THE GOAL SLOT — NOT A NEW FIELD, AND
+        # NOT A RE-DERIVATION. `traj_tgt = refb_labels.waypoint_targets(
+        # pose_last, fut_ext, horizons)` is already the ego-frame future path
+        # resampled onto exactly these horizons, and `slot_valid[:, s]` is
+        # `fut_valid[:, h - 1]`. `goal_point.goal_point_label_at_time` takes
+        # `k = round(t/dt) - 1`, i.e. THE SAME INDEX (t=4.0 s -> tick 40 ->
+        # `fut_valid[:, 39]`). Reusing the trainer's own target is what stops
+        # a guard/label re-implemented beside its consumer from drifting —
+        # the defect the navpred RESULT retracted two published numbers for.
+        #
+        # ⛔ ADMISSIBILITY, RE-STATED WHERE THE CODE IS: this is a TRAIN-ONLY
+        # LABEL built from the ego's own future path, which is sanctioned
+        # ("labels may use ego; inference is vision-only"). `out["goal_point"]`
+        # is predicted from the STRATEGIC CONTEXT TOKEN alone; `fut_ext` never
+        # enters the forward. And the goal sits at t_goal_s = 4.0 s, STRICTLY
+        # BEYOND the 2 s scored horizon — enforced by GoalPointConfig, which
+        # RAISES rather than warns.
+        w_gp = float(getattr(model, "_w_goal_point",
+                             GOAL_POINT_WEIGHT_DEFAULT))
+        if cfg.goal_point_inject and out.get("goal_point") is not None:
+            gcfg = cfg.goal_point_cfg
+            gslot = int(model.gp_slot)
+            gscale = float(gcfg.range_norm_m)
+            gp_tgt = torch.stack([
+                (traj_tgt[:, gslot, 0] / gscale).clamp(-gcfg.xy_clip,
+                                                       gcfg.xy_clip),
+                (traj_tgt[:, gslot, 1] / gscale).clamp(-gcfg.lat_clip,
+                                                       gcfg.lat_clip),
+            ], dim=-1)
+            gp_v = slot_valid[:, gslot]
+            loss_gp = gpm.goal_point_loss(out["goal_point"],
+                                          gp_tgt.to(out["goal_point"].dtype),
+                                          gp_v)
+            loss = loss + w_gp * loss_gp
+            extra["goal_point"] = loss_gp
+            # ⭐ THE HEAD GATE, IN METRES, EVERY EVAL — PREREG §5. Registered
+            # bars: lateral <= 1.0 m, range <= 2.0 m. MEASURED basis: at 1.0 m
+            # injected lateral error the oracle goal point's recovery of the
+            # lateral selection ceiling flips +78.4 % -> -80.7 %; range
+            # recovery goes 57.1 % -> 17.2 % at 2 m -> -57.9 % at 4 m
+            # (separated WORSE). ⛔ If these fail, the planner comparison is
+            # NOT evidence about the goal FORM — stated in advance so it
+            # cannot be decided after the data.
+            with torch.no_grad():
+                extra["gp_lat_rmse_m"] = gpm.lateral_rmse_m(
+                    out["goal_point"], gp_tgt, gp_v, gscale)
+                extra["gp_range_rmse_m"] = gpm.range_rmse_m(
+                    out["goal_point"], gp_tgt, gp_v, gscale)
+                # the DENOMINATOR, always: a window whose future ends before
+                # t_goal_s has NO label, and an RMSE over a handful of rows is
+                # not the same statistic as one over the batch.
+                extra["gp_label_rows"] = gp_v.sum().to(loss_gp.dtype)
+            # ⭐ CAVEAT-B for the S7 gate, same discipline as `goal_gate`
+            # above: the gate value alone cannot tell "not opened YET" from
+            # "never will", so the score scale it multiplies rides with it.
+            if "gp_point_gate_value" in out:
+                extra["gp_point_gate"] = out["gp_point_gate_value"]
+            if "gp_point_score_absmean" in out:
+                extra["gp_point_score_absmean"] = out["gp_point_score_absmean"]
         # E13 telemetry: nav actually reached the tactical/strategic states on
         # this batch. A conditioning edge that silently no-ops (nav_cmd=None
         # everywhere) is the advertised-but-inert defect; this makes it visible.
@@ -1814,6 +2011,21 @@ def _seam_stamp(cfg, args) -> dict:
     return {
         "hier": bool(cfg.hier),
         "hierarchy": bool(core.hierarchy),
+        # ⭐⭐ THE STRATEGIC BYPASS, AND ITS ENTAILED LOSS CHANGE, IN THE
+        # RECORD. `hierarchy` alone can no longer say which arm this was: a
+        # bypassed run STILL reads `hierarchy: true` (that is the whole
+        # bypass-never-delete design), so without this key a finished run
+        # cannot answer "did the strategic layer reach the plan?" from its own
+        # record -- the exact failure SEAM_STATE.md MEASURED for six seams.
+        "no_strategic": bool(getattr(core, "no_strategic", False)),
+        # ...and the loss it implies, stamped separately so the two can never
+        # be confused: with the bypass on, NOTHING consumes `g_str`, so
+        # supervising it would train a head that cannot affect the plan while
+        # still shaping the SHARED ENCODER -- a second variable hiding inside
+        # a one-variable arm.
+        "goal_str_loss_applied": bool(
+            getattr(args, "goal_str", False)
+            and not getattr(core, "no_strategic", False)),
         "graft_maneuver": bool(core.graft_maneuver),
         "factored_maneuver": bool(core.factored_maneuver),
         "graft_prior_center": bool(core.graft_prior_center),
@@ -1859,6 +2071,40 @@ def _seam_stamp(cfg, args) -> dict:
                                              "feasible_prefix_slots", 4)),
         "w_agent": float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT)),
         "w_u0": float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT)),
+        # ⭐⭐ E15 (GP-2, 2026-09-06) — THE GOAL-POINT STAMP, INCLUDING THE
+        # MACHINE-READABLE ADMISSIBILITY DECLARATION.
+        #
+        # ⛔ `goal_point_provenance()` is written into the RUN RECORD rather
+        # than left in a docstring, because the PI's ruling asks a question
+        # ("could this goal have been computed from the situation classifier's
+        # output?") that a reader must be able to answer from the artifact
+        # alone, months later, without the source tree. It is the same reason
+        # the ego block, the nav source and the anchor units are stamped.
+        #
+        # `replaces_nav_inject` is the one a reader would otherwise have to
+        # know a trainer line for: `--goal-point-inject` turns E13's
+        # categorical nav OFF, by pre-registration (PREREG §2, ONE VARIABLE).
+        "goal_point": {
+            "goal_point_inject": bool(getattr(cfg, "goal_point_inject",
+                                              False)),
+            "graft_gp_point": bool(getattr(core, "graft_gp_point", False)),
+            "t_goal_s": float(cfg.goal_point_cfg.t_goal_s),
+            "t_pred_s": float(cfg.goal_point_cfg.t_pred_s),
+            "range_norm_m": float(cfg.goal_point_cfg.range_norm_m),
+            "gp_slot": int(getattr(core, "gp_slot", -1)),
+            "gp_scale_m": float(getattr(core, "gp_scale_m", 0.0)),
+            "w_goal_point": float(getattr(args, "goal_point_w",
+                                          GOAL_POINT_WEIGHT_DEFAULT)),
+            "replaces_nav_inject": bool(getattr(cfg, "goal_point_inject",
+                                                False)),
+            "nav_inject": bool(getattr(cfg, "nav_inject", True)),
+            "label_index_note": (
+                "label = waypoint_targets(pose_last, future_poses_ext, "
+                "horizons)[:, gp_slot]; validity = future_valid_ext[:, h-1]. "
+                "Identical index to goal_point.goal_point_label_at_time "
+                "(k = round(t/dt) - 1). TRAIN ONLY."),
+            "provenance": gpm.goal_point_provenance(cfg.goal_point_cfg),
+        } if getattr(cfg, "goal_point_inject", False) else None,
         # ⛔ M18: the camera the two monocular weights are computed against —
         # or the reason there is none. Without this a reader cannot tell a run
         # that trained `loss_project` from one that stamped its weight and
@@ -2146,6 +2392,51 @@ def assert_seams_are_built(model, stamp: dict) -> None:
                     f"stamp says agents=None but core.{name} WAS BUILT -- a "
                     f"live agent seam absent from the run record")
 
+    # --- E15 (GP-2): the goal-point edge and its ranking seam ------------- #
+    # ⛔ BIDIRECTIONAL, exactly like the two above. A stamped goal point with
+    # no head is FALSE PROVENANCE; a built head absent from the record is the
+    # `SEAM_STATE.md` failure. And a stamped `graft_gp_point` with no gate on
+    # the decoder would be a run claiming a selection seam that ranks nothing.
+    gpst = stamp.get("goal_point")
+    head_built = _mod(model, "gp_head") is not None
+    gate_built = _mod(dec, "gp_point_gate") is not None
+    if gpst is not None and bool(gpst.get("goal_point_inject", False)):
+        if not head_built:
+            bad.append(
+                "stamp says goal_point_inject=True but model.gp_head is None "
+                "-- the record would claim an E15 head the weights do not "
+                "contain")
+        if bool(gpst.get("graft_gp_point", False)) and not gate_built:
+            bad.append(
+                "stamp says graft_gp_point=True but decoder.gp_point_gate is "
+                "None -- the record would claim a ranking seam that ranks "
+                "nothing")
+        if not bool(gpst.get("graft_gp_point", False)) and gate_built:
+            bad.append(
+                "stamp says graft_gp_point=False but decoder.gp_point_gate "
+                "WAS BUILT -- a live selection seam absent from the record")
+        if float(gpst.get("w_goal_point", 0.0)) <= 0.0:
+            bad.append(
+                "stamp says w_goal_point=%s with an E15 head built: the head "
+                "would be supervised by nothing and the PREREG section 5 head "
+                "gate would fail for a reason that is not about the goal form"
+                % (gpst.get("w_goal_point"),))
+        if (int(gpst.get("gp_slot", -1)) < 0
+                and bool(gpst.get("graft_gp_point", False))):
+            bad.append(
+                "stamp carries graft_gp_point=True with gp_slot < 0 -- the "
+                "goal and the anchor would be compared at different times")
+    else:
+        if head_built:
+            bad.append(
+                "stamp carries no goal_point block but model.gp_head WAS "
+                "BUILT -- a live E15 edge absent from the run record")
+        if gate_built:
+            bad.append(
+                "stamp carries no goal_point block but decoder.gp_point_gate "
+                "WAS BUILT -- a live S7 selection seam absent from the record")
+
+
     if bad:
         raise SystemExit(
             "[v3] ⛔⛔ THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to "
@@ -2348,6 +2639,7 @@ def _anchor_stamp(path, anchors, controls=None, units="kappa",
 
 def preflight(args) -> int:
     _check_nav_from_v7_args(args)          # no-op unless --nav-from-v7
+    _check_goal_point_args(args)           # no-op unless --goal-point-*
     art = _read_anchor_artifact(args)      # None without --anchors
     print("[v3-preflight] building both arms + pinning the delta …")
     cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
@@ -2365,8 +2657,28 @@ def preflight(args) -> int:
     cfg = cfg_h if args.arm == "hier" else cfg_f
     _check_anchor_artifact_against_cfg(art, cfg, args)
     model = v3.RefCV3Model(cfg)
+    # E15 (GP-2): the preflight's synthetic loss step must exercise the
+    # SAME terms the run will. Without this the goal-point loss reads
+    # `getattr(model, '_w_goal_point', 0.0)` -> 0 and the preflight would
+    # pass a term it never ran — a green light for an untested path.
+    model._w_goal_point = float(getattr(args, "goal_point_w",
+                                        GOAL_POINT_WEIGHT_DEFAULT))
     bd = v3.param_breakdown_v3(model)
     print(f"[v3-preflight] arm={args.arm} params={bd}")
+    # ⭐ A GATE ROW CARRIES ITS ARM. `arm=hier` is no longer sufficient to
+    # name the arm once the bypass exists, so the preflight prints the bypass
+    # state on its own line, in the same breath as the params.
+    _bp = bool(getattr(cfg.core, "no_strategic", False))
+    print(f"[v3-preflight] strategic_layer="
+          f"{'BYPASSED (--no-strategic)' if _bp else 'ACTIVE'} "
+          f"| ctx->decoder={'OFF' if _bp else 'ON'} "
+          f"| g_str->tactical_FiLM={'OFF' if _bp else 'ON'} "
+          f"| route_readout->selection="
+          f"{'OFF' if (_bp or not cfg.core.graft_route) else 'ON'} "
+          f"| goal_str_loss="
+          f"{'NOT APPLIED' if _bp else ('APPLIED' if getattr(args, 'goal_str', False) else 'n/a')} "
+          f"| nav->operative=ON(measurement) "
+          f"| nav->tactical={'ON(E13)' if cfg.nav_inject else 'OFF'}")
     torch.manual_seed(0)
     h, wpx = cfg.core.encoder.image_hw()
     frames = torch.rand(2, cfg.core.window, cfg.core.encoder.in_channels,
@@ -2508,7 +2820,16 @@ def preflight(args) -> int:
     # masked by nav_valid and is bit-identical with and without every LAN flag
     # (MEASURED, D-LAN-PF) — reading it as evidence about LAN is a category
     # error the LAN arm below exists to prevent.
-    if (args.goal_str or args.graft_lan) and cfg.hier:
+    if bool(getattr(args, "no_strategic", False)):
+        # The LAN arm preflight FAILS the run unless `goal_str` is present,
+        # finite and NON-ZERO in the loss dict. Under the bypass that term is
+        # deliberately absent, so running it would refuse a correctly
+        # configured arm. Say WHY, loudly, rather than skipping silently.
+        print("[v3-preflight] --no-strategic: LAN arm preflight SKIPPED -- "
+              "`goal_str` is deliberately not in the loss (nothing consumes "
+              "g_str under the bypass). The LAN label pathway itself is "
+              "unchanged.")
+    elif (args.goal_str or args.graft_lan) and cfg.hier:
         rc = _lan_arm_preflight(cfg, args)
         if rc:
             return rc
@@ -2524,6 +2845,7 @@ def train(args) -> dict:
     # --nav-from-v7 (E-ARCH-NAVSRC-1): refuse a mis-specified switch BEFORE any
     # data or GPU work; a no-op with the flag off.
     _check_nav_from_v7_args(args)
+    _check_goal_point_args(args)           # E15 (GP-2); no-op with the flags off
     nav_on = bool(getattr(args, "nav_from_v7", False))
     # ⭐ THE ANCHOR ARTIFACT IS READ FIRST: a units-less legacy file is refused
     # before any data or GPU work, the resolved units and the file's own
@@ -2571,6 +2893,11 @@ def train(args) -> dict:
     # checkpoint compatibility (the `_seam_conf` discipline).
     model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
     model._w_u0 = float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT))
+    # E15 (GP-2): same carrier, same reason. `_check_goal_point_args` has
+    # already refused `--goal-point-inject` with a zero weight, so a built head
+    # is always supervised.
+    model._w_goal_point = float(getattr(args, "goal_point_w",
+                                        GOAL_POINT_WEIGHT_DEFAULT))
     # ⛔ WIRED, not `= None`. Until 2026-09-05 this line read `= None` and the
     # attribute was never assigned, so `--agent-w-project` / `--agent-w-ground`
     # were SILENT NO-OPS while being stamped into config.json (mm-decisions
@@ -3553,6 +3880,23 @@ def build_parser() -> argparse.ArgumentParser:
                     help="train the strategic goal head (needs the lan LABEL "
                          "field — minted WITHOUT building the input pathway, "
                          "the refc_goal_config discipline)")
+    # ⭐⭐ STRATEGIC BYPASS (PI 2026-09-06, BINDING). *"remove the strategic
+    # layer in the next experiments, feed the nav command to tactical and
+    # operative planning ... Include a flag to ignore the strategic layer."*
+    ap.add_argument("--no-strategic", action="store_true",
+                    help="BYPASS the strategic layer: ctx does not condition "
+                         "the decoder (operative), the strategic goal does not "
+                         "FiLM the tactical state, the route readout cannot "
+                         "re-rank the fan, and the E15 goal point is off. The "
+                         "nav command still reaches the OPERATIVE planner "
+                         "(inside the measurement vector) and the TACTICAL "
+                         "state (E13 nav_to_tac) -- directly, which is the "
+                         "point. BYPASS, never delete: every strategic "
+                         "parameter stays in state_dict, so an ON build and an "
+                         "OFF build load the same checkpoints strictly. "
+                         "Implies the strategic goal aux loss is NOT applied "
+                         "(nothing consumes g_str), which the config.json "
+                         "stamp records.")
     ap.add_argument("--graft-lan", action="store_true",
                     help="supplied-corridor MODEL INPUT — ⛔ NOT part of any "
                          "registered v3 arm (E12); exists for diagnostics only")
@@ -3620,6 +3964,56 @@ def build_parser() -> argparse.ArgumentParser:
                          "nav_valid=False and is COUNTED. Default OFF = "
                          "byte-identical v1 behaviour (the live run resumes "
                          "through this file).")
+    # ---- ⭐⭐ E15 (GP-2, 2026-09-06): THE PREDICTED METRIC GOAL POINT ----
+    # Pre-registered in `.../Research/2026-09-06-goal-point/PREREG.md` (arms in
+    # section 2, the launch command in section 9). Four flags, and every one of
+    # them defaults to the OFF/inert value, because the live 40 k refcv5 run
+    # resumes through this file.
+    ap.add_argument("--goal-point-inject", action="store_true",
+                    help="E15: predict a METRIC GOAL POINT (x, y) at "
+                         "--goal-point-t seconds from the STRATEGIC CONTEXT "
+                         "(vision only) and feed it back through a zero-init "
+                         "MLP into the tactical and strategic states. "
+                         "⛔ THIS REPLACES E13's categorical nav "
+                         "(nav_inject -> False), by pre-registration: the ONE "
+                         "variable vs the base arm is the TYPE of the route "
+                         "conditioning signal, and running both would make "
+                         "the arm a two-variable experiment. WHY: E13's nav "
+                         "edge is MEASURED to be a PRESENCE-GATED BIAS "
+                         "(inverting the token costs +0.0022 m, NOT "
+                         "separated; removing it costs +0.0961 m separated => "
+                         "content 2.3 pct), and an ORACLE 3-way command's "
+                         "best deterministic decoding of the lateral anchor "
+                         "index is 'go straight' for ALL THREE classes. The "
+                         "label is the ego's own future path (TRAIN ONLY, "
+                         "sanctioned); inference reads vision only.")
+    ap.add_argument("--goal-point-geo-prior", action="store_true",
+                    help="E15/S7: the goal point also reaches SELECTION, "
+                         "through the PARAM-FREE geometric compatibility "
+                         "-||bank[:, :, slot] - goal|| / scale at a fixed TIME "
+                         "slot, behind ONE zero-init gate (+1 parameter). "
+                         "This is the half with no degree of freedom to "
+                         "collapse into: move the goal and the ranking moves "
+                         "BY CONSTRUCTION. Needs --goal-point-inject.")
+    ap.add_argument("--goal-point-t", type=float, default=4.0,
+                    help="seconds at which the goal point is taken. ⛔ MUST "
+                         "be strictly beyond the 2 s scored horizon -- a goal "
+                         "inside it IS THE ANSWER -- and MUST be a model "
+                         "horizon (V3_HORIZONS at 10 Hz => 0.5/1/1.5/2/3/4/5/"
+                         "6 s). Refused twice: here, and structurally by "
+                         "GoalPointConfig, which RAISES. Default 4.0 is the "
+                         "MEASURED design point: at t=4 s the goal recovers "
+                         "57.1 pct of the LONGITUDINAL and 78.4 pct of the "
+                         "lateral selection ceiling, both separated.")
+    ap.add_argument("--goal-point-w", type=float,
+                    default=GOAL_POINT_WEIGHT_DEFAULT,
+                    help="smooth-L1 weight on the NORMALISED goal point. The "
+                         "pre-registered launch value is 1.0. ⛔ "
+                         "--goal-point-inject with 0 is REFUSED: it builds a "
+                         "head, stamps the edge, and trains it on nothing, so "
+                         "the section 5 head gate (<= 1.0 m lateral / <= 2.0 "
+                         "m range RMS) would fail for a reason that is not "
+                         "about the goal FORM.")
     return ap
 
 

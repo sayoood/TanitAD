@@ -97,6 +97,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from tanitad.models.tactical import PhiTac
+from tanitad.refs import goal_point as gp
 from tanitad.refs import refc
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
@@ -379,6 +380,30 @@ class RefCV3Config:
     # `provenance_roles`.
     ego_state_inject: bool = False
     d_ego: int = 32                   # ego embed width (~= d_nav's 64 / 2)
+
+    # --- ⭐⭐ E15: the PREDICTED METRIC GOAL POINT (goal-point agent, 2026-09-06) ----
+    # ⛔ DEFAULT FALSE. With it off this class builds today's refcv4b/refcv5 BIT-
+    # IDENTICALLY (pinned by tests/test_goal_point_wiring.py::test_v3_parity_when_off),
+    # which matters because a live run resumes through this file.
+    #
+    # WHY IT EXISTS, measured, not argued. E13's categorical nav is a PRESENCE-GATED
+    # BIAS: inverting the token on all 1,743 commanded windows costs +0.0022 m
+    # [-0.0006, +0.0052] ADE (NOT separated) while removing it costs +0.0961 m
+    # separated — content 2.3 %, presence 97.7 %. And on the anchor fan an ORACLE 3-way
+    # command's best deterministic decoding of the LATERAL index is "go straight" for
+    # ALL THREE classes: it is bit-identical to the no-information goal and separated
+    # WORSE than the model's own pick. A metric goal point at a fixed TIME beyond the
+    # scored horizon recovers 78.4 % of the lateral and 57.1 % of the LONGITUDINAL
+    # selection ceiling, both separated — and the longitudinal half is unreachable by a
+    # bearing (separated worse by +2.36 m) or by a categorical command (which has no
+    # longitudinal vocabulary at all).
+    # `…/Research/2026-09-06-goal-point/{RESULT.md,PREREG.md}`.
+    #
+    # ⛔ The goal is PREDICTED from the strategic context (vision). It carries NO
+    # situation-classifier output in any form — see goal_point.goal_point_provenance(),
+    # which is written into the run's config.json rather than left in a docstring.
+    goal_point_inject: bool = False
+    goal_point_cfg: gp.GoalPointConfig = field(default_factory=gp.GoalPointConfig)
     # E14 — echo-quotiented goal supervision: g_tac = ha0_ext + delta, with a
     # ZERO-INIT delta head, so the model STARTS at the kinematic extrapolation
     # and every learned parameter is spent on what the ego state cannot
@@ -633,6 +658,31 @@ class RefCV3Model(nn.Module):
     def __init__(self, cfg: RefCV3Config):
         super().__init__()
         self.cfg = cfg
+        # ⭐⭐ S7 / E15 (GP-1) — THE RANKED-SCORE SEAM'S SLOT AND SCALE ARE
+        # DERIVED HERE, BEFORE THE CORE IS BUILT, AND NEVER TYPED.
+        #
+        # ⛔ The failure this closes is not hypothetical, it is the derived-
+        # constant trap (`HORIZON = round(6.0 * 10 / STRIDE)`): a hand-set
+        # `gp_slot` compares the goal at t = 4 s against the anchor at some
+        # OTHER time, and that arm trains, converges, and reports a plausible
+        # number. Deriving it from THIS core's OWN horizons and THIS config's
+        # OWN `t_goal_s` makes the two un-desyncable, and `goal_slot_index`
+        # raises when the time is not a slot at all.
+        if cfg.goal_point_inject:
+            cfg.core.gp_slot = gp.goal_slot_index(
+                cfg.goal_point_cfg.t_goal_s, cfg.core.trajectory.horizons)
+            cfg.core.gp_scale_m = float(cfg.goal_point_cfg.range_norm_m)
+        elif cfg.core.graft_gp_point:
+            # The gate would exist with nothing to feed it: `gp_point` stays
+            # None, the `r_terms` entry is skipped on every forward, and the
+            # arm reads as "the geometric goal prior does nothing" while never
+            # having had a goal. Refuse rather than manufacture that negative.
+            raise ValueError(
+                "core.graft_gp_point=True needs goal_point_inject=True — the "
+                "S7 ranking term is fed by the E15 head's own prediction "
+                "through the hierarchy hook. Without the head the gate is "
+                "built, the term is never appended, and the arm would report "
+                "the seam as inert while it was never wired.")
         self.core = refc.RefCModel(cfg.core)
         if not cfg.hier:
             return
@@ -667,6 +717,27 @@ class RefCV3Model(nn.Module):
         # unrelated conditioning surfaces through one gradient. ZERO-INIT
         # projections keep the arm bit-identical to a nav-less v3 at step 0, so
         # the delta this edge buys is attributable to training, not to init.
+        # ⭐⭐ E15 — THE PREDICTED METRIC GOAL POINT. Structurally the E13 nav block
+        # with the 4-row categorical table replaced by an MLP over a METRIC vector, and
+        # deliberately so: same sites, same additive form, same zero-init, so the ONE
+        # variable between the arms is the TYPE of the conditioning signal.
+        # ⛔ The head is a bare Linear on purpose. Giving the goal more capacity than
+        # E13's embedding would make the comparison a CAPACITY comparison (C34: match
+        # capacity before attributing an effect to information).
+        if cfg.goal_point_inject:
+            self.gp_head = gp.GoalPointHead(cfg.core.strategic.d_ctx)
+            self.gp_cond = gp.GoalPointConditioning(
+                cfg.goal_point_cfg.d_goal, cfg.d_tac, cfg.core.strategic.d_ctx)
+            # DERIVED from THIS core's horizons, not from the module-global
+            # V3_HORIZONS: a build whose trajectory horizons were resized would
+            # otherwise carry a slot that indexes a bank it does not have.
+            self.gp_slot = gp.goal_slot_index(
+                cfg.goal_point_cfg.t_goal_s, cfg.core.trajectory.horizons)
+        else:
+            self.gp_head = None
+            self.gp_cond = None
+            self.gp_slot = None
+
         if cfg.nav_inject:
             # ctx is the StrategicCtx token the hook receives — d_ctx (64),
             # read from the CORE'S OWN config so a resize cannot desync them.
@@ -836,6 +907,12 @@ class RefCV3Model(nn.Module):
     def _hook(self, cache: dict, nav_cmd: Tensor | None = None,
               ego_state: Tensor | None = None):
         cfg = self.cfg
+        # ⭐⭐ STRATEGIC BYPASS (`--no-strategic`, PI 2026-09-06). Read from
+        # the CORE config so there is exactly ONE source of truth for the flag
+        # across `refc.py` and this file -- a second copy is how two halves of
+        # one switch drift apart. `getattr` so an older pickled config without
+        # the field still builds (it reads False = today's behaviour).
+        bypass = bool(getattr(cfg.core, "no_strategic", False))
 
         def hook(pooled_seq: Tensor, ctx: Tensor) -> dict:
             b = pooled_seq.shape[0]
@@ -880,6 +957,25 @@ class RefCV3Model(nn.Module):
                 ego_e = self.ego_inj(torch.cat([es, keep_b], dim=-1))
                 z_tac_raw = z_tac_raw + self.ego_to_tac(ego_e)    # -> tactical
                 ctx = ctx + self.ego_to_str(ego_e)                # -> strategic
+            # ⭐⭐ E15 — the predicted metric goal point, read off the STRATEGIC
+            # context BEFORE its own conditioning is added (a feed-forward residual, not
+            # a cycle) and fed back as a CONTINUOUS, per-window, metric signal.
+            # ⚠️ At train time the LABEL supervises `g_point`; at inference nothing else
+            # is read — the ego's future path never enters the forward.
+            g_point = None
+            # S-BYPASS-4: the E15 metric goal point is read OFF `ctx`, so it
+            # is a STRATEGIC readout and a "goal constraint" in exactly the
+            # sense the PI's directive names. Bypassed with the rest of the
+            # layer. (Inert on refcv4b, whose argv carries no goal-point flag.)
+            if self.gp_cond is not None and not bypass:
+                g_point = self.gp_head(ctx)                       # [B, 2] normalised
+                feats = torch.cat(
+                    [g_point.clamp(-cfg.goal_point_cfg.xy_clip,
+                                   cfg.goal_point_cfg.xy_clip),
+                     torch.ones_like(g_point[:, :1])], dim=-1)    # [B, 3], valid = 1
+                gp_t, gp_s = self.gp_cond(feats)
+                z_tac_raw = z_tac_raw + gp_t                      # -> tactical
+                ctx = ctx + gp_s                                  # -> strategic
             g = self.str_goal_head(ctx)                           # [B, 3]
             bearing = g[:, :2] / torch.linalg.vector_norm(
                 g[:, :2], dim=-1, keepdim=True).clamp_min(1e-6)
@@ -896,10 +992,24 @@ class RefCV3Model(nn.Module):
             # it is a different mechanism (the winner's-curse firewall: letting
             # selection train the goal toward the fan is the failure SEL-1 was
             # refused for). Two detaches, two reasons, one flag.
-            g_down = g_str if cfg.uplink_grad else g_str.detach()
-            gcond = self.gstr_embed(g_down)
-            gamma, beta = self.gstr_film(gcond).chunk(2, dim=-1)
-            z_tac = z_tac_raw * (1.0 + gamma) + beta              # zero-init
+            # ⭐⭐ S-BYPASS-2 -- THE TACTICAL SEAM. This FiLM is the ONLY
+            # in-graph consumer of `g_str` (every other reference is the cache,
+            # the aux loss or the intervention audit), so skipping it is what
+            # makes "the strategic layer sets no goal constraint for tactical"
+            # TRUE rather than merely intended.
+            # ⛔ `g_str` is still COMPUTED and still cached: the strategic
+            # head's opinion stays visible in the record -- which is the whole
+            # reason to prefer a bypass over a deletion, since the route head's
+            # kappa 0.4852 is exactly the quantity this arm is testing.
+            # ⚠ The `else` branch below is the pre-flag code VERBATIM, so with
+            # the flag OFF this block is byte-identical to today.
+            if bypass:
+                z_tac = z_tac_raw
+            else:
+                g_down = g_str if cfg.uplink_grad else g_str.detach()
+                gcond = self.gstr_embed(g_down)
+                gamma, beta = self.gstr_film(gcond).chunk(2, dim=-1)
+                z_tac = z_tac_raw * (1.0 + gamma) + beta          # zero-init
             lat = self.lat_head_tac(z_tac)
             lon = self.lon_head_tac(z_tac)
             # ⛔⛔ DEFECT A — RESOLVED 2026-09-04 (option (a), pre-registered).
@@ -957,7 +1067,9 @@ class RefCV3Model(nn.Module):
                          lat_logits_tac=lat, lon_logits_tac=lon,
                          g_tac=g_tac, g_tac_delta=g_delta,
                          ego_injected=bool(ego_e is not None),
-                         nav_injected=bool(nav_t is not None))
+                         nav_injected=bool(nav_t is not None),
+                         goal_point=g_point,
+                         goal_point_injected=bool(g_point is not None))
             if echo_base is not None:
                 cache.update(
                     echo_base=echo_base,
@@ -967,6 +1079,13 @@ class RefCV3Model(nn.Module):
             # unless the Caveat-A lever is open.
             z_up = z_tac if cfg.uplink_grad else z_tac.detach()
             hook_out = {"target_latent": self.tac_latent_proj(z_up)}
+            if g_point is not None:
+                # ⛔ Emitted, not yet CONSUMED: the param-free geometric ranking term
+                # (`goal_point.anchor_goal_prior_at_time`) needs one gated `r_terms`
+                # entry in `refc.py`'s ranked-score block, which is a different owner's
+                # file. Shipping the value here means that patch is one line and needs
+                # no second forward. Named as an integration item in PREREG.md §8.
+                hook_out["goal_point"] = g_point
             if man5 is not None:
                 hook_out["maneuver_logits"] = man5
             # ⭐ H-EGO-LIT-4: the model's OWN 2 s speed, DETACHED, for the
@@ -989,9 +1108,23 @@ class RefCV3Model(nn.Module):
                 nav_known: Tensor | None = None,
                 ego_state: Tensor | None = None,
                 withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
                 agent_gt: dict | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
 
         ⛔ Fails loud when supplied to a build that would silently drop it: a
         measured ego block quietly discarded is exactly the class of bug the
@@ -1038,16 +1171,32 @@ class RefCV3Model(nn.Module):
                      >= self.cfg.core.ego_dropout).to(ego_state.dtype)
                 ego_state[:, 4] = ego_state[:, 4] * k
             ego_keep = ego_state[:, 4]
+        # ⛔ SAME REFUSAL AS `ego_state` ABOVE, AND FOR THE SAME REASON: a
+        # supplied goal point that this build has no seam for would be SILENTLY
+        # DROPPED, and the intervention arm (`gp_geo_mirror`, `_rng05`, …)
+        # would read as "corrupting the goal costs nothing" — i.e. it would
+        # manufacture a FAILED value-sensitivity gate out of a wiring gap,
+        # which is the one outcome that must never be produced by accident.
+        if gp_point is not None and not self.cfg.core.graft_gp_point:
+            raise ValueError(
+                "gp_point was supplied but this build has no S7 seam "
+                "(`core.graft_gp_point` is False) — it would be SILENTLY "
+                "DROPPED and the intervention would read as 'the goal value "
+                "does not matter', which is exactly the PREREG §4 gate "
+                "failing for the wrong reason. Build with "
+                "--goal-point-geo-prior, or stop passing gp_point.")
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                              nav_known=nav_known, ego_keep=ego_keep,
                              withheld_speed=withheld_speed,
+                             gp_point=gp_point, gp_valid=gp_valid,
                              agent_gt=agent_gt)
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state),
                         withheld_speed=withheld_speed,
+                        gp_point=gp_point, gp_valid=gp_valid,
                         agent_gt=agent_gt)
         # the per-row withholding draw, for diagnostics that split kept from
         # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`
