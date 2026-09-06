@@ -1,0 +1,92 @@
+{
+ "_evidence_class": "MEASURED (ours; every digest below was read back from the surface it names)",
+ "task": "Settle whether the 317 MB B1 TRAIN agent join is REPRODUCIBLE by re-executing the recorded argv and comparing bytes",
+ "date": "2026-09-07",
+ "agent": "Architecture & Inference",
+ "gpu_touched": false,
+ "pod_touched": false,
+ "live_artifact_written_to": false,
+
+ "target": {
+  "path": "C:\\Users\\Admin\\tanitad-caches\\b1-train-join-20260906\\b1train_agents.jsonl.xz",
+  "xz_md5_reverified_this_session": "1c985e6d6ad34e605c4ebd30cb353558",
+  "xz_bytes_reverified_this_session": 317028572,
+  "decompressed_bytes_measured_this_session": 3031865540,
+  "digest_is_32_hex": true,
+  "digest_is_not_the_empty_md5": "d41d8cd98f00b204e9800998ecf8427e excluded"
+ },
+
+ "argv_provenance": {
+  "source": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-refcv5-v2-compose/raw/pod_ship_20260906.json -> b1_train_agent_join.build_argv",
+  "used_verbatim": true,
+  "only_deviation": "--out redirected to a NEW path; the live artifact was never opened for writing",
+  "out_repro": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\out\\b1train_agents.jsonl.xz"
+ },
+
+ "input_identity": {
+  "clips_file": {
+   "argv_value": "b1_train_clips.json (RELATIVE -- resolved from the run cwd)",
+   "tracked_at": "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-06-b1-train-join/raw/b1_train_clips.json",
+   "tracked_md5": "533d5353ffd41ed011878d615781e9f4",
+   "original_run_cwd_copy_md5": "533d5353ffd41ed011878d615781e9f4",
+   "repro_run_cwd_copy_md5": "533d5353ffd41ed011878d615781e9f4",
+   "bytes": 182880,
+   "verdict": "the corpus definition IS versioned and is byte-identical on all three copies"
+  },
+  "ts_dir": {"path": "C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov", "entries": 9438},
+  "ego_dir": {"path": "C:/Users/Admin/tanitad-data/physicalai/labels/egomotion_alpamayo", "entries": 4800},
+  "obstacle_dir": {"path": "C:/Users/Admin/tanitad-data/physicalai/labels/obstacle_offline_b1train", "entries": 4440}
+ },
+
+ "code_surface": {
+  "_why": "a re-execution proves nothing unless the code that ran is the code that is versioned",
+  "isolated_run_tree": "C:\\Users\\Admin\\tanitad-caches\\join-repro-20260907\\tree (git archive HEAD stack taniteval, -c core.autocrlf=false -c core.eol=lf)",
+  "why_isolated": "the shared mirror C:\\Users\\Admin\\tanitad-wt is re-synced FROM the repo mid-run by siblings and silently drops/deletes files; a 30 min build must not read from it",
+  "modules_resolved_at_runtime_all_inside_the_private_tree": true,
+  "dep_digests_HEAD_blob_vs_private_tree": {
+   "stack/scripts/build_b1_agent_join.py": "2a56c451da775face871b36c2c2bccb1",
+   "stack/scripts/build_obstacle_join.py": "11777e245b329517fca8bdf7b47e7d31",
+   "stack/tanitad/data/bev_raster.py": "4f6edc5ce6253be85ed7fa002f8ee130",
+   "stack/tanitad/data/join_meta.py": "2ddef3e46d965c9c1712d34aa30a3687",
+   "taniteval/taniteval/lead_source.py": "c15c35b0c91aaac2965b5bd20b7c556a"
+  },
+  "dep_chain_unchanged_since_the_build_commit": {
+   "build_commit": "1c46b23 2026-09-06 21:23:57 +0200",
+   "commits_since_touching_any_of_the_5_deps": 0,
+   "commits_since_in_total_CONTROL_must_be_nonzero": 34
+  },
+  "worktree_vs_HEAD_is_EOL_ONLY_not_drift": {
+   "_why": "core.autocrlf=true on this box: 3 of the 5 deps have a DIFFERENT raw md5 from their HEAD blob while git status is CLEAN. That is CRLF, not content.",
+   "build_obstacle_join.py": {"cr_count_worktree": 899, "lines": 899, "md5_after_stripping_CR": "matches HEAD"},
+   "bev_raster.py": {"cr_count_worktree": 541, "lines": 541, "md5_after_stripping_CR": "matches HEAD"},
+   "lead_source.py": {"cr_count_worktree": 480, "lines": 480, "md5_after_stripping_CR": "matches HEAD"},
+   "comparator_control": "two genuinely different files hashed unequal, so the comparator is not stuck"
+  }
+ },
+
+ "determinism_audit_of_the_builder": {
+  "compression": "lzma.open(..., preset=6) -- the preset is PINNED IN CODE and Python's lzma is single-threaded, so the xz encoder cannot vary run to run; the .xz container carries no timestamp field (unlike gzip)",
+  "clip_order": "want = set(...) then cids = sorted(want) -- the set is SORTED before use, so PYTHONHASHSEED cannot reorder the corpus",
+  "frame_order": "frames = sorted(fb)",
+  "record_serialisation": "json.dumps(rec, separators=(',',':')) -- dict insertion order, deterministic",
+  "parallelism": "none (no Pool/threads/concurrent.futures in the builder)",
+  "wall_clock_in_the_artifact": "no -- time.time() feeds only the sidecar's wall_s, never the jsonl",
+  "gpu": "torch is imported only inside read_raw_poses(), the v2ep path; reconstruct mode is pure numpy/pandas. Run with CUDA_VISIBLE_DEVICES='' regardless."
+ },
+
+ "live_early_indicator": {
+  "probe": "md5 of the first N lines of the repro build log vs the original build log",
+  "n_lines": 159,
+  "repro_md5": "6e4a88ef349f2f70c2c67210bb9d7cc8",
+  "original_md5": "6e4a88ef349f2f70c2c67210bb9d7cc8",
+  "identical": true,
+  "note": "per-clip boxes/vis/dt/misjoin statistics reproduce exactly, 158 clips in"
+ },
+
+ "incidental_finding_not_mine_to_fix": {
+  "what": "the SHARED git index holds a STALE blob for stack/scripts/build_b1_agent_join.py",
+  "detail": "git status reads MM; `git diff --cached` against HEAD reports 45 insertions / 464 deletions, i.e. the index blob ddacde6a is an OLDER version than HEAD's. The WORKTREE file equals the HEAD blob exactly (2a56c451da775face871b36c2c2bccb1).",
+  "cause": "the known mm_commit.py private-scratch-index side effect -- it leaves the shared index stale",
+  "action_taken": "REPORTED, NOT UNSTAGED (standing rule: if the shared index is off, report it, do not fix it under a sibling)"
+ }
+}
