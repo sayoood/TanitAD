@@ -209,3 +209,43 @@ disagree, this section is later and wins — and the disagreements are named, no
 * ⛔ **The nav command is NOT a training signal** — it is an INPUT simulating the vehicle's nav system.
 * ⭐ **Use the whole tactical AND strategic vocabulary** — both are supervised; the strategic *layer's* conditioning stays switchable.
 * ⛔ **The arm does not launch until agent conditioning is IN or explicitly declared OUT.**
+
+---
+
+## 8. STATE AS OF 2026-09-06 late — THIS SECTION SUPERSEDES THE `state today` COLUMN IN §1
+
+⚠️ §1's `state today` column was written before the validation phase ran and is now stale on **five**
+rows. It is left in place because the *validation rig* and *owner* columns are still correct, and
+because rewriting a register in place destroys the record of what was believed when. **Read this
+section for state; read §1 for how a piece earns entry.**
+
+| # | piece | state 2026-09-06 late | moved? |
+|---|---|---|---|
+| **P1** | agent conditioning | ⭐ **GATE OPEN.** B1 TRAIN join built — 4,427/4,572 clips, 849,263 rows, 28,053,187 boxes, md5 `1c985e6d6ad34e605c4ebd30cb353558`, **zero GPU, zero storage delta**. `--agents head` needs no `agent_gt` (that is `oracle`'s inference-time GT channel), so the DD-faithful mode is unblocked. The 161 GB blocker dissolved: `--pose-source reconstruct` reproduces the EVAL join byte-for-byte. ⛔ Gate open ≠ piece validated — it still owes a tiny-rig arm. | ⭐ yes |
+| **P2** | geometric goal point | wired + gated, weight 0.0. ⭐ `gp_point`/`gp_valid` are now DECLARED diagnostic-only (`goal_point.DIAGNOSTIC_ONLY_FORWARD_KWARGS`) — their only source in an RL rollout is the ego's future path, i.e. the label. A test polices the exclusion. | hardened |
+| **P3** | 22-token TACTICAL vocabulary | ⛔ **audit-only CONFIRMED BY MUTATION**, not by reading: a red↔green flip of `g_tac.goals` changed **0/4,572** supervised records against a control at **779/4,572**. `load_v7_labels` routes it into `V7Label.audit["goal_flags"]`, declared verbatim *"audit-only, NEVER a training input"*. | ⭐ mechanism proven |
+| **P4** | 15-token STRATEGIC vocabulary | ⛔ **VALIDATED AND FAILED ITS SUPPORT BAR.** 3 of 8 goal and 3 of 7 action classes populated (n=801) ⇒ **6 of 15 tokens**, **11.43 %** of the horizon supervisable. The other 9 are blocked on the CORPUS, not on any head. Enters ONLY in the restricted form the FAIL clause pre-committed to. Model side did not exist and was built (`str_goal_tok_head`, named to keep the collision with the 3-unit geometric `str_goal_head` visible). | ⭐ yes |
+| **P5** | decoder refinement fix | ⚠️ **CORRECTION: −30.7 %, not "halves the ADE"** — the wrong figure had propagated into four artifacts. The "doubles curvature" half (2.03×) stands. | ⚠️ corrected |
+| **P6** | selector training + DD deep supervision | still blocked by P12; module built (4,530,444 params), wired to nothing. | no |
+| **P7** | distance-keeping cost | still not ported from refav1 to REF-C. | no |
+| **P8** | `--no-strategic` | done, mutation-proven both directions. | no |
+| **P9** | RL post-training | ⭐ `FORWARD_KEYS` drift is now **derived from `inspect.signature`** rather than hand-maintained — the tuple had silently dropped channels **twice**. ⛔ The first version of that test advised a fix that **would have manufactured a label leak**; overruled and corrected. 8 tests pass, incl. a vacuity gate. | ⭐ yes |
+| **P10** | `g_str` sign fix | ⛔ the repaired steering signal turns left and **the PLAN does not follow it** — MEASURED, with a null-patch control reading **exactly zero**. Converting it needs a ~40k retrain: a PI spend decision. | ⭐ yes |
+| **P11** | nav args (`distance_m`, `time_s`) | escalated as `D-NAVARGS-1`. ⭐ **NOW SPLIT ON ADMISSIBILITY:** arc-length **distance** is admissible (a real nav system knows "turn left in 300 m"); ⛔ **time is NOT** — it is the ego's own future speed profile inverted, and 88.7 % of the oracle gap is longitudinal. Time ships DIAGNOSTIC/TRAINING-ONLY. ⚠️ v8's `nav_30s` arc **distances** are UNVERIFIED pending a re-derive (an 8 s timeline-offset defect the label owner self-reported). | ⭐ yes |
+| **P12** | `a_star` geometry | ⭐ **BINDING FIXED** — was bound to `decoder.anchors`, now a per-window `_decoded_bank`. ⛔ **Every past refcv4b `anchor_acc` / `sel_agrees_oracle` is CONTAMINATED**; corrected full-grid `anchor_acc` = **0.5275**, not 0.0993. | ⭐ yes |
+| **P13** | DD's `t ~ U[0,50)` training draw | ⚠️ **THE §1 ROW IS WRONG.** A live spy on the real `_sample` shows refcv5 trained at **t ∈ {10, 0}** — the inference ladder — **not at t = 8**. Mechanism PASS (schedule pinned bit-equal to diffusers, σ(8) = 0.031588); **benefit NOT established ⇒ does NOT enter.** The `_sample` change is filed as an exact diff, deliberately not landed: it would change the recipe every banked sampler arm was trained under. | ⭐ record corrected |
+| **P14** | sampler ranks the fan | ⭐⭐ **PASS, AND IT EARNS ENTRY.** Ceiling ADE **0.4728 → 0.1914 m**, **+0.2813 [+0.2127, +0.3543]** separated, n = 881 windows / 40 episodes. The defect was PLUMBING not architecture: `sel_refined`/`sel_score_emitted` appear **0 times** in `refc_v3_train.py` (control: `sel_` reads 8). Regression arm valid (shuffled ranking **+13.7598 m** worse). `anchor_traj` BIT-IDENTICAL, so every banked contrast stays paired. ⚠️ **98.9 % of the gain is ALONG-TRACK and curvature is NOT separated — it is a LONGITUDINAL lever and must be reported as one.** | ⭐ yes |
+| **P15** | max-speed constraint | ⭐ **PI RULED 2026-09-06:** use the speed band's upper bound, **quantized to legal steps**. ⛔ Its raw form is the ego's future speed (`s2_geom_emit_v7.py:199-211, :309-315` — max over anchor+2 s…+6 s): corr **0.941** with `v0`, but **51.5 %** of clips differ by >1 m/s and **p95 = +6.12 m/s**. ⛔ `road_class` is NOT the substitute — ego-derived (`refb_labels.py:1817-1819` forbids it as an inference input in so many words) and **`v0` alone recovers it at 76.4 % vs a 65.4 % majority floor**. | ⭐ yes |
+
+### 8.1 Landed outside the register
+
+* ⭐ **Three-segment anchors (D-TRISEG) — all nine bars PASS.** Two three-segment candidates beat the SHIPPED SIX on lane-change supply (**+0.2133 m vs +0.1645 m**) at a third of the bank cost, with **30.3 %** less curvature. The schedule was fixed by a **derived rule before any number**, and in the re-derived sweep that row is **the argmax of nothing** — a post-hoc selector would have taken a different row.
+* ⭐ **Rollability regression fixed** — every banked v7.0 checkpoint was unrollable and the live refcv5 run **unresumable**; six checkpoints now load 0 missing / 0 unexpected.
+* ⭐ **H19 stamp landed** — and the escalation that prompted it is **REFUTED in its strong form**: a non-`kin3` vocabulary does not drop the H19 lateral prior; it drops the **TACTICAL FEED**, on three tensors, as a structural exact zero. refcv4b paid it with a silent record.
+* ⛔ **The v7 emitter reaches 5 of 8 lateral actions.** `LANE_CHANGE_L`, `LANE_CHANGE_R` and `ABORT_LC` are structurally unreachable (`s2_geom_emit_v7.py`, three assignments at :446/:449/:452). Text-side supply ceiling is **105 clips ≈ 2.2 %** — a CORPUS fact, so repairing the emitter makes the class *expressible*, not *supplied*.
+
+### 8.2 ⛔ The gate on Phase 2 is UNCHANGED and is NOT yet met
+
+P14 earns entry; P4 enters restricted; P13 does not enter. That is **three of fifteen resolved**, and §4 still binds: **the composed arm does not launch until P1 is either IN or explicitly declared OUT by the PI.** The B1 join opening P1's gate is a *necessary* condition, not the arm.
+
+⚠️ **AND THE HONEST CEILING IN §6 STILL CAPS ALL OF IT.** Nothing validated tonight touches the vocabulary-resolution gap; P14's gain is longitudinal, and REF-C remains **~84× worse on curvature than a plan that never steers** (0.02737 vs 2.30973) — a finding that survives the honest raw-input floor.
