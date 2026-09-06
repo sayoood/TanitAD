@@ -290,6 +290,17 @@ seeds and **is** non-vacuous — but it is not rare, and it is bought with `turn
    is where the turn is lost: the goal term pays **+0.716** for a right turn and **≈ 0** for a left
    one, *with the curvature penalty switched off*. No curvature weight can repair a goal field that
    offers nothing to aim at.
+   ⭐ **And the decomposition is EXACT, not inferred** (`raw/LEFT_TURN_GOAL_FIELD.md`): the
+   constant-velocity candidate has `kappa ≡ 0`, so `w·kappa²` contributes **exactly zero** to
+   `finecost_cv` — **checked, not argued**, because `med finecost_cv` is **bit-identical across
+   `wk7`, `wk15` and `gkappa`** (0.9242 / 1.7030 / 0.7685 per class in all three). ⇒ the
+   `TURN_L`/`TURN_R` ratio of **2.22×** sits entirely outside the curvature penalty.
+   ⛔ `H-CCOS-TURNL-FIELD` — *the left-turn goal field points where no candidate reaches* — is
+   registered as a **HYPOTHESIS, not a result**: `finecost` is the composed cost and carries
+   `W_VEND = 64.2972`, so `finecost_plan` **1.9964** on `TURN_L` (against **0.0526** on `TURN_R`)
+   is *consistent with* anti-alignment and is not proof of it. **The discriminating experiment is
+   pre-registered with both outcomes** — emit the goal and `W_VEND` terms as separate sidecar
+   columns and re-read the table.
 3. **A second lateral vocabulary level.** `max|kappa|` is pinned at `GOAL_KAPPA_TURN = 0.08` on
    seven arms while the human reaches **0.1797**; the planner's only curvature-carrying candidate
    is the decoded token's canonical profile, so **no weight can cross that ceiling** — `L1-0.08` is
