@@ -1818,3 +1818,53 @@ lever* is now demonstrated in **both** directions, which is what makes it a rule
   that contrast moves **two** variables (`W_JERK` and the seam) and is therefore **not attributable**.
 * ⭐ `loncomb3`'s committed branch — *"if `loncomb3` is worse than `lonshift`, report it; do not retune
   the weight to rescue it"* — **did not fire**: it is better on every longitudinal metric.
+
+
+## M79. ⭐⭐⭐ THE `W_KAPPA` SWEEP, READ ON THE SOUND METRIC — a clean interior optimum, and refav1 DOES track the road
+
+### 1. The sweep, re-read on curvature MAE instead of turn recall
+
+`A2` was designed to find where turn **RECALL** dies. `M74` showed recall is measured through a gate
+the **human fails 3/9**, so the sweep is re-read on **curvature MAE**, which the human passes by
+construction and whose floor is a **perfectly straight plan**.
+
+| arm | `W_KAPPA` | ADE | **curv MAE** | head MAE | turn_L (broken metric) |
+|---|---|---|---|---|---|
+| `ccos_argmax` | 0 | 1.3272 | ⛔ **0.05537** | 23.458 | 0.3636 |
+| `wk1` | 1 | 0.9388 | 0.03941 | 20.373 | 0.3636 |
+| `wk3` | 3 | 0.9301 | 0.03874 | 20.195 | 0.3636 |
+| `wk7` | 7 | 0.8935 | 0.03352 | 19.084 | 0.2727 |
+| ⭐ **`wk15`** | 15.11245 | **0.8934** | ⭐ **0.03098** | **15.270** | 0.0000 |
+| `wk151` | 151.1245 | 0.9084 | 0.03802 | 15.379 | 0.0000 |
+| **FLOOR `ha0`** (perfectly straight) | — | — | **0.040083** | 20.137 | — |
+
+### 2. ⭐⭐ What it establishes
+
+* ⛔ **The UNPENALISED arm is WORSE THAN DRIVING STRAIGHT** — 0.05537 vs the floor's 0.040083.
+  **Independent confirmation of `M74` from a six-point sweep** rather than a two-arm contrast.
+* ⭐ **`wk1` already crosses the floor** (0.03941): the penalty buys road-tracking from its very
+  first unit.
+* ⭐⭐ **A CLEAN INTERIOR OPTIMUM AT `W_KAPPA` ~ 15** — monotone improvement 0 → 1 → 3 → 7 → 15 on
+  **both** curvature and heading, then **degradation at 151** (0.03098 → 0.03802). ⇒ **not a
+  saturating knob and not a cliff: a real optimum**, which is what a well-posed cost term should show.
+* ⭐⭐⭐ **`wk15` beats the straight floor by 23 %** (0.03098 vs 0.040083) — **the best lateral
+  tracking in the programme.**
+
+### 3. ⚠️ `wk7` vs `wk15` — and the answer is NOT what the recall column suggests
+
+`wk7` is the only arm that keeps a **non-zero turn_left recall (0.2727)** while matching `wk15`'s ADE
+(0.8935 vs 0.8934). ⛔ **But recall is the broken metric.** On every SOUND metric `wk15` wins:
+curvature **0.03098 vs 0.03352**, heading **15.270 vs 19.084**, ADE tied.
+⇒ ⭐ **`wk15` is the better arm, and `wk7`'s only advantage is on the gate the human fails.**
+**Reading the sweep on recall would have selected the worse arm** — which is precisely the failure
+`ARCH-D` describes, caught here before it cost anything.
+
+### 4. ⭐ The answer to the PI's central question
+
+**"Is there an arm that both drives accurately and tracks the road?" — YES: `wk15`.**
+ADE **0.8934** (best in the sweep) with curvature MAE **23 % better than a perfectly straight plan**,
+and — with `M77` — a **replicated, non-vacuous zero friction-circle violation rate** at 89 % of the
+human's peak lateral load.
+⛔ **What it still is NOT:** better than `ha0_ext` on the longitudinal family, and `M66` warns that
+`ha0_ext` is itself infeasible on 18.5 % of windows, so that comparison needs its feasibility rate
+stated. **Lateral and safety are established; longitudinal is the open blocker.**
