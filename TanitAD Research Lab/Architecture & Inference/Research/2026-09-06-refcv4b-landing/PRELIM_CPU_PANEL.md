@@ -233,3 +233,56 @@ even though the arm as a whole moved five levers at once.
    vision-only arm by step 30,000.
 3. `frames_blind` — the panel's VOID gate — was still running when this was written; **the panel is
    not admissible until it is read**.
+
+---
+
+## 7. ⛔ ESCALATION — which number is the DEPLOYMENT number is a PI decision, and the two differ by 3.65×
+
+`ego_zero` withholds **all five** channels of the E11' block — `v0, a_long, yaw_rate, curvature,
+keep` — *and* sets `v0 = None` at the core. The standing rulings do not obviously cover that:
+
+| ruling | what it says |
+|---|---|
+| PI 2026-08-03, binding | *"for ground truth data of scenario classification you can use both ego and other label, **for inference only vision**"* |
+| PI 2026-09-02, binding | **measured `v0` at t0 IS a legal initial state** for the WM and the planner |
+
+⇒ the second ruling explicitly admits **`v0`**. It does **not** say anything about `a_long`,
+`yaw_rate`, `curvature` — which are also *measured at the last OBSERVED frame*, derived from the
+corpus's own `actions` with **no finite differencing and no future read**
+(`config.json.ego.derivation`), so the same argument may or may not extend to them.
+
+**This is not a rhetorical question — it selects between two numbers that differ by 3.65×:**
+
+| reading | `os` ADE | what it assumes |
+|---|---|---|
+| all five channels admissible at inference | **0.3055 m** | the 2026-09-02 ruling extends from `v0` to the other four t0-measured channels |
+| none admissible (the conservative bound) | **1.1137 m** | *"for inference only vision"* read strictly |
+
+⛔ **I am not deciding this.** It is a PI ruling, it is named here rather than assumed either way,
+and the landing eval will report **both arms** so the record does not depend on the answer.
+⚠️ A middle reading also exists and is cheap to measure: withhold the four derived channels but keep
+`v0`. That arm does not exist today — `ego_zero` is all-or-nothing — and it is a **work item**
+(one `ABLATIONS` entry) rather than a caveat.
+
+---
+
+## 8. ⭐ RANKED BY MEASURED EFFECT SIZE — which is how the levers must be ordered, not by how interesting they are
+
+| rank | lever | measured effect on `os` ADE | separated? |
+|---|---|---|---|
+| **1** | the **ego-state pathway** (`ego_zero` removes it) | **0.8082 m** [0.6239, 0.9985] | **YES** |
+| **2** | refcv3 → refcv4b, the whole arm (5 levers) | **0.1652 m** [0.1090, 0.2318] | **YES** |
+| 3 | `sel_refined` (0 params) | **0.0259 m** [0.0033, 0.0505] — **the WRONG way** | **YES** |
+| 4 | `h19_off` (the anchor prior) | 0.0034 m [−0.0040, +0.0111] | no |
+
+⇒ **The largest measured lever in the entire panel is the one the PI's binding rule constrains.**
+refcv4b proves two things at once: the **longitudinal** family is where the gain is available
+(decision κ 0.2037 → 0.5782, on the family that owns 88.7 % of the oracle gap), **and** that gain
+currently rides entirely on the measured ego block. `--ego-dropout 0.5` has not produced a
+vision-only arm by step 30,000.
+
+⭐ **THE SINGLE HIGHEST-VALUE CHANGE refcv4b PROVES FOR refcv5: make the longitudinal competence
+VISION-DERIVED rather than ego-mediated** — a *predicted* ego/speed state (the `--withheld-bank
+pred` route a sibling is already building, `H-EGO-LIT-4`) or a vision-derived longitudinal signal.
+**Not more dropout**: dropout at 0.5 for 30,000 steps produced an arm that is 3.65× worse without
+the block. Every other lever measured tonight is between 3× and 240× smaller.
