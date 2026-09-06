@@ -762,12 +762,25 @@ def test_nav_compliance_criteria_exist_and_are_required(registry):
     # behaviour-compliance readout at all. The exemption is read from the registry's
     # `arm_scoring` block rather than hardcoded, so renaming the scored arm cannot
     # leave behind a dead exemption that silently admits any key.
-    declination = f"arms.{registry['arm_scoring']['scored_arm']}.four_families.strategic"
+    # ⚠️ THERE IS MORE THAN ONE SCORED ARM. Two per-arm schemas exist and they
+    # name the planner arm differently -- refav1_arm.py emits `cl`, refcv3_arm.py
+    # emits `os` (registry v2.9.0, `arm_scoring.schemas`). Deriving ONE declination
+    # from `scored_arm` alone made this guard REJECT the refcv3/v4 declination while
+    # ADMITTING refav1's -- not a distinction the criterion intends: both are the
+    # same {status, reason, n} block on a record that emits no behaviour-compliance
+    # readout. The set is still READ FROM THE REGISTRY, never hardcoded, so a renamed
+    # or removed scored arm still cannot leave a dead exemption behind.
+    scored_arms = {registry["arm_scoring"]["scored_arm"]}
+    scored_arms |= {sch["scored_arm"]
+                    for sch in (registry["arm_scoring"].get("schemas") or {}).values()
+                    if isinstance(sch, dict) and "scored_arm" in sch}
+    declinations = {f"arms.{a}.four_families.strategic" for a in scored_arms}
+    assert declinations, "no scored arm in arm_scoring - the exemption is vacuous"
     for cid, stem in (("strat.nav_compliance_ctrl_shuffle", "paired_true_minus_shuffled"),
                       ("strat.nav_compliance_ctrl_zero", "paired_true_minus_zero")):
         keys = ids[cid]["keys"]
-        assert all(k.endswith(stem) or k == declination for k in keys), \
-            f"{cid} names a key that is neither the emitted stem nor the declination: {keys}"
+        assert all(k.endswith(stem) or k in declinations for k in keys), \
+            f"{cid} names a key that is neither the emitted stem nor a declination: {keys}"
         assert any(k.endswith(stem) for k in keys), \
             f"{cid} lost the emitted stem entirely - the pin would be vacuous"
 
@@ -1420,3 +1433,179 @@ def test_a_SAMPLING_arm_that_DOES_report_its_seeds_is_recognised(
     res = cc.check_artifact(art, registry)
     assert "hyg.inference_seed" not in [r["id"] for r in res["violations"]]
     assert not res["violations"], res["violations"]
+
+
+# =========================================================================== #
+# THE refcv3 / refcv4b SHAPE (registry v2.9.0, 2026-09-06)                    #
+# =========================================================================== #
+# ⛔ WHY THIS BLOCK EXISTS. v2.7.0 fixed "the registry cannot SEE refav1 records"
+# by adding the `arms.cl.*` markers. It fixed exactly one schema. `refcv3_arm.py`
+# emits the SAME per-arm shape but its planner arm is `os`, so every refcv3 and
+# refcv4b eval ever produced still read UNKNOWN_SCOPE and was never counted --
+# the identical root cause, surviving its own fix, for a second model family.
+# MEASURED 2026-09-06 on the refcv4b @40,284 landing eval (4,823 windows / 141
+# episodes, all four families emitted, tier T1): UNKNOWN_SCOPE, 0 criteria scored.
+#
+# ⭐ The arms below are the ones programme rule §6.5 requires: a registry change
+# ships WITH the regression that proves it is not vacuous. They are deliberately
+# the same arms already run for refav1, on the other schema, because "the guard
+# passed for one shape" says nothing about the other -- which is precisely how
+# v2.7.0's fix came to be half a fix.
+
+REFCV3_ARMS = ("os", "ha", "ha0", "ha0_ext", "os_navshuf", "os_navzero", "oracle_sel")
+REFCV3_SCORED = "os"
+
+
+def _refcv3_scored(registry) -> str:
+    """The scored arm for the refcv3_arm.py schema, READ FROM THE REGISTRY."""
+    schemas = registry["arm_scoring"].get("schemas") or {}
+    for name, sch in schemas.items():
+        if "refcv3" in name and isinstance(sch, dict) and "scored_arm" in sch:
+            return sch["scored_arm"]
+    raise AssertionError(
+        "arm_scoring.schemas names no refcv3 schema - the fixture would be scoring "
+        "an arm the registry does not know about")
+
+
+@pytest.fixture
+def refcv3() -> dict:
+    """A refcv3/refcv4b record: SEVEN arms on the same windows, one of them T0.
+
+    Shaped from the real artifact -- the four families PER ARM at
+    `arms.<arm>.four_families.*`, the strategic decision/route readout at the
+    RECORD level under `refcv3` (arm-independent: the route head reads the
+    observed window only), and `oracle_sel` stamped T0.
+    """
+    protocol = dict(_refav1_families_block()["_protocol"])
+
+    def _tier(a):
+        return "T0" if a == "oracle_sel" else "T1"
+
+    return {
+        "tool": "taniteval/tools/refcv3_arm.py",
+        "n_windows": 4823, "n_episodes": 141,
+        "arm_keys": list(REFCV3_ARMS),
+        "tiers": {a: _tier(a) for a in REFCV3_ARMS},
+        "_estimator": "point estimates are FULL-SET pooled means over windows; intervals "
+                      "are the episode-cluster bootstrap (taniteval.ci). ⛔ "
+                      "overlapping_holdout_se is NOT used anywhere.",
+        "arms": {a: {
+            "tier": _tier(a),
+            "four_families": _refav1_families_block(_tier(a)),
+            "intervals": {"tier": _tier(a), "n": 4823,
+                          "estimator": "episode_cluster_bootstrap (taniteval.ci)"},
+        } for a in REFCV3_ARMS},
+        "refcv3": {
+            "n_windows": 4823, "n_episodes": 141,
+            "trivial_profile": {"n_windows": 4823,
+                                "arms": {a: {"trivial_frac": 0.0} for a in REFCV3_ARMS}},
+            "distance_keeping": {"status": "REFUSED",
+                                 "reason": "no lead block passed (--lead-block)", "n": 0},
+            "protocol": protocol,
+            "strategic": {
+                "tier": "T1", "n_windows": 4823, "n_route_labeled": 3622,
+                "_echo_caveat": "nav_cmd is an INPUT and the route label derives from "
+                                "the same clip, so under the TRUE nav this measures "
+                                "the nav ECHO",
+                "conditionings": {
+                    "nav_true": {"status": "OK", "n": 3622, "accuracy": 0.7786,
+                                 "kappa": 0.4852,
+                                 "confusion_gt_rows_pred_cols": [[168, 214, 88],
+                                                                 [45, 2360, 37],
+                                                                 [115, 303, 292]]},
+                    "nav_shuffled": {"status": "OK", "n": 3622, "accuracy": 0.7786},
+                    "nav_zero": {"status": "OK", "n": 3622, "accuracy": 0.7786}},
+                "paired_true_minus_shuffled_accuracy": {
+                    "delta": 0.0, "lo": 0.0, "hi": 0.0, "separated": False,
+                    "estimator": "paired_episode_cluster_bootstrap"},
+                "nav_compliance": {"status": "REFUSED",
+                                   "reason": "fixture carries no behaviour readout",
+                                   "n": 0},
+            },
+        },
+    }
+
+
+def test_a_refcv3_record_is_IN_SCOPE(refcv3, registry):
+    """The v2.9.0 defect, pinned. Before it, this returned UNKNOWN_SCOPE and a T1
+    driving eval carrying all four families was not counted at all."""
+    scope, why = cc.scope_of(refcv3, registry)
+    assert scope == cc.IN_SCOPE, f"refcv3 record is not in scope: {why}"
+    assert f"arms.{_refcv3_scored(registry)}.four_families" in why
+
+
+def test_the_refcv3_marker_names_its_own_scored_arm(registry):
+    """The marker and `arm_scoring.schemas` must agree, or the record is admitted
+    by one arm's presence and then scored on another."""
+    marker = f"arms.{_refcv3_scored(registry)}.four_families"
+    values = [r.get("value") for r in registry["applicability"]["in_scope_if_any"]]
+    assert marker in values, f"no in-scope marker for the refcv3 scored arm; have {values}"
+
+
+def test_the_two_schemas_name_DIFFERENT_scored_arms(registry):
+    """⭐ The whole reason one marker was not enough. If these ever coincide, the
+    per-schema block has collapsed and the next schema will be missed the same way."""
+    assert _refcv3_scored(registry) != _scored(registry), \
+        "the refav1 and refcv3 schemas report the same scored arm - `arm_scoring." \
+        "schemas` has lost the distinction that v2.9.0 exists to record"
+    assert _refcv3_scored(registry) == REFCV3_SCORED
+
+
+def test_the_refcv3_record_carries_a_tier_stamp(refcv3, registry):
+    """⛔ MEASURED 2026-09-06: with the families mirrored but `tiers.key_paths` NOT,
+    the artifact scored but read tier UNSTAMPED -- 'a number with no tier is not
+    quotable'. The marker mirror and the tier mirror are one fix, not two."""
+    tier_id, raw = cc.resolve_tier(refcv3, registry)
+    assert tier_id == "T1", f"refcv3 record read tier {tier_id!r} (raw {raw!r})"
+
+
+@pytest.mark.parametrize("family", ["LONGITUDINAL", "LATERAL", "TACTICAL", "STRATEGIC"])
+def test_DELIBERATE_REGRESSION_deleting_a_family_from_a_refcv3_record_is_caught(
+        refcv3, registry, family):
+    """⭐ THE ARM THAT MAKES THE refcv3/refcv4b SUPPORT MEAN ANYTHING.
+
+    A registry that admitted refcv3 records and then resolved none of their keys
+    would still pass the scope test above. So the regression is run again, per
+    family, on THIS shape.
+    """
+    broken = _strip_family_keys(refcv3, registry, family)
+    res = cc.check_artifact(broken, registry)
+    assert res["scope"] == cc.IN_SCOPE, "the record must stay in scope while broken"
+    hit = [r["id"] for r in res["violations"]]
+    assert hit, f"deleting {family} from a refcv3 record produced NO violation - " \
+                f"the guard is vacuous"
+
+    fam_ids = {c["id"] for c in registry["families"][family]["criteria"]}
+    assert fam_ids & set(hit), f"{family} deleted but not flagged; flagged={hit}"
+
+    for other in registry["families"]:
+        if other == family:
+            continue
+        other_ids = {c["id"] for c in registry["families"][other]["criteria"]}
+        leaked = (other_ids & set(hit)) - fam_ids
+        assert not leaked, f"deleting {family} also flagged {other}: {leaked}"
+
+
+def test_DELIBERATE_REGRESSION_deleting_one_metric_from_a_refcv3_record_is_caught(
+        refcv3, registry):
+    """The finer arm on this shape: remove ONLY the yaw-rate number - the metric
+    CLAUDE.md names as where a smooth-but-wrong path hides - and exactly that
+    criterion must fire."""
+    broken = copy.deepcopy(refcv3)
+    del broken["arms"][_refcv3_scored(registry)]["four_families"]["lateral"][
+        "yaw_rate_mae_degps"]
+    hit = [v["id"] for v in cc.check_artifact(broken, registry)["violations"]]
+    assert hit == ["lat.yaw_rate"], f"expected only lat.yaw_rate, got {hit}"
+
+
+def test_ONLY_the_scored_arm_is_read_on_a_refcv3_record(refcv3, registry):
+    """⛔ A refcv3 record holds SEVEN arms - four trivial controls, two nav controls
+    and a T0 diagnostic. Gut every non-scored arm: the verdict must not move."""
+    before = cc.check_artifact(refcv3, registry)
+    art = copy.deepcopy(refcv3)
+    for arm in REFCV3_ARMS:
+        if arm != _refcv3_scored(registry):
+            art["arms"][arm] = {}
+    after = cc.check_artifact(art, registry)
+    assert after == before, \
+        "a non-scored arm changed the verdict - scoring is not arm-scoped on this schema"

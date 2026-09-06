@@ -7958,3 +7958,135 @@ exactly (asserted). n = 1,360 windows / 34 episodes, paired episode-cluster boot
 | ⛔ **D-TLANG-GATE4** | **Fourth gate-not-data defect this campaign.** WP-P's verdict took `max(gap)` over the whole sweep (+0.4290 at beta 40) and called it a trend, where the series **oscillates in sign**; and "consistency is measurable" was judged against an **arbitrary 0.9x-chance threshold**. Both replaced by the statistic's own distribution: trend read only where `ADE <= base`; `CON_rank` bootstrapped against its own chance value | **FIXED** | `code/wpp_frontier.py`, `code/wpq2_con_ci.py` |
 | ⚠️ **D-TLANG-BASE-ANTI** | At **beta = 0** `CON_rank` reads **75.80**, **separated from chance in the WORSE direction** -- the base policy's selection is significantly ANTI-correlated with the port's energy. Expected (the base ignores it by construction), but it means "chance" is not where an unguided arm sits | **MEASURED** | `raw/wpq2_con_ci.json` |
 | ⛔ **D-TLANG-CONREPORT** | **BINDING reporting rule:** every `CON_rank` is quoted with its **beta, its authority %, and its ADE**. All three, or the number is a report of obedience rather than of understanding | **ADOPTED** | `RESULT_WPP_FRONTIER.md` Section 4 |
+
+---
+
+### ⭐⭐⭐ D-REFCV4B-LANDING (2026-09-06, refcv4b landing agent) — refcv4b LANDS: it BEATS refcv3 separated, TIES the trivial controls, and LOSES to the echo control without its ORACLE nav
+
+**Evidence class: MEASURED (ours).** **Tier T1** (`tier_ruling: UNRULED`), **n = 4,823 windows /
+141 held-out episodes** — the grid refcv3 @40,284 was scored on. Estimator: paired
+episode-cluster bootstrap (`taniteval/ci.py`), `n_boot 2000`, `seed 0`. ⛔ `overlapping_holdout_se`
+used nowhere. Full read + artifacts:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-landing/LANDING_RESULT.md`
+and its `raw/`. Registry row updated: `MODEL_REGISTRY.md` §4.6 (was 🟢 TRAINING).
+
+| claim | verdict |
+|---|---|
+| refcv4b beats refcv3 | ⭐ **SUPPORTED** — `os` **0.2975** vs **0.4419 m**, paired **−0.1444 [−0.1647, −0.1227], separated**, 4,823/4,823 windows differ |
+| the preliminary's **−0.1652** (20 clips, ckpt 30k) survives the full grid | ⭐ **SUPPORTED, slightly attenuated** → **−0.1444** at 4,823 windows / step 40,284 |
+| refcv4b beats the trivial controls | ⛔ **NOT SUPPORTED** — `os − ha` **−0.0021 [−0.0178, +0.0154] NOT separated**; `os − ha0_ext` **+0.0101 [−0.0050, +0.0273] NOT separated**. A TIE, not a win — but refcv3's **+0.1423 separated** deficit is closed **7×** |
+| the win is vision-only | ⛔ **REFUTED, and the preliminary's 1.1137 m HOLDS** → `--ablate ego_zero` **1.1310 m** [1.0294, 1.2451], paired **−0.8335 [−0.9431, −0.7281] separated** |
+| the deployment arm clears the echo control | ⛔ **REFUTED** — **`os_navzero − ha0_ext` = +0.1054 [+0.0874, +0.1241], separated WORSE.** The entire margin over the echo control is supplied by an ORACLE nav token |
+
+**⭐ THE INTERNAL CONTROL THAT LICENSES THE CROSS-MODEL COMPARISON.** The model-free arms return
+**bit-identical** across refcv3, refcv4b and both ablations (`ha` 0.2996, `ha0` 0.6723); paired
+refcv4b-vs-refcv3 on `ha` reads **delta 0.0000000000, CI [0, 0], 0/4,823 windows differing**. One
+surface, not two.
+
+**THE FOUR FAMILIES, never pooled.**
+* **LONGITUDINAL** — speed MAE **0.2909** m/s (refcv3 0.4516, **−35.6 %**), target-speed acc@0.5
+  0.8317 (0.7135), along MAE 0.2555. ⛔ Still **separated WORSE than hold-action**: `os − ha`
+  speed MAE **+0.0368 [+0.0197, +0.0557]**. Distance-keeping OK, n = 1,225 / 67 eps: min headway
+  28.47 m, time-gap 4.12 s, min TTC 24.83 s ⚠️ **753/1,225 censored at TTC_CAP 30 s; n_closing 472.**
+* **LATERAL** — heading 1.2950°, yaw-rate 1.7309°/s, cross-track **0.0979 m, the best of every arm**.
+  ⛔ **curvature MAE 0.008097 1/m is ABOVE the straight-line floor `ha0` 0.006802 and 2.2× the echo
+  control's 0.003712 — refcv4b tracks the road WORSE than a plan that never steers** (refcv3
+  0.008815: improved 8 %, sign unchanged). ⇒ a **SHAPE** defect on a positionally-accurate path.
+* **TACTICAL** — LAT acc 0.9583 / κ **0.8289**, `turn_left` **0.813** (n 251), `turn_right`
+  **0.886** (n 396) — **beats every control** (`ha` κ 0.7374 / 0.729 / 0.750; `ha0` κ 0.0000 and
+  recalls 0.000). LON acc 0.8258 / κ **0.5178** (refcv3 0.3078) with `brake_stop` 0.539 and
+  `accelerate` 0.504 — ⛔ **still below `ha`'s κ 0.6071 / 0.697 / 0.649**.
+  ⚠️ These are the v7.2 factored **kin3** labels, NOT the `|dyaw| > 0.15` gate that `D-TURNGATE`
+  showed the human fails 3/9 — quotable only against this label set.
+* **STRATEGIC** — route acc 0.7786 [0.7205, 0.8324], **κ 0.4852 [0.4057, 0.5671]**, n = 3,622 / 128
+  eps, **nav echo index 0.1621**.
+
+### ⭐⭐ H-REFCV4B-ROUTE-ECHO — **RESOLVED: the route head is NOT an echo, and it is nav-INDEPENDENT by construction**
+`nav_true` / `nav_shuffled` / `nav_zero` give **identical** route numbers and
+`paired_true_minus_shuffled_accuracy` = **0.0000, CI [0, 0]** — a **structural identity**, so
+`H-ESTIM-SEED-1` does not touch it. ⛔ **The instrument is not degenerate:** the shuffle changed
+**2,406 / 4,823 tokens (49.89 %)** and on the **1,736-window changed subset** the head follows the
+**TRUE LABEL 0.7437** [0.6803, 0.8067] against the **SHUFFLED NAV 0.2264** [0.1935, 0.2607].
+⇒ genuine route prediction from **vision alone** — the defect flagship v1's route head had
+(1.0000 on a bijection of its own input) is **absent here**. ⚠️ The same fact is a DESIGN gap: a
+strategic head that cannot be **steered** by a route command is half of what the level is for.
+
+### D-REFCV4B-ATTRIBUTION — vision buys the LATERAL half; the LONGITUDINAL half rides on the ego block
+| arm | keeps | ADE | LAT κ | LON κ |
+|---|---|---|---|---|
+| BASE | vision + ego | 0.2975 | 0.8289 | 0.5178 |
+| `ego_zero` | vision only | 1.1310 | **0.8015 (96.7 %)** | **0.2473 (47.8 %)** |
+| `frames_blind` | ego only | 1.0491 | 0.1548 (18.7 %) | 0.0592 (11.4 %) |
+
+⚠️ **CORRECTION to `PRELIM_CPU_PANEL.md` §10, made by this landing read:** it reported the
+vision-only longitudinal κ collapsing to **0.0653 ("near chance", 11 % of full)** on 20 clips at
+step 30,000. On the full grid at 40,284 it is **0.2473 — 47.8 % of full, and comparable to
+refcv3's κ WITH the ego block (0.3078)**. The collapse is **real but ~4× smaller** than the
+20-clip panel implied. Root-cause class: **a shape measured on a subset, quoted as a magnitude.**
+**VOID gate:** `frames_blind` regresses hard while `ha`/`ha0` stay bit-identical ⇒ the panel is
+**ADMISSIBLE** under `PREREG_REFC_V4` §7 OUTCOME IV.
+
+### ⛔⛔ D-REFCV4B-ASTAR-GEOMETRY — `oracle_sel`, `anchor_acc` and `sel_agrees_oracle` are INVALID on refcv4b (NEW, this turn)
+`refcv3_arm.py:1492` binds `anchors_bank = model.core.decoder.anchors` and uses it for the
+`a_star` argmin (`:1657`, `:1665`). `refc_v3_train.py:538-545` **forbids exactly this** for a
+v0-conditioned vocabulary — *"`decoder.anchors` is the family rolled at the REFERENCE SPEED, not
+this window's fan … the model never emitted [it] — silently, and with `anchor_acc` still reading
+plausibly"* — and the trainer itself uses `out["anchor_bank"]`.
+**MEASURED with its control:** refcv4b's argv carries **`--anchor-v0-conditioned` (True, 56
+entries, also `--anchors`)**; refcv3's does **NOT** (False, 43 entries, no `--anchors`).
+⇒ **`oracle_sel` 1.2154 m reads +0.9179 [+0.8055, +1.0348] separated WORSE than `os` — a "ceiling"
+4× above the arm it bounds is not a ceiling**, and `anchor_acc`/`sel_agrees_oracle` = 0.0993 are
+scored against a geometry the model never emitted.
+⭐ **It also explains an inversion that would otherwise read as a model regression:** refcv3's
+`oracle_sel` **0.3668** genuinely *beat* its `os` 0.4419 (fixed vocabulary ⇒ the two banks
+coincide, which the trainer calls *"unchanged arithmetic … verified bit-identical"*). **The
+difference between the two rows is the INSTRUMENT, not the model.**
+⚠️ **Scope: the headline is untouched** — no ADE, no LONGITUDINAL/LATERAL row and no
+lateral/longitudinal decision reads `a_star`. Fix = compute `a_star` from `out["anchor_bank"]`
+(~2 lines + a T0 re-roll). ⛔ **Until it lands, no refcv5 selector claim may rest on `anchor_acc`.**
+
+### D-REFCV4B-CRITERIA-SCOPE — every refcv3/refcv4b eval was INVISIBLE to the criteria census
+`tools/criteria_check.py` returned **UNKNOWN_SCOPE** on the landing artifact. Registry v2.7.0's
+fix added only the `arms.cl.*` markers (refav1); the refcv3/v4 planner arm is **`os`**. ⇒ the
+v2.7.0 root cause **repeated for a second model family**, and every refcv3/refcv4b record carrying
+all four binding families was unscored. Registry extended to **v2.9.0** (`arms.os.four_families`
+scope marker, 23 `arms.os.*` key alternatives, 4 `refcv3.strategic.*` keys, 23 further mirrors
+across `tiers.key_paths` / `artifact_hygiene` / `leak_guards`, plus `arm_scoring.schemas` naming
+the planner arm per schema). **After the fix: tier T1, 0 VIOLATIONS, 2 WORK ITEMS.**
+⚠️ **Ships WITHOUT its deliberate-regression test arm** (programme rule §6.5) — logged as W-7.
+
+### D-REFCV4B-SEED-SCOPE — which variance the intervals answered
+⭐ The **INFERENCE**-seed question is **closed by construction**: `refc.py:1599` sets the diffusion
+decoder's noise to `torch.zeros_like(x)` when `self.training` is False ⇒ refcv4b is
+**deterministic at inference**, so the `hyg.inference_seed` criterion is correctly non-applicable
+and the third variance does not enter. ⛔ **`H-ESTIM-SEED-1` REMAINS OPEN**: refcv4b is a
+**single-seed** arm, so every margin here answers *"would another draw of EPISODES say this?"* and
+never *"would another TRAINING RUN say this?"*.
+
+### ⭐⭐ D-REFCV5-LEVERS — the VALIDATED improvement list, ranked by MEASURED effect size
+1. **Encode CLOSING RATE** (`M84`: lead POSITION decodable **+0.4145 [+0.2018, +0.6120]** vs
+   pixels, constant control exactly +0.000000; CLOSING RATE a clean null **+0.0061** on every arm,
+   and a temporal difference recovers nothing). Corroborated three ways by this read: `os − ha`
+   speed MAE +0.0368 separated worse; LON κ 0.5178 < `ha` 0.6071; **472 of 1,225** distance-keeping
+   windows are actually closing. **A REPRESENTATION requirement — no cost re-weighting substitutes.**
+2. **Feed the model's OWN predicted route instead of the oracle nav** — worth **0.1054 m
+   separated** (`os_navzero − ha0_ext`), and **half-built already**: the route head predicts from
+   vision at κ 0.4852 and passes its anti-echo control. Prefer a **geometric goal point** (+4.7
+   PDMS) over the categorical command (+0.2). ⭐ Cheapest first step: an eval-time `os_navpred` arm
+   on the existing checkpoint — **one GPU roll**, brackets the gain before any training.
+3. **TRAIN the selector (WP-7); do NOT enable `--sel-refined`** (`M72`: **0.0259 m separated
+   WORSE**, 30 % of picks flip, `seen_in_training: no`). New here: selection is concentrated —
+   **50 of 117** anchors ever chosen, **modal anchor 48.79 %**, entropy ratio 0.4524.
+   ⚠️ **Blocked on `D-REFCV4B-ASTAR-GEOMETRY` — the selector cannot be scored until `a_star` is correct.**
+4. **Shape the path's CURVATURE, not its position** — curvature MAE above the straight-line floor
+   while cross-track is the best of any arm. Cheapest test: a curvature-smoothed re-score of the
+   banked dump, **zero GPU**.
+5. **Repair or remove the longitudinal kin3 aux head** — the **EVAL-set** prior floor is
+   **0.8421 nats** (measured this turn, `raw/refcv4b_kin3_marginal.json`; marginal [0.1613, 0.6844,
+   0.1543], n = 4,823) against the trainer's eval CE **1.0090** ⇒ **0.1669 nats WORSE than
+   predicting the class marginal**. Lateral floor 0.5199, and the lateral head does beat it.
+   ⭐ Converts the preliminary's floor from a **TRAIN EMA** to a **MEASURED eval-set** one.
+6. **H19 anchor prior — DE-PRIORITISE** (0.0034 m, NOT separated; 5.85 % of picks).
+⛔ **NOT on the list: "more ego dropout."** refcv4b already ran `--ego-dropout 0.5` for 40,284
+steps and its vision-only arm is still **3.8× worse**. A vision-derived longitudinal state is the
+lever; more of the same knob is not.

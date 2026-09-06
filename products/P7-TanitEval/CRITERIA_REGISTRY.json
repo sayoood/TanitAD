@@ -1,1032 +1,1115 @@
 {
-  "schema": 1,
-  "version": "2.8.0",
-  "created": "2026-08-23",
-  "owner": "TanitAD_EvalFlyWheel",
-  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
-  "three_states": {
-    "PRESENT": "the metric is in the artifact at one of its keys",
-    "REFUSED": "the artifact's `refused` block names the criterion AND gives a reason — admissible, and becomes a WORK ITEM",
-    "ABSENT": "neither — VIOLATION. This is the silent omission the doctrine forbids."
-  },
-  "doctrine": {
-    "families_never_pooled": "The four families are reported per-family. A single composite hides the trade-off we are trying to see.",
-    "ade_alone_is_incomplete": "ADE stays, but an eval reporting ADE alone must not be presented as a result (PI, 2026-08-02, binding).",
-    "estimator": "paired episode-cluster bootstrap over val episodes (taniteval/ci.py)",
-    "forbidden_estimator": "overlapping_holdout_se — biases the point estimate bidirectionally, up to a sign flip",
-    "tier_required": "every artifact carries its tier; T0 is a WM diagnostic and is NEVER driving performance"
-  },
-  "applicability": {
-    "why": "A criteria check that scores PROFILING artifacts against DRIVING criteria reports a huge violation count that is pure noise — and a probe reporting the wrong scope is worse than no probe (the `df` trap, the Thor `free` trap, the cgroup `usage_in_bytes` trap). Scope is therefore decided BEFORE any criterion is evaluated, and an artifact whose kind cannot be determined is reported as UNKNOWN, never silently dropped and never counted as compliant.",
-    "in_scope_if_any": [
-      {
-        "kind": "block_prefix",
-        "value": "taniteval.driving"
-      },
-      {
-        "kind": "key_present",
-        "value": "headline.ade_0_2s"
-      },
-      {
-        "kind": "key_present",
-        "value": "ade_0_2s"
-      },
-      {
-        "kind": "key_present",
-        "value": "full_set.model"
-      },
-      {
-        "kind": "key_present",
-        "value": "heldout.model"
-      },
-      {
-        "kind": "key_present",
-        "value": "four_families"
-      },
-      {
-        "kind": "key_present",
-        "value": "arms.cl.four_families",
-        "reason": "refav1 per-arm schema (taniteval/tools/refav1_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, so the top-level `four_families` marker never matched and every refav1 record read UNKNOWN_SCOPE — invisible to the census while carrying all four binding families. Only the `cl` planner arm is scored; see `arm_scoring`."
-      }
-    ],
-    "out_of_scope_if_any": [
-      {
-        "kind": "key_present",
-        "value": "fp32.params",
-        "reason": "precision/parameter profiling artifact"
-      },
-      {
-        "kind": "key_present",
-        "value": "tf32.params",
-        "reason": "precision/parameter profiling artifact"
-      },
-      {
-        "kind": "key_present",
-        "value": "amp16.params",
-        "reason": "precision/parameter profiling artifact"
-      },
-      {
-        "kind": "key_present",
-        "value": "efficiency.params",
-        "reason": "efficiency profiling artifact"
-      },
-      {
-        "kind": "key_present",
-        "value": "_schema",
-        "reason": "schema/doc artifact, not an eval"
-      },
-      {
-        "kind": "key_present",
-        "value": "exclusions",
-        "reason": "corpus census artifact, not an eval"
-      },
-      {
-        "kind": "key_present",
-        "value": "clips",
-        "reason": "clip-level dump, not a scored eval"
-      }
-    ]
-  },
-  "tiers": {
-    "key_paths": [
-      "block",
-      "tier",
-      "protocol.tier",
-      "arms.cl.four_families._tier",
-      "arms.cl.tier"
-    ],
-    "values": {
-      "T0": {
-        "aliases": [
-          "tier0",
-          "taniteval.driving/tier0"
-        ],
-        "is_driving_performance": false,
-        "note": "teacher-forced world-model fidelity diagnostic. NEVER reported as driving performance."
-      },
-      "T1": {
-        "aliases": [
-          "tier1",
-          "taniteval.driving/tier1"
-        ],
-        "is_driving_performance": true,
-        "note": "action-closed loop — the PRIMARY driving tier."
-      },
-      "T2": {
-        "aliases": [
-          "tier2",
-          "taniteval.driving/tier2"
-        ],
-        "is_driving_performance": true,
-        "note": "re-perception sim."
-      }
-    },
-    "key_paths_note": "Order matters: resolve_tier takes the FIRST path that yields a string. The refav1 paths are LAST so promoting them cannot change any other schema's stamp. Emitter: taniteval/taniteval/four_families.py:1811 (`fam[\"_tier\"] = tier`)."
-  },
-  "families": {
-    "LONGITUDINAL": {
-      "why": "88.7 % of our oracle gap is longitudinal. ADE hides it — an arm can win ADE while setting the wrong speed.",
-      "criteria": [
-        {
-          "id": "long.target_speed",
-          "required": true,
-          "label": "target-speed accuracy",
-          "keys": [
-            "headline.speed_mae_mps",
-            "headline.speed_bias_mps",
-            "four_families.longitudinal.speed_mae_mps",
-            "four_families.longitudinal.target_speed_acc",
-            "arms.cl.four_families.longitudinal.speed_mae_mps",
-            "arms.cl.four_families.longitudinal.speed_bias_mps",
-            "arms.cl.four_families.longitudinal.target_speed_acc"
-          ],
-          "note": "MAE and signed bias; the bias is what exposes systematic over-prediction."
-        },
-        {
-          "id": "long.along_track_error",
-          "required": true,
-          "label": "along-track displacement error",
-          "keys": [
-            "headline.long_abs_2s_m",
-            "headline.long_signed_2s_m",
-            "four_families.longitudinal.along_mae_m",
-            "four_families.longitudinal.along_bias_m",
-            "arms.cl.four_families.longitudinal.along_mae_m",
-            "arms.cl.four_families.longitudinal.along_bias_m"
-          ]
-        },
-        {
-          "id": "long.progress",
-          "required": true,
-          "label": "ego progress",
-          "keys": [
-            "headline.progress_abs_err_m",
-            "headline.progress_signed_err_m",
-            "four_families.longitudinal.ego_progress",
-            "arms.cl.four_families.longitudinal.ego_progress"
-          ]
-        },
-        {
-          "id": "long.distance_keeping",
-          "required": true,
-          "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
-          "keys": [
-            "headline.headway_m",
-            "headline.time_gap_s",
-            "headline.ttc_s",
-            "longitudinal.distance_keeping",
-            "four_families.longitudinal.distance_keeping",
-            "arms.cl.four_families.longitudinal.distance_keeping",
-            "refav1.distance_keeping"
-          ],
-          "refused_as": [
-            "headway_ttc_distance_keeping"
-          ],
-          "note": "MEASURED 2026-08-23: refused in 27/27 complete artifacts — 'no lead-agent state exists (lead_state is a None stub)'. Largest open criterion gap, on the family owning most of the oracle gap.",
-          "refav1_note": "Both refav1 homes carry an inline {status, reason, n} — the per-arm one from four_families, the record-level one from refav1_arm.py::_distance_keeping_block when no --lead-block was passed. Either reads REFUSED-with-a-reason, i.e. a WORK ITEM."
-        }
-      ]
-    },
-    "LATERAL": {
-      "why": "'lateral is fine' has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up.",
-      "criteria": [
-        {
-          "id": "lat.cross_track",
-          "required": true,
-          "label": "cross-track error",
-          "keys": [
-            "headline.lat_abs_2s_m",
-            "headline.lat_signed_2s_m",
-            "headline.pathgeom_crosstrack_m",
-            "four_families.lateral.cross_mae_m",
-            "arms.cl.four_families.lateral.cross_mae_m"
-          ]
-        },
-        {
-          "id": "lat.heading",
-          "required": true,
-          "label": "heading error",
-          "keys": [
-            "headline.heading_mae_2s_deg",
-            "headline.heading_med_2s_deg",
-            "headline.heading_exceed_5deg",
-            "four_families.lateral.heading_mae_deg",
-            "arms.cl.four_families.lateral.heading_mae_deg"
-          ]
-        },
-        {
-          "id": "lat.curvature",
-          "required": true,
-          "label": "curvature error",
-          "keys": [
-            "headline.curv_mae_1_per_m",
-            "headline.curvature_mae",
-            "four_families.lateral.curvature_mae_1pm",
-            "arms.cl.four_families.lateral.curvature_mae_1pm"
-          ],
-          "partial_keys": [
-            "headline.curv_sign_agree"
-          ],
-          "refused_as": [
-            "curvature_mae_at_this_resolution"
-          ],
-          "note": "MEASURED 2026-08-23: magnitude refused in 27/27 ('measured 24x the signal; SIGN agreement only at tier 0'). curv_sign_agree is a PARTIAL satisfaction — sign without magnitude."
-        },
-        {
-          "id": "lat.yaw_rate",
-          "required": true,
-          "label": "yaw-rate error",
-          "keys": [
-            "headline.yaw_rate_mae_dps",
-            "headline.yawrate_mae",
-            "lateral.yaw_rate",
-            "four_families.lateral.yaw_rate_mae_degps",
-            "arms.cl.four_families.lateral.yaw_rate_mae_degps"
-          ],
-          "note": "MEASURED 2026-08-23: ABSENT in 71/71 artifacts and NOT in any refused block — a silent omission."
-        }
-      ]
-    },
-    "TACTICAL": {
-      "why": "The 5-way manoeuvre softmax that MIXES lat+lon is our single largest known defect; a scalar ADE cannot see a decision error.",
-      "criteria": [
-        {
-          "id": "tac.manoeuvre_decision",
-          "required": true,
-          "label": "manoeuvre-decision quality (selected vs executed)",
-          "keys": [
-            "tactical.manoeuvre_accuracy",
-            "tactical.maneuver_accuracy",
-            "headline.maneuver_acc",
-            "four_families.tactical.lateral_decision",
-            "four_families.tactical.longitudinal_decision",
-            "four_families.tactical.maneuver_5way_collapsed",
-            "arms.cl.four_families.tactical.lateral_decision",
-            "arms.cl.four_families.tactical.longitudinal_decision",
-            "arms.cl.four_families.tactical.maneuver_5way_collapsed"
-          ],
-          "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
-        },
-        {
-          "id": "tac.confusion",
-          "required": true,
-          "label": "confusion over the manoeuvre classes",
-          "keys": [
-            "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
-            "four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
-            "four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols",
-            "tactical.confusion_gt_rows_pred_cols",
-            "arms.cl.four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
-            "arms.cl.four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
-            "arms.cl.four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols"
-          ],
-          "note": "MEASURED 2026-08-23: the emitter writes `confusion_gt_rows_pred_cols` (four_families.py:563), together with `per_class` recall/precision and `never_predicted`. An earlier registry looked for `confusion` and the census duly reported '0/135, silently absent everywhere' - a REGISTRY TYPO wearing a finding's clothes. See C133-b. `never_predicted` is the load-bearing field: the deployed arm emitted 0 of 881 'accelerate' decisions, which no accuracy scalar can show."
-        },
-        {
-          "id": "tac.goal_selection",
-          "required": true,
-          "label": "tactical goal / anchor selection quality",
-          "keys": [
-            "tactical.anchor_selection",
-            "tactical.goal_selection",
-            "headline.anchor_top1",
-            "four_families.tactical.goal_setting",
-            "arms.cl.four_families.tactical.goal_setting"
-          ]
-        }
-      ]
-    },
-    "STRATEGIC": {
-      "why": "The hierarchy is the programme's thesis. If we never measure the strategic level we cannot claim it works.",
-      "criteria": [
-        {
-          "id": "strat.decision",
-          "required": true,
-          "label": "strategic decision quality",
-          "keys": [
-            "strategic.decision_accuracy",
-            "strategic.accuracy",
-            "four_families.strategic",
-            "refav1.strategic.conditionings.nav_true.accuracy",
-            "arms.cl.four_families.strategic"
-          ],
-          "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission.",
-          "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
-        },
-        {
-          "id": "strat.route_goal",
-          "required": true,
-          "label": "strategic route / goal-setting quality",
-          "keys": [
-            "strategic.route_quality",
-            "strategic.goal_setting",
-            "headline.route_acc",
-            "four_families.strategic",
-            "refav1.strategic.conditionings.nav_true.accuracy",
-            "arms.cl.four_families.strategic"
-          ],
-          "leak_guard": "route_head_echo",
-          "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test.",
-          "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
-        },
-        {
-          "id": "strat.nav_compliance",
-          "required": true,
-          "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
-          "keys": [
-            "strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
-            "refcv3.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
-            "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
-            "arms.cl.four_families.strategic"
-          ],
-          "partial_keys": [
-            "strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
-            "refcv3.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
-            "four_families.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command"
-          ],
-          "refused_as": [
-            "nav_compliance"
-          ],
-          "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm (via the refcv3_arm.py sidecar; standalone: taniteval/tools/nav_compliance_report.py)",
-          "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-          "note": "Replaces the route metric that could not fail: D-REFAV1-ROUTE-LABEL-IS-THE-NAV MEASURED the route LABEL as an exact bijection of the fed nav token (141/141), so a head copying its input scored 1.0000 and NO behaviour could lower it. This criterion scores the emitted 6 s path (with g_str and the SELECTED anchor as sibling readouts) against the COMMAND on windows where the commanded turn lies inside the plan horizon, n always reported. ⛔ The RATE is NOT the result — it is admissible ONLY with strat.nav_compliance_ctrl_shuffle and _ctrl_zero on the SAME windows; a rate that does not drop under them is coincidence with the scene.",
-          "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
-        },
-        {
-          "id": "strat.nav_compliance_ctrl_shuffle",
-          "required": true,
-          "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
-          "keys": [
-            "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-            "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-            "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-            "arms.cl.four_families.strategic"
-          ],
-          "refused_as": [
-            "nav_compliance_controls",
-            "nav_compliance"
-          ],
-          "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_shuffled (taniteval.ci paired episode-cluster bootstrap)",
-          "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-          "note": "If the model follows the command, compliance with the TRUE command must DROP when the token is permuted; the changed subset must follow the FED command. No drop = the high rate is scene coincidence. Known values on the panel: ha0 reads 0.0000 compliance exactly; every nav-blind control (ha, ha0_ext) reads a delta of exactly 0.0000.",
-          "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
-        },
-        {
-          "id": "strat.nav_compliance_ctrl_zero",
-          "required": true,
-          "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
-          "keys": [
-            "strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
-            "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
-            "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
-            "arms.cl.four_families.strategic"
-          ],
-          "refused_as": [
-            "nav_compliance_controls",
-            "nav_compliance"
-          ],
-          "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_zero",
-          "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
-          "note": "The robustness ablation (D-NAV-IS-GT: os is the deployment arm, os_navzero the ablation). nav_cmd=None collapses the core onto the follow embedding, so this is a LOWER bound on nav dependence; BACKLOG R39 binds it beside the shuffle, never instead.",
-          "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent. ⚠️ On the DORMANT partial_key: refav1 does roll a nav_zero conditioning (`refav1.strategic.conditionings.nav_zero.accuracy`) but banks no paired true-minus-zero delta, so the unpaired rate is registered as a partial_key. MEASURED: on today's records it never fires, because `classify` consults `keys` before `partial_keys` and the strategic declination above resolves first — the row reads REFUSED, not PARTIAL. It is kept for the record shape that HAS a strategic block and still lacks the paired delta; both states are work items, so neither can hide a gap.",
-          "partial_keys": [
-            "refav1.strategic.conditionings.nav_zero.accuracy"
-          ]
-        }
-      ]
-    }
-  },
-  "leak_guards": {
-    "why": "For ANY head, ask whether its inputs at inference include something the label was derived from. Same family as the C6 confound and the REF-A I-JEPA leak (~80 % of val inside train).",
-    "guards": [
-      {
-        "id": "vision_only_inference",
-        "required": true,
-        "rule": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
-        "keys": [
-          "protocol.inference_inputs",
-          "protocol.vision_only",
-          "refav1.protocol.inference_inputs",
-          "refav1.protocol.vision_only",
-          "arms.cl.four_families._protocol.inference_inputs",
-          "arms.cl.four_families._protocol.vision_only"
-        ],
-        "note": "An artifact must state what the model consumed at inference, or its number cannot be checked for this."
-      },
-      {
-        "id": "goal_situation_disjoint",
-        "required": true,
-        "rule": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
-        "keys": [
-          "protocol.goal_source",
-          "refav1.protocol.goal_source",
-          "refav1.protocol.goal_situation_disjoint",
-          "arms.cl.four_families._protocol.goal_source",
-          "arms.cl.four_families._protocol.goal_situation_disjoint"
-        ]
-      },
-      {
-        "id": "route_head_echo",
-        "required": false,
-        "rule": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
-        "keys": [
-          "strategic.echo_test",
-          "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-          "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
-          "refav1.strategic.paired_true_minus_shuffled_accuracy",
-          "refav1.strategic._echo_caveat"
-        ],
-        "note": "2026-09-05: the nav-compliance intervention pair (taniteval.nav_compliance) IS the behavioural echo test and satisfies this guard.",
-        "refav1_note": "⭐ This is where refav1's route-head intervention pair belongs — NOT on strat.nav_compliance_ctrl_shuffle, which is the control for a BEHAVIOUR rate the record does not emit. `paired_true_minus_shuffled_accuracy` (refav1_arm.py:2223, taniteval.ci paired episode-cluster bootstrap) is the echo test the strat.route_goal note demands, and `_echo_caveat` (refav1_arm.py:2184) states the bijection in the artifact itself."
-      }
-    ]
-  },
-  "artifact_hygiene": {
-    "criteria": [
-      {
-        "id": "hyg.tier_stamp",
-        "required": true,
-        "label": "tier stamp present",
-        "note": "MEASURED 2026-08-23: only 27/71 artifacts carry any tier marker."
-      },
-      {
-        "id": "hyg.estimator_named",
-        "required": true,
-        "label": "estimator named",
-        "keys": [
-          "estimator.interval",
-          "estimator",
-          "_estimator",
-          "four_families.tactical._estimator",
-          "intervals.estimator",
-          "arms.cl.intervals.estimator",
-          "arms.cl.four_families.tactical._estimator",
-          "arms.cl.four_families.longitudinal.estimator"
-        ]
-      },
-      {
-        "id": "hyg.n_reported",
-        "required": true,
-        "label": "n printed (windows and episodes)",
-        "keys": [
-          "n_windows",
-          "n_episodes",
-          "four_families.longitudinal.n_windows",
-          "arms.cl.four_families.longitudinal.n_windows",
-          "refav1.n_windows"
-        ]
-      },
-      {
-        "id": "hyg.no_forbidden_estimator",
-        "required": true,
-        "label": "overlapping_holdout_se not used as a decision-grade interval",
-        "note": "It may appear ONLY under an explicitly deprecated label, or in the `deprecated_and_refused` field."
-      },
-      {
-        "id": "hyg.parity",
-        "required": true,
-        "label": "corpus identity recorded (parity key + skip-hash)",
-        "keys": [
-          "parity",
-          "protocol.corpus",
-          "protocol.parity_key",
-          "corpus",
-          "val_cache",
-          "refav1.protocol.parity_key",
-          "refav1.protocol.corpus",
-          "arms.cl.four_families._protocol.parity_key",
-          "arms.cl.four_families._protocol.corpus"
-        ],
-        "note": "Parity is sacred: the canonical train corpus is `physicalai-train-e438721ae894` (2376 episodes), skip-hash `f09e44db`. An artifact that does not record WHICH corpus it scored is not cross-arm comparable, and every delta computed against it is uninterpretable. Anything that re-selects episodes must be flagged NON-PARITY explicitly.",
-        "refav1_note": "refav1 nests the protocol under the record-level `refav1` block and mirrors it into each arm's four_families `_protocol` (refav1_arm.py:2402-2405), so both homes are named."
-      },
-      {
-        "id": "ctrl.floor_comparison",
-        "required": true,
-        "label": "headline metrics reported against their trivial control(s)",
-        "keys": [
-          "floors",
-          "floor_values",
-          "vs_floor_paired",
-          "controls",
-          "four_families.longitudinal.anti_echo",
-          "arms.cl.four_families.longitudinal.anti_echo",
-          "refav1.trivial_profile"
-        ],
-        "note": "⭐ THE CRITERION THAT WOULD HAVE CAUGHT THE PROGRAMME'S LARGEST MISREAD. A model number without its control is unreadable: MEASURED 2026-08-23, the T1 `stage-a-repaired · cl` arm reads 9.3697 m while its own hold-action control reads 0.4246 m on the SAME windows — the trivial baseline beat the model 22×. An artifact reporting only the model's value looks like a result. Controls: hold-v0 (go straight at the observed entry speed) and constant velocity. ⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline won — render that as LOST, never as a tie.",
-        "refav1_note": "The anti-echo block IS the floor comparison for a refav1 arm: it carries holdv0_baseline (the strongest trivial control) with its verdict, and `refav1.trivial_profile` reports what fraction of each arm's own windows are trivial."
-      },
-      {
-        "id": "hyg.inference_seed",
-        "required": false,
-        "applies_when": "the scored arm's planner SAMPLES at inference (refcv5 `--sampler ddim`, refav1 iCEM, any stochastic decoder)",
-        "label": "stochastic planner: inference-seed replicate + the seed floor",
-        "keys": [
-          "inference_seeds",
-          "seed_floor_m",
-          "estimator.inference_seeds",
-          "sampler.inference_seeds",
-          "sel_tele.sampler",
-          "four_families.inference_seeds"
-        ],
-        "refused_as": [
-          "inference_seed_replicate",
-          "seed_floor"
-        ],
-        "note": "⛔⛔ A THIRD VARIANCE THE EPISODE-CLUSTER BOOTSTRAP IS BLIND TO. Three different questions ride on one interval: *would another draw of EPISODES say this?* (what the bootstrap answers), *would another TRAINING RUN say this?* (`H-ESTIM-SEED-1` — a zero-lever replicate cleared `separated` on 3 of 18 family metrics, a ~17 % false-positive rate), and *would another INFERENCE RUN say this?* — THIS ONE. MEASURED on refav1 (`D-REFAV1-SEED-GOAL-MISMATCH`): iCEM samples, so the SAME checkpoint evaluated twice does not give the same answer, and that rig's seed floor is ≈ 0.30 m ADE. ⭐ ADDED 2026-09-06 because refcv5's WP-4 sampler landed and draws FRESH NOISE AT EVAL by design (sampling is the mechanism) — `refc.py::AnchoredDiffusionDecoder._sample`, telemetry `sel_tele.sampler`. Until this criterion existed the registry could not express the obligation at all: all seven probes for `seed` / `replicate` / `stochastic` / `sampler` read 0 against a same-breath control of 46 criteria. ⇒ An artifact from a sampling planner must report how many INFERENCE seeds it ran and the resulting floor, or REFUSE with a reason; an effect smaller than that floor is not an effect. `required: false` because a DETERMINISTIC arm legitimately has nothing to report — `applies_when` is the scope, and scoring a deterministic artifact against it would be the `df`-on-a-pod error. ⚠ The per-arm key `arms.<arm>.inference_seeds` is deliberately NOT registered yet: no emitter writes it, and `test_every_refav1_key_in_the_registry_resolves_in_the_fixture` correctly refuses a key that resolves nowhere -- a key that matches nothing prints as '0 present', which is indistinguishable from a real gap. Register it in the SAME commit as the emitter that first writes it, with its fixture field."
-      }
-    ]
-  },
-  "benchmarks": {
-    "_status": "FILLED 2026-08-23 from the banked protocol specs. A benchmark is enforced only for an artifact that CLAIMS it (a `benchmark` key). Adopting a benchmark means running ITS published protocol verbatim and citing it - never ours relabelled.",
-    "_four_families_still_bind": "An EPDMS or an L2 number does NOT satisfy the four-families rule. Tactical and strategic are absent from NavSim BY CONSTRUCTION, as are longitudinal target-speed and lateral heading/curvature/yaw. A benchmark artifact must REFUSE each absent family explicitly, with its reason and n.",
-    "navsim": {
-      "pending": false,
-      "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
-      "primary": [
-        "arXiv:2406.15349",
-        "arXiv:2506.04218v3"
-      ],
-      "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
-      "THE_COLUMN_TRAP": "READ `score`, NEVER `pdm_score`. PDMScorer._aggregate_pdm_scores masks Extended Comfort out and divides by 14; the real EPDMS (denominator 16) is assembled downstream in run_pdm_score.py::compute_final_scores. The wrong column looks perfectly valid.",
-      "ESTIMATOR_UNRESOLVED": "Our episode-cluster bootstrap does NOT transfer - NavSim's resampling unit is a scene token, not an episode. Do not report a NavSim CI until the cluster unit is settled and pre-registered.",
-      "variants": {
-        "PDMS_v1": {
-          "multipliers": [
-            "NC",
-            "DAC"
-          ],
-          "weighted": {
-            "EP": 5,
-            "TTC": 5,
-            "C": 2
-          },
-          "denominator": 12,
-          "note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:39-48)"
-        },
-        "EPDMS_v2": {
-          "multipliers": [
-            "NC",
-            "DAC",
-            "DDC"
-          ],
-          "weighted": {
-            "EP": 5,
-            "TTC": 5,
-            "LK": 2,
-            "HC": 2,
-            "EC": 2
-          },
-          "denominator": 16
-        }
-      },
-      "criteria": [
-        {
-          "id": "navsim.score",
-          "required": true,
-          "label": "EPDMS/PDMS from the `score` column",
-          "keys": [
-            "benchmark.navsim.score"
-          ],
-          "note": "NOT `pdm_score` - see the column trap above."
-        },
-        {
-          "id": "navsim.variant",
-          "required": true,
-          "label": "which variant + split named",
-          "keys": [
-            "benchmark.navsim.variant"
-          ],
-          "note": "PDMS_v1 vs EPDMS_v2, and navtest vs navhard. 'EPDMS on navtest' (64-87) is NOT navhard EPDMS (11-55); four incomparable protocols exist."
-        },
-        {
-          "id": "navsim.submetrics",
-          "required": true,
-          "label": "every sub-metric reported",
-          "keys": [
-            "benchmark.navsim.submetrics"
-          ],
-          "note": "A composite alone hides which term moved."
-        },
-        {
-          "id": "navsim.ego_inputs",
-          "required": true,
-          "label": "declared ego inputs (vision-only compliance)",
-          "keys": [
-            "benchmark.navsim.ego_inputs"
-          ],
-          "note": "NavSim publishes NO fully ego-free number; even 'camera-only' LTF consumes driving_command + ego_velocity + ego_acceleration. Design against TransFuser B1 'Goal only' = 81.8 PDMS. driving_command is 4-dim in the devkit, not the 3 the paper states."
-        },
-        {
-          "id": "navsim.route_leak_check",
-          "required": true,
-          "label": "route_roadblock_ids provenance checked",
-          "keys": [
-            "benchmark.navsim.route_leak_check"
-          ],
-          "note": "UNVERIFIED whether nuPlan's route_roadblock_ids derives from the expert path. Run this leak check BEFORE quoting a route-conditioned result - same family as our route-head echo."
-        }
-      ],
-      "GATE_estimator_cluster_unit": {
-        "id": "navsim.estimator_unit",
-        "blocking": true,
-        "rule": "A NavSim artifact MUST declare `estimator.cluster_unit`. Until the unit is settled and PRE-REGISTERED, the only admissible interval is an explicit {status:UNAVAILABLE, reason, n}. ⛔ A bare point estimate with no interval block, or an interval computed with the episode-cluster bootstrap, FAILS.",
-        "why": "Our episode-cluster bootstrap does not transfer: NavSim resamples SCENE TOKENS, not episodes, and NavSim scenes are explicitly allowed to OVERLAP (PUB-DEVKIT docs/splits.md: 'NavSim splits contain overlapping scenes'). Resampling overlapping units as if independent understates the variance — the same family as overlapping_holdout_se, which biases the POINT ESTIMATE bidirectionally up to a sign flip. Inventing a CI here would reproduce a retracted defect on a borrowed benchmark.",
-        "keys": [
-          "estimator.cluster_unit",
-          "estimator.interval"
-        ],
-        "admissible_until_settled": "UNAVAILABLE with a reason and n"
-      },
-      "GATE_ego_status_enforcement": {
-        "id": "navsim.ego_enforcement",
-        "blocking": true,
-        "rule": "A NavSim artifact MUST carry `protocol.ego_status_enforcement` naming the MECHANISM by which the agent did not read ego status, and the evidence for it. ⛔ 'we did not use it' is an assertion, not enforcement, and FAILS.",
-        "why": "MEASURED from the devkit: there is NO switch that removes ego status. `EgoStatus` (ego_velocity, ego_acceleration, ego_pose) is ALWAYS populated on AgentInput and nothing in the framework verifies an agent declined to read it — `SensorConfig` gates cameras and LiDAR only. Our vision-only rule (PI, 2026-08-03, binding) is therefore ours alone to enforce and evidence. This is the leak-guard question in a borrowed harness: an input that is present at inference is consumed unless something PREVENTS it.",
-        "acceptable_mechanisms": [
-          "the agent never receives EgoStatus (zeroed/stripped at the adapter seam, asserted in a test)",
-          "an ablation showing the metric is unchanged when ego fields are randomised"
-        ],
-        "keys": [
-          "protocol.ego_status_enforcement"
-        ]
-      },
-      "GATE_modality_label": {
-        "id": "navsim.modality_label",
-        "blocking": true,
-        "rule": "A NavSim artifact MUST declare `protocol.sensor_set` and `protocol.setting` (e.g. 'front-camera-only, perception-free'). ⛔ Comparing our row against a multi-camera or perception-based row without both fields present FAILS.",
-        "why": "The leaderboard server records NO modality — only TEAM_NAME, AUTHORS, EMAIL, INSTITUTION, COUNTRY — so every 'camera-only' claim in the field is the authors', not the server's. MEASURED 2026-08-27 from the banked primary: Drive-JEPA's 93.7 PDMS headline uses 1024x256 stacking FRONT+LEFT+RIGHT, while its perception-free row uses the front camera only at 512x256. Comparing our single 256x640 front-camera arm against the 93.7 row would be a category error in our own favour's opposite direction — and comparing it against the perception-free ladder is legitimate. The label is what makes the difference visible.",
-        "comparable_ladder_perception_free_front_only": {
-          "_source": "PUB-PAPER Drive-JEPA (arXiv 2601.22032) Table 1, read from the banked PDF",
-          "LAW": {
-            "encoder": "21M",
-            "data_h": 20,
-            "PDMS": 83.8
-          },
-          "World4Drive": {
-            "encoder": "21M",
-            "data_h": 20,
-            "PDMS": 85.1
-          },
-          "Epona": {
-            "encoder": "1.1B",
-            "data_h": 128,
-            "PDMS": 86.1
-          },
-          "Drive-JEPA": {
-            "encoder": "307M",
-            "data_h": 330,
-            "PDMS": 89.0
-          },
-          "_note": "This is TanitAD's comparable class: front-camera-only, perception-free (supervised solely by human trajectories, no perception annotations), entry rung 21M and top rung 307M — our scale band."
-        },
-        "keys": [
-          "protocol.sensor_set",
-          "protocol.setting"
-        ]
-      },
-      "published_reference_numbers": {
-        "_evidence": "PUB-PAPER, extracted by the EvalFlyWheel from the banked PDFs 2026-08-27",
-        "drive_jepa_v1_PDMS_full_framework": 93.7,
-        "drive_jepa_v1_PDMS_NOTE": "⛔ 93.7, NOT 93.3. The abstract and §1 both say 93.7; the 93.3 appears only in the paper's own NeurIPS checklist, where it misquotes its own abstract. Cite 93.7 and note the internal inconsistency if the figure is load-bearing.",
-        "drive_jepa_v2_EPDMS": 87.8,
-        "drive_jepa_perception_free_front_only_PDMS": 89.0,
-        "latent_wam_v2_EPDMS": 89.3,
-        "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number."
-      },
-      "OFFICIAL_COLUMN": {
-        "column": "navhard_two_stage EPDMS",
-        "harness": "autonomousvision/navsim @ <SHA> — the SHA is part of the column, not a footnote",
-        "devkit_pin_used_for_this_registry": "0a380a9 (2025-10-27)",
-        "why": "⛔ NavSim v2 carries TWO protocols both called 'EPDMS', roughly 30 POINTS APART: the method papers' single-stage navtest-EPDMS (~76-88) and the challenge's navhard-two-stage (~35-56). A single 'EPDMS' column lets them be read as one metric — precise about the wrong thing, which is the overlapping_holdout_se class exactly. The NavSim authors explicitly disown the navtest variant in print.",
-        "consequence_for_our_positioning": "⭐ MEASURED 2026-08-28 by the EvalFlyWheel from the banked PDF (arXiv 2601.22032), SEVEN probe terms all zero — 'navhard', 'nav hard', 'two_stage', 'two-stage', 'two stage', 'private_test', 'challenge': Drive-JEPA NEVER mentions navhard. Its 87.8 'EPDMS on v2' is therefore the navtest variant, NOT the challenge protocol. ⇒ a navhard number of ours is NOT comparable to Drive-JEPA's 87.8. The camera-only navhard bar to anchor against is DrivoR 56.3 EPDMS at ~40M params (privileged ceiling 56.6).",
-        "what_still_stands": "Drive-JEPA's PERCEPTION-FREE ladder is PDMS on NavSim v1 (their Table 2, 'the first block is the perception-free setting'): LAW 83.8 / World4Drive 85.1 / Epona 86.1 / Drive-JEPA 89.0. That is a v1 PDMS claim and remains valid AS A v1 CLAIM — it must never be printed in an EPDMS column."
-      },
-      "GATE_no_cross_protocol_comparison": {
-        "id": "navsim.cross_protocol",
-        "blocking": true,
-        "rule": "Every NavSim number MUST declare `protocol.navsim_protocol` from the closed set below AND the devkit SHA. ⛔ Placing two different protocols in one column, or comparing across them, FAILS — including implicitly, by omitting the tag.",
-        "closed_set": [
-          "PDMS_v1_navtest",
-          "EPDMS_v2_navhard_two_stage",
-          "EPDMS_v2_navtest_single_stage",
-          "EPDMS_v2_private_test_hard_two_stage",
-          "EPDMS_v2_warmup_two_stage"
-        ],
-        "official": "EPDMS_v2_navhard_two_stage",
-        "why": "~30 points separate two protocols wearing the same name. Untagged, our own leaderboard would merge them by accident — and a reader has no way to tell. Same family as navsim.modality_label: the number is only meaningful with the condition attached.",
-        "keys": [
-          "protocol.navsim_protocol",
-          "protocol.devkit_sha"
-        ]
-      },
-      "EPDMS_submetrics": {
-        "_formula": "EPDMS = prod(NC,DAC,DDC,TLC) * ( sum_w(TTC,EP,HC,LK,EC) / 16 ); filter_m = 1.0 if the human also violated m, else m(agent)",
-        "_weighted_denominator": 16,
-        "_source": "PUB-DEVKIT docs/metrics.md + pdm_scorer.yaml; [N2] Eq.(1) — triple-confirmed",
-        "multiplicative": {
-          "NC": {
-            "name": "no at-fault collisions",
-            "range": [
-              0,
-              0.5,
-              1
-            ],
-            "family": "TACTICAL",
-            "family_note": "a decision OUTCOME, not decision quality — see _family_caveat"
-          },
-          "DAC": {
-            "name": "drivable area compliance",
-            "range": [
-              0,
-              1
-            ],
-            "family": "STRATEGIC",
-            "family_note": "staying on the drivable topology is a route-level property"
-          },
-          "DDC": {
-            "name": "driving direction compliance",
-            "range": [
-              0,
-              0.5,
-              1
-            ],
-            "family": "STRATEGIC",
-            "new_in_v2": true,
-            "family_note": "direction-of-travel against the lane graph — route-level"
-          },
-          "TLC": {
-            "name": "traffic light compliance",
-            "range": [
-              0,
-              1
-            ],
-            "family": "TACTICAL",
-            "new_in_v2": true,
-            "family_note": "stop/go at a light is a tactical decision"
-          }
-        },
-        "weighted": {
-          "EP": {
-            "name": "ego progress",
-            "weight": 5,
-            "range": [
-              0,
-              1
-            ],
-            "family": "LONGITUDINAL"
-          },
-          "TTC": {
-            "name": "time to collision within bound",
-            "weight": 5,
-            "range": [
-              0,
-              1
-            ],
-            "family": "LONGITUDINAL",
-            "family_note": "maps onto our long.distance_keeping criterion directly"
-          },
-          "LK": {
-            "name": "lane keeping",
-            "weight": 2,
-            "range": [
-              0,
-              1
-            ],
-            "family": "LATERAL",
-            "new_in_v2": true,
-            "family_note": "the cross-track analogue"
-          },
-          "HC": {
-            "name": "history comfort",
-            "weight": 2,
-            "range": [
-              0,
-              1
-            ],
-            "family": null,
-            "new_in_v2": true,
-            "family_note": "⛔ UNMAPPED — comfort is a separate axis from our four families"
-          },
-          "EC": {
-            "name": "extended comfort",
-            "weight": 2,
-            "range": [
-              0,
-              1
-            ],
-            "family": null,
-            "new_in_v2": true,
-            "family_note": "⛔ UNMAPPED — comfort; also never human-filtered (injected downstream of the filter)"
-          }
-        },
-        "_family_caveat": "⭐ THE HONEST READING, and it is a finding rather than a mapping problem: EPDMS measures COMPLIANCE AND OUTCOMES, not DECISION QUALITY. Nothing in it corresponds to our tac.manoeuvre_decision (selected vs executed manoeuvre), tac.confusion, or strat.route_goal (goal-setting quality). NC and TLC are mapped to TACTICAL as the closest honest home, but a collision-free run is not evidence that the manoeuvre DECISION was right. ⇒ An EPDMS number does NOT satisfy the four-families rule. A NavSim artifact must still emit our families, or refuse them with reason and n.",
-        "_unmapped": [
-          "HC",
-          "EC"
-        ],
-        "_families_epdms_cannot_supply": [
-          "tac.manoeuvre_decision",
-          "tac.confusion",
-          "tac.goal_selection",
-          "strat.route_goal"
-        ]
-      }
-    },
-    "nuscenes": {
-      "pending": false,
-      "protocol_doc": "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md",
-      "primary": [
-        "arXiv:1903.11027"
-      ],
-      "licence_status": "CONFLICT, UNRESOLVED: the paper states CC BY-NC-SA 4.0 (non-commercial); the AWS Open Data registry lists 'Commercial'. Treat as RESEARCH-ONLY until written terms are obtained.",
-      "tasks": {
-        "detection": {
-          "adoptable": true,
-          "criteria": [
-            {
-              "id": "nusc.det.nds",
-              "required": true,
-              "label": "NDS",
-              "keys": [
-                "benchmark.nuscenes.detection.nds"
-              ]
-            },
-            {
-              "id": "nusc.det.map",
-              "required": true,
-              "label": "mAP (center-distance matching)",
-              "keys": [
-                "benchmark.nuscenes.detection.map"
-              ]
-            },
-            {
-              "id": "nusc.det.tp",
-              "required": true,
-              "label": "the five TP metrics (ATE/ASE/AOE/AVE/AAE)",
-              "keys": [
-                "benchmark.nuscenes.detection.tp_metrics"
-              ]
-            }
-          ]
-        },
-        "tracking": {
-          "adoptable": true,
-          "criteria": [
-            {
-              "id": "nusc.trk.amota",
-              "required": true,
-              "label": "AMOTA",
-              "keys": [
-                "benchmark.nuscenes.tracking.amota"
-              ]
-            },
-            {
-              "id": "nusc.trk.amotp",
-              "required": true,
-              "label": "AMOTP",
-              "keys": [
-                "benchmark.nuscenes.tracking.amotp"
-              ]
-            }
-          ]
-        },
-        "prediction": {
-          "adoptable": true,
-          "criteria": [
-            {
-              "id": "nusc.pred.minade",
-              "required": true,
-              "label": "minADE_k",
-              "keys": [
-                "benchmark.nuscenes.prediction.min_ade"
-              ]
-            },
-            {
-              "id": "nusc.pred.minfde",
-              "required": true,
-              "label": "minFDE_k",
-              "keys": [
-                "benchmark.nuscenes.prediction.min_fde"
-              ]
-            },
-            {
-              "id": "nusc.pred.missrate",
-              "required": true,
-              "label": "MissRate_k",
-              "keys": [
-                "benchmark.nuscenes.prediction.miss_rate"
-              ]
-            }
-          ]
-        },
-        "planning_openloop": {
-          "adoptable": false,
-          "THE_VERDICT": "INADMISSIBLE as a TanitAD criterion or gate. Usable ONLY as a cited external-comparability row. Three measurements: (1) the averaging convention alone moves one VAD checkpoint 0.72 -> 1.22 m (+70 %) and FLIPS the UniAD/VAD ranking; (2) the ground-truth HUMAN trajectory scores 0.36-0.96 % collision - the metric's false-positive floor exceeds the published spread; (3) AD-MLP with no camera and no LiDAR ties a full perception stack. And VAD's 'high-level command' is computed from the GT future trajectory thresholded at +/-2 m and handed back as an input - OUR route-head echo defect, published as state of the art.",
-          "criteria": [
-            {
-              "id": "nusc.plan.protocol_tag",
-              "required": true,
-              "label": "which evaluation implementation produced the number",
-              "keys": [
-                "benchmark.nuscenes.planning.protocol_tag"
-              ],
-              "note": "uniad (L2 AT the timestep) vs stp3 (L2 averaged UP TO it). Five axes of divergence, not one. An untagged L2 is not comparable to anything."
-            },
-            {
-              "id": "nusc.plan.gt_control",
-              "required": true,
-              "label": "the GT-trajectory control published alongside",
-              "keys": [
-                "benchmark.nuscenes.planning.gt_control"
-              ],
-              "note": "The echo test applied to a borrowed instrument: report what the ground-truth human trajectory scores under the same protocol. Without it the number cannot be read."
-            },
-            {
-              "id": "nusc.plan.command_source",
-              "required": true,
-              "label": "high-level command refused, or replaced by a predicted goal",
-              "keys": [
-                "benchmark.nuscenes.planning.command_source"
-              ],
-              "note": "The GT-derived command is inadmissible under our vision-only rule."
-            },
-            {
-              "id": "nusc.plan.nonstraight_subset",
-              "required": true,
-              "label": "the non-straight subset reported alongside full val",
-              "keys": [
-                "benchmark.nuscenes.planning.nonstraight"
-              ],
-              "note": "Most of nuScenes val is straight-line constant-velocity driving."
-            }
-          ]
-        }
-      }
-    }
-  },
-  "schema_note": "Three artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block); `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}); and `refav1` (rec_*.json from taniteval/tools/refav1_arm.py, which nests a full four_families block PER ARM at arms.<arm>.four_families.* and adds a record-level `refav1` block for the protocol, the strategic/tactical declared heads and the trivial profile). All three refusal idioms are honest and all three are read. The refav1 records are the programme's only T1 driving artifacts; see `arm_scoring` for which arm is scored and why the other four are not.",
-  "registry_hygiene": {
-    "why": "A criterion whose keys resolve in NO artifact anywhere is far more likely a REGISTRY TYPO than a universal absence. This happened twice on 2026-08-23 (tac.confusion), and the second time it was published to the PI as 'the surviving universal gap'. The checker therefore reports UNRESOLVABLE separately from ABSENT, and a test pins that every criterion resolves in at least one real artifact.",
-    "rule": "Adding a criterion means naming the key the EMITTER actually writes. Read the producing code, do not guess the name. If a metric is genuinely not emitted anywhere yet, set `not_yet_emitted: true` so the intent is explicit and the audit stays green."
-  },
-  "release_gate": {
-    "why": "The PI asked (2026-08-23) to finalize the tests and criteria that must run at EVERY model release. This block names which registry criteria are release-blocking, so the gate and the census read one source.",
-    "advisory": [
-      "regression vs the previous release (per family)",
-      "(all criteria are advisory per the PI ruling above)"
-    ],
-    "advisory_note": "Advisory until two clean releases exist to compare — a regression gate with no trustworthy baseline manufactures false failures.",
-    "cannot_rule_is_a_verdict": "⭐ A criterion that cannot decide at the configured settings must return CANNOT-RULE, loudly — never a silent PASS and never a perpetual INCONCLUSIVE. MEASURED precedent: the O6 rank gate could never rule (spectrum n=24 against a ceiling of 1024) and its silence was read as a pass for weeks.",
-    "pi_decision_open": null,
-    "PI_RULING_2026-08-28": {
-      "ruling": "THE RELEASE GATE DOES NOT BLOCK A RELEASE.",
-      "by": "Sayed (PI), 2026-08-28",
-      "effect": "Every criterion below is ADVISORY. The gate REPORTS; it never stops a release. It still returns PASS / FAIL / CANNOT-RULE per criterion and still exits non-zero on a FAIL so CI can surface it — but no human or process is required to stop on that signal.",
-      "what_does_NOT_change": "⛔ Advisory is about AUTHORITY, not about honesty. The gate must keep reporting a FAIL as a FAIL, at full strength and in the same words. Softening a verdict because it no longer blocks would destroy the only thing the instrument is for. In particular the floor comparison stays loud: a release whose trivial control beats it 22x is still reported as beaten, and CANNOT-RULE is still a verdict, never a silent pass.",
-      "rationale_recorded": "The programme has research character and moves faster than a blocking gate would allow; the PI keeps the stop/go authority rather than delegating it to the instrument. The gate's value is that nothing ships UNMEASURED - not that it can veto."
-    },
-    "advisory_all": [
-      "all four families PRESENT or REFUSED-with-reason-and-n",
-      "hyg.tier_stamp",
-      "hyg.estimator_named",
-      "hyg.n_reported",
-      "hyg.no_forbidden_estimator",
-      "hyg.parity",
-      "ctrl.floor_comparison",
-      "leak_guards.vision_only_inference",
-      "leak_guards.goal_situation_disjoint"
-    ],
-    "advisory_note_previous": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
-    "exit_code_contract": "non-zero exit on any FAIL is RETAINED so automation can surface it; the exit code is information, not an authority to stop."
-  },
-  "arm_scoring": {
-    "why": "A refav1 record holds FIVE arms on the same 40 windows. Scoring all five would multiply every criterion count by five and would present three trivial CONTROLS and one T0 diagnostic as if each were a driving eval. The record is therefore scored ONCE, on the arm a capability claim may rest on.",
-    "scored_arm": "cl",
-    "scored_arm_is": "the planner arm — plan() at t0 with the TRUE nav token; the predictor consumes the planner's OWN actions; trajectory = unicycle(controls, measured v0). This is the only arm whose number is a claim about the model.",
-    "not_scored": {
-      "ha": "CONTROL — hold the last OBSERVED (a, kappa) for K steps. A baseline, not a result.",
-      "ha0": "CONTROL — constant velocity (a=0, kappa=0) at the measured v0. The strongest trivial baseline.",
-      "ha0_ext": "CONTROL — the echo control (constant (a0, kappa0) from the measured t0 state).",
-      "ol": "⛔ T0. The RECORDED future integrated from v0 — the kinematic-contract control. NEVER driving performance (EVAL_DOCTRINE.md 2026-08-09), and reading it as such is the misread the tier stamp exists to prevent."
-    },
-    "consequence": "The controls are not invisible: ctrl.floor_comparison is answered by the arm's own anti-echo/holdv0 block, which IS the comparison against those baselines. They are simply not scored as separate driving artifacts.",
-    "if_the_scored_arm_changes": "Changing `scored_arm` means re-prefixing every `arms.cl.` key below. The prefix is duplicated deliberately rather than templated, because the checker resolves literal dotted paths and a template would be a second thing to keep in sync.",
-    "strategic_mapping": "⭐ The one non-obvious mapping, recorded so it is not re-derived: refav1's `refav1.strategic` block IS a strategic DECISION/ROUTE readout (route classification with confusion, per-class, kappa, CI, and nav_true / nav_shuffled / nav_zero interventions), so strat.decision and strat.route_goal read PRESENT from it. It is NOT nav-COMPLIANCE: that criterion scores emitted BEHAVIOUR against the command, and refav1 emits no such readout. Mapping route accuracy onto strat.nav_compliance would commit exactly the error that criterion was created to prevent — the route label is a bijection of the fed token (141/141) and cannot fail. The three nav_compliance criteria therefore resolve to the record's own strategic declination at `arms.cl.four_families.strategic` ({status: UNAVAILABLE, reason, n}) and read REFUSED — visible WORK ITEMS, not silent omissions and not false passes."
-  },
-  "changelog": [
-    {
-      "version": "2.7.0",
-      "date": "2026-09-05",
-      "change": "Recognise the refav1 per-arm schema. Adds the `arms.cl.four_families` in-scope marker, the `arms.cl.` key alternative for every criterion in all four families plus hygiene and the leak guards, the two refav1 tier paths, and the `arm_scoring` block recording that only the `cl` planner arm is scored.",
-      "why": "MEASURED: every refav1 record read UNKNOWN_SCOPE — 'matches no in-scope or out-of-scope marker'. They are the programme's only T1 driving artifacts and they carry all four binding families, so the completeness machinery was blind to exactly the artifacts it exists for. Root cause: the marker and the criteria both named top-level `four_families`, while refav1 nests it per arm.",
-      "ships_with": "tools/tests/test_criteria_check.py — refav1-shaped fixture with a deliberate-regression arm per family, plus the arm-scoping arm (deleting a family from a NON-scored arm must change nothing) and two-sided emitter pins. A guard that has never been shown to fail proves nothing.",
-      "also": "tools/criteria_check.py: the forbidden-estimator exoneration list missed the wording '⛔ NOT overlapping_holdout_se' (it carried 'not used' and 'is not' but no bare 'not <token>'), so a disavowal in anti_echo.holdv0_baseline.estimator read as a live use — a false violation on all 13 records. Same class as the earlier 'NOT used' miss recorded in that function."
-    },
-    {
-      "version": "2.8.0",
-      "date": "2026-09-06",
-      "change": "ADD hyg.inference_seed — a stochastic planner must report its inference-seed replicate and seed floor. Prompted by refcv5 WP-4 landing (the control-space DDIM sampler draws fresh noise at eval by design). Ships with its deliberate-regression arm in tools/tests/test_criteria_check.py."
-    }
+ "schema": 1,
+ "version": "2.9.0",
+ "created": "2026-08-23",
+ "owner": "TanitAD_EvalFlyWheel",
+ "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
+ "three_states": {
+  "PRESENT": "the metric is in the artifact at one of its keys",
+  "REFUSED": "the artifact's `refused` block names the criterion AND gives a reason — admissible, and becomes a WORK ITEM",
+  "ABSENT": "neither — VIOLATION. This is the silent omission the doctrine forbids."
+ },
+ "doctrine": {
+  "families_never_pooled": "The four families are reported per-family. A single composite hides the trade-off we are trying to see.",
+  "ade_alone_is_incomplete": "ADE stays, but an eval reporting ADE alone must not be presented as a result (PI, 2026-08-02, binding).",
+  "estimator": "paired episode-cluster bootstrap over val episodes (taniteval/ci.py)",
+  "forbidden_estimator": "overlapping_holdout_se — biases the point estimate bidirectionally, up to a sign flip",
+  "tier_required": "every artifact carries its tier; T0 is a WM diagnostic and is NEVER driving performance"
+ },
+ "applicability": {
+  "why": "A criteria check that scores PROFILING artifacts against DRIVING criteria reports a huge violation count that is pure noise — and a probe reporting the wrong scope is worse than no probe (the `df` trap, the Thor `free` trap, the cgroup `usage_in_bytes` trap). Scope is therefore decided BEFORE any criterion is evaluated, and an artifact whose kind cannot be determined is reported as UNKNOWN, never silently dropped and never counted as compliant.",
+  "in_scope_if_any": [
+   {
+    "kind": "block_prefix",
+    "value": "taniteval.driving"
+   },
+   {
+    "kind": "key_present",
+    "value": "headline.ade_0_2s"
+   },
+   {
+    "kind": "key_present",
+    "value": "ade_0_2s"
+   },
+   {
+    "kind": "key_present",
+    "value": "full_set.model"
+   },
+   {
+    "kind": "key_present",
+    "value": "heldout.model"
+   },
+   {
+    "kind": "key_present",
+    "value": "four_families"
+   },
+   {
+    "kind": "key_present",
+    "value": "arms.cl.four_families",
+    "reason": "refav1 per-arm schema (taniteval/tools/refav1_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, so the top-level `four_families` marker never matched and every refav1 record read UNKNOWN_SCOPE — invisible to the census while carrying all four binding families. Only the `cl` planner arm is scored; see `arm_scoring`."
+   },
+   {
+    "kind": "key_present",
+    "value": "arms.os.four_families",
+    "reason": "refcv3/refcv4 per-arm schema (taniteval/tools/refcv3_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, exactly like refav1, but the planner arm is `os` (the one-shot planner), not `cl`. The v2.7.0 fix added only the `arms.cl` marker, so EVERY refcv3 and refcv4b landing artifact still read UNKNOWN_SCOPE -- invisible to the census while carrying all four binding families. MEASURED 2026-09-06 on the refcv4b @40284 landing eval (4,823 windows / 141 episodes). Same root-cause class as the v2.7.0 refav1 miss, repeated for a second model family: a scope marker enumerated per-schema rather than derived."
+   }
+  ],
+  "out_of_scope_if_any": [
+   {
+    "kind": "key_present",
+    "value": "fp32.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "tf32.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "amp16.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "efficiency.params",
+    "reason": "efficiency profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "_schema",
+    "reason": "schema/doc artifact, not an eval"
+   },
+   {
+    "kind": "key_present",
+    "value": "exclusions",
+    "reason": "corpus census artifact, not an eval"
+   },
+   {
+    "kind": "key_present",
+    "value": "clips",
+    "reason": "clip-level dump, not a scored eval"
+   }
   ]
+ },
+ "tiers": {
+  "key_paths": [
+   "block",
+   "tier",
+   "protocol.tier",
+   "arms.cl.four_families._tier",
+   "arms.cl.tier",
+   "arms.os.four_families._tier",
+   "arms.os.tier"
+  ],
+  "values": {
+   "T0": {
+    "aliases": [
+     "tier0",
+     "taniteval.driving/tier0"
+    ],
+    "is_driving_performance": false,
+    "note": "teacher-forced world-model fidelity diagnostic. NEVER reported as driving performance."
+   },
+   "T1": {
+    "aliases": [
+     "tier1",
+     "taniteval.driving/tier1"
+    ],
+    "is_driving_performance": true,
+    "note": "action-closed loop — the PRIMARY driving tier."
+   },
+   "T2": {
+    "aliases": [
+     "tier2",
+     "taniteval.driving/tier2"
+    ],
+    "is_driving_performance": true,
+    "note": "re-perception sim."
+   }
+  },
+  "key_paths_note": "Order matters: resolve_tier takes the FIRST path that yields a string. The refav1 paths are LAST so promoting them cannot change any other schema's stamp. Emitter: taniteval/taniteval/four_families.py:1811 (`fam[\"_tier\"] = tier`)."
+ },
+ "families": {
+  "LONGITUDINAL": {
+   "why": "88.7 % of our oracle gap is longitudinal. ADE hides it — an arm can win ADE while setting the wrong speed.",
+   "criteria": [
+    {
+     "id": "long.target_speed",
+     "required": true,
+     "label": "target-speed accuracy",
+     "keys": [
+      "headline.speed_mae_mps",
+      "headline.speed_bias_mps",
+      "four_families.longitudinal.speed_mae_mps",
+      "four_families.longitudinal.target_speed_acc",
+      "arms.cl.four_families.longitudinal.speed_mae_mps",
+      "arms.cl.four_families.longitudinal.speed_bias_mps",
+      "arms.cl.four_families.longitudinal.target_speed_acc",
+      "arms.os.four_families.longitudinal.speed_mae_mps",
+      "arms.os.four_families.longitudinal.speed_bias_mps",
+      "arms.os.four_families.longitudinal.target_speed_acc"
+     ],
+     "note": "MAE and signed bias; the bias is what exposes systematic over-prediction."
+    },
+    {
+     "id": "long.along_track_error",
+     "required": true,
+     "label": "along-track displacement error",
+     "keys": [
+      "headline.long_abs_2s_m",
+      "headline.long_signed_2s_m",
+      "four_families.longitudinal.along_mae_m",
+      "four_families.longitudinal.along_bias_m",
+      "arms.cl.four_families.longitudinal.along_mae_m",
+      "arms.cl.four_families.longitudinal.along_bias_m",
+      "arms.os.four_families.longitudinal.along_mae_m",
+      "arms.os.four_families.longitudinal.along_bias_m"
+     ]
+    },
+    {
+     "id": "long.progress",
+     "required": true,
+     "label": "ego progress",
+     "keys": [
+      "headline.progress_abs_err_m",
+      "headline.progress_signed_err_m",
+      "four_families.longitudinal.ego_progress",
+      "arms.cl.four_families.longitudinal.ego_progress",
+      "arms.os.four_families.longitudinal.ego_progress"
+     ]
+    },
+    {
+     "id": "long.distance_keeping",
+     "required": true,
+     "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+     "keys": [
+      "headline.headway_m",
+      "headline.time_gap_s",
+      "headline.ttc_s",
+      "longitudinal.distance_keeping",
+      "four_families.longitudinal.distance_keeping",
+      "arms.cl.four_families.longitudinal.distance_keeping",
+      "refav1.distance_keeping",
+      "arms.os.four_families.longitudinal.distance_keeping"
+     ],
+     "refused_as": [
+      "headway_ttc_distance_keeping"
+     ],
+     "note": "MEASURED 2026-08-23: refused in 27/27 complete artifacts — 'no lead-agent state exists (lead_state is a None stub)'. Largest open criterion gap, on the family owning most of the oracle gap.",
+     "refav1_note": "Both refav1 homes carry an inline {status, reason, n} — the per-arm one from four_families, the record-level one from refav1_arm.py::_distance_keeping_block when no --lead-block was passed. Either reads REFUSED-with-a-reason, i.e. a WORK ITEM."
+    }
+   ]
+  },
+  "LATERAL": {
+   "why": "'lateral is fine' has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up.",
+   "criteria": [
+    {
+     "id": "lat.cross_track",
+     "required": true,
+     "label": "cross-track error",
+     "keys": [
+      "headline.lat_abs_2s_m",
+      "headline.lat_signed_2s_m",
+      "headline.pathgeom_crosstrack_m",
+      "four_families.lateral.cross_mae_m",
+      "arms.cl.four_families.lateral.cross_mae_m",
+      "arms.os.four_families.lateral.cross_mae_m"
+     ]
+    },
+    {
+     "id": "lat.heading",
+     "required": true,
+     "label": "heading error",
+     "keys": [
+      "headline.heading_mae_2s_deg",
+      "headline.heading_med_2s_deg",
+      "headline.heading_exceed_5deg",
+      "four_families.lateral.heading_mae_deg",
+      "arms.cl.four_families.lateral.heading_mae_deg",
+      "arms.os.four_families.lateral.heading_mae_deg"
+     ]
+    },
+    {
+     "id": "lat.curvature",
+     "required": true,
+     "label": "curvature error",
+     "keys": [
+      "headline.curv_mae_1_per_m",
+      "headline.curvature_mae",
+      "four_families.lateral.curvature_mae_1pm",
+      "arms.cl.four_families.lateral.curvature_mae_1pm",
+      "arms.os.four_families.lateral.curvature_mae_1pm"
+     ],
+     "partial_keys": [
+      "headline.curv_sign_agree"
+     ],
+     "refused_as": [
+      "curvature_mae_at_this_resolution"
+     ],
+     "note": "MEASURED 2026-08-23: magnitude refused in 27/27 ('measured 24x the signal; SIGN agreement only at tier 0'). curv_sign_agree is a PARTIAL satisfaction — sign without magnitude."
+    },
+    {
+     "id": "lat.yaw_rate",
+     "required": true,
+     "label": "yaw-rate error",
+     "keys": [
+      "headline.yaw_rate_mae_dps",
+      "headline.yawrate_mae",
+      "lateral.yaw_rate",
+      "four_families.lateral.yaw_rate_mae_degps",
+      "arms.cl.four_families.lateral.yaw_rate_mae_degps",
+      "arms.os.four_families.lateral.yaw_rate_mae_degps"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 artifacts and NOT in any refused block — a silent omission."
+    }
+   ]
+  },
+  "TACTICAL": {
+   "why": "The 5-way manoeuvre softmax that MIXES lat+lon is our single largest known defect; a scalar ADE cannot see a decision error.",
+   "criteria": [
+    {
+     "id": "tac.manoeuvre_decision",
+     "required": true,
+     "label": "manoeuvre-decision quality (selected vs executed)",
+     "keys": [
+      "tactical.manoeuvre_accuracy",
+      "tactical.maneuver_accuracy",
+      "headline.maneuver_acc",
+      "four_families.tactical.lateral_decision",
+      "four_families.tactical.longitudinal_decision",
+      "four_families.tactical.maneuver_5way_collapsed",
+      "arms.cl.four_families.tactical.lateral_decision",
+      "arms.cl.four_families.tactical.longitudinal_decision",
+      "arms.cl.four_families.tactical.maneuver_5way_collapsed",
+      "arms.os.four_families.tactical.lateral_decision",
+      "arms.os.four_families.tactical.longitudinal_decision",
+      "arms.os.four_families.tactical.maneuver_5way_collapsed"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
+    },
+    {
+     "id": "tac.confusion",
+     "required": true,
+     "label": "confusion over the manoeuvre classes",
+     "keys": [
+      "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
+      "four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
+      "four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols",
+      "tactical.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
+      "arms.cl.four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols",
+      "arms.os.four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
+      "arms.os.four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
+      "arms.os.four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols"
+     ],
+     "note": "MEASURED 2026-08-23: the emitter writes `confusion_gt_rows_pred_cols` (four_families.py:563), together with `per_class` recall/precision and `never_predicted`. An earlier registry looked for `confusion` and the census duly reported '0/135, silently absent everywhere' - a REGISTRY TYPO wearing a finding's clothes. See C133-b. `never_predicted` is the load-bearing field: the deployed arm emitted 0 of 881 'accelerate' decisions, which no accuracy scalar can show."
+    },
+    {
+     "id": "tac.goal_selection",
+     "required": true,
+     "label": "tactical goal / anchor selection quality",
+     "keys": [
+      "tactical.anchor_selection",
+      "tactical.goal_selection",
+      "headline.anchor_top1",
+      "four_families.tactical.goal_setting",
+      "arms.cl.four_families.tactical.goal_setting",
+      "arms.os.four_families.tactical.goal_setting"
+     ]
+    }
+   ]
+  },
+  "STRATEGIC": {
+   "why": "The hierarchy is the programme's thesis. If we never measure the strategic level we cannot claim it works.",
+   "criteria": [
+    {
+     "id": "strat.decision",
+     "required": true,
+     "label": "strategic decision quality",
+     "keys": [
+      "strategic.decision_accuracy",
+      "strategic.accuracy",
+      "four_families.strategic",
+      "refav1.strategic.conditionings.nav_true.accuracy",
+      "arms.cl.four_families.strategic",
+      "arms.os.four_families.strategic",
+      "refcv3.strategic.conditionings.nav_true.accuracy",
+      "refcv3.strategic.conditionings.nav_true.kappa"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission.",
+     "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
+    },
+    {
+     "id": "strat.route_goal",
+     "required": true,
+     "label": "strategic route / goal-setting quality",
+     "keys": [
+      "strategic.route_quality",
+      "strategic.goal_setting",
+      "headline.route_acc",
+      "four_families.strategic",
+      "refav1.strategic.conditionings.nav_true.accuracy",
+      "arms.cl.four_families.strategic",
+      "arms.os.four_families.strategic",
+      "refcv3.strategic.conditionings.nav_true.accuracy",
+      "refcv3.strategic.conditionings.nav_true.kappa"
+     ],
+     "leak_guard": "route_head_echo",
+     "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test.",
+     "refav1_note": "PRESENT from the record-level `refav1.strategic` route readout (accuracy, kappa, confusion_gt_rows_pred_cols, per_class, CI) — the decision heads read the OBSERVED window only, so this block is arm-independent and lives at the record level, not under arms.<arm>. The `arms.<arm>.four_families.strategic` alternative is the FALLBACK for a pass that produced no route block: it carries {status: UNAVAILABLE, reason, n} and reads REFUSED. ⚠️ The record's own `_echo_caveat` records that route_label and nav_cmd derive from the SAME field; the echo is scored by the route_head_echo leak guard, not hidden."
+    },
+    {
+     "id": "strat.nav_compliance",
+     "required": true,
+     "label": "nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "refcv3.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "four_families.strategic.nav_compliance.readouts.plan.conditionings.nav_true.compliance_with_TRUE_command",
+      "arms.cl.four_families.strategic",
+      "arms.os.four_families.strategic"
+     ],
+     "partial_keys": [
+      "strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
+      "refcv3.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command",
+      "four_families.strategic.nav_compliance.readouts.gstr.conditionings.nav_true.compliance_with_TRUE_command"
+     ],
+     "refused_as": [
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm (via the refcv3_arm.py sidecar; standalone: taniteval/tools/nav_compliance_report.py)",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "Replaces the route metric that could not fail: D-REFAV1-ROUTE-LABEL-IS-THE-NAV MEASURED the route LABEL as an exact bijection of the fed nav token (141/141), so a head copying its input scored 1.0000 and NO behaviour could lower it. This criterion scores the emitted 6 s path (with g_str and the SELECTED anchor as sibling readouts) against the COMMAND on windows where the commanded turn lies inside the plan horizon, n always reported. ⛔ The RATE is NOT the result — it is admissible ONLY with strat.nav_compliance_ctrl_shuffle and _ctrl_zero on the SAME windows; a rate that does not drop under them is coincidence with the scene.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_shuffle",
+     "required": true,
+     "label": "nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+      "arms.cl.four_families.strategic",
+      "arms.os.four_families.strategic"
+     ],
+     "refused_as": [
+      "nav_compliance_controls",
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_shuffled (taniteval.ci paired episode-cluster bootstrap)",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "If the model follows the command, compliance with the TRUE command must DROP when the token is permuted; the changed subset must follow the FED command. No drop = the high rate is scene coincidence. Known values on the panel: ha0 reads 0.0000 compliance exactly; every nav-blind control (ha, ha0_ext) reads a delta of exactly 0.0000.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent."
+    },
+    {
+     "id": "strat.nav_compliance_ctrl_zero",
+     "required": true,
+     "label": "nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)",
+     "keys": [
+      "strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "four_families.strategic.nav_compliance.readouts.plan.paired_true_minus_zero",
+      "arms.cl.four_families.strategic",
+      "arms.os.four_families.strategic"
+     ],
+     "refused_as": [
+      "nav_compliance_controls",
+      "nav_compliance"
+     ],
+     "emitter": "taniteval/taniteval/nav_compliance.py::compliance_arm -> paired_true_minus_zero",
+     "added": "2026-09-05, Benchmarks & Eval FlyWheel. PI rulings 2026-09-04: 'we are not evaluating the nav command itself, we are evaluating the fact that the model is following the nav command in consistency to the strategic goals'.",
+     "note": "The robustness ablation (D-NAV-IS-GT: os is the deployment arm, os_navzero the ablation). nav_cmd=None collapses the core onto the follow embedding, so this is a LOWER bound on nav dependence; BACKLOG R39 binds it beside the shuffle, never instead.",
+     "refav1_note": "⛔ refav1 emits NO behaviour-compliance readout, and its route accuracy must NOT be mapped here — that metric is a bijection of the fed token and cannot fail, which is the precise reason this criterion exists. The key added is the record's own strategic declination ({status: UNAVAILABLE, reason, n}), so all three read REFUSED: three visible WORK ITEMS ('implement nav-compliance for the refav1 arm'), never a false PRESENT and never a manufactured violation. The rate being unavailable is also why its two controls cannot be PRESENT — a control for a metric that does not exist would be incoherent. ⚠️ On the DORMANT partial_key: refav1 does roll a nav_zero conditioning (`refav1.strategic.conditionings.nav_zero.accuracy`) but banks no paired true-minus-zero delta, so the unpaired rate is registered as a partial_key. MEASURED: on today's records it never fires, because `classify` consults `keys` before `partial_keys` and the strategic declination above resolves first — the row reads REFUSED, not PARTIAL. It is kept for the record shape that HAS a strategic block and still lacks the paired delta; both states are work items, so neither can hide a gap.",
+     "partial_keys": [
+      "refav1.strategic.conditionings.nav_zero.accuracy"
+     ]
+    }
+   ]
+  }
+ },
+ "leak_guards": {
+  "why": "For ANY head, ask whether its inputs at inference include something the label was derived from. Same family as the C6 confound and the REF-A I-JEPA leak (~80 % of val inside train).",
+  "guards": [
+   {
+    "id": "vision_only_inference",
+    "required": true,
+    "rule": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
+    "keys": [
+     "protocol.inference_inputs",
+     "protocol.vision_only",
+     "refav1.protocol.inference_inputs",
+     "refav1.protocol.vision_only",
+     "arms.cl.four_families._protocol.inference_inputs",
+     "arms.cl.four_families._protocol.vision_only",
+     "refcv3.protocol.inference_inputs",
+     "refcv3.protocol.vision_only",
+     "arms.os.four_families._protocol.inference_inputs",
+     "arms.os.four_families._protocol.vision_only"
+    ],
+    "note": "An artifact must state what the model consumed at inference, or its number cannot be checked for this."
+   },
+   {
+    "id": "goal_situation_disjoint",
+    "required": true,
+    "rule": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
+    "keys": [
+     "protocol.goal_source",
+     "refav1.protocol.goal_source",
+     "refav1.protocol.goal_situation_disjoint",
+     "arms.cl.four_families._protocol.goal_source",
+     "arms.cl.four_families._protocol.goal_situation_disjoint",
+     "refcv3.protocol.goal_source",
+     "refcv3.protocol.goal_situation_disjoint",
+     "arms.os.four_families._protocol.goal_source",
+     "arms.os.four_families._protocol.goal_situation_disjoint"
+    ]
+   },
+   {
+    "id": "route_head_echo",
+    "required": false,
+    "rule": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+    "keys": [
+     "strategic.echo_test",
+     "strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+     "refcv3.strategic.nav_compliance.readouts.plan.paired_true_minus_shuffled",
+     "refav1.strategic.paired_true_minus_shuffled_accuracy",
+     "refav1.strategic._echo_caveat",
+     "refcv3.strategic.paired_true_minus_shuffled_accuracy",
+     "refcv3.strategic._echo_caveat"
+    ],
+    "note": "2026-09-05: the nav-compliance intervention pair (taniteval.nav_compliance) IS the behavioural echo test and satisfies this guard.",
+    "refav1_note": "⭐ This is where refav1's route-head intervention pair belongs — NOT on strat.nav_compliance_ctrl_shuffle, which is the control for a BEHAVIOUR rate the record does not emit. `paired_true_minus_shuffled_accuracy` (refav1_arm.py:2223, taniteval.ci paired episode-cluster bootstrap) is the echo test the strat.route_goal note demands, and `_echo_caveat` (refav1_arm.py:2184) states the bijection in the artifact itself."
+   }
+  ]
+ },
+ "artifact_hygiene": {
+  "criteria": [
+   {
+    "id": "hyg.tier_stamp",
+    "required": true,
+    "label": "tier stamp present",
+    "note": "MEASURED 2026-08-23: only 27/71 artifacts carry any tier marker."
+   },
+   {
+    "id": "hyg.estimator_named",
+    "required": true,
+    "label": "estimator named",
+    "keys": [
+     "estimator.interval",
+     "estimator",
+     "_estimator",
+     "four_families.tactical._estimator",
+     "intervals.estimator",
+     "arms.cl.intervals.estimator",
+     "arms.cl.four_families.tactical._estimator",
+     "arms.cl.four_families.longitudinal.estimator",
+     "arms.os.intervals.estimator",
+     "arms.os.four_families.tactical._estimator",
+     "arms.os.four_families.longitudinal.estimator"
+    ]
+   },
+   {
+    "id": "hyg.n_reported",
+    "required": true,
+    "label": "n printed (windows and episodes)",
+    "keys": [
+     "n_windows",
+     "n_episodes",
+     "four_families.longitudinal.n_windows",
+     "arms.cl.four_families.longitudinal.n_windows",
+     "refav1.n_windows",
+     "arms.os.four_families.longitudinal.n_windows",
+     "refcv3.n_windows"
+    ]
+   },
+   {
+    "id": "hyg.no_forbidden_estimator",
+    "required": true,
+    "label": "overlapping_holdout_se not used as a decision-grade interval",
+    "note": "It may appear ONLY under an explicitly deprecated label, or in the `deprecated_and_refused` field."
+   },
+   {
+    "id": "hyg.parity",
+    "required": true,
+    "label": "corpus identity recorded (parity key + skip-hash)",
+    "keys": [
+     "parity",
+     "protocol.corpus",
+     "protocol.parity_key",
+     "corpus",
+     "val_cache",
+     "refav1.protocol.parity_key",
+     "refav1.protocol.corpus",
+     "arms.cl.four_families._protocol.parity_key",
+     "arms.cl.four_families._protocol.corpus",
+     "refcv3.protocol.parity_key",
+     "refcv3.protocol.corpus",
+     "arms.os.four_families._protocol.parity_key",
+     "arms.os.four_families._protocol.corpus"
+    ],
+    "note": "Parity is sacred: the canonical train corpus is `physicalai-train-e438721ae894` (2376 episodes), skip-hash `f09e44db`. An artifact that does not record WHICH corpus it scored is not cross-arm comparable, and every delta computed against it is uninterpretable. Anything that re-selects episodes must be flagged NON-PARITY explicitly.",
+    "refav1_note": "refav1 nests the protocol under the record-level `refav1` block and mirrors it into each arm's four_families `_protocol` (refav1_arm.py:2402-2405), so both homes are named."
+   },
+   {
+    "id": "ctrl.floor_comparison",
+    "required": true,
+    "label": "headline metrics reported against their trivial control(s)",
+    "keys": [
+     "floors",
+     "floor_values",
+     "vs_floor_paired",
+     "controls",
+     "four_families.longitudinal.anti_echo",
+     "arms.cl.four_families.longitudinal.anti_echo",
+     "refav1.trivial_profile",
+     "arms.os.four_families.longitudinal.anti_echo",
+     "refcv3.trivial_profile"
+    ],
+    "note": "⭐ THE CRITERION THAT WOULD HAVE CAUGHT THE PROGRAMME'S LARGEST MISREAD. A model number without its control is unreadable: MEASURED 2026-08-23, the T1 `stage-a-repaired · cl` arm reads 9.3697 m while its own hold-action control reads 0.4246 m on the SAME windows — the trivial baseline beat the model 22×. An artifact reporting only the model's value looks like a result. Controls: hold-v0 (go straight at the observed entry speed) and constant velocity. ⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline won — render that as LOST, never as a tie.",
+    "refav1_note": "The anti-echo block IS the floor comparison for a refav1 arm: it carries holdv0_baseline (the strongest trivial control) with its verdict, and `refav1.trivial_profile` reports what fraction of each arm's own windows are trivial."
+   },
+   {
+    "id": "hyg.inference_seed",
+    "required": false,
+    "applies_when": "the scored arm's planner SAMPLES at inference (refcv5 `--sampler ddim`, refav1 iCEM, any stochastic decoder)",
+    "label": "stochastic planner: inference-seed replicate + the seed floor",
+    "keys": [
+     "inference_seeds",
+     "seed_floor_m",
+     "estimator.inference_seeds",
+     "sampler.inference_seeds",
+     "sel_tele.sampler",
+     "four_families.inference_seeds"
+    ],
+    "refused_as": [
+     "inference_seed_replicate",
+     "seed_floor"
+    ],
+    "note": "⛔⛔ A THIRD VARIANCE THE EPISODE-CLUSTER BOOTSTRAP IS BLIND TO. Three different questions ride on one interval: *would another draw of EPISODES say this?* (what the bootstrap answers), *would another TRAINING RUN say this?* (`H-ESTIM-SEED-1` — a zero-lever replicate cleared `separated` on 3 of 18 family metrics, a ~17 % false-positive rate), and *would another INFERENCE RUN say this?* — THIS ONE. MEASURED on refav1 (`D-REFAV1-SEED-GOAL-MISMATCH`): iCEM samples, so the SAME checkpoint evaluated twice does not give the same answer, and that rig's seed floor is ≈ 0.30 m ADE. ⭐ ADDED 2026-09-06 because refcv5's WP-4 sampler landed and draws FRESH NOISE AT EVAL by design (sampling is the mechanism) — `refc.py::AnchoredDiffusionDecoder._sample`, telemetry `sel_tele.sampler`. Until this criterion existed the registry could not express the obligation at all: all seven probes for `seed` / `replicate` / `stochastic` / `sampler` read 0 against a same-breath control of 46 criteria. ⇒ An artifact from a sampling planner must report how many INFERENCE seeds it ran and the resulting floor, or REFUSE with a reason; an effect smaller than that floor is not an effect. `required: false` because a DETERMINISTIC arm legitimately has nothing to report — `applies_when` is the scope, and scoring a deterministic artifact against it would be the `df`-on-a-pod error. ⚠ The per-arm key `arms.<arm>.inference_seeds` is deliberately NOT registered yet: no emitter writes it, and `test_every_refav1_key_in_the_registry_resolves_in_the_fixture` correctly refuses a key that resolves nowhere -- a key that matches nothing prints as '0 present', which is indistinguishable from a real gap. Register it in the SAME commit as the emitter that first writes it, with its fixture field."
+   }
+  ]
+ },
+ "benchmarks": {
+  "_status": "FILLED 2026-08-23 from the banked protocol specs. A benchmark is enforced only for an artifact that CLAIMS it (a `benchmark` key). Adopting a benchmark means running ITS published protocol verbatim and citing it - never ours relabelled.",
+  "_four_families_still_bind": "An EPDMS or an L2 number does NOT satisfy the four-families rule. Tactical and strategic are absent from NavSim BY CONSTRUCTION, as are longitudinal target-speed and lateral heading/curvature/yaw. A benchmark artifact must REFUSE each absent family explicitly, with its reason and n.",
+  "navsim": {
+   "pending": false,
+   "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
+   "primary": [
+    "arXiv:2406.15349",
+    "arXiv:2506.04218v3"
+   ],
+   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+   "THE_COLUMN_TRAP": "READ `score`, NEVER `pdm_score`. PDMScorer._aggregate_pdm_scores masks Extended Comfort out and divides by 14; the real EPDMS (denominator 16) is assembled downstream in run_pdm_score.py::compute_final_scores. The wrong column looks perfectly valid.",
+   "ESTIMATOR_UNRESOLVED": "Our episode-cluster bootstrap does NOT transfer - NavSim's resampling unit is a scene token, not an episode. Do not report a NavSim CI until the cluster unit is settled and pre-registered.",
+   "variants": {
+    "PDMS_v1": {
+     "multipliers": [
+      "NC",
+      "DAC"
+     ],
+     "weighted": {
+      "EP": 5,
+      "TTC": 5,
+      "C": 2
+     },
+     "denominator": 12,
+     "note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:39-48)"
+    },
+    "EPDMS_v2": {
+     "multipliers": [
+      "NC",
+      "DAC",
+      "DDC"
+     ],
+     "weighted": {
+      "EP": 5,
+      "TTC": 5,
+      "LK": 2,
+      "HC": 2,
+      "EC": 2
+     },
+     "denominator": 16
+    }
+   },
+   "criteria": [
+    {
+     "id": "navsim.score",
+     "required": true,
+     "label": "EPDMS/PDMS from the `score` column",
+     "keys": [
+      "benchmark.navsim.score"
+     ],
+     "note": "NOT `pdm_score` - see the column trap above."
+    },
+    {
+     "id": "navsim.variant",
+     "required": true,
+     "label": "which variant + split named",
+     "keys": [
+      "benchmark.navsim.variant"
+     ],
+     "note": "PDMS_v1 vs EPDMS_v2, and navtest vs navhard. 'EPDMS on navtest' (64-87) is NOT navhard EPDMS (11-55); four incomparable protocols exist."
+    },
+    {
+     "id": "navsim.submetrics",
+     "required": true,
+     "label": "every sub-metric reported",
+     "keys": [
+      "benchmark.navsim.submetrics"
+     ],
+     "note": "A composite alone hides which term moved."
+    },
+    {
+     "id": "navsim.ego_inputs",
+     "required": true,
+     "label": "declared ego inputs (vision-only compliance)",
+     "keys": [
+      "benchmark.navsim.ego_inputs"
+     ],
+     "note": "NavSim publishes NO fully ego-free number; even 'camera-only' LTF consumes driving_command + ego_velocity + ego_acceleration. Design against TransFuser B1 'Goal only' = 81.8 PDMS. driving_command is 4-dim in the devkit, not the 3 the paper states."
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "required": true,
+     "label": "route_roadblock_ids provenance checked",
+     "keys": [
+      "benchmark.navsim.route_leak_check"
+     ],
+     "note": "UNVERIFIED whether nuPlan's route_roadblock_ids derives from the expert path. Run this leak check BEFORE quoting a route-conditioned result - same family as our route-head echo."
+    }
+   ],
+   "GATE_estimator_cluster_unit": {
+    "id": "navsim.estimator_unit",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST declare `estimator.cluster_unit`. Until the unit is settled and PRE-REGISTERED, the only admissible interval is an explicit {status:UNAVAILABLE, reason, n}. ⛔ A bare point estimate with no interval block, or an interval computed with the episode-cluster bootstrap, FAILS.",
+    "why": "Our episode-cluster bootstrap does not transfer: NavSim resamples SCENE TOKENS, not episodes, and NavSim scenes are explicitly allowed to OVERLAP (PUB-DEVKIT docs/splits.md: 'NavSim splits contain overlapping scenes'). Resampling overlapping units as if independent understates the variance — the same family as overlapping_holdout_se, which biases the POINT ESTIMATE bidirectionally up to a sign flip. Inventing a CI here would reproduce a retracted defect on a borrowed benchmark.",
+    "keys": [
+     "estimator.cluster_unit",
+     "estimator.interval"
+    ],
+    "admissible_until_settled": "UNAVAILABLE with a reason and n"
+   },
+   "GATE_ego_status_enforcement": {
+    "id": "navsim.ego_enforcement",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST carry `protocol.ego_status_enforcement` naming the MECHANISM by which the agent did not read ego status, and the evidence for it. ⛔ 'we did not use it' is an assertion, not enforcement, and FAILS.",
+    "why": "MEASURED from the devkit: there is NO switch that removes ego status. `EgoStatus` (ego_velocity, ego_acceleration, ego_pose) is ALWAYS populated on AgentInput and nothing in the framework verifies an agent declined to read it — `SensorConfig` gates cameras and LiDAR only. Our vision-only rule (PI, 2026-08-03, binding) is therefore ours alone to enforce and evidence. This is the leak-guard question in a borrowed harness: an input that is present at inference is consumed unless something PREVENTS it.",
+    "acceptable_mechanisms": [
+     "the agent never receives EgoStatus (zeroed/stripped at the adapter seam, asserted in a test)",
+     "an ablation showing the metric is unchanged when ego fields are randomised"
+    ],
+    "keys": [
+     "protocol.ego_status_enforcement"
+    ]
+   },
+   "GATE_modality_label": {
+    "id": "navsim.modality_label",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST declare `protocol.sensor_set` and `protocol.setting` (e.g. 'front-camera-only, perception-free'). ⛔ Comparing our row against a multi-camera or perception-based row without both fields present FAILS.",
+    "why": "The leaderboard server records NO modality — only TEAM_NAME, AUTHORS, EMAIL, INSTITUTION, COUNTRY — so every 'camera-only' claim in the field is the authors', not the server's. MEASURED 2026-08-27 from the banked primary: Drive-JEPA's 93.7 PDMS headline uses 1024x256 stacking FRONT+LEFT+RIGHT, while its perception-free row uses the front camera only at 512x256. Comparing our single 256x640 front-camera arm against the 93.7 row would be a category error in our own favour's opposite direction — and comparing it against the perception-free ladder is legitimate. The label is what makes the difference visible.",
+    "comparable_ladder_perception_free_front_only": {
+     "_source": "PUB-PAPER Drive-JEPA (arXiv 2601.22032) Table 1, read from the banked PDF",
+     "LAW": {
+      "encoder": "21M",
+      "data_h": 20,
+      "PDMS": 83.8
+     },
+     "World4Drive": {
+      "encoder": "21M",
+      "data_h": 20,
+      "PDMS": 85.1
+     },
+     "Epona": {
+      "encoder": "1.1B",
+      "data_h": 128,
+      "PDMS": 86.1
+     },
+     "Drive-JEPA": {
+      "encoder": "307M",
+      "data_h": 330,
+      "PDMS": 89.0
+     },
+     "_note": "This is TanitAD's comparable class: front-camera-only, perception-free (supervised solely by human trajectories, no perception annotations), entry rung 21M and top rung 307M — our scale band."
+    },
+    "keys": [
+     "protocol.sensor_set",
+     "protocol.setting"
+    ]
+   },
+   "published_reference_numbers": {
+    "_evidence": "PUB-PAPER, extracted by the EvalFlyWheel from the banked PDFs 2026-08-27",
+    "drive_jepa_v1_PDMS_full_framework": 93.7,
+    "drive_jepa_v1_PDMS_NOTE": "⛔ 93.7, NOT 93.3. The abstract and §1 both say 93.7; the 93.3 appears only in the paper's own NeurIPS checklist, where it misquotes its own abstract. Cite 93.7 and note the internal inconsistency if the figure is load-bearing.",
+    "drive_jepa_v2_EPDMS": 87.8,
+    "drive_jepa_perception_free_front_only_PDMS": 89.0,
+    "latent_wam_v2_EPDMS": 89.3,
+    "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number."
+   },
+   "OFFICIAL_COLUMN": {
+    "column": "navhard_two_stage EPDMS",
+    "harness": "autonomousvision/navsim @ <SHA> — the SHA is part of the column, not a footnote",
+    "devkit_pin_used_for_this_registry": "0a380a9 (2025-10-27)",
+    "why": "⛔ NavSim v2 carries TWO protocols both called 'EPDMS', roughly 30 POINTS APART: the method papers' single-stage navtest-EPDMS (~76-88) and the challenge's navhard-two-stage (~35-56). A single 'EPDMS' column lets them be read as one metric — precise about the wrong thing, which is the overlapping_holdout_se class exactly. The NavSim authors explicitly disown the navtest variant in print.",
+    "consequence_for_our_positioning": "⭐ MEASURED 2026-08-28 by the EvalFlyWheel from the banked PDF (arXiv 2601.22032), SEVEN probe terms all zero — 'navhard', 'nav hard', 'two_stage', 'two-stage', 'two stage', 'private_test', 'challenge': Drive-JEPA NEVER mentions navhard. Its 87.8 'EPDMS on v2' is therefore the navtest variant, NOT the challenge protocol. ⇒ a navhard number of ours is NOT comparable to Drive-JEPA's 87.8. The camera-only navhard bar to anchor against is DrivoR 56.3 EPDMS at ~40M params (privileged ceiling 56.6).",
+    "what_still_stands": "Drive-JEPA's PERCEPTION-FREE ladder is PDMS on NavSim v1 (their Table 2, 'the first block is the perception-free setting'): LAW 83.8 / World4Drive 85.1 / Epona 86.1 / Drive-JEPA 89.0. That is a v1 PDMS claim and remains valid AS A v1 CLAIM — it must never be printed in an EPDMS column."
+   },
+   "GATE_no_cross_protocol_comparison": {
+    "id": "navsim.cross_protocol",
+    "blocking": true,
+    "rule": "Every NavSim number MUST declare `protocol.navsim_protocol` from the closed set below AND the devkit SHA. ⛔ Placing two different protocols in one column, or comparing across them, FAILS — including implicitly, by omitting the tag.",
+    "closed_set": [
+     "PDMS_v1_navtest",
+     "EPDMS_v2_navhard_two_stage",
+     "EPDMS_v2_navtest_single_stage",
+     "EPDMS_v2_private_test_hard_two_stage",
+     "EPDMS_v2_warmup_two_stage"
+    ],
+    "official": "EPDMS_v2_navhard_two_stage",
+    "why": "~30 points separate two protocols wearing the same name. Untagged, our own leaderboard would merge them by accident — and a reader has no way to tell. Same family as navsim.modality_label: the number is only meaningful with the condition attached.",
+    "keys": [
+     "protocol.navsim_protocol",
+     "protocol.devkit_sha"
+    ]
+   },
+   "EPDMS_submetrics": {
+    "_formula": "EPDMS = prod(NC,DAC,DDC,TLC) * ( sum_w(TTC,EP,HC,LK,EC) / 16 ); filter_m = 1.0 if the human also violated m, else m(agent)",
+    "_weighted_denominator": 16,
+    "_source": "PUB-DEVKIT docs/metrics.md + pdm_scorer.yaml; [N2] Eq.(1) — triple-confirmed",
+    "multiplicative": {
+     "NC": {
+      "name": "no at-fault collisions",
+      "range": [
+       0,
+       0.5,
+       1
+      ],
+      "family": "TACTICAL",
+      "family_note": "a decision OUTCOME, not decision quality — see _family_caveat"
+     },
+     "DAC": {
+      "name": "drivable area compliance",
+      "range": [
+       0,
+       1
+      ],
+      "family": "STRATEGIC",
+      "family_note": "staying on the drivable topology is a route-level property"
+     },
+     "DDC": {
+      "name": "driving direction compliance",
+      "range": [
+       0,
+       0.5,
+       1
+      ],
+      "family": "STRATEGIC",
+      "new_in_v2": true,
+      "family_note": "direction-of-travel against the lane graph — route-level"
+     },
+     "TLC": {
+      "name": "traffic light compliance",
+      "range": [
+       0,
+       1
+      ],
+      "family": "TACTICAL",
+      "new_in_v2": true,
+      "family_note": "stop/go at a light is a tactical decision"
+     }
+    },
+    "weighted": {
+     "EP": {
+      "name": "ego progress",
+      "weight": 5,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LONGITUDINAL"
+     },
+     "TTC": {
+      "name": "time to collision within bound",
+      "weight": 5,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LONGITUDINAL",
+      "family_note": "maps onto our long.distance_keeping criterion directly"
+     },
+     "LK": {
+      "name": "lane keeping",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LATERAL",
+      "new_in_v2": true,
+      "family_note": "the cross-track analogue"
+     },
+     "HC": {
+      "name": "history comfort",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": null,
+      "new_in_v2": true,
+      "family_note": "⛔ UNMAPPED — comfort is a separate axis from our four families"
+     },
+     "EC": {
+      "name": "extended comfort",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": null,
+      "new_in_v2": true,
+      "family_note": "⛔ UNMAPPED — comfort; also never human-filtered (injected downstream of the filter)"
+     }
+    },
+    "_family_caveat": "⭐ THE HONEST READING, and it is a finding rather than a mapping problem: EPDMS measures COMPLIANCE AND OUTCOMES, not DECISION QUALITY. Nothing in it corresponds to our tac.manoeuvre_decision (selected vs executed manoeuvre), tac.confusion, or strat.route_goal (goal-setting quality). NC and TLC are mapped to TACTICAL as the closest honest home, but a collision-free run is not evidence that the manoeuvre DECISION was right. ⇒ An EPDMS number does NOT satisfy the four-families rule. A NavSim artifact must still emit our families, or refuse them with reason and n.",
+    "_unmapped": [
+     "HC",
+     "EC"
+    ],
+    "_families_epdms_cannot_supply": [
+     "tac.manoeuvre_decision",
+     "tac.confusion",
+     "tac.goal_selection",
+     "strat.route_goal"
+    ]
+   }
+  },
+  "nuscenes": {
+   "pending": false,
+   "protocol_doc": "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md",
+   "primary": [
+    "arXiv:1903.11027"
+   ],
+   "licence_status": "CONFLICT, UNRESOLVED: the paper states CC BY-NC-SA 4.0 (non-commercial); the AWS Open Data registry lists 'Commercial'. Treat as RESEARCH-ONLY until written terms are obtained.",
+   "tasks": {
+    "detection": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.det.nds",
+       "required": true,
+       "label": "NDS",
+       "keys": [
+        "benchmark.nuscenes.detection.nds"
+       ]
+      },
+      {
+       "id": "nusc.det.map",
+       "required": true,
+       "label": "mAP (center-distance matching)",
+       "keys": [
+        "benchmark.nuscenes.detection.map"
+       ]
+      },
+      {
+       "id": "nusc.det.tp",
+       "required": true,
+       "label": "the five TP metrics (ATE/ASE/AOE/AVE/AAE)",
+       "keys": [
+        "benchmark.nuscenes.detection.tp_metrics"
+       ]
+      }
+     ]
+    },
+    "tracking": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.trk.amota",
+       "required": true,
+       "label": "AMOTA",
+       "keys": [
+        "benchmark.nuscenes.tracking.amota"
+       ]
+      },
+      {
+       "id": "nusc.trk.amotp",
+       "required": true,
+       "label": "AMOTP",
+       "keys": [
+        "benchmark.nuscenes.tracking.amotp"
+       ]
+      }
+     ]
+    },
+    "prediction": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.pred.minade",
+       "required": true,
+       "label": "minADE_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.min_ade"
+       ]
+      },
+      {
+       "id": "nusc.pred.minfde",
+       "required": true,
+       "label": "minFDE_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.min_fde"
+       ]
+      },
+      {
+       "id": "nusc.pred.missrate",
+       "required": true,
+       "label": "MissRate_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.miss_rate"
+       ]
+      }
+     ]
+    },
+    "planning_openloop": {
+     "adoptable": false,
+     "THE_VERDICT": "INADMISSIBLE as a TanitAD criterion or gate. Usable ONLY as a cited external-comparability row. Three measurements: (1) the averaging convention alone moves one VAD checkpoint 0.72 -> 1.22 m (+70 %) and FLIPS the UniAD/VAD ranking; (2) the ground-truth HUMAN trajectory scores 0.36-0.96 % collision - the metric's false-positive floor exceeds the published spread; (3) AD-MLP with no camera and no LiDAR ties a full perception stack. And VAD's 'high-level command' is computed from the GT future trajectory thresholded at +/-2 m and handed back as an input - OUR route-head echo defect, published as state of the art.",
+     "criteria": [
+      {
+       "id": "nusc.plan.protocol_tag",
+       "required": true,
+       "label": "which evaluation implementation produced the number",
+       "keys": [
+        "benchmark.nuscenes.planning.protocol_tag"
+       ],
+       "note": "uniad (L2 AT the timestep) vs stp3 (L2 averaged UP TO it). Five axes of divergence, not one. An untagged L2 is not comparable to anything."
+      },
+      {
+       "id": "nusc.plan.gt_control",
+       "required": true,
+       "label": "the GT-trajectory control published alongside",
+       "keys": [
+        "benchmark.nuscenes.planning.gt_control"
+       ],
+       "note": "The echo test applied to a borrowed instrument: report what the ground-truth human trajectory scores under the same protocol. Without it the number cannot be read."
+      },
+      {
+       "id": "nusc.plan.command_source",
+       "required": true,
+       "label": "high-level command refused, or replaced by a predicted goal",
+       "keys": [
+        "benchmark.nuscenes.planning.command_source"
+       ],
+       "note": "The GT-derived command is inadmissible under our vision-only rule."
+      },
+      {
+       "id": "nusc.plan.nonstraight_subset",
+       "required": true,
+       "label": "the non-straight subset reported alongside full val",
+       "keys": [
+        "benchmark.nuscenes.planning.nonstraight"
+       ],
+       "note": "Most of nuScenes val is straight-line constant-velocity driving."
+      }
+     ]
+    }
+   }
+  }
+ },
+ "schema_note": "Three artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block); `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}); and `refav1` (rec_*.json from taniteval/tools/refav1_arm.py, which nests a full four_families block PER ARM at arms.<arm>.four_families.* and adds a record-level `refav1` block for the protocol, the strategic/tactical declared heads and the trivial profile). All three refusal idioms are honest and all three are read. The refav1 records are the programme's only T1 driving artifacts; see `arm_scoring` for which arm is scored and why the other four are not.",
+ "registry_hygiene": {
+  "why": "A criterion whose keys resolve in NO artifact anywhere is far more likely a REGISTRY TYPO than a universal absence. This happened twice on 2026-08-23 (tac.confusion), and the second time it was published to the PI as 'the surviving universal gap'. The checker therefore reports UNRESOLVABLE separately from ABSENT, and a test pins that every criterion resolves in at least one real artifact.",
+  "rule": "Adding a criterion means naming the key the EMITTER actually writes. Read the producing code, do not guess the name. If a metric is genuinely not emitted anywhere yet, set `not_yet_emitted: true` so the intent is explicit and the audit stays green."
+ },
+ "release_gate": {
+  "why": "The PI asked (2026-08-23) to finalize the tests and criteria that must run at EVERY model release. This block names which registry criteria are release-blocking, so the gate and the census read one source.",
+  "advisory": [
+   "regression vs the previous release (per family)",
+   "(all criteria are advisory per the PI ruling above)"
+  ],
+  "advisory_note": "Advisory until two clean releases exist to compare — a regression gate with no trustworthy baseline manufactures false failures.",
+  "cannot_rule_is_a_verdict": "⭐ A criterion that cannot decide at the configured settings must return CANNOT-RULE, loudly — never a silent PASS and never a perpetual INCONCLUSIVE. MEASURED precedent: the O6 rank gate could never rule (spectrum n=24 against a ceiling of 1024) and its silence was read as a pass for weeks.",
+  "pi_decision_open": null,
+  "PI_RULING_2026-08-28": {
+   "ruling": "THE RELEASE GATE DOES NOT BLOCK A RELEASE.",
+   "by": "Sayed (PI), 2026-08-28",
+   "effect": "Every criterion below is ADVISORY. The gate REPORTS; it never stops a release. It still returns PASS / FAIL / CANNOT-RULE per criterion and still exits non-zero on a FAIL so CI can surface it — but no human or process is required to stop on that signal.",
+   "what_does_NOT_change": "⛔ Advisory is about AUTHORITY, not about honesty. The gate must keep reporting a FAIL as a FAIL, at full strength and in the same words. Softening a verdict because it no longer blocks would destroy the only thing the instrument is for. In particular the floor comparison stays loud: a release whose trivial control beats it 22x is still reported as beaten, and CANNOT-RULE is still a verdict, never a silent pass.",
+   "rationale_recorded": "The programme has research character and moves faster than a blocking gate would allow; the PI keeps the stop/go authority rather than delegating it to the instrument. The gate's value is that nothing ships UNMEASURED - not that it can veto."
+  },
+  "advisory_all": [
+   "all four families PRESENT or REFUSED-with-reason-and-n",
+   "hyg.tier_stamp",
+   "hyg.estimator_named",
+   "hyg.n_reported",
+   "hyg.no_forbidden_estimator",
+   "hyg.parity",
+   "ctrl.floor_comparison",
+   "leak_guards.vision_only_inference",
+   "leak_guards.goal_situation_disjoint"
+  ],
+  "advisory_note_previous": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
+  "exit_code_contract": "non-zero exit on any FAIL is RETAINED so automation can surface it; the exit code is information, not an authority to stop."
+ },
+ "arm_scoring": {
+  "why": "A refav1 record holds FIVE arms on the same 40 windows. Scoring all five would multiply every criterion count by five and would present three trivial CONTROLS and one T0 diagnostic as if each were a driving eval. The record is therefore scored ONCE, on the arm a capability claim may rest on.",
+  "scored_arm": "cl",
+  "scored_arm_is": "the planner arm — plan() at t0 with the TRUE nav token; the predictor consumes the planner's OWN actions; trajectory = unicycle(controls, measured v0). This is the only arm whose number is a claim about the model.",
+  "not_scored": {
+   "ha": "CONTROL — hold the last OBSERVED (a, kappa) for K steps. A baseline, not a result.",
+   "ha0": "CONTROL — constant velocity (a=0, kappa=0) at the measured v0. The strongest trivial baseline.",
+   "ha0_ext": "CONTROL — the echo control (constant (a0, kappa0) from the measured t0 state).",
+   "ol": "⛔ T0. The RECORDED future integrated from v0 — the kinematic-contract control. NEVER driving performance (EVAL_DOCTRINE.md 2026-08-09), and reading it as such is the misread the tier stamp exists to prevent."
+  },
+  "consequence": "The controls are not invisible: ctrl.floor_comparison is answered by the arm's own anti-echo/holdv0 block, which IS the comparison against those baselines. They are simply not scored as separate driving artifacts.",
+  "if_the_scored_arm_changes": "Changing `scored_arm` means re-prefixing every `arms.cl.` key below. The prefix is duplicated deliberately rather than templated, because the checker resolves literal dotted paths and a template would be a second thing to keep in sync.",
+  "strategic_mapping": "⭐ The one non-obvious mapping, recorded so it is not re-derived: refav1's `refav1.strategic` block IS a strategic DECISION/ROUTE readout (route classification with confusion, per-class, kappa, CI, and nav_true / nav_shuffled / nav_zero interventions), so strat.decision and strat.route_goal read PRESENT from it. It is NOT nav-COMPLIANCE: that criterion scores emitted BEHAVIOUR against the command, and refav1 emits no such readout. Mapping route accuracy onto strat.nav_compliance would commit exactly the error that criterion was created to prevent — the route label is a bijection of the fed token (141/141) and cannot fail. The three nav_compliance criteria therefore resolve to the record's own strategic declination at `arms.cl.four_families.strategic` ({status: UNAVAILABLE, reason, n}) and read REFUSED — visible WORK ITEMS, not silent omissions and not false passes.",
+  "schemas": {
+   "_why": "Two per-arm schemas exist and their PLANNER ARM IS NAMED DIFFERENTLY. The scored arm is resolved per schema; scoring the controls would multiply every criterion count by the arm count and present trivial baselines as driving evals.",
+   "refav1_arm.py": {
+    "scored_arm": "cl",
+    "scored_arm_is": "plan() at t0 with the TRUE nav token"
+   },
+   "refcv3_arm.py": {
+    "scored_arm": "os",
+    "scored_arm_is": "the deployed ONE-SHOT planner -- out['traj'], the model's own sel_score_v3 pick. NEVER a_star.",
+    "not_scored": {
+     "ha": "CONTROL -- hold the last OBSERVED (a, kappa).",
+     "ha0": "CONTROL -- constant velocity at the measured v0.",
+     "ha0_ext": "CONTROL -- the echo control, constant (a0, kappa0) at t0.",
+     "os_navshuf": "CONTROL -- nav PAIRING broken, marginal preserved.",
+     "os_navzero": "CONTROL -- nav SIGNAL removed; the deployment-relevant arm.",
+     "oracle_sel": "T0 -- oracle anchor selection. NEVER driving performance.",
+     "ol": "ABSENT BY CONSTRUCTION -- refcv3/v4 consume no recorded actions, so integrating them is a corpus property, not a rollout of this model. Declared with its reason, never silently dropped."
+    }
+   }
+  }
+ },
+ "changelog": [
+  {
+   "version": "2.7.0",
+   "date": "2026-09-05",
+   "change": "Recognise the refav1 per-arm schema. Adds the `arms.cl.four_families` in-scope marker, the `arms.cl.` key alternative for every criterion in all four families plus hygiene and the leak guards, the two refav1 tier paths, and the `arm_scoring` block recording that only the `cl` planner arm is scored.",
+   "why": "MEASURED: every refav1 record read UNKNOWN_SCOPE — 'matches no in-scope or out-of-scope marker'. They are the programme's only T1 driving artifacts and they carry all four binding families, so the completeness machinery was blind to exactly the artifacts it exists for. Root cause: the marker and the criteria both named top-level `four_families`, while refav1 nests it per arm.",
+   "ships_with": "tools/tests/test_criteria_check.py — refav1-shaped fixture with a deliberate-regression arm per family, plus the arm-scoping arm (deleting a family from a NON-scored arm must change nothing) and two-sided emitter pins. A guard that has never been shown to fail proves nothing.",
+   "also": "tools/criteria_check.py: the forbidden-estimator exoneration list missed the wording '⛔ NOT overlapping_holdout_se' (it carried 'not used' and 'is not' but no bare 'not <token>'), so a disavowal in anti_echo.holdv0_baseline.estimator read as a live use — a false violation on all 13 records. Same class as the earlier 'NOT used' miss recorded in that function."
+  },
+  {
+   "version": "2.8.0",
+   "date": "2026-09-06",
+   "change": "ADD hyg.inference_seed — a stochastic planner must report its inference-seed replicate and seed floor. Prompted by refcv5 WP-4 landing (the control-space DDIM sampler draws fresh noise at eval by design). Ships with its deliberate-regression arm in tools/tests/test_criteria_check.py."
+  },
+  {
+   "version": "2.9.0",
+   "date": "2026-09-06",
+   "by": "refcv4b landing agent",
+   "change": "in-scope marker `arms.os.four_families` + arms.os.* key alternatives mirrored from arms.cl.*, and refcv3.strategic.conditionings.* for strat.decision / strat.route_goal. Adds `arm_scoring.schemas` naming the planner arm PER SCHEMA. ALSO mirrors arms.cl.*->arms.os.* and refav1.*->refcv3.* across tiers.key_paths, artifact_hygiene and leak_guards -- the first pass walked only `families`, which left the refcv4b artifact reading tier UNSTAMPED and 5 hygiene/leak criteria MISSING while the artifact declared every one of them.",
+   "why": "refcv3/refcv4 per-arm schema (taniteval/tools/refcv3_arm.py): the four families are nested PER ARM at arms.<arm>.four_families.*, exactly like refav1, but the planner arm is `os` (the one-shot planner), not `cl`. The v2.7.0 fix added only the `arms.cl` marker, so EVERY refcv3 and refcv4b landing artifact still read UNKNOWN_SCOPE -- invisible to the census while carrying all four binding families. MEASURED 2026-09-06 on the refcv4b @40284 landing eval (4,823 windows / 141 episodes). Same root-cause class as the v2.7.0 refav1 miss, repeated for a second model family: a scope marker enumerated per-schema rather than derived.",
+   "measured": "BEFORE: refcv4b_t1.json (4,823 windows / 141 episodes, all four families emitted) read UNKNOWN_SCOPE and was not scored at all. AFTER the families-only pass: scored, but tier UNSTAMPED + 5 violations, all of them marker misses rather than real gaps (the artifact carries arms.os.tier='T1', arms.os.four_families._protocol.{inference_inputs,vision_only,goal_source,goal_situation_disjoint,corpus,parity_key} and refcv3.trivial_profile)."
+  }
+ ]
 }
