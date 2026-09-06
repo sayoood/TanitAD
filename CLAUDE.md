@@ -284,6 +284,29 @@ Every subagent brief MUST carry the preamble in
   detect that HEAD moved. *(`stack/scripts/scoped_commit.py` reads HEAD **after** `write-tree`,
   so its window is the entire tree build; its stray-path guard then refuses forever under
   contention. Correct, but livelocked — it needs the CAS and the local-disk index.)*
+  ⛔⛔ **AND THE CAS GUARDS THE REF, NOT THE TREE — BOTH RULES ABOVE PASS WHILE YOU REVERT A
+  SIBLING.** MEASURED 2026-09-06, caught **before** landing. `read-tree` into a local-disk scratch
+  index took **65 s**; inside that window a sibling landed `4be8bef`, rewriting the exact path I was
+  about to write. Re-reading `HEAD` immediately before `commit-tree` then does the *opposite* of
+  what it looks like: it staples a **current parent pointer** onto a **stale tree**, and the
+  compare-and-swap **SUCCEEDS** — because HEAD is precisely what you just read. The commit lands,
+  `git log` looks clean, and the sibling's content is gone. This is the 2026-09-03 vanishing-commit
+  mechanism *from the other side*: those three losses were not caused by a missing CAS, so adding
+  one does not prevent them.
+  ⇒ **After `write-tree`, diff YOUR TREE against CURRENT HEAD by positive per-path blob assertion,
+  and re-seed if anything moved:**
+  * for every path you did **not** name: `git rev-parse <tree>:<p>` **must equal** `HEAD:<p>`;
+  * for every path you **did** name: your blob must be a **descendant** of what HEAD holds — it
+    contains HEAD's content **plus** your change. ⛔ "differs from HEAD" is not the test; a revert
+    also differs. The cheap descendant check is a line count plus a content marker from the version
+    already in HEAD, both of which must survive in yours.
+
+  ⭐ **The discriminating control is what caught it, and it is the cheap half.** I asserted my new
+  blob ≠ `HEAD:<path>` and read back the blob I had recorded as the **worktree** version minutes
+  earlier — i.e. HEAD already held the newer content and my "improvement" was a revert of 54 lines.
+  A positive assertion alone (*"my marker is present in my tree"*) passes happily on a revert,
+  because the marker was in **both** versions. ⚠️ Same family as the empty-string blob-comparison
+  hole above: an assertion that is positive in FORM can still be blind to the failure that matters.
 - ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
   HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
   tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
@@ -370,7 +393,8 @@ Every subagent brief MUST carry the preamble in
   spawns. ⚠️ And when you patch them with `sed`, an anchored `^    sleep 120$` will MISS a
   `sleep` that sits inline after a `;` — I left exactly that one unfixed on the first pass.
   ⭐ The diagnostic that settles it in one line is `/proc/*/fd` with the holder's cmdline:
-  `for p in /proc/[0-9]*/fd/*; do [ "$(readlink $p)" = "<lock>" ] && tr ' ' ' ' < /proc/$(echo $p|cut -d/ -f3)/cmdline; done`
+  `for p in /proc/[0-9]*/fd/*; do [ "$(readlink $p)" = "<lock>" ] && tr '
+' ' ' < /proc/$(echo $p|cut -d/ -f3)/cmdline; done`
   — it names the holder, and the answer has twice been a process nobody suspected.
   ⚠️ **And never `sed -i` a supervisor script while it is running** — bash reads a script lazily by
   byte offset, so an in-place edit can make a live shell execute garbage from the middle of a line.
