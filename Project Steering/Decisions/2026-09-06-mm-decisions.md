@@ -1332,3 +1332,84 @@ does not gate v7f; it gates any claim made FROM v7-tiny.**
 
 ⇒ ⭐ **The cheapest remaining v7f question is therefore not Row 3 at all** — it is whether the
 param-group split is deliberate, which is a source read, not an experiment.
+
+## M72. ⭐⭐ refcv4b BEATS refcv3 BY 35 % SEPARATED — and its entire win lives in the ego pathway, which is a PI ruling
+
+### 1. The preliminary result (CPU, 171 windows / 20 episodes, `ckpt_30000` vs refcv3's final 40,284)
+
+⭐ **Both models are on ONE surface, proven before the comparison:** the model-free arms read
+**bit-identically** across both runs (`ha` 0.2860, `ha0` 0.6542, `ha0_ext` 0.2769), and refcv3's
+checkpoint md5 matches the registry.
+
+| | refcv3 @40,284 | **refcv4b @30,000** |
+|---|---|---|
+| `os` ADE | 0.4707 m | **0.3055 m** |
+| **paired** | **−0.1652 [−0.2318, −0.1090] SEPARATED, −35.1 %** | |
+| LONGITUDINAL kappa | 0.2037 | **0.5782** (brake recall 0.3571→0.6429, accel 0.3704→0.6667) |
+| LATERAL kappa | 0.7554 | 0.7039 |
+
+⭐ **And it is 10,284 steps LESS trained.** **Void gate passes:** `frames_blind` → 1.2198 m separated,
+both kappas collapse, and `ha`/`ha0`/`ha0_ext`/GT return bit-identical ⇒ **the panel is admissible.**
+
+⛔ **But it still LOSES to a trivial hold-action control: 0.3055 against `ha`'s 0.2860.** Reported as
+written. *(Same shape as refav1: better than its predecessor, not yet better than doing nothing
+clever.)*
+
+### 2. ⛔⛔ THE ENTIRE ADVANTAGE IS EGO-MEDIATED — and that is a PI ruling, not a design choice
+
+**Axis attribution, two ablations on the same checkpoint and windows:**
+* **vision-only** keeps lateral kappa **0.6738 (96 % of full)** and longitudinal **0.0653 (11 %)**;
+* **ego-only** keeps **neither**.
+
+⇒ ⛔ **refcv4b's LATERAL competence is vision-derived; its LONGITUDINAL competence — which is the whole
+of its advantage over refcv3 — DOES NOT EXIST without the measured ego block.**
+
+⭐ **Ranked by measured effect, the ego pathway is 0.8082 m separated — the LARGEST lever in the panel**,
+**3–240x every other lever measured**, and it is precisely the one the vision-only rule constrains.
+⚠️ The PI has already ruled that **measured `v0` at t0 is admissible** (velocity at cycle time,
+2026-09-02). ⛔ **What is NOT ruled is WHICH ego channels beyond that are admissible at inference — and
+that ruling selects between 0.3055 m and 1.1137 m**, a **3.6x** swing in the headline number.
+⇒ **Escalated as a PI decision. It is not mine to take, and no refcv4b headline should be quoted
+without stating which ego channels it assumes.**
+
+⇒ ⭐ **The highest-value change this proves for refcv5** (goal 2): make the **longitudinal** competence
+**vision-derived or PREDICTED rather than ego-mediated.** That is where the entire win lives, where the
+entire deployment exposure lives, and it dominates every other lever by 3–240x.
+
+### 3. ⛔⛔ `sel_refined` SEPARATES THE WRONG WAY — correcting a note I relayed hours ago
+
+`M68` §4 relayed the wiring stream's config note: *"an arm wanting the sampler to reach selection must
+pass `--sel-refined`."* **MEASURED: turning it on is 0.0259 m SEPARATED WORSE.**
+
+**Mechanism, and it is diagnostic:** 30 % of picks flip; the **lateral decision is byte-identical**;
+longitudinal *accuracy* rises while **both minority recalls fall** ⇒ ⛔ **a MAJORITY-CLASS TRAP.**
+**The head was never trained to rank.**
+
+⇒ ⭐⭐ **WP-7 SELECTOR TRAINING IS THE LOAD-BEARING PART, NOT THE WIRING.** Wiring the sampler into
+selection without training the ranker makes the model *worse* — ⛔ **so `--sel-refined` must NOT be set
+on refcv5's first arm on the strength of `M68` §4 alone.** *(Same family as `M48`: giving a search a
+new option is not the same as giving it a reason to prefer the right one.)*
+
+⚠️ `h19_off` reads 0.0034 m, **not separated** — sub-1 % of ADE, low value either way. ⭐ Its
+zero-coefficient check was run **first**: the weights are live, so this is a real null and not an inert
+arm (`M65`'s lesson applied prospectively).
+
+### 4. Three instrument facts worth carrying
+
+* ⛔ **The pod was missing 137 of 224 `taniteval` files, including `nav_compliance.py`** — the module
+  whose absence hid the STRATEGIC family for its entire life (`M55`). Synced, 210/210 md5-identical.
+  ⭐ Model code deliberately **not** synced: the repo's `refc.py` carries a sibling's refcv5 wiring.
+* ⛔ **A `refcv3_arm` record is `UNKNOWN_SCOPE` to the criteria checker** — the eval would have
+  **escaped its own completeness check.** Chaining `openloop_suite` gives **0 violations** against the
+  incumbent record's **3**.
+* ⛔ **`GOALS_AND_CLAIMS.md` is BLANK-LINE DOUBLED in its committed bulk (4,438 of 7,806 lines),
+  breaking its tables.** Not repaired — not safe to reflow a file a sibling is appending to. **Queued
+  for a quiet window**, same ruling as `M70`'s committer repair.
+
+### 5. State
+
+The run is at **step 33,350 / 40,284**, pace 3.98 s/step ⇒ **ETA ~08:20 UTC**. Goal 1's headline
+artifacts — the **4,823-window** four-family read and the reel (**15 clips / 2,571 frames / 257.1 s =
+4.95x the refcv3 reel**) — are gated on wall-clock and nothing else; the landing sequence is
+preflighted to a single changed argument. ⭐ The watcher exits on **completion, failure AND channel
+death**, and its failure detector was **proved to read non-zero** rather than assumed.
