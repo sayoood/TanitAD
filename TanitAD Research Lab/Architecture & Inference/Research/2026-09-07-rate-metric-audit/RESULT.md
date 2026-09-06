@@ -422,3 +422,39 @@ terms*. It establishes only that the number claiming they are not is invalid, an
 floor it was compared to, on a masked metric, the model is better. A real smoothness verdict needs
 a floor that is not structurally immune to the estimator's singularity — that is a new question,
 not a resolved one.
+
+
+---
+
+## 11. ⭐ ADDENDUM — the P1 gate arm's own panel CONFIRMS §3, and the register mis-describes it
+
+⚠️ §6.2 hedged that the P1 gate arm's curvature "sits in the masked regime". ⭐ **It is now
+MEASURED, from the arm's own banked panel** — `…/2026-09-07-p1-agent-gate/raw/panel_s0.json`:
+
+| key | value |
+|---|---|
+| `horizons` | ⭐ **`[5, 10, 15, 20, 30, 40, 50, 60]`** — the FULL v3 NON-UNIFORM set |
+| `dt_s` | `0.5` |
+| `lateral.curvature_mae_1pm` | `0.009842` |
+| `lateral.min_ds_m` / `min_ds_mps` | ⭐ **`0.25` / `0.5` — THE MASK IS APPLIED** |
+| `lateral.n_steps_curvature` | `9174` |
+| `lateral.excluded_below_min_ds` | ⭐ **`1345` (14.7 % of steps gated out)** |
+| `lateral.dt_invariant` | ⭐ **`['heading_mae_deg', 'curvature_*', 'cross_*']`** |
+
+⇒ ⛔ **TWO CORRECTIONS TO THE REGISTER'S OWN ACCOUNT.**
+
+1. ⭐ **The gate arm did NOT restrict curvature to the uniform 2 s prefix.** The ADDENDUM in
+   `PI_VIDEO_REVIEW_2026-09-06.md` states *"the gate agent reported every rate metric on the
+   uniform 2 s prefix only, deliberately"*. Its panel reports curvature on the **full 8-slot
+   non-uniform horizon** at `dt_s = 0.5`. The conservative move described was not the move made —
+   and it did not need to be, because
+2. ⭐ **the arm's own panel already stamps `curvature_*` as `dt_invariant`** — the same fact §3
+   proves against the analytic circle. The instrument knew; the prose did not.
+
+⇒ ⭐ **Independent confirmation of §3 from a second, pre-existing surface:** a curvature computed
+on the FULL non-uniform v3 horizon, masked, lands at `0.0098` — the same `~0.01` band as this
+audit's masked re-derivation (shipped `0.0077`, floor `0.0121`) and three orders of magnitude
+below the unmasked `2.30973`. ⛔ **The non-uniform horizon was never the problem; the mask always
+was.** `D-CURV-84X-UNREPRODUCED` can be closed on this basis without any further measurement.
+
+**Evidence class:** MEASURED (read from the arm's banked `panel_s0.json`; not re-run).
