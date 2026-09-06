@@ -166,7 +166,16 @@
       "eval_join_byte_identity": "MEASURED. The same builder on the 141-clip EVAL set with ONLY --pose-source changed (v2ep -> reconstruct) produced md5 3ddb42ecbd3926066795a94587af2aed / 10,012,564 bytes from BOTH pose sources: identical_md5 true, identical_bytes true (reconstruct_byte_identity.json).",
       "train_join_byte_identity": "INFERRED, NOT MEASURED. The TRAIN join was only ever built with --pose-source reconstruct; no v2ep-built TRAIN counterpart exists (that was the point -- the ~161 GB TRAIN epcache lives on Thor). Byte-for-byte reproduction of THIS file from the recorded argv is expected but has not been demonstrated.",
       "what_would_settle_it": "re-run the recorded argv on the dev box (~30 min wall, zero GPU) and compare md5 against 1c985e6d6ad34e605c4ebd30cb353558",
-      "upstream_pose_proof": "grid_crosscheck.json: reconstructed vs banked v2ep poses are float32-identical on 20/20 clips (max_dxy_m 0.0, max_dyaw_deg 0.0, max_dv_mps 0.0)"
+      "upstream_pose_proof": "grid_crosscheck.json: reconstructed vs banked v2ep poses are float32-identical on 20/20 clips (max_dxy_m 0.0, max_dyaw_deg 0.0, max_dv_mps 0.0)",
+      "train_join_byte_identity_SETTLED_2026_09_07": "MEASURED, BYTE-IDENTICAL. The recorded argv was re-executed on the dev box (31 min, zero GPU, --out redirected so the live artifact was never written). Decompressed stream sha256 0283df30bcc9618723d4ae6e96076a80c388535bdd0abc9f205dc66ed55737fc and md5 8a9277a77b132e2631b133f9bea0758e are identical on both sides, AND the .xz container md5 1c985e6d6ad34e605c4ebd30cb353558 at 317,028,572 B is identical, as are rows 849,263 / clips 4,427 / boxes 28,053,187 and the clip-set, file-order and sorted-record digests. The 'what_would_settle_it' above is DISCHARGED; 'train_join_byte_identity' records what was true on 2026-09-06 and is superseded by this key. Full record: TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-join-repro/ (README.md + raw/repro_result_20260907.json)."
+    },
+    "combined_launch_file_digest_RECORDED_2026-09-07": {
+      "_why": "b1_train_plus_eval_agents.jsonl.xz is the file --agents head actually reads (LAUNCH_refcv5_v2.sh:64) and it had NO sidecar and no recorded digest anywhere",
+      "path": "tanitad-a40:/workspace/TanitAD/data/joins/b1_train_plus_eval_agents.jsonl.xz",
+      "md5": "0c31a3a63d7205e9fa50e8ac4204ef46",
+      "bytes": 327041136,
+      "proof_it_is_exactly_cat_train_eval": "streaming b1train_agents.jsonl.xz then CONTROL_b1eval_recon.jsonl.xz through one md5 gives 0c31a3a63d7205e9fa50e8ac4204ef46 at 327,041,136 B == 317,028,572 + 10,012,564, equal to the pod's file digit for digit",
+      "consequence": "the TRAIN join's exact bytes are therefore ALSO embedded at offset 0 of this file on both hosts, so the artifact is in FOUR places, not the two this receipt's section 6 states"
     }
   },
   "surface_moved_mid_session": {

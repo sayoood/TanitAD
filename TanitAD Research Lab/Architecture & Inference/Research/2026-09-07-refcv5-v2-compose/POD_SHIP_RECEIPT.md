@@ -186,6 +186,46 @@ re-run the recorded argv on the dev box (~30 min wall, zero GPU) and compare aga
 `1c985e6d6ad34e605c4ebd30cb353558`. Until then the honest statement is: **reproducible by
 construction, unverified by re-execution.**
 
+### ⭐ SETTLED 2026-09-07: BYTE-IDENTICAL, MEASURED
+
+The re-execution named above was done. Full record:
+[`../2026-09-07-join-repro/`](../2026-09-07-join-repro/README.md) ·
+machine-readable [`raw/repro_result_20260907.json`](../2026-09-07-join-repro/raw/repro_result_20260907.json).
+
+The recorded argv was replayed verbatim (only `--out` redirected to a new path; the live artifact
+was never opened for writing), from a private `git archive HEAD` tree, 31 min, zero GPU.
+**Ten axes, ten matches:**
+
+| | original | re-build |
+|---|---|---|
+| ⭐ decompressed sha256 | `0283df30…37fc` | `0283df30…37fc` |
+| ⭐ decompressed md5 | `8a9277a77b132e2631b133f9bea0758e` | same |
+| `.xz` md5 | `1c985e6d6ad34e605c4ebd30cb353558` | same |
+| bytes | 317,028,572 | 317,028,572 |
+| rows / clips / boxes | 849,263 / 4,427 / 28,053,187 | identical |
+
+⭐ **The decompressed digest ties to git**: this receipt's own committed sidecar records
+`8a9277a77b132e2631b133f9bea0758e` as "the other candidate" it hashed when choosing digest scope —
+and that is exactly what both sides hash to.
+
+⇒ **§6's "must NOT be committed" now rests on a MEASURED recipe, not an inference.** Unversioned is
+an acceptable risk for this artifact: the argv, the builder + 4 modules, `b1_train_clips.json` and
+the obstacle re-pull script are all in git, and the only unversioned inputs are ~4.1 GB of upstream
+PhysicalAI parquets. (The camera directory's 58.8 GB is mp4 the builder never opens — the real
+timestamp input is **56 MB**.)
+
+⚠️ **Three corrections to §6 and §7, measured:**
+1. The artifact is in **four** places, not two — its exact bytes are also embedded at offset 0 of
+   `b1_train_plus_eval_agents.jsonl.xz` on both the pod and the dev box. One of the four is a temp
+   scratchpad and must not be counted as durable.
+2. ⛔ **`b1_train_plus_eval_agents.jsonl.xz` — the file `--agents head` actually reads — has no
+   sidecar and its digest was recorded nowhere.** It is
+   **`0c31a3a63d7205e9fa50e8ac4204ef46`, 327,041,136 B**, and it is exactly `cat train eval`
+   (proven by streaming the two parts through one md5).
+3. ⚠️ **Nothing in `.gitignore` guards the 317 MB artifact** (`git check-ignore` matches no rule;
+   control: `__pycache__/` matches correctly). One `cp` into a `raw/` dir plus a routine `git add`
+   would put it in history irreversibly.
+
 ## 7. Is the pod ready to launch refcv5-v2?
 
 ⭐ **The DEPLOYMENT blocker is gone.** The trainer on the box is HEAD, byte for byte; it parses;
