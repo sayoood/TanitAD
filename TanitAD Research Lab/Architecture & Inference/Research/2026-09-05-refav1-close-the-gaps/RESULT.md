@@ -287,3 +287,75 @@ cannot supply — that route is an **ORACLE bound (T0)** and is deliberately **n
 half is **not**: A4a's configuration has no replicate, so its ADE bar is the **unconstrained**
 neighbour's **0.06070**, and a smaller margin is reported as NOT SEPARATED FROM SEED NOISE with the
 replicate named as the required next arm.
+
+---
+
+## §F — ⛔⛔ THE GROUND TRUTH FAILS ITS OWN TURN GATE ON 6 OF 9 WINDOWS (0 GPU, 03:05)
+
+`raw/turngate.txt`. **This is a measurement about the METRIC, and it changes how every turn-recall
+number in this package — and in the sibling turn-asymmetry stream — must be read.**
+
+The eval's lateral labeller runs the **v1** gate, `|dyaw| > YAW_TURN_RAD = 0.15` rad
+(`refc_tactical.py:148`, `kappa=None` branch). Over the 2.0 s plan window
+`dyaw = integral(kappa * v) dt`, so the gate demands `kappa >= 0.15 / (v0 * T)`.
+
+| arm (TURN_L-goal windows, n=9) | med \|dyaw\| | **passes v1 gate** | med \|kappa\| | passes v2 gate |
+|---|---|---|---|---|
+| `ccos_argmax` | 0.2241 | **6/9** | 0.08000 | 9/9 |
+| `kamm07` | 0.1700 | 5/9 | 0.08000 | 9/9 |
+| `wk15` | 0.0028 | 0/9 | 0.00876 | 0/9 |
+| `wk151` | 0.0015 | 0/9 | 0.00383 | 0/9 |
+| ⛔ **`g` — THE GROUND TRUTH (the control that MUST pass)** | **0.0431** | ⛔ **3/9** | — | — |
+
+### F1 ⛔ THE CONTROL FAILS, AND THAT IS THE FINDING
+
+**The human's own recorded driving registers as a turn on only 3 of 9 windows the eval calls
+TURN_L-goal, with median `dyaw` 0.0431 rad against a 0.15 gate.** `ccos_argmax` passes on **6/9 —
+twice as often as the human.**
+⇒ ⛔⛔ **On this panel, `turn_left` recall measures "did the planner OUT-TURN the human", not "did
+the planner turn correctly".** An arm earns recall by producing more heading change than the person
+actually produced.
+
+### F2 — WHY: THE PANEL IS NEARLY STATIONARY
+
+`v0` on these windows is **p25 0.71 / median 1.40 / p75 4.82 m/s**. At 2.0 s the gate therefore
+demands `kappa_min` = **0.0156 / 0.0536 / 0.1053 1/m** — radii of **64 / 19 / 9 m**.
+* **3 of 9 windows demand MORE curvature than the shipped 0.08 command.**
+* **6 of 9 demand more than the corrected 0.02.**
+A yaw-based gate calibrated for junction turns is **unreachable at walking pace**, whatever the
+planner does. ⇒ The v1 gate and this panel are **mis-matched by construction**.
+
+### F3 ⛔ WHAT THIS RETRACTS, AND WHAT SURVIVES — stated per claim
+
+| claim | verdict |
+|---|---|
+| **`D-REFAV1-KAPPA-UNDERTURN`** — the 3.9x magnitude collapse (0.08000 -> 0.02066) | ⭐ **STANDS.** Measured on **curvature**, never on recall. Confirmed twice (trajectories + cost columns). |
+| **`D-REFAV1-TURN-CMD-WRONG`** — straight beats obeying the 0.08 command on ADE | ⭐ **STANDS and is REINFORCED.** The human's median `dyaw` here is 0.0431 rad; commanding 0.08 produces 0.2241. Of course obeying is worse than straight — **the goal commands ~5x the heading change the human made.** |
+| the **numbers** `turn_left` 0.3636 -> 0.0000 | ⭐ **STAND** — they are correctly computed. |
+| the **INTERPRETATION** *"the arm stopped turning correctly"* | ⛔ **WITHDRAWN.** It means *"the arm stopped out-turning the human"*. |
+| my **A4 committed reading**, `turn_left recall > 0.0000` (RESULT §E5) | ⛔ **AMENDED BELOW — it is the wrong criterion**, and `--goal-kappa-turn 0.02` cannot satisfy it on 6/9 windows **by arithmetic**, independent of any modelling. |
+
+### F4 ⭐ THE AMENDED A4 CRITERION, written before `A4a_gk_kt02` lands
+
+⛔ **Turn recall under the v1 gate is dropped as A4's turning criterion.** It is replaced by three
+statistics that are reachable on this panel and that say what they mean:
+
+1. ⭐ **Curvature tracking against the HUMAN, not against the gate**: median `|kappa_plan - kappa_gt|`
+   on TURN-goal windows. This is the quantity `D-REFAV1-TURN-CMD-WRONG` shows the 0.08 command
+   fails, and it has no speed threshold.
+2. **The v2 curvature gate** (`|kappa| >= 1/60`) reported **beside** v1, since it separates the arms
+   cleanly here (9/9 vs 0/9) where v1 cannot.
+3. **`dyaw` error against GT** — signed, so over-turning and under-turning are distinguishable
+   rather than pooled into one recall number.
+
+⛔ **A4 is NOT cancelled** — it is still the right experiment on ADE and on curvature tracking, and
+it is running. What changes is which column decides it.
+
+### F5 — THE WORK ITEM THIS CREATES, NAMED
+
+⛔ **A speed-matched turn panel does not exist, and the sibling turn-asymmetry panel
+(`panel_turn75.json`, 30 turn_left / 30 turn_right / 15 lane_keep) is selected by the same
+labeller** — so unless its windows were speed-filtered, they carry the same defect and its
+`turn_left` / `turn_right` recalls measure the same thing. **That stream should check its own
+panel's `v0` distribution against `kappa_min = 0.15/(v0*T)` before reading its result.** Flagged
+here; not diagnosed for them.

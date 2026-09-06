@@ -13900,3 +13900,45 @@ succeeded on the first attempt where `cp` had failed six times.**
 buys nothing (the `mv` replaces the inode anyway) and it opens a window in which the file does not
 exist and cannot be recreated. Same discrimination lesson as ARCH-C itself: a failure on one path is
 not a mount outage until a control on a *different* path in the *same breath* also fails.
+
+---
+
+## 2026-09-06 — ARCH-D: A METRIC WHOSE GROUND-TRUTH CONTROL FAILS, OPTIMISED FOR A WHOLE CAMPAIGN
+
+**ROOT-CAUSE CLASS: a gate calibrated for one regime, applied to a panel from another — and never
+checked against the control that would have exposed it in one line.** Same family as the
+`df`/Thor-`free`/`step_s`/cylindrical-FOV traps (a true quantity quoted outside its scope), with the
+object swapped: here the mis-scoped thing is the **decision threshold of a metric**.
+
+**WHAT HAPPENED.** refav1's `turn_left` recall has driven an entire campaign — the cost-geometry
+frontier, the "W_KAPPA kills turning" reading, the turn-asymmetry panel, and this package's own
+ship bars. The eval's v1 lateral gate is `|dyaw| > YAW_TURN_RAD = 0.15` rad. Over a 2.0 s window
+`dyaw = integral(kappa*v) dt`, so the gate demands `kappa >= 0.15/(v0*T)`.
+**MEASURED on the p4 TURN_L-goal windows (n=9): `v0` p25/med/p75 = 0.71 / 1.40 / 4.82 m/s** — nearly
+stationary. The gate therefore demands **0.0156 / 0.0536 / 0.1053 1/m** (radii 64 / 19 / 9 m):
+**3 of 9 windows demand MORE curvature than the shipped 0.08 command, and 6 of 9 more than the
+corrected 0.02.**
+
+**⛔ THE CONTROL THAT SETTLES IT, AND IT HAD NEVER BEEN RUN.** The **ground truth** — the human's own
+recorded driving — passes the gate on **3 of 9** windows, median `dyaw` **0.0431 rad** against a
+0.15 threshold. `ccos_argmax` passes on **6/9, twice as often as the human.**
+⇒ **The metric was not measuring "did the planner turn correctly". It was measuring "did the planner
+OUT-TURN the human."** An arm earned recall by producing ~5x the heading change the person made,
+and paid for it in ADE — which is exactly the paradox the whole cost-geometry campaign kept hitting
+and explaining as a cost-balance problem.
+
+**WHAT SURVIVES.** The *curvature* findings are untouched, because they never used the gate: the
+3.9x under-turn (0.08000 -> 0.02066 at W_KAPPA 15.11) is measured on kappa and is confirmed by two
+independent routes. The recall *numbers* stand; only their *interpretation* is withdrawn.
+
+**⇒ THE RULE.** ⭐ **A metric with a THRESHOLD carries the regime the threshold was calibrated for,
+and the ground truth must be scored through the same gate before any arm is.** If the GT does not
+clear the bar on the panel in use, the metric is measuring the distance from GT, not the quality of
+the arm. **One line would have caught this:** score `g` through the labeller and require it to pass.
+That is the same shape as the `CLAUDE.md` rule *"every probe panel carries a control that must read
+the no-information value"* — extended from probes to **eval gates**, where it was never applied.
+⚠️ **Blast radius, named not estimated:** every `turn_left`/`turn_right` recall in the refav1
+cost-geometry line, and the sibling turn-asymmetry panel (`panel_turn75.json`) if its windows were
+selected by the same labeller without a speed filter. Corrected criterion (curvature tracking vs GT,
+the v2 curvature gate beside v1, and SIGNED dyaw error) is pre-registered in
+`.../2026-09-05-refav1-close-the-gaps/RESULT.md` §F4, **before the arm it governs landed**.
