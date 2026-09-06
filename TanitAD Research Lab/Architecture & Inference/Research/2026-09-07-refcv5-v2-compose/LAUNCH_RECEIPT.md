@@ -141,9 +141,24 @@ status is not the job's). Two reads, separated in time:
 | 2 | **23:15:48Z** | alive | 42,379 MiB · 100 % | 0 B | **`[v3:hier] step 50 loss 51.1370 traj 2.6936`** | 1 |
 
 **Step advanced 0 → 50 across 5 minutes, loss non-zero, stderr empty, no `traceback`/`error`/
-`refus`/`killed`/`oom` marker in either log.** `--log-every 50` and `--save-every 500`, so the first
-`ckpt.pt` lands at step 500; a poll keyed on **both** the success marker (`ckpt.pt` exists) **and**
-the failure markers (trainer gone, stderr non-empty) is running.
+`refus`/`killed`/`oom` marker in either log.**
+
+⭐ **And it kept going, with the checkpoint.** A poll keyed on **both** the success marker (`ckpt.pt`
+exists) **and** the failure markers (trainer gone, stderr non-empty) — because a wait that greps only
+for success polls happily through a crash:
+
+```
+23:16:12Z  step  50  loss 51.1370   23:24:13Z  step 300  loss 26.8185
+23:18:12Z  step 150  loss 50.3320   23:26:13Z  step 350  loss 25.6564
+23:20:12Z  step 200  loss 28.7785   23:28:13Z  step 400  loss 23.2492
+23:22:12Z  step 250  loss 34.0336
+23:30:13Z  CKPT-PRESENT  /workspace/.../ckpt.pt  982,888,448 B
+           step 500  loss 24.6413   metrics.jsonl rows = 10
+```
+
+**A checkpoint path that EXISTS, eight step reads advancing monotonically, loss falling 51.14 →
+23.25, `alive=1` and `stderr=0 B` at every read.** Measured rate **~1.2 s/step** (100 steps per
+120 s poll) ⇒ **≈ 13.5 h** to 40,284, plus the `--eval-every 500` monitor.
 
 **Pre-launch state, verified in the same breath as the launch:** A40 **0 MiB, 0 % util, zero compute
 apps**; `/workspace/experiments/refcv5-v2-noagents-b1-v72-40k` did not exist; a real `dd` write test
