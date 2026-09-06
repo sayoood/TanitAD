@@ -130,6 +130,11 @@ from tanitad.models.v6 import (  # noqa: E402
     PLAN_STEPS, STAGES,
     STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS, InteractionSampler,
     LayerSpectrumMonitor, V6Config, V6Stack, apply_stage_freeze,
+    # ⛔ the declared-freeze preflight. `assert_frozen_external` was built,
+    # quantified its own trap at 86,580,480 params — and was called by NOTHING
+    # outside its own test file, so the trap happened for real on native
+    # modules (the O5 EMA teacher). This import is the wiring.
+    assert_declared_freezes_hold,
     kinematic_saliency,
     near_field_band_mask, sample_cell_block_mask, saliency_weights,
     SpectrumAccumulator, o6_rank_verdict, sigreg_trend_verdict,
@@ -5748,6 +5753,44 @@ def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
     return out
 
 
+def _declared_freeze_preflight(a_stack, a, where: str) -> dict:
+    """⛔ RUN EVERY FREEZE DECLARATION AGAINST WHAT THE FREEZE ACTUALLY DID.
+
+    Called immediately after ``apply_stage_freeze`` on BOTH paths (dry-run and
+    train), because a preflight that skips the real launch is the failure class
+    it exists to prevent.
+
+    ⭐ WHY THIS IS UNCONDITIONAL AND NOT BEHIND A FLAG. MEASURED 2026-09-06
+    before wiring, on both REAL launch lines — v7-tiny's own 30 k args and
+    ``PREREG_V7F.md`` §9 — the guard PASSES (n_trainable 9,185,411 and
+    143,949,315). The ``--refuse-unreached`` precedent is that *a flag that
+    always refuses gets deleted*; the converse holds too, so a guard that
+    passes every honest launch should not be opt-in.
+
+    ⛔ PROVEN BY MUTATION, not by inspection (`guards-need-mutation-not-
+    inspection`). Reintroducing the pre-2026-09-06 group-map-alone freeze makes
+    it raise :class:`GradUnreachableViolation` naming **90,960,000 params in
+    157 tensors** at v7f's geometry and **2,557,504 in 49** at v7-tiny's — and
+    11,742,915 is exactly what ``v7tiny_emao14_30k``'s own banked
+    ``config.json`` recorded as ``n_trainable``, so the guard reproduces the
+    historical overstatement rather than merely asserting against it.
+    Artifacts: ``…/2026-09-06-ema-teacher-forensics/raw/p2_mutation.json``.
+
+    ``--expect-n-trainable`` is optional and defaults to OFF. When a runbook
+    supplies it, an arm whose trainable budget is not the budget it claims
+    refuses before step 1 — the ⛔ A GATE ROW CARRIES ITS ARM rule, enforced by
+    the launcher instead of by a number retyped into a report.
+    """
+    audit = assert_declared_freezes_hold(
+        a_stack, a.stage,
+        expect_n_trainable=getattr(a, "expect_n_trainable", None))
+    print("[v6] declared-freeze preflight OK (%s): %d frozen-external + "
+          "%d grad-unreachable subtree(s); directions A/A'/B checked"
+          % (where, audit["frozen_external"]["n_declared_subtrees"],
+             audit["n_grad_unreachable_subtrees"]), flush=True)
+    return audit
+
+
 def dry_run(a, stack: V6Stack | None = None) -> dict:
     """Build everything, run ``--dry-steps`` (default 2) synthetic CPU steps,
     write ``config.json`` + ``dry_run.json``.
@@ -5821,6 +5864,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         enc_seed_report["exercised"] = True
     assert_trunk_anchor_preflight(a)
     freeze = apply_stage_freeze(stack, a.stage)
+    decl_audit = _declared_freeze_preflight(stack, a, "dry-run")
     weights = _weights_from_args(a)
     w_stage_dry = weights.for_stage(a.stage)
     # ---- the S2 label artifact, REALLY exercised when supplied --------------
@@ -5958,7 +6002,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         print(f"[v6 dry {step}] {json.dumps(row)}", flush=True)
     spec = spectrum_report(torch.randn(64, min(stack.cfg.d_op, 64)))
     iso = stack.assert_isolation(batch_size=1, strict=False)
-    cfg_json = _run_config(a, stack, freeze)
+    cfg_json = _run_config(a, stack, freeze, decl_audit)
     if init_report.get("exercised"):
         cfg_json["init"] = init_report
     # ⛔ P1: the census rides config.json, because config.json is the artifact
@@ -5980,7 +6024,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     result = {
         "mode": "dry-run", "device": device, "steps": rows,
         "elapsed_s": round(time.time() - t0, 2),
-        "freeze": freeze, "isolation": iso, "spectrum_smoke": spec,
+        "freeze": freeze, "declared_freeze_preflight": decl_audit,
+        "isolation": iso, "spectrum_smoke": spec,
         "param_report": stack.param_report(),
         "n_trainable_tensors": len(trainable),
         "precondition": pre,
@@ -6270,7 +6315,8 @@ def run_provenance(device=None) -> dict:
     return prov
 
 
-def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
+def _run_config(a, stack: V6Stack, freeze: dict,
+                decl_audit: dict | None = None) -> dict:
     return {
         "run": f"v6-staged-{a.stage}",
         "stage": a.stage,
@@ -6281,6 +6327,9 @@ def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
         "loss_weights_in_force": asdict(_weights_from_args(a)
                                         .for_stage(a.stage)),
         "freeze": freeze,
+        # the preflight's own audit, so config.json records that the
+        # declarations were CHECKED and not merely made (2026-09-06).
+        "declared_freeze_preflight": decl_audit,
         "param_report": stack.param_report(),
         #: ⛔ THE INIT REGIME IS NOT IN `args` — it arrives through the
         #: TANITAD_RESIDUAL_INIT_SCALE environment variable, so a run's own
@@ -6419,6 +6468,7 @@ def train(a) -> dict:
     assert_trunk_anchor_preflight(a)
     stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
+    decl_audit = _declared_freeze_preflight(stack, a, "train")
     print(f"[v6] stage {a.stage}: trainable "
           f"{freeze['n_trainable']/1e6:.2f} M / frozen "
           f"{freeze['n_frozen']/1e6:.2f} M · groups "
@@ -6995,7 +7045,7 @@ def train(a) -> dict:
                 f"--steps {a.steps}. Nothing to do. If this run finished, its "
                 f"summary.json should say so; write it or raise --steps.")
 
-    cfg_json = _run_config(a, stack, freeze) | {"o4": o4log,
+    cfg_json = _run_config(a, stack, freeze, decl_audit) | {"o4": o4log,
                                                 "precondition": pre,
                                                 "init": init_report,
                                                 # D-V7-DINO-SEED: the trunk's
@@ -9671,6 +9721,16 @@ def build_parser() -> argparse.ArgumentParser:
                          "initialisation (e.g. step_readout_op masked_cells). "
                          "Only meaningful with --refuse-unreached; recorded in "
                          "config.json. Matching is on path segments.")
+    # ⛔ A GATE ROW CARRIES ITS ARM. Three arm-substitutions have been found in
+    # v7-land (an L1 "no collapse" pass, the 39/25/14 signature, the champ30k
+    # mislabel). This makes the runbook's exact-count assertion a LAUNCH
+    # PRECONDITION instead of a number retyped into a report afterwards.
+    # Default None = OFF, so no existing launch line changes behaviour.
+    ap.add_argument("--expect-n-trainable", type=int, default=None,
+                    help="REFUSE the launch unless the post-freeze trainable "
+                         "parameter count equals this exactly. Checked by "
+                         "assert_declared_freezes_hold before step 1. "
+                         "v7f at PREREG_V7F.md 9: 143949315.")
     # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
     # the rank. This confines its gradient to the PREDICTOR (encoder detached for
     # the O1 term only). Default OFF => incumbent loss bit-identical.

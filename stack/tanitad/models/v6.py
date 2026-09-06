@@ -133,7 +133,8 @@ __all__ = [
     "reassert_frozen_external", "assert_frozen_external",
     # ⛔ the grad-unreachable declaration (the v7f budget defect, 2026-09-06)
     "GRAD_UNREACHABLE_FLAG", "declare_grad_unreachable",
-    "grad_unreachable_prefixes",
+    "grad_unreachable_prefixes", "GradUnreachableViolation",
+    "assert_declared_freezes_hold",
     # measure primitives (O2/O3/O4/O6)
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
@@ -4809,6 +4810,85 @@ def assert_frozen_external(stack: nn.Module, stage: str,
                 "trainable",
                 "B: every group in stage_trainable_groups() still has a "
                 "trainable NATIVE parameter"]}
+
+
+class GradUnreachableViolation(RuntimeError):
+    """Raised by :func:`assert_declared_freezes_hold` when a subtree DECLARED
+    grad-unreachable (``models/_gradreach.py``) is trainable after the stage
+    freeze. A DIFFERENT claim from :class:`FrozenExternalViolation` — that one
+    is about PROVENANCE (someone else's weights), this one about the LOSS GRAPH
+    (no loss in this ladder reaches here) — so it is a different exception."""
+
+
+def assert_declared_freezes_hold(stack: nn.Module, stage: str,
+                                 expect_n_trainable: int | None = None) -> dict:
+    """⛔ THE LAUNCH-PATH PREFLIGHT. Every freeze DECLARATION, checked against
+    what ``apply_stage_freeze`` actually produced.
+
+    **Why this function exists rather than more docstrings.**
+    :func:`assert_frozen_external` was fully built, quantified its own trap at
+    **86,580,480** parameters — and was **called by nothing outside its own test
+    file**. The trap it guards then happened for real, on NATIVE modules: the O5
+    EMA teacher was un-frozen by the group map and sat in the optimizer for
+    every ``--o5-target ema`` arm from 2026-08 to 2026-09-06. A guard nobody
+    calls is a comment. This is the call.
+
+    Three checks, and note WHICH of them is live today:
+
+    * **A — frozen-external** (:func:`assert_frozen_external`, Direction A).
+      **LATENT**: ``declare_frozen_external`` has zero production callers right
+      now, so nothing can leak. It arms the day v7f's ``--enc-init-from`` lands
+      a foreign backbone under the ``encoder`` group, which is precisely the
+      E-XENC-1 build the guard was written for.
+    * **A' — grad-unreachable** (this function). **LIVE**: three declarers
+      today (``_EmaCopy`` and two in :meth:`V6Stack.__init__`). This is the
+      direction that actually failed, so it is the direction a launch must not
+      be able to pass while broken.
+    * **B — nothing-trains** (:func:`assert_frozen_external`, Direction B).
+      **LIVE**: every group the stage declares trainable must still hold a
+      trainable parameter that is neither external nor declared unreachable.
+
+    ⚠️ **Direction B is the half that can bite an honest launch**, because
+    ``apply_stage_freeze`` now freezes declared-unreachable subtrees: a group
+    whose every member is declared dead would go trainable-empty and refuse.
+    MEASURED before wiring, on both real launch lines (v7-tiny's own 30 k args
+    and ``PREREG_V7F.md`` §9): this guard PASSES. That measurement is the reason
+    it is wired as a hard refusal and not behind an opt-in flag — the
+    ``--refuse-unreached`` precedent is that *a flag that always refuses gets
+    deleted*, and the converse is that a guard which passes real launches
+    should not be optional.
+
+    Returns the merged audit; raises :class:`FrozenExternalViolation` or
+    :class:`GradUnreachableViolation`.
+    """
+    ext = assert_frozen_external(stack, stage, expect_n_trainable)
+    pres = grad_unreachable_prefixes(stack)
+    leaked: list[tuple[str, str, int]] = []
+    for name, p in stack.named_parameters():
+        pre = _in_gradreach_subtree(name, pres)
+        if pre is not None and p.requires_grad:
+            leaked.append((name, pre, int(p.numel())))
+    if leaked:
+        tot = sum(n for _, _, n in leaked)
+        raise GradUnreachableViolation(
+            f"stage {stage!r}: {len(leaked)} parameters ({tot:,}) inside a "
+            f"DECLARED grad-unreachable subtree are TRAINABLE. This is the "
+            f"2026-09-06 defect exactly: `apply_stage_freeze` sets "
+            f"requires_grad from the GROUP MAP, and a declared-dead subtree "
+            f"whose name falls in a group this stage trains gets UN-FROZEN — "
+            f"which put the O5 EMA teacher (86,138,112 params at v7f's "
+            f"geometry) into the optimizer while its own class docstring said "
+            f"it was 'excluded from every optimiser'. The run's config.json "
+            f"would ship that overstatement as `n_trainable`. "
+            f"Declared subtrees: {sorted(pres)}. "
+            f"First offenders: {[n for n, _, _ in leaked[:4]]}")
+    return {"frozen_external": ext,
+            "grad_unreachable_subtrees": dict(sorted(pres.items())),
+            "n_grad_unreachable_subtrees": len(pres),
+            "n_leaked_grad_unreachable": 0,
+            "directions_checked": ext["directions_checked"] + [
+                "A': no parameter inside a declared GRAD-UNREACHABLE subtree "
+                "is trainable after the stage freeze"]}
 
 
 # ============================================================================

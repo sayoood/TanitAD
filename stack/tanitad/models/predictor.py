@@ -205,7 +205,12 @@ class OperativePredictor(nn.Module):
         # a decision and can be refused. Refusing at the wrong one of those two
         # would have destroyed the evidence instead of preventing the defect.
         # ⇒ `train_v6_staged.py` refuses `--horizons` with any entry != 1 when
-        # CONFIGURING a run. See `_refuse_untrained_horizons` there.
+        # CONFIGURING a run. The check lives INSIDE `preflight(a)` (search the
+        # string "which NO loss consumes"), which `main()` runs before BOTH
+        # `dry_run(a)` and `train(a)`. ⚠️ There is no function named
+        # `_refuse_untrained_horizons` — an earlier version of this comment
+        # named one, and a later reader grepped for that name, found 0, and
+        # concluded the guard did not exist. It does. See the note below.
         untrained = [k for k in cfg.horizons if int(k) != 1]
         if untrained and not allow_untrained_horizons:
             raise ValueError(
@@ -236,11 +241,37 @@ class OperativePredictor(nn.Module):
         # quoted outside its scope, the `df` / Thor-`free` / `step_s` family.
         # ⇒ the declaration is made by `V6Stack.__init__`, which knows its own
         # ladder. See `v6.py`, `declare_grad_unreachable(self.predictor_op...)`.
-        # ⚠️ Still unfixed and NOT mine to fix here: the
-        # `_refuse_untrained_horizons` preflight the comment above promises
-        # DOES NOT EXIST (`grep -c` = 0 in `train_v6_staged.py`, with
-        # `def v6_loss_step` = 1 as the same-breath control), `trained_horizons`
-        # is read by nothing, and `--horizons` still defaults to `[1, 2, 4]`.
+        # ⛔⛔ THE THREE-PART CLAIM THAT STOOD HERE WAS A NAME-ABSENCE READ AS A
+        # BEHAVIOUR-ABSENCE, AND TWO OF ITS THREE PARTS ARE NOW REFUTED
+        # (MEASURED 2026-09-06, `…/2026-09-06-ema-teacher-forensics/`). It read:
+        # *"the `_refuse_untrained_horizons` preflight DOES NOT EXIST (grep -c =
+        # 0, with `def v6_loss_step` = 1 as the same-breath control),
+        # `trained_horizons` is read by nothing, and --horizons still defaults
+        # to [1,2,4]."* The grep was correct and the CONCLUSION was not:
+        #   1. ⛔ REFUTED — the refusal EXISTS, inside `preflight(a)`, which
+        #      `main()` runs before BOTH `dry_run(a)` and `train(a)`. VERIFIED
+        #      BY EXECUTION, not by grep: a fresh `--horizons 1 2 4` launch
+        #      exits 2 with "declares [2, 4], which NO loss consumes". It is
+        #      also present in the PRE-EDIT baseline tree (`train_v6_staged.py`
+        #      md5 `d2ade650…`), so it predates that claim rather than
+        #      post-dating it. Only the IDENTIFIER was missing.
+        #   2. ⛔ REFUTED — `trained_horizons` IS read: `v6.py` consults it to
+        #      decide which heads to declare grad-unreachable. That reader was
+        #      added by the same turn that wrote "read by nothing", so the
+        #      sentence was made false by its own author's edit.
+        #   3. ✅ STANDS — `--horizons` still defaults to `[1, 2, 4]`.
+        # ⭐ AND THE DEFAULT IS DELIBERATELY LEFT ALONE. Changing it would
+        # silently change the GEOMETRY of every new run that omits the flag,
+        # and a model built at `(1,)` cannot strict-load a banked checkpoint
+        # (MEASURED: exactly 6 unexpected keys). The refusal already makes the
+        # wrong default un-launchable for a FRESH arm — loud, actionable, with
+        # the fix in the message — while exempting RESUMES, which is
+        # load-bearing: `k60p30k` (MM-E19) runs `--horizons 1 2 4` deliberately
+        # as a matched control, and refusing its restart would make a 22 h arm
+        # unrecoverable. A guard that destroys the work it protects is worse
+        # than the defect. ⇒ pinned by
+        # `stack/tests/test_horizons_refusal_is_wired.py`, so "does this guard
+        # exist" is answered by a test instead of by a grep for a name.
         self.out_proj = nn.Linear(state_dim, d)  # reserved: feed predictions back
         # ⛔ `out_proj` IS REFERENCED EXACTLY ONCE IN THE PROGRAMME: on this
         # line. MEASURED 2026-09-06 over 989 readable .py files — zero uses in
