@@ -6232,7 +6232,11 @@ Evidence for every row: `TanitAD Research Lab/Architecture & Inference/Research/
 
 | E-DDA-3c | ⭐ **PRE-REGISTERED, NOT RUN — RL post-training on refcv4b, read on the FAN'S FLOOR.** ⛔ **No arm has executed and no RL result exists**; both GPUs are occupied (refcv5's ~44 h A40 training, an eval on Thor) and nothing in this package touched either. Extends `E-DDA-3b` rather than duplicating it: same policy (head-only two-scalar SCALE family, σ floor 0.04, likelihood σ 0.10, G = 4, ≥ GT bar, trunk frozen), same nine arms **plus** a tenth — ⭐ **`reg_collapse`**, a zero-GPU deliberate regression that must be classified `COLLAPSE-SUSPECT` and never `FLOOR-GAIN`. **PASS requires ALL FOUR**: `fan_floor@32` rises with a CI excluding 0 **and the same sign at both seeds**; **and** `fan_floor@64` too (a gain only at `@1` is **FAIL-SHAPE**, not this hypothesis); **and** `fan_diversity` has not fallen > 30 % (else **`COLLAPSE-SUSPECT`**, reported as such and **not** as a pass); **and** `fan_collision_all` does not rise. **GUARD (T1, four families, never pooled):** ⛔ the arm **must beat `ha0_ext` (0.2874) and `ha` (0.2996)** — refcv4b only TIES them at `os` 0.2975, and **an RL arm that does not beat them has not driven**, whatever the fan says; LATERAL is read on **curvature MAE with the straight-line floor beside it** (`os` 0.008097 is *worse* than `ha0`'s 0.006802). ⛔ `oracle_sel`/`anchor_acc` appear nowhere; `--sel-refined` is set on no arm. ⭐ **COORDINATE EXPRESSIBILITY, stated against `M84`:** every RANK term is a **POSITION query** — `headway`, `collision`, and `robust_contact` (which marginalises over lead-track TIMING error by evaluating **positions at shifted times**, never asking for a rate) — while a graded **TTC is kept as a VETO only**, because its ordering would rest on the **closing rate `M84` measured to be a clean null on every arm** (+0.0061 against position's +0.4145 [+0.2018, +0.6120], constant control exactly +0.000000). ⇒ *a reward can express "be at distance d" and cannot express "stop closing"*, and this design is written entirely in the first coordinate | **PRE-REGISTERED (2026-09-06) — ⛔ NOT RUN.** Launch gated on `D-RL-GREWARD-UNREACHABLE-1` (PI/MM ruling on the gate's POPULATION), on `D-RL-REFCV4B-FANDUMP-1` (`B6`), and on a free GPU | `…/2026-09-06-refcv4b-rl/SPEC.md` (all sections); `H-DDA-5` |
 
-| ⛔ D-RL-LAUNCHER-GAP-1 | ⛔ **THE LAUNCHER WOULD SILENTLY RUN THE DELIBERATE-REGRESSION ARM AND REPORT IT AS THE HYPOTHESIS.** `stack/scripts/rl_refcv3_min.py` carries the arm plumbing but **lacks two flags** the refcv4b design needs: **`--noise-space control`** — so exploration acts on `(a_lon, a_lat)` and every explored candidate is **flyable by construction** (`D-REFCV5-PLAN-4`) — and **`--bank-fan`**, so an arm emits the fan the primary readout consumes. ⚠️ Without the first, that launcher explores in **METRE space**, which is precisely **`reg_metre`, the pre-registered deliberate regression that must FAIL flyability**. ⇒ running it as the `rl` arm before the flags land executes the regression and tables it as the lever. ⛔ This stream does **not own that file**, so this is ESCALATED rather than edited. Owner: Training FlyWheel / Master Mind | **SUPPORTED (source-verified 2026-09-06)** — ⛔ OPEN escalation | `…/2026-09-06-refcv4b-rl/SPEC.md` §8, `RESULT.md` §6 (2) |
+| ⛔⛔ D-RL-LAUNCHER-GAP-1 | ⛔⛔ **THE ARM THAT WOULD RUN TODAY IS THE DELIBERATE REGRESSION — CONTROL-SPACE EXPLORATION DOES NOT EXIST IN THE SHIPPED CODE.** MEASURED 2026-09-06 from source, content-verified with a non-zero control on the same read: `refcv3_adapter.sample_offsets` scales the **OFFSET WAYPOINTS** (`scale = mean.abs() * cfg.noise_scale`), and the strings `control` / `rollout_unicycle` / `a_lon` / `alat` appear **ZERO times** in that file (9,078 bytes read); `stack/scripts/rl_refcv3_min.py` (74,437 bytes, 26 flags) has **no fan/bank/dump flag at all**, and no `--noise-space`, `--noise-mode`, `--model` or `--use-gt-bar` — the last two are per-arm entries in its own `ARMS` table, so that CAPABILITY exists there; the first two exist nowhere. ⇒ **launching the `rl` arm today explores in METRE space = `reg_metre`, the pre-registered deliberate regression that must FAIL flyability**, and the result table would have carried it as the hypothesis. ⚠️ **THIS CORRECTS MY OWN EARLIER WORDING IN THE SAME TURN** (*"two missing flags"*): it is a missing **CAPABILITY**, not a missing flag — the **true-but-wrong-for-the-reader** class, where a correct sentence implies a wrong next action. ⭐ **BUILT THIS TURN so the fix is one wiring line rather than a design task:** `stack/tanitad/rl/control_space.py` (**NEW**) + `stack/tests/test_rl_control_space.py` (**15/15 green**) — the DD-v2 two-scalar policy in **CONTROL** space: scale `(accel, curvature)`, clamp to the envelope, re-roll through the programme's single `rollout_unicycle`, with the published sigma floors kept **distinct** (exploration **0.04**, likelihood **0.10** — different numbers in the released code, and collapsing them silently rescales the gradient). ⭐⭐ **ITS CENTRAL CLAIM IS TESTED AGAINST ITS OWN COUNTEREXAMPLE:** `envelope_violation` reads **exactly 0.0** on a control-space sample **even at 25× the published sigma**, while the metre-space arm **does** violate — so *flyable by construction* is a **DISCRIMINATING** property, not a tautology; a property both arms satisfied would prove nothing. ⛔ **STATED LIMIT:** the clamp is a non-injective pushforward, so `logp` is the density of the two **SCALARS**, not of the emitted trajectory — the same class of object as the published estimator (DDv2 evaluates a 16-coordinate isotropic Gaussian on samples drawn from a 2-scalar family, its own §1.3 #3) — and it is quoted as a **scale-perturbation** gradient, never as an exact policy gradient. ⛔ This stream owns neither `refcv3_adapter.py` nor `rl_refcv3_min.py`, so neither was edited | **SUPPORTED (MEASURED / source-verified 2026-09-06)** — ⛔ **ESCALATED, now concrete:** call `control_space.sample_control_space` from the RL stage's sampling path behind a recorded config field, and add a fan-dump path. Owner: Training FlyWheel / Master Mind. ⛔ Until then the `rl` arm MUST NOT be launched | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-rl/SPEC.md` §8.1, `RESULT.md` §6 (2); `stack/tanitad/rl/control_space.py`, `stack/tests/test_rl_control_space.py` |
+
+| ⛔⛔ D-RL-GREWARD-STATISTIC-1 | ⛔⛔ **`G-REWARD`'s DEFECT IS ITS STATISTIC, NOT ITS POPULATION AND NOT ITS THRESHOLD — AND THE "RESTRICT THE POPULATION" REPAIR IS REFUTED IN THE OPPOSITE DIRECTION.** MEASURED 2026-09-06, 0 GPU, **pre-registered before any rate was computed** (`raw/greward_power_curve.py` docstring: the population is a **PROPERTY OF THE SCENE** — the human's own `gt_time_gap_min_s`, recorded before any candidate exists — the ladder **(∞, 5.0, 4.0, 3.0, 2.5, 2.0, 1.5, 1.0) s is fixed in advance, every rung reported**, and the probe **selects nothing**). On the banked rows (**6,089 windows / 73 episodes**, repaired reward `progress 0.3 · collision 1.0 · headway 0.3`, episode-cluster bootstrap n_boot 4,000): the **RATE** `hold_v0 ≥ human` is **0.4418 [0.3687, 0.5163]** all-windows and **RISES MONOTONICALLY with conflict to 0.5482 [0.4128, 0.6529] at ≤ 2.0 s (1,576 w / 29 eps — 5× the banked signal population's 6 episodes)**, with **every rung's CI entirely ABOVE the 0.30 ceiling** ⇒ restricting to lead-conflict scenes makes the gate **HARDER**. ⭐⭐ **But at five of six rungs the MEAN GAP is SEPARATED IN THE HUMAN'S FAVOUR** — all-windows **−0.011239 [−0.017039, −0.005306]**, ≤ 2.0 s **−0.012704 [−0.029915, −0.002008]** ⇒ **the reward DOES prefer the human, with an interval excluding zero, on every population**, while the rate says it does not. The two disagree in sign because the distribution is **skewed: the human wins big on a minority of windows and loses small on a majority**, and a rate cannot see magnitude. ⇒ **THIS IS WHY 2,400 WEIGHTINGS COULD NOT REACH 0.30** — no reweighting makes a rate see a magnitude it is structurally blind to. ⭐ **CHANNEL CONTROLS ALL EXACTLY 0.000e+00** against the banked panel (all-window rate **0.441780259484316**, all-window mean gap **−0.011239379601720929**, `frozen` rate **0.04549187058630317**, and the per-term attribution to 1e-15). ⚠️ **SCOPE:** this does **not** reproduce or refute the banked `0.0635 on 63 windows / 6 episodes` — that population needs `robust_contact`, which these rows do not carry — it is an **independent, larger-n, pre-registered test of the same repair IDEA**, and the idea does not survive it. ⛔ **I SELECT NOTHING**: adopting the mean-gap statistic after seeing it pass is the goalpost move this row exists to avoid. CLASS: **A METRIC WHOSE STATISTIC ANSWERS A NARROWER QUESTION THAN THE CLAIM HUNG ON IT** — same family as `overlapping_holdout_se` biasing the point estimate and `H-ESTIM-SEED-1`, with the object swapped from an ESTIMATOR to the **summary statistic** | **SUPPORTED (MEASURED 2026-09-06, 0 GPU, pre-registered)** — ⛔ **ESCALATED, and it REPLACES yesterday's question:** *should `G-REWARD`'s statistic be the rate, the mean gap, or a magnitude-aware rank test?* Owner: PI / Master Mind | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-rl/RESULT.md` §5.1; `raw/greward_rate_vs_mean.json`, `raw/greward_power_curve.json`, `raw/greward_power_curve.py` |
+
+| ⭐ D-RL-PROGRESS-FLIPS-1 | ⭐⭐ **THE COORDINATE TO REPAIR, NAMED: `progress` FLIPS SIGN AS THE SCENE TIGHTENS AND PAYS THE TRIVIAL PATH FOR NOT SLOWING DOWN.** MEASURED 2026-09-06, 0 GPU, same rows and same pre-registered ladder. Per-term **weighted mean gap** (`hold_v0 − human`; **positive = the trivial constant-velocity path is rewarded MORE**): `progress` **−0.005600** all-windows → **+0.003593** at ≤ 3.0 s → **+0.006368** at ≤ 2.0 s → **+0.008251** at ≤ 1.5 s, while `headway` moves the other way (−0.004818 → −0.011256 → −0.015899 → −0.013504) and `collision` likewise (−0.000821 → −0.005731). ⇒ **in close following the human slows for the lead and a constant-velocity path does not, so `progress` rewards exactly the behaviour the safety terms are there to punish** — and the two fight precisely on the windows where the question is live. ⭐ It is EXPRESSIBLE and therefore fixable: `progress` reads **ego geometry only**, so a conflict-aware reference (normalising by the speed **achievable given the lead** rather than by `v0 · horizon`) is a term this corpus can compute without any new perception and without touching the echo rules. CLASS: `D-RL-PROGRESS-COMPOSED-1` (*"`progress` binds in isolation and not in the composed reward"*) seen from the **rate** side, with the mechanism now localised to a **sign flip conditional on lead proximity** rather than left as a composition effect | **SUPPORTED (MEASURED 2026-09-06)** — ⭐ the named next lever for the reward, 0 GPU to prototype | `…/2026-09-06-refcv4b-rl/RESULT.md` §5.1 Finding 3; `raw/greward_rate_vs_mean.json` (`per_term_weighted_mean_gap` at every rung) |
 
 | D-REFC-KINGATE-1 | ⭐⭐ **THE DELIVERABLE: A TOP-2 KINEMATIC GATE MAKES refcv3's DRIVEN PATH 31 % LESS ENVELOPE-VIOLATING AT NO MEASURABLE ADE COST — ZERO TRAINING, ZERO NEW PARAMETERS, ZERO NEW PERCEPTION.** MEASURED 2026-09-05 (`stack/scripts/rl_fan_rerank_probe.py`, **480 EVAL windows / 138 episodes**, 139 lead windows, paired episode-cluster bootstrap n_boot 4,000; the model is never retrained and the SAME 128 emitted candidates are re-ranked). `gate2` = keep the model's own **top-2 by `sel_score`** (so the semantic/tactical ranking the network learned is preserved) and choose between them by **`feasibility + comfort`**: selected-path `envelope` **0.1062 → 0.0729 (-31 % relative, SEPARATED)**, `peak_g` **0.1815 → 0.1459 g (-20 %)**, and `ade_m` **0.4742 → 0.4705, delta +0.0037 in the MODEL's favour and NOT separated** — no measurable ADE cost. It changes the pick on **48 %** of windows, so it is not a rounding artifact of rarely intervening. The frontier is measured: `gate4` -41 % envelope for -0.0230 m ADE (ns), `gate8` -45 % for -0.0452 m (sep), `kin_only` -45 % for -0.0655 m (sep). ⛔ **ADMISSIBILITY: the kinematic score reads NO SCENE INPUT** — `feasibility` and `comfort` are functions of the candidate's own waypoints only (no lead, no obstacle track, no ego state), so the gate is deployable under the vision-only-at-inference rule with no new perception. `reward_full` is reported for contrast because it is NOT: it needs the lead track and destroys ADE (0.9474). ⭐ **The `oracle` row explains why this works**: the fan's best-ADE candidate is the LEAST drivable one (`sel_envelope` **0.1437** vs the model's 0.1062 and the gate's 0.0729), so an ADE-neutral gate buys feasibility by discarding candidates that were never worth their ADE — `D-RL-FANSAFE-1` reproduced from the other side. ⚠ Quoted from a QUARANTINED artifact whose `lambda_sweep` block alone is withdrawn (RETRACTION #30); the selection-rule numbers touch none of the withdrawn operand and are re-confirmed by the corrected re-run | **SUPPORTED (MEASURED 2026-09-05) — AND THE COMBINATION IS NOW MEASURED: THE TWO LEVERS PARTIALLY CANCEL.** `base + gate2` beats `veto200_s0 + gate2` on ALL THREE axes — `sel_envelope` 0.0729 vs 0.0896, `sel_peak_g` 0.1459 vs 0.1617 g, `ade_m` 0.4705 vs 0.4834 — and the gate's own gain is 38 % smaller on the veto'd checkpoint (+0.0333 → +0.0208). The veto has already spent part of the same headroom: it pushed the FAN off the violating region (`fan_peak_g` 4.0828 vs 4.1734, the fan-level gain reappearing independently) while leaving the SELECTED path worse. ⭐ **DEPLOYMENT ANSWER: ship the gate on the UNMODIFIED base; do NOT ship the veto'd checkpoint.** A one-lever-at-a-time panel could not have produced this, and it reverses the intuition that a fan-level gain and a selection-level gain would add ⛔ **CORRECTED 2026-09-05 by `D-REFC-KINGATE-RANK-1`: this row's gate ranked on `sel_score`, and the deployed `hier` arm argmaxes `sel_score_v3` (`refc.py:1763`) — they disagree with the model's own `sel_idx` on 35/400 windows (8.75 %), so the candidate set did not always contain the model's own pick. Its `re-confirmed by the corrected re-run` clause also names `raw/fan_rerank_base.json`, which did not exist when it was written. The numbers here are SUPERSEDED by `H-KINGATE-1`'s corrected panel; the row is kept for the record rather than rewritten.** | `…/2026-09-05-veto-only-fan-safety/RESULT.md` §8; `stack/scripts/rl_fan_rerank_probe.py`, `raw/fan_rerank_WITHDRAWN_wrong_lambda_operand.{json,log}`, `raw/fan_bank_base_240w.npz` |
 
@@ -8142,7 +8146,7 @@ assume). The mechanism table is then CROSS-TABULATED against the run's own `ckpt
 | id | claim | status | evidence |
 |---|---|---|---|
 | **D-P1-ARM-MISLABEL** | ⛔⛔ **THE `39 / 25 / 14` NORM AUDIT WAS RUN ON A v7-TINY ARM, NOT ON `champ30k` — the row's arm field is wrong.** MEASURED: the signature reproduces EXACTLY (`1Dw=39, at-init=25, moved=14`) on **seven** banked v7-tiny 30k checkpoints, and the at-init set is the **IDENTICAL 25 NAMES on all seven** — so it is a property of the RECIPE (stage `S-W` + `o1_ctrl=o1_fact=o1_scene=o2=o3=0.0`), not of one checkpoint. `champ30k`'s own `config.json`, rebuilt and control-matched to its `param_report.total` **19,337,289** and freeze **10,206,723 / 9,130,566**, yields **32** 1-D `.weight` tensors — **18** at-init, **14** trained — so the audited artifact cannot have been champ30k's. ⚠️ The `14` coincides, which is exactly why nothing looked wrong. ⭐ **This is the ARM-SUBSTITUTION class the v7f brief already warns about, caught by rebuilding the arm rather than re-reading the row** | **CORRECTED (MEASURED 2026-09-06)** | `p1_final.py` replication table (7/7 `identical-set=True`); `p1_norm_audit.py` champ30k rebuild; ckpts `C:\Users\Admin\tanitad-caches\mm-e19-assets-20260901\v7tiny_*\ckpt.pt` |
-| **D-P1-THE-25-NAMED** | ⭐⭐ **ALL 25 ARE NAMED, AND THEY SPLIT INTO EXACTLY TWO MECHANISMS — 20 + 5.** ⛔ **A — `apply_stage_freeze`, 20 of 25** (`requires_grad=False`, **never in the optimizer**): `layer_str` (8) `vocab_str.norm` · `vocab_a_str.norm` · `adapter_str.3` · `predictor_str.blocks.{0,1,2}.0` · `goal_head_str.vocab.norm` · `act_head_str.vocab.norm`; `layer_tac` (11) `vocab_tac.norm` · `vocab_a_lat.norm` · `vocab_a_lon.norm` · `adapter_tac.3` · `predictor_tac.blocks.{0,1,2}.0` · `cond_tac.vocab.norm` · `goal_head_tac.vocab.norm` · `act_head_lat.vocab.norm` · `act_head_lon.vocab.norm`; `planner` (1) `cond_op.vocab.norm`. **This is BY DESIGN** — `v6.py`'s `STAGE_GROUPS["S-W"] = ("encoder","readout","predictor_op","aux")`, so `layer_tac`/`layer_str`/`planner` are trained in S-T/S-S/S-J, not here. ⛔ **B — IN THE OPTIMIZER THE WHOLE TIME, 5 of 25** (`requires_grad=True`, **in the optimizer**, `p.grad is None`): `step_readout_op.net.0` (group `predictor_op`) and `masked_cells.blocks.layers.{0,1}.norm{1,2}` (group `aux`). **Both groups are TRAINABLE at S-W.** Their only objectives — O1 for `step_readout_op`, O3 for `masked_cells` — were weighted **0.0**, and `v6_loss_step` GUARDS those terms (`if w.o1_ctrl or w.o1_fact or w.o1_scene:`), so the modules never enter the autograd graph at all | **MEASURED (ours; CPU, real forward+backward at the run's own weights; cross-tabulated against `ckpt.pt` with 0 disagreements)** | `p1_the_25.json`; `p1_audit_v7tiny_postrain30k.json` |
+| **D-P1-THE-25-NAMED** | ⭐⭐ **ALL 25 ARE NAMED, AND THEY SPLIT INTO EXACTLY TWO MECHANISMS — 20 + 5.** ⛔ **A — `apply_stage_freeze`, 20 of 25** (`requires_grad=False`, **never in the optimizer**): `layer_str` (8) `vocab_str.norm` · `vocab_a_str.norm` · `adapter_str.3` · `predictor_str.blocks.{0,1,2}.0` · `goal_head_str.vocab.norm` · `act_head_str.vocab.norm`; `layer_tac` (11) `vocab_tac.norm` · `vocab_a_lat.norm` · `vocab_a_lon.norm` · `adapter_tac.3` · `predictor_tac.blocks.{0,1,2}.0` · `cond_tac.vocab.norm` · `goal_head_tac.vocab.norm` · `act_head_lat.vocab.norm` · `act_head_lon.vocab.norm`; `planner` (1) `cond_op.vocab.norm`. **This is BY DESIGN** — `v6.py`'s `STAGE_GROUPS["S-W"] = ("encoder","readout","predictor_op","aux")`, so `layer_tac`/`layer_str`/`planner` are trained in S-T/S-S/S-J, not here. ⛔ **B — IN THE OPTIMIZER THE WHOLE TIME, 5 of 25** (`requires_grad=True`, **in the optimizer**, `p.grad is None`): `step_readout_op.net.0` (group `predictor_op`) and `masked_cells.blocks.layers.{0,1}.norm{1,2}` (group `aux`). **Both groups are TRAINABLE at S-W.** Their only objectives — O1 for `step_readout_op`, O3 for `masked_cells` — were weighted **0.0**, and `v6_loss_step` GUARDS those terms (`if w.o1_ctrl or w.o1_fact or w.o1_scene:`), so the modules never enter the autograd graph at all ⚠️ **SCOPE, STATED RATHER THAN GLOSSED — the 25 are not all measured the same way.** **18 of 25** are measured END TO END: rebuilt tensor, real backward, `requires_grad` / optimizer-membership / `p.grad` read off the live object, then cross-tabulated against the checkpoint (**0 disagreements over all 32 rebuilt 1-D `.weight` tensors**; 18 predicted at-init / 18 observed, 14 / 14). The remaining **7 are `*.vocab.norm.weight` keys that HEAD's `v6.py` NO LONGER BUILDS** — each head owned its own goal-vocabulary copy when v7-tiny trained, and HEAD shares the top-level `vocab_*` — so their status is resolved through the SAME `V6Stack.group_of` prefix map and stage funnel that decides `requires_grad` for every parameter (`cond_op.vocab` -> `planner`; `cond_tac` / `goal_head_tac` / `act_head_lat` / `act_head_lon` -> `layer_tac`; `goal_head_str` / `act_head_str` -> `layer_str` — none trained by S-W). ⛔ **That is a DERIVATION from the funnel, not a measurement on a live tensor, and it is labelled as such in `p1_the_25.json`'s `evidence` field.** | **MEASURED (ours; CPU, real forward+backward at the run's own weights; 18/25 end-to-end with 0 checkpoint disagreements, 7/25 derived via the group+stage funnel — per-row `evidence` field)** | `p1_the_25.json`; `p1_audit_v7tiny_postrain30k.json` |
 | **D-P1-BITEXACT-INFERENCE-VOID** | ⛔⛔ **"A PARAMETER THAT STAYED BIT-EXACTLY AT 1.0 THROUGH 30,000 STEPS OF A DECOUPLED-WEIGHT-DECAY OPTIMISER CANNOT HAVE BEEN IN THE OPTIMIZER" IS **UNSOUND**, AND FIVE OF THE 25 ARE THE COUNTEREXAMPLE.** `torch.optim.AdamW._init_group` appends a parameter **only `if p.grad is not None`** (verified in the installed torch 2.11.0+cu128 source), so a `None`-grad parameter is skipped **entirely — decoupled weight decay included**. This trainer calls `opt.zero_grad(set_to_none=True)`, so a never-touched parameter's grad is `None` every step and it is never decayed. ⭐ **MEASURED at the runs' own `lr=1e-4, wd=0.05`, two params in the SAME optimizer:** `grad=None` → `max|dw| = 0` **exactly**; `grad=` allocated **ZEROS** → decays, matching a float32 replication of `(1-lr*wd)^n` to **delta 0** (the 1.5e-5 gap to the float64 closed form is float32 accumulation, not a second effect). ⇒ **at 30,000 steps a STEPPED norm weight would read `0.860708`, not 1.0** — a 14 % shrink that would have been unmissable. ⛔ **The sound discriminator is `p.grad is None`, never the weight value.** Same family as the estimator rules: a true fact quoted outside its scope | **MEASURED (ours) — REFUTES the inference, not the observation** | `p1_mutate.py` §M3 (11/11 mutation proofs pass); pinned by `test_adamw_SKIPS_none_grad_params_entirely_including_weight_decay` |
 | **D-P1-STEPREADOUT-NOT-TRAINED** | ⛔ **"`step_readout_op.net.1` and `.3` DID train (std 0.0090 / 0.0256)" IS REFUTED — those ARE their initialisation scales.** `net` is `Sequential(LayerNorm(2d), Linear(2d,512), GELU, Linear(512,3))`; `nn.Linear`'s default init is `U(-1/sqrt(fan_in), +1/sqrt(fan_in))`, whose std is `(1/sqrt(fan_in))/sqrt(3)` = **0.00902110** at `fan_in 4096` and **0.02551552** at `fan_in 512` — i.e. the reported numbers to 3 dp. ⭐ **Pinned by a BOUND, not a soft std match:** the checkpoint's `max|w|` is **0.01562497 <= a = 0.015625** and **0.04415979 <= a = 0.04419417** — a trained tensor is not obliged to stay inside its init's support, and these do. Second witness: `net.0.bias` (LayerNorm, init exactly 0) reads **bit-exactly 0**. ⇒ **the whole of `step_readout_op` is at initialisation**, and M71's puzzle *"gradient reaching `.1` must pass through `.0`"* DISSOLVES — nothing reached any of them. ⚠️ Root cause of the misreading: comparing a **Linear's** init std (non-zero by construction) against a **LayerNorm's** (exactly zero by construction) | **REFUTED (MEASURED 2026-09-06)** | `p1_mutate.py` §M4; independently confirmed by `p1_fullcensus.json`, where `net.1` and `net.3` appear as UNREACHED |
 | **D-P1-GRADREACH-52PCT** | ⭐⭐⭐ **THE NORM QUESTION WAS THE SMALL VERSION OF THE PROBLEM. At v7-tiny's exact config and stage, on a real backward at its own loss weights, `42 of 138` OPTIMIZER TENSORS RECEIVE NO GRADIENT — `5,305,667` parameters = `52.2 %` OF THE DECLARED TRAINABLE BUDGET (10,169,731).** Rolled up: **`step_readout_op` 2.11 M**, **`masked_cells` 1.62 M**, **`predictor_op` 1.58 M`**. ⛔ **A 1-D-`.weight` audit was structurally incapable of seeing most of this** — the biggest terms are `Linear`s, not norms. ⭐ **MUTATION CONTROL (same geometry, same stage, only the weights move):** switching O1/O3 ON takes it `42 -> 6` tensors and `5.31 M -> 1.58 M`, so the census measures reachability rather than reporting a constant | **MEASURED (ours; CPU, geometry + freeze both control-matched to the run's `config.json`)** | `p1_fullcensus.json`; reproduced end-to-end by a real `--dry-run`, which printed the banner and wrote the census into `config.json` |
@@ -8159,3 +8163,308 @@ census found the real exposure, which nobody had asked about:** any v7f arm that
 budget** — and **1.57 M of that is unreachable in EVERY configuration** and should be deleted, not
 scheduled. ⇒ **v7f's launch line must be read with `--refuse-unreached` before it is committed to
 GPU-days**, which is now a 0-GPU dry-run step rather than a post-hoc checkpoint autopsy.
+
+---
+
+### ⭐⭐⭐ H-NAVPRED-1 (2026-09-06, nav-replacement agent) — **SUPPORTED on its primary endpoint, and its CAUSAL claim REFUSED by its own pre-registered control**
+
+**Pre-registration:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-navpred/SPEC.md`,
+written and banked **before** the roll, with all four outcomes committed.
+**Evidence class MEASURED (ours). Tier T1. n = 4,823 windows / 141 held-out episodes** — the
+landing read's grid, reproduced exactly. **Paired episode-cluster bootstrap**, B = 2,000, seed 0.
+Compute: **Thor**, 1,352 s, 4 forward rows/window; ⛔ the A40 was not touched.
+Artifact: `…/2026-09-06-refcv4b-navpred/RESULT.md` + `raw/`.
+
+**The arm.** `os_navpred` = refcv4b's planner fed **its own predicted route** —
+`argmax(route_logits)` taken from the **`nav_cmd=None`** forward (so no oracle nav enters the arm
+at any point), mapped through the **imported** `refb_labels._ROUTE_TO_NAV`. All seven arms rolled
+in ONE process on ONE surface, so every margin is within-run.
+
+| arm | ADE (m) | CI95 |
+|---|---|---|
+| `ha0_ext` | **0.2874** | [0.2649, 0.3137] |
+| `os` (ORACLE nav) | **0.2965** | [0.2697, 0.3280] |
+| `ha` | 0.2996 | [0.2755, 0.3278] |
+| `os_navshuf` | 0.3006 | [0.2738, 0.3310] |
+| ⭐ **`os_navpred`** | **0.3012** | [0.2744, 0.3318] |
+| `os_navzero` | 0.3926 | [0.3660, 0.4225] |
+| `ha0` | 0.6723 | [0.6007, 0.7469] |
+
+| margin | delta | CI95 | separated |
+|---|---|---|---|
+| **`os_navpred` − `os_navzero`** | **−0.0914** | [−0.1057, −0.0774] | **YES** |
+| **`os_navpred` − `ha0_ext`** | **+0.0138** | [−0.0011, +0.0303] | **no — a TIE** |
+| `os_navpred` − `ha` | +0.0016 | [−0.0135, +0.0181] | no — a TIE |
+| `os_navpred` − `os` | +0.0047 | [+0.0012, +0.0083] | YES |
+| ⛔ **`os_navpred` − `os_navshuf`** | **+0.0006** | [−0.0033, +0.0042] | **no** |
+| `os` − `os_navshuf` | −0.0041 | [−0.0076, −0.0004] | YES |
+
+**Recovery fraction R = 0.951** — the predicted route recovers **0.0914 m of the 0.0961 m** the
+oracle nav was worth, and the deployment arm **TIES the echo control** instead of losing to it by
++0.1054 separated.
+
+⛔⛔ **AND THE PRE-REGISTERED GATING CONTROL REFUSES THE CAUSAL READING.** The SPEC required
+`os_navpred − os_navshuf` to be **separated negative** before the *prediction* (rather than the
+*marginal*) could be credited. It reads **+0.0006 [−0.0033, +0.0042], NOT separated** ⇒ the arm is
+reported, verbatim per the SPEC, as **indistinguishable from a distribution-matched random token**.
+
+⭐⭐ **WHAT `os_navzero` ACTUALLY MEASURES — the correction this arm forces.** On one surface:
+the **true** token 0.2965 · a **random** token 0.3006 · the **predicted** token 0.3012 · **no
+token** 0.3926. ⇒ **any valid token buys ~0.092 m; being the RIGHT token buys ~0.004 m.**
+**95.7 % of what `os_navzero` removes is the PRESENCE of the E13 conditioning vector and 4.3 % is
+its CONTENT** — `nav_cmd=None` skips the E13 tactical+strategic injection for the whole call
+(`refc_v3.py:437-441`) and collapses the core onto `one_hot(0)` (`refc.py:2021-2024`).
+⇒ ⛔ **`os_navzero` is a PATHWAY ablation and `D-REFCV4B-LANDING`'s +0.1054 m was read as an
+INFORMATION one.** The number reproduces (+0.1052 [+0.0876, +0.1246]); the **inference** drawn
+from it does not. **The true cost of losing the oracle route is `os_navpred − os` = +0.0047 m
+[+0.0012, +0.0083] — 22× smaller than the "deployment gap".**
+
+**Four families** (per family, never pooled; full tables in `RESULT.md` §5):
+* **LONGITUDINAL** — `os_navpred` speed MAE **0.2956** (os 0.2900, navshuf 0.2952, navzero 0.3634,
+  `ha` 0.2540), tgt-speed acc 0.8262, along-track 0.2590. ⛔ **still worse than hold-action** ⇒ R1
+  (closing rate) is untouched. Distance-keeping OK, n = 1,224 / 67 eps: min headway 28.44 m
+  [24.43, 32.73], min time-gap 4.11 s (n 1,150), min TTC 24.89 s — ⚠️ **754/1,224 censored at
+  TTC_CAP 30 s, n_closing = 470**.
+* **LATERAL** — curvature MAE **0.008168 > `ha0`'s 0.006802** (the straight-line floor) while
+  cross-track **0.0985 m** is second-best of every arm ⇒ **the landing read's SHAPE defect is
+  unchanged**, as expected: it is cost geometry, not routing.
+* **TACTICAL** — `os_navpred` is marginally the **best planner arm on both κ**: LAT κ 0.8283
+  (os 0.8277), LON κ **0.5269** (os 0.5186), `turn_left` 0.829 (os 0.813), `brake_stop` 0.563
+  (os 0.539). ⚠️ **unpaired, no margins** — not claimed as separated. ⛔ Longitudinally every
+  planner arm still trails `ha` (κ 0.6071). Goal FDE 0.6453 m, goal-bearing MAE **1.5327°** (best).
+  ⛔ `anchor_acc`/`oracle_sel` NOT quoted — `D-REFCV4B-ASTAR-GEOMETRY` unrepaired,
+  `--with-oracle-sel` deliberately OFF.
+* **STRATEGIC** — route acc **0.7791**, κ **0.4864**, n = 3,622/128, **identical under
+  `nav_true` / `nav_shuffled` / `nav_zero` AND `nav_predicted`** ⇒ ⭐ the non-circularity control:
+  feeding the head its own output does not move it (4,823/4,823).
+
+**Controls (SPEC §4), reported PASS *and* FAIL:** C1 model-free `ha` 0.2996 / `ha0` 0.6723 with
+**abs diff 0.000000** (the two surfaces are one surface) ✅ · C2 grid 4,823/141, shuffle changed
+2,406/4,823 ✅ · C4 non-circularity 4,823/4,823 ✅ · C5 same token ⇒ **exactly 0.0 m** path diff
+with a same-breath control reading **3.0065 m** on different-token windows ✅ · C7 map imported ✅ ·
+⛔ **C3 `os` reproduction 0.2965 vs 0.2975, abs diff 0.001031 — MISSES its 0.001 tolerance by 3 %**
+· ⛔ **C6 1,908 differing windows vs the pre-registered 1,917 — MISSES by 9 (0.19 %)**.
+⚠️ **Mechanism, measured, not waived:** this is a **CROSS-HARDWARE** reproduction (A40 / x86_64 /
+torch 2.8.0+cu128 → **Thor / aarch64 / torch 2.13.0+cu130**) and the tolerances were written for a
+same-hardware re-roll. Different kernels ⇒ different float32 tie-breaks in **two argmaxes**
+(anchor selection, route head), which are discrete, so a 1e-7 perturbation gives a decimetre-scale
+change on a near-tied window (`n_distinct` 50→51, modal 0.4879→0.4889). **C1's abs diff 0.000000
+proves only the model's float path moved.** The `os` shift is **89× smaller** than the effect
+measured, and **every margin above is WITHIN-RUN**, so none is exposed. **WORK ITEM NP-3.**
+
+**Registered:** `H-NAVPRED-1` — **SUPPORTED (primary endpoint) / CAUSAL CLAIM REFUSED (gating
+control)**. Consequences: `D-REFCV5-LEVERS` **item 2 is DOWNGRADED** — an eval-time route swap
+recovers the ADE but not through route information; the refcv5 requirement is a **GEOMETRIC goal
+point** (the literature lever is +4.7 PDMS vs the categorical command's +0.2), and **this run is
+the categorical ceiling: the best possible 3-way token is worth 0.0047 m on this surface.**
+⭐ **NEXT LEVER, named and costed: `NP-1` — roll `--with-navflip` (left↔right on every commanded
+window), ~25 min on Thor, no new code.** `os_navshuf` leaves the token *plausible*; flip makes it
+**wrong everywhere**. If `os_navflip` also lands near 0.30 the E13 nav path is a **presence-gated
+bias vector** and the conditioning edge is effectively inert — a refcv5 *architecture* finding much
+larger than this one. **Both outcomes are informative and neither is available from what has been
+rolled.**
+
+### ⛔⛔ D-REFCV3ARM-ROUTE-NAV-TYPE (2026-09-06) — two published refcv4b STRATEGIC numbers were TYPE ERRORS, found and fixed in passing
+
+`taniteval/tools/refcv3_arm.py` compared `route_pred` (a **3-wide `ROUTE_CLASSES`** index)
+**directly** against `nav_cmd` / `nav_cmd_shuf` (**4-wide `NAV_COMMANDS`** indices), on a shipped
+comment asserting they are *"both 3-wide and index-aligned in refb"*. **Refuted at source:**
+`refb.py:64` `("follow","left","right","straight")` vs `refb.py:68`
+`("route_left","route_straight","route_right")`, and `refb_labels.py:483-484`
+`_ROUTE_TO_NAV = {0:1, 1:0, 2:2}` — **not the identity**.
+
+| statistic | published | **corrected** |
+|---|---|---|
+| `nav_echo_index` | 0.1621 | **0.6405** (n 3,622); re-rolled **0.6422** |
+| `route_follows_SHUFFLED_NAV_under_shuffle` | 0.2264 | **0.3370** (n 1,736); re-rolled **0.3335** |
+
+⭐ **ROOT-CAUSE CLASS: a control re-implemented beside the harness it controls, drifted — into a
+REGRESSION against a CORRECT SIBLING.** `taniteval/tools/refav1_arm.py:2308` has always derived
+the map and compared in ROUTE space ⇒ **every refav1 strategic number is unaffected.**
+⚠️ **A third defect, measured false:** the block asserted the two rates are *"different classes by
+construction, so mutually exclusive"* — `route_label` is **per-window**, `nav_cmd` is a
+**per-clip** 25 s token, and on **357/1,736** changed windows they coincide (rates sum to 1.0806).
+`changed_exclusive_subset` (n = 1,311) is now emitted as the quotable form: **LABEL 0.7155
+[0.6395, 0.7896] vs NAV 0.1701 [0.1133, 0.2292], non-overlapping.**
+⭐⭐ **`H-REFCV4B-ROUTE-ECHO` STANDS AND IS SHARPER** — it never rested on the index arithmetic but
+on the head's output being identical under every conditioning; **a function that does not read the
+nav input cannot echo it.**
+**Fixed, staged and MUTATION-PROVEN:** both maps imported, both legacy forms kept under
+`*_RAW_INDEX_LEGACY`, the refuted comment deleted, and
+`stack/tests/test_refcv3_route_nav_alignment.py` added with a deliberate-regression arm (a route
+head that is a *perfect* echo: the corrected index must read exactly 1.0, the legacy form must fail
+to see it). **5/5 pass on the fixed file; 4/5 FAIL on the pre-fix file (md5
+`f60d1f974038d3785c74706b03046fde`).** Logged in `RETRACTION_LOG.md`; corrections applied with
+provenance to `MODEL_REGISTRY.md`, this register and `LANDING_RESULT.md`.
+
+---
+
+## `D-REFAV1-DK-COST` — ⭐ **refav1's LONGITUDINAL DISTANCE-KEEPING COST: BUILT, FIRING, AND RE-RANKING** (2026-09-06)
+
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refav1-distance-keeping/`
+(`RESULT.md`, `raw/dk_fire_probe.json`, `raw/dk_tau_calib.json`, `raw/dk_direction_full.json`,
+`raw/smoke_out_dkw{0,1e-5}.json`, `raw/join_receipt.json`).
+**Code:** `stack/tanitad/refs/refav1_lon_cost.py` (new) · hook in `refa_v1.plan` ·
+`--dk-w/--dk-tau/--dk-d0/--dk-gap-source/--dk-gap-block` in `taniteval/tools/refav1_arm.py` ·
+`stack/tests/test_refav1_lon_cost.py` (23) + `stack/tests/test_refa_v1_dk_hook.py` (9).
+
+### ⛔ CORRECTION FIRST — "refav1 has never reported distance-keeping, n = 0" is REFUTED
+
+**MEASURED:** `taniteval/results/RESULT-refav1-21109-openloop.md` has published it since
+**2026-09-04**: `cl` headway **26.2149 m** / time-gap **4.6913 s** / min-TTC **22.9028 s**, with
+`distance_keeping.status = "OK"`, **`n = 87`**, `n_time_gap = 81`, `n_closing = 39` and the full
+per-speed-band stratification in `refav1-21109-openloop.json`. The wiring is
+`taniteval/taniteval/lead_source.py` + `tools/build_lead_block_b1.py` + the banked **B1 EVAL lead
+block** (29,556 rows / 147 clips), joined by `(clip_id, RAW frame 2t)`.
+⚠️ **ROOT-CAUSE CLASS: a stale absence claim scoped to the WRONG CORPUS.**
+`dump_lead_join.py`'s docstring records the true 2026-08-18 fact *"val40 ∩ train2308 = ∅"* — but
+refav1 evaluates on the **141-clip v7.2 EVAL split**, for which a **different** block was built on
+2026-09-02. Two corpora, one phrase ("the eval set"). Same family as the `physicalai` read-set
+count that rotted four times: **an absence found at ONE location is not absence, and a claim about
+a corpus must name the corpus.**
+⚠️ **The 433,040-record / 2,308-clip agent join is REAL and RE-VERIFIED** (md5
+**`24cbdca8c3b23aafc2fb17e6bf99cf76`** == the banked expected value, 136,689,648 B, at
+`C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl.xz`) — **but it is a TRAIN-corpus
+join and cannot be attached to refav1's EVAL windows.** ⇒ **the `build_lead_tracks.py` adapter was
+NOT built, deliberately**: it would have produced a join for the wrong corpus. Recorded as a
+decision, not an omission (`raw/join_receipt.json`).
+⭐ **TWO `n`s LIVE IN THIS FAMILY:** **90** = windows whose *causal lead selection at t0* found an
+in-corridor vehicle (**what the COST sees**, before any path exists); **87** = windows where the
+*arm's predicted path* keeps the lead in-corridor for ≥1 step (**what the METRIC scores**,
+arm-dependent). Reproduced from the dump; `lead_metrics.distance_keeping(cl, …)` returns exactly
+**87**. **Quote the cost's n for the cost and the metric's n for the metric.**
+
+### The defect, as arithmetic
+
+`_cost_chunk` prices the goal term, `w_jerk·mean(jerk²)`, `w_kappa·mean(κ²)`, and `w_vend` **only
+when `target_speed` is armed — which `refav1_arm.py` never does**. `mean(jerk²)` is **0 for ANY
+constant acceleration**; `mean(κ²)` says nothing about speed. ⇒ **the all-zero control is the joint
+minimiser and the acceleration channel had NO cost at all.** MEASURED on the 21109 panel: `cl`
+bit-identical to `ha0` on **270/282**, κ identically zero on **282/282**, two distinct plans total,
+and the whole cost landscape is `plan_cost_cl` **median 0.0, max 1.41e-04**.
+
+### The term, and the coordinate it is expressible in
+
+`cost_dk = w_dk · mean_k( relu(s*(v_k) − gap_k)² )`, `s*(v) = d0 + tau·v`,
+`gap_k = gap0 + v_lead·t_k − s_ego(t_k)`. A function of **exactly two things**: **`gap0`** (the one
+perception input, which `H-REFAV1-PERCEPT-1` measured is decodable from this planner's own
+`_last_state` at **+0.3632 [+0.2069, +0.5088]** vs a **−0.0513** raw-pixel floor) and the
+**candidate's own kinematics**, integrated with `rollout_unicycle`'s convention *exactly* and
+pinned numerically against the integrator, so the cost's gap **is** the gap
+`lead_metrics.per_step_gap` scores.
+⛔⛔ **THE CLOSURE IS AN ASSUMPTION AND IT IS NAMED:** M84's closing-rate null (`field` +0.0061
+[−0.0406, +0.0513]; and the cheap fix — an explicit temporal difference — recovers **+0.0145, still
+spanning zero**) means the lead's future speed is **unobservable**, so it is closed at
+`v_lead = v0`. The predicted gap then depends **only** on the candidate's excess displacement over
+constant velocity and is **exactly `gap0` for a = 0**. ⇒ **this term prices a GAP; it CANNOT price
+CLOSING**, and the closure travels into every dump.
+⚠️ **IDM-shaped, because a threshold carries its regime (M74):** `gap/v ≥ tau` is undefined at
+v → 0 and rates a 1 m gap at 0.5 m/s as a 2 s headway. `d0` carries the crawl, `tau` the cruise.
+⚠️ **One-sided and saturating**, so it can never reward closing a large gap nor reward braking past
+adequacy. ⛔ **Default-OFF and EXACTLY zero** on the shipped path (test-pinned, each parity
+assertion paired with a same-breath control that MUST differ).
+
+### MEASURED — it fires, it re-ranks, and the human goes the same way
+
+* **P1 (zero-GPU re-pricing of the banked 21109 panel).** Of **90** LEAD windows, **21 (23.3 %,
+  17 episodes) are in violation** at `tau = 1.5`; mean shortfall **9.10 m** (max 27.48), violating
+  v0 **16.44 m/s** vs adequate **8.00**. **Controls read their known values:** adequate cost
+  **exactly 0.0** (an identity), violating **strictly > 0**, unarmed **exactly 0**.
+* **P2 (re-rank).** On the planner's constant-acceleration baselines **both existing regularisers
+  are identically zero and `w_vend` was never armed ⇒ the DK term is the ONLY discriminator**:
+  cost(a=0) **143.373** vs cost(a=−1.5) **100.034** ⇒ **21/21 flip** from hold-speed to decelerate.
+* ⛔ **P2's direction check was a NULL** (tau 1.5: −0.2015 [−0.4455, +0.0446], spans 0) — and the
+  null was about the **panel**, not the corpus: `--window-stride 40` emits **2 windows/episode**, so
+  21 violating windows over 17 episodes cannot settle it. **UNDERPOWERED, reported as such.**
+* ⭐ **P3 — RUN WHERE IT HAS POWER, AND IT PASSES.** The same question on the **full B1 eval lead
+  block: 8,339 usable LEAD rows / 147 clips at 10 Hz**, GT acceleration from the block's own
+  per-frame `speeds`, clip-cluster bootstrap. **A clean interior optimum at tau ≈ 1.2–1.5** in the
+  leakage-immune **EXCESS (TRUE − within-clip SHUFFLE)**: **−0.2120** (tau 1.2; raw −0.3002
+  [−0.5423, −0.1217]) and **−0.2053** (tau 1.5; raw −0.2617 [−0.4531, −0.0991]), both raw CIs
+  excluding zero. ⛔ **The within-clip shuffle is NOT zero anywhere (−0.031 to −0.148)** — clips with
+  many tight-gap rows are also braking clips — **so the EXCESS is the readable quantity, never the
+  raw delta** (M84's agent-count lesson). ⚠️ **tau = 0.8 FAILS while 0.5 and 1.0 pass**; reported as
+  it came out, not smoothed.
+* ⭐ **The corpus agrees from the other side:** time gap at t0 (n = 7,211 rows / 86 clips, v ≥ 1 m/s)
+  **median 2.917 s / p25 1.894 / p10 1.316**; at **v ≥ 10 m/s** (n = 3,218) **median 2.056 / p25
+  1.371 / p10 0.886**. ⇒ **`tau = 1.5 s` sits at ~p25 of the at-speed distribution against a median
+  of 2.06 s — it prices the TAIL and does not fight the reference the arm is scored against.**
+
+### ⭐ P4 — THE DEGENERACY BROKE ON THE REAL CHECKPOINT (T1, dev-box RTX 4060, step 21,109)
+
+Same seed, same flags, `--dk-w` the only difference, on the 2 slice episodes carrying a violating
+eval-grid window. **n = 4 windows / 2 episodes.**
+
+| `cl` | `--dk-w 0` | `--dk-w 1e-5` |
+|---|---|---|
+| constant-velocity frac | **1.0000** | **0.7500** |
+| bit-identical to `ha0` | **4/4** | **3/4** |
+| headway / time-gap / min-TTC | 34.8689 / 1.5360 / 24.2072 | **34.9139 / 1.5381 / 24.3445** |
+| lateral cross-track / curvature MAE | 0.1586 / 0.000414 | **IDENTICAL** |
+| `ha0` control ADE | 0.3312 | **0.3312 (unchanged)** |
+| ADE | 0.3312 [0.2602, 0.4023] | 0.5615 [0.2602, 0.8627] |
+
+⭐ **First time refav1's acceleration channel has been priced at all.** Direction correct (headway
++0.045 m, min-TTC +0.137 s); **lateral bit-identical** — a same-breath control proving the term
+touches only the longitudinal channel.
+⛔⛔ **WHAT THIS IS NOT:** n = 4 carries **no** family claim, and the ADE move (**+0.2303 m**) is
+**BELOW refav1's ≈0.30 m inference-seed floor** (`D-REFAV1-SEED-GOAL-MISMATCH`) — **so it is not an
+effect.** Only the two structural rows stand, and only as identities about this fixed-seed pair:
+const-velocity 1.0000 → 0.7500 and identical-to 4/4 → 3/4 are **exact-equality counts with one flag
+moved**.
+⚠️ **THE GAP IS AN ORACLE LABEL ⇒ THIS IS A CEILING**, answering the question `M53`/`M54` left open
+when a *perfect goal* made this planner **2.03× worse**. `--dk-gap-source` accepts **only**
+`oracle_label` and the tool **refuses** any other value rather than banking an arm whose record
+would misdescribe its input.
+
+### STATUS and what is blocked on what
+
+| item | state |
+|---|---|
+| the cost term + hook + flags + 32 tests | ⭐ **DONE, staged, suite green** |
+| does it fire / re-rank | ⭐ **MEASURED: 21/90 windows, 21/21 flips** |
+| does the human agree | ⭐ **MEASURED with power: interior optimum tau 1.2–1.5, EXCESS −0.2120/−0.2053** |
+| does it drive better | ⏳ **BLOCKED ON A GPU.** Sweep `w_dk ∈ {0, 1e-7, 3e-7, 1e-6, 3e-6, 1e-5}` (band derived from the measured re-rank threshold 3.7e-07 and the existing cost IQR 1.6e-05), **with ≥3 INFERENCE-seed replicates** — exact command in `RESULT.md` §7. `--dk-w 0` doubles as the parity control that must reproduce the banked panel bit-for-bit |
+| **vision-only deployment** | ⛔ **BLOCKED ON A DECODED GAP HEAD** (a dev-box-sized ridge/MLP on `_last_state`; no trunk training). **Decodability is NECESSARY, NOT SUFFICIENT — C131** |
+| closing rate | ⛔ **NOT THIS COST'S PROBLEM.** M84 §4b established it is a REPRESENTATION defect (refcv5 / v7f own it) |
+| `d0 = 5.0 m` | ⚠️ **NOT calibrated from data** (unlike `tau`): the 0–1 m/s band has 9 LEAD windows in the panel and is **UNPOWERED**, which is why it was not swept |
+
+## ⭐ H-REFCV5-DDIM-1 — **PRE-REGISTERED, NOT RUN: the WP-4 control-space DDIM sampler, with the INFERENCE-seed replicate the rig demands** (2026-09-06, Arch+Inference FlyWheel, 0 GPU)
+
+⛔⛔ **NO refcv5 RESULT EXISTS.** `refcv5-ddim-b1-v72-40k` is training on `tanitad-a40`
+(launched 2026-09-06 10:13:52 UTC, 3.938 s/step, ETA ≈ 2026-09-08 06:20 UTC, `D-REFCV5-LAUNCH-1`).
+This row registers the hypothesis and its **committed** PASS/FAIL criteria **before the data
+exists**, which is the only moment a pre-registration is worth anything.
+**SPEC:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv5-landing-prereg/SPEC.md`
+(all sections). **Analysis, written now and self-tested:** `raw/refcv5_landing_analysis.py`,
+`raw/mkfixture.py`, `raw/selftest.log`.
+
+| | |
+|---|---|
+| **Hypothesis** | replacing refcv4b's truncated-diffusion refinement loop with the **DDIM sampler in CONTROL space** (`--sampler ddim` + its **mandatory** `--w-u0 0.5`) improves driving on the same B1 surface — *"every sample re-rolls through the kinematic model and is flyable by construction rather than by penalty."* |
+| **one_variable** | ⭐ **ONE MECHANISM, INSEPARABLE BY CONSTRUCTION.** `U0_WEIGHT_DEFAULT = 0.0` (`refc_v3_train.py:114`); `--sampler ddim --w-u0 0` is **REFUSED** (`:302-309`); a stamp with `w_u0 > 0` and no `control_head` is **REFUSED** (`:2113-2115`). `--agents off` is the **default** (`:3400`) and changes nothing. `--sampler-space control` / `-infer-t 8` / `-steps 2` / `-groups 1` are all defaults, unpassed. And `refc.py:2107` sets `_loop_steps = 0` when the sampler is built, so the pre-v5 loop is **disabled** and exactly one mechanism refines the fan. **G-ARGV** asserts the `config.json['argv']` symmetric difference is exactly `{--sampler ddim, --w-u0 0.5, --agents off}` or the panel is **VOID** |
+| ⭐ **PASS (P1) — the ONLY criterion that decides "progress"** | **`refcv5 os − ha0_ext` on `ade_m` is NEGATIVE, its paired CI excludes zero, and `|delta| > F(ade_m)`** — F being refcv5's OWN measured inference floor. **This is the bar refcv4b FAILED** (`os − ha0_ext` **+0.0101** [−0.0050, +0.0273], not separated) |
+| **PARTIAL (P2)** | `refcv5 os − refcv4b os` separated NEGATIVE and > floor **while P1 does not hold** ⇒ reported as **`LEVER-SUPPORTED / NOT-DRIVING`**. ⛔ Beating refcv4b while still only tying `ha0_ext` (0.2874) and `ha` (0.2996) **is not driving** — it is a delta between two ties |
+| **FAIL (F1 NULL)** | `refcv5 os − refcv4b os` not separated, **or** `|delta| ≤ F(ade_m)` ⇒ a 44-hour arm whose one mechanism moved nothing a second roll of the same checkpoint would not have moved by itself |
+| **FAIL (F2 REGRESSION)** | separated POSITIVE ⇒ the next lever is the ladder (`--sampler-infer-t` / `--sampler-steps`), not more training |
+| ⭐⭐ **L1 — the mechanism's own sharpest committed prediction** | **`os` CURVATURE MAE falls BELOW `ha0`'s straight-line floor 0.006802 1/m**, paired margin separated and > floor, **with cross-track not degrading past `ha0_ext`'s 0.1070 m**. refcv4b reads **0.008097 — WORSE than a plan that never steers** — while having the **best cross-track of any arm (0.0979 m)**: a **SHAPE** defect. Curvature MAE is the metric that measures flyability, so a control-space sampler that leaves it at or above the floor is **REFUTED at the metric it names**, whatever ADE does |
+| **T1-SHAPE (committed)** | an `ade_m` win **while** `turn_left` (refcv4b 0.813, n 251) or `turn_right` (0.886, n 396) recall falls by more than `F(recall)` is reported as **`FAIL-SHAPE`** — a regression wearing a win. *(refav1's best-ADE arm executes **zero** turns.)* |
+| **VOID (not "negative")** | G-ARGV fails · **G-STOCH** fails either way · `frames_blind` does not regress · the model-free arms are not bit-identical · `paired(a,a)` ≠ exactly zero · the window grids differ |
+| ⛔⛔ **THE THREE VARIANCES, NAMED** | **V1 episode draw** — priced by the paired episode-cluster bootstrap. **V2 training run** — ⛔ **NOT PRICED**, a named blocker (~44 h A40, PI decision); `H-ESTIM-SEED-1` gives a **~17 % false-positive rate for `separated`** on a zero-lever replicate, so every margin is *necessary, not sufficient*. **V3 inference run** — ⭐ **PRICED, and it MUST be** |
+| ⭐⭐ **WHY V3 IS NEW HERE** | refcv4b was **deterministic** outside training (`refc.py:2110-2111`, `noise = … if self.training else torch.zeros_like(x)`), so its single-seed CIs closed the inference question **by construction**. **refcv5 cannot**: `refc.py:1815` draws `eps = torch.randn_like(x0_n)` with **no `self.training` guard**, under a comment at `:1801-1813` saying so *by design* — *"a SAMPLER cannot [zero its noise], because sampling is the mechanism."* ⇒ **a separated CI from ONE refcv5 roll answers a question nobody asked** |
+| ⭐ **THE REPLICATE ARM, and the MEASUREMENT that makes it free** | `os_R1` / `os_R2`: same checkpoint, same windows, **argv byte-identical except `--dump-dir`/`--out`**, fresh process. **MEASURED (ours) 2026-09-06:** `refcv3_arm.py` **never calls `torch.manual_seed`** — count **0** against a same-breath control of **33** `add_argument`, and its `--seed` reaches only `analyze_refcv3`/`_boot`/the shuffles — while torch's default generators are seeded **nondeterministically per process** (three dev-box processes: CPU `initial_seed` 198353026560400 / 198354645806200 / 198356256509000; CUDA 6877072347531542 / 1187870223787850 / 2024662901884684, distinct draws on both devices). ⇒ **a plain re-run IS an independent inference draw**, at one eval pass |
+| ⛔ **THE FLOOR IS refcv5's OWN** | `F(m)` = max pairwise `|delta|` over the three rolls. **refav1's ≈0.30 m ADE floor is NOT imported** — a different rig (iCEM, 128 sampled rollouts) against refcv5's one `eps` at `t = 8` with 2 DDIM steps. Quoting it as refcv5's bar would be the `df`/Thor-`free`/`step_s` scope error. It is the **reason** the replicate is mandatory, never the **bar** |
+| ⛔ **EXCLUDED, so nobody quotes them off the landing dump** | **`oracle_sel`**, **`anchor_acc`**, **`sel_agrees_oracle`** — INVALID on a v0-conditioned vocabulary (`refcv3_arm.py:1492` binds `decoder.anchors`, which `refc_v3_train.py:538-545` forbids; refcv5 is `--anchor-v0-conditioned` exactly as refcv4b was, and on refcv4b the "ceiling" read **1.2154 m = +0.9179 separated WORSE than the arm it bounds**) ⇒ **`--with-oracle-sel` is NOT passed**. **`--ablate sel_refined`** — 0.0259 m separated WORSE on refcv4b **and** structurally out of scope (`refc.py:1837-1840`: `SelectionConfig.refined` defaults False, *the sampler deliberately does not touch the ranked score*). The **`\|dyaw\| > 0.15`** turn gate — the human fails it **3 of 9**. Any **PARITY-corpus LEVEL** comparison — this arm is **B1 (4,572 clips)**, valid as an ARM delta, inadmissible as a LEVEL |
+| ⚠️ **Anchor units are OPERATOR-ASSERTED** | the live 117-anchor bank declares **no** `control_units`; the run carries `--anchor-control-units alat`, recorded `control_units_source: cli-override-legacy-file`. Read as curvature the same tensor gives **396 g** and 104/117 anchors outside a μ = 0.7 circle; read correctly **0.31 g, 0/117**. Every anchor-geometry number in the landing carries this sentence |
+| ⭐ **W-1 CLOSED IN ADVANCE** | refcv4b shipped LATERAL and TACTICAL with per-arm CIs and **no paired margins** (`_intervals_complete: false`). `raw/refcv5_landing_analysis.py` computes them offline at **zero GPU** — LATERAL from the banked `ep*.npz` paths, TACTICAL/STRATEGIC from `decisions/ep*.npz` (`lat_label`/`lon_label`/`route_label` against `*_pred_nav_zero`) — with a **derived-vs-harness ADE reconciliation** as the control that must read a known value |
+| ⭐ **THE INSTRUMENT IS ALREADY PROVEN ABLE TO FAIL** | `raw/selftest.log`, MEASURED this turn on synthetic `refcv3_arm`-shaped dumps: **5 negative controls, all firing** — bit-identical rolls ⇒ `G-STOCH … VOID`, **exit 1**; argv drift ⇒ `ARGV AUDIT FAILED`; mismatched grids ⇒ `REFUSED … aligning them would be a fiction`; a wrong harness ADE ⇒ `MISMATCH`; absent `decisions/` ⇒ `REFUSED` with its reason. Positive side: `PREFLIGHT OK`, `paired(A,A)` = **0.0000000000, [0, 0], separated False**, ADE **RECONCILED**. ⚠️ It proves the **instrument**, on synthetic paths; no number in it is a result |
+| ⛔ **PREFLIGHT IMPORT PROBE** | `--preflight` is **GATE 0 step 4**. MEASURED at launch: `taniteval` was **absent from the pod entirely**, so the landing eval would have died on `import taniteval.ci` **after ~45 h of paid compute**. A 2-second probe is the durable fix; `--analyze-only` is checked before anything is ever re-rolled |
+| **Blockers named** | **B1** WP-6 (`--agents oracle`) blocked on a **B1-scoped `obstacle.offline` join** — the *"needs no detector"* precondition was REFUTED at preflight (true of the detector, false of the JOIN); the only join held is parity-scoped, ≈4 % of B1. **B2** V2 training-run variance unpriced (~44 h A40, **PI decision**). **B3** `refcv3_arm.py:1492` `a_star` geometry (W-4) — ⛔ **ESCALATED, not edited: this stream does not own that file**. **B4** ⚠️ declared deviation — the skill says *never validate a design on a full-scale run*, and refcv5 **is** one; a NULL is therefore a statement about **this arm at this budget**, not about the mechanism. **B5** `--sel-refined` does not exist in this trainer (`grep -c` **0** vs a same-breath control `sel_accel_max` **5**) |
+| **Status** | ⛔ **PRE-REGISTERED (2026-09-06) — NOT RUN.** Nothing in this row is a capability number. ⛔ Nothing in the SPEC may be edited after the numbers land; a changed criterion goes to `RETRACTION_LOG.md` |
+
+> ⭐⭐ **THE ONE LINE, COMMITTED BEFORE THE DATA EXISTS:** refcv5 counts as **PROGRESS** only if
+> `os − ha0_ext` on `ade_m` is separated NEGATIVE by more than refcv5's own measured
+> inference-seed floor — the bar refcv4b failed at **+0.0101** — with curvature MAE below `ha0`'s
+> **0.006802** and turn recall not falling. It is a **NULL** if `os − refcv4b os` is unseparated or
+> smaller than that floor: a 44-hour arm whose one mechanism moved nothing a second roll of the
+> same checkpoint would not have moved by itself.

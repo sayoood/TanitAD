@@ -1,0 +1,108 @@
+== refcv5_landing_analysis.py SELF-TEST ==
+run 2026-09-06T11:03:12Z on synthetic refcv3_arm-shaped dumps built by mkfixture.py
+purpose: prove every GATE can FAIL before the landing trusts it with a 44 h run's only output
+
+---- [1] --preflight (GATE 0 step 4) ----
+  [OK     ] numpy                                                      per-window arithmetic
+  [OK     ] taniteval.ci                                               the ONLY admissible estimator
+  [OK     ] taniteval.ci.paired_episode_cluster_bootstrap              the paired estimator
+  [OK     ] taniteval.ci.overlapping_holdout_se                        present-but-never-called (control)
+PREFLIGHT OK
+
+---- [2] --floor R0 R1 R2  (V3 inference floor + G-STOCH) ----
+ARGV AUDIT: OK -- the replicate moved zero levers
+G-STOCH  os differs across rolls on 77/77 of 77 windows -> OK (the sampler is live at eval)
+G-STOCH  model-free ha       bit-identical across rolls: YES
+G-STOCH  model-free ha0      bit-identical across rolls: YES
+G-STOCH  model-free ha0_ext  bit-identical across rolls: YES
+  F(ade_m                     ) = 0.0004   [0 of 3 zero-lever pairs read SEPARATED]
+  F(fde_m                     ) = 0.0004   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LON_speed_mae_mps         ) = 0.0012   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LON_speed_bias_mps        ) = 0.0038   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LON_along_mae_m           ) = 0.0002   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LAT_cross_mae_m           ) = 0.0006   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LAT_heading_mae_deg       ) = 0.0202   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LAT_yaw_rate_mae_degps    ) = 0.0803   [0 of 3 zero-lever pairs read SEPARATED]
+  F(LAT_curvature_mae_1pm     ) = 0.000400   [0 of 3 zero-lever pairs read SEPARATED]
+NOTE: a zero-lever pair that reads SEPARATED is exactly H-ESTIM-SEED-1's failure mode, one variance down. It is expected, not a bug, and it is WHY the floor exists.
+wrote floor.json (9844 bytes)
+
+---- [3] NEGATIVE CONTROL: two BIT-IDENTICAL rolls must VOID ----
+G-STOCH  os differs across rolls on 0 of 77 windows -> VOID -- the rolls are bit-identical, so this arm is NOT the stochastic arm the SPEC describes
+[refcv5] G-STOCH / ARGV FAILED -> the floor is VOID and no margin may be quoted against it
+exit=1
+
+---- [4] NEGATIVE CONTROL: argv drift in the replicate must VOID ----
+PAIRING OK: n_windows=77  n_episodes=7  grid identical (R0 vs BADARGV)
+  ARGV AUDIT FAILED: BADARGV differs from R0 beyond --dump-dir/--out
+ARGV AUDIT: FAILED -> THE FLOOR IS VOID
+[refcv5] G-STOCH / ARGV FAILED -> the floor is VOID and no margin may be quoted against it
+
+---- [5] NEGATIVE CONTROL: a mismatched window grid must REFUSE, not align ----
+[refcv5] REFUSED: R0 has 77 windows, SHORT has 22 -- not the same grid, and aligning them would be a fiction
+
+---- [6] NEGATIVE CONTROL: a wrong harness ADE must read MISMATCH ----
+ADE RECONCILIATION: derived=0.0373 harness=0.9999 |d|=0.96262 tol=0.02000 -> MISMATCH  <- the DERIVED family rows below are NOT trustworthy
+
+---- [7] NEGATIVE CONTROL: absent decisions/ must REFUSE with a reason ----
+  REFUSED TACTICAL/STRATEGIC       no decisions/ep*.npz under NODEC
+
+---- [8] --pair V4B R0  (the arm-vs-arm margin, read against the floor) ----
+PAIRING OK: n_windows=77  n_episodes=7  grid identical (V4B vs R0)
+dt_s=0.5  k=4  arm=os  n_windows=77  n_episodes=7
+  ade_m                      A=0.0916  B=0.0373  B-A=-0.0543 [-0.0594, -0.0485] sep=True  floor=0.0004     QUOTABLE
+  fde_m                      A=0.0946  B=0.0378  B-A=-0.0568 [-0.0613, -0.0522] sep=True  floor=0.0004     QUOTABLE
+  LON_speed_mae_mps          A=0.0824  B=0.0628  B-A=-0.0196 [-0.0302, -0.0086] sep=True  floor=0.0012     QUOTABLE
+  LON_speed_bias_mps         A=0.0339  B=0.0014  B-A=-0.0325 [-0.0346, -0.0307] sep=True  floor=0.0038     QUOTABLE
+  LON_along_mae_m            A=0.0620  B=0.0237  B-A=-0.0383 [-0.0447, -0.0316] sep=True  floor=0.0002     QUOTABLE
+  LAT_cross_mae_m            A=0.0606  B=0.0240  B-A=-0.0366 [-0.0395, -0.0332] sep=True  floor=0.0006     QUOTABLE
+  LAT_heading_mae_deg        A=0.6500  B=0.5077  B-A=-0.1423 [-0.2037, -0.0622] sep=True  floor=0.0202     QUOTABLE
+  LAT_yaw_rate_mae_degps     A=2.1411  B=1.8637  B-A=-0.2774 [-0.5641, 0.0612] sep=False floor=0.0803     ns
+  LAT_curvature_mae_1pm      A=0.004636  B=0.004148  B-A=-0.000500 [-0.001400, 0.000500] sep=False floor=0.000400   ns
+CONTROL paired(A,A): delta=0.0000000000 lo=0.0000000000 hi=0.0000000000 separated=False -> OK
+windows whose ade_m differs at all: 77/77 = 100.00%
+wrote pair.json (4478 bytes)
+
+---- [9] --families R0 --vs V4B  (four families + the paired margins that close W-1) ----
+dump=R0  dt_s=0.5  k=4  n_windows=77  n_episodes=7  arms=os,ha,ha0,ha0_ext,os_navshuf,os_navzero,os_navpred
+ADE RECONCILIATION: derived=0.0373 harness=0.0373 |d|=0.00002 tol=0.02000 -> RECONCILED
+
+PER-ARM LEVELS (episode-cluster bootstrap; V1 only)
+  arm          ade_m                  LON_speed_mae_mps      LAT_cross_mae_m        LAT_curvature_mae_1pm  LAT_heading_mae_deg   
+  os           0.0373                 0.0628                 0.0240                 0.004148               0.5077                
+  ha           0.0602                 0.0906                 0.0396                 0.006529               0.8392                
+  ha0          0.2601                 0.0106                 0.2589                 0.003870               1.8184                
+  ha0_ext      0.0502                 0.0848                 0.0311                 0.004691               0.6096                
+  os_navshuf   0.0395                 0.0630                 0.0254                 0.004091               0.5052                
+  os_navzero   0.1173                 0.0887                 0.0800                 0.004574               0.6906                
+  os_navpred   0.0546                 0.0670                 0.0353                 0.004098               0.5337                
+
+L1 (committed): os curvature 0.004148 vs ha0 straight-line floor 0.003870 -> AT/ABOVE the floor -- L1 REFUTED on this half
+L1 guard: os cross-track 0.0240 vs ha0_ext 0.0311 -> held
+
+TACTICAL / STRATEGIC (per-window 0/1 from decisions/)
+  STR_route_correct          0.8312 [0.7922, 0.8701]  n=77   prediction key route_pred_nav_zero vs label route_label
+  TAC_lat_correct            0.8312 [0.7922, 0.8701]  n=77   prediction key lat_pred_nav_zero vs label lat_label
+  TAC_lon_correct            0.8312 [0.7922, 0.8701]  n=77   prediction key lon_pred_nav_zero vs label lon_label
+  TAC_turn_left_recall       0.7667 [0.6452, 0.8710]  n=30   recall of lat class 0 among 30 labelled windows
+  TAC_turn_right_recall      0.8571 [0.7500, 0.9545]  n=21   recall of lat class 2 among 21 labelled windows
+PAIRING OK: n_windows=77  n_episodes=7  grid identical (R0 vs V4B)
+
+PAIRED MARGINS  (R0) - (V4B)  on arm os   [closes W-1]
+  ade_m                      delta=-0.0543 [-0.0594, -0.0485] sep=True  floor=0.0004     QUOTABLE
+  fde_m                      delta=-0.0568 [-0.0613, -0.0522] sep=True  floor=0.0004     QUOTABLE
+  LON_speed_mae_mps          delta=-0.0196 [-0.0302, -0.0086] sep=True  floor=0.0012     QUOTABLE
+  LON_speed_bias_mps         delta=-0.0325 [-0.0346, -0.0307] sep=True  floor=0.0038     QUOTABLE
+  LON_along_mae_m            delta=-0.0383 [-0.0447, -0.0316] sep=True  floor=0.0002     QUOTABLE
+  LAT_cross_mae_m            delta=-0.0366 [-0.0395, -0.0332] sep=True  floor=0.0006     QUOTABLE
+  LAT_heading_mae_deg        delta=-0.1423 [-0.2037, -0.0622] sep=True  floor=0.0202     QUOTABLE
+  LAT_yaw_rate_mae_degps     delta=-0.2774 [-0.5641, 0.0612] sep=False floor=0.0803     ns
+  LAT_curvature_mae_1pm      delta=-0.000500 [-0.001400, 0.000500] sep=False floor=0.000400   ns
+  STR_route_correct          delta=-0.0390 [-0.1169, 0.0328] sep=False n=77  ns
+  TAC_lat_correct            delta=-0.0390 [-0.1169, 0.0328] sep=False n=77  ns
+  TAC_lon_correct            delta=-0.0390 [-0.1169, 0.0328] sep=False n=77  ns
+  TAC_turn_left_recall       delta=-0.1333 [-0.3220, 0.0679] sep=False n=30  ns
+  TAC_turn_right_recall      delta=0.0476 [-0.1111, 0.2105] sep=False n=21  ns
+wrote fam.json (25051 bytes)
+
+== ALL 5 NEGATIVE CONTROLS FIRED; the gates are proven able to FAIL ==
