@@ -1868,3 +1868,68 @@ human's peak lateral load.
 ⛔ **What it still is NOT:** better than `ha0_ext` on the longitudinal family, and `M66` warns that
 `ha0_ext` is itself infeasible on 18.5 % of windows, so that comparison needs its feasibility rate
 stated. **Lateral and safety are established; longitudinal is the open blocker.**
+
+
+## M80. ⛔⛔ v7f's L1 "NO COLLAPSE" PASS IS ARM-SUBSTITUTED — the PI's doubt was correct, and the mechanism is new
+
+### 1. The measurement
+
+**MEASURED, identical across THREE independent panels** (`leadsplit.json`, `gatec_panel.json`,
+`gateb_panel.json` in `…/2026-08-19-simwam-analysis/raw/`):
+
+| arm | step | participation_val | heldout24 | vs the quoted 8.56 bar |
+|---|---|---|---|---|
+| **`rdw8p30k`** | 30000 | **25.583** | 26.965 | **above** |
+| `rdw8s30k` | 30000 | 18.075 | 18.845 | above |
+| `scale1` | 30000 | 8.541 | 7.537 | val above, held24 below |
+| ⛔ **`splitp30k`** | 30000 | **6.383** | 7.629 | ⛔ **BELOW** |
+| `champ30k` | 30000 | 6.499 | 7.029 | below |
+
+### 2. ⛔⛔ The substitution, on one two-row table
+
+`V7_LAUNCH_GATE.md:237-238` scores L1 and L2 on the **same table** with **DIFFERENT ARMS**:
+
+* **L1** *"no collapse, >= 8.56"* is ✅ on **3.80/3.62 → 25.58/26.96** — that is `rdw8` → **`rdw8p30k`**;
+* **L2** *"the latent CARRIES the environment"* is ✅ on **`splitp30k`** (+0.1220 vs DINOv3 +0.0998);
+* **L3** names **`splitp30k`** as the deliberate-regression arm.
+
+⇒ ⛔ **One arm clears the collapse bar. A DIFFERENT arm carries the decodability story. And that second
+arm would NOT clear the bar the first is credited with clearing.**
+
+⚠️ **The number is not hidden** — 6.38 / 7.63 sits un-bolded beside the bolded 25.58/26.96 in
+`MODEL_REGISTRY.md:4332` and `GOALS_AND_CLAIMS.md:1388`. ⛔ **It simply never appears on the gate
+line.** The row reads as one coherent pass while resting on two objects.
+
+### 3. ⭐ The honest status of L1, and the PI was right
+
+Combined with the separately established fact that **the 8.56 bar is itself unreproducible** — its own
+artifacts read **20.23** n-matched and **5.76** on the same 12 clips, and
+`h_rank16_floor_valclips.json` says verbatim *"do not fail any arm on it"* — the honest status is:
+
+⇒ ⛔ **THE BAR IS UNSETTLED **AND** THE PASS IS NOT ATTRIBUTABLE TO THE ARM THE REST OF THE PANEL RESTS
+ON. That is not a clean ✅.**
+
+⭐⭐ **The PI flagged non-collapse specifically** — *"non-collapse (was marked as solved)"* — and
+**his doubt is now vindicated with a mechanism**, not merely a caveat. ⭐ Note what it is NOT: the
+numbers are all real and all banked. **Nothing was fabricated; the arms were swapped between rows.**
+
+### 4. ⭐⭐ NEW CLASS — A GATE ROW CARRIES ITS ARM
+
+⛔ **Substituting arms across rows of one gate manufactures a coherent-looking pass out of true
+numbers.** Each row is individually honest; the panel as a whole asserts something none of them does.
+
+⇒ This is the same family as tonight's scope errors, with the scope being the **ROW's SUBJECT**:
+* a result carries its **MODEL** (`M52`) · a floor carries its **RIG and ARM** (`M61`, `M79`) ·
+  a lever carries its **OPERATING POINT** (`M69`) · a threshold carries its **REGIME** (`M74`) ·
+  ⭐ **a GATE ROW carries its ARM (`M80`).**
+
+⇒ ⛔ **DURABLE FIX: every gate row prints the ARM NAME that supplies it, and a panel whose rows do not
+share an arm must say so on its face.** A cross-row ✅ is only admissible when one arm clears every row
+— otherwise the gate is scoring a chimera. **One column would have caught this.**
+
+### 5. Consequence for v7f
+
+⛔ **L1 must be re-scored on the arm that carries L2/L3** (`splitp30k`, 6.383) **or the panel must
+declare that its rows use different arms.** Until then *"collapse is solved"* is not quotable.
+⭐ This does **not** touch the earlier finding that the three T1-read arms sit at **0.90–0.98 of
+`rdw8p30k`** and are therefore **not collapsed** — that reading is arm-explicit and stands.
