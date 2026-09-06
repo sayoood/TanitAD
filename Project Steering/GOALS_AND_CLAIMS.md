@@ -9633,3 +9633,32 @@ here vs 4,823 published — this roll skips fewer edge windows). `curvature_mae_
 **0.007975** vs published **0.008097** (delta **−0.000122**, −1.5 %); `ha0` local **0.006846** vs
 published **0.006802** (delta +0.000044). ⇒ the dev-box roll IS the arm in the PI's video, and every
 number in D-SELQ-LC-EMIT-7 / STAB-9 / ASTAR-10 / REGRET-11 / DEADBAND-12 / SMOOTH-13 is about it.
+
+### D-SELQ-TWOSEG-15 — SIX two-segment candidates recover 10.7 % of the lane-change supply gap, and the split point is what matters
+**Status: SUPPORTED (MEASURED, ours — model-free).** ⛔ A SUPPLY/CEILING number; never to be
+compared against an achievement. **RULE ZERO continuation of D-SELQ-LC-VOCAB-4.**
+
+A two-segment candidate holds `+a_lat` for `t_split` s then `−a_lat` for the rest of the 6 s
+horizon, `a_lon` constant — the existing control alphabet applied twice, same integrator, same
+`kappa` map, same model slots. Best-in-fan ADE against the RECORDED 6 s ego path over 5,000 windows
+(**all 1,297** strict lane-change windows kept, the other 3,703 subsampled from 17,318, seed 0):
+
+| extension | n new | lane-change ceiling | gain | all-window | **TURN control** |
+|---|---|---|---|---|---|
+| baseline 117 | — | **1.5315 m** | — | 1.3551 m | 1.9435 m |
+| **2 `a_lat` (±0.75) × 3 splits (2/3/4 s), `a_lon = 0`** | **6** | **1.3670 m** | **0.1645 (10.7 %)** | 1.2765 m | 1.9388 m |
+| 8 `a_lat` × 3 splits | 24 | 1.3662 m | 0.1654 | 1.2646 m | 1.9065 m |
+| 8 `a_lat` × **1** split (3 s) | 8 | 1.5011 m | 0.0304 | 1.3158 m | 1.9285 m |
+
+⭐ **The SPLIT POINT carries the gain, not the magnitude:** three splits with TWO magnitudes recover
+0.1645 m; one split with EIGHT magnitudes recovers 0.0304 m. ⇒ the cheap extension is **6
+candidates, +5.1 % of the bank**; going to 24 buys **0.0009 m** more.
+**CONTROL:** a constant-curvature arc is exactly what a junction turn needs, so the two-segment
+family must NOT win there — it moves the turn ceiling by **−0.0047 m (0.24 %)**, i.e. nothing.
+⚠️ The `a_lon every 4th` rows in the banked JSON are NOT supersets of the `a_lon = 0` rows
+(`a_lon_grid[::4]` skips 0.0); their smaller gains are that artefact, not a finding.
+⛔ **Not sufficient alone.** A head whose three lane-change logits have never received a gradient
+(D-SELQ-LC-HEAD-3: −31 logits, best rank 6 of 8) will not select the new candidates deliberately.
+Recommended order: **(1)** repair `s2_geom_emit_v7.py::tactical_actions()` and rebuild the v7.2
+labels; **(2)** add the 6 two-segment candidates; **(3)** retrain. (1) and (2) are cheap; (3) is the
+PI/compute decision and the A40 is committed to refcv5 until 2026-09-08 07:33 UTC.
