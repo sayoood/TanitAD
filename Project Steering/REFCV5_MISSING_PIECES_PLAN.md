@@ -161,3 +161,51 @@ the rest unsupervised.
 ⇒ ⭐ **If that band is a WRITER limit rather than a SOURCE limit, regenerating labels is worth more
 than every head in this plan.** That determination is in flight and gates how much P3 and P4 can
 deliver. It is stated here rather than discovered later.
+
+---
+
+## 7. STATUS — 2026-09-06 late, appended (the register above is the plan; this is what it has met)
+
+⛔ **Appended, never rewritten.** §1's table states the plan; this states the outcome. Where they
+disagree, this section is later and wins — and the disagreements are named, not smoothed.
+
+### 7.1 Resolved
+
+| # | piece | outcome |
+|---|---|---|
+| **P5** | decoder refinement (R4b) | ⭐ **VALIDATED on a held-out split**, λ chosen on a disjoint half: curvature **−26 % separated**, ADE **not** separated (nothing given back), speed better, cost **0.76 mm**. ⚠️ *"halves ADE"* was an overstatement propagated into four artifacts — it is **−30.7 %**; the 2.03× curvature half is correct. |
+| **P8** | `--no-strategic` | ⭐ **BUILT**, zero new parameters. ON changes **0 of 28** downstream surfaces; OFF moves **20 of 28**; OFF is **byte-identical** over 341 tensors. Strict load 0/0 on a banked checkpoint, with `hierarchy=False` (the delete route) still **failing** as the negative control. |
+| **P11** | nav args | ⭐ **MEASURED, and it is a loader change.** `NAV_ARG_SLOTS = ("distance_m","time_s")` is written on every TURN token — median **27.3 m / 7.2 s** (L), **36.6 m / 7.4 s** (R). **v6/v7f FEEDS both; refav1 DISCARDS; refcv3/refcv4b NEVER READS.** ⛔ Three traps: `NAV_FOLLOW_ROAD` carries `args: {}` on **2,897/2,897** train, **69.97 %** of train records present `distance_m = 0.0` under the consumer's default, and the field needs an explicit validity channel. |
+| **P12** | `a_star` geometry | ⭐ **FIXED — the ceiling is a ceiling again**: best-in-fan **0.1993 m** under `os` **0.2970 m**, where the defect had it 4× above. ⛔ **Broader than first scoped: `a_star` is consumed on EVERY roll, so all past refcv4b `anchor_acc` and `sel_agrees_oracle` are contaminated**, not only `--with-oracle-sel` rolls. ⚠️ And it is an **empirical** ceiling, never a bound — `a_star` minimises SSE while ADE is a different norm. |
+| **P15** | max speed | ⛔ **NO ADMISSIBLE SOURCE.** `road_class` explains 57.9 % of speed variance against a 3.1 % shuffle floor **but is defined by a speed threshold** — circular, and the shuffle control is structurally blind to it. The CoT carries **57/4,729** posted limits with a number, **0 grounded**, ego-coupled at median ratio **1.01**. ⛔ **The PI has ruled out re-asking Alpamayo.** Under-driving stays unscoreable; over-driving and agent clearance do not. |
+
+### 7.2 New, and not in §1 because they were found after it
+
+* ⭐⭐ **The effective-weight guard LANDED** — both live trainers now refuse a weight the operator typed that a later layer zeroes, and stamp `default → layer → effective → builds-a-graph` into `config.json`. ⛔ It corrected this plan's own premise: **S-T zeroes 10 terms, not 9** (`w_s1_multi`), and **S-S zeroes 14** — a set never enumerated. **"Explicit" is read from argv against sentinel defaults, never from the value**, because `--w-o5 1.0` *is* the default. ⚠️ And `refc_v3_train.main` runs `preflight` **only under `--preflight`** — a guard there alone covers **one launch path of two**.
+* ⛔⛔ **A BLOCKING REGRESSION, introduced this evening.** `refc_v3.py` builds `tac_goal_tok_head` unconditionally under any non-`kin3` vocabulary ⇒ a rebuild carries **11,286 params absent from the recorded `param_breakdown`** ⇒ **refcv4b and all three local refcv3 checkpoints are currently UNROLLABLE.** The head is provably inert (`tac_goal_logits` written once, read nowhere across four files). **Fix in flight; this gates all eval work.**
+* ⛔ **`SPEED_BAND` is supervised DEGENERATELY** by the new tactical-goal head: present on **4,572/4,572** and inside `_MEASURED_GEOMETRY_TOKENS`, so every cell gets **weight 1.0 and target 1.0** — a fully-weighted constant-1 BCE target with **zero negatives**. It cannot teach; it can only saturate a logit while contributing loss.
+* ⚠️ **The session's load-bearing eval dumps live in a TEMP DIRECTORY** — `refcv4b_t1_dump` and `refcv3_40284_dump` (141 episodes / 4,823 windows each) are in the session scratchpad, not the repo. Banking in flight. *"An artifact on one disk is NOT done"*, and a scratchpad is worse than a disk.
+* ⭐ **The two-segment anchor extension is a PORT, not a design.** `refa_v1.py` already defines `GOAL_LANE_CHANGE = (2.0, 1.75)` and emits it as an S-curve. Open parameter is only the split points: **2/3/4 s is worth 0.1645 m against 0.0304 m** for a single 3 s split. ⇒ The two lines have **complementary** defects — refav1's S-curves have zero net heading change; refcv4b has all sustained arcs and no S-curves. **Both shapes are needed.**
+
+### 7.3 ⛔ Corrections to numbers this plan or its briefs carried
+
+* **`os` / `os_navzero`**: the registry's **A40 landing roll (0.2975 / 0.3928) IS quotable** — its `C3_os_reproduction` selftest **PASSES** at abs_diff **2.6e-05**. The **Thor re-roll (0.2965 / 0.3926)** misses by 0.001031, from cross-hardware argmax tie-breaks, with `ha`/`ha0` reproducing at **0.000000**. ⇒ **A number carries its ROLL.** Earlier statements that *both* families were unquotable were too strong.
+* **`--sel-refined`**: **n = 171 windows / 20 episodes**, not the 4,823-window grid -- **and on
+  refcv4b `ckpt_30000`, NOT the landing `ckpt_40284`.** Its surface's model-free arms read `ha`
+  **0.2860** / `ha0` **0.6542** / `ha0_ext` **0.2769** -- DIFFERENT WINDOWS from the landing table's
+  0.2996 / 0.6723 / 0.2874. Delta 0.0259 separated worse, 51/171 = **29.82 %** flipped.
+  => Admissible as a **DIRECTION** (do not enable the flag); NOT comparable in magnitude to
+  any landing number. **Stamp the checkpoint AND the surface, not just the n.**
+* **The "refcv4b beats refcv3 by 35.1 %" figure** is the same `ckpt_30000` panel. Only the landing
+  read's **0.1444 [0.1647, 0.1227] separated better** at step 40,284 belongs beside the landing ADEs.
+* **`g_str` removal vs value ratio**: **41.0×**, not 40.9× — the earlier figure divided unrounded values while quoting rounded ones, and the ratio is normalisation-dependent.
+* **The 11th obstacle class** is `train_or_tram_car`, **not** `protruding_object` (always in the canonical ten). ⇒ **No infrastructure clearance is measurable** — `protruding_object` is overhead (bottom face +1.68 m) and the join drops `z`.
+* **`traffic_light_visible = False`** elsewhere is **not-probed, not absent** — the question was asked on **998/4,572** clips.
+
+### 7.4 ⛔ Standing PI constraints, binding on every stream
+
+* ⛔ **No label generation.** *"Don't generate labels again."* The K=9 regeneration was stopped and will not restart without authorisation — even though it was priced at **0.5 min for 100 % band coverage**, because the instruction is the instruction.
+* ⛔ **No Alpamayo re-ask.**
+* ⛔ **The nav command is NOT a training signal** — it is an INPUT simulating the vehicle's nav system.
+* ⭐ **Use the whole tactical AND strategic vocabulary** — both are supervised; the strategic *layer's* conditioning stays switchable.
+* ⛔ **The arm does not launch until agent conditioning is IN or explicitly declared OUT.**
