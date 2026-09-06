@@ -1095,3 +1095,172 @@ the selector ignores, which is refcv3's defect wearing a working denoiser.
   caught **only** because 10 of 11 content markers read MISSING against controls reading 1–95. ⇒ **the
   content-marker check is what stands between us and silent data loss**, and this is its third
   independent save tonight.
+
+## M69. ⭐⭐⭐ ROW 3 MEASURED (the head is NOT dead) — and the TURN GOAL ITSELF IS WRONG, which qualifies my own M48/M58 ruling
+
+### 1. Row 3: the ~0-motion readout is NOT a dead emission head
+
+⭐ **The "blocker" dissolved on a second probe — for the fourth time tonight.** The gate stream reported
+Row 3 *"blocked solely on the path to a banked v7-tiny checkpoint"*; **Thor holds 54 of them**, in
+directories named after the board's own arms. *(`CLAUDE.md`: absence found at ONE location is not
+absence.)*
+
+MEASURED, zero GPU, `champ30k/ckpt.pt`, **step 30000**:
+
+| layer | shape | norm | std | absmax |
+|---|---|---|---|---|
+| `step_readout_op.net.3` (final emission) | (3, 512) | 1.00138 | **0.025558** | 0.044183 |
+| `step_readout_op.net.1` | (512, 4096) | 13.06625 | 0.009023 | **0.015625** |
+| `step_readout_op.net.0` (LayerNorm) | (4096,) | 64.0 | **0.000000** | 1.000000 |
+| **CONTROL** `readout.proj` | (128, 128) | 6.11773 | **0.047796** | 0.311320 |
+
+**Ratio final-emission std / control std = 0.5347.** ⇒ ⛔ **The emission head is within 2x of a working
+head — it is NOT dead, collapsed, or near-zero.** Combined with the gate stream's independent finding
+that **the T1 eval path carries no multiplicative constant anywhere** (`StepDisplacementReadout` is a
+bare MLP; `rollout_decode` only accumulates; `dense_speed_profile` is `norm(dp)/dt`), **Row 3's cause is
+neither the harness NOR the head's own weights.**
+
+⇒ ⭐ **That is real progress and it redirects the search**: the ~0 motion must come from **what the head
+is FED, or what it was TRAINED AGAINST** — not from a scale defect. ⛔ **And it retires my own claim to
+the PI that "if it is a scale error, every T1 number is recoverable by re-analysis with zero
+retraining."** It is not a scale error.
+
+⚠️ **Two caveats stated rather than buried:**
+* `net.1`'s absmax is **exactly 0.015625 = 2^-6** on **both** weight and bias — a **quantisation
+  signature**. If this checkpoint is quantised, the std ratio is **not directly comparable** to an
+  unquantised control. ⇒ **a second probe is owed before the 0.5347 is quoted as decisive.**
+* ⭐ `net.0` (LayerNorm, 4096) sits at **EXACTLY initialisation after 30,000 steps** — weight all 1.0
+  (std **0.000000**), bias all 0.0. Even tiny gradients would break an exact tie across 4,096 values.
+  ⇒ **either frozen by design or receiving NO GRADIENT**, and that is worth explaining before any v7f
+  launch.
+
+### 2. ⛔⛔ THE TURN GOAL IS WRONG — obeying it is worse than driving straight
+
+MEASURED (paired attribution by goal token, grid control passed on all 5 pairs):
+**`GOAL_KAPPA_TURN = 0.08` is R 12.5 m**, on a corpus that curves at **R 100–1000 m.**
+
+| TURN_L windows | ADE |
+|---|---|
+| obeying the command (kappa 0.08) | **1.5043** |
+| partially under-turning | 1.2429 |
+| under-turning most | **1.1959** |
+| **`ha0` straight-line floor** | **1.4630 — beats the faithfully-turning planner** |
+
+⇒ ⭐⭐ **The planner is not wrong to under-turn; it is obeying a command roughly 10x too sharp.** And
+**78–89 % of every lever's ADE gain is earned on `LANE_KEEP` windows** — the turn windows were never
+where the ADE lived.
+
+⇒ ⛔ **This reframes `M54`/`M58`/`M64`.** "The cost discards the correct candidate" is true — **but the
+"correct" candidate is a 12.5 m-radius turn that is itself wrong for this corpus.** ⇒ **A
+goal-conditioned cost alone recovers RECALL and WORSENS turn-window ADE, by arithmetic** (predicted
+0.9777). ⭐ **That is not the fix failing; it is the fix correctly obeying a wrong goal.** The stream
+withdrew half its own prediction **before** its arms landed, which is the only reason this is legible.
+
+### 3. ⛔ My M48/M58 ruling is QUALIFIED — `kamm07`'s "free" turning was a NON-FIRING
+
+I ruled *"carry the CAP, drop `W_KAPPA`"* because the cap buys 67–77 % of the ADE **at zero turning
+cost**. ⚠️ **MEASURED: that zero is a NON-FIRING.** At **v0 ~ 2.78 m/s**, **0 of 13** TURN_R windows
+could bind the friction circle at all. ⛔ **At 20 m/s the same circle cuts 0.08 to 0.0172 — it would
+under-turn HARDER than the penalty.**
+
+⇒ ⛔ **Every turning claim in that frontier is LOW-SPEED**, and the ruling must be restated as: *the cap
+is preferable to the penalty **on this low-speed slice**, and its behaviour at road speed is
+**unmeasured and predicted to be worse**.* ⭐ Same class as `M61` (a floor carries its rig) and `M52`
+(a result carries its model): **a lever carries the OPERATING POINT it was measured at.**
+
+### 4. What survives, and the next lever
+
+⭐ **The under-turn is now quantified rather than thresholded:** at `W_KAPPA = 15.11245` the plan emits
+curvature on **100 %** of TURN_L-goal windows — at **0.02066** against the commanded **0.08000**, a
+**3.9x under-turn**. Recall only *thresholds* it. And it is **asymmetric under a symmetric kappa^2
+term** (TURN_R unchanged at 0.08000) ⇒ **refav1's turn asymmetry is a COST-BALANCE fact, not a head
+fact.**
+
+⭐ A second independent route agrees: the weight at which a full turn loses to doing nothing is
+computable at median **153.4**, while recall dies by **15.11** — a **10x gap** that confirms the
+under-turn mechanism from the cost columns alone.
+
+⇒ **`A4a_gk_kt02`** (goal-conditioned cost **+** `--goal-kappa-turn 0.02`, a constant so it stays T1
+and never an oracle chooser) is **running on Thor**, with `A4b_kt02` as its attribution arm and the
+refutation branch committed: **if it fails, the defect is upstream of the cost and the next lever is
+`--lat-logit-bias`, not another cost term.**
+
+### 5. ⚠️ `M67`'s collision resolved — and NOT in my favour. Recorded as it happened.
+
+`M67` flagged that Thor was armed to run `goal_reach_s` against a sibling's **`STOP -- ALREADY
+REFUTED 0-GPU`** commit subject, and said *"this entry exists so the next tick checks whether it was
+READ."* **It launched.**
+
+⭐ **And on inspection the launch is DEFENSIBLE, so my flag is not vindicated and I say so.** What went
+to the GPU is **`T_grsCTL` / `T_grs1` / `T_grs8` / `T_grs1_s1`** — a **4-arm panel with the CONTROL
+FIRST and a SEED REPLICATE**, plus a **zero-GPU unit test proving default-path safety** (`None`/`2.0`
+bit-identical to omitted; `1.0` doubles the opening acceleration exactly as `a_i = (v_t - v)/reach`
+predicts). ⇒ **That is a stronger test than the parameter sweep it duplicates**, and it carries the
+right reading instruction: ⛔ *read `T_grsCTL` first — if it does not reproduce `T_lonshift`, every
+other arm in the panel is void.*
+
+⇒ ⭐ **The transferable point is about MY role, not theirs:** an orchestrator seeing two streams should
+**surface** a collision, and must then accept that the owning stream may have a better-designed
+experiment than the one being duplicated. ⛔ **A cross-stream STOP is evidence, not authority** — and
+`M67`'s own caveat (*"if the Thor panel composes rather than substitutes, the refutation does not
+bind"*) turned out to be the operative clause. **The GPU spend is real; so is the fact that the
+resulting panel answers the question better than the refutation did.**
+
+## M70. ⛔⛔ THE SHARED COMMITTER'S NAME-PRESERVATION GUARDS WERE DELETED — and their tests still read like coverage
+
+### 1. The finding
+
+MEASURED by positive assertion, each with a same-breath control (`def main` = 1):
+
+| commit | `assert_names_preserved` | `read_tree_entries` |
+|---|---|---|
+| `e685d90` | **3** | **6** |
+| `2c47dc9` — *"the committer that could land a commit tonight when mm_commit could not"* | **0** | **0** |
+| **`HEAD`** | **0** | **0** |
+
+⇒ ⛔ **A rewrite deleted the guards that refuse a LOST TREE ENTRY and a CR-MANGLED NAME** — precisely
+the failure modes `CLAUDE.md` documents at length, in which **a commit's subject sits in the log while
+its content is gone from HEAD**. The six `test_mktree_commit.py` failures dismissed as *"pre-existing"*
+all raise `AttributeError: … has no attribute 'read_tree_entries'` — **one cause, on the tool every
+agent commits with.**
+
+⇒ ⭐⭐ **This is the likely mechanism behind tonight's three independent "exited 0, printed nothing,
+committed nothing" events** — including one of mine.
+
+⭐ **The sharpest part: a guard that has never been shown to fail proves nothing; a guard DELETED WHILE
+ITS TESTS STILL NAME IT is worse, because the test file still reads like coverage.** A red suite that
+everyone has learned to call "pre-existing" is indistinguishable from a guarded one until someone reads
+the failure text.
+
+⚠️ **Scope, stated honestly:** `git log -- stack/scripts/mktree_commit.py` returned **empty** on this
+mount while the file demonstrably has history, so that table is **what the positive probes found, not a
+complete history.**
+
+### 2. ⛔ MASTER-MIND RULING: do NOT repair the shared committer tonight
+
+⭐ **The agent was right to record and not repair.** Rewriting the shared commit path while ~8 agents
+commit concurrently is **exactly how a sibling's work disappears** — the failure mode the guards exist
+to prevent. Repairing it under contention would risk causing the harm it protects against.
+
+**RULING, in three parts:**
+1. ⛔ **No edit to `mktree_commit.py` while agents are live.** Queue the repair for a quiet window.
+2. ⭐ **The compensating control is ALREADY IN FORCE and is sufficient**: every commit must be verified
+   by a **content marker INSIDE the committed blob**, with a same-breath control that must read
+   non-zero. **That check caught all three silent-failure events tonight**, and it is in every live
+   brief. ⇒ **We are not unprotected; we are protected by a different layer than we thought.**
+3. ⭐ **When the repair happens, the CAS must be KEPT, not reverted.** Recovery source is
+   `git show e685d90:stack/scripts/mktree_commit.py`; the current compare-and-swap is what makes a lost
+   race FAIL instead of clobbering, and `e685d90` predates it. ⛔ **A straight revert would trade one
+   integrity bug for a worse one.**
+
+### 3. ⭐ The transferable lesson, and it is about how we read test failures
+
+⛔ **"Pre-existing failures" is a category that hides deletions.** Six red tests were carried for an
+unknown period as background noise; their failure text named a **missing function**, which is the
+signature of removed code rather than of a flaky test. ⇒ ⭐ **A red test whose error is
+`AttributeError: no attribute <name>` is a DELETION until proven otherwise — read the message, not the
+count.** Every stream tonight that reported a suite result reported it as *"N failed, all
+pre-existing"*; **none had read what the N were.**
+
+⚠️ This is the same family as `M63`'s under-mutated proof and the reel's *"exit code 0 while every frame
+was stretched 3.9 %"*: **an artifact that reports its own health in a form nobody parses.**
