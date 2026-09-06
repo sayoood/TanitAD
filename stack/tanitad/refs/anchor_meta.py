@@ -248,7 +248,11 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
         "kappa_cap": None if kappa_cap is None else float(kappa_cap),
         "alat_v_floor": None if alat_v_floor is None else float(alat_v_floor),
         "anchors_sha256": sha256_of_tensor(a),
-        "control_schedule": control_schedule,
+        # ⛔ present-but-``None`` where it does not apply, like the three re-roll
+        # constants above: a FIXED-PATH file has no ``controls``, so declaring a
+        # schedule for them would be a statement about a tensor the file does not
+        # carry — the exact shape of error this module exists to prevent.
+        "control_schedule": control_schedule if controls is not None else None,
         "provenance": provenance_stamp(builder),
     }
     if c is not None:
@@ -364,6 +368,13 @@ def read_anchor_artifact(src, *, cli_control_units: str | None = None,
             raise AnchorUnitsConflict(
                 f"{where} declares control_units={declared!r} but carries no "
                 f"`controls` -- a fixed-path artifact declares {PATHS_ONLY!r}")
+        if meta.get("control_schedule") is not None:
+            raise AnchorScheduleConflict(
+                f"{where} declares control_schedule="
+                f"{meta['control_schedule']!r} but carries no `controls`. A "
+                f"schedule describes how a control is applied over the horizon; "
+                f"a fixed-path artifact has no control to apply, so the field "
+                f"is a statement about a tensor the file does not hold.")
         return AnchorArtifact(anchors, None, PATHS_ONLY, "n/a-fixed-paths",
                               meta, path)
     sched = _resolve_schedule(controls, meta, where)
@@ -431,7 +442,8 @@ def describe(art: AnchorArtifact) -> str:
             + (f", controls {tuple(art.controls.shape)}"
                if art.controls is not None else "")
             + f", units={art.control_units} ({art.control_units_source})"
-            + f", schedule={art.control_schedule}"
+            + (f", schedule={art.control_schedule}"
+               if art.controls is not None else "")
             + f", horizon_s={d['horizon_s']}, dt={d['dt']}, "
               f"ref_speed_ms={d['ref_speed_ms']}, kappa_cap={d['kappa_cap']}, "
               f"alat_v_floor={d['alat_v_floor']}, "

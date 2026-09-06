@@ -326,6 +326,25 @@ def test_schedule_and_column_count_must_agree():
             **CONST)
 
 
+def test_a_fixed_path_artifact_declares_NO_schedule():
+    """⛔ present-but-``None`` where it does not apply, like the three re-roll
+    constants. A fixed-path file has no ``controls``, so a schedule would be a
+    statement about a tensor the file does not hold — and `build_refc_anchors.py`
+    writes exactly such a file."""
+    art = am.build_anchor_artifact(_anchors(4), None,
+                                   control_units=am.PATHS_ONLY, horizons=HZ,
+                                   builder=__file__)
+    assert art["control_schedule"] is None
+    read = am.read_anchor_artifact(art)
+    assert read.control_units == am.PATHS_ONLY
+    assert "schedule=" not in am.describe(read)
+    # ...and a fixed-path file that DOES declare one is refused
+    with pytest.raises(am.AnchorScheduleConflict, match="no `controls`"):
+        am.read_anchor_artifact({"anchors": _anchors(4),
+                                 "control_units": am.PATHS_ONLY,
+                                 "control_schedule": am.CONSTANT_SCHEDULE})
+
+
 def test_legacy_two_column_artifacts_are_untouched():
     """⛔ PARITY: a 2-column build declares ``constant``, keeps the two-name
     ``controls_columns``, and its tensor sha256s are the tensors' own."""
