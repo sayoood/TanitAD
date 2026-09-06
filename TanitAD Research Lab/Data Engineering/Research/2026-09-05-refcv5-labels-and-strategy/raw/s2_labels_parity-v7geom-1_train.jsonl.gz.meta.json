@@ -1,0 +1,130 @@
+{
+ "artifact": "s2_labels_parity-v7geom-1_train.jsonl.gz",
+ "bands_s": {
+  "operative": [
+   0.0,
+   2.0
+  ],
+  "strategic": [
+   8.0,
+   30.0
+  ],
+  "tactical": [
+   2.0,
+   6.0
+  ]
+ },
+ "bytes": 426880,
+ "census": {
+  "a_str": {
+   "HOLD_MAIN_ROAD": 1417,
+   "PREPARE_STOP_FOLLOW_ROUTE": 197,
+   "PREPARE_TURN_L_FOLLOW_ROUTE": 255,
+   "PREPARE_TURN_R_FOLLOW_ROUTE": 274,
+   "RESUME_CRUISE_FOLLOW_ROUTE": 257
+  },
+  "a_tac_lat": {
+   "LANE_KEEP": 1560,
+   "NUDGE_L": 261,
+   "NUDGE_R": 286,
+   "TURN_L": 154,
+   "TURN_R": 139
+  },
+  "a_tac_lon": {
+   "ACCELERATE": 544,
+   "ADAPT_SPEED_FOR_CURVE": 487,
+   "BRAKE_TO": 444,
+   "CREEP": 77,
+   "CRUISE": 731,
+   "FOLLOW": 78,
+   "HOLD": 39
+  },
+  "g_str": {
+   "FOLLOW_ROUTE": 1674,
+   "STOP_AT_FOLLOW_ROUTE": 197,
+   "TURN_LEFT_FOLLOW_ROUTE": 255,
+   "TURN_RIGHT_FOLLOW_ROUTE": 274
+  },
+  "nav_command": {
+   "NAV_FOLLOW_ROAD": 1595,
+   "NAV_TURN_L": 400,
+   "NAV_TURN_R": 405
+  }
+ },
+ "corpus": {
+  "clip_id_sha256_sorted": "e61a04553df5b9d52a0810be32cf31927bd92644d9d12ada563910b8a0ada4de",
+  "corpus_key": "physicalai-train-e438721ae894",
+  "manifest_cross_check": "MATCH",
+  "matches_committed_parity_digest": true,
+  "n_clips": 2400,
+  "note": "2,400 CLIPS; the trainer corpus is 2,376 EPISODES after 24 decode failures. CLIPS != EPISODES."
+ },
+ "digest_scope": "the GZIP FILE s2_labels_parity-v7geom-1_train.jsonl.gz in full -- md5/sha256 are taken over the compressed bytes, not over the records",
+ "failed": [],
+ "faithfulness_control": {
+  "consumed_fields_match": 201,
+  "distinct_lat_lon_pairs": 18,
+  "n_overlap": 201,
+  "negative_control": "non-vacuous iff >1: 18 distinct (lat,lon) pairs across 201 overlap clips",
+  "state": "PASS",
+  "wider_match": 201
+ },
+ "horizon": {
+  "available_s_max": 35.0,
+  "available_s_min": 12.2,
+  "n_full_strategic_band_ge_30s": 2203,
+  "n_full_tactical_band_ge_6s": 2400,
+  "n_records": 2400,
+  "note": "available_s is lookahead AFTER t0=8.0 s, capped by the emitter at 35.0 s (LOOKAHEAD_S 30 + 5). The 20.1 s episode CACHE is the first 20.1 s of the recording (egomotion_source: window at offset 0, verified r>0.99 on 31 clips) -- the labels read the FULL recording, which the cache does not contain. Labels may use ego (PI 2026-08-03); inference stays vision-only.",
+  "recording_span_s_max": 140.4,
+  "recording_span_s_min": 20.3
+ },
+ "layers": {
+  "kinematic": {
+   "coverage": 1.0,
+   "fields": [
+    "a_tac",
+    "a_str",
+    "g_str",
+    "nav_command",
+    "bands",
+    "manoeuvre_sequence",
+    "t0_s",
+    "horizon",
+    "turn_suppression"
+   ],
+   "n_records": 2400,
+   "provenance": "ego geometry only"
+  },
+  "perception": {
+   "coverage": 0.08375,
+   "fields": [
+    "cot_source",
+    "cot_tokens",
+    "semantics",
+    "scene",
+    "alpamayo"
+   ],
+   "n_records_absent": 2199,
+   "n_records_present": 201,
+   "provenance": "vlm-cot / alpamayo",
+   "why": "Alpamayo annotates a different clip set; only the v7.2 overlap carries it. A consumer MUST mask this layer rather than read its absence as a negative."
+  }
+ },
+ "md5": "0d45b8d1344aa669c9d39e1ade2832fe",
+ "n_records": 2400,
+ "provenance": {
+  "builder": "stack/scripts/build_parity_v7geom_labels.py",
+  "built_on": "2026-09-05T22:59:00+0200",
+  "ego_source": "stack/tanitad/data/egomotion_source.py",
+  "emit_seconds": 13.5,
+  "emitter": "stack/scripts/s2_geom_emit_v7.py (UNCHANGED)",
+  "evidence_class": "MEASURED",
+  "host": "FREEDOM2035"
+ },
+ "release": "parity-v7geom-1",
+ "schema_version": "s2-geom-v7",
+ "sha256": "c04179bbffceba428b0e85ebd33161a6f1fd073d98ec107dc6df60377fc28e3c",
+ "t0_s": 8.0,
+ "vocab": "v7"
+}
