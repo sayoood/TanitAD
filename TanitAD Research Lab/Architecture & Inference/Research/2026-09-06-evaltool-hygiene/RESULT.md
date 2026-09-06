@@ -314,6 +314,35 @@ refcv3**, whose bank is 128 — the mirror image of D1, with the other number. I
 bank size from the run it is describing. **Not fixed here** (not this stream's file); escalated
 rather than written into a doc nobody re-reads.
 
+## 7b. ⚠️ SECOND ESCALATION — the CLI dies on this box AFTER the analysis is paid for
+
+Smoke-testing `main()` end-to-end (the tests call `run_dump`/`analyze_refcv3` directly, so the
+CLI path was uncovered) found a live crash in a **sibling's** file:
+
+```
+taniteval/tools/refav1_arm.py :: _print_trivial_profile
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 2-3
+```
+
+Its `_p()` is a bare `print(..., flush=True)` and the degenerate-arm warning contains a U+26A0
+and an em dash. **CONTROLLED: identical crash against the pre-edit blob `5e1349a…`, so it is
+PRE-EXISTING and not caused here.** The same command with `PYTHONIOENCODING=utf-8` completes and
+writes the JSON — the control that isolates the console encoder.
+
+⚠️ **It is not an edge case.** The line fires whenever `degenerate_arms` is non-empty, and `ha0`
+(the constant-velocity floor) is degenerate **by construction on every run** — so every
+`--analyze-only` from a Windows console dies here, *after* the bootstrap is paid for. It does not
+show under pytest because pytest replaces stdout with a UTF-8-capable capture, which is exactly
+why a green suite did not catch it. Same family as `CLAUDE.md`'s *"an analysis-time import that
+fails after the rollout destroys the run's output"*. **Escalated, not fixed** — not this
+stream's file.
+
+With `PYTHONIOENCODING=utf-8` the post-fix CLI produces, on the banked fixture dump:
+`_provenance.verdict = SYNTHETIC_FIXTURE`, `discriminators = {step 11, anchors 20, eps 3,
+windows 42}`, `_unverified` **present** (correct — it is a fixture), and
+`anchor_selection.chance = 0.05` for the 20-anchor bank — where the banked schema string had
+said `1/128 = 0.0078`.
+
 ## 8. ⚠️ Index hygiene observed while banking (not caused here, not repaired here)
 
 `git diff --cached --diff-filter=D` lists **85 staged deletions** in the shared index. A first
