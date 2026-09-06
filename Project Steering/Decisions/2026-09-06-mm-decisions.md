@@ -1128,7 +1128,14 @@ retraining."** It is not a scale error.
 ⚠️ **Two caveats stated rather than buried:**
 * `net.1`'s absmax is **exactly 0.015625 = 2^-6** on **both** weight and bias — a **quantisation
   signature**. If this checkpoint is quantised, the std ratio is **not directly comparable** to an
-  unquantised control. ⇒ **a second probe is owed before the 0.5347 is quoted as decisive.**
+  unquantised control. ⇒ a second probe was owed before quoting 0.5347 as decisive.
+  ⭐ **RESOLVED — the owed probe was run in the same session and the checkpoint is NOT quantised.**
+  MEASURED: `net.3.weight` is float32 with **100.0 % unique values** (1,536/1,536) and **no grid**
+  (max off-grid 0.4995); the control `readout.proj.weight` reads **100.0 % unique**, off-grid 0.5000
+  — **identical behaviour**. `net.1.weight` is 94.0 % unique over 2.1 M values, which is float32
+  collision at scale, not a grid. ⇒ the `2^-6` absmax is a **clipping or init bound**, not a
+  quantisation step. ⭐ **The 0.5347 ratio IS comparable, and Row 3's finding stands: the emission
+  head is NOT dead.**
 * ⭐ `net.0` (LayerNorm, 4096) sits at **EXACTLY initialisation after 30,000 steps** — weight all 1.0
   (std **0.000000**), bias all 0.0. Even tiny gradients would break an exact tie across 4,096 values.
   ⇒ **either frozen by design or receiving NO GRADIENT**, and that is worth explaining before any v7f
