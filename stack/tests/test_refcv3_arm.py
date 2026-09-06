@@ -759,3 +759,238 @@ def test_config_rebuild_refuses_an_unknown_field():
     assert isinstance(back.core.trajectory.horizons, tuple)
     assert back.core.encoder.in_channels == 3 * N_STACK
     assert back.goal_tau_steps == cfg.goal_tau_steps
+
+
+# =========================================================================== #
+# (10) D-EVALTOOL-ANCHOR-CHANCE — THE ANCHOR CHANCE LEVEL IS DERIVED, NEVER    #
+#      REMEMBERED                                                             #
+# =========================================================================== #
+# THE DEFECT: `_SIDECAR_DOC["anchor_acc"]` shipped a hardcoded
+# `"chance = 1/128 = 0.0078"` into every manifest. 128 is `refc.py:356`'s DEFAULT
+# bank; refcv4b's is 117, whose chance is 0.008547 — 9.4 % larger. The COMPUTED
+# field (`refcv3.tactical_declared.anchor_selection.chance`) was always right, so
+# the defect was reader-facing; these tests make the two impossible to drift.
+# ⛔ Substituting 117 for 128 would have been the SAME defect with a different
+# number, so what is pinned is that NO literal bank size decides anything.
+def test_anchor_chance_is_one_over_the_runs_own_bank():
+    # the two banks that actually exist in the programme, at the precision the
+    # refcv4b landing JSON records (`"n_anchors": 117, "chance": 0.008547`)
+    assert rc.anchor_chance(117) == 0.008547
+    assert rc.anchor_chance(128) == 0.007812
+    assert rc.anchor_chance(256) == 0.003906
+    # ⛔ and NO fallback: an artifact that does not declare a bank gets a
+    # refusal, never the config default. A fabricated denominator reads exactly
+    # like a measured one.
+    for bad in (None, 0, -1, "", "117", float("nan")):
+        assert rc.anchor_chance(bad) is None, bad
+
+
+def test_the_schema_string_and_the_computed_chance_cannot_drift(e2e):
+    """The schema line, the tactical `chance` and `model.n_anchors` are all the
+    SAME derivation — checked against each other, not against a literal."""
+    _, _, manifest, rec = e2e
+    n = int(manifest["model"]["n_anchors"])
+    doc = manifest["sidecar_schema"]["anchor_acc"]
+    # (a) ⛔ FIRST, and in the OLD vocabulary, so this test fails on the SUBSTANCE
+    # against the pre-fix file rather than on a missing attribute: this run's
+    # bank is not 128, so no 128-chance may appear in its schema.
+    assert n != 128, "pick a fixture whose bank is not the config default"
+    assert "1/128" not in doc and "0.0078" not in doc, (
+        f"the schema publishes a 1/128 chance level for a {n}-anchor bank — "
+        f"D-EVALTOOL-ANCHOR-CHANCE")
+    # (b) and it names THIS run's bank with its derived chance
+    assert f"1/{n} = {rc.anchor_chance(n)}" in doc
+    # (c) the computed field agrees with the schema, exactly
+    sel = rec["refcv3"]["tactical_declared"]["anchor_selection"]
+    assert sel["n_anchors"] == n
+    assert sel["chance"] == rc.anchor_chance(n)
+    assert sel["chance_absent_because"] is None
+    # (d) the same bank size is what `_is` tells the reader the model chose among
+    assert f"its {n} anchors" in manifest["t1_definition"]["_is"]
+
+
+@pytest.mark.parametrize("n_anchors", [117, 128, 256, 20])
+def test_the_denominator_follows_the_bank_size_by_mutation(n_anchors):
+    """⭐ THE PIN THE BRIEF ASKS FOR: change the bank size, and every published
+    denominator moves with it. A hardcoded 128 (or a hardcoded 117) fails here."""
+    doc = rc.sidecar_schema(n_anchors)["anchor_acc"]
+    assert f"chance = 1/{n_anchors} = {rc.anchor_chance(n_anchors)}" in doc
+    others = {117, 128, 256, 20} - {n_anchors}
+    for other in others:
+        assert f"1/{other} " not in doc and f"1/{other}," not in doc
+
+
+def test_a_manifest_with_no_bank_size_is_refused_not_defaulted(e2e, tmp_path):
+    """⛔ The `or 128` fallbacks are gone. A dump whose manifest declares no
+    `model.n_anchors` must REFUSE the selection profile and publish NO chance
+    level — it must not silently inherit the v3 config default."""
+    _, a, manifest, _ = e2e
+    src, dst = Path(a.dump_dir), tmp_path / "no_bank"
+    (dst / "decisions").mkdir(parents=True)
+    for sub in ("", "decisions"):
+        for f in sorted((src / sub).glob("ep*.npz")):
+            with np.load(f) as d:
+                np.savez_compressed(dst / sub / f.name,
+                                    **{k: d[k] for k in d.files})
+    stripped = json.loads(json.dumps(manifest))
+    stripped["model"].pop("n_anchors")
+    (dst / "manifest.json").write_text(json.dumps(stripped), encoding="utf-8")
+
+    prof = rc._selection_profile(rc._load_decisions(str(dst))[0], stripped)
+    # ⛔ `.get` on purpose: against the pre-fix file this reads the DEFAULTED
+    # profile and fails with "it invented n_anchors=128", which is the substance,
+    # rather than with a KeyError about a field that did not exist.
+    assert prof.get("status") == "REFUSED", (
+        f"a manifest with no bank size still produced a profile: "
+        f"n_anchors={prof.get('n_anchors')}")
+    assert "n_anchors" in prof["reason"]
+    assert "128" in prof["reason"]          # it names what it refused to assume
+
+    rec = rc.analyze_refcv3(str(dst), n_boot=10, seed=0)
+    sel = rec["refcv3"]["tactical_declared"]["anchor_selection"]
+    assert sel["chance"] is None and sel["n_anchors"] is None
+    assert "REFUSED" in sel["chance_absent_because"]
+    # the schema line says the same thing rather than quoting a number
+    assert rc.sidecar_schema(None)["anchor_acc"].endswith("never guessed.")
+
+
+# =========================================================================== #
+# (11) D-EVALTOOL-STAMP-BLIND — THE PROVENANCE STAMP MUST DISCRIMINATE         #
+# =========================================================================== #
+# THE DEFECT: `_UNVERIFIED_ON_REAL_CKPT` ("UNVERIFIED on a real checkpoint …
+# validated on a random-init RefCV3Model … synthetic 3-episode slice only") was
+# emitted on EVERY dump and EVERY analysis record — including the refcv4b LANDING
+# arm, a real 40,284-step checkpoint. Anyone using it to tell a fixture from a
+# real arm therefore misclassified EVERY real dump the programme holds.
+#
+# ⛔ A STAMP THAT READS IDENTICALLY ON BOTH HAS MEASURED NOTHING. These tests
+# mutate the run from synthetic to real-checkpoint and require the stamp to
+# change — in BOTH directions, and end-to-end through `run_dump`, not only in
+# the pure function.
+#: the two MEASURED reference points (2026-09-06).
+FIXTURE_REF = {"model": {"step": 11, "n_anchors": 20},
+               "grid": {"n_episodes": 3, "n_windows": 42}}
+LANDING_REF = {"model": {"step": 40284, "n_anchors": 117},
+               "grid": {"n_episodes": 141, "n_windows": 4823}}
+
+
+def test_the_stamp_separates_the_fixture_from_the_landing_arm():
+    fix, real = rc.provenance_stamp(FIXTURE_REF), rc.provenance_stamp(LANDING_REF)
+    # ⛔ the whole point: they are NOT the same stamp
+    assert fix != real
+    assert fix["verdict"] == "SYNTHETIC_FIXTURE"
+    assert real["verdict"] == "REAL_CHECKPOINT_ON_REAL_CORPUS"
+    assert fix["unverified_on_a_real_checkpoint"] is True
+    assert real["unverified_on_a_real_checkpoint"] is False
+    # every axis separates, so no single threshold is load-bearing
+    assert (fix["checkpoint_scale"], fix["corpus_scale"], fix["bank_scale"]) \
+        == ("SMOKE", "SMOKE", "SMOKE")
+    assert (real["checkpoint_scale"], real["corpus_scale"], real["bank_scale"]) \
+        == ("TRAINED", "FULL", "REAL")
+    # and the KEY, not just the verdict, is emitted conditionally
+    assert "_unverified" in rc.provenance_keys(FIXTURE_REF)
+    assert "_unverified" not in rc.provenance_keys(LANDING_REF)
+    assert "_provenance" in rc.provenance_keys(LANDING_REF)
+
+
+def test_each_discriminator_alone_moves_the_stamp():
+    """No axis is decoration: flip one field at a time from the landing arm and
+    the stamp must react to that field."""
+    base = json.loads(json.dumps(LANDING_REF))
+    for path, value, key, want in (
+            (("model", "step"), 11, "checkpoint_scale", "SMOKE"),
+            (("model", "step"), None, "checkpoint_scale", "UNKNOWN"),
+            (("grid", "n_episodes"), 3, "corpus_scale", "SMOKE"),
+            (("grid", "n_windows"), 42, "corpus_scale", "SMOKE"),
+            (("model", "n_anchors"), 20, "bank_scale", "SMOKE")):
+        m = json.loads(json.dumps(base))
+        m[path[0]][path[1]] = value
+        st = rc.provenance_stamp(m)
+        assert st[key] == want, (path, value, st)
+        # the field that moved is republished, so the reader can check the call
+        assert st["discriminators"][f"{path[0]}.{path[1]}"] == value
+
+
+def test_a_clean_strict_load_is_carried_but_never_read_as_a_discriminator(e2e):
+    """⚠️ THE NAIVE DISCRIMINATOR, REFUTED IN THE FIXTURE ITSELF. The synthetic
+    run's state_dict ALSO loads with empty missing/unexpected keys — exactly like
+    the real landing arm — so 'it loads cleanly' says nothing about trainedness.
+    The stamp must not be reading it."""
+    _, _, manifest, _ = e2e
+    sd = manifest["model"]["state_dict_load"]
+    assert sd["missing_keys"] == [] and sd["unexpected_keys"] == []
+    assert manifest["_provenance"]["verdict"] == "SYNTHETIC_FIXTURE"
+    assert "model.state_dict_load" in manifest["_provenance"][
+        "not_a_discriminator"]
+
+
+def test_mutating_the_run_from_synthetic_to_real_flips_the_stamp(e2e, tmp_path):
+    """⭐ THE TWO-SIDED PROOF, END TO END THROUGH `run_dump`.
+
+    Same corpus, same code path, ONE lever moved — the checkpoint's own step
+    count. The synthetic run must carry `_unverified`; the real-checkpoint run
+    must NOT.
+
+    ⛔ THE ASSERTIONS BELOW ARE ORDERED ON PURPOSE. Everything before the
+    `_provenance` block is written in the vocabulary the OLD tool also emitted,
+    so running this test against the pre-fix file fails on the SUBSTANCE — "the
+    stamp claims UNVERIFIED about a 40,284-step checkpoint" — and not merely on
+    a key that did not exist yet. A test that fails with `KeyError` proves the
+    field is new; this one proves the old field could not discriminate."""
+    root, a, manifest, _ = e2e
+
+    # --- side A: the fixture as built (random-init, step 11) ---------------- #
+    assert manifest["model"]["step"] == 11
+    assert manifest["_unverified"] == rc._UNVERIFIED_ON_REAL_CKPT
+
+    # --- side B: the SAME dump with a real-checkpoint step count ------------ #
+    ck2 = tmp_path / "ckpt_real.pt"
+    blob = torch.load(a.ckpt, map_location="cpu", weights_only=False)
+    blob["step"] = 40284
+    torch.save(blob, str(ck2))
+    (tmp_path / "config.json").write_text(
+        (Path(a.ckpt).parent / "config.json").read_text(encoding="utf-8"),
+        encoding="utf-8")
+    a2 = _args(root, ck2, Path(a.episodes), Path(a.labels),
+               dump_dir=str(tmp_path / "dump_real"))
+    man2 = rc.run_dump(a2)
+    assert man2["model"]["step"] == 40284
+
+    # ⛔⛔ THE DISCRIMINATION ITSELF, in the OLD vocabulary: one lever moved, and
+    # the stamp is no longer the same. On the pre-fix file BOTH runs carry the
+    # identical `_unverified` string and this is the line that fails.
+    assert "_unverified" not in man2, (
+        "the stamp still asserts UNVERIFIED-ON-A-REAL-CHECKPOINT about a "
+        "40,284-step checkpoint — it cannot discriminate, which is "
+        "D-EVALTOOL-STAMP-BLIND")
+    assert manifest.get("_unverified") != man2.get("_unverified")
+
+    # --- and now the positive block that replaced it ------------------------ #
+    assert manifest["_provenance"]["verdict"] == "SYNTHETIC_FIXTURE"
+    assert man2["_provenance"]["checkpoint_scale"] == "TRAINED"
+    # the corpus is still a 3-episode slice, and the stamp says so separately
+    assert man2["_provenance"]["corpus_scale"] == "SMOKE"
+    assert man2["_provenance"]["verdict"] == "REAL_CHECKPOINT_ON_SMOKE_CORPUS"
+    # ⛔ and the two stamps are not the same object read twice
+    assert man2["_provenance"] != manifest["_provenance"]
+
+    # --- and the ANALYSIS record inherits it, not a re-asserted constant ---- #
+    rec2 = rc.analyze_refcv3(a2.dump_dir, n_boot=10, seed=0)
+    assert "_unverified" not in rec2
+    assert rec2["_provenance"]["verdict"] == "REAL_CHECKPOINT_ON_SMOKE_CORPUS"
+    rec1 = rc.analyze_refcv3(a.dump_dir, n_boot=10, seed=0)
+    assert rec1["_unverified"] == rc._UNVERIFIED_ON_REAL_CKPT
+    assert rec1["_provenance"]["verdict"] == "SYNTHETIC_FIXTURE"
+
+
+def test_a_banked_dump_is_classified_without_being_re_rolled(e2e, tmp_path):
+    """The stamp is derived from the manifest, so a dump banked BEFORE it existed
+    is classified by reading `manifest.json` alone — no GPU, no re-roll."""
+    _, a, manifest, _ = e2e
+    legacy = json.loads(json.dumps(manifest))
+    legacy.pop("_provenance"), legacy.pop("_unverified")
+    legacy["model"]["step"] = 40284
+    legacy["grid"].update(n_episodes=141, n_windows=4823)
+    st = rc.provenance_stamp(legacy)
+    assert st["verdict"] == "REAL_CHECKPOINT_ON_REAL_CORPUS"
+    assert st["unverified_on_a_real_checkpoint"] is False

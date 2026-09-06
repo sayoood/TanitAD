@@ -11186,3 +11186,87 @@ Per-segment curvature error, each arm on its **own** lane-change repicks:
 ⚠️ **AND A SECOND FINDING THE PROSE VERSION MISSED:** `anchor_control_seq` **must change in the same commit**. Its own docstring records that a constant sequence must roll to **exactly** `roll_bank`'s bank (pinned in `test_refc_sampler.py`), *"so if the two integrators disagreed, every anchored-Gaussian claim would be measured against a fan the vocabulary never emitted."* ⇒ **patching `roll_bank` alone BREAKS that pin — correctly.** A sibling must be told this in advance, which is the whole value of reading the file.
 
 ⛔ This row **APPENDS**. D-TRISEG-1 … D-TRISEG-7 stand as written; **no measurement, bar or verdict moves** — every number in D-TRISEG-1..7 was computed by `anchor_twoseg.roll_bank` on banked dumps and never touched `refc.py`.
+
+### ⛔ H19-STAMP-1 (APPENDED 2026-09-06) — "a non-`kin3` vocabulary silently drops the H19 lateral prior" is REFUTED in its strong form; the TACTICAL FEED is dropped, by EXACTLY ZERO, and was unstamped at run level.
+
+**Evidence class: MEASURED (ours).** Instruments `…/Research/2026-09-06-h19-prior/raw/h19_blast_radius.py` (+ `.txt`) and `raw/run_mutation_proof.py` (+ `mutation_proof.txt`); report `…/2026-09-06-h19-prior/H19_PRIOR.md`. **ZERO GPU** — CPU smoke rung + banked run records. **No T-tier applies: this is a wiring identity, not a driving number.**
+
+⛔ **REFUTED (strong form).** The H19 anchor prior is **NOT dropped** under a non-`kin3` tactical vocabulary. `refc.py`'s `reweight = maneuver_logits if maneuver_logits is not None else man_logits` substitutes the **core's own** kin3-derived 5-way, so the decoder receives a valid `maneuver_logits [B, 5]` under **both** vocabularies (asserted in-suite, both directions).
+
+✅ **SUPPORTED (true form), and it is broader than "lateral".** What the guard drops is the **TACTICAL BRAIN's feed**, on **three** tensors, and the loss is a **STRUCTURAL EXACT ZERO**, not a degradation. Perturbing **only** `lat_head_tac`/`lon_head_tac` and reading what the decoder receives: decoder `maneuver_logits` `kin3` **24.4632** vs `v7.0` **0.0**; decoder `lat_prior` (D-TAC1, via the `invert_man5` branch the escalation missed) **21.8972** vs **0.0**; `anchor_logits` **18.0365** vs **0.0**. ⇒ under `v7.0` the 8-wide v7 action heads are trained by CE and have **no inference-time influence on the anchor ranking at all**, reaching the decoder through **E7/E9 only**. ⚠️ Being a structural zero, `H-ESTIM-SEED-1` does **not** apply — no seed or replicate changes an identity.
+
+⭐ **THE LIVE ARM DID PAY IT, AND ITS OWN RECORD IS SILENT.** refcv4b: `tac_vocab_version = "v7.0"`, `v7_labels` present — MEASURED from **two agreeing dev-box copies** of its `config.json` (6,416 B each) — and **no `h19_*` field of any kind** beside its ten `param_breakdown` keys. ⚠️ The five banked local v4-design arms (`A_v3`, `B_v4_noguard`, `C_v4_drop`, `D_v4_full`, `E_regress`) all ran **`kin3`** with `v7_labels: null`, so the tiny-rig ablation panel sits on the **applied** side and is unaffected.
+
+⚠️ **CORRECTION to the escalation's phrasing:** there is **no `--tac-vocab-version` CLI flag** (positive assertion against a same-breath control of **88** `add_argument` calls); the vocabulary follows `--v7-labels` through `_pin_trainer_cfg`. The conclusion (refcv4b is non-`kin3`) is nonetheless correct.
+
+⛔ **THE MAGNITUDE IS UNMEASURABLE, AND THAT IS THE FINDING — not a gap in the work.** The counterfactual needs an implementation that never existed correctly: the only v7-fed prior read an 8-wide head through a `[B,3]×[B,3]` **positional** contract (`turn_left ← LANE_CHANGE_L`, `accelerate ← YIELD_MERGE`, **10 of 16 classes never read**) for all of refcv3 and refcv4's first 6,400 steps (`D-REFCV4-DEFECTA1`). ⇒ **the arm lost a seam, not a working capability**; "restoring" it would restore a scrambled prior.
+
+⭐ **REACHABILITY (the cheaper outcome, for a different reason than expected).** `kin3` **is** reachable — it is what every launch without `--v7-labels` gets. And H19 is **never dark from the vocabulary**: `man_logits` is assigned on both branches of `factored_maneuver`, so `reweight` is never `None`. ⇒ the remedy is a **stamp**, not a restoration — not because the prior is unreachable, but because it is **always** reachable and only its **source** changes.
+
+**LANDED (files uncontended at edit time):** `stack/tanitad/refs/refc_v3.py` — `h19_prior_stamp(model)` reading the **BUILT OBJECT** (ONE PREDICATE, ONE CONSUMER, the pattern this file mandates for `param_breakdown_v3`), plus `cache["h19_tactical_feed"] = man5 is not None` **inside `_hook`**, a bool in the same style as the existing `ego_injected`/`nav_injected` so no consumer meets a new value type. `stack/tests/test_h19_prior_stamp.py` — **9 passed**.
+
+⭐ **TWO-SIDED AND PROVEN ABLE TO FAIL.** `hier+kin3` → `applied`/`True`; `hier+v7.0` → `dropped(<reason>)`/`False`; flat → `n/a(...)`, stamped **distinctly from `dropped`**. Source-level mutation **4/4**: M0 pristine PASS, M1 guard removed FAIL, **M2 stamp hardcoded `applied` FAIL**, M3 runtime flag hardcoded `True` FAIL. ⭐ **M2 is the load-bearing one** — it reproduces exactly the sibling defect shipped the same night (a manifest string reading identically on every arm) and the suite refuses it.
+
+⭐ **REACHED, not merely correct:** `test_the_flag_reaches_a_real_forward` asserts the bool arrives on an ordinary `model(frames, v0=…)` call — no `preflight`, no special entry point — the deliberate answer to `refc_v3_train.main` running `preflight` **only** under `--preflight`.
+
+⛔ **ESCALATED, NOT APPLIED:** the `config.json` + preflight stamp is an exact **two-site** diff in `…/2026-09-06-h19-prior/ESCALATION_refc_v3_train.md`; `stack/scripts/refc_v3_train.py` was **`MM`** all turn.
+
+⛔ **NEXT LEVER, blocked on a PI / pre-registration decision, NOT on compute (zero GPU to implement, one tiny-rig A/B to read):** carry the tactical brain into the prior under `v7.0` through the **existing** `refc_tactical` v7→kin3 projection, behind a flag **default OFF**, bit-identical when off by `torch.equal`. **Deliberately not built this turn:** it re-opens the seam `D-REFCV4-DEFECTA1` closed by choosing option (a) precisely so that **"no invented 8→5 mapping is shipped"**, and it would change a live arm's recipe. It needs a bar, not a preference.
+
+**Suite (CONTROLLED):** 8 refc/v3/v4 modules + the new one — **170 passed, 2 failed, 1 skipped**; the 2 (`test_refcv3_ablations.py`, `refcv3_arm.py:1036 TypeError: 'NoneType' object is not callable`) reproduce **identically** with `refc_v3.py` replaced by `git show HEAD:…` ⇒ **PRE-EXISTING**, the sibling's rollability regression, not mine. My files alone **9/9**.
+
+⛔ This row **APPENDS**. No prior row's measurement, bar or verdict moves; `D-REFCV4-DEFECTA1` and `MODEL_REGISTRY.md` §4.6 lever (5) stand as written — they documented this at **programme** level, and what was missing was the **run**-level record.
+
+
+### ⭐ D-EVALTOOL-ANCHOR-CHANCE (2026-09-06, APPENDED) — the refcv3 eval adapter published a **1/128** chance level into every **117-anchor** refcv4b artifact. ⛔ **NO PUBLISHED NUMBER WAS SCORED AGAINST IT** — the computed field was always derived; the defect is a **stale schema STRING that reached the banked deliverables**.
+
+**Evidence class: MEASURED** (ours) — `taniteval/tools/refcv3_arm.py`; corpus sweep by **two mechanisms**, each with a same-breath non-zero control: a parsed-object walk (**3,480 JSON + 1,703 MD, 0 unreadable**, control = 1,487 files containing `anchor`) and a literal-string walk (**8,879 files, 0 unreadable**, control = 2,293).
+
+**THE DEFECT.** `_SIDECAR_DOC["anchor_acc"]` hardcoded `"chance = 1/128 = 0.0078"`. **128** is `stack/tanitad/refs/refc.py:356`'s DEFAULT bank; refcv4b's fitted bank is **117**, chance **1/117 = 0.008547** — 9.4 % larger. Two further `or 128` fallbacks silently defaulted `n_anchors` for any manifest that did not declare one.
+
+**⛔ SCOPE — WHAT IS *NOT* WRONG.** Every `(n_anchors, chance)` pair banked anywhere in the repo is internally consistent: **0 mismatches**. The only refcv3-family pairs that exist are **(117, 0.008547)**, **(128, 0.007812)** and **(20, 0.05)**. ⇒ **no result, bar or verdict moves.**
+
+**⚠️ WHAT *IS* WRONG, AND IT IS NOT ONLY IN SOURCE.** The stale string was written into the deliverables at JSON path `refcv3.manifest.sidecar_schema.anchor_acc`. **The artifact that settles it** is `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-landing/raw/refcv4b_t1.json`, which **contradicts itself in one file**: `model.n_anchors` **117**, `sidecar_schema.anchor_acc` *"chance = 1/128 = 0.0078"*, `tactical_declared.anchor_selection.chance` **0.008547**. Same string in `refcv4b_ego_zero`, `refcv4b_frames_blind`, `refcv4b_navpred(_CORRECTED)`, `refcv4b_navflip`, `refcv4b_t1_s1_ARM`, `c3_cost_probe`, `refcv4b_c3_devbox`, `refcv4b-9500-openloop`.
+
+**⭐ THE PROSE CLAIM THAT IS *NOT* A RETRACTION.** `GOALS_AND_CLAIMS.md` L4957 (`D-REFCV3-EPOCH-READ`) quotes *"`eval_anchor_acc` 0.569, chance 1/128"* — that row is about **refcv3**, whose bank really **is 128**. MEASURED from the two checkpoints' own manifests, both step 40,284 on the same 141-episode / 4,823-window grid (which is exactly why they conflate):
+
+| arm | ckpt | n_anchors | chance | anchor_acc (T1, episode-cluster bootstrap) |
+|---|---|---|---|---|
+| refcv3 | `refcv3-b1-v72-30k/ckpt_40284_FINAL.pt` | **128** | 0.007812 | **0.5654** [0.532, 0.5992] |
+| refcv4b | `refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt` | **117** | 0.008547 | **0.0993** [0.0728, 0.1281] |
+
+⇒ refcv4b's `anchor_acc` clears the TRUE chance at **11.6×** and the FALSE one at 12.7× — **no conclusion flips**, which is why this is a documentation defect and not a retraction of a result.
+
+**THE FIX.** `anchor_chance(n)` is the single derivation; `sidecar_schema(n)` fills the string from the run's own `model.n_anchors`; both `or 128` fallbacks are **REPLACED BY REFUSALS** (`_selection_profile` refuses — the fabricated 128 deflated `entropy_ratio` by 1.85 %, `ln 117 / ln 128`; the tactical family publishes `chance: null` + `chance_absent_because`). ⛔ **`anchor_chance(117)` returns 0.008547 — bit-identical to the banked value.**
+
+⚠️ **Substituting 117 for 128 would have been the SAME defect with a different number.** ROOT-CAUSE CLASS: the `df` / `step_s` / cylindrical-FOV / anchor-units family — **a true value quoted where it does not apply**.
+
+**PINNED:** `stack/tests/test_refcv3_arm.py` — `test_anchor_chance_is_one_over_the_runs_own_bank`, `test_the_schema_string_and_the_computed_chance_cannot_drift`, `test_the_denominator_follows_the_bank_size_by_mutation[117|128|256|20]`, `test_a_manifest_with_no_bank_size_is_refused_not_defaulted`.
+
+**⚠️ MIRROR-IMAGE INSTANCE, NOT OWNED BY THIS STREAM:** `taniteval/tools/training_watch/build_watch.py:21` hardcodes `CHANCE_ANCHOR = 1.0 / 117.0` (*"117-anchor fan · chance 0.85 %"*) — correct for refcv4b, **wrong for refcv3's 128**. Escalated, not written into a doc nobody re-reads.
+
+### ⛔ D-EVALTOOL-STAMP-BLIND (2026-09-06, APPENDED) — the refcv3 adapter's `_unverified` stamp was emitted **unconditionally** and therefore **misclassifies every real dump the programme holds**. It described the TOOL, not the RUN.
+
+**Evidence class: MEASURED** (ours) — the old and new logic applied to three artifacts on disk.
+
+**THE DEFECT.** `_UNVERIFIED_ON_REAL_CKPT` (*"UNVERIFIED on a real checkpoint … validated on a random-init RefCV3Model … synthetic 3-episode slice only"*) was written into **every** manifest and **every** analysis record, twice over (`run_dump` and `main`). It was relayed to the PI as a fixture/real discriminator; it cannot be one.
+
+| banked artifact | step / eps / windows / anchors | OLD `_unverified` | NEW verdict |
+|---|---|---|---|
+| `…/2026-09-06-refcv4b-landing/raw/refcv4b_t1.json` | 40,284 / 141 / 4,823 / 117 | **present** | `REAL_CHECKPOINT_ON_REAL_CORPUS` |
+| `…/2026-09-06-refcv4b-landing/raw/REFCV3_BASELINE_REANALYZED.json` | 40,284 / 141 / 4,823 / 128 | **present** | `REAL_CHECKPOINT_ON_REAL_CORPUS` |
+| `…/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump/manifest.json` | 11 / 3 / 42 / 20 | **present** | `SYNTHETIC_FIXTURE` |
+
+**⚠️ THE OBVIOUS DISCRIMINATOR IS REFUTED IN THE FIXTURE ITSELF.** A clean strict load is NOT evidence of trainedness: the synthetic run's `state_dict_load` reports `missing_keys: []` / `unexpected_keys: []`, **identical to the real landing arm**, because a random-init model saved and reloaded also loads cleanly. It is now carried under `not_a_discriminator` and asserted in the suite.
+
+**THE FIX.** `provenance_stamp(manifest)` derives **three axes, reported separately and never pooled** — `checkpoint_scale` (`model.step`, threshold 1,000), `corpus_scale` (`grid.n_episodes`/`n_windows`, 10 / 500), `bank_scale` (`model.n_anchors`, 64) — plus `discriminators`, `thresholds`, `not_a_discriminator`, `_not_what_this_proves`. `_provenance` is **always** emitted (so absence is never ambiguous with an old record); `_unverified` **only when true of that run**. ⭐ Because it reads the manifest, `analyze_refcv3` **classifies a dump banked before the stamp existed** — no re-roll, no GPU.
+
+**⛔ PROVED BY TWO-SIDED MUTATION.** `test_mutating_the_run_from_synthetic_to_real_flips_the_stamp` runs `run_dump` twice on the same corpus with ONE lever moved (step 11 → 40,284) and requires the stamp to change. Its assertions are ordered so the discriminating one is written in the OLD vocabulary; against the pre-fix blob `5e1349a9a9874d83685572bca30ef9d69bfed91b` it fails on the substance — *"the stamp still asserts UNVERIFIED-ON-A-REAL-CHECKPOINT about a 40,284-step checkpoint"* — not on a missing key. **A stamp that reads identically on both has measured nothing.**
+
+**⚠️ WHAT THIS DOES NOT PROVE:** the stamp reads self-reported fields. It ends the unconditional boilerplate; it is **not** a forgery detector, and a manifest whose `model.step` is wrong is outside what any stamp can see. Stated in the emitted block itself.
+
+### ⚠️ D-EVALTOOL-E7-CLOSURE-ARG (2026-09-06, APPENDED) — the `e7_off` ablation crashed because its wrapper captured the original hook in a **DEFAULT PARAMETER**, which the call site reached positionally.
+
+**Evidence class: MEASURED** (ours) — two PRE-EXISTING failures in `stack/tests/test_refcv3_ablations.py`, both `TypeError: 'NoneType' object is not callable`, found while establishing this stream's baseline.
+
+`def _hook_no_e7(cache, nav_cmd=None, ego_state=None, _o=_orig)` makes the closure cell **positionally reachable**. When `RefCV3Model._hook` gained a 4th argument (`nav_args`, `refc_v3.py:1031`, the strategic-bypass work), the model's own call at `refc_v3.py:1373` passed it fourth, it bound to `_o`, and `_o(...)` was `None`. **FIXED** by a factory (`_make_hook_no_e7`) capturing a real closure and forwarding `*args`. ⛔ **No banked number moves — the ablation CRASHED, so it produced no metric.** ROOT-CAUSE CLASS: a private capture made public by a signature change; same family as the `--v2` conflation (a mechanism whose reach was wider than its author's model of it).

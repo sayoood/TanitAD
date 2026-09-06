@@ -1,0 +1,49 @@
+D-EVALTOOL-STAMP-BLIND / D-EVALTOOL-ANCHOR-CHANCE -- the NEW stamp and the NEW
+denominator applied to REAL BANKED ARTIFACTS (not the test fixture). ZERO GPU.
+tool blob: 6e87fd84d26d647f9ca7a89a437db95b73b2c6de
+
+=== refcv4b LANDING (real)
+    artifact: TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-landing/raw/refcv4b_t1.json
+    OLD stamp: _unverified present at top level = True
+    NEW verdict            : REAL_CHECKPOINT_ON_REAL_CORPUS
+    NEW checkpoint_scale   : TRAINED
+    NEW corpus_scale       : FULL
+    NEW bank_scale         : REAL
+    NEW unverified_on_real : False
+    discriminators         : {'model.step': 40284, 'model.n_anchors': 117, 'grid.n_episodes': 141, 'grid.n_windows': 4823}
+    BANKED schema string   : 1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/128 = 0.0078
+    DERIVED chance (new)   : 0.008547
+    BANKED computed chance : 0.008547  (n_anchors 117)
+    BANKED anchor_acc mean : 0.0993  CI [0.0728, 0.1281]  estimator episode_cluster_bootstrap
+
+=== refcv3 BASELINE (real)
+    artifact: TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv4b-landing/raw/REFCV3_BASELINE_REANALYZED.json
+    OLD stamp: _unverified present at top level = True
+    NEW verdict            : REAL_CHECKPOINT_ON_REAL_CORPUS
+    NEW checkpoint_scale   : TRAINED
+    NEW corpus_scale       : FULL
+    NEW bank_scale         : REAL
+    NEW unverified_on_real : False
+    discriminators         : {'model.step': 40284, 'model.n_anchors': 128, 'grid.n_episodes': 141, 'grid.n_windows': 4823}
+    BANKED schema string   : 1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/128 = 0.0078
+    DERIVED chance (new)   : 0.007812
+    BANKED computed chance : 0.007812  (n_anchors 128)
+    BANKED anchor_acc mean : 0.5654  CI [0.532, 0.5992]  estimator episode_cluster_bootstrap
+
+=== FIXTURE (banked)
+    artifact: TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump/manifest.json
+    OLD stamp: _unverified present at top level = True
+    NEW verdict            : SYNTHETIC_FIXTURE
+    NEW checkpoint_scale   : SMOKE
+    NEW corpus_scale       : SMOKE
+    NEW bank_scale         : SMOKE
+    NEW unverified_on_real : True
+    discriminators         : {'model.step': 11, 'model.n_anchors': 20, 'grid.n_episodes': 3, 'grid.n_windows': 42}
+    BANKED schema string   : 1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); chance = 1/128 = 0.0078
+    DERIVED chance (new)   : 0.05
+    (no tactical_declared block: KeyError)
+
+READING: the OLD _unverified string is PRESENT on all three -- it cannot discriminate.
+The NEW stamp separates the two real 40,284-step arms from the step-11 fixture.
+The BANKED schema string reads 1/128 = 0.0078 on ALL THREE, and is correct only on
+the 128-anchor refcv3 baseline. NO COMPUTED chance was ever wrong.

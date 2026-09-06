@@ -11,14 +11,21 @@ in-training eval is a T0 loss on 160 fixed windows and must never be quoted as
 driving performance.
 
 ⛔⛔ THE ONE FACT THAT SHAPES EVERY LINE BELOW (register ``D-HF-COMPARABILITY``,
-MEASURED). refcv3 is a SUPERVISED ONE-SHOT ANCHOR TRAJECTORY MODEL — 128 anchors
+MEASURED). refcv3 is a SUPERVISED ONE-SHOT ANCHOR TRAJECTORY MODEL — N anchors
 x 8 slots (``refc_v3.py:196``/``:197``/``:106``), NO action input, NO rollout, NO
 per-step decode (``refc_v3.py:480`` — the forward signature has no action
 argument). ``t1_eval.roll_closed`` (``t1_eval.py:760``) carries the FLAGSHIP,
 which is also supervised, because the flagship is ADDITIONALLY autoregressive: it
 feeds ``(steer = atan(L*kappa), a_j)`` back into the predictor each step. refcv3
 has no action to feed back, so THERE IS NO LOOP TO CLOSE and roll_closed cannot
-be ported. Consequences, all implemented here:
+be ported.
+
+⛔ ``N`` ABOVE IS PER-RUN AND IS READ FROM ``model.n_anchors`` — it is 128 in
+``refc.py:356``'s DEFAULT config, **117** in refcv4b's fitted bank, 256 in XL and
+20 in the smoke config. This line said "128" until D-EVALTOOL-ANCHOR-CHANCE
+(2026-09-06), which is how a hardcoded ``chance = 1/128 = 0.0078`` reached every
+refcv4b manifest whose true chance is ``1/117 = 0.008547``. The chance level is
+now derived once, in ``anchor_chance()``. Consequences, all implemented here:
 
   * the arm is named ``os`` (one-shot) and ⛔ NEVER ``cl`` — a shared column name
     is how two different procedures end up in one table read as one quantity;
@@ -237,7 +244,17 @@ DT_FRAME = 0.1           # the 10 Hz corpus tick (the v2ep provider's own grid)
 GRIDS = {"2s": (0.5, 4), "6s": (1.0, 6)}
 ARM_TIERS = {"os": "T1", "os_navshuf": "T1", "os_navzero": "T1", "ha": "T1",
              "ha0": "T1", "ha0_ext": "T1", "oracle_sel": "T0",
-             "os_navflip": "T1"}
+             "os_navflip": "T1", "os_navpred": "T1"}
+#: The route -> nav mapping is IMPORTED from the label module, never re-derived
+#: here. ``stack/scripts/refb_labels.py:483-484`` is the only definition:
+#: ``{ROUTE_LEFT: NAV_LEFT, ROUTE_STRAIGHT: NAV_FOLLOW, ROUTE_RIGHT: NAV_RIGHT}``
+#: = ``{0: 1, 1: 0, 2: 2}``.
+#: |WARN| IT IS NOT THE IDENTITY, and a comment in this very file said it was:
+#: ``NAV_COMMANDS`` is FOUR wide (``follow, left, right, straight``,
+#: ``refb.py:64``) while ``ROUTE_CLASSES`` is THREE (``route_left,
+#: route_straight, route_right``, ``refb.py:68``). Feeding ``route_pred``
+#: straight through would send `route_left` to `follow` and `route_straight` to
+#: `left` -- a scrambled nav that measures nothing.
 #: ⛔ THE NAV NULL, DERIVED FROM SOURCE — not invented, and not ``nav_known``.
 #: The question asked was whether ``RefCV3Model.forward``'s ``nav_known``
 #: argument gives a principled null. MEASURED: it does NOT.
@@ -326,6 +343,18 @@ NAV_NULL = {
         "to carry the nav-ZERO arm beside the nav-shuffle one."),
 }
 ARM_MEANING = {
+    "os_navpred": "T1 -- STAR as os, but the nav token is the MODEL'S OWN "
+                  "predicted route: argmax(route_logits) taken from the "
+                  "nav_cmd=None forward (so NO oracle nav enters the arm at any "
+                  "point), mapped to a NAV_COMMANDS index through the imported "
+                  "refb_labels._ROUTE_TO_NAV. Answers 'how much of the supplied "
+                  "route's value can the model produce from vision alone?' -- "
+                  "i.e. the deployment condition on a corpus that ships no map. "
+                  "ASYMMETRY, stated: the oracle token is per-CLIP while the "
+                  "route head predicts per-WINDOW, so this arm's token can "
+                  "change within a clip. Admissible under the 2026-08-03 goal "
+                  "ruling (a PREDICTED goal is admissible; it carries no "
+                  "situation-classifier output).",
     "os_navflip": "T1 (RULING OPEN) — as os with the nav token FLIPPED "
                   "(left<->right) on every window: the sharpest nav "
                   "intervention for taniteval.nav_compliance. OPTIONAL "
@@ -559,14 +588,156 @@ _UNVERIFIED_ON_REAL_CKPT = (
     "UNVERIFIED on a real checkpoint — this box is forbidden from contacting the "
     "training pod `tanitad-refcv3`; validated on a random-init RefCV3Model at "
     "refc_v3_smoke_config over a synthetic 3-episode slice only")
+
+# --------------------------------------------------------------------------- #
+# ⛔⛔ THE PROVENANCE STAMP — D-EVALTOOL-STAMP-BLIND (2026-09-06)                 #
+# --------------------------------------------------------------------------- #
+# THE DEFECT IT REPLACES. `_UNVERIFIED_ON_REAL_CKPT` was emitted UNCONDITIONALLY
+# into every manifest and every analysis record — including the refcv4b LANDING
+# arm, a real 40,284-step checkpoint whose state_dict loads with empty
+# missing/unexpected keys. A stamp that reads IDENTICALLY on a fixture and on a
+# real arm has measured nothing: anyone using it as a fixture/real discriminator
+# MISCLASSIFIES EVERY REAL DUMP THE PROGRAMME HOLDS, and it was relayed to the PI
+# as exactly such a discriminator.
+#
+# ⭐ THE WORKING DISCRIMINATORS, MEASURED (2026-09-06). They are properties OF THE
+# RUN, carried in the manifest the run already writes:
+#
+#   field                fixture (test_refcv3_arm.py)      refcv4b landing arm
+#   model.step           11                                40,284
+#   grid.n_episodes      3                                 141
+#   grid.n_windows       42                                4,823
+#   model.n_anchors      20 (refc_v3_smoke_config)         117
+#
+# Every one of the four separates the two by >2 orders of magnitude, so the
+# thresholds below are not a knife-edge. ⚠️ `state_dict_load` is CARRIED but is
+# NOT a discriminator: a random-init model saved and reloaded ALSO reports empty
+# missing/unexpected keys, so "loads cleanly" says nothing about trainedness.
+# That is precisely the shape of the defect being fixed, so it is named here
+# rather than left for a reader to rediscover.
+#
+#: A step count at or above this is a TRAINED checkpoint. The fixture is 11; the
+#: smallest real refcv3 run banked is 5 orders of magnitude away from it.
+SMOKE_MAX_STEP = 1_000
+#: Below these the CORPUS is a slice, not an eval set (the fixture is 3 / 42).
+SMOKE_MAX_EPISODES = 10
+SMOKE_MAX_WINDOWS = 500
+#: `refc_v3_smoke_config` builds 20 anchors; every real bank is 117/128/256.
+SMOKE_MAX_ANCHORS = 64
+
+
+def provenance_stamp(manifest) -> dict:
+    """⭐ WHAT PRODUCED THIS RECORD — a fixture, or a real arm?
+
+    Derived from the manifest's OWN ``model`` / ``grid`` blocks, so it also
+    classifies a dump banked BEFORE this stamp existed (pass its
+    ``manifest.json``; nothing has to be re-rolled).
+
+    ⛔ It must read DIFFERENTLY on a synthetic run and on a real-checkpoint run,
+    and ``stack/tests/test_refcv3_arm.py`` proves that BY MUTATION in both
+    directions. A stamp that cannot fail is not evidence.
+    """
+    m = (manifest or {}).get("model") or {}
+    g = (manifest or {}).get("grid") or {}
+
+    def _int(v):
+        return int(v) if isinstance(v, (int, float)) and not isinstance(v, bool) \
+            else None
+
+    step, n_anch = _int(m.get("step")), _int(m.get("n_anchors"))
+    n_eps, n_win = _int(g.get("n_episodes")), _int(g.get("n_windows"))
+
+    # ⭐ THREE INDEPENDENT AXES, REPORTED SEPARATELY. Folding them into one label
+    # is how a reader loses the ability to see WHICH one is smoke-scale — the
+    # same reason the four metric families are never pooled into one score.
+    ckpt = ("UNKNOWN" if step is None else
+            "TRAINED" if step >= SMOKE_MAX_STEP else "SMOKE")
+    corpus = ("SMOKE" if (n_eps is None or n_win is None
+                          or n_eps < SMOKE_MAX_EPISODES
+                          or n_win < SMOKE_MAX_WINDOWS) else "FULL")
+    bank = ("UNKNOWN" if n_anch is None else
+            "REAL" if n_anch > SMOKE_MAX_ANCHORS else "SMOKE")
+
+    #: ⛔ THE LITERAL CLAIM `_UNVERIFIED_ON_REAL_CKPT` MAKES is about the
+    #: CHECKPOINT, so that is the only axis allowed to decide whether it is
+    #: emitted. A smoke CORPUS is a separate warning (`corpus_scale`), not a
+    #: reason to call a real checkpoint unverified.
+    unverified = ckpt != "TRAINED"
+    verdict = ("SYNTHETIC_FIXTURE" if ckpt == "SMOKE" else
+               "CHECKPOINT_SCALE_INDETERMINATE" if ckpt == "UNKNOWN" else
+               "REAL_CHECKPOINT_ON_REAL_CORPUS" if corpus == "FULL" else
+               "REAL_CHECKPOINT_ON_SMOKE_CORPUS")
+    return {
+        "verdict": verdict,
+        "checkpoint_scale": ckpt,
+        "corpus_scale": corpus,
+        "bank_scale": bank,
+        "unverified_on_a_real_checkpoint": bool(unverified),
+        "discriminators": {"model.step": step, "model.n_anchors": n_anch,
+                           "grid.n_episodes": n_eps, "grid.n_windows": n_win},
+        "thresholds": {"trained_step_at_or_above": SMOKE_MAX_STEP,
+                       "full_corpus_episodes_at_or_above": SMOKE_MAX_EPISODES,
+                       "full_corpus_windows_at_or_above": SMOKE_MAX_WINDOWS,
+                       "real_bank_anchors_above": SMOKE_MAX_ANCHORS},
+        "not_a_discriminator": {
+            "model.state_dict_load": (
+                "CARRIED for the record, NEVER read here: a random-init model "
+                "saved and reloaded also reports empty missing/unexpected keys, "
+                "so a clean strict load says nothing about trainedness"),
+            "the tool's own validation history": (
+                "`_unverified` used to be emitted unconditionally and therefore "
+                "described the TOOL, not the RUN — that is the defect this "
+                "block replaces (D-EVALTOOL-STAMP-BLIND)")},
+        "_reading": (
+            "SYNTHETIC_FIXTURE = a smoke/random-init checkpoint; nothing here is "
+            "a result. REAL_CHECKPOINT_ON_SMOKE_CORPUS = a real arm exercised on "
+            "a slice — the TOOL is verified, the NUMBERS are not an eval. "
+            "REAL_CHECKPOINT_ON_REAL_CORPUS = a quotable arm, subject to its tier "
+            "stamp and estimator as usual. `bank_scale` is reported BESIDE the "
+            "verdict rather than folded into it: a real step count on a "
+            "smoke-sized bank is a coherent thing to want (a long smoke run) and "
+            "must stay visible instead of being averaged into one label."),
+        "_not_what_this_proves": (
+            "the stamp reads the run's SELF-REPORTED fields. It ends the "
+            "unconditional boilerplate — it is NOT a forgery detector, and a "
+            "manifest whose `model.step` is wrong is outside what any stamp can "
+            "see."),
+    }
+
+
+def provenance_keys(manifest) -> dict:
+    """The keys a manifest/record carries to say what produced it.
+
+    ⛔ ``_unverified`` is emitted ONLY WHEN IT IS TRUE OF THIS RUN. Its ABSENCE
+    is therefore informative, and ``_provenance`` is always present so absence is
+    never ambiguous with an old record that simply predates the stamp.
+    """
+    st = provenance_stamp(manifest)
+    out = {"_provenance": st}
+    if st["unverified_on_a_real_checkpoint"]:
+        out["_unverified"] = _UNVERIFIED_ON_REAL_CKPT
+    return out
 _SIDECAR_DOC = {
     "sel_idx": "the anchor the MODEL selected (out['sel_idx'])",
     "sel_idx_base": "hier only: the pre-graft core selection (out['sel_idx_base'])",
     "sel_score_max": "max of the ranking score the selection argmaxed over",
     "a_star": "the GT-NEAREST anchor (refc_v3_train.py:460) — the ORACLE, banked "
               "as a diagnostic; the deployed arm NEVER selects with it",
+    #: ⛔ THE DENOMINATOR IS DERIVED, NEVER REMEMBERED (D-EVALTOOL-ANCHOR-CHANCE,
+    #: 2026-09-06). This line used to read "chance = 1/128 = 0.0078" — TRUE of
+    #: `refc.py:356`'s DEFAULT bank and FALSE of every refcv4b dump, whose bank is
+    #: 117 (chance 0.008547). The computed field was always right; only this
+    #: SCHEMA STRING was stale, so the defect was a reader-facing one. It is now
+    #: filled per run by `sidecar_schema()` from the run's OWN `model.n_anchors`.
+    #: ⚠️ Substituting 117 for 128 would have been the SAME defect with a
+    #: different number — the `df`/`step_s` family: a true value quoted where it
+    #: does not apply.
     "anchor_acc": "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); "
-                  "chance = 1/128 = 0.0078",
+                  "chance = 1/n_anchors — DERIVED from this run's own bank, see "
+                  "`model.n_anchors` and "
+                  "`refcv3.tactical_declared.anchor_selection.chance`; ⛔ never "
+                  "a remembered constant (the v3 DEFAULT is 128, refcv4b's bank "
+                  "is 117, and the two chance levels differ by 9.4 %)",
     "sel_agrees_oracle": "1.0 where sel_idx == a_star — how much of `traj` was "
                          "selection rather than refinement",
     "goal_gate": "hier only: out['goal_gate_value'] — the zero-init E9 gate",
@@ -608,6 +779,51 @@ _SIDECAR_DOC = {
     "ep_poses": "[T, 4] the episode's PROVIDER poses, once per file (for the "
                 "label time-base control)",
 }
+
+
+def anchor_chance(n_anchors) -> float | None:
+    """⭐ THE ONE PLACE THE ANCHOR CHANCE LEVEL IS COMPUTED.
+
+    ``1/n_anchors`` where ``n_anchors`` is the run's OWN bank size, or ``None``
+    when the artifact does not carry one — ⛔ NEVER a fallback constant. A
+    fabricated denominator reads exactly like a measured one (the ``df`` /
+    ``step_s`` / cylindrical-FOV family), and here it would silently rescale the
+    only bar ``anchor_acc`` is ever read against.
+    """
+    # ⛔ a NUMBER, not something int() would coerce. A manifest whose bank size
+    # arrived as the string "117" is an artifact whose schema is not what we
+    # think it is; coercing it silently would hide that.
+    if isinstance(n_anchors, bool) or not isinstance(n_anchors, (int, float)):
+        return None
+    if not (n_anchors == n_anchors) or n_anchors <= 0:      # NaN or non-positive
+        return None
+    return round(1.0 / int(n_anchors), 6)
+
+
+def sidecar_schema(n_anchors=None) -> dict:
+    """``_SIDECAR_DOC`` with the ANCHOR-CHANCE line filled in FROM THIS RUN.
+
+    ⛔ D-EVALTOOL-ANCHOR-CHANCE (2026-09-06). The schema shipped a hardcoded
+    ``"chance = 1/128 = 0.0078"`` into every manifest, including refcv4b's, whose
+    bank is 117 (chance 0.008547). ⇒ the number a reader compared ``anchor_acc``
+    against was 9.4 % too small, while the COMPUTED field beside it
+    (``tactical_declared.anchor_selection.chance``) was right all along.
+    Both now come from the same derivation, so they cannot drift again.
+    """
+    doc = dict(_SIDECAR_DOC)
+    ch = anchor_chance(n_anchors)
+    if ch is None:
+        doc["anchor_acc"] = (
+            doc["anchor_acc"] + " ⛔ THIS RUN DECLARES NO `model.n_anchors`, so "
+            "no chance level is published here — it is REFUSED, never guessed.")
+    else:
+        doc["anchor_acc"] = (
+            "1.0 where anchor_logits.argmax == a_star (refc_v3_train.py:642); "
+            f"chance = 1/{int(n_anchors)} = {ch} — DERIVED from THIS run's bank "
+            "(`model.n_anchors`), which is why it may differ from another arm's. "
+            "⛔ Never compare an `anchor_acc` against a bank size it was not "
+            "measured on.")
+    return doc
 
 
 def _p(*a):
@@ -965,6 +1181,35 @@ def _gstr_forward_hook(state: "AblationState"):
     return hook
 
 
+def _make_hook_no_e7(orig):
+    """The ``e7_off`` wrapper for ``RefCV3Model._hook`` — E7's target latent off.
+
+    ⛔ D-EVALTOOL-E7-CLOSURE-ARG (2026-09-06). This used to live inline and
+    captured the original through a DEFAULT PARAMETER (``..., _o=_orig``), which
+    makes the closure cell POSITIONALLY REACHABLE FROM THE CALL SITE. When
+    ``RefCV3Model._hook`` gained a 4th argument (``nav_args``,
+    ``refc_v3.py:1031``, the strategic-bypass work) the model's own call at
+    ``refc_v3.py:1373`` passed it fourth; it bound to ``_o``, and ``_o(...)``
+    died with ``TypeError: 'NoneType' object is not callable``. ⇒ two failures in
+    ``stack/tests/test_refcv3_ablations.py``, PRE-EXISTING when this file was
+    picked up. The ablation CRASHED rather than mis-computing, so no banked
+    number moves by repairing it.
+
+    ⇒ the original is captured as a REAL CLOSURE over a FACTORY PARAMETER (so a
+    later rebinding of the caller's local cannot reach it either) and every
+    argument is forwarded verbatim, so a 5th one cannot repeat this.
+    """
+    def _hook_no_e7(*args, **kwargs):
+        inner = orig(*args, **kwargs)
+
+        def wrapped(pooled_seq, ctx):
+            hk = dict(inner(pooled_seq, ctx))
+            hk["target_latent"] = None          # refc.py:2208 keeps it None
+            return hk
+        return wrapped
+    return _hook_no_e7
+
+
 def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
                     gstr_bank: str | None = None, gstr_seed: int = 0):
     """Apply the eval-time ablations and return ``(state, record)``.
@@ -1008,18 +1253,7 @@ def apply_ablations(model, cfg, names, *, steps: int, feed_ego: bool,
                 load_gstr_bank(gstr_bank, gstr_seed)
             model.str_goal_head.register_forward_hook(_gstr_forward_hook(state))
         elif n == "e7_off":
-            _orig = model._hook
-
-            def _hook_no_e7(cache, nav_cmd=None, ego_state=None, _o=_orig):
-                inner = _o(cache, nav_cmd, ego_state)
-
-                def wrapped(pooled_seq, ctx):
-                    hk = dict(inner(pooled_seq, ctx))
-                    hk["target_latent"] = None      # refc.py:2208 keeps it None
-                    return hk
-                return wrapped
-
-            model._hook = _hook_no_e7
+            model._hook = _make_hook_no_e7(model._hook)
             ev["effect"] = ("the decoder's tgt_film is skipped "
                             "(refc.py:1508 gates on target_latent is not None)")
         elif n == "e9_off":
@@ -1132,6 +1366,69 @@ def grid_slots(horizons, grid: str) -> dict:
             "instants_s": [round(h * DT_FRAME, 3) for h in need],
             "dropped_model_slots": [h for h in hz if h not in need],
             "n_frames": need[-1]}
+
+
+def _decoded_bank(out: dict, row: int = 0) -> "torch.Tensor":
+    """``[1, N, S, 2]`` — the anchor bank THIS forward actually decoded.
+
+    ⛔⛔ ``D-REFCV4B-ASTAR-GEOMETRY``. This exists so that no caller can reach
+    for ``model.core.decoder.anchors`` again. On a **v0-conditioned**
+    vocabulary those are two different geometries:
+    ``RefCDecoder.roll_bank`` (``refc.py``) re-rolls the vocabulary through
+    ``rollout_unicycle`` from THIS window's measured speed, while
+    ``decoder.anchors`` is the family rolled at the **reference** speed. An
+    index argmin'd in the reference geometry names a *different* trajectory
+    when it is read back out of this window's fan — which is how a "ceiling"
+    came to read **+0.9179 m separated WORSE** than the arm it bounds.
+
+    ⭐ On a **fixed** vocabulary the two are the SAME STORAGE, not merely
+    close: ``roll_bank`` returns ``self.anchors[None].expand(...)`` when
+    ``anchor_v0_cond`` is False. That is why this correction is provably a
+    no-op on refcv3, and why the defect was invisible there.
+
+    ``row`` selects the fed condition and MUST match the row every consumer
+    reads back (``out["anchor_traj"][row:row + 1, a_star]``): row 0 is the
+    primary ``os`` condition. ⛔ Absence REFUSES rather than falling back —
+    a fallback to ``decoder.anchors`` is precisely the defect, and a silent
+    one would restore it on exactly the builds it is wrong for.
+    """
+    bank = out.get("anchor_bank")
+    if bank is None:
+        raise SystemExit(
+            "[refcv3_arm] ⛔ the forward emits no `anchor_bank`, so `a_star` "
+            "cannot be measured against the geometry the model DECODED. "
+            "Refusing rather than falling back to `decoder.anchors`: on a "
+            "v0-conditioned vocabulary that is the reference-speed family, "
+            "and scoring against it silently produces a ceiling BELOW its own "
+            "floor while `anchor_acc` still reads plausibly "
+            "(D-REFCV4B-ASTAR-GEOMETRY). `anchor_bank` is emitted by the core "
+            "decoder and re-exported at the model level; a build without it "
+            "predates the fan contract and is not evaluable here.")
+    return bank[row:row + 1].detach().float().cpu()          # [1, N, S, 2]
+
+
+def _oracle_anchor_index(bank: "torch.Tensor", traj_tgt: "torch.Tensor",
+                         sv: "torch.Tensor") -> int:
+    """``a_star`` — the GT-NEAREST anchor, mirroring the trainer exactly.
+
+    The reference implementation is ``compute_losses_v3`` in
+    ``stack/scripts/refc_v3_train.py`` (its ``anchors`` / ``dist`` / ``a_star``
+    triple). Same target function (``refb_labels.waypoint_targets``), same
+    valid-slots-only mask, same squared-error argmin, and — since
+    ``D-REFCV4B-ASTAR-GEOMETRY`` — the same bank. ⛔ There is exactly ONE
+    convention for ``a_star`` in this programme; two consumers disagreeing
+    about it is what produced that defect, so this function is the eval side
+    of that one convention and any change to it must be made against the
+    trainer, never against a local intuition.
+
+    ``bank`` ``[1, N, S, 2]`` · ``traj_tgt`` ``[1, S, 2]`` · ``sv`` ``[S]``
+    (per-slot validity, so a slot past the episode end cannot vote).
+    Returns the scalar anchor index.
+    """
+    tgt = traj_tgt.to(bank.dtype)                            # [1, S, 2]
+    dist = (((tgt[:, None] - bank) ** 2).sum(-1)
+            * sv.to(bank.dtype)[None, None]).sum(-1)         # [1, N]
+    return int(dist.argmin(dim=1)[0])
 
 
 def hold_controls(v, kap, t0: int):
@@ -1315,6 +1612,25 @@ def build_corpus(a, cfg, prov: dict):
 # --------------------------------------------------------------------------- #
 # the roll — writes the dump                                                    #
 # --------------------------------------------------------------------------- #
+_ROUTE_TO_NAV = {0: 1, 1: 0, 2: 2}   # asserted == refb_labels._ROUTE_TO_NAV at run_dump entry
+
+
+def _nav_to_route_map():
+    """NAV_COMMANDS index -> ROUTE_CLASSES index, IMPORTED from the label module
+    (``stack/scripts/refb_labels.py:77-78`` ``_NAV_TO_ROUTE``), never hand-typed.
+    |STOP| The two spaces are DIFFERENT WIDTHS (4 vs 3) and are NOT aligned; the
+    sibling harness ``refav1_arm.py:2308`` has always mapped before comparing and
+    this file did not."""
+    import refb_labels
+    return dict(refb_labels._NAV_TO_ROUTE)
+
+
+def _route_to_nav_map():
+    """The ONLY definition, imported -- never re-derived. See ARM_TIERS above."""
+    import refb_labels
+    return dict(refb_labels._ROUTE_TO_NAV)
+
+
 def _head_argmax(out, key, row):
     v = out.get(key)
     return -1 if v is None else int(v[row].argmax(-1))
@@ -1326,6 +1642,11 @@ def run_dump(a) -> dict:
     import refb_labels
 
     t_start = time.time()
+    if sorted(_ROUTE_TO_NAV.items()) != sorted(refb_labels._ROUTE_TO_NAV.items()):
+        raise SystemExit(
+            "[refcv3_arm] the route->nav map bound at import time is not the "
+            "one refb_labels defines now -- refusing rather than feeding a "
+            "mapping the label module does not agree with.")
     tr = trainer()
     from tanitad.refs import refc_v3 as v3mod
     dev = a.device
@@ -1441,6 +1762,29 @@ def run_dump(a) -> dict:
         _p(f"[nav-flip] os_navflip: left<->right on {int((nav_flip != nav_true).sum())}"
            f"/{len(nav_true)} windows — the sharpest intervention (optional arm)")
     do_navzero = ("os_navzero" in arms) or (a.with_navzero and nav_on)
+    # -- STAR --with-navpred: the arm this whole run exists for ---------------
+    # The token is the model's own route prediction, taken from the nav-null
+    # forward so that NO oracle nav reaches the arm. The nav-null call therefore
+    # has to run BEFORE the batched one (it SUPPLIES a row of it), which is the
+    # only ordering change in the loop -- and it is made only when the flag is on,
+    # so the FULL path stays bit-identical.
+    navpred_on = bool(nav_on and getattr(a, "with_navpred", False))
+    if getattr(a, "with_navpred", False) and not nav_on:
+        raise SystemExit("[refcv3_arm] --with-navpred needs a nav source: with "
+                         "nav_source 'none' the forward already passes "
+                         "nav_cmd=None and there is no token to replace.")
+    if navpred_on and not do_navzero:
+        raise SystemExit("[refcv3_arm] --with-navpred REQUIRES the nav-zero "
+                         "forward -- it is where the predicted route is read "
+                         "from. Drop --no-navzero.")
+    if navpred_on:
+        conds_fed.append("nav_predicted")
+        arms.append("os_navpred")
+        _p("[nav-pred] os_navpred: nav_cmd = refb_labels._ROUTE_TO_NAV["
+           "argmax(route_logits from the nav_cmd=None forward)] -- the model's "
+           "OWN route, no oracle token anywhere in the arm. Map (SOURCE, "
+           f"refb_labels.py:483-484): {dict(sorted(_ROUTE_TO_NAV.items()))} "
+           "-- NOT the identity.")
     conds = conds_fed + (["nav_zero"] if do_navzero else [])
 
     _p(f"[roll] {len(sel)} windows / {len(eps)} episodes · arms={arms} · "
@@ -1486,10 +1830,15 @@ def run_dump(a) -> dict:
 
     horizons = list(cfg.core.trajectory.horizons)
     slots = grid["slots"]
-    # .cpu(): `traj_tgt` (:994) and `sv` (:980) are CPU dataset tensors; the bank
-    # is used ONLY in the a_star argmin below (:1051/:1059), so keeping it on CPU
-    # matches the CPU path the fixture validated and fixes a CUDA/CPU device clash.
-    anchors_bank = model.core.decoder.anchors.detach().cpu()    # [N, S, 2]
+    # ⛔⛔ REMOVED 2026-09-06 (D-REFCV4B-ASTAR-GEOMETRY). A loop-invariant
+    # `anchors_bank = model.core.decoder.anchors.detach().cpu()` used to be
+    # hoisted here and was THE DEFECT: on a v0-conditioned vocabulary the bank
+    # is NOT loop-invariant — `roll_bank` re-rolls it from each window's
+    # measured v0 — so hoisting it silently substituted the reference-speed
+    # family for the decoded geometry. `a_star` is now taken per window from
+    # `_decoded_bank(out)`, mirroring the trainer's `compute_losses_v3`.
+    # ⛔ Do not re-hoist. The CPU/device concern the old comment recorded is
+    # handled inside `_decoded_bank`, which returns a detached CPU tensor.
     episodes_manifest, n_done, n_skipped = [], 0, 0
     t_fwd_first = None
     skip_reasons: dict[str, int] = {}
@@ -1557,7 +1906,11 @@ def run_dump(a) -> dict:
                         "nav_shuffled": int(nav_shuf[i])}
             if nav_flip is not None:
                 nav_vals["nav_flipped"] = int(nav_flip[i])
-            nav_t = torch.tensor([nav_vals[c] for c in conds_fed],
+            # ``.get(c, 0)`` is a no-op for every pre-existing conditioning
+            # (all are present); it exists so `nav_predicted`, whose value is
+            # only known AFTER the nav-null forward, has a placeholder here and
+            # is overwritten below before the batched call runs.
+            nav_t = torch.tensor([nav_vals.get(c, 0) for c in conds_fed],
                                  dtype=torch.long, device=dev)
             v0_t = torch.full((b,), v0, dtype=torch.float32, device=dev)
             # ⭐ the g_str SHUFFLE's per-window channel: the banked goal of the
@@ -1593,14 +1946,36 @@ def run_dump(a) -> dict:
             _v0_fed = None if abl_state.ego_zero else v0_t
             tf = time.time()
             with torch.no_grad():
+                out_z = None
+                if navpred_on:
+                    # STAR the nav-null forward runs FIRST here because it
+                    # SUPPLIES the predicted token. Identical call to the one
+                    # below; only the position moves, and only under this flag.
+                    out_z = model(fr, nav_cmd=None,
+                                  v0=None if abl_state.ego_zero else v0_t[:1],
+                                  steps=steps, ego_state=ego_z)
+                    _rl = out_z.get("route_logits")
+                    if _rl is None:
+                        raise SystemExit(
+                            "[refcv3_arm] --with-navpred: the forward emits no "
+                            "`route_logits`, so there is no predicted route to "
+                            "feed. Refusing rather than inventing a token.")
+                    _rz = int(_rl[0].argmax(-1))
+                    if _rz not in _ROUTE_TO_NAV:
+                        raise SystemExit(
+                            f"[refcv3_arm] --with-navpred: route argmax {_rz} is "
+                            f"outside ROUTE_CLASSES -- the head's width and the "
+                            f"label module disagree; refusing.")
+                    nav_vals["nav_predicted"] = int(_ROUTE_TO_NAV[_rz])
+                    nav_t = torch.tensor([nav_vals[c] for c in conds_fed],
+                                         dtype=torch.long, device=dev)
                 out = model(fr_b, nav_cmd=nav_t if nav_on else None,
                             v0=_v0_fed, steps=steps, ego_state=ego_b)
                 # ⭐ THE NAV NULL — ITS OWN CALL. `nav_cmd=None` is a whole-call
                 # property (it gates the E13 injection, refc_v3.py:437-441), so
                 # it cannot be one row of the batch above. Same frames, same v0,
                 # same window, same grid: the ONLY difference is the nav.
-                out_z = None
-                if do_navzero:
+                if do_navzero and out_z is None:
                     out_z = model(fr, nav_cmd=None,
                                   v0=None if abl_state.ego_zero else v0_t[:1],
                                   steps=steps, ego_state=ego_z)
@@ -1650,21 +2025,26 @@ def run_dump(a) -> dict:
             if "os_navflip" in arms:
                 r = conds_fed.index("nav_flipped")
                 acc["os_navflip"].append(traj[r:r + 1, slots].cpu().numpy())
+            if "os_navpred" in arms:
+                r = conds_fed.index("nav_predicted")
+                acc["os_navpred"].append(traj[r:r + 1, slots].cpu().numpy())
             # -- the ORACLE ceiling, exactly as the trainer computes it --------
+            # ⛔⛔ D-REFCV4B-ASTAR-GEOMETRY (fixed 2026-09-06). `a_star` is
+            # measured against the bank THIS forward DECODED — `out`'s own
+            # `anchor_bank`, row 0, which is the row `anchor_traj[0:1]` is read
+            # from below. It is NOT `decoder.anchors`: on a v0-CONDITIONED
+            # vocabulary that is the family rolled at the REFERENCE speed, a
+            # geometry the model never emitted, and an index argmin'd in it
+            # names a DIFFERENT trajectory when read back out of this window's
+            # fan. Computed ONCE (the two branches were byte-identical) and
+            # unconditionally, because `anchor_acc` / `sel_agrees_oracle` below
+            # consume it on EVERY roll, not only under --with-oracle-sel.
+            sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
+            a_star = _oracle_anchor_index(
+                _decoded_bank(out, row=0), traj_tgt, sv)
             if "oracle_sel" in arms:
-                sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
-                tgt = traj_tgt.to(anchors_bank.dtype)
-                dist = (((tgt[:, None] - anchors_bank[None]) ** 2).sum(-1)
-                        * sv[None, None]).sum(-1)                 # [1, N]
-                a_star = int(dist.argmin(dim=1)[0])
                 acc["oracle_sel"].append(
                     out["anchor_traj"][0:1, a_star][:, slots].float().cpu().numpy())
-            else:
-                sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
-                tgt = traj_tgt.to(anchors_bank.dtype)
-                dist = (((tgt[:, None] - anchors_bank[None]) ** 2).sum(-1)
-                        * sv[None, None]).sum(-1)
-                a_star = int(dist.argmin(dim=1)[0])
             acc["g"].append(g)
             acc["ha"].append(ha)
             acc["ha0"].append(ha0)
@@ -1735,6 +2115,12 @@ def run_dump(a) -> dict:
             dec.setdefault("nav_cmd_shuf", []).append(int(nav_shuf[i]))
             if nav_flip is not None:
                 dec.setdefault("nav_cmd_flip", []).append(int(nav_flip[i]))
+            if navpred_on:
+                # the fed token AND the raw route argmax it came from, so the
+                # mapping can be re-derived from the dump without the model.
+                dec.setdefault("nav_cmd_pred", []).append(
+                    int(nav_vals["nav_predicted"]))
+                dec.setdefault("route_argmax_navzero_fed", []).append(int(_rz))
             dec.setdefault("nav_valid", []).append(bool(nav_valid[i]))
             dec.setdefault("ha_controls", []).append(
                 hold[None].expand(n_f, 2).float().cpu().numpy()[None])
@@ -1827,7 +2213,10 @@ def run_dump(a) -> dict:
                     "consuming the observed frames, the clip's v7.2 nav token and "
                     "the MEASURED v0 at t0 and nothing else, emitting the whole "
                     "6 s path as the model's OWN sel_score_v3-ranked choice among "
-                    "its 128 anchors."),
+                    f"its {prov.get('n_anchors')} anchors (the run's OWN bank "
+                    "size, `model.n_anchors` — ⛔ this line was a hardcoded "
+                    "'128' until D-EVALTOOL-ANCHOR-CHANCE, which is the v3 "
+                    "DEFAULT and NOT refcv4b's 117)."),
             "no_closed_loop_because": (
                 "refc_v3.py:480 — forward(frames, nav_cmd, v0, steps, lan, "
                 "nav_known) has NO action argument; there is no per-step decode "
@@ -1887,6 +2276,18 @@ def run_dump(a) -> dict:
                          "function refav1_arm.py calls at stride=2; pinned "
                          "bit-equal by "
                          "stack/tests/test_refcv3_ha0_ext_shared.py"),
+        "nav_predicted": ({
+            "arm": "os_navpred",
+            "how": ("nav_cmd = refb_labels._ROUTE_TO_NAV[argmax(route_logits)] "
+                    "where route_logits comes from the nav_cmd=None forward, so "
+                    "no oracle nav enters the arm"),
+            "map": {str(k): int(v) for k, v in
+                    sorted(_route_to_nav_map().items())},
+            "map_source": "stack/scripts/refb_labels.py:483-484 (IMPORTED)",
+            "asymmetry": ("the oracle nav token is per-CLIP; the route head "
+                          "predicts per-WINDOW, so this arm's token can change "
+                          "within a clip"),
+        } if navpred_on else None),
         "nav_shuffle": shuf_stats,
         "nav_null": (dict(NAV_NULL, emitted=bool(do_navzero))
                      if do_navzero else
@@ -1896,7 +2297,10 @@ def run_dump(a) -> dict:
                                         "nav-zero arm)")}),
         "head_conditionings": conds,
         "fed_conditionings": conds_fed,
-        "sidecar_schema": _SIDECAR_DOC,
+        # ⭐ FILLED FROM THIS RUN'S OWN BANK, not from a module constant
+        # (D-EVALTOOL-ANCHOR-CHANCE): the anchor-chance line is derived from
+        # `prov["n_anchors"]`, the same field the tactical family divides by.
+        "sidecar_schema": sidecar_schema(prov.get("n_anchors")),
         "ego_state_fed": feed_ego,
         # ⭐⭐ THE ABLATION PROVENANCE. A result must never be readable without
         # knowing which ablation produced it, so this rides in the manifest AND
@@ -1915,12 +2319,24 @@ def run_dump(a) -> dict:
         "episodes": episodes_manifest,
         "wallclock_s": round(time.time() - t_start, 1),
         "first_forward_s": t_fwd_first,
-        "_unverified": _UNVERIFIED_ON_REAL_CKPT,
     }
+    # ⛔ D-EVALTOOL-STAMP-BLIND: `_unverified` is no longer a constant key. It is
+    # emitted ONLY when this run's own `model.step` / `grid` say the claim is
+    # TRUE of it; `_provenance` is always written and carries the fields that
+    # decided. Added AFTER the dict is built so it reads the real `model`/`grid`.
+    manifest.update(provenance_keys(manifest))
     with open(os.path.join(a.dump_dir, "manifest.json"), "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=1, default=str)
     _p(f"[dump] {n_done} windows over {len(episodes_manifest)} episodes "
        f"({n_skipped} skipped: {skip_reasons or 'none'})")
+    _pv = manifest["_provenance"]
+    _p(f"[provenance] {_pv['verdict']} - ckpt={_pv['checkpoint_scale']} "
+       f"corpus={_pv['corpus_scale']} step={_pv['discriminators']['model.step']} "
+       f"eps={_pv['discriminators']['grid.n_episodes']} "
+       f"windows={_pv['discriminators']['grid.n_windows']} "
+       f"anchors={_pv['discriminators']['model.n_anchors']}"
+       + ("  [UNVERIFIED-ON-A-REAL-CHECKPOINT]"
+          if _pv["unverified_on_a_real_checkpoint"] else ""))
     _p("REFCV3_DUMP_DONE")
     return manifest
 
@@ -2166,7 +2582,22 @@ def _selection_profile(dec, manifest) -> dict:
         return _refused("no decisions sidecar — the selection cannot be "
                         "profiled (this dump was not written by "
                         "refcv3_arm.run_dump)", "n/a", 0)
-    n_anchors = int((((manifest or {}).get("model") or {}).get("n_anchors")) or 128)
+    # ⛔ D-EVALTOOL-ANCHOR-CHANCE: this read used to end `or 128`. `n_anchors` is
+    # the DENOMINATOR of `entropy_ratio` and of `max_entropy_nats`, so a
+    # fabricated 128 on a 117-anchor dump would deflate the ratio by 1.85 %
+    # (ln 117 / ln 128 = 4.7622 / 4.8520) while looking exactly like a
+    # measurement — `_entropy` itself is unchanged, only the BAR moves. A
+    # manifest that declares no bank
+    # size gets a REFUSAL, never a guess. (Every dump `run_dump` has ever written
+    # carries `model.n_anchors` — this branch is for foreign/legacy manifests.)
+    n_anchors = (((manifest or {}).get("model") or {}).get("n_anchors"))
+    n_anchors = int(n_anchors) if isinstance(n_anchors, (int, float)) else 0
+    if n_anchors <= 0:
+        return _refused("the manifest declares no `model.n_anchors`, so the "
+                        "selection entropy has no denominator and the anchor "
+                        "chance level cannot be derived — ⛔ REFUSED rather "
+                        "than defaulted to the v3 config's 128, which is FALSE "
+                        "for every refcv4b bank (117)", "n/a", 0)
     sel = np.asarray(dec["sel_idx"], dtype=np.int64)
     n = int(sel.size)
     counts = np.bincount(sel, minlength=n_anchors)
@@ -2356,6 +2787,11 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
                      n_boot=n_boot, seed=seed, dt=dt, paired=pairs)
     rec["tool"] = ("taniteval/tools/refcv3_arm.py (trajectory families via "
                    "taniteval/tools/t1_eval.py::analyze, IMPORTED)")
+    # ⛔ D-EVALTOOL-STAMP-BLIND. Derived from the DUMP'S OWN manifest, so a dump
+    # banked before this stamp existed is classified retroactively with no
+    # re-roll. Set HERE, before any early return, so every path out of analyze()
+    # carries it. `_unverified` appears only when it is true of THIS run.
+    rec.update(provenance_keys(manifest))
 
     G_all, P_all, eid_w, v0_w = [], {x: [] for x in arms}, [], []
     for f in files:
@@ -2448,8 +2884,14 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         raise ValueError(f"decisions sidecar has {len(eid_d)} rows for {N} "
                          f"windows — different grids; refusing the join")
 
-    n_anchors = int((((manifest or {}).get("model") or {})
-                     .get("n_anchors")) or 128)
+    # ⛔ D-EVALTOOL-ANCHOR-CHANCE: this read used to end `or 128`, so a manifest
+    # with no declared bank size published `chance = 0.0078` as though it had
+    # been measured. `chance` is the ONLY bar `anchor_acc` is ever read against;
+    # it is now derived by `anchor_chance()` and is `None` — with a stated
+    # reason — when the artifact does not carry a bank size.
+    _n_raw = (((manifest or {}).get("model") or {}).get("n_anchors"))
+    n_anchors = int(_n_raw) if isinstance(_n_raw, (int, float)) else 0
+    _chance = anchor_chance(n_anchors)
     # ---- TACTICAL: the anchor selection + the declared heads ---------------- #
     tac = {"tier": "T1 (the heads read the OBSERVED window only)",
            "tier_ruling": TIER_RULING["status"],
@@ -2458,9 +2900,16 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
                "_is": ("the TACTICAL family's goal/anchor-selection half. "
                        "`anchor_acc` is 1 where anchor_logits.argmax equals "
                        "a_star, the GT-NEAREST anchor "
-                       "(refc_v3_train.py:460, :642) — chance is 1/n_anchors."),
-               "n_anchors": n_anchors,
-               "chance": round(1.0 / max(1, n_anchors), 6),
+                       "(refc_v3_train.py:460, :642) — chance is 1/n_anchors, "
+                       "DERIVED from this run's own bank and never a remembered "
+                       "constant (D-EVALTOOL-ANCHOR-CHANCE)."),
+               "n_anchors": (n_anchors or None),
+               "chance": _chance,
+               "chance_absent_because": (
+                   None if _chance is not None else
+                   "the manifest declares no `model.n_anchors`; ⛔ REFUSED "
+                   "rather than defaulted to the v3 config's 128 (FALSE for "
+                   "every refcv4b bank, which is 117)"),
                "anchor_acc": _ci.episode_cluster_bootstrap(
                    dec["anchor_acc"].astype(np.float64), eid_d,
                    n_boot=n_boot, seed=seed),
@@ -2537,7 +2986,11 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
              "conditionings": {}}
     use = labeled & nav_valid
     eid_use = [e for e, kk in zip(eid_d, use) if kk]
-    for cname in ("nav_true", "nav_shuffled", "nav_zero"):
+    _strat_conds = ["nav_true", "nav_shuffled", "nav_zero"]
+    for _extra in ("nav_predicted", "nav_flipped"):
+        if dec.get("route_pred_%s" % _extra) is not None:
+            _strat_conds.append(_extra)
+    for cname in _strat_conds:
         pred = dec.get(f"route_pred_{cname}")
         if pred is None or (pred.astype(int) < 0).all():
             strat["conditionings"][cname] = _refused(
@@ -2550,12 +3003,29 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         pi = pred.astype(int)
         blk = ff._agreement_block(route_lbl[use], pi[use], list(ROUTE_CLASSES),
                                   eid_use, n_boot, seed, tier="T1")
+        # |STOP||STOP| CORRECTED 2026-09-06. The line below used to compare
+        # `route_pred` (a ROUTE_CLASSES index, 3-wide) DIRECTLY against
+        # `nav_cmd` (a NAV_COMMANDS index, FOUR-wide) on the claim that the two
+        # are "index-aligned in refb". THEY ARE NOT: refb.py:64 is
+        # ("follow","left","right","straight") and refb.py:68 is
+        # ("route_left","route_straight","route_right"), and the mapping
+        # refb_labels.py:483-484 states is {0:1, 1:0, 2:2}. The uncorrected form
+        # published 0.1621 for refcv4b @40,284 where the true value is 0.6405.
+        # Both are emitted so an old record can be reconciled against a new one.
+        _r2n = _route_to_nav_map()
+        _pi_nav = np.array([_r2n.get(int(x), -1) for x in pi])
         blk["nav_echo_index"] = round(
+            float((_pi_nav[use] == dec["nav_cmd"][use].astype(int)).mean()), 4)
+        blk["nav_echo_index_RAW_INDEX_LEGACY"] = round(
             float((pi[use] == dec["nav_cmd"][use].astype(int)).mean()), 4)
         blk["_nav_echo_index_is"] = (
-            "fraction of scored windows whose route_pred equals the FED nav "
-            "index — the echo index under this conditioning. NAV_COMMANDS and "
-            "ROUTE_CLASSES are both 3-wide and index-aligned in refb.")
+            "fraction of scored windows whose route_pred, MAPPED through "
+            "refb_labels._ROUTE_TO_NAV = {0:1, 1:0, 2:2}, equals the FED nav "
+            "index. |STOP| NAV_COMMANDS is FOUR-wide (refb.py:64) and "
+            "ROUTE_CLASSES THREE (refb.py:68); they are NOT index-aligned, and "
+            "the pre-2026-09-06 form of this key compared them as if they were "
+            "-- it is kept as nav_echo_index_RAW_INDEX_LEGACY for reconciliation "
+            "only and is NOT the echo index.")
         maj = int(np.bincount(route_lbl[use].clip(min=0),
                               minlength=len(ROUTE_CLASSES)).argmax())
         blk["majority_class"] = ROUTE_CLASSES[maj]
@@ -2572,6 +3042,9 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
             _ci.paired_episode_cluster_bootstrap(c_t[use], c_s[use], eid_use,
                                                  n_boot=n_boot, seed=seed)
         changed = use & (dec["nav_cmd_shuf"].astype(int) != dec["nav_cmd"].astype(int))
+        _n2r = _nav_to_route_map()
+        _imp_s = np.array([_n2r.get(int(x), -1)
+                           for x in dec["nav_cmd_shuf"].astype(int)])
         strat["n_changed_subset"] = int(changed.sum())
         if changed.sum():
             e_c = [e for e, kk in zip(eid_d, changed) if kk]
@@ -2582,15 +3055,50 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
                     c_s[changed], e_c, n_boot=n_boot, seed=seed),
                 "route_follows_SHUFFLED_NAV_under_shuffle":
                     _ci.episode_cluster_bootstrap(
+                        (ps_ == _imp_s).astype(float)[changed],
+                        e_c, n_boot=n_boot, seed=seed),
+                "route_follows_SHUFFLED_NAV_RAW_INDEX_LEGACY":
+                    _ci.episode_cluster_bootstrap(
                         (ps_ == dec["nav_cmd_shuf"].astype(int)).astype(float)[changed],
                         e_c, n_boot=n_boot, seed=seed),
-                "_reading": ("on windows whose nav token CHANGED, the label route "
-                             "and the shuffled-nav route are different classes by "
-                             "construction, so the two rates are mutually "
-                             "exclusive: an ECHO reads follows_nav ~ 1 / "
-                             "follows_label ~ 0; route skill from vision reads "
-                             "follows_label high regardless of the token."),
+                "_reading": ("an ECHO reads follows_nav ~ 1 / follows_label ~ 0; "
+                             "route skill from vision reads follows_label high "
+                             "regardless of the token. |STOP| CORRECTED "
+                             "2026-09-06: `follows_nav` now maps the fed nav "
+                             "token THROUGH refb_labels._NAV_TO_ROUTE before "
+                             "comparing, because route_pred is a ROUTE_CLASSES "
+                             "index (3-wide) and nav_cmd_shuf a NAV_COMMANDS "
+                             "index (4-wide). The pre-correction form is kept as "
+                             "..._RAW_INDEX_LEGACY for reconciliation ONLY."),
+                "_exclusivity": ("|STOP| the old text claimed the two rates are "
+                                 "mutually exclusive BY CONSTRUCTION. MEASURED "
+                                 "FALSE: route_label is a PER-WINDOW target "
+                                 "(route_from_future) while nav_cmd is a "
+                                 "PER-CLIP 25 s token, so the label can equal a "
+                                 "DIFFERENT token's implied route. "
+                                 "`changed_exclusive_subset` below is the subset "
+                                 "where they really are exclusive, and it is the "
+                                 "one to quote."),
             }
+            _excl = changed & (route_lbl != _imp_s)
+            if _excl.sum():
+                e_x = [e for e, kk in zip(eid_d, _excl) if kk]
+                strat["changed_exclusive_subset"] = {
+                    "n": int(_excl.sum()),
+                    "n_dropped_label_equals_implied_route":
+                        int((changed & (route_lbl == _imp_s)).sum()),
+                    "tier": "T1", "estimator": "episode_cluster_bootstrap",
+                    "route_follows_LABEL": _ci.episode_cluster_bootstrap(
+                        c_s[_excl], e_x, n_boot=n_boot, seed=seed),
+                    "route_follows_SHUFFLED_NAV": _ci.episode_cluster_bootstrap(
+                        (ps_ == _imp_s).astype(float)[_excl], e_x,
+                        n_boot=n_boot, seed=seed),
+                    "_is": ("the changed subset RESTRICTED to windows where the "
+                            "label and the shuffled token's implied route are "
+                            "genuinely different classes. Only here are the two "
+                            "rates mutually exclusive, so only here does the "
+                            "comparison mean what it says."),
+                }
         else:
             strat["changed_subset"] = _refused(
                 "the permutation changed no nav token (FOLLOW-dominated "
@@ -2779,6 +3287,13 @@ def main(argv=None):
                          "window): the sharpest nav intervention for the "
                          "nav-compliance metric (taniteval.nav_compliance). "
                          "Optional; shuffle + zero remain the REQUIRED controls.")
+    ap.add_argument("--with-navpred", action="store_true",
+                    help="ALSO roll the nav-PREDICTED arm `os_navpred`: the nav "
+                         "token is the model's OWN route-head argmax, read off "
+                         "the nav_cmd=None forward and mapped through the "
+                         "imported refb_labels._ROUTE_TO_NAV. Requires the "
+                         "nav-zero forward (it supplies the token), so it is "
+                         "incompatible with --no-navzero.")
     ap.add_argument("--with-oracle-sel", action="store_true",
                     help="ALSO bank the T0 `oracle_sel` ceiling arm (the "
                          "a_star / GT-nearest anchor). Never compared to T1.")
@@ -2852,10 +3367,13 @@ def main(argv=None):
     rec = analyze_refcv3(dump_dir, n_boot=a.n_boot, seed=a.seed,
                          tiers=t1._parse_tiers(a.tiers), lead_block=lead_path,
                          labels=a.labels)
+    # ⛔ D-EVALTOOL-STAMP-BLIND: `_unverified` is NOT re-stamped here. It (and
+    # `_provenance`) come from `analyze_refcv3`, derived from the dump's own
+    # manifest; re-asserting the constant here is what made the claim
+    # unconditional in the first place.
     rec.update({"arm": a.arm, "ckpt": a.ckpt, "dump_dir": dump_dir,
                 "mode": "analyze-only" if a.analyze_only else "rollout+analyze",
-                "lead_block": lead_path,
-                "_unverified": _UNVERIFIED_ON_REAL_CKPT})
+                "lead_block": lead_path})
     with open(a.out, "w", encoding="utf-8") as fh:
         json.dump(rec, fh, indent=1, default=str)
     _p(f"[out] {a.out}")
