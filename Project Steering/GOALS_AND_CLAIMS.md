@@ -11172,3 +11172,17 @@ Per-segment curvature error, each arm on its **own** lane-change repicks:
 ⛔ **No label set was emitted, rebuilt or regenerated** (PI: *"don't generate labels again"*) — the anchor head's target is a **geometric** `argmin` of the recorded ego path over the emitted fan, unchanged from D-TWOSEG-4. ⛔ **Vocabulary:** the nav command is an **INPUT simulating the vehicle's nav system**, never a training signal; never "oracle nav", never "deployment gap".
 
 **Suite:** `tests/test_anchor_twoseg.py` **41 passed** (19 inherited + **22 new**); with the anchor regression set the copied `stack/tests` reads **141 passed, 17 skipped** (was 118/17).
+
+### ⛔ D-TRISEG-6c (CORRECTION, appended) — the `refc.py` hand-off diff was written from PROSE and would have deleted a leak guard.
+
+**Evidence class: MEASURED** (ours) — `stack/tanitad/refs/refc.py` at `AnchoredDiffusionDecoder.roll_bank`, read from source with a same-breath control (27 `import` lines from the same blob, so the file was genuinely read, not merely queried).
+
+`RESULT.md` §13 as first committed (`0df575a8`) proposed replacing the body of `AnchoredDiffusionDecoder.roll_bank` with a single call to `anchor_twoseg.roll_bank`. ⛔ **That patch would have deleted the `ego_keep` / `anchor_withheld_bank` logic**: `v_ms` is the **PRE-dropout** speed, and withheld rows are deliberately rolled at `ref_speed_ms` so the dropout regime stays genuinely speed-blind (**H-EGO-LIT-4**). Rolling the bank from the pre-dropout speed on a withheld row would put the withheld channel into the candidate **geometry** — a leak, introduced by a hand-off that was never checked against the file it patches.
+
+**ROOT-CAUSE CLASS:** an **INHERITED** claim asserted as MEASURED. The diff was written from the predecessor's *prose description* of `refc.py`, not from `refc.py`. Same family as *"a number carries its arm and its artifact path"* — a hand-off carries the **file it was read from**, or it is not admissible. ⚠️ Aggravating: a wrong diff in a hand-off is worse than a wrong number in a report, because its intended consumer is a **sibling who applies it**.
+
+**The corrected hand-off (RESULT.md §13, rewritten) is SMALLER, not larger:** four sites, of which `roll_bank` needs **one line** — the constant expansion becomes a per-tick `lateral_sign` multiply, with `anchor_v0_cond` / `anchor_withheld_bank` / `ego_keep` / `_withheld_ref_speed` / the float32 discipline **untouched**. `lateral_sign` returns all `+1` on a 2-column bank, so the patched decoder is **bit-identical on every existing checkpoint**.
+
+⚠️ **AND A SECOND FINDING THE PROSE VERSION MISSED:** `anchor_control_seq` **must change in the same commit**. Its own docstring records that a constant sequence must roll to **exactly** `roll_bank`'s bank (pinned in `test_refc_sampler.py`), *"so if the two integrators disagreed, every anchored-Gaussian claim would be measured against a fan the vocabulary never emitted."* ⇒ **patching `roll_bank` alone BREAKS that pin — correctly.** A sibling must be told this in advance, which is the whole value of reading the file.
+
+⛔ This row **APPENDS**. D-TRISEG-1 … D-TRISEG-7 stand as written; **no measurement, bar or verdict moves** — every number in D-TRISEG-1..7 was computed by `anchor_twoseg.roll_bank` on banked dumps and never touched `refc.py`.

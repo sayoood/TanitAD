@@ -439,27 +439,62 @@ is an **INPUT simulating the vehicle's nav system**, never a training signal.
 
 ---
 
-## 13. HAND-OFF — the exact diff a sibling must apply to `refc.py`
+## 13. HAND-OFF — the four sites in `refc.py`, read from source
 
-⛔ **Not applied here: `refc.py` is a sibling's file this turn.** The decoder
-currently refuses a wide bank on its shape checks. The change is to route the
-bank through the reference integrator, which is **bit-identical on the 2-column
-path** (pinned by `test_two_column_path_matches_the_live_decoder_roll_bank`):
+⛔⛔ **CORRECTION, and the first version of this section was WRONG.** It was
+written from the predecessor's *prose description* of `refc.py` rather than from
+`refc.py`, and it proposed replacing the body of
+`AnchoredDiffusionDecoder.roll_bank` with a single call to the reference
+integrator. **That patch would have deleted the `ego_keep` / `anchor_withheld_bank`
+logic** — `v_ms` is the PRE-dropout speed and withheld rows are deliberately
+rolled at `ref_speed_ms` so the dropout regime stays speed-blind (**H-EGO-LIT-4**).
+⛔ **A hand-off diff written from prose is an INHERITED claim, and this one would
+have removed a leak guard.** Rewritten below from the source, with a same-breath
+control (27 `import` lines read from the same blob, so the file was genuinely
+read). ⭐ The real change is **smaller** than the wrong one, not larger.
+
+⛔ **Not applied here: `refc.py` is a sibling's file this turn.** Four sites, all
+in `AnchoredDiffusionDecoder`:
+
+**1. The buffer width.** `register_buffer("anchor_controls",
+torch.zeros(anchors.shape[0], 2))` hardcodes 2. It must take its column count
+from the artifact's `control_schedule` via `anchor_meta.SCHEDULE_NCOL`
+(2 / 3 / 4). `load_anchors`' shape-equality check then follows for free.
+
+**2. `roll_bank` — ONE line, and everything above it stays.** The only change is
+the constant expansion at the end of both unit branches:
 
 ```
-  in AnchoredDiffusionDecoder.roll_bank, replace the constant expansion
-      seq = ctrl[:, :, None, :].expand(B, N, S, 2)
-  with
-      from tanitad.refs.anchor_twoseg import roll_bank as _rb
-      return _rb(self.anchor_controls, v0, control_units=self.control_units,
-                 steps=self.steps, slots=self.anchor_slots, dt=self.dt,
-                 alat_v_floor=self.alat_v_floor, kappa_cap=self.kappa_cap)
-  and widen the `anchor_controls` shape assertion from [N, 2] to [N, 2|3|4].
+-           ctrl = ctrl[:, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
+-       else:
+-           ctrl = ctrl[None, :, None, :].expand(batch, n, h, 2).reshape(-1, h, 2)
++           kap_t = kap[:, :, None] * sgn[None, :, :]          # [B, N, h]
++           lon_t = self.anchor_controls[None, :, 0].expand(batch, n)[
++                       :, :, None].expand(batch, n, h)
++           ctrl = torch.stack([lon_t, kap_t], -1).reshape(-1, h, 2)
+   (with, above:  sgn = lateral_sign(self.anchor_controls, self.anchor_dt, h))
 ```
 
-⭐ **Escalated as an exact diff, not as a "please merge" line in a README** — an
-orthogonality instrument once sat unmerged for **10 days** because the request
-lived in a document nobody re-read.
+⛔ **`anchor_v0_cond`, `anchor_withheld_bank`, `ego_keep`, `_withheld_ref_speed`
+and the float32 discipline are UNTOUCHED.** `lateral_sign` returns all `+1` on a
+2-column bank, so the patched decoder is **bit-identical** on every existing
+checkpoint — that is the property, not a hope, and it is pinned by
+`test_two_column_path_matches_the_live_decoder_roll_bank`.
+
+**3. ⚠️ `anchor_control_seq` MUST CHANGE IN THE SAME COMMIT.** It expands
+`anchor_controls` to `[B, N, S, 2]` for the sampler, and its docstring records
+that a constant sequence must roll to **exactly** `roll_bank`'s bank (pinned in
+`test_refc_sampler.py`), *"so if the two integrators disagreed, every
+anchored-Gaussian claim would be measured against a fan the vocabulary never
+emitted."* ⇒ **patching `roll_bank` alone will BREAK that pin — correctly.**
+It must slice columns `0:2` and carry the same `lateral_sign` per tick.
+
+**4.** The `[N, 2]` assumptions in the fixed-path branch and the
+all-zero-controls check need widening to `[N, 2|3|4]`.
+
+⭐ **Escalated as an exact diff against the real source, not as a "please merge"
+line in a README** — an orthogonality instrument once sat unmerged for **10 days**
+because the request lived in a document nobody re-read.
 
 ---
 
