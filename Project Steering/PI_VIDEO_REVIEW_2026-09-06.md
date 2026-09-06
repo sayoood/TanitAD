@@ -89,3 +89,68 @@ composed refcv5-v2 arm contains no smoothness lever. The magnitude is in doubt;
 the gap is not.
 
 **Registered as `D-CURV-84X-UNREPRODUCED`.**
+
+
+---
+
+## ⭐ RESOLUTION 2026-09-07 — THE 84× IS RETIRED, THE ARITHMETIC WAS FINE, AND THE SIGN REVERSES
+
+⛔ **THIS SUPERSEDES THE ADDENDUM ABOVE, INCLUDING ITS PROPOSED MECHANISM, WHICH WAS
+WRONG.** The addendum said the defect was that *"curvature, yaw-rate and heading-rate
+are all rate metrics"* divided by a single `dt` on a non-uniform horizon. ⛔ **Two of
+those three are not rate metrics at all.** `four_families.py:186` reads
+`curvature = dh / (ds_mid + _EPS)` — heading change over **ARC LENGTH**, never `dt`.
+Only `speed`, `yaw_rate` and `accel` divide by `dt`. And `V3_HORIZONS` is in **steps**
+on a 0.1 s tick, so the set was read correctly and only the **inference from it** was
+wrong. ⚠️ The Master Mind relayed that mechanism to the PI without checking the
+source — an inherited mechanism treated as a measured one.
+
+⭐ **DECIDED BY AN ANALYTIC TARGET, not by reading code.** On the real non-uniform v3
+horizon the estimator recovers a circle's `1/R` to **0.67 %** worst case (R = 20 m),
+against **0.26 %** on a uniform control — so non-uniformity costs ≈ **0.4 %**, which is
+chord discretisation, not a defect. The straight-line null reads **exactly 0.000e+00**,
+and curvature is `torch.equal` across `dt ∈ {0.1, 0.5, 1.0}`.
+
+⛔⛔ **THE REAL CAUSE IS A MISSING VALIDITY MASK, AND IT IS WORSE THAN A UNITS BUG.**
+The producer is a different estimator (`p14_banked_fan.py:38`), on a **uniform 2.0 s**
+grid, and `κ = |d1×d2| / max(|d1|³, 1e-6)` is **singular as speed → 0**. **43 stopped
+windows (4.9 %, `v0 = 0.000`) carry the entire figure:**
+
+| subset | ratio vs the never-steer floor |
+|---|---|
+| ALL windows | **84.40×** |
+| MOVING only (838) | **0.56×** |
+| STOPPED only (43) | **124.21×** |
+
+Median κMAE: model **0.00067** vs floor **0.00074** ⇒ **the model is BETTER on the
+typical window.** The 2.30973482131958 reproduces **bit-identically** — the arithmetic
+was never in question, the **denominator population** was.
+
+⭐⭐ **AND IT DOES NOT CANCEL, WHICH IS WHY THE VERDICT MOVES.** The inflation cancels
+**arm-vs-arm** (every `shipped − oracle` contrast is unchanged), but **not against a
+floor** — a straight-line plan reads `κ ≡ 0` exactly at any speed and is **structurally
+immune** to the singularity. ⇒ an **interaction, not a shared bias**, and the sign flips
+while staying separated: base **+2.28237 [+0.518, +4.577] SEP WORSE** → **−0.00390
+[−0.00708, −0.00100] SEP BETTER**; XL **+1.55583** → **−0.00558 [−0.00903, −0.00258]**.
+
+⇒ **"REF-C is ~84× worse on curvature than a plan that never steers" is RETIRED.**
+Masked, REF-C is **0.64× the floor — better, separated.** ⛔ It must not be requoted in
+any form, including the "under challenge" form in the addendum above.
+
+⭐ **ROW #9 RETURNS TO OPEN AND UNMEASURED — not refuted, and not closed.** The claim
+"trajectories are smooth by construction" is still established by nothing, and
+refcv5-v2 still carries no smoothness lever. What changed is that the number offered as
+evidence *for* the defect was an artefact of stopped windows; that is not evidence
+*against* the defect.
+
+⚠️ **The 1.0× vs 84× disagreement was never a grid error** — both were measured on
+uniform 2 s grids. It was a scope error compounded by an estimator difference, and
+**the mask is the whole of it**: the gate's 1.0× was right, and reproduces at 0.64× on
+the 84×'s own corpus and checkpoint.
+
+⭐ **PINNED SO IT CANNOT RECUR:** `taniteval/tests/test_four_families_curvature_analytic.py`
+— 14 tests fixing `1/R` on the real non-uniform horizon, the exact-zero null,
+dt-invariance and the singularity guard. Mutation-tested: rewriting it as
+`curvature = dh/dt` fails **9 of 14**.
+
+**Registered as `D-CURV-84X-RESOLVED`.**
