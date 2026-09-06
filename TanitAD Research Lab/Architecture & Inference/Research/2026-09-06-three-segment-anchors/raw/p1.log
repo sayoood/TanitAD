@@ -1,0 +1,94 @@
+[bank] source controls (117, 2) sha256 b072f4c052331beb79bef117c7b233f702802b517429cc9157a841294e089664
+[RULE S] t1 grid [2.0, 3.0, 4.0] s, horizon 6.0 s -> schedules [(2.0, 4.0)]  (t2 = 2*t1; empty-third-segment dropped)
+[ext] anchor bank 119 = 117 base + 2 three-segment (+1.71 %), schedules [(2.0, 4.0)] s, a_lat [-0.75, 0.75] m/s^2, schedule=three_segment_alat_pulse
+[grid] 141 B1-v7.2 EVAL clips, refcv4b stride-1 dump: 24114 dumped -> 18615 with a full 6.0 s recorded future
+[grid] lane-change 1297 (6.97 %)  turn 2602  other 14716
+[grid] v0 range 0.00 - 36.27 m/s
+[roll] A0_base117               N=117 x2  ALL 1.2943  LC 1.5315  TURN 1.9476
+[roll] A1_shipped123_twoseg     N=123 x3  ALL 1.2425  LC 1.3670  TURN 1.9412
+[roll] A1p_twoseg_pair119       N=119 x3  ALL 1.2518  LC 1.3676  TURN 1.9450
+[roll] A2_ruleS_triseg119       N=119 x4  ALL 1.2396  LC 1.3183  TURN 1.9445
+[roll] A3_composed125           N=125 x4  ALL 1.2327  LC 1.3178  TURN 1.9411
+[roll] R1_t1=t2=horizon         N=119 x4  ALL 1.2943  LC 1.5315  TURN 1.9476
+[roll] R2_t1=0_t2=horizon       N=119 x4  ALL 1.2943  LC 1.5315  TURN 1.9476
+[roll] R3_t1=2_t2=horizon       N=119 x4  ALL 1.2518  LC 1.3676  TURN 1.9450
+[roll] R4_t1=t2=0               N=119 x4  ALL 1.2943  LC 1.5315  TURN 1.9476
+[roll] F_straight_family        N= 13 x2  ALL 2.3702  LC 1.5750  TURN 7.3596
+[roll] F_const_velocity         N=  1 x2  ALL 3.8387  LC 2.5151  TURN 9.0208
+[roll] F_zero_path              N=  0     ALL 32.6312  LC 36.0329  TURN 23.2278
+
+########## B4  DELIBERATE REGRESSION -- the gate must GRADE #####
+  R1_t1=t2=horizon       LC gain +0.0000000000  ALL gain +0.0000000000  improved 0/18615  -> EXACT ZERO   [+1 at every tick = existing constant arcs]
+  R2_t1=0_t2=horizon     LC gain +0.0000000000  ALL gain +0.0000000000  improved 0/18615  -> EXACT ZERO   [-1 at every tick = mirror arcs (grid is mirror-complete)]
+  R4_t1=t2=0             LC gain +0.0000000000  ALL gain +0.0000000000  improved 0/18615  -> EXACT ZERO   [0 at every tick = candidate 67, the straight line]
+  R3 (grading)           LC gain 0.1639538252 vs the two-segment pair 0.1639538252
+  R3 controls == as_four_column(A1p): True;  per-window ADE array EXACTLY equal: True
+  ==> B4 PASS
+
+########## B2  THE LIMIT IS BIT-IDENTICAL, BY COMPARISON ########
+  L1  117x2 vs 117x4 over 34,847,280 floats: BIT-IDENTICAL
+  L2  123x3 vs 123x4 over 36,634,320 floats: BIT-IDENTICAL
+  L3  MUTATION CONTROL (t1=2, t2=4 on the SAME controls): max |diff| = 112.5986 m  (must be > 1.0)
+  ==> B2 PASS
+
+########## B5  STRUCTURAL ZERO ON THE 2 s GRID #################
+  A2_ruleS_triseg119       max|ADE change| 0.0000000000e+00  windows repicking NEW 0/18615  max|family change| 0.0000000000e+00
+  A1_shipped123_twoseg     max|ADE change| 0.0000000000e+00  windows repicking NEW 0/18615  max|family change| 0.0000000000e+00
+  A3_composed125           max|ADE change| 0.0000000000e+00  windows repicking NEW 0/18615  max|family change| 0.0000000000e+00
+  ==> B5 PASS  -- and this IS the scope limit: the capability CANNOT appear in ade_0_2s
+
+########## B7  SUPERVISION RATE (NOT execution) ################
+  A2_ruleS_triseg119       LC   573/1297  =  44.18 %   TURN  1.04 %   ALL 10.24 %
+  A1_shipped123_twoseg     LC   506/1297  =  39.01 %   TURN  2.19 %   ALL 11.35 %
+  A3_composed125           LC   574/1297  =  44.26 %   TURN  2.27 %   ALL 11.98 %
+  ==> B7 PASS (threshold 20 %, INHERITED from D-TWOSEG B7, not re-chosen)
+     a_lat=-0.75_t1=2.0_t2=4.0          all  1069  LC   282
+     a_lat=+0.75_t1=2.0_t2=4.0          all   837  LC   291
+
+########## B6  KINEMATICS + VACUITY GATE #######################
+  new candidates : peak 0.0765 g  violations 0/38  kappa_cap reached False
+  incumbent bank : peak 0.5097 g  violations 0/2223  kappa_cap reached True
+  VACUITY GATE   : manoeuvre rate 573/1297 lane-change and 1906/18615 overall windows SELECT a new candidate -- the safety zero is not bought by declining the manoeuvre
+  ==> B6 PASS
+
+########## B3  SUPPLY (INHERITED threshold 0.10 m) #############
+  LC supply gain +0.2133 m (>= 0.10)  TURN control +0.0031 m (|.| <= 0.01)  ==> B3 PASS
+
+########## B0  THE INHERITED CAPABILITY BAR ####################
+  B0a  A2 LC gain 0.2133  vs  the SHIPPED SIX 0.1645  -> PASS
+       (equal-cost context, NOT the verdict: the 2-candidate two-segment pair 0.1640)
+  B0b  d-curv on OWN repicks: A2 +0.002344 (n=573)  vs  A1 +0.003361 (n=506)  -> PASS
+  B0b' COMMON repicks (n=505): base 0.002577  A1 0.005895 (+0.003318)  A2 0.004728 (+0.002151)
+  B0b' the common-set read AGREES with the own-repicks read
+  B0c  turn control |+0.0031| <= 0.01 -> PASS
+  B0d  degenerate arms exact zeros -> PASS
+  ==> B0 PASS  (all four clauses; three-of-four is a FAIL)
+
+########## FOUR FAMILIES, never pooled, BOTH DIRECTIONS ########
+  -- lane_change (n = 1297) --
+  arm                           n      ADE    along    cross    speed      curv    head
+  A0_base117                 1297   1.5315   0.8285   1.1617   0.4322  0.002784   2.726
+  A1_shipped123_twoseg       1297   1.3670   0.8315   0.9533   0.4338  0.004095   3.082
+  A2_ruleS_triseg119         1297   1.3183   0.8328   0.8773   0.4341  0.003819   2.794
+  A3_composed125             1297   1.3178   0.8325   0.8776   0.4340  0.003870   2.810
+  F_straight_family          1297   1.5750   0.8294   1.2196   0.4313  0.002726   2.773
+  F_const_velocity           1297   2.5151   1.9152   1.2273   0.8408  0.002726   2.773
+  -- turn (n = 2602) --
+  arm                           n      ADE    along    cross    speed      curv    head
+  A0_base117                 2602   1.9476   1.1080   1.3587   0.6375  0.018196   7.946
+  A1_shipped123_twoseg       2602   1.9412   1.1082   1.3504   0.6363  0.018399   7.994
+  A2_ruleS_triseg119         2602   1.9445   1.1084   1.3545   0.6367  0.018304   7.974
+  A3_composed125             2602   1.9411   1.1083   1.3502   0.6363  0.018410   7.999
+  F_straight_family          2602   7.3596   3.6259   6.0841   1.3400  0.031718  23.870
+  F_const_velocity           2602   9.0208   4.1496   7.1577   1.4707  0.031477  23.870
+  -- all (n = 18615) --
+  arm                           n      ADE    along    cross    speed      curv    head
+  A0_base117                18615   1.2943   0.8922   0.7040   0.4739  0.005055   3.139
+  A1_shipped123_twoseg      18615   1.2425   0.8933   0.6365   0.4746  0.005317   3.164
+  A2_ruleS_triseg119        18615   1.2396   0.8932   0.6342   0.4744  0.005236   3.139
+  A3_composed125            18615   1.2327   0.8935   0.6232   0.4746  0.005267   3.128
+  F_straight_family         18615   2.3702   1.2755   1.7073   0.5772  0.007186   5.908
+  F_const_velocity          18615   3.8387   2.6812   1.8613   1.0900  0.009716   5.908
+
+wrote out_p1_triseg.json
+BARS: B0 PASS | B2 PASS | B3 PASS | B4 PASS | B5 PASS | B6 PASS | B7 PASS

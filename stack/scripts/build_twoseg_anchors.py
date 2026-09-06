@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Build an anchor bank, OPTIONALLY extended with two-segment candidates.
+"""Build an anchor bank, OPTIONALLY extended with two- or three-segment candidates.
 
 ⛔⛔ **PARITY IS THE POINT OF THIS TOOL.** Adding candidates changes the fan every
-banked arm was scored against, so the extension is a FLAG and the flag DEFAULTS
-OFF. Without ``--two-segment`` this writes the source bank's tensors unchanged —
-``[N, 2]`` controls, ``control_schedule="constant"`` — and ``--assert-parity``
-proves that by sha256 rather than asserting it.
+banked arm was scored against, so each extension is a FLAG and every flag
+DEFAULTS OFF. Without ``--two-segment`` and ``--three-segment`` this writes the
+source bank's tensors unchanged — ``[N, 2]`` controls,
+``control_schedule="constant"`` — and ``--assert-parity`` proves that by sha256
+rather than asserting it.
 
 MEASURED 2026-09-06 (`raw/v0_repro.py`): rolling refcv4b's own
 ``core.decoder.anchor_controls`` at ``ref_speed_ms = 10.0`` through
@@ -30,15 +31,32 @@ USAGE
         --from-checkpoint /path/ckpt_40284_FINAL.pt --out anchors_117.pt \
         --assert-anchors-sha 51f930dc… --assert-controls-sha b072f4c0…
 
-    # the extension
+    # the two-segment extension                       -> [123, 3]
     python scripts/build_twoseg_anchors.py \
         --from-checkpoint /path/ckpt_40284_FINAL.pt --out anchors_123.pt \
         --two-segment
 
+    # the three-segment PULSE family, RULE S           -> [119, 4]
+    python scripts/build_twoseg_anchors.py \
+        --from-checkpoint /path/ckpt_40284_FINAL.pt --out anchors_119.pt \
+        --three-segment
+
+    # both, one bank holding all three families        -> [125, 4]
+    python scripts/build_twoseg_anchors.py \
+        --from-checkpoint /path/ckpt_40284_FINAL.pt --out anchors_125.pt \
+        --two-segment --three-segment
+
+⛔ THE THREE-SEGMENT SCHEDULE IS FIXED BY A RULE, NOT BY A FLAG SWEEP. ``t1`` is
+inherited from the shipped split grid and ``t2 = 2*t1`` is DERIVED (the
+net-yaw-zero condition), so there is a ``--t1-grid`` and deliberately **no**
+``--t2``: a flag would let the schedule be chosen after seeing a number, which is
+what PREREG D-TRISEG §2 exists to prevent.
+
 ⛔ CONSUMER STATUS. ``refc.py::AnchoredDiffusionDecoder.roll_bank`` rolls
-``anchor_controls`` as a constant and its shape checks REFUSE a ``[N, 3]`` bank
-(loudly, which is correct). ``tanitad.refs.anchor_twoseg.roll_bank`` is the
-drop-in reference the decoder needs; wiring it is a named hand-off.
+``anchor_controls`` as a constant and its shape checks REFUSE a ``[N, 3]`` or
+``[N, 4]`` bank (loudly, which is correct).
+``tanitad.refs.anchor_twoseg.roll_bank`` is the drop-in reference the decoder
+needs; wiring it is a named hand-off.
 """
 from __future__ import annotations
 
@@ -130,6 +148,23 @@ def main(argv=None) -> int:
     ap.add_argument("--a-lat", default=",".join(
         str(x) for x in ts.DEFAULT_A_LAT_MS2),
         help="lateral accelerations m/s^2 of the new family")
+    ap.add_argument("--three-segment", action="store_true",
+                    help="APPEND the three-segment pulse family (+a_lat, "
+                         "-a_lat, then ZERO). Default OFF. Combines with "
+                         "--two-segment, in which case the two-segment rows "
+                         "are widened to 4 columns (an EXACT limit) and the "
+                         "bank holds all three families.")
+    ap.add_argument("--t1-grid", default=None,
+                    help="RULE S t1 grid, comma-separated seconds (default: "
+                         "the shipped two-segment split grid). ⛔ THERE IS NO "
+                         "--t2 FLAG ON PURPOSE: t2 = 2*t1 is the net-yaw-zero "
+                         "condition and is DERIVED, not an operator choice; a "
+                         "flag would let a schedule be chosen after seeing a "
+                         "number, which is what PREREG D-TRISEG §2 exists to "
+                         "prevent. Arbitrary schedules are reachable from the "
+                         "library (ts.three_segment_controls) for RESEARCH "
+                         "arms, which is where a deliberate-regression "
+                         "schedule belongs -- not in a shipping builder.")
     ap.add_argument("--t-split", default=",".join(
         str(x) for x in ts.DEFAULT_T_SPLIT_S),
         help="split times s. ⚠️ a split at or beyond the horizon NEVER flips "
@@ -170,21 +205,39 @@ def main(argv=None) -> int:
                          f"{tuple(C0.shape)}")
     n_base = int(C0.shape[0])
 
-    if not args.two_segment:
+    if not (args.two_segment or args.three_segment):
         # ⛔ THE PARITY PATH: the tensors are the source's, untouched. Nothing is
         # re-rolled, because re-rolling would introduce a float difference the
         # flag is supposed to exclude by construction.
         controls, anchors = C0, A0
         schedule = am.CONSTANT_SCHEDULE
         kamm = None
-        print("[ext] --two-segment ABSENT: the bank is the source, unchanged")
+        print("[ext] --two-segment / --three-segment ABSENT: the bank is the "
+              "source, unchanged")
     else:
         a_lat = [float(x) for x in args.a_lat.split(",") if x != ""]
         t_spl = [float(x) for x in args.t_split.split(",") if x != ""]
         a_lon = [float(x) for x in args.a_lon.split(",") if x != ""]
-        controls = ts.extend_controls(C0, horizon_s, a_lat=a_lat,
-                                      t_split_s=t_spl, a_lon=a_lon)
-        schedule = am.TWO_SEGMENT_SCHEDULE
+        controls, schedule = C0, am.CONSTANT_SCHEDULE
+        if args.two_segment:
+            controls = ts.extend_controls(controls, horizon_s, a_lat=a_lat,
+                                          t_split_s=t_spl, a_lon=a_lon)
+            schedule = am.TWO_SEGMENT_SCHEDULE
+        if args.three_segment:
+            # ⭐ RULE S, in code: t1 inherited, t2 = 2*t1 DERIVED, and any
+            # schedule whose third segment is empty dropped as a duplicate of a
+            # two-segment candidate. Widening the (2- or 3-column) base to 4
+            # columns is an EXACT limit, asserted by torch.equal in the suite.
+            t1g = ([float(x) for x in args.t1_grid.split(",") if x != ""]
+                   if args.t1_grid else list(ts.DEFAULT_T_SPLIT_S))
+            sch = ts.rule_s_schedules(t1g, horizon_s)
+            print(f"[ext] RULE S: t1 grid {t1g} s, horizon {horizon_s} s -> "
+                  f"schedules {sch} (t2 = 2*t1; empty-third-segment schedules "
+                  f"dropped as duplicates)")
+            controls = ts.extend_controls_three(controls, horizon_s,
+                                                a_lat=a_lat, schedules=sch,
+                                                a_lon=a_lon)
+            schedule = am.THREE_SEGMENT_SCHEDULE
         # ⚠️ `anchors` is the bank rolled at the REFERENCE speed -- the
         # checkpoint-visible artifact the priors fall back to. Rolling the WHOLE
         # extended bank (not just the new rows) keeps one integrator responsible
@@ -201,7 +254,7 @@ def main(argv=None) -> int:
                 "APPEND-ONLY -- a checkpoint trained on the incumbent names "
                 "candidates by integer index." % n_base)
         print(f"[ext] first {n_base} rolled anchors BIT-IDENTICAL to source")
-        print(f"[ext] {ts.describe_family(controls, n_base)}")
+        print(f"[ext] {ts.describe_family(controls, n_base, horizon_s)}")
         # ⛔ KINEMATIC ADMISSIBILITY -- of the NEW rows, at the REALISED a_lat
         kamm = ts.kamm_report(controls[n_base:], KAMM_SPEEDS,
                               control_units=args.control_units, mu=args.mu,
@@ -233,7 +286,8 @@ def main(argv=None) -> int:
              "source_controls_sha256": sha_c0,
              "source": (args.from_checkpoint or args.from_anchors),
              "n_base_candidates": n_base,
-             "two_segment": bool(args.two_segment)}
+             "two_segment": bool(args.two_segment),
+             "three_segment": bool(args.three_segment)}
     if kamm is not None:
         extra["kamm"] = kamm
     art = am.build_anchor_artifact(
@@ -243,9 +297,10 @@ def main(argv=None) -> int:
         builder=__file__, extra=extra)
 
     if args.assert_parity:
-        if args.two_segment:
+        if args.two_segment or args.three_segment:
             raise SystemExit("--assert-parity is meaningless with "
-                             "--two-segment: the bank is deliberately different")
+                             "--two-segment / --three-segment: the bank is "
+                             "deliberately different")
         if art["anchors_sha256"] != sha_a0 or art["controls_sha256"] != sha_c0:
             raise SystemExit("PARITY FAILED: the written tensors differ from "
                              "the source")

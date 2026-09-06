@@ -11026,3 +11026,149 @@ every margin answers *"would another draw of EPISODES say this?"* only (`H-ESTIM
 refcv4b is deterministic at inference (`refc.py` zeroes the decoder noise outside training), so the
 INFERENCE-seed question is closed by construction and the cross-surface delta above is **not**
 inference noise.
+
+---
+
+## D-TRISEG — the three-segment pulse family (Arch+Inference, 2026-09-06)
+
+**Pre-registration:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-three-segment-anchors/PREREG_THREE_SEGMENT_ANCHORS.md`, committed **`07290a0` BEFORE any three-segment number existed in this turn.**
+**Result:** the same directory's `RESULT.md`; raw in `raw/`.
+⛔ These rows **APPEND**. They do not rewrite D-TWOSEG-1 … D-TWOSEG-8, which stand as written; **D-TRISEG-1 is the execution of the bar D-TWOSEG-7 left behind.**
+
+### ⭐⭐ D-TRISEG-1 — THE PRE-REGISTERED BAR D-TWOSEG-7 LEFT BEHIND WAS RUN AS WRITTEN, AND ALL NINE BARS PASS. TWO CANDIDATES BEAT THE SHIPPED SIX.
+
+**Evidence class: MEASURED** (ours) — `.../2026-09-06-three-segment-anchors/raw/out_p1_triseg.json`, `raw/p1.log`.
+**Corpus:** 141 B1-v7.2 EVAL clips, refcv4b T1 stride-1 dump, **24,114 dumped → 18,615** windows with a full 6.0 s recorded future; **1,297 lane-change (6.97 %)**, 2,602 turn. Source `controls` sha256 `b072f4c0…89664`.
+
+The inherited bar, **verbatim**, from D-TWOSEG-7 / `RESULT.md` §10.2: *"a 3-segment family PASSES if it beats the shipped 2-segment family on lane-change supply **and** costs less curvature on its own repicks, with the turn control still ≤ 0.01 m and R1/R2-style degenerate arms still reading exact zeros."*
+
+⭐ **It was written, it is binding, and it was AMBIGUOUS in four places, so the operational form was written FIRST and the pre-registration says so** (PREREG §0.1). Each ambiguity took the **harder** reading: the reference is the **shipped SIX** (not the equal-cost pair, so 2 must beat 6); the curvature comparison is decided **as written** on each arm's own repicks with a **common-repick** robustness read beside it; and **four** degenerate arms are committed, not two.
+
+| bar | verdict | number |
+|---|---|---|
+| **B0** inherited capability bar, 4 clauses | ⭐ **PASS** | below |
+| **B1** default-OFF sha256 parity | ⭐ **PASS** | `anchors 51f930dc…a66df`, `controls b072f4c0…89664`, `[117, 2]`, `schedule="constant"` |
+| **B2** limit bit-identical + MUTATION control | ⭐ **PASS** | 34,847,280 and 36,634,320 floats BIT-IDENTICAL; mutation differs **112.5986 m** |
+| **B3** supply ≥ 0.10 m, turn ≤ 0.01 m | ⭐ **PASS** | **+0.2133** / **+0.0031** |
+| **B4** four deliberate-regression arms | ⭐ **PASS** | D-TRISEG-3 |
+| **B5** 2 s structural zero | ⭐ **PASS** | **exactly 0.0000000000**, 0/18,615 repick |
+| **B6** kinematics + vacuity gate | ⭐ **PASS** | D-TRISEG-5 |
+| **B7** supervision ≥ 20 % | ⭐ **PASS** | **44.18 %** |
+| **B8** schedule declared, NO override | ⭐ **PASS** | D-TRISEG-6 |
+
+**B0, clause by clause.** **B0a** `A2` LC gain **+0.21327135** vs the **shipped six** **+0.16452706** — ⭐ **two candidates beat six**, at **+1.71 %** of the bank against the two-segment family's **+5.13 %** (**3.9× the ceiling per candidate**: 0.1067 m vs 0.0274 m). **B0b** Δcurvature on own repicks **+0.002344** (n = 573) vs **+0.003361** (n = 506), **30.3 % less**; ⭐ the **common-repick** read (n = 505, where the two arms are the same object) **AGREES**: `A1` **+0.003318** vs `A2` **+0.002151**. **B0c** turn control **+0.0031**. **B0d** below.
+
+**Supply table (6 s grid, best-in-fan vs the recorded ego path):**
+
+| arm | N | ADE all | ADE LC | LC gain | ALL gain | TURN gain |
+|---|---|---|---|---|---|---|
+| `A0` incumbent | 117 | 1.2943 | 1.5315 | — | — | — |
+| `A1` **shipped** two-segment | 123 | 1.2425 | 1.3670 | +0.1645 | +0.0519 | +0.0064 |
+| `A1p` equal-cost two-seg pair | 119 | 1.2518 | 1.3676 | +0.1640 | +0.0425 | +0.0026 |
+| ⭐ **`A2` RULE S three-segment** | **119** | **1.2396** | **1.3183** | ⭐ **+0.2133** | +0.0547 | +0.0031 |
+| `A3` composed (both families) | 125 | 1.2327 | 1.3178 | +0.2138 | **+0.0616** | +0.0065 |
+| *floor* straight family | 13 | 2.3702 | 1.5750 | — | — | — |
+| *floor* constant velocity | 1 | 3.8387 | 2.5151 | — | — | — |
+| *floor* zero path | 0 | 32.6312 | 36.0329 | — | — | — |
+
+⭐ **The predecessor's numbers reproduce EXACTLY on this corpus** (`base117` LC 1.5315, `ext123` LC 1.3670, straight floor 0.002726, `A1` Δcurv +0.003361), so D-TWOSEG and D-TRISEG are on one measuring stick.
+
+⛔ **THE VARIANCE, NAMED — AND THEREFORE NO INTERVAL.** Model-free, deterministic, **every** scoreable window scored: no training draw (`H-ESTIM-SEED-1` does not apply, nothing is trained), no inference sampling (nothing is planned), no episode resampling. **No population is being estimated, so NO CI IS QUOTED.** ⛔ **SUPPLY CEILING — never quotable beside an achievement** (`GATE_SPEC_MODEL_FREE_VS_INCLUSIVE.md`).
+
+### ⭐⭐ D-TRISEG-2 — THE SCHEDULE WAS FIXED BY A RULE BEFORE ANY NUMBER, AND THE RULE LANDS ON A ROW THAT IS THE ARGMAX OF NOTHING.
+
+**Evidence class: MEASURED** — `raw/out_p2_triseg_decomp.json` (`ruleS_is_argmax_of`), `tests/test_anchor_twoseg.py::test_rule_s_fixes_exactly_one_schedule_and_it_is_not_a_tuned_constant`.
+
+**RULE S** (`anchor_twoseg.rule_s_schedules`, PREREG §2): **S1** `t₁` INHERITED from the shipped split grid `{2.0, 3.0, 4.0}` s (fixed at commit `56dc078`, a probe predating every three-segment number) with its `t ≥ 2.0 s` constraint; **S2** `t₂ = 2·t₁` **DERIVED** — the net-yaw-zero condition, since under `a_lon = 0` the yaw rate is constant and heading returns iff the `−` segment matches the `+` segment; **S3** drop any schedule whose third segment is empty (`t₂ ≥ horizon`), because it **is** a two-segment candidate already in the shipped bank; **S4** magnitudes inherited (`±0.75`, `a_lon = 0`). ⇒ **exactly one schedule survives: `t₁ = 2.0, t₂ = 4.0`; 2 candidates.**
+
+⭐ **THE POST-HOC CHECK, MEASURED on the re-derived sweep: RULE S's row is the ARGMAX OF NOTHING** — best lane-change gain is `1.5 → 3.0` (0.2266), best all-window `2.0 → 3.0` (0.0592), lowest Δcurv `2.5 → 4.0` (+0.000519), lowest Δcross `2.0 → 3.5` (−0.7217), lowest Δheading `2.0 → 3.0` (−0.862). ⛔ **A rule landing on a row best on no column cannot be the exploratory ranking wearing a justification.** A post-hoc selector would have taken `2.0 → 3.0`.
+
+⚠️ **The predecessor's measured caveat is SCOPED, not ignored.** `net_yaw_zero_split_s` warns that net-yaw-zero is not where the **two**-segment gain lives — true, because there it **forces** the counter-steer to consume the whole remaining horizon, which is exactly the D-TWOSEG-6 defect. The third segment decouples *"return the heading"* from *"spend the horizon"*.
+
+⭐ **The `t ≥ 2.0 s` constraint is LOAD-BEARING, MEASURED:** `1.5 → 3.0` has the largest lane-change gain in the whole sweep (**0.2266**) and **repicks 720 windows on the 2 s grid** — it buys that gain by giving up the structural zero.
+
+### ⭐ D-TRISEG-3 — FOUR DELIBERATE-REGRESSION ARMS, THREE EXACT STRUCTURAL ZEROS AND A GRADING ARM THAT REPRODUCES BIT-EXACTLY.
+
+**Evidence class: MEASURED** — `raw/out_p1_triseg.json` (`B4`).
+⭐ Both apparatus facts were established **before** the expectations were committed (`raw/p0_bank_facts.py`, reading only the incumbent checkpoint): the bank holds `(a_lon, a_lat) = (0, 0)` **at index 67**, and its `a_lat` grid `{0, ±0.75, ±1.5, ±2.25, ±3.0}` is symmetric with **0 of 117** rows missing their `(a_lon, −a_lat)` mirror. That is what makes R2 and R4 structural rather than hoped-for.
+
+| arm | schedule | mechanism | result |
+|---|---|---|---|
+| **R1** | `t₁ = t₂ = 6.0` | `+1` every tick ⇒ existing constant arcs | **+0.0000000000**, 0/18,615 improved |
+| **R2** | `t₁ = 0, t₂ = 6.0` | `−1` every tick ⇒ mirror arcs (grid mirror-complete) | **+0.0000000000**, 0/18,615 |
+| **R4** | `t₁ = t₂ = 0` | `0` every tick ⇒ **candidate 67**, the straight line | **+0.0000000000**, 0/18,615 |
+| **R3** *(GRADING)* | `t₁ = 2.0, t₂ = 6.0` | third segment empty ⇒ **IS** the two-segment pair | **0.1639538252**, and the **per-window ADE array is `np.array_equal`** to the two-segment pair's over all 18,615 windows |
+
+⭐ **R3 is strictly stronger than D-TWOSEG's `±0.005` grading arm:** the geometries are the *same object*, so exact equality is the right test and anything else is a defect. It is the positive proof that the families are **nested**, not merely similar.
+
+### ⭐⭐ D-TRISEG-4 — THE D-TWOSEG-6 REFUTATION'S PREDICTION IS CONFIRMED, AND EXACTLY WHERE THE SCHEDULE SAYS IT SHOULD BE.
+
+**Evidence class: MEASURED** — `raw/out_p2_triseg_decomp.json` (`per_segment_curvature`).
+⛔ **Control at a known value, asserted:** on lane-change windows whose pick did NOT change the two paths are the same object and every family reads **EXACTLY** equal (`np.array_equal`, `True` for both arms; A1 n = 791, A2 n = 724).
+
+Per-segment curvature error, each arm on its **own** lane-change repicks:
+
+| segment | Δ`A1` (two-seg) | Δ`A2` (three-seg) |
+|---|---|---|
+| 0.5–1.0 s | +0.002209 | +0.002485 |
+| 1.0–1.5 s | +0.001414 | +0.001751 |
+| 1.5–2.0 s | +0.001621 | +0.001882 |
+| 2.0–3.0 s *(the flip)* | +0.001334 | +0.001313 |
+| **3.0–4.0 s** | +0.006441 | **+0.006531** |
+| **4.0–5.0 s** | +0.005670 | ⭐ **+0.002551** |
+| **5.0–6.0 s** | +0.004835 | ⭐ **−0.000105** |
+| **TOTAL** | **+0.023524** | ⭐ **+0.016408** (−30.3 %) |
+| **3–6 s TAIL share** | **72.04 %** | **54.71 %** |
+
+⭐⭐ `t₂ = 4.0` means the candidate **still counter-steers through 3–4 s** and is **straight after 4 s** — and that is precisely the pattern: 3–4 s **unchanged**, 4–5 s falls **55 %**, and 5–6 s **crosses zero to −0.000105**, i.e. in the final second the three-segment pick tracks curvature **better than the incumbent**. **The mechanism claim is now supported by a directional prediction that could have failed, not only by a fit.**
+
+⚠️ **NEXT LEVER, NAMED AND NOT TAKEN:** the residual defect is the **3–4 s band**, which is *inside* the counter-steer segment ⇒ a **shorter middle segment**. That is a new schedule and needs **its own pre-registration**; choosing it from this table would be the post-hoc selection D-TRISEG-2 exists to prevent.
+
+### ⚠️ D-TRISEG-5 — FOUR FAMILIES, BOTH DIRECTIONS: IT BUYS CROSS-TRACK, PAYS CURVATURE, AND RETURNS THE HEADING THE TWO-SEGMENT FAMILY GAVE AWAY.
+
+**Evidence class: MEASURED** — `raw/out_p1_triseg.json` (`four_families_6s`, `B6`).
+
+**Lane-change windows (n = 1,297):**
+
+| arm | ADE | along | cross | speed | **curv** | **heading** |
+|---|---|---|---|---|---|---|
+| `A0` | 1.5315 | 0.8285 | 1.1617 | 0.4322 | 0.002784 | 2.7262 |
+| `A1` two-segment | 1.3670 | 0.8315 | 0.9533 | 0.4338 | 0.004095 | 3.0818 |
+| ⭐ **`A2` three-segment** | **1.3183** | 0.8328 | **0.8773** | 0.4341 | **0.003819** | **2.7935** |
+| **floor** straight family | 1.5750 | 0.8294 | 1.2196 | 0.4313 | **0.002726** | 2.7727 |
+
+**BUYS** ADE **−13.9 %** and cross-track **−24.5 %**; against the two-segment family a further **−0.0487 m** ADE and **−0.0760 m** cross-track. **PAYS** curvature **×1.372** (two-segment: ×1.471) — ⛔ a real cost, not hidden. **LONGITUDINAL untouched** (along +0.0043, speed +0.0019), as it must be: `a_lon` is unchanged on every new candidate.
+
+⭐ **THE HEADING IS RETURNED — the net-yaw-zero prediction, confirmed:** on lane-change windows heading rises **+0.0673 deg** against the two-segment family's **+0.3556 deg** (**18.9 %** of the cost), and **on all 18,615 windows it is 3.13861 → 3.13880, +0.00019 deg — unchanged to four decimals** — while the two-segment family pays **+0.02519**.
+
+⚠️ **VACUITY GATE ON THE INCUMBENT'S CURVATURE, RE-REPORTED:** the straight-line floor is **0.002726** and `A0` sits at **0.002784** — ⛔ **the incumbent's "good" curvature score on lane-change windows is bought by barely steering at all, +2.13 % over a plan that never steers.** `A2` sits **+40.1 %** over the floor because it actually turns.
+⚠️ These are **6 s-grid** curvature numbers and are **NOT** comparable to the 2 s re-rolled floors `ha0` 0.006841 / `os` 0.008024. ⚠️ **No refinement effect is attributed**; nothing here touches the refinement path.
+
+**B6 KINEMATICS + VACUITY GATE (PASS):** new candidates peak **0.0765 g** vs the incumbent bank's **0.5097 g**, **0 of 38** (candidate, speed) pairs over `μ = 0.7`, and **`kappa_cap` is never reached** — where the **incumbent bank does reach it**. ⛔ **Manoeuvre rate beside it: 573/1,297 lane-change and 1,906/18,615 overall windows SELECT a new candidate**, so the safety zero is not bought by declining the manoeuvre.
+
+### ⭐ D-TRISEG-6 — WHAT CHANGES IS THE SUPERVISION (44.18 %), NOT THE BEHAVIOUR; AND A FOUR-COLUMN ARTIFACT MUST DECLARE ITS SCHEDULE WITH NO OVERRIDE.
+
+**Evidence class: MEASURED** — `raw/out_p1_triseg.json` (`B7`); `tests/test_anchor_twoseg.py`.
+
+**B7 supervision rate** — the fraction of lane-change windows whose **geometric** `a_star` lands on a new candidate: ⭐ **`A2` 573/1,297 = 44.18 %** (turn 1.04 %, all 10.24 %), against the two-segment family's 506/1,297 = 39.01 % (turn 2.19 %, all 11.35 %). ⭐ **A gradient, not a takeover** — and `A2` captures **more** lane-change supervision on **fewer** all-window picks, which is the shape a targeted vocabulary fix should have. Per candidate: `−0.75` takes 282 LC / 1,069 all; `+0.75` takes 291 / 837.
+
+⛔⛔ **B7 MEASURES SUPERVISION, NOT EXECUTION. refcv4b HAS 117 LOGITS AND STRUCTURALLY CANNOT SELECT THESE CANDIDATES.** A trained execution rate needs a retrain and is a **named blocker**. **Nothing here is a behavioural result.**
+
+**B8 — the declaration.** `control_schedule="three_segment_alat_pulse"`, `controls_columns = ["a_lon_ms2","a_lat_ms2","t1_s","t2_s"]`, and the file declares its three populations (`n_constant` / `n_two_segment` / `n_three_segment` = 117/0/2, composed 117/6/2) so no reader re-derives them. A `[N, 4]` file declaring nothing raises **`AnchorScheduleMissing`** naming the columns it cannot identify; a mismatched declaration raises **`AnchorScheduleConflict`**; `t₂ < t₁` is refused at **build** time *and* in the **integrator**, because silently it renders as a two-segment candidate wearing a three-segment row.
+⛔ **NO CLI OVERRIDE EXISTS, AND A TEST ASSERTS ITS ABSENCE** — by signature inspection *and* behaviourally (the units override, the only one there is, does not suppress the schedule refusal). **No legacy 3- or 4-column file exists anywhere**, so a permitted guess could not rescue a real artifact — it could only **INVENT** one. *(That is the whole difference from `control_units`, where the live `anchors.pt` is a genuine legacy file that must keep loading.)*
+⚠️ **The parity guard demonstrated itself:** a first run passed an `--assert-anchors-sha` whose **middle had been reconstructed from the abbreviated `51f930dc…a66df`**, and the builder **REFUSED before writing anything**. **An abbreviation is not a hash** — same family as the units incident, and the tool caught it rather than care.
+
+### ⚠️ D-TRISEG-7 — WHAT SHARE THIS CAN TOUCH. THE DOMINANT SELECTION DEFECT IS LONGITUDINAL AND THIS IS NOT A FIX FOR IT.
+
+**MEASURED here (supply-side bound):** the extension moves the all-window 6 s supply ceiling by **0.0547 of 1.2943 m = 4.23 %** and the lane-change ceiling by **0.2133 of 1.5315 m = 13.93 %**, on the **6.97 %** of windows (1,297/18,615) that execute a lane-change shape.
+*(INHERITED, commit `a3b232b`, not re-verified here:* **4,350/24,114** *windows carry the wrong longitudinal manoeuvre while the fan held a correct candidate; an* `a_lon` *oracle recovers* **74.2 %** *of the regret against* `a_lat`'s **20.9 %**.*)*
+
+⇒ ⛔ **A lateral vocabulary fix reaches at most the ~20.9 % LATERAL share of the regret, and within it only the lane-change sub-population — and only as SUPERVISION.** It is a real capability the vocabulary did not have; **it is not a fix for the selection defect and is not presented as one.**
+
+⛔ **AND IT CANNOT APPEAR IN `ade_0_2s` AT ALL (B5).** Every RULE S candidate flips at 2.0 s and slot 3 **is** 2.0 s, so the 2 s grid moves by **exactly 0.0000000000** with **0/18,615** windows repicking and every one of the four families changing by exactly zero. **That is the scope limit, reported as a limitation.**
+
+⛔ **BLOCKED, each with what would unblock it:** **(1)** executed lane-change rate — needs a retrain (tiny-rig v7 arm ~17 min on Thor, or an A40 slot); ⛔ **the A40 is FREE and RESERVED for the composed refcv5 arm and was NOT taken.** **(2)** the tactical head's three dead lane-change classes — a **different head**, its repair **is** a label change, **blocked on a PI decision.** **(3)** the consumer: `refc.py::AnchoredDiffusionDecoder.roll_bank` refuses a `[N, 4]` bank on its shape checks (loudly, which is correct); `refc.py` is a sibling's file this turn, so the decoder-side read of columns 2–3 is escalated as an **exact diff** in `RESULT.md` §13, not a "please merge" line.
+
+⛔ **No label set was emitted, rebuilt or regenerated** (PI: *"don't generate labels again"*) — the anchor head's target is a **geometric** `argmin` of the recorded ego path over the emitted fan, unchanged from D-TWOSEG-4. ⛔ **Vocabulary:** the nav command is an **INPUT simulating the vehicle's nav system**, never a training signal; never "oracle nav", never "deployment gap".
+
+**Suite:** `tests/test_anchor_twoseg.py` **41 passed** (19 inherited + **22 new**); with the anchor regression set the copied `stack/tests` reads **141 passed, 17 skipped** (was 118/17).

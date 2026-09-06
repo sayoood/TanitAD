@@ -63,15 +63,37 @@ PATHS_ONLY = "paths"
 #: ``t_split_s``, the time (SECONDS) at which the LATERAL channel's sign flips;
 #: ``t_split_s >= horizon_s`` means it never flips, i.e. exactly ``constant``
 #: (``tanitad.refs.anchor_twoseg.roll_bank``, bit-identical in that limit).
-#: ⛔ A [N, 3] file that declares NO schedule is REFUSED for the same reason a
-#: units-less [N, 2] file is: an undeclared column read as the wrong quantity
-#: produces a table that looks exactly like an answer (:data:`INCIDENT`).
+#: ``three_segment_alat_pulse`` — ``controls`` is [N, 4], column 2 is ``t1_s``
+#: (the ``+ -> -`` flip) and column 3 is ``t2_s``, the time the LATERAL channel
+#: goes to **ZERO** and the candidate runs straight (2026-09-06). ``t2_s >=
+#: horizon_s`` means the third segment is empty, i.e. exactly
+#: ``two_segment_alat_flip`` with ``t_split_s = t1_s``; ``t1_s >= horizon_s``
+#: means exactly ``constant``. ⭐ THE NESTING IS EXACT AND IS WHAT MAKES EACH
+#: FAMILY'S OFF PATH PROVABLE BY COMPARISON rather than asserted.
+#: ⛔ A [N, 3] or [N, 4] file that declares NO schedule is REFUSED for the same
+#: reason a units-less [N, 2] file is: an undeclared column read as the wrong
+#: quantity produces a table that looks exactly like an answer
+#: (:data:`INCIDENT`). ⛔ AND THERE IS NO CLI OVERRIDE FOR A SCHEDULE, unlike
+#: units: the units override exists because a real LEGACY file (refcv4b's live
+#: ``anchors.pt``) must keep loading, and **no legacy 3- or 4-column file
+#: exists anywhere** — so a permitted guess could not rescue a real artifact,
+#: only INVENT one.
 CONSTANT_SCHEDULE = "constant"
 TWO_SEGMENT_SCHEDULE = "two_segment_alat_flip"
-CONTROL_SCHEDULES = (CONSTANT_SCHEDULE, TWO_SEGMENT_SCHEDULE)
+THREE_SEGMENT_SCHEDULE = "three_segment_alat_pulse"
+CONTROL_SCHEDULES = (CONSTANT_SCHEDULE, TWO_SEGMENT_SCHEDULE,
+                     THREE_SEGMENT_SCHEDULE)
 
 #: how many ``controls`` columns each schedule has.
-SCHEDULE_NCOL = {CONSTANT_SCHEDULE: 2, TWO_SEGMENT_SCHEDULE: 3}
+SCHEDULE_NCOL = {CONSTANT_SCHEDULE: 2, TWO_SEGMENT_SCHEDULE: 3,
+                 THREE_SEGMENT_SCHEDULE: 4}
+
+#: the extra column names each schedule appends to the base two.
+SCHEDULE_EXTRA_COLUMNS = {
+    CONSTANT_SCHEDULE: [],
+    TWO_SEGMENT_SCHEDULE: ["t_split_s"],
+    THREE_SEGMENT_SCHEDULE: ["t1_s", "t2_s"],
+}
 
 #: the fields every artifact carries — present-but-``None`` where a field does
 #: not apply (a fixed-path file has no reference speed), never absent.
@@ -258,23 +280,49 @@ def build_anchor_artifact(anchors: Tensor, controls: Tensor | None = None, *,
     if c is not None:
         cols = (["a_lon_ms2", "a_lat_ms2"] if control_units == "alat"
                 else ["a_lon_ms2", "kappa_inv_m"])
-        if control_schedule == TWO_SEGMENT_SCHEDULE:
-            cols = cols + ["t_split_s"]
+        cols = cols + list(SCHEDULE_EXTRA_COLUMNS[control_schedule])
         art["controls"] = c
         art["controls_columns"] = cols
         art["controls_sha256"] = sha256_of_tensor(c)
         art["straight_ahead_control_present"] = bool(
             ((c[:, 0] == 0) & (c[:, 1] == 0)).any())
+        hs = float(art["horizon_s"])
         if control_schedule == TWO_SEGMENT_SCHEDULE:
             # ⭐ A row whose split is at or beyond the horizon NEVER flips and is
             # therefore a `constant` candidate living in a 3-column tensor. The
             # counts are declared so a reader does not have to re-derive which
             # rows are which -- the same reason the units are declared.
-            flips = c[:, 2] < float(art["horizon_s"]) - 1e-9
+            flips = c[:, 2] < hs - 1e-9
             art["n_two_segment"] = int(flips.sum())
             art["n_constant"] = int((~flips).sum())
             art["t_split_s_values"] = sorted(
                 {round(float(x), 6) for x in c[flips, 2]})
+        elif control_schedule == THREE_SEGMENT_SCHEDULE:
+            # ⭐ Same declaration, one nesting level deeper. A 4-column tensor
+            # holds THREE populations and a reader must not have to re-derive
+            # which row is which: `t1 >= horizon` never flips (constant),
+            # `t2 >= horizon` flips but never returns to straight (two-segment),
+            # and only `t2 < horizon` is a genuine three-segment pulse.
+            flips = c[:, 2] < hs - 1e-9
+            returns = flips & (c[:, 3] < hs - 1e-9)
+            art["n_three_segment"] = int(returns.sum())
+            art["n_two_segment"] = int((flips & ~returns).sum())
+            art["n_constant"] = int((~flips).sum())
+            art["t1_s_values"] = sorted({round(float(x), 6) for x in c[flips, 2]})
+            art["t2_s_values"] = sorted(
+                {round(float(x), 6) for x in c[returns, 3]})
+            # ⛔ An ORDERING assertion, not a comment. `t2 < t1` would emit a
+            # negative-duration middle segment, which the integrator silently
+            # renders as "never counter-steer" -- a candidate that is not the one
+            # the row declares. Refused at BUILD time so no such file exists.
+            bad = torch.nonzero(returns & (c[:, 3] < c[:, 2] - 1e-9)).reshape(-1)
+            if bad.numel():
+                raise ValueError(
+                    f"{bad.numel()} three-segment row(s) declare t2 < t1 "
+                    f"(first at index {int(bad[0])}: t1={float(c[bad[0], 2])}, "
+                    f"t2={float(c[bad[0], 3])}). The middle segment would have "
+                    f"negative duration and the integrator would emit a "
+                    f"candidate that is not the one the row declares.")
     else:
         art["path_units"] = "m, ego frame at t0: x along-track, y lateral"
     if extra:
@@ -291,11 +339,12 @@ def _resolve_schedule(controls: Tensor, meta: dict[str, Any],
     """The RESOLVED ``control_schedule`` of a ``controls``-carrying artifact.
 
     ⛔ There is no override here on purpose. Units were overridable because a
-    LEGACY file existed whose units were known from its run record; no legacy
-    3-column file exists, so a 3-column tensor with no declaration is a file
-    nobody can read, and guessing is exactly the failure this module was written
-    after. A 2-column tensor is ``constant`` by construction — that is a fact
-    about the shape, not a default.
+    LEGACY file existed whose units were known from its run record; **no legacy
+    3-column or 4-column file exists anywhere**, so an undeclared wide tensor is
+    a file nobody can read, and guessing is exactly the failure this module was
+    written after — a permitted guess could not rescue a real artifact, only
+    INVENT one. A 2-column tensor is ``constant`` by construction — that is a
+    fact about the shape, not a default.
     """
     ncol = int(controls.shape[-1])
     declared = meta.get("control_schedule")
@@ -306,13 +355,23 @@ def _resolve_schedule(controls: Tensor, meta: dict[str, Any],
     if declared is None:
         if ncol == 2:
             return CONSTANT_SCHEDULE
+        # name the schedule this WIDTH would be, so the refusal is actionable
+        # rather than merely correct.
+        fits = [s for s, k in SCHEDULE_NCOL.items() if k == ncol]
+        hint = (f"Rebuild it with build_anchor_artifact("
+                f"control_schedule='{fits[0]}')." if fits else
+                f"No schedule in {CONTROL_SCHEDULES} is [N, {ncol}].")
+        extra = ", ".join(SCHEDULE_EXTRA_COLUMNS.get(fits[0], [])) if fits \
+            else "the extra column(s)"
         raise AnchorScheduleMissing(
             f"{where} carries `controls` {tuple(controls.shape)} with {ncol} "
-            f"columns but declares NO `control_schedule`, so column 2 cannot "
-            f"be told apart from anything else a third number could mean. "
-            f"Rebuild it with build_anchor_artifact("
-            f"control_schedule='{TWO_SEGMENT_SCHEDULE}'). This is the same "
-            f"failure as the units one, one column to the right: {INCIDENT}")
+            f"columns but declares NO `control_schedule`, so the extra "
+            f"column(s) ({extra}) cannot be told apart from anything else "
+            f"those numbers could mean. {hint} There is NO override for this "
+            f"and there will not be one: no legacy wide file exists, so a "
+            f"permitted guess would invent an artifact rather than rescue one. "
+            f"This is the same failure as the units one, one column to the "
+            f"right: {INCIDENT}")
     want = SCHEDULE_NCOL[declared]
     if ncol != want:
         raise AnchorScheduleConflict(

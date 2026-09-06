@@ -1,0 +1,47 @@
+[grid] n=18615  lane-change=1297
+
+########## STRATA -- and the control at a KNOWN value ##########
+  stratum                                n    ADE b    ADE e    curv b    curv e  cross b  cross e  head b  head e
+  lane-change, REPICKED   [A1 twoseg]   506   1.6248   1.2031  0.002588  0.005949   1.3929   0.8587   2.716   3.628
+  lane-change, unchanged  [A1 twoseg]   791   1.4719   1.4719  0.002909  0.002909   1.0138   1.0138   2.733   2.733
+       CONTROL: pick unchanged => same object => every family EXACTLY equal: True
+  lane-change, REPICKED   [A2 triseg]   573   1.5717   1.0889  0.002493  0.004837   1.3465   0.7028   2.659   2.812
+  lane-change, unchanged  [A2 triseg]   724   1.4998   1.4998  0.003014  0.003014   1.0154   1.0154   2.779   2.779
+       CONTROL: pick unchanged => same object => every family EXACTLY equal: True
+
+########## PER-SEGMENT CURVATURE -- did the TAIL come back? ####
+  segment          base|A1        A1        dA1   base|A2        A2        dA2
+  0.5-1.0 s       0.002809  0.005018  +0.002209  0.002640  0.005125  +0.002485
+  1.0-1.5 s       0.003190  0.004604  +0.001414  0.002985  0.004736  +0.001751
+  1.5-2.0 s       0.003148  0.004768  +0.001621  0.002973  0.004855  +0.001882
+  2.0-3.0 s       0.002614  0.003948  +0.001334  0.002546  0.003859  +0.001313
+  3.0-4.0 s       0.002164  0.008605  +0.006441  0.002208  0.008739  +0.006531
+  4.0-5.0 s       0.001925  0.007595  +0.005670  0.001934  0.004485  +0.002551
+  5.0-6.0 s       0.002266  0.007101  +0.004835  0.002161  0.002056  -0.000105
+  TOTAL                               +0.023524                      +0.016408
+  3-6 s TAIL                          +0.016946                      +0.008977
+  tail share of total degradation:  A1 72.04 %   A2 54.71 %
+
+########## CONTEXT: the exploratory (t1, t2) sweep, re-derived ##
+  ⛔ CONTEXT ONLY. RULE S fixed the schedule before any number existed; nothing here may move the shipped default.
+
+  family                           LCgain  ALLgain  TURNgain  LCpicks    d curv  d cross   d head  2s repick
+  2-seg t=2.0 (equal-cost ref)     0.1640   0.0425    0.0026      506  0.003359  -0.5320    0.913          0
+  3-seg 2.0 -> 3.0                 0.1867   0.0592    0.0048      433  0.000864  -0.7088   -0.862          0
+  3-seg 2.0 -> 3.5                 0.2161   0.0588    0.0037      510  0.001639  -0.7217   -0.418          0
+  3-seg 2.0 -> 4.0  <- RULE S      0.2133   0.0547    0.0031      573  0.002344  -0.6438    0.152          0
+  3-seg 2.0 -> 4.5                 0.1937   0.0494    0.0028      567  0.002727  -0.5768    0.539          0
+  3-seg 1.5 -> 3.0                 0.2266   0.0523    0.0018      767  0.002163  -0.5093    0.248        720
+  3-seg 1.5 -> 3.5                 0.1382   0.0334    0.0014      668  0.002495  -0.3402    0.789        720
+  3-seg 2.5 -> 4.0                 0.0957   0.0460    0.0051      317  0.000519  -0.4754   -0.690          0
+  3-seg 2.5 -> 5.0                 0.1234   0.0465    0.0043      362  0.001237  -0.5726   -0.281          0
+  3-seg 3.0 -> 5.0                 0.0265   0.0307    0.0051      143  0.000661  -0.2950   -0.727          0
+
+  ⭐ IS RULE S's ROW THE ARGMAX OF ANYTHING? (the post-hoc check)
+     best on gain_lane_change     = 3-seg 1.5 -> 3.0
+     best on gain_all             = 3-seg 2.0 -> 3.0
+     best on d_curv_lowest        = 3-seg 2.5 -> 4.0
+     best on d_cross_lowest       = 3-seg 2.0 -> 3.5
+     best on d_head_lowest        = 3-seg 2.0 -> 3.0
+
+wrote out_p2_triseg_decomp.json

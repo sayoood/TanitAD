@@ -430,3 +430,349 @@ def test_builder_refuses_the_incoherent_requests(tmp_path):
     with pytest.raises(ts.SplitOffTick):
         B.main(["--from-anchors", str(src), "--out", str(out), "--two-segment",
                 "--t-split", "2.03"])
+
+
+# =========================================================================== #
+# THE THREE-SEGMENT PULSE FAMILY (D-TRISEG, 2026-09-06)
+#
+# ⛔ WHY IT EXISTS. The two-segment work REFUTED its own mechanism hypothesis:
+# the flip is the SMALLEST curvature contributor (+0.001334) and 72.04 % of the
+# degradation sits in the 3-6 s TAIL, so the candidate is RIGHT IN SHAPE and
+# WRONG IN DURATION. A third segment returns to straight.
+#
+# ⛔ AND THE SCHEDULE IS FIXED BY A RULE, NOT BY A RANKING (PREREG D-TRISEG §2).
+# `rule_s_schedules` is that rule in code, and it is pinned here so a later edit
+# cannot quietly turn it into a tuned constant.
+# =========================================================================== #
+def test_rule_s_fixes_exactly_one_schedule_and_it_is_not_a_tuned_constant():
+    """⛔ RULE S: t1 INHERITED from the shipped split grid, t2 = 2*t1 DERIVED,
+    empty-third-segment schedules DROPPED as duplicates of two-segment
+    candidates. On the shipped grid and a 6 s horizon exactly one survives."""
+    assert ts.rule_s_schedules(horizon_s=HORIZON_S) == [(2.0, 4.0)]
+    # t1 = 3 -> t2 = 6 = horizon and t1 = 4 -> t2 = 8 > horizon: both are
+    # two-segment candidates already in the shipped bank, so both are dropped.
+    assert ts.rule_s_schedules([3.0, 4.0], HORIZON_S) == []
+    # the rule is a FUNCTION of the horizon, not a hardcoded pair
+    assert ts.rule_s_schedules([2.0, 3.0, 4.0], 10.0) == [(2.0, 4.0), (3.0, 6.0),
+                                                          (4.0, 8.0)]
+    assert ts.net_yaw_zero_t2_s(2.0) == 4.0
+
+
+def test_net_yaw_zero_really_returns_the_heading_and_the_control_does_not():
+    """⭐ S2 is a KINEMATIC claim, so it is checked kinematically rather than
+    quoted. A ``t2 = 2*t1`` pulse must bring the final heading back to ~0; a
+    schedule that is NOT net-yaw-zero must not. Without the second half this
+    test could not fail."""
+    v = torch.tensor([20.0])
+    steps = max(HZ)
+
+    def final_yaw(t1, t2):
+        c = torch.tensor([[0.0, 0.75, t1, t2]])
+        sgn = ts.lateral_sign(c, 0.1, steps)                  # [1, steps]
+        kap = (0.75 / max(float(v), 4.0) ** 2)
+        seq = torch.stack([torch.zeros(1, steps), kap * sgn], -1)
+        st = rollout_unicycle(torch.tensor([[0.0, 0.0, 0.0, float(v)]]),
+                              seq, dt=0.1)
+        return float(st[0, -1, 2])
+
+    assert abs(final_yaw(2.0, 4.0)) < 1e-6           # symmetric pulse
+    assert abs(final_yaw(2.0, 3.0)) > 1e-3           # MUTATION control
+    assert abs(final_yaw(2.0, 6.0)) > 1e-3           # the two-segment case
+
+
+def test_three_segment_family_is_two_and_ordering_is_fixed():
+    """The default family is the RULE S schedule x the INHERITED magnitudes.
+    Ordering is FIXED: a candidate's index is a class label the classifier
+    learns, so a reordering between builds would permute a trained head."""
+    c = ts.three_segment_controls(horizon_s=HORIZON_S)
+    assert tuple(c.shape) == (2, 4)
+    assert [tuple(round(float(x), 4) for x in r) for r in c] == [
+        (0.0, -0.75, 2.0, 4.0), (0.0, 0.75, 2.0, 4.0)]
+    # the magnitudes are members of the INCUMBENT's own alphabet, so the
+    # extension introduces a new SCHEDULE and not a new control alphabet.
+    assert set(ts.DEFAULT_A_LAT_MS2) == {-0.75, 0.75}
+
+
+def test_three_segment_controls_refuses_a_backwards_schedule():
+    with pytest.raises(ValueError, match="NEGATIVE duration"):
+        ts.three_segment_controls(schedules=[(4.0, 2.0)], horizon_s=HORIZON_S)
+    with pytest.raises(ValueError, match="EMPTY family"):
+        ts.three_segment_controls(schedules=[], horizon_s=HORIZON_S)
+
+
+def test_extend_three_is_append_only():
+    base = _controls(24)
+    out = ts.extend_controls_three(base, HORIZON_S)
+    assert tuple(out.shape) == (26, 4)
+    assert torch.equal(out[:24, :2], base)
+    assert torch.equal(out[:24, 2], torch.full((24,), HORIZON_S))
+    assert torch.equal(out[:24, 3], torch.full((24,), HORIZON_S))
+    # and it composes on top of a two-segment bank without disturbing it
+    two = ts.extend_controls(base, HORIZON_S)
+    both = ts.extend_controls_three(two, HORIZON_S)
+    assert tuple(both.shape) == (32, 4)
+    assert torch.equal(both[:30, :3], two)
+
+
+# ------------------------------------------------- THE OFF PATH, by comparison
+def test_four_column_limit_is_bit_identical_with_a_mutation_control():
+    """⛔⛔ THE PARITY BAR for the fourth column. ``t1 = t2 = horizon_s`` means
+    the sign is +1 at every tick, so the four-column integrator IS the constant
+    integrator — ``torch.equal``, not ``allclose``.
+
+    ⛔ WITH A MUTATION CONTROL. An equality that cannot fail proves nothing, so
+    a schedule INSIDE the horizon must DIFFER materially."""
+    c = _controls(24)
+    r2 = ts.roll_bank(c, SPEEDS, control_units="alat", steps=max(HZ),
+                      slots=SLOTS, **ROLL)
+    r4 = ts.roll_bank(ts.as_four_column(c, HORIZON_S), SPEEDS,
+                      control_units="alat", steps=max(HZ), slots=SLOTS, **ROLL)
+    assert torch.equal(r2, r4)
+
+    mut = ts.as_four_column(c, HORIZON_S).clone()
+    mut[:, 2], mut[:, 3] = 2.0, 4.0
+    rm = ts.roll_bank(mut, SPEEDS, control_units="alat", steps=max(HZ),
+                      slots=SLOTS, **ROLL)
+    assert not torch.equal(rm, r2)
+    assert float((rm - r2).abs().max()) > 1.0
+
+
+def test_three_column_widened_to_four_is_bit_identical_too():
+    """The SECOND exact limit: ``t2 >= horizon_s`` is the two-segment
+    candidate. This is what lets one bank hold all three families."""
+    three = ts.extend_controls(_controls(24), HORIZON_S)
+    r3 = ts.roll_bank(three, SPEEDS, control_units="alat", steps=max(HZ),
+                      slots=SLOTS, **ROLL)
+    r4 = ts.roll_bank(ts.as_four_column(three, HORIZON_S), SPEEDS,
+                      control_units="alat", steps=max(HZ), slots=SLOTS, **ROLL)
+    assert torch.equal(r3, r4)
+    # MUTATION: pulling t2 inside the horizon must change the emitted geometry
+    mut = ts.as_four_column(three, HORIZON_S).clone()
+    mut[24:, 3] = 4.0
+    rm = ts.roll_bank(mut, SPEEDS, control_units="alat", steps=max(HZ),
+                      slots=SLOTS, **ROLL)
+    assert not torch.equal(rm, r3)
+
+
+def test_2s_prefix_is_a_structural_zero_for_the_three_segment_family():
+    """⛔ Every RULE S candidate flips at t1 = 2.0 s and slot 3 IS 2.0 s, so the
+    2 s scored grid cannot move. That is also the honest SCOPE statement: a
+    capability gained here CANNOT appear in ``ade_0_2s``."""
+    c = _controls(24)
+    ext = ts.extend_controls_three(c, HORIZON_S)
+    s2 = SLOTS[:4]
+    a = ts.roll_bank(c, SPEEDS, control_units="alat", steps=max(HZ),
+                     slots=s2, **ROLL)
+    b = ts.roll_bank(ext, SPEEDS, control_units="alat", steps=max(HZ),
+                     slots=s2, **ROLL)
+    assert torch.equal(a, b[:, :24])
+    # the NEW rows are bit-identical to their constant counterparts on the
+    # 2 s prefix, which is WHY no window can repick there.
+    same = ts.roll_bank(ext[:, :2], SPEEDS, control_units="alat",
+                        steps=max(HZ), slots=s2, **ROLL)
+    assert torch.equal(b[:, 24:], same[:, 24:])
+    # and a split BEFORE 2 s would break it -- the constraint is load-bearing
+    early = ts.extend_controls_three(c, HORIZON_S, schedules=[(1.0, 2.0)])
+    e = ts.roll_bank(early, SPEEDS, control_units="alat", steps=max(HZ),
+                     slots=s2, **ROLL)
+    assert not torch.equal(e[:, 24:], same[:, 24:])
+
+
+def test_lateral_sign_covers_all_three_schedules():
+    steps = 60
+    two_col = ts.lateral_sign(_controls(3), 0.1, steps)
+    assert two_col.shape == (3, steps) and bool((two_col == 1.0).all())
+    three = torch.tensor([[0.0, 0.75, 2.0]])
+    s3 = ts.lateral_sign(three, 0.1, steps)[0]
+    assert int((s3 > 0).sum()) == 20 and int((s3 < 0).sum()) == 40
+    assert int((s3 == 0).sum()) == 0
+    four = torch.tensor([[0.0, 0.75, 2.0, 4.0]])
+    s4 = ts.lateral_sign(four, 0.1, steps)[0]
+    assert (int((s4 > 0).sum()), int((s4 < 0).sum()),
+            int((s4 == 0).sum())) == (20, 20, 20)
+
+
+def test_t2_before_t1_is_refused_by_the_integrator():
+    """⛔ Silently, ``t2 < t1`` renders as "flip and never return" — a TWO-segment
+    candidate wearing a three-segment row, i.e. a candidate that is not the one
+    the row declares. Same family as the units incident."""
+    with pytest.raises(ValueError, match="negative duration"):
+        ts.lateral_sign(torch.tensor([[0.0, 0.75, 4.0, 2.0]]), 0.1, 60)
+
+
+def test_t2_off_the_tick_grid_is_refused():
+    with pytest.raises(ts.SplitOffTick):
+        ts.lateral_sign(torch.tensor([[0.0, 0.75, 2.0, 4.03]]), 0.1, 60)
+
+
+# ------------------------------------------------------ THE DECLARATION (B8) --
+def test_artifact_declares_the_three_segment_schedule_and_counts_populations():
+    c = ts.extend_controls_three(_controls(9), HORIZON_S)
+    art = am.build_anchor_artifact(_anchors(11), c, control_units="alat",
+                                   horizons=HZ,
+                                   control_schedule=am.THREE_SEGMENT_SCHEDULE,
+                                   builder=__file__, **CONST)
+    assert art["control_schedule"] == "three_segment_alat_pulse"
+    assert art["controls_columns"] == ["a_lon_ms2", "a_lat_ms2", "t1_s", "t2_s"]
+    # ⭐ the three populations are DECLARED so a reader never re-derives them
+    assert art["n_constant"] == 9
+    assert art["n_two_segment"] == 0
+    assert art["n_three_segment"] == 2
+    assert art["t1_s_values"] == [2.0] and art["t2_s_values"] == [4.0]
+    got = am.read_anchor_artifact(art)
+    assert got.control_schedule == am.THREE_SEGMENT_SCHEDULE
+    assert "schedule=three_segment_alat_pulse" in am.describe(got)
+
+
+def test_a_composed_bank_declares_all_three_populations():
+    c = ts.extend_controls_three(ts.extend_controls(_controls(9), HORIZON_S),
+                                 HORIZON_S)
+    art = am.build_anchor_artifact(_anchors(17), c, control_units="alat",
+                                   horizons=HZ,
+                                   control_schedule=am.THREE_SEGMENT_SCHEDULE,
+                                   builder=__file__, **CONST)
+    assert (art["n_constant"], art["n_two_segment"],
+            art["n_three_segment"]) == (9, 6, 2)
+
+
+def test_build_refuses_a_backwards_three_segment_row():
+    c = ts.as_four_column(_controls(9), HORIZON_S).clone()
+    c[0, 2], c[0, 3] = 4.0, 2.0
+    with pytest.raises(ValueError, match="t2 < t1"):
+        am.build_anchor_artifact(_anchors(9), c, control_units="alat",
+                                 horizons=HZ,
+                                 control_schedule=am.THREE_SEGMENT_SCHEDULE,
+                                 builder=__file__, **CONST)
+
+
+def test_a_four_column_file_that_declares_nothing_is_refused():
+    """⛔⛔ B8. The 396 g / 0.31 g incident, TWO columns to the right: an
+    undeclared column read as the wrong quantity produces a table that looks
+    exactly like an answer."""
+    c = ts.extend_controls_three(_controls(9), HORIZON_S)
+    with pytest.raises(am.AnchorScheduleMissing, match="t1_s, t2_s"):
+        am.read_anchor_artifact({"anchors": _anchors(11), "controls": c,
+                                 "control_units": "alat"})
+
+
+def test_there_is_NO_override_for_a_missing_schedule():
+    """⛔⛔ AND THERE IS NO ESCAPE HATCH, deliberately. Units are overridable
+    because a real LEGACY file (refcv4b's live anchors.pt) must keep loading;
+    **no legacy 3- or 4-column file exists anywhere**, so a permitted guess
+    could not rescue a real artifact — it could only INVENT one.
+
+    This asserts the ABSENCE of a mechanism, so it is written as a signature
+    check plus a behavioural one: passing the units override must NOT suppress
+    the schedule refusal."""
+    import inspect
+    sig = inspect.signature(am.read_anchor_artifact)
+    assert [p for p in sig.parameters if "schedule" in p.lower()] == []
+    sig2 = inspect.signature(am._resolve_schedule)
+    assert [p for p in sig2.parameters if "override" in p.lower()
+            or "cli" in p.lower()] == []
+    c = ts.extend_controls_three(_controls(9), HORIZON_S)
+    # even the units override -- the ONLY override that exists -- cannot get a
+    # schedule-less wide file through.
+    with pytest.raises(am.AnchorScheduleMissing):
+        am.read_anchor_artifact({"anchors": _anchors(11), "controls": c},
+                                cli_control_units="alat")
+
+
+def test_four_column_schedule_and_column_count_must_agree():
+    c = ts.extend_controls_three(_controls(9), HORIZON_S)
+    with pytest.raises(am.AnchorScheduleConflict, match=r"\[N, 3\]"):
+        am.read_anchor_artifact({"anchors": _anchors(11), "controls": c,
+                                 "control_units": "alat",
+                                 "control_schedule": am.TWO_SEGMENT_SCHEDULE})
+    three = ts.extend_controls(_controls(9), HORIZON_S)
+    with pytest.raises(am.AnchorScheduleConflict, match=r"\[N, 4\]"):
+        am.read_anchor_artifact({"anchors": _anchors(15), "controls": three,
+                                 "control_units": "alat",
+                                 "control_schedule": am.THREE_SEGMENT_SCHEDULE})
+
+
+# ------------------------------------------------------------- THE BUILDER ---
+def test_builder_three_segment_appends_and_keeps_the_prefix(tmp_path):
+    """⛔ B1's second half: the flag adds rows and touches nothing before them."""
+    import build_twoseg_anchors as B
+    src, sa, sc = _write_source(tmp_path)
+    out = tmp_path / "tri.pt"
+    assert B.main(["--from-anchors", str(src), "--out", str(out),
+                   "--three-segment"]) == 0
+    got = am.read_anchor_artifact(str(out))
+    assert tuple(got.controls.shape) == (9 + 2, 4)
+    assert got.control_schedule == am.THREE_SEGMENT_SCHEDULE
+    assert am.sha256_of_tensor(got.controls[:9, :2]) == sc
+    assert am.sha256_of_tensor(got.anchors[:9].contiguous()) == sa
+    assert got.meta["kamm"]["n_violations"] == 0
+    assert got.meta["three_segment"] is True and got.meta["two_segment"] is False
+    assert got.meta["n_three_segment"] == 2
+
+
+def test_builder_composes_both_families_into_one_bank(tmp_path):
+    import build_twoseg_anchors as B
+    src, sa, sc = _write_source(tmp_path)
+    out = tmp_path / "both.pt"
+    assert B.main(["--from-anchors", str(src), "--out", str(out),
+                   "--two-segment", "--three-segment"]) == 0
+    got = am.read_anchor_artifact(str(out))
+    assert tuple(got.controls.shape) == (9 + 6 + 2, 4)
+    assert got.control_schedule == am.THREE_SEGMENT_SCHEDULE
+    assert am.sha256_of_tensor(got.controls[:9, :2]) == sc
+    assert am.sha256_of_tensor(got.anchors[:9].contiguous()) == sa
+    assert (got.meta["n_constant"], got.meta["n_two_segment"],
+            got.meta["n_three_segment"]) == (9, 6, 2)
+
+
+def test_builder_parity_and_three_segment_are_incompatible(tmp_path):
+    import build_twoseg_anchors as B
+    src, _, _ = _write_source(tmp_path)
+    with pytest.raises(SystemExit, match="meaningless"):
+        B.main(["--from-anchors", str(src), "--out", str(tmp_path / "x.pt"),
+                "--three-segment", "--assert-parity"])
+
+
+def test_builder_has_a_t1_grid_flag_and_deliberately_NO_t2_flag():
+    """⛔ THE DESIGN ASSERTION. ``t2 = 2*t1`` is DERIVED, so exposing a ``--t2``
+    would let the schedule be chosen after seeing a number — exactly the
+    post-hoc selection PREREG D-TRISEG §2 exists to prevent. Arbitrary
+    schedules stay reachable from the LIBRARY, which is where a
+    deliberate-regression schedule belongs."""
+    import build_twoseg_anchors as B
+    ap = B.build_parser() if hasattr(B, "build_parser") else None
+    if ap is None:
+        import inspect
+        src = inspect.getsource(B.main)
+    else:                                                   # pragma: no cover
+        src = str(ap.format_help())
+    assert "--t1-grid" in src
+    assert "--t2-grid" not in src and '"--t2"' not in src
+
+
+def test_builder_refuses_to_extend_an_already_extended_three_segment_bank(
+        tmp_path):
+    """The append-only guard must hold for the fourth column too: extending
+    twice would append the family a second time under new indices."""
+    import build_twoseg_anchors as B
+    src, _, _ = _write_source(tmp_path)
+    ext = tmp_path / "tri1.pt"
+    assert B.main(["--from-anchors", str(src), "--out", str(ext),
+                   "--three-segment"]) == 0
+    with pytest.raises(SystemExit, match="already declares"):
+        B.main(["--from-anchors", str(ext), "--out", str(tmp_path / "y.pt"),
+                "--three-segment"])
+
+
+def test_describe_family_does_not_call_a_two_segment_row_a_pulse():
+    """⚠️ A composed bank holds BOTH families in four columns. Without the
+    horizon the launch line cannot tell them apart and misdescribes the
+    vocabulary it announces — so the horizon-aware form is pinned, WITH the
+    horizon-less form beside it so the difference is visible."""
+    both = ts.extend_controls_three(ts.extend_controls(_controls(9), HORIZON_S),
+                                    HORIZON_S)
+    with_h = ts.describe_family(both, 9, HORIZON_S)
+    assert "2 three-segment + 6 two-segment" in with_h
+    assert "8 three-segment" not in with_h
+    # the horizon-less form cannot make the distinction, and says so by
+    # lumping them -- which is exactly why the builder passes the horizon.
+    assert "three-segment (" in ts.describe_family(both, 9)
