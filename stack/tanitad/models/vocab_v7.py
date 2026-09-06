@@ -277,11 +277,41 @@ TACTICAL_GOAL_NEEDS_PERCEPTION: frozenset[str] = frozenset({
 #:   overtake       13 (0.3 %)  -- the 326 "pass the ..." are almost all PARKED
 #:                                 vehicles, which is EVADE_IN_CORRIDOR, not an
 #:                                 overtake. This token is near-unpopulated.
+#: ⛔ THIS SET ANSWERS ONE QUESTION: **is the token SCOREABLE?** It is the
+#: census set below `GOAL_MIN_N_FOR_METRIC`, and nothing else. The separate
+#: question -- is it TRAINABLE? -- is `GOAL_MIN_N_FOR_TRAINING` below. One
+#: constant served both until 2026-09-07 and consequently matched neither.
+#:
+#: ⛔ DO NOT HAND-EDIT. Derived from the v8 census (4,719 clips, train+eval);
+#: `stack/tests/test_tactical_goal_underpowered_matches_census.py` pins every
+#: member against the raw counts and names any missing/extra token.
+#: The five-member version of this set was wrong in BOTH directions: it omitted
+#: four tokens under the floor and carried `WAIT_FOR_ONCOMING`, which had been
+#: renamed to `REACT_ON_ONCOMING` (line 106) and therefore matched nothing.
 TACTICAL_GOAL_UNDERPOWERED: frozenset[str] = frozenset({
-    "OVERTAKE_VEHICLE", "WAIT_FOR_ONCOMING", "TRAFFIC_LIGHT_REACT_YELLOW",
-    "YIELD_FOR_TURN_L", "YIELD_FOR_TURN_R",
+    "TAKE_EXIT_R",                  # n = 133
+    "MERGE",                        # n =  84
+    "TRAFFIC_LIGHT_REACT_YELLOW",   # n =  25
+    "YIELD_FOR_TURN_L",             # n =  23
+    "LANE_CHANGE_L",                # n =  23
+    "OVERTAKE_VEHICLE",             # n =  21
+    "TAKE_EXIT_L",                  # n =  21
+    "YIELD_FOR_TURN_R",             # n =  20
+    "TRAFFIC_LIGHT_REACT",          # n =  18
+    "LANE_CHANGE_R",                # n =  16
 })
+
+#: SCOREABILITY floor: below this n a token is reported WITH ITS n, never as a
+#: rate. Quoted by name in `GOALS_AND_CLAIMS.md` (D-TLIGHT-1).
 GOAL_MIN_N_FOR_METRIC: int = 200
+
+#: TRAINABILITY floor: below this n a token is too thin to train a class on.
+#: ⚠️ A DIFFERENT QUESTION from the one above, and the reason this
+#: constant exists: the DataFlyWheel's `vocab_fill_census.py` hardcodes the
+#: literal `30` for it (line 78). That instrument should import this name --
+#: a hardcoded threshold beside a named one is the `anchor_chance = 1/128`
+#: defect, which is the same class as the drift this block already suffered.
+GOAL_MIN_N_FOR_TRAINING: int = 30
 
 
 # ===========================================================================
