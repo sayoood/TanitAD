@@ -1,0 +1,152 @@
+{
+ "tool": "D-GSTR-1 P1 sign census: g_str TARGET vs OUTPUT",
+ "dump": "/home/nvidia/navpred/navflip_dump/decisions",
+ "tier": "T1 (self-action OPEN loop, 2026-09-02 ruling) for the OUTPUT; the TARGET is a LABEL, no tier applies",
+ "evidence_class": "MEASURED (ours)",
+ "tau_g": 0.1,
+ "n_windows": 4823,
+ "n_episodes": 141,
+ "label_fn": "tanitad.data.lan.lan_window_features -> refc.RefCModel.goal_targets (numpy mirror)",
+ "CONTROLS": {
+  "C1_index_convention": {
+   "rule": "ep_poses[ws + off] must equal the dumped pose_last on EVERY window; a wrong index censuses the wrong window",
+   "windows_resolved": 4823,
+   "windows_unresolved": 0,
+   "offsets_used": {
+    "0": 4823
+   },
+   "PASS": true
+  },
+  "C3_straight_path": {
+   "rule": "a straight path must give lateral EXACTLY 0.0 and be valid",
+   "lateral": 0.0,
+   "cos": 1.0,
+   "any_valid": true,
+   "PASS": true
+  },
+  "C2_mirror_world": {
+   "rule": "negating world y (and yaw) must flip the TARGET's lateral sign on every window; a probe reading a non-lateral slot cannot pass",
+   "n_nonzero": 3970,
+   "mirrored_hist": {
+    "LEFT": 472,
+    "STRAIGHT": 4083,
+    "RIGHT": 268
+   },
+   "PASS": true
+  }
+ },
+ "LABEL_VALIDITY": {
+  "any_valid_frac": 0.8231,
+  "n_valid": 3970,
+  "n_invalid": 853,
+  "first_anchor_hist": {
+   "0": 1126,
+   "1": 2025,
+   "2": 819,
+   "3": 0
+  },
+  "arclengths_m": [
+   20.0,
+   40.0,
+   80.0,
+   160.0
+  ],
+  "note": "goal_targets picks the FIRST leak-guard-admissible anchor; strategic_goal_loss is MASKED by any_valid"
+ },
+ "SIGN_HISTOGRAM": {
+  "_convention": "+lateral is LEFT (dump ORIENTATION_CONTROL: mean GT terminal y +2.8608 under nav=LEFT, -4.1898 under nav=RIGHT)",
+  "TARGET_all_windows": {
+   "LEFT": 268,
+   "STRAIGHT": 4083,
+   "RIGHT": 472
+  },
+  "TARGET_valid_only": {
+   "LEFT": 268,
+   "STRAIGHT": 3230,
+   "RIGHT": 472
+  },
+  "OUTPUT_g_str_all_windows": {
+   "LEFT": 0,
+   "STRAIGHT": 0,
+   "RIGHT": 4823
+  },
+  "OUTPUT_g_str_valid_only": {
+   "LEFT": 0,
+   "STRAIGHT": 0,
+   "RIGHT": 3970
+  }
+ },
+ "DISTRIBUTIONS": {
+  "TARGET_lateral_valid": {
+   "min": -0.8061,
+   "p1": -0.5844,
+   "p25": -0.0233,
+   "median": -0.0025,
+   "p75": 0.0094,
+   "p99": 0.5278,
+   "max": 0.8559,
+   "frac_negative": 0.5861,
+   "frac_positive": 0.4139
+  },
+  "TARGET_lateral_all": {
+   "min": -0.8061,
+   "p1": -0.5502,
+   "p25": -0.0138,
+   "median": 0.0,
+   "p75": 0.0048,
+   "p99": 0.4864,
+   "max": 0.8559,
+   "frac_negative": 0.4825,
+   "frac_positive": 0.3407
+  },
+  "OUTPUT_lateral": {
+   "min": -0.9711,
+   "p1": -0.8844,
+   "p25": -0.6583,
+   "median": -0.5308,
+   "p75": -0.3917,
+   "p99": -0.1378,
+   "max": -0.1022,
+   "frac_negative": 1.0,
+   "frac_positive": 0.0
+  },
+  "TARGET_cos_valid": {
+   "min": 0.5172,
+   "p1": 0.7591,
+   "p25": 0.998,
+   "median": 0.9999,
+   "p75": 1.0,
+   "p99": 1.0,
+   "max": 1.0,
+   "frac_negative": 0.0,
+   "frac_positive": 1.0
+  },
+  "OUTPUT_dist_pref": {},
+  "TARGET_dist_pref_valid": {
+   "min": -1.0,
+   "p1": -1.0,
+   "p25": -1.0,
+   "median": -0.3333,
+   "p75": -0.3333,
+   "p99": 0.3333,
+   "max": 0.3333,
+   "frac_negative": 0.7937,
+   "frac_positive": 0.2063
+  }
+ },
+ "GT_CROSSCHECK": {
+  "rule": "the LABEL's lateral sign must agree with the GT future's own terminal lateral offset far more often than chance",
+  "n": 4823,
+  "gt_terminal_y_hist": {
+   "LEFT": 1597,
+   "STRAIGHT": 981,
+   "RIGHT": 2245
+  },
+  "agree_sign_frac": 0.7008
+ },
+ "TARGET_VS_OUTPUT": {
+  "pearson_r": 0.0664,
+  "cos_loss_1_minus_cos": 0.15,
+  "_note": "r is over the VALID-label windows only"
+ }
+}

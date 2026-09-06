@@ -164,6 +164,19 @@ WHEELBASE_CONST2P9: float = 2.9
 #: Ego block layout: (v0, a_long, yaw_rate, curvature, ego_keep). FOUR value
 #: channels + the X15 validity bit.
 EGO_DIMS: int = 5
+#: Nav-arg block layout: (distance_norm, time_norm, args_valid) -- TWO value
+#: channels from `vocab_v7.NAV_ARG_SLOTS` + the validity bit, EXACTLY the
+#: `EGO_DIMS` shape above and for exactly the same reason. ⛔ The bit is not a
+#: nicety: `NAV_FOLLOW_ROAD` carries `args: {}` on 2,897/2,897 train and 96/96
+#: eval records, and `NavEmitter._args_for_window` defaults a missing slot to
+#: 0.0, so without it the model is told "the turn is HERE, NOW" on the
+#: follow-road majority. ⛔ UNITS: metres and seconds BEFORE normalisation;
+#: the normalisation is fit-split-only (`NavArgStats`) and is stamped into
+#: `config.json` beside the slot names.
+NAV_ARG_DIMS: int = 3
+#: The raw units the two value channels carry BEFORE normalisation. Written
+#: into `config.json`; a run whose record lacks them is not quotable.
+NAV_ARG_UNITS: tuple[str, ...] = ("distance_m:metres", "time_s:seconds")
 #: Per-channel scales, so the block enters at ~unit magnitude. MEASURED on the
 #: val epcache (40 ep / 7,963 frames): v std 3.671, a std 0.931, r std 0.159,
 #: k std 0.055 — these are ~2 sigma, not guesses.
@@ -355,6 +368,32 @@ class RefCV3Config:
     # ⛔ Does NOT relax E11 — `v0` remains refused into every goal node; nav is
     # a route command, which the admissibility ruling permits.
     nav_inject: bool = True
+
+    # --- E13b: the nav command's CONTINUOUS ARGS (D-GSTR-1 P3, 2026-09-06) ---
+    # ⭐ THE FIELD ALREADY EXISTS IN THE LABEL AND WAS NEVER FED. MEASURED:
+    # `vocab_v7.NAV_ARG_SLOTS = ("distance_m", "time_s")`, written by
+    # `s2_geom_emit_v7.nav_command()` on EVERY turn token (train TURN_L median
+    # 27.3 m / 7.2 s, TURN_R 36.6 m / 7.4 s, max ~690 m / 33.6 s). v6/v7f FEED
+    # both through `NavConditioner.arg_proj = Linear(2, d_embed)`; refav1
+    # DISCARDS them; refcv3/refcv4b NEVER READ them -- the join takes
+    # `nav.get("token")` and stores one integer. So refcv4b's nav input is
+    # exactly the stripped BEARING that is separated WORSE by +2.3632 m, while
+    # a goal carrying RANGE recovers 57.1 % of the longitudinal ceiling.
+    #
+    # ⛔ THREE SLOTS, NOT TWO -- the third is a VALIDITY CHANNEL and it is
+    # not optional. MEASURED: `NAV_FOLLOW_ROAD` carries `args: {}` -- EMPTY on
+    # 2,897/2,897 train and 96/96 eval records -- and the consumer's
+    # `_args_for_window` defaults a missing slot to 0.0. A silent 0.0 is a LIE
+    # that reads "the turn is HERE, NOW"; it is the `_ensure_ego` default trap
+    # in a nav costume.
+    #
+    # ⛔ UNITS ARE DECLARED, NOT REMEMBERED. `distance_m` is METRES,
+    # `time_s` is SECONDS, and both arrive ALREADY NORMALISED by fit-split
+    # statistics (`tanitad.models.nav_conditioning.NavArgStats`). Units,
+    # constants and semantics are stamped into `config.json` by the trainer.
+    #
+    # ⚠️ Default OFF: no banked arm's recipe changes.
+    nav_args_inject: bool = False
     n_nav_commands: int = 4           # == len(refb.NAV_COMMANDS), test-pinned
     d_nav: int = 64
 
@@ -748,8 +787,25 @@ class RefCV3Model(nn.Module):
             for lin in (self.nav_to_tac, self.nav_to_str):
                 nn.init.zeros_(lin.weight)
                 nn.init.zeros_(lin.bias)
+            # ⭐ E13b -- the args ride the SAME embedding by ADDITION, which
+            # is `NavConditioner.encode`'s contract verbatim
+            # (`embed(token_id) + arg_proj(args)`), not a new one. Following
+            # that class rather than importing it is deliberate: its
+            # `arg_proj` is `Linear(2, d_embed)` and widening it to 3 would
+            # change the shape every v6/v7f checkpoint loads.
+            # ⛔ NOT zero-init, and that is the CORRECT reading of the
+            # contract: in `NavConditioner` it is the OUTPUT projection
+            # (`layer_proj`) that is zeroed, never `arg_proj`. Here
+            # `nav_to_tac`/`nav_to_str` ARE the output projections and are
+            # already zeroed above, so the whole nav term is exactly 0 at
+            # step 0 with or without this line -- bit-identity is already
+            # bought, and a second zero would only stall this projection's
+            # gradient by one step for nothing.
+            self.nav_arg_proj = (nn.Linear(NAV_ARG_DIMS, cfg.d_nav)
+                                 if cfg.nav_args_inject else None)
         else:
             self.nav_inj = None
+            self.nav_arg_proj = None
 
         # ⭐⭐ E11' — THE MEASURED EGO STATE INTO THE TACTICAL AND STRATEGIC
         # STATES (PI 2026-09-03). Structurally the E13 nav block one edge over,
@@ -930,7 +986,8 @@ class RefCV3Model(nn.Module):
 
     # --- the in-forward hierarchy supplier ----------------------------------
     def _hook(self, cache: dict, nav_cmd: Tensor | None = None,
-              ego_state: Tensor | None = None):
+              ego_state: Tensor | None = None,
+              nav_args: Tensor | None = None):
         cfg = self.cfg
         # ⭐⭐ STRATEGIC BYPASS (`--no-strategic`, PI 2026-09-06). Read from
         # the CORE config so there is exactly ONE source of truth for the flag
@@ -958,6 +1015,31 @@ class RefCV3Model(nn.Module):
             nav_t = nav_s = None
             if self.nav_inj is not None and nav_cmd is not None:
                 e = self.nav_inj(nav_cmd.reshape(-1).long())      # [B, d_nav]
+                # ⭐ E13b -- RANGE AND TIME, ADDED TO THE TOKEN'S OWN CODE.
+                # `NavConditioner.encode` is `embed(id) + arg_proj(args)`; this
+                # is that line with a third, VALIDITY slot. The token still
+                # says WHICH way; the args say HOW FAR and HOW SOON, which is
+                # the half the published goal-conditioning wins are about.
+                if self.nav_arg_proj is not None and nav_args is not None:
+                    a = nav_args.to(e.dtype).reshape(e.shape[0], -1)
+                    if a.shape[-1] != NAV_ARG_DIMS:
+                        raise ValueError(
+                            f"nav_args must be [B, {NAV_ARG_DIMS}] = "
+                            f"(distance_norm, time_norm, args_valid), got "
+                            f"{tuple(nav_args.shape)}. The validity slot is "
+                            f"NOT optional: NAV_FOLLOW_ROAD carries empty "
+                            f"args and a silent 0.0 says 'the turn is here, "
+                            f"now'.")
+                    # ⛔ THE BIT GATES THE VALUES, IN THE MODEL, NOT ONLY
+                    # IN THE LOADER. X15's rule: the consumer re-applies the
+                    # flag so a caller that forgot to zero an invalid row
+                    # cannot leak a phantom range. The bit itself always
+                    # passes, so "no range known" stays a distinct, learnable
+                    # input rather than collapsing onto "0 m away".
+                    a = torch.cat([a[:, :NAV_ARG_DIMS - 1]
+                                   * a[:, NAV_ARG_DIMS - 1:],
+                                   a[:, NAV_ARG_DIMS - 1:]], dim=-1)
+                    e = e + self.nav_arg_proj(a)
                 nav_t, nav_s = self.nav_to_tac(e), self.nav_to_str(e)
                 z_tac_raw = z_tac_raw + nav_t                     # -> tactical
                 ctx = ctx + nav_s                                 # -> strategic
@@ -1140,7 +1222,8 @@ class RefCV3Model(nn.Module):
                 withheld_speed: Tensor | None = None,
                 gp_point: Tensor | None = None,
                 gp_valid: Tensor | None = None,
-                agent_gt: dict | None = None) -> dict:
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -1215,6 +1298,26 @@ class RefCV3Model(nn.Module):
                 "does not matter', which is exactly the PREREG §4 gate "
                 "failing for the wrong reason. Build with "
                 "--goal-point-geo-prior, or stop passing gp_point.")
+        # ⛔ SAME REFUSAL AS `ego_state` AND `gp_point` ABOVE, AND FOR
+        # THE SAME REASON. A build without the E13b seam would SILENTLY DROP
+        # the range and the arm would read as "the nav args do not help"
+        # while never having had them -- the exact shape of the finding this
+        # seam exists to overturn (refav1 binds them to `_args` and never
+        # uses them again; refcv3 never read them at all).
+        if nav_args is not None and not self.cfg.nav_args_inject:
+            raise ValueError(
+                "nav_args was supplied but this build has no E13b seam "
+                "(`cfg.nav_args_inject` is False) - it would be SILENTLY "
+                "DROPPED and the arm would report as +nav-args while running "
+                "on the bare 3-way token. Build with --nav-args, or stop "
+                "passing nav_args.")
+        if nav_args is None and self.cfg.nav_args_inject \
+                and nav_cmd is not None:
+            raise ValueError(
+                "this build is --nav-args but no nav_args reached the "
+                "forward while a nav token did. Refusing rather than "
+                "defaulting: a silent zero would say 'the turn is here, now' "
+                "on every window and the channel would be measured as noise.")
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                              nav_known=nav_known, ego_keep=ego_keep,
@@ -1224,7 +1327,8 @@ class RefCV3Model(nn.Module):
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
-                        hierarchy_hook=self._hook(cache, nav_cmd, ego_state),
+                        hierarchy_hook=self._hook(cache, nav_cmd, ego_state,
+                                                  nav_args),
                         withheld_speed=withheld_speed,
                         gp_point=gp_point, gp_valid=gp_valid,
                         agent_gt=agent_gt)
@@ -1363,6 +1467,10 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
         if model.nav_inj is not None:
             out["nav_inject"] = (cnt(model.nav_inj) + cnt(model.nav_to_tac)
                                  + cnt(model.nav_to_str))
+            # E13b rides the same ledger line's rule: parameters that exist
+            # and are not accounted break `test_param_breakdown_smoke_sums`.
+            if getattr(model, "nav_arg_proj", None) is not None:
+                out["nav_inject"] += cnt(model.nav_arg_proj)
         # ⭐ D-TACGOAL-1 — the 22-token goal-SET head, accounted EXPLICITLY and
         # SEPARATELY from `tac_heads`. ⚠️ It is deliberately its own line: the
         # prereg quotes this ledger as the arm's capacity cost, and the arm's

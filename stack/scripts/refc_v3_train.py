@@ -290,6 +290,45 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # Applied to BOTH arms, so `config_delta` (hier vs flat) is unchanged.
     if getattr(args, "sel_accel_max", None) is not None:
         cfg.core.sel_accel_max = float(args.sel_accel_max)
+    # ---- refcv5 P14: THE SAMPLER MUST RANK THE FAN IT EMITTED ------------ #
+    # ⛔ REFUSE THE HARMFUL HALF ON ITS OWN, BEFORE THE COMPUTE. `--sel-refined`
+    # without `--sel-score-emitted` ranks by a score one denoising pass STALE,
+    # and it is MEASURED 0.0259 m separated WORSE while flipping 29.82 % of
+    # picks. `refc_train.py` already refuses the mirror-image split; this is the
+    # same guard in the trainer that actually launches refcv5.
+    _sel_ref = bool(getattr(args, "sel_refined", False))
+    _sel_emit = bool(getattr(args, "sel_score_emitted", False))
+    if _sel_ref and not _sel_emit:
+        raise SystemExit(
+            "[v3] ⛔ --sel-refined WITHOUT --sel-score-emitted ranks the fan by "
+            "a score one pass STALE. MEASURED: 0.0259 m separated WORSE, "
+            "29.82 % of picks flipped, BOTH minority recalls lowered. Pass "
+            "--sel-score-emitted too, or neither.")
+    if _sel_emit and not _sel_ref:
+        raise SystemExit(
+            "[v3] ⛔ --sel-score-emitted WITHOUT --sel-refined is INERT: the "
+            "ranked score is `refined if sel.refined else conf`, so the "
+            "emitted-fan pass would be computed and then DISCARDED -- a run "
+            "that costs an extra decoder pass per step and changes nothing, "
+            "while `sampler_ranks_the_fan` still stamps False. Pass both.")
+    cfg.core.sel_refined = _sel_ref
+    cfg.core.sel_score_emitted = _sel_emit
+    cfg.core.sel_score_emitted_t = int(getattr(args, "sel_score_emitted_t", -1))
+    # ⚠️ ON A SAMPLER ARM THE DEFAULT t IS THE WRONG ONE, AND IT IS SILENT.
+    # `-1` means "continue the refinement loop's schedule", which is an
+    # `nn.Embedding` index. The sampler conditions through the CONTINUOUS
+    # `time_mlp` and its emitted fan is the FULLY DENOISED state, so the pass
+    # that scores it must name t = 0. Corrected here rather than refused,
+    # because the operator asking for both flags on a `ddim` arm can only mean
+    # this -- and the correction is STAMPED so the record says who chose it.
+    if (_sel_emit and str(getattr(args, "sampler", "none")) == "ddim"
+            and int(getattr(args, "sel_score_emitted_t", -1)) < 0):
+        cfg.core.sel_score_emitted_t = 0
+        args.sel_score_emitted_t = 0
+        args.sel_score_emitted_t_source = "auto-zero-on-ddim"
+        print("[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t "
+              "-1 -> 0 (the emitted fan IS the denoised state; -1 would index "
+              "the refinement loop's embedding table instead)")
     # ⭐ refcv4-b — the v0-CONDITIONED vocabulary. Applied to BOTH arms, so
     # `config_delta` (hier vs flat) is unchanged and C122 still passes.
     if getattr(args, "n_anchors", None):
@@ -325,6 +364,25 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
         if _am.get("alat_v_floor") is not None:
             cfg.core.anchors.alat_v_floor_ms = float(_am["alat_v_floor"])
     _pin_refcv5_seams(cfg, args)
+    # ---- ⭐ E13b (D-GSTR-1 P3): the nav command's range and time -----------
+    # ⛔ REFUSED WITHOUT ITS SUPPLIER AND WITHOUT ITS SEAM. `--nav-args`
+    # without `--nav-from-v7` has no args to read (the values live on the
+    # v7.2 record); with `--goal-point-inject` the nav path is switched OFF
+    # entirely by the pre-registration above, so feeding args into it would
+    # silently do nothing. Both are refused here, at config time, rather than
+    # discovered as a flat result.
+    if getattr(args, "nav_args", False):
+        if not getattr(args, "nav_from_v7", False):
+            raise SystemExit(
+                "[v3] ⛔ --nav-args requires --nav-from-v7: `distance_m` / "
+                "`time_s` live on the v7.2 nav_command record and there is "
+                "no other supplier. Refusing rather than feeding zeros.")
+        if not cfg.nav_inject:
+            raise SystemExit(
+                "[v3] ⛔ --nav-args with the nav path OFF (nav_inject=False, "
+                "e.g. under --goal-point-inject) would be a silently inert "
+                "flag. Refusing.")
+        cfg.nav_args_inject = True
     return cfg
 
 
@@ -1098,6 +1156,7 @@ class V3Dataset(RouteV21Dataset):
                 "the manifest carries the stamp")
         assert_nav_token_alignment()
         nav_by_sid: dict[int, int] = {}
+        args_by_sid: dict[int, tuple] = {}
         for sid, lab in self.v7_by_sid.items():
             nav = v7l.oracle_nav(lab, manifest) or {}      # ⭐ the gate
             tok = nav.get("token")
@@ -1107,6 +1166,19 @@ class V3Dataset(RouteV21Dataset):
                     f"legacy mapping (known: {sorted(NAV_TOKEN_TO_LEGACY)}) — "
                     f"vocabulary drift is a different experiment, refused")
             nav_by_sid[sid] = refb.NAV_COMMANDS.index(NAV_TOKEN_TO_LEGACY[tok])
+            # ⭐ D-GSTR-1 P3 — THE ARGS, WHICH THIS LINE USED TO THROW AWAY.
+            # ⛔ VALIDITY IS READ FROM THE KEY'S PRESENCE, NEVER FROM THE
+            # VALUE. `NavEmitter._args_for_window` defaults a missing slot to
+            # 0.0, so `distance_m == 0.0` is AMBIGUOUS: it is either "the turn
+            # is 0 m away" or "there is no turn". MEASURED: `NAV_FOLLOW_ROAD`
+            # carries `args: {}` on 2,897/2,897 train and 96/96 eval records,
+            # and 69.97 % of train records present distance 0.0 to a consumer.
+            # Presence of the KEY is the only signal that separates the two.
+            _a = nav.get("args") or {}
+            _ok = ("distance_m" in _a) and ("time_s" in _a)
+            args_by_sid[sid] = (float(_a.get("distance_m", 0.0)),
+                                float(_a.get("time_s", 0.0)),
+                                1.0 if _ok else 0.0)
         counts = {name: 0 for name in NAV_TOKEN_TO_LEGACY.values()}
         missing = 0
         for ep in self.episodes:
@@ -1121,6 +1193,7 @@ class V3Dataset(RouteV21Dataset):
                 f"[v3] ⛔ --nav-from-v7 joined ZERO of {n} clips — wrong label "
                 f"blob for this corpus (md5={manifest.md5})")
         self._nav_by_sid = nav_by_sid
+        self._nav_args_by_sid = args_by_sid
         self.v7_manifest = manifest
         self.nav_from_v7 = True
         self.nav_from_v7_stats = {
@@ -1135,6 +1208,85 @@ class V3Dataset(RouteV21Dataset):
               f"{counts['left']} / right {counts['right']}, missing {missing} "
               f"(of {n} clips; md5={manifest.md5})", flush=True)
         return self.nav_from_v7_stats
+
+    # ---- D-GSTR-1 P3: the nav command's CONTINUOUS ARGS ------------------
+
+    def enable_nav_args(self, stats=None) -> dict:
+        """Turn the ``distance_m`` / ``time_s`` channel ON for this dataset.
+
+        ⛔ ``stats`` IS THE FIT SPLIT'S NORMALISER AND THE EVAL DATASET MUST BE
+        HANDED THE TRAIN ONE. Passing ``None`` FITS on this dataset's own
+        clips, which is correct exactly once — on the train split. An eval
+        dataset that fits its own statistics is the 2026-08-22 ridge-probe
+        failure wearing a loader costume: a statistic fitted on the data it
+        will later score makes the channel look more informative than it is.
+        The trainer therefore fits once and passes the object down; this
+        method REFUSES to fit twice by recording which happened.
+
+        ⛔ FIT ON THE **VALID** ROWS ONLY. `NAV_FOLLOW_ROAD` presents 0.0/0.0
+        with `valid = 0`, and on our corpus that is the MAJORITY (2,897/4,572
+        train records). Folding those zeros into the mean/std would compress
+        the real turn distances toward the pad value and hand the model a
+        normaliser fitted mostly on padding.
+
+        Returns the census that goes into ``config.json`` — including THE
+        NUMBER THAT DECIDES WHETHER THIS CHANNEL CARRIES INFORMATION: the
+        fraction of this dataset's WINDOWS that receive a real distance.
+        """
+        from tanitad.models.nav_conditioning import NavArgStats
+        if not self.nav_from_v7 or self._nav_args_by_sid is None:
+            raise ValueError(
+                "[v3] --nav-args needs --nav-from-v7: the args live on the "
+                "v7.2 nav_command record and there is no other supplier. "
+                "Refusing rather than feeding a zero channel.")
+        fitted_here = stats is None
+        if fitted_here:
+            d = [v[0] for v in self._nav_args_by_sid.values() if v[2] > 0.5]
+            t = [v[1] for v in self._nav_args_by_sid.values() if v[2] > 0.5]
+            if not d:
+                raise ValueError(
+                    "[v3] ⛔ --nav-args: NOT ONE clip in this split carries "
+                    "`distance_m`/`time_s`. The channel would be a constant "
+                    "pad and the arm would measure it as noise. Refusing.")
+            stats = NavArgStats.from_fit_split(d, t)
+        self.nav_arg_stats = stats
+        self.nav_args_enabled = True
+        # ---- the census, per CLIP and per WINDOW ------------------------
+        n_clip = n_clip_valid = 0
+        n_win = n_win_valid = 0
+        for ep in self.episodes:
+            v = self._nav_args_by_sid.get(int(ep.episode_id))
+            n_clip += 1
+            if v is not None and v[2] > 0.5:
+                n_clip_valid += 1
+        for (e_i, _t) in self.index:
+            v = self._nav_args_by_sid.get(int(self.episodes[e_i].episode_id))
+            n_win += 1
+            if v is not None and v[2] > 0.5:
+                n_win_valid += 1
+        self.nav_args_report = {
+            "slots": ["distance_norm", "time_norm", "args_valid"],
+            "raw_units": ["distance_m:metres", "time_s:seconds"],
+            "semantics": "t0_constant (v7_labels.NavEmitter's default; the "
+                         "clip's t0 values are constant across its windows)",
+            "normaliser": stats.to_dict(),
+            "normaliser_fitted_here": bool(fitted_here),
+            "n_clips": n_clip, "n_clips_with_real_args": n_clip_valid,
+            "clip_valid_frac": round(n_clip_valid / max(n_clip, 1), 4),
+            "n_windows": n_win, "n_windows_with_real_args": n_win_valid,
+            #: ⭐ THE NUMBER THAT DECIDES THE CLAIM. Quote this, not the clip
+            #: fraction, before saying the channel carries information.
+            "window_real_distance_frac": round(n_win_valid / max(n_win, 1), 4),
+            "_reads": ("args_valid=0 rows carry pad values that the MODEL "
+                       "re-zeroes (refc_v3.py E13b); the bit itself always "
+                       "passes, so 'no range known' stays a distinct input."),
+        }
+        print(f"[v3] nav_args: {n_clip_valid}/{n_clip} clips and "
+              f"{n_win_valid}/{n_win} windows carry a REAL distance "
+              f"({self.nav_args_report['window_real_distance_frac']}); "
+              f"normaliser fitted_here={fitted_here} "
+              f"n_fit={stats.n_fit}", flush=True)
+        return self.nav_args_report
 
     # ---- refcv5 WP-6: obstacle.offline -> the batch ---------------------
     def enable_agent_join(self, reader, pad: int = 0,
@@ -1352,6 +1504,22 @@ class V3Dataset(RouteV21Dataset):
             else:
                 item["nav_cmd"] = torch.tensor(nav_idx, dtype=torch.long)
                 item["nav_valid"] = torch.tensor(True)
+            # ---- --nav-args: (distance_norm, time_norm, args_valid) -------
+            # ⛔ ALWAYS EMITTED WHEN THE CHANNEL IS ON, including for a clip
+            # with no record — as an EXPLICITLY INVALID row, never a missing
+            # key. A batch that sometimes carries `nav_args` and sometimes
+            # does not would make the model's own "supplied but no seam /
+            # seam but not supplied" refusals fire at random.
+            if self.nav_args_enabled:
+                st = self.nav_arg_stats
+                raw = (self._nav_args_by_sid or {}).get(int(ep.episode_id))
+                if raw is None or raw[2] <= 0.5:
+                    item["nav_args"] = torch.zeros(3, dtype=torch.float32)
+                else:
+                    dn = (raw[0] - st.distance_mean) / st.distance_std
+                    tn = (raw[1] - st.time_mean) / st.time_std
+                    item["nav_args"] = torch.tensor([dn, tn, 1.0],
+                                                    dtype=torch.float32)
         # ---- refcv5 WP-6: the obstacle.offline target block ---------------
         # The window's NOW is the last OBSERVED frame -- the same t + w - 1
         # the v7.2 tactical labels above are read at, so the detector and the
@@ -1498,6 +1666,10 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     pose_last = batch["pose_last"].to(device)
     nav_cmd = batch["nav_cmd"].to(device)
     nav_valid = batch["nav_valid"].to(device)
+    # ⭐ D-GSTR-1 P3 (E13b): the nav command's range and time, if the loader
+    # emitted them. Absent from the batch = the channel is off, and the model
+    # REFUSES the mismatch in either direction rather than dropping it.
+    nav_args = (batch["nav_args"].to(device) if "nav_args" in batch else None)
     route_tgt = batch["route_target"].to(device)
     goal_tac = batch["goal_tac"].to(device)                 # [B, K, 4]
     goal_valid = batch["goal_tac_valid"].to(device)         # [B, K] bool
@@ -1518,7 +1690,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             device=device)
 
     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
-                ego_state=ego_state)
+                ego_state=ego_state, nav_args=nav_args)
 
     # ---- trajectory target over the 8-slot 6 s horizon, masked -------------
     traj_tgt = refb_labels.waypoint_targets(pose_last, fut_ext,
@@ -3204,6 +3376,7 @@ def train(args) -> dict:
     u8 = bool(getattr(args, "u8_batches", False))
     ds.u8_frames = u8
     nav_stats = eval_nav_stats = v7_manifest = None
+    nav_args_stats = eval_nav_args_stats = None
     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
     if args.v7_labels:
         from tanitad.data.v2_dataset import stable_episode_id
@@ -3236,6 +3409,10 @@ def train(args) -> dict:
         # (MEASURED, nav-source-agreement package); the two agree on 65.5 %.
         if nav_on:
             nav_stats = ds.enable_nav_from_v7(manifest)
+            # ⭐ D-GSTR-1 P3 (E13b): the args, fitted HERE — on the TRAIN
+            # split — and handed down to the eval dataset unchanged.
+            if getattr(args, "nav_args", False):
+                nav_args_stats = ds.enable_nav_args()
     # ---- refcv5 WP-6: the obstacle.offline join (E-AGT-HEAD labels) -------
     # ⛔ The reader is RESTRICTED to this corpus's episode ids. The full train
     # join is 433,040 records / 12.1 M boxes and costs ~2.1 GB RSS (MEASURED
@@ -3294,6 +3471,12 @@ def train(args) -> dict:
             # (refused above when --eval-labels is missing)
             if nav_on:
                 eval_nav_stats = e_ds.enable_nav_from_v7(e_man)
+                # ⛔ THE EVAL DATASET IS HANDED THE TRAIN SPLIT'S NORMALISER,
+                # NEVER ITS OWN. Fitting here would be a statistic fitted on
+                # the data it is about to score.
+                if getattr(args, "nav_args", False):
+                    eval_nav_args_stats = e_ds.enable_nav_args(
+                        stats=ds.nav_arg_stats)
         # the eval sees the SAME label source as training, with its OWN
         # episode restriction -- and the SAME pad, so the two blocks are
         # directly comparable rather than two different paddings.
@@ -3431,6 +3614,33 @@ def train(args) -> dict:
         "selection": {
             "sel_reach_clamp": bool(cfg.core.sel_reach_clamp),
             "sel_accel_max": float(cfg.core.sel_accel_max),
+            # ---- refcv5 P14 --------------------------------------------- #
+            # ⛔ STAMPED BECAUSE THE ABSENCE OF THIS ROW IS HOW THE DEFECT
+            # SURVIVED. refcv5's `config.json` recorded `sampler: ddim` and
+            # `sampler_train_t_max: 50` and said NOTHING about what ranked the
+            # fan, so a reader had no way to tell a sampled-and-ranked arm from
+            # a sampled-then-ranked-by-a-stale-score arm. `sampler_ranks_the_fan`
+            # is the one key that separates them and it lived only in per-batch
+            # telemetry, which nobody re-reads.
+            "sel_refined": bool(getattr(cfg.core, "sel_refined", False)),
+            "sel_score_emitted": bool(getattr(cfg.core, "sel_score_emitted",
+                                              False)),
+            "sel_score_emitted_t": int(getattr(cfg.core,
+                                               "sel_score_emitted_t", -1)),
+            "sel_score_emitted_t_source": str(
+                getattr(args, "sel_score_emitted_t_source", "operator")),
+            # The single fact a reader needs, precomputed, in the CONFIG.
+            "sampler_ranks_the_fan": bool(
+                getattr(cfg.core, "sel_refined", False)
+                and getattr(cfg.core, "sel_score_emitted", False)),
+            "p14_note": (
+                "sampler_ranks_the_fan is False unless BOTH sel_refined and "
+                "sel_score_emitted are set. False means the emitted fan was "
+                "ranked by a score computed before any sample was drawn. "
+                "MEASURED ceiling on the banked fan (n=881/40 ep, paired "
+                "episode-cluster bootstrap): base 0.4728 -> 0.1914 m ADE "
+                "(+0.2813, CI [+0.2127,+0.3543]), a >2x-better trajectory in "
+                "the fan on 41.09 % of windows; xl +0.3075 m, 45.40 %."),
             "horizon_s": float(cfg.core.selection().horizon_s),
             "band_ms": float(cfg.core.sel_accel_max
                              * cfg.core.selection().horizon_s),
@@ -3490,6 +3700,15 @@ def train(args) -> dict:
                                else NAV_V1_DERIVATION),
         "nav_from_v7_stats": ({"train": nav_stats, "eval": eval_nav_stats}
                               if nav_on else None),
+        # ⭐ D-GSTR-1 P3 (E13b): the nav ARGS channel. ⛔ A tensor carries its
+        # UNITS or it is inadmissible — the raw slots are METRES and SECONDS,
+        # the normaliser is fit-split-only, and `window_real_distance_frac`
+        # is the number that decides whether the channel carries information
+        # at all (69.97 % of train RECORDS present distance 0.0).
+        "nav_args": bool(getattr(args, "nav_args", False)),
+        "nav_args_stats": ({"train": nav_args_stats,
+                            "eval": eval_nav_args_stats}
+                           if getattr(args, "nav_args", False) else None),
         "v7_labels": v7_manifest,
         # ⭐ refcv5 WP-6: WHICH labels the detector saw, and HOW MANY windows
         # actually carried one. A run that stamps `w_agent > 0` without this
@@ -3831,6 +4050,50 @@ def build_parser() -> argparse.ArgumentParser:
                     help="G samples per anchor. Only G=1 is implemented; G>1 "
                          "refuses and names the three consumers that still "
                          "assume an N-wide fan.")
+    # ---- refcv5 P14: THE SAMPLER MUST RANK THE FAN IT EMITTED ----------- #
+    # ⛔⛔ THESE TWO FLAGS DID NOT EXIST IN THIS TRAINER, AND THAT IS THE WHOLE
+    # DEFECT. MEASURED 2026-09-06: `sel_refined` / `sel_score_emitted` appear
+    # ZERO times in `refc_v3_train.py` (control: `sel_` appears 8 times, so the
+    # zero is not a broken probe), while `refc_train.py` -- the v1.2 trainer --
+    # has carried both since D-SEL. So `AnchoredDiffusionDecoder` implements
+    # emitted-fan ranking, `refc.py` stamps `sampler_ranks_the_fan:
+    # bool(self.sel.refined)` into every telemetry row, and the refcv5 arm had
+    # NO WAY TO SET IT. It shipped `False`: the fan is SAMPLED, then ranked by
+    # the CLASSIFIER surface -- a score computed BEFORE any sample was drawn.
+    #
+    # ⭐ WHAT IT COSTS, MEASURED ON THE BANKED FAN AT ZERO GPU (n = 881 windows
+    # / 40 episodes, paired episode-cluster bootstrap):
+    #   refc-base-30k  ADE 0.4728 shipped vs 0.1914 fan-best -- a recoverable
+    #                  +0.2813 m, 95 % CI [+0.2127, +0.3543], separated;
+    #                  a >2x-better trajectory sits IN THE FAN on 41.09 % of
+    #                  windows and the ranking does not pick it.
+    #   refc-xl-30k    +0.3075 m, CI [+0.2397, +0.3778]; 45.40 % of windows.
+    # ⚠️ That is a CEILING on the lever, not its expected value -- it is what a
+    # perfect re-ranking of the SAME fan would buy.
+    #
+    # ⛔ THE TWO ARE A PAIR AND THE TRAINER REFUSES THEM SPLIT (mirroring
+    # `refc_train.py`'s own refusal). `--sel-refined` ALONE is the MEASURED
+    # HARMFUL lever: 0.0259 m separated WORSE, flipping 29.82 % of picks and
+    # lowering BOTH minority recalls -- because it ranks by a score that is one
+    # pass STALE. `--sel-score-emitted` is what makes the score describe the
+    # EMITTED fan; together they are the fix, apart they are the defect.
+    g5.add_argument("--sel-refined", action="store_true",
+                    help="rank by the REFINED/SAMPLED confidence instead of "
+                         "the classifier surface. [!] ALONE THIS IS THE "
+                         "MEASURED-HARMFUL LEVER (0.0259 m separated WORSE): "
+                         "it ranks by a 1-pass-stale score. Must be paired "
+                         "with --sel-score-emitted.")
+    g5.add_argument("--sel-score-emitted", action="store_true",
+                    help="P14. Score the EMITTED fan with one extra pass whose "
+                         "OFFSET IS DISCARDED, so `anchor_traj` is bit- "
+                         "unchanged and every banked oracle-in-fan contrast "
+                         "stays comparable. Requires --sel-refined.")
+    g5.add_argument("--sel-score-emitted-t", type=int, default=-1,
+                    help="timestep for the emitted-fan scoring pass. -1 "
+                         "continues the loop's own schedule. [!] ON A SAMPLER "
+                         "ARM PASS 0: the sampler conditions through the "
+                         "CONTINUOUS `time_mlp`, and t must name the fully "
+                         "denoised state the fan actually is.")
     g5.add_argument("--w-u0", type=float, default=U0_WEIGHT_DEFAULT,
                     help="weight on the x0 loss, in CONTROL space -- the only "
                          "term that supervises the sampler in the space it "
@@ -4113,6 +4376,24 @@ def build_parser() -> argparse.ArgumentParser:
                     help="override core.ego_dropout. Under v4 this is ONE "
                          "draw per sample, shared by the goal path and the "
                          "measurement encoder (never two).")
+    ap.add_argument("--nav-args", action="store_true",
+                    help="⭐ E13b (D-GSTR-1 P3) — FEED the nav command's "
+                         "CONTINUOUS ARGS `distance_m` (METRES) and `time_s` "
+                         "(SECONDS) alongside its token, plus an explicit "
+                         "VALIDITY BIT. MEASURED: the field is written by "
+                         "s2_geom_emit_v7.nav_command() on every TURN token "
+                         "(train TURN_L median 27.3 m / 7.2 s, TURN_R 36.6 m "
+                         "/ 7.4 s), v6/v7f already FEED it through "
+                         "NavConditioner.arg_proj, refav1 DISCARDS it, and "
+                         "this loader NEVER READ it -- so refcv4b's nav input "
+                         "is the stripped BEARING that is separated WORSE by "
+                         "+2.3632 m. ⛔ The validity bit is NOT optional: "
+                         "NAV_FOLLOW_ROAD carries `args: {}` on 2,897/2,897 "
+                         "train records and a silent 0.0 says 'the turn is "
+                         "here, now'. ⛔ Requires --nav-from-v7. Normaliser "
+                         "is FIT-SPLIT ONLY and is stamped in config.json "
+                         "with its units. Default OFF: no banked arm's "
+                         "recipe changes.")
     ap.add_argument("--nav-from-v7", action="store_true",
                     help="feed the model's nav_cmd INPUT from the clip's v7.2 "
                          "nav_command token (oracle, provenance ego-future; "
