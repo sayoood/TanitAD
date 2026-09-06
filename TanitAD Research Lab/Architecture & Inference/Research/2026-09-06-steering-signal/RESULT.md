@@ -296,12 +296,60 @@ arm with the flag ON is **bit-identical at step 0** to one without it (pinned).
 
 ---
 
-## 5. VERDICT
+## 5. ⭐ DOWNSTREAM — the signal turns left; the PLAN does not follow it
+
+⛔ **RULE ZERO: the refit is a waypoint, so the next question was RUN, not deferred.**
+The certified E head was patched into the **deployed model at inference** — a forward
+hook on `str_goal_head`, no file edited, everything else bit-identical — and the same
+windows rolled three ways. **n = 1,215 windows / 45 episodes**, T1, paired
+episode-cluster bootstrap. *(`raw/GSTR_DOWNSTREAM.json`, `tools/gstr_downstream.py`.)*
+
+⛔ **THE CONTROL THAT MAKES IT ADMISSIBLE — a NULL-PATCH arm whose hook replaces `g_str`
+with ITSELF. It must move the plan by exactly zero, or the harness perturbs by existing.
+Reading: mean 0.0000, CI [0.0000, 0.0000], MAX 0.0. PASS.**
+
+| | baseline | patched |
+|---|---|---|
+| `g_str` lateral positive (LEFT), all windows | **0.0000** | ⭐ **0.2412** |
+| `g_str` lateral positive on GT-LEFT windows (n = 318) | **0.0000** | ⭐ **0.4937** |
+| **plan terminal displacement, patch vs baseline** | — | **2.5441 m [2.2344, 2.8918]** |
+| **fraction of plans that are LEFT** (`y > 1.0 m`) | **0.2543** | ⛔ **0.2576** |
+| **plan `delta_y` on GT-LEFT windows** | — | ⛔ **−0.1359 [−0.4491, +0.1028]** |
+
+⭐ **The signal now turns left.** 0.00 % → **49.37 %** on the windows where the ground
+truth turns left, and the plan MOVES: **2.5441 m**, against the antecedent's replicate
+floor of **0.0001 m** (~25,000×) and comparable to that panel's `gstr_ZERO` **3.3130 m**.
+So `g_str` is causally live and the intervention is real.
+
+⛔ **But the PLAN does not turn left.** The LEFT-plan fraction is **unchanged**
+(0.2543 → 0.2576, +0.0033), and the GT-left `delta_y` **straddles zero** with a point
+estimate that is very slightly to the RIGHT. ⇒ **The downstream consumer responds to the
+strategic goal's PERTURBATION but not to its DIRECTION.**
+
+⭐ **That is exactly what 40,000 steps of a constant-direction input would produce**, and
+it names the second candidate the verdict already reserved: the **E4 FiLM** (and every
+weight after it) was trained against a goal that only ever pointed right, so it has had no
+reason to learn a direction-sensitive mapping. ⚠️ **It is a LOWER BOUND on a retrain and
+is NOT evidence that a retrain would fail** — a retrained arm would move the FiLM and the
+goal together, which this experiment cannot do.
+
+⚠️ Scope: 45 of 141 episodes (three forwards per window; matched across arms by
+construction, since all three come from the SAME forward call sequence on the SAME window).
+
+
+## 6. VERDICT
 
 ⭐ **The steering signal's defect is NOT a sign error, NOT a frame error, NOT a
 parameterisation limit and NOT a broken teacher. It is a head that loses to a
 constant on a two-sided label while the context it reads supports 89.8 %
 turn-direction accuracy — and the lever is the LOSS BALANCE, not the head.**
+
+⛔ **AND THE MODEL DOES NOT FOLLOW IT — MEASURED, not assumed (section 5).** Patching the
+repaired goal into the deployed model at inference makes `g_str` point LEFT on **49.37 %** of
+GT-left windows (from **0.00 %**) and moves the plan **2.5441 m [2.2344, 2.8918]** — but the
+fraction of LEFT PLANS is **unchanged**, 0.2543 -> 0.2576, and the GT-left `delta_y` is
+**-0.1359 [-0.4491, +0.1028], NOT separated**. The consumer responds to the goal's PERTURBATION
+and not to its DIRECTION.
 
 **What is certified:** the turn-weighted refit **E** clears all three
 pre-registered gates on **both** seeds, recovers **0.8935 / 0.8843** turn-direction

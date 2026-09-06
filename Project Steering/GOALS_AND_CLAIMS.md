@@ -9927,3 +9927,32 @@ rate. The bootstrap answers **episode draw**. ⚠️ n = 993/29, not the full 4,
 ⚠️ **NOT scored in this panel:** the tactical and longitudinal families (work items, §3.1 of
 `RESULT.md`), and `gstr_SHUFFLE`'s permutation pool is the full 141-episode bank.
 
+
+### ⭐⭐ D-GSTR-DOWN-10 — SUPPORTED (both halves). The signal turns left; the PLAN does not follow it.
+The certified E head was patched into the **deployed model at inference** (forward hook on
+`str_goal_head`; no file edited; everything else bit-identical) and the same windows rolled three
+ways. **n = 1,215 windows / 45 episodes**, T1, paired episode-cluster bootstrap
+(`raw/GSTR_DOWNSTREAM.json`).
+⛔ **CONTROL — a NULL-PATCH arm replacing `g_str` with ITSELF must move the plan by exactly zero:
+mean 0.0000, CI [0.0000, 0.0000], MAX 0.0. PASS.**
+
+| | baseline | patched |
+|---|---|---|
+| `g_str` lateral positive (LEFT), all windows | **0.0000** | **0.2412** |
+| `g_str` lateral positive on GT-LEFT windows (n = 318) | **0.0000** | ⭐ **0.4937** |
+| plan terminal displacement, patch vs baseline | — | **2.5441 m [2.2344, 2.8918]** |
+| fraction of plans that are LEFT (`y > 1.0 m`) | 0.2543 | ⛔ **0.2576** |
+| plan `delta_y` on GT-LEFT windows | — | ⛔ **−0.1359 [−0.4491, +0.1028]** |
+
+⭐ The signal turns left (0.00 % -> **49.37 %** on GT-left windows) and the plan MOVES **2.5441 m**
+— ~25,000x the antecedent's 0.0001 m replicate floor, comparable to its `gstr_ZERO` 3.3130 m — so
+`g_str` is causally live and the intervention is real.
+⛔ **But the plan does NOT turn left**: the LEFT-plan fraction is unchanged (0.2543 -> 0.2576) and
+the GT-left `delta_y` **straddles zero**. ⇒ **the downstream consumer responds to the strategic
+goal's PERTURBATION and not to its DIRECTION.**
+⭐ **This promotes the second candidate to a named next lever:** the **E4 FiLM** and every weight
+after it were trained for 40 k steps against a goal that only ever pointed right, so they have had
+no reason to learn a direction-sensitive mapping.
+⚠️ **It is a LOWER BOUND on a retrain, NOT evidence that a retrain would fail** — a retrained arm
+moves the FiLM and the goal together, which an inference-time patch cannot do. This does not change
+D-GSTR-TURNLEFT-9's blocker; it sharpens what the retrain must be watched for.

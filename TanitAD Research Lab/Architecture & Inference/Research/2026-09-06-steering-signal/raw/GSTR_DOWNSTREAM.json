@@ -1,0 +1,61 @@
+{
+ "tool": "D-GSTR-1 downstream counterfactual (g_str patched at inference)",
+ "evidence_class": "MEASURED (ours)",
+ "tier": "T1 (self-action OPEN loop, 2026-09-02 ruling)",
+ "estimator": "paired episode-cluster bootstrap, 2000 resamples, seed 0",
+ "n_windows": 1215,
+ "n_episodes": 45,
+ "head": "/home/nvidia/navroute/gstr_head_E.pt",
+ "_scope": "the FiLM that consumes g_str and every downstream weight were trained against the BROKEN goal, so this is a LOWER BOUND on a retrain, not an estimate of it",
+ "CONTROL_null_patch": {
+  "rule": "patching g_str with ITSELF must move the plan by EXACTLY 0",
+  "plan_terminal_displacement_m": {
+   "mean": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "n": 1215,
+   "n_ep": 45
+  },
+  "max": 0.0,
+  "PASS": true
+ },
+ "gstr_lateral": {
+  "baseline_frac_positive": 0.0,
+  "patched_frac_positive": 0.2412,
+  "baseline_frac_positive_on_GT_left": 0.0,
+  "patched_frac_positive_on_GT_left": 0.4937
+ },
+ "PLAN": {
+  "terminal_displacement_m_patch_vs_base": {
+   "mean": 2.5441,
+   "lo": 2.2344,
+   "hi": 2.8918,
+   "n": 1215,
+   "n_ep": 45
+  },
+  "plan_terminal_y_base": {
+   "mean": 0.6797,
+   "lo": -1.0317,
+   "hi": 2.4377,
+   "n": 1215,
+   "n_ep": 45
+  },
+  "plan_terminal_y_patch": {
+   "mean": 0.57,
+   "lo": -1.1261,
+   "hi": 2.3215,
+   "n": 1215,
+   "n_ep": 45
+  },
+  "delta_y_on_GT_LEFT_windows": {
+   "mean": -0.1359,
+   "lo": -0.4491,
+   "hi": 0.1028,
+   "n": 318,
+   "n_ep": 28
+  },
+  "n_gt_left": 318,
+  "frac_plans_LEFT_base": 0.2543,
+  "frac_plans_LEFT_patch": 0.2576
+ }
+}

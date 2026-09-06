@@ -42,8 +42,14 @@ def main():
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--head", default="/home/nvidia/navroute/gstr_head_E.pt")
     ap.add_argument("--out", default="/home/nvidia/navroute/GSTR_DOWNSTREAM.json")
+    ap.add_argument("--analyze-only", action="store_true",
+                    help="re-read the banked rows instead of re-rolling")
     a = ap.parse_args()
 
+    if a.analyze_only:
+        import json as _j
+        rows = _j.load(open(a.out + ".rows.json"))
+        globals()["_ROWS"] = rows
     sys.path.insert(0, "/home/nvidia/navpred/taniteval/tools")
     import refcv3_arm as A
     A._bootstrap_paths()
@@ -74,8 +80,8 @@ def main():
         if (t % max(1, a.window_stride)) == 0:
             by_ep.setdefault(e_i, []).append((i, t))
 
-    rows = []
-    for e_i in sorted(by_ep):
+    rows = globals().get("_ROWS") or []
+    for e_i in ([] if rows else sorted(by_ep)):
         ep = eps[e_i]
         for (wi, t) in by_ep[e_i]:
             item = ds[wi]
@@ -118,15 +124,27 @@ def main():
             })
         print(f"# ep {e_i} rows={len(rows)}", flush=True)
     h.remove()
+    # ⛔ BANK BEFORE ANALYSING. The first run of this script rolled all 45
+    # episodes and then died in the analysis on an IndexError, destroying
+    # output whose compute was already paid for. Rows are written FIRST and
+    # `--analyze-only` re-reads them, so a future analysis bug costs seconds.
+    import json as _json
+    with open(a.out + ".rows.json", "w") as _fh:
+        _json.dump(rows, _fh)
+    print(f"# rows banked: {len(rows)} -> {a.out}.rows.json", flush=True)
 
     def arr(k):
         return np.array([r[k] for r in rows], dtype=np.float64)
     epv = arr("ep").astype(np.int64)
 
-    def boot(x, nboot=2000, seed=0):
+    def boot(x, nboot=2000, seed=0, ev=None):
+        """`ev` MUST be the episode vector OF `x`. Passing a subset of x with
+        the full episode vector is what killed the first run."""
+        ev = epv if ev is None else ev
+        assert len(ev) == len(x), (len(ev), len(x))
         rng = np.random.default_rng(seed)
-        ue = np.unique(epv)
-        idx = {e: np.where(epv == e)[0] for e in ue}
+        ue = np.unique(ev)
+        idx = {e: np.where(ev == e)[0] for e in ue}
         d = np.empty(nboot)
         for i in range(nboot):
             pick = rng.choice(ue, size=ue.size, replace=True)
@@ -163,9 +181,9 @@ def main():
             "terminal_displacement_m_patch_vs_base": boot(arr("d_patch")),
             "plan_terminal_y_base": boot(arr("base_y")),
             "plan_terminal_y_patch": boot(arr("patch_y")),
-            "delta_y_on_GT_LEFT_windows": boot(
-                np.where(gl, arr("patch_y") - arr("base_y"), 0.0)[gl]
-                if gl.any() else np.zeros(1)),
+            "delta_y_on_GT_LEFT_windows": (
+                boot((arr("patch_y") - arr("base_y"))[gl], ev=epv[gl])
+                if gl.sum() > 1 else None),
             "n_gt_left": int(gl.sum()),
             "frac_plans_LEFT_base": round(float((arr("base_y") > 1.0).mean()), 4),
             "frac_plans_LEFT_patch": round(float((arr("patch_y") > 1.0).mean()), 4),
