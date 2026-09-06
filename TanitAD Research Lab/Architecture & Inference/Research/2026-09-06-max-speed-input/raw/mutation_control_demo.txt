@@ -1,0 +1,15 @@
+==========================================================================
+STEP 1  BASELINE (zero-init intact) -- the parity assertions must PASS
+  baseline               exit=0   29 passed in 1.71s
+STEP 2  MUTATION (zero-init removed) -- they must now FAIL
+  mutated                exit=1   2 failed, 27 passed in 1.72s
+STEP 3  RESTORED -- green again, so the mutation was the only change
+  restored               exit=0   29 passed in 1.72s
+
+==========================================================================
+baseline PASS   : True
+mutated  FAIL   : True
+restored PASS   : True
+parity tests that went RED under the mutation: ['test_ON_at_INIT_is_also_BIT_IDENTICAL', 'test_the_edge_is_BIT_INERT_at_init']
+
+VERDICT: the bit-identity assertions HAVE TEETH -- an equality that can fail
