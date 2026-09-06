@@ -54,3 +54,38 @@ lands, so a separated ADE delta is not mistaken for having addressed this review
 ⭐ **Two of the twelve turned out to be questions with clean answers rather than defects
 to fix (#3, #12), and both answers were structural** — an oracle-provenance input, and a
 vocabulary the emitter cannot reach. Neither would have been found by tuning.
+
+
+---
+
+## ⛔ ADDENDUM 2026-09-07 — THE "~84×" IN ROW #9 IS UNDER CHALLENGE AND MUST NOT BE REQUOTED
+
+Row **#9** above cites *"REF-C is ~84× worse on curvature than a plan that never
+steers (0.02737 vs 2.30973)"*. ⛔ **That figure did NOT reproduce.** The P1 gate
+arm measured the same contrast at **1.0×** on its corpus.
+
+⚠️ **That is not yet a refutation** — different corpus (B1 EVAL split 104/35),
+different checkpoint, 500 steps. Two numbers from different surfaces disagreeing
+is the *scope-error* family, not automatically an error in either.
+
+⭐ **BUT A CONCRETE MECHANISM IS NAMED, AND IT WOULD BE LARGER THAN THIS ROW.**
+The v3 horizon set is **`[5, 10, 15, 20, 30, 40, 50, 60]`** — **not uniform** —
+while `_seq_geometry` divides by a single `dt`. A rate computed by dividing a
+non-uniform sequence by one constant time step is wrong wherever the spacing
+changes, and **curvature, yaw-rate and heading-rate are all rate metrics**. ⇒ if
+this holds, it touches **every curvature number in the programme**, not this row.
+Same defect class as an anchor column that declares no units — the arithmetic is
+fine and the quantity is not what its name says. The gate agent reported every
+rate metric on the **uniform 2 s prefix only**, deliberately.
+
+⛔ **UNTIL RE-DERIVED WITH ITS HORIZON AND GRID STAMPED, DO NOT QUOTE THE 84×** —
+including in `REFCV5_MISSING_PIECES_PLAN.md` §8.2 and §6, which carry it, and in
+any briefing. ⚠️ The Master Mind quoted it to the PI several times on 2026-09-06
+without a horizon stamp; those statements inherit this caveat.
+
+⭐ **WHAT DOES NOT CHANGE:** row #9's *status* stays **OPEN** either way. The claim
+"trajectories are smooth by construction" is not established by anything, and the
+composed refcv5-v2 arm contains no smoothness lever. The magnitude is in doubt;
+the gap is not.
+
+**Registered as `D-CURV-84X-UNREPRODUCED`.**
