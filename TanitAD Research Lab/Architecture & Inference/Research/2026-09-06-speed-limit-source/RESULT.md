@@ -464,3 +464,98 @@ change can substitute — it is a dataset extension, as the sibling concluded.**
 `Sayood/tanitad-alpamayo2-augmentation` snapshot `cedbf57c…`. Every script
 above regenerates its JSON from it. Nothing lives only on a pod or only in a
 worktree.
+
+
+---
+
+## 10. ADDENDUM (same turn) — TWO MORE SOURCES, ONE OF WHICH CORRECTS §4 ABOVE
+
+⚠️ **Surfaced by a repo-wide grep that finished after this document was first
+committed.** ⛔ **AND THAT GREP IS ITSELF UNDER-REPORTING**: it returned **none**
+of the `stack/` files I had already read directly and know contain the string
+(`cot_tokens_v7.py`, `vlm_route_labels.py`,
+`test_speed_band_derivation_blocker.py`, `test_cot_speed_limit_capture.py`).
+⇒ **Neither the scoped nor the repo-wide grep is an admissible absence probe on
+this mount**, which is why no claim in this document rests on one.
+
+### 10.1 ⛔ CORRECTION to §4 — the VLM sign instrument DID run, and it DID read limits
+
+§4 said I found *"no banked output of either script carrying populated
+`sign_reads`"* and marked it **INCONCLUSIVE**. **The INCONCLUSIVE was right not
+to claim absence, but the underlying statement is now REFUTED: banked output
+exists.**
+
+**MEASURED** on `…/Data Engineering/Implementation/incoming/`
+`2026-07-21-vlm-production-semantic/sidecars_val/*.goal.vlm.json` — **24 val
+episodes**, labeler `scripts/vlm_semantic_labels.py`, model
+**`nvidia/Cosmos-Reason2-8B`**, prompt `vlmsem-2026-07-21-b`:
+
+| | |
+|---|---|
+| zero sign reads (`_note: "no sign read"`) | **20 / 24** |
+| any sign read | **4 / 24** |
+| ⭐ **`type: "speed_limit"` with a value AND a unit** | **2 / 24** |
+
+* `ep_00010` → `{"type": "speed_limit", "value": 30, "unit": "kph", "band": "high"}`
+* `ep_00019` → `{"type": "speed_limit", "value": 50, "unit": "kph", "band": "high"}`
+
+⭐ **This is a SECOND, INDEPENDENT speed-limit channel, on OUR OWN val episodes,
+and unlike Alpamayo it carries the unit explicitly** — the exact defect that
+makes 18 of the 57 CoT readings inadmissible.
+
+⛔ **What it does NOT establish.** n = 24 episodes is far too small to compare a
+rate against Alpamayo's 57/4,729 (2/24 = 8.3 % vs 1.21 % is **not** a meaningful
+comparison at this n, and I am not making it). `band: "high"` is the **model's
+own confidence**, not evidence. These are ungrounded VLM claims of exactly the
+class C87 constrains, and the **dashboard-roundel** failure mode applies
+identically — untested here, because 2 records cannot test it.
+⇒ **It raises the value of route 6.1 rather than replacing it**, and it means
+the re-ask has **two** candidate models, not one.
+
+### 10.2 ⭐ A REAL REGULATORY SOURCE EXISTS — and it is NOT PhysicalAI, and it is already discredited
+
+`…/Research/2026-08-02-nurec-xodr-map/XODR_MAP.md` establishes that the **NuRec**
+scenes ship a `map.xodr` **OpenDRIVE** file with genuine posted limits:
+road-level `<type><speed>` **54 / 116 / 49** roads at 40 / 50 / 70, lane-level
+`<speed>` **106 / 158 / 92**, georeferenced WGS84 (Stockholm).
+⇒ ⭐ **PhysicalAI has no map; the NuRec/AlpaSim scenes DO** — that is a corpus
+distinction, and route 6.3 has a concrete in-hand instance rather than a
+hypothetical.
+
+⛔⛔ **BUT IT IS ALREADY REFUTED AS A TARGET-SPEED LABEL, TWICE, AND I AM NOT
+REOPENING IT:**
+
+1. **The unit field is WRONG.** `unit="mph"` but the values are **km/h** —
+   settled on **138 roads, zero exceptions** by joining to
+   `clipgt/lane.speed_limit` (`40 mph` ↔ 24.854801 × 1.609344 = 39.9999 …).
+   **Consuming it as mph overstates every limit by 1.609×.**
+   ⭐ **THE THIRD INDEPENDENT UNIT DEFECT IN THIS REPORT** — Alpamayo states no
+   unit on 18/57; the xodr states the *wrong* unit on 138/138; only the Cosmos
+   sidecars state it correctly. **A speed limit's unit is not metadata, it is
+   half the number**, and this is the `anchors.pt` trap for the third time.
+2. **The VALUE is inconsistent with the observed driving.** 293 of 299 ego
+   samples snap to roads both sources label **40 km/h** while the ego drives
+   **70–73 km/h** for the first ~15 s (**+78 %**). The prior agent reported it as
+   a finding rather than caveating it away, hypothesised an `autolabels:v0`
+   error, and left a standing instruction: ⛔ *"must not be used as a
+   target-speed label for the LONGITUDINAL family without external
+   verification"*, and *"do NOT wire the xodr speed limit into any LONGITUDINAL
+   target-speed metric"*.
+
+⇒ ⭐ **What it WOULD unblock, stated precisely:** a lane-graph-backed speed
+ceiling for **closed-loop AlpaSim evaluation** — which per `C-ENV-1` is where the
+**under-driving** half of the PI's instruction becomes scoreable at all. ⛔ It
+cannot label a single PhysicalAI clip, so it does **not** rescue options (a) or
+(b) in §5, and its own limit field must clear §6.2's verification first.
+**Not costed here** — that is the AlpaSim stream's call, and it is escalated,
+not assumed.
+
+### 10.3 The one line that now unifies all three sources
+
+**Alpamayo CoT** (57/4,729, 18 unit-less) · **Cosmos sign_reads** (2/24, units
+correct) · **NuRec xodr** (138/138, unit *mislabelled* and value discredited).
+⇒ **Every speed-limit source this programme holds has a unit defect or a
+grounding defect, and no two of them cover the same clips.** That is the honest
+state, and it is why the sibling's `speed_limit_reading` — which refuses to emit
+`value_ms` when the unit is missing — is the right shape for whatever the PI
+decides in §5.
