@@ -147,6 +147,12 @@ from torch import Tensor, nn
 
 from tanitad.models.kinematic import rollout_unicycle
 from tanitad.refs import feasible_decode as _feas
+# refcv5 WP-4. Cheap and cycle-free: `refc_sampler` imports only
+# `tanitad.models.kinematic`, which this module already imports. WP-6's
+# `refc_agents` is imported LAZILY inside `RefCModel.__init__` instead --
+# it pulls the corpus-side raster/projection modules, and an OFF seam must
+# not pay for them.
+from tanitad.refs import refc_sampler as rs
 
 
 def _feas_with_origin(x: Tensor) -> Tensor:
@@ -411,6 +417,51 @@ class DecoderConfig:
     feasible_a_max: float = 4.0   # == rewards.A_MAX_MPS2 (the scorer's own)
     feasible_kappa_max: float = 0.2
     feasible_prefix_slots: int = 4  # the UNIFORM 2 s prefix the scorer differentiates
+    # ---- refcv5 WP-4: THE CONTROL-SPACE DIFFUSION SAMPLER (default OFF) -----
+    #
+    # ⭐ THESE ARE REAL FIELDS, AND THAT IS THE POINT. Until 2026-09-06 the
+    # trainer's `_pin_refcv5_seams` wrote `core.decoder.sampler = "ddim"` onto
+    # an UNFROZEN dataclass that had no such field. Python accepted it, the
+    # trainer's own guards read it back and passed, and `_seam_stamp` copied it
+    # into `config.json` -- for a model that contained NO DENOISER. The run
+    # record claimed a sampler the weights did not have: FALSE PROVENANCE, the
+    # `--v2` conflation failure in a new costume. A declared field plus the
+    # build below plus `assert_seams_are_built` (refc_v3_train) closes it at
+    # all three levels: the config can hold it, the model must build it, and
+    # the stamp is checked against the MODEL rather than against the config
+    # that produced it.
+    #
+    # `"none"` constructs NOTHING -- not "constructs and gates" -- so RNG draw
+    # order is unchanged and every pre-v5 checkpoint keeps loading strictly.
+    sampler: str = "none"              # "none" | "ddim"
+    # ⛔ "metre" is the DD-LITERAL DELIBERATE REGRESSION, pre-registered to FAIL
+    # the flyability gate: it noises the WAYPOINTS, so a 0.73 m lateral
+    # excursion over a 0.5 s slot implies ~5.8 m/s^2 (0.6 g) of lateral
+    # acceleration and the fan fills with paths no car can drive. An arm that
+    # cannot be RUN cannot fail, so it is a code path, not a paragraph.
+    sampler_space: str = "control"     # "control" | "metre"
+    sampler_train_t_max: int = 50      # DD's train draw, t ~ U[0, t_max)
+    sampler_infer_t: int = 8           # DD's truncation point (sigma = 0.0316)
+    sampler_steps: int = 2             # DDIM steps at inference -> ladder [10, 0]
+    # ⛔ > 1 is REFUSED at forward time, not silently honoured: a [B, G*N, ...]
+    # fan mis-indexes `loss_cls`'s a_star, the [B, N] priors and every `sel_idx`
+    # dump, all of which still assume N.
+    sampler_groups: int = 1
+    # (a_lon, a_lat) m/s^2 -- the normaliser the anchored Gaussian and the x0
+    # loss both divide by, so "sigma at t=8" means the same thing in both.
+    control_norm: tuple[float, float] = (4.0, 3.0)
+    # ⛔ DD's PUBLISHED PER-WAYPOINT SIGMA **AT THE TRUNCATION POINT**, in
+    # METRES -- a TARGET, not a divisor, and the distinction is the whole
+    # regression. Used as a divisor directly it delivers `sigma(8) * 0.90 =
+    # 0.028 m` of noise: **31.7x too gentle**, and the DD-literal arm that is
+    # pre-registered to FAIL the flyability gate would quietly PASS it. An arm
+    # that cannot fail proves nothing, which is the defect this whole seam is
+    # instrumented against. The normaliser is therefore DERIVED in `_sample` as
+    # `metre_sigma_m / sqrt(1 - abar(sampler_infer_t))` (= 28.49 / 23.11), so
+    # the emitted noise IS the published 0.90 m / 0.73 m.
+    metre_sigma_m: tuple[float, float] = (0.90, 0.73)
+    # ---- refcv5 WP-6: the agent seam on the decoder's cross-attention -------
+    cross_agent: bool = False
 
 
 @dataclass
@@ -524,6 +575,16 @@ class RefCConfig:
     trajectory: TrajectoryConfig = field(default_factory=TrajectoryConfig)
     anchors: AnchorConfig = field(default_factory=AnchorConfig)
     decoder: DecoderConfig = field(default_factory=DecoderConfig)
+    # ⭐ refcv5 WP-6 -- `refc_agents.AgentSeamConfig | None`. A DECLARED field,
+    # for the same reason `decoder.sampler` is one: the trainer assigns
+    # `core.agents = acfg`, and on a dataclass without the field that assignment
+    # is an ad-hoc attribute the stamp would happily serialise for a model that
+    # built no head. `None` (not a disabled config) is the OFF state, so
+    # `_seam_stamp` can distinguish "off" from "absent".
+    # ⚠️ Annotated loosely on purpose: `from __future__ import annotations` is
+    # in force, so this is never evaluated, and naming the real type here would
+    # force a module-level import of the corpus-side raster/projection stack.
+    agents: "object | None" = None
     law: LawConfig = field(default_factory=LawConfig)
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
@@ -1141,7 +1202,8 @@ class CrossAttnLayer(nn.Module):
     """Anchor-query cross-attention block: cross-attend the conv map, then a
     FiLM(condition)-modulated MLP (pre-norm, residual)."""
 
-    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int):
+    def __init__(self, d: int, n_heads: int, cond_dim: int, ff_mult: int,
+                 cross_agent: bool = False):
         super().__init__()
         self.norm_q = nn.LayerNorm(d)
         self.cross = nn.MultiheadAttention(d, n_heads, batch_first=True)
@@ -1149,12 +1211,58 @@ class CrossAttnLayer(nn.Module):
         self.film = FiLM(cond_dim, d, zero_init=False)   # live core conditioning
         self.mlp = nn.Sequential(nn.Linear(d, ff_mult * d), nn.GELU(),
                                  nn.Linear(ff_mult * d, d))
+        # ⭐ refcv5 WP-6: the AGENT seam. Constructed ONLY when asked, and
+        # AFTER every pre-v5 submodule above, so an off build draws exactly the
+        # RNG it drew before this seam existed.
+        # `agent_gate` is ZERO-INIT (the `ctx_to_cond` discipline): the agent
+        # branch contributes exactly nothing at step 0, so a fresh +agents run
+        # starts bit-identical to the agent-free one and every subsequent
+        # change is attributable to the seam -- while the gradient
+        # (agent_out * dL/dq) is non-zero, so it is GATED, not dead.
+        self.cross_agent: nn.MultiheadAttention | None = None
+        self.norm_a: nn.LayerNorm | None = None
+        self.agent_gate: nn.Parameter | None = None
+        if cross_agent:
+            self.norm_a = nn.LayerNorm(d)
+            self.cross_agent = nn.MultiheadAttention(d, n_heads,
+                                                     batch_first=True)
+            self.agent_gate = nn.Parameter(torch.zeros(1))
 
-    def forward(self, q: Tensor, kv: Tensor, cond: Tensor) -> Tensor:
+    def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
+                agent_tokens: Tensor | None = None,
+                agent_pad: Tensor | None = None) -> Tensor:
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
+        if self.cross_agent is not None and agent_tokens is not None:
+            q = q + self.agent_gate * self._attend_agents(q, agent_tokens,
+                                                          agent_pad)
         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
         return q
+
+    def _attend_agents(self, q: Tensor, tok: Tensor,
+                       pad: Tensor | None) -> Tensor:
+        """Cross-attend the agent tokens. ``pad[b, n] == True`` means slot ``n``
+        is PADDING (torch's convention, and `AgentTokenEmbed`'s).
+
+        ⛔⛔ A FULLY-PADDED ROW MAKES `MultiheadAttention` RETURN NaN, NOT
+        ZERO -- softmax over an all-`-inf` row is undefined. A frame with no
+        detected agent is not an edge case here, it is the *common* case on an
+        empty road, so an unguarded mask would poison the whole batch through
+        the residual and read as an exploding planner rather than as an empty
+        scene. The row is therefore UN-masked (so the attention is well-defined)
+        and its contribution is zeroed afterwards, which is the same answer the
+        maths would give if softmax-over-nothing were defined as 0.
+        """
+        empty = None
+        if pad is not None:
+            empty = pad.all(dim=1)                          # [B]
+            if bool(empty.any()):
+                pad = pad & ~empty[:, None]
+        out = self.cross_agent(self.norm_a(q), tok, tok,
+                               key_padding_mask=pad, need_weights=False)[0]
+        if empty is not None:
+            out = out.masked_fill(empty[:, None, None], 0.0)
+        return out
 
 
 class AnchoredDiffusionDecoder(nn.Module):
@@ -1220,6 +1328,10 @@ class AnchoredDiffusionDecoder(nn.Module):
                              torch.tensor([k - 1 for k in _h],
                                           dtype=torch.long), persistent=False)
         self.anchor_roll_steps = int(max(_h))
+        # The horizons themselves, in TICKS, as a plain attribute: the WP-4
+        # sampler rolls a per-slot control SEQUENCE and needs the slot spans,
+        # which `anchor_slots` (k - 1) does not carry unambiguously.
+        self.anchor_horizons: tuple[int, ...] = tuple(int(k) for k in _h)
         # ⭐ H-EGO-LIT-4: what speed a WITHHELD row's bank is rolled at. Plain
         # attributes, never buffers (no state_dict change, so every checkpoint
         # before and after this flag loads strictly). See WITHHELD_BANK_MODES.
@@ -1234,7 +1346,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.cond_proj = nn.Linear(d_meas, d)                 # measurement -> cond
         self.time_embed = nn.Embedding(cfg.diffusion_steps + 1, d)  # 0..steps
         self.layers = nn.ModuleList(
-            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult)
+            CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult,
+                           cross_agent=bool(getattr(cfg, "cross_agent", False)))
             for _ in range(cfg.layers))
         self.conf_head = nn.Linear(d, 1)                      # per-anchor conf
         self.offset_head = nn.Linear(d, n_steps * 2)          # per-anchor offset
@@ -1337,6 +1450,70 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.sel.graft_goal:
             self.goal_gate = nn.Parameter(torch.zeros(1))
             self.goal_dist_gate = nn.Parameter(torch.zeros(1))
+        # ---- refcv5 WP-4: THE DENOISER ------------------------------------ #
+        #
+        # ⭐ THE MECHANISM, WHICH IS WHAT refcv3 DID NOT HAVE. refcv3 carried
+        # the truncated-diffusion SKELETON -- a `noise_std` perturbation and a
+        # "ranking" that read the t = 0 confidence -- and MEASURED, that
+        # ranking was UNCHANGED ON 201/201 WINDOWS. A loop that cannot move its
+        # own output is not a sampler. What is added here is the four things
+        # that were missing and nothing else: a NOISE SCHEDULE, an ANCHORED
+        # GAUSSIAN over the vocabulary, DDIM SAMPLING, and a real DENOISING
+        # LOOP whose prediction leaves the decoder as `u0_hat` so a loss can
+        # reach it.
+        #
+        # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED. `sampler == "none"` builds
+        # nothing at all, so the RNG draw order is byte-identical to refcv4b
+        # and every pre-v5 checkpoint keeps loading strictly.
+        #
+        # Only TWO new modules exist, because the sampler reuses the decoder it
+        # is wired into: `traj_proj` -> `layers` -> `conf_head` are the same
+        # weights the classifier pass uses, so the sampler cannot drift into a
+        # second, differently-conditioned decoder.
+        #   * `control_head` -- d -> S*2, the predicted CLEAN control x0.
+        #     ZERO-INIT, so the first refinement pass is exactly the identity
+        #     and the emitted fan starts AT the anchored Gaussian. That is what
+        #     makes "the vocabulary is the prior" true rather than intended.
+        #   * `time_mlp` -- DD's sinusoidal embedding of the CONTINUOUS t. The
+        #     pre-v5 `time_embed` is a 3-row `nn.Embedding` and CANNOT represent
+        #     t ~ U[0, 50); using it would quietly collapse the training
+        #     timestep to one of three rows.
+        self.control_head: nn.Linear | None = None
+        self.time_mlp: nn.Module | None = None
+        self.sched: "rs.DDIMSchedule | None" = None
+        sampler = str(getattr(cfg, "sampler", "none"))
+        if sampler not in ("none", "ddim"):
+            raise ValueError(f"cfg.sampler {sampler!r} not in ('none', 'ddim')")
+        space = str(getattr(cfg, "sampler_space", "control"))
+        if space not in ("control", "metre"):
+            raise ValueError(f"cfg.sampler_space {space!r} not in "
+                             f"('control', 'metre')")
+        if sampler == "ddim":
+            self.control_head = nn.Linear(d, n_steps * 2)
+            nn.init.zeros_(self.control_head.weight)
+            nn.init.zeros_(self.control_head.bias)
+            self.time_mlp = rs.build_time_mlp(d)
+            # A PLAIN attribute, never a buffer or a module: the alpha table is
+            # a constant of the published schedule, not a learned tensor, and
+            # putting it in `state_dict` would change checkpoint compatibility
+            # for a quantity no run can alter.
+            self.sched = rs.DDIMSchedule()
+
+    def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
+        """``[B, N, S, 2]`` — the anchor vocabulary as a per-slot control
+        SEQUENCE, which is the state the sampler denoises.
+
+        ⭐ The vocabulary holds ONE ``(a_lon, a_lat)`` pair per anchor; the
+        sampler's state is a sequence of ``S``. This expansion is the bridge,
+        and it is the reason a CONSTANT sequence must roll to exactly
+        :meth:`roll_bank`'s bank (pinned in ``test_refc_sampler.py``): at
+        ``sigma -> 0`` the sequence IS the constant pair, so if the two
+        integrators disagreed, every anchored-Gaussian claim would be measured
+        against a fan the vocabulary never emitted.
+        """
+        n = self.anchors.shape[0]
+        return (self.anchor_controls.to(dtype)[None, :, None, :]
+                .expand(batch, n, self.n_steps, 2))
 
     def load_anchors(self, anchors: Tensor,
                      controls: Tensor | None = None) -> None:
@@ -1509,17 +1686,168 @@ class AnchoredDiffusionDecoder(nn.Module):
         return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
 
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
-                t_idx: int) -> tuple[Tensor, Tensor]:
+                t_idx: int, agents: Tensor | None = None,
+                agent_pad: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """One decoder pass: current trajectory estimate + timestep -> queries;
-        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2])."""
+        cross-attend the map; emit (conf [B, N], offset [B, N, S, 2]).
+
+        ``agents`` / ``agent_pad`` (refcv5 WP-6) are forwarded to every
+        layer. They are inert unless the layer was BUILT with ``cross_agent``,
+        so passing them on an agent-free build is a no-op rather than a branch.
+        """
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
         for layer in self.layers:
-            q = layer(q, kv, cond)
+            q = layer(q, kv, cond, agents, agent_pad)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
+
+    # ---- refcv5 WP-4: the sampler's own pass and its denoising loop -------- #
+    def _decode_ctrl(self, kv: Tensor, cond: Tensor, x_path: Tensor,
+                     t: Tensor, agents: Tensor | None,
+                     agent_pad: Tensor | None) -> tuple[Tensor, Tensor]:
+        """One SAMPLER pass -> (conf [B, N], du [B, N, S, 2]).
+
+        ⭐ It reuses ``traj_proj`` -> ``layers`` -> ``conf_head``, the SAME
+        weights the classifier pass uses. A second, separately-conditioned
+        decoder is how the sampler and the ranker would silently come to
+        disagree about what they are looking at; the only new parameters in the
+        whole seam are ``control_head`` and ``time_mlp``.
+
+        ⛔ The timestep enters through ``time_mlp`` (DD's sinusoidal embedding
+        of the CONTINUOUS ``t``), NOT through ``time_embed``. ``time_embed`` is
+        an ``nn.Embedding`` with ``diffusion_steps + 1 == 3`` rows and cannot
+        represent ``t ~ U[0, 50)`` -- it would quietly collapse the training
+        timestep onto one of three rows, and the schedule would stop meaning
+        anything.
+        """
+        b, n = x_path.shape[:2]
+        q = self.traj_proj(x_path.reshape(b, n, -1))          # [B, N, d]
+        te = self.time_mlp(t.reshape(-1).to(torch.float32)).to(q.dtype)
+        q = q + te.reshape(-1, 1, q.shape[-1])                # per-sample t
+        for layer in self.layers:
+            q = layer(q, kv, cond, agents, agent_pad)
+        conf = self.conf_head(q).squeeze(-1)                  # [B, N]
+        du = self.control_head(q).reshape(b, n, self.n_steps, 2)
+        return conf, du
+
+    def _state_to_path(self, state: Tensor, v: Tensor,
+                       metre: bool) -> Tensor:
+        """The sampler's state -> the emitted fan ``[B, N, S, 2]`` in metres.
+
+        In CONTROL space the state is ``(a_lon, a_lat|kappa)`` per slot and the
+        path is INTEGRATED, so every sample is flyable by construction. In the
+        ``metre`` regression the state already IS the path -- which is exactly
+        why that arm is pre-registered to fail the flyability gate.
+        """
+        if metre:
+            return state
+        return rs.roll_controls(
+            state, v, self.anchor_horizons,
+            control_units=self.anchor_control_units, tick=self.anchor_dt,
+            alat_v_floor=self.anchor_alat_v_floor,
+            kappa_cap=self.anchor_kappa_cap)
+
+    def _sample(self, kv: Tensor, cond: Tensor, bank: Tensor,
+                v_ms: Tensor | None, steps: int,
+                agents: Tensor | None = None,
+                agent_pad: Tensor | None = None
+                ) -> tuple[Tensor, Tensor, Tensor, dict]:
+        """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
+
+        ⭐⭐ THIS IS THE MECHANISM refcv3 DID NOT HAVE, and the four pieces are
+        each here on purpose:
+
+        1. **the anchored Gaussian** -- the state starts at the VOCABULARY's own
+           control sequence, noised once at ``t = sampler_infer_t``. The prior
+           is the anchor set, not a standard normal, so a sample is a
+           perturbation of something the vocabulary can already express;
+        2. **the noise schedule** -- DD's ``scaled_linear`` table, so
+           ``sigma(8) = 0.0316`` means here what it means in the paper;
+        3. **DDIM sampling** -- deterministic (``eta = 0``) steps down the
+           published ``[10, 0]`` ladder;
+        4. **a real denoising loop** -- each pass PREDICTS THE CLEAN CONTROL and
+           the state moves toward it. refcv3's loop read the ``t = 0``
+           confidence and was MEASURED UNCHANGED ON 201/201 WINDOWS; a loop
+           whose output cannot move is not a sampler, and this one's output is
+           ``u0_hat``, the tensor the x0 loss is computed on.
+        """
+        cfg = self.cfg
+        b, n = bank.shape[:2]
+        dev, dtype = bank.device, bank.dtype
+        metre = str(cfg.sampler_space) == "metre"
+        if metre:
+            # DERIVED, never the raw sigma -- see `metre_sigma_m`. Dividing by
+            # the sigma itself would make the DD-literal arm 31.7x too gentle
+            # and it would PASS the gate it exists to fail.
+            _s = float(self.sched.sqrt_one_minus_abar(int(cfg.sampler_infer_t)))
+            norm = bank.new_tensor(tuple(cfg.metre_sigma_m)) / max(_s, 1e-12)
+            x0_n = bank / norm
+        else:
+            norm = bank.new_tensor(tuple(cfg.control_norm))
+            x0_n = self.anchor_control_seq(b, dtype) / norm
+        # The speed the fan is rolled from. `roll_bank` has already applied the
+        # ego-dropout policy to produce `bank`; a sampler with no speed at all
+        # falls back to the SAME reference speed `roll_bank` uses, so the two
+        # never integrate from different initial states.
+        v = (bank.new_full((b,), self.anchor_ref_speed)
+             if v_ms is None else v_ms.reshape(-1).to(torch.float32))
+        t0 = int(cfg.sampler_infer_t)
+        k = int(steps) if int(steps) > 0 else int(cfg.sampler_steps)
+        k = max(k, 1)
+        ladder = self.sched.infer_timesteps(t0, k)
+        # ⭐ THE ANCHORED GAUSSIAN: ONE fresh eps at the truncation point.
+        #
+        # ⛔⛔ THIS IS STOCHASTIC AT EVAL, BY DESIGN AND NOT BY OVERSIGHT, and
+        # any arm that runs it inherits an obligation. The pre-v5 refinement
+        # loop zeroes its noise outside training so a decode is reproducible;
+        # a SAMPLER cannot, because sampling is the mechanism. MEASURED on
+        # refav1 (`D-REFAV1-SEED-GOAL-MISMATCH`): on a planner that samples,
+        # the same checkpoint evaluated twice does not give the same answer,
+        # and that rig's inference-seed floor was ~0.30 m ADE. ⇒ A refcv5
+        # sampler arm must be replicated over INFERENCE seeds, and an effect
+        # smaller than that floor is not an effect. The episode-cluster
+        # bootstrap answers "would another draw of EPISODES say this?" and is
+        # structurally blind to this variance.
+        self.sched.to(dev)          # the alpha table must live where x0 does
+        eps = torch.randn_like(x0_n)
+        x_n = self.sched.add_noise(x0_n, eps,
+                                   torch.tensor(t0, device=dev))
+        x0_hat_n, conf = x_n, None
+        for i, t in enumerate(ladder):
+            t_prev = ladder[i + 1] if i + 1 < len(ladder) else 0
+            x_path = self._state_to_path(x_n * norm, v, metre)
+            tt = torch.full((b,), float(t), device=dev, dtype=torch.float32)
+            conf, du = self._decode_ctrl(kv, cond, x_path, tt,
+                                         agents, agent_pad)
+            # x0-parameterised ("sample"), and `control_head` is ZERO-INIT, so
+            # the first pass predicts exactly the current state: the fan starts
+            # AT the anchored Gaussian and every later movement is learned.
+            x0_hat_n = x_n + du
+            x_n = self.sched.step(x0_hat_n, x_n,
+                                  torch.tensor(t, device=dev),
+                                  torch.tensor(t_prev, device=dev))
+        u0_hat = x0_hat_n * norm
+        fan = self._state_to_path(u0_hat, v, metre)
+        tele = {"sampler": "ddim", "sampler_space": cfg.sampler_space,
+                "sampler_ladder": [int(x) for x in ladder],
+                "sampler_infer_t": t0,
+                # ⚠ MEASURED 2026-09-06 and it is a CONFIG decision, not a
+                # bug: `SelectionConfig.refined` defaults to FALSE, so the
+                # ranked score is the CLASSIFIER surface -- which the sampler
+                # deliberately does not touch (pinned by
+                # `test_hfov_style_sanity...`). With this False the fan is
+                # SAMPLED but RANKED by a head that never saw the sample, which
+                # is the S1 defect one level up (MEASURED there as a 45.4 %
+                # -of-windows ranking failure). It is stamped rather than
+                # refused because "improve the geometry, keep the ranking" is a
+                # legitimate arm -- but an arm that wants the sampler to reach
+                # SELECTION must run `--sel-refined`, and this key is how a
+                # reader tells which one they are looking at.
+                "sampler_ranks_the_fan": bool(self.sel.refined)}
+        return fan, u0_hat, conf, tele
 
     def _lan_anchor_prior(self, lan_dir: Tensor,
                           bank: Tensor | None = None) -> Tensor:
@@ -1621,7 +1949,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 ego_keep: Tensor | None = None,
                 goal_dir: Tensor | None = None,
                 goal_dist_pref: Tensor | None = None,
-                withheld_speed: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None,
+                agent_tokens: Tensor | None = None,
+                agent_pad: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1641,6 +1971,31 @@ class AnchoredDiffusionDecoder(nn.Module):
         """
         b = fmap.shape[0]
         sel = self.sel
+        # ---- refcv5 WP-4 PREFLIGHT -- refuse before the compute, not after -- #
+        # Both of these describe a run that would TRAIN, CONVERGE and MEAN
+        # NOTHING, which is worse than a crash because a crash gets fixed.
+        if self.control_head is not None:
+            if not self.anchor_v0_cond:
+                raise ValueError(
+                    "refcv5 WP-4: the sampler needs a v0-CONDITIONED anchor "
+                    "vocabulary. The sampler's state IS the control sequence, "
+                    "and a fixed-path bank carries `anchor_controls` of all "
+                    "zeros -- so the anchored Gaussian would be centred on 'do "
+                    "nothing' and the arm would be a plausible-looking WRONG "
+                    "experiment. Build the anchors with controls "
+                    "(`--anchor-file` from build_refc_anchors), or run "
+                    "`sampler='none'`.")
+            if int(getattr(self.cfg, "sampler_groups", 1)) > 1:
+                raise NotImplementedError(
+                    "refcv5 WP-4: `sampler_groups > 1` emits a [B, G*N, ...] "
+                    "fan while THREE call sites still assume N and would be "
+                    "silently MIS-INDEXED: (1) `loss_cls`'s `a_star` anchor "
+                    "target, which indexes the fan by anchor id; (2) the "
+                    "[B, N] anchor priors (`maneuver_to_anchor` / "
+                    "`lat_to_anchor` / `lon_to_anchor` / `route_to_anchor`); "
+                    "and (3) every `sel_idx` dump the eval harness joins on. "
+                    "Widening the fan is not a knob until those three are "
+                    "widened with it -- refusing rather than mis-indexing.")
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
@@ -1692,7 +2047,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 took = pre_keep.gather(1, sub)                # [B, K] bool
                 xs = x0.gather(
                     1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
-                c_s, o_s = self._decode(kv, cond, xs, 0)
+                c_s, o_s = self._decode(kv, cond, xs, 0,
+                                        agent_tokens, agent_pad)
                 conf0 = x0.new_full((b, n), float("-inf"))
                 conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
                 offset = x0.new_zeros(b, n, self.n_steps, 2)
@@ -1702,11 +2058,13 @@ class AnchoredDiffusionDecoder(nn.Module):
                 pre_tele["prefilter_k"] = int(k)
                 pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
             else:                                 # nothing to save this batch
-                conf0, offset = self._decode(kv, cond, x0, 0)
+                conf0, offset = self._decode(kv, cond, x0, 0,
+                                             agent_tokens, agent_pad)
                 pre_tele["prefilter_k"] = int(n)
                 pre_tele["prefilter_speedup"] = 1.0
         else:
-            conf0, offset = self._decode(kv, cond, x0, 0)     # classifier pass
+            conf0, offset = self._decode(kv, cond, x0, 0,
+                                         agent_tokens, agent_pad)  # classifier
         x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
@@ -1737,7 +2095,17 @@ class AnchoredDiffusionDecoder(nn.Module):
         # failure. ``steps == 0`` leaves ``refined is conf`` by construction, so
         # ``--mode classifier`` is provably unaffected by S1.
         refined = conf
-        for i in range(steps):
+        # ⭐ refcv5 WP-4: the sampler REPLACES this loop, it does not wrap it.
+        # The loop below perturbs the fan in METRES by a fixed `noise_std` and
+        # re-reads a confidence -- the SKELETON of truncated diffusion with none
+        # of the mechanism, and MEASURED on refcv3 its ranking was UNCHANGED ON
+        # 201/201 WINDOWS. Running both would put two different perturbations on
+        # one fan and make the arm non-attributable, which is the `--v2`
+        # conflation failure. Exactly one of them refines the fan.
+        u0_hat = None
+        smp_tele: dict = {}
+        _loop_steps = 0 if self.control_head is not None else steps
+        for i in range(_loop_steps):
             t_idx = min(i + 1, self.cfg.diffusion_steps)
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
@@ -1751,6 +2119,24 @@ class AnchoredDiffusionDecoder(nn.Module):
             # regression dressed as a fix. Patience 0 — the saturation counter is
             # advanced once per forward, on the classifier surface above.
             refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
+                                            "refined", 0)
+
+        if self.control_head is not None:
+            # The emitted fan comes out of the INTEGRATOR, and the predicted
+            # clean CONTROL leaves the decoder as `u0_hat` -- it is the only
+            # tensor the x0 loss can be computed on, and without that loss
+            # `control_head` stays at its zero init forever while every log row
+            # still says "sampler: ddim" (which is why the trainer REFUSES
+            # `--sampler ddim --w-u0 0`).
+            x, u0_hat, s_conf, smp_tele = self._sample(
+                kv, cond, bank, v_ms, steps, agent_tokens, agent_pad)
+            # Stage 0 applies to EVERY pass that moves a waypoint; a no-op
+            # returning the same object when `feasible_decode` is off.
+            x = self._feasible(x, v_ms)
+            # The refined readout carries the SAME priors as the classifier
+            # surface -- dropping them here would silently DELETE the H19
+            # coupling from selection, a regression dressed as a fix.
+            refined, _ = self._apply_grafts(s_conf, terms, self._seam_refined,
                                             "refined", 0)
 
         # S1b: THE READOUT ABOVE SCORES THE WRONG OBJECT, AND IT IS ONE LINE
@@ -1775,7 +2161,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             t_e = (min(steps + 1, self.cfg.diffusion_steps)
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
-            e_conf, _ = self._decode(kv, cond, x, t_e)
+            e_conf, _ = self._decode(kv, cond, x, t_e,
+                                     agent_tokens, agent_pad)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
@@ -1859,11 +2246,23 @@ class AnchoredDiffusionDecoder(nn.Module):
             tele["prefilter_survivors_max"] = int(surv.max())
             tele["prefilter_rows_full_fan"] = int((surv == pre_keep.shape[1])
                                                   .sum())
+        # refcv5 WP-4: stamped ONLY when the sampler ran, so a reader can
+        # never mistake "the key is absent" for "the sampler was off" -- the
+        # off/absent distinction lives in `config.json`'s seam stamp, which is
+        # written unconditionally.
+        tele.update(smp_tele)
         traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
         out = {"anchor_logits": conf, "refined_logits": refined,
                "anchor_traj": x, "anchor_bank": bank,
                "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        if u0_hat is not None:
+            # [B, N, S, 2] in the VOCABULARY's control units -- `alat` (m/s^2)
+            # or `kappa` (1/m) per `anchor_control_units`. ⛔ The x0 loss MUST
+            # convert its target into these units before comparing: the inverse
+            # map returns CURVATURE, and at 36 m/s the two differ by ~1300x
+            # while BOTH tables look plausible.
+            out["u0_hat"] = u0_hat
         if cons_s is not None:
             out["cons_score"] = cons_s
         if prefinal is not None:
@@ -2023,6 +2422,37 @@ class RefCModel(nn.Module):
             control_units=cfg.anchors.control_units,
             alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
             kappa_cap=cfg.anchors.kappa_cap)
+        # ---- refcv5 WP-6: THE AGENT SEAM (default OFF, builds NOTHING) ----
+        #
+        # ⭐ `agent_head` produces SLOTS, `agent_embed` turns slots into the
+        # tokens the planner decoder cross-attends. The oracle and the learned
+        # detector emit the SAME dict shape, so `agent_embed` consumes either
+        # without a branch and the two arms differ in exactly one object.
+        #
+        # ⛔ THE ORACLE IS NOT A CAPABILITY CLAIM. It reads a privileged label
+        # at inference, which the vision-only rule forbids for any deployable
+        # arm. Its ONLY job is to price the ceiling -- "if the detector were
+        # perfect, would the planner move at all?" -- before a detector
+        # GPU-day is spent. `AgentSeamConfig.oracle` is stamped into
+        # config.json so no reader can mistake one arm for the other.
+        self.agent_head: nn.Module | None = None
+        self.agent_embed: nn.Module | None = None
+        _ag = getattr(cfg, "agents", None)
+        if _ag is not None and bool(getattr(_ag, "enable", False)):
+            from tanitad.refs import refc_agents as _ra    # lazy; see imports
+            if not cfg.decoder.cross_agent:
+                raise ValueError(
+                    "refcv5 WP-6: `agents.enable` is set but "
+                    "`decoder.cross_agent` is False, so the head would be "
+                    "BUILT, SUPERVISED and STAMPED while its tokens reached "
+                    "no decoder layer -- a detector trained into a dead end, "
+                    "and an arm that would read as 'agent tokens do not "
+                    "help'. Set both, or neither.")
+            _gh, _gw = cfg.encoder.grid_shape
+            self.agent_head = (
+                _ra.OracleAgentEmbed(_ag) if bool(_ag.oracle)
+                else _ra.build_agent_head(_ag, feat, int(_gh) * int(_gw)))
+            self.agent_embed = _ra.AgentTokenEmbed(cfg.decoder.d, _ag)
         # LAN route encoder (gated): [B, K*4] corridor features -> [B, d_out].
         # Lives at model level next to ``measurement`` because it is an INPUT
         # encoder, not part of the decoder; param_breakdown reports it as `lan`.
@@ -2292,7 +2722,8 @@ class RefCModel(nn.Module):
                 nav_known: Tensor | None = None,
                 hierarchy_hook=None,
                 ego_keep: Tensor | None = None,
-                withheld_speed: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None,
+                agent_gt: dict | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -2512,6 +2943,32 @@ class RefCModel(nn.Module):
             out_goal = {"goal_bearing": bearing, "goal_dist_pref": goal_dist_pref}
         else:
             out_goal = {}
+        # ---- refcv5 WP-6: slots -> tokens ---------------------------------
+        # ⛔ THE VISION-ONLY RULE IS ENFORCED BY WHERE THE TENSOR IS READ, not
+        # by a comment. The LEARNED head takes `fmap` and nothing else --
+        # `AgentSlotDecoder.forward` accepts exactly one argument, which is the
+        # audit in signature form. `agent_gt` is read ONLY on the oracle path,
+        # which is declared inadmissible as a capability claim and stamped as
+        # such. The detection LABELS never enter here at all; they enter the
+        # LOSS, in the trainer, from `batch["agent_box"]`.
+        agent_slots = agent_tokens = agent_pad = None
+        if self.agent_head is not None:
+            if self.cfg.agents.oracle:
+                if agent_gt is None:
+                    raise ValueError(
+                        "refcv5 WP-6: `agents.oracle` is set but no "
+                        "`agent_gt` reached the forward. The oracle's tokens "
+                        "ARE the ground-truth boxes; with none, the seam would "
+                        "silently emit nothing and the arm would read as "
+                        "'agent tokens do not help' while never having had "
+                        "any. Wire --agent-join, or run --agents head.")
+                agent_slots = self.agent_head(
+                    agent_gt["box"], agent_gt["yaw"], agent_gt["cls"],
+                    agent_gt["valid"], agent_gt.get("rates"))
+            else:
+                agent_slots = self.agent_head(
+                    fmap.flatten(2).transpose(1, 2))          # [B, M, F]
+            agent_tokens, agent_pad = self.agent_embed(agent_slots)
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
@@ -2520,7 +2977,8 @@ class RefCModel(nn.Module):
                            cons_ctx=cons_ctx, v_ms=v_ms,
                            ego_keep=keep.squeeze(-1) > 0.5,
                            goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
-                           withheld_speed=withheld_speed)
+                           withheld_speed=withheld_speed,
+                           agent_tokens=agent_tokens, agent_pad=agent_pad)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -2537,6 +2995,14 @@ class RefCModel(nn.Module):
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
                "measurement": m, **out_goal}
+        if agent_slots is not None:
+            # ⛔ The detection loss is guarded on `"agent_slots" in out`. With
+            # the seam built but this key absent, `--w-agent 1.0` would parse,
+            # be STAMPED into config.json, and supervise NOTHING -- the M18
+            # defect the trainer's own `--agents off` guard names.
+            out["agent_slots"] = agent_slots
+        if "u0_hat" in dec:
+            out["u0_hat"] = dec["u0_hat"]        # refcv5 WP-4's x0 loss target
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
         for _k in ("prefinal_logits", "reach_keep"):

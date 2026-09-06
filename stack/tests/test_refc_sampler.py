@@ -418,3 +418,59 @@ def test_hfov_style_sanity_the_sampler_does_not_touch_the_classifier_pass():
         ob = dec_b(fmap, m, steps=2, v_ms=v0)
     assert torch.equal(oa["anchor_logits"], ob["anchor_logits"])
     assert torch.equal(oa["anchor_bank"], ob["anchor_bank"])
+
+
+def test_metre_space_arm_is_UNFLYABLE_and_the_control_arm_is_NOT():
+    """⛔⛔ THE DELIBERATE REGRESSION MUST BE ABLE TO **FAIL**, not merely to
+    RUN. `test_metre_space_arm_is_REACHABLE` above proves the code path exists;
+    this proves the path produces the pathology it is pre-registered to produce.
+
+    MEASURED 2026-09-06 — and the first implementation FAILED THIS. It used
+    `metre_sigma_m` directly as a divisor, delivering `sigma(8) * 0.90 =
+    0.028 m` of noise: **31.7x too gentle**, so the DD-literal arm would have
+    sailed through the flyability gate and the whole comparison would have read
+    'metre space is fine'. The normaliser must be DERIVED
+    (`metre_sigma_m / sqrt(1 - abar(infer_t))` = 28.49 / 23.11) so the emitted
+    noise IS DD's published 0.90 m / 0.73 m per waypoint.
+
+    At the zero-init `control_head` this measures the SAMPLER's noise alone.
+    """
+    hz = tuple(range(5, 45, 5))          # 8 slots, dt = 0.5 s
+    n = 32
+
+    def mk(space):
+        torch.manual_seed(0)
+        cfg = refc.DecoderConfig(d=32, n_heads=4, layers=2, ff_mult=2,
+                                 sampler="ddim", sampler_space=space)
+        d = refc.AnchoredDiffusionDecoder(
+            feat_dim=16, n_steps=len(hz), d_meas=8, d_ctx=4, tac_latent_dim=4,
+            anchors=torch.randn(n, len(hz), 2), cfg=cfg, hierarchy=False,
+            graft_maneuver=False, graft_target_latent=False,
+            grounded_selector=False, horizons=hz, v0_conditioned=True,
+            control_units="alat").eval()
+        torch.manual_seed(1)
+        d.anchor_controls.copy_(torch.stack(
+            [torch.linspace(-1.0, 1.0, n), torch.linspace(-1.0, 1.0, n)], -1))
+        return d
+
+    def implied_alat(p):
+        y = p[..., 1]
+        d1 = (y[..., 1:] - y[..., :-1]) / 0.5
+        return ((d1[..., 1:] - d1[..., :-1]) / 0.5).abs()
+
+    fm, m, v = torch.randn(1, 16, 3, 5), torch.randn(1, 8), torch.tensor([15.0])
+    got = {}
+    for space in ("control", "metre"):
+        with torch.no_grad():
+            torch.manual_seed(7)
+            got[space] = implied_alat(
+                mk(space)(fm, m, steps=2, v_ms=v)["anchor_traj"])
+    mu = 0.7 * 9.81
+    ctl, met = got["control"], got["metre"]
+    # the regression IS wild: DD's 0.73 m over a 0.5 s slot implies ~5.8 m/s^2
+    assert float(met.mean()) > 3.0, float(met.mean())
+    assert float((met > mu).float().mean()) > 0.05,         "the metre arm must break the friction circle, or it cannot fail the gate"
+    # ...and the control-space arm is NOT, because the acceleration IS the state
+    assert float(ctl.mean()) < float(met.mean()) / 4.0, (float(ctl.mean()),
+                                                         float(met.mean()))
+    assert float((ctl > mu).float().mean()) == 0.0,         "control-space samples are flyable BY CONSTRUCTION"

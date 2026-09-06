@@ -988,7 +988,8 @@ class RefCV3Model(nn.Module):
                 lan: Tensor | None = None,
                 nav_known: Tensor | None = None,
                 ego_state: Tensor | None = None,
-                withheld_speed: Tensor | None = None) -> dict:
+                withheld_speed: Tensor | None = None,
+                agent_gt: dict | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -997,6 +998,23 @@ class RefCV3Model(nn.Module):
         E13 nav seam and the X15 flag exist to remove, and it would look like
         "the ego channels do not help" in a result table.
         """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+            raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+        if agent_gt is None and _ag is not None and _ag.enable and _ag.oracle:
+            raise ValueError(
+                "this build is `--agents oracle` but no agent_gt reached the "
+                "forward. The oracle's tokens ARE the ground-truth boxes; "
+                "with none the seam emits nothing and the arm would read as "
+                "'agent tokens do not help' while never having had any.")
         if ego_state is not None and not self.cfg.ego_state_inject:
             raise ValueError(
                 "ego_state was supplied but cfg.ego_state_inject is False — it "
@@ -1023,12 +1041,14 @@ class RefCV3Model(nn.Module):
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                              nav_known=nav_known, ego_keep=ego_keep,
-                             withheld_speed=withheld_speed)
+                             withheld_speed=withheld_speed,
+                             agent_gt=agent_gt)
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state),
-                        withheld_speed=withheld_speed)
+                        withheld_speed=withheld_speed,
+                        agent_gt=agent_gt)
         # the per-row withholding draw, for diagnostics that split kept from
         # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`
         # below is its mean.

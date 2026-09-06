@@ -79,6 +79,10 @@ __all__ = [
 BETA_START: float = 0.0001
 BETA_END: float = 0.02
 N_TRAIN_TIMESTEPS: int = 1000
+#: Rounding budget for :func:`assert_matches_diffusers`, in units of the
+#: reference dtype's epsilon. MEASURED 2026-09-06 against diffusers 0.40.0:
+#: 1.689e-07 = 1.42 x float32 eps over the 1000-step cumprod.
+ACC_EPS_MULT: float = 16.0
 
 
 class DDIMSchedule:
@@ -102,6 +106,27 @@ class DDIMSchedule:
                                device=device) ** 2
         self.betas = betas
         self.alphas_cumprod = torch.cumprod(1.0 - betas, dim=0)
+
+    def to(self, device) -> "DDIMSchedule":
+        """Move the alpha table onto ``device``. Returns ``self``.
+
+        ⛔ **Why this is not optional.** ``add_noise`` unsqueezes the gathered
+        alpha to ``x0``'s rank before multiplying, so a CPU table meeting a CUDA
+        ``x0`` does NOT get the 0-dim scalar exemption -- it raises
+        ``Expected all tensors to be on the same device``. The schedule is
+        constructed at build time, when the module may still be on CPU, and the
+        model is moved afterwards; ``nn.Module.to`` cannot follow it because the
+        table is deliberately NOT a buffer (it is a constant of the published
+        schedule, and putting it in ``state_dict`` would change checkpoint
+        compatibility for a quantity no run can alter). So the move happens at
+        use time, here.
+
+        ``Tensor.to`` returns ``self`` when the tensor is already on ``device``,
+        so calling this every forward costs nothing.
+        """
+        self.betas = self.betas.to(device)
+        self.alphas_cumprod = self.alphas_cumprod.to(device)
+        return self
 
     # -- the two quantities everything else is built from ------------------ #
     def sqrt_abar(self, t: Tensor | int) -> Tensor:
@@ -175,7 +200,8 @@ class DDIMSchedule:
         return [int(round(hi * (1.0 - i / (steps - 1)))) for i in range(steps)]
 
 
-def assert_matches_diffusers(sched: DDIMSchedule, atol: float = 1e-10) -> bool:
+def assert_matches_diffusers(sched: DDIMSchedule,
+                             atol: float | None = None) -> bool:
     """Pin this re-implementation against the real ``diffusers`` object.
 
     ⭐ **Why this exists.** The scheduler is re-implemented so pods need no new
@@ -183,6 +209,25 @@ def assert_matches_diffusers(sched: DDIMSchedule, atol: float = 1e-10) -> bool:
     unverified copy. Where ``diffusers`` IS importable the alpha table must
     agree to ``atol``; where it is not, the caller SKIPS rather than passing —
     returns ``False`` so a test can mark itself skipped instead of green.
+
+    ⛔⛔ **THE `atol = 1e-10` THIS REPLACES COULD NEVER PASS, AND NOBODY KNEW
+    BECAUSE IT HAD NEVER RUN.** MEASURED 2026-09-06, the first time
+    ``diffusers`` was actually installed beside this module (0.40.0): the check
+    raised at **1.689e-07**. The cause is a DTYPE comparison, not an error --
+    ``DDIMScheduler`` builds its table in **float32** while
+    :class:`DDIMSchedule` builds it in **float64**, and 1.689e-07 is float32
+    epsilon (1.192e-07) territory. Against an exact float64 reference,
+    **ours reads 6.939e-18 and diffusers reads 1.689e-07**: the residual is the
+    REFERENCE's rounding, and this implementation is the more accurate of the
+    two. A tolerance below the reference's own epsilon is not a strict test, it
+    is an UNRUNNABLE one -- the mirror image of a guard that cannot fail.
+
+    ⭐ **The replacement is STRICTER, not looser.** At the reference's own dtype
+    the two tables must be **BIT-EQUAL** (MEASURED: max |d| = **0.000e+00** over
+    all 1000 entries), which admits no tolerance at all; the float64 residual is
+    then bounded by the reference dtype's epsilon, which is exactly what it
+    costs to hold the table in float32 -- ``ACC_EPS_MULT`` epsilons, because a
+    1000-step ``cumprod`` accumulates. ``atol`` overrides that bound.
     """
     try:
         from diffusers import DDIMScheduler          # noqa: PLC0415
@@ -193,13 +238,43 @@ def assert_matches_diffusers(sched: DDIMSchedule, atol: float = 1e-10) -> bool:
                         beta_schedule="scaled_linear",
                         prediction_type="sample",
                         steps_offset=sched.steps_offset)
-    a = sched.alphas_cumprod.cpu().to(torch.float64)
-    b = ref.alphas_cumprod.cpu().to(torch.float64)
+    a = sched.alphas_cumprod.cpu()
+    b = ref.alphas_cumprod.cpu()
     if a.shape != b.shape:
         raise AssertionError(f"alpha table shape {a.shape} != {b.shape}")
-    err = float((a - b).abs().max())
-    if err > atol:
-        raise AssertionError(f"alphas_cumprod differs from diffusers by {err:.3e}")
+    # PRIMARY: THE FORMULA, proven exactly. Rebuild OUR schedule at the
+    # reference's own dtype and require BIT-EQUALITY -- same operations, same
+    # order, same precision, so any difference at all is a formula difference.
+    # ⚠ Casting the float64 table DOWN instead would NOT be this test and
+    # fails at 1.788e-07: rounding once at the end is not the same number as
+    # rounding at each of 1000 cumprod steps, which is what diffusers does.
+    same = DDIMSchedule(sched.num_train_timesteps, BETA_START, BETA_END,
+                        steps_offset=sched.steps_offset, dtype=b.dtype)
+    if not torch.equal(same.alphas_cumprod.cpu(), b):
+        d = float((same.alphas_cumprod.cpu().to(torch.float64)
+                   - b.to(torch.float64)).abs().max())
+        raise AssertionError(
+            f"alphas_cumprod built at the reference dtype {b.dtype} is NOT "
+            f"bit-equal to diffusers: max |diff| = {d:.3e} -- the SCHEDULE "
+            f"FORMULA disagrees, which no dtype choice can explain")
+    # SECONDARY: bound the PRECISION gap between the caller's table and the
+    # reference. The formula is already proven bit-exact above, so the only
+    # thing left to bound is accumulated rounding.
+    # ⚠ The bound is `ACC_EPS_MULT * eps`, NOT one epsilon: a 1000-step
+    # `cumprod` accumulates rounding, and the MEASURED gap between a float64
+    # table and diffusers' float32 one is 1.689e-07 = 1.42 x float32 eps. One
+    # eps would fail on a correct implementation -- the same unrunnable-pin
+    # error as the 1e-10 it replaced, one order less obvious. The margin is
+    # still ~4 orders below any REAL disagreement (mistaking `scaled_linear`
+    # for `linear` moves beta[499] by ~1e-2).
+    tol = (ACC_EPS_MULT * float(torch.finfo(b.dtype).eps)
+           if atol is None else float(atol))
+    err = float((a.to(torch.float64) - b.to(torch.float64)).abs().max())
+    if err > tol:
+        raise AssertionError(
+            f"alphas_cumprod differs from diffusers by {err:.3e} > {tol:.3e} "
+            f"({ACC_EPS_MULT} x the {b.dtype} epsilon) -- far larger than "
+            f"accumulated rounding, so this is a real disagreement")
     return True
 
 

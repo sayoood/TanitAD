@@ -307,6 +307,48 @@ def _pin_refcv5_seams(cfg, args) -> None:
             "anchored Gaussian with no denoiser at all — and it would look "
             "like a trained sampler in every log. Pass --w-u0 > 0, or run "
             "--sampler none.")
+    # --- STAGE 0: the feasibility-aware decode ---------------------------- #
+    # ⛔ REFUSED AT STARTUP, NOT AT THE FIRST FORWARD. `refc.py::_feasible`
+    # raises on a non-uniform prefix -- correctly -- but that raise arrives
+    # after the model is built, the corpus is loaded and the optimiser is
+    # allocated. Same class as the analysis-time import that died AFTER both
+    # arms had rolled all 40 episodes: a preflight failure must cost seconds.
+    feas = bool(getattr(args, "feasible_decode", False))
+    core.decoder.feasible_decode = feas
+    core.decoder.feasible_mu = float(getattr(args, "feasible_mu", 0.7))
+    core.decoder.feasible_entry = bool(getattr(args, "feasible_entry", False))
+    core.decoder.feasible_a_max = float(getattr(args, "feasible_a_max", 4.0))
+    core.decoder.feasible_kappa_max = float(
+        getattr(args, "feasible_kappa_max", 0.2))
+    core.decoder.feasible_prefix_slots = int(
+        getattr(args, "feasible_prefix_slots", 4))
+    if feas:
+        _hz = tuple(core.trajectory.horizons)
+        _sl = [int(h) - 1 for h in _hz]
+        _k = min(int(core.decoder.feasible_prefix_slots), len(_sl))
+        _steps = [_sl[0] + 1] + [_sl[i] - _sl[i - 1] for i in range(1, _k)]
+        if _k < 2 or len(set(_steps)) != 1:
+            raise SystemExit(
+                f"[v3] ⛔ --feasible-decode needs a UNIFORM prefix grid: "
+                f"horizons {_hz[:_k]} give tick spacings "
+                f"{_steps}. Projecting at a dt the scorer does not "
+                f"differentiate produces an APPROXIMATELY feasible fan whose "
+                f"residual reads as noise. Refusing rather than guessing -- "
+                f"pass --feasible-prefix-slots N for the uniform head of the "
+                f"grid.")
+        if core.decoder.feasible_entry and not core.anchors.v0_conditioned:
+            raise SystemExit(
+                "[v3] ⛔ --feasible-entry without a v0-CONDITIONED vocabulary. "
+                "The entry clamp binds the first step's speed to v0 +- a*dt; "
+                "with no v0 the clamp is a no-op that would still be stamped "
+                "into config.json, and the arm would read as the +entry "
+                "variant while being the plain one. Pass an --anchors file "
+                "built with controls, or drop --feasible-entry.")
+        print(f"[v3] feasible decode ON: prefix {_k} slots at dt="
+              f"{_steps[0] * 0.1:.2f} s, a_max {core.decoder.feasible_a_max}, "
+              f"kappa_max {core.decoder.feasible_kappa_max}, mu "
+              f"{core.decoder.feasible_mu}, entry "
+              f"{core.decoder.feasible_entry}", flush=True)
     # --- WP-6: the agent seam -------------------------------------------- #
     if getattr(args, "agents", "off") != "off":
         acfg = _refc_agents.AgentSeamConfig(
@@ -1449,7 +1491,27 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # control sequence through the programme's inverse map -- so the sampler is
     # supervised in the space it samples in, not in the space it is read out in.
     w_u0 = float(getattr(model, "_w_u0", 0.0))
-    if w_u0 > 0.0 and "u0_hat" in out:
+    _space = str(getattr(core.decoder, "sampler_space", "control"))
+    if w_u0 > 0.0 and "u0_hat" in out and _space == "metre":
+        # ⛔⛔ THE DELIBERATE-REGRESSION ARM SAMPLES IN METRES, SO ITS x0
+        # TARGET IS THE PATH -- NOT THE CONTROLS. Taking the branch below for
+        # this arm would compare METRES against m/s^2 divided by (4.0, 3.0):
+        # numerically plausible, silently wrong, and it would corrupt the very
+        # arm whose job is to FAIL the flyability gate honestly. A regression
+        # that fails for the wrong reason proves nothing, and this is the same
+        # units error the branch below exists to prevent, one space over.
+        # A metre SCALE for the loss (errors of ~1 m read as ~1). This is the
+        # raw published sigma on purpose -- unlike the SAMPLER's normaliser,
+        # which must be derived (see `DecoderConfig.metre_sigma_m`).
+        m_norm = torch.tensor(tuple(getattr(core.decoder, "metre_sigma_m",
+                                            (0.90, 0.73))),
+                              device=device, dtype=out["u0_hat"].dtype)
+        a_idx = a_star[:, None, None, None].expand(b, 1, traj_tgt.shape[1], 2)
+        u_sel = out["u0_hat"].gather(1, a_idx).squeeze(1)           # [B, S, 2]
+        loss_u0 = (((u_sel - traj_tgt) / m_norm).abs().sum(-1) * sv).sum() / denom
+        loss = loss + w_u0 * loss_u0
+        extra["u0"] = loss_u0
+    elif w_u0 > 0.0 and "u0_hat" in out:
         u_gt = kin.unicycle_controls_from_path_varstep(
             traj_tgt, kin.slot_dts(core.trajectory.horizons))       # [B, S, 2]
         if core.anchors.control_units == "alat":
@@ -1782,6 +1844,19 @@ def _seam_stamp(cfg, args) -> dict:
         "sampler_steps": int(getattr(core.decoder, "sampler_steps", 2)),
         "sampler_groups": int(getattr(core.decoder, "sampler_groups", 1)),
         "control_norm": list(getattr(core.decoder, "control_norm", (4.0, 3.0))),
+        # ⭐ STAGE 0. A run that does not stamp these cannot say whether its
+        # fan was projected -- and a projected fan reads `envelope 0.0000` as
+        # an IDENTITY, which is indistinguishable in a metrics table from a
+        # model that learned to be safe. The record must carry which one it is.
+        "feasible_decode": bool(getattr(core.decoder, "feasible_decode",
+                                        False)),
+        "feasible_mu": float(getattr(core.decoder, "feasible_mu", 0.7)),
+        "feasible_entry": bool(getattr(core.decoder, "feasible_entry", False)),
+        "feasible_a_max": float(getattr(core.decoder, "feasible_a_max", 4.0)),
+        "feasible_kappa_max": float(getattr(core.decoder, "feasible_kappa_max",
+                                            0.2)),
+        "feasible_prefix_slots": int(getattr(core.decoder,
+                                             "feasible_prefix_slots", 4)),
         "w_agent": float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT)),
         "w_u0": float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT)),
         # ⛔ M18: the camera the two monocular weights are computed against —
@@ -1987,6 +2062,95 @@ def assert_rig_camera_covers(model, ds, args) -> dict:
             % (cov["n_covered"], cov["n"], cov["n_missing"],
                cov["missing_sample"][:4]))
     return {"coverage": cov}
+
+
+def assert_seams_are_built(model, stamp: dict) -> None:
+    """REFUSE to write a run record that claims a seam THE WEIGHTS DO NOT HAVE.
+
+    ⛔⛔ **THE DEFECT THIS CLOSES, MEASURED 2026-09-06.** ``DecoderConfig`` had
+    no ``sampler`` field, so ``_pin_refcv5_seams``'s ``core.decoder.sampler =
+    "ddim"`` created an AD-HOC ATTRIBUTE on an unfrozen dataclass. Python
+    accepted it; the two guards in ``_pin_refcv5_seams`` read it back and
+    PASSED; ``_seam_stamp`` copied it into ``config.json``. The model contained
+    no denoiser at all -- ``refc.py`` had zero occurrences of ``control_head``.
+    A run would have trained, converged, written a checkpoint and STATED IN ITS
+    OWN RECORD that it used a sampler it did not have. That is not a missing
+    feature, it is FALSE PROVENANCE: every later comparison against that arm
+    would have been unfalsifiable.
+
+    ⭐ **Why the field alone is not the fix.** Declaring ``sampler`` on the
+    dataclass removes THIS instance and none of the class. The stamp is built
+    from the CONFIG, and a config is a statement of intent; only the MODEL is a
+    statement of fact. So the record is checked against the built modules, here,
+    immediately before ``config.json`` is written -- the same discipline as
+    :func:`assert_knobs_stamped` one level down, and it runs at startup rather
+    than becoming an unanswerable question in an audit months later.
+
+    ⚠ **The check is BIDIRECTIONAL.** A seam that is BUILT but NOT STAMPED is
+    equally unfalsifiable -- it is the `SEAM_STATE.md` failure, where six live
+    seams were absent from ``config.json`` and the arm was reconstructible only
+    by knowing what ``refc_v3.py`` forces.
+    """
+    core = getattr(model, "core", model)
+    dec = core.decoder
+    bad: list[str] = []
+
+    def _mod(obj, name):
+        return getattr(obj, name, None)
+
+    # --- WP-4: the sampler ------------------------------------------------ #
+    if str(stamp.get("sampler", "none")) != "none":
+        for name in ("control_head", "time_mlp", "sched"):
+            if _mod(dec, name) is None:
+                bad.append(
+                    f"stamp says sampler={stamp['sampler']!r} but "
+                    f"decoder.{name} is None -- the record would claim a "
+                    f"denoiser the weights do not contain")
+    elif _mod(dec, "control_head") is not None:
+        bad.append(
+            "stamp says sampler='none' but decoder.control_head WAS BUILT -- "
+            "a live sampler absent from the run record")
+    if float(stamp.get("w_u0", 0.0)) > 0.0 and _mod(dec, "control_head") is None:
+        bad.append(
+            f"stamp says w_u0={stamp['w_u0']} but there is no control_head "
+            f"for that loss to supervise: the term would be silently skipped "
+            f"while the weight is stamped")
+
+    # --- WP-6: the agent seam --------------------------------------------- #
+    layers = list(getattr(dec, "layers", []))
+    if bool(stamp.get("cross_agent", False)):
+        dead = [i for i, ly in enumerate(layers)
+                if _mod(ly, "cross_agent") is None]
+        if dead:
+            bad.append(
+                f"stamp says cross_agent=True but decoder layers {dead} have "
+                f"no agent attention -- the tokens would reach nothing")
+    else:
+        live = [i for i, ly in enumerate(layers)
+                if _mod(ly, "cross_agent") is not None]
+        if live:
+            bad.append(
+                f"stamp says cross_agent=False but decoder layers {live} DO "
+                f"cross-attend agents -- a live seam absent from the record")
+    if stamp.get("agents") is not None:
+        for name in ("agent_head", "agent_embed"):
+            if _mod(core, name) is None:
+                bad.append(
+                    f"stamp carries an `agents` block but core.{name} is "
+                    f"None -- the record would claim a detector that was "
+                    f"never built")
+    else:
+        for name in ("agent_head", "agent_embed"):
+            if _mod(core, name) is not None:
+                bad.append(
+                    f"stamp says agents=None but core.{name} WAS BUILT -- a "
+                    f"live agent seam absent from the run record")
+
+    if bad:
+        raise SystemExit(
+            "[v3] ⛔⛔ THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to "
+            "write config.json rather than stamping a configuration that did "
+            "not happen:\n  - " + "\n  - ".join(bad))
 
 
 def assert_knobs_stamped(args, stamp: dict,
@@ -2736,6 +2900,10 @@ def train(args) -> dict:
         assert_rig_camera_covers(model, ds, args))
     _seams["agent_ground_prior_probe"] = _ground_probe
     assert_knobs_stamped(args, _seams)
+    # ⛔ ...and the record is checked against the MODEL, not only against
+    # the config that produced it. A config is intent; only the built
+    # modules are fact. See `assert_seams_are_built`.
+    assert_seams_are_built(model, _seams)
     (out_dir / "config.json").write_text(json.dumps({
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
         "registered_delta": {k: [repr(a), repr(b)]
@@ -3177,6 +3345,58 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight on the x0 loss, in CONTROL space -- the only "
                          "term that supervises the sampler in the space it "
                          "samples in.")
+    # ---- refcv5 STAGE 0: the FEASIBILITY-AWARE DECODE ------------------- #
+    # ⛔⛔ THESE FLAGS EXIST BECAUSE THE MECHANISM WAS UNREACHABLE. MEASURED
+    # 2026-09-05: `refc_v3_train.py` contained the string `feasible` ZERO
+    # times, while `DecoderConfig.feasible_decode` and its projection had been
+    # built, validated and banked. A capability the search cannot reach is not
+    # a capability -- `DESIGN_CONSTRAIN_BY_CONSTRUCTION.md` part (2), *make the
+    # good representable, ALONE IT DOES NOTHING*, observed on our own asset.
+    #
+    # What it buys, MEASURED on the refcv3 fan: `envelope` 0.8879 -> 0.0000 and
+    # `kamm_over` 0.8408 -> 0.0000 (structural zeros, not small numbers),
+    # `peak_g` 4.1789 -> 0.5964 g = 96.87 % of the gap; at MATCHED `fan_peak_g`
+    # it costs -0.0103 m of oracle-ADE where an isotropic shrink costs +0.7680.
+    # At T1 the whole deployment cost is `ade_0_2s` +0.0012 m -- 1.2 mm -- while
+    # yaw-rate error falls 80.4 %. The RL stage this replaces FAILED its
+    # committed exit at both seeds at +0.0362 m while making the fan LESS safe.
+    #
+    # ⛔ DEFAULT OFF, and OFF RETURNS THE SAME OBJECT (`refc.py::_feasible`
+    # first line), so a run that passes none of these is bit-identical to
+    # today -- proven at 4,823/4,823 windows, max |delta| = 0.0.
+    g5.add_argument("--feasible-decode", action="store_true",
+                    help="project every emitted fan onto the friction-feasible "
+                         "set INSIDE the decoder, at every pass that moves a "
+                         "waypoint. An envelope- or Kamm-violating path becomes "
+                         "UNREPRESENTABLE -- an identity, not a penalty. A "
+                         "reward moves the ranking by 0.001 and a post-train "
+                         "veto closed ~2.7 pct of the gap while regressing T1 "
+                         "+0.0362 m; both are soft, because they penalise a "
+                         "path the decode can still emit.")
+    g5.add_argument("--feasible-mu", type=float, default=0.7,
+                    help="friction circle. <= 0 disables the Kamm disc and "
+                         "keeps only the box clamp.")
+    g5.add_argument("--feasible-entry", action="store_true",
+                    help="also bind the FIRST step's speed to v0 +- a*dt. The "
+                         "pre-registered `+entry` variant drives "
+                         "`fan_infeasible` 0.8916 -> 0.0000 EXACTLY across all "
+                         "51,200 candidates, and is the only variant that "
+                         "removes the `off_reach` +0.2311 regression. Needs a "
+                         "v0-conditioned bank: without v0 there is no entry "
+                         "speed to bind to, and it is REFUSED at startup.")
+    g5.add_argument("--feasible-a-max", type=float, default=4.0,
+                    help="longitudinal box clamp, m/s^2. Defaults to the "
+                         "SCORER's own A_MAX_MPS2 -- a projection run at a "
+                         "different bound is approximately feasible and "
+                         "reports a residual that looks like noise.")
+    g5.add_argument("--feasible-kappa-max", type=float, default=0.2,
+                    help="curvature box clamp, 1/m.")
+    g5.add_argument("--feasible-prefix-slots", type=int, default=4,
+                    help="the UNIFORM prefix the scorer differentiates (4 = "
+                         "the 2 s window at 0.5 s spacing). ⛔ The prefix dt is "
+                         "DERIVED from anchor_slots and a NON-UNIFORM prefix is "
+                         "REFUSED at startup, never guessed -- the `df` / "
+                         "`step_s` scope family in a geometry costume.")
     g5.add_argument("--agents", default="off",
                     choices=["off", "head", "oracle"],
                     help="E-AGT-*. 'head' = the LEARNED monocular 3D head "

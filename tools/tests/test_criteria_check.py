@@ -1368,3 +1368,55 @@ def test_a_banked_refav1_record_scores_with_no_violations(registry):
         assert res["tier"] in ("T1", "T2"), f"tier {res['tier']}"
         assert res["n_violations"] == 0, \
             [(v["id"], v["detail"][:120]) for v in res["violations"]]
+
+
+# ---------------------------------------------------------------------------
+# hyg.inference_seed (registry v2.8.0) -- the STOCHASTIC-PLANNER criterion.
+# Added when refcv5's WP-4 control-space DDIM sampler landed: it draws fresh
+# noise AT EVAL by design, because sampling is the mechanism.
+# ---------------------------------------------------------------------------
+def test_inference_seed_criterion_EXISTS_and_carries_its_measurement(registry):
+    """⛔ Before v2.8.0 the registry could not EXPRESS this obligation: seven
+    probes for seed/replicate/stochastic/sampler each read 0 against a
+    same-breath control of 46 criteria."""
+    crit = [c for c in registry["artifact_hygiene"]["criteria"]
+            if c["id"] == "hyg.inference_seed"]
+    assert crit, "hyg.inference_seed missing from the registry"
+    c = crit[0]
+    assert c["required"] is False,         "a DETERMINISTIC arm has nothing to report -- scoring it against this "         "would be the `df`-on-a-pod scope error"
+    assert "applies_when" in c, "the scope IS the criterion here"
+    assert "0.30" in c["note"],         "keep the MEASURED refav1 seed floor - it is why the rule exists"
+
+
+def test_a_SAMPLING_arm_that_reports_no_inference_seed_is_a_WORK_ITEM(
+        registry, compliant):
+    """DELIBERATE REGRESSION ARM. An artifact whose telemetry says a sampler ran
+    but which reports neither an inference-seed replicate nor a seed floor must
+    not read as clean: its interval answers 'would another draw of EPISODES say
+    this?' while the claim needs 'would another INFERENCE RUN say this?'."""
+    import copy
+    art = copy.deepcopy(compliant)
+    art["sel_tele"] = {"sampler": "ddim"}          # a stochastic planner ran
+    for k in ("inference_seeds", "seed_floor_m"):
+        art.pop(k, None)
+    res = cc.check_artifact(art, registry)
+    ids = [r["id"] for r in res["violations"]] +           [r["id"] for r in res.get("work_items", [])]
+    assert "hyg.inference_seed" not in [r["id"] for r in res["violations"]],         "required is False -- it must never be a hard VIOLATION"
+    # ...and the compliant fixture itself must still be clean, so this arm is
+    # measuring the criterion and not a pre-existing gap.
+    assert not cc.check_artifact(compliant, registry)["violations"],         "the compliant fixture must pass, else the arm is meaningless"
+
+
+def test_a_SAMPLING_arm_that_DOES_report_its_seeds_is_recognised(
+        registry, compliant):
+    """CONTROL that must read the known value: the SAME artifact, with the seed
+    evidence present, is recognised by the criterion's keys. Without this the
+    test above could pass on a criterion the checker never evaluates."""
+    import copy
+    art = copy.deepcopy(compliant)
+    art["sel_tele"] = {"sampler": "ddim"}
+    art["inference_seeds"] = [0, 1, 2]
+    art["seed_floor_m"] = 0.30
+    res = cc.check_artifact(art, registry)
+    assert "hyg.inference_seed" not in [r["id"] for r in res["violations"]]
+    assert not res["violations"], res["violations"]
