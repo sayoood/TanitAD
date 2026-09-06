@@ -1,11 +1,10 @@
 # RESULT — is refav1's left/right turn asymmetry real?
 
-**STATUS: ROUND 1 LANDED. ⭐⭐ THE VERDICT IS OUTCOME A — THE ASYMMETRY IS REAL**
-(§6, all four pre-registered conditions met, both inference seeds).
-⛔ **But the CAUSAL half is still open:** the increment over the goal-head
-baseline does not clear this panel's own seed floor, so *"the curvature penalty
-causes it"* is NOT yet established. Round 2 (`ta_ccos_s0/s1`, `W_KAPPA = 0`, the
-same 75 windows) is RUNNING and is the arm that adjudicates it — see §6.5.
+**STATUS: COMPLETE. ⭐⭐⭐ OUTCOME A — THE ASYMMETRY IS REAL, AND `W_KAPPA` CAUSES
+IT.** All four pre-registered conditions met on both inference seeds (§6), and the
+full 2 x 2 lever design (`W_KAPPA` in {0, 15.11245} x seed in {0, 1}) closes the
+causal half (§6.8): the penalty takes `turn_left` recall **0.3667 -> 0.0000** at
+BOTH seeds, separated, while `W_KAPPA = 0` is **not measurably asymmetric at all**.
 
 *Read `SPEC_TURN_ASYMMETRY.md` first: it carries the power derivation, the panel
 rule, the three amendments I wrote against myself before the run, and BOTH
@@ -574,6 +573,103 @@ reason and n rather than silently dropped. **TAC longitudinal recall is
   population on every left-goal window, and it **loses on cost**. The lever is
   the **cost comparison itself**, and round 2 says whether `W_KAPPA` is the term
   responsible.
+
+### 6.8 ⭐⭐⭐ ROUND 2 — THE CAUSAL HALF IS ESTABLISHED AT **BOTH** SEEDS: `W_KAPPA` IS WHAT REMOVES THE LEFT TURNS
+
+The full **2 × 2** design is complete — `W_KAPPA ∈ {0, 15.11245} × --plan-seed ∈
+{0, 1}`, all four arms on the **same 75 windows**. Raw:
+`raw/turn_asym_read_round2.txt`, records at `raw/arms/`.
+
+**THE LEVER (paired episode-cluster bootstrap, same windows, same plan seed):**
+
+| seed | stratum | recall `W_KAPPA` 0 → 15.11245 | delta | separated |
+|---|---|---|---|---|
+| **s0** | **`turn_left`** | 0.3667 → **0.0000** | **−0.3667 [−0.6333, −0.1000]** | **YES** |
+| s0 | `turn_right` | 0.5667 → 0.4333 | −0.1333 [−0.2286, −0.0357] | YES |
+| **s1** | **`turn_left`** | 0.3667 → **0.0000** | **−0.3667 [−0.6333, −0.1000]** | **YES** |
+| s1 | `turn_right` | 0.5667 → 0.5000 | −0.0667 [−0.1290, +0.0000] | no |
+
+⭐ **The LEFT effect is IDENTICAL and separated at BOTH seeds (−0.3667). The
+RIGHT effect is smaller and separated at only one.** ⇒ **the curvature penalty
+destroys left turns ROBUSTLY and right turns MARGINALLY**, and the gap widens
+**+0.2000 → +0.4333** (s0) and **+0.2000 → +0.5000** (s1).
+*(Control: the `W_KAPPA = 0` arm against itself reads exactly +0.0000.)*
+
+**AND WITHOUT THE PENALTY THERE IS NO ASYMMETRY TO SPEAK OF:**
+
+| arm | pooled R − L | **within-episode R − L** | retention `TURN_L` / `TURN_R` |
+|---|---|---|---|
+| `ta_ccos_s0` | +0.2000 [−0.2726, +0.5379] **not sep** | +0.1583 [−0.4917, +0.5500] **not sep** | **1.0000 / 1.0000**, delta **+0.0000 [0, 0]** |
+| `ta_ccos_s1` | +0.2000 **not sep** | +0.1583 **not sep** | **1.0000 / 1.0000**, delta **+0.0000** |
+| `ta_wk15_s0` | +0.4333 **SEPARATED** | **+0.4250 SEPARATED** | 0.0000 / 0.8000, **+0.8000 SEPARATED** |
+| `ta_wk15_s1` | +0.5000 **SEPARATED** | **+0.5083 SEPARATED** | 0.0000 / 0.8286, **+0.8286 SEPARATED** |
+
+⭐⭐ **At `W_KAPPA = 0` the plan tracks the goal at full `|kappa| = 0.08` on EVERY
+turn-goal window in BOTH directions — retention 1.0000 / 1.0000, difference
+exactly +0.0000 at both seeds.** ⛔ **That value is a SATURATION, not an
+estimate**, so §3.16's "the retention strata are episode-degenerate" caveat is
+**moot for these two arms**: a confound cannot move a quantity that is 1.0 in
+every cell. The caveat still binds on the `wk15` arms, and their retention rows
+are therefore reported but not used to decide.
+
+⇒ **The asymmetry is not a property of refav1's planner. It is a property of
+refav1's planner UNDER A CURVATURE PENALTY.**
+
+### 6.9 ⛔ A CHECK THAT HAD TO BE RUN: are the two `ccos` arms actually two seeds?
+
+The `ccos` pair reads **exactly identical on every recall and retention metric**
+(deltas +0.0000 with zero-width intervals). On a *stochastic* planner that is the
+signature of a **duplicated arm**, which would have voided the seed floor — so it
+was verified rather than accepted, three independent ways:
+
+1. `plan_cfg.seed` = **0** and **1** in the two records;
+2. the arms' own launch banners: `plan={... seed 0}` and `{... seed 1}`;
+3. ⭐ **the TRAJECTORIES differ** — `ccos_s0` vs `ccos_s1` `max|diff| =` **7.75 m**
+   on **14 / 75** windows (`wk15` pair: 3.70 m on 21/75). *(Control: the LEVER
+   pair `ccos_s0` vs `wk15_s0` differs by 15.08 m on 33/75.)*
+
+⇒ **The seeds are genuinely different; they move the plans on 14 windows and
+simply do not move any of them across a turn-label boundary.** The `ccos` seed
+floor of **+0.0000** on turn recall is a real result — at `W_KAPPA = 0` the
+canonical goal seed wins on every turn-goal window (retention 1.0000), so the
+CEM's stochastic part has nothing left to decide there.
+
+### 6.10 The speed confound, RE-RUN because its first refutation was inadmissible
+
+⛔ I refuted the speed confound on the banked 40-window panel — and then
+established that that panel was **structurally degenerate** (§2). **A refutation
+made on inadmissible evidence is not a refutation, whichever way it came out**,
+so it was re-run here at n = 30/30 with 6 clusters (`raw/speed_retest.py` /
+`_wide.txt`). **It holds:**
+
+| `ta_wk15_s0` | value |
+|---|---|
+| recall, SLOW half of GT turns | **0.2333** [0.0476, 0.4545] |
+| recall, FAST half | **0.2000** [0.0000, 0.3871] |
+| recall, LEFT | **0.0000** |
+| recall, RIGHT | **0.4333** |
+| matched inside SLOW | LEFT **0/17**, RIGHT 7/13 |
+| matched inside FAST | LEFT **0/13**, RIGHT 6/17 |
+
+Left is **zero in BOTH speed bands**, and the wide panel is better speed-balanced
+than the banked one (GT-turn `v0` medians **3.191 vs 5.050**, MWU **p = 0.2036**,
+against the banked panel's 1.886 vs 5.189 at p = 2.5e-06). ⇒ **DIRECTION, not
+speed** — now on admissible evidence.
+
+### 6.11 The complete control ledger
+
+* **153 / 153** retained plans across all four arms curve the way their goal asked
+  — **the sign is never wrong; the failure is magnitude.**
+* An arm against itself: **+0.0000** exactly, on every statistic, in every table.
+* A stratum against itself in the within-episode contrast: **+0.0000** exactly.
+* The pooled `TAC_traj_lat_correct` seed delta: `wk15` **+0.0267 [+0.0000,
+  +0.0741]** (consistent with the banked 0.0750), `ccos` **+0.0000**.
+* GT against itself on the panel: **1.0000 / 1.0000**; GT strata **30 / 30 / 15**,
+  matching `panel_turn75.json` exactly.
+* My CPU goal-decode probe vs the arm's own `goal_lat_cl`: **55 / 55** agreement.
+* `ha0`'s exactly 0.0000 turn recall is a **structural** zero (a constant-velocity
+  plan cannot turn), with `ha0_ext` non-zero on the same windows as its
+  same-breath control.
 
 ---
 

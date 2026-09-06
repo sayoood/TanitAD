@@ -13942,3 +13942,60 @@ cost-geometry line, and the sibling turn-asymmetry panel (`panel_turn75.json`) i
 selected by the same labeller without a speed filter. Corrected criterion (curvature tracking vs GT,
 the v2 curvature gate beside v1, and SIGNED dyaw error) is pre-registered in
 `.../2026-09-05-refav1-close-the-gaps/RESULT.md` §F4, **before the arm it governs landed**.
+
+## 2026-09-06 — TRAIN-C16 · A FOUR-CHARACTER PREFIX WAS TREATED AS AN IDENTITY
+
+**Class: an identifier that is not unique, guarded by a check that asks the wrong
+question.** Sibling of TRAIN-C13 (the label's frame ≠ the arm's frame) — there the label
+was in the wrong *frame*, here it is from the wrong *recording*.
+
+**MEASURED (DataFlyWheel, 2026-09-06).** `physicalai.py:740` derives `episode_id` from the
+**first four characters** of a clip uuid. The pilot join builder's ambiguity guard asks
+*"is this prefix unique among the cached zips?"* — not *"which clip is this?"* Result:
+
+* **`pilot_val_agents.jsonl`: 4 of 15 episodes (26.7 %)** joined to a **different real
+  recording's** cuboids — `ep_00013`, `ep_00065`, `ep_00076`, `ep_00087`.
+* **`pilot_train_agents.jsonl`: 13 of 54 (24.1 %)**, including a proof needing no
+  registration at all — **`ep_00107` and `ep_00108` are assigned the same clip**; 54
+  `clip_id`s map to **53** distinct real clips.
+
+⛔ **There is no downstream symptom.** The boxes are real, well-formed and physically
+plausible; `collision` and `headway` simply fire on agents that were never there. This is
+the all-zero-floor family again (TRAIN-C14) with the failure moved upstream: **a
+plausible-looking input produces a confident number instead of an error.**
+
+⭐ **The fix is identity by CONTENT, and it is decisive rather than heuristic.** Fit each
+prefix candidate's egomotion to the episode's own pose track
+(`taniteval.lead_source.register_poses_to_time`); a candidate that is not the clip
+**cannot register**. Median residual **0.00105 m** against **4.403 m** for a rejected
+sibling — **~1,600× separation**, and 100/100 val + 400/400 train episodes resolved to
+exactly one candidate. On the 11 val episodes whose identity was already right, old and
+new agree on **2,189/2,189 frames (100.0 %)**, so the repair perturbs nothing that was
+correct.
+
+**Two more defects found in the same audit, both silent:**
+* the time base — `0.2 + i/10` is wrong in **both** terms; the recovered affine drifts
+  **0.098–0.200 s** per episode (median longitudinal displacement **0.2369 m**, max 0.764 m);
+* `occ` was a **constant 0**; the real flag says **59.9 %** of boxes are outside the 120° field.
+
+⚠️ **And a third, which is mine:** **292 frames lie outside their clip's obstacle label
+span and carry `agents: []`.** Every probe I ran read an empty list as a **negative**. It
+is **NO_LABEL, not road-clear** — the same absence-is-not-evidence error as a search
+reporting "no matches" for a file it could not open, and the same one this log records for
+`ls-tree`. Masking on the per-episode `label_span_s` is the fix.
+
+⇒ **BLAST RADIUS, stated rather than minimised: every banked probe or pilot result scored
+against `pilot_val_agents.jsonl` or `pilot_train_agents.jsonl` needs re-reading** — WP-F
+(relational edges), WP-G (rider footprint), WP-H/WP-J (trunk vs pixels) and WP-I (semantic
+floor) among them. ⚠️ The contamination is **common-mode across arms** in each of those
+panels, so **arm ORDERINGS are the part most likely to survive and MAGNITUDES are not**;
+anything computed **per episode** — a leave-one-episode-out fold, a within-episode
+permutation null, an episode-cluster bootstrap — is structurally damaged, because 27 % of
+the clustering units are wrong. Not retracted wholesale; **not admissible until re-read.**
+
+→ **Durable fix banked the same night:** `stack/scripts/rl_pilot_join.py` gains four
+additive gates + 12 tests; WP-I re-run as `wpi3_semantic_floor.py` against the verified
+join at **34 episodes instead of 15**.
+⚠️ **The lesson that generalises past this join: a prefix, a hash prefix, or any truncated
+key is an INDEX, never an IDENTITY. Guard it by reconstructing the object and checking it
+against the data, not by asking whether the key happened to be unique in the set you had.**

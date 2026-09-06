@@ -305,6 +305,44 @@ def main(tags):
 
     print()
     print("=" * 100)
+    print("3b. ⭐ THE LEVER: does W_KAPPA CAUSE the asymmetry?  (paired, same windows)")
+    print("=" * 100)
+    print("  The causal claim is a DIFFERENT claim from 'the asymmetry is real'.")
+    print("  It is tested by pairing a W_KAPPA arm against the W_KAPPA = 0 arm at")
+    print("  the SAME plan seed, per direction, on the SAME windows.")
+    fam = {}
+    for t in tags:
+        base = t.rsplit("_", 1)[0]
+        fam.setdefault(t.rsplit("_", 1)[1], []).append(t)
+    pairs = []
+    for seed_sfx, arms_ in sorted(fam.items()):
+        wk = [a for a in arms_ if "wk15" in a]
+        cc = [a for a in arms_ if "ccos" in a]
+        if wk and cc:
+            pairs.append((cc[0], wk[0], seed_sfx))
+    if not pairs:
+        print("  ** no (W_KAPPA=0, W_KAPPA>0) pair at a matched seed in this arm set --")
+        print("     the CAUSAL half CANNOT be tested here and is reported as OPEN. **")
+    for a0, a1, sfx in pairs:
+        print("  seed %s:  %s (W_KAPPA 0)  ->  %s" % (sfx, a0, a1))
+        for nm, m in (("turn_left", mL), ("turn_right", mR)):
+            r = _ci.paired_episode_cluster_bootstrap(hit[a1][m], hit[a0][m],
+                                                     eid[m], n_boot=NB)
+            print("    %-11s recall %.4f -> %.4f   delta %+0.4f [%+0.4f, %+0.4f] "
+                  "separated=%s" % (nm, hit[a0][m].mean(), hit[a1][m].mean(),
+                                    r["delta"], r["lo"], r["hi"], r["separated"]))
+        g0 = rec[a0][1] - rec[a0][0]
+        g1 = rec[a1][1] - rec[a1][0]
+        print("    ⇒ the GAP (R - L) moves %+0.4f -> %+0.4f, i.e. W_KAPPA %s it by "
+              "%+0.4f" % (g0, g1, "WIDENS" if abs(g1) > abs(g0) else "narrows",
+                          g1 - g0))
+        z = _ci.paired_episode_cluster_bootstrap(hit[a0][mL], hit[a0][mL],
+                                                 eid[mL], n_boot=200)
+        print("    CONTROL, the W_KAPPA=0 arm against ITSELF (must be exactly "
+              "+0.0000): %+0.4f" % z["delta"])
+
+    print()
+    print("=" * 100)
     print("4. THE VERDICT, against SPEC section 1's three conditions")
     print("=" * 100)
     fam = [t for t in tags if t.rsplit("_", 1)[0] == tags[0].rsplit("_", 1)[0]]
