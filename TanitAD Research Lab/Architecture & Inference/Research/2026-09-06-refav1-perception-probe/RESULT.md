@@ -5,7 +5,7 @@ Checkpoint `/home/nvidia/refav1_lon/ckpt/ckpt.pt`, **step 21109**, loaded with
 **0 missing / 0 unexpected** into the code bundled beside it
 (`/home/nvidia/refav1_lon/code/stack`, `refa_v1.py` 2,880 lines).
 Pre-registration: `SPEC.md`, committed `092db55` **before** these numbers existed.
-Raw: `raw/probe_results.json`, `raw/lead_census.json`, `raw/bank_meta.json`,
+Raw: `raw/probe_results.json`, `raw/motion_probe.json`, `raw/lead_census.json`, `raw/bank_meta.json`,
 `raw/probe.log`, `raw/percprobe_lead.mp4.assert.json`.
 
 ⛔ **TIER.** This is a **representation diagnostic**, not a driving number. It is
@@ -135,6 +135,52 @@ centres is mostly noise. It is not: the closing rate's **lag-1 autocorrelation i
 latent can say *"the lead is 18 m away"* but **cannot say "and I am closing at
 2 m/s"** — which is precisely the term a following controller needs. This is a
 **representation** work item, and it is upstream of any cost re-weighting.
+
+---
+
+## 4b. THE NEXT LEVER, RUN — and it rules OUT the cheap fix
+
+A null is not a finished turn. The closing-rate null has two very different
+causes, and they differ by ~100x in cost to fix:
+
+* **(A)** the trunk genuinely does not represent relative motion -> upstream,
+  objective/architecture;
+* **(B)** `_last_state` merely **discards** it. It collapses a 4-frame window
+  into one tensor, so a rate could live across the field sequence and be absent
+  from the collapsed state -> cheap, planner-side: hand the cost a temporal pair.
+
+The bank already held what was needed, so (B) was tested directly.
+Raw: `raw/motion_probe.json`, `raw/motion.log`. n = 1,491 rows / **41 clusters**.
+
+| arm | `lead_closing_mps` | 95 % CI | |
+|---|---|---|---|
+| `constant` | +0.000000 | — | control |
+| `pix_diff` — motion FLOOR | +0.0000 | [−0.0000, +0.0000] | |
+| `field_t` (collapsed state) | +0.0061 | [−0.0406, +0.0513] | spans 0 |
+| **`field_diff`** = field[t] − field[t−1] | **+0.0052** | [−0.0161, +0.0252] | spans 0 |
+| **`field_pair`** = [state, difference] | **+0.0145** | [−0.0257, +0.0552] | spans 0 |
+
+Every paired delta spans zero (`field_pair` − `field_t` = +0.0083
+[−0.0015, +0.0203]).
+
+⇒ ⛔ **(B) IS REFUTED. Handing the cost an explicit temporal difference recovers
+nothing.** The closing rate is not merely collapsed out by `_last_state` — it is
+absent from the field sequence too, on this 0.2 s grid. **The answer is (A): the
+expensive, upstream one** — and it is now established rather than assumed, which
+is the whole point of running it.
+
+⭐ **SAME-BREATH NON-ZERO CONTROL, so the null is not a dead rig.** On the *gap*
+target, over the same arms and the same windows, `field_diff` reads **+0.0004**
+while `field_t` reads **+0.3647** — paired **−0.3644 [−0.5083, −0.2115],
+EXCLUDES 0**. The difference operator demonstrably *destroys* positional
+information and the pipeline demonstrably *can* produce a large effect and a
+separated paired delta. So the closing-rate zeros are arithmetic about the
+representation, not a broken harness. (`field_pair` on gap reads +0.3357, so
+concatenation does not break the arm either.)
+
+⇒ **The named next work item is a REPRESENTATION change that makes relative
+motion explicit** — not a cost re-weighting, and not a planner-side temporal
+pair, because the cheap version has now been measured and it does not work.
 
 ---
 
