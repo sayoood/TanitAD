@@ -2934,6 +2934,77 @@ INHERITED from the launch stream that it is md5-identical to the pod's), the lau
 
 ---
 
+### 4.7 REF-C **v5** — `refcv5-ddim-b1-v72-40k` — 🟡 **TRAINING since 2026-09-06 10:13:52 UTC** · ⛔ **NO RESULT EXISTS YET** · the **WP-4 diffusion-sampler** rung
+
+⛔⛔ **THIS ROW RECORDS A LAUNCH, NOT A RESULT. There is no eval, no ADE, no metric-family
+table, and nothing here may be quoted as a capability number.** The row exists so that the
+run's argv, corpus, parity status and preconditions are in the repo while it trains, rather
+than only in one agent's context. Launch record:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv5-launch/RESULT.md`.
+
+| | |
+|---|---|
+| **Status** | 🟡 **TRAINING.** Supervisor pid **2530709**, trainer pid **2530863**, GPU **43,421 MiB / 46,068 at 100 %**. Progress verified in `metrics.jsonl` (steps 50 / 100 / 150), stderr empty. Target **40,284** steps |
+| **The ONE lever vs refcv4b** | **WP-4: `--sampler ddim --w-u0 0.5`.** The metre-space truncated denoise is replaced by an **anchored Gaussian in CONTROL space**, so every sample re-rolls through the kinematic model and is **flyable by construction** rather than by penalty. ⭐ Everything else is refcv4b's argv **byte for byte** — same corpus, same labels, same anchors file, same seed, same step target ⇒ **a matched-step, matched-corpus comparison in which exactly one mechanism moved** |
+| **Args (`config.json['argv']`)** | `--arm hier --size base --v2-cache /root/data/train --v7-labels …/s2_labels_v7.2_train.jsonl.gz --eval-cache /root/data/eval --eval-labels …/s2_labels_v7.2_eval.jsonl.gz --eval-every 500 --eval-batches 8 --image-hw 256 640 --steps 40284 --batch 20 --workers 6 --prefetch-factor 1 --v2-lru 24 --lr 1e-4 --warmup 2000 --seed 0 --log-every 50 --save-every 500 --nav-from-v7 --u8-batches --anchors /workspace/experiments/refcv5-ddim-b1-v72-40k/anchors.pt --n-anchors 117 --anchor-v0-conditioned --anchor-control-units alat --sel-accel-max 2.0 --goal-str --ego-state-inject --ego-dropout 0.5 --sampler ddim --w-u0 0.5 --agents off --out /workspace/experiments/refcv5-ddim-b1-v72-40k` |
+| **Seam stamp (`config.json['seams']`)** | `sampler ddim`, `sampler_space control`, `sampler_infer_t 8`, `sampler_steps 2`, `sampler_groups 1`, `control_norm [4.0, 3.0]`, **`w_u0 0.5`**, `agents off`, `w_agent 0.0`, `cross_agent false`, `feasible_decode false`, `goal_str true`, `withheld_bank fixed`. **`size base`**, **`rig_rung false`** ⇒ registry-grade |
+| ⭐ **The lever is LIVE, not merely stamped** | `metrics.jsonl` carries a **non-zero `u0` at every logged step** — **0.27576 / 0.18663 / 0.32519** at steps 50 / 100 / 150. *A weight that reaches `config.json` and adds zero to the total is the M18 dead-flag defect (and `agent_w_ground`'s 1.16e-10 is a live example); this one is measured non-zero.* Loss falling **61.1346 → 57.7430 → 28.1739** |
+| **Corpus — ⛔ NON-PARITY** | `/root/data/train`, **4,572** `*.v2ep.pt` (B1), **the same corpus refcv4b trained on** — deliberately, so the comparison is matched. The trainer says so itself: `[parity] ⚠ NON-PARITY v2 corpus … Results off it are NOT cross-arm comparable with the parity arms.` ⇒ **a refcv5-vs-refcv4b delta will be a valid ARM delta; a LEVEL against any parity arm is invalid.** Episode ids collision-free 4,572/4,572 |
+| **Labels** | `s2_labels_v7.2_train.jsonl.gz` md5 `0ff902130ce76886b8a925eceed9e3a5`, **4,572/4,572 = 100.0 %** (trainer floor 0.50); nav_from_v7 follow 2,897 / left 811 / right 864, missing 0. Eval `…_eval.jsonl.gz` md5 `aa12c948f062181c3297265b51526ec5`, 141 clips. **781,635** train windows; held-out **24,114** windows / 141 episodes, 8 fixed batches every 500 steps |
+| **Anchor vocabulary (BY CONTENT)** | **The same file as refcv4b, byte-identical**: `file_sha256` **`e86cf507d55a4585435025fe52f33817d08dab879e1f65ff6a1fc9b0eb81e8fb`**, `anchors` [117, 8, 2] sha256 `51f930dc…a66df`, `controls` [117, 2] sha256 `b072f4c0…089664`. ⛔ The file declares **no** `control_units`, so `--anchor-control-units alat` is passed **by name** and the run records `control_units_source: cli-override-legacy-file` — i.e. **the record says the units came from the operator, not the artifact**. The units are not a guess: this is the identical tensor that trained refcv4b for 40,284 steps under `alat` |
+| ⭐ **A DECLARED bank now exists for the NEXT rung** | `pod:/workspace/anchors_117_alat_declared.pt` (11,829 B) — same tensors, **proven unmoved** (`anchors_sha256` and `controls_sha256` re-asserted on both sides of the write), units resolving from the **file** (`control_units alat, source=file, horizon_s 6.0, dt 0.1, ref_speed_ms 10.0, kappa_cap 0.12, alat_v_floor 4.0`), constants read from `anchors.units.json` and corroborated by §4.6. A **same-breath negative control** confirms the undeclared original is **still refused**, so the guard was not weakened to let the new file pass. Builder `stack/scripts/restamp_refcv4b_anchors.py`; log `…/2026-09-06-refcv5-launch/raw/restamp_anchors.log`. ⛔ The live run's file is **not** modified |
+| **Pace / ETA** | **3.938 s/step** steady-state, measured over steps **100 → 150** (startup excluded) ⇒ **~43.9 h remaining, ~44.1 h total**, landing **≈ 2026-09-08 06:20 UTC**. Against refcv4b's **3.844 s/step** on the same pod/cache/batch/workers/LRU, **WP-4 costs +2.4 %**. ⚠️ **This trainer logs no `step_s`; `elapsed_s` is CUMULATIVE — difference two rows, never divide** |
+| **Location** | `tanitad-refcv3` (= `tanitad-a40`) `:/workspace/experiments/refcv5-ddim-b1-v72-40k/` — `config.json`, `metrics.jsonl`, `train.log`, `supervisor.log`, `ckpt.pt` (`--save-every 500`). Supervisor `pod:/workspace/sup_refcv5.sh` = repo `stack/scripts/sup_refcv5.sh` (md5 **`ce882e31ba0b3d1371379d2f52ea9fa2`**, identical both sides, 227 lines, `bash -n` clean). ⛔ **Never eval on this pod while it trains; never modify the run dir except to add a sidecar; never ship a trainer file to the pod mid-run** |
+| **Done-marker (TWO independent writers)** | (1) the **trainer** writes `summary.json` on a clean exit — MEASURED in the 3-step smoke, `[v3:hier] DONE at 3 — summary.json written`; (2) the **supervisor** derives the condition **from the data** (`max step in metrics.jsonl >= 40284`) and writes `{"done": true, "final_step": …}` in the same breath as the decision, then exits 0. Neither depends on the other. Plus a **three-relaunch no-progress crash-loop stop** (writes `{"done": false, "crash_loop": true}`, exit 7) and `MAX_RELAUNCH 40`. `last_step()` is carried over in its **fixed** form (the `\|\| echo 0` fallback that emitted two lines and made the done branch unreachable is not reintroduced) |
+| ⭐ **Lock-fd audit — VERIFIED, not merely written** | `200>&-` on the trainer's redirection list **and on BOTH `sleep`s** (the half a partial fix missed the same day it shipped). Proven by the `/proc/*/fd` holder scan: **exactly one holder, `bash /workspace/sup_refcv5.sh`** — no trainer, no dataloader worker, no `sleep`. A future supervisor restart is therefore possible rather than permanently blocked |
+| **Pre-launch refusals (all fired green)** | missing `anchors.pt` → exit 5; a bank without `controls` / straight-ahead → exit 6; ⭐ **NEW in v5 — the WP-4 seam absent from the shipped stack → exit 8**, a positive import assertion (`DDIMSchedule`, `roll_controls`, `build_agent_head`). It is the direct answer to the stale-pod finding below |
+
+#### ⚠️ Five caveats that travel with this row
+
+1. ⛔⛔ **NO RESULT EXISTS.** Nothing in this row is an eval number. `metrics.jsonl` values
+   (`loss`, `u0`, `traj`) are **T0 loss-surface diagnostics** and must never be quoted as a
+   result (C1) — the same prohibition that stands on refcv4b's row.
+2. ⛔⛔ **refcv5 IS STOCHASTIC AT INFERENCE, AND THIS CHANGES THE LANDING EVAL.** refcv4b is
+   deterministic outside training (`noise = torch.randn_like(x) if self.training else
+   torch.zeros_like(x)`), so its single-seed separated CIs closed the inference question by
+   construction. **The v5 sampler cannot**, and `refc.py` says so at the anchored-Gaussian
+   block: *"THIS IS STOCHASTIC AT EVAL, BY DESIGN AND NOT BY OVERSIGHT … a SAMPLER cannot,
+   because sampling is the mechanism"*, adding *"A refcv5 sampler arm must be replicated
+   over INFERENCE seeds, and an effect smaller than that floor is not an effect."* On refav1
+   the measured inference-seed floor was **~0.30 m ADE**. ⇒ **A landing read without an
+   inference-seed replicate will produce separated CIs that answer a question nobody asked**
+   (`H-ESTIM-SEED-1`; the third-variance rule).
+3. ⛔ **WP-6 (the agent seam) is NOT in this arm, and the reason is measured.** `--agents
+   oracle` was the intended first rung and **does not run without agent ground truth**: the
+   forward raises *"this build is `--agents oracle` but no agent_gt reached the forward. The
+   oracle's tokens ARE the ground-truth boxes"*. ⇒ *"oracle needs no detector"* is true about
+   the **detector** and false about the **join**. There is **no agent join on this pod**, and
+   the only one the programme holds is **parity**-scoped (`train2400_agents.jsonl.xz`, 2,308
+   clips), which covers ~**4 %** of this B1 corpus. **Blocked on a B1-scoped
+   `obstacle.offline` join (DataFlyWheel);** the code, guards and tests are already in HEAD.
+4. ⛔ **The pod's stack was STALE at launch time and was shipped, not fetched.**
+   `refc_sampler.py` and `refc_agents.py` were **ABSENT**; `refc_v3_train.py` read **1,846**
+   lines against HEAD's **3,634**. A launch from that tree would have had no `--sampler` flag
+   at all. Shipped as a tarball (md5 `4aff70f6200d559f328969d4c2f1d303`, identical both
+   sides) and verified **by content** — every load-bearing file re-read at its exact HEAD
+   line count, with same-breath controls reading non-zero. ⛔ `git fetch` on a pod HANGS and a
+   failed fetch followed by a checkout **destroys shipped files**; it was never used.
+   `taniteval` was also absent entirely and was shipped (md5 `789407da18b5df52a1b4190ff0bea075`)
+   — otherwise the **landing eval** would have died on `import taniteval.ci` *after* ~45 h of
+   paid compute, which is the documented analysis-time-import trap.
+5. ⚠️ **`--sel-refined` is not passed and could not be** — `grep -c sel_refined` on the
+   trainer reads **0** against a same-breath control (`sel_accel_max` = 5): the flag does not
+   exist here. Its prohibition stands regardless (MEASURED **0.0259 m separated WORSE** on
+   refcv4b, because the ranking head was never trained to rank). **WP-7 selector *training*
+   remains the load-bearing item; the wiring is not the fix.**
+
+⚠️ **Owed before this run lands (~44 h of head-room):** a **pre-registration for its landing
+eval**, naming the four metric families, the estimator, and — per caveat 2 — the
+**inference-seed replicate**. The WP-4/WP-6 wiring package already recorded that the prereg
+governing this arm is *"a separate, still-owed artifact"*.
+
+---
+
 ## 5. P2 — CEM planner over the frozen v1 world model
 
 **Not a trained model. A reconstructible evaluation artifact — and the evidence base for the v3 pivot.**
