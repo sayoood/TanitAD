@@ -9662,3 +9662,43 @@ family must NOT win there — it moves the turn ceiling by **−0.0047 m (0.24 %
 Recommended order: **(1)** repair `s2_geom_emit_v7.py::tactical_actions()` and rebuild the v7.2
 labels; **(2)** add the 6 two-segment candidates; **(3)** retrain. (1) and (2) are cheap; (3) is the
 PI/compute decision and the A40 is committed to refcv5 until 2026-09-08 07:33 UTC.
+
+### D-SELQ-SIBLING-16 — the S-curve lane-change parameterisation ALREADY EXISTS in `refa_v1`, and a sibling independently named the same three never-labelled classes
+**Status: SUPPORTED (MEASURED, ours — source read).** **Class: convergent evidence + a reuse
+pointer.** Found by an independent repo-wide grep that completed after the main package landed.
+
+**(a) The vocabulary extension is not a blank page.** `stack/tanitad/refs/refa_v1.py:118-123`
+already defines `GOAL_LANE_CHANGE = (2.0, 1.75)` and `canonical_controls` already emits it as an
+**S-CURVE, `+kappa` then `-kappa`, `kap = 2*1.75 / (v_ref^2 * 2.0^2)`** — a 2.0 s half-time and a
+1.75 m half-offset (`…/2026-09-05-refav1-goal-margin/tools/vocab_fit.py`, which re-states the
+constants from that file). That is **exactly the two-segment family D-SELQ-TWOSEG-15 sized**, at
+`t_split = 2.0 s`, already committed on the refav1 line. ⇒ the recommended refcv4b extension is a
+PORT of an existing parameterisation, not a new design; the open question is only which split
+points to carry (D-SELQ-TWOSEG-15 measures 2/3/4 s as worth 0.1645 m against 0.0304 m for a single
+3 s split).
+⭐ The same sibling records the COMPLEMENTARY defect on refav1: because NUDGE_* and LANE_CHANGE_*
+are S-curves with **zero net heading change**, the only SUSTAINED curvatures that vocabulary can
+command are 0 and +-0.08 — so an S-curve family fixes lane changes and does **nothing** for a
+sustained road curve. Both shapes are needed; neither substitutes for the other.
+
+**(b) Independent corroboration of D-SELQ-LC-LABEL-2 / D-SELQ-LC-HEAD-3, from a different arm and a
+different agent.** `…/2026-09-05-refav1-make-it-drive/tools/bias_ladder.py` names, verbatim, *"the
+three NEVER-LABELLED classes (LANE_CHANGE_L/R, ABORT_LC)"* on the refav1 line. It also records a
+consequence this package did NOT measure and which bears directly on the `FOLLOW` defect in
+D-SELQ-LC-EMIT-7: a textbook logit adjustment `-tau * log(pi)` with eps-smoothed (1e-6) priors gives
+those three a bias of **~ +10 at tau = 0.75**, i.e. **it most strongly promotes exactly the tokens
+with no evidence behind them**, and that is very likely why `prior:label tau >= 1.0` COLLAPSED in
+its banked sweep (balanced_acc **0.133**).
+⇒ ⛔ **Any prior-corrected decoding aimed at the `FOLLOW` minority-class failure MUST mask the
+never-labelled classes**, or it will invent lane changes instead of recovering `FOLLOW`. The sibling
+already ships a MASKED variant.
+
+⚠️ **A method caveat that must travel with this row.** The repo-wide `grep -rIn "lane_change|
+LANE_CHANGE" --include=*.py` that surfaced these files returned **43 lines, ALL under
+`TanitAD Research Lab/`, and NOT ONE under `stack/`** — while a grep of the same pattern over an
+md5-verified LOCAL COPY of `stack/` returns `LANE_CHANGE_L` in 20+ files. The repo-wide grep exited
+**0**. That is the documented G:-mount under-reporting (`grep-underreports-on-gdrive`), and it means
+**that grep is INCONCLUSIVE about `stack/` and must never be read as confirming an absence there**.
+The emitter claim in D-SELQ-LC-LABEL-2 does not rest on it: it rests on a direct read of
+`tactical_actions()`'s body and an enumeration of every `lat = ` assignment site in that file — a
+positive assertion, which is the admissible form.

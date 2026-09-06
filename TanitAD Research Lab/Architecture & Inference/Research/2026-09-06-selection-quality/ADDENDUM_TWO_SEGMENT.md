@@ -51,3 +51,39 @@ nothing.
 change can be emitted at all and rebuild the v7.2 labels; (2) add the 6-candidate two-segment
 family; (3) retrain. Steps 1 and 2 are cheap; step 3 is the PI/compute decision, and the A40 is
 committed to refcv5 until 2026-09-08 07:33 UTC.
+
+---
+
+## Cross-reference — this parameterisation already exists in `refa_v1`
+
+Found after the main package landed, by an independent repo-wide grep.
+`stack/tanitad/refs/refa_v1.py:118-123` already defines `GOAL_LANE_CHANGE = (2.0, 1.75)` and
+`canonical_controls` already emits it as an **S-curve, `+kappa` then `-kappa`,
+`kap = 2*1.75 / (v_ref^2 * 2.0^2)`** — a 2.0 s half-time, a 1.75 m half-offset. That is exactly the
+two-segment family sized above, at `t_split = 2.0 s`, already committed on the refav1 line.
+
+⇒ **The recommended refcv4b extension is a PORT, not a new design.** The only open parameter is
+which split points to carry, and the table above answers it: 2/3/4 s is worth **0.1645 m** against
+**0.0304 m** for a single 3 s split.
+
+⭐ The same sibling (`…/2026-09-05-refav1-goal-margin/tools/soft_kappa.py`) records the
+**complementary** defect on refav1: because NUDGE_* and LANE_CHANGE_* are S-curves with **zero net
+heading change**, the only SUSTAINED curvatures that vocabulary can command are 0 and ±0.08, so an
+S-curve family fixes lane changes and does **nothing** for a sustained road curve. refcv4b's fan has
+the opposite problem — all sustained arcs, no S-curves. **Both shapes are needed; neither
+substitutes for the other.**
+
+⛔ **And a warning for the `FOLLOW` defect reported in RESULT.md §1.8.**
+`…/2026-09-05-refav1-make-it-drive/tools/bias_ladder.py` measured that a textbook logit adjustment
+`−tau·log(pi)` with eps-smoothed (1e-6) priors gives the three never-labelled classes a bias of
+**~ +10 at tau = 0.75** — it promotes most strongly exactly the tokens with no evidence behind them
+— and its `prior:label tau >= 1.0` sweep **collapsed to balanced_acc 0.133**. Any prior-corrected
+decoding aimed at `FOLLOW` **must mask the never-labelled classes**; that sibling already ships a
+masked variant.
+
+⚠️ **Method caveat.** The repo-wide grep that surfaced these files returned 43 lines, **all** under
+`TanitAD Research Lab/` and **none** under `stack/`, while the same pattern over an md5-verified
+local copy of `stack/` matches 20+ files. It exited 0. That is the documented G:-mount
+under-reporting: **the grep is INCONCLUSIVE about `stack/` and confirms no absence there.** The
+emitter claim in RESULT.md §1.2 does not rest on it — it rests on a direct read of
+`tactical_actions()` and an enumeration of every `lat = ` assignment site, a positive assertion.
