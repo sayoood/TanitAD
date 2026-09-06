@@ -97,6 +97,13 @@ def _model():
         in_channels=3 * N_STACK, image_size=SIZE, base_width=8,
         blocks=(1, 1, 1, 1))
     cfg.tac_vocab_version = "v7.0"          # the flag `--v7-labels` pins
+    # ⭐ D-ROLL-1 (2026-09-06): the head is OPT-IN. A v7 vocabulary is
+    # NECESSARY but no longer SUFFICIENT -- building it on the vocabulary alone
+    # added 11,286 params to every rebuild of a checkpoint trained before the
+    # head existed and made refcv4b, three refcv3 checkpoints and the LIVE
+    # refcv5 A40 run unrollable/unresumable. Every assertion in this file is
+    # unchanged; the BUILD states the lever.
+    cfg.tac_goal_tok_head = True
     return v3.RefCV3Model(cfg), cfg
 
 
@@ -199,6 +206,11 @@ def test_L3b_kin3_builds_no_head_rather_than_dead_logits():
         in_channels=3 * N_STACK, image_size=SIZE, base_width=8,
         blocks=(1, 1, 1, 1))
     cfg.tac_vocab_version = "kin3"          # no --v7-labels on the command line
+    # ⭐ D-ROLL-1: ASK FOR IT ANYWAY. With the opt-in flag the vocabulary
+    # refusal would otherwise be indistinguishable from the flag's default, and
+    # a control that can pass for two reasons discriminates neither. Setting it
+    # True keeps this a test of the VOCABULARY.
+    cfg.tac_goal_tok_head = True
     m = v3.RefCV3Model(cfg)
     assert m.tac_goal_tok_head is None
     out = m(_frames(1), v0=torch.zeros(1))

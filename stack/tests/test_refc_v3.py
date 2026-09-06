@@ -360,14 +360,29 @@ def test_the_two_size_rungs_build_and_measure():
     TACGOAL = len(v7l.TAC_GOAL_TOKENS) * (refc_v3_small_config().d_tac + 1)
     assert TACGOAL == 11_286, TACGOAL
     assert refc_v3_xl_config().d_tac == refc_v3_small_config().d_tac
-    assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))["total"] \
+    # ⭐ D-ROLL-1 (2026-09-06): the goal-SET head is OPT-IN, so a rung that
+    # PRICES it must ASK for it. Building it on the v7 vocabulary alone put
+    # 11,286 params into every rebuild of a checkpoint trained before the head
+    # existed -- params no recorded `param_breakdown` names -- and made
+    # refcv4b@40284, three refcv3 checkpoints and the LIVE refcv5 A40 run
+    # unrollable. Every assertion here is unchanged; the BUILD now states the
+    # lever it is pricing.
+    _tg = lambda c: dataclasses.replace(c, tac_goal_tok_head=True)  # noqa: E731
+    assert param_breakdown_v3(RefCV3Model(_tg(refc_v3_small_config())))["total"] \
         == 62_930_419 + NAV + STR + 5_130 + TACGOAL
-    assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
+    assert param_breakdown_v3(RefCV3Model(_tg(refc_v3_xl_config())))["total"] \
         == 217_760_775 + NAV + STR + 5_130 + TACGOAL
     # and it carries its OWN ledger line rather than hiding inside `tac_heads`,
     # because the arm's whole question is what the goal-SET head buys
-    assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))[
+    assert param_breakdown_v3(RefCV3Model(_tg(refc_v3_small_config())))[
         "tac_goal_tok_head"] == TACGOAL
+    # ⛔ CONTROL, same breath: the DEFAULT build -- v7.0 vocabulary, flag OFF
+    # -- is the one a banked checkpoint rebuilds through, and it must carry
+    # NEITHER the head nor the ledger line. That is the rollability contract,
+    # and without this line the rung pins above would pass again under the
+    # unconditional construction that broke every checkpoint.
+    assert "tac_goal_tok_head" not in param_breakdown_v3(
+        RefCV3Model(refc_v3_small_config()))
     # ⛔ CONTROL, same breath: under kin3 the head does not exist at all, so the
     # line is ABSENT rather than zero — a zero would mean "built and empty".
     assert "tac_goal_tok_head" not in small
@@ -377,8 +392,8 @@ def test_the_two_size_rungs_build_and_measure():
     # 33 % — the band assertions above deliberately guard the DEFAULT config,
     # not this rung, so the override is explicit here rather than a loosened
     # band that would stop catching accidental growth in the default.
-    base = param_breakdown_v3(RefCV3Model(refc_v3_sized_config("base",
-                                                              hier=True)))
+    base = param_breakdown_v3(RefCV3Model(_tg(refc_v3_sized_config(
+        "base", hier=True))))
     # 106,847,621 before the 2026-09-02 hierarchy rebalance (d_ctx 64 -> 256,
     # matching flagship v7 d_str and refav1 d_ctx); +185,280 for the wider
     # strategic context and its goal head (195 -> 771 params).
