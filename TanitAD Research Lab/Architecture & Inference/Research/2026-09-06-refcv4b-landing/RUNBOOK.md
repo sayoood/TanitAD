@@ -35,6 +35,31 @@ except by this check.
 
 ---
 
+## 0b. ⛔ THE `stack/` SYNC HAPPENS AFTER GATE 0, NEVER BEFORE
+
+A full md5 manifest of `stack/tanitad/**/*.py` (repo 164 files, pod 133) classifies as
+**118 identical (the control, non-zero) · 15 different · 31 missing on the pod · 0 pod-only**.
+Four of the drifted files are on the eval path's module-level imports (`data/comma2k19.py`,
+`models/agent_slots.py`, `models/metric_dynamics.py`, `models/v6.py`).
+
+⛔ **It must NOT be shipped while the run is live.** The registry's own Location note says
+*"never ship a trainer file to the pod mid-run"*, and the mechanism is concrete: the supervisor
+relaunches the trainer on death, and a relaunch would import whatever is on disk — i.e. a code
+change could alter the model **mid-run**. MEASURED: the trainer is a single process,
+PID 2346318, `lstart` **Fri Sep 4 11:40:23 2026** — it has never relaunched, so nothing has
+happened; that is luck to preserve, not a licence.
+
+⚠️ The **taniteval** sync (§3.1 of `STATUS.md`) was safe and was checked, not assumed:
+`refc_v3_train.py` imports `taniteval` **0 times** (control: 29 import lines in the file, so the
+probe reads), and the trainer has not relaunched since two days before the sync.
+
+**Post-GATE-0 sequence:** ship `raw/stage_stack.sh`'s verified set (44 files, ⛔ **excluding
+`refs/refc.py` and `refs/refc_v3.py`** — the code that trained), then **re-run the 20-clip BASE
+probe and compare it to `PRELIM_CPU_PANEL.md` §1**. If the numbers move, the preliminary panel was
+produced under stale code and that is reported, not quietly dropped.
+
+---
+
 ## 1. What the eval will run on, and the one decision that is not cost-driven
 
 | | |

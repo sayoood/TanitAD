@@ -286,3 +286,53 @@ VISION-DERIVED rather than ego-mediated** — a *predicted* ego/speed state (the
 pred` route a sibling is already building, `H-EGO-LIT-4`) or a vision-derived longitudinal signal.
 **Not more dropout**: dropout at 0.5 for 30,000 steps produced an arm that is 3.65× worse without
 the block. Every other lever measured tonight is between 3× and 240× smaller.
+
+---
+
+## 9. ⛔ THE VOID GATE PASSES — the panel is admissible
+
+`--ablate frames_blind` replaces every observed frame with the window's own scalar mean, so the
+encoder sees a constant image and the arm is an **echo BY CONSTRUCTION**.
+
+| | |
+|---|---|
+| BASE `os` | 0.3055 m |
+| `frames_blind` `os` | **1.2198 m** |
+| paired | **−0.9143 m, CI [−1.1854, −0.6568], `separated: TRUE`**, p 0.0 |
+| LATERAL decision κ | 0.7039 → **0.2062** |
+| LONGITUDINAL decision κ | 0.5782 → **0.0215** (chance) |
+| ⛔ **the internal control** | `ha`, `ha0`, `ha0_ext` **and the GT `g`** come back **BIT-IDENTICAL** to the full run (max abs diff **0.00e+00** on all four) — they read no frames, and anything else would mean the harness moved something it should not have |
+
+⇒ **The deliberate regression regresses, and the model-free arms did not move. The instruments can
+fail, and were shown to.** Under `PREREG_REFC_V4` §7 OUTCOME IV this panel is **ADMISSIBLE** rather
+than VOID.
+
+---
+
+## 10. ⭐⭐ THE ATTRIBUTION THAT FALLS OUT OF THE TWO ABLATIONS TOGETHER
+
+Because `ego_zero` and `frames_blind` remove *different* inputs from the *same* checkpoint on the
+*same* windows, reading them side by side decomposes the competence by axis:
+
+| arm | what it keeps | `os` ADE | **LATERAL κ** | **LONGITUDINAL κ** |
+|---|---|---|---|---|
+| BASE | vision + ego | **0.3055** | **0.7039** | **0.5782** |
+| `ego_zero` | **vision only** | 1.1137 | **0.6738** (96 % of full) | **0.0653** (11 % of full) |
+| `frames_blind` | **ego only** | 1.2198 | 0.2062 (29 %) | 0.0215 (4 %) |
+
+⇒ **VISION ALONE BUYS THE LATERAL DECISION AND ALMOST NOTHING LONGITUDINAL. EGO ALONE BUYS
+NEITHER.**
+
+* refcv4b's **lateral** competence is **vision-derived** and survives the PI's vision-only rule
+  essentially intact (κ 0.7039 → 0.6738).
+* refcv4b's **longitudinal** competence — the family that owns **88.7 %** of the oracle gap, and
+  the whole of its measured advantage over refcv3 (κ 0.2037 → 0.5782) — **does not exist without
+  the measured ego block** (κ → 0.0653, near chance).
+* ⚠️ Both single-input arms are far WORSE in ADE than either input alone would suggest
+  (1.11 / 1.22 m against 0.31 m), so this is **not** an echo of one channel: the model needs both,
+  and removing either is catastrophic for the trajectory even where a decision family survives.
+
+⭐ **This sharpens §8's conclusion into something specific enough to build:** refcv5 does not need
+"more vision" or "less ego" in general — it needs a **vision-derived (or predicted) LONGITUDINAL
+state**. The lateral half already meets the vision-only bar; the longitudinal half is the entire
+exposure, and it is also the entire win.
