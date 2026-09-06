@@ -1718,3 +1718,61 @@ will finish and write their records; nothing will interpret them until the loop 
 (`--agents oracle` is the first rung and needs no detector; `--sampler ddim` needs an `--anchor-file`
 with declared `control_units`). ⚠️ **Do NOT set `--sel-refined` on the first arm** — measured
 **0.0259 m separated WORSE** (`M72`): the ranking head was never trained.
+
+
+## M77. ⭐⭐⭐ `best`'s ZERO-VIOLATION RESULT REPLICATES — the programme's first replicated, NON-VACUOUS safety result
+
+### 1. The measurement, with every control passing
+
+Re-run of `feas_audit.py` over the banked dumps, `FEAS_VMIN=2`, n=27 windows. ⭐ **Two controls, both
+pass:** the ground-truth path `g` reads `kamm_over` **0.0000** on every arm (it must — a real vehicle's
+recorded motion is feasible by construction), and the **known-value control reproduces `M56` exactly**.
+
+| arm | `kamm_over` | max \|kappa\| | `peak_g` max |
+|---|---|---|---|
+| **`best`** (seed 0) | **0.0000** | 0.0800 | **0.332** |
+| ⭐ **`best_seed1`** | ⭐ **0.0000** | 0.0800 | **0.332** |
+| `combined` | 0.0000 | 0.1505 | 0.618 |
+| ⛔ `combined_seed1` | ⛔ **0.0741** | 0.1672 | **0.702 — over the mu = 0.7 circle** |
+| **`g` — the human** | **0.0000** | 0.1701 | 0.373 |
+| `ha0_ext` floor | 0.1852 | 0.7672 | 1.436 |
+| `ol` (T0 contract) | 0.1111 | 0.4400 | 1.016 |
+
+### 2. ⭐⭐ What this establishes, and it CORRECTS M56
+
+⭐ **`best`'s zero HOLDS at a second inference seed** — 0.0000 at both, `peak_g` max **0.332 at both**
+(mean 0.082 / 0.081), max|kappa| **0.0800 at both**. ⛔ **`M56` concluded *"no arm in this programme has
+a replicated zero friction-circle violation rate."* THAT IS NOW FALSE: `best` has one.**
+
+⭐ **And it is NOT VACUOUS by `M58`'s own gate.** That gate failed `bestlad` on **max|kappa| 0.0049 <
+0.02**; `best` reads **0.0800 — 4x the threshold** — and runs at **89 % of the human's peak lateral
+load** (0.332 vs 0.373). ⇒ **It is not a stopped arm buying safety by declining to act**, which is the
+degenerate solution this programme has caught three separate times tonight.
+
+⭐⭐ **And unlike the turn gate (`M74`), THIS metric is one the GROUND TRUTH PASSES** — `g` reads
+0.0000 by construction. ⇒ **`kamm_over_rate` is a sound criterion**, and `best` matches the human on it
+at both seeds. **The `ARCH-D` test was applied before quoting the number, and it passes.**
+
+### 3. Why `best` holds where `combined` died — the mechanism
+
+`combined` (`W_KAPPA = 0` + cap + ladder) reaches max|kappa| **0.1505**, nearly **2x the commanded
+0.08**, and at seed 1 overshoots to 0.1672 with `peak_g` **0.702 — outside the circle**. `best`
+(`W_KAPPA = 15.11245` + cap) reads max|kappa| **0.0800 at both seeds — exactly the goal command.**
+
+⇒ ⭐ **The curvature penalty is what makes the safety result STABLE**: it holds the plan at the
+commanded magnitude instead of letting iCEM overshoot into the friction circle. ⇒ this is the same
+mechanism `M75` measured from the other side (*the sign is never wrong; the failure is magnitude*) —
+**and here the magnitude control is exactly what buys the replicated zero.**
+
+⚠️ **Not claimed:** that `best` is therefore the arm to ship. It still loses the longitudinal family,
+and `M74` shows its curvature magnitude is *below* the human's on turn windows. **Safe and stable is
+established; complete is not.**
+
+### 4. ⚠️ My own invocation was wrong twice, and the control caught both
+
+The first run read **ABSENT on all six arms including the control**. Cause: `audit(dumpdir, label)` but
+`__main__` passes `argv[1], argv[2]` — ⛔ **I passed label-then-dir, the reverse** — and `VMIN` reads
+the env var **`FEAS_VMIN`** (default 0) where the banked run used **2.0**.
+⇒ ⭐ **Had I omitted the `combined` control I would have read six ABSENTs and concluded the dumps were
+bad.** *A probe whose known-value control fails is inadmissible — and it is the cheapest possible
+protection against reading one's own argument order as a finding.*
