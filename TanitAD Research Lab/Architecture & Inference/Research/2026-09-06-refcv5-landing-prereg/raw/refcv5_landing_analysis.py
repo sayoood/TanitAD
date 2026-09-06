@@ -198,6 +198,82 @@ def read_manifest(dump_dir):
         return json.load(fh)
 
 
+# --------------------------------------------------------------------------- #
+# THE REPLICATE AUDIT.
+#
+# It does NOT read argv, because a real refcv3_arm manifest DOES NOT CARRY ONE.
+# MEASURED 2026-09-06 against the banked fixture dump at
+# `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/
+# fixture_dump/manifest.json`: its top-level keys are _unverified, absent_arms,
+# action_units, arm_meaning, arms, corpus, doc, episodes, fed_conditionings,
+# first_forward_s, grid, head_conditionings, hold_action_rule, hold_v0_rule,
+# model, nav_null, nav_shuffle, sidecar_schema, t1_definition, tier_ruling,
+# tiers, tool, wallclock_s -- and `model` holds ckpt/cfg/decoder_mode/
+# decoder_steps/n_anchors/config_json/..., no argv anywhere.
+#
+# An earlier version of this file audited `manifest["model"]["argv"]`, which on
+# every real dump would have printed INCONCLUSIVE forever: a gate that cannot
+# fire is not a gate.  The fingerprint below compares what the tool RESOLVED,
+# which is strictly stronger than what an operator typed, and it excludes the
+# two fields that must legitimately differ between two rolls (wallclock_s,
+# first_forward_s).  argv is still used when a manifest happens to carry one.
+# --------------------------------------------------------------------------- #
+_FP_TOP = ("tool", "grid", "arms", "tiers", "action_units", "nav_shuffle",
+           "nav_null", "corpus", "episodes", "absent_arms", "tier_ruling",
+           "fed_conditionings", "head_conditionings", "sidecar_schema")
+_FP_MODEL = ("ckpt", "arm", "hier", "horizons", "n_anchors", "decoder_mode",
+             "decoder_steps", "config_json", "eval_time_cfg_overrides",
+             "config_cross_checks", "eval_labels_md5_at_train")
+_FP_EXCLUDE_NOTE = ("wallclock_s and first_forward_s are EXCLUDED: they must "
+                    "differ between two rolls and are not levers")
+
+
+def provenance_fingerprint(dump_dir):
+    """-> (fingerprint dict, source string).  Empty dict if no manifest."""
+    m = read_manifest(dump_dir)
+    if not m:
+        return {}, "no manifest.json"
+    fp = {k: m[k] for k in _FP_TOP if k in m}
+    mdl = m.get("model") or {}
+    fp["model"] = {k: mdl[k] for k in _FP_MODEL if k in mdl}
+    argv = mdl.get("argv") or m.get("argv")
+    if argv:
+        skip, out = False, []
+        for tok in argv:
+            if skip:
+                skip = False
+                continue
+            if tok in ("--dump-dir", "--out"):
+                skip = True
+                continue
+            out.append(tok)
+        fp["argv_minus_output_paths"] = out
+        return fp, "resolved provenance + argv"
+    return fp, "resolved provenance (this manifest carries NO argv)"
+
+
+def _fp_diff(a, b, path=""):
+    """-> list of differing key paths."""
+    out = []
+    if type(a) is not type(b):
+        return [path or "<root>"]
+    if isinstance(a, dict):
+        for k in sorted(set(a) | set(b)):
+            if k not in a or k not in b:
+                out.append((path + "/" + str(k)).lstrip("/"))
+            else:
+                out += _fp_diff(a[k], b[k], path + "/" + str(k))
+    elif isinstance(a, list):
+        if len(a) != len(b):
+            out.append((path + "[len]").lstrip("/"))
+        else:
+            for i, (x, y) in enumerate(zip(a, b)):
+                out += _fp_diff(x, y, path + "[%d]" % i)
+    elif a != b:
+        out.append(path or "<root>")
+    return out
+
+
 def grid_dt_k(dump_dir, default_dt=0.5):
     """dt_s and k from the dump's OWN manifest -- never hardcoded.
 
@@ -303,13 +379,23 @@ def decision_components(dec, np):
     dropped.
     """
     out, refused = {}, {}
-    pairs = (("TAC_lat_correct", "lat_pred_nav_zero", "lat_label"),
-             ("TAC_lon_correct", "lon_pred_nav_zero", "lon_label"),
-             ("STR_route_correct", "route_pred_nav_zero", "route_label"))
-    for name, pk, lk in pairs:
-        if pk not in dec or lk not in dec:
-            refused[name] = ("absent from decisions/: need %s and %s (have %s)"
-                             % (pk, lk, ",".join(sorted(dec)[:12])))
+    # PREFER the nav_TRUE prediction -- it is the DEPLOYED head reading, and it
+    # exists on a real dump (MEASURED 2026-09-06 on the banked refcv3-arm
+    # fixture: lat/lon/route_pred_nav_{true,shuffled,zero} are ALL present).
+    # nav_zero is the documented fallback and the record NAMES which was used,
+    # so a reader never has to guess which conditioning produced the number.
+    pairs = (("TAC_lat_correct", ("lat_pred_nav_true", "lat_pred_nav_zero"),
+              "lat_label"),
+             ("TAC_lon_correct", ("lon_pred_nav_true", "lon_pred_nav_zero"),
+              "lon_label"),
+             ("STR_route_correct",
+              ("route_pred_nav_true", "route_pred_nav_zero"), "route_label"))
+    for name, pks, lk in pairs:
+        pk = next((k for k in pks if k in dec), None)
+        if pk is None or lk not in dec:
+            refused[name] = ("absent from decisions/: need one of %s and %s "
+                             "(have %s)"
+                             % ("/".join(pks), lk, ",".join(sorted(dec)[:12])))
             continue
         p = np.asarray(dec[pk]).ravel().astype(np.int64)
         l = np.asarray(dec[lk]).ravel().astype(np.int64)
@@ -426,36 +512,28 @@ def cmd_floor(args):
     base_e, base_w = loaded[0][2], loaded[0][3]
     for d, (_, _, e, w, _) in zip(dirs[1:], loaded[1:]):
         assert_same_grid(dirs[0], base_e, base_w, d, e, w)
-    # ---- ARGV AUDIT: the replicate must move NOTHING but its output paths ----
-    argvs, argv_ok = [], True
-    for d in dirs:
-        m = read_manifest(d)
-        argvs.append(((m.get("model") or {}).get("argv")
-                      or m.get("argv") or []))
-    if argvs[0]:
-        ignore = ("--dump-dir", "--out")
-        def strip(a):
-            out, skip = [], False
-            for tok in a:
-                if skip:
-                    skip = False
-                    continue
-                if tok in ignore:
-                    skip = True
-                    continue
-                out.append(tok)
-            return out
-        ref = strip(argvs[0])
-        for d, a in zip(dirs[1:], argvs[1:]):
-            if strip(a) != ref:
-                argv_ok = False
-                print("  ARGV AUDIT FAILED: %s differs from %s beyond "
-                      "--dump-dir/--out" % (d, dirs[0]))
-        print("ARGV AUDIT: %s" % ("OK -- the replicate moved zero levers"
-                                  if argv_ok else "FAILED -> THE FLOOR IS VOID"))
+    # ---- REPLICATE AUDIT: the replicate must move NOTHING but its outputs ----
+    fps = [provenance_fingerprint(d) for d in dirs]
+    audit_ok, audit_detail = True, {}
+    if not fps[0][0]:
+        audit_ok = False
+        print("REPLICATE AUDIT: INCONCLUSIVE -> treated as FAILED. %s has no "
+              "manifest.json, so nothing asserts the replicate moved zero "
+              "levers." % dirs[0])
     else:
-        print("ARGV AUDIT: INCONCLUSIVE -- no argv in manifest.json; "
-              "record it manually before quoting the floor")
+        print("REPLICATE AUDIT source: %s" % fps[0][1])
+        for d, (fp, _src) in zip(dirs[1:], fps[1:]):
+            diff = _fp_diff(fps[0][0], fp)
+            audit_detail[d] = diff
+            if diff:
+                audit_ok = False
+                print("  REPLICATE AUDIT FAILED: %s differs from %s at %d "
+                      "key(s): %s" % (d, dirs[0], len(diff),
+                                      ", ".join(diff[:8])))
+        print("REPLICATE AUDIT: %s   (%s)"
+              % ("OK -- the replicate moved zero levers" if audit_ok
+                 else "FAILED -> THE FLOOR IS VOID", _FP_EXCLUDE_NOTE))
+    argv_ok = audit_ok
     dt, k = grid_dt_k(dirs[0])
     comp = [components(p[args.arm], g, dt, np) for (p, g, _, _, _) in loaded]
     # ---- G-STOCH, both directions ------------------------------------------
@@ -512,8 +590,8 @@ def cmd_floor(args):
         "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py) "
                      "n_boot=%d seed=%d" % (args.n_boot, args.seed)})
     if not (stoch_ok and frozen_ok and argv_ok):
-        sys.exit("[refcv5] G-STOCH / ARGV FAILED -> the floor is VOID and no "
-                 "margin may be quoted against it")
+        sys.exit("[refcv5] G-STOCH / REPLICATE AUDIT FAILED -> the floor is "
+                 "VOID and no margin may be quoted against it")
 
 
 def cmd_families(args):

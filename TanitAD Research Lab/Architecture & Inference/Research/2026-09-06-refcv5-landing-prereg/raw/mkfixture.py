@@ -1,5 +1,19 @@
 """Synthetic refcv3_arm-shaped dumps, to TEST the landing analysis before it
-is trusted with a 44 h run's only output."""
+is trusted with a 44 h run's only output.
+
+PART A of raw/selftest.log runs against these.  PART B runs against the REAL
+banked dump at
+
+    TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/
+        raw/fixture_dump/
+
+which is what caught two defects a synthetic fixture could not: a real
+refcv3_arm manifest carries NO argv (so the original argv-based replicate
+audit could never have fired), and the decisions sidecar carries
+*_pred_nav_TRUE as well as *_pred_nav_zero (the true one is the deployed
+head reading).  Reproduce PART B by copying that directory beside this one
+as `real/`, then `cp -r real realB` and perturb realC's manifest.
+"""
 import json
 import os
 import sys

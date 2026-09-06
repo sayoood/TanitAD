@@ -446,23 +446,47 @@ against banked dumps.
 
 ### 8.1 ⭐ IT HAS ALREADY BEEN RUN, AND EVERY GATE HAS BEEN PROVEN ABLE TO FAIL
 
-`raw/selftest.log` (reproducible from `raw/mkfixture.py`, which builds synthetic
-`refcv3_arm`-shaped dumps). **MEASURED 2026-09-06, this turn — 5 negative controls, all firing:**
+`raw/selftest.log`, MEASURED 2026-09-06 this turn. **PART A** runs against synthetic
+`refcv3_arm`-shaped dumps (`raw/mkfixture.py`); **PART B** runs against the **REAL banked dump**
+at `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump`.
+**6 negative controls, all firing:**
 
 | # | the control | what it read |
 |---|---|---|
-| 3 | two **bit-identical** rolls fed to `--floor` | `G-STOCH … 0 of 77 windows -> VOID`, **exit 1** |
-| 4 | a replicate whose argv carries an extra flag | `ARGV AUDIT: FAILED -> THE FLOOR IS VOID`, exit 1 |
-| 5 | two dumps on **different window grids** | `REFUSED: R0 has 77 windows, SHORT has 22 — … aligning them would be a fiction` |
-| 6 | a harness JSON carrying a **wrong** ADE | `MISMATCH <- the DERIVED family rows below are NOT trustworthy` |
-| 7 | a dump with **no `decisions/`** | `REFUSED TACTICAL/STRATEGIC  no decisions/ep*.npz under …` |
+| A3 | two **bit-identical** rolls fed to `--floor` | `G-STOCH … 0 of 77 windows -> VOID`, **exit 1** |
+| A4 | a replicate with a **lever moved** | `REPLICATE AUDIT: FAILED -> THE FLOOR IS VOID`, exit 1 |
+| A5 | two dumps on **different window grids** | `REFUSED: R0 has 77 windows, SHORT has 22 — … aligning them would be a fiction` |
+| A6 | a harness JSON carrying a **wrong** ADE | `MISMATCH <- the DERIVED family rows below are NOT trustworthy` |
+| A7 | a dump with **no `decisions/`** | `REFUSED TACTICAL/STRATEGIC  no decisions/ep*.npz under …` |
+| **B3** | ⭐ **on a REAL manifest**: `model.decoder_steps` moved, **plus** `wallclock_s` and `first_forward_s` moved | `REPLICATE AUDIT FAILED: … at 1 key(s): /model/decoder_steps` — it names **only the lever** and correctly ignores the two fields that must differ between rolls |
 
-and the positive side: `PREFLIGHT OK`; `paired(A, A)` reads **delta 0.0000000000, [0, 0],
-separated False**; the ADE reconciliation reads **RECONCILED**; the floor turns bare `separated`
-into `QUOTABLE` / `WITHIN-NOISE` / `ns` per row. ⭐ **A gate that has never been shown to FAIL
-certifies nothing** — that is why this log exists before the data does.
-⚠️ The self-test proves the **instrument**, on synthetic paths. It says nothing whatever about
-refcv5, and no number in it is a result.
+Positive side: `PREFLIGHT OK`; `paired(A, A)` = **delta 0.0000000000, [0, 0], separated False**;
+ADE reconciliation **RECONCILED**; the floor turns bare `separated` into `QUOTABLE` /
+`WITHIN-NOISE` / `ns` per row.
+
+### ⛔ PART B EXISTS BECAUSE PART A COULD NOT HAVE CAUGHT THESE TWO — and it found both
+Running the instrument against the **schema the tool actually writes** (rather than the one
+inferred from source) refuted two of my own assumptions in one pass:
+
+1. ⛔ **A real `refcv3_arm` manifest carries NO `argv`.** MEASURED: its top-level keys are
+   `_unverified · absent_arms · action_units · arm_meaning · arms · corpus · doc · episodes ·
+   fed_conditionings · first_forward_s · grid · head_conditionings · hold_action_rule ·
+   hold_v0_rule · model · nav_null · nav_shuffle · sidecar_schema · t1_definition · tier_ruling ·
+   tiers · tool · wallclock_s`, and `model` holds `ckpt`/`cfg`/`decoder_mode`/`decoder_steps`/
+   `n_anchors`/`config_json`/… — **no `argv` anywhere.** The first version of the replicate audit
+   read `manifest["model"]["argv"]` and would therefore have printed **INCONCLUSIVE forever on
+   every real dump**. ⭐ **A gate that cannot fire is not a gate.** It now compares a **resolved
+   provenance fingerprint** — strictly stronger than what an operator typed — excluding
+   `wallclock_s` and `first_forward_s`, which must legitimately differ. *(The SPEC's §7.3
+   "diff the three manifest argv records" is superseded by this; the audit is the same
+   obligation, executed against a field that exists.)*
+2. ⭐ **The decisions sidecar carries `*_pred_nav_TRUE` as well as `*_pred_nav_zero`** — all of
+   `lat/lon/route_pred_nav_{true,shuffled,zero}` are present. The nav-**true** reading is the
+   **deployed** one; the script now prefers it, falls back to `nav_zero`, and **names which key it
+   used in every row**, so a reader never has to guess the conditioning behind a number.
+
+⚠️ The self-test proves the **instrument**. The real dump is an **untrained test fixture** (its
+~9 m ADE is the fixture's, not a model's). Nothing in the log is a refcv5 number.
 
 ---
 

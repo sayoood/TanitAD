@@ -1,16 +1,23 @@
 == refcv5_landing_analysis.py SELF-TEST ==
-run 2026-09-06T11:03:12Z on synthetic refcv3_arm-shaped dumps built by mkfixture.py
-purpose: prove every GATE can FAIL before the landing trusts it with a 44 h run's only output
+run 2026-09-06T11:10:51Z
+PART A: synthetic refcv3_arm-shaped dumps (raw/mkfixture.py) -- proves every GATE can FAIL.
+PART B: the REAL banked dump at 'TanitAD Research Lab/Benchmarks & Evals/Research/
+        2026-09-03-refcv3-arm/raw/fixture_dump' -- proves the loader and the audit work
+        against the SCHEMA THE TOOL ACTUALLY WRITES, not the one inferred from source.
+No number below is a refcv5 result. This proves the INSTRUMENT.
 
----- [1] --preflight (GATE 0 step 4) ----
+############ PART A -- SYNTHETIC ############
+
+---- [A1] --preflight (GATE 0 step 4) ----
   [OK     ] numpy                                                      per-window arithmetic
   [OK     ] taniteval.ci                                               the ONLY admissible estimator
   [OK     ] taniteval.ci.paired_episode_cluster_bootstrap              the paired estimator
   [OK     ] taniteval.ci.overlapping_holdout_se                        present-but-never-called (control)
 PREFLIGHT OK
 
----- [2] --floor R0 R1 R2  (V3 inference floor + G-STOCH) ----
-ARGV AUDIT: OK -- the replicate moved zero levers
+---- [A2] --floor R0 R1 R2  (V3 inference floor + G-STOCH) ----
+REPLICATE AUDIT source: resolved provenance + argv
+REPLICATE AUDIT: OK -- the replicate moved zero levers   (wallclock_s and first_forward_s are EXCLUDED: they must differ between two rolls and are not levers)
 G-STOCH  os differs across rolls on 77/77 of 77 windows -> OK (the sampler is live at eval)
 G-STOCH  model-free ha       bit-identical across rolls: YES
 G-STOCH  model-free ha0      bit-identical across rolls: YES
@@ -25,30 +32,30 @@ G-STOCH  model-free ha0_ext  bit-identical across rolls: YES
   F(LAT_yaw_rate_mae_degps    ) = 0.0803   [0 of 3 zero-lever pairs read SEPARATED]
   F(LAT_curvature_mae_1pm     ) = 0.000400   [0 of 3 zero-lever pairs read SEPARATED]
 NOTE: a zero-lever pair that reads SEPARATED is exactly H-ESTIM-SEED-1's failure mode, one variance down. It is expected, not a bug, and it is WHY the floor exists.
-wrote floor.json (9844 bytes)
+wrote fx/floor.json (10015 bytes)
 
----- [3] NEGATIVE CONTROL: two BIT-IDENTICAL rolls must VOID ----
+---- [A3] NEGATIVE CONTROL: two BIT-IDENTICAL rolls must VOID ----
 G-STOCH  os differs across rolls on 0 of 77 windows -> VOID -- the rolls are bit-identical, so this arm is NOT the stochastic arm the SPEC describes
-[refcv5] G-STOCH / ARGV FAILED -> the floor is VOID and no margin may be quoted against it
+[refcv5] G-STOCH / REPLICATE AUDIT FAILED -> the floor is VOID and no margin may be quoted against it
 exit=1
 
----- [4] NEGATIVE CONTROL: argv drift in the replicate must VOID ----
-PAIRING OK: n_windows=77  n_episodes=7  grid identical (R0 vs BADARGV)
-  ARGV AUDIT FAILED: BADARGV differs from R0 beyond --dump-dir/--out
-ARGV AUDIT: FAILED -> THE FLOOR IS VOID
-[refcv5] G-STOCH / ARGV FAILED -> the floor is VOID and no margin may be quoted against it
+---- [A4] NEGATIVE CONTROL: a lever moved in the replicate must VOID ----
+REPLICATE AUDIT source: resolved provenance + argv
+  REPLICATE AUDIT FAILED: fx/BADARGV differs from fx/R0 at 1 key(s): argv_minus_output_paths[len]
+REPLICATE AUDIT: FAILED -> THE FLOOR IS VOID   (wallclock_s and first_forward_s are EXCLUDED: they must differ between two rolls and are not levers)
+[refcv5] G-STOCH / REPLICATE AUDIT FAILED -> the floor is VOID and no margin may be quoted against it
 
----- [5] NEGATIVE CONTROL: a mismatched window grid must REFUSE, not align ----
-[refcv5] REFUSED: R0 has 77 windows, SHORT has 22 -- not the same grid, and aligning them would be a fiction
+---- [A5] NEGATIVE CONTROL: a mismatched window grid must REFUSE, not align ----
+[refcv5] REFUSED: fx/R0 has 77 windows, fx/SHORT has 22 -- not the same grid, and aligning them would be a fiction
 
----- [6] NEGATIVE CONTROL: a wrong harness ADE must read MISMATCH ----
+---- [A6] NEGATIVE CONTROL: a wrong harness ADE must read MISMATCH ----
 ADE RECONCILIATION: derived=0.0373 harness=0.9999 |d|=0.96262 tol=0.02000 -> MISMATCH  <- the DERIVED family rows below are NOT trustworthy
 
----- [7] NEGATIVE CONTROL: absent decisions/ must REFUSE with a reason ----
-  REFUSED TACTICAL/STRATEGIC       no decisions/ep*.npz under NODEC
+---- [A7] NEGATIVE CONTROL: absent decisions/ must REFUSE with a reason ----
+  REFUSED TACTICAL/STRATEGIC       no decisions/ep*.npz under fx/NODEC
 
----- [8] --pair V4B R0  (the arm-vs-arm margin, read against the floor) ----
-PAIRING OK: n_windows=77  n_episodes=7  grid identical (V4B vs R0)
+---- [A8] --pair V4B R0  (arm-vs-arm margin, read against the floor) ----
+PAIRING OK: n_windows=77  n_episodes=7  grid identical (fx/V4B vs fx/R0)
 dt_s=0.5  k=4  arm=os  n_windows=77  n_episodes=7
   ade_m                      A=0.0916  B=0.0373  B-A=-0.0543 [-0.0594, -0.0485] sep=True  floor=0.0004     QUOTABLE
   fde_m                      A=0.0946  B=0.0378  B-A=-0.0568 [-0.0613, -0.0522] sep=True  floor=0.0004     QUOTABLE
@@ -61,10 +68,10 @@ dt_s=0.5  k=4  arm=os  n_windows=77  n_episodes=7
   LAT_curvature_mae_1pm      A=0.004636  B=0.004148  B-A=-0.000500 [-0.001400, 0.000500] sep=False floor=0.000400   ns
 CONTROL paired(A,A): delta=0.0000000000 lo=0.0000000000 hi=0.0000000000 separated=False -> OK
 windows whose ade_m differs at all: 77/77 = 100.00%
-wrote pair.json (4478 bytes)
+wrote fx/pair.json (4484 bytes)
 
----- [9] --families R0 --vs V4B  (four families + the paired margins that close W-1) ----
-dump=R0  dt_s=0.5  k=4  n_windows=77  n_episodes=7  arms=os,ha,ha0,ha0_ext,os_navshuf,os_navzero,os_navpred
+---- [A9] --families R0 --vs V4B  (four families + the paired margins that close W-1) ----
+dump=fx/R0  dt_s=0.5  k=4  n_windows=77  n_episodes=7  arms=os,ha,ha0,ha0_ext,os_navshuf,os_navzero,os_navpred
 ADE RECONCILIATION: derived=0.0373 harness=0.0373 |d|=0.00002 tol=0.02000 -> RECONCILED
 
 PER-ARM LEVELS (episode-cluster bootstrap; V1 only)
@@ -86,9 +93,9 @@ TACTICAL / STRATEGIC (per-window 0/1 from decisions/)
   TAC_lon_correct            0.8312 [0.7922, 0.8701]  n=77   prediction key lon_pred_nav_zero vs label lon_label
   TAC_turn_left_recall       0.7667 [0.6452, 0.8710]  n=30   recall of lat class 0 among 30 labelled windows
   TAC_turn_right_recall      0.8571 [0.7500, 0.9545]  n=21   recall of lat class 2 among 21 labelled windows
-PAIRING OK: n_windows=77  n_episodes=7  grid identical (R0 vs V4B)
+PAIRING OK: n_windows=77  n_episodes=7  grid identical (fx/R0 vs fx/V4B)
 
-PAIRED MARGINS  (R0) - (V4B)  on arm os   [closes W-1]
+PAIRED MARGINS  (fx/R0) - (fx/V4B)  on arm os   [closes W-1]
   ade_m                      delta=-0.0543 [-0.0594, -0.0485] sep=True  floor=0.0004     QUOTABLE
   fde_m                      delta=-0.0568 [-0.0613, -0.0522] sep=True  floor=0.0004     QUOTABLE
   LON_speed_mae_mps          delta=-0.0196 [-0.0302, -0.0086] sep=True  floor=0.0012     QUOTABLE
@@ -103,6 +110,44 @@ PAIRED MARGINS  (R0) - (V4B)  on arm os   [closes W-1]
   TAC_lon_correct            delta=-0.0390 [-0.1169, 0.0328] sep=False n=77  ns
   TAC_turn_left_recall       delta=-0.1333 [-0.3220, 0.0679] sep=False n=30  ns
   TAC_turn_right_recall      delta=0.0476 [-0.1111, 0.2105] sep=False n=21  ns
-wrote fam.json (25051 bytes)
+wrote fx/fam.json (25057 bytes)
 
-== ALL 5 NEGATIVE CONTROLS FIRED; the gates are proven able to FAIL ==
+############ PART B -- THE REAL BANKED DUMP ############
+(an UNTRAINED test fixture: its ~9 m ADE is the fixture's, not a model's.)
+
+---- [B1] --families on the real dump: schema, arms, dt/k from ITS OWN manifest ----
+dump=real  dt_s=0.5  k=4  n_windows=42  n_episodes=3  arms=os,ha,ha0,os_navshuf,os_navzero
+ADE RECONCILIATION: NOT RUN (pass --harness-json). The derived rows below carry no control and are DIRECTIONAL ONLY.
+
+PER-ARM LEVELS (episode-cluster bootstrap; V1 only)
+  arm          ade_m                  LON_speed_mae_mps      LAT_cross_mae_m        LAT_curvature_mae_1pm  LAT_heading_mae_deg   
+  os           9.0374                 4.7021                 0.7598                 0.953015               93.6787               
+  ha           1.2134                 1.0569                 0.7295                 0.020220               7.2873                
+  ha0          1.0804                 0.7091                 0.7926                 0.013848               5.6874                
+  os_navshuf   9.0377                 4.6982                 0.7609                 0.953373               93.6835               
+  os_navzero   9.0376                 4.7108                 0.7563                 0.961377               93.4271               
+
+L1 (committed): os curvature 0.953015 vs ha0 straight-line floor 0.013848 -> AT/ABOVE the floor -- L1 REFUTED on this half
+
+TACTICAL / STRATEGIC (per-window 0/1 from decisions/)
+  STR_route_correct          1.0000 [1.0000, 1.0000]  n=22   prediction key route_pred_nav_true vs label route_label
+  TAC_lat_correct            0.3333 [0.0000, 1.0000]  n=42   prediction key lat_pred_nav_true vs label lat_label
+  TAC_lon_correct            0.0000 [0.0000, 0.0000]  n=42   prediction key lon_pred_nav_true vs label lon_label
+  TAC_turn_left_recall       0.0000 [0.0000, 0.0000]  n=14   recall of lat class 0 among 14 labelled windows
+wrote real_fam.json (14885 bytes)
+
+---- [B2] the REPLICATE AUDIT on a REAL manifest, identical copies -> OK ----
+     (a real refcv3_arm manifest carries NO argv; an argv-based audit could NEVER fire.)
+REPLICATE AUDIT source: resolved provenance (this manifest carries NO argv)
+REPLICATE AUDIT: OK -- the replicate moved zero levers   (wallclock_s and first_forward_s are EXCLUDED: they must differ between two rolls and are not levers)
+G-STOCH  os differs across rolls on 0 of 42 windows -> VOID -- the rolls are bit-identical, so this arm is NOT the stochastic arm the SPEC describes
+[refcv5] G-STOCH / REPLICATE AUDIT FAILED -> the floor is VOID and no margin may be quoted against it
+
+---- [B3] NEGATIVE CONTROL on a REAL manifest: move model.decoder_steps (a LEVER)
+          AND wallclock_s + first_forward_s (which MUST be ignored) ----
+REPLICATE AUDIT source: resolved provenance (this manifest carries NO argv)
+  REPLICATE AUDIT FAILED: realC differs from real at 1 key(s): /model/decoder_steps
+REPLICATE AUDIT: FAILED -> THE FLOOR IS VOID   (wallclock_s and first_forward_s are EXCLUDED: they must differ between two rolls and are not levers)
+[refcv5] G-STOCH / REPLICATE AUDIT FAILED -> the floor is VOID and no margin may be quoted against it
+
+== 6 NEGATIVE CONTROLS FIRED (A3 A4 A5 A6 A7 B3); the gates are proven able to FAIL ==

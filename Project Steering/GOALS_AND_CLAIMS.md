@@ -8468,3 +8468,43 @@ exists**, which is the only moment a pre-registration is worth anything.
 > **0.006802** and turn recall not falling. It is a **NULL** if `os − refcv4b os` is unseparated or
 > smaller than that floor: a 44-hour arm whose one mechanism moved nothing a second roll of the
 > same checkpoint would not have moved by itself.
+
+### ⭐ `H-REFCV5-DDIM-1` ADDENDUM (same turn) — **the instrument was then run against a REAL dump, and it refuted two of my own assumptions**
+
+The row above says *"5 negative controls"*. **It is 6**, and the sixth is the one that matters,
+because the first five ran on a fixture whose schema I had **inferred from source**. Running the
+same instrument against the **REAL banked dump** —
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump` — found
+two defects a synthetic fixture **could not** have found. Both are fixed and both are in
+`raw/selftest.log` PART B.
+
+1. ⛔ **A real `refcv3_arm` manifest carries NO `argv`, so the replicate audit as first written
+   could NEVER have fired.** MEASURED 2026-09-06: the manifest's top-level keys are `_unverified ·
+   absent_arms · action_units · arm_meaning · arms · corpus · doc · episodes · fed_conditionings ·
+   first_forward_s · grid · head_conditionings · hold_action_rule · hold_v0_rule · model ·
+   nav_null · nav_shuffle · sidecar_schema · t1_definition · tier_ruling · tiers · tool ·
+   wallclock_s`, and `model` holds `ckpt`/`cfg`/`decoder_mode`/`decoder_steps`/`n_anchors`/
+   `config_json`/… — **no `argv` anywhere.** The audit read `manifest["model"]["argv"]` and would
+   have printed **INCONCLUSIVE forever on every real dump** while *looking* like a working gate.
+   ⭐ **A gate that cannot fire is not a gate** — the same family as `H-ECHO-4`'s *"a lever
+   multiplied by a zero coefficient is not a null about the lever"*, with the object swapped from
+   a knob to a **check**. ⇒ replaced by a **resolved-provenance fingerprint** (`model` +
+   `grid`/`arms`/`tiers`/`action_units`/`nav_shuffle`/`corpus`/`episodes`/…), which is *stronger*
+   than argv because it compares what the tool **resolved** rather than what an operator typed,
+   and which excludes `wallclock_s` / `first_forward_s` because those **must** differ between two
+   rolls. ⭐ **PROVEN ABLE TO FAIL ON THE REAL MANIFEST (control B3):** moving
+   `model.decoder_steps` **and** both timing fields reads
+   `REPLICATE AUDIT FAILED … at 1 key(s): /model/decoder_steps` — it names **only the lever**.
+2. ⭐ **The decisions sidecar carries `*_pred_nav_TRUE`, not only `*_pred_nav_zero`** — MEASURED:
+   `lat/lon/route_pred_nav_{true,shuffled,zero}` are **all** present. The nav-**true** reading is
+   the **deployed** one, so the script now prefers it, falls back to `nav_zero`, and **names the
+   key it used in every row** — a number whose conditioning a reader would otherwise have to
+   guess. *(This also makes the STRATEGIC anti-echo control directly computable from the banked
+   dump: `nav_true` vs `nav_shuffled` on the changed subset, at zero GPU.)*
+
+⚠️ Two scope notes that travel with PART B: the real dump is an **UNTRAINED test fixture** (its
+~9 m ADE is the fixture's, not a model's — no number in it is a result), and it **predates
+`ha0_ext`**, which is simply absent from its arm set. The loader handles the absence rather than
+crashing, and reports the arms it actually found — which is how the absence was noticed.
+⇒ `SPEC.md` §7.3's *"diff the three `manifest.json` argv records"* is **superseded by §8.1**: the
+obligation is unchanged, the field it is executed against now exists.
