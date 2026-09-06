@@ -1,0 +1,112 @@
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  28%|##8       | 118/415 [00:00<00:00, 1079.73it/s]Loading weights:  57%|#####7    | 237/415 [00:00<00:00, 1081.63it/s]Loading weights:  86%|########5 | 356/415 [00:00<00:00, 1107.71it/s]Loading weights: 100%|##########| 415/415 [00:00<00:00, 1119.36it/s]
+[wpi2] dinov3 303.1 M params - patch 16 - hidden 1024 - dtype torch.bfloat16
+[wpi2] ep 1/15 ep_00013: 120 windows (58 s)
+[wpi2] ep 2/15 ep_00015: 240 windows (115 s)
+[wpi2] ep 3/15 ep_00026: 360 windows (172 s)
+[wpi2] ep 4/15 ep_00033: 480 windows (228 s)
+[wpi2] ep 5/15 ep_00054: 600 windows (286 s)
+[wpi2] ep 6/15 ep_00056: 720 windows (345 s)
+[wpi2] ep 7/15 ep_00059: 840 windows (402 s)
+[wpi2] ep 8/15 ep_00063: 960 windows (459 s)
+[wpi2] ep 9/15 ep_00064: 1080 windows (516 s)
+[wpi2] ep 10/15 ep_00065: 1200 windows (576 s)
+[wpi2] ep 11/15 ep_00076: 1320 windows (631 s)
+[wpi2] ep 12/15 ep_00078: 1440 windows (687 s)
+[wpi2] ep 13/15 ep_00087: 1560 windows (743 s)
+[wpi2] ep 14/15 ep_00092: 1680 windows (799 s)
+[wpi2] ep 15/15 ep_00095: 1800 windows (859 s)
+
+windows n=1800 - episodes 15 - d[pixels]=72 - d[rand]=5632 - d[trunk]=5632 - d[dinov3]=24576
+feature health (must be finite, non-constant):
+   pixels   d=72     std 0.1113  nonfinite 0  const-cols 0
+   rand     d=5632   std 0.01753  nonfinite 0  const-cols 22
+   trunk    d=5632   std 1.122  nonfinite 0  const-cols 0
+   dinov3   d=24576  std 0.2068  nonfinite 0  const-cols 0
+[wpi2] fold cache pixels   built (10 s)
+   pixels   vru<20m RAW (ungated)        auc 0.5844 (10 s)
+   pixels   vru<60m RAW (ungated)        auc 0.5326 (10 s)
+   pixels   vru<20m IN-FOV               auc 0.6330  p_glob 0.005  p_within 0.805 (35 s)
+   pixels   vru<60m IN-FOV               auc 0.5324  p_glob 0.090  p_within 0.035 (59 s)
+   pixels   crowd: >=3 agents in FOV     auc 0.6170  p_glob 0.000  p_within 0.495 (84 s)
+   pixels   lead < 25 m                  auc 0.7155  p_glob 0.000  p_within 0.000 (109 s)
+   pixels   PC-PIXEL brightness          auc 0.9970  p_glob 0.000  p_within 0.000 (135 s)
+   pixels   PC-TRUNK sel lateral>0       auc 0.3787  p_glob 1.000  p_within 1.000 (161 s)
+[wpi2] fold cache rand     built (175 s)
+   rand     vru<20m RAW (ungated)        auc 0.4070 (175 s)
+   rand     vru<60m RAW (ungated)        auc 0.4232 (175 s)
+   rand     vru<20m IN-FOV               auc 0.5270  p_glob 0.240  p_within 0.985 (199 s)
+   rand     vru<60m IN-FOV               auc 0.4552  p_glob 0.975  p_within 0.955 (223 s)
+   rand     crowd: >=3 agents in FOV     auc 0.6215  p_glob 0.000  p_within 0.845 (247 s)
+   rand     lead < 25 m                  auc 0.5069  p_glob 0.355  p_within 1.000 (271 s)
+   rand     PC-PIXEL brightness          auc 0.9737  p_glob 0.000  p_within 0.000 (297 s)
+   rand     PC-TRUNK sel lateral>0       auc 0.5771  p_glob 0.000  p_within 0.015 (321 s)
+[wpi2] fold cache trunk    built (336 s)
+   trunk    vru<20m RAW (ungated)        auc 0.6630 (336 s)
+   trunk    vru<60m RAW (ungated)        auc 0.4878 (336 s)
+   trunk    vru<20m IN-FOV               auc 0.5554  p_glob 0.085  p_within 0.475 (362 s)
+   trunk    vru<60m IN-FOV               auc 0.4917  p_glob 0.680  p_within 0.915 (387 s)
+   trunk    crowd: >=3 agents in FOV     auc 0.6935  p_glob 0.000  p_within 0.130 (413 s)
+   trunk    lead < 25 m                  auc 0.5835  p_glob 0.000  p_within 0.995 (441 s)
+   trunk    PC-PIXEL brightness          auc 0.7709  p_glob 0.000  p_within 0.000 (483 s)
+   trunk    PC-TRUNK sel lateral>0       auc 0.9400  p_glob 0.000  p_within 0.000 (511 s)
+[wpi2] fold cache dinov3   built (549 s)
+   dinov3   vru<20m RAW (ungated)        auc 0.4785 (549 s)
+   dinov3   vru<60m RAW (ungated)        auc 0.7292 (549 s)
+   dinov3   vru<20m IN-FOV               auc 0.6176  p_glob 0.000  p_within 0.300 (575 s)
+   dinov3   vru<60m IN-FOV               auc 0.6772  p_glob 0.000  p_within 0.000 (600 s)
+   dinov3   crowd: >=3 agents in FOV     auc 0.7402  p_glob 0.000  p_within 0.000 (625 s)
+   dinov3   lead < 25 m                  auc 0.7539  p_glob 0.000  p_within 0.495 (648 s)
+   dinov3   PC-PIXEL brightness          auc 0.7373  p_glob 0.000  p_within 0.000 (673 s)
+   dinov3   PC-TRUNK sel lateral>0       auc 0.7866  p_glob 0.000  p_within 0.000 (698 s)
+
+target                         base  npos    pixels      rand     trunk    dinov3
+vru<20m RAW (ungated)         0.057   103    0.5844    0.4070    0.6630    0.4785
+vru<60m RAW (ungated)         0.142   255    0.5326    0.4232    0.4878    0.7292
+vru<20m IN-FOV                0.038    69    0.6330    0.5270    0.5554    0.6176
+vru<60m IN-FOV                0.127   228    0.5324    0.4552    0.4917    0.6772
+crowd: >=3 agents in FOV      0.568  1023    0.6170    0.6215    0.6935    0.7402
+lead < 25 m                   0.198   357    0.7155    0.5069    0.5835    0.7539
+PC-PIXEL brightness           0.500   900    0.9970    0.9737    0.7709    0.7373
+PC-TRUNK sel lateral>0        0.541   974    0.3787    0.5771    0.9400    0.7866
+
+permutation p (global / within-episode)            pixels              rand             trunk            dinov3
+vru<20m IN-FOV                  0.005/0.805    0.240/0.985    0.085/0.475    0.000/0.300
+vru<60m IN-FOV                  0.090/0.035    0.975/0.955    0.680/0.915    0.000/0.000
+crowd: >=3 agents in FOV        0.000/0.495    0.000/0.845    0.000/0.130    0.000/0.000
+lead < 25 m                     0.000/0.000    0.355/1.000    0.000/0.995    0.000/0.495
+PC-PIXEL brightness             0.000/0.000    0.000/0.000    0.000/0.000    0.000/0.000
+PC-TRUNK sel lateral>0          1.000/1.000    0.000/0.015    0.000/0.000    0.000/0.000
+
+  CONSTANT-only control  0.5000   <- must be 0.5000 EXACTLY
+  NULL MEANS per arm (each must sit at ~0.5000):
+      pixels   global 0.5010 (p95 0.5369)   within 0.4758 (p95 0.5299)
+      rand     global 0.4994 (p95 0.5343)   within 0.5256 (p95 0.5980)
+      trunk    global 0.5034 (p95 0.5407)   within 0.5786 (p95 0.6553)
+      dinov3   global 0.5037 (p95 0.5447)   within 0.4833 (p95 0.5734)
+  PC-PIXEL  pixels 0.9970 vs trunk 0.7709 vs dinov3 0.7373  <- PIXELS must win
+  PC-TRUNK  trunk  0.9400 vs pixels 0.3787 vs dinov3 0.7866  <- TRUNK must win
+  CONTROLS FAIL -- results are not readable
+
+paired difference (AUC)                         delta                      CI95
+vru<60m IN-FOV        trunk - pixels          -0.0407   [-0.2158, +0.0989] overlaps 0
+vru<60m IN-FOV        trunk - rand            +0.0365   [-0.2513, +0.3049] overlaps 0
+vru<60m IN-FOV        dinov3 - trunk          +0.1854   [-0.1640, +0.3279] overlaps 0
+vru<60m IN-FOV        dinov3 - pixels         +0.1448   [-0.1878, +0.3394] overlaps 0
+vru<20m IN-FOV        trunk - pixels          -0.0777   [-0.2482, +0.1020] overlaps 0
+vru<20m IN-FOV        trunk - rand            +0.0283   [-0.2657, +0.2195] overlaps 0
+vru<20m IN-FOV        dinov3 - trunk          +0.0622   [-0.1668, +0.2067] overlaps 0
+vru<20m IN-FOV        dinov3 - pixels         -0.0154   [-0.2919, +0.1864] overlaps 0
+crowd: >=3 agents in  trunk - pixels          +0.0765   [-0.1365, +0.2596] overlaps 0
+crowd: >=3 agents in  trunk - rand            +0.0720   [-0.1573, +0.2952] overlaps 0
+crowd: >=3 agents in  dinov3 - trunk          +0.0468   [-0.0738, +0.1794] overlaps 0
+crowd: >=3 agents in  dinov3 - pixels         +0.1232   [-0.0499, +0.3018] overlaps 0
+lead < 25 m           trunk - pixels          -0.1320   [-0.2355, +0.0270] overlaps 0
+lead < 25 m           trunk - rand            +0.0766   [-0.1466, +0.2860] overlaps 0
+lead < 25 m           dinov3 - trunk          +0.1704   [-0.0504, +0.3650] overlaps 0
+lead < 25 m           dinov3 - pixels         +0.0384   [-0.1719, +0.2370] overlaps 0
+
+  FOV-GATE EFFECT (in-FOV target minus raw target), per arm:
+    vru<20m                 pixels +0.0487 rand +0.1200 trunk -0.1076 dinov3 +0.1391
+    vru<60m                 pixels -0.0002 rand +0.0320 trunk +0.0040 dinov3 -0.0520
+
+-> wpi2_semantic_floor.json

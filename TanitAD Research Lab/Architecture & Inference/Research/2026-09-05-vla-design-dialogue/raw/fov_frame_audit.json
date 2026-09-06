@@ -1,0 +1,75 @@
+{
+ "_tier": "T0; NON-PARITY pilot; MEASURED (ours)",
+ "join_file": "C:/Users/Admin/tanitad-data/rl-pilot/pilot_val_agents.jsonl",
+ "join_lines": 2983,
+ "join_clips": 15,
+ "encoder_frame": {
+  "source": "tanitad.data.physicalai.as_frame(None,256,F_REF)",
+  "height": 256,
+  "width": 256,
+  "f_ref": 266.0,
+  "projection": "pinhole",
+  "half_angle_deg": 25.696999727332447,
+  "hfov_deg": 51.39399945466489
+ },
+ "join_frame": {
+  "source": "build_obstacle_join.py --hfov-deg default (sensor camera_front_wide_120fov)",
+  "half_angle_deg": 60.0,
+  "hfov_deg": 120.0
+ },
+ "per_class_forward": {
+  "automobile": {
+   "n": 31224,
+   "in_encoder_fov": 16086,
+   "frac": 0.5151806302843966
+  },
+  "person": {
+   "n": 8688,
+   "in_encoder_fov": 4632,
+   "frac": 0.5331491712707183
+  },
+  "bus": {
+   "n": 732,
+   "in_encoder_fov": 501,
+   "frac": 0.6844262295081968
+  },
+  "rider": {
+   "n": 577,
+   "in_encoder_fov": 381,
+   "frac": 0.6603119584055459
+  },
+  "stroller": {
+   "n": 58,
+   "in_encoder_fov": 47,
+   "frac": 0.8103448275862069
+  },
+  "heavy_truck": {
+   "n": 310,
+   "in_encoder_fov": 208,
+   "frac": 0.6709677419354839
+  },
+  "protruding_object": {
+   "n": 76,
+   "in_encoder_fov": 59,
+   "frac": 0.7763157894736842
+  },
+  "trailer": {
+   "n": 122,
+   "in_encoder_fov": 55,
+   "frac": 0.45081967213114754
+  }
+ },
+ "window_level_vru": {
+  "near_lt20m": {
+   "positives": 158,
+   "with_in_fov_positive": 110,
+   "unanswerable_share": 0.30379746835443033
+  },
+  "all_lt60m": {
+   "positives": 433,
+   "with_in_fov_positive": 396,
+   "unanswerable_share": 0.08545034642032334
+  }
+ },
+ "_note": "lateral gate |cy|<=4.0 m is a RECTANGULAR predicate applied to a CONICAL field of view; azimuth is the geometrically correct gate."
+}

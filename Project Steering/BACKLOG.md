@@ -251,3 +251,39 @@ that all lands before S-W's first gate.
 - **R60 — `transition_probe.py` is wired into nothing**; `mm_e19_read.py` still calls `actdiv_local.py`, which carries the H-LEAK-1 speed-scale defect. It is the ONLY instrument that answers L3's question on an admissible estimator.
 - **R61 — raw pixels carry 5–200× more transition-specific structure than the learned Δz** (RFF floor, point estimates, no CI). If that survives a CI it is a representation finding, not an instrument one.
 - **R62 — `MODEL_REGISTRY.md` has no row for `k8clip05p30k`** (0 hits, two probes).
+
+---
+
+## ⛔⛔ BLOCKING INTEGRATION ITEM — refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, TanitAD_TrainingFlyWheel)
+
+**0 GPU. Blocks every refcv5 arm and every TanitLang attachment. Needs the Architecture &
+Inference stream (whose uncommitted work it is) or a Master Mind ruling.**
+
+MEASURED on `HEAD`'s blob of `stack/tanitad/refs/refc.py` (`0e6103e5`, 155,407 bytes read),
+with same-breath controls that must read non-zero
+(`…/2026-09-05-vla-design-dialogue/AUDIT_REFCV5_SURFACE.md`):
+
+| symbol | HEAD | worktree |
+|---|---:|---:|
+| `agent_tok` · `control_head` · `cross_agent` · `time_mlp` · `sampler` | **0 · 0 · 0 · 0 · 0** | 19 · 12 · 11 · 6 · 52 |
+| `lan_to_cond` / `maneuver_to_anchor` — **CONTROLS** | 7 / 4 | 7 / 5 |
+
+⛔ `HEAD`'s trainer already calls `_pin_refcv5_seams` (3×) and `AgentSeamConfig` (2×), while
+`assert_seams_are_built` appears **0×** in `HEAD`. That is precisely the false-provenance
+state the guard exists to prevent: **a run that stamps `sampler="ddim"` on a model that has
+no denoiser.** ⇒ **a fresh clone of `HEAD` cannot build a refcv5 model at all**, and any
+refcv5 result produced from a clone would be silently about a different model.
+
+⚠️ **Why I did not simply commit it.** It is another stream's in-progress model code.
+Sweeping it into my commit is exactly the failure `CLAUDE.md`'s git-hygiene rule exists to
+stop — and the same rule says a recorded sweep is recoverable while a silent one is not.
+**Raised here rather than left in a research doc** (an orthogonality instrument once sat
+unmerged for 10 days because the request lived in a README nobody re-read).
+
+**What unblocks it:** the Architecture & Inference stream commits the refcv5 seams with an
+explicit pathspec, and `assert_seams_are_built` lands in the same commit as the seams it
+guards — a half-fix that ships the guard without the seams (or the seams without the guard)
+is worse than either.
+
+**Related, non-blocking:** `stack/tanitad/refs/refc_selector.py` (WP-7, **4,530,444** params)
+*is* committed and is wired to nothing but an import probe.

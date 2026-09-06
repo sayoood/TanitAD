@@ -13999,3 +13999,43 @@ join at **34 episodes instead of 15**.
 ⚠️ **The lesson that generalises past this join: a prefix, a hash prefix, or any truncated
 key is an INDEX, never an IDENTITY. Guard it by reconstructing the object and checking it
 against the data, not by asking whether the key happened to be unique in the set you had.**
+
+## 2026-09-06 — TRAIN-C17 · A HEREDOC-FED `python -` INSIDE A BACKGROUNDED COMMAND SILENTLY DOES NOTHING
+
+**Class: a step that reports success because it never ran.** Sibling of the documented
+*"a nested `ssh` inside a piped script EATS THE REST OF THE SCRIPT'S STDIN"* — same
+mechanism, different costume, and this one destroyed a finished measurement rather than a
+log tail.
+
+**What happened.** A patch adding an outcome-based null screen to `wpm_port_influence.py`
+was written as `python - <<'PY' … PY` inside a compound command launched with
+`run_in_background`. The heredoc's stdin never reached the interpreter: python read EOF,
+did nothing, exited **0**, and the `&&`-chained launch that followed then ran the
+**UNPATCHED** script to completion — a full **1,360-window / 34-episode** run whose printed
+verdict rested on precisely the KL screen the patch existed to replace.
+
+⛔ **Nothing anywhere reported a failure.** The patch script contained
+`assert s.count(old) == 1` and a confirmation `print` — neither fired, because the script
+never executed. The background wrapper swallowed the (empty) stdout. The only evidence was
+that the run's output carried the OLD section headers.
+
+⇒ **The detection was content, not exit status**: `grep -c "=== 4b"` on the script read
+**0** while the file's mtime showed it had been "written". Exit codes, mtimes and the
+absence of an error were all consistent with success.
+
+→ **Durable fix, three parts:**
+1. **A patch that must apply gets its own FILE**, never a heredoc — `patch_wpm.py`.
+2. It runs in the **FOREGROUND**, so its assertions and prints are actually observed.
+3. It is **VERIFIED BY CONTENT before anything consumes it** — `grep -c` for named markers
+   in the *written* file, not the exit code of the writer.
+
+⚠️ **The generalisation, because this is the fourth member of the family in this log:**
+`git add` exit codes are not evidence; a `grep -c 0` from an unreadable file is not
+absence; a `ls-tree` short read is not a deletion; and now **a writer's exit 0 is not a
+write**. In every case the honest check is a **positive content assertion on the artifact
+itself**, made by a different mechanism than the one that produced it.
+
+⚠️ Related, same session, same shape: `pytest -q | tail -30` buffered until the pipeline
+ended, leaving a 0-byte log for 75 minutes; a `ps` check finding no PID then read as
+confirmation the suite had died. It had not — it completed 6,507 passed / 52 failed.
+**Never pipe a long run through `tail`; redirect to a log and poll the log.**

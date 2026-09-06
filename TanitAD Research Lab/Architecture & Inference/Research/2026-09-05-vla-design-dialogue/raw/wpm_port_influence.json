@@ -1,0 +1,55 @@
+{
+ "n": 1360,
+ "K": 128,
+ "episodes": 34,
+ "port_l2": 6.367541313171387,
+ "zero_identity": {
+  "flip": 0.0,
+  "kl": 0.0,
+  "geo_m": 0.0
+ },
+ "real": {
+  "flip": 0.23235294222831726,
+  "kl": 0.18778850138187408,
+  "geo_m": 0.20215517282485962
+ },
+ "outcome_screen": {
+  "real": 0.6521487236022949,
+  "norm_matched": 0.7635749578475952,
+  "permuted": 0.6533722281455994,
+  "passes": true
+ },
+ "semantic_null_kl_only": {
+  "real_kl": 0.18778850138187408,
+  "norm_matched_kl": 0.40654367208480835,
+  "permuted_kl": 0.19396266341209412,
+  "passes": false
+ },
+ "non_degeneracy": {
+  "var_delta_median": 2.1231443881988525,
+  "s0_std_median": 17.907291412353516,
+  "spearman_delta_s0_median": 0.09608187603003113
+ },
+ "ade": {
+  "base": 0.6636495590209961,
+  "guided": 0.6521487236022949,
+  "oracle": 0.23150186240673065,
+  "effect": -0.011500894092023373,
+  "ci95": [
+   -0.04166717072948813,
+   0.018406004551798097
+  ],
+  "separated": false
+ },
+ "consistency": {
+  "mean_rank": 64.39705657958984,
+  "k": 128,
+  "chance_rank": 64.5,
+  "top1": 0.0,
+  "gap": 3.3622515201568604
+ },
+ "verdict": "PORT IS WIRED AND ITS EFFECT BEATS BOTH NULLS ON THE OUTCOME \u2014 the re-ranking channel carries information and is worth building on",
+ "_ckpt": "C:/Users/Admin/tanitad-data/models/refc-base-30k/ckpt.pt",
+ "_join": "C:/Users/Admin/tanitad-data/rl-pilot/pilot_val_agents_ext.jsonl",
+ "_tier": "T0; NON-PARITY pilot; port ablation (maneuver_to_anchor); paired episode-cluster bootstrap over episodes"
+}

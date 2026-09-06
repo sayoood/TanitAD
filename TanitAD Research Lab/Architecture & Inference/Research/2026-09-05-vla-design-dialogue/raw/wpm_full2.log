@@ -1,0 +1,84 @@
+[wpm] maneuver_to_anchor L2 = 6.367541 (the port being ablated)
+[wpm] ep 1/34 ep_00000: 40 windows (13 s)
+[wpm] ep 2/34 ep_00004: 80 windows (26 s)
+[wpm] ep 3/34 ep_00006: 120 windows (39 s)
+[wpm] ep 4/34 ep_00008: 160 windows (51 s)
+[wpm] ep 5/34 ep_00010: 200 windows (64 s)
+[wpm] ep 6/34 ep_00015: 240 windows (77 s)
+[wpm] ep 7/34 ep_00018: 280 windows (90 s)
+[wpm] ep 8/34 ep_00020: 320 windows (102 s)
+[wpm] ep 9/34 ep_00021: 360 windows (115 s)
+[wpm] ep 10/34 ep_00022: 400 windows (128 s)
+[wpm] ep 11/34 ep_00023: 440 windows (140 s)
+[wpm] ep 12/34 ep_00026: 480 windows (153 s)
+[wpm] ep 13/34 ep_00027: 520 windows (166 s)
+[wpm] ep 14/34 ep_00030: 560 windows (178 s)
+[wpm] ep 15/34 ep_00033: 600 windows (191 s)
+[wpm] ep 16/34 ep_00034: 640 windows (204 s)
+[wpm] ep 17/34 ep_00035: 680 windows (217 s)
+[wpm] ep 18/34 ep_00048: 720 windows (229 s)
+[wpm] ep 19/34 ep_00049: 760 windows (242 s)
+[wpm] ep 20/34 ep_00051: 800 windows (254 s)
+[wpm] ep 21/34 ep_00052: 840 windows (267 s)
+[wpm] ep 22/34 ep_00054: 880 windows (280 s)
+[wpm] ep 23/34 ep_00056: 920 windows (292 s)
+[wpm] ep 24/34 ep_00059: 960 windows (305 s)
+[wpm] ep 25/34 ep_00063: 1000 windows (318 s)
+[wpm] ep 26/34 ep_00064: 1040 windows (330 s)
+[wpm] ep 27/34 ep_00074: 1080 windows (343 s)
+[wpm] ep 28/34 ep_00076: 1120 windows (355 s)
+[wpm] ep 29/34 ep_00078: 1160 windows (368 s)
+[wpm] ep 30/34 ep_00086: 1200 windows (381 s)
+[wpm] ep 31/34 ep_00089: 1240 windows (393 s)
+[wpm] ep 32/34 ep_00091: 1280 windows (406 s)
+[wpm] ep 33/34 ep_00092: 1320 windows (418 s)
+[wpm] ep 34/34 ep_00095: 1360 windows (431 s)
+
+[wpm] n=1360 windows - 34 episodes - K=128 anchors
+[wpm] anchor fan is read from the guided pass; the port writes to the confidence surface only (refc.py 'priors on the CLASSIFIER surface')
+
+=== 1. IS THE PORT INERT? ===
+  ZERO-PORT IDENTITY   flip 0.0000  kl 0.000000  geo 0.0000 m   <- must be 0/0/0
+  the TRAINED port     flip 0.2324  kl 0.187789  geo 0.2022 m
+
+=== 2. DOES IT BEAT A SEMANTIC NULL? ===
+  real            kl 0.187789
+  norm-matched    kl 0.406544   <- same intervention magnitude, no content
+  permuted prior  kl 0.193963   <- a REAL prior, attached to the wrong window
+  beats norm-matched: False | beats permuted: False | PASSES BOTH: False
+
+=== 3. NON-DEGENERACY SCREEN (arXiv 2410.08146) ===
+  Var_a[Delta]      median 2.12314   (near-zero => the port cannot re-rank)
+  |S0| spread       median 17.9073   (scale reference for that variance)
+  Spearman(Delta, S0) median 0.0961  (near +1 => rank-identical to the scorer, i.e. the port adds no NEW ordering)
+
+=== 4. DOES THE PORT HELP? (the fan's own oracle is the reference) ===
+  ADE of the base selection    0.6636 m
+  ADE of the guided selection  0.6521 m
+  ADE of the fan's best anchor 0.2315 m   (the ceiling any prior can reach)
+  port effect on ADE           -0.0115 m   (negative = the port HELPS)
+  paired episode-cluster CI95  [-0.0417, +0.0184] overlaps 0
+
+=== 4b. THE SAME SCREEN ON THE OUTCOME, WHICH IS THE AXIS THAT DECIDES ===
+  real prior          ADE 0.6521 m
+  norm-matched null   ADE 0.7636 m   <- intervenes as hard, says nothing
+  permuted prior      ADE 0.6534 m   <- a REAL prior, wrong window
+  base (no port)      ADE 0.6636 m
+  real beats BOTH nulls on the outcome: True
+  margin vs norm-matched  +0.1114 m   (positive = the real prior lands better)
+  margin vs permuted      +0.0012 m   (positive = the real prior lands better)
+
+=== 5. CONSISTENCY — reported as a CALIBRATION, not a verdict ===
+  mean rank 64.397 of 128 (chance 64.5) - top1 0.0000 - gap 3.362252
+  SCOPE: `consistency()` asks whether the ENERGY ALONE ranks the chosen
+     anchor first. REF-C's port is a SMALL ADDITIVE prior and the choice is
+     dominated by the base scorer, so a near-chance rank is EXPECTED and is
+     NOT evidence that REF-C is inconsistent. What it calibrates is the
+     DESIGN CONSTRAINT: sd_a[Delta] 1.46 against an S0 spread of 17.9 --
+     the port runs at ~8 % of the scorer's scale, and at that ratio
+     consistency is UNMEASURABLE. The Energy Bridge needs beta*E comparable
+     to S0's spread or CON_rank reads chance whatever the reasoner knows.
+
+  => PORT IS WIRED AND ITS EFFECT BEATS BOTH NULLS ON THE OUTCOME — the re-ranking channel carries information and is worth building on
+
+-> wpm_port_influence.json
