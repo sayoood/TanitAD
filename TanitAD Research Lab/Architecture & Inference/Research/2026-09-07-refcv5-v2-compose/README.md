@@ -529,7 +529,8 @@ false.
 | P14 paired guard, both directions + control | ⭐ **PASS** (mutation, not inspection) |
 | P1 agent guards, both + control | ⭐ **PASS** (mutation) |
 | composed P1-OUT end-to-end smoke | ⭐ **PASS**, `sampler_ranks_the_fan: True` |
-| combined join readable by `lzma.open` | ⭐ **PASS**, 875,657 rows |
-| agent join md5 on pod | ⭐ **PASS**, byte-identical |
+| combined join readable by `lzma.open` | ⭐ **PASS on the dev box AND ON THE POD**, 875,657 rows both sides |
+| both joins md5 on pod | ⭐ **PASS**, byte-identical (`1c985e6d…3558` / `0c31a3a6…ef46`) |
+| A40 GPU untouched throughout | ⭐ **0 MiB, 0 %** at start, middle and end |
 | `pod_currency_audit.py --host tanitad-a40` | ⛔ **INCONCLUSIVE** — started, produced no output in ~50 min (history-walk over a flapping mount). ⛔ Per `refcv5_preflight.py`'s own rule, **INCONCLUSIVE counts as a FAILURE, never a pass.** Must be re-run and must pass as part of `ship_and_gate.sh`. |
 | `refcv5_preflight.py` on the pod | ⛔ **NOT RUN** — it must run *after* the ship step, against the shipped code. |
