@@ -5,7 +5,8 @@ Checkpoint `/home/nvidia/refav1_lon/ckpt/ckpt.pt`, **step 21109**, loaded with
 **0 missing / 0 unexpected** into the code bundled beside it
 (`/home/nvidia/refav1_lon/code/stack`, `refa_v1.py` 2,880 lines).
 Pre-registration: `SPEC.md`, committed `092db55` **before** these numbers existed.
-Raw: `raw/probe_results.json`, `raw/lead_census.json`, `bank/_bank_meta.json`.
+Raw: `raw/probe_results.json`, `raw/lead_census.json`, `raw/bank_meta.json`,
+`raw/probe.log`, `raw/percprobe_lead.mp4.assert.json`.
 
 ⛔ **TIER.** This is a **representation diagnostic**, not a driving number. It is
 neither T0 nor T1: nothing here is rolled out and nothing here is a capability
@@ -55,7 +56,10 @@ row *j* ↔ episode frame *2j*; re-checked by an offset sweep (§6b).
 
 ## 3. THE DECISIVE CELL — `lead_gap_m` (lead ≤ 30 m, vehicles only)
 
-n = **1,586** scored rows over **77** clips. `d` printed per arm.
+n = **1,586** scored rows over **42** bootstrap clusters. `d` printed per arm.
+⚠️ **42, not 77.** The split has **77** scored clips, but only **42** of
+them carry a labelled lead within 30 m — and it is the **cluster count, not the
+row count and not the split size, that is the n behind every interval here.**
 
 | arm | R²_skill | 95 % CI (episode-cluster) | within-clip | d |
 |---|---|---|---|---|
@@ -82,9 +86,13 @@ CIs are not a null result):
 | `field_rff` − `field` | +0.0779 | [−0.0824, +0.2419] | spans 0 |
 
 ⭐ **PASS on the pre-registered criterion.** `field` beats the raw-pixel floor
-(paired **+0.4145**, CI excludes zero), beats the constant, the within-clip
-shuffle is ~0 while `field`'s **within-clip** skill is **+0.3995** — so it tracks
-the lead **as it moves**, not merely which clip it is looking at.
+(paired **+0.4145**, CI excludes zero) and beats the constant.
+⚠️ **The within-clip shuffle is small but NOT zero: +0.0307, CI
+[+0.0018, +0.0643], which EXCLUDES zero.** The honest readable quantity is
+therefore **TRUE − SHUFFLED = 0.3632 − 0.0307 = +0.3325**, not the raw +0.3632.
+The leakage-immune statistic agrees: `field`'s **within-clip** skill is
+**+0.3995** against the shuffle's **−0.0013** — so it tracks the lead **as it
+moves**, not merely which clip it is looking at.
 
 ⇒ **The lead's LONGITUDINAL POSITION IS in the latent. A cost in this space CAN
 express "keep distance". The objective is REPRESENTABLE, and refav1's
