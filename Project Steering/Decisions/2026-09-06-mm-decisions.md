@@ -1933,3 +1933,69 @@ share an arm must say so on its face.** A cross-row ✅ is only admissible when 
 declare that its rows use different arms.** Until then *"collapse is solved"* is not quotable.
 ⭐ This does **not** touch the earlier finding that the three T1-read arms sit at **0.90–0.98 of
 `rdw8p30k`** and are therefore **not collapsed** — that reading is arm-explicit and stands.
+
+
+## M81. ⛔ CORRECTION — "the STRATEGIC family was silently absent from every refcv3 eval" is HALF REFUTED
+
+### 1. What I said, and what is true
+
+I reported repeatedly — to the PI and in several briefs — that **the strategic family was silently
+absent from every refcv3 eval for its whole life because `corpus["labels"]` was a dict where a string
+was expected.**
+
+⛔ **Half of that is wrong. The strategic block WAS PRESENT in the old `ARM.json`, with real numbers:**
+**n = 3,622 · acc 0.7667 · kappa 0.4604 [0.3775, 0.5432]** — identical before and after the fix.
+
+⇒ ⭐ **What the `resolve_labels_path` fix recovered is the KEY, not the NUMBERS.** And it **cannot pay
+out on the banked dumps at all**: **six of the ten required sidecar keys**
+(`plan_full_nav_true`, `gstr_nav_true`, `gt_future_ext`, `pose_last`, `ego_t0`, `ep_poses`) are
+**absent from all 141 files in BOTH banked dumps**, so `nav_compliance.py:1046-1056` **returns before
+`resolve_labels_path` is ever reached.**
+
+⇒ ⛔ **Trajectory-level nav compliance for refcv3 requires a GPU RE-ROLL.** It was never going to
+appear from a re-analysis, and I implied it would.
+
+### 2. ⚠️ Scope the correction precisely — `M55` is NOT retracted
+
+⛔ **This corrects the refcv3 claim only.** `M55`'s finding is a **different measurement on a different
+rig**: on **refav1's** eval slice, `lat_label` / `lon_label` / `route_label` read **`-100` (ignore_index)
+on 32 of 40 windows**, so refav1's strategic family is scorable on **n <= 8**. ⭐ **That stands** — it
+was measured directly from refav1's own dumps, and it is why refav1 reports strategic as
+`UNAVAILABLE, n = 0`.
+
+⇒ ⭐ **Two rigs, two different label problems, and I collapsed them into one sentence.** refcv3's
+strategic block exists and is populated; refav1's is empty. The 23.30 %-of-windows supervision figure
+(`M60`) belongs to **refcv5's** corpus, a third object again.
+
+### 3. ⛔ A repo-wide grep silently under-reported AGAIN — hardening `M50`
+
+A backgrounded **repo-wide** `grep -rn -F "201/201" .` completed **exit 0 with ZERO hits**. The literal
+exists at **nine locations** (`GOALS_AND_CLAIMS.md:3299, 3783, 4043, 4047, 4049, 5529, 6073, 6491` and
+`Decisions/2026-09-05-mm-decisions.md:2732`), all found by a **path-narrowed** probe on the same tree.
+
+⇒ ⛔ **HARDENED RULE: on this mount a repo-wide recursive grep is NON-EVIDENCE. Only a PATH-NARROWED
+`grep -F` counts** — and it still needs its same-breath control. ⚠️ Note this is **not** the `M50`
+failure (a broken regex); the pattern here was a plain `-F` literal and the *traversal* dropped it.
+**Two distinct mechanisms now produce the same false zero**, which is exactly why a control is
+mandatory rather than advisory.
+
+⚠️ **And a second instance in the same report:** `grep -rn -F "skeleton without"` read 0 because the
+text is **uppercase** — a case error, not a mount error. ⭐ **Three different causes of a false zero in
+one search session**, and only the control distinguishes them.
+
+### 4. ⚠️ Source drift under a live session — line numbers are not addresses
+
+`GOALS_AND_CLAIMS.md` grew **~152 KB (1,258,720 → 1,410,540 B)** during one agent's search, moving
+**28 claim-row line numbers** (e.g. `D-REFC-DDAUDIT-3` 2902 → 6073; `D-PROJCONTACT-1` 3562 → 7395).
+`MODEL_REGISTRY.md` shrank 438,304 → 434,445 B with **line 2911 rewritten**.
+⇒ ⭐ **CITE CLAIM IDs, NEVER LINE NUMBERS**, on any file a sibling is appending to. Every value, md5,
+sha256 and JSON reading survived unchanged — **only the offsets rotted**, which is the cheapest
+possible failure and still cost a re-derivation.
+
+### 5. State
+
+`refcv4b` is at **step 38,950 / 40,284**, trainer live, log age 3 s, **~1.5 h out**. Its registry row
+(§4.6) now carries the preliminary read **with its own refusals intact**: *"20 clips, one seed, five
+levers — an ARM delta on a subset, never a lever attribution and never a registry-grade level"*, and
+⛔ **`--ablate ego_zero` reads 1.1137 m (kappa 0.5782 → 0.0653), so the win is NOT vision-only.**
+⛔ **Both trivial controls still beat it** (`os` 0.3055 vs `ha` 0.2860, `ha0_ext` 0.2769).
