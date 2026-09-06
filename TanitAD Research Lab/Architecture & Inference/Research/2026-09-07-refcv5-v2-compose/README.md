@@ -2,6 +2,9 @@
 
 **Author:** TanitAD Architecture & Inference · **Date:** 2026-09-07
 **Branch:** `agent/arch-inf-20260803` · **Repo HEAD at composition:** `52ca682`
+⚠️ **The repo advanced under this document** (`5088b7f` → `6ae8acf` → `d1c929c` → …);
+every finding below was **re-checked against the moving tip**, and the two that went
+stale are corrected in place with the correction named, never overwritten.
 **Status:** ⛔ **NOT LAUNCHED.** A sibling owns the P1 gate
 (`REFCV5_MISSING_PIECES_PLAN.md` §4, restated §8.2). This document makes the
 launch instant the moment that gate clears; it does not clear it.
@@ -112,7 +115,7 @@ Full runnable scripts: `LAUNCH_refcv5_v2.sh` (both arms), gated by
 ```
 --agents head \
 --w-agent 1.0 \
---agent-join /workspace/TanitAD/data/joins/b1train_agents.jsonl.xz \
+--agent-join /workspace/TanitAD/data/joins/b1_train_plus_eval_agents.jsonl.xz \   # ⛔ COMBINED, see 2.4
 --agent-queries 100
 ```
 
@@ -197,7 +200,7 @@ Paths relative to repo root. Line numbers are worktree (HEAD ±1 where noted).
 | 7a | **`SPEED_BAND`** | `vocab_v7.py:100` | **TRAINING SIGNAL** — ⛔ **degenerate** (present on 4,572/4,572 ⇒ weight 1.0, target 1.0, zero negatives) | emit `s2_geom_emit_v7.py:309-315`; window `:199-211`; band `:51` | `"v_hi_ms": round(float(v.max()), 2),` |
 | 7b | `_MEASURED_GEOMETRY_TOKENS` | `v7_labels.py:274` | negative-policy gate | `v7_labels.py:643` | `w.append(1.0 if tok in _MEASURED_GEOMETRY_TOKENS else IGNORE_W)` |
 | 7c | **max speed (INPUT)** | 8 steps · `stack/tanitad/refs/max_speed_input.py:142` | ⛔ **UNENFORCED-FINDING — module has ZERO consumers** | declared `max_speed_input.py:10-11`; **no consumer, no CLI flag** | `the PI has ruled that class is an INPUT, not a training signal` |
-| 8 | **traffic light** | 4 of the 22 · `vocab_v7.py:108-111` | **TRAINING SIGNAL**, negatives ignored; ⛔ **no quality filter in code** | `v7_labels.py:591-601`; grounding `stack/tanitad/data/alpamayo_fusion.py:273-277` | `only **998 were asked the traffic-light grounding question at all**` |
+| 8 | **traffic light** | 4 of the 22 · `vocab_v7.py:108-111` | **TRAINING SIGNAL**, negatives ignored; ⛔ **no quality filter in code**; ⚠️ see the retraction below | `v7_labels.py:591-601`; grounding `stack/tanitad/data/alpamayo_fusion.py:273-277` | `only **998 were asked the traffic-light grounding question at all**` |
 | 9 | **agents** | `refc_v3_train.py:4250`; `AGENT_WEIGHT_DEFAULT = 0.0` `:116` | `head` = **TRAINING SIGNAL** (vision-only at inference) · `oracle` = **INADMISSIBLE ceiling** | `stack/tanitad/refs/refc.py:3117-3123` | `# ⛔ THE VISION-ONLY RULE IS ENFORCED BY WHERE THE TENSOR IS READ, not by a comment.` |
 | 10 | **geometric goal point** | `stack/tanitad/refs/goal_point.py:99`; weight 0.0 `refc_v3_train.py:129` | ⭐ **DIAGNOSTIC-ONLY** | `goal_point.py:126`; tests `test_rl_forward_keys_cover_signature.py:78-82,:153-167` | `DIAGNOSTIC_ONLY_FORWARD_KWARGS = ("gp_point", "gp_valid")` |
 | 11 | **`road_class`** | `stack/scripts/refb_labels.py:1806-1811` | **TRAINING SIGNAL only; forbidden at inference** | `refb_labels.py:1816-1821` | `fine as LABELS …, never as inference inputs (vision-only rule …)` |
@@ -217,12 +220,24 @@ on 529/4,719 = 11.2 %) — **but `refc_v3_train.py:3461` and `:3544` both call
 stamped and visible, which is the correct handling; it is **not** the production
 nav command, and no capability claim may describe it as one.
 
-⛔ **Finding M — `max_speed_input.py` exists and is DEAD CODE.** Two independent
-probes (repo-wide import scan; direct symbol scan of `refc_v3.py` /
-`refc_v3_train.py`) return **zero consumers**. There is no `--max-speed-input`
-flag, and the test the module's own docstring cites at `:87` as proving its
-bit-identity claim **does not exist**. ⇒ the sibling's P15 channel is *specified*
-but not *wired*; the launch leaves the slot and takes no flag for it, as briefed.
+⚠️ **Finding M — `max_speed_input.py` is NOT an input to the model.**
+⛔ **RE-MEASURED after the repo advanced mid-session (commit `6ae8acf`,
+"max-speed input — pinned quantizer, OFF proof, output-scored constraint"), and
+my first reading is now PARTLY STALE — corrected rather than overwritten.**
+
+* **Was true at 22:0xZ:** zero consumers, and the test the module's own docstring
+  cites at `:87` did not exist.
+* **True now:** the module has **two** consumers —
+  `stack/tanitad/eval/speed_limit_scoring.py` and `stack/tests/test_max_speed_input.py`
+  (the missing test **landed**).
+* **Still true, and it is the load-bearing half:** there is **no
+  `--max-speed-input` trainer flag** — HEAD's trainer is unchanged at
+  **4,479 lines / 88 `add_argument`**, and `max.speed` matches **0 times** in it.
+
+⇒ **P15 is now an EVAL-SIDE SCORER, not a model INPUT.** The PI named max speed
+as one of the three INPUTS; as it stands the model still cannot read it. The
+launch leaves the slot and takes no flag, as briefed — but the slot is *not yet
+fillable*.
 
 ⚠️ **Finding T — the brief's P3 premise is one day stale.** `g_tac.goals` no
 longer routes *only* into `audit["goal_flags"]`. Since 2026-09-06 it is promoted
@@ -458,7 +473,7 @@ The rest are topic-matched. Marked below.
 | **8** ✅ | *"not learning to avoid collisions or keeping enough dspace to the infrastructuire"* | **P1** (agents) + P7 (unported) | ⚠️ **P1-IN ONLY, and only half.** Agent conditioning is the environment link and computes `v_rel_x`. ⛔ **Infrastructure clearance is NOT MEASURABLE AT ALL** (`D-CLEARANCE-IS-AGENT-NOT-INFRA-1`): the 11th obstacle class is `train_or_tram_car`, and `protruding_object` is overhead (bottom face +1.68 m) while the join **drops `z`**. P7's distance-keeping cost is still unported. **P1-OUT moves this by nothing.** |
 | **9** ⚠️ | *"the output trahjectory are not smooth, I thought we are forcing this by conctrsuction"* | P5 (already landed) | ⛔ **NO NEW MOVEMENT.** P5 landed **before** this arm: curvature **−26 %** on a held-out split, ADE not separated. ⚠️ *"halves the ADE"* was an overstatement propagated into four artifacts — it is **−30.7 %**. ⛔ And REF-C remains **~84× worse on curvature than a plan that never steers** (0.02737 vs 2.30973). **Smoothness is not addressed by refcv5-v2.** |
 | **10** ✅ | *"max speed … the model muist learn to adapt it speed … and reach the max speed when the situation allows"* | **P15** | ⛔ **NO — the channel is DEAD CODE.** `max_speed_input.py` has **zero consumers**, no CLI flag, and the test its own docstring cites **does not exist** (§3, Finding M). The slot is left and the flag is absent, as briefed. |
-| **11** ⚠️ | *"The model is not reactiong to traffic light by braking"* | `D-TLIGHT-1` | ⛔ **NO.** The label exists and **reaches nothing**. Of 779 records only **175 are `grounded`, 604 `disputed`**; `traffic_light_visible = False` elsewhere is **not-probed, not absent** (the question was asked on 998/4,572 clips). Slot left; dependency flagged. |
+| **11** ⚠️ | *"The model is not reactiong to traffic light by braking"* | `D-TLIGHT-1` | ⛔ **NO.** The label exists and **reaches nothing**. ⛔ **RETRACTED FIGURES — do not carry "175 grounded / 604 disputed" forward.** `D-TLGROUND-DISPUTED` (commit `47a2302`, `RETRACTION_LOG.md`) re-measured on n = 4,719 clips / 805 emissions: **182 GROUNDED (22.6 %) · 601 NOT_CHECKED (74.7 %) · 22 NO_QUESTION (2.7 %) · 0 CONTRADICTED.** The counts barely moved (175→182, 604→601) **and the verdict inverted**: "disputed" claimed the grounding looked and contradicted, and **nothing contradicted anything** — only one grounding question is asked per clip and on those 601 it asked about something else. Slot left; dependency flagged. |
 | **12** ✅ | *"compltelty ignroing or not activating lane changes, checvk this if there is a systematic error"* | root cause **FOUND** | ⛔ **NO.** The emitter reaches **5 of 8** lateral actions; `LANE_CHANGE_L`/`LANE_CHANGE_R`/`ABORT_LC` are structurally unreachable (`s2_geom_emit_v7.py:446/:449/:452`, verified). Text-side supply ceiling **105 clips ≈ 2.2 %** — a **CORPUS** fact ⇒ repairing the emitter makes the class **expressible, not supplied**. |
 
 ### ⭐ The honest total
