@@ -1,0 +1,197 @@
+{
+ "run": "v7tiny_postrain30k",
+ "stage": "S-W",
+ "trainable_numel": 10169731,
+ "off": {
+  "n_in_optimizer": 138,
+  "n_reached": 96,
+  "n_unreached": 42,
+  "unreached_numel": 5305667,
+  "n_not_in_optimizer": 130,
+  "unreached_modules": {
+   "masked_cells": {
+    "tensors": 2,
+    "numel": 8448,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.linear1": {
+    "tensors": 2,
+    "numel": 263168,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.linear2": {
+    "tensors": 2,
+    "numel": 262400,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.norm1": {
+    "tensors": 2,
+    "numel": 512,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.norm2": {
+    "tensors": 2,
+    "numel": 512,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.self_attn": {
+    "tensors": 2,
+    "numel": 197376,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.0.self_attn.out_proj": {
+    "tensors": 2,
+    "numel": 65792,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.linear1": {
+    "tensors": 2,
+    "numel": 263168,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.linear2": {
+    "tensors": 2,
+    "numel": 262400,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.norm1": {
+    "tensors": 2,
+    "numel": 512,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.norm2": {
+    "tensors": 2,
+    "numel": 512,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.self_attn": {
+    "tensors": 2,
+    "numel": 197376,
+    "group": "aux"
+   },
+   "masked_cells.blocks.layers.1.self_attn.out_proj": {
+    "tensors": 2,
+    "numel": 65792,
+    "group": "aux"
+   },
+   "masked_cells.inp": {
+    "tensors": 2,
+    "numel": 16640,
+    "group": "aux"
+   },
+   "masked_cells.out": {
+    "tensors": 2,
+    "numel": 16448,
+    "group": "aux"
+   },
+   "predictor_op.heads.2": {
+    "tensors": 2,
+    "numel": 526336,
+    "group": "predictor_op"
+   },
+   "predictor_op.heads.4": {
+    "tensors": 2,
+    "numel": 526336,
+    "group": "predictor_op"
+   },
+   "predictor_op.out_proj": {
+    "tensors": 2,
+    "numel": 524544,
+    "group": "predictor_op"
+   },
+   "step_readout_op.net.0": {
+    "tensors": 2,
+    "numel": 8192,
+    "group": "predictor_op"
+   },
+   "step_readout_op.net.1": {
+    "tensors": 2,
+    "numel": 2097664,
+    "group": "predictor_op"
+   },
+   "step_readout_op.net.3": {
+    "tensors": 2,
+    "numel": 1539,
+    "group": "predictor_op"
+   }
+  },
+  "unreached_tensors": [
+   "masked_cells.blocks.layers.0.linear1.bias",
+   "masked_cells.blocks.layers.0.linear1.weight",
+   "masked_cells.blocks.layers.0.linear2.bias",
+   "masked_cells.blocks.layers.0.linear2.weight",
+   "masked_cells.blocks.layers.0.norm1.bias",
+   "masked_cells.blocks.layers.0.norm1.weight",
+   "masked_cells.blocks.layers.0.norm2.bias",
+   "masked_cells.blocks.layers.0.norm2.weight",
+   "masked_cells.blocks.layers.0.self_attn.in_proj_bias",
+   "masked_cells.blocks.layers.0.self_attn.in_proj_weight",
+   "masked_cells.blocks.layers.0.self_attn.out_proj.bias",
+   "masked_cells.blocks.layers.0.self_attn.out_proj.weight",
+   "masked_cells.blocks.layers.1.linear1.bias",
+   "masked_cells.blocks.layers.1.linear1.weight",
+   "masked_cells.blocks.layers.1.linear2.bias",
+   "masked_cells.blocks.layers.1.linear2.weight",
+   "masked_cells.blocks.layers.1.norm1.bias",
+   "masked_cells.blocks.layers.1.norm1.weight",
+   "masked_cells.blocks.layers.1.norm2.bias",
+   "masked_cells.blocks.layers.1.norm2.weight",
+   "masked_cells.blocks.layers.1.self_attn.in_proj_bias",
+   "masked_cells.blocks.layers.1.self_attn.in_proj_weight",
+   "masked_cells.blocks.layers.1.self_attn.out_proj.bias",
+   "masked_cells.blocks.layers.1.self_attn.out_proj.weight",
+   "masked_cells.inp.bias",
+   "masked_cells.inp.weight",
+   "masked_cells.mask_token",
+   "masked_cells.out.bias",
+   "masked_cells.out.weight",
+   "masked_cells.pos",
+   "predictor_op.heads.2.bias",
+   "predictor_op.heads.2.weight",
+   "predictor_op.heads.4.bias",
+   "predictor_op.heads.4.weight",
+   "predictor_op.out_proj.bias",
+   "predictor_op.out_proj.weight",
+   "step_readout_op.net.0.bias",
+   "step_readout_op.net.0.weight",
+   "step_readout_op.net.1.bias",
+   "step_readout_op.net.1.weight",
+   "step_readout_op.net.3.bias",
+   "step_readout_op.net.3.weight"
+  ],
+  "_read": "parameters IN the optimizer whose .grad is None after a real backward at THIS run's own loss weights. AdamW skips them entirely (decoupled weight decay included), so they stay BIT-EXACTLY at initialisation for the whole run."
+ },
+ "on_mutation": {
+  "n_in_optimizer": 138,
+  "n_reached": 132,
+  "n_unreached": 6,
+  "unreached_numel": 1577216,
+  "n_not_in_optimizer": 130,
+  "unreached_modules": {
+   "predictor_op.heads.2": {
+    "tensors": 2,
+    "numel": 526336,
+    "group": "predictor_op"
+   },
+   "predictor_op.heads.4": {
+    "tensors": 2,
+    "numel": 526336,
+    "group": "predictor_op"
+   },
+   "predictor_op.out_proj": {
+    "tensors": 2,
+    "numel": 524544,
+    "group": "predictor_op"
+   }
+  },
+  "unreached_tensors": [
+   "predictor_op.heads.2.bias",
+   "predictor_op.heads.2.weight",
+   "predictor_op.heads.4.bias",
+   "predictor_op.heads.4.weight",
+   "predictor_op.out_proj.bias",
+   "predictor_op.out_proj.weight"
+  ],
+  "_read": "parameters IN the optimizer whose .grad is None after a real backward at THIS run's own loss weights. AdamW skips them entirely (decoupled weight decay included), so they stay BIT-EXACTLY at initialisation for the whole run."
+ }
+}

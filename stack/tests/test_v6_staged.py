@@ -727,11 +727,34 @@ def test_stage_groups_partition_the_model(stack):
 
 
 def test_stage_freeze_trains_exactly_the_declared_groups(stack):
+    """The group map is not the whole predicate, and this test used to say
+    it was. Since 2026-09-06 a subtree may ALSO declare that no ladder loss
+    can reach it (`models/_gradreach.py`), and `apply_stage_freeze` honours
+    that even inside a trained group -- which is the point: at v7f's
+    production geometry the old predicate counted 90,960,000 parameters as
+    trainable that no gradient could reach, 86.1 M of them the O5 EMA
+    teacher, and every run wrote that number into its own config.json.
+
+    The predicate is therefore "in a trained group AND not declared
+    unreachable", and the declared set is asserted NON-EMPTY so this
+    relaxation cannot silently swallow a real freeze bug.
+    `n_grad_unreachable` is cross-checked against the two counts, so the
+    audit cannot report a withholding it did not perform."""
+    from tanitad.models._gradreach import in_declared_subtree
+    from tanitad.models.v6 import grad_unreachable_prefixes
+    dead = grad_unreachable_prefixes(stack)
+    assert dead, ("no subtree declares itself grad-unreachable -- this "
+                  "predicate has gone vacuous and would now pass a stack "
+                  "whose freeze map is broken")
     for st in STAGES:
         rep = apply_stage_freeze(stack, st)
         want = set(stage_trainable_groups(st))
         for n, p in stack.named_parameters():
-            assert p.requires_grad == (stack.group_of(n) in want), (st, n)
+            expect = (stack.group_of(n) in want
+                      and in_declared_subtree(n, dead) is None)
+            assert p.requires_grad == expect, (st, n)
+        assert (rep["n_trainable_by_group_map_alone"]
+                == rep["n_trainable"] + rep["n_grad_unreachable"]), st
         assert rep["n_trainable"] + rep["n_frozen"] == \
                stack.param_report()["total"]
         assert set(rep["shared_goal_tables"]) == {"vocab_tac", "vocab_str"}

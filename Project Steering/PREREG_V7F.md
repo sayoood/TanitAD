@@ -350,10 +350,58 @@ PYTHONPATH=/workspace/TanitAD/stack python3 stack/scripts/train_v6_staged.py \
   --w-o7-distill 0 --w-o8-pixel 0 --w-o9-ema 0 --w-o10-psg 0 \
   --w-o11-cf 0 --w-o13-ego 0 \
   \
+  `# ---- the gradient-reach guard (D-P1-GRADREACH-52PCT, 2026-09-06) ----` \
+  --refuse-unreached \                                            `# NEW`
+  --allow-unreached step_readout_op masked_cells \                `# NEW`
+  \
   `# ---- run mechanics ----` \
   --steps <one full epoch, D-ONE-EPOCH> --batch 8 --lr 1e-4 --clip 1.0 \
   --seed 0 --save-every 1000 --log-every 50 --print-launch
 ```
+
+### 9.1 ⛔ WHAT THE TWO NEW FLAGS ARE FOR, AND WHY THE `--allow-` HALF IS NOT A LOOPHOLE
+
+**MEASURED 2026-09-06** (`…/Research/2026-09-06-v7f-budget/`, reproduced independently
+with an 11/11 mutation control), by building THIS launch line through the trainer's own
+`build_parser` + `build_stack_from_args` and running a real backward at its own weights:
+
+| | as written, BEFORE the fix | as written, AFTER the fix |
+|---|---|---|
+| declared trainable | **234,909,315** | **143,949,315** |
+| receives no gradient | **94,717,187 = 40.3 %** | **3,757,187 = 2.6 %** |
+| **actually trains** | **140,192,128 = 59.7 %** | **140,192,128 = 97.4 %** |
+
+⭐ **The EFFECTIVE number is IDENTICAL in both columns — 140,192,128.** Nothing about what
+v7f trains has changed; what changed is that the run no longer *declares* 90,960,000
+parameters it cannot reach. Of those, **86,138,112 were the O5 EMA teacher** (`--o5-target
+ema` builds `ema_o5_enc`/`ema_o5_ro`; `apply_stage_freeze` un-froze them because
+`ema_o5_enc.` maps to group `aux`, which S-W trains — against `_EmaCopy`'s own docstring),
+**3,149,824** the untrained horizon heads (`--horizons` defaults to `[1, 2, 4]` and no v6
+loss consumes k != 1), and **1,573,632** `predictor_op.out_proj`, which is referenced
+exactly once in the programme: on the line that constructs it.
+
+⛔ **THE `--allow-unreached` LIST IS THE RECORD OF A DECISION THIS DOCUMENT ALREADY MADE.**
+§9's do-not-add list sets `--w-o1-* 0` and `--w-o3 0` for measured reasons, and those two
+weights are the ONLY thing that reaches `step_readout_op` (O1) and `masked_cells` (O3). A
+bare `--refuse-unreached` would therefore refuse this launch every time, and a flag that
+always refuses is a flag that gets deleted from the launch line — which is exactly how
+this defect stayed invisible. Naming the two accepted modules makes the acceptance
+auditable in `config.json`, and any OTHER dead subtree still refuses.
+
+⚠️⚠️ **AND THE ACCEPTANCE CARRIES A REPORTING CONSTRAINT, NOT JUST A FLAG.**
+`step_readout_op` is the **metric trajectory readout** (latent transition -> per-step
+Δpose), and `V6Stack.roll_consistency`, `tanitad/eval/v6_probe_trunk.py` and
+`scripts/probe_saliency_p9.py` all decode through the checkpoint's OWN copy of it. At
+`--w-o1-* 0` it stays at RANDOM INIT for the whole run. ⇒ **no metric decode may be
+reported from a v7f arm launched this way** unless the readout is fitted at eval time and
+the report SAYS SO. This is the same failure that produced the `heads.2`/`heads.4`
+retraction (MM-E10 -> MM-E14) and the false *"the model only imagines 0.1 s"* alarm: an
+untrained module that is READ emits initialisation noise that looks like a measurement.
+The trainer now prints `[gradreach] ⛔ HAZARD step_readout_op: …` at the first backward.
+
+⭐ **This changes NO objective, NO weight and NO criterion of this pre-registration.** It
+adds a launch-time census that was already recorded by default, promotes it to a refusal,
+and writes down a decision §9 had already taken silently.
 
 **Flags that already exist and are used verbatim above** (verified in the argparse of
 `stack/scripts/train_v6_staged.py`): `--v2-cache --require-parity --v2-lru --s2-labels --w-s2-goal

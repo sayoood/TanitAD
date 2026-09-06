@@ -519,7 +519,20 @@ STAGE_INVALIDATES: dict[str, tuple[str, ...]] = {
 #: Cross-stage resume was stopped only INCIDENTALLY, by ``torch.optim``'s
 #: param-group size check, and only because the per-stage trainable-TENSOR
 #: counts happen to be distinct (MEASURED at the production geometry:
-#: S-W 240 · S-T 80 · S-S 54 · S-J 374). That guard is worthless as a guard:
+#: S-W 240 · S-T 80 · S-S 54 · S-J 374).
+#: ⛔ THE DAY THAT ACCIDENT WAS PREDICTED TO END HAS ARRIVED (2026-09-06). The
+#: grad-unreachable declaration removes tensors from S-W and S-J only, so the
+#: counts MOVED: at ``tests/test_v6_ladder_edges.py``'s tiny geometry S-W fell
+#: 84 -> 80 and now COLLIDES with S-T (MEASURED), i.e. the accidental barrier
+#: no longer separates that pair at all; at ``PREREG_V7F.md`` §9's production
+#: geometry they are still distinct (MEASURED: S-W 286 · S-T 76 · S-S 54 ·
+#: S-J 416 — a DIFFERENT config from the four numbers above, which is why
+#: those are left as recorded rather than overwritten). ⇒ nothing about the
+#: ladder's safety changed, because the barrier was never the guard —
+#: :func:`assert_resume_lineage` is, it is called at the run path (:6285), and
+#: ``test_the_old_accidental_barrier_HAS_now_collided_and_the_real_guard_holds``
+#: now EXECUTES it on the colliding pair instead of pinning the coincidence.
+#: That guard is worthless as a guard:
 #:
 #:   * it names nothing — the operator sees ``ValueError: loaded state dict
 #:     contains a parameter group that doesn't match the size of optimizer's
@@ -5444,6 +5457,205 @@ def build_stack_from_args(a) -> V6Stack:
 
 
 # ============================================================================
+# ⛔ P1 — THE PER-PARAMETER GRADIENT-REACH CENSUS
+# ============================================================================
+#: ⛔ WHAT THIS EXISTS TO CATCH, MEASURED 2026-09-06 on SEVEN v7-tiny 30k
+#: checkpoints (the at-init set is the IDENTICAL 25 names on all seven, so it
+#: is a property of the RECIPE, not of one run): **25 of 39 one-dimensional
+#: `.weight` tensors sat BIT-EXACTLY at 1.0 after 30,000 AdamW steps**, and
+#: **5 of those 25 were in the optimizer the whole time** —
+#: `step_readout_op.net.0` (`predictor_op`) and the four `masked_cells`
+#: norms (`aux`). Both groups are TRAINABLE at stage S-W. Nothing was frozen
+#: and nothing was excluded from the optimizer; their only objectives (O1 for
+#: `step_readout_op`, O3 for `masked_cells`) were weighted **0.0**, and
+#: `v6_loss_step` GUARDS those terms (`if w.o1_ctrl or w.o1_fact or
+#: w.o1_scene:`), so the modules never enter the autograd graph at all.
+#:
+#: ⭐ **WHY BIT-EXACT AND NOT MERELY SMALL — the fact that makes this
+#: invisible.** `torch.optim.AdamW._init_group` appends a parameter only
+#: `if p.grad is not None`, so a `None`-grad parameter is skipped ENTIRELY,
+#: **decoupled weight decay included**. With this trainer's
+#: `opt.zero_grad(set_to_none=True)` a never-touched parameter therefore never
+#: decays. MEASURED at the runs' own `lr=1e-4, wd=0.05`: a parameter carrying
+#: an ALLOCATED ZERO grad decays to `(1-lr*wd)**30000 = 0.860708`, while a
+#: `None`-grad parameter reads exactly 1.0.
+#: ⇒ ⛔ **"bit-exact after N steps" is NOT evidence that a parameter is outside
+#: the optimizer.** That inference was made from this checkpoint family and is
+#: wrong; the sound discriminator is `p.grad is None`, which is what this
+#: census reads.
+#:
+#: ⚠️ **WHY THE EXISTING GUARD CANNOT SEE IT** (`test_v6_ladder_edges.py`'s
+#: `_grad_census`): that one is a GROUP roll-up asserted with
+#: `any(census[g]["grad"] for g in trainable_here)` — one reached parameter
+#: anywhere in a group satisfies it — and it runs at DEFAULT `V6LossWeights()`,
+#: never at the run's own zero-weighted set. Two independent reasons it is
+#: structurally blind to a dead module inside a live group. This census is
+#: PER-PARAMETER and runs at the run's OWN weights, on a REAL backward.
+#:
+#: ⭐ IT RECORDS, IT DOES NOT REFUSE. A zero-weighted objective is a legitimate
+#: configuration (S-W is the world stage by design), so the default must not
+#: break every honest arm. `--refuse-unreached` promotes it to a refusal for a
+#: launch that intends every optimizer parameter to train.
+def grad_reach_census(stack: "V6Stack", trainable) -> dict:
+    """Which OPTIMIZER parameters got no gradient from a REAL backward.
+
+    Call immediately after ``loss.backward()`` and BEFORE ``opt.step()`` —
+    ``opt.step()`` does not clear ``.grad``, but ``zero_grad(set_to_none=True)``
+    at the top of the next iteration does, and reading it there would report
+    every parameter as unreached.
+    """
+    opt_ids = {id(p) for p in trainable}
+    trainable_numel = int(sum(int(p.numel()) for p in trainable))
+    unreached, reached, frozen = [], 0, 0
+    unreached_numel = 0
+    by_module: dict[str, dict] = {}
+    for n, p in stack.named_parameters():
+        if id(p) not in opt_ids:
+            frozen += 1
+            continue
+        if p.grad is None:
+            unreached.append(n)
+            unreached_numel += int(p.numel())
+            mod = n.rsplit(".", 1)[0]
+            e = by_module.setdefault(mod, {"tensors": 0, "numel": 0,
+                                           "group": stack.group_of(n)})
+            e["tensors"] += 1
+            e["numel"] += int(p.numel())
+        else:
+            reached += 1
+    return {
+        "n_in_optimizer": len(opt_ids),
+        "n_reached": reached,
+        "n_unreached": len(unreached),
+        "unreached_numel": unreached_numel,
+        "n_not_in_optimizer": frozen,
+        # ⭐ THE BUDGET, IN THE SAME DICT AS THE DEFECT. A consumer that has to
+        # divide `unreached_numel` by a number it fetches from somewhere ELSE
+        # will eventually divide by the wrong one — that is exactly how a
+        # 26.9 % appeared twice from two different fractions. The denominator
+        # ships beside the numerator or the percentage is not quotable.
+        "trainable_numel": trainable_numel,
+        "effective_trainable_numel": trainable_numel - unreached_numel,
+        "unreached_frac_of_trainable": (unreached_numel / trainable_numel
+                                        if trainable_numel else 0.0),
+        "unreached_modules": dict(sorted(by_module.items())),
+        "unreached_tensors": sorted(unreached),
+        "_read": "parameters IN the optimizer whose .grad is None after a real "
+                 "backward at THIS run's own loss weights. AdamW skips them "
+                 "entirely (decoupled weight decay included), so they stay "
+                 "BIT-EXACTLY at initialisation for the whole run.",
+        "_budget_read": "trainable_numel is what the freeze map DECLARED; "
+                        "effective_trainable_numel is what a gradient can "
+                        "actually reach at these weights. Quote the second "
+                        "when reporting what a run trained.",
+    }
+
+
+#: ⛔ UNREACHED MODULES THAT ARE NEVERTHELESS **READ AT EVAL** — as data,
+#: because the difference between "untrained" and "untrained AND quoted" is the
+#: difference between wasted parameters and a retracted result.
+#:
+#: MEASURED 2026-09-06: at the v7-tiny recipe (O1 = 0) and at ``PREREG_V7F.md``
+#: §9's launch line (also O1 = 0), ``step_readout_op`` receives NO gradient and
+#: therefore stays BIT-EXACTLY at initialisation. Its consumers do not know
+#: that and cannot find out from the checkpoint.
+GRADREACH_EVAL_HAZARDS: dict[str, str] = {
+    "step_readout_op": (
+        "this is the METRIC TRAJECTORY READOUT (latent transition -> per-step "
+        "Δpose). It is reached ONLY by O1 (`v6_loss_step` guards the block on "
+        "`if w.o1_ctrl or w.o1_fact or w.o1_scene`), so at O1 = 0 it stays at "
+        "RANDOM INIT for the whole run — while `V6Stack.roll_consistency`, "
+        "`tanitad/eval/v6_probe_trunk.py` and `scripts/probe_saliency_p9.py` "
+        "all decode through the checkpoint's OWN copy of it. Any metric decode "
+        "from this run is a random projection, not a readout. Either switch O1 "
+        "on, or fit a readout at eval time and SAY SO, or do not report a "
+        "metric decode from this arm."),
+    "masked_cells": (
+        "O3's masked-cell predictor. Untrained it is inert rather than "
+        "hazardous (no eval consumer), but it is counted in the parameter "
+        "budget and shipped in every checkpoint."),
+}
+
+
+def report_grad_reach(census: dict, *, refuse: bool = False,
+                      allow=()) -> None:
+    """Print the census as a banner; optionally REFUSE the launch.
+
+    ⭐ ``allow`` IS WHAT MAKES ``--refuse-unreached`` USABLE ON AN HONEST RUN,
+    AND IT IS THE WHOLE POINT OF THE FLAG PAIR. A bare refusal cannot be
+    switched on for v7f: ``PREREG_V7F.md`` §9 sets ``--w-o1-* 0 --w-o3 0`` for
+    MEASURED reasons, so ``step_readout_op`` and ``masked_cells`` are starved
+    BY DESIGN and the launch would refuse every time — and a flag that always
+    refuses gets removed from the launch line, which is how this defect stayed
+    invisible in the first place.
+    ⇒ the operator NAMES the modules they knowingly accept. A module on that
+    list is acknowledged and recorded in ``config.json``; a module that is NOT
+    on it still refuses. So the flag pair catches the case that actually
+    matters: a NEW dead subtree nobody decided about.
+    ⚠️ Matching is on PATH SEGMENTS (``step_readout_op`` covers
+    ``step_readout_op.net.1`` but never ``step_readout_op_v2``).
+    """
+    allow = tuple(allow or ())
+    n = census["n_unreached"]
+    tn = census.get("trainable_numel", 0)
+    if not n:
+        print(f"[gradreach] all {census['n_in_optimizer']} optimizer tensors "
+              f"received a gradient ({tn/1e6:.2f} M params, 100.0 % of the "
+              f"declared trainable budget)", flush=True)
+        return
+    mods = census["unreached_modules"]
+    print(f"[gradreach] WARNING {n} of {census['n_in_optimizer']} OPTIMIZER "
+          f"tensors got NO gradient ({census['unreached_numel']/1e3:.1f} k "
+          f"params). "
+          f"AdamW skips them, so they stay BIT-EXACTLY at init for the whole "
+          f"run:", flush=True)
+    # ⭐ THE HEADLINE IS THE BUDGET, NOT THE TENSOR COUNT. "42 tensors" reads
+    # like a rounding error; "52.2 % of the declared trainable budget" is the
+    # number that would have stopped v7-tiny being quoted as a 10.17 M-param
+    # arm. Print it FIRST-CLASS, not as something a reader must divide out.
+    print(f"[gradreach] EFFECTIVE trainable budget "
+          f"{census.get('effective_trainable_numel', 0)/1e6:.2f} M of "
+          f"{tn/1e6:.2f} M DECLARED "
+          f"({100.0*(1.0-census.get('unreached_frac_of_trainable', 0.0)):.1f} "
+          f"%) — quote the EFFECTIVE number for what this run trained",
+          flush=True)
+    for m, e in mods.items():
+        print(f"[gradreach]   {m} (group {e['group']}): {e['tensors']} tensors,"
+              f" {e['numel']} params", flush=True)
+    # ⛔⛔ NOT EVERY UNREACHED MODULE IS MERELY UNTRAINED. SOME ARE READ AT EVAL,
+    # AND AN UNTRAINED MODULE THAT IS READ EMITS INITIALISATION NOISE THAT LOOKS
+    # LIKE A MEASUREMENT. That is the `heads.2`/`heads.4` lesson in a second
+    # costume: those produced a retracted action-divergence result (MM-E10 ->
+    # MM-E14) and a false "the model only imagines 0.1 s" alarm, and the cost
+    # was never the wasted FLOPs. `step_readout_op` is the worse case, because
+    # it is the METRIC decode: at O1 = 0 it stays at random init for the whole
+    # run, and every consumer below reads a random projection as if it were the
+    # checkpoint's own trajectory readout.
+    for mod, why in GRADREACH_EVAL_HAZARDS.items():
+        if any(m == mod or m.startswith(mod + ".") for m in mods):
+            print(f"[gradreach] ⛔ HAZARD {mod}: {why}", flush=True)
+    if not refuse:
+        return
+    unacknowledged = sorted(
+        m for m in mods
+        if not any(m == a or m.startswith(a + ".") for a in allow))
+    if allow:
+        print(f"[gradreach] ACKNOWLEDGED and recorded: {list(allow)}",
+              flush=True)
+    if not unacknowledged:
+        return
+    raise SystemExit(
+        f"[v6] REFUSED --refuse-unreached: {len(unacknowledged)} unreached "
+        f"module(s) at this run's loss weights are NOT on --allow-unreached: "
+        f"{unacknowledged}. Either switch on the objective that reaches them, "
+        f"or declare them grad-unreachable (models/_gradreach.py) so they "
+        f"leave the optimizer and the trainable count, or name them in "
+        f"--allow-unreached to say ON THE RECORD that this run knowingly "
+        f"leaves them at initialisation. Training them is a no-op that the "
+        f"checkpoint will record as 'at initialisation'.")
+
+
+# ============================================================================
 # --dry-run: build everything, 2 synthetic CPU steps, write the config
 # ============================================================================
 
@@ -5650,6 +5862,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
     gen = torch.Generator().manual_seed(a.seed)
     rows: list[dict] = []
+    grad_reach: dict | None = None
     t0 = time.time()
     sigreg_bank = (SigRegRowBank(a.sigreg_accum)
                    if getattr(a, "sigreg_accum", 1) > 1 else None)
@@ -5712,6 +5925,13 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         if opt is not None:
             opt.zero_grad(set_to_none=True)
             L["loss"].backward()
+            # ⛔ P1: read the census HERE — after the backward, before the next
+            # iteration's `zero_grad(set_to_none=True)` erases the evidence.
+            if grad_reach is None:
+                grad_reach = grad_reach_census(stack, trainable)
+                report_grad_reach(grad_reach, refuse=bool(
+                    getattr(a, "refuse_unreached", False)),
+                    allow=tuple(getattr(a, "allow_unreached", ()) or ()))
             gn = float(torch.nn.utils.clip_grad_norm_(trainable, a.clip))
             opt.step()
             if hasattr(stack, "ema_o5_enc"):
@@ -5741,6 +5961,12 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     cfg_json = _run_config(a, stack, freeze)
     if init_report.get("exercised"):
         cfg_json["init"] = init_report
+    # ⛔ P1: the census rides config.json, because config.json is the artifact
+    # a later audit actually opens. A run whose checkpoint shows tensors "at
+    # initialisation" can now be explained from its own record instead of
+    # being re-derived from the trainer's source months later.
+    if grad_reach is not None:
+        cfg_json["grad_reach"] = grad_reach
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
     # The gate this dry stage hands to the next one. It is assembled by the
     # REAL `run_stage_gate`, so it comes out INCONCLUSIVE exactly as a real
@@ -6878,6 +7104,7 @@ def train(a) -> dict:
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
     t3_alpha_applied = None
+    grad_reach: dict | None = None
     for step in range(start_step + 1, a.steps + 1):
         # ⛔ F-9's curriculum refresh comes BEFORE the draw, not after. With it
         # after, every step samples under the PREVIOUS step's exponent and the
@@ -7296,6 +7523,19 @@ def train(a) -> dict:
                         "remains meanpred.py on held-out clips (C149).")
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
+        # ⛔ P1: read + BANK the census on the first real backward. It must be
+        # here, between backward and the next zero_grad(set_to_none=True).
+        if grad_reach is None:
+            grad_reach = grad_reach_census(stack, trainable)
+            report_grad_reach(grad_reach, refuse=bool(
+                getattr(a, "refuse_unreached", False)),
+                allow=tuple(getattr(a, "allow_unreached", ()) or ()))
+            try:
+                (Path(a.out) / "grad_reach.json").write_text(
+                    json.dumps(grad_reach, indent=1))
+            except OSError as e:                       # never kill a live run
+                print(f"[gradreach] could not write grad_reach.json: {e}",
+                      flush=True)
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
         opt.step()
         if hasattr(stack, "ema_o5_enc"):
@@ -7775,6 +8015,37 @@ def load_resume(stack: V6Stack, opt, ckpt_path, *, stage: str | None = None
             f"ops/ckpt_fp16_snapshot.py. {RESUME_CONTRACT['has_optimiser']}")
     stack.load_state_dict(ck["stack"], strict=True)
     if opt is not None and "opt" in ck:
+        # ⛔ A PRE-2026-09-06 CHECKPOINT HAS MORE OPTIMIZER TENSORS THAN THIS
+        # BUILD DOES, AND torch's OWN ERROR NAMES NEITHER THE CAUSE NOR THE FIX.
+        # The grad-unreachable declaration (`models/_gradreach.py`) withholds
+        # the O5 EMA teacher, `predictor_op.out_proj` and the untrained horizon
+        # heads from the optimizer — at v7f's geometry 90,960,000 params over
+        # 157 tensors — so an `opt` state saved BEFORE that change has a param
+        # group of the old size. `opt.load_state_dict` then raises
+        # "loaded state dict contains a parameter group that doesn't match the
+        # size of optimizer's group", which points at the optimiser and reads
+        # like corruption. The STATE_DICT of the model still loads strictly
+        # (the line above); it is only the moment state that cannot map.
+        # ⚠️ Diagnose, do not auto-repair: silently dropping the extra moments
+        # would resume a run whose Adam state no longer corresponds to its
+        # parameters, position by position — the same "adopt the other stage's
+        # exp_avg by list index" failure RESUME_CONTRACT exists to refuse.
+        want = sum(len(g["params"]) for g in opt.state_dict()["param_groups"])
+        have = sum(len(g["params"]) for g in ck["opt"].get("param_groups", []))
+        if want != have:
+            raise ResumeLineageError(
+                f"[v6] ⛔ optimizer state has {have} parameter slots, this "
+                f"build has {want}. If the checkpoint predates 2026-09-06 this "
+                f"is the GRAD-UNREACHABLE declaration: the O5 EMA teacher, "
+                f"predictor_op.out_proj and any horizon head != 1 are no "
+                f"longer put in the optimizer, because no loss reaches them "
+                f"(they were never trained — AdamW skips a None-grad "
+                f"parameter entirely). The MODEL loaded strictly; only the "
+                f"Adam moments cannot be mapped. Resume the run WEIGHTS-ONLY "
+                f"with --init-from instead of --resume, or continue on the "
+                f"pre-change code. Do NOT force this: an Adam moment landing "
+                f"on a different parameter by list position is the exact "
+                f"failure RESUME_CONTRACT refuses.")
         opt.load_state_dict(ck["opt"])
     return int(ck.get("step", 0))
 
@@ -9380,6 +9651,26 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--freeze-encoder", action="store_true",
                     help="freeze the encoder; train readout+predictor only "
                          "(E-DEC-14 split-encoder probe)")
+    # ⛔ P1 (2026-09-06): the gradient-reach census RECORDS by default and
+    # refuses only when asked. Default OFF keeps every banked arm launchable
+    # bit-identically -- S-W legitimately runs with O1/O2/O3 at 0.0.
+    ap.add_argument("--refuse-unreached", action="store_true",
+                    help="REFUSE the launch if any parameter in the optimizer "
+                         "receives no gradient at this run's loss weights. "
+                         "Default OFF: the census is written to config.json / "
+                         "grad_reach.json either way (see grad_reach_census)")
+    # ⭐ THE COMPANION THAT MAKES THE REFUSAL ADOPTABLE. Without it,
+    # --refuse-unreached cannot go into PREREG_V7F.md §9's launch line at all:
+    # that line sets --w-o1-* 0 --w-o3 0 for measured reasons, so
+    # step_readout_op and masked_cells are starved BY DESIGN and the run would
+    # refuse every time. A flag that always refuses is a flag that gets
+    # deleted. Naming the accepted modules turns a silent default into a
+    # RECORDED decision, and still refuses for anything nobody decided about.
+    ap.add_argument("--allow-unreached", nargs="*", default=[], metavar="MODULE",
+                    help="module prefixes this run KNOWINGLY leaves at "
+                         "initialisation (e.g. step_readout_op masked_cells). "
+                         "Only meaningful with --refuse-unreached; recorded in "
+                         "config.json. Matching is on path segments.")
     # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
     # the rank. This confines its gradient to the PREDICTOR (encoder detached for
     # the O1 term only). Default OFF => incumbent loss bit-identical.

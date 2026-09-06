@@ -46,9 +46,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ops"))
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
+from tanitad.models._gradreach import in_declared_subtree  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
     LADDER_UNTRAINED_GROUPS, MODULE_GROUPS, STAGES, V6Config, V6Stack,
-    apply_stage_freeze, stage_trainable_groups)
+    apply_stage_freeze, grad_unreachable_prefixes, stage_trainable_groups)
 from train_v6_staged import (  # noqa: E402
     RESUME_CONTRACT, STAGE_MAY_INTRODUCE, ResumeLineageError, V6LossWeights,
     _save_ckpt, assert_resume_lineage, load_resume, load_stage_init,
@@ -201,24 +202,46 @@ def test_the_refusal_does_NOT_depend_on_the_optimiser_shape(tmp_path):
         load_resume(victim, o_victim, ck, stage="S-S")
 
 
-def test_the_stage_counts_that_the_old_barrier_leaned_on_are_a_coincidence():
-    """The four stages train different numbers of TENSORS today — which is the
-    only reason the old accidental barrier ever fired. Pinned so that the day
-    a STAGE_GROUPS edit makes two of them collide, this test says so out loud
-    instead of the ladder silently losing its guard."""
+def test_the_old_accidental_barrier_HAS_now_collided_and_the_real_guard_holds():
+    """⛔ THE DAY THIS TEST WARNED ABOUT ARRIVED — 2026-09-06 — AND THE ANSWER
+    IS THE REAL GUARD, NOT A RESTORED COINCIDENCE.
+
+    Until today this asserted that no two stages train the same number of
+    TENSORS, because that accident was the only thing stopping a cross-stage
+    resume: `opt.load_state_dict` refuses a param group of a different size.
+    Its own failure message said what to do when the accident ended — *"the
+    stage check in `assert_resume_lineage` is what actually protects the
+    ladder; this is only a note that the fallback is gone."*
+
+    The grad-unreachable declaration (`models/_gradreach.py`) removed 4 tensors
+    from S-W at this geometry and collapsed it onto S-T. That is a CORRECTION —
+    those tensors receive no gradient — so the coincidence is not coming back,
+    and pinning it would mean pinning the defect.
+
+    ⇒ this test now (a) RECORDS the counts, so a future collision is still
+    visible, and (b) asserts the real guard by EXECUTING it: a checkpoint from
+    the wrong stage must be refused BY NAME, whatever the tensor counts do.
+    `assert_resume_lineage` is called by the trainer at
+    `train_v6_staged.py:6285` — verified, not assumed, because this programme
+    has shipped a fully-built guard (`reassert_frozen_external`) that NOTHING
+    outside its own test file ever called.
+    """
     counts = {}
     for stg in STAGES:
         s = mk("goal", seed=6)
         apply_stage_freeze(s, stg)
         counts[stg] = sum(1 for p in s.parameters() if p.requires_grad)
-    dupes = {(a, b) for a in counts for b in counts
-             if a < b and counts[a] == counts[b]}
-    assert not dupes, (
-        f"stages {dupes} now train the same number of tensors — the OLD "
-        f"accidental optimiser barrier would no longer fire for them. The "
-        f"stage check in assert_resume_lineage is what actually protects the "
-        f"ladder; this is only a note that the fallback is gone. counts="
-        f"{counts}")
+    assert len(counts) == len(STAGES) and all(v > 0 for v in counts.values())
+
+    # THE REAL GUARD, EXERCISED — including on the pair that now collides.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        ck = write_ckpt(Path(td) / "ckpt.pt", mk("goal", seed=6), "S-W", 11)
+        with pytest.raises(ResumeLineageError):
+            assert_resume_lineage(ck, stage="S-T")
+        # MUTATION: the SAME checkpoint at its OWN stage must be accepted, or
+        # the guard is a constant rather than a test of the lineage.
+        assert assert_resume_lineage(ck, stage="S-W")["step"] == 11
 
 
 def test_same_stage_resume_still_works(tmp_path):
@@ -493,8 +516,26 @@ def test_after_init_from_exactly_the_intended_groups_train(st_ckpt,
     apply_stage_freeze(s, stage)
 
     want = set(stage_trainable_groups(stage))
+    # ⛔ THE GROUP MAP IS NOT THE WHOLE PREDICATE, AND THIS LINE USED TO SAY IT
+    # WAS. Since 2026-09-06 a subtree may ALSO declare that no ladder loss can
+    # reach it (`models/_gradreach.py`), and `apply_stage_freeze` honours that
+    # even inside a trained group — which is the entire point: at v7f's
+    # production geometry the old predicate counted 90,960,000 parameters as
+    # trainable that no gradient could ever reach, 86.1 M of them the O5 EMA
+    # TEACHER. `expected` is therefore "in a trained group AND not declared
+    # unreachable", and the declared set is asserted NON-EMPTY below so this
+    # relaxation cannot silently swallow a real freeze bug.
+    dead = grad_unreachable_prefixes(s)
+    assert dead, ("no subtree declares itself grad-unreachable — this "
+                  "predicate has gone vacuous and would now pass a stack "
+                  "whose freeze map is broken")
+
+    def _expected(n):
+        return (s.group_of(n) in want
+                and in_declared_subtree(n, dead) is None)
+
     wrong = [(n, s.group_of(n)) for n, p in s.named_parameters()
-             if p.requires_grad != (s.group_of(n) in want)]
+             if p.requires_grad != _expected(n)]
     assert not wrong, f"requires_grad disagrees with the stage: {wrong[:5]}"
 
     v6_loss_step(s, _stage_batch(s), stage=stage, weights=V6LossWeights(),

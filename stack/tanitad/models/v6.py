@@ -82,6 +82,11 @@ from torch import Tensor, nn
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig
 from tanitad.eval.spectral import effective_rank, participation_ratio
+from tanitad.models._gradreach import (GRAD_UNREACHABLE_FLAG,  # noqa: F401
+                                       declare_grad_unreachable,
+                                       grad_unreachable_prefixes,
+                                       in_declared_subtree as
+                                       _in_gradreach_subtree)
 from tanitad.models.agent_slots import (N_QUERIES_DEFAULT, AgentSlotDecoder,
                                         SlotDecodeRanges)
 from tanitad.models.encoder import ViT5Encoder, ViTEncoder
@@ -126,6 +131,9 @@ __all__ = [
     "FROZEN_EXTERNAL_FLAG", "FrozenExternalViolation",
     "declare_frozen_external", "frozen_external_prefixes",
     "reassert_frozen_external", "assert_frozen_external",
+    # ⛔ the grad-unreachable declaration (the v7f budget defect, 2026-09-06)
+    "GRAD_UNREACHABLE_FLAG", "declare_grad_unreachable",
+    "grad_unreachable_prefixes",
     # measure primitives (O2/O3/O4/O6)
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
@@ -4606,10 +4614,28 @@ def apply_stage_freeze(stack: "V6Stack", stage: str) -> dict:
     seen: set[str] = set()
     report: dict[str, dict] = {g: {"trainable": 0, "frozen": 0}
                                for g in MODULE_GROUPS}
+    # ⛔ THE GROUP MAP IS NOT THE WHOLE TRUTH, AND BEFORE 2026-09-06 IT WAS
+    # TREATED AS THOUGH IT WERE. A subtree that NO loss can reach must not be
+    # counted as trained just because its NAME falls in a trained group.
+    # MEASURED: `ema_o5_enc.` maps to group `aux`, S-W trains `aux`, and this
+    # loop therefore UNDID `_EmaCopy.__init__`'s own freeze — putting
+    # 86,138,112 teacher parameters into the optimizer at v7f's production
+    # geometry, against that class's docstring ("excluded from every
+    # optimiser"). Same shape as the E-XENC-1 trap named in
+    # `assert_frozen_external`, on NATIVE modules instead of foreign ones.
+    # ⭐ The declaration is honoured HERE rather than in a `reassert_*` helper
+    # the caller must remember: `reassert_frozen_external` is exactly such a
+    # helper and it is called by NOTHING outside its own test file, which is
+    # why the trap it guards was still live when this was measured.
+    unreachable = grad_unreachable_prefixes(stack)
+    n_unreachable = 0
     for name, p in stack.named_parameters():
         g = stack.group_of(name)
         seen.add(name)
         train = g in groups
+        if train and _in_gradreach_subtree(name, unreachable) is not None:
+            train = False
+            n_unreachable += int(p.numel())
         p.requires_grad_(train)
         report[g]["trainable" if train else "frozen"] += int(p.numel())
     missing = [n for n, _ in stack.named_parameters() if n not in seen]
@@ -4630,8 +4656,21 @@ def apply_stage_freeze(stack: "V6Stack", stage: str) -> dict:
             "n_trainable": sum(v["trainable"] for v in report.values()),
             "n_frozen": sum(v["frozen"] for v in report.values()),
             "shared_goal_tables": shared,
+            # ⭐ what the group map WOULD have declared, and what was withheld
+            # from it — both, because "the count went down" is not auditable
+            # and "the count went down BY THIS SUBTREE FOR THIS REASON" is.
+            "grad_unreachable": dict(sorted(unreachable.items())),
+            "n_grad_unreachable": int(n_unreachable),
+            "n_trainable_by_group_map_alone": int(
+                sum(v["trainable"] for v in report.values()) + n_unreachable),
             "_note": "a shared goal table moves whenever EITHER of its two "
-                     "views is trainable (HIERARCHY_VOCABULARY §5)"}
+                     "views is trainable (HIERARCHY_VOCABULARY §5)",
+            "_grad_unreachable_note": (
+                "subtrees NO ladder loss reaches (models/_gradreach.py). They "
+                "are frozen here even when their GROUP is trainable, so "
+                "n_trainable is what can actually receive a gradient. The "
+                "tensors stay in state_dict, so strict loads are unaffected."),
+            }
 
 
 # ---------------------------------------------------------------------------
@@ -4781,7 +4820,27 @@ class _EmaCopy(nn.Module):
     buffers-in-spirit: ``requires_grad=False`` and excluded from every
     optimiser, so no gradient can ever flow through this branch — which is what
     makes ``uplink="ema"`` an X3-compliant target source rather than a second
-    trainable path in disguise."""
+    trainable path in disguise.
+
+    ⛔ THAT SENTENCE WAS FALSE FROM 2026-08 UNTIL 2026-09-06, AND THE
+    CONSTRUCTOR BELOW IS NOT WHAT MADE IT TRUE. ``__init__`` did freeze the
+    copy — and then :func:`apply_stage_freeze` walked every named parameter,
+    read ``ema_o5_enc.`` -> group ``aux``, saw that S-W trains ``aux``, and
+    UN-FROZE it. MEASURED at v7f's pre-registered production geometry:
+    **86,138,112 teacher parameters (36.7 % of the whole declared trainable
+    budget) sat in the optimizer**, receiving no gradient, inflating every
+    ``n_trainable`` the run wrote into its own ``config.json``.
+
+    ⚠️ It was numerically harmless ONLY because :meth:`forward` is under
+    ``no_grad``: AdamW skips a ``None``-grad parameter entirely, decoupled
+    weight decay included. That is one un-``no_grad`` call site away from
+    TRAINING THE TEACHER — the X3 violation this class exists to prevent —
+    with nothing in the run's artifacts saying so.
+
+    ⇒ the copy now DECLARES itself grad-unreachable
+    (:func:`~tanitad.models._gradreach.declare_grad_unreachable`), which
+    ``apply_stage_freeze`` honours, so the freeze survives the group map.
+    """
 
     def __init__(self, src: nn.Module, decay: float = 0.996):
         super().__init__()
@@ -4789,6 +4848,10 @@ class _EmaCopy(nn.Module):
         self.module = copy.deepcopy(src)
         for p in self.module.parameters():
             p.requires_grad_(False)
+        declare_grad_unreachable(
+            self, "EMA teacher (V-JEPA pattern): forward() runs under "
+                  "no_grad and update() is a no_grad copy, so no loss can "
+                  "reach it. A gradient here would be an X3 violation.")
         self.decay = float(decay)
 
     @torch.no_grad()
@@ -4946,6 +5009,49 @@ class V6Stack(nn.Module):
         # ---- layer O: predictor + the g_tac conditioner ---------------------
         self.predictor_op = OperativePredictor(cfg.predictor, cfg.d_op,
                                                intent_dim=cfg.d_goal_embed)
+        # ⛔ THE LADDER'S OWN STATEMENT ABOUT ITS OWN HEADS, MADE WHERE IT IS
+        # TRUE. `OperativePredictor.trained_horizons` is `(1,)` because THIS
+        # stack's only consumer of it — O5 — reaches long horizons by applying
+        # head '1' autoregressively (`metric_dynamics.rollout_transitions`).
+        # Heads for k != 1 are allocated, computed in `forward`, and consumed by
+        # NO v6 loss: MEASURED bit-identical over 17,500 steps on `o1ctrl30k`
+        # (|W2| 0.026154, |W4| 0.026113, delta EXACTLY 0.000e+00 at every step)
+        # WITH `w_o1_ctrl 1.0` in force. 3,149,824 params at v7f's geometry.
+        # ⚠️ THE DECLARATION MUST NOT LIVE IN THE PREDICTOR'S CONSTRUCTOR:
+        # `refa_train.py:213` and `finetune_traj.py:248` both sum the loss over
+        # EVERY horizon, so those heads are genuinely trained there. Same class
+        # of error as reading `df` on a pod — a true fact, wrong scope.
+        # ⚠️ `--horizons` still DEFAULTS to `[1, 2, 4]`, so this fires on the
+        # default build; that default is a separate (PI) decision. Freezing is
+        # non-destructive — `requires_grad` is not serialised, so the ~30 banked
+        # checkpoints carrying `heads.2`/`heads.4` still load strictly.
+        for _k in cfg.predictor.horizons:
+            if int(_k) not in self.predictor_op.trained_horizons:
+                declare_grad_unreachable(
+                    self.predictor_op.heads[str(_k)],
+                    f"horizon {_k}: v6's O5 rolls head '1' autoregressively, "
+                    f"so no v6 loss consumes this head (predictor.py's "
+                    f"`trained_horizons`). Allocated for state_dict "
+                    f"compatibility with pre-2026-08-31 checkpoints.")
+        # ⛔ AND `out_proj`, FOR THE SAME REASON AND WITH THE SAME SCOPE.
+        # `predictor_op.out_proj` is referenced exactly ONCE in the programme --
+        # the line that constructs it (MEASURED: 989 readable .py files, zero
+        # uses in `forward`, zero consumers, zero loaders) -- so no v6 loss can
+        # reach it either. It is declared HERE and not in `OperativePredictor`
+        # because `train_flagship_v4.py:1636`'s not-frozen gate reads
+        # `requires_grad` and REFUSES EVERY LAUNCH when the constructor declares
+        # it (MEASURED: `trunk_tensors_frozen: 4`, *"Sayed's hard requirement is
+        # that the encoder AND predictor train jointly"*). That gate's INTENT is
+        # satisfied -- a tensor no gradient reaches was never training -- but its
+        # PREDICATE is this turn's defect in miniature, and fixing a PI hard
+        # requirement's predicate is not a v7f-budget deliverable.
+        declare_grad_unreachable(
+            self.predictor_op.out_proj,
+            "reserved: feed predictions back -- never referenced in forward() "
+            "or anywhere else in the programme (989 files scanned), so no v6 "
+            "loss reaches it. Retiring the tensor is a PI decision because "
+            "every banked checkpoint carries it; withholding the false "
+            "trainable claim is not.")
         #: metric grounding of the operative layer — the head that turns a
         #: latent TRANSITION into a per-step Δpose. O1's response-form L_ctrl
         #: (``train_stage_a.stage_a_losses``) decodes through exactly this, so

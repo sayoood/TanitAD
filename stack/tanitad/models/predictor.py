@@ -226,7 +226,46 @@ class OperativePredictor(nn.Module):
             for h in self.heads.values():
                 h.weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
                 h.bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+        # ⛔ `trained_horizons` IS A FACT ABOUT THE v6 LADDER, NOT ABOUT THIS
+        # CLASS — AND I ALMOST SHIPPED IT AS THE LATTER.
+        # `V6Stack` is the consumer whose only loss (O5) applies head '1'
+        # autoregressively; but `refa_train.py:213` and `finetune_traj.py:248`
+        # BOTH do `for k in horizons: loss_pred += ...`, so in THOSE trainers
+        # heads 2 and 4 are reached and trained. Declaring them dead HERE would
+        # have silently frozen REF-A's multi-horizon objective — a true fact
+        # quoted outside its scope, the `df` / Thor-`free` / `step_s` family.
+        # ⇒ the declaration is made by `V6Stack.__init__`, which knows its own
+        # ladder. See `v6.py`, `declare_grad_unreachable(self.predictor_op...)`.
+        # ⚠️ Still unfixed and NOT mine to fix here: the
+        # `_refuse_untrained_horizons` preflight the comment above promises
+        # DOES NOT EXIST (`grep -c` = 0 in `train_v6_staged.py`, with
+        # `def v6_loss_step` = 1 as the same-breath control), `trained_horizons`
+        # is read by nothing, and `--horizons` still defaults to `[1, 2, 4]`.
         self.out_proj = nn.Linear(state_dim, d)  # reserved: feed predictions back
+        # ⛔ `out_proj` IS REFERENCED EXACTLY ONCE IN THE PROGRAMME: on this
+        # line. MEASURED 2026-09-06 over 989 readable .py files — zero uses in
+        # `forward`, zero consumers, zero loaders. `test_refa.py` already
+        # carries a hand-written exemption for it ("reserved-but-unused in
+        # OperativePredictor.forward — legitimately grad-free"), i.e. the
+        # codebase had already built a test exception AROUND the dead tensor
+        # instead of retiring it. 1,573,632 params at v7f's geometry.
+        #
+        # ⛔⛔ AND IT IS **NOT** DECLARED grad-unreachable HERE, THOUGH IT IS
+        # DEAD IN EVERY CONSUMER — BECAUSE A LIVE PI GATE READS `requires_grad`.
+        # MEASURED: declaring it in this constructor makes
+        # `train_flagship_v4.py:1636`'s not-frozen gate REFUSE EVERY LAUNCH —
+        # *"TRUNK FROZEN — Sayed's hard requirement is that the encoder AND
+        # predictor train jointly (NO frozen part)"*, `trunk_tensors_frozen: 4`.
+        # ⚠️ That gate's INTENT is satisfied (a tensor no gradient reaches was
+        # never training) but its PREDICATE is the very defect this turn is
+        # about: it reads `requires_grad` as a proxy for "trains". Fixing a PI
+        # hard requirement's predicate is not a v7f-budget deliverable, and
+        # silently tripping it is worse. ⇒ the declaration is made by
+        # `V6Stack.__init__`, which is the consumer whose budget was wrong;
+        # REF-A, flagship-v4 and finetune_traj keep byte-identical behaviour and
+        # their (2-tensor) overstatement is logged for their owners.
+        # ⭐ Same scope discipline as the horizon heads above, and it was caught
+        # the same way: by a control that had to keep reading a known value.
         # Tactical-intent conditioning (D-030). Projected into the FiLM cond
         # space and added to the action embedding. Non-zero init so a live FiLM
         # makes the intent steer the output; FiLM's own zero-init keeps the
