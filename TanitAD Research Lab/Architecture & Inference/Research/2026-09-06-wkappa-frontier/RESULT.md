@@ -142,9 +142,39 @@ threshold. ⇒ **three failure modes must be distinguished and only two have ins
 3. ⭐ **ACCEPTS the class and under-executes it** — invisible to the vacuity gate *and* to recall
    alone, visible only in realised curvature **conditioned on the decoded goal token**.
 
-⚠️ **Unexplained, and named as a work item:** a **symmetric** `|κ|` penalty produces a **signed**
-outcome — `TURN_R` holds at 0.08000 at the same weight where `TURN_L` collapses. The cause must lie
-in the goal term the penalty trades against, not in the penalty.
+### 3.3 ⭐⭐ …and the `TURN_L` / `TURN_R` asymmetry is EXPLAINED — it moves the next lever off `W_KAPPA`
+
+A **symmetric** `|κ|` penalty produced a **signed** outcome, which said the cause had to lie in the
+term it trades against. **It does.** Reading the decisions sidecar's own cost columns per decoded
+goal class (`raw/TURN_ASYMMETRY_EXPLAINED.md`, zero GPU):
+
+| decoded goal | n | med `finecost_cv` | med `finecost_plan` | **med margin (cv − plan)** |
+|---|---|---|---|---|
+| `LANE_KEEP` | 18 | 0.9242 | — | **0.00000** |
+| **`TURN_L`** | 9 | **1.7030** | 1.9964 | **−0.00812** |
+| **`TURN_R`** | 13 | 0.7685 | 0.0526 | **+0.71638** |
+
+⇒ ⭐⭐ **The penalty is symmetric; the BENEFIT is not.** The `ccos` goal term pays **+0.71638** for
+turning right and **≈ 0** for turning left. On a `TURN_L` window the planned candidate is worth
+essentially nothing over doing nothing, so **any** curvature price tips it — which is exactly why
+the left turn dies first.
+
+⭐ **The cleanest proof it is not the penalty's doing:** on `gkappa`, whose turn weight is **zero**,
+the gap is still there and **larger** — `TURN_L` **−0.14789** vs `TURN_R` **+0.76118**. With the
+curvature penalty switched off entirely on turn windows, the goal term still will not pay for a
+left turn.
+
+⇒ ⛔ **THE NEXT LEVER IS NOT `W_KAPPA` AT ALL.** The do-nothing candidate already costs **1.7030**
+on a median `TURN_L` window against **0.7685** on a `TURN_R` one, and the planner's own choice
+costs *more* than doing nothing there. **The goal field for a left turn is not giving the planner
+anything to aim at**, and no setting of a curvature weight repairs that.
+
+**Controls, all three read their known values:** `w_kappa_eff_cl` reads **7.00000** on every window
+of the scalar `wk7` and on `gkappa` **exactly** the by-goal map (15.11245 / 0.0 / 0.0), which is
+what proves `goal_lat_cl` is the field the cost actually keyed on; `LANE_KEEP`'s margin is
+**exactly 0.00000** on all three arms, as it must be (a `LANE_KEEP` decode forces curvature exactly
+0, so the plan *is* the constant-velocity candidate); and `wk15`'s `w_kappa_eff_cl` column is
+**absent**, that arm predating the by-goal instrumentation — reported absent, not imputed.
 
 ---
 
@@ -256,8 +286,10 @@ seeds and **is** non-vacuous — but it is not rare, and it is bought with `turn
 
 1. ⭐⭐ **More EPISODES, not more seeds**, for the curvature claim — §4 measures that the episode
    interval is the binding one. The `p4` slice is 8 episodes; the eval corpus has 40.
-2. ⭐ **The `TURN_L` / `TURN_R` asymmetry** (§3.2): a symmetric penalty producing a signed outcome
-   points at the `ccos` goal term, and it is the next mechanism to open.
+2. ⭐⭐ **REPAIR THE `ccos` GOAL TERM'S LEFT-TURN FIELD** — §3.3 measured that this, not `W_KAPPA`,
+   is where the turn is lost: the goal term pays **+0.716** for a right turn and **≈ 0** for a left
+   one, *with the curvature penalty switched off*. No curvature weight can repair a goal field that
+   offers nothing to aim at.
 3. **A second lateral vocabulary level.** `max|kappa|` is pinned at `GOAL_KAPPA_TURN = 0.08` on
    seven arms while the human reaches **0.1797**; the planner's only curvature-carrying candidate
    is the decoded token's canonical profile, so **no weight can cross that ceiling** — `L1-0.08` is

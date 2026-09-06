@@ -31,7 +31,12 @@ BATCH2 = ["t5_s1:5.03748:1", "t10_s1:10.07497:1", "t0_s1:0.0:1", "t15_s1:SCALAR:
 # draws (dA, dB), giving three independent episode draws of the wk7-vs-ha0
 # comparison; `wk3` keeps its replicate because it brackets the frontier on the
 # recall side. The by-goal rungs therefore stop at two seeds, and that is stated.
-BATCH3 = ["wk7_dA:S7.0:0:dA", "wk7_dB:S7.0:0:dB", "wk3_s1:S3.0:1", "wk3_s2:S3.0:2"]
+# ⛔ TWO arms per batch, not four. MEASURED: at 4-way the arms serialise on the
+# single 8 GB GPU and run ~1.5x WORSE than pure serialisation (0.97 CPU each,
+# 100 % util, no episode written in 28 min against an 18 min serialised
+# expectation). Two at a time finishes the arms that matter far sooner.
+BATCH3 = ["wk7_dA:S7.0:0:dA", "wk7_dB:S7.0:0:dB"]
+BATCH4 = ["wk3_s1:S3.0:1", "wk3_s2:S3.0:2"]
 
 
 def n_arms():
@@ -85,6 +90,8 @@ if __name__ == "__main__":
     wait_idle("b1")
     run_batch("batch_episodes", BATCH3)
     wait_idle("b2")
+    run_batch("batch_wk3_seeds", BATCH4)
+    wait_idle("b3")
     run_batch("batch_bygoal_seeds", BATCH2)
     print("ZZCHAINDONE-ZZ", flush=True)
     sys.exit(0)
