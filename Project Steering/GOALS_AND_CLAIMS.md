@@ -10209,3 +10209,101 @@ were never offered*, on exactly the clips where a vehicle **was** boxed. Docstri
 loader's; inventing one would manufacture labels. Escalated to the DataFlyWheel with all ten clip ids
 and the exact recipe; the fix belongs upstream in the export, and any in-repo repair must be
 pre-registered as a corpus change with its own control.
+
+### ⭐⭐ D-BANK-TEMP-1 — SUPPORTED and CLOSED. The session's load-bearing eval dumps lived ONLY in a session-keyed TEMP DIRECTORY; all four distinct dumps are now banked in-repo as md5-verified tarballs. And the marker everyone has been using to tell a synthetic fixture from a real dump DOES NOT DISCRIMINATE.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** · **GPU-days 0** (I/O only; the A40 was not touched) ·
+`…/Architecture & Inference/Research/2026-09-06-dump-banking/` (`RESULT.md`, `raw/BANK_MANIFEST.json`,
+`raw/refcv4b_t1_dump.tgz`, `raw/refcv3_40284_dump.tgz`, `raw/refcv3_30k_full_dump.tgz`, `raw/refav1_t1_dump.tgz`).
+
+⛔ **THE PROBLEM.** Every refcv4b headline this session — refcv4b − refcv3 **−0.1444 [−0.1647, −0.1227]**,
+the trivial-control ties, `os_navzero` **+0.1054**, the four metric families — rested on dumps that
+existed **only** under `…\Temp\claude\…\<session-id>\scratchpad\`. The operating standard says an
+artifact on one disk is NOT done; a scratchpad is worse, because it is keyed to a session id.
+
+**MEASURED sizes before anything moved** (source dirs): refcv4b **11,763,914 B** · refcv3@40284
+**2,293,188 B** · a duplicate of it **2,293,188 B** · refcv3@30k **2,295,778 B** · refav1 **1,305,548 B**
+= **19,951,616 B / 1,416 files**. ⇒ **Nothing was too large to bank**; no escalation on size was needed.
+Banked as **13,590,121 B** of tarball, comparable to the single `navflip_dump.tgz` already in-repo.
+
+**Verification, both ends and on CONTENT.** md5 computed locally and again on the repo copy (all four
+matched first attempt); ⭐ **a DISCRIMINATING all-NUL control (262,144 B) was pushed through the same
+non-zero counter IN THE SAME RUN and read 0**, while the banked tars read **65,337 / 65,234 / 65,240 /
+65,238** non-zero bytes in their first 64 KiB — without the control reading 0 the assertion would prove
+nothing, and this mount has produced correct-size ALL-NUL files. Each **banked** tar was then re-opened
+and an `ep000.npz` loaded: `g` finite, `nonzero_frac 1.0000`.
+
+⭐ **IDENTITY FROM THE MANIFEST, NOT THE NAME** — a sibling found a local "refcv4b dump" that was
+refcv3. Two independent checks. (a) `model.cfg.core.anchors` reads
+`{n_anchors:117, …, v0_conditioned:true, control_units:"alat", ref_speed_ms:10.0, kappa_cap:0.12}` for
+refcv4b and `{n_anchors:128, pool_size:4096, seed:0}` — ⛔ **no `v0_conditioned` key at all** — for
+refcv3. (b) A numeric discriminator over all 141 episodes: ground truth `g` is **bit-identical**
+(sum **272810.9308184178**, max|Δ| = 0) across refcv4b/refcv3@40284/refcv3@30k, proving the same eval
+grid, while `os` **differs** (refcv4b vs refcv3@40284: max|Δ| **6.90476**, mean|Δ| **0.198314**),
+proving a different model. ⇒ the dump named refcv4b **is** refcv4b.
+⚠️ `refcv3-b1-v72-**30k**` holding `ckpt_40284_FINAL.pt` is a **stale run-directory name**, not a step
+mismatch — `model.step` reads 40284.
+
+**Not banked:** `rc3dump/refcv3_40284_dump` is a **byte-identical duplicate** on three independent
+probes (`diff -r -q` clean; `manifest.json` and `ep000.npz` md5s equal; `os` over 141 eps bit-identical,
+max|Δ| = 0). Recorded, not banked twice.
+**Checkpoint md5** is MEASURED for exactly one arm — refcv3@30000, local disk, 428,519,790 B,
+`00da81c6efcd91e7b618a1fbddb3b78f`. The other three are pod-side and **no manifest records a ckpt
+hash**; identity for those rests on (a) + (b), stated rather than guessed.
+
+⇒ **Is the load-bearing evidence still in a temp directory? NO.**
+
+---
+
+### ⭐ D-BANK-TEMP-1a (CORRECTION, appended) — `C3_os_reproduction` PASSES on the banked A40 dump. The A40 family IS quotable; only the Thor roll is not.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** ·
+`…/2026-09-06-refcv4b-navpred/raw/paired_navpred_SELFTEST_on_banked_landing_dump.json`.
+
+The selftest ran against **`dump/refcv4b_t1_dump`** — the very dump now banked as
+`raw/refcv4b_t1_dump.tgz`. `C3_os_reproduction`: measured **0.2975**, banked **0.2975**,
+**abs_diff 2.6e-05** against a 0.001 tolerance → **PASS**. `C1_model_free_known_value`: `ha`
+0.2996/0.2996 and `ha0` 0.6723/0.6723, **abs_diff 0.0** → **PASS**. `C2_grid` 4,823/141 → **PASS**.
+
+⇒ **The tool is sound.** The **0.001031 FAIL is the Thor cross-hardware roll only** —
+A40/x86_64/torch 2.8.0+cu128 vs Thor/aarch64/torch 2.13.0+cu130, argmax tie-breaks, `n_distinct`
+50 → 51. ⇒ ⛔ **The A40 family (`os` 0.2975, `os_navzero` 0.3928) IS QUOTABLE; the Thor family
+(0.2965 / 0.3926) is not.** ⚠️ **Earlier statements that BOTH families were unquotable are TOO STRONG
+and are corrected here** — this row appends that correction rather than rewriting them.
+
+⭐ **Corroborated independently while banking**: the two dumps are genuinely different hardware. The
+banked dump's `model.ckpt` is `/workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt` (A40
+pod); the in-repo `navpred_dump.tgz` carries `/home/nvidia/refcv4b/ckpt_40284_FINAL.pt` (Thor) — same
+step 40284, same 117 anchors, same 141/4,823 grid, different box.
+
+---
+
+### ⛔⛔ D-BANK-TEMP-1b (CORRECTION, appended) — `_unverified` IS TOOL BOILERPLATE AND DOES NOT DISCRIMINATE A SYNTHETIC FIXTURE FROM A REAL DUMP. It is on the refcv4b landing arm too.
+**Date** 2026-09-06 · **Stream** Architecture & Inference · **Evidence MEASURED** ·
+`…/2026-09-06-dump-banking/raw/BANK_MANIFEST.json` note N1; fixture at
+`…/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/raw/fixture_dump/manifest.json`.
+
+The in-repo `fixture_dump` **is** a synthetic 3-episode fixture and must never be mistaken for a real
+arm — MEASURED: **step 11, 3 episodes, 42 windows, 20 anchors**, ckpt under a temp scratchpad from a
+*different* session id.
+
+⛔ **BUT the way it has been identified is wrong.** The self-label *"UNVERIFIED on a real checkpoint …
+random-init RefCV3Model at refc_v3_smoke_config … synthetic 3-episode slice only"* is **BOILERPLATE
+emitted by `taniteval/tools/refcv3_arm.py`**, and MEASURED it is present on **ALL FOUR** refcv3-family
+manifests — **including the refcv4b landing arm** at step 40284 over 141 episodes / 4,823 windows,
+whose `state_dict_load` reports `missing_keys: []` / `unexpected_keys: []` (a random-init model loads
+no state dict). It is absent only from the refav1 dump, which a **different tool** wrote.
+
+⇒ **Using `_unverified` to tell fixture from real would misclassify every real refcv3-family dump we
+hold.** The discriminators are `model.step` (**11** vs **40284**), `grid.n_episodes`/`n_windows`
+(**3 / 42** vs **141 / 4,823**) and `model.n_anchors` (**20** vs **117**).
+
+⚠️ *Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` traps: a TRUE statement — the tool
+**was** validated only on a fixture — quoted outside its scope, where it reads as a fact about the
+**artifact** instead of about the **tool**.* Registered under the existing scope-error class.
+
+⚠️ **Also recorded, escalated NOT edited** (this agent owns no code file): `sidecar_schema.anchor_acc`
+in the refcv4b manifest says *"chance = 1/128 = 0.0078"* while that dump has **117** anchors, so chance
+is **1/117 = 0.00855** — a hardcoded string not re-derived for the 117-anchor bank.
+
+⚠️ **And for the record:** the navpred/navflip dumps **DROP `oracle_sel` entirely** (VERIFIED by
+opening `navpred_dump.tgz`: arms `[os, ha, ha0, ha0_ext, os_navshuf, os_navzero, os_navpred]`) — **that
+is why the `os_navpred` roll has no ceiling arm.** The dumps banked here DO carry `oracle_sel`.
