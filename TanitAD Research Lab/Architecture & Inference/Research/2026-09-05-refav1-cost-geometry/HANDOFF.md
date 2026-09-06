@@ -215,3 +215,39 @@ longitudinal blocker — may still be running; it was never mine to touch.
 5. ⛔ **DO NOT run `W_KAPPA` + cap + ladder** — §7.9 registers the prediction that it
    collapses to the smallest rung, and §7.10 shows the ladder buys nothing once the
    penalty is present.
+
+
+---
+
+## 10. QUEUED AND WAITING: `best_seed1` (2026-09-06T00:05Z)
+
+⛔ **The one experiment this package's own verdict needs, already armed — do not
+re-derive it, and do not let it be lost.**
+
+`raw/queueK.sh` is **running and polling** (up to 6.7 h) for a free GPU slot. It
+fires `best_seed1` = `best`'s command line with **one token changed**
+(`--plan-seed 0 -> 1`) the moment the live `refav1_arm.py` process count drops to
+<= 2 (one arm; **one arm is TWO processes**).
+
+**Why it is not already running:** a SIBLING stream holds both slots with
+`turnasym-ta_wk15_s0/s1` and then `ta_ccos_s0/s1` — arms investigating the
+`turn_left` recall asymmetry this package flagged, and doing it with two seeds.
+**Those slots are not ours.** The 4060's proven ceiling is two concurrent arms; a
+third has been measured to leave ~200 MiB free.
+
+**Both outcomes are committed in the script's header, before it runs:**
+
+* `kamm_over_rate` reads **0.0000** again *and* every family metric moves less than
+  its own floor from `raw/seed_floor.txt` ⇒ `best`'s safety result is **REPLICATED**
+  and may be quoted as a property rather than a single draw;
+* **any** value > 0.0000, or any family metric exceeding its floor ⇒ the zero is
+  **SEED-DEPENDENT exactly as `combined`'s was** (§7.11a), §7.10 is wrong as
+  reported, and the correction is written in the same turn.
+
+**How to read it when it lands:** `bash raw/finalize.sh` regenerates every table
+including this arm; then compare against `best` with the **per-metric** floor table,
+never a remembered scalar — that mistake is logged twice in `RETRACTION_LOG.md` for
+this package alone.
+
+⚠️ **If the queue is gone** (session ended, machine rebooted), re-launch it: the
+script is self-contained and idempotent, and it `rm -rf`s any partial dump first.
