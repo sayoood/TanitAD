@@ -1638,6 +1638,17 @@ def spectrum_report(z: Tensor, *, top_k: int = 8, ci_reps: int = 0,
     if int(ci_reps) > 0:
         out["effective_rank_ci95"] = _cluster_interval_er(
             zc, int(block), int(ci_reps), er, generator)
+        # ⭐ C132: the RETENTION clause rules on participation (p ∝ σ², energy),
+        # so the energy statistic needs its OWN interval — a point ratio with no
+        # interval is exactly the defect o6_rank_verdict was written to replace.
+        # ⚠️ ``reps=0`` ON PURPOSE: the bootstrap block is the only consumer of
+        # ``generator``, and it is a labelled do-not-quote diagnostic that does
+        # NOT cover. Passing 0 leaves the global/`spec_gen` RNG stream
+        # bit-for-bit what it was before this key existed, so adding the
+        # interval cannot perturb a live run's sampling.
+        out["participation_ratio_ci95"] = _cluster_interval_er(
+            zc, int(block), 0, out["participation_ratio"], generator,
+            stat_from_gram=_pr_from_gram, kind="participation_ratio")
     return out
 
 
@@ -1654,14 +1665,38 @@ def _er_from_gram(g: Tensor) -> float:
     return effective_rank(torch.linalg.eigvalsh(gc).clamp_min(0).flip(0).sqrt())
 
 
+def _pr_from_gram(g: Tensor) -> float:
+    """``participation_ratio`` of a row set given its (uncentred) Gram matrix.
+
+    ⭐ C132. The centred Gram's non-negative eigenvalues ARE the centred rows'
+    σ², which is exactly what :func:`participation_ratio` consumes — so the
+    ENERGY statistic comes out of the same ``O(n^3)`` resample as the rank one,
+    and the collapse clause can carry an interval instead of a point ratio.
+    Note the missing ``.sqrt()`` versus :func:`_er_from_gram`: that one square
+    root is the whole difference between p ∝ σ and p ∝ σ².
+    """
+    m = g.mean(0, keepdim=True)
+    gc = g - m - m.T + g.mean()
+    return participation_ratio(torch.linalg.eigvalsh(gc).clamp_min(0))
+
+
 def _cluster_interval_er(zc: Tensor, block: int, reps: int, theta: float,
-                         generator=None) -> dict:
-    """95 % interval for ``effective_rank`` with the CLUSTER as the unit.
+                         generator=None, *,
+                         stat_from_gram=_er_from_gram,
+                         kind: str = "effective_rank") -> dict:
+    """95 % interval for a spectral functional with the CLUSTER as the unit.
 
     Primary: **leave-one-cluster-out jackknife** — no duplicated blocks, so no
     manufactured rank deficiency, and the only one of the three candidates that
     covers (see :func:`spectrum_report`). The bootstrap bounds are computed
     alongside and returned as LABELLED DIAGNOSTICS, never as the interval.
+
+    ``stat_from_gram`` selects the functional: :func:`_er_from_gram` (p ∝ σ,
+    the default and the incumbent behaviour) or :func:`_pr_from_gram` (p ∝ σ²,
+    the ENERGY statistic the collapse verdict rules on since C132). The
+    measured-coverage stamp below was established for ``effective_rank``; it is
+    carried on the participation interval as an INHERITED assumption and
+    labelled as such, never as a fresh measurement.
     """
     zd = zc.double()
     g_full = zd @ zd.T
@@ -1676,14 +1711,24 @@ def _cluster_interval_er(zc: Tensor, block: int, reps: int, theta: float,
     for b in range(nb):
         keep = torch.cat([torch.arange(b * block),
                           torch.arange((b + 1) * block, nb * block)])
-        jk.append(_er_from_gram(g_full[keep][:, keep]))
+        jk.append(stat_from_gram(g_full[keep][:, keep]))
     j = torch.tensor(jk, dtype=torch.float64)
     se = float(((nb - 1) / nb * ((j - j.mean()) ** 2).sum()).sqrt())
     out = {"lo": theta - 1.96 * se, "hi": theta + 1.96 * se,
            "kind": "leave-one-cluster-out jackknife", "se": se,
            "block_rows": block, "n_blocks": int(nb),
+           "statistic": kind,
            "measured_coverage": "0.85 (48 rows) / 0.867 (384 rows) vs nominal "
                                 "0.95 — SIGREG_GATE_POWER.md §4"}
+    if kind != "effective_rank":
+        # ⚠️ SCOPE. The coverage above was MEASURED for effective_rank only.
+        # Quoting it for another functional is the `df`/`step_s` class of
+        # error, so the record says so in its own body rather than inviting
+        # the reader to assume.
+        out["measured_coverage_scope"] = (
+            f"INHERITED, not measured for {kind}: the 0.85/0.867 coverage in "
+            f"SIGREG_GATE_POWER.md §4 was established for effective_rank. "
+            f"Treat this interval as a working uncertainty.")
     # ---- diagnostics only: the bootstrap that does NOT cover ---------------
     if int(reps) > 0:
         vals = []
@@ -1691,7 +1736,7 @@ def _cluster_interval_er(zc: Tensor, block: int, reps: int, theta: float,
         for _ in range(int(reps)):
             idx = torch.randint(0, nb, (nb,), generator=generator)
             rows = (idx[:, None] * block + off).reshape(-1)
-            vals.append(_er_from_gram(g_full[rows][:, rows]))
+            vals.append(stat_from_gram(g_full[rows][:, rows]))
         v = torch.tensor(vals, dtype=torch.float64)
         out["bootstrap_DIAGNOSTIC_do_not_quote"] = {
             "percentile_lo": float(torch.quantile(v, 0.025)),
@@ -1769,8 +1814,34 @@ class SpectrumAccumulator:
 def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
                     retention: float = 0.8,
                     floor: float = O6_RANK_FLOOR,
-                    ceiling_min: int = O6_ADMISSIBLE_CEILING) -> dict:
+                    ceiling_min: int = O6_ADMISSIBLE_CEILING,
+                    participation_floor: float | None = None,
+                    participation_reference: str | None = None) -> dict:
     """The RE-DERIVED O6 gate criterion — see ``SIGREG_GATE_POWER.md`` §5.
+
+    ⛔⛔ C132 REPAIR (2026-09-06). **THIS VERDICT NOW RULES ON
+    ``participation_ratio`` (p ∝ σ², ENERGY). It previously ruled on
+    ``effective_rank`` (p ∝ σ, AMPLITUDE), which INVERTS the ordering it was
+    asked to decide.** The two statistics disagree by up to **141×** on this
+    programme's own arms, and the disagreement is not a tie-break — it is a
+    sign flip on the question the gate exists to answer:
+
+        arm `fixed`      top-1 energy **0.551**, effective_rank 130.91 -> PASSED 64
+        arm `lewm-long`  top-1 energy   0.339, effective_rank  24.14  -> FAILED 64
+
+    A representation with **55 % of its variance in ONE direction passed**, and
+    a cleaner one failed, because ``effective_rank`` rewards a noisy near-zero
+    tail. MEASURED again on the v7f board: ``postrain30k_freeze`` is **lowest by
+    participation and HIGHEST by effective_rank** — the old gate would have
+    ranked the most collapsed arm best. Collapse is an ENERGY question; a
+    direction carrying 1e-6 of the variance carries no information, and the
+    statistic that says otherwise is the wrong instrument.
+
+    ⭐ ``effective_rank`` IS STILL REPORTED, on every branch, under keys suffixed
+    ``_DIAGNOSTIC``. It is a legitimate description of the tail — it is simply
+    not admissible as the *ruling* statistic. Removing it would destroy
+    comparability with the whole banked series, so it stays, demoted and
+    labelled, and no branch of this function reads it to decide ``pass``.
 
     The criterion it replaces (*"≥ 0.8× effective rank across phases"*) named no
     estimator, no ``n`` and no interval, and MEASURED at the live run's n=48 it
@@ -1786,13 +1857,45 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
        :data:`O6_ADMISSIBLE_CEILING` is INCONCLUSIVE — never PASS, never FAIL.
        A single 48-row batch is exactly this case, and saying so is the honest
        reading of the whole banked series.
-    2. **RETENTION (relative), CI-based.** FAIL when the retention interval lies
-       WHOLLY BELOW ``retention``; PASS when it lies wholly at or above it;
-       INCONCLUSIVE when it straddles. Firing therefore requires the interval to
-       exclude the threshold, so noise alone cannot trip it.
-    3. **FLOOR (absolute).** FAIL when the pooled ``effective_rank`` is below
-       ``floor`` regardless of retention — retention alone cannot see a
-       representation that was ALREADY collapsed when the reference was taken.
+    2. **RETENTION (relative), CI-based, ON PARTICIPATION.** FAIL when the
+       participation-retention interval lies WHOLLY BELOW ``retention``; PASS
+       when it lies wholly at or above it; INCONCLUSIVE when it straddles.
+       Firing requires the interval to exclude the threshold, so noise alone
+       cannot trip it. ⭐ **This is the clause that does the work, and it is the
+       one place an absolute-floor objection does not reach**: ``cur`` and
+       ``ref`` are the same run, same corpus, same ambient ``d``, same pooling
+       and same instrument, so the ratio is immune to the corpus/dimension
+       sensitivity that makes the ABSOLUTE participation number unquotable
+       (see :data:`O6_PARTICIPATION_REFERENCES`).
+    3. **FLOOR (absolute) — REPORTED, NOT RULING BY DEFAULT.** ⛔ Both candidate
+       floors are currently inadmissible as gates, for two *different* reasons,
+       and this function refuses to invent a verdict out of either:
+
+       * ``O6_RANK_FLOOR`` (64, on ``effective_rank``) — **wrong statistic.**
+         It is the inversion described above; it produces false PASSES *and*
+         false FAILS. Demoted to ``effective_rank_floor_DIAGNOSTIC``.
+       * :data:`O6_PARTICIPATION_FLOOR` (8.56) — **right statistic, wrong
+         number.** MEASURED 2026-08-23, no live instrument reproduces it, and
+         participation moves 3.51× on EPISODE DIVERSITY alone at fixed encoder,
+         fixed ``n`` and fixed ``d``. The constant's own docstring already
+         carries the standing instruction *"DO NOT FAIL AN ARM ON THE
+         PARTICIPATION CLAUSE"* until a matched-corpus, matched-``d`` reference
+         exists.
+
+       ⇒ The absolute clause fires **only** when the caller passes BOTH
+       ``participation_floor`` and ``participation_reference`` (a string naming
+       the matched corpus/n/d the floor was measured on, e.g. a key of
+       :data:`O6_PARTICIPATION_REFERENCES`). Supplying a floor without a
+       reference is INCONCLUSIVE, not a FAIL — an unnamed threshold is exactly
+       the defect that produced champ30k's recorded FAIL against a number from
+       a different ``d``.
+
+       ⚠️ **This is deliberately a PI DECISION SURFACE, not a silent
+       relaxation.** A criterion that cannot rule must say INCONCLUSIVE — the
+       same principle :func:`rank_gate_capacity` already enforces one level up
+       (*"a criterion that CANNOT RULE at the configured settings is worse than
+       no criterion, because the gate report looks populated"*). The old
+       behaviour did not weigh less than this; it weighed the WRONG WAY.
 
     ``ref=None`` evaluates clauses 1 and 3 only — the first admissible reading
     of a phase has nothing to retain against — and returns INCONCLUSIVE saying
@@ -1802,23 +1905,65 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
                                               int(cur.get("d", 1)))))
     er = float(cur["effective_rank"])
     pr = cur.get("participation_ratio")
-    out: dict = {"criterion": "O6_rank_retention v2 (SIGREG_GATE_POWER.md)",
+    pr_f = float(pr) if pr is not None else None
+    out: dict = {"criterion": "O6_rank_retention v3 (C132 — rules on "
+                              "participation_ratio, p ∝ σ²)",
+                 # ⭐ THE STAMP THAT STOPS THE NEXT READER GUESSING. Two
+                 # statistics live in this record; this names the one that
+                 # produced `pass`. Same discipline as naming an estimator.
+                 "ruling_statistic": "participation_ratio",
+                 "participation_ratio": pr_f,
+                 "retention_threshold": float(retention),
+                 "retention_statistic": "participation_ratio",
+                 # ---- effective_rank: PRESERVED, DEMOTED, NEVER RULING ------
+                 # ⚠️ The KEY NAMES are deliberately unchanged so the banked
+                 # series stays comparable and no downstream reader breaks on a
+                 # missing field. What changed is which one decides `pass`, and
+                 # `*_is_ruling` says so inside the record itself.
                  "effective_rank": er, "rank_ceiling": ceiling,
                  "effective_rank_frac": er / max(ceiling, 1),
-                 "retention_threshold": float(retention),
                  "absolute_floor": float(floor),
-                 # ⭐ the ENERGY-based clause; see O6_PARTICIPATION_FLOOR for why
-                 # effective_rank(σ) cannot decide collapse on its own.
-                 "participation_ratio": (float(pr) if pr is not None else None),
+                 "effective_rank_is_ruling": False,
+                 "effective_rank_above_floor_DIAGNOSTIC": bool(er >= floor),
                  "participation_floor": float(O6_PARTICIPATION_FLOOR),
-                 "participation_pass": (None if pr is None
-                                        else bool(float(pr)
+                 "participation_pass": (None if pr_f is None
+                                        else bool(pr_f
                                                   >= O6_PARTICIPATION_FLOOR)),
+                 "participation_floor_is_ruling": False,
                  "statistic_note": "effective_rank uses p ∝ σ (amplitude, "
                                    "tail-sensitive); participation_ratio uses "
                                    "p ∝ σ² (energy). COLLAPSE is an energy "
                                    "question — decide on participation."}
     out["ceiling_min"] = int(ceiling_min)
+    # ---- clause 3 resolved FIRST, so its armed/disarmed state always travels
+    # with the record even on an early INCONCLUSIVE return.
+    if participation_floor is None:
+        out["absolute_clause"] = {
+            "status": "REPORTED_NOT_RULING", "ruling": False,
+            "reason": "no matched-corpus participation floor supplied. "
+                      "O6_PARTICIPATION_FLOOR=8.56 is reproduced by NO live "
+                      "instrument (see O6_PARTICIPATION_REFERENCES) and moves "
+                      "3.51x on episode diversity alone at fixed encoder/n/d; "
+                      "O6_RANK_FLOOR=64 sits on the INVERTING statistic. Pass "
+                      "participation_floor= AND participation_reference= to "
+                      "arm this clause.",
+            "pi_decision_pending": "retire O6_PARTICIPATION_FLOOR from live "
+                                   "gates, or re-measure it at matched corpus "
+                                   "and matched d"}
+    elif not participation_reference:
+        out["absolute_clause"] = {
+            "status": "INCONCLUSIVE", "ruling": False,
+            "reason": "participation_floor supplied WITHOUT "
+                      "participation_reference. A floor is quotable only with "
+                      "the corpus/n/d it was measured on "
+                      "(O6_FLOOR_IS_CORPUS_AND_DIM_SPECIFIC): champ30k's "
+                      "recorded FAIL compared an arm to a number from a "
+                      "different d. Naming the reference is the fix."}
+    else:
+        out["absolute_clause"] = {
+            "status": "ARMED", "ruling": True,
+            "floor": float(participation_floor),
+            "reference": str(participation_reference)}
     if ceiling < ceiling_min:
         out |= {"pass": None, "status": "INCONCLUSIVE",
                 "reason": f"rank_ceiling {ceiling} < {ceiling_min}: "
@@ -1826,30 +1971,50 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
                           f"cannot resolve rank. Pool more steps "
                           f"(SpectrumAccumulator) before asking this question."}
         return out
-    if er < floor:
+    # ⛔ The ruling statistic must EXIST before anything is ruled. Falling back
+    # to effective_rank here is precisely the C132 inversion, so this is an
+    # INCONCLUSIVE and never a silent substitution.
+    if pr_f is None:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": "reading carries no participation_ratio — the "
+                          "ruling statistic is absent. This gate does NOT fall "
+                          "back to effective_rank (C132: it inverts)."}
+        return out
+    if out["absolute_clause"]["ruling"] and pr_f < float(participation_floor):
         out |= {"pass": False, "status": "FAIL",
-                "reason": f"effective_rank {er:.3f} < the pre-registered "
-                          f"absolute floor {floor} at an ADMISSIBLE ceiling "
-                          f"{ceiling} — clause 3."}
+                "reason": f"participation_ratio {pr_f:.3f} < the armed "
+                          f"absolute floor {float(participation_floor)} "
+                          f"(reference {participation_reference}) at an "
+                          f"ADMISSIBLE ceiling {ceiling} — clause 3."}
         return out
     if ref is None:
         out |= {"pass": None, "status": "INCONCLUSIVE",
                 "reason": "no reference reading — clause 2 (retention) needs a "
-                          "phase-start reading at the SAME pooling. Clauses 1 "
-                          "and 3 passed."}
+                          "phase-start reading at the SAME pooling. Clause 1 "
+                          "passed; clause 3 is "
+                          f"{out['absolute_clause']['status']}."}
         return out
     er0 = float(ref["effective_rank"])
-    if er0 <= 0:
+    if er0 > 0:
+        # preserved for series comparability; NOT read to decide anything.
+        out["reference_effective_rank"] = er0
+        out["effective_rank_retention_DIAGNOSTIC"] = er / er0
+    pr0 = ref.get("participation_ratio")
+    if pr0 is None or float(pr0) <= 0:
         out |= {"pass": None, "status": "INCONCLUSIVE",
-                "reason": "reference effective_rank is non-positive"}
+                "reason": "reference participation_ratio is absent or "
+                          "non-positive — the retention ratio is undefined on "
+                          "the ruling statistic."}
         return out
-    out["reference_effective_rank"] = er0
-    out["retention"] = er / er0
-    ci_c, ci_r = cur.get("effective_rank_ci95"), ref.get("effective_rank_ci95")
+    pr0_f = float(pr0)
+    out["reference_participation_ratio"] = pr0_f
+    out["retention"] = pr_f / pr0_f
+    ci_c = cur.get("participation_ratio_ci95")
+    ci_r = ref.get("participation_ratio_ci95")
     if not (isinstance(ci_c, dict) and "lo" in ci_c
             and isinstance(ci_r, dict) and "lo" in ci_r):
         out |= {"pass": None, "status": "INCONCLUSIVE",
-                "reason": "both readings must carry effective_rank_ci95 "
+                "reason": "both readings must carry participation_ratio_ci95 "
                           "(spectrum_report(..., ci_reps=N)). A point ratio "
                           "with no interval is the defect this replaces."}
         return out
@@ -1862,22 +2027,38 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
     lo = max(ci_c["lo"], 0.0) / max(ci_r["hi"], 1e-12)
     hi = max(ci_c["hi"], 0.0) / max(ci_r["lo"], 1e-12)
     out["retention_ci95"] = {"lo": lo, "hi": hi,
+                             "statistic": "participation_ratio",
                              "kind": "ratio of cluster-JACKKNIFE bounds "
                                      "(conservative: lo/hi and hi/lo)"}
+    # the same interval on the demoted statistic, when both readings carry it —
+    # reported so the C132 disagreement stays VISIBLE in every record instead of
+    # having to be re-derived from a different artifact.
+    dci_c, dci_r = cur.get("effective_rank_ci95"), ref.get("effective_rank_ci95")
+    if (isinstance(dci_c, dict) and "lo" in dci_c
+            and isinstance(dci_r, dict) and "lo" in dci_r):
+        out["effective_rank_retention_ci95_DIAGNOSTIC"] = {
+            "lo": max(dci_c["lo"], 0.0) / max(dci_r["hi"], 1e-12),
+            "hi": max(dci_c["hi"], 0.0) / max(dci_r["lo"], 1e-12),
+            "statistic": "effective_rank", "is_ruling": False}
     if hi < retention:
         out |= {"pass": False, "status": "FAIL",
-                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] lies wholly "
-                          f"below {retention} — clause 2."}
+                "reason": f"participation retention interval "
+                          f"[{lo:.3f}, {hi:.3f}] lies wholly below {retention} "
+                          f"— clause 2."}
     elif lo >= retention:
         out |= {"pass": True, "status": "PASS",
-                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] lies wholly "
-                          f"at/above {retention}, and effective_rank {er:.3f} "
-                          f">= floor {floor} at ceiling {ceiling}."}
+                "reason": f"participation retention interval "
+                          f"[{lo:.3f}, {hi:.3f}] lies wholly at/above "
+                          f"{retention} (participation_ratio {pr_f:.3f} vs "
+                          f"reference {pr0_f:.3f}) at ceiling {ceiling}. "
+                          f"Clause 3 is "
+                          f"{out['absolute_clause']['status']}."}
     else:
         out |= {"pass": None, "status": "INCONCLUSIVE",
-                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] straddles "
-                          f"{retention} — the reading cannot decide. Pool more "
-                          f"steps or take more reference readings."}
+                "reason": f"participation retention interval "
+                          f"[{lo:.3f}, {hi:.3f}] straddles {retention} — the "
+                          f"reading cannot decide. Pool more steps or take "
+                          f"more reference readings."}
     return out
 
 

@@ -204,23 +204,51 @@ def test_guard_DOES_NOT_fire_on_a_healthy_representation():
     assert lo >= 0.8 and lo < 1.0 < hi                # a real interval, not a point
 
 
-def test_guard_fires_on_the_absolute_floor_without_any_reference():
+def test_guard_fires_on_the_absolute_floor_ONLY_WHEN_ARMED():
     """Clause 3: retention alone cannot see a representation that was ALREADY
-    collapsed when the reference was taken."""
+    collapsed when the reference was taken -- but the absolute clause may only
+    fire on the ENERGY statistic, and only against a NAMED reference.
+
+    ⛔⛔ REWRITTEN 2026-09-06 (C132 repair). This test used to assert that
+    ``effective_rank < floor`` FAILS. That clause is the inversion itself: an
+    arm with 55 % of its energy in ONE direction reads effective_rank 769 --
+    higher than a genuinely healthier arm's 660 -- and sails over the floor of
+    64, while a cleaner arm with a shorter tail falls under it. Pinning that
+    behaviour pinned the defect. The absolute floor now rules on
+    ``participation_ratio`` and only when explicitly armed, because
+    ``O6_PARTICIPATION_FLOOR`` is reproduced by no live instrument and is
+    corpus- and dimension-specific (a PI decision, surfaced not taken).
+    """
     gen = torch.Generator().manual_seed(12)
     cur = _reading(T_D, 8, gen, keep=4, ci=0)
+    assert cur["participation_ratio"] < 8.0, "premise: this reading is collapsed"
+
+    # DISARMED (the default): reported, never ruling -- and explicitly so.
     v = o6_rank_verdict(cur, None, floor=T_FLOOR, ceiling_min=T_CEIL)
-    assert v["status"] == "FAIL" and "clause 3" in v["reason"]
+    assert v["status"] == "INCONCLUSIVE" and v["pass"] is None
+    assert v["absolute_clause"]["status"] == "REPORTED_NOT_RULING"
+    assert v["absolute_clause"]["ruling"] is False
+
+    # ARMED with a floor AND the corpus/d it was measured on: clause 3 fires.
+    v2 = o6_rank_verdict(cur, None, floor=T_FLOOR, ceiling_min=T_CEIL,
+                         participation_floor=8.0,
+                         participation_reference="synthetic/test-rig/"
+                                                 f"n{cur['n']}/d{cur['d']}")
+    assert v2["status"] == "FAIL" and "clause 3" in v2["reason"]
+    assert "participation_ratio" in v2["reason"]
 
 
 def test_guard_refuses_a_point_ratio_with_no_interval():
-    """⛔ The defect this replaces: a bare ratio deciding a gate."""
+    """⛔ The defect this replaces: a bare ratio deciding a gate.
+
+    The interval it demands is now the one on the RULING statistic.
+    """
     gen = torch.Generator().manual_seed(13)
     ref = _reading(T_D, 8, gen, ci=0)
     cur = _reading(T_D, 8, gen, keep=8, ci=0)
     v = o6_rank_verdict(cur, ref, floor=1.0, ceiling_min=T_CEIL)
     assert v["pass"] is None and v["status"] == "INCONCLUSIVE"
-    assert "effective_rank_ci95" in v["reason"]
+    assert "participation_ratio_ci95" in v["reason"]
 
 
 def test_shipped_constants_are_the_preregistered_ones():

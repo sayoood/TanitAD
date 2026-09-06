@@ -612,14 +612,25 @@ STAGE_GATE_SPEC: dict[str, dict] = {
             # a guard that goes off when nothing happened. The replacement is
             # owned by tanitad.models.v6.o6_rank_verdict and can say
             # INCONCLUSIVE, which the old one could not.
+            # ⛔⛔ C132 REPAIR 2026-09-06: the ruling statistic is
+            # participation_ratio (p ~ sigma^2, ENERGY), NOT effective_rank
+            # (p ~ sigma, AMPLITUDE). The two INVERT: a representation with
+            # 55 % of its energy in ONE direction reads effective_rank 769 (vs
+            # a genuinely healthier arm's 660) and PASSED the old floor of 64.
+            # effective_rank is still reported, as a labelled diagnostic.
             "O6_rank_retention":
                 "o6_rank_verdict: (1) ADMISSIBLE only at rank_ceiling >= 1024 "
                 "-- a single 48-row batch is INCONCLUSIVE by construction, "
                 "pool with --spectrum-accum; (2) RETENTION fails only when the "
-                "cluster-JACKKNIFE interval on ER_cur/ER_ref lies WHOLLY below "
-                "0.8x, passes only when it lies wholly at/above, else "
-                "INCONCLUSIVE; (3) FLOOR: pooled effective_rank >= 64 "
-                "regardless of retention",
+                "cluster-JACKKNIFE interval on PR_cur/PR_ref (participation "
+                "ratio) lies WHOLLY below 0.8x, passes only when it lies "
+                "wholly at/above, else INCONCLUSIVE -- needs "
+                "--spectrum-ci-reps > 0 on BOTH readings; (3) FLOOR: absolute, "
+                "REPORTED NOT RULING by default -- O6_PARTICIPATION_FLOOR=8.56 "
+                "is reproduced by no live instrument and is corpus/d-specific, "
+                "and O6_RANK_FLOOR=64 sits on the inverting statistic. It "
+                "fires only when the caller passes participation_floor AND a "
+                "named participation_reference. PI DECISION PENDING.",
             # X4 (2026-08-16): the SAME three clauses per layer, under EACH
             # LAYER'S measured (ceiling_min, floor) — tac 256/32, str 128/32
             # (x4_layer_power.json; z_op's 1024/64 re-derived as the anchor).

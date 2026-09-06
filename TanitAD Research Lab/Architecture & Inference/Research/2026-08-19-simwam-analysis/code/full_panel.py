@@ -48,6 +48,26 @@ LEAD = SP / "sp2/cache/slotprobe-lead130-w120-256x640cyl"
 LABELS = SP / "sp2/lead130_agents.jsonl"
 OUT = SP / "e_dec9_10_full_panel.json"
 ARMS = ["rdw8", "o7w1p0", "o8w1p0"]
+
+#: ⛔⛔ THE BASELINE IS NAMED, NOT POSITIONAL (D2, 2026-09-06). This panel used
+#: to take ``present[0]`` — "whoever is listed first" — as the reference for
+#: BOTH the decodability deltas and the kill-gate. Two failures followed from
+#: that one line, and neither announces itself:
+#:
+#:   1. **Verdicts flipped with run order.** Reorder ``ARMS``, or simply run
+#:      before ``rdw8``'s checkpoint has landed, and a DIFFERENT arm silently
+#:      becomes the reference — while the printed column header still said
+#:      "vs rdw8". The table then compares against one arm and labels it
+#:      another.
+#:   2. **The first arm never got a verdict at all.** ``for arm in present[1:]``
+#:      skipped it, so the baseline's own row was absent from ``kill_gate`` —
+#:      and an absent rejection reads, to every downstream summariser, exactly
+#:      like a pass. MEASURED: an arm was recorded as its own baseline.
+#:
+#: ⇒ The reference is this constant. If it is not present the panel REFUSES to
+#: promote a substitute: relative rows and the kill-gate become NO VERDICT, and
+#: the absolute per-arm numbers are still emitted, because they are order-free.
+BASELINE = "rdw8"
 F = 100
 
 
@@ -71,10 +91,19 @@ def main() -> int:
     rng = np.random.default_rng(0)
     present = [a for a in ARMS if (SP / f"v7tiny_{a}" / "ckpt.pt").is_file()]
     missing = [a for a in ARMS if a not in present]
+    have_base = BASELINE in present
     print(f"\n  FULL PANEL · arms {present}" + (f"  MISSING {missing}" if missing else "") + "\n",
           flush=True)
+    if not have_base:
+        print(f"  ** BASELINE {BASELINE!r} ABSENT -- every RELATIVE row and the "
+              f"kill-gate are NO VERDICT. No substitute is promoted. **\n",
+              flush=True)
     rep = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060)", "eval_tier": "T0-DIAGNOSTIC",
-           "arms_missing": missing, "arms": {}}
+           "arms_missing": missing, "arms": {},
+           # ⭐ the baseline's IDENTITY travels in the artifact, so a reader can
+           # never infer it from row order (D2).
+           "baseline_arm": BASELINE, "baseline_present": bool(have_base),
+           "baseline_is_positional": False}
 
     LAB = {}
     with LABELS.open(encoding="utf-8") as f:
@@ -144,13 +173,22 @@ def main() -> int:
     for block, clips, held_out in (("EGO (held-out val)", val, True),
                                    ("ENV (in-sample)", lead, False)):
         COLS, PO, TG = {}, [], {}
+        # the arm whose encode pass also populates the TARGET arrays. Named, so
+        # a reorder cannot move it silently; value-identical across arms, which
+        # the length assertion after the loop actually checks rather than assumes.
+        pose_anchor = present[0] if present else None
         for arm in present:
             w, _ = G.load_arm(arm, dev)
             col = []
             for c in clips:
                 z, _, _ = G.encode_clip(w, c, dev, F)
                 col.append(z.numpy().astype(np.float64))
-                if arm == present[0]:
+                # ⚠️ NOT the baseline, and deliberately so: poses come from the
+                # CLIP file, not from the arm, so this is only a "populate the
+                # target arrays once" guard. It is order-free in value but not
+                # in trigger, so it is pinned to a named anchor and the row
+                # lengths are asserted to agree across arms below.
+                if arm == pose_anchor:
                     d = torch.load(c, map_location="cpu", weights_only=False)
                     m = len(col[-1])
                     PO.append(d["poses"].numpy().astype(np.float64)[:m])
@@ -160,6 +198,14 @@ def main() -> int:
             COLS[f"z_op {arm}"] = col
             del w
             torch.cuda.empty_cache()
+        # the pose_anchor guard above is only order-free if every arm returns
+        # the same per-clip row counts. Assert it instead of trusting it.
+        _lens = {a: [len(x) for x in COLS[f"z_op {a}"]] for a in present}
+        for a, L in _lens.items():
+            assert L == _lens[pose_anchor], (
+                f"arm {a} produced row counts {L} but the pose anchor "
+                f"{pose_anchor} produced {_lens[pose_anchor]} — the targets "
+                f"would be truncated to whichever arm ran first")
         if held_out:
             TG = {"speed": [p[:, 3:4] for p in PO],
                   "d_ego": [np.concatenate([np.diff(p[:, :2], axis=0), np.zeros((1, 2))])
@@ -182,45 +228,69 @@ def main() -> int:
             return np.array(o, dtype=np.float64)
 
         print(f"\n  === {block} · {n} clips ===")
-        print(f"  {'target':<12}{'column':<22}{'R2':>9}{'vs rdw8':>10}{'t':>7}{'favours':>9}",
+        # ⛔ the header is DERIVED from BASELINE. It used to be the literal
+        # string "vs rdw8" beside a delta taken against present[0] — so when
+        # those differed the table asserted a comparison it had not made.
+        print(f"  {'target':<12}{'column':<22}{'R2':>9}"
+              f"{('vs ' + BASELINE) if have_base else 'NO VERDICT':>10}"
+              f"{'t':>7}{'favours':>9}",
               flush=True)
         rep.setdefault("blocks", {})[block] = {}
         for tn, Y in TG.items():
             R = {k: loeo(v, Y) for k, v in COLS.items()}
-            base = R[f"z_op {present[0]}"]
+            base = R[f"z_op {BASELINE}"] if have_base else None
             rep["blocks"][block][tn] = {}
             for k in COLS:
+                row = {"r2": round(float(R[k].mean()), 4), "n": len(R[k]),
+                       "baseline_arm": BASELINE}
+                if base is None:
+                    # ⛔ NO VERDICT, never a substituted baseline.
+                    row |= {"delta_vs_base": None, "t": None,
+                            "n_favouring": None,
+                            "status": "NO VERDICT",
+                            "reason": f"baseline arm {BASELINE!r} absent"}
+                    rep["blocks"][block][tn][k] = row
+                    print(f"  {tn:<12}{k:<22}{float(R[k].mean()):>+9.4f}"
+                          f"{'NO VERDICT':>10}{'-':>7}{'-':>9}")
+                    continue
                 dd = R[k] - base
                 mm = float(dd.mean())
                 se = float(dd.std(ddof=1) / np.sqrt(len(dd))) if len(dd) > 1 else 0.0
                 t = mm / max(se, 1e-12)
-                rep["blocks"][block][tn][k] = {"r2": round(float(R[k].mean()), 4),
-                                               "delta_vs_base": round(mm, 4), "t": round(t, 2),
-                                               "n_favouring": int((dd > 0).sum()), "n": len(dd)}
+                row |= {"delta_vs_base": round(mm, 4), "t": round(t, 2),
+                        "n_favouring": int((dd > 0).sum()),
+                        "status": ("IS BASELINE" if k == f"z_op {BASELINE}"
+                                   else "compared")}
+                rep["blocks"][block][tn][k] = row
                 print(f"  {tn:<12}{k:<22}{float(R[k].mean()):>+9.4f}{mm:>+10.4f}{t:>7.2f}"
                       f"{int((dd > 0).sum()):>6}/{len(dd)}")
             print()
 
     # ---- the kill-gate, applied ---------------------------------------------
-    base = rep["arms"].get(present[0], {})
-    verdicts = {}
-    for arm in present[1:]:
-        r = rep["arms"][arm]
-        rank_dead = (r["participation_val"] < base["participation_val"]
-                     and r["participation_heldout24"] < base["participation_heldout24"])
+    # ⛔ The baseline is NAMED and every present arm gets an entry — the
+    # baseline included. Owned by tanitad.eval.panel_gate so the rule is
+    # covered by the main suite and cannot drift per panel.
+    from tanitad.eval.panel_gate import relative_verdicts, render_verdict
+
+    def _rule(r, b):
+        rank_dead = (r["participation_val"] < b["participation_val"]
+                     and r["participation_heldout24"] < b["participation_heldout24"])
         pred_dead = r["predictor"]["1"]["z"] < 2.0
-        h2 = r["predictor"].get("2", {})
-        verdicts[arm] = {
-            "REJECTED_by_kill_gate": bool(rank_dead or pred_dead),
-            "reason": ("rank fell on BOTH held-out sets" if rank_dead else
-                       "predictor cos z<2 at h=1" if pred_dead else "passes the gate"),
-            "predicts_beyond_h1": bool(h2.get("z", 0) > 2.0),
-        }
+        return (rank_dead or pred_dead,
+                "rank fell on BOTH held-out sets" if rank_dead else
+                "predictor cos z<2 at h=1" if pred_dead else "passes the gate")
+
+    verdicts = relative_verdicts(
+        rep["arms"], present, BASELINE, _rule,
+        extra=lambda r: {"predicts_beyond_h1":
+                         bool(r.get("predictor", {}).get("2", {}).get("z", 0) > 2.0)})
     rep["kill_gate"] = verdicts
-    rep["verdict"] = "; ".join(
-        f"{a}: {'REJECTED — ' + v['reason'] if v['REJECTED_by_kill_gate'] else 'passes gate'}"
-        f"{' · PREDICTS BEYOND h=1' if v['predicts_beyond_h1'] else ' · still identity at h>=2'}"
-        for a, v in verdicts.items())
+    # ⛔ THREE-VALUED renderer: `None` is NOT False, so an arm that could not be
+    # ruled on reads NO VERDICT and never "passes gate".
+    rep["verdict"] = render_verdict(
+        verdicts,
+        suffix=lambda v: (" · PREDICTS BEYOND h=1" if v["predicts_beyond_h1"]
+                          else " · still identity at h>=2"))
     print(f"  VERDICT: {rep['verdict']}")
     OUT.write_text(json.dumps(rep, indent=1), encoding="utf-8")
     print(f"\n-> {OUT}")

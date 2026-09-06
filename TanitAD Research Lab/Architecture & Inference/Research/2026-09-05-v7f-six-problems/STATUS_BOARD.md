@@ -275,3 +275,66 @@ parallel, not behind it.
 
 **Evidence-class discipline:** every *status* in this board that cites a document rather than
 an artifact is stamped `INHERITED` in its own row, including where I believe it.
+
+---
+
+## UPDATE 2026-09-06 — the two gate defects this board's audit found are FIXED
+
+Package: `…/2026-09-06-v7f-gate-repair/RESULT.md`. **16 of 18 new tests FAIL on the unfixed tree.**
+Affected suite `84 passed, 0 failed`. ⚠️ No arm's number moves and **no launch behaviour changes**:
+`O6_spectrum` is `reported`, not `required`, at every stage.
+
+| defect | before | after |
+|---|---|---|
+| **D1** `o6_rank_verdict` (`train_v6_staged.py:5148`, `:7347`) | ruled on `effective_rank` (p ∝ σ) and never read `participation_ratio` | rules on **`participation_ratio`** (p ∝ σ², energy); `effective_rank` still reported, marked `effective_rank_is_ruling: False` |
+| **D2** `full_panel.py`, `rolled_predict.py` | baseline = `present[0]`; first arm got no verdict; `None` rendered as "passes gate" | **named** `BASELINE` via `stack/tanitad/eval/panel_gate.py`; one three-valued entry per arm; **no substitute baseline promoted** |
+
+⛔ **The D1 inversion, executed against HEAD:** a representation with **55 % of its energy in one
+direction** reads `effective_rank` **769.09** vs a healthier arm's **659.69** — the collapsed arm
+reads HIGHER — and the unfixed gate returns **`status=PASS pass=True`**. Participation orders them
+correctly (3.31 vs 31.27). Same two readings, opposite verdicts:
+`OLD retention 1.0815 ci=[1.056,1.107] -> PASS` · `NEW retention 0.1577 ci=[0.126,0.194] -> FAIL`.
+
+⛔ **The D2 order flip, executed:** with `[rdw8, o7w1p0, o8w1p0]`, `o8w1p0` is **REJECTED** and
+`rdw8` has no row; reorder to `[o8w1p0, o7w1p0, rdw8]` and **`o8w1p0` becomes the BASELINE**.
+
+🔴 **PI DECISION SURFACED (`D-O6-FLOOR-PI`):** whether `O6_PARTICIPATION_FLOOR` should gate at all.
+The absolute clause is now **REPORTED_NOT_RULING by default** and fires only with an explicit
+`participation_floor` **and** a named `participation_reference`. **Recommended default: keep it
+disarmed** — 8.56 is reproduced by no live instrument and moves 3.51× on episode diversity alone,
+and the `effective_rank` floor of 64 sits on the inverting statistic.
+
+### Row 3 (≈0-motion readout) — still OPEN, narrowed without a GPU, and its blocker named
+
+* ⛔ **GPU BLOCKED, not skipped:** dev-box 4060 at **100 %**, four sibling `refav1_arm.py` arms.
+  Polled with a check-command monitor (`arms=0` release condition), sibling queues untouched; no
+  slot freed this turn.
+* ⭐ **`D-T1-NO-SCALE-ON-EMISSION-PATH` (MEASURED, source):** the T1 emission path carries **no
+  multiplicative scale constant anywhere** — `StepDisplacementReadout.forward`
+  (`metric_dynamics.py:212`) is a bare MLP with no scale and no output activation; `rollout_decode`
+  (`:233-244`) only stacks + `accumulate_se2`; `dense_speed_profile` (`rollout.py:280-284`) is
+  `norm(Δp)/dt`. With the input side's `SPEED_SCALE = 10.0` already matching the trained 10.0,
+  ⇒ **this row's "if it is a scale error, every T1 number is recoverable by re-analysis with zero
+  retraining" is NOT supported by the eval code path.** ⚠️ **Scoped: rules out the HARNESS, not the
+  TRAINER** — a readout supervised against a wrongly-scaled target gives the same ≈0 signature and
+  that path is *not* closed.
+* ⚠️ **A number this row should NOT be given:** quantifying the corpus speed against
+  `speed_bias −10.381` was attempted and **withheld**. `windows_*.pt`'s `gt` is at **`wp_steps`
+  spacing, not 10 Hz ticks** (`norm(diff(gt))/0.1` gives a nonsense 63.85 m/s), and more importantly
+  `windows_flagship-30k` is a **different arm** from v7-tiny. Dead-readout vs mis-scaled therefore
+  stays **OPEN** and needs v7-tiny's *own* val speed.
+* ⇒ **Revised cheapest probe — ZERO GPU:** load the banked **v7-tiny** checkpoint on CPU and read
+  `step_readout_op`'s final `Linear` weight/bias norms. A weight term ≈0 against the bias means a
+  **constant emitter**, which would make `echo_index 0.0000` vacuous and mean **no re-analysis can
+  recover the T1 numbers**. 🔴 **BLOCKED ON THE ARTIFACT** (verified, not assumed):
+  `taniteval/results` holds **29** dumps and **none** is a v7 arm; locally reachable checkpoints are
+  refav1 and phase-0 flagship only. **What unblocks it: the path to a banked v7-tiny checkpoint.**
+
+### One more instrument defect found in passing
+
+⚠️ **`D-X4PIN-DEAD`:** `test_x4_layer_spectrum.py`'s pin on `o6_rank_verdict` has been **silently
+skipping** — its loader read a historical `v6.py` under a bare module name, hit `v6.py`'s **relative
+imports**, and a bare `except Exception` turned that into the skip message *"git could not supply a
+pre-X4 revision"*. Git was fine; the loader was not. Fixed, skip reason made honest, contract
+updated so the *ruling* keys may move. ⚠️ Its git-history walk exceeds **15 min** on the G: mount —
+bounding that runtime is a named work item before it joins a routine `pytest -q`.

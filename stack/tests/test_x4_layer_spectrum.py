@@ -439,9 +439,19 @@ def _pre_x4_module():
         return None
     tmp = Path(tempfile.mkdtemp()) / "v6_pre_x4.py"
     tmp.write_bytes(src)
-    spec = importlib.util.spec_from_file_location("v6_pre_x4", tmp)
+    # ⛔⛔ THIS GUARD WAS DEAD, AND ITS SKIP MESSAGE BLAMED THE WRONG THING
+    # (found 2026-09-06). ``v6.py`` uses RELATIVE imports (`from .vocab_v7
+    # import ...`), so loading it under a bare module name raises
+    # "attempted relative import with no known parent package". The bare
+    # `except Exception: return None` swallowed that and the test skipped
+    # saying "git could not supply a revision" — git had supplied it perfectly.
+    # A guard that cannot fail is decoration; loading it as a SUBMODULE of
+    # tanitad.models is the whole fix.
+    name = "tanitad.models.v6_pre_x4"
+    spec = importlib.util.spec_from_file_location(name, tmp)
     mod = importlib.util.module_from_spec(spec)
-    sys.modules["v6_pre_x4"] = mod
+    mod.__package__ = "tanitad.models"
+    sys.modules[name] = mod
     try:
         spec.loader.exec_module(mod)
     except Exception:
@@ -455,7 +465,10 @@ def test_spectrum_report_and_o6_verdict_UNCHANGED_vs_the_pre_X4_revision():
     from ``o6_rank_verdict`` — the live run reads both."""
     prev = _pre_x4_module()
     if prev is None:
-        pytest.skip("git could not supply a pre-X4 v6.py revision")
+        pytest.skip("no pre-X4 v6.py revision could be LOADED (git history "
+                    "walk or module exec failed) — note this skip previously "
+                    "fired for a loader bug, not a git one; the C132 repair is "
+                    "pinned by test_o6_verdict_rules_on_participation.py")
     for shape in [(48, 2048), (8, 512), (8, 256), (2, 5)]:
         torch.manual_seed(7)
         z = torch.randn(*shape)
@@ -465,6 +478,26 @@ def test_spectrum_report_and_o6_verdict_UNCHANGED_vs_the_pre_X4_revision():
         vo = prev.o6_rank_verdict(old)
         vn = __import__("tanitad.models.v6", fromlist=["o6_rank_verdict"]
                         ).o6_rank_verdict(new)
+        # ⛔⛔ C132 REPAIR 2026-09-06 — THE RULING KEYS ARE *MEANT* TO DIFFER.
+        # The verdict now rules on participation_ratio (energy) instead of
+        # effective_rank (amplitude), because the two INVERT: an arm with 55 %
+        # of its energy in one direction read effective_rank 769 against a
+        # healthier arm's 660 and PASSED. So `pass`/`status`/`reason` and the
+        # retention fields are EXPECTED to move, and pinning them to the old
+        # values would pin the defect. Everything DIAGNOSTIC must still match.
+        # The repair itself is pinned by
+        # tests/test_o6_verdict_rules_on_participation.py, which proves the old
+        # rule PASSES exactly what the new one FAILS.
+        RULING_MAY_MOVE = {"pass", "status", "reason", "criterion",
+                           "retention", "retention_ci95",
+                           "retention_threshold", "retention_statistic"}
+        assert vn["ruling_statistic"] == "participation_ratio"
+        assert vn["effective_rank_is_ruling"] is False
+        # the demoted statistic must still be REPORTED, bit-identical
+        assert vn["effective_rank"] == vo["effective_rank"]
+        assert vn["rank_ceiling"] == vo["rank_ceiling"]
+        vo = {k: v for k, v in vo.items() if k not in RULING_MAY_MOVE}
+        vn = {k: v for k, v in vn.items() if k not in RULING_MAY_MOVE}
         # ⭐ The PARTICIPATION clause is an intended, PI-approved addition
         # (C132): effective_rank(σ) is not a collapse statistic — it PASSES a
         # representation with 55 % of its energy in one direction while failing
@@ -473,7 +506,11 @@ def test_spectrum_report_and_o6_verdict_UNCHANGED_vs_the_pre_X4_revision():
         # Everything PRE-EXISTING must still be byte-identical; only these
         # four keys may be added, and none may be removed or changed.
         ADDED_OK = {"participation_ratio", "participation_pass",
-                    "participation_floor", "statistic_note"}
+                    "participation_floor", "statistic_note",
+                    # C132 repair (2026-09-06)
+                    "ruling_statistic", "effective_rank_is_ruling",
+                    "effective_rank_above_floor_DIAGNOSTIC",
+                    "participation_floor_is_ruling", "absolute_clause"}
         assert set(vo) - set(vn) == set(),             f"o6_rank_verdict keys REMOVED at {shape}: {set(vo) - set(vn)}"
         assert set(vn) - set(vo) <= ADDED_OK,             f"unexpected o6_rank_verdict keys at {shape}: {set(vn) - set(vo) - ADDED_OK}"
         assert {k: vn[k] for k in vo} == vo,             f"a PRE-EXISTING o6_rank_verdict value moved at {shape}"

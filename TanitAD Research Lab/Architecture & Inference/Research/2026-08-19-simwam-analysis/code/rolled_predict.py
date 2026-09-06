@@ -39,6 +39,11 @@ sys.path.insert(0, r"C:\Users\Admin\tanitad-mirror\stack")
 VAL = SP / "sp2/cache/physicalai-val-w120-256x640cyl"
 OUT = SP / "h_proof7_rolled.json"
 ARMS = ["rdw8", "o5k4", "o5k8"]
+
+#: The k_roll=1 CONTROL, named rather than positional — see the D2 note in
+#: ``full_panel.py``. `rdw8` is the control by construction; `present[0]` was
+#: only the control by coincidence of list order.
+BASELINE = "rdw8"
 KMAX = 6
 F = 100
 
@@ -116,15 +121,30 @@ def main() -> int:
         got = [int(j) for j, v in r.items() if v["z"] > 2.0]
         return max(got) if got else 0
     rep["deepest_significant_rolled_step"] = {a: deepest(a) for a in present}
-    base = deepest(present[0]) if present else 0
-    better = [a for a in present[1:] if deepest(a) > base]
-    rep["verdict"] = (
-        f"deepest rolled step with z>2: {rep['deepest_significant_rolled_step']}. "
-        + (f"⭐ {better} PREDICT DEEPER than the k_roll=1 control — the C139 fix works and "
-           f"multi-step prediction was a TRAINING-CONFIG problem, not a model limit."
-           if better else
-           "No arm predicts deeper than the k_roll=1 control ⇒ deepening the rollout did NOT "
-           "buy multi-step competence, and the limit is real rather than configural."))
+    # ⛔ NAMED CONTROL, NOT present[0] (D2, 2026-09-06). The k_roll=1 control is
+    # `rdw8` by construction; taking "whoever is listed first" made the verdict
+    # depend on run order, and silently promoted a substitute control whenever
+    # rdw8's checkpoint was absent — while the sentence below still called it
+    # "the k_roll=1 control".
+    rep["control_arm"] = BASELINE
+    rep["control_present"] = bool(BASELINE in present)
+    if BASELINE not in present:
+        rep["verdict"] = (
+            f"NO VERDICT: the k_roll=1 control {BASELINE!r} is absent from this "
+            f"run and no substitute control is promoted. Per-arm depths "
+            f"{rep['deepest_significant_rolled_step']} are absolute and stand; "
+            f"the RELATIVE claim cannot be made.")
+    else:
+        base = deepest(BASELINE)
+        better = [a for a in present if a != BASELINE and deepest(a) > base]
+        rep["verdict"] = (
+            f"deepest rolled step with z>2: {rep['deepest_significant_rolled_step']} "
+            f"(control {BASELINE} = {base}). "
+            + (f"⭐ {better} PREDICT DEEPER than the k_roll=1 control — the C139 fix works and "
+               f"multi-step prediction was a TRAINING-CONFIG problem, not a model limit."
+               if better else
+               "No arm predicts deeper than the k_roll=1 control ⇒ deepening the rollout did NOT "
+               "buy multi-step competence, and the limit is real rather than configural."))
     print(f"\n  VERDICT: {rep['verdict']}")
     OUT.write_text(json.dumps(rep, indent=1), encoding="utf-8")
     print(f"\n-> {OUT}")
