@@ -10844,3 +10844,105 @@ result. Retracted inside the banked JSON (not deleted) and replaced by the exact
 fraction, which is bounded in [0, 1].
 ⭐ A third, free consistency check: `visible_frac` is **0.4018** here, **0.4078** on B1 EVAL and
 **0.4106** on train2400 — three joins over **disjoint** clip sets within 0.009 of each other.
+
+### D-PWVOCAB-0 — `labels_train_v4.pt` is DESTROYED, and it was never the source of truth
+**Status: SUPPORTED (MEASURED, ours).** **Class: artifact-location / cache-vs-recipe.**
+Instrument: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-perwindow-wiring/PERWINDOW_WIRING.md` §1.
+
+The per-window flagship-v4 label cache had **one** recorded home,
+`tanitad-pod2:/workspace/v15/labels_train_v4.pt`, declared pod-side-only by its own
+`MANIFEST.md` (*"the multi-GB label tensors are the cache and stay pod-side"*). **pod2 was
+TERMINATED 2026-08-03** and its evacuation (`_pod_backup/pod2-2026-08-03/ckpts/BACKUP_LOG.txt`)
+carried **7 checkpoints and no label cache**. ⛔ **No md5 is quotable because no copy exists to
+hash.**
+
+**Eight locations, two independent mechanisms, every absence with a same-breath non-zero control:**
+repo tree (0 / control 170 `*.md`) · repo index (0 caches / control 11,295 tracked) · pod3, pod4,
+pod5 (**Connection refused**, all three) · Thor (0 / control **18,534** `*.pt`) · live A40
+`69.30.85.211` (0, no `/workspace/v15` / control 82 entries) · dev box (0 / control **2,154** `*.pt`)
+· **HuggingFace `Sayood`, all 45 repos (0 / control 18,573 files enumerated)**.
+
+⭐⭐ **AND THE LOSS IS NOT LOAD-BEARING.** `v4_labels.lat_target` / `lon_target` are **pure
+functions of `poses [T,4]`**, `v4_labels.mint_window` already exists and is documented as *"the
+on-the-fly path … bit-identical to the corresponding row of `mint_episode`"*, and `V3Dataset`
+**already holds the episode's own poses per item**. ⇒ **the `.pt` was a CACHE OF A PURE FUNCTION.**
+Re-obtaining these labels needs **no rebuild, no label generation and no PI decision** — the
+forbidden act is generating labels, and evaluating a banked pure function on data the loader
+already reads is not one.
+**Verified by reproduction, not by reading:** on `physicalai-train-14231cd29c74` (400 episodes,
+68,377 windows, 0 unreadable) the direct calls are **bitwise equal** to `mint_episode`'s rows on
+both axes, with a **negative control** (anchor shifted by one window) reading **not equal**.
+Derivation cost **0.383 ms/window**.
+
+⚠️ **Two things the surviving record gets wrong.** `~/.ssh/config` calls pod2 *"fully evacuated and
+verified"* — true of the checkpoints, false of the label caches. And
+`stack/scripts/make_parity_manifest.py:72` points at `Benchmarks & Eval/` (singular) where the
+directory is `Benchmarks & Evals/` (plural, post-rename), under an `if …exists()` guard ⇒ **that
+cross-check silently does not run.** Reported, not fixed (outside this stream).
+
+### D-PWVOCAB-1 — kin3 destroys the tactical distinction on 16.70 % / 22.64 % of ALL windows
+**Status: SUPPORTED (MEASURED, ours — same windows, same poses, the trainer's own call).**
+**Class: vocabulary resolution. ⛔ PRECONDITION, NOT A CAPABILITY RESULT.**
+Instrument: `…/2026-09-06-perwindow-wiring/raw/crosstab_kin3_vs_v4.{py,json}`, n = 68,377 windows /
+400 episodes.
+
+Cross-tabulating the live trainer's runtime kin3 labels
+(`tac.window_factored_labels(pose_last, fut_ext[:, :20])`) against the v4 per-window vocabulary:
+
+* **LATERAL — 11,418 / 68,377 = 16.70 %** of windows carry a v4 identity kin3 cannot express.
+  kin3's `lane_keep` is the **sole** destination of all five lane-change/nudge tokens
+  (`lc_left` 3,282 · `lc_right` 3,211 · `nudge_left` 2,318 · `nudge_right` 2,603 · `abort_lc` 4).
+* ⚠️ **The reverse error is larger.** v4 `lane_keep` lands in kin3 `lane_keep` at purity **0.597** —
+  **22,950 windows of ordinary lane-keeping are called `turn_left`/`turn_right`**, which is
+  **92.4 %** of everything kin3 calls a turn (22,950 / 24,834). ⇒ **kin3's "turn" classes are
+  predominantly curve-following, not manoeuvres.**
+* **LONGITUDINAL — 15,479 / 68,377 = 22.64 %.** kin3 `steady` <- {`free_cruise`, `hold_stop`,
+  `creep`}; kin3 `brake_stop` <- {`stop_at_point`, `coast`} ⇒ ⭐ **"lift off" and "there is a stop
+  line ahead" are the same word**, in the axis carrying 88.7 % of the oracle gap.
+
+⛔ **This proves information is DISCARDED; it does not prove a model recovers it or that driving
+improves.** That is `PREREG_D-PWVOCAB-1.md`, **registered and NOT RUN** — no arm was trained, so
+there is **no PASS and no FAIL**.
+
+### D-PWVOCAB-2 — coverage 1.0000 is a property of the MINTER; and `pull_over` is ABSENT, not rare
+**Status: SUPPORTED (MEASURED, ours).** **Class: label census / class imbalance.**
+Instrument: `…/2026-09-06-perwindow-wiring/raw/repro_perwindow.{py,json}`.
+
+Re-measured from poses on a corpus **different** from the parity one
+(`physicalai-train-14231cd29c74`; ⚠️ counts are **not** parity-comparable, the structure is):
+`lat_target` and `lon_target` both read **coverage 1.0000, IGNORE = 0** ⇒ the census's headline
+figure is a property of the minter, not of the lost cache. `lc_left` **4.800 %** and `lc_right`
+**4.696 %** — the lane-change tokens the v7.2 per-clip line has at **0 / 4,572** are supplied here at
+~1 window in 10.
+
+⛔⛔ **The imbalance is worse than "rare": `pull_over` reads 0 / 68,377 and `abort_lc` 4 / 68,377.**
+⇒ **the effective lateral vocabulary is FIVE tokens, not seven**, and a 7-wide head would carry two
+units that can never receive a gradient. Registered as a sizing decision, re-openable only by
+re-registration if either token clears n >= 200 on a reachable parity corpus.
+
+⭐ **The majority-class control read its known value and vindicates the doctrine:** a constant
+`lane_keep` predictor scores **pooled 0.8330** — which looks like a working lateral head — against
+**macro-recall 0.1667 = exactly 1/6**. (LON: pooled 0.6094, macro 0.1667.) ⇒ **pooled accuracy is
+inadmissible for this head; per-class recall only.**
+
+### D-PWVOCAB-3 — the wiring is BLOCKED ON OWNERSHIP, not on data or on the PI
+**Status: BLOCKED (escalation filed with an exact diff).** **Class: seam ownership.**
+Instrument: `…/2026-09-06-perwindow-wiring/PERWINDOW_WIRING.md` §4 +
+`refc_v3_train.perwindow.patch.md`.
+
+`compute_losses_v3` already carries **two** tactical label sources on the `z_tac` heads (kin3 and
+v7.2) selected on `use_v7 = "lat_v7" in batch`, each with a width refusal — **the 5x6 set is a
+natural third source through the same seam.** But the head width is chosen in
+`refc_v3.py` (`_nlat = len(tactical_lat_actions(_vv))`), resolving against `TACTICAL_VOCAB_VERSIONS`
+in `stack/tanitad/models/v6.py`, which **raises on an unknown version**. ⇒ a new vocabulary needs
+`v6.py` **and** `refc_v3.py`, **both outside this stream and both with live siblings in them
+tonight. Neither was edited.** The trainer-side half is specified and **deliberately not applied**,
+because a flag whose consumer cannot be built is the refcv5 plan's own **P6** defect.
+
+⛔⛔ **A COUPLING THE DIFF MUST NOT HIDE:** `refc_v3.py` sets
+`man5 = derive_man5_logprobs(...) if tac_vocab_version == "kin3" else None`, and the consumer is
+guarded (`if man5 is not None`). ⇒ **any** non-kin3 vocabulary **silently drops the H19 lateral
+prior** — no crash, no message. ⚠️ **The v7.2 arm already pays this today and it is stamped
+nowhere.** ⇒ the change must stamp `man5_active` into `config.json`, or it becomes the
+effective-weight failure (*an operator types a weight a later layer zeroes*) wearing a vocabulary
+costume.
