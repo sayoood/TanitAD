@@ -307,6 +307,32 @@ Every subagent brief MUST carry the preamble in
   A positive assertion alone (*"my marker is present in my tree"*) passes happily on a revert,
   because the marker was in **both** versions. ⚠️ Same family as the empty-string blob-comparison
   hole above: an assertion that is positive in FORM can still be blind to the failure that matters.
+
+  ⛔⛔ **A CHECK THAT SHARES THE DEFECT IT CHECKS FOR IS GREEN FOREVER — FOUR INSTANCES IN ONE
+  NIGHT, AND EACH ONE GUARDED SOMETHING THAT WAS ALREADY BROKEN.** MEASURED 2026-09-07:
+  * A label builder rounded its ladder to 4 dp (`round(k / 3.6, 4)` → `13.8889` for a step that
+    is `13.888888…`), then verified the shipped buckets **against that same rounded ladder**.
+    Re-snapping read **0 %** moved and the artifact passed its own build gate. Against the ladder a
+    consumer would naturally derive — from the km/h integers — **57.5 % of the corpus (2,631/4,572)
+    moves one step up.** ⭐ *Internally consistent and externally wrong.*
+  * A census emitted `status = "UNDERPOWERED" if t in TACTICAL_GOAL_UNDERPOWERED or n < 30`, and a
+    test pinned the set **against that status** — a union with the set being checked. It could
+    detect a missing token and was **permanently blind to an extra one**, which is how a member
+    that was not a v7 token at all survived.
+  * `test_rl_channel_guard.py` asserted *"if missing: expect refusal; else: expect pass"* — an
+    expected value of **whatever the code does**. It was green while the preflight it guarded was
+    telling operators to plumb the label.
+  * A conditioning test used a **flat two-attribute config stub** to check a map whose real fields
+    are **nested**, and `hasattr` on the class. Doubly inert: it iterated entries that skipped the
+    loop body, and could not have seen the fields even if it had.
+  ⇒ **A CROSS-CHECK MUST BE DERIVED INDEPENDENTLY OF THE VALUE IT CHECKS.** Re-running the
+  producer's own derivation and finding agreement measures **determinism, not correctness** — the
+  same family as repeated samples through one channel being one sample. ⭐ The cheap discriminators,
+  in order of strength: an **analytic target** (a circle's curvature is exactly `1/R`; a
+  straight-line plan's is exactly `0`); an **independently authored** reference (road-law step
+  values, not a histogram fit); a **mutation** that reintroduces the real historical defect and
+  must go RED. ⛔ And write the expectation as a **literal**, never as an expression over the code
+  under test.
 - ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
   HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
   tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
