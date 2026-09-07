@@ -686,6 +686,56 @@ procedure below, which is what actually holds.**
    seeds a **private scratch index from HEAD** and never reads the shared one. That immunity
    is the argument for making it the default, not merely the safest option.
 
+   ⛔⛔ **AND THE SAME STALE-TREE MECHANISM ALSO PLANTS STALE *CONTENT*, WHICH HIDES BEHIND
+   A PLAIN `M` AND IS THEREFORE WORSE THAN THE PHANTOM DELETIONS.** MEASURED 2026-09-07,
+   caught **before** anyone committed: **five steering files carried an index blob that was
+   NEITHER `HEAD` NOR THE WORKTREE** — worktree **==** HEAD in every case, index older than
+   both. A single pathspec-free `git commit` would have **reverted 397 lines**: `CLAUDE.md`
+   1,033 → 965 (losing the two rules landed that night), `PI_DECISION_QUEUE.md` 187 → 105
+   (**both** open PI items), `PI_VIDEO_REVIEW_2026-09-06.md` 208 → 56, `MODEL_REGISTRY.md`
+   4,742 → 4,692, `REFCV5_MISSING_PIECES_PLAN.md` 545 → 500. Every one was a file committed
+   hours earlier — i.e. **the index goes stale precisely for what you just landed.**
+   ⭐ **WHY IT IS HARDER TO SEE THAN THE DELETIONS ABOVE:** a phantom deletion prints `D `
+   and the rule above tells you to look for it. Stale content prints **`M `**, which is
+   **indistinguishable from a sibling's genuine staged edit** — so the documented advice
+   *"check the listing for foreign paths"* passes it straight through.
+   ⇒ **CLASSIFY, DO NOT SKIM. For every `M ` path, read THREE blobs and assert all three are
+   40 chars first:**
+   ```
+   h=$(git rev-parse "HEAD:$p"); i=$(git ls-files --stage -- "$p" | awk '{print $2}')
+   w=$(git hash-object "$p")
+   # i==h -> clean · w==h and i!=h -> STALE INDEX (a revert waiting to happen)
+   # w!=h -> a genuine edit; LEAVE IT ALONE
+   ```
+   ⛔ **Before clearing a stale entry, prove HEAD is a SUPERSET — "differs from HEAD" is not
+   the test, because a revert also differs.** Diff the two line sets and require **zero**
+   lines present only in the staged blob (all five read exactly 0). Then `git add <path>`
+   restores index == worktree == HEAD. ⚠️ Expect one false "staged-only" line per file from
+   whitespace/newline rendering — read it before dismissing it.
+
+   ⛔⛔ **AND `git add` ITSELF CAN PAGE-FAULT FOR MINUTES WHILE `git hash-object` ON THE SAME
+   FILES WORKS.** MEASURED 2026-09-07: `git add` exited **0xC0000006 (STATUS_IN_PAGE_ERROR)
+   WITH EMPTY STDERR** on all 8 retries, for minutes, on 13 paths — while `git hash-object`
+   on **the same paths in the same seconds** succeeded every time. **The mount was not down;
+   one code path was** (`add` reads the working file through a memory map). It then recovered
+   on its own, which is what makes it dangerous: it looks like a broken FILE, not a broken
+   MINUTE. ⇒ **an `add` failure is not evidence about the file.**
+   `stack/scripts/mm_commit.py` now falls back to `hash-object -w` + `update-index
+   --cacheinfo` after a SHORT ladder, and latches the state so the remaining paths skip the
+   probe. ⭐ `--cacheinfo` is also **strictly safer than `add` for a scoped commit**: it
+   writes exactly the entry named and cannot pick up a sibling file or a directory's contents.
+   `stack/scripts/commit_cacheinfo.py` is the standalone route for when `add` **and** file
+   reads are both failing — it stages from blobs already in the object store and reads the
+   worktree not at all. ⛔ Its hazard is therefore **staleness**, and the precondition is
+   ENFORCED rather than documented: it refuses when the staged blob differs from the worktree,
+   and reports **INCONCLUSIVE** — never agreement — when the worktree cannot be read.
+   ⚠️ Pinned by `stack/tests/test_mm_commit_page_fault_fallback.py`, which reproduces both
+   failures at the **real subprocess boundary** via a git shim and ships a
+   deliberate-regression arm for each. MEASURED while writing it: **a PATH shim is NOT
+   reachable** — Windows `CreateProcess` appends only `.exe`, so a `git.bat` on `PATH` is
+   silently ignored and the real git answers, and the test would have been green against a git
+   that was never shimmed.
+
 2. **Every crash leaves a stale `.git/index.lock`**, so the next attempt dies with *"Another git
    process seems to be running"* — that reads like contention but is debris. Confirm no git
    process is alive, then `rm -f .git/index.lock` (the index survives intact). Clear it between
