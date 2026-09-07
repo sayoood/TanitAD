@@ -230,3 +230,77 @@ bearing* head, not that vocabulary, and must not be quoted as satisfying it.
 ⚠️ **One further honesty stamp carried from the launcher, not discovered here:** all 4,719 v7.2 nav
 records carry provenance `ego-future` and the loader runs with `allow_oracle_nav=True`. **This is an
 ORACLE-NAV arm**, kept because it is refcv4b's own input and the comparison must hold it constant.
+
+---
+
+## 9. ⚠️ ADDENDUM 2026-09-07 01:30Z (03:30 Berlin) — WHAT CHANGED AFTER §4, INCLUDING A CORRECTION OF §4
+
+⛔ **§4's `~1.2 s/step => ~13.5 h` IS WRONG AND IS RETRACTED HERE.** `--log-every 50` means the log
+advances in 50-step jumps, so a 120 s poll that straddles two log lines reads 100 steps and a poll
+that does not reads 50. I quoted **the fastest single sample as the rate**. The honest figure for the
+same early window (23:16:12Z step 50 -> 23:30:13Z step 500) is **450 steps / 840 s = 1.87 s/step**,
+and the **sustained rate measured properly** at 01:23-01:29Z is **50 steps per 200 s = 4.0 s/step**:
+
+```
+01:21:58Z step 2400    01:25:18Z step 2450    01:28:38Z step 2500
+CPU ticks +3001 per 30 s sample, TWELVE consecutive samples -- i.e. exactly
+1.00 CPU-second per wall-second, never stalling.
+```
+
+⇒ **Expect ~45 h at the current measured rate, not 13.5 h.** Whoever schedules the eval must plan
+against that.
+
+### 9.1 ⛔ THE TRAINER DIED THREE TIMES. THE WATCHDOG RECOVERED IT.
+
+`train.stderr.log` (1,074 B, three identical tracebacks):
+
+```
+File "/workspace/TanitAD/stack/scripts/refc_v3_train.py", line 3850, in train
+    log.flush()
+OSError: [Errno 5] Input/output error
+```
+
+An EIO from the **MooseFS `/workspace` FUSE mount** while flushing `metrics.jsonl` — infrastructure,
+not the arm. Each death rolled back to the last `--save-every 500` checkpoint:
+
+| | UTC | |
+|---|---|---|
+| relaunch #1 | 00:39:03Z | from step 2200 -> pid 2560244 |
+| relaunch #2 | 00:47:17Z | from step 2200 -> pid 2560445 |
+| relaunch #3 | 00:54:58Z | from step 2200 -> **pid 2560646** (survived; past 2500 at 01:28Z) |
+
+⚠️ **THE TRAINER PID IN §1 IS STALE.** `2559052` is dead. The live trainer is **2560646** (PPID 1).
+Three `[v3] resumed hier at step 2000` lines in `train.log` are the resumes. Net cost: ~500 steps
+redone plus ~25 min. The storm was transient — no fourth crash in the 35 min since.
+
+### 9.2 ⛔ AND THE CRASH-LOOP GUARD WAS DEFEATED — MEASURED, THEN FIXED
+
+All three relaunches logged **`stall=0`** while making **zero net progress** (each resumed at 2000
+and died at 2200). The inherited guard from `sup_refcv5.sh` compares `st` to `prev_st` **but its
+ALIVE branch resets `stall=0` on every poll**, and this run had ~4 live polls between crashes. ⇒ a
+trainer that crashes *slowly* can never trip the 3-strike guard and would have burned all 40
+relaunches. **This is a defect in the programme's supervisor template, reproduced here verbatim.**
+
+Fixed in `sup_refcv5_v2b.sh`: `stall` now counts **relaunches that did not advance the run**
+(`st <= last_relaunch_step`) and only a relaunch can reset it; the ALIVE branch no longer touches it
+and instead reports a **hang** (alive, no step progress for ~20 min) **loudly without killing
+anything** — restarting a live job is a human's decision, not a watchdog's. Old watchdog `2559294`
+killed by **explicit PID**; new watchdog **`2561632`** adopted trainer `2560646` at resume point
+2500.
+
+### 9.3 ⭐ TWO FALSE ALARMS CAUGHT BEFORE THEY WERE REPORTED
+
+Both were surface reads that looked alarming and were not:
+
+1. **"cgroup memory 46.07 / 46.57 GiB = 98.9 % FULL."** The sound instrument is PSI, and
+   `memory.pressure` reads **`some avg10=0.00 avg60=0.00 avg300=0.00`**, `io.pressure` avg10 0.00.
+   That 98.9 % is page cache occupying free space, which is what page cache is for. **Not pressure,
+   not the cause.** No `oom_kill`, no swap.
+2. **"stuck at step 2250 across two reads 90 s apart."** With a 50-step log cadence at 4 s/step a log
+   line appears only every ~200 s, so a 90 s window legitimately sees no change. The decisive check
+   was CPU ticks (+3001 per 30 s, twelve samples) and `train.log` mtime, both of which said it was
+   computing the whole time.
+
+**Health at 01:29:34Z:** GPU at **max clocks 1740/1740 MHz**, 42 C, 284 W of 300 W under load, **all
+throttle reasons Not Active**, sole compute app is our own pid. 1 main + 6 dataloader workers, **no
+orphans** left by the three crashes. `train.stderr.log` has taken **no new bytes since 00:54Z**.
