@@ -4690,3 +4690,53 @@ is d=1024, so "6.489 beats 5.756" is not supported either. Recorded in code besi
 * `…/2026-08-19-simwam-analysis/raw/h_rank16_floor_reconcile.json` — DINOv3 on the 130-clip corpus, swept in n
 * `…/2026-08-19-simwam-analysis/raw/h_rank16_floor_valclips.json` — DINOv3 on the 12 val clips (the apples-to-apples floor)
 * `…/2026-08-19-simwam-analysis/raw/h_rank21_partic_nbias.json` — the synthetic finite-n control with closed-form truth
+
+
+---
+
+## ⭐ 2026-09-07 — THE `os` ADE DISAGREEMENT IS SETTLED: CROSS-RIG ARGMAX TIE-BREAKING, NOT AN INSTRUMENT DEFECT
+
+⛔ **This registry states `os` = 0.2975 with NO caveat.** That figure is the **A40 roll**. Two other
+independent rigs read **0.2965**, and `os_navzero` reads 0.3926 against the registry's 0.3928. A
+reader quoting 0.2975 as a settled absolute is quoting one rig's tie-break.
+
+**MEASURED, three independent surfaces, refcv4b @ 40,284 (md5 `99b573e8277d94a5e3bfbf630cb4d751`)
+on the 141-episode / 4,823-window B1 v7.2 EVAL grid:**
+
+| arm | A40 (this registry) | Thor | dev-box RTX 4060 |
+|---|---:|---:|---:|
+| `os` | 0.2975 | 0.2965 | **0.2965** |
+| `os_navzero` | 0.3928 | — | **0.3926** |
+| `ha` / `ha0` / `ha0_ext` | 0.2996 / 0.6723 / 0.2874 | exact | **bit-exact** |
+
+⭐ **THE DISCRIMINATOR IS THAT THE MODEL-FREE ARMS ARE BIT-EXACT ON ALL THREE** — 66 of 66 rows
+across all four families. ⇒ it is **not** the grid, **not** the join, **not** the analysis path and
+**not** the tool. The only thing that differs is the model's own **discrete selection**: an argmax
+over **117 anchors** whose top scores are near-equal resolves differently under different
+floating-point orderings. ⇒ **cross-hardware ARGMAX TIE-BREAKING.**
+
+⛔⛔ **NO PAIRED MARGIN MOVES, AND THAT IS THE POINT.** `refcv4b − refcv3` reproduces at
+**−0.1455 [−0.1655, −0.1240]** against the published **−0.1444 [−0.1647, −0.1227]**; the trivial
+ties hold (`os − ha` −0.0032 vs −0.0021, `os − ha0_ext` +0.0091 vs +0.0101, neither separated);
+**13 of 14 paired cells agree on `separated`.**
+
+⚠️ **The single flip is `os − os_navshuf`, and it is a fragility finding, not a disagreement.** Its
+published upper bound was **+0.0001 m — one tenth of a millimetre from zero** — and a 1.1 mm
+cross-rig shift carried it across. It is a **nav control**, not a bar, so no published conclusion
+moves. It is now classified **NOT YET MEASURED (separated but FRAGILE)** rather than as a direction.
+⭐ Any cell whose interval clears zero by less than the cross-rig shift is in the same position,
+whatever its p-value.
+
+⚠️ **AND ONE PUBLISHED IDENTITY NEEDS ITS SCOPE:** *"`ha` differs on 0/4,823 windows"* holds
+**WITHIN a rig**. **Across rigs it is 2/4,823** at float32 — with the paired delta still exactly 0
+to ten decimal places. The claim is true; its scope was never stated.
+
+⇒ **THE RULE THIS LEAVES BEHIND: quote `os` WITH ITS RIG, or quote the PAIRED MARGIN instead.**
+Absolute ADE is rig-dependent at the third decimal on an anchor-selecting model; paired margins are
+not. This is the `scope-error` family with the scope being **hardware** — a sibling of the control
+measured on the pod, the status word applied to unobserved records, and the number attributed to the
+wrong cause.
+
+**Registered as `D-OS-ADE-CROSSRIG-RESOLVED`.** Evidence:
+`…/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/` (`RESULT.md` §2.1,
+`raw/REPRO_CHECK.json`, `raw/refcv4b_devbox.json`).
