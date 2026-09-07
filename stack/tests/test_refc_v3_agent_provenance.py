@@ -415,9 +415,16 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE():
     p = t.build_parser()
     # The enabling context, so a knob under test is never refused for a reason
     # that has nothing to do with the knob.
+    # ⭐ WP-D's seam is enabled here for exactly the reason `--agents oracle`
+    # is: `--w-bev-aux` REFUSES without `--bev-aux col|xcol` (a weight with no
+    # head is the `w_agent` defect verbatim — a term stamped into config.json
+    # and silently skipped), so without this the probe would have no admissible
+    # value and would report the knob unstampable for a reason that has nothing
+    # to do with the knob.
     base = ["--out", "x", "--arm", "hier", "--image-hw", "256", "640",
             "--agents", "oracle", "--agent-rig-camera", "nominal",
-            "--agent-join", "j.jsonl"]
+            "--agent-join", "j.jsonl",
+            "--bev-aux", "col", "--w-bev-aux", "0.1"]
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of
     # values would be the rotting list this test exists to avoid.

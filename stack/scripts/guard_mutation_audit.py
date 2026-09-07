@@ -102,6 +102,7 @@ MARKER = BACKUP / "ACTIVE"
 TEST_FILES = ("tests/test_refc_v3_agent_provenance.py",
               "tests/test_refc_v3_refcv5_wiring.py",
               "tests/test_refc_v3_agent_join.py",
+              "tests/test_bev_aux.py",
               "tests/test_guard_mutation_audit.py")
 
 #: Set in the pytest subprocess to the KEY of the mutation currently applied
@@ -145,6 +146,9 @@ _AGENTS = "tanitad/refs/refc_agents.py"
 _PROV = "tests/test_refc_v3_agent_provenance.py"
 _WIRE = "tests/test_refc_v3_refcv5_wiring.py"
 _SELF = "tests/test_guard_mutation_audit.py"
+_BEVD = "tanitad/data/bev_aux.py"          # WP-D target builder
+_REFC = "tanitad/refs/refc.py"             # WP-D head placement
+_BEVT = "tests/test_bev_aux.py"
 
 MUTATIONS: tuple[Mutation, ...] = (
     Mutation(
@@ -300,6 +304,59 @@ MUTATIONS: tuple[Mutation, ...] = (
         caught_by=(f"{_PROV}::test_P2_every_knob_is_recoverable_from_the_"
                    "stamp_BY_VALUE",),
         source="mm-decisions M18 escalation #3",
+    ),
+    # ---- WP-D (E-BEV-AUX-1): the BEV auxiliary target and its head ---------
+    Mutation(
+        key="bev_mirrored_world",
+        defect=("the ego-frame `+y LEFT` convention flipped. MEASURED by the "
+                "parked-car experiment and NOT assumed; `E-DEC-18`'s build "
+                "stated why: 'a sign error here does not crash and does not "
+                "show in a loss curve, it teaches a MIRRORED world' -- every "
+                "agent placed on the wrong side, at the right range."),
+        path=_BEVD,
+        old="        dx = px - cx\n        dy = py - cy\n",
+        new="        dx = px - cx\n        dy = py + cy\n",
+        caught_by=(f"{_BEVT}::test_MUTATION_mirrored_world_moves_every_column",
+                   f"{_BEVT}::test_every_occupied_cell_is_confirmed_by_an_"
+                   "independent_predicate"),
+        source="WP-D / E-BEV-AUX-1",
+    ),
+    Mutation(
+        key="bev_two_state_merge",
+        defect=("the THIRD STATE removed -- occluded cells supervised as "
+                "FREE. MEASURED on the full B1 EVAL join: 17.656 % of cells "
+                "are agent-occluded and 27.958 % of GT-OCCUPIED cells are, so "
+                "the two-state target asserts that more than a quarter of the "
+                "agents in the grid are free road. WP-A flagged exactly this "
+                "merge on WP-D's critical path."),
+        path=_BEVD,
+        old=('    if occlusion == "mask":\n'
+             "        mask &= ~shadow_mask(occ, spec)\n"),
+        new='    if occlusion == "mask":\n        pass\n',
+        caught_by=(f"{_BEVT}::test_MUTATION_two_state_merge_supervises_"
+                   "occluded_space_as_free",
+                   f"{_BEVT}::test_census_counts_are_consistent_literals"),
+        source="WP-D / E-BEV-AUX-1",
+    ),
+    Mutation(
+        key="bev_head_not_constructed_last",
+        defect=("an RNG draw inserted before the BEV head, IN THE AUX ARM "
+                "ONLY. Module construction draws from the global RNG, so a "
+                "head built anywhere but LAST silently changes every "
+                "subsequent module's INITIAL WEIGHTS, and the aux-on/aux-off "
+                "A/B then differs in the SEED as well as in the lever -- a "
+                "one-variable violation invisible in every log. An "
+                "UNCONDITIONAL draw is NOT this defect and correctly SURVIVES: "
+                "it shifts both arms equally. MEASURED: the first version of "
+                "this mutant was unconditional and survived."),
+        path=_REFC,
+        old="        self.route_head = nn.Linear(feat, N_ROUTE)\n",
+        new=("        self.route_head = nn.Linear(feat, N_ROUTE)\n"
+             "        if getattr(cfg, 'bev_aux', None) is not None:\n"
+             "            _m = nn.Linear(7, 7)\n            del _m\n"),
+        caught_by=(f"{_BEVT}::test_shared_params_bit_identical",
+                   f"{_BEVT}::test_planner_output_bit_identical"),
+        source="WP-D / E-BEV-AUX-1",
     ),
 )
 

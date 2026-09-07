@@ -91,6 +91,8 @@ from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
 from tanitad.refs import refc_agents as _refc_agents  # noqa: E402
+from tanitad.refs import refc_bev_aux as _refc_bev_aux  # noqa: E402  (WP-D)
+from tanitad.data import bev_aux as _bev_aux  # noqa: E402  (WP-D target)
 from tanitad.models import kinematic as kin  # noqa: E402
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
 import numpy as _np  # noqa: E402
@@ -511,6 +513,52 @@ def _pin_refcv5_seams(cfg, args) -> None:
               f"kappa_max {core.decoder.feasible_kappa_max}, mu "
               f"{core.decoder.feasible_mu}, entry "
               f"{core.decoder.feasible_entry}", flush=True)
+    # --- WP-D: the BEV auxiliary head (TRAINING-ONLY) --------------------- #
+    # ⛔ Its refusals mirror the `--w-agent` family EXACTLY, because the failure
+    # they prevent is the same one and it has already happened here: a seam
+    # declared in config.json whose loss term is silently skipped, so the run
+    # record claims a lever that never entered the gradient.
+    _bev_mode = str(getattr(args, "bev_aux", "off"))
+    _w_bev = float(getattr(args, "w_bev_aux", 0.0))
+    if _bev_mode != "off":
+        if _w_bev <= 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --bev-aux %s with --w-bev-aux 0 builds a head, stamps "
+                "it into config.json and puts ZERO gradient into the trunk. "
+                "Set --w-bev-aux > 0, or --bev-aux off." % _bev_mode)
+        if not getattr(args, "agent_join", None):
+            raise SystemExit(
+                "[v3] ⛔ --bev-aux %s without --agent-join has NO LABELS. The "
+                "BEV target is built from the SAME obstacle.offline join the "
+                "detection head uses; without it every window is NO_LABEL and "
+                "the term would be an exact 0.0 for the whole run. Pass "
+                "--agent-join <joins/train2400_agents.jsonl.xz>." % _bev_mode)
+        _gh, _gw = core.encoder.grid_shape
+        core.bev_aux = _refc_bev_aux.BEVAuxConfig(
+            enable=True, kind=_bev_mode,
+            n_rng=int(getattr(args, "bev_aux_rng", 24)),
+            n_az=int(_gw),
+            d_tok=int(getattr(args, "bev_aux_dtok", 64)),
+            hidden=int(getattr(args, "bev_aux_hidden", 256)),
+            w=_w_bev,
+            pos_weight=float(getattr(args, "bev_aux_pos_weight", 30.61)),
+            occlusion=str(getattr(args, "bev_aux_occlusion", "mask")),
+            detach_trunk=bool(getattr(args, "bev_aux_detach", False)))
+        print("[v3] WP-D BEV aux ON: kind=%s grid=%dx%d target=%dx%d w=%.4g "
+              "occlusion=%s detach=%s pos_weight=%.4g"
+              % (_bev_mode, _gh, _gw, core.bev_aux.n_rng, core.bev_aux.n_az,
+                 _w_bev, core.bev_aux.occlusion, core.bev_aux.detach_trunk,
+                 core.bev_aux.pos_weight), flush=True)
+    elif _w_bev > 0.0:
+        # ⛔⛔ THE SILENT ONE, and the reason this branch exists: with
+        # `--bev-aux off` no head is built, so `out` carries no `bev_logits`
+        # and the loss-time guard skips the term -- while `w_bev_aux` is
+        # stamped into config.json. That is the `w_agent` defect verbatim.
+        raise SystemExit(
+            "[v3] ⛔ --bev-aux off, but --w-bev-aux %.4g > 0. No head is "
+            "built, so `bev_logits` never appears in `out` and the term is "
+            "SILENTLY SKIPPED while the weight is stamped into config.json. "
+            "Pass --bev-aux col|xcol, or --w-bev-aux 0." % _w_bev)
     # --- WP-6: the agent seam -------------------------------------------- #
     if getattr(args, "agents", "off") != "off":
         acfg = _refc_agents.AgentSeamConfig(
@@ -1034,6 +1082,17 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "already": "_pin_refcv5_seams: the `--agents off` branch and the "
                    "`--agents head` w_agent/agent_join refusals",
     },
+    "w_bev_aux": {
+        "flag": "--w-bev-aux", "term": "WP-D BEV auxiliary loss",
+        "gate": lambda a: (str(getattr(a, "bev_aux", "off")) != "off"
+                           and bool(getattr(a, "agent_join", None)),
+                           "--w-bev-aux needs `--bev-aux col|xcol` AND "
+                           "`--agent-join` (no head => no `bev_logits` in "
+                           "`out`; no join => no target)"),
+        "mask": None,
+        "already": "_pin_refcv5_seams: the `--bev-aux off` branch and the "
+                   "`--bev-aux` w/join refusals",
+    },
     "agent_w_project": {
         "flag": "--agent-w-project", "term": "agent projection consistency",
         "gate": lambda a: (str(getattr(a, "agents", "off")) != "off",
@@ -1232,6 +1291,11 @@ class V3Dataset(RouteV21Dataset):
     #: hide drops the loss is supposed to report.
     agent_pad: int = 0
     agent_join_stats: dict | None = None
+    #: WP-D. ``PolarBEVSpec | None`` -- while it is None the batch carries NO
+    #: ``bev_occ``/``bev_mask`` and ``--w-bev-aux > 0`` REFUSES at loss time,
+    #: for exactly the reason the ``agent_join`` guard above exists.
+    bev_spec = None
+    bev_occlusion: str = "mask"
 
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
@@ -1684,7 +1748,7 @@ class V3Dataset(RouteV21Dataset):
         # MEASURED mount height spans 1.245-1.607 m (37 distinct
         # values in 40 clips). `agent_ep` is the join key the loss
         # uses; it is the SAME id the join itself was matched on.
-        return {"agent_ep": torch.tensor(eid, dtype=torch.long),
+        item = {"agent_ep": torch.tensor(eid, dtype=torch.long),
                 "agent_box": t["box"][0], "agent_yaw": t["yaw"][0],
                 "agent_cls": t["cls"][0], "agent_valid": t["valid"][0],
                 "agent_occ": t["occ"][0], "agent_rates": t["rates"][0],
@@ -1693,6 +1757,19 @@ class V3Dataset(RouteV21Dataset):
                 "agent_n_raw": torch.tensor(int(n_raw), dtype=torch.long),
                 "agent_n_truncated": torch.tensor(max(n_raw - pad, 0),
                                                   dtype=torch.long)}
+        # ⭐ WP-D. Built from the RAW join rows (``ag``, pre-truncation and
+        # pre-visibility-filter), not from the padded slot block: the slot
+        # targets are a DETECTION parameterisation with a fixed query budget,
+        # and rasterising them would silently drop whatever `--agent-pad`
+        # truncated. `labelled=has` keeps NO_LABEL and labelled-clear apart --
+        # both give an all-zero occupancy and they differ ONLY in the mask.
+        if self.bev_spec is not None:
+            _occ, _msk = _bev_aux.build_target(
+                ag, labelled=bool(has), spec=self.bev_spec,
+                occlusion=self.bev_occlusion)
+            item["bev_occ"] = torch.from_numpy(_occ)
+            item["bev_mask"] = torch.from_numpy(_msk)
+        return item
 
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
@@ -2418,6 +2495,45 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         extra["agent_rows_with_cam"] = float(ag["n"]["rows_with_cam"])
         extra["agent_rows_no_cam"] = float(ag["n"]["rows_no_cam"])
 
+    # ---- WP-D: the BEV auxiliary loss -------------------------------------
+    # ⛔ `obstacle.offline` enters HERE, in the loss, and nowhere in the
+    # forward -- the vision-only rule enforced by WHERE the tensor is read.
+    w_bev = float(getattr(model, "_w_bev_aux", 0.0))
+    if w_bev > 0.0 and "bev_occ" not in batch:
+        # ⛔⛔ REFUSE, DO NOT SKIP -- the `--w-agent` guard one level down, and
+        # for the same measured reason: a run that trains, converges, writes a
+        # checkpoint and stamps `w_bev_aux` while the head was never supervised
+        # would read as "the BEV auxiliary does not help".
+        raise SystemExit(
+            "[v3] ⛔ --w-bev-aux > 0 but the batch carries no `bev_occ`: this "
+            "dataset has no BEV target wired (`ds.bev_spec` is None), so the "
+            "auxiliary loss would be SILENTLY SKIPPED while config.json "
+            "stamps the weight. Pass --agent-join, or --w-bev-aux 0.")
+    if w_bev > 0.0 and "bev_logits" in out and "bev_occ" in batch:
+        _bo = batch["bev_occ"].to(device)
+        _bm = batch["bev_mask"].to(device)
+        if bool(getattr(model, "_bev_shuffle", False)):
+            # ⭐ THE INFORMATION CONTROL (--bev-aux-shuffle). A DETERMINISTIC
+            # roll, not a random permutation, on purpose: `randperm` would
+            # consume RNG and desynchronise this arm's every subsequent draw
+            # from the real arm's, so the control would differ in the seed as
+            # well as in the information — the same one-variable violation the
+            # head's construction order exists to avoid. The training loader
+            # runs with shuffle=True, so row i-1 is an unrelated window.
+            _bo = torch.roll(_bo, shifts=1, dims=0)
+            _bm = torch.roll(_bm, shifts=1, dims=0)
+        _bv = _refc_bev_aux.bev_aux_loss(
+            out["bev_logits"], _bo, _bm,
+            pos_weight=float(core.bev_aux.pos_weight))
+        loss = loss + w_bev * _bv["loss"]
+        extra["bev"] = _bv["loss"]
+        # ⭐ n PER TERM, in the log row, always. `bev_n_supervised` is how a
+        # batch of NO_LABEL windows becomes VISIBLE as an exact 0.0 with its
+        # reason, instead of a term that quietly contributes nothing; and
+        # `bev_n_pos` is the base rate the controls must be read against.
+        extra["bev_n_supervised"] = float(_bv["n_supervised"])
+        extra["bev_n_pos"] = float(_bv["n_pos"])
+
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
@@ -2622,6 +2738,17 @@ def _seam_stamp(cfg, args) -> dict:
         "graft_target_latent": bool(core.graft_target_latent),
         "grounded_selector": bool(core.grounded_selector),
         "graft_imagination": bool(core.graft_imagination),
+        # ⭐⭐ WP-D: the BEV auxiliary head, STRUCTURALLY and not only inside
+        # `agent_knobs`. ⛔ `bev_aux_occlusion` in particular is what
+        # distinguishes the pre-registered arm from its DELIBERATE-REGRESSION
+        # twin (`none` supervises occluded space as free, mislabelling a
+        # MEASURED 27.958 % of occupied cells), and a run record that cannot
+        # say which of the two it was makes the panel unfalsifiable — the M18
+        # finding with a different knob in it.
+        "bev_aux": (None if getattr(core, "bev_aux", None) is None
+                    else dict(core.bev_aux.to_dict(),
+                              shuffled_target=bool(
+                                  getattr(args, "bev_aux_shuffle", False)))),
         "tactical_speed_input": bool(core.tactical_speed_input),
         "lan_enable": bool(getattr(args, "goal_str", False)
                            or getattr(args, "graft_lan", False)),
@@ -2768,8 +2895,8 @@ def _seam_stamp(cfg, args) -> dict:
 
 def agent_knob_dests(parser: argparse.ArgumentParser | None = None
                      ) -> tuple[str, ...]:
-    """Every ``--agent-*`` / ``--w-*`` option's ``dest``, **read off the
-    parser**, sorted.
+    """Every ``--agent-*`` / ``--w-*`` / ``--bev-aux*`` option's ``dest``,
+    **read off the parser**, sorted.
 
     ⛔ **DERIVED, NEVER LISTED.** MEASURED 2026-09-05 (mm-decisions M18,
     escalation #3): ``w_agent`` and ``w_u0`` were reported absent from
@@ -2778,12 +2905,24 @@ def agent_knob_dests(parser: argparse.ArgumentParser | None = None
     A hand-written list of knobs to stamp is the same defect deferred: it is
     correct the day it is written and wrong the day a knob is added. This
     function asks argparse, so the stamp cannot fall behind the CLI.
+
+    ⭐ **WIDENED 2026-09-07 to ``--bev-aux*`` (WP-D), and the reason is the M18
+    finding with a different knob in it.** Only ``--w-bev-aux`` starts with
+    ``--w-``, so the WP-D family would otherwise have reached ``config.json``
+    with its WEIGHT recorded and its POLICY absent — and
+    ``--bev-aux-occlusion`` is precisely what separates the pre-registered arm
+    from its DELIBERATE-REGRESSION twin (``none`` supervises occluded space as
+    free, mislabelling a MEASURED 27.958 % of occupied cells). A record that
+    cannot say which of the two ran makes the panel unfalsifiable. Same for
+    ``--bev-aux-detach`` and ``--bev-aux-shuffle``, which are the other two
+    control arms.
     """
     ap = parser if parser is not None else build_parser()
     return tuple(sorted({
         a.dest for a in ap._actions
         if a.dest and a.dest != argparse.SUPPRESS
         and any(o.startswith("--agent") or o.startswith("--w-")
+                or o.startswith("--bev-aux")
                 for o in a.option_strings)}))
 
 
@@ -3168,7 +3307,8 @@ def assert_knobs_stamped(args, stamp: dict,
     missing = {k: v for k, v in want.items() if k not in got or got[k] != v}
     if missing:
         raise SystemExit(
-            f"[v3] ⛔ {len(missing)} --agent-*/--w-* knob(s) do NOT reach "
+            f"[v3] ⛔ {len(missing)} --agent-*/--w-*/--bev-aux* knob(s) do NOT "
+            f"reach "
             f"config.json: {sorted(missing)}. A run that cannot state its own "
             "weights makes every later comparison between arms unfalsifiable "
             "(mm-decisions M18).")
@@ -3604,6 +3744,8 @@ def train(args) -> dict:
     # attributes, never buffers -- they must not enter state_dict and change
     # checkpoint compatibility (the `_seam_conf` discipline).
     model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
+    model._w_bev_aux = float(getattr(args, "w_bev_aux", 0.0))   # WP-D
+    model._bev_shuffle = bool(getattr(args, "bev_aux_shuffle", False))
     model._w_u0 = float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT))
     # E15 (GP-2): same carrier, same reason. `_check_goal_point_args` has
     # already refused `--goal-point-inject` with a zero weight, so a built head
@@ -3820,6 +3962,15 @@ def train(args) -> dict:
         print(f"[v3] agent join loaded: {_rd.n_records} records / "
               f"{_rd.n_clips} clips (filtered out "
               f"{_rd.n_records_filtered_out}) in {time.time() - _t_join:.1f} s")
+        # ⭐ WP-D: the SAME reader, the SAME join, one target more. The BEV
+        # spec is attached BEFORE `enable_agent_join` runs its census so a
+        # single pass over the window index covers both.
+        if str(getattr(args, "bev_aux", "off")) != "off":
+            ds.bev_spec = _bev_aux.PolarBEVSpec(
+                n_az=int(cfg.core.encoder.grid_shape[1]),
+                n_rng=int(getattr(args, "bev_aux_rng", 24)),
+                r_max_m=float(getattr(args, "bev_aux_rmax", 60.0)))
+            ds.bev_occlusion = str(getattr(args, "bev_aux_occlusion", "mask"))
         agent_stats = ds.enable_agent_join(
             _rd, pad=int(getattr(args, "agent_pad", 0)),
             allow_legacy_ids=bool(getattr(
@@ -4146,6 +4297,7 @@ def train(args) -> dict:
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
     t0, model = time.time(), model.train()
     it = iter(dl)
+    _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
     while step < args.steps:
         try:
             batch = next(it)
@@ -4163,6 +4315,26 @@ def train(args) -> dict:
         losses = compute_losses_v3(model, batch, device, mode=args.mode,
                                    ablate_frames=args.ablate_frames)
         losses["withheld_bank_active"] = float(_wb_active)
+        # ⛔⛔ WP-D: THE LOSS-SCALE PARITY GATE, AT THE FIRST SUPERVISED STEP.
+        # `E-DEC-18b` MEASURED the sibling PSG term sitting 10-30x above the
+        # objective it was meant to support, at EVERY weight tested, and
+        # destroying the encoder — and that was visible only AFTER the GPU-days
+        # were spent. This is that check, moved to before them. It fires ONCE,
+        # on the first step that actually had supervised cells (step 0 can be
+        # all-NO_LABEL, and a ratio computed on a 0.0 term would pass the gate
+        # while measuring nothing — the same vacuity the `n` in every log row
+        # exists to expose). ⛔ It RAISES SystemExit; a run whose aux term
+        # already dwarfs its objective should not spend the card.
+        if (not _bev_parity_checked
+                and float(losses.get("bev_n_supervised", 0.0)) > 0.0
+                and "bev" in losses):
+            _bev_parity = _refc_bev_aux.assert_loss_parity(
+                float(getattr(model, "_w_bev_aux", 0.0)),
+                float(losses["bev"].detach()), float(losses["traj"].detach()))
+            _bev_parity_checked = True
+            print("[v3] WP-D loss parity OK at step %d: "
+                  "w*bev/traj = %.4f in %s" % (step, _bev_parity["ratio"],
+                                               _bev_parity["band"]), flush=True)
         opt.zero_grad(set_to_none=True)
         losses["loss"].backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
@@ -4703,6 +4875,75 @@ def build_parser() -> argparse.ArgumentParser:
                          "scaling. Soft is the default BECAUSE a hard mask has "
                          "zero gradient to the presence head through the "
                          "planner loss.")
+    # ---- WP-D: the BEV auxiliary loss (TRAINING-ONLY) -------------------
+    g5.add_argument("--bev-aux", default="off", choices=["off", "col", "xcol"],
+                    help="WP-D. Supervise the trunk's feature map with a POLAR "
+                         "agent-occupancy target built from the same "
+                         "obstacle.offline join --agent-join loads. TRAINING-"
+                         "ONLY: the head is constructed LAST and removing it "
+                         "is BIT-IDENTICAL at the planner's output (pinned by "
+                         "stack/tests/test_bev_aux.py). 'col' = one ray MLP "
+                         "per azimuth column, no cross-column mixing (the "
+                         "CHEAP FLOOR, and the arm the cylindrical projection "
+                         "justifies); 'xcol' = one self-attention block over "
+                         "the column tokens, so cross-column reasoning is an "
+                         "ABLATION rather than an assumption.")
+    g5.add_argument("--w-bev-aux", type=float, default=0.0,
+                    help="weight on the BEV auxiliary loss. ⛔ Checked against "
+                         "the trajectory loss at step 0 by "
+                         "refc_bev_aux.assert_loss_parity: E-DEC-18b MEASURED "
+                         "the sibling PSG term sitting 10-30x above the "
+                         "objective it was meant to support, at EVERY weight "
+                         "tested, and destroying the encoder.")
+    g5.add_argument("--bev-aux-occlusion", default="mask",
+                    choices=["mask", "none"],
+                    help="the THIRD STATE. 'mask' (default) marks cells behind "
+                         "an occluder UNOBSERVABLE and does not supervise "
+                         "them. ⛔ 'none' is the DELIBERATE REGRESSION: it "
+                         "supervises occluded space as FREE, which is the "
+                         "two-state merge WP-A flagged. MEASURED on B1 EVAL "
+                         # ⚠️ `%%`, NOT `%`. argparse formats a help string
+                         # against a dict, so a bare `% o` becomes a `%o`
+                         # conversion and `--help` dies with `TypeError: %o
+                         # format: an integer is required, not dict`. MEASURED
+                         # here 2026-09-07: this exact defect, caught by
+                         # `test_p14_trainer_help_lists_the_flags_and_mine_are_ascii`
+                         # -- which is why that test asserts on the RETURN CODE
+                         # of a real `--help` subprocess and not on the text.
+                         "(26,394 frames): 17.66 %% of cells are occluded and "
+                         "27.96 %% of OCCUPIED cells are, so 'none' mislabels "
+                         "more than a quarter of the agents as empty road.")
+    g5.add_argument("--bev-aux-detach", action="store_true",
+                    help="⛔ DELIBERATE REGRESSION: the head reads a DETACHED "
+                         "feature map, so it learns the target and teaches the "
+                         "trunk NOTHING. The arm that proves the aux gradient "
+                         "actually reaches the trunk.")
+    g5.add_argument("--bev-aux-rng", type=int, default=24,
+                    help="range bins over --bev-aux-rmax (24 x 2.5 m = 60 m, "
+                         "matching bev_raster's x_fwd_m).")
+    g5.add_argument("--bev-aux-rmax", type=float, default=60.0,
+                    help="target range, metres.")
+    g5.add_argument("--bev-aux-pos-weight", type=float, default=30.61,
+                    help="BCE positive-class weight. ⭐ A pre-registered "
+                         "CONSTANT from the MEASURED corpus base rate "
+                         "(3.1634 %% of supervised cells over the whole B1 "
+                         "EVAL join => (1-p)/p = 30.61), NEVER computed from "
+                         "the batch: a batch-derived weight makes two arms "
+                         "with identical flags optimise different objectives.")
+    g5.add_argument("--bev-aux-shuffle", action="store_true",
+                    help="⭐ THE INFORMATION CONTROL. Pair each row's features "
+                         "with ANOTHER row's BEV target (a deterministic "
+                         "roll-by-1 over a SHUFFLED batch, so the partner is "
+                         "an unrelated window and NO RNG is consumed — the "
+                         "arm stays seed-comparable with the real one). Same "
+                         "head, same parameter count, same gradient "
+                         "magnitude, ZERO information. ⛔ If the real arm's "
+                         "gain over aux-off is matched here, the gain is a "
+                         "capacity/regularisation effect and NOT agent "
+                         "content — the WP-A `shuffled` control, moved from "
+                         "the probe into the trainer.")
+    g5.add_argument("--bev-aux-hidden", type=int, default=256)
+    g5.add_argument("--bev-aux-dtok", type=int, default=64)
     ap.add_argument("--withheld-bank", default="fixed",
                     choices=list(refc.WITHHELD_BANK_MODES),
                     help="H-EGO-LIT-4: the speed a WITHHELD row's anchor bank "

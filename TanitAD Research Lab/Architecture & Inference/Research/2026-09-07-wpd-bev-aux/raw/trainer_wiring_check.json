@@ -1,0 +1,80 @@
+{
+  "refusals": [
+    {
+      "case": "bev_aux_on_zero_weight",
+      "fired": true,
+      "needle": "ZERO gradient"
+    },
+    {
+      "case": "bev_aux_on_no_join",
+      "fired": true,
+      "needle": "NO LABELS"
+    },
+    {
+      "case": "weight_without_head",
+      "fired": true,
+      "needle": "SILENTLY SKIPPED"
+    }
+  ],
+  "flags": [
+    {
+      "flag": "bev_aux",
+      "default": "off"
+    },
+    {
+      "flag": "w_bev_aux",
+      "default": 0.0
+    },
+    {
+      "flag": "bev_aux_occlusion",
+      "default": "mask"
+    },
+    {
+      "flag": "bev_aux_detach",
+      "default": false
+    },
+    {
+      "flag": "bev_aux_rng",
+      "default": 24
+    },
+    {
+      "flag": "bev_aux_rmax",
+      "default": 60.0
+    },
+    {
+      "flag": "bev_aux_pos_weight",
+      "default": 30.61
+    }
+  ],
+  "happy": {
+    "bev_aux_cfg": {
+      "enable": true,
+      "kind": "col",
+      "n_rng": 24,
+      "n_az": 20,
+      "d_tok": 64,
+      "hidden": 256,
+      "n_heads": 4,
+      "w": 0.1,
+      "pos_weight": 30.61,
+      "occlusion": "mask",
+      "detach_trunk": false
+    },
+    "loss": 2.0304501056671143,
+    "n_supervised": 732,
+    "n_pos": 48,
+    "base_rate": 0.06557377049180328,
+    "trunk_grad_absnorm": 6.511162757873535,
+    "head_params": 140632,
+    "target_occ_sum": 26.0,
+    "target_frac_ignored": 0.2375,
+    "loss_parity": {
+      "ratio": 0.40609002113342285,
+      "band": [
+        0.02,
+        3.0
+      ],
+      "ok": true
+    }
+  }
+}

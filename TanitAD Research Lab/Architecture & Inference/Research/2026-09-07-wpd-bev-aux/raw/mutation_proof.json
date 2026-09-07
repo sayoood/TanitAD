@@ -1,0 +1,84 @@
+{
+  "baseline_green": true,
+  "n_mutations": 6,
+  "n_killed": 6,
+  "survived": [],
+  "results": [
+    {
+      "mutation": "M1_MIRRORED_WORLD",
+      "file": "tanitad/data/bev_aux.py",
+      "why": "The ego-frame convention is +x fwd / +y LEFT, MEASURED by the parked-car experiment. E-DEC-18's build: 'a sign error here does not crash and does not show in a loss curve, it teaches a MIRRORED world.'",
+      "killed": true,
+      "n_failed": 3,
+      "failed_tests": [
+        "test_MUTATION_mirrored_world_moves_every_column",
+        "test_MUTATION_pinhole_fov_deletes_the_near_lateral_band",
+        "test_every_occupied_cell_is_confirmed_by_an_independent_predicate"
+      ],
+      "summary": "3 failed, 33 passed in 1.60s"
+    },
+    {
+      "mutation": "M2_PINHOLE_FOV",
+      "file": "tanitad/data/bev_aux.py",
+      "why": "The retracted 2026-08-21 error: 2*atan((W/2)/f) gives 92.641 deg on a CYLINDRICAL corpus whose true field is 120 deg (rig name camera_front_wide_120fov). It silently deletes every agent between 46.32 and 60 deg of bearing.",
+      "killed": true,
+      "n_failed": 6,
+      "failed_tests": [
+        "test_MUTATION_mirrored_world_moves_every_column",
+        "test_MUTATION_pinhole_fov_deletes_the_near_lateral_band",
+        "test_agrees_with_psg_targets_azimuth_column",
+        "test_azimuth_column_analytic_literals",
+        "test_azimuth_column_is_left_right_mirror_symmetric",
+        "test_footprint_reaching_into_the_field_is_kept_even_when_its_centre_is_not"
+      ],
+      "summary": "6 failed, 30 passed in 1.71s"
+    },
+    {
+      "mutation": "M3_TWO_STATE_MERGE",
+      "file": "tanitad/data/bev_aux.py",
+      "why": "WP-A on WP-D's critical path: 'a scored negative still MERGES seen-and-empty with agent-occluded'. Supervising 'empty' on an occupied-but-occluded cell teaches the trunk that occluded space is free. MEASURED cost on B1 EVAL: 27.96 % of occupied cells are occluded.",
+      "killed": true,
+      "n_failed": 2,
+      "failed_tests": [
+        "test_MUTATION_two_state_merge_supervises_occluded_space_as_free",
+        "test_census_counts_are_consistent_literals"
+      ],
+      "summary": "2 failed, 34 passed in 1.73s"
+    },
+    {
+      "mutation": "M4_NO_LABEL_IS_CLEAR",
+      "file": "tanitad/data/bev_aux.py",
+      "why": "The join's own documentation: 'An ABSENT (clip, frame) line is NO_LABEL ..., never road clear'. The labels span ~20 s while egomotion runs 48-140 s, so most frames of a long clip carry no label at all.",
+      "killed": true,
+      "n_failed": 1,
+      "failed_tests": [
+        "test_MUTATION_no_label_treated_as_clear_road"
+      ],
+      "summary": "1 failed, 35 passed in 1.60s"
+    },
+    {
+      "mutation": "M5_TIE_BLIND_AP",
+      "file": "tanitad/refs/refc_bev_aux.py",
+      "why": "The per-sample AP breaks ties by array order, so a CONSTANT control reads 0.010236 against a base rate of 0.008333 (+22.8 %) and every arm would be ranked against an inflated floor. This defect was REAL in this module until its own control caught it on the first run.",
+      "killed": true,
+      "n_failed": 2,
+      "failed_tests": [
+        "test_CONTROL_all_zero_predictor_scores_iou_and_f1_exactly_zero",
+        "test_CONTROL_constant_score_reads_exactly_the_base_rate"
+      ],
+      "summary": "2 failed, 34 passed in 1.63s"
+    },
+    {
+      "mutation": "M6_HEAD_NOT_LAST",
+      "file": "tanitad/refs/refc.py",
+      "why": "Module construction draws from the global RNG. A head constructed before the end of __init__ silently changes every SUBSEQUENT module's INITIAL WEIGHTS in the aux arm only, so the aux-on/aux-off A/B differs in the SEED as well as in the lever \u2014 a one-variable violation invisible in every log. \u26a0\ufe0f The FIRST version of this mutant inserted an unconditional draw and SURVIVED, correctly: shifting both arms equally is not the defect. The mutant has to be arm-conditional to be the real one.",
+      "killed": true,
+      "n_failed": 2,
+      "failed_tests": [
+        "test_planner_output_bit_identical",
+        "test_shared_params_bit_identical"
+      ],
+      "summary": "2 failed, 34 passed in 1.71s"
+    }
+  ]
+}

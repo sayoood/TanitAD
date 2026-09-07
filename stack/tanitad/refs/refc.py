@@ -616,6 +616,22 @@ class RefCConfig:
     # in force, so this is never evaluated, and naming the real type here would
     # force a module-level import of the corpus-side raster/projection stack.
     agents: "object | None" = None
+    # ⭐ WP-D -- `refc_bev_aux.BEVAuxConfig | None`, the TRAINING-ONLY BEV
+    # auxiliary head. Declared for the same reason `agents` is: the trainer
+    # assigns `core.bev_aux = bcfg`, and on a dataclass without the field that
+    # assignment is an ad-hoc attribute the stamp would serialise for a model
+    # that built no head. `None` (not a disabled config) is the OFF state.
+    #
+    # ⛔⛔ WHEN IT IS SET, THE HEAD IS CONSTRUCTED **LAST** IN `__init__` AND
+    # CALLED **LAST** IN `forward`, AND BOTH ARE LOAD-BEARING. Module
+    # construction draws from the global RNG, so a head inserted anywhere
+    # earlier silently changes every subsequent module's initial weights and the
+    # "aux on vs aux off" A/B would differ in the SEED as well as in the lever --
+    # a one-variable violation invisible in every log. Pinned by
+    # `stack/tests/test_bev_aux.py::test_shared_params_bit_identical` and
+    # `::test_planner_output_bit_identical`.
+    # ⚠️ Annotated loosely on purpose, exactly like `agents` above.
+    bev_aux: "object | None" = None
     law: LawConfig = field(default_factory=LawConfig)
     strategic: StrategicCtxConfig = field(default_factory=StrategicCtxConfig)
     imagination: ImaginationConfig = field(default_factory=ImaginationConfig)
@@ -2700,6 +2716,28 @@ class RefCModel(nn.Module):
                 nn.Linear(feat + cfg.measurement.d_out, cfg.speed_hidden),
                 nn.ReLU(inplace=True),
                 nn.Linear(cfg.speed_hidden, cfg.speed_bins))
+        # ====================================================================
+        # ⛔⛔ WP-D BEV AUXILIARY HEAD -- THIS BLOCK MUST STAY LAST IN __init__
+        # ====================================================================
+        # Everything above draws from the global RNG at construction. Building
+        # this head here and NOWHERE ELSE is what makes an `aux on` model and an
+        # `aux off` model share BIT-IDENTICAL initial weights for every
+        # parameter they have in common -- i.e. what makes the A/B a
+        # one-variable comparison at step 0 rather than a lever-plus-seed
+        # change. ⛔ Do not insert a module after this one; add it above.
+        # Pinned by `stack/tests/test_bev_aux.py::test_shared_params_bit_identical`.
+        #
+        # ⛔ TRAINING-ONLY. Its output reaches no planner tensor; removing it is
+        # bit-identical at the planner's output
+        # (`::test_planner_output_bit_identical`). The published precedent is
+        # PhyLatent's Physical State Grounding, "used only during training and
+        # not required by the planner" (LIT-2, banked 2608.05720).
+        self.bev_aux_head: nn.Module | None = None
+        _bv = getattr(cfg, "bev_aux", None)
+        if _bv is not None and bool(getattr(_bv, "enable", False)):
+            from tanitad.refs import refc_bev_aux as _rb   # lazy; see imports
+            self.bev_aux_head = _rb.BEVAuxHead(
+                feat, cfg.encoder.grid_shape, _bv)
 
     # --- S6 goal provenance (the PI's admissibility check, in code) ----------
     @staticmethod
@@ -3242,6 +3280,15 @@ class RefCModel(nn.Module):
             centers = self._speed_bin_centers(logits.device, logits.dtype)
             out["speed_logits"] = logits
             out["target_speed"] = F.softmax(logits, dim=-1) @ centers
+        # ⛔⛔ WP-D -- THIS BLOCK MUST STAY LAST IN forward, for the same reason
+        # its constructor is last in __init__: it must not perturb any draw the
+        # decoder makes. It consumes NO RNG (no dropout, no sampling) and writes
+        # to no tensor the planner reads, so `out` minus this key is
+        # bit-identical to an `aux off` build's `out`. TRAINING-ONLY: nothing
+        # downstream of the planner may read `bev_logits`, and an eval path that
+        # did would be reading a head that does not exist at deployment.
+        if self.bev_aux_head is not None:
+            out["bev_logits"] = self.bev_aux_head(fmap)   # [B, n_rng, n_az]
         return out
 
 
@@ -3299,5 +3346,11 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,
         "selection": n_sel,
         "goal": n_goal,
+        # ⭐ WP-D: reported on its own line and NEVER folded into `encoder`, for
+        # the same reason `selection` is carved out of `decoder` — this head is
+        # a TRAINING-ONLY term whose cost a reader must be able to subtract when
+        # comparing a deployed parameter count against an `aux on` run's.
+        "bev_aux": (cnt(model.bev_aux_head)
+                    if getattr(model, "bev_aux_head", None) is not None else 0),
         "total": cnt(model),
     }
