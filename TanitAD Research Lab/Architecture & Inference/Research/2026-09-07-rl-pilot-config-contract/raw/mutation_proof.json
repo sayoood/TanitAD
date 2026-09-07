@@ -1,0 +1,503 @@
+{
+ "n_pass": 79,
+ "n_checks": 79,
+ "cases": [
+  {
+   "case": "T0",
+   "what": "EXPECT_PARAMS and strict=True cannot see anchors.v0_conditioned",
+   "checks": [
+    {
+     "label": "param count with v0_conditioned=False",
+     "want": 104191577,
+     "got": 104191577,
+     "pass": true
+    },
+    {
+     "label": "param count with v0_conditioned=True",
+     "want": 104191577,
+     "got": 104191577,
+     "pass": true
+    },
+    {
+     "label": "state_dict key list identical (names AND order)",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "n state_dict entries",
+     "want": 488,
+     "got": 488,
+     "pass": true
+    },
+    {
+     "label": "every tensor shape identical",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "strict=True cross-load False-weights -> True-model",
+     "want": "OK",
+     "got": "OK",
+     "pass": true
+    },
+    {
+     "label": "consequence entries recorded",
+     "want": 34,
+     "got": 34,
+     "pass": true
+    },
+    {
+     "label": "consequence keys that are not real config leaves",
+     "want": [],
+     "got": [],
+     "pass": true
+    },
+    {
+     "label": "config leaves in total",
+     "want": 96,
+     "got": 96,
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T1",
+   "what": "ckpt cfg says v0_conditioned=True, run would use False -> REFUSE",
+   "checks": [
+    {
+     "label": "model returned",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "exception type",
+     "want": "SystemExit",
+     "got": "SystemExit",
+     "pass": true
+    },
+    {
+     "label": "message says the contract refused",
+     "want_substring": "CONFIG CONTRACT REFUSED",
+     "pass": true
+    },
+    {
+     "label": "message names the field",
+     "want_substring": "anchors.v0_conditioned",
+     "pass": true
+    },
+    {
+     "label": "message gives the checkpoint's value",
+     "want_substring": "checkpoint says True",
+     "pass": true
+    },
+    {
+     "label": "message gives the value this run would use",
+     "want_substring": "this run would use False",
+     "pass": true
+    },
+    {
+     "label": "message says the shape guards cannot see it",
+     "want_substring": "changes no tensor name and no parameter count",
+     "pass": true
+    },
+    {
+     "label": "consequence cites the 10 m/s reference roll",
+     "want_substring": "offered at the 10 m/s reference INSTEAD OF the window's own measured speed",
+     "pass": true
+    },
+    {
+     "label": "consequence cites the MEASURED vocabulary gap",
+     "want_substring": "0.3773",
+     "pass": true
+    },
+    {
+     "label": "consequence cites the v0-conditioned figure",
+     "want_substring": "0.2610",
+     "pass": true
+    },
+    {
+     "label": "consequence names the real hazard in words",
+     "want_substring": "ACTION SPACE THE CHECKPOINT WAS NEVER TRAINED IN",
+     "pass": true
+    },
+    {
+     "label": "stamp case",
+     "want": "DISAGREE",
+     "got": "DISAGREE",
+     "pass": true
+    },
+    {
+     "label": "stamp verdict",
+     "want": "REFUSED",
+     "got": "REFUSED",
+     "pass": true
+    },
+    {
+     "label": "stamp disagreement fields",
+     "want": [
+      "anchors.v0_conditioned"
+     ],
+     "got": [
+      "anchors.v0_conditioned"
+     ],
+     "pass": true
+    },
+    {
+     "label": "stamp records ckpt value",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "stamp records built value",
+     "want": false,
+     "got": false,
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T2",
+   "what": "ckpt cfg identical to the rebuilt config -> PASS, and STAMPED",
+   "checks": [
+    {
+     "label": "no exception",
+     "want": null,
+     "got": null,
+     "pass": true
+    },
+    {
+     "label": "a model was returned",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "stamp case",
+     "want": "AGREE",
+     "got": "AGREE",
+     "pass": true
+    },
+    {
+     "label": "stamp verdict",
+     "want": "PROCEEDING",
+     "got": "PROCEEDING",
+     "pass": true
+    },
+    {
+     "label": "fields compared",
+     "want": 96,
+     "got": 96,
+     "pass": true
+    },
+    {
+     "label": "disagreements",
+     "want": {},
+     "got": {},
+     "pass": true
+    },
+    {
+     "label": "nothing left assumed",
+     "want": {},
+     "got": {},
+     "pass": true
+    },
+    {
+     "label": "v0_conditioned WAS among the compared fields",
+     "want": false,
+     "got": false,
+     "pass": true
+    },
+    {
+     "label": "provenance",
+     "want": "ckpt['cfg']",
+     "got": "ckpt['cfg']",
+     "pass": true
+    },
+    {
+     "label": "stdout announces the AGREE case",
+     "want_substring": "CONFIG CONTRACT: case AGREE",
+     "pass": true
+    },
+    {
+     "label": "stdout reports 96/96 compared",
+     "want_substring": "96/96 config fields COMPARED and AGREEING",
+     "pass": true
+    },
+    {
+     "label": "the weights still loaded",
+     "want_substring": "cold start loaded: 104,191,577",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T3",
+   "what": "ckpt with no config at all -> proceed, assumption STAMPED",
+   "checks": [
+    {
+     "label": "no exception",
+     "want": null,
+     "got": null,
+     "pass": true
+    },
+    {
+     "label": "a model was returned",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "the stamp FILE exists",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "stamp case",
+     "want": "ABSENT",
+     "got": "ABSENT",
+     "pass": true
+    },
+    {
+     "label": "stamp verdict",
+     "want": "PROCEEDING ON UNVERIFIED DEFAULTS",
+     "got": "PROCEEDING ON UNVERIFIED DEFAULTS",
+     "pass": true
+    },
+    {
+     "label": "nothing was compared",
+     "want": {},
+     "got": {},
+     "pass": true
+    },
+    {
+     "label": "every field is recorded as assumed",
+     "want": 96,
+     "got": 96,
+     "pass": true
+    },
+    {
+     "label": "the assumed v0_conditioned value is written down",
+     "want": false,
+     "got": false,
+     "pass": true
+    },
+    {
+     "label": "the assumed reference speed is written down",
+     "want": 10.0,
+     "got": 10.0,
+     "pass": true
+    },
+    {
+     "label": "n behaviour-critical assumptions recorded",
+     "want": 34,
+     "got": 34,
+     "pass": true
+    },
+    {
+     "label": "stdout announces the ABSENT case",
+     "want_substring": "CONFIG CONTRACT: case ABSENT",
+     "pass": true
+    },
+    {
+     "label": "stdout states the assumption explicitly",
+     "want_substring": "ASSUMED anchors.v0_conditioned = False  (UNVERIFIED)",
+     "pass": true
+    },
+    {
+     "label": "stdout warns what an unverified assumption costs",
+     "want_substring": "post-trains on a model configuration it never confirmed",
+     "pass": true
+    },
+    {
+     "label": "weight evidence corroborates the assumption",
+     "want": "CORROBORATED",
+     "got": "CORROBORATED",
+     "pass": true
+    },
+    {
+     "label": "weight evidence state",
+     "want": "ALL_ZERO",
+     "got": "ALL_ZERO",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T4",
+   "what": "ckpt['cfg'] is a PostTrainConfig (the pilot's OWN ckpt_after.pt shape) -> treated as ABSENT, with the reason recorded",
+   "checks": [
+    {
+     "label": "no exception",
+     "want": null,
+     "got": null,
+     "pass": true
+    },
+    {
+     "label": "stamp case",
+     "want": "ABSENT",
+     "got": "ABSENT",
+     "pass": true
+    },
+    {
+     "label": "provenance is None, not the RL config",
+     "want": null,
+     "got": null,
+     "pass": true
+    },
+    {
+     "label": "one source was rejected",
+     "want": 1,
+     "got": 1,
+     "pass": true
+    },
+    {
+     "label": "the rejection names the source",
+     "want_substring": "ckpt['cfg']",
+     "pass": true
+    },
+    {
+     "label": "the rejection says why",
+     "want_substring": "NONE of them RefCConfig fields",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T5",
+   "what": "run would use v0_conditioned=True but the weights carry an all-zero control vocabulary -> REFUSE",
+   "checks": [
+    {
+     "label": "exception type",
+     "want": "SystemExit",
+     "got": "SystemExit",
+     "pass": true
+    },
+    {
+     "label": "message refuses",
+     "want_substring": "CONFIG CONTRACT REFUSED",
+     "pass": true
+    },
+    {
+     "label": "message says the weights are the evidence",
+     "want_substring": "the CHECKPOINT'S OWN WEIGHTS say that is impossible",
+     "pass": true
+    },
+    {
+     "label": "message says every anchor collapses",
+     "want_substring": "EVERY anchor collapses to 'do nothing'",
+     "pass": true
+    },
+    {
+     "label": "message cites refc.py's own words",
+     "want_substring": "a plausible-looking WRONG experiment",
+     "pass": true
+    },
+    {
+     "label": "stamp verdict",
+     "want": "REFUSED (v0 weight evidence)",
+     "got": "REFUSED (v0 weight evidence)",
+     "pass": true
+    },
+    {
+     "label": "weight evidence verdict",
+     "want": "CONTRADICTED",
+     "got": "CONTRADICTED",
+     "pass": true
+    }
+   ]
+  },
+  {
+   "case": "T6",
+   "what": "the REAL cold start refc-diffusion-base-v21-30k, loaded and looked at",
+   "checks": [
+    {
+     "label": "stamp case",
+     "want": "PARTIAL",
+     "got": "PARTIAL",
+     "pass": true
+    },
+    {
+     "label": "stamp verdict",
+     "want": "PROCEEDING",
+     "got": "PROCEEDING",
+     "pass": true
+    },
+    {
+     "label": "provenance is the sidecar next to the ckpt",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "checkpoint step",
+     "want": 29999,
+     "got": 29999,
+     "pass": true
+    },
+    {
+     "label": "fields the checkpoint DOES carry, all agreeing",
+     "want": 38,
+     "got": 38,
+     "pass": true
+    },
+    {
+     "label": "disagreements",
+     "want": {},
+     "got": {},
+     "pass": true
+    },
+    {
+     "label": "fields the checkpoint does NOT carry -> assumed",
+     "want": 58,
+     "got": 58,
+     "pass": true
+    },
+    {
+     "label": "v0_conditioned is one of the ASSUMED, not the compared",
+     "want": true,
+     "got": true,
+     "pass": true
+    },
+    {
+     "label": "and it is assumed False",
+     "want": false,
+     "got": false,
+     "pass": true
+    },
+    {
+     "label": "weight evidence for that assumption",
+     "want": "CORROBORATED",
+     "got": "CORROBORATED",
+     "pass": true
+    },
+    {
+     "label": "weight evidence state",
+     "want": "BUFFER_ABSENT",
+     "got": "BUFFER_ABSENT",
+     "pass": true
+    },
+    {
+     "label": "stdout states the assumption",
+     "want_substring": "ASSUMED anchors.v0_conditioned = False  (UNVERIFIED)",
+     "pass": true
+    },
+    {
+     "label": "the run then dies in the PRE-EXISTING strict load",
+     "want": "RuntimeError",
+     "got": "RuntimeError",
+     "pass": true
+    },
+    {
+     "label": "and it dies on the buffer this ckpt predates",
+     "want_substring": "Missing key(s) in state_dict: \"decoder.anchor_controls\"",
+     "pass": true
+    }
+   ]
+  }
+ ]
+}

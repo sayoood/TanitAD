@@ -1,0 +1,102 @@
+
+=== T0 — EXPECT_PARAMS and strict=True cannot see anchors.v0_conditioned
+    [PASS] param count with v0_conditioned=False: want 104191577 got 104191577
+    [PASS] param count with v0_conditioned=True: want 104191577 got 104191577
+    [PASS] state_dict key list identical (names AND order): want True got True
+    [PASS] n state_dict entries: want 488 got 488
+    [PASS] every tensor shape identical: want True got True
+    [PASS] strict=True cross-load False-weights -> True-model: want 'OK' got 'OK'
+    [PASS] consequence entries recorded: want 34 got 34
+    [PASS] consequence keys that are not real config leaves: want [] got []
+    [PASS] config leaves in total: want 96 got 96
+
+=== T1 — ckpt cfg says v0_conditioned=True, run would use False -> REFUSE
+    [PASS] model returned: want True got True
+    [PASS] exception type: want 'SystemExit' got 'SystemExit'
+    [PASS] message says the contract refused: substring 'CONFIG CONTRACT REFUSED'
+    [PASS] message names the field: substring 'anchors.v0_conditioned'
+    [PASS] message gives the checkpoint's value: substring 'checkpoint says True'
+    [PASS] message gives the value this run would use: substring 'this run would use False'
+    [PASS] message says the shape guards cannot see it: substring 'changes no tensor name and no parameter count'
+    [PASS] consequence cites the 10 m/s reference roll: substring "offered at the 10 m/s reference INSTEAD OF the window's own measured speed"
+    [PASS] consequence cites the MEASURED vocabulary gap: substring '0.3773'
+    [PASS] consequence cites the v0-conditioned figure: substring '0.2610'
+    [PASS] consequence names the real hazard in words: substring 'ACTION SPACE THE CHECKPOINT WAS NEVER TRAINED IN'
+    [PASS] stamp case: want 'DISAGREE' got 'DISAGREE'
+    [PASS] stamp verdict: want 'REFUSED' got 'REFUSED'
+    [PASS] stamp disagreement fields: want ['anchors.v0_conditioned'] got ['anchors.v0_conditioned']
+    [PASS] stamp records ckpt value: want True got True
+    [PASS] stamp records built value: want False got False
+
+=== T2 — ckpt cfg identical to the rebuilt config -> PASS, and STAMPED
+    [PASS] no exception: want None got None
+    [PASS] a model was returned: want True got True
+    [PASS] stamp case: want 'AGREE' got 'AGREE'
+    [PASS] stamp verdict: want 'PROCEEDING' got 'PROCEEDING'
+    [PASS] fields compared: want 96 got 96
+    [PASS] disagreements: want {} got {}
+    [PASS] nothing left assumed: want {} got {}
+    [PASS] v0_conditioned WAS among the compared fields: want False got False
+    [PASS] provenance: want "ckpt['cfg']" got "ckpt['cfg']"
+    [PASS] stdout announces the AGREE case: substring 'CONFIG CONTRACT: case AGREE'
+    [PASS] stdout reports 96/96 compared: substring '96/96 config fields COMPARED and AGREEING'
+    [PASS] the weights still loaded: substring 'cold start loaded: 104,191,577'
+
+=== T3 — ckpt with no config at all -> proceed, assumption STAMPED
+    [PASS] no exception: want None got None
+    [PASS] a model was returned: want True got True
+    [PASS] the stamp FILE exists: want True got True
+    [PASS] stamp case: want 'ABSENT' got 'ABSENT'
+    [PASS] stamp verdict: want 'PROCEEDING ON UNVERIFIED DEFAULTS' got 'PROCEEDING ON UNVERIFIED DEFAULTS'
+    [PASS] nothing was compared: want {} got {}
+    [PASS] every field is recorded as assumed: want 96 got 96
+    [PASS] the assumed v0_conditioned value is written down: want False got False
+    [PASS] the assumed reference speed is written down: want 10.0 got 10.0
+    [PASS] n behaviour-critical assumptions recorded: want 34 got 34
+    [PASS] stdout announces the ABSENT case: substring 'CONFIG CONTRACT: case ABSENT'
+    [PASS] stdout states the assumption explicitly: substring 'ASSUMED anchors.v0_conditioned = False  (UNVERIFIED)'
+    [PASS] stdout warns what an unverified assumption costs: substring 'post-trains on a model configuration it never confirmed'
+    [PASS] weight evidence corroborates the assumption: want 'CORROBORATED' got 'CORROBORATED'
+    [PASS] weight evidence state: want 'ALL_ZERO' got 'ALL_ZERO'
+
+=== T4 — ckpt['cfg'] is a PostTrainConfig (the pilot's OWN ckpt_after.pt shape) -> treated as ABSENT, with the reason recorded
+    [PASS] no exception: want None got None
+    [PASS] stamp case: want 'ABSENT' got 'ABSENT'
+    [PASS] provenance is None, not the RL config: want None got None
+    [PASS] one source was rejected: want 1 got 1
+    [PASS] the rejection names the source: substring "ckpt['cfg']"
+    [PASS] the rejection says why: substring 'NONE of them RefCConfig fields'
+
+=== T5 — run would use v0_conditioned=True but the weights carry an all-zero control vocabulary -> REFUSE
+    [PASS] exception type: want 'SystemExit' got 'SystemExit'
+    [PASS] message refuses: substring 'CONFIG CONTRACT REFUSED'
+    [PASS] message says the weights are the evidence: substring "the CHECKPOINT'S OWN WEIGHTS say that is impossible"
+    [PASS] message says every anchor collapses: substring "EVERY anchor collapses to 'do nothing'"
+    [PASS] message cites refc.py's own words: substring 'a plausible-looking WRONG experiment'
+    [PASS] stamp verdict: want 'REFUSED (v0 weight evidence)' got 'REFUSED (v0 weight evidence)'
+    [PASS] weight evidence verdict: want 'CONTRADICTED' got 'CONTRADICTED'
+
+=== T6 — the REAL cold start refc-diffusion-base-v21-30k, loaded and looked at
+    [PASS] stamp case: want 'PARTIAL' got 'PARTIAL'
+    [PASS] stamp verdict: want 'PROCEEDING' got 'PROCEEDING'
+    [PASS] provenance is the sidecar next to the ckpt: want True got True
+    [PASS] checkpoint step: want 29999 got 29999
+    [PASS] fields the checkpoint DOES carry, all agreeing: want 38 got 38
+    [PASS] disagreements: want {} got {}
+    [PASS] fields the checkpoint does NOT carry -> assumed: want 58 got 58
+    [PASS] v0_conditioned is one of the ASSUMED, not the compared: want True got True
+    [PASS] and it is assumed False: want False got False
+    [PASS] weight evidence for that assumption: want 'CORROBORATED' got 'CORROBORATED'
+    [PASS] weight evidence state: want 'BUFFER_ABSENT' got 'BUFFER_ABSENT'
+    [PASS] stdout states the assumption: substring 'ASSUMED anchors.v0_conditioned = False  (UNVERIFIED)'
+    [PASS] the run then dies in the PRE-EXISTING strict load: want 'RuntimeError' got 'RuntimeError'
+    [PASS] and it dies on the buffer this ckpt predates: substring 'Missing key(s) in state_dict: "decoder.anchor_controls"'
+
+================ 79/79 checks PASS ================
+  T0: 9/9
+  T1: 16/16
+  T2: 12/12
+  T3: 15/15
+  T4: 6/6
+  T5: 7/7
+  T6: 14/14
