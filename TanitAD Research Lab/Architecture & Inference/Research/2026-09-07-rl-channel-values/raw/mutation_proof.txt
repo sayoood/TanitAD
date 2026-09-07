@@ -1,0 +1,27 @@
+MUTATION PROOF -- RL channel VALUE flow guard (refc_adapter.CHANNEL_REQUIREMENTS)
+stack: C:\Users\Admin\tanitad-chanval\stack
+suites: tests/test_rl_channel_value_flow.py tests/test_rl_refc_adapter_robust.py tests/test_rl_forward_keys_cover_signature.py tests/test_rl_channel_guard.py
+CPU only, off-Drive mirror. No GPU, no pod.
+
+id   want   got      description
+------------------------------------------------------------------------------------------------
+--   GREEN  GREEN    CONTROL, unmutated
+                     71 passed in 1.59s
+M1   RED    RED      the FLAT getattr is restored -- THE ORIGINAL DEFECT: a nested predicate reads False forever instead of raising
+                     7 failed, 64 passed in 1.58s
+M2   RED    RED      v0 loses its predicates -> back to unasserted
+                     4 failed, 67 passed in 1.54s
+M3   RED    RED      lan loses its predicate -> back to unasserted
+                     2 failed, 69 passed in 1.55s
+M4   RED    RED      nav_known is OVER-asserted -> would refuse the programme's own nav_cmd=None eval arm
+                     1 failed, 70 passed in 1.53s
+M5   RED    RED      an unasserted channel's unblock becomes the placeholder 'tbd'
+                     2 errors in 1.50s
+M6   RED    RED      withheld_speed drops out of the records -> a plumbed channel nobody ruled on
+                     3 failed, 68 passed in 1.55s
+M7   RED    RED      assert_conditioning stops raising -> the guard is inert
+                     5 failed, 66 passed in 1.55s
+--   GREEN  GREEN    CONTROL, after restore
+                     71 passed in 1.57s
+
+9/9 expectations met

@@ -6,7 +6,7 @@ fails when the code is wrong rather than merely when it is absent:
 1. ``refc_adapter.assert_conditioning`` REFUSES a batch that drops a channel the
    checkpoint's own config says it was trained with. The bug it prevents is silent: the
    forward returns a well-formed fan from a differently-conditioned policy and nothing
-   raises (`refc_v3.py:1000` only guards the opposite direction).
+   raises (`refc_v3.py:1413` only guards the opposite direction).
 2. ``robust_contact`` reduces EXACTLY to ``rewards._collision`` at zero shift, and its
    SIGN runs the way the measured surface says (`dt < 0` = lead earlier along its own
    path = closer to a following ego = the risk direction).
@@ -140,10 +140,25 @@ def test_the_robust_term_can_see_risk_the_point_estimate_cannot():
 # refc_adapter -- the conditioning contract
 # --------------------------------------------------------------------------------------
 
-class _Cfg:
-    def __init__(self, **kw):
-        self.ego_state_inject = kw.get("ego_state_inject", False)
-        self.nav_inject = kw.get("nav_inject", True)
+def _Cfg(**kw):
+    """⭐ THE REAL ``RefCV3Config``, not a two-attribute stub.
+
+    ⛔ THE STUB THIS REPLACED HAD THE SAME BLIND SPOT AS THE CODE. It carried exactly
+    ``ego_state_inject`` and ``nav_inject`` — both FLAT — so no test in this file could
+    ever exercise a NESTED predicate, and the four channels whose declaring field is
+    nested (``core.anchors.v0_conditioned``, ``core.graft_lan``,
+    ``core.nav_known_channel``) were unreachable from the test surface as well as from
+    the guard. A fake config cannot catch a bug about what the real config contains.
+    """
+    from tanitad.refs.refc_v3 import RefCV3Config
+    cfg = RefCV3Config()
+    cfg.ego_state_inject = kw.get("ego_state_inject", False)
+    cfg.nav_inject = kw.get("nav_inject", True)
+    cfg.core.anchors.v0_conditioned = kw.get("v0_conditioned", False)
+    cfg.core.sel_reach_clamp = kw.get("sel_reach_clamp", False)
+    cfg.core.graft_lan = kw.get("graft_lan", False)
+    cfg.core.nav_known_channel = kw.get("nav_known_channel", False)
+    return cfg
 
 
 class _Model:
@@ -187,13 +202,20 @@ def test_nav_cmd_is_never_asserted_because_refc_is_evaluated_with_nav_none():
 
 def test_no_requirement_names_a_config_field_that_does_not_exist():
     """⛔ A guard keyed on a misspelt flag reads False forever -- a check that can never
-    fire. Every non-None flag must be a real attribute of the real config class."""
+    fire. Every declared predicate must RESOLVE on a real config.
+
+    ⚠️ THIS TEST USED TO BE ``hasattr(RefCV3Config, flag)`` ON THE CLASS, and it passed
+    while the guard checked nothing. Two reasons it could not catch the real defect:
+    the map it iterated had ``None`` for six of seven channels (so the loop body was
+    skipped for every one of them), and a flat ``hasattr`` cannot see a NESTED field
+    even when it is named. Resolving the dotted path against an INSTANCE is what
+    actually pins the contract.
+    """
     from tanitad.refs.refc_v3 import RefCV3Config
-    for key, flag in A._REQUIRING_FLAG.items():
-        if flag is not None:
-            assert hasattr(RefCV3Config, flag), (
-                f"{key} -> {flag!r} is not a field of RefCV3Config; the guard would "
-                f"silently never fire")
+    cfg = RefCV3Config()
+    for r in A.CHANNEL_REQUIREMENTS:
+        for p in r.predicates:
+            A._read_predicate(cfg, p)      # raises if it does not resolve
 
 
 def test_model_without_cfg_is_refused_rather_than_guessed():
