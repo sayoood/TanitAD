@@ -330,12 +330,21 @@ cannot finish here":**
 | invocation | outcome |
 |---|---|
 | #1 `--all-files` (with history walk) | **crashed after ~35 min**, `git cat-file --batch-check` exhausted **40 retries**, error text **empty** |
-| #2 `--all-files --no-history` | **still hung >40 min**, zero bytes of output, PID alive |
+| #2 `--all-files --no-history` | ran to its **25-min `timeout` and was killed**: **zero lines of output, and no `--json` file written** |
 | **same-breath control** (`git rev-parse HEAD:<path>`) | ✅ **`control_len=40`** — a real 40-char blob, i.e. **the mount WAS serving git** |
 
 ⇒ The control refutes "the mount was simply down". ⛔ **`pod_currency_audit.py` at `--all-files`
 scope is not completable against this repo on the G: mount** — a tool defect worth its own work
-item, not a fact about Thor. Its JSON belongs in `raw/` if it ever lands.
+item, not a fact about Thor. **No JSON exists to bank; that absence is the result.**
+
+⛔⛔ **AND MY OWN WRAPPER PRINTED `GATE_EXIT=0` FOR THAT KILLED RUN — DO NOT READ IT AS A PASS.**
+The command was `python … | tail -25; echo "GATE_EXIT=$?"`, and after a **pipeline** `$?` is the exit
+status of the **LAST** element — `tail` — which succeeds no matter what happened upstream. So a
+timed-out, output-less audit reported a clean `0`. ⚠️ It is the family this file already documents
+one section up: **a check whose success criterion is disconnected from the thing it is checking**,
+and it is only visible here because the *content* assertions (zero output, absent JSON) were read
+instead of the status code. ⇒ Use `PIPESTATUS[0]`, or drop the pipe. **The admissible evidence that
+this gate did not run is the missing JSON, never the exit code.**
 
 ⚠️ **What this does and does not leave uncovered.** `pod_currency_audit` asks *"is every file in the
 whole `stack` subtree current?"* — for Thor the answer is **known to be NO** and was adjudicated

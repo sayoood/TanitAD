@@ -271,6 +271,26 @@ Every subagent brief MUST carry the preamble in
   elif [ "$a" = "$b" ]; then echo "VERIFIED $a"; else echo "MISMATCH"; fi
   ```
   The same hole exists in every `grep -c` verification: a count of `0` from a file that could not be READ is indistinguishable from a genuine absence, so pair it with a same-breath control that must read non-zero.
+
+  ⛔⛔ **AND `$?` AFTER A PIPELINE IS THE *LAST* ELEMENT'S STATUS — SO `cmd | tail` REPORTS
+  `tail`'S SUCCESS AND HIDES `cmd`'S FAILURE. MEASURED TWICE ON 2026-09-07, IN TWO INDEPENDENT
+  STREAMS, ON TWO DIFFERENT TOOLS.**
+  * `mm_commit.py` exhausted its retries and exited **1** (`git add kept failing`); the wrapper
+    was `python mm_commit.py … | tail -25`, which reported **exit 0**. I read that as the TOOL
+    manufacturing a false success and was about to "fix" a tool that had been honest — the
+    shell had lied, not the program.
+  * A 25-minute `timeout` killed `pod_currency_audit.py` with **zero lines of output and no
+    `--json` file written**, and its wrapper printed **`GATE_EXIT=0`**. A timed-out, output-less
+    **pre-launch gate** reported clean.
+  ⇒ **Never read `$?` through a pipe.** Use `${PIPESTATUS[0]}`, `set -o pipefail`, or redirect to
+  a file and read it afterwards.
+  ⭐ **THE STRONGER FORM, AND THE ONE THAT GENERALISES: ASSERT ON THE ARTIFACT, NOT THE STATUS.**
+  *"The admissible evidence that this gate did not run is the MISSING JSON, never the exit code."*
+  A status code is a claim by the process about itself, routed through a shell that can overwrite
+  it; the artifact is the thing you actually wanted. This is the `df` / cgroup / `step_s` family
+  once more — **a success criterion disconnected from the thing being checked** — and both
+  instances were caught only by reading CONTENT (an empty output, an absent file) rather than a
+  number that said everything was fine.
   ⇒ **`git log` is NOT evidence that your change is in HEAD.** The check is a positive content
   assertion per file — `git show HEAD:<path> | grep -c <marker>`, or a blob comparison
   (`git rev-parse HEAD:<path>` vs `git hash-object <path>`) — run **at the end of the turn**, on
