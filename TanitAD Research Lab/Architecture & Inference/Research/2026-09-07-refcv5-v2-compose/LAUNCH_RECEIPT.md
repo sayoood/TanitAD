@@ -304,3 +304,26 @@ Both were surface reads that looked alarming and were not:
 **Health at 01:29:34Z:** GPU at **max clocks 1740/1740 MHz**, 42 C, 284 W of 300 W under load, **all
 throttle reasons Not Active**, sole compute app is our own pid. 1 main + 6 dataloader workers, **no
 orphans** left by the three crashes. `train.stderr.log` has taken **no new bytes since 00:54Z**.
+
+### 9.4 ⚠️ RECONCILING A SIBLING'S "the box is NOT running the repo" — IT IS THE PRE-SHIP BOX
+
+Commit `0fe8830` lands a `pod_currency_audit` verdict of **FAIL, 26 files**, concluding *"the box is
+NOT running the repo"*. ⛔ **That is not in conflict with §2, and it does not touch this launch — it
+measured the box BEFORE the re-ship.** Its own sharp evidence names
+`refc_v3_train.py` at **pod 3,634 lines / 79 `add_argument`**, which is the pre-ship trainer; the
+audit ran ~90 min and its sample predates the ship completed at ~01:06Z.
+
+Re-verified **after** that commit landed, at 01:33Z against HEAD `f0f7678`:
+
+```
+git diff eb627fa..HEAD -- stack/     -> EMPTY (the shipped ref is still HEAD's stack)
+HEAD blob md5                        7f3043782a32456c95dc8f1d3b709761
+pod    md5                           7f3043782a32456c95dc8f1d3b709761   MATCH
+pod    lines / add_argument          4,576 / 89     (the audit saw 3,634 / 79)
+```
+
+⭐ The sibling's own caveat is the right frame and is adopted here: **26 is an upper bound, not a
+drift count** — at least 6 rows are `HISTORY-UNKNOWN` from a `0xC0000006` G:-mount paging failure (a
+MEASUREMENT failure, not a stale file) and 32 retained rows are repo-only test files that are
+outside this ship's scope by design. This ship's scope is stated in §2: `stack/tanitad` +
+`stack/scripts`, 449 files, the python surface the trainer actually runs.
