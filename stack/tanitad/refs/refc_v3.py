@@ -98,6 +98,7 @@ from torch import Tensor, nn
 
 from tanitad.models.tactical import PhiTac
 from tanitad.refs import goal_point as gp
+from tanitad.refs import max_speed_input as msi
 from tanitad.refs import refc
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
@@ -453,6 +454,43 @@ class RefCV3Config:
     ego_state_inject: bool = False
     d_ego: int = 32                   # ego embed width (~= d_nav's 64 / 2)
 
+    # --- ⭐⭐ E16: the MAX-SPEED (map/nav posted-limit) INPUT ---------------
+    # PI 2026-09-01, reaffirmed 2026-09-06: *"introduce an input in the models
+    # which corresponds the upper band value of speed band"*, then *"good idea
+    # with quantization"*.
+    #
+    # ⛔ DEFAULT FALSE. With it off this class builds today's refcv3/refcv4b/
+    # refcv5 BIT-IDENTICALLY — no module is constructed, so not one RNG draw
+    # moves — which matters because a live 40,284-step run resumes through this
+    # file. Pinned by tests/test_max_speed_wiring.py::test_v3_parity_when_off,
+    # which compares against the PRE-PATCH file itself.
+    #
+    # ⭐ WHY IT IS ADMISSIBLE. `v_max_ms` STANDS IN FOR A MAP/NAV SPEED-LIMIT
+    # SERVICE exactly as `nav_command` stands in for the nav system, and the PI
+    # has ruled that class is an INPUT, not a training signal. We have no map;
+    # this is the simulator for one.
+    #
+    # ⚠️ WHAT IT IS TRAINED ON, STATED SO NOTHING IS OVERSOLD. The label's
+    # provenance is `ego-future`: max of the ego's OWN REALISED speed over
+    # [anchor+2 s, +6 s]. That is a TRAIN/DEPLOY MISMATCH, not a leak — at
+    # deployment the supplier is a posted limit the driver may not reach.
+    # Quantization is COSMETIC as a leak fix (bin + v0 recovers R^2 0.9702 vs
+    # v0-alone 0.8789, i.e. 75.4 % of the future survives) and REAL as a
+    # SEMANTICS fix (raw v_hi sits BELOW the ego's own current speed on 34.8 %
+    # of clips — incoherent for a ceiling; quantized, 8.4 %).
+    # ⚠️ AND ITS RESIDUAL DEFECT: snapping UP from a STOPPED ego reports the
+    # LOWEST limit (75 % of intersection clips get <= 30 km/h where a map would
+    # say 50), so the channel can teach "slow ego => low limit". Not fixable in
+    # this design; it needs a real map.
+    #
+    # ⛔ EVAL OBLIGATION, inseparable from this edge and identical to E13's: any
+    # max-speed-conditioned result carries a SHUFFLE control (serve another
+    # clip's ceiling) and a WITHHOLD control (valid = 0). Without them "the arm
+    # improved" cannot be separated from "the arm gained a parameter".
+    max_speed_input: bool = False
+    max_speed_cfg: msi.MaxSpeedConfig = field(
+        default_factory=msi.MaxSpeedConfig)
+
     # --- ⭐⭐ E15: the PREDICTED METRIC GOAL POINT (goal-point agent, 2026-09-06) ----
     # ⛔ DEFAULT FALSE. With it off this class builds today's refcv4b/refcv5 BIT-
     # IDENTICALLY (pinned by tests/test_goal_point_wiring.py::test_v3_parity_when_off),
@@ -755,6 +793,19 @@ class RefCV3Model(nn.Module):
                 "through the hierarchy hook. Without the head the gate is "
                 "built, the term is never appended, and the arm would report "
                 "the seam as inert while it was never wired.")
+        # ⛔ E16 IS A HIERARCHY EDGE, AND A FLAT BUILD MUST SAY SO RATHER THAN
+        # DROP IT. The two injection sites are `z_tac` and `ctx`, both of which
+        # exist only under `hier`; a flat arm would construct the conditioner,
+        # never call it, and report as +max-speed while running without it —
+        # the same silent-drop class the `ego_state` / `nav_args` / `gp_point`
+        # guards below refuse. Raised BEFORE the `not cfg.hier` return so it is
+        # reached on the flat path too (the `preflight`-only lesson).
+        if getattr(cfg, "max_speed_input", False) and not cfg.hier:
+            raise ValueError(
+                "max_speed_input=True on a FLAT build: the ceiling's two"
+                " injection sites (z_tac, ctx) exist only in the hierarchy,"
+                " so the channel would be built and never read. Use"
+                " --arm hier, or turn the flag off.")
         self.core = refc.RefCModel(cfg.core)
         if not cfg.hier:
             return
@@ -896,6 +947,22 @@ class RefCV3Model(nn.Module):
                 nn.init.zeros_(lin.bias)
         else:
             self.ego_inj = None
+        # ⭐ E16 — the speed ceiling gets its own conditioner, structurally
+        # identical to `nav_to_tac`/`nav_to_str` (E13) and `ego_to_tac`/
+        # `ego_to_str` (E11'). `MaxSpeedConditioner` zero-inits BOTH output
+        # projections itself, so an ON build's EMISSION is bit-identical at
+        # step 0 and an ON-vs-OFF comparison is attributable.
+        # ⛔ ONE CONSTRUCTION SITE, GATED. The D-ROLL-1 regression was a head
+        # built unconditionally: 11,286 params no recorded `param_breakdown`
+        # named, which made refcv4b, three refcv3 checkpoints and a LIVE
+        # refcv5 run unrollable. The gate is the flag, and
+        # `param_breakdown_v3` reads the BUILT OBJECT rather than re-deriving
+        # this condition, so the ledger cannot drift from the constructor.
+        if cfg.max_speed_input:
+            self.max_speed_cond = msi.MaxSpeedConditioner(
+                cfg.d_tac, d_ctx, cfg.max_speed_cfg)
+        else:
+            self.max_speed_cond = None
         # E6 — factored tactical decision heads on z_tac (the H arm's decision
         # supplier; the core's own pooled-based heads keep training as the
         # shared aux surface in BOTH arms, so the supervision surface is
@@ -1030,7 +1097,9 @@ class RefCV3Model(nn.Module):
     # --- the in-forward hierarchy supplier ----------------------------------
     def _hook(self, cache: dict, nav_cmd: Tensor | None = None,
               ego_state: Tensor | None = None,
-              nav_args: Tensor | None = None):
+              nav_args: Tensor | None = None,
+              v_max_ms: Tensor | None = None,
+              v_max_valid: Tensor | None = None):
         cfg = self.cfg
         # ⭐⭐ STRATEGIC BYPASS (`--no-strategic`, PI 2026-09-06). Read from
         # the CORE config so there is exactly ONE source of truth for the flag
@@ -1107,6 +1176,20 @@ class RefCV3Model(nn.Module):
                 ego_e = self.ego_inj(torch.cat([es, keep_b], dim=-1))
                 z_tac_raw = z_tac_raw + self.ego_to_tac(ego_e)    # -> tactical
                 ctx = ctx + self.ego_to_str(ego_e)                # -> strategic
+            # ⭐⭐ E16 — THE MAX-SPEED CEILING REACHES THE SAME TWO NODES.
+            # It enters EXACTLY where `v0` and the nav command already enter and
+            # nowhere else; nothing downstream is reshaped.
+            # ⚠️ MEASURED on the linear readout: a SHUFFLED ceiling collapses
+            # EXACTLY onto ego-only on every longitudinal target (delta +0.0002,
+            # NOT separated), so the shuffle control has teeth — which is why
+            # it is an obligation on every result this edge produces.
+            ms_injected = False
+            if getattr(self, "max_speed_cond", None) is not None \
+                    and v_max_ms is not None:
+                ms_tac, ms_str = self.max_speed_cond(v_max_ms, v_max_valid)
+                z_tac_raw = z_tac_raw + ms_tac                    # -> tactical
+                ctx = ctx + ms_str                                # -> strategic
+                ms_injected = True
             # ⭐⭐ E15 — the predicted metric goal point, read off the STRATEGIC
             # context BEFORE its own conditioning is added (a feed-forward residual, not
             # a cycle) and fed back as a CONTINUOUS, per-window, metric signal.
@@ -1240,6 +1323,7 @@ class RefCV3Model(nn.Module):
                          g_tac=g_tac, g_tac_delta=g_delta,
                          ego_injected=bool(ego_e is not None),
                          nav_injected=bool(nav_t is not None),
+                         max_speed_injected=bool(ms_injected),
                          goal_point=g_point,
                          goal_point_injected=bool(g_point is not None))
             if echo_base is not None:
@@ -1283,7 +1367,9 @@ class RefCV3Model(nn.Module):
                 gp_point: Tensor | None = None,
                 gp_valid: Tensor | None = None,
                 agent_gt: dict | None = None,
-                nav_args: Tensor | None = None) -> dict:
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -1378,6 +1464,26 @@ class RefCV3Model(nn.Module):
                 "forward while a nav token did. Refusing rather than "
                 "defaulting: a silent zero would say 'the turn is here, now' "
                 "on every window and the channel would be measured as noise.")
+        # ⛔ SAME REFUSAL AS `ego_state`, `gp_point` AND `nav_args` ABOVE, AND
+        # FOR THE SAME REASON. A build without the E16 seam would SILENTLY DROP
+        # the ceiling and the arm would read as "+max-speed does not help" while
+        # never having had it — a refutation manufactured by a wiring gap.
+        if v_max_ms is not None and not getattr(self.cfg,
+                                                "max_speed_input", False):
+            raise ValueError(
+                "v_max_ms was supplied but this build has no E16 seam "
+                "(`cfg.max_speed_input` is False) - it would be SILENTLY "
+                "DROPPED and the arm would report as +max-speed-input while "
+                "running without a ceiling. Build with --max-speed-input, or "
+                "stop passing v_max_ms.")
+        if v_max_ms is None and getattr(self.cfg, "max_speed_input", False) \
+                and nav_cmd is not None:
+            raise ValueError(
+                "this build is --max-speed-input but no v_max_ms reached the "
+                "forward while a nav token did. Refusing rather than "
+                "defaulting: a silent 0.0 in the value channel reads as 'the "
+                "limit here is 0 m/s - stop', which is a LIE, not a missing "
+                "value. Pass v_max_valid=0 for 'no limit known'.")
         if not self.cfg.hier:
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                              nav_known=nav_known, ego_keep=ego_keep,
@@ -1388,7 +1494,8 @@ class RefCV3Model(nn.Module):
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state,
-                                                  nav_args),
+                                                  nav_args, v_max_ms,
+                                                  v_max_valid),
                         withheld_speed=withheld_speed,
                         gp_point=gp_point, gp_valid=gp_valid,
                         agent_gt=agent_gt)
@@ -1541,6 +1648,15 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
         # that is the check working, not a nuisance.
         if getattr(model, "tac_goal_tok_head", None) is not None:
             out["tac_goal_tok_head"] = cnt(model.tac_goal_tok_head)
+        # ⭐ E16 — the max-speed conditioner, on its own ledger line and read
+        # off the BUILT OBJECT (never by re-deriving `cfg.max_speed_input`).
+        # ⛔ THIS LINE IS THE ROLLABILITY CONTRACT. D-ROLL-1: parameters that
+        # exist and are not accounted make every banked checkpoint unrollable,
+        # because `refcv3_arm.cross_check_config` compares the recorded ledger
+        # against a rebuild key-for-key and correctly refuses a mismatch.
+        # `test_param_breakdown_smoke_sums` fires the moment they are missing.
+        if getattr(model, "max_speed_cond", None) is not None:
+            out["max_speed_inject"] = cnt(model.max_speed_cond)
     out["total"] = cnt(model)
     return out
 

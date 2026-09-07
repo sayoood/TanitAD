@@ -254,7 +254,15 @@ def load_v7_labels(path: str | Path, *, allow_oracle_nav: bool = False,
                     "lateral": (alp.get("lateral") or {}).get("agree"),
                     "longitudinal": (alp.get("longitudinal") or {}).get("agree")},
             },
-            _oracle={"nav_command": r.get("nav_command")},
+            _oracle={"nav_command": r.get("nav_command"),
+                     # ⭐ E16 — the max-speed INPUT block, carried through
+                     # the SAME private channel as `nav_command` and read
+                     # only through `oracle_max_speed`. ⛔ It belongs here
+                     # and not in a public field because the record itself
+                     # declares `oracle: true` / `provenance: "ego-future"`
+                     # -- identical to nav_command -- so it must be behind
+                     # the SAME manifest permission rather than beside it.
+                     "speed_max_input": r.get("speed_max_input")},
         ))
 
     # ⭐⭐ THE NEGATIVE POLICY IS DERIVED FROM THE BLOB, NOT DECLARED.
@@ -302,6 +310,36 @@ def oracle_nav(label: V7Label, manifest: LabelManifest) -> dict[str, Any]:
             "PREDICTED geometric goal point, which is admissible and is the "
             "lever the literature shows actually works.")
     return label._oracle["nav_command"]
+
+
+def oracle_max_speed(label: V7Label, manifest: LabelManifest
+                     ) -> dict[str, Any] | None:
+    """The ``speed_max_input`` block — refused unless the manifest carries
+    the oracle stamp, exactly like :func:`oracle_nav`.
+
+    ⭐ WHAT IT IS. ``v_max_ms`` (= ``g_tac.goals.SPEED_BAND.v_hi_ms``) plus
+    its ``units``, its pinned posted-limit ladder and its bucket. It STANDS
+    IN FOR A MAP/NAV SPEED-LIMIT SERVICE the way ``nav_command`` stands in
+    for the nav system — an INPUT, never a training signal.
+
+    ⚠️ AND WHAT IT IS NOT. Its provenance is ``ego-future``: the training
+    value is max of the ego's OWN REALISED speed over [anchor+2 s, +6 s],
+    while deployment supplies a LIMIT the driver may not reach. That is a
+    TRAIN/DEPLOY MISMATCH, not a leak — and it is why the read goes through
+    the oracle gate: an arm that used it is identifiable from its own
+    artifacts, which is the whole point of the stamp.
+
+    Returns ``None`` for a record that carries no block (the v7.2 release
+    carries none on 0/4,572 — MEASURED), never a fabricated default.
+    """
+    if not manifest.allow_oracle_nav:
+        raise OracleNavRefused(
+            "[v7_labels] ⛔ speed_max_input is an ORACLE — provenance "
+            "'ego-future', computed from the ego's own future speed. Pass "
+            "allow_oracle_nav=True to load_v7_labels if this is a "
+            "deliberate max-speed arm; the flag stamps the manifest so no "
+            "eval can quote the arm without it being visible.")
+    return label._oracle.get("speed_max_input")
 
 
 def is_oracle_nav(label: "V7Label") -> bool:

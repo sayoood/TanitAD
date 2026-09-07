@@ -85,6 +85,7 @@ from tanitad.refs import refc_tactical as tac  # noqa: E402
 from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
 from tanitad.refs import goal_point as gpm  # noqa: E402  — E15 (GP-2)
+from tanitad.refs import max_speed_input as msi  # noqa: E402  — E16
 from tanitad import effective_weights as _ew  # noqa: E402
 from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
@@ -383,6 +384,33 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
                 "e.g. under --goal-point-inject) would be a silently inert "
                 "flag. Refusing.")
         cfg.nav_args_inject = True
+    # ---- ⭐⭐ E16: THE MAX-SPEED (map/nav posted-limit) INPUT ---------- #
+    # PI 2026-09-01, reaffirmed 2026-09-06. OPT-IN, RECORDED IN ARGV.
+    # ⛔ THE MODE IS PINNED ONTO THE CONFIG, NOT ONLY ONTO `args`, because
+    # `refcv3_arm.rebuild_config` rebuilds through THIS helper: a mode that
+    # lived only on the Namespace would be lost on every roll.
+    # ⛔ A DEAD KNOB IS REFUSED, NOT IGNORED -- the class this trainer
+    # already refuses four times (`--w-agent` under `--agents off`,
+    # `--nav-args` without `--nav-from-v7`, both halves of the P14
+    # selection split, `--tac-goal-tok-head` under kin3).
+    _msi_on = bool(getattr(args, "max_speed_input", False))
+    _msi_mode = str(getattr(args, "max_speed_mode", msi.DEFAULT_MODE))
+    if not _msi_on and _msi_mode != msi.DEFAULT_MODE:
+        raise SystemExit(
+            f"[v3] ⛔ --max-speed-mode {_msi_mode!r} WITHOUT "
+            f"--max-speed-input is INERT: no ceiling is fed, so the mode "
+            f"selects the encoding of a channel that does not exist, and "
+            f"config.json would stamp a mode the run never used. Pass "
+            f"--max-speed-input too, or drop the mode.")
+    if _msi_on:
+        if args.arm != "hier":
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input on a FLAT arm: the ceiling's two "
+                "injection sites (z_tac, ctx) exist only in the hierarchy, "
+                "so the conditioner would be built and never read. Pass "
+                "--arm hier, or drop --max-speed-input.")
+        cfg.max_speed_input = True
+        cfg.max_speed_cfg = msi.MaxSpeedConfig(enabled=True, mode=_msi_mode)
     # ---- ⛔ D-TACGOAL-1 / D-ROLL-1h: the tactical-goal SET head ----- #
     # OPT-IN, RECORDED IN ARGV. Building this head on the vocabulary alone
     # made refcv4b, three refcv3 checkpoints and the LIVE refcv5 run
@@ -897,6 +925,54 @@ def _check_nav_from_v7_args(args) -> None:
                          "against the v1 derivation.")
 
 
+def _check_max_speed_args(args) -> None:
+    """Refuse AT START a ``--max-speed-input`` launch that would mislead.
+
+    ⛔ A DEAD FLAG IS A REFUSAL, NOT A NO-OP. ``speed_max_input`` is a v8
+    field: the v7.2 release carries it on 0 of 4,572 train records and the
+    v8 release on 4,572/4,572 and 147/147 (MEASURED 2026-09-06). Pointed at
+    a v7.2 blob the flag would look switched, feed nothing, and the arm
+    would report as +max-speed while running without a ceiling. The
+    LOADER's own refusal names the split and the field; this one fires
+    before any GPU work, on both launch paths.
+    """
+    if not getattr(args, "max_speed_input", False):
+        return
+    # ⛔ --preflight CANNOT EXERCISE THIS CHANNEL, and it must say so HERE rather
+    # than die inside the loss step. MEASURED 2026-09-07: preflight builds its
+    # corpus with `_synth_episodes` (CI-only, 2 clips) and a synthetic clip
+    # carries no `speed_max_input`, so `enable_max_speed` is never called and the
+    # forward correctly refuses a batch with no `v_max_ms` -- 20 lines into the
+    # run, after the gates have printed PASS. An operator preflighting their real
+    # launch line would read that as "the flag is broken" and drop it. ⭐ It is
+    # NOT the flag failing, and the refusal says so.
+    if getattr(args, "preflight", False):
+        raise SystemExit(
+            "[v3] ⛔ --preflight --max-speed-input is not runnable, and this is "
+            "NOT the flag failing: preflight's corpus is SYNTHETIC "
+            "(`_synth_episodes`, CI-only) and a synthetic clip carries no "
+            "`speed_max_input` block, so the loss step would meet a batch with "
+            "no `v_max_ms`. ⇒ Preflight the arm WITHOUT the flag to check the "
+            "build, the delta and the gates. The channel's OWN preflight is the "
+            "census `enable_max_speed` prints at train() startup, which refuses "
+            "a label blob carrying the field on 0 clips -- and the seam's "
+            "parameter cost is pinned by "
+            "stack/tests/test_max_speed_wiring.py.")
+    if not getattr(args, "v7_labels", None):
+        raise SystemExit(
+            "[v3] ⛔ --max-speed-input needs --v7-labels: the ceiling is "
+            "read from the label record's `speed_max_input` block (v8 "
+            "schema `speed_max_input/1`), and without the labels the flag "
+            "would be a dead switch that looks switched.")
+    if (getattr(args, "eval_cache", None) and getattr(args, "eval_every", 0)
+            and not getattr(args, "eval_labels", None)):
+        raise SystemExit(
+            "[v3] ⛔ --max-speed-input with an in-training eval needs "
+            "--eval-labels: the eval dataset must be fed the SAME ceiling "
+            "channel as training, or every eval row scores a "
+            "max-speed-conditioned model on windows that carry none.")
+
+
 # ============================================================================
 # ⭐⭐ THE EFFECTIVE-WEIGHT AUDIT — `_check_goal_point_args` MADE GENERAL
 # ============================================================================
@@ -1137,6 +1213,14 @@ class V3Dataset(RouteV21Dataset):
     _nav_args_by_sid: dict | None = None
     nav_arg_stats = None
     nav_args_report: dict | None = None
+    #: --max-speed-input (E16): the map/nav posted-limit ceiling.
+    #: ``_max_speed_by_sid[sid] = (v_max_ms, valid)`` in the RAW SHIPPED
+    #: value's units (m/s). ⛔ RAW, NOT PRE-QUANTIZED -- see
+    #: :meth:`enable_max_speed`. Default False keeps every banked arm's
+    #: recipe byte-identical.
+    max_speed_enabled: bool = False
+    _max_speed_by_sid: dict | None = None
+    max_speed_report: dict | None = None
     #: ``obstacle.offline`` agent join (refcv5 WP-6 / ``E-AGT-HEAD``), set by
     #: :meth:`enable_agent_join`. While it is None the batch carries NO
     #: ``agent_box`` and ``--w-agent > 0`` REFUSES in ``compute_losses_v3`` --
@@ -1230,6 +1314,135 @@ class V3Dataset(RouteV21Dataset):
               f"{counts['left']} / right {counts['right']}, missing {missing} "
               f"(of {n} clips; md5={manifest.md5})", flush=True)
         return self.nav_from_v7_stats
+
+    # ---- ⭐⭐ E16: the MAX-SPEED ceiling ---------------------------------
+
+    def enable_max_speed(self, manifest, mode: str = msi.DEFAULT_MODE
+                         ) -> dict:
+        """Turn the map/nav posted-limit ceiling ON for this dataset.
+
+        ⛔⛔ THE VALUE THIS SHIPS IS THE RECORD'S OWN ``v_max_ms``, RAW, AND
+        THE LADDER IS APPLIED EXACTLY ONCE -- inside
+        ``max_speed_input.encode_block``, on the model side, under the
+        arm's ``mode``. Quantizing here as well is not a harmless
+        belt-and-braces: the record's ``v_max_bucket_ms`` is rounded to
+        4 dp (13.8889) while the ladder's 50 km/h step is 13.888888..., so
+        the shipped bucket is strictly GREATER than the step it names and
+        snaps UP to the next one. MEASURED on the v8 train blob: feeding
+        the shipped bucket back through the ladder moves **2,631 of 4,572
+        clips (57.5 %) one step up** (50->70 on 1,593, 20->30 on 809,
+        100->120 on 229). That is the same mechanism that manufactured
+        2,203 phantom violations from a re-derived ``v_hi``: a rounding
+        difference in the third decimal, read as a different quantity.
+
+        ⛔ UNITS ARE REQUIRED, NEVER ASSUMED. ``read_max_speed_field``
+        raises on a payload that declares none; that raise is re-raised
+        here as a ``SystemExit`` NAMING THE FIELD and the clip, because
+        m/s vs km/h vs mph is a 1.61x spread and this programme published
+        a 396 g anchor table from exactly this error.
+
+        ⭐ THE CONTENT ASSERTION. The module's pinned ladder and the
+        record's own ``bucket_steps_kmh`` must agree, and the module's
+        snap of the shipped ``v_max_ms`` must reproduce the record's
+        ``v_max_bucket_kmh`` on EVERY clip. MEASURED 2026-09-06: 4,572/4,572
+        train and 147/147 eval, 0 mismatches. A disagreement means the
+        DataFlyWheel re-pinned the ladder under us, and the run REFUSES
+        rather than training on two different quantizations at once.
+
+        Returns the census that goes into ``config.json``.
+        """
+        if mode not in msi.MODES:
+            raise SystemExit(f"[v3] ⛔ --max-speed-mode must be one of "
+                             f"{msi.MODES}, got {mode!r}")
+        if self.v7_by_sid is None:
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input needs the label join "
+                "(v7_by_sid is None) — the trainer sets it from "
+                "--v7-labels / --eval-labels first")
+        by_sid: dict[int, tuple] = {}
+        n_rec = n_block = n_over = 0
+        for sid, lab in self.v7_by_sid.items():
+            n_rec += 1
+            smi = v7l.oracle_max_speed(lab, manifest)   # ⭐ the oracle gate
+            if not smi:
+                by_sid[sid] = (0.0, 0.0)
+                continue
+            n_block += 1
+            # ⛔ THE LADDER THE RECORD SHIPPED MUST BE THE LADDER WE PIN.
+            steps = tuple(smi.get("bucket_steps_kmh") or ())
+            if steps and steps != msi.POSTED_LIMIT_STEPS_KMH:
+                raise SystemExit(
+                    f"[v3] ⛔ clip {lab.clip_id!r}: the record's "
+                    f"`speed_max_input.bucket_steps_kmh` is {list(steps)} "
+                    f"but this build pins "
+                    f"{list(msi.POSTED_LIMIT_STEPS_KMH)}. Two ladders is "
+                    f"two experiments; refusing rather than quantizing "
+                    f"the corpus two different ways.")
+            try:
+                got = msi.read_max_speed_field(smi, mode="quantized")
+            except msi.MaxSpeedUnitsError as exc:
+                raise SystemExit(
+                    f"[v3] ⛔ --max-speed-input: clip {lab.clip_id!r}'s "
+                    f"`speed_max_input` block carries a max speed and its "
+                    f"UNITS cannot be established. Refusing to guess — m/s "
+                    f"vs km/h vs mph is a 1.61x spread. {exc}") from None
+            if not got["valid"]:
+                by_sid[sid] = (0.0, 0.0)
+                continue
+            # ⭐ THE CONTENT ASSERTION, against the SHIPPED bucket.
+            want = smi.get("v_max_bucket_kmh")
+            if want is not None:
+                have = round(float(got["quantized_ms"]) * 3.6)
+                if have != int(want):
+                    raise SystemExit(
+                        f"[v3] ⛔ clip {lab.clip_id!r}: this build snaps "
+                        f"v_max_ms={smi.get('v_max_ms')} to {have} km/h but "
+                        f"the record shipped {int(want)} km/h. The channel "
+                        f"is scored against the SHIPPED value; a "
+                        f"disagreement is a re-derivation, which is what "
+                        f"manufactured 2,203 phantom violations.")
+            n_over += int(bool(got["over_ceiling"]))
+            # ⛔ RAW m/s, in the record's declared units. The mode lives on
+            # the MODEL (`cfg.max_speed_cfg.mode`); see the docstring.
+            by_sid[sid] = (float(got["raw_ms"]), 1.0)
+        n_win = n_win_valid = 0
+        for (e_i, _t) in self.index:
+            v = by_sid.get(int(self.episodes[e_i].episode_id))
+            n_win += 1
+            if v is not None and v[1] > 0.5:
+                n_win_valid += 1
+        if n_win and n_win_valid == 0:
+            raise SystemExit(
+                f"[v3] ⛔ --max-speed-input: NOT ONE of this split's "
+                f"{n_win} windows receives a `speed_max_input` value. The "
+                f"field is a v8 addition — the v7.2 release carries it on "
+                f"0/4,572 records — so this is almost certainly a v7.2 "
+                f"label blob (md5={manifest.md5}). The channel would be a "
+                f"constant invalid pad and the arm would measure it as "
+                f"noise. Refusing rather than feeding nothing.")
+        self._max_speed_by_sid = by_sid
+        self.max_speed_enabled = True
+        self.max_speed_report = {
+            **msi.artifact_meta(mode),
+            "label_md5": manifest.md5,
+            "allow_oracle_nav": bool(manifest.allow_oracle_nav),
+            "quantized_by": "tanitad.refs.max_speed_input.encode_block "
+                            "(model side, ONCE); the loader ships the RAW "
+                            "shipped v_max_ms",
+            "bucket_cross_check": "module snap == record v_max_bucket_kmh "
+                                  "on every clip (refused otherwise)",
+            "n_clips": n_rec, "n_clips_with_block": n_block,
+            "n_clips_over_ceiling": n_over,
+            "n_windows": n_win, "n_windows_with_ceiling": n_win_valid,
+            #: ⭐ THE NUMBER THAT DECIDES THE CLAIM. Quote this before
+            #: saying the channel carries information.
+            "window_ceiling_frac": round(n_win_valid / max(n_win, 1), 4),
+        }
+        print(f"[v3] max_speed_input ({mode}): {n_block}/{n_rec} clips "
+              f"carry a ceiling, {n_win_valid}/{n_win} windows fed, "
+              f"{n_over} over the 130 km/h top step (md5={manifest.md5})",
+              flush=True)
+        return self.max_speed_report
 
     # ---- D-GSTR-1 P3: the nav command's CONTINUOUS ARGS ------------------
 
@@ -1542,6 +1755,20 @@ class V3Dataset(RouteV21Dataset):
                     tn = (raw[1] - st.time_mean) / st.time_std
                     item["nav_args"] = torch.tensor([dn, tn, 1.0],
                                                     dtype=torch.float32)
+        # ---- --max-speed-input: the map/nav posted-limit ceiling ----------
+        # ⛔ ALWAYS EMITTED WHEN THE CHANNEL IS ON, including for a clip
+        # with no block — as an EXPLICITLY INVALID row, never a missing key.
+        # The `nav_args` rule verbatim: a batch that sometimes carries the
+        # key and sometimes does not would make the model's own
+        # "supplied but no seam / seam but not supplied" refusals fire at
+        # random. A silent 0.0 in the VALUE slot reads as "the limit here is
+        # 0 m/s — stop", which is a LIE; the validity slot is what says
+        # "no limit known".
+        if self.max_speed_enabled:
+            raw = (self._max_speed_by_sid or {}).get(int(ep.episode_id))
+            v_ms, ok = (0.0, 0.0) if raw is None else raw
+            item["v_max_ms"] = torch.tensor(v_ms, dtype=torch.float32)
+            item["v_max_valid"] = torch.tensor(ok, dtype=torch.float32)
         # ---- refcv5 WP-6: the obstacle.offline target block ---------------
         # The window's NOW is the last OBSERVED frame -- the same t + w - 1
         # the v7.2 tactical labels above are read at, so the detector and the
@@ -1692,6 +1919,21 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # emitted them. Absent from the batch = the channel is off, and the model
     # REFUSES the mismatch in either direction rather than dropping it.
     nav_args = (batch["nav_args"].to(device) if "nav_args" in batch else None)
+    # ⭐⭐ E16 — the map/nav posted-limit ceiling, if the loader emitted it.
+    # ⛔ THE REVERSE REFUSAL LIVES HERE, where the BATCH is the fact. A build
+    # that asked for the seam and is handed a batch without the key would
+    # train the conditioner on nothing while `config.json` stamps the edge —
+    # the false-provenance class `assert_seams_are_built` exists to close.
+    v_max_ms = v_max_valid = None
+    if getattr(cfg, "max_speed_input", False):
+        if "v_max_ms" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ this build is --max-speed-input but the batch "
+                "carries no `v_max_ms`: the loader's `enable_max_speed` was "
+                "never called on this dataset. The seam would be stamped "
+                "and fed nothing.")
+        v_max_ms = batch["v_max_ms"].to(device)
+        v_max_valid = batch["v_max_valid"].to(device)
     route_tgt = batch["route_target"].to(device)
     goal_tac = batch["goal_tac"].to(device)                 # [B, K, 4]
     goal_valid = batch["goal_tac_valid"].to(device)         # [B, K] bool
@@ -1712,7 +1954,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             device=device)
 
     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
-                ego_state=ego_state, nav_args=nav_args)
+                ego_state=ego_state, nav_args=nav_args,
+                v_max_ms=v_max_ms, v_max_valid=v_max_valid)
 
     # ---- trajectory target over the 8-slot 6 s horizon, masked -------------
     traj_tgt = refb_labels.waypoint_targets(pose_last, fut_ext,
@@ -2477,6 +2720,36 @@ def _seam_stamp(cfg, args) -> dict:
                                              "")),
             "built": None,      # ← the MODEL fills this; see `train`
         },
+        # ⭐⭐ E16 — THE MAX-SPEED CEILING, STAMPED AS INTENT + FACT.
+        # Same three-fact shape as `tac_goal_tok_head` above and for the
+        # same reason: `requested` is what ARGV asked for, `cfg` is what the
+        # pin put on the config, `built` is what the MODEL has, and
+        # `assert_seams_are_built` refuses when the record and the weights
+        # disagree. ⛔ `provenance` is written into the RUN RECORD rather
+        # than left in a docstring, because a reader months later must be
+        # able to answer "what was this channel actually trained on?" from
+        # the artifact alone — and the answer is `ego-future`, a
+        # TRAIN/DEPLOY MISMATCH that any result must be read against.
+        "max_speed_input": {
+            "requested": bool(getattr(args, "max_speed_input", False)),
+            "cfg": bool(getattr(cfg, "max_speed_input", False)),
+            "mode": str(getattr(getattr(cfg, "max_speed_cfg", None),
+                                "mode", msi.DEFAULT_MODE)),
+            "d_speed": int(getattr(getattr(cfg, "max_speed_cfg", None),
+                                   "d_speed", 0)),
+            "meta": (msi.artifact_meta(
+                str(getattr(getattr(cfg, "max_speed_cfg", None), "mode",
+                            msi.DEFAULT_MODE)))
+                if getattr(cfg, "max_speed_input", False) else None),
+            "required_controls": ["shuffled", "withheld"],
+            "controls_note": (
+                "⛔ EVAL OBLIGATION, inseparable from this edge and "
+                "identical to E13's: a max-speed-conditioned result carries "
+                "a SHUFFLE control (serve another clip's ceiling) and a "
+                "WITHHOLD control (valid = 0), or 'the arm improved' cannot "
+                "be separated from 'the arm gained a parameter'."),
+            "built": None,      # ← the MODEL fills this; see `train`
+        },
         # ⛔ M18: the camera the two monocular weights are computed against —
         # or the reason there is none. Without this a reader cannot tell a run
         # that trained `loss_project` from one that stamped its weight and
@@ -2839,6 +3112,36 @@ def assert_seams_are_built(model, stamp: dict) -> None:
             "the seam stamp carries no `tac_goal_tok_head` block but the "
             "head WAS BUILT -- a live seam absent from the run record")
 
+    # --- E16: the max-speed conditioner ---------------------------------- #
+    # ⛔ BIDIRECTIONAL, exactly like the block above. A conditioner in the
+    # weights that no recorded `param_breakdown` names is the D-ROLL-1
+    # rollability defect; a conditioner in the record that the weights lack
+    # is its mirror image, and both make the checkpoint unloadable through
+    # `refcv3_arm.cross_check_config`.
+    ms = stamp.get("max_speed_input")
+    ms_built = _mod(model, "max_speed_cond") is not None
+    if isinstance(ms, dict):
+        if ms.get("built") is not None and bool(ms["built"]) != ms_built:
+            bad.append(
+                f"stamp says max_speed_input.built={ms['built']!r} but "
+                f"model.max_speed_cond is "
+                f"{'BUILT' if ms_built else 'None'} -- the record and the "
+                f"weights disagree about the E16 conditioner")
+        if bool(ms.get("cfg", False)) and not ms_built:
+            bad.append(
+                "stamp says max_speed_input was pinned onto the config but "
+                "model.max_speed_cond is None -- the record would claim a "
+                "ceiling channel the weights do not contain")
+        if not bool(ms.get("cfg", False)) and ms_built:
+            bad.append(
+                "model.max_speed_cond WAS BUILT but the run record does not "
+                "ask for it -- parameters absent from the record, which is "
+                "what makes a checkpoint unrollable")
+    elif ms_built:
+        bad.append(
+            "the seam stamp carries no `max_speed_input` block but the "
+            "conditioner WAS BUILT -- a live seam absent from the record")
+
     if bad:
         raise SystemExit(
             "[v3] ⛔⛔ THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to "
@@ -3041,6 +3344,7 @@ def _anchor_stamp(path, anchors, controls=None, units="kappa",
 
 def preflight(args) -> int:
     _check_nav_from_v7_args(args)          # no-op unless --nav-from-v7
+    _check_max_speed_args(args)            # no-op unless --max-speed-input
     _check_goal_point_args(args)           # no-op unless --goal-point-*
     check_effective_weights(args)          # a weight whose gate is shut
     art = _read_anchor_artifact(args)      # None without --anchors
@@ -3248,6 +3552,7 @@ def train(args) -> dict:
     # --nav-from-v7 (E-ARCH-NAVSRC-1): refuse a mis-specified switch BEFORE any
     # data or GPU work; a no-op with the flag off.
     _check_nav_from_v7_args(args)
+    _check_max_speed_args(args)            # E16; no-op with the flag off
     _check_goal_point_args(args)           # E15 (GP-2); no-op with the flags off
     # ⛔ NOT REDUNDANT WITH THE `preflight` CALL. `main` runs `preflight`
     # ONLY under `--preflight` and otherwise calls `train` directly, so a
@@ -3454,6 +3759,7 @@ def train(args) -> dict:
     ds.u8_frames = u8
     nav_stats = eval_nav_stats = v7_manifest = None
     nav_args_stats = eval_nav_args_stats = None
+    max_speed_stats = eval_max_speed_stats = None
     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
     if args.v7_labels:
         from tanitad.data.v2_dataset import stable_episode_id
@@ -3480,6 +3786,13 @@ def train(args) -> dict:
                 f"the corpus the tactical/strategic heads would train on a "
                 f"minority of clips while the run LOOKED labelled. Check the "
                 f"cache is B1 (97.0 %) and not the parity corpus (7.9 %).")
+        # ---- ⭐⭐ E16: the map/nav posted-limit ceiling, from the SAME
+        # label join. ⛔ Independent of --nav-from-v7: the ceiling is its own
+        # channel and tying it to the nav source would make two levers one.
+        if getattr(args, "max_speed_input", False):
+            max_speed_stats = ds.enable_max_speed(
+                manifest, str(getattr(args, "max_speed_mode",
+                                      msi.DEFAULT_MODE)))
         # ---- --nav-from-v7 (E-ARCH-NAVSRC-1, PI 2026-09-02): the nav INPUT
         # from the record's token — the input refav1 already trains on. The
         # v1 derivation feeds `follow` (+invalid) on 94.6 % of B1 windows
@@ -3554,6 +3867,14 @@ def train(args) -> dict:
                 if getattr(args, "nav_args", False):
                     eval_nav_args_stats = e_ds.enable_nav_args(
                         stats=ds.nav_arg_stats)
+            # ⭐ E16 — the eval dataset is fed the SAME ceiling channel.
+            # ⚠️ No normaliser is handed down and none is fitted: the ladder
+            # is PINNED road law, not a statistic of the split, which is
+            # exactly why quantizing to a fitted quantile was rejected.
+            if getattr(args, "max_speed_input", False):
+                eval_max_speed_stats = e_ds.enable_max_speed(
+                    e_man, str(getattr(args, "max_speed_mode",
+                                       msi.DEFAULT_MODE)))
         # the eval sees the SAME label source as training, with its OWN
         # episode restriction -- and the SAME pad, so the two blocks are
         # directly comparable rather than two different paddings.
@@ -3649,6 +3970,8 @@ def train(args) -> dict:
     # intent. Same idiom as `agent_rig_camera` two lines up.
     _seams["tac_goal_tok_head"]["built"] = (
         getattr(model, "tac_goal_tok_head", None) is not None)
+    _seams["max_speed_input"]["built"] = (
+        getattr(model, "max_speed_cond", None) is not None)
     assert_knobs_stamped(args, _seams)
     # ⛔ ...and the record is checked against the MODEL, not only against
     # the config that produced it. A config is intent; only the built
@@ -3791,6 +4114,20 @@ def train(args) -> dict:
         "nav_args_stats": ({"train": nav_args_stats,
                             "eval": eval_nav_args_stats}
                            if getattr(args, "nav_args", False) else None),
+        # ⭐⭐ E16 — the max-speed channel's own census, so an arm is
+        # identifiable from its own artifacts. ⛔ `window_ceiling_frac` is
+        # THE number that decides whether the channel carried information;
+        # `provenance: ego-future` inside `meta` is the caveat any result
+        # must be read against.
+        "max_speed_input": bool(getattr(args, "max_speed_input", False)),
+        "max_speed_mode": (str(getattr(args, "max_speed_mode",
+                                       msi.DEFAULT_MODE))
+                           if getattr(args, "max_speed_input", False)
+                           else None),
+        "max_speed_stats": ({"train": max_speed_stats,
+                             "eval": eval_max_speed_stats}
+                            if getattr(args, "max_speed_input", False)
+                            else None),
         "v7_labels": v7_manifest,
         # ⭐ refcv5 WP-6: WHICH labels the detector saw, and HOW MANY windows
         # actually carried one. A run that stamps `w_agent > 0` without this
@@ -4473,6 +4810,47 @@ def build_parser() -> argparse.ArgumentParser:
                     help="override core.ego_dropout. Under v4 this is ONE "
                          "draw per sample, shared by the goal path and the "
                          "measurement encoder (never two).")
+    # ---- ⭐⭐ E16 (PI 2026-09-01, reaffirmed 2026-09-06): THE MAX-SPEED
+    # (map/nav posted-limit) INPUT. Both flags default to the OFF/inert
+    # value, because the live 40 k refcv5 run resumes through this file.
+    ap.add_argument("--max-speed-input", action="store_true",
+                    help="⭐⭐ E16 — FEED the map/nav POSTED-LIMIT CEILING "
+                         "as a model INPUT, beside `v0` and the nav token "
+                         "and nowhere near a loss. Read from the v8 label "
+                         "record's `speed_max_input` block (`v_max_ms`, "
+                         "units DECLARED on the wire as m/s; the v7.2 "
+                         "release carries it on 0/4,572 records and the "
+                         "flag REFUSES there rather than looking switched). "
+                         "It stands in for a speed-limit service the way "
+                         "`nav_command` stands in for the nav system. "
+                         "⚠️ TRAIN/DEPLOY MISMATCH, STATED: the training "
+                         "value's provenance is `ego-future` — max of the "
+                         "ego's OWN REALISED speed over [t0+2 s, +6 s] — "
+                         "while deployment supplies a limit the driver may "
+                         "not reach. ⚠️ AND ITS RESIDUAL DEFECT: snapping "
+                         "UP from a STOPPED ego reports the LOWEST limit "
+                         "(75 %% of intersection clips get <= 30 km/h where "
+                         "a map would say 50), so the channel can teach "
+                         "'slow ego => low limit'. ⛔ Any result carries a "
+                         "SHUFFLE and a WITHHOLD control or it is not "
+                         "evidence. Requires --arm hier and --v7-labels. "
+                         "Default OFF: no banked arm's recipe changes.")
+    ap.add_argument("--max-speed-mode", choices=list(msi.MODES),
+                    default=msi.DEFAULT_MODE,
+                    help="how the ceiling is encoded for the model. "
+                         "`quantized` (DEFAULT) snaps UP to the pinned "
+                         "posted-limit ladder (20/30/50/70/80/100/120/130 "
+                         "km/h — VALUES from road law, MEMBERSHIP from the "
+                         "corpus, NO step is a quantile). `raw` feeds the "
+                         "unquantized float, FOR COMPARISON ONLY. "
+                         "⚠️ Quantization is COSMETIC as a leak fix — the "
+                         "bin plus v0 still recovers the raw value at R^2 "
+                         "0.9702 vs 0.8789 for v0 alone, i.e. 75.4 %% of "
+                         "the future survives — and REAL as a SEMANTICS "
+                         "fix: the raw ceiling sits BELOW the ego's own "
+                         "current speed on 34.8 %% of clips (incoherent for "
+                         "a ceiling), quantized 8.4 %%. ⛔ INERT without "
+                         "--max-speed-input, and refused as such.")
     ap.add_argument("--nav-args", action="store_true",
                     help="⭐ E13b (D-GSTR-1 P3) — FEED the nav command's "
                          "CONTINUOUS ARGS `distance_m` (METRES) and `time_s` "
