@@ -1,0 +1,36 @@
+OK  CONTROL (unmutated tree)
+     expected GREEN, got GREEN  -- 51 passed in 1.50s
+     preflight: PREFLIGHT=PASS
+
+OK  M1  an exclusion with NO REASON
+     expected RED, got RED  -- 18 failed, 33 passed in 1.80s
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_forward_keys_covers_every_required_channel
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_forward_keys_has_no_channels_the_forward_rejects
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_diagnostic_only_names_are_real_channels
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_declared_diagnostic_channels_are_absent_from_forward_keys
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_every_exclusion_carries_a_reason_AND_an_unblock_condition
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_the_temporary_and_permanent_exclusions_are_DISTINGUISHABLE
+     preflight: PREFLIGHT=REFUSED ExclusionDeclarationError
+
+OK  M2  declared-excluded gp_point PLUMBED
+     expected RED, got RED  -- 4 failed, 47 passed in 1.52s
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_declared_diagnostic_channels_are_absent_from_forward_keys
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_MUTATION_moving_a_declared_channel_into_FORWARD_KEYS_is_RED
+       FAILED stack\tests\test_rl_channel_guard.py::test_the_LIVE_pair_PASSES_and_the_verdict_is_reproduced_independently
+       FAILED stack\tests\test_rl_refc_adapter_robust.py::test_forward_kwargs_plumbs_every_channel_the_forward_accepts
+     preflight: PREFLIGHT=REFUSED ChannelLeakError
+
+OK  M3  a channel in NEITHER place
+     expected RED, got RED  -- 4 failed, 47 passed in 1.55s
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_forward_keys_covers_every_required_channel
+       FAILED stack\tests\test_rl_forward_keys_cover_signature.py::test_MUTATION_a_channel_in_NEITHER_place_is_RED
+       FAILED stack\tests\test_rl_channel_guard.py::test_the_LIVE_pair_PASSES_and_the_verdict_is_reproduced_independently
+       FAILED stack\tests\test_rl_refc_adapter_robust.py::test_forward_kwargs_plumbs_every_channel_the_forward_accepts
+     preflight: PREFLIGHT=REFUSED ChannelDriftError
+
+OK  CONTROL (after restore)
+     expected GREEN, got GREEN  -- 51 passed in 1.49s
+     preflight: PREFLIGHT=PASS
+
+==========================================================================
+MUTATION PROOF: ALL EXPECTATIONS MET (5/5)
