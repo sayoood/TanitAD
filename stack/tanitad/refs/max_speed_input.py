@@ -95,6 +95,8 @@ from dataclasses import dataclass
 import torch
 from torch import Tensor, nn
 
+from tanitad.channel_admissibility import ChannelExclusion
+
 # --- units -------------------------------------------------------------------
 
 #: What every speed in this module MEANS. Written into every artifact; required
@@ -109,6 +111,101 @@ UNIT_TO_MS: dict[str, float] = {
     "km_h": 1.0 / 3.6, "km/h": 1.0 / 3.6, "kmh": 1.0 / 3.6, "kph": 1.0 / 3.6,
     "mph": 0.44704, "mi_h": 0.44704, "mi/h": 0.44704,
 }
+
+#: ⛔⛔ `v_max_ms` / `v_max_valid` MUST NOT BE PLUMBED INTO AN RL ROLLOUT **FROM
+#: THIS CORPUS** -- and this is a SUPPLIER ruling, not a ruling against the channel.
+#:
+#: ⭐ THE CHANNEL IS LEGITIMATE IN PRINCIPLE and the module docstring says why: the
+#: PI ruled a posted speed limit is an INPUT, the way `nav_command` is. Nothing below
+#: retracts that. The ladder, the units contract and the zero-init conditioner are
+#: right and stay.
+#:
+#: ⛔ WHAT IS NOT LEGITIMATE IS THE VALUE WE CAN SUPPLY. On this corpus the only
+#: source is `g_tac.goals.SPEED_BAND.v_hi_ms` = `max` of the ego's OWN REALISED speed
+#: over `[anchor+2 s, +6 s]` -- which is why `v7_labels.oracle_max_speed` gates it
+#: behind the `allow_oracle_nav` stamp. And `refc_v3_train.enable_max_speed` ships
+#: that value RAW into the batch; the ladder is applied on the MODEL side. So an
+#: adapter plumbing `batch["v_max_ms"]` plumbs the ego's future speed itself.
+#:
+#: ⚠️⚠️ AND QUANTIZATION DOES NOT LAUNDER IT -- MEASURED, not argued. 5-fold
+#: OUT-OF-FOLD, clip-disjoint, n = 4,572
+#: (`Research/2026-09-06-max-speed-input/raw/quantization_panel_train.txt`):
+#:
+#:     v_hi_raw <- v0 alone                        R2 = 0.8789   rmse 2.586 m/s
+#:     v_hi_raw <- PINNED 8-step bin alone         R2 = 0.9513   rmse 1.640 m/s
+#:     v_hi_raw <- PINNED bin + v0 (per-bin)       R2 = 0.9702   rmse 1.282 m/s
+#:     ---------------------------------------------------------------------
+#:     the future information the BIN adds         dR2 = +0.0913, rmse cut 1.304 m/s
+#:     UNRECOVERED share of the ego's future       0.0298  (train) / 0.0448 (eval)
+#:
+#: ⇒ even at the PINNED 8 steps, 97.0 % of the ego's realised speed ceiling over the
+#: scored horizon is recoverable from the channel. The module docstring rejects the
+#: 13-step ladder at R2 = 0.9884 as "the bin IS the raw value in disguise"; 0.9702 is
+#: the same objection with a smaller number in front of it. For a SUPERVISED arm that
+#: is a declared train/deploy mismatch, stamped and reported. For an RL ROLLOUT on the
+#: axis that owns 88.7 % of the oracle gap it is the answer's upper envelope, handed
+#: over on the very horizon being scored.
+FORWARD_EXCLUSIONS = (
+    ChannelExclusion(
+        channel="v_max_ms",
+        owner="tanitad.refs.max_speed_input (E16 max-speed seam)",
+        reason=(
+            "The channel is admissible IN PRINCIPLE -- the PI ruled a posted limit "
+            "is an input like the nav command -- but this corpus has no posted "
+            "limit. Its only source is SPEED_BAND.v_hi_ms = max of the ego's OWN "
+            "realised speed over [anchor+2 s, +6 s], which is why "
+            "`v7_labels.oracle_max_speed` refuses it without the oracle stamp, and "
+            "`refc_v3_train.enable_max_speed` ships that value RAW into the batch. "
+            "Quantization does not launder it: MEASURED 5-fold out-of-fold on "
+            "n = 4,572, the raw ego-future ceiling is recoverable from the pinned "
+            "8-step bin plus v0 at R2 = 0.9702 (bin alone 0.9513; v0-alone control "
+            "0.8789, so the bin ADDS dR2 = +0.0913 of the ego's future). A rollout "
+            "fed this gets a 97 %-accurate read of its own answer's speed envelope "
+            "on the horizon being scored, on the axis owning 88.7 % of the gap."),
+        unblock=(
+            "A SUPPLIER THAT IS NOT THE EGO'S REALISED FUTURE. Nothing in this "
+            "module changes -- ladder, units contract and conditioner are already "
+            "correct and stay. Join a posted limit from a map (`map.xodr` ships with "
+            "the NuRec scenes; an OSM/HD-map join is the other route) or read it "
+            "from the frames with sign recognition, stamp the new provenance in "
+            "place of 'ego-future', and re-run "
+            "`Research/2026-09-06-max-speed-input/code/quantization_panel.py`: when "
+            "the value no longer predicts the ego's future speed the exclusion is "
+            "lifted, and the arm still reports the recoverability number beside any "
+            "claim. Re-deriving on a corpus whose labels carry a genuine limit is "
+            "the same unblock by a different road."),
+        evidence=("MEASURED: `Research/2026-09-06-max-speed-input/raw/"
+                  "quantization_panel_train.txt` (5-fold OOF, clip-disjoint, "
+                  "n = 4,572). PUBLISHED-CODE: `s2_geom_emit_v7.py:309-315` for "
+                  "v_hi_ms, `v7_labels.oracle_max_speed` for the provenance stamp, "
+                  "`refc_v3_train.enable_max_speed` for the RAW ship."),
+        permanent=False,
+        refs=("Research/2026-09-07-rl-channel-admissibility/",
+              "Research/2026-09-06-max-speed-input/"),
+    ),
+    ChannelExclusion(
+        channel="v_max_valid",
+        owner="tanitad.refs.max_speed_input (E16 max-speed seam)",
+        reason=(
+            "The validity bit of `v_max_ms`, and it is excluded WITH it rather than "
+            "on its own account: on this corpus the bit is 1 exactly where the "
+            "ego-future ceiling exists, so it carries the same provenance. Plumbing "
+            "it alone would also be actively wrong -- the forward refuses a build "
+            "that is `--max-speed-input` and receives no `v_max_ms` while a nav "
+            "token is present, and a bit with no value slot beside it announces a "
+            "limit the model was never given."),
+        unblock=(
+            "The same one as `v_max_ms`, and only that one: when a non-ego-future "
+            "supplier lands, the bit means 'the map knows a limit here' -- which is "
+            "a real and distinct input, and is exactly why the slot exists rather "
+            "than a silent 0.0 in the value channel."),
+        evidence=("PUBLISHED-CODE: `VALID_SLOT` / `MAX_SPEED_DIMS` in this module "
+                  "and the paired refusals in `RefCV3Model.forward`."),
+        permanent=False,
+        refs=("Research/2026-09-07-rl-channel-admissibility/",),
+    ),
+)
+
 
 #: One sentence a refusal can quote, so the reader knows what the rule costs.
 INCIDENT = (

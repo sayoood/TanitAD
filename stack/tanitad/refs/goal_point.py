@@ -91,6 +91,7 @@ from torch import Tensor, nn
 
 from tanitad.data.lan import (LanConfig, cumulative_arclength, horizon_lead_m,
                               resample_arclength)
+from tanitad.channel_admissibility import ChannelExclusion
 
 #: Feature layout the model consumes — pinned by tests/test_goal_point.py.
 #:   0: x / arc   along-track, normalised by the arc length (so it is ~1 by design)
@@ -123,7 +124,63 @@ GOAL_POINT_FEAT_NAMES = ("x_norm", "y_norm", "valid")
 #: ``- set(goal_point.DIAGNOSTIC_ONLY_FORWARD_KWARGS)`` as well.
 #: Raised as ``D-RL-ADAPTER-GOALPOINT-DRIFT`` by the RL stream on 2026-09-06 and
 #: ruled here, by the stream that owns the edge.
-DIAGNOSTIC_ONLY_FORWARD_KWARGS = ("gp_point", "gp_valid")
+FORWARD_EXCLUSIONS = (
+    ChannelExclusion(
+        channel="gp_point",
+        owner="tanitad.refs.goal_point (E15 / S7 goal-point seam)",
+        reason=(
+            "The goal point IS the label. `GoalPointConfig` puts it at "
+            "`t_goal_s = 4.0 s` in time mode and REFUSES a value at or inside the "
+            "scored horizon `t_pred_s = 2.0 s` (`__post_init__`), so the only thing "
+            "a batch could supply it FROM is the ego's own future pose 4 s ahead -- "
+            "the answer's continuation. Feeding it in a rollout turns the "
+            "deployable arm's own prediction into an oracle read at inference, "
+            "which is the supplied-route optimism this whole edge exists to avoid."),
+        unblock=(
+            "NONE, and this is a decision rather than an omission. There is nothing "
+            "to unblock: the deployable arm ALREADY has the goal -- `gp_head(ctx)` "
+            "predicts it from vision inside the forward whenever `goal_point_inject` "
+            "is on. Leaving the kwarg at None is not a gap, it is the correct call, "
+            "and the port stays for the PREREG SS2 eval-time interventions (mirror, "
+            "range x0.5, straight, shuffled, withheld) which are DIAGNOSTIC by "
+            "definition and never run under a rollout."),
+        evidence=("PUBLISHED-CODE: this module's `GoalPointConfig.__post_init__` "
+                  "leak guard; `refc_v3.py` forward docstring (*a DIAGNOSTIC PORT, "
+                  "never a training input*) and its `core.graft_gp_point` refusal."),
+        permanent=True,
+        refs=("D-RL-ADAPTER-GOALPOINT-DRIFT (RL stream, 2026-09-06)",
+              "Research/2026-09-06-goal-point/"),
+    ),
+    ChannelExclusion(
+        channel="gp_valid",
+        owner="tanitad.refs.goal_point (E15 / S7 goal-point seam)",
+        reason=(
+            "The validity bit of a channel that is itself the label. It travels with "
+            "`gp_point` and has no independent source: a batch that could set it "
+            "truthfully is a batch that already read the ego's future pose. Plumbing "
+            "the bit alone would also be worse than useless -- it would announce "
+            "'a goal exists' while the value slot stayed at the pad."),
+        unblock=(
+            "NONE, for the same reason as `gp_point`: it is the companion bit of a "
+            "port the deployable arm does not need, because the arm predicts its own "
+            "goal from vision. It is unblocked only if `gp_point` ever is, which the "
+            "line above rules out."),
+        evidence=("PUBLISHED-CODE: this module's feature layout "
+                  "(`GOAL_POINT_FEAT_NAMES[2] == 'valid'`, *1.0 iff a real, "
+                  "leak-guarded goal exists*)."),
+        permanent=True,
+        refs=("D-RL-ADAPTER-GOALPOINT-DRIFT (RL stream, 2026-09-06)",),
+    ),
+)
+
+#: ⚠️ KEPT AS A DERIVED ALIAS, NEVER RE-TYPED. Older callers (and the first version
+#: of the drift guard) read this flat tuple. It is now COMPUTED from
+#: :data:`FORWARD_EXCLUSIONS` above, so the names cannot desync from the reasons --
+#: which is exactly how a hand-mirrored list rots, one level down from the rot this
+#: whole surface was built to stop.
+#: ⛔ New readers should use ``tanitad.channel_admissibility.forward_exclusions()``:
+#: it carries the OTHER seams' exclusions too, and this tuple never will.
+DIAGNOSTIC_ONLY_FORWARD_KWARGS = tuple(d.channel for d in FORWARD_EXCLUSIONS)
 
 _EPS = 1e-9
 

@@ -35,6 +35,7 @@ from typing import Any
 import torch
 from torch import Tensor, nn
 
+from tanitad.channel_admissibility import ChannelExclusion
 from tanitad.models.vocab_v7 import NAV_COMMAND_TOKENS, NAV_PROVENANCE
 
 __all__ = ["NAV_CONTROLS", "NavArgStats", "NavConditioner", "NavTokenMissing",
@@ -42,6 +43,68 @@ __all__ = ["NAV_CONTROLS", "NavArgStats", "NavConditioner", "NavTokenMissing",
 
 #: the controls the spec requires; ``real`` is the uncontrolled channel.
 NAV_CONTROLS = ("real", "hold", "shuffled", "none")
+
+#: ⛔⛔ `nav_args` MUST NOT BE PLUMBED INTO AN RL ROLLOUT **AS BUILT** -- and the
+#: reason is one of its two value slots, not the channel.
+#:
+#: ⭐ THE TOKEN IS PLUMBED AND THE ARGS ARE NOT, WHICH IS NOT AN INCONSISTENCY.
+#: `nav_cmd` carries `provenance: "ego-future"` on 4,719/4,719 records too, and it IS
+#: in `refc_adapter.FORWARD_KEYS`. The programme admits it because the QUANTITY --
+#: "which way at the next junction" -- is one a real nav system genuinely supplies,
+#: and because this module makes the `shuffled` control mandatory beside any claim
+#: from it. Apply the same two tests slot by slot and the block splits:
+#:
+#:   `distance_m`  ⭐ ADMISSIBLE AS A QUANTITY. A real nav system says "turn left in
+#:                 300 m". Our value is measured along the ego's driven path
+#:                 (`s2_geom_emit_v7._arc_to`), but arc length TO A FIXED ROAD
+#:                 FEATURE is a property of the route, and a map knows it without
+#:                 knowing how the car will be driven.
+#:   `time_s`      ⛔ NOT ADMISSIBLE AT ALL. `s2_geom_emit_v7.py:715` sets it to
+#:                 `nxt[0]` -- the time offset at which THE EGO'S OWN FUTURE PATH
+#:                 reaches the turn. No nav system can know when you will arrive,
+#:                 because that depends on how you drive: `time_s` is the ego's
+#:                 future SPEED PROFILE, inverted. Handing it to a rollout hands it
+#:                 the along-track answer, on the axis that owns 88.7 % of the oracle
+#:                 gap (`Research/2026-09-06-goal-point`).
+#:
+#: ⚠️ AND THERE IS NO WAY TO SHIP ONE WITHOUT THE OTHER TODAY. `NAV_ARG_SLOTS`
+#: is `("distance_m", "time_s")`, `refc_v3.NAV_ARG_DIMS` is 3 and sizes
+#: `nn.Linear(NAV_ARG_DIMS, d_nav)`, the loader always emits `[dist_norm,
+#: time_norm, valid]`, and the forward REFUSES any other width. `--nav-args` is a
+#: boolean: there is no distance-only mode to select. That is why the exclusion is
+#: on the whole channel and is TEMPORARY -- the fix is a build option, not a ruling.
+FORWARD_EXCLUSIONS = (
+    ChannelExclusion(
+        channel="nav_args",
+        owner="tanitad.models.nav_conditioning (E13b nav-argument seam)",
+        reason=(
+            "The block ships (distance_norm, time_norm, args_valid) and cannot ship "
+            "fewer. `distance_m` is admissible as a quantity -- a real nav system "
+            "says 'turn left in 300 m'. `time_s` is not: `s2_geom_emit_v7.py:715` "
+            "sets it to the time offset at which the EGO'S OWN FUTURE PATH reaches "
+            "the turn, and no nav system can know when you will arrive because that "
+            "depends on how you drive. It is the ego's future speed profile "
+            "inverted, on the axis that owns 88.7 % of the oracle gap. Since "
+            "`NAV_ARG_DIMS = 3` sizes the projection and the forward refuses any "
+            "other width, plumbing the channel plumbs the time slot."),
+        unblock=(
+            "A DISTANCE-ONLY MODE. Ship `--nav-args=distance` with "
+            "`NAV_ARG_SLOTS = ('distance_m',)` and `NAV_ARG_DIMS = 2` -- the loader "
+            "emitting `[distance_norm, valid]` and the projection resized to match. "
+            "At that point every slot is a quantity a nav system supplies and the "
+            "channel becomes plumbable, subject to the same `shuffled` control this "
+            "module already makes mandatory for the token. ⚠️ The eval-time "
+            "`--nav-args` arm is NOT blocked meanwhile: it is a supervised arm, not "
+            "a rollout, and it reports its oracle stamp."),
+        evidence=("PUBLISHED-CODE: `vocab_v7.NAV_ARG_SLOTS`, `refc_v3.NAV_ARG_DIMS` "
+                  "= 3 and its width refusal, `refc_v3_train.py` loader emitting "
+                  "`[dn, tn, 1.0]`; `s2_geom_emit_v7.py:714-715` for both slots' "
+                  "provenance. MEASURED: 88.7 % longitudinal share of the oracle "
+                  "gap, `Research/2026-09-06-goal-point`."),
+        permanent=False,
+        refs=("Research/2026-09-07-rl-channel-admissibility/",),
+    ),
+)
 
 
 class NavTokenMissing(RuntimeError):
