@@ -123,6 +123,51 @@ That is why it is here rather than left as a traceback for the next person.
 Evidence: `…/Research/2026-09-07-rl-pilot-config-contract/`.*
 
 
+## 9. DECIDE: refcv5-v2 IS the compose arm, and P1 was excluded ON EVIDENCE — but you asked for environment grounding by name
+
+⭐ **The launch was legitimate and I want that stated first.** §4 of the plan gates the composed
+arm on P1 being *"IN or **explicitly declared OUT**"*. P1 was **declared OUT by a two-seed gate**, so
+the condition was met. Leaving it out was **not** a shortcut and **not** a validate-arm decision —
+it was the gate returning a verdict.
+
+⛔ **But the verdict was a FAILURE, and you asked for this piece by name.** MEASURED, `head − off`,
+T1, paired episode-cluster bootstrap, n = 776–779 windows / 28 episodes, **both seeds**:
+
+| distance-keeping | seed 0 | seed 1 |
+|---|---|---|
+| min headway (m) | **−0.5015** [−0.7712, −0.2366] | **−0.4535** [−0.7915, −0.1639] |
+| min time-gap (s) | **−0.0702** [−0.1074, −0.0385] | **−0.0351** [−0.0694, −0.0037] |
+| min TTC (s) | **−2.1959** [−4.1408, −0.6110] | **−1.2529** [−2.2522, −0.3694] |
+
+Same sign, overlapping intervals, separated **worse** at both seeds.
+
+⭐ **AND THE DELIBERATE-REGRESSION ARM RELOCATED THE CAUSE, which is why this is a decision and not
+a closed case.** A third arm with the join's `clip_id` **deranged** (0 of 26,394 rows on their own
+clip; coverage 94.9 % vs 94.7 %) **reproduces the entire degradation**, while `head − shuf` is **not
+separated on any distance-keeping metric at either seed**. ⇒ the cost is the **auxiliary detection
+task competing for a 17 M trunk at 500 steps** — **not the agent information.**
+
+⚠️ **WHETHER THAT COST VANISHES AT 108 M OVER 40 k STEPS IS UNTESTED.** It is a hypothesis, and the
+gate cannot support it. ⛔ The honest framing for any retry is *"an arm whose exclusion may not
+generalise"*, never *"recovering a lever we know is there"* — the seed-1 retraction is why: a
+one-seed lateral cell was reported as "a direction" and the **deranged** join then beat the real one
+on four lateral metrics.
+
+⚠️ **AND WP-A ADDS A REASON NOT TO RUSH IT.** MEASURED (`E-READOUT-CEILING-1`): under a *perfect*
+front-end the readout prices out at 16×40 **AP 0.4713** vs 4×4 **0.1583**, but **on the real trunk
+none of it transfers** — test AP **0.027–0.034** against a **0.0325** marginal control. ⇒ **the map
+does not yet contain agents.** An agent seam re-enabled today would be feeding a representation that
+cannot localise them, so the cheap order is to give the map spatial structure first.
+
+**Default if silent:** P1 stays out. refcv5-v2 completes as launched (~step 16,400 of 40,284 at
+18:04 Z, landing late Monday) and is scored against refcv4b on the four families. ⛔ The result will
+carry *"agent conditioning excluded on a two-seed tiny-rig gate"* as a stated limitation, not as an
+omission.
+
+*Evidence: `…/Research/2026-09-07-p1-agent-gate/` (both seeds + the derangement),
+`…/2026-09-07-wpa-readout-localisation/`.*
+
+
 ---
 
 ## Not a decision — the state, for orientation
