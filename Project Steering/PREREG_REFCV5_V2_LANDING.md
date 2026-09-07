@@ -14,6 +14,9 @@ nothing was committed. ⛔ **This file changes NO criterion.** Altering a bar af
 arm's data is the goalpost move the operating standard forbids; the text below is copied, not
 rewritten.
 
+
+⛔⛔ **SEE `PREREG_REFCV5_V2_LANDING.ERRATUM-1.md` BEFORE READING §1.** Two of this file's statements about **the arm** are corrected there — `--tac-goal-tok-head` is passed and built but receives **NO GRADIENT** (`grad_abs_sum` 0, 2/2 grads `None`), and `--max-speed-input` is **UNRUNNABLE on v7.2** (`speed_max_input` on 0/4,572 records), not merely unpassed. ⛔ **No CRITERION changes**: `BAR-REFCV5V2-1` and `-2` stand exactly as written.
+
 ## 1. The arm — MEASURED from its live `config.json`, not from the launch intent
 
 `refcv5-v2-noagents-b1-v72-40k`, argv carries:
