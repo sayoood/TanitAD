@@ -94,12 +94,78 @@ WATCH ITEM on the landing read, not as a finding.**
 2026-09-04 that is a first-class ROUTE INPUT, not a leak --- but it is noiseless and perfectly
 timed where a real router is coarse, so no arm's nav may be read as a production command.
 
-## 4. Seeds 1 and 2 --- PENDING
+## 4. RESULT --- all three seeds in
 
-When they land: (a) assert `ha` / `ha0` / `ha0_ext` are **identical** to seed 0 --- if not, stop and
-fix the experiment; (b) report the spread of `os` and, more importantly, of **`os - ha0_ext`**,
-the bar's OWN statistic; (c) state whether the ±0.005 nav bound in §3 survives the sampler.
+**Status: COMPLETE.** `--infer-seed 0 / 1 / 2`, same checkpoint, same flags, one variable.
+Raw: `raw/floor_3seed.json`, `raw/floor_table_3seed.json`.
 
-*Instrument: `C:\Users\Admin\refcv5cmp\noisefloor.sh`, `floor_extract.py`. Bar and prereg:
-`Project Steering/PREREG_REFCV5_V2_LANDING.md`. Register row: GOALS_AND_CLAIMS "That owed
-pre-registration is now WRITTEN".*
+### 4.1 ✅ The known-value control read its known value --- THREE TIMES, EXACTLY
+
+| arm | s0 | s1 | s2 | range |
+|---|---|---|---|---|
+| `ha` | 0.2996 | 0.2996 | 0.2996 | **0.00000** |
+| `ha0` | 0.6723 | 0.6723 | 0.6723 | **0.00000** |
+| `ha0_ext` | 0.2874 | 0.2874 | 0.2874 | **0.00000** |
+| `paired_ha_minus_ha0` | −0.37279 | −0.37279 | −0.37279 | **0.00000** |
+
+⭐ These arms **read no frames**, so they are deterministic BY CONSTRUCTION and this is what a
+passing control looks like: not "close", **exactly zero**, on all six metrics, three times.
+Meanwhile every MODEL arm moved ⇒ **the DDIM branch IS reached at eval**, which is the
+discriminator fixed in §0 before any data existed. A null here would have been ambiguous without
+it; it is not ambiguous.
+
+### 4.2 ⭐ THE FLOOR IS METRIC-SPECIFIC, AND IT SCALES WITH HOW MANY STOCHASTIC ARMS THE STATISTIC DIFFERENCES
+
+This is the transferable result, and it is a clean three-tier ladder:
+
+| statistic | stochastic arms differenced | seed range |
+|---|---|---|
+| `ha − ha0` | **0** | **0.00000** |
+| `os − ha0_ext`, `os − ha`, `os − ha0` | **1** | **0.00073** |
+| `os − navshuf` | **2** | **0.00223** |
+| `os − navzero` | **2** | **0.00364** |
+
+⇒ **A delta against a DETERMINISTIC control costs ~0.0007; a delta between two SAMPLING arms
+costs 3–5× that.** ⛔ So "the inference floor of this arm" is not one number — **quote the floor
+for the statistic you are claiming on.** *(Same family as the estimator rules: `H-ESTIM-SEED-1`
+says a separated CI answers the EPISODE question only; this adds that even the inference question
+has a different answer per statistic.)*
+
+### 4.3 ✅ THE LANDING BAR IS SAFE --- 155× the floor
+
+`os − ha0_ext` = **+0.11342 / +0.11288 / +0.11269**, mean **+0.11300**, seed range **0.00073**,
+**separated at all three seeds**. ⇒ **ratio 155.1×.** Sampler noise does **not** threaten
+`BAR-REFCV5V2-1`. The worry that motivated this measurement is resolved, and resolved favourably.
+`os − ha` behaves identically (range 0.00073, separated ×3), so `BAR-REFCV5V2-2` is equally safe.
+⭐ `oracle_sel − os` = −0.10702 / −0.10605 / −0.10481 (range 0.00221, separated ×3, **48× the
+floor**) ⇒ the **selection headroom is real** on the arm itself, not only on a tiny rig.
+
+### 4.4 ⛔ THE NAV EFFECT IS SMALLER THAN ITS OWN NOISE — `NOT MEASURED`, not "nav does nothing"
+
+| | s0 | s1 | s2 | range | mean | effect / floor |
+|---|---|---|---|---|---|---|
+| `os − navshuf` | −0.00001 | −0.00224 | −0.00201 | 0.00223 | −0.00142 | **0.64×** |
+| `os − navzero` | **+0.00025** | −0.00101 | **−0.00339** | 0.00364 | −0.00138 | 0.38× |
+
+⛔ **The effect is 0.64× its own inference floor, and `os − navzero` FLIPS SIGN across seeds.**
+None of the six cells is separated. ⇒ the correct verdict is **`NOT MEASURED` at this
+checkpoint** — the instrument cannot resolve an effect this small on a sampling planner.
+
+⛔ **THIS IS NOT "the arm ignores nav", AND §3'S WATCH ITEM IS NOW SUPERSEDED BY IT.** §3 recorded
+a seed-0 point estimate of **+0.00025** and asked whether it would survive. It did not: it is
+smaller than the floor, and its sign is not stable. ⭐ **Had this been banked at one seed it would
+have published a sign that does not exist** — which is exactly what a replicate arm is for, one
+level down from `H-ESTIM-SEED-1`.
+✅ What IS admissible is a **BOUND**: the paired CI at every seed straddles zero with half-width
+≈ 0.005 m, so **|nav effect on ADE| < ~0.005 m at step 15,000**, against an arm sitting 0.113 m
+from its bar. ⚠️ Whether nav matters at **40,284** steps is untested and remains a landing
+watch item — `os_navshuf` / `os_navzero` are in every roll, so re-reading it is FREE.
+
+### 4.5 Scope
+
+⛔ **Step 15,000 of 40,284.** No LEVEL here is a capability number and none may be quoted as one:
+at this checkpoint the arm would FAIL both bars (separated WORSE than `ha0_ext` by +0.113 and than
+`ha` by +0.100), while beating constant-velocity `ha0` by −0.272. That is training progress, not
+a verdict. The **SPREAD** is the deliverable, and it is an **ESTIMATE** for the 40k arm — a
+sharper model may sample differently. ⛔ **The landing still runs its own replicate**
+(`compare.sh --infer-seed 1`); this measurement tells us what to expect, it does not replace it.

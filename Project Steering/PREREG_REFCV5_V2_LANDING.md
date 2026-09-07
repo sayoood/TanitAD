@@ -87,6 +87,20 @@ are `ego-future`. Per the binding PI ruling of 2026-09-04 that is a first-class 
 a leak — but it is noiseless and perfectly timed where a real router is coarse, so no arm's nav
 may be read as a production command.
 
+
+✅ **MEASURED 2026-09-07 — THE FLOOR IS IN, AND THE BAR IS SAFE AT 155×.** Three rolls of this
+arm's own `ckpt_15000.pt` at `--infer-seed 0/1/2` (dev-box 4060; **0 A40**). **The known-value
+control read EXACTLY zero, three times**: `ha` / `ha0` / `ha0_ext` identical across all seeds and
+`ha − ha0` range **0.00000** — while every MODEL arm moved, so the DDIM branch IS reached at eval.
+**`os − ha0_ext` = +0.11342 / +0.11288 / +0.11269, separated ×3, seed range 0.00073 ⇒ 155.1×**
+⇒ sampler noise does **not** threaten `BAR-REFCV5V2-1`, and `BAR-REFCV5V2-2` is equally safe
+(same 0.00073 range). ⭐ **The floor is METRIC-SPECIFIC and scales with how many STOCHASTIC arms a
+statistic differences**: 0 arms → 0.00000, 1 arm → 0.00073, 2 arms → 0.00223–0.00364. Quote the
+floor for the statistic being claimed on. ⛔ Step 15,000 is MID-TRAINING: no LEVEL is a capability
+number, the SPREAD is an ESTIMATE for the 40k arm, and **the landing still runs its own replicate**
+(`compare.sh --infer-seed 1`). Full result: `TanitAD Research Lab/Benchmarks & Evals/Research/
+2026-09-07-refcv5-v2-inference-floor/RESULT.md` §4, raw `raw/floor_3seed.json`.
+
 ## 5. The discriminating control that makes this bar credible
 
 ⭐ The harness was run against **refcv4b itself** and **writes FAIL on both bars**. A bar that
