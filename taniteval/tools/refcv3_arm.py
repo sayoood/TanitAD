@@ -800,6 +800,106 @@ def anchor_chance(n_anchors) -> float | None:
     return round(1.0 / int(n_anchors), 6)
 
 
+#: ⭐ EVERY FIELD THAT CAN WITNESS A BANK SIZE, in order of AUTHORITY.
+#: The checkpoint tensor is first because it is THE OBJECT THE MODEL USES: the
+#: anchors are a PERSISTENT buffer (``refc.py:1384``), the deployed selection is
+#: an argmax over exactly that tensor, and ``anchor_acc``'s denominator is
+#: exactly its first dimension. Everything else DESCRIBES it - argv is what was
+#: requested, ``config.json:anchors.shape`` is what the builder installed, a dump
+#: manifest is what an earlier run recorded. ⛔ A description may CORROBORATE
+#: the object; it may never override it, and a disagreement is a REFUSAL naming
+#: both.
+N_ANCHORS_WITNESS_FIELDS = (
+    "checkpoint:model['core.decoder.anchors'].shape[0]",
+    "config.json:anchors.shape[0]",
+    "config.json:anchors.controls_shape[0]",
+    "argv:--n-anchors",
+)
+
+
+def _pos_int(v):
+    """A positive whole number, or ``None``.
+
+    ⛔ Never coerces a string: a bank size that arrived as ``"117"`` means the
+    schema is not what we think it is, and coercing it silently would hide that
+    (the same rule ``anchor_chance`` already applies to the denominator)."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    if not (v == v) or v <= 0 or float(v) != int(v):
+        return None
+    return int(v)
+
+
+def resolve_n_anchors(witnesses: dict, build_value=None) -> tuple:
+    """``(n_anchors, provenance)`` - or a REFUSAL THAT NAMES THE FIELD.
+
+    ⛔ D-EVALTOOL-ANCHOR-CHANCE-2 (2026-09-07). ``anchor_chance()`` made the
+    denominator a single derivation; this makes its INPUT a single resolution.
+    MEASURED the same day on the LIVE refcv5-v2 ``config.json``: it carries no key
+    called ``n_anchors`` anywhere in its 206 leaves - the bank size is present as
+    ``anchors.shape[0] = 117``, as ``anchors.controls_shape[0] = 117``, and in
+    ``argv``'s ``--n-anchors 117``. The fact was there under another NAME.
+    *(Absence found at ONE location is not absence.)*
+
+    ⛔ And the missing witness is not the dangerous case - a WRONG one is.
+    MEASURED 2026-09-07: strip ``--n-anchors`` from a real argv and the trainer's
+    own parser rebuilds the config with the v3 default **128** against a **117**
+    bank. It IS caught today, but by the ``param_breakdown`` cross-check, whose
+    message is a ten-key parameter diff; with ``param_breakdown`` absent it is
+    caught by a ``state_dict`` size-mismatch error. Both are true refusals
+    pointing at the WRONG FIELD, and a reader has to reverse-engineer the bank
+    size from them. This resolver refuses FIRST, and it says ``n_anchors``.
+
+    ⛔ Every witness present must AGREE. Agreement between a value and a
+    re-derivation of itself would measure determinism, not correctness; these are
+    independently authored (a saved tensor, a builder's recorded shape, an
+    operator's flag), which is what makes the cross-check worth running.
+    """
+    seen, dropped = {}, {}
+    for k in N_ANCHORS_WITNESS_FIELDS:
+        n = _pos_int(witnesses.get(k))
+        if n is None:
+            dropped[k] = witnesses.get(k)
+        else:
+            seen[k] = n
+    if not seen:
+        raise SystemExit(
+            "[refcv3_arm] ⛔ n_anchors IS UNRESOLVABLE - every witness is "
+            "absent: " + ", ".join(N_ANCHORS_WITNESS_FIELDS) + ". The anchor "
+            "chance level is 1/n_anchors and there is NO default: the v3 config's "
+            "128 is FALSE for every refcv4b/refcv5 bank (117). Supply one of "
+            "those fields; a bank size is never guessed.")
+    vals = sorted(set(seen.values()))
+    if len(vals) > 1:
+        raise SystemExit(
+            "[refcv3_arm] ⛔ n_anchors WITNESSES DISAGREE: "
+            + "; ".join("%s = %d" % (k, v) for k, v in seen.items())
+            + ". Refusing rather than picking one - a bank size that two "
+              "artifacts describe differently means the config and the weights "
+              "are not the same build.")
+    n = vals[0]
+    b = _pos_int(build_value)
+    if b is not None and b != n:
+        raise SystemExit(
+            "[refcv3_arm] ⛔ n_anchors: the REBUILT model would have %d "
+            "anchors but this run's own witnesses say %d (%s). The usual cause is "
+            "an argv carrying no `--n-anchors`, which leaves the v3 default 128. "
+            "Refusing; fix the config, never the weights."
+            % (b, n, "; ".join("%s = %d" % kv for kv in seen.items())))
+    return n, {
+        "n_anchors": n,
+        "primary": next(k for k in N_ANCHORS_WITNESS_FIELDS if k in seen),
+        "witnesses_agreeing": seen,
+        "witnesses_absent": sorted(dropped),
+        "rebuilt_config_value": b,
+        "_rule": ("the CHECKPOINT TENSOR is authoritative (core.decoder.anchors "
+                  "is a persistent buffer and IS the bank the deployed selection "
+                  "argmaxes over); every other field must corroborate it, and an "
+                  "unresolvable or contradicted bank size is a REFUSAL, never a "
+                  "default (D-EVALTOOL-ANCHOR-CHANCE-2)."),
+    }
+
+
 def sidecar_schema(n_anchors=None) -> dict:
     """``_SIDECAR_DOC`` with the ANCHOR-CHANCE line filled in FROM THIS RUN.
 
@@ -980,6 +1080,24 @@ def load_model(ckpt_path: str, config_path: str | None = None,
     if not isinstance(config, dict):
         raise SystemExit(f"[refcv3_arm] {side} is not a config dict")
     cfg, targs, src = rebuild_config(config)
+    # ⛔ THE BANK SIZE, RESOLVED BEFORE ANY EXPENSIVE WORK, FROM THE TENSOR
+    # FIRST. See `resolve_n_anchors` for why a description may never override the
+    # object, and for the measurement that made this a named refusal instead of a
+    # param-diff three layers down.
+    _anch = (ck.get("model") or {}).get("core.decoder.anchors")
+    _ash = config.get("anchors") if isinstance(config.get("anchors"), dict) else {}
+
+    def _fst(x):
+        return x[0] if isinstance(x, (list, tuple)) and x else None
+
+    n_anchors, n_anchors_prov = resolve_n_anchors(
+        {"checkpoint:model['core.decoder.anchors'].shape[0]":
+             (int(tuple(_anch.shape)[0]) if getattr(_anch, "ndim", 0) == 3 else None),
+         "config.json:anchors.shape[0]": _fst(_ash.get("shape")),
+         "config.json:anchors.controls_shape[0]": _fst(_ash.get("controls_shape")),
+         "argv:--n-anchors": (getattr(targs, "n_anchors", None)
+                              if targs is not None else None)},
+        build_value=int(cfg.core.anchors.n_anchors))
     model = v3.RefCV3Model(cfg)
     checks = cross_check_config(config, cfg, model)
     try:
@@ -1049,7 +1167,8 @@ def load_model(ckpt_path: str, config_path: str | None = None,
             "hier": bool(cfg.hier),
             "tac_vocab_version": cfg.tac_vocab_version,
             "horizons": list(cfg.core.trajectory.horizons),
-            "n_anchors": int(cfg.core.anchors.n_anchors),
+            "n_anchors": int(n_anchors),
+            "n_anchors_provenance": n_anchors_prov,
             "window": int(cfg.core.window),
             "decoder_steps": int(steps), "decoder_mode": mode,
             "nav_from_v7_trained": bool(config.get("nav_from_v7", False)),
@@ -1642,6 +1761,25 @@ def run_dump(a) -> dict:
     import refb_labels
 
     t_start = time.time()
+    # ⛔ THE INFERENCE SEED. `--sampler ddim` DRAWS NOISE AT EVAL (refc.py:1926)
+    # by design, so on a sampler arm the same checkpoint rolled twice does not
+    # give the same answer and the episode-cluster bootstrap is structurally
+    # blind to that variance (`D-REFAV1-SEED-GOAL-MISMATCH`: that rig's
+    # inference-seed floor was ~0.30 m ADE). Seeding here makes a roll
+    # REPRODUCIBLE and makes the replicate a ONE-FLAG operation
+    # (`--infer-seed 1`), which is the cheapest experiment that can answer
+    # "would another INFERENCE run say this?".
+    # ⚠️ It cannot move a deterministic arm: every other eval-time draw in this
+    # stack is behind `self.training` and the model is in `.eval()`.
+    infer_seed = int(getattr(a, "infer_seed", None)
+                     if getattr(a, "infer_seed", None) is not None
+                     else getattr(a, "seed", 0) or 0)
+    import random as _random
+    torch.manual_seed(infer_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(infer_seed)
+    np.random.seed(infer_seed)
+    _random.seed(infer_seed)
     if sorted(_ROUTE_TO_NAV.items()) != sorted(refb_labels._ROUTE_TO_NAV.items()):
         raise SystemExit(
             "[refcv3_arm] the route->nav map bound at import time is not the "
@@ -2207,6 +2345,23 @@ def run_dump(a) -> dict:
         "tool": "taniteval/tools/refcv3_arm.py",
         "doc": "taniteval/tools/REFCV3_ARM.md",
         "model": prov,
+        #: ⛔ WHICH INFERENCE DRAW THIS DUMP IS. On a `--sampler ddim` arm the
+        #: numbers below are ONE sample; a re-roll at another `--infer-seed` is
+        #: a different, equally valid answer, and an effect smaller than the
+        #: spread between them is not an effect. `stochastic_at_inference` is
+        #: read off the REBUILT config, not off a memory of the flag.
+        "inference_seed": {
+            "seed": infer_seed,
+            "flag": "--infer-seed (defaults to --seed)",
+            "stochastic_at_inference": (str(getattr(cfg.core.decoder, "sampler",
+                                                    "none")) != "none"),
+            "sampler": str(getattr(cfg.core.decoder, "sampler", "none")),
+            "_reading": ("a DETERMINISTIC arm ignores this seed entirely (every "
+                         "other eval draw in the stack is behind `self.training` "
+                         "and the model is in .eval()); a SAMPLER arm does not, "
+                         "and its inference-run variance is NOT answered by the "
+                         "episode-cluster bootstrap"),
+        },
         "t1_definition": {
             "arm": "os",
             "_is": ("ONE forward pass of RefCV3Model at the window origin, "
@@ -3323,6 +3478,13 @@ def main(argv=None):
     ap.add_argument("--allow-nonstrict", action="store_true")
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--infer-seed", type=int, default=None,
+                    help="seed for the ROLLOUT's own draws (defaults to "
+                         "--seed). ⛔ It matters only on a sampler arm "
+                         "(`--sampler ddim` draws noise at eval by design); a "
+                         "second roll at a different --infer-seed is the "
+                         "cheapest answer to the inference-run variance "
+                         "question the episode-cluster bootstrap cannot see.")
     ap.add_argument("--tiers", default="",
                     help="extra tier stamps name=T0|T1, merged over this tool's "
                          "own ARM_TIERS and t1_eval.DEFAULT_TIERS")

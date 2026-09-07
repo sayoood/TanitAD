@@ -1,0 +1,31 @@
+============================================================================================
+selftest_n_anchors.py - the bank size is RESOLVED, and an unresolvable one REFUSES by name
+  every expectation below is a LITERAL in the case table (117 / 0.008547 / the field names)
+============================================================================================
+[A] the arm-tool resolver, in isolation
+  PASS  A1 four agreeing witnesses -> exactly 117, tensor primary
+  PASS  A2 nothing anywhere -> REFUSAL naming all four fields
+  PASS  A3 tensor 117 vs argv 128 -> REFUSAL naming both
+  PASS  A4 rebuilt-config default 128 vs witness 117 -> REFUSAL naming --n-anchors
+  PASS  A5 the string "117" is NOT a bank size
+  PASS  A6 a 20-anchor smoke bank resolves to 20
+[B] end to end on the REAL refcv4b checkpoint (CPU, 0 GPU)
+  PASS  B1 real config + real ckpt -> 117 from the TENSOR
+  PASS  B2 --n-anchors stripped -> names n_anchors, NOT param_breakdown
+  PASS  B3 --n-anchors + param_breakdown stripped -> names n_anchors, NOT a shape error
+  PASS  B4 a config whose /anchors/shape LIES -> REFUSAL
+[C] the compare-tool resolver
+  PASS  C1 manifest+config+ckpt -> 117, chance exactly 0.008547
+  PASS  C2 nothing anywhere -> REFUSAL naming every field
+  PASS  C3 manifest+config stripped, ckpt present -> 117 from the tensor
+  PASS  C4 manifest 128 vs config 117 -> REFUSAL naming both
+  PASS  C5 the LIVE refcv5-v2 config ALONE -> 117 from /anchors/shape[0]
+[D] the NESTED lever reads
+  PASS  D1 live refcv5-v2 levers read from /selection, /seams, /anchors
+  PASS  D2 refcv4b's absent levers are a CORROBORATED absence
+  PASS  D3 a config contradicting its own argv -> REFUSAL
+  PASS  D4 sampler stochasticity: ddim -> True, refcv4b -> False
+  PASS  D5 /seams/sampler contradicting argv -> REFUSAL
+============================================================================================
+20 cases, 0 FAILED
+============================================================================================
