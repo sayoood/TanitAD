@@ -1,0 +1,16 @@
+### A13 -- the 3 "Thor-unique" snapshot files, re-probed after the CRLF correction
+### Thor side (read-only): git hash-object of the raw file, and of the LF-normalised file
+ZZ511207d02649c6f7db4df329ead8bc7ac5326f56|ff18515035da7bb40bac6b36b1ba646751725e13|758|stack/scripts/refa_v1_train.py.NEW4ZZ
+ZZ7e8d880789e0f3199e8b0a0624816795c03b5ba7|62fc0999817066774294ec2a1cd69c3658575852|422|stack/scripts/refa_v1_train.py.PRE_EPOCH2ZZ
+ZZ45f095a37eddf16b88bfd17094ad1987fbc1bcfc|7bab551e39edc7dad0da61c61c4e47a27eab88b3|1400|stack/tanitad/refs/refa_v1.py.PRE_EPOCH2ZZ
+### fields: raw_blob | lf_blob | CR_count | path      (CR>0 => the file is CRLF)
+
+### Repo side: object-store presence of each LF form, each probe bracketed by a same-breath
+### control blob (697955681987e3878611f2edca07a41edf34581f = HEAD:README.md) that must resolve.
+ff18515035da -> PRESENT (ctrl OK/OK)
+62fc09998170 -> PRESENT (ctrl OK/OK)
+7bab551e39ed -> PRESENT (ctrl OK/OK)
+
+### => all three are committed content.  NOTHING on Thor is unique.
+### Note ff18515035da is ALSO the LF form of Thor's LIVE stack/scripts/refa_v1_train.py,
+### i.e. the .NEW4 snapshot is a byte-duplicate of the trainer that ran.
