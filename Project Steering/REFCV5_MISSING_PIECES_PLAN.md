@@ -395,3 +395,151 @@ building this channel — flagged, not edited.
 `refc_v3_train.py:380-384` — *"`--nav-args` with the nav path OFF (`nav_inject=False`, e.g.
 under `--goal-point-inject`) would be a silently inert flag. Refusing."* The refusal is correct
 and it fires **before step 1**, so a composed arm carrying both dies at launch, not at hour six.
+
+---
+
+## 9. ⛔ THE §4 / §8.2 GATE IS NOW MET — P1 IS **OUT**. THE COMPOSED ARM MAY LAUNCH WITHOUT IT.
+
+**Appended 2026-09-07 by the Architecture & Inference stream. Appended, never rewritten.**
+**Full record:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/`
+(`PREREG.md` banked before any outcome number; `RESULT.md`; `raw/panel_s0.json`).
+**Register row:** `D-P1-AGENTCOND-1`.
+
+§4 bound Phase 2: *"the composed arm does not launch until P1 is either IN or explicitly declared
+OUT."* §8 opened the gate and said in the same breath *"Gate open ≠ piece validated — it still owes
+a tiny-rig arm."* **That arm has now run, and P1 FAILED its pre-registered bar.**
+
+⛔ **P1 IS OUT.** `--agents head` vs `--agents off`, one variable, v7-tiny (16,989,725 params),
+500 steps, 104 train / 35 eval episode-disjoint clips, dev-box RTX 4060 (⛔ the A40 was NOT touched),
+T1 self-action open loop, paired episode-cluster bootstrap:
+
+| the headline family | `head − off` | |
+|---|---|---|
+| min headway (m) | **−0.5015 [−0.7712, −0.2366]** | ⛔ SEPARATED WORSE |
+| min time-gap (s) | **−0.0702 [−0.1074, −0.0385]** | ⛔ SEPARATED WORSE |
+| min TTC (s) | **−2.1959 [−4.1408, −0.6110]** | ⛔ SEPARATED WORSE |
+| curvature MAE (1/m), with the straight-line floor beside it | −0.0001 [−0.0002, +0.0000] | not separated |
+
+n = 779 windows / 28 episodes. That is §5's FAIL clause verbatim.
+
+⭐⭐ **BUT THE MECHANISM IS NOT WHAT THE NUMBER LOOKS LIKE, AND THE DELIBERATE-REGRESSION ARM IS THE
+ONLY REASON WE KNOW.** A third arm — identical to `head` in every flag, with the join's `clip_id`
+column **deranged** (0 of 26,394 rows on their own clip; coverage 94.9 % vs 94.7 %, 104/104
+episodes both) — **reproduces the ENTIRE degradation**: `shuf − off` headway −0.4576, TTC −1.9334,
+both separated worse, while **`head − shuf` is NOT separated on any distance-keeping metric.**
+
+⇒ **The cost is the AUXILIARY DETECTION TASK competing for a 17 M trunk at 500 steps, NOT the agent
+information.** ⛔ Run as `head` vs `off` alone, this arm would have published *"agent conditioning
+hurts distance-keeping"* — true as a number, wrong about the cause, and it would have sent the next
+arm after the wrong thing.
+
+⭐ **RULE ZERO — what the refutation points at.** `head − shuf` IS separated, and only on the
+LATERAL axis: cross-track **−0.1362 [−0.2110, −0.0660]**, heading **−0.00060 [−0.00120, −0.00002]**,
+yaw-rate **−0.00062 [−0.00122, −0.00004]**. ⇒ **agent identity is a LATERAL signal here** — the
+opposite axis from where §4 expected it and the opposite axis from P14 (98.9 % along-track). ⛔ Two
+of those three clear zero by 2e-5 and 4e-5, against a MEASURED **14.3 %** one-seed replicate
+false-positive rate ⇒ **a DIRECTION, not an established lever.** Seed 1 is running per the prereg's
+own amendment.
+
+⛔⛔ **THE POWER CAVEAT THAT CAPS ALL OF THE ABOVE.** At 500 steps **the straight-line floor beats
+every trained arm on every family** — ADE 4.29 vs 4.91/6.13/6.36, speed MAE 0.498 vs
+0.528/0.743/0.765, headway 37.26 vs 36.29/36.01/36.07. The contrasts are paired so the floor cancels
+inside each draw and *"does the seam change this model"* is answered; *"is this model any good yet"*
+is answered **no**. ⇒ **This is a GATE number, exactly as §2.1 requires, not a lever magnitude.**
+
+⚠️ **AND ONE NUMBER THIS PLAN CARRIES DID NOT REPRODUCE.** §8.2's *"REF-C is ~84× worse on curvature
+than a plan that never steers (0.02737 vs 2.30973)"* reads **1.0×** on this rig (arms 0.00973–0.00981
+vs floor 0.00950), with the floor's absolute value three orders of magnitude away. **This is NOT a
+refutation** — different corpus, different checkpoint, and above all a different grid: the v3 horizon
+set `[5,10,15,20,30,40,50,60]` is **NOT uniform**, and `_seq_geometry` divides by ONE `dt`, so every
+rate metric here is read on the uniform 2 s prefix. ⇒ **the 84× figure should be re-derived with its
+horizon and grid stamped before it is quoted again.**
+
+### 9.1 What enters instead, and what P1 owes next
+
+* ⭐ **The composed arm launches WITHOUT the agent seam**, carrying **P14** (PASSED, +0.2813
+  [+0.2127, +0.3543]) and **P4 restricted**. §8.2's blocker is cleared.
+* ⭐ **P1 is NOT dropped — it is re-queued behind the POD arm on the B1 TRAIN join** (4,427 clips,
+  42× this corpus, genuinely held out, md5 `1c985e6d6ad34e605c4ebd30cb353558`, already built). The
+  capacity objection this rig measured is a 17 M / 500-step objection and does not transfer to a
+  base-size 40k arm — which is precisely why it must be tested there and not asserted from here.
+* ⚠️ **The TRAIN join's sidecar needs the same one-command fix the EVAL one did.** The trainer
+  refuses a join whose sidecar declares no `digest_scope`; `python -m tanitad.data.join_meta <join>
+  --write` MEASURES the scope and writes it. That single missing declaration — not the 161 GB, not
+  `agent_gt` — was the last thing standing between "gate open" and "arm running".
+
+
+### 9.2 ⭐⭐ SEED 1 (appended 2026-09-07, same stream) — THE GATE IS CONFIRMED ON TWO SEEDS, AND §9's LATERAL READING IS RETRACTED
+
+⭐ **P1 IS OUT — CONFIRMED.** All three distance-keeping metrics separate in the unfavourable
+direction at seed 1 as well: headway **−0.4535 [−0.7915, −0.1639]**, time-gap **−0.0351 [−0.0694,
+−0.0037]**, min TTC **−1.2529 [−2.2522, −0.3694]**. Same sign, overlapping intervals, n = 776 / 28.
+⭐ **The mechanism replicates too:** `head − shuf` is not separated on any distance-keeping metric at
+either seed, while `shuf − off` separates worse at both. **The cost is the auxiliary detection task,
+not the agent information — twice.**
+
+⛔⛔ **RETRACTED: §9's "agent identity is a LATERAL signal here".** It does not survive its second
+seed. `head − shuf` cross-track **−0.1362 SEP BETTER → −0.0585 not separated**; heading
+**−0.00060 SEP BETTER → +0.0002 not separated (SIGN FLIP)**; yaw-rate **−0.00062 SEP BETTER → +0.0006
+not separated (SIGN FLIP)**; curvature **not separated → +0.000118 [+0.000002, +0.000246] SEPARATED
+THE OTHER WAY.** And the arm that settles it: at seed 1 **the DERANGED join beats the no-seam control
+on FOUR lateral metrics** (cross-track −0.5461, heading −0.0039, curvature −0.0002, yaw-rate
+−0.0046, all separated). A join that knows nothing about the scene cannot be a lateral lever. ⇒ **the
+lateral cells are SEED NOISE at this rig and budget.** The retracted cells cleared zero by 2e-5 and
+4e-5 — precisely what the MEASURED 6/42 = 14.3 % replicate false-positive rate exists to catch.
+
+⚠️ **ADE FLIPS SIGN BETWEEN SEEDS on the same two arms** — `head − off` **+1.2175 [+0.7274, +1.7505]
+SEPARATED WORSE (seed 0)** vs **−0.4858 [−0.9161, −0.1088] SEPARATED BETTER (seed 1)**. A confidently
+separated ADE verdict in both directions. ⇒ **evidence from inside this package for the standing
+"never ADE alone" rule**: the four-family read is stable on the family that matters while ADE is not.
+
+⇒ ⛔ **CONSEQUENCE FOR THE POD ARM'S BRIEF: there is NO admissible measured direction from this rig
+that agent information helps any family.** The pod arm on the B1 TRAIN join is still worth running —
+it tests the piece at a scale where the 17 M / 500-step capacity objection does not apply — but it
+must **not** be briefed as "confirming a lateral signal". Full record and both panels:
+`…/Research/2026-09-07-p1-agent-gate/RESULT.md` §10, `raw/panel_s0.json`, `raw/panel_s1.json`.
+
+
+---
+
+## 10. ⛔ CORRECTION TO §5 — "604 ARE DISPUTED" IS FALSE, AND AS WRITTEN IT WOULD RETIRE 601 USABLE LABELS
+
+§5 of this plan says: *"175 are grounded; **604 are disputed**. Supervising on disputed labels
+teaches noise."* ⛔ **Nothing is disputed.** MEASURED on v8 train+eval, n = 4,719 clips, all four
+traffic-light tokens pooled, **805 emissions**:
+
+| state | n | share |
+|---|---|---|
+| GROUNDED (`box:traffic_light`) | **182** | 22.6 % |
+| ⛔ **NOT CHECKED** — the clip's ONE grounding question asked about something else | **601** | 74.7 % |
+| NO QUESTION on this clip | **22** | 2.7 % |
+| **CONTRADICTED** | **0** | — |
+
+⭐ **THE NUMBERS BARELY MOVED AND THE INSTRUCTION INVERTS.** 175→182 and 604→601 are within noise
+of each other, which is exactly why the sentence survived — it *reconciles*. But **"disputed" means
+the grounding LOOKED AND CONTRADICTED**, and nothing contradicted anything: each clip gets one
+grounding question, and on those 601 it asked about a pedestrian, a lead vehicle or an adjacent
+vehicle instead. ⇒ **as written, §5 instructs a reader to discard 601 CORRECT labels.**
+Not-checked retires none and instead indicts the **question budget**.
+
+⚠️ **The Master Mind carried this error into a briefing**, so it is recorded here rather than
+silently patched: root-cause class **a status word that asserts an OBSERVATION, applied to records
+nothing observed** (`RETRACTION_LOG.md` → `D-TLGROUND-DISPUTED`). Sibling of `_unverified` reading
+identically on every arm.
+
+⭐ **AND THERE ARE THREE KINDS OF "NOT GROUNDED", NOT ONE.** `NOT_APPLICABLE` — no box class is
+defined for the token — covers **100 % of every GEOMETRIC token** (SPEED_BAND 4,719/4,719,
+FOLLOW_LANE 3,748/3,748, STOP_POINT 336/336, TURN_L 280/280). A consumer computing one "grounded
+rate" across `g_tac.goals` would report those at **0 %** and conclude the corpus is ungrounded —
+when grounding is simply not the right question for a pose-derived label.
+
+⛔ **What §5's conclusion should say instead:** the traffic-light labels are an **Alpamayo-derived
+teacher signal**, not GT — partially-grounded PRESENCE (182/805, **0 contradicted**) and **no
+independent channel for COLOUR at all**. Colour was nonetheless shown to be **seen rather than
+inferred from motion** on three mechanisms (148 clips describe a colour TRANSITION; 597/787 attach
+the colour to the LAMP; YELLOW bimodal at 56.0 % against a pre-registered 20 % bar; RED/GREEN
+stop-rate **18.58×** against a pre-registered 2.0× bar). ⇒ supervising on them is **admissible**,
+and ⛔ **any traffic-light head must be scored against an EGO-ONLY control** — with the teacher
+unverified, that is the only cross-check derived independently of what it checks.
+
+**Registered as `D-PLAN-S5-DISPUTED`.**
