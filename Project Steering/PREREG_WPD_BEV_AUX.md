@@ -425,3 +425,46 @@ re-checked on whatever box actually runs this**; a per-run fact belongs beside i
 | trainer flags, refusals, dataset target, loss term, controls | `stack/scripts/refc_v3_train.py` |
 | the suite (36 tests: analytic literals, independent reference, 4 mutations, 6 controls, removability) | `stack/tests/test_bev_aux.py` |
 | the third-state census + the mutation proof + the wiring check | `TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-wpd-bev-aux/` |
+
+
+---
+
+## ADDENDUM 1 (2026-09-08) --- `pos_weight` RE-DERIVED ON TRAIN, as this prereg required
+
+✅ **This is the prereg being EXECUTED, not amended.** It registered `pos_weight = 30.61` as a
+**stamped constant derived from the EVAL join** and required re-derivation on TRAIN before the
+panel. Done: **`pos_weight = 30.3397163338613`**, over **849,263 / 849,263 records with no
+subsampling** --- a **0.9 %** shift, and it reproduces this prereg's own **28,053,187 boxes /
+4,427 clips** exactly, which is the cross-check that the two derivations describe the same corpus.
+The launched arms carry the TRAIN value (`--bev-aux-pos-weight 30.3397163338613`).
+⛔ No criterion changes.
+
+## ADDENDUM 2 --- a run-killer found by READING SOURCE, before the first GPU-hour
+
+⛔ `compute_losses_v3`'s refuse-don't-skip guard raises **`SystemExit`**, which derives from
+**`BaseException`** --- so the eval block's `except Exception` **cannot catch it** (verified
+independently: `issubclass(SystemExit, Exception)` is **False**). Without handing the EVAL dataset
+the same `bev_spec`, `e_ds.bev_spec` stays `None`, the eval batch carries no `bev_occ`, and the
+run **dies at the FIRST eval with the compute already paid for** --- the `t1_eval` class, where an
+analysis-time failure destroys a completed rollout.
+✅ Fixed in `stack/scripts/refc_v3_train.py` and committed **immediately**, because the fix was
+staged-but-uncommitted and the next closure ship to Thor would have silently reverted it, killing
+the 12,000-step panel at step 500.
+⚠️ **The fix is UNEXERCISED and is recorded as such**: an earlier refusal (the eval cache needs
+the separate B1 EVAL join) fires first and masks it. **Defect = MEASURED; fix works = REASONED.**
+On a no-coverage eval cache the behaviour is still correct and still not a crash --- every frame
+is `NO_LABEL`, so the term is the documented control: loss exactly 0.0 with `bev_n_supervised ==
+0` saying why, never a silent skip.
+
+## ADDENDUM 3 --- what actually launched, and the one deviation
+
+**D0 -> D1 -> D2 chained on Thor, each at the FULL 4,000 steps.** Measured Thor rate **4.21 s/step
+aux-off, 4.88 aux-on** (derived from differences of the trainer's own `elapsed_s` between logged
+step rows; ⛔ `step_s` was never read --- this is `refc_v3_train.py`, so neither the
+`train_v6_staged.py` divisor rule nor its inversion applies). The plan's 4.0 s/step is an **A40**
+figure and does not travel.
+⭐ **Deviation, accepted:** three arms measure 15.7 h and do not fit ~14 h. Rather than DROP D2 as
+instructed, the agent **chained it third** --- D0+D1 still land by ~10:01 Berlin and D2 then uses
+otherwise-idle GPU. Every arm is full length; **the step budget was never shortened**, which was
+the actual constraint. ⚠️ `refc_v3_train.py` has **no `--resume`** (two probes), so a crash at
+hour 4 costs that arm --- watch `wpd_supervisor.log` for a `launch #2`.

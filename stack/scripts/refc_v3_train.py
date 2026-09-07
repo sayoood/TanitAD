@@ -4035,6 +4035,28 @@ def train(args) -> dict:
                          episode_ids={int(e.episode_id) for e in e_eps},
                          with_rates=not bool(getattr(
                              args, "agent_join_no_rates", False)))
+            # ⭐ WP-D: the EVAL dataset is handed the SAME BEV spec as the
+            # train dataset -- and NOT for symmetry.  ⛔ MEASURED 2026-09-07
+            # by reading source before the first GPU-hour: without this line
+            # `e_ds.bev_spec` stays None, the eval batch carries no `bev_occ`,
+            # and `compute_losses_v3`'s REFUSE-DO-NOT-SKIP guard raises
+            # **SystemExit** -- which derives from BaseException, so the eval
+            # block's `except Exception` CANNOT catch it (verified:
+            # `issubclass(SystemExit, Exception)` is False).  The run would
+            # die at the FIRST eval with the compute already paid for -- the
+            # `t1_eval` class where an analysis-time failure destroys a
+            # completed rollout.
+            # ⚠️ On an eval cache with NO join coverage this is still correct
+            # and still not a crash: every frame is NO_LABEL, so the term is
+            # the documented control -- loss exactly 0.0 with
+            # `bev_n_supervised == 0` saying why, never a silent skip.
+            if str(getattr(args, "bev_aux", "off")) != "off":
+                e_ds.bev_spec = _bev_aux.PolarBEVSpec(
+                    n_az=int(cfg.core.encoder.grid_shape[1]),
+                    n_rng=int(getattr(args, "bev_aux_rng", 24)),
+                    r_max_m=float(getattr(args, "bev_aux_rmax", 60.0)))
+                e_ds.bev_occlusion = str(getattr(args, "bev_aux_occlusion",
+                                                 "mask"))
             eval_agent_stats = e_ds.enable_agent_join(
                 _e_rd, pad=int(ds.agent_pad),
                 allow_legacy_ids=bool(getattr(
