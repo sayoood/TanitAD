@@ -202,15 +202,60 @@ def test_model_without_cfg_is_refused_rather_than_guessed():
 
 
 def test_forward_kwargs_plumbs_every_channel_the_forward_accepts():
-    """The original adapter passed 5 of 8. Pin the full set against the real signature."""
+    """The original adapter passed 5 of 8. Pin the full set against the real signature.
+
+    ⛔⛔ NOT `set(FORWARD_KEYS) == sig`. THAT ASSERTION WAS WRONG AND WAS RED.
+    MEASURED 2026-09-07: the live forward accepts TWELVE optional channels and five
+    of them MUST NOT be plumbed -- `gp_point`/`gp_valid` (the goal point IS the
+    label), `nav_args` (its `time_s` slot is the ego's future speed profile
+    inverted) and `v_max_ms`/`v_max_valid` (this corpus's value is the ego's own
+    realised future speed, recoverable from the shipped channel at R2 = 0.9702
+    out-of-fold). A bare set-equality here demands the adapter feed all five, i.e.
+    it demands the leak, and it is the third copy of that same mistake in this
+    repository -- the first two were the drift test's original advice and
+    `channel_guard`'s refusal message.
+
+    ⇒ The contract is `signature - declared exclusions`, and the exclusions are read
+    from the SEAMS that own the channels (`tanitad.channel_admissibility`), each
+    carrying its reason and its unblock condition.
+    """
     import inspect
+    from tanitad.channel_admissibility import excluded_channels
     from tanitad.refs.refc_v3 import RefCV3Model
     sig = set(inspect.signature(RefCV3Model.forward).parameters) - {"self", "frames", "steps"}
-    assert set(A.FORWARD_KEYS) == sig, (
-        f"FORWARD_KEYS {sorted(A.FORWARD_KEYS)} != forward's optional params {sorted(sig)}")
+    excluded = set(excluded_channels())
+    # the vacuity gate: an exclusion set that swallowed the signature would make
+    # every assertion below pass while the adapter plumbed nothing at all
+    assert excluded < sig, (
+        f"declared exclusions {sorted(excluded)} are not a strict subset of the "
+        f"forward's channels {sorted(sig)} -- either an exclusion is stale or "
+        f"everything is excluded, and both make this test vacuous")
+    required = sig - excluded
+    assert set(A.FORWARD_KEYS) == required, (
+        f"FORWARD_KEYS {sorted(A.FORWARD_KEYS)} != the REQUIRED channels "
+        f"{sorted(required)} (= forward's optional params {sorted(sig)} minus the "
+        f"seams' declared exclusions {sorted(excluded)})")
     kw = A.forward_kwargs({"frames": 1, "v0": 2, "ego_state": 3}, PostTrainConfig())
-    assert set(kw) == sig | {"steps"}
+    assert set(kw) == required | {"steps"}
+    # ⛔ and the excluded channels must be ABSENT from the kwargs, not merely None:
+    # `forward_kwargs` emitting `gp_point=None` would be harmless today and a leak
+    # the day a caller starts filling the batch key it advertises.
+    assert not (set(kw) & excluded), (
+        f"forward_kwargs emitted the declared-excluded {sorted(set(kw) & excluded)}")
     assert kw["ego_state"] == 3 and kw["nav_known"] is None
+    # ⛔ THE KEY SET IS NOT THE CONTRACT -- THE VALUE FLOW IS. Pinning only the keys
+    # leaves the silent-drop defect reachable one level down: a `forward_kwargs` that
+    # emits the right key with a None value passes a key-set check while the channel
+    # never reaches the forward, which is the exact failure this module exists to
+    # remove. MEASURED: nulling `agent_gt` inside `forward_kwargs` while leaving it in
+    # FORWARD_KEYS kept this file GREEN until this assertion was added.
+    full = {"frames": 0, "nav_cmd": 1, "v0": 2, "lan": 3, "nav_known": 4,
+            "ego_state": 5, "withheld_speed": 6, "agent_gt": {"box": 7}}
+    kwf = A.forward_kwargs(full, PostTrainConfig())
+    for k in required:
+        assert kwf[k] == full[k], (
+            f"{k} is declared in FORWARD_KEYS but its VALUE did not reach the forward "
+            f"kwargs (got {kwf[k]!r}, batch had {full[k]!r})")
 
 
 def test_sample_fn_asserts_conditioning_on_the_first_batch():

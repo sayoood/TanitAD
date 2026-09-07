@@ -49,9 +49,52 @@ __all__ = ["FORWARD_KEYS", "ConditioningError", "conditioning_requirements",
            "assert_conditioning", "forward_kwargs", "make_refc_sample_fn",
            "sample_offsets", "gt_context"]
 
-#: Every optional conditioning channel ``RefCV3Model.forward`` accepts, in signature
-#: order (`refc_v3.py:986-991`). ``frames`` and ``steps`` are positional/explicit.
-FORWARD_KEYS = ("nav_cmd", "v0", "lan", "nav_known", "ego_state", "withheld_speed")
+#: Every conditioning channel an RL rollout MAY and MUST be given, in signature
+#: order. ⭐ THAT IS NOT "every channel the forward accepts": the live forward takes
+#: TWELVE (`refc_v3.py:1361-1373`) and five of them are declared must-not-be-plumbed
+#: by the seams that own them. ``frames`` and ``steps`` are positional/explicit.
+#:
+#:     required = signature - tanitad.channel_admissibility.excluded_channels()
+#:
+#: ⚠️ ``agent_gt`` WAS MISSING FROM THIS TUPLE, and the stale citation it carried
+#: (`:986-991` — exactly one line short of the signature's last parameter) is the
+#: fingerprint: the tuple was written against a forward that ended at ``withheld_speed``,
+#: and the refcv5 WP-6 agent seam appended ``agent_gt`` afterwards. Because
+#: :func:`forward_kwargs` builds its kwargs by iterating THIS tuple, a channel absent
+#: from it is **never passed at all** — no error, no warning — so an ``--agents oracle``
+#: build driven through this adapter tripped the model's own guard (*"no agent_gt
+#: reached the forward"*) even when the batch carried it, and the message accused the
+#: caller of an omission the ADAPTER had made. Same defect class the module docstring
+#: above describes for ``ego_state``, one channel later.
+#:
+#: ⛔⛔ AND THE OPPOSITE DEFECT IS WORSE, WHICH IS WHY THE TUPLE IS SHORT ON PURPOSE.
+#: The first version of the drift test told the reader to fix the next gap by adding
+#: ``gp_point``/``gp_valid`` here. That advice would have MANUFACTURED A LABEL LEAK:
+#: the only supplier a batch has for a goal point is the ego's own future pose. The
+#: goal-point stream overruled it, and the same question — *where would an RL rollout
+#: GET this value?* — has since excluded three more:
+#:
+#:     gp_point / gp_valid      the goal point IS the label            PERMANENT
+#:     nav_args                 ships a ``time_s`` slot that is the
+#:                              ego's future speed profile inverted    as BUILT
+#:     v_max_ms / v_max_valid   the PI ruled the channel legitimate,
+#:                              but this corpus's value is the ego's
+#:                              own realised future speed              this CORPUS
+#:
+#: ⭐ Each of those is declared IN THE SEAM THAT OWNS IT, with its reason, its
+#: evidence and its UNBLOCK CONDITION — ``tanitad.refs.goal_point``,
+#: ``tanitad.models.nav_conditioning``, ``tanitad.refs.max_speed_input``. Read the
+#: reasons there; two of the three exclusions are temporary and say what lifts them.
+#:
+#: ⛔ KEEP THIS DERIVED FROM THE SIGNATURE MINUS THE DECLARATIONS, NEVER
+#: HAND-MAINTAINED. ``test_rl_forward_keys_cover_signature.py`` compares it against
+#: ``inspect.signature(RefCV3Model.forward)`` and the seams' union at test time, and
+#: ``tanitad.rl.channel_guard`` repeats the comparison at LAUNCH time — in both
+#: directions, because a hand-written list rots the next time the forward grows a
+#: channel, and because the guard that only checked one direction spent a day
+#: refusing correct launches while recommending the leak.
+FORWARD_KEYS = ("nav_cmd", "v0", "lan", "nav_known", "ego_state", "withheld_speed",
+                "agent_gt")
 
 #: Maps a forward kwarg to the ``RefCV3Config`` flag that DECLARES the build was trained
 #: with it. A channel whose flag is True was trained WITH that input, so an RL rollout
@@ -77,6 +120,17 @@ _REQUIRING_FLAG: dict[str, str | None] = {
     "lan": None,
     "nav_cmd": None,          # see the note above: asserting it would be wrong
     "v0": None,
+    # ⚠️ NOT asserted HERE, and not because no field declares it. The declaring
+    # field is NESTED — ``cfg.core.agents.enable``/``.oracle`` (`refc_v3.py:1005`) —
+    # while this map is read with a FLAT ``getattr(cfg, flag, False)``, so writing
+    # ``"agents"`` here would read False forever: the never-firing check this map's
+    # own note warns about. It needs no local guard either, because the model refuses
+    # BOTH directions loudly and unconditionally: `refc_v3.py:1006` when ``agent_gt``
+    # is supplied to a build with no agent seam, and `:1012` when an ``--agents
+    # oracle`` build receives none. There is therefore no SILENT divergence for
+    # ``assert_conditioning`` to catch — only a plumbing duty, which ``FORWARD_KEYS``
+    # above now discharges.
+    "agent_gt": None,
 }
 
 
@@ -138,7 +192,7 @@ def make_refc_sample_fn(model, cfg: PostTrainConfig, *, build_ctx=None,
     the emitted offset — with two differences:
 
     1. **every** forward channel is plumbed (``nav_known``, ``ego_state``,
-       ``withheld_speed`` in addition to ``nav_cmd``/``v0``/``lan``);
+       ``withheld_speed``, ``agent_gt`` in addition to ``nav_cmd``/``v0``/``lan``);
     2. the conditioning contract is ASSERTED on the first batch, so refcv4b's
        ``ego_state`` cannot be dropped silently.
 
