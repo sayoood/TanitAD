@@ -86,6 +86,43 @@ MEASURED: `assert_conditioning` reads **0** in `refcv3_adapter.py` (control: 4 `
 *repointing the pilot* would change which code a live RL arm runs and would come back here as a
 decision. No RL arm is currently running, so nothing is at risk today.
 
+## 8. DECIDE: the RL pilot **cannot load its own cold start** — and the obvious fix is dangerous
+
+⛔ **MEASURED:** `rl_pilot_refc21.py` dies at load with
+`RuntimeError: Missing key(s) in state_dict: "decoder.anchor_controls"` — **487 keys in the July
+checkpoint against 488 built.** `p_rc21_chain.sh` as written cannot run.
+**Cause:** `refc.py:1400` registers `anchor_controls` **UNCONDITIONALLY**, added by the same
+2026-09-04 change (`187c513`) that introduced `v0_conditioned`. The cold start
+(`refc-diffusion-base-v21-30k`) is from **2026-07-20** and predates it.
+⭐ **Nobody noticed for three days, because nothing runs the pilot.** That is as much the finding
+as the error is.
+
+**Three fixes, and they are not equally safe:**
+
+| | option | verdict |
+|---|---|---|
+| **(a)** | `strict=False` | ⛔⛔ **NO.** It deletes the only guard that notices anything — and the buffer initialises to `torch.zeros`, so a **`v0_conditioned=True`** build would then run on an **all-zero control vocabulary**. `refc.py:2091` already calls that *"a plausible-looking WRONG experiment"*. |
+| **(b)** | register the buffer **conditionally** on `v0_conditioned` | ⚠️ principled, but it changes the **key set** of a live model class while refcv5-v2 trains against it. This is the exact D-ROLL-1 class — a registration change that made **four checkpoints unrollable** in one commit. High risk for a dormant benefit. |
+| **(c)** ⭐ | a **declared allowance**: permit `anchor_controls` to be absent **only when `v0_conditioned` is False**, refuse otherwise, and **stamp what was defaulted** | **RECOMMENDED.** |
+
+⭐ **Why (c) is exactly right rather than merely cautious, and it is derivable from the code:**
+`anchor_controls` is **only read when `v0_conditioned` is True** — with it False, `roll_bank`
+(`refc.py:1715`) returns the stored `anchors` unchanged and never touches it. ⇒ for a July
+checkpoint an all-zero buffer is **harmless because it is never read**; the danger is *only* a
+**conditioned** build receiving zeros. So the allowance keys on **the exact flag that determines
+whether the buffer matters**, which makes it a narrow checkable rule rather than a blanket
+relaxation. It also matches the shape the pilot's new config contract already uses: an absent value
+becomes a **stated assumption**, not an invisible one.
+
+**Default if silent:** nothing changes. The pilot stays unrunnable — ⚠️ which is **safe** (it cannot
+produce a wrong result) but means **no RL arm can start** until this is settled.
+⛔ **What must NOT happen by default:** someone hitting the error and reaching for `strict=False`.
+That is why it is here rather than left as a traceback for the next person.
+
+*Owner: `refc.py`'s stream — the registration decision is theirs.
+Evidence: `…/Research/2026-09-07-rl-pilot-config-contract/`.*
+
+
 ---
 
 ## Not a decision — the state, for orientation
