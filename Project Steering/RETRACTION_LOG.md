@@ -14484,3 +14484,73 @@ and then caught that the kinematic corroboration measures **REACTION**, not **PE
 
 **Registered as `D-TLGROUND-COLOUR-RESOLVED`.** Artifacts: `code/tl_colour_test.py` (carries the
 pre-registration) and `raw/tl_colour_test.json`, sha256-verified by the label owner.
+
+
+## ⛔ P1 lateral finding — retracted the same session, by its own pre-registered replicate (2026-09-07)
+
+**Who:** Architecture & Inference stream, `D-P1-AGENTCOND-1`.
+**What I claimed (seed 0, banked ~30 min before the retraction):** *"Knowing WHERE the agents
+actually are is a LATERAL signal in this rig"* — `head − shuf` separated better on cross-track
+(−0.1362 [−0.2110, −0.0660]), heading (−0.00060 [−0.00120, −0.00002]) and yaw-rate
+(−0.00062 [−0.00122, −0.00004]).
+**What is true:** it does not survive seed 1. Cross-track → −0.0585 not separated; heading →
+**+0.0002 (SIGN FLIP)**; yaw-rate → **+0.0006 (SIGN FLIP)**; curvature → **+0.000118 [+0.000002,
++0.000246] separated the OTHER WAY.** Decisive control: at seed 1 the **deranged** join beats the
+no-seam arm on **four** lateral metrics (all separated) — a join carrying no scene information
+cannot be a lateral lever. **The lateral cells are seed noise at 17 M params / 500 steps.**
+**Why it happened:** two of the three cells cleared zero by **2e-5 and 4e-5**, against a MEASURED
+**6/42 = 14.3 %** one-seed replicate false-positive rate. I hedged them as *"a direction, not an
+established lever"* — ⛔ **the hedge was not enough; a marginal one-seed cell should be reported as
+NOT YET MEASURED, not as a direction**, because a "direction" is what the next brief chases.
+**What caught it:** `PREREG.md` **Amendment 1**, written while the seed-0 arms were still training
+and before any outcome number existed, which made a second seed MANDATORY the moment anything
+separated. The prereg caught its own author.
+**What did NOT change:** the gate verdict. **P1 IS OUT on two seeds**, all three distance-keeping
+metrics, same sign, overlapping intervals — and the auxiliary-task attribution replicates too.
+**Also worth logging:** `head − off` **ADE flips sign between seeds** — +1.2175 [+0.7274, +1.7505]
+separated WORSE vs −0.4858 [−0.9161, −0.1088] separated BETTER, same two arms. A confidently
+separated ADE verdict in both directions; in-package evidence for the standing "never ADE alone" rule.
+**Record:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-07-p1-agent-gate/`
+RESULT.md §10.2, `raw/panel_s0.json`, `raw/panel_s1.json`.
+
+
+---
+
+## R-2026-09-07-ap-ties — "the all-zero control = the base rate EXACTLY" (E-READOUT-CEILING-1)
+
+**Retracted:** the register row for `E-READOUT-CEILING-1` (committed `cb84c07`) stated the WP-A
+oracle panel's no-information control as **"all-zero 0.01634 = the test base rate 0.016198 ✓"**.
+The `=` and the tick assert that a control read its known value **exactly**. It did not.
+
+**MEASURED from the banked artifact** (`…/2026-09-07-wpa-readout-localisation/raw/oracle_s0.json`):
+`controls.allzero.ap` **0.016340211033821106** against `controls.allzero.base_rate_test`
+**0.016197554767131805** ⇒ **+0.881 %**. They agree to three significant figures, which is why
+rounding to `0.01634` / `0.016198` made them look identical.
+
+**MECHANISM, and it was found by a sibling package's OWN control, not by re-reading this one.**
+WP-D's constant-score control read **0.010236 against a base rate of 0.008333 (+22.8 %)** on its
+rig — **the no-information control reading HIGHER than the value it defines** — and localised it:
+a naive per-sample average precision **breaks ties by array order**, so a CONSTANT score is
+scored as if it had ranked the positives first. An all-zero predictor is a constant score, so
+WP-A's control carries the same bias at this rig's smaller magnitude. Fixed there by **tie-group
+summation**.
+
+**Root-cause class: A CONTROL THAT IS BIASED BY THE SAME METRIC IT IS VALIDATING.** Sibling of
+*"a check that shares the defect it checks for is green forever"* (`e4af94f`) with the object
+swapped — here the check is independent of the code, but it is **scored by the same estimator**,
+so the estimator's bias moves the control and the arms together and cancels out of the
+comparison while corrupting the *absolute* reading. ⛔ The lesson is narrow and precise: **a
+control agreeing with its known value to 3 s.f. is not the same as agreeing exactly, and only
+the second licenses a ✓.** Round-tripping through a rounded quote is what hid it.
+
+⭐ **SCOPE — what is NOT retracted.** The oracle ladder (16x40 **0.4773** → 1x1 **0.0909**),
+the axis attribution, the replicate noise floor, and the real-trunk dissociation all stand: a
+0.00014 absolute bias is negligible against those magnitudes, and it applies equally to every
+arm. ⚠️ The one place it deserves a second look is the **real-trunk** column, where the arms
+(0.027–0.034) sit close to the marginal control (0.0325) — the arms straddle the control either
+way, so the conclusion *"none of it transfers"* is unchanged, but any FUTURE claim resting on a
+sub-1 % AP margin at that rig must use the tie-corrected metric.
+
+**Consequence:** re-running the banked WP-A AP panel with tie-group summation is registered as an
+open item and is **a PI/owner call, not taken unilaterally** — the numbers move by <1 % and no
+conclusion turns on it.
