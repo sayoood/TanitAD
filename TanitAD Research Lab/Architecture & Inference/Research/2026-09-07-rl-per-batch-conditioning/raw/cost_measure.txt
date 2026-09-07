@@ -1,0 +1,8 @@
+required channels on this build: ('ego_state', 'v0', 'lan')
+resolutions=1  batches=140201
+CHECK   ConditioningContract.check  min=   0.181 us med=   0.191 us
+RESOLVE conditioning_requirements   min=   2.514 us med=   2.560 us
+UNCACHED assert_conditioning        min=   3.124 us med=   3.196 us
+cache speedup on the per-batch path: 17.30x
+FORWARD smoke   B=1 W=4 px=64 ch=1  min=    3.219 ms med=    3.973 ms  || check/forward = 0.00561 %  resolve/forward = 0.07810 %  uncached/forward = 0.09705 %  1 check = 1/17,825 of a forward
+FORWARD default B=1 W=8 px=256 ch=9  min=  435.296 ms med=  444.082 ms  || check/forward = 0.00004 %  resolve/forward = 0.00058 %  uncached/forward = 0.00072 %  1 check = 1/2,410,478 of a forward
