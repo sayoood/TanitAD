@@ -168,6 +168,54 @@ omission.
 `…/2026-09-07-wpa-readout-localisation/`.*
 
 
+## 10. DECIDE: refcv5-v2 is training 11,286 parameters that receive NO GRADIENT — and the fix needs a LOSS-WEIGHT BUDGET, which is yours
+
+⛔ **MEASURED 2026-09-07** (gradient probe, real model, live argv, trainer's own loss, one
+backward — `…/Research/2026-09-07-v7-vocab-reach-census/raw/gradreach_live.json`):
+
+| module | grads that are `None` | `grad_abs_sum` | verdict |
+|---|---|---|---|
+| `tac_goal_tok_head` | **2 of 2** | **0** | ⛔ **NOT WIRED** |
+| `tac_goal_head` | 0 of 2 | 14.368 | ✅ GRADIENT REACHES |
+
+The 22-token tactical head is **built, rollable, and never learns.** ⭐ **The arm is NOT
+tactically blind** — the factored `tac_goal_head` trains normally; what is inert is the TOKEN
+head. ⚠️ This CONFIRMS the registered `D-TACGOAL-TRAINER-SEAM-OPEN`; what is new is gradient
+evidence rather than a code reading, and that **the live run is carrying the dead parameters
+now**.
+
+⭐ **Why nobody noticed:** `assert_seams_are_built` asks *"is it built?"* — and it is.
+`effective_weights_stamp_v3` enumerates **declared loss weights**, and this head **has no weight
+flag**, so it produces **no row at all**. An instrument that enumerates weights cannot see a head
+with no weight. Neither guard was wrong; both were asked a narrower question than the claim hung
+on them. Now pinned by `stack/tests/test_built_heads_receive_gradient.py`.
+
+**What the fix costs:** the head, the targets, the emitter, the negative policy, the `pos_weight`
+and the loss **all exist**. Only the trainer call is missing. ⛔ But adding a loss term means
+taking weight from the **`MANEUVER_WEIGHT` budget**, and re-balancing a live recipe's loss weights
+is a PI/owner call — already registered, not invented here.
+
+⛔ **What must NOT happen:** wiring it into **refcv5-v2 mid-flight**. That would add a lever
+~18k steps in, cost ~20 h of training, and make the refcv4b comparison less attributable — the
+`--v2` conflation failure again. The seam is the NEXT arm's business.
+
+⚠️ **AND THE OTHER "next arm" LEVER IS DATA-GATED, NOT SCHEDULE-GATED.** `--max-speed-input` is
+**UNRUNNABLE on v7.2**: `speed_max_input` on **0 of 4,572** train and **0 of 147** eval records,
+`max_speed_cond_built` **False**, and the trainer **refuses the flag** rather than training on
+nothing. ⇒ it needs **the v8 label blob reaching the trainer's corpus, not a flag flip**. *(The
+flag itself is real and tested — `a1d52e6`. The gap is the DATA.)*
+
+**Default if silent:** refcv5-v2 finishes as launched and is scored on its REAL levers
+(`--sel-refined`, `--sampler ddim`, P14 fan ranking, `--anchor-v0-conditioned`, `--nav-from-v7`).
+⛔ The landing report will state that **no result may be attributed to the 22-token tactical
+vocabulary**, because those parameters never learned — recorded in
+`PREREG_REFCV5_V2_LANDING.ERRATUM-1.md`. The next arm carries **neither** the wired token head
+**nor** max speed until you rule on the weight budget and the v8 labels.
+
+*Evidence: `…/Research/2026-09-07-v7-vocab-reach-census/` (52 tokens classified, 3-leg mutation
+proof incl. fix-forward). Pin: `stack/tests/test_built_heads_receive_gradient.py`.*
+
+
 ---
 
 ## Not a decision — the state, for orientation
