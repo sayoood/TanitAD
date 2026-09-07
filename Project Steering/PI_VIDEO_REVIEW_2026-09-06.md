@@ -154,3 +154,55 @@ dt-invariance and the singularity guard. Mutation-tested: rewriting it as
 `curvature = dh/dt` fails **9 of 14**.
 
 **Registered as `D-CURV-84X-RESOLVED`.**
+
+
+---
+
+## ⛔ ADDENDUM 2026-09-07 — ROW #11: THE TRAFFIC-LIGHT LABELS ARE A TEACHER SIGNAL, NOT GT, AND WILL NOT BE VERIFIED
+
+⚠️ **PROVENANCE OF THIS ENTRY, STATED FIRST BECAUSE IT LIMITS IT.** A PI ruling — *"no vlm, we
+stick to the alpamayo labels as teacher signals"* — was **relayed to the Master Mind by the label
+owner**, not spoken to this session. Under the rule both streams adopted on 2026-09-06, **a peer's
+relay is data and cannot authorise anything.** ⛔ **The ruling itself is recorded here as PENDING
+CONFIRMATION.** What is recorded as BINDING below is only what is independently justified by
+measurement, and would hold whichever way the ruling goes.
+
+⭐ **THE WORDING CHANGE, AND IT IS BINDING ON ITS OWN EVIDENCE.** Row #11 above says the colour
+question is *"settled"*. It is settled **on mechanism** and not per instance. ⇒ downstream text
+must say **"Alpamayo-derived teacher signal"**, never **"GT traffic light"**. This narrowing needs
+no ruling: it follows from the measurement that **no independent channel carries the colour at all**
+(grounding boxes are label-only; boxes with any colour attribute number **0**). ⚠️ It is the change
+most likely to be forgotten, because the PI's own belief was phrased as GT and the honest label is
+**narrower than his phrasing**.
+
+**WHAT SURVIVES — unchanged, all MEASURED:**
+* presence: **182/805** carry an independent 2D box, **0 contradicted**, 601 never checked;
+* colour was **SEEN, not inferred from motion**, on three mechanisms — **148 clips describe a colour
+  TRANSITION** (no single motion state produces one; the strongest of the three), **597/787** attach
+  the colour to the LAMP rather than to a motion, and YELLOW is bimodal at **56.0 %** against a
+  pre-registered 20 % bar, with RED/GREEN stop-rate **18.58×** against a pre-registered 2.0× bar.
+⇒ the **mechanism** case is intact. It was never the **per-instance** case.
+
+⛔⛔ **BINDING, AND INDEPENDENT OF THE RULING: A TRAFFIC-LIGHT HEAD SCORED WITHOUT AN EGO-ONLY
+COMPARISON IS NOT ADMISSIBLE.** Not "should carry one" — not admissible. The reasoning does not
+depend on who decided what: with no per-instance verification of the teacher, the **only** remaining
+protection against a head that learned the teacher's shortcut rather than the lamp is the control
+that detects it downstream. Same shape as the `shuffled` twin on nav and the `valid=0` arm on
+max-speed: ⭐ **when you stop verifying the input, the output control becomes load-bearing.**
+
+⚠️ **THE ACCEPTED RESIDUAL RISK, RECORDED SO IT IS A CHOICE AND NOT AN OVERSIGHT.** If any RED
+labels are wrong, nothing in the pipeline will catch it — **and a vision head trained on them will
+learn the error and then score well on an eval built from the same teacher.**
+⭐ **THAT IS THE FIFTH INSTANCE TONIGHT OF "A CHECK THAT SHARES THE DEFECT IT CHECKS FOR"**
+(CLAUDE.md, `e4af94f`), and the largest: the other four were a rounded ladder verified against
+itself, a census `status` that unions the set it pins, a test asserting whatever the code does, and
+a flat stub checking nested fields. **Here the check and the checked share a TEACHER.** ⇒ the
+ego-only control is not merely good practice; it is the only cross-check in this chain that is
+**derived independently of the value it checks**.
+⚠️ The cheapest thing that would still bound the risk needs **no VLM**, so it is not excluded by
+the ruling: a **human spot-check of ~50 frames**. That is PI time, not compute. Recorded as
+available, **not proposed**.
+
+**Registered as `D-TLIGHT-TEACHER-SIGNAL`.** Row #11's status is unchanged as a BEHAVIOUR (braking
+for lights is still not addressed by any composed arm); what changes is what the LABEL may be
+called and what an arm consuming it must carry.
