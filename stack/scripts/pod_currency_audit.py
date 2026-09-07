@@ -96,6 +96,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -203,6 +204,32 @@ def run_git_stdin(args: List[str], repo: str, payload: bytes, timeout: int = 180
         time.sleep(min(GIT_BACKOFF_CAP, 1.0 + 0.5 * attempt))
     raise RuntimeError("git %s (stdin) exhausted %d retries: %s"
                        % (" ".join(args[:3]), GIT_RETRIES, last))
+
+
+def check_pod_root(root: str) -> str:
+    """Return "" if `root` is a usable POSIX path on the remote box, else why not.
+
+    ⛔ MSYS/Git-Bash REWRITES A POSIX-LOOKING ARGUMENT INTO A WINDOWS PATH before a
+    native python.exe ever sees it, so `--pod-root /workspace/TanitAD/stack` arrives
+    as something like `C:/Program Files/Git/workspace/TanitAD/stack`. The scan then
+    runs against a directory that does not exist on the pod, finds NOTHING, and the
+    audit reports no drift -- ⛔ A FALSE ALL-CLEAR ON A PRE-LAUNCH GATE, which is
+    worse than a crash because it looks like a pass. MEASURED 2026-09-07: this makes
+    the programme's own currency gate unrunnable from the dev box.
+    Workaround at the call site: MSYS_NO_PATHCONV=1.
+    """
+    if not root:
+        return "empty"
+    if re.match(r"^[A-Za-z]:", root):
+        return ("looks like a WINDOWS path (%r) -- MSYS rewrote it; "
+                "re-run with MSYS_NO_PATHCONV=1" % root[:60])
+    for tell in ("/Git/", "/usr/bin/", "Program Files"):
+        if tell in root:
+            return ("contains %r (%r) -- MSYS path conversion; "
+                    "re-run with MSYS_NO_PATHCONV=1" % (tell, root[:60]))
+    if not root.startswith("/"):
+        return "is not absolute (%r); the remote root must start with /" % root[:60]
+    return ""
 
 
 def pod_scan(host: str, root: str, ssh_opts: List[str], timeout: int) -> Dict[str, dict]:
@@ -503,10 +530,26 @@ def main(argv=None) -> int:
     repo = a.repo or run_git(["rev-parse", "--show-toplevel"], os.getcwd()).strip()
     exts = None if a.all_files else (a.ext or [".py"])
 
+    bad = check_pod_root(a.pod_root)
+    if bad:
+        print("AUDIT UNTRUSTWORTHY: --pod-root %s" % bad, file=sys.stderr)
+        return 2
+
     try:
         pod = pod_scan(a.host, a.pod_root, ["-o=%s" % o for o in a.ssh_opt], a.timeout)
     except Exception as exc:
         print("AUDIT UNTRUSTWORTHY: %s" % exc, file=sys.stderr)
+        return 2
+
+    # ⛔ AN EMPTY SCAN IS NOT A CLEAN BOX. `find` over a non-existent root exits
+    #    quietly, every marker is still emitted, and the payload validates -- so
+    #    pod_scan SUCCEEDS with zero entries and the audit below then compares the
+    #    repo against nothing. Assert on CONTENT, never on the fact that the
+    #    command returned.
+    if not pod:
+        print("AUDIT UNTRUSTWORTHY: pod scan returned 0 files under %r on %s -- "
+              "a currency audit over zero files is not a PASS. Check the root exists "
+              "on the box." % (a.pod_root, a.host), file=sys.stderr)
         return 2
 
     result = classify(repo, a.ref, a.subtree, pod, exts, a.skip_dir,
