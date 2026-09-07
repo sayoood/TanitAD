@@ -230,7 +230,7 @@ dimensionality confound `E-DEC-25` flagged in its own row ladder (*"dimensionali
 | orc 1×1 — global pool | 1 × 1 | 120.0 | 0.0909 | 0.086 | 4.550 m | 4.184 m |
 | **pos_only** — marginal control | — | — | **0.0317** | 0.032 | 4.479 m | 4.175 m |
 | **all-zero** — control | — | — | **0.01634** | **0.000** | — | — |
-| | | | *= base rate **0.016198*** ✓ | *F1 **0.000*** | | |
+| | | | *vs base rate **0.016198** — ⚠️ **+0.881 %, NOT equal; the `=` and ✓ are RETRACTED, `R-2026-09-07-ap-ties`** (tie-blind AP scores a CONSTANT arm above its own base rate). The ladder and every conclusion below STAND.* | *F1 **0.000*** | | |
 
 **Against the full 16×40 grid:**
 
