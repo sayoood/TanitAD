@@ -14554,3 +14554,74 @@ sub-1 % AP margin at that rig must use the tie-corrected metric.
 **Consequence:** re-running the banked WP-A AP panel with tie-group summation is registered as an
 open item and is **a PI/owner call, not taken unilaterally** — the numbers move by <1 % and no
 conclusion turns on it.
+
+
+---
+
+## R-2026-09-08-wpa-mirror — "the map does not yet contain agents" (`E-READOUT-CEILING-1`)
+
+⛔⛔ **RETRACTED: WP-A's central conclusion, and the work order it produced.** The row said the
+encoder's addressable content is *"EPISODE-SPECIFIC, not agent-generic"* and that **"the map does
+not yet contain agents"**, from which followed *"WP-B would index into a map with no agents in it;
+**WP-D is the real prerequisite**"*. I committed that (`cb84c07`) and reordered the programme on
+it. **It is false.**
+
+**MEASURED** (WP-D's probe, `…/2026-09-07-wpd-bev-aux/raw/wpa_recheck.json`, on **WP-A's OWN
+BANKED BYTES**, one variable moved): WP-A's `s5_indexed.py` **mirrors the azimuth axis**.
+`bev_aux.azimuth_column` and `psg_targets.azimuth_column` — two independently written modules —
+agree that **column 0 = +60° (LEFT)**; `s5_indexed.py` uses the opposite sense.
+
+| arm | corrected address | mirrored | ratio |
+|---|---|---|---|
+| `pix` | **0.0596** | 0.0284 | 2.10× |
+| `tok` | **0.0457** | 0.0292 | 1.57× |
+
+⭐ **And the mirrored branch REPRODUCES WP-A's banked panel** (0.0270 / 0.0295) — which is what
+makes this a diagnosis rather than a disagreement between two runs.
+
+⭐⭐ **THE CONFIRMATION WAS A FALSIFIABLE PREDICTION STATED BEFORE TESTING, AND RUN ON BOTH
+BRANCHES.** Destroying azimuth resolution must **cost** AP under a correct address and **help**
+under a mirror. **Corrected: 0.0457 → 0.0441 → 0.0398 → 0.0386 — monotone DOWN. Mirrored:
+0.0292 → 0.0337 → 0.0364 → 0.0376 — monotone UP**, reproducing exactly the ordering in which
+WP-A's best rung was **`tok_1x1`, which carries NO azimuth information at all.**
+
+⛔ **THE TELL WAS IN WP-A'S OWN PUBLISHED PANEL AND I READ IT AS A CURIOSITY.** A 1×1 pooling
+that discards every azimuth distinction cannot beat rungs that keep it — under a correct address
+that ordering is not surprising, it is **impossible**. It was reported, and nobody (me included)
+treated an impossible ordering as evidence that the address was wrong.
+
+**Root-cause class: A SIGN/ORIENTATION CONVENTION THAT IS NEVER ASSERTED, IN A PIPELINE WHERE BOTH
+SIDES CAN BE WRONG TOGETHER.** Sibling of the `control_units` trap (`alat` read as curvature —
+396 g vs 0.31 g, both tables internally consistent) and of the cylindrical-FOV trap: a correct
+computation applied under an unstated convention. ⭐ The cheap discriminator that existed all
+along: **two independently authored modules already agreed on the convention**, and neither was
+consulted.
+
+## ⛔ What is retracted, and what is NOT
+
+**RETRACTED:**
+* *"the map does not yet contain agents"* / *"none of it transfers"*. **`D0 − pos_only` is
+  SEPARATED on both geometries** (+0.02457 Cartesian, +0.07368 polar) ⇒ **the map already
+  contained agents.**
+* The design consequence **"WP-D is the prerequisite, not WP-B."** WP-D was run as a prerequisite
+  for a premise that was not true. ⚠️ WP-D is not thereby wasted — it returned a real result
+  (`E-BEV-AUX-1` REFUTED, F4+F2) and its occlusion census stands — but its **ordering rationale is
+  void**, and **WP-B is now the next lever**, at **0 new training arms** to decide.
+* The **real-trunk AP column** as published (0.027–0.034 vs a 0.0325 marginal). Those are
+  mirrored-address numbers.
+
+**NOT RETRACTED, and each still load-bearing:**
+* The **quantisation geometry** — median 4 BEV cells (max 313) per token cell, only 242 of 640
+  token cells receiving any ground-plane cell. This is why WP-B couples to **sparse**
+  `slot_features` rather than a dense raster, and it does not depend on the address sense.
+* The **cylindrical FOV correction** (120.000°, not the pinhole 92.641°) and the `fov_census`.
+* **"refcv5 has NO `SpatialGridReadout`"** — it is stride-32 on 256×640 ⇒ 8×20 = 6.0°/column, and
+  `refc.py:2112` already cross-attends its 160 tokens. Independent of this defect.
+* ⚠️ **`R-2026-09-07-ap-ties` still applies on top of this one** — the AP tie-break bias
+  (+0.881 % on this control) is a SECOND, INDEPENDENT defect in the same panel.
+
+⏳ **OPEN and owed:** the **oracle ladder** (16×40 0.4713 → 1×1 0.0909) has **not** been re-read
+under the corrected address. Its features are built FROM the target, so it may be self-consistent
+under a mirror — **but that is an argument, not a measurement, and this row is what happens when
+an argument is banked as a result.** Re-read cost: **~10 GPU-min, the script exists and runs.**
+⛔ Until then the ladder's absolute AP values are **NOT QUOTABLE**; the ordering is untested.
