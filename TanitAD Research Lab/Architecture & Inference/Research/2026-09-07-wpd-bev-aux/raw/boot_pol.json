@@ -1,0 +1,159 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + the bank's pt_*.npy score matrices)",
+ "tier": "NOT APPLICABLE - frozen-feature representation probe",
+ "geom": "pol",
+ "n_boot": 2000,
+ "n_episodes": 30,
+ "n_test_rows": 2974,
+ "n_cells_per_row": 480,
+ "n_scored_cells": 1171327,
+ "n_pos": 35131,
+ "base_rate": 0.029992478616133668,
+ "exactness_check": [
+  {
+   "fast": 0.12993710138550302,
+   "resorted": 0.12993710138550302,
+   "equal": true
+  },
+  {
+   "fast": 0.14148835716710312,
+   "resorted": 0.14148835716710306,
+   "equal": false
+  },
+  {
+   "fast": 0.21074689737108557,
+   "resorted": 0.2107468973710856,
+   "equal": false
+  }
+ ],
+ "point_ap": {
+  "tok_D0": 0.1432818789212816,
+  "tok_D1": 0.15251029623809517,
+  "tok_D2": 0.15226373651903016,
+  "pix": 0.13303423262757225,
+  "pos_only": 0.06959853200208434,
+  "shuf_D1": 0.0669346792863553
+ },
+ "pairs": {
+  "tok_D1_minus_pos_only": {
+   "delta": 0.082912,
+   "lo": 0.029908,
+   "hi": 0.132495,
+   "separated": true,
+   "p_delta_gt0": 1.0,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "A1 marginal (bar: >= +0.010, separated)"
+  },
+  "tok_D1_minus_pix": {
+   "delta": 0.019476,
+   "lo": -0.012106,
+   "hi": 0.052726,
+   "separated": false,
+   "p_delta_gt0": 0.8745,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "A2 raw-pixel floor (bar: > 0, separated)"
+  },
+  "tok_D1_minus_tok_D0": {
+   "delta": 0.009228,
+   "lo": -0.014571,
+   "hi": 0.030257,
+   "separated": false,
+   "p_delta_gt0": 0.745,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "A3 the lever vs aux-off (bar: >= 3x replicate floor)"
+  },
+  "tok_D1_minus_tok_D2": {
+   "delta": 0.000247,
+   "lo": -0.016554,
+   "hi": 0.016473,
+   "separated": false,
+   "p_delta_gt0": 0.503,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "A4 information vs shuffled target (bar: >= 3x floor)"
+  },
+  "tok_D0_minus_pos_only": {
+   "delta": 0.073683,
+   "lo": 0.024091,
+   "hi": 0.128497,
+   "separated": true,
+   "p_delta_gt0": 1.0,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTEXT: does the AUX-OFF trunk already carry agents?"
+  },
+  "tok_D0_minus_pix": {
+   "delta": 0.010248,
+   "lo": -0.037381,
+   "hi": 0.058999,
+   "separated": false,
+   "p_delta_gt0": 0.671,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTEXT: aux-off trunk vs the raw-pixel floor"
+  },
+  "tok_D2_minus_tok_D0": {
+   "delta": 0.008982,
+   "lo": -0.011207,
+   "hi": 0.02454,
+   "separated": false,
+   "p_delta_gt0": 0.8235,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTEXT: the ZERO-INFORMATION target vs aux-off"
+  },
+  "tok_D2_minus_pos_only": {
+   "delta": 0.082665,
+   "lo": 0.031901,
+   "hi": 0.132198,
+   "separated": true,
+   "p_delta_gt0": 1.0,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTEXT: shuffled-target trunk vs marginal"
+  },
+  "pix_minus_pos_only": {
+   "delta": 0.063436,
+   "lo": 0.010444,
+   "hi": 0.11261,
+   "separated": true,
+   "p_delta_gt0": 0.996,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTEXT: do raw pixels beat the marginal?"
+  },
+  "shuf_D1_minus_pos_only": {
+   "delta": -0.002664,
+   "lo": -0.007457,
+   "hi": 0.000911,
+   "separated": false,
+   "p_delta_gt0": 0.09,
+   "n_boot": 2000,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap -- taniteval.ci._draws resampling, statistic = pooled tie-group AP",
+   "answers": "would another DRAW OF EPISODES say this? It does NOT answer whether another TRAINING RUN would -- that is what the D0b replicate arm measures (H-ESTIM-SEED-1).",
+   "why": "CONTROL: random-frame features must NOT gain"
+  }
+ }
+}
