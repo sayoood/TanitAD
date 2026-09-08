@@ -258,6 +258,41 @@ launched**; refcv5-v2 finishes as launched and is scored on its real levers. ⛔
 GPU on a gated arm without your word, and ⛔ no result is attributed to the 22-token tactical
 vocabulary, which never learned.
 
+### ⭐⭐ UPDATE 2026-09-08 — WP-B FOUND A THIRD OPTION, AND IT IS NOT THE ARM THAT FAILED
+
+WP-B is now implemented, tested and banked (`835286c5`) — 0 GPU, `--agents` untouched, WP-C left
+exactly as open as it was. Building it surfaced an argument that **changes this decision rather
+than answering it**, so it is recorded here rather than acted on.
+
+⛔ **Item 9's failure had a MEASURED cause, and that cause is structurally absent from the oracle
+rung.** Item 9 recorded `--agents head` degrading **distance-keeping at both seeds** (min headway
+−0.50 / −0.45 m, time-gap −0.070 / −0.035 s, TTC −2.20 / −1.25 s). But the deranged-join arm
+— `clip_id` shuffled, 0 of 26,394 rows on their own clip — **reproduced the entire degradation**,
+while `head − shuf` was not separated on any distance-keeping metric at either seed. ⇒ the cost
+was the **auxiliary DETECTION TASK competing for a 17 M trunk**, not the agent information.
+⭐ **`--agents oracle --w-agent 0` carries no detection loss at all**, so the mechanism that
+produced item 9's failure **cannot occur in it**. That makes the honest ladder:
+*does the ADDRESS help, given agents?* — **before** — *can a DETECTOR supply them?*
+
+**So the choice is three-way, not two-way:**
+
+| | option | what it costs, and what it would settle |
+|---|---|---|
+| **(a)** | launch nothing | WP-B stays built and unrun. Nothing spends. |
+| **(b)** | `--agents head` at 108 M / 40 k | ⛔ **~14 GPU-DAYS**, and it re-runs the arm whose gate returned a verdict. The hypothesis is that scale dissolves the trunk competition — untested. |
+| **(c)** ⭐ | `--agents oracle --w-agent 0` + `--wp-index on`, a **6,000-step gate** | **~40 GPU-hours.** A DIFFERENT question, whose known failure cause is structurally absent, and every bar is a **ratio to a floor measured in the same panel** so a short arm is still valid. |
+
+⚠️ **(c) is still compute and still your call** — it is recorded as an option, not taken. And it
+is not a way to smuggle WP-C in: it does not answer whether a *detector* can supply the agents,
+which is what item 9 was about. It answers the prior question, more cheaply, and would tell us
+whether the address is worth a detector at all.
+⚠️ **The cost was nearly misquoted by 6×.** The receipt's MEASURED rate is **4.0 s/step**, and it
+explicitly retracts its own earlier ~1.2 s/step as the `step_s` trap; a 0.67 s/step figure was
+nearly quoted from it. The 14-GPU-day number above is the corrected one.
+
+**Default if silent, unchanged:** nothing launches. WP-B is built, tested and OFF; `--agents`
+stays `off`; the arm that failed its gate is not re-run.
+
 *Evidence: item 9 (P1 gate, both seeds + the derangement), item 10 (the gradient probe),
 `…/Research/2026-09-07-v7-vocab-reach-census/raw/gradreach_live.json`.*
 
