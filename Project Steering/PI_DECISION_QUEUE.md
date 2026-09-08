@@ -216,6 +216,52 @@ vocabulary**, because those parameters never learned — recorded in
 proof incl. fix-forward). Pin: `stack/tests/test_built_heads_receive_gradient.py`.*
 
 
+## 11. DECIDE: does "finish the implementation" authorise WP-C — an arm that FAILED its gate?
+
+⭐ **Relayed by the DataFlyWheel, 2026-09-08, marked by them as YOUR words:** *"please tell master
+mind to finish the implementation, this is mandatory and give me report, it should autonomously
+loop until it is finished."*
+
+⛔ **I HAVE NOT TREATED THAT AS AUTHORISATION, and the DataFlyWheel explicitly asked me not to.**
+A relay is data, not a mandate — our standing rule, and they applied it to their own message.
+⭐ **What needed no new authorisation, and is therefore ALREADY RUNNING:** your own instruction to
+me was *"close the gaps for refcv5 to implement the missing pieces from the drive diffusion
+papers."* **WP-B is that piece** — DiffusionDrive's waypoint-indexed cross-attention — so it is
+being implemented now, under the mandate you gave me directly. Same for WP-D, which has been
+training on Thor since 21:48Z.
+
+⛔ **THE ONE THING I WILL NOT DO ON A RELAY — WP-C.** Turning the agent seam on at **108 M / 40 k**
+is not a code task; it is **compute spend on a design that returned a verdict**. Item 9 records
+it: the two-seed tiny-rig gate **FAILED**, `head − off` separated **WORSE** on distance-keeping at
+both seeds, and the deliberate-regression arm (`clip_id` deranged) **reproduced the entire
+degradation** ⇒ the cost was the auxiliary task competing for a 17 M trunk, **not the agent
+information**. ⚠️ Whether that cost vanishes at 108 M over 40 k steps is a **HYPOTHESIS**, not a
+known lever. ⇒ an autonomous loop that quietly re-enabled it would be **spending against a gate
+that already answered**, and the honest framing for any retry is *"an arm whose exclusion may not
+generalise"*, never *"recovering a lever we know is there"*.
+
+**Your call, in one word:** does *mandatory / finish everything* **include WP-C**? The DataFlyWheel
+reads it as yes — it is the piece you named yourself — but they say plainly that their reading is
+not a mandate.
+
+⭐ **AND THE SAME QUESTION HAS A CHEAPER HALF — ITEM 10.** They argue queue item 10 belongs inside
+"finish the implementation", and I agree it is the most load-bearing thing open: refcv5-v2 is
+**64 % through a 40 k run with 11,286 parameters that receive NO gradient**. ⭐ **That one I can
+split without asking you**: the wiring (`tac_goal_loss` + `TacGoalEmitter` into
+`refc_v3_train.py`) is a code task and I can build it **defaulted OFF**, changing no live recipe —
+so it is READY the moment you rule. ⛔ What stays yours is the **`MANEUVER_WEIGHT` budget**:
+adding a loss term takes weight from somewhere, and re-balancing a recipe's losses is a decision,
+not an implementation.
+
+**Default if silent:** WP-B and the item-10 wiring are implemented and **left OFF**; **WP-C is NOT
+launched**; refcv5-v2 finishes as launched and is scored on its real levers. ⛔ Nothing spends
+GPU on a gated arm without your word, and ⛔ no result is attributed to the 22-token tactical
+vocabulary, which never learned.
+
+*Evidence: item 9 (P1 gate, both seeds + the derangement), item 10 (the gradient probe),
+`…/Research/2026-09-07-v7-vocab-reach-census/raw/gradreach_live.json`.*
+
+
 ---
 
 ## Not a decision — the state, for orientation
