@@ -385,3 +385,61 @@ def test_agent_ORACLE_without_its_boxes_REFUSES():
     m = v3.RefCV3Model(c).eval()
     with pytest.raises(ValueError, match="oracle"):
         m(_frames(c), v0=torch.tensor([12.0, 3.0]), steps=2)
+
+
+# ---------------------------------------------------------------------------
+# refcv5 WP-B (`E-WP-INDEX-1`) -- the waypoint index's two refusals
+# ---------------------------------------------------------------------------
+def test_WPB_index_without_the_agent_seam_REFUSES_before_the_GPU():
+    """⛔ WP-B addresses the SPARSE AGENT TOKENS. With `--agents off` there
+    are no tokens to address, so the bias heads would be built, STAMPED into
+    config.json and never called -- and the arm would read as "the waypoint
+    index does not help" while never having had an index. A refutation
+    manufactured by a missing seam is worse than a crash, so it refuses at pin
+    time rather than at the first batch."""
+    args = _args(agents="off", wp_index="on")
+    with pytest.raises(SystemExit, match="--agents off"):
+        t._pin_refcv5_seams(_cfg(), args)
+
+
+@pytest.mark.parametrize("knob,value", [
+    ("wp_index_mode", "shuffle"),
+    ("wp_index_mode", "const"),
+    ("wp_index_detach", True),
+    ("wp_index_radius_m", 12.0),
+    ("wp_index_hidden", 8),
+    ("wp_index_scale_m", 25.0),
+])
+def test_WPB_every_knob_REFUSES_under_index_off(knob, value):
+    """⛔⛔ THE M18 NO-OP-FLAG DEFECT, CLOSED FOR ALL SIX KNOBS.
+
+    With `--wp-index off` no `WaypointIndexConfig` is built and no bias head is
+    attached, so every one of these parses, is STAMPED INTO config.json, and
+    does nothing -- the run record would state a configuration that did not
+    happen.
+
+    ⚠️ **The first draft refused only three of them** (mode / detach /
+    radius) and left `--wp-index-hidden`, `--wp-index-scale-m` and
+    `--wp-index-const-xy` free. It was caught by
+    `test_refc_v3_agent_provenance.py::test_P2_every_knob_is_recoverable_from_
+    the_stamp_BY_VALUE`, which derives its knob list FROM ARGPARSE instead of
+    from a hand-written list that can rot -- which is exactly why that test is
+    written that way.
+
+    ⭐ `--wp-index-mode` is the dangerous one: it names a CONTROL ARM, so a
+    reader of the record would believe a control had been run."""
+    args = _args(agents="head", w_agent=1.0, agent_join="j.xz",
+                 wp_index="off", **{knob: value})
+    with pytest.raises(SystemExit, match="--wp-index off"):
+        t._pin_refcv5_seams(_cfg(), args)
+
+
+def test_WPB_knobs_at_their_DEFAULTS_do_not_trip_the_refusal():
+    """⛔ THE SAME-BREATH CONTROL: a refusal that fired on the defaults
+    would make `--wp-index off` unusable, and the test above would pass for the
+    wrong reason."""
+    args = _args(agents="head", w_agent=1.0, agent_join="j.xz",
+                 wp_index="off")
+    cfg = _cfg()
+    t._pin_refcv5_seams(cfg, args)
+    assert getattr(cfg.core.decoder, "wp_index", None) is None

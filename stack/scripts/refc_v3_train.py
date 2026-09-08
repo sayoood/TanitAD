@@ -93,6 +93,7 @@ from tanitad.refs import refb  # noqa: E402
 from tanitad.refs import refc_agents as _refc_agents  # noqa: E402
 from tanitad.refs import refc_bev_aux as _refc_bev_aux  # noqa: E402  (WP-D)
 from tanitad.data import bev_aux as _bev_aux  # noqa: E402  (WP-D target)
+from tanitad.refs import refc_wp_index as _refc_wp_index  # noqa: E402  (WP-B)
 from tanitad.models import kinematic as kin  # noqa: E402
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
 import numpy as _np  # noqa: E402
@@ -629,6 +630,80 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "guard does not fire and the detection loss is simply "
                 "skipped. Pass --agents head/oracle, or set these to their "
                 "defaults.")
+    # --- WP-B: the waypoint index on the agent cross-attention ------------ #
+    #
+    # ⛔ ORDER IS LOAD-BEARING: this runs AFTER the WP-6 block above, because
+    # it reads `core.decoder.cross_agent`, which that block sets. Placed before
+    # it, the `--agents head --wp-index on` combination would refuse itself.
+    _wpx = str(getattr(args, "wp_index", "off"))
+    if _wpx != "off":
+        if str(getattr(args, "agents", "off")) == "off":
+            raise SystemExit(
+                "[v3] ⛔ --wp-index %s with --agents off. WP-B is a "
+                "waypoint-indexed cross-attention INTO THE SPARSE AGENT "
+                "TOKENS; with no agent seam there are no tokens to address, "
+                "so the bias heads would be built, STAMPED INTO config.json "
+                "and never called -- and the arm would read as 'the waypoint "
+                "index does not help' while never having had an index. That "
+                "is a REFUTATION MANUFACTURED BY A MISSING SEAM, and it "
+                "refuses here, before the GPU, rather than at the first "
+                "batch. Pass --agents head|oracle, or --wp-index off."
+                % _wpx)
+        core.decoder.wp_index = _refc_wp_index.WaypointIndexConfig(
+            enable=True,
+            hidden=int(getattr(args, "wp_index_hidden", 32)),
+            scale_m=float(getattr(args, "wp_index_scale_m", 10.0)),
+            mode=str(getattr(args, "wp_index_mode", "geom")),
+            const_xy=tuple(float(v) for v in
+                           getattr(args, "wp_index_const_xy", (10.0, 0.0))),
+            detach=bool(getattr(args, "wp_index_detach", False)),
+            radius_m=float(getattr(args, "wp_index_radius_m", 0.0)))
+        print("[v3] WP-B waypoint index ON: mode=%s detach=%s radius_m=%.3g "
+              "hidden=%d scale_m=%.3g -> %d decoder layers"
+              % (core.decoder.wp_index.mode, core.decoder.wp_index.detach,
+                 core.decoder.wp_index.radius_m, core.decoder.wp_index.hidden,
+                 core.decoder.wp_index.scale_m, int(core.decoder.layers)),
+              flush=True)
+    else:
+        # ⛔⛔ --wp-index off MAKES EVERY WP-B KNOB A NO-OP THAT STILL LANDS IN
+        # config.json. Same class as the `--agent-w-project` and `--w-bev-aux`
+        # defects one seam over: the flag parses, the value is stamped, and the
+        # run record states a configuration that did not happen. There is no
+        # third state -- the knobs are refused, not silently dropped.
+        # ⚠️ EVERY knob, not just the interesting three. The first draft
+        # refused only mode/detach/radius and left `--wp-index-hidden`,
+        # `--wp-index-scale-m` and `--wp-index-const-xy` free -- and those
+        # three PARSE, land in `agent_knobs` in config.json, and do nothing,
+        # which is the M18 no-op-flag defect verbatim. It was caught by
+        # `test_refc_v3_agent_provenance.py::test_P2_every_knob_is_recoverable_
+        # from_the_stamp_BY_VALUE`, which derives the knob list FROM ARGPARSE
+        # rather than from a hand-written list that can rot.
+        _dead_wp = {}
+        if str(getattr(args, "wp_index_mode", "geom")) != "geom":
+            _dead_wp["--wp-index-mode"] = getattr(args, "wp_index_mode")
+        if bool(getattr(args, "wp_index_detach", False)):
+            _dead_wp["--wp-index-detach"] = True
+        if float(getattr(args, "wp_index_radius_m", 0.0)) != 0.0:
+            _dead_wp["--wp-index-radius-m"] = getattr(args, "wp_index_radius_m")
+        if int(getattr(args, "wp_index_hidden", 32)) != 32:
+            _dead_wp["--wp-index-hidden"] = getattr(args, "wp_index_hidden")
+        if float(getattr(args, "wp_index_scale_m", 10.0)) != 10.0:
+            _dead_wp["--wp-index-scale-m"] = getattr(args, "wp_index_scale_m")
+        if tuple(float(v) for v in
+                 getattr(args, "wp_index_const_xy", (10.0, 0.0))) \
+                != (10.0, 0.0):
+            _dead_wp["--wp-index-const-xy"] = list(
+                getattr(args, "wp_index_const_xy"))
+        if _dead_wp:
+            raise SystemExit(
+                "[v3] ⛔ --wp-index off, but %s is set. With the index off no "
+                "`WaypointIndexConfig` is built and no bias head is attached, "
+                "so every one of these parses, is STAMPED INTO config.json, "
+                "and does nothing -- the run record would state a "
+                "configuration that did not happen (mm-decisions M18). "
+                "⚠️ --wp-index-mode is the dangerous one: it names a CONTROL "
+                "ARM, so a reader would believe a control had been run. Pass "
+                "--wp-index on, or leave these at their defaults." % _dead_wp)
 
 
 # ============================================================================
@@ -2767,6 +2842,14 @@ def _seam_stamp(cfg, args) -> dict:
         "agents": (core.agents.as_dict()
                    if getattr(core, "agents", None) is not None else None),
         "cross_agent": bool(getattr(core.decoder, "cross_agent", False)),
+        # ⭐⭐ WP-B: the waypoint index, STRUCTURALLY. ⛔ `mode` in particular
+        # is what a reader needs to tell the TREATMENT from the three CONTROLS
+        # (`shuffle` / `const` / `detach`), and a panel that cannot say which
+        # of them ran is unfalsifiable. `None` when the seam is off, so the two
+        # states are distinguishable in the record and not merely by absence.
+        "wp_index": (core.decoder.wp_index.as_dict()
+                     if getattr(core.decoder, "wp_index", None) is not None
+                     else None),
         "sampler": str(getattr(core.decoder, "sampler", "none")),
         "sampler_space": str(getattr(core.decoder, "sampler_space", "control")),
         "sampler_infer_t": int(getattr(core.decoder, "sampler_infer_t", 8)),
@@ -2922,7 +3005,7 @@ def agent_knob_dests(parser: argparse.ArgumentParser | None = None
         a.dest for a in ap._actions
         if a.dest and a.dest != argparse.SUPPRESS
         and any(o.startswith("--agent") or o.startswith("--w-")
-                or o.startswith("--bev-aux")
+                or o.startswith("--bev-aux") or o.startswith("--wp-index")
                 for o in a.option_strings)}))
 
 
@@ -3162,6 +3245,33 @@ def assert_seams_are_built(model, stamp: dict) -> None:
             bad.append(
                 f"stamp says cross_agent=False but decoder layers {live} DO "
                 f"cross-attend agents -- a live seam absent from the record")
+    # --- WP-B: the waypoint index ----------------------------------------- #
+    # ⛔ BIDIRECTIONAL, exactly like the WP-4 and WP-6 checks above. A stamped
+    # index with no bias heads is FALSE PROVENANCE; attached heads absent from
+    # the record are the `SEAM_STATE.md` failure. And a stamped MODE that the
+    # attached config does not carry would let a CONTROL arm be reported as the
+    # treatment, which is worse than either.
+    _wps = stamp.get("wp_index")
+    _wp_live = [i for i, ly in enumerate(layers)
+                if _mod(ly, "wp_index") is not None]
+    if _wps is not None and bool(_wps.get("enable", False)):
+        _dead = [i for i, _ in enumerate(layers) if i not in set(_wp_live)]
+        if _dead:
+            bad.append(
+                f"stamp says wp_index.enable=True but decoder layers {_dead} "
+                f"have no bias head -- the record would claim a waypoint "
+                f"index the weights do not contain")
+        _cfg_mode = str(getattr(_mod(dec, "wp_index_cfg"), "mode", "<none>"))
+        if _wp_live and _cfg_mode != str(_wps.get("mode")):
+            bad.append(
+                f"stamp says wp_index.mode={_wps.get('mode')!r} but the "
+                f"attached config carries {_cfg_mode!r} -- a CONTROL arm "
+                f"would be reported as the treatment, or the reverse")
+    elif _wp_live:
+        bad.append(
+            f"stamp carries no live wp_index but decoder layers {_wp_live} DO "
+            f"index the agent attention by waypoint -- a live seam absent "
+            f"from the run record")
     if stamp.get("agents") is not None:
         for name in ("agent_head", "agent_embed"):
             if _mod(core, name) is None:
@@ -4966,6 +5076,59 @@ def build_parser() -> argparse.ArgumentParser:
                          "the probe into the trainer.")
     g5.add_argument("--bev-aux-hidden", type=int, default=256)
     g5.add_argument("--bev-aux-dtok", type=int, default=64)
+    # ---- refcv5 WP-B (`E-WP-INDEX-1`): DiffusionDrive coupling (1) -------- #
+    g5.add_argument("--wp-index", default="off", choices=["off", "on"],
+                    help="⭐⭐ WP-B — WAYPOINT-INDEXED cross-attention into "
+                         "the SPARSE agent tokens. Each anchor query's current "
+                         "waypoint estimate (metres, ego frame) is the ADDRESS: "
+                         "the metric relation between those waypoints and each "
+                         "agent slot's decoded centre becomes a per-head "
+                         "additive attention bias, so the trajectory's own "
+                         "geometry decides which agent it reads. ⛔ NOT a "
+                         "fusion block — the query LATENT never enters the "
+                         "address. ⛔ REQUIRES --agents head|oracle: with no "
+                         "agent tokens there is nothing to address and the arm "
+                         "would read as 'the index does not help' while never "
+                         "having had one. ⛔ Indexes the SPARSE tokens and "
+                         "never a dense BEV raster (WP-A MEASURED a "
+                         "quantisation floor of AP 0.4713 on the raster route "
+                         "that no training removes).")
+    g5.add_argument("--wp-index-mode", default="geom",
+                    choices=list(_refc_wp_index.WP_INDEX_MODES),
+                    help="⛔ THE PRE-REGISTERED CONTROLS, as run modes. "
+                         "geom = the treatment. shuffle = waypoints permuted "
+                         "ACROSS THE BATCH, so each row is addressed with "
+                         "another sample's geometry — if this matches the real "
+                         "arm the coupling is CAPACITY, not CONTENT (refuses "
+                         "batch < 2, where the permutation is the identity). "
+                         "const = every waypoint at --wp-index-const-xy, the "
+                         "no-information address; its known value is a bias "
+                         "IDENTICAL across the anchor axis.")
+    g5.add_argument("--wp-index-detach", action="store_true",
+                    help="⛔ THE DETACHED CONTROL. Compute the address but "
+                         "block the gradient it would send back through the "
+                         "waypoints and the agent boxes into the trunk. Its "
+                         "known value is a trunk gradient of EXACTLY zero "
+                         "through the index path.")
+    g5.add_argument("--wp-index-radius-m", type=float, default=0.0,
+                    help="> 0 turns on the DEFORMABLE/LOCAL variant: an agent "
+                         "further than this from every waypoint of a query is "
+                         "masked out of that query's attention. 0 (default) is "
+                         "the soft bias-only index, which is the PRIMARY arm; "
+                         "the radius is the pre-registered NEXT LEVER if the "
+                         "soft arm misses its bar.")
+    g5.add_argument("--wp-index-hidden", type=int, default=32,
+                    help="width of the per-layer bias MLP. Cost is "
+                         "`8*h + h + h*H + H` per decoder layer — 552 params "
+                         "per layer at h=32, H=8, and param_breakdown reports "
+                         "it on its OWN line, carved out of `decoder`.")
+    g5.add_argument("--wp-index-scale-m", type=float, default=10.0,
+                    help="metres. Normaliser for the metric address features "
+                         "(NOT a cut-off — that is --wp-index-radius-m).")
+    g5.add_argument("--wp-index-const-xy", type=float, nargs=2,
+                    default=(10.0, 0.0), metavar=("X_M", "Y_M"),
+                    help="the const control's fixed address, metres, ego "
+                         "frame (x forward, y left).")
     ap.add_argument("--withheld-bank", default="fixed",
                     choices=list(refc.WITHHELD_BANK_MODES),
                     help="H-EGO-LIT-4: the speed a WITHHELD row's anchor bank "

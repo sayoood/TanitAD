@@ -160,6 +160,11 @@ from tanitad.refs import goal_point as gpm
 # it pulls the corpus-side raster/projection modules, and an OFF seam must
 # not pay for them.
 from tanitad.refs import refc_sampler as rs
+# refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (1). Cycle-free by
+# construction: `refc_wp_index` imports NOTHING from tanitad, only torch. It is
+# a top-level import (unlike WP-6's `refc_agents`) precisely because it costs
+# nothing to an OFF build — no module it pulls touches the corpus.
+from tanitad.refs import refc_wp_index as wpi
 
 
 def _feas_with_origin(x: Tensor) -> Tensor:
@@ -469,6 +474,20 @@ class DecoderConfig:
     metre_sigma_m: tuple[float, float] = (0.90, 0.73)
     # ---- refcv5 WP-6: the agent seam on the decoder's cross-attention -------
     cross_agent: bool = False
+    # ---- refcv5 WP-B: the WAYPOINT INDEX on that agent cross-attention ------
+    # ⭐ `refc_wp_index.WaypointIndexConfig | None`. A DECLARED field, and
+    # loosely annotated for the same reason `RefCConfig.agents` is: the trainer
+    # assigns `core.decoder.wp_index = wcfg`, and on a dataclass without the
+    # field that assignment would create an AD-HOC ATTRIBUTE which every guard
+    # reads back happily while the model contains no index at all — the WP-4
+    # `sampler` false-provenance defect, one seam over. `None` (and
+    # `enable=False`) construct NOTHING, so RNG draw order is unchanged and
+    # every pre-WP-B checkpoint keeps loading strictly.
+    # ⛔ It is INERT without `cross_agent`: with no agent tokens there is
+    # nothing to address, and an arm that ran it that way would read as "the
+    # waypoint index does not help" while never having had an index. `RefCModel`
+    # refuses that combination rather than honouring it.
+    wp_index: "object | None" = None
 
 
 @dataclass
@@ -1323,20 +1342,61 @@ class CrossAttnLayer(nn.Module):
             self.cross_agent = nn.MultiheadAttention(d, n_heads,
                                                      batch_first=True)
             self.agent_gate = nn.Parameter(torch.zeros(1))
+        # ⭐⭐ refcv5 WP-B: THE WAYPOINT INDEX IS **NOT CONSTRUCTED HERE**.
+        # Module construction draws from the global RNG, so a head built
+        # anywhere but LAST would silently change every subsequent module's
+        # initial weights — and the "index on vs index off" A/B would then
+        # differ in the SEED as well as in the lever, invisibly, in every log.
+        # The bias heads are therefore attached by
+        # `AnchoredDiffusionDecoder.attach_wp_index`, which `RefCModel.__init__`
+        # calls as its VERY LAST statement (the WP-D discipline). ⛔ There is
+        # exactly ONE construction path on purpose: a second, eager one would
+        # be a way for the two to drift apart, which is the `advect` precedent.
+        self.wp_index: nn.Module | None = None
 
     def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
                 agent_tokens: Tensor | None = None,
-                agent_pad: Tensor | None = None) -> Tensor:
+                agent_pad: Tensor | None = None,
+                agent_index: tuple | None = None) -> Tensor:
+        """``agent_index`` (WP-B) is ``(relation [B, N, M, F], d_min [B, N, M])``
+        computed ONCE per decoder pass by :meth:`AnchoredDiffusionDecoder.
+        _agent_index` and shared by every layer — the ADDRESS is a function of
+        geometry alone, so recomputing it per layer would only be a way for two
+        copies to drift apart. Each layer keeps its OWN bias head."""
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
         if self.cross_agent is not None and agent_tokens is not None:
-            q = q + self.agent_gate * self._attend_agents(q, agent_tokens,
-                                                          agent_pad)
+            q = q + self.agent_gate * self._attend_agents(
+                q, agent_tokens, agent_pad, agent_index)
         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
         return q
 
+    def _agent_bias(self, agent_index: tuple | None, pad: Tensor | None):
+        """WP-B: ``(rel, d_min)`` -> the additive attention-logit bias, or
+        ``None``.
+
+        ⛔ Returns ``None`` — rather than a zero tensor — when the index is off.
+        Passing an all-zero ``attn_mask`` is mathematically a no-op but is NOT
+        guaranteed to be one in ``nn.MultiheadAttention``: a supplied mask can
+        change which scaled-dot-product BACKEND torch dispatches to, and two
+        backends need not agree bit-for-bit. The removability proof asserts
+        bitwise equality, so the OFF path must not enter the masked branch.
+
+        ``pad`` is forwarded to the radius gate because a query whose every
+        LIVE neighbour is out of range still looks non-empty to a radius-only
+        test — see :func:`refc_wp_index.apply_radius_gate`.
+        """
+        if self.wp_index is None or agent_index is None:
+            return None
+        rel, d_min = agent_index
+        bias = self.wp_index(rel)
+        return wpi.apply_radius_gate(bias, d_min,
+                                     float(self.wp_index.cfg.radius_m),
+                                     self.wp_index.n_heads, pad)
+
     def _attend_agents(self, q: Tensor, tok: Tensor,
-                       pad: Tensor | None) -> Tensor:
+                       pad: Tensor | None,
+                       agent_index: tuple | None = None) -> Tensor:
         """Cross-attend the agent tokens. ``pad[b, n] == True`` means slot ``n``
         is PADDING (torch's convention, and `AgentTokenEmbed`'s).
 
@@ -1354,8 +1414,28 @@ class CrossAttnLayer(nn.Module):
             empty = pad.all(dim=1)                          # [B]
             if bool(empty.any()):
                 pad = pad & ~empty[:, None]
-        out = self.cross_agent(self.norm_a(q), tok, tok,
-                               key_padding_mask=pad, need_weights=False)[0]
+        bias = self._agent_bias(agent_index, pad)
+        if bias is None:
+            out = self.cross_agent(self.norm_a(q), tok, tok,
+                                   key_padding_mask=pad,
+                                   need_weights=False)[0]
+        else:
+            # ⭐ WP-B: the trajectory's geometry enters HERE and ONLY here —
+            # as an additive per-head logit bias, i.e. as an ADDRESS on the key
+            # axis. `q` itself never reaches `wpi.build_relation`, which is
+            # what makes this an index rather than a fusion of two latents.
+            # ⚠️ The key-padding mask is converted to the SAME dtype as the
+            # bias: torch deprecates a bool `key_padding_mask` beside a float
+            # `attn_mask` ("mismatched ... is deprecated"), and it canonicalises
+            # the bool to exactly this `-inf` fill anyway, so this is the same
+            # arithmetic with a future that does not warn.
+            kpm = pad
+            if kpm is not None and kpm.dtype == torch.bool:
+                kpm = torch.zeros_like(kpm, dtype=bias.dtype).masked_fill(
+                    pad, float("-inf"))
+            out = self.cross_agent(self.norm_a(q), tok, tok,
+                                   key_padding_mask=kpm, attn_mask=bias,
+                                   need_weights=False)[0]
         if empty is not None:
             out = out.masked_fill(empty[:, None, None], 0.0)
         return out
@@ -1441,6 +1521,11 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.traj_proj = nn.Linear(n_steps * 2, d)            # traj estimate -> Q
         self.cond_proj = nn.Linear(d_meas, d)                 # measurement -> cond
         self.time_embed = nn.Embedding(cfg.diffusion_steps + 1, d)  # 0..steps
+        # ⛔ WP-B is OFF until `attach_wp_index` is called. The ADDRESS is
+        # computed once per pass by `_agent_index` and shared by every layer;
+        # the layers own only their bias heads. A layer that re-derived the
+        # address would be the `advect` precedent — two geometries drifting.
+        self.wp_index_cfg = None
         self.layers = nn.ModuleList(
             CrossAttnLayer(d, cfg.n_heads, d, cfg.ff_mult,
                            cross_agent=bool(getattr(cfg, "cross_agent", False)))
@@ -1812,21 +1897,92 @@ class AnchoredDiffusionDecoder(nn.Module):
         shift = (pre[..., k - 1, :] - x[..., k - 1, :]).unsqueeze(-2)
         return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
 
+    # ---- refcv5 WP-B: the waypoint index (DiffusionDrive coupling (1)) ----- #
+    def attach_wp_index(self, cfg) -> int:
+        """Build WP-B's per-layer bias heads. Returns the parameter count.
+
+        ⛔⛔ **CALL THIS LAST, AFTER EVERY OTHER MODULE IN THE MODEL.** These
+        heads draw from the global RNG; attached anywhere earlier they shift
+        the initial weights of everything constructed after them, and the
+        "index on vs index off" A/B would then differ in the SEED as well as in
+        the lever — invisibly, in every log. ``RefCModel.__init__`` calls this
+        as its final statement for exactly that reason, and
+        ``test_wp_index.py::test_shared_params_bit_identical`` pins it.
+
+        ⛔ **REFUSES without the agent seam.** WP-B addresses the SPARSE agent
+        tokens; with ``cross_agent`` off there are no tokens to address, so the
+        heads would be built, stamped into ``config.json`` and never called —
+        and the arm would read as *"the waypoint index does not help"* while
+        never having had an index. That is a refutation manufactured by a
+        missing seam, so it refuses before the GPU rather than at the first
+        batch.
+        """
+        if not bool(getattr(cfg, "enable", False)):
+            return 0
+        dead = [i for i, ly in enumerate(self.layers)
+                if ly.cross_agent is None]
+        if dead:
+            raise ValueError(
+                f"refcv5 WP-B: `wp_index.enable` is set but decoder layers "
+                f"{dead} have no agent cross-attention (`decoder.cross_agent` "
+                f"is False). The waypoint index addresses the SPARSE AGENT "
+                f"TOKENS; with no tokens the bias heads would be built, "
+                f"stamped and NEVER CALLED, and the arm would read as 'the "
+                f"waypoint index does not help' while never having had an "
+                f"index. Set `--agents head|oracle` too, or neither.")
+        self.wp_index_cfg = cfg
+        n = 0
+        for ly in self.layers:
+            ly.wp_index = wpi.WaypointIndexBias(cfg, self.cfg.n_heads)
+            n += ly.wp_index.n_params()
+        return n
+
+    def wp_index_params(self) -> int:
+        """Trainable parameters WP-B added — carved out of the ``decoder`` line
+        in :func:`param_breakdown` for the same reason ``selection`` is: a lever
+        whose cost is buried inside a 40 M-parameter row is a lever nobody can
+        audit."""
+        return sum(ly.wp_index.n_params() for ly in self.layers
+                   if getattr(ly, "wp_index", None) is not None)
+
+    def _agent_index(self, x_est: Tensor, agent_pos: Tensor | None):
+        """⭐⭐ **THE ADDRESS.** ``x_est`` ``[B, N, S, 2]`` is the current
+        trajectory estimate **in metres, ego frame** and ``agent_pos``
+        ``[B, M, 2]`` is each agent slot's decoded centre **in the same metres
+        and the same frame**. The relation between them IS the address, and it
+        is recomputed on every pass because the address MOVES as the trajectory
+        is denoised — that is the coupling, not an optimisation gap.
+
+        Returns ``(relation, d_min)`` or ``None`` when WP-B is off, in which
+        case ``_attend_agents`` never enters its masked branch and the emitted
+        tensors are bitwise those of a build that never had this seam.
+        """
+        cfg = self.wp_index_cfg
+        if cfg is None or not bool(cfg.enable) or agent_pos is None:
+            return None
+        if self.layers and self.layers[0].wp_index is None:
+            return None
+        return wpi.build_relation(x_est, agent_pos, cfg)
+
     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
                 t_idx: int, agents: Tensor | None = None,
-                agent_pad: Tensor | None = None) -> tuple[Tensor, Tensor]:
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """One decoder pass: current trajectory estimate + timestep -> queries;
         cross-attend the map; emit (conf [B, N], offset [B, N, S, 2]).
 
         ``agents`` / ``agent_pad`` (refcv5 WP-6) are forwarded to every
         layer. They are inert unless the layer was BUILT with ``cross_agent``,
         so passing them on an agent-free build is a no-op rather than a branch.
+        ``agent_pos`` (WP-B) is the metric address source and is inert in the
+        same way — see :meth:`_agent_index`.
         """
         b, n = x_est.shape[:2]
         q = self.traj_proj(x_est.reshape(b, n, -1))           # [B, N, d]
         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
+        index = self._agent_index(x_est, agent_pos)
         for layer in self.layers:
-            q = layer(q, kv, cond, agents, agent_pad)
+            q = layer(q, kv, cond, agents, agent_pad, index)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
         return conf, offset
@@ -1834,7 +1990,9 @@ class AnchoredDiffusionDecoder(nn.Module):
     # ---- refcv5 WP-4: the sampler's own pass and its denoising loop -------- #
     def _decode_ctrl(self, kv: Tensor, cond: Tensor, x_path: Tensor,
                      t: Tensor, agents: Tensor | None,
-                     agent_pad: Tensor | None) -> tuple[Tensor, Tensor]:
+                     agent_pad: Tensor | None,
+                     agent_pos: Tensor | None = None
+                     ) -> tuple[Tensor, Tensor]:
         """One SAMPLER pass -> (conf [B, N], du [B, N, S, 2]).
 
         ⭐ It reuses ``traj_proj`` -> ``layers`` -> ``conf_head``, the SAME
@@ -1854,8 +2012,12 @@ class AnchoredDiffusionDecoder(nn.Module):
         q = self.traj_proj(x_path.reshape(b, n, -1))          # [B, N, d]
         te = self.time_mlp(t.reshape(-1).to(torch.float32)).to(q.dtype)
         q = q + te.reshape(-1, 1, q.shape[-1])                # per-sample t
+        # ⭐ WP-B on the SAMPLER path: `x_path` is already the metric fan
+        # (`_state_to_path` integrated the controls), so the address moves with
+        # every DDIM step — which is exactly DiffusionDrive's coupling (1).
+        index = self._agent_index(x_path, agent_pos)
         for layer in self.layers:
-            q = layer(q, kv, cond, agents, agent_pad)
+            q = layer(q, kv, cond, agents, agent_pad, index)
         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
         du = self.control_head(q).reshape(b, n, self.n_steps, 2)
         return conf, du
@@ -1880,7 +2042,8 @@ class AnchoredDiffusionDecoder(nn.Module):
     def _sample(self, kv: Tensor, cond: Tensor, bank: Tensor,
                 v_ms: Tensor | None, steps: int,
                 agents: Tensor | None = None,
-                agent_pad: Tensor | None = None
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None
                 ) -> tuple[Tensor, Tensor, Tensor, dict]:
         """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
 
@@ -1948,7 +2111,7 @@ class AnchoredDiffusionDecoder(nn.Module):
             x_path = self._state_to_path(x_n * norm, v, metre)
             tt = torch.full((b,), float(t), device=dev, dtype=torch.float32)
             conf, du = self._decode_ctrl(kv, cond, x_path, tt,
-                                         agents, agent_pad)
+                                         agents, agent_pad, agent_pos)
             # x0-parameterised ("sample"), and `control_head` is ZERO-INIT, so
             # the first pass predicts exactly the current state: the fan starts
             # AT the anchored Gaussian and every later movement is learned.
@@ -2080,7 +2243,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 gp_valid: Tensor | None = None,
                 withheld_speed: Tensor | None = None,
                 agent_tokens: Tensor | None = None,
-                agent_pad: Tensor | None = None) -> dict:
+                agent_pad: Tensor | None = None,
+                agent_pos: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -2177,7 +2341,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 xs = x0.gather(
                     1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
                 c_s, o_s = self._decode(kv, cond, xs, 0,
-                                        agent_tokens, agent_pad)
+                                        agent_tokens, agent_pad, agent_pos)
                 conf0 = x0.new_full((b, n), float("-inf"))
                 conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
                 offset = x0.new_zeros(b, n, self.n_steps, 2)
@@ -2188,12 +2352,14 @@ class AnchoredDiffusionDecoder(nn.Module):
                 pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
             else:                                 # nothing to save this batch
                 conf0, offset = self._decode(kv, cond, x0, 0,
-                                             agent_tokens, agent_pad)
+                                             agent_tokens, agent_pad,
+                                             agent_pos)
                 pre_tele["prefilter_k"] = int(n)
                 pre_tele["prefilter_speedup"] = 1.0
         else:
             conf0, offset = self._decode(kv, cond, x0, 0,
-                                         agent_tokens, agent_pad)  # classifier
+                                         agent_tokens, agent_pad,
+                                         agent_pos)   # classifier
         x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
@@ -2239,6 +2405,16 @@ class AnchoredDiffusionDecoder(nn.Module):
             noise = (torch.randn_like(x) * self.cfg.noise_std
                      if self.training else torch.zeros_like(x))
             x_in = x + noise
+            # ⚠️ AGENT-FREE AT HEAD, AND LEFT THAT WAY ON PURPOSE. This
+            # pass passes NO `agent_tokens`, so WP-6's seam — and therefore
+            # WP-B's index — does not reach the `diffusion_steps` refinement
+            # loop at all. That asymmetry is PRE-EXISTING (see
+            # `.../Research/2026-09-08-wpb-waypoint-index/RESULT.md` §7.1);
+            # adding the tokens here
+            # would change the agents-on arm at HEAD and break WP-B's
+            # removability proof, so it is REPORTED rather than silently fixed.
+            # ⚠️ Inert for refcv5-v2 (`--sampler ddim` sets `_loop_steps = 0`),
+            # LIVE for any classifier/refine arm.
             r_conf, off = self._decode(kv, cond, x_in, t_idx)
             # EVERY pass that moves a waypoint, not just the classifier pass.
             x = self._feasible(x_in + off, v_ms)
@@ -2258,7 +2434,8 @@ class AnchoredDiffusionDecoder(nn.Module):
             # still says "sampler: ddim" (which is why the trainer REFUSES
             # `--sampler ddim --w-u0 0`).
             x, u0_hat, s_conf, smp_tele = self._sample(
-                kv, cond, bank, v_ms, steps, agent_tokens, agent_pad)
+                kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
+                agent_pos)
             # Stage 0 applies to EVERY pass that moves a waypoint; a no-op
             # returning the same object when `feasible_decode` is off.
             x = self._feasible(x, v_ms)
@@ -2291,7 +2468,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
             e_conf, _ = self._decode(kv, cond, x, t_e,
-                                     agent_tokens, agent_pad)
+                                     agent_tokens, agent_pad, agent_pos)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
@@ -2738,6 +2915,19 @@ class RefCModel(nn.Module):
             from tanitad.refs import refc_bev_aux as _rb   # lazy; see imports
             self.bev_aux_head = _rb.BEVAuxHead(
                 feat, cfg.encoder.grid_shape, _bv)
+        # ⭐⭐ refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (1).
+        # ⛔⛔ **THIS IS THE LAST STATEMENT OF `__init__`, AND THAT IS THE
+        # WHOLE REMOVABILITY PROOF.** Every module above draws from the global
+        # RNG in a fixed order; attaching the index heads here means an
+        # ``index on`` build's shared parameters are BIT-IDENTICAL to an
+        # ``index off`` build's at the same seed, so the A/B differs in the
+        # lever and in nothing else. Anything added below this line breaks
+        # that, and `test_wp_index.py::test_shared_params_bit_identical` will
+        # say so. (Same discipline as WP-D's `bev_aux_head`, which is why that
+        # head sits immediately above.)
+        _wp = getattr(cfg.decoder, "wp_index", None)
+        if _wp is not None:
+            self.decoder.attach_wp_index(_wp)
 
     # --- S6 goal provenance (the PI's admissibility check, in code) ----------
     @staticmethod
@@ -3177,6 +3367,15 @@ class RefCModel(nn.Module):
                 agent_slots = self.agent_head(
                     fmap.flatten(2).transpose(1, 2))          # [B, M, F]
             agent_tokens, agent_pad = self.agent_embed(agent_slots)
+        # ⭐⭐ refcv5 WP-B: the ADDRESS SOURCE. `box[..., :2]` is (cx, cy) in
+        # METRES, ego frame, x forward / y left — the SAME frame and the SAME
+        # units the decoder's trajectory estimate is in, which is why the
+        # address is a subtraction and not a projection. ⛔ It is passed RAW:
+        # `refc_wp_index.build_relation` owns the `detach` control, and
+        # detaching here instead would make the control unfalsifiable (both
+        # arms would read "no gradient").
+        agent_pos = (agent_slots["box"][..., :2]
+                     if agent_slots is not None else None)
         # ⭐⭐ S-BYPASS-1 -- THE OPERATIVE SEAM. `ctx_to_cond` is skipped by
         # the decoder itself when `ctx is None` (its `cond` block reads
         # `ctx is not None`), so the bypass needs NO branch inside the decoder
@@ -3196,7 +3395,8 @@ class RefCModel(nn.Module):
                            goal_dir=goal_dir, goal_dist_pref=goal_dist_pref,
                            gp_point=gp_point, gp_valid=gp_valid,
                            withheld_speed=withheld_speed,
-                           agent_tokens=agent_tokens, agent_pad=agent_pad)
+                           agent_tokens=agent_tokens, agent_pad=agent_pad,
+                           agent_pos=agent_pos)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -3327,6 +3527,11 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
              # the breakdown must keep summing to `total` exactly.
              + (dec.gp_point_gate.numel()
                 if getattr(dec, "gp_point_gate", None) is not None else 0))
+    # ⭐ WP-B: carved out of `decoder` for the same reason `selection` is — the
+    # index is a LEVER and its cost must be readable without unpicking a 40 M
+    # -parameter row. It is 552 params per layer at hidden=32 / n_heads=8.
+    n_wpi = (dec.wp_index_params()
+             if hasattr(dec, "wp_index_params") else 0)
     # S6's head is a MODEL-level input head (like `lan_enc`), reported on its own
     # line: the goal is the lever under the PI's admissibility ruling and its
     # cost must be readable without unpicking a 40 M-parameter decoder row.
@@ -3335,7 +3540,7 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "encoder": cnt(model.encoder),
         "measurement": cnt(model.measurement),
         "strategic": cnt(model.strategic) if model.cfg.hierarchy else 0,
-        "decoder": cnt(model.decoder) - n_sel,
+        "decoder": cnt(model.decoder) - n_sel - n_wpi,
         "imagination": cnt(model.imagination) if model.cfg.graft_imagination
         else 0,
         "lan": cnt(model.lan_enc) if model.cfg.graft_lan else 0,
@@ -3352,5 +3557,7 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         # comparing a deployed parameter count against an `aux on` run's.
         "bev_aux": (cnt(model.bev_aux_head)
                     if getattr(model, "bev_aux_head", None) is not None else 0),
+        # ⭐ WP-B: the waypoint index's own line. 0 unless the seam is attached.
+        "wp_index": n_wpi,
         "total": cnt(model),
     }

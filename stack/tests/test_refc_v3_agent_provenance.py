@@ -421,10 +421,17 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE():
     # and silently skipped), so without this the probe would have no admissible
     # value and would report the knob unstampable for a reason that has nothing
     # to do with the knob.
+    # ⭐ WP-B's seam is enabled here for exactly the same reason WP-D's is:
+    # every `--wp-index-*` knob REFUSES under `--wp-index off` (a knob with no
+    # seam is the `w_agent` defect verbatim -- parsed, stamped into
+    # config.json, and silently inert), so without this the probe would find NO
+    # admissible value for `--wp-index-mode` and report the knob unstampable
+    # for a reason that has nothing to do with the knob.
     base = ["--out", "x", "--arm", "hier", "--image-hw", "256", "640",
             "--agents", "oracle", "--agent-rig-camera", "nominal",
             "--agent-join", "j.jsonl",
-            "--bev-aux", "col", "--w-bev-aux", "0.1"]
+            "--bev-aux", "col", "--w-bev-aux", "0.1",
+            "--wp-index", "on"]
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of
     # values would be the rotting list this test exists to avoid.

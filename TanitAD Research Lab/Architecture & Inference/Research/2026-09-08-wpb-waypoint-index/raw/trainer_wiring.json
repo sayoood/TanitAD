@@ -1,0 +1,57 @@
+{
+  "launch_diff_B0_vs_B1": {
+    "wp_index": [
+      "off",
+      "on"
+    ]
+  },
+  "refusal_index_without_agents": {
+    "refused": true,
+    "matched": true,
+    "msg": "[v3] \u26d4 --wp-index on with --agents off. WP-B is a waypoint-indexed cross-attention INTO THE SPARSE AGENT TOKENS; with no agent seam there are no tokens to address, so the bias heads would be built, STAMPED INTO config.json and never called -- and the arm would"
+  },
+  "refusal_noop_knobs_with_index_off": {
+    "refused": true,
+    "matched": true,
+    "msg": "[v3] \u26d4 --wp-index off, but {'--wp-index-mode': 'shuffle'} is set. With the index off no `WaypointIndexConfig` is built and no bias head is attached, so every one of these parses, is STAMPED INTO config.json, and does nothing -- the run record would state a con"
+  },
+  "stamp_wp_index": {
+    "enable": true,
+    "hidden": 32,
+    "scale_m": 10.0,
+    "mode": "const",
+    "const_xy": [
+      10.0,
+      0.0
+    ],
+    "detach": false,
+    "radius_m": 0.0,
+    "shuffle_seed": 0,
+    "feat_dim": 8,
+    "features": [
+      "d_min_over_scale",
+      "exp_neg_d_min",
+      "tau",
+      "lon_over_scale",
+      "lat_over_scale",
+      "cos_dbearing",
+      "sin_dbearing",
+      "d_range_over_scale"
+    ]
+  },
+  "stamp_cross_agent": true,
+  "knob_dests_wp_index": [
+    "wp_index",
+    "wp_index_const_xy",
+    "wp_index_detach",
+    "wp_index_hidden",
+    "wp_index_mode",
+    "wp_index_radius_m",
+    "wp_index_scale_m"
+  ],
+  "seam_A_stamped_and_built": "PASSED",
+  "seam_B_stamped_but_NOT_built": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen: - stamp says wp_index.enable=True but decoder layers [0, 1] have no bias head -- the record would claim",
+  "seam_C_built_but_NOT_stamped": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen: - stamp carries no live wp_index but decoder layers [0, 1] DO index the agent attention by waypoint -- ",
+  "seam_D_mode_mismatch": "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen: - stamp says wp_index.mode='const' but the attached config carries 'geom' -- a CONTROL arm would be rep",
+  "_pin_stdout": "[v3] WP-B waypoint index ON: mode=const detach=False radius_m=0 hidden=32 scale_m=10 -> 4 decoder layers"
+}
