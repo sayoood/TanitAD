@@ -216,6 +216,15 @@ between arms is what the pool destroyed, at matched capacity.** ⭐ This is prec
 dimensionality confound `E-DEC-25` flagged in its own row ladder (*"dimensionality grows with
 [rows] … the decline may be an SNR artefact"*) — removed by construction here.
 
+⚠️ **THE ADDRESS IN THIS TABLE IS MIRRORED — AND THE TABLE IS NEVERTHELESS CORRECT. READ
+`ORACLE_RECHECK.md` (2026-09-08) BEFORE QUOTING IT.** `s6_oracle.py:82` uses the same mirrored
+azimuth sense as `s5_indexed.py:78` (`R-2026-09-08-wpa-mirror`), but the oracle map is **built with
+the same address the head reads with**, so the sense cancels: re-measured at the corrected address
+the ladder moves by **max 0.0038 AP over 8 rungs** against a training-seed replicate floor of
+**0.0122**. ⭐ Verified by a cross-wired mutation arm that collapses **0.4762 → 0.0750**. ⛔ This
+does **not** extend to §4's real-trunk column, which stays retracted. ⭐ `ORACLE_RECHECK.md` also
+repairs the all-zero control below: with tie-group AP it reads its base rate **exactly**.
+
 ### 5.1 The ladder — mean of 3 training seeds (`raw/oracle_s0.json`, `_t1`, `_t2`)
 
 | arm | rows × az | °/col | **AP** | IoU | lat. MAE 15–30 m | lat. MAE 30–45 m |

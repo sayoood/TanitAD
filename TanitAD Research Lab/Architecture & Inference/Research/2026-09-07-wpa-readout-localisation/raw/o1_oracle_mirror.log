@@ -1,0 +1,72 @@
+[env] torch 2.11.0+cu128 dev cuda NVIDIA GeForce RTX 4060
+[address/prog] sign -1  addressable 6996/7680 (91.09 %)  token cells used 242  BEV cells/token cell median 4.0 max 313
+[address/wpa ] sign +1  addressable 6996/7680 (91.09 %)  token cells used 242  BEV cells/token cell median 4.0 max 313
+[mirror] max |colf_prog + colf_wpa - (TW-1)| = 0.000e+00 (0 ⇒ exact mirror about the column axis)
+[oracle/prog] mean presence 0.02362
+[oracle/wpa ] mean presence 0.02362
+[mirror] map presence mismatch after column flip: 1.360e-03 mean, 11508 cells of 8462720
+[split] rows fit/val/test 7842/2407/2974  cells d=6996
+[base] test base rate 0.016197554333 = 337008/20806104
+[CONTROL] tie-group constant AP 0.016197554333  base 0.016197554333  exact=True
+[CONTROL] tie-group all-zero AP 0.016197554333  exact=True
+[CONTROL] NAIVE     all-zero AP 0.016340207902  bias +0.881 %   (this is s6_oracle.py's own AP; WP-A banked 0.016340211)
+
+===== TRAIN SEED 0 (split seed 0 fixed) =====
+[orc_16x40@prog|s0     ] AP 0.4762 (naive 0.4762)  val 0.4610  F1 0.4771  IoU 0.3133  (36s)
+[orc_8x20@prog|s0      ] AP 0.3341 (naive 0.3341)  val 0.3274  F1 0.3689  IoU 0.2261  (36s)
+[orc_16x4@prog|s0      ] AP 0.2060 (naive 0.2060)  val 0.2064  F1 0.2811  IoU 0.1635  (37s)
+[orc_4x40@prog|s0      ] AP 0.3113 (naive 0.3113)  val 0.3128  F1 0.3693  IoU 0.2265  (37s)
+[orc_4x8@prog|s0       ] AP 0.2067 (naive 0.2067)  val 0.2032  F1 0.2657  IoU 0.1532  (37s)
+[orc_4x4@prog|s0       ] AP 0.1584 (naive 0.1584)  val 0.1546  F1 0.2320  IoU 0.1312  (37s)
+[orc_4x2@prog|s0       ] AP 0.1267 (naive 0.1267)  val 0.1273  F1 0.1953  IoU 0.1082  (37s)
+[orc_1x1@prog|s0       ] AP 0.0914 (naive 0.0914)  val 0.0819  F1 0.1591  IoU 0.0864  (37s)
+[pos_only@prog|s0      ] AP 0.0316 (naive 0.0316)  val 0.0299  F1 0.0628  IoU 0.0324  (30s)
+[orc_16x40@wpa|s0      ] AP 0.4773 (naive 0.4773)  val 0.4632  F1 0.4767  IoU 0.3129  (36s)
+[orc_8x20@wpa|s0       ] AP 0.3367 (naive 0.3367)  val 0.3285  F1 0.3695  IoU 0.2266  (37s)
+[orc_16x4@wpa|s0       ] AP 0.2028 (naive 0.2028)  val 0.2068  F1 0.2779  IoU 0.1614  (37s)
+[orc_4x40@wpa|s0       ] AP 0.3084 (naive 0.3083)  val 0.3122  F1 0.3674  IoU 0.2250  (37s)
+[orc_4x8@wpa|s0        ] AP 0.2106 (naive 0.2106)  val 0.2067  F1 0.2721  IoU 0.1575  (37s)
+[orc_4x4@wpa|s0        ] AP 0.1594 (naive 0.1594)  val 0.1533  F1 0.2299  IoU 0.1299  (37s)
+[orc_4x2@wpa|s0        ] AP 0.1251 (naive 0.1251)  val 0.1271  F1 0.1962  IoU 0.1088  (37s)
+[orc_1x1@wpa|s0        ] AP 0.0909 (naive 0.0909)  val 0.0814  F1 0.1588  IoU 0.0862  (37s)
+[pos_only@wpa|s0       ] AP 0.0316 (naive 0.0316)  val 0.0299  F1 0.0628  IoU 0.0324  (30s)
+[xwire_16x40|s0        ] AP 0.0750 (naive 0.0750)  val 0.0671  F1 0.1523  IoU 0.0824  (36s)
+[xwire_8x20|s0         ] AP 0.0695 (naive 0.0695)  val 0.0630  F1 0.1436  IoU 0.0774  (37s)
+[xwire_16x40_r|s0      ] AP 0.0737 (naive 0.0737)  val 0.0698  F1 0.1526  IoU 0.0826  (36s)
+
+===== TRAIN SEED 1 (split seed 0 fixed) =====
+[orc_16x40@prog|s1     ] AP 0.4646 (naive 0.4646)  val 0.4547  F1 0.4725  IoU 0.3093  (36s)
+[orc_8x20@prog|s1      ] AP 0.3336 (naive 0.3336)  val 0.3248  F1 0.3699  IoU 0.2269  (37s)
+[orc_4x4@prog|s1       ] AP 0.1571 (naive 0.1571)  val 0.1547  F1 0.2251  IoU 0.1268  (37s)
+[orc_1x1@prog|s1       ] AP 0.0918 (naive 0.0918)  val 0.0830  F1 0.1619  IoU 0.0881  (37s)
+[pos_only@prog|s1      ] AP 0.0320 (naive 0.0320)  val 0.0297  F1 0.0618  IoU 0.0319  (30s)
+[orc_16x40@wpa|s1      ] AP 0.4651 (naive 0.4651)  val 0.4562  F1 0.4757  IoU 0.3121  (36s)
+[orc_8x20@wpa|s1       ] AP 0.3337 (naive 0.3337)  val 0.3279  F1 0.3706  IoU 0.2274  (37s)
+[orc_4x4@wpa|s1        ] AP 0.1564 (naive 0.1564)  val 0.1539  F1 0.2258  IoU 0.1273  (37s)
+[orc_1x1@wpa|s1        ] AP 0.0941 (naive 0.0941)  val 0.0830  F1 0.1641  IoU 0.0894  (37s)
+[pos_only@wpa|s1       ] AP 0.0320 (naive 0.0320)  val 0.0297  F1 0.0618  IoU 0.0319  (30s)
+
+[bootstrap] paired episode-cluster, 30 test clips, 2000 draws, AP recomputed inside every draw
+[xcheck] AP  sort-based(cpu) 0.474515245304   histogram 0.474515245304   |d| 5.551e-17
+[xcheck] histogram constant control 0.016197554333  base 0.016197554333  exact=True
+[boot] prog_minus_wpa@16x40|s0                d -0.0011 [-0.0041,+0.0016] sep=False
+[boot] prog_minus_wpa@8x20|s0                 d -0.0025 [-0.0053,+0.0003] sep=False
+[boot] prog_minus_wpa@16x4|s0                 d +0.0032 [+0.0002,+0.0062] sep=True
+[boot] prog_minus_wpa@4x40|s0                 d +0.0029 [-0.0002,+0.0057] sep=False
+[boot] prog_minus_wpa@4x8|s0                  d -0.0038 [-0.0065,-0.0006] sep=True
+[boot] prog_minus_wpa@4x4|s0                  d -0.0010 [-0.0022,+0.0002] sep=False
+[boot] prog_minus_wpa@4x2|s0                  d +0.0015 [+0.0006,+0.0025] sep=True
+[boot] prog_minus_wpa@1x1|s0                  d +0.0005 [+0.0000,+0.0011] sep=True
+[boot] prog_16x40_minus_1x1|s0                d +0.3832 [+0.3417,+0.4299] sep=True
+[boot] prog_1x1_minus_pos_only|s0             d +0.0598 [+0.0391,+0.0727] sep=True
+[boot] wpa_16x40_minus_1x1|s0                 d +0.3848 [+0.3427,+0.4321] sep=True
+[boot] wpa_1x1_minus_pos_only|s0              d +0.0592 [+0.0387,+0.0722] sep=True
+[boot] xwire_minus_prog@16x40|s0              d -0.3996 [-0.4420,-0.3586] sep=True
+[boot] xwire_minus_pos_only@16x40|s0          d +0.0433 [+0.0251,+0.0593] sep=True
+[boot] xwire_r_minus_wpa@16x40|s0             d -0.4019 [-0.4459,-0.3606] sep=True
+[boot] REPLICATE_s0_minus_s1@16x40_prog       d +0.0115 [+0.0065,+0.0164] sep=True
+[boot] REPLICATE_s0_minus_s1@8x20_prog        d +0.0007 [-0.0045,+0.0064] sep=False
+[boot] REPLICATE_s0_minus_s1@4x4_prog         d +0.0013 [-0.0021,+0.0045] sep=False
+[boot] REPLICATE_s0_minus_s1@1x1_prog         d -0.0004 [-0.0025,+0.0021] sep=False
+
+WROTE C:/Users/Admin/wpa-readout/oracle_recheck/raw/oracle_mirror.json 1246s total

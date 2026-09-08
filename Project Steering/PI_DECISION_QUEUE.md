@@ -155,8 +155,9 @@ on four lateral metrics.
 
 ⚠️ **AND WP-A ADDS A REASON NOT TO RUSH IT.** MEASURED (`E-READOUT-CEILING-1`): under a *perfect*
 front-end the readout prices out at 16×40 **AP 0.4713** vs 4×4 **0.1583**, but **on the real trunk
-none of it transfers** — test AP **0.027–0.034** against a **0.0325** marginal control. ⇒ **the map
-does not yet contain agents.** An agent seam re-enabled today would be feeding a representation that
+none of it transfers** — test AP **0.027–0.034** against a **0.0325** marginal control. ⇒ ⛔⛔ **RETRACTED 2026-09-08 — `R-2026-09-08-wpa-mirror`. THIS SENTENCE WAS THE SECOND ARGUMENT FOR THE DEFAULT BELOW AND IT IS GONE.** WP-A's azimuth address is **MIRRORED** (`s6_oracle.py:82` and `s5_indexed.py:78` are character-identical and are an exact mirror of `bev_aux.azimuth_column` / `psg_targets.azimuth_column`, `max|colf_prog + colf_wpa − 39| = 0.000e+00`), and the mirrored branch **reproduces the banked real-trunk panel**. ⇒ *"the map does not yet contain agents"* is **FALSE** — `D0 − pos_only` is **separated on both geometries** — and the *"cheap order is to give the map spatial structure first"* conclusion is **VOID**.
+✅ **What still stands, re-measured under the corrected address:** the perfect-front-end cap **16×40 AP 0.4762 (seed 0) vs 4×4 0.1584**, the axis attribution (**1.64×**, azimuth the dearer axis) and the lateral ratio (1.346 m vs 2.665 m = **1.98×**). ⭐ The oracle ladder is **INVARIANT** to the sense — max effect **0.0038 AP** against a replicate floor of **0.0122** — because its map is *built with the same address the head reads with*; **cross-wiring the two ends collapses it 0.4762 → 0.0750 (105× the sense effect)**, which is why the real trunk, where only ONE end moved, was destroyed and this ladder was not.
+⚠️ **CONSEQUENCE FOR THIS DECISION, STATED PLAINLY: the WP-A objection to re-enabling agents NO LONGER EXISTS.** The default below is unchanged — but it now rests on **one** argument (the two-seed gate FAILED, with the deranged-join arm reproducing the whole degradation), not two. See item 11 for the option that argument does not cover. An agent seam re-enabled today would be feeding a representation that
 cannot localise them, so the cheap order is to give the map spatial structure first.
 
 **Default if silent:** P1 stays out. refcv5-v2 completes as launched (~step 16,400 of 40,284 at

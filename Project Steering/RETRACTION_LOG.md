@@ -14620,8 +14620,27 @@ consulted.
 * ⚠️ **`R-2026-09-07-ap-ties` still applies on top of this one** — the AP tie-break bias
   (+0.881 % on this control) is a SECOND, INDEPENDENT defect in the same panel.
 
-⏳ **OPEN and owed:** the **oracle ladder** (16×40 0.4713 → 1×1 0.0909) has **not** been re-read
-under the corrected address. Its features are built FROM the target, so it may be self-consistent
-under a mirror — **but that is an argument, not a measurement, and this row is what happens when
-an argument is banked as a result.** Re-read cost: **~10 GPU-min, the script exists and runs.**
-⛔ Until then the ladder's absolute AP values are **NOT QUOTABLE**; the ordering is untested.
+✅ **CLOSED 2026-09-08 — RE-READ, AND THE LADDER IS UNCHANGED.**
+`…/2026-09-07-wpa-readout-localisation/ORACLE_RECHECK.md` + `raw/oracle_mirror.json`
+(dev-box RTX 4060, ~21 GPU-min, 31 arms). The oracle path **does** carry the mirrored
+address (`s6_oracle.py:82`, character-identical to `s5_indexed.py:78`) — but its map is
+**BUILT with the same address the head READS with**, so the sense cancels: **max |Δ|
+0.0038 AP over 8 rungs (0.0011 at 16×40)** against a training-seed replicate floor of
+**0.0122**, both ladders strictly monotone DOWN, and the mirrored branch reproducing the
+banked panel to 4 dp at every rung. The prediction was stated in the script's docstring
+**before** the run and held.
+⭐⭐ **The self-consistency argument was NOT taken on trust — it was given a mutation
+control.** A **cross-wired** arm (map built one sense, read the other: the real defect
+deliberately reintroduced into the arm supposed to be immune) collapses **0.4762 →
+0.0750, −0.3996 SEPARATED, 105× the largest sense effect**, and its lateral error
+**4.956 m is WORSE than `pos_only`'s 4.479 m** — a mirrored feature actively misleads,
+exactly the mechanism measured on the real trunk. ⇒ the sense is free **only** when both
+ends move together, so this closes the oracle column and **does NOT rehabilitate the
+real-trunk column**; everything retracted above stays retracted.
+⭐ `R-2026-09-07-ap-ties` is **repaired on this panel**: under tie-group AP the all-zero
+control reads its base rate EXACTLY (`337008/20806104`); s6's naive form reads
+0.016340208, reproducing the banked 0.016340211 at +0.881 %.
+⚠️ **And the re-read produced a fresh instance of `H-ESTIM-SEED-1`:** 4 of 8 sense
+contrasts read `separated` at |Δ| ≤ 0.0038 while the pure REPLICATE (same flags, same
+sense, seed only) reads **+0.0115 SEPARATED** — the seed moves the ladder ~10× more than
+the address sense does.
