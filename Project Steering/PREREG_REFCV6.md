@@ -506,3 +506,66 @@ dev-box 4060 were used for CPU/import-level checks only; no GPU or RAM load was 
 | supervisor · assertion · launcher | `…/code/sup_refcv6.sh`, `assert_supervisor.sh`, `launch_refcv6.sh` |
 | measured evidence | `…/raw/*.json` |
 | the result write-up | `…/2026-09-10-refcv6-build/RESULT.md` |
+
+---
+
+## ⛔ CORRECTION 2026-09-11 — THE STRATEGIC CLAUSE'S PREMISE WAS FALSE. The clause SURVIVES; its reference value CHANGES.
+
+⛔ **The body above is left exactly as pre-registered and is NOT rewritten.** A pre-registration
+whose text is edited after the fact is no longer a pre-registration. This appendix corrects the
+record; the committed criteria stand.
+
+### What was wrong
+
+This document states in two places that refcv5-v2 is the **"only arm"** with a strategic output,
+and its drop-proof table names **`route_acc` present but `n = 0`** as *"(refcv4b's state)"*.
+
+⛔ **Both are FALSE, and the error is mine.** The comparison table I supplied labelled a column
+"refcv4b" when it was in fact the **`ha` hold-action control**. Verified directly from
+`…/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json`, `four_families.base.strategic_computed`:
+
+| arm | route accuracy | κ | n | 95 % CI |
+|---|---|---|---|---|
+| refcv5-v2 | 0.7708 | 0.4614 | **3,622** | [0.7146, 0.8254] |
+| **refcv4b** | **0.7791** | **0.4864** | **3,622** | [0.7248, 0.8318] |
+| `ha` (hold-action control) | — | — | **0** | — |
+
+⇒ **refcv4b has a strategic output, at the same `n`, and scores slightly HIGHER than refcv5-v2.**
+The `n = 0` belongs to the hold-action control, not to refcv4b.
+
+### What it changes — and the change makes the bar STRICTER, not looser
+
+⭐ **The clause itself is unaffected in structure**: *route accuracy may not be separably worse than
+the control, and `n` must be > 0.* ⛔ **What changes is the reference value it is read against.**
+
+⇒ **The strategic reference for refcv6 is `0.7791` (refcv4b), not `0.7708` (refcv5-v2)** — the
+**better** of the two arms. ⚠️ This is a correction of a factual premise, **not a goalpost moved
+after seeing data**: it raises the bar, and it is recorded here rather than applied silently.
+
+⚠️ **The drop-proof case labelled *"(refcv4b's state)"* keeps its behaviour and loses its label.**
+An arm reporting `route_acc` with `n = 0` must still return `MISSING_DATA` — that test is correct
+and its mutant still fails. Only the parenthetical attribution was wrong.
+
+### ⛔ What must NOT be concluded from this
+
+⛔ **"refcv5-v2's strategic head is worthless"** does not follow. Both arms sit at ~0.77–0.78 with
+**overlapping** intervals; nothing separates them. ⭐ The **771-parameter** observation stands
+untouched and remains the striking one: a head that size reaching ~0.77 against a **0.3333** chance
+baseline, beside a **106,067,312**-parameter core, means the strategic level is nearly free — and
+that is true of **both** arms, which strengthens the claim rather than weakening it.
+
+⭐ **And one clause gets materially STRONGER from the same correction.** On masked curvature MAE
+against the straight-line floor, refcv5-v2 reads **0.5123×** — half the error of a plan that never
+steers — while **refcv4b reads 1.1982×, ABOVE the floor**. refcv4b tracks curvature **worse than not
+steering at all.** Against the mislabelled control that gap read 1.16×; against the real arm it is
+**2.34×**. ⇒ **LATERAL is the one family where a trained arm separably beats every control**, and it
+is now the strongest justification for clause **L1**.
+
+⚠️ Also corrected, from the same source: refcv5-v2 **loses** cross-track (0.0994 vs refcv4b's
+**0.0978**) and **loses** tactical lateral κ (0.8193 vs **0.8277**). Both were previously reported
+as wins against the control's values. And refcv5-v2 **wins** accel MAE (**0.3596** vs 0.4346), which
+had never been reported at all.
+
+⛔ **Root-cause class: a number that is real, correctly transcribed, and attached to the WRONG ARM.**
+*"A number carries its ARM and its ARTIFACT PATH, or it is not quotable."* Logged in
+`Project Steering/RETRACTION_LOG.md`.
