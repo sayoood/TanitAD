@@ -132,3 +132,71 @@ reads the v8 `speed_max_input` block, which the v7.2 release carries on **0 of 4
 and the flag **REFUSES there rather than looking switched on**. Whether an admissible supplier
 exists at all is under investigation — PhysicalAI publishes no map, and a ceiling derived from
 the ego's own realised speed would be the **nav-echo defect** in a new costume.
+
+---
+
+## 5. ⛔ CORRECTION — ARM D CANNOT START. The plan in §2 and §3 was wrong.
+
+**MEASURED 2026-09-10**, found by a stream that was sent to audit the V2 mechanism gaps, not to
+check this. ⭐ It outranks what that stream was asked to do, and it was reported as such.
+
+### 5.1 The defect
+
+`refc_v3_train.py:468` raises a hard **`SystemExit`** on any arm combining **`--sampler ddim`**
+with **`--w-u0 0`**.
+
+refcv6's BASE carries `--sampler ddim` (`arms.py:110-111`). Arm **D** is `--w-u0 0` (`arms.py:286`).
+⇒ **That is exactly the refused pair.**
+
+⛔ **Arm D would have died in the first second of a run, discovered only AFTER a pod was
+provisioned.** It is the arm §3.3 says to run **first**, the arm I called *"one flag and free"*,
+and the arm the register still lists as **"RUNNABLE THE MOMENT A GPU EXISTS — needs no PI
+decision"**. All three statements are wrong. ⚠️ The one in §2's default — *"provision one
+A40-class pod and run arms 0 and 1"* — is the expensive form of the error, because arm 1 **is**
+arm D.
+
+### 5.2 ⭐ The refusal's stated REASON is measurably false — but the refusal stands
+
+`:468` justifies itself by claiming `control_head` *"stays at its zero init forever"* without the
+`u0` term. MEASURED, in a single forward:
+
+| path | `grad_abs_sum` |
+|---|---|
+| via `out["anchor_traj"]` — the tensor the **matched-anchor L1** gathers | **9.39e4** |
+| via `u0_hat` | 1.07e5 |
+| three no-information controls, same forward | **exactly 0.0** |
+
+⇒ `control_head` reaches the matched-anchor L1 and is trained **without** the `u0` term. The
+justification has rotted; the code kept enforcing it. Logged as class **`JUSTIFICATION-ROT`**.
+
+⛔ **The reason was refuted, NOT the decision.** The refusal was kept and its message corrected,
+because whether that arm should run is a **PI ruling**, not an agent's. ⭐ That distinction is the
+right one: a false justification licenses re-opening a question, never overriding the answer.
+
+### 5.3 ⇒ The decision this creates, and it is now the FIRST thing needed
+
+⭐ **`D-DDV1-NO-DENOISING-LOSS` is the whole reason arm D exists.** DD-v1 has **no ε-prediction and
+no denoising MSE at all**; its `diff_loss_weight = 20.0` is dead code, and its only trajectory
+supervision is matched-anchor L1 plus focal scoring. Our `--w-u0 0.5` is an **invention, not a
+port** — and refcv5-v2, the arm carrying it, is the one that lost longitudinally. The measurement
+in §5.2 **strengthens** the case for the arm: the head the refusal was protecting is trained
+anyway.
+
+**Two options, and the PI picks:**
+
+| | |
+|---|---|
+| **(a) ⭐ recommended** | authorise `--sampler ddim` with `--w-u0 0` behind an **explicit acknowledgement flag**, so the configuration is recorded as a deliberate operator choice rather than a bypass — the same shape as `control_units_source: cli-override-legacy-file` |
+| **(b)** | drop arm D, and rewrite §3.3's ordering, which currently rests on it |
+
+**Default if silent: (a)**, because the refusal's own premise is refuted and arm D is the cheapest
+test of the only lever that is ours rather than the paper's.
+
+### 5.4 What is still runnable with no decision
+
+**`V0` and `V0b` only** — the baseline pair that measures the rig's noise floor. ⛔ That pair is a
+**prerequisite for every other arm's bar**, so it is not a consolation item; it is the thing that
+must run first regardless. **94 GPU-hours.**
+
+⚠️ ⇒ §2's "run arms 0 and 1" default is **replaced by "run arm 0's pair"** until the PI rules on
+arm D.
