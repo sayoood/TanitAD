@@ -14999,3 +14999,73 @@ is a **test path** with no run record beside it, and re-run each named test.
 `Project Steering/GOALS_AND_CLAIMS.md` (the `D-GTBAR-SPEC-DIVERGENCE` row).
 
 <!-- RETR-2026-09-11-CLOSED-WAS-A-TEST-NAME -->
+
+---
+
+## 2026-09-11 — FOUR retractions from one session, in TWO classes. The second class fired THREE times inside a single experiment.
+
+**Retracted by:** Master Mind. **Evidence:** `…/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json`
+and `…/2026-09-11-rl-gt-bar-reachable/`.
+
+---
+
+### ⛔ CLASS A — A REAL NUMBER, CORRECTLY TRANSCRIBED, ATTACHED TO THE WRONG REFERENCE
+
+⭐ Neither instance is a typo. Both values exist, both were copied accurately, and both were placed
+beside something they do not belong beside.
+
+| retracted | correct | mechanism |
+|---|---|---|
+| refcv4b's bar = **+0.0101 [−0.0050, +0.0273]** | **+0.0091 [−0.0055, +0.0254]**, NOT SEPARATED | the +0.0101 comes from a panel dated **three days earlier**. Quoting it beside refcv5-v2's +0.0205 compares **two different panels on possibly different dumps**. |
+| the whole **"refcv4b" column** in a comparison table | it was the **`ha` hold-action control** — all eight values match that arm exactly | I supplied the table; an agent refused to publish it and checked the column against the panel. Four claimed wins invert. |
+
+⚠️ **The tell in both cases was available for free and I did not look:** the panel names its arms
+(`new` / `base`, and within each, `os` / `ha` / `ha0` / `ha0_ext`). ⇒ **A number's ARM is a field in
+the artifact, not a memory.** *"A number carries its ARM and its ARTIFACT PATH, or it is not
+quotable."*
+
+⛔ **Also in this class, same session:** *"11,286 parameters received zero gradient"* → the true
+figure is **18,472 across THREE heads** (`offset_head` 6,160, `tac_goal_tok_head` 11,286,
+`scorer.goal_point` 1,026, the last **exactly zero**, so it emits the constant origin). ⭐ **A single
+explanation covering one third of the evidence is how a count stays wrong** — `--w-tac-goal`'s
+`default=0.0` explains one head and I stopped looking.
+
+---
+
+### ⛔⛔ CLASS B — A PATTERN REPORTED BEFORE ITS SAMPLE CLOSED. THREE TIMES, ONE EXPERIMENT.
+
+| reported at | claim | what killed it |
+|---|---|---|
+| n = 2 | *"the bar cut drift **5.2×**, +221 % → +42 %"* | **+221 % was one draw.** At seed 1 the same setting gives **+76 %**. The baseline's own spread is **145 points**. |
+| n = 3–4 | *"**complete separation**, exact p = 1/35"* | **a small-sample artifact.** Seed 4's control reads **28.35**, below every treated value. Gone at n = 5. |
+| n = 5 | *"the effect is on **variance**, exact permutation **p = 0.0040**"* | ⭐ **the statistic was exact and correct; the COMPARATOR was wrong.** A control trained **15 % as long** reproduces both the low mean *and* the collapsed spread. |
+
+⭐⭐ **The third is the instructive one, because nothing was wrong with the arithmetic.** An exact
+permutation test over all 252 assignments, distribution-free, p = 0.0040 — and it answered a question
+whose answer did not mean what I said it meant.
+
+### ⇒ THE RULES THIS EARNS
+
+1. ⛔ **A sweep that is still running has no result.** Interim numbers are for deciding whether to
+   keep spending, never for reporting. I published two.
+2. ⛔ **Match the intervention's SIDE EFFECT, not merely its absence.** Ablating a mechanism gives
+   *"with vs without"*. The ≥GT bar admits **14.4 %** of candidates, so the honest control is *the
+   same volume of gradient, chosen at random* — which asks **"is it the selection, or the volume?"**
+   ⭐ **Only the second is a mechanism claim.** ⚠️ Same family as the constant-only and raw-input
+   floors, with the missing floor being not *"no information"* but *"the same amount of information,
+   chosen arbitrarily."*
+3. ⚠️ **Choose the instrument for the QUESTION, then stop changing it.** Range-overlap said *"within
+   noise"* at n = 2 and *"no separation"* at n = 5 — technically correct and useless, because the
+   effect was in the **widths** and that test compares **centres**. ⛔ Picking the test after seeing
+   which one fires is how a result gets manufactured; pick it from the hypothesis, in advance.
+4. ⭐ **A p-value at its design floor is a warning, not a triumph.** With n = 5 per cell the smallest
+   obtainable p is **1/252 = 0.0040** — exactly what I reported. ⇒ **the test was at its limit and
+   could not have distinguished a strong effect from an overwhelming one.**
+
+### ⭐ WHAT SURVIVED, AND WHY IT IS THE PART THAT RESTS ON IDENTITIES
+
+The mechanism's **reachability** was never in doubt through any of this, because it was proven by
+**analytic identity** rather than by comparison: a bar below every achievable reward reproduces the
+unbarred gradient **bit-for-bit**; a bar above it gives **exactly 0.0**; the middle is **partial**.
+⛔ *A mask that only ever admits all or nothing is a switch, not a truncation.* ⇒ **Identities do not
+need seeds, controls, or comparators — and they are the only claims from tonight that never moved.**
