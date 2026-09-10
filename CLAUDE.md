@@ -1,5 +1,62 @@
 # TanitAD — working agreements
 
+## ⭐⭐⭐ THE REPO HAS MOVED — `D:\Projects\TanitAD` IS CANONICAL (PI, 2026-09-10)
+
+**Sayed, verbatim:** *"I want you to move the whole projetc to the following folder
+D:\Projects\TanitAD sicne we have a big problems with G mount. So move all trhe files we need,
+checkout the repo and continue the work, do this for all the TanitAD agents and the research lab
+inclduing all necessary files"*
+
+⛔ **THIS SUPERSEDES EVERY `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD` PATH IN THIS FILE
+AND IN EVERY BRIEF.** Work in `D:\Projects\TanitAD`. ⛔ Do not start new work on G:.
+
+### Why — the diagnosis, not the frustration
+
+The section above records it in full: **G:'s `.git` mutable control files will not hydrate**.
+`HEAD`, `config`, `index`, `packed-refs` and `refs/heads/*` all return **`Invalid request code`**
+while directory listings, pack files and worktree files read perfectly. Git must read `HEAD` and
+`config` to recognise a repository at all, so every git command there reports *"fatal: not a git
+repository"* — a message about one unreadable file, dressed as a claim about the whole repo.
+⛔ **Retrying does not fix it.** That is why the PI moved the project rather than waiting.
+
+### What was moved, and how it was verified
+
+| what | where | verification |
+|---|---|---|
+| the git object store | `D:\Projects\TanitAD\.git` | `fsck --connectivity-only` **rc 0, zero output**; HEAD matches; the only 8 absent objects were **unreachable** blobs |
+| the working tree | `D:\Projects\TanitAD` | checked out from HEAD, **not** copied from G: — so no stale or half-edited file rode along |
+| model artifacts | `D:\Projects\TanitAD-artifacts\` | refcv5-v2, refcv4b, refcv3, the compare harness, the A40 rescue bundle |
+
+⛔ **The working tree was rebuilt from git, never copied from G:.** A copy would have carried
+G:'s stale `CLAUDE.md` and reverted the day's commits — the same revert hazard the git-hygiene
+section documents, arriving through a filesystem instead of an index.
+
+### ⚠️ D: is exFAT, and three of its properties matter
+
+1. ⛔ **No ownership recording** ⇒ git refuses with *"detected dubious ownership"* until
+   `git config --global --add safe.directory D:/Projects/TanitAD` is set. ⚠️ **A `git status`
+   that returns zero lines under that refusal is the REFUSAL, not a clean tree** — the same
+   "a zero is a claim about the probe" trap, in a new costume.
+2. ⚠️ **No symlinks and no hardlinks.** `git clone --local` cannot hardlink here, and any
+   mode-`120000` entry materialises as a plain file.
+3. ⚠️ **Large allocation unit**: 34,955 loose objects occupy **~38 GB allocated for 5 GB of
+   actual data**. ⭐ `git gc` packs them and reclaims most of it — worth running.
+
+⚠️ **It is an EXTERNAL drive.** Unplugging it reproduces the class of failure we just left, so
+`C:\Users\Admin\tanitad-push\.git` stays as the working mirror and **GitHub remains the durable
+copy**. Push often.
+
+### ⛔ What was deliberately NOT rewritten
+
+**233 tracked files contain a hardcoded G: path. 220 of them are historical banked artifacts** —
+run logs, raw JSON, one-off probe scripts under `Implementation/incoming/`. ⛔ **Rewriting those
+would falsify the record of where things actually ran.** A banked artifact says where it was
+produced; that is a fact, not a setting. Only **live operational** files are updated.
+
+⚠️ **And the code barely hardcodes the path at all** — it comes from the working directory. So a
+session or agent launched with the right cwd needs no edits; one launched against G: will fail
+loudly rather than silently, which is the correct behaviour.
+
 ## ⭐⭐⭐ RULE ZERO — A REFUTATION IS A WAYPOINT, NOT A DELIVERABLE (Sayed, 2026-09-05, HIGHEST PRIORITY)
 
 **Sayed, verbatim:** *"I dont need refutaions, I need xcellent results … so if the results are not
