@@ -1214,3 +1214,56 @@ line **after an HTTP 500** while origin had not moved. **Assert on the artifact,
 `C:\Program Files\Git\bin\bash.exe` — **the install PATH matched, not a running `git.exe`.**
 ⇒ match the executable, not a substring of its directory, or you will diagnose contention that
 does not exist and start killing processes to fix it.
+
+## ⛔⛔ BINDING — "BUILT, TESTED, AND UNREACHABLE FROM ITS CALLER" IS A CLASS, NOT A SERIES OF ACCIDENTS. FOUR INSTANCES IN ONE DAY (2026-09-10/11)
+
+Every one of these passed its own unit tests. Every one was importable, rollable and correct. **Not
+one of them ran.** And three were found only *after* an arm had been trained on them.
+
+| mechanism | why it never ran | what it cost |
+|---|---|---|
+| `tac_goal_tok_head` | `--w-tac-goal` declared `default=0.0` (`refc_v3_train.py:4922`) and never passed | **11,286 params, `grad_abs_sum` exactly 0.00000 for all 40,284 steps** of refcv5-v2 |
+| the ≥GT truncation | `rl_pilot_refc21.py` exposed **no `--gt-bar` flag** — 13 flags, none reaching it | a 2,000-step "V2" arm that was a **V1 baseline**; the mask had been gradient-proven the same day |
+| DD-v2's two-scalar sampler | `--noise-mode` did not exist on that caller (`grep -c` **0**, control **4**) | the released sampler was unreachable **from this caller** — though not from the programme |
+| the posttrain spec guard | the guard existed **only inside its own test**; `grep` for its message = **2 hits, both in the test file, 0 in `posttrain.py`** | a **RED test on the tip**, while `GOALS_AND_CLAIMS.md` recorded the row **CLOSED** |
+
+⭐ **AND A FIFTH, FROM THE OTHER DIRECTION — 18,472 PARAMETERS, NOT 11,286.** A probe run while
+verifying an upload found **three** untrained heads in refcv5-v2, not one: `offset_head` (6,160),
+`tac_goal_tok_head` (11,286), and `scorer.goal_point` (1,026, **exactly zero** — zero-init plus zero
+gradient, so it **emits the constant origin**). ⇒ a single explanation covering one third of the
+evidence is how the count stayed wrong.
+
+### ⛔ THE RULE
+
+⭐ **"Rollable and trained are different claims." A test that the mechanism WORKS is not evidence
+that the mechanism RUNS.** Before any arm is launched on a new mechanism, prove **reachability from
+the actual caller**, not existence in the library:
+
+1. ⛔ **Trace the flag to the loss, or to the buffer that reaches it** — argparse → namespace →
+   model attribute → forward → the term in `loss` → `.backward()`. Name the `file:line` at each hop.
+2. ⭐ **Assert a NON-ZERO gradient on the new parameters, and a control that must read EXACTLY
+   0.0.** The zero control is what proves the probe works at all; without it, a zero reading is
+   indistinguishable from a broken probe.
+3. ⛔ **MUTATE, do not inspect.** Delete the single line that emits the value and require the check
+   to go RED. *(MEASURED: an AST census read **0 suspects on BOTH the fixed and the broken
+   trainer**.)* ⭐ The strongest form is an **analytic identity**: a bar below every achievable
+   reward must reproduce the unbarred gradient **bit-for-bit**; a bar above it must give **exactly
+   `0.0`**; and the middle must be **partial** — *a mask that only ever admits all or nothing is a
+   switch, not a truncation.*
+4. ⚠️ **Check the DEFAULT, not just the flag.** `default=0.0` and `default="off"` are how a wired,
+   tested mechanism silently does nothing. **A flag whose default disables it must be named in the
+   arm's argv, or the arm did not test it.**
+5. ⛔ **A grep for a guard's message that finds it ONLY in the test file means the guard does not
+   exist.** Pair every such probe with a same-breath control that must read non-zero in the
+   *implementation*.
+
+⚠️ **AND THE REGISTER CAN BE WRONG IN THE SAME DIRECTION.** One of these rows read **CLOSED** while
+its test was failing on the tip. ⇒ a register entry is a claim like any other; ⛔ **"the register
+says it is done" is INHERITED evidence and may not decide a GPU-day.**
+
+⭐ **Durable instrument:** `…/2026-09-10-refcv5v2-zerograd-heads/probe_zerograd3.py` reads untrained
+parameters straight out of a checkpoint's optimizer state — **Adam allocates state lazily, so a
+registered parameter with no entry never received a gradient**, and the count is exact (357
+registered against 351 with state). ⛔ **It belongs in `stack/scripts/` as a POST-TRAINING GATE.**
+This defect class has now surfaced five times, and every single time **after** an arm was trained
+and, twice, after it was published.
