@@ -25,9 +25,9 @@ was actively wrong. So, here:
   the exact configuration the guard exists to stop and requires a refusal.
   MEASURED 2026-09-10 by ``mutate_cold_start_guard.py``: with the run-condition
   gate DELETED from ``cold_start.py`` (mutant ``M1_remove_run_gate``) that arm
-  goes RED — 3 arms in total, exactly the 3 the harness names as literals —
+  goes RED — 4 arms in total, exactly the 4 the harness names as literals —
   and with the whole allowance replaced by ``strict=False`` (mutant
-  ``M2_strict_false``, i.e. the forbidden option (a)) 14 arms go RED. A green
+  ``M2_strict_false``, i.e. the forbidden option (a)) 15 arms go RED. A green
   suite is not evidence about a guard until it has been watched failing.
 * **the ``strict=False`` prohibition is asserted on the SYNTAX TREE**, because a
   behavioural test cannot distinguish "loaded strictly with one declared key"
@@ -420,6 +420,36 @@ def test_the_pilot_exposes_no_flag_that_can_set_v0_conditioned(monkeypatch):
             f"the pilot grew an option matching {bad!r} — if it can set " \
             f"anchors.v0_conditioned or waive the allowance, the guard is " \
             f"an operator assertion and this test must not be relaxed"
+
+
+def test_NOTHING_an_operator_writes_can_GRANT_the_allowance():
+    """⛔⛔ THE ASYMMETRY THAT MAKES THIS A GUARD AND NOT A SWITCH.
+
+    The checkpoint's config is the one input an operator can trivially forge —
+    it is a JSON file they can drop next to the weights. So the property that
+    matters is directional: **the config can only ever REFUSE.** On a
+    v0-conditioned build every one of these forged inputs must still be
+    refused, because the safety condition is the CONSTRUCTED decoder's flag,
+    which no file can reach.
+
+    (`test_REGRESSION_checkpoint_config_claiming_v0_true_is_refused` covers the
+    other direction: a forged `True` refuses an otherwise-legal load. Together
+    they say the config moves the answer toward REFUSE and never toward ALLOW.)
+    """
+    forged = [
+        None,
+        {},
+        {"anchors.v0_conditioned": False},
+        {"core.anchors.v0_conditioned": False},
+        {"anchors.v0_conditioned": False, "sel_reach_clamp": False},
+        {"anchors.v0_conditioned": 0},          # falsy, not False
+    ]
+    for leaves in forged:
+        model = _smoke_model(v0_conditioned=True)
+        donor = _smoke_model(v0_conditioned=True)
+        with pytest.raises(CS.ColdStartRefused):
+            CS.load_cold_start(model, _july_state_dict(donor),
+                               ckpt_cfg_leaves=leaves)
 
 
 def test_refc_config_default_is_literally_false():

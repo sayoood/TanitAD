@@ -50,6 +50,8 @@ from tanitad.refs import refc  # noqa: E402
 from tanitad.rl import (PostTrainConfig, RewardSpec, rewards as RW)  # noqa: E402
 from tanitad.rl.posttrain import run_posttrain, select_trainable  # noqa: E402
 from tanitad.rl.refcv3_adapter import make_refcv3_sample_fn  # noqa: E402
+from tanitad.refs.cold_start import (  # noqa: E402
+    ColdStartRefused, STAMP_KEY, load_cold_start)
 
 HORIZONS = (5, 10, 15, 20)          # frame offsets @10 Hz -> 0.5/1.0/1.5/2.0 s
 DT_TRAJ = 0.5                        # waypoint spacing in seconds
@@ -604,11 +606,45 @@ def load_model(ckpt_path, device, out_dir):
     # refuse while the model is still the one this run built — refusing after
     # `load_state_dict` would leave a mismatched model in memory and would read
     # to the operator as a loading failure rather than a contract failure.
-    assert_config_contract(refc.refc_config(), ck, ckpt_path, out_dir)
-    m.load_state_dict(ck["model"], strict=True)
+    contract = assert_config_contract(refc.refc_config(), ck, ckpt_path, out_dir)
+    # ⭐ PI DECISION QUEUE item 8, option (c) — THE DECLARED ALLOWANCE.
+    # MEASURED: this model builds 488 state-dict keys; the July cold start
+    # (`refc-diffusion-base-v21-30k`, 2026-07-20) carries 487, because
+    # `decoder.anchor_controls` was added on 2026-09-04 (refc.py:1496) by the
+    # same change that introduced `v0_conditioned`. A plain strict load
+    # therefore REFUSES a checkpoint that is otherwise perfectly valid.
+    #
+    # ⛔ THE FIX IS NOT `strict=False`. `load_cold_start` still loads with
+    # `strict=True` — it COMPLETES the state dict with one LITERALLY declared
+    # key, and only when the decoder about to receive the weights is not
+    # v0-conditioned (so the zeros are unreachable; refc.py:1715/1727/2270).
+    # Any other missing key, and any unexpected key, still raises.
+    #
+    # ⚠️ The checkpoint's own config is passed in as a VETO, not as the source:
+    # `contract["compared"]` holds the leaves the checkpoint actually carried,
+    # so a checkpoint that CLAIMS `v0_conditioned = True` while lacking the
+    # buffer is refused rather than quietly defaulted.
+    try:
+        cold = load_cold_start(
+            m, ck["model"],
+            ckpt_cfg_leaves=(contract or {}).get("compared") or None)
+    except ColdStartRefused as exc:
+        raise SystemExit(f"[pilot] {exc}") from exc
     step = ck.get("step", "?")
-    print(f"[pilot] cold start loaded: {total:,} params @ step {step}", flush=True)
-    return m.to(device)
+    if cold["defaulted_keys"]:
+        print(f"[pilot] ⚠️  DECLARED ALLOWANCE: "
+              f"{cold['keys_in_checkpoint']}/{cold['keys_built']} keys came "
+              f"from the checkpoint; DEFAULTED {cold['defaulted_keys']} from "
+              f"the model's own zero buffer. {STAMP_KEY} = "
+              f"{cold[STAMP_KEY]!r}, checkpoint confirmation = "
+              f"{cold['ckpt_confirmation']}.", flush=True)
+        print(f"[pilot] ⚠️  permitted because "
+              f"{cold['run_v0_source']} is False — the tensor is not read on "
+              f"any code path in this process. Stamped into config.json.",
+              flush=True)
+    print(f"[pilot] cold start loaded: {total:,} params @ step {step} "
+          f"({cold['keys_after_load']} state-dict keys)", flush=True)
+    return m.to(device), cold
 
 
 @torch.no_grad()
@@ -824,7 +860,7 @@ def main() -> int:
               "cannot vary any term relative to the default arm. Correct for a "
               "reproduction control, a DEFECT for anything else.", flush=True)
 
-    model = load_model(a.ckpt, device, a.out)
+    model, cold_start = load_model(a.ckpt, device, a.out)
     spec = RewardSpec(weights=weights, dt=DT_TRAJ)
     train_src = WindowSource(a.train_epdir, a.train_agents, seed=a.seed, lru=a.lru)
     val_src = WindowSource(a.val_epdir, a.val_agents, seed=a.seed)
@@ -872,7 +908,12 @@ def main() -> int:
         model, cfg,
         build_ctx=lambda b, out=None: build_ctx(b, out, extras=train_extras),
         reference=reference)
-    summary = run_posttrain(model, sample_fn, cfg, batches=batches())
+    # ⭐ THE STAMP LANDS IN THE RUN RECORD, not only on stdout. A
+    # contract checked but not written down is not evidence, and a
+    # defaulted tensor is exactly the fact a reader opening this run in
+    # isolation would otherwise have to infer.
+    summary = run_posttrain(model, sample_fn, cfg, batches=batches(),
+                            extra_record={"cold_start_load": cold_start})
 
     # ⛔ SAVE THE TRAINED DECODER. The first pilot saved none, so when the
     # eval-mode defect surfaced there was no way to re-measure P1's outcome
