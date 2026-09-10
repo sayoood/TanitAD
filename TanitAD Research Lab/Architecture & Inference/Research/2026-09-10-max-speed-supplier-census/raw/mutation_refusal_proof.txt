@@ -1,0 +1,31 @@
+ORIGINAL md5 = 9c5bc12490e6b2eefbdc71e30bfbd8ad bytes = 345520
+needle found: 1 occurrence(s)
+
+=== STEP 1: BASELINE (refusal intact) ===
+
+### BASELINE  exit=0
+......                                                                   [100%]
+6 passed, 19 deselected in 1.43s
+
+=== STEP 2: MUTATION (refusal disabled) ===
+
+### MUTATED  exit=1
+stack\tests\test_max_speed_wiring.py:492: Failed
+---------------------------- Captured stdout call -----------------------------
+[v3] max_speed_input (quantized): 0/2 clips carry a ceiling, 0/2 windows fed, 0 over the 130 km/h top step (md5=deadbeef)
+=========================== short test summary info ===========================
+FAILED stack\tests\test_max_speed_wiring.py::test_an_empty_channel_is_REFUSED_because_the_field_is_a_v8_ADDITION
+1 failed, 5 passed, 19 deselected in 1.51s
+tests that went RED:
+    FAILED stack\tests\test_max_speed_wiring.py::test_an_empty_channel_is_REFUSED_because_the_field_is_a_v8_ADDITION
+
+=== STEP 3: RESTORED ===
+restored md5 = 9c5bc12490e6b2eefbdc71e30bfbd8ad  bytes restored EXACTLY: True
+
+### RESTORED  exit=0
+......                                                                   [100%]
+6 passed, 19 deselected in 1.52s
+
+================================================================
+VERDICT: the refusal HAS TEETH -> True
+  baseline GREEN: True | mutation RED: True | restored GREEN: True | bytes exact: True

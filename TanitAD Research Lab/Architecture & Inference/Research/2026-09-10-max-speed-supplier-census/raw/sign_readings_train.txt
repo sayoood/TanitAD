@@ -1,0 +1,68 @@
+=== TRAIN v7.2 ===
+n = 4572
+CONTROL any digit: 3025 / 4572   CONTROL 'traffic light': 1276 / 4572
+
+cot_tokens.speed_limit == True         : 69 / 4572
+clips with a km/h number               : 30 / 4572
+clips with an mph number               : 1 / 4572
+clips with ANY road-unit number        : 31 / 4572  (0.678%)
+  ...of those, in speed-limit context  : 30 / 4572  (0.656%)
+
+OVERLAP with the boolean flag:
+  numeric AND speed_limit==True : 30
+  numeric AND speed_limit==False: 1   <-- the boolean MISSES these
+
+=== distinct values found (unit,value): count ===
+   kmh     30  x83
+   kmh     50  x24
+   kmh     70  x18
+   kmh     20  x14
+   kmh     60  x14
+   kmh     80  x14
+   kmh    100  x10
+   mph     35  x10
+   kmh     40  x9
+
+=== values IN speed-limit context ===
+     20 km/h  x14
+     30 km/h  x77
+     35 km/h  x10
+     40 km/h  x9
+     50 km/h  x24
+     60 km/h  x14
+     70 km/h  x18
+     80 km/h  x14
+    100 km/h  x10
+
+=== per-clip listing (first 40) ===
+   ('10577c0e-d402-49b5-bc23-15575f2ab3af', [50], [], True, True)
+   ('132d381e-191d-4f70-8ca5-90ace242fc26', [30], [], True, True)
+   ('1ad72863-7c25-4866-bae9-714a9c157e98', [70], [], True, True)
+   ('1fbf6ff4-7cfe-46d4-9240-2b81eeac1599', [50], [], True, True)
+   ('207e5b1f-ce76-4608-acc0-c0c6a22e760a', [20], [], True, True)
+   ('21f81dfb-3fd8-4ac0-92e2-d3a3d00b0387', [60], [], True, True)
+   ('232e052a-5c81-43a0-b226-275dcaadab70', [30], [], False, False)
+   ('2844b027-38fd-4218-8486-5f6b7b89a47b', [80], [], True, True)
+   ('2f5c3835-62e3-4cc5-854e-afa9adeab9f7', [30], [], True, True)
+   ('30f158ae-e0f6-411a-8db5-08645ed374b8', [30], [], True, True)
+   ('43bbcbf9-7b50-4f61-8b11-946a835b5180', [50], [], True, True)
+   ('46a5dd1b-bfe5-4c15-bfbb-c31496957b82', [30], [], True, True)
+   ('4ceb00df-4c81-4843-b07e-56fec6719c91', [60], [], True, True)
+   ('51a7c020-cfeb-4340-ad5f-b1ad4a59c6e0', [50], [], True, True)
+   ('55b1253c-8b5c-44cf-99dc-2164d52b8724', [70], [], True, True)
+   ('5ec9e927-21c9-43ff-82e4-50d03138ccc8', [30], [], True, True)
+   ('612fd302-36d6-49ca-8cb6-0a40882b5475', [40], [], True, True)
+   ('7b2470d2-dc21-40f2-9797-19d56571902a', [50], [], True, True)
+   ('7d63dd9a-9e6d-40b9-95f8-6e90a1965418', [50], [], True, True)
+   ('7e13248b-bd13-4987-8ef5-7eefe4aee05d', [40], [], True, True)
+   ('815d1f6d-b7bb-4216-9bc4-9b2d67843db7', [100], [], True, True)
+   ('856a0dba-afda-4d08-be56-f2aa51015658', [50], [], True, True)
+   ('940cbda9-9bef-4ba0-9fb5-7cf34a5f28c9', [30], [], True, True)
+   ('97231077-68fb-4859-ace4-af778648984c', [20], [], True, True)
+   ('c348f101-8812-40ec-8999-14b333b28f8c', [30], [], True, True)
+   ('cf8384a7-beb3-4ec5-b6a4-65a49e849d70', [30], [], True, True)
+   ('d5ecf705-82f7-41fd-8ee4-617368de75cc', [], [35], True, True)
+   ('e5f27074-461c-4a46-b2c8-3e287f7c04be', [70], [], True, True)
+   ('e9ce43a5-b6ff-432b-a379-fae9655af756', [100], [], True, True)
+   ('fa970a60-448d-4286-a69f-711caaff6f96', [30], [], True, True)
+   ('fddcec7f-0356-473e-af70-bcae271a7f45', [70], [], True, True)
