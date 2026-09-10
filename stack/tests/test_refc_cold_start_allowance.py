@@ -408,11 +408,26 @@ def test_the_pilot_exposes_no_flag_that_can_set_v0_conditioned(monkeypatch):
 
     opts = captured["opts"]
     assert opts, "the parser exposed no options at all — the spy did not fire"
-    # LITERAL: the complete option surface of the pilot as of 2026-09-10.
+    # LITERAL: the complete option surface of the pilot.
+    #
+    # ⭐ UPDATED 2026-09-11, DELIBERATELY, AND THE TRIPWIRE DID ITS JOB. The
+    # 2026-09-10 list ended at `--lru`; adding V2's two on-switches made this
+    # assertion FAIL, which is exactly what a literal surface pin is for — a
+    # human has to look at the new flags and decide. Both were looked at:
+    #   `--gt-bar`      turns on DDv2's >=GT positive mask. Touches the ADVANTAGE
+    #                   (`posttrain.rl_objective` -> `composite_advantage`), never
+    #                   the anchor vocabulary or the cold-start allowance.
+    #   `--noise-mode`  selects the exploration policy over the EMITTED offset
+    #                   (`refcv3_adapter.sample_offsets`). Also downstream of the
+    #                   bank; `anchors.v0_conditioned` is read at `refc.py:1715`
+    #                   while building it, which neither flag can reach.
+    # ⛔ Neither can set `anchors.v0_conditioned` or waive the allowance, and the
+    # substring guard below is what enforces that rather than this comment.
     assert sorted(opts) == sorted([
         "-h", "--help", "--ckpt", "--train-epdir", "--train-agents",
         "--val-epdir", "--val-agents", "--out", "--steps", "--batch",
         "--reward", "--proximity-safe-m", "--seed", "--w-anchor", "--lru",
+        "--gt-bar", "--noise-mode",
     ])
     for bad in ("v0", "anchor-control", "anchor_control", "strict", "allow",
                 "conditioned", "force"):

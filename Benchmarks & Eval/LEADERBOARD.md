@@ -183,6 +183,8 @@ n — a WORK ITEM, never a silent omission.** Family coverage on this page:
 | §3 T2 AlpaSim / low-OOD | T2 | ❌ | ⚠️ corridor only | ❌ | ❌ |
 | **§1d refcv3** (B1 corpus) | T1 **UNRULED** | ⏳ PENDING (distance-keeping ⚠️ partial by construction) | ⏳ PENDING | ⏳ PENDING | ⏳ PENDING |
 | **§1d refav1** (B1 corpus, step-1000) | T1 | ✅ **incl. distance-keeping** | ✅ | ✅ | ❌ `families_unavailable` |
+| **§1d refcv4b** (B1 corpus) | T1 | ✅ **incl. distance-keeping** (n 1,224) | ✅ | ✅ | ✅ **route head, n 3,622** |
+| **§1d refcv5-v2** (B1 corpus) | T1 | ✅ **incl. distance-keeping** (n 1,308) | ✅ | ✅ | ✅ **route head, n 3,622** |
 
 Every ❌ above is enumerated as a work item in §12. ⏳ **PENDING** is a cell whose eval has not run —
 distinct from ❌ (measured as absent) and from **NOT MEASURED** (no instrument). §1d names the exact
@@ -276,6 +278,7 @@ is retro-filled: an unmeasured cell stays unmeasured.***
 | §3 / §5.5 T2 AlpaSim | ✅ **YES, and they are the page's only genuinely `CLOSED` rows** | LONG / TACTICAL / STRATEGIC all omitted; §5.5 is a **2-second** number and must never be quoted unqualified |
 | §8 camera-frame gate ladder | ⛔ **NO — SUPERSEDED, different unit.** Never compare to §1 | historical only |
 | **§1d refcv3 / refav1 (B1 corpus)** | ⛔ **NO — the four families are PENDING.** See the row's own cells | the eval itself; §1d states the exact filename that fills each cell |
+| **§1d.6 refcv4b / refcv5-v2 (B1 corpus)** | ✅ **YES — all four families, paired episode-cluster CIs, on the SAME 4,823 windows / 141 episodes, with `ha` / `ha0` / `ha0_ext` floors and 5/5 constant-arm checks** | a **training-seed** replicate (`H-ESTIM-SEED-1`); `anchor_selection` needs a fan+selector surface; the lead block wants rebuilding on the arm's own grid (`--dt 0.5 --k 4`) |
 
 ---
 
@@ -772,6 +775,142 @@ absence claim, especially one written inside a page about stale absence claims.)
 parameters**; **107,082,365** is the **all-tensor** count over 544 tensors, of which **201 are buffers
 totalling 49,464 elements**. Neither figure was wrong — they count different things, and the registry
 directs that **107,032,901** be quoted.
+
+### 1d.6 ⭐ THE B1 LINE IS NO LONGER PENDING — `refcv4b` and `refcv5-v2`, FOUR FAMILIES, MEASURED
+
+*MEASURED 2026-09-09, re-read from the raw JSON 2026-09-11. Artifacts banked and byte-verified in
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/`
+(`refcv5-v2_vs_refcv4b.json` sha256 `8acbcc17…`, `refcv5-v2-seed1_vs_refcv4b.json`
+`11e31e95…`, plus both per-arm JSONs and both panel logs). Registry anchors:
+`MODEL_REGISTRY.md` **§4.6** (refcv4b) and **§4.7** (refcv5-v2). ⛔ Same B1 corpus
+boundary as §1d above — these may never be same-data-compared to §1/§1a/§1b/§1c/§2/§4/§5.*
+
+⛔⛔ **READ THE SIGN BEFORE THE WORD `separated`.** The metric is `ade_m`, **lower is
+better**, so a **positive** delta means the arm is **WORSE** than what it is differenced against.
+Three rows below are separated *against* the model. A separated interval says only *"another draw of
+episodes would say the same"*; it never says who won.
+
+#### 1d.6.1 The floors, and the bar — metric `ade_m`, tier **T1**, paired episode-cluster bootstrap
+
+| row | **refcv5-v2** (seed 0) | **refcv5-v2** (seed 1) | **refcv4b** | reading |
+|---|---|---|---|---|
+| **`os − ha0_ext`** — the committed bar `BAR-REFCV5V2-1` | **+0.0205** [+0.0043, +0.0390] · sep · **fragile** | **+0.0204** [+0.0047, +0.0395] · sep · **fragile** | **+0.0091** [−0.0055, +0.0254] · **NOT sep** | ⛔ **refcv5-v2 FAILS — separated WORSE than the echo control. refcv4b merely TIES it.** |
+| **`os − ha`** — `BAR-REFCV5V2-2` | +0.0082 [−0.0082, +0.0267] · **NOT sep** | +0.0082 [−0.0081, +0.0274] · **NOT sep** | −0.0032 [−0.0179, +0.0133] · **NOT sep** | ⛔ **FAILS** — the predicate is `delta < 0 and hi < 0` |
+| `os − ha0` | −0.3644 [−0.4219, −0.3128] · sep | −0.3645 [−0.4216, −0.3129] · sep | −0.3758 [−0.4336, −0.3233] · sep | both clear the do-nothing floor; **refcv4b by more** |
+| **arm delta `refcv5-v2 − refcv4b`** (informational) | **+0.0114** [+0.0059, +0.0172] · sep · p 1.0 | **+0.0114** [+0.0052, +0.0174] · sep | — | ⛔ **refcv5-v2 is WORSE, separated** |
+| `os − refcv3` | −0.1341 [−0.1536, −0.1128] · sep | — | −0.1455 [−0.1655, −0.1240] · sep | both beat refcv3; **refcv4b by more** |
+| **absolute `ade_m`** | **0.3079** [0.2795, 0.3390] | **0.3078** | **0.2965** [0.2697, 0.3280] | — |
+| ⭐ CONTROL `ha` / `ha0` / `ha0_ext`, cross-arm | **0.0000** [0, 0] | **0.0000** [0, 0] | — | all three read **exactly 0**, as they must |
+
+⭐ **The tool's own verdict on the bar row, carried VERBATIM:** *"⛔ NOT YET MEASURED —
+separated but FRAGILE (the interval reaches back to within 25 % of the point estimate). At ONE seed
+this is not a direction."* ⇒ **both readings stand: the arm MISSED its bar, and the SIZE of the
+miss is not yet a quotable direction.**
+
+**Grid:** 4,823 windows / 141 episodes, `dt_s` 0.5, `horizon_steps` 4 (2 s), `n_boot` 2000,
+`PAIRING OK`, `constant_arm_checks` 5/5. ⛔ `overlapping_holdout_se` is not used; point
+estimates are `full_set`. ⚠️ **ORACLE nav on BOTH arms** — all 4,719 v7.2 nav records
+are `ego-future`; fair between the arms, optimistic in absolute terms, and never a production command.
+
+#### 1d.6.2 ⭐ The inference-seed replicate — the third variance, MEASURED
+
+`land.log` records `--infer-seed 0` and `--infer-seed 1` on the **same checkpoint**. The planner
+samples, so this is the replicate the third-variance rule demands.
+
+| quantity | seed 0 | seed 1 | Δ |
+|---|---|---|---|
+| `ade_m` (`os`) | 0.3079 | 0.3078 | **0.0001** |
+| the bar `os − ha0_ext` | +0.0205 | +0.0204 | **0.0001** |
+| distinct anchors selected | 62 | 64 | 2 — *the sampler really did re-roll* |
+
+⇒ **Inference-seed floor on this rig ≈ 0.0001 m, ~200× below the +0.0205 bar miss —
+so the FAILURE is robust to inference seed.** refav1's ~0.30 m floor does **not** transfer here.
+⛔ **Training variance is UNMEASURED** — one training seed per arm, so `H-ESTIM-SEED-1`
+still binds on the `+0.0114` arm delta.
+
+#### 1d.6.3 ⛔ THE FOUR BINDING FAMILIES — per family, with n. None pending, none pooled.
+
+| family | metric | **refcv5-v2** | **refcv4b** | n | better |
+|---|---|---|---|---|---|
+| **LONGITUDINAL** | `speed_mae_mps` | 0.2919 | **0.2900** | 4,823 / 141 ep | refcv4b |
+| **LONGITUDINAL** | `speed_bias_mps` | +0.0399 | **+0.0331** | 4,823 | refcv4b |
+| **LONGITUDINAL** | `along_mae_m` ⭐ *carries the ADE result* | 0.2655 | **0.2544** | 4,823 | **refcv4b** |
+| **LONGITUDINAL** | `accel_mae_mps2` | **0.3596** | 0.4346 | 4,823 | **refcv5-v2 (−17.3 %)** |
+| **LONGITUDINAL** | target-speed acc @ 0.5 / 1.0 / 2.0 m/s | **0.8346** / **0.9437** / 0.9881 | 0.8329 / 0.9422 / **0.9892** | 4,823 | split |
+| **LONGITUDINAL** | **distance-keeping** `headway_min_m` | 27.8285 [23.9407, 32.4796] | 28.4517 [24.4003, 32.7611] | **1,308 / 68 ep** vs **1,224 / 67 ep** | overlapping |
+| **LONGITUDINAL** | `time_gap_min_s` | 4.0885 [3.2646, 5.0234] | 4.1118 [3.2775, 5.0945] | 1,167 / 1,154 | overlapping |
+| **LONGITUDINAL** | `min_ttc_s` ⚠️ **censored** | 24.6454 [23.2247, 26.0281] · `n_closing` **524** | 24.8434 [23.3648, 26.1655] · `n_closing` **470** | 1,308 / 1,224 | overlapping |
+| **LATERAL** | `heading_mae_deg` | **1.2121** | 1.2964 | 4,823 | refcv5-v2 |
+| **LATERAL** | `yaw_rate_mae_degps` | **1.0534** | 1.7368 | 4,823 | **refcv5-v2 (−39.4 %)** |
+| **LATERAL** | **masked** `curvature_mae_1pm` | **0.003485** | 0.008150 | **13,553** / **13,558** valid step-pairs | **refcv5-v2 (−57.2 %)** |
+| **LATERAL** | ⭐ **ratio to the straight-line floor** (0.006802) | **0.5123 — BELOW** | 1.1982 — **ABOVE** | same | **refcv5-v2** |
+| **LATERAL** | `cross_mae_m` | 0.0994 | **0.0978** | 4,823 | refcv4b (marginal) |
+| **TACTICAL** | lateral decision acc / kappa | 0.9563 [0.9430, 0.9676] / 0.8193 | **0.9579** [0.9455, 0.9687] / **0.8277** | 4,823 | refcv4b (CIs overlap) |
+| **TACTICAL** | longitudinal decision acc / kappa | **0.8354** [0.8121, 0.8580] / **0.5463** | 0.8260 [0.8019, 0.8500] / 0.5186 | 4,823 | refcv5-v2 (overlap) |
+| **TACTICAL** | `accelerate` recall | **0.5967** | 0.5056 | 538 true | **refcv5-v2** |
+| **TACTICAL** | `brake_stop` recall | 0.5008 | **0.5388** | 631 true | refcv4b |
+| **TACTICAL** | goal setting: FDE m / bearing MAE° | 0.6607 [0.6026, 0.7239] / **1.3730** | **0.6345** [0.5781, 0.6964] / 1.5484 | 4,823 / 4,614 bearing | split |
+| **TACTICAL** | `anchor_acc` vs chance **1/117** = 0.008547 | 0.5271 [0.4858, 0.5685] — **61.67×** | 0.5275 [0.4883, 0.5664] — **61.72×** | 4,823 | **indistinguishable** |
+| **TACTICAL** | `n_distinct_selected` of 117 | **62** (seed 0) / **64** (seed 1) | **51** | 4,823 | refcv5-v2 — *diversity, not accuracy* |
+| **TACTICAL** | `anchor_selection` (fan scoring) | ⛔ **UNAVAILABLE** | ⛔ **UNAVAILABLE** | 4,823 each | *one path per window — no fan to score. A WORK ITEM, not a pass* |
+| **STRATEGIC** | `route_acc` vs chance **1/3** | 0.7708 [0.7146, 0.8254] | **0.7791** [0.7248, 0.8318] | **3,622 / 128 ep** | refcv4b (CIs overlap) |
+| **STRATEGIC** | `route_kappa` | 0.4614 | **0.4864** | 3,622 | refcv4b |
+| **STRATEGIC** | ⭐ `route_pred_identical_under_nav_shuffle` | **1.000000** | **1.000000** | 3,622 | *structural — **NOT an echo of its input*** |
+
+⭐⭐ **refcv5-v2's ONE unambiguous structural win is LATERAL SHAPE.** The straight-line floor
+is the curvature error of a plan that **never steers**. refcv4b reads **1.1982× it** — the
+instrument calls that *"a SHAPE defect: a plan that never steers tracks the road better"*. refcv5-v2
+reads **0.5123×** — *"tracks the road better than a plan that never steers"*. ⇒ WP-4's
+control-space anchored Gaussian **fixed the path shape it was pre-registered to fix**, and still
+failed the bar, because ADE is dominated by the **along-track** term where it lost.
+⛔ A curvature number is inadmissible without its validity mask: `min_ds_m` 0.25, with
+**1,140** / **1,146** steps excluded and counted.
+
+⭐ **The route head is not an echo.** Shuffling the nav token changes **nothing** in the route
+prediction (identity 1.000000, both arms) because the head reads the observed window only and never
+the nav token. ⚠️ `nav_echo_index` (0.6458 / 0.6422) must be computed through
+`_ROUTE_TO_NAV {0:1, 1:0, 2:2}`; comparing the raw indices is a **TYPE ERROR** (3-wide
+`ROUTE_CLASSES` vs 4-wide `NAV_COMMANDS`) and published a wrong number on 2026-09-06.
+
+⛔⛔ **CORRECTION carried here so it cannot rot: "refcv5-v2 is the only arm with a strategic
+output; refcv4b reads n = 0" is FALSE.** `STRATEGIC` has two children and mixing them manufactures
+the difference: `as_declared_by_refcv3_arm` reads `UNAVAILABLE, n 0` for **BOTH** arms, and
+`computed_here` reads `OK, n 3,622` for **BOTH**. Reading one child for one arm and the other child
+for the other arm is a **sub-key scope error** — the `df` / cgroup / `step_s` family, with the
+scope being a JSON key.
+
+#### 1d.6.4 ⛔ What these numbers may NOT be credited to
+
+1. ⛔ **The 22-token tactical vocabulary was NEVER SUPERVISED.** `--tac-goal-tok-head` is passed
+   (head built, **11,286** params) but **`--w-tac-goal` is absent from `argv`** ⇒ default
+   **0.0**. MEASURED from the checkpoint's own tensors: `max|w| = 0.0441898` against the `nn.Linear`
+   init bound `1/sqrt(512) = 0.0441942` and `E[max of 11,264 draws] = 0.0441903` — agreement to
+   six significant figures, i.e. **still at initialisation**.
+2. ⛔ **Three heads, 18,472 params, took no gradient:** `core.decoder.offset_head` (6,160, at its
+   init bound), `tac_goal_tok_head` (11,286, at its init bound), `scorer.goal_point` (1,026,
+   **exactly zero** — 0 of 1,024 weights non-zero, so it emits the constant origin).
+   ⭐ The discriminating control: the **fourth** goal head, `tac_goal_head` (6,156, the
+   *geometric* one), reads `max|w| = 0.209529` = **4.74×** its bound — it **did** train, so
+   "nothing trained" is wrong. ⚠️ `tac_goal_head` ≠ `tac_goal_tok_head`
+   (`refc_v3.py:995` warns the name is taken).
+3. ✅ **`goal_setting` is nonetheless ADMISSIBLE** — `four_families.tactical_from_trajectory`
+   computes every one of its numbers from `pred[:, -1]`, the **planned path's last waypoint**, and
+   never touches a goal head. ⇒ valid as a trajectory readout; **not** evidence any goal head works.
+4. ⛔ **The DiffusionDrive agent coupling was ABSENT, not tested** — `--agents off`
+   throughout (`agent_join = None`, `agent_join_digest = None`; `--w-agent` effective 0.0,
+   `builds_graph false`). ⇒ nothing here supports or refutes WP-6.
+5. ⛔⛔ **THE COMPARISON IS NOT SINGLE-LEVER, AND THE EVALUATED ARM IS NOT THE RUN THE
+   REGISTRY LAUNCH TABLE DESCRIBES.** MEASURED by argv diff: refcv5-v2
+   (`refcv5-v2-noagents-b1-v72-40k`) moves **TWO live mechanism groups** against refcv4b —
+   **WP-4** (`--sampler ddim --w-u0 0.5`) **and P14** (`--sel-refined --sel-score-emitted`,
+   a selection change that carries no loss term and is therefore invisible to `effective_weights`).
+   `--tac-goal-tok-head` is inert (never supervised) and `--agents off` is inert. ⚠️
+   **`--sel-refined` ALONE is the 0.0259 m separated-WORSE lever (`D-REFCV4B-SELREF-1`); this
+   arm carries the PAIRED form, which `refc_v3_train.py:386-401` refuses to let be split, so
+   that number is NOT this arm’s handicap.** ⇒ **the +0.0114 m loss is NOT attributable
+   to WP-4.** ⭐ Cheapest discriminating next step, **zero training**: re-score the banked
+   dump with `--ablate sel_refined` (`raw/paired_ablate.py`) to separate WP-4 from P14.
+   See `MODEL_REGISTRY.md` §4.7.0 / §4.7.0b.
 
 ---
 

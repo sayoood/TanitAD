@@ -14931,6 +14931,7 @@ traps: a probe reporting a different scope than the question, read as an answer.
   three consecutive runs, matching the full suite's per-file numbers exactly. Per-file comparison
   is a sound method; the artifacts were unsound, not the approach.
 
+
 - **Within one tree the counts are INVARIANT TO INVOCATION COMPOSITION**, not merely stable -
   which eliminates the alternative explanation I had entertained ("these tests are flaky or
   order-dependent") and leaves the truncation as the whole cause. MEASURED across three
@@ -14949,3 +14950,52 @@ traps: a probe reporting a different scope than the question, read as an answer.
 **Corrected in:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-10-max-speed-v8-build/RESULT.md` S7.2.
 
 <!-- RETR-2026-09-10-TRUNCATED-COMPARISON -->
+
+---
+
+## RETRACTION 2026-09-11 -- "THE GUARD IS CLOSED" WAS A CLAIM ABOUT A TEST, NOT ABOUT THE CODE
+
+**Retracted:** `GOALS_AND_CLAIMS.md`'s `D-GTBAR-SPEC-DIVERGENCE` row, which read **CLOSED** with the
+words *"`run_posttrain` now refuses a divergent explicit spec, with a control proving it is not a
+blanket refusal."*
+
+**What was actually true (MEASURED 2026-09-11, Architecture & Inference):** the guard existed
+**only in its test**. `pytest stack/tests/test_rl_gt_bar_gradient_path.py` was **RED on the tip** --
+`test_run_posttrain_REFUSES_a_spec_that_disagrees_with_the_bars_config` reached the loop's
+`FALSE-GREEN REFUSED` counter error instead of the spec `ValueError` it expected -- and
+`grep "use_gt_bar=True with an explicit spec"` over `stack/` returned **2 hits, BOTH inside the
+test file, 0 in `posttrain.py`**.
+
+**Corrected:** the guard is implemented in `stack/tanitad/rl/posttrain.py::run_posttrain`, fires
+before any sampling, and the accepting direction is asserted so it is not a blanket refusal. The
+register row is corrected in place with the measurement above.
+
+### ROOT-CAUSE CLASS - A CLAIM OF "BUILT" WHOSE EVIDENCE IS A TEST NAME
+
+The same session found the SAME failure in two more costumes, which is why this is a class and not
+an incident:
+
+1. **`--gt-bar` did not exist.** The >=GT truncation was implemented, unit-tested and
+   gradient-proven on 2026-09-10, and the only production RL caller exposed **thirteen flags, none
+   of which reached it**. The 2,000-step arm ran as a V1-style baseline and was reported as an RL
+   arm.
+2. **`--noise-mode` did not exist either.** DDv2's released two-scalar sampler landed the same week;
+   `grep -c noise_mode stack/scripts/rl_pilot_refc21.py` reads **0** against a same-breath control
+   `grep -c PostTrainConfig` = **4**.
+3. **This row.** A test that asserts a refusal is evidence that *someone wanted* the refusal. It
+   becomes evidence that the refusal EXISTS only when it is GREEN.
+
+**The discriminator, and it is cheap:** *"rollable and trained are different claims"*
+(`tac_goal_tok_head`: 11,286 parameters with `grad_abs_sum` exactly 0 for 40,284 steps). For any
+claim that a mechanism is in force, the admissible evidence is **the artifact the mechanism writes**
+-- here `frac_above_bar_mean`, which read **`null`** on every arm the register described as carrying
+the bar and now reads **0.1505** -- never the presence of the code, and never the presence of a test
+for it. A red test and a missing flag are the same statement: *nothing calls this.*
+
+⛔ **Action for the Master Mind:** sweep `GOALS_AND_CLAIMS.md` for other rows whose artifact column
+is a **test path** with no run record beside it, and re-run each named test.
+
+**Corrected in:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-11-rl-gt-bar-reachable/RESULT_GT_BAR_REACHABLE.md` S1.4, S5b, S6;
+`Project Steering/GOALS_AND_CLAIMS.md` (the `D-GTBAR-SPEC-DIVERGENCE` row).
+
+<!-- RETR-2026-09-11-CLOSED-WAS-A-TEST-NAME -->

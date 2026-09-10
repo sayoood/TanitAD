@@ -22,7 +22,13 @@ THE THREE AUDITS
    trains the generator to agree with the stack's weakest component, and the
    resulting number is an echo, not a capability. DDv2 names the same defect
    (selector over-reliance) and our SEL-1 refusal measured it independently.
-2. ``audit_reward`` — BEHAVIOURAL. Does a degenerate policy beat a good one?
+2. ``audit_reward`` — BEHAVIOURAL. Does a degenerate policy beat a good one, and
+   — added 2026-09-11 — **can the reward tell two degenerate policies apart at
+   all?** ⛔ Those are different questions and the second one caught a reward the
+   first called ``clean``: at the pilot's ``dt = 0.5`` the progress-only
+   regression arm scored ``bullet_straight`` / ``teleport`` / ``shaky`` at the
+   identical **1.5**. Nothing was constant, so the liveness half was satisfied;
+   the RANKING had collapsed anyway. See `audit_reward`'s separation check.
 3. ``report_component_coverage`` — HONESTY. A component that never fires (no
    obstacles in frame, no lead vehicle) contributes a constant and is therefore
    invisible in the advantage. Reported explicitly, with its n, rather than
@@ -126,6 +132,66 @@ def sane_reference_trajectory(n_steps: int = 21, dt: float = R.DT_S,
 reference_policy = sane_reference_trajectory
 
 
+#: The panel's own two speeds — the reference's and ``bullet_straight``'s. Named
+#: here so :func:`exercising_ctx` derives its geometry from the panel instead of
+#: carrying a second, independently-drifting copy of it.
+PANEL_V_REF_MPS = 10.0
+PANEL_V_BULLET_MPS = 30.0
+
+
+def exercising_ctx(n_steps: int = 21, dt: float = R.DT_S, device=None) -> dict:
+    """A context that actually EXERCISES ``collision`` and ``headway``.
+
+    ⛔ WHY THIS FUNCTION EXISTS. `audit_reward` called with no context cannot
+    rule on any reward that weights ``collision`` or ``headway``: with no
+    obstacle and no lead they are identically constant, and the audit correctly
+    returns INCONCLUSIVE. MEASURED 2026-09-10 — the 2,000-step pilot's P1 arm
+    (DEFAULT_WEIGHTS) recorded exactly that: *"weighted component(s)
+    ['collision', 'headway'] were CONSTANT across the whole panel … supply a
+    context that exercises them before trusting any verdict."* ⇒ **no P1 verdict
+    was admissible at all**, with or without the >=GT bar. This is the context it
+    asked for.
+
+    ⭐ EVERY NUMBER IS DERIVED FROM THE PANEL, NOT CHOSEN. Two placements were
+    wrong before this geometry and both are instructive (see the history in
+    `tests/test_rl_audit.py::rich_ctx`): an obstacle *under* the reference makes
+    ``frozen`` legitimately win, and one off to the side makes ``collision``
+    constant again.
+
+      * ``obstacle_x`` = the MIDPOINT between the reference's reach and
+        ``bullet_straight``'s — far enough that the lawful reference never gets
+        there, close enough that the 30 m/s policy and ``teleport`` drive
+        straight through it. *That is the scene the reward must get right:
+        reckless speed meets an obstacle the careful policy never reaches.*
+      * ``lead_path`` = the reference offset by ``lead_len_m + target_time_gap_s
+        * v_ref``, i.e. the standoff ``_headway`` itself is written against — no
+        new constant, and nothing tunable.
+
+    ⭐ THE CROSS-CHECK THAT MAKES IT TRUSTWORTHY: at the module default
+    ``dt = 0.1`` this derivation reproduces the banked literal ``[40.0, 0.0]``
+    and the standoff ``24.5`` EXACTLY — values that were found empirically, by
+    hand, months earlier. An independently authored derivation landing on the
+    number already in the tree is evidence; re-running the producer's own
+    arithmetic would only have measured determinism.
+
+    ⚠️ IT SCALES WITH ``dt``, AND IT MUST. The panel is built from
+    ``v * dt * t``, so at the pilot's ``dt = 0.5`` the reference reaches 100 m,
+    not 20 m — and the banked literal 40.0 then sits UNDER the reference, which
+    is the first of the two historical mistakes. MEASURED at both: ``default``
+    reads **clean** (dead=[]) at dt 0.1 and at dt 0.5; ``hackable`` reads
+    **FLAGGED** at both.
+    """
+    ref = sane_reference_trajectory(n_steps, dt, v=PANEL_V_REF_MPS, device=device)
+    span = dt * (n_steps - 1)
+    obstacle_x = 0.5 * (PANEL_V_REF_MPS + PANEL_V_BULLET_MPS) * span
+    standoff = 4.5 + 2.0 * PANEL_V_REF_MPS       # lead_len_m + target_time_gap_s*v
+    return {
+        "obstacles": torch.tensor([[obstacle_x, 0.0]], device=device),
+        "gt_traj": ref,
+        "lead_path": ref + torch.tensor([standoff, 0.0], device=device),
+    }
+
+
 @dataclass
 class AuditReport:
     """Three states, never two.
@@ -149,10 +215,16 @@ class AuditReport:
     winners: list[str]
     inconclusive: bool = False
     dead_components: list[str] = None  # type: ignore[assignment]
+    #: ⭐ THE PANEL ENTRIES THAT TIE AT THE PANEL'S OWN MAXIMUM (see
+    #: `audit_reward`). Reported in EVERY branch, including INCONCLUSIVE, so the
+    #: fact is visible even where it does not decide the verdict.
+    tied_at_max: list[str] = None  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.dead_components is None:
             self.dead_components = []
+        if self.tied_at_max is None:
+            self.tied_at_max = []
 
     @property
     def verdict(self) -> str:
@@ -164,22 +236,79 @@ class AuditReport:
         rows = "\n".join(f"    {k:<18} {v:+.4f}"
                          for k, v in sorted(self.scores.items(),
                                             key=lambda kv: -kv[1]))
+        tie = (f"    TIED AT MAX        {self.tied_at_max}\n"
+               if len(self.tied_at_max) >= 2 else "")
         return (f"[reward audit] {self.verdict}: {self.reason}\n"
-                f"    {'REFERENCE':<18} {self.reference:+.4f}\n{rows}")
+                f"    {'REFERENCE':<18} {self.reference:+.4f}\n{rows}\n{tie}")
+
+
+#: ⭐ THE TIE TOLERANCE FOR THE SEPARATION CHECK, WRITTEN AS A LITERAL AND NAMED
+#: ONCE. Deliberately the same magnitude as the dead-component tolerance below
+#: it: both ask "did this quantity actually move?", and two answers to one
+#: question drifting apart is the `frac_above_bar` two-epsilon defect
+#: (`advantage.gt_bar_mask`) in a second costume.
+TIE_ATOL = 1e-9
 
 
 def audit_reward(spec: R.RewardSpec, ctx: dict | None = None, *,
                  n_steps: int = 21, margin: float = 0.0,
+                 tie_atol: float = TIE_ATOL,
                  device=None) -> AuditReport:
     """Score the degenerate panel against a sane reference.
 
-    Returns FLAGGED if a degenerate policy beats the reference, ``clean`` if
-    none does AND every weighted component actually discriminated, and
-    INCONCLUSIVE if some weighted component was constant across the whole panel
-    (an audit run in a context that cannot exercise the reward).
+    Returns FLAGGED if a degenerate policy beats the reference **or if two or
+    more panel policies TIE at the panel's own maximum**, ``clean`` if neither
+    holds AND every weighted component actually discriminated, and INCONCLUSIVE
+    if some weighted component was constant across the whole panel (an audit run
+    in a context that cannot exercise the reward).
 
     ``margin`` is how far above the reference a degenerate must score to count
     as winning; 0.0 means "ties are not failures, strictly beating is".
+
+    ⛔⛔ THE SEPARATION CHECK, AND WHY LIVENESS WAS NOT ENOUGH (2026-09-11).
+    MEASURED on P2 of the 2,000-step pilot, whose reward is `HACKABLE_WEIGHTS`
+    (progress-only) run at the pilot's ``dt = 0.5``: this function returned
+    **``verdict: clean``, ``flagged: False``, ``dead_components: []``** while its
+    own scores read ``bullet_straight`` **1.5**, ``teleport`` **1.5**, ``shaky``
+    **1.5** — three distinct degenerate policies pinned at the identical value —
+    against ``spinner`` −0.0104 and ``frozen`` 0.0, with the sane reference also
+    at 1.5. ⛔ A reward that cannot separate *drive straight through everything*,
+    *teleport* and *shake violently* is gameable by construction: every one of
+    them is an optimum, so the policy is free to pick any of them.
+
+    ⚠️ ⭐ SCOPE THIS HONESTLY — THE OLD VERDICT WAS NOT A BUG, IT WAS A NARROWER
+    QUESTION. ``dead_components`` reports component **LIVENESS**: did every
+    weighted term vary enough to influence the ranking. Nothing was constant
+    here (``progress`` spans −0.0104 to 1.5), so ``clean`` was *correct by that
+    definition*. **The gap is that liveness is not gameability.** A term can vary
+    across the panel and still be SATURATED at the top of its clamp for every
+    policy that matters — which is exactly what ``progress`` does at ``dt = 0.5``,
+    where its ``hi`` bound of 1.5 is reached by anything fast enough. Liveness
+    looks at the term; separation looks at the RANKING the term produces.
+
+    ⭐ WHY THE TIE IS TAKEN ON THE **PANEL'S** MAXIMUM AND NOT THE REFERENCE'S.
+    MEASURED at both dt values on 2026-09-11, and this is the discriminator that
+    makes the check safe rather than a blanket refusal:
+
+    ======================  ==========  =========================  ==========
+    spec                    panel max   panel entries at that max  fires?
+    ======================  ==========  =========================  ==========
+    ``default``  dt 0.1     1.45        ``['bullet_straight']``    no
+    ``default``  dt 0.5     1.45        ``['bullet_straight']``    no
+    ``default``  dt 0.1 +   0.349503    ``['spinner']``            no
+    rich ctx
+    ``hackable`` dt 0.1     1.5         ``[bullet, teleport]``     **yes**
+    ``hackable`` dt 0.5     1.5         ``[bullet, teleport,       **yes**
+                                          shaky]``
+    ======================  ==========  =========================  ==========
+
+    A single degenerate tying the reference is already the ``margin`` policy's
+    business ("ties are not failures"); this check is about the reward being
+    unable to RANK TWO PROBES APART, which no margin can express.
+
+    ⛔ ORDER: the underpowered (``dead``) branch still wins. An audit that cannot
+    exercise its own components cannot support a gameability verdict either — but
+    ``tied_at_max`` is reported in that branch too, so the fact is never hidden.
     """
     ctx = dict(ctx or {})
     assert_selector_disjoint(ctx)
@@ -192,6 +321,10 @@ def audit_reward(spec: R.RewardSpec, ctx: dict | None = None, *,
     scores = {name: float(spec(traj, ctx)) for name, traj in panel.items()}
     winners = [k for k, v in scores.items() if v > ref + margin]
 
+    # ⭐ THE SEPARATION SET — computed in every branch, used in one.
+    panel_max = max(scores.values())
+    tied = sorted(k for k, v in scores.items() if abs(v - panel_max) <= tie_atol)
+
     # which weighted components actually varied across panel + reference?
     stacked = torch.stack(list(panel.values()) + [ref_traj])
     dead = [n for n, v in spec.per_component(stacked, ctx).items()
@@ -203,17 +336,31 @@ def audit_reward(spec: R.RewardSpec, ctx: dict | None = None, *,
                   "CONSTANT across the whole panel, so they cannot influence the "
                   "ranking. Supply a context that exercises them (obstacles / "
                   "lead_path / gt_traj) before trusting any verdict. "
-                  f"(raw winners under this context: {winners or 'none'})")
+                  f"(raw winners under this context: {winners or 'none'}; "
+                  f"panel entries tied at the maximum: {tied})")
         return AuditReport(False, reason, scores, ref, winners,
-                           inconclusive=True, dead_components=dead)
+                           inconclusive=True, dead_components=dead,
+                           tied_at_max=tied)
+    if len(tied) >= 2:
+        reason = (f"NOT SEPARABLE: {len(tied)} degenerate policies tie at the "
+                  f"panel maximum {panel_max:+.6f} — {tied}. The reward assigns "
+                  "them the identical score, so it cannot rank them and a policy "
+                  "is free to occupy any of them. Component LIVENESS is not "
+                  "gameability: every weighted term varied, and the ranking still "
+                  "collapsed (typically a clamped term SATURATED at its `hi` "
+                  "bound). This is a hackability finding, not an underpowered "
+                  f"panel. (winners over the reference: {winners or 'none'})")
+        return AuditReport(True, reason, scores, ref, winners, tied_at_max=tied)
     if winners:
         reason = (f"{len(winners)} degenerate polic(y/ies) score above the sane "
                   f"reference: {winners}. The reward is hackable as weighted.")
     else:
         reason = ("no degenerate policy in the panel beats the sane reference "
-                  "(this is necessary, NOT sufficient — the panel is fixed and "
-                  "finite, so it bounds the claim)")
-    return AuditReport(bool(winners), reason, scores, ref, winners)
+                  "and no two tie at the panel maximum (this is necessary, NOT "
+                  "sufficient — the panel is fixed and finite, so it bounds the "
+                  "claim)")
+    return AuditReport(bool(winners), reason, scores, ref, winners,
+                       tied_at_max=tied)
 
 
 # ---------------------------------------------------------------------------

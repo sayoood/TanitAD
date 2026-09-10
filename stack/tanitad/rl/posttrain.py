@@ -209,6 +209,82 @@ def veto_mask(traj: Tensor, ctx: dict, cfg: PostTrainConfig) -> Tensor:
     return veto
 
 
+def score_gt_bar(spec: R.RewardSpec, ctx: dict, *,
+                 n_steps: int | None = None,
+                 gt_traj: Tensor | None = None) -> Tensor:
+    """Score the LOGGED (GT) trajectory under ``spec`` on the SAME ctx -> ``[B]``.
+
+    This is V2's per-window bar (`_model_rl.py:891-893`): the GT is scored under
+    the *same* reward as the candidates, and only candidates that clear it earn
+    positive inter-anchor advantage.
+
+    ⛔ THE BAR IS THE HUMAN'S **SCORE**, NEVER THE HUMAN'S **SHAPE**. One scalar
+    per window enters the advantage as a threshold; the trajectory itself never
+    becomes a target. `advantage.truncated_inter_anchor_advantage` carries the
+    full argument.
+
+    ⛔ ONE DERIVATION, ONE SPEC, ONE CONTEXT. The bar and the candidates must be
+    commensurable or the mask is meaningless — silently, with the loop still
+    exiting 0. Two things enforce it rather than document it:
+      * this helper takes the ``spec`` and the training ``ctx`` **the candidates
+        are scored under**, so a caller cannot accidentally use a second reward;
+      * `run_posttrain` REFUSES an explicit ``spec=`` that disagrees with
+        ``cfg.reward_weights`` / ``cfg.dt`` when ``use_gt_bar`` is on.
+
+    ⛔ SHAPE, AND WHY IT IS NOT ``[B, S, 2]``. The reward context is
+    BATCH-SHAPED for candidates ``[B, N, G, S, 2]`` — ``obstacles`` is
+    ``[B, 1, 1, K, 2]``, ``lead_path`` ``[B, 1, 1, S, 2]``, ``v0`` ``[B]``. A
+    ``[B, S, 2]`` GT would broadcast against those on the WRONG axes and either
+    raise or, worse, score a scrambled pairing. The GT is therefore lifted to
+    ``[B, 1, 1, S, 2]`` — the candidate rank with one anchor and one sample — so
+    every component broadcasts EXACTLY as it does for the fan, and the result is
+    reshaped back to ``[B]``.
+
+    ``n_steps`` — when given, the GT's horizon must MATCH the candidates'. ⛔ A
+    bar scored over a different horizon is not the same reward function:
+    ``_progress`` normalises by ``(S - 1) * dt``, so a 4-waypoint GT against a
+    20-waypoint fan would compare two different quantities and look fine.
+
+    ⚠️ STATED LIMIT — ``gt_similarity``. If it is weighted, the GT scores its own
+    maximum on that term by construction (it is identical to itself), which
+    inflates the bar by exactly that weight. DDv2's released reward carries no
+    such term and neither does `rewards.DEFAULT_WEIGHTS`; a spec that does gets a
+    refusal here rather than a bar nobody can clear.
+    """
+    if gt_traj is None:
+        gt_traj = ctx.get("gt_traj")
+    if gt_traj is None:
+        raise ValueError(
+            "score_gt_bar needs the logged trajectory: ctx carries no 'gt_traj' "
+            "and none was passed. A bar that cannot be scored must refuse, not "
+            "fall back to a constant — a constant bar admits or zeroes the whole "
+            "batch identically and reads exactly like a working mask.")
+    if spec.weights.get("gt_similarity", 0.0):
+        raise ValueError(
+            "gt_similarity is weighted at "
+            f"{spec.weights['gt_similarity']} — the GT scores that term's own "
+            "maximum against itself, so the bar would be inflated by that weight "
+            "for every window and no candidate could clear it. Remove the term "
+            "from the bar's spec (DDv2's released reward has none).")
+    if gt_traj.dim() != 3 or gt_traj.shape[-1] != 2:
+        raise ValueError(f"gt_traj must be [B, S, 2], got {tuple(gt_traj.shape)}")
+    if n_steps is not None and int(gt_traj.shape[-2]) != int(n_steps):
+        raise ValueError(
+            f"gt_traj has S={int(gt_traj.shape[-2])} waypoints but the candidate "
+            f"fan has S={int(n_steps)}. The bar and the candidates must be scored "
+            "over the SAME horizon or they are not the same reward function "
+            "(_progress normalises by (S-1)*dt).")
+    b = int(gt_traj.shape[0])
+    lifted = gt_traj.unsqueeze(1).unsqueeze(1)                 # [B, 1, 1, S, 2]
+    bar = spec(lifted, ctx)                                    # [B, 1, 1]
+    if bar.shape != (b, 1, 1):
+        raise ValueError(
+            f"the GT bar came back {tuple(bar.shape)}, expected {(b, 1, 1)} — the "
+            "reward context did not broadcast against the lifted GT the way it "
+            "does against the fan, so the bar is not per-window.")
+    return bar.reshape(b)
+
+
 def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
                  spec: R.RewardSpec, *, imitation_loss: Tensor | None = None,
                  anchor_pair: tuple[Tensor, Tensor] | None = None,
@@ -319,6 +395,27 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
     applied AFTER it, so a caller cannot use this to rewrite what the run
     actually did.
     """
+    # ⛔⛔ COMMENSURABILITY, ASSERTED BEFORE ANY SAMPLING HAPPENS.
+    # V2's mask is a THRESHOLD ON ONE REWARD FUNCTION. The bar is built by the
+    # caller's `sample_fn` from `cfg.reward_weights`; the candidates are scored
+    # here under `spec`. Nothing used to require the two to agree, so a caller
+    # passing `spec=` could compare a bar and a fan measured on different scales
+    # — meaninglessly, with the loop still exiting 0 and `frac_above_bar`
+    # reporting a confident number about a comparison that had no content.
+    # ⚠️ EVIDENCE CLASS: this closes a hole that was LATENT on 2026-09-10 (no
+    # caller passed `spec=`) and became LIVE on 2026-09-11, when the pilot began
+    # passing its own spec so that the bar and the fan are provably one object.
+    if bool(getattr(cfg, "use_gt_bar", False)) and spec is not None:
+        want_w = {k: float(v) for k, v in dict(cfg.reward_weights).items()}
+        got_w = {k: float(v) for k, v in dict(spec.weights).items()}
+        if got_w != want_w or float(spec.dt) != float(cfg.dt):
+            raise ValueError(
+                "use_gt_bar=True with an explicit spec that DISAGREES with the "
+                "config the bar is built from: spec.weights="
+                f"{got_w} dt={float(spec.dt)} vs cfg.reward_weights={want_w} "
+                f"dt={float(cfg.dt)}. The >=GT mask is a threshold on ONE reward "
+                "function; two different ones make it meaningless. Refusing "
+                "before a single step runs.")
     cfg.validate()
     spec = spec or R.RewardSpec(weights=dict(cfg.reward_weights), dt=cfg.dt)
     torch.manual_seed(cfg.seed)
@@ -380,6 +477,14 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
     counters.assert_nonzero()
 
     audit = AUD.audit_reward(spec)
+    # ⭐ AND THE ONE THAT CAN ACTUALLY RULE (2026-09-11). The line above audits on
+    # an EMPTY context, where `collision` and `headway` are constant by
+    # construction — MEASURED on the 2,000-step pilot's P1 arm, whose own verdict
+    # was INCONCLUSIVE for exactly that reason and said so: *"supply a context
+    # that exercises them before trusting any verdict."* ⇒ no P1 verdict was
+    # admissible, bar or no bar. The empty-context audit is KEPT unchanged so no
+    # banked run record changes meaning; this is an ADDITIONAL field.
+    audit_exc = AUD.audit_reward(spec, AUD.exercising_ctx(dt=spec.dt))
     summary = {
         "done": True,
         "run": cfg.run_name,
@@ -391,8 +496,25 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
         "reward_audit": {"verdict": audit.verdict, "flagged": audit.flagged,
                          "inconclusive": audit.inconclusive,
                          "dead_components": audit.dead_components,
+                         # ⭐ the SEPARATION half: which panel policies the reward
+                         # could not tell apart. Liveness is not gameability.
+                         "tied_at_max": audit.tied_at_max,
                          "reason": audit.reason,
-                         "reference": audit.reference, "scores": audit.scores},
+                         "reference": audit.reference, "scores": audit.scores,
+                         "_ctx": "EMPTY — collision/headway cannot fire here"},
+        # ⭐ the admissible one: same panel, same spec, a context that exercises
+        # every weighted component. `audit_reward_exercising.verdict` is the field
+        # to quote; the empty-context one above is kept only for continuity with
+        # the banked records.
+        "reward_audit_exercising": {
+            "verdict": audit_exc.verdict, "flagged": audit_exc.flagged,
+            "inconclusive": audit_exc.inconclusive,
+            "dead_components": audit_exc.dead_components,
+            "tied_at_max": audit_exc.tied_at_max, "reason": audit_exc.reason,
+            "reference": audit_exc.reference, "scores": audit_exc.scores,
+            "_ctx": ("audit.exercising_ctx(dt=spec.dt) — obstacle at the midpoint "
+                     "between the reference's reach and bullet_straight's; lead "
+                     "at the headway standoff")},
         "final_loss": history[-1]["loss"] if history else None,
         # the two facts the RE-SCOPE (2026-09-05) needs from every run record:
         # how often the veto channel had anything to pin, and how often V2's

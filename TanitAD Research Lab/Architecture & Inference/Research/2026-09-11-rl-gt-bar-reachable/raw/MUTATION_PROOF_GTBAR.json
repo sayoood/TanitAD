@@ -1,0 +1,209 @@
+{
+ "_what": "V2's >=GT truncation is REACHED FROM THE CALLER \u2014 proven by mutation, not by inspection",
+ "_tier": "N/A \u2014 instrument proof, not a capability claim",
+ "_evidence_class": "MEASURED (ours)",
+ "_when_utc": "2026-09-10T22:26:35Z",
+ "torch": "2.11.0+cu128",
+ "FIXED": {
+  "default_off_returns_three_tuple": true,
+  "no_bar_grad": [
+   33.523860931396484
+  ],
+  "admit_all_grad": [
+   33.523860931396484
+  ],
+  "admit_none_grad": [
+   0.0
+  ],
+  "identity_admit_all_equals_no_bar": true,
+  "identity_admit_none_is_exactly_zero": true,
+  "frac_admit_all": 1.0,
+  "frac_admit_none": 0.0,
+  "real_scorer_sweep_frac_above_bar": {
+   "2.0": 1.0,
+   "4.0": 0.6666666865348816,
+   "6.0": 0.6666666865348816,
+   "8.0": 0.3333333432674408,
+   "10.0": 0.0,
+   "12.0": 0.0
+  },
+  "real_scorer_masks_PARTIALLY": true
+ },
+ "MUTANT": {
+  "default_off_returns_three_tuple": true,
+  "identity_admit_all_equals_no_bar": "RAISED: ValueError",
+  "identity_admit_none_is_exactly_zero": "RAISED: ValueError",
+  "real_scorer_masks_PARTIALLY": "RAISED: ValueError"
+ },
+ "mutation": {
+  "target_line": "extras[\"gt_bar\"] = bar",
+  "adapter_md5_before_and_after": "a39fc0fbe8e511cf1813775a6f0a32d9",
+  "mutant_md5": "24b3768cf1ef9024df23946d4db28561",
+  "adapter_untouched": true,
+  "mutant_module_deleted": true,
+  "discriminated": {
+   "identity_admit_all_equals_no_bar": [
+    true,
+    "RAISED: ValueError"
+   ],
+   "identity_admit_none_is_exactly_zero": [
+    true,
+    "RAISED: ValueError"
+   ],
+   "real_scorer_masks_PARTIALLY": [
+    true,
+    "RAISED: ValueError"
+   ]
+  },
+  "MUTANT_FAILS_ALL_THREE": true
+ },
+ "reward_audit_panel": {
+  "default|dt=0.1|ctx=empty": {
+   "verdict": "INCONCLUSIVE",
+   "flagged": false,
+   "dead_components": [
+    "collision",
+    "headway"
+   ],
+   "tied_at_max": [
+    "bullet_straight"
+   ],
+   "reference": 1.2000000476837158,
+   "scores": {
+    "bullet_straight": 1.45,
+    "frozen": 0.3,
+    "teleport": 0.949633,
+    "spinner": 0.404293,
+    "shaky": 0.505418
+   }
+  },
+  "default|dt=0.1|ctx=exercising": {
+   "verdict": "clean",
+   "flagged": false,
+   "dead_components": [],
+   "tied_at_max": [
+    "spinner"
+   ],
+   "reference": 1.2000000476837158,
+   "scores": {
+    "bullet_straight": 0.0,
+    "frozen": 0.225,
+    "teleport": -0.500367,
+    "spinner": 0.349503,
+    "shaky": 0.30687
+   }
+  },
+  "hackable|dt=0.1|ctx=empty": {
+   "verdict": "FLAGGED",
+   "flagged": true,
+   "dead_components": [],
+   "tied_at_max": [
+    "bullet_straight",
+    "teleport"
+   ],
+   "reference": 0.6666666865348816,
+   "scores": {
+    "bullet_straight": 1.5,
+    "frozen": 0.0,
+    "teleport": 1.5,
+    "spinner": -0.01041,
+    "shaky": 0.666667
+   }
+  },
+  "hackable|dt=0.1|ctx=exercising": {
+   "verdict": "FLAGGED",
+   "flagged": true,
+   "dead_components": [],
+   "tied_at_max": [
+    "bullet_straight",
+    "teleport"
+   ],
+   "reference": 0.6666666865348816,
+   "scores": {
+    "bullet_straight": 1.0,
+    "frozen": 0.0,
+    "teleport": 1.0,
+    "spinner": -0.01041,
+    "shaky": 0.666667
+   }
+  },
+  "default|dt=0.5|ctx=empty": {
+   "verdict": "INCONCLUSIVE",
+   "flagged": false,
+   "dead_components": [
+    "collision",
+    "headway"
+   ],
+   "tied_at_max": [
+    "bullet_straight"
+   ],
+   "reference": 1.4500000476837158,
+   "scores": {
+    "bullet_straight": 1.45,
+    "frozen": 0.3,
+    "teleport": 0.950062,
+    "spinner": 0.502695,
+    "shaky": 1.261743
+   }
+  },
+  "default|dt=0.5|ctx=exercising": {
+   "verdict": "clean",
+   "flagged": false,
+   "dead_components": [],
+   "tied_at_max": [
+    "shaky"
+   ],
+   "reference": 1.2999999523162842,
+   "scores": {
+    "bullet_straight": 0.0,
+    "frozen": 0.225,
+    "teleport": -0.499908,
+    "spinner": 0.427695,
+    "shaky": 1.090211
+   }
+  },
+  "hackable|dt=0.5|ctx=empty": {
+   "verdict": "FLAGGED",
+   "flagged": true,
+   "dead_components": [],
+   "tied_at_max": [
+    "bullet_straight",
+    "shaky",
+    "teleport"
+   ],
+   "reference": 1.5,
+   "scores": {
+    "bullet_straight": 1.5,
+    "frozen": 0.0,
+    "teleport": 1.5,
+    "spinner": -0.01041,
+    "shaky": 1.5
+   }
+  },
+  "hackable|dt=0.5|ctx=exercising": {
+   "verdict": "FLAGGED",
+   "flagged": true,
+   "dead_components": [],
+   "tied_at_max": [
+    "bullet_straight",
+    "shaky",
+    "teleport"
+   ],
+   "reference": 1.0,
+   "scores": {
+    "bullet_straight": 1.0,
+    "frozen": 0.0,
+    "teleport": 1.0,
+    "spinner": -0.01041,
+    "shaky": 1.0
+   }
+  }
+ },
+ "reward_audit_claims": {
+  "hackable_at_pilot_dt_is_FLAGGED": true,
+  "hackable_at_pilot_dt_ties_three": true,
+  "default_stays_green_on_an_exercising_ctx": true,
+  "default_was_UNRULABLE_on_the_empty_ctx": true
+ },
+ "wall_s": 0.08
+}

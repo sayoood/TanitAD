@@ -706,6 +706,7 @@ def _forward_kwargs(batch, cfg_in: PostTrainConfig) -> dict:
 
 def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
                           build_ctx=None, reference=None,
+                          gt_bar_fn=None,
                           generator: torch.Generator | None = None,
                           strict_conditioning: bool = True):
     """Return a ``sample_fn(batch, cfg) -> (traj, logp, ctx)`` for the handed model.
@@ -739,6 +740,27 @@ def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
     RECORDED on the returned callable (``.strict_conditioning`` /
     ``.conditioning_contract``) so a run record can bank the arm rather than take
     its word for it.
+
+    ⭐⭐ ``gt_bar_fn`` — THE CALLER'S ROUTE TO V2's >=GT TRUNCATION (2026-09-11).
+    ``gt_bar_fn(batch, ctx, n_steps) -> [B]`` is scored by the caller under the
+    SAME ``RewardSpec`` the candidates are scored under (`posttrain.score_gt_bar`)
+    and is handed to `posttrain.rl_objective` as ``extras["gt_bar"]``.
+
+    ⛔ WHY THIS PARAMETER HAD TO EXIST AT ALL — AND IT IS NOT A STYLE POINT.
+    `advantage.truncated_inter_anchor_advantage` has carried the >=GT mask since
+    2026-09-05; `posttrain.rl_objective` has accepted ``gt_bar`` and
+    `PostTrainConfig` has carried ``use_gt_bar``. MEASURED 2026-09-10 on the
+    2,000-step pilot: ``use_gt_bar = False``, ``frac_above_bar_mean = None``, and
+    the only production RL script in the tree exposed **no flag that could set
+    them** — thirteen flags, none reaching the truncation. ⇒ what ran was a
+    V1-style baseline and the V2 stage had never been tested. ⭐ Same family as
+    `tac_goal_tok_head`: 11,286 parameters, built, tested, rollable, and
+    ``grad_abs_sum`` exactly 0 for all 40,284 steps because nothing called them.
+    *Rollable and trained are different claims.* This function is where the
+    calling ends.
+
+    ⛔ ``None`` (the default) returns the pre-2026-09-11 three-tuple unchanged, so
+    every banked run remains reproducible bit-for-bit.
     """
     # ⭐ ONE map for the whole rollout, asserted on every batch. `None` when the
     # ablation escape hatch is typed: nothing is resolved and nothing can raise,
@@ -761,21 +783,41 @@ def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
         ctx = dict(build_ctx(batch, out)) if build_ctx else {}
         ctx.setdefault("dt", cfg_in.dt)
 
-        if reference is None:
+        extras: dict = {}
+        if gt_bar_fn is not None:
+            # ⛔ THE HORIZON IS HANDED IN, NOT ASSUMED. `score_gt_bar` refuses a
+            # GT whose S differs from the fan's: `_progress` normalises by
+            # (S-1)*dt, so a bar scored over a different horizon is a threshold
+            # on a DIFFERENT reward function and would look entirely plausible.
+            bar = gt_bar_fn(batch, ctx, int(traj.shape[-2]))
+            if bar.shape != traj.shape[:1]:
+                raise ValueError(
+                    f"gt_bar_fn returned {tuple(bar.shape)}, expected per-window "
+                    f"{tuple(traj.shape[:1])}. A bar that is not per-window is "
+                    "not V2's mask.")
+            extras["gt_bar"] = bar
+        if reference is not None:
+            # The trust-region pair: the LIVE deterministic fan against the FROZEN
+            # reference's fan on the SAME inputs. Both are means (pre-exploration),
+            # because the anchor constrains the policy, not the noise.
+            with torch.no_grad():
+                ref_out = reference(frames, **kw)
+            extras["anchor_pair"] = (anchor_traj, ref_out["anchor_traj"])
+        if not extras:
+            # ⛔ BIT-IDENTICAL DEFAULT PATH. With neither a reference nor a bar
+            # this returns exactly the three-tuple it always did, so the banked
+            # baseline arms reproduce unchanged.
             return traj, logp, ctx
-        # The trust-region pair: the LIVE deterministic fan against the FROZEN
-        # reference's fan on the SAME inputs. Both are means (pre-exploration),
-        # because the anchor constrains the policy, not the noise.
-        with torch.no_grad():
-            ref_out = reference(frames, **kw)
-        return traj, logp, ctx, {"anchor_pair": (anchor_traj,
-                                                 ref_out["anchor_traj"])}
+        return traj, logp, ctx, extras
 
     # ⭐ "it must be typed, and it is RECORDED" — true of the OBJECT, not just of
     # the docstring. A preflight or a run record reads these rather than trusting
     # an argv string that says what the operator meant to type.
     sample_fn.strict_conditioning = bool(strict_conditioning)
     sample_fn.conditioning_contract = contract
+    # ⭐ Same doctrine for the bar: a preflight or a run record reads the OBJECT
+    # rather than trusting an argv string that says what the operator meant.
+    sample_fn.emits_gt_bar = gt_bar_fn is not None
     return sample_fn
 
 

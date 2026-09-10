@@ -48,7 +48,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from tanitad.refs import refc  # noqa: E402
 from tanitad.rl import (PostTrainConfig, RewardSpec, rewards as RW)  # noqa: E402
-from tanitad.rl.posttrain import run_posttrain, select_trainable  # noqa: E402
+from tanitad.rl.posttrain import (  # noqa: E402
+    run_posttrain, score_gt_bar, select_trainable)
 from tanitad.rl.refcv3_adapter import make_refcv3_sample_fn  # noqa: E402
 from tanitad.refs.cold_start import (  # noqa: E402
     ColdStartRefused, STAMP_KEY, load_cold_start)
@@ -783,7 +784,15 @@ def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
     }
 
 
-def main() -> int:
+def build_argparser() -> argparse.ArgumentParser:
+    """The pilot's complete flag surface, EXTRACTED so a test can read it.
+
+    ⛔ It used to be built inline inside ``main()``, which meant the only way to
+    ask "does this script expose the V2 truncation?" was to read the source. That
+    question was answered wrongly for five days: `--gt-bar` did not exist, the
+    2,000-step arm therefore ran with ``use_gt_bar = False`` and
+    ``frac_above_bar_mean = None``, and the run was reported as an RL arm.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--train-epdir", required=True)
@@ -813,7 +822,49 @@ def main() -> int:
                          "P-RC21 configuration, kept as the sweep's own null)")
     ap.add_argument("--lru", type=int, default=60,
                     help="episode cache size; 60 = whole pilot corpus in RAM")
-    a = ap.parse_args()
+    # ⭐⭐ THE V2 STAGE'S ON-SWITCH (2026-09-11). DEFAULT OFF, deliberately: the
+    # 2,000-step baseline must stay reproducible bit-for-bit, and every banked
+    # run record keeps its meaning.
+    ap.add_argument("--gt-bar", action="store_true", default=False,
+                    help="⭐ DiffusionDriveV2's >=GT POSITIVE MASK. Scores the "
+                         "LOGGED trajectory under this arm's OWN RewardSpec on "
+                         "the SAME context and grants positive INTER-anchor "
+                         "advantage only to anchors whose mean sampled reward "
+                         "clears it (`reward > bar - 1e-6`, the released slack). "
+                         "⛔ The bar is the human's SCORE, never their SHAPE: one "
+                         "scalar per window, never a target. Without this flag "
+                         "the run is a V1-style baseline — MEASURED on the "
+                         "2,000-step arm, which reported use_gt_bar=False and "
+                         "frac_above_bar_mean=None because no flag reached the "
+                         "truncation. `frac_above_bar_mean` in pilot_summary.json "
+                         "is the artifact that says whether it was in force.")
+    # ⭐ V2's SECOND code-only ingredient, and it was unreachable here for the
+    # SAME reason the bar was. MEASURED 2026-09-11 with a same-breath control:
+    # `grep -c noise_mode rl_pilot_refc21.py` = **0** while `grep -c
+    # PostTrainConfig` = 4, so the file WAS read and the token is genuinely
+    # absent. ⚠️ SCOPE IT HONESTLY -- `two_scalar` is NOT unreachable from the
+    # programme: `stack/scripts/rl_refcv3_min.py` reaches it. It was unreachable
+    # from THIS caller, which is the one the P-RC21 line runs.
+    # ⛔ DEFAULT UNCHANGED ("multiplicative"), so every banked arm reproduces.
+    ap.add_argument("--noise-mode",
+                    choices=("multiplicative", "additive", "two_scalar"),
+                    default="multiplicative",
+                    help="the exploration policy over the emitted offset. "
+                         "'two_scalar' is DDv2's RELEASED sampler "
+                         "(`diffusiondrivev2_model_rl.py:646-654`): TWO scalars "
+                         "per trajectory -- one longitudinal, one lateral -- "
+                         "broadcast over every waypoint, so the explored family "
+                         "is a (stretch-along, stretch-lateral) pair and every "
+                         "sample stays smooth. STATED LIMIT, as in V2 itself: "
+                         "the likelihood is the per-coordinate Gaussian summed "
+                         "over (S,2) while the sampler has rank 2. CHANGING "
+                         "THIS IS A LEVER -- pre-register before using it as an "
+                         "arm; it is exposed here so the arm is possible at all.")
+    return ap
+
+
+def main() -> int:
+    a = build_argparser().parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if a.reward == "hackable":
@@ -835,7 +886,13 @@ def main() -> int:
                            # IL loss is wired for v2.1 in this pilot — the
                            # imitation anchor is the FROZEN 96 % of the model.
                            # R3's +10 % guard is the drift alarm instead.
-        out_dir=a.out, run_name=f"p-rc21-{a.reward}-dsafe{a.proximity_safe_m:g}")
+        use_gt_bar=bool(a.gt_bar),
+        noise_mode=str(a.noise_mode),
+        out_dir=a.out,
+        run_name=(f"p-rc21-{a.reward}-dsafe{a.proximity_safe_m:g}"
+                  + ("-gtbar" if a.gt_bar else "")
+                  + ("" if a.noise_mode == "multiplicative"
+                     else f"-{a.noise_mode}")))
     cfg.validate()
 
     # ⭐ EMIT THE RESOLVED WEIGHTS BEFORE TRAINING (D-SAFE-CAL-2 §1c).
@@ -904,16 +961,57 @@ def main() -> int:
     print(f"[pilot] TRAINING against proximity_safe_m="
           f"{a.proximity_safe_m:g} m · READOUT fixed at {R5_FIXED_SAFE_M:g} m",
           flush=True)
+
+    # ⭐⭐ V2's >=GT TRUNCATION — THE CALLER THAT WAS MISSING.
+    # ⛔ ONE SPEC OBJECT, NOT TWO EQUAL ONES. `spec` below is handed BOTH to the
+    # bar (here) and to `run_posttrain` (as `spec=`), so the bar and the
+    # candidates are scored by the SAME RewardSpec instance — the mask is a
+    # threshold on one reward function or it is meaningless. `run_posttrain`
+    # additionally REFUSES a spec that disagrees with `cfg.reward_weights`, so
+    # the agreement is enforced rather than assumed.
+    # ⛔ The bar is scored on the TRAINING context (`train_extras`), the same one
+    # the candidates see, so a `proximity_safe_m` override applies to both sides.
+    gt_bar_fn = None
+    if a.gt_bar:
+        def gt_bar_fn(batch, ctx, n_steps):                   # noqa: F811
+            return score_gt_bar(spec, ctx, n_steps=n_steps)
+        print("[pilot] ⭐ >=GT POSITIVE MASK ON: the logged trajectory is scored "
+              f"under the SAME spec {json.dumps(weights, sort_keys=True)} and "
+              "only anchors clearing it earn positive inter-anchor advantage. "
+              "`frac_above_bar_mean` in pilot_summary.json reports what it "
+              "admitted.", flush=True)
+    else:
+        print("[pilot] ⚠️  >=GT positive mask OFF (--gt-bar not given): this is a "
+              "V1-STYLE BASELINE, not a V2 arm. frac_above_bar_mean will be null.",
+              flush=True)
+
     sample_fn = make_refcv3_sample_fn(
         model, cfg,
         build_ctx=lambda b, out=None: build_ctx(b, out, extras=train_extras),
-        reference=reference)
+        reference=reference, gt_bar_fn=gt_bar_fn)
+    # ⛔ ASSERT ON THE OBJECT, NOT ON THE ARGV. The flag being parsed is not
+    # evidence that the mask is reached; the sampler carrying the emitter is.
+    if bool(a.gt_bar) != bool(getattr(sample_fn, "emits_gt_bar", False)):
+        raise SystemExit(
+            f"[pilot] ⛔ --gt-bar={a.gt_bar} but the sampler reports "
+            f"emits_gt_bar={getattr(sample_fn, 'emits_gt_bar', None)} — the flag "
+            "did not reach the wiring. Refusing rather than running a V1 arm "
+            "under a V2 name (this is the tac_goal_tok_head failure class).")
     # ⭐ THE STAMP LANDS IN THE RUN RECORD, not only on stdout. A
     # contract checked but not written down is not evidence, and a
     # defaulted tensor is exactly the fact a reader opening this run in
     # isolation would otherwise have to infer.
-    summary = run_posttrain(model, sample_fn, cfg, batches=batches(),
+    summary = run_posttrain(model, sample_fn, cfg, spec=spec, batches=batches(),
                             extra_record={"cold_start_load": cold_start})
+    # ⛔ THE ARTIFACT IS THE EVIDENCE, NOT THE FLAG. A configured bar that never
+    # applied is the false-green class this whole item exists to close, so the
+    # run REFUSES to report success when the flag was on and the loop recorded
+    # no admission fraction at all.
+    if a.gt_bar and summary.get("frac_above_bar_mean") is None:
+        raise SystemExit(
+            "[pilot] ⛔ --gt-bar was on and frac_above_bar_mean is None — the "
+            "mask was configured and never reached the advantage. Refusing to "
+            "write a success line over a V1 run wearing a V2 label.")
 
     # ⛔ SAVE THE TRAINED DECODER. The first pilot saved none, so when the
     # eval-mode defect surfaced there was no way to re-measure P1's outcome
