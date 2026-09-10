@@ -1101,3 +1101,59 @@ presented as a result.**
 *(Root cause this rule exists: ADE is the cheapest number to produce and the easiest to compare, so
 it crowded out the metrics that actually decide whether the car drives well. Three separate reports
 went out with ADE-only tables after this was requested.)*
+
+## ⛔ BINDING — "G: IS DOWN" IS THE WRONG DIAGNOSIS: `.git`'S CONTROL FILES DEHYDRATE WHILE EVERYTHING ELSE READS FINE (2026-09-10)
+
+**MEASURED 2026-09-10 with interleaved same-breath controls.** The failure on this mount is
+**not uniform**, and reading it as a whole-mount outage has cost real time — including mine,
+this session, retrying `git rev-parse` five times against a repository that was perfectly
+healthy.
+
+| probe | result |
+|---|---|
+| `git rev-parse HEAD` (also `git -C`, also explicit `--git-dir`) | ⛔ `fatal: not a git repository` |
+| `cat .git/HEAD`, `.git/config`, `.git/index`, `.git/packed-refs`, `.git/refs/heads/<branch>` | ⛔ **`Invalid request code`** |
+| `ls .git/refs/heads/` , `ls .git/objects/pack/` | ✅ full listings |
+| `head -c 32 .git/objects/pack/*.idx` | ✅ **READ_OK** |
+| `wc -c < CLAUDE.md` (a worktree file) | ✅ **88,276**, matching `ls` exactly |
+
+⇒ **The small MUTABLE control files under `.git/` are the ones that fail; pack files and
+worktree files hydrate normally.** That is the entire explanation for the confusing signature
+everyone keeps re-deriving: **git must read `HEAD` and `config` to recognise a directory as a
+repository at all**, so a `.git` whose control files will not hydrate reports *"not a git
+repository"* — a message about **one unreadable file**, dressed as a claim about the whole repo.
+
+⭐ **THE THREE CONSEQUENCES, and they change what you should do:**
+
+1. ⛔ **Retrying does not help and is not evidence.** This is Google Drive cloud-only
+   dehydration, not a transient flap — the same mechanism already recorded for
+   `.claude/worktrees/` (27 identical copies, 0 readable, metadata perfect). ⚠️ It IS
+   intermittent per file: `.git/HEAD` read successfully in one probe and errored two minutes
+   later. So a single success proves nothing either.
+2. ⭐ **This is WHY `commit_cacheinfo.py` works when `git add` does not**, and the reason is
+   now mechanical rather than folklore: it stages **from blobs already in the object store**
+   and never reads the worktree — and **pack reads survive this failure mode**. Its immunity is
+   not luck; it is the one route that touches only the half of `.git` that still hydrates.
+3. ⭐ **THE WORKING ROUTE IS THE LOCAL MIRROR** at `C:/Users/Admin/tanitad-push/.git`. Its
+   `read-tree` takes **0–1 s** where G:'s takes **13 minutes** under contention, and every
+   plumbing operation succeeds. Author locally → `hash-object -w` → scratch index from the tip
+   → `update-index --cacheinfo` → `write-tree` → **revert guard** → `commit-tree` → CAS
+   `update-ref` → push. Three commits landed this way on 2026-09-10 while G: git was refusing
+   every command.
+
+⚠️ **AND THE MIRROR CAN BE BEHIND THE REMOTE — CHECK, DO NOT ASSUME.** MEASURED the same day:
+the mirror's `refs/remotes/origin/<branch>` read `ad68b3d` and its own tip read `ad68b3d`, so it
+looked fully synced; **GitHub actually held `b42ab460`**, one commit ahead, and `b42ab460` was
+**not even a valid object** in the mirror. A commit built on the stale tip was correctly
+**rejected as non-fast-forward**. ⇒ **`git ls-remote` before building**, and rebuild on the true
+tip; ⛔ a stale remote-tracking ref is a cached claim, never a measurement.
+
+⭐ **AND VERIFY THE PUSH BY THE REMOTE REF, NOT BY THE PUSH.** `git ls-remote origin <branch>`
+must equal your local tip. A push has previously logged **"Everything up-to-date"** as its last
+line **after an HTTP 500** while origin had not moved. **Assert on the artifact, not the status.**
+
+⚠️ **One filter trap caught in the same investigation, and it is the `pgrep -f` family again:**
+`ps -W | grep -ci git` read **9**, which looks exactly like heavy git contention. Every one was
+`C:\Program Files\Git\bin\bash.exe` — **the install PATH matched, not a running `git.exe`.**
+⇒ match the executable, not a substring of its directory, or you will diagnose contention that
+does not exist and start killing processes to fix it.
