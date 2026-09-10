@@ -14930,6 +14930,17 @@ traps: a probe reporting a different scope than the question, read as an answer.
 - **Within one tree the counts ARE stable** - the same three files gave `7 failed / 62 passed` on
   three consecutive runs, matching the full suite's per-file numbers exactly. Per-file comparison
   is a sound method; the artifacts were unsound, not the approach.
+
+- **Within one tree the counts are INVARIANT TO INVOCATION COMPOSITION**, not merely stable -
+  which eliminates the alternative explanation I had entertained ("these tests are flaky or
+  order-dependent") and leaves the truncation as the whole cause. MEASURED across three
+  invocations - the 3 files alone (x3 consecutive runs), the same 3 plus 2 more, and the full
+  7,409-test suite - the per-file counts are IDENTICAL every time: ema_tau_ramp 3, drift_levers 3,
+  grad_budget_honesty 1, o1_detach_encoder 4, mktree_commit 6. Per-file comparison is a sound
+  method; the artifact was unsound, not the approach.
+- **And the confirming run carried the control the original lacked**: tally `17 failed` == 17
+  `FAILED` rows present. That one comparison, run the first time, would have caught the whole
+  thing.
 - ** The check that actually found the 3 real regressions was the STATIC one** - *does this
   failing file reference anything I changed?* - run over all 19 failing files with a control that
   must read non-zero. In a haystack of 74 pre-existing failures, positional and rerun evidence both

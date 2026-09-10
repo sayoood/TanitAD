@@ -382,10 +382,20 @@ both of the class this file keeps documenting:
 * ⭐ **The static check stands**: 0 of the other 17 failing files reference
   `max_speed` / `speed_max` / `_synth_episodes` / `synth_clip_ids` / `refc_v3_train`,
   with a discriminating control reading **58 / 7 / 21** on the files that must.
-* ⭐ **Within one tree the counts ARE stable** — the same three files gave
-  **7 failed / 62 passed on three consecutive runs**, matching the full suite's per-file
-  numbers exactly — so per-file comparison is a sound method; it was my *artifacts* that
-  were unsound, not the approach.
+* ⭐⭐ **Within one tree the counts are not merely stable, they are INVARIANT TO
+  INVOCATION COMPOSITION** — which eliminates the alternative explanation I had
+  entertained (*"these tests are flaky or order-dependent"*) and leaves the truncation
+  as the whole cause. MEASURED, three different invocations:
+
+  | invocation | `test_ema_tau_ramp` | `test_drift_levers` | `test_grad_budget_honesty` | `test_o1_detach_encoder` | `test_mktree_commit` |
+  |---|---|---|---|---|---|
+  | those 3 files alone (×3 consecutive runs) | **3** | **3** | **1** | — | — |
+  | 5 files together | **3** | **3** | **1** | **4** | **6** |
+  | the full 7,409-test suite | **3** | **3** | **1** | **4** | **6** |
+
+  ⇒ per-file comparison is a **sound method**; it was my *artifact* that was unsound,
+  not the approach. ⭐ And the 5-file run was checked with the control I should have run
+  the first time: **tally 17 failed = 17 `FAILED` rows present.**
 
 ⛔ **What I do NOT claim:** that all 71 remaining failures were verified to reproduce at
 HEAD. They were not. The admissible statement is the static one — **none of them touches
