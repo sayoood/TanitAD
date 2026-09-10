@@ -1,0 +1,53 @@
+{
+ "tool": "stack/scripts/rl_fan_floor.py",
+ "tier": "T0-fan",
+ "evidence_class": "MEASURED (ours)",
+ "bank": "C:/Users/Admin/tanitad-rlgen/raw/fan_bank_base_240w.npz",
+ "quality": "reward_composed",
+ "quality_provenance": "c_progress*5.0+c_headway*5.0+c_comfort*2.0+c_collision*12.0+c_feasibility*12.0",
+ "collision_flag": "f_contact",
+ "n_windows": 240,
+ "n_candidates": 128,
+ "arm": {
+  "fan_floor@1": 0.6058517456157357,
+  "fan_floor@5": 0.5786983904789907,
+  "fan_floor@8": 0.5583558654430403,
+  "fan_floor@10": 0.5423878348213483,
+  "fan_floor@32": 0.35878067373126793,
+  "fan_floor@64": 0.2653872864305217,
+  "fan_floor@128": 0.16517801525059259,
+  "rand_best@1": 0.30737394019537684,
+  "rand_best@5": 0.4588304851382221,
+  "rand_best@8": 0.5051664050524027,
+  "rand_best@10": 0.5237865201180535,
+  "rand_best@32": 0.585293732120216,
+  "rand_best@64": 0.5985987896919719,
+  "rand_best@128": 0.6058517456157356,
+  "fan_q0.00": 0.6058517456157357,
+  "fan_q0.25": 0.3535789334537552,
+  "fan_q0.50": 0.26393224753642264,
+  "fan_q0.75": 0.22358373540602847,
+  "fan_diversity": 4.54347894585923,
+  "fan_endpoint_std": 4.308519023001297,
+  "fan_collision_all": 0.024869791666666665,
+  "fan_collision_top8": 0.0,
+  "fan_collision_top32": 0.008984375
+ },
+ "notes": [
+  "fan_floor@k is an ORDER STATISTIC over K: not comparable across different K, and MAXIMISED BY MODE COLLAPSE. Read it beside fan_diversity, always.",
+  "rand_best@k is E[max over a random k-subset] - what a no-skill selector reaches. Any 'headroom' reading of @k must be quoted beside it (2026-09-05 retraction: a best-of-N statistic read as a skill gap).",
+  "fan_diversity is OUR definition; DDv2's 42.3->30.3 levels are NOT comparable, only the direction."
+ ],
+ "self_test": {
+  "verdict": "NO-GAIN",
+  "k": 128,
+  "d_floor": 0.0,
+  "d_rand_best": 0.0,
+  "d_diversity": -4.0891310512733074,
+  "rel_diversity": -0.9,
+  "base_floor": 0.16517801525059259,
+  "arm_floor": 0.16517801525059259,
+  "base_diversity": 4.54347894585923,
+  "note": "point deltas only; the decision-grade statistic is the paired episode-cluster bootstrap, and one seed is necessary-not-sufficient (H-ESTIM-SEED-1)"
+ }
+}

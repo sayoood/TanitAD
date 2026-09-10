@@ -189,3 +189,192 @@ ruling, not another apology.**
 4. ⭐ **B1, B3–B8, B10, B11, C2 SCAN — breadth restoration is now the top rotation item, not the last.**
 5. **B9 primary** (debt D-8) — video/driving curation, for backlog row 22.
 6. **A3 fourth probe or formal retirement of E1** — three probes is enough to stop guessing.
+
+
+---
+
+## Fifth pass, 2026-09-05 (frontier scan; 14 domain packages already existed today and were NOT redone)
+
+⛔⛔ **FIRST, THE GAP THIS PASS DID NOT CAUSE AND DOES NOT BACKFILL: 2026-09-03 and 2026-09-04 produced
+domain packages but NO FRONTIER SCAN AT ALL.** Two days of Band-D, Band-B and Band-C coverage do not
+exist. **Escalated to the Master Mind as a scheduling failure, distinct from GS-7's budget tension.**
+
+⭐ **This pass: the first WAYVE adjudication ever (Band D), two full-text deep reads, THREE ledgers created,
+one four-day-old empty RESOLVED, and two corrections to our own records.**
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-05** | **2026-09-05** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐⭐ **Wayve GAIA-4** (2026-08-03), claims **V-1…V-4**. ⛔ The concession — *"no vehicle, pedestrian, or cyclist changes its behavior in response to the AI Driver"* — makes their closed loop **EGO-ONLY against a frozen world**, i.e. **ours**. Our binding open/closed-loop ruling **SURVIVES and GAIA-4 sits on our side of it** |
+| A1 | A | World models | **2026-09-05** | 2026-09-01 | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | scanned via Band D / C1; no dedicated DEEP |
+| A2 | A | JEPA / predictive architectures | **2026-09-05** | **2026-09-05** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐⭐ **ATM `2606.09028`, FULL TEXT.** Probe input `[z_t, z_{t+1}, Δz]` ⇒ **the diagonal carries the GS-1 endpoint leak; the OFF-DIAGONAL `G_{T→P}` does not.** ρ=0.813 vs 0.498 for prediction loss. ⛔ **AITS is encoder-side — SECOND consecutive action-identifiability objective blocked by our frozen trunk** |
+| A3 | A | Vision encoders | **2026-09-05** | **2026-09-05** | ⭐ [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) **(CREATED)** | ⭐⭐ **EMPTY E1 RESOLVED AT THE FOURTH PROBE**, one pass before formal retirement. `2501.08118`: frozen DINOv2 + LSS **+7.4 IoU on half the data/iters**. ⇒ **the suspect moves off the trunk onto the READOUT**; GS-4 gains priority |
+| A4 | A | VLA | 2026-09-02 | 2026-09-02 | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | ⚠️ not scanned this pass |
+| A5 | A | Benchmarks + evaluation | **2026-09-05** | **2026-09-05** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⛔ **navhard EPDMS does not triangulate.** Three independent tables cap it at **≤45.0** (GuideFlow full text 23.1–45.0 · IDOL 38.0 · RAP-DINO 36.9) against our recorded **55.5 / 56.3**. **Row 32 BARRED** — new debt **D-10** |
+| B5 | B | Post-training / RL | **2026-09-05** | **2026-09-05** (abstract-level) | ⭐ [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) **(CREATED)** | ⭐ `2607.08072`: scalar GRPO-style rollout reward **hides cross-dimension degradation**; fix is **event-localised** credit. ⇒ **today's MEASURED RL fan-safety regression is a known field failure mode, not our bug** |
+| B7 | B | Diffusion + flow matching | **2026-09-05** | **2026-09-05** | ⭐ [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) **(CREATED)** | ⭐⭐⭐ **GuideFlow `2511.18729`, FULL TEXT. The SCORER is worth +15.9 EPDMS; all three generative constraint mechanisms together +4.0.** And **per-step forcing (CVF, +1.4) is the WEAKEST** — *"CF applies once"*. ⇒ REF-C's 201/201 ranking blindness disconnects this family's largest lever |
+| C1 | C | Lab + AV releases | **2026-09-05** | **2026-09-05** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | GAIA-4 (2026-08-03); Wayve+Uber London launch 2026-09-03. ⛔ **`LEADERBOARD.md:1370` superseded** — it still calls GAIA-3 *"offline"* |
+| C2 | C | Engineering blogs / release notes | **2026-09-05** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2 sub-entry) | ⚠️ **EMPTY E3b at one probe.** Newest NVIDIA dev-blog item 2026-03-12. Alpamayo-1 on DRIVE Thor uses FP8 ViT at *"production-viable latencies"* — **no number, so FS-4 stands unchanged** |
+| C4 | C | Community signals / leaderboards | **2026-09-05** | **2026-09-05** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐ **NAVSIM navhard Stage 2 IS a 3DGS counterfactual pseudo-closed-loop evaluation** — independent confirmation of the Band-D doctrine, and direct support for backlog row 14 |
+
+### ⛔ Coverage this pass — stated, not smoothed
+
+**10 of 22 tracks scanned · 6 DEEP (2 full text) · 12 tracks NOT SCANNED** (A4, B1, B2, B3, B4, B6, B8,
+B9, B10, B11, B12, B13, C3 — and C2 only partially).
+
+⛔ **FOURTH CONSECUTIVE DAY below the breadth mandate**, counting 09-03 and 09-04 as total non-passes.
+⚠️ **Band-B minimum MISSED: 2 deep reads (B7 full text, B5 abstract-level), not 3.** B3 was not reached.
+**Stated as a miss.**
+
+⛔⛔ **GS-7 RE-ESCALATED, NOT RE-APOLOGISED FOR.** Amendment §8.1 ranks Band D and full-text depth **above**
+breadth; §6 mandates breadth. **A pass cannot honour both in one budget, and four days is no longer a
+budget choice — it is the charter contradicting itself.** ⇒ **A Master-Mind ruling is required: re-scope §6
+into an explicitly budgeted scan-only rotation (N tracks/day on a fixed cycle), or cap depth.**
+
+### ⭐ Banked-but-unread — the FS-5 count, third instalment
+
+**2 of 7 primaries needed today were already banked (29 %).** Trend: 2026-08-31 **20 %** → 09-01 **83 %** →
+09-02 **75 %** → **09-05 29 %**. ⭐ **The fall is real and is explained: this pass went to genuinely new
+material (Wayve doctrine, a June-2026 diagnostic, a CVPR-2026 planner) rather than to standing debts.**
+⛔ **But V-1 still paid twice**: ATM was already held, and the check **corrected debt D-9**, which asserted
+two papers were UNBANKED when both are in `library.json`.
+
+**Library: 441 entries / 2,890.2 MB** (was 313 / 2,136.4 MB on 2026-09-02).
+
+## Next rotation — pre-committed, so it cannot drift
+
+1. ⛔ **B3, B1, B2, B4, B6, B8, B9, B10, B11, C3 SCAN — breadth restoration**, and it stays item 1 until a
+   Master-Mind ruling on GS-7 changes the mandate. **Four days is enough.**
+2. ⛔ **LeWorldModel `2603.19312` full text (debt D-9).** We now cite it through **two** critics (Delta-JEPA
+   and ATM) without having read it. **This is the register's own named failure class.**
+3. **`2501.08118` §method (A3)** — the lift-head specification, to settle whether P-5's "behind on 4 of 5"
+   is a HEAD result or a REPRESENTATION result. Blocks GS-4's priority.
+4. ⛔ **Reconcile the navhard scoring basis (new debt D-10)** — three independent tables vs our two numbers.
+   Blocks every external comparability claim we hold.
+5. **`2606.30807` "Off the Rails"** — bank and read. Its relevance jumped this pass: B7 measured the
+   **scorer** as the dominant component, and this is a published attack on scoring heads.
+6. **A4, A1 dedicated DEEP** — both Band A, both carried indirectly for two passes.
+
+---
+
+## Sixth pass, 2026-09-09 (LAB-RUN-010) - ⭐ BREADTH RESTORED: 22 of 22 SCANNED
+
+⛔⛔ **FIRST, THE GAP: 2026-09-03, 09-04, 09-06, 09-07 and 09-08 produced NO FRONTIER SCAN.** The
+2026-09-05 pass escalated the first two; **09-06 to 09-08 are new and the count is now five days.**
+2026-09-07 produced eleven domain packages, so the Lab was working - what is missing is specifically
+this artifact's Band-D / Band-B / Band-C coverage. **Re-escalated to the Master Mind as a scheduling
+failure, distinct from GS-7's budget tension.**
+
+⭐ **This pass: 22/22 tracks scanned, 6 DEEP (3 FULL TEXT), a new Band-D adjudication (Alpamayo 1.5,
+claims A15-1..A15-4), debt D-10 resolved in mechanism, LEDGER_B10 opened, and TWO corrections to our
+own records.**
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-09** | **2026-09-09** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐⭐ **NVIDIA Alpamayo 1.5**, claims A15-1..A15-4. Concession A15-2 (*teacher runs in cloud or on-prem*, **24-60 GB VRAM**) = **CONFIRMS-US**. A15-3 (verbose NL CoT) **UNSUPPORTED-AS-STATED** at two independent contradictions |
+| A1 | A | World models | **2026-09-09** | **2026-09-09** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | Latent-WAM `2603.24581` **FULL TEXT**. ⛔ **104M AT INFERENCE / 191M in training** - new guideline T-5 |
+| A2 | A | JEPA / predictive architectures | **2026-09-09** | **2026-09-09** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐⭐ **ACPC `2608.12939` FULL TEXT. Post-hoc diagnostics on a FROZEN model - the first item in this family our frozen trunk does NOT block.** SR collapse **0.066** vs healthy **0.967-0.984**. **Corrects this ledger's own over-broad conclusion.** THIRD critic of LeWM - **D-9 hardens** |
+| A3 | A | Vision encoders | **2026-09-09** | partial | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | scanned via the B13 query (OccFeat, SelfOcc, DVGT `2512.16919`); no dedicated DEEP |
+| A4 | A | VLA | **2026-09-09** | **2026-09-09** | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | via the Band-D counter-search: XCoT-VLA `2608.10976`, LCDrive `2512.10226`, runtime monitor `2608.29583`. ⭐ **Independently re-confirms Waymo W-7 from a second stack** |
+| A5 | A | Benchmarks + evaluation | **2026-09-09** | **2026-09-09** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐⭐⭐ **D-10 MECHANISM RESOLVED: two disjoint EPDMS populations** (navhard 23.1-45.0; "NAVSIM v2" 12k-scenario 84.8-89.3), maintainers discourage self-reported splits. **Provenance of OUR 55.5/56.3 still open; row 32 stays BARRED** |
+| B1 | B | VLM / multimodal / omni | **2026-09-09** | - | - | OmniSpatial (ICLR 2026), `2512.19683` spatial-reasoning gap, `2603.06054` lightweight driving-VLM probing |
+| B2 | B | Post-transformer | **2026-09-09** | - | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | scanned; SSM-as-neural-operator `2409.03231`. No live decision moved (V-4); I-2 still gated on P-6's benchmark |
+| B3 | B | Efficient decoding | **2026-09-09** | - | - | ⛔ **EMPTY at a TERM-VARIED second probe (E-B3).** All hits LLM token-serving. **The one Band-B track with no transfer path in three passes** |
+| B4 | B | Efficient training | **2026-09-09** | - | - | scanned via Q9; muP referenced only in AR-scaling context |
+| B5 | B | Post-training / RL | **2026-09-09** | **2026-09-09** (abstract-only) | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | ⭐ **RLIR `2509.23958`: 5-10 % action-following gain - and BLOCKED FOR US pending the GS-1 endpoint-leak audit**, because its inverse-dynamics reward is exactly that shape |
+| B6 | B | Self-improving systems | **2026-09-09** | - | - | Curriculum-RLAIF `2505.20075`; RL post-training demystified `2608.24949` |
+| B7 | B | Diffusion + flow matching | **2026-09-09** | - | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | FlowR2A `2606.24231` (reward-to-action, unifies scoring-dense supervision with anchor generation); WAM-Flow `2512.06112` |
+| B8 | B | Tokenizers | **2026-09-09** | - | - | InfoTok `2512.16975`, iFSQ `2601.17124`, VideoFlexTok `2604.12887` |
+| B9 | B | Data curation | **2026-09-09** | partial | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⛔ **Kairos `2606.16533` curation section UNREAD AT THREE ROUTES** - claim stays `RELAYED`; **debt D-8 WORSENS**. VidaForge `2609.06652` newly surfaced |
+| B10 | B | Semantic search / retrieval | **2026-09-09** | **2026-09-09** | ⭐ [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) **(CREATED)** | ⭐⭐⭐ **`2606.28383` FULL TEXT: zero-label clip-complexity = JEPA prediction error, AP 0.512 vs 0.436.** ⛔ **constant-velocity baseline rho=0.314** (kinematic floor) and **no-EMA = 44x collapse at FIXED alpha=0.996** |
+| B11 | B | Physics-informed operators | **2026-09-09** | - | - | Chronos `2606.30318` (physics-informed, non-Markovian, long-horizon). ⚠️ PI-JEPA `2604.01349` remains WITHDRAWN |
+| B12 | B | Memory / long context | **2026-09-09** | - | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | `2606.25136` memory retrieval; `2606.16178` short-term-memory scaling |
+| B13 | B | 3D / occupancy | **2026-09-09** | - | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⭐ **OccFeat / SelfOcc found - the self-supervised occupancy family S-3 redirected us to**, needing no occupancy GT. Feeds GS-4 |
+| C1 | C | Lab + AV releases | **2026-09-09** | **2026-09-09** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | Alpamayo 1.5 (the Band-D item) |
+| C2 | C | Engineering blogs / release notes | **2026-09-09** | - | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⚠️ **EMPTY E-C2b, second probe.** Newest JetPack still 7.2.1 (2026-08-12). **FS-4 unchanged for a second pass** |
+| C3 | C | Regulatory | **2026-09-09** | - | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | ⛔ **D-4 routes 4 AND 5 FAILED (five total).** ⭐ **Character changed: route 4 is a DIRECT primary URL that exists and is domain-blocked (403) - a RETRIEVAL-CHANNEL problem, not a discovery one** |
+| C4 | C | Community signals | **2026-09-09** | - | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C4) | Commercial only: Waymo 3 new cities + >500k rides/week; Zoox Houston/San Diego; Tesla Cybercab public riders since 2026-09-04; Mobileye 2027 |
+
+### ⭐ Coverage - and the GS-7 tension answered empirically rather than by ruling
+
+**22 of 22 tracks SCANNED. 6 DEEP, 3 of them FULL TEXT. Band-B minimum MET** (B10, B9, B5).
+
+⭐⭐ **BREADTH IS RESTORED, ending a four-pass failure.** The 2026-09-05 pre-committed rotation item 1
+was *"B3, B1, B2, B4, B6, B8, B9, B10, B11, C3 SCAN - breadth restoration, and it stays item 1 until a
+Master-Mind ruling on GS-7 changes the mandate. Four days is enough."* **All ten were scanned.**
+
+⭐ **GS-7 now has evidence, not just a complaint.** Breadth and depth coexisted in one budget **because
+two of the three full-text reads came from SCAN hits on stale tracks (B10 and A5), not from the debt
+list.** ⇒ **Amendment 8.1's depth-first ordering starves breadth only when depth is spent on standing
+debts.** **Proposed ruling: keep 8.1's priority order and add one clause - the day's full-text budget is
+spent on the best hit AVAILABLE, whether it came from a debt or from a scan.**
+
+### ⛔ Banked-but-unread - the FS-5 count, fourth instalment
+
+**4 of 8 primaries needed today were ALREADY BANKED (50 %).**
+Trend: 2026-08-31 **20 %** -> 09-01 **83 %** -> 09-02 **75 %** -> 09-05 **29 %** -> **09-09 50 %**.
+
+⛔⛔ **And the 2026-09-02 Delta-JEPA pattern repeated exactly: `2603.24581` Latent-WAM - the paper that
+resolved D-10's mechanism and produced guideline T-5 - was ALREADY IN THE LIBRARY, UNREAD.** So were all
+three Band-D counter-evidence papers, which means **the entire contradiction step of today's adjudication
+came from papers we already held.**
+
+**Library: 491 entries, 3,198.3 MB** (was 441 / 2,890.2 MB on 2026-09-05).
+
+## Next rotation - pre-committed, so it cannot drift
+
+1. ⛔⛔ **LeWM `2603.19312` full text (debt D-9). THREE critics deep now** (Delta-JEPA, ATM, ACPC). This
+   is the register's own named failure class and it is banked and 0 GPU. **It is item 1 and stays there.**
+2. ⭐ **Run the SR/IR probe on banked v7 arms with our own controls** (constant-predictor + shuffled-action)
+   - 0 GPU, and it sits underneath the v7f freeze.
+3. **Kairos `2606.16533` curation section by a FOURTH route** (debt D-8) - try the ar5iv mirror or the
+   listing-level HTML, since pdf/abs/html v1 all failed.
+4. **A3 and B13 dedicated DEEP** - OccFeat/SelfOcc supervision requirements, for GS-4.
+5. **Split-stamp extraction for all six external EPDMS numbers** (D-10 provenance half).
+6. ⚠️ **D-4 is NOT a Lab item any more** - five routes, one of them a direct 403'd primary URL. It needs a
+   human browser, and it is with the PI.
+
+---
+
+## Seventh pass — 2026-09-10 (LAB-RUN-011)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-10** | **2026-09-10** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐ **NVIDIA closed-loop post-training** (Ivanovic & Pavone, 2026-05-31) adjudicated 7 steps → **A16-1…A16-3**. ⛔ **Zero numbers, zero ablations in the post**; contested at ≥2 independent sources. New debt **D-12** |
+| A1 | A | World models | **2026-09-10** | **2026-09-10** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ **Drive-HWM `2609.03572` FULL TEXT.** Hierarchy +0.8 PDMS over its own flat control — ⛔ **NOT params-matched. Row 18 / H1b still has no matched datapoint** |
+| A2 | A | JEPA / predictive architectures | **2026-09-10** | **2026-09-10** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐⭐ **TWO full texts.** `2601.00844` value-guided JEPA (the winner is an **encoder** loss; joint training loses 5/6; `pred EMA` **0.04** on Maze) · `2603.19312` **LeWM (debt D-9)** — **AdaLN per layer = our FiLM family**, and **no action-sensitivity control at all** |
+| A3 | A | Vision encoders | **2026-09-10** | — | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⛔ **E1 EMPTY at a FIFTH probe**, term varied twice. Approaching genuine absence — ⭐ and if so, a positioning asset |
+| A4 | A | VLA | **2026-09-10** | — | — | scanned only: `2608.30144` *Rethinking Language's Role in Efficient VLA for AVs* (2026-08-31), DeeAD, FASTer, LinkVLA. ⚠️ **no DEEP this pass** |
+| A5 | A | Benchmarks + evaluation | **2026-09-10** | **2026-09-10** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐⭐⭐ **D-10 COUNTS RESOLVED from the maintainers' primary** — navhard **450 S1 / 5,462 S2**; navtest ≈12 k. ⛔ **BASIS STILL OPEN: PDM-Closed reads 51.3 AND 56.6 on "navhard".** ⚠️ our own "≤ 45.0 cap" is **superseded** |
+| B1 | B | VLM / multimodal / omni | 2026-09-09 | — | — | ⚠️ **not scanned this pass** — swept only through other result sets |
+| B2 | B | Post-transformer | 2026-09-09 | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | ⚠️ not scanned. I-2 still gated on P-6's benchmark half |
+| B3 | B | Efficient decoding | **2026-09-10** | **2026-09-10** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) (via Drive-HWM Table III) | ⭐⭐ **B3's transfer path FOUND after four passes of empties — and it is TEMPORAL ABSTRACTION, not token serving.** Cost model `Tavg = Tf + Ts/N`, `Tpeak = Tf + Ts`. ⛔ **Tpeak 107.2 ms misses a 100 ms budget while Tavg 84.8 ms clears it** |
+| B4 | B | Efficient training | **2026-09-10** | — | — | ⚠️ **EMPTY E-B4, first probe.** All hits are language-model training (LLMQ, MuonQ, µLO, MONA, BAOC, Megatron-MoE). **Four passes scanned, still no dedicated DEEP.** Second probe must vary the term |
+| B5 | B | Post-training / RL | **2026-09-10** | **2026-09-10** | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | ⭐ Band-D counter-search: **the diagnosis is confirmed ≥3×, the prescription is contested ≥2×.** Guideline **T-7** |
+| B6 | B | Self-improving systems | 2026-09-09 | — | — | ⚠️ not scanned. ⭐ Kairos v3 §5.1 (*rollout–evaluation–refinement*, understanding module as a built-in reward) is a live B6 lead for the next pass |
+| B7 | B | Diffusion + flow matching | **2026-09-10** | — | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | scanned: FlowR2A `2606.24231`, WAM-Flow `2512.06112`, FlowDrive `2509.21961`, GoalFlow PDMS 90.3. FlowR2A remains the standing candidate for FS9-5 |
+| B8 | B | Tokenizers | 2026-09-09 | — | — | ⚠️ not scanned |
+| B9 | B | Data curation | **2026-09-10** | **2026-09-10** | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) (B9 section) | ⭐⭐⭐ **Kairos `2606.16533` FULL TEXT at the FIFTH route — debt D-8 DISCHARGED.** ⛔ **The claim is a PROPOSAL: *"does not yet compute CID directly"*.** ⛔⭐ **v1 does NOT contain the claim; v3 does — reading v1 would have filed a false REFUTED** |
+| B10 | B | Semantic search / retrieval | 2026-09-09 | 2026-09-09 | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⚠️ not scanned this pass |
+| B11 | B | Physics-informed operators | 2026-09-09 | — | — | ⚠️ not scanned. **Still no live primary since `2604.01349` was WITHDRAWN** |
+| B12 | B | Memory / long context | 2026-09-09 | — | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⚠️ not scanned. ⭐ Kairos v3 §2.3 (*hybrid multi-scale temporal memory*) is a live B12 lead |
+| B13 | B | 3D / occupancy | 2026-09-09 | — | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⚠️ not scanned. FS9-9 (OccFeat / SelfOcc supervision requirements) still open |
+| C1 | C | Lab + AV releases | **2026-09-10** | **2026-09-10** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | Alpamayo 2 Super commercial release; no new Wayve doctrine post |
+| C2 | C | Engineering blogs / release notes | **2026-09-10** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⛔ **EMPTY E-C2c, THIRD probe** — still JetPack 7.2.1 (2026-08-12). ⭐ New: **DOPE ONNX→TRT conversion FAILS on AGX Thor on unsupported layers** — a third-party instance of the D-B1-GATE class |
+| C3 | C | Regulatory | — | — | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | ⛔ **NOT SCANNED — declared.** D-4 at five failed routes, with the PI |
+| C4 | C | Community signals | **2026-09-10** | — | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | navhard anchors extracted from the maintainers' primary |
+
+### ⛔ Coverage honesty for this pass
+
+**18 of 22 tracks carry a query or a named sweep. Four do not: B1, B8, B11, B12** (swept only through other result sets), **and C3 was deliberately not probed.** This is the GS-7 tension again — Band D plus four full texts consumed the budget — and it is stated rather than narrowed silently.
+
+⭐ **But FS9-10's proposed clause worked in practice**: three of the four full texts came from that day's own scan hits (Drive-HWM, value-JEPA) or from a debt that a scan hit made cheap to clear (Kairos), rather than from the debt list outranking breadth by construction.
+
+### Banked-but-unread, per track (FS-5 instalment)
+
+| track | banked, unread |
+|---|---|
+| A2 | `2605.09241` Sub-JEPA — **debt D-9's surviving half** · `2602.03604` EB-JEPA (abstract-only) |
+| A4 | `2608.30144` (found today, unbanked and unread) |
+| B7 | `2606.24231` FlowR2A, `2512.06112` WAM-Flow (both unread) |
+| B9 | `2608.01127` MiniWorld (banked 09-02, still unread) |
+| A1 | `2604.03208` *Hierarchical Planning with Latent World Models* (found today, unbanked — a direct row-18 candidate) |

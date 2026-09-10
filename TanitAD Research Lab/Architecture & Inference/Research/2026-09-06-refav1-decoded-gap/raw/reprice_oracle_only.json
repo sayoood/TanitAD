@@ -1,0 +1,57 @@
+{
+ "task": "D-REFAV1-DK-DECODED BAR-2 -- re-ranking reproduction, decoded vs oracle gap",
+ "evidence_class": "MEASURED (ours) -- zero-GPU re-pricing of the banked refav1-21109 141-episode panel",
+ "tier": "NOT a driving number. Re-prices a BANKED panel's candidate set; nothing is rolled and no model is loaded.",
+ "panel": {
+  "n_windows": 282,
+  "n_episodes": 141,
+  "n_lead_windows": 90,
+  "states": {
+   "LEAD": 90,
+   "NOT_STRAIGHT": 108,
+   "NO_LABEL": 21,
+   "NO_LEAD": 63
+  },
+  "speed_check_max_mps": 1.2897210694973182e-05
+ },
+ "oracle_reproduction_control": {
+  "n_lead_windows": 90,
+  "expected": 90,
+  "n_in_violation": 21,
+  "expected_violating": 21,
+  "n_flips": 21,
+  "expected_flips": 21,
+  "reproduces_published": true,
+  "note": "if this is not 90/21/21 the decoded numbers beside it are not readable against the published ceiling"
+ },
+ "decoded": {
+  "n_with_decode": 0,
+  "gap_oracle": {
+   "n": 90,
+   "mean": 28.6664,
+   "min": 4.7386,
+   "max": 77.6266
+  },
+  "gap_decoded": null,
+  "gap_err_m": {
+   "mae": NaN,
+   "bias": NaN
+  },
+  "n_fires": 0,
+  "n_flips": 0
+ },
+ "BAR2": {
+  "sensitivity": 0.0,
+  "sensitivity_n": 0,
+  "sensitivity_of": 21,
+  "bar": 0.8,
+  "specificity": 1.0,
+  "specificity_n": 69,
+  "specificity_of": 69,
+  "bar_spec": 0.7,
+  "PASS": false,
+  "pixel_floor_sensitivity": 0.0,
+  "pixel_floor_specificity": 1.0
+ },
+ "gap_source_ladder_note": "the ORACLE pass uses gap AND gate from the label; the DECODED pass uses the cross-fitted vision head's gap on the SAME oracle-selected LEAD windows, which is the `decoded_gap` rung. The `decoded` rung (gate also decoded) is measured by the planner A/B, not here."
+}

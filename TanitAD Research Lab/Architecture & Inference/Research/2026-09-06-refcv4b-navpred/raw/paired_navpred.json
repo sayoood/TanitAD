@@ -1,0 +1,266 @@
+{
+  "_is": "os_navpred paired margins + the SPEC's pre-registered controls",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 for every arm here",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), n_boot=2000, seed=0; NEVER overlapping_holdout_se",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "dump": "/home/nvidia/navpred/navpred_dump",
+  "controls": {
+    "C2_grid": {
+      "want": "4823 windows / 141 episodes",
+      "got": "4823 / 141",
+      "verdict": "PASS"
+    },
+    "C1_model_free_known_value": {
+      "_is": "ha and ha0 consume no model output; on the same windows they MUST reproduce the pod's banked values or the two surfaces differ",
+      "measured_vs_banked": {
+        "ha": {
+          "measured": 0.2996,
+          "banked": 0.2996,
+          "abs_diff": 0.0
+        },
+        "ha0": {
+          "measured": 0.6723,
+          "banked": 0.6723,
+          "abs_diff": 0.0
+        }
+      },
+      "verdict": "PASS"
+    },
+    "C3_os_reproduction": {
+      "measured": 0.2965,
+      "banked": 0.2975,
+      "abs_diff": 0.001031,
+      "tolerance_m": 0.001,
+      "_why_a_tolerance": "`os` moves from row 0 of a 2-row batched call to row 0 of a 3-row one; the documented cross-call float32 batching floor on this model is ~6e-7 m",
+      "verdict": "FAIL"
+    },
+    "C6_arm_is_not_degenerate": {
+      "n_navpred_differs_from_navcmd": 1908,
+      "PREREGISTERED": 1917,
+      "n_equal": 2915,
+      "PREREGISTERED_equal": 2906,
+      "navpred_distribution_follow_left_right_straight": [
+        3467,
+        609,
+        747,
+        0
+      ],
+      "PREREGISTERED_distribution": [
+        3465,
+        614,
+        744,
+        0
+      ],
+      "verdict": "FAIL"
+    },
+    "C5_coverage_identity": {
+      "n_same_token": 2915,
+      "max_abs_path_diff_on_same_token_m": 0.0,
+      "tolerance_m": 0.0001,
+      "CONTROL_max_abs_path_diff_on_DIFFERENT_token_m": 3.0064914226531982,
+      "_is": "same token -> same path (to the batching floor). The second row is the same-breath control that must read LARGE, or the first row's small number proves nothing.",
+      "verdict": "PASS"
+    },
+    "C4_route_head_non_circularity": {
+      "route_pred(nav_predicted) == route_pred(nav_zero)": "4823/4823",
+      "banked_identity_rate_nav_true_vs_nav_zero": "4822/4823",
+      "_is": "feeding the model its own predicted route must not move the route head, or the construction is circular",
+      "verdict": "PASS"
+    }
+  },
+  "ade": {
+    "os": {
+      "mean": 0.2965,
+      "ci95": [
+        0.2682,
+        0.3272
+      ]
+    },
+    "ha": {
+      "mean": 0.2996,
+      "ci95": [
+        0.2749,
+        0.328
+      ]
+    },
+    "ha0": {
+      "mean": 0.6723,
+      "ci95": [
+        0.6017,
+        0.7437
+      ]
+    },
+    "ha0_ext": {
+      "mean": 0.2874,
+      "ci95": [
+        0.2646,
+        0.3137
+      ]
+    },
+    "os_navshuf": {
+      "mean": 0.3006,
+      "ci95": [
+        0.2722,
+        0.3301
+      ]
+    },
+    "os_navzero": {
+      "mean": 0.3926,
+      "ci95": [
+        0.3652,
+        0.4212
+      ]
+    },
+    "os_navpred": {
+      "mean": 0.3012,
+      "ci95": [
+        0.2721,
+        0.3314
+      ]
+    }
+  },
+  "paired": {
+    "os_navpred_minus_ha": {
+      "delta_m": 0.0016,
+      "ci95": [
+        -0.0135,
+        0.0181
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navpred_minus_ha0": {
+      "delta_m": -0.3711,
+      "ci95": [
+        -0.4274,
+        -0.3192
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navpred_minus_ha0_ext": {
+      "delta_m": 0.0138,
+      "ci95": [
+        -0.0011,
+        0.0303
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navpred_minus_os_navshuf": {
+      "delta_m": 0.0006,
+      "ci95": [
+        -0.0033,
+        0.0042
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 2373
+    },
+    "os_navpred_minus_os_navzero": {
+      "delta_m": -0.0914,
+      "ci95": [
+        -0.1057,
+        -0.0774
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navpred_minus_os": {
+      "delta_m": 0.0047,
+      "ci95": [
+        0.0012,
+        0.0083
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 1908
+    },
+    "os_minus_ha": {
+      "delta_m": -0.0031,
+      "ci95": [
+        -0.0179,
+        0.0133
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_ha0": {
+      "delta_m": -0.3758,
+      "ci95": [
+        -0.4336,
+        -0.3233
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_ha0_ext": {
+      "delta_m": 0.0091,
+      "ci95": [
+        -0.0055,
+        0.0254
+      ],
+      "separated": false,
+      "tool_separated_flag": false,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_minus_os_navshuf": {
+      "delta_m": -0.0041,
+      "ci95": [
+        -0.0076,
+        -0.0004
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 2406
+    },
+    "os_minus_os_navzero": {
+      "delta_m": -0.0961,
+      "ci95": [
+        -0.1103,
+        -0.0827
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    },
+    "os_navzero_minus_ha0_ext": {
+      "delta_m": 0.1052,
+      "ci95": [
+        0.0876,
+        0.1246
+      ],
+      "separated": true,
+      "tool_separated_flag": true,
+      "n_episodes": 141,
+      "n_windows_differing": 4823
+    }
+  },
+  "RECOVERY": {
+    "oracle_nav_worth_m": 0.0961,
+    "recovered_m": 0.0914,
+    "recovery_fraction_R": 0.951,
+    "_R_is": "(ADE(os_navzero) - ADE(os_navpred)) / (ADE(os_navzero) - ADE(os))",
+    "residual_gap_to_ha0_ext_m": 0.0138,
+    "landing_deployment_gap_m": 0.1054
+  }
+}

@@ -1,0 +1,332 @@
+{
+ "task": "D-REFAV1-DK-COST P3 -- direction check on the FULL B1 eval lead block",
+ "evidence_class": "MEASURED (ours) -- B1 eval lead block, label arithmetic only",
+ "tier": "NOT a driving number and NOT an arm comparison. Label statistics over the eval corpus; no model, no rollout.",
+ "estimator": "clip-cluster bootstrap over the block's clips; answers 'would another draw of CLIPS say this?'. Neither training nor inference randomness is involved -- both operands are deterministic label arithmetic.",
+ "gt_accel_source": "central difference of the block's own per-frame `speeds` (egomotion at the frame) at dt = 0.1 s, WITHIN clip, contiguous frames only",
+ "block": {
+  "n_rows": 29556,
+  "n_clips": 147,
+  "n_lead_rows": 8341,
+  "n_usable_for_direction": 8339,
+  "state_counts": {
+   "LEAD": 8341,
+   "NOT_STRAIGHT": 10622,
+   "NO_LABEL": 4113,
+   "NO_LEAD": 6480
+  }
+ },
+ "tau_sweep": [
+  {
+   "tau_s": 0.5,
+   "n_violating": 227,
+   "n_adequate": 8112,
+   "frac_of_usable": 0.0272,
+   "n_clips_violating": 14,
+   "mean_shortfall_m": 0.7032,
+   "delta_gt_accel_mps2": {
+    "point": -0.3416,
+    "ci95": [
+     -0.62396,
+     -0.04522
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.30427,
+   "mean_gt_accel_adequate": 0.03733,
+   "CONTROL_delta_speed_mps": {
+    "point": -3.683,
+    "ci95": [
+     -7.98818,
+     1.5989
+    ],
+    "excludes_zero": false,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.14806,
+    "p2.5": -0.23127,
+    "p97.5": -0.05572,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 0.8,
+   "n_violating": 747,
+   "n_adequate": 7592,
+   "frac_of_usable": 0.0896,
+   "n_clips_violating": 20,
+   "mean_shortfall_m": 3.1079,
+   "delta_gt_accel_mps2": {
+    "point": -0.15968,
+    "ci95": [
+     -0.44925,
+     0.08307
+    ],
+    "excludes_zero": false,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.11734,
+   "mean_gt_accel_adequate": 0.04234,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.31702,
+    "ci95": [
+     -1.72147,
+     12.81103
+    ],
+    "excludes_zero": false,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.07009,
+    "p2.5": -0.10233,
+    "p97.5": -0.02973,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 1.0,
+   "n_violating": 986,
+   "n_adequate": 7353,
+   "frac_of_usable": 0.1182,
+   "n_clips_violating": 30,
+   "mean_shortfall_m": 5.2181,
+   "delta_gt_accel_mps2": {
+    "point": -0.23429,
+    "ci95": [
+     -0.5303,
+     -0.01814
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.17856,
+   "mean_gt_accel_adequate": 0.05573,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.19731,
+    "ci95": [
+     -0.9082,
+     12.66741
+    ],
+    "excludes_zero": false,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.05663,
+    "p2.5": -0.08505,
+    "p97.5": -0.02821,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 1.2,
+   "n_violating": 1403,
+   "n_adequate": 6936,
+   "frac_of_usable": 0.1682,
+   "n_clips_violating": 35,
+   "mean_shortfall_m": 6.2839,
+   "delta_gt_accel_mps2": {
+    "point": -0.30018,
+    "ci95": [
+     -0.54231,
+     -0.12171
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.22165,
+   "mean_gt_accel_adequate": 0.07854,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.50626,
+    "ci95": [
+     1.28047,
+     11.95851
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.08814,
+    "p2.5": -0.11344,
+    "p97.5": -0.05619,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 1.5,
+   "n_violating": 2251,
+   "n_adequate": 6088,
+   "frac_of_usable": 0.2699,
+   "n_clips_violating": 42,
+   "mean_shortfall_m": 7.5723,
+   "delta_gt_accel_mps2": {
+    "point": -0.26167,
+    "ci95": [
+     -0.45315,
+     -0.09911
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.163,
+   "mean_gt_accel_adequate": 0.09867,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.66464,
+    "ci95": [
+     3.0355,
+     11.58651
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.05635,
+    "p2.5": -0.08089,
+    "p97.5": -0.03344,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 2.0,
+   "n_violating": 3210,
+   "n_adequate": 5129,
+   "frac_of_usable": 0.3849,
+   "n_clips_violating": 48,
+   "mean_shortfall_m": 11.6859,
+   "delta_gt_accel_mps2": {
+    "point": -0.17323,
+    "ci95": [
+     -0.36923,
+     -0.00069
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.07851,
+   "mean_gt_accel_adequate": 0.09471,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.0616,
+    "ci95": [
+     2.90685,
+     10.7004
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.03145,
+    "p2.5": -0.05347,
+    "p97.5": -0.01399,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 2.5,
+   "n_violating": 4170,
+   "n_adequate": 4169,
+   "frac_of_usable": 0.5001,
+   "n_clips_violating": 61,
+   "mean_shortfall_m": 14.9518,
+   "delta_gt_accel_mps2": {
+    "point": -0.19576,
+    "ci95": [
+     -0.35243,
+     -0.05055
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.06984,
+   "mean_gt_accel_adequate": 0.12592,
+   "CONTROL_delta_speed_mps": {
+    "point": 6.45059,
+    "ci95": [
+     2.86694,
+     9.78484
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.05808,
+    "p2.5": -0.07612,
+    "p97.5": -0.0404,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  },
+  {
+   "tau_s": 3.0,
+   "n_violating": 5000,
+   "n_adequate": 3339,
+   "frac_of_usable": 0.5996,
+   "n_clips_violating": 66,
+   "mean_shortfall_m": 18.3983,
+   "delta_gt_accel_mps2": {
+    "point": -0.19818,
+    "ci95": [
+     -0.32388,
+     -0.07618
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "mean_gt_accel_violating": -0.05132,
+   "mean_gt_accel_adequate": 0.14686,
+   "CONTROL_delta_speed_mps": {
+    "point": 7.17381,
+    "ci95": [
+     4.15632,
+     10.10599
+    ],
+    "excludes_zero": true,
+    "n_boot_used": 2000,
+    "n_boot_skipped": 0
+   },
+   "SHUFFLE_CONTROL_within_clip": {
+    "mean": -0.10036,
+    "p2.5": -0.11885,
+    "p97.5": -0.0798,
+    "n": 200,
+    "_what": "violating/adequate permuted WITHIN each clip, counts preserved"
+   }
+  }
+ ],
+ "corpus_time_gap": {
+  "n": 7211,
+  "n_clips": 86,
+  "median_s": 2.9167,
+  "p25_s": 1.8943,
+  "p10_s": 1.3162,
+  "p05_s": 0.8971,
+  "_min_speed_mps": 1.0,
+  "at_speed_ge_10": {
+   "n": 3218,
+   "median_s": 2.0556,
+   "p25_s": 1.3713,
+   "p10_s": 0.8862
+  }
+ }
+}

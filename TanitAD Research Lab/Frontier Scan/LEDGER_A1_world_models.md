@@ -135,3 +135,48 @@ reduce the open-loop / closed-loop mismatch".
 ready-made vocabulary for describing our own latent design. **No comparative numbers in the abstract.**
 
 `Next in this track: full-text read to extract the closed-loop metric suite definition.`
+
+---
+
+## 2026-09-09-01 - Latent-WAM: a 104M world-action model, and a parameter-count unit trap
+
+`lib 2603.24581. FULL TEXT results section. Class PUBLISHED. Retrieved 2026-09-09.`
+
+Two modules: a **Spatial-Aware Compressive World Encoder** that *"distills geometric knowledge from a
+foundation model and compresses multi-view images into compact scene tokens via learnable queries"*,
+and a **Dynamic Latent World Model**, *"a causal Transformer to autoregressively predict future world
+status conditioned on historical visual and motion representations."*
+
+**The parameter statement, verbatim, and the trap in it:** *"The model contains **104M parameters at
+inference time**. During training, an additional EMA encoder is introduced for self-supervised learning,
+**bringing the total to 191M, of which only 104M are trainable**."*
+
+**Guideline T-5 derived: every parameter count in a comparability table carries INFERENCE-TIME or
+TRAINING-TIME**, exactly as every metric carries its eval tier. Backlog row 32's "beat ~40 M" premise
+rests on a DrivoR count that is (a) unverified (L-15) and (b) probably inference-time.
+
+**Relevant to backlog row 4 / MM-E1:** they run *"a frozen SCWE updated via Exponential Moving Average"*
+as a self-supervised target while the primary backbone stays trainable - the same teacher-target shape
+our EMA question concerns, at 104M, in driving.
+
+**Not quotable yet:** the 89.3 EPDMS is under D-10's bar (see `LEDGER_A5_benchmarks.md` 2026-09-09-01)
+and may not enter any comparability table until its split is stamped.
+
+## 2026-09-10-01 — Drive-HWM: the hierarchy edge, priced and unmatched
+
+`FULL TEXT` · arXiv **2609.03572v1** (retrieved 2026-09-10) · Fan, Zhang, Wu, Wang, Jin, Zhao, Zhu, Yan · submitted 2026-09-03.
+Hierarchical slow–fast WM. **Slow:** multi-step future representations, Dynamic-Aware Latents via optical-flow prediction, runs once per N=8 ticks. **Fast:** lightweight multimodal backbone + autoregressive expert, next frame + immediate action, every tick.
+
+**Table IV (ablation), verbatim:** Fast only NC 99.3 / DAC 97.4 / **PDMS 93.0** · Slow only 98.2 / 97.1 / **90.2** · Drive-HWM (K=8) 99.6 / 99.0 / **93.8**.
+**Table III (latency), verbatim:** DriveVLA-W0 Tf 117.8, Tavg 117.8, PDMS 93.0 · Fast Model Only Tf 81.6, Tavg 81.6, PDMS 93.0 · Drive-HWM N=8, Ts 25.6, Tf 81.6, **Tpeak 107.2**, Tavg 84.8, PDMS 93.8.
+**NAVSIM v2:** EPDMS **86.4**, *"best or tied-best performance on seven of the ten metrics"* — ⭐ stamped **navtest** population (LEDGER_A5 2026-09-10-01), **not** navhard.
+
+⛔ **The paper states NO parameter matching** between "Fast only" / "Slow only" and the full model. The +0.8 PDMS therefore confounds *hierarchy* with *capacity*. **This is an existence result, not an ablation** — the Mobileye M-1/M-2 shape GS-5 named. ⇒ **backlog row 18 (H1b) is NOT answered; it is sharpened and re-specified as params-matched.**
+
+⚠️ **V-5 unit refusal:** `N = K = 8` with **no seconds-per-timestep given**. Their K=8 is NOT corroboration of our K=8 (16 s) rung in backlog P-17. Do not pair them.
+
+⭐ Two readings of +0.8 PDMS, both to be carried: absolute **+0.86 % relative**; against remaining headroom **0.8 / 7.0 = 11.4 %**.
+
+**Conceded limitation, verbatim:** *"the current model does not explicitly capture multimodal futures or predictive uncertainty, which may limit its performance in ambiguous and rare driving scenarios."* ⭐ Our REF-C fan and the B7 line address exactly this — a differentiator named by the opponent.
+
+→ `Architecture & Inference/Research/2026-09-10-hierarchy-edge-external-datapoint/RESULT.md`

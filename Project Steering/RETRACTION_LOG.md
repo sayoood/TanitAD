@@ -14644,3 +14644,162 @@ control reads its base rate EXACTLY (`337008/20806104`); s6's naive form reads
 contrasts read `separated` at |Δ| ≤ 0.0038 while the pure REPLICATE (same flags, same
 sense, seed only) reads **+0.0115 SEPARATED** — the seed moves the ladder ~10× more than
 the address sense does.
+
+---
+
+## R-2026-09-09-nav30s-arc-timeline — v8.0 `nav_30s` distances were on the wrong axis
+
+⛔ **RETRACTED:** every `nav_30s.entries[].distance_m` / `.distance_end_m` in the v8.0
+label release (shipped 2026-09-07, train md5 `bb54dfa0…`, eval `920a9fcb…`).
+
+**The defect.** `manoeuvre_sequence` publishes ANCHOR-RELATIVE times —
+`s2_geom_emit_v7.py:148` returns `round(i / hz, 1)` where `i` indexes `rate[key:]`, so
+t=0 is the s2 anchor. `build_v8_nav30s.py` fed those times into an arc-length table
+indexed on the **RAW recording timeline**, where the anchor sits at `RAW_T0_S = 8.0 s`.
+Every distance therefore measured arc length from the RECORDING START to `t_start_s`,
+not from the anchor to the manoeuvre. A second, smaller bug in the same line: the raw
+timestamp axis was never re-zeroed (`ts - ts[0]`), which `egomotion_source.load` does —
+clip `002646e7` starts at −0.197 s.
+
+**MEASURED blast radius** (all 5,418 entries, train+eval, against anchor-correct arc
+tables rebuilt from `egomotion_alpamayo.tar`):
+
+| token | n | median err | mean err | max abs err |
+|---|---|---|---|---|
+| `NAV_FOLLOW_ROAD` | 2,926 | 0.0 m | 0.0 m | **0.0 m** (hardcoded 0.0, correct) |
+| `NAV_TURN_L` | 1,196 | −3.0 m | −9.6 m | 129.9 m |
+| `NAV_TURN_R` | 1,289 | −1.2 m | −6.5 m | **169.2 m** |
+
+**Turn entries: 81.8 % wrong by >1 m, 54.6 % by >10 m.**
+
+⭐⭐ **THE ROOT-CAUSE CLASS IS NOT THE OFFSET — IT IS THE SUMMARY STATISTIC THAT HID IT.**
+The corpus-wide median error is **+0.0 m**, because `NAV_FOLLOW_ROAD` is **54 % of
+entries and carries an exact hardcoded zero**. A build gate reading a pooled median over
+all entries saw perfect health for a field that was wrong on four fifths of the rows
+that actually USE it. The correct denominator was never the entry count; it was the
+count of entries whose distance is COMPUTED rather than constant.
+⇒ **C17 (new) — A POOLED STATISTIC DILUTED BY A CONSTANT-VALUED MAJORITY.**
+Recognition signal: a health metric is aggregated over a population in which a large
+sub-population is constant by construction, so its exact-zero error mathematically
+cannot move and drags the pooled value to "fine". Sibling of the AP tie-break defect
+(`R-2026-09-07-ap-ties`), where a CONSTANT arm also scored better than it should;
+sibling of the `df` / cgroup / `step_s` family in that a true number is read at the
+wrong SCOPE — here the scope is the sub-population, not the unit or the layer.
+⇒ **The fix that generalises: stratify every build-gate statistic by the branch that
+produced the value, and report the constant branch separately. A metric that a constant
+sub-population can carry is not a check.**
+
+⚠️ **Second lesson, and it is the one that nearly shipped: this is the SECOND
+`RAW_T0_S = 8.0` timeline error in four days.** The first (2026-09-07) withdrew 46
+lane-change "contradictions" and the 53.2 / 62.1 / 61.0 % geometry-vs-text agreement
+figures, and it is the direct reason `lane_change_text` is TEXT-ONLY by PI direction.
+A class that has bitten twice in one week is a missing ASSERTION, not a missing habit:
+any code that indexes egomotion by a label-derived time must state which axis it is on,
+and the two axes differ by exactly `RAW_T0_S`.
+
+✅ **CORRECTED AND SHIPPED as v8.1**, 2026-09-09.
+`code/fix_v8_nav30s_arc.py` re-derives both distances from the anchor, freezes all 15
+other top-level fields under a byte-identity assertion, and re-verifies by recomputing
+every shipped distance from the arc tables (0 may move). `distance_m` is now populated
+on **5,418/5,418** entries; `distance_end_m` is null on **535** (was 7) — HONEST, because
+the ego track does not extend 8 s past the anchor to a manoeuvre ending near the 30 s
+horizon. The old builder reported fewer nulls only because it was reading 8 s too early,
+i.e. still inside the track. ⭐ **The null count going UP is the tell that the fix is
+real** — a correction that made a coverage number worse is the shape of an honest one.
+New hashes: train `b45377a1f25263b5c0f3d318c126b1ac`, eval `eefc38d1453bd1c73802d44d45affced`.
+Pushed PRIVATE to `Sayood/tanitad-v7-training-corpus` (commit `a0cf20df`), read-back
+verified from the remote.
+
+⚠️ **Two adjacent defects found and fixed in the same pass, both in the shipped
+artifact:**
+1. **`V8_MANIFEST.json`'s headline `files` block named a file that no longer existed.**
+   The v8 build ran in four stages and EACH stage rewrote the blob and stamped its own
+   hash into the section it added; the top-level block still held the `nav_30s`-stage
+   hash (`3b56d696…`, 2,251,763 bytes) while the shipped file was `bb54dfa0…` at
+   2,644,533 bytes. A consumer verifying a download against the obvious block would have
+   read MISMATCH and been unable to tell a corrupt transfer from a stale manifest. The
+   per-stage hashes are now preserved under `files.build_chain`, labelled INTERMEDIATE,
+   with an explicit statement that only `files.{train,eval}` may verify a download.
+2. **`DATACARD.md` claimed the camera was "not shipped (~47 GB)"** and described upstream
+   range-reads as the only retrieval route, while `MANIFEST.json:camera.status` has read
+   `SHIPPED_IN_DATASET` throughout and 4,719 mp4s (57.4 GiB) sit in the repo. **Two
+   documents in one repo contradicting each other, with the human-facing one wrong.**
+
+
+---
+
+## ⛔⛔ RETRACTION 2026-09-10 -- A GUARD'S JUSTIFICATION IS AS STALE AS THE CODE IT CITES
+
+**ROOT-CAUSE CLASS: `JUSTIFICATION-ROT`** — a check, a waiver or a refusal whose stated
+REASON is a claim about OTHER code. The reason rots exactly as fast as that code moves, and
+because the reason is prose it is never re-run. Sibling of the stale-count class already in
+`CLAUDE.md` (an absence-claim living inside the rule meant to keep it true), with the object
+swapped from a NUMBER to a JUSTIFICATION.
+
+**Three independent instances found in one pass, in three different files.** All three were
+green, all three kept exiting 0.
+
+### 1. RETRACTED: *"`control_head` stays at its zero init forever"* (`refc.py:2429-2435`)
+
+Also stated as the reason `refc_v3_train.py:468-475` refuses `--sampler ddim --w-u0 0`:
+*"it would stay at exactly zero and the arm would silently be the anchored Gaussian with no
+denoiser at all."*
+
+⛔ **FALSE, MEASURED 2026-09-10.** `control_head` reaches `out["anchor_traj"]`, which is
+exactly the tensor the trainer's matched-anchor L1 gathers (`refc_v3_train.py:2245-2247`).
+One backward through `anchor_traj` **alone**, with the u0 loss absent from the graph
+entirely, puts `grad_abs_sum` **9.39e4** on the head — against **1.07e5** through `u0_hat`,
+and against **exactly 0.0** for three outputs of the same forward that cannot reach it
+(`anchor_logits`, `offset`, `sel_score`).
+
+⚠️ **WHAT IS RETRACTED IS THE REASON, NOT THE DECISION.** A sampler supervised only through
+the integrator is still a different, weaker experiment than one supervised on its own x0
+prediction. The refusal was **KEPT**; only its message was corrected. Whether refcv6 arm D
+should run is a **PI ruling**, and it is now one that can be made against a measurement.
+
+⭐ **THE COST THIS UNCOVERED:** refcv6 arm D's argv is BASE with `--w-u0 0`, and BASE carries
+`--sampler ddim` (`…/2026-09-10-refcv6-build/code/arms.py:110-111`, arm D at `:286`).
+⇒ **the arm the design says to run FIRST cannot start at all** — it exits at
+`refc_v3_train.py:468` before one GPU-second. `GOALS_AND_CLAIMS.md` listed it as
+*"RUNNABLE THE MOMENT A GPU EXISTS — needs no PI decision."* Corrected there as
+`D-REFCV6-D-UNLAUNCHABLE`.
+
+### 2. RETRACTED: *"the model refuses BOTH directions loudly and unconditionally"* (`refc_adapter.py`)
+
+The RL adapter lists `agent_gt` in `FORWARD_KEYS` — it forwards the channel — and then
+**waived its own launch-time check** on that ground. The model's own comment said the same
+thing (*"Both directions refuse"*).
+
+⛔ **There were THREE divergent cases, not two.** `agent_gt` supplied to an `--agents head`
+build was **SILENTLY DROPPED**: `refc.py:3366-3368` builds head slots from `fmap` and never
+reads the channel — no warning, no log, no raise. ⇒ **two guards, each deferring to the
+other, and the channel covered by neither.**
+
+MEASURED, not inferred: with the trainer's oracle gate removed, a real `--agents head`
+forward ran **to completion** with a real GT block supplied and discarded. Registered as
+`D-AGENTGT-HEAD-SILENT-DROP` and **never patched** until now.
+
+⚠️ **LATENT, not live** — today's trainer gates `agent_gt` on `enable AND oracle`, so **no
+banked result is affected**. Closed before it opened.
+
+### 3. RETRACTED: *`frac_above_bar` reports whether the >=GT bar zeroed the batch*
+
+The admission predicate was written **twice**: the mask at `bar_eps` **1e-6** (DDv2's
+released slack) and the diagnostic re-deriving it with the module's `EPS`, **1e-8**. On a
+reward at `bar - 1e-7` the **mask admitted 1.0 while the diagnostic reported 0.0**.
+
+⚠️ The DIRECTION is what makes it serious: that number's only job is to make a bar that
+zeroed the batch VISIBLE, and it erred toward *"everything was zeroed"* while nothing had
+been. Fixed by a **single shared derivation** (`advantage.gt_bar_mask`) so the two cannot
+disagree again.
+
+### ⭐ The generalisation, and the cheap check
+
+**Re-deriving a value is not the same as reusing it, and citing a guarantee is not the same
+as holding one.** Where two pieces of code must agree, share the derivation. Where a waiver
+rests on someone else's guarantee, the waiver must name a TEST that fails if that guarantee
+is withdrawn — not a comment quoting it. All three are now pinned that way:
+`stack/tests/test_rl_gt_bar_gradient_path.py`,
+`stack/tests/test_refc_v3_agent_gt_head_drop.py`,
+`stack/tests/test_u0_control_head_reachability.py` — each with a deliberate-regression arm
+that reintroduces the real historical defect and goes RED.

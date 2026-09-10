@@ -1,0 +1,49 @@
+{
+ "tool": "stack/scripts/rl_fan_floor.py",
+ "tier": "T0-fan",
+ "evidence_class": "MEASURED (ours)",
+ "bank": "C:/Users/Admin/tanitad-rlgen/raw/fan_bank_base_240w.npz",
+ "quality": "geom_feasibility",
+ "quality_provenance": "CONTROL-ONLY: -max(|a|/4.0, |kappa|/0.20) from fan2 at dt=0.50 s",
+ "collision_flag": "f_contact",
+ "n_windows": 240,
+ "n_candidates": 128,
+ "arm": {
+  "fan_floor@1": -0.26774421529844405,
+  "fan_floor@8": -0.7992449097335339,
+  "fan_floor@32": -2.2096092740694684,
+  "fan_floor@128": -13.872857630252838,
+  "rand_best@1": -3.901028567388809,
+  "rand_best@8": -1.1811423965675445,
+  "rand_best@32": -0.48818756912330474,
+  "rand_best@128": -0.26774421529844405,
+  "fan_q0.00": -0.26774421529844405,
+  "fan_q0.25": -2.2498348246018094,
+  "fan_q0.50": -3.609271440903346,
+  "fan_q0.75": -5.036678167184194,
+  "fan_diversity": 4.54347894585923,
+  "fan_endpoint_std": 4.308519023001297,
+  "fan_collision_all": 0.024869791666666665,
+  "fan_collision_top8": 0.0,
+  "fan_collision_top32": 0.008984375
+ },
+ "notes": [
+  "fan_floor@k is an ORDER STATISTIC over K: not comparable across different K, and MAXIMISED BY MODE COLLAPSE. Read it beside fan_diversity, always.",
+  "rand_best@k is E[max over a random k-subset] - what a no-skill selector reaches. Any 'headroom' reading of @k must be quoted beside it (2026-09-05 retraction: a best-of-N statistic read as a skill gap).",
+  "fan_diversity is OUR definition; DDv2's 42.3->30.3 levels are NOT comparable, only the direction."
+ ],
+ "self_test": {
+  "verdict": "COLLAPSE-SUSPECT",
+  "k": 128,
+  "d_floor": 9.614185512065887,
+  "d_rand_best": -2.5906607802025974,
+  "d_diversity": -4.0891310512733074,
+  "rel_diversity": -0.9,
+  "base_floor": -13.872857630252838,
+  "arm_floor": -4.258672118186951,
+  "base_diversity": 4.54347894585923,
+  "note": "point deltas only; the decision-grade statistic is the paired episode-cluster bootstrap, and one seed is necessary-not-sufficient (H-ESTIM-SEED-1)",
+  "div_half": "FIRED",
+  "floor_half": "FIRED"
+ }
+}

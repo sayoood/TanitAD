@@ -1,0 +1,157 @@
+{
+  "_is": "os_navpred margins on the TREATED SUBSETS. A whole-set margin dilutes a token intervention over the windows it never touched; restricting to the treated subset is selection on the INTERVENTION, never on the outcome.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1",
+  "estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py), n_boot=2000, seed=0",
+  "dump": "raw/navpred_dump.tgz",
+  "subsets": {
+    "navpred_treated": {
+      "n_windows": 1908,
+      "_is": "the windows whose PREDICTED token differs from the true one",
+      "os_navpred_minus_os": {
+        "delta_m": 0.0119,
+        "ci95": [
+          0.0035,
+          0.0213
+        ],
+        "separated": true,
+        "n_episodes": 96
+      },
+      "os_navshuf_minus_os": {
+        "delta_m": 0.0053,
+        "ci95": [
+          -0.0005,
+          0.0115
+        ],
+        "separated": false,
+        "n_episodes": 96
+      },
+      "os_navzero_minus_os": {
+        "delta_m": 0.0634,
+        "ci95": [
+          0.0471,
+          0.0804
+        ],
+        "separated": true,
+        "n_episodes": 96
+      },
+      "ha0_ext_minus_os": {
+        "delta_m": -0.0323,
+        "ci95": [
+          -0.0655,
+          -0.007
+        ],
+        "separated": true,
+        "n_episodes": 96
+      },
+      "ha_minus_os": {
+        "delta_m": -0.0177,
+        "ci95": [
+          -0.0503,
+          0.0074
+        ],
+        "separated": false,
+        "n_episodes": 96
+      }
+    },
+    "navshuf_treated": {
+      "n_windows": 2406,
+      "_is": "the windows whose SHUFFLED token differs from the true one",
+      "os_navpred_minus_os": {
+        "delta_m": 0.0045,
+        "ci95": [
+          0.0001,
+          0.0095
+        ],
+        "separated": true,
+        "n_episodes": 141
+      },
+      "os_navshuf_minus_os": {
+        "delta_m": 0.0082,
+        "ci95": [
+          0.0009,
+          0.0154
+        ],
+        "separated": true,
+        "n_episodes": 141
+      },
+      "os_navzero_minus_os": {
+        "delta_m": 0.0896,
+        "ci95": [
+          0.0757,
+          0.1049
+        ],
+        "separated": true,
+        "n_episodes": 141
+      },
+      "ha0_ext_minus_os": {
+        "delta_m": -0.0069,
+        "ci95": [
+          -0.0268,
+          0.0104
+        ],
+        "separated": false,
+        "n_episodes": 141
+      },
+      "ha_minus_os": {
+        "delta_m": 0.0054,
+        "ci95": [
+          -0.0145,
+          0.0234
+        ],
+        "separated": false,
+        "n_episodes": 141
+      }
+    },
+    "commanded_only": {
+      "n_windows": 1743,
+      "_is": "nav_cmd is a TURN command (left/right) -- where route CONTENT matters most",
+      "os_navpred_minus_os": {
+        "delta_m": 0.0028,
+        "ci95": [
+          -0.0024,
+          0.0082
+        ],
+        "separated": false,
+        "n_episodes": 51
+      },
+      "os_navshuf_minus_os": {
+        "delta_m": 0.0031,
+        "ci95": [
+          -0.0055,
+          0.0114
+        ],
+        "separated": false,
+        "n_episodes": 51
+      },
+      "os_navzero_minus_os": {
+        "delta_m": 0.0648,
+        "ci95": [
+          0.0463,
+          0.0857
+        ],
+        "separated": true,
+        "n_episodes": 51
+      },
+      "ha0_ext_minus_os": {
+        "delta_m": 0.0029,
+        "ci95": [
+          -0.0136,
+          0.0194
+        ],
+        "separated": false,
+        "n_episodes": 51
+      },
+      "ha_minus_os": {
+        "delta_m": 0.0175,
+        "ci95": [
+          0.0001,
+          0.0358
+        ],
+        "separated": true,
+        "n_episodes": 51
+      }
+    }
+  },
+  "READING": "On the 1,743 COMMANDED windows -- where the route token is a TURN and its content matters most -- replacing the true token with the model's PREDICTION (+0.0028, not separated) or with a RANDOM one (+0.0031, not separated) costs nothing separable, while REMOVING it entirely costs +0.0648 [+0.0463, +0.0857] separated. That is the presence-vs-content split at its sharpest available point before the FLIP arm."
+}

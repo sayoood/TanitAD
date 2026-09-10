@@ -162,3 +162,35 @@ the underlying fact.
 
 **The Lab cannot obtain this primary** — three routes, all 403. This needs either an institutional route to
 UNECE documents or a PI-side download. **Raised to the PI queue rather than left as a rotating debt.**
+
+---
+
+## 2026-09-09-01 - D-4: routes four and five failed, and the failure CHANGED CHARACTER
+
+`Retrieved 2026-09-09.`
+
+**Route 4:** `unece.org/sites/default/files/2026-01/ECE-TRANS-WP.29-GRVA-2026-02e.pdf` - a **direct
+primary-document URL**, surfaced by this pass's C3 query. **HTTP 403 Forbidden.**
+
+**Route 5:** `jasic.org/.../5.A global regulatory framework for Automated Driving Systems.pdf` - a
+different domain, an official regulatory presentation. Fetched **2.2 MB**, and the extractor returned a
+**CIDFont stream with no text layer**. Unreadable, not refused.
+
+**Five routes, still unread. But the character of the failure has changed and that is the reportable
+part.** Routes 1-3 (2026-09-01 / 09-02) could be read as *"we cannot find the primary"*. **Route 4
+proves the primary exists at a known, direct, public URL and that our fetcher is domain-blocked from
+it.** D-4 is a **retrieval-channel** problem, not a discovery problem. A human with a browser settles it
+in two minutes; no further Lab probing will.
+
+**Secondary picture, unchanged in substance and now at a fourth source.** The draft ADS regulation was
+adopted by GRVA at its 19-23 January 2026 session for submission to WP.29 in June 2026. It requires
+**continuous performance monitoring and reporting** and a **DSSAD** *"capable of recording safety-relevant
+ADS performance data"*, plus cyber-security and unauthorised-access protections. Open technical items as
+of the February 2026 Shanghai workshop included **data storage, audit procedures, user interaction and
+the scope of safety-case documentation.**
+
+**Position on injected row I-3, unchanged and restated so it does not drift:** the claimed
+*"UNECE bans online learning"* constraint is **unsupported at four secondary probes and still NOT
+refuted**, because every probe has been a secondary. **The binding constraint the relayed claim obscured
+remains auditability - ISMR plus DSSAD - not legality.** Design against auditability; read the primary
+before committing.

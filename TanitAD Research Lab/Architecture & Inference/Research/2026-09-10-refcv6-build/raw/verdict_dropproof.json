@@ -1,0 +1,142 @@
+{
+  "tool": "verdict_dropproof.py",
+  "baseline_verdict": "SUCCESS",
+  "baseline_success": true,
+  "n_mutants": 13,
+  "n_blocked": 13,
+  "n_survived": 0,
+  "survivors": [],
+  "mutants": [
+    {
+      "mutant": "DROP_LATERAL_heading_err",
+      "description": "the results table simply omits LATERAL.heading_err",
+      "real_defect": "refcv5-v2 WON this metric; omitting it from the table is how a non-regression clause gets silently dropped",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_LATERAL_yaw_rate_err",
+      "description": "the results table simply omits LATERAL.yaw_rate_err",
+      "real_defect": "refcv5-v2 WON this metric; omitting it from the table is how a non-regression clause gets silently dropped",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_LATERAL_cross_track",
+      "description": "the results table simply omits LATERAL.cross_track",
+      "real_defect": "refcv5-v2 WON this metric; omitting it from the table is how a non-regression clause gets silently dropped",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_LATERAL_curvature_mae_masked",
+      "description": "the results table simply omits LATERAL.curvature_mae_masked",
+      "real_defect": "refcv5-v2 WON this metric; omitting it from the table is how a non-regression clause gets silently dropped",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_LATERAL_FAMILY",
+      "description": "the LATERAL family is absent entirely",
+      "real_defect": "ADE-only reporting -- three reports went out this way AFTER four families were made binding",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 4,
+      "n_fail": 0,
+      "why": "⛔ 4 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_STRATEGIC",
+      "description": "the STRATEGIC family is absent entirely",
+      "real_defect": "refcv5-v2 is the ONLY arm with a strategic output; refcv4b reads n = 0",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "STRATEGIC_N_ZERO",
+      "description": "route_acc present but n = 0",
+      "real_defect": "refcv4b's exact state -- a row that LOOKS reported and carries no evidence",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "CURVATURE_NO_FLOOR",
+      "description": "masked curvature without its straight-line floor",
+      "real_defect": "an uninterpretable number: refcv5-v2's value is 0.512x the floor",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "ADE_SEPARATED_NO_MARGIN",
+      "description": "ADE CI separated but relative margin 0.01 < 0.10",
+      "real_defect": "⛔ 'Clearing the CI while missing the margin is a FAIL as written'",
+      "verdict": "FAIL",
+      "blocked": true,
+      "n_missing_data": 0,
+      "n_fail": 1,
+      "why": "⛔ 1 clause(s) FAILED. Reported as written."
+    },
+    {
+      "mutant": "DROP_HA_BASELINE",
+      "description": "no comparison against `ha` (only ha0_ext)",
+      "real_defect": "the bar names BOTH baselines",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "DROP_REPLICATE_FLOOR",
+      "description": "no replicate floor in the panel",
+      "real_defect": "H-ESTIM-SEED-1: a separated CI from a one-seed arm is NECESSARY, NOT SUFFICIENT",
+      "verdict": "MISSING_DATA",
+      "blocked": true,
+      "n_missing_data": 1,
+      "n_fail": 0,
+      "why": "⛔ 1 required clause(s) have NO DATA. This is NOT a pass and NOT a fail -- the bar cannot be evaluated. The clauses were committed before any data existed and cannot be dropped by being left out of the results table."
+    },
+    {
+      "mutant": "FORBIDDEN_ESTIMATOR",
+      "description": "panel scored with overlapping_holdout_se",
+      "real_defect": "it biases the POINT ESTIMATE as well as the interval (-6.67 % to +11.69 %, bidirectional, 27 dumps)",
+      "verdict": "REFUSED",
+      "blocked": true,
+      "n_missing_data": 0,
+      "n_fail": 0,
+      "why": "⛔ the panel's estimator or tier is inadmissible; no verdict may be issued from it. ⛔ estimator names 'overlapping_holdout_se'. FORBIDDEN: it biases the POINT ESTIMATE as well as the interval (-6.67 % to +11.69 %, bidirec"
+    },
+    {
+      "mutant": "WRONG_TIER",
+      "description": "panel stamped T0 instead of T1",
+      "real_defect": "T0 is a WM diagnostic, never driving performance; open-loop lateral skill was an ACTION ECHO (97.9 % -> ~5 % closed-loop)",
+      "verdict": "REFUSED",
+      "blocked": true,
+      "n_missing_data": 0,
+      "n_fail": 0,
+      "why": "⛔ the panel's estimator or tier is inadmissible; no verdict may be issued from it. ⛔ tier is 'T0', must be T1. T0 is a WM diagnostic and is never a driving result; cross-tier comparison is invalid."
+    }
+  ],
+  "verdict": "PASS"
+}

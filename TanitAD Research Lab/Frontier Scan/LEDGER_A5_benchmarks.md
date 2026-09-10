@@ -99,3 +99,104 @@ read (0.4531 -> 0.36-0.40) currently deciding a recipe.
 
 `Next in this track: C4 leaderboard numbers landed 2026-09-02 (see LEDGER_C1_releases.md C4 entry) but`
 `are NOT admissible into a comparability table until backlog row 3 (portfolio) and D-EPDMS-FAM land.`
+
+
+---
+
+## Entry 2026-09-05-01 — ⛔ THE navhard EPDMS LEVEL DOES NOT TRIANGULATE WITH OUR OWN RECORDS
+
+`Three independent 2026 sources read this pass (Q12 full text, Q16 search). Cited by:`
+`Frontier Scan/Daily/2026-09-05/RESULT.md F4.`
+
+### What the field reports on navhard
+
+| source | evidence class | navhard EPDMS |
+|---|---|---|
+| GuideFlow `2511.18729` Table 1 (**FULL TEXT**) | PUBLISHED | LTF **23.1** · GTRS-DP\* **23.8** · DiffusionDrive\* **24.2** · DriveSuprim **42.1** · GuideFlow+Scorer **43.0** · DiffVLA **45.0** |
+| IDOL `2605.31476` | PUBLISHED (abstract-level) | IDOL **38.0** — *"highest final EPDMS among all comparable methods"*, +10.1 over WoTE |
+| RAP `2510.04333` | PUBLISHED (abstract-level) | RAP-DINO **36.9**, claimed SOTA on NAVSIM v2 |
+
+### ⛔ What WE hold
+
+`LAB_BACKLOG.md` row 32 and the 2026-09-02 frontier pass carry **DrivoR 56.3**, **privileged PDM-Closed
+56.6** and **DriveFuture 55.5** on navhard.
+
+**Every one sits ~11–13 points above the highest number in any of the three tables above, and two of the
+three claim SOTA at 36.9–38.0.** ⇒ **Three independent papers do not miss a 56.3 that outranks them by 18
+points.** These are not one leaderboard: different split, different NAVSIM version, or a different
+scoring-basis era. **This is V-5's named corruption path, arriving exactly as V-5 predicted.**
+
+### Consequence — binding
+
+⛔ **Row 32's efficiency wedge is BARRED from quoting any of these levels until the scoring basis is
+reconciled.** This is *stronger* than the 2026-09-02 split-mixing caution: we now hold three independent
+contradicting tables, not a general rule.
+⚠️ **It does NOT retract CW-1's resolution** (`2026-09-02-cw1-resolution-and-evidence-integrity`), which
+settled the *internal consistency* of DriveFuture's own rows. This is a **new** question one level up, on
+the *level*. The two findings are compatible and must not be merged.
+
+### ⭐ The other half of the same table — it confirms Band D
+
+A 3DGS-based framework reports **50.9 EPDMS on a pseudo-closed-loop navhard**, and NAVSIM v2's navhard
+Stage 2 *"uses 3D Gaussian Splatting to synthesise counterfactual camera views after policy deviations,
+thereby simulating closed-loop evaluation from logged data"*. ⇒ **The benchmark our portfolio decision
+(backlog row 3) already ranks GO is itself a counterfactual-rendering pseudo-closed-loop evaluation** —
+independent confirmation of the Wayve GAIA-4 doctrine (register V-1), and direct support for backlog
+row 14 (pseudo-simulation on our NuRec/gsplat assets).
+
+`Position: we cannot enter ANY navhard comparability table until the era question is settled. Proposed`
+`row FS5-3 makes that a work item rather than a standing caveat.`
+
+---
+
+## 2026-09-09-01 - Debt D-10: navhard and "NAVSIM v2 12k" are TWO DISJOINT POPULATIONS
+
+`lib 2603.24581 Latent-WAM, FULL TEXT results. Plus the NAVSIM maintainers' guidance (PUBLISHED-BLOG). Retrieved 2026-09-09.`
+
+| cluster | values (EPDMS) | basis | class |
+|---|---|---|---|
+| navhard | 23.1-45.0 (GuideFlow) - 38.0 (IDOL) - 36.9 (RAP-DINO) | 450 Stage-1 + 5,462 Stage-2 observations | PUBLISHED, read 2026-09-05 |
+| **"NAVSIM v2", 12k scenarios** | **89.3** Latent-WAM - **86.1** DriveVLA-W0 - **85.1** Epona - **84.8** World4Drive | *"12k evaluation scenarios"*, verbatim; **split never named** | PUBLISHED, read today |
+| ours | 55.5 DriveFuture - 56.3 DrivoR | **unknown** | INHERITED, provenance unrecorded |
+
+**Mechanism, from the benchmark's own maintainers:** they *"discourage the use of **self-reported and
+unofficial 'NAVSIM v2' benchmark splits**"* and direct submitters to the leaderboard *"to ensure both
+consistency and visibility of submissions."*
+
+**Verdict: the roughly 40-point spread is not a capability ranking, it is two measurement bases wearing
+one metric name.** Rule V-5's named corruption path, caught before it entered a table.
+
+**Our own two numbers match NEITHER cluster** - above navhard's 45.0 ceiling and well below the 12k
+cluster's 84.8 floor. That makes their provenance unknown, not merely disputed.
+
+**D-10 state: MECHANISM RESOLVED, PROVENANCE OPEN.** Row 32 and FS5-3 stay BARRED.
+**Guideline T-4: no external EPDMS number enters a TanitAD table without a SPLIT STAMP.**
+
+**Caveat recorded against ourselves:** the assignment of "12k evaluation scenarios" to a navtest-class
+split is **our inference from the scenario count**, not a quotation. Two probes (abstract, results) found
+no split name; an appendix probe was not possible.
+
+**Cross-link:** 2026-09-05 established that **navhard Stage 2 IS a 3DGS counterfactual pseudo-closed-loop
+evaluation**. That gives a physical reason for the gap rather than a bookkeeping one, and it makes
+navhard the tier our T1 doctrine says is comparable to us.
+
+## 2026-09-10-01 — D-10: the counts partition, the scoring basis does not
+
+`PUBLISHED` · arXiv **2506.04218v2** (retrieved 2026-09-10) — *Pseudo-Simulation for Autonomous Driving*, CoRL '25, **the NAVSIM v2 maintainers' own paper.**
+
+**Verbatim:** *"It uses a subset of nuPlan that we refer to as navhard, involving **450 Stage 1 and 5462 Stage 2** observations."*
+**navhard leaderboard anchors, same primary:** PDM-Closed **51.3** · Latent TransFuser **23.1** · MLP **12.7** · Constant Velocity **10.9**. EPDMS range **[0, 1]**.
+**A separate correlation-study subset** — *"244 initial observations (Stage 1) and 4164 synthetic observations (Stage 2)"* — ⚠️ **is NOT navhard and must never be reported as such.**
+**navtest** ≈ **12,000 samples** (`PUBLISHED-SECONDARY`, consistent across multiple 2026 method papers; ~136 test logs).
+
+⭐⭐⭐ **FS9-2's first branch fires: the two populations separate by count.** navhard ~5.5 k Stage-2 · navtest ~12 k. ⇒ **the 84.8 / 85.1 / 86.1 / 86.4 / 89.3 cluster is navtest-EPDMS and may NOT be called navhard.** Drive-HWM's 86.4 (read today) is stamped **navtest**; its 93.8 PDMS is **NAVSIM v1**, a different metric.
+
+⛔ **RESIDUE — the part that matters.** Our records carry **PDM-Closed = 56.6 on navhard** (LAB-RUN-008, the basis for row 32's *"within 0.3"*); this primary reports **51.3 on navhard**. **One privileged planner, one split name, a 5.3-point spread.** ⇒ **the split name does not pin the scoring basis.** Candidate causes, unverified: a NAVSIM version bump between CoRL '25 and the 2026 tables; a two-stage weighting change; EPDMS sub-metric additions.
+
+⇒ **D-10: MECHANISM RESOLVED (09-09) · COUNTS RESOLVED (09-10) · BASIS OPEN. Row 32 stays BARRED. Guideline T-4 stands.**
+
+⚠️ **DATED CORRECTION to our own record** (append-only discipline — the 2026-09-05 entry stands as written). It reads *"three independent tables cap navhard at ≤ 45.0"*. The maintainers' primary puts PDM-Closed at **51.3** on navhard. **The ≤ 45.0 cap is SUPERSEDED and must not be re-quoted.**
+
+**Metric definitions banked for D-EPDMS-FAM (backlog row 12):** `PDMS = NC · DAC · (5·EP + 5·TTC + 2·Comf)/12`. EPDMS adds **DDC** (driving-direction compliance), **TLC** (traffic-light compliance), **LK** (lane keeping), and replaces Comf with **HC** (history comfort) and **EC** (extended comfort). ⭐ **None of the eleven sub-metrics maps to `tac.manoeuvre_decision` or `strat.route_goal`** — the four-families gap is confirmed from the metric's own definition, not merely suspected.
+
+→ `Benchmarks & Evals/Research/2026-09-10-navhard-split-stamp/RESULT.md`

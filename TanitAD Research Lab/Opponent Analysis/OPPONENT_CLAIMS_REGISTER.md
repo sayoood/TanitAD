@@ -189,3 +189,190 @@ industry consensus"* is not supportable and should not appear in our positioning
   search-engine summary; the cited primary `2512.16760` contains **no latency number at all**.
   *(Third consecutive day on which the failing load-bearing number was one nobody had opened the primary
   for — cf. D-1's 85.1/92.1 and B2's 25 %.)*
+
+
+---
+
+# Band-D pass 2026-09-05 — WAYVE (GAIA-4). Claims V-1 … V-4
+
+`⭐ FIRST WAYVE ADJUDICATION. The register held Waymo (W-*), NVIDIA (N-*) and Mobileye (M-*) only —`
+`the architecturally closest opponent on the WORLD-MODEL axis had never been adjudicated at all.`
+`Source: wayve.ai/thinking/gaia-4/, 2026-08-03, 13 named authors. PUBLISHED-BLOG.`
+`Full seven-step working: Frontier Scan/Daily/2026-09-05/RESULT.md F1.`
+
+### Document classification (step 1)
+
+| field | value |
+|---|---|
+| **Document** | *"GAIA-4: Multimodal World Models Powering Closed-Loop Simulation for Safe and Scalable Autonomy"*, `wayve.ai/thinking/gaia-4/`, **2026-08-03** |
+| **Evidence class** | `PUBLISHED-BLOG` — never bare `PUBLISHED` |
+| **Competitive context** | Published **one month before** Wayve's London robotaxi launch on Uber (2026-09-03, `RELAYED`). No operator has yet completed VCA registration for unsupervised service. **A safety-credibility document ahead of a commercial launch.** Framing, not disqualification |
+| **Companion** | GAIA-3 press page, **dated 2 December 2025**: 15 B params, *"reduced synthetic-test rejection rates fivefold"* |
+
+### Is it an experiment? (step 2)
+
+⭐ **One genuine controlled comparison exists** — *"Training GAIA for this task improves how faithfully it
+preserves the recorded world by 2.5x"* (task-trained vs not). ⛔ **Metric unnamed, no absolute values.**
+⛔ **The load-bearing doctrinal claim has NO experiment**: *"Early studies show that GAIA-3 simulated
+testing closely mirrors real-world driving results"* — no study named, no metric, no coefficient. **This
+is attribution-from-exposure.** The post's own fidelity question 1 — *"Do the simulated runs reproduce the
+outcomes we observed in the real world?"* — **is never answered numerically** (empty **E6**, found in the
+primary itself).
+
+### Adjudicated claims
+
+| id | claim (Wayve) | step 2: experiment? | step 3: confirming (independent) | step 4: contradicting (actively sought) | step 5: VERDICT | step 6: BINDS ON US? | what would FLIP it |
+|---|---|---|---|---|---|---|---|
+| **V-1** | Generative world-model simulation **measures end-to-end safety at scale** — *"transforming world modeling from scene generation into a way to measure end-to-end safety"* | ⛔ **NO.** *"Early studies"*, unnamed, unnumbered | ✅ **NAVSIM v2 navhard Stage 2 uses 3DGS counterfactual views to simulate closed-loop evaluation from logs**; a method reports **50.9 EPDMS** there. NeuroNCAP `2404.07762` is a second independent framework | ✅ **`2403.16092`** *"Are NeRFs ready for autonomous driving?"* — *"to trust the results achieved in simulation, one needs to ensure that AD systems perceive real and rendered data in the same way"*; identifies **FID/LPIPS** as real-to-sim gap indicators. ⚠️ Abstract-level read; a **class** argument (2024, NeRFs), not like-for-like | ⚠️ **CONTESTED** — the *method* is where the field's evaluation has gone; the *validity* claim is unnumbered while the independent literature says the transfer must itself be measured | ⭐ **NO, and it does not challenge our ruling.** Our binding rule bars *a planner feeding its own predictor*. GAIA-4 has a **separate** world model rendering sensors into the driver's **real** perception stack — architecturally **AlpaSim's role for us**. ⇒ GAIA-4 **satisfies** our ruling | A published measurement of the real-to-sim gap for GAIA-class generative simulators — or Wayve/DriveSafeSim publishing a correlation coefficient against road outcomes |
+| **V-2** | ⛔ **THE CONCESSION.** *"every other agent in the scene keeps the exact behavior it showed in the real-world log"* · *"the evaluation stays conservative: no vehicle, pedestrian, or cyclist changes its behavior in response to the AI Driver"* | ✅ It is a **stated design constraint**, not a claim needing one | ✅ NAVSIM navhard Stage 2 is likewise non-reactive; Waymo's and the benchmark standard's evaluations share the constraint | — (no contradiction sought: it is a concession against interest) | ✅ **SUPPORTED** (they state it against their own interest) | ⭐⭐ **YES, AND IN OUR FAVOUR.** **GAIA-4's "closed loop" is EGO-ONLY against a frozen world.** So is a NuRec/gsplat replay of ours. ⇒ **We are not behind on the loop; we are behind on having BUILT it.** Backlog row 14 is our GAIA-4 | A GAIA-4 successor demonstrating reactive agents **with a measured transfer result** |
+| **V-3** | *"the addition of radar measurably shifts the closed-loop trajectory, providing evidence that the generated radar carries decision-relevant information"* | ⚠️ **An intervention, yes — but the wrong one for the conclusion** | — | — (internal defect, no external search needed) | ⛔ **UNSUPPORTED-AS-STATED** — a **SENSITIVITY** result presented as a **VALIDITY** result. That the trajectory *moves* proves the input is not inert; it says nothing about whether it moves **correctly** | ⭐ **YES — as a warning about OUR OWN reporting.** Our doctrine already names this class: `W_JERK` was measured **inert**, and the ccos repair *"works mechanically and is refuted as an improvement"*. **A lever that engages is not a lever that helps** | A comparison of radar-on vs radar-off closed-loop outcomes against **logged real** outcomes, not against each other |
+| **V-4** | *"Reactive agents is a capability we can switch on, not a limitation of the world model"* | ⛔ **NO** — asserted, not demonstrated | — | — | ⛔ **UNSUPPORTED-AS-STATED** (capability claimed without demonstration) | ⚠️ **Symmetrically binding.** We may not price this into their lead — **and we may not make the same move ourselves.** An unbuilt capability is not a capability | Any published GAIA-4 result **with** reactive agents enabled |
+
+### ⭐ Guidelines derived (step 7)
+
+- **S-6 (strategic).** *Ego-closed-loop-against-a-frozen-world is the state of the art, not a compromise.*
+  Waymo, Wayve and the NAVSIM benchmark standard all evaluate this way. **TanitAD should say so and stop
+  treating the absence of a reactive simulator as our gap** — it is the field's.
+  ⛔ **Falsifier (V-3 rule):** a published AV evaluation with fully reactive agents shown to transfer to
+  road outcomes better than a rails-based one. **None found at this probe.**
+- **T-4 (tactical).** **Re-price backlog row 14 upward — it is our GAIA-4.** Every ingredient is already
+  MEASURED (NuRec msgpack open, gsplat 492 FPS on Thor, the T1 harness), the target formulation is now
+  published (NAVSIM navhard Stage 2), and the opponent's own version concedes the same rails constraint.
+  ⛔ **Falsifier:** our 3DGS reconstructions failing the published R² ≥ 0.7 against T1.
+- **T-5 (evidence hygiene).** ⛔ **No GAIA-3/GAIA-4 number may enter a TanitAD comparability table.**
+  2.5× has no named metric; fivefold measures test **throughput**, not validity; **no parameter count
+  exists**. Update `Benchmarks & Eval/LEADERBOARD.md:1370` — it still calls GAIA-3 *"offline"*, which
+  GAIA-4 supersedes — and mark both rows **capability-only**.
+
+### ⚠️ Opponent strengths recorded (§7.2 — a Band-D package listing none is INCOMPLETE)
+
+1. **Radar generated by the SAME world model as the video**, not bolted on afterwards — *"rather than being
+   added separately afterward"*. A genuine architectural achievement. **We have no multimodal generative
+   capability at all.**
+2. ⭐ **A component-level validity control we do not have**: they perturb ego pose and verify that other
+   vehicles and lane markings stay stable. **That is a good control and we should copy it.**
+3. **A three-level fidelity framework** (outcome / system-output / component). Even unanswered, asking the
+   right three questions in public is ahead of where our own eval doctrine states them.
+4. **External, government-funded validation** — DriveSafeSim with Warwick Manufacturing Group, scrutinising
+   exactly the claim we mark unsupported. **They are trying to close the gap we flagged.**
+5. **Shipped.** London robotaxi service on Uber, 2026-09-03. Doctrine backed by deployment.
+
+### ⛔ Corrections entered this pass
+
+- ⛔ **Debt D-9 is WRONG ON ITS FIRST HALF.** It reads *"LeWorldModel `2603.19312` and Sub-JEPA
+  `2605.09241` are **UNBANKED** and unread."* **Both are present in `library.json`** — verified
+  2026-09-05 by direct substring check **before** any web search (V-1). **The unbanked half is FALSE; the
+  unread half STANDS.** ⭐ *Root-cause class: the same one this register keeps recording — a property
+  asserted in the same turn as the intention, never verified. Here it cost a mis-stated debt; V-1 exists
+  precisely to catch it, and did.*
+- ⚠️ **`LEADERBOARD.md:1370` is superseded** — GAIA-3 is recorded as an *"offline generative world model"*;
+  GAIA-4 (2026-08-03) is not offline. Category change, not just a version bump.
+
+### ⛔ Open verification debts — updated 2026-09-05
+
+| # | debt | status |
+|---|---|---|
+| **D-4** | UNECE GRVA primary text unread | ⛔ **STANDS — with the PI.** Not re-probed this pass (three routes already 403) |
+| **D-7** | `1604.06915` full text unread | ⛔ **STANDS.** Not reached this pass |
+| **D-8** | B9 primary unread (Open-Sora 70M→10M `RELAYED`; MiniWorld `2608.01127` banked-unread) | ⛔ **STANDS.** B9 not scanned this pass |
+| **D-9** | LeWM `2603.19312` + Sub-JEPA `2605.09241` | ⚠️ **HALF-CORRECTED (see above): banked, still UNREAD.** ⛔ Still high priority — we cite LeWM's action-insensitivity **only through its critic**, and ATM `2606.09028` (read in full this pass) is a **second** paper we are now citing about LeWM without having read LeWM |
+| **D-10** *(new)* | ⛔ **The navhard EPDMS SCORING BASIS is unreconciled.** Three independent 2026 tables cap navhard at **≤ 45.0**; our records carry **55.5 / 56.3**. Until resolved, **row 32's efficiency wedge is BARRED** | ⛔ **OPEN — blocks any external comparability claim** |
+| **D-11** *(new)* | **GAIA-4 has no published parameter count and no simulated-vs-real correlation** (empty E6). Both are load-bearing for V-1's verdict | ⛔ **OPEN — watch DriveSafeSim/WMG outputs** |
+
+---
+
+# Band-D pass 2026-09-09 - NVIDIA (Alpamayo 1.5). Claims A15-1 ... A15-4
+
+`Adjudicated under DAILY_RESEARCH_CHARTER_v2_AMENDMENT.md section 7.1. All seven steps, no exceptions.`
+`Retrieval date 2026-09-09. Source: github.com/NVlabs/alpamayo1.5 model card and README.`
+
+### Document classification (step 1)
+
+`NVlabs/alpamayo1.5` - an **open-weights release with an accompanying model card**, published by NVIDIA
+into a competitive context in which NVIDIA sells the compute its own doctrine implies. Evidence class
+**`PUBLISHED-RELEASE-NOTE`**, never bare `PUBLISHED`.
+
+**Why it is Band D and not merely Band C:** the card does not only say what shipped, it argues a
+*shape* - a 10B reasoning VLA whose chain-of-causation trace is the interface between perception and
+action, with a teacher-student deployment story attached. That is a claim about what is true.
+
+**It is genuinely new to us.** Register rows N-1 to N-3 adjudicate **Alpamayo 1** (2026-08-31). N-3
+touched the 1.5 card for its licence text only. **The 1.5 doctrine has never been adjudicated.**
+
+### Is it an experiment? (step 2) - the question that does the most work
+
+⛔ **No controlled ablation is offered for any of the four claims.** The card reports capabilities and
+improvements; it does not report a matched comparison isolating the reasoning channel, and it does not
+publish a reasoning-suppressed arm. **A1.5 improvements over A1 are attribution-from-release, which has
+the same defect as attribution-from-exposure: several things changed at once (RL post-training,
+navigation inputs, VQA head, multi-camera flexibility) and no counterfactual separates them.**
+
+⚠️ One genuine measurement-shaped statement exists and it is a *limitation*, not a claim:
+*"model accuracy may degrade with fewer cameras"* - directional, unquantified.
+
+### Adjudicated claims
+
+| # | claim (verbatim where quoted) | evidence class | confirming (independent) | contradicting (independent, ACTIVELY SOUGHT) | verdict | binds on us? |
+|---|---|---|---|---|---|---|
+| **A15-1** | RL post-training improves driving: *"Alpamayo 1.5 has undergone RL post-training, achieving improvements in reasoning quality and **reasoning-trajectory alignment**"* | `PUBLISHED-RELEASE-NOTE`, no ablation | LCDrive `2512.10226` reports *"larger improvements under interactive RL"* for reasoning-aligned tokens - an independent group finding RL helps this family | ⛔ **`2608.29583` "Drive the Thoughts: Runtime Monitoring of VLA Reasoning-Trajectory Consistency"** exists precisely because reasoning and trajectory **come apart at runtime**; a third party built a monitor for the failure NVIDIA claims to have fixed. **Alignment improved is not alignment achieved.** | ⚠️ **CONTESTED** - the direction is independently supported, the sufficiency is not | ⚠️ **PARTIALLY.** We have no language channel, so "reasoning-trajectory alignment" has no referent for us. What DOES bind is the shape: **a model whose two heads can disagree needs a runtime consistency check.** Our analogue is the planner-vs-predictor disagreement, and we have no monitor for it. |
+| **A15-2** | ⭐ **THE CONCESSION.** *"Alpamayo 1 is the Teacher: a high-capability reasoning model that **runs in cloud or on-premise infrastructure**"*, generating traces for smaller consumers | `PUBLISHED-RELEASE-NOTE` | ⭐⭐ **Waymo W-14, independent of NVIDIA**: *"these Teacher models are too big to run on vehicles for real-time decision making"*; and W-3's *"teacher-student models to optimize onboard compute"* | None found. The counter-search returned no source arguing that frontier-scale reasoning models are deployable on-vehicle today. | ⭐⭐⭐ **CONFIRMS-US** | ⭐⭐ **YES, in our favour.** **Two of the three largest players now state, unprompted, that their big model does not go in the car.** Combined with the hardware line - *"minimum 24 GB VRAM for single-sample inference, up to 60 GB with CFG"* - this is a **quantified** admission: 24-60 GB against Thor's budget. Backlog P-10 (*"argue small-at-deployment as a position, not a constraint"*) gains its second independent opponent citation and its first hard number. |
+| **A15-3** | Verbose natural-language chain-of-causation is the right action-facing interface (implied by the shipped architecture: *"the VLM generates chain-of-causation reasoning, then a diffusion expert produces trajectory predictions"*) | `PUBLISHED-RELEASE-NOTE`, architectural argument, no ablation | The design is widely copied, which is adoption, not evidence. **No independent controlled support found.** | ⛔⛔ **TWO independent sources, both against.** **XCoT-VLA `2608.10976`**: *"verbose natural-language Chain-of-Thought is poorly suited to real-time control because it is **open-ended, costly to decode, and difficult to optimize as an action-facing representation**"* - and reports lower longitudinal and lateral error with **2-6 executable tokens**. **LCDrive `2512.10226`**: latent CoT gives *"faster inference, improved driving quality"* versus **both** non-reasoning **and text-reasoning** baselines. | ⛔ **UNSUPPORTED-AS-STATED** - and contradicted on both cost and quality by two independent groups | ⛔ **NO - and that is the useful part.** We have no language channel to reform. **It binds as CORROBORATION of a choice we already made**: our compact latent interface is the direction two independent groups moved *toward* from the verbose end. ⭐ It also independently re-confirms **Waymo W-7** (*VLMs "too slow for real-time control"*) from a second stack. |
+| **A15-4** | Scale plus reasoning is the path for AV capability (10B, 8.2B backbone + 2.3B action expert) | `PUBLISHED-RELEASE-NOTE` | None independent found this pass. | ⛔ **Our own register row N-1 already stands against it**: Alpamayo's own card showed **0.5 % open-loop trajectory gain across 3.3x parameters**, with language scaling (74.2 to 79.2) while trajectory did not. ⭐ **`2603.24581` Latent-WAM is the harder contradiction: 104M inference-time parameters, in the same year, claiming to beat the 84-89 EPDMS cluster.** A ~100x smaller model is competitive on the metric that matters to us. | ⛔ **UNSUPPORTED-AS-STATED on trajectory** (SUPPORTED on language capability, which is not our target) | ⭐⭐ **YES, in our favour** - but ⚠️ **the Latent-WAM number is under D-10's bar and may NOT be quoted until its split is stamped.** The argument stands on N-1 alone; the Latent-WAM half is held back deliberately. |
+
+### ⭐⭐ Does it bind on us? (step 6, separate from whether it is true)
+
+**A15-1 and A15-3 are true-or-false about a language channel TanitAD does not have.** Conflating "their
+CoT interface is the wrong shape" with "our latent interface is therefore right" would be exactly the
+category error the amendment warns about in the Waymo L1 case. **What transfers is the mechanism (two
+heads can disagree, so measure it), not the verdict.**
+
+**A15-2 binds hardest, and in our favour**, because it is a claim about deployment economics, which is
+the one axis where our constraints and theirs are genuinely commensurable.
+
+### ⚠️ Opponent strengths recorded (section 7.2 - a Band-D package listing none is INCOMPLETE)
+
+1. ⭐ **They ship open weights with a runnable card.** Alpamayo is the only big-league opponent we can
+   actually inspect and measure rather than only read. That is a real and unusual advantage, and it is
+   why H-OPP-1 (backlog row 16) is worth more than any amount of further reading about Waymo.
+2. ⭐ **Their limitations section is honest and specific**: *"not a fully fledged driving stack...
+   lacks access to critical real-world sensor inputs, does not incorporate required diverse and
+   redundant safety mechanisms"*, plus the camera-count degradation note. **We should copy this
+   practice**; several of our own artifacts assert capability without an equivalent boundary statement.
+3. ⭐ **A published, reproducible RL post-training recipe** for a driving VLA. Whatever the alignment
+   claim is worth, the *recipe* being public is an asset the field did not have, and it is more than we
+   publish.
+4. ⚠️ **Ecosystem lock-in as a genuine moat**: teacher in the cloud, student on DRIVE Thor, tooling and
+   corpus (`PhysicalAI-AV`) all from one vendor - the same corpus we train on. **Our parity corpus is
+   their product**, which is a strategic dependency worth naming even though it is not a technical
+   weakness of ours.
+
+### Guidelines derived (step 7)
+
+| id | kind | guideline | the measurement that would OVERTURN it (rule V-3) |
+|---|---|---|---|
+| **S-6** | strategic | **Argue the deployment-economics case with opponent numbers, not ours.** Two independent opponents now concede the teacher does not ride in the car, and Alpamayo attaches **24-60 GB VRAM** to its inference. State small-at-deployment as the industry's own position. | Any opponent shipping a frontier-scale reasoning model running on-vehicle inside an automotive power and latency budget. |
+| **S-7** | strategic | **Claim the compact-latent interface as convergent, not contrarian.** Two independent groups moved from verbose text CoT toward compact executable or latent reasoning **and reported both faster inference and better driving**. | A controlled ablation showing verbose natural-language CoT beating a compact latent interface at matched latency on a driving metric. |
+| **T-4** | tactical | ⛔ **Never quote the Latent-WAM 89.3, the DrivoR 56.3, or the DriveFuture 55.5 until each carries a SPLIT STAMP.** D-10 is resolved in mechanism, not in provenance. | A leaderboard submission, or an author statement naming the split and NAVSIM version for each. |
+| **T-5** | tactical | **Every parameter count in a comparability table carries INFERENCE-TIME or TRAINING-TIME**, the way every metric carries its eval tier. Latent-WAM is 104M at inference and 191M in training; DrivoR's ~40M is unverified (backlog L-15). | Not falsifiable - a notation rule, not a claim. Adopted for hygiene, and marked as such. |
+| **T-6** | tactical | **Build the disagreement monitor we lack.** A15-1's contradiction is that a third party had to monitor reasoning-trajectory consistency at runtime. Our analogue: **log planner-selected versus predictor-implied trajectory divergence per window** on existing arms. 0 GPU on banked dumps. | If planner and predictor never measurably disagree on banked windows, the monitor has no signal and the line closes. |
+
+### Corrections entered this pass
+
+⚠️ **Backlog row 4 / MM-E1's premise is half wrong.** It states *"our fixed tau=0.996 has no published
+operating point - every EMA-teacher line ramps tau."* **`2606.28383` uses a FIXED alpha = 0.996, does
+not ramp, and measures a 44-fold collapse in discriminative power without EMA.** The sentence *"no
+published operating point exists"* is **retracted**. ⛔ **The design question is NOT settled** - that
+result is a 1.29M-parameter model on structured agent-state vectors, not pixels, at 1,322 scenarios.
+See `Frontier Scan/Daily/2026-09-09/RESULT.md` F4.
+
+### Open verification debts - updated 2026-09-09
+
+| # | debt | state |
+|---|---|---|
+| **D-4** | UNECE GRVA primary text | ⛔ **STANDS - FIVE ROUTES NOW.** Route 4 (direct unece.org PDF) **HTTP 403**; route 5 (jasic.org) returned a font stream with no text layer. ⭐ **Character changed: this is a RETRIEVAL-CHANNEL block on a document we have located, not a discovery failure.** With the PI; a human browser settles it in minutes. |
+| **D-7** | `1604.06915` full text unread | ⛔ **STANDS.** Not reached this pass. |
+| **D-8** | B9 primary unread | ⛔ **STANDS and is now WORSE.** Kairos `2606.16533`'s curation section failed at **three routes** today (PDF too large, landing page only, HTML truncated mid-section 4.2). Its two-level-curation claim is `RELAYED` and decides nothing. |
+| **D-9** | LeWM `2603.19312` + Sub-JEPA `2605.09241` banked, unread | ⛔ **STANDS and HARDENS. `2608.12939` is the THIRD independent critic of LeWM we have now read without reading LeWM itself.** This is the register's own named failure class, three deep. |
+| **D-10** | navhard EPDMS scoring basis | ⭐⭐ **MECHANISM RESOLVED 2026-09-09** - two disjoint populations (navhard 23.1-45.0; "NAVSIM v2" 12k-scenario 84.8-89.3), and the maintainers discourage self-reported splits. ⛔ **PROVENANCE STILL OPEN** for our own 55.5/56.3, which match neither cluster. Row 32 stays BARRED; guideline T-4. |
+| **D-11** | GAIA-4 parameter count / sim-real correlation | ⛔ **OPEN.** Not re-probed this pass. |
+| **D-12** *(opened and CLOSED the same pass)* | Today's primaries cited but not banked during the mount outage | ✅ **DISCHARGED 2026-09-09.** The mount recovered late in the pass; **8 primaries banked or citation-updated, all rc=0** (`2608.12939`, `2606.28383`, `2603.24581`, `2509.23958`, `2608.10976`, `2512.10226`, `2505.24808`, `2608.29583`). Library **487 -> 491 entries, 3,198.3 MB**. ⛔ **V-1 measured at 4 of 8 already banked (50 %) - and `2603.24581`, which carried this pass's biggest finding, was one of them, unread.** |

@@ -1,0 +1,285 @@
+{
+ "bank_meta": {
+  "n_clips": 141,
+  "n_rows": 14237,
+  "n_lead_rows": 3991,
+  "pool": [
+   8,
+   20
+  ],
+  "grid": [
+   16,
+   40
+  ],
+  "win": 4,
+  "ckpt_sha256": "37bdf89c8e6a6a673b2200785c4d628ee615812efad5890f66d32142b0b29a41",
+  "ckpt_step": 21109,
+  "block": "C:/Users/Admin/tanitad-wt/_lead_b1/b1_eval_lead_block.npz",
+  "speed_check_max_mps": 3.2033060393565904e-05,
+  "speed_misjoin_ctrl_mean_mps": 0.09485728819521765,
+  "alignment_proven": true,
+  "freeze": {
+   "n_tensors": 407,
+   "sha_mismatches": 0,
+   "max_abs_delta": 0.0,
+   "held": true
+  }
+ },
+ "n_folds": 5,
+ "seed": 0,
+ "chan_k": 32,
+ "final_k": 128,
+ "head_version": "dkgap-linear-v1",
+ "arms_note": "the DINOv3 external reference is deliberately NOT re-run here: it is in none of this spec's bars, M84 already published it on the TRAIN corpus, and its 4.7 GB beside field's would exceed free RAM. The required control is the RAW-PIXEL FLOOR, which is present.",
+ "cells": {
+  "gap_all_lead": {
+   "n_score": 3991,
+   "n_clusters": 85,
+   "d": 128,
+   "fit_mean": 29.599397576846663,
+   "arms": {
+    "constant": {
+     "r2": 0.0,
+     "d": 0,
+     "note": "must read EXACTLY +0.000000"
+    },
+    "shuffle_within_clip": {
+     "r2": 0.15416835250088334,
+     "d": 128
+    },
+    "field": {
+     "r2": 0.4040040564507277,
+     "ci": [
+      0.248053018588844,
+      0.5182992725688362
+     ],
+     "d": 128,
+     "r2_within_clip": 0.31527200049610926,
+     "mae": 11.46318073623114,
+     "bias": 1.9243131131884261
+    },
+    "pix": {
+     "r2": -0.03348195905631779,
+     "ci": [
+      -0.12056936931440099,
+      0.05445683597575301
+     ],
+     "d": 128,
+     "r2_within_clip": -0.029396078769162504,
+     "mae": 15.470541147133112,
+     "bias": 1.4952316129339143
+    }
+   },
+   "paired": {
+    "field-pix": {
+     "delta": 0.43748601550704547,
+     "ci": [
+      0.26389881952552935,
+      0.5815023377262315
+     ],
+     "excludes_zero": true
+    }
+   }
+  },
+  "gap_le30m": {
+   "n_score": 2383,
+   "n_clusters": 64,
+   "d": 128,
+   "fit_mean": 16.8969361937134,
+   "arms": {
+    "constant": {
+     "r2": 0.0,
+     "d": 0,
+     "note": "must read EXACTLY +0.000000"
+    },
+    "shuffle_within_clip": {
+     "r2": -0.006636786856808907,
+     "d": 128
+    },
+    "field": {
+     "r2": 0.6585907213813231,
+     "ci": [
+      0.562125863246894,
+      0.7298358163144717
+     ],
+     "d": 128,
+     "r2_within_clip": 0.7198991684073386,
+     "mae": 3.4853724338737164,
+     "bias": 0.8447527670400886
+    },
+    "pix": {
+     "r2": -0.056779734898306566,
+     "ci": [
+      -0.16472944467089526,
+      0.04909545288458483
+     ],
+     "d": 128,
+     "r2_within_clip": -0.04259255336375434,
+     "mae": 6.222918080366568,
+     "bias": 1.1581915049464175
+    }
+   },
+   "paired": {
+    "field-pix": {
+     "delta": 0.7153704562796297,
+     "ci": [
+      0.6096337399691131,
+      0.8209346736425651
+     ],
+     "excludes_zero": true
+    }
+   }
+  },
+  "present": {
+   "n_score": 7120,
+   "n_clusters": 128,
+   "d": 128,
+   "fit_mean": 0.5606091217891163,
+   "arms": {
+    "constant": {
+     "r2": 0.0,
+     "d": 0,
+     "note": "must read EXACTLY +0.000000"
+    },
+    "shuffle_within_clip": {
+     "r2": 0.1702089628693042,
+     "d": 128
+    },
+    "field": {
+     "r2": 0.18937531096683002,
+     "ci": [
+      0.06274233113218466,
+      0.30440803761433255
+     ],
+     "d": 128,
+     "r2_within_clip": -0.17867589124803374,
+     "mae": 0.38231977851524784,
+     "bias": 0.0002483841183583673
+    },
+    "pix": {
+     "r2": -0.13929205123030752,
+     "ci": [
+      -0.2949625635558373,
+      0.01263297402221399
+     ],
+     "d": 128,
+     "r2_within_clip": -0.2815446026226398,
+     "mae": 0.47656168726502907,
+     "bias": -0.011825192645948595
+    }
+   },
+   "paired": {
+    "field-pix": {
+     "delta": 0.32866736219713755,
+     "ci": [
+      0.1843996181468076,
+      0.48311028693774855
+     ],
+     "excludes_zero": true
+    }
+   }
+  }
+ },
+ "bundle": {
+  "path": "C:/Users/Admin/dkhead_run/head\\gap_head_bundle.pt",
+  "sha256": "56e262d0f5cc110706850bc88c23e1bea21ed42f5531b822a1bfb44004fb0799",
+  "n_bytes": 9843422,
+  "targets": [
+   "gap_all_lead",
+   "gap_le30m",
+   "present"
+  ]
+ },
+ "collapse_check": [
+  {
+   "fold": 0,
+   "max_abs": 1.0317431556217116e-05,
+   "rel": 2.1603222969225062e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 1,
+   "max_abs": 1.0146566115309952e-05,
+   "rel": 1.9534821975266017e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 2,
+   "max_abs": 8.638701096685963e-06,
+   "rel": 1.517099513272536e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 3,
+   "max_abs": 1.6823084060035853e-05,
+   "rel": 2.740455010231578e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 4,
+   "max_abs": 9.846454197770527e-06,
+   "rel": 1.427130773859948e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 0,
+   "max_abs": 4.250019321361265e-06,
+   "rel": 1.5507313484795498e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 1,
+   "max_abs": 3.995201062423348e-06,
+   "rel": 1.3774602161384125e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 2,
+   "max_abs": 4.244794443053479e-06,
+   "rel": 1.5296893558645853e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 3,
+   "max_abs": 3.7772812113701093e-06,
+   "rel": 1.266975124081745e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 4,
+   "max_abs": 3.589240774815039e-06,
+   "rel": 1.3385874751926112e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 0,
+   "max_abs": 2.848702234103939e-07,
+   "rel": 2.59382582131442e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 1,
+   "max_abs": 2.7460741580664916e-07,
+   "rel": 2.0225996292219543e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 2,
+   "max_abs": 3.5663055919510356e-07,
+   "rel": 2.7304482222140386e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 3,
+   "max_abs": 9.739843220835098e-08,
+   "rel": 1.1062168146004046e-07,
+   "n_checked": 200
+  },
+  {
+   "fold": 4,
+   "max_abs": 2.7398470225925564e-07,
+   "rel": 2.486446436088691e-07,
+   "n_checked": 200
+  }
+ ]
+}

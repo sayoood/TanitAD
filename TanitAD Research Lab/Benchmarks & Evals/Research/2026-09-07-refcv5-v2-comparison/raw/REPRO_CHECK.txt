@@ -1,0 +1,185 @@
+================================================================================================
+CONTROL — did the dev-box RTX 4060 harness reproduce refcv4b's PUBLISHED landing?
+  PUBLISHED : C:/Users/Admin/refcv5cmp/dumps/refcv4b_t1_PUBLISHED.json  (A40, /workspace/experiments/refcv4b-b1-v72-40k/ckpt_40284_FINAL.pt)
+  REPRODUCED: C:/Users/Admin/refcv5cmp/out/refcv4b_devbox.json  (dev-box RTX 4060, C:/Users/Admin/refcv4b_final/ckpt_40284_FINAL.pt)
+================================================================================================
+  n_windows        published 4823         reproduced 4823          MATCH
+  n_episodes       published 141          reproduced 141           MATCH
+  dt_s             published 0.5          reproduced 0.5           MATCH
+  horizon_steps    published 4            reproduced 4             MATCH
+  gt_key           published g            reproduced g             MATCH
+
+metric                   arm       published    devbox       delta
+------------------------------------------------------------------------------------------------
+ADE (dense) m            os           0.2975    0.2965      -0.001 ⛔
+LON speed_MAE m/s        os           0.2909    0.2900     -0.0009 ~
+LON speed_bias m/s       os           0.0327    0.0331      0.0004 ~
+LON tgt_speed_acc@0.5    os           0.8317    0.8329      0.0012 ⛔
+LON tgt_speed_acc@1.0    os           0.9420    0.9422      0.0002 ~
+LON along_MAE m          os           0.2555    0.2544     -0.0011 ⛔
+LON dk n                 os             1225      1224          -1 ⛔
+LON dk mean_headway_min m os          28.4748   28.4517     -0.0231 ⛔
+LON dk mean_time_gap_min s os           4.1185    4.1118     -0.0067 ⛔
+LON dk mean_min_ttc s    os          24.8331   24.8434      0.0103 ⛔
+LAT heading_MAE deg      os           1.2950    1.2964      0.0014 ⛔
+LAT yaw_rate_MAE d/s     os           1.7309    1.7368      0.0059 ⛔
+LAT curvature_MAE 1/m    os         0.008097  0.008150     5.3e-05 ⛔
+LAT cross_MAE m          os           0.0979    0.0978     -0.0001 ~
+LAT n_steps_curv         os            13560     13558          -2 ⛔
+LAT excluded<min_ds      os             1144      1146           2 ⛔
+TAC lat acc              os           0.9583    0.9579     -0.0004 ~
+TAC lat kappa            os           0.8289    0.8277     -0.0012 ⛔
+TAC lon acc              os           0.8258    0.8260      0.0002 ~
+TAC lon kappa            os           0.5178    0.5186      0.0008 ~
+TAC goal FDE m           os           0.6365    0.6345      -0.002 ⛔
+TAC goal bearing MAE     os           1.5475    1.5484      0.0009 ~
+------------------------------------------------------------------------------------------------
+ADE (dense) m            ha           0.2996    0.2996           0 EXACT
+LON speed_MAE m/s        ha           0.2540    0.2540           0 EXACT
+LON speed_bias m/s       ha          -0.0632   -0.0632           0 EXACT
+LON tgt_speed_acc@0.5    ha           0.8662    0.8662           0 EXACT
+LON tgt_speed_acc@1.0    ha           0.9560    0.9560           0 EXACT
+LON along_MAE m          ha           0.2348    0.2348           0 EXACT
+LON dk n                 ha             1291      1291           0 EXACT
+LON dk mean_headway_min m ha          28.0480   28.0480           0 EXACT
+LON dk mean_time_gap_min s ha           4.2073    4.2073           0 EXACT
+LON dk mean_min_ttc s    ha          25.5883   25.5883           0 EXACT
+LAT heading_MAE deg      ha           1.5489    1.5489           0 EXACT
+LAT yaw_rate_MAE d/s     ha           1.4542    1.4542           0 EXACT
+LAT curvature_MAE 1/m    ha         0.004030  0.004030           0 EXACT
+LAT cross_MAE m          ha           0.1226    0.1226           0 EXACT
+LAT n_steps_curv         ha            13500     13500           0 EXACT
+LAT excluded<min_ds      ha             1210      1210           0 EXACT
+TAC lat acc              ha           0.9382    0.9382           0 EXACT
+TAC lat kappa            ha           0.7374    0.7374           0 EXACT
+TAC lon acc              ha           0.8443    0.8443           0 EXACT
+TAC lon kappa            ha           0.6071    0.6071           0 EXACT
+TAC goal FDE m           ha           0.6588    0.6588           0 EXACT
+TAC goal bearing MAE     ha           1.6673    1.6673           0 EXACT
+------------------------------------------------------------------------------------------------
+ADE (dense) m            ha0          0.6723    0.6723           0 EXACT
+LON speed_MAE m/s        ha0          0.4880    0.4880           0 EXACT
+LON speed_bias m/s       ha0         -0.0410   -0.0410           0 EXACT
+LON tgt_speed_acc@0.5    ha0          0.7047    0.7047           0 EXACT
+LON tgt_speed_acc@1.0    ha0          0.8569    0.8569           0 EXACT
+LON along_MAE m          ha0          0.4705    0.4705           0 EXACT
+LON dk n                 ha0            1315      1315           0 EXACT
+LON dk mean_headway_min m ha0         27.4550   27.4550           0 EXACT
+LON dk mean_time_gap_min s ha0          4.1178    4.1178           0 EXACT
+LON dk mean_min_ttc s    ha0         24.1077   24.1077           0 EXACT
+LAT heading_MAE deg      ha0          2.7799    2.7799           0 EXACT
+LAT yaw_rate_MAE d/s     ha0          2.3714    2.3714           0 EXACT
+LAT curvature_MAE 1/m    ha0        0.006802  0.006802           0 EXACT
+LAT cross_MAE m          ha0          0.3132    0.3132           0 EXACT
+LAT n_steps_curv         ha0           13518     13518           0 EXACT
+LAT excluded<min_ds      ha0            1215      1215           0 EXACT
+TAC lat acc              ha0          0.8659    0.8659           0 EXACT
+TAC lat kappa            ha0          0.0000    0.0000           0 EXACT
+TAC lon acc              ha0          0.7576    0.7576           0 EXACT
+TAC lon kappa            ha0          0.0000    0.0000           0 EXACT
+TAC goal FDE m           ha0          1.4029    1.4029           0 EXACT
+TAC goal bearing MAE     ha0          2.8832    2.8832           0 EXACT
+------------------------------------------------------------------------------------------------
+ADE (dense) m            ha0_ext      0.2874    0.2874           0 EXACT
+LON speed_MAE m/s        ha0_ext      0.2540    0.2540           0 EXACT
+LON speed_bias m/s       ha0_ext     -0.0632   -0.0632           0 EXACT
+LON tgt_speed_acc@0.5    ha0_ext      0.8662    0.8662           0 EXACT
+LON tgt_speed_acc@1.0    ha0_ext      0.9560    0.9560           0 EXACT
+LON along_MAE m          ha0_ext      0.2341    0.2341           0 EXACT
+LON dk n                 ha0_ext        1285      1285           0 EXACT
+LON dk mean_headway_min m ha0_ext     28.0211   28.0211           0 EXACT
+LON dk mean_time_gap_min s ha0_ext      4.1966    4.1966           0 EXACT
+LON dk mean_min_ttc s    ha0_ext     25.5453   25.5453           0 EXACT
+LAT heading_MAE deg      ha0_ext      1.4322    1.4322           0 EXACT
+LAT yaw_rate_MAE d/s     ha0_ext      1.3395    1.3395           0 EXACT
+LAT curvature_MAE 1/m    ha0_ext    0.003712  0.003712           0 EXACT
+LAT cross_MAE m          ha0_ext      0.1070    0.1070           0 EXACT
+LAT n_steps_curv         ha0_ext       13500     13500           0 EXACT
+LAT excluded<min_ds      ha0_ext        1210      1210           0 EXACT
+TAC lat acc              ha0_ext      0.9419    0.9419           0 EXACT
+TAC lat kappa            ha0_ext      0.7548    0.7548           0 EXACT
+TAC lon acc              ha0_ext      0.8443    0.8443           0 EXACT
+TAC lon kappa            ha0_ext      0.6071    0.6071           0 EXACT
+TAC goal FDE m           ha0_ext      0.6323    0.6323           0 EXACT
+TAC goal bearing MAE     ha0_ext      1.5529    1.5529           0 EXACT
+------------------------------------------------------------------------------------------------
+ADE (dense) m            os_navshuf    0.3013    0.3006     -0.0007 ~
+LON speed_MAE m/s        os_navshuf    0.2958    0.2952     -0.0006 ~
+LON speed_bias m/s       os_navshuf    0.0225    0.0236      0.0011 ⛔
+LON tgt_speed_acc@0.5    os_navshuf    0.8296    0.8300      0.0004 ~
+LON tgt_speed_acc@1.0    os_navshuf    0.9397    0.9396     -0.0001 ~
+LON along_MAE m          os_navshuf    0.2586    0.2581     -0.0005 ~
+LON dk n                 os_navshuf      1219      1218          -1 ⛔
+LON dk mean_headway_min m os_navshuf   28.5503   28.5571      0.0068 ⛔
+LON dk mean_time_gap_min s os_navshuf    4.0864    4.0885      0.0021 ⛔
+LON dk mean_min_ttc s    os_navshuf   24.9093   24.8765     -0.0328 ⛔
+LAT heading_MAE deg      os_navshuf    1.3185    1.3165      -0.002 ⛔
+LAT yaw_rate_MAE d/s     os_navshuf    1.8046    1.8008     -0.0038 ⛔
+LAT curvature_MAE 1/m    os_navshuf  0.008714  0.008685    -2.9e-05 ⛔
+LAT cross_MAE m          os_navshuf    0.0990    0.0988     -0.0002 ~
+LAT n_steps_curv         os_navshuf     13554     13554           0 EXACT
+LAT excluded<min_ds      os_navshuf      1146      1147           1 ⛔
+TAC lat acc              os_navshuf    0.9573    0.9571     -0.0002 ~
+TAC lat kappa            os_navshuf    0.8227    0.8217      -0.001 ⛔
+TAC lon acc              os_navshuf    0.8275    0.8283      0.0008 ~
+TAC lon kappa            os_navshuf    0.5174    0.5195      0.0021 ⛔
+TAC goal FDE m           os_navshuf    0.6453    0.6437     -0.0016 ⛔
+TAC goal bearing MAE     os_navshuf    1.6167    1.6157      -0.001 ⛔
+------------------------------------------------------------------------------------------------
+ADE (dense) m            os_navzero    0.3928    0.3926     -0.0002 ~
+LON speed_MAE m/s        os_navzero    0.3634    0.3634           0 EXACT
+LON speed_bias m/s       os_navzero   -0.1309   -0.1309           0 EXACT
+LON tgt_speed_acc@0.5    os_navzero    0.7989    0.7984     -0.0005 ~
+LON tgt_speed_acc@1.0    os_navzero    0.9349    0.9357      0.0008 ~
+LON along_MAE m          os_navzero    0.3565    0.3564     -0.0001 ~
+LON dk n                 os_navzero      1222      1227           5 ⛔
+LON dk mean_headway_min m os_navzero   28.8329   28.8027     -0.0302 ⛔
+LON dk mean_time_gap_min s os_navzero    4.1218    4.1255      0.0037 ⛔
+LON dk mean_min_ttc s    os_navzero   25.3902   25.4318      0.0416 ⛔
+LAT heading_MAE deg      os_navzero    1.3564    1.3527     -0.0037 ⛔
+LAT yaw_rate_MAE d/s     os_navzero    1.9365    1.9312     -0.0053 ⛔
+LAT curvature_MAE 1/m    os_navzero  0.009239  0.009207    -3.2e-05 ⛔
+LAT cross_MAE m          os_navzero    0.1039    0.1036     -0.0003 ~
+LAT n_steps_curv         os_navzero     13546     13545          -1 ⛔
+LAT excluded<min_ds      os_navzero      1156      1158           2 ⛔
+TAC lat acc              os_navzero    0.9577    0.9581      0.0004 ~
+TAC lat kappa            os_navzero    0.8249    0.8266      0.0017 ⛔
+TAC lon acc              os_navzero    0.8209    0.8184     -0.0025 ⛔
+TAC lon kappa            os_navzero    0.5135    0.5060     -0.0075 ⛔
+TAC goal FDE m           os_navzero    0.7392    0.7386     -0.0006 ~
+TAC goal bearing MAE     os_navzero    1.5688    1.5987      0.0299 ⛔
+------------------------------------------------------------------------------------------------
+
+PAIRED MARGINS  (⛔ the ones that must NOT differ)
+cell                                pub delta     pub lo     pub hi |  new delta     new lo     new hi
+paired_os_minus_ha.ade_m              -0.0021    -0.0178     0.0154 |    -0.0032    -0.0185     0.0142  sep False->False AGREE
+paired_os_minus_ha.speed_mae_mps       0.0368     0.0197     0.0557 |     0.0359     0.0191     0.0547  sep True->True AGREE
+paired_os_minus_ha0ext.ade_m           0.0101    -0.0050     0.0273 |     0.0091    -0.0059     0.0260  sep False->False AGREE
+paired_os_minus_ha0ext.speed_mae_mps     0.0368     0.0197     0.0558 |     0.0359     0.0191     0.0547  sep True->True AGREE
+paired_os_minus_ha0.ade_m             -0.3748    -0.4319    -0.3203 |    -0.3758    -0.4331    -0.3212  sep True->True AGREE
+paired_os_minus_ha0.speed_mae_mps     -0.1971    -0.2285    -0.1640 |    -0.1980    -0.2297    -0.1647  sep True->True AGREE
+paired_os_minus_navshuf.ade_m         -0.0038    -0.0076     0.0001 |    -0.0041    -0.0078    -0.0004  sep False->True ⛔ DISAGREE
+paired_os_minus_navshuf.speed_mae_mps    -0.0049    -0.0093    -0.0005 |    -0.0052    -0.0094    -0.0008  sep True->True AGREE
+paired_os_minus_navzero.ade_m         -0.0953    -0.1096    -0.0804 |    -0.0961    -0.1102    -0.0813  sep True->True AGREE
+paired_os_minus_navzero.speed_mae_mps    -0.0725    -0.0833    -0.0609 |    -0.0734    -0.0841    -0.0621  sep True->True AGREE
+paired_os_navzero_minus_ha0ext.ade_m     0.1054     0.0874     0.1241 |     0.1052     0.0876     0.1238  sep True->True AGREE
+paired_os_navzero_minus_ha0ext.speed_mae_mps     0.1094     0.0919     0.1283 |     0.1094     0.0920     0.1283  sep True->True AGREE
+paired_ha_minus_ha0.ade_m             -0.3727    -0.4346    -0.3161 |    -0.3727    -0.4346    -0.3161  sep True->True AGREE
+paired_ha_minus_ha0.speed_mae_mps     -0.2339    -0.2699    -0.1967 |    -0.2339    -0.2699    -0.1967  sep True->True AGREE
+
+CROSS-CHECKPOINT CONTROL — refcv4b - refcv3 @40,284 on the SAME 4,823 windows
+  published: -0.1444 [-0.1647, -0.1227] separated (…/raw/paired_v4b_vs_v3_FULL.json)
+  reproduced: -0.1455 [-0.1655, -0.1240] separated=True   (refcv4b.os - refcv3.os)
+  MODEL-FREE CONTROL ha   delta -0.0000000000 [-0.0000000000, 0.0000000000] n_changed 2/4823  (must be 0)
+  MODEL-FREE CONTROL ha0  delta 0.0000000000 [0.0000000000, 0.0000000000] n_changed 0/4823  (must be 0)
+
+SUMMARY
+  MODEL-FREE arms (ha/ha0/ha0_ext) — MUST be bit-exact:
+      66 of 66 rows EXACT, 0 non-zero   ✅ the surface is IDENTICAL
+  MODEL arms (os/os_navshuf/os_navzero) — bounded by cross-hardware argmax ties:
+      3 of 66 rows EXACT; largest |delta| 0.0416  (os_navzero LON dk mean_min_ttc s: 25.3902 -> 25.4318)
+      COUNT rows (window tallies) move by at most 5 window(s)
+  PAIRED MARGINS — the verdict-bearing cells:
+      13 of 14 agree on `separated`; DISAGREEING: paired_os_minus_navshuf.ade_m
+  (69 rows EXACT, 23 within display tolerance, 40 beyond it, overall)
+wrote C:/Users/Admin/refcv5cmp/out/REPRO_CHECK.json

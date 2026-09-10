@@ -1,0 +1,45 @@
+{
+  "_is": "THE MECHANISM behind the presence-vs-content split, read off the model's OWN emitted internals rather than from ADE: does the nav token's VALUE move the strategic goal g_str and the selected anchor, or only its PRESENCE?",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1",
+  "n_windows": 4823,
+  "n_commanded_windows": 1743,
+  "dump": "raw/navpred_dump.tgz",
+  "E13_edge_control": {
+    "nav_injected_under_a_token": 1.0,
+    "nav_injected_under_nav_cmd_None": 0.0,
+    "_is": "a control that must read known values 1.0 / 0.0 -- the edge is live and the null is real"
+  },
+  "selected_anchor_changes_vs_nav_true": {
+    "shuffled_token": {
+      "all_windows": "586/4823 (12.15%)",
+      "commanded_windows": "298/1743 (17.10%)"
+    },
+    "predicted_token": {
+      "all_windows": "534/4823 (11.07%)",
+      "commanded_windows": "233/1743 (13.37%)"
+    },
+    "NO_token": {
+      "all_windows": "778/4823 (16.13%)",
+      "commanded_windows": "420/1743 (24.10%)"
+    }
+  },
+  "strategic_goal_g_str_shift_vs_nav_true": {
+    "shuffled_token": {
+      "mean_abs_delta": 0.01025,
+      "max_abs_delta": 0.054781,
+      "n_windows_differing": 2406
+    },
+    "predicted_token": {
+      "mean_abs_delta": 0.008,
+      "max_abs_delta": 0.054781,
+      "n_windows_differing": 1908
+    },
+    "NO_token": {
+      "mean_abs_delta": 0.190153,
+      "max_abs_delta": 0.543267,
+      "n_windows_differing": 4823
+    }
+  },
+  "READING": "Changing the token's VALUE moves g_str by mean |dg| 0.0103; REMOVING the token moves it by 0.1902 -- 18.6x larger. The selected anchor tells the same story (a value change flips 11-12% of picks, removal flips 16%). \u21d2 E13's nav path behaves as a PRESENCE-GATED BIAS on the strategic goal, with only weak dependence on WHICH command it carries. That is the mechanism behind os_navshuf ~ os_navpred ~ os while os_navzero is separated worse, and it makes the refcv5 requirement concrete: the conditioning edge must be made VALUE-SENSITIVE (or replaced by a geometric goal point), not merely present."
+}

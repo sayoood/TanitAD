@@ -86,6 +86,36 @@ MEASURED: `assert_conditioning` reads **0** in `refcv3_adapter.py` (control: 4 `
 *repointing the pilot* would change which code a live RL arm runs and would come back here as a
 decision. No RL arm is currently running, so nothing is at risk today.
 
+### ⭐ UPDATE 2026-09-10 — THE MEASUREMENT THIS ITEM WAS WAITING FOR (found while closing item 8)
+
+**MEASURED (Arch+Inference FlyWheel, `…/2026-09-10-rl-pilot-cold-start-allowance/raw/PROBE_V0.json`),
+`eval()`, identical frames, both controls valid** — same-`v0`-twice is **bitwise identical**, and a
+v0-conditioned build with a real vocabulary **does** move (0.1328 m), so the probe can detect an effect:
+
+| arm | max abs Δ on `anchor_traj` |
+|---|---|
+| `v0 = 5` vs `v0 = 25` | **0.1356 m** |
+| `v0 = 5` vs **`v0` DROPPED** | **0.0130 m** |
+
+…and on `refc.refc_config()` the contract resolves **all 10 channels `False`**, so
+`contract.check({"frames": …})` with **`v0` removed PASSES with no refusal.**
+
+⛔ **The path the predicates miss.** The `v0` predicate is `anchors.v0_conditioned OR
+sel_reach_clamp` (`refcv3_adapter.py:240`), both False by default — but `refc.py:3199-3200` builds
+the measurement encoder's input **unconditionally**, and `refc.py:3204-3206` derives the X15 `keep`
+flag from `v0 is not None`. So a batch that merely OMITS `v0` does not just lose the speed: it
+asserts **`keep = 0`**, which that same file calls the **X15 zero-collision** — a withheld speed made
+indistinguishable from a genuinely stationary car.
+
+⚠️ **Scoped honestly: the contract is NOT wrong about the ACTION SPACE.** With
+`v0_conditioned = False`, `roll_bank` really does return the stored `anchors` unchanged. The finding
+is about **SCOPE** — the refusal is keyed on the action-space consumer only, while the forward has a
+second, always-live one, so a dropped `v0` changes the **policy** with nothing raising.
+
+⛔ **NO BEHAVIOUR WAS CHANGED.** Making `v0` REQUIRED alters which channels a live RL arm must carry,
+which is this item's call and its owner's. This supplies only the measurement.
+
+
 ## 8. DECIDE: the RL pilot **cannot load its own cold start** — and the obvious fix is dangerous
 
 ⛔ **MEASURED:** `rl_pilot_refc21.py` dies at load with
@@ -121,6 +151,44 @@ That is why it is here rather than left as a traceback for the next person.
 
 *Owner: `refc.py`'s stream — the registration decision is theirs.
 Evidence: `…/Research/2026-09-07-rl-pilot-config-contract/`.*
+
+
+### ⭐⭐ UPDATE 2026-09-10 — OPTION (c) IS IMPLEMENTED, MUTATION-PROVEN, AND THE PILOT HAS RUN. This item needs NO decision to proceed.
+
+**MEASURED (Arch+Inference FlyWheel).** `stack/tanitad/refs/cold_start.py` (NEW) implements the
+declared allowance; `rl_pilot_refc21.load_model` routes through it; `run_posttrain` gained
+`extra_record=` so the stamp lands in the run's `config.json`. Evidence:
+`…/Research/2026-09-10-rl-pilot-cold-start-allowance/`.
+
+* ⭐ **THE PILOT LOADS AND STEPS.** Its own `load_model` took a **487-key** checkpoint to **488 keys
+  on the model** (104,191,577 params) and ran **3 real GRPO steps** — finite losses, weights moved
+  (`raw/SMOKE.json`). ⛔ Synthetic weights and frames: this proves the **PATH** and makes **no
+  R1/R2/R3 claim**.
+* ⛔ **The load is still `strict=True`.** The allowance **completes** the state dict with one
+  LITERALLY declared key from the model's own zero buffer; a second missing key, or any unexpected
+  key, still raises. MEASURED by AST: exactly one `strict=` in executable code, value `True`.
+* ⛔ **The regression arm goes RED when the guard is removed** — mutant M1 (delete the gate): exactly
+  the 2 expected arms RED; mutant M2 (`strict=False`, option (a)): exactly the 12 expected RED
+  (`raw/MUTATION_PROOF.json`). Baseline GREEN 23/23.
+* ⛔ **An operator cannot fake the precondition** — the pilot exposes **no** flag that can set
+  `anchors.v0_conditioned` and no `--allow-…`; the flag is read off the constructed `nn.Module`. The
+  test intercepts the **real** parser and pins its **15-option surface as a literal**.
+* ⚠️ **`anchor_controls` initialises to ZEROS, not random** (`refc.py:1496`, MEASURED `[128, 2]`,
+  0 non-zero) — which is why option (a) is worse than it looks: it produces no absurd number at all.
+
+⚠️ **ONE DESIGN POINT THE PI MAY WISH TO OVERRULE, stated rather than buried.** The brief asked that
+`v0_conditioned` be read from **the checkpoint's own config, refusing if absent**. Applied literally
+that rule **can never be satisfied by this checkpoint** — `AnchorConfig.v0_conditioned` did not exist
+until 2026-09-04, so a 2026-07-20 config cannot carry it, and the rule would be a permanent refusal
+wearing a guard's costume. As built, the checkpoint's config is a **VETO** (it refuses on `True`, it
+cannot authorise), the safety condition is the **constructed decoder's** flag, and an absent leaf is
+stamped `ckpt_confirmation: "UNVERIFIED_BY_CKPT_CONFIG"` — never as agreement. A caller wanting the
+strict rule anyway can pass `require_ckpt_confirmation=True`.
+
+⛔ **WHAT REMAINS IS COMPUTE, NOT CODE.** MEASURED 2026-09-10: `tanitad-pod3` / `pod4` / `pod5` /
+`a40` all refuse SSH (*Connection refused*); Thor is alive. `refc-diffusion-base-v21-30k` is on no
+reachable box and not in the repo. ⇒ **a real RL number needs a box + those weights, and that is the
+only thing now standing between here and one.**
 
 
 ## 9. DECIDE: refcv5-v2 IS the compose arm, and P1 was excluded ON EVIDENCE — but you asked for environment grounding by name

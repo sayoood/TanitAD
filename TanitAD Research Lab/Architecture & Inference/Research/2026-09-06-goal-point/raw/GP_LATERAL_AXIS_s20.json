@@ -1,0 +1,309 @@
+{
+  "_is": "GP-LATERAL: hold the LONGITUDINAL anchor choice at the model's own and ask which route signal picks the better LATERAL index. Selection path only, bank scale, ORACLE-FED goal signals = UPPER BOUNDS.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 (dump's tier; re-ranked here)",
+  "arc_length_m": 20.0,
+  "n_windows_scored": 4062,
+  "n_windows_total": 4823,
+  "n_episodes_scored": 136,
+  "estimator": "paired episode-cluster bootstrap, n_boot=2000, seed=0",
+  "anchor_grid": {
+    "a_long_levels": [
+      -4.0,
+      -3.5,
+      -2.9167,
+      -2.3333,
+      -1.75,
+      -1.1667,
+      -0.5833,
+      0.0,
+      0.5833,
+      1.1667,
+      1.75,
+      2.3333,
+      2.9167
+    ],
+    "a_lat_levels": [
+      -3.0,
+      -2.25,
+      -1.5,
+      -0.75,
+      0.0,
+      0.75,
+      1.5,
+      2.25,
+      3.0
+    ],
+    "units": "m/s^2 (control_units='alat'; kappa = a_lat / v^2, clamped at 0.12 with a 4.0 m/s speed floor)"
+  },
+  "controls": {
+    "K2_rebuilt_bank_equals_banked_sel_bank_max_abs_m": 1.52587890625e-05,
+    "K2_verdict": "PASS",
+    "candidates_per_window_same_a_long": {
+      "mean": 9.0,
+      "min": 9
+    },
+    "anchors_SHORTER_than_arc_clamped_to_endpoint_frac": 0.2304
+  },
+  "lat_recall_support": {
+    "lane_keep": 3528,
+    "turn_left": 196,
+    "turn_right": 338
+  },
+  "surfaces": {
+    "live": {
+      "bank_ADE_2s_m": 0.4124,
+      "curvature_mae_1pm": 0.002803,
+      "heading_mae_deg": 1.1668,
+      "cross_mae_m": 0.1937,
+      "lat_recall": {
+        "lane_keep": 0.9705,
+        "turn_left": 0.7755,
+        "turn_right": 0.7899
+      },
+      "changed_vs_live_frac": 0.0
+    },
+    "lat_ORACLE": {
+      "bank_ADE_2s_m": 0.3573,
+      "curvature_mae_1pm": 0.002233,
+      "heading_mae_deg": 0.7364,
+      "cross_mae_m": 0.1215,
+      "lat_recall": {
+        "lane_keep": 0.9756,
+        "turn_left": 0.8469,
+        "turn_right": 0.8964
+      },
+      "changed_vs_live_frac": 0.1792
+    },
+    "point_ORACLE": {
+      "bank_ADE_2s_m": 0.3763,
+      "curvature_mae_1pm": 0.002308,
+      "heading_mae_deg": 0.9019,
+      "cross_mae_m": 0.1505,
+      "lat_recall": {
+        "lane_keep": 0.9853,
+        "turn_left": 0.8316,
+        "turn_right": 0.8254
+      },
+      "changed_vs_live_frac": 0.1499
+    },
+    "point_MIRRORED": {
+      "bank_ADE_2s_m": 0.7837,
+      "curvature_mae_1pm": 0.008496,
+      "heading_mae_deg": 3.7149,
+      "cross_mae_m": 0.5979,
+      "lat_recall": {
+        "lane_keep": 0.9853,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "changed_vs_live_frac": 0.2669
+    },
+    "point_CONSTANT": {
+      "bank_ADE_2s_m": 0.6141,
+      "curvature_mae_1pm": 0.00509,
+      "heading_mae_deg": 2.3481,
+      "cross_mae_m": 0.4287,
+      "lat_recall": {
+        "lane_keep": 1.0,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "changed_vs_live_frac": 0.3503
+    },
+    "bearing_ORACLE": {
+      "bank_ADE_2s_m": 0.3853,
+      "curvature_mae_1pm": 0.002404,
+      "heading_mae_deg": 0.9586,
+      "cross_mae_m": 0.162,
+      "lat_recall": {
+        "lane_keep": 0.9884,
+        "turn_left": 0.7908,
+        "turn_right": 0.7899
+      },
+      "changed_vs_live_frac": 0.1519
+    },
+    "categorical_ORACLE_3way": {
+      "bank_ADE_2s_m": 0.5551,
+      "curvature_mae_1pm": 0.00496,
+      "heading_mae_deg": 2.1711,
+      "cross_mae_m": 0.3543,
+      "lat_recall": {
+        "lane_keep": 1.0,
+        "turn_left": 0.0,
+        "turn_right": 0.0
+      },
+      "changed_vs_live_frac": 0.2312
+    }
+  },
+  "paired_vs_live": {
+    "lat_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": -0.05515,
+        "ci95": [
+          -0.06817,
+          -0.0435
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": 0.01674,
+        "ci95": [
+          0.00753,
+          0.0266
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": 0.09363,
+        "ci95": [
+          0.05692,
+          0.13734
+        ],
+        "separated": true,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    },
+    "point_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": -0.03618,
+        "ci95": [
+          -0.04536,
+          -0.02811
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": 0.01846,
+        "ci95": [
+          0.00788,
+          0.03013
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": 0.04307,
+        "ci95": [
+          -0.00149,
+          0.08731
+        ],
+        "separated": false,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    },
+    "point_MIRRORED": {
+      "bank_ADE_2s_m": {
+        "delta": 0.37122,
+        "ci95": [
+          0.2607,
+          0.49799
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": -0.09035,
+        "ci95": [
+          -0.1255,
+          -0.05742
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": -0.78464,
+        "ci95": [
+          -0.84094,
+          -0.71756
+        ],
+        "separated": true,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    },
+    "point_CONSTANT": {
+      "bank_ADE_2s_m": {
+        "delta": 0.20169,
+        "ci95": [
+          0.14769,
+          0.26188
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": -0.07755,
+        "ci95": [
+          -0.11134,
+          -0.04529
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": -0.78464,
+        "ci95": [
+          -0.84094,
+          -0.71756
+        ],
+        "separated": true,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    },
+    "bearing_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": -0.02713,
+        "ci95": [
+          -0.03528,
+          -0.01929
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": 0.01625,
+        "ci95": [
+          0.00507,
+          0.02889
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": 0.00562,
+        "ci95": [
+          -0.0407,
+          0.05331
+        ],
+        "separated": false,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    },
+    "categorical_ORACLE_3way": {
+      "bank_ADE_2s_m": {
+        "delta": 0.14269,
+        "ci95": [
+          0.09219,
+          0.20147
+        ],
+        "separated": true
+      },
+      "lat_class_accuracy": {
+        "delta": -0.07755,
+        "ci95": [
+          -0.11134,
+          -0.04529
+        ],
+        "separated": true
+      },
+      "turn_windows_lat_accuracy": {
+        "delta": -0.78464,
+        "ci95": [
+          -0.84094,
+          -0.71756
+        ],
+        "separated": true,
+        "n_turn_windows": 534,
+        "n_episodes": 48
+      }
+    }
+  }
+}

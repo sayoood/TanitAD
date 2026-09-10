@@ -1,0 +1,34 @@
+[preflight] 11 analysis imports OK  (this probe exists because a 3.0 h rollout once died in analyze())
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1370: UserWarning: expandable_segments not supported on this platform (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\c10/cuda/CUDAAllocatorConfig.h:39.)
+  return t.to(
+[refav1-labels] v7.2 join: labels 2/2 eps (0 missing), 42/134 windows in-band +-[2.0]s, md5=aa12c948f062181c3297265b51526ec5 | nav 2/2 eps (0 missing -> nav_cmd=0+nav_valid=False), md5=aa12c948f062181c3297265b51526ec5, allow_oracle_nav=True
+[model] C:/Users/Admin/refav1_eval_slice/ckpt_ep3/ckpt.pt step=21109 params=0 a_dim=2 target_space=frozen vocab=v7.0 config<-C:/Users/Admin/refav1_eval_slice/ckpt_ep3/config.json
+[loader] 134 windows over 2 episodes (W=4, K_loader=30, grid 0.2 s); labels=ON nav=ON
+[dk] cost ARMED: w_dk=1e-05 tau=1.5s d0=5.0m source=oracle_label block=b1_eval_lead_block.npz (29556 rows)
+[cost] metric=cos weights={'W_JERK': 0.02, 'W_KAPPA': 0.05, 'W_VEND': 0.1} (shipped module constants); COST_METRICS=('cos', 'chord', 'ccos', 'ccosh') from C:\Users\Admin\tanitad-wt\stack\tanitad\refs\refa_v1.py
+[goal-rule] lat_logit_bias=None -> plain argmax (the legacy path, bit-identical to pre-2026-09-05 arms)
+[goal-vocab] goal_kappa_turn=None -> shipped GOAL_KAPPA_TURN=0.08 (bit-identical to pre-2026-09-05 arms)
+[grid] K=10 (2.0 s) K_wm=30 stride=40 windows=4 arms=['cl', 'ha', 'ha0', 'ha0_ext', 'ol'] plan={samples 300, iters 30, elites 30, seed 0} nav_shuffle=0/4 changed
+[seed-pool] seed_kappa_ladder=None -> the SHIPPED pool (proposal modes + the decoded goal's canonical controls), bit-identical to every arm banked before 2026-09-05
+[cost] first plan() took 21.53 s -> ESTIMATED 0.02 h for 4 windows x 1 planning arms (plan only; forward()/IO extra)
+  [1/2] 2172a5a3-8a1 2 windows 47s
+  [2/2] 2602baaa-436 2 windows 92s
+REFAV1_DUMP_DONE
+[trivial-profile] 4 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n=   4 straight=1.0000 const_speed=0.7500 CONSTANT-VELOCITY=0.7500  identical_to: ha0=3/4
+  ha             n=   4 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ha0            n=   4 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl=3/4
+  ha0_ext        n=   4 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ol             n=   4 straight=0.0000 const_speed=0.0000 CONSTANT-VELOCITY=0.0000
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['cl', 'ha0'] — read their LATERAL rows as a control, never as planning skill
+[lead] b1_eval_lead_block.npz: 4 windows / 2 eps · OK eps 2 · LEAD 4 NO_LEAD 0 NOT_STRAIGHT 0 NO_LABEL 0 (no-row 0) · speed-check max 1e-06 m/s · PRESENT
+[out] C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/f407bc82-7969-457c-a947-6be2014fee89/scratchpad/dk/smoke/out_on.json
+  cl             tier=T1  ADE=0.5615 [0.2602, 0.8627]  families_unavailable=['strategic']  distance_keeping=OK n=4 headway=34.9139 time_gap=1.5381 min_ttc=24.3445
+  ha             tier=T1  ADE=0.5125 [0.4323, 0.5928]  families_unavailable=['strategic']  distance_keeping=OK n=4 headway=35.0533 time_gap=1.5445 min_ttc=24.1955
+  ha0            tier=T1  ADE=0.3312 [0.2602, 0.4023]  families_unavailable=['strategic']  distance_keeping=OK n=4 headway=34.8689 time_gap=1.536 min_ttc=24.2072
+  ha0_ext        tier=T1  ADE=0.4873 [0.4654, 0.5092]  families_unavailable=['strategic']  distance_keeping=OK n=4 headway=35.0525 time_gap=1.5445 min_ttc=24.1893
+  ol             tier=T0  ADE=0.3556 [0.3549, 0.3563]  families_unavailable=['strategic']  distance_keeping=OK n=4 headway=35.0529 time_gap=1.5445 min_ttc=24.1921
+  distance_keeping coverage: {'LEAD': 4, 'NO_LEAD': 0, 'NOT_STRAIGHT': 0, 'NO_LABEL': 0} of 4 windows (no-row 0; eps OK 2/2) status=PRESENT
+  planner[cl] baseline_won_frac=0.75 sources={'cem': 0.25, 'baseline:hold_v0': 0.75} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 1.0}
+  strategic nav_valid_frac=1.0 n_labeled=2
+EXIT_on=0

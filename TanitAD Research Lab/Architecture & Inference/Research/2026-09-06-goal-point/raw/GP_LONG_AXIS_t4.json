@@ -1,0 +1,292 @@
+{
+  "_is": "GP-LONGITUDINAL: hold the LATERAL anchor index at the model's own and ask which route signal picks the better LONGITUDINAL index, with the goal defined at a fixed TIME beyond the scored horizon. Selection path only, bank scale, ORACLE-FED = UPPER BOUNDS.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1 (dump's tier; re-ranked here)",
+  "goal_time_s": 4.0,
+  "anchor_slot": 5,
+  "n_windows_scored": 4286,
+  "n_windows_total": 4823,
+  "n_episodes_scored": 141,
+  "estimator": "paired episode-cluster bootstrap, n_boot=2000, seed=0",
+  "controls": {
+    "K2_rebuilt_bank_max_abs_m": 1.52587890625e-05,
+    "K2_verdict": "PASS",
+    "candidates_per_window_same_a_lat": {
+      "mean": 12.907,
+      "min": 12
+    },
+    "goal_beyond_scored_horizon": true
+  },
+  "surfaces": {
+    "live": {
+      "bank_ADE_2s_m": 0.4263,
+      "speed_mae_ms": 0.3436,
+      "along_track_mae_m": 0.3337,
+      "recomputed_speed_mae_ms": 0.3436,
+      "n_distinct": 49,
+      "changed_vs_live_frac": 0.0
+    },
+    "long_ORACLE": {
+      "bank_ADE_2s_m": 0.2608,
+      "speed_mae_ms": 0.1709,
+      "along_track_mae_m": 0.1493,
+      "recomputed_speed_mae_ms": 0.1709,
+      "n_distinct": 81,
+      "changed_vs_live_frac": 0.4533
+    },
+    "point_TIME_ORACLE": {
+      "bank_ADE_2s_m": 0.3318,
+      "speed_mae_ms": 0.2252,
+      "along_track_mae_m": 0.2363,
+      "recomputed_speed_mae_ms": 0.2252,
+      "n_distinct": 73,
+      "changed_vs_live_frac": 0.4097
+    },
+    "bearing_TIME_ORACLE": {
+      "bank_ADE_2s_m": 2.7896,
+      "speed_mae_ms": 2.926,
+      "along_track_mae_m": 2.7652,
+      "recomputed_speed_mae_ms": 2.926,
+      "n_distinct": 95,
+      "changed_vs_live_frac": 0.9496
+    },
+    "point_TIME_RANGE_x0.5": {
+      "bank_ADE_2s_m": 2.3072,
+      "speed_mae_ms": 2.4519,
+      "along_track_mae_m": 2.2734,
+      "recomputed_speed_mae_ms": 2.4519,
+      "n_distinct": 71,
+      "changed_vs_live_frac": 0.9678
+    },
+    "point_TIME_RANGE_x2.0": {
+      "bank_ADE_2s_m": 2.1107,
+      "speed_mae_ms": 2.2804,
+      "along_track_mae_m": 2.0725,
+      "recomputed_speed_mae_ms": 2.2804,
+      "n_distinct": 63,
+      "changed_vs_live_frac": 0.9533
+    },
+    "point_TIME_CONSTANT": {
+      "bank_ADE_2s_m": 1.9241,
+      "speed_mae_ms": 2.0134,
+      "along_track_mae_m": 1.8737,
+      "recomputed_speed_mae_ms": 2.0134,
+      "n_distinct": 83,
+      "changed_vs_live_frac": 0.9209
+    },
+    "point_TIME_NOISE_rng0.5m": {
+      "bank_ADE_2s_m": 0.3369,
+      "speed_mae_ms": 0.2301,
+      "along_track_mae_m": 0.2412,
+      "recomputed_speed_mae_ms": 0.2301,
+      "n_distinct": 76,
+      "changed_vs_live_frac": 0.4183
+    },
+    "point_TIME_NOISE_rng1.0m": {
+      "bank_ADE_2s_m": 0.3481,
+      "speed_mae_ms": 0.245,
+      "along_track_mae_m": 0.254,
+      "recomputed_speed_mae_ms": 0.245,
+      "n_distinct": 77,
+      "changed_vs_live_frac": 0.4361
+    },
+    "point_TIME_NOISE_rng2.0m": {
+      "bank_ADE_2s_m": 0.3978,
+      "speed_mae_ms": 0.307,
+      "along_track_mae_m": 0.3086,
+      "recomputed_speed_mae_ms": 0.307,
+      "n_distinct": 80,
+      "changed_vs_live_frac": 0.5142
+    },
+    "point_TIME_NOISE_rng4.0m": {
+      "bank_ADE_2s_m": 0.5221,
+      "speed_mae_ms": 0.4571,
+      "along_track_mae_m": 0.4414,
+      "recomputed_speed_mae_ms": 0.4571,
+      "n_distinct": 84,
+      "changed_vs_live_frac": 0.6573
+    }
+  },
+  "paired_vs_live": {
+    "long_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": -0.16554,
+        "ci95": [
+          -0.19252,
+          -0.14225
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.17267,
+        "ci95": [
+          -0.19851,
+          -0.14762
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": -0.09451,
+        "ci95": [
+          -0.11639,
+          -0.07569
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.11839,
+        "ci95": [
+          -0.13937,
+          -0.0994
+        ],
+        "separated": true
+      }
+    },
+    "bearing_TIME_ORACLE": {
+      "bank_ADE_2s_m": {
+        "delta": 2.36322,
+        "ci95": [
+          2.20044,
+          2.51665
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 2.58247,
+        "ci95": [
+          2.40849,
+          2.74472
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_RANGE_x0.5": {
+      "bank_ADE_2s_m": {
+        "delta": 1.88086,
+        "ci95": [
+          1.71109,
+          2.04297
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 2.10832,
+        "ci95": [
+          1.92233,
+          2.28475
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_RANGE_x2.0": {
+      "bank_ADE_2s_m": {
+        "delta": 1.68435,
+        "ci95": [
+          1.58446,
+          1.77612
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 1.93686,
+        "ci95": [
+          1.82735,
+          2.03894
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_CONSTANT": {
+      "bank_ADE_2s_m": {
+        "delta": 1.49776,
+        "ci95": [
+          1.34063,
+          1.65519
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 1.66979,
+        "ci95": [
+          1.49845,
+          1.8439
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_NOISE_rng0.5m": {
+      "bank_ADE_2s_m": {
+        "delta": -0.08942,
+        "ci95": [
+          -0.11064,
+          -0.07112
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.11345,
+        "ci95": [
+          -0.13357,
+          -0.09506
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_NOISE_rng1.0m": {
+      "bank_ADE_2s_m": {
+        "delta": -0.0782,
+        "ci95": [
+          -0.09966,
+          -0.0599
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.0986,
+        "ci95": [
+          -0.11857,
+          -0.08054
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_NOISE_rng2.0m": {
+      "bank_ADE_2s_m": {
+        "delta": -0.02853,
+        "ci95": [
+          -0.0498,
+          -0.00945
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": -0.03654,
+        "ci95": [
+          -0.05717,
+          -0.01667
+        ],
+        "separated": true
+      }
+    },
+    "point_TIME_NOISE_rng4.0m": {
+      "bank_ADE_2s_m": {
+        "delta": 0.09581,
+        "ci95": [
+          0.07021,
+          0.118
+        ],
+        "separated": true
+      },
+      "speed_mae_ms": {
+        "delta": 0.11349,
+        "ci95": [
+          0.08932,
+          0.1374
+        ],
+        "separated": true
+      }
+    }
+  }
+}

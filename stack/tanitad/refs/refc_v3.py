@@ -1407,6 +1407,39 @@ class RefCV3Model(nn.Module):
                 "forward. The oracle's tokens ARE the ground-truth boxes; "
                 "with none the seam emits nothing and the arm would read as "
                 "'agent tokens do not help' while never having had any.")
+        # ⛔⛔ THE THIRD CASE — `D-AGENTGT-HEAD-SILENT-DROP`, closed 2026-09-10.
+        # The comment above claimed "Both directions refuse". It was FALSE, and
+        # the falsehood was load-bearing twice over:
+        #   * `refc.py:3366-3368` builds head slots from `fmap` and never reads
+        #     `agent_gt`, so on a `head` build a supplied GT block was dropped
+        #     with no warning, no log and no raise;
+        #   * `tanitad/rl/refc_adapter.py`'s `ChannelRequirement("agent_gt")`
+        #     WAIVED its own launch-time check citing exactly that claim —
+        #     "the model refuses BOTH directions loudly and unconditionally, so
+        #     there is no SILENT divergence for this guard to catch". Two guards,
+        #     each deferring to the other, and the channel unguarded at both.
+        # ⚠️ LATENT, NOT LIVE, at the time of closing: `refc_v3_train.py` gates
+        # `agent_gt` on `enable AND oracle`, so today's trainer supplies None on
+        # a head build. But `refc_adapter.FORWARD_KEYS` DOES forward `agent_gt`,
+        # so an RL-driven head build would have hit it — and the symptom would
+        # have been "agent tokens do not help", a refutation manufactured by a
+        # wiring gap. That is the exact failure the other two guards exist to
+        # prevent, so it gets the same treatment rather than a warning.
+        # ⭐ It also makes the `head` row of `test_agents_off_and_head_are_
+        # BITWISE_UNCHANGED` DISCRIMINATING: that test's own docstring records
+        # that the head row "cannot distinguish a correct gate from no gate at
+        # all" precisely because of this drop. It now can.
+        if (agent_gt is not None and _ag is not None
+                and _ag.enable and not _ag.oracle):
+            raise ValueError(
+                "agent_gt was supplied to an `--agents head` build, which would "
+                "SILENTLY DROP it: the learned detector reads the feature map "
+                "and nothing else (`refc.py:3366-3368`), and its supervision "
+                "comes from `batch['agent_box']` in the trainer, never from "
+                "this channel. An arm that passed it would report as "
+                "+agent-GT while running vision-only. Use --agents oracle if "
+                "the GT boxes are meant to be the tokens, or stop passing "
+                "agent_gt.")
         if ego_state is not None and not self.cfg.ego_state_inject:
             raise ValueError(
                 "ego_state was supplied but cfg.ego_state_inject is False — it "

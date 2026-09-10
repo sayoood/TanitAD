@@ -1,0 +1,855 @@
+{
+  "_is": "NP-2: PAIRED episode-cluster margins for the LATERAL family (curvature, heading, cross-track) and the TACTICAL turn recalls, on the banked navflip dump. The navpred RESULT reported these per-arm with NO paired margins and forbade quoting them as separated until this landed.",
+  "evidence_class": "MEASURED (ours)",
+  "tier": "T1",
+  "dump": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\f407bc82-7969-457c-a947-6be2014fee89\\scratchpad\\gp\\navflip_dump",
+  "n_windows": 4823,
+  "n_episodes": 141,
+  "dt_s": 0.5,
+  "estimator": "paired episode-cluster bootstrap, steps RE-POOLED inside each draw (n_boot=2000, seed=0)",
+  "variance_answered": "would another draw of EPISODES say this? \u2014 NOT another training run (H-ESTIM-SEED-1) and NOT another inference sample (refcv4b's decoder is deterministic at inference)",
+  "geometry_source": "taniteval.four_families._seq_geometry (imported, not re-derived)",
+  "per_arm": {
+    "os": {
+      "curvature_mae_1pm": 0.00815,
+      "heading_mae_deg": 1.2964,
+      "cross_mae_m": 0.0978,
+      "_recomputed_curv_pooled": 0.00815,
+      "n_steps_curvature": 13558,
+      "POOLING_CONTROL": "PASS"
+    },
+    "os_navflip": {
+      "curvature_mae_1pm": 0.00927,
+      "heading_mae_deg": 1.3773,
+      "cross_mae_m": 0.0995,
+      "_recomputed_curv_pooled": 0.00927,
+      "n_steps_curvature": 13559,
+      "POOLING_CONTROL": "PASS"
+    },
+    "os_navpred": {
+      "curvature_mae_1pm": 0.008168,
+      "heading_mae_deg": 1.3176,
+      "cross_mae_m": 0.0985,
+      "_recomputed_curv_pooled": 0.008168,
+      "n_steps_curvature": 13559,
+      "POOLING_CONTROL": "PASS"
+    },
+    "os_navshuf": {
+      "curvature_mae_1pm": 0.008685,
+      "heading_mae_deg": 1.3165,
+      "cross_mae_m": 0.0988,
+      "_recomputed_curv_pooled": 0.008685,
+      "n_steps_curvature": 13554,
+      "POOLING_CONTROL": "PASS"
+    },
+    "os_navzero": {
+      "curvature_mae_1pm": 0.009207,
+      "heading_mae_deg": 1.3527,
+      "cross_mae_m": 0.1036,
+      "_recomputed_curv_pooled": 0.009207,
+      "n_steps_curvature": 13545,
+      "POOLING_CONTROL": "PASS"
+    },
+    "ha": {
+      "curvature_mae_1pm": 0.00403,
+      "heading_mae_deg": 1.5489,
+      "cross_mae_m": 0.1226,
+      "_recomputed_curv_pooled": 0.00403,
+      "n_steps_curvature": 13500,
+      "POOLING_CONTROL": "PASS"
+    },
+    "ha0": {
+      "curvature_mae_1pm": 0.006802,
+      "heading_mae_deg": 2.7799,
+      "cross_mae_m": 0.3132,
+      "_recomputed_curv_pooled": 0.006802,
+      "n_steps_curvature": 13518,
+      "POOLING_CONTROL": "PASS"
+    },
+    "ha0_ext": {
+      "curvature_mae_1pm": 0.003712,
+      "heading_mae_deg": 1.4322,
+      "cross_mae_m": 0.107,
+      "_recomputed_curv_pooled": 0.003712,
+      "n_steps_curvature": 13500,
+      "POOLING_CONTROL": "PASS"
+    }
+  },
+  "paired_LATERAL": {
+    "os_navflip__minus__os": {
+      "curvature_mae_1pm": {
+        "delta": 0.00112,
+        "ci95": [
+          9e-05,
+          0.002539
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": 0.001413,
+        "ci95": [
+          0.000529,
+          0.002897
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": 0.001674,
+        "ci95": [
+          0.000209,
+          0.003383
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.000956,
+        "ci95": [
+          0.000225,
+          0.001886
+        ],
+        "separated": true,
+        "n_steps": 13551
+      },
+      "heading_mae_deg": {
+        "delta": 0.081,
+        "ci95": [
+          0.0303,
+          0.166
+        ],
+        "separated": true
+      }
+    },
+    "os_navpred__minus__os": {
+      "curvature_mae_1pm": {
+        "delta": 1.8e-05,
+        "ci95": [
+          -0.000277,
+          0.00028
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": 0.000371,
+        "ci95": [
+          5.3e-05,
+          0.000714
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": 0.000701,
+        "ci95": [
+          -0.000874,
+          0.002171
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 4.6e-05,
+        "ci95": [
+          -0.000165,
+          0.000259
+        ],
+        "separated": false,
+        "n_steps": 13553
+      },
+      "heading_mae_deg": {
+        "delta": 0.0213,
+        "ci95": [
+          0.003,
+          0.0409
+        ],
+        "separated": true
+      }
+    },
+    "os_navshuf__minus__os": {
+      "curvature_mae_1pm": {
+        "delta": 0.000535,
+        "ci95": [
+          4e-06,
+          0.001201
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": 0.000351,
+        "ci95": [
+          -0.000221,
+          0.000952
+        ],
+        "separated": false
+      },
+      "cross_mae_m": {
+        "delta": 0.001016,
+        "ci95": [
+          -0.000592,
+          0.002433
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.000641,
+        "ci95": [
+          0.00019,
+          0.001207
+        ],
+        "separated": true,
+        "n_steps": 13548
+      },
+      "heading_mae_deg": {
+        "delta": 0.0201,
+        "ci95": [
+          -0.0127,
+          0.0545
+        ],
+        "separated": false
+      }
+    },
+    "os_navzero__minus__os": {
+      "curvature_mae_1pm": {
+        "delta": 0.001057,
+        "ci95": [
+          0.000476,
+          0.001866
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": 0.000983,
+        "ci95": [
+          -4e-06,
+          0.0021
+        ],
+        "separated": false
+      },
+      "cross_mae_m": {
+        "delta": 0.005765,
+        "ci95": [
+          0.003345,
+          0.008282
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.001129,
+        "ci95": [
+          0.000637,
+          0.001764
+        ],
+        "separated": true,
+        "n_steps": 13540
+      },
+      "heading_mae_deg": {
+        "delta": 0.0563,
+        "ci95": [
+          -0.0002,
+          0.1203
+        ],
+        "separated": false
+      }
+    },
+    "os_navflip__minus__os_navzero": {
+      "curvature_mae_1pm": {
+        "delta": 6.2e-05,
+        "ci95": [
+          -0.000672,
+          0.000865
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": 0.00043,
+        "ci95": [
+          -0.000341,
+          0.001492
+        ],
+        "separated": false
+      },
+      "cross_mae_m": {
+        "delta": -0.00409,
+        "ci95": [
+          -0.006859,
+          -0.001263
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": -0.000251,
+        "ci95": [
+          -0.000963,
+          0.000489
+        ],
+        "separated": false,
+        "n_steps": 13540
+      },
+      "heading_mae_deg": {
+        "delta": 0.0246,
+        "ci95": [
+          -0.0195,
+          0.0855
+        ],
+        "separated": false
+      }
+    },
+    "os_navflip__minus__os_navpred": {
+      "curvature_mae_1pm": {
+        "delta": 0.001102,
+        "ci95": [
+          0.00012,
+          0.002457
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": 0.001042,
+        "ci95": [
+          0.000138,
+          0.002516
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": 0.000973,
+        "ci95": [
+          -0.000662,
+          0.002761
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.000897,
+        "ci95": [
+          0.000149,
+          0.001828
+        ],
+        "separated": true,
+        "n_steps": 13551
+      },
+      "heading_mae_deg": {
+        "delta": 0.0597,
+        "ci95": [
+          0.0079,
+          0.1442
+        ],
+        "separated": true
+      }
+    },
+    "os_navpred__minus__os_navshuf": {
+      "curvature_mae_1pm": {
+        "delta": -0.000517,
+        "ci95": [
+          -0.001154,
+          6e-06
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": 2e-05,
+        "ci95": [
+          -0.000608,
+          0.000617
+        ],
+        "separated": false
+      },
+      "cross_mae_m": {
+        "delta": -0.000314,
+        "ci95": [
+          -0.001586,
+          0.001001
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": -0.000565,
+        "ci95": [
+          -0.001134,
+          -9.4e-05
+        ],
+        "separated": true,
+        "n_steps": 13548
+      },
+      "heading_mae_deg": {
+        "delta": 0.0011,
+        "ci95": [
+          -0.0348,
+          0.0354
+        ],
+        "separated": false
+      }
+    },
+    "os_navflip__minus__os_navshuf": {
+      "curvature_mae_1pm": {
+        "delta": 0.000584,
+        "ci95": [
+          -9.2e-05,
+          0.001485
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": 0.001062,
+        "ci95": [
+          0.000335,
+          0.002119
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": 0.000659,
+        "ci95": [
+          -0.000726,
+          0.002248
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.000362,
+        "ci95": [
+          -0.000148,
+          0.000909
+        ],
+        "separated": false,
+        "n_steps": 13546
+      },
+      "heading_mae_deg": {
+        "delta": 0.0608,
+        "ci95": [
+          0.0192,
+          0.1214
+        ],
+        "separated": true
+      }
+    },
+    "os__minus__ha0_ext": {
+      "curvature_mae_1pm": {
+        "delta": 0.004438,
+        "ci95": [
+          0.002692,
+          0.006464
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": -0.002371,
+        "ci95": [
+          -0.004535,
+          -0.000397
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": -0.009151,
+        "ci95": [
+          -0.02123,
+          0.002922
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.003563,
+        "ci95": [
+          0.002053,
+          0.005422
+        ],
+        "separated": true,
+        "n_steps": 13492
+      },
+      "heading_mae_deg": {
+        "delta": -0.1358,
+        "ci95": [
+          -0.2598,
+          -0.0227
+        ],
+        "separated": true
+      }
+    },
+    "os__minus__ha0": {
+      "curvature_mae_1pm": {
+        "delta": 0.001349,
+        "ci95": [
+          -0.000301,
+          0.003299
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": -0.025892,
+        "ci95": [
+          -0.032958,
+          -0.019877
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": -0.215389,
+        "ci95": [
+          -0.281068,
+          -0.158895
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.000897,
+        "ci95": [
+          -0.000737,
+          0.00278
+        ],
+        "separated": false,
+        "n_steps": 13500
+      },
+      "heading_mae_deg": {
+        "delta": -1.4835,
+        "ci95": [
+          -1.8884,
+          -1.1389
+        ],
+        "separated": true
+      }
+    },
+    "os_navpred__minus__ha0": {
+      "curvature_mae_1pm": {
+        "delta": 0.001366,
+        "ci95": [
+          -0.000245,
+          0.003259
+        ],
+        "separated": false
+      },
+      "heading_mae_rad": {
+        "delta": -0.025521,
+        "ci95": [
+          -0.032697,
+          -0.019426
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": -0.214687,
+        "ci95": [
+          -0.279952,
+          -0.158016
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.00081,
+        "ci95": [
+          -0.000735,
+          0.002569
+        ],
+        "separated": false,
+        "n_steps": 13498
+      },
+      "heading_mae_deg": {
+        "delta": -1.4622,
+        "ci95": [
+          -1.8734,
+          -1.113
+        ],
+        "separated": true
+      }
+    },
+    "os_navpred__minus__ha0_ext": {
+      "curvature_mae_1pm": {
+        "delta": 0.004456,
+        "ci95": [
+          0.002772,
+          0.006432
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": -0.002,
+        "ci95": [
+          -0.004218,
+          -1.5e-05
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": -0.00845,
+        "ci95": [
+          -0.020459,
+          0.003384
+        ],
+        "separated": false
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": 0.003655,
+        "ci95": [
+          0.002178,
+          0.005484
+        ],
+        "separated": true,
+        "n_steps": 13491
+      },
+      "heading_mae_deg": {
+        "delta": -0.1146,
+        "ci95": [
+          -0.2417,
+          -0.0009
+        ],
+        "separated": true
+      }
+    },
+    "ha0_ext__minus__ha0": {
+      "curvature_mae_1pm": {
+        "delta": -0.003089,
+        "ci95": [
+          -0.004052,
+          -0.002276
+        ],
+        "separated": true
+      },
+      "heading_mae_rad": {
+        "delta": -0.023521,
+        "ci95": [
+          -0.029541,
+          -0.018496
+        ],
+        "separated": true
+      },
+      "cross_mae_m": {
+        "delta": -0.206237,
+        "ci95": [
+          -0.268737,
+          -0.153812
+        ],
+        "separated": true
+      },
+      "curvature_mae_1pm_INTERSECTION_MASK": {
+        "delta": -0.003034,
+        "ci95": [
+          -0.003974,
+          -0.002252
+        ],
+        "separated": true,
+        "n_steps": 13459
+      },
+      "heading_mae_deg": {
+        "delta": -1.3477,
+        "ci95": [
+          -1.6926,
+          -1.0597
+        ],
+        "separated": true
+      }
+    }
+  },
+  "tactical_label_source": "trajectory-derived via tanitad.refs.refc_tactical.factor_from_kinematics (the same gate ff.tactical_from_trajectory uses); NOT the dump's 9-wide v7.2 `lat_label` field",
+  "paired_TACTICAL_lat_recall": {
+    "lane_keep": {
+      "n": 4176,
+      "per_arm": {
+        "os": 0.9732,
+        "os_navflip": 0.9753,
+        "os_navpred": 0.9727,
+        "os_navshuf": 0.9753,
+        "os_navzero": 0.9753,
+        "ha": 0.9686,
+        "ha0": 1.0,
+        "ha0_ext": 0.9696
+      },
+      "paired": {
+        "os_navflip__minus__os": {
+          "delta": 0.0022,
+          "ci95": [
+            -0.0007,
+            0.0051
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__os": {
+          "delta": -0.0005,
+          "ci95": [
+            -0.004,
+            0.0029
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__os_navshuf": {
+          "delta": -0.0026,
+          "ci95": [
+            -0.0063,
+            0.001
+          ],
+          "separated": false
+        },
+        "os_navshuf__minus__os": {
+          "delta": 0.0022,
+          "ci95": [
+            -0.0007,
+            0.0051
+          ],
+          "separated": false
+        },
+        "os_navzero__minus__os": {
+          "delta": 0.0022,
+          "ci95": [
+            -0.0021,
+            0.0064
+          ],
+          "separated": false
+        },
+        "os__minus__ha0_ext": {
+          "delta": 0.0036,
+          "ci95": [
+            -0.0051,
+            0.0118
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__ha0_ext": {
+          "delta": 0.0031,
+          "ci95": [
+            -0.0059,
+            0.0116
+          ],
+          "separated": false
+        }
+      }
+    },
+    "turn_left": {
+      "n": 251,
+      "per_arm": {
+        "os": 0.8127,
+        "os_navflip": 0.8167,
+        "os_navpred": 0.8287,
+        "os_navshuf": 0.7968,
+        "os_navzero": 0.8167,
+        "ha": 0.7291,
+        "ha0": 0.0,
+        "ha0_ext": 0.753
+      },
+      "paired": {
+        "os_navflip__minus__os": {
+          "delta": 0.004,
+          "ci95": [
+            -0.0152,
+            0.028
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__os": {
+          "delta": 0.0159,
+          "ci95": [
+            -0.0037,
+            0.0419
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__os_navshuf": {
+          "delta": 0.0319,
+          "ci95": [
+            0.0049,
+            0.0692
+          ],
+          "separated": true
+        },
+        "os_navshuf__minus__os": {
+          "delta": -0.0159,
+          "ci95": [
+            -0.0481,
+            0.0113
+          ],
+          "separated": false
+        },
+        "os_navzero__minus__os": {
+          "delta": 0.004,
+          "ci95": [
+            -0.0261,
+            0.0282
+          ],
+          "separated": false
+        },
+        "os__minus__ha0_ext": {
+          "delta": 0.0598,
+          "ci95": [
+            0.0092,
+            0.1102
+          ],
+          "separated": true
+        },
+        "os_navpred__minus__ha0_ext": {
+          "delta": 0.0757,
+          "ci95": [
+            0.0184,
+            0.1316
+          ],
+          "separated": true
+        }
+      }
+    },
+    "turn_right": {
+      "n": 396,
+      "per_arm": {
+        "os": 0.8889,
+        "os_navflip": 0.8283,
+        "os_navpred": 0.8838,
+        "os_navshuf": 0.8662,
+        "os_navzero": 0.8662,
+        "ha": 0.75,
+        "ha0": 0.0,
+        "ha0_ext": 0.7702
+      },
+      "paired": {
+        "os_navflip__minus__os": {
+          "delta": -0.0606,
+          "ci95": [
+            -0.0969,
+            -0.0297
+          ],
+          "separated": true
+        },
+        "os_navpred__minus__os": {
+          "delta": -0.0051,
+          "ci95": [
+            -0.0233,
+            0.012
+          ],
+          "separated": false
+        },
+        "os_navpred__minus__os_navshuf": {
+          "delta": 0.0177,
+          "ci95": [
+            0.0,
+            0.0394
+          ],
+          "separated": false
+        },
+        "os_navshuf__minus__os": {
+          "delta": -0.0227,
+          "ci95": [
+            -0.0481,
+            0.0
+          ],
+          "separated": false
+        },
+        "os_navzero__minus__os": {
+          "delta": -0.0227,
+          "ci95": [
+            -0.0518,
+            0.0054
+          ],
+          "separated": false
+        },
+        "os__minus__ha0_ext": {
+          "delta": 0.1187,
+          "ci95": [
+            0.0696,
+            0.168
+          ],
+          "separated": true
+        },
+        "os_navpred__minus__ha0_ext": {
+          "delta": 0.1136,
+          "ci95": [
+            0.0682,
+            0.1619
+          ],
+          "separated": true
+        }
+      }
+    }
+  }
+}
