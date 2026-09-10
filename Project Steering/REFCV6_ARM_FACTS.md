@@ -164,3 +164,81 @@ must fail the gate, not survive into a model card.
 ⚠️ And the §2.2 framing above needs its scope widened: `--w-tac-goal`'s `default=0.0` explains
 **one** of the three. The other two have different causes, and **a single explanation covering
 one third of the evidence is how the count stayed wrong.**
+
+---
+
+## 6. ⭐ TWO PI ITEMS RESOLVED FROM THE RECORD — and one of them was about to manufacture a negative
+
+**MEASURED 2026-09-10**, per-file greps with a positive control on every probe. ⚠️ Instrument note
+first, because it changes how much of this is quotable: the **ripgrep-backed search tool returned 0
+on a control that bash grep read as 4**, and a glob-wide bash grep under-reported **35 files across
+~200**. Every absence claim below rests on a **per-file loop with a per-file content control**.
+
+### 6.1 `--w-agent 1.0` IS pre-registered — item resolved, no PI decision needed
+
+⛔ Correcting a claim made earlier today that it was *"MEASURED (provenance) / NOT PRE-REGISTERED"*.
+
+| where | class |
+|---|---|
+| `…/2026-09-07-p1-agent-gate/PREREG.md:46` and `:90` | ⭐ **REGISTERED**, written before any outcome, register row **`D-P1-AGENTCOND-1`** |
+| `…/2026-09-07-p1-agent-gate/code/launch_arms.py:50` (`head`), `:56` (`shuf`) | MEASURED, executed |
+| `…/2026-09-07-p1-agent-gate/raw/config_head_s0.json` → `"w_agent": 1.0` | MEASURED, banked run record |
+| `…/2026-09-05-agent-join-into-batch/raw/smoke_agt_head_600.config.json` → `seams.w_agent = 1.0` | MEASURED, 600-step smoke |
+
+The registered line reads: `--agents head --w-agent 1.0 --agent-join <B1 EVAL join> --agent-join-allow-legacy-ids`.
+
+⇒ **1.0 is not an invention; it is the value the P1 gate registered and ran.** ⭐ refcv6 still
+refuses to hardcode it (`arms.py:289-293` raises `PIDecisionRequired`, *"pass `--w-agent` explicitly
+so the record shows who chose it"*), and `arms.py:59` classifies it **CONSTITUTIVE, not a second
+lever**, so supplying it does not break one-variable discipline.
+
+⚠️ The one registered **0** is `PREREG_WPB_WAYPOINT_INDEX.md:204-205`, and it is **oracle-path
+only** — `:489` says verbatim *"`--w-agent 0` is load-bearing, not a default."* ⛔ Do not carry it
+to a `head` arm; `refc_v3_train.py:583` refuses `--agents head` at `w_agent <= 0`.
+
+### 6.2 ⛔ `train2400_agents.jsonl.xz` NAMES TWO DIFFERENT FILES — pull by md5, never by name
+
+⭐ **This is the 182-clip manufactured negative, and the architecture review names the wrong one.**
+
+| artifact | clips | md5 | coverage vs v7.2 train (4,572) |
+|---|---|---|---|
+| **parity** join (HF `Sayood/tanitad-ph0-aug120 → joins/`) | 2,308 | `24cbdca8c3b23aafc2fb17e6bf99cf76` | ⛔ **182/4,572 = 3.98 %** |
+| **B1 TRAIN** join (pod `/root/data/joins/`) | **4,427** | **`1c985e6d6ad34e605c4ebd30cb353558`** | ✅ **4,427/4,572 = 96.83 %** |
+
+⇒ My standing premise *"the train2400 join shares only 182 clips with v7.2"* is **true of the wrong
+file**. The right file covers **96.83 %**. `D-B1-OVERLAP-IS-4-22-PCT` says it plainly: the parity
+file *"is **the wrong corpus**, not a missing file, and substituting it would train the agent seam
+on ~4 % of B1 and manufacture 'agent tokens do not help' from a starved seam."*
+
+⛔ **A 4 %-coverage arm does not crash. It trains, converges, and reads as a clean negative** — which
+is worse than a crash, because it looks like a result. ⇒ **Identify the join by md5 `1c985e6d…`.**
+
+### 6.3 The trainer has NO coverage floor — the gate is the only thing standing there
+
+`refc_v3_train.py::enable_agent_join` (`:1708-1820`) refuses on **three absolutes only**: zero
+joined episodes, zero stable-id matches without `--agent-join-allow-legacy-ids`, and zero labelled
+NOW-frames. ⛔ **There is no minimum-coverage threshold.** A 4 %-coverage join passes every trainer
+guard and is merely *stamped* into `config.json` as `agent_join_stats.frac_windows_labelled`.
+
+⇒ That gap is exactly why the pre-launch gate's **C4** exists (`prelaunch_gate.py`, floor `0.90`),
+and why C4 was proven **in both directions**: **0.968285 PASS** against **0.039808 FAIL**. ⭐ Its
+read-failure guard states the discipline outright: *"⛔ one side produced NO clip ids. A zero here
+is a claim about the READ, not about the corpus — refusing to report it as coverage."* It returns
+**`INCONCLUSIVE`, never `0.0`.**
+
+### 6.4 Supervisor audit — copy `sup_refcv6.sh`, not `supervise_run.sh`
+
+| script | trainer launch | its own `sleep`s | verdict |
+|---|---|---|---|
+| `sup_refcv6.sh` | ✅ `:179` | ✅ `:197`, `:217` | ⭐ **complete**, and closes fd 200 on its heredocs too |
+| `sup_refcv5_v2b.sh` (the refcv5-v2 watchdog) | ✅ `:78` | ✅ `:140`, `:155` | complete |
+| `sup_refcv5.sh` | ✅ `:145` | ✅ `:221`, `:225` | complete |
+| ⛔ `stack/scripts/supervise_run.sh` | fd **9**, closed only in a subshell `:130` | ❌ `:119, :123, :134, :142` | **PARTIAL — its heartbeat `sleep` still inherits the lock** |
+
+⚠️ `supervise_run.sh` is the **exact partial fix that shipped and failed the same day**: the lock was
+held by `sleep 180`, the supervisor's own poll child, which had outlived its parent. ⛔ **Every child
+gets `200>&-`, the sleeps included.**
+
+⚠️ **UNVERIFIED, not clean:** `sup_refcv5_v2.sh` and `stack/scripts/sup_refcv3.sh` never became
+readable, and `pod_currency_audit.py`'s contents resisted every read (`EISDIR` on a regular `.py`).
+Their existence and sizes are measured; their contents are not.
