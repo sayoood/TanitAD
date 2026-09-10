@@ -2934,7 +2934,9 @@ INHERITED from the launch stream that it is md5-identical to the pod's), the lau
 
 ---
 
-### 4.7 REF-C **v5** — `refcv5-ddim-b1-v72-40k` — 🟡 **TRAINING since 2026-09-06 10:13:52 UTC** · ⛔ **NO RESULT EXISTS YET** · the **WP-4 diffusion-sampler** rung
+### 4.7 REF-C **v5** — `refcv5-ddim-b1-v72-40k` — 🛑 **STOPPED at step 5,950 / 40,284 (14.77 %) on 2026-09-06, PI directive** · ⛔ **NO RESULT EXISTS AND NONE EVER WILL** · SUPERSEDED by **§4.8 `refcv5-v2`**
+
+⚠️ **STATUS CORRECTED 2026-09-10 — this header read "🟡 TRAINING" for four days after the run was killed.** The PI ordered a clean stop because the arm *"implements one lever, not the instructed design"*; the kill is recorded in `TanitAD Research Lab/Architecture & Inference/Research/2026-09-06-refcv5-stop/RESULT.md` (supervisor killed FIRST, no `summary.json` written, so nothing can read this as a completed 40,284-step run). The redesigned arm that DID run to 40,284 is **§4.8**. ⛔ Everything below this line describes the STOPPED launch and is kept for its argv, corpus and precondition record only.
 
 ⛔⛔ **THIS ROW RECORDS A LAUNCH, NOT A RESULT. There is no eval, no ADE, no metric-family
 table, and nothing here may be quoted as a capability number.** The row exists so that the
@@ -3002,6 +3004,136 @@ than only in one agent's context. Launch record:
 eval**, naming the four metric families, the estimator, and — per caveat 2 — the
 **inference-seed replicate**. The WP-4/WP-6 wiring package already recorded that the prereg
 governing this arm is *"a separate, still-owed artifact"*.
+
+---
+
+### 4.8 REF-C **v5-v2** — `refcv5-v2-noagents-b1-v72-40k` — ✅ **COMPLETE at 40,284** · ✅ **EVALUATED 2026-09-07/09 (four families, T1, OPEN LOOP, 4,823 windows / 141 episodes, TWO inference seeds)** · ⛔⛔ **FAILS BOTH PRE-REGISTERED BARS** · ⛔ **and is separably WORSE than refcv4b on ADE**
+
+⛔⛔ **THE HEADLINE IS A FAILURE AND IS REPORTED AS WRITTEN.** `os − ha0_ext` = **+0.0205 m
+[+0.0043, +0.0390]** — **separated in the WRONG DIRECTION**: the arm is *worse* than the echo
+control, and the interval excludes zero on the losing side. The bar was registered
+**2026-09-07, before the checkpoint existed**. ⭐ Per RULE ZERO, a stricter *stopping* condition
+never lowers the *evidence* bar: this row says FAIL.
+
+Primary artifact: the four-family panel, run twice at two inference seeds
+(`C:\Users\Admin\refcv5v2_final\panel.log` seed 0, `panel_seed1.log` seed 1); comparison package
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/`.
+
+| | |
+|---|---|
+| **Lineage** | §4.7's `refcv5-ddim-b1-v72-40k` was **STOPPED at step 5,950 / 40,284 (14.77 %)** on PI directive — *"it implements one lever, not the instructed design"* (`…/2026-09-06-refcv5-stop/RESULT.md`). This row is the **redesigned v2** (`…/2026-09-06-refcv5-redesign/`, composed in `…/2026-09-07-refcv5-v2-compose/`), run to the full **40,284** |
+| **Args (`config.json['argv']`)** | `--arm hier --size base --v2-cache /root/data/train --v7-labels …/s2_labels_v7.2_train.jsonl.gz --eval-cache /root/data/eval --eval-labels …/s2_labels_v7.2_eval.jsonl.gz --eval-every 500 --eval-batches 8 --image-hw 256 640 --steps 40284 --batch 20 --workers 6 --prefetch-factor 1 --v2-lru 24 --lr 1e-4 --warmup 2000 --seed 0 --log-every 50 --save-every 500 --u8-batches --out /workspace/experiments/refcv5-v2-noagents-b1-v72-40k --nav-from-v7 --ego-state-inject --ego-dropout 0.5 --anchors …/anchors.pt --n-anchors 117 --anchor-v0-conditioned --anchor-control-units alat --sel-accel-max 2.0 --sampler ddim --w-u0 0.5 --sel-refined --sel-score-emitted --goal-str --tac-goal-tok-head --agents off` |
+| ⛔ **FOUR levers vs refcv4b, not one — attribution is FORFEITED** | MEASURED by argv set-difference against §4.6 (refcv4b's flag set is a strict subset): **(1)** `--sampler ddim --w-u0 0.5` (WP-4); **(2)** `--sel-refined --sel-score-emitted` (WP-7 selector wiring); **(3)** `--tac-goal-tok-head`; **(4)** `--agents off`. ⛔ **This row may NOT be read as "the diffusion sampler did X".** §4.7 was designed as a one-lever arm; **v2 is not**, and any per-lever claim needs its own arm |
+| ⛔ **`--sel-refined` is LIVE here, and it was MEASURED WORSE on refcv4b** | §4.7 caveat 5 recorded the flag as absent from that pod's stale stack, with its prohibition standing on a refcv4b measurement of **0.0259 m separated WORSE** (the ranking head was never trained to rank). v2 passes it anyway. ⇒ **a known-negative lever is inside this arm**, and it is a candidate explanation for the ADE regression that this arm cannot separate from the other three |
+| **Corpus — ⛔ NON-PARITY** | `/root/data/train`, **4,572** `*.v2ep.pt` (B1) — the same corpus refcv4b trained on, deliberately, so the comparison is matched. ⇒ **a v2-vs-refcv4b delta is a valid ARM delta; a LEVEL against any parity arm is invalid** |
+| **Parameters (`config.json['param_breakdown']`)** | total **108,257,502** — `core` **106,067,312**, `phi_tac` 1,757,440, `tac_latent_proj` 262,656, `gstr_cond` 66,816, `nav_inject` 50,176, `ego_inject` 25,536, `tac_heads` 14,364, `tac_goal_tok_head` **11,286**, `scorer` 1,145, **`str_goal_head` 771** |
+| ⭐ **The strategic level is nearly free** | `str_goal_head` is **771 parameters** and delivers **route accuracy 0.7708** against a **0.3333** chance baseline, while `core` is **106,067,312** — five orders of magnitude larger. ⚠️ Read as a *cost* statement, not a capability one: the head is small and works; it does not follow that the hierarchy thesis is proven |
+
+#### 4.8.1 ⛔ THE FOUR FAMILIES — T1, 4,823 windows / 141 episodes, paired episode-cluster bootstrap
+
+*⛔ `overlapping_holdout_se` is NOT used anywhere in this panel: it biases the POINT ESTIMATE
+(mean-of-split-means, not `full_set`), not merely the interval. Estimator on every margin below is
+the **paired episode-cluster bootstrap** (`taniteval/ci.py`), `n_boot 2000`, `seed 0`,
+cluster = **episode**. ⛔ ADE is ONE of four families and is never "the result".*
+
+| family | metric | **refcv5-v2 `os`** | **refcv4b `os`** | `ha` | `ha0_ext` | `ha0` |
+|---|---|---|---|---|---|---|
+| **ADE** | `ade_0_2s` m [CI95] | 0.3079 [0.2795, 0.3390] | **0.2965** [0.2697, 0.3280] | 0.2996 | **0.2874** | 0.6723 |
+| **LONGITUDINAL** | speed MAE m/s | 0.2919 | 0.2900 | **0.2540** | **0.2540** | 0.4880 |
+| | target-speed acc@0.5 | 0.8346 | 0.8329 | **0.8662** | **0.8662** | 0.7047 |
+| | along-track MAE m | 0.2655 | 0.2544 | 0.2348 | **0.2341** | 0.4705 |
+| | headway / time-gap / min TTC | 27.83 m / 4.089 s / 24.65 s | 28.45 m / 4.112 s / 24.84 s | 28.05 / 4.207 / 25.59 | 28.02 / 4.197 / 25.55 | 27.46 / 4.118 / 24.11 |
+| **LATERAL** | heading ° | **1.2121** | 1.2964 | 1.5489 | 1.4322 | 2.7799 |
+| | yaw-rate °/s | **1.0534** | 1.7368 | 1.4542 | 1.3395 | 2.3714 |
+| | cross-track m | 0.0994 | **0.0978** | 0.1226 | 0.1070 | 0.3132 |
+| | ⭐ curvature MAE 1/m | **0.003485 (0.512× floor)** | ⛔ 0.008150 (**1.198×** — ABOVE) | 0.004030 (0.593×) | 0.003712 (0.546×) | 0.006802 (**= the floor**) |
+| **TACTICAL** | lateral acc / κ | 0.9563 / 0.8193 | **0.9579 / 0.8277** | 0.9382 / 0.7374 | 0.9419 / 0.7548 | 0.8659 / 0.0000 |
+| | longitudinal acc / κ | 0.8354 / 0.5463 | 0.8260 / 0.5186 | 0.8443 / **0.6071** | 0.8443 / **0.6071** | 0.7576 / 0.0000 |
+| | anchor selection acc | 0.5271 [0.4858, 0.5685] (lift **61.67×**) | 0.5275 [0.4883, 0.5664] (61.72×) | — | — | — |
+| | goal FDE m / bearing MAE ° | 0.6607 / **1.3730** | **0.6345** / 1.5484 | 0.6588 / 1.6673 | 0.6323 / 1.5529 | 1.4029 / 2.8832 |
+| **STRATEGIC** | route acc [CI95] | 0.7708 [0.7146, 0.8254] | **0.7791** [0.7248, 0.8318] | ⛔ n = 0 | ⛔ n = 0 | ⛔ n = 0 |
+| | route κ · n | 0.4614 · 3,622 / 128 eps | **0.4864** · 3,622 / 128 eps | — | — | — |
+| | nav echo index | 0.6458 | 0.6422 | — | — | — |
+
+⚠️ **Why the three control columns read `n = 0` on STRATEGIC, stated per family with its reason
+rather than silently dropped:** `ha` / `ha0_ext` / `ha0` are model-free trajectory constructions and
+emit no `route_pred` / `route_gt`, so a strategic number does not exist for them **by
+construction**. It is a structural absence, not a missing measurement.
+
+⚠️ **Distance-keeping is heavily censored and the mean is over censored data**: for refcv5-v2,
+**784 of 1,308** windows never close on the lead and are censored at `TTC_CAP_S = 30.0 s`
+(`n_closing` 524). Quote the censoring with the number.
+
+⚠️ **Curvature uses the MASKED estimator**: refcv5-v2 `n_steps` 13,553 with 1,140 excluded below
+`min_ds = 0.25 m`. ⭐ `ha0`'s own curvature is **exactly 0**, so its MAE **is** the straight-line
+floor — a reference, not a result.
+
+#### 4.8.2 PAIRED MARGINS AND THE PRE-REGISTERED VERDICT
+
+| margin | delta m [CI95] | separated | reading |
+|---|---|---|---|
+| **`os − ha0_ext`** (**BAR-REFCV5V2-1**) | **+0.0205 [+0.0043, +0.0390]** | **yes — WRONG WAY** | ⛔ **FAIL** |
+| **`os − ha`** (**BAR-REFCV5V2-2**) | **+0.0082 [−0.0082, +0.0267]** | no | ⛔ **FAIL** |
+| `os − ha0` | −0.3644 [−0.4219, −0.3128] | yes | beats the straight-line floor only |
+| **`refcv5-v2 − refcv4b` (`os`)** (BAR-3, informational) | **+0.0114 [+0.0059, +0.0172]** | yes | ⛔ **v2 is separably WORSE than refcv4b** |
+| `refcv5-v2 − refcv3` (`os`) | −0.1341 [−0.1536, −0.1128] | yes | beats refcv3 |
+| `refcv4b − refcv3` (`os`) | −0.1455 [−0.1655, −0.1240] | yes | refcv4b beats refcv3 by more |
+| **CONTROL** `refcv5-v2 − refcv4b` on `ha` / `ha0` / `ha0_ext` | **0.0000 [0.0000, 0.0000]** ×3 | no | ⭐ the model-free arms are **bit-identical** ⇒ **ONE surface**, not two |
+
+⭐ **The control row is what makes the comparison admissible.** All three model-free arms return
+exactly zero with zero-width intervals across the two runs, so refcv5-v2 and refcv4b were scored on
+the *same* windows by the *same* instrument; the +0.0114 is an arm difference, not a surface
+difference.
+
+**HEADLINE (verbatim from the panel):** ⛔ **FAIL — refcv5-v2 has NOT cleared the pre-registered
+bar: it does not separate from the do-nothing baselines on this surface, which is exactly where
+refcv4b also stands.**
+
+#### 4.8.3 ⭐ THE INFERENCE-SEED REPLICATE — the third variance, and it was actually run
+
+§4.7 caveat 2 required it: refcv5 **samples at inference** (`--sampler ddim`), so a single-seed
+separated CI answers *"would another draw of EPISODES say this?"* and is blind to *"would another
+INFERENCE RUN say this?"*. **The panel was therefore re-run at a second inference seed**, and the
+verdict does not move:
+
+| margin | seed 0 | seed 1 |
+|---|---|---|
+| `os − ha0_ext` | +0.0205 [+0.0043, +0.0390] sep | **+0.0204 [+0.0047, +0.0395] sep** |
+| `os − ha` | +0.0082 [−0.0082, +0.0267] not sep | **+0.0082 [−0.0081, +0.0274] not sep** |
+| `os − refcv4b` | +0.0114 [+0.0059, +0.0172] sep | **+0.0114 [+0.0052, +0.0174] sep** |
+
+⛔ **This closes the INFERENCE-seed question only.** The **TRAINING**-run question
+(`H-ESTIM-SEED-1`) is still **NOT MEASURED** — one training seed per arm — and the panel prints the
+reason beside every separated cell. ⚠️ Panel multiplicity: **6 of 9 cells read separated (66.7 %)**
+against a pure-replicate false-positive rate of **14.3 % (6/42)**; the panel rate exceeds the
+replicate rate, but each individual cell still answers only the episode-draw question.
+
+#### 4.8.4 ⛔ TWO DEAD-WEIGHT FACTS — without them this row is misleading
+
+1. ⛔⛔ **`tac_goal_tok_head` was 11,286 parameters with `grad_abs_sum` EXACTLY 0 for all 40,284
+   steps.** The head was wired and never trained. ⇒ **NO refcv5-v2 result may be credited to the
+   22-token tactical vocabulary.** The `--tac-goal-tok-head` lever is, on this run, a parameter
+   count and nothing else — and the tactical numbers in §4.8.1 were produced *without* it
+   contributing.
+2. ⛔ **`--agents off` throughout.** The DiffusionDrive agent coupling (WP-6) was **ABSENT, NOT
+   TESTED**. Nothing here supports or refutes it. Per §4.7 caveat 3 the blocker is unchanged: there
+   is **no B1-scoped `obstacle.offline` join**, and the only join the programme holds is
+   parity-scoped (2,308 clips, ~4 % of this corpus).
+
+#### 4.8.5 Artifacts — ⚠️ SINGLE-DISK, and that is a stranding risk
+
+| artifact | where | note |
+|---|---|---|
+| `ckpt.pt` | `C:\Users\Admin\refcv5v2_final\ckpt.pt` | 1,299,559,201 B, md5 **`9405ec73b2d797c4cebd44f82dbce54b`** |
+| `config.json` | same dir | the argv + `param_breakdown` quoted above |
+| `extrinsics141.json` | same dir | 107,849 B |
+| `panel.log` / `panel_seed1.log` | same dir | **the primary four-family artifact**, both seeds |
+| `video/refcv5-v2_long.mp4` | same dir | **116,228,756 B** |
+| `video/refcv5-v2_long_view.mp4` | same dir | 12,911,098 B |
+
+⚠️ **Every one of these lives on ONE DISK (the dev box).** Per the operating standard that is
+*not* done. They are too large for the repo; the correct home is the PI's private HF account.
+**ESCALATED as a work item — this is not a note in a README.**
 
 ---
 

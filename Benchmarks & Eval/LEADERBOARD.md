@@ -775,6 +775,107 @@ directs that **107,032,901** be quoted.
 
 ---
 
+## 1e. THE **B1-CORPUS** LINE, CONTINUED — `refcv4b` and `refcv5-v2` · ⚠️ **loop = OPEN** · *added 2026-09-10*
+
+⭐ **§1d's cells were PENDING because the eval did not exist. It exists now** — for the two arms
+*after* refcv3, on the same B1 surface, with all four families and a paired estimator. This section
+fills them. ⛔ refcv3's own §1d cells stay PENDING: this panel scores refcv4b and refcv5-v2, and
+carries refcv3 only through the two paired deltas at the bottom.
+
+**Tier `T1` · loop = OPEN** (self-action open loop — one forward pass at t0, the path is the model's
+own selection; a planner feeding its own predictor is STILL open loop, PI ruling 2026-09-02).
+**Surface:** 4,823 windows / 141 episodes, `dt = 0.5 s`, `K = 4`.
+**Estimator:** paired episode-cluster bootstrap (`taniteval/ci.py`), `n_boot 2000`, `seed 0`,
+cluster = **episode**. ⛔ `overlapping_holdout_se` is used nowhere — it biases the POINT ESTIMATE,
+not merely the interval.
+**Artifact:** `C:\Users\Admin\refcv5v2_final\panel.log` (seed 0) and `panel_seed1.log` (seed 1);
+package `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/`.
+**Registry:** `MODEL_REGISTRY.md` §4.6 (refcv4b) and §4.8 (refcv5-v2).
+
+⛔ **ADMISSIBILITY — the nav command is ORACLE-DERIVED.** Both arms consume the v7.2 nav command
+and all 4,719 v7.2 nav records are `ego-future`, derived from the ego's own future path. It is a
+**first-class route input** under the PI ruling of 2026-09-04 and both arms share it identically, so
+the comparison is FAIR — but it is noiseless and perfectly timed where a real router is coarse.
+⛔ **Neither arm's nav may be read as a production command.**
+
+### 1e.1 THE FOUR FAMILIES
+
+| family | metric | **refcv5-v2** | **refcv4b** | `ha` (hold-action) | `ha0_ext` (echo) | `ha0` (straight-line) |
+|---|---|---|---|---|---|---|
+| **ADE** | `ade_0_2s` m [CI95] | 0.3079 [0.2795, 0.3390] | **0.2965** [0.2697, 0.3280] | 0.2996 [0.2755, 0.3278] | **0.2874** [0.2649, 0.3137] | 0.6723 [0.6007, 0.7469] |
+| **LONGITUDINAL** | speed MAE m/s | 0.2919 | 0.2900 | **0.2540** | **0.2540** | 0.4880 |
+| | target-speed acc@0.5 | 0.8346 | 0.8329 | **0.8662** | **0.8662** | 0.7047 |
+| | along-track MAE m | 0.2655 | 0.2544 | 0.2348 | **0.2341** | 0.4705 |
+| | min headway m / time-gap s / min TTC s | 27.83 / 4.089 / 24.65 | 28.45 / 4.112 / 24.84 | 28.05 / 4.207 / 25.59 | 28.02 / 4.197 / 25.55 | 27.46 / 4.118 / 24.11 |
+| **LATERAL** | heading ° | **1.2121** | 1.2964 | 1.5489 | 1.4322 | 2.7799 |
+| | yaw-rate °/s | **1.0534** | 1.7368 | 1.4542 | 1.3395 | 2.3714 |
+| | cross-track m | 0.0994 | **0.0978** | 0.1226 | 0.1070 | 0.3132 |
+| | ⭐ curvature MAE 1/m (× floor) | **0.003485 (0.512×)** | ⛔ 0.008150 (**1.198×**) | 0.004030 (0.593×) | 0.003712 (0.546×) | 0.006802 (**1.000× = floor**) |
+| **TACTICAL** | lateral acc / κ | 0.9563 / 0.8193 | **0.9579 / 0.8277** | 0.9382 / 0.7374 | 0.9419 / 0.7548 | 0.8659 / **0.0000** |
+| | longitudinal acc / κ | 0.8354 / 0.5463 | 0.8260 / 0.5186 | 0.8443 / **0.6071** | 0.8443 / **0.6071** | 0.7576 / **0.0000** |
+| | anchor selection acc (lift vs 1/117) | 0.5271 (**61.67×**) | 0.5275 (**61.72×**) | — | — | — |
+| | goal FDE m / bearing MAE ° | 0.6607 / **1.3730** | **0.6345** / 1.5484 | 0.6588 / 1.6673 | 0.6323 / 1.5529 | 1.4029 / 2.8832 |
+| **STRATEGIC** | route acc [CI95] | 0.7708 [0.7146, 0.8254] | **0.7791** [0.7248, 0.8318] | ⛔ n = 0 | ⛔ n = 0 | ⛔ n = 0 |
+| | route κ · n | 0.4614 · 3,622 / 128 eps | **0.4864** · 3,622 / 128 eps | — | — | — |
+
+⚠️ **`n = 0` on STRATEGIC for the three controls is STRUCTURAL, stated per family with its reason
+rather than dropped:** `ha` / `ha0_ext` / `ha0` are model-free trajectory constructions that emit no
+`route_pred` / `route_gt`. No strategic number exists for them by construction.
+⚠️ **Distance-keeping is censored:** 784 of 1,308 refcv5-v2 windows never close on the lead and are
+censored at `TTC_CAP_S = 30 s`. The means above are over censored data.
+⚠️ **Curvature is the MASKED estimator** (refcv5-v2 `n_steps` 13,553, 1,140 excluded below
+`min_ds = 0.25 m`). `ha0`'s curvature is exactly 0, so its MAE **is** the floor — a reference.
+
+### 1e.2 THE PAIRED MARGINS — and both bars FAIL
+
+| margin | delta m [CI95] | separated | verdict |
+|---|---|---|---|
+| **refcv5-v2 `os − ha0_ext`** (BAR-1) | **+0.0205 [+0.0043, +0.0390]** | **yes, WRONG WAY** | ⛔ **FAIL** |
+| **refcv5-v2 `os − ha`** (BAR-2) | **+0.0082 [−0.0082, +0.0267]** | no | ⛔ **FAIL** |
+| refcv4b `os − ha0_ext` | +0.0091 [−0.0055, +0.0254] | no | ⛔ **tie, bar not cleared** |
+| refcv4b `os − ha` | −0.0032 [−0.0179, +0.0133] | no | ⛔ **tie** |
+| **refcv5-v2 − refcv4b** (`os`) | **+0.0114 [+0.0059, +0.0172]** | yes | ⛔ **v2 separably WORSE** |
+| refcv5-v2 − refcv3 (`os`) | −0.1341 [−0.1536, −0.1128] | yes | **win** vs refcv3 |
+| refcv4b − refcv3 (`os`) | −0.1455 [−0.1655, −0.1240] | yes | **win** vs refcv3, by more |
+| **CONTROL** v2 − refcv4b on `ha` / `ha0` / `ha0_ext` | **0.0000 [0, 0]** ×3 | no | ⭐ **ONE surface** — the comparison is admissible |
+
+⛔⛔ **THE THING THIS PAGE EXISTS TO SAY: NEITHER ARM BEATS DOING NOTHING.** `ha0_ext` — an echo
+control — scores **0.2874 m**, better than refcv4b's 0.2965 and refcv5-v2's 0.3079. Per §0.5 both
+arms are **LOST** against `ha0_ext` and **tie** against `ha`. A win over refcv3 is a win over a
+*worse arm*, not evidence of driving skill.
+⭐ **The one family where a trained arm separably beats every control is LATERAL SHAPE:**
+refcv5-v2's curvature MAE **0.003485** is **0.512×** the straight-line floor, against refcv4b's
+**0.008150 = 1.198×** — refcv4b tracks the road *worse than a plan that never steers*, and v2 fixes
+exactly that. That is the real, non-ADE finding on this row.
+
+### 1e.3 Variance — which question the intervals answered
+
+| question | status |
+|---|---|
+| *would another draw of EPISODES say this?* | ✅ **ANSWERED** — paired episode-cluster bootstrap, cluster = episode, `n_boot 2000` |
+| *would another INFERENCE run say this?* | ✅ **ANSWERED** — refcv5-v2 samples (`--sampler ddim`), so the whole panel was re-run at a second inference seed. BAR-1 **+0.0204 [+0.0047, +0.0395]**, BAR-2 **+0.0082 [−0.0081, +0.0274]**, arm delta **+0.0114 [+0.0052, +0.0174]** — the verdict does not move |
+| *would another TRAINING run say this?* | ⛔ **NOT MEASURED** — one training seed per arm (`H-ESTIM-SEED-1`) |
+
+⚠️ **Panel multiplicity:** 6 of 9 cells read separated = **66.7 %**, against a pure-replicate
+false-positive rate of **14.3 % (6/42)**. The panel rate exceeds the replicate rate; individual
+cells still answer only the episode-draw question.
+
+### 1e.4 ⛔ Two dead-weight facts that travel with the refcv5-v2 row
+
+1. ⛔ **`tac_goal_tok_head`: 11,286 parameters, `grad_abs_sum` EXACTLY 0 for all 40,284 steps.**
+   Wired, never trained ⇒ **no refcv5-v2 number may be credited to the 22-token tactical
+   vocabulary**, including the TACTICAL row above.
+2. ⛔ **`--agents off` throughout** ⇒ the DiffusionDrive agent coupling was **ABSENT, NOT TESTED**.
+3. ⛔ **refcv5-v2 moved FOUR levers vs refcv4b** (`--sampler ddim --w-u0 0.5`, `--sel-refined
+   --sel-score-emitted`, `--tac-goal-tok-head`, `--agents off`), so **no per-lever attribution is
+   available from this row** — and one of them, `--sel-refined`, was MEASURED **0.0259 m separated
+   WORSE** on refcv4b.
+
+⭐ **Cheap and real:** `str_goal_head` is **771 parameters** delivering **0.7708** route accuracy
+against **0.3333** chance, beside a `core` of **106,067,312**.
+
+---
+
 ## 2. TIER **T0** — the split read on C1 · *what a single ADE column hides*
 
 *MEASURED 2026-07-21, `python -m taniteval.runner driving-all`, CPU-only over the committed
