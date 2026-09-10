@@ -362,20 +362,37 @@ CHANNEL_REQUIREMENTS: tuple[ChannelRequirement, ...] = (
     ChannelRequirement(
         channel="agent_gt",
         owner="refcv5 WP-6 agent seam",
-        reason="⭐ GUARDED ELSEWHERE — the model refuses BOTH directions loudly and "
-               "unconditionally, so there is no SILENT divergence for this guard to "
-               "catch: `refc_v3.py:1398-1403` when agent_gt is supplied to a build with "
-               "no agent seam, and `:1404-1409` when an `--agents oracle` build receives "
-               "none. ⚠️ It could not be asserted here even if it needed to be: the "
-               "declaring field is NESTED (`cfg.core.agents.enable` / `.oracle`), and "
-               "under the flat getattr this map used to run, a predicate naming it would "
-               "have read False forever. That trap is now closed for everyone by "
-               "`_read_predicate`, which raises on an unresolvable path.",
-        unblock="nothing needs to — but if the model's two refusals were ever relaxed, "
-                "the predicates ('core.agents.enable', 'core.agents.oracle') now resolve "
-                "correctly and this record can simply be given them.",
+        reason="⭐ GUARDED ELSEWHERE — the model now refuses ALL THREE divergent "
+               "cases loudly and unconditionally, so there is no SILENT divergence "
+               "for this guard to catch: agent_gt supplied to a build with no agent "
+               "seam; an `--agents oracle` build receiving none; and — added "
+               "2026-09-10 — agent_gt supplied to an `--agents head` build, whose "
+               "detector reads the feature map and never this channel. "
+               "⛔⛔ THIS RECORD PREVIOUSLY SAID 'BOTH directions', AND THAT WAS THE "
+               "HOLE. The head case was NOT refused: `refc.py:3366-3368` dropped a "
+               "supplied agent_gt silently, while THIS waiver cited the model's "
+               "completeness as the reason not to check here. Two guards, each "
+               "deferring to the other, and `agent_gt` covered by neither — with "
+               "`FORWARD_KEYS` forwarding it, so an RL-driven head build would have "
+               "read as 'agent tokens do not help' while never having had any "
+               "(`D-AGENTGT-HEAD-SILENT-DROP`). ⚠️ The lesson is not about agents: a "
+               "waiver whose justification is a CLAIM ABOUT OTHER CODE must be "
+               "re-read against that code, because it is exactly as stale as the "
+               "code moved. ⚠️ It could not be asserted here even if it needed to "
+               "be: the declaring field is NESTED (`cfg.core.agents.enable` / "
+               "`.oracle`), and under the flat getattr this map used to run, a "
+               "predicate naming it would have read False forever. That trap is now "
+               "closed for everyone by `_read_predicate`, which raises on an "
+               "unresolvable path.",
+        unblock="nothing needs to — but if any of the model's three refusals were "
+                "ever relaxed, the predicates ('core.agents.enable', "
+                "'core.agents.oracle') now resolve correctly and this record can "
+                "simply be given them. The three refusals are pinned by "
+                "`tests/test_refc_v3_agent_gt_head_drop.py`, which carries a "
+                "deliberate-regression arm per case.",
         evidence="PUBLISHED-CODE `refc_v3.py:1397` (`_ag = getattr(self.cfg.core, "
-                 "'agents', None)`), `:1398-1403`, `:1404-1409`."),
+                 "'agents', None)`), `:1398-1403`, `:1404-1409`, and the head-case "
+                 "refusal immediately after them."),
 )
 
 #: Back-compat alias, DERIVED so it can never desync from the records above.

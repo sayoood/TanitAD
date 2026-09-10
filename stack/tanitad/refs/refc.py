@@ -2429,10 +2429,23 @@ class AnchoredDiffusionDecoder(nn.Module):
         if self.control_head is not None:
             # The emitted fan comes out of the INTEGRATOR, and the predicted
             # clean CONTROL leaves the decoder as `u0_hat` -- it is the only
-            # tensor the x0 loss can be computed on, and without that loss
-            # `control_head` stays at its zero init forever while every log row
-            # still says "sampler: ddim" (which is why the trainer REFUSES
-            # `--sampler ddim --w-u0 0`).
+            # tensor the x0 loss can be computed DIRECTLY on.
+            # ⛔⛔ THIS COMMENT USED TO SAY `control_head` "stays at its zero init
+            # forever" without that loss. MEASURED 2026-09-10 -- IT DOES NOT.
+            # `control_head` reaches `out["anchor_traj"]`, which is exactly what
+            # the trainer's matched-anchor L1 gathers
+            # (`refc_v3_train.py:2245-2247`), so one backward through
+            # `anchor_traj` ALONE puts grad_abs_sum 9.39e4 on the head -- against
+            # 1.07e5 through `u0_hat`, and against EXACTLY 0.0 for three outputs
+            # of the same forward that cannot reach it (`anchor_logits`,
+            # `offset`, `sel_score`). Pinned by
+            # `tests/test_u0_control_head_reachability.py`.
+            # ⚠️ WHAT IS REFUTED IS THE REASON, NOT THE DECISION. A sampler
+            # supervised only through the integrator is still weaker than one
+            # supervised on its own x0 prediction, so the trainer's refusal of
+            # `--sampler ddim --w-u0 0` STANDS until the PI rules on refcv6 arm
+            # D. It simply must be argued on that basis rather than on a
+            # gradient claim that measurement contradicts.
             x, u0_hat, s_conf, smp_tele = self._sample(
                 kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
                 agent_pos)

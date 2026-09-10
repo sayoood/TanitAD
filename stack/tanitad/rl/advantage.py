@@ -88,11 +88,45 @@ def grpo_advantage(reward: Tensor, *, normalize: str = "none") -> Tensor:
     return adv
 
 
+#: DDv2's released slack. `diffusiondrivev2_model_rl.py:891-893` writes
+#: ``mask_positive = reward > reward_gt - 1e-6`` — i.e. a candidate that TIES the
+#: human clears the bar. Named ONCE, here, because it was previously written twice
+#: with two different values; see `gt_bar_mask`.
+BAR_EPS = 1e-6
+
+
+def gt_bar_mask(reward: Tensor, gt_bar: Tensor,
+                bar_eps: float = BAR_EPS) -> Tensor:
+    """DDv2's >=GT admission mask, ``reward > gt_bar - bar_eps``, bcast over N.
+
+    ⛔ THE SINGLE DERIVATION, AND THAT IS THE ENTIRE POINT. This predicate used to
+    be computed TWICE — once to mask the advantage (``bar_eps`` 1e-6) and once to
+    report ``frac_above_bar`` (the module's ``EPS``, 1e-8). MEASURED 2026-09-10 on
+    a reward sitting at ``bar - 1e-7``: the mask admitted **1.0** of the anchors
+    while the diagnostic reported **0.0** — i.e. the one number whose whole job is
+    to make a zeroing bar VISIBLE reported the exact opposite of what the mask did,
+    and it erred in the direction that HIDES the failure it exists to catch.
+    Both callers now route through here, so they cannot disagree again.
+
+    ⚠️ Being a shared derivation makes the two agree; it does NOT make either
+    correct. Correctness is pinned in `tests/test_rl_gt_bar_gradient_path.py`
+    against hand-computed literals and a deliberate-regression arm that restores
+    the two-epsilon form and must go RED.
+    """
+    bar = gt_bar
+    if bar.dim() == reward.dim() - 1:
+        bar = bar.unsqueeze(-1)
+    if bar.dim() != reward.dim() or bar.shape[-1] != 1:
+        raise ValueError(f"gt_bar {tuple(gt_bar.shape)} must be per-window "
+                         f"([...] or [..., 1]) against reward {tuple(reward.shape)}")
+    return reward > (bar - bar_eps)
+
+
 def truncated_inter_anchor_advantage(reward: Tensor, *,
                                      veto: Tensor | None = None,
                                      veto_value: float = -1.0,
                                      gt_bar: Tensor | None = None,
-                                     bar_eps: float = 1e-6) -> Tensor:
+                                     bar_eps: float = BAR_EPS) -> Tensor:
     """Cross-anchor advantage with negatives truncated to 0. ``reward`` [..., N].
 
     Negatives -> 0 (do not push mass into the low-quality modes); VETOED
@@ -135,13 +169,7 @@ def truncated_inter_anchor_advantage(reward: Tensor, *,
     """
     adv = (reward - reward.mean(dim=-1, keepdim=True)).clamp_min(0.0)
     if gt_bar is not None:
-        bar = gt_bar
-        if bar.dim() == reward.dim() - 1:
-            bar = bar.unsqueeze(-1)
-        if bar.dim() != reward.dim() or bar.shape[-1] != 1:
-            raise ValueError(f"gt_bar {tuple(gt_bar.shape)} must be per-window "
-                             f"([...] or [..., 1]) against reward {tuple(reward.shape)}")
-        above = reward > (bar - bar_eps)
+        above = gt_bar_mask(reward, gt_bar, bar_eps)
         adv = adv * above.to(adv.dtype)
     if veto is not None:
         if veto.shape != reward.shape:
@@ -155,7 +183,8 @@ def composite_advantage(reward_ig: Tensor, *,
                         veto_ig: Tensor | None = None,
                         w_intra: float = 1.0, w_inter: float = 1.0,
                         normalize: str = "none",
-                        gt_bar: Tensor | None = None) -> dict[str, Tensor]:
+                        gt_bar: Tensor | None = None,
+                        bar_eps: float = BAR_EPS) -> dict[str, Tensor]:
     """DDv2's composition on a ``[..., N, G]`` reward (N anchors x G samples).
 
     Returns the two parts and their weighted sum, so a caller can log and audit
@@ -167,6 +196,12 @@ def composite_advantage(reward_ig: Tensor, *,
     (`_model_rl.py:891-893`); the intra-anchor centring is untouched. The
     returned ``frac_above_bar`` is the share of anchors whose mean sampled
     reward cleared the bar, so a bar that zeroed the batch is visible.
+
+    ⛔ ``frac_above_bar`` IS THE MASK'S OWN ADMISSION SET, never a second opinion
+    about it — both come from `gt_bar_mask` under the same ``bar_eps``. It used to
+    be re-derived with a different epsilon and MEASURED as reporting 0.0 while the
+    mask admitted 1.0: a diagnostic whose only purpose is to catch a silent
+    zeroing, lying in the direction that hides one.
     """
     if reward_ig.dim() < 2:
         raise ValueError(f"expected [..., N, G], got {tuple(reward_ig.shape)}")
@@ -174,13 +209,16 @@ def composite_advantage(reward_ig: Tensor, *,
     per_anchor = reward_ig.mean(dim=-1)                              # [..., N]
     veto_n = veto_ig.any(dim=-1) if veto_ig is not None else None
     inter = truncated_inter_anchor_advantage(per_anchor, veto=veto_n,
-                                             gt_bar=gt_bar)
+                                             gt_bar=gt_bar, bar_eps=bar_eps)
     total = w_intra * intra + w_inter * inter.unsqueeze(-1)
     out = {"intra": intra, "inter": inter, "total": total,
            "per_anchor_reward": per_anchor}
     if gt_bar is not None:
-        bar = gt_bar.unsqueeze(-1) if gt_bar.dim() == per_anchor.dim() - 1 else gt_bar
-        out["frac_above_bar"] = (per_anchor > (bar - EPS)).to(per_anchor.dtype).mean()
+        # ⭐ THE SAME CALL THE MASK MADE — not a re-derivation of it. Re-deriving
+        # it with a different epsilon is precisely what made this line report
+        # 0.0 while the mask admitted everything (see `gt_bar_mask`).
+        out["frac_above_bar"] = gt_bar_mask(per_anchor, gt_bar,
+                                            bar_eps).to(per_anchor.dtype).mean()
     return out
 
 

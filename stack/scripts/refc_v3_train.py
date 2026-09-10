@@ -465,14 +465,28 @@ def _pin_refcv5_seams(cfg, args) -> None:
             "carries anchor_controls of all zeros, so the anchored Gaussian "
             "would be centred on 'do nothing' — a plausible-looking WRONG "
             "experiment. Pass an --anchor-file built with controls.")
+    # ⛔⛔ THE REFUSAL STANDS; ITS ORIGINAL REASON DOES NOT. This used to say
+    # `control_head` "would stay at exactly zero". MEASURED 2026-09-10
+    # (`tests/test_u0_control_head_reachability.py`): the head reaches
+    # `out["anchor_traj"]`, which is what the matched-anchor L1 at `:2245-2247`
+    # gathers, so it receives grad_abs_sum 9.39e4 from that path alone with the
+    # u0 loss absent from the graph entirely — against exactly 0.0 for three
+    # same-forward controls. ⚠️ So the arm is NOT "no denoiser at all"; it is a
+    # denoiser supervised only through the integrator, which is a weaker claim
+    # and a real experiment-design question (refcv6 arm D). Kept as a refusal
+    # because that question is the PI's, not this gate's — but stated honestly,
+    # so the decision is made against the measurement.
     if sampler == "ddim" and float(getattr(args, "w_u0", 0.0)) <= 0.0:
         raise SystemExit(
             "[v3] ⛔ --sampler ddim with --w-u0 0 trains the sampler with NO "
-            "loss on its own prediction: `control_head` is zero-init, so it "
-            "would stay at exactly zero and the arm would silently be the "
-            "anchored Gaussian with no denoiser at all — and it would look "
-            "like a trained sampler in every log. Pass --w-u0 > 0, or run "
-            "--sampler none.")
+            "loss on its OWN prediction: `control_head` is zero-init and would "
+            "then be supervised only INDIRECTLY, through the matched-anchor L1 "
+            "on the integrated fan (MEASURED: it does receive gradient that "
+            "way, ~9.4e4 vs ~1.07e5 through the x0 loss — it does NOT stay at "
+            "zero). That is a different experiment from a trained sampler, and "
+            "every log row would still say 'sampler: ddim'. Pass --w-u0 > 0, "
+            "or run --sampler none. ⚠️ refcv6 arm D wants exactly this "
+            "configuration: it needs a PI ruling, not a flag flip.")
     # --- STAGE 0: the feasibility-aware decode ---------------------------- #
     # ⛔ REFUSED AT STARTUP, NOT AT THE FIRST FORWARD. `refc.py::_feasible`
     # raises on a non-uniform prefix -- correctly -- but that raise arrives

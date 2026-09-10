@@ -11450,6 +11450,26 @@ Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-10-rl-
 
 ⛔ **STILL BLOCKED, and it is COMPUTE, not code:** MEASURED 2026-09-10, `tanitad-pod3` / `pod4` / `pod5` / `a40` all refuse SSH (*Connection refused*); Thor is alive. `refc-diffusion-base-v21-30k` is on no reachable box and not in the repo, so **no real R1/R2/R3 can be produced** until a box and those weights exist. The smoke used the model's own initial weights with one key deleted — it proves the **PATH** and makes **no capability claim**.
 
+⭐⭐ **CORRECTION, SAME DAY — and it RETRACTS this row's own last line.** *"BLOCKED on compute; the
+weights are on no reachable box"* is **FALSE**. Two true probes (pods refuse SSH; the repo lacks the
+file) carried a false conclusion: the checkpoint is on the **dev box** at
+`C:/Users/Admin/tanitad-data/models/refc-base-30k/ckpt.pt`, **1,250,838,325 B**, md5
+**`8f10d6f934f4199e11ddc7352e074939`** — the exact `WANT_MD5` `p_rc21_chain.sh` waits on.
+⭐ **Operating-standard rule 2 violated by the agent quoting it**; vector = searching *where such a
+file usually lives* rather than *what the consumer opens*.
+**MEASURED (`PILOT_EXIT=0`, `raw/realpilot/`):** the REAL pilot loaded the REAL cold start —
+`case PARTIAL via sidecar, 38/98 fields compared, 0 disagreements`; `487/488 keys from the
+checkpoint, DEFAULTED ['decoder.anchor_controls']`; **`104,191,577 params @ step 29999, 488
+state-dict keys`**; `train eps 54 · val eps 15 · device cuda`; both readouts produced.
+⭐ The **ABSENT** case is confirmed on the real artifact — the sidecar's `cfg.anchors` is exactly
+`{n_anchors: 128, pool_size: 4096, seed: 0}`, **no `v0_conditioned`** — so the literal
+checkpoint-config rule would have refused this very checkpoint. The pilot's independent weight-side
+corroborator reads `BUFFER_ABSENT` / `CORROBORATED`.
+⛔ **The 8-step R1/R2/R3 are NOT a result** (8 steps, one seed, no paired CI) and are recorded only as
+evidence the paths execute. ⇒ what remains is a **~2.5 h GPU SPEND DECISION** on a chain that is
+runnable as written.
+
+
 <!-- COLDSTART-ALLOWANCE-2026-09-10 -->
 
 

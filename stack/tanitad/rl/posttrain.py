@@ -303,12 +303,21 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
 
 def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
                   spec: R.RewardSpec | None = None,
-                  batches=None, device: str = "cpu") -> dict:
+                  batches=None, device: str = "cpu",
+                  extra_record: dict | None = None) -> dict:
     """Run the loop and write `config.json` + `summary.json` (done-marker).
 
     ``batches`` is any iterable of batch objects handed straight to
     ``sample_fn``; the loop is agnostic to what a batch is so the smoke can pass
     integers and the real path can pass windows.
+
+    ``extra_record`` is merged into ``config.json`` verbatim. ⭐ It exists so a
+    fact established BEFORE the loop starts — currently the cold-start load's
+    declared allowance (`tanitad.refs.cold_start`) — lands in the run record
+    rather than only on stdout. ⛔ It cannot overwrite a key this function
+    computes: the config, the freeze report and the resolved reward weights are
+    applied AFTER it, so a caller cannot use this to rewrite what the run
+    actually did.
     """
     cfg.validate()
     spec = spec or R.RewardSpec(weights=dict(cfg.reward_weights), dt=cfg.dt)
@@ -324,7 +333,8 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
 
     if cfg.out_dir:
         os.makedirs(cfg.out_dir, exist_ok=True)
-        rec = {**cfg.to_dict(), "freeze_report": freeze_report,
+        rec = {**dict(extra_record or {}),
+               **cfg.to_dict(), "freeze_report": freeze_report,
                "reward_weights_in_force": dict(spec.weights)}
         with open(os.path.join(cfg.out_dir, "config.json"), "w",
                   encoding="utf-8") as fh:

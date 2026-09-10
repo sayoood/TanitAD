@@ -14803,3 +14803,90 @@ is withdrawn — not a comment quoting it. All three are now pinned that way:
 `stack/tests/test_refc_v3_agent_gt_head_drop.py`,
 `stack/tests/test_u0_control_head_reachability.py` — each with a deliberate-regression arm
 that reintroduces the real historical defect and goes RED.
+
+---
+
+## 2026-09-10 — Architecture & Inference FlyWheel, while closing PI queue item 8
+
+### 1. ⛔ RETRACTED: *"the July cold start is on no reachable box"* — and I wrote it in the same document that quotes the rule it broke
+
+**What I claimed.** Closing item 8, I reported that a real R1/R2/R3 was **BLOCKED ON
+COMPUTE** because `refc-diffusion-base-v21-30k` was *"on no reachable box and not in the
+repo"*. It went into `RESULT_COLD_START_ALLOWANCE.md`, `PI_DECISION_QUEUE.md` items 7-8, and
+`GOALS_AND_CLAIMS.md`.
+
+**What is true.** The checkpoint is on **the dev box**:
+`C:/Users/Admin/tanitad-data/models/refc-base-30k/ckpt.pt`, **1,250,838,325 B**, md5
+**`8f10d6f934f4199e11ddc7352e074939`**. The real pilot then loaded it and ran to
+`PILOT_EXIT=0` — 487/488 keys, `104,191,577 params @ step 29999`, `train eps 54 · val eps 15
+· device cuda`.
+
+⭐ **ROOT-CAUSE CLASS: operating-standard rule 2 — *absence found at ONE location is not
+absence*** — committed by the agent quoting that rule three paragraphs earlier. ⚠️ **Both my
+probes returned TRUE results.** The RunPod fleet really does refuse SSH on all four hosts;
+the repo really does not hold the file. **Two true probes carried a false conclusion**,
+because they shared one unstated premise: *a 1.2 GB checkpoint lives on a pod, on HF, or in
+the repo.*
+
+⭐ **THE VECTOR, AND IT IS THE REUSABLE PART: I searched where such a file USUALLY lives,
+instead of what the CONSUMER says it opens.** `p_rc21_chain.sh` — the very script item 8
+says *"as written cannot run"* — declares the absolute path **and its md5** on line 5. I had
+read that script's *symptom* and not its *inputs*. This is the artifact-cost trap
+(*"price what the CONSUMER'S loader reads"*) with the object swapped from a format to a
+**location**: same instruction, same failure, a different noun.
+
+⇒ **THE CHECK: before writing "X does not exist", grep the CONSUMER for the path.** A
+launcher, a config, or a chain script names its inputs, and that is a *different mechanism*
+from guessing hosts — which is exactly what rule 2's "probe a second path, a second name,
+and the tool that owns the fact" asks for. My three probes were three guesses through one
+premise, i.e. **one probe**.
+
+⚠️ **Cost:** nearly a false "BLOCKED ON A PI PROVISIONING DECISION" on the PI's own queue —
+the most expensive kind of wrong, because it asks a human to solve a problem that does not
+exist. Caught in-session; all three documents carry the correction beside the original claim.
+
+### 2. ⛔ REFUTED (mine, before it was written down): *"with `v0_conditioned` and `sel_reach_clamp` both False, the pilot's build is speed-blind"*
+
+Reasoning from `refcv3_adapter`'s own cited chain (`refc.py:3097` → `:2128` → `:1722`) I
+concluded `v0` must be entirely unused on `refc_config()` — which would have made the RL arm
+aimed at the longitudinal axis structurally unable to move it.
+
+**MEASURED (`eval()`, identical frames, determinism control bitwise identical): FALSE.**
+`v0 = 5` vs `v0 = 25` moves `anchor_traj` **0.1356 m**; dropping `v0` moves it **0.0130 m**.
+`refc.py:3199-3200` feeds `v0` to the **measurement encoder unconditionally**, and
+`refc.py:3204-3206` derives the X15 `keep` flag from `v0 is not None`.
+
+⭐ **ROOT-CAUSE CLASS: a correct citation quoted outside its scope** — the `df` / `free` /
+`step_s` / cylindrical-FOV family. The chain I quoted is real and it governs the **action
+space**; it says nothing about the **measurement encoder**, a second and always-live
+consumer. ⇒ The finding survives in a *narrower and better* form and is escalated to item 7:
+the contract requires no channel, so a batch that drops `v0` **passes with no refusal** while
+changing the policy. ⚠️ Recorded as REFUTED because it was **cheap to check and I nearly
+shipped the reasoned version.**
+
+### 3. ⛔ CAUGHT BY ITS OWN CONTROL: a `strict=False` prohibition that could not tell code from prose
+
+`test_strict_false_appears_nowhere_in_the_module` was first a **substring search**, and it
+went **RED on its own docstring**. That is the harmless half. The fatal half is the same
+defect's other direction: **it would have gone GREEN on a `strict=False` sitting inside a
+string.** Replaced by an AST walk over `ast.Call` keywords, with
+`test_the_strict_kwarg_checker_can_actually_see_a_violation` planting the real defect in a
+temp file and requiring the checker to find it.
+
+⭐ **ROOT-CAUSE CLASS: a check that shares the defect it checks for** — here, *"a text search
+cannot parse."* ⇒ **a source-level guard must run on the SYNTAX TREE, and must carry a
+control that plants the violation and demands a hit** — otherwise "no matches" is a claim
+about the search, not about the source.
+
+### 4. ⚠️ CORRECTED: `decoder.anchor_controls` initialises to ZEROS, not to a random tensor
+
+The item-8 brief described the hazard as *"an `anchor_controls` silently left at its random
+init"*. **MEASURED (`refc.py:1496`, `refc_config()`): `torch.zeros([128, 2])`, 0 non-zero
+entries.** ⭐ The correction makes the hazard **worse, not milder**: a random vocabulary emits
+an obviously-wrong fan, whereas an all-zero one makes **every one of 128 anchors** *"hold
+speed, go straight"* — `refc.py:2277`'s *"plausible-looking WRONG experiment"*, which trains,
+converges, and produces **no absurd number at all** to catch it by.
+
+⚠️ **Also corrected, minor:** `rl_pilot_refc21.py`'s comment says the cold start carries
+*"38 of this config's 96 leaves"*; MEASURED today it is **38 of 98**. Numerator unchanged, so
+nothing downstream moved — logged because a stale denominator is how a count rots.

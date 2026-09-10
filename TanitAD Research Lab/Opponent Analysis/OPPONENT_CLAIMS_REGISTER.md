@@ -376,3 +376,77 @@ See `Frontier Scan/Daily/2026-09-09/RESULT.md` F4.
 | **D-10** | navhard EPDMS scoring basis | ⭐⭐ **MECHANISM RESOLVED 2026-09-09** - two disjoint populations (navhard 23.1-45.0; "NAVSIM v2" 12k-scenario 84.8-89.3), and the maintainers discourage self-reported splits. ⛔ **PROVENANCE STILL OPEN** for our own 55.5/56.3, which match neither cluster. Row 32 stays BARRED; guideline T-4. |
 | **D-11** | GAIA-4 parameter count / sim-real correlation | ⛔ **OPEN.** Not re-probed this pass. |
 | **D-12** *(opened and CLOSED the same pass)* | Today's primaries cited but not banked during the mount outage | ✅ **DISCHARGED 2026-09-09.** The mount recovered late in the pass; **8 primaries banked or citation-updated, all rc=0** (`2608.12939`, `2606.28383`, `2603.24581`, `2509.23958`, `2608.10976`, `2512.10226`, `2505.24808`, `2608.29583`). Library **487 -> 491 entries, 3,198.3 MB**. ⛔ **V-1 measured at 4 of 8 already banked (50 %) - and `2603.24581`, which carried this pass's biggest finding, was one of them, unread.** |
+
+---
+
+# 2026-09-10 · BAND-D ADJUDICATION — NVIDIA, closed-loop post-training doctrine
+
+`Appended by LAB-RUN-011. Amendment §7.1, all seven steps. Append-only.`
+
+**Document.** *How to Post-Train Autonomous Vehicle Models in Closed-Loop with NVIDIA Alpamayo* — Boris Ivanovic & Marco Pavone, NVIDIA Autonomous Vehicle Research Group, **2026-05-31**, NVIDIA Technical Blog.
+
+### Step 1 — CLASSIFY
+
+Evidence class **`PUBLISHED-BLOG`**, never bare `PUBLISHED`. Competitive context: NVIDIA is positioning Alpamayo as the open model stack for L4 robotaxis (Alpamayo 2 Super released for commercial use in the same window), and this post is developer-adoption material for **AlpaSim**, its simulator. It is a **how-to**, and its doctrine is carried in the framing rather than in results.
+
+### Step 2 — ⛔ IS IT AN EXPERIMENT?
+
+**NO. Emphatically not, and this is the finding.** The post reports **zero** performance metrics — no accuracy, no safety rate, no planning score, no before/after. Every number in it is an operational specification: 10 B parameters, ≥40 GB VRAM, ~100–150 GB disk, ~21 GB weights, ~1.5 GB/scene, ~1.5 TB for the `public_2601` suite. **There is no ablation, no A/B, and no matched comparison anywhere in the document.** The central claim — that closed-loop post-training improves the policy — is asserted, not measured.
+
+### Step 3 — CONFIRMING EVIDENCE (≥1 independent)
+
+The **diagnosis** is well confirmed independently. `2607.08072` (*Post-Training in End-to-End Autonomous Driving*): *"Closed-loop evaluation is most aligned with post-training because the policy's actions affect future states."* AD-R1 (CVPR 2026) and RAD-2 `2604.15308` both build closed-loop post-training pipelines on the same premise. ⭐ Our own record agrees three ways (action echo 97.9 % vs 0.0 % hold-action; Alpamayo's open-loop metric flat across 3.3× params; Waymo L5).
+
+### Step 4 — ⭐ CONTRADICTING EVIDENCE (actively sought — query Q10)
+
+The **prescription** is contested at ≥2 independent sources:
+
+- **Sim2Real-AD `2604.03497`**: *"Most simulator-trained policies are tightly coupled to their training environment: their observations rely on simulator-native representations unavailable on real vehicles, and their action semantics are calibrated to simulator dynamics. Without mechanisms to bridge both couplings, **direct deployment fails even when the policy performs well in simulation**."*
+- **AD-R1 (CVPR 2026)**: *"Conventional RL Post-training relies on external simulators, suffering from a sim-to-real gap and heuristic rewards"* — and it replaces the external simulator with an internal world model **for that reason**. An independent group arguing against the exact mechanism this post recommends.
+- **`2607.08072`** (already in our B5 ledger): a scalar rollout reward **hides cross-dimension degradation** — so closed-loop post-training can improve an aggregate while regressing a family, which is what we measured on refcv3's RL stage.
+
+⛔ **The post concedes no fidelity limitation of AlpaSim at all** — no sim-to-real discussion, no domain-randomisation need, no transferability constraint. For a document whose entire proposal is "train on simulator rollouts", that silence is the load-bearing omission.
+
+### Step 5 — VERDICT
+
+| claim | verdict | reason (one sentence) |
+|---|---|---|
+| **A16-1** — *open-loop training/eval is insufficient because errors compound when actions affect the environment* | ✅ **CONFIRMS-US** | independently confirmed at ≥3 sources and by our own three measurements; it is our binding open-vs-closed-loop ruling stated by an opponent |
+| **A16-2** — *closed-loop post-training in AlpaSim improves the policy* | ⚠️ **CONTESTED** | asserted with **no metric and no ablation** in the post, while ≥2 independent sources report that simulator-trained policies fail to transfer without explicit bridging |
+| **A16-3** — *simulation should be training experience, not only a final evaluation stage* | ⚠️ **CONTESTED, and narrower than stated** | the direction is sound, but with **no fidelity limits disclosed** and `2607.08072`'s scalar-reward masking, "turn rollouts into experience" is under-specified as an engineering instruction |
+
+### Step 6 — ⭐⭐ DOES IT BIND ON US? (separate from whether it is true)
+
+**A16-1 BINDS, and favourably.** It is the same statement as our own ruling. ⭐ **And its recommended mechanism is one we already possess**: AlpaSim runs bare on an A40 in our fleet, and closed-loop videos already exist. The opponent's prescribed closed-loop path is *open to us today*, which is unusual and should be said out loud.
+
+**A16-2 and A16-3 DO NOT BIND as prescriptions.** Our constraint is different in kind: we are gated on a **fixed parity corpus** and a tiny fleet, not on simulator access, and our binding ruling already requires AlpaSim or a real vehicle for any closed-loop claim. Adopting NVIDIA's *workflow* on the strength of a blog with no numbers would import doctrine and call it evidence — the `INHERITED` failure the operating standard bans (rule V-3).
+
+⚠️ **Also non-binding on scale:** their 10 B model *"does not fit on one GPU"* and a distillation script to a single-GPU checkpoint is *"planned"*. Our sub-300 M positioning is untouched by this document.
+
+### Step 7 — GUIDELINES
+
+- **S-6 (strategic).** *Cite A16-1 as an opponent-side confirmation of the open-vs-closed-loop ruling, and cite it as diagnosis only.* NVIDIA's own doctrine post supports **why** open-loop is insufficient and supplies **no evidence** that their fix works. **Falsifier: any NVIDIA publication reporting a controlled before/after of AlpaSim closed-loop post-training on a fixed eval; that would move A16-2 to SUPPORTED.**
+- **T-7 (tactical).** *Any TanitAD closed-loop post-training arm reports per-family reward decomposition from the first run, not after a regression appears* (FS9-5's mechanism, now with an opponent-side instance of the omission). **Falsifier: a run where the aggregate and every family move together, at which point the granularity requirement is over-engineering for our setting.**
+
+### ⚠️ OPPONENT STRENGTHS, recorded (a package listing none is INCOMPLETE)
+
+1. **They have the simulator and we have it too — but they built it.** AlpaSim plus the NuRec scene corpus is a working reconstruction-based closed-loop rig, and the post makes it reproducible by a third party in an afternoon.
+2. **Open weights and a documented post-training path.** Alpamayo 1.5 at 10 B with published VRAM and disk requirements is a genuinely inspectable opponent — still the only one at this scale.
+3. **They named the right problem before we finished measuring it.** Error compounding under closed loop is the correct diagnosis, and they published it as developer guidance rather than as a paper claim.
+
+### New register debts
+
+| id | debt | when |
+|---|---|---|
+| **D-12** *(new)* | **No AlpaSim fidelity characterisation exists in any NVIDIA source we have read.** A16-2 cannot move off `CONTESTED` without one, and we run AlpaSim ourselves — so this is answerable by measurement, not only by reading. | next Deploy/Band-D pass |
+
+### Standing debt status this pass
+
+| id | status |
+|---|---|
+| **D-4** (UNECE GRVA) | ⛔ **STANDS — not re-probed.** Five routes already failed; with the PI. Declared, not concealed |
+| **D-7** (`1604.06915` full text) | ⛔ **STANDS.** Not reached |
+| **D-8** (Kairos B9 curation) | ✅ **DISCHARGED 2026-09-10 at the FIFTH route** → `Data Engineering/Research/2026-09-10-kairos-curation-fourth-route/RESULT.md`. ⛔ **And the claim is `UNSUPPORTED-AS-STATED` as evidence: the paper says the pipeline *"does not yet compute CID directly"*.** ⚠️ The claim exists only in **v3**; v1 does not contain it |
+| **D-9** (LeWM + Sub-JEPA unread) | ✅ **HALF-DISCHARGED — LeWM `2603.19312` read in full.** ⭐ It conditions by **AdaLN at each layer** (our FiLM family) and **reports no action-sensitivity control at all** ⇒ the insensitivity we cite three times is a third-party measurement, never a self-report. **Sub-JEPA `2605.09241` STANDS unread** |
+| **D-10** (navhard scoring basis) | ⭐⭐ **COUNTS RESOLVED 2026-09-10** — navhard **450 S1 / 5,462 S2** from the maintainers' primary; navtest ≈12,000. The 84.8–89.3 cluster is **navtest**. ⛔ **BASIS STILL OPEN: PDM-Closed reads 51.3 AND 56.6 on "navhard".** Row 32 stays BARRED |
+| **D-11** (GAIA-4 params / sim-real correlation) | ⛔ **OPEN.** Not re-probed this pass |

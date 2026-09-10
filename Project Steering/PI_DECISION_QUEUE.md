@@ -191,6 +191,40 @@ reachable box and not in the repo. ⇒ **a real RL number needs a box + those we
 only thing now standing between here and one.**
 
 
+### ⭐⭐ CORRECTION 2026-09-10, SAME DAY — THE REAL PILOT HAS RUN. Item 8's defect is closed against the artifact that produced it.
+
+⛔⛔ **RETRACTING MY OWN LINE ABOVE** (*"what remains is compute … the weights are on no reachable box"*).
+**FALSE.** It rested on two true probes — the RunPod fleet refuses SSH, and the repo does not hold the
+file — and a false conclusion. The checkpoint is on **the dev box**, at exactly the path
+`p_rc21_chain.sh` has always waited on:
+`C:/Users/Admin/tanitad-data/models/refc-base-30k/ckpt.pt`, **1,250,838,325 B**, md5
+**`8f10d6f934f4199e11ddc7352e074939`** — the chain's own `WANT_MD5`, to the character.
+⭐ Operating-standard **rule 2** (*absence at ONE location is not absence*), committed by the agent
+quoting it. The vector: I searched **where a big checkpoint usually lives** instead of **what the
+consumer says it opens** — and the consumer named the path all along.
+
+**MEASURED (dev-box RTX 4060, `PILOT_EXIT=0`, `raw/realpilot/`):**
+* `CONFIG CONTRACT: case PARTIAL via sidecar` — **38/98 fields compared, 0 disagreements**;
+* `DECLARED ALLOWANCE: 487/488 keys from the checkpoint; DEFAULTED ['decoder.anchor_controls']`;
+* **`cold start loaded: 104,191,577 params @ step 29999 (488 state-dict keys)`** — the real
+  `refc-diffusion-base-v21-30k`, not a stand-in;
+* `train eps 54 · val eps 15 · device cuda`, both readouts produced, `ckpt_after.pt` saved.
+* ⭐ **The ABSENT case is CONFIRMED on the real artifact:** the sidecar's `cfg.anchors` carries
+  exactly `{n_anchors: 128, pool_size: 4096, seed: 0}` and **no `v0_conditioned`** — so the literal
+  "refuse if the checkpoint's config does not carry it" rule **would have refused this exact
+  checkpoint**, and did not need to. The pilot's independent weight-side corroborator agrees:
+  `state: BUFFER_ABSENT`, `verdict: CORROBORATED`.
+
+⛔ **THE R1/R2/R3 THIS RUN PRINTED ARE NOT A RESULT AND MUST NOT BE QUOTED AS ONE.** It ran **8
+steps**, not the pre-registered 2,000; **one seed**, so the run-to-run floor (`H-ESTIM-SEED-1`) is
+unmeasured; and no paired CI was computed. They evidence only that the reward/advantage/readout
+paths execute on real windows.
+
+⇒ **THE ONLY OPEN ITEM IS A SPEND DECISION, AND IT IS YOURS:** `p_rc21_chain.sh` is runnable **as
+written** — checkpoint, both `_epcache` dirs and both agent `jsonl` files all verified present — and
+wants **~2.5 h of dev-box GPU** for the 2,000-step P-RC21 plus the 300-step `hackable` regression arm.
+
+
 ## 9. DECIDE: refcv5-v2 IS the compose arm, and P1 was excluded ON EVIDENCE — but you asked for environment grounding by name
 
 ⭐ **The launch was legitimate and I want that stated first.** §4 of the plan gates the composed
