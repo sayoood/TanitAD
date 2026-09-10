@@ -14890,3 +14890,51 @@ converges, and produces **no absurd number at all** to catch it by.
 ⚠️ **Also corrected, minor:** `rl_pilot_refc21.py`'s comment says the cold start carries
 *"38 of this config's 96 leaves"*; MEASURED today it is **38 of 98**. Numerator unchanged, so
 nothing downstream moved — logged because a stale denominator is how a count rots.
+
+
+---
+
+## 2026-09-10 - "the other 71 suite failures reproduce at pristine HEAD" - RETRACTED IN THE SAME TURN
+
+**Claimed:** that the 71 full-suite failures remaining after my 3 regressions were fixed had been
+verified to reproduce at pristine HEAD.
+
+**Actually established:** only that **none of them references anything this stream changed**
+(static check over all 19 failing files, discriminating control reading 58/7/21 on the files that
+must reference it), plus a like-for-like head-to-head on the **two** failing files that DO
+reference the trainer (after the fix: 5 failed / 10 passed in BOTH trees, identical test names).
+
+### ROOT-CAUSE CLASS 1 - A TRUNCATED ARTIFACT THAT READS LIKE A COMPLETE ONE
+
+The working-tree side of the comparison ran as `pytest ... -rf 2>&1 | tail -25`, so its `FAILED`
+list was cut to **24 lines while its own tally line said 41 failed**. The pristine side was not
+piped and captured **63 of 63**. The per-file table built from those two "showed" pristine failing
+more in six files - entirely an artifact of my own pipe.
+- Same family as `.../2026-09-05-withheld-bank-panel/raw/NOISE_FLOOR.md`, which crashed mid-write
+  on a cp1252 `UnicodeEncodeError` and reads like a finished document.
+- Also the `$?`-through-a-pipe family: a pipe silently changed what I was measuring.
+- **The discriminating control was free and INTERNAL to the file: the tally line (41) disagreeing
+  with the line count (24).** Any artifact that states its own total must have that total checked
+  against the rows actually present.
+
+### ROOT-CAUSE CLASS 2 - A BASELINE THAT IS NOT THE THING IT CLAIMS TO BE
+
+The "pristine HEAD" tree was built with `git archive HEAD stack taniteval tools`, so every test
+needing a repo-root path (`Project Steering/`, research packages, data files) errors or skips
+**there and only there** - 10 errors and 5 skips the working tree does not have. Its aggregate
+counts were never comparable. Same family as the `df` / Thor `free` / cgroup `usage_in_bytes`
+traps: a probe reporting a different scope than the question, read as an answer.
+
+### WHAT WAS RIGHT, AND IS WORTH KEEPING
+
+- **Within one tree the counts ARE stable** - the same three files gave `7 failed / 62 passed` on
+  three consecutive runs, matching the full suite's per-file numbers exactly. Per-file comparison
+  is a sound method; the artifacts were unsound, not the approach.
+- ** The check that actually found the 3 real regressions was the STATIC one** - *does this
+  failing file reference anything I changed?* - run over all 19 failing files with a control that
+  must read non-zero. In a haystack of 74 pre-existing failures, positional and rerun evidence both
+  pointed the wrong way; only the static check flagged the two files that mattered.
+
+**Corrected in:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-10-max-speed-v8-build/RESULT.md` S7.2.
+
+<!-- RETR-2026-09-10-TRUNCATED-COMPARISON -->

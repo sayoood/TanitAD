@@ -184,6 +184,88 @@ NAV_FROM_V7_DERIVATION = ("v7.2 nav_command token (oracle, provenance "
                           "ego-future; allow_oracle_nav=True)")
 NAV_V1_DERIVATION = "refb_labels.nav_command (v1, unchanged)"
 
+#: ⭐⭐ E16 — THE MAX-SPEED CHANNEL'S PROVENANCE STAMP, and the PI's binding
+#: condition on using it (2026-09-10): *"stick to the labels we created in the
+#: data set with the logic of minimal speed etc..."*
+#:
+#: ⛔ THE REQUIREMENT IS DECLARATION, NOT REFUSAL. This channel's value IS
+#: `g_tac.goals.SPEED_BAND.v_hi_ms` = the max of the ego's OWN realised speed
+#: over [t0+2 s, +6 s] — confirmed at three independent source sites
+#: (`v7_labels.py:325-330`, this file's `--max-speed-input` help,
+#: `max_speed_input.py:367`) — and quantization does not launder it (bin + `v0`
+#: recovers R^2 0.9702 of the raw ego future). The PI has decided to use it
+#: anyway, and that decision is CONSISTENT with the programme's existing
+#: position rather than a new exception: `NAV_FROM_V7_DERIVATION` above is the
+#: same class of signal, an INPUT simulating the vehicle's nav system. Max
+#: speed stands in for a speed-limit service the same way.
+#:
+#: ⇒ So the arm must be identifiable from its own artifacts, and
+#: :func:`_assert_speed_max_stamp` REFUSES TO START a run whose config would not
+#: carry this string. ⛔ NO CAPABILITY CLAIM MAY BE CREDITED TO THIS CHANNEL
+#: WITHOUT THE STAMP BESIDE IT.
+SPEED_MAX_DERIVATION = (
+    "v7.2 g_tac.goals.SPEED_BAND.v_hi_ms (oracle, provenance ego-future: max "
+    "of the ego's OWN REALISED speed over [t0+2 s, +6 s]; floor from "
+    ".v_lo_ms; allow_oracle_nav=True). INPUT standing in for a speed-limit "
+    "service, never a training signal.")
+
+#: ⛔ The tokens :func:`_assert_speed_max_stamp` requires to be PRESENT in the
+#: stamp. Written as LITERALS, never as an expression over the constant above —
+#: a check derived from the value it checks is green forever, which is exactly
+#: how a label builder verified its buckets against its own rounded ladder and
+#: passed while 57.5 % of the corpus was wrong.
+SPEED_MAX_STAMP_REQUIRED = ("oracle", "ego-future", "SPEED_BAND.v_hi_ms",
+                            "[t0+2 s, +6 s]")
+
+
+def _assert_speed_max_stamp(cfg_dict: dict, args) -> None:
+    """⛔ REFUSE A ``--max-speed-input`` RUN WHOSE CONFIG DOES NOT DECLARE THE
+    CHANNEL'S PROVENANCE. Called before ``config.json`` is written.
+
+    ⭐ WHY A REFUSAL AND NOT A DEFAULT. The PI authorised an **ego-future**
+    input on the axis owning 88.7 % of the oracle gap. That is defensible
+    exactly as long as every artifact says so — the moment a run's record omits
+    it, a later reader has an arm that looks like a clean capability result and
+    no way to see what fed it. A stamp that can be silently dropped is not a
+    stamp.
+
+    ⛔ It asserts on the CONTENT of the string, not on the presence of a key: a
+    stamp that said "max speed: on" would satisfy a presence check and tell a
+    reader nothing. The four required tokens are written as literals in
+    :data:`SPEED_MAX_STAMP_REQUIRED`.
+
+    ⚠️ Off is off: a run without the flag must NOT carry the stamp, or every
+    banked arm would read as max-speed-conditioned.
+    """
+    on = bool(getattr(args, "max_speed_input", False))
+    stamp = cfg_dict.get("speed_max_derivation")
+    if not on:
+        if stamp is not None:
+            raise SystemExit(
+                "[v3] ⛔ config carries `speed_max_derivation` but "
+                "--max-speed-input is OFF. A run that did not feed the "
+                "ceiling must not be stamped as one — that is the mirror of "
+                "the missing-stamp failure and it manufactures a "
+                "max-speed-conditioned arm out of a control.")
+        return
+    if not isinstance(stamp, str) or not stamp.strip():
+        raise SystemExit(
+            "[v3] ⛔ --max-speed-input is ON but this run's config.json would "
+            "carry no `speed_max_derivation`. The channel's value is the "
+            "ego's OWN FUTURE speed over the horizon being scored; the PI "
+            "authorised it as a declared oracle INPUT, and the declaration is "
+            "the condition. Refusing to start rather than banking an arm "
+            "whose record cannot say what fed it.")
+    missing = [t for t in SPEED_MAX_STAMP_REQUIRED if t not in stamp]
+    if missing:
+        raise SystemExit(
+            f"[v3] ⛔ --max-speed-input: `speed_max_derivation` is present but "
+            f"does not declare {missing}. The stamp exists so a reader who "
+            f"opens config.json in ISOLATION learns the source field, the "
+            f"window and the word `oracle` without going to find the code. A "
+            f"stamp missing any of those is a key, not a declaration. Got: "
+            f"{stamp!r}")
+
 
 def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     """The trainer's OWN pins on a freshly built config (both arms, all paths).
@@ -2008,9 +2090,31 @@ class V3Dataset(RouteV21Dataset):
 
 
 def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
-                    min_frames: int = 40):
+                    min_frames: int = 40, clip_ids=None):
     """CI-only synthetic corpus (unicycle drives, tiny frames). NEVER a
     substitute for the parity cache — refused alongside --data-root.
+
+    ⛔⛔ ``clip_ids`` EXISTS BECAUSE THE SYNTHETIC CORPUS COULD NOT JOIN A LABEL
+    BLOB AT ALL, AND THE FAILURE WAS A BARE ``ValueError``, NOT A REFUSAL.
+    MEASURED 2026-09-10: ``episode_id`` was the STRING ``f"synth-{e:03d}"``
+    while the v7.2/v8 join is ``by_sid = {stable_episode_id(l.clip_id): l}``
+    looked up as ``int(e.episode_id)`` (``train`` :4217). So
+    ``--synth-episodes --v7-labels`` died with
+    ``invalid literal for int() with base 10: 'synth-000'`` — i.e. **no CI or
+    local smoke of ANY v7-label channel (nav, tac-goal, nav-args, max-speed)
+    was possible**, and the crash looked like a broken flag rather than a
+    corpus that structurally cannot carry a label.
+
+    ⇒ When ``clip_ids`` is given, episode ``e`` is stamped with
+    ``stable_episode_id(clip_ids[e])`` — a real integer id from a real label
+    record — so the join HITS and the channel under test is exercised end to
+    end. ⚠️ The FRAMES stay synthetic; this makes the label join real, not the
+    perception. A run using it is identifiable from ``config.json``
+    (``synth_clip_ids_from_labels``), because a synthetic corpus must never
+    masquerade as a training cache.
+
+    ⛔ Default ``None`` keeps the historical string id EXACTLY, so no existing
+    CI path, preflight or test moves.
 
     ``min_frames`` exists because the DEFAULT corpus is too SHORT to carry a
     LAN route and that is not obvious from reading it: T=40 at 2-8 m/s is
@@ -2022,6 +2126,14 @@ def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
     therefore asks for a corpus long enough for the question to be answerable.
     """
     import types
+    from tanitad.data.v2_dataset import stable_episode_id
+    if clip_ids is not None and len(clip_ids) < n:
+        raise SystemExit(
+            f"[v3] ⛔ --synth-episodes {n} but only {len(clip_ids)} label "
+            f"clip_ids were supplied to stamp them with. Refusing rather than "
+            f"reusing a clip_id twice — two episodes sharing one stable id "
+            f"would silently collapse into one label and the join count would "
+            f"still read 100 %.")
     g = torch.Generator().manual_seed(seed)
     h, wpx = cfg.encoder.image_hw()
     eps = []
@@ -2039,7 +2151,8 @@ def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
                                generator=g) * 255).to(torch.uint8),
             actions=torch.zeros(T, 2),
             poses=poses,
-            episode_id=f"synth-{e:03d}"))
+            episode_id=(f"synth-{e:03d}" if clip_ids is None
+                        else stable_episode_id(str(clip_ids[e])))))
     return eps
 
 
@@ -4157,8 +4270,32 @@ def train(args) -> dict:
                          "--synth-episodes (the synthetic corpus is CI-only "
                          "and must never masquerade as a training cache)")
     v2_parity = None
+    synth_clip_ids_from_labels = None
     if args.synth_episodes:
-        eps = _synth_episodes(args.synth_episodes, cfg.core, seed=args.seed)
+        # ⭐ When a label blob is supplied, stamp the synthetic episodes with
+        # REAL clip ids so the v7/v8 join HITS. Without this the join dies on
+        # `int('synth-000')` and no v7-label channel can be smoked at all.
+        # See `_synth_episodes.__doc__`. ⛔ Frames stay synthetic; only the id
+        # is real, and `config.json` records that it happened.
+        if args.v7_labels:
+            _pre_lab, _ = v7l.load_v7_labels(args.v7_labels,
+                                             allow_oracle_nav=True)
+            synth_clip_ids_from_labels = [l.clip_id for l in
+                                          _pre_lab[:args.synth_episodes]]
+        # ⛔⛔ THE KWARG IS PASSED ONLY WHEN IT CARRIES SOMETHING, AND THAT IS
+        # NOT STYLE. MEASURED 2026-09-10: passing `clip_ids=None`
+        # unconditionally broke THREE tests in
+        # `test_refc_v3_save_before_eval.py` that monkeypatch
+        # `_synth_episodes` with their own two-line shim -- `TypeError:
+        # _train_eps() got an unexpected keyword argument 'clip_ids'`. Those
+        # rigs are correct and there is no reason for a NEW optional argument
+        # to reach a caller that never asked for it. ⭐ Fixing the CALL SITE
+        # once beats amending every shim, and it closes the whole class rather
+        # than the two instances that happened to be found.
+        _synth_kw = ({"clip_ids": synth_clip_ids_from_labels}
+                     if synth_clip_ids_from_labels else {})
+        eps = _synth_episodes(args.synth_episodes, cfg.core, seed=args.seed,
+                              **_synth_kw)
     elif args.v2_cache:
         # the flagship's --v2-cache recipe (train_flagship4b.py), verbatim in
         # structure: membership guard BEFORE any GPU work, lazy LRU-bounded
@@ -4228,7 +4365,21 @@ def train(args) -> dict:
         # 7.9 % of the PARITY corpus — so the same flag on the wrong cache
         # silently supervises the tactical heads on ~8 % of clips. The launch
         # record must carry the number, and a low one must be loud.
-        hit = sum(1 for e in eps if int(e.episode_id) in by_sid)
+        # ⛔ A NON-INTEGER episode_id used to die here as a bare
+        # `ValueError: invalid literal for int() ... 'synth-000'`, which reads
+        # like a broken FLAG and is actually a corpus that structurally cannot
+        # carry a label. Name it instead. (MEASURED 2026-09-10; the synthetic
+        # corpus can now be stamped with real clip ids — `_synth_episodes`.)
+        try:
+            hit = sum(1 for e in eps if int(e.episode_id) in by_sid)
+        except (TypeError, ValueError) as exc:
+            raise SystemExit(
+                f"[v3] ⛔ --v7-labels: this corpus's `episode_id` is not an "
+                f"integer, so the label join ({len(by_sid)} records keyed by "
+                f"`stable_episode_id(clip_id)`) can never hit. This is NOT the "
+                f"label blob failing. The synthetic corpus stamps real clip "
+                f"ids only when --v7-labels is passed to --synth-episodes; a "
+                f"v2 cache always carries integer ids. ({exc})") from None
         frac = hit / max(len(eps), 1)
         print(f"[v3] v7.2 labels: {len(labels)} records, joined "
               f"{hit}/{len(eps)} episodes = {100 * frac:.1f} % "
@@ -4504,7 +4655,7 @@ def train(args) -> dict:
     # the config that produced it. A config is intent; only the built
     # modules are fact. See `assert_seams_are_built`.
     assert_seams_are_built(model, _seams)
-    (out_dir / "config.json").write_text(json.dumps({
+    _run_config = {
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
         # ⛔ `argv` records what was TYPED and the seam stamps record what
         # was BUILT; neither says whether each weight's loss term is
@@ -4661,6 +4812,22 @@ def train(args) -> dict:
                              "eval": eval_max_speed_stats}
                             if getattr(args, "max_speed_input", False)
                             else None),
+        # ⭐⭐ E16 — THE PROVENANCE STAMP, and the PI's binding condition on
+        # using this channel at all (2026-09-10). It names the SOURCE FIELD,
+        # the WINDOW and the word `oracle`, exactly as `nav_cmd_derivation`
+        # above does for the nav token — the same class of signal, an INPUT
+        # simulating a vehicle service, never a training signal.
+        # ⛔ `_assert_speed_max_stamp` below REFUSES TO START a --max-speed-input
+        # run that would reach this point without it, and refuses the mirror
+        # case (stamp present, flag off). ⛔ NO CAPABILITY CLAIM MAY BE
+        # CREDITED TO THIS CHANNEL WITHOUT THIS STRING BESIDE IT.
+        "speed_max_derivation": (SPEED_MAX_DERIVATION
+                                 if getattr(args, "max_speed_input", False)
+                                 else None),
+        # ⚠️ A synthetic corpus whose episode ids were stamped from REAL label
+        # clip_ids so the v7/v8 join could hit. Frames are still synthetic —
+        # recorded so such a run can never be mistaken for a trained arm.
+        "synth_clip_ids_from_labels": synth_clip_ids_from_labels,
         "v7_labels": v7_manifest,
         # ⭐ refcv5 WP-6: WHICH labels the detector saw, and HOW MANY windows
         # actually carried one. A run that stamps `w_agent > 0` without this
@@ -4674,7 +4841,15 @@ def train(args) -> dict:
         "agent_join_digest": join_digest,
         "agent_join_stats": ({"train": agent_stats, "eval": eval_agent_stats}
                              if agent_stats is not None else None),
-    }, indent=1), encoding="utf-8")
+    }
+    # ⛔⛔ E16 — THE STAMP IS A PRECONDITION, NOT A FIELD. A --max-speed-input
+    # run whose record would not declare the channel's ego-future provenance
+    # REFUSES TO START here, before config.json is written and before a single
+    # step is taken. Pinned with a deliberate-regression arm in
+    # stack/tests/test_speed_max_derivation_stamp.py.
+    _assert_speed_max_stamp(_run_config, args)
+    (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
+                                         encoding="utf-8")
 
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
     t0, model = time.time(), model.train()

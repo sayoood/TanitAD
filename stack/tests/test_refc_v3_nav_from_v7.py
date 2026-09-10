@@ -322,7 +322,13 @@ def test_one_step_smoke_train_stamps_the_nav_source(tmp_path, monkeypatch,
     sids = [stable_episode_id(c) for c in clip_ids]
     real = T._synth_episodes
 
-    def _with_ids(n, cfg, seed=0, min_frames=40):
+    # ⚠️ `clip_ids` accepted and IGNORED on purpose. As of 2026-09-10
+    # `_synth_episodes` stamps real join ids natively (it had to: the trainer
+    # died on `int('synth-000')`, so no v7-label channel could be smoked at
+    # all). This shim predates that and pins the ids EXPLICITLY, which is the
+    # stronger assertion for THIS test — so it keeps overriding them, and only
+    # needs to tolerate the new keyword the caller now passes.
+    def _with_ids(n, cfg, seed=0, min_frames=40, clip_ids=None):
         eps = real(n, cfg, seed=seed, min_frames=min_frames)
         for ep, sid in zip(eps, sids):
             ep.episode_id = sid           # the join key the trainer uses
