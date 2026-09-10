@@ -14,6 +14,78 @@ applied.
 
 ---
 
+## ⭐⭐ STATUS AS OF 2026-09-11 — read this first; four items moved and TWO ARE NEW
+
+### ✅ CLOSED — no decision needed
+
+| item | what changed |
+|---|---|
+| **8** — the RL pilot's 487-vs-488 cold start | ⭐ **CLOSED.** Option (c) implemented, mutation-proven, and **the pilot loaded the real July checkpoint and ran 2,000 steps.** ⚠️ Correction: the missing tensor is **ZEROS, not random** — so every one of 128 anchors reads *"hold speed, go straight"*, and the arm trains, converges and produces a full plausible result with **no absurd number anywhere** to catch it by. ⛔ `strict=False` appears nowhere. |
+| **`--w-agent`'s value** — I had listed this as needing you | ⭐ **Resolved from the record, not by asking.** `1.0` is **pre-registered** at `…/2026-09-07-p1-agent-gate/PREREG.md:46`, written before any outcome under `D-P1-AGENTCOND-1`, and executed with a banked config. ⛔ Retracts my own claim that it was measured-but-unregistered. |
+| **2** — a ~30 km/h minimum on the max-speed ceiling | ⭐ **The premise fails and the channel is BUILT.** The bottom step of the ladder is **already 20 km/h with 0 nulls**. Per your ruling *"stick to the labels we created in the data set with the logic of minimal speed"*, the v8 block now exists at **4,572/4,572 train and 147/147 eval** — a pure transform of `SPEED_BAND`, no new labels. |
+
+### ⏳ MEASUREMENT IN FLIGHT, so you need not answer
+
+| item | what is happening |
+|---|---|
+| **10** — the `MANEUVER_WEIGHT` budget for `--w-tac-goal` | ⭐ **Being MEASURED on Thor rather than guessed**, which is what I offered. A tiny-rig sweep across four weights plus a **zero-weight control that must read exactly 0.0** returns a grad-versus-weight curve and the point at which the primary objective starts to degrade. ⛔ **The value remains yours to ratify** — you will get a measurement and a recommendation, not a decision. |
+
+---
+
+### ⛔ NEW ITEM 12 — refcv6's arm D **CANNOT START**, and the refusal's own reason is false
+
+`refc_v3_train.py:468` raises a hard **`SystemExit`** on any arm combining **`--sampler ddim`** with
+**`--w-u0 0`**. refcv6's BASE carries `--sampler ddim` (`arms.py:110-111`) and **arm D IS `--w-u0 0`**
+(`arms.py:286`). ⇒ **that is exactly the refused pair.**
+
+⛔ **Arm D is the arm I told you to run FIRST and called "one flag and free."** It would have died in
+the first second of a run — discovered only **after** a pod was provisioned and paid for.
+
+⭐ **The refusal's stated reason is measurably FALSE.** It claims `control_head` *"stays at its zero
+init forever"* without the `u0` term. In a single forward, `control_head` reaches `out["anchor_traj"]`
+— the tensor the **matched-anchor L1** gathers — for `grad_abs_sum` **9.39e4**, against **1.07e5**
+through `u0_hat` and **exactly 0.0** for three no-information controls in the same forward. The
+justification rotted while the code kept enforcing it. Class **`JUSTIFICATION-ROT`**.
+
+⛔ **The REASON was refuted, not the DECISION.** The refusal stands and only its message was
+corrected, because whether that arm runs is **your ruling and not an agent's**. A false justification
+licenses re-opening a question; it never licenses overriding the answer.
+
+⭐ **Why the arm still matters:** `D-DDV1-NO-DENOISING-LOSS` — DiffusionDrive v1 has **no
+ε-prediction and no denoising MSE at all**, and its `diff_loss_weight = 20.0` is dead code. Our
+`--w-u0 0.5` is an **invention, not a port**; our trainer's own default is already **0.0**; and
+refcv5-v2, the arm that opted into 0.5, is the one that lost longitudinally.
+
+| | |
+|---|---|
+| **(a) ⭐ DEFAULT if you say nothing** | authorise `ddim` + `--w-u0 0` behind an **explicit acknowledgement flag**, so the record shows a deliberate operator choice rather than a bypass — the same shape as `control_units_source: cli-override-legacy-file` |
+| **(b)** | drop arm D, and rewrite the review's §3.3 ordering, which currently rests on it |
+
+---
+
+### ⛔ NEW ITEM 13 — compute: refcv6 needs a pod, and it is the only hardware blocker left
+
+The A40 is **stopped and gone**; every irreplaceable artifact was verified byte-exact off it first.
+Thor and the dev-box RTX 4060 are **probe-and-eval class**, not 40 k-step class.
+
+**Priced from refcv5-v2's own record, cross-checked two ways** (40,284 steps × 4.2 s/step measured
+live = 47.0 h; the banked checkpoint's own wall-clock ≈ 47 h): **47 GPU-hours per arm.**
+
+⭐ **The panel is 235 GPU-h, not 423, because the noise floor only has to be measured ONCE** — one
+baseline replicate, then four single-lever arms read against it, with a confirmation replicate bought
+only by an arm that looks like it cleared.
+
+**DEFAULT if you say nothing:** provision **one A40-class pod** and run **arm 0's pair only —
+94 GPU-hours.** ⛔ That pair is not a consolation item: it **is** the rig's noise floor, and without
+it no other arm's bar is readable. ⚠️ This replaces my earlier default of *"run arms 0 and 1"*, since
+arm 1 is arm D and arm D cannot start.
+
+⚠️ **A measured reason this is not optional, from tonight:** on the dev-box RL rig, the **control**
+arm's own seed-to-seed spread was **145 percentage points** on the headline metric — and a lever that
+looked like a clean 5.2× improvement turned out to sit **inside** it.
+
+---
+
 ## 1. ⛔ CONFIRM: "no VLM — the Alpamayo labels stand as teacher signals" — **RELAYED, PENDING**
 
 **Default if silent:** treated as pending. The grader panel is **stood down** (standing down needs
