@@ -103,3 +103,64 @@ lever arm differing from that baseline by **exactly one parsed-namespace key**. 
 ⛔ **Every arm carries a replicate from the start.** MEASURED on WP-D: an arm with **zero levers
 moved** read "separably worse" on **5 of 9** family metrics and reproduced a headline ADE effect
 at **+0.02460** against the lever's **+0.02610**. A one-seed panel cannot adjudicate this rig.
+
+---
+
+## 5. ⛔ CORRECTION — it was THREE heads and 18,472 parameters, not one head and 11,286
+
+**MEASURED 2026-09-10** from refcv5-v2's own checkpoint, after this document was written. ⭐ The
+probe was not asked for: it was run while verifying the Hugging Face upload, and it refused to
+inherit the count in §2.2 above.
+
+**The method is an analytic one, which is why it is trustworthy:** Adam allocates optimizer state
+**lazily**, so a registered parameter with **no entry in `opt["state"]`** never received a
+gradient. The checkpoint registers **357** parameters against **351** state entries.
+
+| head | shape | params | state |
+|---|---|---|---|
+| `core.decoder.offset_head.weight` / `.bias` | (16, 384) / (16,) | **6,160** | default init, **untrained** |
+| `tac_goal_tok_head.net.weight` / `.bias` | (22, 512) / (22,) | **11,286** | default init, **untrained** (as documented) |
+| `scorer.goal_point.weight` / `.bias` | (2, 512) / (2,) | **1,026** | ⛔ **EXACTLY ZERO** — 0 of 1,024 weights nonzero |
+| | | **18,472** | **never trained** |
+
+### 5.1 ⭐ `scorer.goal_point` is structurally inert — and this one is an ANALYTIC prediction
+
+`v6.py:2760` **zero-initialises** it. Zero init **plus** zero gradient predicts that it is still
+**exactly zero**, and it is. ⛔ That is an identity, not an estimate, and no seed changes it.
+
+⇒ **That head emits the constant origin.** The "free regression" half of the goal scorer
+contributed nothing to refcv5-v2.
+
+⚠️ ⇒ **The panel's `goal_setting FDE 0.6607 m / bearing 1.3730°` row is now UNVERIFIED**, because
+it is not established whether that number reads this constant head or the parameter-free anchor
+prior (`refc.py:1638`). ⛔ Do not quote it until the path is settled. **One read settles it.**
+
+### 5.2 `core.decoder.offset_head` — MEASURED untrained, cause is a HYPOTHESIS
+
+⚠️ It sits at random init **inside the arm whose `--sel-refined` lever failed its bar**. The
+proposed cause — that `--sampler ddim` legitimately orphans it because the sampler pass refines
+via `control_head` — is a **HYPOTHESIS, not confirmed**. The discriminating check is **one read
+of any non-ddim refc checkpoint**.
+
+### 5.3 Why the mapping is trustworthy — three independent cross-checks
+
+⛔ A census that re-runs the producer's own derivation measures **determinism, not correctness**.
+These do not:
+
+1. **351 of 351** present ids match their aligned parameter's shape **exactly**.
+2. The mapped parameter total is **108,257,502**, equal to `config.json`'s
+   `param_breakdown.total` — an **independently authored** reference the probe never touched.
+3. Same-breath controls `str_goal_head`, `scorer.cand_bias` and `conf_head` all read **TRAINED**,
+   which excludes a global-zero artifact — the control that discriminates a real finding from a
+   broken probe.
+
+### 5.4 ⇒ What this changes for refcv6
+
+⭐ **This defect class has now surfaced THREE times, and every time only AFTER an arm was trained
+and published.** ⇒ `probe_zerograd3.py` belongs in `stack/scripts/` as a **post-training gate**,
+run before any checkpoint is published or quoted. ⛔ A head that is built, rollable and unreached
+must fail the gate, not survive into a model card.
+
+⚠️ And the §2.2 framing above needs its scope widened: `--w-tac-goal`'s `default=0.0` explains
+**one** of the three. The other two have different causes, and **a single explanation covering
+one third of the evidence is how the count stayed wrong.**
