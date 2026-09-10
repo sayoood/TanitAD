@@ -189,13 +189,15 @@ assert all(chk[f"mean_abs_tok_{arm}"] > 1e-4 for arm in ARMS), "A TRUNK BANK IS 
 assert chk["mean_abs_pix"] > 1e-4 and chk["cart_occ_rate_allcells"] > 0
 
 # ⭐ the three trunks must produce DIFFERENT features on the same pixels
-d01 = float(np.abs(np.asarray(mm["D0"][:w:step], np.float32)
-                   - np.asarray(mm["D1"][:w:step], np.float32)).mean())
-d02 = float(np.abs(np.asarray(mm["D0"][:w:step], np.float32)
-                   - np.asarray(mm["D2"][:w:step], np.float32)).mean())
-chk["mean_abs_diff_D0_D1"], chk["mean_abs_diff_D0_D2"] = d01, d02
-print(f"[distinct-features] |D0-D1| {d01:.6f}  |D0-D2| {d02:.6f}", flush=True)
-assert d01 > 1e-4 and d02 > 1e-4, "TRUNKS PRODUCE IDENTICAL FEATURES"
+import itertools as _it
+_dif = {}
+for _a, _b in _it.combinations(ARMS, 2):
+    _d = float(np.abs(np.asarray(mm[_a][:w:step], np.float32)
+                      - np.asarray(mm[_b][:w:step], np.float32)).mean())
+    _dif[f"mean_abs_diff_{_a}_{_b}"] = _d
+    print(f"[distinct-features] |{_a}-{_b}| {_d:.6f}", flush=True)
+chk.update(_dif)
+assert all(v > 1e-4 for v in _dif.values()), "TWO TRUNKS PRODUCE IDENTICAL FEATURES"
 
 # ⭐ CROSS-CHECK against WP-A's banked Cartesian target, if the plans aligned.
 if align["plan_equal"]:

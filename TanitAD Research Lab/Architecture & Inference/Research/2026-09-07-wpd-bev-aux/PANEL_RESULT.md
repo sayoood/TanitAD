@@ -19,12 +19,26 @@ families.
 
 ## 0. The answer
 
-1. ⛔⛔ **`E-BEV-AUX-1` IS REFUTED ON BOTH HALVES OF ITS OWN SUCCESS CONDITION — `F4` AND `F2`
-   BOTH FIRED.** ⛔ **`F2` (§10):** the planner is separably **WORSE** with the aux term on, on
-   **8 of 9** T1 four-family metrics — ADE **+0.02610 [+0.00970, +0.04240]**,
-   with the same sign across LONGITUDINAL and LATERAL — and the *"it must still ACT"* control
-   CLEARS, so it is not the planner stopping. ⛔ **`F4` (below): the gain is
-   capacity/regularisation, not agent content.** On the polar target the aux head actually trained
+1. ⛔⛔ **`E-BEV-AUX-1` DOES NOT MEET ITS SUCCESS CONDITION — BUT AFTER THE REPLICATE ARMS
+   LANDED (2026-09-10) THE PANEL'S OWN *REASONS* FOR CALLING IT REFUTED NO LONGER HOLD, AND THIS
+   ENTRY IS CORRECTED RATHER THAN SOFTENED.** ⛔ **RETRACTED from the 2026-09-08 version of this
+   line:** *"REFUTED ON BOTH HALVES … `F4` AND `F2` BOTH FIRED … the planner is separably WORSE on
+   **8 of 9** T1 metrics."* **`8 of 9` IS WRONG.** MEASURED (§10.4): the replicate `D0b` — D0's
+   flags, D0's **seed**, **ZERO levers moved**, one differing argv token (`--out`) — is itself
+   *"separably worse"* than D0 on **5 of the same 9 metrics**, reproducing the headline
+   **ADE +0.02610** at **+0.02460** and *exceeding* the lever on **all three LONGITUDINAL**
+   metrics. ⇒ **ADE (1.06× the replicate floor), FDE (1.08×) and the whole
+   LONGITUDINAL family (0.40–0.60×) are RIG NOISE, not the lever.** ✅ **What survives is the
+   LATERAL family** — heading **3.3×**, curvature
+   **6.0×**, yaw-rate **3.5×** the floor, with the
+   replicates unseparated and mostly the OPPOSITE sign — so the defensible claim is **"the aux term
+   costs LATERAL accuracy"**, on **3 of 9** metrics, and *not* *"the planner is worse"*.
+   ⭐⭐ **This is the four-family rule earning itself in reverse: ADE was the spurious part.**
+   ⛔ **`F4` (below) is ALSO no longer established as a MECHANISM**: `|D1 − D2|` = 0.00366 is
+   **1.46× SMALLER** than the probe's own measured seed floor (§5b.1), so *"a shuffled target does
+   the same"* is what this rig reports either way. ⇒ **The honest global verdict is `F5` —
+   UNDERPOWERED at 4,000 steps** on `A3`, `A4` and most of `F2`; the claim **fails** only because
+   **`A2` was never demonstrated** (a straddling CI, which no floor rescues). On the polar target the aux head actually trained
    on, the arm supervised with a **SHUFFLED, zero-information** target (`D2`, AP **0.1525**) is
    indistinguishable from the arm supervised with the real one (`D1`, AP **0.1527**) —
    **+0.00025 [-0.01655, +0.01647], not separated** (2,000 draws). On the Cartesian target the shuffled arm is
@@ -58,10 +72,23 @@ families.
    precisely because the map was believed empty. That gate's premise is gone: the trunk is
    separably above the marginal on both geometries, and §3.3's ladder shows the probe is genuinely
    **reading azimuth** rather than guessing. Cost and the discriminating experiment are in **§7**.
-5. **`D0b`, the replicate arm A3 needs, is LAUNCHED and RUNNING** (**§1**, argv-audited to
-   **one differing token**). Until it lands **A3 is `NOT MEASURED`** — per the prereg's own `F5`,
-   *underpowered, not negative* — and **§5** states exactly how small the replicate floor would
-   have to be for A3 to pass.
+5. ⛔⛔ **`A3` IS NOW CLOSED, AND IT CLOSES AS `F5` — UNDERPOWERED, NOT NEGATIVE (§5b).**
+   Both replicate arms landed (`D0b` = D0's flags and D0's **seed**, argv-audited to **one
+   differing token**, the `--out` path; `D0c` = seed 1). MEASURED Cartesian: `f_same`
+   **0.000285**, `f_seed` **0.005340**, so the floor
+   §5b asks for — `max(f_same, f_seed)` — is **0.00534**, and **3× it is
+   0.01602** against a committed lever gap of **+0.00173**: A3's bar misses by
+   **9.3×**. ⭐⭐ **But the deciding fact is not the replicates — it is
+   that THE INSTRUMENT CANNOT MEASURE WHAT A3 ASKED FOR.** Two probe arms reading a **bit-identical
+   feature file**, same head, same seed, same split, same invocation — a gap whose true value is
+   **exactly 0** — read **0.001009 AP**; and across invocations, on a bank proven
+   **bit-identical** (0 of 1,489,438,720 cells
+   differ), **0.001417**. A3 required the floor to be **below 0.00058**, so the chain's own
+   irreproducibility is **2.44×** the bar. **A3 was unmeasurable on this rig
+   before either replicate was trained.** ⚠️ On the **polar** secondary the bar is looser
+   (**0.00308**) and the instrument sits **0.46×** below it, so there A3 is a **MEASURED FAIL**
+   (misses by 1.9×) rather than underpowered — the two geometries get
+   different labels and must not be quoted interchangeably.
 
 ---
 
@@ -261,7 +288,7 @@ blind to training-run variance — which is what `D0b` exists to measure (`H-EST
 |---|---|---|---|
 | **A1** | `AP(D1) − AP(pos_only)` ≥ **+0.010**, separated | **+0.08291** [+0.02991, +0.13250] | ✅ **PASS** |
 | **A2** | `AP(D1) > AP(pix)`, separated | **+0.01948** [-0.01211, +0.05273], **not separated** | ⛔ **FAIL** |
-| **A3** | ≥ **3×** a replicate floor measured in this panel | **+0.00923** [-0.01457, +0.03026], **not separated**; **floor not yet measured** | ⏳ **NOT MEASURED** |
+| **A3** | ≥ **3×** a replicate floor measured in this panel | **+0.01010** [-0.01106, +0.02850], **not separated**; floor **0.00574** ⇒ 3× = **0.01721** | ⛔ **FAIL** (misses by 1.9×) |
 | **A4** | `AP(D1) − AP(D2)` ≥ 3× that floor | **+0.00025** [-0.01655, +0.01647], **not separated** | ⛔ **FAIL** |
 
 Context rows from the same panel, same estimator:
@@ -290,7 +317,7 @@ Same estimator, same 30 episodes, **n_boot = 2000**, **all 20,859,636 scored cel
 |---|---|---|---|---|---|
 | **A1** | `D1 − pos_only` ≥ **+0.010** | +0.02630 | [+0.00822, +0.04256] | **YES** | ✅ **PASS** |
 | **A2** | `D1 > pix` | +0.01269 | [-0.00082, +0.02495] | no | ⛔ **FAIL** |
-| **A3** | ≥ **3×** a replicate floor from THIS panel | +0.00173 | [-0.00777, +0.01043] | no | ⏳ **NOT MEASURED** |
+| **A3** | ≥ **3×** a replicate floor from THIS panel | +0.00168 | [-0.00693, +0.01016] | no | ⛔ **`F5` UNDERPOWERED** — floor **0.00534**, 3× = **0.01602**; and the INSTRUMENT alone reads **0.001417** where A3 needed **< 0.00058** |
 | **A4** | `D1 − D2` ≥ 3× that floor | -0.00366 | [-0.01173, +0.00397] | no | ⛔ **FAIL** |
 
 ⭐ **A3, stated precisely so `D0b` can settle it without ambiguity.** The measured lever gap is **+0.00173 AP**. A3 passes only if the replicate floor `|AP(D0b) − AP(D0)|` is **below 0.00058 AP** — i.e. only if two runs differing in **nothing** agree to better than **1.05 %** of the arm's own AP. ⛔ For scale, WP-A's oracle-rig floor was ≤ **0.0122 AP**, and that number is **not borrowed** — the floor is being measured here. ⚠️ If the floor exceeds **0.00539**, then D0, D1 and D2 are all within one replicate spread of each other and the honest reading becomes `F5` — **underpowered at 4,000 steps**, not a measured difference in either direction.
@@ -354,8 +381,8 @@ in the seed.
 
 | the floor | what it is |
 |---|---|
-| `f_same = |AP(D0b) − AP(D0)|` | run-to-run **nondeterminism** only (same seed) — the `A0b_replicate` design |
-| `f_seed = |AP(D0c) − AP(D0)|` | **plus** init/shuffle variance — the prereg §4 D0b |
+| `f_same` = abs( AP(D0b) − AP(D0) ) | run-to-run **nondeterminism** only (same seed) — the `A0b_replicate` design |
+| `f_seed` = abs( AP(D0c) − AP(D0) ) | **plus** init/shuffle variance — the prereg §4 D0b |
 | **A3's denominator** | **`max(f_same, f_seed)`** — the larger, because a same-seed-only floor is anti-conservative and would make the 3× bar easier |
 
 ⭐ **A3 PASSES only if `AP(D1) − AP(D0) ≥ 3 × max(f_same, f_seed)`.** ⚠️ And if that floor turns out
@@ -367,6 +394,92 @@ CI already straddles zero.
 reads `loss 51.63894 / traj 2.30219` and D0b reads `loss 51.65258 / traj 2.30269` — two runs
 differing in **nothing** have already diverged, so this arm is measuring a real quantity and not an
 identity.
+
+---
+
+### 5b.1 ⛔⛔ `A3` — CLOSED 2026-09-10. **`F5` UNDERPOWERED on the PRIMARY geometry.**
+
+Both replicate arms landed on `tanitad-thor-wifi` (`summary.json` `done: true`, step 4000;
+`D0b` 16,433 s, `D0c` 16,443 s) and were put through **this panel's own pipeline** —
+`b1_bank_wpd.py` → `b2_probe_wpd.py --az-sign prog` → `b5_fast_boot.py --n-boot 2000` — in
+**one bank and one probe invocation** alongside D0/D1/D2, so no arm is compared across instruments.
+
+⭐ **The levers, audited rather than asserted** (`raw/D0c_argv_audit.json`): against D0's 59 argv
+tokens, **`D0b` differs in ONE — the `--out` path — and in nothing else** (same seed 0);
+**`D0c` differs in the seed alone** (0 → 1). Levers moved excluding the output path: **0** for
+`D0b` and **1** (the seed) for `D0c`.
+
+| the floor, as §5b defines it | Cartesian (**PRIMARY**) | polar (secondary) |
+|---|---|---|
+| `AP(D0)` | 0.056174 | 0.143813 |
+| `AP(D0b)` — same flags, **same seed** | 0.056458 | 0.143179 |
+| `AP(D0c)` — **seed 1**, prereg §4 | 0.050833 | 0.138076 |
+| `f_same` = abs( AP(D0b) − AP(D0) ) | 0.000285 | 0.000633 |
+| `f_seed` = abs( AP(D0c) − AP(D0) ) | **0.005340** | **0.005737** |
+| **floor = `max(f_same, f_seed)`** | **0.005340** ← `f_seed` | **0.005737** ← `f_seed` |
+| **3 × floor** | **0.016020** | **0.017211** |
+| committed lever gap | **+0.00173** (§5b, verbatim) | +0.00923 (*derived* from §5's polar table) |
+| **A3's own bar** | ⛔ **FAIL**, misses by **9.3×** | ⛔ **FAIL**, misses by **1.9×** |
+| **verdict** | ⛔ **`F5` UNDERPOWERED** | ⛔ **`A3` FAIL** (measured, *not* underpowered) |
+
+⚠️ **The two geometries get DIFFERENT labels and must not be quoted interchangeably.** The reason is
+the bar, not the data: polar's required floor is **0.00308**,
+which the instrument (below) sits **0.46×** under, so polar *can* be measured and simply fails;
+Cartesian's is **0.00058**, which it cannot.
+
+#### ⭐⭐ The control that decides the LABEL — and it was not in §5b's recipe
+
+§5b's recipe assumes the measurement chain is reproducible. **It is not**, and that is measured here
+in two ways whose true value is **known to be exactly zero**:
+
+| control | what differs | reads | true value |
+|---|---|---|---|
+| `tok_D0dup` vs `tok_D0`, **same invocation**, IDENTICAL feature file, same head, same seed, same split | **nothing at all** | **0.001009** AP, CI [-0.00316, +0.00241] | **0** |
+| `AP(D0)` panel 2026-09-08 vs this run, on a bank proven **bit-identical** | **nothing at all** | **0.001417** AP | **0** |
+
+⛔ **A3 required the replicate floor to be BELOW 0.00058 AP. The chain cannot reproduce ITSELF to
+better than 0.001417 — 2.44× that bar. A3 was
+UNMEASURABLE on this rig before either replicate arm was trained**, and per the prereg's own `F5`
+an unmeasurable criterion is reported as **UNDERPOWERED, never as a negative**.
+
+⭐ **And the variance is localised, not merely observed.** Re-banking `D0` from the same trunk gave
+**0 of 1,489,438,720 differing cells** (max |diff|
+**0**) — the **ENCODER pass is bit-exact** — while the discriminating
+half confirms the replicate is a real second run: `tok_D0b` differs from `tok_D0` in
+**84.3 %** of cells. ⇒ **every bit of
+this floor is the PROBE HEAD's own training**, and none of it is the trunk.
+
+#### ⚠️ Both readings of §5b's F5 clause, reported side by side rather than chosen
+
+§5b states the F4/F5 test two ways and on the Cartesian read **they disagree** — by 0.9 %:
+
+* **(a) the LITERAL** — *"if the floor exceeds **0.00539**"*: floor **0.00534** ⇒
+  F5 = **False**.
+* **(b) §5b's WORDS** — *"exceed the whole D0→D2 spread"*, with the floor measured **"IN THE SAME
+  PANEL"**: this panel's D0→D2 spread is **0.00240** ⇒
+  F5 = **True**.
+
+⛔ **The verdict rests on NEITHER**, precisely because a 0.9 % knife-edge is not evidence. It rests
+on the instrument floor above, which is independent of both. ⭐ The invariant statement, for a reader
+who wants one number: **three arms differing in NOTHING BUT A SEED span
+0.00562 AP, while D0/D1/D2 span 0.00240
+— a ratio of 2.35×.**
+
+#### What would make A3 readable, and what it costs
+
+1. ⭐ **Cheap and it fixes the INSTRUMENT, not the science:** average each arm's probe over **N head
+   seeds**. The head is 67.2 k params and **43 s** on the dev-box 4060, so N = 10 costs
+   **~45 min for six arms** and shrinks the 0.001417 instrument floor by
+   ≈ √10 → **≈ 0.00045**, under the 0.00058 bar. ⛔ **This does not rescue A3** — it only stops the
+   instrument being the binding constraint.
+2. ⛔ **The binding floor is TRAINING, and it is expensive.** Resolving a **+0.00173** effect against
+   a **0.00534** seed floor at A3's 3× bar needs the arm-mean SE down to ≈ 0.00058,
+   i.e. **n ≈ (0.00534/0.00058)² ≈ 85 training runs per arm** at 4.7 h each ≈ **400 GPU-hours per
+   arm**. ⇒ **Not worth spending.** The honest conclusion is that **a 4,000-step tiny rig cannot
+   adjudicate a 0.0017 AP representation effect at all**, and A3 as written should not be re-run at
+   this scale — it should be restated at a scale where the effect is larger, or retired.
+3. ⭐ **What IS worth spending is on the OTHER half of the claim** — see §7.
+
 
 ---
 
@@ -384,10 +497,25 @@ neither**. The aux-ON trunk does not separably beat the raw-pixel floor, which i
 `E-DEC-18-R1` failed and which the prereg flagged in advance as *"not a formality"*. ⇒ **two of the
 four bars fail and a third is unmeasured**; the claim does not survive on any reading.
 
-⚠️ **`F5` is also partly live and must be said**: `A3` is **NOT MEASURED**, and the prereg is
-explicit that an unmeasured criterion is **underpowered, not negative**. `D0b` decides it. But `F4`
-does not depend on `D0b`: A4 compares two arms *in the same panel* and reads +0.00023 with a CI
-straddling zero.
+⛔⛔ **`F5` IS NOW SETTLED AND IT FIRED — ON THE PRIMARY GEOMETRY THE REPRESENTATION PANEL IS
+UNDERPOWERED, NOT NEGATIVE.** `D0b`/`D0c` landed and §5b's arithmetic gives a Cartesian floor of
+**0.00534** (= `f_seed`; `f_same` is only **0.000285**), so
+**3× the floor is 0.01602** — the committed lever gap **+0.00173** misses it by
+**9.3×**. ⚠️ **And this REACHES BACKWARDS INTO `A4`, which must be said
+plainly:** A4's measured `D1 − D2` is **-0.00366**, and the MEASURED floor **0.00534** is
+**1.46× LARGER** than that magnitude. ⇒ *"the shuffled arm matches the lever"* is **exactly what this rig
+would report whether or not the target carried information**, so `F4`'s *mechanism* claim —
+capacity-not-content — is **NOT** established by A4 alone at 4,000 steps. What survives unchanged is
+the **negative**: `A1 ∧ A2 ∧ A3 ∧ A4` is unreachable, because **`A2` fails on its own terms** (a
++0.01269 point estimate whose CI straddles zero) and no floor makes a straddling CI separate.
+⛔⛔ **AND `F2` WAS TESTED AGAINST ITS OWN REPLICATE FLOOR RATHER THAN ASSUMED — IT SPLITS
+(§10.4).** The same two replicate checkpoints went through the identical T1 arm. `D0b` (**zero
+levers moved**) is *"separably worse"* than D0 on **5 of 9** family metrics, so on this rig
+`separated` has a **55.6 %** false-positive rate for a one-seed pair (the v7-tiny rig's recorded
+figure is 14.3 %). ⇒ **ADE (1.06×), FDE (1.08×) and all three LONGITUDINAL
+metrics (0.40–0.60×) are INSIDE the floor**; only **LATERAL heading / curvature / yaw-rate** clear
+3× (3.3× / 6.0× / 3.5×). ⇒ **`F2` survives
+only as a LATERAL claim on 3 of 9 metrics**, and the ADE headline it was quoted by does not.
 
 ⛔ **`F1` did NOT fire** — the trunk is not empty, so *"no transferable content"* is the wrong
 verdict and `E-DEC-8` DINOv3 distillation is **not** the lever this result calls for. Reporting F1
@@ -452,7 +580,13 @@ is an architecture fact worth its own row, and it was invisible while the addres
   record cannot report its own deployed count**, which is what the claim promised. Same family as
   the units rule: a fact that is true of the design and absent from the artifact a reader opens.
 * ⚠️ The occlusion mask is a **lower bound** (prereg §2.2) and every polar number inherits that.
-* ⚠️ **A3 is NOT MEASURED, not negative.**
+* ⛔ **A3 is CLOSED: `F5` UNDERPOWERED on the Cartesian PRIMARY, `FAIL` on the polar
+  secondary** (`raw/a3_verdict_cart.json`, `raw/a3_verdict_pol.json`). It does **not** say the aux
+  term's effect is zero — it says **this rig cannot resolve an effect of that size**, and the proof
+  is an instrument that reads **0.001417 AP** between two arms that differ in **nothing at all**.
+* ⚠️ **It does NOT retract `A1`.** A1's **+0.02630 [+0.00822, +0.04256]** is
+  **4.9×** the seed floor and stays separated; the trunk really is above
+  the marginal. ⛔ **It DOES weaken `A4`'s mechanism reading** — see §6.
 
 ---
 
@@ -547,6 +681,70 @@ is it genuinely mis-planning?
 ⇒ **D1 is not acting less in any amount the rule counts, and it is not freezing.** The regression is
 not the `kamm07`/`l3ladder` "improve LON by stopping" artefact wearing a new costume — it is a
 planner that is genuinely worse while still driving.
+
+---
+
+### 10.4 ⛔⛔ `F2` READ AGAINST THE PLANNER'S OWN REPLICATE FLOOR — **AND IT SPLITS**
+
+§10 reported D1 separably worse than D0 on 8 of 9 T1 metrics and called it `F2`. ⛔ That was a
+**one-seed** comparison, and `CLAUDE.md` is explicit that a separated CI from one-seed arms is
+**necessary and NOT sufficient** — the episode-cluster bootstrap resamples **EPISODES with the
+models held fixed** and is structurally blind to training variance (`H-ESTIM-SEED-1`). So `D0b`
+(**D0's flags, D0's seed, ZERO levers moved**) and `D0c` (**seed alone**) were put through the
+**identical T1 arm**: same tool, same 40 episodes, same window stride, `--n-boot 2000`.
+
+⭐ **The pairing is asserted, not assumed** — all three dumps are **3,422 windows / 40 episodes**
+with `eid`, `window_start`, `gt` and `v0` **element-wise identical** — and the arms genuinely
+differ: mean |pred(D0b) − pred(D0)| = **0.105934 m**,
+|pred(D0c) − pred(D0)| = **0.122266 m**.
+
+| metric | family | **D1 − D0** (the LEVER, §10) | **D0b − D0** (ZERO levers) | D0c − D0 (seed) | floor = max | lever / floor | ≥ 3× floor? |
+|---|---|---|---|---|---|---|---|
+| `ADE_m` | ADE | **+0.02610** [+0.00970, +0.04240] **sep** | +0.02460 ⛔ **sep** | +0.01290 no | **0.02460** | **1.06×** | ⛔ **inside the floor** |
+| `FDE_m` | ADE | **+0.05440** [+0.01830, +0.09050] **sep** | +0.05040 ⛔ **sep** | +0.03090 no | **0.05040** | **1.08×** | ⛔ **inside the floor** |
+| `LON_speed_mae_mps` | LONGITUDINAL | **+0.01660** [+0.00140, +0.03300] **sep** | +0.03350 ⛔ **sep** | +0.01130 no | **0.03350** | **0.50×** | ⛔ **inside the floor** |
+| `LON_along_mae_m` | LONGITUDINAL | **+0.01310** [-0.00080, +0.02760] no | +0.03290 ⛔ **sep** | +0.00930 no | **0.03290** | **0.40×** | ⛔ **inside the floor** |
+| `LON_accel_mae_mps2` | LONGITUDINAL | **+0.01810** [+0.00340, +0.03400] **sep** | +0.03020 ⛔ **sep** | +0.01220 no | **0.03020** | **0.60×** | ⛔ **inside the floor** |
+| `LAT_cross_mae_m` | LATERAL | **+0.01590** [+0.00010, +0.03180] **sep** | -0.01070 no | +0.00320 no | **0.01070** | **1.49×** | ⛔ **inside the floor** |
+| `LAT_heading_mae_deg` | LATERAL | **+0.15980** [+0.03650, +0.29700] **sep** | -0.01240 no | +0.04860 no | **0.04860** | **3.29×** | ✅ survives |
+| `LAT_curvature_mae_1pm` | LATERAL | **+0.00060** [+0.00020, +0.00100] **sep** | +0.00010 no | +0.00000 no | **0.00010** | **6.00×** | ✅ survives |
+| `LAT_yawrate_mae_radps` | LATERAL | **+0.00210** [+0.00030, +0.00410] **sep** | -0.00060 no | +0.00060 no | **0.00060** | **3.50×** | ✅ survives |
+
+⛔⛔ **THE ZERO-LEVER REPLICATE CLEARS `separated` ON 5 OF 9 FAMILY METRICS
+(55.6 %).** `D0b` differs from `D0` in **one argv token — the output path** —
+and the pairing script's own verdict line for it reads
+*"⛔ FAIL — separably WORSE on ['ADE_m', 'FDE_m', 'LON_speed_mae_mps', 'LON_along_mae_m',
+'LON_accel_mae_mps2']"*. ⚠️ For scale, `CLAUDE.md` records a **14.3 %** false-positive rate for
+`separated` on the v7-tiny rig; **this planner rig reads 55.6 %.**
+
+⇒ **`F2` DOES NOT SURVIVE AS STATED — AND THE PART THAT FAILS IS THE PART EVERYONE QUOTES.**
+* ⛔ **ADE 1.06× the floor and FDE 1.08×** — the headline
+  **ADE +0.02610** is reproduced at **+0.02460** by an arm that changed **nothing**.
+* ⛔ **All three LONGITUDINAL metrics land BELOW the floor** (0.40–0.60×): the zero-lever
+  replicate's longitudinal degradation is **larger** than the lever's.
+* ✅ **The LATERAL family SURVIVES**: heading **3.29×**,
+  curvature **6.00×**,
+  yaw-rate **3.50×** the floor, and on all four
+  lateral metrics the replicates are **not separated and mostly the OPPOSITE sign**. Cross-track is
+  the weak one at **1.49×** and does **not** clear 3×.
+
+⭐⭐ **THIS IS THE FOUR-FAMILY RULE EARNING ITSELF, IN THE DIRECTION NOBODY EXPECTED.** The binding
+rule exists because *"an arm can win ADE while setting the wrong speed"*. Here the failure is the
+mirror image: **ADE and the whole LONGITUDINAL family are pure rig noise, and the only real signal
+is LATERAL.** Had §10 reported ADE alone — which the rule forbids — `F2` would have been entirely
+spurious. ⇒ The defensible statement is **"the aux term costs LATERAL accuracy (heading, curvature,
+yaw-rate) at 3.3–6.0× the rig's replicate floor"**, and **not** *"the planner is worse"*.
+
+⚠️ **The `D-REFAV1-LON-ACTS` "it must still ACT" control clears for the replicates too**
+(`D0b` mean |a| 0.231075 vs D0 0.269772;
+`D0c` 0.284345), so none of this is the stop-to-win artefact — it is
+the rig's own spread.
+
+⛔ **What this does NOT say:** it does not show the aux term is harmless. It shows that **8-of-9 was
+the wrong count**: the honest count is **3 of 9 metrics clear a 3× replicate floor**, all of them
+LATERAL. Evidence: `raw/paired_floor_wpdD0b_vs_D0.json`, `raw/paired_floor_wpdD0c_vs_D0.json`.
+
+---
 
 ### 10.2 The STRATEGIC family, per the four-family rule
 

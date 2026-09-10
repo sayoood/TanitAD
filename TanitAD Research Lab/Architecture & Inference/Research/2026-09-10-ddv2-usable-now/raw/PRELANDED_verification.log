@@ -1,0 +1,42 @@
+
+==========================================================================
+PIECE 1 -- the >= GT positive mask (advantage.truncated_inter_anchor_advantage)
+==========================================================================
+reward            = [[0.20000000298023224, 0.6000000238418579, 0.8999999761581421, 1.0], [0.10000000149011612, 0.4000000059604645, 0.4000000059604645, 0.8999999761581421]]
+OFF (gt_bar=None) = [[0.0, 0.0, 0.22499996423721313, 0.32499998807907104], [0.0, 0.0, 0.0, 0.44999998807907104]]
+ON  (bar .95/.50) = [[0.0, 0.0, 0.0, 0.32499998807907104], [0.0, 0.0, 0.0, 0.44999998807907104]]
+OFF == ON ?       False   (must be False, or the bar is inert)
+hand-computed row 0 (OFF): [[0.0, 0.0, 0.22499999403953552, 0.32499998807907104]]  -> matches: True
+row 0 ON: 0.9 is above the MEAN but below the human's 0.95 -> [0.0, 0.0, 0.0, 0.32499998807907104]
+CORRUPTION with the bar OFF: True   (must be True)
+CORRUPTION with the bar ON : True   (must be True -- the corruption is reachable)
+
+==========================================================================
+PIECE 2 -- intra-anchor grouping (advantage.grpo_advantage refuses G < 2)
+==========================================================================
+G=1 REFUSED: grpo_advantage needs a group of >=2 to have any signal, got G=1. A group of one yields an identically-zero advantage and a SILENT no-op update; refusing instead of returning zeros.
+G=2 centred advantage = [[-0.5, 0.5]]   (analytic: [-0.5, +0.5])
+exact match to the analytic value: True
+composite frac_above_bar with one clearable and one impossible window = 0.5000   (analytic: 0.5000)
+
+==========================================================================
+PIECE 3 -- two-scalar exploration (refcv3_adapter.sample_offsets)
+==========================================================================
+ON  (two_scalar)    max spread of the per-axis ratio ALONG the trajectory: 3.823e-07   (analytic 0)
+OFF (multiplicative) mean spread of the same ratio:               9.921e-01   (must be O(1))
+OFF == ON ? False   (must be False)
+
+RNG-STREAM CHECK -- the OFF path must consume the same draws it always did, or every banked arm re-rolls:
+  OFF is deterministic under a seed: True
+  and its downstream tail is stable: True
+  ⚠️ the ON path draws a DIFFERENT SHAPE ([B,N,G,1,2] vs [B,N,G,S,2]), so its downstream tail differs: True
+     -> that is expected and is why noise_mode is a DECLARED field in PostTrainConfig.to_dict(); it is not a change to the OFF arm.
+
+==========================================================================
+PIECE 4 -- the selector module exists; the CALLER did not (until today)
+==========================================================================
+  tanitad.refs.refc_selector                   importable: True
+  tanitad.refs.refc_selector_targets           importable: True
+  tanitad.refs.refc_selector_aug               importable: True
+
+generated 2026-09-10T08:40:14Z UTC | torch 2.11.0+cu128

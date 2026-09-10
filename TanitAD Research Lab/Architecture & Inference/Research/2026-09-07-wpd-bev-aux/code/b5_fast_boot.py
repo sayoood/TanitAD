@@ -189,7 +189,14 @@ PAIRS = [("tok_D1", "pos_only", "A1 marginal (bar: >= +0.010, separated)"),
          ("tok_D2", "tok_D0", "CONTEXT: the ZERO-INFORMATION target vs aux-off"),
          ("tok_D2", "pos_only", "CONTEXT: shuffled-target trunk vs marginal"),
          ("pix", "pos_only", "CONTEXT: do raw pixels beat the marginal?"),
-         ("shuf_D1", "pos_only", "CONTROL: random-frame features must NOT gain")]
+         ("shuf_D1", "pos_only", "CONTROL: random-frame features must NOT gain"),
+         # ---- A3's replicate floor (H-ESTIM-SEED-1) --------------------------
+         ("tok_D0b", "tok_D0", "A3 FLOOR f_same: D0 flags, D0 SEED, zero levers moved"),
+         ("tok_D0c", "tok_D0", "A3 FLOOR f_seed: D0 flags, seed 1 (prereg section 4)"),
+         ("tok_D0c", "tok_D0b", "A3 CONTEXT: replicate vs replicate"),
+         ("tok_D1", "tok_D0b", "A3 CONTEXT: the lever vs the same-seed replicate"),
+         ("tok_D2", "tok_D0b", "A3 CONTEXT: shuffled target vs the replicate"),
+         ("tok_D0dup", "tok_D0", "CONTROL: IDENTICAL feature file -> TRUE VALUE IS 0")]
 pairs = {}
 for x, yn, why in PAIRS:
     if x in DA and yn in DA:
