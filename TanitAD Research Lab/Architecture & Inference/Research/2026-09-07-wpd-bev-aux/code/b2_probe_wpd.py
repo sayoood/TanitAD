@@ -250,6 +250,20 @@ def load_feat(kind, rows):
 ARMS = [("tok_D0", "D0", False, False), ("tok_D1", "D1", False, False),
         ("tok_D2", "D2", False, False), ("pix", "pix", False, False),
         ("pos_only", "D0", True, False), ("shuf_D1", "D1", False, True)]
+# A3's REPLICATE arms, appended ONLY when the bank actually holds them, so a run
+# over the original bank takes the identical code path it took on 2026-09-08.
+# `run_arm` re-seeds torch AND numpy AND its own Generator at entry, so an arm's
+# result does not depend on which arms ran before it -- appending is safe.
+for _rep in ("D0b", "D0c"):
+    if os.path.exists(os.path.join(a.bank, f"tok_{_rep}.npy")):
+        ARMS.append((f"tok_{_rep}", _rep, False, False))
+# ⛔ THE CONSTANT CONTROL FOR THE FLOOR ITSELF. `tok_D0dup` reads the IDENTICAL
+# feature file as `tok_D0` -- same bytes, same head, same seed, same split, same
+# invocation -- so the TRUE value of |AP(D0dup) - AP(D0)| is KNOWN TO BE ZERO.
+# Whatever it reads is the INSTRUMENT floor, and no arm gap smaller than it is a
+# gap. Without this, A3's floor cannot be separated from the probe's own noise.
+if os.path.exists(os.path.join(a.bank, "tok_D0.npy")):
+    ARMS.append(("tok_D0dup", "D0", False, False))
 if a.arms:
     keep = set(a.arms.split(",")); ARMS = [x for x in ARMS if x[0] in keep]
 
@@ -411,7 +425,16 @@ PAIRS = [("tok_D1", "pos_only", "A1 marginal"), ("tok_D1", "pix", "A2 raw-pixel 
          ("tok_D0", "pix", "D0 vs pixels (context)"),
          ("tok_D2", "pos_only", "D2 marginal (context)"),
          ("tok_D2", "tok_D0", "D2 vs D0 (context)"),
-         ("shuf_D1", "pos_only", "shuffled-frame control -> must NOT separate up")]
+         ("shuf_D1", "pos_only", "shuffled-frame control -> must NOT separate up"),
+         # ---- A3's replicate floor (H-ESTIM-SEED-1). These are the ONLY pairs
+         # that answer "would another TRAINING RUN say this?"; every pair above
+         # answers "would another draw of EPISODES say this?" and is blind to it.
+         ("tok_D0b", "tok_D0", "A3 FLOOR f_same: D0's flags, D0's SEED, zero levers"),
+         ("tok_D0c", "tok_D0", "A3 FLOOR f_seed: D0's flags, seed 1 (prereg s4)"),
+         ("tok_D0c", "tok_D0b", "A3 context: replicate vs replicate"),
+         ("tok_D1", "tok_D0b", "A3 context: the lever vs the same-seed replicate"),
+         ("tok_D2", "tok_D0b", "A3 context: shuffled target vs the replicate"),
+         ("tok_D0dup", "tok_D0", "CONTROL: IDENTICAL features -> MUST read 0.000000")]
 pairs = {}
 for x, y, why in PAIRS:
     if x in res and y in res:

@@ -1,0 +1,144 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this file + C:/Users/Admin/wpd-probe/bank + this json)",
+ "tier": "NOT APPLICABLE - frozen-feature representation probe, no trajectory is produced (PREREG_WPD_BEV_AUX.md section 5A)",
+ "geometry": "cart",
+ "geometry_note": "cart = WP-A's Cartesian GRID_DEFAULT, the PRIMARY read and NOT the parameterisation D1 trained on; pol = the polar 24x20 target the aux head optimised, with its occlusion IGNORE mask (secondary)",
+ "function_class": "NONLINEAR (1x1 conv + 3x3 residual + 3-layer MLP), identical arch/params/steps/seed across arms",
+ "projection_scope": "column LINEAR in azimuth holds for OUR 256x640 cylindrical corpus at f_ref 305.577 (HFOV 120 deg); a pinhole formula gives 92.6 deg and does not travel",
+ "az_sign_chosen": "prog",
+ "az_sign_probe": {},
+ "az_sign_note": "`prog` = bev_aux.azimuth_column AND psg_targets.azimuth_column (two independent implementations that AGREE): image column 0 is azimuth +hfov/2 = LEFT, and it is the convention D1's aux head TRAINED under. `wpa` = WP-A's s5_indexed.py address, which is its MIRROR. The choice is settled by the RAW-PIXEL arm's VAL AP -- an unlearned representation, fit+val only, test untouched. This is the M1 'mirrored world' mutant as a live question, not a style preference.",
+ "bank": "C:\\Users\\Admin\\wpd-probe\\bank_rep",
+ "trunks": {
+  "D0": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "ca24c1b923d0d94cb1c4d46868011237"
+  },
+  "D0b": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "c88eb8776f83c62bd307c830dde0e627"
+  },
+  "D0c": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [],
+   "md5": "21b73bb0a46bb21654adf6b5e23318c4"
+  },
+  "D1": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [
+    "core.bev_aux_head.ray.0.bias",
+    "core.bev_aux_head.ray.0.weight",
+    "core.bev_aux_head.ray.2.bias",
+    "core.bev_aux_head.ray.2.weight",
+    "core.bev_aux_head.tok.bias",
+    "core.bev_aux_head.tok.weight"
+   ],
+   "md5": "7d0cb3e203c2e3870bbd47e54a2d9f77"
+  },
+  "D2": {
+   "step": 4000,
+   "n_enc_params": 90506042,
+   "bev_aux_keys": [
+    "core.bev_aux_head.ray.0.bias",
+    "core.bev_aux_head.ray.0.weight",
+    "core.bev_aux_head.ray.2.bias",
+    "core.bev_aux_head.ray.2.weight",
+    "core.bev_aux_head.tok.bias",
+    "core.bev_aux_head.tok.weight"
+   ],
+   "md5": "c937109410f11269a6b6f4ee6a7d112e"
+  }
+ },
+ "align_with_wpa": {
+  "wpa_clips": 139,
+  "wpa_N": 13223,
+  "clips_equal": true,
+  "plan_equal": true,
+  "y_cart_equals_wpa": true,
+  "y_cart_disagree_cells": 0
+ },
+ "seed": 0,
+ "steps": 1500,
+ "batch": 24,
+ "cells": 1536,
+ "lr": 0.002,
+ "n_cells_per_row": 7014,
+ "n_scored_cells_test": 20859636,
+ "base_rate_test": 0.01610680071310928,
+ "n_pos_test": 335982,
+ "all_zero_accuracy_pct": 98.3893,
+ "controls": {
+  "constant_score_ap": 0.01610680071310928,
+  "base_rate": 0.01610680071310928,
+  "constant_equals_base_rate_exactly": true,
+  "allzero_ap": 0.01610680071310928,
+  "allone_ap": 0.01610680071310928,
+  "perfect_ranker_ap": 1.0,
+  "note": "the constant control is the only thing standing between this panel and the R-2026-09-07-ap-ties defect, in which a no-information arm scored ABOVE its own base rate"
+ },
+ "split_clips": {
+  "fit": 84,
+  "val": 25,
+  "test": 30
+ },
+ "arms": {
+  "tok_D0": {
+   "ap_test": 0.05697659483198449,
+   "ap_val": 0.03877015084946772,
+   "f1_test": 0.12555937469005585,
+   "iou_test": 0.06698498597907776,
+   "thr_from_val": 0.8206225633621216,
+   "f1_val": 0.08667566627264023,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 20859636,
+   "n_cells_per_row": 7014,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 51.2
+  },
+  "tok_D0dup": {
+   "ap_test": 0.05595641981648159,
+   "ap_val": 0.040233915336734385,
+   "f1_test": 0.12605196237564087,
+   "iou_test": 0.06726544900496349,
+   "thr_from_val": 0.8079907894134521,
+   "f1_val": 0.08929361402988434,
+   "head_params": 67233,
+   "az_sign": "prog",
+   "n_test_rows": 2974,
+   "n_test_episodes": 30,
+   "n_scored_cells": 20859636,
+   "n_cells_per_row": 7014,
+   "d_raw_per_row": 112640,
+   "d_head_input_per_cell": 149,
+   "steps": 1500,
+   "wall_s": 44.3
+  }
+ },
+ "pairs": {
+  "tok_D0dup_minus_tok_D0": {
+   "delta": -0.00102,
+   "lo": -0.000718,
+   "hi": 0.000858,
+   "separated": false,
+   "p_delta_gt0": 0.5,
+   "n_boot": 2,
+   "n_episodes": 30,
+   "estimator": "paired episode-cluster bootstrap (taniteval.ci._draws resampling; statistic = pooled tie-group AP per draw)",
+   "answers": "would another draw of EPISODES say this? -- NOT whether another TRAINING RUN would (that is D0b)",
+   "why": "CONTROL: IDENTICAL features -> MUST read 0.000000"
+  }
+ },
+ "boot_cell_stride": 2,
+ "n_boot": 2
+}

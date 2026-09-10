@@ -1,0 +1,13 @@
+{
+  "stack": "C:/Users/Admin/tanitad-agentgt-base/stack",
+  "agent_gt_token_count": 0,
+  "agent_box_token_count_CONTROL": 12,
+  "cfg_agents_enable": true,
+  "cfg_agents_oracle": true,
+  "cfg_oracle_sigma_range_m": 0.0,
+  "cfg_oracle_miss_rate": 0.0,
+  "VERDICT": "RED",
+  "exc_type": "ValueError",
+  "exc": "this build is `--agents oracle` but no agent_gt reached the forward. The oracle's tokens ARE the ground-truth boxes; with none the seam emits nothing and the arm would read as 'agent tokens do not help' while never having had any.",
+  "tb_tail": ")\n  File \"C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1779, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Admin\\venvs\\tanitad\\Lib\\site-packages\\torch\\nn\\modules\\module.py\", line 1790, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"C:\\Users\\Admin\\probe_agent_gt.py\", line 91, in spy\n    out = real_fwd(self, *a, **kw)\n  File \"C:\\Users/Admin/tanitad-agentgt-base/stack\\tanitad\\refs\\refc_v3.py\", line 1405, in forward\n    raise ValueError(\n    ...<3 lines>...\n        \"'agent tokens do not help' while never having had any.\")\nValueError: this build is `--agents oracle` but no agent_gt reached the forward. The oracle's tokens ARE the ground-truth boxes; with none the seam emits nothing and the arm would read as 'agent tokens do not help' while never having had any.\n"
+}
