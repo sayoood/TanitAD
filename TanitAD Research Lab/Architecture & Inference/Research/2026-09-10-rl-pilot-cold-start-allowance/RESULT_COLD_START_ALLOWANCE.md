@@ -414,3 +414,32 @@ before and after. Recorded as UNEXPLAINED rather than rationalised.
    the cold start carries *"38 of this config's 96 leaves"*. MEASURED today it
    is **38 of 98** — the config grew two leaves and the prose did not follow.
    Numerator unchanged, so nothing downstream moved.
+
+---
+
+## ⛔ SUPERSEDED 2026-09-11 — §7's "the only thing it needs is a decision to spend ~2.5 h" IS NO LONGER TRUE
+
+**The chain RAN.** It was launched the same night on the dev-box RTX 4060 at zero spend, and
+**fifteen further arms** followed it. ⛔ **Do not read §7 as an open item.**
+
+⚠️ **Why this correction exists at all:** the agent that wrote §7 ran for ~16 hours, and its view of
+the open items is from when it *started*. ⭐ **A long-running report's "what remains" section is a
+snapshot of its own launch time, not of the present** — the same shape as the stale premise
+*"refav1 is training on Thor"*, which propagated into every brief for days and hid a free GPU.
+
+### What actually happened, and where it is banked
+
+| result | finding |
+|---|---|
+| `…/2026-09-10-rl-pilot-cold-start-allowance/RESULT_P_RC21_2K_ARM.md` | the 2,000-step arm ran in **3 min 18 s**, not 2.5 h. ⛔ Its own audit returned **INCONCLUSIVE**, and `use_gt_bar` was **False** because the pilot had **no `--gt-bar` flag at all** |
+| `…/2026-09-11-rl-gt-bar-reachable/RESULT_GT_BAR_REACHABLE.md` | the flag now exists; the mask is reached, proven by **analytic identity** — bit-identical gradient below the bar, **exactly 0.0** above it, **partial** in between |
+| `…/RESULT_GT_BAR_5SEEDS.md` | five seeds per cell; **variance p = 0.0040** by exact permutation |
+| `…/RESULT_WEAKNESS_CONTROL.md` | ⛔ **that variance claim RETRACTED** — a control trained **15 % as long** reproduces both the low drift and the collapsed spread |
+| `…/RESULT_REWARD_EFFICIENCY.md` | ⭐ **what survived**: the bar is **2.24× more reward-efficient** than an equally small update, exact permutation **p = 0.0079**, and the test is **not at its design floor** |
+
+⇒ **The RL stage's open item is no longer a spend decision.** It is **T1 and a four-family panel**,
+which is what turns a training-side diagnostic into a capability claim. ⛔ Nothing above says the car
+drives better.
+
+⭐ Everything §1–§6 of this document establishes is **untouched**: item 8 is closed, the allowance is
+mutation-proven, and the real July cold start loads.
