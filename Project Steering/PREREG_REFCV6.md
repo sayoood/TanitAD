@@ -569,3 +569,55 @@ had never been reported at all.
 ⛔ **Root-cause class: a number that is real, correctly transcribed, and attached to the WRONG ARM.**
 *"A number carries its ARM and its ARTIFACT PATH, or it is not quotable."* Logged in
 `Project Steering/RETRACTION_LOG.md`.
+
+---
+
+## ⭐ FACT 10'S REFERENCE COLUMN — RE-READ FROM RAW, 2026-09-11. The prereg's OWED item is discharged.
+
+⛔ The values in fact 10 were **INHERITED** from `REFCV6_ARCHITECTURE_REVIEW.md` §1 and had **never
+been re-read from raw eval JSON**. The prereg said they must be before any refcv6 panel is scored.
+**They now have been**, from the repo's own banked artifact:
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/refcv5-v2_vs_refcv4b.json`
+— **T1**, 4,823 windows / 141 episodes.
+
+| metric | refcv5-v2 | refcv4b | `ha` hold-action | `ha0_ext` extrap floor |
+|---|---|---|---|---|
+| **LONG** speed MAE (m/s) | 0.2919 | 0.2900 | **0.2540** | **0.2540** |
+| **LONG** along-track (m) | 0.2655 | 0.2544 | 0.2348 | **0.2341** |
+| **LONG** accel MAE (m/s²) | 0.3596 | 0.4346 | **0.3166** | **0.3166** |
+| **LATE** heading (°) | **1.2121** | 1.2964 | 1.5489 | 1.4322 |
+| **LATE** yaw-rate (°/s) | **1.0534** | 1.7368 | 1.4542 | 1.3395 |
+| **LATE** cross-track (m) | 0.0994 | **0.0978** | 0.1226 | 0.1070 |
+| **LATE** curvature MAE (1/m) | **0.0035** | 0.0081 | 0.0040 | 0.0037 |
+| **LATE** ratio to straight-line floor | **0.5123** | 1.1982 | 0.5925 | 0.5457 |
+| **STRATEGIC** route acc | 0.7708 (κ 0.4614) | **0.7791 (κ 0.4864)** | — | — |
+
+⇒ **STRATEGIC n = 3,622 for BOTH trained arms.** ⛔ The `n = 0` belongs to the hold-action control.
+
+### ⛔⛔ WHAT THE RE-READ MAKES VISIBLE, AND THE INHERITED TABLE DID NOT
+
+⭐ **On LONGITUDINAL, the DO-NOTHING control beats BOTH trained arms on ALL THREE metrics** — speed
+MAE **0.2540** against 0.2900/0.2919, along-track **0.2348** against 0.2544/0.2655, accel MAE
+**0.3166** against 0.4346/0.3596.
+
+⇒ **Neither trained arm has learned to hold speed better than holding the last action.** That is the
+88.7 %-longitudinal-gap statement made concrete, and it is the single most important number in the
+table for refcv6's bar. ⛔ An arm that "improves ADE" while still losing to `ha` longitudinally has
+not fixed the thing that is actually wrong.
+
+⭐ **LATERAL is the mirror image and the only family where training clearly pays.** refcv5-v2 beats
+**every** arm and **every** control on heading, yaw-rate and curvature — and on the ratio to the
+straight-line floor it reads **0.5123** against `ha`'s 0.5925 and `ha0_ext`'s 0.5457, so it is better
+than doing nothing *and* better than extrapolating. ⛔ **refcv4b reads 1.1982 — worse than all three
+controls, i.e. worse than a plan that never steers.**
+
+### ⇒ BINDING FOR SCORING refcv6
+
+1. ⛔ Score against **these** values, not against the review's prose.
+2. ⭐ The **LATERAL** non-regression clause is anchored on refcv5-v2's **0.5123** ratio — the best
+   figure any arm has posted, and the only family where a trained arm separably beats every control.
+3. ⭐ The **STRATEGIC** clause is anchored on **refcv4b's 0.7791**, the better of the two, per the
+   2026-09-11 correction appendix.
+4. ⚠️ **LONGITUDINAL has no trained arm worth anchoring on.** The reference there is **`ha` at
+   0.2540 / 0.2348 / 0.3166** — the bar refcv6 has to clear is *doing nothing*, and nothing has
+   cleared it yet.
