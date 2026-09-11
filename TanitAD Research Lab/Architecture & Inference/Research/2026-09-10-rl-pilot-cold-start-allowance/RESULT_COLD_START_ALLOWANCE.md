@@ -363,11 +363,21 @@ work** — established three independent ways rather than argued:
    clone, so the module never imports and no assertion in the file ever runs.
    There is no code path from `cold_start.py`, the pilot or `posttrain.py` to
    that import.
-3. ⭐ **The positive confirmation.** With `tools/secret_scan.py` restored, both
-   tests **PASS** (`2 passed in 1.28s`). ⚠️ Provenance caveat: that copy came
-   from the local mirror (`tanitad-wt`, 2026-08-23) because G: would not serve
-   `tools/` content at the time — so this rung is a positive control on the
-   MECHANISM, and rungs 1 and 2 are what carry the independence claim.
+3. ⭐ **The positive confirmation — and it carries NO provenance caveat.** With
+   `tools/secret_scan.py` restored, both tests **PASS** (`2 passed in 1.28s`).
+   ⚠️ The copy had to come from the local mirror, because G: would not serve
+   `tools/` through the worktree: three fetch attempts all returned `FAIL`
+   **while the process exited 0** — the *"assert on the ARTIFACT, never the exit
+   code"* rule, live, in the same session that quotes it.
+   ⭐ So the file's identity was established through a **DIFFERENT MECHANISM**:
+   the git **object store**, which was serving normally while worktree reads
+   were not. `git rev-parse HEAD:tools/secret_scan.py` and
+   `git hash-object <the mirror copy>` both read
+   **`dcebe50bf51359bb05b19962996ad185b7675b02`**, both operands asserted 40
+   chars ⇒ the file used in the confirmation is **byte-identical to the repo's
+   HEAD version**. ⚠️ Note this is a genuinely independent probe, not the same
+   read retried: object-store reads and worktree reads are different code paths,
+   which is exactly why `commit_cacheinfo.py` exists.
 
 ⭐ **And the part that IS a clean green:** every test that touches the changed
 modules was re-run against the final code — **234 passed** across
