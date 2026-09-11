@@ -2,9 +2,17 @@
 
 *Arch+Inference FlyWheel · 2026-09-10 · branch `agent/arch-inf-20260803`*
 
-**Status: option (c) IMPLEMENTED, tested, mutation-proven, and the pilot has been
-MEASURED loading a 487-key cold start and taking real GRPO steps.**
-Nothing here needs a PI decision to proceed; two things below are ESCALATED.
+**Status: option (c) IMPLEMENTED, mutation-proven, and the REAL pilot has loaded
+the REAL July cold start and stepped — `104,191,577 params @ step 29999`,
+487 checkpoint keys onto 488 built, `PILOT_EXIT=0`.**
+
+⭐ **The defect is closed against the artifact that produced it, not against a
+stand-in.** Nothing in item 8 needs a PI decision any more. What is left is
+**one spend decision** (§7) and **one escalation to item 7** (§6).
+
+⛔ **§5 carries a RETRACTION of a claim made in an earlier draft of this same
+document** — *"the weights are on no reachable box"* — which was false, and
+which broke the very operating-standard rule this document quotes.
 
 ---
 
@@ -59,7 +67,7 @@ False the zeros are **unreachable**, not merely harmless-looking.
 | file | what |
 |---|---|
 | `stack/tanitad/refs/cold_start.py` | **NEW.** The declared allowance. |
-| `stack/tests/test_refc_cold_start_allowance.py` | **NEW.** 25 tests, all literals, with the deliberate-regression arm. |
+| `stack/tests/test_refc_cold_start_allowance.py` | **NEW.** 26 tests, all literals, with the deliberate-regression arm. |
 | `stack/scripts/rl_pilot_refc21.py` | `load_model` routes through the allowance and returns the stamp. |
 | `stack/tanitad/rl/posttrain.py` | `run_posttrain(..., extra_record=...)` so the stamp lands in the run's `config.json`. |
 
@@ -153,9 +161,9 @@ parses the `FAILED` lines rather than reading an exit code.
 
 | | mutation | result |
 |---|---|---|
-| baseline | none | **GREEN**, 0 failed / 25 |
-| **M1** | delete the `if run_v0: raise` gate — "option (c) without its refusal" | **3 RED, exactly the 3 expected**, including `test_REGRESSION_missing_controls_with_v0_conditioned_is_refused` |
-| **M2** | replace the whole allowance with `strict=False` — the forbidden option (a) | **14 RED, exactly the 14 expected** |
+| baseline | none | **GREEN**, 0 failed / 26 |
+| **M1** | delete the `if run_v0: raise` gate — "option (c) without its refusal" | **4 RED, exactly the 4 expected**, including `test_REGRESSION_missing_controls_with_v0_conditioned_is_refused` |
+| **M2** | replace the whole allowance with `strict=False` — the forbidden option (a) | **15 RED, exactly the 15 expected** |
 
 ⭐ **M2's extra RED arms are the interesting half.** Beyond the refusals, three
 *stamp* tests go RED — because the mutant's stamp **lies**: it reports
@@ -174,33 +182,97 @@ defect and requiring the checker to find it.
 
 ---
 
-## 5. ⭐ RULE ZERO — the pilot was actually run
+## 5. ⭐⭐ RULE ZERO — THE REAL PILOT RAN, ON THE REAL COLD START
 
-`code/smoke_cold_start_rl.py` → `raw/SMOKE.json`. Dev-box RTX 4060 (8 GB),
-torch 2.11.0+cu128.
+⛔⛔ **FIRST, A RETRACTION OF MY OWN, MADE IN THIS DOCUMENT AN HOUR EARLIER.**
+I wrote that the July checkpoint was *"on no reachable box"* on the strength of
+two probes: the RunPod fleet (all refuse SSH — true) and the repo (absent —
+true). **Both were true and the conclusion was FALSE.** The checkpoint is on
+**this dev box**, where `p_rc21_chain.sh` has always expected it:
 
-* **built a 487-key cold start against 488 built keys**, missing exactly
-  `decoder.anchor_controls`, with **no `cfg` key and no sidecar** — the ABSENT
-  case the real July checkpoint presents;
-* drove **the pilot's own `load_model`** (not a re-implementation), through
-  `assert_config_contract` and the new allowance;
-* **LOADED: 488 state-dict keys on the model, 104,191,577 params @ step 30000**,
-  `anchor_controls` present and all-zero, stamp
-  `defaulted-zeros-v0-unconditioned` / `UNVERIFIED_BY_CKPT_CONFIG`;
-* **3 real GRPO steps** through `make_refcv3_sample_fn` + `rl_objective` +
-  AdamW in **1.4 s**; losses finite (`-0.0126`, `0.0130`, `0.0100`), trainable
-  weights moved (max |Δ| 3.06e-05);
-* the stamp **read back off disk** from `config.json`.
+```
+C:/Users/Admin/tanitad-data/models/refc-base-30k/ckpt.pt
+1,250,838,325 B · md5 8f10d6f934f4199e11ddc7352e074939  ← the chain's own WANT_MD5, exactly
+```
 
-⛔ **What this does NOT claim.** The weights are the model's own initial weights
-with one key deleted — they reproduce the DEFECT exactly and carry nothing about
-the July run's quality. The frames and reward context are synthetic. **This
-proves the PATH; it makes no R1/R2/R3 claim.** Those need the real checkpoint
-and the real corpus, and the real checkpoint is on **no reachable box**: MEASURED
-2026-09-10, `tanitad-pod3` / `pod4` / `pod5` / `a40` all refuse SSH
-(*Connection refused*); Thor is alive.
+⭐ This is **operating-standard rule 2** — *absence found at ONE location is not
+absence* — committed by the person quoting it, in the same turn. The vector was
+that I searched *where a big checkpoint usually lives* (pods, HF, the repo) and
+not *where the thing that consumes it says it lives*. **The chain script named
+the path the whole time.** Same family as the artifact-cost trap: **open the
+CONSUMER and read what IT opens.**
 
----
+### The real run — MEASURED 2026-09-10, dev-box RTX 4060, `PILOT_EXIT=0`
+
+`raw/realpilot/` (`pilot_stdout.log`, `config.json`, `config_contract.json`,
+`pilot_summary.json`).
+
+```
+[pilot] ✅ CONFIG CONTRACT: case PARTIAL via sidecar …/refc-base-30k/config.json
+        — 38/98 config fields COMPARED and AGREEING, 0 disagreements.
+[pilot] ⚠️  DECLARED ALLOWANCE: 487/488 keys came from the checkpoint;
+        DEFAULTED ['decoder.anchor_controls'] from the model's own zero buffer.
+[pilot] ⚠️  permitted because AnchoredDiffusionDecoder.anchor_v0_cond … is False
+[pilot] cold start loaded: 104,191,577 params @ step 29999 (488 state-dict keys)
+[pilot] train eps 54 · val eps 15 · device cuda · reward default
+```
+
+* ⭐ **`step 29999`** — this is the real `refc-diffusion-base-v21-30k`, not a
+  stand-in. **487 keys in, 488 on the model, exit 0.** The item-8 defect is
+  closed against the artifact that produced it.
+* ⭐ **The predicted ABSENT case is CONFIRMED against the real artifact.** The
+  sidecar's `cfg.anchors` carries exactly `{n_anchors: 128, pool_size: 4096,
+  seed: 0}` — **no `v0_conditioned`**, because the field did not exist in July.
+  So the stamp reads `ckpt_v0_conditioned: null` /
+  `ckpt_confirmation: "UNVERIFIED_BY_CKPT_CONFIG"`. ⇒ §3's departure from the
+  brief is not hypothetical: **the literal rule would have refused this exact
+  checkpoint, and did not need to.**
+* ⭐ **The pilot's own independent corroborator agrees**, and it is a genuinely
+  separate mechanism — `_v0_corroboration` reads the WEIGHTS, not the config:
+  `state: BUFFER_ABSENT`, `verdict: CORROBORATED`.
+* **The full stamp is in the real run's `config.json`**, including
+  `defaulted_detail` (`shape [128, 2]`, `dtype torch.float32`,
+  `nonzero_entries 0`, source *"the model's own initialised buffer"*).
+* The harness produced both readouts and saved `ckpt_after.pt`.
+
+### ⭐ AND THE LEVER ITEM 8 EXISTS FOR IS LIVE — the LONGITUDINAL reward terms fired on real windows
+
+Item 8's own case for urgency is the axis: `H-DDA-5` puts DD-V2's RL gain at
+**EP +5.3 / DAC +1.7 with NC / TTC / comfort flat** — longitudinal-scale — and
+`D-REFCV3-AXIS1` puts **92.2 % of our own `os − ha` gap along-track**. That
+argument is worth nothing if the pilot's objective cannot express the axis, so
+it was checked rather than assumed.
+
+**MEASURED** (`raw/realpilot/pilot_summary.json`, `counters.components_fired`
+over 8 steps / 16 windows / 8,192 scored samples):
+
+| component | axis | steps fired |
+|---|---|---|
+| `progress` | **longitudinal** | **8 / 8** |
+| `headway` | **longitudinal** | **3 / 8** |
+| `feasibility` | kinematic | 8 / 8 |
+| `comfort` | kinematic | 8 / 8 |
+| `collision` | safety | 3 / 8 |
+
+⇒ the along-track terms are **live on real data**, not dormant. ⚠️ `headway` at
+3/8 is expected, not a defect: it needs a lead agent in frame, and per the
+four-families rule an absent lead is reported with its reason and `n` rather
+than silently dropped. ⛔ This says the objective **can** move the axis; it says
+nothing about whether it **does** — that is the 2,000-step arm.
+
+### ⛔ THE NUMBERS THIS RUN PRODUCED ARE NOT A RESULT, AND MUST NOT BE QUOTED AS ONE
+
+It ran **8 steps**, not the pre-registered 2,000, because the question was
+*"does the path run?"* and not *"does RL help?"*. The readouts
+(`R1 +0.6427 → +0.6921`, `R2 21.335 % → 21.497 %`, `R3 0.654 → 0.660 m`) are
+recorded **only** as evidence that the reward, advantage and readout paths all
+execute end-to-end on real windows.
+
+⛔ They are **not** an RL effect, for three independent reasons, each already
+binding in `CLAUDE.md`: 8 optimiser steps is not the registered arm; there is
+**one seed**, so the run-to-run floor (`H-ESTIM-SEED-1`) is unmeasured; and no
+paired episode-cluster CI was computed. ⚠️ A real P-RC21 number is the 2,000-step
+chain, and it is now **unblocked and runnable on this box**.
 
 ## 6. ⛔ ESCALATED — evidence for PI QUEUE **item 7**, found while closing item 8
 
@@ -260,13 +332,75 @@ change the queue exists to route.
 
 ---
 
-## 7. What is left, and for whom
+## 7. The suite — what was established, and what could NOT be
 
-1. **Nothing blocks the RL stage on this defect any more.** `p_rc21_chain.sh`
-   can run as written once a box and the real cold start exist.
-2. ⛔ **BLOCKED ON COMPUTE, not on code:** no RunPod pod is alive and the
-   `refc-diffusion-base-v21-30k` weights are not on this box or in the repo. A
-   real R1/R2/R3 pilot needs a box + that checkpoint. **That is a PI/provisioning
-   item, and it is the only thing standing between here and a real RL number.**
+⚠️ **Stated plainly, because "the suite is green" is binding and I could not
+establish it outright.** The dev box cannot run the stack from the G: mount, and
+the mount was too degraded to clone completely, so the off-Drive tree used here
+is **partial**. It reports **66 failed + 34 errors BEFORE any change of mine** —
+almost certainly missing data files and modules rather than real defects, but I
+did not prove that and do not claim it.
+
+⭐ **So the admissible read is the DIFFERENCE, measured against a baseline tree
+built from the same clone with my four files reverted:**
+
+| | baseline | with my changes |
+|---|---|---|
+| passed | 7,382 | **7,403** (+21) |
+| failed | 66 | **68** (+2) |
+| skipped / xfailed / errors | 120 / 2 / 34 | 120 / 2 / 34 (unchanged) |
+
+The **+23 collected** are my new test file (23 tests at the moment the run
+collected; it has since grown to **26**, all passing). The **+2 failures** are
+`test_secret_scan.py::test_installed_hook_actually_refuses_a_commit` and
+`::test_the_hook_lets_a_clean_commit_through`, and they are **NOT caused by this
+work** — established three independent ways rather than argued:
+
+1. ⭐ **A same-tree A/B.** My four files were reverted **in the same tree** and
+   the two tests failed **identically**. The only variable removed was my change.
+2. ⭐ **The failure is at COLLECTION.** `ModuleNotFoundError: No module named
+   'secret_scan'` — `tools/secret_scan.py` is simply absent from the partial
+   clone, so the module never imports and no assertion in the file ever runs.
+   There is no code path from `cold_start.py`, the pilot or `posttrain.py` to
+   that import.
+3. ⭐ **The positive confirmation.** With `tools/secret_scan.py` restored, both
+   tests **PASS** (`2 passed in 1.28s`). ⚠️ Provenance caveat: that copy came
+   from the local mirror (`tanitad-wt`, 2026-08-23) because G: would not serve
+   `tools/` content at the time — so this rung is a positive control on the
+   MECHANISM, and rungs 1 and 2 are what carry the independence claim.
+
+⭐ **And the part that IS a clean green:** every test that touches the changed
+modules was re-run against the final code — **234 passed** across
+`test_refc_cold_start_allowance`, `test_rl_posttrain`, `test_rl_refcv3_integration`,
+`test_rl_pilot_join`, `test_rl_refcv3_used_path_guard`, `test_rl_channel_guard`,
+`test_rl_refc_adapter_robust`, `test_rl_config`, `test_rl_v2_faithful`,
+`test_rl_advantage`, `test_rl_rewards`, `test_rl_audit`. MEASURED: nothing
+outside that set imports `tanitad.refs.cold_start`.
+
+⚠️ **One thing I could not explain and am not going to dress up:** the partial
+clone's `tools/` file count moved **35 → 18** between the suite run and the
+post-hoc check, on local disk, with files present at one reading and gone at the
+next. It is confined to a scratch tree; the repo deliverable was re-verified
+intact (18/18 blob-verified, all four code files at their expected sizes) both
+before and after. Recorded as UNEXPLAINED rather than rationalised.
+
+---
+
+## 8. What is left, and for whom
+
+1. ⭐ **Item 8 is CLOSED.** The defect is fixed, mutation-proven, and the real
+   pilot has loaded the real cold start and stepped (`PILOT_EXIT=0`).
+2. ⭐ **`p_rc21_chain.sh` is RUNNABLE AS WRITTEN** — every precondition it waits
+   on is satisfied on this box: the checkpoint at the exact size and md5 it
+   requires, both `_epcache` dirs, and both agent `jsonl` files. ⛔ **The one
+   thing it needs is a decision to spend ~2.5 h of dev-box GPU**, which is the
+   PI's, not mine — a 2,000-step P-RC21 plus the 300-step `hackable` regression
+   arm.
+   ⚠️ **RETRACTED from an earlier draft of this document:** *"blocked on
+   compute; the weights are on no reachable box."* False — see §5.
 3. **ESCALATED to item 7's owner:** §6, with the measurement and the source
-   citation.
+   citation. ⛔ No behaviour was changed there.
+4. ⚠️ **A small drift worth one line:** `rl_pilot_refc21.py`'s own comment says
+   the cold start carries *"38 of this config's 96 leaves"*. MEASURED today it
+   is **38 of 98** — the config grew two leaves and the prose did not follow.
+   Numerator unchanged, so nothing downstream moved.
