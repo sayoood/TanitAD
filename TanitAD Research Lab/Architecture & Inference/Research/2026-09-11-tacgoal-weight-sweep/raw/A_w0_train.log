@@ -1,0 +1,54 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] tensor sharing = file_system (workers=6; /dev/shm 24 GB vs ~34 MB/clip payloads)
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+[v3] anchors: loaded (117, 8, 2) from /home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file+cli), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] v3 v2-cache: physicalai-b1-w120-256x640cyl v2 VERIFIED — 4713 clips, clip sha256 e8bfb98e06eb… matches the committed manifest (sibling of None, skip-hash f09e44db).
+[v2] /home/nvidia/data/physicalai-b1-w120-256x640cyl: 4713 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4573 distinct for 4713 clips]
+[v2] 4713 providers, 4713 distinct episode ids
+[v3] 4713 lazy v2 providers from ['/home/nvidia/data/physicalai-b1-w120-256x640cyl'] (lru 24)
+[v3] v7.2 labels: 4572 records, joined 4572/4713 episodes = 97.0 % (release ?)
+[v3] nav_from_v7: follow 2897 / left 811 / right 864, missing 141 (of 4713 clips; md5=0ff902130ce76886b8a925eceed9e3a5)
+[v3] 4713 episodes -> 805749 windows (window 8, max_horizon 20, image_hw (256, 640), tac_vocab v7.0)
+[v2] /home/nvidia/data/physicalai-b1-EVAL6-w120-256x640cyl: 6 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 6 distinct for 6 clips]
+[v2] 6 providers, 6 distinct episode ids
+[v3] nav_from_v7: follow 6 / left 0 / right 0, missing 0 (of 6 clips; md5=aa12c948f062181c3297265b51526ec5)
+[v3] held-out eval: 6 episodes -> 1032 windows, 8 fixed batches every 400 steps
+[v3] loader: workers=6 prefetch=1 -> <=6 batches in flight
+[v3] u8_batches=True: frames+future_frames = 0.826 GB per collated batch (uint8), <= 6 in flight -> ~4.95 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                                    flag               default  asked  effective  src   graph  status          layer/mask/missing                                                                                                           
+[v3] ------------------------------------------------------  -----------------  -------  -----  ---------  ----  -----  --------------  -----------------------------------------------------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)                         --w-u0             0        0.5    0.5        op    yes    TRAINS                                                                                                                                       
+[v3] GT-supervised detection set loss (WP-6)                 --w-agent          0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-agent needs `--agents head` AND `--agent-join` (no seam => no `agent_slots` in `out`; no join => no labels)      
+[v3] WP-D BEV auxiliary loss                                 --w-bev-aux        0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)
+[v3] D-TACGOAL 22-token tactical goal SET (multi-label BCE)  --w-tac-goal       0        0      0          dflt  no     OFF_BY_DEFAULT                                                                                                                               
+[v3] agent projection consistency                            --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called                             
+[v3] agent ground-plane prior                                --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called                             
+[v3] E15 geometric goal point (GP-2)                         --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT  missing=no --goal-point-inject: the head that predicts the point is never built                                              
+[v3] 1/7 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3] grad probe ON for 3 module(s): tac_goal_tok_head, core.decoder.offset_head, scorer.goal_point
+[v3:hier] step 20 loss 42.9689 traj 5.1298
+[v3:hier] step 40 loss 40.2869 traj 4.7769
+[v3:hier] step 60 loss 20.8665 traj 1.8103
+[v3:hier] step 80 loss 26.1760 traj 2.5673
+[v3:hier] step 100 loss 23.8164 traj 2.0396
+[v3:hier] step 120 loss 22.6114 traj 3.0234
+[v3:hier] step 140 loss 20.5234 traj 2.1268
+[v3:hier] step 160 loss 25.3217 traj 2.6862
+[v3:hier] step 180 loss 21.2671 traj 2.0471
+[v3:hier] step 200 loss 21.5013 traj 1.5574
+[v3:hier] step 220 loss 30.4015 traj 1.5881
+[v3:hier] step 240 loss 17.1580 traj 2.2010
+[v3:hier] step 260 loss 21.8283 traj 1.8560
+[v3:hier] step 280 loss 20.8540 traj 1.6230
+[v3:hier] step 300 loss 16.4120 traj 1.3529
+[v3:hier] step 320 loss 16.5056 traj 1.5333
+[v3:hier] step 340 loss 20.0547 traj 1.3936
+[v3:hier] step 360 loss 15.3424 traj 0.8993
+[v3:hier] step 380 loss 21.4996 traj 1.3445
+[v3:hier] step 400 loss 18.8844 traj 1.8316
+[v3:hier] ckpt step 400 -> ckpt.pt
+[v3:eval] step 400 loss 20.0174 traj 1.2240 lat_tac 1.1883
+[v3:hier] DONE at 400 — summary.json written

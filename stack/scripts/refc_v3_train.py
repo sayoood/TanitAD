@@ -4103,6 +4103,66 @@ def preflight(args) -> int:
 # Train loop
 # ============================================================================
 
+def _grad_probe_row(model, names, log_every_hit: bool = True) -> dict:
+    """Per-module ``sum(|grad|)``, read BEFORE ``clip_grad_norm_`` rescales it.
+
+    D-TACGOAL-2 / PI queue item 10. `tac_goal_tok_head` was 11,286 params at
+    ``grad_abs_sum`` EXACTLY 0.00000 for all 40,284 steps of refcv5-v2 because
+    ``--w-tac-goal`` defaults to 0.0 and was never passed. "Rollable and trained
+    are different claims." The only way to answer *at what weight does this head
+    learn* is to read the gradient the head actually receives, per step, per
+    weight -- so this probe exists, and it is OFF unless asked for.
+
+    MEASURED BEFORE CLIPPING ON PURPOSE. ``clip_grad_norm_`` rescales every grad
+    by a GLOBAL factor, so a post-clip reading confounds "this head's own
+    gradient" with "how big everything else's gradient was this step".
+
+    THE RETURNED VALUES ARE NOT ROUNDED. The caller's log row rounds to 5 dp; a
+    genuinely non-zero grad at a small weight (1e-8) would round to 0.0 and
+    manufacture exactly the defect this probe was built to detect. The caller
+    therefore merges this dict AFTER its own rounding comprehension.
+
+    ``found`` is emitted per module so a typo'd module name reads as
+    ``gp_<name>_found = 0.0`` rather than as a silent absence -- an unreadable
+    module and a module with no gradient must never look the same.
+    """
+    out = {}
+    if not names or not log_every_hit:
+        # The OFF guarantee belongs to the HELPER, not only to its call site: a
+        # run that names no module computes nothing and emits no key, so its
+        # metrics.jsonl schema is identical to the pre-probe trainer's.
+        return out
+    for nm in names:
+        try:
+            mod = model.get_submodule(nm)
+        except (AttributeError, TypeError):
+            mod = None
+        if mod is None:
+            out["gp_%s_found" % nm] = 0.0
+            continue
+        n_t = n_none = n_p = 0
+        g_sum = 0.0
+        for p in mod.parameters(recurse=True):
+            n_t += 1
+            n_p += int(p.numel())
+            if p.grad is None:
+                n_none += 1
+            else:
+                g_sum += float(p.grad.detach().abs().sum().item())
+        out["gp_%s_found" % nm] = 1.0
+        out["gp_%s_grad_abs_sum" % nm] = g_sum
+        out["gp_%s_n_grad_none" % nm] = float(n_none)
+        out["gp_%s_n_tensors" % nm] = float(n_t)
+        out["gp_%s_n_params" % nm] = float(n_p)
+    if torch.cuda.is_available():
+        # On Thor `mem_get_info`, `free`/`tegrastats` and `VmRSS` all lie, in
+        # BOTH directions (3.4 GB "free" against 60 GB allocated and written).
+        # Only the in-process allocator counter is admissible there.
+        out["gp_cuda_max_mem_gb"] = (
+            float(torch.cuda.max_memory_allocated()) / (1024.0 ** 3))
+    return out
+
+
 def train(args) -> dict:
     # --nav-from-v7 (E-ARCH-NAVSRC-1): refuse a mis-specified switch BEFORE any
     # data or GPU work; a no-op with the flag off.
@@ -4852,6 +4912,13 @@ def train(args) -> dict:
                                          encoding="utf-8")
 
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
+    _gp_names = [t.strip() for t in
+                 str(getattr(args, "grad_probe_modules", "") or "").split(",")
+                 if t.strip()]
+    _gp_row = {}
+    if _gp_names:
+        print("[v3] grad probe ON for %d module(s): %s"
+              % (len(_gp_names), ", ".join(_gp_names)), flush=True)
     t0, model = time.time(), model.train()
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
@@ -4894,6 +4961,14 @@ def train(args) -> dict:
                                                _bev_parity["band"]), flush=True)
         opt.zero_grad(set_to_none=True)
         losses["loss"].backward()
+        # D-TACGOAL-2: read the gradient HERE -- after backward,
+        # before the global clip rescales it, and before the next
+        # zero_grad wipes it.
+        _gp_row = _grad_probe_row(
+            model, _gp_names,
+            log_every_hit=bool(_gp_names) and (
+                (step + 1) % args.log_every == 0
+                or (step + 1) >= args.steps))
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
         opt.step()
         step += 1
@@ -4912,6 +4987,11 @@ def train(args) -> dict:
                    or isinstance(v, (int, float, bool))}
             row.update(step=step, elapsed_s=round(time.time() - t0, 1),
                        lr=opt.param_groups[0]["lr"])
+            # AFTER the rounding comprehension above, deliberately:
+            # a real 1e-8 gradient rounded to 5 dp reads 0.0, which
+            # is the exact signature of the defect this measures.
+            if _gp_row:
+                row.update(_gp_row)
             log.write(json.dumps(row) + "\n")
             log.flush()
             print(f"[v3:{args.arm}] step {step} "
@@ -5132,6 +5212,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "traffic light on no evidence. 'geometry' uses the "
                          "frozen declaration instead of the blob, kept so the "
                          "declaration/data divergence stays measurable.")
+    ap.add_argument("--grad-probe-modules", default="",
+                    help="D-TACGOAL-2 / PI queue item 10: comma-separated "
+                         "dotted module paths (e.g. "
+                         "'tac_goal_tok_head,core.decoder.offset_head') whose "
+                         "sum(|grad|) is written into metrics.jsonl on every "
+                         "log step, UNROUNDED, measured BEFORE "
+                         "clip_grad_norm_. EMPTY BY DEFAULT: with this flag "
+                         "absent nothing is computed and the log schema is "
+                         "unchanged, so a recipe that does not pass it is "
+                         "identical to the pre-probe trainer. It exists "
+                         "because tac_goal_tok_head took grad_abs_sum EXACTLY "
+                         "0.00000 for all 40,284 steps of refcv5-v2 and "
+                         "nothing in the run record said so.")
     ap.add_argument("--v2-lru", type=int, default=6,
                     help="per-process LRU of decoded-payload clips for "
                          "--v2-cache. ⚠️ B1 payloads are ~34 MB/clip "

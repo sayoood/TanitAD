@@ -1,0 +1,89 @@
+Exception in thread Thread-9 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x90 in position 908: character maps to <undefined>
+Exception in thread Thread-11 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x90 in position 908: character maps to <undefined>
+Exception in thread Thread-15 (_readerthread):
+Traceback (most recent call last):
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1615, in _readerthread
+    buffer.append(fh.read())
+                  ~~~~~~~^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f in position 342: character maps to <undefined>
+GOOD md5 = 3fa2f4e2e06e51d7f4944a6f3e3f6ab3
+
+=== GREEN baseline (whole file) ===
+rc 0 | ...........                                                              [100%] | 11 passed in 1.72s | 
+
+--- M1 merge removed -> the probe never reaches metrics.jsonl
+    -> RED (good)  rc=1
+     Lab/Architectu...s.preflight:\n        raise SystemExit(preflight(args))\n    train(args)\n\n\nif __name__ == "__main__":\n    main()\n'.count |  | tests\test_grad_probe_tacgoal.py:251: AssertionError | =========================== short te
+
+--- M2 probe moved AFTER the global clip -> reading is rescaled
+    -> RED (good)  rc=1
+    ameters(), 10.0)") |         assert i_bwd > 0 and i_probe > 0 and i_clip > 0 | >       assert i_bwd < i_probe < i_clip | E       assert 288815 < 288750 |  | tests\test_grad_probe_tacgoal.py:270: AssertionError | =========================== 
+
+--- M1b merge DELETED entirely -> the probe never reaches metrics.jsonl
+    -> RED (good)  rc=1
+     Lab/Architectu...s.preflight:\n        raise SystemExit(preflight(args))\n    train(args)\n\n\nif __name__ == "__main__":\n    main()\n'.count |  | tests\test_grad_probe_tacgoal.py:251: AssertionError | =========================== short te
+
+--- M3 probe counts params instead of gradient -> cannot read the defect
+    -> RED (good)  rc=1
+    
+
+--- M6 abs() dropped -> a cancelling gradient reads as no gradient
+    -> RED (good)  rc=1
+    
+
+--- M4 --w-tac-goal default raised off 0.0 -> the pinned literal moves
+    -> RED (good)  rc=1
+    , eval_cache=N...args=False, nav_from_v7=False, goal_point_inject=False, goal_point_geo_prior=False, goal_point_t=4.0, goal_point_w=0.0).w_tac_goal |  | tests\test_grad_probe_tacgoal.py:112: AssertionError | =========================== shor
+
+--- M5 a missing module reads like an unreached one (silent absence)
+    -> RED (good)  rc=1
+    
+
+=== SUMMARY ===
+RED (good)             M1 merge removed -> the probe never reaches metrics.jsonl
+RED (good)             M2 probe moved AFTER the global clip -> reading is rescaled
+RED (good)             M1b merge DELETED entirely -> the probe never reaches metrics.jsonl
+RED (good)             M3 probe counts params instead of gradient -> cannot read the defect
+RED (good)             M6 abs() dropped -> a cancelling gradient reads as no gradient
+RED (good)             M4 --w-tac-goal default raised off 0.0 -> the pinned literal moves
+RED (good)             M5 a missing module reads like an unreached one (silent absence)
+
+final md5 = 3fa2f4e2e06e51d7f4944a6f3e3f6ab3 restored_ok = True
+INERT GUARDS = 0
