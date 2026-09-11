@@ -242,3 +242,50 @@ gets `200>&-`, the sleeps included.**
 ⚠️ **UNVERIFIED, not clean:** `sup_refcv5_v2.sh` and `stack/scripts/sup_refcv3.sh` never became
 readable, and `pod_currency_audit.py`'s contents resisted every read (`EISDIR` on a regular `.py`).
 Their existence and sizes are measured; their contents are not.
+
+---
+
+## 7. ⭐ WHAT A HEALTHY `--agents head` RUN STAMPS — the number to compare a launch against
+
+**MEASURED** from `…/2026-09-07-p1-agent-gate/raw/config_head_s0.json`, the `agent_join_stats` block
+that `enable_agent_join` wrote during the real `--agents head --w-agent 1.0` run (control: `w_agent`
+read 2 both before and after).
+
+| | train | eval |
+|---|---|---|
+| episodes joined by **stable id** | **104 / 104** | **35 / 35** |
+| joined by **legacy id** | **0** | **0** |
+| ambiguous legacy ids in join | **0** | **0** |
+| `id_space` | `stable-63bit` | `stable-63bit` |
+| windows labelled | 16,845 / 17,787 | 5,818 / 5,985 |
+| ⭐ **`frac_windows_labelled`** | **0.947** | **0.9721** |
+| target boxes pre-filter | 563,180 | 213,621 |
+
+⭐ **This independently reproduces `PREREG.md:72` from the BANKED ARTIFACT rather than from prose** —
+104/104 episodes, 16,845/17,787 = 94.7 %, 563,180 boxes. The rig line is corroborated, not asserted.
+
+⛔ **Use `frac_windows_labelled ≈ 0.95` as the launch's sanity number.** A starved join stamps
+something near **0.04** here **and the run still starts**, because the trainer has **no coverage
+floor** — only the pre-launch gate's C4 does. ⇒ *A 4 %-coverage arm trains, converges, and reads as
+"agent tokens do not help": a manufactured negative, worse than a crash because it looks like a
+result.*
+
+### ⚠️ `--agent-join-allow-legacy-ids` — passed by P1, never needed, and NOT to be carried forward
+
+The P1 gate passed it while `id_space` was `stable-63bit` and `n_episodes_joined_legacy_id` was
+**0**. ⇒ **a no-op on that join.** ⛔ **But not a no-op in general:** on a different join it silently
+disables the collision guard at `refc_v3_train.py:1749`, which exists because **34 of 2,308 clips
+share a prefix**. ⚠️ And needing it at all is itself a signal of being on the wrong id space.
+
+⭐ **VERIFIED for refcv6:** `arms.py` carries it **zero** times (control: `DEFAULT_AGENT_JOIN` reads
+4 in the same file). The P1 argv was **not** carried forward wholesale, and the collision guard stays
+armed.
+
+### ⚠️ Two configs remain UNVERIFIED, not clean
+
+`…/2026-09-07-p1-agent-gate/raw/config_shuf_s0.json` and `config_off_s0.json` **never became
+readable** across 40 then 50 attempts. ⛔ A background job exited **0** while printing nothing for
+them — no `READ_OK` line ever passed — and the greps then ran against unreadable files and returned
+empty. **A clean exit code on a silent gate** is exactly the documented failure mode. Nothing in this
+document rests on those two; the `shuf` arm's weight is independently established from source at
+`…/code/launch_arms.py:56`.
