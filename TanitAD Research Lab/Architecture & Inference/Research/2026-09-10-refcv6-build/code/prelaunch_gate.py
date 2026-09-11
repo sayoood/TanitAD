@@ -342,8 +342,20 @@ def check_smoke(*, trainer: str, arm: str, steps: int, out_dir: str,
     argv = A._replace_flag(argv, "--out", [out_dir])
     argv = A._replace_flag(argv, "--steps", [str(steps)])
     argv = A._replace_flag(argv, "--warmup", ["1"])
-    argv = A._replace_flag(argv, "--eval-every", [str(max(steps, 1) + 10)])
-    argv = A._replace_flag(argv, "--save-every", [str(max(steps, 1) + 10)])
+    # ⛔⛔ THIS USED TO PUSH BOTH BEYOND THE SMOKE'S OWN HORIZON (steps + 10), which
+    #     made the smoke fast and STRUCTURALLY BLIND to every eval-time and
+    #     save-time failure. MEASURED 2026-09-11: refcv6 arm C dies on its FIRST
+    #     EVAL -- `tac_goal_targets` is wired train-only, the held-out split hits
+    #     the refuse-do-not-skip guard, and `SystemExit` is not an `Exception` so
+    #     the eval block's handler cannot catch it. refcv5-v2's argv carries
+    #     `--eval-every 500`, so arm C would have died at STEP 500 OF 40,284 --
+    #     ~35 GPU-minutes into a ~47 GPU-hour run -- and THIS GATE WOULD HAVE
+    #     PASSED IT, because the eval it dies on never ran here.
+    # ⭐ That is "a check that shares the defect it checks for": a smoke that skips
+    #     the eval can never fail on the eval. Both now fire INSIDE the horizon.
+    _every = max(1, steps // 2)
+    argv = A._replace_flag(argv, "--eval-every", [str(_every)])
+    argv = A._replace_flag(argv, "--save-every", [str(_every)])
 
     os.makedirs(out_dir, exist_ok=True)
     metrics = os.path.join(out_dir, "metrics.json")
@@ -384,19 +396,39 @@ def check_smoke(*, trainer: str, arm: str, steps: int, out_dir: str,
     moved = len(set(round(float(x), 12) for x in finite)) > 1
     n_steps = len([r for r in rows if isinstance(r, dict) and "step" in r])
 
-    ok = bool(finite) and len(finite) == len(losses) and moved and n_steps >= 1
+    # ⭐ THE EVAL MUST HAVE RUN, and the evidence is the ROW, never the rc.
+    #    Arm C exits 1 AFTER metrics.json is written, so a status-blind verdict
+    #    passes it while an artifact-based one cannot: a crashed eval leaves no
+    #    eval row behind. This keeps the doctrine (assert on the artifact) and
+    #    closes the hole (assert on the RIGHT artifact).
+    def _is_eval_row(r):
+        return isinstance(r, dict) and any(
+            str(k).startswith(("eval", "val_")) or str(k) in ("split", "phase")
+            and str(r.get(k, "")).startswith(("eval", "val"))
+            for k in r)
+    n_eval_rows = len([r for r in rows if _is_eval_row(r)])
+
+    ok = (bool(finite) and len(finite) == len(losses) and moved
+          and n_steps >= 1 and n_eval_rows >= 1)
     return {
         "check": "C5_smoke", "arm": arm, "steps_requested": steps,
         "trainer_rc": rc, "elapsed_s": round(time.time() - started, 1),
-        "n_metric_rows": len(rows), "n_loss_values": len(losses),
+        "n_metric_rows": len(rows), "n_eval_rows": n_eval_rows,
+        "eval_every_used": _every, "n_loss_values": len(losses),
         "n_finite": len(finite), "loss_first": finite[0] if finite else None,
         "loss_last": finite[-1] if finite else None,
         "loss_moved": moved, "metrics_path": metrics,
         "stderr_tail": tail[1] if not ok else "",
         "verdict": "PASS" if ok else "FAIL",
-        "why": ("metrics.json carries finite, MOVING loss values" if ok else
-                "⛔ loss absent, non-finite, or CONSTANT. A constant loss is a "
-                "disconnected graph, not a converged one."),
+        "why": ("metrics.json carries finite, MOVING loss values AND at least "
+                "one EVAL row (the eval actually ran)" if ok else
+                ("⛔ NO EVAL ROW -- the eval did not run or it crashed. This is "
+                 "the arm-C failure: a SystemExit in the eval is not an "
+                 "Exception, so the trainer's handler cannot catch it, and the "
+                 "process dies AFTER metrics.json exists."
+                 if n_eval_rows == 0 else
+                 "⛔ loss absent, non-finite, or CONSTANT. A constant loss is a "
+                 "disconnected graph, not a converged one.")),
     }
 
 
