@@ -559,16 +559,33 @@ def _pin_refcv5_seams(cfg, args) -> None:
     # because that question is the PI's, not this gate's — but stated honestly,
     # so the decision is made against the measurement.
     if sampler == "ddim" and float(getattr(args, "w_u0", 0.0)) <= 0.0:
-        raise SystemExit(
-            "[v3] ⛔ --sampler ddim with --w-u0 0 trains the sampler with NO "
-            "loss on its OWN prediction: `control_head` is zero-init and would "
-            "then be supervised only INDIRECTLY, through the matched-anchor L1 "
-            "on the integrated fan (MEASURED: it does receive gradient that "
-            "way, ~9.4e4 vs ~1.07e5 through the x0 loss — it does NOT stay at "
-            "zero). That is a different experiment from a trained sampler, and "
-            "every log row would still say 'sampler: ddim'. Pass --w-u0 > 0, "
-            "or run --sampler none. ⚠️ refcv6 arm D wants exactly this "
-            "configuration: it needs a PI ruling, not a flag flip.")
+        # ⭐⭐ THE PI RULED 2026-09-11: "follow your recommendation" — authorise
+        #     this configuration behind an EXPLICIT ACKNOWLEDGEMENT, so the run
+        #     record shows a deliberate operator choice rather than a bypass.
+        #     Same shape as `control_units_source: cli-override-legacy-file`.
+        # ⛔ THE REFUSAL IS NOT REMOVED. Without the acknowledgement it still
+        #     raises, because the thing it protects against is REAL: the arm is
+        #     a denoiser supervised only through the integrator, and every log
+        #     row still says 'sampler: ddim'.
+        # ⛔ AND THE ACKNOWLEDGEMENT IS NOT A FIX — it is a RECORD. It changes
+        #     nothing about the training; it only makes the choice attributable.
+        if not bool(getattr(args, "ack_ddim_no_u0", False)):
+            raise SystemExit(
+                "[v3] ⛔ --sampler ddim with --w-u0 0 trains the sampler with NO "
+                "loss on its OWN prediction: `control_head` is zero-init and would "
+                "then be supervised only INDIRECTLY, through the matched-anchor L1 "
+                "on the integrated fan (MEASURED: it does receive gradient that "
+                "way, ~9.4e4 vs ~1.07e5 through the x0 loss — it does NOT stay at "
+                "zero). That is a different experiment from a trained sampler, and "
+                "every log row would still say 'sampler: ddim'. Pass --w-u0 > 0, "
+                "run --sampler none, or — if this is refcv6 arm D and the PI has "
+                "ruled — pass --ack-ddim-no-u0, which PERMITS it and STAMPS the "
+                "choice into config.json as an operator decision.")
+        # ⛔ PINNED ONTO THE CONFIG, not only onto `args`: `rebuild_config`
+        #     rebuilds through this helper, so a stamp living only on the
+        #     Namespace would be LOST on every roll — the same reason the
+        #     max-speed mode is pinned above.
+        cfg.u0_absent_under_ddim = "pi-acknowledged-2026-09-11-refcv6-arm-D"
     # --- STAGE 0: the feasibility-aware decode ---------------------------- #
     # ⛔ REFUSED AT STARTUP, NOT AT THE FIRST FORWARD. `refc.py::_feasible`
     # raises on a non-uniform prefix -- correctly -- but that raise arrives
@@ -5399,6 +5416,17 @@ def build_parser() -> argparse.ArgumentParser:
                          "ARM PASS 0: the sampler conditions through the "
                          "CONTINUOUS `time_mlp`, and t must name the fully "
                          "denoised state the fan actually is.")
+    g5.add_argument("--ack-ddim-no-u0", action="store_true",
+                    help="⭐ PI RULING 2026-09-11. PERMIT `--sampler ddim` with "
+                         "`--w-u0 0` (refcv6 arm D) and STAMP the choice into "
+                         "config.json as `u0_absent_under_ddim`. ⛔ This is a "
+                         "RECORD, not a fix: the arm is still a denoiser "
+                         "supervised only through the integrator, and every log "
+                         "row still says 'sampler: ddim'. ⛔ Without it the "
+                         "refusal stands. D-DDV1-NO-DENOISING-LOSS: DD-v1 has "
+                         "no epsilon-prediction and no denoising MSE at all, so "
+                         "our --w-u0 is an invention rather than a port, and "
+                         "this trainer's own default is already 0.0.")
     g5.add_argument("--w-u0", type=float, default=U0_WEIGHT_DEFAULT,
                     help="weight on the x0 loss, in CONTROL space -- the only "
                          "term that supervises the sampler in the space it "
