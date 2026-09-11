@@ -26,6 +26,18 @@ LABELS="${REFCV6_LABELS:-/workspace/TanitAD/data/s2_labels_v7.2_train.jsonl.gz}"
 JOIN="${REFCV6_JOIN:-/root/data/joins/train2400_agents.jsonl.xz}"
 ANCHORS="${REFCV6_ANCHORS:-/root/data/refcv6/anchors.pt}"
 HOST="${REFCV6_HOST:-}"
+# ⭐ C3 (import closure) can only be measured FROM the box that holds the repo,
+#    while C5 (the smoke) can only run ON the GPU box. On a two-box fleet the
+#    closure audit is therefore run separately and its ARTIFACT handed to the
+#    gate, which re-checks its host, its remote_root, its age and its
+#    import_probe before honouring it. See prelaunch_gate._c3_from_artifact.
+CLOSURE_JSON="${REFCV6_CLOSURE_JSON:-}"
+REMOTE_ROOT="${REFCV6_REMOTE_ROOT:-}"
+# When the gate runs ON the box the closure artifact describes, re-hash the
+# closure files against the artifact's own remote_md5_lf. That asserts THE
+# TREE IS UNCHANGED -- the actual claim -- instead of asking the clock, so a
+# 47-hour arm cannot make the NEXT arm's C3 inconclusive by mere elapsed time.
+CLOSURE_REVERIFY_ROOT="${REFCV6_CLOSURE_REVERIFY_ROOT:-}"
 PY="${REFCV6_PYTHON:-python3}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
@@ -54,8 +66,28 @@ case "$BUDGET" in
   *) echo "unknown budget: $BUDGET"; exit 2 ;;
 esac
 
-OUT_DIR="/workspace/experiments/refcv6-${ARM}"
+# ⛔ WAS HARDCODED `/workspace/experiments/...` -- a POD path on a machine that no
+#    longer exists. Per-box, like every other path in this script.
+OUT_ROOT="${REFCV6_OUT_ROOT:-/workspace/experiments}"
+OUT_DIR="${OUT_ROOT}/refcv6-${ARM}"
 GATE_JSON="${RAW_DIR}/prelaunch_gate_${ARM}.json"
+
+# ⛔⛔ `PYTHONPATH=<tree>/stack` IS REQUIRED OR THE TRAINER DIES
+#    `ModuleNotFoundError: No module named 'tanitad'`. It used to be set only as
+#    a per-command prefix on the gate invocation below -- i.e. NOT exported, and
+#    NOT inherited by the supervisor's trainer. The manifest is the run's record,
+#    so the environment belongs IN `TRAIN_CMD`, not in whatever shell happened to
+#    start the supervisor. `env` is used rather than an exported variable so the
+#    manifest can be read months later and still say what the run actually ran.
+# ⛔ OMP_NUM_THREADS=6: torch spawns ~113 threads per process; without this a
+#    multi-process box sits at 0-6 % GPU for 50 minutes and looks like a hang.
+TRAIN_ENV="${REFCV6_TRAIN_ENV:-env PYTHONPATH=${STACK} OMP_NUM_THREADS=6 PYTHONIOENCODING=utf-8}"
+
+# ⚠️ `refc_v3_train.py` has NO `--resume`, so a relaunch RESTARTS the arm from
+#    step 0. On a ~46 h arm that is not a recovery, it is a second full run.
+#    Default 1 = the supervisor watches and writes the done-marker, but never
+#    silently restarts. Override with REFCV6_MAX_RELAUNCH if you mean it.
+MAX_RELAUNCH="${REFCV6_MAX_RELAUNCH:-1}"
 
 # ---- 1. build this arm's argv from the SINGLE SOURCE OF TRUTH -------------- #
 # ⛔ Never hand-written here. `arms.py` is the only place an arm's flags live, so
@@ -88,7 +120,8 @@ MANIFEST="${RUNS_DIR}/${ARM}.env"
   echo "ARM=${ARM}"
   echo "STEPS=${STEPS}"
   echo "OUT_DIR=${OUT_DIR}"
-  echo "TRAIN_CMD=\"${PY} ${TRAINER} ${ARGV}\""
+  echo "MAX_RELAUNCH=${MAX_RELAUNCH}"
+  echo "TRAIN_CMD=\"${TRAIN_ENV} ${PY} ${TRAINER} ${ARGV}\""
 } > "$MANIFEST"
 echo "[launch] manifest -> ${MANIFEST}"
 
@@ -108,6 +141,10 @@ MSYS_NO_PATHCONV=1 PYTHONPATH="$STACK" TANITAD_STACK="$STACK" \
     --anchors "$ANCHORS" --budget "$BUDGET" \
     ${W_AGENT:+--w-agent "$W_AGENT"} ${W_TAC_GOAL:+--w-tac-goal "$W_TAC_GOAL"} \
     ${HOST:+--host "$HOST"} \
+    ${CLOSURE_JSON:+--closure-json "$CLOSURE_JSON"} \
+    ${CLOSURE_REVERIFY_ROOT:+--closure-reverify-root "$CLOSURE_REVERIFY_ROOT"} \
+    ${REMOTE_ROOT:+--remote-root "$REMOTE_ROOT"} \
+    --smoke-arm "$ARM" --smoke-out "${RAW_DIR}/smoke-${ARM}" \
     --json "$GATE_JSON" > "${RAW_DIR}/gate_${ARM}.log" 2>&1
 GATE_RC=$?
 

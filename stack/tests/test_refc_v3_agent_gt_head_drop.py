@@ -81,13 +81,60 @@ def _trainer():
     return _load(_TRAINER_PY, "refc_v3_train_for_headdrop")
 
 
+def _eol(src: bytes) -> bytes:
+    r"""The line ending THIS CHECKOUT's trainer actually uses.
+
+    The repo has no ``.gitattributes`` and ``core.autocrlf=true``, so one blob is
+    CRLF in the Windows dev-box working tree and LF on every Linux pod.
+    """
+    return b"\r\n" if b"\r\n" in src else b"\n"
+
+
+def _resolve_anchor(src: bytes, anchor: str) -> tuple[bytes, int]:
+    r"""``(the anchor in the form PRESENT in `src`, its total match count)``.
+
+    ⛔⛔ **THE ANCHORS ARE WRITTEN IN CANONICAL LF FORM — the form of the git
+    blob — and resolved to this checkout's own line ending here.** Hard-coding
+    either ending makes every arm in this file fire on the PLATFORM rather than
+    on an edit.
+
+    ⛔ MEASURED 2026-09-11, and this is why the file needed repairing: the
+    working-tree ``refc_v3_train.py`` was **5,975 CRLF / 0 bare LF**, while the
+    index blob was **360,203 B = 366,178 − 5,975** — byte-for-byte the LF form
+    of the same file, i.e. *the trainer source had not changed at all*. Every
+    MULTI-LINE anchor here therefore matched **0** times and its arm was
+    DISARMED, while the single-line ``CORRUPT_VALUE_FROM`` — which contains no
+    newline, so it has only one form — kept matching and its two tests stayed
+    green. ⭐ That split is the SIGNATURE of this failure and not of a real
+    drift: a source change does not sort failures by whether the anchor happens
+    to span a line break.
+
+    ⛔ Re-baselining the anchors to ``\r\n`` is the wrong fix twice over: it
+    moves the false negative onto the pods, and it is the "re-baseline on red"
+    move that ``test_v5_trainer_v2_val.py``'s trainer pin was corrected for on
+    2026-08-04 — same root cause, different guard.
+
+    ⚠️ BOTH forms are counted rather than one being chosen, so a mixed-ending
+    file reports 2 and the arm fails LOUDLY instead of silently picking one.
+    """
+    ab = anchor.encode("utf-8")
+    forms = [ab] if b"\n" not in ab else [ab, ab.replace(b"\n", b"\r\n")]
+    counts = [(f, src.count(f)) for f in forms]
+    return next((f for f, n in counts if n), ab), sum(n for _f, n in counts)
+
+
 def _mutate(tmp_path, name: str, old: str, new: str):
     """A COPY of the trainer with one exact substitution. Bytes, not text — a
     text round-trip on Windows rewrites every line ending and makes a one-line
-    mutant unauditable."""
+    mutant unauditable.
+
+    ⛔ The anchor is resolved to this checkout's line ending by
+    :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+    mutant differs from the shipped file by exactly ONE HUNK on every platform.
+    """
     src = open(_TRAINER_PY, "rb").read()
-    ob, nb = old.encode("utf-8"), new.encode("utf-8")
-    n = src.count(ob)
+    ob, n = _resolve_anchor(src, old)
+    nb = new.encode("utf-8").replace(b"\n", _eol(src))
     assert n == 1, (
         f"the mutation anchor for {name!r} matched {n} times, not 1. The "
         f"deliberate-regression arm is DISARMED and this test would pass "
@@ -217,7 +264,16 @@ def test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed(tmp_path):
     shipped = open(_TRAINER_PY, "rb").read()
     mutant = open(M.__file__, "rb").read()
     assert mutant != shipped
-    assert len(shipped) - len(mutant) == len(CORRUPT_GATE_FROM) - len(CORRUPT_GATE_TO)
+    # ⚠️ The delta is taken against the anchor AS RESOLVED for this checkout,
+    # not against the LF literal: on a CRLF working tree the resolved anchor is
+    # one byte longer per line, so comparing the two would make this assertion
+    # fire on the PLATFORM instead of on a drift — the state this file was in
+    # on 2026-09-11. The count is re-asserted here so the arm is CHECKED rather
+    # than assumed.
+    ob, n_hit = _resolve_anchor(shipped, CORRUPT_GATE_FROM)
+    nb = CORRUPT_GATE_TO.encode("utf-8").replace(b"\n", _eol(shipped))
+    assert n_hit == 1
+    assert len(shipped) - len(mutant) == len(ob) - len(nb)
 
 
 # --------------------------------------------------------------------------- #

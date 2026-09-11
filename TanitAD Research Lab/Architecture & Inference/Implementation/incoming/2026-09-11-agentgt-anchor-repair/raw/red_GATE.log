@@ -1,0 +1,845 @@
+FF.FFF.F.......FFF.F.                                                    [100%]
+================================== FAILURES ===================================
+________________ test_a_head_build_REFUSES_a_supplied_agent_gt ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_a_head_build_REFUSES_a_su0')
+
+    def test_a_head_build_REFUSES_a_supplied_agent_gt(tmp_path):
+        """⭐ THE LOAD-BEARING TEST. Remove the trainer's oracle gate so a real
+        ``agent_gt`` reaches a real ``--agents head`` forward. Before 2026-09-10 this
+        ran to completion with the block discarded; it must now refuse."""
+>       M = _mutate(tmp_path, "gate_removed_head", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_a_head_build_REFUSES_a_su0')
+name = 'gate_removed_head'
+old = '    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)\n            and getattr(_ag_cfg, "oracle", False)):'
+new = '    if True:'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        """A COPY of the trainer with one exact substitution. Bytes, not text — a
+        text round-trip on Windows rewrites every line ending and makes a one-line
+        mutant unauditable.
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant differs from the shipped file by exactly ONE HUNK on every platform.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED and this test would pass "
+            f"without proving anything. Re-anchor it against refc_v3_train.py.")
+E       AssertionError: the mutation anchor for 'gate_removed_head' matched 0 times, not 1. The deliberate-regression arm is DISARMED and this test would pass without proving anything. Re-anchor it against refc_v3_train.py.
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_head_drop.py:138: AssertionError
+___________________ test_the_message_names_the_two_ways_out ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_message_names_the_two0')
+
+    def test_the_message_names_the_two_ways_out(tmp_path):
+        """A refusal that does not say what to do instead gets worked around with
+        the first thing that silences it — which here would be `strict=False`'s
+        cousin: deleting the channel from the caller."""
+>       M = _mutate(tmp_path, "gate_removed_msg", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:214: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_message_names_the_two0')
+name = 'gate_removed_msg'
+old = '    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)\n            and getattr(_ag_cfg, "oracle", False)):'
+new = '    if True:'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        """A COPY of the trainer with one exact substitution. Bytes, not text — a
+        text round-trip on Windows rewrites every line ending and makes a one-line
+        mutant unauditable.
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant differs from the shipped file by exactly ONE HUNK on every platform.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED and this test would pass "
+            f"without proving anything. Re-anchor it against refc_v3_train.py.")
+E       AssertionError: the mutation anchor for 'gate_removed_msg' matched 0 times, not 1. The deliberate-regression arm is DISARMED and this test would pass without proving anything. Re-anchor it against refc_v3_train.py.
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_head_drop.py:138: AssertionError
+___________ test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_DELIBERATE_REGRESSION_the0')
+
+    def test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed(tmp_path):
+        """⛔ A mutation arm whose anchor has drifted passes while proving nothing —
+        the disarmed-regression class. Assert the mutant really differs from the
+        shipped trainer, by BYTES."""
+>       M = _mutate(tmp_path, "armed_check", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:263: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_DELIBERATE_REGRESSION_the0')
+name = 'armed_check'
+old = '    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)\n            and getattr(_ag_cfg, "oracle", False)):'
+new = '    if True:'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        """A COPY of the trainer with one exact substitution. Bytes, not text — a
+        text round-trip on Windows rewrites every line ending and makes a one-line
+        mutant unauditable.
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant differs from the shipped file by exactly ONE HUNK on every platform.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED and this test would pass "
+            f"without proving anything. Re-anchor it against refc_v3_train.py.")
+E       AssertionError: the mutation anchor for 'armed_check' matched 0 times, not 1. The deliberate-regression arm is DISARMED and this test would pass without proving anything. Re-anchor it against refc_v3_train.py.
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_head_drop.py:138: AssertionError
+__________ test_the_shipped_trainer_still_runs_head_without_agent_gt __________
+
+    def test_the_shipped_trainer_still_runs_head_without_agent_gt():
+        """⛔ THE CONTROL THAT STOPS THIS BEING A BLANKET REFUSAL. On the real
+        trainer the oracle gate holds, a head build receives ``None``, and the arm
+        must run exactly as before. If this fails, the new guard has broken the arm
+        it was meant to protect."""
+        T = _trainer()
+>       losses = _run(T, "head")
+                 ^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refc_v3_agent_gt_head_drop.py:195: in _run
+    return T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\refc_v3_train.py:2363: in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+frames = tensor([[[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],
+           [0.5176, 0.6157, 0.8078,  ..., 0.2549, 0..., 0.7451, 0.1961,  ..., 0.5922, 0.3608, 0.0784],
+           [0.8588, 0.5529, 0.8118,  ..., 0.9333, 0.7529, 0.1647]]]]])
+nav_cmd = tensor([1, 2]), v0 = tensor([4.9775, 4.9775]), steps = 2, lan = None
+nav_known = None, ego_state = None, withheld_speed = None, gp_point = None
+gp_valid = None
+agent_gt = {'box': tensor([[[11.6985,  4.9761, 14.1842, 14.1378],
+         [ 5.6552,  9.5012,  5.1417, 13.5947],
+         [ 8.306...ue,  True,  True,  True,  True,  True,  True],
+        [ True,  True,  True,  True, False, False, False, False]]), ...}
+nav_args = None, v_max_ms = None, v_max_valid = None
+
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+    
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
+    
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+            raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+        if agent_gt is None and _ag is not None and _ag.enable and _ag.oracle:
+            raise ValueError(
+                "this build is `--agents oracle` but no agent_gt reached the "
+                "forward. The oracle's tokens ARE the ground-truth boxes; "
+                "with none the seam emits nothing and the arm would read as "
+                "'agent tokens do not help' while never having had any.")
+        # ⛔⛔ THE THIRD CASE — `D-AGENTGT-HEAD-SILENT-DROP`, closed 2026-09-10.
+        # The comment above claimed "Both directions refuse". It was FALSE, and
+        # the falsehood was load-bearing twice over:
+        #   * `refc.py:3366-3368` builds head slots from `fmap` and never reads
+        #     `agent_gt`, so on a `head` build a supplied GT block was dropped
+        #     with no warning, no log and no raise;
+        #   * `tanitad/rl/refc_adapter.py`'s `ChannelRequirement("agent_gt")`
+        #     WAIVED its own launch-time check citing exactly that claim —
+        #     "the model refuses BOTH directions loudly and unconditionally, so
+        #     there is no SILENT divergence for this guard to catch". Two guards,
+        #     each deferring to the other, and the channel unguarded at both.
+        # ⚠️ LATENT, NOT LIVE, at the time of closing: `refc_v3_train.py` gates
+        # `agent_gt` on `enable AND oracle`, so today's trainer supplies None on
+        # a head build. But `refc_adapter.FORWARD_KEYS` DOES forward `agent_gt`,
+        # so an RL-driven head build would have hit it — and the symptom would
+        # have been "agent tokens do not help", a refutation manufactured by a
+        # wiring gap. That is the exact failure the other two guards exist to
+        # prevent, so it gets the same treatment rather than a warning.
+        # ⭐ It also makes the `head` row of `test_agents_off_and_head_are_
+        # BITWISE_UNCHANGED` DISCRIMINATING: that test's own docstring records
+        # that the head row "cannot distinguish a correct gate from no gate at
+        # all" precisely because of this drop. It now can.
+        if (agent_gt is not None and _ag is not None
+                and _ag.enable and not _ag.oracle):
+>           raise ValueError(
+                "agent_gt was supplied to an `--agents head` build, which would "
+                "SILENTLY DROP it: the learned detector reads the feature map "
+                "and nothing else (`refc.py:3366-3368`), and its supervision "
+                "comes from `batch['agent_box']` in the trainer, never from "
+                "this channel. An arm that passed it would report as "
+                "+agent-GT while running vision-only. Use --agents oracle if "
+                "the GT boxes are meant to be the tokens, or stop passing "
+                "agent_gt.")
+E           ValueError: agent_gt was supplied to an `--agents head` build, which would SILENTLY DROP it: the learned detector reads the feature map and nothing else (`refc.py:3366-3368`), and its supervision comes from `batch['agent_box']` in the trainer, never from this channel. An arm that passed it would report as +agent-GT while running vision-only. Use --agents oracle if the GT boxes are meant to be the tokens, or stop passing agent_gt.
+
+tanitad\refs\refc_v3.py:1434: ValueError
+_______________ test_case_1_still_refuses_agent_gt_with_no_seam _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_case_1_still_refuses_agen0')
+
+    def test_case_1_still_refuses_agent_gt_with_no_seam(tmp_path):
+        """The pre-existing guard must be untouched by the new one."""
+>       M = _mutate(tmp_path, "gate_removed_off", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:295: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_case_1_still_refuses_agen0')
+name = 'gate_removed_off'
+old = '    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)\n            and getattr(_ag_cfg, "oracle", False)):'
+new = '    if True:'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        """A COPY of the trainer with one exact substitution. Bytes, not text — a
+        text round-trip on Windows rewrites every line ending and makes a one-line
+        mutant unauditable.
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant differs from the shipped file by exactly ONE HUNK on every platform.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED and this test would pass "
+            f"without proving anything. Re-anchor it against refc_v3_train.py.")
+E       AssertionError: the mutation anchor for 'gate_removed_off' matched 0 times, not 1. The deliberate-regression arm is DISARMED and this test would pass without proving anything. Re-anchor it against refc_v3_train.py.
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_head_drop.py:138: AssertionError
+___________________ test_the_HEAD_row_is_now_DISCRIMINATING ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_HEAD_row_is_now_DISCR0')
+
+    def test_the_HEAD_row_is_now_DISCRIMINATING(tmp_path):
+        """⭐ THE SIDE EFFECT, ASSERTED RATHER THAN CLAIMED.
+    
+        `test_refc_v3_agent_gt_reaches_forward.py` records that its ``head`` parity
+        row could not tell a correct gate from no gate at all, because a head build
+        swallowed ``agent_gt`` either way. With case 3 refused, removing the gate
+        now changes the head arm's OUTCOME — from 'runs' to 'refuses' — which is the
+        strongest form of 'this comparison is sensitive'.
+        """
+        T = _trainer()
+>       assert torch.isfinite(_run(T, "head")["loss"])          # gate in place: runs
+                              ^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_head_drop.py:319: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refc_v3_agent_gt_head_drop.py:195: in _run
+    return T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\refc_v3_train.py:2363: in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+frames = tensor([[[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],
+           [0.5176, 0.6157, 0.8078,  ..., 0.2549, 0..., 0.7451, 0.1961,  ..., 0.5922, 0.3608, 0.0784],
+           [0.8588, 0.5529, 0.8118,  ..., 0.9333, 0.7529, 0.1647]]]]])
+nav_cmd = tensor([1, 2]), v0 = tensor([4.9775, 4.9775]), steps = 2, lan = None
+nav_known = None, ego_state = None, withheld_speed = None, gp_point = None
+gp_valid = None
+agent_gt = {'box': tensor([[[11.6985,  4.9761, 14.1842, 14.1378],
+         [ 5.6552,  9.5012,  5.1417, 13.5947],
+         [ 8.306...ue,  True,  True,  True,  True,  True,  True],
+        [ True,  True,  True,  True, False, False, False, False]]), ...}
+nav_args = None, v_max_ms = None, v_max_valid = None
+
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+    
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
+    
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+            raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+        if agent_gt is None and _ag is not None and _ag.enable and _ag.oracle:
+            raise ValueError(
+                "this build is `--agents oracle` but no agent_gt reached the "
+                "forward. The oracle's tokens ARE the ground-truth boxes; "
+                "with none the seam emits nothing and the arm would read as "
+                "'agent tokens do not help' while never having had any.")
+        # ⛔⛔ THE THIRD CASE — `D-AGENTGT-HEAD-SILENT-DROP`, closed 2026-09-10.
+        # The comment above claimed "Both directions refuse". It was FALSE, and
+        # the falsehood was load-bearing twice over:
+        #   * `refc.py:3366-3368` builds head slots from `fmap` and never reads
+        #     `agent_gt`, so on a `head` build a supplied GT block was dropped
+        #     with no warning, no log and no raise;
+        #   * `tanitad/rl/refc_adapter.py`'s `ChannelRequirement("agent_gt")`
+        #     WAIVED its own launch-time check citing exactly that claim —
+        #     "the model refuses BOTH directions loudly and unconditionally, so
+        #     there is no SILENT divergence for this guard to catch". Two guards,
+        #     each deferring to the other, and the channel unguarded at both.
+        # ⚠️ LATENT, NOT LIVE, at the time of closing: `refc_v3_train.py` gates
+        # `agent_gt` on `enable AND oracle`, so today's trainer supplies None on
+        # a head build. But `refc_adapter.FORWARD_KEYS` DOES forward `agent_gt`,
+        # so an RL-driven head build would have hit it — and the symptom would
+        # have been "agent tokens do not help", a refutation manufactured by a
+        # wiring gap. That is the exact failure the other two guards exist to
+        # prevent, so it gets the same treatment rather than a warning.
+        # ⭐ It also makes the `head` row of `test_agents_off_and_head_are_
+        # BITWISE_UNCHANGED` DISCRIMINATING: that test's own docstring records
+        # that the head row "cannot distinguish a correct gate from no gate at
+        # all" precisely because of this drop. It now can.
+        if (agent_gt is not None and _ag is not None
+                and _ag.enable and not _ag.oracle):
+>           raise ValueError(
+                "agent_gt was supplied to an `--agents head` build, which would "
+                "SILENTLY DROP it: the learned detector reads the feature map "
+                "and nothing else (`refc.py:3366-3368`), and its supervision "
+                "comes from `batch['agent_box']` in the trainer, never from "
+                "this channel. An arm that passed it would report as "
+                "+agent-GT while running vision-only. Use --agents oracle if "
+                "the GT boxes are meant to be the tokens, or stop passing "
+                "agent_gt.")
+E           ValueError: agent_gt was supplied to an `--agents head` build, which would SILENTLY DROP it: the learned detector reads the feature map and nothing else (`refc.py:3366-3368`), and its supervision comes from `batch['agent_box']` in the trainer, never from this channel. An arm that passed it would report as +agent-GT while running vision-only. Use --agents oracle if the GT boxes are meant to be the tokens, or stop passing agent_gt.
+
+tanitad\refs\refc_v3.py:1434: ValueError
+_____________ test_agents_off_and_head_are_BITWISE_UNCHANGED[off] _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_agents_off_and_head_are_B0')
+arm = 'off'
+
+    @pytest.mark.parametrize("arm", ["off", "head"])
+    def test_agents_off_and_head_are_BITWISE_UNCHANGED(tmp_path, arm):
+        """⛔ THE PARITY CLAIM, against the trainer WITHOUT the branch. The batch
+        carries GT boxes on both sides, so a gate that leaked would change the
+        answer.
+    
+        ⚠️ **Scope it honestly: only the ``off`` arm's parity is load-bearing.**
+        MEASURED 2026-09-10 — with the gate deliberately removed, ``off`` REFUSES
+        (``refc_v3.py:1398``) but ``head`` stays bitwise identical, because
+        ``refc.py:3366-3367`` builds head slots from ``fmap`` and never reads
+        ``agent_gt``, while the reverse guard only fires when ``core.agents`` is
+        absent or disabled. So on a head build ``agent_gt`` is SILENTLY DROPPED,
+        and this row cannot distinguish a correct gate from no gate at all. It is
+        kept because it still pins that the head arm did not MOVE; the sensitivity
+        proof is :func:`test_the_OFF_parity_comparison_CAN_FAIL`."""
+        T = _trainer()
+        R = _mutate(tmp_path, f"nobranch_{arm}", REVERT_FROM, REVERT_TO)
+        _m0, l0, _ = _run(R, arm)
+>       _m1, l1, _ = _run(T, arm)
+                     ^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:392: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refc_v3_agent_gt_reaches_forward.py:262: in _run
+    losses = T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\refc_v3_train.py:2363: in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+frames = tensor([[[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],
+           [0.5176, 0.6157, 0.8078,  ..., 0.2549, 0..., 0.7451, 0.1961,  ..., 0.5922, 0.3608, 0.0784],
+           [0.8588, 0.5529, 0.8118,  ..., 0.9333, 0.7529, 0.1647]]]]])
+nav_cmd = tensor([1, 2]), v0 = tensor([4.9775, 4.9775]), steps = 2, lan = None
+nav_known = None, ego_state = None, withheld_speed = None, gp_point = None
+gp_valid = None
+agent_gt = {'box': tensor([[[11.6985,  4.9761, 14.1842, 14.1378],
+         [ 5.6552,  9.5012,  5.1417, 13.5947],
+         [ 8.306...ue,  True,  True,  True,  True,  True,  True],
+        [ True,  True,  True,  True, False, False, False, False]]), ...}
+nav_args = None, v_max_ms = None, v_max_valid = None
+
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+    
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
+    
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+>           raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+E           ValueError: agent_gt was supplied but this build has no agent seam (`core.agents` is off) -- it would be SILENTLY DROPPED and the arm would report as +agents while running without them. Pass --agents oracle/head, or stop passing agent_gt.
+
+tanitad\refs\refc_v3.py:1399: ValueError
+____________ test_agents_off_and_head_are_BITWISE_UNCHANGED[head] _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_agents_off_and_head_are_B1')
+arm = 'head'
+
+    @pytest.mark.parametrize("arm", ["off", "head"])
+    def test_agents_off_and_head_are_BITWISE_UNCHANGED(tmp_path, arm):
+        """⛔ THE PARITY CLAIM, against the trainer WITHOUT the branch. The batch
+        carries GT boxes on both sides, so a gate that leaked would change the
+        answer.
+    
+        ⚠️ **Scope it honestly: only the ``off`` arm's parity is load-bearing.**
+        MEASURED 2026-09-10 — with the gate deliberately removed, ``off`` REFUSES
+        (``refc_v3.py:1398``) but ``head`` stays bitwise identical, because
+        ``refc.py:3366-3367`` builds head slots from ``fmap`` and never reads
+        ``agent_gt``, while the reverse guard only fires when ``core.agents`` is
+        absent or disabled. So on a head build ``agent_gt`` is SILENTLY DROPPED,
+        and this row cannot distinguish a correct gate from no gate at all. It is
+        kept because it still pins that the head arm did not MOVE; the sensitivity
+        proof is :func:`test_the_OFF_parity_comparison_CAN_FAIL`."""
+        T = _trainer()
+        R = _mutate(tmp_path, f"nobranch_{arm}", REVERT_FROM, REVERT_TO)
+        _m0, l0, _ = _run(R, arm)
+>       _m1, l1, _ = _run(T, arm)
+                     ^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:392: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refc_v3_agent_gt_reaches_forward.py:262: in _run
+    losses = T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\refc_v3_train.py:2363: in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+frames = tensor([[[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],
+           [0.5176, 0.6157, 0.8078,  ..., 0.2549, 0..., 0.7451, 0.1961,  ..., 0.5922, 0.3608, 0.0784],
+           [0.8588, 0.5529, 0.8118,  ..., 0.9333, 0.7529, 0.1647]]]]])
+nav_cmd = tensor([1, 2]), v0 = tensor([4.9775, 4.9775]), steps = 2, lan = None
+nav_known = None, ego_state = None, withheld_speed = None, gp_point = None
+gp_valid = None
+agent_gt = {'box': tensor([[[11.6985,  4.9761, 14.1842, 14.1378],
+         [ 5.6552,  9.5012,  5.1417, 13.5947],
+         [ 8.306...ue,  True,  True,  True,  True,  True,  True],
+        [ True,  True,  True,  True, False, False, False, False]]), ...}
+nav_args = None, v_max_ms = None, v_max_valid = None
+
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+    
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
+    
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+            raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+        if agent_gt is None and _ag is not None and _ag.enable and _ag.oracle:
+            raise ValueError(
+                "this build is `--agents oracle` but no agent_gt reached the "
+                "forward. The oracle's tokens ARE the ground-truth boxes; "
+                "with none the seam emits nothing and the arm would read as "
+                "'agent tokens do not help' while never having had any.")
+        # ⛔⛔ THE THIRD CASE — `D-AGENTGT-HEAD-SILENT-DROP`, closed 2026-09-10.
+        # The comment above claimed "Both directions refuse". It was FALSE, and
+        # the falsehood was load-bearing twice over:
+        #   * `refc.py:3366-3368` builds head slots from `fmap` and never reads
+        #     `agent_gt`, so on a `head` build a supplied GT block was dropped
+        #     with no warning, no log and no raise;
+        #   * `tanitad/rl/refc_adapter.py`'s `ChannelRequirement("agent_gt")`
+        #     WAIVED its own launch-time check citing exactly that claim —
+        #     "the model refuses BOTH directions loudly and unconditionally, so
+        #     there is no SILENT divergence for this guard to catch". Two guards,
+        #     each deferring to the other, and the channel unguarded at both.
+        # ⚠️ LATENT, NOT LIVE, at the time of closing: `refc_v3_train.py` gates
+        # `agent_gt` on `enable AND oracle`, so today's trainer supplies None on
+        # a head build. But `refc_adapter.FORWARD_KEYS` DOES forward `agent_gt`,
+        # so an RL-driven head build would have hit it — and the symptom would
+        # have been "agent tokens do not help", a refutation manufactured by a
+        # wiring gap. That is the exact failure the other two guards exist to
+        # prevent, so it gets the same treatment rather than a warning.
+        # ⭐ It also makes the `head` row of `test_agents_off_and_head_are_
+        # BITWISE_UNCHANGED` DISCRIMINATING: that test's own docstring records
+        # that the head row "cannot distinguish a correct gate from no gate at
+        # all" precisely because of this drop. It now can.
+        if (agent_gt is not None and _ag is not None
+                and _ag.enable and not _ag.oracle):
+>           raise ValueError(
+                "agent_gt was supplied to an `--agents head` build, which would "
+                "SILENTLY DROP it: the learned detector reads the feature map "
+                "and nothing else (`refc.py:3366-3368`), and its supervision "
+                "comes from `batch['agent_box']` in the trainer, never from "
+                "this channel. An arm that passed it would report as "
+                "+agent-GT while running vision-only. Use --agents oracle if "
+                "the GT boxes are meant to be the tokens, or stop passing "
+                "agent_gt.")
+E           ValueError: agent_gt was supplied to an `--agents head` build, which would SILENTLY DROP it: the learned detector reads the feature map and nothing else (`refc.py:3366-3368`), and its supervision comes from `batch['agent_box']` in the trainer, never from this channel. An arm that passed it would report as +agent-GT while running vision-only. Use --agents oracle if the GT boxes are meant to be the tokens, or stop passing agent_gt.
+
+tanitad\refs\refc_v3.py:1434: ValueError
+___________________ test_the_OFF_parity_comparison_CAN_FAIL ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_OFF_parity_comparison0')
+
+    def test_the_OFF_parity_comparison_CAN_FAIL(tmp_path):
+        """⛔⛔ THE DISCRIMINATING CONTROL. A parity test that cannot fail proves
+        nothing — WP-B's removability proof was green for a reason unrelated to
+        WP-B because a zero-init gate multiplied its branch away.
+    
+        Remove the gate so the branch fires on EVERY arm and ``--agents off``
+        must stop being identical. It does not merely differ: the model's reverse
+        guard refuses outright, which is the strongest possible form of 'the
+        comparison is sensitive'."""
+>       M = _mutate(tmp_path, "gate_removed", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:407: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_OFF_parity_comparison0')
+name = 'gate_removed'
+old = '    if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)\n            and getattr(_ag_cfg, "oracle", False)):'
+new = '    if True:'
+
+    def _mutate(tmp_path, name: str, old: str, new: str):
+        r"""A COPY of the trainer with one exact substitution, imported as its own
+        module.
+    
+        ⛔ Read and written as BYTES: a text-mode round-trip on Windows rewrites
+        every line ending, which turns a one-line mutant into a 5,640-line diff and
+        makes the arm impossible to audit (MEASURED 2026-09-10 — and ``grep -c``
+        for a carriage return reported 0 while the file SIZE said otherwise, so the
+        size was the artifact that settled it).
+    
+        ⛔ The anchor is resolved to this checkout's line ending by
+        :func:`_resolve_anchor`; the trainer's own bytes are NOT normalised, so the
+        mutant still differs from the shipped file by exactly ONE HUNK on every
+        platform and stays auditable.
+        """
+        src = open(_TRAINER_PY, "rb").read()
+        ob, n = _resolve_anchor(src, old)
+        nb = new.encode("utf-8").replace(b"\n", _eol(src))
+>       assert n == 1, (
+            f"the mutation anchor for {name!r} matched {n} times, not 1. The "
+            f"deliberate-regression arm is DISARMED, so this test would pass "
+            f"without proving anything. Re-anchor it against the current "
+            f"`refc_v3_train.py`; see {RECORD_DOC}.\nanchor:\n{old}")
+E       AssertionError: the mutation anchor for 'gate_removed' matched 0 times, not 1. The deliberate-regression arm is DISARMED, so this test would pass without proving anything. Re-anchor it against the current `refc_v3_train.py`; see TanitAD Research Lab/Architecture & Inference/Research/2026-09-09-wpc-oracle-gate/raw/APPLICATION_RECORD.md.
+E         anchor:
+E             if (_ag_cfg is not None and getattr(_ag_cfg, "enable", False)
+E                     and getattr(_ag_cfg, "oracle", False)):
+E       assert 0 == 1
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:182: AssertionError
+____________ test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED ____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2017/test_the_VALUE_corruption_leav0')
+
+    def test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED(tmp_path):
+        """⛔ ...and its converse, which is what makes the pair a discriminator
+        rather than two separate observations: the in-branch corruption must be
+        INVISIBLE to ``--agents off``. If this failed, the corruption would be
+        leaking outside the gate and the test above would prove nothing about
+        where the sensitivity lives."""
+        T = _trainer()
+        M = _mutate(tmp_path, "value_corrupt_off",
+                    CORRUPT_VALUE_FROM, CORRUPT_VALUE_TO)
+>       _m0, l0, _ = _run(M, "off")
+                     ^^^^^^^^^^^^^^
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:433: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_refc_v3_agent_gt_reaches_forward.py:262: in _run
+    losses = T.compute_losses_v3(model, batch, "cpu", mode="diffusion")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Temp\pytest-of-Admin\pytest-2017\test_the_VALUE_corruption_leav0\value_corrupt_off.py:2363: in compute_losses_v3
+    out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\nn\modules\module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(1, 8, ke...2, bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=32, out_features=2, bias=True)
+  )
+)
+frames = tensor([[[[[0.0863, 0.1294, 0.3059,  ..., 0.6510, 0.7725, 0.4353],
+           [0.5176, 0.6157, 0.8078,  ..., 0.2549, 0..., 0.7451, 0.1961,  ..., 0.5922, 0.3608, 0.0784],
+           [0.8588, 0.5529, 0.8118,  ..., 0.9333, 0.7529, 0.1647]]]]])
+nav_cmd = tensor([1, 2]), v0 = tensor([4.9775, 4.9775]), steps = 2, lan = None
+nav_known = None, ego_state = None, withheld_speed = None, gp_point = None
+gp_valid = None
+agent_gt = {'box': tensor([[[23.3969,  9.9521, 28.3685, 28.2756],
+         [11.3105, 19.0025, 10.2834, 27.1895],
+         [16.612...ue,  True,  True,  True,  True,  True,  True],
+        [ True,  True,  True,  True, False, False, False, False]]), ...}
+nav_args = None, v_max_ms = None, v_max_valid = None
+
+    def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
+                v0: Tensor | None = None, steps: int = 0,
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None,
+                ego_state: Tensor | None = None,
+                withheld_speed: Tensor | None = None,
+                gp_point: Tensor | None = None,
+                gp_valid: Tensor | None = None,
+                agent_gt: dict | None = None,
+                nav_args: Tensor | None = None,
+                v_max_ms: Tensor | None = None,
+                v_max_valid: Tensor | None = None) -> dict:
+        """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
+        — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
+    
+        ⭐ ``gp_point`` [B, 2] / ``gp_valid`` [B] (E15, S7): an EXTERNALLY
+        SUPPLIED metric goal point, in the SAME normalised units the head
+        emits, overriding the model's own prediction on the ranked-score seam.
+        This exists for exactly one purpose — PREREG §2's five eval-time
+        interventions (mirror ``y -> -y``, range ``x0.5``, straight, shuffled,
+        withheld) — so the whole panel rolls in ONE process on ONE surface
+        instead of five monkeypatched copies of the harness.
+        ⛔ It is a DIAGNOSTIC PORT, never a training input: the deployable arm
+        predicts its own goal from vision, and a run that fed this from a label
+        would be supplying a route, which is optimistic by construction on
+        PhysicalAI.
+    
+        ⛔ Fails loud when supplied to a build that would silently drop it: a
+        measured ego block quietly discarded is exactly the class of bug the
+        E13 nav seam and the X15 flag exist to remove, and it would look like
+        "the ego channels do not help" in a result table.
+        """
+        # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
+        # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
+        # not help" in a result table, which is a refutation manufactured by a
+        # wiring gap. Both directions refuse.
+        _ag = getattr(self.cfg.core, "agents", None)
+        if agent_gt is not None and (_ag is None or not _ag.enable):
+>           raise ValueError(
+                "agent_gt was supplied but this build has no agent seam "
+                "(`core.agents` is off) -- it would be SILENTLY DROPPED and "
+                "the arm would report as +agents while running without them. "
+                "Pass --agents oracle/head, or stop passing agent_gt.")
+E           ValueError: agent_gt was supplied but this build has no agent seam (`core.agents` is off) -- it would be SILENTLY DROPPED and the arm would report as +agents while running without them. Pass --agents oracle/head, or stop passing agent_gt.
+
+tanitad\refs\refc_v3.py:1399: ValueError
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_a_head_build_REFUSES_a_supplied_agent_gt
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_the_message_names_the_two_ways_out
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_the_shipped_trainer_still_runs_head_without_agent_gt
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_case_1_still_refuses_agent_gt_with_no_seam
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_the_HEAD_row_is_now_DISCRIMINATING
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_agents_off_and_head_are_BITWISE_UNCHANGED[off]
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_agents_off_and_head_are_BITWISE_UNCHANGED[head]
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_OFF_parity_comparison_CAN_FAIL
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_VALUE_corruption_leaves_agents_off_UNTOUCHED
+10 failed, 11 passed in 5.29s

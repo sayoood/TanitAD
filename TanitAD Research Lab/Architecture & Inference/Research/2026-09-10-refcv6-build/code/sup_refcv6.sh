@@ -41,7 +41,7 @@
 #    `$?` after a pipeline is the LAST element's status, so `cmd | tail` reports
 #    tail's success -- four false successes in two days. This script uses
 #    PIPESTATUS where a pipe is unavoidable, and the done-marker is written only
-#    after `metrics.json` is READ and its step count checked.
+#    after `metrics.jsonl` is READ and its step count checked.
 #
 # ⚠️ 6. NEVER `sed -i` THIS FILE WHILE IT IS RUNNING. bash reads a script lazily
 #    by byte offset; an in-place edit makes a live shell execute garbage from the
@@ -103,23 +103,39 @@ fi
 log "lock acquired on ${LOCK} (fd 200); supervisor pid $$"
 
 # ---- artifact-based completion test (rule 5) ------------------------------- #
-# ⛔ Reads metrics.json and requires the LAST step to have reached STEPS.
+# ⛔ Reads metrics.jsonl and requires the LAST step to have reached STEPS.
 #    An exit code is a claim by the process about itself; the artifact is the
 #    thing we actually wanted.
+# NOTE 2026-09-11: the artifact is `metrics.jsonl`, JSON-LINES, opened in APPEND
+# mode by `refc_v3_train.py:4956`. This function used to name `metrics.json` and
+# `json.load` it -- MEASURED against a real completed run dir
+# (/home/nvidia/experiments/tacgoal-wsweep/A_w0/: ckpt.pt, config.json,
+# metrics.jsonl, summary.json, train.log -- NO metrics.json). It could therefore
+# NEVER have returned 0, so the done-marker would NEVER have been written, and
+# this supervisor would have relaunched a FINISHED arm until MAX_RELAUNCH ran
+# out -- which is precisely the resurrection failure rule 2 exists to prevent.
+# "Assert on the artifact, not the status" only protects you when it is the
+# RIGHT artifact.
 run_is_complete() {
-  local mj="${OUT_DIR}/metrics.json"
+  local mj="${OUT_DIR}/metrics.jsonl"
   [ -s "$mj" ] || return 1
   python3 - "$mj" "$STEPS" <<'PYEOF' 200>&-
 import json, sys
+steps = []
 try:
     with open(sys.argv[1], "r", encoding="utf-8") as fh:
-        m = json.load(fh)
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue            # a torn final line is skipped, never fatal
+            if isinstance(r, dict) and isinstance(r.get("step"), int):
+                steps.append(r["step"])
 except Exception:
     sys.exit(1)
-rows = m if isinstance(m, list) else m.get("rows") or m.get("history") or []
-steps = [r.get("step") for r in rows if isinstance(r, dict) and isinstance(r.get("step"), int)]
-if not steps and isinstance(m, dict) and isinstance(m.get("step"), int):
-    steps = [m["step"]]
 sys.exit(0 if steps and max(steps) >= int(sys.argv[2]) - 1 else 1)
 PYEOF
 }
@@ -135,7 +151,7 @@ with open(path, "w", encoding="utf-8") as fh:
         "final_step": int(final_step), "steps_requested": int(steps),
         "out_dir": out_dir,
         "written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "note": ("Written by sup_refcv6.sh AFTER metrics.json was read and its "
+        "note": ("Written by sup_refcv6.sh AFTER metrics.jsonl was read and its "
                  "step count checked. Its presence is the supervisor's OFF "
                  "SWITCH: a supervisor started against this directory exits "
                  "immediately rather than resurrecting a finished run."),
@@ -144,17 +160,23 @@ PYEOF
 }
 
 final_step_from_metrics() {
-  python3 - "${OUT_DIR}/metrics.json" <<'PYEOF' 200>&-
+  python3 - "${OUT_DIR}/metrics.jsonl" <<'PYEOF' 200>&-
 import json, sys
+steps = []
 try:
     with open(sys.argv[1], "r", encoding="utf-8") as fh:
-        m = json.load(fh)
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(r, dict) and isinstance(r.get("step"), int):
+                steps.append(r["step"])
 except Exception:
     print(-1); raise SystemExit(0)
-rows = m if isinstance(m, list) else m.get("rows") or m.get("history") or []
-steps = [r.get("step") for r in rows if isinstance(r, dict) and isinstance(r.get("step"), int)]
-if not steps and isinstance(m, dict) and isinstance(m.get("step"), int):
-    steps = [m["step"]]
 print(max(steps) if steps else -1)
 PYEOF
 }
@@ -166,7 +188,7 @@ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
 
   if run_is_complete; then
     fs="$(final_step_from_metrics)"
-    log "metrics.json already reaches step ${fs} >= ${STEPS} -- writing done-marker."
+    log "metrics.jsonl already reaches step ${fs} >= ${STEPS} -- writing done-marker."
     write_done_marker "$fs"
     log "done-marker written; exiting cleanly."
     exit 0
@@ -204,14 +226,14 @@ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
 
   if run_is_complete; then
     fs="$(final_step_from_metrics)"
-    log "ARTIFACT CHECK PASSED: metrics.json reaches step ${fs} >= ${STEPS}."
+    log "ARTIFACT CHECK PASSED: metrics.jsonl reaches step ${fs} >= ${STEPS}."
     write_done_marker "$fs"
     log "done-marker written at ${DONE_MARKER}; supervisor exiting cleanly."
     exit 0
   fi
 
   cur="$(final_step_from_metrics)"
-  log "ARTIFACT CHECK FAILED: metrics.json reaches ${cur}, wanted >= ${STEPS}."
+  log "ARTIFACT CHECK FAILED: metrics.jsonl reaches ${cur}, wanted >= ${STEPS}."
   log "⚠️ refc_v3_train.py has NO --resume (two probes) -- a relaunch RESTARTS this arm."
   log "   Relaunching only because MAX_RELAUNCH allows it; set MAX_RELAUNCH=1 to forbid."
   sleep 30 200>&-

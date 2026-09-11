@@ -1,0 +1,143 @@
+FF.F.F.F.....F...FF..                                                    [100%]
+================================== FAILURES ===================================
+________________ test_a_head_build_REFUSES_a_supplied_agent_gt ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_a_head_build_REFUSES_a_su0')
+
+    def test_a_head_build_REFUSES_a_supplied_agent_gt(tmp_path):
+        """⭐ THE LOAD-BEARING TEST. Remove the trainer's oracle gate so a real
+        ``agent_gt`` reaches a real ``--agents head`` forward. Before 2026-09-10 this
+        ran to completion with the block discarded; it must now refuse."""
+        M = _mutate(tmp_path, "gate_removed_head", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+>       with pytest.raises(ValueError, match="SILENTLY DROP"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_head_drop.py:206: Failed
+___________________ test_the_message_names_the_two_ways_out ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_the_message_names_the_two0')
+
+    def test_the_message_names_the_two_ways_out(tmp_path):
+        """A refusal that does not say what to do instead gets worked around with
+        the first thing that silences it — which here would be `strict=False`'s
+        cousin: deleting the channel from the caller."""
+        M = _mutate(tmp_path, "gate_removed_msg", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+>       with pytest.raises(ValueError) as ei:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_head_drop.py:215: Failed
+___________ test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed ___________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_DELIBERATE_REGRESSION_the0')
+
+    def test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed(tmp_path):
+        """⛔ A mutation arm whose anchor has drifted passes while proving nothing —
+        the disarmed-regression class. Assert the mutant really differs from the
+        shipped trainer, by BYTES."""
+        M = _mutate(tmp_path, "armed_check", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+        shipped = open(_TRAINER_PY, "rb").read()
+        mutant = open(M.__file__, "rb").read()
+>       assert mutant != shipped
+E       assert b'"""REF-C v3 trainer \xe2\x80\x94 the goal-mediated hierarchy on the supervised arm.\r\n\r\nDesign: ``TanitAD Researc...\n        raise SystemExit(preflight(args))\r\n    train(args)\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n' != b'"""REF-C v3 trainer \xe2\x80\x94 the goal-mediated hierarchy on the supervised arm.\r\n\r\nDesign: ``TanitAD Researc...\n        raise SystemExit(preflight(args))\r\n    train(args)\r\n\r\n\r\nif __name__ == "__main__":\r\n    main()\r\n'
+
+tests\test_refc_v3_agent_gt_head_drop.py:266: AssertionError
+_______________ test_case_1_still_refuses_agent_gt_with_no_seam _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_case_1_still_refuses_agen0')
+
+    def test_case_1_still_refuses_agent_gt_with_no_seam(tmp_path):
+        """The pre-existing guard must be untouched by the new one."""
+        M = _mutate(tmp_path, "gate_removed_off", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+>       with pytest.raises(ValueError, match="no agent seam"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_head_drop.py:296: Failed
+___________________ test_the_HEAD_row_is_now_DISCRIMINATING ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_the_HEAD_row_is_now_DISCR0')
+
+    def test_the_HEAD_row_is_now_DISCRIMINATING(tmp_path):
+        """⭐ THE SIDE EFFECT, ASSERTED RATHER THAN CLAIMED.
+    
+        `test_refc_v3_agent_gt_reaches_forward.py` records that its ``head`` parity
+        row could not tell a correct gate from no gate at all, because a head build
+        swallowed ``agent_gt`` either way. With case 3 refused, removing the gate
+        now changes the head arm's OUTCOME — from 'runs' to 'refuses' — which is the
+        strongest form of 'this comparison is sensitive'.
+        """
+        T = _trainer()
+        assert torch.isfinite(_run(T, "head")["loss"])          # gate in place: runs
+        M = _mutate(tmp_path, "gate_removed_disc", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+>       with pytest.raises(ValueError, match="SILENTLY DROP"):  # gate removed: refuses
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_head_drop.py:321: Failed
+_______________ test_REVERTING_THE_PATCH_REPRODUCES_THE_DEFECT ________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_REVERTING_THE_PATCH_REPRO0')
+
+    def test_REVERTING_THE_PATCH_REPRODUCES_THE_DEFECT(tmp_path):
+        """⛔⛔ THE ARM THAT GIVES EVERY TEST ABOVE ITS MEANING. Revert the one-line
+        change to the forward call — the dict is still built, it simply never
+        arrives — and the model's own guard must refuse.
+    
+        This is the EXACT state the WP-C oracle gate hit on 2026-09-09, and it is
+        the reason a ~40 GPU-hour negative would have been manufactured rather than
+        measured had the guard not existed."""
+        R = _mutate(tmp_path, "reverted", REVERT_FROM, REVERT_TO)
+>       with pytest.raises(ValueError, match="no agent_gt reached the forward"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:346: Failed
+___________________ test_the_OFF_parity_comparison_CAN_FAIL ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_the_OFF_parity_comparison0')
+
+    def test_the_OFF_parity_comparison_CAN_FAIL(tmp_path):
+        """⛔⛔ THE DISCRIMINATING CONTROL. A parity test that cannot fail proves
+        nothing — WP-B's removability proof was green for a reason unrelated to
+        WP-B because a zero-init gate multiplied its branch away.
+    
+        Remove the gate so the branch fires on EVERY arm and ``--agents off``
+        must stop being identical. It does not merely differ: the model's reverse
+        guard refuses outright, which is the strongest possible form of 'the
+        comparison is sensitive'."""
+        M = _mutate(tmp_path, "gate_removed", CORRUPT_GATE_FROM, CORRUPT_GATE_TO)
+>       with pytest.raises(ValueError, match="no agent seam"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:408: Failed
+__________________ test_the_ORACLE_value_assertion_CAN_FAIL ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-2021/test_the_ORACLE_value_assertio0')
+
+    def test_the_ORACLE_value_assertion_CAN_FAIL(tmp_path):
+        """⛔ The other half of the same discipline, on the ON side. Corrupt the
+        VALUE inside the branch and leave the gate alone: the oracle's bitwise
+        assertion must break while nothing else can see the change."""
+        M = _mutate(tmp_path, "value_corrupt",
+                    CORRUPT_VALUE_FROM, CORRUPT_VALUE_TO)
+        _model, _losses, seen = _run(M, "oracle", spy=True)
+        box, _yaw, _cls, _valid = _gt_tensors()
+>       assert not torch.equal(seen["agent_gt"]["box"], box)
+E       assert not True
+E        +  where True = <built-in method equal of type object at 0x00007FFA5C718DE0>(tensor([[[11.6985,  4.9761, 14.1842, 14.1378],\n         [ 5.6552,  9.5012,  5.1417, 13.5947],\n         [ 8.3063, 18.02...058,  3.0985, 11.2732],\n         [ 6.3478, 10.9808, 15.8946, 15.4267],\n         [ 9.8274, 12.1010, 13.7214,  3.1618]]]), tensor([[[11.6985,  4.9761, 14.1842, 14.1378],\n         [ 5.6552,  9.5012,  5.1417, 13.5947],\n         [ 8.3063, 18.02...058,  3.0985, 11.2732],\n         [ 6.3478, 10.9808, 15.8946, 15.4267],\n         [ 9.8274, 12.1010, 13.7214,  3.1618]]]))
+E        +    where <built-in method equal of type object at 0x00007FFA5C718DE0> = torch.equal
+
+tests\test_refc_v3_agent_gt_reaches_forward.py:420: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_a_head_build_REFUSES_a_supplied_agent_gt
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_the_message_names_the_two_ways_out
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_DELIBERATE_REGRESSION_the_mutation_anchor_is_armed
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_case_1_still_refuses_agent_gt_with_no_seam
+FAILED tests/test_refc_v3_agent_gt_head_drop.py::test_the_HEAD_row_is_now_DISCRIMINATING
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_REVERTING_THE_PATCH_REPRODUCES_THE_DEFECT
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_OFF_parity_comparison_CAN_FAIL
+FAILED tests/test_refc_v3_agent_gt_reaches_forward.py::test_the_ORACLE_value_assertion_CAN_FAIL
+8 failed, 13 passed in 5.93s
