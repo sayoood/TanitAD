@@ -169,5 +169,261 @@ references to the trainer or the probe. Detail: `raw/suite_baseline.txt`.
 
 ---
 
-*(§7 the grad-versus-weight curve · §8 the budget and the recommendation · §9 the manifest —
-written from the completed sweep.)*
+## 7. ⭐ THE CURVE — nine arms, and the zero control is the point no scaling can produce
+
+Nine 400-step arms on one binary (md5 `3575e1f4ab2851a51d282ff7e4f44d73`), ~28 min each,
+`seed 0`, one lever moved. `grad_abs_sum` is on `tac_goal_tok_head`, **unrounded**, read after
+`backward()` and before the clip. Every arm reports `n_params` **11,286** — a literal match.
+
+| arm | `--w-tac-goal` | `grad` first → last | `n_grad_none` | `traj` tail-5 | `cuda_max_mem_gb` |
+|---|---|---|---|---|---|
+| `A_w0` | **absent** | **0.0 → 0.0** | **2 of 2** | 1.400468 | 36.1223 |
+| `A_w0_rep` | **absent** | **0.0 → 0.0** | **2 of 2** | 1.316024 | 36.1223 |
+| `A_w0_rep2` | **absent** | **0.0 → 0.0** | **2 of 2** | 1.327934 | 36.1223 |
+| `B_w0p005` | 0.005 | 0.4885 → 9.0499 | 0 of 2 | 1.430578 | 36.1224 |
+| `C_w0p05` | 0.05 | 4.7535 → 86.994 | 0 of 2 | 1.422654 | 36.1224 |
+| `F_w0p15` | 0.15 | 14.541 → 312.50 | 0 of 2 | 1.530936 | 36.1224 |
+| `D_w0p5` | 0.5 | 42.262 → 803.67 | 0 of 2 | 1.385472 | 36.1224 |
+| `E_w5p0` | 5.0 | 223.93 → 5450.6 | 0 of 2 | 1.429518 | 36.1224 |
+
+⭐ **Does the zero control read exactly 0.0? YES — and not once but 60 times.** All three
+zero-weight arms read `grad_abs_sum` **exactly `0.0` at every one of their 20 logged steps**
+(`sorted(set(...)) == [0.0]`), with `n_grad_none` **2 of 2**. The term is *absent from the
+graph*, not multiplied by zero — and no scaling of a non-zero gradient can produce an exact
+zero, which is what makes it a control rather than a small number.
+
+⭐ **Two further no-information controls read exactly 0.0 in ALL NINE arms** —
+`core.decoder.offset_head` (6,160) and `scorer.goal_point` (1,026). They reproduce
+`REFCV6_ARM_FACTS.md` §5 on a *running trainer at the live width*, and they are what stops
+"non-zero" from being an artifact of the probe.
+
+⭐ **THE CURVE IS LINEAR IN w, WHICH IS AN ANALYTIC PREDICTION AND NOT A FIT.** For a linearly
+weighted term the gradient on the head scales as `w`, so a ×10 weight should give ×10 gradient.
+Measured, on the last logged step: `9.05 → 86.99` = **×9.61**, `86.99 → 803.67` = **×9.24**,
+`803.67 → 5450.6` = **×6.78** (the trunk co-adapts at the top end, which is the expected
+direction). Across the full **1000×** span `0.005 → 5.0` the gradient moves **×602**.
+
+⚠️ **Memory is flat.** `torch.cuda.max_memory_allocated()` reads **36.1223 GB** for every
+zero-weight arm and **36.1224 GB** for every weighted one — a difference of **~0.1 MB**, which
+is the 11,286 parameters' gradient buffer. ⛔ **The weight costs no memory; it is not a capacity
+decision.**
+
+## 8. ⛔ THE BUDGET, AND THE VERDICT ARM BY ARM AGAINST THE PRE-REGISTERED RULE
+
+The weight is meaningless without the term it multiplies. `tac_goal` is a pos-weighted
+multi-label BCE and `traj` is an L1 — what is comparable is the **contribution each makes to the
+scalar that is differentiated**. The references are literals from `refc_train.py`:
+`TRAJ_WEIGHT = 1.0` (:76), `MANEUVER_WEIGHT = 0.1` (:80), `LAT_WEIGHT = LON_WEIGHT = 0.05`
+(:90-91), combined by `refc_v3_train.py:2495-2496` as `0.025 x (lat + lat_tac + lon + lon_tac)`
+— the **total tactical-auxiliary budget, as actually spent over its four surfaces**.
+
+| arm | `w` | `w x tac_goal` | ÷ tactical budget | ÷ primary | ÷ total loss | `traj` Δ vs `A_w0` | × floor | (a) | (b) | (c) | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `B_w0p005` | 0.005 | 0.00286 | **0.022** | 0.20 % | 0.015 % | +0.03011 | 0.357 | PASS | PASS | PASS | ✅ **ADMISSIBLE** |
+| `C_w0p05` | 0.05 | 0.02815 | **0.190** | 1.98 % | 0.147 % | +0.02219 | 0.263 | PASS | PASS | PASS | ✅ **ADMISSIBLE** |
+| `F_w0p15` | 0.15 | 0.09131 | **0.713** | 5.96 % | 0.446 % | +0.13047 | **1.545** | PASS | ⛔ **FAIL** | PASS | ❌ |
+| `D_w0p5` | 0.5 | 0.26134 | **1.708** | 18.9 % | 1.42 % | −0.01500 | 0.178 | PASS | PASS | ⛔ **FAIL** | ❌ |
+| `E_w5p0` | 5.0 | 2.97846 | **20.20** | 208 % | 13.2 % | +0.02905 | 0.344 | PASS | PASS | ⛔ **FAIL** | ❌ |
+
+⛔ **`F_w0p15` FAILED its pre-registered criterion (b)** — `|Δ traj|` = 0.13047 against a floor
+of 0.084444, i.e. **1.545×**. That is reported as a FAIL, and the floor is **not** re-estimated
+to rescue it: adding the third control left `traj`'s floor at **exactly 0.084444**, because
+`A_w0_rep2`'s 1.327934 landed *between* the other two.
+
+### 8.1 ⚠️ WHY CRITERION (b) DOES NOT DISCRIMINATE ON THIS RIG — an argument from dose, not from convenience
+
+| `w` | 0.005 | 0.05 | **0.15** | 0.5 | 5.0 |
+|---|---|---|---|---|---|
+| `traj` Δ | +0.03011 | +0.02219 | **+0.13047** | **−0.01500** | +0.02905 |
+| × floor | 0.357 | 0.263 | **1.545** | 0.178 | 0.344 |
+
+⛔ **Over a 1000× dose range the perturbation is NOT MONOTONE, and the largest weight perturbs
+LESS than the smallest.** `w = 5.0` spends **20× the entire tactical budget** and drives the
+gradient to 5,450 — and moves `traj` by +0.029, *less* than `w = 0.005` does. If the weight were
+causing the movement, a 1000× change in dose would show it. ⇒ criterion (b) is reading the rig's
+run-to-run noise.
+
+⭐ **AND THE PANEL MEASURED THAT NOISE DIRECTLY.** `A_w0` / `A_w0_rep` / `A_w0_rep2` are the
+SAME flags, the SAME seed, run three times with **zero levers moved** — and they differ at
+**every one of the 20 logged steps**. This rig is **not deterministic at a fixed seed**. Over
+13 tracked terms the single-pair floor was too tight and the third control widened it by up to
+**3.73×** (`lon` 0.4655 → 1.7344; `loss` 2.24×; `goal2s_err_m` 1.97×; `goal_tac` 1.92×). ⛔ With
+a one-pair floor, **16 of 39 arm×term cells (41 %) crossed it**, and the crossings were
+non-monotone in dose — the `A0b_replicate` result the programme already recorded, reproduced
+here at 108 M.
+
+⇒ ⭐ **Criterion (c) is what actually sets the weight, because it is ARITHMETIC rather than
+statistical.** `w x tac_goal` against the trainer's own tactical contribution is computed from
+logged quantities and needs no noise model at all.
+
+### 8.2 The criterion-(c) ceiling — five independent estimates that agree
+
+`tac_goal` is nearly independent of `w` (0.523 – 0.609 across a 1000× span), so `w x term` is
+close to linear and every arm gives its own estimate of the crossing point `w* = w / ratio`:
+
+| arm | `B_w0p005` | `C_w0p05` | `F_w0p15` | `D_w0p5` | `E_w5p0` | |
+|---|---|---|---|---|---|---|
+| `w*` | 0.2292 | 0.2633 | 0.2103 | 0.2927 | 0.2476 | **mean 0.2486, range [0.2103, 0.2927]** |
+
+⚠️ **Evidence class: EXTRAPOLATED between tested weights, not MEASURED.** Five arms agreeing
+within ±18 % is what makes it quotable at all; the sweep measures admissibility only at the
+weights it actually ran.
+
+## 9. ⛔⛔ THE FINDING THAT OUTRANKS THE WEIGHT — refcv6 arm C, AS SPECIFIED, WOULD HAVE DIED AT STEP 500 OF 40,284
+
+Every weighted arm **exited 1**, and it was not the training:
+
+```
+400 of 400 steps completed, "ckpt step 400 -> ckpt.pt" written, THEN the step-400
+held-out eval raised:
+  [v3] --w-tac-goal > 0 but the batch carries no `tac_goal_y`/`tac_goal_w` ...
+```
+
+`tac_goal_targets` was set in **exactly one place** — the TRAIN dataset. The eval dataset `e_ds`
+is a different object and never got it. The refusal is **correct** (a silently-skipped term with
+the weight stamped in `config.json` is the `w_agent` defect), but `SystemExit` derives from
+`BaseException`, so the eval block's `except Exception` — which exists precisely so *"an
+in-training eval must never take the run down"* — **cannot catch it**.
+
+⛔ **refcv6 arm C is refcv5-v2's argv plus `--w-tac-goal`, and that argv carries
+`--eval-every 500`.** ⇒ arm C would have died at **step 500 of 40,284**, roughly **35 GPU-minutes
+into a ~47 GPU-hour run**, every time, with the cause reading like a flag error.
+
+⭐ **The precedent was already in the same function, ten lines away.** The `--bev-aux` block sets
+`e_ds.bev_spec` for exactly this reason and its comment spells out the `SystemExit` mechanism in
+full. The tac-goal term never got the same line.
+
+**Fixed** (`stack/scripts/refc_v3_train.py`, +25 lines, 0 removed): `e_ds.tac_goal_targets` and
+`e_ds.tac_goal_negatives`, gated on the same weight, inside the `if args.eval_labels:` branch.
+⛔ `pos_weight` and `class_mask` are **not** refitted there — they live on the model and were fit
+on the TRAIN split; fitting them on the split they are about to score would be the
+tuning-on-the-scored-data defect.
+
+⭐ **Proven end to end, not asserted.** `EVALFIX_smoke` — the *same* `--w-tac-goal 0.05`
+configuration that exited 1 on every sweep arm — runs on the fixed trainer
+(`2c5821aaa036388a85103ed64b8878a5`) and **exits 0 with an eval row**:
+
+```
+eval_tac_goal                0.55854
+eval_tac_goal_n_supervised  41.625      <- non-zero: the term is really computed
+eval_tac_goal_n_pos         11.375
+```
+
+⚠️ `n_supervised 41.625` matters: a term that returned `0.0` with `n_supervised == 0` would be a
+vacuous pass. Guard: `stack/tests/test_tacgoal_eval_target_wiring.py` (8 tests) with four
+mutation arms (§10).
+
+⚠️ **What this costs the sweep, stated plainly:** the held-out eval row exists for the three
+zero-weight controls and is **absent for every weighted arm**, because they ran on the pre-fix
+binary. The secondary held-out comparison between control and weighted arms is therefore **not
+available**, and the verdicts above rest on the pre-registered training-side statistic — which
+is what criterion (b) was written against. Recovering it needs a re-run, not a re-analysis.
+
+## 10. The guards — 11 mutations, all RED, and two of my own were caught INERT
+
+`stack/tests/test_grad_probe_tacgoal.py` (11 tests) and
+`stack/tests/test_tacgoal_eval_target_wiring.py` (8 tests) — **19 passing**. Every expectation is
+a literal: `0.0`, `2`, `15`, `30.0`, `11286`, `22`, `1e-8`.
+
+`raw/mutation_proof.py` reintroduces each defect, runs the named test, restores the trainer and
+**md5-verifies the restore** (`3dcbfa555896422e81d61eb5fa3dde18` before and after every arm).
+
+| | mutation | verdict |
+|---|---|---|
+| M1 / M1b | the probe's row merge disabled / deleted | **RED** |
+| M2 | the probe moved AFTER `clip_grad_norm_` | **RED** |
+| M3 | the probe counts `p.numel()` instead of the gradient | **RED** |
+| M6 | `.abs()` dropped | **RED** |
+| M4 | `--w-tac-goal` default raised off `0.0` | **RED** |
+| M5 | a missing module reads like an unreached one | **RED** |
+| **M7** | **the EVAL dataset loses its goal-set target — the arm that died on Thor** | **RED** |
+| M8 | the eval wiring loses its weight gate | **RED** |
+| M9 | the sibling `--bev-aux` eval wiring dropped | **RED** |
+| M10 | the eval handler widened to `BaseException` | **RED** |
+
+**`INERT GUARDS = 0`.**
+
+⭐⭐ **TWO OF MY OWN GUARDS WERE MEASURED INERT ON THE FIRST RUN, and the second is the more
+useful lesson.** M3 — a probe that counts *parameters* instead of gradients — left BOTH "the
+unreached head reads exactly 0.0" and its `> 0.0` partner GREEN: the unreached head's grads are
+`None`, so the mutated line never ran; the reached head still summed to something positive.
+**`> 0.0` is precisely a check that shares the defect it checks for.** The fix was an **analytic
+target**: `Linear(4, 3)` is 15 parameters in 2 tensors, every gradient element set to exactly
+`-2.0`, so `sum(|grad|)` **is 30.0** — while a `numel` probe reads `15.0` and an `abs`-less probe
+reads `-30.0`. One literal separates all three.
+
+## 11. ⭐ THE RECOMMENDATION — and it is a recommendation, not a decision
+
+> **Recommend `--w-tac-goal 0.05` for refcv6 arm C.**
+
+It is the **largest weight admissible on all three pre-registered criteria**, and it is the only
+recommendation that does not depend on which noise floor you believe: it passes under the
+one-pair floor and under the three-control floor, and it sits **4.97× below** the extrapolated
+criterion-(c) ceiling of ≈0.25.
+
+What 0.05 buys and costs, in the arithmetic the PI asked for:
+
+* the head **trains** — `grad_abs_sum` **4.75 → 86.99**, against **exactly 0.0** for all 40,284
+  steps of refcv5-v2;
+* it adds **0.0282** to a loss of **19.1** — **0.147 %** of the total, **1.98 %** of the primary;
+* against `MANEUVER_WEIGHT = 0.1` as actually spent, it is **19.0 %** — ⛔ **nothing is taken
+  from it.** The flag is structurally additive; no existing term is rebalanced. The `/3.0`
+  re-split remains **a separate arm, not a tweak**, because it would change `lat`/`lon` pressure
+  and break pairing with the banked arm;
+* it costs **~0.1 MB** of GPU memory.
+
+⚠️ **If the PI wants the most signal rather than the most caution**, the measured band runs to
+the criterion-(c) ceiling ≈**0.25**; `0.15` was tested and clears (a) and (c) but **failed (b) as
+pre-registered**, so it is not recommended on this evidence. ⚠️ **If the PI wants the term
+strictly inside `MANEUVER_WEIGHT` rather than beside it**, that is the `/3.0` re-split and it is
+a different arm.
+
+### 11.1 What transfers to refcv6 arm C, and what does not
+
+| transfers | does NOT transfer |
+|---|---|
+| **the architecture and scale** — 108,257,502 params; this *is* arm C's trainer | ⛔ **the step budget.** 400 steps is **1.0 %** of 40,284. This is early-training displacement, not final quality. |
+| **the head width** — 11,286, the live `d_tac 512` | ⛔ **anything about whether the head HELPS.** That is `H-TACGOAL-1`, with its own bar, its own eval and its four families. |
+| **the corpus and label join** — b1 + v7.2, parity `f09e44db` VERIFIED by the trainer | ⚠️ **training-seed variance.** All three controls share seed 0, so the floor is the rig's *nondeterminism* — a LOWER BOUND on the seed floor. A different-seed control is the named next lever. |
+| **the budget arithmetic** — `w x term` vs the tactical contribution is a property of the loss, not of the step count | ⚠️ **the held-out reading for weighted arms** — lost to the eval defect, recoverable only by re-running. |
+
+## 12. Manifest
+
+| artifact | where it lives | in ≥2 places? |
+|---|---|---|
+| `stack/scripts/refc_v3_train.py` (+93 probe, +25 eval fix, **0 removed**) | `repo:` staged · `thor:/home/nvidia/tacgoal_sweep/trainer_FIXED.py` | yes |
+| `stack/tests/test_grad_probe_tacgoal.py` (11 tests) | `repo:` staged | repo only |
+| `stack/tests/test_tacgoal_eval_target_wiring.py` (8 tests) | `repo:` staged | repo only |
+| `PREREG_TACGOAL_WEIGHT_SWEEP.md` | `repo:` staged | repo only |
+| `RESULT.md` (this file) | `repo:` staged | repo only |
+| 9 × `raw/<arm>_metrics.jsonl` + 2 smoke | `repo:` staged · `thor:/home/nvidia/experiments/tacgoal-wsweep/<arm>/` | yes |
+| `raw/A_w0_config.json`, `raw/C_w0p05_config.json`, `raw/A_w0_summary.json`, `raw/A_w0_rep_summary.json`, `raw/A_w0_train.log`, `raw/C_w0p05_train.stderr.log` | `repo:` staged · `thor:` same dirs | yes |
+| `raw/BUDGET_ANALYSIS.json`, `raw/analyze_budget.py`, `raw/analyze_sweep.py` | `repo:` staged | repo only |
+| `raw/mutation_proof.py` + `.log` (11 arms, 0 inert) | `repo:` staged | repo only |
+| `raw/rig_census.json`, `raw/suite_baseline.txt` | `repo:` staged | repo only |
+| `raw/run_tacgoal_sweep.sh`, `raw/run_tacgoal_followup.sh` | `repo:` staged · `thor:/home/nvidia/tacgoal_sweep/` | yes |
+| `raw/sweep_progress.log`, `raw/followup_progress.log` | `repo:` staged · `thor:` | yes |
+| checkpoints (`ckpt.pt`, **1,299,555,361 B × 9**) | ⚠️ **`thor:` ONLY** — deliberately not banked; they are 400-step artifacts of a calibration, not results | **no** |
+
+⚠️ **DISK, because a full quota has killed a flagship mid-checkpoint here before.** The run left **13.5 GB** on Thor — `/home/nvidia/experiments/tacgoal-wsweep` **11 G** (9 arms, each with a 1.3 GB `ckpt.pt`) and `/home/nvidia/experiments/tacgoal-smoke` **2.5 G**. The box is now at **90 % (94 G free)**, up from 88 % before the sweep. ⛔ Nothing was deleted: every metric, config and log is banked in this package, so the checkpoints are reclaimable at any time, but that is a shared-box call rather than mine to take unilaterally.
+
+⚠️ **Trainer currency.** The nine panel arms ran on md5 `3575e1f4ab2851a51d282ff7e4f44d73`; the
+repo file is `2c5821aaa036388a85103ed64b8878a5`. The delta is **the eval-wiring fix plus a 3-line
+helper guard that only fires when the probe's name list is EMPTY** — the sweep always passed
+three names, so no panel number is affected. Both md5s are written into
+`raw/followup_progress.log` by the runner itself.
+
+## 13. ⛔ Escalation — three things that need a decision or an owner, not a doc
+
+1. **PI queue item 10 is ready to close.** The weight has a measured recommendation
+   (`--w-tac-goal 0.05`) and a curve. ⛔ **It is not closed by this package** — ratification is
+   the PI's.
+2. ⛔ **`D-TACGOAL-EVAL-1` must reach any launch path for arm C before it spends a pod.** The fix
+   is staged and tested, and Thor's sweep tree carries it — but a launch from a stale checkout
+   would still die at step 500. **Grep-verify `e_ds.tac_goal_targets` is present on the
+   launching box before arm C starts.**
+3. ⚠️ **10 tests are RED at HEAD and their deliberate-regression arms are DISARMED**
+   (`test_refc_v3_agent_gt_head_drop.py`, `test_refc_v3_agent_gt_reaches_forward.py`). MEASURED
+   identical against HEAD's own trainer, so they predate this work — but every one reports *"the
+   mutation anchor matched 0 times … this test would pass without proving anything"*. They
+   currently guard nothing. Filed as a separate task.

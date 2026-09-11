@@ -4583,6 +4583,31 @@ def train(args) -> dict:
                 if getattr(args, "nav_args", False):
                     eval_nav_args_stats = e_ds.enable_nav_args(
                         stats=ds.nav_arg_stats)
+            # ⭐⭐ D-TACGOAL-EVAL-1 — the eval dataset needs the goal-set
+            # TARGET, for precisely the reason the WP-D block below needs
+            # `bev_spec`, and it is here because arm `C_w0p05` of the
+            # 2026-09-11 weight sweep DIED ON IT: 400/400 training steps
+            # done, checkpoint written, then the step-400 eval raised the
+            # REFUSE-DO-NOT-SKIP guard and the process exited 1 with no eval
+            # row. `SystemExit` derives from BaseException, so the eval
+            # block's `except Exception` cannot catch it
+            # (`issubclass(SystemExit, Exception)` is False).
+            # ⛔ WHY IT MATTERS BEYOND A DIAGNOSTIC: refcv6 arm C is
+            # refcv5-v2's argv plus `--w-tac-goal`, and that argv carries
+            # `--eval-every 500`. Arm C would have died at STEP 500 OF
+            # 40,284.
+            # ⛔ THE pos_weight AND class_mask ARE NOT REFITTED HERE. They
+            # live on the MODEL and were fitted on the TRAIN split; fitting
+            # them on the eval split would be a statistic fitted on the data
+            # it is about to score. Only the TARGET is wired.
+            # ⚠️ On an eval split whose records carry no goal token this is
+            # still correct and still not a crash: every cell is IGNORE_W, so
+            # `tac_goal_loss` returns a real 0.0 WITH `n_supervised == 0`
+            # saying why — the documented control, never a silent skip.
+            if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:
+                e_ds.tac_goal_targets = True
+                e_ds.tac_goal_negatives = str(getattr(
+                    args, "tac_goal_negatives", "measured"))
             # ⭐ E16 — the eval dataset is fed the SAME ceiling channel.
             # ⚠️ No normaliser is handed down and none is fitted: the ladder
             # is PINNED road law, not a statistic of the split, which is

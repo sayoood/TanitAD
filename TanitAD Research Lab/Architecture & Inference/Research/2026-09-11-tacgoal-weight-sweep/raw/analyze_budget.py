@@ -44,8 +44,13 @@ HALF_LAT = LAT_WEIGHT / 2.0            # 0.025, the trainer's own /2.0
 HALF_LON = LON_WEIGHT / 2.0            # 0.025
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ARMS = [("A_w0", None), ("A_w0_rep", None), ("B_w0p005", 0.005),
-        ("C_w0p05", 0.05), ("D_w0p5", 0.5), ("E_w5p0", 5.0)]
+ARMS = [("A_w0", None), ("A_w0_rep", None), ("A_w0_rep2", None),
+        ("B_w0p005", 0.005), ("C_w0p05", 0.05), ("F_w0p15", 0.15),
+        ("D_w0p5", 0.5), ("E_w5p0", 5.0)]
+#: every ZERO-WEIGHT control. The floor is the MAX pairwise difference over
+#: these, not the single A_w0/A_w0_rep difference the first pass used: one
+#: difference is one sample, and on `lon` the third control widened it 3.7x.
+CONTROLS = ["A_w0", "A_w0_rep", "A_w0_rep2"]
 GK = "gp_tac_goal_tok_head_grad_abs_sum"
 NK = "gp_tac_goal_tok_head_n_grad_none"
 PK = "gp_tac_goal_tok_head_n_params"
@@ -137,14 +142,19 @@ def main():
                 }
 
     # --- the replicate floor, then every arm read against it ---------------
-    base, rep = out["arms"].get("A_w0"), out["arms"].get("A_w0_rep")
+    import itertools
+    base = out["arms"].get("A_w0")
+    ok = [c for c in CONTROLS
+          if out["arms"].get(c, {}).get("status") == "OK"]
     floor = {}
-    if (base and rep and base.get("status") == "OK"
-            and rep.get("status") == "OK"):
-        for k in PRIMARY:
-            b, r = base.get("tail5_" + k), rep.get("tail5_" + k)
-            if b is not None and r is not None:
-                floor[k] = {"A_w0": b, "A_w0_rep": r, "abs_diff": abs(r - b)}
+    for k in PRIMARY:
+        vals = {c: out["arms"][c].get("tail5_" + k) for c in ok}
+        vals = {c: v for c, v in vals.items() if v is not None}
+        if len(vals) >= 2:
+            pw = [abs(a - b) for a, b in itertools.combinations(vals.values(), 2)]
+            floor[k] = {"controls": vals, "n_controls": len(vals),
+                        "pairwise_abs_diffs": sorted(pw),
+                        "abs_diff": max(pw)}
     out["replicate_noise_floor"] = floor
 
     for tag, w in ARMS:
@@ -164,6 +174,39 @@ def main():
                       "x_floor": (abs(d) / f) if f else None,
                       "exceeds_floor": (abs(d) > f) if f is not None else None}
         out["primary_vs_floor"][tag] = row
+
+    # ------------------------------------------------------------------
+    # criterion (c)'s CEILING, estimated independently from EVERY weighted arm
+    # ------------------------------------------------------------------
+    # The bound is `w x tac_goal <= 0.025 x (lat + lat_tac + lon + lon_tac)`.
+    # `tac_goal` turns out to be nearly independent of w (the head reaches
+    # about the same loss value whatever weight pushes it), so the bound is
+    # very close to linear in w and each arm gives its own estimate of the
+    # crossing point, w* = w / ratio_to_tactical_budget.
+    # ⭐ FOUR ARMS, FOUR INDEPENDENT ESTIMATES. Agreement between them is the
+    # evidence that the extrapolation is sound; a spread would say it is not.
+    # ⛔ It is an EXTRAPOLATION between tested points and is labelled as one --
+    # the sweep MEASURES admissibility only at the weights it ran.
+    est = {}
+    for tag, w in ARMS:
+        if w is None:
+            continue
+        b = out["budget"].get(tag)
+        if b and b["ratio_to_tactical_budget"]:
+            est[tag] = w / b["ratio_to_tactical_budget"]
+    if est:
+        vals = sorted(est.values())
+        out["criterion_c_ceiling"] = {
+            "_what": "the w at which w x tac_goal equals the trainer's own "
+                     "tactical-auxiliary contribution (MANEUVER_WEIGHT = 0.1 "
+                     "as actually spent over its four surfaces)",
+            "_class": "EXTRAPOLATED between tested weights, not measured",
+            "per_arm": est,
+            "min": vals[0], "max": vals[-1],
+            "mean": sum(vals) / len(vals),
+            "spread_frac_of_mean": ((vals[-1] - vals[0])
+                                    / (sum(vals) / len(vals))),
+        }
     return out
 
 

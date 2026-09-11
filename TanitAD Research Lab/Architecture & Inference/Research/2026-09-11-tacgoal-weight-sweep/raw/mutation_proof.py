@@ -16,6 +16,7 @@ REPO = r"D:\Projects\TanitAD"
 P = os.path.join(REPO, "stack", "scripts", "refc_v3_train.py")
 PY = r"C:\Users\Admin\venvs\tanitad\Scripts\python.exe"
 TEST = "tests/test_grad_probe_tacgoal.py"
+TEST2 = "tests/test_tacgoal_eval_target_wiring.py"
 
 
 def md5(path):
@@ -31,7 +32,7 @@ def run(nodeid):
     env = dict(os.environ)
     env["PYTHONPATH"] = os.path.join(REPO, "stack")
     env["CUDA_VISIBLE_DEVICES"] = "-1"
-    r = subprocess.run([PY, "-m", "pytest", nodeid, "-q", "--no-header"],
+    r = subprocess.run([PY, "-m", "pytest"] + nodeid.split() + ["-q", "--no-header"],
                        cwd=os.path.join(REPO, "stack"), env=env,
                        capture_output=True, text=True)
     tail = (r.stdout or "")[-400:].replace("\n", " | ")
@@ -90,10 +91,29 @@ MUTATIONS = [
      '            out["gp_%s_found" % nm] = 0.0\n            continue',
      '            out["gp_%s_found" % nm] = 1.0\n            continue',
      TEST + "::test_a_mistyped_module_reads_found_zero_rather_than_a_silent_absence"),
+    # ---- D-TACGOAL-EVAL-1: the defect that KILLED arm C_w0p05 on Thor -----
+    ("M7 the EVAL dataset loses its goal-set target (the arm that DIED on Thor)",
+     "                e_ds.tac_goal_targets = True\n",
+     "                pass  # e_ds.tac_goal_targets deleted\n",
+     TEST2 + "::test_the_EVAL_dataset_is_given_the_goal_set_target"),
+    ("M8 the eval wiring loses its weight gate (one dataset gated, one not)",
+     ("            if float(getattr(args, \"w_tac_goal\", 0.0) or 0.0) > 0.0:\n"
+      "                e_ds.tac_goal_targets = True"),
+     ("            if True:  # gate removed\n"
+      "                e_ds.tac_goal_targets = True"),
+     TEST2 + "::test_BOTH_datasets_are_wired_and_BOTH_are_gated_on_the_weight"),
+    ("M9 the sibling --bev-aux eval wiring is dropped",
+     "                e_ds.bev_spec = _bev_aux.PolarBEVSpec(",
+     "                e_ds.bev_spec_GONE = _bev_aux.PolarBEVSpec(",
+     TEST2 + "::test_the_sibling_bev_wiring_is_still_there"),
+    ("M10 the eval handler is widened to BaseException (hides the refusal)",
+     "        except Exception as exc:          # noqa: BLE001 (by design)",
+     "        except BaseException as exc:      # noqa: BLE001 (by design)",
+     TEST2 + "::test_SystemExit_is_NOT_an_Exception_so_the_eval_guard_cannot_catch_it"),
 ]
 
 print("\n=== GREEN baseline (whole file) ===")
-rc, tail = run(TEST)
+rc, tail = run(TEST + " " + TEST2)
 print("rc", rc, "|", tail)
 assert rc == 0, "baseline must be GREEN before any mutation"
 
