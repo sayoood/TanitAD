@@ -621,3 +621,53 @@ controls, i.e. worse than a plan that never steers.**
 4. ⚠️ **LONGITUDINAL has no trained arm worth anchoring on.** The reference there is **`ha` at
    0.2540 / 0.2348 / 0.3166** — the bar refcv6 has to clear is *doing nothing*, and nothing has
    cleared it yet.
+
+---
+
+## ✅ RESOLVED 2026-09-11 — the `goal_setting` row does NOT read the dead head. The UNVERIFIED flag is LIFTED.
+
+⛔ **The open question was:** `scorer.goal_point` is **1,026 parameters, untrained and EXACTLY ZERO**
+in **three** arms (refcv3, refcv4b, refcv5-v2) — zero-init plus zero gradient, an identity — so it
+emits the constant origin. Does the panel's `goal_setting` row read it?
+
+⭐ **NO — and the panel says so in its own stamped field:**
+> `_goal_point_error_is`: *"the final-displacement error (FDE) at the tactical horizon — reported for
+> continuity, NOT offered as a new metric"*
+
+⭐ **The decisive evidence is that the CONTROLS produce values**, which is impossible if the number
+came from a model head only a trained arm has:
+
+| arm | `goal_point_error_m` | `goal_bearing_mae_deg` |
+|---|---|---|
+| `os` (refcv5-v2) | 0.6607 [0.6026, 0.7239] | 1.3730 [0.6644, 2.7219] |
+| `ha` hold-action | **0.6588** | 1.6673 |
+| `ha0` | 1.4029 | — |
+| `ha0_ext` extrapolation floor | **0.6323** | — |
+| `os_navshuf` | 0.6763 | — |
+| `os_navzero` | 0.6686 | — |
+
+⇒ It is **trajectory geometry** computed by the eval harness from each arm's own rolled path, not a
+read of `scorer.goal_point`. ⛔ **The dead head therefore contaminates nothing in the panel**, and
+the row may be quoted — as what it says it is.
+
+### ⚠️ BUT THE NUMBERS THEMSELVES CARRY A FINDING, AND IT IS THE LONGITUDINAL ONE AGAIN
+
+⛔ **The trained arm LOSES to both controls.** `os` reads **0.6607** against hold-action's **0.6588**
+and the extrapolation floor's **0.6323**. ⇒ at the tactical horizon, refcv5-v2's endpoint is *worse
+placed* than holding the last action, and worse than extrapolating.
+
+⚠️ On **bearing** the trained arm wins (1.3730 against 1.6673) — but its interval is
+**[0.6644, 2.7219]**, a width of 2.06° on a 1.37° point estimate. ⛔ **Not separated; no claim.**
+
+⭐ **This is the same shape as the re-read longitudinal column**: the controls win on *where the car
+ends up*, the trained arm wins only on *how it is oriented*, and only inside an interval too wide to
+call. ⇒ **refcv6's problem is placement, not heading**, and that is now visible in three independent
+families rather than one.
+
+### ⇒ WHAT THIS CLOSES AND WHAT IT DOES NOT
+
+* ✅ **CLOSED:** the `goal_setting` row is admissible; it never touched the untrained head.
+* ⛔ **STILL OPEN and unchanged:** `scorer.goal_point`'s 1,026 parameters are dead in three arms, and
+  nothing in the model consumes their output usefully. That is a real defect — it is simply not
+  *this* row's defect. The post-training gate (`stack/scripts/check_untrained_params.py`) now catches
+  it before publication rather than after.
