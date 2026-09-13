@@ -1,0 +1,41 @@
+VERIFICATION OF THE FINAL CALIBRATION (2026-09-13)
+
+1. BEV AGREEMENT — an instrument that never saw the flow data
+   9 anchors, grid 0.08 m, the objective from run_real.py
+
+     6.523e-02   SHIPPED (f 1478.3, h 1.17, horizon 464.4)          +0.0%
+     7.248e-02   my earlier "best" (f 1478.3, h 1.21, horizon 523.4) +11.1%
+     9.272e-02   2-D flow point (f 1300, h 1.72, horizon 454)       +42.1%
+     9.355e-02   h 1.17 at the new f*h (f 2280, horizon 465)        +43.4%
+     9.582e-02   row-flow point (f 1525, h 1.75, horizon 437)       +46.9%
+     1.040e-01   ** RENDERED (f 1438, h 1.70, horizon 465) **       +59.4%
+
+   ⚠️ BEV agreement is biased toward larger f*h (that bias is why lag_scale.py
+   exists), so "new arms beat the shipped" is partly expected. The ranking is NOT
+   explained by it: the rendered arm has f*h = 2445 and beats BOTH the h-1.17 arm
+   (f*h 2668) and the row-flow arm (f*h 2669). A monotone f*h bias cannot produce
+   that order. The HEIGHT, which sets the lateral scale, is doing real work.
+
+2. lag_scale.py now REFUSES on this recording, as it should
+   With the static-reference guard added today:
+     "NO pair produced a distinct correlation peak."
+   Before the guard, the same data gave f = 3645 px (HFOV 29.5 deg) with a tight
+   anchor-cluster bootstrap [3460, 3900]. Confidently precise and wrong.
+
+3. Residual lateral offset — INDICATIVE ONLY, not a measurement
+   At the rendered calibration, over x 8-22 m, 53 frames:
+     left bounding line  -1.895 m
+     right bounding line +2.215 m
+     lane midpoint       +0.190 m   95% CI [+0.115, +0.220]
+   Taken at face value that means the corridor sits 0.19 m right of lane centre
+   and the lateral offset should be -0.12 -> -0.31 m.
+
+   ⚠️ NOT QUOTED AS A RESULT. The range-split that would separate a lateral offset
+   from a residual yaw is INTERNALLY INCONSISTENT: changing `lateral` by a constant
+   must shift every range slab by that same constant and leave the slope untouched.
+   It did not -- the 8-12 m slab moved by only -0.037 m for a -0.19 m change while
+   the 12-16 m slab moved -0.232 m, so the peak SELECTION is switching between runs
+   rather than the geometry moving. Until the lane-line selector is stable this
+   cannot distinguish a 0.19 m offset from a fraction of a degree of yaw.
+
+   Sayed's own estimate is -0.12 m and that is what was rendered.
