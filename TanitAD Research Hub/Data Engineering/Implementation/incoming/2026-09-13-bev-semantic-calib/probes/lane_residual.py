@@ -93,7 +93,7 @@ def main():
     P = dict(RR.NOMINAL)
     P.update(yaw=np.deg2rad(a.yaw), height=a.height, fx=a.fx, lateral=a.lateral)
     P["pitch"] = LS.pitch_for_horizon(P, a.horizon)
-    ranges = [8., 10., 12., 15., 18., 22., 27., 33.]
+    ranges = [5., 6., 7., 8., 10., 12., 15., 20.]
     print(f"f {a.fx}  h {a.height}  horizon {a.horizon}  yaw {a.yaw}  lateral {a.lateral}"
           f"   half-lane {a.half_lane} m\n")
 

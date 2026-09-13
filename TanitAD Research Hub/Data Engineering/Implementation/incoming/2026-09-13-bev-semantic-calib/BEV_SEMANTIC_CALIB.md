@@ -501,3 +501,40 @@ The video sent was **downscaled 1.6×** to fit a 30 MiB upload limit. At full re
 frame is markedly cleaner, and the range ticks check out against the calibration (25 m tick predicted
 at panel row 333, observed ~345; horizon 465 → 276 predicted, ~272 observed). A compressed frame is
 not evidence about a calibration.
+
+## 29. ⭐ Yaw, from the flatness of the SOLID line — and the final set
+
+A yaw error makes the lane residual grow with range; the right yaw makes it **flat**. Scanning yaw
+against the LEFT edge only (the solid line — the dashed right one mis-associates past 10 m), on
+near-straight frames, 130 frames:
+
+| yaw | 8 m | 10 m | 12 m | 15 m | 20 m | slope | mean abs |
+|---|---|---|---|---|---|---|---|
+| −7.90 | +0.147 | +0.143 | +0.242 | +0.327 | +0.403 | +0.0235 | 0.252 |
+| −7.30 | +0.071 | +0.069 | +0.105 | +0.180 | +0.187 | +0.0114 | 0.122 |
+| **−6.80** | **+0.049** | **−0.020** | **+0.005** | **+0.048** | **+0.012** | **−0.0001** | **0.027** |
+| −6.30 | −0.104 | −0.096 | −0.105 | −0.083 | −0.175 | −0.0055 | 0.113 |
+| −5.80 | −0.147 | −0.193 | −0.210 | −0.223 | −0.356 | −0.0161 | 0.226 |
+
+A clean interior minimum: **mean |residual| 2.7 cm across 8–20 m**, slope −0.0001 m/m. It sits
+between the pipeline's FOE yaw (−6.31°) and its lane-VP yaw (−7.01°).
+
+### The final calibration
+
+| parameter | value | from |
+|---|---|---|
+| `f·h` | 2444.6 px·m | row flow vs the odometer |
+| horizon row | 465.0 px | row flow + lane-width range-consistency |
+| height | 1.427 m | projected-lane-vs-paint width (assumes a 3.50 m lane) |
+| focal | 1713 px | `f·h / h` |
+| yaw | **−6.80°** | flatness of the solid left line over 8–20 m |
+| lateral | −0.126 m | same fit — and Sayed's own estimate was −0.12 |
+| roll | 0.0° | not separately measured |
+
+Verified at these values: left-edge residual −0.005, −0.031, +0.035, +0.079, +0.128 m over 8→20 m;
+painted lane 3.60 m against the assumed 3.50.
+
+⚠️ The `CENTRE offset / residual yaw` line printed by `lane_residual.py` at these values reads
+**+4.04°** and is **not trustworthy** — it is corrupted by a single right-edge value of +0.979 m at
+15 m with 16 % association, which is the dashed-line mis-association of §26.2. The left-edge scan
+above is the admissible yaw estimate.
