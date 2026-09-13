@@ -15148,3 +15148,27 @@ Same family as class A of 2026-09-11 (a real fact attached to the wrong referenc
 implementation was real, and the word joined two things that were never the same set.
 
 <!-- RETR-2026-09-13-REFCV6-EVERY-PIECE -->
+
+---
+
+## 2026-09-13 (evening) — "a systematic per-camera over-ranging with one cause: the ground estimate sits 2–6 cm low" — RETRACTED within the hour, by my own follow-up measurement
+
+**Retracted by:** Master Mind, while diagnosing the PI's observation that the SAM3 BEV map was not aligned with the
+front-image overlays. Two statements went to the PI in chat before the controlling experiments ran.
+
+| said | true |
+|---|---|
+| far paint lands systematically too far (+0.3 to +0.7 m at 8–12 m on the low side cameras), and one cause explains every camera: the 10th-percentile LiDAR ground estimate is biased low | changing the ground estimator moves nothing (10th percentile +0.37, median +0.35, obstacle-free band +0.36, robust plane +0.37 on the day clip) — **and the "over-ranging" itself was an artefact of my estimator**: with the reference truncated at the very radius that defined the far population, a far point whose counterpart lay beyond the cut was matched to the cut edge, a positive offset by construction. Margin-corrected: median signed −0.001 m, 1.7 / 2.8 cm absolute. The real cause is semantic spill of far masks (night crosswalk 54–65 % within 0.5 m at 8–16 m vs 91 % at 4–8 m) plus a ±1 s BEV that used future frames. |
+
+### ⛔ CLASS F — AN ESTIMATOR WHOSE REFERENCE SET IS TRUNCATED AT THE BOUNDARY THAT DEFINES ITS TEST SET
+Nearest-neighbour agreement between a NEAR reference and FAR test points is biased whenever the reference stops where
+"far" begins: the true counterpart of a boundary test point is missing, so its nearest neighbour is systematically on
+the near side. It produced a clean, monotonic, physically plausible signal (offset growing with range, stronger for low
+cameras) — the most convincing kind of artefact. ⇒ **Rule: a match-based offset estimator admits only test points whose
+counterpart must lie inside the reference region (a margin at least the largest offset you intend to report), and it
+reports its MATCH RATE beside the offset** — the unmatched share is where spill hides (the offset estimator read ~0 while
+a third of the night crosswalk points matched nothing within 0.5 m). Same family as "a check that shares the defect it
+checks for" (CLAUDE.md): the reference and the test shared the truncation. The second error is older: a single physical
+cause was asserted from a pattern before the one-variable test (swap the ground estimator) had run.
+
+<!-- RETR-2026-09-13-SAM3MAP-OVERRANGE -->
