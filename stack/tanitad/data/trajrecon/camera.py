@@ -134,10 +134,33 @@ class CameraModel:
 # Intrinsics
 # --------------------------------------------------------------------------- #
 def nominal_camera(width: int, height: int, hfov_deg: float = 66.0) -> CameraModel:
+    """Fallback intrinsics from a nominal horizontal field of view.
+
+    ⛔ **THIS IS THE UNCROPPED LENS, AND VIDEO STABILISATION CROPS.** A phone's quoted
+    field of view describes the whole sensor; with EIS enabled the recorded video is a
+    window inside it, so the true focal length in pixels is LARGER than this by the
+    crop factor and every distance derived from it is wrong.
+
+    MEASURED on `2026-08-08_14-19-54-android` (SM-G990B, EIS confirmed on by the
+    operator): the lens is 26 mm-equivalent = 79.5 deg diagonal = **HFOV 67.3 deg**,
+    i.e. `f = 1442 px` at 1920 wide -- and the focal actually in force was
+    **1713 px**, a **1.19x crop**. Taking the nominal put the focal 16% low, and
+    because the ground plane only sees the product `f*h`, the error was absorbed into
+    the HEIGHT: 1.17 m against a true 1.43 m. The overlay was visibly wrong for days
+    and the search went looking for a focal error that was never there.
+
+    ⇒ The provenance below says `uncropped` so no downstream reader can mistake this
+    for a measurement of the recorded video. Pin the real focal per recording
+    (`pipeline.py --focal-px`), or measure `f*h` against the odometer and divide by a
+    height from a lateral metre-stick -- see
+    `incoming/2026-09-13-bev-semantic-calib/flow_scale.py`.
+    """
     fx = (width / 2.0) / np.tan(np.deg2rad(hfov_deg) / 2.0)
     return CameraModel(width=width, height=height, fx=fx, fy=fx,
                        cx=width / 2.0, cy=height / 2.0,
-                       source={"intrinsics": f"nominal HFOV={hfov_deg} deg"})
+                       source={"intrinsics": f"nominal HFOV={hfov_deg} deg (UNCROPPED "
+                                             f"lens; EIS crops, so this is a LOWER "
+                                             f"BOUND on the recorded focal)"})
 
 
 def estimate_focal_from_gyro(t_cam, cam_yaw_rate, t_gyro, gyro_yaw_rate,

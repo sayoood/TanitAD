@@ -180,3 +180,27 @@ def test_declined_yaw_still_collapses_to_none_so_the_diagnostic_is_suppressed():
     """
     assert "yaw_deg if yaw_ok else None" in LANE
     assert "if res.yaw_deg is not None:" in PIPELINE
+
+
+def test_nominal_focal_is_labelled_as_the_uncropped_lens():
+    """The nominal HFOV describes the LENS, not the recorded video.
+
+    Video stabilisation crops, so the focal actually in force is larger than the
+    nominal by the crop factor. MEASURED on `2026-08-08_14-19-54-android`
+    (SM-G990B, EIS confirmed on by the operator): the lens is 26 mm-equivalent =
+    79.5 deg diagonal = HFOV 67.3 deg = 1442 px at 1920 wide, against a true
+    **1713 px** — a **1.19x crop**, so the nominal ran 16% low.
+
+    That error does not announce itself. The ground plane sees only the product
+    `f*h`, so a low focal is absorbed by an inflated HEIGHT — 1.17 m recorded
+    against a true ~1.43 m — and every number downstream stays self-consistent
+    while the overlay is visibly wrong. Days went into hunting a focal error that
+    was never there. The provenance string is the only thing standing between a
+    later reader and that same mistake, so it is pinned here.
+    """
+    assert "UNCROPPED" in CAMERA, (
+        "camera.py's nominal intrinsics no longer warn that the quoted HFOV is the "
+        "uncropped lens; with EIS on it is a LOWER BOUND on the recorded focal")
+    assert "EIS crops" in CAMERA
+    assert re.search(r'"intrinsics":\s*f?"nominal HFOV=.*UNCROPPED', CAMERA, re.S), (
+        "the nominal-focal provenance string no longer carries the warning")

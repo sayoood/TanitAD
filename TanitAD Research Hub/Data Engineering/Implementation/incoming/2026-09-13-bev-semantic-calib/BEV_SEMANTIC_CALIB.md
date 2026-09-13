@@ -643,3 +643,44 @@ Even at 3.9 s smoothing it is **4 % worse than the constant**. ⇒ **Do not depl
 0.43° signal with a 15 px-noise estimator makes the overlay worse, not better. The constant
 horizon stays, and the per-frame wobble is a stated limitation rather than a fixable one with
 the instruments available.
+
+---
+
+# PART 6 — CLOSED. EIS CONFIRMED BY THE OPERATOR (2026-09-13)
+
+## 35. ⭐ Three independent routes now agree
+
+Sayed, asked directly: *"Yes stabilisation was on, I checked the phone parameters."*
+
+| route | focal |
+|---|---|
+| 26 mm-equivalent lens, 79.5° diagonal, full 4:3 sensor | **1442 px** |
+| × the 1.19 EIS crop that confirmation implies | **1713 px** |
+| `f·h = 2444.6` (ego motion) ÷ `h = 1.427` (lane paint) | **1713 px** |
+
+The chain closes. **The final calibration for `2026-08-08_14-19-54-android`:**
+
+```
+--focal-px 1713  --cam-height 1.427  --horizon-row 465.0
+--cam-yaw -6.80  --cam-roll 0.0
+--lateral-offset -0.126 --lock-lateral  --mount-longitudinal 2.1
+```
+
+against the shipped `f 1478.3, h 1.17, horizon 464.4, yaw −7.01, lateral +0.25`.
+**The focal was never really wrong — it was the uncropped lens value, 16 % low, and the ground
+plane absorbed that into the height.**
+
+## 36. The trap, stated where it will be read
+
+`camera.py:nominal_camera` now writes `"nominal HFOV=… (UNCROPPED lens; EIS crops, so this is a
+LOWER BOUND on the recorded focal)"` into the provenance, with the measurement in its docstring and
+a test (`test_nominal_focal_is_labelled_as_the_uncropped_lens`) pinning it. 11/11 pass.
+
+**Why it hid for so long.** The ground plane sees only the product `f·h`
+(`scale_calib.py`'s own derivation), so a 16 % low focal is absorbed by a 22 % high height and
+*every downstream number stays self-consistent*. Nothing contradicts anything; the overlay is
+simply wrong. The only way out is an external metre-stick on the lateral axis, because that is the
+one axis where `h` appears without `f`.
+
+⇒ **Same family as the traps in `CLAUDE.md`:** a quantity that is correct about what it describes
+(the lens) read as an answer to a different question (the recorded video).
