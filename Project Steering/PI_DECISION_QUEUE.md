@@ -110,6 +110,8 @@ scaling those two measurements; no transfer wall-clock is claimed — single-str
 **DECIDE (c):** which layers to keep. Detection is already covered better by `obstacle.offline`; the
 teacher's unique value is the **map** (PhysicalAI ships none) and **semantic occupancy** — both unscored.
 
+⭐ **MAP QUALITY MEASURED (same day, `…/RESULT.md` §12):** the map layout is real but coarse (road edges on a real curb 50.8 % vs 74.7 % for a true map); the occupancy covers only ~56 % of agents vs ~99 % in-distribution. ⇒ for **(c)** the recommendation is **map yes (after fusion + LiDAR cleaning), occupancy no (use LiDAR)**.
+
 **Default if silent:** nothing corpus-scale launches. The 139-clip B1-EVAL slice is prepared as the
 first rung (it is the slice the LiDAR-BEV stream builds GT for, so map/occupancy can be checked against
 LiDAR at scale) and waits for (a).

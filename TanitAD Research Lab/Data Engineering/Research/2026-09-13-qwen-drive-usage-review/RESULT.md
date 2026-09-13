@@ -335,3 +335,66 @@ same-breath control that the scanner matches a known id).
 | ⚠️ v2 frame dirs (14 + 384 frames, ~2 GB, gated PhysicalAI pixels) | `devbox: C:\Users\Admin\qwenvis\v2\` and `thor: /home/nvidia/qwendrive/v2/` — deliberately not in git; rebuildable by `build_frames_v2.py` |
 | ⚠️ Qwen-Drive predictions (`.npz`) + upstream renders | `thor: /home/nvidia/qwendrive/v2/out_*` — rebuildable in ~30 min of Thor |
 | stranded 2026-09-11 packages, landed with this commit | `repo: TanitAD Research Lab/Architecture & Inference/Research/2026-09-11-lidar-bev-gt/` (16 files, `raw/lidar_probe.json` redacted) and `repo: TanitAD Research Lab/Data Engineering/Research/2026-09-11-qwen-drive-perception-sample/code/` (SUPERSEDED banner, `sample_plan.json` redacted) |
+
+---
+
+## 12. Map and occupancy quality on OUR data — measured without map ground truth (second pass, same day)
+
+⭐ **The method.** PhysicalAI ships no map or semantic occupancy, so every number below is agreement with
+**independent** evidence — the LiDAR sweep nearest the frame, the GT agent boxes, and the ego's own driven
+path — computed by one code path (`code/mapq_core.py`) on **Qwen-Drive's nuPlan demo first, where the TRUE
+map exists**. A metric is admissible only if the true raster separates from a shuffled and a mirrored raster
+there. MEASURED, `raw/demo_calibration.json` (4 nuPlan frames) and `raw/mapq_ours.json` (384 frames, 4 clips).
+
+⚠️ **Three defects caught while building it, each fixed before any number here was read:**
+(1) the map raster's orientation was **measured**, not assumed — under the right convention the demo's true map
+puts **0.2 %** of static obstacles on driveable, under the three mirrorings **11–25 %**;
+(2) a sparse **32-beam nuScenes** sweep broke the local ground estimate (9,870 of 13,030 "obstacles" were
+ground) — calibration therefore uses the nuPlan rig and a sparse cell falls back to a 6 m ground cell;
+(3) PhysicalAI labels no cones/barriers/bollards and a raw sweep can hold self-returns, so the obstacle metrics
+use **tall** obstacles (1.2–3 m) with the ego footprint excluded, recalibrated on the demo (true map **0.03 %**).
+⛔ The LiDAR **paint** proxy (bright ground returns) is **not admissible**: gravel/grass verges return brightly
+(visible in `media/mapq_*`), and it cannot be calibrated on the demo (no intensity there).
+
+| metric (better) | TRUE map, nuPlan demo | Qwen on nuPlan (in-distribution) | shuffled, demo | **Qwen v2 on OUR data** (pooled) | ours, per-clip medians | ours fused ±2 s | shuffled, ours | mirrored, ours | prior, ours |
+|---|---|---|---|---|---|---|---|---|---|
+| tall static obstacles (walls, poles, trees) on predicted **driveable** (lower) | 0.03 % | 0.03 % | 60.8 % | **8.3 %** | 1–30 % | 7.6 % | 42.1 % | 21.5 % | 56.0 % |
+| the ego's own driven path on predicted **road** (higher) | — | — | — | **93.5 %** | 94–100 % | 96.4 % | 77.8 % | 70.9 % | 82.1 % |
+| vehicle GT-box centres on predicted **road** (higher) | 100.0 % | 100.0 % | 33.3 % | **90.4 %** | 100–100 % | 92.7 % | 60.6 % | 47.6 % | 57.4 % |
+| predicted **road edges** on a real curb step or obstacle edge (higher) | 74.7 % | 72.8 % | 31.3 % | **50.8 %** | 38–65 % | 55.3 % | 39.7 % | 38.0 % | 32.9 % |
+| tall static obstacles covered by predicted **occupancy** (higher) | 99.9 % | 96.2 % | 39.6 % | **52.6 %** | 32–70 % | 52.6 % | 39.8 % | 36.0 % | — |
+| LiDAR points on agents covered by predicted **object** occupancy (higher) | 100.0 % | 99.1 % | 1.0 % | **56.0 %** | 54–99 % | 56.0 % | 6.2 % | 4.7 % | — |
+
+Per clip (median of frames, v2):
+
+| clip | MAP_A2 | MAP_B | MAP_C | MAP_E | OCC_A2 | OCC_B |
+|---|---|---|---|---|---|---|
+| `4fbd97b6a4b7` dense junction | 15.2 % | 99.4 % | 100.0 % | 38.4 % | 31.8 % | 53.8 % |
+| `73495082f98b` VRU-dense night | 30.2 % | 100.0 % | 100.0 % | 37.8 % | 47.3 % | 54.6 % |
+| `0d90d20036a3` night ramp turn | 15.4 % | 100.0 % | 100.0 % | 65.0 % | 70.3 % | 68.6 % |
+| `6924358fafe0` forest road (control) | 0.9 % | 94.5 % | 100.0 % | 55.2 % | 46.4 % | 99.3 % |
+
+Same 10 legacy instants with LiDAR, v1 vs v2 packing:
+
+| metric | v1 packing | v2 packing |
+|---|---|---|
+| tall static obstacles (walls, poles, trees) on predicted **driveable** | 23.4 % | 9.5 % |
+| the ego's own driven path on predicted **road** | 94.8 % | 97.8 % |
+| vehicle GT-box centres on predicted **road** | 83.8 % | 89.2 % |
+| predicted **road edges** on a real curb step or obstacle edge | 49.5 % | 49.7 % |
+| tall static obstacles covered by predicted **occupancy** | 38.5 % | 51.1 % |
+| LiDAR points on agents covered by predicted **object** occupancy | 18.6 % | 59.7 % |
+
+### 12.1 Verdict
+
+* ⭐ **The map layout is real, but coarse.** On every calibrated map metric Qwen's v2 map beats the shuffled,
+  mirrored and prior controls — it knows where the road is. It falls well short of a true map where geometry
+  must be exact: road edges sit on a real curb or obstacle edge about half the time (true map ~75 %), and in the
+  urban clips the driveable class spills onto walls, poles and trees.
+* ⛔ **The occupancy is weak on our data.** It covers roughly half of the static obstacles and agent points
+  that the in-distribution model covers almost entirely on its own demo. ⇒ **for occupancy, the LiDAR
+  (+ obstacle.offline) is the better teacher**; Qwen's value is the semantic **map**, which nothing else supplies.
+* ⭐ **Temporal fusion (the cheapest lever) helps the area/edge classes** — see the fused column — but plain
+  majority voting **erases thin road lines** (`media/mapq_*`), so any production fusion must be class-aware.
+* ⚠️ No interval; 4 clips from one chunk; the demo calibration is 4 frames. These rank levers; they are not a benchmark.
+
