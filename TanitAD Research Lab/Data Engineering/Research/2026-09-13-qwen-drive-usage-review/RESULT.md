@@ -398,3 +398,58 @@ Same 10 legacy instants with LiDAR, v1 vs v2 packing:
   majority voting **erases thin road lines** (`media/mapq_*`), so any production fusion must be class-aware.
 * ⚠️ No interval; 4 clips from one chunk; the demo calibration is 4 frames. These rank levers; they are not a benchmark.
 
+---
+
+## 13. SAM3 road paint — can it add lane lines, markings and crosswalks to the Qwen map? (third pass, same day)
+
+**Runtime.** Meta's `sam3` image model on the Thor, run from a private vendored folder (`/home/nvidia/sam3vendor`,
+pure-Python deps only, `pycocotools` stubbed) — ⛔ no change to `tanitad-edge` or `tanitad-train`; weights copied
+from the dev box's cache (no download). The programme's C77 dtype fix (`ph0_sam3.install_dtype_agreement`) is
+applied before any forward. **4.29 GB peak, 1.7 s for seven prompts on one 1920×1080 image** (MEASURED).
+
+**Lift.** Every mask pixel is cast through the view's exact calibration onto the LOCAL ground surface measured by
+LiDAR (2 m lower-envelope cells, iterated) — not a flat-world plane (`code/sam3_paint.py`).
+
+### 13.1 Image space — yes, for lines and markings (qualitative)
+On a demo frame: the solid lane line **0.93**, yellow kerb paint and a painted **arrow 0.85** are segmented as
+separate concepts; the crosswalk prompts correctly return **nothing** on a frame without a crosswalk; the
+liveness prompt `road` reads 0.92. `media/sam3_paint_demo_camera_overlay.jpg`.
+
+### 13.2 BEV against a TRUE map — Qwen's demo (4 nuPlan frames × 8 views; paint = road_line ∪ crosswalk, 0.45 m tolerance)
+
+| source / fusion rule | precision | recall | F1 |
+|---|---|---|---|
+| Qwen-Drive map (in-distribution here) | 0.992 | 0.988 | 0.990 |
+| SAM3 lifted | 0.473 | 0.601 | 0.529 |
+| OVERRIDE — SAM3 decides paint wherever a camera looked | 0.556 | 0.609 | 0.581 |
+| UNION — Qwen ∪ SAM3 (road-gated) | 0.783 | 0.996 | 0.876 |
+| AGREE — each source kept only near the other | 0.970 | 0.740 | 0.840 |
+| control: SAM3 mirrored | 0.283 | 0.352 | 0.314 |
+| control: SAM3 from another frame | 0.217 | 0.262 | 0.237 |
+
+⇒ SAM3's lifted paint carries real signal (controls collapse to 0.22–0.35) but, **on the data Qwen was trained on,
+no fusion beats Qwen alone** — the demo is Qwen's home ground, and nuPlan's `road_line` class also contains lane
+boundaries that are not painted, which no paint detector can recover.
+
+### 13.3 Our clips — ⛔ NOT ADMISSIBLE, and why
+The reference was LiDAR ground returns with high intensity, accumulated ±1 s in a 7 m corridor around the driven
+path. **It failed its own controls:** scoring SAM3 against the MIRRORED reference reads recall
+**0.312** vs **0.147** unmirrored, the mirrored sources score at least as well as the
+real ones, and every source's precision is ≤ 0.13. Two causes, both visible in
+`media/sam3_paint_bev_diagnostic.jpg`: the bright-return set is a scatter of specks, not lines, and lane lines
+around the ego are **mirror-symmetric**, so a mirror is not a valid control inside a corridor.
+⛔ **No SAM3-vs-Qwen number on our data is claimed.** What the picture does show (qualitative): SAM3's lifted
+**lane lines follow Qwen's curved road edges closely**, and SAM3's **crosswalk prompts over-segment** —
+**12.2 %** of the road-ish area on the two clips, fan-shaped at day and blob-shaped at night.
+
+### 13.4 The fusion design this points to, and the levers to earn it
+1. **Lines from SAM3, regions from Qwen, geometry from LiDAR:** SAM3 lane lines sharpen/fill Qwen's `road_line`
+   only where they persist over ≥ k frames in the world frame and lie on LiDAR ground inside the curb-bounded road;
+   Qwen keeps `driveable` / `walkway` / `crosswalk` regions; LiDAR supplies curbs and removes obstacles.
+2. **Crosswalks need instance filtering before they are admissible:** score ≥ 0.5, a near-range cap, an area cap,
+   and a stripe-periodicity test on the lifted mask.
+3. **Source reliabilities are learned on TRUE maps, not assumed:** per-class precision/recall of each source on a
+   map-labelled set becomes the log-odds weight. The demo is too small and in-distribution for Qwen; **nuScenes
+   val with its map expansion** (awaiting the PI's download OK) or a **20–30-frame hand-labelled PhysicalAI paint
+   set** are the two admissible references.
+
