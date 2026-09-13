@@ -417,3 +417,27 @@ And the height scan is the clean demonstration: forcing `h` from 0.90 → 1.60 m
   and discarded, not quietly averaged in.
 - **The two flow fits differ**: `f·h` 2668 (row flow) vs 2243 (2-D). 16 % apart, both far above the
   shipped 1729. The interval, not the midpoint, is the result.
+
+## 23. ⭐ Where SAM3 actually earns its place — and it is NOT where I first said
+
+In Part 1 I motivated a semantic front end with *"non-ground ink is the bottleneck"*. **That was
+REFUTED by measurement** (§13): restricting to the central road columns made the extrinsics contrast
+*worse*, +41 % → −6 % → −16 %, because the wide ink carries the lateral leverage yaw needs.
+
+The real bottleneck is the opposite one, and it is now measured. **The ridge detector does not find
+enough marking ink in the FAR field**, and that is exactly what blocks the last two parameters:
+
+- the 16–22 m range slab yields a lane-line pair in **9 of 140 frames**;
+- whole-profile cross-correlation between the 8–12 m and 16–22 m slabs — a method that identifies no
+  peaks at all, so the selector instability of §22 cannot occur — locks in only **14–18 of 150
+  frames** at `r > 0.45`.
+
+Residual yaw and lateral offset are separable **only** by range leverage: a lateral offset displaces
+the lane by the same amount at every range, a yaw error displaces it in proportion to range. With no
+usable far slab there is no leverage, and the two stay confounded. That is a **perception** limit,
+not a geometry one — and it is the first evidence-backed case for a stronger marking segmenter.
+
+⚠️ Note what this does **not** say. It does not say SAM3 would improve the calibration that is now
+settled: `f·h` and the horizon came from tracked points at 8–18 m, where ink is plentiful, and they
+are done. The claim is narrower and testable: **a segmenter that recovers far-field markings would
+separate yaw from lateral offset, which the classical front end cannot.**
