@@ -3147,3 +3147,56 @@ independent try blocks, +2 regression tests.
 ⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
 them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
 that had never once executed look like a working default.
+
+---
+
+## R-2026-09-13-horizon — ⛔ I RULED THE FOE HORIZON WRONG AND THE LANE-VP HORIZON RIGHT. IT IS THE OTHER WAY ROUND.
+
+**Context.** Sayed: *"the yaw angle is definitely wrong in the video"*, then *"all the values are
+wrong yaw, pitch, height and lateral offset (I estimate this to -12 cm), i think also the 1.6m height
+are very plausible"*. The camera calibration for `2026-08-08_14-19-54-android` has three candidate
+horizon rows, and the horizon is what the pitch encodes.
+
+**What I asserted earlier this session** (and carried into `bev_calib.py`, `lag_scale.py`,
+`lane_width.py` and the run defaults): the lane vanishing point puts the horizon at **523.4 px**
+[513.3, 534.8], the pipeline's FOE puts it at **464.4 px**, they are 2.29 deg apart, and *the FOE is
+the wrong one*. Every subsequent module defaulted to `--horizon 523.4`.
+
+**MEASURED today, two independent ways, and both say 523.4 is the outlier:**
+
+| probe | horizon | what it is |
+|---|---|---|
+| row-flow fit, 65,132 tracked points over 218 frame pairs | **448.4 px** | `dv = D q²/(A - D q)`, horizon = the value at which the per-point `f*h` stops trending with image row |
+| lane width held range-independent, 120 frames | **~485 px** | far/near width ratio 1.045 at 485, vs **1.415 at 523.4** and 0.864 at 464.4 |
+| pipeline FOE (inherited) | 464.4 px | 425,093 flow vectors, inliers 0.86 |
+| lane VP (my earlier claim) | 523.4 px | **refuted by the two above** |
+
+Three estimates now cluster at **448-485 px**, straddling the FOE's 464.4. The lane-VP value sits
+**~50 px away from all of them**, and at 523.4 the reconstructed lane width grows **41.5% from the
+8-13 m slab to the 18-25 m slab** — the plane is tilted, which is exactly what a wrong horizon does.
+
+**Consequences, because this was load-bearing:**
+- The claim *"the pipeline's pitch is wrong by 2.29 deg"* is **WITHDRAWN**. The pipeline's pitch is
+  approximately right; the FOE gate fix earlier in this session stands on its own evidence (it fixed
+  a rotation gate fed by a timing instrument) and is untouched by this.
+- `f*h` is **2444 px·m** [flow], against the shipped `1478.3 x 1.17 = 1729` — **41% low**. With the
+  lateral ruler giving `h ≈ 1.7 m`, `f ≈ 1421 px` (HFOV 68.5 deg), i.e. **the shipped FOCAL was
+  roughly right and the shipped HEIGHT was badly wrong.** I had been searching for a focal error.
+- Sayed's *"1.6 m is very plausible"* is corroborated, not contradicted, by the measurement.
+
+**ROOT-CAUSE CLASS — C6 (confounded comparison), with a C3 tail.** I compared two horizon estimates
+against each other and picked the one I could explain, instead of finding a **third, independent
+criterion that neither had been fitted to**. Both candidates were *derived from image structure*;
+the arbiter had to come from somewhere else (ego motion, and range-consistency of a lateral metre).
+The C3 tail: I supplied a mechanism ("the FOE is contaminated") and let it settle a measurement.
+
+⇒ **RULE: when two estimates of the same quantity disagree, do not adjudicate between them on
+plausibility — find a criterion that is orthogonal to BOTH and let it vote.** Two probes that share
+a failure mode can agree, or disagree, for reasons neither reveals.
+⇒ **RULE: a defaulted parameter carries its evidence.** `--horizon 523.4` propagated into four
+modules as a *default*, where it stopped looking like a claim and started looking like a constant.
+Defaults inherit the evidence class of whatever set them — here, a retracted one.
+⇒ **Same family as the `df` / Thor-`free` / cgroup-`usage_in_bytes` traps:** not a wrong number, a
+probe answering a question next to the one asked. A vanishing point measures where lane lines
+converge; the horizon is where the GROUND PLANE vanishes, and on a crowned, curving road those are
+not the same row.
