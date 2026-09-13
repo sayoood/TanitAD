@@ -684,3 +684,60 @@ one axis where `h` appears without `f`.
 
 ⇒ **Same family as the traps in `CLAUDE.md`:** a quantity that is correct about what it describes
 (the lens) read as an answer to a different question (the recorded video).
+
+---
+
+# PART 7 — ⛔ THE HEIGHT MEASUREMENT WAS CIRCULAR. h = 1.427 IS WITHDRAWN.
+
+## 37. What the automatic run exposed
+
+Re-running the pipeline with no operator overrides (only `--lane-width 3.50`, which Sayed
+confirmed and no image can measure):
+
+- **`flow_calib` worked**: `f·h = 2872.7` px·m, 95 % CI [2644, 2909], **87,285 tracked points over
+  204 frame pairs**, and its new guard fired — *"horizon from flow 427.4 px vs the camera's current
+  464.4 px (−37.0 px) … LARGE disagreement"*.
+- **`scale_calib.solve` then declined**: *"implied HFOV 41.6 deg is outside 55-85 deg for a phone
+  camera"* — because it split `f·h` with `lane_calib`'s width (3.60 m **at h = 1.17**).
+- The pipeline fell back to the shipped nominal: `f 1478.3, h 1.17, horizon 464.4`.
+
+⇒ **The automatic render reproduces the original, rejected overlay.**
+
+## 38. ⛔ And it exposed a defect in my own instrument
+
+`lane_calib` says the lane is **3.60 m at h = 1.17**. My `lane_residual` said **3.55 m at
+h = 1.427**. Lateral scale is linear in `h`, so those cannot both be true — 3.55 m at 1.427 is
+4.33 m at 1.17. Run at both calibrations:
+
+| assumed height | painted lane reported |
+|---|---|
+| 1.17 m | **3.53 m** |
+| 1.427 m | **3.57 m** |
+
+**The measured lane width barely moves with the assumed height** — ratio 1.011 where 1.22 was
+required. The instrument has ~zero sensitivity to the quantity it claims to measure: the ±1.1 m
+association window finds whatever paint is nearest the projection, so it **confirms any height fed
+to it**. That is exactly the censoring defect I criticised in `lane_calib` (§*no width censoring*),
+rebuilt in my own probe and not noticed because it always returned a plausible number.
+
+⇒ **`h = 1.427 m` and `f = 1713 px` are WITHDRAWN as measurements.** They remain the best
+*rendering* values tried — the BEV-agreement check ranked them +59.4 % over shipped, and that
+instrument shares no machinery with the lane association — but the height itself was never measured.
+
+## 39. What survives, and the honest bracket
+
+| quantity | status |
+|---|---|
+| `f·h` | **2440–2880 px·m** — MEASURED, several flow variants, tight CIs, synthetic self-test passes |
+| horizon | 427–448 (flow) vs 465–485 (paint) — **unresolved, ~40 px apart** |
+| lens | 26 mm-equiv → **uncropped f = 1442 px**; EIS confirmed on, so the true `f` is larger |
+| **height** | **NOT MEASURED.** From `f·h` and a crop of 1.0–1.2×: **h ∈ [1.41, 2.00] m** |
+
+A third attempt at a non-circular height — `probes/height_from_row_gap.py`, which needs only the
+pixel gap between lane lines in one row (`h = W·(v − v_h)/du`, no focal, no projection, no
+window) — **also failed**: 48–62 % spread across rows at every horizon, because the ridge peaks in
+a single row are not reliably lane lines. It is kept with that result recorded.
+
+⇒ **The height cannot be settled from this recording with this front end.** It needs either a
+marking segmenter good enough to identify the two ego-lane lines per row, or one physical
+measurement of the camera height with a tape.
