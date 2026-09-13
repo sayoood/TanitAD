@@ -1,0 +1,111 @@
+{
+ "mode": "anchor",
+ "chain": [
+  "CAM_CR",
+  "CAM_RR",
+  "CAM_RL",
+  "CAM_RT",
+  "CAM_CL"
+ ],
+ "override": {
+  "CAM_CR": {
+   "yaw_deg": 0.75,
+   "pitch_deg": 0.0,
+   "roll_deg": 0.25,
+   "dz_m": 0.0
+  }
+ },
+ "self_near_m": 7.0,
+ "reference_cameras": [
+  "CAM_FW"
+ ],
+ "near_m": 12.0,
+ "frames": 48,
+ "cameras": {
+  "CAM_CR": {
+   "correction": {
+    "yaw_deg": 0.75,
+    "pitch_deg": 0.0,
+    "roll_deg": 0.25,
+    "dz_m": 0.0
+   },
+   "joined_reference": true,
+   "ncc_fit": {
+    "identity": 0.433,
+    "corrected": 0.544
+   },
+   "ncc_held_out": {
+    "identity": 0.42,
+    "corrected": 0.518
+   },
+   "cells_fit": 103058,
+   "cells_held_out": 104098,
+   "verdict": "apply"
+  },
+  "CAM_RR": {
+   "correction": {
+    "yaw_deg": -0.25,
+    "pitch_deg": 0.0,
+    "roll_deg": 0.75,
+    "dz_m": -0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": 0.058,
+    "corrected": 0.293
+   },
+   "ncc_held_out": {
+    "identity": 0.057,
+    "corrected": 0.281
+   },
+   "cells_fit": 126993,
+   "cells_held_out": 128573,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  },
+  "CAM_RL": {
+   "correction": {
+    "yaw_deg": -1.0,
+    "pitch_deg": -0.5,
+    "roll_deg": -1.0,
+    "dz_m": 0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": 0.0,
+    "corrected": 0.0
+   },
+   "ncc_held_out": {
+    "identity": 0.0,
+    "corrected": 0.0
+   },
+   "cells_fit": 52432,
+   "cells_held_out": 55866,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  },
+  "CAM_RT": {
+   "verdict": "not enough overlap with the reference",
+   "cells": 0
+  },
+  "CAM_CL": {
+   "correction": {
+    "yaw_deg": 1.5,
+    "pitch_deg": -1.0,
+    "roll_deg": 0.0,
+    "dz_m": 0.1
+   },
+   "joined_reference": false,
+   "ncc_fit": {
+    "identity": 0.136,
+    "corrected": 0.135
+   },
+   "ncc_held_out": {
+    "identity": 0.118,
+    "corrected": 0.06
+   },
+   "cells_fit": 105369,
+   "cells_held_out": 103791,
+   "verdict": "keep identity (needs held-out AND fit gain > 0.02 and held-out NCC >= 0.3)"
+  }
+ },
+ "seconds": 50.5
+}

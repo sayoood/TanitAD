@@ -15231,3 +15231,27 @@ value:** spins that must coincide, and two rules that must agree in front of the
 scoring mask, count what it keeps AND what it drops on each side of its decision boundary.**
 
 <!-- RETR-2026-09-13-LIDAR-BEV-DESKEW-SIGN-AND-POLAR-OBSERVED -->
+
+---
+
+## 2026-09-13 (night) — "CAM_FW and CAM_CR agree within 0.1 m" — RETRACTED within the hour by the rotation fit it had justified
+
+**Retracted by:** Master Mind, SAM3 map v6 calibration work. Stated to the PI in chat and used to choose the calibration
+reference cameras.
+
+| said | true |
+|---|---|
+| a translation-only cross-correlation of bright paint at ≤ 12 m peaked at (0, ±0.1 m) for CAM_FW and CAM_CR ⇒ "registered within 0.1 m" | a yaw error of 0.5° moves ground by only 0.105 m at 12 m, so a ±0.1 m translation peak cannot rule it out; the rotation fit then found FW and CR disagree by ~0.5–0.75° (held-out NCC 0.59 → 0.83 when FW is corrected against CR) |
+
+### ⛔ CLASS G — A PROBE WHOSE RESOLUTION AT THE EVALUATED RANGE IS THE SIZE OF THE EFFECT IT RULES OUT
+A null result ("peak at zero within one bin") is only a bound of one bin *at the scale where the effect lives*. A rotation
+error grows with range, a translation probe capped at 12 m sees its smallest projection. ⇒ **State the smallest effect
+the probe can detect, in the parameter you are ruling out (degrees, not metres), before calling something aligned.**
+
+⚠️ **Sibling defect in the same hour (caught before any number was reported):** the first version of the registration
+probe selected its cells by "this camera's paint OR the other cameras' paint at zero shift" — the sample was conditioned
+on the variable being correlated. It produced negative NCC at zero shift and peaks at the search edge for every camera.
+⇒ **Select the sample by one side only** (here: the camera's own SAM3 classes), never by the correlated variable.
+Same family as "a check that shares the defect it checks for" (CLAUDE.md).
+
+<!-- RETR-2026-09-13-SAM3MAP-REGISTRATION -->

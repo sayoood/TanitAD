@@ -194,3 +194,196 @@ crosswalk, 0 hatched (`sam3map_extract_v31.py`).
 | stills: v1/v2/v3 frames, replay contact sheets, patch-rule checks, hood prompt | `media/` (repo, JPG) |
 | videos v1 / v2 / v2.1 / v3 (day, night), long front-only video, v3.1 videos | Thor `/home/nvidia/sam3map/render_*.mp4`, `long_v3.mp4`; copies sent to the PI; `*.mp4` is git-ignored |
 | per-frame npz (class rasters + lifted points + ranges), prompt bank, decoded LiDAR sweeps | Thor `/home/nvidia/sam3map/{<clip>,<clip>_v2,_v3raw,_v3,_v31raw,_v31}/`, `promptbank/`, `data/sweeps/` (not banked: size) |
+
+---
+
+## 9. v5 → v6.1: native cameras, all seven of them, one class per painted region, and a ground-truth export (2026-09-13 evening)
+
+**PI direction (verbatim):** *"I prefer to finalize the sam 3 map generation and then use those as gt for our new bev
+head. So let achieve the best possible sam3 based semantic map, let me confirm the quality by considering the videos,
+then augment the data sets the maps at each frame using all cameras."* — this section is the "best possible map" step;
+corpus augmentation waits for the PI's confirmation of the videos (and for download permission per file).
+
+Evidence class: **MEASURED** (ours; Thor `/home/nvidia/sam3map`) unless a row says otherwise. Tier: none — label artifact.
+Clips: day `4fbd97b6a4b7`, night `73495082f98b` (96 tokens × 7 native cameras each, LiDAR ground).
+
+### 9.1 v5: the native 120° camera instead of the 63.7° virtual view
+
+The virtual pinhole view Qwen-Drive needs (fx 1545 @ 1920) is a crop of the native f-theta camera (focal 932.7 px): a
+1.66× interpolated upsampling. v5 projects through the native f-theta model (`code/camera_model.py`, round trip
+1.12e-3 m) onto a smooth LiDAR ground (`code/ground_surface.py`; the per-2 m-cell lookup put seams through arrows).
+Long video: 8 mined clips, 848 frames, front camera only (refine control 96/96 on every clip). Sent to the PI.
+
+### 9.2 v6: all seven native cameras, a sidewalk / verge class, per-camera ego masks
+
+| step | what | control / measurement |
+|---|---|---|
+| extraction | 18 prompts × CAM_FW, CL, CR (120°), RL, RR (70°), RT, FT (30°); class 7 = sidewalk ∪ grass not drivable; a per-camera SAM3 **evidence bitfield** (diag, crosswalk, line, dashed, solid, symbol, curb, sidewalk) so later rules need no SAM3 re-run | adding the bitfield changed **0 class pixels on all 7 cameras** and 0 points (re-smoke of token 41); ~21 s/frame with a free GPU |
+| refine v6 | ego body per camera from SAM3 "car hood" + border-touching "car" voted over 8 frames (the car rule only if the ego moved ≥ 15 m) | day: FW 2.72 %, RL 4.50 %, RR 3.54 % of pixels, others 0 (matches the contact sheet); relift control **96/96** day and night |
+| scorer | coverage through `camera_model` (native f-theta) instead of the pinhole views | control: the new code reproduces the banked pinhole coverage on 6 tokens × 80,000 cells with **0 mismatches** — after restoring the banked 0.5 m depth cut (the first version differed on 12–17 cells) |
+| renderer v4 patch | native camera names + class 7 | re-rendering a banked v5 clip: **96/96 PNGs byte-identical** |
+
+**LiDAR checks, clip vote (pre-registered rule §2), v2 → v6 (MEASURED, 96 frames each):**
+
+| clip | arm | MAP_A2 ↓ | MAP_B ↑ | MAP_C ↑ | MAP_E ↑ | camera coverage |
+|---|---|---:|---:|---:|---:|---:|
+| day | v2 clip vote (7 virtual views) | 0.0663 | 0.9760 | 0.5584 | 0.5384 | 0.958 |
+| day | **v6 clip vote (7 native cameras)** | **0.0225** | **0.9841** | 0.5455 | 0.5409 | **0.983** |
+| day | v6 mirrored control | 0.4336 | 0.7117 | 0.4838 | 0.2170 | |
+| day | Qwen fused ±2 s | 0.1715 | 0.9565 | 0.8961 | 0.4125 | |
+| night | v2 clip vote | 0.0650 | 0.9689 | 0.4226 | 0.4056 | 0.958 |
+| night | **v6 clip vote** | **0.1429** | 0.9732 | **0.1140** | 0.4462 | 0.984 |
+| night | v6 mirrored control | 0.3226 | 0.6030 | 0.1722 | 0.2291 | |
+| night | Qwen fused ±2 s | 0.2901 | 1.0000 | 0.9071 | 0.4358 | |
+
+The pre-registered clip-vote bar (MAP_B ≥ 0.95, MAP_A2 ≤ fused ±1 s + 0.05, mirrored control below on B and E) holds on
+v6 day: B 0.9841, A2 0.0225 ≤ 0.0256 + 0.05, mirror B 0.7117 / E 0.2170. ⛔ **On the night clip v6 FAILS the same bar on A2: 0.1429 > 0.0664 + 0.05** (B 0.9732 passes, mirror below) — v2 passed it (0.0650). v6 is a regression at night on A2 (×2.2) and MAP_C (0.42 → 0.11); §9.9 attributes it.
+
+### 9.3 The paint trim was eroding wide paint — metric ground layers (renderer v5)
+
+The v4 renderer kept a thin-class pixel only if a **31 px** white top-hat found it brighter than the asphalt. On token 41
+(`code/tophat_probe2.py`), the share of SAM3 thin-paint pixels kept by a 127 px top-hat but NOT by 31 px:
+
+| camera | 0–4 m | 4–8 m | 8–12 m | 12–20 m |
+|---|---:|---:|---:|---:|
+| CAM_CR (120°) | 0.39 | 0.33 | 0.29 | 0.25 |
+| CAM_RR (70°) | 0.18 | 0.20 | 0.12 | 0.04 |
+| CAM_RT (30° tele) | — | — | **0.69** | **0.55** |
+
+Hatched stripes and the yield triangle kept only their outlines. A pixel-sized element cannot fit focal lengths from 930
+to ~3500 px at every range; a metre-sized one can. **Renderer v5** (`code/sam3map_render_v5.py`): every frame × camera
+becomes a 0.10 m metric layer (cell → camera model → SAM3 class, luminance from the MIP level matching the cell's pixel
+footprint), paint = 1.5 m-disc white top-hat on the layer. Timing trap found on the way: a 127 px ELLIPSE top-hat costs
+0.64 s per 1920×1080 image on Thor, a RECT one 0.03 s.
+
+### 9.4 R4: one class per painted region, decided from the whole clip (`code/sam3map_consensus.py`)
+
+**The failure (contact sheet, token 41, against the raw images):** one white hatched gore area was *crosswalk* on
+CAM_RL and CAM_RR and *lane lines* on CAM_RT; dashed lane-line segments on CAM_CR were *hatched*; on front clip
+`1f1f05ca011d` a row of yield triangles was *hatched*. The v3.1 ground test could not run where SAM3's line prompt missed
+the stripes ("too_few" → prompt fallback), and one oblique view rarely sees a whole region.
+
+**Method:** (A) every metric layer accumulates in one world grid: observation weight (camera factor / (1 + (r/8 m)²)),
+bright paint (from views ≤ 15 m only), SAM3 class votes and prompt evidence; (B) regions = cells whose area-paint votes
+are ≥ 35 % of their observation weight; on the FUSED paint: yield-teeth row → line; thin fragments along the axis → line;
+else stripe orientation by a **structure tensor** (the v3.1 1 m-cell point test returned "too_few" on all 4 regions of the
+front clip: a stripe wider than ~0.5 m is not elongated inside a 1 m cell) with the v3.1 thresholds; ambiguous → class
+votes, front cameras ×3; (C) every pixel of classes 1/2/3/6 is lifted to its world cell and relabelled; points re-lifted
+after the relift control.
+
+| clip | regions (crosswalk / hatched / line) | pixels changed | control |
+|---|---|---:|---|
+| front `1f1f05ca011d` | 4 (1 / 3 / 0) | 32,128 | 96/96 |
+| day | 8 (7 / 1 / 0) — the gore area is hatched in every camera | 7,984,377 | 96/96 |
+| night | 6 (5 / 1 / 0) | 1,992,808 | 96/96 |
+
+⚠️ **UNSCORED:** PhysicalAI has no paint ground truth. The effect is shown on before/after contact sheets (the gore area
+on RL / RT, frame 38 and 41) and in the videos; the LiDAR map metrics do not see paint semantics and moved as expected
+(day clip vote A2 0.0225 → 0.0223, B/C/E unchanged). The yield-teeth rule did not fire on the front clip (to2 = 0).
+
+### 9.5 The ground-truth world map and its export to the BEV head's grids
+
+The non-causal world map (renderer v5): every world cell at 0.10 m keeps the class of the NEAREST labelled observation
+over all frames and cameras (labels may use future frames; inference never reads it). **Exporter**
+(`code/sam3map_export_gt.py`) on the head's own contract (`2026-09-13-bev-lidar-corpus-and-head`, `lidar_bev.py`,
+`bev_gt_loader.py`): rig frame +y LEFT; cartesian x 0–60 m, y ±16 m at 0.5 m [120, 64]; polar [24, 20] and polar48
+[48, 40] with col 0 LEFT; a fine [600, 320] code raster at 0.10 m. Coarse cells carry soft class fractions (9 channels:
+background, 7 classes, not seen; 5 × 5 sub-samples; sum 255). Each export asserts its content:
+
+| check | front clip | day | night |
+|---|---|---|---|
+| ego's next 3 s of poses on drivable (real / mirrored) | 1.000 / 0.882 | 1.000 / 0.810 | 1.000 / 0.779 |
+| polar48 vs cartesian drivable MAE (same frame / frame + 40 control) | 0.031 / 0.431 | 0.026 / 0.404 | 0.034 / 0.409 |
+| seen share of the cartesian window · size | 0.902 · 1.01 MB | 0.924 · 1.06 MB | 0.919 · 1.18 MB |
+| re-render → world map | — | **byte-identical** (after a legend fix) | |
+
+**LiDAR checks of the ground-truth world map itself** (new scorer arm, day clip, 96 frames):
+
+| arm | MAP_A2 ↓ | MAP_B ↑ | MAP_C ↑ | MAP_E ↑ | vehicle centres on sidewalk / verge |
+|---|---:|---:|---:|---:|---:|
+| **GT world map (v6.1)** | 0.0533 | **1.000** | **0.7727** | 0.4798 | 2.27 % (n 308) |
+| GT world map, mirrored | 0.5015 | 0.7426 | 0.5519 | 0.2669 | |
+| clip vote (points) | 0.0223 | 0.9841 | 0.5455 | 0.5409 | |
+| night GT world map (v6.1) | 0.0854 | 1.000 | 0.5019 | 0.4044 | **27.5 %** (n 807) |
+| night GT world map, mirrored | 0.4201 | 0.6213 | 0.2367 | 0.2445 | |
+
+The world map keeps the road under moving vehicles (C 0.77 vs 0.55 for the clip vote) and never takes the ego off its
+road; its cost is A2: a far "road" label beats a near view of a pole or a wall.
+
+### 9.6 ⛔ Three pre-registered compositing arms FAILED (surface vote)
+
+Bars committed in `code/sam3map_render_v5.py` before each run, identical for all three: GT MAP_A2 ≤ 0.03 AND MAP_C ≥ 0.75
+AND MAP_B ≥ 0.99 AND MAP_E ≥ 0.48, mirrored control below on B, C, E. Day clip:
+
+| arm | rule | A2 | B | C | E | verdict |
+|---|---|---:|---:|---:|---:|---|
+| v6.1 nearest labelled | (delivered) | 0.0533 | 1.000 | 0.7727 | 0.4798 | reference |
+| v6.2 surface_vote | surface = range-weighted vote incl. background; paint / edges nearest | 0.0317 | 0.9411 | 0.5877 | 0.4798 | **FAIL** |
+| v6.3 + agent occluders | tracked boxes (obstacle.offline) projected per camera = not seen | 0.0291 | 0.8271 | 0.6266 | 0.506 | **FAIL** |
+| v6.4 + refine-zeroed = not seen, background weight 0.5 | | 0.0297 | 0.8866 | 0.6364 | 0.506 | **FAIL** |
+
+Mechanism (world-map crops at frame 33): a vote removes poles and walls, but wherever the near views are blocked — the
+ego's own lane between a lead car and a tailgating van — background wins and the road is lost. The occluder masks
+themselves are right (`code/occ_debug.py`: truck, van and distant cars covered in all 7 cameras), which also confirms
+camera models and LiDAR boxes agree. **v6.1 stays the ground truth.** Next lever, not run: LiDAR tall obstacles written
+into the label — admissible for labels, but MAP_A2 reads the same LiDAR, so it needs an independent check first.
+
+### 9.7 Cross-camera registration: measured, corrections NOT applied
+
+`code/cross_cam_registration.py` correlates each camera's bright paint with the fused paint of the other cameras at rig
+shifts of ±0.4–0.8 m. ⛔ **Its first version was invalid**: it selected cells by "own paint OR the others' paint", i.e.
+on the correlated variable; NCC at zero shift came out negative and every peak sat at the range edge (selection bias).
+Corrected (selection by the camera's own SAM3 classes, reference over all observed cells), partial day clip:
+FW (0, +0.1 m) 0.553 → 0.582, CR (0, −0.1 m) 0.452 → 0.475, CL (+0.3, −0.4 m) 0.407 → **0.577**, mirrored controls ≈ 0.
+
+`code/calib_refine.py` then fitted small rotations + height per camera against CAM_FW. On the full day clip CR (yaw
++0.25°, roll −0.5°, dz +0.05) and RR (yaw +2.25°, dz +0.10) raise held-out NCC 0.42 → 0.58 and 0.24 → 0.48 — but fits on
+the **temporally disjoint halves disagree** (RR yaw −0.25° vs +1.5° vs +2.25°; only CR yaw stays positive, +0.25…+0.75°),
+and the even/odd held-out split was not independent (adjacent frames 200 ms apart). A range-split self-consistency mode
+was **degenerate** (FW pitch +2°, CR yaw of the opposite sign; the near/far split moves with the candidate). ⇒ relative
+misregistration exists (up to ~0.5 m at 12 m for CL), but these corrections are not identifiable from paint on one clip.
+Next lever: a joint fit over several clips of the same vehicle, or a LiDAR-curb anchor.
+
+### 9.8 Camera time offsets (measured, small here)
+
+Per token, the nearest native frame differs from the reference time by a constant +10.7 ms (CL, CR, RT; day) and +4.1 ms
+(night), 0 ms for FW, RL, RR, FT. At these clips' ≤ 8.1 m/s that is ≤ 0.09 m — below the 0.10 m cell; at 30 m/s it would be
+0.32 m, so a corpus-scale build should use the pose at each camera's own timestamp.
+
+### 9.9 The night regression, attributed per camera (`code/a2_by_camera.py`)
+
+Same-frame evidence, every second frame: the share of ALL LiDAR tall-obstacle points of the frame whose 0.15 m cell a
+single camera's lifted drivable points cover, by camera range (a lower bound per camera; comparable across cameras):
+
+| clip | largest | next |
+|---|---|---|
+| night | **CAM_FW 8–15 m: 2.81 %**, CAM_FW 0–8 m: 1.26 % | CAM_RL 8–15 m 1.01 %, CAM_FT 8–15 m 0.92 %, CAM_CR 0–8 m 0.73 % |
+| day | CAM_RL 8–15 m: 1.46 % | CAM_CR 8–15 m 0.67 %, CAM_RR 8–15 m 0.59 %; CAM_FW 8–15 m only 0.13 % |
+
+At night the **front camera's road mask spills onto obstacles at 8–15 m** — 21× its day value. HYPOTHESIS (not yet tested):
+SAM3 sees fewer pixels per metre of far road in the full 120° image than it did in v2's 63.7° crop, which acted as a zoom,
+and night blur makes that worse. Night MAP_C is also confounded by
+definition: many night vehicles stand in parking bays that SAM3 does not call road (27.5 % of vehicle centres on sidewalk
+/ verge at night vs 2.3 % by day), while MAP_C was calibrated on nuPlan, where parking lots are drivable.
+
+## 10. Next levers after v6.1 (ranked)
+
+0. **Night far-range road masks** (§9.9): a zoomed centre tile of the native front camera for SAM3 (roughly 2× extraction
+   time), pre-registered on night A2 with the day clip as a no-regression control.
+1. **PI confirmation of the v6.1 videos**, then the corpus build: the B1 EVAL clips need all 7 camera streams (download
+   permission per file, with size) — the exporter already writes the BEV head's grids.
+2. **Paint accuracy is unscored** — a 30–50 frame human spot-check per class (arrows / text / hatched / crosswalk).
+3. A2 of the world map (0.053): LiDAR tall obstacles in the label, with an independent validation.
+4. Multi-clip joint camera calibration (§9.7) and per-camera timestamps (§9.8).
+5. Throughput: ~21 s per frame × 7 cameras on Thor for extraction; consensus 4 min, render 3 min per clip.
+
+### 10.1 Deliverable manifest (v5 → v6.1 additions)
+
+| artifact | where |
+|---|---|
+| code (43 files, all new or changed since the banked `code/`) | `code/v6/` (repo) — clip ids redacted to sha12; run on Thor under /home/nvidia/sam3map |
+| LiDAR scores v6 / v6.1 day and night, GT world-map arms incl. the three FAILED surface votes, consensus / refine / calibration / registration JSONs, controls | `raw/v6/` (repo) |
+| ground-truth exports for the BEV head (both LiDAR clips) + reports | `gt_samples/*.sam3mapgt.npz` (repo, ~1.1 MB each) |
+| contact sheets, probes, atlases, world-map crops, video stills | `media/v6/` (repo, JPG) |
+| videos: v5 long front (8 clips), v6 and v6.1 day and night | Thor `/home/nvidia/sam3map/long_v5.mp4`, `sam3map_v6_<c8>.mp4`, `sam3map_v61_<c8>.mp4`; sent to the PI; `*.mp4` git-ignored |
+| per-frame npz v6raw / v6 / v61, native 7-camera sequences, world maps | Thor `/home/nvidia/sam3map/<c8>_v6raw`, `_v6`, `_v61`, `native7/`, `render5_*/worldmap.npz` (not banked: size) |
