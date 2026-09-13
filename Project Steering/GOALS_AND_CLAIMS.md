@@ -11558,3 +11558,9 @@ carry one is pre-registered and unlaunched.
 | **H-SAM3-FUSION-1** | A map teacher of **SAM3 lines + Qwen regions + LiDAR geometry**, with per-class source reliabilities learned on true maps and temporal persistence in the world frame, beats Qwen alone on PhysicalAI. Needs first: crosswalk instance filtering, and an admissible paint reference (nuScenes val with maps, or a 20–30-frame hand-labelled PhysicalAI set). | **OPEN — not testable until a reference exists** | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/RESULT.md` §13.4 |
 
 <!-- SAM3-PAINT-2026-09-13 -->
+
+| ID | claim | status | evidence |
+|---|---|---|---|
+| **D-REFCV6-GROUNDING-1** | ⛔ **refcv6 is NOT perception-grounded.** Its staged arms (V0 → V0b → D) run `--agents off`; DiffusionDrive's learned agent-detector head and trajectory-indexed spatial cross-attention are arms A/B of the architecture review, not staged; the frozen refcv5-v2 trunk carries little BEV occupancy (`E-BEVHEAD-FROZEN-1` fails its bars, INHERITED). ⇒ "refcv6 contains every DiffusionDrive V1/V2 piece" is **retracted**; the true statement is "the planner-side pieces". | **DECIDED (retraction, class E)** | `Project Steering/REFCV6_ARCHITECTURE_REVIEW.md` §2; `Project Steering/RETRACTION_LOG.md` 2026-09-13 (afternoon) |
+
+<!-- REFCV6-GROUNDING-2026-09-13 -->

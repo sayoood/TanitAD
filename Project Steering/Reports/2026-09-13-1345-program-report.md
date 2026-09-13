@@ -14,8 +14,14 @@ loop** (PI ruling 2026-09-02); perception numbers carry no driving tier.
 2. **Driving (REF-C line, ~108 M params):** refcv4b **ties** the do-nothing controls; refcv5-v2 **fails both bars
    and is separably worse than refcv4b**. The do-nothing controls win speed, target-speed and along-track accuracy. The one clear gain is lateral
    (curvature error 0.51× the straight-line floor). *(MEASURED, `Benchmarks & Eval/LEADERBOARD.md` §1e.)*
-3. **refcv6 — every DiffusionDrive V1/V2 piece + max-speed input + tactical goal — is built, gated, and stopped**
-   at step 250 by the 2026-09-11 pivot. ~47 h per arm on Thor. *(MEASURED rate 4.09 s/step.)*
+3. **refcv6 — DiffusionDrive's PLANNER-side pieces (truncated anchor diffusion, control-space DDIM sampling, the V2
+   truncation path) + max-speed input + tactical goal — is built, gated, and stopped** at step 250 by the 2026-09-11
+   pivot. ~47 h per arm on Thor. *(MEASURED rate 4.09 s/step.)*
+   ⛔ **CORRECTED SAME DAY (the PI challenged it): DiffusionDrive's PERCEPTION GROUNDING is NOT in refcv6.** The learned
+   agent-detector head (`--agents head`) is **off in all three staged arms** and failed its only gate (17 M rig); the
+   trajectory-indexed spatial cross-attention (`--wp-index`) is built and **never run** (it requires agents on); nothing
+   supervises the trunk with scene structure. *(`Project Steering/REFCV6_ARCHITECTURE_REVIEW.md` §2.1–2.2.)* An
+   earlier version of this line said "every DiffusionDrive V1/V2 piece" — retracted.
 4. **Perception pivot (since 09-11):** the Qwen-Drive teacher works on our data after an input fix; its **map is
    real but coarse**, its **occupancy is weak**; SAM3 extracts **lane lines** but over-calls crosswalks; LiDAR BEV
    ground truth is built for 134 clips; a BEV transformer on the **frozen** trunk **fails its bars** (interim).
@@ -69,7 +75,7 @@ closed loop, single front camera + reasoning + tactical MoE.*
 
 | option | what it is | cost | what it buys | main risk |
 |---|---|---|---|---|
-| **A — relaunch refcv6** | the DiffusionDrive-complete planner, arms V0 → V0b → D | ~47 h/arm on Thor (~6 days for 3) | the first arm with every DiffusionDrive piece, read against the do-nothing bars | the longitudinal failure is not addressed by any refcv6 piece; the trunk stays ungrounded |
+| **A — relaunch refcv6** | DiffusionDrive's planner pieces, staged arms V0 → V0b → D (agents OFF) | ~47 h/arm on Thor (~6 days for 3) | the planner pieces read together against the do-nothing bars | ⛔ **no perception grounding** (agent head / spatial cross-attention are arms A/B of the review, not staged); the longitudinal failure is not addressed |
 | **B — longitudinal lever first** | run the pre-registered max-speed arm; RL ≥GT fine-tune of refcv4b | ~2–3 days Thor | a direct test of the **largest measured gap** (the do-nothing controls win speed, target-speed and along-track accuracy) | the registered residual (slow ego ⇒ low limit) must be shown not to be the win |
 | **C — grounded perception (the 09-11 pivot)** | LiDAR-supervised BEV + agent/map queries trained **with** the planner (DiffusionDrive-style spatial cross-attention), maps from Qwen + LiDAR (+ SAM3 lines) | 1–2 weeks to a trained integrated arm | the missing environment grounding — the frozen-trunk result says it must be **trained in**, not read out | not ready for 5 Oct; token grid loses ~2/3 of localisation (WP-A) |
 | **D — closed-loop harness for 5 Oct** | AlpaSim / NuRec closed loop on Thor for the best current arm | ~3–5 days engineering | the Goal-1 number the evaluation needs; honest closed-loop failure modes | sim-to-real gap; shares Thor with training |

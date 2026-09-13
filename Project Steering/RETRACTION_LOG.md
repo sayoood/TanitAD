@@ -15123,3 +15123,28 @@ the docs pin — and treat "the count matches" as the least informative row.**
    plaintext ids inside saved-parquet paths. Redacted to sha12 at landing; the producing agent was told.
 
 <!-- RETR-2026-09-13-QWEN-DECODER-AND-RIG -->
+
+---
+
+## 2026-09-13 (afternoon) — "refcv6 includes every DiffusionDrive V1/V2 piece" — RETRACTED the same day, caught by the PI
+
+**Retracted by:** Master Mind, after the PI wrote *"You said refcv6 includes each piece of v1 and v2, I thought the
+perception grounding is missing."* **The PI was right.**
+
+| said (report 2026-09-13 13:45, the published page, and chat) | true (`Project Steering/REFCV6_ARCHITECTURE_REVIEW.md` §2.1–2.2) |
+|---|---|
+| refcv6 carries **every** DiffusionDrive V1/V2 piece | refcv6 carries the **planner-side** pieces (truncated anchor diffusion, control-space DDIM sampling, V2 truncation path). DiffusionDrive's **perception grounding is missing**: the learned agent-detector head (`--agents head`) is **off in all three staged arms** and failed its only gate (17 M rig); the trajectory-indexed spatial cross-attention (`--wp-index`) is built and **never run** (it requires agents on); nothing supervises the trunk with scene structure. |
+
+### ⛔ CLASS E — A SCOPE WORD COPIED FROM MY OWN SUMMARY INSTEAD OF THE PROGRAMME'S OWN REVIEW
+
+The session's compaction summary carried the PI's request *"finish the implementation of refcv6 and close all gaps
+relative to both papers v1 and v2"* next to the note that the implementation was done. I turned **the request's
+scope** into **the artifact's scope** — "every piece" — while the programme's own architecture review, in the repo,
+lists the two missing pieces by name and calls the first *"the paper's own central mechanism"*. ⭐ **The review was
+one grep away and was not read before the sentence was written.**
+⇒ **Rule: a completeness word ("every", "all", "complete", "closes all gaps") about an artifact is a claim about a
+CHECKLIST, and it may only be written with the checklist open** — here `REFCV6_ARCHITECTURE_REVIEW.md` §2.
+Same family as class A of 2026-09-11 (a real fact attached to the wrong reference): the request was real, the
+implementation was real, and the word joined two things that were never the same set.
+
+<!-- RETR-2026-09-13-REFCV6-EVERY-PIECE -->
