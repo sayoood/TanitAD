@@ -415,3 +415,17 @@ existing B1 EVAL join and were read, not chosen.
    `taniteval`-side loader + a test that asserts the artifact's own `meta_json` against the builder's
    specs, so the units can never drift from the bytes. The **head** waits on (b), because a target
    that has not been built at corpus scale cannot train anything.
+
+---
+
+## ⛔ Corrections found 2026-09-13 — read before reusing this package's builder
+
+Two defects in `code/lidar_bev.py` of THIS package were found and fixed in
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-bev-lidar-corpus-and-head/` (this file is not edited otherwise):
+* **D-LIDAR-DESKEW-SIGN-1** — `deskew_rigid` rotated by −yaw_rate·dt; the correct inverse is +yaw_rate·dt (the corrected
+  sign wins 24/24 high-yaw instants, spin-to-spin residual 0.0135 m vs 0.1545 m).
+* **D-POLAR-OBSERVED-BIAS-1** — the polar `observed` rule (`~shadow ∨ occ`) kept occupied cells behind the first hit and
+  dropped free ones (78–91 % of scored positives sat there); the new package writes all three variants into every artifact.
+See `Project Steering/GOALS_AND_CLAIMS.md` (E-BEVHEAD-FROZEN-1 block) and `Project Steering/RETRACTION_LOG.md`.
+
+<!-- CORRECTED-2026-09-13-BEVPKG -->

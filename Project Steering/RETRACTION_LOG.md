@@ -15172,3 +15172,62 @@ checks for" (CLAUDE.md): the reference and the test shared the truncation. The s
 cause was asserted from a pattern before the one-variable test (swap the ground estimator) had run.
 
 <!-- RETR-2026-09-13-SAM3MAP-OVERRANGE -->
+
+
+---
+
+## RETRACTION 2026-09-13 -- TWO DEFECTS IN THE 09-11 LIDAR BEV TARGET BUILDER, BOTH FOUND BY A CONTROL, NEITHER VISIBLE IN ANY NUMBER IT HAD PUBLISHED
+
+**Stream:** Architecture & Inference FlyWheel. **Package:**
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-bev-lidar-corpus-and-head/`.
+**What is retracted:** two properties of `2026-09-11-lidar-bev-gt/code/lidar_bev.py`. ⛔ The 09-11
+REGISTRATION numbers (real 10.30x / 4.99x over marginal) are **NOT** retracted -- see scope below.
+
+### 1. `deskew_rigid` rotated the wrong way -- "the per-point timestamp makes the correction exact"
+
+09-11 `lidar_bev.deskew_rigid` mapped a point captured at `t_pt` to the frame at `t_ref` with
+`R(-yaw_rate*dt)`. The ego frame at `t_pt` is rotated by `+yaw_rate*dt`, so the inverse map is
+`R(+yaw_rate*dt)`. The shipped sign **doubled** the yaw smear instead of cancelling it.
+
+**MEASURED** (`raw/p0_deskew_sign_check.json`, `raw/p0_deskew_sign_check_replicate.json`): two
+consecutive spins deskewed to the same instant must put static structure in the same place.
+Median xy nearest-neighbour distance on high-|yaw| instants: rotation OFF **0.1080 / 0.0321 m**,
+shipped sign **0.1545 / 0.0499 m**, flipped sign **0.0135 / 0.0146 m**; flipped wins **24 / 24**
+instants over **3 clips and both turn directions** (5 left turns). Control with a known answer:
+on |yaw| <= 0.02 rad/s (n = 48 + 54) all three agree to ~1 mm. The yaw-rate estimate's own sign
+was checked independently: it agrees with `v * curvature` on 100 % and the trajectory heading on
+82-100 % of |r| > 0.05 samples.
+**Scope:** the registration sweep ran mostly on low-yaw frames, where the term is ~0; its
+real/rot90/mirror ordering is unaffected. Any GT built on the 09-11 module during TURNS carries
+up to ~2x the uncorrected smear (0.15 m median, p90 0.9 m at |r| 0.35 rad/s).
+**Pinned:** `code/test_bev_gt_artifact.py::test_deskew_recovers_static_scene_on_an_exact_arc`
+(physically exact arc, not the code's own inverse) and `::test_MUTATION_old_09_11_rotation_sign_goes_red`.
+
+### 2. The POLAR `observed` rule kept positives and dropped negatives behind the first hit
+
+09-11 `rasterise_polar` defined `observed = ~shadow | occ`, while the Cartesian rule of the SAME
+module is `~shadow | occ | n_pts > 0`. Behind the first occupied cell of a column an OCCUPIED cell
+stays scored and a FREE cell with LiDAR returns does not.
+
+**MEASURED** (`raw/p2b_observed_rule_probe.json`, 3 clips x 24 spins): **78-91 %** of the scored
+positives lie behind the first hit; **5,087-11,421** free-with-returns cells are dropped; the
+polar48 marginal reads **0.414 / 0.620 / 0.471** under the shipped rule against **0.278 / 0.465
+/ 0.364** with the Cartesian term ported. Control: the two rules agree exactly in front of the
+first hit on all 3 clips. Found because a content band declared BEFORE the corpus build
+quarantined 3 of the first 24 clips.
+**Scope:** 09-11 published no polar number that depends on it. It would have biased any head
+scored on the polar target toward "everything past the first obstacle is occupied".
+**Fix:** additive -- `observed_npts` (rule B, consumer default) and `visible_first_hit` (rule C)
+beside the unchanged shipped key (rule A); all three are written into every artifact.
+
+### ROOT-CAUSE CLASS -- A CONVENTION NOBODY ASSERTS, AND A MASK NOBODY SCORED FROM BOTH SIDES
+
+Both are the `R-2026-09-08-wpa-mirror` family: a sign (rotation direction) and a set definition
+(which cells count) that were written once and never checked against a quantity with a known
+answer. Neither changed any number the package reported, which is exactly why neither was caught
+by re-reading its numbers. ⭐ **The discriminator both times was a control that had to read a known
+value:** spins that must coincide, and two rules that must agree in front of the first hit.
+⇒ **For any geometric transform, test it against a physically exact forward model; for any
+scoring mask, count what it keeps AND what it drops on each side of its decision boundary.**
+
+<!-- RETR-2026-09-13-LIDAR-BEV-DESKEW-SIGN-AND-POLAR-OBSERVED -->

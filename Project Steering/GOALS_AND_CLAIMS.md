@@ -11573,3 +11573,65 @@ carry one is pre-registered and unlaunched.
 | **H-SAM3-MAP-SCALE-1** | SAM3-only maps can augment the corpus at scale (PI 2026-09-13: "it can significantly augment our data set"). Open: throughput (v3 20.6 s/frame on Thor, 7 views × 18 prompts), a human paint spot-check (30–50 frames) to score arrows / text / hatched areas, and front-only clips (only 4 clips carry all 7 cameras on disk; the rest use the front camera with the ego path as ground). | **OPEN** | same package §6–§7 |
 
 <!-- SAM3-MAP-2026-09-13 -->
+
+
+
+---
+
+## E-BEVHEAD-FROZEN-1 / D-BEVGT-B1EVAL — the LiDAR BEV ground truth exists at corpus scale for the B1 EVAL slice, and a transformer BEV head was trained on it (2026-09-13, Architecture & Inference FlyWheel)
+
+**PI directive, verbatim (2026-09-11):** *"train the bev transformer based on the lidar based bev as gt"*.
+Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-bev-lidar-corpus-and-head/`.
+⛔ LiDAR is a LABEL; every head input is vision-only (refcv5-v2 trunk tokens or pixels).
+
+| id | claim / hypothesis | status | evidence |
+|---|---|---|---|
+| **D-LIDAR-BANDWIDTH-1** | The dev-box LiDAR fetch (ranged single-member zip read over `HfFileSystem`) SATURATES near **12.6 MB/s aggregate**: aggregate **6.87 / 11.59 / 12.60 MB/s** at concurrency **1 / 4 / 8**, per-stream median **7.51 / 3.11 / 1.68 MB/s**, **n = 8 clips per arm**, 24/24 CRC- and content-verified. c=8 buys +8.8 % over c=4 at twice the streams ⇒ **c = 4 chosen**. ⚠️ Arms ran sequentially; a bandwidth change between arms is confounded with concurrency. Supersedes the 09-11 package's refusal to quote a rate (4 single-stream samples, 7.3× spread): the single-stream spread here is **6.80–8.35 MB/s**. | **MEASURED** | `raw/p1_bandwidth.json` |
+| **D-LIDAR-DESKEW-SIGN-1** | ⛔ **The 09-11 `lidar_bev.deskew_rigid` rotated by −yaw_rate·dt; the correct inverse is +yaw_rate·dt.** Spin-to-spin static-structure agreement on high-|yaw| instants: OFF 0.1080/0.0321 m · shipped 0.1545/0.0499 m · flipped **0.0135/0.0146 m**; flipped wins **24/24** over 3 clips, both turn directions; low-yaw control flat (n = 102). Corrected in this package's `code/lidar_bev.py` (schema `/2`), pinned by an exact-arc test and a mutation arm. | **MEASURED — REFUTES a 09-11 property** (not its registration numbers) | `raw/p0_deskew_sign_check*.json`; `RETRACTION_LOG.md` 2026-09-13 |
+| **D-POLAR-OBSERVED-BIAS-1** | ⛔ **The shipped polar `observed` rule (`~shadow ∨ occ`) keeps positives and drops negatives behind the first hit**: 78–91 % of scored positives lie behind it, 5,087–11,421 free-with-returns cells dropped, marginal 0.414/0.620/0.471 vs **0.278/0.465/0.364** with the Cartesian `n_pts>0` term ported (3 clips × 24 spins; in-front-of-first-hit control exact). All three rules now ship in every artifact; the consumer uses rule B. | **MEASURED** | `raw/p2b_observed_rule_probe.json` |
+| **D-BEVGT-B1EVAL-1** | ⭐ **The LiDAR BEV ground truth EXISTS for the B1 EVAL join: 134 of 139 clips pass every content check, 26,526 labelled instants on the v2ep episode grid** (the grid the refcv5-v2 trunk reads; consumer = `code/p4_bev_head.py` via `code/bev_gt_loader.py`), polar48 (the variant-B head grid) + polar24 + Cartesian 120×64, the third state (occupied / observed-empty / occluded / out-of-camera-field) written per instant, units/extent/frame/dt/z-band/deskew-sign in `meta_json`. Every artifact re-read by the loader and sha256'd; 134/134 D: mirror hashes match. 5 clips QUARANTINED on the ground-plane check (4 of them demonstrably scene false alarms, `raw/p2d_ground_outlier_probe.json`) and kept out, as the gate says. ⚠️ Not staged in git (109.8 MB derived dataset) — two local disks; a private-HF publish is a PI decision. | **MEASURED** | `raw/p2_corpus_summary.json`, `raw/p2_corpus_manifest.jsonl` |
+| **D-BEVGT-ORIENT-1** | The corpus is REGISTERED to an independent source: `obstacle.offline` boxes hit `cart_occ` at **0.5823** vs mirrored **0.1802** vs marginal **0.1356** (real/mirror **3.23×**, real/marginal **4.29×**, 2,107,991 box cells, 134 clips). ⚠️ Per clip, 3 dense symmetric scenes read mirror > real while real stays 1.68–3.77× marginal; 2 clips read real/marginal < 1.5 (one on 97 cells). The P3 suite (10 tests, literals + mutation arms) is green on all 134, and pointed at mirrored / wrong-cell-size copies it goes **RED** (`raw/p3_mutation_run.json`). | **MEASURED** | `raw/p3_orientation_all.json`, `code/test_bev_gt_artifact.py` |
+| **E-BEVHEAD-FROZEN-1** | A LiDAR-supervised BEV **transformer** head (variant B, polar 48×40, d192, L3, **2,284,993** params) on the **FROZEN refcv5-v2 stride-32 tokens** reads occupancy beyond the controls and usefully (pre-registered bars B1–B4). ⛔ **FAILED all four, as written.** Test (34 clips, 6,713 rows, 7,928,485 cells): `main` AP **0.4140** [0.3721, 0.4590] vs `shuffled` 0.3801, `prior` 0.3773, `pixel` 0.3849, `const` 0.2762 (= prevalence exactly); `main − shuffled` **+0.0339** [+0.0055, +0.0626] and `main − prior` **+0.0367** [+0.0076, +0.0675] separated but < +0.05 and < 3F (F = 0.0144); `main − pixel` not separated; **the replicate `main_s1` does not separate from `shuffled`** (+0.0195 [−0.0155, +0.0564]); IoU 0–30 m 0.3293 < 0.45. Gain concentrated near-field (+0.077 AP at 0–15 m → +0.017 at 45–60 m). Both seeds' validation peaks at step 1,000/6,000 ⇒ an 82-clip head that overfits. ⚠️ Scope: B1 EVAL slice, NON-PARITY, frozen trunk, representation probe (no tier, no planner metric families apply). | **MEASURED — REFUTED as stated** | `raw/p4_panel.json`, `PREREG_BEVHEAD_FROZEN_TRUNK.md` |
+| **E-BEVHEAD-L1-S16** | POST-HOC lever L1: the same head on the frozen stride-16 map [352,16,40]. ⛔ **FAILED, and no effect**: AP **0.4074** [0.3533, 0.4601]; `s16 − main` **−0.0066** [−0.0254, +0.0125]; vs shuffled/prior/pixel none separated. Validation peaks at step 500. ⇒ frozen-feature RESOLUTION is not the lever. | **MEASURED — REFUTED** | `raw/p4_panel_levers.json` |
+| **D-BEVHEAD-VAL-OPTIMISM-1** | ⚠️ Best-step selection on 18 validation clips OVER-PROMISES the margin over the positional prior by **2.5–4.5×** on every trained arm: `main` val +0.0928 → test **+0.0367** (2.53×), `main_s1` +0.0982 → +0.0223 (4.39×), `s16` +0.0862 → +0.0301 (2.87×), `pixel` +0.0342 → +0.0076 (4.50×). A validation margin on this rig is not a test margin; the pre-registered test-once discipline is what caught it. | **MEASURED** | `raw/p4_val_reference.json` |
+| **D-LIDAR-FRAMES-REBUILD-1** | Frames rebuilt on the dev box from raw mp4 through the `v2_compressed` path are NOT the pod-built frames: pixels max 3 / mean 0.75 levels apart (27–29 % exactly equal), **trunk tokens 1.73–1.84 % relative mean-abs apart** (wrong-row control 57–66 %) ⇒ the pre-registered G5 bar (≤ 1 %) FAILS. No PyAV interpolation/colourspace variant closes it (ITU709 is worse); `calib.py` code unchanged since the build ⇒ a library-version difference on the pod (swscale rounding and/or torch `grid_sample`), not pinned. ⇒ any data lever that rebuilds frames must put EVERY split on rebuilt frames (L4 amendment A1). | **MEASURED** | `raw/p6a_frames_equivalence.json`, `raw/p6c_token_equivalence.json`, `raw/p6e_decode_variants.json` |
+| **D-LIDAR-COVERAGE-B1TRAIN-1** | Of the first 200 B1 TRAIN clips by sha12, **8 have no LiDAR member** in their chunk zip under ANY spelling (full central-directory substring search; same-chunk controls found 3/3, 2/2, 6/6, 33/35, 19/20; 3 chunks have no control clip). 181/200 built OK; 19 failed = 8 no-LiDAR + 8 ground-check + 2 near-empty grid + 1 low observed fraction. | **MEASURED** | `raw/p6d_missing_lidar_probe.json`, `raw/p6b_extra_selection.json` |
+
+⛔ **What is NOT claimed:** no driving result, no planner metric, no tier; nothing about capacity
+competition (`E-BEVLIDAR-CAP-1` is untouched — the trunk here is frozen). The data lever L4
+(`PREREG_L4_MORE_TRAINING_CLIPS.md`, amendment A1) was RUNNING when these rows were written; its
+rows are appended when its panel exists.
+
+<!-- E-BEVHEAD-FROZEN-1-2026-09-13 -->
+
+
+### E-BEVHEAD-DATA-1 — ADDENDUM (2026-09-13, Architecture & Inference FlyWheel): lever L4 scored
+
+Package `TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-bev-lidar-corpus-and-head/`,
+pre-registration `PREREG_L4_MORE_TRAINING_CLIPS.md` incl. amendment A1 (written after gate G5 failed,
+before any L4 arm ran). Same 34 test clips / 7,928,485 cells as `E-BEVHEAD-FROZEN-1`.
+
+| id | claim / hypothesis | status | evidence |
+|---|---|---|---|
+| **E-BEVHEAD-DATA-1** | Adding 181 B1-TRAIN clips (training rows 16,199 → **51,908**) to the frozen-trunk BEV transformer head lifts test AP by ≥ +0.03 over the same head on 82 clips, separated. ⛔ **REFUTED as written:** `data_rb − main_rb` **+0.0179** [−0.0063, +0.0402], not separated (both arms on locally rebuilt frames). ⭐ What the data DID measurably do: the replicate floor tightened **0.0144 → 0.0033**; both seeds now separate from their zero-information arm (`data_rb − shuffled` **+0.0552** [+0.0231, +0.0866]; `data_rb_s1 − shuffled` **+0.0519** [+0.0134, +0.0920]) and from the positional prior (+0.0574 [+0.0258, +0.0885]) ⇒ the original bars **B1 and B2 now PASS** at the strict floor 3 × max(0.0144, 0.0033) = 0.0431; best validation step moved 1,000 → 1,500–3,000. **B4 still FAILS** (AP **0.4352** [0.3976, 0.4737] < 0.60; IoU 0–30 m 0.3400 < 0.45); B3 not re-tested. | **MEASURED — REFUTED (criterion) / B1+B2 cleared** | `raw/p4_panel_L4_data_rb.json` |
+| **D-BEVHEAD-FRAMESHIFT-1** | The ~1.8 % token shift of dev-box-rebuilt frames (the reason G5 failed) does **not** move test AP for this head: `main_rb − main` (same 82-clip arm, rebuilt vs pod frames, paired on the same cells) **+0.0033** [−0.0029, +0.0086], not separated. ⇒ G5's 1 % token bar was conservative for this consumer; rebuilt frames are usable as training data for a BEV head. ⚠️ Not shown for any other consumer (a planner may be more sensitive). | **MEASURED** | `raw/p4_panel_rb_shift.json`, `raw/p6c_token_equivalence.json` |
+
+⛔ Still not claimed: any driving or planner metric, any tier, anything about joint training
+(`E-BEVLIDAR-CAP-1`). Levers L3 (azimuth-aligned attention) and L2 (unfrozen last stage) were
+running when this addendum was written.
+
+<!-- E-BEVHEAD-DATA-1-2026-09-13 -->
+
+
+### E-BEVHEAD levers L3 / L2 — ADDENDUM (2026-09-13, Architecture & Inference FlyWheel) and where RULE ZERO stops
+
+Same package, same 34 test clips / 7,928,485 cells, one panel with the pre-registered arms
+(`raw/p4_panel_levers_L1L2L3.json`).
+
+| id | claim / hypothesis | status | evidence |
+|---|---|---|---|
+| **E-BEVHEAD-L3-GEO** | POST-HOC lever L3: an azimuth-aligned cross-attention mask (each polar query sees only token columns within 9° of its cell's projection through the nominal rig camera; exact on the cylindrical frame) improves the frozen-trunk head. ⛔ **FAILED, not separated:** AP **0.4172** [0.3675, 0.4659]; Δ vs `main` **+0.0032** [−0.0100, +0.0170]; vs shuffled +0.0371 and vs prior +0.0399 separated but < +0.05; vs pixel not separated; best val step 500. | **MEASURED — REFUTED** | `raw/p4_panel_levers_L1L2L3.json` |
+| **E-BEVHEAD-L2-UNFREEZE** | POST-HOC lever L2: unfreezing the checkpoint's last ResNet stage (**51,562,368** params, BN statistics frozen — verified) improves the head. ⛔ **FAILED, not separated:** AP **0.4248** [0.3691, 0.4786]; Δ vs `main` **+0.0107** [−0.0092, +0.0353]; vs shuffled +0.0447 / prior +0.0475 separated but < +0.05; vs pixel not separated; best val step 500. ⚠️ Found and fixed BEFORE it ran: BN would have used batch statistics for 500 steps (modules construct in training mode). | **MEASURED — REFUTED** | `raw/p4_panel_levers_L1L2L3.json` |
+| **D-BEVHEAD-RULEZERO-STOP-1** | The frozen-trunk BEV transformer head does NOT clear its pre-registered usefulness bar (B4, AP ≥ 0.60) in any of 11 trained arms; best **0.4352** (`data_rb`). The four 4060-feasible levers measured **−0.0066 (L1), +0.0032 (L3), +0.0107 (L2), +0.0179 (L4)**, none separated; B4 needs ≥ +0.165. ⇒ STOP by RULE ZERO condition 3: the levers that could plausibly deliver that jump are BLOCKED — **full-scale LiDAR GT** (4,571 train clips ≈ 1.55 TB ≈ 34 h at the measured 12.6 MB/s ⇒ a bandwidth-rich pod) and **joint BEV-aux trunk training** (`E-BEVLIDAR-CAP-1`, pod GPUs); both need PI-authorised compute. Combinations on the 4060 are runnable but measured-marginal and were not opened, per the PI's 97 %-committed-memory steer. | **MEASURED (effects) + named blockers** | `RESULT.md` §6.5 |
+
+<!-- E-BEVHEAD-L3L2-STOP-2026-09-13 -->
