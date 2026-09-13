@@ -15069,3 +15069,57 @@ The mechanism's **reachability** was never in doubt through any of this, because
 unbarred gradient **bit-for-bit**; a bar above it gives **exactly 0.0**; the middle is **partial**.
 ⛔ *A mask that only ever admits all or nothing is a switch, not a truncation.* ⇒ **Identities do not
 need seeds, controls, or comparators — and they are the only claims from tonight that never moved.**
+
+---
+
+## 2026-09-13 — Qwen-Drive "does not work on our data" was never the finding: TWO classes of mine, and two more caught before publishing
+
+**Retracted by:** Master Mind, after the PI rejected the 2026-09-11/12 validation video (*"the video
+content is not correct, the occupancy map has no details, the boxes not correct, the map small and
+noisy"*). **Evidence:** `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/RESULT.md`.
+
+### ⛔ CLASS C — AN OUTPUT DECODED FROM A GUESSED SCHEMA, WHEN THE PRODUCER SHIPS ITS OWN DECODER
+
+| what I drew | what the output is (upstream source) | what the PI saw |
+|---|---|---|
+| `occ.max(axis=2)` through a continuous colormap | a **semantic** 200×200×16 grid, 10 classes, `empty` = label 9 (`configuration_perception.py:38`) | *"no details"* — a near-uniform field of 9s |
+| the map raster as stored, through `magma` | a **(Y, X)** raster, 6 classes; upstream transposes and flips it (`visualize.py:322-325`) | *"small and noisy"* — sideways, false-colour |
+| box column 3 as width | *"`w` along the heading direction"* (`docs/perception.md:96-97`) | *"boxes not correct"* — every box across the road |
+
+⭐ `scripts/visualize_perception.py` and `visualize.render_frame` (17,442 B) were in the cloned repo the
+whole time. Run through them, **even the rejected v1 input** shows road-shaped occupancy and a plausible
+map (`media/v1_vs_v2_*`). ⇒ **Two of the PI's three complaints were my renderer, not the model.**
+⇒ **Rule: when a producer ships a decoder, run it FIRST. Write your own only to add something, and diff
+it against theirs on the same bytes.** Same family as *"a check that shares the defect it checks for"*:
+a renderer I wrote from my own reading of the schema could only ever confirm that reading.
+
+### ⛔ CLASS D — A PRETRAINED MODEL JUDGED ON INPUTS OUTSIDE ITS PUBLISHED OPERATING GEOMETRY
+
+Upstream states it twice (`docs/perception.md:110-112`, `configuration_perception.py:17-20`): trained at a
+**fixed** 896×512 with **fixed camera configurations**; *"a different camera layout or resolution is not
+covered by the released weights."* The 2026-09-11 packing fed focal lengths of **313.7 / 664.2 / 1732.3 px**
+where every trained view has **721.0**. Its own docstring called the result *"in the model's training
+distribution"* because the camera COUNT matched nuScenes — the count was the one axis that did not matter.
+
+MEASURED on the upstream demo, where GT exists: **only** the focal changed ⇒ detection **54/57 → 0/57**;
+zoom with **no black pixels** ⇒ **2/57**; dropping two cameras ⇒ **54/57** (unchanged).
+⇒ **Rule: before judging any pretrained model on our data, (1) reproduce its own demo on our hardware
+and score it against the demo's GT, and (2) tabulate our input against its training rig on EVERY axis
+the docs pin — and treat "the count matches" as the least informative row.**
+
+### ⚠️ Caught before publishing, same session — logged because the class recurs
+
+1. **A control whose side effect differs from the intervention it emulates.** Arm A2 emulated our focal by
+   re-rendering the demo on a 110° canvas — which a 63.7° source can only fill **81 % black**, a property the
+   v1 packing never had. A2's collapse therefore could not by itself be read as a *scale* effect. Two arms
+   were added (A4: the same blackness at the correct scale → survives at 38/57; A6: scale with no black →
+   2/57). ⭐ Exactly the 2026-09-11 CLASS B rule 2 (*"match the intervention's SIDE EFFECT"*), recurring
+   **two days later** in a different stream — it is a standing hazard, not a one-off.
+2. **A comparative claim written from a picture.** A draft said *"v2's map predicts the crosswalk; v1's does
+   not"*. The count: v1 predicts **355** crosswalk cells, v2 **3,052**, at different places — and with no map
+   GT neither is scorable. Removed before publication. ⇒ **a "has / has not" about an image is a count.**
+3. **A confidentiality claim contradicted by its own staged artifact.** The LiDAR-BEV package (2026-09-11)
+   states clip ids *"never appear in a staged document"*; its staged `raw/lidar_probe.json` carried **4**
+   plaintext ids inside saved-parquet paths. Redacted to sha12 at landing; the producing agent was told.
+
+<!-- RETR-2026-09-13-QWEN-DECODER-AND-RIG -->

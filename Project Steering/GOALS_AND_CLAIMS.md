@@ -11527,3 +11527,17 @@ created in the data set with the logic of minimal speed etc..."*
 carry one is pre-registered and unlaunched.
 
 <!-- E16-MAXSPEED-V8-BUILD-2026-09-10 -->
+
+---
+
+## Qwen-Drive perception teacher — usage review (Master Mind, 2026-09-13)
+
+| ID | claim | status | evidence |
+|---|---|---|---|
+| **D-QWEN-THOR-1** | ⭐ Qwen-Drive-1.0-4B perception runs correctly on the Jetson Thor: its own demo through its own runner + visualizer finds **54/57** GT boxes over the 4 nuPlan demo frames, map mIoU **0.799**, occupancy geometric IoU **0.389**; both CUDA kernels compiled and the loader has no fallback path. | **MEASURED (ours)**, n = 4 frames | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/raw/demo_control_metrics.json` arm `A0` |
+| **D-QWEN-SCALE-1** | ⛔ The released perception weights **collapse under an image-SCALE change** on their own demo: focal → 313.7 px (81 % black canvas) **0/57**; zoom ×2.40 with **no black pixels** **2/57**; the same 81 % black at the correct scale survives at **38/57**; dropping CAM_R1 + CAM_L1 is harmless (**54/57**). ⇒ scale, not camera count and not blackness, is the dominant lever. | **MEASURED (ours)**, n = 4 frames; effects 54→0 / 54→2 of 57 | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/raw/demo_control_metrics.json` arms A1–A6 |
+| **D-QWEN-RENDER-1** | ⛔ The PI's 2026-09-12 rejection (*"occupancy no details, map small and noisy, boxes not correct"*) was **two parts renderer, one part packing**: occupancy was drawn as `max(axis=2)` of a semantic grid, the map un-transposed through a continuous colormap, box column 3 as width. Decoded by the upstream visualizer, even the rejected input shows road structure. | **DECIDED (retraction, classes C + D)** | `Project Steering/RETRACTION_LOG.md` 2026-09-13; `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/media/v1_vs_v2_*.png` |
+| **D-QWEN-V2-1** | ⭐ **v2 packing** (virtual nuPlan 8-camera rig, exact reprojection, ego origin shifted to nuPlan's 0.325 m) vs the 2026-09-11 packing, **same 14 instants, same 225 GT boxes ≤ 50 m**: precision **0.250 → 0.429**, recall **0.182 → 0.404**, near-range (0–20 m) recall **0.292 → 0.646**, occupancy BEV IoU vs single-sweep LiDAR **0.370 → 0.477**. Full clips (v2): `4fbd97b6a4b7` P 0.516 / R 0.382 (GT 2236); `73495082f98b` P 0.482 / R 0.477 (GT 3141); `0d90d20036a3` P 0.507 / R 0.403 (GT 1318); `6924358fafe0` P 0.589 / R 0.811 (GT 53). ⛔ Not a benchmark; no interval; the LiDAR occupancy is a visual reference, not semantic GT. | **MEASURED (ours)**, perception-teacher validation, no driving tier | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/raw/ours_metrics.json` |
+| **H-QWEN-TEACHER-1** | Qwen-Drive's **map** and **semantic occupancy** layers — which PhysicalAI-AV does not ship — are usable as training teachers for TanitAD after v2 packing. ⛔ **Unscored on PhysicalAI** (no semantic GT); detection is already covered better by `obstacle.offline`. The cheapest discriminating check is agreement with LiDAR at scale on the 139-clip B1-EVAL slice. | **OPEN — gated on PI validation (PI_DECISION_QUEUE item 14)** | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/RESULT.md` §8–§9 |
+
+<!-- QWEN-USAGE-REVIEW-2026-09-13 -->

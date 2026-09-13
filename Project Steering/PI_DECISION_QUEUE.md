@@ -81,6 +81,41 @@ one command at **~46.8 h/arm**. refcv6 restarts from exactly where it was whenev
 ⚠️ **The augmented corpus is a NEW DATASET.** A panel cannot change its dataset midway, so refcv6's
 arms would have to be re-run against it. That is a sequencing fact, not an objection.
 
+## ⭐⭐⭐ NEW ITEM 14 (2026-09-13) — Qwen-Drive: the rejected video is diagnosed and fixed. Your validation gates the corpus run.
+
+**What you rejected was not the model.** Two of your three complaints (*"occupancy has no details"*,
+*"map small and noisy"*) were **my renderer** — I decoded the outputs from a guessed schema while
+Qwen-Drive ships its own visualizer. The third (*"boxes not correct"*) was **both** my renderer and our
+input packing, which fed focal lengths the weights never saw.
+
+⭐ **MEASURED on Qwen-Drive's own demo, where GT exists:** on Thor it finds **54/57** boxes, map mIoU
+**0.799**. Changing **only** the focal to our old packing's value gives **0/57**; dropping two cameras
+changes nothing (**54/57**).
+
+⭐ **The fix (v2): a virtual nuPlan 8-camera rig** reprojected exactly from the PhysicalAI cameras.
+Same 14 instants, same GT: recall **0.182 → 0.404**, precision **0.250 → 0.429**, near-range (0–20 m)
+recall **0.292 → 0.646**, occupancy agreement with LiDAR **0.370 → 0.477**. Full-clip videos rendered by
+Qwen-Drive's own visualizer are in `…/2026-09-13-qwen-drive-usage-review/media/`.
+
+⚠️ **v2 is a large fix, not a finished teacher**: recall 0.40 on our GT vs 0.95 on their demo; side
+views are weakest (cross cameras sit at 0.81 m); **map and occupancy cannot be scored** on PhysicalAI
+(no semantic GT exists).
+
+**DECIDE (a):** do the v2 videos pass your visual validation?
+**DECIDE (b):** scope of the augmentation run. v2 needs **5 more cameras per clip** than we hold (the
+front tele is unused): **7.13 GB per 100 clips** (MEASURED, chunk 768's five zips, 100 clips each), and
+Thor runs **~4.1 s per frame** (MEASURED, 391 s for 96 frames incl. model load). At 2 Hz over 20 s clips:
+B1-EVAL 139 clips ≈ **9.9 GB + ~6.3 h Thor**; parity 2,376 clips ≈ **170 GB + ~108 h Thor** (ESTIMATED by
+scaling those two measurements; no transfer wall-clock is claimed — single-stream HF rates have spread 7.3×).
+**DECIDE (c):** which layers to keep. Detection is already covered better by `obstacle.offline`; the
+teacher's unique value is the **map** (PhysicalAI ships none) and **semantic occupancy** — both unscored.
+
+**Default if silent:** nothing corpus-scale launches. The 139-clip B1-EVAL slice is prepared as the
+first rung (it is the slice the LiDAR-BEV stream builds GT for, so map/occupancy can be checked against
+LiDAR at scale) and waits for (a).
+
+---
+
 ## ⭐⭐ STATUS AS OF 2026-09-11 — read this first; four items moved and TWO ARE NEW
 
 ### ✅ CLOSED — no decision needed
