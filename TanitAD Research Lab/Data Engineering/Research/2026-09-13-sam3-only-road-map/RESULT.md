@@ -598,3 +598,25 @@ block; the grey square on the road is an object on the car inside the extraction
 | scores, PI checks, robust A2, render stats, chain logs, probe outputs | `raw/v6b/`, `raw/v65/` (repo) |
 | hard-frame sheets, A2 hit maps, reprojection stills | `media/v65/` (repo, JPG) |
 | world maps (`worldmap.npz`), comparison frames and MP4 videos | Thor `/home/nvidia/sam3map/render5_*`, `reproj*_*/`, `reproj*_*.mp4` (not in repo: *.mp4 is git-ignored) |
+
+---
+
+## 16. Filling what a vehicle hid — two pre-registered box-free arms (2026-09-14)
+
+On the delivered box-free map d0, road that a vehicle covered for the whole clip stays "seen, no class": a grey strip where a
+van followed the ego (day), and parking lanes seen only past parked cars (night: 27 % of tracked vehicle centres on sidewalk or
+grey, MAP_C 0.503). Bars, committed in `code/v65/sam3map_render_v5j.py` before any run, identical for both arms, BOTH clips
+(all 7 cameras): **MAP_C ≥ d0 + 0.03 AND A2r_onroad ≤ d0 + 0.005 AND LiDAR curb recall ≥ d0 − 0.02 AND fragments ≤ d0**.
+
+| arm | lever on d0 | night C / A2r_onroad / curb / frag | day C / A2r_onroad / curb / frag | verdict |
+|---|---|---|---|---|
+| d0 (delivered) | — | 0.503 / 0.0723 / 0.814 / 67.0 | 0.776 / 0.0093 / 0.800 / 94.6 | reference |
+| d1 | seen-no-class cells inside the 2.5 m closing of the road become road (strips with road on both sides) | 0.503 / 0.0725 / 0.814 / 66.4 | **0.893** / 0.0094 / 0.800 / 94.0 | **FAIL** (night C unchanged) |
+| d2 | d1 + seen-no-class cells within 2.5 m of both road and sidewalk become road; fills before edges | 0.683 / **0.1679** / 0.804 / 64.8 | 0.896 / 0.0097 / 0.806 / 91.0 | **FAIL** (night A2r_onroad 2.3×) |
+
+* d1 fills what it was built for — the day lane under a following vehicle (2,950 cells, MAP_C +0.117) — and nothing at night,
+  because night parked cars have road on one side only. The day gain is not adopted: the pre-registered bar required both clips.
+* d2's parking-lane fill painted 32,324 night cells (323 m²) as road, and the robust LiDAR check shows what stood there: tall
+  obstacles on road 0.0723 → 0.1679. Between the road and the sidewalk there are more than parked cars.
+* ⇒ **Delivered map unchanged: d0.** What a box-free map cannot know is what stands under a vehicle; the next lever needs
+  evidence of the ground under it (LiDAR ground returns before or after the vehicle passes), not a geometric fill.

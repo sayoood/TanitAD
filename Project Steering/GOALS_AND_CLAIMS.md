@@ -11657,3 +11657,9 @@ Same package, same 34 test clips / 7,928,485 cells, one panel with the pre-regis
 | **D-SAM3-BOX-Z-1** | PhysicalAI obstacle.offline boxes (gt.npz, v2 ego frame) carry z ≈ 1 m under the smooth LiDAR ground (median 0.99 m, 10 vehicle boxes ≤ 20 m; z + h matches the LiDAR roof +0.19 m): a hull from z − h/2 blanked the road in front of every vehicle in the reprojection display and in the box-masked arms e2–e6. Box-free maps and a SAM3-based paint mask replace them (PI: *"sam 3 is separating the roads from the rest very well"*); dropping the vehicle-footprint lever raised curb recall (day 0.687 → 0.800, night 0.801 → 0.814). | **DECIDED** (MEASURED) | same package §15; `raw/v65/occluder_check_day_output.txt` |
 
 <!-- SAM3-MAP-V65-2026-09-14 -->
+
+| ID | claim | status | evidence |
+|---|---|---|---|
+| **H-SAM3-OCC-FILL-1** | Road hidden by a vehicle for the whole clip can be filled box-free by geometry: (d1) unseen strips inside the 2.5 m closing of the road, (d2) plus unseen cells within 2.5 m of both road and sidewalk. Pre-registered, both clips: d1 FAILS (night vehicles on road 0.503 unchanged; day 0.776 → 0.893 at no measured cost), d2 FAILS (night robust obstacles on road 0.0723 → 0.1679 — the parking-lane fill paints 323 m² that holds more than parked cars). The delivered box-free map stays d0. | **REFUTED** (MEASURED, 2 arms × 2 clips) | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-sam3-only-road-map/RESULT.md` §16; `raw/v65/pi_checks_*_[hi].json`, `raw/v65/a2_robust2_*_[hi].txt` |
+
+<!-- SAM3-MAP-V65B-2026-09-14 -->
