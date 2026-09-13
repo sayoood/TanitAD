@@ -186,3 +186,119 @@ programme has been operating on, is worth having.
    whether the semantic front end is worth its cost.
 4. Add the line-width and dash-pitch constraints as independent cross-checks on §6.
 5. Leave roll and lateral to an external reference; do not expect this method to supply them.
+
+---
+
+# PART 2 — ON THE REAL RECORDING (2026-09-13)
+
+**Evidence class: MEASURED (ours, real).** `raw/real_run_log_v2.txt`,
+`raw/real_bev_calib_v2.json`. Front end = `lane_calib._ridge_points`, the pipeline's OWN marking
+detector, so no new unvalidated perception component is in the loop. 9 anchors × 7 frames,
+176,435 ink points.
+
+## 10. ⭐ It works on the extrinsics, and independently corroborates August
+
+```
+nominal (shipped, yaw 0)      4.963e-02
+yaw -7.01                     6.409e-02    +29%
+yaw -7.01, pitch -0.64        7.020e-02    +41%   <- BEST
+yaw -7.01, pitch -2.93 (FOE)  6.560e-02    worse than -0.64
+height 0.05 (collapse)       -4.9e-18      correctly rejected
+```
+
+Two results matter here, and neither was available before:
+
+1. **The yaw correction is confirmed by a third, independent physics.** August's −7.01° came from
+   lane vanishing points and translational flow. This is BEV cross-frame consistency — a different
+   measurement entirely — and it prefers −7.01° over the shipped 0.0° by **+29 %**.
+2. **The lane-VP pitch beats the FOE pitch.** −0.64° (from the measured horizon row 523.4) scores
+   above −2.93° (from the FOE). That is exactly the conclusion reached on 2026-08-08 by VP fitting,
+   now reproduced by an unrelated method. It also supports the earlier call that the FOE pitch was
+   the wrong quantity to drive the ground homography.
+
+## 11. ⚠️ It does NOT yet determine height or focal on real data
+
+```
+f*h = const manifold:  peak at h = 0.95 m,  max/min = 2.09x
+                       (synthetic gave 9.00x straight / 17.63x curved)
+joint 4-parameter fit: ran to the bound — fx 2588 of a 2600 limit, height 2.064 m
+```
+
+The f·h direction that was sharply peaked in synthetic is **4–8× weaker on real ink**, peaks at
+0.95 m against the 1.03–1.21 m from the independent focal-free lane-width method, and the
+unconstrained joint fit runs away to its bounds. ⇒ **The extrinsics are usable; the intrinsics and
+height are not.** Do not quote h = 0.95 m as a measurement.
+
+## 12. Four bugs, three of mine, all found by measurement
+
+| # | bug | how it showed |
+|---|---|---|
+| 1 | objective v1 scored **concentration** | collapse beat the truth **15×** (§4) |
+| 2 | objective v2 used **raw** cross-correlation | collapse still won **3.8×** (§4) |
+| 3 | **anchor span 2.0 s = ZERO ground overlap** | see below — this was the real-data killer |
+| 4 | `pgrep -f` **self-matched** my own command | the first real run silently never started |
+
+**Bug 3 is the instructive one.** At 22 m/s a 2.0 s span is **44 m of travel** against a ~35 m
+visible ground band, so the anchor and the last frame share **no ground at all**:
+
+```
+   dt [s]  travel [m]  overlap [m]  % of band
+     0.10         2.2         32.8        94%
+     0.50        11.0         24.0        69%
+     1.00        22.0         13.0        37%
+     2.00        44.0          0.0         0%     <- what the first run used
+```
+
+With zero overlap the objective scores noise, and the joint fit duly returned a **54.7° yaw**. The
+BEV picture is what exposed it — the stacked view showed the same structure repeated once per
+frame instead of superimposed. **Default span is now 0.6 s.**
+
+Bug 4 is the `pgrep -f` trap already in `CLAUDE.md` ("self-matches your own command"): the waiter's
+own command line contained the pattern it was grepping for, so it looped forever and the run never
+launched — while every status check reported "RUNNING" for the same reason.
+
+## 13. Hypotheses of mine that the data refuted
+
+Recorded because each was stated before being tested, and the corrections are the useful part:
+
+| hypothesis | verdict |
+|---|---|
+| metric ego-motion kills the collapse degeneracy | **NO** — collapse won 15× until the self-term was removed |
+| removing the self-term is sufficient | **NO** — still 3.8×; needed NCC |
+| f and h are degenerate on a straight path | **NO** — peaked 9×; the degeneracy is a *paraxial approximation*, not a fact |
+| mount misalignment is what breaks that degeneracy | **HALF** — it strengthens the peak (3.3×→9.0×) but an aligned camera is still peaked |
+| non-ground ink (guardrail, rock) is the binding constraint | **NO** — restricting to central image columns made discrimination *worse*: +41% → −6% → −16%. Yaw needs lateral leverage, and the wide ink carries it. |
+
+That last one matters for the SAM3 question: **the evidence does not currently support "the classical
+front end is the bottleneck".** Removing suspected junk removed signal instead.
+
+## 14. ⚠️ EIS remains UNVERIFIED — and the time sync could not be confirmed
+
+The single-mount-rotation assumption could not be checked, because the instrument available for it
+is too noisy on this clip. Camera-vs-gyro roll: magnitudes nearly equal (2.04 vs 2.06 °/s) but
+**r = 0.048**. On yaw, with the pipeline's own band-pass (0.15–4.0 Hz), a full lag scan gives:
+
+```
+best |r| = 0.312 at lag +4.40 s        (the pipeline uses +3.30 s)
+r at the pipeline's lag   = -0.193      (negative)
+|r| over all lags: p50 0.111  p95 0.243  max 0.312   ->  max/p95 = 1.28x
+```
+
+**No distinct peak.** ⚠️ This does NOT prove the sync is wrong — the pipeline refines on the 3-vector
+across three bands with an agreement test, a stronger estimator than this scalar correlation, and
+its `sync_score` is not a Pearson r. What it establishes is that the sync **cannot be independently
+confirmed from this channel**, so the BEV method should estimate the offset rather than trust it.
+`scan_time_offset.py` does exactly that and is the next thing to run.
+
+## 15. Revised next steps
+
+1. **Run `scan_time_offset.py`** — turn the unconfirmable sync into a measured quantity.
+2. **Constrain the f·h direction with an external metric** rather than hoping the optimiser finds
+   it: painted line width (lateral → h alone) and dash pitch (longitudinal → f·h). §11 shows the
+   free fit will not get there on its own.
+3. **Sweep the anchor span** (0.2–1.0 s) and the number of anchors; §12 shows the result is very
+   sensitive to overlap, and 0.6 s was chosen by arithmetic, not optimised.
+4. **SAM3 — but with a measurement first.** §13 refutes the motivating assumption that non-ground
+   ink is the limiter. Before taking the dependency, test whether restricting ink to *semantically
+   confirmed markings* (hand-label a few frames as a proxy) actually sharpens the f·h peak. If it
+   does not, the limiter is elsewhere (ego-motion error, non-planar road, EIS) and SAM3 will not fix it.

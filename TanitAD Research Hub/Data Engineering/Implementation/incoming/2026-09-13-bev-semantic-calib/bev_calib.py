@@ -188,14 +188,27 @@ class BevGrid:
 
 def _blur(H: np.ndarray, sigma_cells: float) -> np.ndarray:
     """Separable Gaussian. Smooths the objective so a gradient-free optimiser is
-    not fighting the grid's own quantisation steps."""
+    not fighting the grid's own quantisation steps.
+
+    ``scipy.ndimage`` when available: the original ``np.apply_along_axis`` version
+    is a Python loop over every row AND column, which on a 437x250 grid is ~690
+    convolve calls per frame and ~50,000 per objective evaluation -- it dominated
+    the runtime of the first real-data run. ``mode="constant"`` reproduces the
+    zero-padded ``mode="same"`` behaviour of that version, so the objective is
+    unchanged; only the speed differs. The fallback is kept so the module has no
+    hard scipy dependency.
+    """
     if sigma_cells <= 0:
         return H
-    r = max(1, int(round(3 * sigma_cells)))
-    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma_cells) ** 2)
-    k /= k.sum()
-    out = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 0, H)
-    return np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 1, out)
+    try:
+        from scipy.ndimage import gaussian_filter
+        return gaussian_filter(H, sigma_cells, mode="constant", truncate=3.0)
+    except Exception:
+        r = max(1, int(round(3 * sigma_cells)))
+        k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma_cells) ** 2)
+        k /= k.sum()
+        out = np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 0, H)
+        return np.apply_along_axis(lambda m: np.convolve(m, k, mode="same"), 1, out)
 
 
 def agreement(obs, poses, P: dict, grid: BevGrid, sigma_cells: float = 1.0) -> float:
@@ -255,23 +268,30 @@ sharpness = agreement
 
 
 def calibrate(obs, poses, P0: dict, free, bounds=None, grid: BevGrid = None,
-              sigma_cells: float = 1.0, maxiter: int = 400, seed: int = 0):
+              sigma_cells: float = 1.0, maxiter: int = 400, seed: int = 0,
+              objective=None, maxfev: int = 1500):
     """Maximise BEV agreement over the named free parameters.
 
     ``free`` is a tuple of names from :data:`PARAMS`. Everything else is held at
     its value in ``P0``. Returns ``(P_best, info)``.
 
-    Powell is used deliberately: the objective is a histogram score and is only
-    piecewise smooth, so a gradient-based method chases quantisation noise.
+    ``objective`` overrides the built-in single-anchor score with any callable
+    ``P -> float`` (higher is better). Real runs use it to average over several
+    anchors, so one odd stretch of road cannot decide the fit; ``obs``/``poses``
+    are then ignored and may be ``None``.
+
+    Powell is used deliberately: the objective is a histogram score and only
+    piecewise smooth, so a gradient method chases quantisation noise.
     """
     from scipy.optimize import minimize
 
     grid = grid or BevGrid()
     bounds = bounds or {}
+    score_of = objective or (lambda P: agreement(obs, poses, P, grid, sigma_cells))
     x0 = np.array([P0[k] for k in free], dtype=float)
     scale = np.array([_SCALE.get(k, 1.0) for k in free])
 
-    hist = []
+    n_eval = [0]
 
     def unpack(x):
         P = dict(P0)
@@ -284,15 +304,17 @@ def calibrate(obs, poses, P0: dict, free, bounds=None, grid: BevGrid = None,
         for k, (lo, hi) in bounds.items():
             if k in free and not (lo <= P[k] <= hi):
                 return 1e6
-        s = sharpness(obs, poses, P, grid, sigma_cells)
-        hist.append(s)
-        return -s
+        n_eval[0] += 1
+        return -score_of(P)
 
+    # maxfev matters: Powell's `maxiter` counts OUTER iterations, each of which
+    # runs a line search per parameter, so `maxiter=400` on 4 parameters can mean
+    # tens of thousands of evaluations. Bound the actual work.
     res = minimize(neg, x0 / scale, method="Powell",
-                   options=dict(maxiter=maxiter, xtol=1e-4, ftol=1e-6))
+                   options=dict(maxiter=maxiter, maxfev=maxfev, xtol=1e-4, ftol=1e-6))
     P = unpack(res.x)
-    return P, dict(score=float(-res.fun), score0=float(sharpness(obs, poses, P0, grid, sigma_cells)),
-                   nfev=int(res.nfev), n_eval=len(hist), success=bool(res.success))
+    return P, dict(score=float(-res.fun), score0=float(score_of(P0)),
+                   nfev=int(res.nfev), n_eval=n_eval[0], success=bool(res.success))
 
 
 #: per-parameter step scaling, so Powell takes comparable steps in radians,
