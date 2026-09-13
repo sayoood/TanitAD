@@ -441,3 +441,63 @@ not a geometry one — and it is the first evidence-backed case for a stronger m
 settled: `f·h` and the horizon came from tracked points at 8–18 m, where ink is plentiful, and they
 are done. The claim is narrower and testable: **a segmenter that recovers far-field markings would
 separate yaw from lateral offset, which the classical front end cannot.**
+
+---
+
+# PART 4 — THE HEIGHT WAS STILL 19 % TOO HIGH (2026-09-13, after Sayed: *"the quality is still not ok"*)
+
+## 24. He was right, and the failing ruler was the one §22 already flagged
+
+Motion settled the longitudinal geometry (`f·h`, horizon). The **height** came from
+`lane_width.py`, which pairs adjacent peaks in a lateral profile — the selector §22 recorded as
+unstable. It was. It gave 1.65–1.86 m; the truth is ~1.43.
+
+`probes/lane_residual.py` replaces it with the test that actually matters: **project the model's
+lane edges into the image and measure, in metres, how far the nearest paint is.** No peak is
+identified, so there is nothing to mis-pair; association is bounded to ±1.1 m so a residual cannot
+be manufactured by locking onto the next line over; the unassociated fraction is printed.
+
+At the rendered `h = 1.70` the painted lane measured **4.09 m** wide. That is not a lane.
+
+## 25. The fit, with `f·h` and the horizon held
+
+|  | height | lateral | yaw | cost |
+|---|---|---|---|---|
+| rendered | 1.700 | −0.120 | −7.010 | 1.436 |
+| **fitted** | **1.427** | **−0.126** | **−7.299** | **0.924** (−35.7 %) |
+
+`f = f·h / h = 1713 px`. Three successive fits converge: **1.482 → 1.448 → 1.427**. The lateral
+offset lands at **−0.126 m** against Sayed's own estimate of **−0.12 m**.
+
+## 26. ⚠️ Two confounds found, both of which read as yaw
+
+1. **Road curvature.** On a curve the lane centre genuinely moves laterally with range — the exact
+   signature of a mount-yaw error. This clip reaches `|k| = 0.0034 1/m` (radius 294 m) = **0.38 m of
+   displacement over the 8–15 m window**, the same size as the residual being fitted. Restricting to
+   `|yaw rate| ≤ 0.6 °/s` dropped the apparent residual yaw from **+2.83° to +1.76°**.
+2. **The right lane line is DASHED.** On straight frames the LEFT edge residual is flat —
+   −0.087, −0.075, +0.007, +0.055, +0.037, +0.040 m across 8→22 m — while only the RIGHT drifts.
+   **A yaw error moves both edges together, so an asymmetry is not yaw.** The left line is solid and
+   associates at every range; the right is dashed, and beyond ~10 m the associator often has no dash
+   and locks onto the shoulder. The residual "+1.76°" is that artefact. Ranges restricted to 8–12 m,
+   where both edges associate above 60 %.
+
+## 27. ⚠️ What the height still rests on
+
+`h` scales linearly with the assumed lane width, and **nothing here measures it**:
+
+| assumed lane | height | focal | vs the 1356–1628 device band |
+|---|---|---|---|
+| 3.50 m (French motorway) | 1.427 | 1713 px (HFOV 58.5°) | outside |
+| 3.65 m (the pipeline's own `--lane-width` default) | 1.488 | 1643 px | at the edge |
+
+**I am not picking the assumption that lands inside the band.** The coupling is stated; the render
+uses the 3.50 m standard. Resolving it needs a lane width measured on the ground, or a device FOV
+measured in video mode rather than inferred from the stills spec.
+
+## 28. Part of what he saw was mine
+
+The video sent was **downscaled 1.6×** to fit a 30 MiB upload limit. At full resolution the same
+frame is markedly cleaner, and the range ticks check out against the calibration (25 m tick predicted
+at panel row 333, observed ~345; horizon 465 → 276 predicted, ~272 observed). A compressed frame is
+not evidence about a calibration.
