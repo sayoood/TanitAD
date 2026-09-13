@@ -387,3 +387,214 @@ definition: many night vehicles stand in parking bays that SAM3 does not call ro
 | contact sheets, probes, atlases, world-map crops, video stills | `media/v6/` (repo, JPG) |
 | videos: v5 long front (8 clips), v6 and v6.1 day and night | Thor `/home/nvidia/sam3map/long_v5.mp4`, `sam3map_v6_<c8>.mp4`, `sam3map_v61_<c8>.mp4`; sent to the PI; `*.mp4` git-ignored |
 | per-frame npz v6raw / v6 / v61, native 7-camera sequences, world maps | Thor `/home/nvidia/sam3map/<c8>_v6raw`, `_v6`, `_v61`, `native7/`, `render5_*/worldmap.npz` (not banked: size) |
+
+---
+
+## 11. The night regression, three pre-registered levers later (2026-09-13 night)
+
+Evidence class **MEASURED** (Thor; LiDAR checks as §2, 96 frames per clip). Bars, identical for every arm below and
+committed in each script before its run: **(a)** night clip-vote MAP_A2 ≤ that arm's own fused ±1 s + 0.05 (the bar v6
+failed), **(b)** day clip-vote MAP_A2 rises by ≤ 0.01 over v6 (0.0225), **(c)** MAP_B ≥ 0.95 on both clips.
+
+| arm | what changes | night A2 (bar) | night B | day A2 | day B | verdict |
+|---|---|---:|---:|---:|---:|---|
+| v6 | — | 0.1429 (0.1164) | 0.9732 | 0.0225 | 0.9841 | FAIL (a) |
+| **v6z** zoom tile (`code/v6/sam3map_zoom_fw.py`) | SAM3 re-run on CAM_FW's central 960×540 upsampled 2× | 0.1430 (0.1161) | 0.9732 | 0.0225 | 0.9841 | **FAIL (a)** — changed ~0.3 % of CAM_FW pixels and no metric |
+| **v6r** rectified front road (`code/v6/sam3map_rectified_road.py`) | CAM_FW drivable decision from the banked rectified v2 view of the same camera centre | 0.1331 (0.1124) | 0.9714 | 0.0224 | 0.9805 | **FAIL (a)** |
+| **v6n** rectified road, all cameras + no tele drivable | FW/CL/CR/RL/RR drivable from their rectified v2 views; FT/RT drivable dropped | 0.1003 (0.1150) | 0.9673 | 0.0223 | 0.9762 | **PASS (a)(b)(c) on the clip vote — NOT adopted**, see below and §13 |
+
+⛔ **v6n passed the bars it was given and is still not adopted.** The bars were written on the clip-vote arm; the
+deliverable is the whole-clip world map, and the world map built from v6n's rasters is WORSE on the same night clip:
+MAP_A2 0.1450 vs 0.0854 (v6.1), and on the robust form of §13 A2r_onroad **0.1096 vs 0.0502** (`raw/v6b/a2_robust2_night_v6b.txt`).
+The bars measured the wrong artifact. v6r and v6z leave the world map unchanged (A2r_onroad 0.0503 / 0.0503).
+
+**Controls that make the v6r / v6n mapping trustworthy:** every v2 virtual view has the SAME centre as its native camera
+(F0←FW, L0/L1←CL, R0/R1←CR, L2←RL, R2←RR; translations identical, FW↔F0 rotation 0.79°), so native pixels map to virtual
+pixels by ray alone; image intensity through that mapping correlates at **0.998 night / 0.997 day** vs **0.785 / 0.862**
+for a 40 px shifted control.
+
+**Where the night bleed lives** (`code/v6/a2_fov_split.py`; share of all tall-obstacle points covered by a camera part's
+drivable, summed over cameras and ranges):
+
+| clip | inside the v2 views | periphery + tele cameras | largest parts |
+|---|---:|---:|---|
+| night | 6.17 % | **3.62 %** | FW inside 8–15 m 1.73 % (v2 F0: 1.43 %), FW periphery 8–15 m 1.10 %, FT 8–15 m 0.92 %, RL inside 8–15 m 0.93 % (v2 L2: 0.66 %) |
+| day | 3.45 % | 0.50 % | RL inside 8–15 m 1.45 %, CR inside 8–15 m 0.62 % |
+
+⇒ at night the native fisheye masks spill 20–40 % more than the rectified ones **inside the same field of view**, and the
+periphery and tele cameras add ~37 % of the total; by day the periphery is clean. Magnification alone (v6z) is refuted.
+⚠️ **Read with §13:** these shares count mapq_core's tall points, whose minimum-z ground turns road-surface returns into
+"obstacles" on this corpus (half of the night hits). Comparisons between camera parts on the same points stand; the absolute
+night "bleed" does not.
+
+⛔ **Incident, caught before any number was reported as a result:** the first v6r day control ran on **20 of 96 frames**.
+The banked rectified-view extraction of the day clip (`<c8>_v3raw`) had been stopped after frame 19 earlier in the day;
+the rectification crashed at frame 20, and refine, consensus and both LiDAR scores then ran on what existed (day "MAP_B
+0.1078"). The chain logged `raw20` but gated nothing on it. All 15 outputs were renamed `INVALID20_*` on Thor (not
+deleted), the missing 76 frames were extracted with the same extractor file (md5 `9eec3014`, the version the first 20
+frames came from), and the day arms re-ran. ⇒ a control's first check is its INPUT COUNT; the chains now wait for all 96
+frames before starting.
+
+⇒ None of the three levers is adopted. §13 then shows that most of the night "bleed" these levers chased was the metric.
+
+---
+
+## 12. v6.5 — the PI's three questions answered on the map itself (2026-09-13 night)
+
+The PI's review of the night comparison at t = 17.2 s: *"why is the exit of the roundabout noisy? why is the space between
+the cross walk markings colored? ... the left curb in the roundabout was not always detected"* and *"can you prompt sam to
+just color the markings belonging to cross walk, not the space between"*. Each question got a lever **and a measurement
+that answers it** (`code/v65/pi_checks.py`, whole clip, cells within 30 m of the driven path; evidence class MEASURED,
+Thor). The curb reference is LiDAR only (ground height steps 0.08–0.35 m, accumulated over 96 frames, components ≥ 2 m),
+independent of SAM3; no map variant below uses LiDAR at label time.
+
+| night clip, all 7 cameras | noise fragments / 1000 m² ↓ | crosswalk: coloured share of the crossing area (stripes only ≈ 0.5) | LiDAR curbs with an edge ≤ 0.6 m ↑ | map edges on a LiDAR curb / obstacle ↑ | lane-line area |
+|---|---:|---:|---:|---:|---:|
+| v6.1 nearest labelled view | 170.5 | 0.699 | 0.499 | 0.680 | 16.6 m² |
+| v6.5s weighted majority + SAM3 "crosswalk stripe" prompt | 91.2 | 0.778 | 0.726 | 0.687 | 13.3 m² |
+| v6.5c + tracked vehicle footprints drivable + 5×5 surface mode | 71.5 | 0.781 | 0.801 | 0.666 | 20.4 m² |
+| **v6.5d** + adaptive paint threshold + stripes trimmed to bright paint | **69.7** | **0.507** | **0.801** | **0.666** | **31.4 m²** |
+| front camera only, v6.1 → v6.5d | 152.8 → 105.5 | 0.908 → 0.606 | 0.549 → 0.788 | 0.732 → 0.617 | 0.7 m² (v6.5s) → 23.5 m² |
+
+**The levers, each with the measurement that motivated it:**
+* **Noise → weighted majority** (`sam3map_render_v5b.py`, composite `majority_v65`): 63 % of BEV cells receive two or more
+  classes over the clip and the nearest view picked a minority label in 6–8 % of cells (`exit_edge_xwalk_diag.py`). Weight
+  1/(1+(r/8 m)²) per labelled observation; background never votes.
+* **Crosswalk gaps → stripe prompt** (`sam3map_xwalk_stripes.py`): on 9 crosswalk views "crosswalk stripe" (≥ 0.5) covers 72 %
+  of the stripe paint and 6.5 % of the gaps (the area prompt "crosswalk": 70 % of the gaps); used inside the detected
+  crossing only. The world map still filled gaps (0.78) until each camera layer's stripe cells were trimmed to paint brighter
+  than the asphalt (v6.5d, 0.507).
+* **Curb gaps → boundary edges**: along CAM_FW frames 76–92 the island's drivable boundary lay 23–50 px from any SAM3
+  grass / curb mask, so the per-camera edge rule (≤ 3 px) never fired. Edges are now drawn where the consolidated
+  sidewalk-verge meets the consolidated drivable surface (5×5 openings, components ≥ 1 m) plus cells labelled edge in ≥ 25 %
+  of their near observations.
+* **Night lane lines → adaptive paint threshold** (`night_paint_probe.py`): night CAM_FW line cells have a 1.5 m top-hat
+  median of 2–4 grey levels (road 90th percentile 2–3, road MAD 0.2–1.0); the fixed floor of 10 kept **1–4 %** of them.
+  Rule v6.5d: paint if the top-hat exceeds max(3, the layer's road 95th percentile).
+* **Vehicles on sidewalk → footprints drivable**: 27.5 % of tracked vehicle centres sat on sidewalk-verge (parking lanes).
+  Label-time boxes; MAP_B and MAP_C then read the same evidence and read 1.0 by construction.
+
+**Display — the ground-truth map drawn into the cameras** (`gt_reproject.py`, `compare_gt_reproj.py`): every camera pixel's
+ray meets the smooth LiDAR ground and shows the world-map class under it; tracked agent boxes, the ego body and LiDAR returns
+standing in front of the ground are left unpainted. What the PI sees in a camera is now exactly the BEV label, not a
+per-frame SAM3 mask.
+
+⚠️ **Not a checked quantity: paint.** PhysicalAI's LiDAR intensity does not separate paint from asphalt (ground returns:
+road p50 9 / p90 13, lines 11 / 15, crosswalk 11 / 15, sidewalk 13 / 31; `lidar_intensity_probe.py`), so the LiDAR paint
+check in `pi_checks.py` is uninformative here and is not quoted. Paint quality rests on the PI's visual review.
+
+---
+
+## 13. ⛔ Correction: most of the night MAP_A2 was the metric, not road spill
+
+**RETRACTED** (class: *a probe calibrated on one corpus quoted on another* — the `df` / Thor-`free` family): *"night road
+spill"* as the diagnosis of the night clip's MAP_A2 (§11, and the PI messages of 2026-09-13). MEASURED on the night clip:
+
+1. `mapq_core.split_points` takes the ground as the **minimum** z of a 2 m cell. 6.7 % of night 2 m cells (day 2.9 %) hold a
+   return > 0.5 m below the cell's 10th percentile (`ground_ghost_probe.py`), so the "ground" drops and road-surface returns
+   and car bodies count as tall obstacles.
+2. The hit picture of the v6.5s map showed car-sized blobs in the middle of the roundabout lanes; in rig coordinates the top
+   bins were a following car at x −7…−8 m and a lead car at x +10 m (`a2_rigpos.py`), and 40.5 % of hit cells were hit in a
+   single frame.
+3. **50–57 % of MAP_A2 hits on the all-camera maps are road-surface returns** (within 0.3 m of the 10th-percentile ground).
+
+**Robust form A2r_onroad** (reported beside MAP_A2, never instead of it): ground = 10th percentile of the 2 m cell, agent boxes
+grown 1.0 m, hits on any on-road class. Night clip:
+
+| map | MAP_A2 | A2r_onroad | hits on road-surface returns |
+|---|---:|---:|---:|
+| v6.1 nearest, all 7 | 0.0854 | **0.0502** | 56.8 % |
+| v6.5s majority + stripes | 0.1051 | 0.0708 | 53.9 % |
+| v6.5c + agents + mode | 0.1119 | 0.0742 | 50.9 % |
+| v6.5d + paint rule | 0.1149 | 0.0742 | 50.2 % |
+| v6.1 nearest, front only | 0.0999 | 0.0519 | 38.4 % |
+
+⚠️ **A real regression survives the correction: the majority composite adds +0.021 A2r_onroad** (0.0502 → 0.0708), and
+88.6 % of the robust hits lie within 1 m of the road boundary (`a2_attrib.py ROBUST=1`). Hypothesis: several far "road"
+views outvote one near sidewalk view, and near views of poles and walls never vote. Two pre-registered arms follow (§14).
+
+---
+
+## 14. Obstacles at the road border — pre-registered arms on top of v6.5d (night clip)
+
+Bars, committed in `code/v65/sam3map_render_v5e.py` before any arm ran, identical for every arm: the night clip, all 7
+cameras, **A2r_onroad ≤ 0.062 AND noise fragments ≤ 90 / 1000 m² AND LiDAR curb recall ≥ 0.75 AND crosswalk coloured share
+≤ 0.60** (v6.5d: 0.0742 / 69.7 / 0.801 / 0.507; v6.1 nearest: 0.0502 / 170.5 / 0.499 / 0.699).
+
+| arm | lever on top of v6.5d | A2r_onroad | fragments | curb recall | crosswalk share | verdict |
+|---|---|---:|---:|---:|---:|---|
+| e1 | every vote weighted 1/(1+(r/4 m)²)² — near views dominate | 0.0645 | 84.7 | 0.702 | 0.492 | **FAIL** (A2r, curb recall) |
+| e2 | a "no class" observation within 10 m votes background; tracked agent boxes masked out of every camera | **0.0194** | 105.5 | 0.542 | 0.530 | **FAIL** (fragments, curb recall) |
+| e3 | e2 + edges where near background meets the road + background-won specks < 0.5 m² reverted | 0.0194 | 99.1 | 0.744 | 0.530 | **FAIL** (fragments, curb recall) |
+| e4 | e3 + every enclosed background / sidewalk speck < 0.5 m² takes its ring's majority surface | 0.0194 | 78.1 | 0.744 | 0.530 | **FAIL** (curb recall) |
+| **e5** | e4 + near-background cells not opened before drawing edges | **0.0194** | **77.9** | **0.759** | **0.530** | **PASS** (all four) |
+
+**What e2 teaches, measured:** near views of poles and walls voting against the road cut the robust obstacle rate to 0.0194 —
+2.6× below even the nearest-view map (0.0502) — which confirms the §13 hypothesis about the majority's regression. It failed on
+two things it broke, both traced before e3 was written: its extra fragments are **background specks** (class-0 fragments
+123 → 293) and its lost curbs are borders where **background, not sidewalk, now meets the road** — the boundary-edge rule only
+drew sidewalk/road borders (map edge cells in LiDAR coverage 3,312 → 2,233).
+
+e3's background edges brought the curb recall back to 0.744 (edge cells 2,233 → 3,327) at edge precision 0.629, but its
+specks were mostly cells with **no labelled vote at all** (background fragments 283; the background-won revert touched only
+1,248 cells) — hence e4's enclosed-speck fill and, in parallel, e5's un-opened background edges.
+
+**e5 passes all four bars on the night clip** — the robust obstacle rate falls **3.8× below v6.5d and 2.6× below the nearest-view
+map**, while the noise, curb and crosswalk gains of §12 are kept. ⚠️ **Costs, reported beside the pass:** edges are less precise —
+map edges on a LiDAR curb / obstacle 0.666 → 0.635 (`pi_checks.py`) and the scorer's per-frame MAP_E 0.5218 → 0.4710 — and the
+masked agent boxes leave never-seen shadows behind parked cars in the BEV. Front camera only, e5: A2r_onroad 0.0547, fragments
+120.0, curb recall 0.743. The day clip gets its own no-regression bars, committed before its run (`v65e5_day.sh`): A2r_onroad ≤ day v6.5d's, fragments ≤ 105.1, curb recall ≥ 0.667,
+crosswalk share ≤ 0.60 — **e5 FAILS the day clip on curb recall (0.600)** while passing the other three (0.0084 / 90.3 / 0.536).
+
+| arm | lever | night A2r_onroad / frag / curb / xw | day A2r_onroad / frag / curb / xw | verdict (both clips) |
+|---|---|---|---|---|
+| e6 | e5, but background may veto the ROAD only (a sidewalk-verge vote is never outvoted) | 0.0237 / 79.0 / 0.779 / 0.530 ✓ | 0.0084 / 91.4 / **0.626** / 0.536 | **FAIL** (day curb recall) |
+
+Every background-vote arm loses 6–9 points of day curb recall; the night obstacle gain is robust across e2–e6.
+
+---
+
+## 15. The PI's question on the video: "why are there uncolored areas near to the objects?" — and a box-free map
+
+**MEASURED** (`occluder_check.py`, day clip, 10 vehicle boxes within 20 m): the tracked boxes' z lies **0.43–1.28 m below the
+smooth LiDAR ground under them (median 0.99 m)** while z + h matches the LiDAR roof (+0.19 m). The display's agent mask — and the
+masking in arms e2–e6 — spanned z − h/2 − 0.2 … z + h + 0.2, i.e. down to ~2 m under the road, so it blanked the asphalt in front
+of every vehicle (the PI's big rectangle under the van). The small squares were LiDAR returns marked in 8-px blocks grown by one
+block; the grey square on the road is an object on the car inside the extraction's ego mask.
+
+**PI, verbatim:** *"you don't need the boxes, scince sam 3 is seperating the roads from the rest very well"*. Applied twice:
+* **Display v2** (`compare_gt_reproj_v2.py`): the colour is still the BEV ground truth; WHERE it is drawn now comes from that
+  frame's own SAM3 raster (road-level classes, dilated 4 working px for thin edges). No boxes, no LiDAR occluders.
+* **Box-free maps**: d0 = v6.5d without vehicle footprints; e6nb = e6 without any box masking (pre-registered in
+  `sam3map_render_v5i.py`, same bars as e6, both clips).
+
+| all 7 cameras | fragments / 1000 m² | crosswalk share | curb recall | edge precision | A2r_onroad | MAP_C vehicles on road | vehicles on sidewalk |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| night v6.5d (vehicle boxes) | 69.7 | 0.507 | 0.801 | 0.666 | 0.0742 | 1.000 (by construction) | 0.0 |
+| **night d0 box-free** | **67.0** | **0.507** | **0.814** | **0.668** | 0.0723 | 0.503 | 0.270 |
+| night e6nb box-free | 39.5 | 0.509 | 0.816 | 0.705 | 0.0391 | **0.103** | 0.270 |
+| day v6.5d (vehicle boxes) | 105.1 | 0.564 | 0.687 | 0.857 | 0.0094 | 1.000 (by construction) | 0.0 |
+| **day d0 box-free** | **94.6** | **0.564** | **0.800** | **0.822** | 0.0093 | 0.776 | 0.020 |
+| day e6nb box-free | 80.9 | 0.569 | 0.767 | 0.806 | 0.0076 | **0.679** | 0.020 |
+
+* **Dropping the boxes improved the curbs on both clips** (day 0.687 → 0.800, night 0.801 → 0.814): the forced vehicle
+  footprints had overwritten sidewalk and edges beside parked cars at the kerb.
+* **e6nb PASSES all eight pre-registered bars** (night 0.0391 / 39.5 / 0.816 / 0.509; day 0.0076 / 80.9 / 0.767 / 0.569) — and
+  is **NOT adopted**, on a quantity its bars did not contain: vehicles seen near now vote the road away under and behind them,
+  MAP_C falls 0.503 → 0.103 at night and 0.776 → 0.679 by day, and the day BEV shows a background trail along the lane where a
+  vehicle followed the ego. ⚠️ The gap is in the pre-registration: MAP_C was left out because the boxed arms read 1.0 by
+  construction. The PASS is reported as written; the adoption decision rests on MAP_C and the BEV sheet
+  (`media/v65/hard_frames_nobox_*.jpg`), stated here rather than folded into the bars after the fact.
+* **Delivered: d0** — box-free, display v2. Open, with numbers: vehicles on sidewalk-verge 27 % at night (parking lanes seen
+  only past the cars), the majority's border obstacles (A2r_onroad 0.072 vs 0.050 nearest), fragmented night stripes.
+
+
+### Deliverables of sections 11-15 (where they live)
+
+| artifact | location |
+|---|---|
+| v6z / v6r / v6n levers and chains | `code/v6b/` (repo) |
+| v6.5 renderers (majority, stripes, agents, paint rule, border arms e1-e6nb, box-free), reprojection display v1/v2, PI checks, A2 probes | `code/v65/` (repo) |
+| scores, PI checks, robust A2, render stats, chain logs, probe outputs | `raw/v6b/`, `raw/v65/` (repo) |
+| hard-frame sheets, A2 hit maps, reprojection stills | `media/v65/` (repo, JPG) |
+| world maps (`worldmap.npz`), comparison frames and MP4 videos | Thor `/home/nvidia/sam3map/render5_*`, `reproj*_*/`, `reproj*_*.mp4` (not in repo: *.mp4 is git-ignored) |

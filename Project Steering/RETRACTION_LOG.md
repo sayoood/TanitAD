@@ -15255,3 +15255,28 @@ on the variable being correlated. It produced negative NCC at zero shift and pea
 Same family as "a check that shares the defect it checks for" (CLAUDE.md).
 
 <!-- RETR-2026-09-13-SAM3MAP-REGISTRATION -->
+
+---
+
+## 2026-09-13 (night) — "the night map spills road onto obstacles" — RETRACTED: half of the evidence was road-surface LiDAR returns
+
+**Retracted by:** Master Mind, SAM3 map v6.5 work. Stated to the PI in chat ("night road spill", "native fisheye masks spill
+20-40 % more") and used to pick three pre-registered levers (v6z / v6r / v6n) and to rank night map versions.
+
+| said | true |
+|---|---|
+| night MAP_A2 0.0854 (world map) / 0.1429 (clip vote) = road labels on tall obstacles ⇒ night road spill | mapq_core takes the ground as the MINIMUM z of a 2 m cell; 6.7 % of night cells (day 2.9 %) hold a return > 0.5 m below the cell's 10th percentile, so road-surface returns and car bodies count as "tall". 50-57 % of night A2 hits on the all-camera maps are road-surface returns; the hit map showed car-sized blobs in the middle of the lanes (a following car at x −7 m, a lead car at +10 m). Robust A2r_onroad of the same world map: **0.0502**, hits within 1 m of the road boundary. |
+
+### ⛔ CLASS H — A METRIC CALIBRATED ON ONE CORPUS, QUOTED ON ANOTHER WITHOUT LOOKING AT ITS HITS
+MAP_A2 was calibrated on nuPlan demo frames (true map 0.03 %) and carried to wet night PhysicalAI sweeps. Nothing in the number
+signals that its ground estimator broke; one picture of WHERE the hits lie did, in minutes. ⇒ **Before diagnosing a map from a
+LiDAR check on a new corpus or condition, draw the hits on the map and read their positions (in the rig frame too).** A second
+same-family instance the same night: LiDAR intensity, the paint check calibrated on nuPlan, does not separate paint on this
+sensor (road p50 / p90 9 / 13, lines 11 / 15, sidewalk 13 / 31) and was dropped rather than quoted. Same family as the `df` /
+Thor `free` / cgroup scope traps (CLAUDE.md): a true measurement read outside the conditions it was calibrated for.
+
+⚠️ **Sibling defect, same session:** PhysicalAI's tracked boxes carry z about 1 m under the LiDAR ground; a display mask built
+from z − h/2 blanked the road in front of every vehicle and the PI asked why. Measure a label's frame against the sensor it
+will be drawn over before building on it.
+
+<!-- RETR-2026-09-13-SAM3MAP-A2-GHOST-GROUND -->
