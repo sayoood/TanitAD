@@ -606,3 +606,40 @@ is exactly what Sayed observed.
 - **`per_frame_vp.py`** — per-frame vanishing point from the two lane lines. **Unusable**: the solid
   left line yields a median of 19 samples per frame and fits to 1.39 px, the dashed right line
   yields 8. Three frames of 260 produced a vanishing point.
+
+## 34. ⛔ Per-frame horizon tracking: built, validated, and NOT deployable
+
+The obvious fix for §31 is to track the horizon per frame. Built (`probes/horizon_track.py`):
+with `f·h` known, the row-flow relation inverts in closed form per tracked point,
+`v_h = [(v+v') − √((v+v')² − 4(v v' − A dv/D))]/2`, so it needs road texture, not paint —
+**259 frames at 412 votes each**, against the lane-based measurement's 39 frames at 5 samples.
+
+It corroborates the magnitude: p10–p90 **47.1 px = 1.57°**, against the lane estimate's 1.75°.
+But frame by frame the two agree only at **r = +0.336**.
+
+Decomposing the flow series against itself settles which part is real. Lag-1 autocorrelation
+**+0.416** (decaying to +0.203 at 2.4 s) on a raw sd of 19.7 px gives
+
+| | |
+|---|---|
+| true horizon swing | sd ≈ **12.8 px ≈ 0.43°** |
+| estimator noise | sd ≈ **15.0 px** |
+
+**The noise is larger than the signal.** So §31's "1.75°" was itself inflated by the lane
+estimator's own noise; the genuine swing is about 0.43° sd.
+
+The deployment test, judged by the lane residual (which shares no features or model with the
+tracker), 13 straight frames:
+
+| horizon source | median abs slope | sd |
+|---|---|---|
+| **fixed 465 px** | **0.0265** | 0.0180 |
+| flow track, raw | 0.0445 | 0.0439 |
+| flow track, 0.9 s | 0.0382 | 0.0452 |
+| flow track, 2.1 s | 0.0378 | 0.0409 |
+| flow track, 3.9 s | 0.0277 | 0.0340 |
+
+Even at 3.9 s smoothing it is **4 % worse than the constant**. ⇒ **Do not deploy.** Chasing a
+0.43° signal with a 15 px-noise estimator makes the overlay worse, not better. The constant
+horizon stays, and the per-frame wobble is a stated limitation rather than a fixable one with
+the instruments available.
