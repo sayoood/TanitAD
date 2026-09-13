@@ -538,3 +538,71 @@ painted lane 3.60 m against the assumed 3.50.
 **+4.04°** and is **not trustworthy** — it is corrupted by a single right-edge value of +0.979 m at
 15 m with 16 % association, which is the dashed-line mis-association of §26.2. The left-edge scan
 above is the admissible yaw estimate.
+
+---
+
+# PART 5 — WHY NO CONFIGURATION FITS EVERY FRAME (Sayed, 2026-09-13)
+
+## 30. The camera: 26 mm-equivalent, and the "81°" is right
+
+Both S21 FE cameras are **26 mm-equivalent**, so which one was used barely moves the FOV
+(main: 12 MP f/1.8, OIS; front: 32 MP f/2.2, Sony IMX616, fixed focus). 26 mm-equiv is
+**79.5° diagonal** — Sayed's 81° is that figure, rounded on a spec sheet.
+
+| | |
+|---|---|
+| 79.5° diagonal on a 4:3 sensor | HFOV **67.3°**, VFOV 53.1° |
+| at 1920 px wide, full sensor | **f ≈ 1442 px** |
+| the pipeline's shipped nominal | 1478 px (HFOV 66°) — within 2.5 % |
+| **measured here** | **1713 px** (HFOV 58.5°) = a **1.19× crop** |
+
+A 1.19× crop is exactly what video stabilisation takes. ⚠️ And the choice matters: `f` is what
+turns the measured `f·h = 2444.6` into a height. At `f = 1442`, `h = 1.695 m`; at `f = 1713`,
+`h = 1.427 m` — and the lane-width measurement independently favours ~1.43, which is only
+consistent with the cropped focal. **So this is a real, answerable question: was video
+stabilisation on?**
+
+## 31. ⭐ The camera's pitch relative to the ROAD moves by 1.75° during the clip
+
+Sayed could not find one configuration satisfying every frame. He is right, and it is a property
+of the recording, not a fitting failure.
+
+Per-frame residual slope of the solid left line, 39 straight frames:
+
+| | sd | p10 | p90 |
+|---|---|---|---|
+| with a **fixed** horizon (465) | 0.0404 m/m | −0.0120 | +0.0353 |
+| with a **per-frame** horizon | 0.0165 m/m | −0.0027 | +0.0049 |
+
+**A per-frame horizon removes 59 % of the spread.** The best-fit horizon per frame runs
+**449.8 → 502.0 px (p10–p90 = 52 px = 1.75° of pitch)**, sd 20 px. A 52 px horizon swing moves the
+range of a point at 20 m by ~11 m.
+
+## 32. ⚠️ It is NOT the driver steering — tested, because the two look identical
+
+A vehicle yawed θ to the lane is *crossing* the lane at `v·sin θ`, so the attitude swing makes a
+prediction: `d(lateral)/dt = v · (residual slope)`. Both sides measured on consecutive frames:
+
+- measured lateral drift **0.156 m/s rms**
+- predicted from the attitude swing **0.512 m/s rms**
+- regression **−0.05×**, **r = −0.164**
+
+The attitude swing predicts **3× more lane-crossing than actually happens**, with no correlation.
+So it is not yaw from steering — it is pitch, which produces the same residual slope and no lane
+crossing. Consistent with a hilly motorway: vertical curvature and suspension move the camera
+relative to the road plane ahead.
+
+⇒ **A per-clip constant pitch is the wrong model for this recording.** The horizon has to be
+tracked per frame, or the overlay will be right on average and wrong on individual frames — which
+is exactly what Sayed observed.
+
+## 33. Two probes that failed here, kept with their refutations
+
+- **`eis_vs_gyro.py`** — race distant image motion against the gyro; the slope would be the
+  stabilisation strength. **Inconclusive**: all correlations |r| < 0.04, because rows 0.12–0.38 H
+  on this road hold *near* hillside and roadside trees, not distant content, so translation
+  dominated (measured 15 px rms against a 2.4 px gyro prediction). The probe reports the weak
+  correlation and refuses rather than quoting a slope.
+- **`per_frame_vp.py`** — per-frame vanishing point from the two lane lines. **Unusable**: the solid
+  left line yields a median of 19 samples per frame and fits to 1.39 px, the dashed right line
+  yields 8. Three frames of 260 produced a vanishing point.
