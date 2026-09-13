@@ -741,3 +741,77 @@ a single row are not reliably lane lines. It is kept with that result recorded.
 ⇒ **The height cannot be settled from this recording with this front end.** It needs either a
 marking segmenter good enough to identify the two ego-lane lines per row, or one physical
 measurement of the camera height with a tape.
+
+---
+
+# PART 8 — THE VEHICLE IS A VW CADDY, AND IT DOES WHAT NO IMAGE COULD
+
+## 40. One fact from Sayed replaced an unmeasurable parameter
+
+The height could not be measured from this recording (§37-39). It did not have to be: the mount
+photo shows a windscreen cradle at rear-view-mirror height, and the vehicle is a **VW Caddy**
+(1.797 m tall). A Caddy windscreen-header mount puts the camera at roughly **1.50-1.80 m**, against
+~1.25 m for a saloon — and that band, crossed with the device's focal limits, is decisive.
+
+`f·h` across **every** flow variant measured this session:
+
+| variant | f·h |
+|---|---|
+| rowfit pooled (bootstrap) | 2664 |
+| `row_flow_fit`, 218 pairs | 2668 |
+| `flow_calib`, 204 pairs (in the pipeline) | 2873 |
+| step-1 only | 2906 |
+| direct 2-parameter fit | 2444 |
+| 2-D flow fit | 2243 |
+| **median** | **2666** (range 2243-2906) |
+
+| h | f = f·h/h | HFOV | crop vs the 1442 px uncropped lens |
+|---|---|---|---|
+| 1.43 *(rendered earlier)* | 1864 | 54.5° | **1.29× — too large for EIS** |
+| 1.55 | 1720 | 58.3° | 1.19× |
+| **1.60** | **1666** | **59.9°** | **1.16×** |
+| 1.70 | 1568 | 62.9° | 1.09× |
+
+⇒ **h = 1.427 is excluded**: it demands a 1.29× crop. Sayed's own early estimate — *"i think also
+the 1.6 m height are very plausible"* — was right from the start.
+
+## 41. BEV agreement, on arms that share an f·h
+
+All the Caddy arms hold `f·h = 2666`, so the objective's known f·h bias cannot order them:
+
+| set | vs shipped |
+|---|---|
+| h 1.60, **horizon 485** | **+79.6 %** |
+| h 1.60, horizon 465 | +74.5 % |
+| h 1.55, horizon 465 | +74.4 % |
+| h 1.70, horizon 465 | +73.3 % |
+| rendered (h 1.427) | +62.4 % |
+| h 1.60, horizon 437 *(the flow horizon)* | +51.5 % |
+
+**The paint-family horizon wins and the flow horizon loses**, on an instrument that saw neither.
+
+## 42. ⚠️ And where the same objective must NOT be believed
+
+Scanning further at fixed `f·h`:
+
+- **horizon** — interior optimum at **485** (475 and 495 both score lower). Admissible, and it
+  agrees with the independent lane-width range-consistency test, which also said ~485.
+- **height** — monotone to the boundary (1.45 best of 1.45-1.75, still rising). **Rejected.**
+- **yaw** — monotone to the boundary (−6.00 best of −7.6 to −6.0, still rising). **Rejected.**
+
+A scan that runs to its boundary is the exact pathology that opened this whole investigation (the
+focal scan, §Part 2). Adopting `h = 1.45, yaw = −6.00` from it would repeat the original mistake
+with a different parameter. Yaw stays at **−6.80** from the left-line flatness test, which reads
+range *structure* rather than a level and is not affected by the association circularity.
+
+## 43. Rendered
+
+```
+--focal-px 1666  --cam-height 1.60  --horizon-row 485.0
+--cam-yaw -6.80  --cam-roll 0.0
+--lateral-offset -0.126 --lock-lateral  --mount-longitudinal 2.1
+```
+
+⚠️ **`h = 1.60` is CHOSEN, not measured** — the midpoint of the band the Caddy geometry and the
+device FOV jointly allow, and `f` follows from it as `f·h / h`. A tape measure from the ground to
+the lens still collapses the remaining ±0.15 m, and with it the ±100 px on the focal.
