@@ -233,3 +233,30 @@ def test_flow_calib_solves_for_the_horizon_rather_than_taking_it():
     assert i_flow < i_sc, (
         "flow_calib must be tried BEFORE scale_calib: it is the one that does not "
         "inherit a wrong horizon")
+
+
+def test_camera_height_can_be_made_authoritative():
+    """`--cam-height` alone does not survive the estimators.
+
+    It seeds the camera before `scale_calib` runs, and `scale_calib.solve` then
+    RESETS `cam.height_m` from f*h and the lane width. MEASURED 2026-09-13: a run
+    given `--cam-height 1.60` rendered at **1.622**, because scale_calib recomputed
+    it and nothing put the operator's value back.
+
+    That matters more than 1.4%: on this corpus the height is the one parameter no
+    instrument could measure (every lateral estimator turned out to confirm whatever
+    height it was given), so it is supplied from outside — the VW Caddy's mount
+    geometry, or a tape measure. A supplied value that an estimator can silently
+    discard is worse than no override at all, because the provenance still shows
+    what was asked for.
+
+    Every other override sits in the post-estimator block for exactly this reason.
+    `--lock-height` puts the height there too.
+    """
+    assert "--lock-height" in PIPELINE, "the height override is gone"
+    i_lock = PIPELINE.index('"lock_height", False')
+    i_scale = PIPELINE.index("ScaleResult") if "ScaleResult" in PIPELINE else None
+    assert 'cam.height_m = float(args.cam_height)' in PIPELINE, (
+        "--lock-height no longer actually reassigns cam.height_m")
+    assert "OPERATOR OVERRIDE --lock-height (not measured)" in PIPELINE, (
+        "a locked height must be labelled as not measured, like every other override")

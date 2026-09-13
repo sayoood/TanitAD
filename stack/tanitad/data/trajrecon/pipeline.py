@@ -360,6 +360,18 @@ def process_one(zip_path, out_dir, scratch, args, log) -> dict:
             "source": f"OPERATOR OVERRIDE --horizon-row {row:.1f} px (not measured)"}
         log(f"    override: horizon row = {row:.1f} px "
             f"-> pitch {np.rad2deg(cam.pitch):+.3f} deg (operator)", "WARN")
+    if getattr(args, "lock_height", False):
+        # ⚠️ `--cam-height` alone is NOT authoritative: it seeds the camera before
+        # `scale_calib` runs, and `scale_calib.solve` then RESETS `cam.height_m` from
+        # f*h and the lane width. MEASURED 2026-09-13: a run given `--cam-height 1.60`
+        # rendered at 1.622, because scale_calib recomputed it and nothing put the
+        # operator's value back. Every other override in this block is applied after
+        # the estimators precisely so it cannot be undone; the height was the one gap.
+        cam.height_m = float(args.cam_height)
+        calib["parameters"]["height_m"] = {
+            "value": round(float(args.cam_height), 3), "unit": "m",
+            "source": "OPERATOR OVERRIDE --lock-height (not measured)"}
+        log(f"    override: camera height locked at {args.cam_height:.3f} m", "WARN")
     if getattr(args, "lock_lateral", False):
         calib["parameters"]["lateral_offset_m"] = {
             "value": round(float(args.lateral_offset), 3), "unit": "m",
@@ -972,6 +984,10 @@ def main():
                     help="override pitch by the row the lane markings converge to "
                          "(px). Directly observable in the image, unlike pitch; "
                          "pitch = atan((row - cy) / fy). Overrides --cam-pitch.")
+    ap.add_argument("--lock-height", action="store_true",
+                    help="make --cam-height authoritative. Without it scale_calib "
+                         "recomputes the height from f*h and the lane width and the "
+                         "operator's value is silently discarded.")
     ap.add_argument("--lock-lateral", action="store_true",
                     help="keep --lateral-offset even if lane_calib measures one")
     ap.add_argument("--vehicle-width", type=float, default=1.8)
