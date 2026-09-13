@@ -598,8 +598,31 @@ def self_calibrate(video, cam, traj, sync, args, log, session=None, vframe=None)
             from trajlib import scale_calib as SC
             ft = sync.frame_times(video.pts)
             spd = np.interp(ft, traj.t, traj.speed)
-            vals, note = SC.estimate_fh(video, np.arange(len(ft)), spd, ft,
-                                        cam.horizon_v(), video.width, video.height)
+            vals, note = None, None
+            # ---- ground flow first: it solves for the horizon instead of taking it -- #
+            # `SC.estimate_fh` is passed `cam.horizon_v()`, and a road point's range is
+            # f*h / (v - v_horizon). A horizon that is 50 px wrong therefore biases every
+            # track, by an amount that depends on where in the frame the track sat --
+            # which is how it returned a 62% spread over 1576 tracks on the 2026-08-08
+            # recording and declined. `flow_calib` fits the horizon jointly, so it cannot
+            # be poisoned that way.
+            if getattr(args, "flow_calib", True):
+                from trajlib import flow_calib as FC
+                fres = FC.estimate(video, traj, sync, cam)
+                log.block("f*h from ground flow", str(fres))
+                for n in fres.notes:
+                    log(f"    {n}", "WARN")
+                if fres.ok:
+                    vals = np.full(max(fres.n_points, 1), fres.fh, dtype=float)
+                    rec["cross_checks"]["fh_flow_px_m"] = round(fres.fh, 1)
+                    rec["cross_checks"]["fh_flow_ci"] = [round(v, 1) for v in fres.fh_ci]
+                    rec["cross_checks"]["horizon_flow_px"] = round(fres.horizon_row, 1)
+                    rec["cross_checks"]["horizon_flow_ci"] = [round(v, 1) for v in fres.horizon_ci]
+                    rec["cross_checks"]["horizon_flow_minus_current_px"] = round(
+                        fres.horizon_row - cam.horizon_v(), 1)
+            if vals is None:
+                vals, note = SC.estimate_fh(video, np.arange(len(ft)), spd, ft,
+                                            cam.horizon_v(), video.width, video.height)
             if note:
                 log(f"f*h not measured: {note}", "WARN")
             res = SC.solve(vals, lane_w_measured, cam.height_m,
@@ -979,6 +1002,12 @@ def main():
     ap.add_argument("--scale-calib", action="store_true", default=True,
                     help="separate focal from camera height via f*h and lane width")
     ap.add_argument("--no-scale-calib", dest="scale_calib", action="store_false")
+    ap.add_argument("--flow-calib", action="store_true", default=True,
+                    help="measure f*h AND the horizon from ground flow against the "
+                         "odometer, instead of taking the horizon as given. Preferred "
+                         "over scale_calib, which is passed cam.horizon_v() and is "
+                         "biased by any error in it (62%% spread on 2026-08-08).")
+    ap.add_argument("--no-flow-calib", dest="flow_calib", action="store_false")
     ap.add_argument("--lane-width", type=float, default=3.65,
                     help="true lane width in metres; external metric knowledge that "
                          "lets f and h be separated (US 12 ft = 3.66, DE = 3.50)")

@@ -204,3 +204,32 @@ def test_nominal_focal_is_labelled_as_the_uncropped_lens():
     assert "EIS crops" in CAMERA
     assert re.search(r'"intrinsics":\s*f?"nominal HFOV=.*UNCROPPED', CAMERA, re.S), (
         "the nominal-focal provenance string no longer carries the warning")
+
+
+def test_flow_calib_solves_for_the_horizon_rather_than_taking_it():
+    """The whole reason this module exists next to `scale_calib`.
+
+    A road point's range is `f*h / (v - v_horizon)`. `scale_calib.estimate_fh` is
+    PASSED `cam.horizon_v()`, so a horizon that is wrong biases every track by an
+    amount depending on where in the frame it sat — which is how it returned a 62%
+    spread over 1576 tracks on 2026-08-08 and declined. `flow_calib` scans the
+    horizon and takes the zero-trend crossing, so it cannot be poisoned that way.
+
+    Also pinned: it must WARN when its horizon disagrees with the camera's. On that
+    recording the flow family lands at 431–448 px and the paint family at 465–485,
+    ~40 px apart, and only the paint set is validated against the markings. An
+    operator who silently inherits whichever ran last gets a 12% error in f*h.
+    """
+    FLOW = (PKG / "flow_calib.py").read_text(encoding="utf-8")
+    assert "_solve" in FLOW and "zero crossing" in FLOW, (
+        "flow_calib no longer brackets a zero-trend horizon — if it now takes the "
+        "horizon as an input it has the same defect as scale_calib")
+    assert "LARGE disagreement" in FLOW, (
+        "flow_calib no longer warns when its horizon disagrees with the camera's")
+    assert "--flow-calib" in PIPELINE and "flow_calib" in PIPELINE, (
+        "the pipeline no longer calls flow_calib")
+    i_flow = PIPELINE.index("from trajlib import flow_calib")
+    i_sc = PIPELINE.index("vals, note = SC.estimate_fh")
+    assert i_flow < i_sc, (
+        "flow_calib must be tried BEFORE scale_calib: it is the one that does not "
+        "inherit a wrong horizon")
