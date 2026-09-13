@@ -116,13 +116,36 @@ def test_every_operator_override_is_labelled_as_not_measured():
     measured)" into the provenance, and this pins that.
     """
     for flag in ("--cam-yaw", "--cam-pitch", "--cam-roll", "--horizon-row",
-                 "--lock-lateral"):
+                 "--lock-lateral", "--focal-px"):
         assert flag in PIPELINE, f"{flag} override is gone"
     n_override = PIPELINE.count("OPERATOR OVERRIDE")
-    assert n_override >= 4, (
+    assert n_override >= 5, (
         f"only {n_override} provenance strings say OPERATOR OVERRIDE; every "
         f"override path must label itself as not measured")
     assert "(not measured)" in PIPELINE
+
+
+def test_focal_override_is_applied_before_the_horizon_row_override():
+    """Order is load-bearing, not cosmetic.
+
+    `--horizon-row` is converted to a pitch by ``atan((row - cy) / fy)``. If the
+    focal override ran afterwards, that conversion would use the OLD focal and the
+    horizon would land on a different row than the operator asked for — silently,
+    because both flags would still appear in the provenance with the values that
+    were requested.
+
+    Concrete on this corpus: the row flow gives ``f*h = 2668`` px·m
+    (95% CI [2547, 2798]) against the shipped ``1478.3 x 1.17 = 1729``, so a
+    validation run supplies BOTH a new focal and a horizon row. At f 1438 vs 1478
+    a horizon of 465 px would be misplaced by ~2 px, and at the shipped-vs-measured
+    focal ratio the error grows with how wrong the focal was.
+    """
+    i_focal = PIPELINE.index('"focal_px", None')
+    i_horiz = PIPELINE.index('"horizon_row", None')
+    assert i_focal < i_horiz, (
+        "--focal-px must be applied BEFORE --horizon-row: the horizon->pitch "
+        "conversion divides by fy, so a later focal override silently moves the "
+        "horizon away from the row that was requested")
 
 
 def test_locked_lateral_actually_blocks_the_lane_calib_override():

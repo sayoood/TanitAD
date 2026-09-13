@@ -325,6 +325,19 @@ def process_one(zip_path, out_dir, scratch, args, log) -> dict:
     # settling the geometry needs externally supplied values to be pinned and the
     # rest re-derived against them. Anything set here is NOT a measurement and the
     # provenance must never let it read as one.
+    # ⚠️ The focal goes FIRST, because --horizon-row is converted to a pitch via
+    # ``atan((row - cy) / fy)`` and would otherwise use the old focal, silently
+    # placing the horizon somewhere else than the row asked for.
+    if getattr(args, "focal_px", None) is not None:
+        cam.fx = cam.fy = float(args.focal_px)
+        calib["parameters"]["focal_px"] = {
+            "value": round(float(args.focal_px), 1), "unit": "px",
+            "source": f"OPERATOR OVERRIDE --focal-px (not measured)"}
+        calib["parameters"]["hfov_deg"] = {
+            "value": round(float(np.rad2deg(2 * np.arctan(cam.cx / cam.fx))), 2),
+            "unit": "deg", "source": "derived from --focal-px (not measured)"}
+        log(f"    override: focal = {args.focal_px:.1f} px "
+            f"(HFOV {np.rad2deg(2*np.arctan(cam.cx/cam.fx)):.1f} deg) (operator)", "WARN")
     for flag, attr, unit in (("cam_yaw", "yaw", "deg"),
                              ("cam_pitch", "pitch", "deg"),
                              ("cam_roll", "roll", "deg")):
@@ -919,6 +932,13 @@ def main():
     # the rest re-derived against them. Every one of these is recorded in the
     # provenance as "OPERATOR OVERRIDE ... (not measured)" so a validation run can
     # never be mistaken for a measurement.
+    ap.add_argument("--focal-px", type=float, default=None,
+                    help="override the focal length (px). Applied BEFORE --horizon-row, "
+                         "which converts a row to a pitch using it. MEASURED 2026-09-13 "
+                         "on this corpus: the ROW FLOW of tracked ground points against "
+                         "the odometer gives f*h = 2444 px*m, so the focal follows from "
+                         "the height via f = f*h / h -- see "
+                         "incoming/2026-09-13-bev-semantic-calib/flow_scale.py")
     ap.add_argument("--cam-yaw", type=float, default=None,
                     help="override mount yaw (deg), applied after all estimators")
     ap.add_argument("--cam-pitch", type=float, default=None,

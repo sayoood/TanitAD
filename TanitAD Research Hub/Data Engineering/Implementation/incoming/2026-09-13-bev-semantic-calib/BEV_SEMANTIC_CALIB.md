@@ -302,3 +302,118 @@ confirmed from this channel**, so the BEV method should estimate the offset rath
    ink is the limiter. Before taking the dependency, test whether restricting ink to *semantically
    confirmed markings* (hand-label a few frames as a proxy) actually sharpens the f·h peak. If it
    does not, the limiter is elsewhere (ego-motion error, non-planar road, EIS) and SAM3 will not fix it.
+
+---
+
+# PART 3 — SOLVED. AND THE FOCAL WAS NEVER THE PROBLEM (2026-09-13, later)
+
+## 16. ⭐ The answer
+
+| parameter | shipped | **measured here** | how |
+|---|---|---|---|
+| horizon row | 464.4 (FOE) / 523.4 (lane VP) | **437–485 px** | row flow **437.4** [431.4, 443.4]; 2-D flow **454.0**; lane-width range-consistency **~485** |
+| `f·h` | 1478.3 × 1.17 = **1729** | **2240–2800 px·m** | row flow **2668** [2547, 2798]; 2-D flow **2243** |
+| height | 1.17 m | **~1.65–1.86 m** | lane width at horizon 465, assuming a 3.50 m lane |
+| focal | 1478.3 px (HFOV 66°) | **~1400–1530 px** | `f = f·h / h` — **the shipped focal was roughly right** |
+
+**The shipped focal was approximately correct and the shipped HEIGHT was wrong by ~45 %.**
+This whole line of work was a hunt for a focal error. Sayed's *"i think also the 1.6 m height are
+very plausible"* is **corroborated by the measurement**, not contradicted by it.
+
+Rendered with `f = 1438 px`, `h = 1.70 m`, horizon `465`, yaw `−7.01°`, lateral `−0.12 m`
+(Sayed's estimate), which sits centrally in every interval above.
+
+## 17. ⛔ RETRACTION — I had the horizon backwards (logged: `R-2026-09-13-horizon`)
+
+Earlier this session I ruled the lane-VP horizon **523.4 px** correct and the pipeline's FOE
+**464.4 px** wrong, a "2.29° pitch error", and defaulted four modules to `--horizon 523.4`.
+**It is the other way round.** Two probes orthogonal to both candidates put it at **437–454**
+(ego motion) and **~485** (lane width held range-independent), straddling the FOE. At 523.4 the
+reconstructed lane width **grows 41.5 %** from the 8–13 m slab to the 18–25 m slab — a tilted
+plane, which is exactly what a wrong horizon does:
+
+| assumed horizon | 8–13 m | 13–18 m | 18–25 m | far/near |
+|---|---|---|---|---|
+| 464.4 | 1.980 | 2.070 | 1.710 | 0.864 |
+| **485.0** | 1.980 | 2.370 | 2.070 | **1.045** |
+| 523.4 | 1.950 | 2.685 | 2.760 | **1.415** |
+
+Root-cause class **C6**: I adjudicated between two *image-derived* estimates on plausibility
+instead of finding a criterion orthogonal to both. A vanishing point measures where lane lines
+converge; the horizon is where the **ground plane** vanishes, and on a crowned, curving road those
+are not the same row.
+
+## 18. Three estimators, two diagnosed failures, one that works
+
+**`lag_scale.py` — BEV cross-frame lag against the odometer. Validated, then REFUSED.**
+Synthetic self-test recovers an injected `f·h` to within 5 % across a 3.3× range *and* recovers a
+±10 px horizon error to ±2.3 px (where a naive whole-map read would be off by +21 %/−15 %). On real
+data it declines, for a measured reason: at `D = 2.99 m` the correlation **decays monotonically from
+`r = 0.211` at lag 0** and is only `r = 0.062` at the true displacement. Content static in the
+*image* back-projects to the same range in every frame, so it correlates at lag 0 and outweighs the
+moving ground. **Before the static-reference guard added here, it reported `f = 3645 px` with a tight
+bootstrap** — confidently precise and wrong.
+
+**`flow_scale.py` 2-D fit — failed on the front end, not the model.**
+`goodFeaturesToTrack` does not find the road, it **avoids** it: corners live where texture is and
+asphalt is smooth, so 6807 tracks gave **2.3 % inliers at a 400 px median reprojection**. Masking to
+the pipeline's own ridge detector and cutting the row band at 0.77 H fixed it (median 11.7 → 7.6 px,
+inliers 17.7 %).
+
+**`flow_scale.row_flow_fit` — the one that works.** Vertical flow only, two parameters:
+
+```
+dv = D q² / (A − D q)        q = v − v_h,  A = f·h
+A  = D q q' / (q' − q)       inverted per point
+```
+
+and the horizon is found by **consistency** — the value at which the per-point `A` stops trending
+with image row — not by fitting a curve.
+
+## 19. ⚠️ The row band is a measurement, not a choice
+
+Below row ~830 the tracked flow **collapses to ~0** while the plane model predicts 59–135 px, and
+the tracking rate falls to 15–20 %. That region is static in the image (bonnet / windscreen
+reflection) and it supplied **6294 of the seeds**. Rows 580–830 follow the model closely — at
+730–780, measured **27.46 px** against a predicted **27.27**.
+
+| rows | seeds | tracked | rate | measured dv | model dv |
+|---|---|---|---|---|---|
+| 580–630 | 3605 | 3117 | 86.5 % | 8.81 | 3.15 |
+| 680–730 | 1981 | 1312 | 66.2 % | 19.37 | 16.35 |
+| 730–780 | 1436 | 615 | 42.8 % | **27.46** | **27.27** |
+| 830–880 | 2859 | 428 | 15.0 % | **1.02** | 58.90 |
+| 880–930 | 3435 | 713 | 20.8 % | **−0.60** | 80.15 |
+
+## 20. Three hypotheses of mine, all REFUTED by measurement rather than assumed away
+
+1. **Tracking selection inflates `f·h`** (points that move far fail LK, so survivors are biased
+   slow). Across steps of 1/2/3 frames the tracking rate falls **61.8 % → 24.8 % → 8.8 %** — a 7×
+   change in selection pressure — while the fitted horizon holds at **423.7 / 432.5 / 426.6 px**.
+   A selection artefact cannot survive that.
+2. **A per-pair constant row offset (pitch jitter / EIS).** Eliminating one by within-pair de-meaning
+   made the robust cost **worse** (1.348 vs 1.340) and sent the horizon to a degenerate 120 px.
+   Not modelled, on evidence.
+3. **My "overlap normalisation" diagnosis** of the lag estimator's shrink-toward-unity bias: it
+   changed `f·h × 1.40` from `s = 1.233` to `1.234`. **No effect.** The real cause was in the *test* —
+   injecting a focal error at fixed pitch **also moves the horizon**, so `s = factor` was never the
+   right expectation. The estimator was convicted of a bias it did not have.
+
+## 21. Why the height needs a ruler, measured rather than asserted
+
+`observability()` differentiates the actual reprojection on the actual tracks:
+singular values **[233.3, 85.1, 33.5, 5.0]**, least-observable direction **height −0.82, yaw +0.57**.
+And the height scan is the clean demonstration: forcing `h` from 0.90 → 1.60 m moves the fitted
+`f·h` only **2244.2 → 2237.2 (0.4 %)** while the cost spread is **0.2 %**. `f·h` is the observable;
+`h` is not, at any optimiser setting.
+
+## 22. ⚠️ What is still an assumption
+
+- **`h` scales linearly with the assumed lane width.** At 3.50 m (French motorway) `h ≈ 1.7 m` and
+  `f ≈ 1438`; at 3.00 m, `h ≈ 1.47` and `f ≈ 1663`. Both keep `f` inside the 1356–1628 device band,
+  so the band does **not** discriminate between them.
+- **The painted-line-width ruler is UNUSABLE with this front end.** It returns 0.29–0.51 m FWHM at
+  *every* horizon — that is the ridge detector's response plus along-range smear, not paint. Reported
+  and discarded, not quietly averaged in.
+- **The two flow fits differ**: `f·h` 2668 (row flow) vs 2243 (2-D). 16 % apart, both far above the
+  shipped 1729. The interval, not the midpoint, is the result.
