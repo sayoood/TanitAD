@@ -892,3 +892,45 @@ growing with distance — exactly the reported symptom, with no calibration or t
 the horizon or the yaw will move it. It is bounded by GNSS/IMU heading over a 1–2 s horizon, and the
 levers are better heading (RTK, or fusing the image), or drawing the corridor shorter than ~30 m and
 saying why.
+
+## 47. ⛔ PART 9's DIAGNOSIS IS REFUTED. It is a stale yaw, and it is fixable.
+
+Part 9 blamed the trajectory's heading error for the corridor cutting markings at range. That was an
+inference from a hold-out statistic, never a measurement of the symptom.
+`probes/corridor_vs_lane.py` measures it: the distance from the ribbon to the left painted line, by
+range, computed twice — once for the **trajectory** ribbon that is actually drawn, once for a
+**straight** ribbon.
+
+| range | trajectory ribbon | straight ribbon |
+|---|---|---|
+| 10 m | −0.380 m (n 238) | −0.357 m (n 235) |
+| 14 m | −0.392 m (n 159) | −0.389 m (n 158) |
+| 18 m | −0.411 m (n 53) | −0.411 m (n 55) |
+| 22 m | −0.515 m (n 25) | −0.528 m (n 26) |
+| 26 m | −0.468 m (n 14) | −0.548 m (n 14) |
+| **angle** | **1.24°** | **1.18°** |
+
+**The trajectory adds +0.06°.** A straight ribbon drifts just as much, so the heading error is not
+the dominant term and Part 9 is wrong. The drift is **calibration**, and at 1.2° it is 0.85 m at
+40 m — the whole symptom.
+
+**The cause: a stale yaw.** Yaw was fitted at horizon 465 (§29). The horizon was then moved to 485
+(§41-42) and the yaw was never refitted — and the two are coupled in this residual. Refitting at the
+current `f 1666, h 1.622, horizon 485`, over 190 straight frames:
+
+| yaw | 9 m | 12 m | 15 m | 18 m | 21 m | slope | at 40 m |
+|---|---|---|---|---|---|---|---|
+| −7.20 | −0.365 | −0.396 | −0.347 | −0.446 | −0.500 | −0.0107 | 0.43 m |
+| **−7.80** | −0.341 | −0.252 | −0.225 | −0.273 | −0.273 | **+0.0038** | **0.15 m** |
+| −8.40 | −0.212 | −0.155 | −0.097 | −0.079 | −0.034 | +0.0145 | 0.58 m |
+| *−6.80 (rendered)* | −0.337 | −0.473 | −0.512 | −0.640 | −0.688 | −0.0290 | **0.85 m** |
+
+A clean interior minimum. **Yaw −7.80° cuts the far-field drift 0.85 m → 0.15 m at 40 m, 5.7×.**
+
+⚠️ The residual LEVEL (≈ −0.27 m at −7.80) is deliberately **not** zeroed into the lateral offset.
+It conflates the camera's mount offset with the driver's average position in the lane, and the
+corridor is supposed to follow the *car*, not the lane centre. Only the slope is a calibration error.
+
+⚠️ **Lesson, and it is the session's recurring one:** every time a parameter moved, the ones coupled
+to it needed refitting and did not get it. Yaw↔horizon here; earlier f↔h. Fitting them one at a time
+and freezing each is what left a 1° error in a set that every individual test called good.
