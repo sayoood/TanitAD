@@ -67,11 +67,17 @@ class LaneCalibResult:
                 f"yaw_spread={self.yaw_spread_deg:.2f} deg)")
 
 
-def _ridge_mask(gray, r0, r1):
-    """Bright-ridge mask for lane markings, ridge width scaled by perspective."""
+def _ridge_mask(gray, r0, r1, w_of_row=None):
+    """Bright-ridge mask for lane markings, ridge width scaled by perspective.
+
+    ``w_of_row`` -- see :func:`paint_width_schedule`.  Without it the width ramps by
+    the row's rank in ``[r0, r1)``, which undersizes the operator in the far field and
+    costs exactly the long, shallow segments the yaw fit depends on.
+    """
     m = np.zeros(gray.shape, np.uint8)
     for y in range(r0, r1, 2):
-        w = max(2, int(round(2 + 26 * (y - r0) / max(1, r1 - r0))))
+        w = (max(2, int(round(2 + 26 * (y - r0) / max(1, r1 - r0))))
+             if w_of_row is None else int(w_of_row(y)))
         row = gray[y].astype(np.int16)
         c = 2 * row - np.roll(row, w) - np.roll(row, -w)
         c[:w] = 0
@@ -80,10 +86,42 @@ def _ridge_mask(gray, r0, r1):
     return m
 
 
-def _ridge_points(gray, r0, r1, pct=99.2, thr_min=28):
+def paint_width_schedule(cam, paint_m: float = 0.18):
+    """``w(row)`` for :func:`_ridge_points`, sized by the PAINT, not by the row's rank.
+
+    The ridge operator is ``2*row - row(-w) - row(+w)``: it responds only when ``w``
+    straddles the marking, and returns almost nothing when it samples entirely INSIDE
+    the paint.  The right ``w`` is therefore about the marking's apparent half-width,
+    which follows from the geometry with no focal length in it at all::
+
+        x = f*h / (y - v_h)    and    half width in px = 0.5 * paint_m * f / x
+                               so     w ~ 2 + 0.5 * paint_m * (y - v_h) / h
+
+    The default schedule instead ramps ``w`` from 2 to 28 across whatever band it is
+    handed.  Over this module's own 0.55-0.86 H band that is right at the near edge and
+    **badly undersized at the far edge** -- it asks for w = 2 where this geometry wants
+    10 -- so the far field, which is where the lane's angular information lives, is
+    detected weakly or not at all.  MEASURED on the 2026-08-08 recording, in a narrow
+    far band the effect is total: association succeeded at 40 m in 2 frames of 150 with
+    the default schedule, and the line is plainly visible in every one of them.
+    """
+    vh = cam.horizon_v()
+    h = max(float(cam.height_m), 0.2)
+
+    def w_of(y):
+        q = float(y) - vh
+        if q <= 1.0:
+            return 2
+        return int(max(2, min(40, round(2.0 + 0.5 * paint_m * q / h))))
+
+    return w_of
+
+
+def _ridge_points(gray, r0, r1, pct=99.2, thr_min=28, w_of_row=None):
     us, vs = [], []
     for y in range(r0, r1, 2):
-        w = max(2, int(round(2 + 26 * (y - r0) / max(1, r1 - r0))))
+        w = (max(2, int(round(2 + 26 * (y - r0) / max(1, r1 - r0))))
+             if w_of_row is None else int(w_of_row(y)))
         row = gray[y].astype(np.int16)
         c = 2 * row - np.roll(row, w) - np.roll(row, -w)
         c[:w] = 0
@@ -174,7 +212,8 @@ def estimate(session, video, cam, vframe, t_video_start_s: float = 0.0,
         r0, r1 = int(0.52 * H), int(0.88 * H)
         g = cv2.GaussianBlur(cv2.cvtColor(fr, cv2.COLOR_BGR2GRAY), (5, 5), 0)
         grays.append((t, g))
-        seg = cv2.HoughLinesP(_ridge_mask(g, r0, r1), 1, np.pi / 360,
+        seg = cv2.HoughLinesP(_ridge_mask(g, r0, r1, paint_width_schedule(cam)),
+                              1, np.pi / 360,
                               threshold=40, minLineLength=55, maxLineGap=14)
         if seg is None:
             continue
@@ -251,7 +290,8 @@ def estimate(session, video, cam, vframe, t_video_start_s: float = 0.0,
     centres, widths = [], []
     for t, g in grays:
         H = g.shape[0]
-        u, vv_ = _ridge_points(g, int(0.55 * H), int(0.86 * H))
+        u, vv_ = _ridge_points(g, int(0.55 * H), int(0.86 * H),
+                               w_of_row=paint_width_schedule(cam))
         if len(u) < 150:
             continue
         d = np.stack([(u - cam.cx) / cam.fx, (vv_ - cam.cy) / cam.fy, np.ones(len(u))], 1) @ R

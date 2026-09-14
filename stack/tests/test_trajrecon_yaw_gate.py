@@ -260,3 +260,92 @@ def test_camera_height_can_be_made_authoritative():
         "--lock-height no longer actually reassigns cam.height_m")
     assert "OPERATOR OVERRIDE --lock-height (not measured)" in PIPELINE, (
         "a locked height must be labelled as not measured, like every other override")
+
+
+def test_the_ridge_operator_is_sized_by_the_paint_not_by_the_rows_rank():
+    """`w` must come from the geometry, or the far field is detected out of existence.
+
+    The operator is `2*row - row(-w) - row(+w)`: it responds only when `w` straddles
+    the marking and returns almost nothing when it samples entirely INSIDE the paint.
+    The original schedule ramps `w` from 2 to 28 across whatever band it is handed,
+    which is right at the near edge of `lane_calib`'s own 0.55-0.86 H band and asks
+    for `w = 2` at the far edge where this geometry wants ~10.
+
+    MEASURED 2026-09-14 on the 14-19-54 recording: in a narrow far band, association
+    to the painted line succeeded at 40 m in **2 frames of 150** with the default
+    schedule, while the line is plainly visible in every one of them. That is the
+    far field — where the lane's angular information lives, and where the yaw fit
+    that this whole test file is about gets its leverage.
+
+    The schedule is `w ~ 2 + 0.5 * paint_m * (y - v_h) / h`, which carries NO focal
+    length: eliminating range between `v = v_h + f*h/x` and a width `0.5*paint*f/x`
+    cancels `f` exactly.
+    """
+    assert "def paint_width_schedule" in LANE, (
+        "the physical ridge-width schedule is gone; the far field goes with it")
+    assert "w_of_row=paint_width_schedule(cam)" in LANE, (
+        "_ridge_points no longer receives the physical schedule — the lateral-offset "
+        "fit is back to the rank-based ramp")
+    assert "paint_width_schedule(cam)" in LANE.split("HoughLinesP")[1][:200] or \
+           "_ridge_mask(g, r0, r1, paint_width_schedule(cam))" in LANE, (
+        "the yaw fit's Hough segments are still built from the rank-based mask")
+    assert "cam.horizon_v()" in LANE, (
+        "the schedule must be anchored on the horizon row, not on the band edges")
+
+
+def test_the_physical_ridge_width_restores_the_response_the_default_zeroes():
+    """Behavioural, not source-level: build the failure and show the fix removes it.
+
+    ⚠️ The first version of this test asserted on the NUMBER of ridge points and it
+    was too weak — on a clean synthetic line the rank-based schedule still fires on
+    the line's two EDGES (it found 417 points against the fix's 433). The mechanism
+    is not "the line is invisible", it is that the response AT THE LINE'S CENTRE
+    collapses to zero when `w` sits inside the paint, so all that survives is a pair
+    of weak edge responses that a 99.2nd-percentile threshold then discards on a real,
+    textured road. The centre response is the quantity to assert on.
+    """
+    import importlib
+    import sys
+    import types
+    import numpy as np
+    # `tanitad.data.__init__` imports torch, which this container does not have, and
+    # the ridge operator needs none of it. Stub the two parent packages so the
+    # module's own relative imports still resolve, then import it for real.
+    root = PKG.parents[2]
+    for name, path in (("tanitad", root / "tanitad"),
+                       ("tanitad.data", root / "tanitad" / "data"),
+                       ("tanitad.data.trajrecon", PKG)):
+        if name not in sys.modules:
+            mod = types.ModuleType(name)
+            mod.__path__ = [str(path)]
+            sys.modules[name] = mod
+    LC = importlib.import_module("tanitad.data.trajrecon.lane_calib")
+
+    class Cam:
+        fx = fy = 1533.0
+        cx, cy = 960.0, 540.0
+        height_m = 1.586
+
+        def horizon_v(self):
+            return 448.4
+
+    r0, r1 = 594, 928             # lane_calib's own band, 0.55-0.86 H at 1080
+    y = 596                       # the FAR edge of it: ~16.6 m for this geometry
+    row = np.full(1920, 90, np.int16)
+    row[700:716] = 230            # a 0.18 m marking is ~16 px wide at that range
+
+    def response(w, at):
+        return int(2 * row[at] - row[at - w] - row[at + w])
+
+    w_default = max(2, int(round(2 + 26 * (y - r0) / max(1, r1 - r0))))
+    w_fixed = LC.paint_width_schedule(Cam())(y)
+    centre = 708
+
+    assert w_default < 4, f"the rank-based schedule no longer undersizes here (w={w_default})"
+    assert w_fixed >= 5, f"the physical schedule is not straddling the paint (w={w_fixed})"
+    assert response(w_default, centre) == 0, (
+        "the premise of the fix is wrong: an operator inside the paint should see "
+        "no ridge at the line's centre")
+    assert response(w_fixed, centre) > 100, (
+        f"the physical schedule recovers only {response(w_fixed, centre)} at the line "
+        f"centre — it is not straddling the marking")
