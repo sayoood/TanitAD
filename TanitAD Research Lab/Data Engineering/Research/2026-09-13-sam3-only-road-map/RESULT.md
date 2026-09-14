@@ -620,3 +620,67 @@ grey, MAP_C 0.503). Bars, committed in `code/v65/sam3map_render_v5j.py` before a
   obstacles on road 0.0723 → 0.1679. Between the road and the sidewalk there are more than parked cars.
 * ⇒ **Delivered map unchanged: d0.** What a box-free map cannot know is what stands under a vehicle; the next lever needs
   evidence of the ground under it (LiDAR ground returns before or after the vehicle passes), not a geometric fill.
+
+---
+
+## 17. The PI's review of the box-free videos: hatched area in red, a noisy yellow/red border, stripes not separated (2026-09-14)
+
+**PI, verbatim:** *"Why is the 'Sperrfläche' marked as red? Why is the separation between yellow and red so noisy? it was better in
+the past. The stripes of the cross talk are also not well enough separated."* Evidence class MEASURED (Thor); every rule below is
+**exploratory, not pre-registered** — the PI's visual review is the criterion, and each check was chosen while exploring.
+
+**Instrument first.** The renderer of the delivered map d0 now saves its per-cell vote fields (`code/v65/sam3map_render_v5m.py`,
+FIELDS=1, float32), and `code/v65/compose.py` rebuilds the map from them in seconds. Control: with no options the offline map
+**equals d0 cell for cell on all four maps** (night / day × all 7 / front only). Every variant below differs only in composition.
+
+**What each complaint was, from the fields** (`media/v65r/spot_*.jpg`):
+* **Yellow inside the red kerb edge (day island):** no painted line lies along that kerb. SAM3 calls the bright kerb face a lane line
+  in some views, and the adaptive paint threshold of v6.5d (max(3, road p95), adopted for night lane lines) keeps it. v6.5s, still on
+  the old floor of 10, had a clean red edge there.
+* **Red on the hatched area (night exit):** a white SUV stood on it at the crossing for most of the clip, so it is mostly "seen, no
+  class"; a few views saw hatched paint, some saw sidewalk. Red boundary edges were drawn around those sidewalk fragments on the
+  road, and observed-edge cells landed inside the road: **228 edge cells at night (553 by day) have no non-drivable cell within 0.2 m.**
+* **Stripes not separated:** the delivered stripe cells sit on the paint but cover a small part of each crossing, as fragments.
+
+**Composition rules adopted in map r** (`compose.py LINE_EDGE_GAP=1 LINE_MIN_LEN_M=1.0 WLK_ISLAND_M2=3 EDGE_OBS=near XWALK=dirclose XWALK_LEN=11`):
+a lane-line cell touching sidewalk / no-class is road; lane-line pieces shorter than 1 m are road; sidewalk fragments < 3 m² with a
+≥ 70 % road ring are road (before edges); observed edges only next to a non-drivable cell and never over paint; stripe cells joined
+**along their own direction only** (local structure tensor, 1.1 m line element).
+
+| all 7 cameras, d0 → r | night | day |
+|---|---|---|
+| edge cells with no non-drivable cell within 0.2 m (red inside the road) | 228 → **0** | 553 → **3** |
+| lane-line / edge 4-neighbour contacts (yellow inside red) | 125 → **1** | 701 → **19** |
+| noise fragments / 1000 m² | 67.0 → **25.4** | 94.6 → **27.8** |
+| LiDAR curbs with an edge ≤ 0.6 m | 0.814 → 0.802 | 0.800 → 0.789 |
+| map edges on a LiDAR curb / obstacle (pi_checks) · scorer MAP_E | 0.668 → 0.671 · 0.507 → 0.522 | 0.822 → 0.859 · 0.692 → 0.731 |
+| A2r_onroad | 0.0723 → 0.0734 | 0.0093 → 0.0093 |
+| crosswalk: image top-hat on bars / on gaps (single images) · bar share of crossing pixels | 1.544 → 1.517 · 0.071 → 0.087 | 2.405 → 2.387 · 0.039 → 0.052 |
+
+⚠️ **Front camera only, night: curbs with an edge 0.792 → 0.717** (edge precision 0.614 → 0.594) — the one-camera arm loses the
+observed edges it relied on. Day front only: 0.852 → 0.838 at precision 0.882 → 0.926.
+
+### Stripes — five rules measured against the images, and why none of them solves it
+The check (`code/v65/xwalk_reproj_contrast.py`): through the video reprojection, the image white top-hat on each map's crosswalk
+pixels vs on the road pixels of the **same** crossing, every 2nd frame, front and cross cameras, single images — bars that sit on paint
+read high, bars on asphalt read ~1.0. Full table: `raw/v65r/xwalk_contrast_all_variants.txt`.
+
+| rule | night bar/gap · bar share | day bar/gap · bar share | verdict |
+|---|---|---|---|
+| d0 delivered (majority votes, stripe prompt, trimmed to bright paint) | 1.544 · 0.071 | 2.405 · 0.039 | on paint, fragmented |
+| **periodic bar fit per crossing** (spectral peak, phase folding) | **1.070** · 0.295 | **0.952** · 0.325 | **looks clean, not on the paint** |
+| periodic fit in 4.5 m windows | 1.121 · 0.169 | 1.308 · 0.257 | not on the paint |
+| stripes from the image evidence (oriented smoothing + Otsu) | 1.511 · 0.157 | 2.115 · 0.071 | on paint, but mostly bands and blobs, not bars |
+| … bar-shaped pieces only (≤ 0.9 m wide, ≤ 30° off) + votes | 1.536 · 0.077 | 2.346 · 0.043 | back to d0's coverage |
+| paint votes from views ≤ 12 m only | 1.315 · 0.055 | 2.283 · 0.022 | worse |
+| **along-stripe join 1.1 m (r)** | **1.517 · 0.087** | **2.387 · 0.052** | adopted: +23–33 % bars, still on paint |
+
+* The zebra IS periodic in the fields (`stripe_fft_probe.py`: peaks of 0.8–1.6 m period at 8–43× the ring median, shuffled control
+  2–3.6×) — and a fitted pattern still lands off the paint. ⇒ **a clean-looking stripe rendering is not evidence that it is right;
+  only the single-image check separated the two.**
+* **SAM3 at 2× zoom** (`stripe_zoom_test.py`, night front camera): at 15–25 m it finds no stripes on the full image and almost none
+  on the crop; at 5–12 m the crop adds ~24 % stripe pixels at the same top-hat contrast. At night the limit is the paint's
+  visibility beyond ~12 m, not the model's input resolution.
+
+**Delivered: map r** (videos `reproj2_v65r_*.mp4` on Thor). Open, with numbers: stripe coverage 5–9 % of the crossing pixels; the
+hatched area under the SUV stays largely unseen; front-only night curb recall −0.075.
