@@ -1427,3 +1427,70 @@ at 22 m/s implies roughly 0.6°) and actual camera rotation (EIS and/or suspensi
 separate them — a constant yaw *offset* relative to the lane does not appear in a rate. The
 instrument that can is the **gyro**, compared against image rotation measured in the far field where
 `H = K·R·K⁻¹` exactly.
+
+---
+
+# PART 13 — STEP 1: it is NOT the camera. And my residual metric is noisier than I said.
+
+## 70. Two instrument designs failed first, and both are recorded
+
+`probes/image_rot_vs_gyro.py` estimates camera rotation depth-free: for a rigid scene,
+`flow = A(x)·ω + s·e`, so the flow component **perpendicular to the FOE-radial direction is purely
+rotational at any depth**. Elegant, and it did not work.
+
+| design | 0–0.5 Hz corr. with the gyro | why |
+|---|---|---|
+| FOE taken from the calibration | **0.09** | a near-road point moves ~100 px/frame; a 20 px FOE error at radius 300 px injects 6.7 px of false "rotation" against a real signal of 1.5 px — **4× the signal** |
+| FOE solved for, alternating | **0.22** | a yaw rotation and a horizontal FOE shift are near-degenerate; the re-fit absorbs the rotation |
+
+Neither reproduced the vehicle's own turning, which both the image and the gyro **must** see. The
+gyro side was validated first and passes: against the trajectory's yaw rate, **r = +0.992, slope
++0.992** below 0.5 Hz. So the fault was mine, and no EIS conclusion was read off either.
+
+⚠️ **The broadband validation gate I first wrote (|r| > 0.8) was unmeetable by construction.** The
+trajectory's yaw rate is a 0.6 s fit, i.e. the low-passed gyro, so `r = sd(traj)/sd(gyro) =
+0.0219/0.0540 = 0.405` — and the measurement was 0.404. A gate that a correct instrument cannot
+pass is not a validation.
+
+## 71. A third design, and a correlation that was an artefact
+
+Comparing the camera-to-lane angle `θ(t)` against the gyro-integrated vehicle heading on a straight
+run gave **corr 0.73–0.79, slope 4–5** — which read as "the camera over-rotates 4× relative to the
+car". It is an artefact: **44 % of frames had no lane fit and were interpolated**, and interpolation
+manufactures smooth structure that correlates with any smooth signal. Re-run on fitted frames only,
+with the gyro integrated at its own 105 Hz before sampling: **corr 0.075 / −0.008 / 0.050 / 0.007**
+across every detrending window. The 4× slope evaporates with it.
+
+## 72. ⭐⭐ THE COMMON-MODE CONTROL — and it answers Step 1
+
+Fit the lane **twice per frame on disjoint range bands**, near (10–16 m) and far (16–40 m). Both look
+through the *same* camera, so **a camera rotation moves both identically**; a wobble that is the fit
+or the paint does not. 744 frames on the longest straight run:
+
+    near-band theta   detrended rms  1.393 deg
+    far-band  theta   detrended rms  2.373 deg
+    correlation near vs far          -0.072
+    differential rms 2.837 deg  =>  per-band noise 2.006 deg
+    common-mode  rms 1.332 deg  (noise alone would give 1.419 deg)
+
+**The two bands are uncorrelated.** Common-mode camera rotation is consistent with **zero**, with a
+2σ upper bound of about **0.25° rms ≈ 0.17 m at 40 m.**
+
+⇒ **PRE-REGISTERED OUTCOME, taken as committed: the camera is not the lever. Do NOT build Step 2.
+Go to Step 3.**
+
+## 73. ⚠️ And it undercuts §68's noise estimate, which I must correct
+
+§68 put the instrument noise at **0.063°** from an odd/even row split. That is too optimistic:
+interleaved rows are adjacent samples of the *same* paint over the *same* range span, so they share
+every systematic the fit has and differ only in pixel noise. The disjoint-band split says a fit over
+a shortened span carries **~2°**. The full-band fit's true noise lies between the two and is **not
+0.063°** — so the "100 % of the variance is real" claim in §68 is **not supported at that
+precision**, and the ~1° per-frame residual is part lane-fit variability, part real motion, in a
+proportion I have not yet measured.
+
+**Consequence, and it points the next move:** before chasing the trajectory, the residual metric
+needs an honest noise floor — two *independent full-span* estimates of the same frame's lane angle
+(e.g. left line vs right line, or alternating RANSAC seeds on disjoint point subsets over the whole
+span). If the floor turns out to be ~0.5°, most of the "residual" is my ruler and the overlay is
+already better than the numbers I have been quoting.
