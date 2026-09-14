@@ -349,3 +349,32 @@ def test_the_physical_ridge_width_restores_the_response_the_default_zeroes():
     assert response(w_fixed, centre) > 100, (
         f"the physical schedule recovers only {response(w_fixed, centre)} at the line "
         f"centre — it is not straddling the marking")
+
+
+def test_a_vehicle_override_renames_the_vehicle():
+    """A label must not outlive the values it describes.
+
+    MEASURED 2026-09-14: a run given `--wheelbase 3.105` (VW Caddy Maxi) printed
+
+        Steering [Audi A6 e-tron, L=3.105 m, ratio 15.9:1]
+
+    The wheelbase was applied correctly; only the NAME was stale. But a reader sees a
+    car's name next to numbers and takes the numbers as that car's, and the remaining
+    fields (steering ratio, understeer gradient, lock, track) really are still the
+    Audi's -- so the line asserts more than the run knows.
+
+    This is the same failure as the yaw gate calling a nominal placeholder "the FOE":
+    the defect was never the number, it was a label that made a placeholder look like
+    a measurement. Overriding either dimension now relabels the vehicle unless the
+    operator names it.
+    """
+    assert "--vehicle-name" in PIPELINE, (
+        "no way to name the vehicle, so an override silently keeps the Audi's label")
+    assert 'veh["name"] = args.vehicle_name' in PIPELINE, (
+        "--vehicle-name is declared but never applied")
+    assert "unnamed vehicle" in PIPELINE, (
+        "an overridden wheelbase/ratio no longer relabels the vehicle — the panel is "
+        "back to printing a car's name beside numbers that are not that car's")
+    assert "other" in PIPELINE.split("unnamed vehicle")[1][:200], (
+        "the relabel must still say which values are inherited, or it trades a wrong "
+        "name for a claim that nothing is inherited")

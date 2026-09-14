@@ -1198,3 +1198,43 @@ calibration to the driver's line — the confound §40 already refused once.
   **Audi A6 e-tron's 2.946 m**; Sayed's car is a **VW Caddy** (≈2.68 m gen-4, ≈2.76 m gen-5). This
   changes the reported steering-wheel angle and rate, and nothing else — the overlay geometry does
   not use it. Left as an operator flag, not guessed.
+
+## 59. ⭐ The ridge-width fix shows up in the pipeline's OWN automatic calibration
+
+The fix in §50 was made for the probes. Its effect on `lane_calib` itself, read out of the
+`out_caddyv` run's log (`--horizon-row`/`--cam-height` are applied AFTER these estimators, so
+these are the pipeline's own unaided numbers):
+
+    LaneCalib(yaw=-6.86 deg, lateral=declined, lane_width=3.40 m,
+              frames=59, segments=981, yaw_spread=0.31 deg)
+    pitch cross-check: lane VP row is 7.9 px from the FOE row
+
+| | before the fix | after |
+|---|---|---|
+| lane VP vs FOE row | **~59 px** apart (523.4 vs 464.4 — the R-2026-09-13-horizon dispute) | **7.9 px** |
+| reconstructed lane width | grew **41.5 %** from the 8–13 m slab to the 18–25 m slab | **3.40 m** against a true 3.5 m |
+
+The horizon dispute that cost a retraction was, in part, **a detector artefact**: an operator sized
+by the row's rank in its band lost the far paint, and the lane VP was fitted to whatever near-field
+segments survived.
+
+⚠️ **NOT resolved, and recorded as open:** the pipeline's own yaw is still **−6.86° (lane VP) /
+−6.31° (FOE)** against the **−5.30°** measured in §55. The relation `dyaw/dv_h = m/f ≈ 0.029°/px`
+says a 54 px horizon difference would account for it exactly, which points at the horizon
+`lane_calib` uses internally rather than at the yaw estimator. Not chased here — it does not touch
+the delivered overlay, which takes the operator's overrides.
+
+## 60. A label must not outlive the values it describes
+
+Overriding `--wheelbase 3.105` printed:
+
+    Steering [Audi A6 e-tron, L=3.105 m, ratio 15.9:1]
+
+The wheelbase was applied correctly; only the **name** was stale — and the remaining fields
+(steering ratio, understeer gradient, lock, track) really are still the Audi's, so the line asserts
+more than the run knows. **Same failure as the yaw gate calling a nominal placeholder "the FOE":
+the defect was never the number, it was a label that made a placeholder look like a measurement.**
+
+`--vehicle-name` added; without it, overriding either dimension relabels the vehicle
+`unnamed vehicle (wheelbase overridden; other Audi A6 e-tron values retained)` — which also says
+what is still inherited, rather than trading a wrong name for a claim that nothing is.

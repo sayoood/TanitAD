@@ -307,9 +307,24 @@ def process_one(zip_path, out_dir, scratch, args, log) -> dict:
         log("REJECTED: the solved trajectory failed its checks", "ERROR")
         return report
 
-    steer = estimate_steering(traj, {**AUDI_A6_ETRON, "wheelbase_m": args.wheelbase,
-                                     "steering_ratio": args.steering_ratio},
-                              max_wheel_rate_deg_s=args.max_wheel_rate)
+    # ⚠️ THE LABEL MUST NOT OUTLIVE THE VALUES IT DESCRIBES. Overriding --wheelbase
+    # used to leave `name` at the default, so the panel printed
+    # "Steering [Audi A6 e-tron, L=3.105 m, ratio 15.9:1]" -- a wrong car beside a
+    # correct number, which reads as a fact about that car. Same failure as the yaw
+    # gate calling a nominal placeholder "the FOE": the log looked like a measurement.
+    veh = {**AUDI_A6_ETRON, "wheelbase_m": args.wheelbase,
+           "steering_ratio": args.steering_ratio}
+    if args.vehicle_name:
+        veh["name"] = args.vehicle_name
+    else:
+        changed = [n for n, v in (("wheelbase", args.wheelbase),
+                                  ("ratio", args.steering_ratio))
+                   if abs(v - AUDI_A6_ETRON[{"wheelbase": "wheelbase_m",
+                                             "ratio": "steering_ratio"}[n]]) > 1e-9]
+        if changed:
+            veh["name"] = (f"unnamed vehicle ({', '.join(changed)} overridden; other "
+                           f"{AUDI_A6_ETRON['name']} values retained)")
+    steer = estimate_steering(traj, veh, max_wheel_rate_deg_s=args.max_wheel_rate)
     log.block("steering", steer.summary())
 
     # ------------------------------------------------------------- camera
@@ -993,6 +1008,11 @@ def main():
     ap.add_argument("--vehicle-width", type=float, default=1.8)
     ap.add_argument("--wheelbase", type=float, default=AUDI_A6_ETRON["wheelbase_m"])
     ap.add_argument("--steering-ratio", type=float, default=AUDI_A6_ETRON["steering_ratio"])
+    ap.add_argument("--vehicle-name", default=None,
+                    help="name for the steering read-out. Without it, overriding "
+                         "--wheelbase or --steering-ratio relabels the vehicle as "
+                         "'unnamed', so the panel never shows a car's name next to "
+                         "numbers that are not that car's.")
     ap.add_argument("--max-wheel-rate", type=float, default=180.0)
 
     # trajectory export
