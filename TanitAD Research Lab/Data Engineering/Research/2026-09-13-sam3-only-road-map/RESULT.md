@@ -716,3 +716,223 @@ Noise fragments and LiDAR curb recall stayed inside their bars for the zoomed an
 
 Map r stays delivered; the softer-trimming videos (`reproj2_v65rs2_*.mp4`, Thor) are offered to the PI as a visual trade-off
 (night better on both measures, day about 3 % more stripe cells on asphalt), not as a pass.
+
+## 19. SAM3 inference time on Thor — approved measures
+
+PI, 2026-09-14: *"We need to optimize the inference time of sam3 on thor, I need concret approved measures"*, and during the
+work: *"Could quantization if the model help?"*
+
+Scope: the per-frame SAM3 work of the delivered **front-camera map r** (v6 `classify()` on CAM_FW with 17 prompts, the v6s
+stripe pass with 2 prompts, the front-only re-lift). Downstream stages (refine, consensus, renderer v5m fields, compose with the
+map-r options) are unchanged in every arm. Thor: torch 2.13.0+cu130, SAM3 841 M parameters in fp32 (the C77 choice), TF32 already
+enabled by the vendor builder, flash/mem-efficient SDPA enabled.
+
+### 19.1 Where the time goes (MEASURED, `raw/speed/sam3_profile.json`, 6 warm front frames of both clips)
+
+| stage, per front frame | s | note |
+|---|---:|---|
+| image encoder (`set_image`) | 0.392 | run **twice** today (classify, then again for the stripe prompts) |
+| text encoder, 19 prompts | 0.158 | recomputed for every prompt of every frame, although prompts never change |
+| grounding, 19 prompts | **2.182** | 0.115 s per prompt: fusion encoder 1.224 · decoder 0.531 · mask head 0.368 · prompt 0.067 |
+| mask upsampling to 1920×1080 | 0.042 | for every query above the 0.25 processor threshold (142 per frame), not only the accepted ones |
+| mask copy to host | 0.302 | same: all 142, as bytes |
+| classify CPU logic | 0.263 | 0.06–0.56 depending on instance count |
+
+### 19.2 Screen of levers (feasibility, instance level — NOT the approval; `sam3_levers_probe.json`, `sam3_precision_probe.json`)
+
+Per prompt and query against the fp32 per-prompt path: max |Δp|, keep flips at the extractor thresholds, pixel disagreement of
+masks kept by both. The yardstick is the **numerical floor**: 19 prompts batched in fp32 — mathematically the same computation,
+different kernels.
+
+| grounding variant (19 prompts) | s | max \|Δp\| | keep flips | mask px disagreement |
+|---|---:|---:|---:|---:|
+| fp32, per prompt (today) | 2.220 | 0 | 0/301 | 0 |
+| text features cached | 2.156 | **0** | 0/158 | **0** |
+| fp32 batched (floor) | 2.050 | 0.020 | 0/301 | 4.4e-5 |
+| cudnn.benchmark | 2.156 | 0 | 0/158 | 0 (no speed-up) |
+| **fp16 autocast, fusion encoder only** | **1.249** | 0.025 | **0/301** | 6.0e-5 |
+| fp16 autocast, all stages | 1.127 | 0.066 | 1/301 | 2.5e-4 |
+| **fp16 autocast, all stages, batched** | **0.841** | 0.234 | 1/301 | 2.6e-4 |
+| bf16 autocast, fusion encoder only | 1.253 | 0.328 | 3/301 | 3.5e-4 |
+| bf16 autocast, all stages, batched | 0.842 | 0.605 | 8/301 | 2.1e-3 |
+
+Findings. (a) The fp32 fusion encoder is the single largest term, and half precision makes it **4.9× faster** (1.224 → 0.249 s);
+in fp32 its attention cannot use the flash kernel. (b) **fp16 stays at the numerical floor, bf16 does not**: bf16's 7-bit
+mantissa moves real detections (one "road marking" query 0.661 → 0.053 while another rises 0.079 → 0.68), fp16's only flip is
+a "white stripe on road" query at 0.401 → 0.399 against a 0.4 threshold. (c) Batching in fp32 buys 5 % (the GPU is already
+saturated per prompt); in fp16 it buys 25 %. (d) The mask head does not move with precision (0.31–0.37 s). (e) bf16 image backbone:
+0.391 → 0.229 s but FPN features differ by up to 34 % and 16/158 instances flip — not carried.
+
+### 19.3 Pre-registered approval (`code/speed/SPEC_sam3_speed.md`, banked on Thor 2026-09-14 15:30:16, md5 dfb9fc4c…, before any map-level result)
+
+One driver (`code/speed/sam3map_front_fast.py`) writes the exact frame files refine reads. `MODE=ref` is today's pipeline
+through the unmodified `classify()` and stock processor; `MODE=fast` runs **the same `classify` code object** with SAM3 results
+injected, so its CPU logic cannot drift. Arms: `spd0` reference · `spdA` exact measures (text cache, one image encode, GPU-side
+selection) · `spdF1` + fp16 fusion encoder · `spdF2` + fp16 all grounding stages, 19 prompts batched · `spdREG` spdA without the
+`curb` prompt (deliberate regression, must FAIL) · later, same bars: `spdF2a` / `spdF3a` async CPU, `spdF3` + fp16 backbone.
+
+Bars, both clips, vs `spd0`. EXACT: every frame file bit-identical and the composed map identical. NUMERICAL: N1 map agreement
+≥ 0.990 over cells seen in either · N2 IoU ≥ 0.95 per class with ≥ 500 cells · N3 PI checks |Δ fragments/1000 m²| ≤ 2.0,
+|Δ crosswalk coloured share| ≤ 0.02, |Δ curb recall 1.0 m| ≤ 0.01, |Δ edge precision 0.6 m| ≤ 0.01 · N4 per-frame raster
+agreement ≥ 0.990. Controls: C-REPRO (`spd0` reproduces the historical extraction and the delivered map r) and C-REG.
+
+### 19.4 Results, parts 1–2 (MEASURED, `raw/speed/spd_eval.json`; both clips, 96 front frames each; no eval tier applies — label-pipeline speed and output equivalence, not driving performance)
+
+**Controls.** C-REPRO **PASS** on both clips: `spd0`'s 192 raw frame files are bit-identical to the historical extraction and its
+composed map equals the delivered map r cell for cell — today's code reproduces the delivered map, so `spd0` IS map r. C-REG
+**PASS**: dropping one prompt (`curb`) fails every numerical bar on both clips (N1 0.989 / 0.985, edge IoU 0.46 / 0.32, line IoU
+0.55 / 0.54, fragments −2.9 / −14.4, N4 0.966 / 0.966) — the bars see a real quality loss.
+
+| arm | s/frame night | s/frame day | vs `spd0` | verdict | the binding numbers |
+|---|---:|---:|---:|---|---|
+| `spd0` today | 3.417 | 3.601 | 1.00× | reference | — |
+| `spdA` exact measures | 2.650 | 2.832 | 1.29× / 1.27× | **EXACT — APPROVED** | 192/192 frames bit-identical, both maps identical |
+| `spdF1` + fp16 fusion encoder | 1.690 | 1.868 | 2.02× / 1.93× | **NUMERICAL-PASS — APPROVED** | N1 0.99986 / 0.99990 · lowest IoU 0.984 / 0.988 (edges) · N3 Δ ≤ 0.39 fragments, 0.003 edge precision · N4 0.99975 / 0.99987 · LiDAR \|Δ\| ≤ 0.0017 |
+| `spdF2` + fp16 all grounding stages, batched | 1.286 | 1.470 | 2.66× / 2.45× | **FAIL (N2)** | edge IoU **0.943 / 0.931** < 0.95; N1 0.99933 / 0.99893, N3, N4 pass |
+| `spdF3` = `spdF2` + fp16 backbone | 1.230* | 1.434* | — | **FAIL (N2)** | edge IoU **0.926 / 0.931** |
+| `spdF2a` = `spdF2` + async CPU | 1.189* | 1.292* | — | **EXACT vs `spdF2`** (async approved; inherits F2's FAIL) | 192/192 frames and both maps identical to `spdF2` |
+| `spdF3a` = `spdF3` + async CPU | 1.056* | 1.093* | — | **EXACT vs `spdF3`** (inherits F3's FAIL) | 192/192 frames and both maps identical to `spdF3` |
+
+\* extraction overlapped part 1's downstream stages on the CPU; upper bounds, re-timed cleanly in part 3.
+
+Reading. Everything that failed failed on ONE class: map **edges** (curb / boundary, ~3.4 k cells per clip), the class built from
+mask boundaries of road, non-drivable and curb masks. Surfaces, lines, crosswalks and every PI check stayed inside their bars.
+The pre-registered goal (≥ 2.0× with every measure approved) is **not met by part 2**: `spdF1` is the fastest approved arm and
+reaches 2.02× by night but 1.93× by day.
+
+### 19.5 Probes of the remaining levers (MEASURED, feasibility; `sam3_stage_probe.json`, `sam3_fp8_probe.json`)
+
+* **Mask head** at fp16, 19 prompts batched: 0.197 s of the 0.749 s grounding is the pixel decoder (3×3 convs + GroupNorm up to
+  288×288, prompt-dependent because the encoder output enters it); instance head 0.029, mask predictor 0.007, the unused semantic
+  head 0.013. Nothing here moves with precision.
+* **Image backbone in fp16:** 0.34 → 0.21 s/frame; FPN features within 1.3–5.4 %; 0/264 keep flips; mask disagreement ≤ 5e-4.
+  Instance-level clean, but in `spdF3` it deepened the edge failure (0.943 → 0.926 night).
+* **torch.compile** (inductor, static shapes, fp16, batched): 52.7 s to compile, then **slower** — 0.822 s vs 0.752 s eager, 0.916 s
+  on a second frame. Not a lever on Thor.
+* **Quantization — the PI's question — FP8 on the image backbone** (every ViT linear as float8_e4m3fn matmul through
+  `torch._scaled_mm`, nothing installed): per-tensor scales **0.320 s vs fp16 0.206 s (slower)** with **37/264 kept instances
+  flipped**, FPN features off by 56 %, mask disagreement 1.6e-2; row-wise scales 0.468 s (slower than fp32) with 44/264 flips.
+  SAM3 is precision-sensitive (bf16 already moved detections that fp16 kept) and FP8's grid is coarser still: on this model and
+  hardware quantization costs accuracy and buys no speed. Weight-only INT8/INT4 targets memory, and SAM3 peaks at 4.5–12.5 GB of
+  Thor's 128 GB. **Not a lever; not carried.**
+
+### 19.6 Why the fp16 decoder fails, and why no fp32 island rescues it (MEASURED, `sam3_decoder_island_probe.json`, 6 frames, 291 kept instances)
+
+All variants: fusion encoder fp16, mask head fp32, 19 prompts batched; against the fp32 per-prompt reference.
+
+| decoder | grounding s | decoder s | max \|Δp\| | flips | mask px disagreement |
+|---|---:|---:|---:|---:|---:|
+| all fp32 incl. encoder (floor) | 1.926 | 0.382 | 0.020 | 0/291 | 4.4e-5 |
+| **fp32** (encoder fp16 = `spdF4a`) | **0.938** | 0.380 | 0.018 | 0/291 | **5.9e-5** |
+| fp16 (as in the failed `spdF2`) | 0.741 | 0.183 | 0.063 | 1/291 | 2.4e-4 |
+| fp16 + image cross-attention fp32 | 0.816 | 0.257 | 0.061 | 1/291 | 2.5e-4 |
+| fp16 + box-RPB bias fp32 | 0.918 | 0.361 | 0.052 | 0/291 | 1.5e-4 |
+| fp16 + box refinement fp32 | 0.743 | 0.183 | 0.286 | 1/291 | 2.4e-4 |
+| fp16 + self / text attention fp32 | 0.754 | 0.184 | 0.090 | 1/291 | 2.7e-4 |
+| fp16 + cross-attention AND RPB bias fp32 | 0.949 | 0.385 | 0.063 | 0/291 | 6.5e-5 |
+
+The sensitive computation is the **box relative-position bias inside the image cross-attention**: only fp32 for both restores fp32
+masks, and it then costs exactly what the fp32 decoder costs (0.385 vs 0.380 s). The RPB bias is a 19 × 8 × 201 × 5184 tensor per
+layer — at fp16 its precision moves mask boundaries, which is what the edge class reads. **The decoder stays fp32; lever closed.**
+
+### 19.7 Results, part 3 — decoder back to fp32 (MEASURED, `raw/speed/spd_eval.json`, `spd_eval_part3.txt`; timings clean: GPU otherwise idle)
+
+Added after `spdF2` / `spdF3` failed, on the diagnosis of §19.2 (the extra mask deviation appears when the decoder joins fp16);
+bars unchanged, as the SPEC commits for any further arm.
+
+| arm | s/frame night | s/frame day | vs `spd0` | verdict | the binding numbers |
+|---|---:|---:|---:|---|---|
+| `spdF1a` = `spdF1` + async CPU | 1.646 | 1.548 | 2.08× / 2.33× | **EXACT vs `spdF1` — APPROVED** | 192/192 frames and both maps identical to `spdF1` |
+| **`spdF4a`** fp16 fusion encoder · fp32 decoder + mask head · 19 prompts batched · async | **1.306** | **1.342** | **2.62× / 2.68×** | **NUMERICAL-PASS — APPROVED** | N1 0.99986 / 0.99967 · edge IoU **0.989 / 0.981**, all other classes ≥ 0.9987 · N3 \|Δ\| ≤ 0.002 · N4 0.99986 / 0.99978 · LiDAR \|Δ\| ≤ 0.001 |
+| `spdF5a` = `spdF4a` + fp16 image backbone | 1.177 | 1.213 | 2.90× / 2.97× | **NUMERICAL-PASS — APPROVED, at the bar** | N1 0.99950 / 0.99926 · edge IoU **0.953 / 0.955** (bar 0.95) · line IoU 0.998 / 0.985 · N3 \|Δ\| ≤ 0.58 fragments, 0.004 edge precision · N4 0.99917 / 0.99958 |
+
+Async CPU is exact on a third configuration. The pre-registered goal (≥ 2.0× with every measure approved) is **met** by `spdF1a`,
+`spdF4a` and `spdF5a` on both clips; the stretch (≤ 1.2 s/frame) by `spdF5a` at night only.
+
+**Recommendation for GT production: `spdF4a`.** `spdF5a` passes every committed bar and is approved by the SPEC's own rule, but its
+edge class — the class the PI's reviews were about (kerb separation) — clears the bar by 0.003–0.005, where `spdF4a` clears it by
+0.031–0.039. The backbone buys 0.13 s per frame (10 %); on two clips that margin is too thin to bet the corpus on without a third
+clip. `spdF5a` stays available if Thor time becomes the binding constraint.
+
+### 19.8 Pipeline-level measures (MEASURED, `raw/speed/front_stream_spdS.json`, `stream_equal_spdS.txt`)
+
+`code/speed/sam3map_front_stream.py`: (1) SAM3 is built **once per process** — refine's ego-mask SAM3 calls (8 frames per clip) run on
+the loaded model in fp32 with the fast path's fp16 wrapper suspended, where today every clip pays a second model build inside
+refine; (2) refine (after its ego masks, `code/speed/refine_with_ego.py` = the unmodified refine with only its ego step fed),
+consensus, renderer and compose run **unmodified as background processes** while the GPU extracts the next clip.
+
+**EXACT** against the chain arm with the same per-frame flags (`spdF5a`), both clips: raw frames 96/96, refine output incl. ego
+masks 96/96, consensus 96/96, composed maps identical, refine summaries equal.
+
+| per 96-frame clip, `spdF5a` flags | every stage its own process | streaming |
+|---|---:|---:|
+| model build | 10.9 s (extractor) + ~11 s (refine) | 10.9 s once per process |
+| SAM3 extraction | 115 s | 115–117 s (the second clip beside the first clip's CPU stages: 1.220 vs 1.213 s/frame — no measurable contention) |
+| ego masks | inside refine | 5.2–5.4 s |
+| refine / consensus / renderer / compose | 40 / 29 / 18 / 1 s, on the critical path | 16.5 / 30–32 / 19–21 / 0.6 s, in the background |
+| **wall-clock per clip in steady state** | **≈ 214 s** | **≈ 120 s** (the CPU stages, 70 s, keep up with a 120 s GPU clip) |
+
+### 19.9 The approved measures, and what they do to the augmentation estimate
+
+| # | measure | class | approval | effect (MEASURED on Thor) |
+|---|---|---|---|---|
+| 1 | text features cached per prompt | exact | bit-identical, 192 frames + maps | part of 3.51 → 2.74 s/frame |
+| 2 | one image encode per frame (classify + stripe prompts) | exact | same | 〃 |
+| 3 | prompt threshold on the GPU before mask upsampling and host copy | exact | same | 〃; peak GPU memory 6.1 → 4.5 GB |
+| 4 | CPU post-processing async (2 threads) | exact | bit-identical on 3 configurations | −0.04 to −0.34 s/frame |
+| 5 | fp16 autocast on the fusion encoder | numerical | N1–N4 pass, both clips, edge IoU ≥ 0.981 | encoder 1.22 → 0.25 s/frame |
+| 6 | the 19 prompts in one grounding forward (decoder, mask head fp32) | numerical | passes together with 5 (`spdF4a`) | −0.21 to −0.34 s/frame |
+| 7 | one model build per process; refine's ego masks on the loaded model | exact | every intermediate bit-identical | −11 s per clip |
+| 8 | refine / consensus / renderer / compose in the background | exact | same | ~70 s per clip moved off the GPU's critical path |
+| 9 | fp16 image backbone (optional) | numerical | passes AT the bar (edge IoU 0.953 / 0.955) | −0.13 s/frame |
+| ✗ | fp16 decoder / all stages · bf16 · FP8 quantization · torch.compile · cudnn.benchmark | — | FAIL or no speed-up | §19.4–19.6 |
+
+**Per front frame: 3.417 / 3.601 s → 1.306 / 1.342 s with measures 1–6 (2.62× / 2.68×), 1.177 / 1.213 s with 9 (2.90× / 2.97×).**
+
+Augmentation estimate, same assumptions as the estimate given to the PI the same day (20 s clips, 100 SAM3 frames each, fetch +
+decode ≈ 1 min per clip — that one ESTIMATED, not measured; Thor's GPU dedicated), recomputed for the old pipeline with today's
+measured numbers so both columns use one formula:
+
+| scope | clips | today's pipeline (3.51 s/frame, stages in series: 514 s/clip) | approved, measures 1–8 (198 s/clip) | + backbone fp16 (185 s/clip) |
+|---|---:|---:|---:|---:|
+| front videos already on Thor | 160 | 22.8 h | **8.8 h** | 8.2 h |
+| BEV-head clips (134 EVAL + 181 train) | 315 | 45 h (1.9 days) | **17.3 h** | 16.2 h |
+| full v7 training corpus | 4,719 | 28 days | **10.8 days** | 10.1 days |
+
+The fetch-and-decode minute is now a third of each clip; prefetching the next clip in parallel (not yet measured) would bring the
+315 clips to about 12 h.
+
+### 19.10 The last big lever — fewer prompts — FAILS (MEASURED; addenda pre-registered 20:17:21 and 20:39:51, before their results)
+
+After precision, every grounding stage scales with the number of prompts. A screen over 192 frames (`prompt_redundancy.json`) found
+five prompts whose accepted pixels are ≤ 2.1 % unique within their family (asphalt road surface 0.5 %, pedestrian crossing 0.8 %,
+crosswalk stripe and zebra crossing 1.6 %, lane marking 2.1 %); `stop line` and `diagonal stripes on road` returned zero instances on
+both clips and were excluded up front — the clips contain no stop line and no hatched area, which is not redundancy. Arms on
+`spdF4a` flags, same bars:
+
+| arm | dropped | s/frame | verdict | why |
+|---|---|---:|---|---|
+| `spdP3a` | asphalt road surface, zebra crossing, pedestrian crossing | 1.164 / 1.200 | **FAIL** | edge IoU **0.681 / 0.840**; night PI checks: fragments −4.03, curb recall +0.013, edge precision +0.025 |
+| `spdP5a` | P3 + lane marking, crosswalk stripe | 1.062 / 1.088 | **FAIL** | night: line IoU 0.858, crosswalk 0.776, edge 0.679, crosswalk coloured share +0.098 |
+| `spdP2a` (chosen after P3 failed, addendum 2) | zebra crossing, pedestrian crossing — both road prompts kept | 1.235 / 1.248 | **passes on the two test clips** | N1 0.99984 / 0.99943 · crosswalk IoU 0.9993 / 0.9971 · edge IoU 0.986 / **0.954** · N3 \|Δ\| ≤ 0.77 fragments · N4 0.99984 / 0.9997 |
+
+Pixel redundancy does not predict map redundancy: a prompt's few unique pixels sit where the map is decided — the road boundary the
+edge class is built from, the painted bars the stripe pass keeps — and the multi-frame vote makes a consistent shift permanent.
+`spdP2a` is, as committed in advance, **not approved**: it buys 0.07–0.09 s per frame (≈ 6 %), the two clips hold four crossings,
+and its day edge class clears the bar by 0.004. It needs the PI's sign-off and a validation on more crossings first.
+
+### 19.11 Where this stands
+
+**Done — the committed goal is cleared.** Every measure in rows 1–8 of §19.9 is approved against the map the PI confirmed:
+**3.42 / 3.60 s → 1.31 / 1.34 s per front frame (2.62× / 2.68×)**, and with the streaming pipeline ≈ 214 s → ≈ 120 s per clip on
+the GPU's path. For the 315 BEV-head clips the augmentation estimate falls from ≈ 45 h to ≈ 17 h.
+
+Levers left, each with what decides it:
+* **fp16 image backbone as default** (`spdF5a`, −0.13 s/frame): approved at the bar — the PI's call, or a third clip first.
+* **Dropping the two crosswalk synonyms** (`spdP2a`, −0.08 s/frame): passes on two clips — PI sign-off + more crossings.
+* **Prefetching the next clip's video** while the GPU works (≈ −1 min/clip, ESTIMATED): exact by construction, but it can only be
+  measured on corpus videos, whose download still needs the PI's permission (the native test clips have nothing to fetch).
+* **Fewer SAM3 frames per clip** (2.5 instead of 5 per second — halves the SAM3 GPU time, ≈ −1.1 min/clip): changes the map by
+  design — the PI's call, as in the first estimate.
+* Closed on evidence: fp16 / bf16 decoder, FP8 quantization, torch.compile, cudnn.benchmark, fp32 batching alone, pruning prompts
+  that feed the road boundary or the stripe pass.
