@@ -815,3 +815,21 @@ range *structure* rather than a level and is not affected by the association cir
 ⚠️ **`h = 1.60` is CHOSEN, not measured** — the midpoint of the band the Caddy geometry and the
 device FOV jointly allow, and `f` follows from it as `f·h / h`. A tape measure from the ground to
 the lens still collapses the remaining ±0.15 m, and with it the ±100 px on the focal.
+
+## 44. `--lock-height` verified end to end
+
+The fix was committed on a source-level test; run against the real recording it now actually fires:
+
+```
+override: focal = 1666.0 px (HFOV 59.9 deg) (operator)
+override: horizon row = 485.0 px -> pitch -1.891 deg (operator)
+override: camera height locked at 1.600 m
+```
+
+`calibration.json`: `f 1666.0  h 1.600  horizon 485.0  f·h 2665.6`, with
+`height_m.source = "OPERATOR OVERRIDE --lock-height (not measured)"`. Before the fix the same
+invocation emitted **1.622**, because `scale_calib.solve` recomputed the height after
+`--cam-height` had been applied.
+
+The delivered Caddy video was rendered at 1.622 rather than 1.600 — a 1.4 % difference, inside the
+±0.15 m the height is uncertain by anyway, so it was not re-rendered.
