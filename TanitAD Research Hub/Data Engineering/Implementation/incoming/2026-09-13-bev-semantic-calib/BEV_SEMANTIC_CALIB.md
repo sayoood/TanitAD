@@ -1149,3 +1149,52 @@ interpretation. On the common grid, at the rendered yaws: `caddy` 496, `joint2` 
 all far below the horizon at 448, i.e. all three cross the paint on the visible road.
 
 **ADOPTED AND RENDERED:** `horizon 448.4 · h 1.586 · f 1533 · yaw −5.35 · lateral −0.126`.
+
+## 58. ✅ VERIFIED ON THE DELIVERED VIDEO — `out_final2`
+
+`horizon 448.4 · h 1.586 · f 1533 · yaw −5.35 · lateral −0.126`, measured over 220 frames:
+
+| range | corridor left edge → painted line | IQR | n |
+|---|---|---|---|
+| 10 m | **+1.24 m** | [+1.07, +1.36] | 88 |
+| 15 m | +1.22 m | [+1.01, +1.38] | 88 |
+| 20 m | +1.22 m | [+0.96, +1.42] | 88 |
+| 25 m | +1.21 m | [+0.87, +1.46] | 88 |
+| 30 m | +1.20 m | [+0.80, +1.51] | 88 |
+| 40 m | +1.28 m | [+0.68, +1.94] | 69 |
+| 50 m | +1.15 m | [+0.32, +1.97] | 76 |
+
+**Slope −0.001 m/m.** Straight frames **+0.0023 m/m = 0.13°**, against **1.11°** at yaw −6.59 and
+**2.14°** at yaw −7.80 on the same grid. Median crossing row **447.6** against the horizon at
+**448.4**. **65 % of straight frames: the corridor never reaches the paint on the visible road**;
+when it does, the median is 66 m.
+
+⭐ **The loop closes.** The yaw scan run on THIS render answers **−5.35, i.e. +0.00 from what was
+rendered**. The correction predicted from the previous video was applied and the new video needs
+none — which is the check every earlier fit failed.
+
+### Why the level is 1.22 m and not 0.85 m, and why nothing should be done about it
+
+Parallel geometry forces it: with `Q = du/dv` for the corridor-minus-lane difference, the metric gap
+is `Q·h` at EVERY range, so making the corridor parallel *determines* the level. It says the
+corridor's centre sits **0.38 m right of lane centre**.
+
+MEASURED, with no calibration at all — `offset = 1.75·(m_L + m_R)/|m_L − m_R|`, in which `h` cancels
+against `|m_L − m_R| = 3.5/h`:
+
+    camera offset from lane centre = 0.245 m, frame-cluster bootstrap 95% CI [0.075, 0.414] m
+    per-frame robust sd 0.473 m  (real lane wandering)
+
+**0.38 m is inside that interval.** The car genuinely drives right of lane centre, and the corridor
+is supposed to follow the car. Zeroing the level into `--lateral-offset` would be fitting the
+calibration to the driver's line — the confound §40 already refused once.
+
+### What is NOT fixed
+
+- **Per-frame spread.** 90th-percentile |slope| on straight frames is **0.0388 m/m ≈ 2.2° ≈ 1.55 m
+  at 40 m**. Part of that is real (the path genuinely approaches the line when the driver drifts);
+  how much is EIS is **unmeasured** — `probes/road_vp.py` was written for it and did not complete.
+- **The steering panel uses the wrong car.** `pipeline.py:994` defaults `--wheelbase` to the
+  **Audi A6 e-tron's 2.946 m**; Sayed's car is a **VW Caddy** (≈2.68 m gen-4, ≈2.76 m gen-5). This
+  changes the reported steering-wheel angle and rate, and nothing else — the overlay geometry does
+  not use it. Left as an operator flag, not guessed.
