@@ -3312,3 +3312,61 @@ two-lane cluster at 4.50–5.00, **exactly 2× apart** — which is evidence, no
 `h ≈ 1.59 m` still stands, but it stands on ONE route (which needs the horizon), not two, and the
 claim of independent cross-confirmation is withdrawn. The delivered overlay is unaffected: it was
 verified on the video itself, not on `h`.
+
+---
+
+## R-2026-09-14-foliage — the "paint detector" has been detecting the roadside bank
+
+**WITHDRAWN:** every measurement on the 2026-08-08 recording that depended on finding the
+**RIGHT-hand lane boundary**. Named explicitly, because several are load-bearing:
+
+| claim | where | status |
+|---|---|---|
+| camera height **h = 1.586 m** from lane-width range-constancy | §50 | ⛔ rests on a lane width whose right edge may be foliage |
+| the horizon **joint fit → 448** | §51 | ⛔ its lane-width branch shares that input |
+| lane width **varies 3.27–4.10 m** across the clip | §76 | ⛔ withdrawn |
+| ego **offset 0.25–0.90 m** from lane centre | §76, §75 | ⛔ withdrawn |
+| **lane pair found in 81 % of frames**, width 3.38 ± 0.23 m | this turn | ⛔ withdrawn |
+| the corridor is **0.37 m too far right** | this turn | ⛔ never reported, withdrawn before use |
+
+**HOW IT WAS FOUND — by drawing the detector's input on the image, which I should have done
+before running any statistic on it.** `overlay_far.ridge_cols` takes the brightest narrow features
+in each image row, thresholded at the row's **99th percentile**. On this footage the sunlit
+vegetation and pale rock bank to the RIGHT of the carriageway are brighter and far more textured
+than the road markings, so the detector's points land overwhelmingly **on the bank**. In the
+annotated frames the fitted "lane pair" sits entirely in the bushes.
+
+**Why it went unnoticed for so long, and what that says.** The symptom was visible the whole time
+and I read it as noise instead of as a wrong object:
+
+* the right boundary had **55 median inliers against the left's 136** — read as "the dashed line is
+  sparse", actually "this is not a line";
+* **94 %** of frames failed a parallelism test — read as "the detector is weak";
+* the implied lane read **6.41 m at 10 m growing to 18.28 m at 40 m** — read as "the gate is wrong";
+* the two detectors agreed on the same left line in **0 of 260 frames** — which is what finally
+  forced me to look at a picture.
+
+Four escalating absurdities, each explained away with a plausible mechanism. **A quantity that is
+physically impossible (an 18 m lane) is not a weak measurement, it is a wrong object.**
+
+**ROOT-CAUSE CLASS — C-SCOPE (a probe answering a different question than the one asked),** the
+same family as `df` on pod disk, Thor's `free`, cgroup `usage_in_bytes`, the Drive 404 classifier
+and R-2026-09-14-onvideo. The operator was asked for "bright narrow ridges" and answered exactly
+that — correctly. It was never asked for **road markings**, and nothing in the pipeline restricted
+it to the road.
+
+⇒ **RULE: before the first statistic, render the detector's INPUT onto the image and look at it.**
+Not the fit, not the residual — the raw detections. Two minutes here would have saved a day, and
+the four warning signs above were all cheaper than the picture and all less conclusive.
+⇒ **RULE: a physically impossible intermediate value halts the chain.** An 18 m lane, a 42 m camera
+height (§65), a 0.82 m camera height (§50) — each was treated as a gate to tune. Each was the
+measurement telling me it was measuring something else.
+⇒ **THE FIX is the one `ground_calib.collect_road_tracks` already uses: mask to the projected road
+corridor.** The probes in `incoming/2026-09-13-bev-semantic-calib/` do not, and must.
+
+**WHAT SURVIVES, and why.** `overlay_far` gates every candidate line to pass within **0.75 m** of a
+predicted position near the corridor at the seed range — the bank is far outside that window — so
+its numbers (the flat 1.15–1.28 m profile, the crossing row, the render-less yaw scan, and the
+loop closing at +0.00) are **not** implicated. Left-line measurements are largely intact: the
+contamination is on the right of the carriageway. The delivered renders are unaffected; what is in
+doubt is the evidence for `h`, and through it `f`.

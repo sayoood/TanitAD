@@ -1690,3 +1690,53 @@ circularity that killed `lane_residual.py`. The corridor is supposed to follow t
 ⇒ **The decisive input is a tape measure in the car: the horizontal distance from the vehicle's
 centreline to the phone's lens, and which side.** With it the corridor moves by exactly that amount
 and the right-hand clearance becomes a prediction testable against the left line alone.
+
+---
+
+# PART 16 — ⛔ THE PAINT DETECTOR HAS BEEN DETECTING THE ROADSIDE BANK
+
+See `R-2026-09-14-foliage`. `ridge_cols` takes the brightest narrow features in each image row at
+the row's 99th percentile; on this footage the sunlit vegetation and pale rock bank to the RIGHT are
+brighter and more textured than the markings, so the detections land overwhelmingly on the bank.
+Drawn on the image, the fitted "lane pair" sits in the bushes.
+
+**Withdrawn:** the camera height (§50), the horizon's lane-width branch (§51), the lane-width
+variation and ego offsets (§75–76), and everything in this turn's pair search.
+
+**Not implicated:** `overlay_far`, which gates every candidate line to within 0.75 m of a predicted
+position near the corridor — far inside the bank — and therefore the flat 1.15–1.28 m profile, the
+crossing row, the render-less yaw scan and the loop closing at +0.00. Left-line measurements are
+largely intact; the contamination is on the right of the carriageway. The delivered renders are
+unaffected.
+
+## 80. Four warnings, each explained away
+
+| the detector said | I read it as | it meant |
+|---|---|---|
+| right boundary: 55 inliers vs the left's 136 | "the dashed line is sparse" | this is not a line |
+| 94 % of frames fail a parallelism test | "the detector is weak here" | the pair is not a lane |
+| implied lane 6.41 m at 10 m → **18.28 m** at 40 m | "the gate is wrong" | not a lane at all |
+| two detectors agree on the left line in **0 of 260** frames | — | *this* is what made me look |
+
+⇒ **A physically impossible intermediate value halts the chain.** An 18 m lane, a 42 m camera
+height (§65), a 0.82 m camera height (§50) — each was treated as a threshold to tune. Each was the
+measurement saying it was measuring something else.
+
+⇒ **RULE, and it is the cheapest one in this document: before the first statistic, draw the
+detector's INPUT on the image and look.** Not the fit, not the residual — the raw detections. Two
+minutes would have saved a day, and all four warnings above were cheaper to obtain and none of them
+was conclusive.
+
+## 81. The fix, and what has to be redone
+
+`ground_calib.collect_road_tracks` already masks to the projected road corridor. The probes in this
+directory do not. Every one of them needs the same mask, and then:
+
+1. re-measure the lane width, and with it **h** — currently the weakest link in the adopted set;
+2. re-measure the ego's lateral position, which is what decides whether the corridor's placement is
+   a defect or the truth;
+3. re-run the horizon joint fit with a clean lane-width branch.
+
+Until then the adopted calibration stands on: `f·h` from row flow (no paint), the horizon from row
+flow plus the lens constraint, the yaw from `overlay_far`'s gated fit and its render-less scan, and
+the loop closure on the delivered video. **`h` itself is the number now without support.**
