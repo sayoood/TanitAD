@@ -1623,3 +1623,70 @@ rejected last. **No angle error is needed to produce it.**
 ⚠️ The absolute widths inherit the 3.5 m that calibrated `h` on this same corpus, so read them as
 **ratios**: the road varies by **1.25×** between its narrowest and widest, and that variation is
 measured independently of the assumption.
+
+---
+
+# PART 15 — No, not satisfied. And the unmeasured parameter is named.
+
+## 77. ⛔ The lateral PLACEMENT of the corridor is not measurable with this detector
+
+`probes/does_it_cut_paint.py` set out to measure Sayed's actual symptom. It cannot, and the way it
+fails is the result:
+
+| gate on the lane pair | frames kept | "corridor − vehicle" |
+|---|---|---|
+| slope band only (1.6 < \|m_L−m_R\| < 3.2) | 140/300 | **−1.22 m** |
+| + range-constancy of the implied width | **18/300** | **+0.93 m** |
+
+**The answer swung 2.15 m and changed sign on a gate choice. Neither value is a measurement and both
+are withdrawn.** The first gate's own output shows why: it reported a "lane" of **6.41 m at 10 m
+growing to 18.28 m at 40 m**. A lane does not do that — the right-hand line was not a lane boundary,
+and every placement number built on it was nonsense. Adding the correct gate (two road-parallel lines
+converge at the horizon, so the implied width must be range-independent) leaves **18 frames of 300**.
+
+⇒ **On this recording the RIGHT-hand boundary cannot be detected reliably enough to locate the car in
+its lane.** 55 median inliers against the left line's 136; 94 % of frames rejected by a parallelism
+test. Every probe in this document that needed both boundaries — the lane-width height, the ego
+offset, this placement check — inherits that weakness, and only the ones using the LEFT line alone
+are solid.
+
+## 78. What IS solid, and what it implies about the symptom
+
+Measured with the left line alone (reliable), on the delivered render:
+
+    corridor left edge -> left painted line:  1.15 - 1.28 m, FLAT from 10 m to 50 m
+    drift 0.00 m/m; crossing row 447.6 against a horizon of 448.4
+
+For a **1.855 m** ribbon centred in a **3.5 m** lane that gap should be **(3.5 − 1.855)/2 = 0.82 m.**
+It is **1.2 m**, so the corridor sits about **0.38 m right of lane centre**, which puts its right
+edge roughly **3.06 m** from the left line — i.e. **0.2–0.45 m from the right-hand markings**
+depending on the local lane width, which itself varies 3.27–3.66 m across the clip.
+
+**That is the symptom, and the angle is not causing it.** The corridor is parallel to the lane; it is
+sitting too far to one side.
+
+## 79. ⭐ The one parameter never measured — and its sign, now pinned
+
+`--lateral-offset = −0.126 m` (the camera's distance from the vehicle centreline, + = left) is
+**inherited and has never been measured**. It is the only calibration parameter in the set that has
+not been, and it is exactly the one that decides §78.
+
+**Sign convention verified end to end** (single-frame render, corridor edges read at the 20 m row):
+
+| `--lateral-offset` | corridor centre | shift |
+|---|---|---|
+| −0.426 | 764 px | −0.31 m |
+| **−0.126** (shipped) | 788 px | 0.00 m |
+| +0.174 | 810 px | **+0.30 m** |
+| +0.474 | 834 px | **+0.60 m** |
+
+Exactly 1:1 and linear: **a more positive offset moves the corridor right, a more negative one moves
+it left.** So the correction is a single number applied directly.
+
+⛔ **I am NOT setting it to whatever centres the corridor.** That fits the calibration to the
+assumption that the car drives centred — the confound §40 refused, and the same shape as the
+circularity that killed `lane_residual.py`. The corridor is supposed to follow the *car*.
+
+⇒ **The decisive input is a tape measure in the car: the horizontal distance from the vehicle's
+centreline to the phone's lens, and which side.** With it the corridor moves by exactly that amount
+and the right-hand clearance becomes a prediction testable against the left line alone.
