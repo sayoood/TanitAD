@@ -934,3 +934,115 @@ corridor is supposed to follow the *car*, not the lane centre. Only the slope is
 ⚠️ **Lesson, and it is the session's recurring one:** every time a parameter moved, the ones coupled
 to it needed refitting and did not get it. Yaw↔horizon here; earlier f↔h. Fitting them one at a time
 and freezing each is what left a 1° error in a set that every individual test called good.
+
+---
+
+# PART 10 — the instrument that was deciding things could not see the defect
+
+## 48. ⛔ §47's yaw −7.80 is WITHDRAWN. It made the video worse, measurably.
+
+`probes/overlay_far.py` measures the **delivered video**: corridor-left-edge to painted-line
+distance, in metres, at ranges out to the far field. Over 220 frames, straight frames only:
+
+| arm | drift, straight frames | at 40 m | gap 10 m → 50 m |
+|---|---|---|---|
+| `out_caddy`, yaw **−6.80** | **−0.0037 m/m = 0.21°** | 0.15 m | 1.12 → 0.96 m |
+| `out_yaw78`, yaw **−7.80** | −0.0192 m/m = **1.10°** | 0.79 m | 0.99 → **0.16 m** |
+
+Yaw −7.80 walks the corridor onto the left line by ~50 m. That is Sayed's *"the corridor leaves
+the ego lane"*, and it is the arm he was looking at. **§47's table had the sign of the correction
+right and the magnitude wrong because its residual was read through an association window centred
+on a prediction that moves with the parameter under test.**
+
+## 49. ⭐ THE VALIDITY CHECK THAT SHOULD HAVE EXISTED FROM THE START
+
+The two arms differ by **exactly 1.000° of yaw and nothing else**. A camera-yaw error `δ` shifts the
+drawn corridor by `f·δ` px at every row, which is a lateral error of `δ·x` metres at range `x` — so
+**the residual slope IS the yaw error in radians**, and the two arms' slopes MUST differ by
+0.01745 m/m. That is free ground truth, available at any moment, and it grades the instrument:
+
+| instrument | difference recovered | verdict |
+|---|---|---|
+| per-range window nearest the prediction | 0.0038 (**22 %**) | ⛔ absorbed 78 % of a known 1° |
+| `track_line_up` (local tracker) | — | ⛔ random-walks: a relative threshold in a 10 px window ALWAYS returns a candidate, so it never reports a miss (IQR to +9.4 m, slopes of 27°) |
+| **RANSAC line, global threshold, identity gate only** | **0.0155 (89 %)** | ✅ usable |
+
+⇒ **RULE: when an experiment imposes a known change, MEASURE THAT CHANGE BACK before trusting the
+instrument on the unknown one.** Two renders differing by one parameter are a free calibration
+standard, and neither `corridor_vs_lane.py` nor `joint_fit.py` was ever held to it.
+
+## 50. ⭐⭐ CAMERA HEIGHT, MEASURED AT LAST — and it needs no focal length
+
+`probes/lane_width_far.py`. Eliminating range between `u = cx + f(y−lat)/x` and `v = v_h + f·h/x`:
+
+    Delta_y  =  Delta_u · h / (v − v_h)          ← f is GONE
+
+so the lateral metric scale on the ground is `h/(v − v_h)` and nothing else. Then the lane width
+cannot depend on range, and **only the true `v_h` makes it range-independent**; Sayed's 3.5 m turns
+the scale into `h`. This is the same degeneracy that blocked the session, used as a tool.
+
+It only became possible once the far field was reachable — `lane_calib._ridge_points` ramps its
+operator width by **the row's rank in the band it is handed**, not by the paint's apparent width, so
+in a narrow far band it puts `w = 2` where the paint is 7.5 px wide and the operator samples
+entirely *inside* the line. Fixed in `overlay_far.ridge_width_px`.
+
+**The separation histogram is the internal validation, and it was not assumed:**
+
+| Δy/h | n | reading |
+|---|---|---|
+| 0.00–0.25 | 19 | the two edges of one painted line |
+| **2.25–2.50** | **30** | **one lane** |
+| 4.50–5.00 | 32 | two lanes — **exactly 2× the first cluster** |
+
+⚠️ The first pass took the two STRONGEST lines and called them the lane. They are the median edge
+and the right-hand edge — **two** lanes — and calling that 3.5 m returned h = 0.82 m and a 35° HFOV.
+Rescuing the number by reinterpreting the pair afterwards would have been the plausibility-over-
+measurement failure of R-2026-09-13-horizon; the histogram is what makes the reading a measurement.
+
+## 51. The horizon: two zero-trend criteria, fitted together, arbitrated by the lens
+
+`probes/horizon_joint.py`. Both instruments define the horizon the same way — drive a range-trend to
+zero — on physics that share nothing:
+
+| criterion | uses | prefers |
+|---|---|---|
+| row flow `q' = qA/(A−Dq)`, 62,928 pts / 218 pairs | ego motion, **no paint** | **438** |
+| lane width range-independence | paint, **no focal length, no ego motion** | **470** |
+| **joint minimum of both trends** | — | **448** |
+
+and the arbiter is orthogonal to both — **the lens**. 26 mm-equivalent is ≈ 1442 px at 1920 wide and
+EIS can only ever crop *in*:
+
+| solution | h | f | crop |
+|---|---|---|---|
+| flow-only, 438 | 1.637 m | 1622 px | 1.12× |
+| **joint, 448** | **1.586 m** | **1533 px** | **1.06×** |
+| width-only, 470 | 1.468 m | 1345 px | **0.93× — ⛔ IMPOSSIBLE** |
+
+The paint-only horizon is **excluded by the optics**: it would need the recorded image to be wider
+than the lens. This is the third-criterion rule from R-2026-09-13-horizon actually applied.
+
+**ADOPTED:** `horizon 448.4 px · h 1.586 m · f 1533 px (HFOV 64.1°, EIS crop 1.06×) · f·h 2431 px·m`.
+h = 1.586 m sits inside the 1.50–1.80 m the VW Caddy mount allows; crop 1.06× is what a mild video
+EIS does. Against what was being rendered (`f 1666, h 1.622, horizon 485`) the horizon was **37 px
+low** and f·h **11 % high**.
+
+## 52. What is left is VARIANCE, not bias — and one part of it is not an error at all
+
+At yaw −6.80 the *median* frame is already right (drift 0.21°, gap 0.87–0.93 m against an ideal
+0.85 m). The **90th-percentile** frame is off by **0.023 m/m ≈ 1.3° ≈ 0.9 m at 40 m**, on straight
+frames, and that is what "no config satisfies all frames" means.
+
+⚠️ **Part of that spread is the car, not the calibration.** The corridor is the *predicted path*,
+not the lane. A driver drifting 0.3 m/s inside the lane genuinely puts the path 0.4 m closer to the
+line at 40 m — a 0.01 m/m "drift" that is the overlay being CORRECT. Any further optimisation that
+drives the per-frame spread to zero would be fitting the calibration to the driver's line.
+
+**Not measured:** how much of the remaining spread is EIS. `probes/road_vp.py` was written to answer
+it (per-frame vanishing point from road-parallel segments; its pooling argument is sound — every
+road-parallel line passes through `cx + f·tanθ` at `v = v_h` regardless of lateral position) but it
+**did not complete** — 35 min without output, HoughLinesP on dilated ridge masks is too slow. It is
+banked unrun. The MP4 carries **no optical metadata** (`ffprobe`: no focal, no lens, only
+`com.android.version=16`), and SensorLogger records through Camera2, so whether the Samsung camera
+app's stabilisation setting reaches this capture is **not established from the file** — the 1.06×
+crop implied by the joint fit is the only evidence, and it is indirect.

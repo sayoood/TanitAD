@@ -3200,3 +3200,38 @@ Defaults inherit the evidence class of whatever set them — here, a retracted o
 probe answering a question next to the one asked. A vanishing point measures where lane lines
 converge; the horizon is where the GROUND PLANE vanishes, and on a crowned, curving road those are
 not the same row.
+
+---
+
+## R-2026-09-14-onvideo — the on-video overlay check was measuring the wrong 10 metres
+
+**WITHDRAWN:** *"the joint fit is measurably worse on the actual video — left gap 21 px vs 49 px at
+row 420, covering a line 4 %/3 %/2 % against 1 %/0 %/0 %"*, and with it the decision **not to ship
+the joint fit**. The comparison is void; both arms have to be re-measured.
+
+**What the probe actually did** (`/tmp/overlap.py`, now superseded by
+`probes/overlay_far.py`), three independent defects, all in the same direction:
+
+| # | defect | measured consequence |
+|---|---|---|
+| 1 | assumed the camera panel was **1178 px** wide | `compose_panels` resizes 1920×1080 to height 720, so the panel is **1280 px** (scale exactly 2/3) and the BEV starts at column 1280 — CONFIRMED here, first near-white column = 1280 on both renders. **153 source columns were cut off the right edge**, so every RIGHT-hand gap it printed was measured against a truncated image. |
+| 2 | sampled **fixed composite rows 420–660** | with `f·h = 2703`, horizon 485 those rows are source rows 630–990, i.e. ranges **4.8 m to 14.2 m**. Sayed's complaint is *"cuts road markings at LARGE distances"*. **The probe never looked past 14 m.** |
+| 3 | required **≥ 25 green pixels** in the row | the fill ramps green→amber with time (`col = (60+40f, 230−60f, 40+200f)` BGR), so beyond a few seconds G < R and the fill is not green at all — only the two edge polylines, drawn opaque at `(200,255,200)`, stay green, and they contribute ~4–8 px. The far rows were **silently skipped**, which is why defect 2 was invisible. |
+
+**ROOT-CAUSE CLASS — C-SCOPE (a probe answering a different question than the one asked),** the same
+family as `df` on pod disk, Thor's `free`/`tegrastats`, cgroup `usage_in_bytes`, and the Google-Drive
+404 classifier. Every one of those returned a confident number for a question next to the real one.
+Here the question was *"does the corridor cut the paint far away?"* and the instrument answered
+*"how close is the corridor to the paint between 5 and 14 metres?"*
+
+**The aggravating factor, and the actual lesson.** This probe was not a measurement I was curious
+about — **it was the arbiter I used to reject a fitted calibration.** It was written in one pass, run
+once, and given decision authority immediately.
+
+⇒ **RULE: an instrument that will DECIDE something gets a validity check before its first verdict,
+not after a surprising one.** The cheap check here was three lines — print the RANGE of every row it
+samples. It would have shown 4.8–14.2 m instantly.
+⇒ **RULE: when a probe reads an image a renderer produced, the panel geometry is a MEASUREMENT, not
+an assumption.** One `colmean` scan settled it.
+⇒ **Corollary to "verify before alarming": also verify before REJECTING.** The cost of this one was
+a fitted calibration discarded on a metric that could not see the defect it was fitted against.

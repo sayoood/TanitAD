@@ -22,3 +22,20 @@ promoting them would invite them to be re-run as if they were instruments.
 
 Run them with `PYTHONPATH=<stack>/tanitad/data` and the `trajlib` alias registered — see the
 header of any one of them.
+
+## Part 10 — the on-video instruments (2026-09-14)
+
+| script | question | result |
+|---|---|---|
+| `overlay_far.py` | on the DELIVERED video, how far is the corridor from the paint, in metres, out to the far field? | yaw −6.80 drift **0.21°**; yaw −7.80 drift **1.10°** (0.79 m at 40 m) ⇒ §47's refit WITHDRAWN |
+| `lane_width_far.py` | camera height and horizon from lane width alone — **no focal length** | h = 1.586 m at the adopted horizon; separation histogram shows a 1-lane cluster and a 2-lane cluster at exactly 2× |
+| `horizon_joint.py` | the flow horizon (438) and the paint horizon (470) disagree — settle it | joint zero **448**, and the LENS excludes the paint-only answer (it needs crop 0.93×) |
+| `road_vp.py` | per-frame vanishing point ⇒ how much is EIS? | ⛔ **DID NOT COMPLETE** — 35 min, no output; HoughLinesP on dilated ridge masks is too slow. Banked unrun; the pooling argument in its docstring is still worth keeping. |
+| `joint_fit.py` | joint (f·h, horizon, yaw, lateral) against the paint | ⛔ measured WORSE on the video; its objective uses the prediction-centred window that §49 grades at 22 % |
+
+⛔ **Three association designs failed in this directory and all three are kept in
+`overlay_far.py` with their measurements**, because each looked correct when written:
+a per-range window centred on the prediction (absorbs 78 % of a known 1°), a local
+tracker with a relative threshold (always finds a candidate, never reports a miss,
+random-walks), and the working one (RANSAC line, global threshold, prediction used
+ONCE as an identity gate — recovers 89 % of a known 1°).
