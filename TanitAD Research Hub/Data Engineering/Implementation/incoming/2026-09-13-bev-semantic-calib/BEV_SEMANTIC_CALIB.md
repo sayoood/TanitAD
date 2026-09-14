@@ -1494,3 +1494,65 @@ needs an honest noise floor — two *independent full-span* estimates of the sam
 (e.g. left line vs right line, or alternating RANSAC seeds on disjoint point subsets over the whole
 span). If the floor turns out to be ~0.5°, most of the "residual" is my ruler and the overlay is
 already better than the numbers I have been quoting.
+
+## 74. ⭐ THE NOISE FLOOR — 0.088°, and the hopeful reading is refuted
+
+`probes/noise_floor.py`, 628 frames of the longest straight run, span 10–40 m, **no continuity
+gate** (the delivered metric's gate constrains each frame toward the previous one and would drive
+the floor artificially low).
+
+**The structure function** `D(τ) = rms[θ(t+τ) − θ(t)]`. Independent per-frame noise contributes a
+constant `√2·N` at *every* lag; anything real must grow from zero, because nothing moves in 33 ms.
+
+| lag | 0.033 | 0.067 | 0.10 | 0.20 | 0.33 | 0.50 | 1.0 | 1.5 | 2.0 | 3.0 s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| D(τ)° | 0.125 | 0.138 | 0.166 | 0.226 | 0.294 | 0.425 | 0.791 | 1.177 | 1.395 | 1.950 |
+
+A clean floor that grows monotonically and saturates near 3 s.
+
+    NOISE FLOOR   N = 0.088 deg  = 0.06 m at 40 m  = 0.0015 m/m
+    REAL          S = 1.376 deg  = 0.96 m at 40 m
+
+⇒ **The residual is real.** `overlay_far`'s 90th-percentile |slope| of 0.039 m/m is **25× the
+floor**. The hopeful possibility I raised — *"if the floor is ~0.5°, most of the residual is my
+ruler"* — is **refuted**.
+
+⇒ **§73 over-corrected §68 and is itself corrected here.** §68's odd/even estimate was 0.063°; the
+true floor is 0.088°, a factor of 1.4 away, not the factor of 30 that §73's disjoint-band figure
+implied. The ~2° from short bands never transferred to the full span — a badly conditioned fit is
+not a noise floor for a well conditioned one.
+
+### ⛔ Estimator A (left line vs right line) is NOT a noise estimate here
+
+It returned N = 1.827°, and the structure function refutes it in one line: **if per-frame noise were
+1.8°, consecutive frames would differ by √2·1.8 = 2.6°. They differ by 0.125°.** The left-right
+disagreement is systematic, not per-frame — the right boundary carries 55 median inliers against the
+left's 136 and is frequently not the lane edge at all.
+
+⭐ **Its median part is a measurement, though, of something else.** With
+`θ = atan((m·v_h + b − cx)/f)`, `dθ/dv_h = m/f`, and the two boundaries have **opposite** slopes, so
+a horizon error moves them in opposite directions. With `m_L − m_R = −3.5/h`, the measured offset of
+**+1.125°** implies `Δv_h = −13.6 px`, i.e. **horizon 434.8** rather than the adopted 448.4 — and
+row flow alone preferred **438**. Two independent routes now sit at 435–438 while lane-width
+range-constancy sits at 470 and the joint fit at 448. *(Flagged, not acted on: the right-boundary
+contamination that kills A as a noise estimate also weakens it as a horizon estimate, and the lens
+constraint admits the whole 435–458 range.)*
+
+### What the timescale says
+
+`D(τ)` half-saturates around **1 s** and saturates by **3 s**. That is not camera shake; it is the
+timescale of driver lane-keeping and of gentle road curvature. Together with §72 (camera common-mode
+≤ 0.25°), the source of the residual is the **vehicle and/or the trajectory**, not the camera and
+not the instrument.
+
+⚠️ **And the reframing that follows.** θ varying over seconds is not by itself an overlay error — the
+road curves and the car moves, and the corridor is *supposed* to follow the car. The open question
+is sharper than "how big is the residual":
+
+> **Does the corridor's predicted deviation actually come true?** When the corridor says at time `t`
+> that the car will be 1 m left of lane centre in 2 s, is the car measurably there at `t+2 s`?
+
+The lateral-position probe answers it with **no calibration in it at all** —
+`offset = 1.75·(m_L + m_R)/|m_L − m_R|`, in which `h` cancels. If the prediction verifies, the
+overlay is right and the rejected frames are correct. If it does not, the trajectory's heading is
+the defect. **That is Step 3, and it is now a one-experiment question.**
