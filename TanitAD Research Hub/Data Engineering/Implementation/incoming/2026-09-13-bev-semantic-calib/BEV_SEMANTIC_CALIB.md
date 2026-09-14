@@ -833,3 +833,62 @@ invocation emitted **1.622**, because `scale_calib.solve` recomputed the height 
 
 The delivered Caddy video was rendered at 1.622 rather than 1.600 — a 1.4 % difference, inside the
 ±0.15 m the height is uncertain by anyway, so it was not re-rendered.
+
+---
+
+# PART 9 — SYNC, AND WHY THE CORRIDOR CUTS MARKINGS AT RANGE (Sayed, 2026-09-14)
+
+*"Did you look also at the synchronization between frame and ego data? … the overlay corridor cuts
+road markings at large distances."*
+
+## 45. Sync: looked at three times, never confirmed — and now the reason is known
+
+| attempt | result |
+|---|---|
+| `scan_time_offset.py` — BEV agreement vs a pose offset | **FLAT**, max/min 1.05×. Refused. |
+| image yaw rate vs the raw gyro | no distinct peak; best \|r\| 0.312 at +4.40 s vs the pipeline's +3.30 s, r **negative** at the pipeline's own lag |
+| `eis_vs_gyro.py` | all \|r\| < 0.04 — the "distant" rows held near hillside, so translation dominated |
+| **`sync_yawrate.py`** (new) — image rotation vs the *trajectory*, central columns only | **cannot resolve it, and says why** |
+
+Raw, it produced a textbook false positive: r ramping monotonically from −0.284 at −0.97 s to
+−0.587 at +0.97 s, **still rising at the search bound** (peak/p95 = 1.01×). That is the
+boundary-running pathology from Part 2 in a third costume, and the probe now carries a guard that
+refuses it.
+
+Band-passed (both series share the road's overall curvature, and a shared trend correlates at
+*every* lag), the correlation goes **flat**: peak \|r\| 0.237, peak/p95 **1.06×**. The reason is
+visible in the numbers — after removing the trend the trajectory's yaw rate rms is only
+**0.190 °/s**. **The trajectory is too smooth to time-align against.** No method can resolve the
+sync from this channel on this clip; the signal is not there.
+
+What the pipeline says about its own sync: `t_video_start = 3.3043 s`, source
+*"gyro-xcorr (bands agree to 2 ms)"*, `sync_score 0.47`.
+
+## 46. ⭐ But sync is not needed to explain it — the trajectory's heading error already does
+
+The corridor follows the **future path**, so a heading error rotates it about the car and the
+lateral error **grows linearly with range**. From the pipeline's own hold-out validation on this
+recording (n = 82 folds, each holding out every 5th GNSS fix ≈ a 5 s outage):
+
+```
+heading   mean 0.43   rms 0.53   p95 0.97   max 1.00  deg
+position  mean 0.59   rms 0.70   p95 1.36   max 1.71  m
+```
+
+Corridor half-width 0.90 m inside a 1.75 m half-lane leaves **0.85 m of margin** each side:
+
+| range | rms 0.53° | p95 0.97° | verdict |
+|---|---|---|---|
+| 10 m | 0.09 m | 0.17 m | clear |
+| 20 m | 0.19 m | 0.34 m | clear |
+| 30 m | 0.28 m | 0.51 m | clear |
+| **40 m** | **0.37 m** | **0.68 m** | touching the line |
+| **50 m** | **0.46 m** | **0.85 m** | margin fully consumed |
+
+⇒ **Beyond ~30 m the p95 heading error alone eats the margin.** Fine near, cutting markings far,
+growing with distance — exactly the reported symptom, with no calibration or timing error required.
+
+⚠️ This is an **ego-trajectory accuracy limit, not a calibration one.** No further work on `f`, `h`,
+the horizon or the yaw will move it. It is bounded by GNSS/IMU heading over a 1–2 s horizon, and the
+levers are better heading (RTK, or fusing the image), or drawing the corridor shorter than ~30 m and
+saying why.
