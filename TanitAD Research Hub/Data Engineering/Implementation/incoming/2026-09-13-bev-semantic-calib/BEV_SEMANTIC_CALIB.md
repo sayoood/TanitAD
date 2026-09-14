@@ -1046,3 +1046,23 @@ banked unrun. The MP4 carries **no optical metadata** (`ffprobe`: no focal, no l
 `com.android.version=16`), and SensorLogger records through Camera2, so whether the Samsung camera
 app's stabilisation setting reaches this capture is **not established from the file** — the 1.06×
 crop implied by the joint fit is the only evidence, and it is indirect.
+
+## 53. A second defect in the same function, found and NOT fixed — on purpose
+
+`lane_calib.estimate` reads its ridge points from rows **0.55–0.86 H** and then keeps
+back-projected points with **X ∈ (7, 40) m**. With the adopted calibration those rows are::
+
+    row 594 (0.55 H) -> q = 145.6 -> x = 2431/145.6 = 16.7 m
+    row 928 (0.86 H) -> q = 479.6 -> x =  5.1 m
+
+**The band tops out at 16.7 m. The filter asks for 40 m. The upper 58 % of the requested range
+does not exist in the input** — the yaw fit has never seen it on this recording, and the width
+schedule fix cannot conjure rows that are not read.
+
+The physical band would be `r0 = v_h + f·h/40`, i.e. row **509** here. I have **not** made that
+change. It alters behaviour on every recording, the regression that would catch a mistake is a
+full pipeline re-run per corpus, and this container cannot run `pytest -q` at all (125 collection
+errors, every one `No module named torch`). Changing a band I cannot regression-test, in the same
+commit as a fix I can, is how a good change and a bad one become indistinguishable later.
+
+⇒ Banked as a work item with its measurement, not as a silent edit.
