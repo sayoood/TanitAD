@@ -1,0 +1,8 @@
+PRE-REGISTERED 2026-09-14T10:53:44Z before any day-clip run of this rule.
+Rule rs2 = map r (compose.py LINE_EDGE_GAP=1 LINE_MIN_LEN_M=1.0 WLK_ISLAND_M2=3 EDGE_OBS=near XWALK=dirclose XWALK_LEN=11) + XWALK_SOFT=0.15,0.6
+(road cells whose UNTRIMMED stripe weight is >= 0.15 of their road weight and whose mean top-hat / layer threshold is >= 0.6 become crosswalk).
+The setting was chosen on the NIGHT clip out of three (0.15/0.8, 0.15/0.6, 0.30/0.6): night bar share 0.087 -> 0.122, bar/gap 1.517 -> 1.535.
+The night clip is therefore tuned; the DAY clip is the test.
+rs2 WORKS on the day clip (all 7 cameras) if: crosswalk bar share of crossing pixels >= 0.068 (1.3 x map r 0.052) AND bar/gap image top-hat >= 2.337
+(map r 2.387 - 0.05) AND noise fragments <= 32.8 per 1000 m2 (map r 27.8 + 5) AND LiDAR curb recall >= 0.769 (map r 0.789 - 0.02).
+Night (tuned) must also keep fragments <= 30.4 and curb recall >= 0.782. Anything else is a FAIL.

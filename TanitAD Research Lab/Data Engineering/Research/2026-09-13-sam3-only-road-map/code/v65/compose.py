@@ -31,6 +31,10 @@ past. The stripes of the crosswalk are also not well enough separated"):
                        bins; each bin closes the stripe mask with a line element of XWALK_LEN cells at that angle; closed cells
                        inside the crossing and on road become crosswalk. MEASURED first: the fitted periodic bars (fft /
                        fft_tiles) looked clean but did not sit on the paint (bar/gap 1.07 / 1.12 night, 0.95 / 1.31 day).
+  XWALK_SOFT=s,t       extra crosswalk cells from the UNTRIMMED stripe votes: a road cell whose untrimmed stripe weight is >= s of its
+                       road weight AND whose mean top-hat / layer threshold over all its observations is >= t becomes crosswalk
+                       (before XWALK); MEASURED motivation: each layer trims stripe cells to its road 95th-percentile top-hat, and
+                       faint night stripes rarely pass, so the delivered stripes cover 5-9 % of the crossing pixels.
 Usage: compose.py <fields render dir> <out render dir>   (options by environment)"""
 import json, os, sys
 from pathlib import Path
@@ -79,6 +83,12 @@ if WLK_ISLAND_M2 > 0:
             dsub = drv[i0:i1, j0:j1]; dsub[comp] = True
             conv += int(comp.sum())
     stats["cells_sidewalk_islands_to_road"] = conv
+if os.environ.get("XWALK_SOFT"):
+    s_share, s_ratio = [float(v) for v in os.environ["XWALK_SOFT"].split(",")]
+    ratio_ = F["vth"].astype(np.float32) / (F["vobs"].astype(np.float32) + 1e-6)
+    soft = drv & (F["vraw3"].astype(np.float32) >= s_share * dw) & (ratio_ >= s_ratio) & (out == 1)
+    out[soft] = 3
+    stats["xwalk_soft_cells_added"] = int(soft.sum())
 S_votes = (out == 3).copy()
 if XWALK in ("image", "image_shape"):
     E = F["vth"].astype(np.float32) / (F["vobs"].astype(np.float32) + 1e-6)

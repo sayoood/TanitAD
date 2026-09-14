@@ -684,3 +684,35 @@ read high, bars on asphalt read ~1.0. Full table: `raw/v65r/xwalk_contrast_all_v
 
 **Delivered: map r** (videos `reproj2_v65r_*.mp4` on Thor). Open, with numbers: stripe coverage 5–9 % of the crossing pixels; the
 hatched area under the SUV stays largely unseen; front-only night curb recall −0.075.
+
+---
+
+## 18. Crosswalk stripes from zoomed SAM3 crops, softer trimming, one keyframe — three pre-registered arms, three FAILs (2026-09-14)
+
+**PI, on the zoom test at night frame 84:** *"84 und zoom crop seem to be good, are we taking these?"* — they were not in the map
+(a three-frame test). Three levers followed, each with bars written before its run and read against map r (§17) with the same
+single-image check (`xwalk_reproj_contrast.py`: image white top-hat on bar pixels / on gap pixels of the same crossing, every 2nd
+frame, front and cross cameras) plus the PI checks. Evidence class MEASURED (Thor); raw in `raw/v6sz/`.
+
+| arm (all 7 cameras) | pre-registered bar | night: bar/gap · bar share | day: bar/gap · bar share | verdict |
+|---|---|---|---|---|
+| map r (delivered, §17) | — | 1.517 · 0.087 | 2.387 · 0.052 | reference |
+| **zoomed SAM3 crops** — full-image masks OR crops around every crossing ≤ 20 m (`sam3map_xwalk_stripes_zoom.py`, 853 / 798 crops), full pipeline re-run | both clips: share ≥ 1.3× r, bar/gap ≥ r − 0.05, fragments ≤ r + 5, curb recall ≥ r − 0.02 | 1.537 · **0.091** | 2.351 · **0.062** | **FAIL** (share, both clips) |
+| **softer trimming** — untrimmed stripe votes ≥ 0.15 of road weight with mean top-hat / threshold ≥ 0.6 (setting chosen on the night clip out of three) | day clip (the test): same four bars | 1.535 · 0.122 (tuned) | **2.310** · 0.073 | **FAIL** (day bar/gap < 2.337) |
+| **one keyframe per crossing** — stripes from the frame / camera with the most stripe points 4–12 m, no fusion (`xwalk_keyframe.py`) | both clips: bar/gap ≥ r − 0.05 AND share ≥ 1.3× r | **1.451 · 0.033** | **1.901 · 0.040** | **FAIL** (both, both clips) |
+
+Noise fragments and LiDAR curb recall stayed inside their bars for the zoomed and softer arms (night 25.4 / 28.3, curb 0.802; day
+29.9 / 26.5, curb 0.789).
+
+**What the three failures say together.**
+* Zoomed crops add **3.7 % (night) / 5.2 % (day) stripe pixels over the whole clip** — the +24 % of frame 84 does not generalise:
+  near views already resolve the bars, and at night far crossings show nothing to find.
+* Softer trimming raises coverage 40 % but by day puts more stripe cells on asphalt than the bar allowed.
+* ⭐ **The keyframe arm localises the defect.** Bars taken from ONE frame land clearly off the paint in the other frames (day bar/gap
+  2.387 → 1.901): frames and cameras disagree on the ground position of the same bar by a sizeable fraction of a 0.5 m stripe.
+  Fusion averages that disagreement and blurs neighbouring bars into bands. ⇒ **the stripe separation the PI asks for is
+  limited by cross-frame / cross-camera registration, not by SAM3's masks or by the fusion rule** — the lever is
+  H-SAM3-CALIB-1 (relative calibration and pose timing), which one clip could not identify.
+
+Map r stays delivered; the softer-trimming videos (`reproj2_v65rs2_*.mp4`, Thor) are offered to the PI as a visual trade-off
+(night better on both measures, day about 3 % more stripe cells on asphalt), not as a pass.

@@ -11670,3 +11670,11 @@ Same package, same 34 test clips / 7,928,485 cells, one panel with the pre-regis
 | **H-SAM3-STRIPE-FIT-1** | Crosswalk stripes can be regularised into clean bars by fitting the zebra's periodic pattern (or by image evidence, near-only paint votes) from the multi-view fields. MEASURED against single images (bar/gap white top-hat on identical crossing pixels): periodic fits 1.07 / 1.12 night and 0.95 / 1.31 day vs the delivered 1.54 / 2.41 — clean-looking bars off the paint; image-evidence stripes on paint but mostly non-bar shapes; near-only votes worse; SAM3 at 2× zoom +~24 % stripe pixels at 5–12 m only. Only an along-stripe join (+23–33 % bars, contrast unchanged) is adopted. | **REFUTED** (the regularisation) / stripe coverage **OPEN** | same package §17; `raw/v65r/xwalk_contrast_all_variants.txt`, `raw/v65r/stripe_probes_output.txt` |
 
 <!-- SAM3-MAP-V65C-2026-09-14 -->
+
+| ID | claim | status | evidence |
+|---|---|---|---|
+| **H-SAM3-STRIPE-ZOOM-1** | SAM3 "crosswalk stripe" on zoomed crops around each crossing (≤ 20 m) widens the map's stripes: pre-registered on both clips (share ≥ 1.3× map r, bar/gap ≥ r − 0.05, fragments ≤ r + 5, curb ≥ r − 0.02). MEASURED: +3.7 % / +5.2 % stripe pixels over the clips, bar share 0.087 → 0.091 night, 0.052 → 0.062 day. | **REFUTED** (FAIL on share, both clips) | `TanitAD Research Lab/Data Engineering/Research/2026-09-13-sam3-only-road-map/RESULT.md` §18; `raw/v6sz/` |
+| **H-SAM3-STRIPE-SOFT-1** | Softer stripe trimming (untrimmed votes ≥ 0.15, mean top-hat / threshold ≥ 0.6; tuned on night) keeps stripes on the paint by day: day bar share 0.052 → 0.073 but bar/gap 2.387 → 2.310 < pre-registered 2.337. | **REFUTED** (day test FAIL) | same package §18 |
+| **D-SAM3-STRIPE-REGISTRATION-1** | Stripes from a single keyframe per crossing land off the paint in the other frames (bar/gap 1.451 night, 1.901 day vs fused 1.517 / 2.387; pre-registered arm FAILS both bars on both clips): cross-frame / cross-camera ground registration errors are a sizeable fraction of a 0.5 m zebra bar, so stripe separation is limited by registration, not by SAM3 masks or the fusion rule. Next lever: H-SAM3-CALIB-1. | **DECIDED** (MEASURED, 2 clips; the keyframe hypothesis REFUTED) | same package §18; `raw/v6sz/keyframe_contrast_output.txt` |
+
+<!-- SAM3-MAP-V6SZ-2026-09-14 -->
