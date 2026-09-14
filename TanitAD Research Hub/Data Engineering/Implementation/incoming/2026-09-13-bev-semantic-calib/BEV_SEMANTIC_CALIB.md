@@ -1556,3 +1556,70 @@ The lateral-position probe answers it with **no calibration in it at all** —
 `offset = 1.75·(m_L + m_R)/|m_L − m_R|`, in which `h` cancels. If the prediction verifies, the
 overlay is right and the rejected frames are correct. If it does not, the trajectory's heading is
 the defect. **That is Step 3, and it is now a one-experiment question.**
+
+---
+
+# PART 14 — STEP 3: the angle is partly real driving, and the rest is MY ruler
+
+## 75. Does the predicted deviation come true? Partly — and the lag structure says which part
+
+`probes/does_it_come_true.py`, 595 frames of the longest straight run with a valid single-lane pair.
+Both inputs come from the paint and **neither needs a calibration**: `ψ_rel = θ_L − median(θ_L)`
+(the median removes the mount yaw — it came out **−5.38°** against the adopted −5.35, measured not
+assumed) and `L = 1.75·(m_L + m_R)/|m_L − m_R|`, in which `h` cancels.
+
+| lag | pairs | predicted rms | measured rms | slope | corr | skill |
+|---|---|---|---|---|---|---|
+| 0.25 s | 547 | 0.102 m | 0.345 m | 0.28 | 0.083 | 0.01 |
+| 0.50 s | 477 | 0.206 m | 0.376 m | 0.21 | 0.117 | 0.01 |
+| 1.00 s | 477 | 0.427 m | 0.387 m | 0.19 | 0.206 | 0.04 |
+| 1.50 s | 466 | 0.642 m | 0.432 m | 0.24 | 0.363 | 0.13 |
+| 2.00 s | 459 | 0.884 m | 0.470 m | 0.19 | 0.358 | 0.13 |
+| 3.00 s | 436 | 1.350 m | 0.497 m | 0.16 | 0.426 | 0.18 |
+
+Neither pre-registered extreme. **The correlation GROWS with lag, 0.08 → 0.43** — which is the
+committed signature of *real heading*: a shared per-frame fit artefact would be largest at the
+shortest lag and fade, and this does the opposite. So the angle carries genuine vehicle heading.
+
+**But the slope is 0.16–0.28, not 1.** Regression dilution reads that directly: `slope =
+var(true)/var(measured)`, so **only ~19 % of ψ_rel's variance predicts where the car actually goes.**
+With ψ_rel at 1.19° rms that is **≥ 0.52° of real heading and ≤ 1.07° of error** (a lower bound on
+the real part, since a driver who corrects realises less than the full heading).
+
+⭐ **And the error is MINE, not the overlay's.** `ψ_rel` is measured purely from the paint — the
+trajectory never enters it. So the ~1.07° that fails to predict the car's motion is error in my
+**image measurement of the lane angle**: line identification wandering, paint irregularity, camber.
+The residual metric is built on that same lane angle, so **it inherits ~1.07° of my own ruler**.
+
+⇒ **This reconciles §74 with §73.** The structure function's 0.088° floor is the *fast* noise only;
+lane-fit error that drifts over ~1 s is invisible at a 33 ms lag and is an order of magnitude larger.
+**The per-frame "residual" I have been quoting is dominated by my lane measurement, not by the
+overlay.** The MEDIAN statistics — which ranked the arms, closed the yaw loop at +0.00, and gave the
+flat 1.15–1.28 m profile — average this down and are unaffected.
+
+## 76. ⭐ And this explains the rejected frames without any error at all
+
+The corridor is drawn 1.855 m wide around the car's path. Two things measured across the whole clip
+(426 frames, both from the paint):
+
+| time | lane width | ego offset from lane centre |
+|---|---|---|
+| 13–22 s | 3.66 m | −0.54 m |
+| 22–41 s | 3.58–3.63 m | −0.36 m |
+| **41–50 s** | **3.27 m** | **−0.73 m** |
+| 50–59 s | 3.41 m | **−0.90 m** |
+| 59–68 s | 3.42 m | −0.66 m |
+
+**The road narrows to 3.27 m and the driver sits up to 0.90 m off centre.** Clearance on the tight
+side for a 1.855 m ribbon at the median 0.48 m offset:
+
+    lane 3.5 m -> +0.34 m      lane 3.2 m -> +0.19 m
+    lane 3.0 m -> +0.09 m      lane 2.8 m -> -0.01 m
+
+**29 % of frames read narrower than 3.2 m.** In those, a geometrically correct corridor has ~0.1–0.2 m
+of clearance and *looks* as though it is on the line or the kerb — which is exactly the frame Sayed
+rejected last. **No angle error is needed to produce it.**
+
+⚠️ The absolute widths inherit the 3.5 m that calibrated `h` on this same corpus, so read them as
+**ratios**: the road varies by **1.25×** between its narrowest and widest, and that variation is
+measured independently of the assumption.
