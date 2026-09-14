@@ -3235,3 +3235,34 @@ samples. It would have shown 4.8–14.2 m instantly.
 an assumption.** One `colmean` scan settled it.
 ⇒ **Corollary to "verify before alarming": also verify before REJECTING.** The cost of this one was
 a fitted calibration discarded on a metric that could not see the defect it was fitted against.
+
+---
+
+## R-2026-09-14-yaw — every mount yaw used on this recording was ~1.3° too negative
+
+**WITHDRAWN:** `−7.01` (lane VP), `−6.80`, `−6.59`, `−7.80`, `−8.52` — every yaw rendered or
+proposed for `2026-08-08_14-19-54-android`. **MEASURED: −5.30°**, robust sd 1.01° over 54 straight
+frames, from the paint alone: the left lane line's column **at the horizon row** is `cx + f·tan(yaw)`,
+because the `y/h` term vanishes exactly at `v = v_h`. No trajectory, no ego motion, no flow.
+
+Corroborated independently by a render-less yaw scan on **three separately rendered videos**
+(rendered at −6.59, −6.80, −7.80): **−5.34 / −5.30 / −5.55**, spread 0.25°.
+
+**ROOT-CAUSE CLASS — C-COUPLED (a parameter fitted through a wrong coupled parameter, then frozen).**
+Not one of these yaws was independently wrong. Every one was the correct answer *to the question
+asked*, and the question contained a horizon that was 37–75 px too low. `yaw = atan((u(v_h) − cx)/f)`
+is a function of `v_h`; a 37 px horizon error moves it by about 1.1°. The session then spent hours
+refitting yaw — including a refit that made the video measurably worse — while the parameter that
+was actually wrong sat frozen upstream.
+
+⇒ **RULE: before refitting a parameter that keeps coming out wrong, write down what it is a function
+of and check THOSE first.** The symptom appears in the dependent parameter and the defect lives in
+the independent one. Three refits of yaw all moved the wrong dial.
+⇒ **RULE: a parameter is only "measured" together with the parameters it was measured through.**
+`−7.01 at horizon 523.4` and `−7.01` are different claims, and only the first one is true.
+⇒ **Corollary that actually broke the deadlock:** the escape from a coupled chain is an estimator
+that CANCELS the coupling algebraically, not a better optimiser. Two were found, both by eliminating
+range between the two projection equations: `Δy = Δu·h/(v − v_h)` (no focal length) and
+`du/dv = y/h` (no focal length AND no horizon). The second measured the camera height —
+**1.573 m [1.511, 1.628]** — which nothing had managed in the entire session, and it then confirmed
+the horizon from outside the chain that produced it.

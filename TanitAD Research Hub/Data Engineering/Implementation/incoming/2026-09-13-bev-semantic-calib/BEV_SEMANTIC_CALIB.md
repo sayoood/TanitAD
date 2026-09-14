@@ -1066,3 +1066,86 @@ errors, every one `No module named torch`). Changing a band I cannot regression-
 commit as a fix I can, is how a good change and a bad one become indistinguishable later.
 
 ⇒ Banked as a work item with its measurement, not as a silent edit.
+
+---
+
+# PART 11 — the yaw was never the parameter that was wrong first
+
+## 54. ⭐⭐ CAMERA HEIGHT AGAIN, WITH NO HORIZON IN IT AT ALL
+
+§50 measured `h` by holding the lane width range-independent, which needs `v_h`. There is a
+**stronger form of the same algebra that needs nothing**. For any road-parallel line,
+
+    u = cx + f·tanθ + y·(v − v_h)/h      ⇒      du/dv = y/h
+
+so the image SLOPE of a lane boundary is `y/h`, and the **difference of the two boundaries'
+slopes is 3.5/h — with no horizon, no focal length and no ego motion anywhere in it.**
+
+    MEASURED, 125 adjacent line pairs from straight frames:
+        median |slope difference| = 2.2247
+        h = 3.5 / 2.2247 = 1.573 m     frame-cluster bootstrap 95% CI [1.511, 1.628]
+
+⚠️ Weaker than §50's histogram in one respect and it must be said: the slope-difference
+histogram does **not** show the crisp 1-lane / 2-lane pair of clusters that the width histogram
+does, so the 1.6–3.2 single-lane band here is a **prior, not a read-off**.
+
+What makes it decisive is the agreement. §50 gives h = 1.586 m **through** the horizon; this gives
+1.573 m [1.511, 1.628] **without** it. Inverting: h = 1.573 requires `r(v_h) = 3.5/1.573 = 2.225`,
+and the measured `r` curve reaches that at **v_h ≈ 451** — against the joint fit's **448**.
+
+⇒ **Horizon 448, h 1.58, f 1533 is now confirmed by a route that shares no parameter with the
+route that produced it.** It also kills the remaining candidates: h = 1.427 (withdrawn earlier as
+circular) and h = 1.468 (the paint-only horizon) are both outside the CI.
+
+## 55. ⛔ EVERY YAW USED THIS SESSION WAS ~1.3° TOO NEGATIVE
+
+With the horizon settled, the yaw can be read straight off the paint. The left lane line's column
+**at the horizon row** is `cx + f·tan(yaw)`, because at `v = v_h` the `y/h` term vanishes — so that
+one number is the angle between the camera axis and the lane, and on straight road that is the
+mount yaw. **No trajectory, no ego motion, no flow.**
+
+    MEASURED over 54 straight frames:   yaw = −5.30°,  robust sd 1.01°,  10–90% [−7.05, −3.91]
+
+Against everything that was rendered: **−7.01, −6.80, −6.59, −7.80, −8.52.** All too negative,
+because they were all fitted through a horizon that was 37–75 px too low.
+
+## 56. ⭐ A YAW SCAN THAT NEEDS NO RENDER, AND THE CHECK IT PASSES
+
+A yaw change `δ` displaces the drawn corridor by `f·δ` px at **every** row — its image line moves
+in intercept only. So once the corridor's edge line and the lane line are fitted in a delivered
+video, **every candidate yaw can be scored on the frames already in hand.** The objective is not
+"fewest crossings" (over-rotating the other way maximises that); it is that the two lines should
+**meet AT the horizon**, which is what parallel-on-the-ground means.
+
+| video rendered at | scan's answer | median crossing row at the answer |
+|---|---|---|
+| −6.59 | **−5.34°** | 449.1 vs horizon 448 |
+| −6.80 | **−5.30°** | 446.2 |
+| −7.80 | **−5.55°** | 448.1 |
+
+Three different images, spread 0.25°. And against the paint-only reading of §55, **−5.30 vs −5.34
+— 0.04° apart.**
+
+⭐ **That agreement is also a decomposition.** §55 measures the CAMERA. §56 measures what makes the
+corridor — which comes from the TRAJECTORY — parallel to the lane. Had the trajectory carried a
+systematic heading bias the two would differ by it. They do not, to 0.04°, so
+**the trajectory's heading is unbiased and the entire far-field error was the mount yaw.**
+Part 9's diagnosis (trajectory heading) is refuted a second time, now by a measurement that could
+have shown the opposite.
+
+## 57. ⚠️ AND THE METRIC I HAD BEEN RANKING ARMS WITH IS HORIZON-DEPENDENT
+
+`out_caddy` measured a drift of **0.21°** on its own grid and **1.22°** on the common grid — same
+video, same probe. The algebra says why: with a metric horizon `v_m` and focal `f_m`,
+
+    residual(x) = (P + Q·v_m)·x/f_m + Q·f·h_m/f_m
+
+so **the slope carries `v_m` inside it.** Ranking arms by drift in m/m compares interpretations as
+much as overlays, and each arm read through its own wrong horizon flattered itself.
+
+⇒ The ranking statistic must be the one that is a fact about the image: **the row where the
+corridor's left edge crosses the painted line.** Two lines meeting at a pixel is not an
+interpretation. On the common grid, at the rendered yaws: `caddy` 496, `joint2` 492, `yaw78` 524 —
+all far below the horizon at 448, i.e. all three cross the paint on the visible road.
+
+**ADOPTED AND RENDERED:** `horizon 448.4 · h 1.586 · f 1533 · yaw −5.35 · lateral −0.126`.

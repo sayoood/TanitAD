@@ -213,7 +213,7 @@ def measure(src_gray, rows, edges, fx, horizon, fh, seed_x, gap_m=0.85, seed_win
     """
     e0 = edges.get(seed_x)
     if e0 is None:
-        return None, "no corridor at the seed range"
+        return None, "no corridor at the seed range", None
     v0 = horizon + fh / seed_x
     pred0 = e0[0] / S - gap_m * fx / seed_x
     half0 = seed_win_m * fx / seed_x
@@ -232,7 +232,7 @@ def measure(src_gray, rows, edges, fx, horizon, fh, seed_x, gap_m=0.85, seed_win
         for c in cols:
             pts.append((float(v), float(c)))
     if len(pts) < min_inliers:
-        return None, "no paint detected in the band"
+        return None, "no paint detected in the band", None
     P = np.asarray(pts, float)
 
     rng = np.random.default_rng(0)
@@ -253,24 +253,46 @@ def measure(src_gray, rows, edges, fx, horizon, fh, seed_x, gap_m=0.85, seed_win
         if k > best_n:
             best_n, best = k, (m, b)
     if best is None or best_n < min_inliers:
-        return None, "no line passed the identity gate"
+        return None, "no line passed the identity gate", None
     m, b = best
     for _ in range(3):
         d = np.abs(P[:, 1] - (m * P[:, 0] + b))
         inl = P[d < tol_px]
         if len(inl) < min_inliers or np.ptp(inl[:, 0]) < min_span:
-            return None, "line support too short"
+            return None, "line support too short", None
         m, b = np.polyfit(inl[:, 0], inl[:, 1], 1)
 
-    out = []
+    out, ev = [], []
     for x, v in rows:
         e = edges.get(x)
         if e is None:
             continue
-        out.append((x, float((e[0] / S - (m * v + b)) * x / fx)))
+        cu = e[0] / S
+        out.append((x, float((cu - (m * v + b)) * x / fx)))
+        ev.append((v, cu))
     if len(out) < 4:
-        return None, "corridor too short"
-    return out, "ok"
+        return None, "corridor too short", None
+
+    # ⭐ THE CALIBRATION-FREE NUMBER. Everything above is a distance in metres, and a
+    # metre depends on the horizon you read the row through -- which is why ``caddy``
+    # measured 0.21 deg on its own grid and 1.22 deg on the common one, from the SAME
+    # video. Algebra: residual(x) = (P + Q*v_m)*x/f_m + Q*f*h_m/f_m, so the SLOPE
+    # carries the metric horizon ``v_m`` inside it. Comparing arms by drift in m/m is
+    # therefore comparing interpretations as much as overlays.
+    #
+    # The row where the corridor's LEFT EDGE crosses the painted line is not an
+    # interpretation. It is two lines in one image meeting at a pixel, and it is
+    # exactly Sayed's question: where does the corridor leave the lane?
+    E = np.asarray(ev, float)
+    if len(E) >= 3:
+        me, be = np.polyfit(E[:, 0], E[:, 1], 1)
+        if abs(me - m) > 1e-6:
+            v_cross = float((b - be) / (me - m))
+            # (lane line, corridor line) so a caller can re-ask the question for a
+            # DIFFERENT yaw without re-rendering: a yaw change of d shifts the drawn
+            # corridor by f*d px at every row, i.e. it moves ``be`` and nothing else.
+            return out, "ok", (v_cross, float(m), float(b), float(me), float(be))
+    return out, "ok", None
 
 
 def fit_left_line(src_gray, rows_src, anchor_row_src, anchor_col_src, tol_px=4.0):
@@ -328,6 +350,9 @@ def main():
                     default=[10., 12., 15., 20., 25., 30., 40.])
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--label", default="")
+    ap.add_argument("--yaw-base", type=float, default=0.0,
+                    help="the yaw this video was RENDERED with, so the scan can name "
+                         "absolute yaws instead of offsets")
     ap.add_argument("--json", type=pathlib.Path, default=None)
     a = ap.parse_args()
 
@@ -358,6 +383,8 @@ def main():
     acc = {x: [] for x in a.ranges}
     slopes = []
     slopes_by_class = {"straight": [], "curved": []}
+    crossings = []                 # (row, range_m, road class) where corridor meets paint
+    lines_for_scan = []            # (lane m, lane b, corridor m, corridor b, class)
     drops = {}
     nfit = 0
     rows_l = [(x, rows[x]) for x in sorted(a.ranges)][::-1]      # far -> near rows
@@ -372,7 +399,7 @@ def main():
             g = cv2.imread(str(src[i]), cv2.IMREAD_GRAYSCALE)
             if g is not None:
                 edges = {x: corridor_edges(fr, int(round(rows[x] * S))) for x in a.ranges}
-                got, why = measure(g, rows_l, edges, a.fx, a.horizon, a.fh, min(a.ranges))
+                got, why, v_cross = measure(g, rows_l, edges, a.fx, a.horizon, a.fh, min(a.ranges))
                 if why != "ok":
                     drops[why] = drops.get(why, 0) + 1
                 if got and len(got) >= 4:
@@ -386,6 +413,12 @@ def main():
                         slopes_by_class[cls].append(sl)
                     if why == "ok":
                         nfit += 1
+                        if v_cross is not None:
+                            vc = v_cross[0]
+                            rng_ = (a.fh / (vc - a.horizon)) if vc > a.horizon + 8 else float("inf")
+                            crossings.append((float(vc), float(rng_), cls))
+                            lines_for_scan.append((v_cross[1], v_cross[2],
+                                                   v_cross[3], v_cross[4], cls))
                         for x, d in got:
                             acc[x].append((d, rows[x]))
                         slopes.append(sl)
@@ -434,6 +467,99 @@ def main():
               f"   ->{40*med:+.2f} m by 40 m   2.5-97.5% [{lo:+.4f}, {hi:+.4f}]"
               f"   n {len(S_)}")
         out["per_frame_slope"] = dict(median=med, lo=float(lo), hi=float(hi), n=len(S_))
+
+    if len(crossings) >= 20:
+        C = np.asarray([c[1] for c in crossings], float)
+        R = np.asarray([c[0] for c in crossings], float)
+        finite = np.isfinite(C)
+        print(f"\n  ⭐ WHERE THE CORRIDOR'S LEFT EDGE MEETS THE PAINTED LINE")
+        print(f"     (two lines in one image crossing at a pixel — this one does NOT")
+        print(f"      depend on which horizon you read the rows through)")
+        print(f"     crossing row   median {np.median(R):6.1f}"
+              f"   10-90% [{np.percentile(R,10):.0f}, {np.percentile(R,90):.0f}]"
+              f"   horizon is {a.horizon:.0f}")
+        above = int((R <= a.horizon + 8).sum())
+        print(f"     crosses ABOVE the horizon (i.e. never, on the visible road): "
+              f"{above}/{len(R)} frames = {100*above/len(R):.0f} %")
+        if finite.sum() >= 10:
+            cf = C[finite]
+            print(f"     when it does cross: median {np.median(cf):6.1f} m"
+                  f"   25-75% [{np.percentile(cf,25):.0f}, {np.percentile(cf,75):.0f}] m"
+                  f"   10th pct {np.percentile(cf,10):.0f} m   n {len(cf)}")
+        for cls in ("straight", "curved"):
+            sel = [c for c in crossings if c[2] == cls]
+            if len(sel) >= 10:
+                rr = np.asarray([c[0] for c in sel]); ab = int((rr <= a.horizon + 8).sum())
+                cc = np.asarray([c[1] for c in sel]); cc = cc[np.isfinite(cc)]
+                print(f"     {cls:9s} n {len(sel):4d}   never-crosses {100*ab/len(sel):3.0f} %"
+                      + (f"   else median {np.median(cc):.0f} m" if len(cc) else ""))
+        out["crossing"] = dict(row_median=float(np.median(R)),
+                               never_frac=float(above / len(R)),
+                               range_median=float(np.median(C[finite])) if finite.sum() else None,
+                               n=len(R))
+
+    if len(lines_for_scan) >= 20:
+        # ⭐ DECOMPOSITION. The lane line's column AT THE HORIZON ROW is cx + f*tan(theta),
+        # where theta is the angle between the CAMERA AXIS and the lane. On straight road
+        # the vehicle is parallel to the lane, so that angle IS the camera's mount yaw --
+        # measured from the paint, with no trajectory anywhere in it.
+        #
+        # The yaw scan above instead finds the yaw that makes the DRAWN CORRIDOR parallel
+        # to the lane, and the corridor comes from the trajectory. The difference between
+        # the two is therefore the trajectory's systematic HEADING BIAS, which is a
+        # different defect with a different fix.
+        st = [(lm, lb) for lm, lb, _, _, cls in lines_for_scan if cls == "straight"]
+        if len(st) >= 15:
+            uh = np.array([lm * a.horizon + lb for lm, lb in st])
+            yaw_cam = np.rad2deg(np.arctan((uh - 960.0) / a.fx))
+            med = float(np.median(yaw_cam))
+            sd = 1.4826 * float(np.median(np.abs(yaw_cam - med)))
+            print(f"\n  ⭐ CAMERA YAW FROM THE PAINT ALONE (no trajectory, no ego motion)")
+            print(f"     the left lane line's column at the horizon row is cx + f*tan(yaw)")
+            print(f"     yaw {med:+.2f} deg   robust sd {sd:.2f} deg   n {len(st)} straight frames")
+            print(f"     10-90% [{np.percentile(yaw_cam,10):+.2f}, "
+                  f"{np.percentile(yaw_cam,90):+.2f}] deg")
+            out["yaw_camera_from_paint"] = dict(median=med, sd=sd, n=len(st))
+
+    if len(lines_for_scan) >= 20:
+        print(f"\n  ⭐ YAW SCAN WITHOUT RE-RENDERING")
+        print(f"     A yaw change d displaces the drawn corridor by f*d px at EVERY row,")
+        print(f"     so its image line moves in intercept only. The lane lines are already")
+        print(f"     measured, so every candidate yaw can be scored on the frames in hand.")
+        print(f"     Target: the two lines should meet AT the horizon ({a.horizon:.0f}) —")
+        print(f"     that is what 'the corridor is parallel to the lane' means.")
+        print(f"\n     {'yaw':>8}{'median crossing row':>22}{'never crosses':>16}"
+              f"{'straight: never':>18}")
+        base = a.yaw_base
+        best = None
+        for d in np.arange(-1.5, 3.01, 0.25):
+            vcs, vcs_st = [], []
+            for lm, lb, cm, cb, cls in lines_for_scan:
+                cb2 = cb + a.fx * np.deg2rad(d)
+                if abs(cm - lm) < 1e-6:
+                    continue
+                vc = (lb - cb2) / (cm - lm)
+                vcs.append(vc)
+                if cls == "straight":
+                    vcs_st.append(vc)
+            if len(vcs) < 15:
+                continue
+            V_ = np.asarray(vcs); Vs = np.asarray(vcs_st) if vcs_st else V_
+            never = float((V_ <= a.horizon + 8).mean())
+            never_st = float((Vs <= a.horizon + 8).mean())
+            score = abs(np.median(V_) - a.horizon)
+            if best is None or score < best[0]:
+                best = (score, d, float(np.median(V_)), never, never_st)
+            if abs(d * 4 - round(d * 4)) < 1e-9 and abs(round(d * 2) - d * 2) < 1e-9:
+                print(f"     {base + d:8.2f}{np.median(V_):22.1f}{100*never:15.0f}%"
+                      f"{100*never_st:17.0f}%")
+        if best:
+            print(f"\n     BEST yaw {base + best[1]:+.2f} deg "
+                  f"({best[1]:+.2f} from the rendered {base:+.2f}):"
+                  f"  median crossing row {best[2]:.1f} vs horizon {a.horizon:.0f},"
+                  f"  never-crosses {100*best[3]:.0f} % (straight {100*best[4]:.0f} %)")
+            out["yaw_scan_best"] = dict(yaw=float(base + best[1]), delta=float(best[1]),
+                                        row=best[2], never=best[3], never_straight=best[4])
 
     print(f"\n  SELECTION CONTROL — frames dropped: "
           + ", ".join(f"{k} {v}" for k, v in drops.items() if v))
