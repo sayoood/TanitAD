@@ -77,7 +77,8 @@ def draw_trajectory_on_image(img, ego, cam, vehicle_width: float = 1.8,
                              draw_past: bool = True, tick_every: float = 1.0,
                              alpha: float = 0.35, draw_horizon: bool = True,
                              near_clip_m: float = 4.0, label_max_m: float = 60.0,
-                             lateral_offset_m: float = 0.0):
+                             lateral_offset_m: float = 0.0,
+                             fade_start_m: float = 30.0, fade_end_m: float = 55.0):
     """Render the ego trajectory onto a BGR image (OpenCV array).
 
     Future path is drawn as a translucent ribbon with per-second tick marks,
@@ -88,12 +89,36 @@ def draw_trajectory_on_image(img, ego, cam, vehicle_width: float = 1.8,
     of the frame and buries the road; starting it a car-length ahead is both
     more readable and more honest, since that near strip is under the bonnet and
     not actually visible.
+
+    ``fade_start_m`` / ``fade_end_m`` fade the ribbon out with RANGE, and the
+    default is set by a measurement rather than by taste.  On the 2026-08-08
+    recording the per-frame angle between the drawn corridor and the lane has a
+    real spread of about **1 deg** after the camera (<= 0.25 deg) and the
+    instrument (0.088 deg) are accounted for.  One degree is a lateral
+    uncertainty of 0.52 m at 30 m and **0.93 m at 53 m** -- and 0.93 m is exactly
+    half the ribbon's width.  Beyond there the band could be a full half-width
+    off and a solid edge asserts a precision the geometry does not have, so it is
+    ramped to nothing by 55 m.  Set ``fade_end_m`` to a large value to disable.
+
+    ⚠️ This is a HONESTY change, not an accuracy one.  Nothing about where the
+    ribbon is drawn changes; only how loudly it is asserted far away.
     """
     import cv2
 
     out = img.copy()
     overlay = img.copy()
     H, W = out.shape[:2]
+    # per-pixel alpha, so the ribbon can be blended with a range-dependent weight.
+    # The previous single `addWeighted` could only apply one alpha to the whole band.
+    amask = np.zeros((H, W), np.float32)
+    f0 = float(fade_start_m)
+    f1 = max(float(fade_end_m), f0 + 1e-3)
+
+    def _fade(d):
+        """1 inside ``fade_start_m``, 0 beyond ``fade_end_m``, linear between."""
+        if not np.isfinite(d):
+            return 0.0
+        return float(np.clip((f1 - d) / (f1 - f0), 0.0, 1.0))
     SHIFT = 6                      # sub-pixel rasterisation, see draw_bev_cv
     K = 1 << SHIFT
     sub = lambda a: np.round(np.asarray(a, dtype=float) * K).astype(np.int32)
@@ -138,24 +163,45 @@ def draw_trajectory_on_image(img, ego, cam, vehicle_width: float = 1.8,
             # green (near, imminent) -> amber (far, later)
             col = (int(60 + 40 * f), int(230 - 60 * f), int(40 + 200 * f))
             quads.append((depth, quad, col))
-        for _, quad, col in sorted(quads, key=lambda q: -q[0]):
+        for depth, quad, col in sorted(quads, key=lambda q: -q[0]):
+            aq = alpha * _fade(depth)
+            if aq <= 0.004:
+                continue
             cv2.fillConvexPoly(overlay, quad, col, lineType=cv2.LINE_AA, shift=SHIFT)
+            # ⚠️ LINE_8 on the alpha mask, not LINE_AA. Abutting quads antialias
+            # against each other, and a later quad REPLACES rather than accumulates,
+            # which would leave a lower-alpha seam along every quad boundary. The
+            # colour overlay keeps LINE_AA; only the coverage has to tile exactly.
+            cv2.fillConvexPoly(amask, quad, float(aq), lineType=cv2.LINE_8, shift=SHIFT)
 
-        cv2.addWeighted(overlay, alpha, out, 1 - alpha, 0, out)
+        def _stroke(seg_v, colr, th, a_scale=1.0):
+            """Polyline drawn segment by segment, each with its own range fade."""
+            for piece in clip_polyline_to_camera(seg_v, cam):
+                pcz = cam.to_camera(piece)[:, 2]
+                uv, ok = cam.project(piece)
+                for i in range(len(uv) - 1):
+                    if not (ok[i] and ok[i + 1]):
+                        continue
+                    aa = a_scale * _fade(0.5 * (pcz[i] + pcz[i + 1]))
+                    if aa <= 0.004:
+                        continue
+                    p = sub([uv[i], uv[i + 1]])
+                    cv2.line(overlay, tuple(p[0]), tuple(p[1]), colr, th,
+                             cv2.LINE_AA, shift=SHIFT)
+                    cv2.line(amask, tuple(p[0]), tuple(p[1]), float(aa), th,
+                             cv2.LINE_AA, shift=SHIFT)
 
         # centre line + edges on top of the translucent fill
         centre = np.stack([x[fut], y[fut], np.zeros(fut.sum())], axis=1)
         for seg, colr, th in ((centre, (255, 255, 255), 2),
                               (left, (200, 255, 200), 1),
                               (right, (200, 255, 200), 1)):
-            for piece in clip_polyline_to_camera(seg, cam):
-                uv, ok = cam.project(piece)
-                if ok.sum() >= 2:
-                    cv2.polylines(out, [sub(uv[ok])], False, colr, th, cv2.LINE_AA, shift=SHIFT)
+            _stroke(seg, colr, th)
 
         # one tick per `tick_every` seconds, labelled with time and distance
         sf = s_fwd[fut]
         last_row = None
+        labels = []                    # emitted AFTER the blend, so text stays crisp
         for tv in np.arange(np.ceil(tf[0]), tf[-1] + 1e-9, tick_every):
             xi = np.interp(tv, tf, x[fut]); yi = np.interp(tv, tf, y[fut])
             si = np.interp(tv, tf, sf)
@@ -172,17 +218,33 @@ def draw_trajectory_on_image(img, ego, cam, vehicle_width: float = 1.8,
             uv, ok = cam.project(bar)
             if not ok.all():
                 continue
-            ps = sub(uv)
-            cv2.line(out, tuple(ps[0]), tuple(ps[1]), (255, 255, 255), 2, cv2.LINE_AA, shift=SHIFT)
+            zbar = float(np.mean(cam.to_camera(bar)[:, 2]))
+            afade = _fade(zbar)
+            if afade > 0.004:
+                ps = sub(uv)
+                cv2.line(overlay, tuple(ps[0]), tuple(ps[1]), (255, 255, 255), 2,
+                         cv2.LINE_AA, shift=SHIFT)
+                cv2.line(amask, tuple(ps[0]), tuple(ps[1]), float(afade), 2,
+                         cv2.LINE_AA, shift=SHIFT)
             p = uv.astype(np.int32)
             # Labels pile up on top of each other near the vanishing point, where
             # successive seconds are only a few pixels apart -- keep them legible.
             row = int(p[1][1])
             if si > label_max_m or (last_row is not None and abs(row - last_row) < 18):
                 continue
+            # and do not label a tick the fade has all but removed: a crisp
+            # "4s / 88m" floating over nothing reads as a fault in the render.
+            if afade < 0.35:
+                continue
             last_row = row
-            lab = f"{tv:.0f}s / {si:.0f}m"
-            org = (int(p[1][0]) + 6, row + 4)
+            labels.append((f"{tv:.0f}s / {si:.0f}m", (int(p[1][0]) + 6, row + 4)))
+
+        # ---- one blend, with the per-pixel alpha built above ---- #
+        m3 = amask[:, :, None]
+        out[:] = np.clip(overlay.astype(np.float32) * m3
+                         + out.astype(np.float32) * (1.0 - m3), 0, 255).astype(np.uint8)
+
+        for lab, org in labels:
             cv2.putText(out, lab, org, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 3, cv2.LINE_AA)
             cv2.putText(out, lab, org, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 

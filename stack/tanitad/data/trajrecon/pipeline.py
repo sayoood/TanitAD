@@ -911,7 +911,9 @@ def _extract_frames(video, indices, out_dir, quality, width):
 
 def _compose(img, ego, cam, steer, t_ref, args):
     over = viz.draw_trajectory_on_image(img, ego, cam, vehicle_width=args.vehicle_width,
-                                        lateral_offset_m=0.0)
+                                        lateral_offset_m=0.0,
+                                        fade_start_m=args.fade_start_m,
+                                        fade_end_m=args.fade_end_m)
     over = viz.draw_hud(over, ego)
     sw = float(np.interp(t_ref, steer.t, steer.wheel_deg))
     sr = float(np.interp(t_ref, steer.t, steer.wheel_rate_deg_s))
@@ -1008,6 +1010,14 @@ def main():
     ap.add_argument("--vehicle-width", type=float, default=1.8)
     ap.add_argument("--wheelbase", type=float, default=AUDI_A6_ETRON["wheelbase_m"])
     ap.add_argument("--steering-ratio", type=float, default=AUDI_A6_ETRON["steering_ratio"])
+    ap.add_argument("--fade-start-m", type=float, default=30.0,
+                    help="range at which the drawn corridor starts fading out")
+    ap.add_argument("--fade-end-m", type=float, default=55.0,
+                    help="range at which it has faded to nothing. The default is set "
+                         "by measurement: the per-frame corridor-to-lane angle has a "
+                         "real spread of ~1 deg, which is 0.93 m at 53 m -- half the "
+                         "ribbon's width. Beyond that a solid edge asserts a precision "
+                         "the geometry does not have. Set large to disable.")
     ap.add_argument("--vehicle-name", default=None,
                     help="name for the steering read-out. Without it, overriding "
                          "--wheelbase or --steering-ratio relabels the vehicle as "

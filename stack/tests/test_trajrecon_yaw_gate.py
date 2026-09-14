@@ -408,3 +408,44 @@ def test_road_tracks_reject_correspondences_that_do_not_move_like_the_road():
     assert "d_meas <" not in GROUND, (
         "a two-sided motion gate turns the filter into a fit against cam, which is "
         "the very thing the estimator is supposed to measure")
+
+
+def test_the_corridor_fades_with_range_and_the_fade_is_per_pixel():
+    """Beyond ~53 m a solid ribbon asserts a precision the geometry does not have.
+
+    MEASURED on the 14-19-54 recording: after removing the camera (common-mode
+    rotation <= 0.25 deg) and the instrument (0.088 deg), the per-frame angle
+    between the drawn corridor and the lane still has a real spread of about
+    1 deg. One degree is 0.52 m of lateral uncertainty at 30 m and **0.93 m at
+    53 m** -- exactly half the 1.855 m ribbon's width. Drawing a crisp edge past
+    that point states more than is known.
+
+    The renderer could not express this before: it blended the whole band with a
+    single `addWeighted`, so alpha was one number for the entire ribbon. The fade
+    needs a PER-PIXEL alpha mask, and the fill has to be rasterised into it
+    without antialiasing -- abutting quads antialias against each other and a
+    later quad replaces rather than accumulates, which would leave a lower-alpha
+    seam along every quad boundary.
+    """
+    VIZ = (PKG / "viz.py").read_text(encoding="utf-8")
+    assert "fade_start_m" in VIZ and "fade_end_m" in VIZ, (
+        "the range fade is gone; the corridor is solid to the vanishing point again")
+    assert "amask" in VIZ, (
+        "no per-pixel alpha mask — a single addWeighted cannot fade with range")
+    assert "cv2.addWeighted(overlay, alpha, out" not in VIZ, (
+        "the single global-alpha blend is back, which silently disables the fade")
+    assert "lineType=cv2.LINE_8" in VIZ, (
+        "the alpha mask is antialiased again — abutting quads will seam")
+    assert "fade_start_m=args.fade_start_m" in PIPELINE, (
+        "the pipeline no longer passes the fade through, so the default is unreachable")
+
+
+def test_a_faded_tick_is_not_labelled():
+    """A crisp '4s / 88m' floating over nothing reads as a fault in the render."""
+    VIZ = (PKG / "viz.py").read_text(encoding="utf-8")
+    assert "if afade < 0.35:" in VIZ, (
+        "tick labels are drawn regardless of the fade again")
+    i_blend = VIZ.index("out[:] = np.clip(overlay")
+    i_label = VIZ.index("for lab, org in labels:")
+    assert i_label > i_blend, (
+        "labels are emitted before the blend, so the alpha mask washes the text out")
