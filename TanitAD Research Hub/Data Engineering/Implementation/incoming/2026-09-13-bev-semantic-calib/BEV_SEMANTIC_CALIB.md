@@ -1386,3 +1386,44 @@ with `plane_calib`'s own note that roll is geometrically unobservable this way.
 height is ±0.39 m. It is a check, not a replacement for the lane-width measurement — and the yield
 has to come up before this can deliver the PER-FRAME attitude that the residual spread actually
 needs.
+
+## 68. ⭐ The residual spread is REAL — the instrument contributes 3 % of it
+
+Before attributing the per-frame spread to EIS, the trajectory or the driver, ask how much of it is
+the probe. The lane line was fitted **twice per frame on interleaved rows** (odd vs even — same
+range span, independent noise), and the two yaws compared, over 66 straight frames:
+
+    yaw, full fit          median −5.33°   robust sd 2.045°
+    split-half difference  median +0.001°  robust sd 0.126°   ⇒ σ_meas = 0.063°
+
+**σ_meas = 0.063°, σ_observed = 2.045°: 100 % of the variance is real.** At 40 m that is 1.43 m of
+real frame-to-frame variation against 0.04 m of my own noise. The spread is not an artefact of the
+measurement — which is the first thing every earlier "spread" in this session turned out to be.
+
+## 69. And it is not road curvature aliasing into a straight-line fit
+
+A chord across a 10–50 m span on a 2100 m radius (the |yaw rate| ≤ 0.6 °/s gate) is already tilted
+~0.8° from the tangent, so the obvious suspect is my own straight-line lane model. Measured against
+both knobs:
+
+| fit span | \|yaw rate\| ≤ | n | median yaw | robust sd | corr. with yaw rate |
+|---|---|---|---|---|---|
+| 10–50 m | 0.6 | 183 | −4.98° | 2.284° | −0.188 |
+| 10–50 m | 0.2 | 190 | −5.18° | 2.443° | −0.197 |
+| 10–25 m | 0.6 | 148 | −5.12° | 1.773° | −0.163 |
+| 10–18 m | 0.2 | 89 | −5.40° | 1.485° | −0.150 |
+
+**It does not collapse.** Shortening the span 10–50 → 10–18 m moves it 2.28 → 1.49° and tightening
+the yaw-rate gate does not help at all. Correlation with the vehicle's yaw rate is −0.07…−0.20, so
+it is not the driver steering either.
+
+⚠️ **Half of it is line misidentification in this ungated probe.** `overlay_far`, which carries an
+identity gate, reports **1.01°** on the same quantity against 2.04° here — so the defensible figure
+is **~1° of real per-frame camera-to-lane yaw variation ≈ 0.70 m at 40 m**.
+
+⛔ **NOT YET SEPARATED, and this is the crux:** that ~1° splits between the vehicle's genuine yaw
+relative to the lane (the lateral-position probe puts per-frame wander at robust sd 0.473 m, which
+at 22 m/s implies roughly 0.6°) and actual camera rotation (EIS and/or suspension). Yaw RATE cannot
+separate them — a constant yaw *offset* relative to the lane does not appear in a rate. The
+instrument that can is the **gyro**, compared against image rotation measured in the far field where
+`H = K·R·K⁻¹` exactly.
