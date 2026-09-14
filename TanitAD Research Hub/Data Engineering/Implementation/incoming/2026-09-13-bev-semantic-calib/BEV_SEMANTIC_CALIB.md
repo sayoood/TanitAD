@@ -1238,3 +1238,34 @@ the defect was never the number, it was a label that made a placeholder look lik
 `--vehicle-name` added; without it, overriding either dimension relabels the vehicle
 `unnamed vehicle (wheelbase overridden; other Audi A6 e-tron values retained)` — which also says
 what is still inherited, rather than trading a wrong name for a claim that nothing is.
+
+## 61. ✅ DELIVERED — `out_caddyv`, VW Caddy V Maxi
+
+Sayed: *"ist caddy last generation and the long version"* ⇒ **Caddy V (SB, 2020–) Maxi**.
+
+| flag | was | now | what it touches |
+|---|---|---|---|
+| `--wheelbase` | 2.946 m (Audi A6 e-tron default) | **3.105 m** | the steering read-out **only** — `apply_drivability` is off by default and `pipeline.py` never calls it, so neither the path nor the corridor depends on it |
+| `--vehicle-width` | 1.8 m (generic) | **1.855 m** (body, excl. mirrors) | the drawn ribbon **and** the BEV panel |
+
+Verified on the delivered video, 220 frames, calibration unchanged:
+
+| 10 m | 15 m | 20 m | 25 m | 30 m | 40 m | 50 m |
+|---|---|---|---|---|---|---|
+| +1.22 | +1.20 | +1.19 | +1.16 | +1.17 | +1.30 | +1.16 m |
+
+**Drift +0.0000 m/m.** Crossing row **447.6** vs horizon **448.4**; **69 % of straight frames never
+reach the paint**. Yaw scan on this render: **−5.35, +0.00 from rendered.**
+
+⚠️ Two Caddy numbers are still **not** the Caddy's and are flagged rather than guessed:
+- **steering ratio 15.9:1** is the Audi's. The panel now says so (§60).
+- **`--mount-longitudinal 2.1 m`** — the phone's distance ahead of the rear axle. With a 3.105 m
+  wheelbase the published dimensions suggest ~2.3–2.5 m, but that is arithmetic on a bonnet length
+  I do not have. On a mostly-straight motorway clip it is second-order (it only separates the
+  phone's path from the vehicle's through turns), so it is left at the value already validated.
+  **A tape measure from the rear-axle centreline to the phone would settle it.**
+
+⛔ **The RIGHT-side clearance is NOT measured.** A mirrored version of the left-edge probe returned
+**3 usable frames of 220** — the global ridge threshold is set by the brighter left half of the
+image and buries the right-hand line. Arithmetic gives 3.5 − 1.22 − 1.855 ≈ **0.43 m**, but that
+assumes the left reading and a 3.5 m lane and is **not an independent measurement**.
