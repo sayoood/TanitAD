@@ -105,7 +105,8 @@ def unproject_ground(cam, uv, height_m: float | None = None):
 def collect_road_tracks(video, cam, traj, sync, t_windows=None, gap_frames: int = 8,
                         max_pairs: int = 260, proc_width: int = 960,
                         roi=(0.62, 0.96), min_speed: float = 4.0,
-                        corridor_half_w: float = 3.2, corridor_x=(5.0, 32.0)):
+                        corridor_half_w: float = 3.2, corridor_x=(5.0, 32.0),
+                        min_motion_frac: float = 0.35):
     """Track road-surface patches and pair them with the trajectory's motion.
 
     Features are taken from a band low in the image, which is road surface rather
@@ -196,8 +197,50 @@ def collect_road_tracks(video, cam, traj, sync, t_windows=None, gap_frames: int 
         p0_ = float(np.interp(t0, traj.t, psi))
         c, s = np.cos(-p0_), np.sin(-p0_)
         dp = np.array([c * dE - s * dN, s * dE + c * dN])   # displacement in frame-0 axes
+
+        a, b = _drop_static(cam, a, b, dp, dpsi, min_frac=min_motion_frac)
+        if len(a) < 12:
+            continue
         rows.append((a, b, dp, dpsi, float(t0), float(t1)))
     return rows
+
+
+def _drop_static(cam, a, b, dp, dpsi, min_frac: float = 0.35):
+    """Discard correspondences that do not MOVE like the road plane.
+
+    ⛔ WHY. The corridor mask is a polygon projected from ``cam``, and its near end
+    (``corridor_x[0] = 5 m``) is UNDER THE BONNET on a high-mounted camera. MEASURED
+    on the 2026-08-08 recording: the polygon spans source rows 529-1079 while the
+    bonnet line sits at row 832, so **45 % of the mask's rows are not road**, and the
+    bonnet is *static*. RANSAC then fits the homography to the static part and
+    ``plane_calib`` reports a camera height of **42 m**, a pitch of **+17.8 deg**, and
+    **0 of 90 pairs admissible** -- which surfaces only as
+    "plane calibration produced too few usable homographies".
+
+    Masking by a bonnet row would need that row. This does not: a point on the road
+    plane must move by roughly the amount the KNOWN vehicle displacement predicts, so
+    anything moving far less than predicted is not on the road, whatever it is --
+    bonnet, wiper, dashboard reflection, a stopped vehicle ahead.
+
+    ⚠️ The gate consumes ``cam``, so it is not fully independent of the calibration it
+    helps produce. It is deliberately coarse and ONE-SIDED (it only rejects points that
+    move too little): a 2x error in ``f*h`` moves the predicted displacement by 2x,
+    which a 0.35 threshold still tolerates. It is a sanity gate, not a fit.
+    """
+    if len(a) == 0:
+        return a, b
+    Pg, okg = unproject_ground(cam, a)
+    Pv = Pg + np.asarray(cam.t_v[:2], dtype=float)      # camera-relative -> vehicle frame
+    cz, sz = np.cos(-dpsi), np.sin(-dpsi)
+    X = Pv[:, 0] - dp[0]
+    Y = Pv[:, 1] - dp[1]
+    nxt = np.stack([cz * X - sz * Y, sz * X + cz * Y, np.zeros(len(X))], axis=1)
+    pred, okp = cam.project(nxt)
+    d_meas = np.linalg.norm(b - a, axis=1)
+    d_pred = np.linalg.norm(pred - a, axis=1)
+    keep = (okg & okp & np.isfinite(d_pred) & (d_pred > 1.0)
+            & (d_meas > min_frac * d_pred))
+    return a[keep], b[keep]
 
 
 def prefilter(rows, cam, x_min: float = 2.0, x_max: float = 45.0):

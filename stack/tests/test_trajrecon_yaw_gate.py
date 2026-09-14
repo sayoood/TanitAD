@@ -378,3 +378,33 @@ def test_a_vehicle_override_renames_the_vehicle():
     assert "other" in PIPELINE.split("unnamed vehicle")[1][:200], (
         "the relabel must still say which values are inherited, or it trades a wrong "
         "name for a claim that nothing is inherited")
+
+
+def test_road_tracks_reject_correspondences_that_do_not_move_like_the_road():
+    """The corridor mask reaches under the bonnet, and the bonnet is static.
+
+    MEASURED 2026-09-14 on the 14-19-54 recording: `collect_road_tracks` projects a
+    corridor of x in (5, 32) m, and that polygon spans source rows 529-1079 while the
+    bonnet line sits at row 832 -- so 45 % of the mask's rows are not road. RANSAC
+    fits the homography to the static part, and `plane_calib` then reports a camera
+    height of 42.0 m, a pitch of +17.8 deg and 0 of 90 pairs admissible. All of that
+    surfaces as one line: "plane calibration produced too few usable homographies".
+
+    A bonnet-row mask would need the bonnet row. This does not: a point on the road
+    must move by roughly what the KNOWN vehicle displacement predicts, so anything
+    moving far less is not on the road -- bonnet, wiper, dashboard reflection, or a
+    stopped vehicle ahead.
+
+    The gate must stay ONE-SIDED. Rejecting points that move too MUCH as well would
+    make it a fit against `cam`, and `cam` is what the estimator exists to produce.
+    """
+    GROUND = (PKG / "ground_calib.py").read_text(encoding="utf-8")
+    assert "def _drop_static" in GROUND, (
+        "the static-content filter is gone; the bonnet is back in the homography")
+    assert "_drop_static(cam, a, b, dp, dpsi" in GROUND, (
+        "_drop_static exists but collect_road_tracks no longer calls it")
+    assert "d_meas > min_frac * d_pred" in GROUND, (
+        "the motion test is no longer the one-sided 'moves too little' comparison")
+    assert "d_meas <" not in GROUND, (
+        "a two-sided motion gate turns the filter into a fit against cam, which is "
+        "the very thing the estimator is supposed to measure")

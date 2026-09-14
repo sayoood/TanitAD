@@ -1269,3 +1269,120 @@ reach the paint**. Yaw scan on this render: **−5.35, +0.00 from rendered.**
 **3 usable frames of 220** — the global ridge threshold is set by the brighter left half of the
 image and buries the right-hand line. Arithmetic gives 3.5 − 1.22 − 1.855 ≈ **0.43 m**, but that
 assumes the left reading and a 3.5 m lane and is **not an independent measurement**.
+
+---
+
+# PART 12 — SLAM: the right family, already in the pipeline, and measurably broken
+
+Sayed: *"Back to my idea of using a sort of slam/optimization by looking for which parameter
+configuration lead to the best match of static features? Do visual slam help here?"*
+
+## 62. ⛔ First, §54 is WITHDRAWN — see `R-2026-09-14-slopeheight`
+
+The "no-horizon" height (1.573 m) came from the median of a **band I chose from expectation**. The
+histogram inside that band is **flat** (n = 14/8/8/4/6/12/9/9/10/10/5/3/5/7/9/5 across 1.6→3.2), and
+the estimate moves with the frame sample (1.573 → 1.504 m). It was reporting my prior back to me.
+§50's lane-WIDTH measurement survives — its histogram really does show a one-lane cluster and a
+two-lane cluster **exactly 2× apart** — so `h ≈ 1.59 m` stands on one route, not two.
+
+## 63. The idea is right, and the literal version of it is degenerate
+
+**"Optimise the parameters for the best match of static features"** has a gauge problem: scene scale,
+camera height and the focal length trade against each other exactly. Bundle adjustment over static
+features alone has a 7-DoF similarity freedom, and for a camera translating along its own optical
+axis there is a further near-degeneracy between focal length and depth. **A dashcam driving forward
+is close to the worst case for monocular SfM**: the road ahead — precisely where the corridor lives —
+sits near the epipole and has almost no parallax. That is the same `f·h` degeneracy this whole
+document has been fighting, in a new coordinate system; it does not dissolve by adding more
+features, only by adding a **metric anchor** (the odometer baseline, or a known lane width).
+
+## 64. ⭐ But the right member of that family is ALREADY IN THE PIPELINE — and it is silently dead
+
+`plane_calib.py` decomposes the inter-frame road-plane homography `H = R + (t/d)·nᵀ`. The normal `n`
+**is** the camera's roll and pitch relative to the road **per frame pair**, and with the metric
+baseline from the trajectory, `t/d` gives the **camera height**. It sidesteps the forward-motion
+degeneracy by using the known planar structure instead of general structure-from-motion. On the
+08-11 session it worked: 93 usable pairs, height 1.167 m [1.100, 1.223].
+
+On this recording it prints one line and stops:
+
+    WARN  plane calibration produced too few usable homographies
+
+**MEASURED (`probes/plane_frontend.py`, 120 pairs), where it actually dies:**
+
+| front end | features | tracked | RANSAC inliers | usable pairs |
+|---|---|---|---|---|
+| `goodFeaturesToTrack` (shipped) | 500 | 96 | 16 | **5/120** |
+| + CLAHE | 500 | 88 | 12 | 11/120 |
+| ridge-seeded (paint) | 894 | **192** | **42** | **0/120** |
+| ridges + features | 1394 | **282** | **47** | **0/120** |
+
+⇒ **The front end is NOT the bottleneck.** Ridge seeding triples the inliers and *still* yields
+nothing: 120/120 die at `no admissible decomposition`.
+
+## 65. ⛔ The bonnet is driving the homography
+
+`collect_road_tracks` masks a corridor of `x ∈ (5, 32) m`, half-width 3.2 m, projected with `cam`.
+MEASURED: that polygon spans **source rows 529–1079**. Row 832 (0.77 H) is the bonnet line
+`flow_scale` already measured — below it the image is **static** — so **45 % of the mask's rows are
+not road at all.** RANSAC fits the homography to the static part:
+
+| mask | inliers | recovered normal | pitch | roll | height | admissible |
+|---|---|---|---|---|---|---|
+| as shipped | 54 | [+0.03, −0.94, **+0.31**] | **+17.8°** | +1.7° | **42.0 m** | **0/90** |
+| bonnet cut at 832 | 16 | [−0.22, −0.88, +0.04] | +2.3° (IQR −7.2…+8.5) | −12.7° | 2.35 m | 12/73 |
+| *a level road wants* | | *[0.00, −1.00, −0.06]* | *−3.4°* | *~0* | *~1.59 m* | |
+
+A **42 m** height is the signature: `|t|/d → 0` because the homography is near-identity, which is
+what static content gives. **This is the same class as the ridge-width bug and the panel-width bug —
+a front end quietly measuring something other than the road.**
+
+⚠️ **The bonnet cut is necessary but NOT sufficient.** With it, pitch scatters ±8° per pair and roll
+lands at −12.7°. The roll is not a surprise: `plane_calib`'s own docstring already records that
+**roll is geometrically unobservable this way** (`roll ≈ n_x`, the normal's lateral component). The
+pitch scatter is the real blocker — over a 4-frame baseline at 80 km/h the camera travels 2.8 m, and
+a real road is not planar over that distance. Tightening the gates (RANSAC 1.0 px, ≥20 inliers)
+leaves 0–3 pairs of 110. **The 08-11 session was slower; motorway speed makes the same frame gap a
+much longer baseline, and the planarity assumption pays for it.**
+
+## 66. ⚠️ And the tempting shortcut is circular
+
+The per-frame quantity is reachable straight from the paint — yaw from the lane line's column at the
+horizon row, per frame, already measured at **robust sd 1.01°**. **Using it to correct the camera
+per frame would be wrong**, and the reason matters: that sd is *camera jitter plus the vehicle's real
+yaw relative to the lane*. Driving it to zero would force the corridor to be parallel to the lane in
+every frame — which deletes exactly what the overlay exists to show, namely that the car is changing
+lane, drifting, or turning. **A per-frame correction has to come from an instrument that measures the
+CAMERA (homography, VO, gyro), never from one that measures the LANE.**
+
+⇒ **The honest state:** per-frame attitude is the right fix for the residual spread (90th pct 2.2°,
+1.55 m at 40 m), the right instrument for it is in the repo, its mask bug is diagnosed and fixable,
+and its conditioning at motorway speed is an open problem — not a matter of turning on SLAM.
+
+## 67. ✅ THE FIX, AND IT TURNS A DEAD ESTIMATOR INTO AN INDEPENDENT CONFIRMATION
+
+`ground_calib._drop_static` — added to `collect_road_tracks`. It needs no bonnet row: a point on the
+road must move by roughly what the **known vehicle displacement** predicts, so anything moving far
+less is not on the road, whatever it is. The gate is deliberately **one-sided** (it only rejects
+points that move too little); a two-sided version would be a fit against `cam`, which is the thing
+the estimator exists to measure.
+
+MEASURED, 110 pairs, 4-frame baseline:
+
+| front end | inliers | admissible | pitch | roll | height |
+|---|---|---|---|---|---|
+| as shipped | 23 | 9/110 | **+13.66 ± 1.80** | −6.41 ± 12.99 | 1.602 ± 0.539 m |
+| + motion filter | 16 | 2/110 | — | — | — |
+| **+ motion filter, ridges + features** | 14 | **8/110** | **−3.07 ± 1.66** | −5.30 ± 6.87 | **1.592 ± 0.388 m** |
+| *independent target* | | | *−3.42°* | *~0 (unobservable)* | *~1.59 m* |
+
+⭐ **Pitch −3.07° against −3.42°, height 1.592 m against 1.586 m** — from the inter-frame plane
+homography plus the odometer baseline, a route that shares **nothing** with the lane-width
+range-constancy and row-flow pair that produced the adopted set. This is the third criterion
+`R-2026-09-13-horizon` demands, and it lands on the adopted values. Roll is consistent with zero and
+with `plane_calib`'s own note that roll is geometrically unobservable this way.
+
+⚠️ **Corroborates, does not tighten.** Only 8 of 110 pairs are admissible and the per-pair MAD on
+height is ±0.39 m. It is a check, not a replacement for the lane-width measurement — and the yield
+has to come up before this can deliver the PER-FRAME attitude that the residual spread actually
+needs.

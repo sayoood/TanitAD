@@ -3266,3 +3266,49 @@ range between the two projection equations: `Δy = Δu·h/(v − v_h)` (no focal
 `du/dv = y/h` (no focal length AND no horizon). The second measured the camera height —
 **1.573 m [1.511, 1.628]** — which nothing had managed in the entire session, and it then confirmed
 the horizon from outside the chain that produced it.
+
+---
+
+## R-2026-09-14-slopeheight — the "no-horizon" camera height was a prior, not a measurement
+
+**WITHDRAWN:** *"h = 1.573 m [1.511, 1.628], measured from the lane-line slope difference with no
+horizon, no focal length and no ego motion"*, and with it the claim that it **confirmed** the joint
+fit *"from a route that shares no parameter with the route that produced it"*.
+
+The algebra is right: `du/dv = y/h` for a road-parallel line, so `|m_L − m_R| = 3.5/h` really does
+carry no horizon and no focal length. The failure is in the read-out. The estimate was the median of
+the values falling in a **1.6–3.2 band that I chose from prior expectation**, on the stated grounds
+that it was where a single lane "should" sit.
+
+**MEASURED today, the histogram inside that band, 200 frames:**
+
+    1.6-1.7 n14 | 1.7-1.8 n8 | 1.8-1.9 n8 | 1.9-2.0 n4 | 2.0-2.1 n6 | 2.1-2.2 n12
+    2.2-2.3 n9  | 2.3-2.4 n9 | 2.4-2.5 n10| 2.5-2.6 n10| 2.6-2.7 n5 | 2.7-2.8 n3
+    2.8-2.9 n5  | 2.9-3.0 n7 | 3.0-3.1 n9 | 3.1-3.2 n5
+
+**It is FLAT.** There is no single-lane cluster. The median of a flat distribution over a band I
+picked is the band's centre, so the "measurement" was reporting my own prior back to me — and it
+moves with the sample: **2.2247 → h 1.573 m** on one frame set, **2.327 → h 1.504 m** on another.
+The per-pair IQR maps to h ∈ **[1.316, 1.827] m**, which is not a measurement of anything.
+
+**I flagged the weakness in the same message that made the claim** — *"the slope-difference
+histogram does NOT show the crisp 1-lane / 2-lane pair of clusters that the width histogram does, so
+the 1.6–3.2 single-lane band here is a prior, not a read-off"* — and then used the number as
+confirmation two paragraphs later. **Writing the caveat is not the same as obeying it.**
+
+**ROOT-CAUSE CLASS — C-PRIOR (a selection band chosen from expectation, then read as a result),** a
+sibling of the circular-association class that killed `lane_residual.py`. There the window confirmed
+whatever height it was handed; here the band confirmed whatever height I expected.
+
+⇒ **RULE: a cluster must be VISIBLE before it may be selected.** If the estimate requires a band,
+publish the histogram inside the band in the same breath; a flat histogram means there is no
+estimate, only a prior.
+⇒ **RULE: a caveat that does not change the conclusion is decoration.** State the caveat, then act
+on it — or do not state it.
+
+**What survives, and what does not.** §50's lane-WIDTH measurement is untouched and remains the
+height estimate: its histogram does show the structure — a single-lane cluster at 2.25–2.50 and a
+two-lane cluster at 4.50–5.00, **exactly 2× apart** — which is evidence, not a chosen band. So
+`h ≈ 1.59 m` still stands, but it stands on ONE route (which needs the horizon), not two, and the
+claim of independent cross-confirmation is withdrawn. The delivered overlay is unaffected: it was
+verified on the video itself, not on `h`.
