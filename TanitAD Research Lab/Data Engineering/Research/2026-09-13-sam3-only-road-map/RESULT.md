@@ -936,3 +936,138 @@ Levers left, each with what decides it:
   design — the PI's call, as in the first estimate.
 * Closed on evidence: fp16 / bf16 decoder, FP8 quantization, torch.compile, cudnn.benchmark, fp32 batching alone, pruning prompts
   that feed the road boundary or the stripe pass.
+
+## 20. Before corpus production: fp16 on new clips, several SAM3 instances, the long video, Thor cleanup
+
+PI, 2026-09-14 evening: *"let cleanup the thor and archive non used disk content or delete it. check the fp16 on a third clip. check
+if there is the possibility to paralize the inferenmce and load different instances of sam3 into the gpu, since you said it is not
+memory bounded. Combined the proven measures and give me a rendered long video to confirm quality. After this we will start the
+production for the whole training corpus"*
+
+### 20.1 Several SAM3 instances on Thor's one GPU — no gain (MEASURED, `raw/speed2/mi_probe.json`)
+
+N worker processes, each its own model with the approved `spdF4a` flags and the complete per-frame work (encode, 19 prompts, CPU
+post-processing, write to RAM disk), built and warmed up first, released together, frames counted over a common 90 s window.
+
+| instances | frames/s, all instances | frames/s per instance | memory per instance |
+|---:|---:|---:|---:|
+| 1 | 0.667 | 0.667 | 9.4 GB |
+| 2 | 0.689 (+3 %) | 0.344 | 9.4 GB |
+| 3 | 0.689 | 0.222–0.233 | 9.4 GB |
+| 4 | 0.689 | 0.167–0.178 | 9.4 GB |
+
+Memory was never the limit (four instances use 38 GB of 128 GB); **compute is**: after the approved measures Thor's GPU is saturated
+by one instance, so more instances only time-share it. Throughput scales only with more GPUs. (The probe loads frames on the worker's
+main thread, so its single-instance pace, 1.50 s/frame, is slower than the production driver's 1.31–1.34 s; the comparison across N
+is like for like.) **Not a lever; not carried.**
+
+### 20.2 fp16 on ten new clips (MEASURED, `raw/speed2/spd_eval_val.json`; addendum 3 pre-registered 21:17:06, md5 156f91ad…)
+
+Clips never processed by any map arm before: two more LiDAR clips in the approved native format (6924358fafe0, 0d90d20036a3, built for this
+test from the native videos + LiDAR sweeps already on Thor) and eight production-format clips (native f-theta front frames, ground from
+the ego path, no LiDAR — the input production will have without the LiDAR download). Arms through the streaming driver: `spdSA`
+exact reference · `spdS4` = the approved `spdF4a` flags · `spdS5` = `spdF5a` flags (fp16 image backbone on top). Bars unchanged.
+
+| clip | ground | `spdS4` map agreement | `spdS4` edge IoU | `spdS4` raster agreement | `spdS5` map agreement | `spdS5` edge IoU |
+|---|---|---:|---:|---:|---:|---:|
+| 6924358fafe0 | LiDAR | 0.99999 | 1.000 | 0.99996 | 0.99992 | 0.995 |
+| 0d90d20036a3 | LiDAR | 0.99996 | 0.994 | 0.99993 | 0.99938 | 0.988 |
+| 1f1f05ca011d | ego path | 0.99996 | 0.999 | 0.99987 | 0.99961 | 0.981 |
+| b5d9b91e6637 | ego path | 0.99992 | 0.992 | 0.99991 | 0.99974 | 0.954 |
+| b975bf8ebf95 | ego path | 0.99999 | 1.000 | 0.99994 | 0.99991 | 0.987 |
+| 41f10d46174e | ego path | 0.99992 | 0.995 | 0.99987 | 0.99955 | **0.936 FAIL** |
+| 26015e788849 | ego path | 0.99997 | 0.996 | 0.99995 | 0.99984 | 0.986 |
+| f63e215a546a | ego path | 0.99996 | 0.999 | 0.99980 | 0.99978 | 0.993 |
+| c1dc66b6ae42 | ego path | 0.99956 | 0.958 | 0.99973 | 0.99941 | **0.943 FAIL** |
+| d672fc17a315 | ego path | 0.99996 | 1.000 | 0.99991 | 0.99987 | 0.995 |
+
+Every other class of every clip is ≥ 0.998 for `spdS4` (lowest: sidewalk / verge on c1dc66b6ae42).
+
+**Verdicts, against addendum 3 as committed.**
+* `spdS5` **fails** N2 on two clips (edge IoU 0.936, 0.943) → the fp16 image backbone is **not promoted**; it fails on 2 of 10 new
+  clips after passing the two test clips at the bar. Production default stays `spdF4a`.
+* `spdS4` **fails no measured bar on any clip**: N1, N2 and N4 pass on all ten (lowest edge IoU 0.958, c1dc66b6ae42). ⚠️ **Deviation from the
+  pre-registration:** N3 (the PI checks) was planned on the two new LiDAR clips and could not be computed — its curb reference reads a
+  clip's full LiDAR parquet, which is on Thor only for the two test clips (the new clips' sequences carry the per-frame sweeps), and the
+  evaluator deliberately does not pass a LiDAR clip whose PI checks are missing, so its formal line reads FAIL. N3 therefore rests on
+  the two test clips, where it passed; computing it on more clips needs the ~350 MB LiDAR parquet per clip or a different curb
+  reference, which would not be the same bar. On the production-format clips N3 is not computable by design (no LiDAR).
+* Pace in the streaming driver (previous clip's CPU stages running beside): `spdSA` 2.59 s/frame, **`spdS4` 1.43 s/frame (1.27–1.71)**,
+  `spdS5` 1.32 s/frame; busy scenes (more instances to upsample and copy) are the slow end.
+
+### 20.3 The long quality video with the combined measures (`sam3map_fast_long_v2.mp4` on Thor, 1080p 42 MB; 720p copy 26 MB; stills in `media/speed2/`)
+
+12 clips, 1,212 frames at 5 per second (≈ 4 min): the two test clips and the two new LiDAR clips, then the eight production-format
+clips. Per frame, top: the map of the combined approved measures (fp16 fusion encoder, 19 prompts batched, async CPU, streaming — the
+configuration that survived §20.2) drawn into the front camera; bottom: the same frame with today's pipeline; middle: both BEVs; a
+title card per clip carries its measured agreement. Display rules as the approved reprojection videos v2 (paint only where that arm's
+own SAM3 raster sees a road-level surface; no boxes). By eye the two rows are indistinguishable on every clip, consistent with map
+agreement 99.96–100.00 %. The first render had the top panel title running into the BEV label; fixed and re-rendered (v2).
+The production-format clips show what corpus production looks like WITHOUT the LiDAR download (ground from the ego path).
+
+### 20.4 The production driver (`code/speed2/sam3map_prod.py`)
+
+One process, one model build; per corpus clip: (1) the native front sequence at 5 Hz from the clip's front-wide mp4, the chunk's
+f-theta calibration and the B1 bundle's egomotion + camera timestamps (both already on Thor for all 4,719 clips), ground from the ego
+path; (2) the map with `spdF4a` flags and the approved pipeline measures; (3) export on the **v2ep episode grid** the BEV head trains on
+(camera timestamps → linspace at 10 Hz, exactly `v2_compressed._resampled`; pose interpolated from 100 Hz egomotion at each frame's
+exposure instant; schema `tanitad.sam3_map_gt/2`, the grids, soft fractions and content checks of the v1 exporter); (4) a JSONL ledger,
+resumable. Each clip's working files are removed only after its export passed its checks; a failing clip keeps them.
+
+Two defects found and fixed by testing, before any production:
+* **Frame poses must be the validated builder's.** MEASURED on 1f1f05ca011d with IDENTICAL inputs (timestamps, egomotion, token times
+  bit-equal to the validation sequence): interpolating the frame poses (≤ 5 cm from the nearest 100 Hz sample) changed the map at cell
+  level — thin-class IoU ≈ 0.5 against the validation map, while a same-offset resampling control reads 1.0 — although at the BEV head's
+  0.5 m grid the class fractions stayed within 0.002–0.008 (a 40-frames-apart control: 0.01–0.44). Production must reproduce the map the
+  PI reviewed, so the sequence uses nearest-sample poses as `build_front_seq_native` does; interpolation is kept only in the export.
+* **The mirror-orientation check could not decide on straight drives** (the future path at y ≈ 0 is its own mirror: 0.9921 vs 0.9921,
+  a false export failure). It now scores only future points ≥ 0.75 m to the side and reports "untestable" below 30 such points.
+
+**Test on 16 corpus clips whose inputs are all on Thor** (14 train, 1 val, 1 test; `raw/speed2/prod_test16_manifest.jsonl`, per-clip
+reports in `prod_test16_reports/`), no download: **16 / 16 OK** after the two check fixes. Measured per clip: extraction 1.31–1.70 s/frame
+(mean 1.47), refine 12–17 s, consensus 26–33 s, renderer 16–20 s, compose ≈ 1 s, export ≈ 3 s — the CPU stages run beside the next
+clip's extraction and keep up; **151 s per 96-frame clip on the GPU's path** (2,411 s for 16 clips, sequence building included);
+201 GT frames per 20 s clip; outputs 2.8 MB per clip (GT export + map). **The 8 clips shared with the validation set produce maps
+bit-identical to their validation maps** (same grid, same class array) — production reproduces the pipeline the PI reviewed.
+Orientation: 13 clips "ok", 1 "untestable: path too straight", 2 "undecided: symmetric surroundings" (lateral path points on
+drivable 1.0 for the map and its mirror alike); one of the two is validation clip f63e215a546a, whose map is bit-identical to the
+reviewed one.
+
+### 20.5 Corpus production: time and what is needed
+
+| scope | clips | per clip | Thor time |
+|---|---:|---:|---:|
+| BEV-head clips (134 EVAL + 181 train) | 315 | 151–211 s | **13–19 h** |
+| full v7 training corpus | 4,719 | 151–211 s | **8–11.5 days** |
+
+Per clip = the MEASURED 151 s plus the video fetch, ESTIMATED at 0 s (fetched ahead in parallel) to 60 s (serial). Outputs ≈ 13 GB for
+the corpus. Inputs on Thor already: egomotion and camera timestamps for all 4,719 clips (B1 bundle), the index. **Needed from
+`nvidia/PhysicalAI-Autonomous-Vehicles` (PI's permission required):** the front-wide mp4 member of each clip (HTTP range reads,
+≈ 10–12 MB per clip, ≈ 47–57 GB transferred, not stored beyond the clip), the chunk calibration parquets (≈ 70 MB); optional: LiDAR
+sweeps for ground height (≈ 35 MB per clip, ≈ 165 GB transferred) — without them the ground comes from the ego path, as in the eight
+production-format clips of the video; LiDAR ground would need a builder extension and its own validation before use.
+
+### 20.6 Thor cleanup (MEASURED; inventory by `code/speed2/disk_inventory.sh` — the TSV stays on Thor, it names directories with clip prefixes; archive list `raw/speed2/archive_list.tsv`, log `raw/speed2/archive_move.txt`)
+
+Before: 857 GB used of 937 GB, 33 GB free. Inventory of 2,054 directories (size, files, newest file, references by cron / units / live
+processes). Kept: the training caches in `data/` (596 GB; DINOv3 / B1 / parity / val caches, modified 6–29 days ago — the parity cache
+is protected), every experiment or research directory touched in the last three weeks, venvs, caches, the repo clone, and in `sam3map`
+the inputs, map r's lineage, the reference and production speed arms and everything the validation used.
+
+**Archived = moved to the dev box, verified by content, then removed from Thor** (`D:/thor_archive/2026-09-14/`, md5 manifest of every
+file and a symlink manifest per directory in `_manifests/`; a directory leaves Thor only after every file verified on the dev box):
+241 directories, 129.3 GB — epcache_prefix (41 d), nurec_scenes / nurec_work (42 d), ckpt_snaps (23–28 d), experiments/v6F-SW-30k (23 d),
+backup/v1arch-v2bal (42 d), valdata (41 d), nine TensorRT engine directories (42–43 d), seven old checkpoints in models/ (42–43 d),
+alpasim, rq_out, and 217 superseded SAM3-map iterations and intermediates.
+
+Result: **241 / 241 directories verified (52,464 files, 129.3 GB, md5 of every file on the dev box) and removed from Thor**,
+0 skipped, 0 failed removals. Thor: 857 GB used / 33 GB free before → **735 GB used / 154 GB free** after (the validation and production
+tests of §20.2–20.4 wrote ≈ 6 GB in between). Spot checks: removed paths absent on Thor and present on D: with the inventory's file
+counts; map inputs, map r, the reference / production arms, the parity cache, recent checkpoints untouched. Transfer ran at 10–20 MB/s;
+Windows cannot recreate the Linux hard links and symlinks of one directory (alpasim): its first attempt failed verification and left
+extra files on D: (flagged to the PI), the retry with `--hard-dereference` verified all 31,041 files; symlinks are listed per
+directory in `_manifests/*.links`.
+
+**Deletion is left to the PI** (Claude does not delete data): `/home/nvidia/thor_delete_candidates.sh` lists 3.8 GB of duplicates and
+regenerable scratch (a second copy of an archived checkpoint, epcache measurement copies, uv / pip download caches, the throughput
+probe's RAM scratch); it is a dry run unless called with `--yes`.
