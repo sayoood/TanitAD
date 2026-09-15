@@ -112,12 +112,21 @@ import sys
 sys.modules.setdefault("trajlib", sys.modules[__name__])
 
 __all__ = [
-    "accel_source", "camera", "contract", "diagnose", "frame_folder", "frames",
-    "geo", "ground_calib", "io_sensorlogger", "lane_calib", "pipeline",
-    "plane_calib", "quality", "render_video", "run_demo", "scale_calib",
-    "steering", "timesync", "trajectory", "validate", "vehicle_frame", "viz",
-    "vp_calib",
+    "accel_source", "camera", "contract", "diagnose", "flow_calib",
+    "frame_folder", "frames", "geo", "ground_calib", "io_sensorlogger",
+    "lane_calib", "pipeline", "plane_calib", "quality", "render_video",
+    "run_demo", "scale_calib", "steering", "timesync", "trajectory", "validate",
+    "vehicle_frame", "viz", "vp_calib",
 ]
+# ⛔ `flow_calib` shipped undeclared. `test_trajrecon_integrity` has been checking
+# for exactly this since it was written, but it could not run: collecting it
+# imported `tanitad.data`, which imported torch, so the whole module errored out
+# and BOTH its completeness checks were silently skipped. The 2026-09-15 lazy
+# import of `tanitad.data` unmasked them. ⇒ **A test that cannot be collected is
+# not a passing test**, and a suite reporting "125 errors" hides the same number
+# of unrun assertions. `flow_calib` measures `f*h` from ground flow against the
+# odometer — the one paint-free scale in this package — so it is not a module to
+# leave undiscoverable.
 
 
 def __getattr__(name: str):
