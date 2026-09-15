@@ -1740,3 +1740,75 @@ directory do not. Every one of them needs the same mask, and then:
 Until then the adopted calibration stands on: `f·h` from row flow (no paint), the horizon from row
 flow plus the lens constraint, the yaw from `overlay_far`'s gated fit and its render-less scan, and
 the loop closure on the delivered video. **`h` itself is the number now without support.**
+
+---
+
+# PART 17 — the road mask, and h re-measured behind it
+
+## 82. The mask, and the preview that is now part of the procedure
+
+`probes/road_mask.py`. A corridor projected from the calibration, cut at the bonnet row (832),
+**asymmetric on purpose**: a symmetric ±3 m corridor previewed with its LEFT edge exactly on the ego
+lane's left boundary while its RIGHT edge overran the shoulder — most slack on the side with the
+contaminating bank. Widened left (4.2 m), trimmed right (2.6 m).
+
+Running the file writes an annotated preview: **green = detections kept, red = rejected**. On this
+recording every red point is on the bank and the green ones sit on the paint. **That preview is not
+optional — it is the step whose absence produced `R-2026-09-14-foliage`.**
+
+## 83. h re-measured — and it was 5 % LOW, not high
+
+Masked ridge points + the constrained pair search (both boundaries share a vanishing point, so a
+non-parallel "lane" is not expressible). 199 pairs from 300 frames, and the histogram is finally
+**unimodal and tight** where the unmasked one was flat:
+
+    1.9-2.0  n 28   |   2.0-2.1  n 61   |   2.1-2.2  n 71   |   2.2-2.3  n 22
+
+    |m_R - m_L| = 2.095  ->  h = 3.5 / 2.095 = 1.668 m
+    frame-cluster bootstrap 95% CI [1.655, 1.685] m     (withdrawn §50 value: 1.586 m)
+
+**Converged under iteration** — the mask is projected with h, so it was re-run with the new value:
+1.586 → 1.668 → 1.668.
+
+## 84. ⚠️ But h ALONE IS MEANINGLESS — it is a curve against the horizon
+
+`|m_R − m_L| = Δu/(v − v_h)`, so a higher horizon makes the separation larger and h smaller. With
+`f·h` from the row flow (ego motion, no paint) at each pinned horizon:
+
+| horizon | pairs | \|Δm\| | **h** | f·h | **f** | crop | |
+|---|---|---|---|---|---|---|---|
+| 440 | 126 | 2.034 | **1.721** | 2610 | 1517 | 1.05 | ⚠ very high for a screen mount |
+| **448** | 127 | 2.098 | **1.668** | 2431 | **1457** | **1.01** | |
+| 456 | 129 | 2.178 | 1.607 | 2260 | 1406 | 0.98 | |
+| 464 | 120 | 2.262 | 1.547 | 2094 | 1353 | 0.94 | |
+| 472 | 104 | 2.346 | 1.492 | 1935 | 1297 | 0.90 | |
+| 480 | 84 | 2.404 | 1.456 | 1779 | 1222 | 0.85 | |
+
+⚠️ **Correcting my own printed note in that run:** it said f is "flat across the scan". **It is not** —
+f runs 1517 → 1222, a 24 % spread. It is *flatter* than either component because h and `f·h` move
+together, but the **lens constraint still discriminates**: EIS can only crop in, so `f ≥ ~1442` and
+the admissible band is **horizon ≲ 450 ⇒ h = 1.67–1.72 m, f = 1457–1517 px, crop 1.01–1.05×.**
+
+⭐ **f lands essentially on the uncropped lens.** Crop ≈ 1.0 means **EIS is not cropping this
+capture** — consistent with SensorLogger recording through Camera2, where the phone's own
+stabilisation setting need not apply. That is the first direct evidence either way.
+
+## 85. The horizon, measured a third way — and excluded a third time
+
+Two UNCONSTRAINED lines fitted to the masked points intersect at row **467.7**, robust sd 9.0,
+bootstrap CI **[466.2, 469.0]**. That is the lane vanishing point, now from clean data.
+
+It is **excluded by the lens** (it needs crop 0.93×), exactly as the paint-only horizon was before —
+and exactly as `R-2026-09-13-horizon` warns: *a vanishing point measures where lane lines converge;
+the horizon is where the GROUND PLANE vanishes, and on a crowned road those are not the same row.*
+Three routes now: row flow **438**, lens-admissible band **≲450**, lane VP **468**.
+
+## 86. ⛔ Still open, and it is the one that moves the corridor off the paint
+
+The camera yaw from the masked pair's `u_vp` is **−6.20° to −6.51°** (robust sd ~1.7 per frame,
+~200 pairs) against the rendered **−5.35°** and `overlay_far`'s gated left-line fit at **−5.30°**.
+
+The two are not the same measurement and the difference is the size a ~30 px horizon error produces
+(`∂yaw/∂v_h = m/f ≈ 0.039 °/px`). **Going more negative moves the corridor LEFT — away from the
+right-hand markings — by 0.4 m at 20 m and 0.6 m at 30 m.** That is the direction the symptom needs,
+which is a reason to be *more* careful with it, not less.
