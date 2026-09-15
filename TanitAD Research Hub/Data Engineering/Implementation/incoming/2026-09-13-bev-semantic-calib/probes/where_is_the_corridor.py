@@ -215,6 +215,119 @@ def per_frame(a, P, geo, hw):
     return 0
 
 
+def lookahead(a, P, geo, hw):
+    """The same piece of road, seen far and then near. Does the far view tell the truth?
+
+    ⛔ FIRST, A CORRECTION TO MY OWN PLAN. §109 recommended widening the ribbon
+    with range "to carry the prediction's growing lateral uncertainty". **There is
+    no prediction.** The records carry `t: [-3.0 … +5.0]` with `x` running −64 to
+    +114 m — the ACTUAL reconstructed trajectory, past and future. The overlay
+    replays where the car really went. Widening by a prediction uncertainty would
+    have been drawing a quantity that does not exist, which is worse than drawing
+    nothing: it would look like rigour.
+
+    SO THE QUESTION IS NOT "how uncertain is it" BUT "is it TRUE". And that has a
+    closed-loop test needing no new calibration and no right-hand boundary:
+
+        a fixed piece of road is at 50 m now, and at 10 m in 2.21 - 0.45 = 1.76 s
+        (53 frames at 29.94 fps). The corridor-to-line CLEARANCE there is a
+        PHYSICAL GAP, so both views must report the same number.
+
+    The two views share almost nothing: different rows of the image, different
+    ranges, different parts of the fade, a ribbon drawn from a different frame's
+    trajectory window, and paint measured 53 frames apart. **If they agree, the
+    far-field corridor is telling the truth and the crossings in §108 are the car
+    genuinely going there.** If they disagree, the far field is wrong and the
+    disagreement's sign says which way.
+
+    ⚠️ The lag is computed PER FRAME from that frame's own `(t, x)` path, not from
+    a nominal speed — the car varies 19.7–23.3 m/s and a fixed 53-frame offset
+    would smear the pairing by metres.
+    """
+    recs = {int(r["frame"]): r for r in RR.load_records(RR.RUN)}
+    src = sorted(pathlib.Path(a.frames_dir).glob("*.jpg"))
+    cap = cv2.VideoCapture(a.video)
+    nfr = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    hi = min(nfr, len(src)) - 5
+    fps = a.fps
+    want = set(range(30, hi, a.stride))
+    print(f"sampling every {a.stride} frames from 30 to {hi} ({len(want)} frames) "
+          f"at {fps:.2f} fps")
+
+    road, meas, i = None, {}, 0
+    while True:
+        ok, fr = cap.read()
+        if not ok or i >= hi:
+            break
+        if i in want and i in recs and recs[i]["complete"]:
+            g = cv2.imread(str(src[i]), cv2.IMREAD_GRAYSCALE)
+            if g is not None:
+                if road is None:
+                    road = road_mask(P, g.shape, y_left=4.4, y_right=4.4,
+                                     x_range=(8.0, max(a.ranges) + 5.0))
+                cols_at = _cols_factory(g, road, a.fx, a.paint_k)
+                r = recs[i]
+                px, py = np.asarray(r["x"], float), np.asarray(r["y"], float)
+                pt = np.asarray(r["t"], float)
+                fwd = px > 0.0
+                d = {}
+                for x, G in geo.items():
+                    ys = [(c - G["u0"]) / G["du"] for c in cols_at(G["row"], x)]
+                    ys = [y for y in ys if abs(y - a.ref) < a.track_win]
+                    if ys:
+                        y = min(ys, key=lambda z: abs(z - a.ref))
+                        d[x] = y - (float(np.interp(x, px[fwd], py[fwd])) + hw)
+                if d:
+                    meas[i] = dict(clear=d,
+                                   t_of=lambda xx, px=px, pt=pt, fwd=fwd:
+                                        float(np.interp(xx, px[fwd], pt[fwd])))
+        i += 1
+    cap.release()
+    print(f"{len(meas)} frames measured\n")
+
+    print(f"  ⭐ SAME ROAD, SEEN FAR THEN NEAR — a physical gap, so both must agree")
+    print(f"  {'far range':>11}{'lag':>8}{'n':>6}{'far clear':>12}{'near clear':>12}"
+          f"{'far - near':>12}{'r':>7}")
+    out = {}
+    near_x = min(geo)
+    for far_x in sorted(geo):
+        if far_x <= near_x:
+            continue
+        pairs = []
+        for f, m in meas.items():
+            if far_x not in m["clear"]:
+                continue
+            lag = int(round((m["t_of"](far_x) - m["t_of"](near_x)) * fps))
+            for cand in (f + lag, f + lag - 1, f + lag + 1, f + lag - 2, f + lag + 2):
+                mm = meas.get(cand)
+                if mm and near_x in mm["clear"]:
+                    pairs.append((m["clear"][far_x], mm["clear"][near_x], lag))
+                    break
+        if len(pairs) < 25:
+            print(f"  {far_x:8.0f} m{'-- too few pairs --':>30}")
+            continue
+        A = np.asarray([p[0] for p in pairs])
+        B = np.asarray([p[1] for p in pairs])
+        lag = int(np.median([p[2] for p in pairs]))
+        r = float(np.corrcoef(A, B)[0, 1]) if A.std() and B.std() else float("nan")
+        print(f"  {far_x:8.0f} m{lag:8d}{len(pairs):6d}{np.median(A):+11.2f} m"
+              f"{np.median(B):+11.2f} m{np.median(A - B):+11.2f} m{r:+7.2f}")
+        out[str(far_x)] = dict(n=len(pairs), lag=lag, far=float(np.median(A)),
+                               near=float(np.median(B)),
+                               bias=float(np.median(A - B)),
+                               spread=float(1.4826 * np.median(np.abs(
+                                   (A - B) - np.median(A - B)))), r=r)
+    print(f"\n  BIAS is the far view's error: ~0 means the far field is TRUE and the")
+    print(f"  §108 crossings are the car genuinely going there. A positive bias means")
+    print(f"  the far corridor sits too far from the line (over-optimistic), negative")
+    print(f"  means it exaggerates the excursion.")
+    print(f"  r is the per-pair correlation — it tests that the far view tracks the")
+    print(f"  near one frame by frame, not merely that their medians coincide.")
+    if a.json:
+        a.json.write_text(json.dumps(out, indent=2))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--video", required=True)
@@ -234,6 +347,13 @@ def main():
     ap.add_argument("--per-frame", action="store_true",
                     help="the MINIMUM clearance per frame and its correlation with "
                          "yaw rate — the tail, which no median can show")
+    ap.add_argument("--lookahead", action="store_true",
+                    help="the same road seen at a far range and later at the near "
+                         "range — a physical gap, so both views must agree")
+    ap.add_argument("--stride", type=int, default=4)
+    ap.add_argument("--fps", type=float, default=29.94)
+    ap.add_argument("--ref", type=float, default=2.04,
+                    help="first-pass left-line lateral used to track it (§108)")
     ap.add_argument("--track-win", type=float, default=0.80,
                     help="track the left line within this many metres of a first-pass "
                          "estimate; a free 'nearest to the vehicle' pick would select a "
@@ -257,6 +377,8 @@ def main():
         geo[x] = dict(row=float(uv[0, 1]), u0=u0, du=u1 - u0,
                       pred_l=float(uv[2, 0]), pred_r=float(uv[3, 0]))
 
+    if a.lookahead:
+        return lookahead(a, P, geo, hw)
     if a.per_frame:
         return per_frame(a, P, geo, hw)
 

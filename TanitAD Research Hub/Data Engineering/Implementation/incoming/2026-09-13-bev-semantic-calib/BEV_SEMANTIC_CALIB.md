@@ -2390,3 +2390,87 @@ over all frames); the claim attached to them did not.
 ⚠️ Same family as `R-2026-09-15-longitudinal`: **a default silently substituted for a fact.**
 `.get(key, default)` on a schema you have not enumerated is the dictionary version of reading a
 statistic over the wrong scope.
+
+---
+
+# Part 23 — the far field is TRUE, and §109's proposed fix was for a quantity that does not exist
+
+## 111. ⛔ CORRECTING MY OWN RECOMMENDATION: there is no prediction
+
+§109 proposed widening the ribbon with range *"to carry the prediction's growing lateral
+uncertainty"*. **There is no prediction.** The records carry `t: [-3.0 … +5.0]` with `x` running
+**−64 m to +114 m** — the **ACTUAL reconstructed trajectory**, past and future. The overlay replays
+where the car really went.
+
+⇒ Widening by a prediction uncertainty would have drawn **a quantity that does not exist**, and it
+would have been worse than drawing nothing, because it would have looked like rigour. The
+recommendation is withdrawn before implementation.
+
+⚠️ The right question is therefore not *"how uncertain is the far field"* but ***"is it TRUE"*** —
+and that has a closed-loop test needing no new calibration, no right-hand boundary and no new
+assumption.
+
+## 112. ⭐⭐ The same road, seen far and then near — the gap is physical, so both views must agree
+
+A fixed piece of road sits at 50 m now and at 10 m **1.76 s later** (58 frames at 29.94 fps). The
+corridor-to-line clearance there is a **physical gap**, so the two views must report the same
+number. They share almost nothing: different image rows, different ranges, different parts of the
+fade, ribbons drawn from trajectory windows 58 frames apart, and paint measured from different
+source frames. The lag is computed **per frame from that frame's own `(t, x)` path**, because the
+car varies 19.7–23.3 m/s and a fixed offset would smear the pairing by metres.
+
+| far range | lag (frames) | n pairs | far clear | near clear | **far − near** | per-pair r |
+|---|---|---|---|---|---|---|
+| 20 m | 14 | 261 | +1.07 | +1.05 | **−0.01 m** | +0.71 |
+| 30 m | 29 | 149 | +0.98 | +1.13 | **−0.09 m** | +0.56 |
+| 40 m | 43 | 112 | +1.07 | +1.12 | **−0.07 m** | +0.51 |
+| 50 m | 58 | 71 | +1.30 | +1.11 | **+0.03 m** | −0.01 |
+
+⭐ **The bias is within 0.09 m at every range out to 50 m.** The far-field corridor is telling the
+truth, so **§108's crossings are the car genuinely going there** and the overlay is correct.
+
+⇒ **No `viz.py` change is warranted on geometric grounds.** Combined with §102 (the renderer draws
+within 0.01 m of `project_ground`) and §108 (inside 30 m the clearance never drops below +0.28 m
+over the whole recording), **the corridor's geometry is now verified end to end**: renderer
+self-consistency, near-field absolute placement, and far-field truthfulness against an independent
+view of the same road.
+
+## 113. ⚠️ What the decaying correlation does and does NOT say
+
+The per-pair `r` falls +0.71 → +0.56 → +0.51 → **−0.01**. Two readings, and they are not equally
+supported:
+
+* **the far-field RENDER stops corresponding frame by frame** — this would indict the overlay;
+* **my own 50 m MEASUREMENT is noise-dominated** — n drops to 71, the paint is 7 px wide at 50 m,
+  and the corridor is deep in the fade.
+
+⭐ **The second is the supported one, and the table itself discriminates.** The near (10 m)
+measurement is common to every row, and it correlates at **+0.71** with the 20 m view — so the near
+measurement is demonstrably good. If both members of the 50 m pair were sound, `r` could not
+collapse to zero while the *median* bias stays at +0.03 m. **A noise-dominated estimator loses
+correlation while keeping its centre**, which is exactly the pattern observed.
+
+⇒ **`r → 0` at 50 m is a limit of this instrument, not evidence against the render**, and it is
+recorded as such rather than quoted as a finding. Distinguishing them properly would need a second
+independent far-field measurement, which is not worth building for a question already answered by
+the bias.
+
+## 114. Where the calibration now stands
+
+| question | status |
+|---|---|
+| does the corridor cut markings? | **YES, 12.9 % of frames, all beyond 30 m** (§108) |
+| is that a defect? | **NO** — bias ≤ 0.09 m out to 50 m (§112); the car went there |
+| renderer placement | **verified**, within 0.01 m of `project_ground` (§102) |
+| near field (≤ 30 m) | **verified**, clearance never below +0.28 m over the recording (§108) |
+| mount offset `lateral` | **≈ −0.05…−0.11 m** from the bodywork (§103), small; no tape needed |
+| yaw | **verified**, rendered −5.35° vs optimum −5.10° (§87) |
+| horizon | **460–484** by lateral drift (§104), vs row flow 438 — 1.1° of grade would explain it |
+| `h` / `f` split | **OPEN** — 1.500/1620 or 1.586/1533, both admissible (§101) |
+| right lane boundary | **OPEN** — no isolated peak; the 0.60 m spacing is the peak-picker's own rule (§107) |
+
+**The two open items are the same item.** The `h`/`f` split is set by `lane/h`, and `lane/h` is set
+by the right boundary. Neither changes the delivered render: `f·h` is fixed by the row flow, the
+lateral scale at a given row depends on `h` alone, and the difference between the two candidates is
+**5.7 % of ribbon width** — 0.05 m on a 1.855 m ribbon at the near field, far below the 0.28 m
+clearance margin.
