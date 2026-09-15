@@ -1812,3 +1812,49 @@ The two are not the same measurement and the difference is the size a ~30 px hor
 (`∂yaw/∂v_h = m/f ≈ 0.039 °/px`). **Going more negative moves the corridor LEFT — away from the
 right-hand markings — by 0.4 m at 20 m and 0.6 m at 30 m.** That is the direction the symptom needs,
 which is a reason to be *more* careful with it, not less.
+
+## 87. ✅ The yaw scan, re-run behind the mask — and it CONFIRMS the rendered value
+
+`overlay_far` now takes the road mask (`--mask`, default on). Its identity gate already gave it
+partial protection, and the re-run shows that protection was real: **the numbers barely move, and
+the ones that do, improve.**
+
+| | unmasked | **masked** |
+|---|---|---|
+| coherent association | 88/220 | **146/220** |
+| yaw from the paint alone | −5.30° | **−5.29°** (sd 1.03, n 74) |
+| yaw scan optimum | −5.34° | **−5.10°** |
+| profile 10→30 m | 1.24 … 1.20 m | **1.19 / 1.15 / 1.15 / 1.12 / 1.13 m** |
+| never-crosses at the optimum | 65 % | **70 %** (straight frames) |
+
+**Rendered at −5.35, the scan's optimum is −5.10 — a difference of 0.25°, i.e. 0.17 m at 40 m,**
+well inside the per-frame spread. The delivered render's yaw is right.
+
+## 88. ⛔ And that withdraws the −6.20/−6.51° yaw from §86
+
+The masked pair search reported the camera yaw at **−6.20 to −6.51°**, against `overlay_far`'s
+**−5.29°**. Both are masked, so the disagreement is not contamination — it is **methodological, and
+the pair search is the one that is wrong here.**
+
+`lane_pair` *constrains both boundaries to intersect at the assumed horizon* and reports that
+intersection as `u_vp`. But §85 measured, with two UNCONSTRAINED lines, that the boundaries actually
+meet at **467.7 px** — not at the assumed 448.4. Forcing the intersection 19 px away from where the
+data puts it tilts both fitted lines and drags `u_vp` sideways; `∂yaw/∂v_h ≈ 0.039 °/px` × 19 px ≈
+**0.75°**, which is the size of the disagreement.
+
+⇒ The single-line reading is the trustworthy one for "the column at row 448.4": it fits a line to
+the paint and evaluates it, with nothing imposed. **The pair's `u_vp` is not a yaw measurement
+unless the horizon it is given is the row where the lines really meet.**
+
+⚠️ This does NOT rescue the horizon. The boundaries meeting at 467.7 while the lens admits only
+≲450 is the standing tension of `R-2026-09-13-horizon`, now with clean data on both sides: a
+vanishing point is where lane LINES converge, and on a crowned road that is not where the ground
+plane vanishes.
+
+## 89. What is left of the symptom
+
+With the angle confirmed, the corridor-to-left-line distance is **flat at 1.12–1.19 m from 10 to
+30 m**. For a 1.855 m ribbon centred in a 3.5 m lane it should be **0.82 m**. The corridor is
+therefore ~0.33 m to one side — **a LEVEL, not an angle** — and that is the `--lateral-offset`
+question, which no image measurement on this recording has been able to settle (§77) and which a
+tape measure from the vehicle centreline to the phone lens settles in thirty seconds.

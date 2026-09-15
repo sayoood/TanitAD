@@ -195,7 +195,7 @@ def associate(src_gray, rows, edges, fx, gap_m=0.85, win_m=0.90, jump_m=0.35):
 
 
 def measure(src_gray, rows, edges, fx, horizon, fh, seed_x, gap_m=0.85, seed_win_m=0.75,
-            tol_px=3.0, min_inliers=22, min_span=90.0):
+            tol_px=3.0, min_inliers=22, min_span=90.0, road=None):
     """Corridor-left-edge minus painted-line distance, in metres, at each range.
 
     ONE straight line is fitted to real ridge points across the whole 10-50 m band by
@@ -218,18 +218,34 @@ def measure(src_gray, rows, edges, fx, horizon, fh, seed_x, gap_m=0.85, seed_win
     pred0 = e0[0] / S - gap_m * fx / seed_x
     half0 = seed_win_m * fx / seed_x
 
+    # ⛔ ``road`` is the ROAD MASK (R-2026-09-14-foliage). Without it the ridge operator
+    # returns the brightest narrow features in the row, which on this recording is the
+    # sunlit bank, not the paint. The identity gate below gave this probe partial
+    # protection -- a candidate line has to pass within 0.75 m of a predicted position
+    # near the corridor -- but "partial" is not a property to rely on, and a foliage
+    # line that happens to satisfy the gate would be indistinguishable. The mask removes
+    # the possibility rather than making it unlikely.
     band = [(x, v) for x, v in rows]
     pts = []
+
+    def _cols(v, x):
+        vi = int(round(v))
+        if road is not None and (vi < 0 or vi >= road.shape[0] or road[vi].max() == 0):
+            return ()
+        out = ridge_cols(src_gray[vi], ridge_width_px(x, fx))
+        if road is None:
+            return out
+        return [c for c in out
+                if 0 <= int(c) < road.shape[1] and road[vi, int(c)]]
+
     for x, v in band:
-        cols = ridge_cols(src_gray[int(round(v))], ridge_width_px(x, fx))
-        for c in cols:
+        for c in _cols(v, x):
             pts.append((v, c))
     # a line needs support between the sampled ranges too, not just at them
     vmin, vmax = min(v for _, v in band), max(v for _, v in band)
     for v in np.arange(vmin, vmax, 4.0):
         x = fh / max(v - horizon, 1e-3)
-        cols = ridge_cols(src_gray[int(round(v))], ridge_width_px(x, fx))
-        for c in cols:
+        for c in _cols(v, x):
             pts.append((float(v), float(c)))
     if len(pts) < min_inliers:
         return None, "no paint detected in the band", None
@@ -350,6 +366,12 @@ def main():
                     default=[10., 12., 15., 20., 25., 30., 40.])
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--label", default="")
+    ap.add_argument("--mask", dest="mask", action="store_true", default=True,
+                    help="restrict ridge detection to the projected road (default ON)")
+    ap.add_argument("--no-mask", dest="mask", action="store_false",
+                    help="the pre-R-2026-09-14-foliage behaviour, for comparison only")
+    ap.add_argument("--y-left", type=float, default=4.2)
+    ap.add_argument("--y-right", type=float, default=2.6)
     ap.add_argument("--yaw-base", type=float, default=0.0,
                     help="the yaw this video was RENDERED with, so the scan can name "
                          "absolute yaws instead of offsets")
@@ -387,6 +409,7 @@ def main():
     lines_for_scan = []            # (lane m, lane b, corridor m, corridor b, class)
     drops = {}
     nfit = 0
+    road_m = None
     rows_l = [(x, rows[x]) for x in sorted(a.ranges)][::-1]      # far -> near rows
     rows_l = sorted(rows_l, key=lambda p: p[1])                  # by image row, top first
     want = set(np.linspace(30, min(nfr, len(src)) - 30, a.n).astype(int).tolist())
@@ -399,7 +422,15 @@ def main():
             g = cv2.imread(str(src[i]), cv2.IMREAD_GRAYSCALE)
             if g is not None:
                 edges = {x: corridor_edges(fr, int(round(rows[x] * S))) for x in a.ranges}
-                got, why, v_cross = measure(g, rows_l, edges, a.fx, a.horizon, a.fh, min(a.ranges))
+                if road_m is None and a.mask:
+                    from road_mask import calib as _calib, road_mask as _rm
+                    _P = _calib(fx=a.fx, height=a.fh / a.fx, horizon=a.horizon,
+                                yaw=a.yaw_base)
+                    road_m = _rm(_P, g.shape, y_left=a.y_left, y_right=a.y_right,
+                                 x_range=(8.0, max(a.ranges) + 5.0))
+                    print(f"road mask: {100*float(road_m.mean())/255:.1f} % of the frame")
+                got, why, v_cross = measure(g, rows_l, edges, a.fx, a.horizon, a.fh,
+                                            min(a.ranges), road=road_m)
                 if why != "ok":
                     drops[why] = drops.get(why, 0) + 1
                 if got and len(got) >= 4:
