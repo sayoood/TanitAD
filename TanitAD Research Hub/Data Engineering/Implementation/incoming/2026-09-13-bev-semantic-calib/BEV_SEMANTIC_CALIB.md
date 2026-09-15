@@ -2658,3 +2658,72 @@ that should have made it inadmissible rather than merely soft.
 
 ⚠️ Both were found by a result being *impossible* rather than merely surprising. That is the only
 reliable check available when the instrument and the analyst share an assumption.
+
+---
+
+# Part 26 — the near clip is in the wrong frame, and that is what "leaves the road" means
+
+## 124. ⛔ The ribbon is painted on the BONNET, and `near_clip_m` was supposed to stop that
+
+Sayed, on the corrected render: *"still the same problem, the trajectory leaves the road while the
+ego vehicle is not doing this in the future."* The BEV panel in his frame shows the future path as a
+**straight vertical line at y = 0** — so it is not the trajectory, and it is not the 0.28 m lateral
+offset fixed in Part 25.
+
+Locating his exact frame (the HUD's `t` is `t_session_s`, not `pts_s` — **frame 298**, speed
+19.87 m/s, path straight to ±0.03 m over 50 m) and measuring it:
+
+| range | clear L | clear R |
+|---|---|---|
+| 7 m | +1.23 m | **+0.22 m** |
+| 9 m | +1.37 m | +1.61 m |
+
+At mid-field the corridor is inside the lane. **The part that reads as "on the shoulder" is at
+source rows ~870–1078 — which is the BONNET.** Tracing the drawn ribbon edges straight out of the
+render, it runs down to **row 1078**, while the road stops being visible at row ~830 (6.37 m camera
+range; `lk_failure_vs_static` settled this — a stronger tracker finds no motion below it).
+
+⇒ **~250 rows, a quarter of the frame, painted on sheet metal** — at the widest part of the ribbon,
+immediately beside the visible shoulder. That is what it looks like when the corridor leaves the road.
+
+## 125. ⛔⛔ AND THE CODE ALREADY INTENDED TO PREVENT IT — IN THE WRONG FRAME
+
+`viz.draw_trajectory_on_image` has a `near_clip_m` whose docstring says exactly this:
+
+> *"`near_clip_m` drops the first few metres of the future path … that near strip is under the
+> bonnet and not actually visible."*
+
+But it is applied as `s_fwd >= near`, and **`s_fwd` is arc length from the TRAJECTORY ORIGIN — the
+rear axle** — while "under the bonnet" is a fact about the **lens**. The camera sits
+`longitudinal_m` = 2.10 m forward, so `near_clip_m = 4.0` started the ribbon at
+
+    4.0 − 2.10 = **1.9 m ahead of the lens**
+
+against a bonnet that hides the road to **6.37 m**. The stated intent was never achieved, in any
+recording, since the parameter was written.
+
+⭐ **Same class as `R-2026-09-15-longitudinal`, and the second instance in two days: a quantity
+documented in one frame and applied in another, with nothing to type-check it.** The first cost a
+retracted lane-width conclusion; this one cost a quarter of every rendered frame.
+
+**FIX:** `near += cam.longitudinal_m`, so `near_clip_m` means what it says, plus a
+`--near-clip-m` pipeline flag (it had none — the default was unreachable from the CLI). Rendered
+here at **6.5 m**, which clears the 6.37 m bonnet.
+
+## 126. What this does and does not explain
+
+**EXPLAINS:** the near-field sprawl, which is where the corridor visually crosses onto the shoulder
+and which no amount of lateral correction could fix, because the geometry there was never wrong —
+the pixels simply should not have been drawn.
+
+**DOES NOT EXPLAIN, and is separate:** the residual ~0.2 m rightward bias still visible on
+individual frames (frame 298 at 7 m: clear L +1.23 vs clear R +0.22). Part 25's correction moved the
+fleet median from 0.28 m to 0.06 m, but per-frame spread remains and the right boundary is still
+the weakest measurement in this programme.
+
+⚠️ **AND IT COST ME A WRONG DIAGNOSIS FIRST.** I read Sayed's screenshot as a far-field lean,
+computed a yaw error from it, and was about to chase the yaw — until tracing the ribbon's own edges
+showed them converging at source column 812 against the calibration's 816, i.e. **the ribbon is
+drawn exactly as the calibration specifies**. Reading pixel positions off a compressed screenshot
+has now produced a wrong answer three times in this document. **Locate the frame, render it at full
+resolution, measure it.**

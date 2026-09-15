@@ -137,7 +137,26 @@ def draw_trajectory_on_image(img, ego, cam, vehicle_width: float = 1.8,
     # 0.7 m/s crawl it is most of the whole 5 s window, so the overlay went almost
     # empty exactly where a reviewer most wants to check it.  Clip roughly the
     # distance covered in the next 0.4 s instead, with a 1 m floor.
+    # ⛔ `near_clip_m` IS A CAMERA RANGE, BUT `s_fwd` IS MEASURED FROM THE
+    # TRAJECTORY ORIGIN. `s_fwd` is arc length from t = 0, i.e. from the REAR
+    # AXLE, while the docstring's justification for this clip -- "that near strip
+    # is under the bonnet and not actually visible" -- is a fact about what the
+    # LENS can see. The camera sits `longitudinal_m` (2.10 m here) forward of the
+    # origin, so clipping at s_fwd >= 4.0 started the ribbon **1.9 m ahead of the
+    # lens**, deep under the bonnet, and the stated intent was never achieved.
+    #
+    # MEASURED 2026-09-15 on `14-19-54`: the ribbon was drawn down to source row
+    # 1078 while the road stops being visible at row ~830 (6.4 m camera range,
+    # established by `lk_failure_vs_static` -- a stronger tracker finds no motion
+    # below it). That is ~250 rows, a quarter of the frame, painted on sheet
+    # metal at the WIDEST part of the ribbon, immediately beside the visible
+    # shoulder -- which is exactly where it reads as the corridor leaving the
+    # road. `R-2026-09-15-nearclip`.
+    #
+    # Same class as `R-2026-09-15-longitudinal`: a quantity documented in one
+    # frame and applied in another, with nothing to type-check it.
     near = float(np.clip(0.4 * abs(ego.get("speed_ref", 0.0)), 1.0, near_clip_m))
+    near += float(getattr(cam, "longitudinal_m", 0.0))
     fut = (t >= 0) & (s_fwd >= near)
     if fut.sum() < 2:                      # stopped: show the whole future window
         fut = t >= 0

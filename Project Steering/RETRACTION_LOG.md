@@ -3630,3 +3630,47 @@ warnings on its face: best correlation 0.68, bands disagreeing in sign, one runn
 boundary. I wrote *"not precise enough to correct it, but decisive on what mattered: the mount
 offset is small."* **It was not small.** A quantity that weakly determined cannot be decisive about
 anything, and calling it so is how a known-bad number became load-bearing.
+
+---
+
+## `R-2026-09-15-nearclip` — the bonnet clip was expressed in the rear-axle frame (second frame-mismatch in two days)
+
+**THE DEFECT.** `viz.draw_trajectory_on_image`'s `near_clip_m` exists to stop the ribbon being drawn
+where the bonnet hides the road — its docstring says so. It is applied as `s_fwd >= near`, and
+`s_fwd` is arc length from the **TRAJECTORY ORIGIN (rear axle)**, while "under the bonnet" is a fact
+about the **LENS**, which sits `longitudinal_m` = 2.10 m forward. So `near_clip_m = 4.0` started the
+ribbon **1.9 m ahead of the lens**, against a bonnet that hides the road to **6.37 m**.
+
+**MEASURED:** the ribbon is drawn down to source row **1078** while the road ends at row ~830 —
+about **250 rows, a quarter of the frame**, painted on sheet metal at the ribbon's widest point,
+immediately beside the visible shoulder. That is what Sayed has been reporting as *"the trajectory
+leaves the road"*, and no lateral correction could fix it because the geometry there was never
+wrong: those pixels should not have been drawn at all.
+
+**ROOT-CAUSE CLASS — A QUANTITY DOCUMENTED IN ONE FRAME AND APPLIED IN ANOTHER.** Second instance in
+two days after `R-2026-09-15-longitudinal`, and the failure mode is identical: two frames, one
+variable name, nothing that type-checks a datum. ⇒ **Any length compared against a trajectory
+arc-length or a `project_ground` x is in the REAR-AXLE frame; any length describing what the camera
+can see is in the LENS frame. State which, at the point of use.**
+
+⚠️ **THE DOCSTRING WAS RIGHT AND THE CODE WAS WRONG, WHICH IS WHY IT SURVIVED.** Anyone reading
+`near_clip_m`'s documentation would conclude the bonnet case was handled. The prose asserted an
+intent the implementation never delivered, and prose is not checked. *(Same shape as the
+`MODEL_REGISTRY` rule that exists because prose lied to us.)*
+
+## `R-2026-09-15-screenshot` — three wrong diagnoses read off compressed screenshots
+
+**WITHDRAWN before acting on it:** a far-field yaw error, inferred from pixel positions measured on
+Sayed's screenshot, which I was about to chase by re-opening the yaw.
+
+Tracing the ribbon's own edges out of the render instead showed them converging at source column
+**812** against the calibration's `cx + f·tan(yaw)` = **816** — i.e. **the ribbon is drawn exactly as
+specified**, and there is no yaw error to find. Earlier in the same session, screenshot-derived pixel
+readings also produced a phantom "ribbon 2.3× too wide relative to the lane" and a phantom right-hand
+boundary at −1.0 m.
+
+**ROOT CAUSE.** A screenshot is scaled, re-compressed, cropped and of unknown origin; recovering a
+source column from it compounds three uncertain scale factors, and the result is confidently wrong
+rather than noisy. ⇒ **Locate the frame in the source, render it at full resolution, and measure it
+there.** A screenshot is evidence that something is wrong and evidence of *where to look* — it is
+never a measurement.

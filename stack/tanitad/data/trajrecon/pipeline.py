@@ -913,7 +913,8 @@ def _compose(img, ego, cam, steer, t_ref, args):
     over = viz.draw_trajectory_on_image(img, ego, cam, vehicle_width=args.vehicle_width,
                                         lateral_offset_m=0.0,
                                         fade_start_m=args.fade_start_m,
-                                        fade_end_m=args.fade_end_m)
+                                        fade_end_m=args.fade_end_m,
+                                        near_clip_m=args.near_clip_m)
     over = viz.draw_hud(over, ego)
     sw = float(np.interp(t_ref, steer.t, steer.wheel_deg))
     sr = float(np.interp(t_ref, steer.t, steer.wheel_rate_deg_s))
@@ -1010,6 +1011,12 @@ def main():
     ap.add_argument("--vehicle-width", type=float, default=1.8)
     ap.add_argument("--wheelbase", type=float, default=AUDI_A6_ETRON["wheelbase_m"])
     ap.add_argument("--steering-ratio", type=float, default=AUDI_A6_ETRON["steering_ratio"])
+    ap.add_argument("--near-clip-m", type=float, default=4.0,
+                    help="drop the ribbon nearer than this CAMERA range. The road is "
+                         "hidden by the bonnet below ~6.4 m on the 2026-08-08 Caddy, and "
+                         "drawing there paints the widest part of the ribbon onto sheet "
+                         "metal right beside the visible shoulder -- which reads as the "
+                         "corridor leaving the road (R-2026-09-15-nearclip)")
     ap.add_argument("--fade-start-m", type=float, default=30.0,
                     help="range at which the drawn corridor starts fading out")
     ap.add_argument("--fade-end-m", type=float, default=55.0,
