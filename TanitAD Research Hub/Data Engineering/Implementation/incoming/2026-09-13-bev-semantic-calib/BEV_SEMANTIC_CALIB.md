@@ -2474,3 +2474,94 @@ by the right boundary. Neither changes the delivered render: `f·h` is fixed by 
 lateral scale at a given row depends on `h` alone, and the difference between the two candidates is
 **5.7 % of ribbon width** — 0.05 m on a 1.855 m ribbon at the near field, far below the 0.28 m
 clearance margin.
+
+---
+
+# Part 24 — the right boundary, settled by periodicity; and the closing state
+
+## 115. ⛔ The first dash test failed its own control — and that is why it had one
+
+`R-2026-09-15-burstiness` failed because the frames were **9 s apart**. The fix is stride 1, and at
+29.94 fps there is a better discriminator than burstiness: **a dashed line is PERIODIC**, which is
+a structural claim rather than a variance claim and survives a detector that misses half the
+dashes.
+
+**The first run flagged EVERY bin as dashed — including the SOLID left line — all at lag 6, which
+was `--lag-lo`, the scan's own lower bound.** Two red flags at once, and the control is what made
+it undeniable: consecutive frames 0.2 s apart are nearly identical, so the **detector's own
+temporal smoothness** dominates the autocorrelation at short lags and looks exactly like a period.
+
+⇒ High-pass first (subtract a 9-frame moving average), and exclude lags below any physical dash
+cycle. ⚠️ **Fourth boundary solution in this work** — §94's first pass, `--scan`'s default, the
+bonnet band, and now this. **A scan whose optimum sits at an end of its range is not a measurement**,
+and the check is now explicit everywhere a scan runs.
+
+## 116. ⭐⭐ Settled: the right boundary is at −1.10 m, pitch 13 m
+
+Detrended, three **independent** 700-frame stretches:
+
+| stretch | flagged bins | lag | pitch |
+|---|---|---|---|
+| 744–1443 | −1.15, −1.05 | 19 | 13.8 m |
+| 1500–2199 | −1.45 … −0.75, centred **−1.10** | 18–19 | 12.4–13.1 m |
+| 100–799 | −1.15 | 18 | 12.4 m |
+
+**Controls pass:** the solid left line (+2.05) peaks at acf **+0.12**, the gravel (−2.95, −2.55) at
+**+0.13** — no periodicity in either. Stray left-side flags at +1.55 and +1.95 appear in one
+stretch each with inconsistent lags (17, 35) and acf 0.27–0.35, at the threshold; the right-hand
+detection appears in **all three** at lag 18–19. That asymmetry is the evidence, not the flag count.
+
+⭐ **The pitch is CALIBRATION-FREE.** It is `speed × lag / fps` — GPS speed and frame rate only,
+no `f`, no `h`, no horizon. A dash reappears in *any* fixed image region at the pitch divided by
+the speed, wherever that region is. **12.4–13.8 m against the French T'1 standard of 3 m mark +
+10 m gap = 13 m.** A fact about the road, established without the camera.
+
+## 117. ⭐ And that closes `h`/`f` — 3.5 m is excluded, on a MEASURED boundary this time
+
+`lane/h` = (2.05 − (−1.10))/1.586 = **1.986**. §101 used 2.333 on a right boundary §107 itself
+recorded as unestablished; it is now measured.
+
+| W | h = W/1.986 | f = 2431/h | crop |
+|---|---|---|---|
+| 3.00 m | 1.510 | 1609 | 1.12× |
+| **3.15 m** | **1.586** | **1533** | **1.06×** ← the adopted set |
+| 3.25 m | 1.636 | 1486 | 1.03× |
+| 3.35 m | 1.687 | 1441 | 1.00× |
+| 3.50 m | 1.762 | 1380 | **0.96× ⛔** |
+
+⭐ **The lens caps the lane at W ≤ 3.35 m, so a 3.5 m lane is excluded** — the conclusion §97
+reached, then lost to the `+LON` bug, and now regains on properly measured inputs. **The adopted
+`h = 1.586 · f = 1533` implies a 3.15 m lane**, an ordinary width for a French route
+départementale, and it sits mid-band rather than at an edge.
+
+⚠️ Stated at its true strength: this rests on the left line at **+2.05** (clean, two independent
+probes agreeing to 0.04 m) and the right at **−1.10** (three stretches, controls passing). The band
+`W ∈ [2.9, 3.35]` is the honest interval; 3.15 m is its centre, not a point measurement.
+
+## 118. CLOSING STATE — the 2026-08-08 calibration
+
+| quantity | value | evidence |
+|---|---|---|
+| **horizon** | **448.4 px** (adopted) | row flow 437.4; lateral drift 460–484; ~1.1° of grade reconciles them (§105). **The one genuinely unresolved item.** |
+| **`f·h`** | **2431 px·m** | row flow vs the odometer, no paint |
+| **`h`** | **1.586 m** | `f·h` / `f`, with `lane/h` = 1.986 measured (§117) |
+| **`f`** | **1533 px** | HFOV 64.1°, EIS crop 1.06× |
+| **yaw** | **−5.35°** | optimum −5.10°, i.e. 0.17 m at 40 m (§87) |
+| **`lateral`** | **−0.126 m** | bodywork symmetry gives −0.05…−0.11 m (§103) — small, and not the explanation for anything |
+| **lane width** | **3.15 m** [2.9, 3.35] | left +2.05, right −1.10 |
+| **marking** | French T'1, 13 m pitch | calibration-free (§116) |
+
+**The corridor's geometry is verified end to end:** the renderer draws within **0.01 m** of
+`project_ground` (§102); inside 30 m the clearance to the left line never drops below **+0.28 m**
+across the whole recording (§108); and the far-then-near consistency check agrees to within
+**0.09 m** out to 50 m (§112).
+
+⭐ **Sayed's complaint is answered: the trajectory DOES cut road markings, in 12.9 % of frames, all
+beyond 30 m — and it is correct to do so.** The overlay replays the actual reconstructed
+trajectory, `r(path lateral, clearance) = −0.789` at 50 m, and the far view agrees with an
+independent near view of the same road. **The car went there.** No `viz.py` or calibration change
+is warranted.
+
+**What would still be worth doing, none of it blocking:** the horizon's 438-vs-470 split needs a
+grade-aware estimator or a verifiably level stretch (§105, pre-registered with both outcomes); and
+`W` could be tightened from [2.9, 3.35] with a second marking-standard anchor.

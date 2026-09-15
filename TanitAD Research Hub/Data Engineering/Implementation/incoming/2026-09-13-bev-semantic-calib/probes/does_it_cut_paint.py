@@ -567,6 +567,130 @@ def histogram(a):
     return 0
 
 
+def dash(a):
+    """Which lateral bin is PAINT — by periodicity, on CONSECUTIVE frames.
+
+    ⛔ THE FIX FOR `R-2026-09-15-burstiness`. That test asked whether a lateral bin
+    is bursty, which should separate a DASHED line from a CONTINUOUS gravel apron.
+    It failed completely — Fano 15–75 in every bin, including the left SOLID line
+    — because the frames were sampled **~9 s apart** for coverage, so section, sun,
+    exposure and lateral position all changed between samples and swamped the dash
+    period. **It measured the sampling scheme.** At stride 1 (29.94 fps) the dash
+    period is the only thing changing.
+
+    ⭐ AND AT STRIDE 1 THERE IS A FAR BETTER DISCRIMINATOR THAN BURSTINESS:
+    **a dashed line is PERIODIC.** At ~21 m/s a 12 m dash pitch gives a 0.57 s
+    cycle, about 17 frames; gravel has no period at all. Periodicity is a
+    structural claim, not a variance claim, so it cannot be faked by the scene
+    changing — and it survives a detector that misses half the dashes.
+
+    ⚠️ CONTROLS ARE PART OF THE MEASUREMENT, because §107 is exactly the story of
+    an instrument that produced regular-looking structure out of nothing (peaks
+    spaced by precisely the peak-picker's own 0.5 m rule). Two are reported:
+
+      * the LEFT line is solid, so it must show **no** periodicity. If it does,
+        the instrument is manufacturing it and nothing here is admissible.
+      * `dash_standard.py` records that an earlier autocorrelation returned a
+        **frame comb** — it tracked frame spacing, not road. Here the series is
+        one value per frame per lateral bin, so there is no stacking and no comb;
+        the control is what confirms it rather than the argument.
+    """
+    P0 = dict(RR.NOMINAL)
+    P0.update(fx=a.fx, height=a.height, lateral=a.lateral, yaw=np.deg2rad(a.yaw))
+    P0["pitch"] = LS.pitch_for_horizon(P0, a.horizon)
+    fh = a.fx * a.height
+    LON = float(P0.get("longitudinal", 0.0))
+    band = np.arange(a.horizon + fh / max(a.ranges), a.horizon + fh / min(a.ranges), 1.0)
+    y_of = {}
+    for v in band:
+        x = fh / max(v - a.horizon, 1e-3) + LON
+        uv = BC.project_ground(np.array([[x, 0.0], [x, 1.0]]), P0)
+        if np.isfinite(uv).all() and abs(uv[1, 0] - uv[0, 0]) > 1e-6:
+            y_of[int(round(v))] = (float(uv[0, 0]), float(uv[1, 0] - uv[0, 0]))
+
+    recs = {int(r["frame"]): r for r in RR.load_records(RR.RUN)}
+    fdir = pathlib.Path(a.frames_dir)
+    have = sorted(int(p.stem) for p in fdir.glob("*.jpg"))
+    start = a.start if a.start else have[len(have) // 3]
+    seq = [f for f in range(start, start + a.n) if f in set(have) and f in recs]
+    if len(seq) < 200:
+        print("⛔ not enough consecutive frames")
+        return 1
+    v_ms = float(np.median([recs[f]["speed_ms"] for f in seq]))
+    print(f"CONSECUTIVE frames {seq[0]}..{seq[-1]} ({len(seq)} at {a.fps} fps), "
+          f"median speed {v_ms:.1f} m/s, band {min(a.ranges):.0f}-{max(a.ranges):.0f} m")
+    print(f"a 12 m dash pitch would give a period of {12.0/v_ms*a.fps:.1f} frames; "
+          f"a 17 m pitch {17.0/v_ms*a.fps:.1f}\n")
+
+    edges = np.arange(-a.y_right, a.y_left + 1e-9, 0.10)
+    road, M = None, np.zeros((len(seq), len(edges) - 1), float)
+    for k, f in enumerate(seq):
+        g = cv2.imread(str(fdir / f"{f:06d}.jpg"), cv2.IMREAD_GRAYSCALE)
+        if g is None:
+            continue
+        if road is None:
+            road = road_mask(P0, g.shape, y_left=a.y_left, y_right=a.y_right,
+                             x_range=(8.0, max(a.ranges) + 5.0))
+        cols_at = _cols_factory(g, road, a.fx, a.paint_k)
+        ys = []
+        for v in band:
+            vi = int(round(v))
+            if vi not in y_of:
+                continue
+            u0, du = y_of[vi]
+            for c in cols_at(v, fh / max(v - a.horizon, 1e-3)):
+                ys.append((float(c) - u0) / du)
+        if ys:
+            M[k], _ = np.histogram(np.asarray(ys, float), bins=edges)
+
+    lags = np.arange(a.lag_lo, a.lag_hi + 1)
+    print(f"  {'lateral':>9}{'mean':>8}{'occup':>8}{'peak acf':>10}{'at lag':>8}"
+          f"{'= pitch':>10}   verdict")
+    out = []
+    for j in range(M.shape[1]):
+        s = M[:, j]
+        if s.mean() < 0.40:
+            continue
+        # ⛔ THE CONTROL CAUGHT THIS. Raw autocorrelation flagged EVERY bin as
+        # dashed at lag 6 -- including the SOLID left line -- and lag 6 was the
+        # scan's own lower bound. Consecutive frames 0.2 s apart are nearly
+        # identical, so the detector's own temporal smoothness dominates the acf
+        # at short lags and looks exactly like a period. HIGH-PASS it: subtract a
+        # moving average of `--smooth` frames, which kills the smooth component
+        # while leaving a genuine dash cycle (17-24 frames here) untouched.
+        w = max(3, int(a.smooth) | 1)
+        ker = np.ones(w) / w
+        trend = np.convolve(s, ker, mode="same")
+        z = s - trend
+        den = float((z * z).sum())
+        if den <= 0:
+            continue
+        acf = np.array([float((z[:-L] * z[L:]).sum()) / den for L in lags])
+        i = int(np.argmax(acf))
+        peak, lag = float(acf[i]), int(lags[i])
+        pitch = v_ms * lag / a.fps
+        yc = edges[j] + 0.05
+        occ = float((s > 0).mean())
+        v = ("⭐ DASHED PAINT" if peak >= a.acf_min
+             else "solid paint or continuous" if occ > 0.85
+             else "no period — verge/gravel or noise")
+        print(f"  {yc:+8.2f}{s.mean():8.2f}{100*occ:7.0f}%{peak:10.2f}{lag:8d}"
+              f"{pitch:9.1f} m   {v}")
+        out.append(dict(y=float(yc), mean=float(s.mean()), occ=occ, acf=peak,
+                        lag=lag, pitch=float(pitch)))
+        if any(abs(yc - q) < 0.06 for q in a.profile):
+            curve = " ".join(f"{L}:{v:+.2f}" for L, v in zip(lags, acf)
+                             if L % 4 == 0)
+            print(f"        acf({yc:+.2f}) = {curve}")
+    print(f"\n  ⚠️ CONTROL: the LEFT line (around +2.0 m) is SOLID and MUST show a low")
+    print(f"     peak acf. If it is flagged dashed, this instrument manufactures")
+    print(f"     periodicity and nothing above is admissible.")
+    if a.json:
+        a.json.write_text(json.dumps(dict(frames=[seq[0], seq[-1]], v_ms=v_ms,
+                                          fps=a.fps, bins=out), indent=2))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--video", required=True)
@@ -602,6 +726,20 @@ def main():
                     metavar=("LO", "HI", "STEP"), default=[380.0, 470.0, 2.0],
                     help="horizon scan range. ⚠️ CHECK THE OPTIMUM IS NOT AT AN "
                          "END OF IT — a boundary solution is not a measurement")
+    ap.add_argument("--dash", action="store_true",
+                    help="which lateral bin is paint, by PERIODICITY on consecutive "
+                         "frames — the fix for R-2026-09-15-burstiness")
+    ap.add_argument("--start", type=int, default=0)
+    ap.add_argument("--fps", type=float, default=29.94)
+    ap.add_argument("--lag-lo", type=int, default=12,
+                    help="below ~12 frames no dash pitch is physical at this "
+                         "speed; the raw acf there is detector smoothness")
+    ap.add_argument("--smooth", type=int, default=9,
+                    help="moving-average window removed before the acf")
+    ap.add_argument("--profile", type=float, nargs="*", default=[],
+                    help="print the full acf curve for these lateral bins")
+    ap.add_argument("--lag-hi", type=int, default=70)
+    ap.add_argument("--acf-min", type=float, default=0.25)
     ap.add_argument("--hist", action="store_true",
                     help="histogram every detection in metres and exit — no fit, "
                          "no winner, so a non-paint peak is visible instead of chosen")
@@ -610,6 +748,8 @@ def main():
     a = ap.parse_args()
     if a.preview:
         return preview(a, a.preview)
+    if a.dash:
+        return dash(a)
     if a.hist:
         return histogram(a)
 

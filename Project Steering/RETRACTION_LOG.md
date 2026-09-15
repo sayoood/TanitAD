@@ -3557,3 +3557,35 @@ key rather than defaulting.
 the records carry the future path (`x`, `y`) — so `y` interpolated at a range is not a *proxy* for
 why the ribbon leaves the lane, it **is** the ribbon's predicted lateral there. That substitution is
 what produced §109's `r = −0.789`, which settled the symptom.
+
+---
+
+## `R-2026-09-15-acflag` — an autocorrelation that found the detector, not the road (caught by its own control)
+
+**WITHDRAWN before it produced a result:** the first consecutive-frame dash test. It flagged
+**every** lateral bin as dashed paint — **including the SOLID left line** — all at **lag 6, which
+was the scan's own lower bound**.
+
+**ROOT CAUSE.** Consecutive frames 0.2 s apart are nearly identical, so the **detector's own
+temporal smoothness** dominates the autocorrelation at short lags and is indistinguishable from a
+period. High-passing the count series (subtract a 9-frame moving average) and excluding lags below
+any physical dash cycle fixes it; the control then passes cleanly (solid line acf **+0.12**, gravel
+**+0.13**) and the real signal appears at a single 0.2 m-wide location in **all three** independent
+stretches.
+
+**⭐ THE CONTROL IS WHY THIS COST MINUTES INSTEAD OF DAYS.** It was declared in the docstring before
+the first run — *"the LEFT line is solid, so it must show no periodicity; if it does, the instrument
+is manufacturing it and nothing here is admissible"* — so the failure announced itself instead of
+being published. Every retraction above was found the other way round: by a downstream
+contradiction, days later. ⇒ **A discriminator must be given something it should NOT fire on, and
+the negative control must be named in advance.**
+
+**⚠️ FOURTH BOUNDARY SOLUTION IN THIS WORK** — §94's first horizon pass, `--scan`'s default, the
+bonnet symmetry band, and now this. ⇒ **A scan whose optimum sits at an end of its range is not a
+measurement.** It is now checked explicitly wherever a scan runs, and the range is a flag rather
+than a literal.
+
+**ROOT-CAUSE CLASS — A STATISTIC THAT MEASURES THE INSTRUMENT.** Same family as
+`R-2026-09-15-burstiness` (measured the 9 s sampling stride) and `R-2026-09-15-scope` (a threshold
+over the wrong scope). In all three the code ran, returned plausible numbers, and described the
+apparatus rather than the world.
