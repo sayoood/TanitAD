@@ -1936,24 +1936,27 @@ sharpen the lane. It did not: on this road the shoulder is **constant-width**, s
 with the paint. The re-referenced peak at **+3.99 m** is exactly `1.747 + 2.25` — the gravel again.
 The technique is right; the road defeated it.
 
-## 93. ⭐ The lane is 2.97 m at the adopted scale — so `f·h` is ~18 % too small, or the lane is not 3.5 m
+## 93. ⚠️ SUPERSEDED BY §97 — I attributed the lane measurement to the wrong parameter
 
-Taking +1.62 m and the −1.35 m step: the ego lane is **2.97 m** at `f·h = 1533 × 1.586 = 2431`.
+*(Kept as written, with its error marked, because the error is the instructive part.)*
 
-This is load-bearing, because **`h` was derived by dividing an assumed 3.5 m lane by a measured
-separation** — and §90 shows the separations being measured were not the lane. Three readings are
-now available and they are mutually exclusive:
+Taking +1.62 m and the −1.35 m step: the ego lane is **2.97 m** at ~~`f·h = 1533 × 1.586 = 2431`~~.
+
+⛔ **THE SCALING IS `h/(v − v_h)`, NOT `f·h`.** With `u = cx − f(y−lat)/x` and `x = f·h/(v−v_h)`,
+the focal **cancels**: `y = −(u − u₀)·h/(v − v_h)`. So the histogram's laterals are set by the
+**height and the horizon**, and are entirely **free of `f`**. Everything below that reasons about
+`f·h` is therefore mis-attributed; the arithmetic in row 2 is also simply wrong (`f = 2431/1.45 =
+1676`, not 1976). **§97 redoes it correctly, and the corrected version is a much stronger result.**
 
 | if… | then |
 |---|---|
-| the lane really is 3.5 m and `f = 1533` | `h = 1.87 m` — **impossible** on a Caddy windscreen |
-| the lane really is 3.5 m and `h = 1.45 m` | `f = 1976`, a **1.29× EIS crop** |
-| `f·h = 2431` is right | the lane is **2.97 m** — narrow, but this section has a concrete barrier hard against the shoulder and yellow markings in places, i.e. a **roadworks/contraflow layout**, where 2.75–3.0 m is normal |
+| the lane really is 3.5 m | `h = 3.5/1.873 = 1.87 m` — **impossible** on a Caddy windscreen ✓ *(this row survives: it never used `f`)* |
+| ~~the lane really is 3.5 m and `h = 1.45 m`~~ | ~~`f = 1976`, a 1.29× EIS crop~~ — **wrong arithmetic and wrong parameter** |
+| the adopted `h = 1.586` is right | the lane is **2.97 m** — narrow, but this section has a concrete barrier hard against the shoulder and yellow markings in places, i.e. a **roadworks/contraflow layout**, where 2.75–3.0 m is normal |
 
-⛔ **`h = 1.668 m` (§86) is therefore not admissible either**, and neither is the `crop ≈ 1.0 ⇒ EIS
-is not cropping` conclusion that rested on it. Both came from a pair search whose pair has not been
-shown to be the lane. **The lateral scale `f·h` is currently the least-determined quantity in this
-calibration, and it multiplies every lateral number the overlay draws.**
+⛔ **`h = 1.668 m` (§86) is not admissible**, and neither is the `crop ≈ 1.0 ⇒ EIS is not cropping`
+conclusion that rested on it. Both came from a pair search whose pair has not been shown to be the
+lane.
 
 ⚠️ What does NOT change: the **angle**. `overlay_far`'s yaw is read from the corridor against the
 LEFT line, which §92 confirms is real, isolated and narrow — so §87's "rendered −5.35 vs optimum
@@ -2003,3 +2006,94 @@ and a proper CI is the obvious next instrument, and it would settle `v_h` withou
 2. **`--lateral-offset`.** Still unmeasured (§89), still a tape measure from the vehicle centreline
    to the lens. **Independent of 1** — it is a level, not a scale.
 3. **NOT blocking:** the yaw (§87, confirmed), the fade, the vehicle geometry, the render pipeline.
+
+---
+
+# Part 19 — the 3.5 m lane was the assumption that was wrong
+
+## 97. ⭐⭐ THE CIRCULARITY, AND HOW IT BREAKS
+
+Every `h` in this programme descends from one sentence in §16: *"height ~1.65–1.86 m — lane width
+at horizon 465, **assuming a 3.50 m lane**"*. From there `f = f·h / h` closed the loop. So the
+chain has been:
+
+```
+  row flow (odometer, NO paint)  ->  f·h
+  paint + ASSUMED 3.5 m lane     ->  h
+  f = f·h / h                    ->  f          ->  checked against the lens bound
+```
+
+The middle line is the one §90 retracts: the separations being divided into 3.5 m were a bank, a
+seam and a gravel apron, never the lane. **But the loop can be run the other way, and then the lane
+width stops being an input and becomes the thing under test.**
+
+**THE THREE INPUTS, each independent of the others:**
+
+| | value | provenance |
+|---|---|---|
+| **lane / h** = \|Δm\| | **1.873** | MEASURED — near-band histogram, §92. **Free of `f` and free of `f·h`**: the focal cancels out of `y = −(u−u₀)·h/(v−v_h)`. |
+| **`f·h`** at horizon 448 | **2431 px·m** | MEASURED — row flow against the odometer, §84. **No paint at all.** |
+| **`f` ≥ 1442 px** | lens bound | PUBLISHED — 26 mm-equiv at 1920 px wide, and **EIS can only crop IN**, never out. |
+
+Combining them, with the lane width `W` as the free variable:
+
+| W (lane) | h = W/1.873 | f = 2431/h | crop = f/1442 |
+|---|---|---|---|
+| 2.60 m | 1.388 | 1751 | 1.21× |
+| 2.75 m | 1.469 | 1655 | 1.15× |
+| **3.00 m** | **1.602** | **1517** | **1.05×** |
+| 3.25 m | 1.736 | 1401 | **0.97× ⛔** |
+| 3.50 m | 1.869 | 1301 | **0.90× ⛔** |
+
+⭐ **THE LENS BOUND CAPS THE LANE AT W ≤ 3.16 m — so the 3.5 m assumption is REFUTED by the
+optics.** A 3.5 m lane here would require the recorded image to be *wider than the lens*, which is
+the same impossibility that excluded the paint-only horizon in §51. The assumption that has been
+propagating since Part 3 is the thing that was wrong.
+
+⭐ **And the adopted calibration survives its own justification being retracted.** `h = 1.586,
+f = 1533` corresponds to `W = 2.97 m`, comfortably inside the admissible band — and a 2.97 m lane
+is exactly what the frames show: a concrete barrier hard against the shoulder, yellow markings in
+places, a contraflow/roadworks cross-section. **The numbers were right; the reason given for them
+was not.** That is a weaker claim than "confirmed" and it is the one the evidence supports:
+**not excluded, and consistent.**
+
+⚠️ **The soft input is the RIGHT boundary at −1.35 m**, read as a step on the gravel's flank rather
+than a peak (§92). At ±0.15 m on it the ratio runs 1.78–1.97 and the cap runs `W ≤ 3.0–3.3 m`. The
+conclusion "not 3.5 m" is robust across that whole range; the exact width is not.
+
+## 98. ⛔ The dash-burstiness discriminator failed — and it failed by measuring my own sampling
+
+The right-hand boundary is **dashed** and the gravel apron is **continuous**, which no amount of
+masking or brightness gating can see. So: watch one lateral bin across frames — a dashed line
+should be **bursty** (a dash enters the range window, then a gap), a shoulder **steady**. Occupancy
+and the Fano factor should separate them.
+
+**MEASURED, 240 frames, near band: they do not.** Fano is **15–75 in every bin** and occupancy
+2–79 % in every bin — *including the left SOLID line* (+1.65 m: occupancy **51 %**, Fano **25.6**).
+
+**ROOT CAUSE: the frames are sampled ~9 s apart**, spread across the whole recording to get
+coverage. Between two samples the road section, the sun, the exposure, the curvature and the car's
+lateral position have all changed, and that variance swamps any dash pattern by an order of
+magnitude. **The statistic measured my sampling scheme, not the road.** Burstiness is only
+meaningful on *consecutive* frames, where the dash period is the only thing changing.
+
+⚠️ Logged rather than fixed: the result in §97 does not depend on it, and a consecutive-frame
+version is a cheap future instrument. **Same family as everything else in Parts 18–19 — a statistic
+computed over the wrong scope** — which is now the fifth costume, after `df`, Thor's `free`, cgroup
+`usage_in_bytes` and the `ridge_cols` threshold of §91.
+
+## 99. What this changes, and what it does not
+
+**CHANGES:**
+- ⛔ *"The lane is 3.5 m"* is **retired as an input** everywhere in this programme. It is now a
+  **derived quantity, bounded above at ~3.16 m by the optics.**
+- `f·h` is **not** the least-determined quantity (that was §93's error). It is measured by the row
+  flow with no paint. The least-determined quantity is the **right lane boundary**, and through it
+  the split of `f·h` into `f` and `h`.
+
+**DOES NOT CHANGE:**
+- The adopted set `horizon 448.4 · h 1.586 · f 1533 · yaw −5.35`, which is inside every admissible
+  band above. The delivered renders stand.
+- The yaw (§87), the fade, the vehicle geometry, the render pipeline.
+- The `--lateral-offset` question (§89, §96 item 2) — still a **level**, still unmeasured, still a
+  tape measure. Nothing in Part 19 touches it.

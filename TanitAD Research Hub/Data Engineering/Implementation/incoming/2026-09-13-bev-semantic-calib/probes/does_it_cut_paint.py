@@ -440,6 +440,48 @@ def histogram(a):
                 print(f"     camera vs that lane's centre: "
                       f"{(1.747 - w / 2.0) * -1:+.2f} m using the pooled left-line "
                       f"centroid +1.75 (+ = camera LEFT of centre)")
+    # ── IS IT PAINT? THE DASHED LINE BLINKS; THE GRAVEL DOES NOT ─────────────
+    #
+    # ⭐ THE RIGHT-HAND BOUNDARY IS DASHED AND THE GRAVEL APRON IS CONTINUOUS,
+    # and that is a property no amount of brightness gating or masking can see.
+    # In the pooled histogram the dashed line has no local maximum at all — it
+    # rides the flank of the gravel's much larger peak — so every estimator that
+    # picks a peak returns the gravel. But watch ONE lateral bin across frames:
+    # a dashed line is BURSTY (a dash enters the range window, then a gap), while
+    # a shoulder is STEADY. Occupancy and the Fano factor separate them, and they
+    # are cheap.
+    #
+    #   occupancy  = fraction of frames in which this bin has any detection
+    #   Fano       = var/mean of the per-frame count; ~1 for a steady source,
+    #                >1 for a bursty one
+    #
+    # ⚠️ Read this WITH the width, not instead of it. Paint is narrow AND
+    # (if dashed) bursty; the gravel is broad AND steady; a seam is narrow and
+    # steady. It takes both axes to name a feature, which is exactly why one
+    # number has been wrong here three times.
+    if per_frame:
+        eb = np.arange(-a.y_right - 0.2, a.y_left + 0.2 + 1e-9, 0.10)
+        M = np.zeros((len(per_frame), len(eb) - 1), float)
+        for i, ys in enumerate(per_frame):
+            if ys:
+                M[i], _ = np.histogram(np.asarray(ys, float), bins=eb)
+        mean = M.mean(0)
+        occ = (M > 0).mean(0)
+        fano = np.divide(M.var(0), np.maximum(mean, 1e-9))
+        print(f"\n  ═══ IS IT PAINT? occupancy and burstiness per lateral bin ═══")
+        print(f"  {'lateral':>14}{'mean/frame':>12}{'occupancy':>11}{'Fano':>8}   verdict")
+        for j, e0 in enumerate(eb[:-1]):
+            if mean[j] < 0.30:
+                continue
+            yc = e0 + 0.05
+            v = ("gravel/verge (steady, broad)" if occ[j] > 0.90 and fano[j] < 2.0
+                 else "BURSTY -> dashed paint" if fano[j] >= 2.0 and occ[j] < 0.92
+                 else "steady, narrow -> solid paint or a seam")
+            print(f"  {yc:+8.2f} m   {mean[j]:11.2f}{100*occ[j]:10.0f}%{fano[j]:8.2f}   {v}")
+        out["bin_profile"] = [[float(eb[j] + 0.05), float(mean[j]), float(occ[j]),
+                               float(fano[j])] for j in range(len(eb) - 1)
+                              if mean[j] >= 0.30]
+
     # ── THE HORIZON, FROM THE ONE FEATURE WE KNOW IS REAL ────────────────────
     #
     # ⭐ A LANE BOUNDARY IS AT THE SAME LATERAL AT 10 m AND AT 30 m. That is not

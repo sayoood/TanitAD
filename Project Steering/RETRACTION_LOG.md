@@ -3427,3 +3427,61 @@ costume, after `df` reporting the 965 TB cluster instead of the pod quota, `free
 Thor unified memory, and cgroup `usage_in_bytes` counting reclaimable page cache. ⇒ **When a probe
 and a filter are composed, check which one runs first.** A threshold computed before a mask is a
 threshold for a different image.
+
+---
+
+## `R-2026-09-15-lanewidth` — the 3.5 m lane was an ASSUMPTION, and the optics refute it
+
+**WITHDRAWN:** *"the lane is 3.50 m"* as an **input** to this calibration, and with it every `h`
+derived from it — §16's `h ≈ 1.65–1.86 m`, §86's `h = 1.668 m`, and the justification (though not
+the values) of the adopted `h = 1.586 · f = 1533`.
+
+**THE CIRCULARITY.** `f·h` came from the row flow against the odometer (no paint). `h` came from
+dividing an **assumed** 3.5 m lane by a measured paint separation. `f = f·h/h` closed the loop and
+was then checked against the lens bound. `R-2026-09-15-seam` retracts the middle step — the
+separations were a bank, a seam and a gravel apron, never the lane — so the loop can be run the
+other way, with the lane width as the **free variable under test** instead of an input.
+
+**MEASURED.** The near-band lateral histogram gives `lane/h = 1.873`, and that ratio is **free of
+the focal**: with `x = f·h/(v−v_h)`, the `f` in `y = −(u−u₀)·f/x` cancels, leaving
+`y = −(u−u₀)·h/(v−v_h)`. Against the row-flow `f·h = 2431` and the lens bound `f ≥ 1442` (26 mm
+equivalent at 1920 px; **EIS can only crop IN**):
+
+| W | h = W/1.873 | f = 2431/h | crop |
+|---|---|---|---|
+| 3.00 m | 1.602 | 1517 | 1.05× |
+| 3.25 m | 1.736 | 1401 | **0.97× ⛔** |
+| 3.50 m | 1.869 | 1301 | **0.90× ⛔** |
+
+⇒ **W ≤ 3.16 m.** A 3.5 m lane would need the recorded image to be wider than the lens.
+
+**ROOT-CAUSE CLASS — AN ASSUMED CONSTANT THAT WAS NEVER PROMOTED TO A MEASUREMENT, INSIDE A LOOP
+THAT COULD HAVE TESTED IT.** The 3.5 m was reasonable (it is the French/Spanish motorway standard)
+and it was labelled as an assumption in §22. What went wrong is that it then sat in the denominator
+of every `h` for three parts of the document while an *independent* bound on the same quantity —
+the lens — was being applied to the OUTPUT of the chain rather than being propagated back to the
+input. **When an assumption and an independent constraint bracket the same unknown, solve for the
+unknown; do not use the constraint only to audit the answer.**
+
+⚠️ **The adopted values survive their own justification being retracted** — `h = 1.586, f = 1533`
+implies `W = 2.97 m`, inside the admissible band, and the frames show a contraflow/roadworks
+cross-section where 2.75–3.0 m is normal. **Not excluded, and consistent** — which is a weaker
+claim than "confirmed" and is the one the evidence supports.
+
+## `R-2026-09-15-burstiness` — a dash detector that measured my own frame sampling
+
+**WITHDRAWN before use:** the occupancy/Fano-factor discriminator intended to separate the *dashed*
+right-hand lane line from the *continuous* gravel apron.
+
+**MEASURED:** Fano **15–75 in every lateral bin**, occupancy 2–79 % in every bin, **including the
+left SOLID line** (+1.65 m: occupancy 51 %, Fano 25.6). It does not discriminate at all.
+
+**ROOT CAUSE:** the 240 frames are sampled ~**9 s apart** for coverage. Between two samples the road
+section, sun, exposure, curvature and the car's lateral position have all changed, and that variance
+swamps the dash period by an order of magnitude. **The statistic measured the sampling scheme, not
+the road.** It is only meaningful on *consecutive* frames.
+
+**ROOT-CAUSE CLASS — A STATISTIC COMPUTED OVER THE WRONG SCOPE**, fifth costume, after `df` on a
+pod, `free`/`tegrastats` on Thor, cgroup `usage_in_bytes`, and `ridge_cols`' whole-row threshold
+(`R-2026-09-15-scope`). ⇒ **Before reading a temporal statistic, ask what the sampling interval is
+relative to the phenomenon.** A 9 s stride cannot see a structure with a ~1 s period.
