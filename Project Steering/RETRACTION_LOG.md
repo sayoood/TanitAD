@@ -3589,3 +3589,44 @@ than a literal.
 `R-2026-09-15-burstiness` (measured the 9 s sampling stride) and `R-2026-09-15-scope` (a threshold
 over the wrong scope). In all three the code ran, returned plausible numbers, and described the
 apparatus rather than the world.
+
+---
+
+## `R-2026-09-15-oneside` — I measured the easy side, and a one-sided instrument cannot see a placement error
+
+**WITHDRAWN:** §114's *"the corridor's geometry is verified end to end"* as to **lateral
+placement**; §103's bonnet-symmetry mount offset (−0.05…−0.11 m); and §117's closure of the `h`/`f`
+split.
+
+**THE DEFECT IS REAL.** The drawn corridor sits **0.28 m right of the lane centre** (frame-cluster
+bootstrap CI [0.26, 0.29], 584 frames): clearance **+1.09 m left, +0.51 m right**. On the frame
+Sayed showed, the right clearance is **+0.03 m at 9 m** — the edge is on the paint. The correction
+is `--lateral-offset −0.126 → −0.41 m`, and **the pipeline's own default was −0.35**: the override
+was the error.
+
+**ROOT CAUSE 1 — A ONE-SIDED INSTRUMENT.** Every probe in Parts 22–23 measured the **LEFT** line,
+because it is solid and clean. But a single boundary yields a *clearance*, and a clearance is
+consistent with **any** placement once the car is allowed to be off-centre — which is exactly the
+escape hatch I used. ⇒ **A placement error is only observable from BOTH boundaries.** Measuring the
+side that measures well is not measuring.
+
+**ROOT CAUSE 2 — A DASHED FEATURE HANDED TO A NEAREST-NEIGHBOUR SELECTOR.** Whenever a dash had a
+gap at the sampled range, "nearest paint to the right" returned the **shoulder edge line at −2.5 m**
+— and it did so preferentially in the frames where the ribbon was closest to the paint. A reported
+metre of clearance that did not exist. Same class as `R-2026-09-15-seam`, fourth occurrence: **a
+selection step handed an incomplete feature silently returns the next thing out.** The fix is a
+DECLARED GATE (the right boundary is within 2.2 m; beyond is shoulder), after which the lane width
+stabilises at 3.40 m ± 0.25 instead of ranging 2.5–4.4 m.
+
+**⭐ THE EVIDENCE WAS PUBLISHED AND I EXPLAINED IT AWAY.** §116/§117 reported the left boundary at
++2.05 m and the right at −1.10 m. Those cannot both be right if the car drives between the markings
+— they differ by 0.95 m. I attributed the asymmetry to the driver. **The discriminating input was
+never in the data: where the car actually sits in its lane.** Sayed supplied it in one sentence.
+⇒ **When a measurement admits two readings and only an outside fact separates them, go and get the
+outside fact** — do not pick the reading that leaves the model intact.
+
+**⚠️ AND THE SOFT NUMBER SHOULD HAVE BEEN INADMISSIBLE, NOT SOFT.** §103 was published with three
+warnings on its face: best correlation 0.68, bands disagreeing in sign, one running to a scan
+boundary. I wrote *"not precise enough to correct it, but decisive on what mattered: the mount
+offset is small."* **It was not small.** A quantity that weakly determined cannot be decisive about
+anything, and calling it so is how a known-bad number became load-bearing.

@@ -2565,3 +2565,96 @@ is warranted.
 **What would still be worth doing, none of it blocking:** the horizon's 438-vs-470 split needs a
 grade-aware estimator or a verifiably level stretch (§105, pre-registered with both outcomes); and
 `W` could be tightened from [2.9, 3.35] with a second marking-standard anchor.
+
+---
+
+# Part 25 — Sayed was right: the corridor IS misplaced, by 0.28 m to the right
+
+## 119. ⛔⛔ §114's "geometry verified end to end" was wrong about LATERAL PLACEMENT
+
+Sayed, on the re-render: *"no improvements, the trajectory still leaving the road, knowing that ego
+[is] driving between the road markings."*
+
+He is right, and the defect was in my own published numbers the whole time. §116/§117 measured the
+left boundary at **+2.05 m** and the right at **−1.10 m** from the vehicle centreline. **If the car
+drives centred between the markings those must be symmetric. They differ by 0.95 m.** I read that
+asymmetry as *the car sitting right of centre* rather than as *the drawing being displaced*, and
+never questioned it because the one input that discriminates — where the driver actually is — was
+never in the data.
+
+**MEASURED on the delivered render, 584 distinct frames, 2335 reads at 7–12 m:**
+
+| | left | right |
+|---|---|---|
+| clearance, ribbon edge → line | **+1.09 m** (sd 0.24) | **+0.51 m** (sd 0.30) |
+
+⭐ **The ribbon centre sits 0.28 m RIGHT of the lane centre**, frame-cluster bootstrap 95 % CI
+**[0.26, 0.29] m**. On frame 522 — the frame Sayed showed — it is worse: right clearance **+0.12 m
+at 7 m and +0.03 m at 9 m**, i.e. the drawn edge is *on* the line while the left side has 0.64–1.03 m.
+
+## 120. ⛔ WHY EVERY STATISTIC I RAN HID IT
+
+**The right boundary is DASHED.** Whenever a dash had a gap at the sampled range, "the nearest paint
+to the right" was not the lane line — it was the **shoulder edge line at −2.5 m**. That single
+substitution turned a 0.5 m clearance into a reported metre, and it did so in exactly the frames
+where the ribbon was closest to the paint.
+
+This is `R-2026-09-15-seam` for the fourth time: **a selection step, handed an incomplete feature,
+silently returns the next thing out.** The fix is not a better peak-picker but a **declared gate** —
+the ego lane's right boundary is within 2.2 m, anything beyond is shoulder — and with that gate the
+lane width stabilises at **3.40 m (robust sd 0.25)** instead of the 2.5–4.4 m my earlier passes
+produced.
+
+⚠️ **And I compounded it.** Every probe in Parts 22–23 measured the **LEFT** line, because it is the
+clean one. A one-sided instrument cannot see a placement error at all — it sees a clearance, and a
+clearance is consistent with any placement once you allow the car to be off-centre. **Measuring the
+easy side is not measuring.**
+
+## 121. The fix, and what it implies physically
+
+The measured lateral shifts **1:1** with the `lateral` parameter: `measured_Y = −(u−c_x)·h/(v−v_h) +
+lat`, so the correction is the offset itself.
+
+    --lateral-offset   −0.126 m   →   −0.41 m
+
+The camera sits ~0.41 m **right** of the vehicle centreline — a phone mounted right of the mirror,
+which for a 1.855 m vehicle is unremarkable. ⭐ **The pipeline's own default is −0.35 m.** The
+override to −0.126 was the error, and the default was closer to the truth than the "measurement"
+that replaced it.
+
+⛔ **§103's bonnet-symmetry estimate (−0.05…−0.11 m) is REFUTED, not merely imprecise.** I described
+it as "not precise enough to correct, but decisive on what mattered: the mount offset is small".
+**It was not small, and that sentence licensed exactly the wrong conclusion.** Its correlations were
+0.68 at best, its bands disagreed in sign, and one ran to a scan boundary — three published warnings
+that should have made it inadmissible rather than merely soft.
+
+## 122. What survives, and what re-opens
+
+**SURVIVES** — neither depends on `lateral`:
+* §102's renderer self-consistency: the drawn ribbon is **1.88–1.91 m** at every range from 5 m to
+  18 m (ratio 1.02–1.03 to `project_ground`, the excess being the edge stroke). The renderer is not
+  flaring and is not misdrawing the width.
+* §112's far-then-near consistency (bias ≤ 0.09 m out to 50 m) — it compares the same quantity in
+  two views, so a common lateral bias cancels.
+* The yaw, the fade, `f·h` from the row flow.
+
+**RE-OPENS:**
+* ⛔ §114's *"the corridor's geometry is verified end to end"* — withdrawn as to lateral placement.
+* The lane width, now **3.40 m** rather than §117's 3.15 m, because the right boundary moved from
+  −1.10 to −1.44 once the shoulder was gated out. That gives `lane/h` = 2.144, and with the row-flow
+  `f·h` = 2431 and the lens bound the cap becomes **W ≤ 3.61 m** — so **3.5 m is admissible again**.
+  ⚠️ This figure has now read 2.97 / 3.15 / 3.40 across three passes, each time moving with which
+  right-side feature was used. **The `h`/`f` split is NOT settled and §117's closure of it is
+  withdrawn**; re-deciding it a fourth time on the same weak boundary would be the error, not the fix.
+
+## 123. Two coding errors of mine this turn, both caught in-session
+
+1. A window expression `int(mid-3.0/w*w/mpp*0+mid-460)` evaluated to `2·mid−460`, so a "read the
+   whole row" diagnostic searched **only the right half** and returned nothing but negative offsets.
+   Caught because *every* detection had the same sign — an impossible result for a lane.
+2. The correction print was `lateral − offset` where the algebra gives `lateral + offset`, so it
+   reported **+0.152 m** when the answer is **−0.41 m**. Caught by re-deriving the 1:1 relation
+   instead of trusting the line.
+
+⚠️ Both were found by a result being *impossible* rather than merely surprising. That is the only
+reliable check available when the instrument and the analyst share an assumption.
