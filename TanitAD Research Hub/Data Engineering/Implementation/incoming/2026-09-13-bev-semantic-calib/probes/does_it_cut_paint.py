@@ -295,9 +295,17 @@ def histogram(a):
     band = np.arange(a.horizon + fh / max(a.ranges), a.horizon + fh / min(a.ranges), 1.0)
 
     # column -> lateral, per row, from the real projection (yaw included)
+    # ⛔ THE +LON IS NOT COSMETIC. ``project_ground``'s x is measured from the
+    # TRAJECTORY ORIGIN (the rear axle); the camera sits ``longitudinal`` = 2.1 m
+    # forward of it. But ``x = f·h/(v - v_h)`` is the range from the CAMERA. Feeding
+    # one into the other asks for the scale at ``x - 2.1`` and applies it at ``x``,
+    # so every lateral comes out too small by ``(1 - 2.1/x)`` -- 21 % at 10 m, 7 % at
+    # 30 m. RANGE-DEPENDENT, so it also manufactures a drift that looks exactly like
+    # a horizon error. See `R-2026-09-15-longitudinal`.
+    LON = float(P0.get("longitudinal", 0.0))
     y_of = {}
     for v in band:
-        x = fh / max(v - a.horizon, 1e-3)
+        x = fh / max(v - a.horizon, 1e-3) + LON
         uv = BC.project_ground(np.array([[x, 0.0], [x, 1.0]]), P0)
         if np.isfinite(uv).all() and abs(uv[1, 0] - uv[0, 0]) > 1e-6:
             y_of[int(round(v))] = (float(uv[0, 0]), float(uv[1, 0] - uv[0, 0]))
@@ -516,8 +524,8 @@ def histogram(a):
                 q = vi - vh
                 if q <= 4.0:
                     continue
-                xx = fht / q
-                uv = BC.project_ground(np.array([[xx, 0.0], [xx, 1.0]]), Pt)
+                xx = fht / q                       # range from the CAMERA
+                uv = BC.project_ground(np.array([[xx + LON, 0.0], [xx + LON, 1.0]]), Pt)
                 if np.isfinite(uv).all() and abs(uv[1, 0] - uv[0, 0]) > 1e-6:
                     ymap[vi] = (float(uv[0, 0]), float(uv[1, 0] - uv[0, 0]), xx)
             pk = []

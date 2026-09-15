@@ -3485,3 +3485,45 @@ the road.** It is only meaningful on *consecutive* frames.
 pod, `free`/`tegrastats` on Thor, cgroup `usage_in_bytes`, and `ridge_cols`' whole-row threshold
 (`R-2026-09-15-scope`). ⇒ **Before reading a temporal statistic, ask what the sampling interval is
 relative to the phenomenon.** A 9 s stride cannot see a structure with a ~1 s period.
+
+---
+
+## `R-2026-09-15-longitudinal` — `project_ground`'s x is from the REAR AXLE, and I fed it camera ranges
+
+**WITHDRAWN:** `R-2026-09-15-lanewidth` in full, and with it §97's *"the lens caps the lane at
+W ≤ 3.16 m, so the 3.5 m assumption is refuted"*. **The conclusion INVERTS: the cap is W ≤ 3.93 m
+and a 3.5 m lane is comfortably admissible** (`h = 1.500 m, f = 1620 px, crop 1.12×`). Also
+withdrawn: §92's left boundary at **+1.62 m** (true **+2.05 m**) and §94's horizon scan in its
+entirety.
+
+**THE BUG.** `RR.NOMINAL` carries `longitudinal: 2.1`, and `CameraModel.t_v = [longitudinal_m,
+lateral_m, height_m]` is the camera's position **in the vehicle frame**. So `project_ground`'s `x`
+is measured from the **trajectory origin (rear axle)** and `project_ground([[10, y]])` sits
+**7.80 m ahead of the camera**. Every probe that inverted a row to a range used
+`x = f·h/(v − v_h)` — the range from the **camera** — and handed it to `project_ground` as a range
+from the **rear axle**, so the lateral scale applied was `f/(x − 2.1)` where `f/x` was needed:
+**−27 % at 8 m, −21 % at 10 m, −12 % at 20 m, −7 % at 30 m.**
+
+**ROOT-CAUSE CLASS — TWO FUNCTIONS THAT SHARE A VARIABLE NAME AND NOT ITS ORIGIN.** Both call it
+`x` and both mean "metres forward"; they disagree about *forward of what*. Nothing type-checks a
+datum. ⇒ **When composing a closed-form inversion with a library projection, verify the round trip
+numerically before trusting it** — one `project_ground(x)` → read the row → invert → compare would
+have caught this on day one, and it is now the standard check.
+
+**⭐ AND THE ERROR IS RANGE-DEPENDENT, WHICH IS WHY IT WAS EXPENSIVE.** A constant scale error would
+have been caught by any sanity check against a known width. This one shrinks with range, so it
+**manufactures a drift** — and §94's horizon estimator works by looking for exactly such a drift and
+attributing it to `v_h`. It injected ~0.28 m of spurious drift, the same order as the signal.
+**§94 measured this bug and reported it as an unresolved horizon.** Same family as the wrong-scope
+statistics of `R-2026-09-15-scope` and `R-2026-09-15-burstiness`: the probe answered a different
+question than the one asked.
+
+**HOW IT WAS CAUGHT — a disagreement, not a review.** Two probes read the *same* left line as
++1.62 m and +2.01 m. A 0.39 m gap on one feature is not noise. ⇒ **Measuring one quantity two ways
+is worth more than measuring two quantities once**, and this is the second time in two days that a
+cross-check, not an audit, found the defect.
+
+**WHAT SURVIVES.** Anything that never called `project_ground`: `clear_L`, the render-less yaw scan
+and §87's *"rendered −5.35 vs optimum −5.10"*, the flat 1.12–1.19 m profile, the row-flow `f·h`.
+**The renderer is unaffected** — it works in vehicle coordinates end to end, and its
+self-consistency check (drawn ribbon vs projected ribbon) passes at **±0.04 m** across 10–30 m.

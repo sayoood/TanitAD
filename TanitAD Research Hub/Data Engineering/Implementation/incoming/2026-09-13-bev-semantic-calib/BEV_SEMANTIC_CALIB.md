@@ -2011,6 +2011,12 @@ and a proper CI is the obvious next instrument, and it would settle `v_h` withou
 
 # Part 19 — the 3.5 m lane was the assumption that was wrong
 
+## 97. ⛔⛔ RETRACTED BY §100 — the ratio it used was 24 % low (`R-2026-09-15-longitudinal`)
+
+*(Kept in full. The METHOD below is right and is reused in §100; the INPUT `lane/h = 1.873`
+was corrupted by a coordinate-frame bug, and with the corrected `2.333` the headline
+conclusion **inverts**: a 3.5 m lane is not refuted, it is comfortably admissible.)*
+
 ## 97. ⭐⭐ THE CIRCULARITY, AND HOW IT BREAKS
 
 Every `h` in this programme descends from one sentence in §16: *"height ~1.65–1.86 m — lane width
@@ -2045,8 +2051,8 @@ Combining them, with the lane width `W` as the free variable:
 | 3.25 m | 1.736 | 1401 | **0.97× ⛔** |
 | 3.50 m | 1.869 | 1301 | **0.90× ⛔** |
 
-⭐ **THE LENS BOUND CAPS THE LANE AT W ≤ 3.16 m — so the 3.5 m assumption is REFUTED by the
-optics.** A 3.5 m lane here would require the recorded image to be *wider than the lens*, which is
+⛔ ~~**THE LENS BOUND CAPS THE LANE AT W ≤ 3.16 m — so the 3.5 m assumption is REFUTED by the
+optics.**~~ **WRONG — see §100. The true cap is W ≤ 3.93 m.** A 3.5 m lane here would require the recorded image to be *wider than the lens*, which is
 the same impossibility that excluded the paint-only horizon in §51. The assumption that has been
 propagating since Part 3 is the thing that was wrong.
 
@@ -2097,3 +2103,124 @@ computed over the wrong scope** — which is now the fifth costume, after `df`, 
 - The yaw (§87), the fade, the vehicle geometry, the render pipeline.
 - The `--lateral-offset` question (§89, §96 item 2) — still a **level**, still unmeasured, still a
   tape measure. Nothing in Part 19 touches it.
+
+---
+
+# Part 20 — a coordinate-frame bug that manufactured a horizon drift and a refutation
+
+## 100. ⛔⛔ `project_ground`'s `x` is measured from the REAR AXLE, not the camera
+
+`RR.NOMINAL` carries **`longitudinal: 2.1`**, and `CameraModel.t_v = [longitudinal_m,
+lateral_m, height_m]` is *"the camera position expressed in the vehicle frame"*. So
+`project_ground([[10, y]])` is a point 10 m ahead of the **trajectory origin** — which is
+**7.80 m ahead of the camera**.
+
+Every probe here that inverted a row to a range did it with `x = f·h/(v − v_h)`, which is the
+range **from the camera**, and then handed that number to `project_ground` as a range **from the
+rear axle**. The lateral scale used was therefore `f/(x − 2.1)` where `f/x` was required:
+
+| nominal x | camera range `project_ground` actually used | lateral error |
+|---|---|---|
+| 8 m | 5.82 m | **−27 %** |
+| 10 m | 7.80 m | **−21 %** |
+| 20 m | 17.69 m | −12 % |
+| 30 m | 27.59 m | −7 % |
+
+**HOW IT WAS CAUGHT.** Two probes disagreed about the *same* line: the histogram said the left
+boundary was at **+1.62 m**, `where_is_the_corridor` said **+2.01 m**. A 0.39 m gap between two
+readings of one feature is not noise, and the renderer self-consistency test had already left the
+clue — `project_ground` at "10 m" produced a lateral scale matching a **7.89 m** camera range, a
+number with no business appearing unless something was subtracting ≈2.1 m.
+
+With the `+LON` fix the two agree: histogram **+2.05 m**, `where_is_the_corridor` **+2.01 m**.
+
+**⭐ AND IT EXPLAINS THE HORIZON SCAN.** §94's estimator measures a lane boundary's lateral in
+three range bands and looks for the `v_h` that removes the drift. But the bug's error is
+**range-dependent** — −21 % at 10 m, −7 % at 30 m — so it injects a spurious drift of ~0.14× the
+lateral, about **0.28 m**, which is the same order as the drifts being scanned. **§94 was measuring
+this bug, not the horizon.** That is why its basin was broad and noisy and why a first pass ran to
+its own boundary. A re-run with the fix is the obvious next instrument and is now unblocked.
+
+⚠️ **Not everything is affected.** `clear_L` and the yaw scan use `mpp = x/f` with `x` from the
+camera and never touch `project_ground`, so §87 and the flat 1.12–1.19 m profile stand. The
+renderer is unaffected: it works in vehicle coordinates throughout, which is why its
+self-consistency check passes at **±0.04 m**.
+
+## 101. ⭐ Redone: the 3.5 m lane is ADMISSIBLE, and the cap is 3.93 m
+
+Corrected near-band peaks (200 frames, `h 1.586 · v_h 448.4`, `+LON` fixed):
+
+* **left boundary +2.05 m** (mode 2.00–2.10, n 2303) — clean and isolated, as before;
+* right-hand candidates **−1.65 m** (1272) and **−2.25 m** (2962), with the **gravel mode at
+  −2.75 m** (4832). Taking −1.65 as the boundary gives `lane/h = 2.333`.
+
+| W | h = W/2.333 | f = 2431/h | crop |
+|---|---|---|---|
+| 3.25 m | 1.393 | 1745 | 1.21× |
+| **3.50 m** | **1.500** | **1620** | **1.12×** |
+| **3.70 m** | **1.586** | **1533** | **1.06×** ← the adopted `h` |
+| 3.93 m | 1.685 | 1443 | 1.00× |
+| 4.10 m | 1.757 | 1383 | **0.96× ⛔** |
+
+⭐ **The lens caps the lane at W ≤ 3.93 m.** A 3.5 m lane is comfortably inside it, at
+`h = 1.500 m, f = 1620 px, crop 1.12×` — a very ordinary windscreen-mount height and a very
+ordinary EIS crop. The adopted `h = 1.586` corresponds to a **3.70 m** lane, which is also an
+entirely standard width. **Both are admissible and the optics no longer discriminate between
+them.** §97's refutation is withdrawn.
+
+⚠️ The open ambiguity is now the **right boundary: −1.65 m or −2.25 m** (lane 3.70 m or 4.30 m).
+−2.25 m is excluded by the lens for any `h ≥ 1.30`, so **−1.65 m is the boundary and −2.25 m is
+shoulder** — the optics do still discriminate *there*. Worth confirming with a consecutive-frame
+dash test (§98's instrument, fixed).
+
+## 102. What Sayed actually sees, and whether it is a defect
+
+Measured on the delivered render, straight frames only (|yaw rate| < 1 °/s, n 106–167 per range):
+
+| range | corridor centre (should be 0.00) | left line | gap, ribbon edge → line |
+|---|---|---|---|
+| 10 m | **+0.004 m** | +2.01 | +1.09 m |
+| 20 m | **−0.002 m** | +2.04 | +1.12 m |
+| 30 m | **+0.008 m** | +1.95 | +1.02 m |
+
+1. **The renderer is not misplacing the corridor.** It draws the ribbon within **0.01 m** of where
+   `project_ground` puts it, at every range. There is no drawing bug.
+2. **There is over a metre of clearance to the left line**, flat with range. The corridor is not
+   cutting the left boundary in straight driving.
+3. The vehicle centreline sits at `(2.05 − 1.65)/2 = +0.20 m` from lane centre — the car runs
+   slightly right of centre, which is ordinary on a two-way road.
+
+⇒ **The remaining candidates for the symptom are (a) CURVES, where the ribbon correctly follows the
+future path and legitimately crosses a line, and (b) the per-frame spread** — the left line's robust
+sd is **0.23 m at 10 m rising to 0.54 m at 30 m**, so individual frames sit far closer than the
+median. A median cannot show either. **The next measurement is the per-frame minimum clearance
+distribution and its correlation with yaw rate**, which separates "correct prediction of a turn"
+from "wrong geometry" — and it needs no new calibration.
+
+## 103. ⭐ The mount offset, from the car's own bodywork — no tape measure
+
+The bonnet is symmetric about the vehicle centreline, so for a symmetric pair at depth `D` the
+midpoint column is `cx + f·tanψ + f·lat/D`; against the road vanishing point,
+`m − u_vp = f·lat/D`. At `D ≈ 1.8 m` and `f = 1533`, a 0.126 m mount offset is **107 px** — not a
+subtle signal.
+
+MEASURED by mirror correlation on the illumination-flattened vertical-gradient map of a 120-frame
+median (`u_vp = cx + f·tan(−5.35°) = 816.4`):
+
+| source rows | symmetry axis | corr | `m − u_vp` | lat at D = 1.3…2.1 m |
+|---|---|---|---|---|
+| 830–900 | 950 | **0.149** | +134 | +0.11…+0.18 ⚠ weak |
+| 900–960 | 746 | 0.243 | −70 | −0.06…−0.10 |
+| 930–1000 | **520 ⛔** | 0.378 | — | **boundary solution, discarded** |
+| 960–1040 | 739 | **0.684** | −77 | −0.07…−0.11 |
+| 830–1040 | 740 | **0.677** | −76 | −0.07…−0.11 |
+
+⇒ **`lat ≈ −0.05 to −0.11 m`** from the two well-correlated bands — same sign as the rendered
+**−0.126 m** and the same order. ⚠️ Not precise enough to *correct* it (the depth `D` is known only
+to ~±20 %, and the bands disagree), but decisive on the question that mattered: **the mount offset
+is small, so it cannot account for a placement error of several tenths of a metre.** The
+tape-measure blocker of §96 is therefore **not blocking** — it was never the explanation.
+
+⚠️ One band ran to the edge of its own scan window and was discarded. That is the third boundary
+solution in two days (§94's first pass, the `--scan` default, this). **A scan whose optimum sits at
+an end of its range is not a measurement** — it is now checked for explicitly wherever a scan is run.
