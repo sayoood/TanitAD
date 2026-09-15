@@ -1071,3 +1071,125 @@ directory in `_manifests/*.links`.
 **Deletion is left to the PI** (Claude does not delete data): `/home/nvidia/thor_delete_candidates.sh` lists 3.8 GB of duplicates and
 regenerable scratch (a second copy of an archived checkpoint, epcache measurement copies, uv / pip download caches, the throughput
 probe's RAM scratch); it is a dry run unless called with `--yes`.
+
+## 21. Corpus production and the training dataset on HF
+
+PI, 2026-09-15 morning: *"Ok, start now the augmentation of the complete training corpus, download what do you need, manage efficiently
+disk memory and push the final dataset to my hf account, the data set should include all augmentations, the already generated alpamayo
+outputs, our already generated newest nav commands, tactical and strategic labels and the semantic maps..."*
+
+**State at the time of writing:** production of the 4,719 clips is **running** on Thor (launched 07:51 Europe/Berlin; ≈ 144 s per clip ⇒
+≈ 7.9 days); the maps are **published incrementally** to the private corpus repo `Sayood/tanitad-v7-training-corpus` every 6 h; the
+other augmentation components are **pushed**. The dataset's live status is `semantic_maps/SEMANTIC_MAPS_MANIFEST.json:status`
+(`IN_PROGRESS` until the last clip, then `COMPLETE`, written by the publisher).
+
+### 21.1 What runs where
+
+| host | process | job |
+|---|---|---|
+| Thor | `corpus_feeder.py` | keeps the next 120 not-done clips' front-wide mp4s on disk: HF download at the pinned corpus revision `a0cf20df`, sha256 against `camera/camera_sha256.json`, atomic rename; removes the mp4 of every finished clip (originals stay on HF and the dev box) |
+| Thor | `corpus_supervisor.sh` | runs `sam3map_prod.py` in launches of 250 clips (fresh process and CUDA context every ≈ 10 h), restarts after a crash, breaks a crash loop by skipping the head clip after 3 launches without ledger growth, exits after 5 start failures or 10 skips, writes `DONE` at the end; lock fd closed on every long-lived child |
+| Thor | `sam3map_prod.py` | the approved `spdF4a` map pipeline and the v2ep export of §20.4, one ledger row per clip |
+| Thor | `corpus_publish_loop.sh` → `corpus_publisher.py` | every 6 h: OK clips → HF in commits of ≤ 91 files, every file's sha256 re-read from the Hub before the clip counts as published, manifest committed last; refuses above 900 GB private storage or 150 GB for this repo |
+| dev box | `stage_augment.py`, `push_augment.py`, `finalize_card.py` | calibration, LiDAR BEV GT, obstacle tracks, loader, release manifest, datacard |
+
+Disk on Thor is bounded by construction: the input window is 120 mp4s (1.7–1.8 GB), a finished clip leaves 4.3 MB of output, and the
+working files of at most 20 failed clips are kept. 153 GB free at launch.
+
+### 21.2 Checks before launch (MEASURED, `raw/corpus/precheck.txt`)
+
+* 4,719 clips in the production order, 4,719 unique, **4,719 unique 8-character prefixes** (the pipeline names working directories by
+  `clip[:8]`), 0 missing from the B1 index.
+* Calibration: 1,411 chunks copied to Thor, **0 clips without a front-wide intrinsics and extrinsics row**.
+* The HF sha256 table has 4,719 entries and covers every clip; **the 160 mp4s behind the validated maps (dev-box copies on Thor) hash
+  equal to it** — the HF camera files are the inputs the approval used.
+* HF storage (MEASURED ≈ 08:05, per-repo `usedStorage` over all 48 repos of the account, `raw/corpus/hf_storage.txt`): **166.33 GB
+  private**, 901.34 GB public. PUBLISHED plan (huggingface.co/docs/hub/storage-limits, read the same morning): Pro includes **1 TB
+  private**; beyond it storage is billed pay-as-you-go ($18/TB/month). The additions are ≈ 19 GB (≈ 3.4 MB of maps per clip × 4,719 plus
+  2.6 GB of dev-box components), so the ceilings in code (900 GB private, 150 GB for this repo) sit far below the billed tier.
+
+### 21.3 A defect in the validated driver's error path, and the reproduction check (MEASURED, `raw/corpus/verify/`)
+
+Reading the driver for a multi-day run showed that **one failed sequence build would fail every later clip**: the next clip's prebuild
+was queued only *after* the failed future's `result()`, so the loop kept re-reading the same failed future. It never fired in §20.4
+because no clip failed there. Fixed (the next prebuild is queued before the result is read), together with the corpus-run features —
+wait for the feeder's input, give a clip up after two failures (one for `FAIL-EXPORT-CHECKS`, the map being deterministic), a CPU-stage
+exception becomes a failed row rather than a dead process, three GPU-stage failures in a row or an input timeout end the process so the
+supervisor restarts it with a fresh CUDA context. The compute path (`build_sequence` → `export_v2ep`) differs from the validated file
+only by the input wait.
+
+Same list `[bogus clip, validated clip 41257700ce38]` through both drivers:
+
+| driver | bogus clip | validated clip |
+|---|---|---|
+| validated `sam3map_prod.py` (deliberate regression) | FAIL-GPU-STAGE `KeyError` | **FAIL-GPU-STAGE with the bogus clip's `KeyError`** — the defect |
+| corpus `sam3map_prod.py` | FAIL-GPU-STAGE `KeyError` | **OK**, and against `production_test2` (the validated production output): **GT npz 9/9 arrays and worldmap 8/8 arrays bit-identical** |
+
+### 21.4 Production so far (MEASURED, ledger `raw/corpus/ledger_head.jsonl`)
+
+At 08:55 (Europe/Berlin), 1.07 h after launch: **27 clips done, 24 OK, 3 failed the export gate**,
+25.3 clips/h ⇒ ≈ 7.8 days for the corpus. Extraction median 130.2 s per 96-frame clip (range
+124.4–147.9); CPU stages median 66.8 s in the background. GPU memory flat: `cuda_alloc_gb`
+[3.81], `cuda_max_gb` [9.4] on every clip. Orientation check on the OK clips: {'undecided: symmetric surroundings': 9, 'ok': 8, 'untestable: path too straight': 7}.
+Median cart seen share 0.948, drivable 0.336;
+lowest ego-path-on-drivable 0.9597.
+
+**The first failures, read against the camera before acting** (`raw/corpus/failcheck/`):
+* **081b986f8888** failed only because `ego_future_path_on_drivable` had **no value**. The camera shows a car **parked at night facing
+  a snowy embankment behind a fence**; it moves 3.98 m in the whole clip, so its few future points sit in the unseen near field. The map
+  is plausible (non-drivable verge ahead, drivable parking surface to the left). An egomotion census over every clip's camera span
+  (`code/corpus/path_testable_census.py`, the export's own grid, poses and geometry) finds **20 of 4,719 clips (0.42 %) with no
+  future-path point at all** (1 among the 315 BEV-head clips); near-stationary clips like this one come on top.
+* **2b568af29b7d** failed with 87.7 % of its future path on drivable (bar 0.9). Under the path: drivable 77.0 %, lane line 10.7 %,
+  **"seen, no class" 12.3 %, non-drivable 0 %** — the camera shows the car **creeping in a queue behind a truck** (2.0 m/s mean), and the
+  unlabelled cells are the near field just in front of the bonnet (median 4.9 m ahead, 18 of 161 frames), which a queued car never saw
+  as road. The rest of the map (lanes, markings, crosswalk, verge) matches the image.
+
+**Decision.** The gate was **not** changed mid-run: the driver and its ledger stay as validated, and `semantic_maps/gt/` keeps its
+meaning. The publisher sorts the failures by what the evidence says: a clip ships in a separate opt-in tier, `semantic_maps/gt_flagged/`,
+only when **nothing contradicts its map** — every other check passed, and either the path check had nothing to test, or the off-road
+share of the path is only unlabelled road with **no path cell on a non-drivable class** and ≥ 50 % on road classes. Each flagged clip
+carries its reason and the class counts under its path (manifest block `clips_flagged`; loader `allow_flagged=True`). A path that runs
+over an edge or sidewalk — the map contradicting the drive — stays unpublished with its failed checks. Same family as the orientation
+check's `untestable`, which was never scored as a failure.
+
+### 21.5 The published dataset
+
+| component | repo path | clips | how verified |
+|---|---|---|---|
+| semantic maps | `semantic_maps/gt/<clip_id>.sam3mapgt.npz` (every check passed), `semantic_maps/gt_flagged/` (failed only where nothing contradicts the map, §21.4), `semantic_maps/worldmap/`, `semantic_maps/logs/` | in progress | Hub sha256 per file after its commit; independently downloaded back on the dev box: 6/6 files sha256-equal, schema, shapes, frame counts and cell sums correct |
+| LiDAR BEV GT | `lidar_bev_gt/<clip_id>.bevgt.npz` | 315 (134 b1eval + 181 b1train200) | bytes = builder record, D: mirror sha256 = C: build cache, builder-ok set = shipped set, 0 quarantined shipped; the loader re-verifies 315/315 |
+| obstacle tracks (upstream) | `agents/obstacle_offline/obstacle_offline_<NNN>.parquet` + `index.parquet` | 4,585 source files (6 with zero cuboids), 134 clips without an upstream file | every shard re-read and compared to its sources clip by clip |
+| calibration (upstream) | `calibration/camera_intrinsics.parquet`, `calibration/sensor_extrinsics.parquet` | 4,719 | a front-wide row for every clip (asserted) |
+| loader | `tools/augment_loader.py` | — | refuses a file whose stored clip hash differs from its name (deliberate regression: a map copied under another clip id is refused) |
+| release index, card | `AUG_2026_09_MANIFEST.json`, `DATACARD.md` | — | the card edit is additive (pointer paragraph + appended section; the old card is a prefix/suffix of the new one, asserted) |
+
+Already in the repo and unchanged: the camera mp4s, egomotion, timestamps, index, splits, the Alpamayo2-Super outputs
+(`alpamayo/records.parquet`, sha256-equal to `Sayood/tanitad-alpamayo2-augmentation`: trajectory, meta_action, auto_labeling, VQA and
+grounding for 4,729 clips, 0 errors — its VQA question bank `vqa_bank_500.json` was missing and is added) and the **v8.1 labels** (strategic, tactical, nav_command + nav_30s, tac_SIT, lane_change_text,
+speed_max_input). v8.1 is the newest label release: the repo's own packages hold v7, v7.2 and v8.0 only.
+
+Dev-box pushes (`raw/corpus/push_augment.txt`): commit `3393f646d5` 90 files ['agents', 'calibration', 'lidar_bev_gt'] verified 90/90, bad 0; commit `aedce97e62` 90 files ['lidar_bev_gt'] verified 90/90, bad 0; commit `e5f3c8e401` 90 files ['lidar_bev_gt'] verified 90/90, bad 0; commit `9361de264b` 90 files ['lidar_bev_gt'] verified 90/90, bad 0; commit `4ebab7733d` 6 files ['agents', 'lidar_bev_gt'] verified 6/6, bad 0; commit `c86bc4996a` 4 files ['AUG_2026_09_MANIFEST.json', 'DATACARD.md', 'alpamayo', 'tools'] verified 4/4, bad 0.
+Thor publisher so far (`raw/corpus/thor/publisher.txt`): batch 0001 3 clips 7 files 12.5 MB commit `37706a03aa`.
+**Second channel** (`code/corpus/verify_hf_components.py`, `raw/corpus/verify_hf_components.txt`): every pushed component downloaded back from HF into a fresh folder and checked with the loader the dataset ships — (ok, mismatched, not downloaded) per component {'calibration': (2, 0, 0), 'agents': (48, 0, 0), 'lidar_bev_gt': (315, 0, 0), 'alpamayo': (1, 0, 0)}, datacard edit additive against the card that was on the Hub before: **True**; overall **PASS**; one clip through every loader: lidar (201, 120, 64), agents 4594 rows, calibration fw_poly_1 924.126.
+
+⛔ **Label-only.** The semantic maps are non-causal and the LiDAR GT reads a sensor the deployed model does not have: training targets
+and evaluation references, never inference inputs. ⚠️ **Not measured on the corpus:** per-class map accuracy against an independent
+reference; the per-clip export checks are a sanity gate, not an accuracy measure.
+
+### 21.6 Traps met today (each cost a round)
+
+* A backgrounded `a && b && … &` list in a remote shell gets stdin from `/dev/null`: a `tar -xf -` at its head read nothing
+  (*"does not look like a tar archive"*). Ship and launch in separate ssh calls.
+* A `/proc/*/cmdline` scan for `*corpus_publisher.py*` matched **its own ssh shell** and reported a publisher that was not running —
+  the `pgrep -f` self-match in a new costume. A `[c]`-bracket pattern cannot match its own text.
+* `grep -c $'\r'` in Git Bash counted every line as carrying a carriage return; the files had none (md5 unchanged by a CRLF strip).
+* An upstream obstacle parquet with zero rows stores null-typed string columns and float32 numbers; writing shards from a pandas round
+  trip failed on the first such clip. Shards now take the native schema of a non-empty source.
+* `list_models(expand=["usedStorage"])` is a 400; `usedStorage` is available per repo (`model_info` / `dataset_info` / `space_info`).
+* `Keys.txt` on the old G: path was unreadable for 20 retries: the project now lives at `D:/Projects/TanitAD`.
+
+### 21.7 For the PI
+
+* **Your D: checkout is 34 commits behind origin** (`d221843`, 2026-09-11, vs branch tip `c8eab57`) with 190 changed or untracked
+  entries — a `git pull` there is yours to run; this landing goes through the lander clone as before.
