@@ -220,3 +220,16 @@ Source: `…/Benchmarks & Evals/Research/2026-09-07-refcv5-v2-comparison/raw/` (
 * ⛔ **Compute is the binding constraint:** Thor is busy until ~22 Sep and every pod is gone. A 40 k-step arm is ~47 h on Thor. Without a pod, at most ~5 arms fit between 23 Sep and 5 Oct — and closed loop needs Thor too.
 
 The companion document **`Project Steering/REFCV6_DESIGN_GROUNDED.md`** finishes the refcv6 design on this basis.
+
+---
+
+## ⛔ CORRECTION (2026-09-16)
+
+The arm-D row above describes `--w-u0 0.5 → 0` as *"DiffusionDrive has no denoising loss"*. **That is misleading.**
+DiffusionDrive's matched-anchor L1 **is** its x0 denoising loss (`multimodal_loss.py:133-159`, reg weight 8 with
+focal 10, summed per cascade layer and scaled by `trajectory_weight` 12); `diff_loss_weight` 20 multiplies a
+`diffusion_loss` key the V1 head never emits, so it contributes nothing. Our `--w-u0` is a **second copy** of DD's
+loss in control space, so arm D removes a duplicate rather than adding a paper feature.
+
+Sources and the full correction list: `Project Steering/REFCV6_CLARIFICATION.md` §9 and §5; class entry
+`RETR-2026-09-15-DD-PAPER-OVER-CODE` in `Project Steering/RETRACTION_LOG.md`.

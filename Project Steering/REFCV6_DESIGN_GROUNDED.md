@@ -265,3 +265,24 @@ The 09-10 pre-launch gate (C1–C6, JSON verdict, never the exit code) plus:
 * ⚠️ Owed before quoting outside the repo: bank the Simple-BEV and DiffusionDrive V1/V2 primaries through `tools/kb_add.py`.
 * ⚠️ Owed before scoring: `verdict_refcv6.py`'s stale literals replaced by the re-read values (status report §5, item 3).
 * ⚠️ The 09-10 `PREREG_REFCV6.md` is **not rewritten**; when you approve this design, the new pre-registration `PREREG_REFCV6_GROUNDED.md` is committed with §6 frozen verbatim, before any arm trains.
+
+---
+
+## 12. ⛔ CORRECTIONS (2026-09-16, before any approval)
+
+Two statements above are wrong. They are corrected **here** rather than rewritten in place, so that the proposal
+as you read it on 09-15 stays legible next to what is true. Full list with sources: `REFCV6_CLARIFICATION.md` §9;
+class entry `RETR-2026-09-15-DD-PAPER-OVER-CODE` in `RETRACTION_LOG.md`.
+
+| where | it says | what is true |
+|---|---|---|
+| §2.6, third coupling | "P = 4 learned offsets each (**deformable sampling, DiffusionDrive's trajectory-indexed spatial attention**)" | DiffusionDrive's released code samples the BEV map at the candidate's **own waypoints with no learned offsets** (`ddv2_src/blocks.py:84-104`). The offsets are **our extension**: they must be labelled as ours and ablated against the paper's form, which is the cheaper arm |
+| §2.6 losses and the §3 table | "matched-anchor L1 + focal scoring, **no denoising loss**"; "u0 0.5 (**our invention**)" | DD's matched-anchor L1 **is** its x0 denoising loss (`multimodal_loss.py:133-159`: reg weight 8 + focal 10, summed per cascade layer and scaled by `trajectory_weight` 12). `--w-u0` is a **second copy** of it in control space. `diff_loss_weight` 20 multiplies a `diffusion_loss` key the V1 head never emits, so it contributes 0 |
+
+Two further facts this design assumed and that were checked since:
+
+- ⛔ **The warm start is new code, not a switch.** `refc_v3_train.py:4735-4741` resumes only its own `<out>/ckpt.pt`,
+  strictly and with the optimizer state; there is no flag to start from another checkpoint with new modules.
+- ⚠️ **"The trunk cannot place things" is too strong.** refcv5-v2's tokens carry their own position: a ridge probe
+  reads column 86.2 % and row 97.5 % on held-out clips (`D-REFCV5V2-TOKEN-POS-1`). A positional-encoding arm is
+  therefore low priority; supervision and the waypoint-indexed read are the levers.
