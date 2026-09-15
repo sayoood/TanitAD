@@ -3370,3 +3370,60 @@ its numbers (the flat 1.15–1.28 m profile, the crossing row, the render-less y
 loop closing at +0.00) are **not** implicated. Left-line measurements are largely intact: the
 contamination is on the right of the carriageway. The delivered renders are unaffected; what is in
 doubt is the evidence for `h`, and through it `f`.
+
+---
+
+## `R-2026-09-15-seam` — the right-hand lane boundary was a TAR SEAM (and before that a bank, and beside it the gravel)
+
+**WITHDRAWN.** Everything `does_it_cut_paint.py` produced from a right-hand line fit, including the
+run made earlier the same day *with* the road mask: the corridor placement **−0.32 m** (−0.38 m
+h-free), the camera at **−0.36 m** from lane centre, `lane w` **3.33→2.83 m**, and the
+boundary-convergence row **466.1 ± 9.4 (n 183)**. Also **`h = 1.668 m`** (`h_masked.py`, §86) and
+the `crop ≈ 1.0 ⇒ EIS is not cropping` conclusion built on it — both rest on a pair search whose
+pair has not been shown to be the lane.
+
+**ROOT-CAUSE CLASS — A SELECTION STEP CANNOT REPORT THAT IT SELECTED BADLY.** RANSAC scores a line
+by **inlier count**. On this recording the left boundary is SOLID and the right is DASHED, so a
+continuous tar seam up the middle of the ego lane offers more inliers than the real right line. The
+detector was not confused — **it answered the question it was asked**, and returned the seam with a
+confident support count. This is the THIRD non-paint feature a selection step here has returned
+with confidence: the sunlit bank (`R-2026-09-14-foliage`), the seam, and the gravel apron at the
+foot of the barrier (which is the *mode* of the lateral histogram, 5848 counts at −2.15 m).
+
+**WHAT THE STATISTICS SAID, AND WHY I ALMOST MISSED IT.** The output table contained its own
+diagnosis: `clear L` flat to **0.02 m** across 10→30 m while `clear R` drifted **0.58 m**, and the
+"lane" shrank 0.50 m while the *drawn* ribbon read flat. **A range-dependent error on exactly one
+side is not a calibration error — it is one of the two lines not being a line.** I had begun
+writing a downgrade/horizon explanation for it before drawing the fit on the image.
+
+⇒ **THE FIX IS NOT A BETTER GATE. It is to stop selecting.** `--hist` converts every detection to a
+vehicle-frame lateral and counts; the paint, the seam and the gravel appear as separate labelled
+peaks and the reader sees the structure. A fit may follow a histogram; it may not replace one.
+
+⇒ **AND THE PREVIEW MUST DRAW THE DETECTOR'S OUTPUT, NOT ONLY ITS INPUT.** `R-2026-09-14-foliage`
+established "draw the detector's input before the first statistic". That rule was FOLLOWED here and
+was NOT enough: the input looked fine, the *fitted line* did not. `--preview` now runs the same
+`fit_pair` as the measurement and draws the fitted lines, the mask and a **labelled lateral ruler**.
+
+**WHAT SURVIVES.** The yaw. `overlay_far` reads the corridor against the LEFT line, and the left
+line is confirmed real, isolated and narrow (a clean peak at +1.62 m with 1–30 counts either side
+of it, ±0.10 m after per-frame re-referencing). §87's "rendered −5.35 vs optimum −5.10" and the
+flat 1.12–1.19 m profile stand. The delivered renders' DIRECTION is right; their lateral SCALE is
+in doubt.
+
+## `R-2026-09-15-scope` — the ridge detector's threshold was set by pixels it then discards
+
+**WITHDRAWN:** the implicit claim that adding the road mask could only improve detection. It made it
+**worse**, and measurably: with the mask on, **three of four preview frames found no lane pair at
+all** while the left boundary is plainly bright paint in every one.
+
+`ridge_cols(row, w)` called with no window sets `thr = max(28, percentile(c, 99))` over the **WHOLE
+ROW** — here the sunlit bank and the concrete barrier, both **outside** the mask — and the mask is
+applied *after* thresholding. So discarded structures were setting the bar the paint had to clear.
+`ridge_cols` has accepted `lo`/`hi` for exactly this since it was written; no caller passed them.
+
+**ROOT-CAUSE CLASS — A STATISTIC AGGREGATED OVER THE WRONG SCOPE, READ AS AN ANSWER.** Fourth
+costume, after `df` reporting the 965 TB cluster instead of the pod quota, `free`/`tegrastats` on
+Thor unified memory, and cgroup `usage_in_bytes` counting reclaimable page cache. ⇒ **When a probe
+and a filter are composed, check which one runs first.** A threshold computed before a mask is a
+threshold for a different image.

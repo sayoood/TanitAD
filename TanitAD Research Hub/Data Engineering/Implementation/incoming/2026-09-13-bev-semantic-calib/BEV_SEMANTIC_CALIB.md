@@ -1858,3 +1858,148 @@ With the angle confirmed, the corridor-to-left-line distance is **flat at 1.12�
 therefore ~0.33 m to one side — **a LEVEL, not an angle** — and that is the `--lateral-offset`
 question, which no image measurement on this recording has been able to settle (§77) and which a
 tape measure from the vehicle centreline to the phone lens settles in thirty seconds.
+
+---
+
+# Part 18 — the lateral placement, and why three detectors in a row measured the wrong thing
+
+## 90. ⛔ The right-hand "lane boundary" was a TAR SEAM
+
+`does_it_cut_paint.py` is the probe that answers Sayed's actual complaint. It was rebuilt this
+turn with the road mask, and it ran cleanly: 183/285 frames with a valid lane pair, a placement
+defect of **−0.32 m** (−0.38 m by the h-free route), `clear R` going **negative** at 20–30 m, and
+a boundary-convergence row of **466.1 ± 9.4**. Every one of those numbers is **VOID.**
+
+The table diagnosed itself and I nearly missed it:
+
+| range | clear L | clear R | lane w | ribbon w |
+|---|---|---|---|---|
+| 10 m | 1.19 | +0.30 | 3.33 | 1.87 |
+| 20 m | 1.18 | −0.02 | 3.07 | 1.90 |
+| 30 m | **1.19** | **−0.28** | **2.83** | **1.85** |
+
+`clear L` is flat to **0.02 m** while `clear R` drifts **0.58 m**, and the "lane" shrinks 0.50 m
+while the *drawn* ribbon reads flat at 1.87. A range-dependent error that appears on exactly one
+side is not a calibration error — **it is one of the two lines not being a line.**
+
+So I drew the fit on the image (`--preview`, new). The right-hand fit runs up a **tar seam in the
+middle of the ego lane**; the real right boundary — **dashed** — is well beyond it.
+
+**THE MECHANISM, and it is not bad luck.** RANSAC scores a line by **inlier count**. The left
+boundary here is SOLID, the right is DASHED, and a continuous seam offers more inliers over the
+same rows than a dashed line does. The detector was not confused; **it answered the question it was
+asked.** Mask out the bank (`R-2026-09-14-foliage`) and the detector moves to the next-brightest
+continuous non-paint structure available. Same class, one layer down.
+
+⚠️ **A selection step cannot report that it selected badly.** RANSAC by inlier count, a Hough peak,
+a seeded association — all three have now returned something that is not paint, and each returned
+it with a confident support count. That is the argument for the histogram in §92.
+
+## 91. ⛔ And the detector's threshold was set by pixels it then throws away
+
+Found by reading the call, not the output: the masked probes call `ridge_cols(row, w)` **with no
+window**, and that sets `thr = max(28, percentile(c, 99))` over the **WHOLE ROW** — on this
+recording the sunlit bank and the concrete barrier, both **outside** the mask. The mask is applied
+*after* thresholding, so structures we discard were setting the bar the paint had to clear, and
+**masking made detection worse rather than better.**
+
+MEASURED: with the mask on and no window, **three of four preview frames found no lane pair at
+all**, while the left boundary is plainly bright paint in every one. `ridge_cols` has taken
+`lo`/`hi` for exactly this purpose since it was written; nothing was passing them. Fixed in
+`_cols_factory`, together with a **paint-brightness gate** (a detection must clear the row's own
+masked median by `k` robust sd — the threshold then follows sun, shadow and exposure).
+
+⚠️ Same family as `df` on a pod, `free`/`tegrastats` on Thor and cgroup `usage_in_bytes`:
+**a statistic aggregated over the wrong scope, read as an answer.** Fourth costume.
+
+## 92. The instrument that cannot pick a wrong winner: histogram, don't fit
+
+New: `--hist` converts every detection to a vehicle-frame lateral (exactly — the ground projection
+is affine in `y` at fixed range, so two probe points per row invert it) and **counts**. No line
+fit, no pair constraint, no parallelism gate. The lane boundaries, the seam and the gravel all
+appear as separate peaks **labelled in metres**, and a non-paint feature is *visible* instead of
+*chosen*.
+
+**MEASURED** (200 frames, `f 1533 · h 1.586 · v_h 448.4`, near band 9–13 m where lateral
+resolution is 0.0065 m/px):
+
+* **LEFT boundary: a clean, isolated peak at +1.62 m** (centroid over +1.25…+2.05). It is genuinely
+  isolated — the bins from +0.3 to +0.9 carry 1–30 counts against a mode of 2725. Per-frame
+  re-referencing sharpens it to **±0.10 m**, so it is a real narrow feature, not a smear.
+* **RIGHT: no isolated peak exists.** A continuous ramp from −0.9 m into a mode at **−2.15 m**
+  (5848) — the **gravel apron at the foot of the barrier** — with a plateau step around −1.35 m
+  that is the dashed line riding the gravel's flank.
+
+⚠️ **My de-smearing assumption was wrong and I am recording it as wrong.** I expected per-frame
+re-referencing to the left line to blur the shoulder (its distance from the paint should vary) and
+sharpen the lane. It did not: on this road the shoulder is **constant-width**, so it moves rigidly
+with the paint. The re-referenced peak at **+3.99 m** is exactly `1.747 + 2.25` — the gravel again.
+The technique is right; the road defeated it.
+
+## 93. ⭐ The lane is 2.97 m at the adopted scale — so `f·h` is ~18 % too small, or the lane is not 3.5 m
+
+Taking +1.62 m and the −1.35 m step: the ego lane is **2.97 m** at `f·h = 1533 × 1.586 = 2431`.
+
+This is load-bearing, because **`h` was derived by dividing an assumed 3.5 m lane by a measured
+separation** — and §90 shows the separations being measured were not the lane. Three readings are
+now available and they are mutually exclusive:
+
+| if… | then |
+|---|---|
+| the lane really is 3.5 m and `f = 1533` | `h = 1.87 m` — **impossible** on a Caddy windscreen |
+| the lane really is 3.5 m and `h = 1.45 m` | `f = 1976`, a **1.29× EIS crop** |
+| `f·h = 2431` is right | the lane is **2.97 m** — narrow, but this section has a concrete barrier hard against the shoulder and yellow markings in places, i.e. a **roadworks/contraflow layout**, where 2.75–3.0 m is normal |
+
+⛔ **`h = 1.668 m` (§86) is therefore not admissible either**, and neither is the `crop ≈ 1.0 ⇒ EIS
+is not cropping` conclusion that rested on it. Both came from a pair search whose pair has not been
+shown to be the lane. **The lateral scale `f·h` is currently the least-determined quantity in this
+calibration, and it multiplies every lateral number the overlay draws.**
+
+⚠️ What does NOT change: the **angle**. `overlay_far`'s yaw is read from the corridor against the
+LEFT line, which §92 confirms is real, isolated and narrow — so §87's "rendered −5.35 vs optimum
+−5.10" stands, and so does the flat 1.12–1.19 m profile. **The delivered render's direction is
+right; its lateral SCALE is in doubt, and its lateral OFFSET is still unmeasured.**
+
+## 94. The horizon: a null result, with its resolution stated
+
+A real lane boundary sits at the same lateral at 10 m and at 30 m — that is what "road-parallel"
+means — and the recovered lateral depends on the range, hence on `v_h`. So the `v_h` that removes
+the drift is the horizon, measured from the strong solid left line alone, with **no pair, no
+vanishing point and no lens argument**. Scanned 370→470 px in 2 px steps, on 160 frames:
+
+| v_h | y(9–13 m) | y(13–20 m) | y(20–30 m) | drift |
+|---|---|---|---|---|
+| 418 | 1.379 | 1.454 | 1.410 | **0.076** |
+| 424 | 1.434 | 1.439 | 1.516 | 0.082 |
+| 446 | 1.614 | 1.695 | 1.643 | 0.081 |
+| 448 | 1.647 | 1.748 | 1.671 | 0.101 |
+| 450 | 1.661 | 1.759 | 1.723 | 0.098 |
+
+⛔ **This does NOT measure the horizon.** The basin is broad and noisy — 0.076 at 418 against 0.081
+at 446 is not a discrimination — and a first pass that scanned only ±30 px returned **418.4, its
+own lower bound**, which is a boundary solution and not a measurement. **Quotable conclusion: the
+estimator constrains `v_h` to roughly 418–450 and does not resolve the standing
+438 / ≲450 / 466 disagreement. The rendered 448.4 sits inside its indifference band and is not
+refuted by it.**
+
+*(The near band `y(9–13 m)` rises smoothly and monotonically 1.202 → 1.848 across the scan. That is
+the signal; the far band is what is noisy. A version of this estimator with a longer range lever
+and a proper CI is the obvious next instrument, and it would settle `v_h` without the lens.)*
+
+## 95. Deliverable manifest
+
+| artifact | where |
+|---|---|
+| `does_it_cut_paint.py` — rebuilt: road mask, sign fix, horizon-free gate, `fit_pair` shared by measurement and preview, `--preview` with a lateral ruler, `--hist`, `--scan`, paint-brightness gate, in-mask thresholding | repo `incoming/2026-09-13-bev-semantic-calib/probes/` |
+| fit previews (fit on image, three mask/threshold variants) | session scratchpad — **regenerate with `--preview`, they are reproducible** |
+| histogram JSON (`hist_wide`, `hist_rel`, `hist_horizon2`, `hist_near`) | session scratchpad |
+| §90–§94 | this document |
+| `R-2026-09-15-seam`, `R-2026-09-15-scope` | `Project Steering/RETRACTION_LOG.md` |
+
+## 96. What is actually blocking, and what is not
+
+1. ⛔ **`f·h` (the lateral scale).** Blocking every lateral number. Settled by ONE of: the true lane
+   width on this road; a tape from the ground to the phone lens; or a metre-stick in frame.
+2. **`--lateral-offset`.** Still unmeasured (§89), still a tape measure from the vehicle centreline
+   to the lens. **Independent of 1** — it is a level, not a scale.
+3. **NOT blocking:** the yaw (§87, confirmed), the fade, the vehicle geometry, the render pipeline.
