@@ -1,0 +1,50 @@
+# THE lane_width CHECK CANNOT VALIDATE CAMERA HEIGHT — MEASURED 2026-08-08
+#
+# lane_calib.py:279 filters each frame's lane-marking separation BEFORE the median:
+#       if not (2.6 < w < 4.6):
+#           continue
+# so `lane_width` is CENSORED into a plausible band and reports a sane number at
+# ANY assumed camera height. Demonstrated by running the real pipeline twice:
+#
+#   --cam-height 1.17  ->  LaneCalib(... lane_width=3.60 m ... ) , lateral 7 usable frames
+#   --cam-height 1.60  ->  LaneCalib(... lane_width=3.60 m ... ) , lateral 5 usable frames
+#
+# IDENTICAL 3.60 m at heights 37% apart. Ground lateral distance is directly
+# proportional to h (scale_calib.py's own derivation: y = (u-cx)*h/(v-v_horizon),
+# no f), so a genuine measurement MUST scale — 3.60 -> 4.92 m. It did not, because
+# frames whose width left the 2.6-4.6 band were dropped instead of counted.
+#
+# => `lane_width` is a check that cannot fail. It looks like corroboration of the
+#    camera model and is not. Same family as the traps in CLAUDE.md: a probe that
+#    answers a different question than the one asked.
+#
+# UNCENSORED re-measurement (own code, same ridge extractor, |Y| < 12 m window,
+# NO 2.6-4.6 filter), ego-lane width vs assumed height:
+#
+#   h=1.00 m -> 5.40 m (IQR 1.85, n=19)
+#   h=1.17 m -> 5.40 m (IQR 2.20, n=29)
+#   h=1.30 m -> 5.00 m (IQR 2.87, n=46)
+#   h=1.45 m -> 4.40 m (IQR 3.30, n=57)
+#   h=1.60 m -> 4.10 m (IQR 3.20, n=61)
+#   h=1.69 m -> 4.40 m (IQR 3.60, n=64)
+#
+# ⚠️ THIS TABLE IS NOT A HEIGHT ESTIMATE AND MUST NOT BE QUOTED AS ONE. It is
+# confounded two ways: n rises 19->64 across the sweep, so each height is measured
+# on a DIFFERENT frame set; and the innermost-peak pairing can switch which two
+# physical markings are matched. The IQRs (1.85-3.60 m) are far too wide to
+# separate the candidates in any case.
+#
+# The ONE admissible reading: at NO height in 1.00-1.69 m does the measured lane
+# width approach a plausible French 3.0-3.5 m. Height alone therefore cannot
+# explain the projection error — the horizon row (pitch) and/or the focal length
+# are implicated too. That is consistent with the PI's report that yaw, pitch,
+# height AND lateral offset are all wrong.
+#
+# WHY THE IMAGERY CANNOT SETTLE THIS ALONE — scale_calib.py's own docstring:
+#     "the ground plane can never separate f from h on its own: it sees h in the
+#      lateral direction and the product f*h in the longitudinal one. Every
+#      self-consistency check built purely on ground back-projection is therefore
+#      blind to a focal error"
+# and its resolver DECLINED here (f*h spread 62%). So one EXTERNAL physical
+# measurement is required. The PI's 1.6 m is an estimate ("I think ... plausible"),
+# not a tape reading, so it does not yet break the degeneracy.

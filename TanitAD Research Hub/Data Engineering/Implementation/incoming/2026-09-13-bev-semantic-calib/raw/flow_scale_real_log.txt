@@ -1,0 +1,41 @@
+building tracks…
+218 frame pairs, 59307 forward-backward-checked correspondences
+
+observability on the REAL tracks (reprojection px per step):
+    f*h(+1%)            0.377 px rms
+    horizon(+2px)       0.509 px rms
+    yaw(+0.2deg)        0.289 px rms
+    height(+2%)         0.212 px rms
+    singular values ['233.3', '85.1', '33.5', '5.0']  cond 46.7
+    least-observable direction: f*h(+1%) +0.02  horizon(+2px) +0.01  yaw(+0.2deg) +0.57  height(+2%) -0.82
+
+ROW-FLOW fit (vertical flow only — the 2 parameters this geometry has)
+    59307 points, 218 pairs, rows 589-835, 56001 after trimming
+    horizon    437.39 px   95% CI [431.4, 443.4]
+    f*h        2668.1 px*m   (relative IQR 0.274)   95% CI [2547, 2798]
+    f for a range of heights — the height is NOT from this fit:
+       h 1.17 m -> f  2280.5 px  HFOV  45.7 deg
+       h 1.45 m -> f  1840.1 px  HFOV  55.1 deg
+       h 1.60 m -> f  1667.6 px  HFOV  59.9 deg
+       h 1.75 m -> f  1524.7 px  HFOV  64.4 deg   <== inside the 1356-1628 device band
+       h 1.90 m -> f  1404.3 px  HFOV  68.7 deg   <== inside the 1356-1628 device band
+
+fit (f*h, horizon, yaw) at h = 1.720 m
+    cost 2.87574 -> 2.30153  (215 evals)
+    f*h        2444.1  ->    2233.5 px*m
+    horizon    465.00  ->    453.98 px
+    yaw         -7.01  ->     -8.31 deg
+    f = f*h/h = 1299 px  (HFOV 72.9 deg)
+    reprojection: median 11.67 -> 7.63 px (scored 59307/59307 -> 59307/59307 on-frame), inliers(<3px) 10.1% -> 17.7%
+
+height scan — does f*h move when h is forced?
+    h  0.90 m  ->  f*h  2244.2  f  2493.6 px  horizon  454.75  cost 2.30577  median  7.68 px  inliers 17.5%
+    h  1.03 m  ->  f*h  2245.8  f  2180.3 px  horizon  454.51  cost 2.30341  median  7.66 px  inliers 17.6%
+    h  1.17 m  ->  f*h  2245.4  f  1919.1 px  horizon  454.33  cost 2.30212  median  7.66 px  inliers 17.6%
+    h  1.30 m  ->  f*h  2244.5  f  1726.5 px  horizon  454.18  cost 2.30157  median  7.65 px  inliers 17.7%
+    h  1.45 m  ->  f*h  2241.6  f  1545.9 px  horizon  454.07  cost 2.30135  median  7.64 px  inliers 17.7%
+    h  1.60 m  ->  f*h  2237.2  f  1398.3 px  horizon  454.01  cost 2.30139  median  7.63 px  inliers 17.7%
+    cost range over the scan 2.30135-2.30577 (0.2% spread), best h 1.45 m
+    => h is NOT determined by this fit (as the geometry predicts); f*h is the result and f needs h from the lateral metric.
+
+wrote raw/flow_scale_real.json
