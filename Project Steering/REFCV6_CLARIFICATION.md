@@ -29,8 +29,8 @@ Your words, verbatim, are recorded in `Project Steering/Decisions/2026-09-15-pi-
 | 4 | Tactical layer learns max speed and all tactical behaviours from the GT labels | The labels exist: speed band on all 4,572 clips, lateral/longitudinal actions, 17 of 22 goal tokens trainable. ⚠️ **The shipped "max-speed input" is the same number as the label**, so your 09-01, 09-10 and 09-15 statements need one ruling. Default: **the tactical layer predicts it, and a user limit only clamps selection.** §4 |
 | 5 | Is the diffusion implemented as in the paper? Hypotheses, denoising | **Inference: yes** (noise at t = 8, 2 DDIM steps, x0 prediction), with 117 speed-conditioned control anchors instead of 20 k-means paths. **Training: no**: no random-t denoising objective, no per-layer loss, timestep only at the input. Our noise grows with horizon, where DD's is flat at 0.9 m. Nine changes listed (F1–F9). §5 |
 | 6 | How is the ResNet trained and used, vs DiffusionDrive and other AD works? | **DD:** ImageNet ResNet-34 (21.8 M) fine-tuned end-to-end at half the learning rate, with perception losses, 100 epochs; **frozen in V2**. **Ours:** a random-init 90.5 M trunk, **one epoch of 25.5 h**, no perception loss. Every compared work pretrains its trunk. Our frozen trunk is ≈ raw pixels on a BEV probe. Measured today: its tokens **do** carry their position, and training concentrated its token features ≈ 4× relative to random init (participation ratio 16 → 4). §6 |
-| 7 | Prepare and validate the RL approach as in the paper | **In progress on the dev box.** The paper-exact spec, the objective as a tested library, the log-probability chain our decoder lacks, a reward proxy and a ≤ 3 GPU-h pre-registered validation. §7 is replaced when verified; no result is claimed yet. §7 |
-| 8 | Your computer for preparation and final design; a pod for heavy work | **Dev box:** ≈ 20 GPU-h of proof tests + all code, default-off, with tests. **Pod:** ≈ 230–320 GPU-h (≈ 3 days on 4 × 48 GB) once you have ruled. §8 |
+| 7 | Prepare and validate the RL approach as in the paper | **Built, pre-registered and run (2.3 GPU-h on your computer). The result is negative and the cause is measured:** DiffusionDriveV2's **imitation** term — not its RL term — collapses our 117-anchor fan by 93 % and costs 0.08 m ADE; switching the policy gradient off reproduces the damage. One of two RL seeds diverged (no gradient clipping in the release). Next lever is ≈ 3 GPU-h on the dev box, not a pod. §7 |
+| 8 | Your computer for preparation and final design; a pod for heavy work | **Dev box:** ≈ 20 GPU-h of proof tests + all code, default-off, with tests. **Pod:** ≈ 210–300 GPU-h (≈ 2–3 days on 4 × 48 GB) once you have ruled, plus 39–75 for RL only if its dev-box lever separates. §8 |
 | 9 | refcv6 first, then refav1, then v7 | Recorded as binding; refav1 and v7 wait for your refcv6 rulings. §8.3 |
 
 ---
@@ -47,7 +47,7 @@ Your words, verbatim, are recorded in `Project Steering/Decisions/2026-09-15-pi-
 | **D6** | `timm` + ImageNet ResNet-34 weights (≈ 87 MB) for the prior test H1 (§6.4) | download · skip | skip until you say |
 | **D7** | refcv6 diffusion | **paper-faithful** (F1–F6) with ours as the knockout · ours with the paper form as the knockout | paper-faithful |
 | **D8** | Trunk | T-A keep ours (warm) · T-B ImageNet ResNet-34 (paper-faithful) · both, paired | decided by H1; T-A if H1 is not separated |
-| **D9** | RL per the paper | put to you when §7 lands | — |
+| **D9** | RL per the paper (§7.6) | **L1** fix the imitation term first (dev box, ≈ 3 GPU-h) · L2 put the chain on support · L3 release scale on a pod (≈ 39–75 GPU-h) | **L1**; no pod RL until the fan endpoint separates |
 | **D10** | Pod | 4 × 48 GB · 2 × 80 GB | 4 × 48 GB, after D1–D9 |
 
 ---
@@ -594,29 +594,79 @@ Source: PUBLISHED-CODE `v1/transfuser_model_v2.py`. The noise values are compute
 
 ---
 
-## 7. Reinforcement learning as in DiffusionDriveV2 — IN PROGRESS on the dev box
+## 7. Reinforcement learning as in DiffusionDriveV2 — prepared, pre-registered, validated
 
-**Status at landing (2026-09-15, 22:50):** the preparation is running and **nothing in this section is a result yet**. This section is replaced when the work is verified.
+**The machinery is built and proven. Run faithfully at dev-box scale on refcv5-v2, the recipe does not work — and the cause is measured, not guessed: the damage comes from DiffusionDriveV2's imitation term, not from its RL term.**
 
-**What is being prepared, in an isolated worktree** (not landed; nothing touches a live run):
+I re-ran the agent's test suite myself: **72 passed, 1 skipped**. Every number below was re-checked against the banked raw files.
 
-| deliverable | purpose |
+### 7.1 What the paper's RL is
+
+| element | as the paper states it |
 |---|---|
-| `SPEC_DDV2_RL_PAPER.md` | the RL method **as the V2 paper states it**, each equation and hyper-parameter pinned to a page, beside what the released code actually runs (§1.2 found that the released code already departs from the paper on the frozen trunk, the decoder depth and the coordinate normalisation) |
-| `ddv2_step_sensitivity.{py,txt}` | how the paper's per-step exploration noise behaves under DD's schedule |
-| `stack/tanitad/rl/ddv2_rl.py` + tests | the paper's objective as a library: grouped rollouts per anchor, advantages, the constrained truncation, the imitation term |
-| `stack/tanitad/rl/ddv2_refc_chain.py` + tests | the log-probability chain the objective needs on **our** control-space DDIM decoder, which today exposes none |
-| `stack/tanitad/rl/pdm_proxy.py` + tests | a label-time reward proxy for DD's PDM score, because PhysicalAI has no simulator |
-| `stack/scripts/ddv2_rl_refcv5.py` | the runner for a tiny pre-registered validation on refcv5-v2, with a held-out split |
+| rollouts | the truncated chain is run as **10 DDIM steps**; **G = 4 groups × 20 anchors = 80 chains** per sample |
+| exploration | two multiplicative scalars per trajectory, ×(1 + 0.04 ε), with a floor; a 0.1 floor on the likelihood |
+| advantage | normalised **within each anchor's group** (intra-anchor), per-sample truncation with a **"at least as good as the logged trajectory"** mask |
+| objective | REINFORCE over the samples with non-zero advantage, discount γ = 0.8, **plus an imitation term** on all chains with a λ schedule |
+| reward | the PDM score: no-collision × drivable-area compliance × (time-to-collision, ego progress, comfort) |
+| optimiser | AdamW, 2e-4 (RL) / 1e-4 (selector), no gradient clipping |
 
-**Validation budget:** ≤ 3 GPU-hours on the RTX 4060, sequential, pre-registered before any number is read.
+### 7.2 What the released code does that the paper does not say
 
-**What this section will answer:**
-1. What the paper's RL is, exactly.
-2. What the released code runs instead.
-3. What of it our data and decoder can carry.
-4. Whether the tiny validation shows the objective improves the controls it must beat, **without** regressing the four families.
-5. The decision for you (D9).
+Beyond the frozen trunk and the single decoder layer (§1.2), one finding matters for anyone porting this:
+
+⭐ **The predicted clean sample is clamped to [−1, 1] inside every DDIM step** (diffusers' `clip_sample=True` default; all three release constructors leave it at the default). DiffusionDriveV2's trajectories are therefore capped at 50 m / 20 m, and **a clamped coordinate receives exactly zero policy gradient at the final step — which carries 61 % of the weight**. This was missed by our earlier spec and by the first port; it is now pinned by a bitwise test.
+
+### 7.3 What we built (dev box, no pod, new files only)
+
+| module | what it is | tests |
+|---|---|---|
+| `stack/tanitad/rl/ddv2_rl.py` | the released step (including the clamp), the advantage, the loss and the chain, with an exact per-step loss decomposition | 38 |
+| `stack/tanitad/rl/ddv2_refc_chain.py` | the log-probability chain on **our** control-space sampler, which exposed none | 10 |
+| `stack/tanitad/rl/pdm_proxy.py` | a PDM-shaped reward we can actually compute (PhysicalAI has no simulator) | 25 |
+| `stack/scripts/ddv2_rl_refcv5.py` | the runner, on the T1 harness's own loader and conditioning | — |
+
+- **Mutation proof: 31 of 31 re-introduced defects killed, 0 survived.** The first sweep left 3 alive; each got a killing test.
+- Two latent defects in the earlier agent's tests were found and fixed.
+- **Zero-training diagnostics first:** bitwise parity on 12 real windows; the clamp binds on 9.2 % / 25.7 % of chain endpoints; the release chain sits 11.8 m from our deployed fan; about 10 % of samples reach the "at least as good as the log" bar.
+
+### 7.4 The validation (pre-registered, then run)
+
+`Project Steering/PREREG_DDV2_RL_VALIDATION.md` was written at **22:48:57**, the first arm started at **~22:50** (MEASURED from file and log times).
+
+- **Arms:** cold start · RL seed 0 · **RL-off control** (the policy-gradient coefficient set to exactly 0, everything else identical) · RL seed 1.
+- 600 steps × 4 windows each, release constants.
+- **Split:** the 141 eval clips split by hash into 41 held out and 100 used for RL training.
+- **Budget:** 2.3 of 3.0 GPU-hours.
+
+**Held-out result (493 windows / 40 clips, paired, clip-cluster bootstrap):**
+
+| contrast | primary endpoint (fan quality) | fan endpoint spread |
+|---|---|---|
+| RL seed 0 − RL-off | **+0.0056 [−0.000, +0.0123] — not separated** | +0.02 m |
+| RL seed 1 − RL-off | **−0.2418 [−0.2844, −0.1983] — separated, worse** | +17.2 m |
+| RL-off − cold start (the imitation term alone) | +0.2205 [+0.1836, +0.2562] | **−35.1 m [−40.0, −30.0]** |
+
+**Driving quality (T1, 1,402 windows / 41 episodes, four families):** the cold start reads ADE 0.2994. Both RL arms are worse — RL seed 0 by **0.083 m** [0.056, 0.115], separated. **But the RL-off control is worse by 0.081 m**, and RL − RL-off is **−0.0012 m, not separated**. Verdict: **FAIL-HARM**, caused by the imitation term.
+
+**The mechanism, measured:** DiffusionDriveV2's imitation term pulls all chains at all steps toward the single logged trajectory. On our vocabulary it **collapses the 117-anchor fan by 93 %** (endpoint spread 37.5 m → 2.45 m), which also starves the intra-anchor advantage of the within-group variation it ranks. One of the two RL seeds diverged under the release's no-clipping recipe (gradient norm 15,712, against 147 for the others).
+
+### 7.5 What this does and does not say
+
+- ⛔ **It does not contradict the paper.** This is ≈ 0.4 % of the paper's optimiser samples, on a control-space sampler whose noise labels sit off its training support, with a proxy reward and no drivable-area term (our maps do not yet cover the training clips).
+- ⛔ **It does say** that porting the recipe verbatim onto refcv5-v2's 117-mode vocabulary destroys the mode diversity the vocabulary exists for.
+- ⚠️ The RL-off control has **one seed**, so the RL − RL-off contrast carries its unmeasured seed variance.
+- ⛔ **The three trained checkpoints are burned:** they saw 100 of the 141 evaluation clips. They must never be scored on the 141-clip panel. They stay on the dev box and are not banked.
+
+### 7.6 D9 — your decision
+
+| lever | what changes | cost | recommendation |
+|---|---|---|---|
+| **L1 — fix the imitation term first** ⭐ | keep every release element, but replace the all-modes imitation with the **mode-preserving nearest-anchor objective the REF-C trainer already has** (or λ ≈ 0.01), and add gradient clipping 1.0 | **dev box, ≈ 3 GPU-h** | **default.** Only if the fan endpoint separates does anything downstream make sense |
+| L2 — put the chain on support | train the sampler at the noise labels the chain actually visits, and/or run without the clamps | dev box | after L1 |
+| L3 — release scale | the full recipe at the paper's scale | **pod: ≈ 39 GPU-h with a frozen-trunk feature cache (~7 GB), ≈ 75 GPU-h without** (A40-class, ESTIMATED); 188 GPU-h on the dev box | only after L1 separates |
+
+⚠️ Also open: the drivable-area reward term needs SAM3 maps for the **training** clips (D4 in the decisions table covers only the 315 LiDAR-GT clips).
 
 ---
 
@@ -637,7 +687,8 @@ Source: PUBLISHED-CODE `v1/transfuser_model_v2.py`. The noise values are compute
 | 1 | Perception proof package (§2.4): planner-use tests T-A…T-H on refcv5-v2, rung-1 box / map / occupancy probes on cached tokens, tiny-rig joint arms, gradient-conflict detector | 2 | ≈ 20 GPU-h over ≈ 5 days |
 | 2 | Nav battery on refcv5-v2: T-FLIP (never run), T-ZERO readout (§3.3) | 3 | 1–2 rolls |
 | 3 | Diffusion inference A/Bs on the existing checkpoint: DD step semantics (F2), several noise samples per anchor (F7, after widening the three indexing sites) | 5 | ≈ 35 min per roll + code |
-| 4 | RL per the paper: implementation, unit tests, tiny validation (§7) | 7 | ≤ 3 GPU-h (agent budget) |
+| 4 | ✅ **done**: RL per the paper — implementation, 73 tests, 31/31 mutants, pre-registered validation (§7) | 7 | 2.3 of 3.0 GPU-h spent |
+| 4b | RL lever L1: mode-preserving imitation + gradient clipping, re-run the same four arms (§7.6) | 7 | ≈ 3 GPU-h |
 | 5 | Code for the approved design, **every piece default-off**, with unit + mutation tests: tactical heads and wiring (§4.3), faithful diffusion training (F1, F3–F6), warm-start loader (**new code**: the trainer only resumes its own `ckpt.pt`), T-FLIP gate | 3, 4, 5 | CPU + tiny smokes |
 | 6 | Pre-registration: bars, arms and controls frozen before the pod starts | all | — |
 
@@ -653,9 +704,9 @@ Source: PUBLISHED-CODE `v1/transfuser_model_v2.py`. The noise values are compute
 | link-type matrix, joint trunk | top 2 + replicates | 4 × 13–16 GPU-h |
 | refcv6 system + knockouts, 12 k steps warm | control, full, replicate, 3–4 knockouts | 6–7 × 13–16 GPU-h |
 | faithful-diffusion arms (F1, F3–F6 as one arm + F6 knockout) | 2–3 | 2–3 × 13–16 GPU-h |
-| RL stage on the best arm | 1–2 | ≤ 1 day |
+| RL stage on the best arm — **only if the dev-box lever L1 separates** (§7.6) | 1–2 | ≈ 39 GPU-h with a frozen-trunk feature cache, ≈ 75 without |
 
-**Total ≈ 230–320 GPU-h on a 48 GB-class GPU** (≈ 10–13 days on one GPU, ≈ 2.5–3.5 days on 4).
+**Total ≈ 210–300 GPU-h on a 48 GB-class GPU without the RL stage** (≈ 9–12 days on one GPU, ≈ 2–3 days on 4). The RL stage adds ≈ 39–75 GPU-h, and only if the dev-box lever separates first.
 
 **Suggested pod:** 4 × 48 GB (A40 / L40S / A6000), or 2 × 80 GB (A100 / H100). refcv5-v2 already fills 43 GB at batch 20, and the BEV branch adds memory. The first hour is the throughput gate, which re-states this table from measured s/step.
 

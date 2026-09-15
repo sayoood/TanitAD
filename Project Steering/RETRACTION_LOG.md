@@ -15280,3 +15280,45 @@ from z − h/2 blanked the road in front of every vehicle and the PI asked why. 
 will be drawn over before building on it.
 
 <!-- RETR-2026-09-13-SAM3MAP-A2-GHOST-GROUND -->
+
+### ⛔ CLASS I — A PAPER'S WORDING QUOTED OVER ITS OWN CODE, AND A DERIVATION OUTLIVING THE DESIGN IT DESCRIBED (2026-09-15)
+
+Answering the PI's nine refcv6 questions forced a line-by-line re-read of DiffusionDrive's two papers, its released code and ours.
+**Nine of our own statements were wrong or misleading.** They fall into three families, and none of them came from a bad
+measurement — each came from repeating a description instead of reading the thing described.
+
+**(a) The paper's word, not the code's behaviour.** DiffusionDrive's text says "deformable spatial cross-attention" and "3D
+detection". Its code samples the BEV map at the candidate's own waypoints with **no learned offsets** (`blocks.py:84-104`) and
+predicts **2-D BEV boxes** (`BoundingBox2DIndex`). We repeated the paper in `PREREG_WPD_BEV_AUX.md:40`, `PREREG_REFCV6.md:49`,
+`REFCV6_ARCHITECTURE_REVIEW.md:49`, `GOALS_AND_CLAIMS.md:9059` — and, worse, in `REFCV6_DESIGN_GROUNDED.md:102` I labelled **our
+own extension** (P = 4 learned offsets per waypoint) as "DiffusionDrive's trajectory-indexed spatial attention". A design that
+credits its own novelty to a paper cannot be ablated against that paper.
+
+**(b) A claim about an absence, without reading the loss.** *"DiffusionDrive has no denoising loss, so `--w-u0` is our
+invention"* (`REFCV6_DESIGN_GROUNDED.md:126`, `Reports/2026-09-15-1445-…-status.md:40`). DD's matched-anchor L1 **is** its x0
+denoising loss (`multimodal_loss.py:133-159`, weight 8, plus focal 10, summed per cascade layer and scaled by
+`trajectory_weight` 12); `diff_loss_weight` 20 multiplies a `diffusion_loss` key the V1 head never emits, so it contributes 0.
+`--w-u0` is a **second copy** of DD's loss in control space, not an invention.
+
+**(c) A derivation that outlived its design.** `refc_sampler.py:19-21` computes our control-space noise as "~2.3 m along-track
+and ~1.7 m lateral at the 6 s endpoint — comparable spread to DD's". That arithmetic assumes **one** control held for 6 s. The
+sampler the docstring sits in draws **i.i.d. noise per slot** (`:490-493`), which gives ≈0.86 / 0.65 m at 6 s and ≈0.016 m at
+0.5 s — about 55–60× SMALLER than DD's 0.90 / 0.73 m at its first waypoint. The same docstring says the timestep embedding is
+"injected per layer"; the code adds it **once** to the query (`refc.py:2013-2014`). And `refc.py:2015-2017` calls WP-B's agent
+index "exactly DiffusionDrive's coupling (1)", when DD's coupling (1) samples the **map**.
+
+⭐ **Two were caught before they left this session**, which is the control that makes the rest readable: "+32 PDMS for the
+spatial link" (true, but measured against a **collapsed** ego-only decoder — the honest figure is +2.0 over agents-only), and my
+own "correction" that the V2 selector scores 200 candidates, when the release scores **800** (200 denoised + 3 randomly scaled
+copies each, `diffusiondrivev2_model_sel.py:1270-1286`) exactly as `D-DDV2-CODE-4` already said. **A correction needs the same
+verification bar as the claim it corrects.**
+
+⇒ **The rule this adds:** when a paper's wording and its released code disagree, the record quotes the CODE and names the
+paper's word as the paper's. When a docstring states arithmetic, the arithmetic is re-derived against the code in the same file
+before it is quoted anywhere else.
+
+⚠️ **Open, tracked in `Project Steering/REFCV6_CLARIFICATION.md` §9:** the seven landed statements above are corrected in the
+record but **not yet edited in place** (C1–C7); the two carried-forward items ("V2's encoder is byte-identical", the
+`verdict_refcv6.py` literals) are re-read before either is touched.
+
+<!-- RETR-2026-09-15-DD-PAPER-OVER-CODE -->
