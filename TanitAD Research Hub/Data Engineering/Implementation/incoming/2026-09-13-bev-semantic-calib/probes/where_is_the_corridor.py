@@ -445,11 +445,20 @@ def main():
     if out:
         ls = [v["left_line"] for v in out.values()]
         print(f"\n  ⭐ LEFT LINE AT {np.median(ls):+.2f} m FROM THE VEHICLE CENTRELINE")
-        print(f"     a {a.vehicle_width} m vehicle centred in a lane of width W sits with its")
-        print(f"     left boundary at W/2, so this reading implies W = {2*np.median(ls):.2f} m")
-        print(f"     if the car is centred — and §97 bounds W at <= 3.16 m by the optics.")
-        print(f"     Excess over a centred car in a 3.00 m lane: "
-              f"{np.median(ls) - 1.50:+.2f} m (+ = car sits RIGHT of centre)")
+        # ⚠️ The "implied W if centred" line below is a SANITY READING, not a lane
+        # measurement — it assumes the car is centred, which §117 measures it is
+        # not. The lane is 3.15 m [2.9, 3.35] from the LEFT line at +2.05 and the
+        # RIGHT at -1.10 (dash periodicity, three stretches); the car runs right
+        # of centre. An earlier version of this text quoted §97's W <= 3.16 m cap,
+        # which R-2026-09-15-longitudinal withdrew.
+        W = 3.15
+        print(f"     a {a.vehicle_width} m vehicle CENTRED in a lane of width W would put its")
+        print(f"     left boundary at W/2, so this reading would imply W = "
+              f"{2*np.median(ls):.2f} m --")
+        print(f"     but §117 measures the lane at {W} m [2.9, 3.35] and the car right of")
+        print(f"     centre, so read this as a cross-check, not a width.")
+        print(f"     offset from the centre of a {W} m lane: "
+              f"{np.median(ls) - W/2:+.2f} m (+ = car sits RIGHT of centre)")
         out["summary"] = dict(left_line_median=float(np.median(ls)),
                               implied_W_if_centred=float(2 * np.median(ls)),
                               offset_vs_3m_lane=float(np.median(ls) - 1.50))
