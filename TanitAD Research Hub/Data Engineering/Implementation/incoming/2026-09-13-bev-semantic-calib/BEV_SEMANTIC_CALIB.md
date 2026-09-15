@@ -2224,3 +2224,82 @@ tape-measure blocker of §96 is therefore **not blocking** — it was never the 
 ⚠️ One band ran to the edge of its own scan window and was discarded. That is the third boundary
 solution in two days (§94's first pass, the `--scan` default, this). **A scan whose optimum sits at
 an end of its range is not a measurement** — it is now checked for explicitly wherever a scan is run.
+
+---
+
+# Part 21 — the horizon estimator works now, and it moves the disagreement
+
+## 104. ⭐ With `+LON` fixed, the lateral-drift scan has a real minimum
+
+§94 reported this estimator as a null: a broad noisy basin, a first pass that ran to its own
+boundary, no discrimination. §100 explains why — the `+LON` bug injects a **range-dependent**
+lateral error (−21 % at 10 m, −7 % at 30 m), which is precisely the signature the estimator
+attributes to `v_h`. **It was measuring the bug.**
+
+Re-run with the fix, 200 frames, scan 400→500 px in 2 px steps:
+
+| v_h | y(9–13 m) | y(13–20 m) | y(20–30 m) | drift |
+|---|---|---|---|---|
+| 400 | 1.605 | 1.289 | 1.236 | 0.369 |
+| 438 | 1.939 | 1.893 | 1.660 | 0.278 |
+| 448 | 2.023 | 1.997 | 1.834 | 0.190 |
+| 464 | 2.184 | 2.181 | 2.222 | 0.041 |
+| **476** | 2.328 | 2.349 | 2.362 | **0.034** |
+| 482 | 2.403 | 2.431 | 2.449 | 0.046 |
+| 498 | 2.570 | 2.819 | 3.010 | 0.440 |
+
+⭐ **A clean V with an interior optimum: drift falls monotonically from 0.37, bottoms in a basin
+at 460–484, and rises again to 0.44.** Nothing like §94's flat noise. **Horizon = 460–484 px,
+best ≈ 476.**
+
+## 105. ⚠️ Two paint routes now agree — but they share a confound
+
+| route | horizon | uses |
+|---|---|---|
+| lateral drift (§104) | **460–484** | paint, flat road |
+| lane-boundary convergence (§85) | **466–468** | paint, flat road |
+| row flow vs odometer (§16) | **437.4** [431.4, 443.4] | ego motion, **no paint**, flat road |
+| lens bound | **≲450** | optics + an assumed `h` |
+
+The two paint routes agreeing is **weaker evidence than it looks**: both assume the road is a
+plane. On a downgrade, road-parallel lines converge **below** the true horizon and the recovered
+lateral also drifts — so a grade pushes **both** paint routes the same way, and they would agree
+while both being wrong. **They agree because they share a bias, not necessarily because they are
+right.** The 30 px gap to the row flow corresponds to `atan(30/1533)` = **1.1° of average
+downgrade**, which is unremarkable on a road that visibly runs through a rock cutting.
+
+⇒ **The discriminating experiment is a grade-aware estimator, or the same estimators restricted to
+a verifiably level stretch.** Pre-registered, both outcomes committed: if the paint routes move
+toward 438 on level ground, grade is the explanation and the row flow wins; if they stay at ~470,
+the row flow has a bias of its own and the flat-road assumption is not the culprit.
+
+## 106. What it does to `h` and `f` — the lens bound now bites the OTHER way
+
+Near-band peaks re-measured at each candidate horizon (160 frames, h 1.586), with the row-flow
+`f·h` at the same pinned horizon from §84:
+
+| horizon | `f·h` | left | right | lane/h | `f` if W = 3.5 m | crop |
+|---|---|---|---|---|---|---|
+| **448** | 2431 | +2.05 | −1.65 | 2.333 | **1620** | 1.12× |
+| 464 | 2094 | +2.15 | −1.65 | 2.396 | 1433 | 0.99× ⚠ |
+| 476 | ~1857 | +2.35 | −1.85 | 2.648 | 1405 | 0.97× ⚠ |
+
+⚠️ **At the horizon the drift scan prefers, a 3.5 m lane needs `f` ≈ 1405–1433 — just below the
+1442 px uncropped bound.** Marginal, not decisive: "26 mm equivalent" is a rounded spec, and
+25–27 mm spans `f` = 1386–1497. So the lens no longer excludes the high horizons cleanly, and it
+no longer picks a winner. **What it does say is that at horizon ≈ 470 the capture is essentially
+uncropped, while at 448 it is cropped ~1.12×.**
+
+## 107. ⛔ And the right-hand boundary is still NOT established
+
+At every horizon tried, the right-side peaks come out **evenly spaced by exactly 0.60 m**
+(−1.85 / −2.45 / −3.05 at v_h = 476; −1.65 / −2.25 / −2.85 at 464). That regularity is not road
+structure — it is **the peak-picker's own 0.5 m minimum-separation rule slicing a broad
+continuous mass**, which is what §92 already found on the right side and what §98's burstiness
+test failed to resolve.
+
+⇒ **Any "lane width" in the table above is provisional on the right boundary**, and the numbers
+are published with that attached rather than quietly averaged. The instrument that can settle it
+is the consecutive-frame dash test (§98's idea, with its sampling defect fixed) — the right line
+is dashed and the shoulder is not, and at a 1-frame stride the dash period is the only thing
+changing.
