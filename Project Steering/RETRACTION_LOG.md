@@ -3527,3 +3527,33 @@ cross-check, not an audit, found the defect.
 and §87's *"rendered −5.35 vs optimum −5.10"*, the flat 1.12–1.19 m profile, the row-flow `f·h`.
 **The renderer is unaffected** — it works in vehicle coordinates end to end, and its
 self-consistency check (drawn ribbon vs projected ribbon) passes at **±0.04 m** across 10–30 m.
+
+---
+
+## `R-2026-09-15-missingfield` — `.get(key, default)` on a schema I never enumerated
+
+**WITHDRAWN:** the label *"straight frames only (|yaw rate| < 1 °/s)"* on §102's corridor-placement
+table, and the yaw-rate stratification in the first run of `where_is_the_corridor --per-frame`.
+The numbers in §102 stand — they are simply over **all** frames, not straight ones.
+
+**THE BUG.** These trajectory records carry `frame · pts_s · speed_ms · steer_wheel_deg ·
+steer_valid · standstill · t · x · y · yaw · v · pos_sigma`. There is **no `yaw_rate_dps`**, so
+`r.get("yaw_rate_dps", 0.0)` returned `0.0` for every frame: the filter passed everything and the
+stratification put **228 of 228 frames into one band**.
+
+**⚠️ IT HAD ALREADY ANNOUNCED ITSELF AND I READ PAST IT.** The probe printed *"2156 straight frames
+… out of 2216"* — **97 % of a recording on a visibly bending road classified as straight**. ⇒ **A
+filter that rejects almost nothing is a filter that is not running.** Print the reject count, and
+disbelieve a pass rate near 100 %.
+
+**ROOT-CAUSE CLASS — A DEFAULT SILENTLY SUBSTITUTED FOR A FACT.** Same family as
+`R-2026-09-15-longitudinal` (a variable that means something different in the function next door)
+and `R-2026-09-15-scope` (a statistic over the wrong scope): in each, the code ran, returned
+plausible numbers, and answered a question nobody asked. ⇒ **`.get(k, default)` is only admissible
+on a schema you have enumerated.** Enumerate it once, in the probe, and fail loudly on a missing
+key rather than defaulting.
+
+**THE REPLACEMENT IS BETTER THAN THE ORIGINAL INTENT.** `steer_wheel_deg` is real and measured, and
+the records carry the future path (`x`, `y`) — so `y` interpolated at a range is not a *proxy* for
+why the ribbon leaves the lane, it **is** the ribbon's predicted lateral there. That substitution is
+what produced §109's `r = −0.789`, which settled the symptom.

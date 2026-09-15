@@ -2175,7 +2175,11 @@ dash test (§98's instrument, fixed).
 
 ## 102. What Sayed actually sees, and whether it is a defect
 
-Measured on the delivered render, straight frames only (|yaw rate| < 1 °/s, n 106–167 per range):
+Measured on the delivered render, ~~straight frames only (|yaw rate| < 1 °/s,~~ n 106–167 per range):
+
+⛔ **THE STRAIGHT-FRAME FILTER NEVER RAN** — see §110. These records carry no `yaw_rate_dps`, so
+`r.get("yaw_rate_dps", 0.0)` returned the default for every frame and the filter passed 2156 of
+2216. The table is over ALL frames. Its numbers stand; the label on them did not.
 
 | range | corridor centre (should be 0.00) | left line | gap, ribbon edge → line |
 |---|---|---|---|
@@ -2303,3 +2307,86 @@ are published with that attached rather than quietly averaged. The instrument th
 is the consecutive-frame dash test (§98's idea, with its sampling defect fixed) — the right line
 is dashed and the shoulder is not, and at a 1-frame stride the dash period is the only thing
 changing.
+
+---
+
+# Part 22 — the symptom, found: it is real, it is beyond 30 m, and it is the prediction
+
+## 108. ⭐⭐ The corridor DOES cross the left line — in 12.9 % of frames, all beyond 30 m
+
+Sayed: *"i see the trajectory cutting road markings"*. Every previous answer quoted a **median**,
+and a median with a metre of clearance is exactly the statistic that cannot show a visible
+minority. **A complaint about what is visible is a complaint about the TAIL.**
+
+Per-frame **minimum** clearance from the ribbon's left edge to the left painted line, 210 frames,
+all speeds, **all** steering angles, on the delivered fade render:
+
+| range | n | median | p5 |
+|---|---|---|---|
+| 10 m | 404 | +1.08 | **+0.62** |
+| 20 m | 391 | +1.10 | **+0.68** |
+| 30 m | 232 | +1.03 | **+0.42** |
+| 40 m | 170 | +1.09 | **−0.18** |
+| 50 m | 111 | +1.24 | **−0.87** |
+
+Frame-worst percentiles: p0 **−1.06 m**, p5 −0.29, p10 −0.11, p50 +0.94, p100 +2.13.
+**27 of 210 frames (12.9 %) have the ribbon on or past the line.**
+
+⭐ **Restricted to ≤30 m, it never happens: 0 of 228 frames below +0.25 m clearance, worst case
++0.28 m.** The symptom is entirely a far-field phenomenon, and the boundary is sharp — p5 flips
+sign between 30 m (+0.42) and 40 m (−0.18).
+
+## 109. ⭐ And it is the PREDICTION, not the geometry
+
+The ribbon is drawn about the **future path**, so the discriminating variable is the path's own
+predicted lateral — which the trajectory records carry directly (`x`, `y` arrays), needing no image
+at all. At 50 m the predicted lateral has median −0.10 m and a **5–95 % span of [−1.49, +2.14] m**:
+over a 2.4 s look-ahead the car genuinely goes somewhere else.
+
+| statistic | at 30 m | at 50 m |
+|---|---|---|
+| `r(path lateral, worst clearance)` | −0.360 | **−0.789** |
+
+⭐ **r = −0.789.** The far-field excursion is dominated by the predicted path, so **the ribbon is
+crossing the line because the car is about to.** Crossings also rise with steering — the fraction
+below zero goes 8.6 % → 10.2 % → 10.6 % → **24.0 %** across |steering| bands 0–1°, 1–2°, 2–4°,
+4–7°.
+
+⇒ **This is not a calibration defect and must not be "fixed" geometrically.** Forcing the ribbon
+to stay inside the current lane would make the overlay *wrong* — it would stop showing where the
+car is going, which is the entire point of it. The geometry is corroborated independently: the
+renderer draws the ribbon within **0.01 m** of `project_ground` (§102), and inside 30 m the
+clearance never drops below 0.28 m over the whole recording.
+
+**WHAT IS ACTUALLY WRONG IS THE PRESENTATION.** At 50 m a 2 m lateral swing is drawn as crisply as
+a 10 m one, while its uncertainty is far larger and is not shown at all. Three candidate fixes, in
+increasing order of honesty:
+
+1. bring the fade in — it currently runs 30→55 m, and **every crossing is beyond 30 m**, so a
+   25→40 m fade would put them all in the faint region;
+2. **widen the ribbon with range**, so the drawn band carries the prediction's growing lateral
+   uncertainty instead of implying a precision it does not have;
+3. draw the far field as a centre-line with a confidence envelope rather than a hard-edged corridor.
+
+(2) is the one that is *true* rather than merely tidy, and it is a `viz.py` change, not a
+calibration change.
+
+## 110. ⛔ `yaw_rate_dps` does not exist, so the "straight frames" filter never ran
+
+`per_frame`'s first run put **228 of 228 frames into a single yaw-rate band** — a result with only
+one explanation. The records carry `frame · pts_s · speed_ms · steer_wheel_deg · steer_valid ·
+standstill · t · x · y · yaw · v · pos_sigma`. There is **no `yaw_rate_dps`**, so
+`r.get("yaw_rate_dps", 0.0)` returned the default everywhere.
+
+⚠️ **It had already shown itself and I read past it.** `main()` reported *"2156 straight frames
+(|yaw rate| < 1.0 deg/s)"* out of 2216 — 97 % of a recording on a bending road classified as
+straight. **A filter that rejects almost nothing is a filter that is not running**, and §102's
+"straight frames only" label is corrected above on that basis. The numbers in it stand (they are
+over all frames); the claim attached to them did not.
+
+⇒ The replacement is better than the original intent: `steer_wheel_deg` is real, and the path's own
+`y` interpolated at each range is not a *proxy* for the cause but **the cause itself**.
+
+⚠️ Same family as `R-2026-09-15-longitudinal`: **a default silently substituted for a fact.**
+`.get(key, default)` on a schema you have not enumerated is the dictionary version of reading a
+statistic over the wrong scope.
