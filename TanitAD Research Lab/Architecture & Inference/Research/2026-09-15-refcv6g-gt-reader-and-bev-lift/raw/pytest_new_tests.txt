@@ -1,0 +1,61 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: C:\Users\Admin\tanitad-wt-refcv6g\stack
+configfile: pyproject.toml
+plugins: anyio-4.14.1
+collecting ... collected 35 items
+
+tests/test_semantic_map_gt.py::test_reads_fractions_and_seen_mask PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_schema[bad0] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_schema[bad1] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_schema[bad2] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_schema[bad3] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_schema[bad4] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_arrays[arrays0] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_arrays[arrays1] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_arrays[arrays2] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_arrays[arrays3] PASSED
+tests/test_semantic_map_gt.py::test_refuses_wrong_arrays[arrays4] PASSED
+tests/test_semantic_map_gt.py::test_refuses_non_monotone_time_axis PASSED
+tests/test_semantic_map_gt.py::test_refuses_corrupt_archive PASSED
+tests/test_semantic_map_gt.py::test_MUTATION_file_renamed_to_another_clip_is_refused PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[6] PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[-1] PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[idx2] PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[2.0] PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[idx4] PASSED
+tests/test_semantic_map_gt.py::test_refuses_out_of_range_or_malformed_indices[idx5] PASSED
+tests/test_semantic_map_gt.py::test_refuses_time_misalignment PASSED
+tests/test_semantic_map_gt.py::test_pose_alignment_check PASSED
+tests/test_semantic_map_gt.py::test_coverage_three_states PASSED
+tests/test_semantic_map_gt.py::test_episode_grid_restatement_and_stacked_rows PASSED
+tests/test_semantic_map_gt.py::test_real_file_reads_and_seen_mask_matches_channel_8 PASSED
+tests/test_semantic_map_gt.py::test_real_MUTATION_renamed_and_reschema_refused PASSED
+tests/test_semantic_map_gt.py::test_real_alignment_time_and_pose_on_v2ep_episodes PASSED
+tests/test_bev_lift.py::test_b_geometry_analytic_literals PASSED
+tests/test_bev_lift.py::test_c_MUTATION_mirrored_lift_fails_b PASSED
+tests/test_bev_lift.py::test_b_grid_orientation_and_validity PASSED
+tests/test_bev_lift.py::test_feature_grid_literals_and_stride_refusal PASSED
+tests/test_bev_lift.py::test_refc_feature_centre_is_stride_times_index PASSED
+tests/test_bev_lift.py::test_lift_pixel_matches_the_cache_builder_resample PASSED
+tests/test_bev_lift.py::test_bevlift_module_params_sampling_and_refusals 
+BEVLift(d_in=352, d_out=128, Z=4) parameters: 180,480
+PASSED
+tests/test_bev_lift.py::test_d_validity_mask_vs_lidar_cam_vis_on_real_clips 
+sha12         IoU    n_disagree max_dist_to_edge emulation(rig A)
+00213e99adca  0.99868      9  0  -
+101ef2cf05dc  0.99898      7  0  -
+2aa810802777  0.99926      5  0  -
+3db625a5f941  0.99781     15  1  exact
+4b5c891e90e6  0.99839     11  0  -
+60f8d13ff2e2  0.99941      4  0  exact
+7695875eaea9  0.99912      6  0  -
+9546f6d574e2  0.99912      6  0  exact
+b0d17a91f120  0.99897      7  0  exact
+c0d4ac1d8f62  0.99897      7  0  exact
+c8c6aa11d792  0.99868      9  0  -
+e01bd05b8e43  0.99794     14  0  -
+fcc9209b8e83  0.99898      7  0  exact
+PASSED
+
+============================= 35 passed in 3.55s ==============================
