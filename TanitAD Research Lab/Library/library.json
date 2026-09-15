@@ -123,9 +123,10 @@
    "banked": "2026-08-18",
    "tags": [
     "driving",
+    "resnet-trunk",
     "world-model"
    ],
-   "note": "LAW (ICLR2025): future-latent-feature prediction as auxiliary; SOTA nuScenes/NAVSIM/CARLA",
+   "note": "LAW (ICLR2025): future-latent-feature prediction as auxiliary; SOTA nuScenes/NAVSIM/CARLA | resnet-trunk review 2026-09-15: LAW on NAVSIM perception-free camera-only ResNet-34 640x320 20 ep -> 84.6 PDMS (Tab.2); REF-C's LAW aux source",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md"
    ]
@@ -520,9 +521,10 @@
     "driving",
     "ego-input",
     "input-pipeline",
+    "resnet-trunk",
     "rl-posttrain"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM | DDv2 analysis 2026-09-05: v1 counterparts read at 9b52ed0 (norm_odo, 2-layer cascade, forward_train) | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DD v1 image trunk = timm ResNet-34 ImageNet-init (supp. A), LiDAR ResNet-34 scratch, E2E 100 ep bs512 lr6e-4, 1024x256 single frame, 60M/45FPS (Tab.2) | resnet-trunk review 2026-09-15 (verified vs released code): image_encoder lr_mult 0.5 -> 3e-4, 3-ep warm-up + cosine (transfuser_config.py:123-127, transfuser_agent.py:170-175); ToTensor [0,1] with NO ImageNet mean/std (transfuser_features.py:73); single frame (cameras[-1], GPT asserts seq_len==1); learned pos_emb in fusion GPT + _keyval_embedding on planner KV; paper 4.2 'from scratch' = single-stage training, image trunk still ImageNet-init (supp. A)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
@@ -699,9 +701,10 @@
    "banked": "2026-08-23",
    "tags": [
     "data-scaling",
-    "input-pipeline"
+    "input-pipeline",
+    "resnet-trunk"
    ],
-   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey",
+   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey | resnet-trunk review 2026-09-15: DriveVLA-W0 Tab.3: TransFuser-50M ResNet-34 vs TransFuser-7B DINOv3 at 70k/700k/70M frames under action-only supervision | resnet-trunk review 2026-09-15: Tab.3 p.9 ADE at 70k/700k/70M frames, action-only: TransFuser-50M (ResNet-34) 2.5893/1.7464/1.2627 vs TransFuser-7B (DINOv3-init ViT-7B) 2.5757/2.1391/1.2244 - a pretrained 7B backbone does not rescue sparse action supervision",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Data Engineering/2026-08-22-lab-run-001/RESULT.md"
@@ -2273,9 +2276,10 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
-    "nuscenes"
+    "nuscenes",
+    "resnet-trunk"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2312,9 +2316,10 @@
    "tags": [
     "benchmarks",
     "ego-input",
-    "input-pipeline"
+    "input-pipeline",
+    "resnet-trunk"
    ],
-   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever",
+   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2412,9 +2417,10 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
-    "nuscenes"
+    "nuscenes",
+    "resnet-trunk"
    ],
-   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell",
+   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell | resnet-trunk review 2026-09-15: UniAD loads BEVFormer weights; image backbone FROZEN in both stages (App. E.6); 125.0M, 1.8 FPS A100 (Tab.13)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2486,9 +2492,10 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
-    "nuscenes"
+    "nuscenes",
+    "resnet-trunk"
    ],
-   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV",
+   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV | resnet-trunk review 2026-09-15: SparseDrive R50 256x704 / R101 512x1408; stage-2 nothing frozen, backbone lr x0.1 (Tab.7); 85.9M 9.0 FPS 4090",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2524,9 +2531,10 @@
    "tags": [
     "benchmarks",
     "ego-input",
-    "input-pipeline"
+    "input-pipeline",
+    "resnet-trunk"
    ],
-   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0",
+   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2645,9 +2653,10 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
-    "ego-input"
+    "ego-input",
+    "resnet-trunk"
    ],
-   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2",
+   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2 | resnet-trunk review 2026-09-15: WoTE ResNet-34 TransFuser trunk, 256x1024 + LiDAR, 30 ep bs128, 88.3 PDMS; 18.7 ms L20 (Tab.6)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
@@ -2705,9 +2714,10 @@
    "tags": [
     "benchmarks",
     "ego-input",
-    "input-pipeline"
+    "input-pipeline",
+    "resnet-trunk"
    ],
-   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6",
+   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6 | resnet-trunk review 2026-09-15: TransFuser RegNetY-3.2GF image ImageNet-pretrained + LiDAR scratch (§4.7); aux-loss ablation Tab.7 (none: RC 92.28->78.17); backbone highest impact Tab.8",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
@@ -2855,14 +2865,15 @@
     "benchmarks",
     "ego-input",
     "input-pipeline",
-    "recovered-orphan"
+    "recovered-orphan",
+    "resnet-trunk"
    ],
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision",
+   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision | resnet-trunk review 2026-09-15: VAD ResNet-50, 6 cams 1280x720 (Base), 2 s history, 60 ep; 4.5 FPS; backbone 39% of VAD-Tiny latency (Tab.5)",
    "kind": "arxiv",
    "title": "VAD: Vectorized Scene Representation for Efficient Autonomous Driving",
    "authors": [
@@ -3653,9 +3664,10 @@
    "banked": "2026-08-29",
    "tags": [
     "anti-echo-control",
-    "benchmark-portfolio"
+    "benchmark-portfolio",
+    "resnet-trunk"
    ],
-   "note": "Bench2Drive: CARLA-v2 closed-loop, 44 scenarios x 220 short routes; 2M-frame Think2Drive expert train set (Apache-2.0); DS + multi-ability + smoothness; eval cost 8xH800 x 2 days (VAD)",
+   "note": "Bench2Drive: CARLA-v2 closed-loop, 44 scenarios x 220 short routes; 2M-frame Think2Drive expert train set (Apache-2.0); DS + multi-ability + smoothness; eval cost 8xH800 x 2 days (VAD) | resnet-trunk review 2026-09-15: Bench2Drive 2M frames @10Hz / 13,638 clips; base = 1,000 clips",
    "cited_by": [
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -3773,9 +3785,10 @@
    "tags": [
     "diffusiondrive",
     "refc-lineage",
+    "resnet-trunk",
     "rl-posttrain"
    ],
-   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully",
+   "note": "DiffusionDriveV2: GRPO-RL-constrained truncated diffusion from DD cold start; navtest PDMS 91.2 @R34 (+3.1), P4-EPDMS 85.5; raw-fan floor 75.3->84.4@top10; names selector over-reliance as the hazard | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | REF-C vs DiffusionDrive v1/v2 implementation audit (2026-09-05): decoder is an unrolled residual refiner, not a diffusion model; selection never sees the refined fan | RL post-training design for refcv4b/refcv5 (2026-09-05): DDv2's released RL stage explores a TWO-SCALAR (a_lon,a_lat) scale family, additive DDPM term multiplied by zero, so a deterministic fan needs no sampler to be post-trained faithfully | resnet-trunk review 2026-09-15: DDv2 keeps DD v1 ResNet-34 (21.8M, §5.3) frozen through RL (10 ep) + selector (20 ep); cold start from DD v1 | resnet-trunk review 2026-09-15 (verified vs released code): the freeze is CODE-ONLY, paper text states none - RL trains only _trajectory_head, rest requires_grad=False + eval() (diffusiondrivev2_rl_agent.py:62-68); selector trains only 13 scorer-head prefixes, whole model eval() (diffusiondrivev2_sel_agent.py:61-82); paper reports no FPS/latency",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
@@ -4429,9 +4442,10 @@
    "sha256": "641561d0e4c1d46d6883a3d38c68b475030de5bbbcdf747af268366f47f97a6b",
    "banked": "2026-08-30",
    "tags": [
-    "input-pipeline"
+    "input-pipeline",
+    "resnet-trunk"
    ],
-   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | resnet-trunk review 2026-09-15: BEVFormer R101-DCN init from FCOS3D, V2-99 from DD3D (§4.2); nuScenes 1000 scenes x ~20 s (§4.1)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
    ]
@@ -6832,9 +6846,10 @@
    "sha256": "020b2fff9302726e93c9d4f36f8d98189b7d0fe268fe39058c1824f51fc612a8",
    "banked": "2026-08-30",
    "tags": [
-    "data-efficiency"
+    "data-efficiency",
+    "resnet-trunk"
    ],
-   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h",
+   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h | resnet-trunk review 2026-09-15: NVIDIA E2E data scaling 16-8192 h, ResNet-18/50; open-loop power law, closed-loop plateau ~256 h (§6)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
    ]
@@ -10593,9 +10608,10 @@
    "tags": [
     "diffusiondrive",
     "ego-input",
+    "resnet-trunk",
     "vocabulary"
    ],
-   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout",
+   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
@@ -13716,6 +13732,51 @@
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
    ]
+  },
+  "2503.07656": {
+   "key": "2503.07656",
+   "kind": "arxiv",
+   "title": "DriveTransformer: Unified Transformer for Scalable End-to-End Autonomous Driving",
+   "authors": [
+    "Xiaosong Jia",
+    "Junqi You",
+    "Zhiyuan Zhang",
+    "Junchi Yan"
+   ],
+   "published": "2025-03-07",
+   "abstract": "End-to-end autonomous driving (E2E-AD) has emerged as a trend in the field of autonomous driving, promising a data-driven, scalable approach to system design. However, existing E2E-AD methods usually adopt the sequential paradigm of perception-prediction-planning, which leads to cumulative errors and training instability. The manual ordering of tasks also limits the system`s ability to leverage synergies between tasks (for example, planning-aware perception and game-theoretic interactive prediction and planning). Moreover, the dense BEV representation adopted by existing methods brings computational challenges for long-range perception and long-term temporal fusion. To address these challenges, we present DriveTransformer, a simplified E2E-AD framework for the ease of scaling up, characterized by three key features: Task Parallelism (All agent, map, and planning queries direct interact w",
+   "url": "https://arxiv.org/abs/2503.07656",
+   "path": "TanitAD Research Lab/Library/papers/2503.07656_DriveTransformer-Unified-Transformer-for-Scalable-End-to-End.pdf",
+   "bytes": 5341995,
+   "sha256": "7e9958a48bd51899c8936d8e1bf22ffabb8eae78101844d1b231fcd8986afd44",
+   "banked": "2026-09-15",
+   "tags": [
+    "resnet-trunk"
+   ],
+   "note": "DriveTransformer (ICLR25): unified task/sensor/temporal attention E2E stack; camera-only Bench2Drive+nuScenes; cited for backbone/init/data-scale row of the ResNet-trunk comparison | resnet-trunk review 2026-09-15: DriveTransformer ResNet-50 384x1056, Bench2Drive base 1000 clips 30 ep single-stage; planning-only 60.45->54.22 DS (Tab.5b)",
+   "cited_by": []
+  },
+  "2110.00476": {
+   "key": "2110.00476",
+   "kind": "arxiv",
+   "title": "ResNet strikes back: An improved training procedure in timm",
+   "authors": [
+    "Ross Wightman",
+    "Hugo Touvron",
+    "Hervé Jégou"
+   ],
+   "published": "2021-10-01",
+   "abstract": "The influential Residual Networks designed by He et al. remain the gold-standard architecture in numerous scientific publications. They typically serve as the default architecture in studies, or as baselines when new architectures are proposed. Yet there has been significant progress on best practices for training neural networks since the inception of the ResNet architecture in 2015. Novel optimization &amp; data-augmentation have increased the effectiveness of the training recipes. In this paper, we re-evaluate the performance of the vanilla ResNet-50 when trained with a procedure that integrates such advances. We share competitive training settings and pre-trained models in the timm open-source library, with the hope that they will serve as better baselines for future work. For instance, with our more demanding training setting, a vanilla ResNet-50 reaches 80.4% top-1 accuracy at reso",
+   "url": "https://arxiv.org/abs/2110.00476",
+   "path": "TanitAD Research Lab/Library/papers/2110.00476_ResNet-strikes-back-An-improved-training-procedure-in-timm.pdf",
+   "bytes": 457790,
+   "sha256": "4c483b65eef494b68ab7fe9b62325f0baf49c671cc34066899c846c8a2b6593e",
+   "banked": "2026-09-15",
+   "tags": [
+    "resnet-trunk"
+   ],
+   "note": "ResNet strikes back: timm A1/A2/A3 ImageNet-1k training recipes; A1 = the recipe behind timm resnet34.a1_in1k, the checkpoint DiffusionDrive V1/V2 initialise their image ResNet-34 from | resnet-trunk review 2026-09-15: A1 = 600 epochs (Tab.1); ResNet-34 21.8M params 3.7 GFLOPs, 76.4 top-1 under A1 (Tab.4)",
+   "cited_by": []
   }
  }
 }
