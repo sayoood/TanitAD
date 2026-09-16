@@ -87,3 +87,59 @@ Programme reference: G-RANK frozen DINOv3 on our frames reads 8.56. ⚠️ That 
 | "REF-C's decoder is position-blind" | implied by "no positional encoding" | ⛔ withdrawn as a gap: position is linearly recoverable (M2) |
 | "control-space noise ≈ DD's spread" (`refc_sampler.py` docstring) | 2.3 / 1.7 m at 6 s | 0.86 / 0.65 m at 6 s; ≈ 55–60× smaller than DD at 0.5 s (M1) |
 | "LAW flattens the trunk" | hypothesis | supported, not proven (M4) |
+
+---
+
+## M5 · H4: does a REF-C trunk's BEV content grow with training exposure? (MEASURED 2026-09-16)
+
+Pre-registered in `raw/h4_prereg.md` **before any H4 number was read**; run overnight on the dev box, 2.5 GPU-h.
+
+**The one variable: the checkpoint.** refcv4b `@9,500` vs `@40,284` of the **same run** — the two `config.json`
+files are **md5-identical** (`58ad809aaf241729c1695bec2ab30d8e`), both checkpoints carry 551 model keys, 396
+`core.encoder.*` keys and the same 117-anchor bank, and each step is read from the checkpoint's own `step` field.
+Everything else is held: the extractor (`raw/h4_extract_tokens.py`, a copy of P4a whose only additions are
+`--ckpt`, `--v2ep`, `--no-pix` and a clip list recovered from the banked index), the head, 6,000 steps, the
+content-blind split, fp32 inference. **Both extractions are row-identical to the banked P4 index** (asserted in
+the extractor), which is what makes this panel paired with the banked controls.
+
+| arm | AP (rule B) | CI95 | IoU 0–30 m |
+|---|---|---|---|
+| `const` | **0.2761858** | — | 0.2224 |
+| `prior` | 0.3773 | [0.3297, 0.4267] | 0.2941 |
+| `shuffled` (zero information, banked) | 0.3801 | [0.3322, 0.4286] | 0.2931 |
+| `pixel` floor (banked, checkpoint-independent) | 0.3849 | [0.3317, 0.4307] | 0.2883 |
+| **refcv4b @9,500** | **0.3972** | [0.3465, 0.4469] | 0.3036 |
+| **refcv4b @40,284** | **0.4080** | [0.3570, 0.4566] | 0.3120 |
+| refcv4b @40,284, probe seed 1 | 0.4035 | [0.3527, 0.4607] | 0.3220 |
+
+n = 34 test clips / 6,713 rows / 7,928,485 scored cells; paired clip-cluster bootstrap, 2,000 resamples, seed 0.
+
+**Gates (the instrument, before any reading):**
+- `const` reads the test prevalence **exactly** (0.2761858034668666 both sides) ✅
+- `shuffled` 0.3801 ≤ `prior` 0.3773 + 0.02 ✅
+
+**The contrast:**
+
+| pair | ΔAP | CI95 | separated? |
+|---|---|---|---|
+| **@40,284 − @9,500** | **+0.0108** | **[−0.0078, +0.0309]** | **NO** |
+| probe-seed floor F = \|seed 0 − seed 1\| | 0.0045 | — | bar = 3F = **0.0135** |
+| @40,284 − shuffled | +0.0279 | [+0.0008, +0.0570] | yes |
+| @40,284 − prior | +0.0307 | [+0.0027, +0.0606] | yes |
+| @40,284 − **pixel** | +0.0231 | [−0.0126, +0.0647] | **no** |
+| @9,500 − shuffled / prior / pixel | +0.0171 / +0.0199 / +0.0123 | all cover 0 | no |
+
+⇒ **H4 is REFUTED as written**: the interval covers 0 **and** the gap is below 3× the floor. **4.2× more training
+exposure did not separably increase the trunk's BEV content.** Neither refcv4b checkpoint separates from the raw
+pixel floor, which is the same verdict the frozen refcv5-v2 trunk got (AP 0.4140 vs pixels 0.3849).
+
+**Scope, declared in the pre-registration:** two checkpoints of **one** run are n = 2 on one trajectory; exposure is
+confounded with optimisation progress; a probe bounds what a *probe* recovers, not what the trunk contains.
+
+**What it changes:** the "the trunk is data-limited" reading loses its support **within this run's range**, and the
+weight moves to the two remaining hypotheses — the missing **pretrained prior** (H1) and **planning-only
+supervision** (H2). Both are in `REFCV6_CLARIFICATION.md` §6.4.
+
+⚠️ **Naming hazard in `raw/h4_panel.json`:** the panel script hard-codes the names `main` / `main_s1` for its
+verdict, so in that file **`main` = refcv4b @40,284** and **`main_s1` = the same checkpoint at probe seed 1** —
+*not* the banked refcv5-v2 arm. The run directories (`tok_dir`) name the token set each arm actually read.
