@@ -51,21 +51,89 @@ def test_the_vendored_excerpt_is_byte_identical_to_its_pinned_hash():
     assert got == "ae98ea7680374c177529176a5e7be02a985594d794de2125fcfb98fc4f6f505f"
 
 
-def test_the_excerpt_matches_the_banked_release_when_the_bank_is_checked_out():
+#: sha256 of the banked release's **line-ending-normalised** bytes. Same content, same pin
+#: value as before: the LF bytes were always what `2789081a…` was computed over.
+BANK_SHA256 = "2789081af3b62ae3c97744a1f86d61d31a9b1de9453bc19c583f3334288a6e46"
+
+
+def _bank_path():
     # sparse worktrees omit the Research Lab bank; TANITAD_BANK_ROOT points at a full checkout
     root = pathlib.Path(os.environ.get("TANITAD_BANK_ROOT", str(HERE.parents[1])))
-    bank = (root / "TanitAD Research Lab" / "Architecture & Inference" / "Research"
+    return (root / "TanitAD Research Lab" / "Architecture & Inference" / "Research"
             / "2026-09-05-diffusiondrive-v2-analysis" / "raw" / "ddv2_src"
             / "diffusiondrivev2_model_rl.py")
+
+
+def _lf(raw: bytes) -> bytes:
+    """⚠️ **HASH THE LINE-ENDING-NORMALISED BYTES, NOT THE RAW ONES.**
+
+    The repo has no ``.gitattributes`` for this path, so with the dev box's ``core.autocrlf=
+    true`` the working tree is CRLF while every Linux pod / cloud checkout is LF — and a raw
+    ``read_bytes()`` hash then reports the SAME FILE as changed depending only on where it ran.
+
+    MEASURED 2026-09-16 and independently verified by the coordinator: in a fresh NON-sparse
+    worktree this file hashes ``a9075847ee…`` raw (53,674 bytes, 1,170 CRLF pairs) while
+    ``git cat-file -p HEAD:<path> | sha256sum`` is ``2789081af3b6…`` (52,504 bytes) — exactly
+    the pin. The content was right; only the checkout differed. The test passed historically
+    only because the predecessor worktrees were SPARSE and took the skip path below, so a fresh
+    full checkout would have gone red on the platform and taught the reader to re-baseline on
+    red — which is precisely how a real edit would slip through.
+
+    ⛔ This forgives line endings and NOTHING else: proven by
+    :func:`test_MUTATION_the_normalised_bank_hash_still_catches_a_one_character_change`.
+    Same convention as ``tests/test_v5_trainer_v2_val.py``'s trainer pin.
+    """
+    return raw.replace(b"\r\n", b"\n")
+
+
+def test_the_excerpt_matches_the_banked_release_when_the_bank_is_checked_out():
+    bank = _bank_path()
     if not bank.exists():
         pytest.skip("banked release not in this (sparse) checkout; the excerpt hash above "
                     "still pins the fixture")
-    raw = bank.read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == (
-        "2789081af3b62ae3c97744a1f86d61d31a9b1de9453bc19c583f3334288a6e46")
+    raw = _lf(bank.read_bytes())
+    assert hashlib.sha256(raw).hexdigest() == BANK_SHA256, (
+        "the banked DiffusionDriveV2 RL source changed. This is the PRIMARY SOURCE every "
+        "`rl.py:NNN` citation in ddv2_rl.py, the SPEC and the DIFF resolves against. Confirm "
+        "the edit is intended before touching this pin — and note that a line-ending "
+        "difference can no longer cause this, because the bytes are normalised first.")
     lines = raw.decode("utf-8").splitlines(keepends=True)
     text = FIXTURE.read_text(encoding="utf-8")
     assert "".join(lines[517:676]) == text[text.index("class DDIMScheduler_with_logprob"):]
+
+
+def test_MUTATION_the_normalised_bank_hash_still_catches_a_one_character_change():
+    """⛔ A pin that forgives line endings must not forgive CONTENT. Both branches proven.
+
+    Fixing the CRLF false positive by normalising is only safe if the normalised pin is still
+    a real guard — so the forgiven transform is required to PASS and three content changes,
+    one of them a single character and one of them whitespace-only, are required to go RED.
+    """
+    bank = _bank_path()
+    if not bank.exists():
+        pytest.skip("banked release not in this (sparse) checkout")
+    lf = _lf(bank.read_bytes())
+    sha = lambda b: hashlib.sha256(_lf(b)).hexdigest()          # noqa: E731
+
+    # (a) the real file passes, on LF and on a CRLF checkout of the SAME content
+    assert sha(lf) == BANK_SHA256
+    crlf = lf.replace(b"\n", b"\r\n")
+    assert crlf != lf and len(crlf) > len(lf), "fixture: the CRLF expansion must differ"
+    assert sha(crlf) == BANK_SHA256, "the whole point: a CRLF checkout is the same content"
+
+    # (b) a ONE-CHARACTER content change must go red
+    i = lf.index(b"class DDIMScheduler_with_logprob")
+    one_char = lf[:i] + b"C" + lf[i + 1:]                        # 'class' -> 'Class'
+    assert len(one_char) == len(lf) and one_char != lf
+    assert sha(one_char) != BANK_SHA256
+
+    # (c) a WHITESPACE-ONLY change that is not a line ending must go red too
+    ws = lf.replace(b"class DDIMScheduler_with_logprob",
+                    b"class  DDIMScheduler_with_logprob", 1)
+    assert ws != lf and sha(ws) != BANK_SHA256
+
+    # (d) and a deletion must go red
+    assert sha(lf[:-1]) != BANK_SHA256
 
 
 # --------------------------------------------------------------------------- #

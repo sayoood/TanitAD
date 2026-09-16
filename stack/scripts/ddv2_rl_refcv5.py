@@ -6,7 +6,13 @@
             fan (clamps on / off); D4 the cost of one RL step; D5 the known-value controls
             (the human's own proxy scores; human-as-candidate identity; the GT-bar admission rate)
   train     one arm: ``--arm rl`` (DDv2 advantage) | ``--arm norl`` (the same stage with A == 0,
-            i.e. the release's IL term alone at lambda = 1.0 — the length-matched control)
+            i.e. the release's IL term alone at lambda = 1.0 — the length-matched control).
+            ⭐ LEVER L1 / D9 (PI 2026-09-16), two flags and nothing else:
+            ``--il-form {release,matched,lambda}`` and ``--grad-clip`` (default 100 — AMENDMENT
+            A-1, 2026-09-16, pre-run: 1.0 was MEASURED to bind on 600/600 steps of all three
+            banked arms, i.e. an every-step rescale rather than a spike guard; ``0`` = the
+            release's no-clipping recipe). ``--il-form release --grad-clip 0`` reproduces the
+            2026-09-15 validation EXACTLY. See ``tanitad.rl.ddv2_il``.
   heldout   T0 read of a checkpoint on held-out windows with the DEPLOYED sampler (paired
             inference noise per window): proxy scores of the selected plan and of the fan
 
@@ -43,9 +49,18 @@ for _p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval"), HERE):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from tanitad.rl import ddv2_il as L  # noqa: E402  (lever L1 / D9 — the two declared changes)
 from tanitad.rl import ddv2_refc_chain as C  # noqa: E402
 from tanitad.rl import ddv2_rl as D  # noqa: E402
 from tanitad.rl import pdm_proxy as P  # noqa: E402
+
+#: ``--il-form`` -> :class:`tanitad.rl.ddv2_il.IlSettings` form + lambda scale.
+#: ``lambda``'s 0.1 multiplies the release's advantage-derived 0.1 / 1.0 row weights, and
+#: MEASURED D6 says essentially every cold-start row carries a positive advantage — so the
+#: weight that binds becomes 0.1 * 0.1 = **lambda ~ 0.01**, the RESULT.md LEVER-1 alternative.
+IL_FORM_FLAGS = {"release": (L.RELEASE_IL_FORM, 1.0),
+                 "matched": ("matched_anchor", 1.0),
+                 "lambda": ("release_all_modes_lambda", 0.1)}
 
 DEFAULTS = {
     "ckpt": "C:/Users/Admin/refcv5v2_final/ckpt.pt",
@@ -339,10 +354,13 @@ def cmd_diagnose(a):
 # the RL step                                                                  #
 # --------------------------------------------------------------------------- #
 class ChainArm:
-    def __init__(self, kind: str, settings: C.ChainSettings):
+    def __init__(self, kind: str, settings: C.ChainSettings, il: L.IlSettings | None = None):
         if kind not in ("rl", "norl"):
             raise ValueError(kind)
+        # ⛔ DEFAULT = THE RELEASE. `il=None` is the 2026-09-15 recipe exactly (all-modes IL,
+        # no gradient clipping), so a call site that does not name the lever does not get it.
         self.kind, self.settings = kind, settings
+        self.il = L.IlSettings(grad_clip=None) if il is None else il
 
 
 def rl_step(ctx, inp, items, arm: ChainArm, gen, *, apply: bool, opt=None) -> dict:
@@ -374,6 +392,10 @@ def rl_step(ctx, inp, items, arm: ChainArm, gen, *, apply: bool, opt=None) -> di
     t = time.time()
     T = len(roll["labels"])
     w = D.step_loss_weights(adv.reshape(b, -1), T, consts=consts)
+    # ⭐ LEVER L1, CHANGE 1b — the cheaper alternative arm. A pure post-hoc scale of the IL
+    # coefficient the RELEASE derived; `coef_rl` is returned by identity, so a lambda arm
+    # cannot move the policy gradient. A no-op (same dict object) when lambda_scale == 1.0.
+    w = L.apply_lambda_scale(w, arm.il)
     if arm.kind == "norl":
         # ⭐ THE CONTROL REMOVES ONLY THE POLICY-GRADIENT TERM. The IL weights stay the ones the
         # release derives from THIS batch's advantage (0.1 on rows with a positive, 1.0 else,
@@ -382,26 +404,43 @@ def rl_step(ctx, inp, items, arm: ChainArm, gen, *, apply: bool, opt=None) -> di
         # row carries a positive, so the RL arm runs at lambda = 0.1 nearly always).
         w["coef_rl"] = torch.zeros_like(w["coef_rl"])
     gt = torch.stack([x["gt_wp"] for x in items]).to(ctx.dev)
+    # ⭐ LEVER L1, CHANGE 1 — the match is over the DECODED BANK this forward used
+    # (`inp.bank` IS `out["anchor_bank"]`, refc.py:2615), the trainer's own object
+    # (refc_v3_train.py:2383-2386), and it is computed ONCE per step: it depends on the GT and
+    # the bank, neither of which moves across the 10 rollout steps.
+    # ⚠️ COMPUTED ON EVERY ARM, USED BY ONE. `imitation_term` dispatches on `arm.il.form`, so
+    # the release arms are unaffected; having `a_star` lets every arm log BOTH IL statistics, so
+    # `il_mean_m` — which is not comparable across forms, the matched anchor being the nearest
+    # by construction — is never the only number a cross-arm reading has.
+    a_star = L.matched_anchor_index(inp.bank, gt)
     params = [p for _, p in trainable_params(ctx.dec)]
     for p in params:
         p.grad = None
-    loss_total, il_total, rl_part = 0.0, 0.0, 0.0
+    loss_total, il_total, rl_part, spread = 0.0, 0.0, 0.0, None
+    il_all, il_match = 0.0, 0.0
     for i in range(T):
         lp, x0 = D.chain_step_logprob(fn, roll["chain"], i, ctx.table, labels=roll["labels"],
                                       eta=consts.eta, consts=consts)
         path = C.state_to_path(ctx.dec, x0, inp.v)
-        il_i = (path - gt[:, None]).abs().mean()
+        il_i = L.imitation_term(path, gt, arm.il, a_star=a_star, n_anchors=n)
         li = D.per_step_loss(lp, il_i, w, i)
         li.backward()
         loss_total += float(li)
         il_total += float(il_i) / T
         rl_part += float(li) - float(w["il_coef"]) * float(il_i)
-    sq = [(p.grad.float() ** 2).sum() for p in params if p.grad is not None]
-    if not sq:
-        raise RuntimeError("no trainable parameter received a gradient — requires_grad not set?")
-    gnorm = float(torch.sqrt(torch.stack(sq).sum()))
+        with torch.no_grad():                       # the two IL statistics, on every arm
+            il_all += float(L.all_modes_il(path, gt)) / T
+            il_match += float(L.matched_anchor_il(path, gt, a_star, n)) / T
+            if i == T - 1:
+                # the LAST step's x̂0 is the chain's answer — the canary is read there
+                spread = L.fan_endpoint_spread(path, n)
     torch.cuda.synchronize()
     tim["grad_pass_s"] = round(time.time() - t, 3)
+    # ⭐ LEVER L1, CHANGE 2 — ONCE, after all T backwards have accumulated and before the step.
+    # `grad_norm` stays the PRE-clip norm, so it remains comparable with the 2026-09-15 logs
+    # (RL-s0 147, RL-s1 15,712).
+    gstats = L.clip_gradients(params, arm.il)
+    gnorm = gstats["grad_norm"]
     if apply:
         opt.step()
     for p in params:
@@ -410,6 +449,12 @@ def rl_step(ctx, inp, items, arm: ChainArm, gen, *, apply: bool, opt=None) -> di
     sub = {k: float(torch.stack([s[k] for s in scores]).mean()) for k in ("nc", "ep", "ttc", "comfort")}
     return {"loss": loss_total, "rl_part": rl_part, "rl_coef_abs_sum": float(w["coef_rl"].abs().sum()),
             "il_mean_m": il_total, "il_coef": float(w["il_coef"]), "grad_norm": gnorm,
+            # ---- LEVER L1 / D9 telemetry -------------------------------------------- #
+            "il_form": arm.il.form, "il_lambda_scale": arm.il.lambda_scale,
+            "il_all_modes_m": il_all, "il_matched_anchor_m": il_match,
+            "grad_norm_clipped": gstats["grad_norm_clipped"], "grad_clipped": gstats["grad_clipped"],
+            "grad_clip": gstats["grad_clip"], "chain_endpoint_spread_m": spread,
+            **{f"match_{k}": v for k, v in L.anchor_match_diagnostics(a_star, n).items()},
             "reward_mean": float(reward.mean()), "reward_best_mean": float(reward.flatten(1).amax(1).mean()),
             "human_pdms_mean": float(reward_gt.mean()),
             "human_nc_eq_1_frac": sum(1 for h in hum if h["nc"] == 1.0) / b,
@@ -445,7 +490,10 @@ def cmd_train(a):
     os.makedirs(a.out_dir, exist_ok=True)
     settings = C.ChainSettings(groups=a.groups, input_clamp=not a.no_input_clamp,
                                consts=D.DDV2Constants(clip_sample=not a.no_clip_sample))
-    arm = ChainArm(a.arm, settings)
+    form, lam = IL_FORM_FLAGS[a.il_form]
+    il = L.IlSettings(form=form, lambda_scale=lam,
+                      grad_clip=(None if float(a.grad_clip) == 0.0 else float(a.grad_clip)))
+    arm = ChainArm(a.arm, settings, il)
     for p in ctx.model.parameters():
         p.requires_grad_(False)
     named = trainable_params(ctx.dec)
@@ -456,7 +504,8 @@ def cmd_train(a):
     opt = torch.optim.AdamW([p for _, p in named], lr=a.lr, weight_decay=a.weight_decay)
     run = {"arm": a.arm, "seed": a.seed, "steps": a.steps, "batch": a.batch, "lr": a.lr,
            "weight_decay": a.weight_decay, "schedule": "linear warmup 10% + cosine to 1e-6 (P suppl. §7, over steps)",
-           "grad_clip": None, "precision": "fp32", "chain": settings.to_dict(),
+           "grad_clip": il.grad_clip, "il": il.to_dict(), "il_form_flag": a.il_form,
+           "precision": "fp32", "chain": settings.to_dict(),
            "trainable": {"prefixes": ["traj_proj", "time_mlp", "layers", "control_head"],
                          "n_params": n_train, "n_tensors": len(named)},
            "proxy": P.PROXY.to_dict(), "n_train_windows": len(ctx.windows), "dropped": ctx.dropped,
@@ -466,6 +515,9 @@ def cmd_train(a):
         json.dump(run, fh, indent=1)
     log(f"[train] arm {a.arm} seed {a.seed} windows {len(ctx.windows)} trainable {n_train:,} "
         f"steps {a.steps} batch {a.batch}")
+    log(f"[train] LEVER L1: il_form={il.form} lambda_scale={il.lambda_scale} "
+        f"effective_lambda={il.effective_lambda()} grad_clip={il.grad_clip} "
+        f"is_release={il.is_release}")
     order_gen = torch.Generator().manual_seed(10_000 + a.seed)
     chain_gen = torch.Generator(device=ctx.dev).manual_seed(20_000 + a.seed)
     perm, ptr = torch.randperm(len(ctx.windows), generator=order_gen).tolist(), 0
@@ -498,7 +550,9 @@ def cmd_train(a):
                 log(f"[train {a.arm} s{a.seed}] step {step} lr {lr:.2e} loss {stats['loss']:.4f} "
                     f"il {stats['il_mean_m']:.3f} m R {stats['reward_mean']:.3f} Rbest {stats['reward_best_mean']:.3f} "
                     f"H {stats['human_pdms_mean']:.3f} pos {stats['frac_positive_after_bar']:.4f} "
-                    f"fail {stats['frac_constraint_fail']:.3f} g {stats['grad_norm']:.3f} d {dnorm:.4f} "
+                    f"fail {stats['frac_constraint_fail']:.3f} g {stats['grad_norm']:.3f}"
+                    f"{'->clip' if stats['grad_clipped'] else ''} d {dnorm:.4f} "
+                    f"spread {stats['chain_endpoint_spread_m']:.2f} m "
                     f"t {stats['timing']} wall {stats['wall_s']}s")
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     sd = ctx.model.state_dict()
@@ -574,6 +628,18 @@ def main(argv=None):
             s.add_argument("--weight-decay", type=float, default=D.DDV2.weight_decay)
             s.add_argument("--no-input-clamp", action="store_true")
             s.add_argument("--no-clip-sample", action="store_true")
+            # ⭐ LEVER L1 / D9. ⛔ DEFAULTS ARE THE LEVER, not the release: this script's only
+            # remaining purpose is running L1, and the 2026-09-15 release arms are already
+            # banked. `--il-form release --grad-clip 0` reproduces them exactly, and `run.json`
+            # records `il.is_release` either way so no record can be ambiguous about which ran.
+            s.add_argument("--il-form", choices=tuple(IL_FORM_FLAGS), default="matched",
+                           help="release = the all-modes L1 that collapsed the fan 93%%; "
+                                "matched = the trainer's nearest-anchor L1 (mode preserving); "
+                                "lambda = the release's form at lambda ~ 0.01")
+            s.add_argument("--grad-clip", type=float, default=L.GRAD_CLIP,
+                           help="clip_grad_norm_ max-norm, default 100 (A-1: 1.0 bound on "
+                                "600/600 banked steps = an every-step rescale; 100 binds on "
+                                "1/600 stable, 276/600 diverged); 0 = the release (no clipping)")
             s.add_argument("--out-dir", required=True)
         if name == "heldout":
             s.add_argument("--out", required=True)

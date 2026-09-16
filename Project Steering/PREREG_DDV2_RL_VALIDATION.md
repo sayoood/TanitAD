@@ -90,3 +90,141 @@ MEASURED in the smoke run: ≈ 2.7 s per step ⇒ ≈ 27 min per arm ⇒ **≈ 8
 
 ## 10. Execution record
 Filled by `RESULT.md` in the package, including any deviation from this file.
+
+---
+
+# EXTENSION — lever **L1 / D9**, the mode-preserving imitation term + gradient clipping
+
+**Written:** 2026-09-16, **before any L1 arm ran**; **0 GPU-minutes spent on this lever.**
+**Owner:** Arch+Inference implementation/validation agent. **PI request:** *"Do what is necessary to prepare the RL post training, implement D9"* (2026-09-16), executing §9 **LEVER 1** of `…/2026-09-15-ddv2-rl-prep/RESULT.md`.
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-16-refcv6-rl-l1/` (RESULT, DIFF, code).
+⛔ **§§1-10 above are the 2026-09-15 pre-registration and are NOT rewritten.** They stand as the record of the arms that already ran and FAILED. Everything below is an extension, and every clause that is carried forward unchanged says so.
+
+**What ran BEFORE this extension, and why it does not contaminate the test:** the implementation and its 110 CPU tests (`stack/tests/test_ddv2_il.py` 37 + the 73 pre-existing), including the synthetic-fan mutation proof. **No model was trained, no checkpoint was produced and no held-out number of any L1 arm exists.**
+
+## 11. What changes, and what does not
+
+The measured cause of the 2026-09-15 FAILURE was the release's **imitation** term, not its RL term (§7.2-7.3 of that RESULT: fan endpoint spread **37.5199 m → 2.4457 m**, −93.5 %; NORL−BASE T1 ADE **+0.081 m [0.051, 0.116]** against RL−BASE's +0.083 m; RL−NORL **−0.0012 m [−0.0285, +0.0268]**, not separated). One seed diverged at grad norm **15,712**.
+
+**Exactly two changes** (element-by-element proof: `…/2026-09-16-refcv6-rl-l1/DIFF_L1_VS_RELEASE.md`):
+
+* **C1** — the all-modes L1 over all `G·N = 468` chains is replaced by the **mode-preserving matched-anchor** L1 the REF-C trainer already uses (`stack/scripts/refc_v3_train.py:2383-2391`), matched over the **decoded** bank (`inp.bank` IS `out["anchor_bank"]`, `refc.py:2615`), normalised as the trainer normalises it so the batch's **total** imitation budget is unchanged.
+* **C1b** — the **plain λ ≈ 0.01** variant of the release's own form, exposed as the cheaper alternative arm **and** as C1's confound control.
+* **C2** — `clip_grad_norm_(params, GRAD_CLIP)`, **once**, after all ten per-step backwards and before `opt.step()`. **`GRAD_CLIP = 100`** — see AMENDMENT A-1 immediately below.
+
+### ⭐ AMENDMENT A-1 — the gradient-clip max-norm, **1.0 → 100**
+
+**Amended 2026-09-16. NO ARM HAD RUN AT AMENDMENT TIME** — zero GPU-minutes had been spent on this lever, no L1 checkpoint existed and no L1 held-out number existed. This is a **pre-run amendment**, not a post-hoc one.
+
+**Why.** The extension as first written pre-registered **1.0** (the PI's instruction) and escalated a measured problem with it. **MEASURED** on the banked logs (`…/2026-09-15-ddv2-rl-prep/raw/metrics_arm-*.jsonl`, 600 steps × 3 arms) and **INDEPENDENTLY VERIFIED by the coordinator on the same three files**:
+
+| threshold | RL-s0 | NORL-s0 | RL-s1 (diverged) |
+|---|---|---|---|
+| steps with `grad_norm > 1.0` | **600/600** | **600/600** | **600/600** |
+| steps with `grad_norm > 100` | **1/600** | **1/600** | **276/600** |
+| minimum norm observed | 1.87 | 2.22 | 3.45 |
+| median norm | 16.67 | 17.93 | 61.96 |
+| maximum norm | 147.3 | 146.0 | **15,712.3** |
+
+⇒ **1.0 is a 17-62× rescale on every single step; 100 is an actual spike guard.** C2 exists to stop the RL-s1 divergence, not to re-scale a healthy run, so the max-norm that implements C2's stated purpose is **100**.
+
+**Coordinator's ruling, 2026-09-16, recorded verbatim in substance:** *"Your escalation is upheld and the clip threshold changes to 100 — I verified your gradient-norm numbers myself against the banked logs. 1.0 was my number and it was wrong. You were right to implement it as instructed and escalate rather than silently substitute."*
+
+**What A-1 changes:** `ddv2_il.GRAD_CLIP` and therefore the `--grad-clip` default, from `1.0` to `100.0`; and every Stage-A / Stage-B arm command in §12 now reads `--grad-clip 100`. **`--grad-clip 1.0` and `--grad-clip 0` remain available as declared arms** — 1.0 becomes interesting **only if the diverging seed also fails at 100**, and running it would be a new arm with its own record, not a re-read of these.
+
+**What A-1 does NOT change — nothing else in this extension is re-derived or touched:** the F1 fan-collapse gate stays **CI lower bound > −15.01 m, i.e. ≥ 60 % of the 37.5199 m cold start** · the primary endpoint `Δfan` and its statistic · the arms, split, cold start, seeds, step count and batch · I1-I10 · the budget · the scope limits. A-1 is a **single scalar**.
+
+Under AdamW a *constant* rescale of the whole gradient largely cancels in `m/(√v+ε)` (**REASONED, not measured**) — which is why the every-step behaviour at 1.0 might have passed unnoticed — but the rescale is not constant across steps and Adam's `v` is an EMA across them, so the optimiser trajectory does change. §13.4 still reports the clip's own effect against the banked arms, and **I10** still refuses a run whose clip never bound while its peak norm exceeded the max-norm, so at 100 a dead flag cannot pass either.
+
+**Unchanged, and unchanged by construction** (`git diff` on `stack/tanitad/rl/ddv2_rl.py`, `ddv2_refc_chain.py`, `pdm_proxy.py` is **empty**): truncated start t = 8 · the 10-label chain [18…0] with one-unit transitions and ᾱ(−1) = 1 · two-scalar exploration with its **0.04** floor and the drawn-then-zeroed additive pair · the **0.10** likelihood floor · **G = 4** · intra-anchor normalisation `(r − mean_G)/(std_G + 1e-4)` · per-sample truncation with the **≥GT** mask and the −1 constraint branch applied last · **γ = 0.8** · REINFORCE averaged over **non-zero-advantage** samples · the IL row weights' derivation from the advantage (0.1 / 1.0) · the batch-global 0-dim IL scalar · **AdamW 2e-4 / wd 1e-4** with 10 % linear warmup + cosine to 1e-6 · both release clamps ON · η = 1 · the NORL control's definition · the reward proxy, corpus, split, window filter and the deployed held-out read.
+
+The only edited tracked file is the driver `stack/scripts/ddv2_rl_refcv5.py` (**+73 / −11**). `--il-form release --grad-clip 0` reproduces the 2026-09-15 recipe exactly, and `run.json` records `il.is_release` on every run.
+
+## 12. Arms (same split, same cold start, same statistic)
+
+Cold start `C:/Users/Admin/refcv5v2_final/ckpt.pt`, md5 `9405ec73b2d797c4cebd44f82dbce54b`, step 40,284 (the driver refuses another). Split: **the same** `raw/SPLIT_eval141_sha12.json` — 41 held-out clips, 100 RL-train clips. All arms `--steps 600 --batch 4`, release defaults otherwise.
+
+### Stage A — primary
+
+| arm | command | differs from **L1-RL-s0** by |
+|---|---|---|
+| **BASE** | the cold start, untrained | no training |
+| **L1-RL-s0** | `train --arm rl --seed 0 --il-form matched --grad-clip 100` | — |
+| **L1-NORL-s0** | `train --arm norl --seed 0 --il-form matched --grad-clip 100` | the policy-gradient coefficient is exactly 0 on every step; the IL weights stay the release's advantage-derived 0.1 / 1.0 (the §3 reasoning is carried forward unchanged) |
+| **L1-RL-s1** | `train --arm rl --seed 1 --il-form matched --grad-clip 100` | window order and chain noise |
+
+### Stage B — the cheaper alternative arm, CONDITIONAL
+
+| arm | command | what it answers |
+|---|---|---|
+| **L1λ-NORL-s0** | `train --arm norl --seed 0 --il-form lambda --grad-clip 100` | the release's **form** at **λ ≈ 0.01**, IL only: *was the fan saved by mode preservation, or merely by less imitation pressure?* |
+
+**Run condition:** Stage B runs **only if** the cumulative GPU time after Stage A is ≤ **2.45 h**; otherwise it is recorded **NOT RUN**, never "unnecessary".
+
+**Held-out reads:** `heldout --stride 10` on the 41 held-out clips for BASE, BASE-repeat (**I5**) and every trained arm — deployed sampler, **identical inference noise per window across checkpoints** (`seed = 500000 + k`). T1 rolls (`refcv3_arm.py`, grid 2 s, stride 5, infer-seed 0, all four metric families) for BASE and the three Stage-A arms.
+
+## 13. Criteria
+
+### 13.1 F1 — THE GATE: the fan must not collapse
+
+`Δspread(X) = fan_endpoint_spread_m(X) − fan_endpoint_spread_m(BASE)`, **paired per window** with identical inference noise, **clip-cluster bootstrap** (2,000 resamples, seed 0, 95 % percentile CI), on the same held-out read.
+
+> **F1 PASS** for arm X iff the 95 % CI **lower** bound of `Δspread(X)` is **> −15.01 m** — X retains **≥ 60 %** of the cold start's **37.5199 m** (i.e. mean spread ≥ **22.51 m**).
+> **F1 FAIL** iff the CI **upper** bound lies below that line. Otherwise **F1 INCONCLUSIVE**.
+
+The threshold, stated against the measured reference points: the **cold start** is 37.5199 m (100 %); **the measured failure** — the release's IL term alone — is **2.4457 m (6.52 %)**, which fails the bar by 53 pp; the **diverged seed** RL-s1 sat at 19.6838 m (52.46 %) and **also fails**, so a bar this programme's own known-harmful arm could pass is excluded; DDv2's own reported diversity drop (P Tab. 3, −28 % ⇒ ≈ 72 % retained) **passes**, so the bar does not forbid the sharpening the paper claims is desirable.
+
+**F1 is read BEFORE the primary endpoint.** If the fan collapses again, the lever is refuted and `Δfan` is reported but decides nothing.
+
+### 13.2 PRIMARY ENDPOINT — `Δfan` must separate
+
+`Δfan(X) = fan_pdms_mean(L1-RL-sX) − fan_pdms_mean(L1-NORL-s0)`, X ∈ {0, 1} — the **same** endpoint, pairing and statistic as §5.2.
+
+> **SUCCESS** — L1-RL-s0, L1-NORL-s0 and L1-RL-s1 all pass **F1**, AND `Δfan(0)` and `Δfan(1)` both have 95 % CI lower bounds **> 0**.
+> **PARTIAL** — F1 passes for all three, exactly one seed separates, the other's CI contains 0.
+> **FAILURE** — F1 fails for any trained arm, OR both `Δfan` CIs contain 0, OR either upper bound < 0.
+
+⚠️ **PRE-REGISTERED AS INVALID:** comparing an L1 arm's `fan_pdms_mean` with a 2026-09-15 arm's as if higher were better. Collapse RAISES that mean by making the 117 members alike (MEASURED NORL−BASE **+0.2205 [0.1836, 0.2562]** while the fan's best member and its human coverage got worse). `fan_pdms_mean` is compared only within this package, against a control of the same spread, and always reported beside the spread, the oracle and the best-of-117 ADE.
+
+### 13.3 H-DDV2RL-2 — the harm guard, carried forward unchanged
+
+**FAIL-HARM** if, for **both** RL seeds, T1 `ade_m` of `os` vs BASE has a paired CI lower bound > 0. Otherwise "no harm detected at this n" (not a claim of no harm). If L1-RL-s1's T1 roll is dropped for budget, the guard is reported **unevaluable**, never passed.
+
+### 13.4 Reported with a direction but NO criterion
+
+Fan **oracle** proxy and **best-of-117 ADE** (the metrics the collapse actually hurt: MEASURED 0.994 → 0.956 and 0.888 → 1.532 m) · `sel_*` deltas · NORL − BASE under the new form · fan collision fraction · clamp-binding rates · the within-run canaries `chain_endpoint_spread_m`, `il_all_modes_m` vs `il_matched_anchor_m`, `match_n_distinct_anchors_matched`, `grad_clipped` · and, as mechanism evidence for "RL now has something to rank", `frac_positive_after_bar` and the within-group reward spread against the 2026-09-15 values (RL-s0 4.2 % → 6.4 %).
+
+**The clip's own effect** (per the escalation in §11): the fraction of steps on which the clip bound (**expected ≈ 0.2 % on a stable arm** at the amended max-norm of 100, against ≈ 100 % had A-1 not been made), the pre-clip `grad_norm` distribution, and `param_delta_norm` against the banked arms' step-600 values (RL-s0 **7.81**, NORL-s0 **8.56**, RL-s1 **11.03**). A value far below those would say the clip changed the optimiser's trajectory materially — which the AdamW argument predicts it will not, and which this diagnostic exists to check rather than assume.
+
+### 13.5 Integrity — all must hold, else the run is VOID (not negative)
+
+**Carried forward unchanged from §6:** I1, I2 (the D-1 amended form), I3, I4, I5, I6.
+
+**New, and each proven able to FAIL by mutation** (`…/2026-09-16-refcv6-rl-l1/code/check_arm_l1.py`; `stack/tests/test_ddv2_il.py::test_MUTATION_each_L1_integrity_check_fires_on_its_own_defect`):
+
+* **I7 — the lever is on, and is the one claimed.** `run.json`'s `il.form` / `il.lambda_scale` / `grad_clip` match the flags, and **every** logged step agrees with them. (The defect: an arm that declares `matched` and ran the release.)
+* **I8 — the matched term is the one that drove.** Matched arms: `il_mean_m == il_matched_anchor_m` and the two IL statistics are not identical on every step. Release/λ arms: `il_mean_m == il_all_modes_m`.
+* **I9 — the match is not degenerate.** Not every batch matched a single anchor on every step.
+* **I10 — clipping is real and is not everything.** No step's post-clip norm exceeds the max-norm; and either the clip bound on some step, or the run's peak pre-clip norm stayed under it.
+
+## 14. Budget — ≤ 3.0 GPU-hours on the RTX 4060
+
+**MEASURED** from the banked logs' own wall clock: **2.60 / 2.49 / 2.46 s per step** (§8 above budgeted 2.7 s from the smoke; the completed runs came in below it). Plus L1's ≈ +2 % (two extra `no_grad` L1 evaluations, one 117×117 `cdist`, one `argmin`) ⇒ **ESTIMATED ≈ 2.65 s**. The totals below keep the conservative **2.75 s**, so they are an upper bound.
+
+Stage A = 3 arms × 27.5 min (**82.5**) + 5 held-out T0 reads × 4 min (**20**) + 4 T1 rolls × 11 min (**44**) = **146.5 min = 2.44 GPU-h**. Stage B = **0.53 GPU-h**. **Total ≈ 2.97 GPU-h.**
+
+**Drop order** if the cumulative passes **2.85 h**: (1) Stage B; (2) L1-NORL-s0's T1 roll; (3) L1-RL-s1's T1 roll — each recorded **NOT RUN** with the criterion it disables named. Dropping (3) makes H-DDV2RL-2 unevaluable.
+
+**Spent so far on L1: 0 GPU-minutes.** ⛔ The dev box's RTX 4060 belongs to another agent's proof package; these arms wait for the Master Mind's slot and the GPU is checked free before each one.
+
+## 15. Scope limits that carry forward and must appear in every L1 report
+
+1. The three 2026-09-15 checkpoints are **BURNED** (trained on 100 of the 141 EVAL clips) and **must never be scored on the 141-clip panel**. ⛔ **The L1 checkpoints are burned on the same split and inherit the same prohibition.**
+2. The dev-box scale is **≈ 0.4 % of the paper's optimiser samples**; L1 does not change that.
+3. The reward is a **proxy with NO drivable-area term** — our maps do not yet cover the training clips, so DAC ≡ 1 and the release's DAC constraint branch is inert. **Never quote any number here as PDMS.**
+4. T1 is **self-action OPEN loop** (PI ruling 2026-09-02); nothing here is a closed-loop claim.
+5. Every UNVERIFIED item of §10 of the 2026-09-15 RESULT carries forward, and this extension adds three of its own (`…/2026-09-16-refcv6-rl-l1/RESULT.md` §8): the outcome itself, whether the matched form's concentrated per-chain budget is the right scale on the real model, and whether a preserved (across-anchor) fan actually gives GRPO the (within-anchor) variation it ranks on.
+
+## 16. Execution record
+
+Filled by `…/2026-09-16-refcv6-rl-l1/RESULT.md`, including any deviation from this extension. ⛔ **Any deviation is declared BEFORE the held-out number it could affect is read**, in the form §7's D-1 used.
