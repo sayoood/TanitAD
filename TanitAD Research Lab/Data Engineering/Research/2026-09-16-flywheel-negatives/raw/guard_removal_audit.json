@@ -1,0 +1,107 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "target": "C:\\Users\\Admin\\tanitad-wt-flywheel-neg\\stack\\tanitad\\data\\v7_labels.py",
+ "target_md5": "d12469e49355ba757246825d34ca85bb",
+ "n_guards": 14,
+ "n_proven": 14,
+ "rows": [
+  {
+   "guard": "blob-md5 binding",
+   "test": "sidecar_built_over_another_blob",
+   "defeat": "if meta.get(\"source_blob_md5\") != manifest.md5:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "schema tag",
+   "test": "schema_tag_changed",
+   "defeat": "if doc.get(\"schema\") != COT_SIDECAR_SCHEMA:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "policy id",
+   "test": "policy_id_changed",
+   "defeat": "if sc.policy != COT_ABSENCE_POLICY_ID:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "digest-algorithm declaration",
+   "test": "digest_algorithm_undeclared",
+   "defeat": "if meta.get(\"digest_algorithm\") != COT_SIDECAR_DIGEST_ALGO:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "row width",
+   "test": "row_not_token_wide",
+   "defeat": "bad = {d: b for d, b in sc.by_digest.items() if len(b) != len(sc.tokens)}",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "empty policy",
+   "test": "empty_policy",
+   "defeat": "if not sc.tokens or not sc.by_digest:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "clip coverage (blob -> sidecar)",
+   "test": "clip_dropped_from_sidecar",
+   "defeat": "if missing:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "clip coverage (sidecar -> blob)",
+   "test": "clip_not_in_blob",
+   "defeat": "if extra:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "positive agreement",
+   "test": "positive_bit_flipped",
+   "defeat": "if n_disagree:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "new CoT token left undecided",
+   "test": "new_cot_token_left_undecided",
+   "defeat": "if new_tokens:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "stale sidecar token",
+   "test": "sidecar_token_no_longer_cot_backed",
+   "defeat": "if gone_tokens:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "policy needs a sidecar",
+   "test": "test_policy_without_sidecar_is_refused",
+   "defeat": "if sidecar is None:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "sidecar needs the policy",
+   "test": "test_sidecar_without_policy_is_refused",
+   "defeat": "elif sidecar is not None:",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  },
+  {
+   "guard": "per-clip coverage at target time",
+   "test": "test_uncovered_clip_is_refused_not_defaulted",
+   "defeat": "if not sidecar.covers(label.clip_id):",
+   "test_result_with_guard_removed": "FAILED (guard is load-bearing)",
+   "verdict": "PROVEN"
+  }
+ ]
+}

@@ -63,7 +63,7 @@ import gzip
 import hashlib
 import json
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -80,13 +80,17 @@ from tanitad.models.vocab_v7 import (NAV_COMMAND_TOKENS as NAV_TOKENS,
                                      TACTICAL_LAT_ACTIONS_V7,
                                      TACTICAL_LON_ACTIONS_V7)
 
-__all__ = ["HEADS", "IGNORE_W", "LabelManifest", "TAC_GOAL_HEAD",
+__all__ = ["COT_ABSENCE_POLICY_ID", "COT_ABSENCE_RULING",
+           "COT_ABSENCE_RULING_DATE", "COT_ABSENCE_RULING_WIDENED",
+           "CotAbsenceNegativeRefused", "CotNegativeSidecar",
+           "HEADS", "IGNORE_W", "LabelManifest", "TAC_GOAL_HEAD",
            "TAC_GOAL_TOKENS", "TacGoalEmitter", "V7Label",
-           "assert_mask_matches_presence",
-           "class_weights", "effective_mask", "flatten_tactical_actions",
+           "assert_mask_matches_presence", "assert_sidecar_matches_presence",
+           "class_weights", "clip_sha12", "cot_backed_tokens",
+           "effective_mask", "flatten_tactical_actions",
            "goal_pos_weight", "goal_supervision_census", "head_mask",
-           "is_oracle_nav", "load_v7_labels", "NavEmitter",
-           "NavTokenMissing",
+           "is_oracle_nav", "load_cot_negative_sidecar", "load_v7_labels",
+           "NavEmitter", "NavTokenMissing",
            "oracle_nav", "tactical_goal_targets"]
 
 #: The four supervised heads. ⛔ ``tac_lat`` and ``tac_lon`` are SEPARATE by
@@ -104,6 +108,73 @@ EXPECTED_VOCAB = "v7"
 
 class OracleNavRefused(RuntimeError):
     """Raised when oracle nav is reached without an explicit opt-in."""
+
+
+class CotAbsenceNegativeRefused(RuntimeError):
+    """Raised when the 2026-09-16 absence-is-negative policy is used without
+    a sidecar, or a sidecar is supplied without selecting the policy."""
+
+
+# ---------------------------------------------------------------------------
+# THE 2026-09-16 RULING — carried as DATA, never as a silent default
+# ---------------------------------------------------------------------------
+#: ⛔ THE POLICY ID. It is written into the sidecar, into the manifest and into
+#: :meth:`TacGoalEmitter.provenance`, so a run that supervised caption-absence
+#: as a negative is identifiable from its OWN artifacts, exactly as
+#: ``allow_oracle_nav`` makes an oracle-nav arm identifiable.
+COT_ABSENCE_POLICY_ID = "cot-absence-negative/2026-09-16"
+
+#: ⭐ THE RULING, VERBATIM (PI, 2026-09-16), typos included — a paraphrase
+#: would be this module's opinion of the ruling rather than the ruling.
+COT_ABSENCE_RULING = (
+    "fix the negatives with the flywheel agent for those 4 tokens, it is ok to "
+    "intepret the absence of vlm caption as negatives. If there is no label "
+    "about a red traffic light, that means there is no red traffic light in th "
+    "eenvironment")
+
+#: ⭐ AND THE WIDENING, same day: the ruling covers every CoT-backed token, not
+#: only the four that had ZERO negatives.
+COT_ABSENCE_RULING_WIDENED = (
+    "the interpretation of absence as negatiove should be not only for the "
+    "four missing")
+
+COT_ABSENCE_RULING_DATE = "2026-09-16"
+
+#: ⚠️ THE PRECEDENT THIS RULING OVERRIDES, recorded ONCE and not re-litigated.
+#: The provenance policy below (see :func:`tactical_goal_targets`) was adopted
+#: because MEASURED evidence showed a declaration-based negative policy would
+#: supervise 4,534 unknowable lane-change negatives as true. The PI has now
+#: ruled deliberately in the other direction, with the measured false-negative
+#: rates in
+#: ``TanitAD Research Lab/Data Engineering/Research/2026-09-16-flywheel-negatives/RESULT.md``
+#: beside it. A future reader re-deciding this has both numbers.
+COT_ABSENCE_PRECEDENT = (
+    "v7_labels.py (the negatives='measured' policy): trusting a DECLARATION "
+    "about which tokens need perception would have supervised 4,534 unknowable "
+    "lane-change negatives as true. MEASURED 2026-08-30. The 2026-09-16 ruling "
+    "overrides the provenance policy deliberately; the cost is bounded by the "
+    "false-negative rates measured in the 2026-09-16-flywheel-negatives "
+    "package, not assumed to be zero.")
+
+#: ⛔ THE SIDECAR SCHEMA TAG. A consumer that cannot read this refuses.
+COT_SIDECAR_SCHEMA = "tanitad.cot_absence_negative/1"
+
+#: How a clip id is written in a REPO-BOUND artifact. ⛔ Clip ids are never
+#: written in the clear; the sidecar is committed, so it carries digests.
+#: Declared IN the sidecar too (the M18 self-describing rule,
+#: :mod:`tanitad.data.join_meta`): a recorded digest that does not say what it
+#: is taken over is a number, not a verification.
+COT_SIDECAR_DIGEST_ALGO = "sha256(clip_id.encode('utf-8')).hexdigest()[:12]"
+
+
+def clip_sha12(clip_id: str) -> str:
+    """The repo-safe clip token: first 12 hex of ``sha256(clip_id)``.
+
+    Truncation of :func:`tanitad.data.parity.clip_digest`, kept here rather
+    than imported so this module has no dependency on the parity machinery for
+    a twelve-character string.
+    """
+    return hashlib.sha256(str(clip_id).encode("utf-8")).hexdigest()[:12]
 
 
 @dataclass(frozen=True)
@@ -150,14 +221,94 @@ class LabelManifest:
     #: can quote it without the flag being visible.
     allow_oracle_nav: bool
     divergences: tuple[str, ...] = ()
+    #: ⛔ THE SECOND STAMP (2026-09-16). ``None`` = the provenance policy;
+    #: a dict = this run read a caption-absence-is-negative sidecar, and the
+    #: dict names the policy, the sidecar and its md5, and the blob md5 the
+    #: sidecar was built over. Same contract as ``allow_oracle_nav``: the value
+    #: is set by the LOAD, so no run can use the policy without its config
+    #: saying so.
+    cot_absence_negative: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {"path": self.path, "md5": self.md5, "n_records": self.n_records,
                 "schema_version": self.schema_version, "vocab": self.vocab,
                 "allow_oracle_nav": self.allow_oracle_nav,
+                "cot_absence_negative": self.cot_absence_negative,
                 "divergences": list(self.divergences),
                 "_read": "md5 is the identity — six copies of this blob exist "
                          "under three roots and their md5s differ."}
+
+
+@dataclass(frozen=True)
+class CotNegativeSidecar:
+    """The 2026-09-16 ruling, as a file this run actually read.
+
+    ⭐ IT IS THE PERMISSION TOKEN, NOT A LOOKUP TABLE. It can only be built by
+    :func:`load_cot_negative_sidecar`, which refuses unless the sidecar's
+    ``source_blob_md5`` equals the md5 of the blob THIS run loaded. So the
+    policy cannot be applied to a different corpus by accident: the blob and
+    the policy travel together or the load fails.
+
+    ⛔ Clip ids are stored as :func:`clip_sha12`, never in the clear — the
+    sidecar is a committed artifact.
+    """
+
+    path: str
+    md5: str
+    policy: str
+    ruling: str
+    ruling_widened: str
+    ruling_date: str
+    precedent: str
+    source_blob_md5: str
+    source_blob_records: int
+    digest_algorithm: str
+    #: the CoT-backed tokens this sidecar decides. Absence of one of these on a
+    #: clip is a NEGATIVE under the policy; every other token keeps the
+    #: provenance rule.
+    tokens: tuple[str, ...]
+    #: ``clip_sha12 -> "0101..."`` over :attr:`tokens`, in order.
+    by_digest: dict[str, str] = field(repr=False, default_factory=dict)
+    counts_before: dict[str, Any] = field(default_factory=dict)
+    counts_after: dict[str, Any] = field(default_factory=dict)
+
+    def covers(self, clip_id: str) -> bool:
+        return clip_sha12(clip_id) in self.by_digest
+
+    def positive(self, clip_id: str, token: str) -> bool:
+        """Is ``token`` POSITIVE on this clip per the sidecar?
+
+        ⛔ Raises on an unknown clip or token rather than defaulting. A default
+        here would silently supervise a cell this policy never decided — the
+        very failure the policy is being audited for.
+        """
+        bits = self.by_digest.get(clip_sha12(clip_id))
+        if bits is None:
+            raise CotAbsenceNegativeRefused(
+                f"[cot-neg] ⛔ clip digest for the requested clip is not in "
+                f"{self.path} ({len(self.by_digest)} clips, built over blob "
+                f"md5 {self.source_blob_md5}). Refusing rather than defaulting: "
+                f"a default is exactly the unevidenced negative this policy is "
+                f"being measured for.")
+        try:
+            i = self.tokens.index(token)
+        except ValueError:
+            raise CotAbsenceNegativeRefused(
+                f"[cot-neg] ⛔ token {token!r} is not decided by this sidecar; "
+                f"it decides {list(self.tokens)}") from None
+        return bits[i] == "1"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Goes into ``config.json`` — the run's own record of the policy."""
+        return {"policy": self.policy, "path": self.path, "md5": self.md5,
+                "ruling": self.ruling, "ruling_widened": self.ruling_widened,
+                "ruling_date": self.ruling_date, "precedent": self.precedent,
+                "source_blob_md5": self.source_blob_md5,
+                "source_blob_records": self.source_blob_records,
+                "digest_algorithm": self.digest_algorithm,
+                "tokens": list(self.tokens), "n_clips": len(self.by_digest),
+                "counts_before": self.counts_before,
+                "counts_after": self.counts_after}
 
 
 def _goal_audit(g_tac: dict[str, Any] | None) -> dict[str, Any]:
@@ -276,9 +427,10 @@ def load_v7_labels(path: str | Path, *, allow_oracle_nav: bool = False,
     # (15) are CoT-sourced in the blob while absent from the declared set —
     # so trusting the declaration would supervise 4,534 unknowable
     # lane-change negatives as true.
-    global _MEASURED_GEOMETRY_TOKENS
+    global _MEASURED_GEOMETRY_TOKENS, _MEASURED_COT_TOKENS
     _cot_backed = {t for lb in labels for t, m in lb.tac_goal_meta.items()
                    if m.get("provenance") == "vlm-cot"}
+    _MEASURED_COT_TOKENS = frozenset(_cot_backed & set(TACTICAL_GOAL_TOKENS_V7))
     _MEASURED_GEOMETRY_TOKENS = frozenset(
         t for t in TACTICAL_GOAL_TOKENS_V7
         if t not in _cot_backed and t not in TACTICAL_GOAL_NEEDS_PERCEPTION)
@@ -288,6 +440,163 @@ def load_v7_labels(path: str | Path, *, allow_oracle_nav: bool = False,
         schema_version=next(iter(schemas)), vocab=next(iter(vocabs)),
         allow_oracle_nav=bool(allow_oracle_nav),
         divergences=tuple(divergences))
+
+
+def cot_backed_tokens() -> frozenset[str]:
+    """The tokens this loaded split emits from ``vlm-cot``. MEASURED, not
+    declared — the same read that decides the negative policy."""
+    return _MEASURED_COT_TOKENS
+
+
+def load_cot_negative_sidecar(path: str | Path, manifest: LabelManifest
+                              ) -> tuple[CotNegativeSidecar, LabelManifest]:
+    """Read the 2026-09-16 sidecar and STAMP the manifest. The opt-in, by name.
+
+    ⛔ THE OPT-IN IS THE FILENAME. There is no boolean and no default: a
+    consumer must name this artifact, exactly as a nav-conditioned arm must
+    pass ``allow_oracle_nav=True``. The returned manifest carries the policy,
+    the sidecar path and both md5s, so the run's ``config.json`` answers *"did
+    this arm supervise caption-absence as a negative, and from which file"*
+    without anyone having to remember to record it.
+
+    ⛔ IT REFUSES A SIDECAR BUILT OVER A DIFFERENT BLOB. ``source_blob_md5``
+    must equal the md5 the manifest reports. Six copies of the label blob exist
+    under three roots with differing md5s; a sidecar silently applied to the
+    wrong one would mint negatives for clips it never inspected.
+    """
+    p = Path(path)
+    raw = p.read_bytes()
+    md5 = hashlib.md5(raw).hexdigest()
+    opener = gzip.open if p.suffix == ".gz" else open
+    with opener(p, "rt", encoding="utf-8") as fh:
+        doc = json.load(fh)
+
+    if doc.get("schema") != COT_SIDECAR_SCHEMA:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {p} declares schema {doc.get('schema')!r}, this "
+            f"module reads {COT_SIDECAR_SCHEMA!r}. A sidecar that does not say "
+            f"what it is is not a permission, it is a dict.")
+    meta = doc.get("meta") or {}
+    if meta.get("source_blob_md5") != manifest.md5:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {p} was built over blob md5 "
+            f"{meta.get('source_blob_md5')!r} but this run loaded "
+            f"{manifest.md5!r} ({manifest.path}). Refusing: applying a negative "
+            f"policy computed on one corpus to another mints negatives for "
+            f"clips the builder never inspected.")
+    if meta.get("digest_algorithm") != COT_SIDECAR_DIGEST_ALGO:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {p} declares digest_algorithm "
+            f"{meta.get('digest_algorithm')!r}; this module computes "
+            f"{COT_SIDECAR_DIGEST_ALGO!r}. A digest whose scope is not declared "
+            f"is a number, not a verification (join_meta M18).")
+
+    sc = CotNegativeSidecar(
+        path=str(p), md5=md5, policy=meta.get("policy", ""),
+        ruling=meta.get("ruling", ""),
+        ruling_widened=meta.get("ruling_widened", ""),
+        ruling_date=meta.get("ruling_date", ""),
+        precedent=meta.get("precedent", ""),
+        source_blob_md5=meta.get("source_blob_md5", ""),
+        source_blob_records=int(meta.get("source_blob_records", 0)),
+        digest_algorithm=meta.get("digest_algorithm", ""),
+        tokens=tuple(meta.get("tokens") or ()),
+        by_digest=dict(doc.get("clips") or {}),
+        counts_before=meta.get("counts_before") or {},
+        counts_after=meta.get("counts_after") or {})
+    if sc.policy != COT_ABSENCE_POLICY_ID:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {p} carries policy {sc.policy!r}, this module "
+            f"implements {COT_ABSENCE_POLICY_ID!r}.")
+    if not sc.tokens or not sc.by_digest:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {p} decides {len(sc.tokens)} tokens over "
+            f"{len(sc.by_digest)} clips — an empty policy would silently "
+            f"supervise nothing while the manifest claimed it did.")
+    bad = {d: b for d, b in sc.by_digest.items() if len(b) != len(sc.tokens)}
+    if bad:
+        raise CotAbsenceNegativeRefused(
+            f"[cot-neg] ⛔ {len(bad)} rows in {p} are not {len(sc.tokens)} bits "
+            f"wide — the row/token alignment is the whole file.")
+
+    stamped = replace(manifest, cot_absence_negative=sc.to_dict())
+    return sc, stamped
+
+
+def assert_sidecar_matches_presence(labels: Sequence[V7Label],
+                                    sidecar: CotNegativeSidecar) -> dict:
+    """⛔ THE GUARD: a future blob cannot silently change what is supervised.
+
+    Sibling of :func:`assert_mask_matches_presence`, and it fails in every
+    direction that is silent damage:
+
+      * a clip in the blob that the sidecar does not decide  -> its cells would
+        raise at train time, or (worse, in a forgiving consumer) default;
+      * a clip in the sidecar that the blob no longer carries -> the sidecar was
+        built over a different selection than it claims;
+      * a POSITIVE the two disagree about -> the sidecar's bits are stale, so
+        every negative beside them is unverified too;
+      * a token that is ``vlm-cot``-backed in THIS blob but absent from the
+        sidecar (a NEW caption token would keep the old ignore policy and be
+        silently half-supervised), or in the sidecar and no longer CoT-backed
+        in the blob (the emitter moved it to geometry and the sidecar would
+        override a better signal).
+
+    ⭐ The last pair is the one that matters for the future: the blob is
+    re-pinned regularly, and the failure this guards against is a new token
+    appearing whose absence nobody decided.
+    """
+    problems: list[str] = []
+    blob_digests = {clip_sha12(x.clip_id): x for x in labels}
+    missing = set(blob_digests) - set(sidecar.by_digest)
+    extra = set(sidecar.by_digest) - set(blob_digests)
+    if missing:
+        problems.append(f"{len(missing)} clips in the blob are NOT decided by "
+                        f"the sidecar (e.g. {sorted(missing)[:3]})")
+    if extra:
+        problems.append(f"{len(extra)} clips in the sidecar are NOT in the blob "
+                        f"(e.g. {sorted(extra)[:3]})")
+
+    cot_now = cot_backed_tokens()
+    if not cot_now:
+        problems.append("no blob has been loaded in this process, so the "
+                        "CoT-backed token set is EMPTY — the sidecar cannot be "
+                        "checked against a measurement that was never taken")
+    new_tokens = set(cot_now) - set(sidecar.tokens)
+    gone_tokens = set(sidecar.tokens) - set(cot_now)
+    if new_tokens:
+        problems.append(f"tokens are vlm-cot-backed in THIS blob but absent "
+                        f"from the sidecar: {sorted(new_tokens)} — they would "
+                        f"keep the old ignore policy while their neighbours do "
+                        f"not, which is a half-applied ruling")
+    if gone_tokens:
+        problems.append(f"tokens in the sidecar are no longer vlm-cot-backed in "
+                        f"this blob: {sorted(gone_tokens)} — the sidecar would "
+                        f"override a signal the emitter has since improved")
+
+    n_disagree = 0
+    first: list[str] = []
+    for d, lb in blob_digests.items():
+        bits = sidecar.by_digest.get(d)
+        if bits is None:
+            continue
+        for i, tok in enumerate(sidecar.tokens):
+            want = tok in (lb.tac_goals or frozenset())
+            if (bits[i] == "1") != want:
+                n_disagree += 1
+                if len(first) < 5:
+                    first.append(f"{d}/{tok}: sidecar={bits[i]} blob={int(want)}")
+    if n_disagree:
+        problems.append(f"{n_disagree} (clip, token) POSITIVES disagree between "
+                        f"the sidecar and the blob: {first}")
+
+    if problems:
+        raise AssertionError("[v7_labels] ⛔ cot-absence sidecar / blob "
+                             "mismatch:\n  " + "\n  ".join(problems))
+    return {"n_clips": len(blob_digests), "n_tokens": len(sidecar.tokens),
+            "tokens": list(sidecar.tokens),
+            "cot_backed_measured": sorted(cot_now),
+            "policy": sidecar.policy, "source_blob_md5": sidecar.source_blob_md5}
 
 
 def oracle_nav(label: V7Label, manifest: LabelManifest) -> dict[str, Any]:
@@ -607,6 +916,7 @@ def _goal_provenance(label: "V7Label", token: str) -> str | None:
 
 def tactical_goal_targets(label: "V7Label", t_now_s: float, *,
                           negatives: str = "measured",
+                          sidecar: "CotNegativeSidecar | None" = None,
                           ) -> tuple[tuple[float, ...], tuple[float, ...]]:
     """``(y, w)`` for one window: 22 targets and 22 per-class loss weights.
 
@@ -656,9 +966,53 @@ def tactical_goal_targets(label: "V7Label", t_now_s: float, *,
     ``negatives="geometry"`` uses the frozen ``TACTICAL_GOAL_NEEDS_PERCEPTION``
     declaration instead of the blob. Kept so the declaration/data divergence
     above is measurable rather than argued.
+
+    ⭐⭐ ``negatives="cot-absence-negative"`` — THE PI'S 2026-09-16 RULING, and
+    it REVERSES the paragraph above for the CoT tokens. Verbatim:
+    *"it is ok to intepret the absence of vlm caption as negatives. If there is
+    no label about a red traffic light, that means there is no red traffic
+    light in th eenvironment"*, widened the same day to *"the interpretation of
+    absence as negatiove should be not only for the four missing"*. Under it
+    every token becomes two-state: a clip is POSITIVE or NEGATIVE, and
+    :data:`IGNORE_W` disappears from the goal head entirely.
+
+    ⛔ IT IS UNREACHABLE WITHOUT THE SIDECAR. ``sidecar=`` must be the object
+    :func:`load_cot_negative_sidecar` returned for THIS blob — the same shape
+    of gate :func:`oracle_nav` uses, and for the same reason: an arm that
+    supervised caption-absence as a negative must be identifiable from its own
+    artifacts, not from someone's memory of which flag was set.
+
+    ⚠️ AND WHAT IT COSTS, MEASURED rather than assumed
+    (``2026-09-16-flywheel-negatives/RESULT.md``): of the clips that were asked
+    the traffic-light grounding question AND showed a VISIBLE light,
+    **692 / 867 = 79.8 %** carry no traffic-light token, so this policy labels
+    them negative against the annotator's own box channel. The ruling is the
+    PI's to make; the rate is not a matter of opinion and travels with it.
     """
     n = len(TAC_GOAL_TOKENS)
     present = label.tac_goals or frozenset()
+    if negatives == "cot-absence-negative":
+        if sidecar is None:
+            raise CotAbsenceNegativeRefused(
+                "[v7_labels] ⛔ negatives='cot-absence-negative' is the PI's "
+                "2026-09-16 ruling and it needs the SIDECAR that records it: "
+                "pass sidecar=<the object load_cot_negative_sidecar returned "
+                "for this blob>. There is no default, on purpose — a default "
+                "would make thousands of unevidenced negatives the quiet "
+                "behaviour of an import.")
+        if not sidecar.covers(label.clip_id):
+            raise CotAbsenceNegativeRefused(
+                f"[v7_labels] ⛔ the sidecar {sidecar.path} does not decide "
+                f"this clip. Refusing rather than falling back to the "
+                f"provenance policy: a silent per-clip fallback would leave "
+                f"part of the corpus on the old policy and nothing would say "
+                f"which part.")
+    elif sidecar is not None:
+        raise CotAbsenceNegativeRefused(
+            f"[v7_labels] ⛔ a cot-absence sidecar was supplied but "
+            f"negatives={negatives!r}. The sidecar would be IGNORED, and a "
+            f"silently ignored permission is worse than a missing one: the "
+            f"manifest would carry the stamp while the loss did not.")
     if not window_in_band(label, t_now_s):
         return (0.0,) * n, (IGNORE_W,) * n
     entailed = entailed_false(present)
@@ -679,10 +1033,17 @@ def tactical_goal_targets(label: "V7Label", t_now_s: float, *,
             w.append(IGNORE_W if tok in TACTICAL_GOAL_NEEDS_PERCEPTION else 1.0)
         elif negatives == "measured":
             w.append(1.0 if tok in _MEASURED_GEOMETRY_TOKENS else IGNORE_W)
+        elif negatives == "cot-absence-negative":
+            # ⭐ the ruling: a token the SIDECAR decides is supervised either
+            # way; a token it does not decide keeps the provenance rule, so
+            # the geometry tokens are unaffected and no token silently
+            # changes policy because a future blob moved its provenance.
+            w.append(1.0 if (tok in sidecar.tokens
+                             or tok in _MEASURED_GEOMETRY_TOKENS) else IGNORE_W)
         else:
             raise ValueError(
-                f"[v7_labels] unknown negatives policy {negatives!r}; "
-                f"expected 'measured' | 'geometry' | 'all'")
+                f"[v7_labels] unknown negatives policy {negatives!r}; expected "
+                f"'measured' | 'geometry' | 'all' | 'cot-absence-negative'")
     return tuple(y), tuple(w)
 
 
@@ -693,8 +1054,17 @@ def tactical_goal_targets(label: "V7Label", t_now_s: float, *,
 #: than silently supervising everything.
 _MEASURED_GEOMETRY_TOKENS: frozenset[str] = frozenset()
 
+#: The complement, filled by the same read: the tokens this blob emits from
+#: ``vlm-cot``. It is what :func:`assert_sidecar_matches_presence` checks the
+#: sidecar's scope against, so a NEW caption token in a future blob cannot be
+#: silently left on the old ignore policy. Starts EMPTY for the same reason.
+_MEASURED_COT_TOKENS: frozenset[str] = frozenset()
 
-def goal_supervision_census(labels: Sequence["V7Label"]) -> dict[str, Any]:
+
+def goal_supervision_census(labels: Sequence["V7Label"], *,
+                            negatives: str = "measured",
+                            sidecar: "CotNegativeSidecar | None" = None
+                            ) -> dict[str, Any]:
     """What the goal head will actually be trained on. Goes into ``config.json``.
 
     ⛔ Reports POSITIVES, NEGATIVES and IGNORED per token. A head reported only
@@ -703,27 +1073,37 @@ def goal_supervision_census(labels: Sequence["V7Label"]) -> dict[str, Any]:
     scoring 99.67 % 'accuracy'.
     """
     out: dict[str, Any] = {}
+    # ⭐ ONE pass over the labels, not one per token: the weights are a
+    # property of the record, so recomputing them 22 times was 22x the work
+    # and 22 chances for the two loops to drift apart.
+    ws = [tactical_goal_targets(lb, lb.t0_s, negatives=negatives,
+                                sidecar=sidecar)[1] for lb in labels]
     for i, tok in enumerate(TAC_GOAL_TOKENS):
         pos = neg = ign = 0
-        for lb in labels:
-            _, w = tactical_goal_targets(lb, lb.t0_s)
+        for lb, w in zip(labels, ws):
             if tok in (lb.tac_goals or frozenset()):
                 pos += 1
             elif w[i] > 0.0:
                 neg += 1
             else:
                 ign += 1
+        sup = (tok in _MEASURED_GEOMETRY_TOKENS
+               or (sidecar is not None and tok in sidecar.tokens
+                   and negatives == "cot-absence-negative"))
         out[tok] = {"pos": pos, "neg": neg, "ignored": ign,
                     "prevalence": pos / max(len(labels), 1),
                     "provenance": sorted({p for lb in labels
                                           if (p := _goal_provenance(lb, tok))}),
-                    "supervised_negative": tok in _MEASURED_GEOMETRY_TOKENS,
+                    "supervised_negative": sup,
+                    "negatives_policy": negatives,
                     "entailed_false_by": sorted(_EXCLUDED_BY.get(tok, ()))}
     return out
 
 
 def goal_pos_weight(labels: Sequence["V7Label"], *,
-                    cap: float = 50.0) -> tuple[float, ...]:
+                    cap: float = 50.0, negatives: str = "measured",
+                    sidecar: "CotNegativeSidecar | None" = None
+                    ) -> tuple[float, ...]:
     """Per-class ``pos_weight`` for ``BCEWithLogitsLoss``, FROM THE SPLIT.
 
     ``pos_weight[i] = n_neg / n_pos`` over the cells this policy actually
@@ -738,12 +1118,23 @@ def goal_pos_weight(labels: Sequence["V7Label"], *,
     ``pos_weight`` ~304 and a single positive would dominate the batch gradient.
     ⛔ A class with ZERO supervised positives gets 0.0 and MUST also be masked —
     a pos_weight on an empty class is a weight on nothing.
+
+    ⭐⭐ UNDER ``negatives="cot-absence-negative"`` THIS IS THE LIVE PROBLEM.
+    The ruling removes the ignore state, so every token's negative count jumps
+    to ``n_clips - positives`` and the ratios go with it: MEASURED on this blob,
+    ``LANE_CHANGE_R`` 15 pos / 4,557 neg -> uncapped 303.8, ``TRAFFIC_LIGHT_
+    REACT`` 18 / 4,554 -> 253.0, ``OVERTAKE_VEHICLE`` 20 / 4,552 -> 227.6 — all
+    three land ON the cap, i.e. the cap, not the data, sets their weight. ⛔ Do
+    not raise the cap to "fix" that: at 300 a single positive outweighs the
+    whole batch. This is THE existing path for the problem and it is wired
+    deliberately rather than replaced.
     """
     n = len(TAC_GOAL_TOKENS)
     pos = [0] * n
     neg = [0] * n
     for lb in labels:
-        y, w = tactical_goal_targets(lb, lb.t0_s)
+        y, w = tactical_goal_targets(lb, lb.t0_s, negatives=negatives,
+                                     sidecar=sidecar)
         for i in range(n):
             if w[i] <= 0.0:
                 continue
@@ -772,10 +1163,23 @@ class TacGoalEmitter:
 
     def __init__(self, labels: Sequence["V7Label"],
                  clip_id_by_ep_idx: dict[int, str], *,
-                 negatives: str = "measured"):
-        if negatives not in ("measured", "geometry", "all"):
+                 negatives: str = "measured",
+                 sidecar: "CotNegativeSidecar | None" = None):
+        if negatives not in ("measured", "geometry", "all",
+                             "cot-absence-negative"):
             raise ValueError(f"[tac_goal] unknown negatives {negatives!r}")
+        if negatives == "cot-absence-negative" and sidecar is None:
+            raise CotAbsenceNegativeRefused(
+                "[tac_goal] ⛔ negatives='cot-absence-negative' needs the "
+                "sidecar from load_cot_negative_sidecar(); refusing to build an "
+                "emitter that would raise on its first batch.")
+        if negatives != "cot-absence-negative" and sidecar is not None:
+            raise CotAbsenceNegativeRefused(
+                f"[tac_goal] ⛔ a sidecar was supplied with "
+                f"negatives={negatives!r} — it would be ignored, and an ignored "
+                f"permission is a config that lies about its own loss.")
         self.negatives = negatives
+        self.sidecar = sidecar
         self.clip_id_by_ep_idx = dict(clip_id_by_ep_idx)
         self._by_clip = {x.clip_id: x for x in labels}
         self.n_tokens = len(TAC_GOAL_TOKENS)
@@ -809,7 +1213,8 @@ class TacGoalEmitter:
                     f"[tac_goal] ⛔ clip {clip!r} (ep_idx {e}) has no label "
                     f"record.")
             y, w = tactical_goal_targets(
-                rec, rec.t0_s if t is None else t, negatives=self.negatives)
+                rec, rec.t0_s if t is None else t, negatives=self.negatives,
+                sidecar=self.sidecar)
             ys.append(list(y))
             ws.append(list(w))
         return (torch.tensor(ys, dtype=torch.float32),
@@ -817,13 +1222,20 @@ class TacGoalEmitter:
 
     def provenance(self) -> dict[str, Any]:
         """Goes into ``config.json`` beside the label manifest."""
+        sup = set(_MEASURED_GEOMETRY_TOKENS)
+        if self.negatives == "cot-absence-negative" and self.sidecar:
+            sup |= set(self.sidecar.tokens)
         return {"tac_goal_negatives": self.negatives,
                 "tac_goal_tokens": list(TAC_GOAL_TOKENS),
                 "tac_goal_n_tokens": self.n_tokens,
                 "n_clips_mapped": len(self.clip_id_by_ep_idx),
                 "n_label_records": len(self._by_clip),
-                "supervised_negative_tokens":
-                    sorted(_MEASURED_GEOMETRY_TOKENS)}
+                "supervised_negative_tokens": sorted(sup),
+                # ⛔ the stamp travels with the emitter too, so a run that
+                # reports only its emitter provenance still says it used the
+                # ruling, and from which file.
+                "cot_absence_negative":
+                    self.sidecar.to_dict() if self.sidecar else None}
 
 
 # ---------------------------------------------------------------------------

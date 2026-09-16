@@ -1532,6 +1532,11 @@ class V3Dataset(RouteV21Dataset):
     #: NOT-PROBED rather than negative). Surfaced as ``--tac-goal-negatives``
     #: so the cheap arm is comparable rather than hidden.
     tac_goal_negatives: str = "measured"
+    #: ⭐ PI 2026-09-16. ``None`` = the provenance policy above. Set only from
+    #: ``--cot-negative-sidecar``, and the two must agree: the loader refuses a
+    #: sidecar without the policy and the policy without a sidecar, so this
+    #: field can never be a permission the loss quietly ignored.
+    cot_negative_sidecar = None
     #: --nav-from-v7 (E-ARCH-NAVSRC-1): when True, ``nav_cmd``/``nav_valid``
     #: are OVERRIDDEN per window from the clip's v7.2 ``nav_command`` token
     #: (see :meth:`enable_nav_from_v7`). ⛔ Default False keeps the v1
@@ -2108,7 +2113,8 @@ class V3Dataset(RouteV21Dataset):
                 else:
                     _tg_y, _tg_w = v7l.tactical_goal_targets(
                         lab, (t + w - 1) * self.v7_dt,
-                        negatives=self.tac_goal_negatives)
+                        negatives=self.tac_goal_negatives,
+                        sidecar=self.cot_negative_sidecar)
                 item["tac_goal_y"] = torch.tensor(_tg_y, dtype=torch.float32)
                 item["tac_goal_w"] = torch.tensor(_tg_w, dtype=torch.float32)
         # ---- --nav-from-v7: the nav INPUT from the clip's v7.2 token -------
@@ -4719,7 +4725,21 @@ def train(args) -> dict:
         by_sid = {stable_episode_id(l.clip_id): l for l in labels}
         ds.v7_by_sid = by_sid
         ds.v7_dt = 0.1
-        v7_manifest = manifest.to_dict()      # md5 + the oracle stamp
+        # ---- ⭐ PI 2026-09-16: the absence-is-negative sidecar ------------
+        # ⛔ Loaded HERE, before the manifest is stamped into the run record,
+        # so a run that used the ruling cannot produce a config.json that does
+        # not say so. The guard runs against the ACTUAL loaded split: a future
+        # blob that makes a new token CoT-backed fails at launch rather than
+        # half-applying the ruling for a whole training run.
+        if getattr(args, "cot_negative_sidecar", None):
+            cot_sc, manifest = v7l.load_cot_negative_sidecar(
+                args.cot_negative_sidecar, manifest)
+            v7l.assert_sidecar_matches_presence(labels, cot_sc)
+            ds.cot_negative_sidecar = cot_sc
+            print(f"[v3] cot-absence-negative: {len(cot_sc.tokens)} tokens, "
+                  f"{len(cot_sc.by_digest)} clips, sidecar md5 {cot_sc.md5}",
+                  flush=True)
+        v7_manifest = manifest.to_dict()      # md5 + BOTH stamps
         # ⛔ COVERAGE IS REPORTED, NOT ASSUMED. MEASURED 2026-09-02: the v7.2
         # train set joins 4,572/4,713 = 97.0 % of B1 but only 190/2,400 =
         # 7.9 % of the PARITY corpus — so the same flag on the wrong cache
@@ -4769,15 +4789,19 @@ def train(args) -> dict:
             ds.tac_goal_targets = True
             ds.tac_goal_negatives = str(getattr(args, "tac_goal_negatives",
                                                 "measured"))
-            tac_goal_census = v7l.goal_supervision_census(labels)
+            _neg = {"negatives": ds.tac_goal_negatives,
+                    "sidecar": ds.cot_negative_sidecar}
+            tac_goal_census = v7l.goal_supervision_census(labels, **_neg)
             tac_goal_mask = _tac_goal_head.mask_report(tac_goal_census)
-            tac_goal_pw = v7l.goal_pos_weight(labels)
+            tac_goal_pw = v7l.goal_pos_weight(labels, **_neg)
             model._tac_goal_pos_weight = torch.tensor(tac_goal_pw,
                                                       dtype=torch.float32)
             model._tac_goal_class_mask = torch.tensor(tac_goal_mask["mask"],
                                                       dtype=torch.float32)
             tac_goal_stats = {
                 "negatives": ds.tac_goal_negatives,
+                "cot_absence_negative": (ds.cot_negative_sidecar.to_dict()
+                                         if ds.cot_negative_sidecar else None),
                 "n_trainable": int(tac_goal_mask["n_trainable"]),
                 "n_total": int(tac_goal_mask["n_total"]),
                 "trainable": list(tac_goal_mask["trainable"]),
@@ -5532,8 +5556,27 @@ def build_parser() -> argparse.ArgumentParser:
                          "ADDITIVE: nothing is taken from MANEUVER_WEIGHT and "
                          "no existing term is rebalanced -- that is a PI "
                          "decision (queue item 10), not this flag's.")
+    ap.add_argument("--cot-negative-sidecar", default=None,
+                    help="⭐ PI 2026-09-16: the absence-is-negative SIDECAR. "
+                         "Required by, and only usable with, "
+                         "--tac-goal-negatives cot-absence-negative. The path "
+                         "IS the opt-in (there is no boolean), the loader "
+                         "refuses a sidecar built over a different blob md5, "
+                         "and the policy + both md5s are stamped into "
+                         "config.json so an arm that supervised caption-"
+                         "absence as a negative is identifiable from its own "
+                         "artifacts. ⚠️ MEASURED exposure: 692/867 = 79.8 %% of "
+                         "the clips asked the traffic-light question WITH a "
+                         "visible light carry no traffic-light token. ⛔ That "
+                         "is a PRESENCE rate, NOT a false-negative rate -- the "
+                         "token is a REACTION, and a light governing another "
+                         "lane is a present light with a correctly absent "
+                         "reaction. It bounds how many of these new negatives "
+                         "COULD be wrong; how many ARE is unmeasured "
+                         "(2026-09-16-flywheel-negatives/RESULT.md §4.5).")
     ap.add_argument("--tac-goal-negatives", default="measured",
-                    choices=["measured", "geometry", "all"],
+                    choices=["measured", "geometry", "all",
+                             "cot-absence-negative"],
                     help="what an ABSENT goal token means. 'measured' "
                          "(default) reads provenance PER TOKEN FROM THE "
                          "LOADED SPLIT and supervises a negative only for "
