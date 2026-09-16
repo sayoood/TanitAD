@@ -806,6 +806,29 @@ class RefCConfig:
     grounded_selector: bool = False     # progress/collision proxy vs top-1 conf
     graft_imagination: bool = False     # H15 belief field over conv-map tokens
     graft_lan: bool = False             # LAN lane-anchored route conditioning
+    # --- refcv6 §4/§5 (PI 2026-09-16). Three SEPARATE levers, because the
+    # arm's questions separate the same way: does the tactical POSTERIOR make
+    # a better anchor prior than the image-only lat3/lon3; does the
+    # BEHAVIOUR SET help SELECTION; does following nav cost or buy ADE. All
+    # default OFF and all are zero-init or param-free, so an all-off build is
+    # byte-identical to REF-C today.
+    graft_tac8_prior: bool = False      # the 8x8 tactical posterior REPLACES
+    #                                   lat3/lon3 as the anchor prior, through
+    #                                   NEW zero-init 8 -> n_anchors grafts
+    graft_behaviour_sel: bool = False   # the valid-behaviour term (computed in
+    #                                   refc_v3, already masked) reaches the
+    #                                   RANKED score
+    graft_nav_compliance: bool = False  # the PARAM-FREE nav-compliance
+    #                                   predicate reaches the RANKED score
+    #                                   behind ONE zero-init gate
+    # ⚠️ NO DEFAULT THAT MEANS ANYTHING. The tolerance is derived per corpus
+    # by `nav_compliance.derive_tolerance(pos, neg)` and the arm must STATE
+    # the value it used; 0.0 is the 'not set' sentinel and the constructor
+    # REFUSES it when the graft is on. An invented tolerance is a number with
+    # no evidence class deciding what 'compliant' means.
+    nav_compliance_tau_rad: float = 0.0
+    speed_ceiling_filter: bool = False  # the fed set-speed filters the ARGMAX
+    #                                   (the S2 pattern), never the score
     # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
     # Every lever below acts on WHICH candidate is emitted, never on which are
     # proposed. All are zero-init or param-free; all default OFF, so the
@@ -1621,7 +1644,12 @@ class AnchoredDiffusionDecoder(nn.Module):
                  ref_speed_ms: float = 10.0,
                  control_units: str = "kappa",
                  alat_v_floor_ms: float = 4.0,
-                 kappa_cap: float = 0.12):
+                 kappa_cap: float = 0.12,
+                 graft_tac8_prior: bool = False,
+                 graft_behaviour_sel: bool = False,
+                 graft_nav_compliance: bool = False,
+                 nav_compliance_tau_rad: float = 0.0,
+                 speed_ceiling_filter: bool = False):
         super().__init__()
         self.cfg = cfg
         self.n_steps = n_steps
@@ -1724,6 +1752,45 @@ class AnchoredDiffusionDecoder(nn.Module):
         elif graft_maneuver:
             self.maneuver_to_anchor = nn.Linear(n_maneuvers, anchors.shape[0],
                                                 bias=False)
+        # ⭐⭐ refcv6 §4 — THE TACTICAL 8x8 POSTERIOR REPLACES lat3/lon3 AS THE
+        # ANCHOR PRIOR. NEW layers, not a widening of `lat_to_anchor`: the
+        # 3-wide graft is LIVE in every banked checkpoint and resizing it would
+        # make refcv4b/refcv5 unrollable (D-ROLL-1, paid for once already).
+        # BOTH are ZERO-INIT, so the ranked/confidence surface is bit-identical
+        # at step 0 and every later change is attributable to this seam.
+        # ⛔ When they are on, the 3-wide pair is NOT also fed: two priors on
+        # one surface is a confound, and `forward` refuses the pair.
+        self.tac8_lat_to_anchor: nn.Linear | None = None
+        self.tac8_lon_to_anchor: nn.Linear | None = None
+        if graft_tac8_prior:
+            from tanitad.refs.refcv6_tactical import (N_LAT_ACTIONS,
+                                                      N_LON_ACTIONS)
+            self.tac8_lat_to_anchor = nn.Linear(N_LAT_ACTIONS,
+                                                anchors.shape[0], bias=False)
+            self.tac8_lon_to_anchor = nn.Linear(N_LON_ACTIONS,
+                                                anchors.shape[0], bias=False)
+            nn.init.zeros_(self.tac8_lat_to_anchor.weight)
+            nn.init.zeros_(self.tac8_lon_to_anchor.weight)
+        # ⭐ refcv6 §5 — THE NAV-COMPLIANCE TERM, param-free, one zero-init
+        # scalar. Same shape and same argument as `lan_gate`: selection among
+        # the fan is where a route can act at all, and a GEOMETRIC predicate
+        # cannot become a route-shaped shortcut the way a learned
+        # `nav -> n_anchors` matrix could. Initialised to 0, so the ranked
+        # score is bit-unchanged at step 0 while the gradient
+        # (compliance * dL/dscore) is non-zero — gated, not dead.
+        self.navc_gate: nn.Parameter | None = None
+        self.navc_tau_rad = float(nav_compliance_tau_rad)
+        if graft_nav_compliance:
+            if not (self.navc_tau_rad > 0.0):
+                raise ValueError(
+                    'graft_nav_compliance needs nav_compliance_tau_rad > 0. '
+                    'The tolerance is DERIVED per corpus by '
+                    '`taniteval.nav_compliance.derive_tolerance(pos, neg)` and '
+                    'the arm must state the value it used; defaulting it here '
+                    'would invent the definition of `compliant`.')
+            self.navc_gate = nn.Parameter(torch.zeros(1))
+        self.graft_behaviour_sel = bool(graft_behaviour_sel)
+        self.speed_ceiling_filter = bool(speed_ceiling_filter)
         # Graft: FiLM the condition on a tactical goal latent (zero-init).
         self.tgt_proj: nn.Linear | None = None
         self.tgt_film: FiLM | None = None
@@ -2644,7 +2711,12 @@ class AnchoredDiffusionDecoder(nn.Module):
                 agent_pad: Tensor | None = None,
                 agent_pos: Tensor | None = None,
                 ego_hist: Tensor | None = None,
-                bev: Tensor | None = None) -> dict:
+                bev: Tensor | None = None,
+                tac_lat_prior: Tensor | None = None,
+                tac_lon_prior: Tensor | None = None,
+                behaviour_term: Tensor | None = None,
+                nav_cmd_sel: Tensor | None = None,
+                v_limit_ms: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -2817,6 +2889,23 @@ class AnchoredDiffusionDecoder(nn.Module):
         # D-TAC1: the factorised pair, summed. ``lat_prior`` / ``lon_prior`` are
         # already log-probabilities (optionally prior-centered) prepared by the
         # model, so the decoder keeps no policy of its own.
+        # ⭐⭐ refcv6 §4: the TACTICAL posterior REPLACES the image-only pair.
+        # ⛔ REPLACES, never adds. Two priors over the same axis on one
+        # surface is a confound that no ablation can separate afterwards, and
+        # the spec's word is 'replaces'. The refusal below is the mechanism.
+        _tac8 = (self.tac8_lat_to_anchor is not None
+                 and tac_lat_prior is not None)
+        if _tac8:
+            if lat_prior is not None and self.lat_to_anchor is not None:
+                raise ValueError(
+                    'refcv6: BOTH the image-only lat3/lon3 prior and the '
+                    'tactical 8x8 posterior reached the decoder. The 8-wide '
+                    'pair REPLACES the 3-wide one; feeding both puts two '
+                    'priors on one surface and makes neither attributable. '
+                    'Pass lat_prior=None on a --graft-tac8-prior arm.')
+            terms.append(_tile(self.tac8_lat_to_anchor(tac_lat_prior)))
+            if self.tac8_lon_to_anchor is not None and tac_lon_prior is not None:
+                terms.append(_tile(self.tac8_lon_to_anchor(tac_lon_prior)))
         if self.lat_to_anchor is not None and lat_prior is not None:
             terms.append(_tile(self.lat_to_anchor(lat_prior)))
         if self.lon_to_anchor is not None and lon_prior is not None:
@@ -2963,6 +3052,17 @@ class AnchoredDiffusionDecoder(nn.Module):
         # `refined` here IS `_apply_grafts(s_conf, …)`, the emitting pass's own
         # confidence carrying the same priors the classifier surface carries.
         base = refined if (sel.refined or self.rv6.f5_emitting_conf) else conf
+        # ⛔ DEFERRED IMPORT, AND IT IS FORCED, NOT STYLISTIC. A module-
+        # level `from tanitad.refs import refcv6_selection` here is a
+        # CIRCULAR import and fails at collection:
+        #   refc -> refcv6_selection -> refc_selector_targets -> refc
+        #           (`refc_selector_targets.py:94` imports NAV_COMMANDS)
+        # MEASURED, not guessed: the module-level form raised
+        # `ImportError: cannot import name 'NAV_COMMANDS' from partially
+        # initialized module 'tanitad.refs.refc'`. Importing inside the
+        # forward is the smallest change that breaks the cycle without
+        # moving `NAV_COMMANDS` out from under its existing readers.
+        from tanitad.refs import refcv6_selection as v6sel
         r_terms: list[Tensor] = []
         cons_s = None
         if self.route_to_anchor is not None and route_prior is not None:
@@ -3025,6 +3125,35 @@ class AnchoredDiffusionDecoder(nn.Module):
                                            self.feat_proj, self.conf_head,
                                            detach=sel.cons_detach)
             r_terms.append(self.cons_gate * cons_s)
+        # ⭐⭐ refcv6 §4: THE VALID-BEHAVIOUR SET REACHES SELECTION.
+        # The term arrives ALREADY PROJECTED and ALREADY MASKED from
+        # `RefCV3Model.tac_behaviour_gate_v6` (a zero-init 22 -> N graft whose
+        # five SITUATION columns are structurally dead and proven so by
+        # mutation at build time — PI 2026-08-03). It is passed as a TENSOR so
+        # this file owns no copy of the admissibility mask: one mask, one
+        # owner, no drift.
+        if self.graft_behaviour_sel and behaviour_term is not None:
+            if behaviour_term.shape != base.shape:
+                raise ValueError(
+                    f'refcv6 behaviour_term must be [B, N] = '
+                    f'{tuple(base.shape)}, got {tuple(behaviour_term.shape)}')
+            r_terms.append(behaviour_term.to(base.dtype))
+        # ⭐⭐ refcv6 §5: THE NAV-COMPLIANCE TERM, finally on the forward path.
+        # `refc_selector_targets.compliance_target` has existed since the
+        # selector work and was MEASURED to be unreachable: 'the rule-based
+        # nav-compliance scorer exists but is not on the forward path'
+        # (REFCV6_CLARIFICATION §3.1). This is the one line that changes that.
+        # ⛔ The predicate is UNDEFINED on `follow`/`straight`, and
+        # `compliance_target` returns its own mask — the product is
+        # identically zero there, so the term cannot push the score around on
+        # the ~75-79 %% of windows that carry no commanded side.
+        if self.navc_gate is not None and nav_cmd_sel is not None:
+            _nc, _ = v6sel.nav_compliance_prior(
+                x, nav_cmd_sel, tau_rad=self.navc_tau_rad)
+            r_terms.append(self.navc_gate * _nc.to(base.dtype))
+            tele['navc_gate'] = round(float(self.navc_gate.detach()), 6)
+            tele['navc_frac_complying'] = round(
+                float(_nc.detach().mean()), 4)
         score, r_tele = self._apply_grafts(base, r_terms, self._seam_rank,
                                            "rank", sel.seam_fail_patience)
         if self.grounded:
@@ -3052,6 +3181,24 @@ class AnchoredDiffusionDecoder(nn.Module):
                 float(1.0 - keep.to(score.dtype).mean().detach()), 4)
             tele["reach_frac_windows_empty"] = round(
                 float(dead.to(score.dtype).mean().detach()), 4)
+        # ⭐⭐ refcv6 §5 — THE SET-SPEED CEILING FILTERS THE ARGMAX. Exactly
+        # the S2 shape above, for exactly the S2 reason: `score` is returned
+        # UNMASKED so no `-inf` can reach a cross-entropy, and a row whose
+        # survivor set is EMPTY keeps its whole fan. ⚠️ Those empty rows are
+        # the ONLY structural reason the obedience rate can fall below 1.0, so
+        # they are counted into the telemetry and the acceptance test reports
+        # the count beside the rate.
+        # ⛔ THE dt IS DERIVED FROM `anchor_horizons`, NEVER TYPED. The
+        # waypoint grid is (5, 10, 15, 20) TICKS at 0.1 s, i.e. 0.5 s apart;
+        # a typed 0.1 would report every planned speed 5x too high and the
+        # obedience test would fail an obedient model. Same derivation, same
+        # reason, as `_feasible`'s prefix dt four hundred lines above.
+        if self.speed_ceiling_filter and v_limit_ms is not None:
+            _keep, _st = v6sel.SpeedCeilingFilter(
+                horizons=self.anchor_horizons,
+                tick_s=self.anchor_dt)(x, v_limit_ms)
+            rank = rank.masked_fill(~_keep, float('-inf'))
+            tele.update(_st)
         idx = rank.argmax(dim=1)                              # [B] (detached)
         # S2b telemetry + THE RUNTIME GUARD. `be2da04` keeps two claims apart:
         # the VARIABLE-width policy is structurally exact, while a FIXED budget
@@ -3281,7 +3428,12 @@ class RefCModel(nn.Module):
             ref_speed_ms=cfg.anchors.ref_speed_ms,
             control_units=cfg.anchors.control_units,
             alat_v_floor_ms=cfg.anchors.alat_v_floor_ms,
-            kappa_cap=cfg.anchors.kappa_cap)
+            kappa_cap=cfg.anchors.kappa_cap,
+            graft_tac8_prior=cfg.graft_tac8_prior,
+            graft_behaviour_sel=cfg.graft_behaviour_sel,
+            graft_nav_compliance=cfg.graft_nav_compliance,
+            nav_compliance_tau_rad=cfg.nav_compliance_tau_rad,
+            speed_ceiling_filter=cfg.speed_ceiling_filter)
         # ---- refcv5 WP-6: THE AGENT SEAM (default OFF, builds NOTHING) ----
         #
         # ⭐ `agent_head` produces SLOTS, `agent_embed` turns slots into the
@@ -3659,7 +3811,10 @@ class RefCModel(nn.Module):
                 agent_gt: dict | None = None,
                 ego_poses: Tensor | None = None,
                 ego_n_past: int | None = None,
-                bev: Tensor | None = None) -> dict:
+                bev: Tensor | None = None,
+                scene_hook=None,
+                bev_tokens: Tensor | None = None,
+                bev_pad: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -3956,6 +4111,35 @@ class RefCModel(nn.Module):
         # arms would read "no gradient").
         agent_pos = (agent_slots["box"][..., :2]
                      if agent_slots is not None else None)
+        # ⭐⭐ refcv6 §4 — THE SCENE HOOK. A SECOND in-forward supplier, and it
+        # has to be here and nowhere else: `hierarchy_hook` fires ~200 lines
+        # ABOVE, at the pooled/ctx stage, where `agent_tokens` do not exist
+        # yet. The behaviour decoder's keys and values ARE those tokens (plus
+        # the BEV tokens), so this is the only point in the forward at which
+        # the scene is built and the operative decoder has not yet run.
+        # Supplier: `RefCV3Model._scene_hook`.
+        # ⛔ With `scene_hook=None` this block is untouched dead code and the
+        # forward is byte-identical to the pre-refcv6 file.
+        tac_lat_prior = tac_lon_prior = behaviour_term = v_limit_ms = None
+        if scene_hook is not None:
+            if agent_tokens is None and bev_tokens is None:
+                raise ValueError(
+                    'refcv6: a scene_hook was supplied but this forward built '
+                    'NEITHER agent tokens NOR BEV tokens. The behaviour '
+                    'decoder would attend to nothing and the arm would read '
+                    'as "behaviours cannot be learned from the scene" — a '
+                    'refutation manufactured by a wiring gap. Turn the agent '
+                    'seam on, or pass bev_tokens, or drop the hook.')
+            sk = scene_hook(agent_tokens, agent_pad, bev_tokens, bev_pad)
+            tac_lat_prior = sk.get('lat_prior')
+            tac_lon_prior = sk.get('lon_prior')
+            behaviour_term = sk.get('behaviour_term')
+            v_limit_ms = sk.get('v_limit_ms')
+        # ⛔ THE 8-WIDE PRIOR REPLACES THE 3-WIDE ONE, AT THE CALL SITE TOO.
+        # The decoder refuses the pair; suppressing them here is what makes
+        # that refusal reachable rather than a permanent exception.
+        if tac_lat_prior is not None and self.cfg.graft_tac8_prior:
+            lat_prior = lon_prior = None
         # ⭐⭐ S-BYPASS-1 -- THE OPERATIVE SEAM. `ctx_to_cond` is skipped by
         # the decoder itself when `ctx is None` (its `cond` block reads
         # `ctx is not None`), so the bypass needs NO branch inside the decoder
@@ -4010,7 +4194,12 @@ class RefCModel(nn.Module):
                            gp_point=gp_point, gp_valid=gp_valid,
                            withheld_speed=withheld_speed,
                            agent_tokens=agent_tokens, agent_pad=agent_pad,
-                           agent_pos=agent_pos, ego_hist=ego_vec, bev=bev)
+                           agent_pos=agent_pos, ego_hist=ego_vec, bev=bev,
+                           tac_lat_prior=tac_lat_prior,
+                           tac_lon_prior=tac_lon_prior,
+                           behaviour_term=behaviour_term,
+                           nav_cmd_sel=(nav_cmd if nav_cmd_given else None),
+                           v_limit_ms=v_limit_ms)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
