@@ -2727,3 +2727,79 @@ showed them converging at source column 812 against the calibration's 816, i.e. 
 drawn exactly as the calibration specifies**. Reading pixel positions off a compressed screenshot
 has now produced a wrong answer three times in this document. **Locate the frame, render it at full
 resolution, measure it.**
+
+---
+
+# Part 27 — it was the YAW all along, and I fitted it with the lateral
+
+## 127. ⛔⛔ THE ERROR GROWS WITH RANGE — that is a yaw, not an offset
+
+Sayed: *"fix the residual 0.2 m right bias. still no solution, trajectory leaving the road boundary."*
+
+Measuring the corridor-to-lane-centre offset **as a function of range** on the v3 render
+(yaw −5.35, lateral −0.41), 1953 reads:
+
+| range | offset | clear L | clear R | lane |
+|---|---|---|---|---|
+| 9 m | +0.05 | +0.86 | +0.75 | 3.43 |
+| 12 m | +0.08 | +0.84 | +0.67 | 3.37 |
+| 16 m | +0.25 | +0.98 | +0.44 | 3.29 |
+| 20 m | **+0.51** | +1.22 | **+0.24** | 3.27 |
+
+`offset = −0.411 + 0.0438·x` ⇒ **a residual yaw of 2.51°**, which extrapolates to **+1.34 m at
+40 m**. *That* is "the trajectory leaves the road boundary."
+
+⛔ **AND IT MEANS PART 25's FIX WAS WRONG IN KIND.** I measured the offset only over **7–12 m**,
+and over a 5 m window a yaw error and a lateral offset are **indistinguishable**. Setting
+`--lateral-offset` to −0.41 nulled the error at ~10 m and made it **worse at every longer range** —
+which is precisely why each "fix" left the far field still leaving the road. **A single-range
+measurement cannot separate a level from an angle, and I never varied the range until now.**
+
+## 128. ⭐ `clear_L` is the diagnostic, because parallel means FLAT
+
+The left boundary is the one feature every instrument in this programme agrees on. If the ribbon is
+parallel to the road, the gap from its left edge to that line is **constant with range** — no
+lane-width assumption, no right-hand line, no horizon.
+
+| render | clear L, 9 m → 18 m | implied yaw error |
+|---|---|---|
+| v3, yaw −5.35 | 0.86 → 1.07 | **+1.40°** ⇒ −6.75° |
+| v4, yaw −7.39 | 0.82 → 0.76 | **−0.38°** ⇒ **−7.01°** |
+
+Two renders, corrected independently, land on **−6.75°** and **−7.01°**.
+
+⭐⭐ **−7.01° is EXACTLY what `lane_calib` measured on this recording in the first place** — and the
+pipeline threw it away with *"yaw declined: −7.01 deg is 7.0 deg from the FOE, not credible"*, where
+the FOE fit had already failed so the gate was comparing against a **nominal 0.0**.
+`tests/test_trajrecon_yaw_gate.py` exists in this repo **because that rejection was a bug**.
+
+## 129. ⛔ Every independent estimate pointed away from −5.35, and I discarded them one at a time
+
+| source | yaw | what I did with it |
+|---|---|---|
+| `lane_calib`, this recording | **−7.01°** | rejected by the broken FOE gate (pre-existing) |
+| independent VP fit, 154 frames / 6689 segments | **−6.05°** [−6.28, −5.83] | not carried forward |
+| §88 pair-Hough | **−6.20…−6.51°** | ⛔ **I withdrew it** in favour of −5.29° |
+| road-VP vs ribbon-VP, this part, n=294 | **−6.26°** | — |
+| `clear_L` slope, v3 and v4 | **−6.75 / −7.01°** | adopted |
+
+**Five estimates spanning −6.0 to −7.0, and the render used −5.35.** §87's "rendered −5.35 vs
+optimum −5.10, the delivered render's yaw is right" was the single-line reading, and it is the only
+one that agreed with the shipped value — so I kept it and dropped the rest.
+
+⚠️ **ROOT CAUSE: the single-line yaw read-out evaluates one fitted line AT the assumed horizon row.**
+It therefore measures the yaw *conditional on the horizon being right*, and the horizon is the one
+parameter still unresolved (§105: row flow 438 vs drift 460–484). A conditional measurement that
+happens to agree with the status quo is the easiest thing in the world to keep.
+
+## 130. ⚠️ What is still not clean
+
+* The measured **lane narrows with range** — 3.43 m at 9 m to 3.27 m at 20 m in v3, 3.38 → 3.26 in
+  v4. That is a horizon signature, and it implies `v_h` is ~8 px low (≈456 rather than 448.4),
+  in the direction §104's drift scan already pointed (460–484).
+* The offset's residual slope in v4 (+0.98°) **disagrees** with `clear_L`'s (−0.38°). The difference
+  is the right-hand line: its detection count falls from 540 at 9 m to 70 at 20 m and `clear_R`
+  shrinks with it, so the "lane centre" drifts inward at long range. **`clear_L` is the trustworthy
+  one; the offset-vs-range slope inherits the right boundary's weakness**, which is the same
+  weakness that has now defeated six instruments.
+* ⇒ The yaw is settled to about **±0.3°**; below that the horizon has to be settled first.

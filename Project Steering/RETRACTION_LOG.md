@@ -3674,3 +3674,36 @@ source column from it compounds three uncertain scale factors, and the result is
 rather than noisy. ⇒ **Locate the frame in the source, render it at full resolution, and measure it
 there.** A screenshot is evidence that something is wrong and evidence of *where to look* — it is
 never a measurement.
+
+---
+
+## `R-2026-09-16-yawnotlateral` — I fitted a YAW error with the LATERAL parameter, over a 5 m window
+
+**WITHDRAWN:** Part 25's `--lateral-offset −0.41` and §119's diagnosis of *"the ribbon sits 0.28 m
+right of lane centre"* **as a lateral defect**. The offset is real but it is **range-dependent** —
+`offset = −0.411 + 0.0438·x` on the v3 render, i.e. **2.51° of yaw**, reaching **+1.34 m at 40 m**.
+Also withdrawn: §87's *"the delivered render's yaw is right"*.
+
+**ROOT CAUSE — A LEVEL AND AN ANGLE ARE THE SAME THING OVER A SHORT LEVER.** Every placement
+measurement I made ran over **7–12 m**. Across a 5 m window a constant offset and a 2.5° rotation
+are indistinguishable to within the noise, so the fit assigned all of it to the parameter I was
+looking at. The "correction" nulled the error at 10 m and **made it worse at every longer range**,
+which is exactly what Sayed kept reporting after each render. ⇒ **Never fit a placement parameter
+without varying the range. The slope IS the second parameter, and if you do not measure it you have
+silently assumed it is zero.**
+
+**⭐ THE DIAGNOSTIC THAT WORKS IS `clear_L` vs RANGE.** Parallel means FLAT — no lane width, no
+right-hand line, no horizon. v3 gave +1.40° (⇒ −6.75°), v4 gave −0.38° (⇒ **−7.01°**).
+
+**⛔ AND THE ANSWER WAS MEASURED CORRECTLY BEFORE ANY OF THIS.** `lane_calib` reported **−7.01°** on
+this recording and the pipeline rejected it against an FOE that had failed to fit — a bug this repo
+already documents in `tests/test_trajrecon_yaw_gate.py`. Four further independent estimates (VP fit
+−6.05 [−6.28, −5.83]; pair-Hough −6.20…−6.51; road-VP −6.26; `clear_L` −6.75/−7.01) all landed
+between −6.0 and −7.0. **The render used −5.35, and I withdrew the pair-Hough estimate (§88)
+specifically because it disagreed with it.**
+
+⚠️ **THE SURVIVING ESTIMATE WAS THE CONDITIONAL ONE.** §87's single-line read-out evaluates a fitted
+line *at the assumed horizon row*, so it measures the yaw **given** the horizon — and the horizon is
+the one parameter still unresolved. It agreed with the shipped value because it was anchored to the
+same assumption. ⇒ **When one estimate agrees with the status quo and four disagree, the burden is
+on the agreeing one**, and the first question is what it shares with the thing it is confirming.
