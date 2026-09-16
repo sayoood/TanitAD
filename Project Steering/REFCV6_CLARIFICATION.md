@@ -544,12 +544,12 @@ Source: PUBLISHED-CODE `v1/transfuser_model_v2.py`. The noise values are compute
 | Hydra-MDP / GTRS | V2-99 · **DD3D** (depth-pretrained) / ViT-L · DepthAnything | — | 1–4 | 3-D detection, BEV segmentation |
 | Hydra-MDP++ | ResNet-34 / V2-99, "pretrained" | current frame fine-tuned, t−1 frozen | 2 | none (perception aux 86.6 → 86.1 PDMS) |
 | DriveTransformer | ResNet-50 | single-stage fine-tune | 10 | detection, motion, map |
-| DriveVLA-W0 | ResNet-34 / **DINOv3 ViT-7B** | fine-tuned | 1 | none (action-only) |
+| DriveVLA-W0 — **two separate models** | TransFuser-50M: **ResNet-34** (21.8 M) · TransFuser-7B: **ViT-7B initialised from DINOv3** (≈ 7 B) | fine-tuned | 1 | none (action-only) |
 | **REF-C refcv5-v2** | 90.5 M · **random** | one learning rate, one epoch | 3-frame stack | **none** |
 
 **What the literature supports:**
 - **Pretraining.** Every stated image-trunk init is pretrained, and **none of these papers ablates ImageNet vs scratch**. REF-C is the outlier.
-- **Supervision matters more than the prior.** DriveVLA-W0 shows that a pretrained trunk does not rescue action-only training: at 70 k frames, ResNet-34 ADE 2.59 and DINOv3-7B 2.58. Adding scene supervision moves results more:
+- **Supervision matters more than the prior — and a 300× bigger pretrained encoder does not buy driving quality by itself.** DriveVLA-W0's two backbones, ADE in metres (2510.12796:827-839): at **70 k** frames ResNet-34 **2.5893** vs DINOv3 ViT-7B **2.5757**; at **700 k** the ResNet-34 is **better** (1.7464 vs 2.1391); only at **70 M** does the 7 B pull ahead (1.2627 vs 1.2244). The paper's own reading: under action-only supervision, pretraining can *hurt* (`:792`). Adding scene supervision moves results more:
   - LAW's latent loss: 77.5 → 84.6 PDMS;
   - TransFuser without BEV segmentation: 81.6 vs 83.3–84.4;
   - DriveTransformer planning-only: 54.2 vs 60.5.
@@ -592,6 +592,35 @@ Source: PUBLISHED-CODE `v1/transfuser_model_v2.py`. The noise values are compute
 2. H1 runs once you approve the ~87 MB weights. The LAW-off / EMA tiny-rig arm for H5 joins the proof package.
 3. Carry **T-A and T-B as a paired arm on the pod** only if H1 shows the ImageNet prior beats our trunk, separated. Otherwise T-A.
 4. H2 is now the leading hypothesis and it needs no extra run: the **first refcv6 arm that trains a perception head** is probed with the same frozen-trunk panel, against refcv5-v2 on the same rows (35 min, §6.4 H2).
+
+### 6.6 "Could we initialise from DINOv3?" — your question of 2026-09-16
+
+**First, a correction to §6.2 above** (it is also §9 C10): DriveVLA-W0 is **two separate models** — TransFuser-50M with a ResNet-34, and TransFuser-7B with a **ViT-7B initialised from DINOv3** (2510.12796:773-774, 1729-1732). DINOv3 never initialises their ResNet. My table's slash invited the opposite reading.
+
+⛔ **DINOv3 cannot initialise a ResNet at all.** Initialisation loads weights into identical shapes; a ResNet is 3×3 convolutions with batch-norm, a ViT is attention blocks with a patch embedding. Knowledge crosses architectures only by **distillation** — matching the teacher's *outputs* — never by loading weights.
+
+**The sizes, for scale:**
+
+| | params |
+|---|---|
+| ResNet-34 (DiffusionDrive) | 21.8 M |
+| **our REF-C trunk** | **90.5 M** |
+| DINOv3 **ViT-L/16** (in our local cache) | **303,129,600** — MEASURED 2026-09-16; 24 layers, hidden 1024, patch 16 |
+| DINOv3 **ViT-7B** (DriveVLA's) | ≈ 7 B — ⚠️ the DINOv3 paper is **not banked**; bank it before quoting outside the repo |
+
+**The three routes, and what the programme has already measured about each:**
+
+| route | verdict | evidence |
+|---|---|---|
+| **(a) seed our encoder from DINOv3 weights** | ⛔ **measured to fail at our own geometry.** At 256×640 the seeded trunk is **not separable from random init** (+0.1671 [−0.1742, +0.6124]) while published DINOv3 **is** separated from that floor (+0.5021) and from pixels (+0.9049). On scene content: DINOv3 **+0.2401** [+0.116, +0.365] vs the seed's **+0.0351** [−0.017, +0.089], a **separated** loss of +0.2050 [+0.0896, +0.3233]. Two cheap repairs did not recover it | `E-SEED-2`, `…/2026-09-04-v7-seed-and-external-target/RESULT.md` X1/X2b |
+| **(b) run DINOv3 frozen as the trunk** | works, but a different cost class: **303 M** params every tick and **640** tokens against our 160, on a 108 M model and Thor's latency budget. Never measured on our planner | — |
+| **(c) distil frozen DINOv3 into our trunk** ⭐ | ✅ **the one route with a measured positive here.** An encoder trained on **nothing but** matching frozen DINOv3's cells moved agent-count decodability **−1.0407 → +0.3274** (t 12.63, 24/24 episodes), level with the teacher, **and ego improved** (speed +0.2830 → +0.3940). No trade-off. DINOv3 also beat V-JEPA2 as teacher 9/9 | `E-DEC-8`, `E-DEC-68` |
+
+⭐ **Why (c) fits us mechanically:** the grids already align. At 256×640, DINOv3 patch-16 emits **16×40** tokens and our trunk's **stride-16 map is exactly 16×40** — cell for cell, no resampling. The teacher runs only at training time, so the inference cost is unchanged. It also replaces the self-chosen LAW target that H5 implicates.
+
+⚠️ **Scope:** `E-DEC-8` used a **0.97 M** encoder on the older v6 rig, not our 90.5 M ResNet at 256×640. It proves the **ingredient**, not the transfer.
+
+⭐ **The cheap test that decides it, before any commitment: probe the teacher on our own panel.** Extract frozen DINOv3 ViT-L/16 features on the same eval clips and run the **same** occupancy probe H4 just used. If DINOv3's own features do not clear the bar our trunk fails (AP 0.60 vs today's 0.41), then distilling it cannot ground us either. ≈ 1–2 GPU-h on the dev box, **no download** — the checkpoint is already cached here. This is sharper than H1, because it measures the prior on **our target** rather than on a proxy.
 
 ---
 
@@ -732,6 +761,8 @@ Every row was re-checked on 2026-09-15 against the primary source named in its l
 | C7 | `refc_sampler.py:19-21` (docstring) | control noise gives "~2.3 m along-track and ~1.7 m lateral at the 6 s endpoint — comparable spread to DD's" | with the 8-slot i.i.d. noise the model actually uses: **≈0.86 / 0.65 m at 6 s, 0.145 / 0.109 m at 2 s** (ESTIMATED, linearised). 2.3 / 1.7 m holds only for a noise constant across slots | `refc_sampler.py:490-493`; horizons `refc_anchors_6s_v0cond_alat_117.pt.json` |
 | C8 | my earlier chat summaries (not landed) | "the spatial link is worth +32 PDMS" | measured against a **collapsed** ego-only decoder (55.1). Over agents-only it is +2.0; agents add +0.3 on top of it | DD paper Table 3, p.7 |
 | C9 | my draft of this dossier (caught before landing) | "the V2 selector sees 200 candidates, not 800" | **800 is right**: 200 denoised + 3 randomly scaled copies of each, exactly as `D-DDV2-CODE-4` says | `diffusiondrivev2_model_sel.py:1270-1286,1444` |
+
+| C10 | §6.2 of this dossier, as landed in `04f02de` (**the PI caught it, 2026-09-16**) | the DriveVLA-W0 row read "ResNet-34 / **DINOv3 ViT-7B**", which reads as *DINOv3 initialising a ResNet-34* | **two separate models**: TransFuser-50M uses a ResNet-34; TransFuser-7B uses a **ViT-7B initialised from DINOv3**. DINOv3 never touches their ResNet, and weights cannot cross architectures at all. Row rewritten, and §6.6 added with the sizes, the three routes and their measured verdicts | 2510.12796:773-774, 1729-1732 |
 
 **Carried from an earlier review pass, not yet re-located today** (they are fixed only after being re-read):
 - the scope of "V2's encoder is byte-identical to V1" (true of the RL model's import; not yet re-checked for the selector);
