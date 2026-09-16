@@ -17,7 +17,7 @@ keep its decode contract intact") is enforced mechanically, not by convention:
 * :meth:`Box3DSlotDecoder.decode` returns **every key**
   :meth:`agent_slots.AgentSlotDecoder.decode` returns, with the same shapes and
   the same meanings -- ``box`` is still ``[B, N, 4] = (cx, cy, l, w)`` in metres
-  -- and ADDS ``box3d``, ``cz`` and ``h``. ``tests/test_refcv6_box3d.py``
+  -- and ADDS ``box3d``, ``cz`` and ``h``. ``tests/test_refcv6_perception.py``
   asserts the 2-D keys are bit-identical to the base decoder's on the shared
   columns;
 * the **matcher is untouched**. :func:`agent_slots.match_slots` costs
@@ -28,11 +28,22 @@ keep its decode contract intact") is enforced mechanically, not by convention:
 
 ## Where z and h come from, and what happens when they do not
 
-The eval agent join (``2026-09-06-b1-agent-join``) carries
+The FIRST eval agent join (``2026-09-06-b1-agent-join``) carried
 ``cx, cy, yaw, l, w, occ, track_id, cls`` and **no z, no h** -- MEASURED on
 ``b1eval_agents.jsonl.xz`` 2026-09-16. The cuboids in
 ``labels/obstacle.offline/*.parquet`` do carry ``center_z`` and ``size_z``;
 :mod:`tanitad.data.agent_cuboid_gt` is the reader that recovers them.
+
+⭐ SUPERSEDED 2026-09-17 (``b1-agent-join-3d-20260917``, landed 24065b6): the
+3-D join DOES carry them, under the join's own spellings ``cz`` and ``h`` --
+**not** the parquet's ``center_z``/``size_z``, which is a trap a probe of mine
+walked into. MEASURED on ``b1eval_agents_3d.jsonl.xz``: 139 clips, 26,394 lines,
+**905,512 / 905,512 agent-frames carry z+h (100.00 %)**, cuboid bottoms a median
+**-0.103 m** off the ego ground plane. The last hop -- join to ``zh_targets`` to
+``box3d_set_loss`` with ``n["z"] > 0`` -- is verified END TO END by
+``tests/test_refcv6_perception_realdata.py::test_the_3d_join_reaches_the_height_targets``
+(green on the artifact, RED under a mutation that makes the join answer
+all-False, skipped when ``$TANITAD_AGENT_JOIN3D`` is unset).
 
 ⛔ Until a join carries them, ``tgt["zh_mask"]`` is **all False** and the z/h
 terms are computed over ZERO items and SAY SO (``n_z == 0`` in the returned
@@ -46,7 +57,7 @@ not a prediction.
 
 :func:`box3d_ap` is average precision over a matched detection set at a 3-D
 centre-distance threshold. The brief requires it to read a known value:
-``tests/test_refcv6_box3d.py`` pins **perfect predictions -> AP exactly 1.0**
+``tests/test_refcv6_perception.py`` pins **perfect predictions -> AP exactly 1.0**
 and **random predictions -> AP within sampling error of the base rate**, where
 the base rate is computed in closed form from the threshold and the sampling box
 (:func:`random_ap_base_rate`), NOT read off the same run it is compared with.
@@ -324,7 +335,7 @@ def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
     ⛔ With no 3-D labels (``zh_mask`` all False, the state of today's eval join)
     ``loss_z`` and ``loss_h`` are ``0.0`` with ``n["z"] == n["h"] == 0``, and
     ``total`` is then EXACTLY the 2-D total -- asserted by
-    ``tests/test_refcv6_box3d.py::test_no_zh_labels_is_the_2d_loss_exactly``.
+    ``tests/test_refcv6_perception.py::test_no_zh_labels_is_the_2d_loss_exactly``.
     """
     w = {**BOX3D_LOSS_W, **(weights or {})}
     m = match or match_slots(pred, tgt)

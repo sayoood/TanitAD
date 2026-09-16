@@ -495,3 +495,117 @@ def test_the_lift_puts_left_on_the_left_for_every_clip():
 
 
 _ = (F, glob, hashlib)
+
+
+# ---------------------------------------------------------------------------
+# The 3-D join's LAST HOP, on the real artifact (added 2026-09-17)
+# ---------------------------------------------------------------------------
+# The join agent could not run this: its worktree predated ``box3d_head.py``,
+# so ``3-D join -> zh_targets -> n_z > 0`` shipped UNVERIFIED in 24065b6.
+# It is verified here, against the file itself, and can no longer regress.
+
+JOIN3D_DIR = os.environ.get("TANITAD_AGENT_JOIN3D")
+_join3d = pytest.mark.skipif(
+    not (JOIN3D_DIR and Path(JOIN3D_DIR).exists()),
+    reason="set $TANITAD_AGENT_JOIN3D to the b1eval 3-D join")
+
+
+@_join3d
+def test_the_3d_join_reaches_the_height_targets():
+    """END TO END on the real join: open -> zh_for_frame -> zh_targets ->
+    box3d_set_loss, with ``n["z"] > 0`` and the no-label control beside it.
+
+    Three things are asserted that the toy fixtures cannot reach:
+
+    1. the join's OWN field names (``cz``/``h``) survive the whole chain --
+       a probe of mine asserted ``center_z``/``size_z`` and failed on itself;
+    2. the z/h terms MOVE the total against the same prediction with the
+       labels withheld, which is what proves they are consumed, not carried;
+    3. the cuboid bottoms sit on the ground plane, so ``cz``/``h`` are the
+       centre-and-extent pair the head expects, not a bottom-and-top pair.
+    """
+    import json
+    import lzma
+
+    from tanitad.data.agent_cuboid_gt import (
+        base_from_centre, open_join3d, zh_for_frame,
+    )
+    from tanitad.models.agent_slots import match_slots, targets_from_join
+    from tanitad.models.box3d_head import (
+        Box3DSlotDecoder, box3d_set_loss, zh_targets,
+    )
+
+    store = open_join3d(JOIN3D_DIR)
+    assert store is not None and len(store) > 0
+
+    with lzma.open(JOIN3D_DIR, "rt", encoding="utf-8") as fh:
+        rec = json.loads(fh.readline())
+    agents = rec["agents"]
+    assert agents, "the first line carries no agent"
+    tracks = [a["track_id"] for a in agents]
+    arr = np.asarray(
+        [[a["cx"], a["cy"], a["yaw"], a["l"], a["w"], a["occ"]] for a in agents],
+        dtype=np.float32)
+    tgt = targets_from_join(arr, classes=[a["cls"] for a in agents])
+
+    cz, h, mask = zh_for_frame(rec["clip_id"], rec["frame"], tracks,
+                               join3d=store)
+    assert int(mask.sum()) > 0, "the join carried no z/h for its own first frame"
+
+    t3 = zh_targets(tgt, cz, h, mask=mask)
+    n_z = int(t3["zh_mask"].sum())
+    assert n_z > 0, "the 3-D join did NOT reach the height targets"
+
+    # (3) the bottom faces stand on the ground plane
+    zz = t3["cz"][t3["zh_mask"]].numpy()
+    hh = t3["h"][t3["zh_mask"]].numpy()
+    assert (hh > 0.5).all() and (hh < 6.0).all(), "implausible heights"
+    base = base_from_centre(zz, hh)
+    assert abs(float(np.median(base))) < 0.5, (
+        "cuboid bottoms are %.3f m off the ground plane -- cz/h are probably "
+        "not a centre-and-extent pair" % float(np.median(base)))
+
+    # (2) the terms are CONSUMED: same prediction, labels withheld
+    torch.manual_seed(1)
+    dec = Box3DSlotDecoder(d_memory=16, n_memory=8,
+                           n_queries=max(32, len(tracks)), d_model=32,
+                           depth=1, n_heads=4, enforce_band=False)
+    pred = dec(torch.randn(1, 8, 16))
+    m = match_slots(pred, t3)
+    with_labels = box3d_set_loss(pred, t3, match=m)
+    without = box3d_set_loss(pred, zh_targets(tgt), match=m)
+
+    assert with_labels["n"]["z"] == n_z and with_labels["n"]["h"] == n_z
+    assert without["n"]["z"] == 0 and float(without["loss_z"]) == 0.0
+    assert abs(float(with_labels["total"]) - float(without["total"])) > 1e-6, (
+        "the z/h terms did not move the total -- they are carried, not used")
+
+
+@_join3d
+def test_the_join_covers_every_agent_frame_it_ships():
+    """Coverage, not one frame: every agent on every line must round-trip
+    through ``zh_for_frame``. A line the reader indexes but cannot answer for
+    is a silent all-masked batch at training time."""
+    import json
+    import lzma
+
+    from tanitad.data.agent_cuboid_gt import open_join3d, zh_for_frame
+
+    store = open_join3d(JOIN3D_DIR)
+    seen = missed = lines = 0
+    with lzma.open(JOIN3D_DIR, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            rec = json.loads(line)
+            ids = [a["track_id"] for a in rec["agents"]]
+            if not ids:
+                continue
+            lines += 1
+            _, _, mask = zh_for_frame(rec["clip_id"], rec["frame"], ids,
+                                      join3d=store)
+            seen += int(mask.sum())
+            missed += int((~mask).sum())
+    total = seen + missed
+    assert total > 0 and lines > 0
+    assert missed == 0, (
+        "%d of %d agent-frames over %d lines carry no z/h"
+        % (missed, total, lines))
