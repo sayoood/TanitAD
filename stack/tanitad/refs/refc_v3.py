@@ -102,6 +102,12 @@ from tanitad.refs import max_speed_input as msi
 from tanitad.refs import refc
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
+# ⭐ refcv6 (PI 2026-09-16). Imported at module scope, NOT lazily inside the
+# constructor: a deferred import is how a build silently loses a seam when the
+# module moves, and these three are cheap (no v6 model, no heavy data path).
+from tanitad.refs import refcv6_max_speed as v6ms
+from tanitad.refs import refcv6_selection as v6sel
+from tanitad.refs import refcv6_tactical as v6tac
 
 __all__ = [
     "V3_HORIZONS", "SEAM_SLOT", "GOAL_TAU_STEPS", "RefCV3Config",
@@ -522,6 +528,46 @@ class RefCV3Config:
     # three days later (the Caveat-B discipline applied to the echo).
     echo_base: bool = False
 
+    # --- refcv6 §4: the DETR behaviour decoder over the scene embedding -----
+    # ⭐ PI 2026-09-16: *"The tactical layer must learn to emitt the valid
+    # tactical behaviors, choose the best architecture for it. It should learn
+    # them from the scene embeddings, for the agent and the map."*
+    #
+    # ⛔ DEFAULT FALSE, like every other new seam in this file: a default that
+    # moved would silently change a training in flight, and refcv5-v2 resumes
+    # THROUGH this class. With it off, `tac_decoder_v6 is None` and the forward
+    # is bit-identical to today's (pinned by
+    # tests/test_refcv6_tactical.py::test_v3_parity_when_off).
+    #
+    # ⚠️ IT NEEDS THE SCENE. The decoder's keys/values are the agent slots and
+    # the BEV tokens, so a build with `core.agents.enable = False` and no BEV
+    # port has nothing to attend to; `__init__` REFUSES that combination rather
+    # than constructing 2.23 M parameters (MEASURED, agents-only at d = 256 /
+    # 2 layers) that read the unconditional prior and report as "behaviours
+    # cannot be learned from the scene".
+    tac_decoder_v6: bool = False
+    tac_decoder_cfg: "v6tac.TacticalDecoderConfig" = field(
+        default_factory=v6tac.TacticalDecoderConfig)
+    #: The sigmoid threshold at which a behaviour counts as VALID for the
+    #: selection gate and for the per-class report. ⛔ Not a free parameter to
+    #: tune after seeing the result: it is stamped into `config.json` and the
+    #: report carries precision beside recall at exactly this value.
+    tac_decoder_valid_threshold: float = 0.5
+
+    # --- refcv6 §5: max speed as a FOUR-VALUE ONE-HOT INPUT -----------------
+    # ⭐ The PI's correction of 2026-09-16: max speed is an INPUT, not a
+    # tactical target, and it takes FOUR discrete values {30, 50, 100, 120}
+    # km/h. This is a DIFFERENT channel from `max_speed_input` (E16), which is
+    # a continuous scalar over an EIGHT-step ladder; both may not be on at once
+    # (`__init__` refuses), because two ceilings in one condition make the arm
+    # non-attributable.
+    #
+    # ⛔ EGO-FUTURE DERIVED. The trainer must stamp `speed_max_derivation_v6`
+    # into `config.json` and `refcv6_max_speed.assert_speed_max_stamp_v6`
+    # refuses to start without it — AND refuses the mirror, a control that
+    # carries the stamp with the channel off.
+    max_speed_onehot_v6: bool = False
+
     @property
     def n_goal_taus(self) -> int:
         return len(self.goal_tau_steps)
@@ -806,6 +852,19 @@ class RefCV3Model(nn.Module):
                 " injection sites (z_tac, ctx) exist only in the hierarchy,"
                 " so the channel would be built and never read. Use"
                 " --arm hier, or turn the flag off.")
+        # ⛔ refcv6's TWO new edges are hierarchy edges for exactly the same
+        # reason, and are refused on the flat path for exactly the same reason.
+        # Raised BEFORE the `not cfg.hier` return — the `preflight`-only lesson:
+        # a guard placed after the early return covers one launch path of two.
+        if (getattr(cfg, "tac_decoder_v6", False)
+                or getattr(cfg, "max_speed_onehot_v6", False)) and not cfg.hier:
+            raise ValueError(
+                "[refcv6] ⛔ tac_decoder_v6 / max_speed_onehot_v6 on a FLAT "
+                "build: the behaviour decoder and the 4-way ceiling are read "
+                "through the hierarchy hook, which exists only under `hier`. "
+                "A flat arm would construct them, never call them, and report "
+                "as refcv6 while running refcv5. Use --arm hier, or turn the "
+                "flags off.")
         self.core = refc.RefCModel(cfg.core)
         if not cfg.hier:
             return
@@ -1019,6 +1078,81 @@ class RefCV3Model(nn.Module):
             self.tac_goal_tok_head = TacGoalTokenHead(
                 cfg.d_tac, n_tokens=len(_goal_toks))
             self.tac_goal_tokens = tuple(_goal_toks)
+        # ⭐⭐ refcv6 §4 — THE DETR BEHAVIOUR DECODER OVER THE SCENE EMBEDDING.
+        #
+        # ⛔ IT IS NOT A SECOND COPY OF `tac_goal_tok_head`. That head reads
+        # `z_tac` — a POOLED IMAGE latent plus nav plus ego — and emits the same
+        # 22 logits. This one attends to the AGENT SLOTS and the BEV TOKENS,
+        # which is what the PI asked for and what `z_tac` structurally cannot
+        # do: a pooled vector has no addressable agents and no map. Running both
+        # would put two heads on one loss and make neither attributable, so
+        # `__init__` refuses the pair.
+        self.tac_decoder_v6 = None
+        self.max_speed_1h_v6 = None
+        if bool(getattr(cfg, "tac_decoder_v6", False)):
+            if _vv == "kin3":
+                raise ValueError(
+                    "[refcv6] ⛔ tac_decoder_v6 needs a v7 tactical vocabulary "
+                    "(tac_vocab_version='v7.0'); `kin3` has no 22-token goal "
+                    "set, so 22 validity logits could never be supervised — "
+                    "the defect `effective_mask` exists to prevent, one layer "
+                    "up.")
+            if self.tac_goal_tok_head is not None:
+                raise ValueError(
+                    "[refcv6] ⛔ tac_goal_tok_head AND tac_decoder_v6 are both "
+                    "on. Two heads emitting the same 22 tokens under one loss "
+                    "is not an ablation, it is a confound: neither head's "
+                    "per-class number could be attributed. Pick one.")
+            _ag = getattr(cfg.core, "agents", None)
+            _has_agents = bool(_ag is not None and getattr(_ag, "enable", False))
+            _has_bev = int(getattr(cfg.tac_decoder_cfg, "d_bev", 0)) > 0
+            if not _has_agents and not _has_bev:
+                raise ValueError(
+                    "[refcv6] ⛔ tac_decoder_v6 is on but this build has "
+                    "NEITHER agent slots (core.agents.enable) NOR a BEV port "
+                    "(tac_decoder_cfg.d_bev > 0). The decoder's keys and values "
+                    "ARE the scene; with none it would attend to nothing, emit "
+                    "the unconditional prior, and read as 'tactical behaviours "
+                    "cannot be learned from the scene' — a refutation "
+                    "manufactured by a wiring gap (the refcv5 WP-6 rule).")
+            _tdc = cfg.tac_decoder_cfg
+            if _has_agents:
+                # ⛔ THE AGENT TOKEN WIDTH IS READ OFF THE CORE, NEVER TYPED.
+                # `refc.py:2966` builds `AgentTokenEmbed(cfg.decoder.d, ...)`,
+                # so the tokens are exactly `decoder.d` wide; a hand-set
+                # `d_agent` that disagreed would raise only at the first
+                # forward — after the ledger was written.
+                _tdc.d_agent = int(cfg.core.decoder.d)
+            else:
+                _tdc.d_agent = 0
+            self.tac_decoder_v6 = v6tac.TacticalBehaviourDecoder(_tdc)
+            # The valid-behaviour set -> SELECTION, as a zero-init graft whose
+            # five situation columns are structurally dead (PI 2026-08-03).
+            self.tac_behaviour_gate_v6 = v6sel.BehaviourSelectionGate(
+                int(cfg.core.anchors.n_anchors))
+            # ⛔ PROVEN BY MUTATION AT BUILD TIME, not inspected. See
+            # `refcv6_selection.assert_situation_columns_dead`: it drives the
+            # refused columns and refuses if the output moves, then drives the
+            # admissible ones and refuses if it does NOT.
+            self.tac_gate_mutation_proof_v6 = \
+                v6sel.assert_situation_columns_dead(self.tac_behaviour_gate_v6)
+        if bool(getattr(cfg, "max_speed_onehot_v6", False)):
+            if getattr(self, "max_speed_cond", None) is not None:
+                raise ValueError(
+                    "[refcv6] ⛔ BOTH max-speed channels are on: E16's "
+                    "continuous 8-step `max_speed_input` and refcv6's 4-way "
+                    "one-hot. Two ceilings in one condition make the arm "
+                    "non-attributable — and they carry DIFFERENT provenance "
+                    "stamps, so the run record could not say which one fed it. "
+                    "Pick one.")
+            self.max_speed_1h_v6 = v6ms.MaxSpeedOneHotEncoder()
+        # ⛔⛔ THE ADMISSIBILITY RULING, CHECKED ON EVERY BUILD. PI 2026-08-03:
+        # no situation classifier may feed a goal input. Called HERE, in
+        # `__init__`, because `goal_provenance.audit_arm` measures the edge
+        # interventionally only where someone runs it, while this runs on every
+        # build. Both ship; this one cannot be skipped.
+        v6tac.assert_situation_tokens_are_targets_only(
+            self.provenance_roles(), where="RefCV3Model.provenance_roles")
         # E8 — tactical geometric goals, E4.1 layout (x, y, heading, speed)@tau.
         self.tac_goal_head = nn.Linear(cfg.d_tac, k * GOAL_DIMS)
         # ⭐ E14 — under `echo_base` this head predicts the RESIDUAL over the
@@ -1067,6 +1201,7 @@ class RefCV3Model(nn.Module):
         existed. v4 adds the plumbing, so v4 adds the probe.
         """
         v4 = bool(self.cfg.ego_state_inject)
+        v6 = bool(getattr(self, "tac_decoder_v6", None) is not None)
         refused = ["lan -> inference (E12; label-only)",
                    "situation classifier output -> any goal node "
                    "(PI 2026-08-03, UNCHANGED)"]
@@ -1074,14 +1209,55 @@ class RefCV3Model(nn.Module):
             "future_poses/future_actions -> any goal node (E11'; the PI's "
             "'not the future one', pinned interventionally)" if v4
             else "v0 -> any goal node (E11)")
+        if v6:
+            # ⛔⛔ refcv6 EXTENDS THE RULING TO SELECTION, because refcv6 is the
+            # first arm in which the tactical BEHAVIOUR SET reaches the ranked
+            # score at all. `tac_SIT`, the four traffic-light tokens and YIELD
+            # are situation OUTPUTS: they may be auxiliary TARGETS of the
+            # behaviour head (they are supervised, and reported per class) and
+            # they may NEVER be inputs to a goal node or to selection.
+            # ⭐ THE REFUSAL IS STRUCTURAL, NOT DECLARATIVE: the five columns of
+            # `BehaviourSelectionGate` are zeroed on EVERY forward and the
+            # deadness is proven by MUTATION at build time
+            # (`tac_gate_mutation_proof_v6` carries the two measured deltas).
+            refused.append(
+                "tac_SIT / TRAFFIC_LIGHT_* / YIELD -> selection (PI "
+                "2026-08-03, extended to the refcv6 behaviour gate; the "
+                "columns are structurally dead and proven so by mutation)")
         return {
             "goal": ["g_str", "g_tac", "goal_point_tac"],
-            "situation_output": [],
+            # ⭐ The situation tokens are declared HERE, as TARGETS. This key is
+            # what makes the distinction auditable: a token listed here and
+            # absent from the two input lists is supervised and inadmissible as
+            # an input, which is exactly the PI's ruling.
+            "situation_output": (sorted(v6tac.SITUATION_OUTPUT_TOKENS)
+                                 if v6 else []),
+            "situation_output_role": ("auxiliary TARGETS of the refcv6 "
+                                      "behaviour head; never inputs"
+                                      if v6 else "none in graph"),
             "inference_inputs_of_goals": (
                 ["frames (via pooled_seq/ctx)",
                  "ego_state @ t0 = (v0, a_long, yaw_rate, curvature, keep) "
                  "— MEASURED at the last OBSERVED frame (E11')"]
                 if v4 else ["frames (via pooled_seq/ctx only)"]),
+            # ⛔ refcv6 ADDS THIS KEY, and `assert_situation_tokens_are_targets_
+            # _only` REFUSES a declaration that omits it. Selection now has
+            # declared inputs, so the ruling applies to them; a missing key is
+            # refused rather than assumed empty, because a guard that passes on
+            # an absent declaration is a guard proven by inspection.
+            "selection_inputs": ([
+                "anchor confidence (the decoder's own)",
+                "tactical lat/lon posterior -> anchor prior (DETACHED, "
+                "zero-init 8 -> n_anchors)",
+                "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, "
+                "zero-init; the 5 situation columns are structurally dead)",
+                "nav compliance (PARAMETER-FREE geometric predicate, one "
+                "zero-init gate)",
+                "max-speed ceiling (ARGMAX FILTER, no parameters)",
+            ] if v6 else [
+                "anchor confidence (the decoder's own)",
+                "the D-SEL grafts this build has on (route/goal/gp/cons)",
+            ]),
             "required_live_edges": (
                 ["ego_state -> {z_tac, g_str, g_tac}", "frames -> every goal"]
                 if v4 else ["frames -> every goal"]),
@@ -1358,6 +1534,116 @@ class RefCV3Model(nn.Module):
 
         return hook
 
+    # ------------------------------------------------------------------
+    # refcv6 §4/§5 — the SCENE hook
+    # ------------------------------------------------------------------
+    def _scene_hook(self, cache: dict, nav_cmd: Tensor | None = None,
+                    ego_state: Tensor | None = None,
+                    v_max_ms: Tensor | None = None,
+                    v_max_valid: Tensor | None = None):
+        """A SECOND in-forward supplier, for the layer that needs the SCENE.
+
+        ⛔⛔ WHY A SECOND HOOK AND NOT THE EXISTING ONE. ``hierarchy_hook`` is
+        called at ``refc.py``'s pooled/ctx stage — MEASURED by reading the file:
+        it fires at ``refc.py:3170``, and ``agent_slots`` are not decoded until
+        ``refc.py:3365``, ~200 lines later. The behaviour decoder's keys and
+        values ARE those slots (plus the BEV tokens), so calling it from the
+        existing hook would hand it a scene that does not exist yet. The hook
+        below is called AFTER the slots are built and BEFORE the operative
+        decoder, which is the only point in the forward where both are true.
+        ⚠️ That ordering fact is the whole content of the ``refc.py`` patch;
+        everything else it does is passing three tensors through.
+
+        Called as ``scene_hook(agent_tokens, agent_pad, bev_tokens, bev_pad)``
+        and returns a dict of DETACHED planner feeds:
+
+          ``lat_prior`` / ``lon_prior``  ``[B, 8]`` log-probabilities — the
+              anchor prior, replacing the image-only ``lat3``/``lon3``.
+          ``behaviour_term`` ``[B, N]`` additive log-space selection term.
+          ``v_limit_ms`` ``[B]`` the fed ceiling, for the argmax filter.
+
+        Returns ``None`` (and the patch skips every seam) when the decoder is
+        not built, so an arm without ``--tac-decoder-v6`` is bit-identical.
+        """
+        if self.tac_decoder_v6 is None:
+            return None
+        cfg = self.cfg
+
+        def scene_hook(agent_tokens: Tensor | None = None,
+                       agent_pad: Tensor | None = None,
+                       bev_tokens: Tensor | None = None,
+                       bev_pad: Tensor | None = None) -> dict:
+            # -- the condition: [nav(4), max_speed(4), v0, a0] --------------
+            ref = (agent_tokens if agent_tokens is not None else bev_tokens)
+            if ref is None:
+                raise ValueError(
+                    "[refcv6] ⛔ the scene hook was called with neither agent "
+                    "tokens nor BEV tokens. Behaviours are learned FROM THE "
+                    "SCENE (PI 2026-09-16); a call with no scene would emit "
+                    "the unconditional prior and read as 'the tactical layer "
+                    "learned nothing'.")
+            b, dev = ref.shape[0], ref.device
+            nav_1h = torch.zeros(b, v6tac.N_NAV_COMMANDS, device=dev,
+                                 dtype=ref.dtype)
+            if nav_cmd is not None:
+                # ⛔ nav_cmd=None is the nav-ZERO intervention and must stay an
+                # ALL-ZERO row, not one_hot(0)='follow'. The core collapses to
+                # `follow` (refc.py:2021-2024) and that collapse is why the
+                # zero arm is only a LOWER BOUND on nav dependence there. Here
+                # the honest null is available, so it is used — and T-ZERO is
+                # read on THIS channel.
+                nav_1h = F.one_hot(nav_cmd.reshape(-1).long(),
+                                   v6tac.N_NAV_COMMANDS).to(ref.dtype)
+            if self.max_speed_1h_v6 is not None and v_max_ms is not None:
+                vmax_1h, over = self.max_speed_1h_v6(
+                    v_max_ms.reshape(-1).to(ref.dtype), v_max_valid)
+                cache["vmax_over_ceiling_frac"] = float(
+                    over.to(torch.float32).mean())
+                v_lim = v6ms.limit_ms_of_bin(vmax_1h.argmax(dim=-1)).to(dev)
+                # An all-zero (unknown) row has no ceiling: the argmax filter
+                # must be INERT there, so the limit is +inf rather than 30 km/h.
+                v_lim = torch.where(vmax_1h.sum(dim=-1) > 0.5, v_lim,
+                                    torch.full_like(v_lim, float("inf")))
+            else:
+                vmax_1h = torch.zeros(b, v6ms.N_SPEED_MAX_BINS_V6, device=dev,
+                                      dtype=ref.dtype)
+                v_lim = torch.full((b,), float("inf"), device=dev,
+                                   dtype=torch.float32)
+            if ego_state is not None:
+                es = ego_state.to(ref.dtype)
+                keep = es[:, 4:5]
+                v0c, a0c = es[:, 0:1] * keep, es[:, 1:2] * keep
+            else:
+                v0c = torch.zeros(b, 1, device=dev, dtype=ref.dtype)
+                a0c = torch.zeros(b, 1, device=dev, dtype=ref.dtype)
+            cond = v6tac.build_condition(nav_1h, vmax_1h, v0c, a0c,
+                                         v_scale=EGO_SCALE_V,
+                                         a_scale=EGO_SCALE_A)
+            out = self.tac_decoder_v6(cond, agent_tokens=agent_tokens,
+                                      agent_pad=agent_pad,
+                                      bev_tokens=bev_tokens, bev_pad=bev_pad)
+            # ⛔ THE RAW LOGITS GO IN THE CACHE, ATTACHED, because that is what
+            # the LOSS reads. Only the PLANNER feeds below are detached.
+            cache.update(tacv6_goal_logits=out["goal_logits"],
+                         tacv6_goal_conf=out["goal_conf"],
+                         tacv6_lat_logits=out["lat_logits"],
+                         tacv6_lon_logits=out["lon_logits"],
+                         tacv6_n_scene=out["n_scene"],
+                         tacv6_injected=True)
+            feeds = v6tac.planner_feeds(
+                out, valid_threshold=cfg.tac_decoder_valid_threshold)
+            cache["tacv6_valid_frac"] = float(
+                feeds["valid_mask"].to(torch.float32).mean())
+            return {
+                "lat_prior": feeds["lat_logprob"],
+                "lon_prior": feeds["lon_logprob"],
+                "behaviour_term": self.tac_behaviour_gate_v6(
+                    feeds["valid_behaviour"]),
+                "v_limit_ms": v_lim,
+            }
+
+        return scene_hook
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
@@ -1501,16 +1787,24 @@ class RefCV3Model(nn.Module):
         # FOR THE SAME REASON. A build without the E16 seam would SILENTLY DROP
         # the ceiling and the arm would read as "+max-speed does not help" while
         # never having had it — a refutation manufactured by a wiring gap.
-        if v_max_ms is not None and not getattr(self.cfg,
-                                                "max_speed_input", False):
+        # ⭐ refcv6 ADDS A SECOND CONSUMER OF THE SAME TENSOR. `v_max_ms` now
+        # feeds EITHER E16's continuous conditioner OR refcv6's 4-way one-hot,
+        # so the guard asks "does ANY ceiling seam exist?" rather than naming
+        # one. ⛔ Widened, NOT weakened: with neither seam the tensor is still
+        # refused, which is the whole point; and `__init__` already refuses
+        # both seams at once, so "either" can never mean "both".
+        _has_ceiling = (bool(getattr(self.cfg, "max_speed_input", False))
+                        or bool(getattr(self.cfg, "max_speed_onehot_v6",
+                                        False)))
+        if v_max_ms is not None and not _has_ceiling:
             raise ValueError(
-                "v_max_ms was supplied but this build has no E16 seam "
-                "(`cfg.max_speed_input` is False) - it would be SILENTLY "
-                "DROPPED and the arm would report as +max-speed-input while "
-                "running without a ceiling. Build with --max-speed-input, or "
-                "stop passing v_max_ms.")
-        if v_max_ms is None and getattr(self.cfg, "max_speed_input", False) \
-                and nav_cmd is not None:
+                "v_max_ms was supplied but this build has NO max-speed seam "
+                "(neither `cfg.max_speed_input` (E16, continuous 8-step) nor "
+                "`cfg.max_speed_onehot_v6` (refcv6, 4-way one-hot)) - it would "
+                "be SILENTLY DROPPED and the arm would report as "
+                "+max-speed-input while running without a ceiling. Build with "
+                "one of them, or stop passing v_max_ms.")
+        if v_max_ms is None and _has_ceiling and nav_cmd is not None:
             raise ValueError(
                 "this build is --max-speed-input but no v_max_ms reached the "
                 "forward while a nav token did. Refusing rather than "
@@ -1524,6 +1818,17 @@ class RefCV3Model(nn.Module):
                              gp_point=gp_point, gp_valid=gp_valid,
                              agent_gt=agent_gt)
         cache: dict = {}
+        # ⭐ refcv6 §4/§5. `_scene_hook` returns None when the behaviour decoder
+        # is not built, and `refc.py` skips every seam on a None — so an arm
+        # without `--tac-decoder-v6` calls the core with exactly the pre-refcv6
+        # argument set. ⛔ The keyword is passed UNCONDITIONALLY so that a core
+        # which does not yet carry the patch fails LOUDLY with a TypeError,
+        # instead of silently running refcv5 while the config says refcv6.
+        _core_kw = {}
+        _sh = self._scene_hook(cache, nav_cmd, ego_state, v_max_ms,
+                               v_max_valid)
+        if _sh is not None:
+            _core_kw["scene_hook"] = _sh
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state,
@@ -1531,7 +1836,7 @@ class RefCV3Model(nn.Module):
                                                   v_max_valid),
                         withheld_speed=withheld_speed,
                         gp_point=gp_point, gp_valid=gp_valid,
-                        agent_gt=agent_gt)
+                        agent_gt=agent_gt, **_core_kw)
         # the per-row withholding draw, for diagnostics that split kept from
         # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`
         # below is its mean.
@@ -1690,6 +1995,22 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
         # `test_param_breakdown_smoke_sums` fires the moment they are missing.
         if getattr(model, "max_speed_cond", None) is not None:
             out["max_speed_inject"] = cnt(model.max_speed_cond)
+        # ⭐ refcv6 §4 — the behaviour decoder and its selection gate, on TWO
+        # separate ledger lines and read off the BUILT OBJECTS. Separate,
+        # because the arm's question splits the same way: what the DECODER
+        # learns is one thing, what feeding it into SELECTION buys is another,
+        # and a single line would hide whichever of the two is being tested.
+        # ⛔ Same rollability contract as the line above: parameters that exist
+        # and are not accounted make every banked checkpoint unrollable through
+        # `refcv3_arm.cross_check_config`.
+        if getattr(model, "tac_decoder_v6", None) is not None:
+            out["tac_decoder_v6"] = cnt(model.tac_decoder_v6)
+            out["tac_behaviour_gate_v6"] = cnt(model.tac_behaviour_gate_v6)
+        # ⚠️ `max_speed_1h_v6` is deliberately ABSENT from this ledger and that
+        # is not an omission: `MaxSpeedOneHotEncoder` has ZERO parameters (the
+        # one-hot is embedded by whichever consumer reads it, so one encoding
+        # reaches every consumer). A zero line would suggest a module whose cost
+        # might change; there is none to change.
     out["total"] = cnt(model)
     return out
 
