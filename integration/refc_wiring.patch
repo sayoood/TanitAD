@@ -1,0 +1,347 @@
+--- a/stack/tanitad/refs/refc.py
++++ b/stack/tanitad/refs/refc.py
+@@ -161,11 +161,15 @@
+ # it pulls the corpus-side raster/projection modules, and an OFF seam must
+ # not pay for them.
+ from tanitad.refs import refc_sampler as rs
+-# refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (1). Cycle-free by
++# refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (2) [C5]. Cycle-free by
+ # construction: `refc_wp_index` imports NOTHING from tanitad, only torch. It is
+ # a top-level import (unlike WP-6's `refc_agents`) precisely because it costs
+ # nothing to an OFF build — no module it pulls touches the corpus.
+ from tanitad.refs import refc_wp_index as wpi
++# refcv6 coupling (1): BEV features at the candidate's own waypoints.
++# Same import discipline as `wpi` above -- a leaf module whose only
++# tanitad import is `data.bev_raster`, so it cannot cycle back into refc.
++from tanitad.models import refc_bev_coupling as bevc
+ 
+ 
+ def _feas_with_origin(x: Tensor) -> Tensor:
+@@ -554,6 +558,16 @@
+     # waypoint index does not help" while never having had an index. `RefCModel`
+     # refuses that combination rather than honouring it.
+     wp_index: "object | None" = None
++    #: refcv6 coupling (1) -- `refc_bev_coupling.BEVCouplingConfig | None`, a
++    #: DECLARED field for the same reason `wp_index` is one: the trainer assigns
++    #: `core.decoder.bev_coupling = bcfg`, and on a dataclass without the field
++    #: that assignment would be a silent no-op on a frozen instance.
++    bev_coupling: "object | None" = None
++    #: width of the BEV feature map coupling (1) reads -- the BEV encoder's
++    #: `d_out`. ⛔ NOT a backbone constant: it is downstream of the stride-16
++    #: map, whose own width is 1024 on resnet101 and 256 on resnet34 and is read
++    #: from `feature_info` (`CNNEncoderConfig.s16_dim`), never written down.
++    bev_coupling_d_bev: int = 96
+ 
+ 
+ @dataclass
+@@ -1483,11 +1497,19 @@
+         # exactly ONE construction path on purpose: a second, eager one would
+         # be a way for the two to drift apart, which is the `advect` precedent.
+         self.wp_index: nn.Module | None = None
++        # refcv6 coupling (1). None until `attach_bev_coupling`; while it is
++        # None `forward` never enters the branch, so the emitted tensors are
++        # bitwise those of a build that never had this seam -- the
++        # `_agent_bias` rule, that the OFF path must not reach a different
++        # kernel either.
++        self.bev_wp: nn.Module | None = None
+ 
+     def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
+                 agent_tokens: Tensor | None = None,
+                 agent_pad: Tensor | None = None,
+-                agent_index: tuple | None = None) -> Tensor:
++                agent_index: tuple | None = None,
++                bev: Tensor | None = None,
++                waypoints: Tensor | None = None) -> Tensor:
+         """``agent_index`` (WP-B) is ``(relation [B, N, M, F], d_min [B, N, M])``
+         computed ONCE per decoder pass by :meth:`AnchoredDiffusionDecoder.
+         _agent_index` and shared by every layer — the ADDRESS is a function of
+@@ -1498,6 +1520,12 @@
+         if self.cross_agent is not None and agent_tokens is not None:
+             q = q + self.agent_gate * self._attend_agents(
+                 q, agent_tokens, agent_pad, agent_index)
++        # ⭐ refcv6 coupling (1) -- the BEV read at the candidate's OWN
++        # waypoints, recomputed on every pass because the address MOVES as the
++        # trajectory is denoised. The sampler owns its zero-init gate, so this
++        # line is bitwise inert at step 0 and on any build with `bev_wp is None`.
++        if self.bev_wp is not None and bev is not None and waypoints is not None:
++            q = self.bev_wp(q, waypoints, bev)
+         q = q + self.mlp(self.film(self.norm_f(q), cond.unsqueeze(1)))
+         return q
+ 
+@@ -2077,7 +2105,7 @@
+         shift = (pre[..., k - 1, :] - x[..., k - 1, :]).unsqueeze(-2)
+         return torch.cat([pre, x[..., k:, :] + shift], dim=-2)
+ 
+-    # ---- refcv5 WP-B: the waypoint index (DiffusionDrive coupling (1)) ----- #
++    # ---- refcv5 WP-B: the waypoint index (DD coupling (2), C5) ------------- #
+     def attach_wp_index(self, cfg) -> int:
+         """Build WP-B's per-layer bias heads. Returns the parameter count.
+ 
+@@ -2117,6 +2145,70 @@
+             n += ly.wp_index.n_params()
+         return n
+ 
++    def attach_bev_coupling(self, cfg, d_bev: int) -> int:
++        """Build refcv6 coupling (1): one BEV waypoint sampler per decoder
++        layer. Returns the parameter count.
++
++        ⛔⛔ **ATTACH THIS AFTER `attach_wp_index`, AS THE LAST STATEMENT OF
++        `RefCModel.__init__`.** The RNG-ordering argument in
++        `attach_wp_index`'s docstring applies to this seam too, and the ORDER
++        between the two matters: with the BEV sampler drawn LAST, a
++        `bev-coupling on` build's WP-B heads are bit-identical to a
++        `bev-coupling off` build's at the same seed, so the 2x2 ablation
++        (WP-B on/off) x (BEV on/off) differs in the levers and in nothing else.
++        Attached the other way round, turning the BEV coupling on would silently
++        re-draw every WP-B head.
++
++        `d_bev` is the width of the BEV FEATURE MAP the sampler reads -- the BEV
++        encoder's `d_out`, which is downstream of the trunk's stride-16 map and
++        so is NOT a backbone constant. ⛔ It is a required argument rather than a
++        default for the same reason `Box3DMemory.image_hw` is: the stride-16
++        width is 1024 on `resnet101` and 256 on `resnet34` (read from
++        `feature_info` via `CNNEncoderConfig.s16_dim`), and a default here would
++        pin one backbone silently.
++
++        `n_points` is taken from `self.n_steps`: the sampler weights the
++        candidate's OWN waypoints, and there are exactly `n_steps` of them.
++        """
++        if cfg is None or not bool(getattr(cfg, "enable", False)):
++            return 0
++        if int(d_bev) < 1:
++            raise ValueError(
++                f"d_bev must be the BEV encoder's output width, got {d_bev}. "
++                f"Take it from the perception branch you built, never a "
++                f"literal (PI 2026-09-16).")
++        self.bev_coupling_cfg = cfg
++        n = 0
++        for ly in self.layers:
++            ly.bev_wp = bevc.BEVWaypointSampler(
++                bevc.BEVCouplingConfig(
++                    enable=True, d_model=int(self.cfg.d), d_bev=int(d_bev),
++                    n_points=int(self.n_steps),
++                    learned_offsets=bool(getattr(cfg, "learned_offsets", False)),
++                    offset_max_m=float(getattr(cfg, "offset_max_m", 2.0))))
++            n += ly.bev_wp.n_params
++        return n
++
++    def bev_coupling_params(self) -> int:
++        """Trainable parameters coupling (1) added -- carved out of the
++        `decoder` line in :func:`param_breakdown` for the reason
++        :meth:`wp_index_params` is: a lever whose cost is buried inside a 40 M
++        row is a lever nobody can audit."""
++        return sum(ly.bev_wp.n_params for ly in self.layers
++                   if getattr(ly, "bev_wp", None) is not None)
++
++    def bev_coupling_provenance(self) -> dict:
++        """⚠️ What a trainer stamps into `config.json`: whether this build is
++        the RELEASED DiffusionDrive coupling or OUR extension. The released code
++        samples AT the waypoints with NO learned offsets
++        (`.../2026-09-05-diffusiondrive-v2-analysis/raw/ddv2_src/blocks.py`
++        :80-108); an arm with offsets on that reports itself as
++        "DiffusionDrive's coupling" is a mislabelled arm, not a better one."""
++        ly = next((l for l in self.layers
++                   if getattr(l, "bev_wp", None) is not None), None)
++        return {"enabled": ly is not None,
++                **({} if ly is None else ly.bev_wp.cfg.as_dict())}
++
+     def wp_index_params(self) -> int:
+         """Trainable parameters WP-B added — carved out of the ``decoder`` line
+         in :func:`param_breakdown` for the same reason ``selection`` is: a lever
+@@ -2147,7 +2239,8 @@
+     def _decode(self, kv: Tensor, cond: Tensor, x_est: Tensor,
+                 t_idx: int, agents: Tensor | None = None,
+                 agent_pad: Tensor | None = None,
+-                agent_pos: Tensor | None = None) -> tuple[Tensor, Tensor]:
++                agent_pos: Tensor | None = None,
++                bev: Tensor | None = None) -> tuple[Tensor, Tensor]:
+         """One decoder pass: current trajectory estimate + timestep -> queries;
+         cross-attend the map; emit (conf [B, N], offset [B, N, S, 2]).
+ 
+@@ -2162,7 +2255,11 @@
+         q = q + self.time_embed.weight[t_idx][None, None]     # timestep bias
+         index = self._agent_index(x_est, agent_pos)
+         for layer in self.layers:
+-            q = layer(q, kv, cond, agents, agent_pad, index)
++            # `x_est` IS the metric fan this pass is refining, so it is the
++            # address for BOTH couplings -- the agent slots (WP-B / coupling
++            # (2), through `index`) and the BEV map (coupling (1), through
++            # `waypoints`).
++            q = layer(q, kv, cond, agents, agent_pad, index, bev, x_est)
+         conf = self.conf_head(q).squeeze(-1)                  # [B, N]
+         offset = self.offset_head(q).reshape(b, n, self.n_steps, 2)
+         return conf, offset
+@@ -2171,7 +2268,8 @@
+     def _decode_ctrl(self, kv: Tensor, cond: Tensor, x_path: Tensor,
+                      t: Tensor, agents: Tensor | None,
+                      agent_pad: Tensor | None,
+-                     agent_pos: Tensor | None = None
++                     agent_pos: Tensor | None = None,
++                     bev: Tensor | None = None
+                      ) -> tuple[Tensor, Tensor]:
+         """One SAMPLER pass -> (conf [B, N], du [B, N, S, 2]).
+ 
+@@ -2201,7 +2299,7 @@
+         # extra module call, no extra tensor, no branch inside the layer.
+         if self.cascade is None and self.adaln is None:
+             for layer in self.layers:
+-                q = layer(q, kv, cond, agents, agent_pad, index)
++                q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+             conf = self.conf_head(q).squeeze(-1)              # [B, N]
+             du = self.control_head(q).reshape(b, n, self.n_steps, 2)
+             return conf, du
+@@ -2209,7 +2307,7 @@
+         confs: list[Tensor] = []
+         dus: list[Tensor] = []
+         for i, layer in enumerate(self.layers):
+-            q = layer(q, kv, cond, agents, agent_pad, index)
++            q = layer(q, kv, cond, agents, agent_pad, index, bev, x_path)
+             # F4 — DD modulates AFTER the layer's FFN (`:335-337`), never
+             # before the attention. Order matters: the scale/shift is applied
+             # to the layer's OUTPUT, which is what makes it a per-stage
+@@ -2257,7 +2355,8 @@
+                 v_ms: Tensor | None, steps: int,
+                 agents: Tensor | None = None,
+                 agent_pad: Tensor | None = None,
+-                agent_pos: Tensor | None = None
++                agent_pos: Tensor | None = None,
++                bev: Tensor | None = None
+                 ) -> tuple[Tensor, Tensor, Tensor, dict]:
+         """The truncated-diffusion sampler. -> (fan, u0_hat, conf, telemetry).
+ 
+@@ -2382,7 +2481,7 @@
+             tt = (train_t.to(torch.float32) if t is None else
+                   torch.full((b,), float(t), device=dev, dtype=torch.float32))
+             conf, du = self._decode_ctrl(kv, cond, x_path, tt,
+-                                         agents, agent_pad, agent_pos)
++                                         agents, agent_pad, agent_pos, bev)
+             # x0-parameterised ("sample"), and `control_head` is ZERO-INIT, so
+             # the first pass predicts exactly the current state: the fan starts
+             # AT the anchored Gaussian and every later movement is learned.
+@@ -2544,7 +2643,8 @@
+                 agent_tokens: Tensor | None = None,
+                 agent_pad: Tensor | None = None,
+                 agent_pos: Tensor | None = None,
+-                ego_hist: Tensor | None = None) -> dict:
++                ego_hist: Tensor | None = None,
++                bev: Tensor | None = None) -> dict:
+         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
+         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
+ 
+@@ -2679,7 +2779,8 @@
+                 xs = x0.gather(
+                     1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
+                 c_s, o_s = self._decode(kv, cond, xs, 0,
+-                                        agent_tokens, agent_pad, agent_pos)
++                                        agent_tokens, agent_pad, agent_pos,
++                                        bev)
+                 conf0 = x0.new_full((b, n), float("-inf"))
+                 conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
+                 offset = x0.new_zeros(b, n, self.n_steps, 2)
+@@ -3328,7 +3429,12 @@
+             from tanitad.refs import refc_bev_aux as _rb   # lazy; see imports
+             self.bev_aux_head = _rb.BEVAuxHead(
+                 feat, cfg.encoder.grid_shape, _bv)
+-        # ⭐⭐ refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (1).
++        # ⭐⭐ refcv5 WP-B (`E-WP-INDEX-1`) — DiffusionDrive coupling (2).
++        # ⚠️ CORRECTION C5 (2026-09-16): these comments said "coupling (1)".
++        # `SPEC_REFCV6_V2.md` §1 numbers them (1) BEV sampled at the
++        # candidate's own waypoints, (2) agent slots addressed by waypoint
++        # (this), (3) image tokens by content. A reader who trusted the old
++        # wording concluded the BEV seam already existed; it did not.
+         # ⛔⛔ **THIS IS THE LAST STATEMENT OF `__init__`, AND THAT IS THE
+         # WHOLE REMOVABILITY PROOF.** Every module above draws from the global
+         # RNG in a fixed order; attaching the index heads here means an
+@@ -3341,6 +3447,14 @@
+         _wp = getattr(cfg.decoder, "wp_index", None)
+         if _wp is not None:
+             self.decoder.attach_wp_index(_wp)
++        # ⭐⭐ refcv6 coupling (1) -- attached AFTER WP-B and LAST of all, so
++        # that turning the BEV coupling on leaves every WP-B head bit-identical
++        # (see `attach_bev_coupling`'s docstring). Anything added below this line
++        # breaks BOTH removability proofs.
++        _bevc = getattr(cfg.decoder, "bev_coupling", None)
++        if _bevc is not None:
++            self.decoder.attach_bev_coupling(
++                _bevc, int(getattr(cfg.decoder, "bev_coupling_d_bev", 96)))
+ 
+     # --- S6 goal provenance (the PI's admissibility check, in code) ----------
+     @staticmethod
+@@ -3544,7 +3658,8 @@
+                 gp_valid: Tensor | None = None,
+                 agent_gt: dict | None = None,
+                 ego_poses: Tensor | None = None,
+-                ego_n_past: int | None = None) -> dict:
++                ego_n_past: int | None = None,
++                bev: Tensor | None = None) -> dict:
+         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
+         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
+         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
+@@ -3578,15 +3693,42 @@
+         every existing reader keeps its field and its semantics).
+         """
+         b, w = frames.shape[:2]
++        # ⭐⭐ refcv6 PERCEPTION SEAM. `fmap_s16` is the stride-16 map the
++        # trunk ALREADY produced, exposed for the BEV lift -> map head + 3-D box
++        # branch. `None` only on the in-repo REF-C trunk, which emits stride 32
++        # alone (`CNNEncoderConfig.s16_dim` RAISES rather than inventing a
++        # width). ⛔ Its channel count is `cfg.encoder.s16_dim`, read from
++        # timm's `feature_info` (1024 on resnet101, 256 on resnet34) and never
++        # written down.
++        # ⚠️ BOTH branches are wired. An earlier cut left the hierarchy path
++        # `None` and called that "reported rather than half-wired" -- but
++        # `refc_smoke_config()` and every hierarchy arm set `hierarchy = True`,
++        # so the seam would have been dead on the path actually taken. Here it
++        # is the SAME last-frame reshape `fmap` already gets, one axis wider.
++        fmap_s16 = None
++        _s16 = hasattr(self.encoder, "forward_features")
+         if self.cfg.hierarchy:
+-            fmap_all, pooled_all = self.encoder(
+-                frames.reshape(b * w, *frames.shape[2:]))
++            if _s16:
++                s16_all, fmap_all, pooled_all = self.encoder.forward_features(
++                    frames.reshape(b * w, *frames.shape[2:]))
++                fmap_s16 = s16_all.reshape(b, w, *s16_all.shape[1:])[:, -1]
++            else:
++                fmap_all, pooled_all = self.encoder(
++                    frames.reshape(b * w, *frames.shape[2:]))
+             pooled_seq = pooled_all.reshape(b, w, -1)
+             pooled = pooled_seq[:, -1]
+             fmap = fmap_all.reshape(b, w, *fmap_all.shape[1:])[:, -1]
+             ctx = self.strategic(pooled_seq)
+         else:                                    # last frame only (same values)
+-            fmap, pooled = self.encoder(frames[:, -1])
++            if _s16:
++                # ONE trunk pass, three outputs. `fmap`/`pooled` are the SAME
++                # tensors `self.encoder(...)` returns -- its `forward` is
++                # literally `forward_features(...)[1:]` -- so this branch is
++                # bit-identical to the line it replaces.
++                fmap_s16, fmap, pooled = self.encoder.forward_features(
++                    frames[:, -1])
++            else:
++                fmap, pooled = self.encoder(frames[:, -1])
+             ctx = None
+ 
+         # REF-C v3 hierarchy hook (gated by the ARGUMENT, not by a config flag:
+@@ -3868,7 +4010,7 @@
+                            gp_point=gp_point, gp_valid=gp_valid,
+                            withheld_speed=withheld_speed,
+                            agent_tokens=agent_tokens, agent_pad=agent_pad,
+-                           agent_pos=agent_pos, ego_hist=ego_vec)
++                           agent_pos=agent_pos, ego_hist=ego_vec, bev=bev)
+         traj = dec["traj"]
+         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
+                                            dim=-1))
+@@ -3876,6 +4018,12 @@
+         keys = self.cfg.path_dists if self.cfg.refc1 \
+             else self.cfg.trajectory.horizons
+         out = {"pooled": pooled, "traj": traj, "wp_seq": traj,
++               # refcv6: the perception branch's input, emitted beside the
++               # plan. A READ of what the trunk already built -- adding a key
++               # cannot change any existing one, and the bit-identity proof
++               # covers every tensor that was there before. `None` on the
++               # in-repo REF-C trunk and on the hierarchy path.
++               "fmap_s16": fmap_s16,
+                "waypoints": {k: traj[:, i] for i, k in enumerate(keys)},
+                "anchor_logits": dec["anchor_logits"],
+                "refined_logits": dec["refined_logits"],

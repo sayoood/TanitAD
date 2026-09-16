@@ -64,7 +64,7 @@ __all__ = [
     "SEEN_SHARE_MIN", "TIME_TOL_US", "GT_SUBDIR",
     "SemanticMapGTError", "SchemaMismatch", "ClipIdentityMismatch",
     "FrameIndexError", "TimeMisalignment",
-    "sha12", "gt_path", "open_clip", "ClipMapGT", "MapFrames",
+    "sha12", "gt_path", "open_clip", "open_path", "ClipMapGT", "MapFrames",
     "coverage", "episode_frame_times_us", "raw_frame_index",
 ]
 
@@ -387,8 +387,21 @@ def open_clip(root, clip_id: str) -> ClipMapGT:
     Raises ``FileNotFoundError`` when there is no file, :class:`SchemaMismatch` /
     :class:`ClipIdentityMismatch` when there is one that is not this clip's
     ``tanitad.sam3_map_gt/2`` labels, and lets I/O errors propagate unchanged."""
+    return open_path(gt_path(root, clip_id), clip_id)
+
+
+def open_path(path, clip_id: str) -> ClipMapGT:
+    """:func:`open_clip` for an EXPLICIT file path.
+
+    Added 2026-09-16 (refcv6 perception) so that a non-canonical layout -- the
+    dev-box copy of the eval maps is a FLAT directory named by ``sha12``, not
+    ``<root>/semantic_maps/gt/<clip_id>...`` -- reaches exactly this validation
+    and no second copy of it. :func:`open_clip` is now this function plus
+    :func:`gt_path`; the schema, identity and frame-axis checks are unchanged
+    and have one spelling.
+    """
     s12 = sha12(clip_id)
-    path = gt_path(root, clip_id)
+    path = Path(path)
     if not path.is_file():
         os.stat(path)          # raises FileNotFoundError / the real OSError
         raise SchemaMismatch(f"[{s12}] GT path exists but is not a regular file")
