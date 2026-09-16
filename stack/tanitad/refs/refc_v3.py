@@ -1655,7 +1655,9 @@ class RefCV3Model(nn.Module):
                 agent_gt: dict | None = None,
                 nav_args: Tensor | None = None,
                 v_max_ms: Tensor | None = None,
-                v_max_valid: Tensor | None = None) -> dict:
+                v_max_valid: Tensor | None = None,
+                ego_poses: Tensor | None = None,
+                ego_n_past: int | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -1735,6 +1737,30 @@ class RefCV3Model(nn.Module):
             raise ValueError(f"ego_state must be [B, {EGO_DIMS}] = (v0, "
                              f"a_long, yaw_rate, curvature, keep), got "
                              f"{tuple(ego_state.shape)}")
+        # ⭐⭐ refcv6 §2b — THE PERMANENT FIX FOR EGO HISTORY THROUGH THE
+        # WRAPPER (handover item, 2026-09-17). ``RefCModel.forward`` grew
+        # ``ego_poses`` / ``ego_n_past`` in 8c7d215, and this wrapper did not
+        # forward unknown kwargs — so the core's own comment names the
+        # workaround it had to ship instead: ``RefCModel.set_ego_window``, a
+        # ONE-SHOT channel that is POPPED by the next forward and raises if a
+        # second forward finds it empty. Safe, but a workaround: it makes the
+        # ego window a property of CALL ORDER rather than of the call.
+        # ⛔ SAME SILENT-DROP REFUSAL AS `ego_state` ABOVE, AND FOR THE SAME
+        # REASON. A build with no history encoder that was handed a history
+        # would report as +ego-history while running without it.
+        if ego_poses is not None and getattr(self.core, "ego_hist", None) is None:
+            raise ValueError(
+                "ego_poses was supplied but this core has no ego-history "
+                "encoder (`RefCModel.ego_hist` is None) — it would be "
+                "SILENTLY DROPPED and the arm would report as +ego-history "
+                "while running without it. Build the encoder, or stop passing "
+                "ego_poses.")
+        if ego_poses is not None and ego_poses.dim() != 3:
+            raise ValueError(
+                f"ego_poses must be [B, W, C] (the pose window), got "
+                f"{tuple(ego_poses.shape)}. ⛔ `ego_n_past` slices it: "
+                f"everything at or after that index is FUTURE and the encoder "
+                f"must never read it.")
         # ⭐ ONE WITHHOLDING DRAW, ONE OWNER (E11'/X15). In training v4 draws
         # `keep` HERE and hands the SAME vector to both consumers: the goal
         # path (through `ego_state[:, 4]`) and the core's measurement encoder
@@ -1816,7 +1842,8 @@ class RefCV3Model(nn.Module):
                              nav_known=nav_known, ego_keep=ego_keep,
                              withheld_speed=withheld_speed,
                              gp_point=gp_point, gp_valid=gp_valid,
-                             agent_gt=agent_gt)
+                             agent_gt=agent_gt,
+                             ego_poses=ego_poses, ego_n_past=ego_n_past)
         cache: dict = {}
         # ⭐ refcv6 §4/§5. `_scene_hook` returns None when the behaviour decoder
         # is not built, and `refc.py` skips every seam on a None — so an arm
@@ -1836,7 +1863,9 @@ class RefCV3Model(nn.Module):
                                                   v_max_valid),
                         withheld_speed=withheld_speed,
                         gp_point=gp_point, gp_valid=gp_valid,
-                        agent_gt=agent_gt, **_core_kw)
+                        agent_gt=agent_gt,
+                        ego_poses=ego_poses, ego_n_past=ego_n_past,
+                        **_core_kw)
         # the per-row withholding draw, for diagnostics that split kept from
         # withheld rows (the trainer's `withheld_speed_mae`); `ego_keep_frac`
         # below is its mean.

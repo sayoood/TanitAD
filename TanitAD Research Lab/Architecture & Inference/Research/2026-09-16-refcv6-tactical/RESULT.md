@@ -2,7 +2,7 @@
 
 **2026-09-16 (Europe/Berlin).** Architecture & Inference. Code only — **no GPU hour was spent and no arm was trained.** Everything below is either a MEASURED property of code that ran on this dev box, or a MEASURED property of the label corpus. Nothing here is a claim about a model's driving.
 
-**Branch base:** `agent/arch-inf-20260803` @ `9a782fa`. Worktree `C:/Users/Admin/tanitad-wt-tactical-v6`. Python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe`, `CUDA_VISIBLE_DEVICES=""` throughout.
+**Branch base:** `agent/arch-inf-20260803` @ **`e95af00`** (this work first landed as `cbadba5` @ `9a782fa`; §10 records the rebase). Worktree `C:/Users/Admin/tanitad-wt-tactical-v6`. Python `C:/Users/Admin/venvs/tanitad/Scripts/python.exe`, `CUDA_VISIBLE_DEVICES=""` throughout.
 
 ---
 
@@ -10,7 +10,7 @@
 
 Five things the Master Mind must decide or apply; the first two are blocking.
 
-1. **`refc.py` is a PATCH, not a staged edit** (another agent owns it). `refcv6_refc_integration.patch` is staged beside this file and applies cleanly to `9a782fa`'s `refc.py` (`git apply --check` clean; applied, exercised end-to-end, then reverted). **Nothing in §4/§5 reaches a forward without it** — `RefCV3Model.forward` passes `scene_hook=` unconditionally, so an unpatched core raises `TypeError` rather than silently running refcv5 under a refcv6 config. Apply-here notes in §6.
+1. **`refc.py` is a PATCH, not a staged edit** (another agent owns it). ⭐ **REBASED 2026-09-17 onto `e95af00`** — see §10; the version staged beside this file is the rebased one and applies cleanly to `e95af00`'s `refc.py` (`git apply --check` clean; applied, exercised end-to-end, then reverted). **Nothing in §4/§5 reaches a forward without it** — `RefCV3Model.forward` passes `scene_hook=` unconditionally, so an unpatched core raises `TypeError` rather than silently running refcv5 under a refcv6 config. Apply-here notes in §6.
 2. **The tactical decoder forces the agent seam on, and that is a SECOND variable.** `refc.py:2955` refuses `agents.enable` without `decoder.cross_agent` (refcv5 WP-6: a detector trained into a dead end — a correct guard, another owner's). So giving the TACTICAL layer agent slots also turns on agent cross-attention in the OPERATIVE decoder. ⇒ **a refcv6 tactical arm is one-variable only against a baseline that already has the agent seam on.** Not worked around, not silently relaxed. Decide the baseline before the arm is launched.
 3. **The BEV port is built and unfed, and `d_bev` MUST be set from the trunk.** The decoder has a real `bev_tokens` port, but the lift belongs to the perception agent (`tanitad-wt-percep-v6`, locked). Until it lands, refcv6 tactical runs **agents-only** — the decoder refuses a `bev_tokens` argument on a `d_bev = 0` build and refuses a build with neither source, so there is no silent-drop path either way.
    ⭐ **PI 2026-09-16 (absorbed):** the input becomes **256×1024** and the trunk becomes **resnet101**, with **resnet34** as the comparison run. ⇒ the stride-16 map is **16 × 64** (was 16 × 40) and is **1024** channels wide (resnet34: **256**). The **token COUNT is read off the tensor at runtime and nothing is typed** — `bev_feats_to_tokens` derives `P = X·Y` from the grid, and the queries and the FiLM condition are shape-independent of it (tested at 16×64, 16×40 and 30×16 on one build). The **WIDTH is a parameter shape** (`bev_in = Linear(d_bev, 256)`) and therefore must be DECLARED: `tac_decoder_cfg.d_bev` = **1024 for resnet101, 256 for resnet34**. A mismatch is refused by name on the forward, not surfaced as a bare `mat1 and mat2 shapes cannot be multiplied` a hundred frames into a pod run.
@@ -29,7 +29,7 @@ Five things the Master Mind must decide or apply; the first two are blocking.
 | 4 | the channel REGENERATION script + census | `stack/scripts/build_refcv6_speed_max_window.py` | NEW, staged |
 | 5 | the acceptance instruments (T-FLIP, T-ZERO, obedience) | `taniteval/taniteval/refcv6_acceptance.py` | NEW, staged |
 | 6 | config, build, hook, provenance, ledger | `stack/tanitad/refs/refc_v3.py` | MODIFIED, staged |
-| 7 | 83 tests, **33 mutations** | `stack/tests/test_refcv6_tactical.py` | NEW, staged |
+| 7 | 93 tests, **41 mutations** | `stack/tests/test_refcv6_tactical.py` | NEW, staged |
 | 8 | the `refc.py` wiring | `…/2026-09-16-refcv6-tactical/refcv6_refc_integration.patch` | PATCH, staged — **not applied** |
 | 9 | this file | `…/2026-09-16-refcv6-tactical/RESULT.md` | NEW, staged |
 
@@ -302,7 +302,7 @@ loss_tac6, tac6_tele = tactical_behaviour_losses(
 
 ---
 
-## 7. The mutation table — 33 mutations, generated from the test file
+## 7. The mutation table — 41 mutations, generated from the test file
 
 Rendered from `test_refcv6_tactical.MUTATIONS`, so the table and the tests cannot drift.
 
@@ -311,36 +311,44 @@ Rendered from `test_refcv6_tactical.MUTATIONS`, so the table and the tests canno
 | 1 | `AnchoredDiffusionDecoder.__init__` (patched) | graft_nav_compliance on with nav_compliance_tau_rad left at 0.0 | ValueError RAISED (the tolerance is DERIVED per corpus and must be stated) |
 | 2 | `AnchoredDiffusionDecoder.forward` | BOTH the image-only lat3 prior and the tactical 8-wide posterior passed to one decode | ValueError RAISED ('the 8-wide pair REPLACES the 3-wide one') |
 | 3 | `RefCModel.forward` (patched) | a scene_hook supplied while the forward built neither agent nor BEV tokens | ValueError RAISED (the decoder would attend to nothing) |
-| 4 | `RefCV3Model.__init__` | E16's continuous 8-step channel AND refcv6's 4-way one-hot both on | ValueError RAISED (two ceilings, two stamps, one condition) |
-| 5 | `RefCV3Model.__init__` | tac_decoder_v6 on a FLAT (hier=False) build | ValueError RAISED (it would build and never be called) |
-| 6 | `RefCV3Model.__init__` | tac_decoder_v6 under the kin3 vocabulary | ValueError RAISED (22 logits that could never be supervised) |
-| 7 | `RefCV3Model.__init__` | tac_decoder_v6 with agents OFF and d_bev = 0 | ValueError RAISED (it would attend to nothing) |
-| 8 | `RefCV3Model.__init__` | tac_goal_tok_head AND tac_decoder_v6 both on | ValueError RAISED (a confound, not an ablation) |
-| 9 | `SpeedCeilingFilter` | a row whose every candidate exceeds the ceiling | the whole fan is kept and `speed_rows_empty` counts it — the only structural reason obedience can fall below 1.0 |
-| 10 | `TacticalBehaviourDecoder.forward` | BEV tokens of the OTHER backbone's width (resnet34 256 vs resnet101 1024) fed to a declared build | SceneInputRefused RAISED naming both widths |
-| 11 | `TacticalBehaviourDecoder.forward` | a [B, C, X, Y] BEV feature map passed where flat tokens are expected | SceneInputRefused RAISED (pointing at `bev_feats_to_tokens`) |
-| 12 | `TacticalBehaviourDecoder.forward` | a scene tensor passed to a build with that port switched off | SceneInputRefused RAISED (both directions) |
-| 13 | `TacticalBehaviourDecoder.forward` | called with agent_tokens=None AND bev_tokens=None | SceneInputRefused RAISED (would emit the unconditional prior) |
-| 14 | `TacticalLossWeights.assert_within_budget` | weights raised to 0.15 (over the 0.10 budget) | ValueError RAISED |
-| 15 | `_QueryFiLM zero-init` | FiLM projections re-initialised to N(0, 0.5) after the equality check | the two conditions now DIFFER -> the equality test can fail |
-| 16 | `acceptance_panel` | one of the three instruments omitted | overall = INCOMPLETE (a 2-of-3 panel must not read as a pass) |
-| 17 | `assert_scene_only` | 'image' added to the key/value source list | SceneInputRefused RAISED |
-| 18 | `assert_situation_columns_dead` | BehaviourSelectionGate.forward replaced by one that SKIPS the admissibility mask | SituationInputRefused RAISED ('PI 2026-08-03 VIOLATED') |
-| 19 | `assert_situation_columns_dead` | the gate's forward replaced by a constant-zero function | SituationInputRefused RAISED (the positive control catches a dead layer passing the refused-column check vacuously) |
-| 20 | `assert_situation_tokens_are_targets_only` | 'TRAFFIC_LIGHT_REACT_RED probability' added to selection_inputs | SituationInputRefused RAISED |
-| 21 | `assert_situation_tokens_are_targets_only` | 'tac_SIT one-hot' added to inference_inputs_of_goals | SituationInputRefused RAISED |
-| 22 | `assert_situation_tokens_are_targets_only` | the `selection_inputs` key deleted from the declaration | SituationInputRefused RAISED (an absent key is not a pass) |
-| 23 | `assert_speed_max_stamp_v6` | E16's 8-step stamp supplied under the 4-way key | SpeedMaxStampError RAISED (no ladder declared) |
-| 24 | `assert_speed_max_stamp_v6` | channel OFF but config carries the stamp (the MIRROR case) | SpeedMaxStampError RAISED |
-| 25 | `assert_speed_max_stamp_v6` | channel ON, stamp absent from config | SpeedMaxStampError RAISED |
-| 26 | `assert_speed_max_stamp_v6` | each of the 7 required tokens deleted from the stamp, one at a time | SpeedMaxStampError RAISED on every one |
-| 27 | `bev_feats_to_tokens` | a [B, P, C] token sequence passed as a grid | SceneInputRefused RAISED |
-| 28 | `build_condition` | a SOFT (0.25 each) distribution smuggled into the nav / max-speed slots | ValueError RAISED (a richer input than the PI authorised) |
-| 29 | `planned_max_speed` | the waypoint grid mis-declared as 1 tick apart instead of 5 | the reported speed is 5x (50.0 vs 10.0) — why the dt is DERIVED |
-| 30 | `speed_max_bin` | fed NaN (would silently bin to 0 = 30 km/h) | ValueError RAISED |
-| 31 | `tactical_behaviour_losses` | all three weights set to 0.0 (the guarded-term failure mode) | p.grad is a ZEROS tensor on every parameter, never None |
-| 32 | `tactical_behaviour_losses` (CE) | a batch entirely OUTSIDE the ±2 s band; torch's mean-reduction on the same input is NaN | finite 0.0 with n_supervised = 0 reported beside it |
-| 33 | `tflip_verdict` | a block whose MEAN (0.62) clears the 0.50 bar but whose CI lower bound (0.31) does not | FAIL — the verdict reads the lower bound |
+| 4 | `RefCModel.forward` scene_hook (patched) | run on the FLAT (hierarchy=False) branch, where hierarchy_hook cannot go | the hook IS called and the agent tokens reach it — the call site is after both branches merge |
+| 5 | `RefCV3Model.__init__` | E16's continuous 8-step channel AND refcv6's 4-way one-hot both on | ValueError RAISED (two ceilings, two stamps, one condition) |
+| 6 | `RefCV3Model.__init__` | tac_decoder_v6 on a FLAT (hier=False) build | ValueError RAISED (it would build and never be called) |
+| 7 | `RefCV3Model.__init__` | tac_decoder_v6 under the kin3 vocabulary | ValueError RAISED (22 logits that could never be supervised) |
+| 8 | `RefCV3Model.__init__` | tac_decoder_v6 with agents OFF and d_bev = 0 | ValueError RAISED (it would attend to nothing) |
+| 9 | `RefCV3Model.__init__` | tac_goal_tok_head AND tac_decoder_v6 both on | ValueError RAISED (a confound, not an ablation) |
+| 10 | `RefCV3Model.forward (ego_poses)` | ego_poses passed to a build with no ego-history encoder | ValueError RAISED (it would be silently dropped and read as +ego-history) |
+| 11 | `RefCV3Model.forward (ego_poses)` | ego_poses[:, n_past:] corrupted by +1e4 (a blatant FUTURE read) | the emitted plan is BIT-IDENTICAL — the future index cannot enter |
+| 12 | `RefCV3Model.forward (ego_poses)` | two ego histories 15 m/s apart passed through the WRAPPER on identical frames | the emitted plan differs, and `core._ego_window` stays None — the value went through the signature, not the one-shot workaround |
+| 13 | `SpeedCeilingFilter` | a row whose every candidate exceeds the ceiling | the whole fan is kept and `speed_rows_empty` counts it — the only structural reason obedience can fall below 1.0 |
+| 14 | `TacticalBehaviourDecoder.forward` | BEV tokens of the OTHER backbone's width (resnet34 256 vs resnet101 1024) fed to a declared build | SceneInputRefused RAISED naming both widths |
+| 15 | `TacticalBehaviourDecoder.forward` | a [B, C, X, Y] BEV feature map passed where flat tokens are expected | SceneInputRefused RAISED (pointing at `bev_feats_to_tokens`) |
+| 16 | `TacticalBehaviourDecoder.forward` | a scene tensor passed to a build with that port switched off | SceneInputRefused RAISED (both directions) |
+| 17 | `TacticalBehaviourDecoder.forward` | called with agent_tokens=None AND bev_tokens=None | SceneInputRefused RAISED (would emit the unconditional prior) |
+| 18 | `TacticalLossWeights.assert_within_budget` | weights raised to 0.15 (over the 0.10 budget) | ValueError RAISED |
+| 19 | `_QueryFiLM zero-init` | FiLM projections re-initialised to N(0, 0.5) after the equality check | the two conditions now DIFFER -> the equality test can fail |
+| 20 | `acceptance_panel` | one of the three instruments omitted | overall = INCOMPLETE (a 2-of-3 panel must not read as a pass) |
+| 21 | `assert_scene_only` | 'image' added to the key/value source list | SceneInputRefused RAISED |
+| 22 | `assert_situation_columns_dead` | BehaviourSelectionGate.forward replaced by one that SKIPS the admissibility mask | SituationInputRefused RAISED ('PI 2026-08-03 VIOLATED') |
+| 23 | `assert_situation_columns_dead` | the gate's forward replaced by a constant-zero function | SituationInputRefused RAISED (the positive control catches a dead layer passing the refused-column check vacuously) |
+| 24 | `assert_situation_tokens_are_targets_only` | 'TRAFFIC_LIGHT_REACT_RED probability' added to selection_inputs | SituationInputRefused RAISED |
+| 25 | `assert_situation_tokens_are_targets_only` | 'tac_SIT one-hot' added to inference_inputs_of_goals | SituationInputRefused RAISED |
+| 26 | `assert_situation_tokens_are_targets_only` | the `selection_inputs` key deleted from the declaration | SituationInputRefused RAISED (an absent key is not a pass) |
+| 27 | `assert_speed_max_stamp_v6` | E16's 8-step stamp supplied under the 4-way key | SpeedMaxStampError RAISED (no ladder declared) |
+| 28 | `assert_speed_max_stamp_v6` | channel OFF but config carries the stamp (the MIRROR case) | SpeedMaxStampError RAISED |
+| 29 | `assert_speed_max_stamp_v6` | channel ON, stamp absent from config | SpeedMaxStampError RAISED |
+| 30 | `assert_speed_max_stamp_v6` | each of the 7 required tokens deleted from the stamp, one at a time | SpeedMaxStampError RAISED on every one |
+| 31 | `bev_feats_to_tokens` | a [B, P, C] token sequence passed as a grid | SceneInputRefused RAISED |
+| 32 | `build_condition` | a SOFT (0.25 each) distribution smuggled into the nav / max-speed slots | ValueError RAISED (a richer input than the PI authorised) |
+| 33 | `planned_max_speed` | the waypoint grid mis-declared as 1 tick apart instead of 5 | the reported speed is 5x (50.0 vs 10.0) — why the dt is DERIVED |
+| 34 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=False, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 35 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=False) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 36 | `refcv6 selection seams under F3/F4` | the split-loop arms turned on (f3_per_layer=True, f4_adaln=True) on a v0-conditioned ddim build | all three seams still report — they are whole-fan terms outside BOTH layer loops, not per-layer modules |
+| 37 | `speed_max_bin` | fed NaN (would silently bin to 0 = 30 km/h) | ValueError RAISED |
+| 38 | `tactical_behaviour_losses` | all three weights set to 0.0 (the guarded-term failure mode) | p.grad is a ZEROS tensor on every parameter, never None |
+| 39 | `tactical_behaviour_losses` (CE) | a batch entirely OUTSIDE the ±2 s band; torch's mean-reduction on the same input is NaN | finite 0.0 with n_supervised = 0 reported beside it |
+| 40 | `tflip_verdict` | a block whose MEAN (0.62) clears the 0.50 bar but whose CI lower bound (0.31) does not | FAIL — the verdict reads the lower bound |
+| 41 | `the refcv6 selection seams` | each zero-init gate forced open in turn (navc_gate 5.0, tac8 weights N(0,1), behaviour gate N(0,5)), scored on the CONTINUOUS ranked score and on the argmax | all three move `sel_score`; navc_gate moves traj=True, tac8_lat_to_anchor moves traj=False, behaviour_gate moves traj=True — gated, not dead, and every gate restores bit-identically |
 
 ### 7.1 Three defects the mutations found in my own code, before any GPU hour
 
@@ -383,3 +391,143 @@ Staged on `agent/arch-inf-20260803` in `C:/Users/Admin/tanitad-wt-tactical-v6`. 
 
 ⛔ **NOT staged and NOT modified:** `stack/tanitad/refs/refc.py`, `refc_sampler.py`, `scripts/refc_v3_train.py` — other owners'. The `refc.py` wiring is the patch; the trainer wiring is §6.4.
 ⚠️ `stack/tanitad/refs/refc_v3.py` was already modified on this branch before I started; **I staged only my own hunks by path.**
+
+---
+
+## 10. ⭐ REBASE ONTO e95af00 — 2026-09-17
+
+My tactical work landed as **cbadba5**. `refc.py` then moved twice: **8c7d215**
+(core: timm trunk, K-frame history, ego-condition seam, F1–F9) and **e95af00**
+(perception: DiffusionDrive coupling (1), `out["fmap_s16"]`). 3,576 → 4,035 →
+**4,183** lines. The 12-hunk patch was cut against `9a782fa` and no longer
+applied.
+
+### 10.1 Apply status
+
+**REBASED. `git apply --check` CLEAN against `e95af00`; applied, exercised, and
+reverted.** 7 of 12 anchors were still exact; **5 moved** and were re-cut:
+
+| hunk | what moved | how it was re-cut |
+|---|---|---|
+| 4 | decoder `forward` signature gained `ego_hist` (8c7d215) and `bev` (e95af00) | appended after both |
+| 5 | **F7 now wraps every `[B, N_ANCHOR]` prior in `_tile`** | ⚠️ the tac8 grafts are `Linear(8, n_anchors)` — exactly that shape — so **both go through `_tile` too**. Untiled they would be a shape error on the F7 arm, or a silent broadcast. Pinned by `test_TRAP1b_the_tac8_prior_is_TILED_on_the_F7_widened_fan`, which reads the source line. |
+| 8 | `RefCModel.forward` gained `ego_poses` / `ego_n_past` / `bev` | appended after all three |
+| 10 | the `self.decoder(...)` call gained `ego_hist=ego_vec, bev=bev` | appended |
+| 12 | F5 changed the `base` line to `refined if (sel.refined or self.rv6.f5_emitting_conf) else conf` | matched the new line |
+
+### 10.2 The two traps — both CHECKED, not assumed
+
+**TRAP 1 — F3/F4 split `_decode_ctrl` into two layer loops.** The refcv6-tactical
+seams are **not per-layer**: three whole-fan terms (`terms` on the confidence
+surface, `r_terms` on the ranked score) and one argmax filter, each appended
+ONCE in `forward`, outside both loops. ⛔ That is an argument, so it is also a
+test: `test_TRAP1_seams_still_fire_under_the_F3_F4_SPLIT_LOOPS` builds a
+v0-conditioned `ddim` decoder at **(f3, f4) = (T,F), (F,T), (T,T)**, asserts the
+cascade / AdaLN stack actually built, and asserts all three seams still report.
+**3/3 pass.**
+
+**TRAP 2 — `hierarchy=True` is the default path.** The `scene_hook` call site is
+after both branches merge (beside `agent_pos`, ~200 lines below the
+`if self.cfg.hierarchy` / `else`), so it is branch-independent by construction.
+Tested on **both**: `test_TRAP2_the_scene_hook_fires_on_the_FLAT_hierarchy_branch_too`
+drives the flat core directly (the v3 wrapper refuses a flat refcv6 build by
+design, so it cannot reach that branch), and `test_TRAP2b` covers the default
+hierarchy path.
+
+⛔ The `scene_hook` contract is unchanged: `RefCV3Model.forward` passes the
+keyword **unconditionally**, so an unpatched core raises `TypeError` rather than
+silently running refcv5 under a refcv6 config.
+
+### 10.3 Bit-identity on 64 fixed windows — MEASURED
+
+Harness `bitid.py`: seed `20260917`, 8 batches × 8 rows, refcv6-tactical seams
+**OFF**, run once against the patched tree and once against the `e95af00`
+baseline (md5 `32da1253eaeb6ae11ba089ba93f7dfc3`), compared with `torch.equal`
+(⛔ not `allclose` — a tolerance would let a real perturbation hide).
+
+| tensor | shape | equal | max abs delta |
+|---|---|---|---|
+| `traj` | (64, 8, 2) | **True** | 0 |
+| `sel_idx` | (64,) | **True** | 0 |
+| `sel_score` | (64, 20) | **True** | 0 |
+| `anchor_logits` | (64, 20) | **True** | 0 |
+| `refined_logits` | (64, 20) | **True** | 0 |
+| `offset` | (64, 20, 8, 2) | **True** | 0 |
+| `maneuver_logits` | (64, 5) | **True** | 0 |
+
+Parameter count **131,209** and state-dict key count **193** identical on both.
+⇒ **BIT-IDENTICAL ON ALL 7 TENSORS ACROSS 64 WINDOWS.**
+
+**And gated, not dead.** `test_the_seams_are_GATED_not_DEAD` forces each
+zero-init gate open in turn and scores the **continuous** ranked score AND the
+argmax:
+
+| gate | moves `sel_score` | moves `traj` |
+|---|---|---|
+| `navc_gate` (5.0) | **yes** | yes |
+| `tac8_lat_to_anchor` (N(0,1)) | **yes** | *no* |
+| `behaviour_gate` (N(0,5)) | **yes** | yes |
+
+Restoring every gate returns `traj` and `sel_score` bit-identical to baseline.
+
+⚠️ **A defect in my own test, stated.** The first version asserted only on
+`traj` — which is `fan[argmax]`, a DISCRETE pick over 20 anchors — and reported
+`tac8_lat_to_anchor` as **dead**. It is not: it moves the log-posterior without
+flipping the winner on this fixture. The liveness bar is now the continuous
+surface and the argmax is reported beside it. A discrete readout cannot falsify
+a continuous graft.
+
+### 10.4 Test counts, with the control
+
+| sweep | patched | control (UNPATCHED, same tree) |
+|---|---|---|
+| `test_refcv6_tactical.py` | 93 passed | — |
+| `test_wp_index.py` | 35 passed | — |
+| `test_refcv6_trunk.py` | 40 passed | — |
+| `test_refcv6_diffusion.py` | 34 passed | — |
+| `test_refcv6_perception.py` | 33 passed | — |
+| **all five together** | **235 passed, 0 failed** | **224 passed, 11 skipped, 0 failed** |
+
+⛔ **The patch breaks nothing: N = 0.** The control is reported anyway — the
+11 skips are exactly the end-to-end and trap tests, which skip with the reason
+*"refc.py integration patch not applied"* rather than failing. A skip is not a
+pass, which is why both columns are printed.
+
+### 10.5 ⭐ The one-line fix only I own — ego history through the v3 wrapper
+
+`RefCModel.forward` grew `ego_poses` / `ego_n_past` in 8c7d215, but
+`RefCV3Model.forward` does not forward unknown kwargs — so ego history could not
+reach the core through the wrapper at all. The core shipped
+`RefCModel.set_ego_window` as a workaround and **named the permanent fix in its
+own comment**: *"one line in `refc_v3.py` — add `ego_poses` to its signature and
+pass it to both `self.core(...)` calls"*. That workaround is a ONE-SHOT channel,
+popped by the next forward, which makes the ego window a property of CALL ORDER
+rather than of the call.
+
+**Done**, at both call sites (flat early-return and the hierarchy path), plus two
+silent-drop refusals mirroring the existing `ego_state` guard. Three tests:
+
+1. **It delivers.** Two ego histories 15 m/s apart on identical frames produce
+   different plans, **and `core._ego_window` stays `None`** — proving the value
+   went through the SIGNATURE, not the workaround.
+   ⚠️ Both zero-init projections have to be opened for this to mean anything —
+   the encoder's `zero_init_out` **and** the decoder's `ego_to_cond`
+   (`refc.py:1952-1957`). Ego history is a removable graft at BOTH ends; with
+   either at zero the plan cannot move and the test would pass whether or not
+   the value arrived. Stated, not hidden.
+2. **A FUTURE index can never enter.** Corrupting `ego_poses[:, n_past:]` by
+   **+1e4** leaves the plan **bit-identical**. If it did not, the channel would
+   be an oracle.
+3. `ego_poses` to a build with no encoder **raises**.
+
+### 10.6 What §10 does NOT prove
+
+- Still **no GPU hour, no arm trained, no trajectory scored**. Every acceptance
+  bar in §5 remains unmeasured.
+- Bit-identity was measured on the **smoke** model (1-channel, 64 px, 20
+  anchors, 131,209 params) — the structural claim, not a 256×1024 resnet101 one.
+- The F3/F4 trap test runs at the **decoder** level on a 5-anchor synthetic
+  fixture, not a full model: it proves the seams are outside both loops, not
+  that they help.
+- `tac8_lat_to_anchor` moves the ranked score but **did not flip the argmax** on
+  this fixture. That is a fixture fact, not a finding about the graft's value.

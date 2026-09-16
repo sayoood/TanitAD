@@ -904,6 +904,358 @@ def test_e2e_nav_compliance_tau_has_no_usable_default():
 
 
 # ===========================================================================
+# 8c. THE TWO REBASE TRAPS (2026-09-17, e95af00)
+#
+# The perception rebase hit both of these on this same file, so both are
+# ASSERTED here rather than reasoned about in a comment.
+# ===========================================================================
+
+def _e2e_inputs(cfg, b=2):
+    ego = torch.tensor([[8.0, 0.3, 0.0, 0.0, 1.0],
+                        [22.0, -1.0, 0.0, 0.0, 1.0]])[:b]
+    return dict(
+        frames=torch.randn(b, cfg.core.window, 1, 64, 64),
+        nav_cmd=torch.tensor([refc.NAV_COMMANDS.index("left"),
+                              refc.NAV_COMMANDS.index("follow")])[:b],
+        v0=ego[:, 0], ego_state=ego,
+        v_max_ms=torch.tensor([8.4, 33.0])[:b],
+        v_max_valid=torch.tensor([1.0, 1.0])[:b])
+
+
+def _f34_decoder(f3: bool, f4: bool, n_anchors: int = 5,
+                 horizons=(5, 10, 15, 20), seed: int = 0):
+    """A v0-CONDITIONED sampler decoder with F3/F4 live — the same harness
+    shape `tests/test_refcv6_diffusion.py::_decoder` uses, so the two files
+    exercise ONE build recipe rather than two that can drift."""
+    from tanitad.models import refcv6_diffusion as rv6
+    torch.manual_seed(seed)
+    cfg = refc.DecoderConfig(
+        d=32, n_heads=4, layers=2, ff_mult=2, sampler="ddim",
+        refcv6=rv6.DiffusionFlags(f3_per_layer=f3, f4_adaln=f4,
+                                  f4_zero_init=True))
+    dec = refc.AnchoredDiffusionDecoder(
+        feat_dim=16, n_steps=len(horizons), d_meas=8, d_ctx=4,
+        tac_latent_dim=4,
+        anchors=torch.randn(n_anchors, len(horizons), 2), cfg=cfg,
+        hierarchy=False, graft_maneuver=True, graft_target_latent=False,
+        grounded_selector=False, horizons=horizons, v0_conditioned=True,
+        control_units="alat", factored_maneuver=True,
+        graft_tac8_prior=True, graft_behaviour_sel=True,
+        graft_nav_compliance=True, nav_compliance_tau_rad=0.08,
+        speed_ceiling_filter=True)
+    torch.manual_seed(seed + 1)
+    dec.anchor_controls.copy_(torch.stack(
+        [torch.linspace(-2.0, 2.0, n_anchors),
+         torch.linspace(-1.5, 1.5, n_anchors)], dim=-1))
+    return dec.eval()
+
+
+@needs_patch
+@pytest.mark.parametrize("f3,f4", [(True, False), (False, True), (True, True)])
+def test_TRAP1_seams_still_fire_under_the_F3_F4_SPLIT_LOOPS(f3, f4):
+    """⛔ TRAP 1. F3/F4 split ``_decode_ctrl`` into TWO layer loops (the fast
+    path and the cascade path). Anything that must run PER DECODER LAYER has to
+    be patched into BOTH, or it is silently dead in exactly the arms refcv6
+    exists to test.
+
+    ⭐ The refcv6-TACTICAL seams are **not per-layer** — they are three
+    whole-fan terms (``terms`` on the confidence surface, ``r_terms`` on the
+    ranked score) and one argmax filter, each appended ONCE in ``forward``,
+    outside both loops. That is an argument; this test is the evidence. It
+    turns F3 and F4 on — on the v0-conditioned sampler build they require —
+    and asserts every seam still reports.
+    """
+    b, n = 2, 5
+    dec = _f34_decoder(f3, f4, n_anchors=n)
+    assert (dec.cascade is not None) == f3, "F3 did not build the cascade"
+    assert (dec.adaln is not None) == f4, "F4 did not build the AdaLN stack"
+    with torch.no_grad():
+        out = dec(torch.randn(b, 16, 3, 5), torch.randn(b, 8), steps=2,
+                  v_ms=torch.tensor([9.0, 9.0]),
+                  tac_lat_prior=torch.log_softmax(torch.randn(b, 8), -1),
+                  tac_lon_prior=torch.log_softmax(torch.randn(b, 8), -1),
+                  behaviour_term=torch.zeros(b, n),
+                  nav_cmd_sel=torch.tensor(
+                      [refc.NAV_COMMANDS.index("left"),
+                       refc.NAV_COMMANDS.index("right")]),
+                  v_limit_ms=torch.tensor([30.0 / 3.6, 50.0 / 3.6]))
+    st = out["sel_tele"]
+    assert st["navc_gate"] == 0.0                     # nav-compliance fired
+    assert "navc_frac_complying" in st
+    assert "speed_frac_candidates_clipped" in st      # speed filter fired
+    assert "speed_rows_empty" in st
+    assert torch.isfinite(out["traj"]).all()
+    _m("refcv6 selection seams under F3/F4",
+       f"the split-loop arms turned on (f3_per_layer={f3}, f4_adaln={f4}) on a "
+       f"v0-conditioned ddim build",
+       "all three seams still report — they are whole-fan terms outside BOTH "
+       "layer loops, not per-layer modules")
+
+
+@needs_patch
+def test_TRAP1b_the_tac8_prior_is_TILED_on_the_F7_widened_fan():
+    """⛔ TRAP 1b, found during the rebase. F7 widens the fan to ``G*N`` and
+    every ``[B, N_ANCHOR]`` prior must go through ``_tile``. The tac8 grafts are
+    ``Linear(8, n_anchors)`` — exactly that shape — so an untiled term would be
+    a shape error on the F7 arm, or worse, a silent broadcast."""
+    import inspect
+    src = inspect.getsource(refc.AnchoredDiffusionDecoder.forward)
+    for name in ("tac8_lat_to_anchor", "tac8_lon_to_anchor"):
+        i = src.index(name + "(")
+        line = src[src.rindex("\n", 0, i) + 1:src.index("\n", i)]
+        assert "_tile(" in line, (
+            f"{name} is appended to `terms` WITHOUT `_tile` — it will break "
+            f"or silently broadcast on the F7 widened fan. Line: {line!r}")
+
+
+@needs_patch
+def test_TRAP2_the_scene_hook_fires_on_the_FLAT_hierarchy_branch_too():
+    """⛔ TRAP 2. ``hierarchy=True`` is the default path; a seam wired only into
+    the last-frame branch is dead in practice — and the mirror is just as bad.
+
+    ⭐ The ``scene_hook`` call site is AFTER both branches merge (it sits beside
+    ``agent_pos``, ~200 lines below the ``if self.cfg.hierarchy`` / ``else``),
+    so it is branch-independent BY CONSTRUCTION. Tested on the flat core
+    directly, because the v3 wrapper REFUSES a flat refcv6 build by design
+    (`test_flat_build_REFUSES_the_refcv6_flags`) and so cannot reach it.
+    """
+    from tanitad.refs import refc_agents as ra
+    cfg = refc.refc_smoke_config()
+    cfg.hierarchy = False                      # ⛔ the LAST-FRAME branch
+    cfg.agents = ra.AgentSeamConfig(enable=True)
+    cfg.decoder.cross_agent = True
+    core = refc.RefCModel(cfg).eval()
+    seen = {}
+
+    def hook(agent_tokens, agent_pad, bev_tokens, bev_pad):
+        seen["n_agents"] = None if agent_tokens is None else agent_tokens.shape[1]
+        n = cfg.anchors.n_anchors
+        return {"lat_prior": None, "lon_prior": None,
+                "behaviour_term": None,
+                "v_limit_ms": torch.full((2,), 30.0 / 3.6)}
+
+    with torch.no_grad():
+        out = core(torch.randn(2, cfg.window, 1, 64, 64),
+                   nav_cmd=torch.zeros(2, dtype=torch.long),
+                   v0=torch.zeros(2), scene_hook=hook)
+    assert seen, "the scene hook was NEVER CALLED on the flat branch"
+    assert seen["n_agents"] and seen["n_agents"] > 0
+    assert torch.isfinite(out["traj"]).all()
+    _m("RefCModel.forward scene_hook (patched)",
+       "run on the FLAT (hierarchy=False) branch, where hierarchy_hook cannot go",
+       "the hook IS called and the agent tokens reach it — the call site is "
+       "after both branches merge")
+
+
+@needs_patch
+def test_TRAP2b_the_hierarchy_branch_reaches_the_hook_as_well():
+    """The other half of TRAP 2, on the DEFAULT path."""
+    m, cfg = _e2e_model()
+    assert cfg.core.hierarchy is True
+    with torch.no_grad():
+        out = m(**_e2e_inputs(cfg))
+    assert out["tacv6_injected"] is True
+    assert int(out["tacv6_n_scene"].max()) > 0
+
+
+@needs_patch
+def test_the_seams_are_GATED_not_DEAD():
+    """⛔ Bit-identity when OFF is only half the claim. With the gates FORCED
+    open each seam must MOVE the surface it acts on — a seam that cannot change
+    anything is indistinguishable from one that was never wired.
+
+    ⛔⛔ THE SURFACE MATTERS, AND THE FIRST VERSION OF THIS TEST GOT IT WRONG.
+    It asserted only on ``traj``, which is ``fan[argmax]`` — a DISCRETE pick
+    over 20 anchors. A prior that moves the log-posterior without flipping the
+    winner leaves ``traj`` bit-identical, and the test read that as "the graft
+    is dead". MEASURED: the tac8 anchor prior moves ``sel_score`` while leaving
+    ``traj`` unchanged on this fixture. So each gate is scored on BOTH, and the
+    liveness bar is the CONTINUOUS surface; the argmax is reported beside it.
+    """
+    m, cfg = _e2e_model()
+    m.eval()
+    kw = _e2e_inputs(cfg)
+    with torch.no_grad():
+        b = m(**kw)
+    base_traj, base_score = b["traj"].clone(), b["sel_score"].clone()
+    dec = m.core.decoder
+
+    def _probe(name, open_fn, close_fn):
+        with torch.no_grad():
+            open_fn()
+            o = m(**kw)
+            t, sc = o["traj"].clone(), o["sel_score"].clone()
+            close_fn()
+        return {"gate": name,
+                "score_moved": not torch.equal(base_score, sc),
+                "d_score": float((base_score - sc).abs().max()),
+                "traj_moved": not torch.equal(base_traj, t),
+                "d_traj": float((base_traj - t).abs().max())}
+
+    rows = [
+        _probe("navc_gate",
+               lambda: dec.navc_gate.fill_(5.0),
+               lambda: dec.navc_gate.zero_()),
+        _probe("tac8_lat_to_anchor",
+               lambda: torch.nn.init.normal_(dec.tac8_lat_to_anchor.weight,
+                                             std=1.0),
+               lambda: torch.nn.init.zeros_(dec.tac8_lat_to_anchor.weight)),
+        _probe("behaviour_gate",
+               lambda: torch.nn.init.normal_(
+                   m.tac_behaviour_gate_v6.proj.weight, std=5.0),
+               lambda: torch.nn.init.zeros_(
+                   m.tac_behaviour_gate_v6.proj.weight)),
+    ]
+    with torch.no_grad():
+        back = m(**kw)
+    assert torch.equal(base_traj, back["traj"]),         "restoring the gates did not restore the plan"
+    assert torch.equal(base_score, back["sel_score"])
+    dead = [r["gate"] for r in rows if not r["score_moved"]]
+    assert not dead, (
+        f"these gates could not move the ranked score AT ALL and are DEAD, "
+        f"not gated: {dead}. Full probe: {rows}")
+    _m("the refcv6 selection seams",
+       "each zero-init gate forced open in turn (navc_gate 5.0, tac8 weights "
+       "N(0,1), behaviour gate N(0,5)), scored on the CONTINUOUS ranked score "
+       "and on the argmax",
+       "all three move `sel_score`; "
+       + ", ".join(f"{r['gate']} moves traj={r['traj_moved']}" for r in rows)
+       + " — gated, not dead, and every gate restores bit-identically")
+
+
+# ===========================================================================
+# 8d. refcv6 §2b — EGO HISTORY THROUGH THE v3 WRAPPER (the one-line fix)
+# ===========================================================================
+
+def _ego_hist_model():
+    """A v3 build whose CORE carries the ego-history encoder."""
+    from tanitad.refs import refc_v3 as v3
+    cfg = v3.refc_v3_smoke_config(hier=True)
+    cfg.tac_vocab_version = "v7.0"
+    from tanitad.models import ego_history as eh
+    # ⛔ `zero_init_out=False` ON PURPOSE. The shipped default zero-inits the
+    # output projection so the condition is bit-inert at step 0 — correct for
+    # the arm, fatal for this test: a channel that cannot move the plan at init
+    # is indistinguishable from one that never arrived. The DELIVERY test needs
+    # a live projection; the FUTURE-READ test below needs it too, for the same
+    # reason (a dead projection would pass it vacuously).
+    cfg.core.ego_history = eh.EgoHistoryConfig(
+        enable=True, steps=cfg.core.window, out_dim=16, zero_init_out=False)
+    m = v3.RefCV3Model(cfg).eval()
+    # ⛔⛔ AND THE DECODER'S OWN GRAFT HAS TO BE OPENED TOO. `ego_to_cond`
+    # (`refc.py:1952-1957`) is a SECOND zero-init projection — ego history is a
+    # removable graft at BOTH ends, which is right for the arm and fatal for a
+    # delivery test: with either end at zero the plan cannot move and the test
+    # would pass whether or not the value arrived. Opening it is stated, not
+    # hidden: what is being proven is that the VALUE reaches the graft, not
+    # that the graft is open by default (it is not, and must not be).
+    e2c = getattr(m.core.decoder, "ego_to_cond", None)
+    assert e2c is not None, "the decoder built no ego_to_cond graft"
+    torch.nn.init.normal_(e2c.weight, std=0.5)
+    return m, cfg
+
+
+def _has_ego_hist() -> bool:
+    try:
+        m, _ = _ego_hist_model()
+        return getattr(m.core, "ego_hist", None) is not None
+    except Exception:
+        return False
+
+
+needs_ego_hist = pytest.mark.skipif(
+    not _has_ego_hist(),
+    reason="this core has no ego-history encoder (refcv6 §2b, 8c7d215)")
+
+
+@needs_ego_hist
+def test_ego_poses_REACHES_THE_CORE_THROUGH_THE_v3_WRAPPER():
+    """⛔⛔ THE HANDOVER ITEM. ``RefCV3Model.forward`` did not forward unknown
+    kwargs, so ego history could not reach the core through the wrapper at all;
+    the core shipped ``set_ego_window``, a ONE-SHOT channel popped by the next
+    forward, as a workaround — and said so in its own comment.
+
+    This asserts the wrapper path now DELIVERS: two different ego histories on
+    the same frames must produce different plans, and the one-shot channel must
+    be untouched (still None) after the call, proving the value went through
+    the SIGNATURE and not through the workaround.
+    """
+    m, cfg = _ego_hist_model()
+    w = cfg.core.window
+    frames = torch.randn(2, w, 1, 64, 64)
+    nav = torch.zeros(2, dtype=torch.long)
+    n_past = w
+    # poses are [B, T, >=4] = (x, y, yaw, v) -- `ego_channels_from_poses`
+    p1 = torch.zeros(2, w, 4)
+    p1[:, :, 0] = torch.arange(w).float() * 1.0
+    p1[:, :, 3] = 10.0                                   # 10 m/s
+    p2 = torch.zeros(2, w, 4)
+    p2[:, :, 0] = torch.arange(w).float() * 2.5
+    p2[:, :, 3] = 25.0                                   # 25 m/s
+    assert m.core._ego_window is None
+    with torch.no_grad():
+        o1 = m(frames, nav_cmd=nav, v0=torch.zeros(2),
+               ego_poses=p1, ego_n_past=n_past)
+        # ⛔ the one-shot workaround was NOT consumed: the value arrived
+        # through the signature.
+        assert m.core._ego_window is None
+        o2 = m(frames, nav_cmd=nav, v0=torch.zeros(2),
+               ego_poses=p2, ego_n_past=n_past)
+    assert not torch.equal(o1["traj"], o2["traj"]), (
+        "two very different ego histories produced the SAME plan — the "
+        "channel is not reaching the condition")
+    _m("RefCV3Model.forward (ego_poses)",
+       "two ego histories 15 m/s apart passed through the WRAPPER on identical "
+       "frames",
+       "the emitted plan differs, and `core._ego_window` stays None — the "
+       "value went through the signature, not the one-shot workaround")
+
+
+@needs_ego_hist
+def test_a_FUTURE_index_can_NEVER_enter_the_ego_history():
+    """⛔⛔ THE ADMISSIBILITY HALF. ``ego_n_past`` is where PAST ends. Mutating
+    everything at or after that index must leave the output BIT-IDENTICAL — if
+    it does not, the encoder is reading the future through the channel the
+    wrapper just opened, and the whole arm is an oracle."""
+    m, cfg = _ego_hist_model()
+    w = cfg.core.window
+    n_past = max(1, w // 2)
+    frames = torch.randn(2, w, 1, 64, 64)
+    nav = torch.zeros(2, dtype=torch.long)
+    poses = torch.randn(2, w, 4)
+    fut = poses.clone()
+    fut[:, n_past:] = fut[:, n_past:] + 1e4      # a BLATANT future corruption
+    with torch.no_grad():
+        a = m(frames, nav_cmd=nav, v0=torch.zeros(2),
+              ego_poses=poses, ego_n_past=n_past)["traj"]
+        b = m(frames, nav_cmd=nav, v0=torch.zeros(2),
+              ego_poses=fut, ego_n_past=n_past)["traj"]
+    assert torch.equal(a, b), (
+        f"a FUTURE read: corrupting ego_poses[:, {n_past}:] by 1e4 moved the "
+        f"plan by {float((a - b).abs().max()):.6g}. The ego-history channel is "
+        f"an oracle.")
+    _m("RefCV3Model.forward (ego_poses)",
+       f"ego_poses[:, n_past:] corrupted by +1e4 (a blatant FUTURE read)",
+       "the emitted plan is BIT-IDENTICAL — the future index cannot enter")
+
+
+@needs_ego_hist
+def test_ego_poses_to_a_core_WITHOUT_the_encoder_REFUSES():
+    from tanitad.refs import refc_v3 as v3
+    cfg = v3.refc_v3_smoke_config(hier=True)
+    cfg.tac_vocab_version = "v7.0"
+    m = v3.RefCV3Model(cfg).eval()          # no ego_history
+    with pytest.raises(ValueError, match="no ego-history encoder"):
+        m(torch.randn(1, cfg.core.window, 1, 64, 64),
+          nav_cmd=torch.zeros(1, dtype=torch.long), v0=torch.zeros(1),
+          ego_poses=torch.zeros(1, cfg.core.window, 4))
+    _m("RefCV3Model.forward (ego_poses)",
+       "ego_poses passed to a build with no ego-history encoder",
+       "ValueError RAISED (it would be silently dropped and read as "
+       "+ego-history)")
+
+
+# ===========================================================================
 # 9. the acceptance instruments
 # ===========================================================================
 
