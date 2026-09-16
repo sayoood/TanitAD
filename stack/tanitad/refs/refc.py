@@ -146,6 +146,7 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from tanitad.models.kinematic import rollout_unicycle
+from tanitad.models import refcv6_diffusion as _rv6
 from tanitad.refs import feasible_decode as _feas
 # ⭐ S7 / E15 — the param-free metric-goal-point compatibility. Imported, NEVER
 # re-derived beside the thing it scores: a guard/score re-implemented next to
@@ -314,10 +315,61 @@ class CNNEncoderConfig:
     image_width: int | None = None   # non-square input; None == square (default)
     base_width: int = 88          # V2-99-class width (90.5 M trunk); XL -> 124
     blocks: tuple[int, ...] = (3, 6, 16, 6)    # deep-34 (8x8xF map preserved)
+    # ⭐ refcv6 §2: which trunk to BUILD. "refc" (DEFAULT) is the in-repo
+    # torchvision-free ResNet above — every pre-refcv6 config keeps it and is
+    # bit-identical. "timm" builds `timm` `resnet34.a1_in1k` with ImageNet
+    # weights (`tanitad.models.timm_trunk`), which is DiffusionDrive's trunk
+    # and DiffusionDrive's initialisation. ⛔ The two differ in `feat_dim`
+    # (512 vs base_width*8) and in `in_channels` semantics (the timm default
+    # is DD's SINGLE 3-channel frame), so switching is a new arm, never a
+    # drop-in for an existing checkpoint.
+    trunk: str = "refc"           # "refc" | "timm"
+    # ⭐ PI 2026-09-16: the trunk SIZE is under review, so the backbone is a
+    # NAME resolved through timm and every channel count is read from
+    # `feature_info`. Swapping resnet34 -> resnet50 -> convnext must not need a
+    # model-code change.
+    # ⭐ PI 2026-09-16: PRIMARY `resnet101.a1_in1k` (1024 @ stride-16 /
+    # 2048 @ stride-32), with `resnet34.a1_in1k` (256 / 512) as the second
+    # comparison run. ⚠️ Inert unless `trunk == "timm"`, so this default
+    # changes nothing for any pre-refcv6 arm.
+    trunk_name: str = "resnet101.a1_in1k"
+    # ⭐⭐ PI 2026-09-16: FRAME HISTORY IS REQUIRED. "shared" runs the SAME
+    # weights over each of the K = in_channels // 3 frames (3 channels each,
+    # ImageNet-normalised, so the prior stays exact) and fuses AFTER the trunk
+    # at both strides. "inflate" is the cheaper alternative arm: one pass with
+    # a 3K-channel stem whose ImageNet weights are repeated and divided by K.
+    trunk_mode: str = "shared"        # "shared" (K passes) | "inflate" (1)
+    trunk_fuse: str = "concat1x1"     # "concat1x1" | "attn" | "last"
+    trunk_fuse_identity: bool = True  # history as a REMOVABLE graft
+    trunk_pretrained: bool = True     # timm only; False is the knockout arm
+    trunk_imagenet_norm: bool = True  # timm only; E-SEED-2 says never off
 
     @property
     def feat_dim(self) -> int:
+        if str(self.trunk) == "timm":
+            # ⛔⛔ READ FROM timm's `feature_info`, NEVER WRITTEN DOWN. resnet34
+            # emits 512 at stride 32 and resnet101 emits 2048 (MEASURED
+            # 2026-09-16); a hard-coded 512 would build `feat_proj` 1536
+            # channels too narrow on the PI's PRIMARY trunk, and it would fail
+            # somewhere far from this line. It is NOT `base_width * 8` either.
+            from tanitad.models.timm_trunk import trunk_feature_channels
+            return int(trunk_feature_channels(str(self.trunk_name))[1])
         return self.base_width * 8
+
+    @property
+    def s16_dim(self) -> int:
+        """Stride-16 channel count — the PERCEPTION map's width.
+
+        Only the timm trunk exposes a stride-16 map; the in-repo ResNet returns
+        stride 32 alone, so asking it here is a caller error rather than a
+        number to invent.
+        """
+        if str(self.trunk) != "timm":
+            raise ValueError(
+                "the in-repo REF-C trunk emits only a stride-32 map; the "
+                "stride-16 perception map exists on `trunk='timm'`.")
+        from tanitad.models.timm_trunk import trunk_feature_channels
+        return int(trunk_feature_channels(str(self.trunk_name))[0])
 
     @property
     def grid(self) -> int:
@@ -459,6 +511,20 @@ class DecoderConfig:
     # fan mis-indexes `loss_cls`'s a_star, the [B, N] priors and every `sel_idx`
     # dump, all of which still assume N.
     sampler_groups: int = 1
+    # ⭐ refcv6 §2b: the width of the ego-history vector the model will hand
+    # `forward` as `ego_hist`. 0 (DEFAULT) builds no `ego_to_cond` at all.
+    ego_hist_dim: int = 0
+    # ---- refcv6 §3: F1..F9 --------------------------------------------------
+    # ⭐ ``tanitad.models.refcv6_diffusion.DiffusionFlags | None``. A DECLARED
+    # field for the same reason ``sampler`` and ``wp_index`` are declared: the
+    # refcv5 false-provenance defect (a trainer writing a knob onto a dataclass
+    # that had no such field, which Python accepted, the guards read back and
+    # ``config.json`` recorded, for a model that contained no denoiser).
+    # ⛔ ``None`` CONSTRUCTS NOTHING -- not "constructs and gates" -- so RNG
+    # draw order, parameter count and every emitted tensor are bit-identical to
+    # the pre-refcv6 file. Loosely annotated to keep this module import-free of
+    # ``tanitad.models`` on the default path.
+    refcv6: object | None = None
     # (a_lon, a_lat) m/s^2 -- the normaliser the anchored Gaussian and the x0
     # loss both divide by, so "sigma at t=8" means the same thing in both.
     control_norm: tuple[float, float] = (4.0, 3.0)
@@ -886,6 +952,16 @@ class RefCConfig:
     #                                   ⛔ DEFAULT OFF. Turning it on changes what
     #                                   every arm is fed and is a PI decision.
     #                                   Feed it from `refb_labels.nav_input_v22`.
+    # ⭐⭐ refcv6 §2b — EGO HISTORY AS AN INPUT (PI 2026-09-16). Today only
+    # `v0` at t0 reaches the model; the rest of the OBSERVED window's ego state
+    # is discarded. `tanitad.models.ego_history.EgoHistoryConfig | None`.
+    # ⛔ `None` (the DEFAULT) constructs NOTHING, so the parameter count, the
+    # RNG draw order and every emitted tensor are bit-identical to pre-refcv6.
+    # ⛔ ADMISSIBILITY: PAST ego only. The binding PI ruling of 2026-09-02
+    # makes measured v0 at t0 legal, and past ego is the same class; ego
+    # FUTURE is not, and `EgoHistoryEncoder.forward` slices before it computes
+    # so the boundary is MUTATION-testable rather than described.
+    ego_history: object | None = None
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
@@ -1275,6 +1351,60 @@ class ResNetEncoder(nn.Module):
         for stage in self.stages:
             x = stage(x)
         return x, x.mean(dim=(2, 3))                # fmap [B,F,g,g], pooled
+
+
+def _refcv6_flags(cfg) -> "_rv6.DiffusionFlags":
+    """``cfg.refcv6`` -> a :class:`DiffusionFlags`, with ``None`` == all off.
+
+    ⛔ The ``None`` case returns the DEFAULT block, whose ``any_on`` is False,
+    so every branch guarded by it is dead on a default build. It does NOT
+    write the object back onto the config: a config that grew a flag block as
+    a side effect of being read is how ``config_delta`` (which compares two
+    configs built through the same helper) would start reporting a difference
+    that no operator asked for.
+    """
+    flags = getattr(cfg, "refcv6", None)
+    if flags is None:
+        return _rv6.DiffusionFlags()
+    if not isinstance(flags, _rv6.DiffusionFlags):
+        raise TypeError(
+            f"DecoderConfig.refcv6 must be a DiffusionFlags (or None), got "
+            f"{type(flags).__name__}. A dict or a Namespace here would read "
+            f"back as 'no flags' through every `getattr` and the arm would "
+            f"silently be the baseline.")
+    return flags
+
+
+def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
+    """refcv6 §2 trunk factory. -> a module honouring ``(fmap, pooled)``.
+
+    ⛔ ``cfg.trunk == "refc"`` returns exactly ``ResNetEncoder(cfg)`` — the
+    same object the pre-refcv6 code built, constructed the same way — so every
+    existing config is bit-identical through this seam. Only the explicit
+    ``"timm"`` value reaches the new trunk, and that trunk FAILS LOUD if the
+    ImageNet weights are not really there.
+    """
+    kind = str(getattr(cfg, "trunk", "refc"))
+    if kind == "refc":
+        return ResNetEncoder(cfg)
+    if kind == "timm":
+        from tanitad.models.timm_trunk import build_timm_trunk
+        # ⭐ K is DERIVED from the corpus's stack width (`in_channels = 3K`),
+        # never configured twice: a trunk built for a different K than the data
+        # carries must fail at build time, not at the first forward.
+        return build_timm_trunk(
+            in_channels=int(cfg.in_channels),
+            image_hw=cfg.image_hw(),
+            model_name=str(getattr(cfg, "trunk_name", "resnet34.a1_in1k")),
+            mode=str(getattr(cfg, "trunk_mode", "shared")),
+            fuse=str(getattr(cfg, "trunk_fuse", "concat1x1")),
+            fuse_identity_init=bool(getattr(cfg, "trunk_fuse_identity", True)),
+            pretrained=bool(getattr(cfg, "trunk_pretrained", True)),
+            imagenet_norm=bool(getattr(cfg, "trunk_imagenet_norm", True)))
+    raise ValueError(
+        f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
+        f"would otherwise fall through to the legacy trunk and the run would "
+        f"claim an ImageNet prior it never loaded.")
 
 
 class StrategicCtx(nn.Module):
@@ -1710,6 +1840,56 @@ class AnchoredDiffusionDecoder(nn.Module):
             # putting it in `state_dict` would change checkpoint compatibility
             # for a quantity no run can alter.
             self.sched = rs.DDIMSchedule()
+        # ---- refcv6 §3: F1..F9 -------------------------------------------- #
+        # ⛔ CONSTRUCTED LAST, AND ONLY WHEN ASKED -- the same discipline the
+        # sampler above follows, for the same reason: with `cfg.refcv6` None
+        # (the default) NOTHING here allocates a parameter, so the RNG draw
+        # order and the state_dict are byte-identical to the pre-refcv6 file.
+        # Only F3 and F4 add weights; the other seven are a different USE of
+        # the same weights and stay checkpoint-compatible.
+        # ---- refcv6 §2b: the EGO-HISTORY vector joins the CONDITION -------- #
+        # ⭐ Same seam and same zero-init discipline as `lan_to_cond` /
+        # `ctx_to_cond`: the vector reaches the condition (and therefore every
+        # decoder layer and every denoising pass), the projection starts at
+        # ZERO, so ego history is a REMOVABLE GRAFT and the first step is
+        # bit-identical to the baseline. `ego_hist_dim` is set by the model
+        # that owns the encoder; None constructs nothing.
+        self.ego_to_cond: nn.Linear | None = None
+        _eh_dim = int(getattr(cfg, "ego_hist_dim", 0) or 0)
+        if _eh_dim > 0:
+            self.ego_to_cond = nn.Linear(_eh_dim, d)
+            nn.init.zeros_(self.ego_to_cond.weight)
+            nn.init.zeros_(self.ego_to_cond.bias)
+        self.rv6 = _refcv6_flags(cfg)
+        self.cascade: nn.Module | None = None
+        self.adaln: nn.ModuleList | None = None
+        # Plain attributes, never buffers: they hold LIVE tensors of the last
+        # forward (F3's per-stage predictions) and must not enter `state_dict`.
+        self._last_layer_conf: list[Tensor] = []
+        self._last_layer_du: list[Tensor] = []
+        self._rv6_layer_u0: list[Tensor] = []
+        self._rv6_layer_conf: list[Tensor] = []
+        if self.rv6.any_on and self.control_head is None:
+            raise ValueError(
+                "refcv6 §3: F1..F9 describe the DIFFUSION decoder, and this "
+                "build has no sampler (`cfg.sampler == 'none'`), so none of "
+                "them could ever run. A flag that reaches no mechanism is the "
+                "refcv5 false-provenance defect -- refusing rather than "
+                "stamping an arm that does not exist.")
+        if self.rv6.f3_per_layer:
+            self.cascade = _rv6.CascadeHeads(len(self.layers), d, n_steps)
+        if self.rv6.f4_adaln:
+            self.adaln = nn.ModuleList([
+                _rv6.AdaLNModulation(d, d, zero_init=self.rv6.f4_zero_init)
+                for _ in self.layers])
+        if self.rv6.f8_flat_waypoint_noise and space != "metre":
+            raise ValueError(
+                "refcv6 F8 is DD's WAYPOINT-space noise, so it requires "
+                "`sampler_space='metre'`. Left on the control-space sampler it "
+                "would normalise (a_lon, a_lat) by DD's METRE spans (56.9 / "
+                "46) -- a plausible-looking number for a quantity that is not "
+                "a distance, which is exactly the `metre_sigma_m` divisor trap "
+                "one field up.")
 
     def anchor_control_seq(self, batch: int, dtype: torch.dtype) -> Tensor:
         """``[B, N, S, 2]`` — the anchor vocabulary as a per-slot control
@@ -2016,9 +2196,43 @@ class AnchoredDiffusionDecoder(nn.Module):
         # (`_state_to_path` integrated the controls), so the address moves with
         # every DDIM step — which is exactly DiffusionDrive's coupling (1).
         index = self._agent_index(x_path, agent_pos)
-        for layer in self.layers:
+        # ---- refcv6 F3/F4 -------------------------------------------------- #
+        # ⛔ With both flags off this loop is the ONE LINE it always was — no
+        # extra module call, no extra tensor, no branch inside the layer.
+        if self.cascade is None and self.adaln is None:
+            for layer in self.layers:
+                q = layer(q, kv, cond, agents, agent_pad, index)
+            conf = self.conf_head(q).squeeze(-1)              # [B, N]
+            du = self.control_head(q).reshape(b, n, self.n_steps, 2)
+            return conf, du
+        te3 = te.reshape(-1, 1, q.shape[-1])
+        confs: list[Tensor] = []
+        dus: list[Tensor] = []
+        for i, layer in enumerate(self.layers):
             q = layer(q, kv, cond, agents, agent_pad, index)
-        conf = self.conf_head(q).squeeze(-1)                  # [B, N]
+            # F4 — DD modulates AFTER the layer's FFN (`:335-337`), never
+            # before the attention. Order matters: the scale/shift is applied
+            # to the layer's OUTPUT, which is what makes it a per-stage
+            # re-parameterisation of the feature rather than a second
+            # conditioning of the input.
+            if self.adaln is not None:
+                q = self.adaln[i](q, te3)
+            if self.cascade is not None:
+                c_i, du_i = self.cascade.emit(i, q)
+                confs.append(c_i)
+                dus.append(du_i)
+                # F3 — DD detaches the trajectory handed to the next stage
+                # (`:379`), so stage i+1 cannot backprop into stage i's
+                # geometry. We carry the same cut on the QUERY, which is our
+                # equivalent hand-off. ⚠️ The cut is real: without it the
+                # per-layer losses are just extra gradient paths into one
+                # chain, which is NOT the cascade DD ablates in Tab. 5.
+                q = q.detach()
+        if self.cascade is not None:
+            self._last_layer_conf = confs
+            self._last_layer_du = dus
+            return confs[-1], dus[-1]
+        conf = self.conf_head(q).squeeze(-1)
         du = self.control_head(q).reshape(b, n, self.n_steps, 2)
         return conf, du
 
@@ -2065,19 +2279,50 @@ class AnchoredDiffusionDecoder(nn.Module):
            ``u0_hat``, the tensor the x0 loss is computed on.
         """
         cfg = self.cfg
+        rv6 = self.rv6
         b, n = bank.shape[:2]
         dev, dtype = bank.device, bank.dtype
         metre = str(cfg.sampler_space) == "metre"
-        if metre:
+        # ⭐ refcv6 F8 uses DD's AFFINE box (`norm_odo`, `:432-441`) instead of
+        # the pure divisor, so `denorm` is the inverse map rather than a
+        # multiply. With F8 off `denorm(z) is z * norm`, bit for bit.
+        norm = None
+        if metre and rv6.f8_flat_waypoint_noise:
+            x0_n = _rv6.dd_norm_waypoints(bank)
+
+            def denorm(z: Tensor) -> Tensor:
+                return _rv6.dd_denorm_waypoints(z)
+        elif metre:
             # DERIVED, never the raw sigma -- see `metre_sigma_m`. Dividing by
             # the sigma itself would make the DD-literal arm 31.7x too gentle
             # and it would PASS the gate it exists to fail.
             _s = float(self.sched.sqrt_one_minus_abar(int(cfg.sampler_infer_t)))
             norm = bank.new_tensor(tuple(cfg.metre_sigma_m)) / max(_s, 1e-12)
             x0_n = bank / norm
+
+            def denorm(z: Tensor) -> Tensor:
+                return z * norm
         else:
             norm = bank.new_tensor(tuple(cfg.control_norm))
             x0_n = self.anchor_control_seq(b, dtype) / norm
+            # ---- refcv6 F7: the CONTROL state must be tiled with the bank -- #
+            # `roll_bank`'s output was widened to [B, G*N, S, 2] in `forward`;
+            # `anchor_control_seq` still emits [B, N, S, 2]. Tiling here, in
+            # the SAME group-major layout, is what keeps candidate `g*N + a`
+            # the anchor `a` it is claimed to be. A shape mismatch would crash
+            # loudly -- but an INTERLEAVED tile would not, which is why the
+            # layout is asserted rather than assumed.
+            if x0_n.shape[1] != n:
+                g, rem = divmod(n, x0_n.shape[1])
+                if rem:
+                    raise AssertionError(
+                        f"F7: bank has {n} candidates, which is not a whole "
+                        f"multiple of the {x0_n.shape[1]}-anchor control "
+                        f"sequence")
+                x0_n = x0_n.repeat(1, g, 1, 1)
+
+            def denorm(z: Tensor) -> Tensor:
+                return z * norm
         # The speed the fan is rolled from. `roll_bank` has already applied the
         # ego-dropout policy to produce `bank`; a sampler with no speed at all
         # falls back to the SAME reference speed `roll_bank` uses, so the two
@@ -2102,25 +2347,67 @@ class AnchoredDiffusionDecoder(nn.Module):
         # bootstrap answers "would another draw of EPISODES say this?" and is
         # structurally blind to this variance.
         self.sched.to(dev)          # the alpha table must live where x0 does
+        # ---- refcv6 F1: DD's TRAINING draw replaces the inference chain ---- #
+        # ⛔ `t ~ U[0, 50)` PER SAMPLE and ONE decoder call
+        # (`transfuser_model_v2.py:463-476`). Today the network only ever sees
+        # the two labels {10, 0} and backprops through both, so it has never
+        # been asked what a t = 37 state looks like. Only in TRAINING: at eval
+        # the published truncated ladder is what the paper measures.
+        train_t = None
+        if rv6.f1_random_t and self.training:
+            train_t = rs.draw_train_timesteps(b, int(rv6.f1_t_max), dev)
         eps = torch.randn_like(x0_n)
-        x_n = self.sched.add_noise(x0_n, eps,
-                                   torch.tensor(t0, device=dev))
+        t_noise = (train_t if train_t is not None
+                   else torch.tensor(t0, device=dev))
+        x_n = self.sched.add_noise(x0_n, eps, t_noise)
+        # ---- refcv6 F8: DD CLAMPS the normalised sample to [-1, 1] --------- #
+        # `transfuser_model_v2.py:474` (train) and `:519` (test). On DD's
+        # waypoint box that clamp is a real operation -- it is what keeps a
+        # noised anchor inside the 56.9 x 46 m window. It is applied ONLY on
+        # the F8 arm, because on our control normalisation the same clamp would
+        # bound (a_lon, a_lat) at +-4 / +-3 m/s^2, a different physical claim.
+        if rv6.f8_flat_waypoint_noise:
+            x_n = x_n.clamp(-1.0, 1.0)
+        # ---- refcv6 F2: DD's step semantics -------------------------------- #
+        pairs = _rv6.dd_step_pairs([int(x) for x in ladder],
+                                   bool(rv6.f2_dd_step))
+        if train_t is not None:
+            # ONE call, at the drawn t. The ladder is not walked in training.
+            pairs = [(None, None)]
         x0_hat_n, conf = x_n, None
-        for i, t in enumerate(ladder):
-            t_prev = ladder[i + 1] if i + 1 < len(ladder) else 0
-            x_path = self._state_to_path(x_n * norm, v, metre)
-            tt = torch.full((b,), float(t), device=dev, dtype=torch.float32)
+        layer_u0: list[Tensor] = []
+        layer_conf: list[Tensor] = []
+        for i, (t, t_prev) in enumerate(pairs):
+            x_path = self._state_to_path(denorm(x_n), v, metre)
+            tt = (train_t.to(torch.float32) if t is None else
+                  torch.full((b,), float(t), device=dev, dtype=torch.float32))
             conf, du = self._decode_ctrl(kv, cond, x_path, tt,
                                          agents, agent_pad, agent_pos)
             # x0-parameterised ("sample"), and `control_head` is ZERO-INIT, so
             # the first pass predicts exactly the current state: the fan starts
             # AT the anchored Gaussian and every later movement is learned.
             x0_hat_n = x_n + du
+            # ---- refcv6 F3: every cascade stage is supervised -------------- #
+            # DD sums the loss over `poses_reg_list` (`:494-497`). The stages'
+            # x0 predictions are exported here, in the SAME units as `u0_hat`,
+            # so the trainer's per-layer term needs no second de-normalisation
+            # to get wrong.
+            if self.cascade is not None:
+                for du_i, c_i in zip(self._last_layer_du, self._last_layer_conf):
+                    layer_u0.append(denorm(x_n + du_i))
+                    layer_conf.append(c_i)
+            if t is None:
+                break
             x_n = self.sched.step(x0_hat_n, x_n,
                                   torch.tensor(t, device=dev),
                                   torch.tensor(t_prev, device=dev))
-        u0_hat = x0_hat_n * norm
+        u0_hat = denorm(x0_hat_n)
         fan = self._state_to_path(u0_hat, v, metre)
+        # ⛔ Exported on `self`, not through `tele`: `tele` is JSON-serialised
+        # into `config.json` and every log row, and a live tensor with its
+        # graph attached in that dict is a memory leak dressed as telemetry.
+        self._rv6_layer_u0 = layer_u0
+        self._rv6_layer_conf = layer_conf
         tele = {"sampler": "ddim", "sampler_space": cfg.sampler_space,
                 "sampler_ladder": [int(x) for x in ladder],
                 "sampler_infer_t": t0,
@@ -2137,6 +2424,18 @@ class AnchoredDiffusionDecoder(nn.Module):
                 # SELECTION must run `--sel-refined`, and this key is how a
                 # reader tells which one they are looking at.
                 "sampler_ranks_the_fan": bool(self.sel.refined)}
+        # ⛔ STAMPED ONLY WHEN AN F-FLAG IS ON. `tele` reaches `config.json`
+        # and the `sel_tele` dump, and a key that appears on every run is a key
+        # a reader stops reading. With all nine off the dict is the pre-refcv6
+        # dict, key for key.
+        if rv6.any_on:
+            tele["refcv6"] = _rv6.flag_stamp(rv6)
+            tele["refcv6_pairs"] = [[None if a is None else int(a),
+                                     None if c is None else int(c)]
+                                    for a, c in pairs]
+            tele["refcv6_train_t"] = (None if train_t is None
+                                      else [int(x) for x in train_t[:8].cpu()])
+            tele["refcv6_cascade_stages"] = len(layer_u0)
         return fan, u0_hat, conf, tele
 
     def _lan_anchor_prior(self, lan_dir: Tensor,
@@ -2244,7 +2543,8 @@ class AnchoredDiffusionDecoder(nn.Module):
                 withheld_speed: Tensor | None = None,
                 agent_tokens: Tensor | None = None,
                 agent_pad: Tensor | None = None,
-                agent_pos: Tensor | None = None) -> dict:
+                agent_pos: Tensor | None = None,
+                ego_hist: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -2278,23 +2578,51 @@ class AnchoredDiffusionDecoder(nn.Module):
                     "experiment. Build the anchors with controls "
                     "(`--anchor-file` from build_refc_anchors), or run "
                     "`sampler='none'`.")
-            if int(getattr(self.cfg, "sampler_groups", 1)) > 1:
+            # ---- refcv6 F7: the refusal, RETAINED but now conditional ----- #
+            # ⭐ Two of the three named sites ARE widened (see
+            # `refcv6_diffusion.F7_UNWIDENED_SITES`): the matched-anchor target
+            # reads `candidate_to_anchor_id`, and every [B, N] prior is tiled
+            # by `tile_anchor_prior` in the SAME group-major layout the bank is
+            # tiled in. ⛔ THE THIRD IS NOT OURS TO WIDEN: `taniteval`'s window
+            # dumps join on `sel_idx` AS AN ANCHOR ID, and that file belongs to
+            # another agent. With G > 1 the forward therefore ALSO emits
+            # `sel_anchor_id`, and `f7_ack_eval_join` is the operator saying
+            # the consumer reads it. Without that acknowledgement the refusal
+            # stands, because a silently mis-joined eval is worse than a crash.
+            _g = max(int(getattr(self.cfg, "sampler_groups", 1)),
+                     int(self.rv6.f7_samples_per_anchor))
+            if _g > 1 and not self.rv6.f7_ack_eval_join:
                 raise NotImplementedError(
-                    "refcv5 WP-4: `sampler_groups > 1` emits a [B, G*N, ...] "
-                    "fan while THREE call sites still assume N and would be "
-                    "silently MIS-INDEXED: (1) `loss_cls`'s `a_star` anchor "
-                    "target, which indexes the fan by anchor id; (2) the "
-                    "[B, N] anchor priors (`maneuver_to_anchor` / "
-                    "`lat_to_anchor` / `lon_to_anchor` / `route_to_anchor`); "
-                    "and (3) every `sel_idx` dump the eval harness joins on. "
-                    "Widening the fan is not a knob until those three are "
-                    "widened with it -- refusing rather than mis-indexing.")
+                    "refcv5 WP-4 / refcv6 F7: `sampler_groups > 1` emits a "
+                    "[B, G*N, ...] fan while THREE call sites assumed N: (1) "
+                    "`loss_cls`'s `a_star` anchor target, which indexes the "
+                    "fan by anchor id; (2) the [B, N] anchor priors "
+                    "(`maneuver_to_anchor` / `lat_to_anchor` / "
+                    "`lon_to_anchor` / `route_to_anchor`); and (3) every "
+                    "`sel_idx` dump the eval harness joins on. refcv6 F7 "
+                    "WIDENS (1) via `candidate_to_anchor_id` and (2) via "
+                    "`tile_anchor_prior`. ⛔ (3) IS NOT OURS TO WIDEN -- "
+                    "`taniteval`'s dumps read `sel_idx` AS AN ANCHOR ID and "
+                    "that file belongs to another agent. The forward emits "
+                    "`sel_anchor_id` for it; set "
+                    "`DiffusionFlags.f7_ack_eval_join=True` to state that the "
+                    "consumer reads it. Refusing rather than mis-indexing.")
+        # ---- refcv6 F9: the vocabulary is a NO-CHANGE item, so assert it -- #
+        if self.rv6.f9_assert_vocab:
+            _rv6.assert_f9_vocabulary(int(self.anchors.shape[0]),
+                                      bool(self.anchor_v0_cond),
+                                      int(self.rv6.f9_n_anchors))
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
             cond = cond + self.ctx_to_cond(ctx)
         if self.lan_to_cond is not None and lan_emb is not None:
             cond = cond + self.lan_to_cond(lan_emb)           # LAN (zero-init)
+        # ⭐ refcv6 §2b: PAST ego state reaches the condition, and therefore
+        # every decoder layer and every denoising pass — the same route nav and
+        # max-speed take. Zero-init, so it is a removable graft.
+        if self.ego_to_cond is not None and ego_hist is not None:
+            cond = cond + self.ego_to_cond(ego_hist.to(cond.dtype))
         if self.tgt_film is not None and target_latent is not None:
             cond = self.tgt_film(cond, self.tgt_proj(target_latent))
 
@@ -2307,6 +2635,16 @@ class AnchoredDiffusionDecoder(nn.Module):
         # which is why it is also returned.
         bank = self.roll_bank(v_ms, ego_keep, b, fmap.dtype,
                               withheld_speed=withheld_speed)
+        # ---- refcv6 F7: G independent noise draws per anchor -------------- #
+        # ⛔ GROUP-MAJOR, and `tile_anchor_prior` documents why: candidate
+        # `g*N + a` must be anchor `a`. `repeat_interleave` would type-check
+        # and attach every prior to the wrong candidate.
+        _groups = (max(int(getattr(self.cfg, "sampler_groups", 1)),
+                       int(self.rv6.f7_samples_per_anchor))
+                   if self.control_head is not None else 1)
+        if _groups > 1:
+            bank = bank.repeat(1, _groups, 1, 1)               # [B, G*N, S, 2]
+            n = n * _groups
         x0 = bank
         prior_bank = bank if self.anchor_v0_cond else None
 
@@ -2363,18 +2701,25 @@ class AnchoredDiffusionDecoder(nn.Module):
         x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
+        # ⭐ refcv6 F7: every [B, N_ANCHOR] prior below is produced by a Linear
+        # whose OUT features are the ANCHOR count, so on a widened fan it must
+        # be tiled to [B, G*N] in the group-major layout `bank` was tiled in.
+        # `_tile` is the identity when G == 1, which is what keeps this seam
+        # bit-identical off the F7 arm.
+        _tile = ((lambda z: _rv6.tile_anchor_prior(z, _groups))
+                 if _groups > 1 else (lambda z: z))
         terms: list[Tensor] = []
         # H19: maneuver prior reweights the anchor confidences (log-space).
         if self.maneuver_to_anchor is not None and maneuver_logits is not None:
-            terms.append(self.maneuver_to_anchor(
-                torch.log_softmax(maneuver_logits, dim=-1)))
+            terms.append(_tile(self.maneuver_to_anchor(
+                torch.log_softmax(maneuver_logits, dim=-1))))
         # D-TAC1: the factorised pair, summed. ``lat_prior`` / ``lon_prior`` are
         # already log-probabilities (optionally prior-centered) prepared by the
         # model, so the decoder keeps no policy of its own.
         if self.lat_to_anchor is not None and lat_prior is not None:
-            terms.append(self.lat_to_anchor(lat_prior))
+            terms.append(_tile(self.lat_to_anchor(lat_prior)))
         if self.lon_to_anchor is not None and lon_prior is not None:
-            terms.append(self.lon_to_anchor(lon_prior))
+            terms.append(_tile(self.lon_to_anchor(lon_prior)))
         # LAN: the route reweights the SAME anchor priors, geometrically.
         if self.lan_gate is not None and lan_dir is not None:
             terms.append(self.lan_gate
@@ -2476,6 +2821,32 @@ class AnchoredDiffusionDecoder(nn.Module):
         # `t_idx` continues the loop's own schedule (pass i used `i + 1`),
         # clamped to the embedding table exactly as the loop clamps it.
         prefinal = None
+        # ---- refcv6 F5: the EMITTING pass's own confidence ----------------- #
+        # ⭐ DD's emitted trajectory and its score come out of the SAME pass:
+        # `poses_reg` and `poses_cls` are both returned by the last decoder
+        # layer (`transfuser_model_v2.py:544-552`), and `best_reg` gathers the
+        # former by the argmax of the latter. Our sampler already returns that
+        # pair -- `conf, du = self._decode_ctrl(...)` with `u0_hat = x_n + du`
+        # -- but `SelectionConfig.refined` defaults FALSE, so the CLASSIFIER
+        # surface (a head that never saw the sample) does the ranking.
+        # ⛔ F5 therefore does NOT add a pass; it REMOVES one. It makes the
+        # sampler's own confidence the ranked surface, which is what
+        # `--sel-refined --sel-score-emitted` buys today at the cost of a
+        # FOURTH decoder call. Refused together, because running both would put
+        # two different scores on one fan and make the arm unattributable.
+        if self.rv6.f5_emitting_conf:
+            if sel.score_emitted:
+                raise ValueError(
+                    "refcv6 F5 and `--sel-score-emitted` are two different "
+                    "answers to the same question (which head scores the "
+                    "emitted fan). F5 uses the sampler's OWN last pass and "
+                    "costs nothing; `--sel-score-emitted` spends a fourth "
+                    "decoder call. Running both makes the arm "
+                    "unattributable -- pick one.")
+            if self.control_head is None:
+                raise ValueError(
+                    "refcv6 F5 needs the sampler: on a classifier build there "
+                    "is no 'emitting pass' whose confidence could be read.")
         if sel.score_emitted and steps > 0:
             t_e = (min(steps + 1, self.cfg.diffusion_steps)
                    if sel.score_emitted_t < 0
@@ -2487,11 +2858,14 @@ class AnchoredDiffusionDecoder(nn.Module):
                                             "refined", 0)
 
         # ---- the RANKED score ------------------------------------------------
-        base = refined if sel.refined else conf
+        # F5 forces the sampler surface even when `sel.refined` is False —
+        # `refined` here IS `_apply_grafts(s_conf, …)`, the emitting pass's own
+        # confidence carrying the same priors the classifier surface carries.
+        base = refined if (sel.refined or self.rv6.f5_emitting_conf) else conf
         r_terms: list[Tensor] = []
         cons_s = None
         if self.route_to_anchor is not None and route_prior is not None:
-            r_terms.append(self.route_to_anchor(route_prior))
+            r_terms.append(_tile(self.route_to_anchor(route_prior)))
         # S6: the PREDICTED goal reaches SELECTION through the SAME param-free
         # geometric compatibility the SUPPLIED LAN route uses — identical
         # mechanism, different provenance — and through a separately-gated
@@ -2615,6 +2989,19 @@ class AnchoredDiffusionDecoder(nn.Module):
                "anchor_traj": x, "anchor_bank": bank,
                "offset": offset, "sel_score": score,
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
+        # ---- refcv6 F7: the index the eval join must read ------------------ #
+        # ⛔ `sel_idx` indexes a CANDIDATE. With G > 1 that is NOT an anchor
+        # id, and every consumer that treats it as one silently mis-joins. The
+        # anchor id is emitted alongside it so the join has a correct column to
+        # move to; the refusal in the preflight is what makes moving mandatory.
+        if _groups > 1:
+            out["sel_anchor_id"] = _rv6.candidate_to_anchor_id(
+                idx, int(self.anchors.shape[0]), _groups)
+            out["sampler_groups"] = _groups
+        # ---- refcv6 F3: the per-stage predictions the cascade loss needs --- #
+        if self.cascade is not None and self._rv6_layer_u0:
+            out["layer_u0_hat"] = self._rv6_layer_u0
+            out["layer_logits"] = self._rv6_layer_conf
         if u0_hat is not None:
             # [B, N, S, 2] in the VOCABULARY's control units -- `alat` (m/s^2)
             # or `kappa` (1/m) per `anchor_control_units`. ⛔ The x0 loss MUST
@@ -2725,8 +3112,21 @@ class RefCModel(nn.Module):
     def __init__(self, cfg: RefCConfig):
         super().__init__()
         self.cfg = cfg
-        self.encoder = ResNetEncoder(cfg.encoder)
+        self.encoder = build_encoder(cfg.encoder)
         feat = self.encoder.feat_dim
+        # ---- refcv6 §2b: the EGO-HISTORY encoder (PI 2026-09-16) ---------- #
+        # ⛔ CONSTRUCTED ONLY WHEN ASKED. `cfg.ego_history is None` (the
+        # default) builds nothing, so the RNG draw order and the state_dict are
+        # bit-identical to pre-refcv6 and every banked checkpoint still loads
+        # strictly. The decoder's `ego_to_cond` is sized from THIS module's
+        # output, never from a second copy of the number.
+        self.ego_hist: nn.Module | None = None
+        self._ego_window: tuple | None = None
+        _ehc = getattr(cfg, "ego_history", None)
+        if _ehc is not None and bool(getattr(_ehc, "enable", False)):
+            from tanitad.models.ego_history import EgoHistoryEncoder
+            self.ego_hist = EgoHistoryEncoder(_ehc)
+            cfg.decoder.ego_hist_dim = int(_ehc.out_dim)
         n_steps = len(cfg.trajectory.horizons)
         if cfg.refc1 and len(cfg.path_dists) != n_steps:
             raise ValueError(f"refc1 needs len(path_dists) == "
@@ -3015,6 +3415,29 @@ class RefCModel(nn.Module):
         }
 
     # --- encode surface -----------------------------------------------------
+    def set_ego_window(self, poses: Tensor, n_past: int) -> None:
+        """Hand the NEXT forward this batch's observed ego track. ONE SHOT.
+
+        ``poses`` ``[B, T, 4]`` = (x, y, yaw, v); ``n_past`` is how many
+        leading steps are PAST. :meth:`forward` consumes and clears it, so a
+        forward that is not preceded by a fresh call raises rather than
+        re-encoding a previous batch's window — the failure mode a plain
+        attribute would have made invisible.
+
+        ⛔ Needed only because ``refc_v3.RefCV3Model.forward`` does not forward
+        unknown keyword arguments to the core. A caller that can reach
+        :meth:`forward` directly should pass ``ego_poses=`` instead.
+        """
+        if self.ego_hist is None:
+            raise ValueError(
+                "set_ego_window on a build with no ego-history encoder: the "
+                "window would be silently discarded while the caller believes "
+                "it was consumed. Build with `cfg.ego_history`.")
+        if poses.ndim != 3 or poses.shape[-1] < 4:
+            raise ValueError(f"ego window must be [B, T, >=4], got "
+                             f"{tuple(poses.shape)}")
+        self._ego_window = (poses, int(n_past))
+
     def encode_pooled(self, frames: Tensor) -> Tensor:
         """frames [B, C, H, W] -> pooled latent [B, F] (LAW target path)."""
         return self.encoder(frames)[1]
@@ -3119,7 +3542,9 @@ class RefCModel(nn.Module):
                 withheld_speed: Tensor | None = None,
                 gp_point: Tensor | None = None,
                 gp_valid: Tensor | None = None,
-                agent_gt: dict | None = None) -> dict:
+                agent_gt: dict | None = None,
+                ego_poses: Tensor | None = None,
+                ego_n_past: int | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -3398,6 +3823,40 @@ class RefCModel(nn.Module):
         # INPUT to the plan. With the flag OFF `ctx_dec is ctx` exactly, so this
         # line cannot perturb a today-arm.
         ctx_dec = None if self.cfg.no_strategic else ctx
+        # ---- refcv6 §2b: PAST ego -> a condition vector -------------------- #
+        # ⛔ THE ADMISSIBILITY BOUNDARY IS ENFORCED HERE AND IN THE ENCODER,
+        # not documented. `ego_poses` may be the whole window; `ego_n_past`
+        # says how much of it is PAST, the channel builder slices at that
+        # index, and the encoder slices again. A test mutates
+        # `ego_poses[:, n_past:]` and asserts the output is bit-identical, so a
+        # future read goes RED rather than unnoticed.
+        ego_vec = None
+        if self.ego_hist is not None:
+            # ⛔⛔ THE ONE-SHOT CHANNEL, AND WHY IT EXISTS. The v3 wrapper
+            # (`refc_v3.py::RefCV3Model.forward`) does not forward `**kwargs`
+            # to `self.core(...)`, and that file belongs to ANOTHER AGENT. So a
+            # caller that cannot reach this signature uses
+            # :meth:`set_ego_window`, and this POPS it: a second forward
+            # without a fresh `set_ego_window` finds nothing and raises, so a
+            # STALE window can never be silently re-encoded into a different
+            # batch's condition. ⭐ The permanent fix is one line in
+            # `refc_v3.py` — add `ego_poses` to its signature and pass it to
+            # both `self.core(...)` calls — and is named in the handover.
+            if ego_poses is None and self._ego_window is not None:
+                ego_poses, _n = self._ego_window
+                self._ego_window = None
+                ego_n_past = _n if ego_n_past is None else ego_n_past
+            if ego_poses is None:
+                raise ValueError(
+                    "refcv6 §2b: the ego-history encoder was BUILT but no "
+                    "`ego_poses` reached the forward. The condition would "
+                    "silently lose the channel while config.json stamps it -- "
+                    "the refcv5 false-provenance defect, one seam over.")
+            from tanitad.models.ego_history import ego_channels_from_poses
+            n_past = int(self.cfg.window if ego_n_past is None else ego_n_past)
+            ch = ego_channels_from_poses(ego_poses, n_past,
+                                         dt=float(self.ego_hist.cfg.dt))
+            ego_vec = self.ego_hist(ch)
         dec = self.decoder(fmap, m, ctx=ctx_dec, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
@@ -3409,7 +3868,7 @@ class RefCModel(nn.Module):
                            gp_point=gp_point, gp_valid=gp_valid,
                            withheld_speed=withheld_speed,
                            agent_tokens=agent_tokens, agent_pad=agent_pad,
-                           agent_pos=agent_pos)
+                           agent_pos=agent_pos, ego_hist=ego_vec)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))

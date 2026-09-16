@@ -421,6 +421,55 @@ def refc_channel_requirements():
                     "parameter on the forward rather than a guard in an RL adapter.",
             evidence="PUBLISHED-CODE 2026-09-07: `refc.py:2876` (the parameter), "
                      "`:2891-2897` (the docstring), `:2937-2946` (what it fills)."),
+        # ---- refcv6 §2b: EGO HISTORY (PI 2026-09-16) ---------------------- #
+        # ⚠️ DECLARED HERE BECAUSE THIS CONTRACT REQUIRES IT, by its own words:
+        # *"every surviving channel MUST be declared ... A forward that grows a
+        # channel therefore breaks LOUDLY at the next rollout construction
+        # instead of running blind to it."* The channel is added in
+        # `refc.py` (arch-inf core, refcv6); this file is the RL adapter's and
+        # the entry is additive. Routing around the guard with a stateful
+        # setter would have hidden the channel from the contract entirely,
+        # which is worse than declaring it.
+        CR(
+            channel="ego_poses",
+            owner="refcv6 §2b ego-history seam — arch-inf 2026-09-16",
+            predicates=("ego_history", "core.ego_history"),
+            reason="⛔ A build with `cfg.ego_history` REFUSES when this is "
+                   "absent (`refc.py::RefCModel.forward`, 'the condition "
+                   "would silently lose the channel while config.json stamps "
+                   "it'), so on such a build it is MANDATORY. On a build "
+                   "without the encoder it reaches nothing at all. ⭐ "
+                   "ADMISSIBILITY: it is the OBSERVED window's ego track "
+                   "`(x, y, yaw, v)` and nothing else. The binding PI ruling "
+                   "of 2026-09-02 makes measured v0 at t0 legal and PAST ego "
+                   "is the same class; ego FUTURE is not, and the encoder "
+                   "slices at `n_past` before it computes so the boundary is "
+                   "MUTATION-testable (`test_refcv6_trunk.py::"
+                   "test_ego_encoder_CANNOT_READ_THE_FUTURE`).",
+            evidence="PUBLISHED-CODE 2026-09-16: `refc.py::RefCModel.forward` "
+                     "(the parameter and its refusal), "
+                     "`tanitad/models/ego_history.py::EgoHistoryEncoder."
+                     "forward` (the single slice), `refc_v3_train.py::"
+                     "V3Dataset.__getitem__` (`ep.poses[t:t + w]`, which ends "
+                     "at the window's NOW and does not overlap "
+                     "`future_poses_ext`)."),
+        CR(
+            channel="ego_n_past",
+            owner="refcv6 §2b ego-history seam — arch-inf 2026-09-16",
+            reason="⭐ NOT A TENSOR CHANNEL — an INTEGER saying how many "
+                   "leading steps of `ego_poses` are PAST. `None` means "
+                   "`cfg.window`, the whole observed window, which is the "
+                   "only value the trainer passes. It is declared rather than "
+                   "filtered out by type for the same reason "
+                   "`hierarchy_hook` is: a channel silently dropped from the "
+                   "scope is indistinguishable from one nobody thought about.",
+            unblock="⛔ nothing should assert it. It is the SLICE INDEX of the "
+                    "admissibility boundary, not an observation; asserting it "
+                    "would refuse every build that relies on the default.",
+            evidence="PUBLISHED-CODE 2026-09-16: `refc.py::RefCModel.forward` "
+                     "(`n_past = cfg.window if ego_n_past is None`), "
+                     "`ego_history.py::ego_channels_from_poses` (the bound "
+                     "check that refuses an n_past past the tensor)."),
     )
 
 

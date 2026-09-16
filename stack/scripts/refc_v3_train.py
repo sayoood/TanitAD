@@ -96,6 +96,7 @@ from tanitad.refs import refc_bev_aux as _refc_bev_aux  # noqa: E402  (WP-D)
 from tanitad.data import bev_aux as _bev_aux  # noqa: E402  (WP-D target)
 from tanitad.refs import refc_wp_index as _refc_wp_index  # noqa: E402  (WP-B)
 from tanitad.models import kinematic as kin  # noqa: E402
+from tanitad.models import refcv6_diffusion as _rv6  # noqa: E402  (refcv6 §3)
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
 import numpy as _np  # noqa: E402
 
@@ -299,13 +300,53 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # pinning it here is what stopped an 8-wide build training on 3 classes.
     cfg.tac_vocab_version = ("v7.0" if getattr(args, "v7_labels", None)
                              else "kin3")
+    # ⭐ refcv6 §2 — the TRUNK pin goes FIRST, because the `--image-hw`
+    # rebuild below reconstructs `CNNEncoderConfig` field by field and would
+    # otherwise silently drop it (the same class of loss as the `rebuild_config`
+    # stamp that lived only on the Namespace).
+    _trunk = str(getattr(args, "trunk", "refc"))
+    cfg.core.encoder.trunk = _trunk
+    cfg.core.encoder.trunk_name = str(getattr(args, "trunk_name",
+                                              "resnet34.a1_in1k"))
+    cfg.core.encoder.trunk_mode = str(getattr(args, "trunk_mode", "shared"))
+    cfg.core.encoder.trunk_fuse = str(getattr(args, "trunk_fuse", "concat1x1"))
+    cfg.core.encoder.trunk_fuse_identity = not bool(
+        getattr(args, "trunk_fuse_plain_init", False))
+    _tic = int(getattr(args, "trunk_in_channels", 0) or 0)
+    if _tic:
+        cfg.core.encoder.in_channels = _tic
+    # ---- refcv6 §2b: the ego-history encoder onto the CORE config -------- #
+    # ⛔ Pinned onto the CONFIG, never only onto `args` — `rebuild_config`
+    # rebuilds through this helper, so a block on the Namespace would be lost
+    # on every roll.
+    if bool(getattr(args, "ego_history", False)):
+        from tanitad.models.ego_history import EgoHistoryConfig
+        cfg.core.ego_history = EgoHistoryConfig(
+            enable=True, steps=int(cfg.core.window),
+            hidden=int(getattr(args, "ego_history_hidden", 64)),
+            out_dim=int(getattr(args, "ego_history_out", 32)),
+            kind=str(getattr(args, "ego_history_kind", "gru")))
+    # ---- refcv6 §3: the F1..F9 block onto the CORE config ----------------- #
+    # ⛔ Pinned onto the CONFIG, never only onto `args`: `rebuild_config`
+    # rebuilds through this same helper, so a block living on the Namespace
+    # would be LOST on every roll — the identical failure the max-speed mode
+    # and `u0_absent_under_ddim` are pinned here to avoid.
+    _rv6_flags = refcv6_flags_from_args(args)
+    cfg.core.decoder.refcv6 = _rv6_flags
+    if _rv6_flags is not None and _rv6_flags.f6_w_u0_zero:
+        # F6 IS `--w-u0 0`, and it carries its own acknowledgement so the
+        # record reads "refcv6 F6" rather than "someone bypassed a guard".
+        args.w_u0 = 0.0
+        args.ack_ddim_no_u0 = True
     if args.image_hw:
         h, w = (int(args.image_hw[0]), int(args.image_hw[1]))
         enc = cfg.core.encoder
         cfg.core.encoder = refc.CNNEncoderConfig(
             in_channels=enc.in_channels, image_size=h,
             image_width=None if w == h else w,
-            base_width=enc.base_width, blocks=enc.blocks)
+            base_width=enc.base_width, blocks=enc.blocks,
+            trunk=enc.trunk, trunk_pretrained=enc.trunk_pretrained,
+            trunk_imagenet_norm=enc.trunk_imagenet_norm)
     # ---- ⭐⭐ REF-C v4 pins (E11' + E14 + X15) ------------------------
     # Applied to BOTH arms identically, exactly like every other pin here, so
     # `config_delta` stays the derived instrument it is: the v4 lever set is
@@ -1477,6 +1518,14 @@ class V3Dataset(RouteV21Dataset):
     #: discipline as ``nav_from_v7`` above, and the reason the OFF path can be
     #: proven bit-identical to the pre-wiring trainer at a fixed seed.
     tac_goal_targets: bool = False
+    #: ⭐ refcv6 §2b: emit ``pose_hist``, the OBSERVED window's ego track.
+    #: ⛔ Default False keeps the item's KEY SET byte-identical to the base
+    #: contract — pinned by ``test_refc_v3_u8_batches.py``, which compares the
+    #: emitted keys against ``_contract.py``'s. The gate is per-DATASET (set
+    #: once at construction), never per-ROW: a key that appeared on only some
+    #: rows would make the loss-time refusal fire at random instead of at
+    #: launch, which is the ``nav_args`` lesson.
+    ego_history: bool = False
     #: ⛔ NOT a literal in the loss. The negative policy is a property of THE
     #: LOADED SPLIT (`v7_labels.tactical_goal_targets.__doc__`: 3,574 of 4,572
     #: clips were never ASKED the traffic-light question, so their absence is
@@ -2010,6 +2059,18 @@ class V3Dataset(RouteV21Dataset):
         idx = torch.arange(t + w, t + w + MAX_H_EXT)
         item["future_poses_ext"] = ep.poses[idx.clamp(max=T - 1)]   # [60, 4]
         item["future_valid_ext"] = idx <= (T - 1)                   # [60] bool
+        # ---- refcv6 §2b: the OBSERVED window's ego track -------------------
+        # ⛔ EXACTLY `[t, t + w)`. The window's NOW is `t + w - 1`, the same
+        # index `pose_last` reads (`_contract.py:137`), so this slice ENDS at
+        # the present and contains no future sample. `future_poses_ext` above
+        # starts at `t + w`; the two do not overlap, and that non-overlap is
+        # the admissibility boundary the PI's 2026-09-02 ruling draws.
+        # ⛔ Gated PER DATASET, never per row. Off, the item's KEY SET is
+        # byte-identical to the base contract (`test_refc_v3_u8_batches.py`
+        # pins exactly that); on, EVERY row carries it, so the trainer's
+        # refusal fires at launch rather than at a random batch.
+        if self.ego_history:
+            item["pose_hist"] = ep.poses[t:t + w]                   # [W, 4]
         g, gv = refb_labels.goal_tac_targets(ep.poses, t + w - 1,
                                              v3.GOAL_TAU_STEPS)
         item["goal_tac"] = g                                        # [K, 4]
@@ -2361,6 +2422,22 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                         "agent_rates",
                         torch.zeros(*batch["agent_yaw"].shape, 3)).to(device)}
 
+    # ---- refcv6 §2b: hand the core THIS batch's OBSERVED ego window ------- #
+    # ⛔ `pose_hist` is `ep.poses[t : t + w]` — the observed window, ending at
+    # the same index `pose_last` reads. `n_past` is its FULL length because
+    # every step of it is past; the encoder slices again, so a future read
+    # would have to defeat two independent cuts. ⚠️ `set_ego_window` is a ONE-
+    # SHOT channel (`RefCModel.set_ego_window`): it exists only because
+    # `refc_v3.RefCV3Model.forward` does not forward unknown kwargs to the
+    # core, and that file is another agent's.
+    if getattr(model.core, "ego_hist", None) is not None:
+        if "pose_hist" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --ego-history but the batch carries no `pose_hist`: "
+                "the encoder would be stamped and fed nothing. Rebuild the "
+                "dataset through V3Dataset, which emits it unconditionally.")
+        ph = batch["pose_hist"].to(device)
+        model.core.set_ego_window(ph, int(ph.shape[1]))
     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
                 ego_state=ego_state, nav_args=nav_args,
                 v_max_ms=v_max_ms, v_max_valid=v_max_valid,
@@ -2385,7 +2462,17 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             * sv[:, None]).sum(-1)                          # [B, N] valid-only
     a_star = dist.argmin(dim=1)
     ar = torch.arange(b, device=device)
-    loss_cls = F.cross_entropy(out["anchor_logits"], a_star)
+    # ---- refcv6 F5: DD classifies with a SIGMOID FOCAL loss, not a softmax -- #
+    # `multimodal_loss.py:146-157`, gamma 2.0 / alpha 0.25, reduction 'mean'
+    # over B x N. ⛔ With `f5_focal` off this is the same `cross_entropy` call
+    # it has always been -- same tensor, same reduction, same scale.
+    _rv6f = _refcv6_flags_of(model)
+    if _rv6f.f5_focal:
+        loss_cls = _rv6.focal_cls_loss(out["anchor_logits"], a_star,
+                                       gamma=float(_rv6f.f5_focal_gamma),
+                                       alpha=float(_rv6f.f5_focal_alpha))
+    else:
+        loss_cls = F.cross_entropy(out["anchor_logits"], a_star)
     recon = out["anchor_traj"][ar, a_star]                  # [B, S, 2]
     denom = (sv.sum() * 2).clamp_min(1.0)
     loss_traj = (((recon - traj_tgt).abs().sum(-1)) * sv).sum() / denom
@@ -2727,6 +2814,44 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         loss_u0 = (((u_sel - u_gt) / norm).abs().sum(-1) * sv).sum() / denom
         loss = loss + w_u0 * loss_u0
         extra["u0"] = loss_u0
+
+    # ---- refcv6 F3: EVERY cascade stage carries the loss ------------------- #
+    # ⭐ DD sums `trajectory_loss` over `poses_reg_list` — one term per cascade
+    # layer (`transfuser_model_v2.py:492-497`) — and the trajectory handed to
+    # the next stage is DETACHED (`:379`). The detach lives in the decoder; the
+    # per-stage TERMS live here, because this is where the target is.
+    # ⛔ THE LAST STAGE IS EXCLUDED. It is already the emitted fan, already
+    # supervised by `loss_traj` + `loss_cls` above; adding it again would
+    # double-weight it and the "per-layer loss" arm would be partly a
+    # loss-weight arm. Only stages 0..L-2 are new terms.
+    if _rv6f.f3_per_layer and "layer_u0_hat" in out:
+        stages = out["layer_u0_hat"][:-1]
+        stage_logits = out["layer_logits"][:-1]
+        if stages:
+            # ⛔ `v0` is THIS window's measured speed — the same tensor the
+            # forward rolled the bank from (`:2311`). Rolling a stage at the
+            # reference speed instead would compare a 6 s path against a target
+            # generated at a different initial state, and every stage term
+            # would be wrong by a horizon-growing offset that still looks like
+            # a loss.
+            v_cas = v0.reshape(-1).to(torch.float32)
+            l_cas = out["anchor_logits"].new_zeros(())
+            for u_i, c_i in zip(stages, stage_logits):
+                # geometry: the stage's x0 in control units, rolled by the SAME
+                # integrator the fan uses, then matched-anchor L1 in metres.
+                p_i = model.core.decoder._state_to_path(
+                    u_i, v_cas,
+                    str(core.decoder.sampler_space) == "metre")
+                r_i = p_i[ar, a_star]
+                l_cas = l_cas + (((r_i - traj_tgt).abs().sum(-1) * sv).sum()
+                                 / denom)
+                l_cas = l_cas + (
+                    _rv6.focal_cls_loss(c_i, a_star,
+                                        gamma=float(_rv6f.f5_focal_gamma),
+                                        alpha=float(_rv6f.f5_focal_alpha))
+                    if _rv6f.f5_focal else F.cross_entropy(c_i, a_star))
+            loss = loss + l_cas
+            extra["cascade"] = l_cas
 
     # ---- refcv5 WP-6: the GT-supervised detection set loss ----------------
     # ⛔ `obstacle.offline` is a TRAIN-TIME LABEL. It enters HERE, in the loss,
@@ -3178,6 +3303,34 @@ def _seam_stamp(cfg, args) -> dict:
         "sampler_steps": int(getattr(core.decoder, "sampler_steps", 2)),
         "sampler_groups": int(getattr(core.decoder, "sampler_groups", 1)),
         "control_norm": list(getattr(core.decoder, "control_norm", (4.0, 3.0))),
+        # ⭐⭐ refcv6 §2 + §3. A run that does not stamp these cannot say which
+        # trunk it trained or which of F1..F9 were live — the same
+        # unfalsifiability `SEAM_STATE.md` measured for six earlier seams.
+        # `refcv6: null` is the BASELINE and is distinguishable from absence.
+        "trunk": str(getattr(core.encoder, "trunk", "refc")),
+        "trunk_name": str(getattr(core.encoder, "trunk_name",
+                                  "resnet34.a1_in1k")),
+        "trunk_mode": str(getattr(core.encoder, "trunk_mode", "shared")),
+        "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
+        "trunk_fuse_identity": bool(getattr(core.encoder,
+                                            "trunk_fuse_identity", True)),
+        "trunk_frames": int(core.encoder.in_channels) // 3,
+        "trunk_pretrained": bool(getattr(core.encoder, "trunk_pretrained",
+                                         True)),
+        "trunk_imagenet_norm": bool(getattr(core.encoder,
+                                            "trunk_imagenet_norm", True)),
+        "trunk_in_channels": int(core.encoder.in_channels),
+        # ⭐ refcv6 §2b. `null` is the baseline and is distinguishable from
+        # absence — the `wp_index` convention, for the same reason.
+        "ego_history": (core.ego_history.as_dict()
+                        if getattr(core, "ego_history", None) is not None
+                        else None),
+        "opt": str(getattr(args, "opt", "adam")),
+        "weight_decay": float(getattr(args, "weight_decay", 1e-4)),
+        "encoder_lr_mult": float(getattr(args, "encoder_lr_mult", 0.5)),
+        "refcv6": (_rv6.flag_stamp(core.decoder.refcv6)
+                   if getattr(core.decoder, "refcv6", None) is not None
+                   else None),
         # ⭐ STAGE 0. A run that does not stamp these cannot say whether its
         # fan was projected -- and a projected fan reads `envelope 0.0000` as
         # an IDENTITY, which is indistinguishable in a metrics table from a
@@ -3551,6 +3704,48 @@ def assert_seams_are_built(model, stamp: dict) -> None:
             f"for that loss to supervise: the term would be silently skipped "
             f"while the weight is stamped")
 
+    # --- refcv6 §2/§3: the trunk and the F-flags, BOTH DIRECTIONS ---------- #
+    # ⛔ A stamped `trunk: timm` on a model whose encoder is the in-repo
+    # ResNet would claim an ImageNet prior the weights do not have — the same
+    # false provenance as a stamped sampler with no denoiser. And an F3/F4 arm
+    # whose heads were not built would train the BASELINE under refcv6's name.
+    _enc = _mod(core, "encoder")
+    _is_timm = type(_enc).__name__ == "TimmResNetTrunk"
+    if str(stamp.get("trunk", "refc")) == "timm" and not _is_timm:
+        bad.append(
+            "stamp says trunk='timm' but core.encoder is a "
+            f"{type(_enc).__name__} -- the record would claim an ImageNet "
+            "prior the weights do not have")
+    if str(stamp.get("trunk", "refc")) != "timm" and _is_timm:
+        bad.append(
+            "stamp says trunk='refc' but core.encoder IS the timm ImageNet "
+            "trunk -- a live prior absent from the run record")
+    _eh = stamp.get("ego_history")
+    _eh_built = _mod(core, "ego_hist") is not None
+    if _eh is not None and bool(_eh.get("enable")) and not _eh_built:
+        bad.append("stamp carries an `ego_history` block but core.ego_hist is "
+                   "None -- the record would claim an input the model never "
+                   "reads")
+    if (_eh is None or not bool(_eh.get("enable"))) and _eh_built:
+        bad.append("core.ego_hist IS built but the stamp says ego_history is "
+                   "off -- a live input absent from the run record")
+    _r6 = stamp.get("refcv6")
+    _built = _mod(dec, "rv6")
+    if _r6 is not None:
+        if _mod(dec, "cascade") is None and bool(_r6.get("f3_per_layer")):
+            bad.append("stamp says F3 but decoder.cascade is None -- the "
+                       "per-layer heads were never built")
+        if _mod(dec, "adaln") is None and bool(_r6.get("f4_adaln")):
+            bad.append("stamp says F4 but decoder.adaln is None -- the "
+                       "AdaLN modulation was never built")
+        if _built is not None and _rv6.flag_stamp(_built) != _r6:
+            bad.append("the stamped refcv6 block differs from the one the "
+                       "decoder was BUILT with -- the record would name a "
+                       "different arm than the one that trains")
+    elif _built is not None and _built.any_on:
+        bad.append("decoder carries live refcv6 flags but the stamp says "
+                   "refcv6=null -- a live arm absent from the run record")
+
     # --- WP-6: the agent seam --------------------------------------------- #
     layers = list(getattr(dec, "layers", []))
     if bool(stamp.get("cross_agent", False)):
@@ -3806,6 +4001,94 @@ def _verify_agent_join(args) -> dict | None:
           f"{ev['filename']}) = {ev['digest']}", flush=True)
     ev.update({"mode": mode, "sidecar": str(side)})
     return ev
+
+
+def _refcv6_flags_of(model) -> "_rv6.DiffusionFlags":
+    """The F1..F9 block the MODEL was built with. -> ``DiffusionFlags``.
+
+    ⛔ Read off the built decoder, never off ``args``. A flag that lives only
+    on the Namespace is the refcv5 false-provenance defect: the loss would take
+    the F3/F5 branch for a model whose decoder built no cascade heads, and the
+    run would stamp an arm it did not train.
+    """
+    dec = getattr(getattr(model, "core", model), "decoder", None)
+    flags = getattr(dec, "rv6", None)
+    return flags if isinstance(flags, _rv6.DiffusionFlags) else _rv6.DiffusionFlags()
+
+
+def refcv6_flags_from_args(args) -> "_rv6.DiffusionFlags | None":
+    """``--f1-…`` .. ``--f9-…`` -> a :class:`DiffusionFlags`, or ``None``.
+
+    ⭐ ``None`` when EVERY flag is at its default, so ``DecoderConfig.refcv6``
+    stays ``None`` on a baseline run and the decoder constructs nothing. That
+    is what makes "all nine off == bit-identical" true of the BUILD and not
+    only of the forward.
+    """
+    flags = _rv6.DiffusionFlags(
+        f1_random_t=bool(getattr(args, "f1_random_t", False)),
+        f1_t_max=int(getattr(args, "f1_t_max", 50)),
+        f2_dd_step=bool(getattr(args, "f2_dd_step", False)),
+        f3_per_layer=bool(getattr(args, "f3_per_layer", False)),
+        f4_adaln=bool(getattr(args, "f4_adaln", False)),
+        f4_zero_init=bool(getattr(args, "f4_zero_init", False)),
+        f5_emitting_conf=bool(getattr(args, "f5_emitting_conf", False)),
+        f5_focal=bool(getattr(args, "f5_focal", False)),
+        f6_w_u0_zero=bool(getattr(args, "f6_w_u0_zero", False)),
+        f7_samples_per_anchor=int(getattr(args, "f7_samples_per_anchor", 1)),
+        f7_ack_eval_join=bool(getattr(args, "f7_ack_eval_join", False)),
+        f8_flat_waypoint_noise=bool(getattr(args, "f8_flat_noise", False)),
+        f9_assert_vocab=bool(getattr(args, "f9_assert_vocab", False)))
+    return flags if flags.any_on else None
+
+
+def build_optimizer(model, args):
+    """refcv6 §2 — the optimiser, behind ``--opt``. -> ``torch.optim.Optimizer``.
+
+    ``--opt adam`` (DEFAULT) returns **exactly** ``torch.optim.Adam(
+    model.parameters(), lr=args.lr)``: one parameter group, one learning rate,
+    no weight decay. That is the line this function replaced, and
+    ``tests/test_refcv6_trunk.py::test_default_optimiser_is_bit_identical``
+    pins it against a freshly-constructed ``Adam`` group-for-group so the
+    refcv6 flags cannot change a banked arm by accident.
+
+    ``--opt dd`` returns DiffusionDrive's optimiser, from the released config
+    (``…/ddv2_src/diffusiondrivev2_rl_config.py:119-131``, paper §4.2):
+
+    * ``AdamW`` (``optimizer_type = "AdamW"``, line 122);
+    * ``weight_decay = 1e-4`` (line 120) — NOT torch's 1e-2 AdamW default;
+    * ``opt_paramwise_cfg`` (lines 125-131) puts the **image encoder** on
+      ``lr_mult = cfg_lr_mult = 0.5`` (line 124), i.e. the encoder group runs
+      at HALF the head learning rate.
+
+    ⛔ Warm-up + cosine is unchanged and lives in the ``sched`` lambda at the
+    call site. It is a MULTIPLIER on each group's own ``lr``, so the 0.5x
+    survives the schedule instead of being overwritten by it — which is the
+    silent way a paramwise config stops meaning anything.
+    """
+    kind = str(getattr(args, "opt", "adam"))
+    if kind == "adam":
+        return torch.optim.Adam(model.parameters(), lr=args.lr)
+    if kind == "dd":
+        from tanitad.models.timm_trunk import param_groups_dd
+        # ⛔ The prefix is READ OFF THE MODEL, never assumed. `refc_v3`'s
+        # wrapper nests the trunk at `core.encoder`; a bare `RefCModel` has it
+        # at `encoder`. Guessing wrong does not crash — it puts EVERY tensor in
+        # the head group and the 0.5x applies to nothing, which is the DD
+        # recipe in name only. `param_groups_dd` raises on an empty encoder
+        # group, and this picks the prefix that exists.
+        _enc_attr = ("core.encoder" if hasattr(getattr(model, "core", None),
+                                               "encoder") else "encoder")
+        groups = param_groups_dd(
+            model, float(args.lr), encoder_attr=_enc_attr,
+            encoder_lr_mult=float(getattr(args, "encoder_lr_mult", 0.5)),
+            weight_decay=float(getattr(args, "weight_decay", 1e-4)))
+        opt = torch.optim.AdamW(groups, lr=float(args.lr))
+        print(f"[v3] opt=dd AdamW wd={getattr(args, 'weight_decay', 1e-4)} "
+              f"encoder_lr={groups[0]['lr']:.3e} ({len(groups[0]['params'])} "
+              f"tensors) head_lr={groups[1]['lr']:.3e} "
+              f"({len(groups[1]['params'])} tensors)", flush=True)
+        return opt
+    raise SystemExit(f"[v3] ⛔ --opt {kind!r} not in ('adam', 'dd')")
 
 
 def _apply_withheld_bank(model, args, eps, device) -> dict:
@@ -4479,6 +4762,9 @@ def train(args) -> dict:
         # ever be pushed towards 1, which degrades the shared trunk and
         # inflates any pooled score. Both are stamped into config.json, so the
         # run record says what the head was actually trained on.
+        # ⭐ refcv6 §2b: the ego-history channel is a DATASET decision, taken
+        # here so the trainer's `pose_hist` refusal fires at launch.
+        ds.ego_history = bool(getattr(args, "ego_history", False))
         if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:
             ds.tac_goal_targets = True
             ds.tac_goal_negatives = str(getattr(args, "tac_goal_negatives",
@@ -4621,6 +4907,10 @@ def train(args) -> dict:
             # still correct and still not a crash: every cell is IGNORE_W, so
             # `tac_goal_loss` returns a real 0.0 WITH `n_supervised == 0`
             # saying why — the documented control, never a silent skip.
+            # ⭐ refcv6 §2b: the EVAL split is fed the same channel, or the
+            # in-training eval would run a model whose condition is missing an
+            # input it was trained with.
+            e_ds.ego_history = bool(getattr(args, "ego_history", False))
             if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:
                 e_ds.tac_goal_targets = True
                 e_ds.tac_goal_negatives = str(getattr(
@@ -4724,7 +5014,7 @@ def train(args) -> dict:
 
     withheld_stamp = _apply_withheld_bank(model, args, eps, device)
 
-    opt = torch.optim.Adam(model.parameters(), lr=args.lr)
+    opt = build_optimizer(model, args)
     sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \
         0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)
                               / max(1, args.steps - args.warmup)))   # noqa: E731
@@ -5756,6 +6046,144 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--batch", type=int, default=20)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--warmup", type=int, default=2000)
+    # ---- refcv6 §2: the trunk and the optimiser the papers actually use --- #
+    # ⛔ BOTH DEFAULT TO TODAY'S BEHAVIOUR. `--trunk refc` + `--opt adam` is
+    # bit-for-bit the pre-refcv6 trainer (pinned by
+    # tests/test_refcv6_trunk.py::test_default_optimiser_is_bit_identical).
+    ap.add_argument("--trunk", choices=("refc", "timm"), default="refc",
+                    help="refcv6 §2. `timm` builds `resnet34.a1_in1k` with "
+                         "ImageNet weights (DiffusionDrive's trunk and "
+                         "DiffusionDrive's init, `rl_config.py:16-18`); it "
+                         "REFUSES to build if the weights did not load. "
+                         "`refc` (default) is the in-repo random-init 90.5 M "
+                         "trunk. ⚠️ The two differ in feat_dim (512 vs "
+                         "base_width*8): switching is a new arm, never a "
+                         "resume.")
+    ap.add_argument("--trunk-in-channels", type=int, default=0,
+                    help="0 = leave the config's `in_channels` alone. It is "
+                         "3*K: the stack width the corpus delivers, and K is "
+                         "DERIVED from it. 9 = our 3-frame stack (the PI's "
+                         "2026-09-16 default), 3 = DD's single frame.")
+    ap.add_argument("--trunk-name", default="resnet101.a1_in1k",
+                    help="timm backbone id. ⭐ PI 2026-09-16: PRIMARY "
+                         "`resnet101.a1_in1k` (42,500,160 params; 1024 @ "
+                         "stride-16 / 2048 @ stride-32), SECOND COMPARISON RUN "
+                         "`resnet34.a1_in1k` (21,284,672; 256 / 512) -- the "
+                         "papers' and DiffusionDrive's own. Every channel "
+                         "count is read from timm's `feature_info`, so a swap "
+                         "needs no model-code change.")
+    ap.add_argument("--trunk-mode", choices=("shared", "inflate"),
+                    default="shared",
+                    help="⭐ PI 2026-09-16: FRAME HISTORY IS REQUIRED. "
+                         "`shared` (DEFAULT) runs the SAME weights over each "
+                         "of the K frames, 3 ImageNet-normalised channels "
+                         "each, and fuses AFTER the trunk at both strides -- "
+                         "which keeps the ImageNet prior EXACT. `inflate` is "
+                         "the cheaper alternative arm: ONE pass with a "
+                         "3K-channel stem whose weights are repeated and "
+                         "divided by K.")
+    ap.add_argument("--trunk-fuse", choices=("concat1x1", "attn", "last"),
+                    default="concat1x1",
+                    help="temporal fusion over the K per-frame maps. `last` is "
+                         "the single-frame CONTROL. Identity-initialised on "
+                         "the NEWEST frame, so history is a REMOVABLE graft "
+                         "and step 0 is bit-identical to K = 1.")
+    ap.add_argument("--trunk-fuse-plain-init", action="store_true",
+                    help="⛔ DELIBERATE REGRESSION of the identity init. "
+                         "Without the identity, 'K frames beat 1 frame' is "
+                         "confounded with 'a random 1x1 conv was inserted'.")
+    # ---- refcv6 §2b: EGO HISTORY AS AN INPUT (PI 2026-09-16) ------------- #
+    ap.add_argument("--ego-history", action="store_true",
+                    help="⭐ PI 2026-09-16. Encode the OBSERVED window's ego "
+                         "track (speed, longitudinal accel, yaw rate per step) "
+                         "into a vector that joins the condition beside nav "
+                         "and max speed. ⛔ PAST ONLY -- the encoder slices "
+                         "before it computes and a mutation test asserts a "
+                         "future index is never read.")
+    ap.add_argument("--ego-history-kind", choices=("gru", "conv1d"),
+                    default="gru")
+    ap.add_argument("--ego-history-hidden", type=int, default=64)
+    ap.add_argument("--ego-history-out", type=int, default=32)
+    ap.add_argument("--opt", choices=("adam", "dd"), default="adam",
+                    help="refcv6 §2. `dd` is DiffusionDrive's optimiser "
+                         "(`diffusiondrivev2_rl_config.py:119-131`): AdamW, "
+                         "weight_decay 1e-4, and the ENCODER parameter group "
+                         "at `cfg_lr_mult` = 0.5x the head lr. `adam` "
+                         "(default) is today's plain Adam, one lr, no weight "
+                         "decay -- kept as the default so every banked run "
+                         "stays reproducible.")
+    ap.add_argument("--weight-decay", type=float, default=1e-4,
+                    help="`--opt dd` only. DD's value, NOT torch AdamW's 1e-2 "
+                         "default.")
+    ap.add_argument("--encoder-lr-mult", type=float, default=0.5,
+                    help="`--opt dd` only. DD's `cfg_lr_mult`.")
+    # ---- refcv6 §3: F1..F9, each its own flag, each default OFF ----------- #
+    # ⛔ With none of these passed, `refcv6_flags_from_args` returns None,
+    # `DecoderConfig.refcv6` stays None, and the decoder constructs NOTHING --
+    # pinned by tests/test_refcv6_diffusion.py::
+    # test_all_flags_off_is_bit_identical_on_64_windows.
+    g6 = ap.add_argument_group("refcv6 diffusion (F1..F9)")
+    g6.add_argument("--f1-random-t", action="store_true",
+                    help="F1. DD's TRAINING objective: ONE decoder call at "
+                         "t ~ U[0, --f1-t-max) per sample, instead of "
+                         "backprop through the 2-step inference chain. DD "
+                         "`transfuser_model_v2.py:463-476`.")
+    g6.add_argument("--f1-t-max", type=int, default=50,
+                    help="F1's draw bound, EXCLUSIVE. 50 is DD's. 1 is the "
+                         "pre-registered zero-noise regression arm.")
+    g6.add_argument("--f2-dd-step", action="store_true",
+                    help="F2. DD's step semantics t -> t-1 (it calls "
+                         "`set_timesteps(1000)`, `:507`), which keeps ~95 pct "
+                         "of the residual. Ours steps 10 -> 0 and keeps ~28 "
+                         "pct.")
+    g6.add_argument("--f3-per-layer", action="store_true",
+                    help="F3. Per-layer offset + confidence heads, a loss term "
+                         "per stage, and a DETACH between stages (DD `:379`, "
+                         "`:492-497`). ⚠️ ADDS PARAMETERS -- not "
+                         "checkpoint-compatible.")
+    g6.add_argument("--f4-adaln", action="store_true",
+                    help="F4. DD's `ModulationLayer` after every layer's FFN "
+                         "(`:229-268`, applied `:337`). Today the timestep is "
+                         "added ONCE, to the query. ⚠️ ADDS PARAMETERS.")
+    g6.add_argument("--f4-zero-init", action="store_true",
+                    help="F4 variant: zero-init the scale/shift so the "
+                         "modulation starts as the identity. ⛔ DD's released "
+                         "`if_zeroinit_scale` is FALSE (`:233`); this is OUR "
+                         "removable-graft variant, and the stamp says which "
+                         "ran.")
+    g6.add_argument("--f5-emitting-conf", action="store_true",
+                    help="F5a. Rank by the SAMPLER's own last-pass confidence "
+                         "-- the pass that emitted the fan (DD `:544-552`). "
+                         "REMOVES a decoder call; refuses alongside "
+                         "--sel-score-emitted.")
+    g6.add_argument("--f5-focal", action="store_true",
+                    help="F5b. DD's sigmoid FOCAL classification loss "
+                         "(gamma 2.0, alpha 0.25, `multimodal_loss.py:"
+                         "146-157`) instead of our softmax CE.")
+    g6.add_argument("--f6-w-u0-zero", action="store_true",
+                    help="F6. DD has ONE reconstruction loss; our --w-u0 "
+                         "duplicates it in control space. Sets --w-u0 0 AND "
+                         "implies --ack-ddim-no-u0, so the choice is stamped "
+                         "as refcv6 F6 rather than as a bypass.")
+    g6.add_argument("--f7-samples-per-anchor", type=int, default=1,
+                    help="F7. G independent noise draws per anchor -> a "
+                         "[B, G*N] fan (DD Tab. 6: N 20 -> 40 is +0.1 PDMS). "
+                         "Requires --f7-ack-eval-join.")
+    g6.add_argument("--f7-ack-eval-join", action="store_true",
+                    help="F7. State that the eval consumer reads the new "
+                         "`sel_anchor_id` column rather than `sel_idx`. ⛔ "
+                         "Without it G > 1 still REFUSES: taniteval's dumps "
+                         "join `sel_idx` as an ANCHOR id and that file is not "
+                         "this agent's to change.")
+    g6.add_argument("--f8-flat-noise", action="store_true",
+                    help="F8. DD's FLAT waypoint-space noise: the affine "
+                         "`norm_odo` box (x/56.9, y/46, `:432-441`) plus DD's "
+                         "[-1, 1] clamp, giving 0.90 / 0.73 m per waypoint at "
+                         "EVERY horizon. Requires --sampler-space metre.")
+    g6.add_argument("--f9-assert-vocab", action="store_true",
+                    help="F9. Assert the vocabulary is still v0-conditioned "
+                         "and 117 anchors. F9 is a NO-CHANGE item, so it is "
+                         "enforced rather than described.")
     ap.add_argument("--episodes", type=int, default=0, help="0 = all")
     ap.add_argument("--goal-str", action="store_true",
                     help="train the strategic goal head (needs the lan LABEL "

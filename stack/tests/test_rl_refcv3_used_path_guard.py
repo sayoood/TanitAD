@@ -92,8 +92,16 @@ def test_the_two_adapters_bind_DIFFERENT_CLASSES():
     b = set(inspect.signature(v3.RefCV3Model.forward).parameters)
     # ⛔ HARD-CODED, both directions. Not "the sets differ" — WHICH channels, so a
     # signature change has to be read by a human instead of re-blessed by a diff.
+    # ⭐ MOVED 2026-09-16 (refcv6 §2b, PI: *"process the image frame history and
+    # also ego data history as inputs"*). `RefCModel.forward` grew `ego_poses`
+    # (the OBSERVED window's ego track) and `ego_n_past` (how much of it is
+    # PAST). They are on the CORE and not on `RefCV3Model`, which is why they
+    # land in `a - b`: the v3 wrapper does not forward them yet, and until it
+    # does the core's own `set_ego_window` one-shot carries them. ⚠️ THE v3
+    # SIGNATURE IS THE OPEN ITEM — adding `ego_poses` there moves these two
+    # back out of this set, and that edit belongs with the v3 owner.
     assert a - b == {"maneuver_logits", "target_latent", "hierarchy_hook",
-                     "ego_keep"}
+                     "ego_keep", "ego_poses", "ego_n_past"}
     assert b - a == {"ego_state", "nav_args", "v_max_ms", "v_max_valid"}
 
 
@@ -138,9 +146,13 @@ def test_the_channel_set_is_derived_from_the_handed_models_OWN_signature(
         refc_model):
     """⛔ HARD-CODED expectations for BOTH families, from their real signatures."""
     got = ad.forward_conditioning_channels(refc_model)
+    # ⭐ `ego_poses` / `ego_n_past` added 2026-09-16 (refcv6 §2b) — declared in
+    # `refc_channel_requirements`, which is what makes them CHECKED rather than
+    # merely present.
     assert set(got) == {"nav_cmd", "v0", "maneuver_logits", "target_latent",
                         "lan", "nav_known", "hierarchy_hook", "ego_keep",
-                        "withheld_speed", "agent_gt"}
+                        "withheld_speed", "agent_gt", "ego_poses",
+                        "ego_n_past"}
     # frames/steps are not conditioning channels; the goal point and the three
     # E13b/E16 channels are LABELS, excluded in the seams that own them.
     for absent in ("frames", "steps", "self", "gp_point", "gp_valid"):
@@ -392,7 +404,8 @@ def test_the_lazy_import_holds_in_BOTH_orders(first, second):
     r = subprocess.run([sys.executable, "-c", code], capture_output=True,
                        text=True)
     assert r.returncode == 0, f"{first} then {second}:\n{r.stderr[-2000:]}"
-    assert r.stdout.strip() == "11"
+    # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
+    assert r.stdout.strip() == "13"
 
 
 def test_every_declaration_is_reviewable_and_covers_both_families():
@@ -406,7 +419,8 @@ def test_every_declaration_is_reviewable_and_covers_both_families():
     from tanitad.rl import refc_adapter as ra
 
     decls = ad.refc_channel_requirements()
-    assert len(decls) == 11
+    # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
+    assert len(decls) == 13
     mine = {r.channel: r for r in decls}
     theirs = {r.channel: r for r in ra.CHANNEL_REQUIREMENTS}
 
