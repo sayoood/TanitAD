@@ -869,16 +869,44 @@ def test_e2e_the_image_only_lat3_prior_is_REPLACED_not_added():
 
 @needs_patch
 def test_e2e_a_scene_hook_with_no_scene_REFUSES():
+    """⚠️ RE-TARGETED 2026-09-17 (PI RULING R2), and the SECOND half is the
+    point. Moving the BEV encoder INTO the forward added an EARLIER, more
+    specific refusal on the v3 path: a decoder built ``d_bev > 0`` with no
+    perception branch attached now raises before the core is called, because
+    ``refcv6_tactical.forward`` would otherwise run AGENT-ONLY without
+    complaining while the record said 'agent and map'.
+
+    ⛔ SO THE OLD TARGET MUST BE PROVEN STILL REACHABLE, or this patch quietly
+    turned a live guard into dead code — which is exactly the damage this suite
+    exists to catch. It is reachable from a DIRECT ``RefCModel`` call, which is
+    a real call site (the core is used without the v3 wrapper), and the second
+    half of this test takes it.
+    """
     import torch as t
+
+    from tanitad.refs import refc as _refc
     from tanitad.refs import refc_v3 as v3
     cfg = _v3cfg(tac_decoder_v6=True)
     cfg.tac_decoder_cfg = v6tac.TacticalDecoderConfig(
         d_model=64, n_layers=1, n_heads=4, d_agent=0, d_bev=16)
     m = v3.RefCV3Model(cfg)          # d_bev > 0, so the build is admissible
     b, w = 1, cfg.core.window
-    with pytest.raises(ValueError, match="NEITHER agent tokens NOR BEV"):
+    # (1) the v3 path: the EARLIER refusal, naming the missing branch
+    with pytest.raises(ValueError, match="NO perception branch is attached"):
         m(t.randn(b, w, 1, 64, 64), nav_cmd=t.zeros(b, dtype=t.long),
           v0=t.zeros(b))
+    _m("RefCV3Model.forward",
+       "a decoder built d_bev > 0 with NO perception branch attached",
+       "ValueError RAISED (it would run agent-only while the record said "
+       "'agent and map')")
+
+    # (2) THE CORE'S OWN REFUSAL IS STILL LIVE — reached directly, with a hook
+    # and neither token source. ⛔ Without this the patch would have made it
+    # unreachable from the suite and nobody would know.
+    core = _refc.RefCModel(cfg.core)
+    with pytest.raises(ValueError, match="NEITHER agent tokens NOR BEV"):
+        core(t.randn(b, w, 1, 64, 64), nav_cmd=t.zeros(b, dtype=t.long),
+             v0=t.zeros(b), scene_hook=lambda *a, **k: {})
     _m("RefCModel.forward (patched)",
        "a scene_hook supplied while the forward built neither agent nor BEV "
        "tokens",

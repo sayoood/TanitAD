@@ -553,6 +553,16 @@ class RefCV3Config:
     #: tune after seeing the result: it is stamped into `config.json` and the
     #: report carries precision beside recall at exactly this value.
     tac_decoder_valid_threshold: float = 0.5
+    #: ⛔ **OFF is the PI's ruling, not a default someone picked.** 2026-09-17,
+    #: verbatim: *"you can backpropagate to the trunk"*. With this False the BEV
+    #: tokens reach the behaviour decoder ATTACHED, so the tactical loss shapes
+    #: the shared ResNet trunk. True is the ABLATION — runnable, stamped into
+    #: `config.json`, and never selected silently. ⚠️ The cost the ruling names
+    #: is attribution: with it off the trunk is optimised FOUR ways (planner,
+    #: map head, box head, tactical decoder) and the named mitigation is
+    #: per-head `grad_abs_sum` plus the gradient-conflict detector, both of
+    #: which must be ON for every arm from here.
+    tac_decoder_bev_detach: bool = False
 
     # --- refcv6 §5: max speed as a FOUR-VALUE ONE-HOT INPUT -----------------
     # ⭐ The PI's correction of 2026-09-16: max speed is an INPUT, not a
@@ -1644,6 +1654,98 @@ class RefCV3Model(nn.Module):
 
         return scene_hook
 
+    # ------------------------------------------------------------------
+    # refcv6 §4 — the BEV hook (PI RULING 2026-09-17 R2/R3)
+    # ------------------------------------------------------------------
+    def _bev_hook(self, cache: dict, grid: Tensor | None = None,
+                  valid: Tensor | None = None):
+        """Run the perception branch INSIDE the core forward, not after it.
+
+        ⛔ **THIS IS THE LIFTED BLOCKER.** `PREREG_REFCV6_V2.ERRATUM-1.md` §E8
+        recorded §4's map half as *structurally* unreachable: this forward never
+        passed ``bev_tokens=`` to ``self.core(...)``, and the BEV encoder lived
+        on the TRAINER's wrapper (``model._perception``), running AFTER the core
+        forward on ``out["fmap_s16"]`` — so no BEV token existed at the instant
+        ``refc.py``'s scene hook fired. The PI lifted it by instruction on
+        2026-09-17 (*"yes use also the map for tactical behavior decoding and
+        you can backpropagate to the trunk"*). The branch is still an ATTRIBUTE
+        the trainer attaches, not a config field, for the reason
+        ``refcv6_perception_branch``'s docstring gives: a model that does not
+        build it is bit-identical to one that never could.
+
+        ⛔ **NO DETACH.** The tokens carry the trunk's graph, so the tactical
+        loss shapes the trunk — R3, explicitly. The alternative is expressible
+        (``--tac-decoder-bev-detach``) and is stamped when used; it is not
+        chosen here on an implementer's judgement.
+
+        Returns ``None`` — and ``refc.py`` then skips the whole block — when no
+        branch is attached, which is every arm the tip could run.
+        """
+        br = getattr(self, "_perception", None)
+        if br is None:
+            return None
+
+        def bev_hook(fmap_s16: Tensor) -> dict:
+            if br.lift is not None and (grid is None or valid is None):
+                raise ValueError(
+                    "[refcv6] ⛔ the BEV lift is built but no per-clip lift "
+                    "geometry reached the forward. Pass `perception_grid=` / "
+                    "`perception_valid=` (LiftGeometryBank.for_episodes). A "
+                    "default camera would back-project through the wrong road "
+                    "plane on a corpus whose MEASURED mount height spans "
+                    "1.2131-1.6672 m over 554 distinct values in 2,400 clips, "
+                    "and every count would still look healthy.")
+            pout = br(fmap_s16, grid, valid)
+            # ⛔⛔ THE FEED GATE, AND IT IS NOT A CONVENIENCE. A perception arm
+            # can be built with NO behaviour decoder at all, or with one built
+            # `d_bev = 0` (agent-only). The branch still produces BEV tokens —
+            # they are the map head's own features — and handing them to a
+            # `d_bev = 0` decoder is REFUSED by `refcv6_tactical.forward`
+            # (`SceneInputRefused`), correctly: a decoder with no `bev_in`
+            # would silently drop them. MEASURED: without this gate the
+            # agent-only arm raises on every forward.
+            # ⚠️ The tensor is not discarded — `bev_feats` still carries it for
+            # the map loss and for any diagnostic. Only the DECODER FEED is
+            # withheld, and the dict says which happened, so a later reader
+            # never has to infer it.
+            _dec = getattr(self, "tac_decoder_v6", None)
+            _dbev = int(getattr(getattr(_dec, "cfg", None), "d_bev", 0) or 0)
+            _feed = _dec is not None and _dbev > 0
+            if _feed and "bev_tokens" not in pout:
+                # the mirror refusal: a decoder that DECLARED a bev source and
+                # a branch that produces none. The pin refuses this at launch;
+                # this refuses it at the seam, so the invariant does not depend
+                # on one call site remembering it.
+                raise ValueError(
+                    "[refcv6] ⛔ the behaviour decoder was built with d_bev "
+                    f"{_dbev} but this perception branch produces NO BEV "
+                    "tokens (its map branch is not built — `w_map` is 0). The "
+                    "decoder would declare a 'bev' key/value source it never "
+                    "receives and the arm would read as 'the map adds nothing "
+                    "to behaviours' while never having had a map.")
+            if not _feed:
+                pout = dict(pout)
+                pout.pop("bev_tokens", None)
+                pout["bev_tokens_fed"] = False
+                return pout
+            pout = dict(pout)
+            pout["bev_tokens_fed"] = True
+            if bool(getattr(self.cfg, "tac_decoder_bev_detach", False)) \
+                    and "bev_tokens" in pout:
+                # ⚠️ NOT the default and NOT a judgement call: the PI ruled the
+                # path may train the trunk. This branch exists so the ablation
+                # is RUNNABLE and, when run, is visible in config.json.
+                pout = dict(pout)
+                pout["bev_tokens"] = pout["bev_tokens"].detach()
+                cache["tacv6_bev_detached"] = True
+            # ⛔ ONE OWNER OF THE KEY. `refc.py` puts this dict on `out
+            # ["perception"]`; writing it into `cache` as well would give the
+            # same object two spellings and `out.update(cache)` would then
+            # decide which wins — a coin-flip nobody would think to check.
+            return pout
+
+        return bev_hook
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
@@ -1657,7 +1759,9 @@ class RefCV3Model(nn.Module):
                 v_max_ms: Tensor | None = None,
                 v_max_valid: Tensor | None = None,
                 ego_poses: Tensor | None = None,
-                ego_n_past: int | None = None) -> dict:
+                ego_n_past: int | None = None,
+                perception_grid: Tensor | None = None,
+                perception_valid: Tensor | None = None) -> dict:
         """``ego_state`` is the v4 block ``[B, 5]`` from :func:`ego_state_at_t0`
         — (v0, a_long, yaw_rate, curvature, keep) at the LAST OBSERVED frame.
 
@@ -1838,6 +1942,20 @@ class RefCV3Model(nn.Module):
                 "limit here is 0 m/s - stop', which is a LIE, not a missing "
                 "value. Pass v_max_valid=0 for 'no limit known'.")
         if not self.cfg.hier:
+            # ⛔ REFUSE, DO NOT SKIP. A perception branch attached to a FLAT arm
+            # would be silently stepped over by this early return: its
+            # parameters would sit in the optimiser, `config.json` would stamp
+            # `refcv6_perception`, the map/box losses would find no `out
+            # ["perception"]`, and the arm would read as a jointly-trained
+            # perception run that never ran one. Same class as the `--w-agent`
+            # defect this trainer already refuses five times.
+            if getattr(self, "_perception", None) is not None:
+                raise ValueError(
+                    "[refcv6] ⛔ a perception branch is attached but this "
+                    "model is the FLAT arm (`cfg.hier=False`), whose forward "
+                    "returns before the BEV hook is built. The branch would "
+                    "be optimised by nothing while config.json stamped it. "
+                    "Run --arm hier, or do not attach the branch.")
             return self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                              nav_known=nav_known, ego_keep=ego_keep,
                              withheld_speed=withheld_speed,
@@ -1856,6 +1974,43 @@ class RefCV3Model(nn.Module):
                                v_max_valid)
         if _sh is not None:
             _core_kw["scene_hook"] = _sh
+        # ⭐⭐ refcv6 §4 / PI RULING 2026-09-17 R2. The BEV encoder now runs
+        # INSIDE the core forward, so a BEV token EXISTS when the scene hook
+        # fires — the whole content of the E8 unblock. ⛔ Conditional, unlike
+        # `scene_hook`: a core that predates the patch would raise a TypeError
+        # on every run of every arm, including the ones that build no
+        # perception branch, and this seam must be invisible to those.
+        _bh = self._bev_hook(cache, perception_grid, perception_valid)
+        # ⛔⛔ THE SILENT-AGENT-ONLY HOLE, CLOSED HERE BECAUSE ONLY THIS OBJECT
+        # KNOWS THE INVARIANT. MEASURED while writing the wiring: a decoder
+        # built with `d_bev > 0` that receives `bev_tokens=None` while agent
+        # tokens ARE present does NOT raise in
+        # `refcv6_tactical.forward` — its `kv_parts` is non-empty, so it runs
+        # AGENT-ONLY and returns a perfectly healthy dict, while `config.json`
+        # stamps `sources: ["agent", "bev"]` and
+        # `bev_tokens_reach_decoder: true`. That is the exact defect this
+        # programme keeps paying for, and the ruling that lifted E8 is what
+        # makes it reachable for the first time.
+        # ⚠️ IT CANNOT BE CLOSED IN THE DECODER. The symmetric guard there
+        # ("bev_in built but no tokens") would break the legitimate unit tests
+        # that exercise ONE source on a two-source build
+        # (`test_bev_token_COUNT_is_runtime_and_WIDTH_is_declared` feeds bev
+        # only to a `d_agent=32` decoder). The decoder cannot know whether a
+        # missing source is an experiment or an accident; this forward can.
+        _dec6 = getattr(self, "tac_decoder_v6", None)
+        _dbev_cfg = int(getattr(getattr(_dec6, "cfg", None), "d_bev", 0) or 0)
+        if _dbev_cfg > 0 and _bh is None:
+            raise ValueError(
+                f"[refcv6] ⛔ the behaviour decoder was built with d_bev "
+                f"{_dbev_cfg} — it declares a 'bev' key/value source — but NO "
+                f"perception branch is attached to this model, so no BEV token "
+                f"can be produced. The decoder would run AGENT-ONLY without "
+                f"raising (its agent keys are non-empty) while the run record "
+                f"said 'agent and map'. Attach `model._perception` (the "
+                f"trainer does this behind --w-map > 0), or build the decoder "
+                f"with d_bev 0 and report the arm as agent-only.")
+        if _bh is not None:
+            _core_kw["bev_hook"] = _bh
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state,

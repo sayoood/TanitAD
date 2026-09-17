@@ -54,6 +54,7 @@ from dataclasses import dataclass, field
 import torch
 from torch import Tensor, nn
 
+from tanitad.channel_admissibility import ChannelExclusion
 from tanitad.data.bev_raster import GRID_DEFAULT, BEVGrid
 from tanitad.data.semantic_map_gt import CART_SHAPE, N_CHANNELS
 from tanitad.models.bev_encoder import (BEVEncoderConfig, BEVMapBranch,
@@ -66,7 +67,71 @@ from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
                                          frame_for_width)
 
 __all__ = ["PerceptionBranchConfig", "LiftGeometryBank", "PerceptionBranch",
-           "build_perception_branch", "grad_reach_report"]
+           "build_perception_branch", "grad_reach_report", "FORWARD_EXCLUSIONS"]
+
+
+# --------------------------------------------------------------------------- #
+# the RL channel contract — declared HERE because this seam owns the channel   #
+# --------------------------------------------------------------------------- #
+#: ⛔⛔ PI RULING 2026-09-17 R2 added ``perception_grid`` / ``perception_valid`` to
+#: ``RefCV3Model.forward`` (the BEV encoder moved INTO the forward, so this batch's
+#: per-clip lift geometry must arrive with it). ``tests/
+#: test_rl_forward_keys_cover_signature.py`` DERIVES the RL adapter's requirement from
+#: the live signature and went RED on exactly these two — correctly: a channel absent
+#: from ``refc_adapter.FORWARD_KEYS`` is **never passed at all**, with no error.
+#:
+#: ⭐ THEY ARE NOT LABELS. Unlike ``gp_point`` (the goal IS the label) or ``v_max_ms``
+#: (read off the ego's realised future), this geometry is RIG CALIBRATION: a mount
+#: pose per clip, back-projected through the road plane. Nothing in it comes from the
+#: future, so the channel is admissible in principle and the exclusion is TEMPORARY.
+#:
+#: ⚠️ AND THE ABSENCE CANNOT SILENTLY CORRUPT ANYTHING, which is what makes excluding
+#: it safe rather than merely convenient: a model driven through the RL adapter has no
+#: perception branch attached, so ``RefCV3Model._bev_hook`` returns ``None`` and the
+#: channel is never read; and if one WERE attached, that same hook REFUSES rather than
+#: falling back to a nominal camera. There is no third state in which a missing
+#: geometry is quietly replaced by a default.
+FORWARD_EXCLUSIONS = tuple(
+    ChannelExclusion(
+        channel=_ch,
+        owner="tanitad.models.refcv6_perception_branch (refcv6 §2/§6 BEV lift)",
+        reason=(
+            "An RL rollout would have to get this from a LiftGeometryBank built "
+            "over a PER-CLIP extrinsics table, and the RL adapter plumbs none: "
+            "`tanitad.rl.refc_adapter` never constructs a bank and a rollout "
+            "carries no clip->mount-pose map. ⛔ The channel is NOT a label — it "
+            "is rig calibration and nothing in it comes from the ego's future — "
+            "so this is an unplumbed supplier, not an inadmissible one. Feeding "
+            "a DEFAULT camera instead is the failure this refuses: MEASURED, the "
+            "corpus's mount height spans 1.2131-1.6672 m over 554 distinct "
+            "values in 2,400 clips, and the lift back-projects through the road "
+            "plane, so one pose for the corpus biases every BEV cell it fills "
+            "while every count still looks healthy. ⚠️ Withholding it is safe "
+            "because a model driven through this adapter has no `_perception` "
+            "attached, so `RefCV3Model._bev_hook` returns None and the channel "
+            "is never read — and with a branch attached the same hook RAISES "
+            "rather than defaulting."),
+        unblock=(
+            "Plumb a LiftGeometryBank into the RL rollout: build it from the "
+            "same per-clip extrinsics table the trainer uses "
+            "(`--agent-rig-extrinsics`), call `for_episodes(batch_episode_ids)` "
+            "and pass the (grid, valid) pair through `forward_kwargs`. Then add "
+            "both channels to `refc_adapter.FORWARD_KEYS` in signature order and "
+            "delete this declaration. No change to this module is needed — the "
+            "bank and the refusal are already correct."),
+        evidence=(
+            "MEASURED 2026-09-17: `Research/2026-09-17-refcv6-bev-tactical/raw/"
+            "grad_reach_bev.json` (the branch runs in-forward, four arms) and "
+            "the live run's own refusal when a positional episode id was passed "
+            "instead of a stable one. PUBLISHED-CODE: `LiftGeometryBank.geometry` "
+            "raises SystemExit on a missing clip; `RefCV3Model._bev_hook` raises "
+            "when the lift is built and no geometry arrives; "
+            "`tanitad.rl.refc_adapter.FORWARD_KEYS` contains no bank."),
+        permanent=False,
+        refs=("TanitAD Research Lab/Architecture & Inference/Research/"
+              "2026-09-17-refcv6-bev-tactical/",),
+    )
+    for _ch in ("perception_grid", "perception_valid"))
 
 
 # --------------------------------------------------------------------------- #
@@ -254,6 +319,61 @@ class PerceptionBranch(nn.Module):
                 n_queries=int(cfg.n_queries), d_model=int(cfg.d_model),
                 enforce_band=bool(cfg.enforce_param_band))
 
+    # -- refcv6 §4, PI RULING 2026-09-17 R2: BEV TOKENS FOR THE DECODER ----- #
+    @property
+    def bev_token_dim(self) -> int:
+        """Width of one BEV token == :class:`BEVEncoderConfig`.``d_out``.
+
+        ⛔ **DERIVED, never an operator knob.** ``--tac-decoder-d-bev`` must
+        equal this or the decoder's ``Linear(d_bev, d_model)`` would be sized
+        for a tensor that never arrives -- the units error of C-ANCHOR-UNITS in
+        a channel-count costume. The trainer reads THIS property rather than
+        re-deriving the number, so there is exactly one spelling of it.
+        """
+        return int(self.cfg.bev_cfg.d_out)
+
+    @property
+    def n_bev_tokens(self) -> int:
+        h, w = self.cfg.bev_tokens_hw
+        return int(h) * int(w)
+
+    def bev_tokens(self, bev_feats: Tensor) -> Tensor:
+        """``[B, d_out, X, Y]`` -> ``[B, P, d_out]``, a FLAT token sequence.
+
+        ⚠️ Pooled to :attr:`PerceptionBranchConfig.bev_tokens_hw` -- the SAME
+        pool :class:`Box3DMemory` already applies, and for the same reason its
+        docstring gives: nothing downstream of this pool is compared to a
+        per-cell label, and a 7,680-key cross-attention would make the decoder
+        the experiment rather than the map. ⛔ Deliberately the same field, not
+        a second one: two pools that can drift apart is how the box head and
+        the tactical decoder would silently read different maps.
+
+        ⭐ **ZERO PARAMETERS.** ``adaptive_avg_pool2d`` + a reshape. That is
+        what keeps the bit-identity argument intact: turning the tactical BEV
+        path on adds no tensor to ``state_dict`` beyond the decoder's own
+        ``bev_in``, which the decoder's ``d_bev`` already accounts for.
+
+        ⛔ **THE FLATTEN IS NOT REIMPLEMENTED HERE.**
+        :func:`refcv6_tactical.bev_feats_to_tokens` is *"the ONLY place a BEV
+        grid is flattened"* by its own docstring, and it derives the token count
+        from the tensor so no grid size is ever typed. A second spelling of a
+        transpose is how two call sites end up disagreeing about which axis is
+        X — silently, with both shapes valid.
+        """
+        from tanitad.refs.refcv6_tactical import bev_feats_to_tokens
+        if bev_feats.dim() != 4:
+            raise ValueError(
+                f"[perception] bev_feats must be [B, C, X, Y], got "
+                f"{tuple(bev_feats.shape)}")
+        if bev_feats.shape[1] != self.bev_token_dim:
+            raise ValueError(
+                f"[perception] bev_feats are {bev_feats.shape[1]} wide, the "
+                f"branch's BEV encoder emits {self.bev_token_dim} "
+                f"(BEVEncoderConfig.d_out)")
+        t = torch.nn.functional.adaptive_avg_pool2d(
+            bev_feats, tuple(int(x) for x in self.cfg.bev_tokens_hw))
+        return bev_feats_to_tokens(t)                    # [B, P, d_out]
+
     # -- reporting ---------------------------------------------------------- #
     def param_breakdown(self) -> dict:
         def n(m):
@@ -295,6 +415,12 @@ class PerceptionBranch(nn.Module):
             out["bev"] = bev
             out["bev_feats"] = bev_feats
             out["map_logits"] = mb["map_logits"]
+            # ⭐⭐ PI RULING 2026-09-17 R2/R3. The tactical behaviour decoder's
+            # keys and values are "the scene embeddings, for the agent AND THE
+            # MAP". This is the map half, and it is emitted ATTACHED: R3
+            # authorises the tactical loss to shape the shared trunk, so a
+            # `.detach()` here would silently refuse a ruling the PI made.
+            out["bev_tokens"] = self.bev_tokens(bev_feats)
         if self.box_dec is not None:
             mem = self.box_mem(fmap_s16, bev_feats)
             out["box_slots"] = self.box_dec(mem)
@@ -391,6 +517,16 @@ def grad_reach_report(model, branch: PerceptionBranch | None = None) -> dict:
     br = branch if branch is not None else getattr(model, "_perception", None)
     rep: dict = {}
     parts = {"trunk": getattr(model.core, "encoder", None)}
+    # ⭐⭐ PI RULING 2026-09-17 R3 — THE TRUNK IS NOW OPTIMISED FOUR WAYS:
+    # planner, map head, box head AND the tactical behaviour decoder. The
+    # ruling's own stated cost is that a trunk improvement can no longer be
+    # assigned to one head, and the named mitigation is per-head reach plus the
+    # conflict detector. A report that covers three of the four heads cannot
+    # perform that mitigation, so the two non-perception heads are named here.
+    # ⛔ `None` when the seam is not built -- the loop below skips it, so this
+    # cannot add a key to an arm that has no such head.
+    parts["planner"] = getattr(model.core, "decoder", None)
+    parts["tac_decoder"] = getattr(model, "tac_decoder_v6", None)
     if br is not None:
         parts.update({"lift": br.lift,
                       "bev_encoder": (None if br.map_branch is None

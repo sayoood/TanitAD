@@ -3834,6 +3834,7 @@ class RefCModel(nn.Module):
                 ego_n_past: int | None = None,
                 bev: Tensor | None = None,
                 scene_hook=None,
+                bev_hook=None,
                 bev_tokens: Tensor | None = None,
                 bev_pad: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
@@ -3906,6 +3907,55 @@ class RefCModel(nn.Module):
             else:
                 fmap, pooled = self.encoder(frames[:, -1])
             ctx = None
+
+        # ⭐⭐⭐ refcv6 §4 — THE BEV HOOK. PI RULING 2026-09-17 R2/R3.
+        #
+        # ⛔ WHY IT IS HERE AND NOT IN THE TRAINER. Until tonight the BEV
+        # encoder lived on the trainer's wrapper (`model._perception`) and ran
+        # AFTER this forward returned, on `out["fmap_s16"]`. That ordering made
+        # §4's map half STRUCTURALLY UNREACHABLE: `scene_hook` fires ~250 lines
+        # below, so at the instant the behaviour decoder asked for its keys and
+        # values there was no BEV token in existence, `--tac-decoder-d-bev > 0`
+        # REFUSED, and every arm stamped `sources: ["agent"]`. The PI's ruling
+        # is to move the encoder INTO the forward; this is that move, and it is
+        # three lines because `fmap_s16` was already built right above.
+        #
+        # ⛔ WITH `bev_hook=None` THIS BLOCK IS UNTOUCHED DEAD CODE and the
+        # forward is byte-identical to the pre-ruling file — the same
+        # construction `hierarchy_hook` and `scene_hook` use, and the condition
+        # the bit-identity proof rests on. A build that does not attach a
+        # perception branch never supplies the hook.
+        #
+        # ⚠️ THE GRAPH IS NOT CUT. R3 authorises the tactical loss to shape the
+        # shared trunk, so `bev_tokens` reach the decoder ATTACHED. That is a
+        # ruling, not a default: a `.detach()` here would refuse it silently,
+        # and the flag that expresses the alternative lives in the TRAINER
+        # (`--tac-decoder-bev-detach`), where it is stamped into config.json.
+        perception_out = None
+        if bev_hook is not None:
+            if bev_tokens is not None:
+                raise ValueError(
+                    "refcv6: BOTH `bev_hook` and `bev_tokens` were supplied. "
+                    "Two suppliers for one tensor is how a caller silently "
+                    "trains on the one it did not mean; the hook's tokens "
+                    "carry the trunk's graph and an explicit tensor usually "
+                    "does not. Pass exactly one.")
+            if fmap_s16 is None:
+                raise ValueError(
+                    "refcv6: a `bev_hook` was supplied but this build's trunk "
+                    "exposes NO stride-16 map (`fmap_s16` is None — the "
+                    "in-repo REF-C ResNetEncoder emits stride 32 alone). The "
+                    "BEV lift would have nothing to sample and the arm would "
+                    "read as 'the map adds nothing to behaviours' while never "
+                    "having had a map. Build with --trunk timm.")
+            perception_out = bev_hook(fmap_s16)
+            if not isinstance(perception_out, dict):
+                raise ValueError(
+                    "refcv6: `bev_hook` must return a dict; got "
+                    f"{type(perception_out).__name__}")
+            bev_tokens = perception_out.get("bev_tokens")
+            if bev_pad is None:
+                bev_pad = perception_out.get("bev_pad")
 
         # REF-C v3 hierarchy hook (gated by the ARGUMENT, not by a config flag:
         # with hook=None this block is untouched dead code and the forward is
@@ -4234,6 +4284,20 @@ class RefCModel(nn.Module):
                # covers every tensor that was there before. `None` on the
                # in-repo REF-C trunk and on the hierarchy path.
                "fmap_s16": fmap_s16,
+               # ⭐⭐ refcv6 PI RULING 2026-09-17 R2. The perception branch's
+               # OWN outputs (`map_logits`, `box_slots`, `bev_feats`,
+               # `bev_tokens`), produced INSIDE this forward and emitted with
+               # the trunk's graph attached, so the map/box losses the trainer
+               # computes reach the trunk through the SAME forward the
+               # behaviour decoder read its map from. ⛔ `None` — not an absent
+               # key — when no hook ran: an absent key reads as "this build
+               # cannot do perception", a `None` reads as "it can and did not",
+               # and only the second is true of a weightless arm.
+               # ⚠️ A NAMESPACED key, deliberately. Merging the branch's dict
+               # into `out` would let a future head's key silently shadow a
+               # planner key, which is the collision class this file already
+               # pays for elsewhere.
+               "perception": perception_out,
                "waypoints": {k: traj[:, i] for i, k in enumerate(keys)},
                "anchor_logits": dec["anchor_logits"],
                "refined_logits": dec["refined_logits"],

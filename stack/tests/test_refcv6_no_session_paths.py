@@ -74,6 +74,41 @@ OWNED = (
     # strips it by STRUCTURE (any UUID-shaped segment), not by the one literal
     # id, so the next package is not left with the same hole.
     "stack/tests/test_refcv6_tactical_training.py",
+    # --- refcv6 §4, the BEV->tactical unblock (PI RULING 2026-09-17) ------- #
+    # ⚠️ The raw JSONs here record run-output directories, which is exactly the
+    # route by which the previous package tripped this guard. They go through
+    # the SAME `redact.py` (by structure, not by one literal id) and are listed
+    # here so the guard, not a habit, is what keeps them clean.
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/bitid.sh",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/config_diff.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/grad_reach_bev.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/geometry_408.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/mutation_proof.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/code/live.sh",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/live_run/config.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/live_run/metrics.jsonl",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/live_run/launch_excerpt.txt",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/mutation_proof.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/bit_identity.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/bitid_config_diff.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/grad_reach_bev.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-bev-tactical/raw/geometry_408.json",
     "TanitAD Research Lab/Architecture & Inference/Research/"
     "2026-09-17-refcv6-tactical-training/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/"

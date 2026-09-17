@@ -1,0 +1,10 @@
+# Each line: a token the TIP carries that this rewrite does not, and WHY.
+# A waiver claims the information survives in a BETTER form -- never that it
+# stopped mattering. Every entry below was INSPECTED against the tip's text.
+# One comment reference. The tip's line 538 read "`RefCV3Model._scene_hook` and the
+# BEV-token half is decided by ..."; the agent's rewrite names the NEW supplier
+# (`RefCV3Model._bev_hook`) and keeps `scene_hook` itself, which still appears SIX
+# times including the load-bearing `channel="scene_hook"` declaration at :496.
+# ⭐ Verified explicitly: all four channel declarations landed earlier tonight --
+#    "bev", channel="scene_hook", "bev_tokens", "bev_pad" -- are PRESENT.
+RefCV3Model._scene_hook   # renamed in prose to the new supplier; the symbol survives

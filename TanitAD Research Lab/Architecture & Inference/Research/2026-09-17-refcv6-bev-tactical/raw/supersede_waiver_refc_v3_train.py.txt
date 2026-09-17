@@ -1,0 +1,18 @@
+# Each line: a token the TIP carries that this rewrite does not, and WHY.
+# A waiver claims the information survives in a BETTER form -- never that it
+# stopped mattering. Every entry below was INSPECTED against the tip's text.
+# All seven are from ONE comment block (tip lines 669-671) describing the PRE-R2
+# wiring: the BEV encoder ran on the TRAINER'S WRAPPER, after the core forward, so
+# the scene hook fired before any BEV token existed. R2/R3 moves the encoder INSIDE
+# the forward, which makes every clause of that comment FALSE. It is rewritten in
+# place (agent lines ~666-676) to describe the seam that now exists.
+# ⛔ Keeping the old text would be worse than dropping it: a comment that describes
+#    a structure the file no longer has is the stale-blocker class this repo has a
+#    sweep for.
+3837                 # a refc.py LINE NUMBER for the old call site; the seam moved
+4154                 # ditto -- scene_hook's old line; it is now :4204
+refc.py:4154         # the same citation in file:line form
+scene_hook           # named in that comment as the thing reached AFTER the forward
+out[\"fmap_s16\"]      # the OLD read -- the trainer no longer reads it post-forward
+self.core(...)       # the wrapper call the old BEV encoder ran after
+**_core_kw           # the kwargs splat of that wrapper call

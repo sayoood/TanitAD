@@ -1,0 +1,178 @@
+{
+  "rows": [
+    {
+      "height": 256,
+      "width": 1024,
+      "f_ref": 488.92398517830253,
+      "projection": "cylindrical",
+      "vfov_deg": 29.341486105062707,
+      "nearest_visible_road_m": 5.0203125,
+      "divisible_by_32": true,
+      "megapixels_rel_408": 0.6274509803921569,
+      "feature_hw_s16": [
+        16,
+        64
+      ],
+      "builds": true,
+      "declared_s16_shape": [
+        16,
+        64
+      ],
+      "declared_s32_shape": [
+        8,
+        32
+      ],
+      "actual_s16_shape": [
+        16,
+        64
+      ],
+      "actual_s32_shape": [
+        8,
+        32
+      ],
+      "declared_matches_actual": true,
+      "timm_would_emit_s16_rows": 16,
+      "floor_div_s16_rows": 16,
+      "floor_div_understates_by": 0
+    },
+    {
+      "height": 384,
+      "width": 1024,
+      "f_ref": 488.92398517830253,
+      "projection": "cylindrical",
+      "vfov_deg": 42.87978100351012,
+      "nearest_visible_road_m": 3.3468750000000003,
+      "divisible_by_32": true,
+      "megapixels_rel_408": 0.9411764705882353,
+      "feature_hw_s16": [
+        24,
+        64
+      ],
+      "builds": true,
+      "declared_s16_shape": [
+        24,
+        64
+      ],
+      "declared_s32_shape": [
+        12,
+        32
+      ],
+      "actual_s16_shape": [
+        24,
+        64
+      ],
+      "actual_s32_shape": [
+        12,
+        32
+      ],
+      "declared_matches_actual": true,
+      "timm_would_emit_s16_rows": 24,
+      "floor_div_s16_rows": 24,
+      "floor_div_understates_by": 0
+    },
+    {
+      "height": 408,
+      "width": 1024,
+      "f_ref": 488.92398517830253,
+      "projection": "cylindrical",
+      "vfov_deg": 45.29596962187206,
+      "nearest_visible_road_m": 3.15,
+      "divisible_by_32": false,
+      "megapixels_rel_408": 1.0,
+      "feature_hw_s16": null,
+      "feature_hw_refusal": "408x1024 is not divisible by stride 16: the feature map would not tile the frame",
+      "builds": false,
+      "build_refusal": "refcv6 trunk: image 408x1024 \u2014 each axis must divide by 32 or the stride-32 map is silently mis-sized (the 2026-07-27 single-axis check defect, per axis this time).",
+      "timm_would_emit_s16_rows": 26,
+      "floor_div_s16_rows": 25,
+      "floor_div_understates_by": 1
+    },
+    {
+      "height": 416,
+      "width": 1024,
+      "f_ref": 488.92398517830253,
+      "projection": "cylindrical",
+      "vfov_deg": 46.09213171161337,
+      "nearest_visible_road_m": 3.089423076923077,
+      "divisible_by_32": true,
+      "megapixels_rel_408": 1.0196078431372548,
+      "feature_hw_s16": [
+        26,
+        64
+      ],
+      "builds": true,
+      "declared_s16_shape": [
+        26,
+        64
+      ],
+      "declared_s32_shape": [
+        13,
+        32
+      ],
+      "actual_s16_shape": [
+        26,
+        64
+      ],
+      "actual_s32_shape": [
+        13,
+        32
+      ],
+      "declared_matches_actual": true,
+      "timm_would_emit_s16_rows": 26,
+      "floor_div_s16_rows": 26,
+      "floor_div_understates_by": 0
+    },
+    {
+      "height": 448,
+      "width": 1024,
+      "f_ref": 488.92398517830253,
+      "projection": "cylindrical",
+      "vfov_deg": 49.22966553644194,
+      "nearest_visible_road_m": 2.86875,
+      "divisible_by_32": true,
+      "megapixels_rel_408": 1.0980392156862746,
+      "feature_hw_s16": [
+        28,
+        64
+      ],
+      "builds": true,
+      "declared_s16_shape": [
+        28,
+        64
+      ],
+      "declared_s32_shape": [
+        14,
+        32
+      ],
+      "actual_s16_shape": [
+        28,
+        64
+      ],
+      "actual_s32_shape": [
+        14,
+        32
+      ],
+      "declared_matches_actual": true,
+      "timm_would_emit_s16_rows": 28,
+      "floor_div_s16_rows": 28,
+      "floor_div_understates_by": 0
+    }
+  ],
+  "verdict": {
+    "camera_height_m_backsolved_from_ruling": 1.3143147390604173,
+    "reproduces_ruling_vfov_45_296": true,
+    "reproduces_ruling_near_3_15": true,
+    "408_builds": false,
+    "408_build_refusal": "refcv6 trunk: image 408x1024 \u2014 each axis must divide by 32 or the stride-32 map is silently mis-sized (the 2026-07-27 single-axis check defect, per axis this time).",
+    "408_floor_div_would_understate_s16_rows_by": 1,
+    "416_builds": true,
+    "416_declared_matches_actual": true,
+    "416_s16_equals_what_timm_would_emit_at_408": true,
+    "416_is_better_on_the_rulings_own_criterion": true,
+    "416_pixel_cost_vs_408": 1.0196078431372548,
+    "384_nearest_visible_road_m": 3.3468750000000003,
+    "384_loses_ground_vs_408": true
+  },
+  "trunk": "resnet34.a1_in1k (shape probe; the channel count differs on resnet101, the SHAPES do not)",
+  "torch": "2.11.0+cu128"
+}

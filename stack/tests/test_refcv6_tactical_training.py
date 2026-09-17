@@ -118,7 +118,13 @@ def test_RED_weight_without_decoder_refuses():
     (_set(BASE + TAC, "--arm", "flat"), "FLAT"),
     (_drop(BASE + TAC, "--v7-labels"), "kin3"),
     (BASE + TAC + ["--tac-goal-tok-head"], "two experiments"),
-    (BASE + TAC + ["--tac-decoder-d-bev", "256"], "bev_tokens"),
+    # ⭐ PI RULING 2026-09-17 R2 lifted the STRUCTURAL block; what remains is a
+    # PRECONDITION. The BEV tokens ARE the supervised map branch's features, so
+    # a BEV width with no live map weight still refuses — for a different, and
+    # now correct, reason. ⛔ The needle is `--w-map`, not `bev_tokens`: a test
+    # that kept the old needle would go green again the day someone restored
+    # the old blanket refusal, which is the regression this pins against.
+    (BASE + TAC + ["--tac-decoder-d-bev", "96"], "--w-map"),
 ])
 def test_RED_each_dead_configuration_refuses_for_its_own_reason(argv, needle):
     ok, msg, _ = _pin(argv)
@@ -127,7 +133,7 @@ def test_RED_each_dead_configuration_refuses_for_its_own_reason(argv, needle):
 
 
 def test_GREEN_d_bev_zero_is_the_buildable_arm():
-    """The control for the `--tac-decoder-d-bev 256` refusal above: 0 must
+    """The control for the `--tac-decoder-d-bev` refusals above: 0 must
     pass, or that guard is a brick rather than a gate."""
     ok, msg, _ = _pin(BASE + TAC + ["--tac-decoder-d-bev", "0"])
     assert ok, msg
@@ -156,18 +162,86 @@ def test_graft_behaviour_sel_reaches_the_BUILT_DECODER_not_only_the_config():
     assert seen == {True: True, False: False}, seen
 
 
-def test_the_blocked_bev_seam_is_declared_in_the_stamp_not_only_in_prose():
-    """⚠️ The PI asked for behaviours learned from *"the agent and the map"*.
-    Only the agent half is reachable, and an arm that ran agent-only must say
-    so IN ITS OWN ARTIFACT — a later reader must not credit it with a map."""
-    args = T.build_parser().parse_args(BASE + TAC)
+def _map_argv(tmp_path) -> list:
+    """The argv of a LIVE map arm: a real per-clip extrinsics table on disk
+    (the pin OPENS it), a declared frame, and the timm trunk.
+
+    ⛔ 256 x 1024 and not the PI's 408 x 1024 — deliberately, and it is not a
+    geometry this test believes in: ``TimmTrunkConfig.__post_init__`` REFUSES
+    any axis that 32 does not divide, and ``408 % 32 == 8``. That refusal is
+    correct (at 408 the trunk emits a 26-row stride-16 map while
+    ``timm_trunk.py:406`` would declare ``408 // 16 == 25``), and it is
+    reported as a named blocker on ruling R1 rather than worked around here.
+    Nothing in this file reads the numbers: they go in as argv.
+    """
+    p = tmp_path / "extr.json"
+    p.write_text(json.dumps({
+        "clip%02d" % i: {"qx": 0.0, "qy": 0.0, "qz": 0.0, "qw": 1.0,
+                         "tx": 2.05, "ty": 0.0, "tz": 1.30 + 0.01 * i}
+        for i in range(4)}), encoding="utf-8")
+    return ["--trunk", "timm", "--image-hw", "256", "1024",
+            "--w-map", "1.0", "--map-gt-root", "m",
+            "--agent-rig-camera", "extrinsics",
+            "--agent-rig-extrinsics", str(p)]
+
+
+def test_the_bev_seam_stamp_is_the_ARM_S_OWN_answer_not_a_constant(tmp_path):
+    """⭐⭐ PI RULING 2026-09-17 R2/R3, pinned on BOTH arms.
+
+    ⛔ Until the ruling this field was the literal ``False`` and the test
+    asserted it. A one-arm assertion cannot tell a wired seam from a hardcoded
+    constant — which is exactly what it was — so both arms are read here and
+    the pair must DIFFER. The PI asked for behaviours learned from *"the agent
+    and the map"*; an arm that ran agent-only must still say so in its own
+    artifact, and an arm that ran with the map must not have to be taken on
+    trust.
+    """
+    seen = {}
+    for extra, tag in ((["--tac-decoder-d-bev", "96"], "bev"),
+                       ([], "agent_only")):
+        args = T.build_parser().parse_args(
+            BASE + TAC + _map_argv(tmp_path) + extra)
+        cfg = v3.RefCV3Config(hier=True)
+        T._pin_trainer_cfg(cfg, args)
+        seen[tag] = T._seam_stamp(cfg, args)["tac_decoder_v6"]
+
+    assert seen["bev"]["bev_tokens_reach_decoder"] is True
+    assert seen["bev"]["sources"] == ["agent", "bev"]
+    # R3: attached is the RULING, so a default BEV arm trains the trunk.
+    assert seen["bev"]["bev_grad_reaches_trunk"] is True
+    assert seen["bev"]["bev_detached"] is False
+
+    # ⛔ THE DISCRIMINATING CONTROL. Same everything, `d_bev 0`: the stamp must
+    # FLIP. Without this the three assertions above pass on a constant `True`.
+    assert seen["agent_only"]["bev_tokens_reach_decoder"] is False
+    assert seen["agent_only"]["sources"] == ["agent"]
+    assert seen["agent_only"]["bev_grad_reaches_trunk"] is False
+    assert seen["bev"]["w"] == 1.0    # the fact `tac_goal_tok_head` lacked
+
+
+def test_the_R3_detach_ablation_is_expressible_and_STAMPED(tmp_path):
+    """⚠️ The PI ruled the tactical loss MAY shape the trunk. The ablation must
+    be RUNNABLE — otherwise the ruling is untestable — and it must be VISIBLE in
+    ``config.json``, or a detached arm and an attached arm are indistinguishable
+    in the record. ⛔ And it must REFUSE when there is nothing to detach: a flag
+    that is silently inert while the record stamps it on is the dead-flag class
+    this trainer refuses five times over."""
+    args = T.build_parser().parse_args(
+        BASE + TAC + _map_argv(tmp_path)
+        + ["--tac-decoder-d-bev", "96", "--tac-decoder-bev-detach"])
     cfg = v3.RefCV3Config(hier=True)
     T._pin_trainer_cfg(cfg, args)
-    stamp = T._seam_stamp(cfg, args)["tac_decoder_v6"]
-    assert stamp["bev_tokens_reach_decoder"] is False
-    assert "bev_tokens" in stamp["bev_blocked_by"]
-    assert stamp["sources"] == ["agent"]
-    assert stamp["w"] == 1.0          # the fact `tac_goal_tok_head` lacked
+    st = T._seam_stamp(cfg, args)["tac_decoder_v6"]
+    assert cfg.tac_decoder_bev_detach is True
+    assert st["bev_detached"] is True
+    # ⭐ the seam is still WIRED — only the gradient is cut. Conflating the two
+    # would let a detached arm read as an agent-only one.
+    assert st["bev_tokens_reach_decoder"] is True
+    assert st["bev_grad_reaches_trunk"] is False
+
+    ok, msg, _ = _pin(BASE + TAC + ["--tac-decoder-bev-detach"])
+    assert not ok, "a detach flag with no BEV path must refuse"
+    assert "no BEV path to detach" in msg, msg[:200]
 
 
 # =========================================================================== #

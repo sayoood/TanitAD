@@ -1,0 +1,57 @@
+{
+  "top_level": {
+    "keys_only_in_tip": [],
+    "keys_only_in_patched": [],
+    "keys_with_changed_value": [
+      "argv",
+      "seams"
+    ]
+  },
+  "argv": {
+    "n_tip": 15,
+    "n_patched": 15,
+    "same_length": true,
+    "differing_tokens": [
+      {
+        "tip": "<SCRATCH>/bitid4/tip",
+        "patched": "<SCRATCH>/bitid4/patched"
+      }
+    ]
+  },
+  "seams": {
+    "keys_only_in_tip": [],
+    "keys_only_in_patched": [],
+    "keys_with_changed_value": [
+      "tac_decoder_v6"
+    ],
+    "per_block": {
+      "tac_decoder_v6": {
+        "keys_only_in_tip": [
+          "bev_blocked_by"
+        ],
+        "keys_only_in_patched": [
+          "bev_detached",
+          "bev_grad_reaches_trunk",
+          "bev_unblocked_by"
+        ],
+        "keys_with_changed_value": [],
+        "removed_values": {
+          "bev_blocked_by": "refc_v3.RefCV3Model.forward does not pass `bev_tokens=` to self.core(...), and the BEV encoder (model._perception) runs AFTER the core forward on out['fmap_s16'] \u2014 so no BEV token exists at refc.py:4154 where the scene hook fires. Arms built today are AGENT-ONLY and must be reported as such."
+        },
+        "added_values": {
+          "bev_detached": false,
+          "bev_grad_reaches_trunk": false,
+          "bev_unblocked_by": "PI RULING 2026-09-17 (SPEC_REFCV6_V2.md, items 15/18 CLOSED): the BEV encoder moved INTO the model forward (refc_v3.RefCV3Model._bev_hook -> refc.py's `bev_hook` seam), so a BEV token exists where the scene hook fires. An arm with d_bev 0 is still AGENT-ONLY and must be reported as such."
+        }
+      }
+    }
+  },
+  "verdict": {
+    "only_argv_and_seams_differ": true,
+    "argv_differs_only_in_the_out_path": true,
+    "no_seam_leaf_changed_its_VALUE": true,
+    "seam_blocks_changed": [
+      "tac_decoder_v6"
+    ]
+  }
+}

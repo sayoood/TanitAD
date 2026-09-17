@@ -1,0 +1,118 @@
+{
+  "control": {
+    "test_GREEN_bev_tokens_REACH_the_behaviour_decoder": true,
+    "test_MUTATION_a_declared_bev_source_with_NO_branch_REFUSES": true,
+    "test_MUTATION_a_perception_branch_on_the_FLAT_arm_REFUSES": true,
+    "test_R3_the_tactical_loss_REACHES_the_bev_branch_and_the_detach_STOPS_it": true,
+    "test_RED_each_dead_configuration_refuses_for_its_own_reason": true,
+    "test_bev_hook_and_explicit_bev_tokens_TOGETHER_are_refused": true,
+    "test_every_conflict_term_HAS_A_PRODUCER_in_the_loss_dict": true,
+    "test_the_bev_seam_stamp_is_the_ARM_S_OWN_answer_not_a_constant": true,
+    "test_the_conflict_detector_counts_the_TACTICAL_term_as_an_aux_gradient": true
+  },
+  "mutations": [
+    {
+      "mutation": "feed_gate_removed",
+      "file": "stack/tanitad/refs/refc_v3.py",
+      "test": "test_GREEN_bev_tokens_REACH_the_behaviour_decoder",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 3.32s"
+    },
+    {
+      "mutation": "declared_bev_without_branch_guard_removed",
+      "file": "stack/tanitad/refs/refc_v3.py",
+      "test": "test_MUTATION_a_declared_bev_source_with_NO_branch_REFUSES",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 2.91s"
+    },
+    {
+      "mutation": "bev_hook_never_passed_to_core",
+      "file": "stack/tanitad/refs/refc_v3.py",
+      "test": "test_GREEN_bev_tokens_REACH_the_behaviour_decoder",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 2.92s"
+    },
+    {
+      "mutation": "detach_flag_ignored",
+      "file": "stack/tanitad/refs/refc_v3.py",
+      "test": "test_R3_the_tactical_loss_REACHES_the_bev_branch_and_the_detach_STOPS_it",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 3.36s"
+    },
+    {
+      "mutation": "flat_arm_refusal_removed",
+      "file": "stack/tanitad/refs/refc_v3.py",
+      "test": "test_MUTATION_a_perception_branch_on_the_FLAT_arm_REFUSES",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 1.45s"
+    },
+    {
+      "mutation": "two_suppliers_guard_removed",
+      "file": "stack/tanitad/refs/refc.py",
+      "test": "test_bev_hook_and_explicit_bev_tokens_TOGETHER_are_refused",
+      "test_passed_under_mutation": false,
+      "reason_matched": false,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 1.55s"
+    },
+    {
+      "mutation": "trainer_d_bev_precondition_removed",
+      "file": "stack/scripts/refc_v3_train.py",
+      "test": "test_RED_each_dead_configuration_refuses_for_its_own_reason",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed, 3 passed in 1.63s"
+    },
+    {
+      "mutation": "stamp_hardcoded_false_again",
+      "file": "stack/scripts/refc_v3_train.py",
+      "test": "test_the_bev_seam_stamp_is_the_ARM_S_OWN_answer_not_a_constant",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 2.86s"
+    },
+    {
+      "mutation": "conflict_detector_loses_the_tactical_term",
+      "file": "stack/scripts/refc_v3_train.py",
+      "test": "test_the_conflict_detector_counts_the_TACTICAL_term_as_an_aux_gradient",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 1.57s"
+    },
+    {
+      "mutation": "tactical_loss_not_exposed_to_the_detector",
+      "file": "stack/scripts/refc_v3_train.py",
+      "test": "test_every_conflict_term_HAS_A_PRODUCER_in_the_loss_dict",
+      "test_passed_under_mutation": false,
+      "reason_matched": true,
+      "verdict": "DETECTED",
+      "tail": "1 failed in 1.57s"
+    }
+  ],
+  "restored": {
+    "stack/tanitad/refs/refc_v3.py": true,
+    "stack/tanitad/refs/refc.py": true,
+    "stack/scripts/refc_v3_train.py": true
+  },
+  "verdict": {
+    "all_named_tests_pass_unmutated": true,
+    "n_mutations": 10,
+    "n_detected": 10,
+    "blind": [],
+    "not_applied": [],
+    "worktree_restored": true
+  }
+}

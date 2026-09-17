@@ -1,0 +1,8 @@
+# Each line: a token the TIP carries that this rewrite does not, and WHY.
+# A waiver claims the information survives in a BETTER form -- never that it
+# stopped mattering. Every entry below was INSPECTED against the tip's text.
+# A test's flag VALUE changed, not a fact: the BEV width moved 256 -> 96, which is
+# what the R2/R3 build and every banked number in this package use
+# (`--tac-decoder-d-bev 96`). A test pinning the old width would pin a build that no
+# longer exists.
+--tac-decoder-d-bev 256   # superseded by 96, the width the landed arms actually use

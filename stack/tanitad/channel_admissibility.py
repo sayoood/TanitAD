@@ -175,6 +175,11 @@ SEAM_MODULES: tuple[str, ...] = (
     "tanitad.refs.goal_point",          # gp_point / gp_valid   (E15, S7)
     "tanitad.models.nav_conditioning",  # nav_args              (E13b)
     "tanitad.refs.max_speed_input",     # v_max_ms / v_max_valid (E16)
+    # ⭐ PI RULING 2026-09-17 R2: the BEV encoder moved INTO `RefCV3Model.forward`,
+    # which added `perception_grid` / `perception_valid` to the signature. The
+    # signature-derived guard went RED on both — correctly — and this is the seam
+    # that owns them. ⚠️ TEMPORARY and NOT a label: rig calibration, unplumbed.
+    "tanitad.models.refcv6_perception_branch",   # perception_grid / _valid
 )
 
 

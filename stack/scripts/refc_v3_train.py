@@ -663,30 +663,47 @@ def _pin_refcv6_tactical(cfg, args) -> None:
                 "40,284 steps of refcv5-v2 and nothing in the run record said "
                 "so. Pass --w-tac-v6 > 0 (1.0 reproduces the spec's weights), "
                 "or drop --tac-decoder-v6." % _w6)
-        # ⚠️ THE MAP HALF IS A NAMED BLOCKED SEAM, NOT A SILENT DROP. The PI
-        # asked for "the agent and the map". `refc_v3.RefCV3Model.forward`
-        # never passes `bev_tokens=` to `self.core(...)` (the keyword exists on
-        # `refc.py`'s forward at :3837 and reaches `scene_hook` at :4154, but
-        # the v3 wrapper's call site passes only `**_core_kw`, which carries
-        # `scene_hook` alone), and the BEV encoder lives on the TRAINER's
-        # wrapper (`model._perception`) and runs AFTER the core forward on
-        # `out["fmap_s16"]`. So no BEV token exists at the instant the hook
-        # fires. Declaring a width for a tensor that never arrives would make
-        # the arm read as "the map adds nothing" while never having had a map.
+        # ⭐⭐⭐ THE MAP HALF, UNBLOCKED BY PI RULING 2026-09-17 (R2/R3).
+        # ⛔ The old refusal here was STRUCTURAL — no BEV token existed at the
+        # instant the scene hook fired, because the BEV encoder ran AFTER the
+        # core forward on the trainer's wrapper. That is no longer true: the
+        # encoder now runs INSIDE the forward (`refc_v3.RefCV3Model._bev_hook`
+        # -> `refc.py`'s `bev_hook` seam), so the tokens exist where the hook
+        # reads them. What replaces it is a PRECONDITION guard, not an absence
+        # of one — the failure the old refusal protected against (a decoder
+        # declaring a 'bev' source it never receives) is still reachable, just
+        # by a different route: asking for BEV keys with no BEV branch built.
         _dbev = int(getattr(args, "tac_decoder_d_bev", 0) or 0)
         if _dbev > 0:
-            raise SystemExit(
-                "[v3] ⛔ --tac-decoder-d-bev %d: no BEV token reaches the "
-                "behaviour decoder on this path. `refc_v3.RefCV3Model.forward` "
-                "does not pass `bev_tokens=` to `self.core(...)`, and the BEV "
-                "encoder (`model._perception`) runs AFTER the core forward on "
-                "`out[\"fmap_s16\"]` — so at `refc.py:4154`, where the scene "
-                "hook fires, there is nothing to pass. The decoder would "
-                "declare a 'bev' key/value source it never receives and the "
-                "arm would read as 'the map adds nothing to behaviours' while "
-                "never having had a map. ⇒ Run agent-only "
-                "(--tac-decoder-d-bev 0) until the BEV token seam is wired, "
-                "and say which arm you ran." % _dbev)
+            _wmap = float(getattr(args, "w_map", 0.0) or 0.0)
+            if _wmap <= 0.0:
+                raise SystemExit(
+                    "[v3] ⛔ --tac-decoder-d-bev %d with --w-map %.6g. The BEV "
+                    "tokens ARE the supervised map branch's features "
+                    "(`BEVMapBranch.bev_feats`, pooled); with no live map "
+                    "weight the lift and the BEV encoder are NOT BUILT "
+                    "(`PerceptionBranchConfig.use_bev` is `w_map > 0`), so the "
+                    "decoder would declare a 'bev' key/value source it never "
+                    "receives — the arm would read as 'the map adds nothing to "
+                    "behaviours' while never having had a map. ⇒ Pass --w-map "
+                    "> 0 with --map-gt-root, or run agent-only "
+                    "(--tac-decoder-d-bev 0) and SAY which arm you ran."
+                    % (_dbev, _wmap))
+            # ⛔ THE WIDTH IS DERIVED, NEVER TYPED. `BEVEncoderConfig.d_out`
+            # is what the branch emits; a hand-set width that disagreed would
+            # size `Linear(d_bev, d_model)` for a tensor that never arrives and
+            # raise only at the first forward — after config.json was written.
+            # Same family as C-ANCHOR-UNITS: a correct number in the wrong unit.
+            _want = int(_perc.BEVEncoderConfig().d_out)
+            if _dbev != _want:
+                raise SystemExit(
+                    "[v3] ⛔ --tac-decoder-d-bev %d but this build's BEV "
+                    "encoder emits %d-wide tokens "
+                    "(`BEVEncoderConfig.d_out`). The width is DERIVED from the "
+                    "branch, not chosen: a mismatch sizes the decoder's "
+                    "`Linear(d_bev, d_model)` for a tensor that never arrives. "
+                    "Pass --tac-decoder-d-bev %d, or 0 for agent-only."
+                    % (_dbev, _want, _want))
         _tdc = v6tac.TacticalDecoderConfig(
             d_agent=int(cfg.core.decoder.d), d_bev=_dbev,
             sources=("agent",) if _dbev <= 0 else ("agent", "bev"))
@@ -694,6 +711,19 @@ def _pin_refcv6_tactical(cfg, args) -> None:
         cfg.tac_decoder_cfg = _tdc
         cfg.tac_decoder_valid_threshold = float(
             getattr(args, "tac_decoder_valid_threshold", 0.5))
+        # ⭐ PI RULING 2026-09-17 R3. Attached is the RULING; detach is the
+        # ABLATION. ⛔ Refused outright when there is no BEV path to detach —
+        # a flag that is silently inert while config.json stamps it on is the
+        # dead-flag class this trainer already refuses five times.
+        _bdet = bool(getattr(args, "tac_decoder_bev_detach", False))
+        if _bdet and _dbev <= 0:
+            raise SystemExit(
+                "[v3] ⛔ --tac-decoder-bev-detach with --tac-decoder-d-bev 0: "
+                "there is no BEV path to detach, so the flag would be "
+                "SILENTLY INERT while config.json stamped it on. It is the "
+                "ablation of PI ruling R3 (*\"you can backpropagate to the "
+                "trunk\"*) and only means something on a BEV arm.")
+        cfg.tac_decoder_bev_detach = _bdet
     elif _w6 > 0.0:
         # ⚠️ `REFC_WEIGHT_GATES` also refuses this, and deliberately so: that
         # audit is the EXHAUSTIVE instrument and must stay able to see the
@@ -3058,10 +3088,34 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 "dataset through V3Dataset, which emits it unconditionally.")
         ph = batch["pose_hist"].to(device)
         model.core.set_ego_window(ph, int(ph.shape[1]))
+    # ---- refcv6 §2/§6 + PI RULING 2026-09-17 R2: THIS BATCH'S LIFT GEOMETRY --
+    # ⛔ RESOLVED BEFORE THE FORWARD, because the BEV encoder now runs INSIDE
+    # it. Until tonight the branch ran after `model(...)` returned and could
+    # look the geometry up itself; that ordering is precisely what kept the
+    # behaviour decoder from ever seeing a map. ⚠️ An EXPLICIT argument, not a
+    # one-shot setter: `set_ego_window`'s POP idiom exists only because
+    # `RefCV3Model.forward` could not be edited, and it can be here.
+    _pgrid = _pvalid = None
+    _pbr = getattr(model, "_perception", None)
+    if _pbr is not None and _pbr.lift is not None:
+        _bank = getattr(model, "_lift_bank", None)
+        if _bank is None:
+            raise SystemExit(
+                "[v3] ⛔ the BEV lift is built but no per-clip geometry bank "
+                "is attached. One mount pose for a corpus whose MEASURED "
+                "height spans 1.2131-1.6672 m (554 distinct values in 2,400 "
+                "clips) biases every cell the lift fills.")
+        if "map_ep" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ the BEV lift needs `map_ep` and the batch carries "
+                "none — a camera would attach to the wrong clip, silently, "
+                "with every count still looking healthy.")
+        _pgrid, _pvalid = _bank.for_episodes(batch["map_ep"], device=device)
     out = model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan,
                 ego_state=ego_state, nav_args=nav_args,
                 v_max_ms=v_max_ms, v_max_valid=v_max_valid,
-                agent_gt=agent_gt)
+                agent_gt=agent_gt,
+                perception_grid=_pgrid, perception_valid=_pvalid)
 
     # ---- trajectory target over the 8-slot 6 s horizon, masked -------------
     traj_tgt = refb_labels.waypoint_targets(pose_last, fut_ext,
@@ -3743,6 +3797,17 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             goal_class_mask=getattr(model, "_tac_goal_class_mask", None),
             ignore_index=v7l.IGNORE_ID)
         loss = loss + _w_t6 * _t6_loss
+        # ⭐⭐ THE TACTICAL TERM, EXPOSED TO THE GRADIENT-CONFLICT DETECTOR.
+        # PI RULING 2026-09-17 R3 names the detector as the mitigation for a
+        # trunk optimised FOUR ways — and MEASURED on this patch's own rig, the
+        # tactical loss reaches the trunk with `grad_abs_sum` 78,146 even on the
+        # AGENT-ONLY arm, while `CONFLICT_PERCEPTION_TERMS` listed only
+        # bev / map / box3d. So the detector has been BLIND to this gradient
+        # since the term existed; R3 is what makes that blindness load-bearing.
+        # ⛔ The UNWEIGHTED tensor, keyed `tac_v6`: `_conflict_terms` multiplies
+        # by the arm's own weight, so handing it a pre-weighted tensor would
+        # square the weight and silently misreport the ratio.
+        extra["tac_v6"] = _t6_loss
         # ⭐ n PER TERM, ALWAYS, AND PER TERM MEANS THREE NUMBERS HERE. A bare
         # 0.0 on the lat/lon heads reads as "supervised, and perfect", when
         # the normal case is that the window is OUTSIDE the record's ±2 s
@@ -3814,22 +3879,26 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         # ⚠️ `out["fmap_s16"]` is the stride-16 map of the LAST OBSERVED frame
         # (`refc.py:3869/3883`) — the same instant `t + w - 1` the map target
         # and the agent target are read at.
-        _grid = _valid = None
-        if _br.lift is not None:
-            _bank = getattr(model, "_lift_bank", None)
-            if _bank is None:
-                raise SystemExit(
-                    "[v3] ⛔ the BEV lift is built but no per-clip geometry "
-                    "bank is attached. One mount pose for a corpus whose "
-                    "MEASURED height spans 1.2131-1.6672 m (554 distinct "
-                    "values in 2,400 clips) biases every cell the lift fills.")
-            if "map_ep" not in batch:
-                raise SystemExit(
-                    "[v3] ⛔ the BEV lift needs `map_ep` and the batch carries "
-                    "none — a camera would attach to the wrong clip, silently, "
-                    "with every count still looking healthy.")
-            _grid, _valid = _bank.for_episodes(batch["map_ep"], device=device)
-        _pout = _br(out["fmap_s16"], _grid, _valid)
+        # ⭐⭐⭐ PI RULING 2026-09-17 R2 — THE BRANCH ALREADY RAN, INSIDE THE
+        # FORWARD. It used to be called HERE, after `model(...)` returned; that
+        # ordering is exactly what made §4's map half unreachable (no BEV token
+        # existed when the scene hook fired). The branch now runs in
+        # `RefCV3Model._bev_hook`, so this reads its outputs off `out`.
+        # ⛔ ONE FORWARD, ONE GRAPH — never two. Re-running `_br(...)` here
+        # would build a SECOND lift/encoder/map-head graph on the same
+        # `fmap_s16`, double the perception gradient into the trunk relative to
+        # the planner's, and leave the behaviour decoder reading a DIFFERENT
+        # BEV tensor from the one the map loss scores. Both arms would look
+        # healthy and the attribution would be silently wrong.
+        _pout = out.get("perception")
+        if _pout is None:
+            raise SystemExit(
+                "[v3] ⛔ --w-map/--w-box3d > 0 but `out['perception']` is "
+                "None: the model's forward did not run the perception branch. "
+                "Either this core predates the `bev_hook` seam, or the model "
+                "is the FLAT arm whose forward returns early. The losses below "
+                "would have nothing to read while config.json stamped a "
+                "jointly-trained perception branch.")
         if _w_map > 0.0:
             _mlab = batch["map_label"].to(device)
             _msel = _mlab.nonzero(as_tuple=False).flatten()
@@ -4272,13 +4341,30 @@ def _seam_stamp(cfg, args) -> dict:
                             if getattr(cfg, "tac_decoder_v6", False) else None),
             "sources": (list(getattr(cfg.tac_decoder_cfg, "sources", ()))
                         if getattr(cfg, "tac_decoder_v6", False) else None),
-            "bev_tokens_reach_decoder": False,
-            "bev_blocked_by": (
-                "refc_v3.RefCV3Model.forward does not pass `bev_tokens=` to "
-                "self.core(...), and the BEV encoder (model._perception) runs "
-                "AFTER the core forward on out['fmap_s16'] — so no BEV token "
-                "exists at refc.py:4154 where the scene hook fires. Arms built "
-                "today are AGENT-ONLY and must be reported as such."),
+            # ⭐⭐ PI RULING 2026-09-17 R2 — THE FACT, NOT A CONSTANT. This
+            # read `False` unconditionally while the seam was structurally
+            # blocked; it is now the ARM's own answer, and an agent-only arm
+            # still stamps `false` and must still be reported as agent-only.
+            # ⛔ Derived from the width the decoder was BUILT with, never from
+            # the flag alone: `--tac-decoder-d-bev` can be refused above, and a
+            # stamp that believed argv would then out-claim the weights.
+            "bev_tokens_reach_decoder": bool(
+                getattr(cfg, "tac_decoder_v6", False)
+                and int(getattr(cfg.tac_decoder_cfg, "d_bev", 0) or 0) > 0),
+            # ⛔ PI RULING R3: the tactical loss MAY shape the shared trunk, and
+            # attached is the ruling. A run that took the ablation says so here
+            # rather than in a report nobody re-reads.
+            "bev_grad_reaches_trunk": bool(
+                getattr(cfg, "tac_decoder_v6", False)
+                and int(getattr(cfg.tac_decoder_cfg, "d_bev", 0) or 0) > 0
+                and not bool(getattr(cfg, "tac_decoder_bev_detach", False))),
+            "bev_detached": bool(getattr(cfg, "tac_decoder_bev_detach", False)),
+            "bev_unblocked_by": (
+                "PI RULING 2026-09-17 (SPEC_REFCV6_V2.md, items 15/18 CLOSED): "
+                "the BEV encoder moved INTO the model forward "
+                "(refc_v3.RefCV3Model._bev_hook -> refc.py's `bev_hook` seam), "
+                "so a BEV token exists where the scene hook fires. An arm with "
+                "d_bev 0 is still AGENT-ONLY and must be reported as such."),
             "built": None,      # ← the MODEL fills this; see `train`
         },
         # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed. ⛔ `derivation` is the
@@ -5355,6 +5441,24 @@ CONFLICT_PERCEPTION_TERMS = (
     ("bev", lambda m: float(getattr(m, "_w_bev_aux", 0.0))),      # WP-D
     ("map", lambda m: float(getattr(m, "_w_map", 0.0))),          # refcv6 SAM3
     ("box3d", lambda m: float(getattr(m, "_w_box3d", 0.0))),      # refcv6 boxes
+    # ⭐⭐ THE FOURTH GRADIENT (PI RULING 2026-09-17 R3). The ruling states the
+    # trunk is now optimised FOUR ways — planner, map head, box head AND the
+    # tactical behaviour decoder — and names this detector as the mitigation for
+    # the attribution that costs. A detector whose aux sum omits the tactical
+    # term cannot perform that mitigation.
+    # ⛔ AND THE BLINDNESS PRE-DATES THE RULING. MEASURED 2026-09-17 on a
+    # tactical-only backward: the tactical loss reaches the trunk with
+    # `grad_abs_sum` 78,146 on the AGENT-ONLY arm (agent slots are decoded from
+    # the trunk's own feature map), so this gradient has been arriving —
+    # unmeasured — for as long as the term has existed. R3 is what makes it
+    # load-bearing, not what creates it.
+    # ⚠️ CONSEQUENCE, STATED RATHER THAN DISCOVERED: on an arm carrying BOTH a
+    # perception weight and `--w-tac-v6`, the aux side of every `cd_*` row now
+    # includes the tactical term, so those numbers are NOT comparable with a
+    # pre-2026-09-17 run's. Nothing banked is known to be affected — no arm
+    # could run `--tac-decoder-d-bev > 0` before tonight — but a reader
+    # comparing across that date must know.
+    ("tac_v6", lambda m: float(getattr(m, "_w_tac_v6", 0.0))),    # refcv6 §4
 )
 
 
@@ -6751,8 +6855,18 @@ def train(args) -> dict:
         # parameters with `grad_abs_sum` EXACTLY 0 for all 40,284 steps --
         # parsed, stamped, reaching nothing, and invisible in every loss value.
         # A head whose `_ga` row is 0.0 while its loss is finite is that class.
+        # ⭐⭐ WIDENED BY PI RULING 2026-09-17 R3. The trunk is now optimised
+        # FOUR ways — planner, map head, box head AND the tactical behaviour
+        # decoder — and the ruling's own named mitigation for the attribution
+        # it costs is per-head reach plus the conflict detector. Gating this on
+        # `_perception` alone would leave a tactical arm with NO reach row at
+        # all, which is the `tac_goal_tok_head` blind spot one head over.
+        # ⛔ Still nothing on an arm with neither seam: `_pr_row` stays empty,
+        # no `ga_*` key enters metrics.jsonl, and bit-identity is untouched.
         _pr_row = {}
-        if getattr(model, "_perception", None) is not None and (
+        _ga_on = (getattr(model, "_perception", None) is not None
+                  or getattr(model, "tac_decoder_v6", None) is not None)
+        if _ga_on and (
                 step % max(1, args.log_every) == 0 or step + 1 >= args.steps):
             for _pk, _pv in _perc.grad_reach_report(model).items():
                 _pr_row[f"ga_{_pk}"] = _pv["grad_abs_sum"]
@@ -7720,14 +7834,22 @@ def build_parser() -> argparse.ArgumentParser:
                           "behaviour decoder; 0 (default) = agent slots only. "
                           "⛔ The token COUNT is always derived from the "
                           "tensor (`bev_feats_to_tokens`); only the CHANNEL "
-                          "width is declared, because it is a parameter shape "
-                          "that follows the trunk (resnet34 -> 256, "
-                          "resnet101 -> 1024 at stride 16). ⚠️ > 0 REFUSES "
-                          "today: `refc_v3.RefCV3Model.forward` never passes "
-                          "`bev_tokens=` to `self.core(...)`, so the decoder "
-                          "would declare a width for a tensor that never "
-                          "arrives and the arm would read as 'the map adds "
-                          "nothing' while never having had a map.")
+                          "width is declared. ⛔ It is NOT the trunk's "
+                          "stride-16 width: the tokens are the SUPERVISED MAP "
+                          "branch's features, so the only admissible value is "
+                          "`BEVEncoderConfig.d_out` and anything else REFUSES "
+                          "with the derived number named. ⭐ > 0 is live since "
+                          "PI RULING 2026-09-17 (R2) and needs --w-map > 0 "
+                          "(the lift and BEV encoder are built only behind a "
+                          "live map weight).")
+    g6t.add_argument("--tac-decoder-bev-detach", action="store_true",
+                     help="ABLATION of PI ruling R3. By default the BEV "
+                          "tokens reach the decoder ATTACHED, so the tactical "
+                          "loss shapes the shared trunk — the PI's explicit "
+                          "instruction (*\"you can backpropagate to the "
+                          "trunk\"*). This flag cuts that path and is stamped "
+                          "in config.json as `bev_detached`. ⛔ REFUSES with "
+                          "--tac-decoder-d-bev 0: nothing to detach.")
     g6t.add_argument("--tac-decoder-valid-threshold", type=float, default=0.5,
                      help="sigmoid threshold at which a behaviour counts as "
                           "VALID for the selection gate and for "

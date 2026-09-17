@@ -533,14 +533,20 @@ def refc_channel_requirements():
                    "behaviour decoder then attends to agents only, and a behaviour "
                    "that is a property of the MAP (lane keeping, corridor offset) has "
                    "no evidence to be learned from.",
-            unblock="a predicate on the tactical seam's own flag. ⛔ It does not "
-                    "exist yet: the behaviour decoder is supplied by "
-                    "`RefCV3Model._scene_hook` and the BEV-token half is decided by "
-                    "the CALLER, not by a config field this adapter can read. ⭐ "
-                    "When the tactical layer gets a persisted config flag (it must, "
-                    "to be rollable), declare it here as a predicate and this "
-                    "channel becomes ASSERTED — the `v0` path exactly.",
-            evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3816`, `:4125-4133`."),
+            unblock="⭐ SUPERSEDED IN PART BY PI RULING 2026-09-17 (R2). The flag "
+                    "this entry said 'does not exist yet' now DOES: "
+                    "`cfg.tac_decoder_cfg.d_bev > 0` is persisted and is exactly "
+                    "the predicate. ⛔ But the channel is still NOT assertable ON "
+                    "THIS PARAMETER, because the tokens no longer arrive through "
+                    "it: they are produced INSIDE the forward by `bev_hook` and "
+                    "assigned to `bev_tokens` there. Passing them here as well is "
+                    "now REFUSED outright (two suppliers for one tensor). ⇒ the "
+                    "assertion belongs on `bev_hook`, and the model already "
+                    "enforces it: a decoder built `d_bev > 0` with no perception "
+                    "branch raises before the core is called.",
+            evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3816`, `:4125-4133`; "
+                     "and the `bev_hook` entry below for the supply route that "
+                     "replaced this one."),
         CR(
             channel="bev_pad",
             owner="refcv6 tactical behaviour decoder, key mask — arch-inf 2026-09-16",
@@ -559,6 +565,42 @@ def refc_channel_requirements():
                     "assertable in the same turn, or the mask becomes the half "
                     "nobody checks.",
             evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3817`, `:4133`."),
+        CR(
+            channel="bev_hook",
+            owner="refcv6 §4 BEV->tactical seam — PI RULING 2026-09-17 (R2/R3)",
+            reason="⛔ NOT A TENSOR CHANNEL — a CALLABLE, declared for the same "
+                   "reason `hierarchy_hook` and `scene_hook` are: this contract "
+                   "derives its scope from the SIGNATURE, and a channel silently "
+                   "dropped from scope is indistinguishable from one nobody "
+                   "thought about. ⭐ IT IS THE CHANNEL THAT LIFTED E8. Until the "
+                   "ruling the BEV encoder ran on the TRAINER's wrapper AFTER the "
+                   "core forward, so no BEV token existed when `scene_hook` "
+                   "fired and `bev_tokens` could never be non-None on this path; "
+                   "the hook now runs the perception branch INSIDE the forward, "
+                   "where `fmap_s16` is born, and supplies exactly those tokens. "
+                   "With `bev_hook=None` the block is untouched dead code and the "
+                   "forward is byte-identical (MEASURED: ckpt BITWISE-IDENTICAL "
+                   "over 193 tensors). ⚠️ Omitting it on a build whose decoder "
+                   "DECLARED `d_bev > 0` is the silent case — the decoder would "
+                   "attend to agents only while the record said 'agent and map' "
+                   "— and that is why `RefCV3Model.forward` REFUSES it rather "
+                   "than letting this contract be the only thing standing "
+                   "between the two.",
+            unblock="⛔ nothing should assert it here, for the `scene_hook` "
+                    "reason unchanged: the hook is an OPTIONAL seam and "
+                    "asserting it would refuse every non-perception build. ⭐ The "
+                    "two dangerous directions are BOTH closed loudly in the "
+                    "model: supplying both a hook and explicit `bev_tokens` "
+                    "raises (two suppliers for one tensor), and a decoder built "
+                    "`d_bev > 0` with no perception branch attached raises before "
+                    "the core is called. This adapter attaches no branch, so the "
+                    "hook is legitimately absent here.",
+            evidence="PUBLISHED-CODE 2026-09-17: `refc.py` (the `bev_hook` "
+                     "parameter and its block, which sets `bev_tokens` from the "
+                     "hook's return), `refc_v3.RefCV3Model._bev_hook` (the "
+                     "supplier and the feed gate). MEASURED: `Research/"
+                     "2026-09-17-refcv6-bev-tactical/raw/bit_identity.json` and "
+                     "`raw/grad_reach_bev.json`."),
     )
 
 

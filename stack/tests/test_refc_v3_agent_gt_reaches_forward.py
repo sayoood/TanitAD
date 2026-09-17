@@ -84,9 +84,19 @@ RECORD_DOC = ("TanitAD Research Lab/Architecture & Inference/Research/"
 #: ⛔ THE PATCH, REVERTED — the pre-2026-09-10 forward call, verbatim. The dict
 #: is still built; it simply never reaches the model, which is EXACTLY the
 #: defect: a supplier that exists and is not connected.
+#: ⚠️ RE-ANCHORED 2026-09-17 (PI RULING R2). The forward call now also carries
+#: `perception_grid=` / `perception_valid=` — this batch's per-clip lift
+#: geometry, needed because the BEV encoder moved INTO the forward. The old
+#: anchor matched 0 times and the harness REFUSED rather than passing vacuously,
+#: which is exactly what it is for: a disarmed deliberate-regression arm is a
+#: green test that proves nothing.
 REVERT_FROM = ("                v_max_ms=v_max_ms, v_max_valid=v_max_valid,\n"
-               "                agent_gt=agent_gt)")
-REVERT_TO = "                v_max_ms=v_max_ms, v_max_valid=v_max_valid)"
+               "                agent_gt=agent_gt,\n"
+               "                perception_grid=_pgrid, "
+               "perception_valid=_pvalid)")
+REVERT_TO = ("                v_max_ms=v_max_ms, v_max_valid=v_max_valid,\n"
+             "                perception_grid=_pgrid, "
+             "perception_valid=_pvalid)")
 
 #: ⛔ IN-BRANCH VALUE CORRUPTION. The gate is untouched, so `off`/`head` cannot
 #: see it; only the oracle's value-flow assertion can. Proves the ON comparison

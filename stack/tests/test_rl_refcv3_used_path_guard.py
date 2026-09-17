@@ -107,9 +107,18 @@ def test_the_two_adapters_bind_DIFFERENT_CLASSES():
     # add them to `RefCV3Model.forward`, which is exactly what the note above
     # predicted would move them out of this set. Both halves are this session's
     # refcv6 work and both are now declared in `refc_channel_requirements`.
+    # ⭐ MOVED A THIRD TIME by PI RULING 2026-09-17 (R2), again in BOTH
+    # directions. IN to the CORE-only set: `bev_hook`, the callable that runs
+    # the perception branch inside the forward. IN to the v3-only set:
+    # `perception_grid` / `perception_valid`, this batch's per-clip lift
+    # geometry — which the branch needs precisely BECAUSE it now runs in the
+    # forward rather than after it. ⚠️ The two are ONE change seen from two
+    # sides, and hard-coding both is what makes that visible.
     assert a - b == {"maneuver_logits", "target_latent", "hierarchy_hook",
-                     "ego_keep", "bev", "scene_hook", "bev_tokens", "bev_pad"}
-    assert b - a == {"ego_state", "nav_args", "v_max_ms", "v_max_valid"}
+                     "ego_keep", "bev", "scene_hook", "bev_tokens", "bev_pad",
+                     "bev_hook"}
+    assert b - a == {"ego_state", "nav_args", "v_max_ms", "v_max_valid",
+                     "perception_grid", "perception_valid"}
 
 
 def test_the_configs_NEST_differently_which_is_what_breaks_a_copied_contract():
@@ -161,11 +170,15 @@ def test_the_channel_set_is_derived_from_the_handed_models_OWN_signature(
     # `refc_channel_requirements`, which is what makes them CHECKED rather than
     # merely present. ⛔ The adapter REFUSED to build until they were, and that
     # refusal is why they were caught before an RL arm ran.
+    # ⭐ `bev_hook` added 2026-09-17 by PI RULING R2: the callable that runs the
+    # perception branch INSIDE the forward, which is what makes `bev_tokens`
+    # reachable at all — before it, the BEV encoder ran AFTER the forward and
+    # the map half of the behaviour decoder was structurally unreachable.
     assert set(got) == {"nav_cmd", "v0", "maneuver_logits", "target_latent",
                         "lan", "nav_known", "hierarchy_hook", "ego_keep",
                         "withheld_speed", "agent_gt", "ego_poses",
                         "ego_n_past", "bev", "scene_hook", "bev_tokens",
-                        "bev_pad"}
+                        "bev_pad", "bev_hook"}
     # frames/steps are not conditioning channels; the goal point and the three
     # E13b/E16 channels are LABELS, excluded in the seams that own them.
     for absent in ("frames", "steps", "self", "gp_point", "gp_valid"):
@@ -423,7 +436,10 @@ def test_the_lazy_import_holds_in_BOTH_orders(first, second):
                        text=True)
     assert r.returncode == 0, f"{first} then {second}:\n{r.stderr[-2000:]}"
     # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
-    assert r.stdout.strip() == "17"
+    # ⭐ 17 -> 18: PI RULING 2026-09-17 (R2) added `bev_hook` to
+    # `RefCModel.forward` — the callable that runs the perception branch INSIDE
+    # the forward, which is what made `bev_tokens` reachable at all.
+    assert r.stdout.strip() == "18"
 
 
 def test_every_declaration_is_reviewable_and_covers_both_families():
@@ -438,7 +454,8 @@ def test_every_declaration_is_reviewable_and_covers_both_families():
 
     decls = ad.refc_channel_requirements()
     # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
-    assert len(decls) == 17          # 13 + the four refcv6 channels
+    # ⭐ 17 -> 18: PI RULING 2026-09-17 (R2) added `bev_hook`.
+    assert len(decls) == 18          # 13 + the five refcv6 channels
     mine = {r.channel: r for r in decls}
     theirs = {r.channel: r for r in ra.CHANNEL_REQUIREMENTS}
 
