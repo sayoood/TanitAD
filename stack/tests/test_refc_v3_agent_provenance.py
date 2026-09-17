@@ -407,7 +407,7 @@ def _leaf_values(obj) -> list:
     return out
 
 
-def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE():
+def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
     """⭐ DERIVED FROM ARGPARSE, ASSERTED BY VALUE. Each knob is set to a
     distinctive value and must be findable in the seam stamp — so the test
     survives any renaming of the stamp's keys and cannot be satisfied by a
@@ -432,6 +432,29 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE():
             "--agent-join", "j.jsonl",
             "--bev-aux", "col", "--w-bev-aux", "0.1",
             "--wp-index", "on"]
+    # ⭐⭐ refcv6 §2/§6: a PER-KNOB seam, because these two CANNOT live in the
+    # shared `base`. `--w-map` needs `--map-gt-root`, and `--map-gt-root` with
+    # both perception weights at 0 fires the REVERSE refusal (an artifact
+    # named in config.json and read by nothing) -- so putting it in `base`
+    # would make EVERY OTHER knob's probe inadmissible. The requirement is
+    # mutual, and a shared prefix cannot express that.
+    # ⛔ This is a SEAM table, not the per-knob VALUE table the docstring
+    # forbids: the probe VALUES still come from `cand`, derived from argparse.
+    # ⚠️ A REAL per-clip table: `_pin_trainer_cfg` READS the file (that is
+    # `test_P1_extrinsics_source_needs_a_FILE`'s whole point), so a placeholder
+    # path would make this probe fail for a reason that has nothing to do with
+    # the knob -- exactly what `base` exists to prevent.
+    extr = tmp_path / "extr.json"
+    extr.write_text(json.dumps({"c0": {"qx": 0.4957, "qy": -0.5006,
+                                       "qz": 0.5045, "qw": -0.4992,
+                                       "x": 1.7795, "y": -0.0596,
+                                       "z": 1.2531}}), encoding="utf-8")
+    seam = {
+        "w_map": ["--trunk", "timm", "--map-gt-root", "m",
+                  "--agent-rig-camera", "extrinsics",
+                  "--agent-rig-extrinsics", str(extr)],
+        "w_box3d": ["--trunk", "timm"],
+    }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of
     # values would be the rotting list this test exists to avoid.
@@ -454,7 +477,8 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE():
             continue
         last = None
         for v in vals:
-            argv = list(base) + ([opt] if v is True else [opt, str(v)])
+            argv = (list(base) + seam.get(a.dest, [])
+                    + ([opt] if v is True else [opt, str(v)]))
             try:
                 args = p.parse_args(argv)
                 cfg, _ = _cfg_at(args=args)

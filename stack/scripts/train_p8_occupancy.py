@@ -254,9 +254,19 @@ class JoinFileReader:
     """
 
     def __init__(self, path: str | os.PathLike, *, episode_ids=None,
-                 with_rates: bool = False):
+                 with_rates: bool = False, with_track_ids: bool = False):
         """``episode_ids`` / ``with_rates`` are the E-AGT-HEAD additions
         (2026-09-05); both default to the historical behaviour exactly.
+
+        ``with_track_ids`` (refcv6 §6, 2026-09-17) -- keep each record's
+        ``track_id`` strings ALIGNED with :meth:`lookup`'s rows, exactly as
+        ``_cls_by_clip`` keeps ``cls``. ⛔ It exists because the 3-D cuboid
+        join is keyed BY TRACK (``agent_cuboid_gt.zh_for_frame``): without the
+        ids a loader would have to align ``cz``/``h`` to the 2-D rows BY
+        POSITION, which is right only while no filter ever reorders either
+        file, and wrong silently the first time one does. Strings are
+        ``sys.intern``-ed, so the cost is one per TRACK, not one per agent.
+        Default False keeps every existing reader byte-identical.
 
         ``episode_ids`` -- keep ONLY these clips. The TRAIN join is 433,040
         records / 12,122,129 boxes and a full load costs ~2.1 GB RSS
@@ -279,8 +289,11 @@ class JoinFileReader:
         self.episode_ids = (None if episode_ids is None
                             else {int(x) for x in episode_ids})
         self.with_rates = bool(with_rates)
+        self.with_track_ids = bool(with_track_ids)
         self._by_clip: dict[tuple[str, int], np.ndarray] = {}
         self._cls_by_clip: dict[tuple[str, int], np.ndarray] = {}
+        self._tid_by_clip: dict[tuple[str, int], np.ndarray] = {}
+        self.has_track_ids = False
         self._rates_by_clip: dict[tuple[str, int], tuple] = {}
         self._clip_of_uid: dict[int, str] = {}
         self._clip_of_legacy: dict[int, str] = {}
@@ -369,6 +382,16 @@ class JoinFileReader:
                         [str(d.get("cls", "")) for d in rec["agents"]],
                         dtype=object)
                     self.has_classes = True
+                # refcv6 §6: the per-agent track id, in the SAME row order.
+                # ⚠️ A record whose agents carry no `track_id` yields the empty
+                # string, which `AgentJoin3D.zh` then masks OFF -- an absent
+                # 3-D label is a MASK, never a zero.
+                if self.with_track_ids and isinstance(rec["agents"], list):
+                    self._tid_by_clip[key] = np.asarray(
+                        [sys.intern(str(d.get("track_id", "")))
+                         for d in rec["agents"]], dtype=object)
+                    if any(str(d.get("track_id", "")) for d in rec["agents"]):
+                        self.has_track_ids = True
                 if (ag.shape[0] > 0) and (ag[:, 5] >= 0.0).any():
                     self.has_occlusion_flags = True
                 if cid not in seen_clips:
@@ -454,6 +477,16 @@ class JoinFileReader:
         if cid is None:
             return None
         return self._cls_by_clip.get((cid, int(frame_idx)))
+
+    def lookup_track_ids(self, episode_id: int,
+                         frame_idx: int) -> np.ndarray | None:
+        """Per-agent ``track_id`` strings aligned with :meth:`lookup`'s rows,
+        or ``None`` when the reader was not built ``with_track_ids=True`` (or
+        the record is NO_LABEL). refcv6 §6's join key into the 3-D cuboids."""
+        cid = self._clip_of(episode_id)
+        if cid is None:
+            return None
+        return self._tid_by_clip.get((cid, int(frame_idx)))
 
     def raster(self, episode_id: int, frame_idx: int,
                grid: BEVGrid = GRID_DEFAULT,

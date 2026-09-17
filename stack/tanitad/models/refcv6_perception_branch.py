@@ -1,0 +1,423 @@
+"""refcv6 §2/§6 -- THE PERCEPTION BRANCH, as ONE module a trainer can own.
+
+The PI's instruction (2026-09-16) is to *"train jointly the resnet-trunk, the bev
+map (based on the sam2 maps as gt) and a head for 3d bounding boxes extracted
+from the resnet trunk"*. Every piece of that existed and **nothing assembled
+them**: MEASURED on tip ``c16b7f1``, ``bev_encoder``, ``bev_lift`` and
+``box3d_head`` are imported by ``stack/tests/`` and **by no production module at
+all** -- ``BEVLift``, ``BEVMapBranch``, ``Box3DMemory`` and ``Box3DSlotDecoder``
+are never constructed outside a test. This module is the missing assembly.
+
+WHAT IT IS, AND WHAT IT DELIBERATELY IS NOT
+-------------------------------------------
+It is a ``nn.Module`` the **trainer** builds and attaches to the model
+(``model._perception``), reading ``out["fmap_s16"]`` -- the stride-16 map
+``RefCModel.forward`` already returns (``refc.py:4215``) for the LAST OBSERVED
+frame of the window, with its graph attached.
+
+⛔ It is NOT an edit to ``refc.py`` / ``refc_v3.py``. Two reasons, and the second
+is the load-bearing one:
+
+1. those files are another stream's, and the seam they publish is already
+   sufficient -- ``fmap_s16`` needs no new plumbing;
+2. **a model that does not build the branch is bit-identical to the tip.** A
+   config field would have to be defaulted, stamped, and read on every arm; an
+   attribute the trainer attaches only when a weight is positive cannot change
+   a default run's parameter set, its ``state_dict``, or its RNG draw order.
+
+WHERE THE SHAPES COME FROM
+--------------------------
+⛔ Nothing here hard-codes 640 / 1024 / 160 / 40 / 20 or a channel count.
+
+* ``d_image`` = ``encoder.s16_dim``   -- timm's ``feature_info.channels()``;
+* ``image_hw`` = ``encoder.s16_shape`` -- derived from the payload's own H x W;
+* the BEV grid = :data:`bev_raster.GRID_DEFAULT`, asserted against the SAM3
+  label grid by :func:`trunk_shapes.assert_label_grid_unmoved`;
+* the camera frame = :func:`trunk_shapes.frame_for_width` on the cache's width.
+
+THE THREE GRADIENT PATHS, NAMED
+-------------------------------
+``loss_map``   -> MapHead -> BEVEncoder -> BEVLift -> **trunk** (via ``fmap_s16``)
+``loss_box3d`` -> Box3DSlotDecoder -> Box3DMemory -> **trunk** (image tokens),
+                  and additionally through the BEV features when ``use_bev``.
+
+Both therefore reach the ResNet trunk, which is the PI's "train jointly".
+:func:`grad_reach_report` is the instrument that PROVES it per head rather than
+asserting it -- the ``tac_goal_tok_head`` precedent (11,286 parameters with
+``grad_abs_sum`` exactly 0 for all 40,284 steps) is the failure it exists for.
+"""
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass, field
+
+import torch
+from torch import Tensor, nn
+
+from tanitad.data.bev_raster import GRID_DEFAULT, BEVGrid
+from tanitad.data.semantic_map_gt import CART_SHAPE, N_CHANNELS
+from tanitad.models.bev_encoder import (BEVEncoderConfig, BEVMapBranch,
+                                        map_metrics, map_soft_ce)
+from tanitad.models.bev_lift import HEIGHTS_M, BEVLift, build_lift_geometry
+from tanitad.models.box3d_head import (Box3DMemory, Box3DSlotDecoder,
+                                       box3d_set_loss)
+from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
+                                         assert_label_grid_unmoved,
+                                         frame_for_width)
+
+__all__ = ["PerceptionBranchConfig", "LiftGeometryBank", "PerceptionBranch",
+           "build_perception_branch", "grad_reach_report"]
+
+
+# --------------------------------------------------------------------------- #
+# config                                                                       #
+# --------------------------------------------------------------------------- #
+@dataclass(frozen=True)
+class PerceptionBranchConfig:
+    """What the trainer decides; every SHAPE comes from the payload instead.
+
+    ``w_map`` / ``w_box3d`` are the loss weights. ⛔ **Both 0.0 is not a legal
+    config for this object** -- a branch with no live weight must not be BUILT,
+    because its parameters would enter ``model.parameters()``, change the
+    optimiser's state and the checkpoint, and train on nothing. The trainer
+    refuses before constructing; :meth:`__post_init__` refuses again here, so
+    the invariant does not depend on one call site remembering it.
+    """
+
+    w_map: float
+    w_box3d: float
+    d_bev: int = 128                  # BEVLift.d_out == BEVEncoderConfig.d_in
+    bev_cfg: BEVEncoderConfig = field(default_factory=BEVEncoderConfig)
+    n_queries: int = 100              # agent_slots.N_QUERIES_DEFAULT
+    d_model: int = 256
+    bev_tokens_hw: tuple[int, int] = (30, 16)
+    heights_m: tuple[float, ...] = HEIGHTS_M
+    stride: int = PERCEPTION_STRIDE
+    #: ⛔ SHAPE TESTS ONLY. :class:`Box3DSlotDecoder` enforces §6's
+    #: pre-registered 2-4 M parameter band at construction, for the reason its
+    #: own docstring gives: a bigger head stops measuring what the LATENT
+    #: carries. A tiny test rig is BELOW the band, so a test must be able to
+    #: say so BY NAME rather than by silently widening the band -- and no argv
+    #: reaches this field.
+    enforce_param_band: bool = True
+    #: ⛔ NOT a knob the operator sets. It is DERIVED: the box head reads BEV
+    #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``.
+    #: Building the lift + encoder for an unsupervised feature path would put
+    #: ~1 M parameters in the optimiser whose only gradient is the box loss's --
+    #: legal, but a different experiment, and it must be asked for by name.
+    def __post_init__(self) -> None:
+        if float(self.w_map) < 0.0 or float(self.w_box3d) < 0.0:
+            raise ValueError("perception weights must be >= 0")
+        if float(self.w_map) == 0.0 and float(self.w_box3d) == 0.0:
+            raise ValueError(
+                "PerceptionBranchConfig with BOTH weights 0.0: the branch "
+                "would add parameters to the optimiser and the checkpoint "
+                "while training on nothing. Do not build it.")
+        if int(self.d_bev) != int(self.bev_cfg.d_in):
+            raise ValueError(
+                f"d_bev {self.d_bev} != bev_cfg.d_in {self.bev_cfg.d_in}: the "
+                f"lift's output width IS the BEV encoder's input width")
+
+    @property
+    def use_bev(self) -> bool:
+        return float(self.w_map) > 0.0
+
+    def as_dict(self) -> dict:
+        return {"w_map": float(self.w_map), "w_box3d": float(self.w_box3d),
+                "d_bev": int(self.d_bev), "n_queries": int(self.n_queries),
+                "d_model": int(self.d_model),
+                "bev_tokens_hw": list(self.bev_tokens_hw),
+                "heights_m": list(self.heights_m), "stride": int(self.stride),
+                "use_bev_in_box_head": bool(self.use_bev),
+                "bev_encoder": {"d_in": int(self.bev_cfg.d_in),
+                                "d_model": int(self.bev_cfg.d_model),
+                                "d_out": int(self.bev_cfg.d_out),
+                                "dilations": list(self.bev_cfg.dilations)}}
+
+
+# --------------------------------------------------------------------------- #
+# per-clip lift geometry                                                       #
+# --------------------------------------------------------------------------- #
+class LiftGeometryBank:
+    """``episode_id -> (grid, valid)`` for :class:`BEVLift`, built ONCE per clip.
+
+    ⛔ **Per clip, never per run.** The same argument
+    :class:`refc_agents.RigCameraBank` carries: MEASURED on the parity corpus,
+    mount height spans 1.2131-1.6672 m over **554 distinct values in 2,400
+    clips**, and the lift back-projects through the road plane, so one mount
+    pose applied to every clip biases the geometry of every cell it fills.
+
+    ⛔ A missing episode REFUSES. Falling back to a default camera is how the
+    map head would train against the wrong ground plane while every count looked
+    healthy -- the same refusal ``_resolve_rig_cameras`` makes one seam over.
+    """
+
+    def __init__(self, extr_by_clip: dict, *, frame, stride: int,
+                 heights_m=HEIGHTS_M, grid: BEVGrid = GRID_DEFAULT):
+        from tanitad.data.v2_dataset import stable_episode_id
+        self.frame = frame
+        self.stride = int(stride)
+        self.heights_m = tuple(float(h) for h in heights_m)
+        self.grid_spec = grid
+        self._extr: dict[int, object] = {}
+        self.clip_of: dict[int, str] = {}
+        for cid, e in extr_by_clip.items():
+            sid = int(stable_episode_id(str(cid)))
+            if sid in self._extr:
+                raise SystemExit(
+                    f"[perception] two clip_ids collide on stable_episode_id "
+                    f"{sid}; refusing rather than attaching one clip's mount "
+                    f"pose to another's BEV cells")
+            self._extr[sid] = e
+            self.clip_of[sid] = str(cid)
+        self._cache: dict[int, tuple] = {}
+
+    def __len__(self) -> int:
+        return len(self._extr)
+
+    def covers(self, ep_id: int) -> bool:
+        return int(ep_id) in self._extr
+
+    def geometry(self, ep_id: int) -> tuple:
+        """``(grid [Z,X,Y,2] float32, valid [Z,X,Y] bool)`` for one episode."""
+        k = int(ep_id)
+        hit = self._cache.get(k)
+        if hit is not None:
+            return hit
+        e = self._extr.get(k)
+        if e is None:
+            raise SystemExit(
+                f"[perception] no rig extrinsics for episode {k} -- the BEV "
+                f"lift has no camera for this clip and a default would put the "
+                f"road plane in the wrong place. Pass an extrinsics table that "
+                f"covers every clip in the cache.")
+        g = build_lift_geometry(e, frame=self.frame, stride=self.stride,
+                                heights_m=self.heights_m, grid=self.grid_spec)
+        hit = (g.grid, g.valid)
+        self._cache[k] = hit
+        return hit
+
+    def for_episodes(self, ep_ids, device=None) -> tuple:
+        """Stack one row per episode id -> ``([B,Z,X,Y,2], [B,Z,X,Y])``."""
+        ids = [int(x) for x in (ep_ids.tolist() if torch.is_tensor(ep_ids)
+                                else list(ep_ids))]
+        if not ids:
+            raise ValueError("for_episodes: empty batch")
+        gs, vs = zip(*(self.geometry(i) for i in ids))
+        grid = torch.stack(gs).to(device) if device is not None else torch.stack(gs)
+        valid = torch.stack(vs).to(device) if device is not None else torch.stack(vs)
+        return grid, valid
+
+    def coverage(self, ep_ids) -> dict:
+        ids = [int(x) for x in ep_ids]
+        n_ok = sum(1 for i in ids if i in self._extr)
+        return {"n": len(ids), "n_covered": n_ok,
+                "n_missing": len(ids) - n_ok,
+                "frac": (n_ok / len(ids)) if ids else float("nan"),
+                "bank_n_clips": len(self._extr)}
+
+
+# --------------------------------------------------------------------------- #
+# the branch                                                                   #
+# --------------------------------------------------------------------------- #
+class PerceptionBranch(nn.Module):
+    """``fmap_s16`` -> map logits and/or 3-D slots. One forward, one graph."""
+
+    def __init__(self, cfg: PerceptionBranchConfig, *, d_image: int,
+                 image_hw: tuple[int, int], n_classes: int = N_CHANNELS):
+        super().__init__()
+        self.cfg = cfg
+        self.d_image = int(d_image)
+        self.image_hw = (int(image_hw[0]), int(image_hw[1]))
+        # ⛔ The SAM3 label grid is asserted, not assumed: if it ever moves, the
+        # lift geometry and the loss disagree silently on which cell is which.
+        self.map_grid_hw = assert_label_grid_unmoved(CART_SHAPE)
+
+        self.lift: BEVLift | None = None
+        self.map_branch: BEVMapBranch | None = None
+        if cfg.use_bev:
+            self.lift = BEVLift(d_in=self.d_image, d_out=int(cfg.d_bev),
+                                n_heights=len(cfg.heights_m),
+                                feat_hw=self.image_hw)
+            self.map_branch = BEVMapBranch(cfg.bev_cfg, n_classes=n_classes)
+
+        self.box_mem: Box3DMemory | None = None
+        self.box_dec: Box3DSlotDecoder | None = None
+        if float(cfg.w_box3d) > 0.0:
+            self.box_mem = Box3DMemory(
+                d_image=self.d_image, d_bev=int(cfg.bev_cfg.d_out),
+                d_model=int(cfg.d_model), image_hw=self.image_hw,
+                bev_tokens_hw=tuple(cfg.bev_tokens_hw),
+                use_bev=bool(cfg.use_bev), perception_stride=int(cfg.stride))
+            self.box_dec = Box3DSlotDecoder(
+                d_memory=int(cfg.d_model), n_memory=int(self.box_mem.n_tokens),
+                n_queries=int(cfg.n_queries), d_model=int(cfg.d_model),
+                enforce_band=bool(cfg.enforce_param_band))
+
+    # -- reporting ---------------------------------------------------------- #
+    def param_breakdown(self) -> dict:
+        def n(m):
+            return 0 if m is None else int(sum(p.numel() for p in m.parameters()))
+        return {"lift": n(self.lift), "bev_encoder": n(
+                    None if self.map_branch is None else self.map_branch.encoder),
+                "map_head": n(None if self.map_branch is None
+                              else self.map_branch.head),
+                "box_memory": n(self.box_mem), "box_decoder": n(self.box_dec),
+                "total": n(self)}
+
+    def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
+                valid: Tensor | None = None) -> dict:
+        """⛔ ONE argument family, all vision. No parameter here can carry a
+        label -- the ``AgentSlotDecoder.forward`` audit, extended to the branch.
+        """
+        if fmap_s16 is None:
+            raise ValueError(
+                "[perception] fmap_s16 is None: this build's trunk exposes no "
+                "stride-16 map. refcv6 perception reads stride 16 (an oracle "
+                "on the stride-32 map caps at AP 0.3341 vs 0.4713, "
+                "SPEC_REFCV6_V2 section 2) -- use --trunk timm.")
+        if fmap_s16.shape[1] != self.d_image:
+            raise ValueError(
+                f"[perception] fmap_s16 has {fmap_s16.shape[1]} channels, the "
+                f"branch was built for {self.d_image} (read from timm's "
+                f"feature_info at build time)")
+        out: dict = {}
+        bev_feats = None
+        if self.lift is not None:
+            if grid is None or valid is None:
+                raise ValueError(
+                    "[perception] the BEV branch is built but no lift geometry "
+                    "was passed: the map would be predicted from features "
+                    "sampled at no camera at all")
+            bev = self.lift(fmap_s16, grid, valid)
+            mb = self.map_branch(bev)
+            bev_feats = mb["bev_feats"]
+            out["bev"] = bev
+            out["bev_feats"] = bev_feats
+            out["map_logits"] = mb["map_logits"]
+        if self.box_dec is not None:
+            mem = self.box_mem(fmap_s16, bev_feats)
+            out["box_slots"] = self.box_dec(mem)
+        return out
+
+
+# --------------------------------------------------------------------------- #
+# factory                                                                      #
+# --------------------------------------------------------------------------- #
+def build_perception_branch(model, cfg: PerceptionBranchConfig) -> PerceptionBranch:
+    """Read the trunk's OWN shapes off the built model and construct the branch.
+
+    ⛔ Every number comes from the encoder object, never from a literal: a
+    resnet34 -> resnet101 swap changes ``s16_dim`` 256 -> 1024 and a 256x640 ->
+    256x1024 cache changes ``s16_shape`` (16, 40) -> (16, 64). Both arrive here
+    through ``timm``'s ``feature_info`` and the payload, so neither is written
+    down anywhere in this file.
+    """
+    enc = model.core.encoder
+    if not hasattr(enc, "forward_features") or not hasattr(enc, "s16_dim"):
+        raise SystemExit(
+            "[perception] this build's encoder exposes no stride-16 map "
+            f"({type(enc).__name__}). refcv6 perception reads stride 16; the "
+            "legacy REF-C ResNetEncoder returns the stride-32 map only. Pass "
+            "--trunk timm.")
+    return PerceptionBranch(cfg, d_image=int(enc.s16_dim),
+                            image_hw=tuple(enc.s16_shape))
+
+
+def frame_for_model(model):
+    """The :class:`CanonicalFrame` of THIS build's cache geometry."""
+    h, w = model.cfg.core.encoder.image_hw()
+    return frame_for_width(int(w), int(h))
+
+
+# --------------------------------------------------------------------------- #
+# the losses -- thin, so the arithmetic stays in the tested modules            #
+# --------------------------------------------------------------------------- #
+def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
+                 with_metrics: bool = False) -> dict:
+    """:func:`map_soft_ce` plus the per-head COUNT the log row must carry.
+
+    ⭐ ``n_map_cells`` is not decoration. A map loss of 0.0 with 0 seen cells and
+    a map loss of 0.0 on 200,000 cells are opposite findings, and without the
+    count the log cannot tell them apart -- the ``tac_goal_n_supervised``
+    precedent, one head over.
+    """
+    r = map_soft_ce(logits, frac, seen)
+    row = {"loss": r["loss"], "n_map_cells": float(r["n_cells"])}
+    if with_metrics:
+        m = map_metrics(logits.detach(), frac, seen)
+        row["map_acc"] = float(m["acc"])
+        for i, c in enumerate(m["classes"]):
+            v = float(m["iou"][i])
+            if v == v:                                   # skip NaN (no union)
+                row[f"map_iou_{i}"] = v
+    return row
+
+
+def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None) -> dict:
+    """:func:`box3d_set_loss` plus per-term counts, flattened for the log row."""
+    r = box3d_set_loss(slots, tgt, weights=weights)
+    row = {"loss": r["total"]}
+    for k, v in r.items():
+        if k.startswith("loss_") and torch.is_tensor(v):
+            row[f"box3d_{k[5:]}"] = v
+    for k, v in (r.get("n") or {}).items():
+        row[f"box3d_n_{k}"] = float(v)
+    return row
+
+
+# --------------------------------------------------------------------------- #
+# the instrument that PROVES the gradient reaches the trunk                    #
+# --------------------------------------------------------------------------- #
+@torch.no_grad()
+def grad_abs_sum(module: nn.Module) -> tuple[float, int, int]:
+    """``(sum |grad|, n_params, n_params_with_a_grad)`` over a module."""
+    s, n, g = 0.0, 0, 0
+    for p in module.parameters():
+        n += int(p.numel())
+        if p.grad is not None:
+            s += float(p.grad.detach().abs().sum())
+            g += int(p.numel())
+    return s, n, g
+
+
+def grad_reach_report(model, branch: PerceptionBranch | None = None) -> dict:
+    """Per-head ``grad_abs_sum`` AFTER a backward -- read, never assumed.
+
+    ⛔ Call it after ``.backward()`` and BEFORE ``opt.zero_grad()``. A head with
+    parameters and ``grad_abs_sum`` exactly 0 is the ``tac_goal_tok_head``
+    class: parsed, stamped, reaching nothing.
+    """
+    br = branch if branch is not None else getattr(model, "_perception", None)
+    rep: dict = {}
+    parts = {"trunk": getattr(model.core, "encoder", None)}
+    if br is not None:
+        parts.update({"lift": br.lift,
+                      "bev_encoder": (None if br.map_branch is None
+                                      else br.map_branch.encoder),
+                      "map_head": (None if br.map_branch is None
+                                   else br.map_branch.head),
+                      "box_memory": br.box_mem, "box_decoder": br.box_dec})
+    for name, m in parts.items():
+        if m is None:
+            continue
+        s, n, g = grad_abs_sum(m)
+        rep[name] = {"grad_abs_sum": s, "n_params": n, "n_params_with_grad": g}
+    return rep
+
+
+if __name__ == "__main__":                                # pragma: no cover
+    # ⛔ NO LITERAL GEOMETRY, not even in a demo: every shape comes from
+    # `TrunkSpec`, which reads timm's `feature_info` and the frame's own width.
+    # A demo that writes 256/(16, 40) down is the first place a hard-coded
+    # geometry reappears, and `tests/test_refcv6_geometry_agnostic.py` plus
+    # `test_refcv6_perception_training.py` both scan this file for exactly that.
+    from tanitad.models.trunk_shapes import TrunkSpec
+    c = PerceptionBranchConfig(w_map=1.0, w_box3d=1.0)
+    for name in ("resnet34.a1_in1k", "resnet101.a1_in1k"):
+        for width in (640, 1024):  # geometry-exempt: a __main__ demo must name SOME widths to print a table; nothing importable reads them, and the SHAPES still come from TrunkSpec
+            sp = TrunkSpec.from_timm(name, frame_for_width(width))
+            b = PerceptionBranch(c, d_image=sp.perception.channels,
+                                 image_hw=sp.perception.hw)
+            print(f"{name} @ {sp.frame.height}x{sp.frame.width}: "
+                  f"{b.param_breakdown()}")

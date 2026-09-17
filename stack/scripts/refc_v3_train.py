@@ -49,6 +49,7 @@ finished run relaunched for 2 days) is the reason.
 from __future__ import annotations
 
 import argparse
+import dataclasses as _dc
 import json
 import math
 import sys
@@ -99,6 +100,17 @@ from tanitad.models import kinematic as kin  # noqa: E402
 from tanitad.models import refcv6_diffusion as _rv6  # noqa: E402  (refcv6 §3)
 from tanitad.train import grad_conflict as _gcf  # noqa: E402  (refcv6 §6)
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
+# --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
+# ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
+# analysis-time import that fails AFTER the rollout destroys a run whose
+# compute is already paid for (`t1_eval.py`, 2026-08-11: both arms, 40
+# episodes, ~11 min/arm, then `ImportError` in `analyze()`); at module scope it
+# fails in 2 seconds instead.
+from tanitad.data import perception_targets as _perception_targets  # noqa: E402
+from tanitad.data import semantic_map_gt as _sem_map  # noqa: E402
+from tanitad.data import agent_cuboid_gt as _agent_cuboid  # noqa: E402
+from tanitad.models import box3d_head as _box3d_head  # noqa: E402
+from tanitad.models import refcv6_perception_branch as _perc  # noqa: E402
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -313,6 +325,15 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     cfg.core.encoder.trunk_fuse = str(getattr(args, "trunk_fuse", "concat1x1"))
     cfg.core.encoder.trunk_fuse_identity = not bool(
         getattr(args, "trunk_fuse_plain_init", False))
+    # ⛔ `--no-trunk-pretrained` -- THE KNOCKOUT ARM'S ONLY ROUTE FROM ARGV.
+    # `None` (the flag's default) leaves the dataclass field ALONE, so every
+    # banked arm and every caller that builds a config without this Namespace
+    # is bit-identical; only an explicit flag writes it. It is pinned onto the
+    # CONFIG for the same reason the four lines above are: `rebuild_config`
+    # reconstructs `CNNEncoderConfig` field by field.
+    _tpre = getattr(args, "trunk_pretrained", None)
+    if _tpre is not None:
+        cfg.core.encoder.trunk_pretrained = bool(_tpre)
     _tic = int(getattr(args, "trunk_in_channels", 0) or 0)
     if _tic:
         cfg.core.encoder.in_channels = _tic
@@ -342,12 +363,28 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     if args.image_hw:
         h, w = (int(args.image_hw[0]), int(args.image_hw[1]))
         enc = cfg.core.encoder
-        cfg.core.encoder = refc.CNNEncoderConfig(
-            in_channels=enc.in_channels, image_size=h,
-            image_width=None if w == h else w,
-            base_width=enc.base_width, blocks=enc.blocks,
-            trunk=enc.trunk, trunk_pretrained=enc.trunk_pretrained,
-            trunk_imagenet_norm=enc.trunk_imagenet_norm)
+        # ⛔⛔ D-REFCV6-IMAGEHW-DROPS-TRUNK-FIELDS (MEASURED 2026-09-17).
+        # This rebuild listed `trunk`, `trunk_pretrained` and
+        # `trunk_imagenet_norm` and SILENTLY DROPPED FOUR MORE, so with
+        # `--image-hw` every one of them reverted to the dataclass default:
+        #   --trunk-name resnet34.a1_in1k  -> built resnet101.a1_in1k
+        #   --trunk-mode inflate           -> built shared
+        #   --trunk-fuse last              -> built concat1x1
+        #   --trunk-fuse-plain-init        -> built the IDENTITY init
+        # ⚠️ The last two are CONTROL ARMS -- `last` is the single-frame
+        # control and the plain init is the deliberate regression -- so a run
+        # that asked for either got the primary arm while `config.json`'s
+        # `seams` block recorded the control. And `--image-hw 256 1024` is the
+        # PI's own 2026-09-16 geometry, so EVERY refcv6 run on the 1024 cache
+        # took this path. MEASURED on the first live perception run: argv said
+        # resnet34, `fmap_s16_channels` read 1024 = resnet101.
+        # ⭐ The comment 30 lines up already names the mechanism -- *"the
+        # --image-hw rebuild reconstructs CNNEncoderConfig field by field and
+        # would otherwise silently drop it"* -- and the fix had been applied to
+        # ONE field. ⇒ Replaced by `dataclasses.replace`, which carries EVERY
+        # field by construction and cannot fall behind a new one.
+        cfg.core.encoder = _dc.replace(
+            enc, image_size=h, image_width=None if w == h else w)
     # ---- ⭐⭐ REF-C v4 pins (E11' + E14 + X15) ------------------------
     # Applied to BOTH arms identically, exactly like every other pin here, so
     # `config_delta` stays the derived instrument it is: the v4 lever set is
@@ -771,6 +808,17 @@ def _pin_refcv5_seams(cfg, args) -> None:
                  for k in ("w_agent", "agent_w_project", "agent_w_ground")}
         _dead = {k: v for k, v in _dead.items() if v > 0.0}
         _cam = str(getattr(args, "agent_rig_camera", "off"))
+        # ⚠️ refcv6 §2: THE CAMERA IS NOT DEAD UNDER `--w-map > 0`, and
+        # refusing it there would be a FALSE REFUSAL -- the mirror of the
+        # defect this guard exists for, and just as costly: it would make
+        # `--agents off --w-map 1.0` (a legitimate map-only arm) unlaunchable,
+        # so an operator would switch the detector on to get past the guard
+        # and quietly run a different experiment. The BEV lift reads the SAME
+        # per-clip extrinsics table through `LiftGeometryBank`, so under a live
+        # map weight the camera has a consumer. The three WEIGHTS above stay
+        # refused: none of them has one.
+        if float(getattr(args, "w_map", 0.0) or 0.0) > 0.0:
+            _cam = "off"
         if _dead or _cam != "off":
             raise SystemExit(
                 "[v3] ⛔ --agents off, but "
@@ -860,6 +908,93 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "⚠️ --wp-index-mode is the dangerous one: it names a CONTROL "
                 "ARM, so a reader would believe a control had been run. Pass "
                 "--wp-index on, or leave these at their defaults." % _dead_wp)
+    _pin_refcv6_perception(cfg, args)
+
+
+# ============================================================================
+# ⛔⛔ refcv6 §2/§6 — THE PERCEPTION BRANCH'S REFUSALS
+# ============================================================================
+# EVERY ONE OF THESE FIRES BEFORE `config.json` IS WRITTEN AND BEFORE A SINGLE
+# BATCH IS LOADED, which is the whole point: the defect class they close is a
+# head that PARSES, is STAMPED `enabled`, and reaches nothing. The programme has
+# now measured that class five times (`--w-agent`, `--agent-w-project`,
+# `--agent-w-ground`, `--w-bev-aux`, `--conflict-detector on`), and once with
+# the object being a HEAD rather than a weight: `tac_goal_tok_head`, 11,286
+# parameters with `grad_abs_sum` EXACTLY 0 for all 40,284 steps.
+
+def _pin_refcv6_perception(cfg, args) -> None:
+    """Refuse every ``--w-map`` / ``--w-box3d`` combination that cannot train.
+
+    ⛔ The REVERSE refusal is here too — a supplied artifact with a zero weight.
+    An operator who passes ``--map-gt-root`` and forgets ``--w-map`` gets a run
+    whose ``config.json`` names the SAM3 corpus and whose trunk never saw one
+    cell of it, and there is no artifact that would later reveal it.
+    """
+    w_map = float(getattr(args, "w_map", 0.0) or 0.0)
+    w_b3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
+    root = getattr(args, "map_gt_root", None)
+    j3d = getattr(args, "join3d", None)
+    if w_map < 0.0 or w_b3d < 0.0:
+        raise SystemExit("[v3] ⛔ --w-map / --w-box3d must be >= 0.")
+    if w_map == 0.0 and w_b3d == 0.0:
+        # The DEFAULT path. Nothing is built; the only thing that can be wrong
+        # is an artifact supplied with no weight to consume it.
+        _dead = {k: v for k, v in (("--map-gt-root", root),
+                                   ("--join3d", j3d)) if v}
+        if float(getattr(args, "map_min_coverage", None) or 0.0) > 0.0:
+            _dead["--map-min-coverage"] = getattr(args, "map_min_coverage")
+        if _dead:
+            raise SystemExit(
+                "[v3] ⛔ --w-map 0 and --w-box3d 0, but %s is set. No "
+                "perception branch is built at zero weight, so the label "
+                "corpus would be NAMED in config.json and READ BY NOTHING -- "
+                "a run record stating a configuration that did not happen "
+                "(mm-decisions M18). Pass a weight, or drop the artifact."
+                % _dead)
+        return
+    # ---- from here on at least one head is live -------------------------- #
+    if str(getattr(args, "trunk", "refc")) != "timm":
+        raise SystemExit(
+            "[v3] ⛔ --w-map/--w-box3d > 0 needs --trunk timm. refcv6 "
+            "perception reads the STRIDE-16 map, and the legacy REF-C "
+            "ResNetEncoder exposes only stride 32 -- `fmap_s16` would be None "
+            "and the branch would have nothing to read. (An oracle on the "
+            "stride-32 map caps at AP 0.3341 vs 0.4713, SPEC_REFCV6_V2 §2.)")
+    if w_map > 0.0:
+        if not root:
+            raise SystemExit(
+                "[v3] ⛔ --w-map > 0 without --map-gt-root has NO LABELS. The "
+                "BEV branch would be built, stamped, and shaped only by the "
+                "box head's gradient -- and the arm would read as 'the map "
+                "head does not help' while never having had a map.")
+        if str(getattr(args, "agent_rig_camera", "off")) != "extrinsics":
+            raise SystemExit(
+                "[v3] ⛔ --w-map > 0 needs --agent-rig-camera extrinsics "
+                "--agent-rig-extrinsics <table>. The lift back-projects "
+                "through the ROAD PLANE, so the mount pose sets which image "
+                "pixel fills which BEV cell; one pose for a corpus whose "
+                "MEASURED height spans 1.2131-1.6672 m over 554 distinct "
+                "values in 2,400 clips teaches the head that geometry as "
+                "truth. A nominal camera is not admissible here.")
+    if w_b3d > 0.0 and not getattr(args, "agent_join", None):
+        raise SystemExit(
+            "[v3] ⛔ --w-box3d > 0 without --agent-join has NO LABELS. The "
+            "3-D set loss IS the 2-D set loss plus two masked metre terms; "
+            "with no 2-D targets there is nothing to Hungarian-match against.")
+    if j3d and w_b3d == 0.0:
+        raise SystemExit(
+            "[v3] ⛔ --join3d with --w-box3d 0: the cuboid heights would be "
+            "loaded, joined, emitted into every batch and multiplied by zero, "
+            "while config.json names the 3-D join. Pass --w-box3d > 0.")
+    if w_b3d > 0.0 and not j3d:
+        # ⚠️ A WARNING, NOT A REFUSAL, and the difference is real: this is a
+        # LEGAL arm (the 2-D-only rung `box3d_set_loss` itself documents, whose
+        # total is EXACTLY the 2-D total). It is announced because a run that
+        # believes it is training 3-D and is not would otherwise be invisible.
+        print("[v3] ⚠️ --w-box3d > 0 with NO --join3d: `zh_mask` is all-False, "
+              "so `loss_z`/`loss_h` are 0.0 over n=0 items and the total is "
+              "EXACTLY the 2-D set loss. This is the 2-D rung, not a 3-D arm.",
+              flush=True)
 
 
 # ============================================================================
@@ -894,9 +1029,25 @@ _RIG_CAM_ANNOUNCED: set = set()
 #: ``f_ref``.
 def _agent_cam_frames() -> dict:
     from tanitad.data import calib as _calib
+    from tanitad.models import trunk_shapes as _ts
     return {(256, 640): _calib.PHYSICALAI_WIDE120_256x640,
             (176, 624): _calib.PHYSICALAI_RIG_CLEAN_176x624,
-            (128, 576): _calib.PHYSICALAI_RIG_CLEAN_128x576}
+            (128, 576): _calib.PHYSICALAI_RIG_CLEAN_128x576,
+            # ⭐ The PI's 2026-09-16 geometry. ⛔ TAKEN FROM
+            # `trunk_shapes.FRAME_256x1024`, NOT written out here: that module
+            # derives `f_ref` as the 640 frame's scaled by 1024/640
+            # (305.5774907364391 x 1.6 = 488.92398517830253), which holds the
+            # field at EXACTLY 120.0000 deg. Re-typing "488.92" gives
+            # 120.0010 deg, and a SECOND spelling of a camera constant is how
+            # two files drift apart while both look right.
+            # ⚠️ Until 2026-09-17 this table had no 256x1024 row and
+            # `--agent-rig-camera extrinsics` REFUSED the PI's own cache --
+            # a correct refusal (a frame is not its pixel count; this corpus
+            # is CYLINDRICAL and the pinhole formula reads 92.6 deg for a
+            # 120 deg camera) against a frame that was ALREADY DECLARED one
+            # module over. MEASURED here: it blocked the first live refcv6
+            # perception run.
+            (256, 1024): _ts.FRAME_256x1024}
 
 
 def _extr_from_obj(d: dict, path: str, where: str):
@@ -1376,6 +1527,44 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "mask": None,
         "already": "_check_goal_point_args (both directions)",
     },
+    # ---- refcv6 §2/§6: the perception branch ---------------------------- #
+    # ⛔ THESE ROWS ARE NOT BOILERPLATE. `test_v6_effective_weights.py::
+    # test_REFC_WEIGHT_GATES_covers_every_weight_flag_the_parser_accepts` is
+    # EXHAUSTIVE over the parser, so a `--w-*` flag added without a row here
+    # FAILS THE SUITE -- which is what made me write them, and is the guard
+    # working exactly as the `tac_goal_tok_head` post-mortem designed it.
+    "w_map": {
+        "flag": "--w-map", "term": "refcv6 SAM3 BEV map soft-CE (§2)",
+        # THREE conditions, and each one has its own silent failure. No
+        # `--trunk timm` => `fmap_s16` is None and the branch reads nothing.
+        # No `--map-gt-root` => the BEV branch is built and never supervised.
+        # No per-clip extrinsics => the lift back-projects through ONE road
+        # plane for a corpus with 554 distinct mount heights.
+        "gate": lambda a: (
+            str(getattr(a, "trunk", "refc")) == "timm"
+            and bool(getattr(a, "map_gt_root", None))
+            and str(getattr(a, "agent_rig_camera", "off")) == "extrinsics",
+            "--w-map needs `--trunk timm` (stride-16 map), `--map-gt-root` "
+            "(the labels) AND `--agent-rig-camera extrinsics` (the per-clip "
+            "lift geometry)"),
+        "mask": None,
+        "already": "_pin_refcv6_perception (all three, plus the REVERSE "
+                   "refusal: an artifact supplied with a zero weight)",
+    },
+    "w_box3d": {
+        "flag": "--w-box3d", "term": "refcv6 3-D cuboid set loss (§6)",
+        # ⚠️ `--join3d` is deliberately NOT in this gate. Without it the arm
+        # is the LEGAL 2-D rung whose total is exactly the 2-D set loss
+        # (`box3d_set_loss`'s own test), so gating on it would refuse a real
+        # experiment; `_pin_refcv6_perception` PRINTS the distinction instead.
+        "gate": lambda a: (
+            str(getattr(a, "trunk", "refc")) == "timm"
+            and bool(getattr(a, "agent_join", None)),
+            "--w-box3d needs `--trunk timm` (stride-16 tokens) AND "
+            "`--agent-join` (the 2-D targets the Hungarian matches against)"),
+        "mask": None,
+        "already": "_pin_refcv6_perception",
+    },
 }
 
 
@@ -1581,6 +1770,28 @@ class V3Dataset(RouteV21Dataset):
     #: for exactly the reason the ``agent_join`` guard above exists.
     bev_spec = None
     bev_occlusion: str = "mask"
+    #: ⭐⭐ refcv6 §2/§6 -- THE SAM3 MAP GT, set by :meth:`enable_map_gt`.
+    #: While it is None the batch carries NO ``map_frac``/``map_seen`` and
+    #: ``--w-map > 0`` REFUSES at loss time, for exactly the reason the
+    #: ``agent_join`` guard above exists. ``map_clip_of_ep`` is the
+    #: ``stable_episode_id -> clip_id`` table: ``LazyV2Episode`` carries only
+    #: the id, and :class:`MapGTStore` resolves files by clip id / sha12.
+    map_store = None
+    map_clip_of_ep: dict | None = None
+    #: The cache's OWN ``n_stack``, read from the v2 manifest. ⛔ NOT a
+    #: literal 3: ``semantic_map_gt.raw_frame_index`` adds ``n_stack - 1`` to
+    #: convert a stacked-row index into the RAW v2ep frame the labels are
+    #: indexed by, and a wrong value shifts EVERY window's map by that many
+    #: frames -- 1.7 m at 30 km/h, inside the tolerance of nothing and visible
+    #: in no metric (``perception_targets.assert_frame_alignment.__doc__``).
+    map_n_stack: int = 0
+    map_stats: dict | None = None
+    #: ``agent_cuboid_gt.AgentJoin3D | None`` (refcv6 §6), set by
+    #: :meth:`enable_join3d`. It WIDENS the 2-D agent block with ``cz``/``h``
+    #: and a MASK; with it None the mask is all-False and ``box3d_set_loss``
+    #: reports ``n["z"] == 0`` rather than training on zeros.
+    join3d = None
+    join3d_stats: dict | None = None
 
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
@@ -2054,7 +2265,146 @@ class V3Dataset(RouteV21Dataset):
                 occlusion=self.bev_occlusion)
             item["bev_occ"] = torch.from_numpy(_occ)
             item["bev_mask"] = torch.from_numpy(_msk)
+        # ---- refcv6 §6: WIDEN the 2-D block to 3-D, by TRACK ID ----------- #
+        # ⛔ BY TRACK ID, never by position. `zh_for_frame` is the module's own
+        # designed call and it aligns on the id, so a filter that ever reorders
+        # either file cannot silently attach agent k's height to agent k+1.
+        # ⛔ THE INDEX SPACES DIFFER AND BOTH ARE IN THIS EXPRESSION. The 2-D
+        # join's `frame_idx` is POST-n_stack-trim (the episode index `f` above);
+        # the 3-D join's key `frame` is the RAW v2ep index, which is
+        # `f + n_stack - 1`. MEASURED on the eval join: line 1 is
+        # `{"frame": 0, "frame_idx": -2}`, i.e. exactly that offset at n_stack 3.
+        if self.join3d is not None:
+            tids = r.lookup_track_ids(eid, int(f))
+            cid = (self.map_clip_of_ep or {}).get(eid)
+            if tids is None or cid is None or not has:
+                _t3 = _box3d_head.zh_targets(t)          # all-False mask
+            else:
+                if n_raw > pad:
+                    tids = _np.asarray(tids)[order]
+                _cz, _h, _m = _agent_cuboid.zh_for_frame(
+                    cid, int(f) + int(self.map_n_stack) - 1, list(tids),
+                    join3d=self.join3d)
+                _pad_f = pad - len(tids)
+                if _pad_f > 0:                # pad to the slot block's width
+                    _cz = _np.concatenate([_cz, _np.zeros(_pad_f)])
+                    _h = _np.concatenate([_h, _np.zeros(_pad_f)])
+                    _m = _np.concatenate([_m, _np.zeros(_pad_f, dtype=bool)])
+                _t3 = _box3d_head.zh_targets(
+                    t, torch.from_numpy(_cz).to(t["box"].dtype)[None],
+                    torch.from_numpy(_h).to(t["box"].dtype)[None],
+                    mask=torch.from_numpy(_m)[None])
+            item["agent_cz"] = _t3["cz"][0]
+            item["agent_h"] = _t3["h"][0]
+            item["agent_zh_mask"] = _t3["zh_mask"][0]
         return item
+
+    # ---- refcv6 §2: the SAM3 map GT ------------------------------------- #
+    def enable_map_gt(self, store, clip_of_ep: dict, n_stack: int,
+                      min_coverage: float | None = None) -> dict:
+        """Attach the SAM3 BEV labels so ``__getitem__`` emits ``map_*``.
+
+        ⛔ **COVERAGE IS A REFUSAL, NOT A WARNING.**
+        :func:`perception_targets.require_map_coverage` is run over THIS
+        dataset's own window index -- the windows that will actually be drawn,
+        not the clips that happen to have files -- and a run below the floor
+        raises :class:`MapCoverageTooLow` HERE, before the GPU. ⚠️ Its
+        comparison uses ``frac_ok``, the LOWER bound, so an inconclusive window
+        counts against the run: "we could not tell" is not coverage.
+        """
+        if int(n_stack) < 1:
+            raise SystemExit(
+                "[v3] ⛔ enable_map_gt needs the cache's own n_stack; it is "
+                "what converts a stacked-row index into the RAW v2ep frame "
+                "the labels are indexed by, and a literal here shifts every "
+                "window's map by (wrong - right) frames, silently.")
+        self.map_store = store
+        self.map_clip_of_ep = dict(clip_of_ep)
+        self.map_n_stack = int(n_stack)
+        w = self.window
+        miss = [int(self.episodes[e_i].episode_id) for e_i, _ in self.index
+                if int(self.episodes[e_i].episode_id) not in self.map_clip_of_ep]
+        if miss:
+            raise SystemExit(
+                f"[v3] ⛔ {len(set(miss))} episodes in this dataset have no "
+                f"clip_id in the v2 manifest table, so their SAM3 labels "
+                f"cannot be resolved at all. Refusing rather than counting "
+                f"them as uncovered -- that would be a MEASUREMENT of the "
+                f"manifest, reported as map coverage.")
+        # ⛔ (clip_id, STACKED-ROW index of the window's NOW frame). The store
+        # applies `+ (n_stack - 1)` itself; passing the raw frame here would
+        # label every window `n_stack - 1` steps late instead.
+        windows = [(self.map_clip_of_ep[int(self.episodes[e_i].episode_id)],
+                    t + w - 1) for e_i, t in self.index]
+        kw = {} if min_coverage is None else {"min_frac": float(min_coverage)}
+        rep = _perception_targets.require_map_coverage(
+            windows, store, n_stack=self.map_n_stack, **kw)
+        # ⛔ THE PER-STATE COUNTS ARE `n_ok` / `n_no_file` / ... AT THE TOP
+        # LEVEL, not a nested `states` dict. MEASURED here 2026-09-17: reading
+        # a `states` key that does not exist printed "0/23,772 windows covered"
+        # beside `frac_ok 0.9712` -- the total right and EVERY COLUMN ZERO,
+        # which is the exact diagnostic shape `require_map_coverage`'s own
+        # docstring warns about, reproduced one layer up in its caller.
+        _states = {k[2:]: int(v) for k, v in rep.items()
+                   if k.startswith("n_") and k not in
+                   ("n_windows", "n_clips", "n_stack")}
+        self.map_stats = {
+            "root": str(getattr(store, "root", "")),
+            "n_windows": int(rep.get("n_windows", 0)),
+            "n_clips": int(rep.get("n_clips", 0)),
+            "frac_ok": float(rep.get("frac_ok", float("nan"))),
+            "frac_ok_upper": float(rep.get("frac_ok_upper", float("nan"))),
+            "verdict": str(rep.get("verdict", "")),
+            "min_coverage": (float(min_coverage) if min_coverage is not None
+                             else float(_perception_targets.MIN_MAP_COVERAGE)),
+            "states": _states,
+            "reasons": dict(rep.get("reasons", {})),
+            "n_stack": self.map_n_stack,
+            "layouts": sorted(set((rep.get("layout_of") or {}).values())),
+        }
+        print("[v3] SAM3 map GT: %d/%d windows covered (%.4f, floor %.2f, "
+              "verdict %s) over %d clips; states %s; layouts %s"
+              % (_states.get("ok", 0), self.map_stats["n_windows"],
+                 self.map_stats["frac_ok"], self.map_stats["min_coverage"],
+                 self.map_stats["verdict"], self.map_stats["n_clips"],
+                 _states, self.map_stats["layouts"]), flush=True)
+        return self.map_stats
+
+    def _map_item(self, ep, win_idx: int) -> dict:
+        """One window's map target. NO_LABEL and LABELLED are different states.
+
+        A clip with no GT file emits an all-zero ``map_frac`` with an ALL-FALSE
+        ``map_seen`` and ``map_label`` False -- so ``map_soft_ce`` scores zero
+        cells on it and the log's ``n_map_cells`` says so, rather than the loss
+        reading 0.0 as "supervised, and perfect" (the ``tac_goal`` precedent).
+        """
+        cid = self.map_clip_of_ep[int(ep.episode_id)]
+        try:
+            mf = self.map_store.frames_for_windows(
+                cid, [int(win_idx)], n_stack=self.map_n_stack)
+        except (FileNotFoundError, IndexError, OSError):
+            return {"map_frac": torch.zeros((_sem_map.N_CHANNELS,)
+                                            + _sem_map.CART_SHAPE,
+                                            dtype=torch.float32),
+                    "map_seen": torch.zeros(_sem_map.CART_SHAPE,
+                                            dtype=torch.bool),
+                    "map_label": torch.tensor(False),
+                    "map_raw_frame": torch.tensor(-1, dtype=torch.long)}
+        return {"map_frac": torch.from_numpy(mf.cart[0]).to(torch.float32),
+                "map_seen": torch.from_numpy(mf.seen[0]),
+                "map_label": torch.tensor(True),
+                "map_raw_frame": torch.tensor(int(mf.frame_idx[0]),
+                                              dtype=torch.long)}
+
+    def enable_join3d(self, join3d) -> dict:
+        """Attach the 3-D cuboid join. A census, not a second label path."""
+        self.join3d = join3d
+        self.join3d_stats = {
+            "path": str(getattr(join3d, "path", "")),
+            "n_lines": int(getattr(join3d, "n_lines", 0)),
+            "n_agents": int(getattr(join3d, "n_agents", 0)),
+            "n_clips": int(getattr(join3d, "n_clips", 0))}
+        return self.join3d_stats
 
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
@@ -2171,6 +2521,17 @@ class V3Dataset(RouteV21Dataset):
         # tactical heads are supervised at ONE instant, not two.
         if self.agent_join is not None:
             item.update(self._agent_item(ep, t + w - 1))
+        # ---- refcv6 §2: the SAM3 map target at the SAME instant ------------
+        # ⛔ `t + w - 1` -- the window's NOW as a STACKED-ROW index, which is
+        # what `MapGTStore.raw_frames` converts. The detector, the tactical
+        # heads and the map are then supervised at ONE instant, not three.
+        # ⭐ `map_ep` travels with it for the same reason `agent_ep` does: the
+        # BEV lift geometry is PER CLIP (mount height spans 1.2131-1.6672 m
+        # over 554 distinct values in 2,400 clips) and the loss has no episode
+        # ids of its own.
+        if self.map_store is not None:
+            item.update(self._map_item(ep, t + w - 1))
+            item["map_ep"] = torch.tensor(int(ep.episode_id), dtype=torch.long)
         return item
 
 
@@ -3063,6 +3424,142 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         extra["tac_goal_n_pos"] = float(
             ((batch["tac_goal_y"] > 0.5) & (batch["tac_goal_w"] > 0)).sum())
 
+    # ======================================================================= #
+    # refcv6 §2/§6 — THE PERCEPTION BRANCH: SAM3 BEV MAP + 3-D CUBOIDS        #
+    # ======================================================================= #
+    # The PI's central refcv6 instruction (2026-09-16): *"train jointly the
+    # resnet-trunk, the bev map (based on the sam2 maps as gt) and a head for
+    # 3d bounding boxes extracted from the resnet trunk"*.
+    #
+    # ⛔ BOTH ARE TRAIN-TIME LABELS AND THEY ENTER HERE, IN THE LOSS, AND
+    # NOWHERE IN THE FORWARD. The branch's own `forward` takes ONE argument
+    # family (`fmap_s16`, and the camera geometry) and there is no parameter
+    # through which a label could arrive — the vision-only rule enforced by
+    # where the tensor is read, not by a comment.
+    #
+    # ⛔ SAM3 maps ONLY. LiDAR is NOT a training target (PI); it may be quoted
+    # as an INDEPENDENT EVALUATION REFERENCE and nothing here reads it.
+    #
+    # ⭐ At both weights 0.0 this whole block is skipped, `_perception` was
+    # never built, and the returned dict carries no `map`/`box3d` key — the
+    # bit-identity condition, enforced by construction rather than asserted.
+    _w_map = float(getattr(model, "_w_map", 0.0))
+    _w_b3d = float(getattr(model, "_w_box3d", 0.0))
+    if _w_map > 0.0 or _w_b3d > 0.0:
+        _br = getattr(model, "_perception", None)
+        if _br is None:
+            raise SystemExit(
+                "[v3] ⛔ --w-map/--w-box3d > 0 but no perception branch was "
+                "attached to the model. The weights would be stamped into "
+                "config.json and multiply nothing — the `--w-agent` defect "
+                "verbatim. This is a trainer wiring error, not an argv one.")
+        # ⛔ REFUSE, DO NOT SKIP — the same rule as `agent_box` above. A batch
+        # without the targets means the loader was never given the labels, and
+        # a silent skip would train the trunk on the planner alone while the
+        # record claims a jointly-trained perception branch.
+        if _w_map > 0.0 and "map_frac" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-map > 0 but the batch carries no `map_frac`: "
+                "this dataset has no SAM3 map GT attached "
+                "(`ds.enable_map_gt` was never called). Pass --map-gt-root.")
+        if _w_b3d > 0.0 and "agent_box" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-box3d > 0 but the batch carries no `agent_box`: "
+                "the 3-D set loss is the 2-D set loss plus two masked metre "
+                "terms, and without the 2-D targets there is nothing to match "
+                "against. Pass --agent-join.")
+        # ---- ONE branch forward for BOTH heads, on THIS batch's graph ----- #
+        # ⚠️ `out["fmap_s16"]` is the stride-16 map of the LAST OBSERVED frame
+        # (`refc.py:3869/3883`) — the same instant `t + w - 1` the map target
+        # and the agent target are read at.
+        _grid = _valid = None
+        if _br.lift is not None:
+            _bank = getattr(model, "_lift_bank", None)
+            if _bank is None:
+                raise SystemExit(
+                    "[v3] ⛔ the BEV lift is built but no per-clip geometry "
+                    "bank is attached. One mount pose for a corpus whose "
+                    "MEASURED height spans 1.2131-1.6672 m (554 distinct "
+                    "values in 2,400 clips) biases every cell the lift fills.")
+            if "map_ep" not in batch:
+                raise SystemExit(
+                    "[v3] ⛔ the BEV lift needs `map_ep` and the batch carries "
+                    "none — a camera would attach to the wrong clip, silently, "
+                    "with every count still looking healthy.")
+            _grid, _valid = _bank.for_episodes(batch["map_ep"], device=device)
+        _pout = _br(out["fmap_s16"], _grid, _valid)
+        if _w_map > 0.0:
+            _mlab = batch["map_label"].to(device)
+            _msel = _mlab.nonzero(as_tuple=False).flatten()
+            extra["map_n_windows"] = float(_mlab.shape[0])
+            extra["map_n_labelled"] = float(int(_mlab.sum()))
+            if int(_mlab.sum()):
+                _mrow = _perc.map_loss_row(
+                    _pout["map_logits"].index_select(0, _msel),
+                    batch["map_frac"].to(device).index_select(0, _msel),
+                    batch["map_seen"].to(device).index_select(0, _msel))
+                loss = loss + _w_map * _mrow["loss"]
+                extra["map"] = _mrow["loss"]
+                extra["n_map_cells"] = _mrow["n_map_cells"]
+            else:
+                # ⛔ A COUNTED ZERO, never an absent key. `map = 0.0` with
+                # `n_map_cells = 0` is "no window in this batch had a label";
+                # a missing key would read as "the head is off".
+                extra["map"] = out["fmap_s16"].sum() * 0.0
+                extra["n_map_cells"] = 0.0
+        if _w_b3d > 0.0:
+            _b3_keep = batch.get("agent_label")
+            _b3_n = (int(_b3_keep.sum()) if _b3_keep is not None
+                     else int(batch["agent_valid"].shape[0]))
+            extra["box3d_n_windows"] = float(batch["agent_valid"].shape[0])
+            extra["box3d_n_labelled"] = float(_b3_n)
+            if _b3_n:
+                _sel3 = (_b3_keep.to(device).nonzero(as_tuple=False).flatten()
+                         if _b3_keep is not None else
+                         torch.arange(batch["agent_valid"].shape[0],
+                                      device=device))
+                _z = batch.get("agent_zh_mask")
+                _t3 = {
+                    "box": batch["agent_box"].to(device),
+                    "yaw": batch["agent_yaw"].to(device),
+                    "cls": batch["agent_cls"].to(device),
+                    "valid": batch["agent_valid"].to(device),
+                    "occ": batch.get("agent_occ",
+                                     torch.full_like(batch["agent_yaw"], -1.0)
+                                     ).to(device),
+                    "rates": batch.get(
+                        "agent_rates",
+                        torch.zeros(*batch["agent_yaw"].shape, 3)).to(device),
+                    "rates_mask": batch.get(
+                        "agent_rates_mask",
+                        torch.zeros_like(batch["agent_valid"])).to(device),
+                    # ⛔ An absent 3-D label is a MASK, never a zero. With no
+                    # --join3d this is all-False and `box3d_set_loss` reports
+                    # `n["z"] == 0` — the 2-D total EXACTLY, by its own test.
+                    "cz": batch.get(
+                        "agent_cz",
+                        torch.zeros_like(batch["agent_yaw"])).to(device),
+                    "h": batch.get(
+                        "agent_h",
+                        torch.zeros_like(batch["agent_yaw"])).to(device),
+                    "zh_mask": (torch.zeros_like(batch["agent_valid"])
+                                if _z is None else _z).to(device)}
+                _t3 = {k: v.index_select(0, _sel3) for k, v in _t3.items()}
+                _s3 = {k: (v.index_select(0, _sel3)
+                           if torch.is_tensor(v)
+                           and v.shape[:1] == _b3_keep.shape[:1] else v)
+                       for k, v in _pout["box_slots"].items()} \
+                    if _b3_keep is not None else _pout["box_slots"]
+                _brow = _perc.box3d_loss_row(_s3, _t3)
+                loss = loss + _w_b3d * _brow["loss"]
+                extra["box3d"] = _brow["loss"]
+                for _k3, _v3 in _brow.items():
+                    if _k3 != "loss":
+                        extra[_k3] = _v3
+            else:
+                extra["box3d"] = out["fmap_s16"].sum() * 0.0
+                extra["box3d_n_z"] = 0.0
+
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
@@ -3948,6 +4445,47 @@ def assert_knobs_stamped(args, stamp: dict,
             "(mm-decisions M18).")
 
 
+def _clip_table_for_caches(cache_dirs) -> tuple[dict, int]:
+    """``({stable_episode_id: clip_id}, n_stack)`` from the v2 MANIFESTS.
+
+    ⛔ **The clip id cannot be recovered from the episode id.**
+    ``stable_episode_id`` is a blake2b digest, so this table is the ONLY route
+    from what ``LazyV2Episode`` carries to what :class:`MapGTStore` and
+    :class:`AgentJoin3D` resolve by. Reading it from the manifest (rather than
+    from the agent join's ``_clip_of_uid``) keeps the map path independent of
+    whether a join was loaded at all.
+
+    ⛔ ``n_stack`` is READ, never assumed. It converts a stacked-row index into
+    the RAW v2ep frame the SAM3 labels and the 3-D join are indexed by, and a
+    literal 3 against a cache built with another value shifts every label by
+    the difference -- 1.7 m at 30 km/h, and visible in no metric. Caches with
+    DISAGREEING ``n_stack`` are refused rather than silently reduced to one.
+    """
+    from tanitad.data.v2_dataset import load_or_build_manifest
+    dirs = ([cache_dirs] if isinstance(cache_dirs, (str, Path))
+            else list(cache_dirs))
+    table: dict[int, str] = {}
+    n_stacks: set[int] = set()
+    for cd in dirs:
+        man = load_or_build_manifest(cd, verbose=False)
+        cids = list(man.get("clip_id") or [])
+        uids = list(man.get("episode_uid") or [])
+        if len(uids) != len(cids):
+            raise SystemExit(
+                f"[v3] ⛔ {cd}: the v2 manifest has {len(cids)} clip_ids and "
+                f"{len(uids)} episode_uids. Refusing rather than zipping two "
+                f"lists of different length into a label join.")
+        for u, c in zip(uids, cids):
+            table[int(u)] = str(c)
+        n_stacks.update(int(x) for x in (man.get("n_stack") or []))
+    if len(n_stacks) > 1:
+        raise SystemExit(
+            f"[v3] ⛔ the caches disagree on n_stack {sorted(n_stacks)}. One "
+            f"stacked-row -> raw-frame conversion cannot serve both, and the "
+            f"wrong one shifts every map label by the difference.")
+    return table, (n_stacks.pop() if n_stacks else 0)
+
+
 def _verify_agent_join(args) -> dict | None:
     """Check ``--agent-join`` against its sidecar's **declared** digest scope.
 
@@ -4600,6 +5138,57 @@ def train(args) -> dict:
     model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
     model._w_bev_aux = float(getattr(args, "w_bev_aux", 0.0))   # WP-D
     model._bev_shuffle = bool(getattr(args, "bev_aux_shuffle", False))
+    # ---- refcv6 §2/§6: THE PERCEPTION BRANCH -------------------------- #
+    # ⛔ BUILT ONLY BEHIND A POSITIVE WEIGHT, and BEFORE `build_optimizer`,
+    # which is the whole reason it is here and not later: `torch.optim.Adam(
+    # model.parameters(), ...)` enumerates once. A branch attached after that
+    # line would be a head with parameters, gradients, and NO OPTIMIZER STATE
+    # -- it would never move, and every metric would read as "the perception
+    # heads do not help".
+    # ⭐ At weight 0.0 NOTHING happens here: no submodule, so `model.parameters()`
+    # is the same list, `state_dict()` the same keys, and the RNG draw order
+    # unchanged. That is the bit-identity condition, met by construction.
+    model._w_map = float(getattr(args, "w_map", 0.0) or 0.0)
+    model._w_box3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
+    model._perception = None
+    model._lift_bank = None
+    perception_stamp = None
+    if model._w_map > 0.0 or model._w_box3d > 0.0:
+        _pcfg = _perc.PerceptionBranchConfig(w_map=model._w_map,
+                                             w_box3d=model._w_box3d)
+        model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
+        _pframe = _perc.frame_for_model(model)
+        if model._w_map > 0.0:
+            _pe, _ptable = _read_rig_extrinsics(
+                str(getattr(args, "agent_rig_extrinsics", "")))
+            if _ptable is None:
+                raise SystemExit(
+                    "[v3] ⛔ --w-map > 0 needs a PER-CLIP extrinsics table "
+                    "(clip_id -> pose); this file carries a single camera. "
+                    "One mount pose for the whole corpus biases every BEV "
+                    "cell the lift fills.")
+            model._lift_bank = _perc.LiftGeometryBank(
+                _ptable, frame=_pframe, stride=int(_pcfg.stride))
+        perception_stamp = {
+            **_pcfg.as_dict(),
+            "branch_params": model._perception.param_breakdown(),
+            "fmap_s16_channels": int(model.core.encoder.s16_dim),
+            "fmap_s16_hw": list(model.core.encoder.s16_shape),
+            "frame": {"height": int(_pframe.height), "width": int(_pframe.width),
+                      "projection": str(_pframe.projection),
+                      "f_ref": float(_pframe.f_ref)},
+            "map_gt_root": str(getattr(args, "map_gt_root", None) or "") or None,
+            "join3d": str(getattr(args, "join3d", None) or "") or None,
+            "lift_bank_n_clips": (0 if model._lift_bank is None
+                                  else len(model._lift_bank)),
+            # ⛔ The PI's constraint, IN THE RUN RECORD: a reader who opens
+            # config.json in isolation learns which corpus was the BEV target.
+            "bev_map_target": "SAM3 semantic maps (tanitad.sam3_map_gt/2)",
+            "lidar_as_training_target": False,
+        }
+        print("[v3] refcv6 perception: w_map=%.4g w_box3d=%.4g; params %s"
+              % (model._w_map, model._w_box3d,
+                 model._perception.param_breakdown()), flush=True)
     # ⛔⛔ refcv6 §6: REFUSE A DETECTOR THAT CAN NEVER READ ANYTHING -- HERE,
     # before `config.json` is written and before a single batch is loaded.
     # MEASURED 2026-09-17 on the smoke path: `--conflict-detector on` with no
@@ -4935,6 +5524,8 @@ def train(args) -> dict:
     # 2026-09-05); a tiny rig must not pay that, and a run must not silently
     # hold a corpus it is not training on.
     agent_stats = eval_agent_stats = None
+    map_stats = eval_map_stats = None
+    join3d_stats = eval_join3d_stats = None
     join_digest = _verify_agent_join(args)
     if getattr(args, "agent_join", None):
         from train_p8_occupancy import JoinFileReader
@@ -4942,7 +5533,11 @@ def train(args) -> dict:
         _rd = JoinFileReader(
             args.agent_join,
             episode_ids={int(e.episode_id) for e in eps},
-            with_rates=not bool(getattr(args, "agent_join_no_rates", False)))
+            with_rates=not bool(getattr(args, "agent_join_no_rates", False)),
+            # refcv6 §6: the 3-D join is keyed BY TRACK, so the 2-D rows must
+            # carry their track ids or `cz`/`h` could only be aligned by
+            # position. Paid for ONLY when --join3d is actually passed.
+            with_track_ids=bool(getattr(args, "join3d", None)))
         print(f"[v3] agent join loaded: {_rd.n_records} records / "
               f"{_rd.n_clips} clips (filtered out "
               f"{_rd.n_records_filtered_out}) in {time.time() - _t_join:.1f} s")
@@ -4959,6 +5554,66 @@ def train(args) -> dict:
             _rd, pad=int(getattr(args, "agent_pad", 0)),
             allow_legacy_ids=bool(getattr(
                 args, "agent_join_allow_legacy_ids", False)))
+    # ---- refcv6 §2/§6: the SAM3 map GT and the 3-D cuboid join ------------ #
+    # ⛔ AFTER `enable_agent_join`, because `_agent_item` is what widens to 3-D
+    # and the coverage census below walks the same window index.
+    # ⛔ THE WHOLE BLOCK IS GATED, INCLUDING THE MANIFEST READ. An unconditional
+    # `_clip_table_for_caches` would read every cache's manifest on a run that
+    # asked for no perception at all -- work the tip does not do, on a path
+    # where `--v2-cache` may be None (`--synth-episodes`). Measured here: it
+    # crashed the bit-identity control, which is exactly what that control is
+    # for.
+    _clip_of_ep, _cache_nstack = {}, 0
+    if getattr(args, "map_gt_root", None) or getattr(args, "join3d", None):
+        _clip_of_ep, _cache_nstack = _clip_table_for_caches(args.v2_cache)
+    if getattr(args, "map_gt_root", None):
+        map_stats = ds.enable_map_gt(
+            _perception_targets.MapGTStore(
+                Path(args.map_gt_root),
+                max_open=int(getattr(args, "map_lru", 4) or 4)),
+            _clip_of_ep, _cache_nstack,
+            min_coverage=getattr(args, "map_min_coverage", None))
+    if getattr(args, "join3d", None):
+        if ds.agent_join is None:
+            raise SystemExit(
+                "[v3] ⛔ --join3d without --agent-join: the 3-D join WIDENS "
+                "the 2-D target block by track id; with no 2-D block there is "
+                "nothing to widen and the heights would be loaded and dropped.")
+        if not getattr(ds.agent_join, "has_track_ids", False):
+            raise SystemExit(
+                "[v3] ⛔ --join3d, but the 2-D join carries no `track_id` on "
+                "any agent. The cuboid heights are keyed BY TRACK, so every "
+                "target would be masked OFF and the run would report "
+                "`box3d_n_z 0` for its whole life while config.json names a "
+                "3-D join -- a 3-D arm that is silently the 2-D rung.")
+        # ⛔⛔ THE INDEX-SPACE TRAP, AND IT IS SILENT IN BOTH DIRECTIONS.
+        # `JoinFileReader` (the 2-D seam) keys on `frame_idx`, the EPISODE
+        # index; `AgentJoin3D` keys on `frame`, the RAW v2ep index. They differ
+        # by `n_stack - 1` -- 2 frames = 0.2 s at 10 Hz. Join on the wrong key
+        # and every `cz`/`h` belongs to a moment 0.2 s from the one the trunk
+        # saw; the loss stays finite, non-zero and plausible, and NOTHING
+        # RAISES. ⭐ MEASURED by a sweep over offsets -3..+3 on 8 real clips
+        # (`…/2026-09-17-refcv6-perception-training/raw/join3d_offset_sweep.json`):
+        # at +2 = `n_stack - 1`, 2,955/2,955 agents match the 2-D rows EXACTLY
+        # (mean |dx| 0.0000 m); at EVERY other offset 0.0 % match and mean |dx|
+        # >= 3.24 m -- including the naive +0, which reads 3.24 m.
+        # ⇒ `n_stack` is therefore LOAD-BEARING here, and a 0 would silently
+        # apply an offset of -1. It is read from the manifest, and refused.
+        if int(_cache_nstack) < 1:
+            raise SystemExit(
+                "[v3] ⛔ --join3d but the v2 manifest reports no n_stack "
+                "(%r). It is what converts the 2-D join's EPISODE index into "
+                "the 3-D join's RAW v2ep frame, and a wrong value shifts every "
+                "cuboid height by that many frames -- 0.2 s per frame, "
+                "finite-and-plausible in the loss, visible in no metric."
+                % (_cache_nstack,))
+        if ds.map_clip_of_ep is None:
+            ds.map_clip_of_ep, ds.map_n_stack = _clip_of_ep, _cache_nstack
+        join3d_stats = ds.enable_join3d(_agent_cuboid.open_join3d(
+            args.join3d, clips=set(_clip_of_ep.values())))
+        join3d_stats["frame_key"] = "RAW v2ep (= episode index + n_stack - 1)"
+        join3d_stats["n_stack"] = int(ds.map_n_stack)
+        print("[v3] 3-D cuboid join: %s" % join3d_stats, flush=True)
     # launch-line P4: the run PRINTS its episode/window counts at start — the
     # only way a parity claim about the enumeration is checkable from the log.
     print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
@@ -5074,6 +5729,26 @@ def train(args) -> dict:
                 _e_rd, pad=int(ds.agent_pad),
                 allow_legacy_ids=bool(getattr(
                     args, "agent_join_allow_legacy_ids", False)))
+        # ---- refcv6 §2/§6 on the HELD-OUT split ------------------------- #
+        # ⛔ Its own coverage census, never the train split's. The eval cache
+        # is a different clip set, and quoting the train number for it is the
+        # scope error this programme has measured in six other costumes.
+        if getattr(args, "map_gt_root", None) \
+                or getattr(args, "join3d", None):
+            _e_clip, _e_ns = _clip_table_for_caches([args.eval_cache])
+            if getattr(args, "map_gt_root", None):
+                eval_map_stats = e_ds.enable_map_gt(
+                    _perception_targets.MapGTStore(
+                        Path(args.map_gt_root),
+                        max_open=int(getattr(args, "map_lru", 4) or 4)),
+                    _e_clip, _e_ns,
+                    min_coverage=getattr(args, "map_min_coverage", None))
+            if getattr(args, "join3d", None) and e_ds.agent_join is not None:
+                if e_ds.map_clip_of_ep is None:
+                    e_ds.map_clip_of_ep, e_ds.map_n_stack = _e_clip, _e_ns
+                eval_join3d_stats = e_ds.enable_join3d(
+                    _agent_cuboid.open_join3d(
+                        args.join3d, clips=set(_e_clip.values())))
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
@@ -5349,6 +6024,20 @@ def train(args) -> dict:
         "agent_join_digest": join_digest,
         "agent_join_stats": ({"train": agent_stats, "eval": eval_agent_stats}
                              if agent_stats is not None else None),
+        # ⭐⭐ refcv6 §2/§6. ⛔ `None` when both weights are 0.0 — the key is
+        # absent-as-null rather than a zeroed block, so a default run's
+        # config.json differs from the pre-branch trainer's by NOTHING a
+        # comparison can act on, and a perception run can never be mistaken
+        # for one. It carries the COVERAGE, not merely the paths: a run that
+        # stamps `w_map > 0` without it cannot say whether the trunk saw the
+        # map on 100 % or 3 % of its windows, and those are different
+        # experiments (the `agent_join_stats` argument, one head over).
+        "refcv6_perception": (
+            None if perception_stamp is None else
+            {**perception_stamp,
+             "map_gt_stats": {"train": map_stats, "eval": eval_map_stats},
+             "join3d_stats": {"train": join3d_stats,
+                              "eval": eval_join3d_stats}}),
     }
     # ⛔⛔ E16 — THE STAMP IS A PRECONDITION, NOT A FIELD. A --max-speed-input
     # run whose record would not declare the channel's ego-future provenance
@@ -5513,6 +6202,19 @@ def train(args) -> dict:
             log_every_hit=bool(_gp_names) and (
                 (step + 1) % args.log_every == 0
                 or (step + 1) >= args.steps))
+        # ⛔⛔ refcv6 §2/§6 — PER-HEAD GRADIENT REACH, READ, NEVER ASSUMED.
+        # HERE for the same reason `_grad_probe_row` is: after `backward`,
+        # before the global clip rescales it, before the next `zero_grad`
+        # wipes it. ⚠️ The failure it exists for is `tac_goal_tok_head`: 11,286
+        # parameters with `grad_abs_sum` EXACTLY 0 for all 40,284 steps --
+        # parsed, stamped, reaching nothing, and invisible in every loss value.
+        # A head whose `_ga` row is 0.0 while its loss is finite is that class.
+        _pr_row = {}
+        if getattr(model, "_perception", None) is not None and (
+                step % max(1, args.log_every) == 0 or step + 1 >= args.steps):
+            for _pk, _pv in _perc.grad_reach_report(model).items():
+                _pr_row[f"ga_{_pk}"] = _pv["grad_abs_sum"]
+                _pr_row[f"ga_{_pk}_n"] = _pv["n_params_with_grad"]
         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
         opt.step()
         step += 1
@@ -5536,6 +6238,11 @@ def train(args) -> dict:
             # is the exact signature of the defect this measures.
             if _gp_row:
                 row.update(_gp_row)
+            # AFTER the rounding comprehension, same reason: a real 1e-8
+            # gradient rounded to 5 dp reads 0.0, which is EXACTLY the
+            # signature of the defect this measures.
+            if _pr_row:
+                row.update(_pr_row)
             # ⛔ AFTER the rounding comprehension, for the same reason as
             # `_gp_row`: a conflict of -1e-8 rounded to 5 dp reads 0.0, which is
             # "no conflict" -- the exact misreading this instrument exists to
@@ -6365,6 +7072,62 @@ def build_parser() -> argparse.ArgumentParser:
                     help="⛔ DELIBERATE REGRESSION of the identity init. "
                          "Without the identity, 'K frames beat 1 frame' is "
                          "confounded with 'a random 1x1 conv was inserted'.")
+    # ⛔⛔ THE KNOCKOUT ARM HAD NO SWITCH. `CNNEncoderConfig.trunk_pretrained`
+    # is a real field (`refc.py:348`, *"False is the knockout arm"*), consumed
+    # at `refc.py:1439` and stamped into config.json at `:3325` -- and until
+    # 2026-09-17 NO CLI FLAG REACHED IT, so the ImageNet-vs-random-init
+    # comparison the field exists for could not be run from argv at all. Same
+    # class as the `--w-agent` defect with the direction reversed: not a flag
+    # that reaches nothing, but a config that no flag reaches.
+    ap.add_argument("--trunk-pretrained", dest="trunk_pretrained",
+                    action="store_true", default=None,
+                    help="load timm's ImageNet weights (the DEFAULT; the trunk "
+                         "REFUSES to build if they did not really load).")
+    ap.add_argument("--no-trunk-pretrained", dest="trunk_pretrained",
+                    action="store_false",
+                    help="⛔ THE KNOCKOUT ARM: build the SAME timm "
+                         "architecture with a RANDOM init. Without it, 'the "
+                         "ImageNet prior helps' is unfalsifiable -- the "
+                         "comparison arm cannot be built. Stamped into "
+                         "config.json as trunk_pretrained: false.")
+    # ---- refcv6 §2/§6: THE PERCEPTION BRANCH (PI 2026-09-16) ------------- #
+    # *"train jointly the resnet-trunk, the bev map (based on the sam2 maps as
+    # gt) and a head for 3d bounding boxes extracted from the resnet trunk"*.
+    # ⛔ BOTH WEIGHTS DEFAULT TO 0.0, and at 0.0 NOTHING is built: no module,
+    # no parameters in the optimiser, no key in metrics.jsonl, no block in
+    # config.json. The default path is bit-identical to the pre-branch trainer.
+    g6 = ap.add_argument_group("refcv6 perception (map + 3-D boxes)")
+    g6.add_argument("--w-map", type=float, default=0.0,
+                    help="weight on the SAM3 BEV map loss (9-class soft CE on "
+                         "SEEN cells only, `bev_encoder.map_soft_ce`). > 0 "
+                         "needs --map-gt-root and --agent-rig-extrinsics (the "
+                         "lift back-projects through the road plane, so the "
+                         "mount pose is per clip). ⛔ SAM3 maps are the ONLY "
+                         "BEV map target -- LiDAR is NOT a training target "
+                         "(PI); it may be quoted as an independent evaluation "
+                         "reference.")
+    g6.add_argument("--w-box3d", type=float, default=0.0,
+                    help="weight on the 3-D cuboid set loss "
+                         "(`box3d_head.box3d_set_loss`, Hungarian, metres). "
+                         "> 0 needs --agent-join AND --join3d.")
+    g6.add_argument("--map-gt-root", default=None,
+                    help="directory of `<sha12>.sam3mapgt.npz` (or the "
+                         "canonical semantic_maps/gt/ layout). Clip ids appear "
+                         "in artifacts ONLY as sha12.")
+    g6.add_argument("--map-min-coverage", type=float, default=None,
+                    help="floor on the fraction of TRAIN WINDOWS that have a "
+                         "map frame; below it the run REFUSES rather than "
+                         "training on fewer cells. Default = "
+                         "`perception_targets.MIN_MAP_COVERAGE` (0.90).")
+    g6.add_argument("--map-lru", type=int, default=4,
+                    help="how many clips' decompressed `cart_frac` arrays to "
+                         "keep resident (~14 MB each for 201 frames).")
+    g6.add_argument("--join3d", default=None,
+                    help="the 3-D agent join (`*_agents_3d.jsonl.xz`) whose "
+                         "`cz`/`h` widen the 2-D targets. ⛔ NOTE the field "
+                         "names are `cz`/`h`, NOT the parquet's "
+                         "`center_z`/`size_z`. Absent 3-D labels are a MASK, "
+                         "never a zero (`box3d_head.zh_targets`).")
     # ---- refcv6 §2b: EGO HISTORY AS AN INPUT (PI 2026-09-16) ------------- #
     ap.add_argument("--ego-history", action="store_true",
                     help="⭐ PI 2026-09-16. Encode the OBSERVED window's ego "

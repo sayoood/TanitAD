@@ -223,6 +223,7 @@ def test_the_stride_32_map_is_still_named_when_it_is_handed_over():
 #: at every call site, so they are listed separately below.
 OWNED = ("models/bev_encoder.py", "models/box3d_head.py",
          "models/refc_bev_coupling.py", "models/trunk_shapes.py",
+         "models/refcv6_perception_branch.py",     # the trainer's assembly
          "data/agent_cuboid_gt.py", "data/lift_orientation.py",
          "data/perception_targets.py")
 
