@@ -798,6 +798,20 @@ had not chosen.
 ⇒ the two remaining open items are **16** (the conflict statistic, default stands), **17** (clip-id leakage) and **§12 refusal 10** — see the full text above.
 
 <!-- PI-RULING-2026-09-17 -->
+
+## ⭐ PI RULING 2026-09-17 (second) — ITEM 17 IS CLOSED
+
+**Sayed, asked and answered:** *"Its hygiene and reproducibility."*
+
+⇒ **option 2.** The banked record is **left alone**; a guard stops the count growing. Redacting 53 files of evidence would have bought **appearance only** — git history keeps every one of them regardless — and rewriting an identifier inside a sentence a past conclusion rests on is not housekeeping.
+
+`tools/clipid_scan.py` + `tools/clipid_baseline.json` + its tests. ⛔ **The baseline stores COUNTS, never identifiers** — an allowlist of the leaked ids would itself be a list of clip ids, i.e. the guard's own artifact would be the thing the guard exists to stop growing. Four refusals, **4 of 4 killed** by the guard-removal audit, 10 tests.
+
+⭐ **The scope is broader than clip ids, deliberately.** Under a hygiene argument the defect is that **a bare UUID is an unstable handle**; `sha12` is a hash and is the identity every GT file already stores. So the always-runnable half needs **no corpus list** and cannot rot when one moves. ⚠️ Both figures are true and answer different questions: **64** corpus-matched clip UUIDs across 53 files, and **120** UUIDs of any kind across 27 files under the same globs. The 8-char prefix half (530) needs a clip list and is **opt-in**.
+
+⇒ the only item still open is **16** (the conflict statistic), whose default stands.
+
+<!-- PI-RULING-2-2026-09-17 -->
 ## Not a decision — the state, for orientation
 
 ⚠️ **CORRECTED 2026-09-17 — this paragraph described a run that has since FINISHED, and said so
