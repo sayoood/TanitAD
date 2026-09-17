@@ -139,3 +139,52 @@ not a corpus dependency.
 
 `raw/dac_attrib.json` · `raw/speed_attrib.json` · `code/dac_attrib.py` · `code/speed_attrib.py`.
 Clip identifiers appear only as **sha12**.
+
+## ⛔⭐ ADDENDUM, same day — the root cause is SHARPER, and it changes the schedule
+
+**The claim above said DAC was ≡ 1 *because the RL-train split had no SAM3 maps*. That is
+true about the data and WRONG about the binding constraint.**
+
+`score_candidates` takes DAC as **optional keyword arguments**:
+
+```python
+def score_candidates(cand_states, human_states, agents, route, *,
+                     dac_cand=None, dac_human=None, cfg=PROXY):
+    ...
+    dac = ones.clone()
+    if dac_cand is not None:  dac[1:] = dac_cand
+    if dac_human is not None: dac[0]  = dac_human
+```
+
+⛔ **And no caller anywhere supplies them.** Both call sites in `ddv2_rl_refcv5.py`
+(:231, :300) pass exactly four positional arguments — `(states, human, tracks, route)`.
+A repo-wide search finds `dac_cand` / `dac_human` **only inside `pdm_proxy.py`'s own
+signature**, and `dac_from_drivable` called **only by `pdm_proxy.py` itself and its test**:
+⭐ **it has never had a production caller.** The RL trainer contains **no map machinery at
+all** (`semantic_map_gt` / `perception_targets` / `sam3`: zero hits across
+`tanitad/rl/` and `scripts/ddv2*.py`, with `score_candidates` reading non-zero in the
+same breath as the positive control).
+
+⇒ **Maps alone would NOT have fixed it.** On a fully mapped corpus, this code still
+computes `dac = ones` and the road-boundary term is still algebraically absent.
+
+⚠️ **And the damage is wider than the final multiplier.** `multi = nc * dac` feeds
+`raw = ego_progress(...) * multi`, so DAC ≡ 1 also removes drivability from the **EP
+normalisation**: a candidate that leaves the road without colliding receives **full
+progress credit**. The missing term was gating progress, not just scaling the total.
+
+### What changes
+
+* ✅ **The measurements stand unchanged** — rl-s0's separated off-road increase and rl-s1's
+  separated over-speeding are observations about the arms, not about why DAC was constant.
+* ⭐ **The schedule changes.** `H-DDV2RL-3` was gated on SAM3 covering the **RL-train**
+  split (≈2026-09-22). That gate is **necessary but NOT sufficient**: the plumbing must be
+  built, and it can be built and tested **now** against the eval-139 maps, which already
+  exist (135/139).
+* **ROOT-CAUSE CLASS (mine):** *a docstring's conditional read as this run's cause.* The
+  module says DAC is *"1 when no map exists"*; I checked that no map existed and stopped,
+  without checking whether the caller ever passes it when one does. Same family as the
+  entry logged hours earlier the same day — **a number read as a mechanism** — with the
+  object swapped for a documented default.
+
+<!-- D9-ADDENDUM-NO-PRODUCTION-CALLER-2026-09-17 -->

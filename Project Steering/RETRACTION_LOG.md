@@ -15598,3 +15598,37 @@ convention in a cross-artifact join is pinned by an exact match against the arti
 themselves, and a residual of 0.000000 is what "pinned" means.**
 
 <!-- RETR-2026-09-17-MAP-COVERAGE-AND-FRAME -->
+
+## RETR-2026-09-17-D9-DAC-ROOT-CAUSE — sharpened hours after landing: the data was not the binding constraint
+
+**Said (landed `b17c709`):** *"The RL-train split had no SAM3 maps, so DAC was identically
+1 for every candidate in every anchor group."*
+
+**True instead:** `score_candidates` takes `dac_cand` / `dac_human` as **optional
+keywords defaulting to ones**, and **no caller anywhere supplies them**. Both call sites
+in `ddv2_rl_refcv5.py` (:231, :300) pass four positional arguments. `dac_from_drivable`
+is called **only by `pdm_proxy.py` itself and its test** — it has **never had a
+production caller** — and the RL trainer contains **no map machinery at all**.
+⇒ **On a fully mapped corpus the code would still compute `dac = ones`.**
+
+✅ **The measurements are unaffected** — rl-s0's separated off-road increase and rl-s1's
+separated over-speeding are observations about the arms, not about why DAC was constant.
+⚠️ **What was wrong was the REMEDY and therefore the SCHEDULE:** `H-DDV2RL-3` was gated on
+SAM3 reaching the RL-train split (≈2026-09-22). The plumbing is the binding constraint,
+it can be built and tested **now** against the eval-139 maps, and waiting would have cost
+five days for nothing.
+
+⚠️ Also missed on the first pass: `multi = nc * dac` feeds `raw = ego_progress(...) *
+multi`, so a constant DAC removes drivability from the **EP normalisation** too — a
+candidate that leaves the road without colliding receives **full progress credit**. The
+term was gating progress, not merely scaling the total.
+
+**ROOT-CAUSE CLASS:** *a docstring's CONDITIONAL read as this run's CAUSE.* The module
+states DAC is *"1 when no map exists"*; I verified no map existed and stopped there,
+without asking whether the caller passes it when one does. ⇒ **When a default explains
+an observation, check that the non-default branch is reachable from a real call site
+before naming the default's precondition as the cause.** Same family as
+`RETR-2026-09-17-MAP-COVERAGE-AND-FRAME` §1 — a number read as a mechanism — with the
+object swapped for a documented default.
+
+<!-- RETR-2026-09-17-D9-DAC-ROOT-CAUSE -->

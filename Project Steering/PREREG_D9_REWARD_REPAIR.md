@@ -156,3 +156,38 @@ term, both mechanisms measured tonight are insufficient, and D9's problem is not
 reward. That outcome is reported as a refutation of `H-DDV2RL-3`, and the next lever is
 chosen from the selection evidence (item 19: a collision gate is worth **62.4 %** of the
 oracle gap from **5.1 %** of windows), not from a third reward patch.
+
+---
+
+## 11. ⛔ AMENDMENT, 2026-09-17 (same day) — §7's gate is NECESSARY BUT NOT SUFFICIENT
+
+§7 gates the start on SAM3 maps covering the **RL-train** split. That remains required.
+It is **not enough**, and the file would have been misleading without this:
+
+**`dac_from_drivable` has no production caller.** `score_candidates` accepts `dac_cand` /
+`dac_human` as optional keywords and defaults them to **ones**; both call sites in
+`ddv2_rl_refcv5.py` (:231, :300) pass four positional arguments and no DAC; and a
+repo-wide search finds those keywords only inside `pdm_proxy.py`'s own signature. The RL
+trainer carries **no map machinery at all**.
+
+⇒ **On a fully mapped corpus this code would still compute `dac = ones`.** The repair is
+a **code change first, a data dependency second**.
+
+⚠️ It is also wider than the final multiplier: `multi = nc * dac` feeds
+`raw = ego_progress(...) * multi`, so a constant DAC removes drivability from the **EP
+normalisation** as well — a candidate that leaves the road without colliding gets **full
+progress credit**.
+
+### Consequence for the plan
+
+1. **`L2-DAC` now has a build step before it has a run step:** plumb the SAM3 map into the
+   RL scoring path (`sha12` and `t0` are already on every item, so the lookup key exists),
+   compute `dac_cand` / `dac_human`, and pass them.
+2. ⭐ **That step is testable TODAY** against the eval-139 maps (135/139 present) — it does
+   not wait for 2026-09-22. What waits for the corpus is only the *training* run.
+3. ⛔ **`L2-REGRESS` gains a second, sharper form:** the pre-repair code path is not
+   *"DAC on a split without maps"* but *"DAC never passed"*. The regression arm must
+   reproduce **that** — the repaired scorer called without `dac_cand` — and must show the
+   harm return.
+
+<!-- PREREG-D9-AMENDMENT-NO-PRODUCTION-CALLER-2026-09-17 -->
