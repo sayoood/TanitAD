@@ -578,9 +578,171 @@ stays `off`; the arm that failed its gate is not re-run.
 
 ---
 
+## 15. DECIDE: the VERTICAL field at 256x1024 — your instruction costs a 1.88 m blind strip in front of the ego
+
+**You said, 2026-09-16:** *"so let increase the azimut resolution and use 256x1024, we will do this
+for all our future trainings."* That is being followed. This item exists because following it has a
+cost you were not told about when you said it, and because **the alternative is already built**, so
+changing your mind is cheap right now and expensive after the corpus rebuild.
+
+**The mechanism.** `calib.cylindrical_rays` uses **one `f_ref` for BOTH axes**
+(`phi = (u-(W-1)/2)/f_ref`, `y_n = (v-(H-1)/2)/f_ref`). Holding `H = 256` while `f_ref` rises
+305.577 -> 488.924 — which is what keeps azimuth at 120 deg across 1024 columns — narrows the
+**vertical** field by the same 1.6x. Azimuth is bought with elevation. This is a property of the
+shared resampler, not of the cache build.
+
+| | **256x640** (today) | **256x1024** (your instruction) | **408x1024** (BUILT) |
+|---|---|---|---|
+| HFOV / deg-per-column | 120.000 / 0.1875 | 120.000 / **0.1172** | 120.000 / **0.1172** |
+| **VFOV** | **45.456 deg** | **29.341 deg** (64.5 %) | **45.296 deg** (99.6 %) |
+| rows of today's frame kept | all | **47.5 … 207.5** (drops 48 top + 48 bottom) | **0.0 … 255.0** |
+| **nearest visible road ahead** | **3.14 m** | **5.02 m** | **3.15 m** |
+| stride-16 tokens | 640 | 1024 | 1664 |
+| corpus cache (4,713 clips) | 178.0 GB | **273.6 GB** | **386.5 GB** |
+| resnet101 K=3 activations | 645.9 MB | 1033.5 MB | **1662.9 MB (1.609x)** |
+| corpus build wall | — | **8.7 h** | **10.6 h** |
+
+⭐ **The number that matters is the last-but-four row.** MEASURED camera height **1.3158 m**
+(median over the 141 eval extrinsics; range 1.213–1.662) and mount pitch **+0.016 deg** (median).
+The steepest downward ray is `atan((H/2)/f_ref) + pitch`, so the nearest patch of road the camera
+can see moves from **3.14 m to 5.02 m** ahead: **a new blind strip of 1.88 m directly in front of
+the vehicle** (4.68–6.01 m across the 141 clips' own heights and pitches).
+⚠️ Flat ground, no suspension pitch — first-order. ⚠️ **This corrects my own earlier figure of
+"3.6–5.7 m", which assumed a 1.5 m camera height instead of measuring it.**
+⚠️ **And one thing I did NOT verify:** I read pitch from the extrinsics quaternion assuming an
+intrinsic ZYX convention with +x forward, and did not independently confirm the rig's rotation
+convention. It barely matters here — the median comes out **+0.016 deg**, so the pitch term is
+negligible and **the 3.14 -> 5.02 m result is driven by the field geometry alone**
+(`atan((H/2)/f_ref)`), which needs no convention at all. If the mount were genuinely pitched a few
+degrees down, both numbers shrink together and the 1.88 m gap changes little.
+
+**Why it may or may not matter.** Our planner places waypoints in exactly that near field, and the
+BEV lift integrates the ground plane it can see. Against that: DiffusionDrive/NAVSIM's own input is
+**1024x256**, a 4:1 frame — so **256x1024 is the paper-matching shape** and the papers evidently
+drive with it. We have no measurement either way on OUR corpus; the ablation has not been run.
+
+**⭐ THIS DOES NOT BLOCK ANYTHING TONIGHT.** Both caches are built and validated on the 139 eval
+clips, so the pipeline validation you asked for runs either way. The decision binds only the
+**corpus rebuild**, which cannot start until SAM3 production finishes (~22 Sep).
+
+**Default if silent: 256x1024 — your instruction, unchanged.** Two reasons, and neither is that I
+think it is the better geometry: (a) you named the shape explicitly and overriding an explicit
+instruction on my own judgement is not my call; (b) **the HF quota is a hard ceiling** and 408
+costs **+41 % cache** (386.5 vs 273.6 GB). If your intent was *"more azimuth"* rather than *"that
+exact shape"*, **408x1024 delivers the azimuth and keeps the field**, and it is built and gated
+today — say the word and it is a flag.
+
+⚠️ **A fourth option exists and was NOT built.** An exact 1.6x supersample needs H = **409.6**, so
+no integer height is both field-exact and aligned to the 640-row grid; 408 lands half a pixel off.
+**H = 416** is integer-aligned and slightly *exceeds* today's field (VFOV 46.092 deg, nearest road
+**3.09 m**) at ~2 % more disk than 408. Evidence class **DERIVED, not measured** — it has never
+been built or gated.
+
+*Evidence: `TanitAD Research Lab/Data Engineering/Research/2026-09-16-256x1024-cache/` —
+`RESULT.md` Escalation 1 and `raw/geometry_comparison.json`; camera height and pitch recomputed
+here from `extrinsics141.json`.*
+
+---
+
+## 16. DECIDE: the gradient-conflict statistic we pre-registered CANNOT SEE the defect it was written to catch
+
+This is the *"a check that shares the defect it checks for"* class (`e4af94f`), and it was caught
+by the agent that built the instrument, before any arm ran.
+
+**The algebra.** `cos(g_traj, g_aux)` is invariant under positive scaling of either argument — that
+is precisely what a cosine quotients out. `E-DEC-18`'s measured failure mechanism was **magnitude**
+("the aux gradient is 10–30x the planner's"). An **angle** statistic can never see a magnitude.
+
+**Verified independently, not taken on report.** On a shared trunk with two heads: a 30x aux moved
+the cosine by **1.49e-08** (rounding), and a **32x** rescale — a power of two, so binary-exact —
+left the cosine **bitwise identical**. The agent measured **3.4e-8** on the real model with the same
+32x bitwise result. Two scale-sensitive channels computed from the **same two gradients at no extra
+backward** do see it: `ratio = |g_aux|/|g_traj|` and `proj = <g_traj,g_aux>/|g_traj|^2`, both
+reading **exactly 30x**.
+
+⛔ **Consequence for the panel: pre-registered criterion `B2` would have called the KNOWN defect
+REFUTED.** On the 40-step worked example the deliberate 30x defect reaches median cos **-0.0515**
+against B2's `< -0.05` line with **75 %** of steps negative against B2's `>= 80 %` — it scrapes one
+threshold and misses the other. `ratio` separated by **21x** and was never ambiguous.
+
+**Default if silent:** the detector ships with **all three channels** logged (`cos`, `ratio`,
+`proj`), and **`B2` is restated as DIRECTION-ONLY** with a new magnitude criterion on `ratio`
+beside it. Nothing is gated on `cos` alone. This is the conservative reading and it costs nothing.
+
+⚠️ **A second correction rides with it: the cost estimate in the prereg is out by ~2x.** The
+prereg said "one extra backward ... no extra GPU-day". MEASURED over 3 interleaved replicates on
+the real model at 3 trunk sizes: **+71.7 % / +83.8 % / +104.2 %** for the pre-registered `probe`
+mode, rising with trunk size. A `subtract` mode (one backward, bit-identical) costs
+**+26.3 % / +53.1 % / +62.2 %** but changes what the planning side *means*
+(`L_total - L_aux`, not `L_traj`) — stamped `cd_plan_side` on every row so the two can never be
+silently compared. ⛔ Every number here is a **smoke model on a synthetic corpus**: the instrument
+is proven, the readings are not a result, and nothing was measured on GPU.
+
+*Evidence: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-conflict-detector/`
+— `RESULT.md`, `raw/overhead.json`, `raw/worked/{1x,30x}/metrics.jsonl`.*
+
+---
+
+## 17. DECIDE: the repo has been leaking CLIP IDS into banked records for months — 64 full UUIDs and 530 prefixes
+
+**The binding rule:** clip ids appear in repo artifacts **only as sha12**, where
+`sha12(clip_id) = sha256(clip_id)[:12]` (`semantic_map_gt.py:117`) — a HASH, not a
+truncation. ⛔ **MEASURED 2026-09-17** across `Project Steering/**/*.md` and
+`TanitAD Research Lab/**/*.md` on the current tip:
+
+| | count | files |
+|---|---|---|
+| **full clip UUIDs** | **64** | across **53 files** |
+| **8-char UUID prefixes** (e.g. *"clip `<8 hex>` is a road bend"* — not quoted here, for the obvious reason) | **530** | |
+
+Worst offenders: a label REVIEW_SHEET (25 full UUIDs), the refcv4b RUNBOOK (15),
+a SHIP_VERIFY (8), and `GOALS_AND_CLAIMS.md` itself (2 full + 23 prefixes). ⚠️ An
+8-char prefix is not a partial identifier in practice — across 4,719 clips it is
+**uniquely identifying**, so it is a clip id wearing a short name.
+
+⛔ **This is NOT something to fix quietly, which is why it is a decision and not a
+task I did.** These are **banked evidence records**. Rewriting an identifier
+inside a sentence like *"`<8 hex>` genuinely CONTAINS cyclists"* edits the
+evidence a past conclusion rests on, and a reader who later pulls the raw artifact
+by sha12 must still land on the same clip. There are three honest options and they
+are not equivalent:
+
+1. **Redact in place, mapping each id to its sha12.** Clean going forward; it
+   rewrites history-bearing documents, and any external copy of them stops
+   matching.
+2. **Leave the record, fix the RULE going forward** — a pre-commit guard that
+   refuses new leaks, with the existing 594 grandfathered and listed. Honest about
+   what happened; the leak stays in git history either way (it always does — a
+   redaction does not remove it from earlier commits).
+3. **Decide the rule was never meant to cover prose in the Research Lab**, only
+   code, filenames and machine-readable artifacts — in which case 530 of these are
+   not violations at all and the rule should say so.
+
+**Default if silent: option 2.** It is the only one that is both reversible and
+honest — the history already contains them, so a redaction buys appearance rather
+than secrecy, while a guard stops the count from growing. ⚠️ I have added no guard
+tonight: a guard that fires on 594 pre-existing hits would be red from the first
+run and would be turned off within a day.
+
+*Evidence: MEASURED by a scan of the two trees at tip `0243ce4`; the scan is the
+same `UUID`/8-hex matcher every landing this session has run against the corpus's
+own clip list.*
+
+---
+
 ## Not a decision — the state, for orientation
 
-**refcv5-v2 is training** on the A40 (PID 2560646, watchdog 2561632), step ~5,400 of 40,284 at
+⚠️ **CORRECTED 2026-09-17 — this paragraph described a run that has since FINISHED, and said so
+in the present tense long after it landed.** `refcv5-v2` is **COMPLETE at step 40,284**, evaluated
+2026-09-09 at two inference seeds, and it **FAILED its pre-registered bar `BAR-REFCV5V2-1`**: it
+does not beat the echo control `ha0_ext` — it is **separated WORSE** — and it loses to `refcv4b` on
+ADE by **+0.0114 m, separated**. `MODEL_REGISTRY.md` §4.7 **on this same branch** carried the
+settled outcome while this file still said "is training", so a reader orienting from here was
+being told the opposite of the record. ⛔ Read §4.7, not this paragraph, and note its own warning
+that the +0.0114 m is **NOT attributable to WP-4** — two mechanism groups moved together.
+
+*What the paragraph said when it was written, kept so the correction is legible:* **refcv5-v2 is
+training** on the A40 (PID 2560646, watchdog 2561632), step ~5,400 of 40,284 at
 05:00 Z, **4.11 s/step ⇒ ~37 h**, landing ≈ Monday evening Berlin. It carries P14's validated
 emitted-fan ranking (`sampler_ranks_the_fan: True`, the exact key v1 shipped `False`) and the
 22-token tactical goal vocabulary on a **provably rollable** head.

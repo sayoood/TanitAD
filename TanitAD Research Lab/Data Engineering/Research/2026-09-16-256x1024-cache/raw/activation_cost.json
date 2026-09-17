@@ -1,0 +1,212 @@
+{
+ "model": "resnet101",
+ "K": 3,
+ "in_chans": 9,
+ "batch": 1,
+ "dtype": "fp32",
+ "device": "cpu",
+ "what_is_measured": "sum of every leaf module's output tensor bytes in one forward pass; NOT a CUDA max_memory_allocated",
+ "strides": [
+  2,
+  4,
+  8,
+  16,
+  32
+ ],
+ "geometries": {
+  "256x640": {
+   "activation_sum_mb": 645.9,
+   "returned_features_mb": 28.75,
+   "n_module_outputs": 375,
+   "levels": [
+    {
+     "shape": [
+      1,
+      64,
+      128,
+      320
+     ],
+     "tokens": 40960,
+     "mb": 10.0
+    },
+    {
+     "shape": [
+      1,
+      256,
+      64,
+      160
+     ],
+     "tokens": 10240,
+     "mb": 10.0
+    },
+    {
+     "shape": [
+      1,
+      512,
+      32,
+      80
+     ],
+     "tokens": 2560,
+     "mb": 5.0
+    },
+    {
+     "shape": [
+      1,
+      1024,
+      16,
+      40
+     ],
+     "tokens": 640,
+     "mb": 2.5
+    },
+    {
+     "shape": [
+      1,
+      2048,
+      8,
+      20
+     ],
+     "tokens": 160,
+     "mb": 1.25
+    }
+   ],
+   "height": 256,
+   "width": 640,
+   "ratio_vs_256x1024": 0.625
+  },
+  "256x1024": {
+   "activation_sum_mb": 1033.5,
+   "returned_features_mb": 46.0,
+   "n_module_outputs": 375,
+   "levels": [
+    {
+     "shape": [
+      1,
+      64,
+      128,
+      512
+     ],
+     "tokens": 65536,
+     "mb": 16.0
+    },
+    {
+     "shape": [
+      1,
+      256,
+      64,
+      256
+     ],
+     "tokens": 16384,
+     "mb": 16.0
+    },
+    {
+     "shape": [
+      1,
+      512,
+      32,
+      128
+     ],
+     "tokens": 4096,
+     "mb": 8.0
+    },
+    {
+     "shape": [
+      1,
+      1024,
+      16,
+      64
+     ],
+     "tokens": 1024,
+     "mb": 4.0
+    },
+    {
+     "shape": [
+      1,
+      2048,
+      8,
+      32
+     ],
+     "tokens": 256,
+     "mb": 2.0
+    }
+   ],
+   "height": 256,
+   "width": 1024,
+   "ratio_vs_256x1024": 1.0
+  },
+  "408x1024": {
+   "activation_sum_mb": 1662.9,
+   "returned_features_mb": 73.5,
+   "n_module_outputs": 375,
+   "levels": [
+    {
+     "shape": [
+      1,
+      64,
+      204,
+      512
+     ],
+     "tokens": 104448,
+     "mb": 25.5
+    },
+    {
+     "shape": [
+      1,
+      256,
+      102,
+      256
+     ],
+     "tokens": 26112,
+     "mb": 25.5
+    },
+    {
+     "shape": [
+      1,
+      512,
+      51,
+      128
+     ],
+     "tokens": 6528,
+     "mb": 12.75
+    },
+    {
+     "shape": [
+      1,
+      1024,
+      26,
+      64
+     ],
+     "tokens": 1664,
+     "mb": 6.5
+    },
+    {
+     "shape": [
+      1,
+      2048,
+      13,
+      32
+     ],
+     "tokens": 416,
+     "mb": 3.25
+    }
+   ],
+   "height": 408,
+   "width": 1024,
+   "ratio_vs_256x1024": 1.609
+  }
+ },
+ "ratios": {
+  "256x640": 0.625,
+  "256x1024": 1.0,
+  "408x1024": 1.609
+ },
+ "external_cuda_peak_scaling": {
+  "caveat": "The 256x1024 CUDA peak below was NOT measured by this package. It is scaled by the activation RATIO measured here, which is only valid if activations dominate that peak. Treat as ESTIMATED, evidence class: derived.",
+  "given_256x1024_mb": 3257.0,
+  "implied": {
+   "256x640": 2035.6,
+   "256x1024": 3257.0,
+   "408x1024": 5240.5
+  }
+ }
+}

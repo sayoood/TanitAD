@@ -3,6 +3,13 @@
 **Status: BINDING for implementation.** It supersedes `REFCV6_DESIGN_GROUNDED.md` wherever they disagree.
 Every implementation agent builds against this file; nothing else is authority.
 
+⛔⛔ **READ §10 BEFORE §1.** The PI amended this spec LATER THE SAME DAY and §10 overrides §1–§9 wherever
+they differ. §1 and §2 below still show the **pre-amendment** geometry and trunk (256×640, resnet34)
+and are kept so the change is legible — they are **NOT what to build**. What to build:
+**256 × 1024** cylindrical (`f_ref` 488.9239852, stride-16 **16×64**, stride-32 **8×32**),
+**resnet101 primary with resnet34 as the comparison run**, plus **K-frame image history and ego
+history as inputs**. Added 2026-09-17 because §1's diagram was being read as current.
+
 ## 0. The PI's directives of 2026-09-16, verbatim
 
 > * *"Let plan to train jointly the resnet-trunk, the bev map (based on the sam2 maps as gt) and a head for 3d bounding boxes extracted from the resnet trunk (based on the gt agent bounding boxes included in our training corpus from the av data set). I would also recommand to give additionally access to the truink for the diffusion planner"*
@@ -18,8 +25,12 @@ Every implementation agent builds against this file; nothing else is authority.
 
 ## 1. The model
 
+⚠️ **SUPERSEDED BY §10.1 / §10.2 / §10.3** — the diagram below is the 2026-09-16 morning design.
+**Build 256×1024, resnet101, with frame and ego history.** The structure is unchanged; the
+geometry, the trunk and the inputs are not.
+
 ```
-frame 256x640 ─► TRUNK: timm resnet34, ImageNet a1_in1k  (§2)
+frame 256x640 ─► TRUNK: timm resnet34, ImageNet a1_in1k  (§2)   ⛔ see §10.1/§10.2
    ├─ stride-16 map 16x40x256 ─► BEV LIFT (parameter-free geometry) ─► BEV encoder ─► BEV feats 120x64
    │                                 ├─► MAP head  (9-class SAM3 soft CE, seen cells only)
    │                                 └─► BOX head  (3-D cuboids, Hungarian)
@@ -40,6 +51,10 @@ frame 256x640 ─► TRUNK: timm resnet34, ImageNet a1_in1k  (§2)
 ⛔ **Deactivated for this experiment:** the whole strategic layer — route head, `g_str`, strategic GRU. No head estimates the route (PI). The flags remain but default OFF and the heads are not built.
 
 ## 2. Trunk — timm ResNet-34, ImageNet, trained as the papers do
+
+⚠️ **SUPERSEDED BY §10.2 (trunk) and §10.1 (geometry) and §10.3 (single-frame).** The table below
+is kept for the recipe — AdamW, wd 1e-4, encoder lr ×0.5, ImageNet mean/std — all of which STILL
+HOLD. The **backbone**, the **input size** and the **single-frame** row do not.
 
 | item | value | source |
 |---|---|---|

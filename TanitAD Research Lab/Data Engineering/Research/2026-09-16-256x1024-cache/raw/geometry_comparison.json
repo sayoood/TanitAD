@@ -1,0 +1,130 @@
+{
+ "note": "every cell read from a built artifact or a measurement receipt; nothing retyped",
+ "corpus_clips_assumed": 4713,
+ "activation_caveat": "sum of every leaf module's output tensor bytes in one forward pass; NOT a CUDA max_memory_allocated",
+ "geometries": {
+  "256x640": {
+   "height": 256,
+   "width": 640,
+   "f_ref": 305.5774907,
+   "hfov_deg": 120.0,
+   "vfov_deg": 45.4556,
+   "deg_per_col": 0.1875,
+   "centre_col": 319.5,
+   "centre_row": 127.5,
+   "rows_of_256x640_covered": [
+    -0.5,
+    255.5
+   ],
+   "vfov_vs_today_pct": 100.0,
+   "mb_per_clip": 37.77,
+   "mb_per_clip_source": "deployed cache, du -sb / 4713 payloads",
+   "corpus_gb": 178.0,
+   "stride16": {
+    "grid": [
+     16,
+     40
+    ],
+    "tokens": 640,
+    "deg_per_col": 3.0,
+    "channels": 1024
+   },
+   "stride32": {
+    "grid": [
+     8,
+     20
+    ],
+    "tokens": 160,
+    "deg_per_col": 6.0,
+    "channels": 2048
+   },
+   "activation_sum_mb_k3_b1_fp32": 645.9,
+   "activation_ratio_vs_256x1024": 0.625
+  },
+  "256x1024": {
+   "height": 256,
+   "width": 1024,
+   "f_ref": 488.9239852,
+   "hfov_deg": 120.0,
+   "vfov_deg": 29.3415,
+   "deg_per_col": 0.117187,
+   "centre_col": 511.5,
+   "centre_row": 127.5,
+   "rows_of_256x640_covered": [
+    47.5,
+    207.5
+   ],
+   "vfov_vs_today_pct": 64.5,
+   "mb_per_clip": 58.05,
+   "mb_per_clip_source": "MANIFEST.json, 139 clips",
+   "corpus_gb": 273.6,
+   "stride16": {
+    "grid": [
+     16,
+     64
+    ],
+    "tokens": 1024,
+    "deg_per_col": 1.875,
+    "channels": 1024
+   },
+   "stride32": {
+    "grid": [
+     8,
+     32
+    ],
+    "tokens": 256,
+    "deg_per_col": 3.75,
+    "channels": 2048
+   },
+   "activation_sum_mb_k3_b1_fp32": 1033.5,
+   "activation_ratio_vs_256x1024": 1.0
+  },
+  "408x1024": {
+   "height": 408,
+   "width": 1024,
+   "f_ref": 488.9239852,
+   "hfov_deg": 120.0,
+   "vfov_deg": 45.296,
+   "deg_per_col": 0.117187,
+   "centre_col": 511.5,
+   "centre_row": 203.5,
+   "rows_of_256x640_covered": [
+    0.0,
+    255.0
+   ],
+   "vfov_vs_today_pct": 99.6,
+   "mb_per_clip": 82.0,
+   "mb_per_clip_source": "MANIFEST.json, 139 clips",
+   "corpus_gb": 386.5,
+   "stride16": {
+    "grid": [
+     26,
+     64
+    ],
+    "tokens": 1664,
+    "deg_per_col": 1.875,
+    "channels": 1024
+   },
+   "stride32": {
+    "grid": [
+     13,
+     32
+    ],
+    "tokens": 416,
+    "deg_per_col": 3.75,
+    "channels": 2048
+   },
+   "activation_sum_mb_k3_b1_fp32": 1662.9,
+   "activation_ratio_vs_256x1024": 1.609
+  }
+ },
+ "external_cuda_peak_scaling": {
+  "caveat": "The 256x1024 CUDA peak below was NOT measured by this package. It is scaled by the activation RATIO measured here, which is only valid if activations dominate that peak. Treat as ESTIMATED, evidence class: derived.",
+  "given_256x1024_mb": 3257.0,
+  "implied": {
+   "256x640": 2035.6,
+   "256x1024": 3257.0,
+   "408x1024": 5240.5
+  }
+ }
+}
