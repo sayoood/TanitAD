@@ -3372,7 +3372,28 @@ class RefCModel(nn.Module):
         self._ego_window: tuple | None = None
         _ehc = getattr(cfg, "ego_history", None)
         if _ehc is not None and bool(getattr(_ehc, "enable", False)):
+            import dataclasses as _dc
+
             from tanitad.models.ego_history import EgoHistoryEncoder
+            # ⛔⛔ ONE ZERO-INIT GATE, NEVER TWO — MEASURED 2026-09-17, the graft
+            # was a DEAD PRODUCT and 3,072 parameters could never leave zero.
+            # `EgoHistoryConfig.zero_init_out` and the decoder's `ego_to_cond`
+            # were BOTH zero-initialised, by two authors, for the SAME correct
+            # reason ("the condition is UNCHANGED at step 0"). Stacked, they
+            # multiply: `cond += ego_to_cond(ego_hist)` makes
+            # d/d(ego_to_cond.W) proportional to `ego_hist` (= 0) and
+            # d/d(out.W) proportional to `ego_to_cond.W` (= 0), so NEITHER can
+            # ever move and only `ego_to_cond.bias` learns — a constant that
+            # carries no ego information at all. The PI asked for ego history
+            # BY NAME; it was wired, stamped, and reaching nothing.
+            # ⭐ The decoder's gate ALONE gives bit-identity at step 0 (it is
+            # the outermost factor), so the encoder's own zero-init is
+            # redundant AND fatal. It is turned off here, and written BACK onto
+            # the config so `config.json` records what the model actually did
+            # rather than what was asked for.
+            if bool(getattr(_ehc, "zero_init_out", False)):
+                _ehc = _dc.replace(_ehc, zero_init_out=False)
+                cfg.ego_history = _ehc
             self.ego_hist = EgoHistoryEncoder(_ehc)
             cfg.decoder.ego_hist_dim = int(_ehc.out_dim)
         n_steps = len(cfg.trajectory.horizons)
