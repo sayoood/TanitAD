@@ -1,0 +1,209 @@
+{
+ "n_cases": 25,
+ "n_ok": 25,
+ "n_wrong": 0,
+ "n_green_controls": 7,
+ "⛔": "every RED is paired with the nearest GREEN that must pass; a table of refusals alone cannot distinguish a guard from a brick",
+ "cases": [
+  {
+   "case": "GREEN  decoder + live weight",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the valid arm — if this refuses, every RED below is meaningless",
+   "message": ""
+  },
+  {
+   "case": "RED    decoder with w=0",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "THE defect: 2,262,020 params built, stamped, and unable to learn",
+   "message": "[v3] ⛔ --tac-decoder-v6 with --w-tac-v6 0: the behaviour decoder would be BUILT (2,262,020 params at d_bev 256, 2,229,252 at d_bev 128), forward-run, stamped into config.json — and receive NO GRADIENT, because at a non-positive weight the term never enters the graph. That is exactly the defect this flag exists to close: `tac_goal_tok_head` took grad_abs_sum EXACTLY 0.0 for all 40,284 steps of refc"
+  },
+  {
+   "case": "RED    weight without decoder",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "no decoder => no `tacv6_goal_logits` for the loss to read",
+   "message": "[v3] ⛔ --w-tac-v6 1 without --tac-decoder-v6: no behaviour decoder is built, so `out` carries no `tacv6_goal_logits` and the loss would have nothing to read. Pass --tac-decoder-v6, or --w-tac-v6 0."
+  },
+  {
+   "case": "RED    decoder on a FLAT arm",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the agent slots and the selection seam exist only under --arm hier",
+   "message": "[v3] ⛔ --tac-decoder-v6 on a FLAT arm. The behaviour decoder's keys are the agent slots and its feeds enter the hierarchy's selection seam, both of which exist only under --arm hier, so the decoder would be built and never read. Pass --arm hier, or drop --tac-decoder-v6."
+  },
+  {
+   "case": "RED    decoder without --v7-labels (kin3 vocab)",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "kin3 has no 22-token goal set: the behaviour queries have no label",
+   "message": "[v3] ⛔ --tac-decoder-v6 with the kin3 vocabulary. kin3 is the 3x3 KINEMATIC derivation and has no 22-token tactical goal set, so the decoder's 22 behaviour queries would have no label to learn from. Pass --v7-labels (which pins tac_vocab_version=v7.0), or drop --tac-decoder-v6."
+  },
+  {
+   "case": "RED    decoder AND the old tac_goal_tok_head",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "two heads on one target = two experiments, non-attributable",
+   "message": "[v3] ⛔ --tac-goal-tok-head AND --tac-decoder-v6 both emit a 22-token tactical goal posterior from the same labels. Two heads on one target is two experiments in one arm and the result is non-attributable. Pick one."
+  },
+  {
+   "case": "RED    --tac-decoder-d-bev > 0 (the BLOCKED map half)",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "no BEV token reaches the hook; a declared-but-absent source would read as 'the map adds nothing'",
+   "message": "[v3] ⛔ --tac-decoder-d-bev 256: no BEV token reaches the behaviour decoder on this path. `refc_v3.RefCV3Model.forward` does not pass `bev_tokens=` to `self.core(...)`, and the BEV encoder (`model._perception`) runs AFTER the core forward on `out[\"fmap_s16\"]` — so at `refc.py:4154`, where the scene hook fires, there is nothing to pass. The decoder would declare a 'bev' key/value source it never rec"
+  },
+  {
+   "case": "GREEN  --tac-decoder-d-bev 0 is the agent-only arm",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the control for the row above — 0 is the buildable arm",
+   "message": ""
+  },
+  {
+   "case": "RED    --graft-behaviour-sel without the decoder",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the selection term has no producer: a silently inert flag",
+   "message": "[v3] ⛔ --graft-behaviour-sel without --tac-decoder-v6. The selection term is produced by the decoder's `planner_feeds` and by nothing else, so with no decoder the flag is SILENTLY INERT while config.json stamps it on — the dead-flag class this trainer already refuses five times. Pass --tac-decoder-v6, or drop --graft-behaviour-sel."
+  },
+  {
+   "case": "GREEN  --graft-behaviour-sel WITH the decoder",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the control for the row above",
+   "message": ""
+  },
+  {
+   "case": "RED    --max-speed-input-v6 without a sidecar",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the 4-value ladder is NOT a label field; with no sidecar the 4 slots are a constant all-zero pad",
+   "message": "[v3] ⛔ --max-speed-input-v6 without --speed-max-sidecar-v6. The 4-value ladder is NOT a field of the label blob: it is the CONTAINING-WINDOW quantization of `g_tac.goals.SPEED_BAND.v_hi_ms`, produced by `scripts/build_refcv6_speed_max_window.py`. Without the sidecar the condition's 4 slots would be a constant all-zero pad ('not known') on every window and the arm would measure the channel as noise"
+  },
+  {
+   "case": "GREEN  --max-speed-input-v6 WITH a sidecar",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the control for the row above",
+   "message": ""
+  },
+  {
+   "case": "RED    E16 and refcv6 ceilings together",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "two ladders over two source fields: the channel becomes non-attributable",
+   "message": "[v3] ⛔ --max-speed-input (E16, CONTINUOUS 8-step ladder over the v8 `speed_max_input` block) AND --max-speed-input-v6 (refcv6, 4-way one-hot over `SPEED_BAND.v_hi_ms`) are two DIFFERENT quantizations of a ceiling, from two different source fields. Feeding both makes the channel's effect non-attributable and `RefCV3Model.__init__` refuses the pair as well. Pick one."
+  },
+  {
+   "case": "RED    --max-speed-input-v6 without the decoder",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the one-hot's only consumer is the decoder's condition",
+   "message": "[v3] ⛔ --max-speed-input-v6 without --tac-decoder-v6: the one-hot's ONLY consumer is the behaviour decoder's condition (`refc_v3.py:1597`), so with no decoder the encoder is built and read by nothing. Pass --tac-decoder-v6, or drop the flag."
+  },
+  {
+   "case": "GREEN  the real sidecar reads",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "if this refuses, every reader RED below is meaningless",
+   "message": "n_valid=147"
+  },
+  {
+   "case": "RED    a clip_id-keyed sidecar (no `sid`)",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "those rows can never join; and the message must name THE SID, not the downstream 'no valid ceiling' symptom",
+   "message": "[refcv6-vmax] ⛔ 147 of 147 sidecar rows carry no `sid`. This is a clip_id-keyed sidecar from before the join key was fixed; `LazyV2Episode` carries the stable id and not the clip_id string, so those rows can never join — whatever else they contain. Rebuild it with `scripts/build_refcv6_speed_max_window.py`, which now emits `sid` on every row."
+  },
+  {
+   "case": "RED    a sidecar whose `bin` disagrees with the ladder",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "two ladders is two experiments",
+   "message": "[refcv6-vmax] ⛔ sid 1760025021937651541: the sidecar says bin 0 but this module's ladder puts v_hi_ms=12.85 in bin 1 (50 km/h). Two ladders is two experiments; refusing rather than training on a quantization this build does not implement."
+  },
+  {
+   "case": "RED    an all-invalid sidecar",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the channel would be a constant pad measured as noise",
+   "message": "[refcv6-vmax] ⛔ NOT ONE of the sidecar's 147 rows carries a valid ceiling (every row is keyed and readable, and every one says `valid: 0`). The 4 condition slots would be a constant all-zero pad on every window and the channel would be measured as noise. Refusing."
+  },
+  {
+   "case": "RED    an EMPTY sidecar",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "an empty read and a genuine absence of ceilings are different facts",
+   "message": "[refcv6-vmax] ⛔ the sidecar '<TMP>\\\\mutant.jsonl' has ZERO rows. An empty file reads downstream exactly like 'this corpus has no set speeds', which is a different fact. Refusing."
+  },
+  {
+   "case": "ASSERT the sid-less message names the CAUSE, not the symptom",
+   "expect": "names `sid`, not `valid ceiling`",
+   "got": "names `sid`",
+   "verdict": "OK",
+   "why": "a true-sounding message naming the wrong cause sends the reader to rebuild the labels instead of re-keying the sidecar",
+   "message": "[refcv6-vmax] ⛔ 147 of 147 sidecar rows carry no `sid`. This is a clip_id-keyed sidecar from before the join key was fixed; `LazyV2Episode` carries the stable id and not the clip_id string, so those r"
+  },
+  {
+   "case": "STAMP on=True stamp=False",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "channel ON, no stamp -> an arm whose record cannot say what fed it",
+   "message": "[refcv6] ⛔ the 4-way max-speed input is ON but this run's config.json would carry no `speed_max_derivation_v6`. The channel's value is derived from the ego's OWN FUTURE speed over the horizon being sc"
+  },
+  {
+   "case": "STAMP on=True stamp=True",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the control: ON with the stamp",
+   "message": ""
+  },
+  {
+   "case": "STAMP on=False stamp=True",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "the MIRROR: a control stamped as conditioned",
+   "message": "[refcv6] ⛔ config carries `speed_max_derivation_v6` but the 4-way max-speed input is OFF. A run that did not feed a set speed must not be stamped as one — that is the MIRROR of the missing-stamp failu"
+  },
+  {
+   "case": "STAMP on=False stamp=False",
+   "expect": "PASS",
+   "got": "PASS",
+   "verdict": "OK",
+   "why": "the control: OFF with no stamp",
+   "message": ""
+  },
+  {
+   "case": "STAMP on=True stamp=True",
+   "expect": "REFUSED",
+   "got": "REFUSED",
+   "verdict": "OK",
+   "why": "a stamp missing the required tokens is a key, not a declaration",
+   "message": "[refcv6] ⛔ 4-way max-speed input: `speed_max_derivation_v6` is present but does not declare ['oracle', 'ego-future', 'SPEED_BAND.v_hi_ms', '[t0+2 s, +6 s]', '{30, 50, 100, 120} km/h', 'CONTAINING-WIND"
+  }
+ ]
+}

@@ -67,6 +67,48 @@ OWNED = (
     "2026-09-17-refcv6-conflict-detector/code/worked_example.py",
     "TanitAD Research Lab/Architecture & Inference/Research/"
     "2026-09-17-refcv6-conflict-detector/RESULT.md",
+    # --- refcv6 §4/§5, the tactical training wiring (2026-09-17) ---------- #
+    # ⚠️ ADDED BECAUSE THIS GUARD CAUGHT THIS PACKAGE. Three banked raw JSONs
+    # carried the session scratchpad path — whose directory name is a UUID —
+    # purely because they record the run's output directory. `code/redact.py`
+    # strips it by STRUCTURE (any UUID-shaped segment), not by the one literal
+    # id, so the next package is not left with the same hole.
+    "stack/tests/test_refcv6_tactical_training.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/bitid.sh",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/bitid_check.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/grad_reach.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/label_facts.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/live.sh",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/mutation_proof.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/redact.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/code/refusals.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/bit_identity.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/grad_reach.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/label_facts.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/refusals.json",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/live_run/config.json",
+    # ⛔ THE SIDECARS ARE LISTED TOO, and they are the reason `--omit-clip-id`
+    # exists: a raw `clip_id` is UUID-shaped, so a clip_id-keyed sidecar CANNOT
+    # be banked. These carry `sid` = stable_episode_id(clip_id) only.
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_train.jsonl",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-tactical-training/raw/speed_max_window_v6_eval.jsonl",
 )
 
 # ⛔ EVERY PATTERN IS ASSEMBLED FROM FRAGMENTS, and so is every mutation

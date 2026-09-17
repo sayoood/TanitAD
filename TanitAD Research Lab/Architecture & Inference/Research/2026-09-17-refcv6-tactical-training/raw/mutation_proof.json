@@ -1,0 +1,52 @@
+{
+ "n_arms": 5,
+ "n_ok": 5,
+ "⛔": "an arm is proven ONLY when the unmutated test PASSES and the mutated test FAILS. A green suite alone says nothing about whether a guard can fire.",
+ "arms": [
+  {
+   "arm": "the zero-weight refusal is deleted",
+   "defect_reintroduced": "a 2,262,020-parameter head builds, trains at zero gradient, and stamps `tac_decoder_v6: true` -- the tac_goal_tok_head defect at 200x scale",
+   "node": "tests/test_refcv6_tactical_training.py::test_RED_decoder_with_zero_weight_refuses",
+   "unmutated": "PASS",
+   "mutated": "FAIL",
+   "restored_md5_matches": true,
+   "verdict": "OK — the guard is REACHABLE"
+  },
+  {
+   "arm": "the BEV-token refusal is deleted",
+   "defect_reintroduced": "the decoder declares a `bev` key/value source that never arrives, and the arm reads as 'the map adds nothing to behaviours'",
+   "node": "tests/test_refcv6_tactical_training.py::test_RED_each_dead_configuration_refuses_for_its_own_reason",
+   "unmutated": "PASS",
+   "mutated": "FAIL",
+   "restored_md5_matches": true,
+   "verdict": "OK — the guard is REACHABLE"
+  },
+  {
+   "arm": "the weight row is removed from the exhaustive audit",
+   "defect_reintroduced": "the head becomes INVISIBLE to the effective-weight audit -- the exact blindness that hid tac_goal_tok_head for 40,284 steps",
+   "node": "tests/test_refcv6_tactical_training.py::test_the_new_weight_has_a_gate_row_and_the_gate_discriminates",
+   "unmutated": "PASS",
+   "mutated": "FAIL",
+   "restored_md5_matches": true,
+   "verdict": "OK — the guard is REACHABLE"
+  },
+  {
+   "arm": "the sid-before-valid ordering is reverted",
+   "defect_reintroduced": "a clip_id-keyed sidecar is diagnosed as 'no row carries a valid ceiling', which is FALSE -- a symptom named as the cause",
+   "node": "tests/test_refcv6_tactical_training.py::test_a_sid_less_sidecar_names_the_CAUSE_not_the_symptom",
+   "unmutated": "PASS",
+   "mutated": "FAIL",
+   "restored_md5_matches": true,
+   "verdict": "OK — the guard is REACHABLE"
+  },
+  {
+   "arm": "the MANEUVER_WEIGHT budget assertion is neutered",
+   "defect_reintroduced": "the tactical layer silently inflates the total objective and every loss curve becomes incomparable with refcv5-v2's",
+   "node": "tests/test_refcv6_tactical_training.py::test_the_loss_weights_stay_inside_the_MANEUVER_WEIGHT_budget",
+   "unmutated": "PASS",
+   "mutated": "FAIL",
+   "restored_md5_matches": true,
+   "verdict": "OK — the guard is REACHABLE"
+  }
+ ]
+}

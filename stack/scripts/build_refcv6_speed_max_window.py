@@ -68,17 +68,55 @@ def _open(path: str):
             else open(path, "rt", encoding="utf-8"))
 
 
-def build(labels_path: str, out_path: str, split: str = "train") -> dict:
+def build(labels_path: str, out_path: str, split: str = "train",
+          omit_clip_id: bool = False) -> dict:
+    """⭐ EVERY ROW CARRIES ``sid`` = ``stable_episode_id(clip_id)``, ADDITIVE.
+
+    ⛔⛔ WHY ``sid`` AND NOT ``clip_id`` IS THE JOIN KEY THE TRAINER READS.
+    Two independent reasons, and both of them bind:
+
+    1. **It is the corpus's only admissible join key.** ``LazyV2Episode``
+       carries the stable id, not the ``clip_id`` string, and
+       ``V3Dataset.__getitem__`` joins the v7.2 labels on
+       ``int(ep.episode_id)``. A ``clip_id``-keyed sidecar would need a second
+       table to be usable at all.
+    2. **A raw ``clip_id`` is UUID-shaped and may not enter a repo artifact.**
+       ``tests/test_refcv6_no_session_paths.py`` forbids the 8-4-4-4-12 hex
+       pattern outright, for the stated reason that *nothing can tell a
+       session UUID from a clip UUID by looking at it*. ``sid`` is a 63-bit
+       digest of the FULL clip id, so it is both the right key and a
+       bankable one.
+
+    ⚠️ ``omit_clip_id`` drops the plaintext column for the repo-bankable copy.
+    It is OFF by default so an existing caller's output is unchanged except
+    for the ADDED ``sid`` field — additive, never a redefinition of a hashed
+    artifact (the rule this script's own docstring opens with).
+    """
+    from tanitad.data.v2_dataset import stable_episode_id      # noqa: E402
+
     src_md5 = _md5(labels_path)
     rows: list[dict] = []
     v_hi: list[float] = []
     n = 0
     n_no_band = 0
     no_band_clips: list[str] = []
+    seen_sid: dict[int, str] = {}
     for line in _open(labels_path):
         rec = json.loads(line)
         n += 1
         clip = rec.get("clip_id")
+        # ⛔ A COLLISION IS REFUSED, NOT RESOLVED. `stable_episode_id` is
+        # 63-bit (collision probability ~4e-12 over 9,000 clips), but the
+        # SIXTEEN-bit id it replaced collided for 609 of 9,000 -- so this is
+        # the assertion that says which one we actually got.
+        sid = int(stable_episode_id(str(clip)))
+        if sid in seen_sid and seen_sid[sid] != clip:
+            raise SystemExit(
+                "[refcv6-vmax] ⛔ two clip_ids collide on stable_episode_id "
+                f"{sid}. Refusing rather than silently dropping one clip's "
+                "ceiling; the 63-bit id should make this ~4e-12, so a hit "
+                "here means the id function changed under us.")
+        seen_sid[sid] = clip
         sb = ((rec.get("g_tac") or {}).get("goals") or {}).get("SPEED_BAND")
         v = (sb or {}).get("v_hi_ms")
         if v is None:
@@ -88,19 +126,25 @@ def build(labels_path: str, out_path: str, split: str = "train") -> dict:
             # would assert a 30 km/h limiter nobody measured.
             n_no_band += 1
             if len(no_band_clips) < 20:
-                no_band_clips.append(clip)
-            rows.append({"clip_id": clip, "v_hi_ms": None, "bin": None,
-                         "limit_kmh": None,
-                         "one_hot": [0.0] * N_SPEED_MAX_BINS_V6,
-                         "over_ceiling": None, "valid": 0})
+                no_band_clips.append(sid)
+            r = {"sid": sid, "clip_id": clip, "v_hi_ms": None, "bin": None,
+                 "limit_kmh": None,
+                 "one_hot": [0.0] * N_SPEED_MAX_BINS_V6,
+                 "over_ceiling": None, "valid": 0}
+            if omit_clip_id:
+                r.pop("clip_id")
+            rows.append(r)
             continue
         v = float(v)
         i, over = speed_max_bin(v)
         oh = [0.0] * N_SPEED_MAX_BINS_V6
         oh[i] = 1.0
-        rows.append({"clip_id": clip, "v_hi_ms": round(v, 6), "bin": i,
-                     "limit_kmh": int(SPEED_MAX_STEPS_KMH_V6[i]),
-                     "one_hot": oh, "over_ceiling": bool(over), "valid": 1})
+        r = {"sid": sid, "clip_id": clip, "v_hi_ms": round(v, 6), "bin": i,
+             "limit_kmh": int(SPEED_MAX_STEPS_KMH_V6[i]),
+             "one_hot": oh, "over_ceiling": bool(over), "valid": 1}
+        if omit_clip_id:
+            r.pop("clip_id")
+        rows.append(r)
         v_hi.append(v)
 
     cen = ladder_census(v_hi) if v_hi else {"n": 0}
@@ -115,11 +159,17 @@ def build(labels_path: str, out_path: str, split: str = "train") -> dict:
         "n_clips": n,
         "n_with_speed_band": len(v_hi),
         "n_without_speed_band": n_no_band,
-        "clips_without_speed_band_sample": no_band_clips,
+        # ⚠️ SIDs, not clip_ids: a raw clip_id is UUID-shaped and may not
+        # enter a repo artifact (`test_refcv6_no_session_paths.py`).
+        "sids_without_speed_band_sample": no_band_clips,
         "census": cen,
         "sidecar": os.path.basename(out_path),
+        "join_key": "sid = stable_episode_id(clip_id)",
+        "clip_id_column_present": not omit_clip_id,
         "⛔": ("this is a SIDECAR; the label blob is NOT modified. Join on "
-               "clip_id. A clip with no SPEED_BAND carries bin=null and an "
+               "`sid` = stable_episode_id(clip_id) -- the corpus's only "
+               "admissible join key, and the one `LazyV2Episode` actually "
+               "carries. A clip with no SPEED_BAND carries bin=null and an "
                "all-zero one-hot (the 'not known' state), never bin 0."),
     }
     os.makedirs(os.path.dirname(os.path.abspath(out_path)) or ".",
@@ -141,8 +191,11 @@ def _print_census(meta: dict) -> None:
     print(f"clips       : {n}")
     print(f"with band   : {meta['n_with_speed_band']}")
     print(f"NO band     : {meta['n_without_speed_band']}"
-          + (f"   e.g. {meta['clips_without_speed_band_sample'][:3]}"
+          + (f"   e.g. sid {meta['sids_without_speed_band_sample'][:3]}"
              if meta["n_without_speed_band"] else ""))
+    print(f"join key    : {meta['join_key']}"
+          + ("" if meta["clip_id_column_present"]
+             else "   (clip_id column OMITTED -- repo-bankable)"))
     print()
     print("CONTAINING-WINDOW census over {30, 50, 100, 120} km/h")
     tot = c.get("n", 0)
@@ -166,13 +219,20 @@ def main(argv=None) -> int:
                     help="s2_labels_v8*.jsonl(.gz) — the SOURCE, never written")
     ap.add_argument("--out", required=True, help="sidecar .jsonl to write")
     ap.add_argument("--split", default="train")
+    ap.add_argument("--omit-clip-id", action="store_true",
+                    help="drop the plaintext clip_id column, leaving `sid` as "
+                         "the only key. ⛔ REQUIRED for a copy that will be "
+                         "banked in the repo: a clip_id is UUID-shaped and "
+                         "`tests/test_refcv6_no_session_paths.py` forbids that "
+                         "pattern outright, because nothing can tell a session "
+                         "UUID from a clip UUID by looking at it.")
     a = ap.parse_args(argv)
     if os.path.abspath(a.labels) == os.path.abspath(a.out):
         raise SystemExit(
             "[refcv6-vmax] ⛔ --out is the label blob itself. This script "
             "writes a SIDECAR; overwriting a hashed label release in place "
             "silently redefines every arm that resumes against it.")
-    meta = build(a.labels, a.out, a.split)
+    meta = build(a.labels, a.out, a.split, omit_clip_id=bool(a.omit_clip_id))
     _print_census(meta)
     return 0
 

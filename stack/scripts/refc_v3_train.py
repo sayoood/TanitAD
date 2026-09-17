@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses as _dc
+import inspect as _inspect
 import json
 import math
 import sys
@@ -89,6 +90,13 @@ from tanitad.refs import goal_point as gpm  # noqa: E402  — E15 (GP-2)
 from tanitad.refs import max_speed_input as msi  # noqa: E402  — E16
 from tanitad import effective_weights as _ew  # noqa: E402
 from tanitad.refs import tac_goal_head as _tac_goal_head  # noqa: E402
+# refcv6 §4/§5 — the behaviour decoder and the 4-way set-speed. ⛔ Imported at
+# module scope, beside the other seam modules, so a missing module fails at
+# IMPORT rather than after a rollout has already been paid for (the
+# `t1_eval.py` trap: both arms, 40 episodes, 6,844 windows each, then a dead
+# `from taniteval import selgap` in `analyze()`).
+from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
+from tanitad.refs import refcv6_max_speed as v6ms  # noqa: E402
 from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
 from tanitad.refs import refb  # noqa: E402
@@ -598,7 +606,147 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
                 "Pass --v7-labels (which pins tac_vocab_version=v7.0), "
                 "or drop --tac-goal-tok-head.")
         cfg.tac_goal_tok_head = True
+    _pin_refcv6_tactical(cfg, args)
     return cfg
+
+
+def _pin_refcv6_tactical(cfg, args) -> None:
+    """refcv6 §4/§5 — the behaviour decoder and the 4-way set-speed, from argv.
+
+    ⛔⛔ THE REFUSAL THIS FUNCTION EXISTS FOR IS ``--tac-decoder-v6`` WITH A
+    ZERO WEIGHT, and it is not symmetry-for-its-own-sake. MEASURED at tip
+    837c308: the decoder builds 2,262,020 parameters (``d_bev`` 256), runs in
+    the forward, writes ``cache["tacv6_*"]`` — and NOTHING read them, so every
+    one of those parameters sat at ``grad_abs_sum`` EXACTLY 0. A run that
+    built the head, converged, wrote a checkpoint and stamped
+    ``tac_decoder_v6: true`` would read as *"the tactical layer does not
+    help"*. That is the ``tac_goal_tok_head`` post-mortem (11,286 params, 0
+    gradient, 40,284 steps) at 200x the scale, and the ``--conflict-detector
+    on`` refusal one file down is the same rule in its established shape.
+
+    ⛔ EVERY refusal here fires BEFORE ``config.json`` is written and before a
+    batch is loaded, so a misconfigured arm costs seconds, not a GPU-day.
+    """
+    _w6 = float(getattr(args, "w_tac_v6", 0.0) or 0.0)
+    _on6 = bool(getattr(args, "tac_decoder_v6", False))
+    if _on6:
+        if args.arm != "hier":
+            raise SystemExit(
+                "[v3] ⛔ --tac-decoder-v6 on a FLAT arm. The behaviour "
+                "decoder's keys are the agent slots and its feeds enter the "
+                "hierarchy's selection seam, both of which exist only under "
+                "--arm hier, so the decoder would be built and never read. "
+                "Pass --arm hier, or drop --tac-decoder-v6.")
+        if str(getattr(cfg, "tac_vocab_version", "")) == "kin3":
+            raise SystemExit(
+                "[v3] ⛔ --tac-decoder-v6 with the kin3 vocabulary. kin3 is "
+                "the 3x3 KINEMATIC derivation and has no 22-token tactical "
+                "goal set, so the decoder's 22 behaviour queries would have "
+                "no label to learn from. Pass --v7-labels (which pins "
+                "tac_vocab_version=v7.0), or drop --tac-decoder-v6.")
+        if bool(getattr(args, "tac_goal_tok_head", False)):
+            raise SystemExit(
+                "[v3] ⛔ --tac-goal-tok-head AND --tac-decoder-v6 both emit a "
+                "22-token tactical goal posterior from the same labels. Two "
+                "heads on one target is two experiments in one arm and the "
+                "result is non-attributable. Pick one.")
+        # ⛔⛔ THE CORE REFUSAL. A BUILT HEAD WITH NO LIVE WEIGHT.
+        if _w6 <= 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --tac-decoder-v6 with --w-tac-v6 %.6g: the behaviour "
+                "decoder would be BUILT (2,262,020 params at d_bev 256, "
+                "2,229,252 at d_bev 128), forward-run, stamped into "
+                "config.json — and receive NO GRADIENT, because at a "
+                "non-positive weight the term never enters the graph. That is "
+                "exactly the defect this flag exists to close: "
+                "`tac_goal_tok_head` took grad_abs_sum EXACTLY 0.0 for all "
+                "40,284 steps of refcv5-v2 and nothing in the run record said "
+                "so. Pass --w-tac-v6 > 0 (1.0 reproduces the spec's weights), "
+                "or drop --tac-decoder-v6." % _w6)
+        # ⚠️ THE MAP HALF IS A NAMED BLOCKED SEAM, NOT A SILENT DROP. The PI
+        # asked for "the agent and the map". `refc_v3.RefCV3Model.forward`
+        # never passes `bev_tokens=` to `self.core(...)` (the keyword exists on
+        # `refc.py`'s forward at :3837 and reaches `scene_hook` at :4154, but
+        # the v3 wrapper's call site passes only `**_core_kw`, which carries
+        # `scene_hook` alone), and the BEV encoder lives on the TRAINER's
+        # wrapper (`model._perception`) and runs AFTER the core forward on
+        # `out["fmap_s16"]`. So no BEV token exists at the instant the hook
+        # fires. Declaring a width for a tensor that never arrives would make
+        # the arm read as "the map adds nothing" while never having had a map.
+        _dbev = int(getattr(args, "tac_decoder_d_bev", 0) or 0)
+        if _dbev > 0:
+            raise SystemExit(
+                "[v3] ⛔ --tac-decoder-d-bev %d: no BEV token reaches the "
+                "behaviour decoder on this path. `refc_v3.RefCV3Model.forward` "
+                "does not pass `bev_tokens=` to `self.core(...)`, and the BEV "
+                "encoder (`model._perception`) runs AFTER the core forward on "
+                "`out[\"fmap_s16\"]` — so at `refc.py:4154`, where the scene "
+                "hook fires, there is nothing to pass. The decoder would "
+                "declare a 'bev' key/value source it never receives and the "
+                "arm would read as 'the map adds nothing to behaviours' while "
+                "never having had a map. ⇒ Run agent-only "
+                "(--tac-decoder-d-bev 0) until the BEV token seam is wired, "
+                "and say which arm you ran." % _dbev)
+        _tdc = v6tac.TacticalDecoderConfig(
+            d_agent=int(cfg.core.decoder.d), d_bev=_dbev,
+            sources=("agent",) if _dbev <= 0 else ("agent", "bev"))
+        cfg.tac_decoder_v6 = True
+        cfg.tac_decoder_cfg = _tdc
+        cfg.tac_decoder_valid_threshold = float(
+            getattr(args, "tac_decoder_valid_threshold", 0.5))
+    elif _w6 > 0.0:
+        # ⚠️ `REFC_WEIGHT_GATES` also refuses this, and deliberately so: that
+        # audit is the EXHAUSTIVE instrument and must stay able to see the
+        # term. This raise is the EARLY, NAMED one — the pin runs on both
+        # launch paths and before the model is constructed.
+        raise SystemExit(
+            "[v3] ⛔ --w-tac-v6 %.6g without --tac-decoder-v6: no behaviour "
+            "decoder is built, so `out` carries no `tacv6_goal_logits` and "
+            "the loss would have nothing to read. Pass --tac-decoder-v6, or "
+            "--w-tac-v6 0." % _w6)
+    if bool(getattr(args, "graft_behaviour_sel", False)):
+        if not _on6:
+            raise SystemExit(
+                "[v3] ⛔ --graft-behaviour-sel without --tac-decoder-v6. The "
+                "selection term is produced by the decoder's `planner_feeds` "
+                "and by nothing else, so with no decoder the flag is "
+                "SILENTLY INERT while config.json stamps it on — the dead-flag "
+                "class this trainer already refuses five times. Pass "
+                "--tac-decoder-v6, or drop --graft-behaviour-sel.")
+        cfg.core.graft_behaviour_sel = True
+    # ---- §5: the 4-way one-hot set-speed -------------------------------- #
+    if bool(getattr(args, "max_speed_input_v6", False)):
+        if args.arm != "hier":
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input-v6 on a FLAT arm: the one-hot "
+                "enters the behaviour decoder's condition, which exists only "
+                "in the hierarchy. Pass --arm hier, or drop the flag.")
+        if bool(getattr(args, "max_speed_input", False)):
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input (E16, CONTINUOUS 8-step ladder over "
+                "the v8 `speed_max_input` block) AND --max-speed-input-v6 "
+                "(refcv6, 4-way one-hot over `SPEED_BAND.v_hi_ms`) are two "
+                "DIFFERENT quantizations of a ceiling, from two different "
+                "source fields. Feeding both makes the channel's effect "
+                "non-attributable and `RefCV3Model.__init__` refuses the pair "
+                "as well. Pick one.")
+        if not getattr(args, "speed_max_sidecar_v6", None):
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input-v6 without --speed-max-sidecar-v6. "
+                "The 4-value ladder is NOT a field of the label blob: it is "
+                "the CONTAINING-WINDOW quantization of "
+                "`g_tac.goals.SPEED_BAND.v_hi_ms`, produced by "
+                "`scripts/build_refcv6_speed_max_window.py`. Without the "
+                "sidecar the condition's 4 slots would be a constant all-zero "
+                "pad ('not known') on every window and the arm would measure "
+                "the channel as noise. Build the sidecar and pass it.")
+        if not _on6:
+            raise SystemExit(
+                "[v3] ⛔ --max-speed-input-v6 without --tac-decoder-v6: the "
+                "one-hot's ONLY consumer is the behaviour decoder's condition "
+                "(`refc_v3.py:1597`), so with no decoder the encoder is built "
+                "and read by nothing. Pass --tac-decoder-v6, or drop the flag.")
+        cfg.max_speed_onehot_v6 = True
 
 
 def _pin_refcv5_seams(cfg, args) -> None:
@@ -1565,6 +1713,36 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "mask": None,
         "already": "_pin_refcv6_perception",
     },
+    # ---- refcv6 §4: the tactical behaviour decoder ---------------------- #
+    # ⭐⭐ THE ROW THAT MAKES THE HEAD VISIBLE TO THIS AUDIT AT ALL. The
+    # `tac_goal_tok_head` post-mortem is explicit that this instrument
+    # ENUMERATES DECLARED LOSS WEIGHTS and is therefore *structurally blind to
+    # a head that has none* — which is why `--w-tac-v6` is not packaging
+    # around the fix, it IS part of it. Before this row existed, 2,262,020
+    # parameters could be built and trained at zero gradient and every
+    # standing guard stayed green.
+    "w_tac_v6": {
+        "flag": "--w-tac-v6",
+        "term": "refcv6 §4 tactical behaviour decoder "
+                "(22-token BCE + lat/lon CE + confidence)",
+        # THREE conditions, each with its own silent failure. No decoder =>
+        # no `tacv6_goal_logits` in the cache. No --v7-labels => no 22-token
+        # target and no lat/lon class ids. No --agents => `agent_tokens` is
+        # None and the hook's only live key/value source is absent, which
+        # `refc.py:4146` refuses at the first forward rather than at launch.
+        "gate": lambda a: (
+            bool(getattr(a, "tac_decoder_v6", False))
+            and bool(getattr(a, "v7_labels", None))
+            and str(getattr(a, "agents", "off")) != "off",
+            "--w-tac-v6 needs `--tac-decoder-v6` (no decoder => no "
+            "`tacv6_goal_logits`), `--v7-labels` (no join => no 22-token "
+            "target and no lat/lon class ids) AND `--agents` (the agent "
+            "slots are the decoder's only live key/value source)"),
+        "mask": None,
+        "already": "_pin_refcv6_tactical — which refuses the CONVERSE too "
+                   "(`--tac-decoder-v6` with a zero weight), the case this "
+                   "audit cannot see because a zero weight is a legal value.",
+    },
 }
 
 
@@ -2002,6 +2180,72 @@ class V3Dataset(RouteV21Dataset):
               f"carry a ceiling, {n_win_valid}/{n_win} windows fed, "
               f"{n_over} over the 130 km/h top step (md5={manifest.md5})",
               flush=True)
+        return self.max_speed_report
+
+    # ---- ⭐⭐ refcv6 §5: the PI's FOUR-VALUE set-speed, from the SIDECAR --
+
+    def enable_max_speed_v6(self, sidecar_path: str, manifest=None) -> dict:
+        """Turn the 4-way one-hot set-speed ON for this dataset.
+
+        ⛔⛔ A DIFFERENT SOURCE FIELD FROM :meth:`enable_max_speed`, and that
+        is the whole reason it is a second method. E16 reads the v8
+        ``speed_max_input`` block (a POSTED LIMIT, 8-step ladder
+        {20,30,50,70,80,100,120,130}); this reads
+        ``g_tac.goals.SPEED_BAND.v_hi_ms`` (the ego's own realised maximum over
+        ``[t0+2 s, +6 s]``, 4-step ladder {30,50,100,120}). Same-looking
+        quantity, different provenance, different ladder — and
+        ``RefCV3Model.__init__`` refuses the pair precisely so an arm cannot
+        feed both and become non-attributable.
+
+        ⛔ IT SHIPS THE RAW ``v_hi_ms`` AND THE LADDER IS APPLIED ONCE, on the
+        model side, in ``MaxSpeedOneHotEncoder`` — the E16 rule, whose own
+        docstring records the 2,631-of-4,572 (57.5 %) step shift that
+        double-quantizing produced.
+
+        ⛔ THE WINDOW COVERAGE IS THE NUMBER THAT DECIDES WHETHER THE CHANNEL
+        CARRIES ANYTHING, so a split where NO window is fed REFUSES here
+        rather than training a constant all-zero pad and reporting it as a
+        measured channel.
+        """
+        by_sid, report = v6ms.read_speed_max_sidecar_v6(
+            str(sidecar_path),
+            label_md5=(getattr(manifest, "md5", None) if manifest else None))
+        n_win = n_win_valid = 0
+        for (e_i, _t) in self.index:
+            v = by_sid.get(int(self.episodes[e_i].episode_id))
+            n_win += 1
+            if v is not None and v[1] > 0.5:
+                n_win_valid += 1
+        if n_win and n_win_valid == 0:
+            raise SystemExit(
+                f"[v3] ⛔ --max-speed-input-v6: NOT ONE of this split's "
+                f"{n_win} windows joins to a sidecar row with a ceiling. The "
+                f"sidecar has {report['n_valid']} valid rows, so this is a "
+                f"JOIN failure, not an empty sidecar — most likely a sidecar "
+                f"built over a different split. The channel would be a "
+                f"constant all-zero pad and the arm would measure it as "
+                f"noise. Refusing rather than feeding nothing.")
+        self._max_speed_by_sid = by_sid
+        self.max_speed_enabled = True
+        self.max_speed_report = {
+            **report,
+            "channel": "refcv6 4-way one-hot (§5)",
+            "label_md5": getattr(manifest, "md5", None) if manifest else None,
+            "n_windows": int(n_win),
+            "n_windows_fed": int(n_win_valid),
+            # ⭐ THE number: the fraction of WINDOWS that receive a real
+            # ceiling. A per-CLIP coverage of 100 % can still be a low window
+            # coverage if the join misses, and the window figure is the one
+            # the model actually experiences.
+            "window_ceiling_frac": round(n_win_valid / max(n_win, 1), 6),
+        }
+        print(f"[v3] max_speed_input_v6 (4-way one-hot): "
+              f"{report['n_valid']}/{report['n_rows']} sidecar rows carry a "
+              f"ceiling, {n_win_valid}/{n_win} windows fed "
+              f"({100.0 * n_win_valid / max(n_win, 1):.1f} %), "
+              f"{report['n_over_ceiling']} clips ABOVE the 120 km/h top step "
+              f"(clamped, and on those the fed ceiling is one the ego "
+              f"demonstrably exceeded)", flush=True)
         return self.max_speed_report
 
     # ---- D-GSTR-1 P3: the nav command's CONTINUOUS ARGS ------------------
@@ -2712,14 +2956,22 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # that asked for the seam and is handed a batch without the key would
     # train the conditioner on nothing while `config.json` stamps the edge —
     # the false-provenance class `assert_seams_are_built` exists to close.
+    # ⛔ refcv6 §5 SHARES THE `v_max_ms` BATCH KEY, and that is safe ONLY
+    # because the two channels are mutually exclusive: `_pin_refcv6_tactical`
+    # and `RefCV3Model.__init__` both refuse `--max-speed-input` together with
+    # `--max-speed-input-v6`. What travels in the key is the RAW m/s value in
+    # both cases; the LADDER that turns it into a condition differs, lives on
+    # the model, and is applied exactly once there.
     v_max_ms = v_max_valid = None
-    if getattr(cfg, "max_speed_input", False):
+    _vmax_on = (bool(getattr(cfg, "max_speed_input", False))
+                or bool(getattr(cfg, "max_speed_onehot_v6", False)))
+    if _vmax_on:
         if "v_max_ms" not in batch:
             raise SystemExit(
-                "[v3] ⛔ this build is --max-speed-input but the batch "
-                "carries no `v_max_ms`: the loader's `enable_max_speed` was "
-                "never called on this dataset. The seam would be stamped "
-                "and fed nothing.")
+                "[v3] ⛔ this build is --max-speed-input/--max-speed-input-v6 "
+                "but the batch carries no `v_max_ms`: the loader's "
+                "`enable_max_speed`/`enable_max_speed_v6` was never called on "
+                "this dataset. The seam would be stamped and fed nothing.")
         v_max_ms = batch["v_max_ms"].to(device)
         v_max_valid = batch["v_max_valid"].to(device)
     route_tgt = batch["route_target"].to(device)
@@ -3425,6 +3677,96 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             ((batch["tac_goal_y"] > 0.5) & (batch["tac_goal_w"] > 0)).sum())
 
     # ======================================================================= #
+    # refcv6 §4 — THE TACTICAL BEHAVIOUR DECODER'S OWN LOSSES                  #
+    # ======================================================================= #
+    # ⭐⭐ THIS IS THE SEAM THAT WAS OPEN, AND IT WAS OPEN 200x WIDER THAN THE
+    # ONE ABOVE. MEASURED at tip 837c308: this file contained ZERO occurrences
+    # of `tacv6`, `loss_tacv6` and `behaviour_loss`, while `refc_v3.py:1128`
+    # BUILT a 2,262,020-parameter decoder (d_bev 256), `:1622` ran it, and
+    # `:1627` wrote `cache["tacv6_*"]` into a dict nothing read. Every one of
+    # those parameters sat at `grad_abs_sum` EXACTLY 0.
+    #
+    # ⛔⛔ AND THE LAYER CAN NEVER LEARN THROUGH THE PLANNER, BY DESIGN.
+    # `refcv6_tactical.planner_feeds` detaches all four feeds, and that is
+    # CORRECT — with the feed attached, the cheapest way to lower the
+    # trajectory loss is to reshape the behaviour head into whatever
+    # correlates with the trajectory, and its per-class numbers would then
+    # stop measuring what the LABELS taught it. ⇒ The detachment is precisely
+    # why this block has to exist: these losses are the layer's ONLY gradient.
+    #
+    # ⛔ THE `w <= 0` BRANCH IS AN ABSENCE, NOT A MULTIPLICATION BY ZERO — the
+    # `--w-tac-goal` rule verbatim. The term never enters the graph, so a
+    # recipe that does not pass `--w-tac-v6` is BIT-IDENTICAL to the pre-wiring
+    # trainer at a fixed seed. INSIDE the channel nothing is guarded:
+    # `tactical_behaviour_losses` computes every term unconditionally and
+    # applies the weight by MULTIPLICATION, so `p.grad is None` stays a clean
+    # discriminator for "never wired" (42 of 138 optimizer tensors read None
+    # on 2026-09-06 because objectives were weighted 0.0 AND guarded).
+    _w_t6 = float(getattr(model, "_w_tac_v6", 0.0) or 0.0)
+    if _w_t6 > 0.0:
+        # ⛔⛔ REFUSE, DO NOT SKIP. A run that trains, converges, writes a
+        # checkpoint and STAMPS `w_tac_v6` while the decoder was never
+        # supervised would read as "the tactical layer does not help" — the
+        # exact refutation this package exists to make impossible.
+        if "tacv6_goal_logits" not in out:
+            raise SystemExit(
+                "[v3] ⛔ --w-tac-v6 > 0 but `out` carries no "
+                "`tacv6_goal_logits`: the behaviour decoder was never built "
+                "or its scene hook never fired. Pass --tac-decoder-v6 (with "
+                "--v7-labels and --agents), or --w-tac-v6 0.")
+        if "tac_goal_y" not in batch or "tac_goal_w" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-tac-v6 > 0 but the batch carries no "
+                "`tac_goal_y`/`tac_goal_w`: this dataset has no goal-set "
+                "target wired (`ds.tac_goal_targets` is False), so the "
+                "22-token BCE would be SILENTLY SKIPPED while config.json "
+                "stamps the weight. Pass --v7-labels, or --w-tac-v6 0.")
+        if "lat_v7" not in batch or "lon_v7" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-tac-v6 > 0 but the batch carries no "
+                "`lat_v7`/`lon_v7`: the 8+8 action queries would receive no "
+                "target at all. Pass --v7-labels, or --w-tac-v6 0.")
+        _t6_loss, _t6_tele = v6tac.tactical_behaviour_losses(
+            {"goal_logits": out["tacv6_goal_logits"],
+             "goal_conf": out["tacv6_goal_conf"],
+             "lat_logits": out["tacv6_lat_logits"],
+             "lon_logits": out["tacv6_lon_logits"]},
+            goal_y=batch["tac_goal_y"].to(device),
+            goal_w=batch["tac_goal_w"].to(device),
+            lat_target=batch["lat_v7"].to(device),
+            lon_target=batch["lon_v7"].to(device),
+            # ⛔ THE SAME pos_weight AND class_mask AS `--w-tac-goal`, fitted
+            # on the TRAIN split and carried on the model. Re-deriving a
+            # second copy here is the derived-constant trap; using a literal
+            # would be worse.
+            goal_pos_weight=getattr(model, "_tac_goal_pos_weight", None),
+            goal_class_mask=getattr(model, "_tac_goal_class_mask", None),
+            ignore_index=v7l.IGNORE_ID)
+        loss = loss + _w_t6 * _t6_loss
+        # ⭐ n PER TERM, ALWAYS, AND PER TERM MEANS THREE NUMBERS HERE. A bare
+        # 0.0 on the lat/lon heads reads as "supervised, and perfect", when
+        # the normal case is that the window is OUTSIDE the record's ±2 s
+        # band: MEASURED 1,157 of 4,823 eval windows are in band, so most
+        # batches legitimately supervise the action heads on a minority of
+        # rows and `n_supervised` is the only thing that says so.
+        extra["tacv6_goal_bce"] = _t6_tele["tac_goal_bce"]
+        extra["tacv6_goal_conf_bce"] = _t6_tele["tac_goal_conf_bce"]
+        extra["tacv6_lat_ce"] = _t6_tele["tac_lat_ce"]
+        extra["tacv6_lon_ce"] = _t6_tele["tac_lon_ce"]
+        extra["tacv6_total_weighted"] = _t6_tele["tac_total_weighted"]
+        extra["tacv6_n_supervised_goal_cells"] = float(
+            _t6_tele["n_supervised_goal_cells"])
+        extra["tacv6_n_supervised_lat"] = float(_t6_tele["n_supervised_lat"])
+        extra["tacv6_n_supervised_lon"] = float(_t6_tele["n_supervised_lon"])
+        # ⚠️ `tacv6_n_scene` is the decoder's ATTENDED key count. A row that
+        # attends to ZERO keys is a scene that reached the decoder empty, and
+        # it would otherwise be invisible: the losses are all finite and the
+        # arm reads as "behaviours cannot be learned from the scene".
+        if "tacv6_n_scene" in out:
+            extra["tacv6_n_scene_mean"] = out["tacv6_n_scene"].to(
+                torch.float32).mean()
+
+    # ======================================================================= #
     # refcv6 §2/§6 — THE PERCEPTION BRANCH: SAM3 BEV MAP + 3-D CUBOIDS        #
     # ======================================================================= #
     # The PI's central refcv6 instruction (2026-09-16): *"train jointly the
@@ -3907,6 +4249,50 @@ def _seam_stamp(cfg, args) -> dict:
             "cfg": bool(getattr(cfg, "tac_goal_tok_head", False)),
             "tac_vocab_version": str(getattr(cfg, "tac_vocab_version",
                                              "")),
+            "built": None,      # ← the MODEL fills this; see `train`
+        },
+        # ⭐⭐ refcv6 §4 — THE BEHAVIOUR DECODER, STAMPED AS THE SAME THREE
+        # SEPARATE FACTS, plus the one that would have caught this defect in
+        # the run record: the WEIGHT. `tac_goal_tok_head` was `requested`,
+        # `cfg` and `built` all true for 40,284 steps and still learned
+        # nothing, because nothing in the record said whether a loss could
+        # reach it. `w` is that missing fact.
+        # ⛔ `sources` is stamped because the PI asked for "the agent and the
+        # map": an arm that ran agent-only must say so in its own artifact,
+        # or a later reader will credit it with a map it never had.
+        "tac_decoder_v6": {
+            "requested": bool(getattr(args, "tac_decoder_v6", False)),
+            "cfg": bool(getattr(cfg, "tac_decoder_v6", False)),
+            "w": float(getattr(args, "w_tac_v6", 0.0) or 0.0),
+            "valid_threshold": float(
+                getattr(cfg, "tac_decoder_valid_threshold", 0.5)),
+            "graft_behaviour_sel": bool(
+                getattr(cfg.core, "graft_behaviour_sel", False)),
+            "decoder_cfg": (cfg.tac_decoder_cfg.to_dict()
+                            if getattr(cfg, "tac_decoder_v6", False) else None),
+            "sources": (list(getattr(cfg.tac_decoder_cfg, "sources", ()))
+                        if getattr(cfg, "tac_decoder_v6", False) else None),
+            "bev_tokens_reach_decoder": False,
+            "bev_blocked_by": (
+                "refc_v3.RefCV3Model.forward does not pass `bev_tokens=` to "
+                "self.core(...), and the BEV encoder (model._perception) runs "
+                "AFTER the core forward on out['fmap_s16'] — so no BEV token "
+                "exists at refc.py:4154 where the scene hook fires. Arms built "
+                "today are AGENT-ONLY and must be reported as such."),
+            "built": None,      # ← the MODEL fills this; see `train`
+        },
+        # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed. ⛔ `derivation` is the
+        # module's own constant, never retyped here, and
+        # `assert_speed_max_stamp_v6` refuses a run whose config.json would
+        # not carry it — AND refuses the mirror (a control stamped as
+        # conditioned).
+        "max_speed_onehot_v6": {
+            "requested": bool(getattr(args, "max_speed_input_v6", False)),
+            "cfg": bool(getattr(cfg, "max_speed_onehot_v6", False)),
+            "sidecar": (str(getattr(args, "speed_max_sidecar_v6", None) or "")
+                        or None),
+            "ladder_kmh": list(v6ms.SPEED_MAX_STEPS_KMH_V6),
+            "provenance": "ego-future (oracle INPUT, ~1.7555 bits)",
             "built": None,      # ← the MODEL fills this; see `train`
         },
         # ⭐⭐ E16 — THE MAX-SPEED CEILING, STAMPED AS INTENT + FACT.
@@ -5217,6 +5603,30 @@ def train(args) -> dict:
     model._w_tac_goal = float(getattr(args, "w_tac_goal", 0.0) or 0.0)
     model._tac_goal_pos_weight = None
     model._tac_goal_class_mask = None
+    # ⭐ refcv6 §4: same carrier, same reason. The pos_weight and class_mask
+    # above are SHARED with this channel and are fitted from the loaded split
+    # further down, never from a literal.
+    model._w_tac_v6 = float(getattr(args, "w_tac_v6", 0.0) or 0.0)
+    # ⛔⛔ A BUILT DECODER WITH NO LIVE WEIGHT IS REFUSED HERE TOO — and this
+    # is NOT redundant with `_pin_refcv6_tactical`. That guard reads ARGV;
+    # this one reads THE MODEL THAT WAS ACTUALLY BUILT. The 2026-09-17
+    # `--image-hw` post-mortem is exactly this distinction: a refusal that
+    # diffs argv PASSED while the defect lived between argv and the model.
+    _tac6_built = getattr(model, "tac_decoder_v6", None) is not None
+    if _tac6_built != (model._w_tac_v6 > 0.0):
+        raise SystemExit(
+            "[v3] ⛔ refcv6 §4 disagreement between the MODEL and the WEIGHT: "
+            "`model.tac_decoder_v6` is %s but --w-tac-v6 is %.6g. %s This is "
+            "read off the BUILT OBJECT, not off argv, because a guard that "
+            "diffs argv cannot see a defect that lives between argv and the "
+            "model."
+            % ("BUILT" if _tac6_built else "None", model._w_tac_v6,
+               ("The decoder's parameters would receive no gradient for the "
+                "whole run — the `tac_goal_tok_head` defect (11,286 params, "
+                "grad_abs_sum exactly 0, 40,284 steps) at 200x the scale."
+                if _tac6_built else
+                "The loss would have no logits to read and would refuse at "
+                "the first batch, after the model was already built.")))
     model._w_u0 = float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT))
     # E15 (GP-2): same carrier, same reason. `_check_goal_point_args` has
     # already refused `--goal-point-inject` with a zero weight, so a built head
@@ -5398,6 +5808,8 @@ def train(args) -> dict:
     tac_goal_stats = None                       # D-TACGOAL
     nav_args_stats = eval_nav_args_stats = None
     max_speed_stats = eval_max_speed_stats = None
+    max_speed_v6_stats = eval_max_speed_v6_stats = None
+    tac_v6_stats = None
     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
     if args.v7_labels:
         from tanitad.data.v2_dataset import stable_episode_id
@@ -5466,7 +5878,24 @@ def train(args) -> dict:
         # ⭐ refcv6 §2b: the ego-history channel is a DATASET decision, taken
         # here so the trainer's `pose_hist` refusal fires at launch.
         ds.ego_history = bool(getattr(args, "ego_history", False))
-        if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:
+        # ⭐⭐ refcv6 §4 SHARES THIS CHANNEL, AND THAT IS THE POINT. The
+        # behaviour decoder's 22 validity queries are supervised by the SAME
+        # `tactical_goal_targets` (y, w) pair, under the SAME
+        # `goal_pos_weight` and the SAME `mask_report` class mask, as
+        # `--w-tac-goal`. Re-deriving a second copy would be the
+        # derived-constant trap (HORIZON 7 -> 8) with two heads reading two
+        # quantizations of one label set.
+        # ⚠️ THE LABEL FACTS THAT TRAVEL WITH EVERY TACTICAL NUMBER, and they
+        # are computed HERE from the loaded split, never from a literal:
+        # after the PI's absence-as-negative ruling 21 of 22 tokens are
+        # trainable, but NINE sit ON the `goal_pos_weight` cap of 50 (so for
+        # those nine THE CAP, NOT THE DATA, sets the weight) and TEN sit under
+        # the n = 200 scoreability floor. `tanitad/train/panel_refusals.py`
+        # enforces both; a pooled accuracy over 22 tokens is dominated by
+        # FOLLOW_LANE at 79.4 % prevalence and says nothing.
+        _w_tv6 = float(getattr(args, "w_tac_v6", 0.0) or 0.0)
+        if (float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0
+                or _w_tv6 > 0.0):
             ds.tac_goal_targets = True
             ds.tac_goal_negatives = str(getattr(args, "tac_goal_negatives",
                                                 "measured"))
@@ -5490,16 +5919,44 @@ def train(args) -> dict:
                 "pos_weight": [float(x) for x in tac_goal_pw],
                 "census": tac_goal_census,
             }
+            # ⛔ PER CLASS, NEVER POOLED, AND THE CAPPED/UNSCOREABLE COUNTS
+            # ARE PRINTED BESIDE THE TRAINABLE ONE. A bare "21/22 trainable"
+            # invites the reading that 21 classes are learnable from data;
+            # for the ones ON the cap it is the CAP that sets the weight.
+            # ⛔ THE CAP IS READ FROM `goal_pos_weight`'s OWN SIGNATURE, never
+            # retyped. It is a DEFAULT PARAMETER (`cap: float = 50.0`), not a
+            # module constant, and a literal 50.0 here would be a second copy
+            # that goes stale the day the DataFlyWheel moves it — the
+            # derived-constant trap this file already carries three scars from.
+            _pw_cap = float(_inspect.signature(
+                v7l.goal_pos_weight).parameters["cap"].default)
+            _n_capped = sum(1 for x in tac_goal_pw
+                            if float(x) >= _pw_cap - 1e-6)
+            _n_unscoreable = sum(
+                1 for _t in vocab_v7.TACTICAL_GOAL_TOKENS_V7
+                if int((tac_goal_census.get(_t) or {}).get("pos", 0) or 0)
+                < vocab_v7.GOAL_MIN_N_FOR_METRIC)
+            tac_goal_stats["n_on_pos_weight_cap"] = int(_n_capped)
+            tac_goal_stats["pos_weight_cap"] = float(_pw_cap)
+            tac_goal_stats["n_under_scoreability_floor"] = int(_n_unscoreable)
+            tac_goal_stats["scoreability_floor_n"] = int(
+                vocab_v7.GOAL_MIN_N_FOR_METRIC)
             print(f"[v3] tac_goal: {tac_goal_stats['n_trainable']}"
                   f"/{tac_goal_stats['n_total']} classes trainable "
                   f"(negatives={ds.tac_goal_negatives}), "
-                  f"w={float(args.w_tac_goal)}", flush=True)
+                  f"w_tac_goal={float(getattr(args, 'w_tac_goal', 0.0) or 0.0)}"
+                  f" w_tac_v6={_w_tv6}"
+                  f" | {_n_capped} ON the pos_weight cap "
+                  f"{_pw_cap:g} (the CAP, not the data, "
+                  f"sets their weight), {_n_unscoreable} under the n="
+                  f"{int(vocab_v7.GOAL_MIN_N_FOR_METRIC)} scoreability floor "
+                  f"-- report PER CLASS, never pooled", flush=True)
             # ⛔ A CHANNEL THAT IS ON AND TEACHES NOTHING IS THE DEFECT THIS
             # PACKAGE CLOSES, ONE LAYER UP. Refuse at LAUNCH, not after a
             # GPU day.
             if tac_goal_stats["n_trainable"] == 0:
                 raise SystemExit(
-                    "[v3] ⛔ --w-tac-goal > 0 but ZERO of "
+                    "[v3] ⛔ --w-tac-goal/--w-tac-v6 > 0 but ZERO of "
                     f"{tac_goal_stats['n_total']} goal classes are trainable "
                     "on this split (every class lacks positives or lacks a "
                     "supervised negative). The head would be built, stamped "
@@ -5508,6 +5965,13 @@ def train(args) -> dict:
             max_speed_stats = ds.enable_max_speed(
                 manifest, str(getattr(args, "max_speed_mode",
                                       msi.DEFAULT_MODE)))
+        # ⛔ refcv6 §5 — the OTHER ceiling channel. `_pin_refcv6_tactical` has
+        # already refused the two together, so this `elif` can never shadow
+        # E16; it is written as a separate `if` anyway so that a future
+        # loosening of the pin cannot make one channel silently win.
+        if getattr(args, "max_speed_input_v6", False):
+            max_speed_v6_stats = ds.enable_max_speed_v6(
+                str(args.speed_max_sidecar_v6), manifest)
         # ---- --nav-from-v7 (E-ARCH-NAVSRC-1, PI 2026-09-02): the nav INPUT
         # from the record's token — the input refav1 already trains on. The
         # v1 derivation feeds `follow` (+invalid) on 94.6 % of B1 windows
@@ -5682,7 +6146,15 @@ def train(args) -> dict:
             # in-training eval would run a model whose condition is missing an
             # input it was trained with.
             e_ds.ego_history = bool(getattr(args, "ego_history", False))
-            if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:
+            # ⭐ refcv6 §4 rides the SAME eval wiring, and for the SAME reason
+            # arm C_w0p05 died on it: the in-training eval calls
+            # `compute_losses_v3`, whose refcv6 block REFUSES (SystemExit, so
+            # `except Exception` cannot catch it) when `--w-tac-v6 > 0` meets
+            # a batch with no `tac_goal_y`. Without this line a refcv6
+            # tactical arm dies at the FIRST eval with the training compute
+            # already paid for.
+            if (float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0
+                    or float(getattr(args, "w_tac_v6", 0.0) or 0.0) > 0.0):
                 e_ds.tac_goal_targets = True
                 e_ds.tac_goal_negatives = str(getattr(
                     args, "tac_goal_negatives", "measured"))
@@ -5694,6 +6166,17 @@ def train(args) -> dict:
                 eval_max_speed_stats = e_ds.enable_max_speed(
                     e_man, str(getattr(args, "max_speed_mode",
                                        msi.DEFAULT_MODE)))
+            # ⛔ refcv6 §5 on the EVAL split, with its OWN sidecar. An eval
+            # dataset fed no ceiling would run a model whose condition is
+            # missing an input it was TRAINED with — a train/eval channel
+            # mismatch that reads as a capability drop.
+            # ⚠️ `--speed-max-sidecar-v6-eval` falls back to the train
+            # sidecar ONLY when the eval labels are the same blob; otherwise
+            # the reader's md5 guard refuses, which is the intended outcome.
+            if getattr(args, "max_speed_input_v6", False):
+                eval_max_speed_v6_stats = e_ds.enable_max_speed_v6(
+                    str(getattr(args, "speed_max_sidecar_v6_eval", None)
+                        or args.speed_max_sidecar_v6), e_man)
         # the eval sees the SAME label source as training, with its OWN
         # episode restriction -- and the SAME pad, so the two blocks are
         # directly comparable rather than two different paddings.
@@ -5833,6 +6316,23 @@ def train(args) -> dict:
         getattr(model, "tac_goal_tok_head", None) is not None)
     _seams["max_speed_input"]["built"] = (
         getattr(model, "max_speed_cond", None) is not None)
+    # ⛔ refcv6 §4/§5: read off the BUILT OBJECT, never re-derived from cfg —
+    # the `param_breakdown_v3` idiom, and the reason is the `--image-hw`
+    # post-mortem: a second copy of the build condition is how a record drifts
+    # from the model it claims to describe.
+    _seams["tac_decoder_v6"]["built"] = (
+        getattr(model, "tac_decoder_v6", None) is not None)
+    if getattr(model, "tac_decoder_v6", None) is not None:
+        # ⭐ THE PARAMETER LEDGER, IN THE RUN RECORD. The whole defect was
+        # 2,262,020 parameters nobody could see from the artifact.
+        _seams["tac_decoder_v6"]["param_breakdown"] = \
+            model.tac_decoder_v6.param_breakdown()
+        _seams["tac_decoder_v6"]["provenance"] = \
+            model.tac_decoder_v6.provenance()
+        _seams["tac_decoder_v6"]["loss_weights"] = \
+            v6tac.TacticalLossWeights().to_dict()
+    _seams["max_speed_onehot_v6"]["built"] = (
+        getattr(model, "max_speed_1h_v6", None) is not None)
     assert_knobs_stamped(args, _seams)
     # ⛔ ...and the record is checked against the MODEL, not only against
     # the config that produced it. A config is intent; only the built
@@ -6038,6 +6538,41 @@ def train(args) -> dict:
              "map_gt_stats": {"train": map_stats, "eval": eval_map_stats},
              "join3d_stats": {"train": join3d_stats,
                               "eval": eval_join3d_stats}}),
+        # ⭐⭐ refcv6 §4 — the tactical layer's own block, `None` when the
+        # weight is 0.0 for the same absent-as-null reason as the perception
+        # block above: a default run's config.json must differ from the
+        # pre-wiring trainer's by NOTHING a comparison can act on.
+        # ⛔ IT CARRIES THE LABEL LIMITS, not merely the weight. A tactical
+        # number quoted without them is unreadable: 9 of 22 tokens sit ON the
+        # pos_weight cap (for those the CAP, not the data, sets the weight)
+        # and 10 of 22 sit under the n=200 scoreability floor.
+        "refcv6_tactical": (
+            None if float(getattr(args, "w_tac_v6", 0.0) or 0.0) <= 0.0 else
+            {"w_tac_v6": float(args.w_tac_v6),
+             "loss_weights": v6tac.TacticalLossWeights().to_dict(),
+             "valid_threshold": float(
+                 getattr(args, "tac_decoder_valid_threshold", 0.5)),
+             "graft_behaviour_sel": bool(
+                 getattr(args, "graft_behaviour_sel", False)),
+             "label_limits": tac_goal_stats,
+             "scene_sources_live": ["agent"],
+             "scene_sources_blocked": ["bev"],
+             "⛔": ("AGENT-ONLY. The PI asked for 'the agent and the map'; "
+                    "no BEV token reaches the behaviour decoder on this path "
+                    "(refc_v3.RefCV3Model.forward does not pass "
+                    "`bev_tokens=` to self.core). Any result from this arm is "
+                    "about the AGENT half and must say so.")}),
+        # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed census.
+        "refcv6_max_speed": ({"train": max_speed_v6_stats,
+                              "eval": eval_max_speed_v6_stats}
+                             if max_speed_v6_stats is not None else None),
+        # ⛔⛔ THE §5 STAMP IS A PRECONDITION, NOT A FIELD — and it keys on
+        # `speed_max_derivation_v6`, so E16's stamp cannot satisfy this guard
+        # or vice versa. Two ladders sharing one key is how an arm ends up
+        # describing a ceiling it never fed.
+        "speed_max_derivation_v6": (
+            v6ms.SPEED_MAX_DERIVATION_V6
+            if getattr(args, "max_speed_input_v6", False) else None),
     }
     # ⛔⛔ E16 — THE STAMP IS A PRECONDITION, NOT A FIELD. A --max-speed-input
     # run whose record would not declare the channel's ego-future provenance
@@ -6045,6 +6580,13 @@ def train(args) -> dict:
     # step is taken. Pinned with a deliberate-regression arm in
     # stack/tests/test_speed_max_derivation_stamp.py.
     _assert_speed_max_stamp(_run_config, args)
+    # ⛔⛔ refcv6 §5 — the SAME precondition for the 4-way channel, and it is a
+    # SEPARATE call on a SEPARATE key on purpose. The PI authorised an
+    # EGO-FUTURE input on the axis that owns most of the oracle gap; that is
+    # defensible exactly as long as every artifact says so. Both directions
+    # refuse: a channel with no stamp, and a control that carries one.
+    v6ms.assert_speed_max_stamp_v6(
+        _run_config, bool(getattr(args, "max_speed_input_v6", False)))
     (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                          encoding="utf-8")
 
@@ -7128,6 +7670,107 @@ def build_parser() -> argparse.ArgumentParser:
                          "names are `cz`/`h`, NOT the parquet's "
                          "`center_z`/`size_z`. Absent 3-D labels are a MASK, "
                          "never a zero (`box3d_head.zh_targets`).")
+    # ---- refcv6 §4: THE TACTICAL BEHAVIOUR DECODER (PI 2026-09-16) ------- #
+    # ⭐ THE PI, verbatim: *"The tactical layer must learn to emitt the valid
+    # tactical behaviors, choose the best architecture for it. It shoudl learn
+    # them from the scene embeddings, for the agent and the map."*
+    #
+    # ⛔⛔ WHY THESE FLAGS EXIST AT ALL — the defect they close. MEASURED
+    # 2026-09-17 at tip 837c308: `refcv6_tactical.TacticalBehaviourDecoder` is
+    # BUILT (`refc_v3.py:1128`), FORWARD-RUN (`:1622`), and writes
+    # `cache["tacv6_*"]` (`:1627`) — and this file contained **ZERO**
+    # occurrences of the string `tacv6`. 2,262,020 parameters (d_bev 256) with
+    # NO GRADIENT PATH and no flag that could switch them on. That is
+    # `tac_goal_tok_head` — 11,286 params at `grad_abs_sum` EXACTLY 0 for all
+    # 40,284 steps of refcv5-v2 — rebuilt 200x larger one layer up.
+    #
+    # ⛔ THE DEFAULT IS 0.0/OFF AND AT THE DEFAULT NOTHING IS BUILT: no module,
+    # no optimiser tensor, no metrics key, no config block. A recipe that does
+    # not pass these is BIT-IDENTICAL to the pre-wiring trainer at a fixed seed
+    # (proven on artifacts, not on an exit code — see the RESULT's bit-identity
+    # section), which is what lets this land beside a live recipe.
+    g6t = ap.add_argument_group("refcv6 tactical behaviour decoder (§4)")
+    g6t.add_argument("--tac-decoder-v6", action="store_true",
+                     help="build the DETR-style behaviour decoder (2 layers, "
+                          "d=256; 38 queries = 22 behaviours + 8 lat + 8 lon) "
+                          "over the SCENE — agent slots (and BEV tokens when "
+                          "a build supplies them). ⛔ Image tokens are "
+                          "STRUCTURALLY excluded. Needs --arm hier, "
+                          "--v7-labels and --agents (the agent slots are the "
+                          "only live key/value source; see the RESULT's "
+                          "blocked-seam section for the BEV half). ⛔ REFUSES "
+                          "with --w-tac-v6 0: a built head with no live "
+                          "weight is exactly the 2,262,020-parameter "
+                          "zero-gradient defect this flag exists to close.")
+    g6t.add_argument("--w-tac-v6", type=float, default=0.0,
+                     help="weight MULTIPLIER on the tactical layer's own "
+                          "losses (goal BCE 0.05 + lat CE 0.025 + lon CE "
+                          "0.025, i.e. the existing MANEUVER_WEIGHT budget "
+                          "0.1 re-split three ways by "
+                          "`refcv6_tactical.TacticalLossWeights`; the "
+                          "confidence head is a SUB-SPLIT of the goal BCE, "
+                          "not a fourth term). ⛔ DEFAULT 0.0 AND THE TERM IS "
+                          "THEN ABSENT FROM THE GRAPH — not multiplied by "
+                          "zero — so the no-flag path is bit-identical. "
+                          "⚠️ 1.0 reproduces the spec's weights exactly; this "
+                          "multiplier exists so the budget can be scaled "
+                          "without editing the spec's split.")
+    g6t.add_argument("--tac-decoder-d-bev", type=int, default=0,
+                     help="declared WIDTH of the BEV tokens fed to the "
+                          "behaviour decoder; 0 (default) = agent slots only. "
+                          "⛔ The token COUNT is always derived from the "
+                          "tensor (`bev_feats_to_tokens`); only the CHANNEL "
+                          "width is declared, because it is a parameter shape "
+                          "that follows the trunk (resnet34 -> 256, "
+                          "resnet101 -> 1024 at stride 16). ⚠️ > 0 REFUSES "
+                          "today: `refc_v3.RefCV3Model.forward` never passes "
+                          "`bev_tokens=` to `self.core(...)`, so the decoder "
+                          "would declare a width for a tensor that never "
+                          "arrives and the arm would read as 'the map adds "
+                          "nothing' while never having had a map.")
+    g6t.add_argument("--tac-decoder-valid-threshold", type=float, default=0.5,
+                     help="sigmoid threshold at which a behaviour counts as "
+                          "VALID for the selection gate and for "
+                          "`tacv6_valid_frac`. Reporting only; the BCE loss "
+                          "is threshold-free.")
+    g6t.add_argument("--graft-behaviour-sel", action="store_true",
+                     help="let the valid-behaviour set gate anchor SELECTION "
+                          "(`refc.py:3135`, additive log-space term, fed "
+                          "DETACHED). ⛔ Needs --tac-decoder-v6: without the "
+                          "decoder no `behaviour_term` is ever produced and "
+                          "the flag would be silently inert while "
+                          "config.json stamps it on.")
+    # ---- refcv6 §5: THE 4-VALUE MAX-SPEED INPUT (PI 2026-09-16) ---------- #
+    # ⭐ THE PI, verbatim: *"It should few discrete values: 30 kph, 50 kph,
+    # 100 kph, 120 kph ... Let use it as input in our next experiment"*.
+    # ⛔ A DIFFERENT CHANNEL FROM `--max-speed-input` (E16), which is the
+    # CONTINUOUS 8-step ladder over the v8 `speed_max_input` block.
+    # `RefCV3Model.__init__` refuses the two together and so does the pin.
+    g6t.add_argument("--max-speed-input-v6", action="store_true",
+                     help="feed the PI's FOUR-value set-speed {30, 50, 100, "
+                          "120} km/h as a 4-way ONE-HOT into the behaviour "
+                          "decoder's condition. ⛔ EGO-FUTURE DERIVED "
+                          "(~1.7555 bits, MEASURED) and stamped as "
+                          "`speed_max_derivation_v6` in config.json; "
+                          "`refcv6_max_speed.assert_speed_max_stamp_v6` "
+                          "refuses a run that would not carry the "
+                          "declaration, and refuses the mirror case too. "
+                          "Needs --speed-max-sidecar-v6.")
+    g6t.add_argument("--speed-max-sidecar-v6", default=None,
+                     help="the sidecar built by "
+                          "`scripts/build_refcv6_speed_max_window.py`: one "
+                          "JSON-lines record per clip carrying the "
+                          "CONTAINING-WINDOW bin. ⛔ The loader joins on "
+                          "`sid` (= `stable_episode_id(clip_id)`, the "
+                          "corpus's only admissible join key) and refuses a "
+                          "sidecar whose `source_md5` does not match the "
+                          "label blob this run loaded — two quantizations of "
+                          "one corpus is two experiments.")
+    g6t.add_argument("--speed-max-sidecar-v6-eval", default=None,
+                     help="the EVAL split's sidecar. Defaults to "
+                          "--speed-max-sidecar-v6, which is correct only when "
+                          "the eval labels are the SAME blob; otherwise the "
+                          "reader's md5 guard refuses, which is the point.")
     # ---- refcv6 §2b: EGO HISTORY AS AN INPUT (PI 2026-09-16) ------------- #
     ap.add_argument("--ego-history", action="store_true",
                     help="⭐ PI 2026-09-16. Encode the OBSERVED window's ego "

@@ -449,11 +449,30 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
                                        "qz": 0.5045, "qw": -0.4992,
                                        "x": 1.7795, "y": -0.0596,
                                        "z": 1.2531}}), encoding="utf-8")
+    v7lab = tmp_path / "s2_labels_v7.2_probe.jsonl.gz"
+    v7lab.write_bytes(b"")
+    TACV6 = ["--tac-decoder-v6", "--v7-labels", str(v7lab)]
     seam = {
         "w_map": ["--trunk", "timm", "--map-gt-root", "m",
                   "--agent-rig-camera", "extrinsics",
                   "--agent-rig-extrinsics", str(extr)],
         "w_box3d": ["--trunk", "timm"],
+        # ⭐⭐ refcv6 §4, same shape as §6's two above: `--w-tac-v6` REFUSES
+        # without `--tac-decoder-v6` ("a weight with no head is the `w_agent`
+        # defect verbatim"), and every other `--tac-decoder-*` knob is inert
+        # without it too. ⛔ Without these rows the probe finds NO admissible
+        # value and reports the knob unstampable for a reason that has nothing
+        # to do with the knob -- which is exactly what this table prevents, and
+        # exactly what it did when the §4 wiring landed without them.
+        # ⚠️ The chain is TWO deep: `--tac-decoder-v6` itself refuses under the
+        # kin3 vocabulary ("no 22-token tactical goal set, so the decoder's 22
+        # behaviour queries would have no label to learn from"), so the seam
+        # must also pin `--v7-labels`. ⭐ Both refusals are CORRECT and this
+        # table is the right place to satisfy them — not a reason to weaken
+        # either.
+        "w_tac_v6": TACV6,
+        "tac_decoder_valid_threshold": TACV6,
+        "graft_behaviour_sel": TACV6,
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of

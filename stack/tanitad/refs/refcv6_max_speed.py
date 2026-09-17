@@ -69,7 +69,7 @@ __all__ = [
     "SPEED_MAX_CONTROL_UNITS",
     "speed_max_bin", "speed_max_bin_tensor", "speed_max_onehot",
     "limit_ms_of_bin", "assert_speed_max_stamp_v6", "MaxSpeedOneHotEncoder",
-    "SpeedMaxStampError", "ladder_census",
+    "SpeedMaxStampError", "ladder_census", "read_speed_max_sidecar_v6",
 ]
 
 
@@ -315,6 +315,151 @@ def assert_speed_max_stamp_v6(cfg_dict: dict, on: bool) -> None:
             f"field, the window, the LADDER and the word `oracle` without "
             f"going to find the code. A stamp missing any of those is a key, "
             f"not a declaration. Got: {stamp!r}")
+
+
+# --- the sidecar -----------------------------------------------------------
+
+def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None
+                              ) -> tuple[dict[int, tuple[float, float]], dict]:
+    """``sidecar.jsonl -> ({sid: (v_hi_ms, valid)}, meta)``.
+
+    The 4-value ladder is **not a field of the label blob**: it is the
+    CONTAINING-WINDOW quantization of ``g_tac.goals.SPEED_BAND.v_hi_ms``,
+    produced by ``scripts/build_refcv6_speed_max_window.py``. This is the only
+    reader, and it is here rather than in the trainer so the format travels
+    with the module that defines the ladder.
+
+    ⛔⛔ THE VALUE RETURNED IS THE RAW ``v_hi_ms``, NOT THE BIN, AND THE LADDER
+    IS APPLIED EXACTLY ONCE — in :class:`MaxSpeedOneHotEncoder`, on the model
+    side. This is the E16 rule restated for this channel, and E16's own
+    docstring records what the other choice cost: the shipped bucket was
+    rounded to 4 dp (``13.8889``) while the ladder's 50 km/h step is
+    ``13.888888…``, so re-snapping the shipped bucket moved **2,631 of 4,572
+    clips (57.5 %) one step up**. Quantizing in two places is not
+    belt-and-braces; it is two ladders.
+
+    ⭐ THE SIDECAR'S OWN ``bin`` IS READ BACK AND CHECKED AGAINST THIS
+    MODULE'S LADDER, on every row. That is the cross-check the same docstring
+    says was missing when a builder verified its buckets against its own
+    rounded ladder and passed while 57.5 % of the corpus was wrong — and it is
+    a genuine cross-check here only because the two derivations are
+    independent: the sidecar's bin was computed in a separate process from the
+    label blob, and this one is computed now from the raw value.
+
+    ⛔ ``label_md5``, when given, must equal the sidecar's ``source_md5``. Two
+    quantizations of one corpus is two experiments, and the failure is silent:
+    a sidecar built over a different blob joins perfectly and feeds the wrong
+    ceilings on whatever fraction of clips moved.
+    """
+    import json as _json
+    import os as _os
+
+    meta_path = path + ".meta.json"
+    if not _os.path.isfile(path):
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ --speed-max-sidecar-v6 {path!r} does not exist. "
+            f"Build it with `python scripts/build_refcv6_speed_max_window.py "
+            f"--labels <s2_labels_v8*.jsonl.gz> --out <sidecar.jsonl> "
+            f"--omit-clip-id`. ⚠️ An ABSENT sidecar and an EMPTY one are not "
+            f"the same failure and must not read the same: this refuses, and "
+            f"the zero-row check below refuses the other.")
+    meta: dict = {}
+    if _os.path.isfile(meta_path):
+        with open(meta_path, "r", encoding="utf-8") as fh:
+            meta = _json.load(fh)
+    if label_md5 and meta.get("source_md5") and \
+            str(meta["source_md5"]) != str(label_md5):
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ the sidecar was built over label blob md5 "
+            f"{meta['source_md5']!r} but this run loaded {label_md5!r}. The "
+            f"join would SUCCEED and feed ceilings derived from a different "
+            f"release on whatever fraction of clips moved between them — a "
+            f"silent, per-clip wrong input. Rebuild the sidecar against the "
+            f"blob this run uses.")
+    by_sid: dict[int, tuple[float, float]] = {}
+    n_rows = n_valid = n_over = n_no_sid = 0
+    with open(path, "r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            r = _json.loads(line)
+            n_rows += 1
+            sid = r.get("sid")
+            if sid is None:
+                n_no_sid += 1
+                continue
+            v = r.get("v_hi_ms")
+            if v is None or not int(r.get("valid", 0) or 0):
+                # ⛔ (0.0, 0.0) — the value slot is 0 and the VALIDITY slot is
+                # what says "no ceiling known". `speed_max_onehot` turns an
+                # invalid row into an ALL-ZERO one-hot, never bin 0: "unknown"
+                # and "30 km/h" are different inputs (the X15 rule).
+                by_sid[int(sid)] = (0.0, 0.0)
+                continue
+            v = float(v)
+            # ⭐ the independent re-derivation, per row.
+            i, over = speed_max_bin(v)
+            if r.get("bin") is not None and int(r["bin"]) != int(i):
+                raise SpeedMaxStampError(
+                    f"[refcv6-vmax] ⛔ sid {sid}: the sidecar says bin "
+                    f"{int(r['bin'])} but this module's ladder puts "
+                    f"v_hi_ms={v} in bin {i} "
+                    f"({SPEED_MAX_STEPS_KMH_V6[i]} km/h). Two ladders is two "
+                    f"experiments; refusing rather than training on a "
+                    f"quantization this build does not implement.")
+            n_valid += 1
+            n_over += int(bool(over))
+            by_sid[int(sid)] = (v, 1.0)
+    # ⛔ A ZERO-ROW OR ALL-INVALID SIDECAR IS REFUSED. An empty read and a
+    # genuine absence of ceilings are indistinguishable downstream — the
+    # channel would be a constant all-zero pad and the arm would measure it as
+    # noise while config.json stamped it on.
+    if n_rows == 0:
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ the sidecar {path!r} has ZERO rows. An empty "
+            f"file reads downstream exactly like 'this corpus has no set "
+            f"speeds', which is a different fact. Refusing.")
+    # ⛔⛔ THE MISSING-`sid` CHECK COMES FIRST, AND THE ORDER IS THE WHOLE
+    # POINT. MEASURED 2026-09-17 while wiring this: on a clip_id-keyed sidecar
+    # the `n_valid == 0` branch fired first and said *"NOT ONE of the
+    # sidecar's 147 rows carries a valid ceiling"* — which is FALSE. All 147
+    # carried one; they were skipped for having no `sid`, and `n_valid` was 0
+    # only as a CONSEQUENCE. A true-sounding message naming the wrong cause
+    # sends the reader to rebuild the labels instead of re-keying the sidecar.
+    # ⇒ report the CAUSE before its SYMPTOM.
+    if n_no_sid:
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ {n_no_sid} of {n_rows} sidecar rows carry no "
+            f"`sid`. This is a clip_id-keyed sidecar from before the join key "
+            f"was fixed; `LazyV2Episode` carries the stable id and not the "
+            f"clip_id string, so those rows can never join — whatever else "
+            f"they contain. Rebuild it with "
+            f"`scripts/build_refcv6_speed_max_window.py`, which now emits "
+            f"`sid` on every row.")
+    if n_valid == 0:
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ NOT ONE of the sidecar's {n_rows} rows carries "
+            f"a valid ceiling (every row is keyed and readable, and every one "
+            f"says `valid: 0`). The 4 condition slots would be a constant "
+            f"all-zero pad on every window and the channel would be measured "
+            f"as noise. Refusing.")
+    report = {
+        "sidecar": _os.path.basename(path),
+        "n_rows": n_rows,
+        "n_valid": n_valid,
+        "n_over_ceiling": n_over,
+        "over_ceiling_frac": round(n_over / max(n_valid, 1), 6),
+        "source_md5": meta.get("source_md5"),
+        "source_labels": meta.get("source_labels"),
+        "join_key": "sid = stable_episode_id(clip_id)",
+        "ladder_kmh": list(SPEED_MAX_STEPS_KMH_V6),
+        "quantized_by": ("tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder "
+                         "(model side, ONCE); this reader ships the RAW "
+                         "v_hi_ms and only CHECKS the sidecar's own bin"),
+        "_derivation": SPEED_MAX_DERIVATION_V6,
+    }
+    return by_sid, report
 
 
 # --- the conditioner -------------------------------------------------------
