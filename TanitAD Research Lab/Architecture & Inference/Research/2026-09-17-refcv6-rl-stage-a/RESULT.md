@@ -463,6 +463,46 @@ and they touch this whole package:
    not answer** — after the oracle gap and the pinned inference seed. All three were caught, each
    one faster than the last, and this one before it left this document.
 
+### ⛔ The CAUSE is NOT measured, and I am not going to assert one
+
+⚠️ It would be easy to write *"TF32 / cuDNN autotune, and `strict_numerics()` is the fix"* — the
+repo even invites it. `stack/tanitad/instruments/numerics.py` diagnosed **this exact mechanism** in
+July 2026 (*"TF32/cuDNN selecting different kernels (different reduction orders, ~1e-3
+precision)"*), ships `strict_numerics()`, and states the doctrine: *"every probe fit, every gate
+evaluation … run inside `strict_numerics()`. **Training keeps fast kernels.**"* MEASURED today:
+that context manager is used in **22** files — **every one a measurement path** — and **0** times in
+`ddv2_rl_refcv5.py` (same-breath control: the file's 17 imports read fine). And across the whole
+stack, `use_deterministic_algorithms` / `cudnn.deterministic` / `CUBLAS_WORKSPACE_CONFIG` appear
+**0** times, against **1,089** `manual_seed` sites — *this programme seeds heavily and has never
+made a training run reproducible.*
+
+⛔ **But TF32 is deterministic-but-imprecise, not nondeterministic**, so it cannot by itself explain
+two launches differing at step 2. The standard culprit is **non-deterministic atomic reductions in
+backward**, which `strict_numerics()` does **not** address and
+`torch.use_deterministic_algorithms(True)` does. ⇒ **naming `strict_numerics()` as the fix would be
+the same error class this document has already retracted three times tonight: asserting a mechanism
+I have not measured.**
+
+⭐ **So the experiment is written instead of the claim.** `code/determinism_probe.sh` +
+`code/det_wrap.py`, ~10 min of GPU, queued behind the replicate:
+
+1. **Name the op** — one 3-step run under `use_deterministic_algorithms(True, warn_only=False)`, so
+   the first offending kernel **raises and names itself**. That converts *"something amplifies"* into
+   *"this op is the source"* in a single short run.
+2. **Two launches as-is** and **two under determinism**, 20 steps each. ⭐ The readout is
+   **bit-identity of `grad_norm`**, never a metric: under one condition two launches either agree to
+   the last bit or they do not.
+
+⛔ `det_wrap.py` sets the flags in a **parent process** via `runpy` — the trainer is read, never
+written — because it was the load-bearing arm still running when this was designed, and this repo's
+rule is *never edit a running script*. ⚠️ It also **refuses** unless `CUBLAS_WORKSPACE_CONFIG` is
+already in the environment, since that must precede CUDA initialisation and a silent miss would make
+the determinism arm quietly fail open.
+
+⚠️ **And whatever it finds is an ARM, not a patch.** Changing the trainer's numerics changes every
+future arm's comparability with the banked ones, and determinism costs throughput. That is a
+decision, not a fix to apply on my own authority.
+
 ⚠️ **What is NOT measured:** launch A died at step 156 with no checkpoint, so the **held-out**
 consequence of its divergence is unknown. The 56.5× and 22.0× are training-trajectory quantities,
 not metric quantities. Banked: `raw/launch_nondeterminism.json`.
