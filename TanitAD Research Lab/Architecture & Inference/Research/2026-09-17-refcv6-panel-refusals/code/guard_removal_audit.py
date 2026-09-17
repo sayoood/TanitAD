@@ -77,6 +77,12 @@ REMOVALS_PANEL = [
     ("R12-counts-contradict-policy",
      r"    if mismatched:",
      "    if False:                         # GUARD REMOVED"),
+    ("R10-capped-quoted-bare",
+     r"    if bare:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R10-false-cap-claim",
+     r"    if lying:",
+     "    if False:                         # GUARD REMOVED"),
 ]
 
 #: ⛔ Keyed by module stem so the audit cannot be pointed at one module while

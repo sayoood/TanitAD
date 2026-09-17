@@ -14,6 +14,7 @@ from tanitad.train.panel_refusals import (
     refuse_control_not_reading_known_value,
     refuse_pooled_or_underpowered_tactical,
     refuse_unnamed_negatives_policy,
+    refuse_capped_weight_without_note, pos_weight_cap,
 )
 
 
@@ -182,3 +183,68 @@ def test_a_policy_the_trainer_accepts_but_we_have_NOT_measured_is_flagged_UNVERI
     assert r["counts_verified"] is False and "UNVERIFIED" in r["why"]
     ok = refuse_unnamed_negatives_policy({"negatives_policy": "measured"})
     assert ok["counts_verified"] is True
+
+
+# ------------------------------------------------- refusal 10 (ERRATUM §E4/§E7)
+
+def _capped_report(cap):
+    return {"per_token": {
+        "LANE_KEEP": {"pos_weight": 3.2},
+        "LANE_CHANGE_R": {"pos_weight": cap, "capped": True,
+                          "cap_note": "the cap sets this weight, not the data "
+                                      "(uncapped it implies 303.8)"},
+    }}
+
+
+def test_the_cap_is_READ_from_the_function_that_applies_it_not_a_literal():
+    """⛔ The trainer reads it the same way and says why: a literal would be a
+    second copy that goes stale. This module was already caught once tonight
+    carrying its own copy of a vocabulary."""
+    import inspect
+
+    from tanitad.data import v7_labels
+    assert pos_weight_cap() == float(
+        inspect.signature(v7_labels.goal_pos_weight).parameters["cap"].default)
+
+
+def test_a_capped_token_WITH_its_note_passes_and_uncapped_tokens_are_ignored():
+    c = pos_weight_cap()
+    r = refuse_capped_weight_without_note(_capped_report(c))
+    assert r["n_on_cap"] == 1 and r["cap"] == c and r["n_tokens"] == 2
+
+
+def test_MUT_a_capped_weight_quoted_BARE_is_REFUSED():
+    """⭐ The refusal §E4 doubted could exist, because it was a rule about PROSE.
+    It is enforceable once the obligation moves onto the PANEL: the report cannot
+    be written without the sentence, because the sentence is a field."""
+    c = pos_weight_cap()
+    rep = _capped_report(c)
+    del rep["per_token"]["LANE_CHANGE_R"]["capped"]
+    del rep["per_token"]["LANE_CHANGE_R"]["cap_note"]
+    with pytest.raises(TacticalReportRefused, match="quoted without it"):
+        refuse_capped_weight_without_note(rep)
+
+
+def test_MUT_an_EMPTY_cap_note_does_not_satisfy_it():
+    """⛔ A field present but blank is the box-ticking failure — it passes a
+    key-presence check while telling the reader nothing."""
+    c = pos_weight_cap()
+    rep = _capped_report(c)
+    rep["per_token"]["LANE_CHANGE_R"]["cap_note"] = "   "
+    with pytest.raises(TacticalReportRefused, match="quoted without it"):
+        refuse_capped_weight_without_note(rep)
+
+
+def test_MUT_claiming_capped_on_a_token_that_is_NOT_capped_is_REFUSED():
+    """⛔ A false cap note is worse than none: it makes an uncapped weight look
+    like one somebody checked."""
+    c = pos_weight_cap()
+    rep = _capped_report(c)
+    rep["per_token"]["LANE_KEEP"].update(capped=True, cap_note="x")
+    with pytest.raises(TacticalReportRefused, match="claim `capped` but are NOT"):
+        refuse_capped_weight_without_note(rep)
+
+
+def test_MUT_a_report_with_no_per_token_block_is_REFUSED_here_too():
+    with pytest.raises(TacticalReportRefused, match="cannot be checked"):
+        refuse_capped_weight_without_note({"negatives_policy": "measured"})

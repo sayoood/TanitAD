@@ -50,6 +50,8 @@ __all__ = [
     "refuse_control_not_reading_known_value",
     "refuse_pooled_or_underpowered_tactical",
     "refuse_unnamed_negatives_policy",
+    "refuse_capped_weight_without_note",
+    "pos_weight_cap",
     "N_FLOOR",
 ]
 
@@ -203,3 +205,69 @@ def refuse_unnamed_negatives_policy(report) -> dict:
             f"{mismatched} (reported, expected). ⛔ Naming one policy and reporting "
             f"another's numbers is worse than naming none — it reads as checked.")
     return {"negatives_policy": pol, "counts_verified": True, **facts}
+
+
+def pos_weight_cap() -> float:
+    """The `goal_pos_weight` cap, READ FROM THE FUNCTION THAT APPLIES IT.
+
+    ⛔ Never a literal. The trainer reads it the same way and says why
+    (`refc_v3_train.py`): *"a literal 50.0 here would be a second copy that goes
+    stale the day the DataFlyWheel moves it — the derived-constant trap this file
+    already carries three scars from."* A checker with its own copy of a constant
+    is the same defect as one with its own copy of a vocabulary, and this module
+    has already been caught doing exactly that once tonight.
+    """
+    import inspect
+
+    from tanitad.data import v7_labels
+
+    return float(inspect.signature(v7_labels.goal_pos_weight)
+                 .parameters["cap"].default)
+
+
+def refuse_capped_weight_without_note(report, *, cap: float | None = None) -> dict:
+    """§12 refusal 10 — a CAPPED `goal_pos_weight` may not be quoted bare.
+
+    ⭐ This is the refusal §E4 said might not be enforceable *"because it is a rule
+    about PROSE"*. It becomes enforceable by moving the obligation off the prose
+    and onto the PANEL: a token whose weight sits on the cap must carry
+    ``capped: true`` and a non-empty ``cap_note``. The report then cannot be
+    written without the sentence, because the sentence is a field.
+
+    ⛔ Why it matters: for a capped token **the CAP, not the data, sets the
+    weight**. Quoting its `pos_weight` as though the label frequency chose it
+    misreads a clamp as a measurement — and on the opt-in negatives policy
+    **9 of 22** tokens sit on the cap.
+    """
+    c = pos_weight_cap() if cap is None else float(cap)
+    per_token = report.get("per_token")
+    if not per_token:
+        raise TacticalReportRefused(
+            "the report carries no `per_token` block; refusal 10 cannot be "
+            "checked and absence is not a pass.")
+    bare, lying = [], []
+    for tok, v in sorted(per_token.items()):
+        if not isinstance(v, dict) or "pos_weight" not in v:
+            continue
+        on_cap = float(v["pos_weight"]) >= c - 1e-6
+        claims = bool(v.get("capped"))
+        note = str(v.get("cap_note") or "").strip()
+        if on_cap and not (claims and note):
+            bare.append(tok)
+        elif claims and not on_cap:
+            lying.append(f"{tok} (pos_weight {v['pos_weight']} < cap {c})")
+    if bare:
+        raise TacticalReportRefused(
+            f"these tokens sit ON the goal_pos_weight cap of {c} and are quoted "
+            f"without it: {bare}. Each needs `capped: true` AND a non-empty "
+            f"`cap_note`. ⛔ For a capped token the CAP, not the data, sets the "
+            f"weight — quoting it bare misreads a clamp as a measurement.")
+    if lying:
+        raise TacticalReportRefused(
+            f"these tokens claim `capped` but are NOT on the cap: {lying}. A "
+            f"false cap note is worse than none: it makes an uncapped weight "
+            f"look like one somebody checked.")
+    n_capped = sum(1 for v in per_token.values()
+                   if isinstance(v, dict) and "pos_weight" in v
+                   and float(v["pos_weight"]) >= c - 1e-6)
+    return {"cap": c, "n_on_cap": n_capped, "n_tokens": len(per_token)}
