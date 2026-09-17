@@ -232,6 +232,33 @@ almost entirely inside the tail**.
 **The selector picks a colliding plan out of a fan that is MAJORITY collision-free, in 100 % of the
 cases where it collides.** That is not a hard-scene problem and not a generator problem.
 
+### ⛔⛔ AND THE DECISIVE QUALIFIER, WHICH I CHECKED BEFORE LETTING THE ABOVE PROPAGATE
+
+**These arms have NO AGENT INPUT AT ALL.** Verified from the run record by three independent
+signals, not asserted:
+
+1. `argv` carries **`--agents off`**;
+2. the base run's own directory is **`refcv5-v2-noagents-b1-v72-40k`**;
+3. the config's `agent_join`, `agent_join_digest` and `agent_join_stats` are all **`None`**.
+
+⛔ **And the REWARD does see them.** The proxy scores collision and TTC against agent tracks from
+`b1eval_agents.jsonl.xz`, with `ttc_offsets [0, 3, 6, 9]`, and **172 windows were dropped for
+missing agent data** — a drop that is only possible because the reward reads that file.
+
+⇒ **The objective sees the other agents; the model does not.** So the correct reading is **NOT**
+*"the selector ignores information it has"* — it is *"the selector is graded on a constraint it has
+no structured channel for"*. ⚠️ It is not blind: the trunk sees the image, so other vehicles are in
+the **pixels**. What is missing is their conversion into a collision-relevant representation — which
+is precisely what **D3** measured from the other side the same night, and why the two readings agree.
+
+⭐⭐ **THIS IS A NEW AND INDEPENDENT ARGUMENT FOR RE-OPENING THE AGENT SEAM, ON A LEDGER THE OLD
+DECISION NEVER TOUCHED.** The agent channel was gated off because the **auxiliary agent task** cost
+accuracy at two seeds on the tiny rig. That is a finding about a *training task*. This is a finding
+about a *selection constraint*: the channel is worth a measured **62.4 % of the oracle gap**, and
+`refc_agents.slot_features` — continuous metric range and bearing — **already exists** behind the
+`--agents off` gate. ⛔ Re-opening it is still an ARM, not a recovery: its tiny-rig exclusion may or
+may not generalise, and nothing here says the auxiliary task became free.
+
 ### The repair, priced before any GPU is spent on it
 
 An **oracle-repair ceiling**: lift one named sub-population to the best candidate the fan actually
@@ -256,7 +283,7 @@ have bought, **not** what the deployed policy can see at inference. A selection-
 **predicted** occupancy, and under the vision-only rule it may not read the recorded future. ⇒ this
 is not a free re-ranking; it is a **requirement on perception**.
 
-⭐ **Which makes it a direct, quantified argument for the PI's refcv6 perception directive.** The
+⭐ **Which makes it a direct, quantified argument for the PI's refcv6 perception directive** — and, independently, for the agent seam above. The
 BEV map head being wired right now is exactly the organ a collision gate would read, and this prices
 what it is worth on the selection side: **62 % of the oracle gap**, concentrated in 5 % of windows,
 on a rig where the fan already contains the right answer. ⚠️ And it lines up with D3 from the same
