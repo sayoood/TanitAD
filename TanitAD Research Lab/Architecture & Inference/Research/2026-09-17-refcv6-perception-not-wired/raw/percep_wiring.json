@@ -1,0 +1,74 @@
+{
+ "evidence_class": "MEASURED",
+ "question": "do the refcv6 perception heads reach the TRAINER's loss, or only exist as tested modules?",
+ "compute_losses_v3_loss_keys": [
+  "loss_applied",
+  "loss_cls",
+  "loss_forward_reduce_cuda_kernel_2d",
+  "loss_goal",
+  "loss_gp",
+  "loss_gstr",
+  "loss_lat",
+  "loss_lat_tac",
+  "loss_law",
+  "loss_lon",
+  "loss_lon_tac",
+  "loss_route",
+  "loss_sel",
+  "loss_traj",
+  "loss_u0"
+ ],
+ "trainer_calls": {
+  "map_soft_ce": 0,
+  "box3d_set_loss": 0,
+  "collate_map_targets": 0,
+  "collate_box_targets": 0,
+  "MapGTStore": 0,
+  "zh_for_frame": 0
+ },
+ "trainer_imports_of_perception_modules": {
+  "bev_encoder": 0,
+  "box3d_head": 0,
+  "bev_lift": 0,
+  "perception_targets": 0,
+  "semantic_map_gt": 0
+ },
+ "perception_loss_weights": {
+  "_w_map_reads": 1,
+  "_w_map_assignments": 0,
+  "_w_box3d_reads": 1,
+  "_w_box3d_assignments": 0
+ },
+ "cli_flags": {
+  "w-map": 0,
+  "w-box3d": 0,
+  "trunk-pretrained": 0,
+  "no-trunk-pretrained": 0
+ },
+ "trunk_pretrained": {
+  "field_declared_in_refc": 0,
+  "consumed_in_refc": 1,
+  "stamped_in_trainer_config": 2,
+  "cli_flag": 0
+ },
+ "the_heads_themselves": {
+  "tanitad/models/bev_encoder.py": {
+   "bytes": 17408,
+   "defines": true
+  },
+  "tanitad/models/box3d_head.py": {
+   "bytes": 24856,
+   "defines": true
+  },
+  "tanitad/data/perception_targets.py": {
+   "bytes": 19348,
+   "defines": true
+  }
+ },
+ "controls_all_nonzero": {
+  "def main": 1,
+  "add_argument": 143,
+  "loss_traj_in_compute_losses_v3": 1
+ },
+ "verdict": "THE PERCEPTION BRANCH IS A TESTED ISLAND WITH NO BRIDGE TO THE TRAINER"
+}
