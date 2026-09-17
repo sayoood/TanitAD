@@ -107,3 +107,44 @@ number.
 from a rig that is not the one under test, without the range or the provenance beside it. It is the
 `true-but-wrong-for-the-reader` class — every word defensible, the conclusion the reader draws
 wrong.
+
+---
+
+## E4. §12 — "the launch checker exits non-zero on any of these" asserts machinery that, for **4 of the 10**, DOES NOT EXIST
+
+*(Found by continuing the audit into the parent file's claims about CODE, not only its numbers.)*
+
+§12 lists ten refusals and introduces them as *"the launch checker exits non-zero on any of these"*.
+That sentence claims a program. ⛔ **There is no single such program for the SPEC-v2 arms**, and the
+ten split three ways. MEASURED 2026-09-17 by reading
+`…/2026-09-10-refcv6-build/code/` (13 files) and the refcv6 test suite:
+
+| # | refusal | status |
+|---|---|---|
+| 1 | arms differ in more than `one_variable`, on PARSED namespaces | ⚠️ **EXISTS, WIRED TO THE OLD ARMS.** `prelaunch_gate.check_one_variable` takes `w_agent` / `w_tac_goal` — the 2026-09-10 lever set. The v2 variable is the BACKBONE. **Needs rewiring, not writing.** |
+| 2 | a missing control, or one not reading its known value EXACTLY | ⚠️ **PARTIAL.** `verdict_refcv6.py` has the stronger half — absence is `MISSING_DATA`, a verdict distinct from `FAIL`, so a family cannot be deleted to "fix" it. The *known-value* half is per-panel and not centralised. |
+| 3 | an unregistered hypothesis id | ⛔ **DOES NOT EXIST.** Nothing reads `GOALS_AND_CLAIMS.md`. |
+| 4 | a hyper-parameter selected on the SCORED split | ⛔ **DOES NOT EXIST.** Nothing checks it. ⚠️ **This is the most consequential of the four** — it is the one that silently manufactures a positive. |
+| 5 | an estimator field naming `overlapping_holdout_se` | ✅ **EXISTS.** `verdict_refcv6.FORBIDDEN_ESTIMATORS`, plus the T1-stamp refusal. |
+| 6 | a hard-coded 640 / 160 / 40 / 20 in the shape path | ✅ **EXISTS AND IS MUTATION-PROVEN.** `test_refcv6_geometry_agnostic.py` scans owned source, requires a written reason for each exemption, and has two mutations (a reintroduced literal is caught; the exemption marker is itself required). |
+| 7 | `--conflict-detector on` with no live perception weight | ✅ **EXISTS** — exits 1 *before* `config.json` is written (landed `0243ce4`). |
+| 8 | a trunk prefix that selects ZERO parameters | ✅ **EXISTS** (landed `0243ce4`). |
+| 9 | a pooled tactical headline, or one quoting a token under n = 200 | ⚠️ **PARTIAL.** `verdict_refcv6.py` knows about pooling; the n = 200 floor is documented in `refcv6_tactical.py:52` (*10 of 22 sit under it*) but is not enforced at report time. |
+| 10 | a capped `goal_pos_weight` quoted without the cap sentence | ⛔ **DOES NOT EXIST**, and ⚠️ it may not be enforceable in code at all — it is a rule about PROSE. It should either become a check on the emitted report's own fields, or be demoted from a refusal to a reporting convention. Pretending it is a refusal is what makes it never get built. |
+
+⇒ **4 ✅ · 3 ⚠️ · 3 ⛔.**
+
+⛔ **The correction to §12:** replace *"the launch checker exits non-zero on any of these"* with
+**"these ten are the refusals the launch checker MUST implement; 4 exist today, 3 need rewiring
+from the 2026-09-10 arm set, and 3 do not exist"** — and add to §11's OWED list:
+
+> ⚠️ **OWED — the launch checker itself.** ⛔ No GPU arm may launch until refusals 3, 4 and 10 are
+> built (or 10 is explicitly demoted) and 1, 2 and 9 are rewired to the SPEC-v2 arms. §8 already says
+> no pod hour is spent before the D3 package and the RL lever; **this is the third item on that
+> list**, and it was the one asserted as done.
+
+⭐ **Why this matters more than the number errors above.** E1–E3 were wrong *evidence*. This is a
+wrong *guarantee*: a reader of §12 would believe ten failure modes are mechanically impossible, and
+would therefore not look for them. **A refusal that does not exist is worse than no refusal**,
+because it displaces the attention that would have caught the thing by hand — which is the same
+class as `e4af94f`, *a check that shares the defect it checks for*.
