@@ -15529,3 +15529,72 @@ turn recall **0.475 → 0.000** with nav removed) also stands and is consistent:
 wholly on nav even where nav explains only ~39–43 % of the label's entropy.
 
 <!-- RETR-2026-09-17-ERRATUM-OVERREACH-42-7 -->
+
+## RETR-2026-09-17-MAP-COVERAGE-AND-FRAME — four corrections in one night, and only ONE of them shipped
+
+⚠️ **Logged together because they share a spine:** each is a statement that was true about
+one thing and was read as a statement about another. Two were caught **before** any claim
+rested on them, and that asymmetry is the useful part of the record.
+
+### 1. ⛔ RETRACTED (SHIPPED) — *"the 4 map-less clips are skipped by the chain entirely"*
+
+**Said:** in chat, after measuring that 4 of 139 eval clips have no SAM3 map.
+**True instead:** `refc_v3_train._map_item` emits those windows with `map_label = False`
+and an **all-false `map_seen`**, so `map_soft_ce` scores **zero cells** on them —
+deliberately, so the loss cannot read `0.0` as *"supervised, and perfect"* (its docstring
+names the `tac_goal` precedent). The windows **are drawn**; the trunk sees those frames and
+still takes **planner and 3-D-box gradient** from them. Only the **map term** abstains.
+
+⭐ **Why it matters more than a wording fix:** *"skipped"* implies **four clips of lost
+training signal**. The real cost is **2.877 % of the MAP HEAD's supervision and nothing
+else** — a different answer for anyone sizing the map head's data budget.
+
+**ROOT-CAUSE CLASS:** *a coverage NUMBER read as a MECHANISM.* I had the count and inferred
+what the trainer does with it instead of reading the consuming code path. Same family as
+the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` traps — a true quantity quoted
+outside its scope — with the scope being **what the consumer does**, not the unit.
+⇒ **Before describing a defect's CONSEQUENCE, open the function that consumes it.**
+
+### 2. ⛔ RETRACTED (SHIPPED) — *"this run did not count how many clips fell below the coverage floor"*
+
+**Said:** in the landed §10.6 `RESULT.md`.
+**True instead:** it had counted them all along. `require_map_coverage` runs over the
+dataset's **own window index before the GPU** and writes its whole report into
+`config.json` at `refcv6_perception.map_gt_stats.train`: **23,772 windows / 139 clips,
+`frac_ok` 0.9712 = `frac_ok_upper`, verdict PASS, `ok` 23,088 / `no_file` 684 /
+`frame_out_of_range` 0 / `inconclusive` 0**, with `reasons` naming exactly 4 clips.
+
+**ROOT-CAUSE CLASS:** *an absence claim about MY SEARCH, reported as a property of the
+run.* Identical in form to the `42.7` erratum logged the same day and to
+*"absence found at ONE location is not absence"*. ⇒ **Before writing "this run did not
+measure X", grep the run's own config and metrics for X.** Corrected in `0986b4e`.
+
+### 3. ✅ CAUGHT BY A CONTROL, NEVER SHIPPED — the D9 off-road instrument read the human at 0.1741
+
+The gold control (the human's own driven path must be almost entirely on drivable ground)
+read **0.1741** off-road. Cause: `gt_future_ext` is in the **EPISODE** frame while the
+plans (`os`, `ha0`) are in the **EGO frame at t0** — MEASURED: `gt[0] − pose_last` =
+`v0 × 0.1` m. Transformed, it reads **0.0171**: a **10×** difference.
+
+⭐ **The arm deltas were never read through the broken instrument**, and the verdict is now
+**gated on the control in code** (`CONTROL_BAR = 0.05`) so a future run cannot print a
+confident number through a broken frame.
+
+**ROOT-CAUSE CLASS:** *a correct computation applied in the wrong FRAME* — the
+`anchors.pt` alat-vs-curvature class and the cylindrical-FOV class, third costume.
+⭐ **What saved it was a control that had to read a KNOWN value.** Without the human
+arm, +0.0151 for `rl-s0` would have looked like a clean result, because the arm ordering
+survives the frame error — the error inflates every arm roughly equally.
+
+### 4. ✅ CAUGHT BY MEASUREMENT, NEVER SHIPPED — the `+7` window offset
+
+The same script first computed the map frame as `raw_frame_index(ws[wi] + 7, n_stack)`, a
+**guess** at the window-NOW offset. Matching `pose_last` against `ep_poses` showed
+`pose_last[w] == ep_poses[ws[w]]` at residual **0.000000** ⇒ **`ws` IS the NOW row**, and
+`ep_poses == poses[2:]` at residual **0.000000** ⇒ raw frame = `ws + (n_stack − 1)`.
+
+**ROOT-CAUSE CLASS:** *an index convention assumed rather than measured.* ⇒ **Every index
+convention in a cross-artifact join is pinned by an exact match against the artifacts
+themselves, and a residual of 0.000000 is what "pinned" means.**
+
+<!-- RETR-2026-09-17-MAP-COVERAGE-AND-FRAME -->
