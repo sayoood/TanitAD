@@ -25,16 +25,34 @@ worse than the rule implied. Six held-out dumps — `heldout_base`, `heldout_bas
 windows / 40 episode clusters** (checked on `(sha12, t0)`, all six sets equal), so every pairing
 below is admissible on the paired estimator. **Zero GPU.**
 
-### 1. The INFERENCE floor is EXACTLY ZERO — and that NARROWS a standing programme caveat
+### 1. The repeat read is bit-identical — but ⛔ IT IS A REPRODUCIBILITY CHECK, NOT AN INFERENCE FLOOR
 
 The **same checkpoint scored twice** (`heldout_base` vs `heldout_base_repeat`) is **bit-identical on
 493 of 493 windows**; all ten metrics read **+0.0000 with CI [0.0000, 0.0000]**.
 
-⭐ `CLAUDE.md` warns that on a **stochastic planner** a third variance rides on the same interval —
-*"would another INFERENCE RUN say this?"* — measured on refav1, whose iCEM planner **samples**, with
-a seed floor of ≈0.30 m ADE. ⇒ **That caveat does NOT bind on this rig.** This DDIM path is
-deterministic end to end, so an inference replicate here is a **structural zero**, not an estimate.
-⛔ It is narrowed, not retracted: it still binds wherever the planner samples.
+⛔⛔ **MY FIRST READING OF THIS WAS WRONG AND IS WITHDRAWN.** I wrote that the DDIM path is
+"deterministic end to end" and that `CLAUDE.md`'s third-variance caveat therefore "does not bind on
+this rig". **It is bit-identical because the reader PINS THE SEED**, and the source says so in the
+line itself:
+
+```
+inp, out = ctx.capture([it], seed=500_000 + k)      # PAIRED inference noise per window
+```
+
+⇒ the repeat answers *"is this pipeline reproducible?"* — **never** *"would another inference draw
+say this?"*. **The third variance on this rig remains UNMEASURED**, and measuring it needs a
+different sampler seed, which no banked dump has. ⇒ `CLAUDE.md`'s caveat — raised on refav1, whose
+iCEM planner genuinely **samples**, with a measured seed floor of **≈0.30 m** ADE — **stands here
+untouched**, neither confirmed nor narrowed. ⚠️ Same defect class as the oracle-gap retraction
+logged the same night: **a measurement read as answering a question it does not answer.**
+
+⭐ **What IS true, and it is more useful than what I claimed.** The seed is `500_000 + k` — a
+function of the **window index only**, so *every arm sees the SAME inference noise on the SAME
+window*. That is a deliberate pairing device, and it means **inference variance cancels inside every
+paired cross-arm delta in this package by construction**. ⇒ the deltas in §2 and below are clean of
+it; what they are **not** clean of is training variance, which is precisely §2's subject. ⛔ Any
+**absolute** number here (`sel_pdms` = 0.9161, say) still carries an unmeasured inference-draw
+variance, so it is a within-rig quantity and not a portable one.
 
 ### 2. ⛔⛔ The TRAINING floor is CATASTROPHIC — 10 of 10 metrics separated on SEED ALONE
 

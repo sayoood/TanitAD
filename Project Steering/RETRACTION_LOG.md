@@ -15398,3 +15398,42 @@ actual, oracle — or state none. Instrument: `raw/selection_skill_vs_random.jso
 above.
 
 <!-- RETR-2026-09-17-SELECTION-GAP-NO-CONTROL -->
+
+## R-2026-09-17-inference-floor-was-a-pinned-seed — A REPRODUCIBILITY CHECK READ AS AN INFERENCE FLOOR
+
+**Retracted:** 2026-09-17, ~35 minutes after landing (`fbde5c7`) · **By:** Master Mind ·
+**Class: I — self-caught by reading the source of the harness that produced the number, while
+scoping the claim for a different document.**
+
+**Where it lived:** `…/2026-09-17-refcv6-rl-stage-a/RESULT.md` §1, and the matching row in
+`GOALS_AND_CLAIMS.md` (`D-DDV2RL-SEED-FLOOR-DWARFS-THE-LEVER`).
+
+| the statement, as landed | status |
+|---|---|
+| *"The INFERENCE floor on this rig is EXACTLY ZERO — 493/493 bit-identical … `CLAUDE.md`'s third-variance caveat DOES NOT BIND on this deterministic DDIM path."* | ⛔ **WITHDRAWN.** The reader **pins the sampler seed per window**. `ddv2_rl_refcv5.py:579` reads `ctx.capture([it], seed=500_000 + k)` with the comment **"PAIRED inference noise per window"**. Bit-identity is therefore **reproducibility**, not determinism, and it says nothing about inference variance. ⇒ **the third variance on this rig remains UNMEASURED**; measuring it needs a different sampler seed, which no banked dump has. |
+
+⭐ **What replaces it is narrower and more useful.** The seed is a function of the **window index
+only**, so every arm sees the **same inference noise on the same window**. That is a deliberate
+pairing device, and it means **inference variance cancels inside every paired cross-arm delta** in
+that package by construction. ⇒ those deltas are clean of it; what they are not clean of is
+**training** variance, which is the same package's §2 and the reason its replicate is load-bearing.
+⚠️ Any **absolute** number from this harness still carries an unmeasured inference-draw variance and
+is a within-rig quantity, not a portable one.
+
+⛔ **ROOT-CAUSE CLASS: A MEASUREMENT READ AS ANSWERING A QUESTION IT DOES NOT ANSWER** — the *same*
+class as `R-2026-09-17-selection-gap-no-control`, logged the same night, and the second instance in
+one session. There the gap answered *"is there headroom?"* and was read as *"does the selector
+work?"*; here the repeat answers *"is the pipeline reproducible?"* and was read as *"would another
+inference draw say this?"*. ⚠️ **The tell is identical in both: I did not open the producer.** The
+oracle-gap control was printed in the table I was reading; this seed is on the line that generated
+the file. ⇒ **the rule this earns is the cheapest one available — before quoting a replicate as a
+variance floor, read the line that draws its randomness.** A repeat that shares a seed is one
+sample, exactly as `CLAUDE.md`'s *"repeated samples through one broken channel are one sample"* says
+for a broken probe; a pinned seed is the same defect wearing a working probe.
+
+⭐ **Two things this did NOT damage, and they are the load-bearing ones:** the **seed-only training
+floor** (10/10 separated at 2.5×–101× the lever) came from two arms with **different training
+seeds** and is untouched; and the **collision defect in the untouched base** (28/493, 28/28 with a
+safe plan in the fan) is a within-arm reading that never depended on a floor at all.
+
+<!-- RETR-2026-09-17-INFERENCE-FLOOR-PINNED-SEED -->
