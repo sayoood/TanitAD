@@ -37,10 +37,12 @@ import json
 import lzma
 import math
 import os
+import pathlib
 import sys
 import time
 import types
 
+import numpy as np
 import torch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -120,6 +122,49 @@ class Ctx:
                                    nav_source="v72")
         (self.eps, _, self.clip_ids, self.ds, _, self.join, self.nav_src,
          self.raw_off) = self.arm.build_corpus(ns, self.cfg, self.prov)
+        # ---- the reward's DAC term ------------------------------------------- #
+        # ⛔ STATED LOUDLY EITHER WAY. A reward silently missing its road-boundary
+        # constraint is what produced H-DDV2RL-2's FAIL-HARM, and the run record
+        # said nothing about it. Now it always does.
+        self.map_root = getattr(a, "map_gt_root", None) or None
+        self.map_store = None
+        if self.map_root:
+            from tanitad.data import semantic_map_gt as _smg
+            self._smg = _smg
+            self.map_store = {}          # clip_id -> ClipMapGT, opened lazily
+            print(f"[rl] ⭐ DAC IS LIVE: SAM3 map GT from {self.map_root}. The reward's "
+                  f"road-boundary multiplier reads the map; `cand_dac_mean` below 1.0 "
+                  f"means candidates are being penalised for leaving the drivable area.",
+                  flush=True)
+        else:
+            print("[rl] ⛔ DAC IS DEAD: no --map-gt-root, so `score_candidates` defaults "
+                  "the road-boundary multiplier to ONES. `cand_dac_mean` will read "
+                  "EXACTLY 1.0 on every step and the policy is unconstrained by the road "
+                  "edge -- this is the H-DDV2RL-2 configuration, and it is a legal "
+                  "ABLATION but never a deployable arm.", flush=True)
+
+    def map_for(self, clip_id: str, raw_frame: int):
+        """``(drivable_frac [120,64], seen [120,64])`` at a RAW frame, or ``None``.
+
+        ⛔ The key is the RAW frame (``t0 + raw_off``) -- the same index the agent
+        lookup already uses. Passing the stacked-row ``t0`` would label every window
+        ``raw_off`` frames early, silently.
+        """
+        if self.map_store is None:
+            return None
+        g = self.map_store.get(clip_id)
+        if g is None:
+            p = pathlib.Path(self.map_root) / f"{self._smg.sha12(clip_id)}{self._smg.GT_SUFFIX}"
+            if not p.is_file():
+                self.map_store[clip_id] = False
+                return None
+            g = self.map_store[clip_id] = self._smg.open_path(p, clip_id)
+        if g is False:
+            return None
+        mf = g.read(np.asarray([int(raw_frame)]))
+        ch = self._smg.CHANNELS.index("drivable")
+        return (torch.from_numpy(np.asarray(mf.cart[0][ch], dtype=np.float32)),
+                torch.from_numpy(np.asarray(mf.seen[0], dtype=bool)))
         self.tr = self.arm.trainer()
         from tanitad.refs import refc_v3 as v3mod
         import refb_labels
@@ -199,9 +244,15 @@ class Ctx:
         nid = getattr(self.ds, "_nav_by_sid", {}).get(int(ep.episode_id))
         es = self.v3.ego_state_from_batch({"pose_last": pose_last[None],
                                            "actions": item["actions"].float()[None]}, device="cpu")
+        # ⛔ THE MAP IS KEYED ON r0, THE RAW FRAME -- the same index the agent lookup
+        # above already uses. Keying it on the stacked-row `t0` would label every
+        # window `raw_off` frames early and nothing would report it.
+        dmap = self.map_for(cid, r0)
         return {"frames": item["frames"], "v0": float(pose_last[3]), "nav": 0 if nid is None else int(nid),
                 "ego_state": es[0], "gt_wp": gt_wp, "human": human,
                 "route": torch.stack([rcx, rcy], dim=-1), "tracks": tracks,
+                "map_drivable": None if dmap is None else dmap[0],
+                "map_seen": None if dmap is None else dmap[1],
                 "sha12": sha12(cid), "t0": int(t0)}
 
     def capture(self, items, seed=None):
@@ -226,10 +277,38 @@ def score_batch(ctx, u, items, v):
                                         control_units=ctx.dec.anchor_control_units,
                                         alat_v_floor=ctx.dec.anchor_alat_v_floor,
                                         kappa_cap=ctx.dec.anchor_kappa_cap)
+    # ⛔ THE ARTIFACT-SUPPLIED-BUT-READ-BY-NOTHING REFUSAL. An operator who passes
+    # --map-gt-root and whose items carry no map would get a run whose record NAMES the
+    # SAM3 corpus and whose reward never saw one cell of it -- the exact shape of
+    # H-DDV2RL-2, with a config that says otherwise. MEASURED 2026-09-17: a mutation
+    # that silently drops the map in `fetch` leaves every unit test green, because the
+    # unit tests build their items by hand. This guard is what catches it.
+    if getattr(ctx, "map_root", None) and not any(
+            it.get("map_drivable") is not None for it in items):
+        raise SystemExit(
+            "[rl] ⛔ --map-gt-root is set but NOT ONE item in this batch carries a map, "
+            "so DAC would silently fall back to ONES and the reward would have no "
+            "road-boundary term -- while config.json named a map corpus. Refusing. "
+            "Check that the clips have GT files and that `fetch` still attaches "
+            "`map_drivable` / `map_seen`.")
     outs = []
     for b, it in enumerate(items):
+        # ---- the road-boundary multiplier ---------------------------------- #
+        # ⛔ Passed EXPLICITLY, because `score_candidates` defaults DAC to ONES and
+        # for the whole of H-DDV2RL-2 nothing ever passed it. The human is scored
+        # with the SAME map so its DAC is comparable -- `pdms` normalises EP
+        # pairwise against the human, so a human scored without the constraint and
+        # candidates scored with it would be two different reward scales.
+        dk = {}
+        if it.get("map_drivable") is not None:
+            fr = it["map_drivable"].to(u.device)
+            sn = it["map_seen"].to(u.device)
+            hs = it["human"].to(u.device)
+            dk = {"dac_cand": P.dac_from_drivable(states[b], fr, sn),
+                  "dac_human": P.dac_from_drivable(hs[None], fr, sn)[0]}
         outs.append(P.score_candidates(states[b], it["human"].to(u.device),
-                                       it["tracks"].to(u.device), it["route"].to(u.device)))
+                                       it["tracks"].to(u.device), it["route"].to(u.device),
+                                       **dk))
     return outs, states
 
 
@@ -446,7 +525,17 @@ def rl_step(ctx, inp, items, arm: ChainArm, gen, *, apply: bool, opt=None) -> di
     for p in params:
         p.grad = None
     hum = [s["human"] for s in scores]
-    sub = {k: float(torch.stack([s[k] for s in scores]).mean()) for k in ("nc", "ep", "ttc", "comfort")}
+    # ⛔ "dac" BELONGS IN THIS LIST AND WAS MISSING UNTIL 2026-09-17. `score_candidates`
+    # returns it, `pdms` multiplies by it, and `frac_constraint_fail` is
+    # `(nc != 1) | (dac != 1)` -- yet 600 steps x 3 arms logged NOTHING about the term,
+    # so a reward whose road-boundary constraint was identically 1 left no trace in the
+    # telemetry. MEASURED: `cand_dac_mean` is absent from every banked L1 metrics file
+    # while `cand_nc_mean` / `cand_ep_mean` / `cand_ttc_mean` are present and varying.
+    # ⇒ A SUB-SCORE THAT IS NOT LOGGED CANNOT BE SEEN TO BE CONSTANT. With this key in
+    # place, a dead DAC reads `cand_dac_mean` EXACTLY 1.0 on every step, which is a
+    # visible defect instead of an invisible one.
+    sub = {k: float(torch.stack([s[k] for s in scores]).mean())
+           for k in ("nc", "dac", "ep", "ttc", "comfort")}
     return {"loss": loss_total, "rl_part": rl_part, "rl_coef_abs_sum": float(w["coef_rl"].abs().sum()),
             "il_mean_m": il_total, "il_coef": float(w["il_coef"]), "grad_norm": gnorm,
             # ---- LEVER L1 / D9 telemetry -------------------------------------------- #
@@ -614,6 +703,19 @@ def main(argv=None):
                 s.add_argument(f"--{k}", default=v)
         s.add_argument("--device", default="cuda")
         s.add_argument("--stride", type=int, default=5)
+        # ⛔ WITHOUT THIS, THE REWARD HAS NO ROAD-BOUNDARY TERM AT ALL.
+        # `pdms = NC x DAC x (...)`, DAC is a BINARY MULTIPLIER, and
+        # `score_candidates` defaults it to ONES. Until 2026-09-17 no caller
+        # anywhere passed it -- `dac_from_drivable` had never had a production
+        # caller -- so DAC was identically 1 for every candidate in every anchor
+        # group. GRPO's advantage is computed WITHIN a group, so a term with zero
+        # within-group variance contributes EXACTLY ZERO to the gradient: the
+        # constraint was not weak, it was ABSENT. (`H-DDV2RL-2` = FAIL-HARM.)
+        s.add_argument("--map-gt-root", default=None,
+                       help="SAM3 map GT root. Makes the reward's DAC term LIVE. "
+                            "Omitted, DAC is identically 1 and the policy is free "
+                            "to leave the road -- the run record and the per-step "
+                            "cand_dac_mean both say so.")
         if name == "diagnose":
             s.add_argument("--n-windows", type=int, default=12)
             s.add_argument("--cost-batches", type=int, nargs="+", default=[2, 4])
