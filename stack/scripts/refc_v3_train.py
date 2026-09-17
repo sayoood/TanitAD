@@ -6296,10 +6296,22 @@ def train(args) -> dict:
         # directly comparable rather than two different paddings.
         if getattr(args, "agent_join", None):
             from train_p8_occupancy import JoinFileReader as _JFR
+            # ⛔ `with_track_ids` MUST MATCH THE TRAIN READER (:6118). Without it
+            # `lookup_track_ids` returns None for every eval window -- its own
+            # docstring says so -- `__getitem__` falls to `zh_targets(t)`'s
+            # all-False mask, and the eval reports `box3d_z` / `box3d_h` =
+            # **0.0 with n_z = n_h = 0**: a zero that reads as PERFECT.
+            # MEASURED 2026-09-18 by the 139-clip coverage pass, over 900 windows
+            # on BOTH halves, while the TRAIN side of the SAME runs had
+            # `box3d_n_z == box3d_n_matched` EXACTLY (23=23, 41=41, 34=34).
+            # ⇒ the two readers are built in two places and only one carried the
+            # flag; a default that silently disables supervision is worse than a
+            # refusal, because nothing in the log says the term went dark.
             _e_rd = _JFR(args.agent_join,
                          episode_ids={int(e.episode_id) for e in e_eps},
                          with_rates=not bool(getattr(
-                             args, "agent_join_no_rates", False)))
+                             args, "agent_join_no_rates", False)),
+                         with_track_ids=bool(getattr(args, "join3d", None)))
             # ⭐ WP-D: the EVAL dataset is handed the SAME BEV spec as the
             # train dataset -- and NOT for symmetry.  ⛔ MEASURED 2026-09-07
             # by reading source before the first GPU-hour: without this line
