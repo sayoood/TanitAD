@@ -142,3 +142,75 @@ training signal. The real cost is 2.877 % of the map head's supervision, and not
 `raw/r34nocd_metrics.jsonl` (8 logged rows, steps 5→40) · `raw/r34nocd_config.json` ·
 `code/pipeline_val.sh` · `code/boxstat.py`. Clip identifiers redacted to **sha12**; the scan found
 **0** in both files.
+
+## ⭐⭐ CLOSURE 2026-09-18 — all 139 clips carry the chain end to end, at the PI's 416 × 1024
+
+§10.6 asks that *"the 139 B1 eval clips … carry the whole chain end to end"*. The 40-step
+arms above drew **80** windows of 23,772. This closes it properly, on the geometry the PI
+ruled on 2026-09-17.
+
+### How, and why the coverage is a FACT rather than a probability
+
+⛔ `refc_v3_train` **refuses** a run whose train and eval caches share episodes
+(*"a held-out split that is not held out measures memorisation"*). That refusal is correct
+and was **not worked around**: the 139 clips were split into two **disjoint** halves
+(sorted-order alternating, so neither half is biased toward one end of an id-sorted
+corpus) and each pass **evaluates one half while training on the other**.
+
+⭐ The eval subset is built as
+`perm = randperm(len(e_ds), generator=Generator().manual_seed(12345))[:nb*batch]` —
+**deterministic** — so which clips it touches was **replayed offline against the cache
+manifest before either pass ran**: split A needs **150** eval-batches to touch all 70
+clips, split B needs **130** for all 69. The passes used **250** and **200**.
+
+### Result — both halves, every head
+
+| | **split A** (70 clips) | **split B** (69 clips) |
+|---|---|---|
+| windows through the chain | **500** | **400** |
+| planner `eval_traj` | 24.373 | 24.848 |
+| map `eval_map` · `n_map_cells` | 2.350 · **14,267.2** | 2.354 · **13,847.8** |
+| 3-D box `n_matched` · **`n_dropped`** | 40.19 · **0.0** | 35.96 · **0.0** |
+| agent `n_matched` · **`rows_no_cam`** | 8.58 · **0.0** | 7.18 · **0.0** |
+| tactical **`tacv6_n_scene_mean`** | **496.0** | **496.0** |
+| `nav_injected` · `ego_injected` | 1.0 · 0.0 | 1.0 · 0.0 |
+
+⭐ **900 windows over all 139 clips, every head live, zero dropped boxes, zero rows
+without a camera.** The two halves agree closely on every reading, which is itself
+evidence that nothing clip-specific breaks: had one half contained a pathological clip,
+the halves would not track each other this well.
+
+⭐ **The map gate cross-checks the earlier count from a third direction:** split A reports
+`no_file` **171** (= 1 clip × 171 windows) and split B **513** (= 3 × 171). **1 + 3 = 4**,
+exactly the four map-less clips measured independently from the manifest and the directory
+listing. `frame_out_of_range` and `inconclusive` are **0** in both.
+
+### ⚠️ A finding this pass surfaced, and it is NOT a sampling accident
+
+`eval_box3d_z` and `eval_box3d_h` read **0.0** — with **`eval_box3d_n_z = 0`** and
+**`eval_box3d_n_h = 0`**, on **BOTH** halves, over 900 windows. ⇒ **the eval path
+supervises neither z nor h at all**, while the training path does (`box3d_z` 1.3039 →
+0.6975 in the 40-step arm).
+
+⛔ **Quoting `eval_box3d_z = 0.0` without its `n` would read as "perfect"** — the exact
+`tac_goal` inversion `_map_item`'s own docstring was written to prevent. The instrument
+reports the count beside the value, so it is readable; **the work item is why the eval
+join does not build the z/h targets**, and until that is answered **no refcv6 arm may
+quote an eval-side z or h number**.
+
+### ⛔ What this does NOT establish
+
+* ⛔ **Still no capability claim**: 1 training step, ImageNet-init trunk, eval cache == the
+  object under test by design. **No tier stamp, no metric family.** This establishes
+  **reachability** — that every clip's data flows through trunk → lift → map + box3d heads
+  → planner without error — and nothing else.
+* ⚠️ `resnet34`, not `resnet101`: §10.2's PRIMARY trunk OOMs on the 8 GB card at 416 × 1024
+  **batch 1**. Its shapes are proven separately on CPU (`wallclock_s` 382.9, every head
+  live, rig coverage 139/139).
+* The split halves are **copies, not links** — D: is exFAT and both `os.link` and
+  `os.symlink` fail there with `WinError 1`.
+
+`cover_evalA` wallclock **3,221.9 s**, `cover_evalB` **2,534.3 s**; both `summary.json`
+carry `"done": true`.
+
+<!-- PIPEVAL-139-CLIP-COVERAGE-CLOSED-2026-09-18 -->
