@@ -1,0 +1,81 @@
+{
+ "_what": "D9 attribution: off-road waypoint rate, cold start vs RL, identical windows",
+ "_hypothesis": "DAC was a constant multiplier (no maps on the RL-train split), so it had zero within-group variance and contributed exactly zero to GRPO's advantage -- the policy had no road-boundary term at all.",
+ "_tier": "T1 plans (self-action open loop), scored against SAM3 map GT",
+ "_evidence_class": "MEASURED (ours)",
+ "_point_test": "ego-centre waypoints, NOT the footprint -- a LOWER bound on contact",
+ "_n": {
+  "episodes": 37,
+  "windows": 1265
+ },
+ "_worst_map_pose_residual_m": 0.005484342339592129,
+ "_refused": [
+  "ep023: alignment INCONCLUSIVE",
+  "ep026: alignment INCONCLUSIVE",
+  "ep034: alignment INCONCLUSIVE",
+  "ep040: TimeMisalignment [2aa810802777] GT poses do not follow the v2ep poses on the same frame index: max residual 0.086 m > 0.05 m (median 0.000 m)"
+ ],
+ "arms": {
+  "human": {
+   "n_offroad": 85,
+   "n_scored": 4963,
+   "rate": 0.017126737860165223,
+   "per_episode_mean": 0.01719318830295062,
+   "n_episodes": 37
+  },
+  "ha0": {
+   "n_offroad": 100,
+   "n_scored": 4959,
+   "rate": 0.02016535591853196,
+   "per_episode_mean": 0.01989508784586002,
+   "n_episodes": 37
+  },
+  "base": {
+   "n_offroad": 82,
+   "n_scored": 4963,
+   "rate": 0.016522264759218214,
+   "per_episode_mean": 0.016662410631770243,
+   "n_episodes": 37
+  },
+  "rl-s0": {
+   "n_offroad": 155,
+   "n_scored": 4966,
+   "rate": 0.03121224325412807,
+   "per_episode_mean": 0.03114928765696415,
+   "n_episodes": 37
+  },
+  "rl-s1": {
+   "n_offroad": 87,
+   "n_scored": 4938,
+   "rate": 0.01761846901579587,
+   "per_episode_mean": 0.017525925006893685,
+   "n_episodes": 37
+  },
+  "_paired_ci": {
+   "rl-s0 - base": {
+    "delta": 0.0151,
+    "lo": 0.0057,
+    "hi": 0.0261,
+    "separated": true
+   },
+   "rl-s1 - base": {
+    "delta": 0.0015,
+    "lo": -0.0037,
+    "hi": 0.0068,
+    "separated": false
+   },
+   "base  - human": {
+    "delta": -0.0009,
+    "lo": -0.004,
+    "hi": 0.0018,
+    "separated": false
+   },
+   "ha0   - human": {
+    "delta": 0.0038,
+    "lo": -0.0059,
+    "hi": 0.014,
+    "separated": false
+   }
+  }
+ }
+}
