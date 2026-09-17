@@ -213,3 +213,63 @@ file also carries. A reader who takes a number from §2 or §6 must take these w
 
 ⭐ Nothing in the design changes. Both are quoting errors, and the erratum carries the
 full account including two it found in the pre-registration itself.
+
+---
+
+## ⭐⭐⭐ PI RULING 2026-09-17 — three decisions, BINDING. Items 15 and 18 are CLOSED.
+
+**Sayed, verbatim:** *"You can take 408x1024, yes use also the map for tactical behavior decoding
+and you can backpropagate to the trunk."*
+
+### R1 — the input geometry is **408 × 1024** (closes item 15)
+
+⇒ **`408 × 1024` supersedes `256 × 1024` for every future training.** The vertical field is kept:
+VFOV **45.296°** (99.6 % of today's) instead of 29.341 %, and the nearest visible road stays at
+**3.15 m** rather than moving to 5.02 m — the **1.88 m blind strip is not taken**.
+
+| what it costs, MEASURED | 256 × 1024 | **408 × 1024** |
+|---|---|---|
+| corpus cache (4,713 clips) | 273.6 GB | **386.5 GB** (+41 %) |
+| resnet101 K=3 activations | 1033.5 MB | **1662.9 MB** (1.609×) |
+| stride-16 / stride-32 tokens | 1024 / 256 | **1664 / 416** (1.63×) |
+| corpus build wall | 8.7 h | **10.6 h** |
+
+⭐ The eval-139 cache at 408 × 1024 **already exists and is gated** (`v2ep-eval139-408x1024cyl`), so
+nothing waits on a rebuild to start work; the corpus rebuild waits on SAM3 either way.
+
+⚠️ **Two consequences that must travel with this ruling, neither of them a reason to revisit it:**
+1. ⛔ **HF quota.** 386.5 GB against 273.6 GB is **+112.9 GB** on a hard ceiling. The quota must be
+   checked BEFORE the corpus rebuild is pushed, not after — this is a standing constraint, not a
+   new one.
+2. ⚠️ **The token count rises 1.63× at both strides**, so every per-step cost estimate taken at
+   256 × 1024 is now low. Re-measure rather than scale.
+
+⛔ `SPEC_REFCV6_V2.md` §10.1, and every arm in `PREREG_REFCV6_V2.md` §1, now read **408 × 1024**.
+The ⭐ "nothing may hard-code a geometry" rule is what makes this a one-line change rather than a
+sweep — and `tests/test_refcv6_geometry_agnostic.py` is the mutation-proven guard that keeps it so.
+
+### R2 — the tactical decoder reads the **map**, and R3 — it **may backprop into the trunk** (closes item 18)
+
+⇒ **E8's blocker is lifted by instruction.** The BEV encoder moves **into the model forward** so a
+BEV token exists where the hook fires, and the behaviour decoder's loss **is allowed to shape the
+shared trunk**.
+
+⭐ **What this buys:** `E-REFCV6V2-TACTICAL` becomes testable in the form the PI actually asked for
+— *"the scene embeddings, for the agent **and the map**"*. Behaviours that are properties of the map
+(lane keeping, corridor offset) now have evidence to be learned from; under agent-only they were
+**uninterpretable**, not merely weak.
+
+⚠️ **What it costs, stated because the PI should not have to rediscover it:**
+1. ⛔ **Attribution gets harder, by construction.** The trunk is now jointly optimised by the
+   planner, the map head, the box head **and** the tactical decoder. A trunk improvement can no
+   longer be assigned to one head. This is the `--v2` conflation failure's shape, and the mitigation
+   is the **per-head gradient-reach reporting and the gradient-conflict detector** that already
+   exist — both must be ON for every arm from here.
+2. ⚠️ **Every bit-identity proof landed tonight was taken against a forward that did not carry the
+   BEV encoder.** They must be **re-run against the new baseline**; they are not void, they are
+   about a different forward.
+3. ⚠️ The **conflict detector's cost** (+71.7 % to +104.2 % in `probe` mode) now applies to a
+   four-way trunk rather than a three-way one.
+
+⇒ both rulings are applied as work, not merely recorded; `PI_DECISION_QUEUE.md` items **15 and 18
+are CLOSED**.

@@ -785,6 +785,19 @@ had not chosen.
 
 ---
 
+
+## ⭐⭐⭐ PI RULING 2026-09-17 — ITEMS 15 AND 18 ARE CLOSED
+
+**Sayed, verbatim:** *"You can take 408x1024, yes use also the map for tactical behavior decoding and you can backpropagate to the trunk."*
+
+| item | ruling |
+|---|---|
+| **15 — the vertical field** | ⭐ **408 × 1024.** The field is kept (VFOV 45.296°, nearest road **3.15 m**) and the **1.88 m blind strip is not taken**. Costs **+112.9 GB** of corpus cache (386.5 vs 273.6) and **1.63×** the tokens at both strides. ⛔ The **HF quota must be checked BEFORE the rebuild is pushed.** |
+| **18 — the tactical layer's map half** | ⭐ **Unblocked by instruction, both halves.** The BEV encoder moves INTO the model forward, and the behaviour decoder **may backprop into the shared trunk**. ⚠️ Attribution is now four-way (planner + map + box + tactical): the per-head gradient-reach report and the **conflict detector must be ON for every arm**. ⚠️ Every bit-identity proof taken before this is about a **different forward** and must be re-run. |
+
+⇒ the two remaining open items are **16** (the conflict statistic, default stands), **17** (clip-id leakage) and **§12 refusal 10** — see the full text above.
+
+<!-- PI-RULING-2026-09-17 -->
 ## Not a decision — the state, for orientation
 
 ⚠️ **CORRECTED 2026-09-17 — this paragraph described a run that has since FINISHED, and said so
