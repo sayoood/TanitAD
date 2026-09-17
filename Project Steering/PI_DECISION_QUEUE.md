@@ -904,3 +904,68 @@ exists — `refc_agents.slot_features` passes continuous metric range and bearin
 never as a claim that the channel works.
 
 <!-- PIQ-ITEM-19-AGENT-SEAM-PRICED-2026-09-17 -->
+
+---
+
+## ⛔⛔ NEW ITEM 20 (2026-09-17) — **408 × 1024 CANNOT BE BUILT.** The trunk refuses it, and the geometry you authorised needs replacing
+
+**You authorised this geometry in session on 2026-09-17:** *"You can take 408x1024, yes use also the
+map for tactical behavior decoding and you can backpropagate to the trunk."* ⛔ **The first half is
+not buildable.** This item is only about the geometry; the map/trunk half is built and measured.
+
+### The refusal, verified by construction rather than by reading
+
+`stack/tanitad/models/timm_trunk.py:216` — an explicit guard, not an accident:
+
+```
+if h % 32 or w % 32:
+    raise ValueError("refcv6 trunk: image {h}x{w} — each axis must divide by 32 or "
+                     "the stride-32 map is silently mis-sized ...")
+```
+
+Constructed each candidate directly:
+
+| geometry | `h % 32` | result |
+|---|---|---|
+| 256 × 640 (today) | 0 | ✅ accepted |
+| **256 × 1024** | **0** | ✅ **accepted** |
+| **408 × 1024** | **24** | ⛔ **REFUSED** |
+| **416 × 1024** | **0** | ✅ **accepted** |
+
+⭐ **And the guard is right.** At `h = 408` the trunk would declare `h // 32 = 12` rows while a
+stride-32 CNN emits `⌈408/32⌉ = 13` — the guard's own comment names it *"the 2026-07-27 single-axis
+check defect, per axis this time"*. ⚠️ The refusal is at **stride 32**, not stride 16 as the
+implementing agent reported (it wrote *"408 % 32 == 8"*; the true values are **408 % 32 = 24** and
+408 % 16 = 8, so its modulus was wrong and its conclusion right).
+
+### ⚠️ This was already half-known, and saying so matters
+
+`…/Data Engineering/Research/2026-09-16-256x1024-cache/RESULT.md` §*"One honest wrinkle"* already
+recorded that an exact 1.6× supersample needs height **409.6**, that **H = 408 lands half a pixel
+off**, and that **H = 416** (VFOV **46.0921°**, offset −2 rows) is *"integer-aligned AND slightly
+exceeds today's field, at ~2 % more disk than 408 — arguably the cleanest choice, but it was **not
+built**"*. ⇒ **the wrinkle that package flagged as cosmetic is a hard blocker one layer down.**
+⭐ Two independent sources agree on 416's VFOV (46.0921° there, 46.09° from the implementing agent).
+
+### What already exists
+
+**Both** 256 × 1024 and 408 × 1024 caches are **built and validated on the 139 B1 EVAL clips**
+(`MANIFEST_eval139_408x1024.json`). ⇒ the 408 cache is real work that **cannot feed the refcv6
+trunk**. 416 has never been built.
+
+### The decision, with its default
+
+| option | |
+|---|---|
+| **(a) DEFAULT — `416 × 1024`** | the **lose-nothing** shape: keeps ~100 % of today's VFOV *and* 1.6× finer azimuth, integer-aligned to the 640 row grid, legal at both strides. ⛔ **Cost: the eval-139 cache must be rebuilt** (~2 % more disk than the 408 one, which is then dead), and the corpus rebuild after SAM3 finishes uses 416. |
+| **(b) `256 × 1024`** | **already built and legal today** — zero rebuild. Paper-matching (DiffusionDrive/NAVSIM is 1024 × 256). ⚠️ Buys azimuth by **spending elevation**: 64.5 % of today's VFOV. |
+| (c) `400 × 1024` | also integer-aligned (VFOV 44.4952°, offset +3 rows) but **below** today's field — strictly worse than (a) on your own criterion. |
+
+⚠️ **If you say nothing, (a) is what happens** — 416 × 1024, because it is the only legal geometry
+that satisfies the intent of "take 408×1024" (lose nothing, gain azimuth). ⭐ **(b) is the cheap
+answer if disk or schedule is the binding constraint**, and it is already on disk today.
+
+⛔ **Do not read this as a reason to relax the guard.** It exists because a silently mis-sized
+stride-32 map is the failure it names, and the 2026-07-27 defect it cites is in the retraction log.
+
+<!-- PIQ-ITEM-20-408-UNBUILDABLE-2026-09-17 -->
