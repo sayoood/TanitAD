@@ -714,3 +714,79 @@ def test_provenance_names_the_trunk_it_measured():
         x.numel() for n, x in m.named_parameters() if not n.startswith("encoder."))
     assert p["controls"]["ok"] is True and p["controls"]["self_cos"] == 1.0
     assert sum(g["n_params"] for g in p["groups"].values()) == p["n_trunk_params"]
+
+
+# --------------------------------------------------------------------------- #
+# ⛔⛔ THE DEVICE ARM. Every `cosine_stats` test above runs on the CPU — 12 of
+# them, zero CUDA references — and that is exactly why this defect shipped.
+#
+# MEASURED 2026-09-17, on the FIRST GPU run of the refcv6 chain (the §10.6
+# pipeline validation): `cosine_stats` built its three accumulators with
+# `torch.zeros((), dtype=dtype)` and no `device=`, so they landed on the CPU and
+# `saq += av.dot(av)` raised
+#
+#     RuntimeError: Expected all tensors to be on the same device,
+#                   but found at least two devices, cuda:0 and cpu!
+#
+# at step 0, inside the detector's OWN self-check. The detector had been
+# mutation-proven, benchmarked and shipped — all on CPU. A guard exercised only
+# on one device is a guard that has never met the other one.
+#
+# ⚠️ A SKIP HERE IS INCONCLUSIVE, NEVER A PASS. On a box with no CUDA this arm
+# reports nothing and the defect would be invisible again; that is stated rather
+# than hidden behind a green run.
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.skipif(not torch.cuda.is_available(),
+                    reason="no CUDA on this box — this arm is INCONCLUSIVE here, "
+                           "not passing; the defect it guards is device-specific")
+def test_REGRESSION_cosine_stats_accumulates_on_the_GRADIENTS_device():
+    """⛔ The exact call that died. Before the fix this RAISED; it must now run.
+
+    Mixed ``None``/tensor on purpose: the ``None`` branches are where the
+    accumulator is touched without a matching partner, which is where the
+    device mismatch first surfaces.
+    """
+    ga = [torch.randn(64, device="cuda"), None, torch.randn(32, device="cuda")]
+    gb = [torch.randn(64, device="cuda"), torch.randn(16, device="cuda"), None]
+    r = cosine_stats(ga, gb)
+    assert r["n_tensors"] == 3 and r["n_params"] == 112
+    assert math.isfinite(r["cos"])
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(),
+                    reason="no CUDA on this box — INCONCLUSIVE, not passing")
+def test_the_plus_and_minus_one_identities_hold_EXACTLY_on_cuda_too():
+    """⭐ The docstring promises the controls are IDENTITIES, not tolerances.
+
+    That promise is what the float64 accumulation is for, and it has to survive
+    the move onto the device — a fix that made the error go away while turning
+    ``1.0`` into ``0.9999997`` would have broken the thing the module exists to
+    report.
+    """
+    g = [torch.randn(128, device="cuda"), torch.randn(7, 5, device="cuda")]
+    assert cosine_stats(g, g)["cos"] == 1.0
+    assert cosine_stats(g, [-t for t in g])["cos"] == -1.0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(),
+                    reason="no CUDA on this box — INCONCLUSIVE, not passing")
+def test_the_cpu_path_is_UNCHANGED_by_the_device_fix():
+    """⛔ The control that keeps the fix honest. Deriving the device from the
+    gradients must not quietly move CPU work onto the GPU, or every existing
+    test above would be measuring something new."""
+    c = [torch.randn(50), torch.randn(4, 4)]
+    assert cosine_stats(c, c)["cos"] == 1.0
+    assert cosine_stats(c, [-t for t in c])["cos"] == -1.0
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(),
+                    reason="no CUDA on this box — INCONCLUSIVE, not passing")
+def test_an_ALL_NONE_side_still_degenerates_rather_than_crashing_on_cuda():
+    """⚠️ ``dev`` is derived from the first non-``None`` tensor across BOTH
+    lists, so a side that is entirely ``None`` must still find a device from the
+    other one — and the zero-norm side must read ``degenerate``, never a
+    tolerated epsilon."""
+    g = [torch.randn(16, device="cuda")]
+    r = cosine_stats([None], g)
+    assert r["degenerate"] is True and math.isnan(r["cos"])

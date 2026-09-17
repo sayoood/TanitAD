@@ -218,9 +218,18 @@ def cosine_stats(ga, gb, *, dtype=torch.float64) -> dict:
     """
     if len(ga) != len(gb):
         raise ValueError(f"gradient lists differ in length: {len(ga)} vs {len(gb)}")
-    dot = torch.zeros((), dtype=dtype)
-    saq = torch.zeros((), dtype=dtype)
-    sbq = torch.zeros((), dtype=dtype)
+    # ⛔ THE ACCUMULATORS MUST LIVE WHERE THE GRADIENTS DO. Created without a
+    # `device=` they land on the CPU, and `saq += av.dot(av)` then raises
+    # "Expected all tensors to be on the same device" the moment a gradient is on
+    # CUDA. MEASURED 2026-09-17: this function was only ever exercised on CPU, so
+    # the defect was invisible until the first GPU run of the refcv6 chain — it
+    # killed the §10.6 pipeline validation at step 0, inside the detector's own
+    # self-check. ⭐ Accumulate on-device and convert once at the end; `float()` on
+    # a CUDA scalar does the single transfer.
+    dev = next((t.device for t in (*ga, *gb) if t is not None), None)
+    dot = torch.zeros((), dtype=dtype, device=dev)
+    saq = torch.zeros((), dtype=dtype, device=dev)
+    sbq = torch.zeros((), dtype=dtype, device=dev)
     n_params = n_tensors = 0
     n_none_a = n_none_b = 0
     for a, b in zip(ga, gb):
