@@ -421,3 +421,52 @@ T1 read on all four families. ⛔ It is **not** the guard — §13.3 requires **
 is reported as a **diagnostic with a direction and no criterion**, never as a verdict.
 
 <!-- PREREG-DDV2RL-BUDGET-DROP-ORDER-EXECUTED-2026-09-17 -->
+
+---
+
+## 16.4 DEVIATION D-3, DECLARED — the dropped T1 roll was run after all, and why
+
+§16.3 executed §14's drop order and recorded `H-DDV2RL-2` **UNEVALUABLE**. That was correct on the
+information available. Then the `l1-rl-s0` T1 read came back:
+
+> **separably worse than the untouched cold start on ALL TEN metrics, in all four families** —
+> `ade_m` **0.2994 → 0.5502** (**+83.8 %**, paired −0.2508 [−0.3186, −0.1901]),
+> `LAT_cross_mae_m` **0.0908 → 0.3209** (**3.53×**), every longitudinal and tactical row separated
+> the wrong way.
+
+Against 2026-09-15's **FAIL-HARM** baseline of **+0.083 m** [0.056, 0.115], that is roughly **3× the
+harm the release form showed** — on the **primary tier**, for the lever built to repair it.
+
+### The decision, and the reasoning stated so it can be disagreed with
+
+⛔ **I ran `L1-RL-s1`'s T1 roll, exceeding the pre-registered budget** (3.71 h against a planned
+2.97 h, a **25 %** overrun). The drop order was written **without knowing the surviving seed would
+look like that**, and the alternative was shipping a package whose **primary safety endpoint is
+unevaluable while its one measured seed shows 3× the known harm**.
+
+⭐ **What is NOT changed, and this is the part that matters:** the **criterion** is untouched.
+§13.3 still requires **both** RL seeds, still cannot be *"passed"*, and the one-seed read is still
+reported as a **diagnostic with a direction and no criterion**. Only a **resource bound** is
+exceeded — and it was **my** bound, set in this file, not a PI constraint; the dev-box GPU has run
+every arm in this package. ⇒ this is a budget overrun, **not** a moved goalpost.
+
+⚠️ **The honest tension, named rather than hidden.** Three times this night the pre-registration was
+followed where it was inconvenient — Stage B stayed NOT RUN when ≤ 2.45 h was momentarily
+satisfiable, `sel_ade_m` was withdrawn despite a cleanly separated interval, and §16.3 left the
+guard open. Overrunning **now**, after seeing data that makes the missing measurement look valuable,
+is a decision that deserves scrutiny. The distinction I am relying on: **Stage B is an optional
+extra arm answering a secondary question; `L1-RL-s1`'s T1 roll is a REQUIRED part of a
+pre-registered primary endpoint** (§12 names T1 for BASE and all three arms). Cutting the former
+costs a diagnostic; cutting the latter costs the safety verdict. ⛔ If the PI disagrees, the roll
+cost 0.48 GPU-h on an otherwise idle local card and the record says exactly what was spent and why.
+
+### What it buys
+
+`H-DDV2RL-2` becomes **evaluable**: FAIL-HARM iff **both** seeds are definitively worse than the
+cold start on T1 `ade_m`. ⚠️ And it supplies the thing the one-seed read most needs — **a T1
+run-to-run floor on this rig, which is currently UNMEASURED.** The L1 rig's **T0** `sel_ade_m` floor
+is **+1.0341**, *larger* than the T1 delta of −0.2508; that is a different metric on different
+windows so it does not transfer, but it is a standing warning that the regression could sit inside a
+floor nobody has measured. **Two seeds bound it.**
+
+<!-- PREREG-DDV2RL-DEVIATION-D3-2026-09-17 -->

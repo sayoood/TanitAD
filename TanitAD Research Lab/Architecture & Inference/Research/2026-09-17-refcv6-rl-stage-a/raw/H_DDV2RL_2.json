@@ -1,0 +1,197 @@
+{
+ "_what": "PREREG_DDV2_RL_VALIDATION.md section 13.3 -- H-DDV2RL-2, the T1 harm guard.",
+ "_tier": "T1 (self-action OPEN loop, PI ruling 2026-09-02 -- never 'closed loop')",
+ "_evidence_class": "MEASURED (ours)",
+ "_rule": "FAIL-HARM iff, for BOTH RL seeds, the paired ade_m interval puts the arm definitively worse than the cold start. Otherwise 'no harm detected at this n' -- which is NOT a claim of no harm.",
+ "_note_on_norl": "L1-NORL-s0's T1 roll was DROPPED under the section 14 drop order (item 2); it feeds only a section 13.4 no-criterion diagnostic and the guard does not need it.",
+ "paired": {
+  "l1-rl-s0 vs base": {
+   "status": "OK",
+   "record": "paired_l1-rl-s0__vs__base.json",
+   "n": "n = 1402 shared windows over 41 episodes; common instants [0.5, 1.0, 1.5, 2.0] s",
+   "convention": "B_minus_A = (B - floor) - (A - floor); for error metrics POSITIVE means A (the ARM, listed first) is better",
+   "rows": [
+    {
+     "metric": "ade_m",
+     "A_abs": 0.5502,
+     "B_abs": 0.2994,
+     "floor": 0.6671,
+     "B_minus_A": -0.2508,
+     "ci": "[-0.3186, -0.1901]",
+     "sep": "YES"
+    },
+    {
+     "metric": "fde_m",
+     "A_abs": 1.101,
+     "B_abs": 0.63,
+     "floor": 1.3779,
+     "B_minus_A": -0.471,
+     "ci": "[-0.6104, -0.3418]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LON_speed_mae_mps",
+     "A_abs": 0.3501,
+     "B_abs": 0.2641,
+     "floor": 0.4623,
+     "B_minus_A": -0.086,
+     "ci": "[-0.1231, -0.0534]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LON_along_mae_m",
+     "A_abs": 0.3605,
+     "B_abs": 0.2595,
+     "floor": 0.4769,
+     "B_minus_A": -0.101,
+     "ci": "[-0.1418, -0.0665]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LON_accel_mae_mps2",
+     "A_abs": 0.4156,
+     "B_abs": 0.335,
+     "floor": 0.4501,
+     "B_minus_A": -0.0806,
+     "ci": "[-0.1170, -0.0488]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LAT_cross_mae_m",
+     "A_abs": 0.3209,
+     "B_abs": 0.0908,
+     "floor": 0.2912,
+     "B_minus_A": -0.2301,
+     "ci": "[-0.3004, -0.1678]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LAT_heading_mae_deg",
+     "A_abs": 4.0306,
+     "B_abs": 2.9168,
+     "floor": 4.4268,
+     "B_minus_A": -0.9919,
+     "ci": "[-1.1997, -0.8047]",
+     "sep": "YES"
+    },
+    {
+     "metric": "LAT_yaw_rate_mae_radps",
+     "A_abs": 0.0527,
+     "B_abs": 0.0358,
+     "floor": 0.0538,
+     "B_minus_A": -0.0169,
+     "ci": "[-0.0215, -0.0129]",
+     "sep": "YES"
+    },
+    {
+     "metric": "TAC_traj_lat_correct",
+     "A_abs": 0.913,
+     "B_abs": 0.9501,
+     "floor": 0.8752,
+     "B_minus_A": 0.0371,
+     "ci": "[0.0186, 0.0577]",
+     "sep": "YES"
+    },
+    {
+     "metric": "TAC_traj_lon_correct",
+     "A_abs": 0.7967,
+     "B_abs": 0.8252,
+     "floor": 0.7646,
+     "B_minus_A": 0.0285,
+     "ci": "[0.0043, 0.0591]",
+     "sep": "YES"
+    },
+    {
+     "metric": "TAC_declared_lat_correct",
+     "A_abs": 0.6955,
+     "B_abs": 0.6955,
+     "floor": 0.6806,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "TAC_declared_lat_correct_navshuf",
+     "A_abs": 0.6657,
+     "B_abs": 0.6657,
+     "floor": 0.6806,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "TAC_declared_lat_correct_navzero",
+     "A_abs": 0.6925,
+     "B_abs": 0.6925,
+     "floor": 0.6806,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "TAC_declared_lon_correct",
+     "A_abs": 0.5224,
+     "B_abs": 0.5224,
+     "floor": 0.2657,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "TAC_declared_lon_correct_navshuf",
+     "A_abs": 0.5254,
+     "B_abs": 0.5254,
+     "floor": 0.2657,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "TAC_declared_lon_correct_navzero",
+     "A_abs": 0.4955,
+     "B_abs": 0.4955,
+     "floor": 0.2657,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "STR_route_correct",
+     "A_abs": 0.7917,
+     "B_abs": 0.7917,
+     "floor": 0.6847,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "STR_route_correct_navshuf",
+     "A_abs": 0.7917,
+     "B_abs": 0.7917,
+     "floor": 0.6847,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    },
+    {
+     "metric": "STR_route_correct_navzero",
+     "A_abs": 0.7917,
+     "B_abs": 0.7917,
+     "floor": 0.6847,
+     "B_minus_A": 0.0,
+     "ci": "[0.0000, 0.0000]",
+     "sep": "no"
+    }
+   ]
+  }
+ },
+ "_arms_rolled": [
+  "l1-rl-s0"
+ ],
+ "_arms_dropped_for_budget": [
+  "l1-rl-s1"
+ ],
+ "H_DDV2RL_2": "UNEVALUABLE",
+ "_why_unevaluable": "section 13.3 needs BOTH RL seeds against BASE; rolled ['l1-rl-s0'], dropped ['l1-rl-s1'] under the section 14 drop order after the 2.85 h threshold was passed. Reported UNEVALUABLE, NEVER passed.",
+ "_2026_09_15_comparison": "that package read FAIL-HARM on the RELEASE-form lever: RL-s0 +0.083 [0.056, 0.115] and NORL-s0 +0.081 [0.051, 0.116] m worse than the cold start."
+}

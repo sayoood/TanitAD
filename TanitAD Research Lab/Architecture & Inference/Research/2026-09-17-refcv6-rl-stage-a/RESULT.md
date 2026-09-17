@@ -1,4 +1,4 @@
-# RL Stage A — §13.2 **SUCCESS**, and the lever clears the rig's OWN floor on 9 of 10 metrics. ⛔ `sel_ade_m` does not and is withdrawn; the primary endpoint clears its floor by only 1.4×.
+# RL Stage A — §13.2 **SUCCESS** on the T0 endpoint, and ⛔ **the arm is separably WORSE than an untrained checkpoint on all ten T1 metrics.** That is not a contradiction; it is why T0 may never be quoted as driving performance.
 
 **Date:** 2026-09-17 · **Evidence class: MEASURED** · **Tier: T0** (deployed sampler, recorded
 future, proxy reward) · **Estimator:** `taniteval.ci.paired_episode_cluster_bootstrap`, n_boot 2000,
@@ -16,6 +16,57 @@ is what bounds that floor **and it has not completed**.
 
 ⇒ **No statement below is a claim about the RL lever.** They are absolute, controlled, paired
 differences between two arms that differ in one variable, awaiting their floor.
+
+## ⛔⛔⛔ T1 — THE PRIMARY TIER SAYS SOMETHING THE FAN METRICS DID NOT: THE ARM IS MUCH WORSE THAN DOING NOTHING
+
+`l1-rl-s0` against the **untouched cold start**, T1, **1,402 shared windows over 41 episodes**,
+common instants [0.5, 1.0, 1.5, 2.0] s. ⛔ **Separably worse on all ten metrics, in all four
+families.**
+
+| family | metric | **arm** | **base** | base − arm | 95 % CI | |
+|---|---|---|---|---|---|---|
+| ADE | `ade_m` | **0.5502** | **0.2994** | **−0.2508** | [−0.3186, −0.1901] | ⛔ **separated WORSE** |
+| ADE | `fde_m` | 1.1010 | 0.6300 | −0.4710 | [−0.6104, −0.3418] | ⛔ separated worse |
+| longitudinal | `LON_speed_mae_mps` | 0.3501 | 0.2641 | −0.0860 | [−0.1231, −0.0534] | ⛔ separated worse |
+| longitudinal | `LON_along_mae_m` | 0.3605 | 0.2595 | −0.1010 | [−0.1418, −0.0665] | ⛔ separated worse |
+| longitudinal | `LON_accel_mae_mps2` | 0.4156 | 0.3350 | −0.0806 | [−0.1170, −0.0488] | ⛔ separated worse |
+| lateral | **`LAT_cross_mae_m`** | **0.3209** | **0.0908** | **−0.2301** | [−0.3004, −0.1678] | ⛔ **3.53×** |
+| lateral | `LAT_heading_mae_deg` | 4.0306 | 2.9168 | −0.9919 | [−1.1997, −0.8047] | ⛔ separated worse |
+| lateral | `LAT_yaw_rate_mae_radps` | 0.0527 | 0.0358 | −0.0169 | [−0.0215, −0.0129] | ⛔ separated worse |
+| tactical | `TAC_traj_lat_correct` | 0.9130 | 0.9501 | +0.0371 | [+0.0186, +0.0577] | ⛔ separated worse |
+| tactical | `TAC_traj_lon_correct` | 0.7967 | 0.8252 | +0.0285 | [+0.0043, +0.0591] | ⛔ separated worse |
+
+*(The `TAC_declared_*` and `STR_route_*` rows read **exactly +0.0000 with CI [0, 0]** — those heads
+are untouched by L1, so they are an identity, not an estimate, and a useful same-breath control that
+the pairing is real.)*
+
+⛔⛔ **ADE nearly DOUBLES (+83.8 %) and lateral cross-track error more than TRIPLES.** Against the
+2026-09-15 **FAIL-HARM** baseline of **+0.083 m** [0.056, 0.115], this arm is **+0.2508 m** — about
+**3× the harm of the release form L1 was built to repair.**
+
+### ⭐ This is exactly why the tier doctrine exists
+
+Everything above this section is **T0** — a diagnostic tier on a proxy reward with a recorded
+future. T0 said: *the fan narrows, the lever is mildly worse on selection, and the primary endpoint
+separates positive.* **T1 — the primary tier, the trajectory the car would actually drive — says the
+arm is far worse than an untrained checkpoint on every family.** ⇒ **a §13.2 SUCCESS on
+`fan_pdms_mean` and a large T1 regression are not in conflict; they are the reason a T0 number may
+never be quoted as driving performance.**
+
+### ⛔ AND IT IS STILL NOT THE GUARD, AND STILL NOT A LEVER CLAIM
+
+* **`H-DDV2RL-2` remains UNEVALUABLE** as this document is written: §13.3 requires **both** RL seeds
+  against BASE, and only `l1-rl-s0` had rolled. One seed is a **diagnostic with a direction and no
+  criterion**, never a verdict — §13.3's own words are *unevaluable, never passed*.
+* ⚠️ **One seed, and the T1 run-to-run floor on this rig is UNMEASURED.** The L1 rig's **T0**
+  `sel_ade_m` floor is **+1.0341**, which is *larger* than this T1 delta — a different metric on
+  different windows, so it does not transfer, but it is a warning that **−0.2508 could sit inside a
+  T1 floor nobody has measured.** The second seed is what bounds it.
+
+⇒ **that is what makes the dropped roll worth its 0.48 GPU-h, and it is why it was run after all —
+declared as Deviation D-3 in `PREREG_DDV2_RL_VALIDATION.md` §16.4 rather than taken quietly.**
+
+Banked: `raw/H_DDV2RL_2.json`, `paired_l1-rl-s0__vs__base.json`.
 
 ## ⭐⭐⭐ THE SYNTHESIS — THREE INDEPENDENT INSTRUMENTS, ONE DIAGNOSIS: THE INFORMATION IS PRESENT AND UNUSED
 
