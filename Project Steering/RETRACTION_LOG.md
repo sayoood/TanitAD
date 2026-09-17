@@ -15322,3 +15322,33 @@ record but **not yet edited in place** (C1–C7); the two carried-forward items 
 `verdict_refcv6.py` literals) are re-read before either is touched.
 
 <!-- RETR-2026-09-15-DD-PAPER-OVER-CODE -->
+
+---
+
+## R-2026-09-17-prereg-v2-unchecked-numbers — TWO NUMBERS IN A PRE-REGISTRATION, QUOTED FROM A SUMMARY INSTEAD OF THE RECORD
+
+**Retracted:** 2026-09-17, hours after landing (`cc24073`) · **By:** Master Mind · **Class: I —
+self-caught by re-reading the record to verify my own landed text; nothing failed.**
+
+**Full correction:** `Project Steering/PREREG_REFCV6_V2.ERRATUM-1.md` (BINDING).
+
+| # | the statement, as landed | status |
+|---|---|---|
+| 1 | *"42.7 % of the TURN label's entropy is already in the nav token"* (`PREREG_REFCV6_V2.md` §6, and the `E-REFCV6V2-TACTICAL` row in `GOALS_AND_CLAIMS.md`) | ⛔ **WITHDRAWN — UNSUPPORTED.** No such measurement exists. The only `42.7 %` in the record is an unrelated corpus-overlap statistic (256 of 600 parity-val clips inside v2corpus's selection). ⭐ Replaced by what WAS measured and is stronger: `refcv5-v2`'s turn recall **0.475 → 0.000** with nav removed — a **pure** nav echo, not a partial one. |
+| 2 | *"an oracle on 8×20 tops out at AP 0.3341 against 0.4713 on 16×40"* (`PREREG_REFCV6_V2.md` §5; the same pair in `SPEC_REFCV6_V2.md` §2 and §6) | ⚠️ **SUPERSEDED, one of the two.** `E-READOUT-CEILING-1` was partially retracted 2026-09-08 (`R-2026-09-08-wpa-mirror`) and its ladder re-read under the corrected address: **16×40 = 0.4762**, not 0.4713. **8×20 = 0.3341 was correct.** |
+
+⭐ **No criterion, bar, arm or refusal changes.** The gap §5 depends on is **0.4762 − 0.3341 =
+0.1421**, and the **replicate floor on that ladder is 0.0122 AP** — a pure seed replicate reads
+**+0.0115 "separated"** — so the 0.0049 I was wrong by sits *inside the noise floor* and the
+conclusion (*a head on the 160 stride-32 tokens is capped below the 0.60 bar before training
+starts*) is untouched. Item 1's conclusion is likewise unchanged and now rests on evidence rather
+than on a number I attached to the wrong claim.
+
+⛔ **The mechanism, stated plainly so it is not repeated:** I carried both numbers from a session
+summary rather than re-reading them from the record. Three other landings the same night quoted
+figures I *had* re-derived from source; these two I did not, and the pre-registration is the single
+worst document to do it in, because its numbers become the reference the arms are judged against.
+**A summary is not a path**, and this programme's own rule — every number carries its evidence class
+*and its path* — would have caught both.
+
+<!-- RETR-2026-09-17-PREREG-V2-NUMBERS -->

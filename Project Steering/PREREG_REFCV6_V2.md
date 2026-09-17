@@ -289,3 +289,18 @@ POWER failure, not a lift failure. It now scores every scorable clip with a comp
 ⛔ **Guards are proven by MUTATION, never by inspection.** Each check above has a test that
 reintroduces the defect and requires the check to go RED.
 
+---
+
+## ⛔ ERRATUM-1 (2026-09-17) — READ IT BEFORE QUOTING ANY NUMBER ABOVE
+
+`Project Steering/PREREG_REFCV6_V2.ERRATUM-1.md` is **BINDING** and corrects two numbers in
+this file, both quoted from a session summary instead of the record:
+
+1. §6's *"42.7 % of the TURN label's entropy is already in the nav token"* is **WITHDRAWN —
+   UNSUPPORTED**. The measured fact is stronger: `refcv5-v2`'s turn recall **0.475 -> 0.000**
+   with nav removed.
+2. §5's oracle ceiling at 16x40 is **0.4762**, not 0.4713 (`E-READOUT-CEILING-1` re-read after
+   `R-2026-09-08-wpa-mirror`). 8x20 = 0.3341 was correct.
+
+⭐ **No criterion, bar, arm or refusal changes.** See also
+`RETRACTION_LOG.md` -> `R-2026-09-17-prereg-v2-unchecked-numbers`.

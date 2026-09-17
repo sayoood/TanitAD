@@ -11774,3 +11774,7 @@ across input geometries** — the 256×1024 vs 408×1024 ablation has not been r
 nearest visible road sits **5.02 m** ahead against **3.14 m** today (PI decision queue item 15).
 
 <!-- REFCV6V2-PREREG-2026-09-17 -->
+
+⛔ **CORRECTION 2026-09-17 to the `E-REFCV6V2` block above** (`PREREG_REFCV6_V2.ERRATUM-1.md`, `RETRACTION_LOG.md` -> `R-2026-09-17-prereg-v2-unchecked-numbers`): the `E-REFCV6V2-TACTICAL` row's *"42.7 % of the TURN label's entropy"* is **WITHDRAWN as UNSUPPORTED** — the measured fact is `refcv5-v2`'s turn recall **0.475 -> 0.000** with nav removed, a PURE nav echo; and the `E-REFCV6V2-PERCEP` row's oracle ceiling at 16x40 is **0.4762**, not 0.4713. ⭐ No criterion changes: the gap is 0.4762 - 0.3341 = 0.1421 against a replicate floor of 0.0122 AP.
+
+<!-- REFCV6V2-ERRATUM1-2026-09-17 -->
