@@ -43,7 +43,17 @@ inp, out = ctx.capture([it], seed=500_000 + k)      # PAIRED inference noise per
 say this?"*. **The third variance on this rig remains UNMEASURED**, and measuring it needs a
 different sampler seed, which no banked dump has. ⇒ `CLAUDE.md`'s caveat — raised on refav1, whose
 iCEM planner genuinely **samples**, with a measured seed floor of **≈0.30 m** ADE — **stands here
-untouched**, neither confirmed nor narrowed. ⚠️ Same defect class as the oracle-gap retraction
+untouched**, neither confirmed nor narrowed.
+
+⭐⭐ **AND IT IS WORSE THAN "UNMEASURED": IT HAS BEEN MEASURED ON THIS MODEL FAMILY, AND IT IS NOT
+ZERO.** The **D3** package — same model family, same night — opens with *"§2. THE INFERENCE-SEED
+FLOOR — measured first, because everything is read against it"* and registers a **minimum-time-gap
+floor of 0.0054 s** [−0.0007, +0.0117] by **varying the inference seed**, with one quantity moving
+**64 % of its own point estimate** across seeds. ⇒ the ddv2_rl held-out reader's pinned
+`seed = 500_000 + k` does not make that variance vanish; it **hides** it. ⛔ So every **absolute**
+number in this package carries a real, non-zero, unquantified inference-draw variance, and only the
+**paired** deltas are protected — by the pinning, which is what it is for. ⭐ D3 also shows the
+correct instrument already exists in the programme: vary the seed and measure the floor first. ⚠️ Same defect class as the oracle-gap retraction
 logged the same night: **a measurement read as answering a question it does not answer.**
 
 ⭐ **What IS true, and it is more useful than what I claimed.** The seed is `500_000 + k` — a
