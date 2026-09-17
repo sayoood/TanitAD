@@ -302,3 +302,74 @@ the asymmetry, but do not quote **42.7 %** bare: its derivation is not in the re
 `raw/nav_turn_entropy_share.json` in the 2026-09-17 RL Stage A package carries the computation.
 
 <!-- SPEC-REFCV6-V2-S9-RISK1-CORRECTION-2026-09-17 -->
+
+## 12. CORRECTION 2026-09-17 — §11 R1's `408 × 1024` is UNBUILDABLE; the geometry is **416 × 1024**
+
+⛔ **This section supersedes §10.1 (`256 × 1024`) and §11 R1 (`408 × 1024`) for every future
+training.** PI ruling, 2026-09-17, in session: *"for 2 move to 416X1024"*.
+
+### 12.1 Why `408` cannot be built — verified by CONSTRUCTION, not by argument
+
+`timm_trunk.py:216` refuses any axis not divisible by 32. Each candidate was constructed:
+
+| geometry | `h % 32` | |
+|---|---|---|
+| `256 × 640` | 0 | ✅ |
+| `256 × 1024` | 0 | ✅ |
+| **`408 × 1024`** | **24** | ⛔ **REFUSED** |
+| **`416 × 1024`** | **0** | ✅ **accepted** |
+
+⭐ **And the guard is right.** At `h = 408` the trunk would declare `408 // 32 = 12` rows
+while a stride-32 CNN emits `⌈408/32⌉ = 13` — the stride-32 map silently mis-sized, which
+is the exact single-axis defect the guard was built for. `408` is not stride-16 aligned
+either (`408 % 16 = 8`).
+
+### 12.2 ⭐ R1's OWN COST TABLE WAS ALREADY COMPUTED AT 416
+
+§11 R1 states *"stride-16 / stride-32 tokens — **1664 / 416** (1.63×)"*. Those numbers
+**cannot come from 408**:
+
+* `1664 = 26 × 64` ⇒ `h / 16 = 26` ⇒ **`h = 416`**
+* `416 = 13 × 32` ⇒ `h / 32 = 13` ⇒ **`h = 416`**
+* at `h = 408`, `408 / 16 = 25.5` and `408 / 32 = 12.75` — **neither stride divides**, so
+  no token count exists at all.
+
+⇒ **The height was an arithmetic slip; the costs were right.** Moving to 416 does not
+change R1's cost table — it makes the table **consistent with its own heading**. Every
+token, memory and activation figure in §11 R1 stands as written.
+
+### 12.3 What 416 costs and keeps, MEASURED
+
+| | |
+|---|---|
+| eval-139 cache | **139/139 clips, 0 failures, 10.75 GB, 18.8 min** |
+| HFOV | **exactly 120.0000°** — `f_ref` is **unchanged** from `256 × 1024` (488.92398517830253), because a cylindrical `f_ref` is a **horizontal** quantity and the width did not move |
+| VFOV | **46.0921°** vs the `256 × 640` reference **45.4556°** ⇒ 416 slightly **exceeds** today's field; `408` would have fallen slightly **below** it |
+| stride-16 / stride-32 | **26 × 64 = 1664** / **13 × 32 = 416** |
+| parity ingest gate | `kept` 139, `decision_grade` **False** for the parity-trained line (11 of 139 clips are inside `physicalai-train-e438721ae894`), **True** for the v7.2/B1 line refcv6 trains on; clean subset **128** |
+
+### 12.4 ⛔ A GEOMETRY IS NOT FINISHED WHEN ITS CACHE IS BUILT
+
+The first `resnet101` run on the fresh 416 cache was **refused**: *"no canonical frame is
+DECLARED for that geometry, and one cannot be invented."* That is the **same** refusal the
+`256 × 1024` cache hit the day before, against a table one module over.
+
+⇒ **Declaring a new geometry means, at minimum:**
+1. `trunk_shapes.FRAME_<h>x<w>` — **derived** via `frame_for_width`, never re-typed
+   (re-typing the PI's rounded `f_ref` 488.92 reads **120.0010°**, not 120);
+2. the `(h, w)` row in `refc_v3_train._agent_cam_frames`, **referencing that object**;
+3. a test that fails if either is missing — `stack/tests/test_frame_416x1024.py`,
+   **mutation-audited**: baseline 7 passed → drop the trainer row **1 red** → re-type
+   `f_ref` **3 red** → restored 7 passed.
+
+### 12.5 ⚠️ Consequence for §10.6 and §10.2
+
+§10.6's pre-pod gate was executed at `256 × 1024` (it PASSED, `E-REFCV6-PIPELINE-VALIDATED`)
+and has been **re-executed at 416 × 1024**: the chain carries, every head live, rig-camera
+coverage **139/139**. ⛔ **`resnet101` — §10.2's PRIMARY trunk — OOMs on the 8 GB dev box at
+BOTH geometries**, including `416 × 1024` at **batch 1**; its shapes are proven on CPU
+instead (`wallclock_s` 382.9, every head live). **That is a pod-sizing fact, and the
+primary arm's first GPU run will be its first run at scale unless a larger card is used
+for a rehearsal.**
+
+<!-- SPEC-REFCV6-V2-S12-GEOMETRY-416-2026-09-17 -->
