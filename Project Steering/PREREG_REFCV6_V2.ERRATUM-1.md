@@ -170,3 +170,57 @@ this whole erratum section is about.
 
 ⇒ the §12 tally is now **6 ✅ · 3 ⚠️ (rewiring) · 1 ⛔ (decision)**. §11's OWED item stands: no GPU
 arm launches until refusals 1, 2 and 9 are rewired to the SPEC-v2 arms and 10 is built or demoted.
+
+---
+
+## E5. §12 refusal 1 is INSUFFICIENT AS WRITTEN — a parsed-namespace diff cannot see this class of defect
+
+*(Added 2026-09-17 after a defect was found that refusal 1, exactly as §12 specifies it, would have
+passed.)*
+
+**What §12 says:** *"arms differing in more than `one_variable` **as parsed namespaces**, not as
+intent"*. The emphasis on parsed namespaces is right and was hard-won — diffing argv STRINGS misses
+a flag sitting at its default, a `dest=`, a `type=` coercion.
+
+⛔ **But it stops one layer too early.** MEASURED 2026-09-17: `_pin_trainer_cfg` rebuilds
+`CNNEncoderConfig` by **hand-listing its fields**. The dataclass has **12**; the list carries **8**.
+So whenever `--image-hw` is given, four fields are silently reset to their defaults:
+
+| dropped | resets to | consequence |
+|---|---|---|
+| `trunk_name` | **`resnet101.a1_in1k`** | ⛔ **`--trunk-name resnet34` BUILDS RESNET101** |
+| `trunk_mode` | `shared` | the inflate arm is unbuildable |
+| `trunk_fuse` | `concat1x1` | ⛔ `--trunk-fuse last` — the **single-frame control** — is not the control |
+| `trunk_fuse_identity` | `True` | ⛔ `--trunk-fuse-plain-init` — the **deliberate regression** — is not deliberate |
+
+⭐ **`--image-hw 256 1024` is the PI's own standing instruction for every future training**, so
+every 1024 run took this path — and `config.json` recorded **what was asked for, not what was
+built**. §1's **arm B is `resnet34`**: it would have built `resnet101`, made A and B **the same
+model**, and reported a clean recipe comparison between two identical arms.
+
+⛔ **Refusal 1 as specified would have passed both.** The defect lives **between argv and the
+model**: the parsed namespaces differ exactly as declared — `trunk_name` really is `resnet34` on one
+side — and the **built configs do not differ at all**. A check that never looks at what was
+CONSTRUCTED cannot see it.
+
+⇒ **Refusal 1 is restated in two parts, and BOTH are required:**
+
+1. **the parsed namespaces** differ in exactly the declared lever (as written today); **and**
+2. ⭐ **the BUILT config** — the object the model is actually constructed from, after every pin and
+   rebuild — differs in exactly the fields that lever is declared to move, with the values asserted
+   as **literals**. A field that silently returns to its default is a VIOLATION, not a bookkeeping
+   difference.
+
+⚠️ **Part 2 is the one that bites, and it is cheap**: it is a `dataclasses.asdict` diff of
+`cfg.core.encoder` (and its siblings) between the two arms, taken **after** `_pin_trainer_cfg`.
+
+⭐ **Blast radius: ZERO banked arms** — verified: no banked `config.json` carries `trunk_name`, no
+argv carries `--trunk-name`, and no refcv6 arm has ever run. ⛔ **No retraction is therefore
+warranted** — nothing was claimed on an affected run. The defect was caught *before* the first arm,
+which is exactly what §8's *"before any pod hour"* gate exists for, and the honest record is a
+defect found and fixed rather than a result withdrawn.
+
+⚠️ The class is one CLAUDE.md already names: *"write the expectation as a LITERAL, never as an
+expression over the code under test"* — here a **hand-written field list** standing in for a
+dataclass, which rots the moment the dataclass grows. The fix is `dataclasses.replace`, so the
+field set cannot drift again.
