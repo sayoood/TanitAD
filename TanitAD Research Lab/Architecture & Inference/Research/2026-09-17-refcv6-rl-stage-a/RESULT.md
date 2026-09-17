@@ -1,4 +1,4 @@
-# RL Stage A — §13.2 **SUCCESS** on the T0 endpoint, and ⛔ **the arm is separably WORSE than an untrained checkpoint on all ten T1 metrics.** That is not a contradiction; it is why T0 may never be quoted as driving performance.
+# RL Stage A — §13.2 **SUCCESS** on the T0 endpoint and **`H-DDV2RL-2` = FAIL-HARM** on the primary one. ⛔ The lever is ~3× worse than doing nothing at T1, at both seeds, 43× its own floor.
 
 **Date:** 2026-09-17 · **Evidence class: MEASURED** · **Tier: T0** (deployed sampler, recorded
 future, proxy reward) · **Estimator:** `taniteval.ci.paired_episode_cluster_bootstrap`, n_boot 2000,
@@ -99,6 +99,67 @@ never be quoted as driving performance.**
 declared as Deviation D-3 in `PREREG_DDV2_RL_VALIDATION.md` §16.4 rather than taken quietly.**
 
 Banked: `raw/H_DDV2RL_2.json`, `paired_l1-rl-s0__vs__base.json`.
+
+## ⛔⛔⛔ `H-DDV2RL-2` = **FAIL-HARM** — decided, and the second seed supplies its own floor
+
+`L1-RL-s1`'s T1 roll completed (659,849 B). Both RL seeds are **definitively worse than the
+untouched cold start** on T1 `ade_m` — §13.3's condition, met:
+
+| | `ade_m` arm | base | paired `base − arm` | 95 % CI | upper < 0 |
+|---|---|---|---|---|---|
+| `L1-RL-s0` | 0.5502 | 0.2994 | −0.2508 | [−0.3186, −0.1901] | ✅ |
+| `L1-RL-s1` | 0.5561 | 0.2994 | −0.2567 | [−0.3327, −0.1911] | ✅ |
+
+⇒ **`H-DDV2RL-2` = FAIL-HARM.** The lever built to repair the 2026-09-15 harm makes it **≈3×
+worse**, on the primary tier, at both seeds.
+
+### ⭐ And the two seeds ARE the T1 floor — so the verdict can be priced against it
+
+`|s1 − s0|` on the same metric and the same windows is a **run-to-run floor measured on the very
+arms being judged**:
+
+| metric | base | s0 | s1 | **two-seed floor** | mean harm | **harm ÷ floor** |
+|---|---|---|---|---|---|---|
+| **`ade_m`** | 0.2994 | 0.5502 | 0.5561 | **0.0059** | **0.2538** | **43.0×** |
+| `fde_m` | 0.6300 | 1.1010 | 1.1927 | 0.0917 | 0.5169 | **5.6×** |
+| `LAT_yaw_rate_mae_radps` | 0.0358 | 0.0527 | 0.0442 | 0.0085 | 0.0126 | 1.5× |
+| `LON_along_mae_m` | 0.2595 | 0.3605 | 0.5107 | 0.1502 | 0.1761 | 1.2× |
+| `LON_speed_mae_mps` | 0.2641 | 0.3501 | **0.5436** | 0.1935 | 0.1828 | 0.9× |
+| `LON_accel_mae_mps2` | 0.3350 | 0.4156 | 0.6464 | 0.2308 | 0.1960 | 0.8× |
+| `LAT_cross_mae_m` | 0.0908 | **0.3209** | 0.1439 | 0.1770 | 0.1416 | 0.8× |
+| `TAC_traj_lat_correct` | 0.9501 | 0.9130 | 0.9451 | 0.0321 | 0.0210 | 0.7× |
+| `TAC_traj_lon_correct` | 0.8252 | 0.7967 | **0.5906** | 0.2061 | 0.1316 | 0.6× |
+| `LAT_heading_mae_deg` | 2.9168 | 4.0306 | 2.9821 | 1.0485 | 0.6586 | 0.6× |
+
+⭐ **`ade_m` clears its own floor by 43×, and the measured inference floor by 2,538×.** The verdict
+is not fragile.
+
+### ⛔⛔ BUT THE FOUR-FAMILY ATTRIBUTION DOES NOT REPLICATE — and that qualifies what I wrote earlier
+
+⛔ **Only `ade_m` (43.0×) and `fde_m` (5.6×) exceed their own two-seed floor. The other EIGHT are at
+0.6×–1.5× — i.e. INSIDE it.** And the seeds break the car in **different places**: `s0` wrecks
+**lateral** (`LAT_cross_mae_m` **0.0908 → 0.3209**, 3.53×) while `s1` wrecks **longitudinal**
+(`LON_speed_mae_mps` **0.2641 → 0.5436**) and **tactical-longitudinal** (`TAC_traj_lon_correct`
+**0.8252 → 0.5906**, where `s0` moved only to 0.7967).
+
+⇒ ⚠️ **the section above, which read `l1-rl-s0` alone as *"separably worse in all four families"*, is
+TRUE OF THAT SEED and must not be read as a family-level attribution.** Each seed is separably worse
+on 9–10 of 10 metrics, so the **direction** replicates; the **magnitude and its location do not**.
+
+⭐ **The admissible statement: "the L1 RL lever is definitively harmful at T1" — established at 43×
+its floor. "The lever is harmful AT LATERAL", or AT LONGITUDINAL, is NOT established**, because a
+zero-lever seed change moves those metrics as much as the lever does. That distinction is exactly
+what this programme's estimator rules exist to force, and it survived only because the replicate was
+run.
+
+### ⭐ One more thing the replicate settles
+
+The `TAC_declared_*` and `STR_route_*` rows read **exactly +0.0000 with CI [0, 0]** on **both**
+seeds — heads L1 never touches. A same-breath control that reads a **structural zero on two
+independent arms** is the strongest available evidence that the pairing is real and that the
+separations above are not an artifact of it.
+
+Banked: `raw/t1_two_seed_floor.json`, `raw/H_DDV2RL_2.json`.
 
 ## ⭐⭐⭐ THE SYNTHESIS — THREE INDEPENDENT INSTRUMENTS, ONE DIAGNOSIS: THE INFORMATION IS PRESENT AND UNUSED
 

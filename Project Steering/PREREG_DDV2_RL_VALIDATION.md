@@ -470,3 +470,49 @@ windows so it does not transfer, but it is a standing warning that the regressio
 floor nobody has measured. **Two seeds bound it.**
 
 <!-- PREREG-DDV2RL-DEVIATION-D3-2026-09-17 -->
+
+---
+
+## 16.5 FINAL — `H-DDV2RL-2` = **FAIL-HARM**, and what Deviation D-3 bought
+
+`L1-RL-s1`'s T1 roll completed. §13.3's condition is met at **both** RL seeds — `ade_m` paired
+against BASE, CI upper bound below zero: **s0 −0.2508** [−0.3186, −0.1901], **s1 −0.2567**
+[−0.3327, −0.1911].
+
+> ⛔ **`H-DDV2RL-2` = FAIL-HARM.** The lever is **≈3× worse** than the harm it was built to repair
+> (2026-09-15: **+0.083 m** [0.056, 0.115]).
+
+### What the overrun bought, stated against what it cost
+
+**0.48 GPU-h** (§16.4) bought three things that the one-seed read could not have delivered:
+
+1. **The verdict itself.** §13.3 requires both seeds; one seed is *unevaluable, never passed*.
+2. ⭐ **The T1 run-to-run floor, measured on the very arms being judged.** `|s1 − s0|` on `ade_m` is
+   **0.0059 m** against a mean harm of **0.2538 m** ⇒ **43.0×**, and **2,538×** the inference-seed
+   floor of ≈0.0001 m from `MODEL_REGISTRY.md` §4.7. **The FAILURE is robust on both variances.**
+3. ⛔ **A correction that would otherwise have shipped.** Only `ade_m` (43.0×) and `fde_m` (5.6×)
+   exceed their own two-seed floor; the other **eight metrics sit at 0.6×–1.5× — inside it** — and
+   the seeds damage **different families**: s0 lateral (`LAT_cross_mae_m` 3.53×), s1 longitudinal
+   and tactical-longitudinal (`TAC_traj_lon_correct` 0.8252 → 0.5906). ⇒ the one-seed reading
+   *"separably worse in all four families"* is true **of that seed** and is **not** a family-level
+   attribution. **"The lever is harmful" is established; "harmful at lateral" is not.**
+
+⭐ **(3) is the part that justifies the overrun on the programme's own terms.** Without the
+replicate this package would have shipped a four-family attribution that a zero-lever seed change
+reproduces. That is precisely the failure `H-ESTIM-SEED-1` exists to prevent, and it was avoided by
+spending the 0.48 h rather than by reasoning about it.
+
+### Stage A, closed
+
+| criterion | verdict |
+|---|---|
+| §13.1 **F1** (fan must not collapse) | ✅ **PASS**, all three arms (76.0 % / 94.2 % / 73.7 % retained, bar 60 %) |
+| §13.2 **primary endpoint** `Δfan` | ✅ **SUCCESS** (+0.0363 and +0.0616, both lower bounds > 0) ⚠️ but only **1.4×** its own floor |
+| §13.3 **`H-DDV2RL-2`** harm guard | ⛔ **FAIL-HARM**, both seeds, **43×** its floor |
+| §13.4 no-criterion diagnostics | reported; `NORL − BASE` **NOT RUN** (drop order item 2) |
+| **Stage B** | ⛔ **NOT RUN** (drop order item 1) |
+
+⛔ **The package's headline is the §13.3 FAILURE, not the §13.2 SUCCESS.** T0 is a diagnostic tier;
+T1 is primary, and `EVAL_DOCTRINE.md` settles which one a capability claim may rest on.
+
+<!-- PREREG-DDV2RL-FINAL-FAIL-HARM-2026-09-17 -->

@@ -114,6 +114,16 @@ def main() -> int:
         res["H_DDV2RL_2"] = "FAIL-HARM"
     else:
         res["H_DDV2RL_2"] = "no harm detected at this n"
+    # ⛔ Keep the artifact's OWN history. An earlier run of this file wrote UNEVALUABLE,
+    # because §14's drop order had cut `L1-RL-s1`'s roll at the 2.85 h threshold. That is
+    # not noise to be overwritten -- it is why the verdict exists at all, and dropping it
+    # would erase the deviation that bought it.
+    res["_supersedes"] = (
+        "an earlier evaluation of this same file read UNEVALUABLE: section 13.3 needs BOTH RL "
+        "seeds and L1-RL-s1's T1 roll had been dropped under the section 14 drop order after "
+        "the 2.85 h budget threshold was passed. It was then run as DEVIATION D-3 (declared in "
+        "PREREG_DDV2_RL_VALIDATION.md section 16.4), a 25% overrun to 3.71 h against a planned "
+        "2.97 h, with the CRITERION untouched.")
     res["_2026_09_15_comparison"] = ("that package read FAIL-HARM on the RELEASE-form lever: "
                                      "RL-s0 +0.083 [0.056, 0.115] and NORL-s0 +0.081 "
                                      "[0.051, 0.116] m worse than the cold start.")
