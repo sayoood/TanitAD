@@ -476,3 +476,32 @@ package is 48 NEW paths under one new directory — so the landing is additive.
 
 **Clip-id hygiene:** `code/scrub_sha12.py` rewrote **141 clip ids per paired record** to
 sha12 and a second pass reads **0 left** in every banked file.
+
+---
+
+## ⛔ MASTER MIND CORRECTION, 2026-09-17 — "the SAM3 eval maps are not on this box" is FALSE, and it blocked the map panel for nothing
+
+**§ NOT RUN** of this RESULT records the SAM3 map panel, occupancy on decoder outputs and **D4**
+as blocked because *"SAM3 eval maps are not on this box"*.
+
+⛔ **They are.** MEASURED the same night, on the same machine this package ran on:
+
+| | |
+|---|---|
+| path | `D:/Projects/TanitAD-artifacts/sam3-maps-eval` |
+| count | **135** `*.sam3mapgt.npz`, sha12-named |
+| readable | yes — keys `meta_json`, `t_query_us`, `t_img_us`, `cam_frame_idx`, `T_world_rig`, `cart_frac` |
+| independently exercised | the 256 × 1024 real-data validation read them the same night and passed **16/16** (`ec56eb9`) |
+
+⇒ the map panel and **D4** were **not** blocked on data. They were blocked on a **locator**, and the
+blocker was never re-probed.
+
+⚠️ **This is the class CLAUDE.md names first:** *"Absence found at ONE location is not absence.
+Before writing 'X does not exist', probe a second path, a second name, and the tool that owns the
+fact."* It is also the **stale-blocker** class — a blocker line not revisited after the thing that
+blocked it landed. The maps were copied from Thor on 2026-09-16, before this package started.
+
+⭐ **Nothing else in this RESULT is affected.** The Rung 1 and Rung 2 panels, the T-B refutation, the
+seed floor and both escalations were measured on artifacts that were present, and they stand exactly
+as written. What changes is only the **status of the unrun work**: the map panel is **UNBLOCKED, not
+impossible**, and D4 is **unanswered, not unanswerable**.
