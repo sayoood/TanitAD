@@ -1,4 +1,4 @@
-# RL Stage A — the lever and its control ran, the lever is WORSE, and the damage is in SELECTION. ⛔ The REPLICATE did not run, so this is still not a lever claim.
+# RL Stage A — every CROSS-ARM number here sits INSIDE the only training-variance floor this rig family has. ⭐ The WITHIN-ARM findings survive it, and one of them reproduces on four checkpoints.
 
 **Date:** 2026-09-17 · **Evidence class: MEASURED** · **Tier: T0** (deployed sampler, recorded
 future, proxy reward) · **Estimator:** `taniteval.ci.paired_episode_cluster_bootstrap`, n_boot 2000,
@@ -16,6 +16,91 @@ is what bounds that floor **and it has not completed**.
 
 ⇒ **No statement below is a claim about the RL lever.** They are absolute, controlled, paired
 differences between two arms that differ in one variable, awaiting their floor.
+
+## ⛔⛔⛔ THE FLOOR, MEASURED FROM DUMPS THAT WERE ALREADY BANKED — READ THIS FIRST
+
+The caveat at the top of this document was written as a rule. It is now a **number**, and it is
+worse than the rule implied. Six held-out dumps — `heldout_base`, `heldout_base_repeat`, the two
+2026-09-15 release-form arms, and this package's two — were verified to be on the **IDENTICAL 493
+windows / 40 episode clusters** (checked on `(sha12, t0)`, all six sets equal), so every pairing
+below is admissible on the paired estimator. **Zero GPU.**
+
+### 1. The INFERENCE floor is EXACTLY ZERO — and that NARROWS a standing programme caveat
+
+The **same checkpoint scored twice** (`heldout_base` vs `heldout_base_repeat`) is **bit-identical on
+493 of 493 windows**; all ten metrics read **+0.0000 with CI [0.0000, 0.0000]**.
+
+⭐ `CLAUDE.md` warns that on a **stochastic planner** a third variance rides on the same interval —
+*"would another INFERENCE RUN say this?"* — measured on refav1, whose iCEM planner **samples**, with
+a seed floor of ≈0.30 m ADE. ⇒ **That caveat does NOT bind on this rig.** This DDIM path is
+deterministic end to end, so an inference replicate here is a **structural zero**, not an estimate.
+⛔ It is narrowed, not retracted: it still binds wherever the planner samples.
+
+### 2. ⛔⛔ The TRAINING floor is CATASTROPHIC — 10 of 10 metrics separated on SEED ALONE
+
+`heldout_arm-rl-s0` vs `heldout_arm-rl-s1` from 2026-09-15: **same flags, same rig, seed 0 vs
+seed 1, zero levers moved.**
+
+| metric | **this package's LEVER** (RL − NORL) | **SEED ALONE** | floor ÷ lever |
+|---|---|---|---|
+| `sel_pdms` | −0.0449 | **+0.2431** | **5.41×** |
+| `sel_ade_m` | +0.2798 | **−3.2637** | **11.66×** |
+| `sel_ttc` | −0.0669 | +0.1866 | 2.79× |
+| `sel_nc` | −0.0233 | +0.1298 | 5.57× |
+| `sel_ep` | −0.0301 | +0.1288 | 4.28× |
+| `fan_endpoint_spread_m` | −6.8289 | **−17.2200** | 2.52× |
+| `fan_minade_m` | −0.0877 | −2.1319 | 24.31× |
+| `fan_pdms_best` | +0.0011 | +0.1113 | **101.18×** |
+
+**Every seed-only interval excludes zero. 10 of 10.**
+
+⇒ ⛔ **EVERY CROSS-ARM NUMBER IN THIS PACKAGE IS SMALLER THAN THE SEED-ONLY EFFECT ON THE SIBLING
+RIG, BY 2.5× TO 101×.** The nine "separated" rows are downgraded from *separated WORSE* to **inside
+the only training-variance floor this rig family has measured**, pending `L1-RL-s1`.
+
+⚠️ **Scope it honestly, because the scope is the only thing that keeps this from being fatal.** The
+2026-09-15 arms ran the **RELEASE-form** lever (`--il-form release --grad-clip 0`) — the
+configuration MEASURED to collapse the fan by **93 %**, and the reason L1 and Amendment A-1 exist at
+all. A wildly unstable arm having a wild seed variance is **expected**, so this is an **UPPER bound
+on instability**, not an estimate of L1's own floor. ⛔ But it is the **only** training-variance
+measurement this rig family has, and "the stable configuration is probably much tighter" is a
+**hypothesis**, not a floor. ⇒ **`L1-RL-s1` is not bookkeeping; it is the load-bearing measurement
+of this entire package**, which is why it was relaunched unchanged rather than shrunk to fit.
+
+⭐ **Nothing here is a retraction.** This document said from its first version that a separated
+one-seed interval is *necessary, not sufficient*, and that no statement in it was a lever claim.
+That hedge was correct; what has changed is that it now carries a number instead of a rule.
+
+### 3. What SURVIVES the floor, and it is the more interesting half
+
+⭐ The floor is a statement about **differences between two trained arms**. It does not touch a
+reading of **one arm against a control computed on its own windows from its own fan** — and those
+are exactly the findings below. Better: they now **reproduce across four checkpoints in three
+different training states**:
+
+| | `base` (untouched) | `base_repeat` | `L1-NORL-s0` | `L1-RL-s0` |
+|---|---|---|---|---|
+| windows where the **selected** plan collides | **28** / 493 | 28 / 493 | **25** / 493 | **37** / 493 |
+| …of which the fan **still held a collision-free candidate** | **28 / 28** | 28 / 28 | **25 / 25** | **37 / 37** |
+| picks the fan's best candidate exactly | 240 = **48.7 %** | 240 = 48.7 % | 258 = **52.3 %** | 174 = 35.3 % |
+| pooled normalised skill (0 = random, 1 = oracle) | **0.7499** | 0.7499 | **0.7652** | 0.5818 |
+
+⛔⛔ **THE COLLISION DEFECT IS NOT L1'S DOING — IT IS ALREADY IN THE UNTOUCHED CHECKPOINT.** 28 of
+493 windows on a model that received **no RL, no L1, no extra training at all**, and in **28 of 28**
+a collision-free candidate was sitting in the fan. ⇒ this is a **refcv5-v2 property**, i.e.
+**programme-level**, and it is not attributable to the lever this package was testing.
+
+### 4. And two more things the base control settles
+
+* **`L1-NORL-s0` ≈ the base.** Only **4 of 10** metrics separated and **`sel_pdms` is NOT**
+  (+0.0084 [−0.0059, +0.0255]). ⇒ 600 steps of matched-anchor IL barely move the model off its cold
+  start, which is what a *control* arm should do and is worth having verified rather than assumed.
+* **`L1-RL-s0` is separably worse than the base on 10 of 10** — `sel_pdms` **−0.0365**
+  [−0.0615, −0.0161], `sel_ttc` −0.0487, `sel_nc` −0.0183. ⚠️ Read against §2's floor this is
+  **suggestive, not established**; but it is anchored to a checkpoint that required **no training at
+  all**, which is a cleaner anchor than an arm-to-arm difference.
+
+Banked: `raw/noise_floors_and_base_control.json`.
 
 ## ⭐ The one-variable proof — MEASURED, not argued
 
