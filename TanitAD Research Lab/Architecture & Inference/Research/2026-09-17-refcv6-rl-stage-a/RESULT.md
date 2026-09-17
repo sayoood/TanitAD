@@ -265,7 +265,9 @@ the good plan" cannot do that. ⇒ **the earlier sentence is withdrawn.**
 control, **86.5 % of all selection regret is carried by the worst 10 % of windows** — 49 of 493 —
 while the other 444 are at or near the ceiling. That is not "rebuild selection"; that is **find what
 those windows have in common**, which is a stratification question answerable on the banked rows at
-zero GPU.
+zero GPU. ⚠️ **I then tested whether they ARE the same 49 across checkpoints, and they are only
+partly — see "Is the tail a stable set of windows?" below, which corrects this sentence rather
+than repeating it.**
 
 ⭐⭐ **And it sharpens the RL attribution to something the fan-width story could not say.** The RL
 arm hands its selector a **strictly easier problem** — its random-pick control is **higher**
@@ -335,6 +337,37 @@ almost entirely inside the tail**.
 
 **The selector picks a colliding plan out of a fan that is MAJORITY collision-free, in 100 % of the
 cases where it collides.** That is not a hard-scene problem and not a generator problem.
+
+### ⚠️ IS THE TAIL A STABLE SET OF WINDOWS? Enriched, but NOT a memorisable 49 — and I over-promised
+
+Above I wrote that the next lever is *"find what those windows have in common"*. That presumes the
+49 are **the same 49**. Tested across all six banked checkpoints, against the right control —
+**chance overlap of two random 49-of-493 subsets is 4.87 windows**, not zero:
+
+| | |
+|---|---|
+| pairwise tail overlap | **median 3.49× chance** (min 1.85×, max 6.78×) |
+| windows in the tail of **all six** checkpoints | **1** (6-way chance ≈ 0.0005) |
+| windows in **any** tail | **134 / 493 = 27.2 %** |
+| windows where the selected plan **collides on all six** | **9** |
+| …collides on **at least one** | **127 / 493 = 25.8 %** |
+
+⚠️ **So the honest reading is in between, and my sentence was too strong.** A **3.49×** enrichment is
+far above chance, so there **is** a real scene component — the tail is not noise. But **27.2 % of the
+corpus enters some tail** and only **one** window is hard on every checkpoint. ⇒ *"find what those
+windows have in common"* is **not** the well-posed target I implied; the tail is largely
+**run-dependent**, which is exactly what the launch-nondeterminism section predicts.
+
+⭐⭐ **AND THAT MAKES THE COLLISION-GATE ARGUMENT STRONGER, NOT WEAKER.** If the same 25 windows
+failed every time, a memorised hard-case list could paper over it. They do not: a **different**
+25–37 fail each run, drawn from a pool of **127**. ⇒ **the gate has to work generally**, which is
+precisely what a perception channel buys and a lookup table does not.
+
+⭐ **What IS a well-posed inspection target: the 9 windows that collide on ALL SIX checkpoints** —
+stably hard across three training states and two lever families, and small enough to look at frame
+by frame. That is the bounded next action, and it is the one I name instead.
+
+Banked: `raw/regret_tail_stability.json`.
 
 ### ⛔⛔ AND THE DECISIVE QUALIFIER, WHICH I CHECKED BEFORE LETTING THE ABOVE PROPAGATE
 
