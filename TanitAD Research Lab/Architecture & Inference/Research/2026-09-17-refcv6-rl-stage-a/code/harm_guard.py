@@ -66,11 +66,16 @@ def run_paired(a: str, b: str) -> dict:
 
 
 def main() -> int:
-    need = ["base", "l1-rl-s0", "l1-rl-s1"]
-    missing = [n for n in need if not os.path.isdir(os.path.join(OUT, f"t1_{n}_dump"))]
-    if missing:
-        print(f"ZZHARM-BLOCKED missing T1 dumps: {missing}ZZ")
+    # ⛔ DEGRADE, DO NOT BLOCK. `L1-RL-s1`'s roll was dropped under the §14 budget order, so
+    # the guard is UNEVALUABLE by construction. That is not a reason to deliver nothing:
+    # whatever rolls DID complete still give a paired read, reported as a DIAGNOSTIC with a
+    # direction and no criterion -- never as the verdict.
+    if not os.path.isdir(os.path.join(OUT, "t1_base_dump")):
+        print("ZZHARM-BLOCKED no BASE dump -- nothing is comparableZZ")
         return 2
+    arms = [a for a in ("l1-rl-s0", "l1-rl-s1")
+            if os.path.isdir(os.path.join(OUT, f"t1_{a}_dump"))]
+    dropped = [a for a in ("l1-rl-s0", "l1-rl-s1") if a not in arms]
     res = {"_what": "PREREG_DDV2_RL_VALIDATION.md section 13.3 -- H-DDV2RL-2, the T1 harm guard.",
            "_tier": "T1 (self-action OPEN loop, PI ruling 2026-09-02 -- never 'closed loop')",
            "_evidence_class": "MEASURED (ours)",
@@ -81,8 +86,10 @@ def main() -> int:
                              "(item 2); it feeds only a section 13.4 no-criterion diagnostic and "
                              "the guard does not need it."),
            "paired": {}}
+    res["_arms_rolled"] = arms
+    res["_arms_dropped_for_budget"] = dropped
     worse = []
-    for arm in ("l1-rl-s0", "l1-rl-s1"):
+    for arm in arms:
         r = run_paired(arm, "base")
         res["paired"][f"{arm} vs base"] = r
         print(f"\n=== {arm} vs base ===  status {r['status']}  {r.get('n') or ''}")
@@ -97,8 +104,12 @@ def main() -> int:
         hi = float(ade[0]["ci"].strip("[]").split(",")[1])
         worse.append(hi < 0)
         print(f"   -> ade_m upper bound {hi:+.4f}  => arm definitively worse: {hi < 0}")
-    if any(w is None for w in worse):
+    if dropped or any(w is None for w in worse) or len(worse) < 2:
         res["H_DDV2RL_2"] = "UNEVALUABLE"
+        res["_why_unevaluable"] = (
+            f"section 13.3 needs BOTH RL seeds against BASE; rolled {arms}, dropped {dropped} "
+            f"under the section 14 drop order after the 2.85 h threshold was passed. "
+            f"Reported UNEVALUABLE, NEVER passed.")
     elif all(worse):
         res["H_DDV2RL_2"] = "FAIL-HARM"
     else:

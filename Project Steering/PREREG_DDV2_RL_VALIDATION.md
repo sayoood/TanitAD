@@ -355,3 +355,69 @@ syntax check is not a semantics check. The probe was moved into `code/boxstat.py
 written as a file.
 
 <!-- PREREG-DDV2RL-EXEC-RECORD-T1-2026-09-17 -->
+
+---
+
+## 16.3 BUDGET — the §14 drop order EXECUTED, and my own estimate was wrong by 3×
+
+### The arithmetic, from each job's own clock
+
+| item | min | cumulative |
+|---|---|---|
+| `L1-RL-s0` train | 31.3 | 0.52 h |
+| `L1-NORL-s0` train | 34.3 | 1.09 h |
+| `L1-RL-s1` train | 32.8 | 1.64 h |
+| `L1-RL-s1` failed attempt A | 11.0 | 1.82 h |
+| `L1-RL-s1` failed attempt B *(estimated: 186 rows at A's rate)* | 13.0 | 2.04 h |
+| held-out reads × 3 | 14.0 | 2.27 h |
+| **T1 roll: `base`** | **28.7** | **2.75 h** |
+| **T1 roll: `l1-rl-s0`** | **28.7** | **3.23 h** |
+| *(an `l1-rl-s1` T1 roll would add)* | *28.7* | *3.71 h* |
+
+⇒ **§14's 2.85 h drop threshold was passed DURING THE FIRST T1 ROLL**, against a planned total of
+**2.97 h**.
+
+### ⛔ MY ESTIMATE WAS WRONG BY 3.0×, AND THE MECHANISM IS ONE THIS FILE ALREADY WARNS ABOUT
+
+§16.1 costed the remedy at *"3 rolls × ≈9.6 min ≈ 29 min"*. **MEASURED on this box: 28.7 min each.**
+The 9.6 came from dividing the 2026-09-15 package's *"4 T1 rolls 22:24:07 → 23:02:34"* = 38.5 min by
+four — **a figure carried from another run instead of timed here**. ⚠️ That is the same class as
+quoting a per-step cost across rigs, and it is the class this programme has paid for repeatedly:
+**a true measurement quoted outside its scope reads exactly like an answer.** ⇒ a cost estimate for a
+job on THIS box must be timed on THIS box, or carry the fact that it was not.
+
+### The drop order, executed rather than argued
+
+§14: *"Drop order if the cumulative passes 2.85 h: (1) Stage B; (2) `L1-NORL-s0`'s T1 roll;
+(3) `L1-RL-s1`'s T1 roll — each recorded NOT RUN with the criterion it disables named."*
+
+* **(1) Stage B** — NOT RUN (§16.1).
+* **(2) `L1-NORL-s0`'s T1 roll** — NOT RUN. Disables §13.4's *"NORL − BASE under the new form"*,
+  which carries **no criterion**.
+* **(3) `L1-RL-s1`'s T1 roll** — ⛔ **NOT RUN.** Disables **`H-DDV2RL-2`**, which §13.3 then requires
+  be reported **UNEVALUABLE, never passed**.
+
+⛔ **The loop was stopped rather than allowed to spend the hour.** The two `bash t1_rolls.sh`
+processes were killed **by explicit PID** (15024, 30988 — never a pattern kill), and the running
+`l1-rl-s0` roll was **verified to survive**: its dump advanced 24 → 33 episodes across the kill. The
+already-paid `base` and `l1-rl-s0` rolls were allowed to finish, because stopping a roll mid-way
+spends the compute and banks nothing.
+
+⚠️ **This is the third time tonight the pre-registration has been followed where it was inconvenient**
+— Stage B stayed NOT RUN when ≤ 2.45 h was momentarily satisfiable, `sel_ade_m` was withdrawn
+despite a cleanly separated interval, and now the package's most important open question is left
+open by its own budget rule. ⭐ A pre-registration that bends when its budget bites is not one.
+
+### What closing the guard would cost, stated so it is a one-line decision and not a rediscovery
+
+**One `l1-rl-s0`-sized roll: 1,722 s ≈ 0.48 GPU-h**, on the dev-box RTX 4060, taking the package to
+**3.71 h**. It would convert `H-DDV2RL-2` from **UNEVALUABLE** to a verdict against the 2026-09-15
+**FAIL-HARM** baseline (both release-form RL seeds worse than the cold start on T1 ADE: **+0.083**
+[0.056, 0.115] and **+0.081** [0.051, 0.116] m) — i.e. it would answer *whether L1 repaired the harm
+it was built to repair*. ⇒ **PI: one line authorising 0.48 GPU-h closes it.**
+
+⭐ **What IS still delivered from the completed rolls:** `l1-rl-s0 vs base` is a **one-seed** paired
+T1 read on all four families. ⛔ It is **not** the guard — §13.3 requires **both** RL seeds — and it
+is reported as a **diagnostic with a direction and no criterion**, never as a verdict.
+
+<!-- PREREG-DDV2RL-BUDGET-DROP-ORDER-EXECUTED-2026-09-17 -->
