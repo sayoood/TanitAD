@@ -15437,3 +15437,46 @@ seeds** and is untouched; and the **collision defect in the untouched base** (28
 safe plan in the fan) is a within-arm reading that never depended on a floor at all.
 
 <!-- RETR-2026-09-17-INFERENCE-FLOOR-PINNED-SEED -->
+
+## R-2026-09-17-seed-1-is-not-the-diverging-seed — DIVERGENCE IS LAUNCH-DEPENDENT, AND THE RIG IS NOT REPRODUCIBLE
+
+**Retracted:** 2026-09-17, same day · **By:** Master Mind · **Class: I — self-caught by relaunching
+the failed arm and reading its gradient trace against the failure's.**
+
+**Where it lived:** `…/2026-09-17-refcv6-rl-stage-a/RESULT.md`, every version since the first, and
+it had been relayed into two commit messages.
+
+| the statement, as landed | status |
+|---|---|
+| *"**Seed 1 is the diverging seed**, and Amendment A-1 is validated on the arm it was written for."* — from `grad_norm_max` **11,511** with **44/157** steps over the clip | ⚠️ **HALF WITHDRAWN.** ⭐ The A-1 half **STANDS**: the clip does discriminate a stable arm (3/600, 0/600) from a diverging one (44/157), which is exactly what A-1 predicted. ⛔ The **"seed 1 is the diverging seed"** half is **REFUTED**: the identical command relaunched peaks at **203.6** over the same first 157 steps against **11,511** (**56.5×**) and binds the clip **2/157 = 1.3 %** against **28.0 %** (**22.0×**). |
+
+⭐⭐ **THE MECHANISM IS A PROGRAMME-LEVEL FACT ABOUT `ddv2_rl_refcv5.py`: THE RUN IS NOT REPRODUCIBLE
+ACROSS LAUNCHES, AND THE NONDETERMINISM AMPLIFIES.** Step 0 is identical on **42 of 44** scalar
+fields (the two exceptions, `fetch_s` and `wall_s`, are wall-clock). The launches first differ at
+**step 2** by **2.86e−06** absolute / **3.03e−07** relative — a float-level reduction-order
+difference — and the relative divergence then grows **3.03e−07 → 6.66e−06 (step 10) → 2.10e−03
+(40) → 2.59e−01 (60) → 3.48 (80)**: **O(1) within eighty steps**, about one order of magnitude every
+ten. At step 120 launch A reads **11511.416016** where launch B reads **14.693929**.
+
+⇒ ⛔ **A SAME-SEED RELAUNCH ON THIS RIG IS A FRESH DRAW, NOT A REPRODUCTION.** Anything in this
+programme that treated a same-seed rerun of this trainer as a reproduction was treating one sample
+as two.
+
+⛔ **ROOT-CAUSE CLASS: a measurement read as answering a question it does not answer** — the **third**
+instance in one session, after `R-2026-09-17-selection-gap-no-control` and
+`R-2026-09-17-inference-floor-was-a-pinned-seed`. Here a single run's gradient trace was read as a
+property of its **seed**. ⭐ The three were caught at 20 min, 35 min, and **before leaving the
+document** respectively; the discriminator each time was the same — **go to the thing that produced
+the number** (the control in the table, the seed on the capture line, a second launch).
+
+⭐ **A consequence that improves an adjacent claim rather than damaging it.** The 2026-09-15
+replicate pair was described as a **"SEED-ONLY"** floor. Those two arms differ in seed **and** in
+launch, and launch alone is now shown to change the regime ⇒ it is a **RUN-TO-RUN** floor. **The
+magnitude is unchanged** (10/10 metrics separated, 2.5×–101× the lever); only the attribution moves,
+and it moves toward the more general cause.
+
+⚠️ **NOT measured:** launch A died at step 156 with no checkpoint, so the **held-out** consequence of
+its divergence is unknown. The 56.5× and 22.0× are training-trajectory quantities, never metric
+ones. Instrument: `…/2026-09-17-refcv6-rl-stage-a/raw/launch_nondeterminism.json`.
+
+<!-- RETR-2026-09-17-SEED-1-NOT-THE-DIVERGING-SEED -->

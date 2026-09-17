@@ -54,10 +54,11 @@ it; what they are **not** clean of is training variance, which is precisely §2'
 **absolute** number here (`sel_pdms` = 0.9161, say) still carries an unmeasured inference-draw
 variance, so it is a within-rig quantity and not a portable one.
 
-### 2. ⛔⛔ The TRAINING floor is CATASTROPHIC — 10 of 10 metrics separated on SEED ALONE
+### 2. ⛔⛔ The TRAINING floor is CATASTROPHIC — 10 of 10 metrics separated on a RUN-TO-RUN replicate
 
-`heldout_arm-rl-s0` vs `heldout_arm-rl-s1` from 2026-09-15: **same flags, same rig, seed 0 vs
-seed 1, zero levers moved.**
+`heldout_arm-rl-s0` vs `heldout_arm-rl-s1` from 2026-09-15: **same flags, same rig, zero levers
+moved** — differing in seed *and* in launch. ⚠️ **Read the section above before calling this a SEED
+floor: launch alone changes the regime on this trainer, so this is a RUN-TO-RUN floor.**
 
 | metric | **this package's LEVER** (RL − NORL) | **SEED ALONE** | floor ÷ lever |
 |---|---|---|---|
@@ -416,13 +417,55 @@ won — the `$?`-after-a-pipeline trap, hit again despite a standing memory abou
 check caught what the exit code hid** (`rows 186 != 600`, no checkpoint). The re-run captured the
 status directly and reported `ARM3_RC=1` honestly.
 
-## ⭐ One thing the failed arm DID establish
+## ⛔⛔ What the failed arm established — and the half of it that is now REFUTED
 
-**Seed 1 is the diverging seed, and Amendment A-1 is validated on the arm it was written for.**
 `grad_norm_max` **11,511** with **44** steps over 100 in only 157 rows, and the log shows
 `g 147.304->clip`. A-1 replaced a clip of 1.0 — which would have bound **600/600** — with 100,
 predicting it would bind rarely on stable arms and often on a diverging one. MEASURED: **3/600** on
-arm 1, **0/600** on arm 2, **44/157** here.
+arm 1, **0/600** on arm 2, **44/157** on that failed launch. ⭐ **That prediction holds and A-1 is
+validated**: the clip does discriminate a stable arm from a diverging one.
+
+⛔⛔ **BUT I ALSO WROTE "SEED 1 IS THE DIVERGING SEED", AND THAT IS REFUTED BY THE RELAUNCH.** The
+same command — same seed, same flags, same batch — relaunched on a quiet box does **not** diverge:
+over the same first 157 steps it peaks at **203.6** against the failed launch's **11,511** (**56.5×**)
+and binds the clip **2/157 = 1.3 %** against **44/157 = 28.0 %** (**22.0×**).
+
+⭐⭐ **THE MECHANISM, AND IT IS A PROGRAMME-LEVEL FACT ABOUT THIS TRAINER: THE RUN IS NOT
+REPRODUCIBLE ACROSS LAUNCHES, AND THE NONDETERMINISM AMPLIFIES.** Step 0 is identical on **42 of 44**
+scalar fields (the two that differ are `fetch_s` and `wall_s` — wall-clock, not state). The two
+launches first part company at **step 2**, by **2.86e−06** absolute and **3.03e−07** relative, and
+from there:
+
+| step | launch A `grad_norm` | launch B `grad_norm` | relative divergence |
+|---|---|---|---|
+| 0 · 1 | 40.887421 · 21.098879 | 40.887421 · 21.098879 | **0** (bit-identical) |
+| 2 | 9.455194 | 9.455192 | 3.03e−07 |
+| 10 | 15.317718 | 15.317820 | 6.66e−06 |
+| 40 | 6.361910 | 6.348524 | 2.10e−03 |
+| 60 | 6.412241 | 4.751979 | 2.59e−01 |
+| 80 | 4.470911 | 20.014410 | **3.48** |
+| 120 | **11511.416016** | 14.693929 | 9.99e−01 |
+
+**Relative divergence grows from 3e−07 to O(1) in eighty steps** — about one order of magnitude
+every ten steps — so a float-level reduction-order difference decides whether the arm diverges.
+
+⇒ ⛔ **A SAME-SEED RELAUNCH ON THIS RIG IS A FRESH DRAW, NOT A REPRODUCTION.** Three consequences,
+and they touch this whole package:
+
+1. **The arm 3 now running is not "the diverging seed, retried".** It is a second draw that landed
+   in the stable regime. It is a perfectly good training-variance replicate — which is what §13.2
+   asks for — but it reproduces nothing.
+2. ⚠️ **The floor in §2 is mis-attributed and I am correcting it here.** I called it a "SEED-ONLY"
+   floor. The two 2026-09-15 arms differ in seed **and** in launch, and this shows **launch alone
+   changes the regime**. It is a **RUN-TO-RUN** floor. The magnitude is unchanged; the cause is not
+   the seed.
+3. ⛔ **This is the third time tonight that a measurement was read as answering a question it does
+   not answer** — after the oracle gap and the pinned inference seed. All three were caught, each
+   one faster than the last, and this one before it left this document.
+
+⚠️ **What is NOT measured:** launch A died at step 156 with no checkpoint, so the **held-out**
+consequence of its divergence is unknown. The 56.5× and 22.0× are training-trajectory quantities,
+not metric quantities. Banked: `raw/launch_nondeterminism.json`.
 
 ## Budget
 
