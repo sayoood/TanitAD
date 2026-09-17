@@ -17,6 +17,74 @@ is what bounds that floor **and it has not completed**.
 ⇒ **No statement below is a claim about the RL lever.** They are absolute, controlled, paired
 differences between two arms that differ in one variable, awaiting their floor.
 
+## ⭐⭐⭐ THE SYNTHESIS — THREE INDEPENDENT INSTRUMENTS, ONE DIAGNOSIS: THE INFORMATION IS PRESENT AND UNUSED
+
+The BASE T1 roll was run for the harm guard and arrived carrying a complete four-family read of the
+**cold start** — `refcv5-v2` untouched, **1,402 windows / 41 episodes**, paired episode-cluster
+bootstrap. Three of its blocks matter, and the third closes a pattern.
+
+### It beats the plain floor comfortably — 10 of 10, every family
+
+`os − ha0`: `ade_m` **−0.3677** [−0.4757, −0.2674] · `fde_m` −0.7479 · `LAT_cross_mae_m` −0.2004 ·
+`LAT_heading_mae_deg` −1.3571 · `LAT_yaw_rate_mae_radps` −0.0180 · `LON_along_mae_m` −0.2175 ·
+`LON_speed_mae_mps` −0.1982 · `LON_accel_mae_mps2` −0.1151 · `TAC_traj_lat_correct` **+0.0749** ·
+`TAC_traj_lon_correct` **+0.0606**. **All ten separated.** The model is doing something real.
+
+### ⛔ It does NOT clear the bar it was set — and on one cell it is separably WORSE
+
+`os − ha0_ext`, the **extended do-nothing baseline** the pre-registration named as the bar
+(*"refcv5-v2 must BEAT `ha0_ext` separated, or it has not learned to drive either"*):
+
+| family | metric | Δ | 95 % CI | |
+|---|---|---|---|---|
+| ADE | `ade_m` | +0.0024 | [−0.0162, +0.0223] | not separated |
+| longitudinal | **`LON_accel_mae_mps2`** | **+0.0328** | [+0.0046, +0.0612] | ⛔ **separated WORSE** |
+| longitudinal | `LON_along_mae_m` · `LON_speed_mae_mps` | +0.0107 · +0.0211 | — | not separated |
+| lateral | all three | −0.0059 · −0.0779 · −0.0018 | — | not separated |
+| tactical | both | +0.0114 · −0.0050 | — | not separated |
+
+⇒ **1 of 10 separated, and it is separated the wrong way.** This is an independent four-family
+confirmation of the landed LEADERBOARD verdict, and slightly *harsher* than "ties".
+
+### ⛔⛔ AND THE NAV INPUT IS INERT — 0 of 10, every family
+
+`os − os_navzero` — the same checkpoint with the **nav signal removed entirely**:
+`ade_m` **−0.0014** [−0.0149, +0.0131] · `fde_m` +0.0021 · `LAT_cross_mae_m` −0.0032 ·
+`LAT_heading_mae_deg` −0.0314 · `LAT_yaw_rate_mae_radps` **+0.0000** · `LON_along_mae_m` −0.0001 ·
+`LON_speed_mae_mps` −0.0007 · `LON_accel_mae_mps2` +0.0069 · `TAC_traj_lat_correct` **+0.0029** ·
+`TAC_traj_lon_correct` −0.0007. **Not one separated.** *(`os − os_navshuf`, the other binding
+control, separates on 1 of 10 — `LON_accel_mae_mps2` −0.0119 [−0.0242, −0.0004].)*
+
+⭐ **The tactical cells are the pointed ones.** Even `TAC_traj_lat_correct` — the metric a nav
+command should most directly help — moves **+0.0029** when nav is deleted.
+
+### ⭐⭐⭐ THREE INSTRUMENTS, THREE TIERS, ONE DIAGNOSIS
+
+| # | instrument | the information IS there | and it is NOT used |
+|---|---|---|---|
+| 1 | **D3** (attention, T1) | the planner **attends** to the lead — T-G **1.92×**, separated at all four decoder layers | greying the lead out moves the time gap **0.09×** the inference-seed floor (bar: ≥ 3×) |
+| 2 | **collision gate** (T0, this package) | a **collision-free** plan is in the fan in **119 of 119** collision windows across five checkpoints, 55–61 % of the fan | it selects a colliding one **every time** |
+| 3 | **nav** (T1, this package) | nav rules a turn **out with certainty** in the labels — `P(turn \| NAV_FOLLOW_ROAD)` = **0.0000** | deleting nav moves **0 of 10** metrics across all four families |
+
+⛔ **This is not three findings. It is one defect seen three ways**, and the convergence is
+load-bearing precisely because the three use **different tiers and different instruments** —
+attention masking at T1, a proxy-reward fan read at T0, and an input-ablation at T1. A single
+instrument agreeing with itself would prove nothing.
+
+⇒ **`refcv5-v2` does not have a perception problem or an information problem. It has a
+USE problem.** Adding inputs to this architecture is measurably not the lever; the levers are the
+ones that force the existing reads into the decision — which is what the BEV/occupancy wiring and a
+collision gate on selection both are.
+
+⚠️ **What this does NOT license.** ⛔ It is **not** an argument against the PI's *"nav mandatory in
+operative + tactical + selection"* directive. Nav being inert **on refcv5-v2** is a fact about this
+model, not about nav — and tonight's label measurement shows nav carries real, asymmetric
+information the model is failing to exploit. ⇒ the directive stands; what this adds is that
+**merely including nav has already been tried and measured at zero**, so refcv6 must do something
+structurally different with it than refcv5-v2 did.
+
+Banked: `raw/t1_base_four_families.json`.
+
 ## ⭐⭐⭐ THE VERDICT — §13.2 **SUCCESS**, and the replicate REHABILITATES most of this package
 
 `L1-RL-s1` ran **600/600** unchanged on a quiet box (`grad_norm_max` **203.58**, clipped
