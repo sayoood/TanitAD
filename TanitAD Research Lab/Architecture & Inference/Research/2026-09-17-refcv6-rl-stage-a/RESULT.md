@@ -44,6 +44,38 @@ the pairing is real.)*
 2026-09-15 **FAIL-HARM** baseline of **+0.083 m** [0.056, 0.115], this arm is **+0.2508 m** — about
 **3× the harm of the release form L1 was built to repair.**
 
+### ⭐ The roll validates against the registry — and the regression is 2,508× the MEASURED inference floor
+
+⛔ **A fresh T1 roll is worthless if it is not measuring what the banked one measured**, so it was
+checked against `MODEL_REGISTRY.md` §4.7's own refcv5-v2 rows before anything was concluded:
+
+| row | **this roll** (41 eps / 1,402 win) | **registry** (141 eps / 4,823 win) | |
+|---|---|---|---|
+| `os − ha0` | **−0.3677** [−0.4757, −0.2674] | **−0.3644** [−0.4219, −0.3128] | |diff| **0.0033**, registry point **inside my CI** |
+| `os − ha0_ext` | +0.0024 [−0.0162, +0.0223] | +0.0205 [+0.0043, +0.0390] | same sign, registry point **inside my CI** |
+
+⭐ **`os − ha0` reproduces to 0.0033 m** — the roll is sound. ⚠️ **And `os − ha0_ext` is NOT a
+contradiction**: my grid is **41 episodes against the registry's 141**, so the read is underpowered
+and its interval swallows the banked point. ⛔ **I nearly claimed it was a contradiction** by reading
+the registry's three columns (`refcv5-v2` seed 0 | seed 1 | **refcv4b**) as three *reads of one arm*;
+they are **different arms**, and the `+0.0091 · NOT separated` cell is **refcv4b's**, not a third
+refcv5-v2 read. The grid line two rows down is what settled it.
+
+### ⛔ AND A SCOPE FIX TO THIS DOCUMENT'S OWN RETRACTION
+
+§1 above says *"the third variance on this rig remains UNMEASURED"*. **That is true of the ddv2_rl
+`heldout` reader** — it pins `seed = 500_000 + k` — **and FALSE of the T1 harness**, which takes
+`--infer-seed`. `MODEL_REGISTRY.md` §4.7 records two rollouts of the **same checkpoint** at
+`--infer-seed 0` and `1`: `ade_m` **0.3079 vs 0.3078**, the bar row **+0.0205 vs +0.0204**, with
+**distinct anchors 62 → 64** proving the sampler genuinely re-rolled.
+
+⇒ **the T1 inference-seed floor on this rig is ≈0.0001 m**, and the regression above is
+**−0.2508 m = 2,508× that floor.** ⭐ **The T1 regression is therefore decisively NOT an inference
+artifact** — which is exactly the question `CLAUDE.md`'s third-variance rule exists to force, and
+here it is answered rather than caveated. ⚠️ It remains **one training seed**; that is the floor the
+replicate roll is being spent on.
+
+
 ### ⭐ This is exactly why the tier doctrine exists
 
 Everything above this section is **T0** — a diagnostic tier on a proxy reward with a recorded
