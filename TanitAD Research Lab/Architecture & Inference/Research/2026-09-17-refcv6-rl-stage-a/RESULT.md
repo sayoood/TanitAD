@@ -179,6 +179,93 @@ full** — they await `L1-RL-s1` like every other cross-arm number here.
 
 Banked: `raw/selection_skill_vs_random.json`.
 
+## ⭐⭐ THE NEXT LEVER, MEASURED AND PRICED: 5 % of windows carry 62 % of the oracle gap
+
+The tail above is not a mood, it is a **named sub-population**, and it is small. Stratifying the
+worst 10 % against the other 444 windows — **reproduced independently on both arms**, which is the
+only reason it is quoted at one seed:
+
+| | tail (49) | rest (444) | ratio |
+|---|---|---|---|
+| `fan_nc_fail_frac` — share of the FAN that collides | **0.3851** | **0.1247** | **3.09×** |
+| `fan_endpoint_spread_m` | 31.50 | 35.79 | 0.88× |
+| `fan_pdms_best` — was a good plan present? | **0.9728** | 0.9961 | 0.98× |
+| `human_pdms` | 0.9405 | 0.9910 | 0.95× |
+| `t0` — position in the episode | 73.65 | 74.37 | 0.99× |
+
+*(`L1-RL-s0` reads 0.3377 / 0.0983 = **3.44×**, spread 27.03 / 28.70, `fan_pdms_best` 0.9867,
+`t0` 75.98 / 74.11 — same shape.)*
+
+⭐ **It is the CROWDED population, and the fan is NARROWER there, not wider.** `fan_nc_fail_frac`
+is a property of the **fan**, not of the selection, so unlike the sub-scores it is not definitional.
+And `fan_pdms_best` stays at **0.9728** — a good plan was present even in the tail.
+
+### Which sub-score discriminates — and which is structurally incapable of it
+
+⛔ The tail is defined by `fan_pdms_best − sel_pdms`, and `sel_pdms` is a function of the four PDM
+sub-scores, so *"the tail has low sub-scores"* is **partly definitional**. What is **not**
+definitional is where each sub-score's failures **live**:
+
+| sub-score | windows imperfect (of 493) | of which in the tail | |
+|---|---|---|---|
+| `sel_nc` | **25** | **25** | **100.0 %** |
+| `sel_ttc` | **45** | **43** | **95.6 %** |
+| `sel_ep` | **216** | 34 | **15.7 %** |
+| `sel_comfort` | **1** | 1 | — |
+
+⚠️ **`sel_comfort` is imperfect on ONE window in the whole corpus** (sd 0.045). Its absence from the
+tail is **structural** — a sub-score that never varies cannot carry regret — so "the selector is not
+trading safety for comfort" would have been a wrong reading, and is not made. ⭐ The real
+discriminator is the contrast between `sel_ep` and `sel_nc`/`sel_ttc`: **ego-progress failures are
+common (216/493 = 43.8 %) and mostly benign**, while **collision and TTC failures are rare and
+almost entirely inside the tail**.
+
+### ⛔⛔ And in EVERY collision window, a collision-free plan was sitting in the fan
+
+| | `L1-NORL-s0` | `L1-RL-s0` |
+|---|---|---|
+| windows whose **selected** plan collides | **25** | **37** |
+| …of which the fan still held a **collision-free** candidate | **25 / 25 = 100 %** | **37 / 37 = 100 %** |
+| mean share of the fan that was collision-free there | **55.3 %** | **60.6 %** |
+| mean `fan_pdms_best` available there | 0.9570 | 0.9824 |
+
+**The selector picks a colliding plan out of a fan that is MAJORITY collision-free, in 100 % of the
+cases where it collides.** That is not a hard-scene problem and not a generator problem.
+
+### The repair, priced before any GPU is spent on it
+
+An **oracle-repair ceiling**: lift one named sub-population to the best candidate the fan actually
+held, and ask what the corpus mean becomes. ⛔ A ceiling, never a result — no selector reaches an
+oracle — and it is equally a basis for **refusing** a lever whose price is too small to matter.
+
+| repair | n | Δ `sel_pdms` | 95 % CI | share of the full oracle gap |
+|---|---|---|---|---|
+| **collision windows only** | **25** | **+0.0485** | [+0.0228, +0.0801] | **62.4 %** |
+| the whole worst-10 % tail | 49 | +0.0672 | [+0.0347, +0.1040] | 86.5 % |
+| every window (full oracle) | 493 | +0.0777 | [+0.0454, +0.1140] | 100 % |
+
+*(`L1-RL-s0`: **+0.0733** on 37 windows = **59.3 %** of its larger gap.)*
+
+⭐⭐ **Five per cent of windows carry sixty-two per cent of the recoverable PDMS**, and the
+intervention is a **hard constraint, not a learned weight**: never select a colliding candidate
+while a collision-free one is in the fan.
+
+⛔⛔ **THE CATCH, AND IT IS THE WHOLE ENGINEERING PROBLEM.** `sel_nc` is scored against the
+**RECORDED future** — this is T0. So the table above says what a **perfect collision checker** would
+have bought, **not** what the deployed policy can see at inference. A selection-time gate needs a
+**predicted** occupancy, and under the vision-only rule it may not read the recorded future. ⇒ this
+is not a free re-ranking; it is a **requirement on perception**.
+
+⭐ **Which makes it a direct, quantified argument for the PI's refcv6 perception directive.** The
+BEV map head being wired right now is exactly the organ a collision gate would read, and this prices
+what it is worth on the selection side: **62 % of the oracle gap**, concentrated in 5 % of windows,
+on a rig where the fan already contains the right answer. ⚠️ And it lines up with D3 from the same
+night — the planner **attends** to the lead and the read changes nothing — because the tail is
+precisely the population where the lead is what matters.
+
+Banked: `raw/selection_regret_strata.json`, `raw/selection_regret_subscores.json`,
+`raw/selection_repair_ceiling.json`.
+
 ⚠️ **It is still T0** — deployed sampler, **recorded future**, **proxy reward** — so it is a
 diagnostic and **never a driving number**. And `fan_pdms_best` is a **max over the fan**, which is
 optimistic by construction: an oracle that picks the best of N is not a selector.
@@ -233,6 +320,8 @@ Too large for the repo; `raw/` here carries every number that has been quoted, a
 are keyed by **`sha12`**, never by clip id.
 
 ## Next
+
+⭐ **The named next lever is above and needs no GPU to specify: a collision gate on selection, worth a measured 62.4 % of the oracle gap, blocked only on a predicted occupancy the perception wiring is being built for.**
 
 `L1-RL-s1` re-runs **unchanged** — same batch, same flags, same seed 1 — once the box is quiet; it
 is the only thing between this package and a lever claim. **Stage B is NOT RUN** under the
