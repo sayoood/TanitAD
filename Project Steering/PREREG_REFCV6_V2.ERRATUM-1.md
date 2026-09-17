@@ -148,3 +148,25 @@ wrong *guarantee*: a reader of §12 would believe ten failure modes are mechanic
 would therefore not look for them. **A refusal that does not exist is worse than no refusal**,
 because it displaces the attention that would have caught the thing by hand — which is the same
 class as `e4af94f`, *a check that shares the defect it checks for*.
+
+### E4 status update — 2026-09-17, `caf9ca8`
+
+⭐ **Two of the three ⛔ rows are now ✅.** `stack/tanitad/train/prelaunch_v2.py` implements
+**refusal 3** (`refuse_unregistered_hypotheses`, reading the real `GOALS_AND_CLAIMS.md`) and
+**refusal 4** (`refuse_scored_split_leak` + `refuse_overlapping_splits`). 14 tests, and a
+**guard-removal audit: 8 of 8 branches KILLED, 0 escaped, baseline restored green**.
+
+⚠️ **Refusal 4 enforces what is decidable, not what is claimed.** *"Was this threshold fitted on the
+scored split?"* cannot be read off a panel. What is enforced: every tuned quantity **declares** its
+split (an **undeclared** one is REFUSED, not assumed innocent — silence is how a tuned threshold
+passes as a constant), no declaration names the scored split, and the scored split is disjoint from
+fit and val, measured on ids. ⇒ **a run can still lie; it can no longer pass by saying nothing.**
+
+⛔ **Refusal 10 is still absent, now deliberately.** It is a rule about **prose** and cannot be
+enforced against a report a human writes. It must either become a check on the panel's own fields
+(a `pos_weight` entry carrying `capped: true` and a `cap_note`) or be **demoted from a refusal to a
+convention** — the PI's call. Leaving it listed as a refusal with nothing behind it is the defect
+this whole erratum section is about.
+
+⇒ the §12 tally is now **6 ✅ · 3 ⚠️ (rewiring) · 1 ⛔ (decision)**. §11's OWED item stands: no GPU
+arm launches until refusals 1, 2 and 9 are rewired to the SPEC-v2 arms and 10 is built or demoted.
