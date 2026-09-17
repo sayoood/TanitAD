@@ -969,3 +969,68 @@ answer if disk or schedule is the binding constraint**, and it is already on dis
 stride-32 map is the failure it names, and the 2026-07-27 defect it cites is in the retraction log.
 
 <!-- PIQ-ITEM-20-408-UNBUILDABLE-2026-09-17 -->
+
+---
+
+## ⭐⭐ NEW ITEM 21 (2026-09-17) — **D9 (RL post-training) as configured is REFUTED at T1.** The evidence now orders the refcv6 work differently
+
+You asked for *"prepare the rl post training, implement D9"*. It is implemented, it ran, and it has a
+pre-registered verdict. **This item is the consequence, not a request for permission.**
+
+### What D9's own lever measured
+
+| | |
+|---|---|
+| `H-DDV2RL-2` (the pre-registered T1 harm guard) | ⛔ **FAIL-HARM**, both seeds |
+| T1 `ade_m` vs the **untouched cold start** | **0.2994 → 0.5502** and **0.5561** |
+| against its own two-seed floor (0.0059 m) | **43×** |
+| against the measured inference floor (≈0.0001 m) | **2,538×** |
+| versus the harm it was built to repair (2026-09-15, +0.083 m) | **≈3× worse** |
+
+⛔ **The lever makes the car drive worse than not training it at all**, on the primary tier, robustly
+on both variances.
+
+### ⚠️ What this does NOT say — please read this before it is quoted
+
+* ⛔ **It does not refute RL post-training.** It refutes **one configuration**: GRPO with the
+  matched-anchor IL term, 600 steps, on the 9.47 M-parameter decoder subset, with a **proxy reward
+  that has no drivable-area term**. A different reward, budget or parameter set is a different arm.
+* ⚠️ **The T0 endpoint PASSED** (§13.2 SUCCESS, `Δfan` +0.0363 and +0.0616). T0 is a diagnostic tier
+  over a **recorded future**; the two results are not in conflict, and this package is the clearest
+  demonstration the programme has of why a T0 number may never be quoted as driving performance.
+* ⭐ **Amendment A-1 and the matched-anchor form are VINDICATED** on what they were for: F1 passes on
+  all three arms (73.7–94.2 % of the fan retained against a 60 % bar, where the release form kept
+  **6.52 %**), and they **stabilised the rig ~10×** (a zero-lever replicate separates on 4/10 metrics
+  against the release rig's 10/10).
+
+### What the same night's evidence says to do instead
+
+Three instruments at three tiers converged on one diagnosis — **`refcv5-v2` has a USE problem, not
+an information problem**:
+
+| | the information IS there | and is NOT used |
+|---|---|---|
+| **D3** (attention, T1) | attends to the lead, **1.92×**, all four decoder layers | masking it moves **0.09×** the floor (bar ≥ 3×) |
+| **collision** (T0) | a collision-free plan is in the fan in **119 of 119** windows across five checkpoints | it selects a colliding one every time |
+| **nav** (T1) | nav rules a turn **out with certainty** — `P(turn \| NAV_FOLLOW_ROAD)` = **0.0000** | deleting nav moves **0 of 10** metrics |
+
+⇒ **adding inputs is measurably not the lever; forcing the existing reads into the decision is.**
+And the one such lever that is priced: **a collision gate on selection is worth 62.4 % of the oracle
+gap from 5.1 % of windows** (item 19), blocked only on a predicted occupancy — which is exactly what
+the BEV map head you directed is for, and which is now wired (R2/R3, opening **3,146,752** trunk
+parameters to the tactical layer).
+
+### The decision, with its default
+
+**Ordering, not cancellation.**
+
+| option | |
+|---|---|
+| **(a) DEFAULT — perception and selection FIRST, D9 parked** | spend the next refcv6 arms on the BEV/occupancy path and a collision gate; re-open D9 **after** selection has something to select with. D9's instrument, pre-registration and harness all survive and are banked. |
+| (b) re-run D9 with a changed reward | the proxy has **no drivable-area term** (our maps did not cover the training clips when it was built; SAM3 finishes ≈2026-09-22). A DAC-carrying reward is a genuinely different arm — but it is a **new** pre-registration, not a re-run. |
+| (c) proceed with D9 as specified | ⛔ not recommended: the measured effect is a large, robust regression on the tier that decides capability claims. |
+
+⚠️ **If you say nothing, (a) happens.** ⛔ Nothing is deleted — D9 stays implemented, banked and
+re-runnable the moment a reward or a scale argument justifies it.
+
+<!-- PIQ-ITEM-21-D9-REFUTED-REORDER-2026-09-17 -->
