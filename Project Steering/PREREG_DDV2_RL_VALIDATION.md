@@ -228,3 +228,86 @@ Stage A = 3 arms × 27.5 min (**82.5**) + 5 held-out T0 reads × 4 min (**20**) 
 ## 16. Execution record
 
 Filled by `…/2026-09-16-refcv6-rl-l1/RESULT.md`, including any deviation from this extension. ⛔ **Any deviation is declared BEFORE the held-out number it could affect is read**, in the form §7's D-1 used.
+
+---
+
+## 16.1 EXECUTION RECORD — Stage A, filled 2026-09-17
+
+**Package:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-rl-stage-a/`.
+
+### What ran
+
+| | status | wall |
+|---|---|---|
+| **L1-RL-s0** | ✅ 600/600, `check_arm_l1.py` exit 0, `problems: []` | 1,875.5 s |
+| **L1-NORL-s0** | ✅ 600/600, exit 0, `problems: []` | 2,056.8 s |
+| **L1-RL-s1** | ⛔ **failed twice on CUDA OOM** under host-RAM contention (died at 157 and 186 rows), then ✅ relaunched **unchanged** on a quiet box | 658 s + ~780 s wasted, then ~1,990 s |
+| held-out T0 reads | ✅ for all three trained arms (BASE and BASE-repeat were already banked 2026-09-15 on the **identical** 493 windows) | ~14 min |
+| **Stage B (`L1λ-NORL-s0`)** | ⛔ **NOT RUN** — §14 drop order item **(1)** | — |
+| **T1 rolls** | ⛔ **NOT RUN in Stage A** — see the deviation below | — |
+
+⛔ **The batch was NOT reduced to get the replicate through.** Batch is held constant across arms, so
+a smaller-batch arm 3 would have been a **third condition wearing a replicate's name**.
+
+### §13.1 F1 GATE — evaluated on the pre-registered statistic
+
+⭐ **Cold-start check is exact:** BASE mean `fan_endpoint_spread_m` reads **37.5199 m**, matching
+§13.1's literal to four decimals.
+
+| arm | Δspread vs BASE | 95 % CI | mean | retained | **F1** |
+|---|---|---|---|---|---|
+| L1-RL-s0 | −8.9872 | [−11.3541, −6.5142] | 28.53 m | **76.0 %** | **PASS** |
+| L1-NORL-s0 | −2.1583 | [−3.9559, −0.3553] | 35.36 m | **94.2 %** | **PASS** |
+
+⭐⭐ **This is the gate the 2026-09-15 release arm failed by 53 pp** (2.4457 m = 6.52 %). The
+matched-anchor IL form plus **Amendment A-1** fixed the fan collapse, read **before** the primary
+endpoint as §13.1 requires.
+
+### ⛔⛔ DEVIATION D-2 — THE T1 ROLLS WERE NOT RUN, AND THIS DECLARATION IS **LATE**
+
+§12 requires T1 rolls for BASE and all three Stage-A arms. **None ran.** ⇒ **`H-DDV2RL-2` is
+UNEVALUABLE**, which §13.3 requires be reported as such and **never as passed**.
+
+⛔ **§16 says a deviation is declared BEFORE the held-out number it could affect is read. The T0
+numbers were already read when I noticed. This declaration is therefore LATE, and I am recording
+that rather than backdating it.** ⚠️ Mitigating, and stated as mitigation rather than excuse: T1 and
+T0 are different tiers on different instruments, so the late declaration cannot have been shaped by
+a T0 result — but the rule exists precisely so that argument never has to be trusted.
+
+⭐ **Why this is the package's most serious gap, not a bookkeeping nit.** 2026-09-15 read
+**FAIL-HARM**: both RL seeds worse than the cold start on T1 ADE (**+0.083 [0.056, 0.115]** and
+**+0.081 [0.051, 0.116]**). **Repairing that harm is what L1 exists for.** Every number in the Stage
+A package is **T0** — a diagnostic tier — so without T1 the package cannot say whether L1 fixed the
+thing it was built to fix.
+
+### The remedy, and it follows the pre-registered drop order rather than my judgement
+
+§14's order at >2.85 h is: **(1) Stage B, (2) L1-NORL-s0's T1 roll, (3) L1-RL-s1's T1 roll.**
+
+* **(1)** already NOT RUN.
+* **(2) L1-NORL-s0's T1 roll is DROPPED.** It feeds only §13.4's *"NORL − BASE under the new form"*,
+  which is **reported with a direction but NO criterion**.
+* **(3) L1-RL-s1's roll is KEPT** — `H-DDV2RL-2` needs **both** RL seeds against BASE.
+
+⇒ **dropping exactly item (2) makes the harm guard EVALUABLE inside the budget:** 3 rolls ×
+≈9.6 min ≈ 29 min, cumulative ≈ **2.75 h < 2.85 h**. Script: the package's `code/t1_rolls.sh`, whose
+invocation is copied verbatim from the 2026-09-15 `run_validation.sh` so the two packages' T1
+numbers stay comparable.
+
+### Budget
+
+Training 1,875.5 + 2,056.8 + ≈1,990 s, plus ≈1,438 s lost to the two OOM attempts, plus ≈14 min of
+held-out reads ⇒ ≈ **2.27 GPU-h** before T1; ≈ **2.75 GPU-h** with the three T1 rolls. ⛔ **Stage B
+stays NOT RUN even though ≤ 2.45 h was momentarily satisfiable** — it was satisfiable only because
+the T1 rolls had not run, and §14 puts Stage B **first** in the drop order. Spending a budget freed
+by skipping a required measurement on an optional arm would invert the pre-registration.
+
+### §13.2 primary endpoint
+
+`Δfan(s0)` = **+0.0363 [+0.0243, +0.0475]**, lower bound > 0. `Δfan(s1)` follows the replicate.
+⚠️ **And §13.2's two-seed requirement turns out to be the only thing standing between this endpoint
+and noise:** a run-to-run replicate on the sibling rig moves `fan_pdms_mean` by **+0.2474**, **6.8×**
+the +0.0363 being used to decide. See `D-DDV2RL-SEED-FLOOR-DWARFS-THE-LEVER` and
+`D-DDV2RL-LAUNCH-NONDETERMINISM` in `GOALS_AND_CLAIMS.md`.
+
+<!-- PREREG-DDV2RL-EXEC-RECORD-STAGE-A-2026-09-17 -->
