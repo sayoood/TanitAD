@@ -15356,3 +15356,45 @@ worst document to do it in, because its numbers become the reference the arms ar
 ⛔ **ITEM 3, added in the same audit pass (2026-09-17):** the parent file's *"measured **14.3 %** one-seed floor"* is **RIG-SPECIFIC and the mildest figure in the record**. 14.3 % is the **v7-tiny** rig (6 of 42 family cells). On the **WP-D** rig a replicate with D0's flags, **D0's SEED and ZERO levers moved** read separably worse on **5 of 9 metrics = 55.6 %**, reproducing a headline ADE +0.02610 at +0.02460. ⇒ the honest statement is **14.3 %–55.6 %, rig-dependent, refcv6's own rig UNMEASURED**, and the worst case is **same-seed replicate noise** that no seed-control arm would catch. ⭐ This makes the "necessary not sufficient" rule STRONGER: a refcv6 result needs a **same-seed replicate**, not merely a second seed. See `PREREG_REFCV6_V2.ERRATUM-1.md` §E3.
 
 <!-- RETR-2026-09-17-PREREG-V2-NUMBERS-E3 -->
+
+## R-2026-09-17-selection-gap-no-control — A GAP READ AS A DIAGNOSIS, WITH THE CONTROL SITTING UNREAD IN THE SAME FILE
+
+**Retracted:** 2026-09-17, ~20 minutes after landing (`9599913`) · **By:** Master Mind ·
+**Class: I — self-caught by running the control the claim had never been checked against.**
+
+**Where it lived:** `TanitAD Research Lab/Architecture & Inference/Research/2026-09-17-refcv6-rl-stage-a/RESULT.md`
+(both the 1-arm and the 2-arm version), and it had been relayed into two other packages as
+*"three independent readings point at selection"*.
+
+| the statement, as landed | status |
+|---|---|
+| *"The fan already contains a near-human plan; the selector does not pick it."* — inferred from `fan_pdms_best` **0.9949** against `sel_pdms` **0.8712** | ⛔ **WITHDRAWN.** MEASURED the same day: on the control arm the selector picks the fan's **single best** candidate **exactly** on **258 of 493 windows (52.3 %)**, normalised-skill **median 1.0000**, and beats a pick-at-random control by **+0.2532 [+0.2119, +0.2964]**, separated. A selector that "does not pick the good plan" cannot do that. |
+
+⭐ **What replaces it is sharper and cheaper to act on: the regret is a TAIL.** On the control,
+**86.5 % of all selection regret is carried by the worst 10 % of windows** (49 of 493) while the
+other 444 sit at or near the ceiling. "Rebuild selection" was the wrong target; "find what those
+49 windows have in common" is a stratification question answerable on the banked rows at zero GPU.
+
+⭐ **It also sharpened an attribution the original framing could not reach.** The RL arm hands its
+selector a **strictly easier** problem — random-pick control **higher** (0.6992 vs 0.6629, the fan
+being tighter) and oracle ceiling **no lower** (0.9949 vs 0.9938) — and the selector still scores
+**worse** (0.8712 vs 0.9161), with exact picks down **17.0 pp** and worse-than-chance windows
+nearly doubled (**34 → 63**). ⇒ the RL term's damage is localised to **selection**, which no
+reading of `fan_endpoint_spread_m` alone could establish.
+
+⛔ **ROOT-CAUSE CLASS: an inference from a GAP, with no no-information control** — the same family
+as the 2026-08-22 ridge-probe failures, where four confident numbers were each caught only by a
+control that had to read a known value. `best − selected` is large for a **good** selector too,
+because `best` is a **max over the fan** and grows with fan size; without the random-pick baseline
+the gap cannot distinguish a selector that reads nothing from one that is near-optimal on the
+median window. ⚠️ **The aggravating detail: the control was already in the banked rows.**
+`fan_pdms_mean` — the expected score of a uniformly drawn candidate — was printed in the very table
+the claim was read off, at **0.6992**, and computing the comparison cost **zero GPU and one
+script**. This is not a missing measurement; it is an unread one.
+
+⇒ **The rule this earns:** ⛔ **never quote an oracle-minus-actual gap as evidence about the
+actual, without the no-information baseline on the same windows.** State all three — random,
+actual, oracle — or state none. Instrument: `raw/selection_skill_vs_random.json` in the package
+above.
+
+<!-- RETR-2026-09-17-SELECTION-GAP-NO-CONTROL -->

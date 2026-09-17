@@ -1,4 +1,4 @@
-# RL Stage A — the lever and its control ran, and the lever is WORSE. ⛔ The REPLICATE did not run, so this is still not a lever claim.
+# RL Stage A — the lever and its control ran, the lever is WORSE, and the damage is in SELECTION. ⛔ The REPLICATE did not run, so this is still not a lever claim.
 
 **Date:** 2026-09-17 · **Evidence class: MEASURED** · **Tier: T0** (deployed sampler, recorded
 future, proxy reward) · **Estimator:** `taniteval.ci.paired_episode_cluster_bootstrap`, n_boot 2000,
@@ -120,14 +120,64 @@ distribution; every metric that reads worse is what the car would actually execu
 
 1. **This arm, read against itself:** `fan_pdms_best` **0.9949** against `sel_pdms` **0.8712** — a
    gap of **0.1237** — and `sel_ade` **2.54 m** against `fan_minade` **0.82 m**, a **3.107×** ratio.
-   The fan already contains a near-human plan; the selector does not pick it. ⭐ This needs no
-   cross-arm comparison and no control: it is one arm read against itself. ⚠️ It holds in the
-   control too (**0.0777**, **2.497×**), so it is a property of the architecture, not of the lever.
+   ⭐ This needs no cross-arm comparison and no control: it is one arm read against itself. ⚠️ It
+   holds in the control too (**0.0777**, **2.497×**), so it is a property of the architecture, not
+   of the lever. ⛔ **But see the next section: "the selector does not pick the good plan" is the
+   WRONG reading of this gap, and I wrote it before measuring the random-pick control.**
 2. **D3, same model family, same night:** the planner **attends** to the lead (T-G 1.92×, separated
    at all four layers) yet greying the lead out moves the time gap by **0.09× the noise floor**. The
    read is there and unused.
 3. **Here:** the RL term narrows the fan **without improving its best member**. It is removing
    options, not making better ones.
+
+## ⛔⛔ CORRECTION — the selector is NOT failing to pick the good plan. The regret is a TAIL.
+
+⚠️ **This section corrects the first version of this document, which read the
+`fan_pdms_best` − `sel_pdms` gap as "the fan contains a near-human plan and the selector does not
+pick it".** That sentence is an inference from a gap, with **no control**. The control was already
+sitting in the banked rows and costs zero GPU: `fan_pdms_mean` is the expected score of a candidate
+drawn **uniformly** from the fan, i.e. exactly what a selector that reads **nothing** would score.
+MEASURED, paired episode-cluster bootstrap, n_boot 2000:
+
+| | `L1-RL-s0` | `L1-NORL-s0` |
+|---|---|---|
+| pick-at-random control (`fan_pdms_mean`) | 0.6992 | 0.6629 |
+| **the deployed selector** (`sel_pdms`) | **0.8712** | **0.9161** |
+| oracle ceiling (`fan_pdms_best`) | 0.9949 | 0.9938 |
+| selector **−** random | **+0.1720** [+0.1308, +0.2136] | **+0.2532** [+0.2119, +0.2964] |
+| selector **−** oracle | −0.1237 [−0.1709, −0.0835] | −0.0777 [−0.1140, −0.0454] |
+| normalised skill (0 = random, 1 = oracle) — mean · median | 0.6680 · **0.9475** | **0.8156** · **1.0000** |
+| picks the fan's best candidate **exactly** | 174 / 493 = **35.3 %** | 258 / 493 = **52.3 %** |
+| … within 0.01 of it | 229 / 493 = 46.5 % | 329 / 493 = **66.7 %** |
+| picks **worse than chance** over its own fan | 63 / 493 = **12.8 %** | 34 / 493 = **6.9 %** |
+| share of all regret carried by the worst 10 % of windows | **68.6 %** | **86.5 %** |
+
+⭐ **On the control arm the selector picks the single best candidate in the fan on the MEDIAN
+window** (normalised skill median **1.0000**, exact pick on **52.3 %**), and it beats the
+random-pick control by **+0.2532** with the interval clear of zero. A selector that "does not pick
+the good plan" cannot do that. ⇒ **the earlier sentence is withdrawn.**
+
+⭐⭐ **What is true instead, and it points somewhere much cheaper: the loss is a TAIL.** On the
+control, **86.5 % of all selection regret is carried by the worst 10 % of windows** — 49 of 493 —
+while the other 444 are at or near the ceiling. That is not "rebuild selection"; that is **find what
+those windows have in common**, which is a stratification question answerable on the banked rows at
+zero GPU.
+
+⭐⭐ **And it sharpens the RL attribution to something the fan-width story could not say.** The RL
+arm hands its selector a **strictly easier problem** — its random-pick control is **higher**
+(0.6992 vs 0.6629, because the fan is tighter) and its oracle ceiling is **no lower** (0.9949 vs
+0.9938) — and the selector still scores **worse** (0.8712 vs 0.9161). Exact picks fall by **84
+windows (−17.0 pp)** and windows selected **worse than chance nearly double (34 → 63)**. ⇒ **the RL
+term's damage is localised to SELECTION, not to the generator**, which no reading of
+`fan_endpoint_spread_m` alone could establish.
+
+⚠️ **Scope, honestly.** The *within-arm* rows (selector vs its own random control, exact-pick
+counts, the regret tail) are absolute readings of one arm against a control computed on the **same
+windows from the same fan**, so the one-seed caveat at the top does not touch them. The
+*cross-arm* rows (−17.0 pp, 34 → 63) are RL-minus-NORL differences and are **subject to it in
+full** — they await `L1-RL-s1` like every other cross-arm number here.
+
+Banked: `raw/selection_skill_vs_random.json`.
 
 ⚠️ **It is still T0** — deployed sampler, **recorded future**, **proxy reward** — so it is a
 diagnostic and **never a driving number**. And `fan_pdms_best` is a **max over the fan**, which is
