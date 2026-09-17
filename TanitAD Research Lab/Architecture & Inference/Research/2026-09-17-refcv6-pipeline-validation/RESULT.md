@@ -99,8 +99,43 @@ See `PI_DECISION_QUEUE.md` **item 20**, default **416 × 1024**. §10.1's standi
   degenerate side reads **NaN** rather than a tolerated epsilon, as the module's contract requires.
   `grep -c "same device"` on that log reads **0**. ⚠️ That arm is still running its 40 steps; only
   the crash-clearing and the identities are claimed here.
-* ⚠️ Map coverage was gated at `--map-min-coverage 0.90`; clips below it are skipped, and this run
-  did not count how many.
+* ⭐ **Map coverage is now MEASURED and fully explained — see the section below.** An earlier
+  draft of this file said the run *"did not count how many"* clips fell below
+  `--map-min-coverage 0.90`. It had counted them all along: the gate writes its whole report into
+  `config.json`, and it reconciles exactly.
+
+## ⭐ Map coverage: the gate had already counted, and two independent instruments agree
+
+`--map-min-coverage 0.90` is **a refusal, not a filter**, and it is evaluated over **windows, not
+clips** — over this dataset's own window index, before the GPU. Both arms' `config.json` carry the
+identical report at `refcv6_perception.map_gt_stats.train`:
+
+| | |
+|---|---|
+| windows · clips | **23,772** · 139 |
+| `frac_ok` · `frac_ok_upper` | **0.9712** · **0.9712** — identical |
+| verdict vs the 0.90 floor | **PASS** |
+| states | `ok` **23,088** · `no_file` **684** · `frame_out_of_range` **0** · `inconclusive` **0** |
+| `reasons` | exactly **4** clips, each `FileNotFoundError errno 2` |
+
+⭐ **The deficit is fully explained and nothing is unaccounted for.** `no_file` is the *only*
+non-`ok` state, so every uncovered window belongs to one of those four clips. Independently, from
+the cache manifest and a directory listing (no trainer involved): **139 clips, 135 map files, 4
+missing, 0 orphans** — and **the four sha12s are the same four**, set-identical to the trainer's
+`reasons` keys. The arithmetic closes too: windows/clip = `n_frames − 30`, the four clips carry
+201 frames each → **171 windows each → 4 × 171 = 684**, exactly the `no_file` count.
+
+⭐ **`frac_ok == frac_ok_upper` means the bound is tight, not merely satisfied.** The gate's
+comparison deliberately uses the LOWER bound, so an inconclusive window would count *against* the
+run — *"we could not tell"* is not coverage. There are **zero** inconclusive windows here, so the
+2.877 % is exact rather than a worst case.
+
+⚠️ **Correction to a claim made earlier in this session: those four clips are NOT "skipped by the
+chain".** `_map_item` emits their windows with `map_label = False` and an all-false `map_seen`, so
+`map_soft_ce` scores **zero cells** on them — deliberately, so the loss cannot read `0.0` as
+*"supervised, and perfect"*. The trunk still sees those frames and still takes planner and 3-D-box
+gradient from them; only the **map term abstains**. "Skipped" would have implied 4 clips of lost
+training signal. The real cost is 2.877 % of the map head's supervision, and nothing else.
 
 ## Artifacts
 
