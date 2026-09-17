@@ -68,3 +68,42 @@ would have caught it is one this programme already has — *every number carries
 and its path* — and a summary is not a path.
 
 
+
+---
+
+## E3. §0 — "a measured **14.3 %** one-seed floor" is RIG-SPECIFIC and quotes the MILDEST number we have. **It should be 14.3 %–55.6 %, and the worst case is not a seed effect at all.**
+
+*(Added in the same audit pass, after E1 and E2, by continuing to check rather than stopping at the
+first two.)*
+
+**What the parent file says** (§0, standing caveats): *"one-seed separation carries a measured
+**14.3 %** floor"*.
+
+**14.3 % is real** — `CLAUDE.md` records it for the **v7-tiny rig**: `separated` differences on
+**6 of 42 family cells**, re-derived 2026-09-06. ⛔ **But it is the mildest figure in the record, and
+quoting it alone makes the caveat about four times weaker than the evidence supports.**
+
+⭐ **MEASURED on the WP-D rig, and it is worse in kind, not just in degree:** `D0b` — **D0's flags,
+D0's SEED, ZERO levers moved** — was itself *separably worse* than `D0` on **5 of the same 9 metrics
+(55.6 %)**, reproducing the headline ADE **+0.02610 at +0.02460** and **exceeding the lever on all
+three longitudinal metrics**. The two checkpoints went through the identical T1 arm, 3,422 windows /
+40 episodes, with `eid` / `window_start` / `gt` / `v0` element-wise identical; mean
+`|pred(D0b) − pred(D0)|` = **0.1059 m**.
+
+⇒ **The correction is not a bigger number, it is a different claim:**
+
+| as written | as it should read |
+|---|---|
+| a **14.3 %** one-seed floor | a **14.3 %–55.6 %** replicate false-positive rate, **rig-dependent**, ⛔ **and refcv6's own rig is UNMEASURED** |
+| attributed to **seed** variation | ⛔ the 55.6 % case moved **no seed and no lever** — it is **same-seed replicate noise**, which no seed-control arm would catch |
+
+⭐ **This makes §0's rule STRONGER, not weaker.** "A separated interval is necessary, not sufficient"
+was already the rule; what changes is that the honest way to establish a refcv6 result is a
+**replicate at the same seed**, not merely a second seed — and that **the floor for these arms has
+not been measured and must be**, rather than inherited from whichever rig gives the friendliest
+number.
+
+⛔ **And this is the same error as E1 and E2 in a third costume:** I quoted a figure that exists,
+from a rig that is not the one under test, without the range or the provenance beside it. It is the
+`true-but-wrong-for-the-reader` class — every word defensible, the conclusion the reader draws
+wrong.

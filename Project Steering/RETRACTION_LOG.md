@@ -15352,3 +15352,7 @@ worst document to do it in, because its numbers become the reference the arms ar
 *and its path* — would have caught both.
 
 <!-- RETR-2026-09-17-PREREG-V2-NUMBERS -->
+
+⛔ **ITEM 3, added in the same audit pass (2026-09-17):** the parent file's *"measured **14.3 %** one-seed floor"* is **RIG-SPECIFIC and the mildest figure in the record**. 14.3 % is the **v7-tiny** rig (6 of 42 family cells). On the **WP-D** rig a replicate with D0's flags, **D0's SEED and ZERO levers moved** read separably worse on **5 of 9 metrics = 55.6 %**, reproducing a headline ADE +0.02610 at +0.02460. ⇒ the honest statement is **14.3 %–55.6 %, rig-dependent, refcv6's own rig UNMEASURED**, and the worst case is **same-seed replicate noise** that no seed-control arm would catch. ⭐ This makes the "necessary not sufficient" rule STRONGER: a refcv6 result needs a **same-seed replicate**, not merely a second seed. See `PREREG_REFCV6_V2.ERRATUM-1.md` §E3.
+
+<!-- RETR-2026-09-17-PREREG-V2-NUMBERS-E3 -->
