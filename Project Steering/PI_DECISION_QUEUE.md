@@ -1034,3 +1034,29 @@ parameters to the tactical layer).
 re-runnable the moment a reward or a scale argument justifies it.
 
 <!-- PIQ-ITEM-21-D9-REFUTED-REORDER-2026-09-17 -->
+
+## ⭐⭐ ANSWERED 2026-09-17 — the PI ruled on all four open items in session
+
+**Verbatim, in two messages:** *"for 1, chose (b), for 2 move to 416X1024, for 3 chose
+defult, what is D9?"* and, after D9 was explained, *"dont park D9, solveit and prove it."*
+
+⛔ **Recorded here because a decision that lives only in a chat transcript is not a
+decision the programme can act on later.** Each row states what was asked, what was
+answered, and what has ALREADY been done about it.
+
+| # | the question | the PI's answer | what was done, same day |
+|---|---|---|---|
+| **NEW** | `resnet101` — §10.2's PRIMARY trunk — OOMs on the 8 GB dev box. How does it get its pre-pod gate? | **(b) local batch-1 proof** — shapes and wiring, not memory | ⭐ **DONE, with a harder answer than the option assumed.** It OOMs at 416×1024 **batch 1** too (*"tried to allocate 156.00 MiB … 22.34 GiB is allocated by PyTorch"*), so the GPU route to (b) is closed at **either** geometry. Delivered on **CPU** instead: `{"done": true, "step": 5, "wallclock_s": 382.9}` with every head live and rig coverage **139/139**. ⇒ **shapes correct; the card is the only obstacle**, and the >20 GB figure is pod-sizing information. |
+| **20** | input geometry — `408×1024` is unbuildable (`408 % 32 = 24`) | **move to 416 × 1024** | ⭐ **DONE.** Cache rebuilt 139/139, 0 failures, 10.75 GB, 18.8 min; HFOV exactly 120.0000°, VFOV 46.0921°, `416 % 32 = 0` ⇒ 13 stride-32 rows. ⛔ **Building was not enough** — the first run was refused for an undeclared `CanonicalFrame`, the same omission that blocked 256×1024 the day before. Declared derived-not-retyped + 7 mutation-audited tests (`d8306f1`). |
+| **19** | the agent/selection seam — priced at **62.4 %** of the oracle gap from **5.1 %** of windows | **default** — carry it as a named arm with its own pre-registration | recorded; its pre-registration follows the D9 one. Nothing about it changes the D9 ordering below. |
+| **21** | D9 (RL post-training) is refuted at T1 — park it, re-reward it, or proceed? | ⭐⭐ **"dont park D9, solve it and prove it"** — i.e. **NOT option (a)**; a repaired reward, with proof | ⭐ **DONE (diagnosis) + PRE-REGISTERED (repair).** Two named defects, one per seed, each separated: **DAC ≡ 1** (seed 0, off-road +0.0151 SEPARATED) and **EP with no speed-appropriateness term** (seed 1, +0.372 m/s SEPARATED). `H-DDV2RL-3` written with both outcomes committed (`ce8e892`). |
+
+### ⛔ The one thing item 21's answer does NOT unblock
+
+`H-DDV2RL-3` **must not start** until SAM3 maps cover the **RL-train** split (corpus
+finishes ≈2026-09-22). A partially covered split makes `dac_from_drivable` return its
+no-map value of **1** on the uncovered part — which is *precisely the defect being
+repaired*, reintroduced silently. The pre-registration states this as a gate, not a
+preference.
+
+<!-- PIQ-ANSWERED-19-20-21-RESNET101-2026-09-17 -->
