@@ -191,3 +191,57 @@ progress credit**.
    harm return.
 
 <!-- PREREG-D9-AMENDMENT-NO-PRODUCTION-CALLER-2026-09-17 -->
+
+---
+
+## 12. ⛔ AMENDMENT 2 — `L2-SPD` cannot be "EP gains a speed term". EP is BLIND to speed.
+
+§3 defines `L2-SPD` as *"EP gains a speed-appropriateness term"*. **That is not
+implementable, and the reason is a measurement, not an opinion.**
+
+`ego_progress` is a **projection onto a route that ends at the human's last point**, so it
+**saturates**. MEASURED 2026-09-17 on a 4 s route, human at 10 m/s:
+
+| candidate | travels | `ego_progress` |
+|---|---|---|
+| 6 m/s | 24.00 m | 24.0000 |
+| 8 m/s | 32.00 m | 32.0000 |
+| **10 m/s** | 40.00 m | **38.5390** |
+| 12 / 14 / **20 m/s** | 48 / 56 / **80 m** | **38.5390** — identical |
+
+⇒ **A candidate at twice the human's speed scores exactly the human's progress.** EP
+penalises being **slow** and is **blind** to being fast, and reshaping the EP ratio
+(e.g. to `min(raw,ref)/max(raw,ref)`) changes **nothing**, because its input is already
+clipped. *(That reshape was implemented, tested, measured useless and reverted the same
+hour — the test refuted the design.)*
+
+### ⭐ The corrected mechanism for seed 1
+
+Nothing in this reward bounds speed: EP saturates, NC and TTC bite only when an agent is
+near, and comfort bounds **accelerations and jerk**, not speed (the only speed-named
+config fields are `stopped_speed_ego`, `stopped_speed_track`, `ttc_stopped_speed` — all
+**stopped-detection thresholds**, now pinned by a test).
+
+⇒ **Speed above the human's is a FLAT DIRECTION in the reward — neither rewarded nor
+penalised.** A flat direction under a stochastic policy gradient **drifts**, and which way
+it drifts is a per-seed accident. That fits the evidence better than *"EP rewards
+over-speeding"*: it explains why the two seeds damaged **different families**, why only
+one over-sped, and why the no-RL control does not move.
+
+⚠️ **It also corrects this file's own §1 wording** (*"EP rewards progress along the
+human's path with no speed-appropriateness term"*), which reads as though EP pays for
+speed. Above the human's speed it pays nothing at all: the defect is **absence**, not
+incentive.
+
+### What `L2-SPD` becomes
+
+**`L2-SPD` ADDS a speed-appropriateness penalty; it does not reshape EP.** Its one
+variable is that new term. Its mechanism check (§4.2) is unchanged — the signed speed
+bias must return toward the cold start's **+0.045 m/s** — and now has a stated reason to
+be capable of moving: the reward gains a gradient in a direction that previously had none.
+
+⚠️ **The term's exact form is NOT fixed here** and must be pre-registered before it runs,
+because a penalty weight chosen after seeing the data is a hyper-parameter selected on the
+scored split.
+
+<!-- PREREG-D9-AMENDMENT-2-EP-IS-BLIND-TO-SPEED-2026-09-17 -->

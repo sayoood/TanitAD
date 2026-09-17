@@ -232,3 +232,60 @@ def test_a_map_root_with_NO_MAPS_ON_THE_ITEMS_is_REFUSED():
     v = torch.full((1,), 10.0)
     with pytest.raises(SystemExit, match="NOT ONE item in this batch carries a map"):
         R.score_batch(_CtxWithRoot(), u, [item], v)           # ...but never read
+
+
+# --------------------------------------------------------------------------- #
+# the OTHER half of D9: THE REWARD HAS NO SPEED TERM, and EP cannot supply one  #
+# --------------------------------------------------------------------------- #
+
+def _progress(v, human_v=10.0):
+    """`ego_progress` of one candidate at ``v`` against a human at ``human_v``."""
+    n = P.PROXY.n_ticks
+    human = _straight(n, human_v)[0]
+    st = _straight(n, v)
+    allst = torch.cat([human[None], st])
+    return float(P.ego_progress(allst, human[:, :2].clone(), P.PROXY)[1])
+
+
+def test_MEASURED_ego_progress_SATURATES_at_the_route_end():
+    """⛔ The finding that kills the obvious repair.
+
+    The route ends at the human's last point, so progress is a projection that CAPS
+    there. A candidate at TWICE the human's speed scores exactly the human's progress.
+    MEASURED 2026-09-17 on a 4 s route: 6 -> 24.00, 8 -> 32.00, and 10 / 12 / 14 / 20
+    all -> 38.5390.
+    """
+    slow6, slow8 = _progress(6.0), _progress(8.0)
+    at, fast12, fast20 = _progress(10.0), _progress(12.0), _progress(20.0)
+    assert slow6 < slow8 < at, "below the human, progress must still discriminate"
+    assert fast12 == pytest.approx(at, rel=1e-9)
+    assert fast20 == pytest.approx(at, rel=1e-9), (
+        "a candidate at 2x the human's speed scores the SAME progress -- EP is blind "
+        "above the human's speed, so reshaping the EP ratio cannot penalise over-speeding")
+
+
+def test_EP_is_therefore_IDENTICAL_for_matching_and_for_massively_over_speeding():
+    """⛔ The consequence, stated as a behaviour rather than an argument."""
+    n = P.PROXY.n_ticks
+    human = _straight(n, 10.0)[0]
+    tracks = P.AgentTracks.from_frames([[] for _ in range(n + 1 + 9)],
+                                       torch.zeros((n + 1 + 9, 4)))
+    route = human[:, :2].clone()
+    ep = {}
+    for v in (10.0, 20.0):
+        out = P.score_candidates(_straight(n, v), human, tracks, route)
+        ep[v] = float(out["ep"][0])
+    assert ep[10.0] == pytest.approx(1.0, abs=1e-6)
+    assert ep[20.0] == pytest.approx(ep[10.0], abs=1e-6), (
+        "EP cannot tell 'exactly right' from 'twice too fast'")
+
+
+def test_no_reward_term_in_this_config_bounds_SPEED():
+    """⚠️ The positive statement behind the two tests above: comfort bounds
+    ACCELERATIONS and jerk, never speed. If a speed bound is ever added to
+    `ProxyConfig`, this test should fail and the `L2-SPD` design be revisited."""
+    fields = set(P.ProxyConfig().to_dict())
+    speedish = {f for f in fields if "speed" in f}
+    assert speedish == {"stopped_speed_ego", "stopped_speed_track", "ttc_stopped_speed"}, (
+        f"unexpected speed-related config fields {speedish}: all three known ones are "
+        "STOPPED-detection thresholds, not speed limits")

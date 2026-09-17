@@ -62,6 +62,17 @@ class ProxyConfig:
     max_abs_lon_jerk: float = 4.13
     max_abs_yaw_rate: float = 0.95
     static_classes: tuple = ("protruding_object",)
+    #: ⛔ THERE IS NO SPEED TERM IN THIS CONFIG, AND THAT IS DELIBERATE TO RECORD.
+    #: MEASURED 2026-09-17: ``ego_progress`` saturates at the route end, so candidates at
+    #: 10 / 12 / 14 / 20 m/s against a human at 10 all score the SAME progress (38.5390 on
+    #: a 4 s route) while 6 and 8 m/s score 24.0 and 32.0. ⇒ EP penalises being SLOW and
+    #: is **blind** to being fast; NC and TTC bite only when an agent is near; comfort
+    #: bounds ACCELERATIONS, not speed. **Speed above the human's is a FLAT DIRECTION in
+    #: this reward** -- neither rewarded nor penalised -- and a flat direction under a
+    #: stochastic policy gradient DRIFTS, which is consistent with the two `H-DDV2RL-2`
+    #: seeds damaging different families and only one of them over-speeding (+0.372 m/s,
+    #: separated). A repair must ADD a penalty here; reshaping EP cannot work, because its
+    #: input is already clipped.
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -428,6 +439,15 @@ def score_candidates(cand_states: Tensor, human_states: Tensor, agents: AgentTra
     raw = ego_progress(allst, route, cfg) * multi
     ref = raw[0]
     mx = torch.maximum(ref, raw)
+    # ⛔ EP IS BLIND TO OVER-SPEEDING, AND NOT BECAUSE OF THIS LINE. `ego_progress` is a
+    # PROJECTION ONTO A ROUTE THAT ENDS AT THE HUMAN'S LAST POINT, so it SATURATES:
+    # MEASURED 2026-09-17 with a 4 s route, candidates at 10 / 12 / 14 / 20 m/s against a
+    # human at 10 all score progress 38.5390 -- IDENTICAL -- while 6 and 8 m/s score 24.0
+    # and 32.0. A candidate at TWICE the human's speed is indistinguishable from one that
+    # matches it. ⇒ making this ratio two-sided would change nothing: `raw` is already
+    # clipped. The reward has NO speed term, and speed above the human's is a FLAT
+    # DIRECTION -- neither rewarded nor penalised. See `PREREG_D9_REWARD_REPAIR.md`
+    # arm `L2-SPD`, which must therefore ADD a penalty rather than reshape this.
     ep = torch.where(mx > cfg.progress_threshold, raw / (mx + 1e-6),
                      torch.where(multi == 0, torch.zeros_like(raw), torch.ones_like(raw)))
     score = pdms(nc, dac, ep, ttc, cf, cfg)
