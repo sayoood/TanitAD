@@ -1,4 +1,4 @@
-# RL Stage A — every CROSS-ARM number here sits INSIDE the only training-variance floor this rig family has. ⭐ The WITHIN-ARM findings survive it, and one of them reproduces on four checkpoints.
+# RL Stage A — §13.2 **SUCCESS**, and the lever clears the rig's OWN floor on 9 of 10 metrics. ⛔ `sel_ade_m` does not and is withdrawn; the primary endpoint clears its floor by only 1.4×.
 
 **Date:** 2026-09-17 · **Evidence class: MEASURED** · **Tier: T0** (deployed sampler, recorded
 future, proxy reward) · **Estimator:** `taniteval.ci.paired_episode_cluster_bootstrap`, n_boot 2000,
@@ -16,6 +16,88 @@ is what bounds that floor **and it has not completed**.
 
 ⇒ **No statement below is a claim about the RL lever.** They are absolute, controlled, paired
 differences between two arms that differ in one variable, awaiting their floor.
+
+## ⭐⭐⭐ THE VERDICT — §13.2 **SUCCESS**, and the replicate REHABILITATES most of this package
+
+`L1-RL-s1` ran **600/600** unchanged on a quiet box (`grad_norm_max` **203.58**, clipped
+**2/600 = 0.33 %**, wall 1,968.0 s, 1.30 GB checkpoint), verified by **artifact** — 600 rows and a
+checkpoint — never by exit code.
+
+### §13.1 F1 — all three arms PASS
+
+| arm | Δspread vs BASE | 95 % CI | mean | retained | **F1** |
+|---|---|---|---|---|---|
+| L1-RL-s0 | −8.9872 | [−11.3541, −6.5142] | 28.53 m | 76.0 % | **PASS** |
+| L1-NORL-s0 | −2.1583 | [−3.9559, −0.3553] | 35.36 m | 94.2 % | **PASS** |
+| **L1-RL-s1** | **−9.8677** | [−12.1547, −7.4317] | **27.65 m** | **73.7 %** | **PASS** |
+
+### §13.2 PRIMARY ENDPOINT — both seeds separate positive
+
+`Δfan(s0)` **+0.0363** [+0.0243, +0.0475] · `Δfan(s1)` **+0.0616** [+0.0493, +0.0735].
+Both lower bounds > 0, all three F1 PASS ⇒ **§13.2 VERDICT: SUCCESS**, on the pre-registered rule.
+
+### ⭐⭐ AND THE THING THE WHOLE PACKAGE WAS WAITING FOR: THE L1 RIG'S **OWN** FLOOR IS TIGHT
+
+`L1-RL-s1` vs `L1-RL-s0` — same flags, same lever, zero levers moved — separates on **4 of 10**,
+against the release rig's **10 of 10**:
+
+| metric | RELEASE-form floor | **L1 floor** | tighter by |
+|---|---|---|---|
+| `fan_minade_m` | −2.1319 | −0.0051 | **418.0×** |
+| `fan_pdms_best` | +0.1113 | +0.0004 | **278.2×** |
+| `fan_nc_fail_frac` | −0.1126 | −0.0024 | 46.9× |
+| `sel_ttc` | +0.1866 | +0.0041 | 45.5× |
+| `fan_endpoint_spread_m` | −17.2200 | −0.8805 | 19.6× |
+| `sel_pdms` | +0.2431 | +0.0145 | 16.8× |
+| `fan_pdms_mean` | +0.2474 | +0.0253 | 9.8× |
+| `sel_nc` | +0.1298 | +0.0152 | 8.5× |
+| `sel_ep` | +0.1288 | +0.0298 | 4.3× |
+| `sel_ade_m` | −3.2637 | +1.0341 | 3.2× |
+
+⭐⭐ **THIS IS A RESULT IN ITS OWN RIGHT AND IT WAS NOT PRE-REGISTERED: the matched-anchor IL form
+plus Amendment A-1 did not merely save the fan — they STABILISED THE RIG by roughly an order of
+magnitude.** ⇒ **the catastrophic floor belongs to the RELEASE configuration, not to L1**, and the
+"every cross-arm number is inside the floor" reading above is **superseded for this package** while
+remaining true of the sibling rig it was measured on.
+
+### ⛔ The lever against its own floor, tiered honestly
+
+| tier | metrics | floor ÷ lever |
+|---|---|---|
+| **ROBUST** | `fan_minade_m` 0.06× · `sel_ttc` 0.06× · `fan_nc_fail_frac` 0.08× · `fan_endpoint_spread_m` 0.13× · `sel_pdms` 0.32× | floor < ⅓ of the lever |
+| ⚠️ **MARGINAL** | `fan_pdms_best` 0.36× · `sel_nc` 0.65× · **`fan_pdms_mean` 0.70×** · `sel_ep` 0.99× | floor is ⅓–1× the lever |
+| ⛔ **INSIDE THE FLOOR** | **`sel_ade_m` 3.70×** | the floor **exceeds** the lever |
+
+⛔⛔ **`sel_ade_m` +0.2798 [+0.1129, +0.4634] IS WITHDRAWN AS A LEVER CLAIM.** Its run-to-run floor
+is **+1.0341**, **3.70×** the effect. The separated interval was real and answered the wrong
+question. *(It remains a correct statement about these two particular arms; it is not a statement
+about the RL term.)*
+
+⚠️⚠️ **AND THE PRIMARY ENDPOINT ITSELF IS MARGINAL — I am not going to bank this SUCCESS quietly.**
+`fan_pdms_mean` clears its own floor by only **1.4×** (lever +0.0363, floor +0.0253). ⭐ The two
+seeds' `Δfan` are **+0.0363** and **+0.0616** — they **agree in sign**, which is the part that
+matters, and they differ by **0.0253**, which is *exactly* the measured floor. ⛔ **§13.2's rule
+requires both CIs' lower bounds > 0 and NO margin over the run-to-run floor**, so a lever 1.4× its
+floor passes it. That is a **defect in the criterion**, not in the arms, and it is recorded here
+rather than discovered later: a future endpoint on this rig should require a **stated multiple** of
+a **measured** floor, the way D3's T-B bar already does (**≥ 3× the seed floor**).
+
+### The collision finding, now on a FIFTH checkpoint
+
+| | BASE | L1-NORL-s0 | L1-RL-s0 | **L1-RL-s1** |
+|---|---|---|---|---|
+| selected plan collides | 28 / 493 | 25 / 493 | 37 / 493 | **29 / 493** |
+| …fan still held a collision-free candidate | 28 / 28 | 25 / 25 | 37 / 37 | **29 / 29** |
+| picks the fan's best exactly | 48.7 % | 52.3 % | 35.3 % | **68.8 %** |
+| pooled normalised skill | 0.7499 | 0.7652 | 0.5818 | **0.5954** |
+
+⭐ **Five checkpoints, four training states, and in every collision window a collision-free plan was
+in the fan — 119 for 119.** ⚠️ Note `L1-RL-s1` picks the fan's best on **68.8 %** of windows against
+`L1-RL-s0`'s 35.3 % while their pooled skill is nearly the same (0.5954 vs 0.5818): the exact-pick
+*rate* moves a lot between seeds, the *pooled* loss does not — another reason to read a rate against
+its own floor before calling it an effect.
+
+Banked: `raw/stageA_VERDICT.json`.
 
 ## ⛔⛔⛔ THE FLOOR, MEASURED FROM DUMPS THAT WERE ALREADY BANKED — READ THIS FIRST
 
