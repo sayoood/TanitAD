@@ -9,9 +9,11 @@ from __future__ import annotations
 import pytest
 
 from tanitad.train.panel_refusals import (
-    N_FLOOR, ControlDidNotReadItsKnownValue, TacticalReportRefused,
+    N_FLOOR, NEGATIVES_POLICIES, POLICY_FACTS,
+    ControlDidNotReadItsKnownValue, TacticalReportRefused,
     refuse_control_not_reading_known_value,
     refuse_pooled_or_underpowered_tactical,
+    refuse_unnamed_negatives_policy,
 )
 
 
@@ -113,3 +115,70 @@ def test_MUT_a_report_with_no_per_token_block_is_REFUSED():
 
 def test_the_floor_is_the_documented_one():
     assert N_FLOOR == 200
+
+
+# -------------------------------------------------- refusal 12 (ERRATUM §E7)
+
+def test_both_policies_pass_and_carry_their_own_counts():
+    """⭐ The two policies are NOT interchangeable: 17/22 with 3 capped vs 21/22
+    with 9. That difference is the reason the refusal exists."""
+    a = refuse_unnamed_negatives_policy({"negatives_policy": "measured"})
+    b = refuse_unnamed_negatives_policy(
+        {"negatives_policy": "cot-absence-negative"})
+    assert (a["trainable"], a["on_cap"]) == (17, 3)
+    assert (b["trainable"], b["on_cap"]) == (21, 9)
+    assert a["under_floor"] == b["under_floor"] == 10
+
+
+def test_MUT_a_report_with_NO_policy_is_REFUSED_not_defaulted():
+    """⛔ The real error: the pre-registration quoted the OPT-IN policy's numbers
+    while the trainer defaults to the other one. Assuming a default here would
+    reproduce exactly that."""
+    with pytest.raises(TacticalReportRefused, match="does not name its negatives"):
+        refuse_unnamed_negatives_policy({"per_token": {}})
+
+
+def test_MUT_a_policy_name_the_trainer_does_not_know_is_REFUSED():
+    with pytest.raises(TacticalReportRefused, match="not one the trainer knows"):
+        refuse_unnamed_negatives_policy({"negatives_policy": "absence-negative"})
+
+
+def test_MUT_naming_one_policy_while_reporting_the_OTHERS_counts_is_REFUSED():
+    """⛔ Worse than naming none, because it reads as checked."""
+    with pytest.raises(TacticalReportRefused, match="contradict it"):
+        refuse_unnamed_negatives_policy(
+            {"negatives_policy": "measured", "trainable": 21, "on_cap": 9})
+
+
+def test_the_policy_vocabulary_matches_the_trainer_and_is_not_invented():
+    """⛔ A checker with its own copy of a vocabulary is a check that shares the
+    defect it checks for — so this pins the names against the trainer's own
+    `--tac-goal-negatives` choices."""
+    import re
+    from pathlib import Path
+    src = (Path(__file__).resolve().parents[1] / "scripts"
+           / "refc_v3_train.py").read_text(encoding="utf-8", errors="replace")
+    # ⛔ Scoped to the SINGLE add_argument call. A non-greedy `.*?choices=`
+    # spans into the NEXT flag's choices — my first version did exactly that and
+    # pulled in `auto/on/off` from an unrelated argument.
+    i = src.index('add_argument("--tac-goal-negatives"')
+    j = src.index("choices=[", i)
+    declared = set(re.findall(r'"([a-z-]+)"', src[j:src.index("]", j)]))
+    assert set(NEGATIVES_POLICIES) == declared, (
+        f"checker knows {sorted(NEGATIVES_POLICIES)}, trainer declares "
+        f"{sorted(declared)}")
+    # ⚠️ POLICY_FACTS is deliberately a SUBSET: `geometry` and `all` are accepted
+    # by the trainer and their label census has NOT been measured here. Asserting
+    # equality would force a fabricated census, which would then be checked
+    # against itself and pass.
+    assert set(POLICY_FACTS) < declared
+    assert set(POLICY_FACTS) == {"measured", "cot-absence-negative"}
+
+
+def test_a_policy_the_trainer_accepts_but_we_have_NOT_measured_is_flagged_UNVERIFIED():
+    """⛔ 'accepted by the trainer' and 'its census is known' are different facts.
+    Collapsing them is how an unchecked number reads as a checked one."""
+    r = refuse_unnamed_negatives_policy({"negatives_policy": "geometry"})
+    assert r["counts_verified"] is False and "UNVERIFIED" in r["why"]
+    ok = refuse_unnamed_negatives_policy({"negatives_policy": "measured"})
+    assert ok["counts_verified"] is True

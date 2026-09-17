@@ -22,10 +22,34 @@ individually correct and the sentence they support is false.
 """
 from __future__ import annotations
 
+#: The negatives policies the trainer accepts, pinned against its OWN
+#: ``--tac-goal-negatives`` choices by
+#: ``test_the_policy_vocabulary_matches_the_trainer_and_is_not_invented``.
+#: ⚠️ There are FOUR, not two — my first version of this module invented a
+#: two-item vocabulary and the pinning test caught it immediately. A checker
+#: carrying its own copy of a vocabulary is a check that shares the defect it
+#: checks for.
+NEGATIVES_POLICIES = ("measured", "geometry", "all", "cot-absence-negative")
+
+#: What a policy actually yields on the v8.1 labels, MEASURED 2026-09-17.
+#: ⛔ The DEFAULT is ``measured``; the PI's absence-as-negative ruling is OPT-IN
+#: behind ``--cot-negative-sidecar``. A tactical figure quoted without its policy
+#: is ambiguous by 4 tokens of trainability and 6 of cap saturation.
+#: ⚠️ ``geometry`` and ``all`` are ACCEPTED BY THE TRAINER AND NOT MEASURED HERE.
+#: They are deliberately absent rather than guessed: a fabricated census would be
+#: checked against itself and pass. A report naming one is accepted, and its
+#: counts are reported as UNVERIFIED rather than silently blessed.
+POLICY_FACTS = {
+    "measured": {"trainable": 17, "on_cap": 3, "under_floor": 10},
+    "cot-absence-negative": {"trainable": 21, "on_cap": 9, "under_floor": 10},
+}
+
 __all__ = [
     "ControlDidNotReadItsKnownValue", "TacticalReportRefused",
+    "NEGATIVES_POLICIES", "POLICY_FACTS",
     "refuse_control_not_reading_known_value",
     "refuse_pooled_or_underpowered_tactical",
+    "refuse_unnamed_negatives_policy",
     "N_FLOOR",
 ]
 
@@ -128,3 +152,54 @@ def refuse_pooled_or_underpowered_tactical(report, *, n_floor: int = N_FLOOR) ->
     below = sorted(t for t, v in per_token.items() if int(v["n"]) < n_floor)
     return {"n_tokens": len(per_token), "n_below_floor": len(below),
             "below_floor": below, "headline_ok": True}
+
+
+def refuse_unnamed_negatives_policy(report) -> dict:
+    """§12 refusal 12 — a tactical report must NAME its negatives policy.
+
+    ⛔ `PREREG_REFCV6_V2.ERRATUM-1.md` §E7: the pre-registration quoted
+    **21/22 trainable, 9 on the cap** — which is the **opt-in**
+    ``cot-absence-negative`` policy — while the trainer DEFAULTS to ``measured``,
+    giving **17/22 and 3**. The same per-token AP means different things under the
+    two, and a figure without its policy is ambiguous by **4 tokens of
+    trainability and 6 of cap saturation**.
+
+    ⭐ Same shape as *never quote an interval without its estimator*: the number is
+    not wrong, it is **unplaceable**.
+
+    Also refuses a report whose ``trainable`` / ``on_cap`` counts CONTRADICT the
+    policy it names — because naming one and reporting the other's numbers is
+    worse than naming none: it reads as checked.
+    """
+    pol = report.get("negatives_policy")
+    if pol is None:
+        raise TacticalReportRefused(
+            f"the report does not name its negatives policy. REFUSING rather "
+            f"than assuming the default: the same per-token AP means different "
+            f"things under {list(NEGATIVES_POLICIES)}, and the two differ by 4 "
+            f"tokens of trainability and 6 of cap saturation. Declare "
+            f"`negatives_policy`.")
+    if pol not in NEGATIVES_POLICIES:
+        raise TacticalReportRefused(
+            f"negatives_policy {pol!r} is not one the trainer knows "
+            f"({list(NEGATIVES_POLICIES)}). A policy name that does not exist "
+            f"cannot be checked against anything.")
+    facts = POLICY_FACTS.get(pol)
+    if facts is None:
+        # ⛔ The trainer accepts it; we have not measured its census. Say so
+        # rather than passing it quietly — "accepted" and "checked" are
+        # different facts and collapsing them is how an unchecked number reads
+        # as a checked one.
+        return {"negatives_policy": pol, "counts_verified": False,
+                "why": (f"{pol!r} is accepted by the trainer but its label "
+                        f"census has not been measured here, so its trainable / "
+                        f"on_cap counts are UNVERIFIED. Measure it before "
+                        f"quoting them.")}
+    mismatched = {k: (report[k], facts[k]) for k in ("trainable", "on_cap")
+                  if k in report and report[k] != facts[k]}
+    if mismatched:
+        raise TacticalReportRefused(
+            f"the report names policy {pol!r} but its counts contradict it: "
+            f"{mismatched} (reported, expected). ⛔ Naming one policy and reporting "
+            f"another's numbers is worse than naming none — it reads as checked.")
+    return {"negatives_policy": pol, "counts_verified": True, **facts}

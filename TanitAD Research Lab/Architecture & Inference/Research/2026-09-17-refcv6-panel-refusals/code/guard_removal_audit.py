@@ -68,12 +68,41 @@ REMOVALS_PANEL = [
     ("R9-headline-under-floor",
      r"    if under:",
      "    if False:                         # GUARD REMOVED"),
+    ("R12-no-policy-named",
+     r"    if pol is None:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R12-unknown-policy-name",
+     r"    if pol not in NEGATIVES_POLICIES:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R12-counts-contradict-policy",
+     r"    if mismatched:",
+     "    if False:                         # GUARD REMOVED"),
 ]
 
 #: ⛔ Keyed by module stem so the audit cannot be pointed at one module while
 #: silently using another's removal list -- which would report PATTERN-MISSED for
 #: every branch and still print a tidy summary.
-BY_MODULE = {"prelaunch_v2": REMOVALS, "panel_refusals": REMOVALS_PANEL}
+#: §12 refusal 1, both halves. The last two are the ones E5 added.
+REMOVALS_ONEVAR = [
+    ("R1-lever-absent",
+     r"    if lever not in nd:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R1-lever-wrong-way",
+     r"    if \(got_from, got_to\) != \(expected_from, expected_to\):",
+     "    if False:                         # GUARD REMOVED"),
+    ("R1-second-argv-lever",
+     r"    if extra:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R1-BUILT-configs-identical",
+     r"    if not cd:",
+     "    if False:                         # GUARD REMOVED"),
+    ("R1-BUILT-undeclared-diff",
+     r"    if unexplained:",
+     "    if False:                         # GUARD REMOVED"),
+]
+
+BY_MODULE = {"prelaunch_v2": REMOVALS, "panel_refusals": REMOVALS_PANEL,
+             "one_variable_v2": REMOVALS_ONEVAR}
 
 
 def main(mod_path: str, test_path: str) -> int:
