@@ -190,3 +190,26 @@ The 139 B1 eval clips are rebuilt at 256 × 1024 and carry the whole chain end t
 ### 10.7 RL gradient clipping: **100, not 1.0** (Master Mind correction)
 
 1.0 was my number and it was wrong. MEASURED on the banked 600-step logs of all three arms: a 1.0 max-norm would bind on **600/600 steps** (minimum norms 1.87 / 2.22 / 3.45, medians 16.7 / 17.9 / 62.0) — an every-step 17–62× rescale, not a divergence guard. At **100** it binds **1/600** on both stable arms and **276/600** on the seed that diverged to 15,712. Amended before any GPU arm ran.
+
+---
+
+## ⛔ ERRATUM-1 (2026-09-17) — two numbers in §2 and §6 are corrected elsewhere
+
+`Project Steering/PREREG_REFCV6_V2.ERRATUM-1.md` is **BINDING** and corrects figures this
+file also carries. A reader who takes a number from §2 or §6 must take these with it:
+
+1. ⚠️ **The oracle ceiling at 16×40 is `0.4762`, not `0.4713`** (§2's `features` row and §6).
+   `E-READOUT-CEILING-1` was partially retracted (`R-2026-09-08-wpa-mirror`) and its ladder
+   re-read under the corrected azimuth address. **8×20 = 0.3341 was correct.** ⭐ The gap
+   the argument rests on is **0.4762 − 0.3341 = 0.1421** against a **replicate floor of
+   0.0122 AP**, so the conclusion — *a head on the stride-32 tokens is capped below the
+   0.60 bar before training starts* — is untouched.
+2. ⚠️ **The trunk-size figures in §2 and §9 are `resnet34`'s and are SUPERSEDED by §10.2**,
+   which makes **`resnet101` the primary arm**. MEASURED directly with `timm` on
+   2026-09-17: the 2-map feature extractor is **42.500 M** (`resnet101`, stride-16/32
+   channels **1024 / 2048**) and **21.285 M** (`resnet34`, **256 / 512**). §2's *"≈21.8 M"*
+   and §9's *"90.5 M → 21.8 M"* therefore describe the **comparison** arm, not the
+   primary one, and the channel counts must come from `feature_info` in either case.
+
+⭐ Nothing in the design changes. Both are quoting errors, and the erratum carries the
+full account including two it found in the pre-registration itself.
