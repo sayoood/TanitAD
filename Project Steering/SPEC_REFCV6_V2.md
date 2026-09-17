@@ -273,3 +273,32 @@ shared trunk**.
 
 ⇒ both rulings are applied as work, not merely recorded; `PI_DECISION_QUEUE.md` items **15 and 18
 are CLOSED**.
+
+---
+
+## 11. CORRECTION 2026-09-17 — §9 risk 1's "42.7 %" now has a measured basis, and a sharper form
+
+§9 risk 1 reads *"42.7 % of the TURN label's entropy is already in the nav token"*. That figure was
+ruled **UNSUPPORTED** earlier the same day (`PREREG_REFCV6_V2.ERRATUM-1.md`), and that ruling has
+now itself been half-corrected (`RETRACTION_LOG.md` → `R-2026-09-17-erratum-overreach-42-7`):
+
+* ⛔ **Nothing in the repo derives it** — a probe over **10,919 tracked files** finds the source
+  table's distinctive triple (42.7 / 30.5 / 16.9) only in `REFCV6_CLARIFICATION.md` §4.1 and the
+  register quoting it. So it remains **inadmissible as cited**.
+* ⭐ **But it is not fabricated.** An independent computation on the v7.2 **EVAL** labels
+  (**n = 147** clips) gives **39.2 %** — `H(turn)` 0.5162 bits, `H(turn | nav)` 0.3137 bits —
+  within ~3.5 pp of 42.7 % on a different split, and the table's supporting co-occurrence claim
+  holds **exactly (0 counterexamples of 96)**. ⚠️ The table's own basis is **4,572 TRAIN** clips,
+  which are not on this box, so reproducing it is **blocked on data**.
+
+⭐⭐ **THE RISK IS BETTER STATED WITHOUT THE SHARE.** `P(turn | NAV_FOLLOW_ROAD)` = **0.0000** and
+`P(turn | NAV_TURN_*)` = **0.2549**: **nav rules a turn OUT with certainty and predicts one IN
+weakly.** ⇒ a tactical head that copies nav gets **every no-turn case right for free** — which is a
+stronger statement of the risk than any single entropy figure, and it is exactly what **T-ZERO on
+the non-turn classes** already guards. ⛔ **No criterion or arm changes.**
+
+⚠️ **Quote the reproduced figure with its split and n** (*"39.2 %, v7.2 eval, n = 147"*), or quote
+the asymmetry, but do not quote **42.7 %** bare: its derivation is not in the record.
+`raw/nav_turn_entropy_share.json` in the 2026-09-17 RL Stage A package carries the computation.
+
+<!-- SPEC-REFCV6-V2-S9-RISK1-CORRECTION-2026-09-17 -->

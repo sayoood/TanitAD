@@ -15480,3 +15480,52 @@ its divergence is unknown. The 56.5× and 22.0× are training-trajectory quantit
 ones. Instrument: `…/2026-09-17-refcv6-rl-stage-a/raw/launch_nondeterminism.json`.
 
 <!-- RETR-2026-09-17-SEED-1-NOT-THE-DIVERGING-SEED -->
+
+## R-2026-09-17-erratum-overreach-42-7 — A RETRACTION THAT WENT TOO FAR: "NO SUCH MEASUREMENT EXISTS" WAS A CLAIM ABOUT MY SEARCH
+
+**Corrected:** 2026-09-17, same day · **By:** Master Mind · **Class: II — a correction OF a
+correction, found by searching for the number's SIBLINGS instead of the number.**
+
+**What it corrects:** `R-2026-09-17-prereg-v2-unchecked-numbers` item 1 and
+`PREREG_REFCV6_V2.ERRATUM-1.md`, both landed earlier the same day.
+
+| the retraction, as landed | status |
+|---|---|
+| *"42.7 % of the TURN label's entropy is already in the nav token"* → **"WITHDRAWN — UNSUPPORTED. No such measurement exists. The only `42.7 %` in the record is an unrelated corpus-overlap statistic."** | ⚠️ **HALF CORRECT, AND THE STRONG HALF IS WRONG.** ⛔ A source **does** exist: `REFCV6_CLARIFICATION.md` §4.1 carries a **five-row table** — turn **42.7 %**, strategic goal **30.5 %**, lateral **16.9 %**, speed bucket **5.5 %**, longitudinal **5.2 %** — headed *"How much each label is already predictable from the nav token alone (mutual information / label entropy)"*. My search missed it, and *"no such measurement exists"* was a claim about **my search**, not about the record. |
+
+⭐ **What the original retraction got RIGHT, and it still stands: nothing DERIVES the table.** A
+probe over **10,919 tracked files** for the distinctive triple (42.7 / 30.5 / 16.9) finds it only in
+that prose table and in the register that quotes it — no script, no raw JSON, no log. ⇒ the number
+was **inadmissible as cited**, exactly as ruled. ⛔ **But "not banked" is not "not measured"**, and
+collapsing the two is what made the retraction overreach.
+
+⭐⭐ **SO I COMPUTED IT.** Independent implementation, v7.2 **EVAL** labels, **n = 147** clips
+(`raw/nav_turn_entropy_share.json`): `H(turn) = 0.5162` bits, `H(turn | nav) = 0.3137` bits ⇒
+**39.2 %** of the TURN label's entropy is predictable from the nav token, against the table's
+**42.7 %**. ⚠️ **NOT a reproduction** — the table is over **4,572 TRAIN** clips, which are not on
+this box — but a magnitude check on a different split landing within ~3.5 pp. And the table's own
+supporting claim (*"no clip has NAV_FOLLOW_ROAD together with a tactical turn"*) holds **exactly**:
+**0 counterexamples of 96** such clips.
+
+⭐⭐ **AND THE STRUCTURE IS SHARPER THAN THE SHARE, WHICH IS WHY A SINGLE NUMBER WAS THE WRONG
+INSTRUMENT ALL ALONG.** `P(turn | NAV_FOLLOW_ROAD)` = **0.0000**; `P(turn | NAV_TURN_*)` =
+**0.2549**. **Nav rules a turn OUT with certainty and predicts one IN weakly.** An entropy share
+averages those two very different facts into one figure — so the design conclusion it supports
+(*"turns are where a tactical layer can succeed by copying nav"*) is **strengthened and made
+precise**: a tactical head copying nav gets **every no-turn case right for free**, which is what
+`T-ZERO on the non-turn classes` was already designed around.
+
+⛔ **ROOT-CAUSE CLASS: an absence claim that was really a search result** — the class `CLAUDE.md`
+names as *"absence found at ONE location is not absence"*, and the class its comma-formatting rule
+belongs to. ⭐ **The discriminator that found it is cheap and general: search for the number's
+SIBLINGS, not the number.** `42.7` alone appears in nine steering documents and is mostly noise —
+one instance is a renderer's **42.7 px**, another the genuine corpus-overlap statistic. The **triple
+(42.7 / 30.5 / 16.9)** is distinctive, and it landed on the source file immediately. ⇒ **when hunting
+a figure that lives in a table, hunt the ROW IT SITS IN.**
+
+⚠️ **No criterion moves.** `E-REFCV6V2-TACTICAL` already excluded the turn classes by design; this
+supports that exclusion rather than changing it. The erratum's replacement evidence (`refcv5-v2`
+turn recall **0.475 → 0.000** with nav removed) also stands and is consistent: a model can rely
+wholly on nav even where nav explains only ~39–43 % of the label's entropy.
+
+<!-- RETR-2026-09-17-ERRATUM-OVERREACH-42-7 -->
