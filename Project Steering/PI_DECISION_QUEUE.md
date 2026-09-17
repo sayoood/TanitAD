@@ -837,3 +837,70 @@ learned to drive either.**
 ⚠️ **What a clean margin will still NOT establish:** `--sampler ddim` is **stochastic at inference**
 where refcv4b was deterministic, so it will not show the result survives a second **inference** draw.
 And both arms are **oracle-nav** — fair to each other, but neither carries a production nav command.
+
+---
+
+## ⭐⭐ NEW ITEM 19 (2026-09-17) — the AGENT SEAM now has a PRICE, on a ledger the decision that closed it never touched
+
+**This needs no GPU to state and it is not a re-litigation.** The agent channel was gated off
+because the **auxiliary agent task** cost accuracy at two seeds on the tiny rig. That is a finding
+about a **training task**. What follows is a finding about a **selection constraint**, measured
+today at zero GPU on 493 held-out windows, and the two do not meet.
+
+### What was measured
+
+| | |
+|---|---|
+| windows where the **selected** plan collides (untouched `refcv5-v2`) | **28 / 493** |
+| …of which the fan **still held a collision-free candidate** | **28 / 28 = 100 %** |
+| mean share of the fan that was collision-free there | **55.3 %** |
+| **oracle-repair ceiling from fixing collision-selection ALONE** | **+0.0485 `sel_pdms` [+0.0228, +0.0801] = 62.4 % of the entire oracle gap** |
+| windows it covers | **25 / 493 = 5.1 %** |
+
+⭐ **Five per cent of windows carry sixty-two per cent of the recoverable PDMS**, and the
+intervention is a **hard constraint**, not a learned weight: *never select a colliding candidate
+while a collision-free one is in the fan*.
+
+⭐ It **reproduces on four checkpoints in three training states** (`base` 28/28, `base_repeat`
+28/28, `L1-NORL-s0` 25/25, `L1-RL-s0` 37/37), so it is **not** an artifact of the RL experiment
+that surfaced it — it is a **refcv5-v2 property**.
+
+### Why it is an AGENT-SEAM item and not a re-ranking item
+
+⛔ **These arms have no agent input at all** — verified three ways: `argv` carries `--agents off`,
+the run directory is `refcv5-v2-noagents-b1-v72-40k`, and `agent_join` / `agent_join_digest` /
+`agent_join_stats` are all `None`. ⛔ **And the REWARD does see the agents**: the proxy scores
+collision and TTC against tracks from `b1eval_agents.jsonl.xz`, and **172 windows were dropped for
+missing agent data**.
+
+⇒ **the model is graded on a constraint it has no structured channel for.** It is not blind — the
+trunk sees the image, so the vehicles are in the **pixels** — but nothing converts them into a
+collision-relevant representation. That is the same defect **D3** measured from the other side the
+same night: the planner **attends** to the lead, and greying the lead out moves the time gap by
+**0.09× the noise floor**.
+
+### ⛔ What this is NOT
+
+* **NOT** "recover a lever we know is there." Re-opening `--agents on` is an **ARM whose tiny-rig
+  exclusion may or may not generalise**, exactly as the WP-C framing was corrected to say.
+* **NOT** a claim the auxiliary task became free. Nothing here touches that measurement.
+* **NOT** a free re-ranking. `sel_nc` is scored against the **RECORDED future** (T0), so the 62.4 %
+  is what a **perfect collision checker** would have bought. At inference the vision-only rule
+  forbids the recorded future ⇒ a gate needs a **predicted** occupancy.
+
+### The decision, with its default
+
+**Your call is whether the refcv6 arm matrix carries an agent-channel arm.** The seam already
+exists — `refc_agents.slot_features` passes continuous metric range and bearing, gated behind
+`--agents off`.
+
+| option | |
+|---|---|
+| **(a) DEFAULT — carry it as a named arm** | add `--agents on` as one arm in the refcv6 matrix, pre-registered against the collision statistic above rather than against ADE. Costs one arm. ⭐ It is also the organ the **BEV map head** you directed is being wired for, so the two are the same bet from two directions. |
+| (b) hold it until the perception heads report | spend nothing now; re-read this item when the BEV/box3d wiring lands and a predicted occupancy exists to gate on. |
+| (c) decline | the 62.4 % stays on the table as measured headroom nobody is reaching for. |
+
+⚠️ **If you say nothing, (a) is what happens** — as a *named arm carrying its own pre-registration*,
+never as a claim that the channel works.
+
+<!-- PIQ-ITEM-19-AGENT-SEAM-PRICED-2026-09-17 -->
