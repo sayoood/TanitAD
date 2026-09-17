@@ -97,6 +97,7 @@ from tanitad.data import bev_aux as _bev_aux  # noqa: E402  (WP-D target)
 from tanitad.refs import refc_wp_index as _refc_wp_index  # noqa: E402  (WP-B)
 from tanitad.models import kinematic as kin  # noqa: E402
 from tanitad.models import refcv6_diffusion as _rv6  # noqa: E402  (refcv6 §3)
+from tanitad.train import grad_conflict as _gcf  # noqa: E402  (refcv6 §6)
 from tanitad.models import agent_slots as _agent_slots  # noqa: E402
 import numpy as _np  # noqa: E402
 
@@ -4409,6 +4410,78 @@ def preflight(args) -> int:
 # Train loop
 # ============================================================================
 
+# ============================================================================
+# SPEC_REFCV6_V2 §6 — the gradient-conflict detector's three seams
+# ============================================================================
+#: ⭐ The PLANNING side of the cosine, exactly as ``compute_losses_v3`` weights
+#: it into the total. ⛔ The TRAJECTORY term alone, per
+#: ``PREREG_BEV_CAPACITY_COMPETITION.md`` §4 (``g_traj = dL_traj/dtheta``), not
+#: the whole planner objective: the pre-registered quantity is the one that gets
+#: measured, and widening it afterwards would be choosing a statistic after
+#: seeing a number.
+CONFLICT_PLAN_TERMS = (("traj", lambda m: TRAJ_WEIGHT),)
+
+#: ⭐ The PERCEPTION side: every aux term that reaches the shared trunk, SUMMED,
+#: each at the weight it actually enters ``loss`` with. ⛔ Keyed on the loss dict
+#: so a term that is absent from THIS run is absent from the cosine rather than
+#: contributing a silent zero. ``map`` / ``box3d`` are refcv6 §6's two heads and
+#: are listed BEFORE their loss wiring lands, deliberately: the alternative is a
+#: detector that silently ignores the head it was built for.
+CONFLICT_PERCEPTION_TERMS = (
+    ("bev", lambda m: float(getattr(m, "_w_bev_aux", 0.0))),      # WP-D
+    ("map", lambda m: float(getattr(m, "_w_map", 0.0))),          # refcv6 SAM3
+    ("box3d", lambda m: float(getattr(m, "_w_box3d", 0.0))),      # refcv6 boxes
+)
+
+
+def _conflict_override(args):
+    """``--conflict-detector auto|on|off`` -> ``None`` / ``True`` / ``False``."""
+    v = str(getattr(args, "conflict_detector", "auto") or "auto").lower()
+    return None if v == "auto" else (v == "on")
+
+
+def _conflict_aux_weights(model) -> dict:
+    """-> ``{loss key: weight}`` for every perception term with a LIVE weight.
+
+    ⛔ A weight of 0.0 is not a perception term: it reaches the trunk with a zero
+    gradient, and a cosine against the zero vector is the degenerate NaN, not a
+    measurement. Empty means "this arm has no second gradient", and
+    :func:`grad_conflict.enabled_for_arm` then keeps the detector off rather than
+    logging NaN for the whole run.
+    """
+    return {k: w for k, wf in CONFLICT_PERCEPTION_TERMS
+            for w in (wf(model),) if w > 0.0}
+
+
+def _conflict_terms(model, losses):
+    """-> ``(L_traj, L_aux_summed)`` as WEIGHTED tensors, or ``(None, None)``.
+
+    The weights are the ones the term enters ``loss`` with, so the cosine is
+    between the gradients that actually arrive at the trunk -- not between two
+    unweighted losses whose real influence differs by orders of magnitude.
+    ``(None, None)`` when this batch carried no supervised aux (an all-NO_LABEL
+    batch), which is a genuine absence and is logged as a missing row rather
+    than as a zero.
+    """
+    plan = None
+    for key, wf in CONFLICT_PLAN_TERMS:
+        t = losses.get(key)
+        if t is None or not torch.is_tensor(t):
+            continue
+        term = float(wf(model)) * t
+        plan = term if plan is None else plan + term
+    aux = None
+    for key, w in _conflict_aux_weights(model).items():
+        t = losses.get(key)
+        if t is None or not torch.is_tensor(t) or not t.requires_grad:
+            continue
+        term = w * t
+        aux = term if aux is None else aux + term
+    if plan is None or aux is None or not plan.requires_grad:
+        return (None, None)
+    return (plan, aux)
+
+
 def _grad_probe_row(model, names, log_every_hit: bool = True) -> dict:
     """Per-module ``sum(|grad|)``, read BEFORE ``clip_grad_norm_`` rescales it.
 
@@ -4527,6 +4600,25 @@ def train(args) -> dict:
     model._w_agent = float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT))
     model._w_bev_aux = float(getattr(args, "w_bev_aux", 0.0))   # WP-D
     model._bev_shuffle = bool(getattr(args, "bev_aux_shuffle", False))
+    # ⛔⛔ refcv6 §6: REFUSE A DETECTOR THAT CAN NEVER READ ANYTHING -- HERE,
+    # before `config.json` is written and before a single batch is loaded.
+    # MEASURED 2026-09-17 on the smoke path: `--conflict-detector on` with no
+    # live perception weight built the detector, printed "ON", stamped
+    # `conflict_detector.enabled=true` -- and emitted ZERO `cd_*` rows for the
+    # whole run, because there is no second gradient. That is the `--w-agent`
+    # defect verbatim: a run whose record claims an instrument it never read.
+    # ⭐ `auto` is already correct (it returns False with no aux); only the
+    # explicit override can reach this, so only the override is refused.
+    if _conflict_override(args) is True and not _conflict_aux_weights(model):
+        raise SystemExit(
+            "[v3] ⛔ --conflict-detector on, but NO perception term has a live "
+            "weight (%s). The detector would be built and stamped while its "
+            "second gradient does not exist, and metrics.jsonl would carry no "
+            "cd_* key for the entire run -- an instrument in the run record "
+            "that was never read. Pass a perception weight (--bev-aux col|xcol "
+            "with --w-bev-aux > 0 and --agent-join), or --conflict-detector "
+            "auto." % ", ".join("%s=%s" % (k, wf(model))
+                                for k, wf in CONFLICT_PERCEPTION_TERMS))
     # D-TACGOAL: same carrier, same reason. ⛔ `_tac_goal_pos_weight` and
     # `_tac_goal_class_mask` are set from THE LOADED SPLIT further down (never
     # from a literal -- `goal_pos_weight.__doc__` is explicit, and it is the
@@ -5275,6 +5367,55 @@ def train(args) -> dict:
     if _gp_names:
         print("[v3] grad probe ON for %d module(s): %s"
               % (len(_gp_names), ", ".join(_gp_names)), flush=True)
+    # ---- SPEC_REFCV6_V2 §6: the gradient-conflict detector ----------------- #
+    # ⛔ ON BY DEFAULT FOR refcv6 ARMS, off otherwise. `for_model` returns None
+    # when the flag is off, so the off path constructs nothing at all and the
+    # step below is the pre-detector step, byte for byte.
+    # ⛔ The refcv6 block is read off the CONFIG THE MODEL WAS BUILT FROM, and
+    # `None` (the baseline) stays distinguishable from a live block -- the same
+    # discipline `_refcv6_flags_of` states for the F-flags, and the reason
+    # `config.json` stamps `refcv6: null` instead of omitting the key.
+    _cd_aux = _conflict_aux_weights(model)
+    _cd_on = _gcf.enabled_for_arm(
+        getattr(getattr(cfg, "core", cfg).decoder, "refcv6", None),
+        override=_conflict_override(args), aux_present=bool(_cd_aux))
+    _cd_cfg = _gcf.ConflictConfig(
+        enabled=_cd_on,
+        # ⚠️ RESOLVED from the model, never assumed: `RefCV3Model` wraps the
+        # trunk at `core.encoder.` while `RefCModel` holds it at `encoder.`, and
+        # a prefix that matches nothing would log NaN for the whole run.
+        trunk_prefixes=(_gcf.resolve_trunk_prefixes(model) if _cd_on
+                        else _gcf.TRUNK_PREFIX_CANDIDATES),
+        mode=str(getattr(args, "conflict_mode", _gcf.MODE_PROBE)),
+        every=max(1, int(getattr(args, "conflict_every", 1))))
+    _cd = _gcf.GradientConflictDetector.for_model(model, _cd_cfg)
+    _cd_row, _cd_checked = {}, False
+    if _cd is not None:
+        _p = _cd.provenance()
+        print("[v3] conflict detector ON (%s, plan side=%s, every=%d): "
+              "theta_trunk = %d tensors / %d params in %d groups (%s); "
+              "aux terms = %s"
+              % (_cd_cfg.mode, _gcf.PLAN_SIDE[_cd_cfg.mode], _cd_cfg.every,
+                 _p["n_trunk_tensors"], _p["n_trunk_params"], len(_p["groups"]),
+                 ", ".join(sorted(_p["groups"])),
+                 ", ".join(sorted(_cd_aux))), flush=True)
+        # ⚠️ SAY THE COST OUT LOUD, AT START. The prereg budgets this at "one
+        # extra backward over the trunk -- no extra GPU-day"; MEASURED on the
+        # dev box it is +72..104 % of step time in `probe` and +26..62 % in
+        # `subtract`, RISING with trunk size. A run that discovers that from its
+        # wall clock at hour 6 has already paid for it.
+        print("[v3] ⚠️ conflict detector MEASURED overhead (dev-box CPU, batch "
+              "2, 77k-6.9M trunks): probe +72..104%%, subtract +26..62%% of "
+              "step time, rising with trunk size. Divide by --conflict-every "
+              "(%d) to amortise; the GPU figure is UNVERIFIED."
+              % _cd_cfg.every, flush=True)
+        # ⭐ the detector's own config goes into the RUN RECORD, so a
+        # `cd_*`-free metrics.jsonl and a run that never enabled it are
+        # distinguishable after the fact -- the `refcv6: null` discipline.
+        _run_config["conflict_detector"] = _cd_cfg.as_dict()
+        _run_config["conflict_detector"]["aux_terms"] = sorted(_cd_aux)
+        (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
+                                             encoding="utf-8")
     t0, model = time.time(), model.train()
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
@@ -5316,7 +5457,54 @@ def train(args) -> dict:
                   "w*bev/traj = %.4f in %s" % (step, _bev_parity["ratio"],
                                                _bev_parity["band"]), flush=True)
         opt.zero_grad(set_to_none=True)
-        losses["loss"].backward()
+        # ---- SPEC_REFCV6_V2 §6: cos(g_traj, g_aux) on the shared trunk ----- #
+        # ⛔ BEFORE the backward, because the two gradients must be SEPARATE;
+        # ⛔ LOGGED AND REPORTED, NEVER A STOP RULE -- nothing below halts,
+        # clips, re-weights or projects anything. `measure` uses
+        # `torch.autograd.grad`, which does NOT accumulate into `.grad`, so the
+        # `backward()` that follows writes exactly the bytes it wrote before the
+        # detector existed (tests/test_refcv6_grad_conflict.py proves the step
+        # is bit-identical with the flag ON as well as off).
+        if _cd is not None:
+            # ⛔ cleared EVERY step: with `--conflict-every > 1` a retained row
+            # would re-log the previous step's reading under this step's number,
+            # which is a fabricated measurement, not a stale one.
+            _cd_row = {}
+            _cd_lt, _cd_la = _conflict_terms(model, losses)
+            if _cd_lt is not None and _cd_la is not None:
+                if not _cd_checked:
+                    # ⛔ THE PROBE REFUSES TO RUN IF ANY CONTROL MISSES
+                    # (PREREG_BEV_CAPACITY_COMPETITION.md §4). Raising here
+                    # costs one step; a run whose probe cannot read +1 costs the
+                    # whole card and answers nothing.
+                    _cd_ctl = _cd.self_check(_cd_lt, _cd_la)
+                    _cd_checked = True
+                    print("[v3] conflict controls OK: cos(g,g)=%r cos(g,-g)=%r "
+                          "detached cos=%r conflict=%r |g_aux|=%r"
+                          % (_cd_ctl.self_cos, _cd_ctl.negated_cos,
+                             _cd_ctl.detached_cos, _cd_ctl.detached_conflict,
+                             _cd_ctl.detached_norm_aux), flush=True)
+                    log.write(json.dumps({"step": step,
+                                          "conflict_controls":
+                                              _cd_ctl.as_dict(),
+                                          "conflict_provenance":
+                                              _cd.provenance()}) + "\n")
+                    log.flush()
+                if step % _cd_cfg.every == 0 and _cd_cfg.mode != _gcf.MODE_SUBTRACT:
+                    _cd_row = _cd.measure(_cd_lt, _cd_la, step=step).row()
+        # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward
+        # (and the backward must retain the graph for its one aux pass) and
+        # BEFORE `clip_grad_norm_`, which rescales `.grad` in place.
+        # (`_cd_la` is only reached when `_cd is not None`, where the tuple
+        #  unpack above has always bound it.)
+        _cd_sub = (_cd is not None and _cd_cfg.mode == _gcf.MODE_SUBTRACT
+                   and _cd_la is not None and step % _cd_cfg.every == 0)
+        if _cd_sub:
+            losses["loss"].backward(retain_graph=True)
+        else:
+            losses["loss"].backward()
+        if _cd_sub:
+            _cd_row = _cd.measure_after_backward(_cd_la, step=step).row()
         # D-TACGOAL-2: read the gradient HERE -- after backward,
         # before the global clip rescales it, and before the next
         # zero_grad wipes it.
@@ -5348,6 +5536,13 @@ def train(args) -> dict:
             # is the exact signature of the defect this measures.
             if _gp_row:
                 row.update(_gp_row)
+            # ⛔ AFTER the rounding comprehension, for the same reason as
+            # `_gp_row`: a conflict of -1e-8 rounded to 5 dp reads 0.0, which is
+            # "no conflict" -- the exact misreading this instrument exists to
+            # prevent. With the detector off `_cd_row` is `{}` and the log
+            # schema is identical to the pre-detector trainer's.
+            if _cd_row:
+                row.update(_cd_row)
             log.write(json.dumps(row) + "\n")
             log.flush()
             print(f"[v3:{args.arm}] step {step} "
@@ -5587,6 +5782,41 @@ def build_parser() -> argparse.ArgumentParser:
                          "traffic light on no evidence. 'geometry' uses the "
                          "frozen declaration instead of the blob, kept so the "
                          "declaration/data divergence stays measurable.")
+    ap.add_argument("--conflict-detector", choices=("auto", "on", "off"),
+                    default="auto",
+                    help="SPEC_REFCV6_V2 §6 / PREREG_BEV_CAPACITY_COMPETITION "
+                         "§4: log cos(g_traj, g_aux) on the SHARED TRUNK every "
+                         "step, pooled and per parameter group, plus the two "
+                         "scale-SENSITIVE channels (|g_aux|/|g_traj| and the "
+                         "projection onto g_traj) that the cosine is blind to. "
+                         "'auto' (default) is ON for refcv6 arms with a live "
+                         "perception weight and OFF otherwise. LOGGED AND "
+                         "REPORTED, NEVER A STOP RULE -- the only thing it "
+                         "refuses is to START when its own +1 / 0 / -1 "
+                         "controls miss. With it off nothing is constructed "
+                         "and metrics.jsonl carries no cd_* key; with it on "
+                         "the training step is still bit-identical "
+                         "(tests/test_refcv6_grad_conflict.py).")
+    ap.add_argument("--conflict-mode", choices=("probe", "subtract"),
+                    default="probe",
+                    help="'probe' (default) is the PRE-REGISTERED statistic: "
+                         "cos(g_traj, g_aux), two extra partial backwards. "
+                         "MEASURED overhead on the dev box (CPU, batch 2): "
+                         "+72 to +104 %% of step time. 'subtract' costs ONE "
+                         "extra backward (+26 to +62 %% MEASURED) by recovering "
+                         "the planning gradient from `.grad` by linearity -- "
+                         "but its planning side is then the WHOLE planning "
+                         "objective, not L_traj. ⛔ That is a DIFFERENT "
+                         "statistic; every row it writes stamps "
+                         "cd_plan_side=total_minus_aux, and it is not "
+                         "interchangeable with 'probe' in a B2 verdict. Both "
+                         "leave the training step bit-identical.")
+    ap.add_argument("--conflict-every", type=int, default=1,
+                    help="log the conflict reading every N steps (default 1, "
+                         "which is what the prereg asks for). Raise it only if "
+                         "the MEASURED overhead is unacceptable on the real "
+                         "trunk -- and then say so in the run record, because "
+                         "a median over sparse steps is a different statistic.")
     ap.add_argument("--grad-probe-modules", default="",
                     help="D-TACGOAL-2 / PI queue item 10: comma-separated "
                          "dotted module paths (e.g. "

@@ -59,6 +59,14 @@ OWNED = (
     "integration/verify_patch.py",
     "TanitAD Research Lab/Architecture & Inference/Research/"
     "2026-09-16-refcv6-perception/RESULT.md",
+    # --- refcv6 §6, the gradient-conflict detector (2026-09-17) ------------- #
+    "stack/tanitad/train/grad_conflict.py",
+    "stack/tests/test_refcv6_grad_conflict.py",
+    "stack/tests/test_refcv6_conflict_wiring.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-conflict-detector/code/worked_example.py",
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-09-17-refcv6-conflict-detector/RESULT.md",
 )
 
 # ⛔ EVERY PATTERN IS ASSEMBLED FROM FRAGMENTS, and so is every mutation
