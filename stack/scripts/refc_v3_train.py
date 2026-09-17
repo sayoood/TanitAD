@@ -1225,7 +1225,17 @@ def _agent_cam_frames() -> dict:
             # 120 deg camera) against a frame that was ALREADY DECLARED one
             # module over. MEASURED here: it blocked the first live refcv6
             # perception run.
-            (256, 1024): _ts.FRAME_256x1024}
+            (256, 1024): _ts.FRAME_256x1024,
+            # ⭐ The PI's 2026-09-17 geometry, replacing 256x1024. Same discipline
+            # as the row above: TAKEN FROM `trunk_shapes.FRAME_416x1024`, which
+            # derives it through `frame_for_width`, never re-typed here.
+            # ⚠️ This row exists because the SAME omission bit twice: the first
+            # resnet101 run on the freshly built 416x1024 cache was REFUSED by
+            # this very table (MEASURED 2026-09-17, 20:39Z) exactly as the
+            # 256x1024 cache had been the day before. A new geometry is not
+            # finished when its cache is built -- it is finished when every
+            # table that must declare it does.
+            (416, 1024): _ts.FRAME_416x1024}
 
 
 def _extr_from_obj(d: dict, path: str, where: str):

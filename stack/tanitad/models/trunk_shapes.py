@@ -46,7 +46,8 @@ from tanitad.data.calib import PHYSICALAI_WIDE120_256x640, CanonicalFrame
 from tanitad.data.semantic_map_gt import CART_SHAPE
 
 __all__ = [
-    "FRAME_256x640", "FRAME_256x1024", "PERCEPTION_STRIDE", "PLANNER_STRIDE",
+    "FRAME_256x640", "FRAME_256x1024", "FRAME_416x1024",
+    "PERCEPTION_STRIDE", "PLANNER_STRIDE",
     "FeatureMap", "TrunkSpec", "feature_hw", "assert_label_grid_unmoved",
     "frame_for_width",
 ]
@@ -79,6 +80,21 @@ def frame_for_width(width: int, height: int = 256) -> CanonicalFrame:
         height=int(height), width=int(width),
         f_ref=PHYSICALAI_WIDE120_256x640.f_ref * int(width) / 640,
         projection="cylindrical")
+
+
+#: ⭐ the PI's 2026-09-17 geometry, replacing 256x1024. ⛔ DERIVED, never typed:
+#: ``frame_for_width`` is the one spelling of this camera constant, and because
+#: 416x1024 keeps the WIDTH it keeps ``f_ref`` EXACTLY -- a cylindrical frame's
+#: ``f_ref`` is a horizontal quantity (the column is linear in azimuth,
+#: ``az_max = (W/2)/f_ref``), so only the VERTICAL field changes: 29.3414 deg at
+#: 256 rows -> 46.0921 deg at 416. The builder's own manifest reports the same
+#: 46.09213171161337, independently computed, which is the cross-check.
+#: ⚠️ 408x1024 -- the height first authorised -- is UNBUILDABLE: ``408 % 32 = 24``,
+#: so the stride-32 map would be mis-sized (the trunk declares 12 rows while a
+#: stride-32 CNN emits 13) and ``timm_trunk.py:216`` refuses it. ``416 % 32 = 0``
+#: gives exactly 13 rows and slightly EXCEEDS the 256x640 reference field
+#: (45.4556 deg), so no vertical field is given up to gain the alignment.
+FRAME_416x1024: CanonicalFrame = frame_for_width(1024, 416)
 
 
 def feature_hw(frame: CanonicalFrame, stride: int) -> tuple[int, int]:
