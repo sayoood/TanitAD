@@ -100,8 +100,15 @@ def test_the_two_adapters_bind_DIFFERENT_CLASSES():
     # does the core's own `set_ego_window` one-shot carries them. ⚠️ THE v3
     # SIGNATURE IS THE OPEN ITEM — adding `ego_poses` there moves these two
     # back out of this set, and that edit belongs with the v3 owner.
+    # ⭐ MOVED AGAIN 2026-09-17, in BOTH directions, which is why this is
+    # hard-coded rather than diffed. IN: `bev`, `scene_hook`, `bev_tokens`,
+    # `bev_pad` — refcv6 coupling (1) and the tactical behaviour decoder, both
+    # on the CORE only. OUT: `ego_poses` and `ego_n_past` — the v3 owner DID
+    # add them to `RefCV3Model.forward`, which is exactly what the note above
+    # predicted would move them out of this set. Both halves are this session's
+    # refcv6 work and both are now declared in `refc_channel_requirements`.
     assert a - b == {"maneuver_logits", "target_latent", "hierarchy_hook",
-                     "ego_keep", "ego_poses", "ego_n_past"}
+                     "ego_keep", "bev", "scene_hook", "bev_tokens", "bev_pad"}
     assert b - a == {"ego_state", "nav_args", "v_max_ms", "v_max_valid"}
 
 
@@ -149,10 +156,16 @@ def test_the_channel_set_is_derived_from_the_handed_models_OWN_signature(
     # ⭐ `ego_poses` / `ego_n_past` added 2026-09-16 (refcv6 §2b) — declared in
     # `refc_channel_requirements`, which is what makes them CHECKED rather than
     # merely present.
+    # ⭐ `bev` / `scene_hook` / `bev_tokens` / `bev_pad` added 2026-09-17
+    # (refcv6 coupling (1) + the tactical behaviour decoder) — declared in
+    # `refc_channel_requirements`, which is what makes them CHECKED rather than
+    # merely present. ⛔ The adapter REFUSED to build until they were, and that
+    # refusal is why they were caught before an RL arm ran.
     assert set(got) == {"nav_cmd", "v0", "maneuver_logits", "target_latent",
                         "lan", "nav_known", "hierarchy_hook", "ego_keep",
                         "withheld_speed", "agent_gt", "ego_poses",
-                        "ego_n_past"}
+                        "ego_n_past", "bev", "scene_hook", "bev_tokens",
+                        "bev_pad"}
     # frames/steps are not conditioning channels; the goal point and the three
     # E13b/E16 channels are LABELS, excluded in the seams that own them.
     for absent in ("frames", "steps", "self", "gp_point", "gp_valid"):
@@ -163,8 +176,13 @@ def test_the_v3_family_derives_a_DIFFERENT_set_through_the_SAME_adapter():
     """⭐ The duck-typing that makes a hard-coded tuple impossible to get right."""
     model = v3.RefCV3Model(v3.refc_v3_smoke_config(hier=False))
     got = ad.forward_conditioning_channels(model)
+    # ⭐ `ego_poses` / `ego_n_past` added 2026-09-17: the v3 wrapper now
+    # FORWARDS the ego window instead of relying on the core's `set_ego_window`
+    # one-shot. ⛔ The two families still differ — `ego_state` here, `ego_keep`
+    # and the four refcv6 core channels there — which is the point of the test.
     assert set(got) == {"nav_cmd", "v0", "lan", "nav_known", "ego_state",
-                        "withheld_speed", "agent_gt"}
+                        "withheld_speed", "agent_gt", "ego_poses",
+                        "ego_n_past"}
     assert "ego_state" in got and "ego_keep" not in got
 
 
@@ -405,7 +423,7 @@ def test_the_lazy_import_holds_in_BOTH_orders(first, second):
                        text=True)
     assert r.returncode == 0, f"{first} then {second}:\n{r.stderr[-2000:]}"
     # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
-    assert r.stdout.strip() == "13"
+    assert r.stdout.strip() == "17"
 
 
 def test_every_declaration_is_reviewable_and_covers_both_families():
@@ -420,7 +438,7 @@ def test_every_declaration_is_reviewable_and_covers_both_families():
 
     decls = ad.refc_channel_requirements()
     # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
-    assert len(decls) == 13
+    assert len(decls) == 17          # 13 + the four refcv6 channels
     mine = {r.channel: r for r in decls}
     theirs = {r.channel: r for r in ra.CHANNEL_REQUIREMENTS}
 

@@ -98,8 +98,17 @@ __all__ = ["FORWARD_KEYS", "ConditioningError", "conditioning_requirements",
 #: directions, because a hand-written list rots the next time the forward grows a
 #: channel, and because the guard that only checked one direction spent a day
 #: refusing correct launches while recommending the leak.
+#: ⭐ `ego_poses` / `ego_n_past` ADDED 2026-09-17. `RefCV3Model.forward` grew the
+#: ego-window passthrough with refcv6 (SPEC_REFCV6_V2 §10.3, PI: *"it is important
+#: to process the image frame history and also ego data hisory as inputs"*) and
+#: this tuple did not follow, so the adapter was passing NEITHER — a policy
+#: conditioned on its past ego track at training time was being ROLLED without it,
+#: and nothing raised. ⛔ They are OBSERVATIONS, not labels: only the PAST half of
+#: the window is read (`ego_n_past` says how much), which is admissible under the
+#: 2026-09-02 ruling. A future index would be a leak and is refused in the seam
+#: that owns it, not here.
 FORWARD_KEYS = ("nav_cmd", "v0", "lan", "nav_known", "ego_state", "withheld_speed",
-                "agent_gt")
+                "agent_gt", "ego_poses", "ego_n_past")
 
 #: ⛔⛔ WHY THIS IS A DECLARATION AND NO LONGER A ``dict[str, str | None]``.
 #:
@@ -393,6 +402,45 @@ CHANNEL_REQUIREMENTS: tuple[ChannelRequirement, ...] = (
         evidence="PUBLISHED-CODE `refc_v3.py:1397` (`_ag = getattr(self.cfg.core, "
                  "'agents', None)`), `:1398-1403`, `:1404-1409`, and the head-case "
                  "refusal immediately after them."),
+
+    # ---- the refcv6 ego window, added 2026-09-17 ---------------------------
+    # ⛔ These two were added to `FORWARD_KEYS` in the same change. The pair is
+    # ONE decision: a key plumbed but not declared is a channel this table
+    # silently does not check, and `test_rl_forward_keys_cover_signature.py`
+    # compares the two sets in BOTH directions precisely so neither half can
+    # land alone.
+    ChannelRequirement(
+        channel="ego_poses",
+        owner="refcv6 ego-history seam (SPEC_REFCV6_V2 section 10.3)",
+        predicates=("core.ego_history",),
+        reason="⛔ the OBSERVED ego window the PI asked for by name (*\"it is "
+               "important to process the image frame history and also ego data "
+               "hisory as inputs\"*). Omitting it on a build trained with it rolls "
+               "a policy that had a past ego track without one, and nothing raises "
+               "-- the same silent re-conditioning as `ego_state`, one seam later. "
+               "⭐ It is an OBSERVATION, not a label: only the PAST half is read "
+               "(`ego_n_past` says how much), which is admissible under the "
+               "2026-09-02 ruling that a measured state at t0 is a legal initial "
+               "state. A future index would be a leak and is refused in the seam "
+               "that owns it, not here.",
+        evidence="PUBLISHED-CODE, read from source 2026-09-17: `refc.py:3812-3813` "
+                 "(the parameters), `refc.py:1001` (`ego_history`, default None), "
+                 "`refc_v3.py` core passthrough; SPEC_REFCV6_V2.md section 10.3."),
+    ChannelRequirement(
+        channel="ego_n_past",
+        owner="refcv6 ego-history seam -- the PAST/FUTURE split",
+        predicates=("core.ego_history",),
+        reason="⛔⛔ NOT A SECOND TENSOR -- it is the INDEX that says how much of "
+               "`ego_poses` is PAST, and it is therefore the channel that makes the "
+               "difference between an admissible observation and a leak. Dropped, "
+               "the consumer has a window and no boundary. It is declared "
+               "separately rather than folded into `ego_poses` because the two can "
+               "be supplied independently at the call site, and 'the boundary was "
+               "forgotten' is a different defect from 'the window was forgotten' -- "
+               "and a far worse one.",
+        evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3813`; the admissibility test "
+                 "that fails if a FUTURE index is read (SPEC_REFCV6_V2 section 10.3)."),
+
 )
 
 #: Back-compat alias, DERIVED so it can never desync from the records above.

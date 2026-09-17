@@ -271,8 +271,13 @@ def test_forward_kwargs_plumbs_every_channel_the_forward_accepts():
     # never reaches the forward, which is the exact failure this module exists to
     # remove. MEASURED: nulling `agent_gt` inside `forward_kwargs` while leaving it in
     # FORWARD_KEYS kept this file GREEN until this assertion was added.
+    # ⭐ `ego_poses` / `ego_n_past` added 2026-09-17 with the refcv6 ego-window
+    # passthrough. They belong in THIS dict and not only in FORWARD_KEYS: the
+    # assertion below is a VALUE-flow check, so a required channel missing from
+    # the batch fixture would make the loop raise KeyError instead of testing it.
     full = {"frames": 0, "nav_cmd": 1, "v0": 2, "lan": 3, "nav_known": 4,
-            "ego_state": 5, "withheld_speed": 6, "agent_gt": {"box": 7}}
+            "ego_state": 5, "withheld_speed": 6, "agent_gt": {"box": 7},
+            "ego_poses": 8, "ego_n_past": 9}
     kwf = A.forward_kwargs(full, PostTrainConfig())
     for k in required:
         assert kwf[k] == full[k], (

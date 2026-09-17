@@ -135,9 +135,15 @@ def test_groups_are_independent_queries():
 def test_REGRESSION_a_layer_that_mixes_queries_is_caught(monkeypatch):
     real = refc.CrossAttnLayer.forward
 
-    def mixing(self, q, kv, cond, agent_tokens=None, agent_pad=None, agent_index=None):
+    # ⭐ `*args, **kwargs` since 2026-09-17, deliberately. This double used to
+    # PIN the layer's argument list (`agent_tokens, agent_pad, agent_index`) and
+    # broke the moment refcv6 gave `CrossAttnLayer.forward` its BEV and tactical
+    # arguments — a TypeError in the DOUBLE that looks exactly like a failure of
+    # the thing under test. The mutation being made here is to `q` alone; every
+    # other argument is pass-through and nothing is gained by naming them.
+    def mixing(self, q, kv, cond, *args, **kwargs):
         return real(self, q + 0.1 * q.mean(dim=1, keepdim=True), kv, cond,
-                    agent_tokens, agent_pad, agent_index)
+                    *args, **kwargs)
     monkeypatch.setattr(refc.CrossAttnLayer, "forward", mixing)
     whole, whole_others, _ = _group_independence(_dec())
     assert not torch.equal(whole[:, :5], whole_others[:, :5])

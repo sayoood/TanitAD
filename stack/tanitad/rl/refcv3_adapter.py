@@ -470,6 +470,95 @@ def refc_channel_requirements():
                      "(`n_past = cfg.window if ego_n_past is None`), "
                      "`ego_history.py::ego_channels_from_poses` (the bound "
                      "check that refuses an n_past past the tensor)."),
+        # ---- refcv6 seams, added 2026-09-16/17 (SPEC_REFCV6_V2) -----------
+        # ⛔ These four were added to `RefCModel.forward` by the refcv6 work and
+        # NOT declared here, so `make_refcv3_sample_fn` refused to build and
+        # 8 tests in `test_rl_refcv3_used_path_guard.py` went red. The guard was
+        # RIGHT and it is the reason this was caught before an RL arm ran.
+        CR(
+            channel="bev",
+            owner="refcv6 coupling (1) — DiffusionDrive spatial CA (arch-inf 2026-09-16)",
+            predicates=("decoder.bev_coupling", "core.decoder.bev_coupling"),
+            reason="⛔ a missing BEV map SILENTLY DISABLES DiffusionDrive's coupling "
+                   "(1) — the one mechanism the PI asked the trunk to feed the "
+                   "planner. `refc.py:1550` reads `if self.bev_wp is not None and "
+                   "bev is not None and waypoints is not None:`, and "
+                   "`refc_bev_coupling.py:225` reads `if not self.cfg.enable or bev "
+                   "is None: return queries` — the sampler returns its queries "
+                   "UNCHANGED and nothing raises. A policy trained WITH the coupling "
+                   "and rolled WITHOUT it returns a well-formed fan from a decoder "
+                   "that never looked at the map, which is exactly the "
+                   "differently-conditioned-policy case this table exists for.",
+            evidence="PUBLISHED-CODE, read from source 2026-09-17: `refc.py:1550`, "
+                     "`refc.py:3814` (the parameter), `refc.py:4197` (handed to the "
+                     "decoder), `refc_bev_coupling.py:224-225`."),
+        CR(
+            channel="scene_hook",
+            owner="refcv6 tactical behaviour decoder — arch-inf 2026-09-16",
+            reason="⛔ NOT A TENSOR CHANNEL — a CALLABLE, declared for the same reason "
+                   "`hierarchy_hook` is: this contract derives its scope from the "
+                   "SIGNATURE, and a channel silently dropped from scope is "
+                   "indistinguishable from one nobody thought about. With "
+                   "`scene_hook=None` `refc.py:4121-4122` states the block is "
+                   "*untouched dead code and the forward is byte-identical to the "
+                   "pre-refcv6 file*: `tac_lat_prior`, `tac_lon_prior`, "
+                   "`behaviour_term` and `v_limit_ms` all stay None, so the decoder "
+                   "falls back to the 3-wide IMAGE-ONLY prior instead of the 8-wide "
+                   "tactical one, selection is not gated by the valid-behaviour set, "
+                   "and the max-speed mask does not apply. ⭐ The plan is then not "
+                   "tactically conditioned AT ALL and nothing raises.",
+            unblock="⛔ nothing should assert it here. The hook is an OPTIONAL seam by "
+                    "construction and asserting it would refuse every non-tactical "
+                    "build — the `hierarchy_hook` ruling, unchanged. ⭐ The forward "
+                    "already refuses the dangerous direction LOUDLY: "
+                    "`refc.py:4124-4133` raises when a hook is supplied but neither "
+                    "agent tokens nor BEV tokens were built, because a behaviour "
+                    "decoder attending to nothing would read as *behaviours cannot be "
+                    "learned from the scene* — a refutation manufactured by a wiring "
+                    "gap.",
+            evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3815` (the parameter), "
+                     "`:4120-4133` (the block and its refusal), `:4136-4140` (the "
+                     "8-wide prior replacing the 3-wide one)."),
+        CR(
+            channel="bev_tokens",
+            owner="refcv6 tactical behaviour decoder, keys/values — arch-inf 2026-09-16",
+            reason="the BEV half of *“the scene embeddings, for the agent and the "
+                   "map”* (PI, 2026-09-16). It is read ONLY through "
+                   "`scene_hook`: `refc.py:4133` passes it to the hook, and with the "
+                   "hook absent it is untouched. ⚠️ With the hook PRESENT and both "
+                   "`agent_tokens` and `bev_tokens` absent the forward RAISES rather "
+                   "than running a decoder with empty keys — so the failure mode this "
+                   "channel could otherwise cause is already closed loudly. Omitting "
+                   "it while agent tokens ARE present is the silent case: the "
+                   "behaviour decoder then attends to agents only, and a behaviour "
+                   "that is a property of the MAP (lane keeping, corridor offset) has "
+                   "no evidence to be learned from.",
+            unblock="a predicate on the tactical seam's own flag. ⛔ It does not "
+                    "exist yet: the behaviour decoder is supplied by "
+                    "`RefCV3Model._scene_hook` and the BEV-token half is decided by "
+                    "the CALLER, not by a config field this adapter can read. ⭐ "
+                    "When the tactical layer gets a persisted config flag (it must, "
+                    "to be rollable), declare it here as a predicate and this "
+                    "channel becomes ASSERTED — the `v0` path exactly.",
+            evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3816`, `:4125-4133`."),
+        CR(
+            channel="bev_pad",
+            owner="refcv6 tactical behaviour decoder, key mask — arch-inf 2026-09-16",
+            reason="the padding mask that travels WITH `bev_tokens` (`refc.py:4133`). "
+                   "⛔ Absent where the tokens are padded, the behaviour decoder "
+                   "attends to PAD positions as if they were scene — a quiet "
+                   "contamination that does not raise and does not look wrong in any "
+                   "loss curve. It is declared separately from `bev_tokens` rather "
+                   "than folded into it because the two can be supplied independently "
+                   "at the call site, and 'the mask was forgotten' is the defect, not "
+                   "'the tokens were forgotten'.",
+            unblock="the same flag that unblocks `bev_tokens`, plus a shape check "
+                    "tying the mask to the tokens. ⛔ Neither exists yet. "
+                    "⚠️ The two are ONE decision and must not drift into "
+                    "being two: whatever makes `bev_tokens` assertable makes this "
+                    "assertable in the same turn, or the mask becomes the half "
+                    "nobody checks.",
+            evidence="PUBLISHED-CODE 2026-09-17: `refc.py:3817`, `:4133`."),
     )
 
 
