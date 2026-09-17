@@ -1,0 +1,1345 @@
+{
+ "evidence_class": "MEASURED",
+ "assembly": {
+  "git_head": "faecb29ae4c35bcce50000fdfa8c6a7b6aabbfa4",
+  "argv": [
+   "--arm",
+   "hier",
+   "--size",
+   "small",
+   "--trunk",
+   "timm",
+   "--trunk-name",
+   "resnet101.a1_in1k",
+   "--trunk-mode",
+   "shared",
+   "--trunk-fuse",
+   "concat1x1",
+   "--ego-history",
+   "--no-strategic",
+   "--image-hw",
+   "256",
+   "1024",
+   "--sampler",
+   "ddim",
+   "--f1-random-t",
+   "--f2-dd-step",
+   "--f3-per-layer",
+   "--f4-adaln",
+   "--f5-focal",
+   "--f6-w-u0-zero",
+   "--f9-assert-vocab",
+   "--v2-cache",
+   "D:/Projects/TanitAD-artifacts/v2ep-eval139-256x1024cyl",
+   "--out",
+   "C:\\Users\\Admin\\tanitad-wt-e2e\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-17-refcv6-e2e-1024\\_runout",
+   "--v7-labels",
+   "C:/Users/Admin/refcv5cmp/data/s2_labels_v7.2_eval.jsonl.gz",
+   "--anchors",
+   "D:/Projects/TanitAD-artifacts/hf-refcv5v2/anchors.pt",
+   "--anchor-v0-conditioned",
+   "--n-anchors",
+   "117"
+  ],
+  "payload_frame": {
+   "height": 256,
+   "width": 1024,
+   "f_ref": 488.92398517830253,
+   "projection": "cylindrical"
+  },
+  "encoder_image_hw": [
+   256,
+   1024
+  ],
+  "encoder_in_channels": 9,
+  "window": 8,
+  "trunk_spec_from_timm": {
+   "perception_stride": 16,
+   "perception_hw": [
+    16,
+    64
+   ],
+   "perception_channels": 1024,
+   "planner_stride": 32,
+   "planner_hw": [
+    8,
+    32
+   ],
+   "planner_channels": 2048
+  },
+  "trunk_provenance": {
+   "trunk": "timm",
+   "model_name": "resnet101.a1_in1k",
+   "timm_version": "1.0.29",
+   "pretrained": true,
+   "verified_pretrained": true,
+   "frames": 3,
+   "mode": "shared",
+   "fuse": "concat1x1",
+   "fuse_identity_init": true,
+   "in_channels": 9,
+   "imagenet_norm": true,
+   "image_hw": [
+    256,
+    1024
+   ],
+   "s16": [
+    1024,
+    16,
+    64
+   ],
+   "s32": [
+    2048,
+    8,
+    32
+   ],
+   "params": 58231872,
+   "backbone_params": 42500160
+  },
+  "n_params_total": 86181732,
+  "param_breakdown": {
+   "core": 83684300,
+   "phi_tac": 2101504,
+   "str_goal_head": 771,
+   "gstr_cond": 66816,
+   "tac_heads": 14364,
+   "tac_latent_proj": 262656,
+   "scorer": 1145,
+   "nav_inject": 50176,
+   "total": 86181732
+  },
+  "unreachable_spec_seams": [
+   "S4_tactical_behaviour_decoder",
+   "S5_max_speed_onehot_4value",
+   "S6_box3d_head",
+   "S6_map_head"
+  ],
+  "seams_absent_from_built_model": [
+   "S6_box3d_head",
+   "S6_map_head"
+  ]
+ },
+ "forward": {
+  "n_clips": 139,
+  "batch_shapes": {
+   "frames": [
+    1,
+    8,
+    9,
+    256,
+    1024
+   ],
+   "actions": [
+    1,
+    8,
+    2
+   ],
+   "future_frames": [
+    1,
+    20,
+    9,
+    256,
+    1024
+   ],
+   "future_actions": [
+    1,
+    20,
+    2
+   ],
+   "future_poses": [
+    1,
+    20,
+    4
+   ],
+   "pose_last": [
+    1,
+    4
+   ],
+   "episode_id": [
+    1
+   ],
+   "nav_cmd": [
+    1
+   ],
+   "nav_valid": [
+    1
+   ],
+   "route_target": [
+    1
+   ],
+   "route_valid": [
+    1
+   ],
+   "future_poses_ext": [
+    1,
+    60,
+    4
+   ],
+   "future_valid_ext": [
+    1,
+    60
+   ],
+   "pose_hist": [
+    1,
+    8,
+    4
+   ],
+   "goal_tac": [
+    1,
+    3,
+    4
+   ],
+   "goal_tac_valid": [
+    1,
+    3
+   ],
+   "lat_v7": [
+    1
+   ],
+   "lon_v7": [
+    1
+   ]
+  },
+  "t_s": {
+   "mean": 39.35838763147807,
+   "min": 23.335206985473633,
+   "max": 72.39752459526062,
+   "total_h": 1.519671077993181
+  },
+  "rss_gb_peak": 19.435272216796875,
+  "n_nonfinite_values": 0,
+  "nonfinite_keys": [],
+  "loss_terms_absent": [
+   "agent",
+   "bev_aux",
+   "goal_point",
+   "goal_str",
+   "gstr",
+   "tac_goal",
+   "u0"
+  ],
+  "loss_terms_zero_on_some_clip": [
+   "route",
+   "traj"
+  ],
+  "n_clips_with_zero_route": 27,
+  "per_loss": {
+   "anchor_acc": {
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0,
+    "n_exact_zero": 139,
+    "n_nonfinite": 0
+   },
+   "cls": {
+    "min": 0.6277169585227966,
+    "median": 6.49757719039917,
+    "max": 25.818323135375977,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "goal2s_err_m": {
+    "min": 0.07761269062757492,
+    "median": 18.957719802856445,
+    "max": 71.42473602294922,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "goal_gate": {
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0,
+    "n_exact_zero": 139,
+    "n_nonfinite": 0
+   },
+   "goal_score_absmean": {
+    "min": 1.3658883571624756,
+    "median": 18.460433959960938,
+    "max": 70.07691955566406,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "goal_tac": {
+    "min": 0.11799045652151108,
+    "median": 47.70817184448242,
+    "max": 177.6850128173828,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "lat": {
+    "min": 1.048658847808838,
+    "median": 1.1069204807281494,
+    "max": 1.1333643198013306,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "lat_tac": {
+    "min": 1.9023164510726929,
+    "median": 2.1782331466674805,
+    "max": 2.3156356811523438,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "law": {
+    "min": 0.04415639489889145,
+    "median": 0.6560285091400146,
+    "max": 4.874216556549072,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "lon": {
+    "min": 1.0313907861709595,
+    "median": 1.1466798782348633,
+    "max": 1.17193603515625,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "lon_tac": {
+    "min": 1.8882628679275513,
+    "median": 2.0942063331604004,
+    "max": 2.261735439300537,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "loss": {
+    "min": 11.937289237976074,
+    "median": 46.83509826660156,
+    "max": 125.49983978271484,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "route": {
+    "min": 0.0,
+    "median": 1.1128188371658325,
+    "max": 1.1878422498703003,
+    "n_exact_zero": 27,
+    "n_nonfinite": 0
+   },
+   "sel_v3": {
+    "min": 2.09970760345459,
+    "median": 15.100564956665039,
+    "max": 27.722877502441406,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "slot_valid_frac": {
+    "min": 1.0,
+    "median": 1.0,
+    "max": 1.0,
+    "n_exact_zero": 0,
+    "n_nonfinite": 0
+   },
+   "traj": {
+    "min": 0.0,
+    "median": 1.2516844272613525,
+    "max": 11.037084579467773,
+    "n_exact_zero": 1,
+    "n_nonfinite": 0
+   }
+  },
+  "grad": {
+   "core.decoder": {
+    "n_params": 12132515,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 23504.21499567153,
+    "median": 94531.72676727083,
+    "max": 480679.7151507181
+   },
+   "core.ego_hist": {
+    "n_params": 15328,
+    "n_rows": 139,
+    "n_rows_exact_zero": 139,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "core.encoder": {
+    "n_params": 58231872,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 7483.95920035243,
+    "median": 12416.297034718096,
+    "max": 17624.755174040794
+   },
+   "core.law_head": {
+    "n_params": 8425472,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 74.66305689513683,
+    "median": 1182.750959932804,
+    "max": 8559.601618170738
+   },
+   "core.measurement": {
+    "n_params": 17280,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 3.1110020354390144,
+    "median": 6.666976630687714,
+    "max": 23.241255462169647
+   },
+   "core.route_head": {
+    "n_params": 6147,
+    "n_rows": 139,
+    "n_rows_exact_zero": 27,
+    "min": 0.0,
+    "median": 17.108819350600243,
+    "max": 22.703862011432648
+   },
+   "core.strategic": {
+    "n_params": 4066560,
+    "n_rows": 139,
+    "n_rows_exact_zero": 139,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "core.tactical_trunk": {
+    "n_params": 786816,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 17.570181995630264,
+    "median": 245.11956679821014,
+    "max": 648.0639896392822
+   },
+   "lat_head_tac": {
+    "n_params": 4104,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 2.890357967466116,
+    "median": 3.7441377341747284,
+    "max": 4.838041044771671
+   },
+   "lon_head_tac": {
+    "n_params": 4104,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 2.841894458979368,
+    "median": 3.7097509391605854,
+    "max": 4.8195523247122765
+   },
+   "phi_tac": {
+    "n_params": 2101504,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 1669.2234469875693,
+    "median": 2974.7623509317636,
+    "max": 3688.253553763032
+   },
+   "scorer": {
+    "n_params": 1144,
+    "n_rows": 139,
+    "n_rows_exact_zero": 139,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "tac_goal_head": {
+    "n_params": 6156,
+    "n_rows": 139,
+    "n_rows_exact_zero": 0,
+    "min": 55.28575050830841,
+    "median": 149.22973597049713,
+    "max": 199.9479215145111
+   },
+   "tac_latent_proj": {
+    "n_params": 262656,
+    "n_rows": 139,
+    "n_rows_exact_zero": 139,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   }
+  }
+ },
+ "perception": {
+  "n_clips_attempted": 13,
+  "n_skipped": 0,
+  "skip_reasons": [],
+  "head_params": {
+   "lift": 393408,
+   "map_branch": 758505,
+   "box_mem": 287744,
+   "box_dec": 3643159
+  },
+  "fmap_s16_shape": [
+   1,
+   1024,
+   16,
+   64
+  ],
+  "bev_shape": [
+   1,
+   96,
+   120,
+   64
+  ],
+  "map_logits_shape": [
+   1,
+   9,
+   120,
+   64
+  ],
+  "label_grid": [
+   1,
+   9,
+   120,
+   64
+  ],
+  "map_loss": {
+   "min": 2.004674196243286,
+   "median": 2.2546231746673584,
+   "max": 2.34236741065979,
+   "n_exact_zero": 0,
+   "n_nonfinite": 0
+  },
+  "map_seen_frac": {
+   "min": 0.6070312261581421,
+   "median": 1.0
+  },
+  "map_grad_to_trunk": {
+   "core.encoder": {
+    "n_params": 58231872,
+    "n_rows": 13,
+    "n_rows_exact_zero": 0,
+    "min": 10902.20017787069,
+    "median": 12610.211596794426,
+    "max": 15223.001402951777
+   }
+  },
+  "box_grad_to_trunk": {
+   "core.encoder": {
+    "n_params": 58231872,
+    "n_rows": 13,
+    "n_rows_exact_zero": 0,
+    "min": 198685.6473043859,
+    "median": 1041173.7338600159,
+    "max": 2350481.9725346565
+   }
+  },
+  "n_with_boxes": 13,
+  "box_loss": {
+   "min": 47.99559783935547,
+   "median": 88.91637420654297,
+   "max": 130.4383544921875
+  },
+  "n_z_targets": {
+   "min": 2,
+   "median": 22,
+   "max": 153,
+   "total": 569
+  },
+  "control_no_zh_all_zero_loss_z": true,
+  "control_delta_total_min_abs": 3.1689071655273438,
+  "join_vs_parquet_max_abs_dz": 0.8705199180603027,
+  "t_s_mean": 119.05419107583853,
+  "rss_gb_peak": 19.655529022216797
+ },
+ "identity": {
+  "evidence_class": "MEASURED",
+  "baseline_commit": "4d74774",
+  "materialised": [
+   183
+  ],
+  "blocked": null,
+  "state_dict_keys_equal": true,
+  "only_in_pre": [],
+  "only_in_new": [],
+  "n_params_pre": 63158525,
+  "n_params_new": 63158525,
+  "n_weight_mismatch": 0,
+  "weight_mismatch_sample": [],
+  "forward_image_hw": [
+   256,
+   1024
+  ],
+  "out_keys_equal": false,
+  "out_only_in_pre": [],
+  "out_only_in_new": [
+   "fmap_s16"
+  ],
+  "bit_identical": false,
+  "max_abs_delta_overall": 0.0,
+  "n_keys_compared": 37
+ },
+ "zero_grad_forensics": {
+  "ego_history": {
+   "sides": [
+    "core.ego_hist.out.weight",
+    "core.decoder.ego_to_cond.weight"
+   ],
+   "grad_a_as_shipped": 0.0,
+   "grad_b_as_shipped": 0.0,
+   "grad_a_when_b_broken": 5.2654242515563965,
+   "grad_b_when_a_broken": 11.136418342590332,
+   "both_zero_as_shipped": true,
+   "verdict": "DEAD_ZERO_PRODUCT",
+   "gate_side": null
+  },
+  "target_latent": {
+   "sides": [
+    "tac_latent_proj.weight",
+    "core.decoder.tgt_film.to_scale_shift.weight"
+   ],
+   "grad_a_as_shipped": 0.0,
+   "grad_b_as_shipped": 47.69892883300781,
+   "grad_a_when_b_broken": 116.93356323242188,
+   "grad_b_when_a_broken": 102.69304656982422,
+   "both_zero_as_shipped": false,
+   "verdict": "GATED_RECOVERABLE",
+   "gate_side": "core.decoder.tgt_film.to_scale_shift.weight"
+  },
+  "goal_scorer": {
+   "sides": [
+    "scorer",
+    "goal_gate"
+   ],
+   "grad_a_as_shipped": 0.0,
+   "grad_b_as_shipped": 3.808323860168457,
+   "grad_a_when_b_broken": 0.1488742008805275,
+   "grad_b_when_a_broken": 3.7426390647888184,
+   "both_zero_as_shipped": false,
+   "verdict": "GATED_RECOVERABLE",
+   "gate_side": "goal_gate"
+  }
+ },
+ "pretrained_guard": {
+  "resnet101.a1_in1k": {
+   "stem": {
+    "module": "conv1",
+    "abs_sum": 1402.778076171875,
+    "pinned": 1402.778076171875,
+    "rtol": 0.02,
+    "band": [
+     1374.7225146484375,
+     1430.8336376953125
+    ],
+    "he_init_reference_in_docstring": 875.0
+   },
+   "control": "PASS",
+   "mut_he_reinit": {
+    "abs_sum_after": 187.3873291015625,
+    "guard": "RED (correct): refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 187.3873 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that clai"
+   },
+   "mut_pretrained_false": {
+    "stem_abs_sum": 190.22496032714844,
+    "guard": "RED (correct): refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 190.2250 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that clai"
+   },
+   "feature_info": {
+    "perception": {
+     "stride": 16,
+     "channels": 1024,
+     "hw": [
+      16,
+      64
+     ]
+    },
+    "planner": {
+     "stride": 32,
+     "channels": 2048,
+     "hw": [
+      8,
+      32
+     ]
+    }
+   }
+  },
+  "resnet34.a1_in1k": {
+   "stem": {
+    "module": "conv1",
+    "abs_sum": 1279.853759765625,
+    "pinned": 1279.853759765625,
+    "rtol": 0.02,
+    "band": [
+     1254.2566845703125,
+     1305.4508349609375
+    ],
+    "he_init_reference_in_docstring": 875.0
+   },
+   "control": "PASS",
+   "mut_he_reinit": {
+    "abs_sum_after": 187.47955322265625,
+    "guard": "RED (correct): refcv6 trunk 'resnet34.a1_in1k': conv1.weight |w|.sum() = 187.4796 is outside [1254.2567, 1305.4508] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that claim"
+   },
+   "mut_pretrained_false": {
+    "stem_abs_sum": 191.12689208984375,
+    "guard": "RED (correct): refcv6 trunk 'resnet34.a1_in1k': conv1.weight |w|.sum() = 191.1269 is outside [1254.2567, 1305.4508] \u2014 the ImageNet weights were NOT loaded (a He init reads ~875). Refusing to train a trunk that claim"
+   },
+   "feature_info": {
+    "perception": {
+     "stride": 16,
+     "channels": 256,
+     "hw": [
+      16,
+      64
+     ]
+    },
+    "planner": {
+     "stride": 32,
+     "channels": 512,
+     "hw": [
+      8,
+      32
+     ]
+    }
+   }
+  }
+ },
+ "join_frame_key": {
+  "evidence_class": "MEASURED",
+  "instrument": "join cz vs PARQUET center_z, parquet reached by TIME",
+  "n_clips": 12,
+  "clip_sha12": [
+   "0dfe63214bc2",
+   "c64f0103aece",
+   "54e3dc4b3ae4",
+   "d0c6db065fa0",
+   "c8831556989f",
+   "bfc3a203bd06",
+   "b435685d40c8",
+   "47f22ccd6fbb",
+   "ea6d261f6c62",
+   "42cc086733d8",
+   "d4c144f52747",
+   "7f6670448ef6"
+  ],
+  "n_window_probes": 67,
+  "window_indices": [
+   7,
+   30,
+   60,
+   90,
+   120,
+   150
+  ],
+  "mean_abs_dcz_by_offset_from_RAW": {
+   "-3": 0.2534213160855108,
+   "-2": 0.2042829381074534,
+   "-1": 0.13031940858342844,
+   "0": 0.020877975371605684,
+   "1": 0.09178952463780013,
+   "2": 0.1750842772481115,
+   "3": 0.23472621481697775
+  },
+  "n_samples_by_offset": {
+   "-3": 66,
+   "-2": 66,
+   "-1": 66,
+   "0": 67,
+   "1": 67,
+   "2": 67,
+   "3": 67
+  },
+  "n_tracks_masked_at_offset0": 11,
+  "argmin_offset": 0,
+  "separation_x": 4.396476334704134,
+  "verdict": "AgentJoin3D is keyed on the RAW v2ep frame index"
+ },
+ "cost_model": {
+  "evidence_class": "MEASURED (MAC count) + ESTIMATED (projection)",
+  "frame": {
+   "height": 256,
+   "width": 1024
+  },
+  "window_positions": 8,
+  "arms": {
+   "resnet101.a1_in1k": {
+    "macs_one_window_position": 128685441024,
+    "macs_by_kind": {
+     "conv": 128685441024,
+     "linear": 0
+    },
+    "gflops_one_window_position_fwd": 257.370882048,
+    "window_positions": 8,
+    "gflops_one_sample_fwd": 2058.967056384,
+    "gflops_one_sample_fwd_plus_bwd": 6176.901169152,
+    "cpu_s_one_window_position_fwd_measured": 2.1564624309539795,
+    "n_trunk_passes_per_sample": 24
+   },
+   "resnet34.a1_in1k": {
+    "macs_one_window_position": 57818480640,
+    "macs_by_kind": {
+     "conv": 57818480640,
+     "linear": 0
+    },
+    "gflops_one_window_position_fwd": 115.63696128,
+    "window_positions": 8,
+    "gflops_one_sample_fwd": 925.09569024,
+    "gflops_one_sample_fwd_plus_bwd": 2775.28707072,
+    "cpu_s_one_window_position_fwd_measured": 0.4960145950317383,
+    "n_trunk_passes_per_sample": 24
+   }
+  },
+  "measured_cpu": {
+   "n_clips": 139,
+   "mean_s_per_clip": 39.35838763147807,
+   "trunk_gflops_per_clip": 6176.901169152,
+   "effective_cpu_gflops": 156.9398936508221,
+   "note": "trunk only; the true achieved rate is higher because the clip also decodes PNGs and runs the whole planner"
+  },
+  "projection": {
+   "evidence_class": "ESTIMATED",
+   "assumption": "an A40 sustains 40-60 TFLOP/s bf16 on convs of this shape (30-40 pct of the 150 TFLOP/s peak); the dev-box RTX 4060 sustains ~5-8 TFLOP/s",
+   "a40_s_per_clip_trunk_only": [
+    0.1029483528192,
+    0.1544225292288
+   ],
+   "rtx4060_s_per_clip_trunk_only": [
+    0.772112646144,
+    1.2353802338304
+   ],
+   "a40_s_for_139_clips": [
+    14.3098210418688,
+    21.4647315628032
+   ],
+   "rtx4060_s_for_139_clips": [
+    107.323657814016,
+    171.7178525024256
+   ],
+   "cpu_s_for_139_clips_measured_rate": 5470.815880775452,
+   "caveat": "COMPUTE ONLY. A real pod step is bounded by the PNG decode and the v2 LRU as often as by the GPU -- the epcache rule (CLAUDE.md: price what the CONSUMER reads)."
+  }
+ },
+ "tip_recheck": {
+  "evidence_class": "MEASURED",
+  "worktree_head": "faecb29",
+  "branch_tip": "e50116a",
+  "refs": {
+   "faecb29": {
+    "stack/scripts/refc_v3_train.py": {
+     "read": true,
+     "n_lines": 6446,
+     "file_really_read": 105,
+     "perception_heads": 0,
+     "tac_decoder_v6_mentions": 0,
+     "max_speed_onehot_v6_mentions": 0,
+     "cli_flags": [
+      "--ablate-frames",
+      "--ack-ddim-no-u0",
+      "--agent-cam-height",
+      "--agent-join",
+      "--agent-join-allow-legacy-ids",
+      "--agent-join-no-rates",
+      "--agent-join-verify",
+      "--agent-miss-rate",
+      "--agent-pad",
+      "--agent-presence-hard",
+      "--agent-queries",
+      "--agent-rig-camera",
+      "--agent-rig-extrinsics",
+      "--agent-rig-extrinsics-allow-partial",
+      "--agent-sigma-range",
+      "--agent-w-ground",
+      "--agent-w-project",
+      "--agents",
+      "--anchor-control-units",
+      "--anchor-ref-speed",
+      "--anchor-v0-conditioned",
+      "--anchors",
+      "--arm",
+      "--batch",
+      "--bev-aux",
+      "--bev-aux-detach",
+      "--bev-aux-dtok",
+      "--bev-aux-hidden",
+      "--bev-aux-occlusion",
+      "--bev-aux-pos-weight",
+      "--bev-aux-rmax",
+      "--bev-aux-rng",
+      "--bev-aux-shuffle",
+      "--cot-negative-sidecar",
+      "--data-root",
+      "--device",
+      "--echo-base",
+      "--ego-dropout",
+      "--ego-history",
+      "--ego-history-hidden",
+      "--ego-history-kind",
+      "--ego-history-out",
+      "--ego-state-inject",
+      "--ego-valid-channel",
+      "--encoder-lr-mult",
+      "--episodes",
+      "--eval-batches",
+      "--eval-cache",
+      "--eval-every",
+      "--eval-labels",
+      "--f1-random-t",
+      "--f1-t-max",
+      "--f2-dd-step",
+      "--f3-per-layer",
+      "--f4-adaln",
+      "--f4-zero-init",
+      "--f5-emitting-conf",
+      "--f5-focal",
+      "--f6-w-u0-zero",
+      "--f7-ack-eval-join",
+      "--f7-samples-per-anchor",
+      "--f8-flat-noise",
+      "--f9-assert-vocab",
+      "--feasible-a-max",
+      "--feasible-decode",
+      "--feasible-entry",
+      "--feasible-kappa-max",
+      "--feasible-mu",
+      "--feasible-prefix-slots",
+      "--goal-point-geo-prior",
+      "--goal-point-inject",
+      "--goal-point-t",
+      "--goal-point-w",
+      "--goal-str",
+      "--grad-probe-modules",
+      "--graft-lan",
+      "--image-hw",
+      "--lan-arclengths",
+      "--lan-min-lead-m",
+      "--log-every",
+      "--lr",
+      "--max-speed-input",
+      "--max-speed-mode",
+      "--mode",
+      "--n-anchors",
+      "--nav-args",
+      "--nav-from-v7",
+      "--no-strategic",
+      "--opt",
+      "--out",
+      "--prefetch-factor",
+      "--preflight",
+      "--require-parity",
+      "--sampler",
+      "--sampler-groups",
+      "--sampler-infer-t",
+      "--sampler-space",
+      "--sampler-steps",
+      "--sampler-train-t-max",
+      "--save-every",
+      "--seed",
+      "--sel-accel-max",
+      "--sel-refined",
+      "--sel-score-emitted",
+      "--sel-score-emitted-t",
+      "--size",
+      "--smoke",
+      "--steps",
+      "--synth-episodes",
+      "--tac-goal-negatives",
+      "--tac-goal-tok-head",
+      "--trunk",
+      "--trunk-fuse",
+      "--trunk-fuse-plain-init",
+      "--trunk-in-channels",
+      "--trunk-mode",
+      "--trunk-name",
+      "--u8-batches",
+      "--v2-cache",
+      "--v2-lru",
+      "--v7-labels",
+      "--w-agent",
+      "--w-bev-aux",
+      "--w-tac-goal",
+      "--w-u0",
+      "--warmup",
+      "--weight-decay",
+      "--withheld-bank",
+      "--withheld-bank-warmup",
+      "--withheld-speed-max",
+      "--workers",
+      "--wp-index",
+      "--wp-index-const-xy",
+      "--wp-index-detach",
+      "--wp-index-hidden",
+      "--wp-index-mode",
+      "--wp-index-radius-m",
+      "--wp-index-scale-m"
+     ],
+     "n_cli_flags": 138,
+     "has_tac_decoder_flag": false,
+     "has_max_speed_onehot_flag": false,
+     "has_any_perception_flag": false
+    },
+    "stack/tanitad/refs/refc_v3.py": {
+     "read": true,
+     "n_lines": 2267,
+     "file_really_read": 53,
+     "perception_heads": 0,
+     "tac_decoder_v6_mentions": 16,
+     "max_speed_onehot_v6_mentions": 6
+    },
+    "stack/tanitad/refs/refc.py": {
+     "read": true,
+     "n_lines": 4372,
+     "file_really_read": 108,
+     "perception_heads": 1,
+     "tac_decoder_v6_mentions": 0,
+     "max_speed_onehot_v6_mentions": 0
+    }
+   },
+   "e50116a": {
+    "stack/scripts/refc_v3_train.py": {
+     "read": true,
+     "n_lines": 6676,
+     "file_really_read": 109,
+     "perception_heads": 0,
+     "tac_decoder_v6_mentions": 0,
+     "max_speed_onehot_v6_mentions": 0,
+     "cli_flags": [
+      "--ablate-frames",
+      "--ack-ddim-no-u0",
+      "--agent-cam-height",
+      "--agent-join",
+      "--agent-join-allow-legacy-ids",
+      "--agent-join-no-rates",
+      "--agent-join-verify",
+      "--agent-miss-rate",
+      "--agent-pad",
+      "--agent-presence-hard",
+      "--agent-queries",
+      "--agent-rig-camera",
+      "--agent-rig-extrinsics",
+      "--agent-rig-extrinsics-allow-partial",
+      "--agent-sigma-range",
+      "--agent-w-ground",
+      "--agent-w-project",
+      "--agents",
+      "--anchor-control-units",
+      "--anchor-ref-speed",
+      "--anchor-v0-conditioned",
+      "--anchors",
+      "--arm",
+      "--batch",
+      "--bev-aux",
+      "--bev-aux-detach",
+      "--bev-aux-dtok",
+      "--bev-aux-hidden",
+      "--bev-aux-occlusion",
+      "--bev-aux-pos-weight",
+      "--bev-aux-rmax",
+      "--bev-aux-rng",
+      "--bev-aux-shuffle",
+      "--conflict-detector",
+      "--conflict-every",
+      "--conflict-mode",
+      "--cot-negative-sidecar",
+      "--data-root",
+      "--device",
+      "--echo-base",
+      "--ego-dropout",
+      "--ego-history",
+      "--ego-history-hidden",
+      "--ego-history-kind",
+      "--ego-history-out",
+      "--ego-state-inject",
+      "--ego-valid-channel",
+      "--encoder-lr-mult",
+      "--episodes",
+      "--eval-batches",
+      "--eval-cache",
+      "--eval-every",
+      "--eval-labels",
+      "--f1-random-t",
+      "--f1-t-max",
+      "--f2-dd-step",
+      "--f3-per-layer",
+      "--f4-adaln",
+      "--f4-zero-init",
+      "--f5-emitting-conf",
+      "--f5-focal",
+      "--f6-w-u0-zero",
+      "--f7-ack-eval-join",
+      "--f7-samples-per-anchor",
+      "--f8-flat-noise",
+      "--f9-assert-vocab",
+      "--feasible-a-max",
+      "--feasible-decode",
+      "--feasible-entry",
+      "--feasible-kappa-max",
+      "--feasible-mu",
+      "--feasible-prefix-slots",
+      "--goal-point-geo-prior",
+      "--goal-point-inject",
+      "--goal-point-t",
+      "--goal-point-w",
+      "--goal-str",
+      "--grad-probe-modules",
+      "--graft-lan",
+      "--image-hw",
+      "--lan-arclengths",
+      "--lan-min-lead-m",
+      "--log-every",
+      "--lr",
+      "--max-speed-input",
+      "--max-speed-mode",
+      "--mode",
+      "--n-anchors",
+      "--nav-args",
+      "--nav-from-v7",
+      "--no-strategic",
+      "--opt",
+      "--out",
+      "--prefetch-factor",
+      "--preflight",
+      "--require-parity",
+      "--sampler",
+      "--sampler-groups",
+      "--sampler-infer-t",
+      "--sampler-space",
+      "--sampler-steps",
+      "--sampler-train-t-max",
+      "--save-every",
+      "--seed",
+      "--sel-accel-max",
+      "--sel-refined",
+      "--sel-score-emitted",
+      "--sel-score-emitted-t",
+      "--size",
+      "--smoke",
+      "--steps",
+      "--synth-episodes",
+      "--tac-goal-negatives",
+      "--tac-goal-tok-head",
+      "--trunk",
+      "--trunk-fuse",
+      "--trunk-fuse-plain-init",
+      "--trunk-in-channels",
+      "--trunk-mode",
+      "--trunk-name",
+      "--u8-batches",
+      "--v2-cache",
+      "--v2-lru",
+      "--v7-labels",
+      "--w-agent",
+      "--w-bev-aux",
+      "--w-tac-goal",
+      "--w-u0",
+      "--warmup",
+      "--weight-decay",
+      "--withheld-bank",
+      "--withheld-bank-warmup",
+      "--withheld-speed-max",
+      "--workers",
+      "--wp-index",
+      "--wp-index-const-xy",
+      "--wp-index-detach",
+      "--wp-index-hidden",
+      "--wp-index-mode",
+      "--wp-index-radius-m",
+      "--wp-index-scale-m"
+     ],
+     "n_cli_flags": 141,
+     "has_tac_decoder_flag": false,
+     "has_max_speed_onehot_flag": false,
+     "has_any_perception_flag": false
+    },
+    "stack/tanitad/refs/refc_v3.py": {
+     "read": true,
+     "n_lines": 2267,
+     "file_really_read": 53,
+     "perception_heads": 0,
+     "tac_decoder_v6_mentions": 16,
+     "max_speed_onehot_v6_mentions": 6
+    },
+    "stack/tanitad/refs/refc.py": {
+     "read": true,
+     "n_lines": 4372,
+     "file_really_read": 108,
+     "perception_heads": 1,
+     "tac_decoder_v6_mentions": 0,
+     "max_speed_onehot_v6_mentions": 0
+    }
+   }
+  },
+  "verdict": {
+   "faecb29": {
+    "unreadable_files": [],
+    "perception_heads_referenced_anywhere": 1,
+    "trainer_mentions_tac_decoder_v6": 0,
+    "trainer_has_tac_decoder_flag": false,
+    "trainer_has_max_speed_onehot_flag": false,
+    "trainer_has_any_perception_flag": false,
+    "n_cli_flags": 138,
+    "INCONCLUSIVE": false
+   },
+   "e50116a": {
+    "unreadable_files": [],
+    "perception_heads_referenced_anywhere": 1,
+    "trainer_mentions_tac_decoder_v6": 0,
+    "trainer_has_tac_decoder_flag": false,
+    "trainer_has_max_speed_onehot_flag": false,
+    "trainer_has_any_perception_flag": false,
+    "n_cli_flags": 141,
+    "INCONCLUSIVE": false
+   }
+  }
+ },
+ "tactical": {
+  "config_overrides": {
+   "tac_decoder_v6": [
+    false,
+    true
+   ]
+  },
+  "n_clips": 5,
+  "losses_first": {
+   "loss": 34.328147888183594,
+   "traj": 1.018430233001709,
+   "cls": 1.734558343887329,
+   "law": 0.43796268105506897,
+   "route": 1.0652395486831665,
+   "lat": 1.115299105644226,
+   "lon": 1.1276867389678955,
+   "lat_tac": 2.0263378620147705,
+   "lon_tac": 1.9724799394607544,
+   "anchor_acc": 0.0,
+   "slot_valid_frac": 1.0,
+   "goal_tac": 35.44354248046875,
+   "goal2s_err_m": 13.404252052307129,
+   "sel_v3": 11.309659957885742,
+   "goal_gate": 0.0,
+   "goal_score_absmean": 13.43501091003418,
+   "agent_presence": 0.043727051466703415,
+   "agent_cls": 3.601771831512451,
+   "agent_centre": 28.963699340820312,
+   "agent_size": 4.085000514984131,
+   "agent_yaw": 0.15094143152236938
+  },
+  "grad": {
+   "core.agent_head": {
+    "n_params": 3781909,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 3.225242314248817,
+    "median": 116952.49803362787,
+    "max": 118196.19802277535
+   },
+   "core.decoder": {
+    "n_params": 14501031,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 27438.773413164483,
+    "median": 64305.79499306803,
+    "max": 272153.0275385999
+   },
+   "core.ego_hist": {
+    "n_params": 15328,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "core.encoder": {
+    "n_params": 58231872,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 13536.745501287282,
+    "median": 136197.67217218876,
+    "max": 153668.92416274548
+   },
+   "core.law_head": {
+    "n_params": 8425472,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 166.9135356992483,
+    "median": 987.6449784934521,
+    "max": 2210.003449141979
+   },
+   "core.measurement": {
+    "n_params": 17280,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 8.011455729603767,
+    "median": 9.281013533473015,
+    "max": 10.736486837267876
+   },
+   "core.route_head": {
+    "n_params": 6147,
+    "n_rows": 5,
+    "n_rows_exact_zero": 1,
+    "min": 0.0,
+    "median": 17.826682895421982,
+    "max": 18.995681643486023
+   },
+   "core.strategic": {
+    "n_params": 4066560,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "core.tactical_trunk": {
+    "n_params": 786816,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 105.33049273490906,
+    "median": 313.0682587623596,
+    "max": 422.3684494495392
+   },
+   "lat_head_tac": {
+    "n_params": 4104,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 3.7608896866440773,
+    "median": 3.886153195053339,
+    "max": 4.09791161864996
+   },
+   "lon_head_tac": {
+    "n_params": 4104,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 3.777751635760069,
+    "median": 3.8185964822769165,
+    "max": 4.203928809612989
+   },
+   "phi_tac": {
+    "n_params": 2101504,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 1665.1189915388823,
+    "median": 3399.6921126395464,
+    "max": 3535.499234482646
+   },
+   "scorer": {
+    "n_params": 1144,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "tac_behaviour_gate_v6": {
+    "n_params": 2574,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "tac_decoder_v6": {
+    "n_params": 2262020,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   },
+   "tac_goal_head": {
+    "n_params": 6156,
+    "n_rows": 5,
+    "n_rows_exact_zero": 0,
+    "min": 57.012181520462036,
+    "median": 170.67736792564392,
+    "max": 188.8041226863861
+   },
+   "tac_latent_proj": {
+    "n_params": 262656,
+    "n_rows": 5,
+    "n_rows_exact_zero": 5,
+    "min": 0.0,
+    "median": 0.0,
+    "max": 0.0
+   }
+  }
+ }
+}

@@ -1,0 +1,1426 @@
+{
+ "evidence_class": "MEASURED",
+ "heads_assembled_by": "THE HARNESS, not the trainer (RefCV3Model contains no BEV lift, no map head and no 3-D box head; compute_losses_v3 has no map or box term)",
+ "head_params": {
+  "lift": 393408,
+  "map_branch": 758505,
+  "box_mem": 287744,
+  "box_dec": 3643159
+ },
+ "head_params_total": 5082816,
+ "single_position_equivalence": {
+  "checked": true,
+  "bit_identical": true,
+  "max_abs_delta": 0.0,
+  "shape": [
+   1,
+   1024,
+   16,
+   64
+  ]
+ },
+ "equivalence_note": "the FIRST scored clip of EVERY run re-checks that the harness's stride-16 map is bit-identical to the model's own out['fmap_s16']; the run raises if it is not, so these 13 rows each cleared it.",
+ "n_clips": 13,
+ "n_clips_requested": 45,
+ "n_clips_in_corpus": 139,
+ "subset_rule": "evenly spaced over the 139 episodes (one middle window each)",
+ "stopped_early_because": "the dev box became CPU- and RAM-contended by other packages (another refc_v3_train run plus the GPU package); s/clip went 62.7 -> 270.3 and the run was stopped by explicit PID at 13 clips. Every row is banked incrementally in logs/perception.jsonl.",
+ "t_s": {
+  "min": 53.90145540237427,
+  "median": 107.2353138923645,
+  "max": 270.30288195610046
+ },
+ "rows": [
+  {
+   "episode_index": 0,
+   "dataset_index": 85,
+   "clip_sha12": "0dfe63214bc2",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.004674196243286,
+    "n_cells": 7072,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 0.9208333492279053,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 11806.745522938669,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9452518,
+    "raw_frame": 94,
+    "n_cuboids": 15,
+    "n_zh_from_join": 15,
+    "join_vs_parquet_max_abs_dz": 0.14068051071166998,
+    "join_vs_parquet_max_abs_dh": 0.0004550247192383061,
+    "n_z_targets": 15,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 89.15953063964844,
+    "n": {
+     "matched": 15,
+     "target": 15,
+     "dropped": 0,
+     "cls": 15,
+     "centre": 15,
+     "size": 15,
+     "yaw": 15,
+     "rates": 0,
+     "occ": 0,
+     "z": 15,
+     "h": 15
+    },
+    "terms": {
+     "loss_presence": 0.3096194565296173,
+     "loss_cls": 2.195540189743042,
+     "loss_centre": 72.31429290771484,
+     "loss_size": 6.613275051116943,
+     "loss_yaw": 0.5549670457839966,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 89.15953063964844,
+     "loss_z": 5.861306667327881,
+     "loss_h": 1.3105347156524658
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 81.9876937866211,
+     "delta_total": 7.171836853027344
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1076640.0534974337,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 75.1752495765686,
+   "rss_gb": 18.258129119873047
+  },
+  {
+   "episode_index": 3,
+   "dataset_index": 598,
+   "clip_sha12": "d0c6db065fa0",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.34236741065979,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 13801.752049542964,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9311025,
+    "raw_frame": 94,
+    "n_cuboids": 19,
+    "n_zh_from_join": 19,
+    "join_vs_parquet_max_abs_dz": 3.7736511230512804e-05,
+    "join_vs_parquet_max_abs_dh": 0.0004966354370117276,
+    "n_z_targets": 19,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 92.71421813964844,
+    "n": {
+     "matched": 19,
+     "target": 19,
+     "dropped": 0,
+     "cls": 19,
+     "centre": 19,
+     "size": 19,
+     "yaw": 19,
+     "rates": 0,
+     "occ": 0,
+     "z": 19,
+     "h": 19
+    },
+    "terms": {
+     "loss_presence": 0.3961719572544098,
+     "loss_cls": 2.389258623123169,
+     "loss_centre": 81.61872863769531,
+     "loss_size": 4.142374515533447,
+     "loss_yaw": 0.9335827231407166,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 92.71421813964844,
+     "loss_z": 3.0885698795318604,
+     "loss_h": 0.14553114771842957
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 89.48011779785156,
+     "delta_total": 3.234100341796875
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1343721.156955123,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 64.67072558403015,
+   "rss_gb": 19.655529022216797
+  },
+  {
+   "episode_index": 6,
+   "dataset_index": 1111,
+   "clip_sha12": "b435685d40c8",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.113685131072998,
+    "n_cells": 4662,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 0.6070312261581421,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 12474.881809078157,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9347765,
+    "raw_frame": 94,
+    "n_cuboids": 153,
+    "n_zh_from_join": 153,
+    "join_vs_parquet_max_abs_dz": 0.048679102706909116,
+    "join_vs_parquet_max_abs_dh": 0.0004987688064574947,
+    "n_z_targets": 153,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 70.47906494140625,
+    "n": {
+     "matched": 100,
+     "target": 153,
+     "dropped": 53,
+     "cls": 100,
+     "centre": 100,
+     "size": 100,
+     "yaw": 100,
+     "rates": 0,
+     "occ": 0,
+     "z": 100,
+     "h": 100
+    },
+    "terms": {
+     "loss_presence": 2.0082125663757324,
+     "loss_cls": 2.749358892440796,
+     "loss_centre": 58.463924407958984,
+     "loss_size": 2.433561325073242,
+     "loss_yaw": 1.2888689041137695,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 70.47906494140625,
+     "loss_z": 3.2818450927734375,
+     "loss_h": 0.25328946113586426
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 66.94393157958984,
+     "delta_total": 3.5351333618164062
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 198685.6473043859,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 53.90145540237427,
+   "rss_gb": 19.190059661865234
+  },
+  {
+   "episode_index": 9,
+   "dataset_index": 1624,
+   "clip_sha12": "42cc086733d8",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.2193403244018555,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 14503.655566051602,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9347765,
+    "raw_frame": 94,
+    "n_cuboids": 2,
+    "n_zh_from_join": 2,
+    "join_vs_parquet_max_abs_dz": 2.7960205078114697e-05,
+    "join_vs_parquet_max_abs_dh": 0.00023884201049795273,
+    "n_z_targets": 2,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 130.4383544921875,
+    "n": {
+     "matched": 2,
+     "target": 2,
+     "dropped": 0,
+     "cls": 2,
+     "centre": 2,
+     "size": 2,
+     "yaw": 2,
+     "rates": 0,
+     "occ": 0,
+     "z": 2,
+     "h": 2
+    },
+    "terms": {
+     "loss_presence": 0.05360429733991623,
+     "loss_cls": 2.4449424743652344,
+     "loss_centre": 119.54615783691406,
+     "loss_size": 4.401529788970947,
+     "loss_yaw": 0.17255133390426636,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 130.4383544921875,
+     "loss_z": 3.762319326400757,
+     "loss_h": 0.057247817516326904
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 126.61878967285156,
+     "delta_total": 3.8195648193359375
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 2350481.9725346565,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 54.76495289802551,
+   "rss_gb": 19.518123626708984
+  },
+  {
+   "episode_index": 12,
+   "dataset_index": 2138,
+   "clip_sha12": "7e5dc4ad4e52",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.0190820693969727,
+    "n_cells": 6806,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 0.8861979246139526,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 12610.211596794426,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9392191,
+    "raw_frame": 94,
+    "n_cuboids": 30,
+    "n_zh_from_join": 30,
+    "join_vs_parquet_max_abs_dz": 0.00031582431793214516,
+    "join_vs_parquet_max_abs_dh": 0.0004892215728760085,
+    "n_z_targets": 30,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 88.91637420654297,
+    "n": {
+     "matched": 30,
+     "target": 30,
+     "dropped": 0,
+     "cls": 30,
+     "centre": 30,
+     "size": 30,
+     "yaw": 30,
+     "rates": 0,
+     "occ": 0,
+     "z": 30,
+     "h": 30
+    },
+    "terms": {
+     "loss_presence": 0.612571656703949,
+     "loss_cls": 2.3552920818328857,
+     "loss_centre": 76.79855346679688,
+     "loss_size": 3.687725782394409,
+     "loss_yaw": 1.2323260307312012,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 88.91637420654297,
+     "loss_z": 4.042910099029541,
+     "loss_h": 0.18699383735656738
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 84.68647003173828,
+     "delta_total": 4.2299041748046875
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 664739.3510095477,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 60.948326587677,
+   "rss_gb": 18.97241973876953
+  },
+  {
+   "episode_index": 15,
+   "dataset_index": 2649,
+   "clip_sha12": "37616735658b",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.2813286781311035,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 10902.20017787069,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9354144,
+    "raw_frame": 94,
+    "n_cuboids": 33,
+    "n_zh_from_join": 33,
+    "join_vs_parquet_max_abs_dz": 0.322920053100586,
+    "join_vs_parquet_max_abs_dh": 0.0004837064743041797,
+    "n_z_targets": 33,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 99.96150207519531,
+    "n": {
+     "matched": 33,
+     "target": 33,
+     "dropped": 0,
+     "cls": 33,
+     "centre": 33,
+     "size": 33,
+     "yaw": 33,
+     "rates": 0,
+     "occ": 0,
+     "z": 33,
+     "h": 33
+    },
+    "terms": {
+     "loss_presence": 0.6838620901107788,
+     "loss_cls": 2.272348165512085,
+     "loss_centre": 83.89954376220703,
+     "loss_size": 7.101809024810791,
+     "loss_yaw": 1.1709076166152954,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 99.96150207519531,
+     "loss_z": 4.078379154205322,
+     "loss_h": 0.7546608448028564
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 95.12846374511719,
+     "delta_total": 4.833038330078125
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 486356.8404408097,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 62.627198219299316,
+   "rss_gb": 19.34613037109375
+  },
+  {
+   "episode_index": 18,
+   "dataset_index": 3162,
+   "clip_sha12": "c167e6ce11a3",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.2546231746673584,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 11706.432295780629,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9388639,
+    "raw_frame": 94,
+    "n_cuboids": 5,
+    "n_zh_from_join": 5,
+    "join_vs_parquet_max_abs_dz": 0.006578605651855529,
+    "join_vs_parquet_max_abs_dh": 0.0004977455139161258,
+    "n_z_targets": 5,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 71.08480834960938,
+    "n": {
+     "matched": 5,
+     "target": 5,
+     "dropped": 0,
+     "cls": 5,
+     "centre": 5,
+     "size": 5,
+     "yaw": 5,
+     "rates": 0,
+     "occ": 0,
+     "z": 5,
+     "h": 5
+    },
+    "terms": {
+     "loss_presence": 0.1167849749326706,
+     "loss_cls": 2.190959930419922,
+     "loss_centre": 58.503387451171875,
+     "loss_size": 4.620148658752441,
+     "loss_yaw": 0.9833110570907593,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 71.08480834960938,
+     "loss_z": 4.462087154388428,
+     "loss_h": 0.20811934769153595
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 66.41459655761719,
+     "delta_total": 4.6702117919921875
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1303170.6706539392,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 107.2353138923645,
+   "rss_gb": 0.5840110778808594
+  },
+  {
+   "episode_index": 21,
+   "dataset_index": 3681,
+   "clip_sha12": "209199ce8280",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.293527603149414,
+    "n_cells": 7642,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 0.9950520992279053,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 11530.845899514854,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9457035,
+    "raw_frame": 94,
+    "n_cuboids": 22,
+    "n_zh_from_join": 22,
+    "join_vs_parquet_max_abs_dz": 4.673690795897745e-05,
+    "join_vs_parquet_max_abs_dh": 0.00044999027252190515,
+    "n_z_targets": 22,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 63.27634048461914,
+    "n": {
+     "matched": 22,
+     "target": 22,
+     "dropped": 0,
+     "cls": 22,
+     "centre": 22,
+     "size": 22,
+     "yaw": 22,
+     "rates": 0,
+     "occ": 0,
+     "z": 22,
+     "h": 22
+    },
+    "terms": {
+     "loss_presence": 0.44819942116737366,
+     "loss_cls": 2.3332812786102295,
+     "loss_centre": 52.545204162597656,
+     "loss_size": 3.6626434326171875,
+     "loss_yaw": 0.8524823784828186,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 63.27634048461914,
+     "loss_z": 3.3114702701568604,
+     "loss_h": 0.12306291610002518
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 59.8418083190918,
+     "delta_total": 3.4345321655273438
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 463154.03756022453,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 154.3933002948761,
+   "rss_gb": 1.3230476379394531
+  },
+  {
+   "episode_index": 24,
+   "dataset_index": 4194,
+   "clip_sha12": "6ad168dc58db",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.3209195137023926,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 13041.455183155835,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9399940,
+    "raw_frame": 94,
+    "n_cuboids": 122,
+    "n_zh_from_join": 122,
+    "join_vs_parquet_max_abs_dz": 0.1721453611373901,
+    "join_vs_parquet_max_abs_dh": 0.0004949083328247283,
+    "n_z_targets": 122,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 67.73456573486328,
+    "n": {
+     "matched": 100,
+     "target": 122,
+     "dropped": 22,
+     "cls": 100,
+     "centre": 100,
+     "size": 100,
+     "yaw": 100,
+     "rates": 0,
+     "occ": 0,
+     "z": 100,
+     "h": 100
+    },
+    "terms": {
+     "loss_presence": 2.0294947624206543,
+     "loss_cls": 2.5308594703674316,
+     "loss_centre": 54.781063079833984,
+     "loss_size": 3.8511877059936523,
+     "loss_yaw": 0.9487287402153015,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 67.73456573486328,
+     "loss_z": 3.328428268432617,
+     "loss_h": 0.26480284333229065
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 64.1413345336914,
+     "delta_total": 3.593231201171875
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 307845.10059285164,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 158.6492531299591,
+   "rss_gb": 1.9525413513183594
+  },
+  {
+   "episode_index": 27,
+   "dataset_index": 4707,
+   "clip_sha12": "09f53befdab2",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.3218488693237305,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 14331.458044692874,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9380700,
+    "raw_frame": 94,
+    "n_cuboids": 108,
+    "n_zh_from_join": 108,
+    "join_vs_parquet_max_abs_dz": 0.22407407331466678,
+    "join_vs_parquet_max_abs_dh": 0.0004977951049804918,
+    "n_z_targets": 108,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 74.79389190673828,
+    "n": {
+     "matched": 100,
+     "target": 108,
+     "dropped": 8,
+     "cls": 100,
+     "centre": 100,
+     "size": 100,
+     "yaw": 100,
+     "rates": 0,
+     "occ": 0,
+     "z": 100,
+     "h": 100
+    },
+    "terms": {
+     "loss_presence": 2.04447865486145,
+     "loss_cls": 2.373452663421631,
+     "loss_centre": 61.44712448120117,
+     "loss_size": 4.0925188064575195,
+     "loss_yaw": 1.1191471815109253,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 74.79389190673828,
+     "loss_z": 3.6337454319000244,
+     "loss_h": 0.08341789990663528
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 71.07672882080078,
+     "delta_total": 3.7171630859375
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1323278.5599564314,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 141.09717655181885,
+   "rss_gb": 0.4507255554199219
+  },
+  {
+   "episode_index": 30,
+   "dataset_index": 5220,
+   "clip_sha12": "fcc9209b8e83",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.185586929321289,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 11711.95149871707,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9523319,
+    "raw_frame": 94,
+    "n_cuboids": 21,
+    "n_zh_from_join": 21,
+    "join_vs_parquet_max_abs_dz": 4.7966289520307015e-05,
+    "join_vs_parquet_max_abs_dh": 0.0004887361526488831,
+    "n_z_targets": 21,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 100.09722137451172,
+    "n": {
+     "matched": 21,
+     "target": 21,
+     "dropped": 0,
+     "cls": 21,
+     "centre": 21,
+     "size": 21,
+     "yaw": 21,
+     "rates": 0,
+     "occ": 0,
+     "z": 21,
+     "h": 21
+    },
+    "terms": {
+     "loss_presence": 0.44867920875549316,
+     "loss_cls": 2.392822742462158,
+     "loss_centre": 87.98819732666016,
+     "loss_size": 4.843278408050537,
+     "loss_yaw": 1.25533926486969,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 100.09722137451172,
+     "loss_z": 3.0787534713745117,
+     "loss_h": 0.09015335142612457
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 96.92831420898438,
+     "delta_total": 3.1689071655273438
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 876677.7077260017,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 180.38238167762756,
+   "rss_gb": 2.2187728881835938
+  },
+  {
+   "episode_index": 33,
+   "dataset_index": 5732,
+   "clip_sha12": "67e3568c2eda",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.1332740783691406,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 15223.001402951777,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9452182,
+    "raw_frame": 94,
+    "n_cuboids": 33,
+    "n_zh_from_join": 33,
+    "join_vs_parquet_max_abs_dz": 0.8705199180603027,
+    "join_vs_parquet_max_abs_dh": 0.0004975795745849609,
+    "n_z_targets": 33,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 118.17253875732422,
+    "n": {
+     "matched": 33,
+     "target": 33,
+     "dropped": 0,
+     "cls": 33,
+     "centre": 33,
+     "size": 33,
+     "yaw": 33,
+     "rates": 0,
+     "occ": 0,
+     "z": 33,
+     "h": 33
+    },
+    "terms": {
+     "loss_presence": 0.6734829545021057,
+     "loss_cls": 2.33292818069458,
+     "loss_centre": 102.98522186279297,
+     "loss_size": 6.215373992919922,
+     "loss_yaw": 0.7791498899459839,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 118.17253875732422,
+     "loss_z": 4.648126125335693,
+     "loss_h": 0.5382579565048218
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 112.98615264892578,
+     "delta_total": 5.1863861083984375
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1041173.7338600159,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 163.55626821517944,
+   "rss_gb": 0.8998146057128906
+  },
+  {
+   "episode_index": 37,
+   "dataset_index": 6416,
+   "clip_sha12": "59d98b34ae8b",
+   "fmap_s16_shape": [
+    1,
+    1024,
+    16,
+    64
+   ],
+   "fmap_s16_requires_grad": true,
+   "bev_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "map_logits_shape": [
+    1,
+    9,
+    120,
+    64
+   ],
+   "bev_feats_shape": [
+    1,
+    96,
+    120,
+    64
+   ],
+   "window_t": 85,
+   "window_now_row": 92,
+   "map": {
+    "loss": 2.3092455863952637,
+    "n_cells": 7680,
+    "label_grid": [
+     1,
+     9,
+     120,
+     64
+    ],
+    "seen_frac": 1.0,
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 13084.75852265954,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "box": {
+    "t_img_us": 9378314,
+    "raw_frame": 94,
+    "n_cuboids": 6,
+    "n_zh_from_join": 6,
+    "join_vs_parquet_max_abs_dz": 3.236865997324756e-05,
+    "join_vs_parquet_max_abs_dh": 0.00047011089324944244,
+    "n_z_targets": 6,
+    "memory_tokens": [
+     1,
+     1504,
+     256
+    ],
+    "loss_total": 47.99559783935547,
+    "n": {
+     "matched": 6,
+     "target": 6,
+     "dropped": 0,
+     "cls": 6,
+     "centre": 6,
+     "size": 6,
+     "yaw": 6,
+     "rates": 0,
+     "occ": 0,
+     "z": 6,
+     "h": 6
+    },
+    "terms": {
+     "loss_presence": 0.14061784744262695,
+     "loss_cls": 2.5149004459381104,
+     "loss_centre": 38.3276481628418,
+     "loss_size": 1.227016806602478,
+     "loss_yaw": 1.5831785202026367,
+     "loss_rates": 0.0,
+     "loss_occ": 0.0,
+     "total": 47.99559783935547,
+     "loss_z": 4.079143047332764,
+     "loss_h": 0.1230928897857666
+    },
+    "control_no_zh": {
+     "n_z": 0,
+     "loss_z": 0.0,
+     "total": 43.79336166381836,
+     "delta_total": 4.202236175537109
+    },
+    "grad": {
+     "gp_core.encoder_found": 1.0,
+     "gp_core.encoder_grad_abs_sum": 1243195.0277408361,
+     "gp_core.encoder_n_grad_none": 32.0,
+     "gp_core.encoder_n_tensors": 316.0,
+     "gp_core.encoder_n_params": 58231872.0,
+     "gp_cuda_max_mem_gb": 0.0
+    }
+   },
+   "t_s": 270.30288195610046,
+   "rss_gb": 1.5088424682617188
+  }
+ ]
+}
