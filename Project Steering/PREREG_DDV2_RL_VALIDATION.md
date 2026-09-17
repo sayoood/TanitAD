@@ -311,3 +311,47 @@ the +0.0363 being used to decide. See `D-DDV2RL-SEED-FLOOR-DWARFS-THE-LEVER` and
 `D-DDV2RL-LAUNCH-NONDETERMINISM` in `GOALS_AND_CLAIMS.md`.
 
 <!-- PREREG-DDV2RL-EXEC-RECORD-STAGE-A-2026-09-17 -->
+
+---
+
+## 16.2 EXECUTION RECORD — the T1 rolls, 2026-09-17
+
+**First attempt FAILED and the failure is recorded rather than smoothed.** `t1_rolls.sh` ran the
+BASE roll and died at **episode ~33 of 41** with `torch.AcceleratorError: CUDA error: out of memory`
+inside `rollout_unicycle` — with **host free RAM at 0.57 GB of 31.8** and a sibling `python` at
+**4.95 GB**. ⇒ **host contention, not a T1 sizing problem**: T1 itself peaks ≈1.5 GB of an 8 GB card,
+and the 2026-09-15 package ran **four** of these rolls on this same box in 38.5 min.
+
+⛔ **The invocation was NOT reduced to fit.** It is copied verbatim from that package's
+`run_validation.sh` precisely so the two packages' T1 numbers stay comparable; a shrunk roll would
+be a different measurement wearing the same name — the same reasoning that kept the replicate arm at
+full batch. It was re-run **unchanged** once the box was quiet.
+
+⚠️ **`--analyze-only` was checked BEFORE re-running** (the documented lesson: an analysis-time
+failure after a paid rollout must not cost the rollout twice). The tool has it, and the partial dump
+held **33 of 41** episodes — but analysing 33 would produce a **different window set** from BASE's 41
+and from the 2026-09-15 rolls, so it is not a shortcut here. Re-rolling whole was the correct call.
+
+### ⚠️ Two defects in my own harness, both found by their own output
+
+1. **`echo "ZZT1 $CK rc=$RC bytes=$SZZZ"`** — bash parsed **`$SZZZ`**, not `$SZ` followed by the
+   `ZZ` marker, and `set -u` killed the script **before it could report the OOM**. My own marker
+   convention collided with variable interpolation — the same family as a monitor filter that
+   matches its own echoed command text. ⭐ The artifact check would still have caught it (`SZ` reads
+   0 ⇒ `ZZT1-INCOMPLETE`); the bug cost a clear error message, not a wrong conclusion.
+2. ⛔ **The inherited `gpu_free()` guard was watching the wrong thing, and on this OS it can never
+   pass.** It grepped `nvidia-smi --query-compute-apps` for `python|torch`. On Linux that lists CUDA
+   compute clients; on **Windows/WDDM it lists every process with a graphics context** —
+   `explorer.exe`, `SearchHost.exe`, the NVIDIA overlay, Edge. MEASURED: it refused on a **pytest
+   process holding 19.6 MB**. A guard that cannot tell a trainer from a text editor is a stop
+   button, not a safety guard — and it was guarding GPU while the job died of **host RAM**.
+   ⇒ replaced by `box_free()`, which refuses on **free memory**: GPU used > 2,500 MiB (desktop
+   baseline ≈1,550) or host free < 8 GB. A real trainer (arm 3 held ≈3.5 GB of GPU) still blocks it.
+   ⭐ It reports **INCONCLUSIVE, never clear**, when either probe fails — proven by mutation.
+
+⚠️ **And a third, avoided:** generating the replacement guard through a shell heredoc silently ate
+the `\r` escapes in a `tr -d` and produced a broken command that **`bash -n` still accepted**. A
+syntax check is not a semantics check. The probe was moved into `code/boxstat.py` and the script
+written as a file.
+
+<!-- PREREG-DDV2RL-EXEC-RECORD-T1-2026-09-17 -->
