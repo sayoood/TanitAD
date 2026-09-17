@@ -730,6 +730,61 @@ own clip list.*
 
 ---
 
+## 18. DECIDE: the tactical layer can see the AGENTS but not the MAP — and unblocking it is a design call, not plumbing
+
+**You asked, 2026-09-16:** *"The tactical layer must learn to emitt the valid tactical behaviors …
+It shoudl learn them from the scene embeddings, **for the agent and the map**."*
+
+⭐ **The agent half now works.** As of `ec08291` the decoder trains: all 8 probed heads reach,
+`grad_abs_sum` **0.162 → 991.2**, `n_grad_none = 0` on every module on every step — where at the
+previous tip **2.26 M parameters read exactly 0**.
+
+⛔ **The map half cannot be reached without a structural change.** MEASURED:
+
+| | |
+|---|---|
+| `refc_v3.RefCV3Model.forward` | **never passes `bev_tokens=`** to `self.core(...)` — the call site passes `**_core_kw`, carrying `scene_hook` alone |
+| the BEV encoder | lives on the **trainer's wrapper**, and runs **AFTER** the core forward, on `out["fmap_s16"]` |
+| ⇒ at the hook | **no BEV token exists yet** |
+
+So `--tac-decoder-d-bev > 0` **refuses**, and a run stamps `sources: ["agent"]` /
+`bev_tokens_reach_decoder: false`. ⭐ **The refusal is the right behaviour** — a decoder quietly
+attending to agents only while the record says "agent and map" is exactly the class of defect that
+has cost this programme the most.
+
+### What it costs while it stays blocked
+
+⚠️ `E-REFCV6V2-TACTICAL` can only be tested in its **agent-only** form. Behaviours that are a
+property of the **map** — lane keeping, corridor offset — have **no evidence to learn from**, so a
+per-class result on those tokens is **uninterpretable**, not merely weak. They must carry that
+scope or be excluded from any headline.
+
+### The two options, and the second is the real question
+
+1. **Move the BEV encoder into the model forward**, so a BEV token exists before the hook fires.
+   Mechanical, and it changes the model's forward contract — every bit-identity proof landed
+   tonight would need re-running against the new baseline.
+2. ⭐ **Then decide whether the behaviour decoder may BACKPROP INTO THE SHARED TRUNK.** This is the
+   design question, not the plumbing one:
+   * **if yes** — the tactical loss shapes the trunk, and the trunk is then jointly optimised by the
+     planner, both perception heads **and** the tactical decoder. ⚠️ Attribution gets harder: a
+     trunk improvement can no longer be assigned to one head, which is the `--v2` conflation failure
+     the programme has already paid for once.
+   * **if no** — the decoder reads a **detached** BEV, learns from the map, and cannot corrupt the
+     trunk. ⚠️ But then the map representation it reads is shaped only by the perception losses, and
+     "the tactical layer learned from the map" means "learned from a map it had no say in".
+
+**Default if silent: neither.** ⛔ The decoder ships **agent-only**, the refusal stays, and every
+tactical number is reported with `sources: ["agent"]` attached. That is honest and it is testable —
+it simply does not answer the map half of your question. ⚠️ I am **not** defaulting to option 1,
+because doing the plumbing without the ruling would land a model whose attribution properties you
+had not chosen.
+
+*Evidence: `…/2026-09-17-refcv6-tactical-training/RESULT.md`;
+`PREREG_REFCV6_V2.ERRATUM-1.md` §E8.*
+
+---
+
 ## Not a decision — the state, for orientation
 
 ⚠️ **CORRECTED 2026-09-17 — this paragraph described a run that has since FINISHED, and said so

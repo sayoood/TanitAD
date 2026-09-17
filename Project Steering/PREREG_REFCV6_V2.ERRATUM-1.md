@@ -288,3 +288,69 @@ not a measurement of the thing §5 claims.
 ceiling. Quoting an AP that the mirrored address also achieves would mean **reporting a perception
 capability that does not exist** — and `E-REFCV6V2-PERCEP` is precisely a claim that the heads
 "reach the trunk" and are "LEARNED". The oracle ladder cannot catch that; only the mirror can.
+
+---
+
+## E7. §6's tactical label figures name a policy the trainer does NOT default to
+
+*(Added 2026-09-17 from the tactical-wiring agent, which corrected me on three counts.)*
+
+**What §6 says:** *"Under the PI's absence-as-negative ruling, 54,253 cells convert ignore →
+negative and the head mask goes **17/22 → 21/22** trainable … **9 of 22 tokens now sit ON the
+`goal_pos_weight` cap of 50** (3 before)."*
+
+That sentence is **accurate about the ruling** and **silent about which policy an arm actually
+runs**. ⛔ MEASURED: `refc_v3_train.py` declares `tac_goal_negatives: str = "measured"` as its
+**default**, and the absence-as-negative policy is **opt-in** behind `--cot-negative-sidecar`.
+
+| policy | trainable | on the `goal_pos_weight` cap | under the n = 200 floor |
+|---|---|---|---|
+| **`measured`** — the trainer's DEFAULT | **17 / 22** | **3** | 10 |
+| `cot-absence-negative` — the PI's ruling, **OPT-IN** | 21 / 22 | 9 | 10 |
+
+⇒ **a tactical number must name its NEGATIVES POLICY, not just its split.** A reader planning an arm
+from §6 as written would expect 21/22 trainable tokens and 9 capped, and would get 17/22 and 3
+unless they passed the sidecar flag. ⚠️ **My brief to the implementation agent stated "21/22" as the
+current state, which is worse than the prereg's silence** — it asserted the opt-in policy as the
+default.
+
+⭐ **Nothing about the criteria changes.** T-CLASS, T-FLOOR and T-ZERO are per-class and floor-aware
+under either policy; what changes is that **every reported tactical figure must carry the policy
+name beside it**, exactly as every interval carries its estimator.
+
+### Two more corrections from the same source
+
+1. ⛔ **"The max-speed builder was never run" was WRONG.** It ran on **2026-09-16** —
+   `speed_max_window_v6_{train,eval}.meta.json` are banked under
+   `…/2026-09-16-refcv6-tactical/`. Only the **payload** was absent from the artifacts directory I
+   searched. ⚠️ This is *absence found at ONE location*, the first trap CLAUDE.md names, committed by
+   me while briefing an agent about a different gap. The rebuild reproduces that meta's census **to
+   the digit**, which is what makes the rebuilt payload trustworthy rather than merely present.
+2. ⚠️ **The tactical decoder's parameter count depends on a flag I did not name.** **2,262,020** is
+   the `d_bev=256` build. The default `d_bev=128` gives **2,229,252**, and the arm actually
+   buildable today — agent-only, because the BEV half is blocked (§E8) — is **2,228,996**. Quoting
+   one number without `d_bev` is the units error in a new costume.
+
+## E8. §4's map half is STRUCTURALLY BLOCKED — the decoder learns from agents only
+
+⛔ MEASURED: `refc_v3.RefCV3Model.forward` **never passes `bev_tokens=`** to `self.core(...)` — its
+call site passes `**_core_kw`, which carries `scene_hook` alone — and the BEV encoder lives on the
+**trainer's wrapper**, running **after** the core forward on `out["fmap_s16"]`. So **no BEV token
+exists** at the point where the hook fires.
+
+⇒ `--tac-decoder-d-bev > 0` **REFUSES**, and a run stamps `sources: ["agent"]` /
+`bev_tokens_reach_decoder: false`.
+
+⛔ **The PI asked for "the scene embeddings, for the agent AND THE MAP".** Half of that ask is
+currently unreachable, and the refusal is the honest behaviour — a decoder silently attending to
+agents only, while the record said "agent and map", is the defect this programme keeps finding.
+
+⚠️ **Consequence for `E-REFCV6V2-TACTICAL`:** as it stands the hypothesis can only be tested in its
+**agent-only** form. A behaviour that is a property of the MAP — lane keeping, corridor offset —
+has no evidence to be learned from, so a per-class result on those tokens is **uninterpretable**,
+not merely weak. They must be reported with that scope or excluded from the headline.
+
+⇒ **PI DECISION** (queue item 18): unblocking requires moving the BEV encoder **into the model
+forward**, and a ruling on whether the behaviour decoder may **backprop into the shared trunk**.
+That second half is a design question about attribution, not a plumbing detail, and is not taken
+here.
