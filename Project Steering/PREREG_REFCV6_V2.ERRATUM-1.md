@@ -224,3 +224,67 @@ defect found and fixed rather than a result withdrawn.
 expression over the code under test"* — here a **hand-written field list** standing in for a
 dataclass, which rots the moment the dataclass grows. The fix is `dataclasses.replace`, so the
 field set cannot drift again.
+
+---
+
+## E6. §5's stride-16 premise — the ORACLE argument survives, the INFERENCE from it does not, and a new control becomes mandatory
+
+*(Added 2026-09-17 from the D3 proof package, `0e947e4`.)*
+
+**What §5 says:** *"an ORACLE on 8×20 tops out at AP 0.3341 against 0.4713 on 16×40, so a head on
+the 160 stride-32 tokens is capped below our 0.60 bar before training starts."*
+
+E2 already corrected `0.4713 → 0.4762`. D3 raises something E2 did not touch: **what that number is
+evidence FOR.**
+
+### What D3 measured, on `refcv5-v2`'s frozen trunk
+
+| arm | AP@2m |
+|---|---|
+| `main_s16` seed 0 / seed 1 | 0.0361 / 0.0387 |
+| `main_s32` seed 0 / seed 1 | 0.0324 / 0.0386 |
+| ⛔ **`mirror_s16`** (the WRONG-address control) | **0.0388 — the highest arm in the panel** |
+| `pixel` floor | 0.0299 |
+| `shuf_s16` / `shuf_s32` | 0.0141 / 0.0262 |
+
+⇒ **16×40 does not beat 8×20** (slots −0.0007 [−0.0223, +0.0277], heatmap +0.0037 [−0.0097,
++0.0119]) — **the seed spread swamps the stride difference** — and `main_s16` barely clears the
+raw-pixel floor.
+
+### ⛔⛔ The finding that outranks the stride question: the MIRROR CONTROL DID NOT LOSE
+
+`main_s16 − mirror_s16` = **+0.0067 [−0.0048, +0.0255], not separated**, and the mirrored arm is the
+**highest-scoring** one. This is the `R-2026-09-08-wpa-mirror` class. ⇒ **at this level none of these
+AP numbers measures LOCALISATION at all** — a feature map read at a deliberately wrong azimuth
+address scores as well as the right one, so the AP is reading something that is not "where things
+are".
+
+### ⚠️ How far this transfers, stated precisely, because it is easy to overstate
+
+⛔ **D3 measured `refcv5-v2`'s FROZEN, from-scratch trunk. refcv6's trunk is a DIFFERENT object** —
+`timm` ImageNet-initialised and, as of `dadb7e3`, **jointly trained with the map and box losses**,
+which is exactly the intervention intended to make the stride-16 map carry more than it does today.
+⇒ D3 **does not refute** §5 for refcv6's trunk, and anyone quoting it as though it did is repeating
+the scope error this programme keeps making. It is a **strong caution about the premise's evidence**,
+not a measurement of the thing §5 claims.
+
+### What actually changes
+
+1. ⚠️ **The oracle ladder survives as an UPPER BOUND on the ADDRESS SPACE and nothing more.** It
+   prices what a *perfect* front-end could reach through each grid. It is **not** evidence that a
+   real trunk's stride-16 map carries more usable signal than its stride-32 map — and on the one
+   real trunk anybody has measured, it does not.
+2. ⛔ **§5's inference is downgraded from MEASURED to HYPOTHESIS.** *"Perception hangs on stride-16"*
+   remains the design choice, and it is defensible on address-space grounds, but the sentence *"a
+   head on the 160 stride-32 tokens is capped below our 0.60 bar before training starts"* is an
+   **oracle-derived expectation**, not a measured property of any trunk we have.
+3. ⭐ **A NEW REFUSAL, and it is mandatory:** ⛔ **no box-head AP on these tokens may be quoted as
+   localisation unless the MIRRORED-ADDRESS control is reported beside it AND is separated WORSE.**
+   A panel whose mirror control ties — or wins, as it did here — is measuring something other than
+   position, and its AP is inadmissible as a perception claim. This becomes **§12 refusal 11** and it
+   applies to `E-REFCV6V2-PERCEP` directly.
+
+⭐ **Why refusal 11 matters more than the stride choice.** Getting the stride wrong costs some
+ceiling. Quoting an AP that the mirrored address also achieves would mean **reporting a perception
+capability that does not exist** — and `E-REFCV6V2-PERCEP` is precisely a claim that the heads
+"reach the trunk" and are "LEARNED". The oracle ladder cannot catch that; only the mirror can.
