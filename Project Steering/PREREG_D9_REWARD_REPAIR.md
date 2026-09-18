@@ -245,3 +245,72 @@ because a penalty weight chosen after seeing the data is a hyper-parameter selec
 scored split.
 
 <!-- PREREG-D9-AMENDMENT-2-EP-IS-BLIND-TO-SPEED-2026-09-17 -->
+
+---
+
+## 13. `L2-SPD` — the speed-appropriateness term, specified BEFORE it runs
+
+§12 established that EP cannot supply this: `ego_progress` saturates at the route end, so
+above the human's speed the reward is **flat**. This section fixes the term's form. ⛔ It
+is written before any `L2-SPD` arm exists, because a penalty weight chosen after seeing
+the data is a hyper-parameter selected on the scored split.
+
+### 13.1 The form
+
+The term enters the PDMS shape as a **fourth weighted component**, not as a multiplier:
+
+```
+pdms = NC × DAC × (w_ep·EP + w_ttc·TTC + w_c·C + w_spd·SPD) / (w_ep + w_ttc + w_c + w_spd)
+
+SPD = clamp(1 − max(0, v̄_cand − v̄_human) / v_tol, 0, 1)
+```
+
+where `v̄` is the mean speed over the scored ticks, taken from the states the proxy
+already builds.
+
+⭐ **Additive, not multiplicative**, deliberately. NC and DAC are multipliers because they
+are **constraints**: a collision or leaving the road annihilates the score. Driving 0.4 m/s
+fast is a **quality** failure, and the terms that express quality (EP, TTC, comfort) are
+weighted components. Making SPD a multiplier would make a mild over-speed catastrophic and
+would reintroduce, on the other side, exactly the all-or-nothing behaviour that made a
+constant DAC so damaging.
+
+⭐ **One-sided, deliberately.** Being *slower* than the human is **already** penalised — EP
+is `raw / max(ref, raw)` and discriminates fully below the reference (MEASURED: 6 m/s →
+24.0, 8 → 32.0 against the human's 38.5). A two-sided SPD would penalise slowness twice and
+change the meaning of the existing EP result.
+
+### 13.2 ⛔ `v_tol` is NOT chosen from the failure
+
+The failing seed over-speeds by **+0.372 m/s** (separated). ⛔ **Choosing `v_tol` so that
++0.372 scores badly is fitting the reward to the observation it is meant to be tested
+against.** Instead:
+
+* **candidate set, fixed here:** `v_tol ∈ {0.75, 1.5, 3.0} m/s` — a coarse half-decade
+  ladder, chosen for spacing and not for where the failure lands;
+* **selected on the FIT split only**, by the pre-registered criterion in §4;
+* the **scored split is scored once**, never tuned on;
+* the chosen value and the two rejected ones are **both reported**, so a reader can see
+  whether the result depends on the knob.
+
+⚠️ If all three values behave the same, say so — that is evidence the term's *presence*
+matters and its *scale* does not, which is a stronger result than a tuned one.
+
+### 13.3 The controls this term needs
+
+| control | what it must read |
+|---|---|
+| **`w_spd = 0`** | **byte-identical** to the arm without the term. A new term that changes the score at zero weight is not a term, it is a bug. |
+| **the human's own trajectory** | `SPD` **exactly 1.0** — the human cannot over-speed relative to itself, and any other value means `v̄_human` is being computed from a different source than `v̄_cand` |
+| **a candidate at the human's speed** | `SPD` **exactly 1.0** — the penalty must start at the reference, not before it |
+| **a candidate slower than the human** | `SPD` **exactly 1.0** — one-sidedness, asserted rather than assumed |
+
+### 13.4 What it does NOT do
+
+⛔ It does not bound **absolute** speed, and it must not be described as a speed limit: it
+penalises **excess over the human on that window**. On a window where the human is
+speeding, the term is silent — which is correct for a proxy whose entire reference frame
+is the human's own future, and which is also a **stated limitation** of the whole
+`pdm_proxy` family, not something this term introduces.
+
+<!-- PREREG-D9-13-SPD-TERM-SPECIFIED-2026-09-18 -->
