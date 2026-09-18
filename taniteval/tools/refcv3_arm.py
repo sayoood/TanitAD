@@ -1026,7 +1026,8 @@ def rebuild_config(config: dict):
     return cfg, args, src
 
 
-def rebuild_perception_branch(model, config: dict, device: str = "cpu"):
+def rebuild_perception_branch(model, config: dict, device: str = "cpu",
+                              targs=None):
     """Rebuild refcv6's perception branch from `config.json`'s own stamp.
 
     ⛔ WITHOUT THIS, NO refcv6 CHECKPOINT LOADS. The trainer attaches the branch to
@@ -1078,15 +1079,39 @@ def rebuild_perception_branch(model, config: dict, device: str = "cpu"):
     model._w_map = w_map
     model._w_box3d = w_box3d
     model._perception = _perc.build_perception_branch(model, pcfg).to(device)
-    # ⛔ THE LIFT BANK IS NOT REBUILT, AND THAT IS STATED RATHER THAN HIDDEN. It is
-    # built from a PER-CLIP EXTRINSICS FILE, which is a path in the training
-    # environment and may not exist here; it holds NO parameters, so the load and the
-    # param cross-check are unaffected. A caller that wants MAP metrics must supply it
-    # (`_perc.LiftGeometryBank`) and should refuse rather than report a map number
-    # without one.
+    # ---- THE LIFT BANK ------------------------------------------------------- #
+    # ⛔ REQUIRED FOR ANY FORWARD once the lift exists: `refc_v3.py` REFUSES a BEV
+    # lift with no per-clip geometry, because a default camera would back-project
+    # through the wrong road plane on a corpus whose mount height spans 1.2131-1.6672 m
+    # over 554 distinct values -- 'and every count would still look healthy'. We SUPPLY
+    # it; we never default it.
     model._lift_bank = None
+    lift_note = None
+    extr_path = str(getattr(targs, "agent_rig_extrinsics", "") or "")
+    if w_map > 0.0 and extr_path:
+        try:
+            _tr = trainer()
+            _single, _table = _tr._read_rig_extrinsics(extr_path)
+            if _table is None:
+                lift_note = ("the extrinsics file carries a SINGLE camera, not a "
+                             "per-clip table; refusing to lift the whole corpus "
+                             "through one mount pose")
+            else:
+                _frame = _perc.frame_for_model(model)
+                model._lift_bank = _perc.LiftGeometryBank(
+                    _table, frame=_frame, stride=int(pcfg.stride),
+                    heights_m=tuple(pcfg.heights_m))
+        except FileNotFoundError:
+            lift_note = f"extrinsics file not on this box: {extr_path}"
+        except Exception as exc:          # noqa: BLE001 -- recorded, never silent
+            lift_note = f"{type(exc).__name__}: {exc}"
+    elif w_map > 0.0:
+        lift_note = "no --agent-rig-extrinsics in the run's argv"
     out = pcfg.as_dict()
-    out["_lift_bank_rebuilt"] = False
+    out["_lift_bank_rebuilt"] = model._lift_bank is not None
+    out["_lift_bank_clips"] = (0 if model._lift_bank is None
+                               else len(model._lift_bank))
+    out["_lift_bank_note"] = lift_note
     out["_stamped_branch_params"] = st.get("branch_params")
     return out
 
@@ -1166,7 +1191,8 @@ def load_model(ckpt_path: str, config_path: str | None = None,
     # ⛔ W0: the refcv6 perception branch lives on the MODEL, not in the config, so it
     # MUST be rebuilt before the cross-check — otherwise `param_breakdown.total` is
     # short by exactly the branch and every refcv6 checkpoint is refused.
-    perception_rebuilt = rebuild_perception_branch(model, config, device)
+    perception_rebuilt = rebuild_perception_branch(model, config, device,
+                                                  targs=targs)
     checks = cross_check_config(config, cfg, model)
     checks["perception_rebuilt"] = perception_rebuilt
     try:
@@ -2151,6 +2177,30 @@ def run_dump(a) -> dict:
             # derives `keep` from `v0 is not None`, so a pre-zeroed v0 would
             # arrive with keep = 1 — the file says so itself. Pass None.
             _v0_fed = None if abl_state.ego_zero else v0_t
+            # ---- per-clip BEV lift geometry, ONCE per window ------------------ #
+            # ⛔ `refc_v3.py` refuses a lift with no geometry rather than defaulting a
+            # camera; we supply it. ⭐ One lookup is EXACT here, not an approximation:
+            # the batched rows are the CONDITIONS of a single window, so they all
+            # belong to the same episode.
+            _lb = getattr(model, "_lift_bank", None)
+            _pg1 = _pv1 = None
+            if _lb is not None:
+                # ⛔ `for_episodes` keys on the INTEGER episode id, not the clip string:
+                # `stable_episode_id(clip_id)` -- the SAME 63-bit join key the corpus uses
+                # everywhere else. Passing the raw clip id raises rather than mis-joining,
+                # which is the right failure but is easy to hit.
+                from tanitad.data.v2_dataset import stable_episode_id as _sid
+                _pg1, _pv1 = _lb.for_episodes(
+                    [int(_sid(str(clip_ids[e_i])))], device=dev)
+
+            def _geom(n_rows: int) -> dict:
+                """`perception_grid`/`perception_valid` for `n_rows` rows of THIS
+                window, or an empty dict when the arm has no lift."""
+                if _pg1 is None:
+                    return {}
+                return {"perception_grid": _pg1.expand(n_rows, *_pg1.shape[1:]),
+                        "perception_valid": _pv1.expand(n_rows, *_pv1.shape[1:])}
+
             tf = time.time()
             with torch.no_grad():
                 out_z = None
@@ -2160,7 +2210,8 @@ def run_dump(a) -> dict:
                     # below; only the position moves, and only under this flag.
                     out_z = model(fr, nav_cmd=None,
                                   v0=None if abl_state.ego_zero else v0_t[:1],
-                                  steps=steps, ego_state=ego_z)
+                                  steps=steps, ego_state=ego_z,
+                                  **_geom(int(fr.shape[0])))
                     _rl = out_z.get("route_logits")
                     if _rl is None:
                         raise SystemExit(
@@ -2177,7 +2228,8 @@ def run_dump(a) -> dict:
                     nav_t = torch.tensor([nav_vals[c] for c in conds_fed],
                                          dtype=torch.long, device=dev)
                 out = model(fr_b, nav_cmd=nav_t if nav_on else None,
-                            v0=_v0_fed, steps=steps, ego_state=ego_b)
+                            v0=_v0_fed, steps=steps, ego_state=ego_b,
+                            **_geom(int(fr_b.shape[0])))
                 # ⭐ THE NAV NULL — ITS OWN CALL. `nav_cmd=None` is a whole-call
                 # property (it gates the E13 injection, refc_v3.py:437-441), so
                 # it cannot be one row of the batch above. Same frames, same v0,
@@ -2185,7 +2237,8 @@ def run_dump(a) -> dict:
                 if do_navzero and out_z is None:
                     out_z = model(fr, nav_cmd=None,
                                   v0=None if abl_state.ego_zero else v0_t[:1],
-                                  steps=steps, ego_state=ego_z)
+                                  steps=steps, ego_state=ego_z,
+                                  **_geom(int(fr.shape[0])))
             if t_fwd_first is None:
                 t_fwd_first = time.time() - tf
                 n_calls = b + (1 if do_navzero else 0)
