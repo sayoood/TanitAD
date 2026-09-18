@@ -1308,3 +1308,35 @@ out of repo by size); its **stamp** is banked at
 `TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-dinov3-b16-seed/raw/`.
 
 <!-- PIQ-ITEM-24-RESOLVED-AUTHORISED-AND-EXECUTED-2026-09-18 -->
+
+## ⛔⛔ ITEM 25 (2026-09-18) — AS WRITTEN, THE refcv6 PANEL CAN NEVER EMIT `SUCCESS`
+
+**MEASURED, and verified by me directly rather than taken from the agent that found it.**
+
+`verdict_refcv6.py:121` carries
+`Clause("S1", "STRATEGIC", "route_acc not separably worse than control, and n > 0")`,
+and `:39` states the rule plainly: *"`n` must be > 0. ⛔ `n = 0` is `MISSING_DATA`, never
+a pass"*. Absence deliberately cannot pass — that design is CORRECT and is not the problem.
+
+⛔ **The problem is that refcv6 turns the strategic layer OFF by the PI's own directive.**
+`SPEC_REFCV6_V2.md` §0/§1: *"Deactivated for this experiment: the whole strategic layer…
+No head estimates the route (PI)"*, and the 2026-09-16 ruling is that nav is a **supplied
+input**, not something a head estimates: *"We dont need any head to estimate the route."*
+⇒ `route_acc` has no data by construction ⇒ `n = 0` ⇒ `MISSING_DATA` ⇒ **S1 can never
+be satisfied, so the panel can never reach `SUCCESS` no matter how well refcv6 drives.**
+
+⚠️ **This is not a bug in either document.** The verdict script predates the amendment
+that switched the strategic layer off. Two correct decisions, taken weeks apart, that
+contradict each other — the same shape as the `Research Hub` rename silently blinding
+three guards tonight.
+
+| option | |
+|---|---|
+| **(a) DEFAULT — score `strat.nav_compliance` in S1's place** | it is the only strategic metric that is COMPUTABLE with the layer off and nav supplied: does the trajectory FOLLOW the nav command it was given? MEASURED: **0 present / 3 refused / 38 missing across all 41 banked artifacts**, so it is owed regardless. This keeps S1 a real clause rather than deleting a family. |
+| (b) mark S1 `n/a-by-design` and require the other clauses | honest, but it removes the STRATEGIC family from the verdict entirely, which the four-family directive forbids ("a missing metric is a work item, not an excuse"). |
+| (c) re-enable a route head for refcv6 | ⛔ contradicts the 2026-09-16 directive. Listed only so the option set is complete. |
+
+⚠️ **If you say nothing, (a) happens** — and `strat.nav_compliance` gets built, because it
+is owed under the four-family rule whichever way S1 is resolved.
+
+<!-- PIQ-ITEM-25-S1-ROUTE-ACC-BLOCKS-SUCCESS-2026-09-18 -->

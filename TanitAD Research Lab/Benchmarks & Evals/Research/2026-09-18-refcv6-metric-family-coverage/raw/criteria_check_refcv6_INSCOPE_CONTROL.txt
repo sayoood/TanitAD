@@ -1,0 +1,68 @@
+=== refcv6_evalrow_inscope_CONTROL.json ===
+tier: UNSTAMPED  (NOT a driving-performance tier)
+
+LONGITUDINAL  [0/4 present]
+   [MISSING] target-speed accuracy
+            -> no key present and not refused
+   [MISSING] along-track displacement error
+            -> no key present and not refused
+   [MISSING] ego progress
+            -> no key present and not refused
+   [MISSING] distance-keeping (headway / time-gap / TTC to the lead agent)
+            -> no key present and not refused
+
+LATERAL  [0/4 present]
+   [MISSING] cross-track error
+            -> no key present and not refused
+   [MISSING] heading error
+            -> no key present and not refused
+   [MISSING] curvature error
+            -> no key present and not refused
+   [MISSING] yaw-rate error
+            -> no key present and not refused
+
+TACTICAL  [0/3 present]
+   [MISSING] manoeuvre-decision quality (selected vs executed)
+            -> no key present and not refused
+   [MISSING] confusion over the manoeuvre classes
+            -> no key present and not refused
+   [MISSING] tactical goal / anchor selection quality
+            -> no key present and not refused
+
+STRATEGIC  [0/5 present]
+   [MISSING] strategic decision quality
+            -> no key present and not refused
+   [MISSING] strategic route / goal-setting quality
+            -> no key present and not refused
+   [MISSING] nav-COMPLIANCE — the emitted BEHAVIOUR follows the route command (imminent windows)
+            -> no key present and not refused
+   [MISSING] nav-compliance CONTROL: paired drop under nav-SHUFFLE (token permuted across windows)
+            -> no key present and not refused
+   [MISSING] nav-compliance CONTROL: paired drop under nav-ZERO (nav withheld, E13 skipped)
+            -> no key present and not refused
+
+ARTIFACT HYGIENE
+   [MISSING] tier stamp present
+            -> no tier marker at any known key path
+   [MISSING] estimator named
+            -> no key present and not refused
+   [MISSING] n printed (windows and episodes)
+            -> no key present and not refused
+   [  ok  ] overlapping_holdout_se not used as a decision-grade interval
+   [MISSING] corpus identity recorded (parity key + skip-hash)
+            -> no key present and not refused
+   [MISSING] headline metrics reported against their trivial control(s)
+            -> no key present and not refused
+   [MISSING] stochastic planner: inference-seed replicate + the seed floor
+            -> no key present and not refused
+
+LEAK GUARDS
+   [MISSING] Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).
+            -> no key present and not refused
+   [MISSING] The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).
+            -> no key present and not refused
+   [MISSING] A route/goal head scoring near 1.0 must publish its echo test against its own input.
+            -> no key present and not refused
+
+VIOLATIONS (silently absent, required): 23
+WORK ITEMS (refused with a reason, or partial): 0
