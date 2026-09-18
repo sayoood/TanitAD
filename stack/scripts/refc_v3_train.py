@@ -330,6 +330,11 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     cfg.core.encoder.trunk_name = str(getattr(args, "trunk_name",
                                               "resnet34.a1_in1k"))
     cfg.core.encoder.trunk_mode = str(getattr(args, "trunk_mode", "shared"))
+    # ⛔ MEMORY LEVERS. `resnet101` at 416x1024 does not fit on an 8 GB card without
+    # them (MEASURED 2026-09-18: 22.34 GB OOM -> 2.887 GB, 4.2-4.9 s/step, all 22 heads
+    # live). They travel on the CONFIG, not on a wrapper, so `config.json` records them.
+    cfg.core.encoder.trunk_chunk_ckpt = int(getattr(args, "trunk_chunk_ckpt", 0) or 0)
+    cfg.core.encoder.trunk_frozen_bn = bool(getattr(args, "trunk_frozen_bn", False))
     cfg.core.encoder.trunk_fuse = str(getattr(args, "trunk_fuse", "concat1x1"))
     cfg.core.encoder.trunk_fuse_identity = not bool(
         getattr(args, "trunk_fuse_plain_init", False))
@@ -4282,6 +4287,11 @@ def _seam_stamp(cfg, args) -> dict:
         "trunk_name": str(getattr(core.encoder, "trunk_name",
                                   "resnet34.a1_in1k")),
         "trunk_mode": str(getattr(core.encoder, "trunk_mode", "shared")),
+        # ⚠️ `trunk_frozen_bn` is NOT a performance note -- it changes the ARM. An
+        # arm trained with BN pinned to ImageNet statistics is not comparable with one
+        # that trained BN on the batch, so this row is what keeps a later panel honest.
+        "trunk_chunk_ckpt": int(getattr(core.encoder, "trunk_chunk_ckpt", 0) or 0),
+        "trunk_frozen_bn": bool(getattr(core.encoder, "trunk_frozen_bn", False)),
         "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
         "trunk_fuse_identity": bool(getattr(core.encoder,
                                             "trunk_fuse_identity", True)),
@@ -7776,6 +7786,26 @@ def build_parser() -> argparse.ArgumentParser:
                          "papers' and DiffusionDrive's own. Every channel "
                          "count is read from timm's `feature_info`, so a swap "
                          "needs no model-code change.")
+    ap.add_argument("--trunk-chunk-ckpt", type=int, default=0,
+                    help="⭐ recompute the backbone in leading-batch slices of N "
+                         "(gradient checkpointing). 0 = OFF (default, unchanged "
+                         "behaviour). MEASURED 2026-09-18: resnet101 at 416x1024 "
+                         "batch 1 goes 22.34 GB (OOM) -> 2.887 GB and 4.2-4.9 s/step "
+                         "with N=1, all 22 heads live -- 1.96-2.28 d for a full "
+                         "40,284-step arm on this 8 GB card. ⚠⚠ `--arm hier` calls "
+                         "the trunk on frames.reshape(b*w, ...) with window 8, so at "
+                         "batch 1 the backbone sees 24 images, not 3. ⛔ REFUSED "
+                         "without --trunk-frozen-bn: chunking alone changes "
+                         "BatchNorm (-40%% on resnet34 ga_trunk, MEASURED) and would "
+                         "silently make the arm incomparable.")
+    ap.add_argument("--trunk-frozen-bn", action="store_true",
+                    help="⛔ pin every backbone BatchNorm to its ImageNet running "
+                         "statistics. This CHANGES THE ARM and is stamped into "
+                         "config.json for that reason. Required by "
+                         "--trunk-chunk-ckpt, where it is what makes chunking EXACT "
+                         "(chunked vs unchunked agree to 7.2e-6, MEASURED). The "
+                         "pin survives the trainer's own model.train(), which "
+                         "recurses and would otherwise silently un-freeze it.")
     ap.add_argument("--trunk-mode", choices=("shared", "inflate"),
                     default="shared",
                     help="⭐ PI 2026-09-16: FRAME HISTORY IS REQUIRED. "

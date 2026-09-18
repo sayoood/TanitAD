@@ -167,6 +167,19 @@ class TimmTrunkConfig:
     * ``frames=1`` recovers DiffusionDrive's single frame in either mode.
     """
 
+    #: ⛔ MEMORY LEVERS — both OFF by default, so the default path is unchanged.
+    #: `chunk_ckpt = N` recomputes the backbone in leading-batch slices of N
+    #: (`torch.utils.checkpoint`, non-reentrant). MEASURED 2026-09-18: resnet101 at
+    #: 416x1024 batch 1 goes 22.34 GB (OOM) -> 2.887 GB, 4.2-4.9 s/step on an 8 GB card.
+    #: ⚠️ `--arm hier` calls the trunk on `frames.reshape(b*w, ...)` with window 8, so
+    #: at batch 1 the backbone sees **24 images, not 3** — which is why this lever is
+    #: the one that matters and why a per-sample intuition misprices it.
+    chunk_ckpt: int = 0
+    #: ⛔ Pin every backbone BatchNorm to its ImageNet running statistics. REQUIRED
+    #: with `chunk_ckpt`: chunking alone changes BN and MEASURED a -40 % shift in
+    #: `ga_trunk` on resnet34 — a config that fits but is a DIFFERENT ARM. With BN
+    #: frozen, chunked and unchunked agree to 7.2e-6.
+    frozen_bn: bool = False
     #: ⭐ PI 2026-09-16: the PRIMARY. `resnet34.a1_in1k` — the papers' and
     #: DiffusionDrive's own — is the second comparison run, selected by name.
     model_name: str = "resnet101.a1_in1k"
@@ -345,6 +358,66 @@ class TemporalFuse(nn.Module):
         return (x * a.unsqueeze(2)).sum(dim=1)
 
 
+def _relu_out_of_place_(net) -> int:
+    """Make every in-place activation out-of-place; returns how many moved.
+
+    ⛔ Required before ANY recomputation: a checkpointed segment runs twice, and an
+    in-place ReLU trips autograd's version counter on the second pass. MEASURED: timm's
+    own `set_grad_checkpointing(True)` RAISES *"modified by an inplace operation ...
+    ReluBackward0 ... version 1"* on resnet34 AND resnet101. The lever's real price
+    includes this, and the extra activation memory it costs is inside the numbers above.
+    """
+    n = 0
+    for m in net.modules():
+        if isinstance(m, (nn.ReLU, nn.ReLU6, nn.SiLU, nn.Hardswish)) \
+                and getattr(m, "inplace", False):
+            m.inplace = False
+            n += 1
+    return n
+
+
+def _freeze_bn_(net) -> int:
+    """Pin every BatchNorm to EVAL (ImageNet running stats); returns how many.
+
+    ⛔ IT REFUSES TO BE UN-FROZEN, and that is the whole point. `nn.Module.train()`
+    RECURSES into children and the trainer calls `model.train()` every step, so a plain
+    `.eval()` would be silently undone on step 1 and the run would REPORT a frozen-BN
+    arm while training BN on the batch. Replacing the bound `train` is what makes the
+    claim survive contact with the trainer; :meth:`bn_training_count` reads it back from
+    the live model rather than trusting this.
+    """
+    k = 0
+    for m in net.modules():
+        if isinstance(m, nn.modules.batchnorm._BatchNorm):
+            m.eval()
+            m.train = (lambda mode=True, _m=m: _m)   # noqa: E731 — deliberate
+            k += 1
+    return k
+
+
+def _chunked_backbone(net, x: Tensor, chunk: int):
+    """Run ``net`` over ``x`` in leading-batch slices of ``chunk``, each checkpointed.
+
+    ⭐ THE ONE LEVER THAT DOES NOT CHANGE THE ARM (with BN frozen): same weights, same
+    dtype, same frames, same fusion — one extra forward. It is NOT timm's
+    `set_grad_checkpointing`, which raises on this backbone (in-place ReLU vs the
+    version counter) and, once that is fixed, still does not fit: it checkpoints the
+    four stages while the 653 MB stem activation stays resident (MEASURED 15.17 GB).
+
+    ⛔ A FUNCTION, NOT A WRAPPER MODULE, ON PURPOSE. Wrapping `self.net` renamed every
+    backbone key (`net.conv1.weight` -> `net.net.conv1.weight`), so a checkpoint from a
+    levered run could not be loaded by an unlevered model or by any eval driver — and
+    that failure would surface days later, at load time, on an arm already paid for.
+    Chunking the CALL leaves the module tree and the state_dict IDENTICAL, so the lever
+    can be turned on or off between runs of the same lineage.
+    """
+    outs = []
+    for i in range(0, x.shape[0], chunk):
+        outs.append(torch.utils.checkpoint.checkpoint(
+            net, x[i:i + chunk], use_reentrant=False))
+    n = len(outs[0])
+    return [torch.cat([o[j] for o in outs], dim=0) for j in range(n)]
+
 class TimmResNetTrunk(nn.Module):
     """A ``timm`` ImageNet backbone over K history frames.
 
@@ -435,6 +508,32 @@ class TimmResNetTrunk(nn.Module):
         # which halves the contrast just as quietly.
         self.norm_calls: int = 0
 
+        # ---- memory levers, LAST: `feature_info` above must be read from the
+        # UNWRAPPED backbone, and the freeze must precede the wrap because it walks
+        # `.modules()` on the real network.
+        self.memory_levers: dict = {"chunk_ckpt": 0, "frozen_bn": False,
+                                    "bn_pinned": 0, "relu_out_of_place": 0}
+        if bool(getattr(self.cfg, "frozen_bn", False)):
+            self.memory_levers["frozen_bn"] = True
+            self.memory_levers["bn_pinned"] = _freeze_bn_(self.net)
+        _ck = int(getattr(self.cfg, "chunk_ckpt", 0) or 0)
+        if _ck > 0:
+            # ⚠️ REFUSED, not silently allowed: chunking without frozen BN is a
+            # DIFFERENT ARM (MEASURED -40 % on `ga_trunk`), and a run that believed it
+            # had only saved memory would be compared against arms it no longer matches.
+            if not self.memory_levers["frozen_bn"]:
+                raise ValueError(
+                    "trunk chunk_ckpt=%d without frozen_bn: chunking changes "
+                    "BatchNorm (each chunk is a different sub-batch; MEASURED "
+                    "-40%% on resnet34's ga_trunk), so the arm would silently "
+                    "stop matching every arm it is compared with. Pass "
+                    "frozen_bn=True, or do not chunk." % _ck)
+            self.memory_levers["relu_out_of_place"] = _relu_out_of_place_(self.net)
+            # ⛔ `self.net` is NOT replaced — see `_chunked_backbone`. The module tree
+            # and the state_dict stay identical, so checkpoints remain interchangeable
+            # with unlevered runs of the same lineage.
+            self.memory_levers["chunk_ckpt"] = _ck
+
     # -- the normalisation, in one place ---------------------------------- #
     def normalise(self, x: Tensor) -> Tensor:
         """ImageNet mean/std on a ``[B, 3K, H, W]`` float tensor in ``[0, 1]``."""
@@ -448,6 +547,14 @@ class TimmResNetTrunk(nn.Module):
         self.norm_calls += 1
         return (x - self._mean.to(x.dtype)) / self._std.to(x.dtype)
 
+    def _backbone(self, x: Tensor):
+        """The backbone call, chunked or not. ONE place decides, so the two call
+        sites below cannot drift apart.
+        """
+        ck = int(self.memory_levers.get("chunk_ckpt", 0) or 0)
+        if ck <= 0:
+            return self.net(x)
+        return _chunked_backbone(self.net, x, ck)
     def forward_features(self, x: Tensor,
                          already_normalised: bool = False
                          ) -> tuple[Tensor, Tensor, Tensor]:
@@ -468,7 +575,7 @@ class TimmResNetTrunk(nn.Module):
         if not already_normalised:
             x = self.normalise(x)
         if str(self.cfg.mode) == "inflate" or self.k == 1:
-            s16, s32 = self.net(x)
+            s16, s32 = self._backbone(x)
         else:
             # ⭐ K SEPARATE 3-CHANNEL PASSES THROUGH THE SAME WEIGHTS. Folding
             # K into the batch is what makes them one kernel launch while
@@ -476,7 +583,7 @@ class TimmResNetTrunk(nn.Module):
             b = x.shape[0]
             per = x.reshape(b, self.k, 3, *x.shape[2:]).reshape(
                 b * self.k, 3, *x.shape[2:])
-            f16, f32 = self.net(per)
+            f16, f32 = self._backbone(per)
             s16 = self.fuse16(f16.reshape(b, self.k, *f16.shape[1:]))
             s32 = self.fuse32(f32.reshape(b, self.k, *f32.shape[1:]))
         self.last_s16 = s16
@@ -495,6 +602,16 @@ class TimmResNetTrunk(nn.Module):
         """The BACKBONE alone, without the fusion — the number the literature
         quotes (DD's ResNet-34 is 21.8 M)."""
         return sum(p.numel() for p in self.net.parameters())
+
+    def bn_training_count(self) -> int:
+        """How many backbone BatchNorms are in TRAINING mode RIGHT NOW.
+
+        ⭐ Read this AFTER the trainer has called `model.train()`, never before: the
+        whole hazard is that `.train()` recurses and un-freezes. A frozen-BN arm must
+        report 0 here during the real run — a measurement, not a promise.
+        """
+        return sum(1 for m in self.modules()
+                   if isinstance(m, nn.modules.batchnorm._BatchNorm) and m.training)
 
     def provenance(self) -> dict:
         """What a ``config.json`` stamp must carry about this trunk."""

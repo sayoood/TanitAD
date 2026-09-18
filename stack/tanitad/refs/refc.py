@@ -347,6 +347,14 @@ class CNNEncoderConfig:
     trunk_fuse_identity: bool = True  # history as a REMOVABLE graft
     trunk_pretrained: bool = True     # timm only; False is the knockout arm
     trunk_imagenet_norm: bool = True  # timm only; E-SEED-2 says never off
+    #: ⛔ MEMORY LEVERS — REAL FIELDS, not attributes set from outside. MEASURED
+    #: 2026-09-19: setting them as ad-hoc attributes LOOKED fine (`setattr` succeeds on
+    #: this dataclass) and the trunk still OOM'd at 22.34 GB, because a non-field does
+    #: not survive the config's own round-trip. A lever that can be silently dropped
+    #: between the CLI and the model is worse than no lever: the run reports the flag
+    #: and trains the other arm.
+    trunk_chunk_ckpt: int = 0        # 0 = off; N = leading-batch chunk size
+    trunk_frozen_bn: bool = False    # required by trunk_chunk_ckpt; CHANGES THE ARM
 
     @property
     def feat_dim(self) -> int:
@@ -1437,7 +1445,12 @@ def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
             fuse=str(getattr(cfg, "trunk_fuse", "concat1x1")),
             fuse_identity_init=bool(getattr(cfg, "trunk_fuse_identity", True)),
             pretrained=bool(getattr(cfg, "trunk_pretrained", True)),
-            imagenet_norm=bool(getattr(cfg, "trunk_imagenet_norm", True)))
+            imagenet_norm=bool(getattr(cfg, "trunk_imagenet_norm", True)),
+            # ⛔ The memory levers travel with the config so they reach
+            # `config.json`. A lever applied by a wrapper is a lever the run
+            # cannot prove it used.
+            chunk_ckpt=int(getattr(cfg, "trunk_chunk_ckpt", 0) or 0),
+            frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)))
     raise ValueError(
         f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
         f"would otherwise fall through to the legacy trunk and the run would "
