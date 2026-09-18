@@ -1260,3 +1260,51 @@ programme's attention is. This clarification changes what the decision is ABOUT,
 happens if you say nothing.
 
 <!-- PIQ-ITEM-24-CLARIFIED-DINO-IS-AN-INIT-2026-09-18 -->
+
+## ✅ ITEM 24 — RESOLVED BY THE PI, 2026-09-18, AND EXECUTED THE SAME TURN
+
+**PI, verbatim:** *"you can downloa the dino v3 vitb16"* ⇒ option **(a) authorise the pull**.
+The standing default was (c) defer; it is superseded.
+
+### What was done, end to end
+
+| step | result |
+|---|---|
+| download `facebook/dinov3-vitb16-pretrain-lvd1689m` | ✅ **342.66 MB**, 3 files. The licence was already accepted on the account — no human gate was hit. |
+| token handling | read IN PLACE from the git-ignored `Keys.txt`, never printed, never on a command line, and redacted out of any error string. |
+| TLS | `truststore.inject_into_ssl()` — `certifi` fails behind this box's proxy. |
+| convert to an encoder seed | ✅ `dinov3_seed_checkpoint.py --target vit` → **148 tensors, 342.7 MB**. |
+| provenance | `source_sha256=9a21ac3df0c63839…`, `seed_sha256=c00cdd8ff3d83272…`, full mapping table stored IN the seed's stamp. |
+
+⭐ **The converter did NOT refuse, and that is the point.** It refuses unless EVERY source
+tensor is mapped or explicitly allow-listed AND every target tensor is written or on the
+left-at-init list — built against the failure where a load puts 60 % of a trunk in place,
+leaves the rest at random init, and looks exactly like success in every log.
+
+### ⚠️ The two declared losses travel with every quotation of this seed
+
+1. **POSITIONAL INFORMATION DOES NOT TRANSFER.** DINOv3 is RoPE-only and carries **no**
+   learned absolute-position table; `ViTEncoder`'s `pos` is **left at its own init**.
+   ⇒ the seeded trunk is **DINOv3's *content* at a *fresh* positional code**.
+2. **CLS / register / mask tokens are dropped** — `ViTEncoder` has none, and DINOv3 was
+   trained with those tokens attending, so the seeded forward is **not bit-identical** to
+   the published trunk.
+⇒ the Observer-Effect step-0 control (`PREREG_V7F` §6.2b) measures **THIS** trunk, not the
+published DINOv3. Any report quoting the published rho 0.91 beside this seed must say so.
+
+### What it unblocks
+
+* the **v7f seed at the pre-registration's chosen geometry** (B/16 ≈ 86 M; L/16 is
+  **303,129,600 params of encoder alone** and busts the sub-300M budget on the trunk).
+* **`R23` / rung R3's `anchored` arm** — `--w-trunk-anchor` runs a SECOND frozen forward of
+  the seed's own ViT-B/16, so it needed the same file and was blocked behind this.
+
+⚠️ **Still true and unchanged:** v7f is **not** the refcv6 line, and the PI's 2026-09-18
+ruling is that **the pod is used only after the preparation is proven on the dev box**. This
+authorisation buys a file, not a launch — nothing trains on it without a separate decision.
+
+⭐ Artifact: `D:/Projects/TanitAD-artifacts/dinov3-seeds/dinov3_vitb16_seed.pt` (342.7 MB,
+out of repo by size); its **stamp** is banked at
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-dinov3-b16-seed/raw/`.
+
+<!-- PIQ-ITEM-24-RESOLVED-AUTHORISED-AND-EXECUTED-2026-09-18 -->
