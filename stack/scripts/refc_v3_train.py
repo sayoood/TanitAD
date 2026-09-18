@@ -3922,6 +3922,52 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 loss = loss + _w_map * _mrow["loss"]
                 extra["map"] = _mrow["loss"]
                 extra["n_map_cells"] = _mrow["n_map_cells"]
+                # ---- occupancy quality, in a form a collision gate can use --- #
+                # ⛔ A SOFT CE IS NOT A QUALITY READ. `map` falls monotonically
+                # while telling nobody whether the DRIVABLE mask is right, and a
+                # collision gate needs exactly that mask. MEASURED 2026-09-18:
+                # the no-information floor -- predict drivable everywhere -- is
+                # IoU **0.3412** over 10,068,274 seen cells, so an IoU below that
+                # is worse than a constant, and one near it is PREVALENCE rather
+                # than skill (`…/2026-09-18-occupancy-floor/`).
+                # ⭐ Computed from the SAME tensors that feed the loss, so the
+                # `map` value in this row is the instrument check: if the loss
+                # matches a banked run and the IoU does not, the IoU is wrong.
+                # ⭐ Thresholded the SAME way on both sides (>= 0.5 on the GT
+                # fraction and on the softmax probability) -- a prediction scored
+                # by argmax against a GT scored by threshold is two rules.
+                # ⚠️ ALWAYS LOGGED, never behind a flag: the D9 DAC defect hid for
+                # 600 steps x 3 arms because its term was not in the key list.
+                with torch.no_grad():
+                    _dch = _sem_map.CHANNELS.index("drivable")
+                    _sn = batch["map_seen"].to(device).index_select(0, _msel)
+                    _gt = (batch["map_frac"].to(device).index_select(0, _msel)[:, _dch]
+                           >= 0.5) & _sn
+                    _pr = (_pout["map_logits"].index_select(0, _msel)
+                           .softmax(dim=1)[:, _dch] >= 0.5) & _sn
+                    _inter = float((_gt & _pr).sum())
+                    _union = float((_gt | _pr).sum())
+                    extra["map_iou_drivable"] = _inter / _union if _union else 0.0
+                    extra["map_pred_drivable_frac"] = (
+                        float(_pr.sum()) / float(_sn.sum()) if float(_sn.sum()) else 0.0)
+                    extra["map_gt_drivable_frac"] = (
+                        float(_gt.sum()) / float(_sn.sum()) if float(_sn.sum()) else 0.0)
+                    # ⛔ AND A THRESHOLD-FREE COMPANION, because the IoU above is
+                    # BLIND TO AN UNDER-CONFIDENT HEAD. MEASURED 2026-09-18: at
+                    # ImageNet init the softmax is ~1/9 everywhere, NOTHING crosses
+                    # 0.5, and the IoU reads EXACTLY 0.0 -- correct, but it would
+                    # read 0.0 just the same for a head that had learned the shape
+                    # and stayed at 0.45. The mean predicted drivable fraction on
+                    # seen cells moves continuously from ~0.111 toward the GT's
+                    # ~0.355, so it shows progress the IoU cannot.
+                    # ⇒ QUOTE THEM TOGETHER. The IoU says "usable by a gate yet?";
+                    # this says "is it learning at all?", and they answer
+                    # different questions.
+                    _prob = (_pout["map_logits"].index_select(0, _msel)
+                             .softmax(dim=1)[:, _dch])
+                    extra["map_pred_drivable_prob_mean"] = (
+                        float((_prob * _sn).sum()) / float(_sn.sum())
+                        if float(_sn.sum()) else 0.0)
             else:
                 # ⛔ A COUNTED ZERO, never an absent key. `map = 0.0` with
                 # `n_map_cells = 0` is "no window in this batch had a label";
