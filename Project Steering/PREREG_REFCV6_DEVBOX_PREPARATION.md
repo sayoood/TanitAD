@@ -383,3 +383,61 @@ measures **124**. ⛔ Those files are authorities and this package does **not** 
 correction is raised for the owning agent to apply.
 
 <!-- PREREG-REFCV6-DEVBOX-PREPARATION-2026-09-18 -->
+
+---
+
+## ⭐ W-BOOTSTRAP — make the paired episode-cluster bootstrap REACHABLE (spec, 2026-09-18)
+
+⛔ **THE BLOCKER, MEASURED.** `paired_episode_cluster_bootstrap(a, b, eid, ...)` is the
+ONLY admissible interval in this programme, and **no refcv6 artifact can feed it.**
+Verified on tonight's own run: `metrics.jsonl` carries **0 non-scalar values and 0
+episode/clip/window-id keys**. Read from source rather than guessed, it is TWO layers:
+
+1. `compute_losses_v3` **already reduces over the batch**, so a per-window value is never
+   formed; the eval loop sums those batch scalars and divides by `nb_e`. The artifact is a
+   mean of means.
+2. The eval **batch carries no identifier at all** — `frames`, `map_frac`, `agent_box`,
+   `nav_cmd`… and nothing saying WHICH clip.
+   ⚠️ `agent_valid` / `nav_valid` match an `id`-substring grep and are FALSE POSITIVES.
+
+⇒ an aggregate-only dump cannot be bootstrapped **by any rescore**.
+
+### ⭐ THE DESIGN IS SETTLED BY PRECEDENT — nothing here needs a decision
+
+`sid = stable_episode_id(clip_id)` (`v2_dataset.py:69`): collision-free, 63-bit, from the
+FULL clip_id. `build_refcv6_speed_max_window.py:167` already calls it *"the corpus's only
+join key"* and **REFUSES a collision rather than resolving it** (`:108-115`).
+⚠️ `sid` is an **id, not a clip id**, so it may be written into repo artifacts where a raw
+clip_id may not.
+
+### ⛔ The constraint that dictates the shape
+
+`test_refc_v3_u8_batches.py:375` asserts `set(batch) == set(HEAD_BATCH01)` — an **EXACT**
+key set. Adding `sid` to the TRAINING batch breaks that pin, and the pin is RIGHT: the
+training batch contract must not drift for an eval feature.
+
+⇒ **Gate the key on the flag, so the training path stays bit-identical:**
+`--eval-window-dump PATH`, off by default. When set, the **eval** dataset emits `sid` and
+the eval iterates **per window** (batch 1, so a batch mean IS the window value), writing
+one JSON row per window: `{sid, t0, step, <every scalar compute_losses_v3 returns>}`. The
+aggregate row keeps its shape, so every banked comparison is untouched.
+
+### Acceptance — committed in advance
+
+1. ⛔ **PARITY**: flag unset ⇒ `metrics.jsonl` **byte-identical** and
+   `test_refc_v3_u8_batches` green. A flag that perturbs the default path has failed
+   regardless of what it enables.
+2. **REACHABILITY**: the rows load and the bootstrap runs with `eid = sid`.
+3. ⛔ **THE DISCRIMINATING CONTROL**: bootstrap an arm **against itself** — the interval
+   must contain 0. A harness that "separates" a run from itself is measuring its own bug,
+   which is exactly what `H-ESTIM-SEED-1` is about.
+4. **n is stated**; a read below the gate's floor is reported as underpowered, not quoted.
+
+⚠️ **Cost**: per-window eval is batch-1 and slower per window. It is a **separate,
+opt-in pass**, not a replacement for the in-training monitor.
+
+⚠️ **Not implemented tonight, deliberately**: the GPU is held by the resnet101 fit
+measurement (one job at a time), and this touches the live trainer's eval path, so it wants
+its parity check RUN rather than argued.
+
+<!-- W-BOOTSTRAP-EVAL-WINDOW-DUMP-SPEC-2026-09-18 -->
