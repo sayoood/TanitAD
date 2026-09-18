@@ -214,3 +214,41 @@ quote an eval-side z or h number**.
 carry `"done": true`.
 
 <!-- PIPEVAL-139-CLIP-COVERAGE-CLOSED-2026-09-18 -->
+
+## ⭐ WORK ITEM CLOSED 2026-09-18 — the eval z/h term was DEAD, and the cause was one missing keyword
+
+The closure above flagged an open item: `eval_box3d_z` / `_h` read **0.0 with `n_z` =
+`n_h` = 0** over 900 windows on both halves, while the TRAIN side of the same runs read
+`box3d_n_z == box3d_n_matched` **exactly**. It is found, fixed and **re-measured on the
+same 900 windows**.
+
+### Cause
+
+`refc_v3_train` builds a `JoinFileReader` **twice** — train at `:6111`, eval at `:6310` —
+and **only the train one passed `with_track_ids`**. `lookup_track_ids`'s own docstring
+says it returns **None** without that flag, so `__getitem__` fell through to
+`zh_targets(t)`'s **all-False** mask and every eval z/h term was masked out.
+⇒ **two construction sites, one missing a keyword.** A default that silently disables
+supervision is worse than a refusal, because the run record says nothing.
+
+### Re-measured, all 139 clips, the SAME 900 windows
+
+| | before A | **after A** | before B | **after B** |
+|---|---|---|---|---|
+| `eval_box3d_n_matched` | 40.192 | **40.192** | 35.955 | **35.955** |
+| `eval_box3d_n_z` | **0.0** | **40.192** | **0.0** | **35.955** |
+| `eval_box3d_n_h` | **0.0** | **40.192** | **0.0** | **35.955** |
+| `eval_box3d_z` | 0.0 | **1.4905** | 0.0 | **1.4744** |
+| `eval_box3d_h` | 0.0 | **0.2489** | 0.0 | **0.2608** |
+| `eval_box3d` (total) | 69.320 | 71.060 | 76.472 | 78.207 |
+
+⭐ **`n_matched` is IDENTICAL before and after** — the fix changed **only** the z/h
+supervision and nothing about matching. That control is what makes the rest readable.
+⭐ **`n_z == n_matched` now holds on both halves**, the same identity the train side always
+had. ⚠️ The `box3d` TOTAL rises because two previously-masked terms now contribute —
+**correct, not a regression**, the same aggregation caveat this package already carries.
+
+⇒ **The prohibition is lifted: refcv6 arms may quote eval-side z and h numbers again**,
+provided they are quoted with their `n` as every term in this package is.
+
+<!-- PIPEVAL-EVAL-ZH-FIXED-2026-09-18 -->
