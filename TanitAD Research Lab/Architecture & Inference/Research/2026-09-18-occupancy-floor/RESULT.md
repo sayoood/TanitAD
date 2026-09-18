@@ -178,3 +178,45 @@ good enough to gate on**: a collision gate driven by an occupancy that scores be
 constant predictor would reorder candidates on noise.
 
 <!-- OCC-MAPHEAD-1K-2026-09-18 -->
+
+## ⭐⭐ 2,000 STEPS — the occupancy head CLEARS the floor, by 1.43×
+
+The 1,000-step read left it **below** the no-information floor (last-10 mean IoU 0.2511 vs
+**0.3412**). Continued to 2,000 from the same checkpoint (`metrics.jsonl` is append-mode,
+so the trajectory is one series).
+
+| | steps 1–1000 | steps 1010–2000 | last 40 logs |
+|---|---|---|---|
+| `map` (soft CE) | 1.5437 | 1.0462 | **1.0240** |
+| **`map_iou_drivable` mean** | 0.0421 | **0.4532** | **0.4865** |
+| `map_iou_drivable` median | 0.0000 | 0.4618 | **0.5022** |
+| `map_pred_drivable_prob_mean` | 0.2421 | 0.3393 | **0.3460** |
+
+⭐ **The second thousand steps is where it happens.** IoU goes from a mean of 0.0421 (median
+**exactly 0**) to **0.4532**, and logs with a non-zero IoU go **27/100 → 127/200**.
+⭐ **`prob_mean` lands on the GT's own prevalence** — 0.3460 against a corpus `P(drivable |
+seen)` of **0.3412**. The head is no longer under-confident; it now predicts drivable
+coverage at about the rate the ground truth has it.
+⭐ **The margin is not marginal:** last-40 mean **0.4865 / 0.3412 = 1.43×** the
+no-information floor, over 40 batches (80 windows) rather than the single batch the
+1,000-step run's final number came from.
+
+### ⚠️ What is still not established
+
+* ⛔ **Instrument, not arm.** One configuration, no replicate, no comparison — **no
+  capability claim about refcv6**, which needs the pre-registered panel.
+* ⚠️ **Train-side, per-batch.** The floor was measured over **10,068,274 seen cells**;
+  these are batches of 2 windows. The last-40 aggregate is a far better estimate than the
+  last-10 was, but it is still not the held-out many-window number a gate should quote.
+* ⚠️ **Not a generalisation read** — the head is scored on what it trained on.
+
+### ⭐ What it unblocks
+
+`PREREG_S1` §8 made `S1-GATE-PRED` conditional on *"a read of the PREDICTED occupancy's
+quality against SAM3 map GT"*. That read now exists and is **positive**: an occupancy head
+trained for 2,000 steps (≈16 h on this box at 29.2 s/step) predicts drivable area
+**1.43× better than a constant predictor**. ⇒ a collision gate driven by it would be
+reordering candidates on **signal**, not on noise — which was the precise worry the floor
+was measured to settle.
+
+<!-- OCC-MAPHEAD-2K-CLEARS-FLOOR-2026-09-18 -->

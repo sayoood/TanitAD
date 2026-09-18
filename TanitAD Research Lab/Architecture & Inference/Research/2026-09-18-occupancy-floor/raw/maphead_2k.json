@@ -1,0 +1,35 @@
+{
+ "_what": "map-head 2,000-step instrument run: does the occupancy head clear the no-information floor?",
+ "_answer": "YES -- last-40 mean IoU 0.4865 vs floor 0.3412 = 1.43x",
+ "_not_an_arm": "one configuration, no replicate, no comparison; NO capability claim about refcv6",
+ "_evidence_class": "MEASURED (ours)",
+ "_floor": {
+  "all_drivable_iou": 0.3412,
+  "seen_cells": 10068274
+ },
+ "_caveats": [
+  "train-side, per-batch (2 windows/log) -- not a held-out many-window read",
+  "scored on what it trained on: not a generalisation read"
+ ],
+ "steps_1_1000": {
+  "map": 1.5437189,
+  "iou_mean": 0.0420865,
+  "iou_median": 0.0,
+  "prob_mean": 0.2421036
+ },
+ "steps_1010_2000": {
+  "map": 1.0462119,
+  "iou_mean": 0.4531665,
+  "iou_median": 0.461795,
+  "prob_mean": 0.3393222
+ },
+ "last40": {
+  "map": 1.023994,
+  "iou_mean": 0.4864715,
+  "iou_median": 0.502185,
+  "prob_mean": 0.346034
+ },
+ "n_logs_nonzero_iou": 127,
+ "n_logs": 200,
+ "ratio_to_floor_last40": 1.4257664126611957
+}
