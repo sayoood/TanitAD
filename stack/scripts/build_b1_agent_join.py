@@ -620,6 +620,22 @@ def build_args(argv=None):
                     help="front-camera field for the occ flag (default 120)")
     ap.add_argument("--limit", type=int, default=0,
                     help="debug: only the first N clips")
+    #: ⛔ THE INGEST GATE (parity.py §10c). This build turns a SET OF CLIP
+    #: IDS into a per-clip artifact that becomes `box3d` SUPERVISION, so it is
+    #: an ingest door and must ask the question before the first byte.
+    #: ⚠️ The DEFAULT role is undeclared (""), which parity.py treats as
+    #: SUPERVISION and checks against the DEPLOYED VAL -- deliberately the
+    #: dangerous direction (C113). A held-out build must SAY SO: `--parity-role
+    #: eval` then checks that parity TRAIN is not inside it instead.
+    ap.add_argument("--parity-role", default="",
+                    choices=["", "train", "augmentation", "val", "eval",
+                             "audit"],
+                    help="what this join BECOMES. Default '' = presumed supervision, checked against the deployed val.")
+    ap.add_argument("--parity-mode", default="refuse",
+                    choices=["refuse", "exclude", "keep"],
+                    help="refuse (default) | exclude the overlap and report | keep and only record it")
+    ap.add_argument("--parity-audit-reason", default=None,
+                    help="required by parity.py when --parity-role audit")
     return ap.parse_args(argv)
 
 
@@ -672,6 +688,27 @@ def main(argv=None) -> int:
             files = [f for f in files if f.name.split(".v2ep")[0] in want]
     if a.limit:
         files = files[:a.limit]
+
+    # ⛔ §10c: ask the parity question HERE -- `files` is final and nothing is
+    # written yet. C112 died AFTER paying for a 536 MB download; a gate that runs
+    # late is a gate that costs money to trip.
+    from tanitad.data import parity as _parity
+    _cids = sorted((f.name.split('.timestamps')[0] if recon
+                    else f.name.split('.v2ep')[0]) for f in files)
+    _kept, PARITY_GATE = _parity.guard_corpus_build(
+        _cids, label='build_b1_agent_join -> %s' % a.out,
+        role=a.parity_role, mode=a.parity_mode,
+        sanctioned_audit=a.parity_audit_reason)
+    if a.parity_mode == 'exclude' and len(_kept) != len(_cids):
+        _drop = set(_cids) - set(_kept)
+        files = [f for f in files
+                 if (f.name.split('.timestamps')[0] if recon
+                     else f.name.split('.v2ep')[0]) not in _drop]
+        print('[b1join] parity gate: kept %d of %d clips (role=%r)'
+              % (len(files), len(_cids), a.parity_role), flush=True)
+    else:
+        print('[b1join] parity gate PASSED: %d clips, role=%r, mode=%r'
+              % (len(_cids), a.parity_role, a.parity_mode), flush=True)
 
     block = load_lead_block(Path(a.lead_block) if a.lead_block else None)
     print("[b1join] clips=%d  tol_s=%.4f  hfov=%.1f  pose_source=%s  "
@@ -956,7 +993,11 @@ def main(argv=None) -> int:
     md5 = md5_of(outp)
     wall = round(time.time() - t0, 1)
 
+    #: ⚠️ The gate's RECORD travels in the manifest, not only in stdout:
+    #: "a filtered build whose manifest does not say what was filtered reports
+    #: a clip count that no longer matches the selection it names".
     meta = {
+        "parity_gate": PARITY_GATE,
         "task": ("B1 %s obstacle.offline -> agent join (WP-6 agent conditioning)"
                  % ("TRAIN" if recon else "EVAL")),
         "_evidence_class": "MEASURED (ours; artifact = the jsonl + this meta)",

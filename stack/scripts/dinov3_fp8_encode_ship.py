@@ -147,6 +147,18 @@ def main(argv=None) -> int:
                          "(the fp16 arm fp8_l2_gate.py scores against)")
     ap.add_argument("--no-ship", action="store_true",
                     help="encode only; push nothing to Thor")
+    #: ⛔ THE INGEST GATE (parity.py §10c, backlog R18 / C-FP8-SHIPPER-UNGATED).
+    #: The shipped fp8 cache becomes TRAINING INPUT, so this is an ingest door.
+    #: ⚠️ Default role "" = presumed supervision, checked against the DEPLOYED VAL
+    #: -- deliberately the dangerous direction (C113). A held-out split must say so.
+    ap.add_argument("--parity-role", default="",
+                    choices=["", "train", "augmentation", "val", "eval", "audit"],
+                    help="what the shipped cache BECOMES (default: presumed supervision)")
+    ap.add_argument("--parity-mode", default="refuse",
+                    choices=["refuse", "exclude", "keep"],
+                    help="refuse (default) | exclude the overlap | keep and record")
+    ap.add_argument("--parity-audit-reason", default=None,
+                    help="required by parity.py when --parity-role audit")
     a = ap.parse_args(argv)
     split, work = a.split, a.work
     src, dst = SRC[split], DST[split]
@@ -157,6 +169,27 @@ def main(argv=None) -> int:
 
     all_eps = sorted(l.strip().replace(".v2ep.pt", "") for l in
                      ssh(f"ls {src}").splitlines() if l.endswith(".v2ep.pt"))
+
+    # ⛔ §10c ON THE SOURCE SPLIT, BEFORE THE RESUME SCAN -- so a refused build
+    # spends no GPU and no transfer. The source listing IS the clip set this run
+    # would turn into per-clip artifacts.
+    from tanitad.data import parity as _parity
+    _kept, PARITY_GATE = _parity.guard_corpus_build(
+        all_eps, label=f'dinov3_fp8_encode_ship {split} {src} -> {dst}',
+        role=a.parity_role, mode=a.parity_mode,
+        sanctioned_audit=a.parity_audit_reason)
+    if a.parity_mode == 'exclude' and len(_kept) != len(all_eps):
+        print(f'[{split}] parity gate: kept {len(_kept)} of {len(all_eps)} '
+              f'source episodes (role={a.parity_role!r})', flush=True)
+        all_eps = sorted(_kept)
+    else:
+        print(f'[{split}] parity gate PASSED: {len(all_eps)} source episodes, '
+              f'role={a.parity_role!r}, mode={a.parity_mode!r}', flush=True)
+    # ⚠️ The record is written beside the shipped cache so the manifest states what
+    # was checked -- a filtered build whose manifest is silent reports a clip count
+    # that no longer matches the selection it names.
+    (work / f'parity_gate_{split}.json').write_text(
+        json.dumps(PARITY_GATE, indent=1, default=str), encoding='utf-8')
     if a.only:
         missing = sorted(set(a.only) - set(all_eps))
         if missing:
