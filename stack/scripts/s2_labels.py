@@ -183,8 +183,16 @@ SUPERSEDED_NAME = "SUPERSEDED.json"
 #: ONE name; the trainer's `--s2-labels` help, `S2_LOSS.md`'s launch line and
 #: the test all quote it rather than re-deriving a path. Corrected set after
 #: the PI's 2026-08-16 adjudication (commit `06b8782`).
+#: ⛔ CORRECTED 2026-09-18: this read the pre-rename spelling for 22 days after
+#: the PI's 2026-08-27 directive, so :func:`s2_canonical_labels_dir` resolved to a
+#: directory that DOES NOT EXIST — and the docstring below tells every caller an
+#: absent artifact may be a legitimate skip, so the miss read as "not in this
+#: checkout" rather than as a broken path. MEASURED 2026-09-18: only the `Research
+#: Lab` spelling exists on disk. `train_v6_staged.py`'s deliberate second copy WAS
+#: renamed and this one was not — exactly the drift C81 makes the pair audit each
+#: other for, and the audit is what caught it.
 S2_CANONICAL_LABELS_REL = (
-    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
     "2026-08-16-s2-v1-labels/review/labels_v2")
 #: The census key for a family a record DECLINED to label. ⛔ NOT a token —
 #: `g_str`'s `NONE_ABSTAIN` is a supervised target ("no goal applies"), this is
@@ -209,7 +217,7 @@ def s2_canonical_labels_dir(repo_root=None) -> Path:
 
     ``repo_root`` defaults to this file's repo (``stack/scripts`` -> up two).
     Returns the path whether or not it exists — the CALLER decides whether an
-    absent artifact is a skip (a pod checkout carries no Research Hub) or a
+    absent artifact is a skip (a pod checkout carries no Research Lab) or a
     refusal (`--s2-labels` already refuses a missing path in milliseconds)."""
     root = Path(repo_root) if repo_root is not None \
         else Path(__file__).resolve().parents[2]

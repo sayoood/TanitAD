@@ -1163,3 +1163,100 @@ live gap. Four of these became moot when the pods went; one when a measurement l
 **None of them was ever asked, so none of them was ever closed.**
 
 <!-- PIQ-ITEMS-22-24-BACKLOG-PI-ROWS-ASKED-2026-09-18 -->
+
+## ⛔ CORRECTION TO ITEM 23, 2026-09-18 — the PI reversed its premise, and the default flips
+
+**PI, verbatim:** *"nav is an input which will exist at deployment."*
+
+⛔ **Item 23 above is WRONG and its default is withdrawn.** I wrote that nav is *"an
+oracle input that will not exist at deployment"* and defaulted to leading with the
+**nav-zero** margin on that basis.
+
+⚠️ **The premise came from `BACKLOG.md` row R54 and I propagated it without checking it
+against the spec.** It contradicts the PI's own directive of **2026-09-16**, recorded in
+`SPEC_REFCV6_V2.md` §0: *"Confirm using nav command as mandatory input for tactical and
+operative planning. The selection of the tactical plan and the planing and selection of the
+trajectory must use the nav command and follow it. We dont need any head to estimate the
+route."* ⇒ nav is a **mandatory deployed input**, supplied by the vehicle's navigation, not
+an oracle borrowed from the future.
+
+### The corrected decision
+
+| option | |
+|---|---|
+| **(a) NEW DEFAULT — lead with the FED-NAV margin** | it is the **deployed configuration**. Report the nav-zero margin beside it as an **ablation** — *"what the system is worth without its nav input"* — which is what that number actually measures. |
+| (b) lead with nav-zero | ⛔ withdrawn. It would describe a configuration the programme does not ship and the PI has ruled mandatory. |
+
+⚠️ **And the ablation keeps its teeth.** Leading with fed-nav does **not** retire the
+nav-ablation reads — `D-REFCV5V2-NAV` measured that deleting nav moves **0 of 10** metrics,
+and `P(turn | NAV_FOLLOW_ROAD) = 0.0000` says nav rules a turn out with certainty. A
+mandatory input the model does not USE is a finding, and it is a different finding from
+*"the input will not be there"*. The first is ours to fix; the second was never true.
+
+### ⛔ The class, because it is the third time tonight
+
+**A steering file's PREMISE quoted forward without re-deriving it against the spec.** The
+row was written before the 09-16 directive and never revisited; I read it, found it
+plausible, and drafted a decision on it. ⇒ **When a backlog row states a fact about the
+system — not a task — check it against the binding spec before building on it.** The same
+class as `R4`/`R5` reading as PI-gated when their gates had closed, and as the four pod
+rows surviving the fleet they depended on.
+
+<!-- PIQ-ITEM-23-CORRECTED-NAV-IS-DEPLOYED-2026-09-18 -->
+
+## ⭐ CLARIFICATION TO ITEM 24, 2026-09-18 — it is an **initialisation**, not an encoder
+
+**PI, verbatim:** *"does v7f need DINOv3 VIT encoder? Do you mean init by DINO? v7f is our
+world model based predictor multihierarchacy flagship."*
+
+✅ **The PI's reading is correct and my Item 24 wording was loose.** It said the pull *"blocks
+the v7f seed at the pre-registration's chosen geometry"* — true, but *"the DINOv3 ViT-B/16
+pull"* reads like v7f depends on a DINOv3 encoder. It does not.
+
+### What v7f actually does with DINOv3 (MEASURED, from source)
+
+| | |
+|---|---|
+| **the trunk** | our own `ViTEncoder` / `ViT5Encoder`, **TRAINABLE** — `PREREG_V7F.md:108`: *"DINOv3 ViT-B/16, **trainable**, with a discriminative learning rate and a distillation anchor"* |
+| **DINOv3's role** | **the starting weights, and nothing else.** `stack/scripts/dinov3_seed_checkpoint.py:4`: *"The PI directed that v7 trains its trunk **from a DINOv3 initialisation**."* |
+| **at inference** | ⛔ **no frozen DINOv3 in v7f's forward pass.** |
+| **the three OTHER roles** | frozen DINOv3 IS used elsewhere in the programme — O7's distillation teacher, REF-A's precomputed feature bank, the fp8 shipper — which is exactly why the bare phrase *"v7f needs DINOv3"* is ambiguous. |
+
+### ⚠️ The seed is NOT bit-identical DINOv3 — two declared losses, printed by every run
+
+1. **POSITIONAL INFORMATION DOES NOT TRANSFER.** DINOv3 is RoPE-only and carries **no**
+   learned absolute-position table (verified on the ViT-L/16 snapshot: **415 tensors, none
+   positional**); `ViTEncoder` is the mirror image — a learned `pos` table, no RoPE. `pos`
+   is LEFT AT ITS OWN INIT. ⇒ **a seeded trunk is DINOv3's *content* at a *fresh* positional
+   code**, and that is the converter's own phrasing, not a gloss.
+2. **CLS AND REGISTER TOKENS ARE DROPPED** — `ViTEncoder` has neither.
+
+⭐ The converter REFUSES rather than silently seeding a partial trunk: every source tensor
+mapped or explicitly allow-listed, every target tensor written or explicitly left-at-init,
+shape and geometry disagreements named. *(The failure it is built against — a 60 %-seeded
+trunk that looks exactly like a success in every log — is the `df`/`step_s` family in a
+checkpoint costume.)*
+
+### Why **B/16** when **L/16 is already on the box**
+
+⛔ **Parameter budget, and it is not close.** B/16 is **~86 M** (`PREREG_V7F.md:450`);
+DINOv3 **ViT-L/16 is 303,129,600 parameters of ENCODER ALONE** (`TANITAD_PAPER.md:3728`),
+which busts the programme's sub-300M whole-model budget on the trunk by itself. `PREREG_V7F`
+§10 D1 chose B/16, and §R3 specifies the rung run **the same B/16 trunk v7f will deploy**
+rather than a cheaper stand-in.
+
+### What is actually blocked, precisely
+
+⚠️ **Only the FILE.** The converter is wired and tested (`R15 — STRUCK 2026-09-03`) and
+**never downloads**. Missing: `facebook/dinov3-vitb16-pretrain-lvd1689m`. Only ViT-L/16 and
+dinov2-base are on the box.
+⚠️ **And R23 needs the same file** — `--w-trunk-anchor` runs a SECOND frozen forward of the
+seed's own ViT-B/16 at the loss site, so refusing the pull blocks the anchored arm too, not
+just the seed.
+
+⚠️ **The default stated in Item 24 is UNCHANGED — (c) defer** — and the reason is unchanged
+too: nothing in **refcv6's** critical path needs it this week, and refcv6 is where the
+programme's attention is. This clarification changes what the decision is ABOUT, not what
+happens if you say nothing.
+
+<!-- PIQ-ITEM-24-CLARIFIED-DINO-IS-AN-INIT-2026-09-18 -->

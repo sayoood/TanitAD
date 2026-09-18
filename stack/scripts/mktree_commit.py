@@ -86,6 +86,55 @@ def ls_tree(tree: str) -> dict:
     return out
 
 
+def read_tree_entries(tree: str, missing_ok: bool = False) -> dict:
+    """:func:`ls_tree`, plus an EXPLICIT choice about a tree that is not there.
+
+    ⛔ THE DISTINCTION IS A SAFETY PROPERTY, not ergonomics. "this tree is absent"
+    and "this tree is empty" must never collapse into one answer: confusing them
+    turns a mount blink into a commit that silently empties a subtree. With
+    ``missing_ok=False`` (the default) an absent tree RAISES, exactly as
+    :func:`ls_tree` already does via :func:`git`; only an explicit
+    ``missing_ok=True`` may read ``{}``.
+
+    ⚠️ Restored 2026-09-18. It and :func:`build_tree` were the API this module
+    shipped on 2026-09-04 (`e685d90`); `aad4088` renamed them to :func:`ls_tree` /
+    :func:`update` the next day and left `test_mktree_commit.py` addressing the old
+    names, so six tests could not run. The behaviour is unchanged — these are the
+    names their test speaks, kept as the thin layer over the current internals
+    rather than a second implementation of them.
+    """
+    if missing_ok:
+        # ⛔ Probed WITHOUT `git()` on purpose: `git()` raises SystemExit on a
+        # non-zero return, which is the behaviour we are deliberately opting out
+        # of here — and catching that exception instead would also swallow a
+        # genuine failure and report it as "absent".
+        probe = subprocess.run([*GIT, "cat-file", "-e", tree],
+                               capture_output=True)
+        if probe.returncode != 0:
+            return {}
+    return ls_tree(tree)
+
+
+def build_tree(commit_or_tree: str, flat: dict) -> str:
+    """New tree from ``commit_or_tree`` with the FLAT ``path -> blob`` map applied.
+
+    The caller-facing shape: full slash-separated paths, a commit accepted as well
+    as a tree. :func:`update` is the internal form and takes a TREE plus a NESTED
+    spec; this splits the paths and resolves the commit, reusing ``main``'s own
+    conventions so there is one spelling of each.
+    ``REMOVE`` is passed through as a value, so a deletion spec works here too.
+    """
+    root = git("rev-parse", f"{commit_or_tree}^{{tree}}").strip()
+    spec: dict = {}
+    for p, sha in flat.items():
+        parts = p.split("/")
+        node = spec
+        for seg in parts[:-1]:
+            node = node.setdefault(seg, {})
+        node[parts[-1]] = sha
+    return update(root, spec)
+
+
 def mktree(entries: dict) -> str:
     body = "".join(f"{m} {t} {s}\t{n}\n"
                    for n, (m, t, s) in sorted(entries.items()))

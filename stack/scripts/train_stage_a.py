@@ -279,7 +279,8 @@ def stage_a_losses(predictor, step_readout, states: Tensor, aw2: Tensor,
                    rand_da: Tensor | None = None,
                    w_ctrl: float = 1.0, w_fact: float = 1.0,
                    w_scene: float = 0.3, n_basis: int = N_BASIS_DEFAULT,
-                   ctrl_form: str = "response") -> dict:
+                   ctrl_form: str = "response",
+                   stopgrad_factual: bool = False) -> dict:
     """One batch of the three stage-A losses (module docstring).
 
     ``states`` [B, W, S] (DETACHED — encoder frozen), ``aw2``/``fa2`` the
@@ -320,7 +321,19 @@ def stage_a_losses(predictor, step_readout, states: Tensor, aw2: Tensor,
         with torch.no_grad():
             an_c = analytic_endpoints(aw_c, fa_c, v0, k).float()
         if ctrl_form == "response":
-            l_ctrl_arms[arm] = ((wp_c - wp_f) - (an_c - an_f)).abs().mean()
+            # ⭐ E-DEC-15 / `--o1-stopgrad-factual`: treat the FACTUAL prediction as a
+            # STOP-GRADIENT REFERENCE inside the separation term (LIT-3 / PhyLatent
+            # CASC). The response `wp_c - wp_f` otherwise back-propagates into the
+            # factual roll as well, so L_ctrl can lower itself by moving the ANCHOR
+            # instead of fixing the gain — the two ways to reduce a difference.
+            # ⛔ ONLY here. `l_fact` above must keep its gradient: training the factual
+            # position is its entire job, and detaching it there would make the anchor
+            # untrained rather than merely unmoved by L_ctrl.
+            # ⛔ DEFAULT FALSE ⇒ `ref_f is wp_f` ⇒ the shipped path is BIT-IDENTICAL,
+            # which `test_loss_determinism` asserts on loss, terms AND RNG draw-count.
+            # ⚠️ The `absolute` branch never reads `wp_f`, so the flag cannot affect it.
+            ref_f = wp_f.detach() if stopgrad_factual else wp_f
+            l_ctrl_arms[arm] = ((wp_c - ref_f) - (an_c - an_f)).abs().mean()
         else:                                                # absolute
             l_ctrl_arms[arm] = (wp_c - an_c).abs().mean()
     l_ctrl = torch.stack(list(l_ctrl_arms.values())).mean()
