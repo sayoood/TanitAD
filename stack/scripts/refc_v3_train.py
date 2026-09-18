@@ -6261,6 +6261,7 @@ def train(args) -> dict:
     # eval clips, and every eval number off them would be optimistic and
     # inadmissible. The launch trains the 4,572 and evaluates the held-out set.
     eval_dl = None
+    eval_win_dl = None
     if args.eval_cache and args.eval_every:
         # the SAME provider call the train side uses (refc_v3_train:680) —
         # a second construction path would be a second contract.
@@ -6433,6 +6434,15 @@ def train(args) -> dict:
         print(f"[v3] held-out eval: {len(e_eps)} episodes -> {len(e_ds)} "
               f"windows, {args.eval_batches} fixed batches every "
               f"{args.eval_every} steps", flush=True)
+        # ⭐ W-BOOTSTRAP: the SAME windows, in the SAME deterministic order, at
+        # batch 1 -- so a 'batch mean' IS the window value and the rows can be
+        # clustered by `episode_id` without decomposing the loss.
+        if getattr(args, "eval_window_dump", None):
+            eval_win_dl = torch.utils.data.DataLoader(
+                torch.utils.data.Subset(e_ds, perm),
+                batch_size=1, shuffle=False, num_workers=0, drop_last=False)
+            print(f"[v3] eval WINDOW DUMP on -> {args.eval_window_dump} "
+                  f"({len(perm)} windows, batch 1, separate pass)", flush=True)
 
     # ⛔ IN-FLIGHT BATCHES ARE THE SHM COST, NOT THE CLIP CACHE. MEASURED
     # 2026-09-02: two launches died on `Bus error ... out of shared memory`
@@ -7084,6 +7094,44 @@ def train(args) -> dict:
                       f"traj {erow.get('eval_traj', float('nan')):.4f} "
                       f"lat_tac {erow.get('eval_lat_tac', float('nan')):.4f}",
                       flush=True)
+
+            # ---- W-BOOTSTRAP: per-window rows, so the paired episode-cluster
+            # bootstrap becomes reachable. ⚠️ A SEPARATE pass: the aggregate row
+            # above is untouched, so every banked comparison still holds.
+            if eval_win_dl is not None:
+                _n_win, _dump_err = 0, None
+                try:
+                    with torch.no_grad():
+                        with open(args.eval_window_dump, "a",
+                                  encoding="utf-8") as _wf:
+                            for _wb in eval_win_dl:
+                                _wl = compute_losses_v3(
+                                    model, _wb, device, mode=args.mode,
+                                    ablate_frames=args.ablate_frames)
+                                _row = {"step": int(step),
+                                        "episode_id": int(
+                                            _wb["episode_id"].reshape(-1)[0])}
+                                for _k, _v in _wl.items():
+                                    if torch.is_tensor(_v) and _v.ndim == 0:
+                                        _row[_k] = float(_v.detach())
+                                    elif isinstance(_v, (int, float, bool)):
+                                        _row[_k] = float(_v)
+                                _wf.write(json.dumps(_row) + chr(10))
+                                _n_win += 1
+                except Exception as _exc:          # noqa: BLE001 (by design)
+                    import traceback
+                    traceback.print_exc()
+                    _dump_err = f"{type(_exc).__name__}: {_exc}"
+                model.train()
+                # ⛔ n IS STATED, always. A read over fewer windows than a gate's
+                # floor must be reported as underpowered, never quoted bare.
+                log.write(json.dumps({
+                    "step": step, "eval_window_dump": str(args.eval_window_dump),
+                    "eval_window_rows": _n_win,
+                    "eval_window_dump_error": _dump_err}) + chr(10))
+                log.flush()
+                print(f"[v3:eval] window dump: {_n_win} rows -> "
+                      f"{args.eval_window_dump}", flush=True)
     # ⛔ the done-marker, SAME turn as completion (the v5f supervisor lesson).
     (out_dir / "summary.json").write_text(
         json.dumps({"done": True, "step": step, "arm": args.arm,
@@ -7786,6 +7834,15 @@ def build_parser() -> argparse.ArgumentParser:
                          "papers' and DiffusionDrive's own. Every channel "
                          "count is read from timm's `feature_info`, so a swap "
                          "needs no model-code change.")
+    ap.add_argument("--eval-window-dump", default=None, metavar="PATH",
+                    help="⭐ write ONE JSONL ROW PER EVAL WINDOW to PATH, each "
+                         "carrying `episode_id` = stable_episode_id(clip_id). "
+                         "⛔ Without this the eval emits only BATCH MEANS with no "
+                         "id, and `taniteval.ci.paired_episode_cluster_bootstrap` "
+                         "-- the only admissible interval in this programme -- is "
+                         "NOT REACHABLE BY ANY RESCORE. Off by default; a SEPARATE "
+                         "batch-1 pass, so the in-training monitor above is "
+                         "unchanged and every banked comparison still holds.")
     ap.add_argument("--trunk-chunk-ckpt", type=int, default=0,
                     help="⭐ recompute the backbone in leading-batch slices of N "
                          "(gradient checkpointing). 0 = OFF (default, unchanged "

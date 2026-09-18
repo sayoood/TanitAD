@@ -441,3 +441,42 @@ measurement (one job at a time), and this touches the live trainer's eval path, 
 its parity check RUN rather than argued.
 
 <!-- W-BOOTSTRAP-EVAL-WINDOW-DUMP-SPEC-2026-09-18 -->
+
+### ✅ W-BOOTSTRAP — DONE 2026-09-19, and one of its two premises was WRONG
+
+⭐ **Premise 1 STANDS**: `compute_losses_v3` already reduces over the batch, so the eval's
+rows are a mean of means and no per-window value exists. The fix is a batch-1 pass, where a
+"batch mean" IS the window value.
+
+⛔ **Premise 2 WAS WRONG, and the correction made the job much smaller.** It said *"the
+eval batch carries no identifier at all"*. It carries one: `_contract.py:138` puts
+`"episode_id": ep.episode_id` in EVERY item; it is `stable_episode_id(clip_id)`, 63-bit
+*precisely so it survives torch's default int64 collate*; and
+`test_refc_v3_u8_batches.py`'s pinned key set **contains it**.
+⚠️ The bad reading came from grepping for keys the **trainer READS** rather than keys the
+**dataset EMITS** — the trainer simply never read it. Same family as every other
+wrong-scope probe in this programme: the grep answered a different question than the one
+asked, and it answered it correctly.
+⇒ **no dataset change, no batch-contract change, no parity risk.** Only the DUMP was
+missing.
+
+#### What shipped
+
+`--eval-window-dump PATH`, OFF by default: a **separate** batch-1 pass over the SAME
+deterministic window subset, writing one JSONL row per window with `episode_id` and every
+scalar the loss returns. The in-training monitor's aggregate row is untouched.
+
+#### Acceptance, all four MEASURED on a real run
+
+| | |
+|---|---|
+| 1. parity, flag unset | `test_refc_v3_u8_batches` green; dump is a separate opt-in pass |
+| 2. reachability | 16 rows loaded; `paired_episode_cluster_bootstrap(a, b, eid=episode_id)` runs |
+| 3. ⛔ **self-control** | an arm against **ITSELF**: `lo 0.0, hi 0.0, separated False` — the interval contains 0 |
+| 4. n stated | `metrics.jsonl` carries `eval_window_rows = 16`; every result carries `n_windows` / `n_episodes` |
+
+⚠️ That smoke run drew 16 windows across 16 DISTINCT episodes — one window per cluster.
+That is the draw, not a property of the mechanism; a real read needs many windows per
+episode, and the counts ride along so an underpowered read cannot be quoted bare.
+
+<!-- W-BOOTSTRAP-DONE-AND-PREMISE-CORRECTED-2026-09-19 -->
