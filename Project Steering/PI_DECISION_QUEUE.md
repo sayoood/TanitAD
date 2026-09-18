@@ -1060,3 +1060,106 @@ repaired*, reintroduced silently. The pre-registration states this as a gate, no
 preference.
 
 <!-- PIQ-ANSWERED-19-20-21-RESNET101-2026-09-17 -->
+
+## ⭐⭐ NEW ITEMS 22–24 (2026-09-18) — the backlog's "blocked on the PI" rows, finally ASKED
+
+⛔ **Why these appear only now.** `BACKLOG.md` carried rows reading *"needs the PI"*,
+*"NOT AUTHORISED without the PI"*, *"decision pending"* — and **not one of them was in this
+file**. Six probed by name returned **0 hits** each, against a positive control (`ITEM 21`)
+reading 1. ⇒ they were **not gated, they were UNASKED**: a row saying *"blocked on the PI"*
+is skipped by every sweep while the question never reaches the PI. That is worse than an
+open decision, because it looks like one.
+
+⚠️ **The count was wrong too, and smaller than reported.** A FlyWheel sweep said *"11 of
+11"*. Re-derived here: **10 lines** mention a PI gate, of which **3 are rule statements**
+(not items) and **2 (`R4`, `R5`) are already marked DONE/DIAGNOSED** — their gate is
+historical. Of the **8** real rows, **4 are MOOT** and **1 appears already answered**
+(§B below). **3 are genuinely live**, and only those are asked.
+
+---
+
+### ⭐ ITEM 22 — `A3` / C64 option B: freeze the clean v2-line val at **n = 400**, or reject B?
+
+**MEASURED, and the interesting part is what it cost to find out.** The clean val was
+BUILT (2026-08-02) and its column semantics are a machine-checked contract (34/34 on
+18,988 rows). Then three findings landed against it:
+
+* the **6.77× advantage was ONE AXIS** — on junction+turn+speed it is **1.07×**, and
+  +brake it is **0.77 = infeasible**;
+* **cell-quota matching does not balance** (max |d| **0.3997**, 10/13 axes over bar);
+  greedy covariate balancing reaches **0.0094**;
+* ⛔ **a clean v2 val is NOT clean for v1**: **62 of a 600-draw are inside v1's TRAIN**
+  ⇒ excluding the parity corpus makes **600 unavailable** (headroom 0.95).
+
+**Shipped: n = 400**, max |d| **0.0409**, sha256 `abe041db72a045b3…` (an n = 300 variant
+exists). ⚠️ No draw from this remainder is exchangeable with train (within-cell median
+|d| **0.359**).
+
+| option | |
+|---|---|
+| **(a) DEFAULT — freeze n = 400** | take the balanced 400 as the clean v2-line val and state its non-exchangeability wherever it is quoted. It is built, balanced and hashed; the alternative is no clean val at all. |
+| (b) take n = 300 | tighter balance, less power. Only if 400's |d| 0.0409 is judged too loose. |
+| (c) reject option B | no clean v2-line val; cross-line comparisons keep carrying the leak caveat instead. |
+
+⚠️ **If you say nothing, (a) happens** — and the non-exchangeability caveat travels with
+every number drawn from it.
+
+---
+
+### ⭐ ITEM 23 — `R54` / D3b: which margin **leads** the H-vs-F table?
+
+A reporting convention, **zero compute**, and it changes what the programme appears to
+claim.
+
+The choice is between the **fed-nav** margin and the **deployment (nav-zero)** margin.
+⛔ **Nav is an oracle input that will not exist at deployment**, so leading with the
+fed-nav margin **overstates the system**.
+
+| option | |
+|---|---|
+| **(a) DEFAULT — lead with the DEPLOYMENT margin** | report the nav-zero margin as the headline and the fed-nav one beside it. The headline then describes what ships. |
+| (b) lead with fed-nav | only defensible if nav is guaranteed at deployment — which contradicts the vision-only rule. |
+
+⚠️ **If you say nothing, (a) happens.**
+
+---
+
+### ⭐ ITEM 24 — `R24`: authorise (or refuse) the **DINOv3 ViT-B/16** pull?
+
+Only **ViT-L/16** and **dinov2-base** are on the box; the converter never downloads. This
+blocks the **v7f seed at the pre-registration's chosen geometry**.
+
+⚠️ **Scope honestly:** v7f is **not** the refcv6 line, and refcv6 is where the programme's
+attention currently is. This is a small download, not compute — but the standing rule is
+that **downloads need their own permission**.
+
+| option | |
+|---|---|
+| **(a) DEFAULT — authorise the pull** | it is a model download inside the research-licence class, it unblocks a pre-registered seed, and it costs no GPU. |
+| (b) refuse | the v7f seed runs at a geometry its own pre-registration did not choose, and that must then be stated in its results. |
+| (c) defer until refcv6's panel is decided | avoids splitting attention; costs nothing but time. |
+
+⚠️ **If you say nothing, (c) happens** — deferral, not authorisation, because nothing in
+refcv6's critical path needs it this week.
+
+---
+
+## §B — the five that should be RETIRED rather than asked
+
+⛔ **Drafting these as live decisions would be asking the PI to rule on infrastructure that
+no longer exists.**
+
+| row | why it is not a live decision |
+|---|---|
+| **`D1`** — how many **A40-hours** for S-W | ⛔ **MOOT.** *"The A40 is stopped and gone"* (`PI_DECISION_QUEUE.md:172`), *"There is no A40 — the pod was stopped and is gone"* (`PREREG_REFCV6.md:6`, `:456`). |
+| **`D2`** — **which pod** runs S-W | ⛔ **MOOT**, same evidence. |
+| **`C4`** — release the **old CPU pod** | ⛔ **MOOT** — the fleet it belongs to is gone (MEASURED 2026-09-10 on `pod3`/`pod4`/`pod5`). |
+| **`C5`** — **X2 verdict run, 30 pod-days** | ⛔ **MOOT** — 30 pod-days of a fleet that does not exist. If X2 is still wanted it is a **new** item priced against today's compute. |
+| **`C6`** — wheelbase fix | ⚠️ **APPEARS ALREADY ANSWERED.** The PI chose *"C = measure first"*; the measurement landed. `H-ECHO-6` is **SUPPORTED** — `curvature = tan(steer)/2.9` inverts the corpus encoding exactly, cross-checked against `d/dt(unwrap(yaw))` at **r = +0.9430**, where *"a wheelbase error would read about 0"* — and `GOALS_AND_CLAIMS` records *"exact and the wheelbase cancels, so no re-cache and no parity break"*. ⇒ **verify and strike**, do not ask. |
+
+⚠️ **The lesson under all five is the same one `BACKLOG.md` diagnosed about itself:** a
+blocker note is not revisited when the thing it blocks on changes, so it keeps reading as a
+live gap. Four of these became moot when the pods went; one when a measurement landed.
+**None of them was ever asked, so none of them was ever closed.**
+
+<!-- PIQ-ITEMS-22-24-BACKLOG-PI-ROWS-ASKED-2026-09-18 -->
