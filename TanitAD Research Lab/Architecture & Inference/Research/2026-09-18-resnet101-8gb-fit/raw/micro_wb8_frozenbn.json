@@ -1,0 +1,275 @@
+{
+ "host": "dev-box RTX 4060 8188 MiB",
+ "torch": "2.11.0+cu128",
+ "alloc_conf": "",
+ "geometry": [
+  416,
+  1024
+ ],
+ "wb": 8,
+ "frames": 3,
+ "arms": [
+  {
+   "arm": "r34_fbn",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "frozen_bn": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "bn_eval": 36,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 6.641447067260742,
+   "peak_reserved_gb": 9.177734375,
+   "iter_s_all": [
+    3.7312,
+    3.3935,
+    3.3937
+   ],
+   "iter_s": 3.3937,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 136.154845336152,
+   "grad_fingerprint": {
+    "net.conv1.weight": 16.516754150390625,
+    "net.bn1.weight": 0.2720145881175995,
+    "net.bn1.bias": 0.4322283864021301,
+    "net.layer1.0.conv1.weight": 0.01968434266746044,
+    "net.layer1.0.bn1.weight": 5.54458201804664e-05,
+    "net.layer1.0.bn1.bias": 6.034483158146031e-05
+   },
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r34_fbn_ck1",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": 1
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "bn_eval": 36,
+   "relu_outofplace": 33,
+   "chunk": 1,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 0.9256925582885742,
+   "peak_reserved_gb": 0.978515625,
+   "iter_s_all": [
+    0.9472,
+    0.8421,
+    0.8329
+   ],
+   "iter_s": 0.8421,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 136.15582479177465,
+   "grad_fingerprint": {
+    "net.net.conv1.weight": 16.517349243164062,
+    "net.net.bn1.weight": 0.27202308177948,
+    "net.net.bn1.bias": 0.43224412202835083,
+    "net.net.layer1.0.conv1.weight": 0.01968533545732498,
+    "net.net.layer1.0.bn1.weight": 5.544728264794685e-05,
+    "net.net.layer1.0.bn1.bias": 6.034680700395256e-05
+   },
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_fbn_ck1",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": 1
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "bn_eval": 104,
+   "relu_outofplace": 100,
+   "chunk": 1,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 2.451742172241211,
+   "peak_reserved_gb": 2.75390625,
+   "iter_s_all": [
+    2.634,
+    2.2091,
+    2.3349
+   ],
+   "iter_s": 2.3349,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 60.59488586658409,
+   "grad_fingerprint": {
+    "net.net.conv1.weight": 2.133629322052002,
+    "net.net.bn1.weight": 0.035805828869342804,
+    "net.net.bn1.bias": 0.05537257343530655,
+    "net.net.layer1.0.conv1.weight": 0.0002446307335048914,
+    "net.net.layer1.0.bn1.weight": 5.193328433961142e-06,
+    "net.net.layer1.0.bn1.bias": 6.559579560416751e-06
+   },
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_fbn_ck2",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": 2
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "bn_eval": 104,
+   "relu_outofplace": 100,
+   "chunk": 2,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 3.4834799766540527,
+   "peak_reserved_gb": 3.572265625,
+   "iter_s_all": [
+    2.275,
+    2.2227,
+    2.2241
+   ],
+   "iter_s": 2.2241,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 60.594798057438595,
+   "grad_fingerprint": {
+    "net.net.conv1.weight": 2.133638858795166,
+    "net.net.bn1.weight": 0.035806089639663696,
+    "net.net.bn1.bias": 0.05537313595414162,
+    "net.net.layer1.0.conv1.weight": 0.0002446130383759737,
+    "net.net.layer1.0.bn1.weight": 5.193925971980207e-06,
+    "net.net.layer1.0.bn1.bias": 6.559549547091592e-06
+   },
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_fbn_ck3",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": 3
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "bn_eval": 104,
+   "relu_outofplace": 100,
+   "chunk": 3,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 4.471028804779053,
+   "peak_reserved_gb": 4.5859375,
+   "iter_s_all": [
+    2.3194,
+    2.2974,
+    2.3377
+   ],
+   "iter_s": 2.3377,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 60.59496986273132,
+   "grad_fingerprint": {
+    "net.net.conv1.weight": 2.133676767349243,
+    "net.net.bn1.weight": 0.03580653667449951,
+    "net.net.bn1.bias": 0.05537382885813713,
+    "net.net.layer1.0.conv1.weight": 0.0002446337603032589,
+    "net.net.layer1.0.bn1.weight": 5.1939910008513834e-06,
+    "net.net.layer1.0.bn1.bias": 6.559629582625348e-06
+   },
+   "n_grad_none": 0,
+   "status": "OK"
+  }
+ ]
+}

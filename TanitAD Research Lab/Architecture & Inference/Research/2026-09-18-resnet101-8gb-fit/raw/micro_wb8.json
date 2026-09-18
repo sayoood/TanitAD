@@ -1,0 +1,681 @@
+{
+ "host": "dev-box RTX 4060 8188 MiB",
+ "torch": "2.11.0+cu128",
+ "alloc_conf": "",
+ "geometry": [
+  416,
+  1024
+ ],
+ "wb": 8,
+ "frames": 3,
+ "arms": [
+  {
+   "arm": "r34_base",
+   "model": "resnet34.a1_in1k",
+   "levers": {},
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 6.641510009765625,
+   "peak_reserved_gb": 9.177734375,
+   "iter_s_all": [
+    6.8466,
+    5.8167,
+    5.8301
+   ],
+   "iter_s": 5.8301,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 583.5926899967385,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_base",
+   "model": "resnet101.a1_in1k",
+   "levers": {},
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "status": "OOM",
+   "peak_alloc_gb": 22.366341590881348,
+   "error": "CUDA out of memory. Tried to allocate 156.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 22.36 GiB is allocated by PyTorch, and 87.86 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  ("
+  },
+  {
+   "arm": "r101_ck1",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 1
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "chunk": 1,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 2.4539499282836914,
+   "peak_reserved_gb": 2.75390625,
+   "iter_s_all": [
+    2.6671,
+    2.9831,
+    2.5881
+   ],
+   "iter_s": 2.9831,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 747.388041429365,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_ck2",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 2
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "chunk": 2,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 3.483856678009033,
+   "peak_reserved_gb": 3.572265625,
+   "iter_s_all": [
+    2.343,
+    2.2739,
+    2.2809
+   ],
+   "iter_s": 2.2809,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 769.4913297832094,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_ck4",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 4
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "chunk": 4,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 5.433079242706299,
+   "peak_reserved_gb": 5.607421875,
+   "iter_s_all": [
+    2.4189,
+    2.3952,
+    2.3942
+   ],
+   "iter_s": 2.3952,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 772.1730260622529,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_timmgc",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "grad_checkpoint": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "gc_applied": true,
+   "trainable_params": 58231872,
+   "status": "ERROR",
+   "error": "RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [24, 64, 208, 512]], which is output 0 of ReluBackward0, is at version 1; expected version 0 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False)."
+  },
+  {
+   "arm": "r101_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 14.742521286010742,
+   "peak_reserved_gb": 16.115234375,
+   "iter_s_all": [
+    18.7957,
+    16.3836,
+    17.6052
+   ],
+   "iter_s": 17.6052,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 770.3182164859275,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_chlast",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "channels_last": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "trainable_params": 58231872,
+   "status": "OOM",
+   "peak_alloc_gb": 22.401501178741455,
+   "error": "CUDA out of memory. Tried to allocate 40.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 22.40 GiB is allocated by PyTorch, and 86.86 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (h"
+  },
+  {
+   "arm": "r101_freeze_l1",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "freeze": "layer1"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1"
+   ],
+   "trainable_params": 58006528,
+   "peak_alloc_gb": 19.577542781829834,
+   "peak_reserved_gb": 20.181640625,
+   "iter_s_all": [
+    28.5371,
+    24.4503,
+    25.0591
+   ],
+   "iter_s": 25.0591,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 767.0776794989466,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_freeze_l2",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "freeze": "layer2"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1",
+    "layer2"
+   ],
+   "trainable_params": 56786944,
+   "peak_alloc_gb": 14.839425563812256,
+   "peak_reserved_gb": 15.318359375,
+   "iter_s_all": [
+    21.0402,
+    20.8205,
+    20.8325
+   ],
+   "iter_s": 20.8325,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 780.7177611515554,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_inflate",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "trunk_mode": "inflate"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "inflate",
+   "images_through_trunk": 8,
+   "backbone_params": 42518976,
+   "total_params": 42518976,
+   "trainable_params": 42518976,
+   "peak_alloc_gb": 10.287174224853516,
+   "peak_reserved_gb": 11.279296875,
+   "iter_s_all": [
+    6.1502,
+    4.5589,
+    3.9625
+   ],
+   "iter_s": 4.5589,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 67.79531908624273,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_ck1_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 1,
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "chunk": 1,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 3.1379165649414062,
+   "peak_reserved_gb": 3.1796875,
+   "iter_s_all": [
+    1.8177,
+    1.6645,
+    1.6986
+   ],
+   "iter_s": 1.6986,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 752.6609231440077,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_ck2_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 2,
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "relu_outofplace": 100,
+   "chunk": 2,
+   "trainable_params": 58231872,
+   "peak_alloc_gb": 3.657329559326172,
+   "peak_reserved_gb": 3.712890625,
+   "iter_s_all": [
+    1.5466,
+    1.3076,
+    1.2517
+   ],
+   "iter_s": 1.3076,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 772.4139501365136,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_ck1_bf16_fz",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 1,
+    "bf16": true,
+    "freeze": "layer1"
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 42500160,
+   "total_params": 58231872,
+   "frozen": [
+    "conv1",
+    "bn1",
+    "layer1"
+   ],
+   "relu_outofplace": 100,
+   "chunk": 1,
+   "trainable_params": 58006528,
+   "peak_alloc_gb": 2.983151435852051,
+   "peak_reserved_gb": 3.138671875,
+   "iter_s_all": [
+    1.496,
+    1.4241,
+    1.4187
+   ],
+   "iter_s": 1.4241,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 760.0578577574413,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r101_infl_bf16",
+   "model": "resnet101.a1_in1k",
+   "levers": {
+    "trunk_mode": "inflate",
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "inflate",
+   "images_through_trunk": 8,
+   "backbone_params": 42518976,
+   "total_params": 42518976,
+   "trainable_params": 42518976,
+   "peak_alloc_gb": 6.401912212371826,
+   "peak_reserved_gb": 6.765625,
+   "iter_s_all": [
+    0.3657,
+    0.3326,
+    0.3345
+   ],
+   "iter_s": 0.3345,
+   "s16_shape": [
+    8,
+    1024,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    2048,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 68.23488620750783,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r34_ck1",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "chunk_ckpt": 1
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "relu_outofplace": 33,
+   "chunk": 1,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 2.259411334991455,
+   "peak_reserved_gb": 2.29296875,
+   "iter_s_all": [
+    0.8815,
+    0.8541,
+    0.8544
+   ],
+   "iter_s": 0.8544,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 566.5802557668072,
+   "n_grad_none": 0,
+   "status": "OK"
+  },
+  {
+   "arm": "r34_bf16",
+   "model": "resnet34.a1_in1k",
+   "levers": {
+    "bf16": true
+   },
+   "image_hw": [
+    416,
+    1024
+   ],
+   "wb": 8,
+   "frames": 3,
+   "mode": "shared",
+   "images_through_trunk": 24,
+   "backbone_params": 21284672,
+   "total_params": 22268480,
+   "trainable_params": 22268480,
+   "peak_alloc_gb": 5.110349178314209,
+   "peak_reserved_gb": 6.283203125,
+   "iter_s_all": [
+    0.3903,
+    0.3616,
+    0.3612
+   ],
+   "iter_s": 0.3616,
+   "s16_shape": [
+    8,
+    256,
+    26,
+    64
+   ],
+   "s32_shape": [
+    8,
+    512,
+    13,
+    32
+   ],
+   "trunk_grad_abs_sum": 586.1166379595768,
+   "n_grad_none": 0,
+   "status": "OK"
+  }
+ ]
+}

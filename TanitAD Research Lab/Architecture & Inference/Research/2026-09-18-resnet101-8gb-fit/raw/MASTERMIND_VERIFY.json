@@ -1,0 +1,34 @@
+{
+ "_what": "MASTER MIND INDEPENDENT REPRODUCTION of the two decisive arms, 2026-09-19",
+ "_why": "This result inverts the programme's dev-box plan, so the two load-bearing arms were re-run BY HAND on the same harness rather than accepted. The agent has already self-corrected once in this package (a 3-step liveness probe reported a live tactical head as dark), which is a reason to check, not a reason to doubt.",
+ "arms": [
+  {
+   "tag": "VERIFY_r34_b2_ref",
+   "trunk": "resnet34.a1_in1k",
+   "batch": 2,
+   "levers": {},
+   "peak_alloc_gb_MINE": 14.628,
+   "peak_alloc_gb_AGENT": 14.629,
+   "s_per_step_MINE": 73.2,
+   "s_per_step_AGENT": 29.1,
+   "note": "The MEMORY number reproduces to 3 decimals; the WALL-CLOCK does not, and that is expected and is itself the point -- a spilling configuration's step time is set by host paging and co-tenancy, not by the GPU. It is not a compute cost, so it is not reproducible as one."
+  },
+  {
+   "tag": "VERIFY_r101_b1_fbn_ck1",
+   "trunk": "resnet101.a1_in1k",
+   "batch": 1,
+   "levers": {
+    "frozen_bn": true,
+    "chunk_ckpt": "1"
+   },
+   "peak_alloc_gb_MINE": 2.887,
+   "peak_alloc_gb_AGENT": 2.887,
+   "s_per_step_MINE": 4.2,
+   "s_per_step_AGENT": 4.9,
+   "heads_live_MINE": 22,
+   "status": "OK"
+  }
+ ],
+ "verdict": "CONFIRMED. The production resnet34 rig at batch 2 allocates 14.63 GB on an 8188 MiB card -- it pages to host RAM. resnet101 with frozen BN + leading-batch chunk checkpointing runs at 2.887 GB and 4.2-4.9 s/step.",
+ "_evidence_class": "MEASURED (ours; two arms re-run on the agent's harness, GPU idle at 538 MiB)"
+}
