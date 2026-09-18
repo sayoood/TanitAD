@@ -1,0 +1,40 @@
+{
+ "_what": "map-head instrument run: does the occupancy head learn, and does it clear the floor?",
+ "_not_an_arm": "one configuration, no replicate, no comparison. NO capability claim about refcv6 -- that needs the pre-registered panel.",
+ "_evidence_class": "MEASURED (ours)",
+ "_config": {
+  "trunk": "resnet34.a1_in1k",
+  "image_hw": [
+   416,
+   1024
+  ],
+  "batch": 2,
+  "steps": 1000,
+  "wallclock_s": 29196.7,
+  "s_per_step": 29.2
+ },
+ "_floor": {
+  "all_drivable_iou": 0.3412,
+  "measured_over_seen_cells": 10068274,
+  "source": ".../2026-09-18-occupancy-floor/"
+ },
+ "first20": {
+  "map": 2.1203905,
+  "iou_mean": 0.0,
+  "prob_mean": 0.1106595
+ },
+ "last20": {
+  "map": 1.1800535,
+  "iou_mean": 0.165312,
+  "prob_mean": 0.3208455
+ },
+ "last10": {
+  "map": 1.178612,
+  "iou_mean": 0.25111,
+  "prob_mean": 0.337008
+ },
+ "iou_first_nonzero_step": 630,
+ "n_logs_with_nonzero_iou": 27,
+ "n_logs": 100,
+ "_caveat": "each log is ONE batch of 2 windows; gt_drivable_frac ranges 0.1324-0.6542 across batches, so the final single-batch IoU (0.3577) is NOT the result. The aggregate last-10 mean (0.2511) is still BELOW the 0.3412 floor."
+}

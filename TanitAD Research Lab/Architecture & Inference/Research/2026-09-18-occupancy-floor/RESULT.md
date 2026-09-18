@@ -129,3 +129,52 @@ LAUNCHED"*). What has changed is that the instrument, the floor and the starting
 now exist, so the first trained number will be readable the moment it arrives.
 
 <!-- OCC-FLOOR-UNTRAINED-HEAD-MEASURED-2026-09-18 -->
+
+## ⭐ THE HEAD LEARNS — 1,000 steps, and it has NOT yet cleared the floor
+
+An **instrument run**, not an arm: one configuration, no replicate, no comparison. It
+answers the one question `PREREG_S1` §8 gates `S1-GATE-PRED` on — *does the occupancy head
+move at all, and how fast?* ⛔ It makes **no capability claim** about refcv6; that needs the
+pre-registered panel.
+
+`resnet34`, 416 × 1024, batch 2, every head live, **1,000 steps in 29,196.7 s**
+(**29.2 s/step**, against 28.30 predicted from a 30-step probe).
+
+### It learns, unambiguously
+
+| | first 20 logs | last 20 | last 10 |
+|---|---|---|---|
+| `map` (soft CE) | 2.1204 | **1.1801** | 1.1786 |
+| `map_pred_drivable_prob_mean` | 0.1107 | 0.3208 | **0.3370** |
+| `map_iou_drivable` mean | **0.0000** | 0.1653 | **0.2511** |
+
+⭐ The loss roughly **halves**. ⭐ The threshold-free probability climbs **0.111 → 0.337**,
+into the GT's ~0.35 band — which is exactly the progress the IoU is structurally blind to
+while the head is under-confident, and the reason that companion metric was added.
+⭐ **`map_iou_drivable` is EXACTLY 0.0 for the first 62 logs** and first non-zero at
+**step 630** — a clean, dated threshold-crossing rather than a drift.
+
+### ⛔ But it has NOT beaten the no-information floor, and the final number must not be quoted
+
+The run's **last logged IoU is 0.3577**, above the **0.3412** floor. ⛔ **That is one batch
+of two windows and it is not the result.** Per-batch IoU is very noisy here:
+`map_gt_drivable_frac` ranges **0.1324 – 0.6542** across batches, and only **27 of 100**
+logs have a non-zero IoU at all.
+
+The defensible statement is the aggregate: **last-10 mean IoU 0.2511**, still **below**
+0.3412. ⇒ **1,000 steps is not enough for the occupancy head to beat a constant
+predictor.** The trend is rising and the run is continuing to 2,000.
+
+⚠️ **And the comparison is not yet like-for-like.** The floor was measured over
+**10,068,274 seen cells**; these IoUs come from batches of **2 windows**. Even the
+aggregate is a train-side read on a noisy estimator, not the held-out, many-window number
+the gate will eventually need.
+
+### What this unblocks, and what it does not
+
+⭐ **`S1-GATE-PRED`'s dependency is no longer hypothetical** — the occupancy head demonstrably
+learns, the instrument reads it, and the floor it must clear is known. ⛔ It is **not yet
+good enough to gate on**: a collision gate driven by an occupancy that scores below a
+constant predictor would reorder candidates on noise.
+
+<!-- OCC-MAPHEAD-1K-2026-09-18 -->
