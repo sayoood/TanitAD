@@ -1,0 +1,1333 @@
+{
+  "backlog": "Project Steering/BACKLOG.md",
+  "rows": 117,
+  "counts": {
+    "CLOSED": 4,
+    "OPEN": 91,
+    "DONE-BUT-OPEN": 7,
+    "STALE-BLOCKER": 1,
+    "CLOSED-ELSEWHERE": 14
+  },
+  "git": {
+    "last_commit": "8b694049d",
+    "last_date": "2026-09-07",
+    "commits_since": 37
+  },
+  "heading_items": [
+    {
+      "line": 259,
+      "title": "?? BLOCKING INTEGRATION ITEM -- refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, TanitAD_TrainingFlyWheel)",
+      "closed": false
+    },
+    {
+      "line": 296,
+      "title": "? D-ROLL-1h -- CLOSED 2026-09-06: the `--tac-goal-tok-head` TRAINER FLAG IS WIRED",
+      "closed": true
+    }
+  ],
+  "verdicts": [
+    {
+      "id": "A1",
+      "line": 16,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        16
+      ],
+      "excerpt": "| ~~A1~~ | ~~Build the emitters~~ ? **AUDITED `1ad18ea`/`9e09b54` -- NEITHER needs writing.** #2 needs an **EVAL** (re-emit `g_op_fwd_ade_m` from the checkpoint, needs a free GPU); #7 needs **ONE ARCH"
+    },
+    {
+      "id": "A2",
+      "line": 17,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        17
+      ],
+      "excerpt": "| ~~A2~~ | ~~Wire the NC gate with filter_m~~ ? **CONTRACT RECORDED `8d4a138`** -- `filter_m` appeared NOWHERE in pseudosim (grep=0), so the gate would have shipped PDMS-v1 and over-penalised every ar"
+    },
+    {
+      "id": "A3",
+      "line": 18,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        18
+      ],
+      "excerpt": "| A3 | **C64 option B** -- build the clean v2-line val | ? **BUILT 2026-08-02** (`.../incoming/2026-08-02-v2-clean-val-selector/`, 27 ?). ? Column semantics are now a machine-checked contract (34/34 o"
+    },
+    {
+      "id": "A4",
+      "line": 19,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        19
+      ],
+      "excerpt": "| A4 | **Re-verify the factorised path x velocity vocabulary** (refuted 0-3 in the survey) | maps 1:1 onto our LAT+LON softmax mechanism and the 88.7 % longitudinal gap -- the single most valuable re-"
+    },
+    {
+      "id": "A5",
+      "line": 20,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        20
+      ],
+      "excerpt": "| A5 | **Confirm C64 at clip_id granularity** -- replay `discover_r0_clips` on pod2's raw root | ? **PARTLY ANSWERED 2026-08-02 with NO pod**, from the two selection parquets: **256 of v1's 600 parity"
+    },
+    {
+      "id": "A6",
+      "line": 21,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        21
+      ],
+      "excerpt": "| A6 | **Reconcile pod2's tree** -- 317 modified tracked files, untracked `taniteval`, **untracked running trainer on one disk** | ? **after v5 finishes, never during an incident** |"
+    },
+    {
+      "id": "A7",
+      "line": 22,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        22
+      ],
+      "excerpt": "| A7 | **Delta-JEPA one-liner**: IDM decoder takes latent **displacement** `z_{t+1}-z_t` instead of concatenated endpoints | HYPOTHESIS-class lead; bears on our smaller-IDM-is-better ladder (input for"
+    },
+    {
+      "id": "A8",
+      "line": 23,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        23
+      ],
+      "excerpt": "| A8 | **Sub-JEPA regulariser swap**: isotropic prior in random **low-dimensional subspaces** vs our ambient `SigRegConfig` (`n_slices=512`, w 0.1) | HYPOTHESIS-class lead, public code exists |"
+    },
+    {
+      "id": "A9",
+      "line": 24,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        24
+      ],
+      "excerpt": "| A9 | **Task-list hygiene** -- #37/#39 are marked completed but were falsified (pod1 still down; pod3 had drifted back) | a task list that lies is worse than none |"
+    },
+    {
+      "id": "A10",
+      "line": 25,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        25
+      ],
+      "excerpt": "| A10 | **Bank gen-1 `sc_train.py`'s remaining pod-only siblings** if any | stranding rule |"
+    },
+    {
+      "id": "A11",
+      "line": 26,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        26
+      ],
+      "excerpt": "| A11 | ~~? **Rescue the 45 stranded files on Thor**~~ ? **DONE 2026-08-18, 0 GPU** (`.../incoming/2026-08-18-thor-stranded-rescue/`) | ? **It was 98, not 45.** `pod_git_drift.py` scans **`.py`/`.sh` "
+    },
+    {
+      "id": "A12",
+      "line": 27,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        27
+      ],
+      "excerpt": "| ~~A12~~ | ~~Ship the 4 stale/absent files to Thor~~ ? **DONE 2026-09-02 -- 4/4 now on Thor.** `lf0_bev_lead.py`, `p8_bev_reel.py`, `refc_train.py` shipped **2026-08-15**; `sel_winners_curse_law.py` "
+    },
+    {
+      "id": "A14",
+      "line": 28,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        28
+      ],
+      "excerpt": "| A14 | **Decide on 24 un-pulled per-window rollout dumps on Thor** (`cl_out*`/`ol_out*`/`cutin_out` `rollouts_*.json`, `video_*_openloop.json`) -- **9,550,490 B**, mostly `long_*` re-runs | found by "
+    },
+    {
+      "id": "A15",
+      "line": 29,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "CLOSED",
+      "occurrences": [
+        29
+      ],
+      "excerpt": "| ~~A15~~ | ~~Adjudicate `thor_profile.py`~~ ? **DONE -- BOTH HALVES, verified 2026-09-02 (the row was stale, not open).** **(a) The adjudication landed 2026-08-18**: the package now carries `PROVENAN"
+    },
+    {
+      "id": "A13",
+      "line": 32,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        32
+      ],
+      "excerpt": "| A13 | ~~**Adjudicate the 24 DRIFT rows in Thor's live `/home/nvidia/TanitAD` checkout**~~ ? **DONE 2026-09-07, 0 GPU** (`TanitAD Research Lab/Tools & DevEnv/Research/2026-09-07-thor-checkout-drift-a"
+    },
+    {
+      "id": "A13b",
+      "line": 33,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        33
+      ],
+      "excerpt": "| A13b | ? **Ship the import closure to Thor before the NEXT launch, and gate on it** -- **29 of 130 closure files differ and 13 are absent**; the checkout is 1,273 commits behind. ? Ship the **CLOSUR"
+    },
+    {
+      "id": "A13c",
+      "line": 34,
+      "kind": "table",
+      "section": "A. 0-GPU -- ALWAYS EXECUTABLE, no excuse to idle",
+      "verdict": "OPEN",
+      "occurrences": [
+        34
+      ],
+      "excerpt": "| A13c | **Record the code provenance of `refav1-b1-v72-ep3-speed` in `MODEL_REGISTRY.md`** -- it was trained from Thor's OLDER stack, not from repo HEAD | flows from A13; a registry row that does not"
+    },
+    {
+      "id": "B1",
+      "line": 40,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        40
+      ],
+      "excerpt": "| B1 | ? **RR-FT** -- fine-tune v1 with `--rollout-k 20`, exactly one flag different, ~3-5 k steps | **IN PROGRESS.** Measure `step_s` over 200 steps and report before committing to full length |"
+    },
+    {
+      "id": "B2",
+      "line": 41,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        41
+      ],
+      "excerpt": "| B2 | **E-ROLL** -- recursive k=1 rollout past 2 s on the deployed arm, measure ADE **and** CR to 4 s/6 s | ~2-4 GPU-h; divergence is the *expected* result and is informative |"
+    },
+    {
+      "id": "B3",
+      "line": 42,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        42
+      ],
+      "excerpt": "| B3 | **Linear free/occupied probe** on frozen v1 latents from `obstacle.offline` | <0.5 GPU-day; depends on A2's chunk download |"
+    },
+    {
+      "id": "B4",
+      "line": 43,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        43
+      ],
+      "excerpt": "| B4 | ~~**Matched-capacity camera head** for sitclf~~ **DONE 2026-08-03, 0 pod GPU-h** (`.../incoming/2026-08-03-sitclf-matched-capacity/`) | ? **The curve PEAKS AT THE FLOOR.** On `intersection` (th"
+    },
+    {
+      "id": "B5",
+      "line": 44,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        44
+      ],
+      "excerpt": "| B5 | **Frozen VIDEO-pretrained encoder** (V-JEPA 2 ViT-L) vs from-scratch, same corpus/steps | ? the one experiment nobody in the field has run; our frozen-encoder ceiling was measured on IMAGE-pret"
+    },
+    {
+      "id": "B6",
+      "line": 45,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        45
+      ],
+      "excerpt": "| B6 | **REF-C-base canonical eval + v1.6 paired bootstrap** (task #31) | queued since pod3 freed |"
+    },
+    {
+      "id": "B7",
+      "line": 46,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        46
+      ],
+      "excerpt": "| B7 | **Opponent SC-13 on our checkpoint** (task #10) | |"
+    },
+    {
+      "id": "B8",
+      "line": 47,
+      "kind": "table",
+      "section": "B. ONE GPU -- executable now (pod3; ? eval stays free for C64-A)",
+      "verdict": "OPEN",
+      "occurrences": [
+        47
+      ],
+      "excerpt": "| B8 | **Cosmos Reason1 vs Reason2 head-to-head** (task #29) | VLM labeler choice |"
+    },
+    {
+      "id": "C1",
+      "line": 53,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        53
+      ],
+      "excerpt": "| C1 | **Rollout-recovery at scale / 8-GPU work** | ? **pod1 console stop/start (PI)** -- `/dev/nvidia*` empty, not fixable over SSH |"
+    },
+    {
+      "id": "C2",
+      "line": 54,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "STALE-BLOCKER",
+      "occurrences": [
+        54
+      ],
+      "excerpt": "| C2 | **C64 option A** -- score both arms on the 19 leak-free episodes, **v1 re-scored there** | ~~v2corpus reaching 30 k (~17:00 UTC 2026-07-29)~~ ?? **RE-PROBE 2026-08-16 -- the gating DATE passed "
+    },
+    {
+      "id": "C3",
+      "line": 55,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        55
+      ],
+      "excerpt": "| C3 | **v5 gate verdict** | ~~v5 reaching step 2000; ?? first probe is the INCUMBENT and cannot stop the run~~ ? **CLOSED 2026-08-16 -- blocker CLEARED 2026-08-09.** `flagship-v5f-w120-30k` is ? **CO"
+    },
+    {
+      "id": "C4",
+      "line": 56,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        56
+      ],
+      "excerpt": "| C4 | **Old CPU pod release** (task #40) | ? deletion needs the PI |"
+    },
+    {
+      "id": "C5",
+      "line": 57,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        57
+      ],
+      "excerpt": "| C5 | **X2 verdict run (30 pod-days)** | ? NOT AUTHORISED without the PI |"
+    },
+    {
+      "id": "C6",
+      "line": 58,
+      "kind": "table",
+      "section": "C. GATED -- and on what, precisely",
+      "verdict": "OPEN",
+      "occurrences": [
+        58
+      ],
+      "excerpt": "| C6 | **Wheelbase fix** | ? PI chose C = measure first; decision pending |"
+    },
+    {
+      "id": "D1",
+      "line": 64,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        64
+      ],
+      "excerpt": "| D1 | **v3: DINO-WM proper** -- feature-prediction + CEM/diffusion/MPC, no head (task #26) |"
+    },
+    {
+      "id": "D2",
+      "line": 65,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        65
+      ],
+      "excerpt": "| D2 | **TanitEval clickable interactive tool** (task #23) |"
+    },
+    {
+      "id": "D3",
+      "line": 66,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        66
+      ],
+      "excerpt": "| D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |"
+    },
+    {
+      "id": "D4",
+      "line": 67,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        67
+      ],
+      "excerpt": "| D4 | **Own dataset / lake v0** -- ingest at scale + HF push (task #5) |"
+    },
+    {
+      "id": "D5",
+      "line": 68,
+      "kind": "table",
+      "section": "D. Standing / long-horizon",
+      "verdict": "OPEN",
+      "occurrences": [
+        68
+      ],
+      "excerpt": "| D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |"
+    },
+    {
+      "id": "E1",
+      "line": 79,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        79
+      ],
+      "excerpt": "| E1 | **Four-families rescore on the banked v5.8f windows** -> completes registry ?1.14 | 0-GPU (banked windows) | nothing -- runnable the moment T1 lands |"
+    },
+    {
+      "id": "E2",
+      "line": 80,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        80
+      ],
+      "excerpt": "| E2 | **HF release of the v5.8f artifact set** (ckpts, gates, windows, figures) | 0-GPU | the release row existing |"
+    },
+    {
+      "id": "E3",
+      "line": 81,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        81
+      ],
+      "excerpt": "| E3 | **W5 / E-H1 6 s baseline for v5.8f** -- REQUIRED precursor now that 6 s is the v6 spec | 1 GPU | pod5 after T1 |"
+    },
+    {
+      "id": "E4",
+      "line": 82,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        82
+      ],
+      "excerpt": "| E4 | **I4b** -- imagination ablation stratified by the P4/P8 occluded split | 1 GPU | p8c gate + the banked I4a arms |"
+    },
+    {
+      "id": "E5",
+      "line": 83,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        83
+      ],
+      "excerpt": "| E5 | **LF0** -- probe PRE-POOL spatial tokens + BEV lead read-off (routing vs learning) | ~0.5 GPU-h | p8c head existing |"
+    },
+    {
+      "id": "E6",
+      "line": 84,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        84
+      ],
+      "excerpt": "| E6 | **PERCEPTION-AGENTS head** (slot decoder on frozen latents: bbox+state+class) | ~1 GPU-day | prereg + v6 GO |"
+    },
+    {
+      "id": "E7",
+      "line": 85,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        85
+      ],
+      "excerpt": "| E7 | **Alpamayo meta-action -> vocabulary mapping table + coverage measurement** | 0-GPU | records.parquet (present on pod4) |"
+    },
+    {
+      "id": "E8",
+      "line": 86,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        86
+      ],
+      "excerpt": "| E8 | **E-ENC arm prereg** (shared encoder + adapters vs per-layer) incl. B5's frozen V-JEPA-2 control | 0-GPU to write | v6 GO |"
+    },
+    {
+      "id": "E9",
+      "line": 87,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        87
+      ],
+      "excerpt": "| E9 | **Spectrum finding follow-up**: participation ratio ~ 4.5 of 2048 dims at 5k (top-8 = 99 % of variance) -- is this SIGReg working as designed or an anisotropy finding? | 0-GPU analysis | the fu"
+    },
+    {
+      "id": "E10",
+      "line": 88,
+      "kind": "table",
+      "section": "E. 2026-08-11 NIGHT -- the live pull-list (supersedes A/B where they conflict)",
+      "verdict": "OPEN",
+      "occurrences": [
+        88
+      ],
+      "excerpt": "| E10 | **Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHERITED) | 0-GPU | nothing |"
+    },
+    {
+      "id": "F1",
+      "line": 104,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        104
+      ],
+      "excerpt": "| **F1** | ? **S-S gate amendment (D6)** -- promote `S1_ade_8_30s` from `reported` to `required` for the PH2-pending case, keeping STRATEGIC `n/a` **with its reason and its n**. Pre-register **before*"
+    },
+    {
+      "id": "F2",
+      "line": 105,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        105
+      ],
+      "excerpt": "| **F2** | **S-W supervisor manifest** -- write `runs.d/v6-SW-30k.env` with the ?2.1 `TRAIN_CMD` verbatim, plus the R7/R8 discipline in the header (done-marker = off-switch; manifest sourced ONCE at s"
+    },
+    {
+      "id": "F3",
+      "line": 106,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        106
+      ],
+      "excerpt": "| **F3** | ? **Noise-robust selection rule prereg (R2)** -- sweep top-m rules and the **`--w-prog`** anti-degeneracy term off the **already-banked** `w7_eval_windows.pt`. Pre-register the rule **befor"
+    },
+    {
+      "id": "F4",
+      "line": 107,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        107
+      ],
+      "excerpt": "| **F4** | **Correct the cost basis name in `V6_TRAINER_DESIGN ?5`** -- \"v4.2\" -> **`flagship-v4-fromscratch`** (registry ?1.5.5). `flagship-v4.2-30k` (?1.5.3) is a different arm, killed at ~step 5 k "
+    },
+    {
+      "id": "F5",
+      "line": 108,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        108
+      ],
+      "excerpt": "| **F5** | **The 23 standing `pytest` failures** -- `onnx` absent (1), a Windows-basename assert in `test_resim.py` (2), a suite-order polluter in `test_rig_clean_fix.py` (20, all pass in isolation) |"
+    },
+    {
+      "id": "F6",
+      "line": 109,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        109
+      ],
+      "excerpt": "| **F6** | **E-ENC short-arm prereg (D5)** -- the matched pair at a **reduced, equal step count**: `--per-layer-encoders` (120 743 881) vs shared `--pred-dim 960` (118 105 417), **gap 2.19 %** quoted."
+    },
+    {
+      "id": "F7",
+      "line": 110,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        110
+      ],
+      "excerpt": "| **F7** | **Pod-side ship + STEP-ZERO runbook as a script** -- md5 + `grep -c assert_isolation` + cache `ls` + `dd` write test + `--dry-run`, one command, refusing loudly on any mismatch | ~1 h | **0"
+    },
+    {
+      "id": "F8",
+      "line": 111,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        111
+      ],
+      "excerpt": "| **F8** | **Verify `F` (frames per episode) on the pod** and record the realised window count per stage from the trainer's own `[v6] windowing:` line | ~15 min | **0-GPU** (rides F7) | `.../incoming/"
+    },
+    {
+      "id": "F9",
+      "line": 112,
+      "kind": "table",
+      "section": "F -- 2026-08-12 v6 launch pull-list",
+      "verdict": "OPEN",
+      "occurrences": [
+        112
+      ],
+      "excerpt": "| **F9** | **Registry row skeleton for S-W** -- pre-write the ?1.15 row with every field the run must fill (parity key, skip-hash, derived `max_horizon`, realised window count, `step_s` MEASURED, gate"
+    },
+    {
+      "id": "R1",
+      "line": 122,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        122
+      ],
+      "excerpt": "| **R1** | ? **DONE 2026-09-02 (D-REFAV1-LEAD-BLOCK)** -- **Lead block for the 141-clip eval grid** -- nearest lead agent per window from `obstacle.offline` (headway / time-gap / TTC), so LONGITUDINAL"
+    },
+    {
+      "id": "R2",
+      "line": 123,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        123
+      ],
+      "excerpt": "| **R2** | ? **DONE 2026-09-02 (`3a6a48c`)** -- **Review the UNSTAGED `taniteval/tools/t1_eval.py` worktree diff** (2026-08-30, *\"window follows the checkpoint\"*, +18/-2) -- stage with provenance or r"
+    },
+    {
+      "id": "R3",
+      "line": 124,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "OPEN",
+      "occurrences": [
+        124
+      ],
+      "excerpt": "| **R3** | **Run `cl_oraclegoal` (T0) beside `cl` (T1) at the step-1000 read** -- the cheapest search-vs-goal discriminator: if the oracle goal also returns baselines, the search budget is the ceiling"
+    },
+    {
+      "id": "R4",
+      "line": 125,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "DONE-BUT-OPEN",
+      "occurrences": [
+        125
+      ],
+      "excerpt": "| **R4** | ? **DONE 2026-09-02 19:26Z (switch step 16,500; D-REFCV3-NAV-SWITCHED)** -- **`--nav-from-v7` for refcv3** -- ship + relaunch at the next 500-step checkpoint ONLY on the PI's go (C-NAV-SOUR"
+    },
+    {
+      "id": "R5",
+      "line": 126,
+      "kind": "table",
+      "section": "refav1 pull-list (2026-09-02, Master Mind) -- 0-GPU items that gate the first refav1 read",
+      "verdict": "OPEN",
+      "occurrences": [
+        126
+      ],
+      "excerpt": "| **R5** | ? **DIAGNOSED 2026-09-02 (cgroup OOM kill; D-REFCV3-EVAL-DEATH-DIAGNOSED) -- fix (save-before-eval) in progress** -- **Diagnose refcv3's silent deaths at eval boundaries** (2,000 / 4,500 / "
+    },
+    {
+      "id": "R6",
+      "line": 130,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        130
+      ],
+      "excerpt": "- **R6 -- `--bptt-truncate` for the O1 stage-A rolls** (`stack/scripts/train_stage_a.py::stage_a_losses`, 6 of 8 `rollout_transitions` calls per step): one line + the same property test; owner needed "
+    },
+    {
+      "id": "R7",
+      "line": 131,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        131
+      ],
+      "excerpt": "- **R7 -- tactical CE term on the v7.2 factored labels** (`tac_lat_id`/`tac_lon_id`/`tac_valid` already in the batch; `out[\"a_lat\"]`/`out[\"a_lon\"]`): a NEW loss term -> `TanitAD_ValidateAIDesign` pre-"
+    },
+    {
+      "id": "R8",
+      "line": 132,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        132,
+        151
+      ],
+      "excerpt": "- **R8 -- v7f LAUNCH BLOCKER: eval-clip exclusion in the v7 trainer's B1 path.** The 141 eval clips with pixels sit inside the 4,713-clip cache; `build_train_episodes`/`build_v2_providers` need an exc"
+    },
+    {
+      "id": "R9",
+      "line": 133,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 04:10 Berlin (from D-V7-WIRING)",
+      "verdict": "OPEN",
+      "occurrences": [
+        133
+      ],
+      "excerpt": "- **R9 -- strategic ARG encoder for v7.2 labels** (spec ?3.2, Data FlyWheel): a named dict today, no slot encoder; args unsupervised until it exists."
+    },
+    {
+      "id": "R10",
+      "line": 137,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        137,
+        170
+      ],
+      "excerpt": "- **R10 -- the PLANNER COST-SURFACE probe** (the next refav1 read): evaluate `_cost_chunk`'s four terms SEPARATELY at h = 10 on the banked step-1,000 checkpoints, in BOTH conventions (raw ?, and `? ->"
+    },
+    {
+      "id": "R11",
+      "line": 138,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "OPEN",
+      "occurrences": [
+        138
+      ],
+      "excerpt": "- **R11 -- wire the new diagnostics in**: `taniteval/tools/actdiv_anchored.py` and `transition_probe.py` are committed but called by nothing -- `mm_e19_read.py`'s actdiv stage still calls the banked `"
+    },
+    {
+      "id": "R12",
+      "line": 139,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        139,
+        250
+      ],
+      "excerpt": "- **R12 -- read the banked GS-9 transition-probe JSON**: the rescued package's RESULT ?4 still says pending while its raw JSON exists and is unread."
+    },
+    {
+      "id": "R13",
+      "line": 140,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        140,
+        208
+      ],
+      "excerpt": "- **R13 -- `t1_eval.DEFAULT_TIERS` needs `\"ha0\": \"T1\"`** (`taniteval/tools/t1_eval.py:145`); until then the standalone CLI needs `--tiers ha0=T1` (D-REFAV1-HA0-ARM's one-line integration)."
+    },
+    {
+      "id": "R14",
+      "line": 141,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:20 Berlin (from D-ACTDIV-ANCHORED-REFAV1)",
+      "verdict": "OPEN",
+      "occurrences": [
+        141
+      ],
+      "excerpt": "- **R14 -- the anti-stranding rule, operational**: a completed run's artifacts lived only in `C:\\Users\\Admin\\tanitad-wt\\_gs89_pkg\\` until a later agent rescued 17 files. Every agent brief already says"
+    },
+    {
+      "id": "R15",
+      "line": 145,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        145,
+        163
+      ],
+      "excerpt": "- **R15 -- v7f LAUNCH BLOCKER: the DINOv3 -> seed-checkpoint converter.** No loader puts DINOv3 weights into `ViTEncoder`/`ViT5Encoder`; `--init-from` refuses a partial checkpoint (`train_v6_staged.py"
+    },
+    {
+      "id": "R16",
+      "line": 146,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "OPEN",
+      "occurrences": [
+        146
+      ],
+      "excerpt": "- **R16 -- sweep every retired threshold through the instruction documents** (`.claude/skills/`, `CLAUDE.md`, the PREREG templates), not only through the register: the 8.56 floor survived eleven days "
+    },
+    {
+      "id": "R17",
+      "line": 147,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)",
+      "verdict": "OPEN",
+      "occurrences": [
+        147
+      ],
+      "excerpt": "- **R17 -- rung R0 of the v7f ladder is 0 GPU and can refute the LDAD line before an arm is spent** (`PREREG_V7F.md`); run it before any v7f compute is scheduled."
+    },
+    {
+      "id": "R18",
+      "line": 152,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 08:15 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        152
+      ],
+      "excerpt": "- **R18 -- gate the fp8 shipper** (`stack/scripts/dinov3_fp8_encode_ship.py`, C-FP8-SHIPPER-UNGATED): call `parity.guard_corpus_build` on the SOURCE split before encoding (preferred), or classify it i"
+    },
+    {
+      "id": "R19",
+      "line": 153,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 08:15 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        153
+      ],
+      "excerpt": "- **R19 -- bound `_artifact_path_names`' two-hop closure** in `test_build_parity_guard.py`: it reached ~200 unrelated locals and produced a spurious ungated-writer entry; the owner of that suite shoul"
+    },
+    {
+      "id": "R20",
+      "line": 157,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        157,
+        230
+      ],
+      "excerpt": "- **R20 -- refcv3 T1 adapter: triage the rescued draft** (`Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/`). Re-derive the T1 definition for a supervised trajectory model"
+    },
+    {
+      "id": "R21",
+      "line": 158,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        158
+      ],
+      "excerpt": "- **R21 -- decide when `--action-units steer` becomes the default** (D-STEER-INTERFACE-RESOLVED). Every banked refav1 lateral number was produced OFF; ON and OFF numbers are not comparable, so the fli"
+    },
+    {
+      "id": "R22",
+      "line": 159,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:25 Berlin",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        159,
+        250
+      ],
+      "excerpt": "- **R22 -- run `actdiv_anchored`'s `d(a)` in BOTH unit conventions** (~15 min CPU): the only admissible test of what the unit costs the imagination, and item (iii) of D-ACTDIV-ANCHORED-REFAV1's next-p"
+    },
+    {
+      "id": "R23",
+      "line": 164,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        164,
+        224
+      ],
+      "excerpt": "- **R23 -- wire `--w-trunk-anchor`** (v7f rung R3's `anchored` arm is blocked without it): a SECOND frozen forward of the seed's own ViT-B/16 plus the live encoder's patch tokens at the loss site. O7'"
+    },
+    {
+      "id": "R24",
+      "line": 165,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "OPEN",
+      "occurrences": [
+        165
+      ],
+      "excerpt": "- **R24 -- PI decision: authorise (or refuse) the DINOv3 ViT-B/16 pull.** Only ViT-L/16 and dinov2-base are on the box; the converter never downloads. Blocks the v7f seed at the prereg's chosen geomet"
+    },
+    {
+      "id": "R25",
+      "line": 166,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)",
+      "verdict": "OPEN",
+      "occurrences": [
+        166
+      ],
+      "excerpt": "- **R25 -- the `-k` selection in every v7 brief misses new test files by name.** `test_dinov3_seed.py` matches none of `v6|staged|parity|v7_labels|intrain|v7_wiring|eval_exclusion`; the agent correctl"
+    },
+    {
+      "id": "R26",
+      "line": 171,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        171,
+        185
+      ],
+      "excerpt": "- **R26 -- URGENT: complete the ?->steer conversion or remove the flag.** `as_command` is called at ONE site (`refa_v1.py:1832`); `_imagine_tactical_goal` (`:1680`) still rolls the goal in raw ?, so `"
+    },
+    {
+      "id": "R27",
+      "line": 172,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        172,
+        186
+      ],
+      "excerpt": "- **R27 -- the cost's TIME units**: `_cost_chunk` consumes the 2.0 s plan on the 0.6 s tactical clock and imagines 6.0 s, while the goal is subsampled correctly. Also: T4 (`target_speed`) is dead code"
+    },
+    {
+      "id": "R28",
+      "line": 173,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        173
+      ],
+      "excerpt": "- **R28 -- THE LEVER (training, not planning): the tactical decoder.** It asks for a turn on 0 of 27 human-turn windows (incumbent; ep2 0.333) and the goal it emits IS the cv rollout on 79-92 % of win"
+    },
+    {
+      "id": "R29",
+      "line": 174,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        174,
+        196
+      ],
+      "excerpt": "- **R29 -- the cosine cost is float32-saturated along ?** (2.00 ULPs median vs 167.5/19,804 along `a`; the shipped winning cost takes six distinct values over 140 windows, some negative). Package repa"
+    },
+    {
+      "id": "R30",
+      "line": 178,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        178
+      ],
+      "excerpt": "- **R30 -- PI/DOCTRINE RULING, blocks register decision 9**: does `EVAL_DOCTRINE.md` admit as T1 a model that consumes NO actions? refcv3 is one-shot with no rollout, so `roll_closed` cannot be ported"
+    },
+    {
+      "id": "R31",
+      "line": 179,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        179
+      ],
+      "excerpt": "- **R31 -- the in-training eval must dump PER-WINDOW values with episode ids.** Every number in `metrics.jsonl` is already a pooled mean, so no estimator can put an interval on it and the information "
+    },
+    {
+      "id": "R32",
+      "line": 180,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "OPEN",
+      "occurrences": [
+        180
+      ],
+      "excerpt": "- **R32 -- reconcile the leaked-eval count**: `C-REFCV3-EVAL-PRIOR-LEAK` says 34, the metrics file measures 40, and the file starts at step 550 so neither covers the whole run."
+    },
+    {
+      "id": "R33",
+      "line": 181,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:05 Berlin (from D-REFCV3-EPOCH-READ)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        181,
+        219
+      ],
+      "excerpt": "- **R33 -- pick up `taniteval/tools/refcv3_metrics_read.py`**: a naive read of `metrics.jsonl` is wrong in three separate ways (era segmentation, the `elapsed_s` resets across 10 launches, and the ora"
+    },
+    {
+      "id": "R34",
+      "line": 187,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        187
+      ],
+      "excerpt": "- **R34 -- DESIGN: the plan spans 2.0 s of a 6.0 s goal.** The planner's own canonical seed cannot reproduce its own goal, which sits directly beside the measurement that a correct turn buys one float"
+    },
+    {
+      "id": "R35",
+      "line": 188,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        188
+      ],
+      "excerpt": "- **R35 -- decide T4 (`target_speed`) deliberately**: unused by production, exercised by two tests, so neither deletion nor wiring is free. Recommendation: KEEP until the cost is redesigned."
+    },
+    {
+      "id": "R36",
+      "line": 189,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        189
+      ],
+      "excerpt": "- **R36 -- decide when `cost_time_grid=\"tactical\"` becomes the default.** The banked panel is provably unaffected (the winner is constant on 140/140), so the flip is safe for what is banked -- but it "
+    },
+    {
+      "id": "R37",
+      "line": 193,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        193,
+        201
+      ],
+      "excerpt": "- **R37 -- L1, PREFLIGHT for every arm in `PREREG_TACTICAL_DECODER.md`: log the decoder's loss.** Four keys (`loss_lat_label`, `loss_lon_label`, `loss_route_label`, and their weighted share) in `refa_"
+    },
+    {
+      "id": "R38",
+      "line": 194,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "OPEN",
+      "occurrences": [
+        194,
+        202
+      ],
+      "excerpt": "- **R38 -- L0: make the planner's canonical seed reproduce its own goal.** 62 of 64 token pairs differ, `TURN` over-rotates its goal by 82.5deg, and `4139203`'s time-grid repair does NOT close it (the"
+    },
+    {
+      "id": "R39",
+      "line": 195,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        195,
+        237
+      ],
+      "excerpt": "- **R39 -- THE DEPLOYMENT QUESTION: the tactical decision is oracle nav, not scene.** Under `nav_zero` the ranking collapses to 0.520 and a nav-only predictor beats the model (0.684 > 0.650). nav will"
+    },
+    {
+      "id": "R40",
+      "line": 197,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)",
+      "verdict": "OPEN",
+      "occurrences": [
+        197
+      ],
+      "excerpt": "- **R40 -- 5 of 16 tactical classes have ZERO support** in the training labels, and 8.13 % of batch-8 steps see no labelled row at all (~2.15 rows per step). A class-balanced loss cannot conjure suppo"
+    },
+    {
+      "id": "R41",
+      "line": 203,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:10 Berlin (from D-TACDEC-L0-L1-E0)",
+      "verdict": "CLOSED-ELSEWHERE",
+      "occurrences": [
+        203,
+        243
+      ],
+      "excerpt": "- **R41 -- the cost repair is now the critical path, and the chord is NOT optional.** Only one configuration ranks a turn at shipped weights (L0 identity + chord + steer units) and it is 4 episodes of"
+    },
+    {
+      "id": "R42",
+      "line": 204,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:10 Berlin (from D-TACDEC-L0-L1-E0)",
+      "verdict": "OPEN",
+      "occurrences": [
+        204
+      ],
+      "excerpt": "- **R42 -- scope note on `D-REFAV1-BOUNDARY-NULL`**: the steer conversion wins nothing under the SHIPPED cost but is NECESSARY under the only cost that ranks a turn. Any future statement of its value "
+    },
+    {
+      "id": "R43",
+      "line": 212,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        212
+      ],
+      "excerpt": "- **R43 -- MERGE `LAB-REP-2` into theme 1's `LAB-DRIFT-2` before either is scheduled.** The same lever (multi-horizon heads + a training-only cross-modal target) arrived from two independent primaries"
+    },
+    {
+      "id": "R44",
+      "line": 213,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        213
+      ],
+      "excerpt": "- **R44 -- adopt the three-gate ORDER for P5/L3** (capture -> real-effect resolvability -> propagation; `2608.29998`). ? `rdw8p30k` currently FAILS gate 1 (pooled cross-clip R? -0.05...-0.09), so no p"
+    },
+    {
+      "id": "R45",
+      "line": 214,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        214
+      ],
+      "excerpt": "- **R45 -- add the four controls we lack** to the criteria registry: a COUNTERFACTUAL input, a VALIDATED POSITIVE control (an engineered-leaky model that must fire), the PASSTHROUGH bound (an untraine"
+    },
+    {
+      "id": "R46",
+      "line": 215,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 10:40 Berlin (from D-SOTA-DECODABILITY)",
+      "verdict": "OPEN",
+      "occurrences": [
+        215
+      ],
+      "excerpt": "- **R46 -- the oracle-input audit of refav1 as a PUBLISHABLE result** (LAB-REP-4): the field states it could not find a public-weights world model conditioning its predictor on language and calls demo"
+    },
+    {
+      "id": "R47",
+      "line": 220,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:00 Berlin",
+      "verdict": "OPEN",
+      "occurrences": [
+        220
+      ],
+      "excerpt": "- **R47 -- the rule this earns**: when a number about to be published disagrees with a banked one, DIFF THE DEFINITIONS FIRST. Printing both and deferring is honest but is not the work."
+    },
+    {
+      "id": "R48",
+      "line": 225,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:30 Berlin (from D-V7-TRUNK-ANCHOR)",
+      "verdict": "OPEN",
+      "occurrences": [
+        225
+      ],
+      "excerpt": "- **R48 -- rung R3's `lastk` arm has no flag**: `--trunk-lr-scale` is whole-trunk. A per-block LR policy is a separate, unowned change; either implement it or drop `lastk` from R3 and say so."
+    },
+    {
+      "id": "R49",
+      "line": 226,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:30 Berlin (from D-V7-TRUNK-ANCHOR)",
+      "verdict": "OPEN",
+      "occurrences": [
+        226
+      ],
+      "excerpt": "- **R49 -- `dry_run()` does not seed the global RNG** (two identical default dry-runs read 4.0784 vs 4.1158). Pre-existing; a seeding fix would move every banked dry-run number, so it needs a stated c"
+    },
+    {
+      "id": "R50",
+      "line": 231,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        231
+      ],
+      "excerpt": "- **R50 -- the SELECTION PROFILE gate, and it generalises.** A random-init anchor model picked ONE anchor on 42/42 windows while the trivial-profile gate read 0.0000: our degeneracy instrument asks wh"
+    },
+    {
+      "id": "R51",
+      "line": 232,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        232
+      ],
+      "excerpt": "- **R51 -- `REFCV3_ARM.md` ?2 needs a human read before any refcv3 number is quoted** (GATE 2 is blocked on that, not on GPU)."
+    },
+    {
+      "id": "R52",
+      "line": 233,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 11:50 Berlin (from D-REFCV3-ARM)",
+      "verdict": "OPEN",
+      "occurrences": [
+        233
+      ],
+      "excerpt": "- **R52 -- the lead-block join reaches only EVEN raw frames** (`_odd_raw_frames` prints the count); fix before the real read or state the coverage in the result."
+    },
+    {
+      "id": "R53",
+      "line": 238,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 12:40 Berlin (from D-REFCV3-NAVZERO)",
+      "verdict": "OPEN",
+      "occurrences": [
+        238
+      ],
+      "excerpt": "- **R53 -- `trivial_profile.identity_to`'s 1e-9 m threshold is unresolvable for CROSS-CALL arms.** The batching floor alone is 5.96e-07 m (different batch sizes take different GEMM paths), so two arms"
+    },
+    {
+      "id": "R54",
+      "line": 239,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 12:40 Berlin (from D-REFCV3-NAVZERO)",
+      "verdict": "OPEN",
+      "occurrences": [
+        239
+      ],
+      "excerpt": "- **R54 -- PI decision D3b: which margin leads the H-vs-F table**, the fed-nav one or the deployment (nav-zero) one. Quoting only the fed-nav margin overstates the system, since nav is an oracle input"
+    },
+    {
+      "id": "R55",
+      "line": 244,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        244
+      ],
+      "excerpt": "- **R55 -- `chord` must NOT become the default.** Default-safe as a flag, but a 5,793x reweighting wearing a metric's clothes; any adoption needs the weight re-derived WITH it."
+    },
+    {
+      "id": "R56",
+      "line": 245,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        245
+      ],
+      "excerpt": "- **R56 -- unreconciled: the ?? charge reads 3.20e-04 (cost-repair) vs 2.24e-04 (cost-surface), 1.43x.** Both MEASURED in different packages, neither withdrawn. Reconcile before either number is quote"
+    },
+    {
+      "id": "R57",
+      "line": 246,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:10 Berlin (from D-COST-CHORD)",
+      "verdict": "OPEN",
+      "occurrences": [
+        246
+      ],
+      "excerpt": "- **R57 -- an unowned file appeared inside another stream's package dir**: `.../2026-09-03-cost-repair/PROPOSED_REGISTER_ROWS.md` (12,695 B) at 11:28, after the Master Mind's 11:15 listing; a file of "
+    },
+    {
+      "id": "R58",
+      "line": 251,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        251
+      ],
+      "excerpt": "- **R58 -- `v` leaks in at the MODEL BOUNDARY, not in a decode target.** `clip_features:521` lifts `v0` into the third channel while the zero-action arm zeroes only steer and accel; `v_t` alone scores"
+    },
+    {
+      "id": "R59",
+      "line": 252,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        252
+      ],
+      "excerpt": "- **R59 -- `run_panel()` silently skips unknown cells**, a false-negative generator: it would have dropped the `v_t` control that found R58 without a word. Two-line refusal needed (not the finding str"
+    },
+    {
+      "id": "R60",
+      "line": 253,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        253
+      ],
+      "excerpt": "- **R60 -- `transition_probe.py` is wired into nothing**; `mm_e19_read.py` still calls `actdiv_local.py`, which carries the H-LEAK-1 speed-scale defect. It is the ONLY instrument that answers L3's que"
+    },
+    {
+      "id": "R61",
+      "line": 254,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        254
+      ],
+      "excerpt": "- **R61 -- raw pixels carry 5-200x more transition-specific structure than the learned ?z** (RFF floor, point estimates, no CI). If that survives a CI it is a representation finding, not an instrument"
+    },
+    {
+      "id": "R62",
+      "line": 255,
+      "kind": "bullet",
+      "section": "Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)",
+      "verdict": "OPEN",
+      "occurrences": [
+        255
+      ],
+      "excerpt": "- **R62 -- `MODEL_REGISTRY.md` has no row for `k8clip05p30k`** (0 hits, two probes)."
+    }
+  ]
+}

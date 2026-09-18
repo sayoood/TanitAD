@@ -1,0 +1,116 @@
+[backlog-drift] Project Steering/BACKLOG.md
+[backlog-drift] rows read     : 117 distinct ids over 133 occurrence(s), 30 section(s)
+[backlog-drift] last written  : 8b694049d  2026-09-07  (37 commit(s) to the repo since)
+[backlog-drift] verdicts      : CLOSED=4  CLOSED-ELSEWHERE=14  DONE-BUT-OPEN=7  OPEN=91  STALE-BLOCKER=1
+[backlog-drift] heading items : 2 (1 without a closure marker) - NOT id'd rows, a human adjudicates these
+                 L259  ?? BLOCKING INTEGRATION ITEM -- refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, Tanit
+
+GENUINELY OPEN ROWS - this is the real pull-list:
+  A3    L18   | A3 | **C64 option B** -- build the clean v2-line val | ? **BUILT 2026-08-02** (`.../incoming/2026-08-02-v2-clean-val-s
+  A4    L19   | A4 | **Re-verify the factorised path x velocity vocabulary** (refuted 0-3 in the survey) | maps 1:1 onto our LAT+LON s
+  A5    L20   | A5 | **Confirm C64 at clip_id granularity** -- replay `discover_r0_clips` on pod2's raw root | ? **PARTLY ANSWERED 202
+  A6    L21   | A6 | **Reconcile pod2's tree** -- 317 modified tracked files, untracked `taniteval`, **untracked running trainer on on
+  A7    L22   | A7 | **Delta-JEPA one-liner**: IDM decoder takes latent **displacement** `z_{t+1}-z_t` instead of concatenated endpoin
+  A8    L23   | A8 | **Sub-JEPA regulariser swap**: isotropic prior in random **low-dimensional subspaces** vs our ambient `SigRegConf
+  A9    L24   | A9 | **Task-list hygiene** -- #37/#39 are marked completed but were falsified (pod1 still down; pod3 had drifted back)
+  A10   L25   | A10 | **Bank gen-1 `sc_train.py`'s remaining pod-only siblings** if any | stranding rule |
+  A14   L28   | A14 | **Decide on 24 un-pulled per-window rollout dumps on Thor** (`cl_out*`/`ol_out*`/`cutin_out` `rollouts_*.json`, 
+  A13b  L33   | A13b | ? **Ship the import closure to Thor before the NEXT launch, and gate on it** -- **29 of 130 closure files diffe
+  A13c  L34   | A13c | **Record the code provenance of `refav1-b1-v72-ep3-speed` in `MODEL_REGISTRY.md`** -- it was trained from Thor'
+  B1    L40   | B1 | ? **RR-FT** -- fine-tune v1 with `--rollout-k 20`, exactly one flag different, ~3-5 k steps | **IN PROGRESS.** Me
+  B2    L41   | B2 | **E-ROLL** -- recursive k=1 rollout past 2 s on the deployed arm, measure ADE **and** CR to 4 s/6 s | ~2-4 GPU-h;
+  B3    L42   | B3 | **Linear free/occupied probe** on frozen v1 latents from `obstacle.offline` | <0.5 GPU-day; depends on A2's chunk
+  B5    L44   | B5 | **Frozen VIDEO-pretrained encoder** (V-JEPA 2 ViT-L) vs from-scratch, same corpus/steps | ? the one experiment no
+  B6    L45   | B6 | **REF-C-base canonical eval + v1.6 paired bootstrap** (task #31) | queued since pod3 freed |
+  B7    L46   | B7 | **Opponent SC-13 on our checkpoint** (task #10) | |
+  B8    L47   | B8 | **Cosmos Reason1 vs Reason2 head-to-head** (task #29) | VLM labeler choice |
+  C1    L53   | C1 | **Rollout-recovery at scale / 8-GPU work** | ? **pod1 console stop/start (PI)** -- `/dev/nvidia*` empty, not fixa
+  C4    L56   | C4 | **Old CPU pod release** (task #40) | ? deletion needs the PI |
+  C5    L57   | C5 | **X2 verdict run (30 pod-days)** | ? NOT AUTHORISED without the PI |
+  C6    L58   | C6 | **Wheelbase fix** | ? PI chose C = measure first; decision pending |
+  D1    L64   | D1 | **v3: DINO-WM proper** -- feature-prediction + CEM/diffusion/MPC, no head (task #26) |
+  D2    L65   | D2 | **TanitEval clickable interactive tool** (task #23) |
+  D3    L66   | D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |
+  D4    L67   | D4 | **Own dataset / lake v0** -- ingest at scale + HF push (task #5) |
+  D5    L68   | D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |
+  E1    L79   | E1 | **Four-families rescore on the banked v5.8f windows** -> completes registry ?1.14 | 0-GPU (banked windows) | noth
+  E2    L80   | E2 | **HF release of the v5.8f artifact set** (ckpts, gates, windows, figures) | 0-GPU | the release row existing |
+  E3    L81   | E3 | **W5 / E-H1 6 s baseline for v5.8f** -- REQUIRED precursor now that 6 s is the v6 spec | 1 GPU | pod5 after T1 |
+  E4    L82   | E4 | **I4b** -- imagination ablation stratified by the P4/P8 occluded split | 1 GPU | p8c gate + the banked I4a arms |
+  E5    L83   | E5 | **LF0** -- probe PRE-POOL spatial tokens + BEV lead read-off (routing vs learning) | ~0.5 GPU-h | p8c head existi
+  E6    L84   | E6 | **PERCEPTION-AGENTS head** (slot decoder on frozen latents: bbox+state+class) | ~1 GPU-day | prereg + v6 GO |
+  E7    L85   | E7 | **Alpamayo meta-action -> vocabulary mapping table + coverage measurement** | 0-GPU | records.parquet (present on
+  E8    L86   | E8 | **E-ENC arm prereg** (shared encoder + adapters vs per-layer) incl. B5's frozen V-JEPA-2 control | 0-GPU to write
+  E9    L87   | E9 | **Spectrum finding follow-up**: participation ratio ~ 4.5 of 2048 dims at 5k (top-8 = 99 % of variance) -- is thi
+  E10   L88   | E10 | **Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHER
+  F1    L104  | **F1** | ? **S-S gate amendment (D6)** -- promote `S1_ade_8_30s` from `reported` to `required` for the PH2-pending cas
+  F2    L105  | **F2** | **S-W supervisor manifest** -- write `runs.d/v6-SW-30k.env` with the ?2.1 `TRAIN_CMD` verbatim, plus the R7/R
+  F3    L106  | **F3** | ? **Noise-robust selection rule prereg (R2)** -- sweep top-m rules and the **`--w-prog`** anti-degeneracy ter
+  F4    L107  | **F4** | **Correct the cost basis name in `V6_TRAINER_DESIGN ?5`** -- "v4.2" -> **`flagship-v4-fromscratch`** (registr
+  F5    L108  | **F5** | **The 23 standing `pytest` failures** -- `onnx` absent (1), a Windows-basename assert in `test_resim.py` (2),
+  F6    L109  | **F6** | **E-ENC short-arm prereg (D5)** -- the matched pair at a **reduced, equal step count**: `--per-layer-encoders
+  F7    L110  | **F7** | **Pod-side ship + STEP-ZERO runbook as a script** -- md5 + `grep -c assert_isolation` + cache `ls` + `dd` wri
+  F8    L111  | **F8** | **Verify `F` (frames per episode) on the pod** and record the realised window count per stage from the traine
+  F9    L112  | **F9** | **Registry row skeleton for S-W** -- pre-write the ?1.15 row with every field the run must fill (parity key, 
+  R3    L124  | **R3** | **Run `cl_oraclegoal` (T0) beside `cl` (T1) at the step-1000 read** -- the cheapest search-vs-goal discrimina
+  R5    L126  | **R5** | ? **DIAGNOSED 2026-09-02 (cgroup OOM kill; D-REFCV3-EVAL-DEATH-DIAGNOSED) -- fix (save-before-eval) in progre
+  R6    L130  - **R6 -- `--bptt-truncate` for the O1 stage-A rolls** (`stack/scripts/train_stage_a.py::stage_a_losses`, 6 of 8 `rollou
+  R7    L131  - **R7 -- tactical CE term on the v7.2 factored labels** (`tac_lat_id`/`tac_lon_id`/`tac_valid` already in the batch; `o
+  R9    L133  - **R9 -- strategic ARG encoder for v7.2 labels** (spec ?3.2, Data FlyWheel): a named dict today, no slot encoder; args 
+  R11   L138  - **R11 -- wire the new diagnostics in**: `taniteval/tools/actdiv_anchored.py` and `transition_probe.py` are committed b
+  R14   L141  - **R14 -- the anti-stranding rule, operational**: a completed run's artifacts lived only in `C:\Users\Admin\tanitad-wt\
+  R16   L146  - **R16 -- sweep every retired threshold through the instruction documents** (`.claude/skills/`, `CLAUDE.md`, the PREREG
+  R17   L147  - **R17 -- rung R0 of the v7f ladder is 0 GPU and can refute the LDAD line before an arm is spent** (`PREREG_V7F.md`); r
+  R18   L152  - **R18 -- gate the fp8 shipper** (`stack/scripts/dinov3_fp8_encode_ship.py`, C-FP8-SHIPPER-UNGATED): call `parity.guard
+  R19   L153  - **R19 -- bound `_artifact_path_names`' two-hop closure** in `test_build_parity_guard.py`: it reached ~200 unrelated lo
+  R21   L158  - **R21 -- decide when `--action-units steer` becomes the default** (D-STEER-INTERFACE-RESOLVED). Every banked refav1 la
+  R24   L165  - **R24 -- PI decision: authorise (or refuse) the DINOv3 ViT-B/16 pull.** Only ViT-L/16 and dinov2-base are on the box; 
+  R25   L166  - **R25 -- the `-k` selection in every v7 brief misses new test files by name.** `test_dinov3_seed.py` matches none of `
+  R28   L173  - **R28 -- THE LEVER (training, not planning): the tactical decoder.** It asks for a turn on 0 of 27 human-turn windows 
+  R29   L174  - **R29 -- the cosine cost is float32-saturated along ?** (2.00 ULPs median vs 167.5/19,804 along `a`; the shipped winni
+  R30   L178  - **R30 -- PI/DOCTRINE RULING, blocks register decision 9**: does `EVAL_DOCTRINE.md` admit as T1 a model that consumes N
+  R31   L179  - **R31 -- the in-training eval must dump PER-WINDOW values with episode ids.** Every number in `metrics.jsonl` is alrea
+  R32   L180  - **R32 -- reconcile the leaked-eval count**: `C-REFCV3-EVAL-PRIOR-LEAK` says 34, the metrics file measures 40, and the 
+  R34   L187  - **R34 -- DESIGN: the plan spans 2.0 s of a 6.0 s goal.** The planner's own canonical seed cannot reproduce its own goa
+  R35   L188  - **R35 -- decide T4 (`target_speed`) deliberately**: unused by production, exercised by two tests, so neither deletion 
+  R36   L189  - **R36 -- decide when `cost_time_grid="tactical"` becomes the default.** The banked panel is provably unaffected (the w
+  R38   L194  - **R38 -- L0: make the planner's canonical seed reproduce its own goal.** 62 of 64 token pairs differ, `TURN` over-rota
+  R40   L197  - **R40 -- 5 of 16 tactical classes have ZERO support** in the training labels, and 8.13 % of batch-8 steps see no label
+  R42   L204  - **R42 -- scope note on `D-REFAV1-BOUNDARY-NULL`**: the steer conversion wins nothing under the SHIPPED cost but is NEC
+  R43   L212  - **R43 -- MERGE `LAB-REP-2` into theme 1's `LAB-DRIFT-2` before either is scheduled.** The same lever (multi-horizon he
+  R44   L213  - **R44 -- adopt the three-gate ORDER for P5/L3** (capture -> real-effect resolvability -> propagation; `2608.29998`). ?
+  R45   L214  - **R45 -- add the four controls we lack** to the criteria registry: a COUNTERFACTUAL input, a VALIDATED POSITIVE contro
+  R46   L215  - **R46 -- the oracle-input audit of refav1 as a PUBLISHABLE result** (LAB-REP-4): the field states it could not find a 
+  R47   L220  - **R47 -- the rule this earns**: when a number about to be published disagrees with a banked one, DIFF THE DEFINITIONS 
+  R48   L225  - **R48 -- rung R3's `lastk` arm has no flag**: `--trunk-lr-scale` is whole-trunk. A per-block LR policy is a separate, 
+  R49   L226  - **R49 -- `dry_run()` does not seed the global RNG** (two identical default dry-runs read 4.0784 vs 4.1158). Pre-existi
+  R50   L231  - **R50 -- the SELECTION PROFILE gate, and it generalises.** A random-init anchor model picked ONE anchor on 42/42 windo
+  R51   L232  - **R51 -- `REFCV3_ARM.md` ?2 needs a human read before any refcv3 number is quoted** (GATE 2 is blocked on that, not on
+  R52   L233  - **R52 -- the lead-block join reaches only EVEN raw frames** (`_odd_raw_frames` prints the count); fix before the real 
+  R53   L238  - **R53 -- `trivial_profile.identity_to`'s 1e-9 m threshold is unresolvable for CROSS-CALL arms.** The batching floor al
+  R54   L239  - **R54 -- PI decision D3b: which margin leads the H-vs-F table**, the fed-nav one or the deployment (nav-zero) one. Quo
+  R55   L244  - **R55 -- `chord` must NOT become the default.** Default-safe as a flag, but a 5,793x reweighting wearing a metric's cl
+  R56   L245  - **R56 -- unreconciled: the ?? charge reads 3.20e-04 (cost-repair) vs 2.24e-04 (cost-surface), 1.43x.** Both MEASURED i
+  R57   L246  - **R57 -- an unowned file appeared inside another stream's package dir**: `.../2026-09-03-cost-repair/PROPOSED_REGISTER
+  R58   L251  - **R58 -- `v` leaks in at the MODEL BOUNDARY, not in a decode target.** `clip_features:521` lifts `v0` into the third c
+  R59   L252  - **R59 -- `run_panel()` silently skips unknown cells**, a false-negative generator: it would have dropped the `v_t` con
+  R60   L253  - **R60 -- `transition_probe.py` is wired into nothing**; `mm_e19_read.py` still calls `actdiv_local.py`, which carries 
+  R61   L254  - **R61 -- raw pixels carry 5-200x more transition-specific structure than the learned ?z** (RFF floor, point estimates,
+  R62   L255  - **R62 -- `MODEL_REGISTRY.md` has no row for `k8clip05p30k`** (0 hits, two probes).
+
+STALE ROWS - each contradicts BACKLOG.md:8, 'Strike items through
+when done, with the commit'. A puller scanning for open work reads
+these as work, and spends the turn re-deriving that they are not:
+  DONE-BUT-OPEN  A11   L26    | A11 | ~~? **Rescue the 45 stranded files on Thor**~~ ? **DONE 2026-08-18, 0 GPU** (`.../incoming/2026-08-18-
+  DONE-BUT-OPEN  A13   L32    | A13 | ~~**Adjudicate the 24 DRIFT rows in Thor's live `/home/nvidia/TanitAD` checkout**~~ ? **DONE 2026-09-0
+  DONE-BUT-OPEN  B4    L43    | B4 | ~~**Matched-capacity camera head** for sitclf~~ **DONE 2026-08-03, 0 pod GPU-h** (`.../incoming/2026-08
+  STALE-BLOCKER  C2    L54    | C2 | **C64 option A** -- score both arms on the 19 leak-free episodes, **v1 re-scored there** | ~~v2corpus r
+  DONE-BUT-OPEN  C3    L55    | C3 | **v5 gate verdict** | ~~v5 reaching step 2000; ?? first probe is the INCUMBENT and cannot stop the run~
+  DONE-BUT-OPEN  R1    L122   | **R1** | ? **DONE 2026-09-02 (D-REFAV1-LEAD-BLOCK)** -- **Lead block for the 141-clip eval grid** -- nearest
+  DONE-BUT-OPEN  R2    L123   | **R2** | ? **DONE 2026-09-02 (`3a6a48c`)** -- **Review the UNSTAGED `taniteval/tools/t1_eval.py` worktree di
+  DONE-BUT-OPEN  R4    L125   | **R4** | ? **DONE 2026-09-02 19:26Z (switch step 16,500; D-REFCV3-NAV-SWITCHED)** -- **`--nav-from-v7` for r
+
+=> DONE-BUT-OPEN : strike the id (~~A11~~) and keep the evidence.
+=> STALE-BLOCKER : the blocker cleared and the row was not revisited;
+   re-state what is still open, or strike it. Do not leave it reading
+   as a live gap.

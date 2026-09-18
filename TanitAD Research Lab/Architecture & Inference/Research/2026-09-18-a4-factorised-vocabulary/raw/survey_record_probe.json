@@ -1,0 +1,60 @@
+{
+ "probe": "A4 survey record - what the 0-3 vote actually contains",
+ "date": "2026-09-18",
+ "evidence_class": "MEASURED (ours)",
+ "files": {
+  "raw_report1_autonomous_driving.json": {
+   "sha256": "6c245263d0fd56740b0b45853ccbbddd466f265dbfaba3372e1e3d3db7b81988",
+   "n_workflowProgress": 111,
+   "n_resultPreview": 106,
+   "distinct_resultPreview_lengths": [
+    401
+   ]
+  },
+  "raw_report2_robotics_wm_jepa.json": {
+   "sha256": "b9c31cab07edbe614ff2b5ca8038d859a224add30e65d64657263bdb2855cfa2",
+   "n_workflowProgress": 114,
+   "n_resultPreview": 109,
+   "distinct_resultPreview_lengths": [
+    401
+   ]
+  }
+ },
+ "refuted_entry_12": {
+  "keys": [
+   "claim",
+   "vote",
+   "source"
+  ],
+  "claim": "The scaling is made affordable by FACTORISING the trajectory vocabulary into geometric paths x velocity profiles rather than enumerating whole trajectories: 1024 path anchors x 256 velocity anchors = 262,144 effective trajectories, described as 32x denser than the prior 8192 flat vocabulary. The ablation isolates the velocity axis independently of the path axis (512x128 -> 88.7, 512x256 -> 89.2, 1024x128 -> 89.5, 1024x256 -> 90.1 EPDMS), i.e. velocity-profile density alone buys ~+0.5-0.6 EPDMS at fixed path density. This is the strongest external support for TanitAD's measured longitudinal/lateral split — oracle speed recovers 88.7% of the oracle-vs-produced ADE gap, entirely longitudinal, lateral untouched — and it prescribes exactly the decomposition our single 5-way maneuver softmax currently collapses.",
+  "vote": "0-3",
+  "source": "https://arxiv.org/abs/2603.29163"
+ },
+ "logs_23": "\"The scaling is made affordable by FACTORISING the …\": 0-3 ✗",
+ "verifier_previews": {
+  "workflowProgress[83]": {
+   "label": "v0:The scaling is made affordable by FACTOR",
+   "lastToolSummary": "Primary source refutes itself: Table 6 (left) of arXiv 2603…",
+   "resultPreview": "{\"refuted\":true,\"counterSource\":\"Primary source refutes itself: Table 6 (left) of arXiv 2603.29163 (SparseDriveV2, 31 Mar 2026), verified via two independent renderings (arxiv.org/html/2603.29163v1 and alphaxiv.org/abs/2603.29163), plus the EPDMS definition in the paper's Eq. 32.\",\"evidence\":\"FACTUAL CORE VERIFIED — the claim's numbers are real. Paper exists: \\\"SparseDriveV2: Scoring is All You Ne…",
+   "resultPreview_len": 401
+  },
+  "workflowProgress[84]": {
+   "label": "v1:The scaling is made affordable by FACTOR",
+   "lastToolSummary": "FACTUAL SCAFFOLDING IS ACCURATE — INTERPRETIVE CORE IS REFU…",
+   "resultPreview": "{\"refuted\":true,\"evidence\":\"FACTUAL SCAFFOLDING IS ACCURATE — INTERPRETIVE CORE IS REFUTED BY THE PAPER'S OWN TABLE.\\n\\nVerified (2 independent WebFetch: /abs and /html/v1). arXiv 2603.29163 = \\\"SparseDriveV2: Scoring is All You Need for End-to-End Autonomous Driving\\\", Sun, Lin, Chen, Pei, Li, Shi, Zheng; submitted 2026-03-31. Every descriptive number in the claim is EXACT: abstract verbatim conf…",
+   "resultPreview_len": 401
+  },
+  "workflowProgress[85]": {
+   "label": "v2:The scaling is made affordable by FACTOR",
+   "lastToolSummary": "DESCRIPTIVE HALF: VERIFIED. arXiv 2603.29163 is real — \"Spa…",
+   "resultPreview": "{\"refuted\":true,\"evidence\":\"DESCRIPTIVE HALF: VERIFIED. arXiv 2603.29163 is real — \\\"SparseDriveV2: Scoring is All You Need for End-to-End Autonomous Driving\\\" (Sun, Lin, Chen, Pei, Li, Shi, Zheng), v1 submitted 31 Mar 2026, in-window. Abstract verbatim confirms the factorized vocabulary and \\\"92.0 PDMS and 90.1 EPDMS on NAVSIM ... 89.15 Driving Score and 70.00 Success Rate on Bench2Drive\\\". Body …",
+   "resultPreview_len": 401
+  }
+ },
+ "open_question_2": "Five of eight requested research areas returned zero admissible claims, and the refuted set contains results that map directly onto our diagnosed mechanisms — most sharply the factorised path x velocity trajectory vocabulary, which addresses the exact '5-way maneuver softmax mixes LAT+LON' defect behind our 88.7% longitudinal oracle gap. Was that voted down on substance, or on verification protocol? Re-verifying arXiv 2603.29163 alone is probably worth more than the whole surviving set.",
+ "library_banking": {
+  "library_json": "TanitAD Research Lab/Library/library.json",
+  "occurrences_of_29163": 0,
+  "reading": "0 => arXiv 2603.29163 is NOT banked; any claim about its tables is PUBLISHED-SECONDARY and inadmissible."
+ }
+}
