@@ -689,7 +689,13 @@ TINY_GEOMETRY: tuple[str, ...] = (
     "--enc-dim", "32", "--enc-depth", "1", "--enc-heads", "2",
     "--readout-grid", "4", "--readout-dim", "8",
     "--pred-dim", "32", "--pred-depth", "1", "--pred-heads", "2",
-    "--window", "4", "--horizons", "1", "2",
+    # ⛔ `--horizons 1`, NOT `1 2`. Corrected 2026-09-18: the trainer REFUSES a
+    # declared head no loss consumes (head [2] takes exactly zero gradient because
+    # the O5 rollout applies head '1' autoregressively, then feeds initialisation
+    # noise to any probe that reads it -- two retracted findings already). The dry
+    # ladder kept the old pair, so EVERY stage exited rc=2 at argparse and the chain
+    # broke after its first step. The horizon is set by `--o5-k`, not here.
+    "--window", "4", "--horizons", "1",
     "--d-tac", "32", "--d-str", "16", "--d-goal-embed", "16",
     "--adapter-hidden", "32", "--sigreg-slices", "8",
 )

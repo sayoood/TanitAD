@@ -1,4 +1,42 @@
 # V6 GO PACKAGE — the v6 ladder's OPERATOR RUNBOOK
+
+> ⛔ **CORRECTED 2026-09-18 — step 2.0(e) could not run, and it is the step that exists
+> to stop you spending GPU-days on a configuration the trainer refuses.** It passed no
+> `--horizons`, so it inherited the default `[1, 2, 4]` and exited 2: heads [2, 4] are
+> consumed by NO loss (the O5 rollout applies head '1' autoregressively), so they take
+> exactly zero gradient and then feed initialisation noise to any probe that reads them.
+> ⇒ `--horizons 1` added. The check that exists to catch this class was itself an
+> instance of it.
+>
+> ⭐ The default `[1, 2, 4]` is DELIBERATE and stays — pinned by
+> `test_horizons_refusal_is_wired.py`, and `k60p30k` (MM-E19) uses it as a matched
+> control. A default that refuses is what forces every operator to STATE the horizons.
+>
+> ⛔ **§2.2's FOUR PRODUCTION LINES ARE STILL REFUSED, AND ARE NOT FIXED HERE.** They
+> need `--nav-cond` (PI directive 2026-08-30 — an arm without the nav token is
+> ARCHITECTURALLY DIFFERENT from every arm after it and cannot be compared with them)
+> AND `--horizons 1`. Two things block it:
+>
+> 1. **§2.2 is a RENDERING of `v6_chain.py`, never an edit of it** — editing it here is
+>    caught by the drift check by design. Regenerate with:
+>    `python3 scripts/v6_chain.py commands --root /root/experiments --workdir
+>    /root/TanitAD/stack --train-cache <train> --val-cache <val>`
+> 2. **`ChainConfig` has NEITHER a `nav_cond` NOR a `nav_labels` field**, so the chain
+>    cannot render a compliant command at all; and `--nav-cond` without `--nav-labels`
+>    is refused too (nothing would produce `nav_token`; `V6Stack.forward` raises
+>    `NavTokenMissing` at step 0). MEASURED 2026-09-18: every `--nav-labels` reference
+>    in this repo is a PLACEHOLDER (`<same>`, `<v7 label blob>`) — no concrete blob
+>    path is established anywhere.
+>
+> ⇒ **PI DECISION NEEDED:** which v7 label blob the v6F ladder uses — and, before that,
+> whether the v6F ladder is launched at all now that the programme is on refcv6. Wiring
+> a path I invented would produce a command that runs and trains the wrong thing, which
+> is worse than one that refuses.
+>
+> ⚠️ Also unresolved, deliberately not edited: `--o5-k` is **12 (1.2 s)** here and **20
+> (2.0 s)** in §2.2, while the refusal names §4b's BINDING target as **6.0 s =
+> `--o5-k 60`**. That decides what the arm PLANS; it is not a syntax repair.
+<!-- RUNBOOK-DRYRUN-PREFLIGHT-REPAIR-2026-09-18 -->
 ### §2 is the part you paste at 3 a.m. It is generated, not written. Decisions: `PI_DECISIONS_2026-08-12.md`.
 
 > ## ⛔ STATUS — 2026-08-16. §2 WAS REWRITTEN; §1's "BLOCKED" VERDICT IS SUPERSEDED.
@@ -173,7 +211,7 @@ cd /root/TanitAD/stack && \
 PYTHONPATH=/root/TanitAD/stack OMP_NUM_THREADS=6 \
 python3 scripts/train_v6_staged.py --stage S-W --dry-run --device cpu \
     --out /root/experiments/v6-dryrun --dry-batch 1 --dry-steps 2 \
-    --dry-k 12 --o5-k 12
+    --dry-k 12 --o5-k 12 --horizons 1
 
 # f. ⭐ ask the LADDER what may launch, instead of deciding yourself. Exit 3 = refused,
 #    and the refusal text names the exact missing artifact.
