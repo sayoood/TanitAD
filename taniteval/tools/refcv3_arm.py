@@ -1026,6 +1026,70 @@ def rebuild_config(config: dict):
     return cfg, args, src
 
 
+def rebuild_perception_branch(model, config: dict, device: str = "cpu"):
+    """Rebuild refcv6's perception branch from `config.json`'s own stamp.
+
+    ⛔ WITHOUT THIS, NO refcv6 CHECKPOINT LOADS. The trainer attaches the branch to
+    the MODEL (`refc_v3_train.py:5712`), not to `RefCV3Config`, so a model rebuilt from
+    the config lacks it: `param_breakdown.total` comes up short by exactly
+    `refcv6_perception.branch_params.total` and `cross_check_config` refuses — before
+    the load, so `--allow-nonstrict` cannot reach it (MEASURED: both settings refuse
+    identically).
+
+    ⭐ No new information is needed: the stamp already carries the whole
+    `PerceptionBranchConfig`. VERIFIED — `as_dict()`'s key set is a strict SUBSET of the
+    stamp's, so it round-trips.
+
+    Returns the rebuilt config's `as_dict()`, or ``None`` when the run had no branch.
+    """
+    st = config.get("refcv6_perception")
+    if not isinstance(st, dict):
+        return None
+    w_map = float(st.get("w_map", 0.0) or 0.0)
+    w_box3d = float(st.get("w_box3d", 0.0) or 0.0)
+    if w_map <= 0.0 and w_box3d <= 0.0:
+        # ⚠️ A stamp with both weights at 0 means the trainer built NOTHING (that is
+        # its bit-identity condition), so the rebuilt model is already correct.
+        return None
+    import dataclasses
+    from tanitad.models import refcv6_perception_branch as _perc
+
+    _probe = _perc.PerceptionBranchConfig(w_map=1.0, w_box3d=1.0)
+    _BEV = type(_probe.bev_cfg)
+    _bev_fields = {f.name for f in dataclasses.fields(_BEV)}
+    _bev_in = st.get("bev_encoder") or {}
+    # ⚠️ Only STAMPED fields are passed; anything the stamp omits takes its default.
+    # That is safe BECAUSE the param-total cross-check below is the guard: a default
+    # that differs from the trained value changes the parameter count and refuses.
+    bev_cfg = _BEV(**{k: v for k, v in _bev_in.items() if k in _bev_fields})
+
+    _fields = {f.name for f in dataclasses.fields(_perc.PerceptionBranchConfig)}
+    kw = {}
+    for k in ("d_bev", "n_queries", "d_model", "stride"):
+        if k in st and k in _fields:
+            kw[k] = st[k]
+    # JSON gives lists; the config wants tuples, and a list would compare unequal
+    # in any later provenance check even when the values are identical.
+    for k in ("bev_tokens_hw", "heights_m"):
+        if k in st and k in _fields:
+            kw[k] = tuple(st[k])
+    pcfg = _perc.PerceptionBranchConfig(w_map=w_map, w_box3d=w_box3d,
+                                        bev_cfg=bev_cfg, **kw)
+    model._w_map = w_map
+    model._w_box3d = w_box3d
+    model._perception = _perc.build_perception_branch(model, pcfg).to(device)
+    # ⛔ THE LIFT BANK IS NOT REBUILT, AND THAT IS STATED RATHER THAN HIDDEN. It is
+    # built from a PER-CLIP EXTRINSICS FILE, which is a path in the training
+    # environment and may not exist here; it holds NO parameters, so the load and the
+    # param cross-check are unaffected. A caller that wants MAP metrics must supply it
+    # (`_perc.LiftGeometryBank`) and should refuse rather than report a map number
+    # without one.
+    model._lift_bank = None
+    out = pcfg.as_dict()
+    out["_lift_bank_rebuilt"] = False
+    out["_stamped_branch_params"] = st.get("branch_params")
+    return out
+
 def cross_check_config(config: dict, cfg, model) -> dict:
     """Every fact ``config.json`` states about the model must hold for the rebuilt
     one. A contradiction is a REFUSAL naming BOTH values (the
@@ -1099,7 +1163,12 @@ def load_model(ckpt_path: str, config_path: str | None = None,
                               if targs is not None else None)},
         build_value=int(cfg.core.anchors.n_anchors))
     model = v3.RefCV3Model(cfg)
+    # ⛔ W0: the refcv6 perception branch lives on the MODEL, not in the config, so it
+    # MUST be rebuilt before the cross-check — otherwise `param_breakdown.total` is
+    # short by exactly the branch and every refcv6 checkpoint is refused.
+    perception_rebuilt = rebuild_perception_branch(model, config, device)
     checks = cross_check_config(config, cfg, model)
+    checks["perception_rebuilt"] = perception_rebuilt
     try:
         res = model.load_state_dict(ck["model"], strict=False)
     except RuntimeError as ex:
