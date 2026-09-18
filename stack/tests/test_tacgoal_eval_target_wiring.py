@@ -47,8 +47,23 @@ _TRAINER_PY = os.path.join(_STACK, "scripts", "refc_v3_train.py")
 #: the eval-side wiring line, as a literal. A mutation that deletes it must
 #: make this file go RED.
 _EVAL_WIRE = "                e_ds.tac_goal_targets = True"
-#: the weight gate, used on BOTH datasets. Two occurrences is the fix.
-_WEIGHT_GATE = 'if float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0:'
+#: ⛔ THE WEIGHT GATE, ONE LITERAL PER DATASET, EACH SPANNING THE STATEMENT IT
+#: GUARDS. Re-pinned 2026-09-18: the trainer WIDENED both gates to a disjunction so
+#: a refcv6 tactical arm (`--w-tac-v6 > 0` with `w_tac_goal` at 0) also gets its
+#: targets built, and the old single-condition literal stopped matching on the added
+#: parenthesis and line wrap. Both gates were present throughout -- this was a stale
+#: pin, not a dropped half, VERIFIED by reading `refc_v3_train.py:6057` and `:6316`.
+#: ⭐ The previous form counted the gate (2) and the assignment separately, so a gate
+#: that drifted to guard the WRONG statement passed both counts. Spanning the pair
+#: closes that, and puts the `w_tac_v6` disjunct under the pin for the first time.
+_TRAIN_GATE = (
+    '        if (float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0\n'
+    '                or _w_tv6 > 0.0):\n'
+    '            ds.tac_goal_targets = True')
+_EVAL_GATE = (
+    '            if (float(getattr(args, "w_tac_goal", 0.0) or 0.0) > 0.0\n'
+    '                    or float(getattr(args, "w_tac_v6", 0.0) or 0.0) > 0.0):\n'
+    '                e_ds.tac_goal_targets = True')
 
 
 def _src() -> str:
@@ -102,7 +117,8 @@ def test_BOTH_datasets_are_wired_and_BOTH_are_gated_on_the_weight():
     assert s.count("def train(args) -> dict:") == 1          # control
     assert s.count("            ds.tac_goal_targets = True") == 1   # train
     assert s.count(_EVAL_WIRE) == 1                                  # eval
-    assert s.count(_WEIGHT_GATE) == 2                                # literal
+    assert s.count(_TRAIN_GATE) == 1          # gate + the statement it guards
+    assert s.count(_EVAL_GATE) == 1           # ditto, on the eval dataset
 
 
 def test_the_eval_wiring_sits_INSIDE_the_eval_labels_branch():

@@ -166,7 +166,19 @@ UBIQUITOUS_NAMES = frozenset({
 #: A same-basename hit is a real finding only when the repo side is OURS.
 #: ``thor_profile.py`` lives under the research hub; a stray ``glam`` build
 #: script does not.
-AUTHORED_ROOTS = ("stack/", "taniteval/", "alpasim/", "TanitAD Research Hub/",
+#: ⛔ CORRECTED 2026-09-18 — THIS LIST SILENTLY REOPENED C110.
+#: `_authored_twin()` condition 3 is `only.startswith(AUTHORED_ROOTS)`. After the
+#: PI's 2026-08-27 rename the tree is `TanitAD Research Lab/`, so every file under
+#: it failed condition 3 and was downgraded NAME_DRIFT -> NAME_ONLY, which is
+#: deliberately NOT in `ACTIONABLE`. `thor_profile.py` — the C110 case this
+#: promotion exists for — lives under exactly that tree. ⇒ the escape was reopened
+#: by a DIRECTORY RENAME, with no change to the logic and nothing to see in a diff.
+#: ⭐ BOTH spellings are kept on purpose. This is an allowlist of roots we AUTHOR:
+#: an extra entry can only widen what counts as ours, a path under a directory that
+#: no longer exists cannot match, and a pod checkout banked before the rename still
+#: carries the old tree — that file is no less ours than its renamed twin.
+AUTHORED_ROOTS = ("stack/", "taniteval/", "alpasim/",
+                  "TanitAD Research Lab/", "TanitAD Research Hub/",
                   "Project Steering/", "scripts/", "tools/")
 
 #: ⚠️ Paths that must NEVER be pulled without reading them first. C111: the
