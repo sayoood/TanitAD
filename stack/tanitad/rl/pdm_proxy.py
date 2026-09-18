@@ -35,6 +35,7 @@ from torch import Tensor
 __all__ = ["ProxyConfig", "PROXY", "box_corners", "boxes_overlap", "ego_states_from_controls",
            "ego_states_from_poses", "AgentTracks", "no_at_fault_collision", "ttc_within_bound",
            "comfort", "path_progress", "ego_progress", "dac_from_drivable", "pdms",
+           "speed_appropriateness",
            "score_candidates"]
 
 
@@ -62,7 +63,16 @@ class ProxyConfig:
     max_abs_lon_jerk: float = 4.13
     max_abs_yaw_rate: float = 0.95
     static_classes: tuple = ("protruding_object",)
-    #: ⛔ THERE IS NO SPEED TERM IN THIS CONFIG, AND THAT IS DELIBERATE TO RECORD.
+    #: ⭐ `L2-SPD`'s speed-appropriateness term (`PREREG_D9_REWARD_REPAIR.md` §13),
+    #: specified BEFORE it ran and DEFAULT OFF. At ``w_spd = 0`` the numerator and the
+    #: denominator are both unchanged, so the score is byte-identical to the arm without
+    #: the term -- §13.3's first control, and a test asserts it.
+    #: ⚠️ `v_tol_mps` is NOT tuned here. §13.2 fixes the candidate ladder
+    #: {0.75, 1.5, 3.0} and requires selection on the FIT split only; the default below
+    #: is the ladder's midpoint, chosen for being the midpoint and for no other reason.
+    w_spd: float = 0.0
+    v_tol_mps: float = 1.5
+    #: ⛔ WITHOUT THE TERM ABOVE THERE IS NO SPEED TERM AT ALL, AND THAT IS RECORDED.
     #: MEASURED 2026-09-17: ``ego_progress`` saturates at the route end, so candidates at
     #: 10 / 12 / 14 / 20 m/s against a human at 10 all score the SAME progress (38.5390 on
     #: a 4 s route) while 6 and 8 m/s score 24.0 and 32.0. ⇒ EP penalises being SLOW and
@@ -410,10 +420,48 @@ def dac_from_drivable(states: Tensor, drivable_frac: Tensor, seen: Tensor, *,
     return (~off.any(dim=(1, 2))).float()
 
 
+def speed_appropriateness(states: Tensor, cfg: ProxyConfig = PROXY) -> Tensor:
+    """``SPD [M]`` from ``states [M, T, 4]`` whose row 0 is the HUMAN (`PREREG` §13.1).
+
+    ``SPD = clamp(1 - max(0, v_cand - v_human) / v_tol, 0, 1)`` over the mean speed of
+    the scored ticks.
+
+    ⛔ **ONE-SIDED, DELIBERATELY.** Being *slower* than the human is ALREADY penalised by
+    EP, which discriminates fully below the reference (MEASURED: 6 m/s -> progress 24.0,
+    8 -> 32.0 against the human's 38.5). A two-sided form would penalise slowness twice
+    and change the meaning of the existing EP result.
+    ⛔ **It is an EXCESS-OVER-THE-HUMAN term, never a speed limit.** On a window where the
+    human speeds it is silent -- correct for a proxy whose whole reference frame is the
+    human's own future, and a stated limitation of this family rather than of this term.
+    ⭐ The human's own row scores EXACTLY 1.0 by construction (its excess over itself is
+    zero), which §13.3 requires as a control.
+    """
+    v = states[..., 3].mean(dim=-1)                       # [M] mean speed per candidate
+    excess = (v - v[0]).clamp(min=0.0)                    # row 0 IS the human
+    tol = max(float(cfg.v_tol_mps), 1e-9)
+    return (1.0 - excess / tol).clamp(0.0, 1.0)
+
+
 def pdms(nc: Tensor, dac: Tensor, ep: Tensor, ttc: Tensor, c: Tensor,
-         cfg: ProxyConfig = PROXY) -> Tensor:
-    """``NC x DAC x (w_ep EP + w_ttc TTC + w_c C) / (w_ep + w_ttc + w_c)`` (P Eq. 14)."""
-    return nc * dac * (cfg.w_ep * ep + cfg.w_ttc * ttc + cfg.w_c * c) / (cfg.w_ep + cfg.w_ttc + cfg.w_c)
+         cfg: ProxyConfig = PROXY, spd: Tensor | None = None) -> Tensor:
+    """``NC x DAC x (w_ep EP + w_ttc TTC + w_c C) / (w_ep + w_ttc + w_c)`` (P Eq. 14),
+    plus ``w_spd SPD`` in numerator AND denominator when the term is enabled.
+
+    ⭐ **ADDITIVE, NOT MULTIPLICATIVE** (`PREREG` §13.1). NC and DAC multiply because they
+    are CONSTRAINTS -- a collision or leaving the road annihilates the score. Driving
+    0.4 m/s fast is a QUALITY failure, and the quality terms (EP, TTC, comfort) are
+    weighted components. A multiplicative SPD would make a mild over-speed catastrophic,
+    reintroducing from the other side the all-or-nothing behaviour that made a constant
+    DAC so damaging.
+    ⭐ At ``w_spd == 0`` both numerator and denominator are untouched, so the result is
+    byte-identical to the pre-term score.
+    """
+    num = cfg.w_ep * ep + cfg.w_ttc * ttc + cfg.w_c * c
+    den = cfg.w_ep + cfg.w_ttc + cfg.w_c
+    if spd is not None and float(cfg.w_spd) > 0.0:
+        num = num + cfg.w_spd * spd
+        den = den + cfg.w_spd
+    return nc * dac * num / den
 
 
 def score_candidates(cand_states: Tensor, human_states: Tensor, agents: AgentTracks,
@@ -450,11 +498,18 @@ def score_candidates(cand_states: Tensor, human_states: Tensor, agents: AgentTra
     # arm `L2-SPD`, which must therefore ADD a penalty rather than reshape this.
     ep = torch.where(mx > cfg.progress_threshold, raw / (mx + 1e-6),
                      torch.where(multi == 0, torch.zeros_like(raw), torch.ones_like(raw)))
-    score = pdms(nc, dac, ep, ttc, cf, cfg)
+    # ⭐ COMPUTED ALWAYS, WEIGHTED ONLY WHEN ENABLED. `spd` is reported in `out` even at
+    # w_spd = 0, so a run can SEE the speed excess it is not yet penalising -- the lesson
+    # the D9 DAC term earned, where an unlogged sub-score stayed invisible for 600 steps
+    # across 3 arms. At w_spd = 0 `pdms` ignores it and the score is byte-identical.
+    spd = speed_appropriateness(allst, cfg)
+    score = pdms(nc, dac, ep, ttc, cf, cfg, spd=spd)
     out = {"nc": nc[1:], "dac": dac[1:], "ep": ep[1:], "ttc": ttc[1:], "comfort": cf[1:],
+           "spd": spd[1:],
            "pdms": score[1:], "human": {"nc": float(nc[0]), "dac": float(dac[0]),
                                        "ep": float(ep[0]), "ttc": float(ttc[0]),
                                        "comfort": float(cf[0]), "pdms": float(score[0]),
+                                       "spd": float(spd[0]),
                                        "progress_m": float(ref)},
            "constraint_fail": (nc[1:] != 1) | (dac[1:] != 1)}
     return out
