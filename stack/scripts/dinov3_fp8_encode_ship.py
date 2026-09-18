@@ -155,8 +155,13 @@ def main(argv=None) -> int:
                     choices=["", "train", "augmentation", "val", "eval", "audit"],
                     help="what the shipped cache BECOMES (default: presumed supervision)")
     ap.add_argument("--parity-mode", default="refuse",
-                    choices=["refuse", "exclude", "keep"],
-                    help="refuse (default) | exclude the overlap | keep and record")
+                    #: ⛔ "keep" is NOT a valid mode — `guard_corpus_build` accepts only
+                    #: ("refuse", "exclude") and raises ParityViolation otherwise. Offering
+                    #: it here would have been a CLI that advertises a value the callee
+                    #: rejects: the run dies AT the gate, which reads exactly like a real
+                    #: parity violation. Caught 2026-09-18 by the refusal-message test.
+                    choices=["refuse", "exclude"],
+                    help="refuse (default) | exclude the overlap and report")
     ap.add_argument("--parity-audit-reason", default=None,
                     help="required by parity.py when --parity-role audit")
     a = ap.parse_args(argv)

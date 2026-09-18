@@ -2402,7 +2402,14 @@ def guard_corpus_build(clip_ids: Iterable[str], *, label: str,
         f"  corpus requested : {len(ids)} clip(s)",
         f"  role             : {rec['role']}",
         f"  disqualifying    : {len(hazard)} {direction}   <-- LEAK",
-        f"  (other direction : {len(in_train) if heldout else len(in_val)} "
+        # ⛔ CORRECTED 2026-09-18: this ternary was INVERTED relative to the label
+        # ternary below, so both branches printed the HAZARD count (already shown one
+        # line above) under the OTHER direction's name. MEASURED: a real refusal read
+        # "11 in the val deployment" while the record from the same call says
+        # `in_deployed_val: 0` -- an operator would hunt the wrong leak in the wrong
+        # corpus. `heldout` means the hazard IS `in_train`, so the OTHER direction is
+        # `in_val`, and vice versa. Pinned by test_parity_refusal_other_direction.py.
+        f"  (other direction : {len(in_val) if heldout else len(in_train)} "
         f"{'in the val deployment' if heldout else 'in the parity train split'}"
         f", recorded, not disqualifying for this role)",
         "",
