@@ -12045,3 +12045,44 @@ nearest visible road sits **5.02 m** ahead against **3.14 m** today (PI decision
 | **Tests + mutation audit.** `test_eval_join_track_ids.py`, 4 arms; the invariant is a **PAIRING** one (every reader built `with_rates` must also be built `with_track_ids`) because the defect class is *two construction sites, one missing a flag*; a second arm pins the EVAL site specifically, since a count alone would pass if BOTH dropped it. | ⭐ **MEASURED:** restoring the exact shipped defect turns **2 of 4** arms red; baseline and restored both green. ⭐ **No new failures, measured not assumed:** the agent/box3d/join/perception subset was run against the branch tip AND the change and the failure sets compared **by ID** — tip **22**, mine **20**, **new failures ZERO** (the two that differ are this commit's own arms). | ⭐ **LANDED.** | `stack/tests/test_eval_join_track_ids.py` |
 
 <!-- E-REFCV6-EVAL-ZH-FIXED-2026-09-18 -->
+
+## ⛔ `D-REFCV6-EVAL139-PARITY` — 11 of the 139 B1 eval clips are INSIDE the parity TRAIN corpus (2026-09-18)
+
+**MEASURED**, by `tanitad.data.parity.guard_corpus_build` run on the 139 clip ids with both
+roles, the moment the ingest gate was wired into `build_b1_agent_join.py` (R18, commit
+`5e4a93d`):
+
+| | |
+|---|---|
+| clips in the **deployed val** (40 episodes) | **0 of 40** ✅ |
+| clips inside **`physicalai-train-e438721ae894`** (the parity TRAIN corpus) | ⛔ **11 of 139 = 7.9 %** |
+| gate at `role=""` (presumed supervision — checks deployed val) | **PASSED**, 139 kept |
+| gate at `role="eval"` (held-out — checks parity train) | ⛔ **REFUSED** |
+
+Membership is by **per-clip sha256, not by provenance**; no clip id is printed anywhere.
+
+### ⚠️ Scope — NO LANDED CLAIM IS AFFECTED
+
+§10.6 is explicitly a **COVERAGE pass** and says so in its own header: *"NO number it emits
+is a capability claim, a tier stamp, or a metric family."* Nothing has been scored on those
+139 clips as a held-out set, so nothing is retracted by this.
+
+### ⛔ What it DOES constrain — the refcv6 panel that has not run yet
+
+Any refcv6 arm scored on the 139-clip set **as a held-out eval** must exclude those 11
+first, or its numbers are **not held out with respect to the parity corpus**. The gate now
+**refuses that build** rather than letting it produce a number — which is the whole point
+of §10c. Use `--parity-role eval` (which is what refuses) and `--parity-mode exclude` to
+build the clean 128-clip set, and quote **128**, never 139, for a held-out read.
+
+⚠️ **This is the `4713 vs 4719` lesson again, one corpus down:** the instrument's own
+words on the B1 epcache were *"The corpus is 4713 clips; quote THAT number, never 4719."*
+Same shape here — the set you may quote is smaller than the set you built.
+
+⭐ **How it was found, because the method is the transferable part.** The guard's own test
+is a SOURCE-GREP — it asserts the call exists, a class that passes on broken code (measured
+twice this campaign). So the gate was RUN, on real ids, at two roles, to prove it
+discriminates. The discriminating run is what surfaced the 11; the passing test would not
+have.
+
+<!-- GC-PARITY-EVAL139-11-IN-TRAIN-2026-09-18 -->
