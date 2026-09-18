@@ -433,7 +433,7 @@ def test_the_lazy_import_holds_in_BOTH_orders(first, second):
             f"import tanitad.rl.refcv3_adapter as a;"
             f"print(len(a.refc_channel_requirements()))")
     r = subprocess.run([sys.executable, "-c", code], capture_output=True,
-                       text=True)
+                       text=True, encoding="utf-8")
     assert r.returncode == 0, f"{first} then {second}:\n{r.stderr[-2000:]}"
     # ⭐ 11 -> 13: refcv6 §2b added `ego_poses` + `ego_n_past` (2026-09-16).
     # ⭐ 17 -> 18: PI RULING 2026-09-17 (R2) added `bev_hook` to

@@ -74,7 +74,7 @@ def run_cfg(name: str, argv: list[str], *, trainer: str, out: Path,
     env.setdefault("OMP_NUM_THREADS", "8")
     t0 = time.time()
     p = subprocess.run([sys.executable, "-c", WRAP], env=env,
-                       capture_output=True, text=True, timeout=timeout)
+                       capture_output=True, text=True, encoding="utf-8", timeout=timeout)
     wall = time.time() - t0
     blob = (p.stdout or "") + (p.stderr or "")
     res: dict = {"name": name, "argv": argv, "tf32": tf32,

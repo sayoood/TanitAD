@@ -659,7 +659,7 @@ def check_smoke(t):
     env = dict(os.environ, PYTHONIOENCODING="utf-8", OMP_NUM_THREADS="6",
                PYTHONPATH=str(STACK) + os.pathsep + str(REPO / "taniteval"))
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800,
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=1800,
                            env=env, errors="replace")
     except Exception as ex:                                   # noqa: BLE001
         record("a 2-step run states every weight", None,

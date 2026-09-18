@@ -81,6 +81,14 @@ def _high_entropy_value() -> str:
     return "v4Xq8Lm2Pd7Rt5Yn3Bw9Zc6Hj1Ks4Gf"
 
 
+def _const_ref_name() -> str:
+    """The SCREAMING_SNAKE_CASE constant name the gate releases. Returned from a
+    helper so the string never sits on a line with a credential key-word on it:
+    quoted and next to `token =`, it is a Tier-A2 match BY DESIGN, and planting one
+    in this file turns `test_repo_source_surface_is_clean` red."""
+    return "TACTICAL_GOAL_TOKENS_V7"
+
+
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
                           text=True, encoding="utf-8", errors="replace")
@@ -262,6 +270,51 @@ def test_a_code_expression_assigned_to_tokens_is_not_a_finding():
 def test_a_dotted_identifier_assigned_to_a_secret_name_is_not_a_finding():
     src = "secret = config.runtime.credentials_provider\n"
     assert not [f for f in ss.scan_bytes(src.encode(), "x.py") if f.blocking]
+
+
+def _aws_shaped() -> str:
+    """An AWS access-key id, CONCATENATED so the 20-char shape never appears as one
+    literal in this file. ⛔ Writing it out would plant a Tier-A match in the repo's
+    own source surface and turn `test_repo_source_surface_is_clean` red — which is
+    precisely what the first draft of this change did, in the scanner's comment."""
+    return "AKIA" + "IOSFODNN7EXAMPLE"
+
+
+def test_an_unquoted_CONSTANT_REFERENCE_is_not_a_finding():
+    """⚠️ MEASURED FALSE POSITIVE 2026-09-18 — the repo-surface gate was RED for it.
+
+    `refs/refcv6_tactical.py:876,878` pass the tactical vocabulary in as a keyword whose
+    name is one of `ASSIGN_KEY_HINTS`. `ASSIGN_RE`'s quote is OPTIONAL, and the CONSTANT'S
+    NAME is 23 chars of uppercase+digits+underscore at 3.64 bits/char — which cleared
+    every gate that existed. The value is a REFERENCE to a module constant; a credential
+    has to be a LITERAL.
+
+    ⛔ A false positive is not cosmetic in a security guard. An operator who watches the
+    scanner flag the repo's own source learns to wave it through, and then it protects
+    nothing — the same failure mode as a test that is red for a reason nobody reads.
+    """
+    src = "        tokens=TACTICAL_GOAL_TOKENS_V7," + chr(10)
+    assert not [f for f in ss.scan_bytes(src.encode(), "refcv6_tactical.py")
+                if f.blocking]
+
+
+@pytest.mark.parametrize("make, why", [
+    # ⛔ An AWS key IS a valid Python identifier, so a gate on "bare identifier" would
+    # have BLINDED the scanner here. It carries no underscore, so it stays caught.
+    (lambda: "token = " + _aws_shaped(), "AWS-shaped: identifier-like, no underscore"),
+    # ⛔ The SAME name, QUOTED, is a literal and must still be reported. This is the arm
+    # that proves the gate turns on QUOTING and not merely on the name's shape.
+    (lambda: 'token = ' + '"' + _const_ref_name() + '"',
+     "same text, but a literal"),
+    (lambda: "api_key = " + _high_entropy_value(),
+     "unquoted, genuinely high-entropy"),
+])
+def test_MUTATION_the_constant_reference_gate_did_NOT_blind_the_scanner(make, why):
+    """⭐ The control that stops the test above from being a licence to miss secrets.
+
+    Each arm is a value the release of the constant-reference shape could plausibly
+    have taken with it. All three MUST stay blocking."""
+    assert [f for f in ss.scan_bytes((make() + chr(10)).encode(), "x.py") if f.blocking], why
 
 
 @pytest.mark.parametrize("digest", [

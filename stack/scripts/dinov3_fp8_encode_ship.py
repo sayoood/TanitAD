@@ -71,7 +71,7 @@ def _run(cmd: list[str], tries: int = 3):
     last = None
     for k in range(tries):
         try:
-            return subprocess.run(cmd, capture_output=True, text=True,
+            return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
                                   check=True)
         except subprocess.CalledProcessError as e:
             last = e

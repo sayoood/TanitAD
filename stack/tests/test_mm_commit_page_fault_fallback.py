@@ -34,7 +34,7 @@ SHIM = Path(__file__).resolve().parent / "_data" / "mm_commit_gitshim.py"
 
 def _git(repo: Path, *a: str) -> str:
     r = subprocess.run(["git", f"--git-dir={repo / '.git'}", f"--work-tree={repo}", *a],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8")
     return r.stdout.strip()
 
 
@@ -109,7 +109,7 @@ def test_shim_is_actually_in_the_loop(repo: Path) -> None:
     """Control: without it, every assertion below would be about the real git."""
     env = dict(os.environ, MM_SHIM_FAIL_ADD="1")
     r = subprocess.run([sys.executable, str(SHIM), "add", "--", "target.txt"],
-                       capture_output=True, text=True, env=env, cwd=repo)
+                       capture_output=True, text=True, encoding="utf-8", env=env, cwd=repo)
     assert r.returncode == 3221225478, (
         "the shim must reproduce 0xC0000006 exactly; got %r" % r.returncode)
 

@@ -28,12 +28,21 @@ Usage: python mktree_commit.py <msgfile> <path> [<path> ...]
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-REPO = Path(r"G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD")
+#: ⛔ CORRECTED 2026-09-18. This was a HARDCODED `G:\...\Projects\TanitAD` literal,
+#: wrong twice over: the live project moved to `D:/Projects/TanitAD` (so the tool pointed
+#: at a path whose .git does not hydrate, and EVERY call burned the full 30x6s retry
+#: ladder before failing — that is the 12 minutes its test file took), and
+#: `test_mktree_commit.py` sets `MKTREE_REPO` to a throwaway repo, which a literal cannot
+#: honour — so all six of its tests ran against the dead mount instead of their fixture.
+#: Derived-from-`__file__` is the only spelling that is correct in the repo, in a
+#: worktree, and under the test.
+REPO = Path(os.environ.get("MKTREE_REPO") or Path(__file__).resolve().parents[2])
 GIT = ["git", f"--git-dir={REPO / '.git'}", f"--work-tree={REPO}"]
 
 TRANSIENT = ("not a git repository", "Invalid argument", "Invalid request code",
@@ -43,15 +52,33 @@ TRANSIENT = ("not a git repository", "Invalid argument", "Invalid request code",
 TRANSIENT_RC = (3221225478, -1073741818, 3221225477, -1073741819)
 
 
-def git(*a, binary_in=None, attempts=30, sleep_s=6.0):
+def git(*a, stdin=None, binary_in=None, attempts=30, sleep_s=6.0):
+    """Run one git command, retrying only the TRANSIENT mount failures.
+
+    ``stdin`` is the caller-facing name (str or bytes, as ``mktree`` wants) and is
+    the spelling `test_mktree_commit.py` uses; ``binary_in`` is the older internal
+    name, kept so existing call sites do not move. Both at once is a caller bug.
+    """
+    if stdin is not None:
+        if binary_in is not None:
+            raise SystemExit("git(): pass stdin= or binary_in=, not both")
+        binary_in = stdin.encode("utf-8") if isinstance(stdin, str) else stdin
     last = ""
     for i in range(attempts):
-        r = subprocess.run([*GIT, *a], capture_output=True,
+        r = subprocess.run([*GIT, *a], capture_output=True, cwd=str(REPO),
                            input=binary_in, text=binary_in is None,
                            encoding=None if binary_in else "utf-8",
                            errors=None if binary_in else "replace")
         if r.returncode == 0:
-            return r.stdout if binary_in is None else r.stdout.decode()
+            out = r.stdout if binary_in is None else r.stdout.decode()
+            # ⚠️ Strip the TRAILING NEWLINE only. Every caller here wants an OID, and
+            # an unstripped one silently becomes part of the NEXT revision expression:
+            # f"{head}^{{tree}}" built from a newline-terminated sha asks git for a ref
+            # with a line break inside it and fails as `ambiguous argument`, which reads
+            # like a bad ref rather than a formatting bug (MEASURED 2026-09-18: five of
+            # this file's six tests failed that way). rstrip of CR/LF and NOT strip(),
+            # so `ls-tree -z` output, whose records end in NUL, is untouched.
+            return out.rstrip("\r\n")
         err = (r.stderr if binary_in is None
                else r.stderr.decode("utf-8", "replace")) or ""
         last = f"[{r.returncode}] {err.strip()[:110]}"
@@ -87,21 +114,25 @@ def ls_tree(tree: str) -> dict:
 
 
 def read_tree_entries(tree: str, missing_ok: bool = False) -> dict:
-    """:func:`ls_tree`, plus an EXPLICIT choice about a tree that is not there.
+    """``name -> "<mode> <type> <sha>"`` for ONE directory, plus an EXPLICIT choice
+    about a tree that is not there.
 
-    ⛔ THE DISTINCTION IS A SAFETY PROPERTY, not ergonomics. "this tree is absent"
-    and "this tree is empty" must never collapse into one answer: confusing them
-    turns a mount blink into a commit that silently empties a subtree. With
-    ``missing_ok=False`` (the default) an absent tree RAISES, exactly as
-    :func:`ls_tree` already does via :func:`git`; only an explicit
+    ⛔ THE missing_ok DISTINCTION IS A SAFETY PROPERTY, not ergonomics. "this tree is
+    absent" and "this tree is empty" must never collapse into one answer: confusing
+    them turns a mount blink into a commit that silently empties a subtree. With
+    ``missing_ok=False`` (the default) an absent tree RAISES; only an explicit
     ``missing_ok=True`` may read ``{}``.
 
-    ⚠️ Restored 2026-09-18. It and :func:`build_tree` were the API this module
-    shipped on 2026-09-04 (`e685d90`); `aad4088` renamed them to :func:`ls_tree` /
-    :func:`update` the next day and left `test_mktree_commit.py` addressing the old
-    names, so six tests could not run. The behaviour is unchanged — these are the
-    names their test speaks, kept as the thin layer over the current internals
-    rather than a second implementation of them.
+    ⚠️ THE VALUE IS A STRING, NOT :func:`ls_tree`'s TUPLE — and I got this wrong once.
+    Restored 2026-09-18 alongside :func:`build_tree`; both were this module's API on
+    2026-09-04 (`e685d90`) and `aad4088` renamed them to :func:`ls_tree` / :func:`update`
+    the next day, orphaning six tests. My first restoration described itself as "a thin
+    layer over the current internals, behaviour unchanged" and delegated straight to
+    :func:`ls_tree`. That was WRONG: the caller rebuilds an `mktree` body with
+    ``f"{meta}	{name}"``, so ``meta`` must already be the ``"100644 blob <sha>"`` line
+    git emits — a tuple renders as its repr and produces a corrupt tree. The two
+    functions genuinely differ in their return type, and saying otherwise was a claim
+    about the code I had not checked against its consumer.
     """
     if missing_ok:
         # ⛔ Probed WITHOUT `git()` on purpose: `git()` raises SystemExit on a
@@ -109,10 +140,43 @@ def read_tree_entries(tree: str, missing_ok: bool = False) -> dict:
         # of here — and catching that exception instead would also swallow a
         # genuine failure and report it as "absent".
         probe = subprocess.run([*GIT, "cat-file", "-e", tree],
-                               capture_output=True)
+                               capture_output=True, cwd=str(REPO))
         if probe.returncode != 0:
             return {}
-    return ls_tree(tree)
+    return {name: f"{mode} {typ} {sha}"
+            for name, (mode, typ, sha) in ls_tree(tree).items()}
+
+
+def assert_names_preserved(label: str, old: dict, new_tree: str,
+                           changed: set) -> None:
+    """REFUSE a rebuilt tree that lost, gained or MANGLED a name.
+
+    ⛔ WHAT THIS IS FOR, and it is not hypothetical: on 2026-09-04 a rebuilt tree
+    came back with a CARRIAGE RETURN appended to every entry name. Git accepted it —
+    `mktree` does not validate names — so `a.txt
+` and `a.txt` are two different
+    files, the commit "succeeded", and every original path was gone while the tree
+    looked the right size. A count check passes that; only comparing the NAME SETS
+    catches it.
+
+    ``changed`` names may differ in CONTENT; no name may appear or disappear. The
+    check is on names only, because content is verified separately by blob hash.
+    """
+    got = set(read_tree_entries(new_tree))
+    want = set(old)
+    lost, gained = sorted(want - got), sorted(got - want)
+    if lost or gained:
+        raise SystemExit(
+            f"REFUSING to commit: rebuilding {label} changed its NAME SET — "
+            f"lost {lost or '[]'}, gained {gained or '[]'}. "
+            "A name that vanishes or grows a stray byte (CR, 2026-09-04) is a "
+            "corrupt tree that git will happily accept.")
+    unexpected = sorted(n for n in want
+                        if n not in changed and old[n] != read_tree_entries(new_tree)[n])
+    if unexpected:
+        raise SystemExit(
+            f"REFUSING to commit: rebuilding {label} changed entries nobody named: "
+            f"{unexpected}")
 
 
 def build_tree(commit_or_tree: str, flat: dict) -> str:
@@ -229,7 +293,7 @@ def main():
     #: `git add` exit code.
     for p in removals:
         chk = subprocess.run([*GIT, "rev-parse", f"{new_tree}:{p}"],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8")
         if chk.returncode == 0:
             raise SystemExit(f"removal did not take: {p} still resolves in the new tree")
     print(f"[mktree] all named paths verified in the new tree "
@@ -254,7 +318,7 @@ def main():
         raise SystemExit(f"POST-COMMIT VERIFICATION FAILED: {bad}")
     for p in removals:
         chk = subprocess.run([*GIT, "rev-parse", f"HEAD:{p}"],
-                             capture_output=True, text=True)
+                             capture_output=True, text=True, encoding="utf-8")
         if chk.returncode == 0:
             raise SystemExit(f"POST-COMMIT: {p} still resolves in HEAD")
     print(f"VERIFIED in HEAD by blob comparison: {len(blobs)} path(s); "

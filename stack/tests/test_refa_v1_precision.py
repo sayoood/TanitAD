@@ -300,13 +300,13 @@ def _cuda_busy_reason() -> str | None:
             q = subprocess.run(
                 ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,"
                  "memory.total", "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=20, check=True)
+                capture_output=True, text=True, encoding="utf-8", timeout=20, check=True)
             util, used, total = [float(x) for x in
                                  q.stdout.strip().splitlines()[0].split(",")]
             apps = subprocess.run(
                 ["nvidia-smi", "--query-compute-apps=pid,process_name",
                  "--format=csv,noheader"],
-                capture_output=True, text=True, timeout=20, check=True)
+                capture_output=True, text=True, encoding="utf-8", timeout=20, check=True)
             foreign = [l.strip() for l in apps.stdout.splitlines()
                        if "python" in l.lower()
                        and not l.strip().startswith(f"{os.getpid()},")]

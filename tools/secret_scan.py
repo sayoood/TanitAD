@@ -264,6 +264,7 @@ def filter_rule(max_bytes: int, include_git: bool) -> dict:
             "gates": ["placeholder-denylist", "must-mix-letters-and-digits",
                       "not-a-hex-digest(32/40/64)", "not-a-path-or-url",
                       "credential-alphabet-only", "not-a-dotted-identifier",
+                      "not-an-unquoted-SCREAMING_SNAKE_CASE-constant-reference",
                       "text-files-only"],
         },
         "tier_b_path_globs": list(SECRET_PATH_GLOBS),
@@ -311,9 +312,34 @@ def shannon_bits_per_char(s: str) -> float:
     return -sum((c / n) * math.log2(c / n) for c in counts.values())
 
 
-def _assign_is_credential_shaped(val: str) -> bool:
-    """All the Tier A2 gates, in the cheap-first order."""
+#: ⛔ A SCREAMING_SNAKE_CASE **name**, UNQUOTED — i.e. a reference to a module
+#: constant, not a literal. MEASURED 2026-09-18: `tokens=TACTICAL_GOAL_TOKENS_V7`
+#: (`refs/refcv6_tactical.py:876,878`) was reported as a BLOCKING finding — the key
+#: `tokens` is in `ASSIGN_KEY_HINTS`, `ASSIGN_RE`'s quote is OPTIONAL, and the name
+#: is 23 chars of uppercase+digits+underscore, which clears every existing gate.
+#: ⚠️ WHY THE GATE IS THIS NARROW AND NOT "any bare identifier": an AWS access-key
+#: id (the `AKIA` + 16 uppercase/digits shape — NOT written out here, because this
+#: file is itself scanned and a literal example would make the scanner flag its own
+#: source, which is how this comment failed its first draft) IS a valid Python
+#: identifier, so gating on identifier-ness
+#: would BLIND the scanner to a real credential. Requiring at least one UNDERSCORE
+#: and no lowercase keeps that key caught (it has neither) while releasing the
+#: constant-reference shape, which no credential generator emits.
+#: ⚠️ A false positive is not cosmetic here: a security guard that cries wolf on its
+#: own source is a guard operators learn to wave through.
+CONST_REF_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")
+
+
+def _assign_is_credential_shaped(val: str, quoted: bool = True) -> bool:
+    """All the Tier A2 gates, in the cheap-first order.
+
+    ``quoted`` says whether the match carried quotes. It defaults to ``True`` — the
+    conservative value — so any caller that does not know keeps the OLD behaviour and
+    the gate below cannot silently widen for it.
+    """
     if len(val) < MIN_ASSIGN_LEN:
+        return False
+    if not quoted and CONST_REF_RE.match(val):
         return False
     low = val.lower()
     if any(p in low for p in PLACEHOLDERS):
@@ -416,7 +442,7 @@ def scan_bytes(data: bytes, path: str) -> list[Finding]:
         if any(h in low for h in ASSIGN_KEY_HINTS):
             for m in ASSIGN_RE.finditer(text):
                 val = m.group("val")
-                if _assign_is_credential_shaped(val):
+                if _assign_is_credential_shaped(val, quoted=bool(m.group("q"))):
                     ln = line_at(m.start())
                     hit_lines.add(ln)
                     out.append(Finding(

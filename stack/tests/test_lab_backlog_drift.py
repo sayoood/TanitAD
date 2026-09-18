@@ -22,7 +22,7 @@ import lab_backlog_drift as m  # noqa: E402
 
 def _run(repo, *args):
     subprocess.run(["git", *args], cwd=repo, check=True,
-                   capture_output=True, text=True)
+                   capture_output=True, text=True, encoding="utf-8")
 
 
 def _commit(repo: Path, rel: str, text: str, msg: str):

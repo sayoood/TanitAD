@@ -94,7 +94,7 @@ def _in_head(rel: str):
 
     for _ in range(6):
         r = subprocess.run(["git", "-C", str(REPO), "cat-file", "-e", f"HEAD:{rel}"],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8")
         if r.returncode == 0:
             return True
         err = r.stderr or ""

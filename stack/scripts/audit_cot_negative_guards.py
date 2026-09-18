@@ -94,7 +94,7 @@ DEFEATS = [
 def run(sel: str) -> tuple[bool, str]:
     p = subprocess.run([sys.executable, "-m", "pytest", str(TESTS), "-q",
                         "-k", sel, "-x", "--no-header"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding="utf-8")
     return p.returncode == 0, (p.stdout or "")[-400:]
 
 

@@ -187,7 +187,7 @@ def test_e_help_exits_zero_on_a_cp1252_console(tmp_path):
     env = dict(os.environ, PYTHONIOENCODING="cp1252",
                PYTHONPATH=os.path.join(_REPO, "stack"))
     r = subprocess.run([sys.executable, tool, "--help"], env=env,
-                       capture_output=True, text=True, errors="replace",
+                       capture_output=True, text=True, encoding="utf-8", errors="replace",
                        timeout=300)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
     assert "--window-list" in r.stdout
@@ -205,7 +205,7 @@ def test_e_a_cli_typo_gives_usage_not_a_traceback(tmp_path):
     env = dict(os.environ, PYTHONIOENCODING="cp1252",
                PYTHONPATH=os.path.join(_REPO, "stack"))
     r = subprocess.run([sys.executable, tool, "--not-a-flag"], env=env,
-                       capture_output=True, text=True, errors="replace",
+                       capture_output=True, text=True, encoding="utf-8", errors="replace",
                        timeout=300)
     assert r.returncode == 2                      # argparse usage error
     assert "Traceback" not in (r.stdout + r.stderr)

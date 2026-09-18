@@ -57,7 +57,7 @@ def run(name, extra, out_root, timeout=3600):
     env = dict(os.environ, PYTHONIOENCODING="utf-8", OMP_NUM_THREADS="6",
                PYTHONPATH=str(STACK) + os.pathsep + str(REPO / "taniteval"))
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True,
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
                            timeout=timeout, env=env, errors="replace")
         rc, so, se = r.returncode, r.stdout or "", r.stderr or ""
     except subprocess.TimeoutExpired:

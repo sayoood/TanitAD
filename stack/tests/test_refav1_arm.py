@@ -234,7 +234,7 @@ def test_the_t1_eval_CLI_still_reads_the_dump_untouched(e2e):
                         # refav1 dump read through the standalone CLI.
                         "--tiers", "cl_navshuf=T1,cl_oraclegoal=T0,ha0=T1",
                         "--n-boot", "30", "--dt", "0.2"],
-                       capture_output=True, text=True, env=env)
+                       capture_output=True, text=True, encoding="utf-8", env=env)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
     rec = json.loads(out.read_text(encoding="utf-8"))
     assert rec["tiers"]["ol"] == "T0" and rec["tiers"]["cl"] == "T1"
