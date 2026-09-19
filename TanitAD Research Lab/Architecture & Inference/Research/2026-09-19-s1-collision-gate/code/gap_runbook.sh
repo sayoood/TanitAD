@@ -24,9 +24,18 @@ mkdir -p "$OUT"
 export PYTHONPATH='D:\Projects\TanitAD\stack;D:\Projects\TanitAD;D:\Projects\TanitAD\taniteval'
 export PYTHONIOENCODING=utf-8 OMP_NUM_THREADS=6
 
+#: ``DEV=cpu`` runs the S1 steps on the CPU. ⛔ It does NOT relax the GPU rule: a CPU step
+#: touches no GPU at all, so it gates on HOST memory only. A GPU step still needs the full
+#: boxstat gate, and when the GPU is busy with someone else's work the step REFUSES.
+DEV=${DEV:-cuda}
+
 gate() {
   read -r GU HF < <("$PY" "$BOX")
   case "$GU$HF" in *[!0-9]*) echo "ZZGAP-PROBE-INCONCLUSIVE $GU $HF ZZ"; exit 3 ;; esac
+  if [ "$DEV" = "cpu" ]; then
+    [ "$HF" -ge 8 ] || { echo "ZZGAP-HOST-TIGHT host=${HF}GBZZ"; exit 3; }
+    echo "ZZGAP-CLEAR-CPU gpu=${GU}MiB (not ours, untouched) host=${HF}GBZZ"; return 0
+  fi
   [ "$GU" -le 2500 ] && [ "$HF" -ge 8 ] || { echo "ZZGAP-BUSY gpu=${GU} host=${HF}ZZ"; exit 3; }
   echo "ZZGAP-CLEAR gpu=${GU}MiB host=${HF}GBZZ"
 }
@@ -39,7 +48,7 @@ case "${1:-}" in
     gate
     rm -f "$OUT/smoke_A3.jsonl" "$OUT/smoke_A3.jsonl.meta.json"
     args=("${common[@]}"); args[1]="$A3/config.json"
-    "$PY" "$S1" --mode pass "${args[@]}" --ckpt "$A3/ckpt.pt" --device cuda --limit 2 \
+    "$PY" "$S1" --mode pass "${args[@]}" --ckpt "$A3/ckpt.pt" --device "$DEV" --limit 2 \
         --replicate 2 --rows "$OUT/smoke_A3.jsonl" --out "$OUT/unused.json" > "$OUT/smoke.log" 2>&1
     [ -f "$OUT/smoke_A3.jsonl.meta.json" ] || { echo "ZZGAP-SMOKE-NO-METAZZ"; tail -20 "$OUT/smoke.log"; exit 4; }
     "$PY" "$S1" --mode analyze --rows "$OUT/smoke_A3.jsonl" --out "$OUT/smoke_verdict.json" \
@@ -55,10 +64,10 @@ case "${1:-}" in
           "$D/taniteval/tools/refcv3_arm.py" "$D/stack/tanitad/rl/pdm_proxy.py"
           "$D/stack/tanitad/models/box3d_head.py" "$D/stack/tanitad/models/agent_slots.py"
           "$D/stack/scripts/refc_v3_train.py" "$D/stack/scripts/ddv2_rl_refcv5.py"
-          "$A8/ckpt.pt")
+          "$A8/ckpt_5000.pt")
     md5sum "${MODS[@]}" > "$OUT/pass_md5_before.txt"
     args=("${common[@]}"); args[1]="$A8/config.json"
-    "$PY" "$S1" --mode pass "${args[@]}" --ckpt "$A8/ckpt.pt" --device cuda --replicate 50 \
+    "$PY" "$S1" --mode pass "${args[@]}" --ckpt "$A8/ckpt_5000.pt" --device "$DEV" --replicate 50 \
         --rows "$OUT/rows_A8.jsonl" --out "$OUT/unused.json" > "$OUT/pass.log" 2>&1
     md5sum -c "$OUT/pass_md5_before.txt" > "$OUT/pass_md5_check.txt" 2>&1 \
         && echo "ZZGAP-MD5-BRACKET-OKZZ" || { echo "ZZGAP-MD5-CHANGED-MID-RUNZZ"; cat "$OUT/pass_md5_check.txt"; }
@@ -70,7 +79,7 @@ case "${1:-}" in
   e9)
     T0=$(date +%s)
     CUDA_VISIBLE_DEVICES="" "$PY" /d/Projects/TanitAD/taniteval/tools/refcv3_arm.py \
-        --ckpt "$A8/ckpt.pt" --config "$A8/config.json" --episodes "$B" --labels "$LAB" \
+        --ckpt "$A8/ckpt_5000.pt" --config "$A8/config.json" --episodes "$B" --labels "$LAB" \
         --device cpu --episodes-n 1 --window-stride 25 --out "$OUT/e9_refcv3arm_cpu.json" \
         --dump-dir "$OUT/e9_dump" > "$OUT/e9.log" 2>&1
     RC=$?; T1=$(date +%s)

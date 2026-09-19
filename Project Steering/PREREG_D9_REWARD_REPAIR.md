@@ -314,3 +314,25 @@ is the human's own future, and which is also a **stated limitation** of the whol
 `pdm_proxy` family, not something this term introduces.
 
 <!-- PREREG-D9-13-SPD-TERM-SPECIFIED-2026-09-18 -->
+
+<!-- DAC-HUMAN-ZERO-GATE-2026-09-20 -->
+## NEW GATE ON STARTING (2026-09-20) -- the DAC term zeroes the HUMAN on 44.6 % of windows
+
+MEASURED (TrainingFlyWheel, 736 held-out windows, 0 GPU): with the SAM3 map LIVE, `dac = 0` on
+**328/736** recorded-human trajectories, so the human's own PDMS is 0 there. `dac_from_drivable`
+zeroes a window if ANY of 4 ego-box corners at ANY of 41 ticks lands on a SEEN cell with drivable
+fraction < 0.5 (164 samples per trajectory). The banked ddv2 dumps' `human_pdms` 0.986 is NOT a
+counterexample: DAC was DEAD in those runs (the multiplier defaulted to ones), which the LIVE/DEAD
+stamp postdates. Registered as `D-DAC-HUMAN-ZERO-1`.
+
+=> This pre-registration's reward multiplies progress by that same DAC, with the HUMAN as the
+reference. A reference whose own progress is zeroed on ~45 % of windows cannot calibrate a
+repaired reward: the repair would be measured against a broken yardstick -- the same shape as the
+defect it exists to fix.
+
+**GATE, committed before any repaired-reward run:** the human-zero rate must be (a) EXPLAINED --
+cause separated between map quality, the ANY-corner/ANY-tick rule and genuine off-map driving --
+and (b) either brought to a stated, defensible level or the DAC term REDEFINED with a
+pre-registered rule (a corner/tick tolerance, or an unseen/uncertain-cell abstention), with its
+own control that must read a known value. Until then `H-DDV2RL-3` does not start; this is in
+addition to the existing SAM3-coverage gate, not instead of it.
