@@ -247,3 +247,56 @@ for us, and it is recorded so the C4 rotation is not re-run on the same ground.*
 **C4 (community signals).** No new leaderboard movement probed beyond the navhard anchors extracted for `LEDGER_A5_benchmarks.md` 2026-09-10-01.
 
 **C3 (regulatory).** ⛔ **NOT SCANNED — declared, not concealed.** D-4 stands at five failed routes and is with the PI; no new route was attempted and none is claimed.
+
+
+## 2026-09-13-01 — C1/C2 sweep
+
+* **Waymo** riders in Denver, San Diego, Tampa (blog 2026-09-01) → 14 cities · **"A look under our trunk"** compute post (2026-08-20): 5 nm ASIC, >1,000 TOPS front-end, two independent compute engines, liquid-cooled, *"20x in just eight years"* — adjudicated as Band D A17-1…A17-3 (`PUBLISHED-BLOG`).
+* **Tesla Cybercab** launch, Austin, 2026-09-03, closed event; press: HW4 + FSD 14.3.3 *"vision-plus-radar"* (RELAYED) — Band D A17-4.
+* **NVIDIA NuRec 26.04 = 1,607 PhysicalAI clips** (26.01 = 918), each with `map.xodr`; licence internal AV development, 12-month term (HF card, `PUBLISHED-RELEASE-NOTE`). ⭐ **MEASURED overlap with our clips: 16/4,572 train, 1/147 eval** (DE package 2026-09-13).
+* **PhysicalAI-AV-NCore** (~1.1 k clips, released 03/06/2026): offline calibration, egomotion, cuboids — **no map, no speed limit** (HF card).
+* **C2:** JetPack **7.2.1** / TensorRT **10.16.2** still current for Thor — **E-C2c EMPTY at a fourth probe**; ⭐ **TensorRT 11.2.1 does not support JetPack** (RELAYED via search of NVIDIA docs) ⇒ FS-4 gated a third pass; no TRT-11 feature may be assumed on Thor.
+
+
+---
+
+## 2026-09-17 (LAB-RUN-014) — ⭐⭐ NVIDIA moves the WHOLE Alpamayo lineup to a permissive commercial licence
+
+**Alpamayo 2 Super, released 2026-08-04, read today.**
+
+| fact | value |
+|---|---|
+| total | **34 B** |
+| backbone | **32 B** Cosmos 3 Super Reasoner (VLM) |
+| action expert | **2.3 B**, diffusion-based action decoder |
+| weights licence | ⭐ **OpenMDW-1.1** (Linux Foundation) — fine-tuning, derivative models, **commercial redistribution**; no field-of-use or geographic restriction; model outputs carry no licence conditions |
+| code licence | Apache-2.0 |
+| scope | ⭐ **NVIDIA states OpenMDW now applies across the ENTIRE Alpamayo lineup** — distilled models deployable commercially without further permission |
+| reasoning | Lingo-Judge **79.2** |
+| closed-loop | **AlpaSim 1.50 ± 0.13** |
+| open-loop | **minADE_6 @ 6.4 s = 0.911 m** |
+| adoption | *"400,000 downloads to date"* across Alpamayo reasoning models (claimed) |
+
+⛔ **`minADE_6` is BEST-OF-6 and is NOT our `fwd_ade`.** It may not enter any TanitAD table (V-5).
+⚠️ **Params token trap, resolved:** the blog says *"32-billion parameter VLM backbone"*, three
+secondaries say *"34B model"* — **both are right about different objects**, and the model card
+settles it. Same family as the 09-09 inference-vs-training split.
+
+⭐ **Our position, and it is a strategic change rather than a technical one.** ⛔ **Register row N-3
+(the Alpamayo licence split) may be SUPERSEDED** and must be re-checked against OpenMDW-1.1 — a
+restriction we have been carrying may no longer exist. Consequence: our differentiation can no
+longer rest on **access** to a frontier driving model, because a commercially usable 34 B baseline is
+now public. It must rest on **efficiency and hierarchy, measured** — which is what the programme
+claims anyway, now with the comfortable half removed.
+
+**C2, same pass:** **JetPack 7.2.1 = Jetson Linux 39.2.1 · CUDA 13.2.1 · TensorRT 10.16.2**; DRIVE OS
+7.0.3 on Thor. ⭐ Consistent with 09-13's finding that **TensorRT 11.2.1 excludes JetPack** — the
+Jetson line is on the 10.x branch. Feeds **FS-4** (re-run the FP8/FP4 precision census on 7.2.1).
+⛔ **E-C2 EMPTY at a FIFTH probe** for a September-2026 release note.
+
+→ `Frontier Scan/Daily/2026-09-17/RESULT.md` §1.2, §3
+
+## 2026-09-18-01 — C2: TensorRT 11 removes weak typing; JetPack is not supported
+
+`PUBLISHED-RELEASE-NOTE` · NVIDIA docs `release-notes-11/11.0.0.html`, `11.3.0.html`, read 2026-09-18. 11.0.0: `IInt8Calibrator` and the calibration/dynamic-range APIs **removed**; all weak-typing APIs and per-precision `BuilderFlag`s (`kFP16 … kFP8, kINT8, kINT4, kFP4`) **removed**; `createNetworkV2()` strongly typed by default. 11.3.0: *"NVIDIA JetPack is not supported"*; DriveOS 11.3.1 on CUDA 13.4.
+**Our position:** the D-B1-GATE silent-fallback mechanism is gone upstream but **live on Thor** (TRT 10.16.2 under JetPack 7.2.1). ⇒ Write the B1 recipe strongly typed + explicit Q/DQ **now** (backlog row 1); keep the gate until JetPack ships TRT 11. C1: Wayve × Uber supervised London rides (2026-09). C3: NHTSA AV-Framework comments extended to 2026-09-30.

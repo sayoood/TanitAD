@@ -200,3 +200,70 @@ navhard the tier our T1 doctrine says is comparable to us.
 **Metric definitions banked for D-EPDMS-FAM (backlog row 12):** `PDMS = NC · DAC · (5·EP + 5·TTC + 2·Comf)/12`. EPDMS adds **DDC** (driving-direction compliance), **TLC** (traffic-light compliance), **LK** (lane keeping), and replaces Comf with **HC** (history comfort) and **EC** (extended comfort). ⭐ **None of the eleven sub-metrics maps to `tac.manoeuvre_decision` or `strat.route_goal`** — the four-families gap is confirmed from the metric's own definition, not merely suspected.
 
 → `Benchmarks & Evals/Research/2026-09-10-navhard-split-stamp/RESULT.md`
+
+
+## 2026-09-13-01 — ⛔ DATED CORRECTION to 2026-09-10's residue: the PDM-Closed 51.3-vs-56.6 spread was TWO VERSIONS of one paper — D-10 CLOSES
+
+`FULL TEXT` · arXiv **2506.04218 v3** (20 Mar 2026, banked 2026-08-23) vs **v2** (27 Aug 2025, HTML) · `2606.07170` TOAD Tables 2/6.
+v2 Table 2: PDM-C navhard two-stage **51.3**. v3 Table 2 (*"navhard leaderboard. Snapshot from 03/2026"*, 11 entries, source `huggingface.co/spaces/AGC2025/e2e-driving-navhard`): PDM-C **56.6**, DrivoR 54.5, SimScale 53.2, GuideFlow 51.5, ZTRS 48.1, RAP 39.6, NavFormer 34.1, LTFv6 31.9, LTF 25.1, Ego MLP 14.1, CV 11.4. Both versions: 450 S1 / 5,462 S2.
+**Stage 1 identical 9/9** (94.4/98.8/100/99.5/100/93.5/99.3/87.7/36.0); **Stage 2 moved 7/9** (NC 88.1→90.5, TTC 83.1→86.6, EC 25.4→29.7, LK 73.7→74.2, HC 91.5→91.9, DDC 96.3→95.4, TLC 98.5→98.4) — v3 = TOAD exactly.
+⇒ the **Stage-2 substrate** was re-scored between the 08/2025 and 03/2026 snapshots. **BE10-1 branch 1 fires; D-10 CLOSED.** The 2026-09-10-01 entry stands as the record of what we believed; its cause was reading v2 while holding v3 (LI10-1 class).
+**Admission test from now on:** a shared deterministic baseline's Stage 1 must match this fingerprint; the number carries its snapshot date.
+→ `Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md`
+
+
+---
+
+## 2026-09-17 (LAB-RUN-014) — the #151 primary read, and a published admissibility ladder for WM simulators
+
+**(a) `E-BE-FIX151-1` executed — the mechanism confirms, the committed partition does NOT.**
+NAVSIM issue #151 (opened **2025-09-03**) is titled *"Question Regarding the human_penalty_filter
+Mechanism: Discrepancy Between Reported Sub-score and Final Score Calculation"*: when the human
+driver fails a metric, the agent's score is exempted to **1.0 in the reported sub-scores** while the
+final total still used **0.0**, because the exemption did not modify the **`weighted_metrics_array`**.
+
+⭐ **EPDMS partition, recorded once so it is never re-derived:**
+
+| kind | members |
+|---|---|
+| multiplicative penalty gates | **NC · DAC · DDC · TLC** |
+| weighted metrics (weights) | **EP (5) · TTC (5) · LK (2) · HC (2) · EC (2)** |
+
+⇒ the bug lives in the **weighted** array, which **contains EP**. `E-BE-FIX151-1` committed: *"if the
+fix touches EP or DAC, the 7/9 pattern has an unexplained component and the stamp table carries a
+caveat."* **That branch fires.** And its complement is sharper: **#151 cannot directly move NC / DAC /
+DDC / TLC**, so any Stage-2 movement on the four *safety* terms has a second, still-unnamed cause.
+⚠️ The fix commit itself is **unread** — the issue is closed with none linked on its page (one probe).
+
+⛔ **CORRECTION to this ledger's 09-15 stamp table (dated entry, history not rewritten): an external
+EPDMS now needs TWO stamps** — the **split** (`navtest` / `navhard`) *and* the **fix**
+(`pre-` / `post-#151`). **WA-JEPA 91.7 is `navtest` and is excluded from every navhard table.**
+
+**(b) `2607.07196` — "Validate the Dream Before You Trust Its Verdict"** (Oefinger, Schäfer, Moller,
+Piccinini, Betz; 2026-07-08). A WM used as a **test oracle** must be *accredited* before its verdicts
+are evidence: ladder **L0** visual fidelity -> **L1** action-responsiveness -> **L2** declared operating
+envelope + OOD detection -> **L3** failure attribution separating simulator from policy error -> **L4**
+measured sim-to-real correlation. Built on VV&A, SOTIF and scenario-based testing practice.
+
+⭐⭐ **The measured result, and it is our own doctrine from outside:** applied to two driving WMs,
+*"the model that ranks higher on visual generation quality (L0) ranks **lower** on action-following
+(L1-L2), so visual fidelity does not predict the action-robustness a closed-loop verdict depends
+on."* That is the ridge-probe lesson in assurance costume: **the impressive surface metric is the one
+to distrust.**
+
+⭐ **Our position.** **Backlog row 14** (NuRec/gsplat pseudo-simulation pilot) targets *"R2 >= 0.7 vs
+our T1"*, which is an **L4** claim — the top rung — while having **no L1 check at all**. Re-scope it
+to L1-L2 first; that is also far cheaper. ⛔ And Waymo's own concession the same day (*"purely
+reconstructive simulation methods suffer from visual breakdowns due to missing observations"*) names
+the hazard: a replay-based asset may be **capped at L0 by construction**, because a counterfactual
+action has nothing to respond with. `E-BE-LADDER-1` registered.
+
+⚠️ **Limit:** the rung definitions here come from the abstract + a secondary. **The PDF is banked and
+its full text is a debt.** No rung threshold is quoted as a number.
+
+→ `Benchmarks & Evals/Research/2026-09-17-navsim-fix151-mechanism/RESULT.md` · `Frontier Scan/Daily/2026-09-17/RESULT.md` FS17-5
+
+## 2026-09-18-01 — Ladder read in full: L1 is trivial for a 3DGS replay; L2 (envelope) is what binds row 14; T1 can never anchor L4
+
+`FULL TEXT (local pypdf)` · arXiv **2607.07196**. Operational L1 = IEC via ACT-Estimator, significantly above 1/8 chance; instrument validated (0.77 m real ADE; 93.4 % vs 94.0 %; Vista 30.7 % reproduced). The paper **scopes OUT reconstruction simulators** (NeRF/3DGS). Epona L2 h* 3.2 s vs Vista 1.6 s at a 1.8 m band — both below our 6 s horizon. n = 2 models (conceded).
+**Our position:** LR14-8's *"capped at L0"* branch does NOT fire; row 14 must target **L2-envelope** first and anchor L4 on **T2**, never T1 (`EVAL_DOCTRINE.md:29`). Experiment BE18-1 (`E-BE-ENVELOPE-1`). Leaderboard (C4): DriveZero-Scale 57.1 navhard two-stage; DriveVLA-M0 `2608.10413` 47.0 navhard.

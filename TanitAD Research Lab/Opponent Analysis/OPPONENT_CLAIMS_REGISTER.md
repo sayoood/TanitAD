@@ -450,3 +450,130 @@ The **prescription** is contested at ≥2 independent sources:
 | **D-9** (LeWM + Sub-JEPA unread) | ✅ **HALF-DISCHARGED — LeWM `2603.19312` read in full.** ⭐ It conditions by **AdaLN at each layer** (our FiLM family) and **reports no action-sensitivity control at all** ⇒ the insensitivity we cite three times is a third-party measurement, never a self-report. **Sub-JEPA `2605.09241` STANDS unread** |
 | **D-10** (navhard scoring basis) | ⭐⭐ **COUNTS RESOLVED 2026-09-10** — navhard **450 S1 / 5,462 S2** from the maintainers' primary; navtest ≈12,000. The 84.8–89.3 cluster is **navtest**. ⛔ **BASIS STILL OPEN: PDM-Closed reads 51.3 AND 56.6 on "navhard".** Row 32 stays BARRED |
 | **D-11** (GAIA-4 params / sim-real correlation) | ⛔ **OPEN.** Not re-probed this pass |
+
+
+---
+
+# 2026-09-13 · BAND-D ADJUDICATION — Waymo compute doctrine (+ Tesla Cybercab, RELAYED)
+
+`Appended by LAB-RUN-012. Amendment §7.1, all seven steps. Append-only. Full reasoning: Frontier Scan/Daily/2026-09-13/RESULT.md F1 / F1b.`
+
+**Documents.** (a) *A look under our trunk: what's in our compute* — Satish Jeyachandran (VP Engineering) & Daniel Rosenband, Waymo blog, **2026-08-20**, `PUBLISHED-BLOG` (read via fetch summariser; short quotes only). (b) Tesla Cybercab launch, Austin, **2026-09-03** — **no Tesla primary read**; trade press only ⇒ `RELAYED`.
+**Context.** (a) was published two weeks before (b) and paired in the press with Waymo's *"cameras … aren't enough"* argument (TechCrunch 2026-09-01). ⚠️ Waymo's 10-lessons post is **already adjudicated** (W-1…W-13); not re-opened.
+
+| id | claim | opponent | date | experiment? | confirming (independent) | contradicting (sought) | verdict | binds on us? | evidence that would FLIP it |
+|---|---|---|---|---|---|---|---|---|---|
+| **A17-1** | custom 5 nm ASIC, >1,000 TOPS dedicated to front-end sensor processing, is what L4 compute needs | Waymo | 2026-08-20 | ⛔ no — a specification | none independent (press relays of the post) | TOPS is a synthetic-workload proxy — an accelerator with 7.5× a GPU's TOPS delivered ~4× network throughput (RELAYED, aiMotive / Hailo engineering blogs) | **UNSUPPORTED-AS-STATED** | no (hardware); **yes as a rule: never quote TOPS** | a published Waymo latency/accuracy comparison of the ASIC stack against a commodity stack on the same models |
+| **A17-2** | pixels-to-actuation latency is optimised across **every percentile** | Waymo | 2026-08-20 | ⛔ no numbers | COLA `2305.07147` (tail latency is safety-critical in a real L4 stack; lib, abstract-only); `2209.05487` (99th-percentile outliers, scan) | none found arguing mean latency suffices (EMPTY, D12) | **CONFIRMS-US** | ✅ yes — identical to D10-2 (`Tpeak` gate) | a study showing planning safety insensitive to tail latency at fixed mean |
+| **A17-3** | L4 compute must be two independent engines sharing load with seamless failover | Waymo | 2026-08-20 | ⛔ no | fail-operational requirement for L4 in the ISO 26262 literature (`2011.00892`, scan; PatSnap blog RELAYED) | asymmetric failover (primary + weaker safety-only unit) is a published alternative (patent literature as summarised by search — RELAYED) | **SUPPORTED** as practice, not as necessity | ⚠️ not now (research reference on one Thor); a P6 requirement the day deployability is claimed | a type-approved L4 system shipping without compute redundancy |
+| **A17-4** | camera-based end-to-end networks are the core of L4; 380 k unsupervised miles *"no notable incidents"* | Tesla | 2026-09-03 | ⛔ attribution-from-exposure | NHTSA SGO mid-June→mid-July 2026: 2 incidents, robotaxi stationary, other party at fault (RELAYED) | 17 Austin incidents Jul 2025→Mar 2026 at 5.9 mph average; remote-operator crash Houston (Electrek 2026-07-20, RELAYED) | **CONTESTED** (weakest-sourced row in the register) | ⛔ no — our vision-only rule is admissibility, not sufficiency | NHTSA SGO primaries with exposure-normalised rates vs a matched human baseline |
+
+### ⭐ Concessions
+
+* **Waymo:** *"…especially in the low-batch regimes we often operate"* — the real operating point is batch ≈ 1, where TOPS says least. Matches our Thor measurement (throughput flat across a 6× batch range, saturation at batch 8).
+* **Tesla (RELAYED, needs a primary):** press describes Cybercab's FSD 14.3.3 as a **"vision-plus-radar stack"**.
+
+### Guidelines
+
+* **S-6b (strategic)** — *our latency claims are worst-case claims.* Falsifier: a TanitAD deployment table quoting a mean without a percentile.
+* **S-7 (strategic)** — *"small at deployment" gains a redundancy argument: a sub-300 M model can run on the degraded half of a fail-over pair* — only after measuring on half a Thor. Falsifier: the model does not meet its budget at half compute.
+* **T-8 (tactical)** — *never quote TOPS; measured ms at a named percentile on the target only.*
+* **T-9 (tactical)** — *read NHTSA SGO primaries before A17-4 is quoted anywhere.*
+⚠️ **Naming collision noted:** LAB-RUN-011 already used **S-6** (cite A16-1 as diagnosis only); today's strategic latency guideline is therefore **S-6b**. The Master Mind should renumber on the next register review.
+
+### ⚠️ OPPONENT STRENGTHS, recorded
+
+1. **Waymo ships a custom ASIC, redundant compute and vehicle-integrated liquid cooling** — production engineering we do not have and do not claim.
+2. **200 M fully autonomous miles; riders in 14 cities** (2026-09-01) — the exposure record is real even where it is not an experiment.
+3. **Tesla put a no-wheel, no-pedal L4 vehicle into public launch** on a camera-centric stack — whatever its evidence, it is a deployment fact.
+
+### Standing debt status this pass
+
+| id | status |
+|---|---|
+| **D-4** (UNECE GRVA) | ⛔ **STANDS — three more routes failed (6/7/8, all HTTP 403). Eight total.** The UN ADS Regulation was adopted 2026-06-24 (RELAYED); with the PI |
+| **D-7** (`1604.06915`) | ⛔ **STANDS.** Not reached |
+| **D-9** (Sub-JEPA `2605.09241`) | ⛔ **STANDS (half).** Not reached |
+| **D-10** (navhard scoring basis) | ✅ **CLOSED 2026-09-13** → `Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md`: 51.3 = `2506.04218` v2 (08/2025 snapshot), 56.6 = **v3** (03/2026 snapshot); Stage 1 identical 9/9, Stage 2 re-scored 7/9. ⛔ Our 09-10 reading of v2 while holding v3 caused the contradiction (LI10-1 class) |
+| **D-11** (GAIA-4) | ⛔ **OPEN.** Not re-probed |
+| **D-12** (AlpaSim fidelity) | ⛔ **OPEN** — and sharpened: NuRec's `map.xodr` speed field is unit-mislabelled and value-inconsistent on the one scene we hold (DE package F2/F3) — one measurable fidelity defect already on file |
+
+
+---
+
+## Pass 2026-09-17 (LAB-RUN-014) — ⭐⭐ debt **D-1 DISCHARGED**: "The Waymo World Model" adjudicated after 17 days open
+
+`Seven-step adjudication per DAILY_RESEARCH_CHARTER_v2_AMENDMENT.md §7.1. Full working: Frontier Scan/Daily/2026-09-17/RESULT.md §1.`
+
+| id | opponent · date | claim | experiment? | verdict | binds on us? | what would FLIP it |
+|---|---|---|---|---|---|---|
+| **W-17-1** | Waymo · 2026-02 · PUBLISHED-BLOG | The world model's role is **high-fidelity multi-sensor SIMULATION** (camera + lidar, 4D point clouds, Genie 3) for preparing the Driver — presented with no onboard-planning role | ⛔ **NO — demonstration videos only.** No ablation, no comparison, no metric. The only quantities are exposure counts (200 M autonomous miles, "billions" of virtual miles) | **UNSUPPORTED-AS-STATED** for the reading *"world models belong in simulation rather than onboard"* — ⚠️ which the post **never asserts**; it is the takeaway its framing invites | ⛔ **NO.** Different artifact: a **generative multi-sensor simulator** producing training data vs our **latent predictive planner** producing a plan. ⚠️ It **does** bind on backlog **row 14**, which is the same artifact class | Waymo publishing an onboard-vs-simulation ablation, or a controlled result that a generative simulator outperforms latent planning at matched compute |
+| **W-17-2** | Waymo · 2026-02 | *"By simulating the 'impossible', we proactively prepare the Waymo Driver for some of the most rare and complex scenarios"* (tornado, elephant) | ⛔ **NO** — no downstream driving metric is attached to the synthetic scenarios | **UNSUPPORTED-AS-STATED** — the inference from *"we can generate it"* to *"the Driver is prepared"* is the missing step | ⚠️ **Partially.** Our long-tail augmentation ambitions rest on the same unproven inference; we should not repeat it | any published measurement that training on generated rare events improves real long-tail performance |
+| **W-17-3** ⭐ | Waymo · 2026-02 · **CONCESSION** | *"the longer the simulation, the tougher it is to compute and maintain stable quality"* | it is an admission, not a claim | **SUPPORTED** (and independently by our own k=60 BPTT divergence and drift) | ⭐⭐ **YES, favourably.** Long-horizon rollout stability is **conceded unsolved by the best-resourced opponent** ⇒ our measurement of it is an asset, not an embarrassment | a Waymo (or other) result demonstrating stable long-horizon generative rollout with a metric |
+| **W-17-4** ⭐ | Waymo · 2026-02 · **CONCESSION** | *"purely reconstructive simulation methods … suffer from visual breakdowns due to missing observations"* | an admission | **SUPPORTED** | ⛔⭐ **YES, and it is a direct hazard to backlog row 14** — our NuRec/gsplat pilot IS a reconstructive method, and a perturbation grid is exactly what creates missing observations | a reconstructive pipeline shown to hold quality under counterfactual viewpoints |
+| **N-17-1** | NVIDIA · 2026-08-04 · PUBLISHED-BLOG | *"AlpaGym exposes compounding errors and edge-case failures that static datasets miss"*; closed-loop training *"exposes AV models to the consequences of their actions at training time"* | ⚠️ **NO ablation offered** — an argument, not a controlled comparison of closed-loop-trained vs static-trained | **SUPPORTED** — classical covariate-shift result, and independently confirmed by **our own** 97.9 % open-loop vs 0.0 % hold-action vs ~5 % closed-loop | ✅ **YES, and we already comply** — it is our own open/closed-loop ruling, reached independently | an ablation showing closed-loop training gives no advantage at matched data |
+| **N-17-2** | NVIDIA · 2026-08-04 | *"State-of-the-art performance in multiple aspects including reasoning quality, trajectory accuracy, alignment"* | ⛔ **NO baseline table in the blog** | **UNSUPPORTED-AS-STATED** in the blog. ⚠️ The **model card** does publish three numbers (Lingo-Judge 79.2 · AlpaSim 1.50 ± 0.13 · minADE_6 @6.4s 0.911 m) — cite the card, never the blog | ⛔ scale does not bind (34 B vs our sub-300 M ceiling) | a comparison table with named baselines on a stamped benchmark |
+| **N-17-3** ⭐⭐ | NVIDIA · 2026-08-04 · PUBLISHED-CARD | **OpenMDW-1.1 across the ENTIRE Alpamayo lineup**: fine-tuning, derivatives, **commercial redistribution**, no field-of-use restriction; code Apache-2.0. Model = **34 B = 32 B Cosmos 3 Super Reasoner + 2.3 B action expert** | a licence fact, not a claim | **CONFIRMED** at the card plus three secondaries | ⭐⭐ **YES — strategically.** ⛔ **Register row N-3 (the Alpamayo licence split) may be SUPERSEDED and must be re-checked.** Our differentiation can no longer be *access*; it must be **efficiency and hierarchy, measured** | NVIDIA restricting the licence, or the card's terms differing from the blog's description |
+
+### Guidelines derived this pass
+
+* **S-5 (strategic)** — ⭐⭐ *"world model" names TWO different artifacts — a **generative simulator** (Waymo/Genie 3, AlpaGym) and a **latent predictive planner** (ours, JEPA-family) — and evidence about one is not evidence about the other.* State it in the paper. **Falsifier:** a controlled result showing a generative simulator outperforms latent planning at matched compute on the same task.
+* **S-6c (strategic)** — *our differentiation is efficiency and hierarchy, not access to a frontier driving model* (N-17-3 removed the access argument). **Falsifier:** an open 34 B baseline matching our efficiency claims at our parameter budget. ⚠️ **Numbering:** S-6 and S-6b are both taken (LAB-RUN-011, -012); this is **S-6c**. The Master Mind should renumber the S-6 family in one pass.
+* **T-6 (tactical)** — *before backlog row 14 is designed, state which rung of the `2607.07196` ladder it targets.* Its current R² ≥ 0.7 goal is **L4** while it has no **L1** check. **Falsifier:** row 14 clearing L1-L3 and still failing L4.
+* **T-7 (tactical)** — *re-check register row **N-3** against OpenMDW-1.1 this week.* A licence restriction we are carrying may no longer exist.
+
+### ⚠️ OPPONENT STRENGTHS, recorded (a Band-D package listing none is INCOMPLETE)
+
+4. **Waymo generates camera AND lidar together** in one simulator — a multi-sensor generative capability we do not have and have no path to.
+5. **Waymo has Genie 3** through DeepMind: a frontier generative backbone no independent programme can match.
+6. **NVIDIA publishes a closed-loop score WITH an interval** (AlpaSim 1.50 ± 0.13) — more than most of the field offers, and more than several of our own rows.
+7. **NVIDIA ships AlpaGym as closed-loop TRAINING infrastructure**, not merely evaluation.
+8. ⭐ **NVIDIA conceded its moat deliberately** (OpenMDW-1.1 across the lineup) in exchange for ecosystem — a strategic choice, and a confident one.
+
+### Standing debt status this pass
+
+| id | status |
+|---|---|
+| **D-1** (The Waymo World Model, 2026-02) | ✅ **DISCHARGED 2026-09-17** — adjudicated as W-17-1…W-17-4 above. Open since 2026-08-31 |
+| **D-2** (*Demonstrably Safe AI*, 2025-12) | ⛔ **STANDS.** Not reached |
+| **D-3** (Waymo Foundation Model post, 2025-12) | ⛔ **STANDS.** Not reached |
+| **D-4** (UNECE GRVA primary) | ⛔ **STANDS** — not re-probed today; eight routes failed previously; with the PI |
+| **D-7** (`1604.06915`) | ⛔ **STANDS.** Not reached |
+| **D-9** (Sub-JEPA) | ✅ **CLOSED 2026-09-15** → `Architecture & Inference/Research/2026-09-15-subjepa-rank-direction/RESULT.md` |
+| **D-11** (GAIA-4) | ⛔ **OPEN.** Not re-probed |
+| **D-12** (AlpaSim fidelity) | ⛔ **OPEN** — ⭐ and now equipped with a published ladder (`2607.07196`) to state fidelity claims against, rather than arguing them informally |
+
+## Pass 2026-09-18 (LAB-RUN-015) — TESLA doctrine adjudicated (T-18-1 … T-18-3) + a bookkeeping correction
+
+`Seven-step adjudication per DAILY_RESEARCH_CHARTER_v2_AMENDMENT.md §7.1. Full working: Frontier Scan/Daily/2026-09-18/RESULT.md §1.`
+`Documents: Tesla AI FSD v14 Lite release notes 2026.20.5.1 (2026-06-29, PUBLISHED-RELEASE-NOTE via verbatim reproduction); Elluswamy ICCV-25 / ScaledML-26 talks (RELAYED — no transcript primary).`
+
+| id | opponent · date | claim | experiment? | verdict | binds on us? | what would FLIP it |
+|---|---|---|---|---|---|---|
+| **T-18-1** | Tesla · 2026-06-29 · PUBLISHED-RELEASE-NOTE | *"Distilled the intelligence from HW4 V14 into HW3 … unlocks the improvements … including Reinforcement Learning (RL)"* | ⛔ NO — no metric in the notes | **SUPPORTED** as a practice (Waymo teacher-student; DriveZero `2609.06055` measured) · ⚠️ **UNSUPPORTED-AS-STATED** that RL gains transfer · counter: **TAKD `1902.03393`** (large capacity gap degrades distillation) | ⭐ **YES, favourably** — train-large/deploy-small, now Waymo **and** Tesla doctrine | a published HW3 v14-Lite vs v13 comparison showing no gain |
+| **T-18-1c** ⭐ | Tesla · 2026-06-29 · **CONCESSION** | *"This feature does not make your vehicle autonomous"* — the distilled student ships **supervised** | admission | **SUPPORTED** | ⭐ YES — distillation is shown to reach *supervised* quality only | an unsupervised deployment on a distilled student |
+| **T-18-2** | Tesla · ICCV-25 · RELAYED | *"loss on open-loop predictions might not correlate to great performance in the real-world"* ⇒ closed-loop neural world simulator | ⛔ NO | **SUPPORTED** for open-loop *loss* (confirm: `2605.00066`, `2605.31041` +7.1 % vs −14.6 %, our 97.9 %/0.0 %); counter: pseudo-sim R² 0.8 `2506.04218` — some offline metrics do correlate | ⭐⭐ **YES — CONFIRMS-US** (`EVAL_DOCTRINE.md`); also a concession about Tesla's own imitation objective | an open-loop loss ranking closed-loop outcomes at ρ ≥ 0.8 across architectures |
+| **T-18-3** | Tesla · ICCV-25 · RELAYED | end-to-end is *"the only scalable solution"* | ⛔ NO — anecdotes | **CONTESTED** (counter: Waymo W-13 hybrid, Mobileye M-1, DriveZero decomposes perception/action) | ⚠️ PARTIALLY — our hierarchy is neither pole; row 18 (H1b) is the test | matched-params E2E vs hybrid ablation on a shared benchmark |
+
+### Guidelines derived this pass
+* **S-7 (strategic)** — train-large/deploy-small is Waymo + Tesla doctrine; **our** claim is that a sub-300 M model trained as a world model needs no giant teacher. **Falsifier:** our distilled student beating our directly-trained model at matched deploy params.
+* **T-8 (tactical)** — budget a teacher-assistant step when teacher/student params exceed ~10× (TAKD). **Falsifier:** direct large→small matching the TA route at our scale.
+* **T-9 (tactical)** — quote T-18-2 in the paper as opponent corroboration of the tier doctrine, labelled **RELAYED** until a transcript primary is banked.
+
+### ⚠️ OPPONENT STRENGTHS, recorded
+9. Tesla ships a distilled student onto hardware with ~15 % of the teacher platform's memory bandwidth (RELAYED figure), at fleet scale.
+10. Tesla runs a closed-loop neural world simulator for evaluation **and** RL at fleet-data scale.
+11. (academic, context) DriveZero `2609.06055` reaches **57.1 EPDMS navhard two-stage** from frozen VFMs + a 5.70 M privileged PPO teacher — the bar G3 must now clear.
+
+### ⛔ CORRECTION (append-only; nothing above is rewritten)
+The 2026-09-17 debt table lists **D-2** and **D-3** as *"STANDS. Not reached"*. This register's own lines under *"Waymo — The Waymo World Model + Demonstrably Safe AI"* already record both as **DISCHARGED** (W-11…W-15). Today's primary fetch of *Demonstrably Safe AI* (2025-12-09) reproduces W-13's quotes exactly. ⇒ **D-2 and D-3 are CLOSED**; the 09-17 listing re-opened already-discharged ids. D-3's residual (a dedicated Foundation-Model read is owed only if a claim depends on it) stands.
+
+### Standing debt status this pass
+| id | status |
+|---|---|
+| D-2, D-3 | ✅ **CLOSED** (see correction) |
+| D-4 (UNECE GRVA primary) | ⛔ STANDS — not re-probed |
+| D-7 (`1604.06915`) | ⛔ STANDS — not reached |
+| D-11 (GAIA-4 params / sim-real correlation) | ⛔ OPEN — **re-probed today, still EMPTY** (2nd probe) |
+| D-12 (AlpaSim fidelity) | ⛔ OPEN — now has the ladder's L2 envelope as its instrument (see `Benchmarks & Evals/Research/2026-09-18-ladder-l1-row14/RESULT.md`) |
+| **D-13** *(new)* | Elluswamy talk **transcript primary** — T-18-2/-3 are RELAYED until it is banked |

@@ -378,3 +378,159 @@ came from papers we already held.**
 | B7 | `2606.24231` FlowR2A, `2512.06112` WAM-Flow (both unread) |
 | B9 | `2608.01127` MiniWorld (banked 09-02, still unread) |
 | A1 | `2604.03208` *Hierarchical Planning with Latent World Models* (found today, unbanked — a direct row-18 candidate) |
+
+
+---
+
+## Eighth pass — 2026-09-13 (LAB-RUN-012)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-13** | **2026-09-13** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | Waymo compute post (2026-08-20) → **A17-1…A17-3**; Tesla Cybercab (RELAYED) → **A17-4 CONTESTED**. Concession: *"low-batch regimes we often operate"* |
+| A1 | A | World models | **2026-09-13** | **2026-09-13** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ **HWM `2604.03208` FULL TEXT — Table 16 capacity control** (flat 98M 35 % vs hierarchy 94M 78 %), frozen encoder. A10-2 branch 1 fires |
+| A2 | A | JEPA / predictive architectures | **2026-09-13** | **2026-09-13** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐ **SG-JEPA `2609.10464` FULL TEXT** — physics as action coordinate; gain located in the encoder (≈12 %) |
+| A3 | A | Vision encoders | **2026-09-13** | — | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⚠️ scan only — **EMPTY for a Sept-2026 encoder release** (probe 1 of a new term). MVV (B1) supplies a DINOv2-vs-VLM datapoint |
+| A4 | A | VLA | **2026-09-13** | **2026-09-13** | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | `2608.30144` read — Language Residue L1–L4; **TanitAD is L1** |
+| A5 | A | Benchmarks + evaluation | **2026-09-13** | **2026-09-13** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐⭐⭐ **D-10 CLOSED** — 51.3 vs 56.6 = `2506.04218` v2 vs **v3**; Stage 1 identical 9/9 |
+| B1 | B | VLM / multimodal / omni | **2026-09-13** | **2026-09-13** | [`LEDGER_B1_vlm.md`](LEDGER_B1_vlm.md) *(created)* | MVV `2508.02047` FULL TEXT: signs DINOv2 0.484 vs InternVL-9B 0.467, types not values |
+| B2 | B | Post-transformer | **2026-09-13** | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | scanned — EMPTY for Sept 2026 |
+| B3 | B | Efficient decoding | **2026-09-13** | — | — | scanned — BeaconKV `2609.04971` (LLM-only); real-time AR policies `2606.13355` |
+| B4 | B | Efficient training | **2026-09-13** | — | — | ⛔ **EMPTY E-B4, SECOND probe, term varied** (vision/video data-efficient pretraining). Nearest: `2605.19137` (frozen-image-FM video pretraining). ⚠️ candidate for row-39 promotion per FS5-6 — **not promoted** |
+| B5 | B | Post-training / RL | **2026-09-13** | — | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | scanned — `2609.03225` WM-RL + GRPO multi-style driving |
+| B6 | B | Self-improving systems | **2026-09-13** | — | — | scanned — EMPTY for Sept 2026 |
+| B7 | B | Diffusion + flow matching | **2026-09-13** | — | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) *(created — the 09-10 link was BROKEN, FS-6 class)* | scanned — `2609.04921` |
+| B8 | B | Tokenizers | **2026-09-13** | — | — | scanned — EMPTY for Sept 2026 |
+| B9 | B | Data curation | **2026-09-13** | — | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) (B9 section) | scanned — ScenarioCharacterization `2608.16041`, OpenLongTail `2607.09655` |
+| B10 | B | Semantic search / retrieval | **2026-09-13** | — | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | scanned — EMPTY for Sept 2026 |
+| B11 | B | Physics-informed operators | **2026-09-13** | **2026-09-13** | [`LEDGER_B11_physics_operators.md`](LEDGER_B11_physics_operators.md) *(created)* | ⭐ **first live primary since the 2604.01349 withdrawal** — SG-JEPA |
+| B12 | B | Memory / long context | **2026-09-13** | — | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | scanned — 2AM `2609.11308`, MemoryWAM `2606.20562` |
+| B13 | B | 3D / occupancy | **2026-09-13** | **2026-09-13** | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⭐⭐ **OccFeat `2404.14027`** — FS9-9 answered: LiDAR occupancy + DINOv2 features; **our LiDAR BEV GT (A&I, today) supplies it**; encoder-side |
+| C1 | C | Lab + AV releases | **2026-09-13** | **2026-09-13** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | NuRec 26.04 = 1,607 clips; NCore; Waymo 14 cities; Cybercab |
+| C2 | C | Engineering blogs / release notes | **2026-09-13** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⛔ **E-C2c EMPTY, FOURTH probe**; ⭐ TensorRT 11.2.1 excludes JetPack |
+| C3 | C | Regulatory | **2026-09-13** | — | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | ⭐ **scanned again after two unscanned passes** — UN ADS Regulation adopted 2026-06-24 (RELAYED); NHTSA comment period → 09-30. ⛔ D-4 routes 6–8 failed |
+| C4 | C | Community signals | **2026-09-13** | — | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | navhard 03/2026 snapshot (11 entries); Bench2Drive LB updated 2026-08-28 |
+
+### Coverage honesty
+
+**22 / 22 tracks carry a named query.** DEEP: D1, A1, A2, A4, A5, B1, B11, B13 (+ C1 from HF cards). **A3 scan only.** ⚠️ A17-4 rests on RELAYED sources only.
+
+### Banked-but-unread, per track (FS-5 instalment)
+
+| track | banked, unread |
+|---|---|
+| A2 | `2605.09241` Sub-JEPA (D-9 half) · `2602.03604` EB-JEPA |
+| A5 | `2603.23034` TS-1M (abstract-only, banked today) · `2403.04133` nuPlan (abstract-only) |
+| B7 | `2606.24231` FlowR2A, `2512.06112` WAM-Flow |
+| B9 | `2608.01127` MiniWorld |
+| D | `2305.07147` COLA (abstract-only, banked today) |
+
+**Library: 493 entries, 3,262.1 MB** (was 491 / 3,198.3 MB). ⚠️ Six of today's banks carry **empty title metadata** — content verified by magic bytes and local text extraction.
+
+## Next rotation — pre-committed
+
+1. ⭐⭐ **A3 dedicated DEEP** — two passes scan-only in a row.
+2. **`E-BE-S1S2-1`** Stage-1 fingerprint of the external EPDMS rows (0 GPU).
+3. **Sub-JEPA `2605.09241`** (D-9's surviving half) and **`1604.06915`** (D-7).
+4. **B7 DEEP** — FlowR2A for FS9-5.
+5. ⛔ **D-4 is not a Lab item** (eight routes).
+
+
+---
+
+## Ninth pass — 2026-09-17 (LAB-RUN-014)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-17** | **2026-09-17** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐⭐ **D-1 DISCHARGED** — the Waymo World Model (2026-02), open 17 days → **W-17-1…4**; NVIDIA Alpamayo 2 Super → **N-17-1…3**. Concessions: *"the longer the simulation, the tougher it is to … maintain stable quality"*, *"purely reconstructive … visual breakdowns"* |
+| A1 | A | World models | **2026-09-17** | **2026-09-17** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ **Fast-WAM `2603.16666` FULL TEXT** — test-time imagination unnecessary (91.8 vs 91.3/90.6), training-time co-training essential (83.8 without), 190 ms vs 810 ms |
+| A2 | A | JEPA / predictive architectures | **2026-09-17** | **2026-09-17** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐⭐⭐ **WA-JEPA `2608.20974` FULL TEXT** — *"deterministic regression … fundamentally ill-suited"*; flow matching **+1.0 EPDMS** vs masking +0.4. ⛔ 91.7 = **navtest** |
+| A3 | A | Vision encoders | **2026-09-17** | ⭐ **2026-09-17** | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⭐⭐⭐ **DEBT DISCHARGED after two scan-only passes** — FROST-Drive `2601.03460` FULL TEXT, frozen 14B beats fine-tuned 14B; **the ledger's own prescribed term change is what found it** |
+| A4 | A | VLA | **2026-09-17** | — | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | ⚠️ **scan only** — covered through Alpamayo 2 Super (34 B VLA, diffusion action decoder); no dedicated VLA primary |
+| A5 | A | Benchmarks + evaluation | **2026-09-17** | **2026-09-17** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐⭐ **#151 primary read** — EPDMS partition recorded; `E-BE-FIX151-1` fires its second branch. **`2607.07196` L0–L4 ladder**, with the L0-vs-L1/L2 reversal |
+| B1 | B | VLM / multimodal / omni | **2026-09-17** | — | [`LEDGER_B1_vlm.md`](LEDGER_B1_vlm.md) | scan through C1 only (Cosmos 3 Super Reasoner, 32 B backbone) |
+| B2 | B | Post-transformer | **2026-09-17** | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | scanned — Log-Linear Attention `2506.04761` (ICLR 2026), Kalman Linear Attention `2602.10743`, sparse post-training `2512.05865` |
+| B3 | B | Efficient decoding | **2026-09-17** | partial | — | ⭐ Fast-WAM's **190 ms vs 810 ms (>4×)** is this track's transfer number, from an A1 paper |
+| B4 | B | Efficient training | **2026-09-17** | — | — | ⛔ **EMPTY E-B4, THIRD probe** for a Sept-2026 vision/video item |
+| B5 | B | Post-training / RL | **2026-09-17** | — | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | scanned — WorldCompass `2602.09022`, diffusion policy optimisation `2605.26282`, VLA-World GRPO, RehearseVLA, WMPO |
+| B6 | B | Self-improving systems | **2026-09-17** | — | — | ⛔ **EMPTY E-B6, second probe** |
+| B7 | B | Diffusion + flow matching | **2026-09-17** | partial | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | ⭐ first controlled **number** on this track (WA-JEPA's +1.0), but it arrives via an A2 paper. ⛔ FlowR2A `2606.24231` **still banked-unread — pre-committed rotation item 4, missed twice** |
+| B8 | B | Tokenizers | **2026-09-17** | — | — | scanned — iFSQ `2601.17124`, InfoTok `2512.16975`, IDEAL `2606.11096`, FSQ-for-diffusion `2606.09962` |
+| B9 | B | Data curation | **2026-09-17** | **2026-09-17** | — | ⭐ KITScenes CLOSED (CC BY-NC 4.0, 4.58 TB, no value field at 3 probes); OSM closed-by-coordinates |
+| B10 | B | Semantic search / retrieval | **2026-09-17** | — | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⛔ **EMPTY E-B10, second probe** |
+| B11 | B | Physics-informed operators | ⛔ **NOT SCANNED** | — | [`LEDGER_B11_physics_operators.md`](LEDGER_B11_physics_operators.md) | ⛔ **no query today — declared unscanned, not empty.** The one track this pass missed |
+| B12 | B | Memory / long context | **2026-09-17** | — | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⛔ **EMPTY E-B12, second probe** — B-Q5 returned only occupancy/3DGS |
+| B13 | B | 3D / occupancy | **2026-09-17** | — | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | scanned — GaussianOcc3D `2601.22729`, VG3S `2603.06210`, EnerGS `2604.26238`, `2607.04661` |
+| C1 | C | Lab + AV releases | **2026-09-17** | **2026-09-17** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | ⭐⭐ **OpenMDW-1.1 across the whole Alpamayo lineup**; 34 B = 32 B + 2.3 B; AlpaSim 1.50 ± 0.13 |
+| C2 | C | Engineering blogs / release notes | **2026-09-17** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | **JetPack 7.2.1 = JL 39.2.1 / CUDA 13.2.1 / TRT 10.16.2**; DRIVE OS 7.0.3. ⛔ **E-C2 EMPTY, FIFTH probe** |
+| C3 | C | Regulatory | **2026-09-17** | **2026-09-17** | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | UN GTR adopted at WP.29 23–26 Jun 2026; foot-brake NPRM 06-26, comments closed 07-27, no final rule; ⭐ **today: NHTSA puts the Cybercab under sworn oath** (touches A17-4) |
+| C4 | C | Community signals | **2026-09-17** | — | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⚠️ scan-through only — Waymo E2E board (FROST-Drive 3rd), HUGSIM 436 scenarios, navtest board |
+
+### ⛔ Coverage honesty
+
+**21 / 22 tracks carry a named query. B11 does not and is declared UNSCANNED.**
+**DEEP:** D1 ×2, A1, A2, **A3 (debt discharged)**, A5, B9, C1, C3. **A4 and C4 are scan-only.**
+⚠️ **Band-B depth is this pass's weakest column and is not counted generously:** B3 and B7 are served
+by *transfer numbers inside A-band full texts*, not by dedicated Band-B primaries. **Counted as ~2 of
+the required 3.** Per charter §6 the pass is therefore **INCOMPLETE on two counts** and says so in its
+own RESULT.md §4.
+**FULL-TEXT reads: 3** (Fast-WAM, WA-JEPA, FROST-Drive) — clears V-2's ≥ 2.
+**Library: 503 → 507 entries, 3,438.2 MB.** ⭐ V-1 re-find rate **2 of 5**.
+
+### Banked-but-unread, per track (FS-5 instalment)
+
+| track | banked, unread |
+|---|---|
+| A2 | ⛔ `2606.31232` **Delta-JEPA — PDF extraction FAILED today**; nearest external relative of row 13 / H-RANK-17 · `2608.07409` UniJEPA (abstract-only) · `2602.03604` EB-JEPA |
+| A5 | ⛔ `2607.07196` **full-text debt opened today** (rung definitions read from the abstract only) · `2603.23034` TS-1M · `2403.04133` nuPlan |
+| B7 | ⛔ `2606.24231` **FlowR2A — pre-committed rotation item, missed on two consecutive passes** · `2512.06112` WAM-Flow |
+| B9 | `2608.01127` MiniWorld |
+| D | `2305.07147` COLA |
+
+### Next rotation — pre-committed, so it cannot drift
+
+1. ⛔ **B11** — the one unscanned track; it leads by construction.
+2. ⛔ **FlowR2A `2606.24231`** — banked-unread and pre-committed twice. A third miss should be escalated, not re-listed.
+3. ⛔ **Delta-JEPA `2606.31232`** via a working extraction path (local pypdf, not the fetch route that failed).
+4. **`2607.07196` full text** — extract the operational L1 definition, for backlog row 14 (`E-BE-LADDER-1`).
+5. **Band-D debts D-2 / D-3** (Waymo *Demonstrably Safe AI*, Foundation Model post).
+6. **A4 dedicated DEEP** — scan-only today.
+
+---
+
+## Tenth pass — 2026-09-18 (LAB-RUN-015)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-18** | **2026-09-18** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐ **Tesla T-18-1…3** (distillation SUPPORTED/unmeasured; concession: student ships supervised; open-loop-loss claim CONFIRMS-US). ⛔ **D-2/D-3 bookkeeping corrected — already discharged** |
+| A1 | A | World models | **2026-09-18** | **2026-09-18** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ **DriveZero `2609.06055`** — navhard two-stage **57.1** (above our stamp table) |
+| A2 | A | JEPA | **2026-09-18** | ⭐ **2026-09-18 FULL TEXT** | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | ⭐ **Delta-JEPA debt discharged** (pypdf); `E-AI-LDAD-0` MEASURED on our trunk |
+| A3 | A | Vision encoders | **2026-09-18** | via A1 | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⛔ E-A3 driving query EMPTY (3rd); served by DriveZero's frozen-VFM ablation (+0.53 PDMS, ViT-S) — **no A3-ledger append today** |
+| A4 | A | VLA | **2026-09-18** | ⭐ **2026-09-18** | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | ⭐ **dedicated DEEP (09-17 debt)** — `2605.31041`: open-loop +7.1 % vs closed-loop −14.6 % |
+| A5 | A | Benchmarks | **2026-09-18** | ⭐ **2026-09-18 FULL TEXT** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐ **`2607.07196` full-text debt discharged** — L1 trivial for 3DGS, L2 binds row 14 |
+| B1 | B | VLM | **2026-09-18** | — | [`LEDGER_B1_vlm.md`](LEDGER_B1_vlm.md) | ⛔ E-B1 — no new Sept-2026 VLM release |
+| B2 | B | Post-transformer | **2026-09-18** | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | ⛔ E-B2 — no video-predictor transfer primary |
+| B3 | B | Efficient decoding | **2026-09-18** | partial | — | FLASH speculative VLA (19.1 ms, 3.04×), MeanFlow one-step; FlowR2A's latency table (K=10: 53.2 ms) |
+| B4 | B | Efficient training | **2026-09-18** | — | — | ⭐ **empty streak BROKEN** (Muon-in-ViT `2605.24770`, CMuon) — scan only |
+| B5 | B | Post-training / RL | **2026-09-18** | ⭐ **2026-09-18** | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | DriveZero's DriveRL — 5.70 M privileged PPO teacher distilled into a vision student |
+| B6 | B | Self-improving | **2026-09-18** | — | — | ⭐ **empty streak BROKEN** (`2606.12072`, `2604.01985`) — scan only |
+| B7 | B | Diffusion / flow | **2026-09-18** | ⭐ **2026-09-18 FULL TEXT** | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | ⭐⭐ **FlowR2A — missed twice, discharged**; the reward-as-identifier leak |
+| B8 | B | Tokenizers | **2026-09-18** | — | — | scan only |
+| B9 | B | Data curation | **2026-09-18** | — | — | ActiveAD (CVPR 2026) — scan only; in-corpus side served by `E-DE-SIGN-3` |
+| B10 | B | Retrieval | **2026-09-18** | — | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⭐ **empty streak BROKEN** (DriveVLA-M0 47.0 navhard) — scan only |
+| B11 | B | Physics operators | ⭐ **2026-09-18** | ⭐ **2026-09-18** | [`LEDGER_B11_physics_operators.md`](LEDGER_B11_physics_operators.md) | ⭐⭐⭐ **09-17's unscanned track leads and delivers**: LGS — flow term +145–155 %; contraction bound |
+| B12 | B | Memory / long context | **2026-09-18** | — | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⭐ **empty streak BROKEN** (DeepSight `2605.10564`) — next rotation #1 |
+| B13 | B | 3D / occupancy | **2026-09-18** | — | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⛔ E-B13 — only 2024-25 items |
+| C1 | C | Releases | **2026-09-18** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | Wayve × Uber London (supervised) |
+| C2 | C | Release notes | **2026-09-18** | ⭐ **2026-09-18** | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⭐⭐ **TensorRT 11: weak typing + kFP8/kFP4/kINT8 flags REMOVED; JetPack NOT supported** ⇒ backlog row 1 |
+| C3 | C | Regulatory | **2026-09-18** | — | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | NHTSA AV-Framework comments extended to 2026-09-30 |
+| C4 | C | Community signals | **2026-09-18** | via A1 | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | navhard stub: DriveZero-Scale, SimWAM `2608.07468` |
+
+### ⛔ Coverage honesty
+**22 / 22 tracks carry a named query.** DEEP: D1, A1, A2, A4, A5, **B5, B7, B11** (three dedicated Band-B deep-reads — the bar is met without the transfer-number crutch), C2. **A3 is served only through A1** and gets no ledger append. **Full texts: 3 via local pypdf** (Delta-JEPA, FlowR2A, `2607.07196`) + 2 HTML primaries through the fetch summariser (DriveZero, LGS — flagged in RESULT §4). **10 empties named.** **Library: 507 → 513 entries, 3,504.2 MB.** V-1 re-finds: **4** papers + **1 register-level** (D-2/D-3).
+
+### Next rotation — pre-committed
+1. **B12 DEEP** — DeepSight `2605.10564`.
+2. **B10 DEEP** — DriveVLA-M0 `2608.10413` (touches I-3).
+3. **Local pypdf re-read of DriveZero + LGS** before any of their numbers enters the registry.
+4. **D-13** — Elluswamy transcript primary.
+5. **A3 driving-specific DEEP** — three consecutive driving-term empties; try "frozen vision foundation model end-to-end planner ablation".

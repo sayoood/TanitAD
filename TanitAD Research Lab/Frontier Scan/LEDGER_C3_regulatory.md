@@ -194,3 +194,42 @@ the scope of safety-case documentation.**
 refuted**, because every probe has been a secondary. **The binding constraint the relayed claim obscured
 remains auditability - ISMR plus DSSAD - not legality.** Design against auditability; read the primary
 before committing.
+
+
+## 2026-09-13-01 — UN ADS Regulation adopted; NHTSA exemption guidance open; D-4 fails at three more routes
+
+* **WP.29 adopted the UN Regulation and GTR on Automated Driving Systems, 2026-06-24** (RELAYED ×2: TomTom newsroom, auto-tech-news; UNECE primary 403). Content as relayed: safety-case approval with a **certified SMS**, validated (incl. virtual) testing, **in-service monitoring and reporting**, **DSSAD**, performance at least that of *"a competent and careful human driver"*; software updates via UN R156.
+* **NHTSA** AV Framework interim guidance on commercial-deployment exemptions — **comment period extended to 2026-09-30** (Federal Register 2026-08-31, `PUBLISHED`).
+* ⛔ **D-4 (GRVA primary) — routes 6, 7, 8 FAILED today:** UNECE document page (HTTP 403), UNECE press release (HTTP 403), direct `ECE-TRANS-WP.29-GRVA-2026-02e.pdf` via curl (HTTP 403, 5,582 B HTML). An `indico.un.org` PDF that returned 200 is a **2024 GRVA-19 provisional agenda**, not the primary. **Eight routes total. The online-learning question stays "unsupported at probes", not "refuted."** With the PI (human browser).
+* ⭐ **For injected I-3:** with the regulation *adopted*, the ISMR + DSSAD + R156 frame binds — an adapting encoder is an **update-management and auditability** question, not a legality question. (RELAYED; decides nothing until D-4 is read.)
+
+
+---
+
+## 2026-09-17 (LAB-RUN-014) — the WM-as-oracle question becomes a regulatory-adjacent one, and a US enforcement datapoint lands today
+
+**(a) ⭐⭐ `2607.07196` puts world-model simulators inside the assurance frame.** *"any WM used as a
+test oracle must first be accredited before its verdicts can serve as evidence"*, built explicitly on
+**VV&A, SOTIF and scenario-based testing standards** — i.e. the same credibility apparatus a
+regulator already recognises. Ladder **L0** visual fidelity -> **L1** action-responsiveness -> **L2**
+operating envelope + OOD -> **L3** failure attribution (simulator vs policy) -> **L4** measured
+sim-to-real correlation. MEASURED on two driving WMs: **higher L0 ranks LOWER on L1-L2.**
+
+⭐ **Our position.** This is the missing admissibility vocabulary for **backlog row 14** and for the
+Phase-1 safety case (row 30). It also gives **I-3** (self-supervised closed-loop adaptation) a
+sharper frame: the 09-01 finding was that the binding constraint is **auditability, not legality** —
+and an accreditation ladder is precisely an auditability instrument.
+
+**(b) Regulatory state, refreshed.** UN **GTR on ADS** adopted at **WP.29, 23-26 June 2026** (GRVA
+text agreed 19-23 Jan 2026); NHTSA's comment period on the draft GTR **closed 2026-02-23**. NHTSA
+**foot-brake NPRM 2026-06-26** (removing the foot-control mandate for autonomous-only vehicles),
+comments closed **2026-07-27**, **no final rule issued**. ⭐ **2026-09-17 (today): NHTSA places the
+Tesla Cybercab under sworn oath regarding the foot-brake requirement** — an enforcement datapoint
+against the deployment claim adjudicated as **A17-4 (CONTESTED)** on 09-13.
+
+⛔ **Debt D-4 (a UNECE GRVA primary) STANDS** — not re-probed today; eight routes have failed
+(HTTP 403) across prior passes, and it is with the PI.
+⚠️ All (b) items are **RELAYED** (news and government summaries); no primary regulation text was read
+today, so none of them may uphold or retract a claim on its own.
+
+→ `Frontier Scan/Daily/2026-09-17/RESULT.md` §1, §3

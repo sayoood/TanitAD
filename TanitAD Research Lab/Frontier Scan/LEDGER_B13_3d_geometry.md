@@ -145,3 +145,12 @@ with **no explicit geometry term at all**.
 tested.** Proposed as a backlog row with a committed outcome: **if an explicit geometry loss does not move
 azimuth-bin decodability, the ceiling is resolution-bound and the readout must be re-architected** — the
 expensive branch, but then a known-necessary one rather than an assumed one.
+
+
+## 2026-09-13-01 — OccFeat: FS9-9's supervision question answered — and today we can produce it
+
+`READ (HTML + PDF tables)` · arXiv **2404.14027v3** (12 Jun 2024, CVPRW 2024) · lib `2404.14027` (banked today).
+Auxiliary pretraining head "unsplats" BEV features to a 3-D volume predicting **occupancy** (*"a voxel occupied if it contains at least one Lidar point"*) and **DINOv2 features** of occupied voxels; head removed after pretraining. nuScenes, SimpleBEV EN-B0 vehicles IoU: **24.3 (+10.6) at 1 % labels · 30.9 (+4.9) at 10 % · 37.7 (+0.3) at 100 %**.
+⭐ **Our position:** supervision = LiDAR + camera + calibration. **The A&I FlyWheel built a LiDAR BEV GT over 139 PhysicalAI clips on 2026-09-13** (`…/2026-09-13-bev-lidar-corpus-and-head/`) ⇒ the self-supervised-occupancy redirect (S-3) is **unblocked on data**. ⛔ **But it is an ENCODER pretraining loss** — the seventh encoder-side lever this month; the frozen trunk forfeits it. Its gain is largest in the low-label regime the A&I head is in (82 train clips; `main − pixel` +0.0291 [−0.0040, +0.0693], INHERITED).
+Scan: **no Sept-2026 camera-only occupancy item** (EMPTY, probe 1).
+→ `Frontier Scan/Daily/2026-09-13/RESULT.md` F5 · experiment `E-B13-OCCF-1`

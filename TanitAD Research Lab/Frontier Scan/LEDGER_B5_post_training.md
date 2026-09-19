@@ -111,3 +111,8 @@ The **diagnosis** — open-loop is insufficient because actions change future st
 ⇒ Guideline **T-7**: any TanitAD closed-loop post-training arm reports **per-family reward decomposition from the first run**, not after a regression appears.
 
 Full adjudication: `../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md` rows **A16-1 … A16-3**. New debt **D-12** — no AlpaSim fidelity characterisation exists in any NVIDIA source we have read, **and we run AlpaSim ourselves, so it is answerable by measurement rather than only by reading.**
+
+## 2026-09-18-01 — A privileged RL teacher distilled into a vision student (DriveZero)
+
+`HTML primary via summariser` · arXiv **2609.06055**. DriveRL: mixed-agent closed-loop RL converting logs into interactive environments; PPO teacher **5.70 M params** on structured privileged observations; student learns by winner-takes-all distillation. RL-only < human (93.61 vs 93.92); **+ goal augmentation 94.41**. Concession: self-play benefit is small on nuPlan because IDM background agents do not reward natural interaction.
+**Our position:** RL where RL is cheap (a 5.7 M teacher on vectors), imitation where perception is expensive — and admissible under our label/inference split. FS18-2. Also scanned: Crisp-Drive `2609.03225`, CRAFT `2605.04470`, OmniDreams `2606.03159`.

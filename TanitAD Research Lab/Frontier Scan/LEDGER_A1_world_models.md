@@ -180,3 +180,70 @@ Hierarchical slow–fast WM. **Slow:** multi-step future representations, Dynami
 **Conceded limitation, verbatim:** *"the current model does not explicitly capture multimodal futures or predictive uncertainty, which may limit its performance in ambiguous and rare driving scenarios."* ⭐ Our REF-C fan and the B7 line address exactly this — a differentiator named by the opponent.
 
 → `Architecture & Inference/Research/2026-09-10-hierarchy-edge-external-datapoint/RESULT.md`
+
+
+## 2026-09-13-01 — HWM: the capacity-controlled hierarchy result, on a FROZEN encoder
+
+`FULL TEXT` · arXiv **2604.03208v2** (16 Jun 2026; banked 2026-08-27, read 2026-09-13) · Zhang, Terver, Zholus, Chitnis, Sutaria, Assran, Balestriero, Bar, Bardes, LeCun†, Ballas† (FAIR/NYU).
+Two latent WMs at different temporal scales in ONE shared latent space; the high-level model's first predicted latent is the low-level MPC's subgoal (latent matching); learned macro-action encoder (dim 4).
+
+**Table 16 (App. D.2), values:** Push-T flat 44M 55 % / 17 % · flat **98M 35 % / 15 %** · hierarchy **94M 78 % / 61 %** (H=10/15). Diverse Maze flat 54k 85/63 · flat **178k 82/59** · hierarchy **182k 95/83**. *"increasing the capacity of single-level models does not improve performance—in fact, it often degrades it"*.
+**Table 2:** Push-T d=25/50/75 — DINO-WM 84/55/17, hierarchy 89/78/61. Frozen DINOv2 encoder at both levels (25M low / 75M high predictor).
+
+⭐ **Our position:** the capacity control row 18 / H1b lacked now exists — **outside driving**. With Drive-HWM (2026-09-10-01: driving, NOT matched) the field holds one controlled non-driving positive and one uncontrolled driving positive; **the controlled driving cell is empty and is ours to fill.**
+⛔ **Not settled:** Table 16 has no interval and no seed count; matching is ±4 % (flat larger on Push-T); the high-level model also gets stride-10 waypoint data and a smaller search space (capacity is controlled, data is not); the 98M flat model degrading hints at an untuned baseline.
+⭐ **The first lever this month that works on a frozen encoder.**
+
+→ `Architecture & Inference/Research/2026-09-13-hwm-capacity-matched-hierarchy/RESULT.md`
+
+**Scan, same pass:** SV-WAM `2609.03602` (surround-view world-action model, future-video supervision for actions — unread) · `2609.03225` (long-horizon interaction-aware WM + GRPO, multi-style driving — unread).
+
+
+---
+
+## 2026-09-17 (LAB-RUN-014) — ⭐⭐⭐ the first controlled ablation on whether TEST-TIME imagination is needed at all
+
+**Fast-WAM `2603.16666` — FULL TEXT.** *"do WAMs need to imagine future observations at test time, or
+do they benefit primarily from learning to model them during training?"*
+
+Three variants share training and differ only at inference, plus a direct control that removes the
+video objective:
+
+| variant | RoboTwin avg | LIBERO avg | latency |
+|---|---|---|---|
+| Fast-WAM (no test-time future) | **91.8** | **97.6** | **190 ms** |
+| Fast-WAM-Joint (shared attention during denoising) | 90.6 | 98.5 | — |
+| Fast-WAM-IDM (generate video, then act) | 91.3 | 98.0 | 810 ms |
+| ⛔ Fast-WAM **w/o video co-training** (the control) | **83.8** | **93.5** | — |
+
+Also: LingBot-VA 92.2, Motus 87.8 (pretrained baselines). Real-world towel-folding: the no-co-training
+arm drops to **10 %**. 6 B total (5 B video DiT from Wan2.2 + 1 B action expert), action horizon 32,
+10 denoising steps, CFG 1.0. LIBERO 2,000 trials / 40 tasks; RoboTwin 100 trials per task.
+
+⭐ **Our position.** This splits the programme's thesis into two claims that must now be evidenced
+separately: *(a) a world model is the right thing to TRAIN* — **supported**, and it is the paper's
+sharpest number; *(b) rolling it at INFERENCE is what makes the planner good* — **no measurable
+benefit found**. Our planner rolls at inference. ⭐ It combines with our own measurements rather than
+contradicting them: at an h=1 action/scene ratio of **0.004** a rollout is close to a constant
+unrolled, and dropping such a rollout should cost nothing — which is what they measure.
+
+⛔ **Not settled.** No driving experiment exists in the paper (LIBERO / RoboTwin / towel-folding are
+tabletop manipulation); **no std and no seed count** for a 91.8-vs-91.3 comparison; the authors
+*"omit the outer auto-regressive loop"*, i.e. exactly the long-horizon regime driving needs; and they
+concede *"pretrained pi-0.5 remains the strongest method"* on the real-world task. **Transfer to
+driving is a HYPOTHESIS**, and `E-AI-NOIMAG-1` (0 GPU, banked dumps) is registered to test it on us.
+
+⚠️ **Correction watch:** this ledger's 09-13 entry credits the hierarchy result (HWM Table 16) to
+capacity control. Nothing today touches that. What today touches is the **inference-time rollout**,
+which is a different axis and must not be merged with it.
+
+→ `Frontier Scan/Daily/2026-09-17/RESULT.md` FS17-1 · `Architecture & Inference/Research/2026-09-17-frozen-trunk-external-evidence/RESULT.md`
+
+**Scan, same pass:** PWM `2510.19654` (unify world modelling + planning) · GraphWorld `2606.16274` ·
+UniDrive-WM `2601.04453` · DriveWAM `2605.28544` · CoWorld-VLA `2605.10426` · DAWN `2605.11550` ·
+`2608.24882` (latent action as intention) · `2605.06222` (when to trust imagination) — all unread.
+
+## 2026-09-18-01 — DriveZero: frozen VFMs + a privileged RL teacher reach navhard 57.1
+
+`HTML primary via summariser` · arXiv **2609.06055** (2026-09-05) · banked. navhard **two-stage 57.1 EPDMS** (Scale) / 51.5 (base); navtest 95.3 / 94.8 PDMS; HUGSIM zero-shot 46.6 HD-Score. Frozen DINOv3+SigLIP2+SAM+DA-V2 (+LoRA): **+0.53 PDMS** over DINOv3-only (ViT-S). 5.70 M-param privileged PPO teacher (DriveRL) distilled into the vision student; RL-only 93.61 < human 93.92; + goal augmentation 94.41. ⛔ ego kinematics + nav at inference ⇒ benchmark-arm only.
+**Our position:** above our stamp table's top (56.6). The privileged teacher is **admissible for us as a label factory** (labels may use anything). Experiments FS18-1 (stamp), FS18-2 (teacher-distillation arm). Also scanned: IDOL `2605.31476` (banked abstract-only — inverse dynamics on adjacent predicted BEV latents).

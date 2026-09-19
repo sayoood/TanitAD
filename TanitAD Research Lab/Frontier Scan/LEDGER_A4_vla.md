@@ -79,3 +79,16 @@ and names **no deployable architecture**. It may inform positioning; it may not 
 `CUDA speedup) and LinkVLA (claimed 86 % latency cut) are all UNREAD and UNBANKED. ⚠️ All three speedup`
 `figures above are RELAYED from search summaries and are barred from use until primaries are read —`
 `this ledger's own first entry is a correction of exactly that failure.`
+
+
+## 2026-09-13-01 — Language Residue taxonomy: TanitAD is an L1 system
+
+`READ (survey)` · arXiv **2608.30144** (banked 2026-09-05) · Guo, Su (Northeastern).
+L1 train-time-only language (zero inference cost) · L2 latent reasoning · L3 conditional invocation · L4 per-frame generation; five deployment axes (latency, params, memory, FLOPs, tokens). Relayed cost frame: one onboard autoregressive VLM call **500–2,000 ms** vs a **20–100 ms** loop (Huang et al. 2026 — RELAYED, unbanked).
+**Our position:** Alpamayo CoT → v7 labels at train time only ⇒ **L1 by construction** — a positioning line for the paper, not a lever. BLUE `2606.08684` (L3 gate, 0.11 M params, 2.54× speed-up) stays the reference if a language path is ever admitted.
+→ `Frontier Scan/Daily/2026-09-13/RESULT.md` F6
+
+## 2026-09-18-01 — A dedicated VLA deep (debt from 09-17): open-loop scores barely see whether the model uses its eyes
+
+`HTML primary` · arXiv **2605.31041** (ITSC 2026) · banked. Impromptu-VLA 3B: removing images entirely → open-loop L2 **+7.1 %**; closed-loop NeuroNCAP **−14.6 %**; 75 % downsampling **−27.2 %** closed-loop. Single model (conceded).
+**Our position:** independent, controlled corroboration of our action-echo finding and of the tier doctrine. Experiment FS18-3: image-removal/shuffle audit on our T1 (committed: < 10 % degradation ⇒ T1 is vision-blind).

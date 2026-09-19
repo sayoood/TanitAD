@@ -370,3 +370,65 @@ Method: train the state encoder so that `V(s,g) = −‖E(s) − E(g)‖` approx
 **Conceded limitation:** *"Planning with current latent world models remains restricted to short horizons."*
 
 → `Architecture & Inference/Research/2026-09-10-hierarchy-edge-external-datapoint/RESULT.md` · `Deployment & Optimization/Research/2026-09-10-i1-value-guided-latent/RESULT.md`
+
+
+## 2026-09-13-01 — SG-JEPA: a physical parameter as an action coordinate, and the gain is the encoder again
+
+`FULL TEXT` · arXiv **2609.10464v1** (9 Sep 2026) · Liu, Sun, Baker, Balestriero, Sous · lib `2609.10464` (banked today).
+Gravity `g` concatenated to the control (`a~_t = [u_t; g]`, constant per episode, z-scored). K=5 rollout loss, gamma=0.95, SIGReg, **no stop-gradient**, Muon/AdamW. vs DINO-WM: 3-D prediction error **−31–48 %**; Arm Catcher Ball capture **9.5 % → 23.3 %** (five seeds).
+⭐ **Attribution, their own:** fresh predictors on each FROZEN encoder — *"the GRU-trained encoder lowers mean rollout error by about 12 %"* (1.376 vs 1.555; 1.269 vs 1.453).
+
+**Our position:** (1) *physics-as-action* is our own speed-as-action-channel lever (REF-A 3.73 → 0.83 m) generalised — it is the **input form** for a posted limit if a supplier appears; (2) ⛔ **sixth encoder-located gain this month** — our frozen trunk forfeits the mechanism. Limitation conceded: one scalar (gravity), toy physics, linear theory.
+→ `Frontier Scan/Daily/2026-09-13/RESULT.md` F4 · experiment `E-B11-SGJ-1`
+
+
+---
+
+## 2026-09-17 (LAB-RUN-014) — ⭐⭐⭐ WA-JEPA calls deterministic regression "fundamentally ill-suited", and prices the fix
+
+**WA-JEPA `2608.20974` — FULL TEXT.** Verbatim: *"V-JEPA is built around random-mask completion and
+**deterministic regression**, making it **fundamentally ill-suited** for autonomous driving planning
+that demands future-directed prediction tightly coupled with action."*
+
+Two levers, separately ablated (Tab. 4b-c):
+
+| lever | effect |
+|---|---|
+| masking: full-mask alone 91.3 · patch-mask alone 91.0 · **both 91.7** | **+0.4 EPDMS** |
+| ⭐ **conditional flow matching vs deterministic regression** | **+1.0 EPDMS** |
+
+Method: hybrid future-masked pre-training (infer future latents from observed context) + conditional
+flow matching over latent futures + a joint future-action predictor denoising future scene tokens and
+ego trajectories in one latent space. Pre-trained nuPlan, fine-tuned NAVSIM. ViT-L, MMDiT-style.
+
+⛔ **STAMP: 91.7 is `navtest`** — *"Comparison with state-of-the-art methods on NAVSIM-v2 navtest"*
+(Discrete-WAM 90.4, SparseDriveV2 90.1). Our stamp table is **navhard** (48.3-56.6). **91.7 may not
+enter any navhard comparability table.** Closed-loop HUGSIM HD-Score **0.4462** vs DrivoR 0.3252,
+UniAD 0.3124, LTF 0.2310, VAD 0.1393 (436 scenarios).
+
+⭐ **Our position.** This is the **third independent line** converging on the latent regression
+objective: WA-JEPA (here), Sub-JEPA's frozen-projection concession (09-15), and our own P-1/P-2.
+⭐ **And it combines with Fast-WAM into a single position the programme does not currently hold:
+model the future STOCHASTICALLY while training, do NOT roll it at inference.** v7 does the opposite
+on both counts. Mechanism worth stating: a deterministic regressor against a stochastic future is
+driven to the **conditional mean**, and a conditional mean is action-insensitive **by construction** —
+which is a candidate cause for our measured h=1 action/scene ratio of 0.004. ⛔ Candidate, not cause.
+
+⛔ **Not settled.** No parameter counts published, so "+1.0 at matched params" cannot be verified; a
+different corpus (nuPlan) and a supervised planning head, so the number is not portable; **no
+limitations section at all** (recorded per amendment §7.2). `E-AI-FLOW-1` is pre-registered with both
+outcomes committed, including the MM-1 requirement to read numerator and denominator separately.
+
+**Banked-but-unread on this track:** `2606.31232` Delta-JEPA (⛔ PDF extraction FAILED today; its
+title names *action-sensitive world models via latent difference decoding*, the nearest external
+relative of row 13 / H-RANK-17 — read it properly, do not summarise the title) · `2608.07409`
+UniJEPA (abstract-only; claims planning *"up to tens of times faster than generative world models at
+comparable accuracy"*) · `2602.03604` EB-JEPA.
+**Scan:** Var-JEPA `2603.20111` · Causal-JEPA `2602.11389` · LeWorldModel `2603.19312` · Phys-JEPA `2606.16076`.
+
+→ `Frontier Scan/Daily/2026-09-17/RESULT.md` FS17-2
+
+## 2026-09-18-01 — Delta-JEPA read in full; the displacement carries the action — and on OUR frozen trunk it already does (LON)
+
+`FULL TEXT (local pypdf, debt from 09-17's failed extraction)` · arXiv **2606.31232**. Decode action from `Δz = z_{t+1} − z_t`: beats endpoint-concat by +4.07 / +1.07 / **+12.60** / +0.67 pp (3 seeds); λ = 0 nearly collapses; best λ = 50. Toy tasks, ViT-Tiny, end-to-end encoder.
+**Our measurement (`E-AI-LDAD-0`, MEASURED):** frozen refcv5-v2 `Δz` decodes 0.8 s ego acceleration at **R² 0.3297 [0.2384, 0.3957]**, +0.33 over pixels, +0.28 over the scene alone; LAT **VOID** (shuffle control leaked the scene term — my SPEC's defect). ⇒ LDAD for us is **predictor-side** (AI18-1). Independent confirmations in scan: `2609.03565` (IDM + state alignment, held), IDOL `2605.31476`.
