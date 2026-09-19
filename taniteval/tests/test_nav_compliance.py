@@ -291,22 +291,63 @@ def test_fan_coverage_reports_when_the_vocabulary_cannot_comply():
 # --------------------------------------------------------------------------- #
 # the label join                                                               #
 # --------------------------------------------------------------------------- #
+def _turn_yaw(start_f: int, n: int = 300, deg: float = 60.0):
+    """A yaw trace that turns `deg` over 4 s starting at frame `start_f`."""
+    y = np.zeros(n)
+    y[start_f:start_f + 40] = np.linspace(0, math.radians(deg), 40)
+    y[start_f + 40:] = math.radians(deg)
+    return y
+
+
+#: ⛔ FOUR clips, because `time_base_control` REFUSES to decide on fewer: a
+#: ">= 50 % of clips" rule over one clip is decided by that clip. The single-clip
+#: fixture this replaced could not tell 'could not test' from 'disagreed everywhere'.
+_TB_LABEL = {"nav_token": "NAV_TURN_L", "side": 1, "t0_s": 8.0,
+             "turns": [(4.0, 8.0, 60.0, True)],
+             "nav_time_rel_s": 4.0, "nav_distance_m": 30.0}
+_TB_LABELS = {c: dict(_TB_LABEL) for c in ("c0", "c1", "c2", "c3")}
+
+
 def test_time_base_control_picks_relative_when_the_turn_sits_at_t0_plus_rel():
-    yaw = np.zeros(300)
-    yaw[120:160] = np.linspace(0, math.radians(60), 40)    # turn at 12-16 s absolute
-    yaw[160:] = math.radians(60)
-    labels = {"c": {"nav_token": "NAV_TURN_L", "side": 1, "t0_s": 8.0,
-                    "turns": [(4.0, 8.0, 60.0, True)],
-                    "nav_time_rel_s": 4.0, "nav_distance_m": 30.0}}
-    tb = nc.time_base_control({"c": yaw}, labels)
-    assert tb["status"] == "OK" and tb["chosen"] == "relative"
-    yaw2 = np.zeros(300)
-    yaw2[40:80] = np.linspace(0, math.radians(60), 40)     # turn at 4-8 s absolute
-    yaw2[80:] = math.radians(60)
-    tb2 = nc.time_base_control({"c": yaw2}, labels)
-    assert tb2["chosen"] == "absolute"
-    tb3 = nc.time_base_control({"c": np.zeros(300)}, labels)
-    assert tb3["status"] == "BROKEN" and tb3["chosen"] is None
+    """The turn sits at t0 + nav_time_rel_s -> the RELATIVE base reproduces it."""
+    yaws = {c: _turn_yaw(120) for c in _TB_LABELS}      # 12-16 s absolute
+    tb = nc.time_base_control(yaws, _TB_LABELS)
+    assert tb["status"] == "OK" and tb["chosen"] == "relative", tb
+
+
+def test_time_base_control_picks_absolute_when_the_turn_sits_at_clip_time():
+    yaws = {c: _turn_yaw(40) for c in _TB_LABELS}       # 4-8 s absolute
+    tb = nc.time_base_control(yaws, _TB_LABELS)
+    assert tb["chosen"] == "absolute", tb
+
+
+def test_time_base_control_is_BROKEN_when_neither_base_reproduces_WITH_POWER():
+    """A flat yaw reproduces nothing. ⚠️ With ENOUGH clips that is a real BROKEN;
+    with one clip it is not, which is what the UNDERPOWERED arm below pins."""
+    yaws = {c: np.zeros(300) for c in _TB_LABELS}
+    tb = nc.time_base_control(yaws, _TB_LABELS)
+    assert tb["status"] == "BROKEN" and tb["chosen"] is None, tb
+
+
+def test_time_base_control_says_UNDERPOWERED_not_BROKEN_on_too_few_clips():
+    """⛔ THE REGRESSION THIS FILE EXISTS FOR, MEASURED 2026-09-19 on a real refcv6 arm.
+
+    At 10 episodes the control read `relative {n: 0}`, `absolute {n: 1, match: 0}` and
+    reported **BROKEN** — because `frac` is None with no testable clip and `None or 0.0`
+    scored ZERO SAMPLES as ZERO AGREEMENT. The SAME dump path at 35 episodes reads
+    `relative {n: 5, match: 5, frac: 1.0}` -> **OK**. The join was never broken; the
+    sample could not test it. An operator acting on the first message would have hunted
+    a join bug that does not exist.
+    """
+    one = {"c0": np.zeros(300)}
+    labels = {"c0": dict(_TB_LABEL)}
+    tb = nc.time_base_control(one, labels)
+    assert tb["status"] == "UNDERPOWERED", tb
+    assert tb["chosen"] is None
+    # ⭐ the same fixture WITH power must reach a real verdict, or the floor is
+    # just hiding the answer rather than qualifying it.
+    many = nc.time_base_control({c: np.zeros(300) for c in _TB_LABELS}, _TB_LABELS)
+    assert many["status"] == "BROKEN", many
 
 
 def test_join_uses_the_commanded_side_turn_only():

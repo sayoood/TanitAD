@@ -700,6 +700,13 @@ def join_windows_to_labels(clip_of_window: Sequence[str], t_now_s, labels: dict,
             "has_record": has, "time_base": time_base}
 
 
+#: ⛔ Below this many TESTABLE clips the control cannot decide anything: a ">= 50 %"
+#: fraction over 1-3 clips is decided by one clip, which is no basis for declaring a
+#: corpus join broken. This is a STATED FLOOR, not a measured one -- named so it can be
+#: argued with rather than buried in a comparison.
+MIN_CLIPS_FOR_TIME_BASE = 4
+
+
 def time_base_control(ep_yaw_by_clip: Mapping[str, np.ndarray], labels: dict, *,
                       dt: float = DT, raw_offset_frames: int = 0) -> dict:
     """⭐ THE CONTROL THAT DECIDES THE TIME BASE ON THE GT, NOT ON A DOCSTRING.
@@ -741,7 +748,16 @@ def time_base_control(ep_yaw_by_clip: Mapping[str, np.ndarray], labels: dict, *,
         n = res[hyp]["n"]
         res[hyp]["frac"] = round(res[hyp]["match"] / n, 4) if n else None
     fr, fa = res["relative"]["frac"] or 0.0, res["absolute"]["frac"] or 0.0
-    if max(fr, fa) < 0.5:
+    n_best = max(res["relative"]["n"], res["absolute"]["n"])
+    # ⛔ ZERO SAMPLES IS NOT ZERO AGREEMENT. `frac` is None when a hypothesis had no
+    # testable clip, and `None or 0.0` used to make 'could not test' indistinguishable
+    # from 'disagreed everywhere' -- which reported a PERFECTLY GOOD JOIN as BROKEN.
+    # MEASURED 2026-09-19: at 10 episodes this read relative{n:0} absolute{n:1,match:0}
+    # -> BROKEN; the same path at 35 episodes reads relative{n:5,match:5,frac:1.0} ->
+    # OK. The join was never broken; the sample could not test it.
+    if n_best < MIN_CLIPS_FOR_TIME_BASE:
+        chosen, status = None, "UNDERPOWERED"
+    elif max(fr, fa) < 0.5:
         chosen, status = None, "BROKEN"
     else:
         chosen, status = ("relative" if fr >= fa else "absolute"), "OK"
@@ -1087,6 +1103,16 @@ def from_refcv3_dump(dump_dir: str, labels_path: str | None = None, *,
     t_now = (A["ws"].astype(np.float64) + raw_off) * DT
     # ---- the time base, decided on the GT ----------------------------------- #
     tb = time_base_control(ep_yaw_by_clip, labels, dt=DT, raw_offset_frames=raw_off)
+    if tb["status"] == "UNDERPOWERED":
+        # ⚠️ A DIFFERENT SENTENCE ON PURPOSE. 'Broken' sends an operator to hunt a join
+        # bug; 'underpowered' sends them to run more episodes. They are different jobs.
+        return unavailable_block(
+            "the time base could not be TESTED: fewer than "
+            f"{MIN_CLIPS_FOR_TIME_BASE} clips in this dump carry a commanded turn "
+            f"(relative n={tb['hypotheses']['relative']['n']}, "
+            f"absolute n={tb['hypotheses']['absolute']['n']}). This says NOTHING "
+            "about the join \u2014 run more episodes.",
+            N, time_base_control=tb)
     if tb["status"] != "OK":
         return unavailable_block(
             "the label time base could not be reproduced on the GT yaw under "
