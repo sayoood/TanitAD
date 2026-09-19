@@ -393,20 +393,42 @@ def box3d_ap(pred: dict, tgt: dict, *, dist_thresh_m: float = 2.0,
     (1 - softmax probability of a no-object column; unused today, kept so the
     caller never invents a second scoring rule at the call site).
     """
+    per_elem, n_gt_elem = box3d_match_rows(pred, tgt, dist_thresh_m=dist_thresh_m,
+                                           use_z=use_z, score=score)
+    rows = [r for elem in per_elem for r in elem]
+    return ap_from_rows(rows, sum(n_gt_elem))
+
+
+def box3d_match_rows(pred: dict, tgt: dict, *, dist_thresh_m: float = 2.0,
+                     use_z: bool = True, score: str = "presence"):
+    """:func:`box3d_ap`'s greedy matching, per batch element, exposed.
+
+    Returns ``(per_elem, n_gt_elem)``: ``per_elem[b]`` is the list of
+    ``(conf, hit, pred_slot, gt_slot)`` rows in the matching order, with ``gt_slot``
+    the matched target's index in ``tgt``'s slot axis (``-1`` for a miss), and
+    ``n_gt_elem[b]`` is that element's number of valid targets.
+
+    ⭐ Split out (2026-09-19, PREREG_S1 S1A.4) so a caller can (a) take the AP's
+    OWN matched pairs, e.g. for a velocity error, rather than re-deriving a second
+    matcher, and (b) pool rows over a RESAMPLED set of elements for an
+    episode-cluster bootstrap. :func:`box3d_ap` is recomposed from this and
+    :func:`ap_from_rows` and returns exactly what it returned before (pinned by
+    ``tests/test_box3d_match_rows.py``).
+    """
     if score not in ("presence", "cls"):
         raise ValueError(f"score must be 'presence' or 'cls', got {score!r}")
     key = "box3d" if use_z else "box"
     if key not in pred:
         raise ValueError(f"pred has no {key!r}")
     B = int(pred[key].shape[0])
-    rows = []
-    n_gt = 0
+    per_elem, n_gt_elem = [], []
     with torch.no_grad():
         conf_all = (pred["presence_logit"].sigmoid() if score == "presence"
                     else pred["cls_logits"].softmax(-1).max(-1).values)
         for b in range(B):
+            rows = []
             valid = tgt["valid"][b].nonzero(as_tuple=False).flatten()
-            n_gt += int(valid.numel())
+            n_gt_elem.append(int(valid.numel()))
             if use_z:
                 pc = pred["box3d"][b][:, :3]
                 tc = torch.stack([tgt["box"][b][valid][:, 0],
@@ -420,7 +442,7 @@ def box3d_ap(pred: dict, tgt: dict, *, dist_thresh_m: float = 2.0,
             taken = torch.zeros(valid.numel(), dtype=torch.bool)
             for i in order.tolist():
                 if valid.numel() == 0:
-                    rows.append((float(conf[i]), 0))
+                    rows.append((float(conf[i]), 0, i, -1))
                     continue
                 d = (tc - pc[i][None, :]).norm(dim=-1)
                 d = torch.where(taken.to(d.device), torch.full_like(d, float("inf")), d)
@@ -428,11 +450,20 @@ def box3d_ap(pred: dict, tgt: dict, *, dist_thresh_m: float = 2.0,
                 hit = float(d[j]) <= float(dist_thresh_m)
                 if hit:
                     taken[j] = True
-                rows.append((float(conf[i]), 1 if hit else 0))
+                rows.append((float(conf[i]), 1 if hit else 0, i,
+                             int(valid[j]) if hit else -1))
+            per_elem.append(rows)
+    return per_elem, n_gt_elem
+
+
+def ap_from_rows(rows, n_gt: int) -> dict:
+    """All-point-interpolated AP from pooled ``(conf, hit, ...)`` rows -- the
+    arithmetic :func:`box3d_ap` has always used, unchanged. The sort is stable,
+    so pooled rows in element order give exactly the historical result."""
     if n_gt == 0:
         return {"ap": float("nan"), "n_gt": 0, "n_pred": len(rows),
                 "precision": [], "recall": []}
-    rows.sort(key=lambda r: -r[0])
+    rows = sorted(rows, key=lambda r: -r[0])
     tp = np.cumsum([r[1] for r in rows], dtype=np.float64)
     fp = np.cumsum([1 - r[1] for r in rows], dtype=np.float64)
     rec = tp / float(n_gt)

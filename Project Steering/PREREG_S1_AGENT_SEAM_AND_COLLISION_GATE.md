@@ -387,3 +387,28 @@ external validity moves. `v72` (an input-distribution shift against training) an
 ablation, item 23) are **not** run.
 
 <!-- /S1-AMENDMENT-NAV-2026-09-19 -->
+
+<!-- S1-AMENDMENT-BOXREAD-2026-09-19 -->
+### S1A.11 The box read's computation, fixed BEFORE it has any data (completes S1A.4)
+
+* **GT:** the trainer's **own** held-out agent targets. The pass makes the same calls on the
+  window dataset that `refc_v3_train.py` makes on its eval dataset: `JoinFileReader(agent_join,
+  with_rates=True, with_track_ids=True)`, then `enable_agent_join(reader, pad=agent_pad)`, then
+  `enable_join3d(open_join3d(...))` (`refc_v3_train.py` ~6524-6590). Windows the join marks as
+  NO_LABEL (`agent_label` false) are excluded from the read and counted.
+* **Detection:** **BEV** AP (`use_z = False`). The gate's collision check is BEV box overlap, and
+  missing 3-D labels are masked (`zh_mask`) rather than zeroed. Threshold: **2.0 m** centre
+  distance (`box3d_ap`'s default). Score: presence. All slots are ranked with no threshold. Rows
+  are pooled over windows via `box3d_match_rows` + `ap_from_rows`, which is **identical** to
+  `box3d_ap` on the batch (pinned by `tests/test_box3d_match_rows.py` against a frozen copy of the
+  historical function).
+* **Base rate:** per window `random_ap_base_rate(n_gt_w, n_pred_w, 2.0, (x_fwd_m, 2·y_half_m, 0))`,
+  with the extents read from the checkpoint's box head (`SlotDecodeRanges`). It is pooled as a
+  prediction-weighted mean, because AP under hits independent of score is the pooled precision.
+  **PASS iff the episode-cluster bootstrap CI's lower bound on AP exceeds this base rate.**
+* **Velocity:** on the AP's **own** matched pairs whose GT rate is observed
+  (`agent_rates_mask`): `err = ‖v_pred − v_gt‖₂` over `(v_rel_x, v_rel_y)`, against the
+  **zero-velocity floor** `‖v_gt‖₂` on the same pairs. **PASS iff the paired episode-cluster
+  bootstrap of `mean(floor − err)` (a ratio of per-window sums) has its lower bound > 0.**
+
+<!-- /S1-AMENDMENT-BOXREAD-2026-09-19 -->

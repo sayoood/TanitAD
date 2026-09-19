@@ -92,19 +92,59 @@ def expand_waypoints(wp, horizons, v0: float, n_ticks: int, dt: float):
     return x, y, yaw, v
 
 
+def candidate_world_poses(wp, horizons, pose_last, n_ticks: int, dt: float) -> torch.Tensor:
+    """``[M, n_ticks, 4]`` WORLD poses ``(x, y, yaw, v)`` at ticks 1..n: the format the
+    recorded future carries, so any consumer of the human's future (the proxy's state
+    constructor, the tactical labeler) reads a candidate the same way."""
+    pl = torch.as_tensor(pose_last, dtype=torch.float64).reshape(4)
+    x, y, yaw, v = expand_waypoints(wp, horizons, float(pl[3]), n_ticks, dt)
+    x0, y0, h0 = float(pl[0]), float(pl[1]), float(pl[2])
+    c, s = math.cos(h0), math.sin(h0)
+    wx, wy = x0 + x * c - y * s, y0 + x * s + y * c         # ego@t0 -> world
+    return torch.as_tensor(np.stack([wx, wy, yaw + h0, v], axis=-1)[:, 1:],
+                           dtype=torch.float32)
+
+
 def candidate_states(wp, horizons, pose_last, cfg=P.PROXY) -> torch.Tensor:
     """``[M, n_ticks + 1, 4]`` through ``pdm_proxy.ego_states_from_poses`` -- the constructor
     the HUMAN is scored with (``ddv2_rl_refcv5.py:241``), so candidate and human share one
     construction, rotation convention and yaw wrap."""
-    pl = torch.as_tensor(pose_last, dtype=torch.float64).reshape(4)
-    x, y, yaw, v = expand_waypoints(wp, horizons, float(pl[3]), cfg.n_ticks, cfg.dt)
-    x0, y0, h0 = float(pl[0]), float(pl[1]), float(pl[2])
-    c, s = math.cos(h0), math.sin(h0)
-    wx, wy = x0 + x * c - y * s, y0 + x * s + y * c         # ego@t0 -> world
-    fut = np.stack([wx, wy, yaw + h0, v], axis=-1)[:, 1:]   # ticks 1..n
-    m = fut.shape[0]
-    return P.ego_states_from_poses(pl[None].expand(m, 4).float(),
-                                   torch.as_tensor(fut, dtype=torch.float32), cfg)
+    fut = candidate_world_poses(wp, horizons, pose_last, cfg.n_ticks, cfg.dt)
+    pl = torch.as_tensor(pose_last, dtype=torch.float32).reshape(1, 4)
+    return P.ego_states_from_poses(pl.expand(fut.shape[0], 4), fut, cfg)
+
+
+def _wrap(a):
+    return (a + math.pi) % (2 * math.pi) - math.pi
+
+
+def pick_families(cand: torch.Tensor, human: torch.Tensor, dt: float = P.PROXY.dt,
+                  kappa_mask: float = 1e-3) -> dict:
+    """S1A.8 LONGITUDINAL + LATERAL on ONE selected candidate vs the human, both
+    ``[T+1, 4]`` ego-frame states ``(x, y, yaw, v)``. Errors are read in the HUMAN's frame
+    at each tick: along = the error projected on its heading, cross = on its left normal."""
+    out = {}
+    T = human.shape[0] - 1
+    for tag, k in (("2s", int(round(2.0 / dt))), ("4s", int(round(4.0 / dt)))):
+        if k > T:
+            continue
+        e = (cand[k, :2] - human[k, :2]).double()
+        h = float(human[k, 2])
+        out[f"along_{tag}"] = abs(float(e[0] * math.cos(h) + e[1] * math.sin(h)))
+        out[f"cross_{tag}"] = abs(float(-e[0] * math.sin(h) + e[1] * math.cos(h)))
+    k4 = min(int(round(4.0 / dt)), T)
+    out["speed_err_4s"] = abs(float(cand[k4, 3] - human[k4, 3]))
+    out["heading_err_4s"] = abs(_wrap(float(cand[k4, 2] - human[k4, 2])))
+    k2 = min(int(round(2.0 / dt)), T - 1)
+
+    def kappa(st):
+        ds = float((st[k2 + 1, :2] - st[k2 - 1, :2]).norm())
+        return _wrap(float(st[k2 + 1, 2] - st[k2 - 1, 2])) / max(ds, 1e-3)
+    kh, kc = kappa(human), kappa(cand)
+    out["kappa_human_2s"] = kh
+    out["curv_err_2s"] = abs(kc - kh) if abs(kh) > kappa_mask else None
+    out["curv_floor_2s"] = abs(kh) if abs(kh) > kappa_mask else None   # straight line
+    return out
 
 
 # ============================================================================ tracks

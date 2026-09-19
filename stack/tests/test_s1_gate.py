@@ -199,6 +199,28 @@ def test_the_MODEL_mask_is_honoured_before_the_gate():
     assert S.select(rank, keep, torch.tensor([True, True, False])) == (1, False)
 
 
+def test_FAMILIES_read_known_values():
+    """Along/cross are read in the HUMAN's frame. A candidate 1 m to the human's LEFT and 2 m
+    AHEAD, both heading along +y (yaw pi/2), reads along = 2, cross = 1 exactly."""
+    T = N_T + 1
+    h = torch.zeros(T, 4)
+    h[:, 1] = torch.arange(T) * DT * 10.0           # the human drives along +y
+    h[:, 2] = math.pi / 2
+    h[:, 3] = 10.0
+    c = h.clone()
+    c[:, 0] -= 1.0                                   # +y heading => LEFT is -x
+    c[:, 1] += 2.0
+    c[:, 3] = 12.0
+    f = S.pick_families(c, h)
+    assert f["along_2s"] == pytest.approx(2.0, abs=1e-5)
+    assert f["cross_2s"] == pytest.approx(1.0, abs=1e-5)
+    assert f["speed_err_4s"] == pytest.approx(2.0, abs=1e-5)
+    assert f["heading_err_4s"] == pytest.approx(0.0, abs=1e-6)
+    assert f["curv_err_2s"] is None, "a straight human path is MASKED, not scored as 0"
+    g = S.pick_families(h, h)
+    assert g["along_4s"] == 0.0 and g["cross_4s"] == 0.0 and g["speed_err_4s"] == 0.0
+
+
 @pytest.mark.parametrize("n", [5, 128])
 def test_RANDOM_is_the_EXACT_fan_mean_over_N_read_from_the_fan(n):
     g = torch.Generator().manual_seed(n)
