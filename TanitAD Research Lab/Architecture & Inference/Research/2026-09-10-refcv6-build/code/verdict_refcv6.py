@@ -104,6 +104,21 @@ REQUIRED_TACTICAL = {
 FORBIDDEN_ESTIMATORS = ("overlapping_holdout_se", "heldout", "jackknife")
 REQUIRED_ESTIMATOR_TOKENS = ("paired", "episode", "bootstrap")
 
+#: ⏸ PI RULING 2026-09-19 (queue ITEM 25, in session, verbatim): *"the strategic layer will be
+#: only switched off temporarily until we proved that both tactical and operative layers are
+#: driving with high quality. So the 4 layer rule is just temporarily paused and concerns only
+#: the strategic part. The nav command is an input at both training and inference."*
+#: ⇒ S1 is PAUSED -- never dropped, never a pass. It is still evaluated, its would-be verdict is
+#: reported beside the ruling, and it does not block SUCCESS while the pause holds. It pauses
+#: the STRATEGIC family ONLY: every other clause keeps its full force. Lifting the pause (set this
+#: to None, or pass --unpause-strategic) restores S1's original behaviour byte for byte.
+STRATEGIC_PAUSE = {
+    "ruling": "PI 2026-09-19, PI_DECISION_QUEUE.md ITEM 25",
+    "until": ("the tactical AND operative layers are proven to drive with high quality; "
+              "the strategic layer is switched off TEMPORARILY, not removed"),
+    "scope": "the STRATEGIC family only (clause S1); nav remains an INPUT at training AND inference",
+}
+
 
 class Clause:
     def __init__(self, cid, family, text, required=True):
@@ -179,7 +194,7 @@ def _margin_and_sep(m: dict, lower_is_better: bool) -> tuple[float | None, bool 
     return rel, (bool(sep) if sep is not None else None), problems
 
 
-def evaluate(panel: dict) -> dict:
+def evaluate(panel: dict, strategic_paused: bool = STRATEGIC_PAUSE is not None) -> dict:
     results: list[dict] = []
     est = _check_estimator(panel)
 
@@ -308,6 +323,20 @@ def evaluate(panel: dict) -> dict:
                     ("no separated strategic regression" if not regressed else
                      "⛔ route accuracy separably WORSE than the control."))
 
+    # ---- ⏸ the PI's temporary pause of the STRATEGIC family ---------------- #
+    # S1 was evaluated exactly as before; while paused its verdict is REPORTED beside the
+    # ruling and replaced by PAUSED, which the roll-up counts as neither a pass nor a block.
+    if strategic_paused:
+        for r in results:
+            if r["clause"] == "S1":
+                r["unpaused_verdict"] = r["verdict"]
+                r["verdict"] = "PAUSED"
+                r["detail"] = {**(r["detail"] or {}), "pause": STRATEGIC_PAUSE
+                               or {"ruling": "paused by caller"}}
+                r["why"] = (f"⏸ PAUSED by PI ruling 2026-09-19 (ITEM 25) until the tactical "
+                            f"and operative layers are proven -- NOT a pass. Unpaused this "
+                            f"clause would read {r['unpaused_verdict']}: {r['why']}")
+
     # ---- LONGITUDINAL / TACTICAL: reported, with n ------------------------- #
     for cid, family, req in (("G1", "LONGITUDINAL", REQUIRED_LONGITUDINAL),
                              ("T1", "TACTICAL", REQUIRED_TACTICAL)):
@@ -328,6 +357,7 @@ def evaluate(panel: dict) -> dict:
     # ---- roll up ----------------------------------------------------------- #
     n_missing = sum(1 for r in results if r["verdict"] == "MISSING_DATA")
     n_fail = sum(1 for r in results if r["verdict"] == "FAIL")
+    paused = [r["clause"] for r in results if r["verdict"] == "PAUSED"]
 
     if not est["ok"]:
         verdict = "REFUSED"
@@ -344,9 +374,17 @@ def evaluate(panel: dict) -> dict:
         why = f"⛔ {n_fail} clause(s) FAILED. Reported as written."
     else:
         verdict = "SUCCESS"
-        why = ("every committed clause passed: the ADE bar against BOTH "
-               "baselines with the 0.10 margin, the lateral non-regression, the "
-               "strategic non-regression, and the replicate floor.")
+        if paused:
+            why = ("every committed clause that is not PAUSED passed: the ADE bar against "
+                   "BOTH baselines with the 0.10 margin, the lateral non-regression, the "
+                   "longitudinal and tactical rows with n, and the replicate floor. ⏸ "
+                   f"PAUSED, NOT scored and NOT a pass: {', '.join(paused)} (the STRATEGIC "
+                   "family), by PI ruling 2026-09-19 until the tactical and operative "
+                   "layers are proven.")
+        else:
+            why = ("every committed clause passed: the ADE bar against BOTH "
+                   "baselines with the 0.10 margin, the lateral non-regression, the "
+                   "strategic non-regression, and the replicate floor.")
 
     return {
         "tool": "verdict_refcv6.py",
@@ -355,6 +393,8 @@ def evaluate(panel: dict) -> dict:
         "clauses": results,
         "n_clauses": len(results), "n_pass": sum(1 for r in results if r["verdict"] == "PASS"),
         "n_fail": n_fail, "n_missing_data": n_missing,
+        "n_paused": len(paused), "paused_clauses": paused,
+        "strategic_pause": STRATEGIC_PAUSE if strategic_paused else None,
         "verdict": verdict, "why": why,
     }
 
@@ -363,6 +403,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--panel", required=True)
     ap.add_argument("--json", default=None)
+    ap.add_argument("--unpause-strategic", action="store_true",
+                    help="score S1 (STRATEGIC) as originally committed. Use ONLY once the PI "
+                         "lifts the 2026-09-19 pause (ITEM 25).")
     a = ap.parse_args()
     try:
         with open(a.panel, "r", encoding="utf-8") as fh:
@@ -370,7 +413,8 @@ def main() -> int:
     except Exception as exc:
         print(f"⛔ could not read panel: {exc}", file=sys.stderr)
         return 3
-    out = evaluate(panel)
+    out = evaluate(panel, strategic_paused=(STRATEGIC_PAUSE is not None
+                                            and not a.unpause_strategic))
     if a.json:
         os.makedirs(os.path.dirname(os.path.abspath(a.json)) or ".", exist_ok=True)
         with open(a.json, "w", encoding="utf-8") as fh:

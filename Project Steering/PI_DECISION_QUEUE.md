@@ -1359,3 +1359,21 @@ Engineering/Research/2026-09-19-c4-hf-quota-check/`):
 (b) re-publish it with sha12 file names, then decide visibility; (c) leave it as is.
 **⭐ DEFAULT if unanswered: (c) status quo for the repo, AND no private push of the 386.5 GB cache
 until this item is ruled** — the push is the only action that could silently start billing.
+
+<!-- PI-RULINGS-2026-09-19 -->
+## ⭐⭐ PI RULINGS 2026-09-19 — items 25, 22, 23, 26 (+4) and the pod, answered in session
+
+**Sayed, verbatim:** *"1. again the strategic layer will be only switched off temporarily until we
+proved that both tactical and operative layers are driving with high quality. So the 4 layer rule
+is just temporarily paused and concerns only the strategic part. The nav command is an input at
+both training and inference as I stated many times · 2. a · 3. default, again nav is an input both
+in training and inference · 4. leave it as it is and make it with gated manual approval for access ·
+5. we will do it later"*
+
+| item | ruling | what was done, same turn |
+|---|---|---|
+| **25** — the refcv6 panel could never emit SUCCESS | ⏸ the **STRATEGIC family is PAUSED, temporarily** — not removed — until the tactical AND operative layers are proven to drive with high quality. The four-family rule is paused **for the strategic part only**. Nav is an **input at training AND inference**. | `verdict_refcv6.py`: S1 is still evaluated, reported as **PAUSED** beside the ruling and its would-be verdict, **never counted as a pass**, and does not block SUCCESS; every other clause keeps full force; `--unpause-strategic` restores S1 byte for byte. `verdict_dropproof.py`: 13/13 drop-mutants still blocked + 5/5 pause controls; two deliberate mutations of the pause (leaking it to every clause; counting it as a pass) both turn the proof REFUSE. |
+| **22** — the clean v2-line val | **(a) freeze n = 400** (sha256 `abe041db72a045b3…`, max \|d\| 0.0409) | adopted as the clean v2-line val; its non-exchangeability caveat travels with every number drawn from it |
+| **23** — which margin leads H-vs-F | **default (a): lead with the FED-NAV margin** — nav is an input at training and inference | the nav-zero margin is reported beside it as an ablation |
+| **26 (+ item 4)** — public HF repos | **leave them as they are, GATED with manual approval** | read back via the Hub API: `Sayood/tanitad-physicalai-w120-256x640cyl` (dataset) and `Sayood/tanitad-refc-v3` (model) are both `private: false, gated: "manual"` — **already in that state before the ruling; no change was needed.** ⚠️ A gated repo's FILE LIST stays visible, so the raw clip ids in 3,000 of the dataset's 6,061 file names remain readable; the ruling accepts that. The ceiling still BILLS rather than refuses, so any private push keeps its pre-push arithmetic check (E18). |
+| **D10** — the pod | **later** | parked until the dev-box checklist is complete |

@@ -1267,3 +1267,14 @@ registered parameter with no entry never received a gradient**, and the count is
 registered against 351 with state). ⛔ **It belongs in `stack/scripts/` as a POST-TRAINING GATE.**
 This defect class has now surfaced five times, and every single time **after** an arm was trained
 and, twice, after it was published.
+
+<!-- STRATEGIC-PAUSE-2026-09-19 -->
+⏸ **TEMPORARY PAUSE OF THE STRATEGIC FAMILY (Sayed, 2026-09-19, `PI_DECISION_QUEUE.md` ITEM 25).**
+*"the strategic layer will be only switched off temporarily until we proved that both tactical and
+operative layers are driving with high quality. So the 4 layer rule is just temporarily paused and
+concerns only the strategic part."* ⇒ While the strategic layer is switched off, report the
+STRATEGIC family as **PAUSED, with this ruling** — ⛔ never as a pass, ⛔ never silently omitted,
+and ⛔ never extended to longitudinal, lateral or tactical, which keep full force. Do not "fix"
+the pause; lifting it is the PI's call (`verdict_refcv6.py --unpause-strategic` restores S1).
+⛔ **Nav is an INPUT at training AND inference** — stated by the PI many times; it is not an oracle
+that disappears at deployment.

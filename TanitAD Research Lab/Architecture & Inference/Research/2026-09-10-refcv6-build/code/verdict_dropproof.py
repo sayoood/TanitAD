@@ -161,16 +161,36 @@ def main() -> int:
     base_v = evaluate(base)
     baseline_success = base_v["verdict"] == "SUCCESS"
 
+    # ⏸ The PI paused the STRATEGIC family on 2026-09-19 (ITEM 25). The two STRATEGIC mutants
+    # are therefore run UNPAUSED -- they prove the guard that comes back when the pause is
+    # lifted -- and every OTHER mutant runs under the pause, which proves the pause cannot
+    # leak into any other family.
     rows = []
     for mid, desc, panel, defect in mutants(base):
-        v = evaluate(panel)
+        strategic = mid in ("DROP_STRATEGIC", "STRATEGIC_N_ZERO")
+        v = evaluate(panel, strategic_paused=not strategic)
         rows.append({
             "mutant": mid, "description": desc, "real_defect": defect,
+            "evaluated": "UNPAUSED" if strategic else "PAUSED",
             "verdict": v["verdict"],
             "blocked": v["verdict"] != "SUCCESS",
             "n_missing_data": v["n_missing_data"], "n_fail": v["n_fail"],
             "why": v["why"][:220],
         })
+
+    # ⏸ Controls that must read KNOWN values under the pause (a pause is not a drop):
+    #   the strategic family absent -> SUCCESS, with S1 PRESENT as PAUSED, carrying the
+    #   ruling and its would-be verdict MISSING_DATA, and NOT counted as a pass.
+    pv = evaluate(_drop_family(base, "STRATEGIC"), strategic_paused=True)
+    s1 = next((r for r in pv["clauses"] if r["clause"] == "S1"), None)
+    pause_controls = {
+        "absent_strategic_reads_SUCCESS": pv["verdict"] == "SUCCESS",
+        "S1_present_as_PAUSED": bool(s1) and s1["verdict"] == "PAUSED",
+        "S1_would_read_MISSING_DATA": bool(s1) and s1.get("unpaused_verdict") == "MISSING_DATA",
+        "S1_not_counted_as_pass": pv["n_pass"] == pv["n_clauses"] - 1,
+        "ruling_carried": (pv.get("strategic_pause") or {}).get("ruling", "").startswith("PI 2026-09-19"),
+    }
+    pause_ok = all(pause_controls.values())
 
     blocked = sum(1 for r in rows if r["blocked"])
     out = {
@@ -181,7 +201,9 @@ def main() -> int:
         "n_survived": len(rows) - blocked,
         "survivors": [r["mutant"] for r in rows if not r["blocked"]],
         "mutants": rows,
-        "verdict": "PASS" if (baseline_success and blocked == len(rows)) else "REFUSE",
+        "pause_controls": pause_controls,
+        "verdict": ("PASS" if (baseline_success and blocked == len(rows) and pause_ok)
+                    else "REFUSE"),
     }
     if a.json:
         os.makedirs(os.path.dirname(os.path.abspath(a.json)) or ".", exist_ok=True)
@@ -193,7 +215,10 @@ def main() -> int:
     for r in rows:
         print(f"  [{'BLOCKED ' if r['blocked'] else 'SURVIVED'}] "
               f"{r['mutant']:<28} -> {r['verdict']}")
+    for k, ok in pause_controls.items():
+        print(f"  [{'OK  ' if ok else 'FAIL'}] pause control: {k}")
     print(f"[dropproof] {blocked}/{len(rows)} mutants blocked | "
+          f"pause controls {sum(pause_controls.values())}/{len(pause_controls)} | "
           f"verdict = {out['verdict']}")
     return 0 if out["verdict"] == "PASS" else 1
 
