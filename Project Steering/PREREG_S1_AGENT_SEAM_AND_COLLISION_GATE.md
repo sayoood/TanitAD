@@ -369,3 +369,21 @@ the gate and `s1_gate.arm_metrics`. The `nc = 0.5` share is reported beside it, 
 visible.
 
 <!-- /S1-AMENDMENT-ERRATUM-2-2026-09-19 -->
+
+<!-- S1-AMENDMENT-NAV-2026-09-19 -->
+### S1A.10 The nav fed to the A8 fan pass — decided with the Master Mind BEFORE the pass
+
+**nav = v1**, i.e. `refb_labels.nav_command (v1)`. This is the derivation A8 **trained** on (its
+`config.json`: `nav_from_v7: false`, `nav_cmd_derivation: "refb_labels.nav_command (v1,
+unchanged)"`), and exactly what the trainer's own held-out eval feeds. The fan is therefore the
+one A3/A8's `eval_traj` measured. PI items 23 and 25 rule that nav is an **input** at training
+and at inference, so this is the deployed configuration, not a leak. The pass checks, per window,
+that the nav it feeds equals the trainer dataset's own `nav_cmd` for that window (a known-value
+control).
+⛔ **The verdict text carries, next to the validity sentence:** *"nav = v1, the trained
+derivation; on PhysicalAI it is derived from the ego's own future path, so it is optimistic by
+construction."* All arms share one fan, so the comparison between arms is unaffected; only
+external validity moves. `v72` (an input-distribution shift against training) and nav-zero (the
+ablation, item 23) are **not** run.
+
+<!-- /S1-AMENDMENT-NAV-2026-09-19 -->
