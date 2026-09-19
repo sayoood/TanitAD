@@ -76,3 +76,32 @@ ITEM 26 already records, now larger.
 `code/pdq_items.py <n…>` prints an item's own section compacted; `code/hf_repo_names_audit.py
 <universe.json> <out.json>` repeats the HF audit (read-only; the universe is built from
 `clip_index.parquet` and is deliberately not banked).
+
+
+## Revision 2026-09-19 (after the PI's 2026-09-19 rulings, and item 17)
+
+⚠️ **This section supersedes the verdict table above for items 3, 4, 5, 13 and 17. Nothing above
+is edited.** The audit was written at `9e5f430`, before `537b028` recorded the PI's rulings of the
+same day; the Master Mind's landing note under §C already answers item 4 with ITEM 26.
+
+| item | revised verdict | evidence |
+|---|---|---|
+| **4** | **CLOSED-BY-RULING** | PI 2026-09-19: *"leave it as it is and make it with gated manual approval for access"*. Read back via the Hub API: **27 of 28** public repos are `gated: manual`, including all three whose file names carry clip ids and `tanitad-refc-v3`; no ungated public repo carries one (`raw/hf_public_gating.json`). |
+| **3**, **5** | **CLOSED-BY-RULING — deferred**, not overtaken | PI 2026-09-19: *"the strategic layer will be only switched off temporarily until we proved that both tactical and operative layers are driving with high quality."* |
+| **13** | **CLOSED-BY-RULING** — reinforced | 2026-09-19: *"5. we will do it later"* — the pod is parked. |
+| **17** (added) | **CLOSED-BY-RULING** | PI 2026-09-17: *"Its hygiene and reproducibility."* — the record stays, `tools/clipid_scan.py` guards growth. |
+
+**The guard, on tip `07541b7`:** the default UUID half reads **`NO-GROWTH`** (120 UUIDs in 27 files,
+equal to the baseline). The prefix half is **unchanged since the ruling** — 530 → 530 against the
+4,719-clip corpus list and 870 → 870 against the full index, **0 files grew** — but the baseline
+stores **0 prefixes for every file**, so `--clips` against it reads red on every existing prefix.
+Recording that floor is the guard owner's task. `raw/clipid_scan_tip_uuid_half.txt`,
+`raw/clipid_growth_since_ruling.json`.
+
+⛔ **Two corrections of my own, for the record.** (1) In the LAB-RUN-016 collection I presented
+the tip-wide clip-id count as a new PI decision and redacted the register; the PI had closed that
+question on 2026-09-17 (item 17), so the redaction is not landed. (2) While re-measuring, a direct
+call into the scan module read **0** UUIDs where the CLI read 120 on the same tree — a broken
+probe, discarded; every count above comes from the tool's own CLI.
+
+⇒ **Still wanting the PI: item 6 (optional), and the v6F runbook only if v6F is to be revived.**
