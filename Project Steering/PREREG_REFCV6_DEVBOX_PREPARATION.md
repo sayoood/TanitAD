@@ -975,3 +975,17 @@ all of it is pre-registered by the harness owner BEFORE any S1 data exists.
   references; its `roll_closed` drives the flagship's action loop, which refc_v3 lacks). The refcv6
   route is `refcv3_arm.py` → `t1_eval.analyze`, which already ran end to end on a refcv6 checkpoint
   at 416×1024 in W1 (`4000946`). What E9 still owes is its **s/window**.
+
+<!-- S1-FAN-128-ERRATUM-2026-09-19 -->
+### ⚠️ ERRATUM to "A4–A6 DESIGN DECIDED" above: the fan is **128** candidates, not 117
+
+Found by the TrainingFlyWheel before any S1 data. MEASURED: A8's and A3's `config.json` both record
+`anchors = {shape [128, 8, 2], source "refc.default_anchors (SYNTHETIC)", path null,
+v0_conditioned false}`, and neither argv passes `--n-anchors`. "117" is the **refcv4b fitted
+bank** (PREREG_S1 §4's held-constant list); the Master Mind's decision text carried it without
+re-reading the checkpoint record. ⇒ chance is **1/128 = 0.0078** (not 0.0085), so A3's
+anchor_acc 0.092 is **11.8×** chance; N is READ from the checkpoint, never a literal; RANDOM's
+expectation is over all N; and because the bank is synthetic and speed-independent, fan min-ADE is
+reported per speed tercile. Pre-registered in PREREG_S1 as *S1A ERRATUM-1*. Class:
+`D-EVALTOOL-ANCHOR-CHANCE` (2026-09-06) with the direction reversed — a constant carried from one
+checkpoint's record into another's.

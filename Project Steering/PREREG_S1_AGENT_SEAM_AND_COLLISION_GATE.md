@@ -327,3 +327,29 @@ proxy horizon.
   smoke on ≤ 10 halfB windows before the full pass.
 
 <!-- /S1-AMENDMENT-DEVBOX-2026-09-19 -->
+
+<!-- S1-AMENDMENT-ERRATUM-1-2026-09-19 -->
+### ⛔ S1A ERRATUM-1 (same day, still 0 S1 data) — the fan has 128 candidates, not 117
+
+**Wrong in S1A.1, S1A.7 and the Master Mind's decision text:** *"the 117 candidates"* and *"chance
+1/117 = 0.0085"*. Both were carried over from §4's *"`n_anchors` 117"* without being re-read from the
+checkpoint's own record.
+
+**True (MEASURED from `a8-occupancy-5k-20260919/run/config.json`, and identically from A3's):**
+`anchors = {shape [128, 8, 2], source "refc.default_anchors (SYNTHETIC)", path null,
+v0_conditioned false, sha256 42ec4ce281ee…}`. Neither run passes `--n-anchors`.
+* The S1 fan is **N = 128**, a **synthetic, speed-independent** bank plus learned offsets.
+* Chance for `anchor_acc` is **1/128 = 0.0078**, so A3's **0.092** is **11.8× chance**, not 10.8×.
+* ⚠️ §4's *"held constant: … anchors, `n_anchors` 117"* does **not** describe the dev-box refcv6 runs.
+  Which bank the pod arms will use is `PREREG_REFCV6_V2`'s question and is not settled here.
+* ⭐ **Consequence for the harness, pre-registered now:** N is **read from the checkpoint**
+  (`model.n_anchors` / `config.json:anchors.shape[0]`), never written as a literal. RANDOM's
+  expectation is over **all N** candidates. The verdict's validity sentence reads
+  *"`anchor_acc` 0.092 vs chance 1/128 = 0.0078"*. *(The same defect class as
+  `D-EVALTOOL-ANCHOR-CHANCE`, 2026-09-06, which hard-coded 1/128 where the bank held 117. Here it is
+  the other way round.)*
+* A speed-independent bank also narrows **external** validity further: at high v0 the synthetic
+  fan may cover the human's path worse than a v0-conditioned bank would. The fan's `min-ADE` to
+  the human is reported per speed tercile so this is visible, not assumed.
+
+<!-- /S1-AMENDMENT-ERRATUM-1-2026-09-19 -->
