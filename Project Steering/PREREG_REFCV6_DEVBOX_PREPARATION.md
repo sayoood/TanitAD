@@ -480,3 +480,106 @@ That is the draw, not a property of the mechanism; a real read needs many window
 episode, and the counts ride along so an underpowered read cannot be quoted bare.
 
 <!-- W-BOOTSTRAP-DONE-AND-PREMISE-CORRECTED-2026-09-19 -->
+
+---
+
+# ⭐⭐ RE-PRICING, 2026-09-19 — the rate this document was built on measured HOST PAGING
+
+⛔ **What is void, and what is not.** §3's PARTITION and §5's REPLICATE CONFRONTATION
+**stand unchanged**. Every **hour** in §1, §3 and §6 is **void**, because all of them derive
+from **29.1967 s/step** — and that figure was never a compute cost.
+
+## R.1 The measurement that voids it
+
+MEASURED 2026-09-18/19 on this box, and reproduced by hand before being acted on:
+
+| | peak allocated | s/step | fits (`peak_reserved ≤ 7.1 GB`)? |
+|---|---|---|---|
+| `resnet34` @ batch 2, **as this plan priced it** | **14.628 GB** | 29.1 | ⛔ **NO** — on an **8,188 MiB** card |
+| `resnet34` @ batch 2, **+ frozen-BN + chunk-ckpt 1** | **2.512 GB** | **2.8** | ✅ |
+| `resnet101` @ batch 1, same levers | **2.887 GB** | **4.2–4.9** | ✅ |
+| `resnet101` @ batch 2, same levers | 3.890 GB | **8.55** | ✅ |
+
+⛔ **On this Windows/WDDM box CUDA SPILLS PAST VRAM INTO HOST RAM INSTEAD OF RAISING.** The
+arm this plan was priced from was **paging**, so 29.1967 s/step is a host-memory measurement
+wearing a compute unit. ⇒ *"it did not raise"* is **not** a fit on this hardware, and the
+fit rule used throughout the re-pricing is `peak_reserved ≤ 7.1 GB`.
+
+⭐ **§4.1's own closing instruction is what produced this:** *"Do not close the `resnet101`
+question as 'needs a bigger card' until AMP + gradient checkpointing have been tried,
+because the current evidence cannot distinguish the two."* They were tried. Chunked
+checkpointing fits; AMP alone does not (14.74 GB); timm's own `set_grad_checkpointing`
+**raises** on this backbone and, once fixed, still does not fit (15.17 GB).
+
+## R.2 A full 40,284-step arm
+
+| configuration | hours | days |
+|---|---|---|
+| `resnet34` @ b2, levered | 31.3 | **1.31** |
+| `resnet101` @ b1, levered (slow end) | 54.8 | **2.28** |
+| `resnet101` @ b2, levered | 95.7 | **3.99** |
+| ~~the figure this plan used~~ | ~~326.7~~ | ~~13.61~~ ⛔ **void** |
+
+## R.3 Bucket (A), re-priced — **132.1 h → 33.6 h (5.50 d → 1.40 d)**
+
+⚠️ **Only TRAINING scales.** A3–A6 are eval-only and are **unchanged**; scaling them would
+have been the same class of error this document is correcting.
+
+| arm | old | new |
+|---|---|---|
+| A0 · A1 (no GPU) | 1.0 h | 1.0 h |
+| A2 harness + 40 steps | 1.0 h | 0.7 h |
+| A3 · A4 · A5 · A6 (eval only) | 12.5 h | **12.5 h** — unchanged |
+| **A7** ImageNet knockout (4 arms × 2,000) | 72.0 h | **13.3 h** |
+| **A8** occupancy → 5,000 | 42.4 h | **5.7 h** |
+| A9 conflict detector | 3.2 h | 0.3 h |
+| **TOTAL** | **132.1 h = 5.50 d** | ⭐ **33.6 h = 1.40 d** |
+
+**Headroom against the 7-day ceiling: 134 h** (was ≈ 36 h).
+
+## R.4 The replicate accounting, re-derived
+
+§5's rule is unchanged and still binds. The **share** changes: A7 is now **13.3 h of 33.6 h
+= 39.7 %** (was 55 %).
+⛔ **The conclusion does NOT change.** A7's replicate remains the **last thing cut**: cutting
+it still does not shorten the plan meaningfully (it saves 6.7 h of 33.6) and still **deletes
+the plan's only admissible lever claim**. The cheaper the arms get, the *weaker* the excuse
+for a one-seed result — a 14.3 % false-positive rate is not made acceptable by a short run.
+
+## R.5 What moves out of bucket (B) — and what does NOT
+
+| item | old | re-derived | verdict |
+|---|---|---|---|
+| **B1** `resnet101` **step-matched** | ⛔ *"0 steps are possible"* | **2.28 d** @b1 · **3.99 d** @b2 | ⭐ **MOVES TO (A)** |
+| **B1** `resnet101` **sample-matched** | — | **39.9–45.7 d** | ⛔ **STAYS IN (B)** |
+| **B3** 10-arm panel, **step-matched** | 136.1 d | **13.05 d** | ⚠️ borderline — two weeks of exclusive box |
+| **B3** 10-arm panel, **@ the 12,000-step cut** | 40.6 d | **3.89 d** | ⭐ **MOVES TO (A)** |
+| **B3** 10-arm panel, **sample-matched** | 1,361.3 d | **130.6 d** | ⛔ **STAYS IN (B)** |
+
+⭐ **THE SHAPE OF THE POD REQUEST CHANGES COMPLETELY.** It is no longer *"the dev box cannot
+run the primary trunk"* — it can, in **2.3 days**. What the dev box still cannot do is
+**SAMPLE-MATCHED** work: this box runs batch 2 where `refcv5-v2` ran batch 20, so matching
+the data a banked arm saw costs **10× the steps**, and that is where the 40–130 day figures
+live. ⇒ the pod case is now **specific and defensible** rather than general.
+
+## R.6 ⚠️ Three caveats that travel with every number above
+
+1. ⛔ **`--trunk-frozen-bn` CHANGES THE ARM.** Chunking alone shifts `ga_trunk` by **−40 %**
+   on `resnet34`; BN is pinned to ImageNet statistics to make chunking exact (agreement
+   **7.2e-6**). **There is NO configuration that both fits and reproduces the unpatched
+   arm's BN statistics.** Any comparison against a banked unfrozen-BN arm must say so.
+2. ⚠️ **§4.1's reduced-configuration clause is satisfied, and was checked:** the fit is at
+   **K = 3** (`--trunk-in-channels 9`) and **batch 2 is available**, so this is *not* a
+   reduced geometry and the rate *may* be used to size the pre-registered arm. The frozen-BN
+   change is a **different axis** and is declared in (1) rather than hidden here.
+3. ⭐ **§4.1's `A10` is DONE and is no longer an estimate.** It asked for a 200-step sizing
+   arm at *"≈ 65 s/step (ESTIMATED; re-measure, do not scale)"*. Re-measured: **4.2–4.9
+   s/step at batch 1** — the estimate was **13–15× pessimistic**, which is itself an argument
+   for the instruction never to scale an estimate.
+
+⚠️ **§3.1's governing constraint is UNCHANGED and still binds:** one epoch over a 62-clip
+half is 5,302 steps. At 2.8 s/step that is **4.1 h**, not 43.0 h — so a 2,000-step arm still
+sees **0.38 of one epoch**, and **no arm in bucket (A) is a capability claim.** Cheaper steps
+buy more arms; they do not buy more data.
+
+<!-- DEVBOX-PREP-REPRICED-2026-09-19 -->
