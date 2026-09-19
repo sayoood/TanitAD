@@ -1377,3 +1377,48 @@ in training and inference · 4. leave it as it is and make it with gated manual 
 | **23** — which margin leads H-vs-F | **default (a): lead with the FED-NAV margin** — nav is an input at training and inference | the nav-zero margin is reported beside it as an ablation |
 | **26 (+ item 4)** — public HF repos | **leave them as they are, GATED with manual approval** | read back via the Hub API: `Sayood/tanitad-physicalai-w120-256x640cyl` (dataset) and `Sayood/tanitad-refc-v3` (model) are both `private: false, gated: "manual"` — **already in that state before the ruling; no change was needed.** ⚠️ A gated repo's FILE LIST stays visible, so the raw clip ids in 3,000 of the dataset's 6,061 file names remain readable; the ruling accepts that. The ceiling still BILLS rather than refuses, so any private push keeps its pre-push arithmetic check (E18). |
 | **D10** — the pod | **later** | parked until the dev-box checklist is complete |
+
+---
+
+## §C — audit 2026-09-19: which of the older items are still live
+
+**By the DataFlyWheel, on the Master Mind's request. Append-only — no old item above is edited.**
+Evidence is quoted from tip `9e5f430`; `:N` means line N of THIS file at that tip. Verdicts:
+**CLOSED-BY-RULING** (a later PI ruling answered it, quoted) · **OVERTAKEN** (what it asks about is
+gone or replaced) · **STILL-LIVE** (a genuine open question, with its default). Package:
+`TanitAD Research Lab/Data Engineering/Research/2026-09-19-pi-queue-audit/`.
+
+⇒ **Of the 14 rows audited, only three still want the PI: 4 (fold into 26), 6 (optional, and
+newly relevant), and the v6F runbook — and that one only if v6F is to be revived.**
+
+| item | verdict | evidence |
+|---|---|---|
+| **1** — no VLM; the Alpamayo labels stand as teacher signals | **CLOSED-BY-RULING** | The PI's own words, typed into the DataFlyWheel's session on 2026-09-07 — *"no vlm, we stick to the alpamayo labels as teacher signals"* — first-hand there, relayed here; banked verbatim at `…/2026-09-01-v8-tacsit-release/V8_MANIFEST.json:166`. Consistent first-hand ruling to the Master Mind 2026-09-15 (c): the tactical layer learns *"using the gt labels in our data set"* (`Decisions/2026-09-15-pi-directives.md`). The default is fully in effect either way. |
+| **3** — the 15-token strategic vocabulary | **OVERTAKEN** | refcv6 deactivates the whole strategic layer, *"route head, `g_str`, strategic GRU … (PI)"* (`SPEC_REFCV6_V2.md:51`; :1321). Nothing in the current plan trains a strategic vocabulary; the corpus gap (6 of 15 tokens) returns only if a later arm re-enables the layer. |
+| **4** — `tanitad-refc-v3` is PUBLIC | **STILL-LIVE → fold into ITEM 26** | Still public: 2.142 GB, 12 files, **0** raw clip ids in its file names (read-only HF audit, 48 repos). ⛔ **The audit found TWO MORE public repos whose file names carry raw clip ids:** `tanitad-ph0-aug120` (39.9 GB, **6,833** names) and `tanitad-flagship-v5f-w120` (31.7 GB, **16** names), beside item 26's 455.4 GB repo (3,000). Default: status quo — item 4's own, and item 26's (c). |
+| **5** — the `g_str` ~40k-step retrain | **OVERTAKEN** | *"The A40 is **stopped and gone**"* (:172), and refcv6 deactivates `g_str` (`SPEC_REFCV6_V2.md:51`). Heavy compute is now the pod the PI will provide after dev-box preparation (`Decisions/2026-09-15-pi-directives.md:28`). |
+| **6** — a human spot-check of ~50 traffic-light frames | **STILL-LIVE — optional, and newly relevant** | The colour labels now have a consumer. `TRAFFIC_LIGHT_REACT_*` sit in the tactical vocabulary (`stack/tanitad/models/vocab_v7.py:108-109`); the tactical-goal gate was widened on 2026-09-18 so a refcv6 tactical arm gets those targets (`stack/tests/test_tacgoal_eval_target_wiring.py:50-55`); and 2026-09-15 (c) has the tactical layer learn every behaviour from the labels. **Default:** not done; accepted risk; the ego-only control on any traffic-light head stays the mandated guard. **Unblocks:** a per-instance error bound on the colour labels before refcv6 trains on them. |
+| **7** — the RL pilot's adapter | **OVERTAKEN** | The executed RL path is now D9, `stack/scripts/ddv2_rl_refcv5.py` (PI 2026-09-17: *"dont park D9, solve it and prove it"*, :1052), which imports **none** of `refcv3_adapter`, `refc_adapter`, `rl_pilot_refc21`. ⚠️ Engineering note, not a decision: `refc.py` still consumes `v0` unconditionally, so a dropped `v0` reads as a stationary car (X15). |
+| **9** — refcv5-v2 as the compose arm; environment grounding | **OVERTAKEN** | refcv5-v2 is **COMPLETE at 40,284 and evaluated** (`MODEL_REGISTRY.md:3372`). Environment grounding moved to refcv6 and was ruled 2026-09-17: the BEV encoder moves into the model forward (:796). |
+| **10** — 11,286 parameters with no gradient; the `--w-tac-goal` budget | **OVERTAKEN** | refcv5-v2 finished (above). The budget was measured (`9d13fd2`, 2026-09-11: 0.05). E19 closed from the record in `9e5f430` (`PREREG_REFCV6_DEVBOX_PREPARATION.md:924-952`): `--w-tac-goal` gates only V1 arm C, and V2 supplies tactical targets through `--w-tac-v6`. |
+| **11** — does "finish the implementation" authorise WP-C? | **CLOSED-BY-RULING** | PI 2026-09-17, verbatim *"for 3 chose defult"* (:1040-1041), mapped at :1051 to the agent/selection seam: *"carry it as a named arm with its own pre-registration."* WP-C's lever runs only that way. |
+| **12** — refcv6 arm D: `ddim` + `--w-u0 0` refused | **CLOSED-BY-RULING** | `stack/scripts/refc_v3_train.py:839-841`: *"THE PI RULED 2026-09-11: 'follow your recommendation' — authorise this configuration behind an EXPLICIT ACKNOWLEDGEMENT"*. The flag is `ack_ddim_no_u0` (:849), and V2's F6 sets it by construction (:386-390). |
+| **13** — refcv6 needs a pod | **CLOSED-BY-RULING** | *"Use my computer for prepration and final design of refcv6 then I will provide a pod for heavy work"* (`Decisions/2026-09-15-pi-directives.md:28`, consequence (e)). The request itself is earned by `PREREG_REFCV6_DEVBOX_PREPARATION.md` §8.4. |
+| **14** — Qwen-Drive videos, scope, layers | **OVERTAKEN** | The corpus augmentation the PI ordered on 2026-09-15 runs as **SAM3** production on Thor (`Decisions/2026-09-15-pi-directives.md` §1). On SAM3-only maps, PI 2026-09-13: *"it can significantly augment our data set"* (`GOALS_AND_CLAIMS.md:11573`). Qwen-Drive's occupancy was measured unusable (:11550 there); its map regions survive only as an open fusion hypothesis (:11558 there). |
+| **16** — the conflict statistic cannot see its defect | **NO PI RULING NEEDED — default half-built** | Built: `stack/tanitad/train/grad_conflict.py:271-273` logs `cos`, `ratio` and `proj`, and A9 priced it. ⛔ **Not built: B2 "restated as DIRECTION-ONLY with a magnitude criterion on `ratio`" exists only here (:669), in no pre-registration.** Owed by the detector's owner before any arm is scored on B2. |
+| **v6F runbook** — `ChainConfig` has no nav label | **NOT A PI DECISION — a RED TEST with TWO defects** | Nav is already ruled mandatory (PI directive 2026-08-30, quoted by the trainer's own preflight; 2026-09-15 (b); :1169). `stack/tests/test_runbook_commands.py::test_every_runbook_launch_line_passes_the_trainers_own_preflight` **FAILS** (`:259`): the lines `ChainConfig` builds (`stack/scripts/v6_chain.py:604`, no `nav_cond` / `nav_labels`) are refused for **(1)** a missing `--nav-cond` and **(2)** `--horizons (1, 2, 4)`, whose heads 2 and 4 **no loss consumes**. `test_nav_v6stack.py` passes 17/17 — it is not the red one. v6F is absent from the PI's 2026-09-15 order (refcv6 → refav1 → v7). **Owner action:** fix `ChainConfig`, or retire the v6F runbook and its test with that reason. A PI question only if v6F is to be revived. |
+
+<!-- PIQ-AUDIT-OLDER-ITEMS-2026-09-19 -->
+
+> ⭐ **Master Mind, at landing (2026-09-19):** §C above was written at `9e5f430`, BEFORE the PI ruled
+> in session on items 25, 22, 23 and 26 (+4) — see *PI RULINGS 2026-09-19* earlier in this file
+> (`537b028`). Item 4 is therefore ANSWERED with 26 ("leave it as it is, gated with manual
+> approval"). The audit found two MORE public repos with raw clip ids in their file names
+> (`Sayood/tanitad-ph0-aug120`, 39.9 GB, 6,833 names; `Sayood/tanitad-flagship-v5f-w120`,
+> 31.7 GB, 16 names), so ITEM 26 spans ~527 GB across three repos. Read back via the Hub API,
+> **all three are already `private: false, gated: "manual"`** — the ruling holds for every one
+> of them with no change. The ordering trap stands, larger: flipping all three PRIVATE would reach
+> ~704 GB, and adding the 386.5 GB cache push ~1,090 GB — over the 1 TB ceiling, and BILLED.
+> Still wanting the PI: **item 6** (optional traffic-light spot-check — MORE live now that
+> `TRAFFIC_LIGHT_REACT_*` are refcv6 tactical targets; default: not done, accepted risk) and the
+> **v6F runbook** only if v6F is to be revived.
