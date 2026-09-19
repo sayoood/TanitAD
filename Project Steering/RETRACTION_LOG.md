@@ -15674,3 +15674,30 @@ eval asserts `not model.training` at its first forward, and isolates the RNG it 
 an acceptance test on shape cannot see a mode error, because the rows look right in both modes.
 And the check that would have caught it existed: a pinned test went RED at HEAD and I did not
 run it — ⇒ run the tests that pin the code you touched, not only the ones you wrote.
+
+<!-- RETR-2026-09-19-WINDUMP-ESTIMAND -->
+### RETR-2026-09-19-WINDUMP-ESTIMAND — addendum to `RETR-2026-09-19-WINDUMP-TRAIN-MODE`: the rows' plain mean is a different estimand, EVEN IN EVAL MODE
+
+**Retracted (TrainingFlyWheel, 2026-09-19):** the premise in the W-BOOTSTRAP block's own comment
+that at batch 1 *"a 'batch mean' IS the window value and the rows can be clustered by `episode_id`
+without decomposing the loss"*. That premise is what made the acceptance run's reducer `"mean"` look
+like the bootstrap of `eval_traj`. **The mode fix does not remove this.**
+
+**Truth (MEASURED).** `loss_traj = Σ|err|·sv / (2·Σsv)` (`refc_v3_train.py`) is a
+**valid-slot-weighted** mean over the batch, and `eval_traj` averages **batch-2 pairs**. So whenever
+windows carry unequal valid futures, the equal-weight mean of batch-1 rows is not `eval_traj`.
+Real data does carry them: on the acceptance run 15 of 16 windows were full and 1 was at 0.5.
+Rebuilding its train-mode rows by the loss's own rule closes **0.0611** of the 0.0926 gap; the
+remaining 0.0316 is the train mode. The two effects need not add, so this is one ordering. In eval
+mode the rows rebuild `eval_traj` **exactly** by `Σ traj·frac / Σ frac` per consecutive pair
+(`frac` = `slot_valid_frac`). This is pinned by
+`stack/tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row`
+(rel 1e-5), with a control that the rig really has partial futures. ⇒ A7 bootstraps the
+**slot-weighted ratio** per draw, with the plain mean as a sensitivity row. That was pre-registered
+before data in `PREREG_REFCV6_DEVBOX_PREPARATION.md` A7.8.
+
+**ROOT-CAUSE CLASS:** *a mean of per-unit ratios read as the ratio the aggregate computes.* The
+acceptance's own control could not see it. A self-vs-self paired bootstrap reads exactly 0 for ANY
+rows, including wrong ones. ⇒ **When per-unit rows are added to decompose an aggregate, the
+acceptance test is that the rows REBUILD the aggregate by the metric's own weighting, on the same
+units. A control that is identity-true for any values proves only that the machinery runs.**
