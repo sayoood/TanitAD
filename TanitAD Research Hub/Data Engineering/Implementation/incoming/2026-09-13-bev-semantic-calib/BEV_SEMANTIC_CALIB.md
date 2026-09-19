@@ -2907,3 +2907,57 @@ shorter. **The corridor's placement is settled to the metric; its range calibrat
 
 ⚠️ The yaw is now consistent across every non-conditional estimate: `lane_calib` −7.01, `clear_L`
 slope −6.75/−7.01, containment −7.50, margin −7.75. The shipped −5.35 is outside all of them.
+
+## 136. ⭐ Verified ON THE RENDER, and the model agrees with it
+
+The optimisation scored a *predicted* projection. Closing the loop — reading the **drawn** ribbon out
+of the composite and testing it against the drivable mask built from the source frame:
+
+| render | on-road | p1 | **p5 margin** | median | n |
+|---|---|---|---|---|---|
+| v1 `−5.35 / 448.4 / −0.126` | 84.3 % | −0.25 | **−0.13 m** | +0.33 | 15598 |
+| v5 `−7.01 / 448.4 / −0.088` | 97.2 % | −0.20 | +0.12 m | +0.63 | 7554 |
+| **v6 `−7.75 / 472 / −0.15`** | **97.9 %** | −0.16 | **+0.27 m** | **+0.85** | 7552 |
+
+**Predicted 98.0 %, measured on the render 97.9 %** — the projection model and the renderer agree,
+which is what makes the optimisation admissible rather than circular.
+
+⚠️ v1's sample count is **twice** the others' because it drew the ribbon down over the bonnet
+(`R-2026-09-15-nearclip`); the near-clip fix removed those rows, and they were the widest and worst.
+
+## 137. ⭐⭐ THE PIPELINE HAD THE ANSWER. THE OVERRIDE WAS THE BUG.
+
+From the v6 run's own calibration stage, with no input from this document:
+
+    LaneCalib(yaw=-6.86 deg, lane_width=3.40 m, frames=59, segments=981, yaw_spread=0.31 deg)
+    yaw: FOE -6.31 deg -> lane VP -6.86 deg (-0.55 deg, 0.38 m at 40 m)
+
+* `lane_width = 3.40 m` over 981 segments — **identical to the independent left-anchored
+  measurement (3.38–3.40 m, robust sd 0.18)**;
+* the **FOE fitted this time** (−6.31°), so the credibility gate had a real reference and would have
+  **accepted** −6.86°.
+
+Scored with the metric (horizon 472, lateral −0.15):
+
+| yaw | source | on-road | p5 |
+|---|---|---|---|
+| **−5.35** | operator override (shipped) | 82.1 % | **−0.25 m** |
+| −6.31 | pipeline FOE | 96.9 % | +0.13 m |
+| **−6.86** | **pipeline's own lane VP** | 97.7 % | **+0.23 m** |
+| −7.01 | `lane_calib` v1 | 97.9 % | +0.24 m |
+| −7.75 | this document's optimum | 98.3 % | +0.29 m |
+
+⭐ **My hand-tuned value beats the pipeline's own measurement by 0.06 m of p5 margin — inside the
+noise.** Six renders of parameter-chasing recovered what `lane_calib` reports unaided. **The entire
+defect was `--cam-yaw -5.35`, an operator override that bypassed a working measurement.**
+
+⚠️ **AND I MISREAD THE GATE WHILE CHECKING THIS.** I read `lane_calib.py:282` — which still compares
+against `cam.yaw` and still says *"from the FOE"* unconditionally — and reported the gate as unfixed.
+It is fixed, **in the caller**: `pipeline.py:583` sets `max_yaw_correction_deg = 4.0 if foe_measured
+else 15.0`, exactly as `test_trajrecon_yaw_gate.py` asserts. ⇒ **Reading a guard without reading its
+call site is reading half the code**, and it is the same mistake as `R-2026-09-15-nearclip`, where
+the docstring was right and the application wrong.
+
+⇒ **STANDING RECOMMENDATION: do not override `--cam-yaw` on this corpus.** Let `lane_calib` measure
+it. An override is admissible only with a measurement that beats the metric by more than its noise,
+and this one did not.
