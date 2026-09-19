@@ -63,12 +63,14 @@ def trainer_windows(ds, n: int, seed: int = 12345) -> list[int]:
 
 class Corpus:
     def __init__(self, config_path: str, cache: str, labels: str, agents: str,
-                 maps: str | None, lru: int = 2):
+                 maps: str | None, lru: int = 2, episodes_n: int = 0):
+        """``episodes_n`` > 0 builds a SMALL corpus for probes only; the window-identity
+        check (``_windows``) then cannot pass, so no pass or verdict can run on it."""
         self.config_path, self.cache = config_path, cache
         self.config = json.loads(Path(config_path).read_text(encoding="utf-8"))
         self.cfg, self.targs, self.cfg_src = ARM.rebuild_config(self.config)
-        ns = types.SimpleNamespace(episodes=cache, lru=lru, episodes_n=0, labels=labels,
-                                   nav_source="none")
+        ns = types.SimpleNamespace(episodes=cache, lru=lru, episodes_n=int(episodes_n),
+                                   labels=labels, nav_source="none")
         (self.eps, _, self.clip_ids, self.ds, _, self.join, _,
          self.raw_off) = ARM.build_corpus(ns, self.cfg, {})
         self.W = int(self.cfg.core.window)
