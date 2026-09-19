@@ -919,3 +919,35 @@ as `sum(traj·frac)/sum(frac)` per consecutive pair.
 ⛔ And a pinned test (`test_refc_v3_save_before_eval`) was already RED at HEAD from W-BOOTSTRAP's
 second `model.train()` — a defect I shipped without seeing it. Retraction:
 `RETR-2026-09-19-WINDUMP-TRAIN-MODE`.
+
+<!-- E16-E19-CLOSED-2026-09-19 -->
+## ✅ E16 and E19 CLOSED FROM THE RECORD, 2026-09-19 — neither needs a new PI value
+
+### E16 / C1 — "resnet101 may be a TRAINER gap, not a card gap": DECIDED, and the answer was the trainer
+C1 asked for AMP + gradient checkpointing to be *"tried (with a bit-identity proof) or explicitly
+deferred in writing"*. **Gradient checkpointing was tried and is proven:** leading-batch chunk
+checkpointing of the trunk (`--trunk-chunk-ckpt 1`) with BN pinned to ImageNet statistics
+(`--trunk-frozen-bn`) fits resnet101 at 416×1024 in **2.887 GB** (batch 1) / **3.890 GB** (batch 2)
+on the 8 GiB card (MEASURED, `8b1f1db`); chunking with frozen BN agrees with the unchunked forward
+to **7.2e-6** (R.6). Both are real, stamped flags (`0f6036d`). ⇒ C1's hypothesis is CONFIRMED: the
+OOM was *"not fitting as the trainer was written"*, never *"the card is too small"*.
+**AMP is DEFERRED, in writing:** it is not needed to fit, it would change the arm's numerics (a
+second variable against every banked fp32 arm), and it is a separate knockout if ever wanted.
+⚠️ The frozen-BN caveat of R.6 (1) still travels: *there is no configuration that both fits and
+reproduces the unpatched arm's BN statistics*; A7's recalibration amendment (A7.2) handles it for
+the one lever claim that depends on it.
+
+### E19 / C5 — "the two values that are the PI's": RESOLVED FROM THE RECORD for refcv6 V2
+* **`--w-agent` = 1.0** is PRE-REGISTERED (`…/2026-09-07-p1-agent-gate/PREREG.md:46`, under
+  `D-P1-AGENTCOND-1`, written before any outcome) and is the value every dev-box instrument
+  (A2, A3, A8, A9) has run with. ⚠️ C5's *"NOT PRE-REGISTERED"* is corrected by this pointer.
+* **The V2 tactical weights are FIXED BY THE SPEC, not open:** `SPEC_REFCV6_V2.md:90` —
+  *"BCE 0.05 on goal tokens, CE 0.025 per action head, inside the existing MANEUVER_WEIGHT
+  budget"* — and the trainer carries them INSIDE `--w-tac-v6` (`refc_v3_train.py`, the flag's
+  own help: *"goal BCE 0.05 + lat CE 0.025 + lon CE 0.025, i.e. the existing MANEUVER_WEIGHT
+  budget"*), whose outer multiplier every instrument runs at 1.0.
+* **`--w-tac-goal` belongs to the OLDER V1 panel** (`…/2026-09-10-refcv6-build/code/arms.py`:
+  lever `C  --w-tac-goal <PI>`, default 0.0), which drives refcv5-v2's 22-token head — the head
+  V2's tactical decoder replaces. It gates only V1 arm C, a bucket-(B) pod arm.
+⇒ **E19 needs no PI value for refcv6 V2.** If the PI later wants the V1 10-arm panel run on the
+pod, `--w-tac-goal` becomes a live question then (queue item 10 holds its history).
