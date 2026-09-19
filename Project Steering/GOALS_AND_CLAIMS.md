@@ -12086,3 +12086,50 @@ discriminates. The discriminating run is what surfaced the 11; the passing test 
 have.
 
 <!-- GC-PARITY-EVAL139-11-IN-TRAIN-2026-09-18 -->
+
+## ⭐⭐ `S1-GATE-PRED`'s BLOCKING DEPENDENCY IS DISCHARGED — 1.70x the floor, HELD OUT (2026-09-19)
+
+`PREREG_S1_AGENT_SEAM_AND_COLLISION_GATE.md` §8: *"`S1-GATE-PRED` cannot start before a
+predicted occupancy exists."* It now exists, and the read is **held out**.
+
+| step | held-out IoU | halfB floor | ratio | pred prevalence | n windows |
+|---|---|---|---|---|---|
+| 1,000 | 0.49016 | 0.3388 | 1.447x | 0.44981 | 1,000 |
+| **2,000** | **0.57607** | **0.3388** | ⭐ **1.700x** | **0.34998** | **1,000** |
+
+**MEASURED**: a map head trained on **halfA only** (2,000 steps), scored on **halfB** — a
+half it never saw — against **halfB's own** A1 floor.
+
+⭐⭐ **THE FLOOR IS CONFIRMED FROM TWO DIRECTIONS.** A1 read halfB's drivable prevalence as
+**0.3388** from the SAM3 `.npz` files; this eval read **0.33845** through the trainer's
+dataloader. |diff| = **0.00035**. The ratio is 1.700x against A1's floor and 1.702x against
+the eval's own — the number the claim rests on is not one script's opinion.
+
+⭐ **AND THE HEAD CALIBRATES.** At 1,000 steps it over-predicts drivable (0.44981 vs GT
+0.33845) and reads 1.447x; by 2,000 its predicted prevalence is 0.34998 — essentially the
+GT rate — and it reads 1.700x.
+
+### ⛔ What this is NOT
+
+* **NOT a capability claim.** 2,000 steps × batch 2 = 4,000 windows = **0.38 of ONE epoch**
+  over 62 clips. It says the occupancy head learns real signal on unseen data; it says
+  nothing about refcv6's driving.
+* **NOT an A/B.** One configuration, no comparison ⇒ **no replicate required**, and it may
+  never become *"2,000 beats 1,000"* — the two rows are a curve with their step index.
+* ⚠️ **NOT bit-comparable with the banked `maphead1k`**: this arm is frozen-BN + chunk-ckpt,
+  because without those levers the configuration pages at 29 s/step on this card.
+
+### ⚠️ It replaces, and retires, the train-side number
+
+Tonight's earlier **1.43x** was **TRAIN-side**, over batches of 2 windows, and was reported
+with that caveat. This supersedes it.
+
+### ⛔ Why a new checkpoint was needed — the near-miss worth recording
+
+The banked 2,000-step map head trained on the **FULL 139-clip cache**: **62/62 of BOTH**
+clean halves were inside its training set, **0 outside**. Scoring it on either half would
+have produced a train-side read wearing a held-out label — and it would have looked exactly
+like this discharge. What separated them was asking **which clips the checkpoint had SEEN**
+before scoring anything with it.
+
+<!-- GC-S1-GATE-PRED-DEPENDENCY-DISCHARGED-2026-09-19 -->
