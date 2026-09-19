@@ -353,3 +353,19 @@ v0_conditioned false, sha256 42ec4ce281ee…}`. Neither run passes `--n-anchors`
   the human is reported per speed tercile so this is visible, not assumed.
 
 <!-- /S1-AMENDMENT-ERRATUM-1-2026-09-19 -->
+
+<!-- S1-AMENDMENT-ERRATUM-2-2026-09-19 -->
+### ⛔ S1A ERRATUM-2 (same day, still 0 S1 data) — "collided" is `nc != 1`, not `nc = 0`
+
+**Wrong in S1A.7:** *"the share of windows whose SELECTED candidate has recorded nc = 0"*.
+**True (MEASURED from source):** `pdm_proxy.no_at_fault_collision` returns NC ∈ **{0, 0.5, 1}**
+(`pdm_proxy.py:279-307`). An at-fault collision with a **static-class** track scores **0.5**
+(`static_classes = ("protruding_object",)`); any other at-fault collision scores 0. Item 19 counted
+**`nc != 1`** (`fan_nc_fail_frac`, `ddv2_rl_refcv5.py:679`), and the gate treats a candidate as free
+only if **`nc == 1`**. `nc = 0` would silently drop every static-object collision from the
+statistic while the gate still avoided them. ⇒ **The collided-selection rate is the share of
+windows whose selected candidate has recorded `nc != 1`**, which is the same definition as item 19,
+the gate and `s1_gate.arm_metrics`. The `nc = 0.5` share is reported beside it, so the split stays
+visible.
+
+<!-- /S1-AMENDMENT-ERRATUM-2-2026-09-19 -->
