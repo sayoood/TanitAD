@@ -1,0 +1,43 @@
+==============================================================================
+BEV-agreement calibration — synthetic recovery
+==============================================================================
+
+[1] convention
+  projection vs trajlib.camera: max |delta| = 0.000000000 px
+  ground->pixel->ground: max |delta| = 0.000000000 m
+
+[2] objective shape
+
+  BEV agreement score (higher = sharper):
+    truth                        8.771210e-02   <-- TRUTH
+    yaw +2 deg                   2.103608e-02   
+    pitch +1 deg                 1.199587e-02   
+    height x1.3                  1.755178e-02   
+    height -> 0.05 (collapse)    2.061090e-02   
+    fx x1.3                      1.217340e-02   
+
+[3] recovery
+
+  EXTRINSICS from a wrong start (curved path, 1/300 m^-1)
+    score 1.6025e-03 -> 8.1541e-02  (494 evals)
+    yaw          true    -6.500  start     0.000  ->     -6.491   err   +0.009 deg
+    pitch        true    -1.200  start     0.000  ->     -1.331   err   -0.131 deg
+    roll         true     0.800  start     0.000  ->     -0.046   err   -0.846 deg
+    height       true     1.280  start     1.170  ->      1.278   err   -0.002 m
+    lateral      true    -0.120  start     0.250  ->      0.282   err   +0.402 m
+
+  f AND h on a STRAIGHT path (expect: NOT separated)
+    score 8.9311e-03 -> 8.8302e-02  (320 evals)
+    height       true     1.280  start     1.630  ->      1.286   err   +0.006 m
+    fx           true  1478.300  start  1898.300  ->   1459.549   err  -18.751 px
+    -> h err +0.006 m, f err -18.8 px, f*h preserved to 0.8%
+
+  f AND h on a CURVED path, R=150 m (expect: separated)
+    score 2.7465e-03 -> 8.6593e-02  (298 evals)
+    height       true     1.280  start     1.630  ->      1.292   err   +0.012 m
+    fx           true  1478.300  start  1898.300  ->   1462.888   err  -15.412 px
+
+==============================================================================
+  straight path: |h err| 0.006 m, |f err| 19 px
+  curved  path: |h err| 0.012 m, |f err| 15 px
+==============================================================================

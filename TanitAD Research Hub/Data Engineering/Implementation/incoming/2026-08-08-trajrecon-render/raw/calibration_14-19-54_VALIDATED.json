@@ -1,0 +1,94 @@
+{
+ "recording": "2026-08-08_14-19-54-android",
+ "image": {
+  "width": 1920,
+  "height": 1080
+ },
+ "K": {
+  "fx": 1478.2703652619996,
+  "fy": 1478.2703652619996,
+  "cx": 960.0,
+  "cy": 540.0
+ },
+ "extrinsics": {
+  "yaw_deg": -7.00714655308642,
+  "pitch_deg": -0.6433667261294187,
+  "roll_deg": 0.0,
+  "height_m": 1.21,
+  "lateral_offset_m": -0.12,
+  "longitudinal_m": 2.1
+ },
+ "horizon_row_px": 523.4,
+ "raw_sources": {
+  "intrinsics": "nominal HFOV=66.0 deg",
+  "intrinsics_note": "gyro focal refinement rejected (r=0.24, n=57) - kept nominal",
+  "foe_rotation_gate": "gyro |omega| per frame interval",
+  "extrinsics": "FOE at (797,464) px, 425093 flow vectors, inliers=0.86"
+ },
+ "per_recording": true,
+ "parameters": {
+  "focal_px": {
+   "value": 1478.3,
+   "unit": "px",
+   "source": "nominal HFOV=66.0 deg"
+  },
+  "hfov_deg": {
+   "value": 66.0,
+   "unit": "deg",
+   "source": "derived from focal"
+  },
+  "yaw_deg": {
+   "value": -7.007,
+   "unit": "deg",
+   "source": "lane vanishing point, 976 segments over 59 straight frames (half-split spread 0.20 deg)"
+  },
+  "pitch_deg": {
+   "value": -0.643,
+   "unit": "deg",
+   "source": "OPERATOR OVERRIDE --horizon-row 523.4 px (not measured)"
+  },
+  "height_m": {
+   "value": 1.21,
+   "unit": "m",
+   "source": "operator default (not measured)"
+  },
+  "roll_deg": {
+   "value": 0.0,
+   "unit": "deg",
+   "source": "assumed level (not measured)"
+  },
+  "lateral_offset_m": {
+   "value": -0.12,
+   "unit": "m",
+   "source": "OPERATOR OVERRIDE --lock-lateral (not measured)"
+  },
+  "mount_longitudinal_m": {
+   "value": 2.1,
+   "unit": "m",
+   "source": "operator prior",
+   "note": "+forward. Phone position ahead of the vehicle reference point (rear axle). The exported trajectory is the rear axle's path, not the phone's: a point mounted this far forward swings wide through every turn, and ignoring it left up to 2.6 m of lateral error at intersections while straight-road checks still showed centimetres."
+  },
+  "trajectory_reference": {
+   "value": "rear axle",
+   "unit": "-",
+   "source": "phone re-referenced by (L=2.10, W=-0.12) m via a per-point rigid transform"
+  },
+  "vehicle_width_m": {
+   "value": 1.8,
+   "unit": "m",
+   "source": "operator setting"
+  }
+ },
+ "cross_checks": {
+  "plane": "insufficient homographies",
+  "vertical_vp": "insufficient vertical lines",
+  "lane_frames": 59,
+  "lane_segments": 976,
+  "pitch_foe_vs_lane_vp_px": 13.7,
+  "yaw_foe_vs_lane_deg": -0.699,
+  "fh_px_m": 1608.1,
+  "fh_tracks": 1576,
+  "fh_spread": 0.618,
+  "hfov_deg": 66.0
+ }
+}

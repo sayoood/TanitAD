@@ -1,0 +1,30 @@
+building tracks…
+112 frame pairs, 6807 forward-backward-checked correspondences
+
+observability on the REAL tracks (reprojection px per step):
+    f*h(+1%)           74.992 px rms
+    horizon(+2px)      62.398 px rms
+    yaw(+0.2deg)        8.426 px rms
+    height(+2%)         6.094 px rms
+    singular values ['8765.9', '997.0', '676.4', '24.7']  cond 355
+    least-observable direction: f*h(+1%) +0.03  horizon(+2px) +0.00  yaw(+0.2deg) +0.57  height(+2%) -0.82
+
+fit (f*h, horizon, yaw) at h = 1.030 m
+    cost 8.52948 -> 8.31955  (322 evals)
+    f*h        1522.6  ->    1472.7 px*m
+    horizon    523.40  ->    496.78 px
+    yaw         -7.01  ->     -2.46 deg
+    f = f*h/h = 1430 px  (HFOV 67.8 deg)
+    reprojection: median 348.42 -> 422.63 px, inliers(<3px) 0.0% -> 2.3%
+
+height scan — does f*h move when h is forced?
+    h  0.90 m  ->  f*h  1511.5  f  1679.4 px  horizon  495.46  cost 8.32383  median 413.44 px  inliers  2.4%
+    h  1.03 m  ->  f*h  1472.7  f  1429.8 px  horizon  496.78  cost 8.31955  median 422.63 px  inliers  2.3%
+    h  1.17 m  ->  f*h  1529.0  f  1306.8 px  horizon  495.79  cost 8.31847  median 405.23 px  inliers  2.1%
+    h  1.30 m  ->  f*h  1482.9  f  1140.7 px  horizon  510.10  cost 8.38618  median 385.08 px  inliers  0.2%
+    h  1.45 m  ->  f*h  1535.9  f  1059.2 px  horizon  498.24  cost 8.32871  median 395.58 px  inliers  1.8%
+    h  1.60 m  ->  f*h  1543.3  f   964.6 px  horizon  496.85  cost 8.32570  median 395.78 px  inliers  1.9%
+    cost range over the scan 8.31847-8.38618 (0.8% spread), best h 1.17 m
+    => h is NOT determined by this fit (as the geometry predicts); f*h is the result and f needs h from the lateral metric.
+
+wrote raw/flow_scale_real.json

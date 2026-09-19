@@ -1,0 +1,26 @@
+GROUND OVERLAP vs ANCHOR SPAN — the real-data bug (MEASURED 2026-09-13)
+  speed 22.0 m/s, visible band 5.0-40.0 m (depth 35.0 m)
+
+ dt [s]  travel [m]  overlap [m]  % of band
+   0.10         2.2         32.8        94%
+   0.25         5.5         29.5        84%
+   0.50        11.0         24.0        69%
+   0.60        13.2         21.8        62%
+   0.75        16.5         18.5        53%
+   1.00        22.0         13.0        37%
+   1.50        33.0          2.0         6%
+   2.00        44.0          0.0         0%
+
+  The first real run used span 2.00 s -> ZERO overlap -> objective scored noise
+  -> joint fit returned a 54.7 deg yaw. Default is now 0.60 s.
+
+COLUMN-RESTRICTION PROBE — refutes 'non-ground ink is the bottleneck'
+  (image-space filter; guardrail and rock face live at the frame edges)
+
+           ink columns    n ink     nominal   yaw+pitch    gain  f*h peak h   ratio
+          all (0-100%)   176435  4.9633e-02  7.0204e-02     41%        0.95    2.09x
+           central 60%    91608  7.0014e-02  6.5660e-02     -6%        1.10    1.13x
+           central 40%    57172  7.6049e-02  6.3785e-02    -16%        1.70    1.26x
+
+  Removing suspected junk removed SIGNAL: yaw needs lateral leverage and the
+  wide ink carries it. The motivating assumption for SAM3 is NOT supported here.

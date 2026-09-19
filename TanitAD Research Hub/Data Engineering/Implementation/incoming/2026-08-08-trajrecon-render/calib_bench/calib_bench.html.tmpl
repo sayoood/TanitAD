@@ -1,0 +1,443 @@
+<title>TanitAD Calibration Bench — 2026-08-08</title>
+<style>
+  :root{
+    --ground:#0E1418; --panel:#141E24; --panel-2:#17232B; --rule:#26333C;
+    --text:#DCE6EC; --muted:#8CA0AD; --dim:#5F7280;
+    --accent:#35E0A1; --accent-dim:#1C7F5C;
+    --assumed:#F2A65A; --measured:#35E0A1; --crit:#FF6B6B;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--text);
+    font-family:var(--sans); font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    padding:14px 20px; border-bottom:1px solid var(--rule); background:var(--panel);
+  }
+  header h1{
+    margin:0; font-size:15px; font-weight:600; letter-spacing:.02em;
+  }
+  header .sub{color:var(--muted); font-size:12.5px; font-family:var(--mono)}
+  .legend{margin-left:auto; display:flex; gap:14px; font-size:11.5px; color:var(--muted)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+  .wrap{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:0; min-height:calc(100vh - 52px)}
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr} }
+
+  .stage{padding:18px 20px; display:flex; flex-direction:column; gap:12px; min-width:0}
+  .videoBox{position:relative; width:100%; background:#000; border:1px solid var(--rule); border-radius:6px; overflow:hidden}
+  .videoBox video{display:block; width:100%; height:auto}
+  .videoBox canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+
+  .transport{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  button{
+    font-family:var(--sans); font-size:13px; color:var(--text);
+    background:var(--panel-2); border:1px solid var(--rule); border-radius:5px;
+    padding:7px 12px; cursor:pointer;
+  }
+  button:hover{border-color:var(--accent-dim); color:#fff}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  button.primary{background:var(--accent-dim); border-color:var(--accent-dim); color:#04150F; font-weight:600}
+  input[type=range]{accent-color:var(--accent); width:100%; height:18px}
+  input[type=range]:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+  input[type=number]{
+    font-family:var(--mono); font-size:12px; width:76px; text-align:right;
+    background:var(--ground); color:var(--text); border:1px solid var(--rule);
+    border-radius:4px; padding:3px 5px; font-variant-numeric:tabular-nums;
+  }
+  #seek{flex:1; min-width:180px}
+
+  .readout{
+    display:flex; gap:18px; flex-wrap:wrap; font-family:var(--mono); font-size:12px;
+    color:var(--muted); font-variant-numeric:tabular-nums;
+    padding:9px 12px; background:var(--panel); border:1px solid var(--rule); border-radius:6px;
+  }
+  .readout b{color:var(--text); font-weight:600}
+  .readout .k{color:var(--dim)}
+
+  .rail{
+    border-left:1px solid var(--rule); background:var(--panel);
+    padding:16px 16px 40px; display:flex; flex-direction:column; gap:16px;
+    max-height:calc(100vh - 52px); overflow-y:auto;
+  }
+  @media (max-width:900px){ .rail{border-left:none; border-top:1px solid var(--rule); max-height:none} }
+  .group{display:flex; flex-direction:column; gap:9px}
+  .group > h2{
+    margin:0; font-size:10.5px; font-weight:700; letter-spacing:.10em; text-transform:uppercase;
+    color:var(--dim); display:flex; align-items:center; gap:8px;
+  }
+  .group > h2::after{content:""; flex:1; height:1px; background:var(--rule)}
+  .ctl{display:flex; flex-direction:column; gap:3px}
+  .ctl .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .ctl label{font-size:12px; color:var(--text)}
+  .ctl .unit{color:var(--dim); font-size:11px; font-family:var(--mono)}
+  .tag{
+    font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:700;
+    padding:1px 5px; border-radius:3px; border:1px solid;
+  }
+  .tag.measured{color:var(--measured); border-color:#1C5E48; background:#0D2B22}
+  .tag.assumed{color:var(--assumed); border-color:#6B4A22; background:#2A1E10}
+
+  .toggles{display:flex; flex-wrap:wrap; gap:6px}
+  .toggles label{
+    font-size:11.5px; display:flex; align-items:center; gap:5px; cursor:pointer;
+    background:var(--panel-2); border:1px solid var(--rule); border-radius:4px; padding:4px 8px;
+  }
+  .toggles input{accent-color:var(--accent); margin:0}
+
+  .presets{display:flex; flex-direction:column; gap:6px}
+  .presets button{text-align:left; font-family:var(--mono); font-size:11.5px; line-height:1.35}
+  .presets button span{display:block; color:var(--dim); font-size:10.5px; margin-top:2px}
+
+  #out{
+    font-family:var(--mono); font-size:11px; line-height:1.6; white-space:pre; overflow-x:auto;
+    background:var(--ground); border:1px solid var(--rule); border-radius:5px;
+    padding:10px; color:var(--text); font-variant-numeric:tabular-nums;
+  }
+  .note{font-size:11.5px; color:var(--muted); line-height:1.55}
+  .note b{color:var(--assumed); font-weight:600}
+</style>
+
+<header>
+  <h1>Calibration Bench</h1>
+  <span class="sub">2026-08-08_14-19-54 · SM-G990B · 1920×1080 · 2216 frames</span>
+  <div class="legend">
+    <span><i style="background:#35E0A1"></i>ego corridor</span>
+    <span><i style="background:#5AB6F2"></i>lane guides</span>
+    <span><i style="background:#FF6B6B"></i>horizon</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stage">
+    <div class="videoBox">
+      <video id="vid" playsinline preload="auto"></video>
+      <canvas id="cv"></canvas>
+    </div>
+
+    <div class="transport">
+      <button id="play" class="primary">Play</button>
+      <button id="prev">◀ Frame</button>
+      <button id="next">Frame ▶</button>
+      <input type="range" id="seek" min="0" max="2215" step="1" value="600" aria-label="Seek">
+    </div>
+
+    <div class="readout">
+      <span><span class="k">frame</span> <b id="rFrame">–</b></span>
+      <span><span class="k">t</span> <b id="rTime">–</b> s</span>
+      <span><span class="k">speed</span> <b id="rSpeed">–</b> m/s</span>
+      <span><span class="k">wheel</span> <b id="rSteer">–</b>°</span>
+      <span><span class="k">HFOV</span> <b id="rHfov">–</b>°</span>
+      <span><span class="k">horizon row</span> <b id="rHor">–</b> px</span>
+    </div>
+
+    <p class="note">
+      Align the <b style="color:#5AB6F2">blue lane guides</b> to the real paint to set
+      <b>height</b> and <b>lateral</b>; align the <b style="color:#FF6B6B">red horizon</b> to where the
+      markings converge to set <b>pitch</b>; make the corridor run parallel to the lane to set
+      <b>yaw</b>. Lane guides are drawn at ±half the lane width you set, so they only match the paint
+      when the ground scale is right.
+    </p>
+  </div>
+
+  <aside class="rail">
+    <div class="group">
+      <h2>Rotation</h2>
+      <div id="gRot"></div>
+    </div>
+    <div class="group">
+      <h2>Mount translation</h2>
+      <div id="gMount"></div>
+    </div>
+    <div class="group">
+      <h2>Intrinsics</h2>
+      <div id="gIntr"></div>
+    </div>
+    <div class="group">
+      <h2>Scene reference</h2>
+      <div id="gScene"></div>
+    </div>
+
+    <div class="group">
+      <h2>Overlays</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="tCorr" checked> corridor</label>
+        <label><input type="checkbox" id="tLane" checked> lane guides</label>
+        <label><input type="checkbox" id="tHor" checked> horizon</label>
+        <label><input type="checkbox" id="tTicks" checked> range ticks</label>
+        <label><input type="checkbox" id="tPast"> past path</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Presets</h2>
+      <div class="presets">
+        <button data-preset="shipped">Shipped (wrong)<span>yaw 0 · pitch 0 · h 1.17 · lat −0.35</span></button>
+        <button data-preset="validated">Last validation run<span>yaw −7.01 · pitch −0.64 · h 1.21 · lat −0.12</span></button>
+        <button data-preset="foe">Gyro-FOE run<span>yaw −7.01 · pitch −2.93 · h 1.17 · lat +0.25</span></button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Values to send back</h2>
+      <div id="out"></div>
+      <button id="copy">Copy parameters</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+const TRAJ = __TRAJ_JSON__;
+const VID_W = 1920, VID_H = 1080;
+
+/* ---- parameter definitions -------------------------------------------- */
+const P = [
+  {k:"yaw",   g:"gRot",   label:"yaw",          unit:"deg", min:-20, max:20,  step:0.01, v:-7.01, tag:"measured"},
+  {k:"pitch", g:"gRot",   label:"pitch",        unit:"deg", min:-12, max:12,  step:0.01, v:-0.64, tag:"measured"},
+  {k:"roll",  g:"gRot",   label:"roll",         unit:"deg", min:-12, max:12,  step:0.01, v:0.00,  tag:"assumed"},
+  {k:"lon",   g:"gMount", label:"longitudinal", unit:"m",   min:-1,  max:4,   step:0.01, v:2.10,  tag:"assumed"},
+  {k:"lat",   g:"gMount", label:"lateral (+left)", unit:"m",min:-1.5,max:1.5, step:0.01, v:-0.12, tag:"assumed"},
+  {k:"h",     g:"gMount", label:"height",       unit:"m",   min:0.6, max:2.4, step:0.005,v:1.21,  tag:"assumed"},
+  {k:"fx",    g:"gIntr",  label:"focal fx=fy",  unit:"px",  min:900, max:2400,step:1,    v:1478.3,tag:"assumed"},
+  {k:"cx",    g:"gIntr",  label:"principal cx", unit:"px",  min:700, max:1220,step:1,    v:960,   tag:"assumed"},
+  {k:"cy",    g:"gIntr",  label:"principal cy", unit:"px",  min:300, max:780, step:1,    v:540,   tag:"assumed"},
+  {k:"lw",    g:"gScene", label:"lane width",   unit:"m",   min:2.5, max:4.5, step:0.05, v:3.50,  tag:"assumed"},
+  {k:"vw",    g:"gScene", label:"vehicle width",unit:"m",   min:1.2, max:2.4, step:0.01, v:1.80,  tag:"assumed"},
+];
+const S = {}; P.forEach(p => S[p.k] = p.v);
+
+const PRESETS = {
+  shipped:   {yaw:0,     pitch:0,     roll:0, lon:2.10, lat:-0.35, h:1.17, fx:1478.3},
+  validated: {yaw:-7.01, pitch:-0.64, roll:0, lon:2.10, lat:-0.12, h:1.21, fx:1478.3},
+  foe:       {yaw:-7.01, pitch:-2.93, roll:0, lon:2.10, lat:0.25,  h:1.17, fx:1478.3},
+};
+
+/* ---- build controls ---------------------------------------------------- */
+for (const p of P) {
+  const box = document.createElement("div"); box.className = "ctl";
+  box.innerHTML =
+    '<div class="row"><label for="s_'+p.k+'">'+p.label+' <span class="unit">'+p.unit+'</span></label>' +
+    '<span style="display:flex;gap:6px;align-items:center">' +
+    '<span class="tag '+p.tag+'" id="tag_'+p.k+'">'+p.tag+'</span>' +
+    '<input type="number" id="n_'+p.k+'" step="'+p.step+'" value="'+p.v+'"></span></div>' +
+    '<input type="range" id="s_'+p.k+'" min="'+p.min+'" max="'+p.max+'" step="'+p.step+'" value="'+p.v+'">';
+  document.getElementById(p.g).appendChild(box);
+  const sl = box.querySelector("#s_"+p.k), nu = box.querySelector("#n_"+p.k);
+  sl.addEventListener("input", () => { S[p.k] = +sl.value; nu.value = sl.value; draw(); });
+  nu.addEventListener("input", () => { S[p.k] = +nu.value; sl.value = nu.value; draw(); });
+}
+function applyPreset(name){
+  const q = PRESETS[name]; if(!q) return;
+  for (const k in q){
+    S[k] = q[k];
+    const sl = document.getElementById("s_"+k), nu = document.getElementById("n_"+k);
+    if (sl){ sl.value = q[k]; nu.value = q[k]; }
+  }
+  draw();
+}
+document.querySelectorAll("[data-preset]").forEach(b =>
+  b.addEventListener("click", () => applyPreset(b.dataset.preset)));
+
+/* ---- projection: mirrors trajlib camera.py exactly ---------------------- */
+const R_CV_NOMINAL = [[0,-1,0],[0,0,-1],[1,0,0]];
+function matmul(A,B){
+  const C=[[0,0,0],[0,0,0],[0,0,0]];
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++){ let s=0; for(let k=0;k<3;k++) s+=A[i][k]*B[k][j]; C[i][j]=s; }
+  return C;
+}
+function rotYPR(yaw,pitch,roll){
+  const cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch),
+        cr=Math.cos(roll), sr=Math.sin(roll);
+  const Ry=[[cy,0,sy],[0,1,0],[-sy,0,cy]];      // about camera Y (down) -> yaw
+  const Rx=[[1,0,0],[0,cp,sp],[0,-sp,cp]];      // about camera X (right) -> pitch
+  const Rz=[[cr,-sr,0],[sr,cr,0],[0,0,1]];      // about optical axis -> roll
+  return matmul(Rz, matmul(Rx, Ry));
+}
+function camera(){
+  const d = Math.PI/180;
+  const R = matmul(rotYPR(S.yaw*d, S.pitch*d, S.roll*d), R_CV_NOMINAL);
+  return {R, t:[S.lon, S.lat, S.h], fx:S.fx, fy:S.fx, cx:S.cx, cy:S.cy};
+}
+// vehicle-frame FLU point -> pixel. pc = (p - t) @ R^T  =>  pc[i] = dot(p-t, R[i])
+function project(C, p){
+  const d=[p[0]-C.t[0], p[1]-C.t[1], p[2]-C.t[2]];
+  const z = C.R[2][0]*d[0] + C.R[2][1]*d[1] + C.R[2][2]*d[2];
+  if (z <= 0.35) return null;
+  const x = C.R[0][0]*d[0] + C.R[0][1]*d[1] + C.R[0][2]*d[2];
+  const y = C.R[1][0]*d[0] + C.R[1][1]*d[1] + C.R[1][2]*d[2];
+  return [C.fx*x/z + C.cx, C.fy*y/z + C.cy];
+}
+function horizonRow(C){                        // vanishing row of the forward direction
+  const z = C.R[2][0], y = C.R[1][0];
+  return Math.abs(z) < 1e-9 ? NaN : C.fy*y/z + C.cy;
+}
+
+/* ---- canvas ------------------------------------------------------------ */
+const vid = document.getElementById("vid"), cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+let curFrame = 600;
+
+function frameFromTime(t){
+  const f = TRAJ.frames; let lo=0, hi=f.length-1;
+  while(lo<hi){ const m=(lo+hi)>>1; if(f[m].p < t) lo=m+1; else hi=m; }
+  return lo;
+}
+function fitCanvas(){
+  const r = vid.getBoundingClientRect();
+  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+}
+function ribbon(xs, ys, width){
+  const L=[], Rr=[], n=xs.length, hw=width/2;
+  for(let i=0;i<n;i++){
+    const i0=Math.max(0,i-1), i1=Math.min(n-1,i+1);
+    let tx=xs[i1]-xs[i0], ty=ys[i1]-ys[i0];
+    const m=Math.hypot(tx,ty)||1; tx/=m; ty/=m;
+    const nx=-ty, ny=tx;                                   // unit left-normal
+    L.push([xs[i]+nx*hw, ys[i]+ny*hw, 0]);
+    Rr.push([xs[i]-nx*hw, ys[i]-ny*hw, 0]);
+  }
+  return [L,Rr];
+}
+function polyPath(C, pts, sc){
+  const out=[];
+  for(const p of pts){ const q=project(C,p); if(q) out.push([q[0]*sc, q[1]*sc]); }
+  return out;
+}
+function draw(){
+  fitCanvas();
+  const sc = cv.width / VID_W;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const C = camera();
+  const rec = TRAJ.frames[curFrame];
+  const hor = horizonRow(C);
+
+  document.getElementById("rFrame").textContent = curFrame + " / " + (TRAJ.frames.length-1);
+  document.getElementById("rTime").textContent  = rec ? rec.p.toFixed(2) : "–";
+  document.getElementById("rSpeed").textContent = rec ? rec.s.toFixed(1) : "–";
+  document.getElementById("rSteer").textContent = rec ? rec.w.toFixed(1) : "–";
+  document.getElementById("rHfov").textContent  = (2*Math.atan(VID_W/(2*S.fx))*180/Math.PI).toFixed(1);
+  document.getElementById("rHor").textContent   = isFinite(hor) ? hor.toFixed(1) : "–";
+
+  // horizon
+  if (document.getElementById("tHor").checked && isFinite(hor)){
+    ctx.strokeStyle="#FF6B6B"; ctx.lineWidth=1.5; ctx.setLineDash([9,7]);
+    ctx.beginPath(); ctx.moveTo(0,hor*sc); ctx.lineTo(cv.width,hor*sc); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // lane guides at +/- lw/2 relative to the VEHICLE centreline
+  if (document.getElementById("tLane").checked){
+    ctx.strokeStyle="#5AB6F2"; ctx.lineWidth=2;
+    for (const side of [1,-1]){
+      const pts=[]; for(let x=3;x<=70;x+=1) pts.push([x, side*S.lw/2, 0]);
+      const pp = polyPath(C, pts, sc);
+      if (pp.length>1){ ctx.beginPath(); ctx.moveTo(pp[0][0],pp[0][1]);
+        for(let i=1;i<pp.length;i++) ctx.lineTo(pp[i][0],pp[i][1]); ctx.stroke(); }
+    }
+  }
+  if (!rec) return;
+  const t = TRAJ.t, xs = rec.x.map(v=>v/100), ys = rec.y.map(v=>v/100);
+  const fi = t.map((v,i)=>[v,i]).filter(a=>a[0]>=0).map(a=>a[1]);
+  const pi = t.map((v,i)=>[v,i]).filter(a=>a[0]<=0).map(a=>a[1]);
+
+  // corridor (future)
+  if (document.getElementById("tCorr").checked && fi.length>1){
+    const fx_=fi.map(i=>xs[i]), fy_=fi.map(i=>ys[i]);
+    const [L,Rr] = ribbon(fx_, fy_, S.vw);
+    const lp = polyPath(C,L,sc), rp = polyPath(C,Rr,sc);
+    if (lp.length>1 && rp.length>1){
+      ctx.beginPath(); ctx.moveTo(lp[0][0],lp[0][1]);
+      for(let i=1;i<lp.length;i++) ctx.lineTo(lp[i][0],lp[i][1]);
+      for(let i=rp.length-1;i>=0;i--) ctx.lineTo(rp[i][0],rp[i][1]);
+      ctx.closePath();
+      ctx.fillStyle="rgba(53,224,161,0.30)"; ctx.fill();
+      ctx.strokeStyle="rgba(53,224,161,0.95)"; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    // centre line
+    const cp = polyPath(C, fi.map(i=>[xs[i],ys[i],0]), sc);
+    if (cp.length>1){ ctx.beginPath(); ctx.moveTo(cp[0][0],cp[0][1]);
+      for(let i=1;i<cp.length;i++) ctx.lineTo(cp[i][0],cp[i][1]);
+      ctx.strokeStyle="rgba(255,255,255,0.75)"; ctx.lineWidth=1.2; ctx.stroke(); }
+  }
+  // past
+  if (document.getElementById("tPast").checked && pi.length>1){
+    const pp = polyPath(C, pi.map(i=>[xs[i],ys[i],0]), sc);
+    if (pp.length>1){ ctx.beginPath(); ctx.moveTo(pp[0][0],pp[0][1]);
+      for(let i=1;i<pp.length;i++) ctx.lineTo(pp[i][0],pp[i][1]);
+      ctx.strokeStyle="rgba(242,166,90,0.9)"; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  // range ticks across the lane
+  if (document.getElementById("tTicks").checked){
+    ctx.strokeStyle="rgba(220,230,236,0.55)"; ctx.fillStyle="rgba(220,230,236,0.85)";
+    ctx.lineWidth=1; ctx.font="11px ui-monospace,monospace";
+    for (const d of [10,20,30,40,50]){
+      const a=project(C,[d,-S.lw/2,0]), b=project(C,[d,S.lw/2,0]);
+      if(!a||!b) continue;
+      ctx.beginPath(); ctx.moveTo(a[0]*sc,a[1]*sc); ctx.lineTo(b[0]*sc,b[1]*sc); ctx.stroke();
+      ctx.fillText(d+" m", b[0]*sc+4, b[1]*sc-2);
+    }
+  }
+  emit();
+}
+function emit(){
+  const f=(x,n)=>Number(x).toFixed(n);
+  document.getElementById("out").textContent =
+`yaw     ${f(S.yaw,2)} deg
+pitch   ${f(S.pitch,2)} deg
+roll    ${f(S.roll,2)} deg
+long    ${f(S.lon,2)} m
+lateral ${f(S.lat,2)} m
+height  ${f(S.h,3)} m
+fx=fy   ${f(S.fx,1)} px   (HFOV ${f(2*Math.atan(VID_W/(2*S.fx))*180/Math.PI,2)} deg)
+cx,cy   ${f(S.cx,0)}, ${f(S.cy,0)} px
+lane    ${f(S.lw,2)} m   vehicle ${f(S.vw,2)} m
+horizon ${f(horizonRow(camera()),1)} px
+
+--cam-yaw ${f(S.yaw,2)} --cam-pitch ${f(S.pitch,2)} --cam-roll ${f(S.roll,2)} \\
+  --cam-height ${f(S.h,3)} --lateral-offset ${f(S.lat,2)} --lock-lateral \\
+  --mount-longitudinal ${f(S.lon,2)} --lane-width ${f(S.lw,2)}`;
+}
+document.getElementById("copy").addEventListener("click", async () => {
+  const b = document.getElementById("copy");
+  try { await navigator.clipboard.writeText(document.getElementById("out").textContent);
+        b.textContent="Copied"; } catch { b.textContent="Select the text above"; }
+  setTimeout(()=>b.textContent="Copy parameters", 1600);
+});
+
+/* ---- transport --------------------------------------------------------- */
+const seek = document.getElementById("seek"), playBtn = document.getElementById("play");
+seek.max = TRAJ.frames.length - 1;
+function gotoFrame(i){
+  curFrame = Math.max(0, Math.min(TRAJ.frames.length-1, i));
+  seek.value = curFrame;
+  vid.currentTime = TRAJ.frames[curFrame].p;
+  draw();
+}
+seek.addEventListener("input", () => gotoFrame(+seek.value));
+document.getElementById("prev").addEventListener("click", () => { vid.pause(); gotoFrame(curFrame-1); });
+document.getElementById("next").addEventListener("click", () => { vid.pause(); gotoFrame(curFrame+1); });
+playBtn.addEventListener("click", () => { vid.paused ? vid.play() : vid.pause(); });
+vid.addEventListener("play",  () => playBtn.textContent = "Pause");
+vid.addEventListener("pause", () => playBtn.textContent = "Play");
+vid.addEventListener("timeupdate", () => {
+  if (!vid.paused){ curFrame = frameFromTime(vid.currentTime); seek.value = curFrame; }
+  draw();
+});
+vid.addEventListener("seeked", draw);
+vid.addEventListener("loadedmetadata", () => { fitCanvas(); gotoFrame(curFrame); });
+window.addEventListener("resize", draw);
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === " "){ e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+  if (e.key === "ArrowLeft"){ vid.pause(); gotoFrame(curFrame-1); }
+  if (e.key === "ArrowRight"){ vid.pause(); gotoFrame(curFrame+1); }
+});
+function raf(){ if(!vid.paused) draw(); requestAnimationFrame(raf); }
+requestAnimationFrame(raf);
+
+vid.src = "data:video/mp4;base64,__VIDEO_B64__";
+emit();
+</script>

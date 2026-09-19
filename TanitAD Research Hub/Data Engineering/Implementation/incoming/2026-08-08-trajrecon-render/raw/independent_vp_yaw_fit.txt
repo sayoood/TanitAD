@@ -1,0 +1,30 @@
+# INDEPENDENT vanishing-point yaw fit, 2026-08-08
+# Written from scratch (own Canny+HoughLinesP+least-squares VP), NOT trajrecon code,
+# to check lane_calib's -7.01 deg against a second implementation.
+#
+# Frames: 923 straight frames selected by |yaw rate| < 0.5 deg/s AND |steer| < 1.5 deg,
+#         sampled every 6th -> 154 frames used, 6689 lane segments.
+# Intrinsics: fx = fy = 1478.27 px, cx = 960, cy = 540 (the pipeline's nominal HFOV 66 deg).
+# ROI rows 0.58H..0.95H; segments kept only at 12..78 deg from horizontal.
+
+POOLED    vp = (803.3, 523.4) px   ->  yaw -6.05 deg   pitch -0.64 deg
+  first half    vp_x 802.2   yaw -6.09 deg   pitch -1.21 deg
+  second half   vp_x 784.9   yaw -6.76 deg   pitch +0.62 deg
+
+frame-bootstrap (200 resamples): yaw -6.07 deg, 95% CI [-6.28, -5.83]
+
+trajrecon lane_calib reported: -7.01 deg (half-split spread 0.20 deg, 59 frames, 976 segments)
+pipeline SHIPPED:              0.00 deg (nominal)
+
+=> Two independent implementations agree the mount yaw is about -6 to -7 deg.
+   The ~1 deg between them is ROI/filtering/sampling, not disagreement about sign or scale.
+   The shipped 0.0 is wrong by ~6.5 deg.
+
+Lateral error injected by yaw=0.0 (ground point d ahead lands d*tan(theta) to the side):
+  distance   theta=6.05    theta=7.01
+      10 m      1.06 m        1.23 m
+      20 m      2.12 m        2.46 m
+      40 m      4.24 m        4.92 m
+      45 m      4.77 m        5.53 m
+  Half a 3.50 m lane is 1.75 m -> the corridor leaves its own lane ~15-17 m ahead.
+  The pipeline's own (suppressed) diagnostic agrees: "4.89 m at 40 m".

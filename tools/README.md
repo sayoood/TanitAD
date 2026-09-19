@@ -252,3 +252,51 @@ the freshly-touched worktree copies filled the window (`RETRACTION_LOG` 07-24, C
 
 Exit 0 always unless `--fail-on {future,stale,any}` is set: this is a reporter,
 not a gate.
+
+## gdrive_fetch
+
+```bash
+python tools/gdrive_fetch.py --check                     # preflight the domain set
+python tools/gdrive_fetch.py --check --json probes.json
+python tools/gdrive_fetch.py <share-url-or-file-id> -o ep.pt
+python tools/gdrive_fetch.py <id> -o ep.pt --expect-md5 <hex>
+```
+
+The programme's raw material lives on Google Drive, but a web/pod session has no
+`G:` mount — only HTTPS through the egress proxy. Drive needs **three** hosts and
+that is the point of the module:
+
+| host | role |
+|---|---|
+| `drive.google.com` | entry point — `/uc?export=download` serves **no bytes**, it answers **303** |
+| `drive.usercontent.google.com` | **the bytes** |
+| `*.googleusercontent.com` | `lh3.`, `drive-thirdparty.`, the older `doc-XX-XX-docs.` shards |
+
+MEASURED 2026-08-08 (three tools; evidence in
+`TanitAD Research Hub/Tools&DevEnv/Implementation/incoming/2026-08-08-google-drive-domains/`):
+all three answer through the proxy with `ssl_verify_result=0` and no 403/407, and the
+303 chain is intact. **The egress policy already permits Drive** — what was missing
+was a checked way to use it.
+
+- **The allowlist is enforced, not documented.** Every redirect hop is re-checked and
+  one that leaves the allowlist is **refused, not followed**. The input here is a
+  share URL, and share URLs arrive pasted out of docs and other agents' reports;
+  "follow whatever `Location` comes back" turns a pasted string into arbitrary egress.
+  The wildcard is a **dot-boundary** match, so `notgoogleusercontent.com` is refused
+  and the bare apex is not in the set.
+- **Anonymous downloads only.** MEASURED: unauthenticated Drive answers
+  `302 → accounts.google.com`, which is deliberately *not* allowlisted. A sign-in
+  redirect therefore means **the file is not shared**, not that the allowlist is too
+  narrow — and the refusal message says so, because the generic version invites the
+  wrong fix.
+- **`--check` reads its negatives correctly.** A **404** for a bogus id is a *healthy*
+  answer — the host served us. Only 403/407 (proxy policy denial, per
+  `/root/.ccr/README.md`) or a dead tunnel counts as blocked.
+- Bytes land on `<dest>.part` and are renamed only after the digest check, so an
+  interrupted or md5-mismatched pull can never be mistaken for a complete artifact.
+  Google's error HTML is never written out under the artifact's name.
+
+stdlib only — `requests` is behind the `real` extra and a repo-level tool must not
+need an optional extra to run.
+
+Exit 0 ok · 1 blocked host, refused redirect, md5 mismatch, or HTML instead of bytes.
