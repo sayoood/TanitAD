@@ -661,3 +661,35 @@ arm will actually use, not this worst case.
 is thin for a rate; it is quoted as an overhead RATIO measured back-to-back on one box, which
 is what the criterion asks for. Artifacts:
 `TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-a9-conflict-cost/`.
+
+<!-- E17-E18-CLOSED-2026-09-19 -->
+## ✅ E17 and E18 CLOSED, 2026-09-19 — by the DataFlyWheel; landed by the Master Mind after a content and leak scan (its numbers are the DataFlyWheel's MEASURED values, not re-measured here)
+
+### ⛔ E17 / C3 — constant 13 was an ABSENCE FROM A SINGLE PROBE, and C3's transfer leg is VOID
+Constant 13 said *"the 4,713 train clips' source frames are not on this box"*. It was measured
+on `D:/Projects/TanitAD-artifacts` ONLY. They ARE on the box: `C:/Users/Admin/tanitad-data/
+physicalai/camera/camera_front_wide_120fov` (NTFS) — 4,719 mp4s + 4,719 timestamp parquets,
+checked against HF's own per-file size and LFS sha256 (revision 0ddee95d): **4,719/4,719 match,
+0 mismatches, 61.6 GB** (MEASURED). The 4,713 train clips reproduce the B1 membership digest
+`e8bfb98e` exactly (positive control). **Bytes: 61,545,041,700 B; transfer: 0 h** (local read
+≥ 826.5 MB/s incl. sha256, MEASURED). ⇒ **the corpus rebuild is blocked ONLY by C2 (SAM3)**, not
+by any transfer. Two small items remain: a local-mirror staging mode for `fetch_corpus_clips.py`
+is not built, and the two sidecar tars (2.02 GB) live in `C:/Users/Admin/tanitad-wt/_s2build` —
+the mirror that has DELETED repo-absent files on resync — and must be copied to D: before the
+rebuild. Package: `TanitAD Research Lab/Data Engineering/Research/2026-09-19-c3-source-transfer-price/`.
+
+### ✅ E18 / C4 — PASS, with three flags the PI must see
+PRIVATE storage used **176.554 GB** over 20 repos (MEASURED, per-repo `usedStorage`) against the
+PRO **1 TB** private allowance (PUBLISHED, HF storage-limits doc) ⇒ **823.4 GB free**; a PRIVATE
+push of the 408×1024 cache (**386.5 GB**, ESTIMATED and probably high) leaves **436.9 GB**. PASS.
+- ⚠️ **+112.9 GB is NOT a push size** — it is the 408-vs-256 geometry difference; no 273.6 GB
+  cache exists on HF to replace, so a push adds the full 386.5 GB.
+- ⛔ **THE CEILING DOES NOT ENFORCE ITSELF.** The account reads `canPay: true`, prepaid billing:
+  storage above 1 TB is billed pay-as-you-go ($18/TB/mo), no 402/413 stops a push, and no
+  endpoint exposes the ceiling. ⇒ **pre-push arithmetic is the ONLY guard.**
+- ⛔ `Sayood/tanitad-physicalai-w120-256x640cyl` is **455.4 GB and PUBLIC**, and **3,000 of its
+  6,061 file names carry raw clip ids**. Making it private AND pushing the 408 cache reaches
+  **1,018.4 GB — 18.4 GB over, billed**. → `PI_DECISION_QUEUE.md` ITEM 26.
+Package: `TanitAD Research Lab/Data Engineering/Research/2026-09-19-c4-hf-quota-check/`. (Also: the 18 D:-divergent Data files need NO merge — HEAD is
+authoritative for all 18: 5 blob-identical, 10 redaction-only, 2 header+backup, 1 stub-filled;
+mutation-tested. `TanitAD Research Lab/Data Engineering/Research/2026-09-19-d-sync-divergence-resolution/`.)

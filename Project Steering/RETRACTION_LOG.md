@@ -15632,3 +15632,18 @@ before naming the default's precondition as the cause.** Same family as
 object swapped for a documented default.
 
 <!-- RETR-2026-09-17-D9-DAC-ROOT-CAUSE -->
+
+<!-- RETR-2026-09-19-SOURCE-FRAMES-ABSENT -->
+### RETR-2026-09-19-SOURCE-FRAMES-ABSENT — "the source frames are not on this box"
+
+**Retracted:** `PREREG_REFCV6_DEVBOX_PREPARATION.md` constant 13 and bucket (C) C3: *"the 4,713
+train clips' source frames are not on this box"*, and C3's *"an unpriced data transfer is"* the
+blocker. **Truth (MEASURED, DataFlyWheel 2026-09-19):** all 4,719 front-wide mp4s + timestamp
+parquets are at `C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov`,
+4,719/4,719 matching HF's own size and LFS sha256 (61.6 GB); the transfer is **0 bytes**.
+
+**ROOT-CAUSE CLASS:** *absence found at ONE location* (CLAUDE.md operating rule 2). The claim
+was measured on `D:/Projects/TanitAD-artifacts` only — one directory, one probe — and then
+priced as a programme-level blocker. ⇒ **Before writing "X is not on this box", probe a second
+path, a second name, and the tool that owns the fact** (here: the HF fetch receipt that says
+where the fetch wrote).

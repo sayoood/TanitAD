@@ -1340,3 +1340,22 @@ three guards tonight.
 is owed under the four-family rule whichever way S1 is resolved.
 
 <!-- PIQ-ITEM-25-S1-ROUTE-ACC-BLOCKS-SUCCESS-2026-09-18 -->
+
+<!-- ITEM-26-2026-09-19 -->
+## ⛔ ITEM 26 (2026-09-19) — a 455.4 GB PUBLIC HF dataset whose file names carry raw clip ids, and a storage ceiling that bills instead of refusing
+
+**MEASURED by the DataFlyWheel** (raw JSON in the package; the Master Mind scanned and landed it but did NOT re-measure the HF numbers) (`TanitAD Research Lab/Data
+Engineering/Research/2026-09-19-c4-hf-quota-check/`):
+- `Sayood/tanitad-physicalai-w120-256x640cyl` holds the parity caches, is **455.4 GB**, is
+  **PUBLIC**, and **3,000 of its 6,061 file names carry raw clip ids** — against two standing
+  rules: augmented datasets stay PRIVATE, and clip ids appear only as sha12.
+- Private storage today **176.554 GB** of the PRO **1 TB**. The account is `canPay: true`,
+  prepaid: **over 1 TB is BILLED ($18/TB/mo), never refused.**
+- If that repo goes private AND the 386.5 GB 408×1024 cache is pushed privately: **1,018.4 GB,
+  18.4 GB over the ceiling, billed.** Pushing the 256×1024 cache instead: 905.5 GB, fits.
+  `periodEnd` now reads 2026-10-01.
+
+**Options:** (a) make the repo PRIVATE (+455.4 GB private) and push only what fits under 1 TB;
+(b) re-publish it with sha12 file names, then decide visibility; (c) leave it as is.
+**⭐ DEFAULT if unanswered: (c) status quo for the repo, AND no private push of the 386.5 GB cache
+until this item is ruled** — the push is the only action that could silently start billing.
