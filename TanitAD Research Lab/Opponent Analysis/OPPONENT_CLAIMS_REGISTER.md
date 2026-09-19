@@ -577,3 +577,43 @@ The 2026-09-17 debt table lists **D-2** and **D-3** as *"STANDS. Not reached"*. 
 | D-11 (GAIA-4 params / sim-real correlation) | ⛔ OPEN — **re-probed today, still EMPTY** (2nd probe) |
 | D-12 (AlpaSim fidelity) | ⛔ OPEN — now has the ladder's L2 envelope as its instrument (see `Benchmarks & Evals/Research/2026-09-18-ladder-l1-row14/RESULT.md`) |
 | **D-13** *(new)* | Elluswamy talk **transcript primary** — T-18-2/-3 are RELAYED until it is banked |
+
+## Pass 2026-09-19 (LAB-RUN-016) — NVIDIA (Jim Fan WAM thesis), WAABI (simulator realism), MOBILEYE (bias-variance): seven claims, all new
+
+`Seven-step adjudication per DAILY_RESEARCH_CHARTER_v2_AMENDMENT.md §7.1. Full working: Frontier Scan/Daily/2026-09-19/RESULT.md §1.`
+`Documents: Jim Fan, Sequoia AI Ascent 2026 talk (RELAYED via verbatim-quoting summary, eventual.ai 2026-05-08; video primary linked, not transcribed) + NVIDIA Technical Blog "Pretrained to Imagine, Fine-Tuned to Act" (2026-06-15, PUBLISHED-BLOG, read in full); Waabi "Simulator realism: the new safety standard" (Urtasun, 2025-03-11, PUBLISHED-BLOG); Mobileye "Autonomous decisions: the bias-variance tradeoff" (Shashua & Shalev-Shwartz, 2024-05-15, PUBLISHED-BLOG).`
+
+| id | opponent · date | claim | experiment? | verdict | binds on us? | what would FLIP it |
+|---|---|---|---|---|---|---|
+| **N-19-1** | NVIDIA · AI Ascent 2026 · RELAYED | *"Rest in peace [VLAs]. Long live world action models."* | ⛔ NO — the NVIDIA blog concedes *"This is not proof that WAMs are the better default"*; DreamZero 1750 vs π0.5 1622 Elo is not matched | **CONTESTED**: *WM objectives help action* SUPPORTED (World Tokens `2608.09730`, matched baseline 59.4 → 76.0 %); *"VLAs are dead"* UNSUPPORTED-AS-STATED. Counter: NVIDIA's **own** AV product Alpamayo 2 Super is a 34 B VLA | ⭐⭐ YES favourably (we are a WM); the **pixel-video-backbone** half does not bind | matched-data/params real-world VLA vs WAM with the VLA winning |
+| **N-19-2** | NVIDIA · AI Ascent 2026 · RELAYED | *"If the video prediction works, the action works. If the video hallucinates, the action fails."* / physics emerges from next-pixel prediction at scale | ⛔ NO | **UNSUPPORTED-AS-STATED** for pixels: DeepSight T3 (VAE target 27.75 vs DINOv3 74.79 DS) and World Tokens T2 (RGB anchor 91.5 < no-WM 92.8), both independent and controlled; Physics-IQ `2501.09038` (understanding unrelated to realism) | ⭐⭐ YES — **CONFIRMS-US** (semantic latent targets) | a matched ablation where a pixel-reconstruction target beats a semantic-feature target in closed loop |
+| **N-19-3** ⭐ | NVIDIA blog · 2026-06-15 · **CONCESSION** | *"3–4x slowdown at inference time, which matters a lot for real-time control"*; Fast-WAM 590–800 ms vs π0.5 ~190 ms | admission | **SUPPORTED** | ⭐⭐ YES — train-time WM, sub-300 M deploy (S-8) | a pixel WAM inside 100 ms on an edge SoC at matched quality |
+| **WB-19-1** | Waabi · 2025-03-11 · PUBLISHED-BLOG | Waabi World **99.7 % realism** = `(1 − avg relative trajectory distance) × 100`, full stack sim vs real ⇒ sim can replace much real-world testing | ⭐ PARTLY — a **paired** sim/real measurement (a real counterfactual), but no n, no module breakdown, no CI, no third party | **UNSUPPORTED-AS-STATED** as a safety standard: an average distance is dominated by nominal driving and hides the rare divergent event; the reality gap is per-facet (`2509.22379`). Confirm: pseudo-sim R² 0.8 (`2506.04218`), ladder `2607.07196` | ⭐ YES as INSTRUMENT DESIGN — D-12 must not adopt an average realism score (T-11) | per-event realism on the safety-critical subset, with n and CI, at the claimed level |
+| **WB-19-1c** ⭐ | Waabi · **CONCESSION** | *"variations in actor behavior, differences in simulated sensor data, differences in the latency of the system"* compound trajectory differences | admission | **SUPPORTED** | ⭐ YES — the three error sources our T1 tier cannot see (EVAL_DOCTRINE T1 ≠ T2) | — |
+| **M-19-1** | Mobileye · 2024-05-15 · PUBLISHED-BLOG | "Zero-bias" E2E needs exponentially more data than an engineered system whose abstractions trade bias for variance | ⛔ NO — theory + analogy; formal source is their own `1604.06915` (D-7, not independent) | **SUPPORTED** as sample complexity (DriveZero decomposes and wins; ours MEASURED: speed-as-action-channel 3.73 → 0.83 m); **CONTESTED** as a system claim | ⭐ YES favourably — E2E-trained with structure-shaped heads | a pure E2E net with no structured heads matching the structured one at small data |
+| **M-19-1c** ⭐ | Mobileye · **CONCESSION ×2** | *"Waymo is clear evidence that the bias of an engineered system is sufficiently small"*; E2E nets *"can include sensing-state branches … without sacrificing the E2E label"* | admission | **SUPPORTED** | ⭐⭐ YES — the E2E/modular axis is not the real one; **the intermediate supervision is** | — |
+| **M-19-2** | Mobileye · 2024-05-15 | Tesla v12.3.6 ~300 mi per critical intervention ≈ 10 h MTBF, *"6 orders of magnitude"* from 10⁷ h | ⛔ NO — crowd-sourced (RELAYED), 2024 vintage | **UNSUPPORTED-AS-STATED** today (stale by ≥ 2 FSD majors) | NO | a current audited intervention rate |
+
+### Guidelines derived this pass
+* **S-8 (strategic)** — world model at **training** time, not in the deploy loop (World Tokens; NVIDIA's latency concession; our sub-300 M thesis). **Falsifier:** planning-by-rollout beating train-time-only WM aux at matched deploy latency on v7-tiny.
+* **T-10 (tactical)** — exclusive routing of the action head through the WM-shaped representation, plus a bypass control in every arm (94.1 < 95.0 < 97.0). **Falsifier:** FS19-1 bypass ≥ routed.
+* **T-11 (tactical)** — D-12 fidelity is stated per event on the safety-critical subset with n and CI, never as an average trajectory distance. **Falsifier:** average and tail realism ranking simulators identically (ρ ≥ 0.9, ≥ 5 simulators).
+* **T-12 (tactical)** — WM prediction targets are semantic features (DINOv3-class, incl. DINOv3 of a BEV raster), never pixels. **Falsifier:** FS19-3 pixel ≥ semantic.
+
+### ⚠️ OPPONENT STRENGTHS, recorded
+12. Waabi has paired sim/real replay infrastructure and publishes a quantitative sim-real number; we have neither (AlpaSim unprovisioned, D-12 unmeasured).
+13. NVIDIA runs both paradigms at scale (DreamZero/GR00T WAMs and the 34 B Alpamayo VLA) and can hedge the question with compute we lack.
+14. Mobileye has absorbed the E2E critique (its sensing-state concession) on a decade of production fleet, which makes it harder to caricature than its headline.
+
+### V-1 register re-find
+TechCrunch 2026-09-01 ("Waymo goes on offense"): its primary is the *10 AI Lessons* post (adjudicated 2026-08-31) plus an Axios interview. **No new Waymo claim.**
+
+### Standing debt status this pass
+| id | status |
+|---|---|
+| D-4 (UNECE GRVA primary) | ⛔ STANDS — routes 9–13 failed (UNECE PDF ×2 methods, regulations.gov, federalregister.gov, transportation.gov, globalpolicywatch: 403 / bot challenge). Not bypassed |
+| D-7 (`1604.06915`) | ⛔ STANDS — now carries M-1 **and** M-19-1; next rotation #3 |
+| D-11 (GAIA-4) | ⛔ OPEN — not re-probed |
+| D-12 (AlpaSim fidelity) | ⛔ OPEN — T-11 now fixes the FORM its measurement must take |
+| D-13 (Elluswamy transcript) | ⛔ STANDS — 2nd probe EMPTY; speaker's own X post exists but is unfetchable here |
+| **D-14** *(new)* | Waymo *Reference Driver* (2026-06 blog + Nature Comms, TU Delft) — unadjudicated A5/Band-D claim about benchmarking AVs against humans |

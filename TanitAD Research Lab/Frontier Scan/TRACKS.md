@@ -534,3 +534,41 @@ own RESULT.md §4.
 3. **Local pypdf re-read of DriveZero + LGS** before any of their numbers enters the registry.
 4. **D-13** — Elluswamy transcript primary.
 5. **A3 driving-specific DEEP** — three consecutive driving-term empties; try "frozen vision foundation model end-to-end planner ablation".
+
+## Eleventh pass — 2026-09-19 (LAB-RUN-016)
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-19** | **2026-09-19** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐ **NVIDIA N-19-1…3, Waabi WB-19-1(c), Mobileye M-19-1(c)/-2** — 7 claims, all new; D-14 opened (Waymo ReD) |
+| A1 | A | World models | **2026-09-19** | **2026-09-19** | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⭐⭐⭐ target > pixels (DeepSight T3 + World Tokens T2); WM-checkpoint backdoor `2609.15781` |
+| A2 | A | JEPA | **2026-09-19** | 2026-09-19 (abstract-only) | [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) | LEAP `2609.03294` gradient planning through frozen LeWM, 77.5 → 94.8 % |
+| A3 | A | Vision encoders | **2026-09-19** | via A1/B12 | [`LEDGER_A3_vision_encoders.md`](LEDGER_A3_vision_encoders.md) | ⛔ E-A3 4th; the A3 evidence now arrives as encoder-as-TARGET |
+| A4 | A | VLA | **2026-09-19** | ⭐ **2026-09-19** | [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) | ⭐⭐⭐ **World Tokens** — exclusive routing, matched baseline |
+| A5 | A | Benchmarks | **2026-09-19** | 2026-09-19 | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | DeepSight B2D 86.23 DS; DriveZero navhard numbers **verified locally**; E-A5 |
+| B1 | B | VLM | **2026-09-19** | — | [`LEDGER_B1_vlm.md`](LEDGER_B1_vlm.md) | SenseNova-U1.5 (RELAYED) — scan only |
+| B2 | B | Post-transformer | **2026-09-19** | — | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | ⛔ E-B2 (3rd) |
+| B3 | B | Efficient decoding | **2026-09-19** | — | — | ⛔ E-B3 (WM-rollout transfer); VeriCache scan only |
+| B4 | B | Efficient training | **2026-09-19** | — | — | scan only |
+| B5 | B | Post-training / RL | **2026-09-19** | — | [`LEDGER_B5_post_training.md`](LEDGER_B5_post_training.md) | WorldRFT, RAD-2, DAWN — scan only |
+| B6 | B | Self-improving | **2026-09-19** | — | — | `2606.15386` (MDL ⇒ self-improving not self-confirming) — scan only |
+| B7 | B | Diffusion / flow | **2026-09-19** | — | [`LEDGER_B7_diffusion_flow.md`](LEDGER_B7_diffusion_flow.md) | GuideFlow, MeanFuser — scan only |
+| B8 | B | Tokenizers | **2026-09-19** | ⭐ **2026-09-19 (first ever)** | [`LEDGER_B8_tokenizers.md`](LEDGER_B8_tokenizers.md) (**new**) | ⭐⭐ OneWM-VLA — 1 token/view best for prediction; split roles vs our localisation ceiling |
+| B9 | B | Data curation | **2026-09-19** | — | — | scan only |
+| B10 | B | Retrieval | **2026-09-19** | ⭐ **2026-09-19** | [`LEDGER_B10_retrieval.md`](LEDGER_B10_retrieval.md) | ⭐⭐ DriveVLA-M0 — label-supervised auditable TTT; **I-3 served (partial)** |
+| B11 | B | Physics operators | **2026-09-19** | ⭐ **2026-09-19 (local re-read)** | [`LEDGER_B11_physics_operators.md`](LEDGER_B11_physics_operators.md) | ⛔ **CORRECTION** of 09-18 "0/16 → 16/16" ⇒ "15/16 at 5 & 10 steps" |
+| B12 | B | Memory / long context | **2026-09-19** | ⭐ **2026-09-19 FULL TEXT** | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⭐⭐ DeepSight — the planning-WM "long horizon" is **2 s** |
+| B13 | B | 3D / occupancy | **2026-09-19** | — | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⛔ E-B13 (2nd) |
+| C1 | C | Releases | **2026-09-19** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | Cybercab paid service; Waymo 14 cities |
+| C2 | C | Release notes | **2026-09-19** | — | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | ⛔ E-C2 (no post-7.2.1 JetPack) |
+| C3 | C | Regulatory | **2026-09-19** | — | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | NHTSA AQ26002 (Cybercab); D-4 routes 9–13 failed |
+| C4 | C | Community signals | **2026-09-19** | via A5 | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | no navhard entry above 57.1 |
+
+### ⛔ Coverage honesty
+**22 / 22 tracks carry a named query.** DEEP: D1, A1, A4, A5, **B8, B10, B11, B12** (four dedicated Band-B, bar met), A2 only abstract-deep. **Full texts: 3 via local pypdf** (DeepSight; DriveZero and LGS re-read) + 3 HTML via summariser (World Tokens, DriveVLA-M0, OneWM-VLA — **pre-committed for local re-read**, because today's LGS correction is exactly what the summariser costs). **11 empties named.** **Library: 489 → 521** (7 banked today incl. 1 re-find; **26 orphan PDFs from earlier passes recovered by `--reindex-orphans`**); `--verify` reports **49 MISSING** (indexed, absent from D: and from git) ⇒ escalated. ⛔ **The four domain packages were NOT produced today** (the PI asked for the frontier scan).
+
+### Next rotation — pre-committed
+1. Local pypdf re-read of World Tokens, DriveVLA-M0, OneWM-VLA.
+2. **D-14** Waymo *Reference Driver*.
+3. **D-7** `1604.06915`.
+4. A3 with a changed term: "DINOv3 BEV feature target world model".
+5. B2/B3 transfer empties: "gated delta net video predictor robotics", "consistency distillation world model rollout".

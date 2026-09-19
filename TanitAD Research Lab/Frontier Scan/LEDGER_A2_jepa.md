@@ -432,3 +432,8 @@ comparable accuracy"*) · `2602.03604` EB-JEPA.
 
 `FULL TEXT (local pypdf, debt from 09-17's failed extraction)` · arXiv **2606.31232**. Decode action from `Δz = z_{t+1} − z_t`: beats endpoint-concat by +4.07 / +1.07 / **+12.60** / +0.67 pp (3 seeds); λ = 0 nearly collapses; best λ = 50. Toy tasks, ViT-Tiny, end-to-end encoder.
 **Our measurement (`E-AI-LDAD-0`, MEASURED):** frozen refcv5-v2 `Δz` decodes 0.8 s ego acceleration at **R² 0.3297 [0.2384, 0.3957]**, +0.33 over pixels, +0.28 over the scene alone; LAT **VOID** (shuffle control leaked the scene term — my SPEC's defect). ⇒ LDAD for us is **predictor-side** (AI18-1). Independent confirmations in scan: `2609.03565` (IDM + state alignment, held), IDOL `2605.31476`.
+
+## 2026-09-19-01 — LEAP: gradient planning through a FROZEN JEPA-class WM beats CEM
+
+`abstract-only` · arXiv **2609.03294** (Pham & Bera, 2026-09-03) · banked. Quasi-Newton optimisation of the whole action horizon through a frozen LeWorldModel, with a terminal latent-goal + decoder-descriptor energy: mean success **77.5 % (LeWM + CEM) → 94.8 %**, 4 domains, matched protocol.
+**Our position:** the refav1 planner is a **sampler** (iCEM) with an inference-seed floor ≈ **0.30 m** ADE (INHERITED, `D-REFAV1-SEED-GOAL-MISMATCH`). A deterministic refinement from a fixed init attacks the **inference** variance source directly. FS19-4 commits ≥ 3× spread reduction at equal-or-better mean. ⚠️ Abstract-only, so it may not decide a GPU-day.

@@ -70,3 +70,8 @@ decision-relevant information."* **Select on decision-relevance, not scene stati
 ⭐ **Kairos's own concession:** *"Direct validation of real-robot closed-loop regret reduction … remains an important [direction]"*, with results offered as *"proxy evidence"* — our open-vs-closed-loop binding ruling, stated by an industrial full-stack programme.
 
 → `Data Engineering/Research/2026-09-10-kairos-curation-fourth-route/RESULT.md`
+
+## 2026-09-19-01 — DriveVLA-M0: test-time adaptation that is label-SUPERVISED, retrieval-keyed and auditable
+
+`HTML via summariser` · arXiv **2608.10413** · banked. Memory = **training** failures found by **oracle PDM scoring** (`Q < 0.5`), 4 k cases (Base) / 10 k (Scale). Test time: hierarchical retrieval (k2 = 3, k1 = 3·k2) and decoupled **map/agent LoRA** updated from the retrieved cases' **stored expert labels**. Base **91.0 → 92.3** PDMS (map-only 91.7); full-TTT 92.4 ≈ LoRA 92.3. Latency: retrieve **15.19**, forward **30.79**, LoRA backward **26.44 ms**. Ego at inference. No seeds.
+**Our position:** serves injected **I-3** in part. It is the **auditable** form (finite store; each update names its cases, which suits ISMR/DSSAD) but **not** label-free. PhysicalAI has no map, so the oracle would be **collision/TTC + the four families** only. FS19-5 (0 GPU on banked T1 dumps) tests whether retrieval has signal on our corpus. Also scanned: `2609.08217` (hierarchical memory + tool-grounded reasoning).

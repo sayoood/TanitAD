@@ -147,3 +147,9 @@ FROST-Drive**, and the 09-13 entry's phrasing invited exactly that broader readi
 Perception Encoder · `2605.12491` Elastic Attention Cores — all unread.
 
 → `Architecture & Inference/Research/2026-09-17-frozen-trunk-external-evidence/RESULT.md`
+
+## 2026-09-19-01 — 4th driving-term probe without a dedicated benchmark; the A3 evidence arrives through the WM TARGET instead
+
+`SCAN` · E-A3 (4th). Probe: "frozen vision foundation model end-to-end driving planner ablation DINOv3 SigLIP encoder comparison 2026" → DriveZero, FROST-Drive (both held), "The Constant Eye" `2602.12563` (appearance robustness, scan only).
+⭐ **The A3-relevant measurement today is DeepSight T3** (`2605.10564`, full text): **frozen DINOv3-ViT-L/16 features as the prediction TARGET** beat a VAE codebook by **+47.04 DS**. That is a claim about what a frozen encoder is good *for* (a target space for prediction), not about the trunk.
+**Our position:** the A3 question has moved from *"which encoder as trunk"* to *"which encoder as target"*, and the second has a measured answer. Next probe changes the term: "DINOv3 BEV feature target world model".

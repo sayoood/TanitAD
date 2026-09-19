@@ -92,3 +92,8 @@ L1 train-time-only language (zero inference cost) · L2 latent reasoning · L3 c
 
 `HTML primary` · arXiv **2605.31041** (ITSC 2026) · banked. Impromptu-VLA 3B: removing images entirely → open-loop L2 **+7.1 %**; closed-loop NeuroNCAP **−14.6 %**; 75 % downsampling **−27.2 %** closed-loop. Single model (conceded).
 **Our position:** independent, controlled corroboration of our action-echo finding and of the tier doctrine. Experiment FS18-3: image-removal/shuffle audit on our T1 (committed: < 10 % degradation ⇒ T1 is vision-blind).
+
+## 2026-09-19-01 — World Tokens: world modelling at TRAINING time only, with EXCLUSIVE routing so the action head cannot bypass it
+
+`HTML via summariser` · arXiv **2608.09730** (Tang et al., 2026-08-10) · banked. Real robot R1 Pro, **96 trials/arm**: **59.4 → 76.0 %** vs a **matched action-only** baseline (Qwen-GR00T). LIBERO **98.2 vs 96.9**. Ablation (LIBERO-Long): baseline **92.8**, routing-only **95.0**, WM-with-bypass **94.1**, full **97.0**. Deploy: WM branch removed, **61.85 ms vs π0.5 56.32 ms**. ⚠️ No seeds or CIs.
+**Our position:** a published structural remedy for our **bypass/echo** defect class (nav-echo 369/369; open-loop action echo 97.9 % → 0.0 %). Guidelines **S-8** (train-time WM) and **T-10** (exclusive routing + a bypass control in every arm). Experiment FS19-1. Also: RT-VLA `2606.14010` (re-find) distils SimLingo **44.8×** faster with competitive closed loop (abstract-only), a 3rd confirmation of train-large/deploy-small (S-7).

@@ -233,3 +233,9 @@ against the deployment claim adjudicated as **A17-4 (CONTESTED)** on 09-13.
 today, so none of them may uphold or retract a claim on its own.
 
 → `Frontier Scan/Daily/2026-09-17/RESULT.md` §1, §3
+
+## 2026-09-19-01 — NHTSA audit query on Cybercab; D-4 route count now 13
+
+* ⭐ **NHTSA Audit Query AQ26002** into Tesla's FMVSS self-certification of the Cybercab (opened 2026-09-03, RELAYED via press/tracker). The first federal action aimed at a purpose-built robotaxi's self-certification.
+* UN ADS Regulation (1958 Agreement) + GTR (1998 Agreement): GRVA adopted drafts in Jan 2026, WP.29 vote expected June 2026 (RELAYED).
+* ⛔ **D-4** (GRVA primary on in-service learning): routes **9–13** failed today — UNECE PDF (WebFetch + curl with browser UA: **403**), regulations.gov `NHTSA-2026-0034-0058` (**403**), federalregister.gov (bot redirect), transportation.gov (**403**), globalpolicywatch (**403**). **Not bypassed.** I-3's legal half stays **UNREAD**; its auditability half gained a published design today (`LEDGER_B10` 2026-09-19-01).

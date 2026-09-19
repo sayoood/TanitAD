@@ -143,3 +143,8 @@ arm** in the hierarchy-vs-flat comparison, and arguably the strongest flat basel
   asymmetry argument now has a mechanism and a number (13 % over LeWM) behind it.
 - **L-1 corroborated** by a second independent primary.
 - **backlog row 18 (H1b)** gains a required third arm.
+
+## 2026-09-19-01 — DeepSight: the planning literature's "long horizon" is 2 seconds
+
+`FULL TEXT (local pypdf, 14 pp)` · arXiv **2605.10564** (Tsinghua / Amap-Alibaba) · banked. Parallel world queries predict **5 future BEV latent frames × 0.5 s = 2 s** in one forward pass (+3.57 % latency). GT = **DINOv3-ViT-L/16 of BEV renders or segmentation maps**. Bench2Drive **86.23 DS**. Target ablation +47.04 DS (VAE → DINOv3); multi-frame +11.78; adaptive CoT fires on **< 30 %** of frames and adds +1.71 on top of the WM. ⚠️ Dev-10 routes, one seed; the λ_world sweep alone spans **7.6 DS**.
+**Our position:** ⭐ the published planning-WM "long horizon" is **2 s**; minute-scale rollouts exist only in **video generation** (HorizonDrive ~1 min, ReWorld `2608.23565`, Matrix-Game 3.0, DecMem). Our **6 s** tactical horizon is already 3× that, and **no planning-grade WM at 30 s** (strategic) was found. This is a differentiator to stamp in the paper, not a gap. The DINOv3-of-BEV-raster target combines with the SAM3 map corpus (FS19-3).

@@ -247,3 +247,10 @@ UniDrive-WM `2601.04453` · DriveWAM `2605.28544` · CoWorld-VLA `2605.10426` ·
 
 `HTML primary via summariser` · arXiv **2609.06055** (2026-09-05) · banked. navhard **two-stage 57.1 EPDMS** (Scale) / 51.5 (base); navtest 95.3 / 94.8 PDMS; HUGSIM zero-shot 46.6 HD-Score. Frozen DINOv3+SigLIP2+SAM+DA-V2 (+LoRA): **+0.53 PDMS** over DINOv3-only (ViT-S). 5.70 M-param privileged PPO teacher (DriveRL) distilled into the vision student; RL-only 93.61 < human 93.92; + goal augmentation 94.41. ⛔ ego kinematics + nav at inference ⇒ benchmark-arm only.
 **Our position:** above our stamp table's top (56.6). The privileged teacher is **admissible for us as a label factory** (labels may use anything). Experiments FS18-1 (stamp), FS18-2 (teacher-distillation arm). Also scanned: IDOL `2605.31476` (banked abstract-only — inverse dynamics on adjacent predicted BEV latents).
+
+## 2026-09-19-01 — The TARGET beats the pixels, and a backdoored WM checkpoint passes clean checks
+
+`FULL TEXT (local pypdf)` DeepSight **2605.10564** · `HTML via summariser` World Tokens **2608.09730** · `abstract-only` **2609.15781** · all banked. Detail: `Frontier Scan/Daily/2026-09-19/RESULT.md` §0 rows 2–3, §2.
+* **Two independent controlled ablations:** DeepSight T3 (Dev-10, one seed) VAE-codebook target **27.75 / 14.66 DS** (1 / 5 frames) vs DINOv3-feature target **74.79 / 86.57**; World Tokens T2 (LIBERO-Long) RGB anchor **91.5 < no-WM 92.8 < full 97.0**.
+* **Backdoor:** a poisoned latent-WM checkpoint steers the victim's own MPC/actor optimisation to the attacker's action on **100 %** of triggered steps, with **≥ ~75 %** clean success, so it passes pre-deployment diagnostics.
+**Our position:** CONFIRMS the latent/semantic-target choice (T-12) and adjudicates N-19-2 (NVIDIA, pixel coupling) **UNSUPPORTED-AS-STATED**. New hygiene item: pin the sha256 of every upstream checkpoint (DINOv3, SAM3, Cosmos, Alpamayo) in run records. Experiment FS19-3.

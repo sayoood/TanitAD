@@ -300,3 +300,7 @@ Jetson line is on the 10.x branch. Feeds **FS-4** (re-run the FP8/FP4 precision 
 
 `PUBLISHED-RELEASE-NOTE` · NVIDIA docs `release-notes-11/11.0.0.html`, `11.3.0.html`, read 2026-09-18. 11.0.0: `IInt8Calibrator` and the calibration/dynamic-range APIs **removed**; all weak-typing APIs and per-precision `BuilderFlag`s (`kFP16 … kFP8, kINT8, kINT4, kFP4`) **removed**; `createNetworkV2()` strongly typed by default. 11.3.0: *"NVIDIA JetPack is not supported"*; DriveOS 11.3.1 on CUDA 13.4.
 **Our position:** the D-B1-GATE silent-fallback mechanism is gone upstream but **live on Thor** (TRT 10.16.2 under JetPack 7.2.1). ⇒ Write the B1 recipe strongly typed + explicit Q/DQ **now** (backlog row 1); keep the gate until JetPack ships TRT 11. C1: Wayve × Uber supervised London rides (2026-09). C3: NHTSA AV-Framework comments extended to 2026-09-30.
+
+## 2026-09-19-01 — C1/C2 sweep
+
+C1: Tesla **Cybercab** in paid service, Austin (2026-09-03); Waymo **14 US cities** (Denver / San Diego / Tampa, 09-01), Singapore (09-17), Allianz Europe (09-15); Uber × Wayve London (09-03; Mach-E, cameras + radar, no lidar). All RELAYED/press. **C2:** no JetPack after **7.2.1** (TRT **10.16.2**) ⇒ the TRT-11 migration note of 09-18 and the D-B1-GATE hazard both stand. Detail: `Frontier Scan/Daily/2026-09-19/RESULT.md` §4.

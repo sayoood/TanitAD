@@ -267,3 +267,10 @@ its full text is a debt.** No rung threshold is quoted as a number.
 
 `FULL TEXT (local pypdf)` · arXiv **2607.07196**. Operational L1 = IEC via ACT-Estimator, significantly above 1/8 chance; instrument validated (0.77 m real ADE; 93.4 % vs 94.0 %; Vista 30.7 % reproduced). The paper **scopes OUT reconstruction simulators** (NeRF/3DGS). Epona L2 h* 3.2 s vs Vista 1.6 s at a 1.8 m band — both below our 6 s horizon. n = 2 models (conceded).
 **Our position:** LR14-8's *"capped at L0"* branch does NOT fire; row 14 must target **L2-envelope** first and anchor L4 on **T2**, never T1 (`EVAL_DOCTRINE.md:29`). Experiment BE18-1 (`E-BE-ENVELOPE-1`). Leaderboard (C4): DriveZero-Scale 57.1 navhard two-stage; DriveVLA-M0 `2608.10413` 47.0 navhard.
+
+## 2026-09-19-01 — Stamp-table additions; no new navhard entry above DriveZero-Scale
+
+`FULL TEXT (local pypdf)` DeepSight **2605.10564**: Bench2Drive base, Think2Drive expert, 220 routes: **86.23 DS / 71.36 % SR** (w/o CoT 84.52 / 65.91); nuScenes open-loop avg L2 **0.33 m** (⛔ open loop, and a different L2 convention from our `fwd_ade`, per V-5). Inputs at inference include **ego state + target point** ⇒ **benchmark-arm only**.
+`HTML via summariser` DriveVLA-M0 **2608.10413**: navhard **47.0 EPDMS, two-stage**; navtest **94.1 PDMS**; ego at inference.
+**Verified today from the local PDF:** DriveZero **57.1 (Scale) / 51.5 (base)** are both navhard **two-stage** EPDMS; SimScale data: Stage 1 **−1.8**, Stage 2 **+8.3**.
+⚠️ **E-A5:** no new SOTA after DriveZero-Scale. **D-14 (new):** Waymo's *Reference Driver* (2026-06) is an A5 claim about benchmarking AVs against humans and is unadjudicated.
