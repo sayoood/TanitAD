@@ -989,3 +989,33 @@ expectation is over all N; and because the bank is synthetic and speed-independe
 reported per speed tercile. Pre-registered in PREREG_S1 as *S1A ERRATUM-1*. Class:
 `D-EVALTOOL-ANCHOR-CHANCE` (2026-09-06) with the direction reversed — a constant carried from one
 checkpoint's record into another's.
+
+<!-- A8-DONE-2026-09-19 -->
+## ⚠️ A8 DONE — the occupancy curve is NOT monotone, and after 2,000 steps it is FLAT inside the rig's own run-to-run spread
+
+A3's configuration run to **5,000 steps** on clean-124 halfA (0.94 of ONE epoch), with a held-out
+halfB read of 1,000 windows every 1,000 steps. MEASURED (ours); the checkpoint is `ckpt_5000.pt`.
+
+| step | held-out `map_iou_drivable` | × the halfB floor 0.3388 |
+|---|---|---|
+| 1,000 | 0.45049 | 1.330 |
+| 2,000 | **0.56906** | 1.680 |
+| 3,000 | 0.54010 | 1.594 |
+| 4,000 | 0.57437 | 1.695 |
+| 5,000 | **0.58379** | 1.723 |
+
+⛔ **§7's A8 row asked for a MONOTONE rise. It is not monotone** (3,000 falls 0.029 below 2,000),
+and the whole 2,000 → 5,000 gain is **+0.0147**. ⚠️ Read that against the rig's own spread, which
+this run measured for free: **A3 and A8 are the SAME configuration and the SAME seed**, and the
+trainer is not reproducible across launches, so they are two draws — **0.00701 apart at 2,000 and
+0.03967 apart at 1,000** (n = 2: an INDICATION of the floor, not a replicate panel). ⇒ the 3,000-step
+gain is **inside** that spread at 1,000 and barely outside it at 2,000.
+⇒ **The pre-committed reading applies:** the head has SATURATED on 62 clips; **more dev-box steps
+are not the lever**, and the schedule's first cut (A8) can stay cut. What the run does buy: the
+S1 pass its checkpoint (0.94 epoch, the best available), and a second held-out confirmation that
+the occupancy clears its floor by **1.72×**.
+⚠️ Rate, stated for honesty and NOT for planning: train-only median **4.74 s/step** (492 deltas),
+wall 40,131 s including five 1,000-window reads. The box was shared with a NAVSIM caching job and
+D: I/O all afternoon, so this is a CONTENDED figure, not the 2.51 s/step planning rate.
+⛔ NOT a capability claim: a map head at 0.94 of one epoch over 62 clips.
+Artifacts: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-a8-occupancy-5k/`.
