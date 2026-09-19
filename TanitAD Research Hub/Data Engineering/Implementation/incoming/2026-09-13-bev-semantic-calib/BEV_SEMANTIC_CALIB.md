@@ -2803,3 +2803,107 @@ happens to agree with the status quo is the easiest thing in the world to keep.
   one; the offset-vs-range slope inherits the right boundary's weakness**, which is the same
   weakness that has now defeated six instruments.
 * ⇒ The yaw is settled to about **±0.3°**; below that the horizon has to be settled first.
+
+---
+
+# Part 28 — one metric, every frame, with a known target
+
+## 131. ⭐⭐ ROAD CONTAINMENT — and why "we know the future" is what makes it a goal
+
+Sayed: *"you need to introduce a metric which represents non-leaving-the-road, which [is] a
+clear simple verified goal, since we know the future."*
+
+Right, and the diagnosis of five failed renders is that **no single quantity was ever made to answer
+for the whole calibration**. `R-2026-09-15-oneside` measured only the left boundary, so a placement
+error was invisible; `R-2026-09-16-yawnotlateral` measured only 7–12 m, so a yaw error was fitted
+with the lateral parameter. Same failure twice: a bespoke instrument, a narrow window, no target.
+
+**THE METRIC.** The ribbon is drawn around the car's **actual recorded future path**, and the car
+did not leave the road. So:
+
+> **on-road rate** — the fraction of (frame, range) samples where BOTH ribbon edges land on
+> drivable surface — **must be ~100 % for a correct calibration.**
+
+⭐ That is what *"since we know the future"* buys, and it is the property every earlier instrument
+lacked: **a known right answer.** A clearance of 0.5 m could always be explained away as the driver
+sitting off-centre. 78 % on-road cannot.
+
+**THE SURFACE.** Drivable road is near-grey. MEASURED: asphalt **S = 8**, lane paint **S = 4**, pale
+shoulder **S = 79**, bank **S = 95**, sky **S = 139**. One saturation threshold separates the
+carriageway from the shoulder the corridor was spilling onto, and puts the paint on the road side
+where it belongs. Verified by drawing it on six frames before any statistic.
+
+## 132. ⭐ It ranks every render this document has shipped
+
+300 frames × 7 ranges (10–40 m), both edges required on road:
+
+| calibration | on-road | 20 m | 30 m | **40 m** |
+|---|---|---|---|---|
+| shipped v1 `−5.35 / 448.4 / −0.126` | **65.1 %** | 70.0 | 44.8 | **53.6** |
+| v3 `−5.35 / 448.4 / −0.41` (the lateral "fix") | 76.3 % | 90.0 | 60.8 | **58.8** |
+| v5 `−7.01 / 448.4 / −0.088` | 90.9 % | 94.0 | 90.0 | **78.8** |
+| **v6 `−7.75 / 472 / −0.15`** | **98.0 %** | 97.7 | 95.7 | **95.0** |
+
+⚠️ **Read the v3 row.** Part 25's lateral correction raised the near field (20 m: 70 → 90 %) and
+barely moved the far field (40 m: 53.6 → 58.8 %). That is the signature of fitting an angle with a
+level, visible at a glance in a table that did not exist when I made the error.
+
+## 133. ⛔ The metric is DEGENERATE in the horizon, and in `f·h` — measured, not assumed
+
+Raising the horizon moves samples toward the wide near field **and shrinks the ribbon relative to
+the road**, so containment climbs without bound. MEASURED, at fixed yaw/lateral:
+
+| horizon | on-road | ribbon/road width at 10 m | at 40 m |
+|---|---|---|---|
+| 440 | 89.1 % | 0.197 | 0.091 |
+| 472 | 97.1 % | 0.185 | 0.077 |
+| 500 | **98.0 %** | 0.176 | **0.068** |
+
+The ratio falls monotonically while the score rises ⇒ **the score is being bought by drawing a
+smaller ribbon.** ⇒ **containment cannot determine the horizon, and cannot choose between `f·h`
+candidates either.** It is used only for `yaw` and `lateral`, which do not change the ribbon's size
+and where the optimum is genuinely interior.
+
+⭐ **This is the guard the five previous instruments never had**, and it is why the optimum is
+reported with its degeneracy rather than as a measurement. An optimum at the edge of its scan is not
+a measurement — a rule this document has now had to learn six times.
+
+## 134. The optimisation, and its honest resolution
+
+With the horizon fixed at **472** (from §104's left-line drift scan, basin 460–484, which is a
+SHAPE constraint and therefore not degenerate), scanning `yaw × lateral`:
+
+* binary containment: optimum **yaw −7.50, lateral 0.00 → 96.7 %**, interior ✓ — but the 1 %-down
+  contour spans the whole grid, so it pins the calibration only to ±1° and ±0.35 m;
+* **margin** (signed distance to the road edge, in metres, via a distance transform) is far sharper:
+
+| calibration | on-road | **p5 margin** | median |
+|---|---|---|---|
+| shipped v1 | 81.9 % | **−0.25 m** | +0.48 |
+| v3 | 88.0 % | −0.19 m | +0.57 |
+| v5 | 95.4 % | +0.04 m | +0.62 |
+| **v6 `−7.75 / 472 / −0.15`** | **98.0 %** | **+0.29 m** | **+0.94** |
+
+⭐ **A positive p5 margin is the goal stated properly: 95 % of all samples sit at least 0.29 m
+inside the road.** The shipped calibration was at **−0.25 m** — i.e. its 5th percentile was a
+quarter of a metre *outside*.
+
+## 135. ⚠️ What the metric cannot settle, stated plainly
+
+Four self-consistent `(f·h, horizon)` triples, each optimised independently:
+
+| | optimum | p5 margin | on-road |
+|---|---|---|---|
+| `f·h 2431, hz 448.4` (adopted) | −7.50 / −0.10 | +0.07 m | 96.0 % |
+| **`f·h 2431, hz 472`** (drift scan) | **−7.75 / −0.15** | **+0.29 m** | **98.0 %** |
+| `f·h 1935, hz 472` (row flow at 472) | −8.00 / −0.25 | +0.17 m | 97.4 % |
+| `f·h 2431, hz 448.4, f at lens bound` | −8.00 / −0.10 | +0.10 m | 96.4 % |
+
+The chosen triple scores best, **but its margin over the row-flow-consistent one is inside the
+degeneracy** (a larger `h` draws a smaller ribbon). ⇒ **`f·h` and the horizon remain unresolved**,
+and the practical consequence is that the **range labels** on the ticks carry that uncertainty:
+at horizon 472 the row flow would want `f·h ≈ 1935`, which would make the labelled ranges ~26 %
+shorter. **The corridor's placement is settled to the metric; its range calibration is not.**
+
+⚠️ The yaw is now consistent across every non-conditional estimate: `lane_calib` −7.01, `clear_L`
+slope −6.75/−7.01, containment −7.50, margin −7.75. The shipped −5.35 is outside all of them.
