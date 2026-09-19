@@ -693,3 +693,229 @@ push of the 408×1024 cache (**386.5 GB**, ESTIMATED and probably high) leaves *
 Package: `TanitAD Research Lab/Data Engineering/Research/2026-09-19-c4-hf-quota-check/`. (Also: the 18 D:-divergent Data files need NO merge — HEAD is
 authoritative for all 18: 5 blob-identical, 10 redaction-only, 2 header+backup, 1 stub-filled;
 mutation-tested. `TanitAD Research Lab/Data Engineering/Research/2026-09-19-d-sync-divergence-resolution/`.)
+
+
+---
+
+<!-- A7-AMENDMENT-BN-2026-09-19 -->
+## ⛔ A7 AMENDMENT, 2026-09-19 — BatchNorm handling, pre-registered BEFORE ANY DATA
+
+**Author:** TanitAD_TrainingFlyWheel (A7 owner, assigned by the Master Mind 2026-09-19).
+**Status at the time of writing: 0 A7 GPU seconds spent. No A7 arm has been launched.**
+Every fact below is MEASURED (ours) unless labelled otherwise.
+
+### A7.1 ⛔ The confound — a SECOND variable the memory levers smuggle into A7
+
+A7 must run with the memory levers (`--trunk-chunk-ckpt 1 --trunk-frozen-bn`): without them
+the arm allocates **14.6 GB on an 8 GiB card and pages** (R.1). `--trunk-frozen-bn` pins every
+backbone BatchNorm to **eval mode**, where it normalises with its **stored running statistics**
+(`timm_trunk.py::_freeze_bn_`, which also replaces the bound `train` so the trainer's own
+`model.train()` cannot undo it).
+
+| condition | what the stored statistics ARE | what frozen BN therefore does |
+|---|---|---|
+| ImageNet-init | ImageNet's per-channel mean/var | a real normalisation — of **ImageNet's** input distribution |
+| **random-init** | ⛔ **MEASURED: 36 BN layers, every `running_mean` exactly 0.0, every `running_var` exactly 1.0**, `bn_training_count` 0 | `(x − 0)/√(1+ε)·γ + β` with `γ = 1, β = 0` ⇒ ⛔ **THE IDENTITY. No normalisation at all.** |
+
+*(Measured on `resnet34.a1_in1k`, `pretrained=False`, `frozen_bn=True`, K = 3, CPU, 2026-09-19.)*
+
+⇒ **Unfixed, A7 compares "ImageNet weights + a normalisation" against "random weights + no
+normalisation".** A random-init deficit would be uninterpretable — it could be the missing
+prior or the missing normalisation — and §5's rule that A7 is the plan's **only admissible
+lever claim** would be spent on a two-variable result.
+
+### A7.2 ⭐ The BN handling, pre-registered: RECALIBRATE BOTH ARMS, THEN FREEZE
+
+A new trainer flag, **`--trunk-bn-recalib N`** (default **0 = OFF**, bit-identical to today when
+off), applied **identically to all four arms**:
+
+1. **When:** once, after the model is built and moved to the device — i.e. after the seeded
+   random init (`torch.manual_seed(args.seed)` precedes the build, `refc_v3_train.py`) — and
+   **before step 1**.
+2. **What:** the canonical `torch.optim.swa_utils.update_bn` procedure on the trunk's backbone
+   BatchNorms only: `reset_running_stats()`, `momentum = None` (the exact cumulative mean over
+   batches), BN in train mode, forward under `no_grad`, statistics kept; then BN is frozen
+   exactly as `--trunk-frozen-bn` does today.
+3. ⛔ **Chunked checkpointing is BYPASSED during recalibration.** With `--trunk-chunk-ckpt 1`
+   every BN "batch" would be **one image**; averaging per-image variances omits the
+   between-image variance, so `running_var` would be **systematically under-estimated**.
+   Recalibration therefore runs the backbone on the **full** trunk batch (no gradients are
+   kept, so the memory cost the lever exists to avoid does not arise).
+4. **On what:** a FIXED set of **N = 256 halfA windows** (the TRAIN half — never halfB), drawn by
+   **`--trunk-bn-recalib-seed 0`**, a generator **independent of `--seed`**, so all four arms
+   recalibrate on **byte-identical windows in the same order**. The drawn index list is
+   digested (`sha12`) into `config.json` so the identity is checkable after the fact.
+5. **The trunk input is the forward's own:** `frames.reshape(b·w, …)` on the hierarchy path,
+   `frames[:, -1]` otherwise — the same rule `refc.py`'s forward applies, pinned by a test that
+   captures the encoder's real input with a forward pre-hook and requires `torch.equal`.
+6. **Stamped:** `config.json` carries `trunk_bn_recalib: {n_windows, seed, windows_sha12,
+   n_batches, n_images, n_bn, stats_sha12}`; with the flag off it carries
+   `trunk_bn_recalib: null` (the baseline, distinguishable from absence). The recalibrated
+   statistics themselves are banked as `bn_recalib_stats.pt` in the run directory.
+
+⚠️ **Declared consequence:** the ImageNet arm's running statistics become **driving-data
+statistics**, no longer ImageNet's. A7's ImageNet arm is therefore **deliberately NOT
+bit-comparable with A3 or A8**, which ran with ImageNet statistics. That is the price of making
+the two A7 conditions differ in the weights only, and it is paid knowingly.
+
+### A7.3 ⭐ Two controls that must read known values
+
+**(a) The identity control — both ImageNet arms must recalibrate IDENTICALLY.** Before step 1
+their trunk weights are identical (a fixed download) and their windows are byte-identical, so
+their recalibrated statistics must agree **to floating-point non-determinism** (cuDNN
+convolution algorithms need not be bit-reproducible, so an exact byte identity is NOT the
+criterion). Reported as the max relative difference over every BN channel, **and read as a
+RATIO against the ImageNet-vs-random difference of the same statistics** — never against a
+remembered epsilon. ⛔ If the same-condition difference is not orders of magnitude below the
+between-condition difference, the recalibration is seed-dependent, the arms are not what they
+claim, and **A7 stops**.
+
+**(b) The mutation control — the flag must be REACHABLE, not merely correct.** Per the
+2026-09-10/11 binding rule (*"built, tested, and unreachable from its caller"*): the test
+suite proves (i) OFF is bit-identical, (ii) ON changes the backbone's running statistics
+**from the trainer's own entry point**, (iii) the stamp is written, and (iv) ⛔ deleting the one
+line that performs the recalibration turns the test **RED**.
+
+### A7.4 ⚠️ The residual confound, measured rather than assumed away
+
+Recalibration equalises the **start**. Frozen statistics then go **stale** as the weights train,
+and a random trunk moves further in 2,000 steps than an ImageNet one — so the random arm's
+normalisation may be **staler at the end**. Pre-registered diagnostic, computed on the trained
+trunk **of every arm** on the same 256 windows (into a copy — the checkpoint is not altered):
+
+* `bn_staleness_var` = median over BN channels of `|ln(var_frozen / var_true)|`
+* `bn_staleness_mean` = median over BN channels of `|mean_frozen − mean_true| / √var_true`
+
+**How it qualifies the verdict, committed now:** if the between-condition difference in
+staleness **exceeds the within-condition seed spread of staleness**, a random-init deficit is
+reported as **partly attributable to stale normalisation** and the verdict says so in its first
+sentence. ⛔ It never changes the criterion below; it changes only how much of an effect may be
+attributed to the prior.
+
+### A7.5 The four arms — the ONLY differences from the A3 template
+
+`C:/Users/Admin/qland/a3_heldout_read.sh`'s configuration, with exactly these changes:
+
+| arm | `--trunk-…pretrained` | `--seed` | plus, on every arm |
+|---|---|---|---|
+| **A7-IN-s0** | `--trunk-pretrained` | 0 | `--trunk-bn-recalib 256 --trunk-bn-recalib-seed 0` |
+| **A7-IN-s1** | `--trunk-pretrained` | 1 | `--eval-every 2000` (one read, at step 2,000) |
+| **A7-RND-s0** | `--no-trunk-pretrained` | 0 | `--eval-window-dump <arm>/eval_windows.jsonl` |
+| **A7-RND-s1** | `--no-trunk-pretrained` | 1 | `--out <arm-specific>` |
+
+Everything else — `resnet34.a1_in1k`, 416 × 1024, batch 2, 2,000 steps, `--trunk-in-channels
+9`, the levers, every head and weight, `--conflict-detector off`, halfA training, halfB held-out
+`--eval-batches 500` — is **byte-identical** across the four. Run **one at a time**, only when
+`boxstat.py` reads GPU ≤ 2,500 MiB and host free ≥ 8 GB.
+
+### A7.6 ⭐ The verdict — §7's A7 row, made computable, committed before the data
+
+* **Metric:** `eval_traj` — the held-out **planner** loss (§7: *"on the planner loss"*) — at
+  **step 2,000**, over the **1,000 fixed halfB windows** (`torch.Generator().manual_seed(12345)`,
+  `refc_v3_train.py`, independent of `--seed`, hence byte-identical windows across all four arms).
+* **Effect** `E` = mean over the two seeds of the RND arm's `eval_traj` minus mean over the two
+  seeds of the IN arm's. **Positive = ImageNet better** (lower loss).
+* **Seed floor** `F` = measured **in this same panel**: the larger of the two within-condition
+  seed differences, `max(|IN_s0 − IN_s1|, |RND_s0 − RND_s1|)` — the conservative choice.
+* ⭐ **The headline is the ratio `R = E / F`** (the Master Mind's instruction), quoted with `E`,
+  `F`, and all four arm values.
+
+| outcome | condition | what I will report |
+|---|---|---|
+| ⭐ **SUPPORTS** | **both** IN arms below **both** RND arms (all four cross-pairs favour ImageNet), **and** `R > 1` | ImageNet-init is ahead of random-init on the held-out planner loss at matched steps, beyond the seed floor measured in the same panel |
+| ⚠️ **UNDERPOWERED** — ⛔ *not* REFUTED | `R ≤ 1`, i.e. the gap is inside the seed floor | *"the ImageNet prior is not visible at 2,000 steps on 124 clips"* — and the pre-committed reading that `E-REFCV6V2-TRUNK` **needs corpus scale**, which is evidence for the pod |
+| **RANDOM AHEAD** | `E < 0` beyond the floor | reported exactly as measured |
+| ⛔ **VOID** | A7.3(a) fails, or any arm crashes / writes no `eval_windows.jsonl` | no verdict; the failure is the finding |
+
+**Supporting statistics, reported alongside and never substituted for `R`:** the paired
+episode-cluster bootstrap (`taniteval.ci`) on `eval_traj`, IN vs RND, per seed-matched pair —
+⛔ with the explicit statement that it answers *"would another draw of episodes say this?"* and
+is **blind to training variance**, which is exactly why `R` is the headline and not this.
+
+### A7.7 ⚠️ What this panel cannot establish — stated now so it is not discovered later
+
+1. ⛔ **`F` rests on two seeds per condition** — one difference each. A ratio near 1 is not
+   decisive, and it is reported with that caveat rather than rounded into a verdict.
+2. ⛔ **NOT a capability claim.** 2,000 steps × batch 2 = 0.38 of one halfA epoch (§3.1).
+   Tier: **T0, held-out, open-loop, trainer-side read.**
+3. ⚠️ **The four metric families.** The held-out read emits family **losses**
+   (`eval_lon`/`eval_lon_tac`, `eval_lat`/`eval_lat_tac`, `eval_tac_v6`/`eval_goal_tac`/
+   `eval_anchor_acc`, `eval_route`) and they are reported per arm with the same seed-floor ratio.
+   It does **not** emit the doctrine's family **metrics** (headway/TTC, curvature and yaw-rate
+   error, manoeuvre confusion, route accuracy). ⛔ That gap is recorded as a **work item**, not
+   waved through; closing it is out of A7's scope and needs the T1 harness (C8).
+4. ⛔ **No extra seeds, no metric switch, no post-hoc threshold.** If the result is ambiguous,
+   it is reported as ambiguous.
+
+### A7.8 ⛔ PRE-DATA ADDENDUM, same day — the window dump A7.6 leans on was measuring something else
+
+**Status at the time of writing: still 0 A7 GPU seconds.** Found while wiring A7.6's supporting
+statistic; fixed, tested and mutation-proven **before any A7 arm launched**.
+
+1. ⛔ **The defect (MEASURED).** `refc_v3_train.py`'s W-BOOTSTRAP per-window pass ran *after*
+   the aggregate eval had restored train mode, i.e. **in TRAIN mode**: `ego_dropout = 0.5` and
+   `route_dropout = 0.5` fired on the held-out windows; `compute_losses_v3`'s
+   `if model.training:` gate **re-opened C-REFCV3-EVAL-PRIOR-LEAK** (held-out labels EMA'd into
+   `core.lat/lon_log_prior`); and its draws plus the loader iterator moved the training RNG.
+   * the only real run that used the flag (`refcv6-windump-20260919`, step 1, 16 windows, 0 GPU
+     to re-read): row-mean `traj` **14.50351** vs the aggregate `eval_traj` **14.59615** on the
+     SAME windows;
+   * the synthetic rig (`stack/tests/test_eval_window_dump_mode.py`, pre-fix): rows **11.1558**
+     vs aggregate **10.7542**; `lat_log_prior` moved from `[-1.1087, -1.1087, -1.0788]` to
+     `[-1.0593, -1.1489, -1.0897]`; **170 tensors** differed after one later training step
+     between dump-ON and dump-OFF.
+2. **The fix:** `model.eval()` plus `_RngIsolated(device, None)` (torch/numpy/python RNG forked,
+   **not** reseeded) around the dump pass. Five tests pin it through `T.train`; mutation **M6**
+   (delete the `model.eval()`) and **M7** (delete the fork) both go RED with the control GREEN
+   (`raw/mutation_proof.json` in the A7 package).
+3. ⚠️ **A second, independent non-equivalence — found by the same test, and it survives the fix.**
+   `loss_traj = Σ|err|·sv / (2·Σsv)` is a **valid-slot-weighted** mean over the batch, and
+   `eval_traj` averages **batch-2 pairs**. So even in eval mode the plain mean of the batch-1 rows
+   is NOT `eval_traj` whenever windows carry unequal valid futures — which real data does (the
+   acceptance run: 15/16 windows full, 1 at 0.5; of its 0.0926 gap, rebuilding its train-mode rows
+   by the rule below closes 0.0611 and the remaining 0.0316 is the train mode — one ordering of two
+   effects that need not add). The rows reproduce `eval_traj` **exactly** by the loss's own rule —
+   `Σ traj_w·frac_w / Σ frac_w` per consecutive pair (`frac` = `slot_valid_frac`), then the mean
+   over pairs; test (b) asserts it to rel 1e-5.
+4. ⭐ **Committed now, before any data — the bootstrap statistic.** A7.6's supporting paired
+   episode-cluster bootstrap computes, per draw and per arm, the **valid-slot-weighted ratio**
+   `Σ traj_w·frac_w / Σ frac_w` over the resampled windows — the loss's own weighting, without the
+   batch pairing, which has no meaning once episodes are resampled. The **plain window mean** is
+   reported beside it as a sensitivity row. Both are supporting only; the headline stays
+   **`R = E / F` on `eval_traj` from `metrics.jsonl`**, which this defect never touched (the
+   aggregate block was already in eval mode).
+5. **A per-arm dump gate (validity, not a verdict criterion):** after each arm the rows must rebuild
+   that arm's `eval_traj` by rule 3 to rel 1e-4. An arm whose dump fails is VOID **for the
+   bootstrap only**; `R` is unaffected.
+6. **Scope outside A7:** of the dev-box runs, only the W-BOOTSTRAP acceptance run used the flag —
+   A2, A3, A8 and A9 did not (read from each run's `config.json` argv). Its reachability claim
+   (the bootstrap RUNS end to end) stands; its rows were train-mode rows and are not a measurement
+   of the eval.
+7. **Correction to A7.2 item 5, pre-data:** the trunk-input test does NOT use a forward pre-hook —
+   the hierarchy path calls `encoder.forward_features(...)` directly, so a module pre-hook never
+   fires there (measured while writing it). The test wraps `forward_features` itself, on both
+   branches, and requires `torch.equal`.
+
+<!-- /A7-AMENDMENT-BN-2026-09-19 -->
+
+<!-- W-BOOTSTRAP-DUMP-DEFECT-2026-09-19 -->
+## ⛔ CORRECTION TO W-BOOTSTRAP (2026-09-19) — the per-window dump ran in TRAIN mode
+
+Found by the TrainingFlyWheel while building A7, verified and landed by the Master Mind.
+`--eval-window-dump` (W-BOOTSTRAP, `1d1e148`) ran its batch-1 pass AFTER the aggregate eval had
+already called `model.train()`, so on held-out windows: ego_dropout 0.5 and route_dropout 0.5
+FIRED; the `if model.training:` gate EMA'd held-out labels into `core.lat/lon_log_prior` —
+re-opening **C-REFCV3-EVAL-PRIOR-LEAK** — and the dropout draws moved the training RNG.
+MEASURED on the only run that ever used the flag (`refcv6-windump-20260919`, same 16 windows):
+dump-row mean traj **14.50351** vs aggregate `eval_traj` **14.59615**.
+⇒ W-BOOTSTRAP's **reachability** claim STANDS (the bootstrap runs); its **row values are VOID** —
+they were never a measurement of the eval. ⚠️ Scope, checked by argv: **A2, A3, A8 and A9 did NOT
+use the flag**, so none of their numbers is touched.
+**Fix:** `model.eval()` plus an RNG fork (`_RngIsolated`, forked, not reseeded) around the dump
+pass; 5 new tests, all RED before the fix and GREEN after; 7/7 mutations caught. A second,
+independent issue survives the fix and is pre-registered in **A7.8**: `loss_traj` is
+valid-slot-weighted, so the plain mean of batch-1 rows is not `eval_traj` — rows rebuild it exactly
+as `sum(traj·frac)/sum(frac)` per consecutive pair.
+⛔ And a pinned test (`test_refc_v3_save_before_eval`) was already RED at HEAD from W-BOOTSTRAP's
+second `model.train()` — a defect I shipped without seeing it. Retraction:
+`RETR-2026-09-19-WINDUMP-TRAIN-MODE`.

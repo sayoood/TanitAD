@@ -296,4 +296,13 @@ def test_step_loop_saves_before_it_evals_in_the_source():
     assert i_save < i_eval, "ckpt.pt must be written BEFORE the eval block"
     assert loop.index("if step in MILESTONES:") < i_eval
     assert "except Exception as exc:" in loop and '"eval_error"' in loop
-    assert loop.count("model.eval()") == 1 and loop.count("model.train()") == 1
+    # ⚠️ TWO held-out passes live in the loop since W-BOOTSTRAP (2026-09-19): the
+    # aggregate eval and the per-window dump, and EACH must enter eval mode itself.
+    # The dump once ran WITHOUT its own `model.eval()` -- i.e. in TRAIN mode, right
+    # after the aggregate's `model.train()` -- which is what turned the old `== 1`
+    # pin red at HEAD. Behaviour: tests/test_eval_window_dump_mode.py.
+    assert loop.count("model.eval()") == 2 and loop.count("model.train()") == 2
+    i_dump = loop.index("if eval_win_dl is not None:")
+    assert (loop.index("model.eval()", i_dump)
+            < loop.index("compute_losses_v3(", i_dump)), (
+        "the window dump forwards before entering eval mode")

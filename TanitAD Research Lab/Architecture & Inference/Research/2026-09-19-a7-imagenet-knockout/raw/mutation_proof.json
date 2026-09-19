@@ -1,0 +1,120 @@
+{
+ "ok": true,
+ "results": {
+  "M0_control_unmutated": {
+   "rc": 0,
+   "failed": [],
+   "n_failed": 0,
+   "n_passed": 22,
+   "tail": ":test_REFUSED_without_frozen_bn_BEFORE_anything_is_written\nPASSED tests/test_bn_recalib.py::test_REFUSED_on_the_in_repo_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\n22 passed in 8.37s\n"
+  },
+  "M1_call_site_deleted -- the ORIGINAL DEFECT reintroduced: frozen BN left at the identity": {
+   "rc": 1,
+   "failed": [
+    "test_END_TO_END_the_real_trainer_recalibrates_stamps_and_holds_the_freeze"
+   ],
+   "n_failed": 1,
+   "n_passed": 21,
+   "tail": "o_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\nFAILED tests/test_bn_recalib.py::test_END_TO_END_the_real_trainer_recalibrates_stamps_and_holds_the_freeze\n1 failed, 21 passed in 11.32s\n",
+   "must_go_red": [
+    "test_END_TO_END_the_real_trainer_recalibrates_stamps_and_holds_the_freeze"
+   ],
+   "caught": true
+  },
+  "M2_forward_deleted -- the pass reaches no layer": {
+   "rc": 1,
+   "failed": [
+    "test_ANALYTIC_the_first_bn_equals_the_exact_moments_of_its_input",
+    "test_END_TO_END_the_real_trainer_recalibrates_stamps_and_holds_the_freeze",
+    "test_OFF_writes_null_and_touches_nothing",
+    "test_ON_does_not_shift_the_TRAINING_rng_stream",
+    "test_SAME_BREATH_CONTROL_per_image_batches_really_do_underestimate_var",
+    "test_measure_true_leaves_EVERY_buffer_untouched",
+    "test_recalibration_moves_EVERY_layer_off_the_identity_and_keeps_it_frozen"
+   ],
+   "n_failed": 7,
+   "n_passed": 15,
+   "tail": "the_freeze\nERROR tests/test_bn_recalib.py::test_OFF_writes_null_and_touches_nothing - As...\nERROR tests/test_bn_recalib.py::test_ON_does_not_shift_the_TRAINING_rng_stream\nFAILED tests/test_bn_recalib.py::test_recalibration_moves_EVERY_layer_off_the_identity_and_keeps_it_frozen\nFAILED tests/test_bn_recalib.py::test_ANALYTIC_the_first_bn_equals_the_exact_moments_of_its_input\nFAILED tests/test_bn_recalib.py::test_SAME_BREATH_CONTROL_per_image_batches_really_do_underestimate_var\nFAILED tests/test_bn_recalib.py::test_measure_true_leaves_EVERY_buffer_untouched\n4 failed, 15 passed, 3 errors in 6.27s\n",
+   "must_go_red": [
+    "test_recalibration_moves_EVERY_layer_off_the_identity_and_keeps_it_frozen",
+    "test_ANALYTIC_the_first_bn_equals_the_exact_moments_of_its_input",
+    "test_END_TO_END_the_real_trainer_recalibrates_stamps_and_holds_the_freeze"
+   ],
+   "caught": true
+  },
+  "M3_chunk_bypass_deleted -- per-image BN batches": {
+   "rc": 1,
+   "failed": [
+    "test_chunking_is_BYPASSED_so_a_bn_batch_is_never_one_image"
+   ],
+   "n_failed": 1,
+   "n_passed": 21,
+   "tail": "ED_on_the_in_repo_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\nFAILED tests/test_bn_recalib.py::test_chunking_is_BYPASSED_so_a_bn_batch_is_never_one_image\n1 failed, 21 passed in 8.25s\n",
+   "must_go_red": [
+    "test_chunking_is_BYPASSED_so_a_bn_batch_is_never_one_image"
+   ],
+   "caught": true
+  },
+  "M4_rng_fork_deleted -- recalibration consumes TRAINING rng": {
+   "rc": 1,
+   "failed": [
+    "test_ON_does_not_shift_the_TRAINING_rng_stream",
+    "test_rng_isolation_SAME_BREATH_CONTROL_and_exact_restore",
+    "test_the_dump_changes_NOTHING_about_training"
+   ],
+   "n_failed": 3,
+   "n_passed": 19,
+   "tail": "mp_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nFAILED tests/test_bn_recalib.py::test_rng_isolation_SAME_BREATH_CONTROL_and_exact_restore\nFAILED tests/test_bn_recalib.py::test_ON_does_not_shift_the_TRAINING_rng_stream\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\n3 failed, 19 passed in 10.74s\n",
+   "must_go_red": [
+    "test_ON_does_not_shift_the_TRAINING_rng_stream",
+    "test_rng_isolation_SAME_BREATH_CONTROL_and_exact_restore"
+   ],
+   "caught": true
+  },
+  "M5_refusal_deleted -- recalibrating an UNFROZEN BN": {
+   "rc": 1,
+   "failed": [
+    "test_REFUSED_without_frozen_bn_BEFORE_anything_is_written"
+   ],
+   "n_failed": 1,
+   "n_passed": 21,
+   "tail": "SED_on_the_in_repo_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\nFAILED tests/test_bn_recalib.py::test_REFUSED_without_frozen_bn_BEFORE_anything_is_written\n1 failed, 21 passed in 7.92s\n",
+   "must_go_red": [
+    "test_REFUSED_without_frozen_bn_BEFORE_anything_is_written"
+   ],
+   "caught": true
+  },
+  "M6_dump_eval_mode_deleted -- the W-BOOTSTRAP pass back in TRAIN mode": {
+   "rc": 1,
+   "failed": [
+    "test_the_dump_changes_NOTHING_about_training",
+    "test_the_dump_pass_does_not_touch_the_tactical_prior",
+    "test_the_dump_pass_runs_in_EVAL_mode",
+    "test_the_dump_rows_REPRODUCE_the_aggregate_eval_row"
+   ],
+   "n_failed": 4,
+   "n_passed": 18,
+   "tail": "SED_without_frozen_bn_BEFORE_anything_is_written\nPASSED tests/test_bn_recalib.py::test_REFUSED_on_the_in_repo_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\n4 failed, 18 passed in 7.99s\n",
+   "must_go_red": [
+    "test_the_dump_pass_runs_in_EVAL_mode",
+    "test_the_dump_rows_REPRODUCE_the_aggregate_eval_row",
+    "test_the_dump_pass_does_not_touch_the_tactical_prior",
+    "test_the_dump_changes_NOTHING_about_training"
+   ],
+   "caught": true
+  },
+  "M7_dump_rng_fork_deleted -- the dump consumes TRAINING rng": {
+   "rc": 1,
+   "failed": [
+    "test_the_dump_changes_NOTHING_about_training"
+   ],
+   "n_failed": 1,
+   "n_passed": 21,
+   "tail": "SED_without_frozen_bn_BEFORE_anything_is_written\nPASSED tests/test_bn_recalib.py::test_REFUSED_on_the_in_repo_trunk\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_runs_in_EVAL_mode\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_rows_REPRODUCE_the_aggregate_eval_row\nPASSED tests/test_eval_window_dump_mode.py::test_CONTROL_the_rig_really_has_partial_futures\nPASSED tests/test_eval_window_dump_mode.py::test_the_dump_pass_does_not_touch_the_tactical_prior\nFAILED tests/test_eval_window_dump_mode.py::test_the_dump_changes_NOTHING_about_training\n1 failed, 21 passed in 7.13s\n",
+   "must_go_red": [
+    "test_the_dump_changes_NOTHING_about_training"
+   ],
+   "caught": true
+  }
+ }
+}

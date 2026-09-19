@@ -613,6 +613,119 @@ class TimmResNetTrunk(nn.Module):
         return sum(1 for m in self.modules()
                    if isinstance(m, nn.modules.batchnorm._BatchNorm) and m.training)
 
+    # -- BatchNorm RECALIBRATION (A7, 2026-09-19) ------------------------- #
+    # ⛔⛔ WHY THIS EXISTS. `frozen_bn` pins every backbone BN to EVAL, where it
+    # normalises with its STORED running statistics. On an ImageNet-init trunk those
+    # are ImageNet's. On a RANDOM-init trunk they are what a fresh BN stores --
+    # MEASURED 2026-09-19 on resnet34: 36 layers, every running_mean exactly 0.0,
+    # every running_var exactly 1.0 -- so eval-mode BN is `(x-0)/sqrt(1+eps)*1+0`,
+    # THE IDENTITY. An ImageNet-vs-random knockout run with the memory levers
+    # therefore compared "ImageNet weights + a normalisation" against "random
+    # weights + NO normalisation": two variables, one of them invisible.
+    # ⇒ Recalibrate BOTH arms' statistics on the SAME data, then keep them frozen,
+    # so the conditions differ in their WEIGHTS only.
+    def backbone_bns(self) -> list:
+        """Every BatchNorm in the BACKBONE, in module order.
+
+        ⭐ Exactly the set :func:`_freeze_bn_` walks (``self.net.modules()``), so
+        recalibration and freezing act on the SAME layers by construction.
+        :class:`TemporalFuse` carries no normalisation and is correctly outside it.
+        """
+        return [m for m in self.net.modules()
+                if isinstance(m, nn.modules.batchnorm._BatchNorm)]
+
+    def bn_stats_snapshot(self) -> dict:
+        """A detached float64 CPU copy of every backbone BN's running statistics."""
+        bns = self.backbone_bns()
+        return {
+            "mean": torch.cat([m.running_mean.detach().double().cpu().flatten()
+                               for m in bns]),
+            "var": torch.cat([m.running_var.detach().double().cpu().flatten()
+                              for m in bns]),
+            "n_bn": len(bns)}
+
+    @torch.no_grad()
+    def recalibrate_bn_(self, batches) -> dict:
+        """Re-estimate every backbone BN's running statistics on ``batches``.
+
+        ``batches`` is an iterable of trunk inputs -- ``[N, 3K, H, W]`` floats in
+        ``[0, 1]``, exactly what :meth:`forward_features` receives in training.
+
+        ⭐ The canonical ``torch.optim.swa_utils.update_bn`` procedure, applied to the
+        backbone only: ``reset_running_stats()``, ``momentum = None`` (the EXACT
+        cumulative mean over batches, not an EMA), BN in train mode, forward under
+        ``no_grad``. Every module's ``training`` flag, every momentum and the chunk
+        lever are restored afterwards, so a frozen trunk comes back exactly as frozen
+        -- with new statistics.
+
+        ⛔ CHUNKING IS BYPASSED FOR THE DURATION, AND THAT IS A CORRECTNESS RULE, NOT
+        AN OPTIMISATION. With ``chunk_ckpt = 1`` every BN "batch" would be ONE image;
+        averaging per-image variances omits the between-image variance, so
+        ``running_var`` would be systematically UNDER-estimated. No gradients are kept
+        here, so the memory the lever exists to save is not at stake.
+
+        ⚠️ The pinned ``train`` that :func:`_freeze_bn_` installs is bypassed ON
+        PURPOSE by writing ``.training`` directly: calling ``.train()`` on a frozen BN
+        is a deliberate no-op, and this is the one place it must be overridden.
+        """
+        bns = self.backbone_bns()
+        if not bns:
+            raise ValueError(
+                "recalibrate_bn_: the backbone has no BatchNorm -- there is nothing "
+                "to recalibrate, and a stamp saying otherwise would be false.")
+        flags = {m: m.training for m in self.modules()}
+        moms = [m.momentum for m in bns]
+        ck = self.memory_levers.get("chunk_ckpt", 0)
+        n_b = n_i = 0
+        try:
+            self.eval()                     # nothing else in the trunk may move
+            self.memory_levers["chunk_ckpt"] = 0
+            for m in bns:
+                m.reset_running_stats()
+                m.momentum = None
+                m.training = True
+            for x in batches:
+                self.forward_features(x)
+                n_b += 1
+                n_i += int(x.shape[0])
+        finally:
+            for m, mom in zip(bns, moms):
+                m.momentum = mom
+            for m, tr in flags.items():
+                m.training = tr
+            self.memory_levers["chunk_ckpt"] = ck
+        if n_b == 0:
+            raise ValueError(
+                "recalibrate_bn_ saw ZERO batches: the statistics are now the reset "
+                "values (mean 0 / var 1) -- exactly the identity this exists to "
+                "remove. Refusing rather than training on it.")
+        snap = self.bn_stats_snapshot()
+        import hashlib
+        h = hashlib.sha256()
+        h.update(snap["mean"].numpy().tobytes())
+        h.update(snap["var"].numpy().tobytes())
+        return {"n_batches": n_b, "n_images": n_i, "n_bn": len(bns),
+                "chunk_bypassed": bool(ck), "stats_sha12": h.hexdigest()[:12]}
+
+    @torch.no_grad()
+    def measure_true_bn_stats_(self, batches) -> dict:
+        """The statistics these weights WOULD have now, leaving the trunk UNCHANGED.
+
+        Recalibrates in place and then restores every BN buffer, so the checkpoint
+        and the rest of the run see the frozen statistics exactly as they were.
+        """
+        bns = self.backbone_bns()
+        saved = [(m.running_mean.clone(), m.running_var.clone(),
+                  m.num_batches_tracked.clone()) for m in bns]
+        try:
+            self.recalibrate_bn_(batches)
+            return self.bn_stats_snapshot()
+        finally:
+            for m, (rm, rv, nb) in zip(bns, saved):
+                m.running_mean.copy_(rm)
+                m.running_var.copy_(rv)
+                m.num_batches_tracked.copy_(nb)
+
     def provenance(self) -> dict:
         """What a ``config.json`` stamp must carry about this trunk."""
         return {
@@ -634,6 +747,33 @@ class TimmResNetTrunk(nn.Module):
             "params": self.param_count(),
             "backbone_params": self.trunk_param_count(),
         }
+
+
+def bn_staleness(frozen: dict, true: dict) -> dict:
+    """How stale FROZEN BatchNorm statistics are against the TRUE ones of the weights.
+
+    ⚠️ Recalibration equalises the START of a frozen-BN run; the statistics then go
+    stale as the weights train, and a random trunk moves further than an ImageNet
+    one. This is the measured size of that residual, per arm (A7.4):
+
+    * ``bn_staleness_var``  -- median over channels of ``|ln(var_frozen / var_true)|``
+    * ``bn_staleness_mean`` -- median over channels of
+      ``|mean_frozen - mean_true| / sqrt(var_true)``
+
+    Both are 0.0 exactly when the frozen statistics are the true ones.
+    """
+    if frozen["var"].shape != true["var"].shape:
+        raise ValueError("bn_staleness: the two snapshots cover different channels "
+                         "(%s vs %s)" % (tuple(frozen["var"].shape),
+                                         tuple(true["var"].shape)))
+    eps = 1e-12
+    vf = frozen["var"].double().clamp_min(eps)
+    vt = true["var"].double().clamp_min(eps)
+    lr = (vf / vt).log().abs()
+    ms = (frozen["mean"].double() - true["mean"].double()).abs() / vt.sqrt()
+    return {"bn_staleness_var": float(lr.median()),
+            "bn_staleness_mean": float(ms.median()),
+            "n_channels": int(vf.numel())}
 
 
 def _find_stem(net: nn.Module) -> tuple[str, nn.Conv2d]:

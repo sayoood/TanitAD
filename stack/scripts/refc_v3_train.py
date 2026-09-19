@@ -335,6 +335,21 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # live). They travel on the CONFIG, not on a wrapper, so `config.json` records them.
     cfg.core.encoder.trunk_chunk_ckpt = int(getattr(args, "trunk_chunk_ckpt", 0) or 0)
     cfg.core.encoder.trunk_frozen_bn = bool(getattr(args, "trunk_frozen_bn", False))
+    # ⛔ A7 (2026-09-19): recalibration is only meaningful when the statistics are
+    # then FROZEN -- an unfrozen BN trains on batch statistics and its running stats
+    # are overwritten by momentum within steps, so a stamp saying "recalibrated"
+    # would describe a run that did not use it. Refused here, before any model is
+    # built or any data loaded, so the refusal costs seconds, not a launch.
+    if int(getattr(args, "trunk_bn_recalib", 0) or 0) > 0:
+        if not cfg.core.encoder.trunk_frozen_bn:
+            raise SystemExit(
+                "[v3] ⛔ --trunk-bn-recalib without --trunk-frozen-bn: the "
+                "recalibrated statistics would be overwritten by BN's own momentum "
+                "during training. Pass --trunk-frozen-bn, or do not recalibrate.")
+        if _trunk != "timm":
+            raise SystemExit(
+                "[v3] ⛔ --trunk-bn-recalib needs --trunk timm (the in-repo "
+                "`refc` trunk has no recalibration); got --trunk %s" % _trunk)
     cfg.core.encoder.trunk_fuse = str(getattr(args, "trunk_fuse", "concat1x1"))
     cfg.core.encoder.trunk_fuse_identity = not bool(
         getattr(args, "trunk_fuse_plain_init", False))
@@ -2959,6 +2974,161 @@ def _resolve_rig_cameras(model, ep_ids, n_rows: int):
             "targets, so a camera would attach to the wrong clip."
             % (len(cams), int(n_rows)))
     return cams
+
+
+# ---- A7 (2026-09-19): BatchNorm recalibration for the timm trunk ---------- #
+def _bn_recalib_resolve(model):
+    """-> ``(core, trunk)``. ⛔ Resolved, never assumed: ``RefCV3Model`` holds the
+    trunk at ``core.encoder`` and ``RefCModel`` at ``encoder``."""
+    core = getattr(model, "core", model)
+    trunk = getattr(core, "encoder", None)
+    if trunk is None or not hasattr(trunk, "recalibrate_bn_"):
+        raise SystemExit(
+            "[v3] ⛔ --trunk-bn-recalib: this model's encoder is %r and cannot "
+            "recalibrate. Refusing rather than stamping a recalibration that did "
+            "not happen." % type(trunk).__name__)
+    return core, trunk
+
+
+def bn_recalib_trunk_input(core, frames: torch.Tensor) -> torch.Tensor:
+    """EXACTLY the tensor ``refc.py``'s forward hands the encoder.
+
+    ⛔ Pinned by ``test_bn_recalib.py``, which captures the encoder's REAL input with
+    a forward pre-hook during a real forward and requires ``torch.equal`` -- so if
+    the forward's reshape ever changes, recalibration cannot silently keep
+    calibrating on a different input from the one the model trains on.
+    """
+    if bool(getattr(core.cfg, "hierarchy", False)):
+        b, w = frames.shape[:2]
+        return frames.reshape(b * w, *frames.shape[2:])
+    return frames[:, -1]
+
+
+def _bn_recalib_loader(dl, args):
+    """The FIXED recalibration windows, drawn by ``--trunk-bn-recalib-seed``."""
+    ds = dl.dataset
+    n = int(args.trunk_bn_recalib)
+    if n > len(ds):
+        raise SystemExit("[v3] ⛔ --trunk-bn-recalib %d exceeds the %d training "
+                         "windows" % (n, len(ds)))
+    g = torch.Generator().manual_seed(int(args.trunk_bn_recalib_seed))
+    idx = sorted(torch.randperm(len(ds), generator=g)[:n].tolist())
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(ds, idx), batch_size=args.batch, shuffle=False,
+        num_workers=0, drop_last=False, collate_fn=dl.collate_fn)
+    return loader, idx
+
+
+def _bn_recalib_feed(loader, core, device):
+    for b in loader:
+        yield bn_recalib_trunk_input(core, frames_to_device(b["frames"], device))
+
+
+class _RngIsolated:
+    """Fork every RNG the recalibration could touch, seeded from the recal seed.
+
+    ⛔ Two properties, both required. (1) Creating a DataLoader ITERATOR draws from
+    the global torch RNG even with ``shuffle=False`` (its worker base seed), so
+    without the fork the recalibration would SHIFT THE TRAINING RNG STREAM and an ON
+    arm would differ from an OFF arm in data order, not only in BN statistics.
+    (2) Seeding inside the fork makes any dataset randomness a function of the
+    recalibration seed, never of ``--seed``.
+    """
+
+    def __init__(self, device, seed):
+        self.dev = ([torch.device(device).index or 0]
+                    if str(device).startswith("cuda") else [])
+        # ``seed=None``: fork WITHOUT reseeding -- every stream is left exactly
+        # where it was found (the W-BOOTSTRAP dump pass uses this form).
+        self.seed = None if seed is None else int(seed)
+
+    def __enter__(self):
+        import random as _r
+        self._np, self._py = _np.random.get_state(), _r.getstate()
+        self._fork = torch.random.fork_rng(devices=self.dev)
+        self._fork.__enter__()
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+            _np.random.seed(self.seed % (2 ** 32))
+            _r.seed(self.seed)
+        return self
+
+    def __exit__(self, *exc):
+        import random as _r
+        try:
+            return self._fork.__exit__(*exc)
+        finally:
+            _np.random.set_state(self._np)
+            _r.setstate(self._py)
+
+
+def _bn_recalib_start(model, dl, args, device, out_dir):
+    """Recalibrate once, before step 1. -> ``(loader, stamp)``."""
+    import hashlib
+    core, trunk = _bn_recalib_resolve(model)
+    loader, idx = _bn_recalib_loader(dl, args)
+    before = trunk.bn_stats_snapshot()
+    with _RngIsolated(device, args.trunk_bn_recalib_seed):
+        stamp = trunk.recalibrate_bn_(_bn_recalib_feed(loader, core, device))
+    start = trunk.bn_stats_snapshot()
+    torch.save({"start": start, "before": before, "window_idx": idx},
+               out_dir / "bn_recalib_stats.pt")
+    stamp.update({
+        "n_windows": len(idx), "seed": int(args.trunk_bn_recalib_seed),
+        "windows_sha12": hashlib.sha256(
+            ",".join(map(str, idx)).encode()).hexdigest()[:12],
+        "changed": bool(not torch.equal(before["var"], start["var"])),
+        "var_median_before": float(before["var"].median()),
+        "var_median_after": float(start["var"].median()),
+        "stats_file": "bn_recalib_stats.pt"})
+    print("[v3] A7 BN recalibration: %d windows (seed %d, sha12 %s) -> %d batches, "
+          "%d trunk images, %d BN layers; median running_var %.6g -> %.6g; "
+          "chunking bypassed=%s"
+          % (stamp["n_windows"], stamp["seed"], stamp["windows_sha12"],
+             stamp["n_batches"], stamp["n_images"], stamp["n_bn"],
+             stamp["var_median_before"], stamp["var_median_after"],
+             stamp["chunk_bypassed"]), flush=True)
+    if not stamp["changed"]:
+        raise SystemExit("[v3] ⛔ --trunk-bn-recalib ran and the statistics did NOT "
+                         "change -- the pass reached nothing. Refusing to train on it.")
+    return loader, stamp
+
+
+def _bn_recalib_finish(model, loader, args, device, out_dir, run_config, step):
+    """The EXACT freeze-held identity, then the measured staleness (A7.4)."""
+    from tanitad.models.timm_trunk import bn_staleness
+    core, trunk = _bn_recalib_resolve(model)
+    bank = torch.load(out_dir / "bn_recalib_stats.pt", weights_only=False)
+    end = trunk.bn_stats_snapshot()
+    # ⛔ AN IDENTITY, NOT AN ESTIMATE: frozen statistics are never written during
+    # training, so the step-N statistics must equal the recalibrated ones BYTE FOR
+    # BYTE. Anything else means the freeze did not hold and the arm is not what its
+    # stamp says.
+    held = bool(torch.equal(bank["start"]["mean"], end["mean"])
+                and torch.equal(bank["start"]["var"], end["var"]))
+    rec = {"step": int(step), "freeze_held": held, "staleness": None,
+           "staleness_error": None}
+    try:
+        if str(device).startswith("cuda"):
+            torch.cuda.empty_cache()
+        with _RngIsolated(device, args.trunk_bn_recalib_seed):
+            true = trunk.measure_true_bn_stats_(
+                _bn_recalib_feed(loader, core, device))
+        rec["staleness"] = bn_staleness(end, true)
+        bank["true_at_end"] = true
+        torch.save(bank, out_dir / "bn_recalib_stats.pt")
+    except Exception as exc:                         # noqa: BLE001 (recorded)
+        rec["staleness_error"] = "%s: %s" % (type(exc).__name__, exc)
+    (out_dir / "bn_recalib.json").write_text(json.dumps(rec, indent=1),
+                                             encoding="utf-8")
+    if isinstance(run_config.get("trunk_bn_recalib"), dict):
+        run_config["trunk_bn_recalib"]["final"] = rec
+        (out_dir / "config.json").write_text(json.dumps(run_config, indent=1),
+                                             encoding="utf-8")
+    print("[v3] A7 BN freeze held through %d steps: %s | staleness %s%s"
+          % (step, "YES (exact)" if held else "⛔ NO -- the arm is VOID",
+             rec["staleness"], "" if rec["staleness_error"] is None
+             else " | ⛔ " + rec["staleness_error"]), flush=True)
 
 
 def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
@@ -6532,6 +6702,9 @@ def train(args) -> dict:
     assert_seams_are_built(model, _seams)
     _run_config = {
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
+        # ⭐ A7: `null` is the baseline (no recalibration) and is distinguishable
+        # from a trainer that predates the flag -- the `refcv6: null` convention.
+        "trunk_bn_recalib": None,
         # ⛔ `argv` records what was TYPED and the seam stamps record what
         # was BUILT; neither says whether each weight's loss term is
         # actually reached. A run record that does not carry its effective
@@ -6839,6 +7012,16 @@ def train(args) -> dict:
         _run_config["conflict_detector"]["aux_terms"] = sorted(_cd_aux)
         (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                              encoding="utf-8")
+    # ---- A7 (2026-09-19): BatchNorm RECALIBRATION, then kept frozen ------- #
+    # ⛔ AFTER the seeded model build (so a random-init trunk is recalibrated on its
+    # OWN init) and BEFORE step 1 and before `iter(dl)`. Off by default: with the
+    # flag unset nothing below executes and the loop is byte-identical.
+    _bnr_loader = None
+    if int(getattr(args, "trunk_bn_recalib", 0) or 0) > 0:
+        _bnr_loader, _run_config["trunk_bn_recalib"] = _bn_recalib_start(
+            model, dl, args, device, out_dir)
+        (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
+                                             encoding="utf-8")
     t0, model = time.time(), model.train()
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
@@ -7100,8 +7283,21 @@ def train(args) -> dict:
             # above is untouched, so every banked comparison still holds.
             if eval_win_dl is not None:
                 _n_win, _dump_err = 0, None
+                # ⛔⛔ EVAL MODE AND A FORKED RNG -- BOTH REQUIRED (2026-09-19, found
+                # preparing A7, the dump's first real consumer;
+                # tests/test_eval_window_dump_mode.py). The aggregate block above
+                # ENDS by restoring train mode, so this pass used to run in TRAIN
+                # mode: ego- and route-dropout (0.5 each) fired on the held-out
+                # windows, and compute_losses_v3's `if model.training:` gate
+                # re-opened C-REFCV3-EVAL-PRIOR-LEAK (held-out labels EMA'd into
+                # core.lat/lon_log_prior). Its draws -- and creating this loader's
+                # iterator -- also moved the global RNG, so every later training
+                # step differed from the same run without the dump. MEASURED on
+                # refcv6-windump-20260919, the SAME 16 windows: dump-row mean traj
+                # 14.50351 vs the aggregate eval_traj 14.59615.
+                model.eval()
                 try:
-                    with torch.no_grad():
+                    with _RngIsolated(device, None), torch.no_grad():
                         with open(args.eval_window_dump, "a",
                                   encoding="utf-8") as _wf:
                             for _wb in eval_win_dl:
@@ -7132,6 +7328,10 @@ def train(args) -> dict:
                 log.flush()
                 print(f"[v3:eval] window dump: {_n_win} rows -> "
                       f"{args.eval_window_dump}", flush=True)
+    # ---- A7: did the freeze hold, and how stale did it get? -------------- #
+    if _bnr_loader is not None:
+        _bn_recalib_finish(model, _bnr_loader, args, device, out_dir,
+                           _run_config, step)
     # ⛔ the done-marker, SAME turn as completion (the v5f supervisor lesson).
     (out_dir / "summary.json").write_text(
         json.dumps({"done": True, "step": step, "arm": args.arm,
@@ -7863,6 +8063,26 @@ def build_parser() -> argparse.ArgumentParser:
                          "(chunked vs unchunked agree to 7.2e-6, MEASURED). The "
                          "pin survives the trainer's own model.train(), which "
                          "recurses and would otherwise silently un-freeze it.")
+    ap.add_argument("--trunk-bn-recalib", type=int, default=0,
+                    help="⭐ A7 (2026-09-19): before step 1, re-estimate every backbone "
+                         "BatchNorm's running statistics on N FIXED training windows "
+                         "(torch.optim.swa_utils.update_bn semantics: reset, momentum "
+                         "None, train mode, no_grad; chunking bypassed so a BN batch "
+                         "is never a single image), then keep them frozen. 0 = OFF "
+                         "(default, byte-identical). ⛔ WHY: with --trunk-frozen-bn a "
+                         "RANDOM-init trunk's BN stores mean 0 / var 1 (MEASURED, 36 "
+                         "layers on resnet34) and is the IDENTITY -- no normalisation "
+                         "-- while an ImageNet trunk keeps ImageNet's. An "
+                         "ImageNet-vs-random knockout without this is two variables. "
+                         "Requires --trunk-frozen-bn and --trunk timm. Stamped into "
+                         "config.json; the statistics are banked in "
+                         "bn_recalib_stats.pt and the end-of-run freeze check and "
+                         "staleness in bn_recalib.json.")
+    ap.add_argument("--trunk-bn-recalib-seed", type=int, default=0,
+                    help="the seed that draws the --trunk-bn-recalib windows. "
+                         "⛔ INDEPENDENT of --seed on purpose: every arm of a panel "
+                         "must recalibrate on byte-identical windows in the same "
+                         "order. Its index list is digested (sha12) into config.json.")
     ap.add_argument("--trunk-mode", choices=("shared", "inflate"),
                     default="shared",
                     help="⭐ PI 2026-09-16: FRAME HISTORY IS REQUIRED. "

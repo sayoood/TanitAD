@@ -15657,3 +15657,20 @@ where the fetch wrote).
 **ROOT-CAUSE CLASS:** *V-1 ("search the Library before the web") applied to the Library and the claims register, but not to the Lab's own RESULT packages.* The earlier finding lived in a domain package, which neither `library.json` nor `OPPONENT_CLAIMS_REGISTER.md` indexes. ⇒ **Before calling anything "first", grep `TanitAD Research Lab/*/Research/*/RESULT.md` for the key identifier** (here `speed_limit_mph`), and name the grep in the claim. Same family as *"absence found at one location is not absence"*, with the object swapped from a fact to a priority claim.
 
 <!-- RETR-2026-09-19-POSTED-LIMIT-REFIND -->
+
+<!-- RETR-2026-09-19-WINDUMP-TRAIN-MODE -->
+### RETR-2026-09-19-WINDUMP-TRAIN-MODE — "W-BOOTSTRAP's rows are the eval's per-window values"
+
+**Retracted:** the value half of `W-BOOTSTRAP DONE` (`1d1e148`). The `--eval-window-dump` rows
+were produced in TRAIN mode — dropout on, held-out labels EMA'd into the learned priors
+(re-opening C-REFCV3-EVAL-PRIOR-LEAK), training RNG advanced — so they are not the eval's
+values (14.50351 vs 14.59615 on the same 16 windows). Reachability stands. Found by the
+TrainingFlyWheel; fixed with tests and a mutation proof; no quoted result used the flag.
+
+**ROOT-CAUSE CLASS:** *a pass inherits whatever MODE the code before it left the model in.* I
+placed a new eval-side pass after the aggregate eval and checked its OUTPUT SHAPE (rows, ids,
+the bootstrap consuming them), never the model's mode at entry. ⇒ **Any pass that must be an
+eval asserts `not model.training` at its first forward, and isolates the RNG it consumes** —
+an acceptance test on shape cannot see a mode error, because the rows look right in both modes.
+And the check that would have caught it existed: a pinned test went RED at HEAD and I did not
+run it — ⇒ run the tests that pin the code you touched, not only the ones you wrote.
