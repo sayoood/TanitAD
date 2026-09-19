@@ -84,3 +84,15 @@ python code/fit_fetch_receipt.py <2026-09-16 package>/raw/fetch_receipt_eval139.
 
 🔒 Outputs carry sha12 only. A scan of every file in this package over 4,725 known clip ids,
 their 8-hex prefixes and their 12-hex tails found **0** hits, against a control that reads 7.
+
+## ⚠️ Refined 2026-09-19 (later the same day) — "no disk here is the bottleneck" holds only uncontended
+
+Measured while building `--local-mirror` (`…/2026-09-19-local-mirror-staging/raw/d_drive_io.json`):
+D: writes **34.7 / 32.5 MB/s** (fsync, two trials) against the rebuild's **~10.2 MB/s** need —
+~3× headroom — but **8.7 MB/s while the same session read a 2 GB tar from D:**, i.e. below the
+need. D: reads at **18.7 MB/s**. ⇒ keep the mp4 mirror on C: (it is) and do not overlap the
+rebuild with other heavy D: I/O. The staging mode itself now exists: `fetch_corpus_clips.py
+--local-mirror`, with its tests.
+⛔ **And the staging-copy estimate above ("≈ 1–11 min") is wrong:** it assumed a D: write floor
+of 100 MB/s, and D: measures **32.5–34.7 MB/s** ⇒ copying the 61.6 GB of mp4s C: → D: takes
+**≈ 30 min** (ESTIMATED from those rates). Staging on C: by hardlink still costs 0 bytes.

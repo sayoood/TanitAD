@@ -105,3 +105,5 @@ call into the scan module read **0** UUIDs where the CLI read 120 on the same tr
 probe, discarded; every count above comes from the tool's own CLI.
 
 ⇒ **Still wanting the PI: item 6 (optional), and the v6F runbook only if v6F is to be revived.**
+
+**Re-check, same evening:** the guard reads `NO-GROWTH` on `83d8ae3` and on `bbcfe4c` too — 120 UUIDs in 27 files; prefixes 530 / 870 as at the ruling; 0 files grew. `raw/clipid_guard_recheck.json`.
