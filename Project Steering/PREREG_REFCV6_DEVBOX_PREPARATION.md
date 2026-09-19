@@ -951,3 +951,27 @@ the one lever claim that depends on it.
   V2's tactical decoder replaces. It gates only V1 arm C, a bucket-(B) pod arm.
 ⇒ **E19 needs no PI value for refcv6 V2.** If the PI later wants the V1 10-arm panel run on the
 pod, `--w-tac-goal` becomes a live question then (queue item 10 holds its history).
+
+<!-- S1-DESIGN-2026-09-19 -->
+## ⚠️ A4–A6 DESIGN DECIDED + a dependency the prereg missed (2026-09-19)
+
+Proposed by the TrainingFlyWheel (now owner of the S1 harness and E9), decided by the Master Mind;
+all of it is pre-registered by the harness owner BEFORE any S1 data exists.
+* **The fan:** refcv6's OWN emitted 117-anchor fan from the **A8** checkpoint (0.95 of a halfA
+  epoch), deterministic, on the SAME 1,000 halfB windows A3 read; ONE forward pass per window;
+  all five inference-only arms read post-hoc through the UNCHANGED `pdm_proxy.score_candidates`.
+  ⇒ ~1 pass instead of the 10.7 h budgeted for A4–A6. ⚠️ A **deviation**: PREREG_S1's 28/493,
+  55.3 % and +0.0485 were measured on refcv5-v2's DDv2 fan, so the collision-free share here is a
+  NEW measurement, not a check. A6's "second inference draw" becomes a control that must read
+  exactly 0 (deterministic fan). Internal validity holds; external validity to a trained planner
+  does NOT (anchor_acc 0.092 vs chance 0.0085) and is stated in every verdict.
+* **⛔ The dependency:** the collided-selection statistic is AGENT NC, so `S1-GATE-PRED` needs a
+  **held-out BOX read** (A8's box head on the same windows: AP vs `random_ap_base_rate`, velocity
+  MAE) in addition to A3's map read. A3 discharged §8 as written; the box half is owed
+  (`D-S1-DEP-BOX`).
+* **A diagnostic arm, ORACLE-CV:** recorded t0 boxes, constant-velocity extrapolated — splits
+  ORACLE−PRED into a no-motion-forecast part and a detection part.
+* **E9 re-scoped:** `taniteval/tools/t1_eval.py` does NOT run a refcv6 checkpoint by design (0 `refc`
+  references; its `roll_closed` drives the flagship's action loop, which refc_v3 lacks). The refcv6
+  route is `refcv3_arm.py` → `t1_eval.analyze`, which already ran end to end on a refcv6 checkpoint
+  at 416×1024 in W1 (`4000946`). What E9 still owes is its **s/window**.
