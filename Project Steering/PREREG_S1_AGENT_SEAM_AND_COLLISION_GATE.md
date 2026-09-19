@@ -160,3 +160,170 @@ Committed in advance: if `S1-GATE-ORACLE` reproduces the **+0.0485** ceiling but
 and the **predicted occupancy is not good enough to reach it**. That is reported as a
 refutation of `H-SEL-GATE-1` *as configured*, and the next work is **perception quality**
 — the occupancy head's own accuracy against SAM3 map GT — not a better gate.
+
+
+---
+
+<!-- S1-AMENDMENT-DEVBOX-2026-09-19 -->
+## ⛔ S1 AMENDMENT, 2026-09-19 — the dev-box inference-only arms on refcv6's OWN fan, pre-registered BEFORE ANY S1 DATA
+
+**Author:** TanitAD_TrainingFlyWheel. **Decided with the Master Mind 2026-09-19** (fan source,
+checkpoint, box-read dependency and ORACLE-CV all accepted; tip `69bbd52`). **Status: 0 S1 data,
+0 S1 GPU seconds.** This governs `PREREG_REFCV6_DEVBOX_PREPARATION.md` rows **A4–A6** and adds two
+pre-registered reads (S1A.4, S1A.5). Everything in §1–§10 above still binds unless a line below
+says otherwise. ⚠️ **Name collision, stated once:** this file's **S1** is the collision-gate
+programme. `verdict_refcv6.py`'s **S1** is the STRATEGIC clause. They are unrelated.
+
+### S1A.1 ⛔ DEVIATION — the fan (every "known value" in §1 and §7 was measured on ANOTHER fan)
+
+* **Fan:** refcv6's own emitted fan, the **117** candidates of `anchor_traj` over the 8-slot horizon,
+  from checkpoint **A8** (`a8-occupancy-5k-20260919/run/ckpt.pt`: 5,000 steps × batch 2 = **0.95
+  of one halfA epoch**) at **416 × 1024**, eval mode, with the **fed** nav command (PI item 23: fed
+  nav leads; nav-zero is the ablation and is NOT run here).
+* **Windows:** the **1,000 fixed halfB windows** (`torch.Generator().manual_seed(12345)` in
+  `refc_v3_train.py`). These are the same windows as A3's held-out occupancy read and A7's eval,
+  and they are held out from A8's training. Windows the proxy cannot score are dropped **with
+  reasons and `n` stated**, by the item-19 `_select` rules (`ddv2_rl_refcv5.py:190-215`): no full
+  route future, or a missing agent-label frame on `t0 … t0+49`.
+* ⛔ **§1's 28/493, 55.3 % and +0.0485 were MEASURED on `refcv5-v2`'s DDv2 fan over 493 OTHER
+  windows.** On this fan, the collision-free share, the collided-selection rate and the oracle
+  ceiling are **NEW MEASUREMENTS, never checks**. §7's *"≈ 55.3 %"* row does **not** apply to this
+  fan. It applies only to the optional **external-validity replicate** on refcv5-v2's fan, which
+  is deferred.
+
+### S1A.2 ONE forward pass, every arm post-hoc, ONE checker
+
+* Per window, **one** eval-mode forward of A8 yields three things: the fan, the model's own
+  per-candidate ranking score (`sel_score_v3` on the goal-point path, else the core's `sel_score`)
+  with the model's own `reach_keep` mask when present, and the box-head slots. **Every arm is a
+  different selection rule over that SAME fan**, so each moves one variable and the pairing is
+  exact.
+* **The checker is `tanitad.rl.pdm_proxy.score_candidates` / `no_at_fault_collision`, IMPORTED,
+  never re-implemented.** The item-19 per-window inputs are built exactly as
+  `ddv2_rl_refcv5.py::fetch` builds them: human states and route from the recorded poses,
+  `AgentTracks.from_frames` over the agent join, and the SAM3 drivable map keyed on the raw frame.
+  ⛔ `taniteval/tools/fan_safety.py` uses a DIFFERENT collision model (lead only, 2 m) and is not
+  used.
+
+| arm | selection rule | tracks the GATE sees | tier |
+|---|---|---|---|
+| `S1-BASE` | the model's own pick: argmax of its ranking score, its own mask applied | — | T1* |
+| `S1-RANDOM` | the **exact uniform expectation** over the fan (the candidate mean, no RNG) | — | T1* |
+| `S1-GATE-ORACLE` | BASE's rule, with candidates colliding under the gate's tracks masked to −inf; BASE's pick if every candidate collides | **recorded** future tracks | **T0** |
+| `S1-GATE-CONST` | the same gate | **empty** (everything free) | T1* |
+| `S1-GATE-PRED` | the same gate | **predicted** tracks (S1A.4) | T1* |
+| `S1-ORACLE-CV` | the same gate — ⚠️ diagnostic only (S1A.5) | recorded **t0** boxes + t0 velocities, constant-velocity extrapolated | **T0** |
+
+* ⛔ **Every selected candidate is SCORED against the RECORDED future** (recorded tracks, human,
+  route, map), whichever tracks gated it. A gate scored against its own tracks would certify
+  anything.
+* **Waypoints → proxy states.** A candidate's 8 ego-frame slots are expanded to the proxy's 10 Hz
+  grid (40 ticks) by a **C² cubic spline in time** through the origin at t = 0 and the slots, with
+  the initial velocity fixed to `(v0, 0)`. Yaw comes from the tangent and speed from the
+  derivative. The result goes through `pdm_proxy.ego_states_from_poses`, **the constructor the
+  human is scored with**, so candidate and human share one construction.
+
+### S1A.3 The inference replicate is a CONTROL that must read EXACTLY 0 (MM point 1(b))
+
+A8's argv carries **no sampler flag**, so the fan is deterministic. A second full forward on the
+same windows must reproduce **every arm's selected index and every recorded-nc flag EXACTLY**
+(difference 0). Raw fan coordinates are reported as `max |Δ|`: on CUDA, cuDNN may move them at
+float precision, but it must not flip one selection. ⛔ The effect is therefore read against the
+**episode bootstrap only**. The verdict says so, because a training replicate does not apply (no
+retraining) and the inference floor is structurally 0.
+
+### S1A.4 ⛔ PRED's REAL first dependency: a HELD-OUT BOX READ (corrects the "DISCHARGED" claim)
+
+The collided-selection statistic is **agent NC**, so PRED gates on the **box head**. A3's map IoU
+(0.576 vs a 0.339 floor) discharged **only the map/DAC half** of §8. Pre-registered on the same
+windows, from A8's box head (same pass):
+
+* **Detection:** AP at the box head's own distance threshold against `random_ap_base_rate`
+  (closed form, `box3d_head.py:445`), with an episode-cluster bootstrap CI through a callable
+  reducer. **PASS iff the CI lower bound > the base rate.**
+* **Velocity:** on the AP's own matched pairs, the MAE of the predicted ego-frame relative
+  velocity (`v_rel_x`, `v_rel_y`, `agent_slots.py:172`) against the recorded one, compared with
+  the **zero-velocity floor** on the same pairs. **PASS iff the paired CI of (floor MAE − pred
+  MAE) excludes 0 in PRED's favour.**
+* **Predicted tracks:** slots with `sigmoid(presence) > 0.5` (fixed now), decoded to metres by the
+  head's own decode, and extrapolated at **constant velocity in the t0 ego frame** as
+  `v = v_rel + (v0, 0)`. v0 is admissible (PI ruling 2026-09-02). Yaw is held constant, because
+  the ego yaw rate is not an admissible input. Length and width come from the head. The tracks
+  are built in the t0 ego frame with `AgentTracks.from_frames`' **own conventions**: `static` from
+  the predicted **class** (argmax over `AGENT_CLASSES` ∈ `cfg.static_classes`, as
+  `pdm_proxy.py:246` sets it from the recorded class), and `speed` by the **same finite
+  difference** of positions (`:247-252`). *(Corrected while writing: an earlier draft of this line
+  said "static = speed < threshold". That is not how the checker defines it, and it was caught by
+  reading `from_frames` before this was appended.)*
+* ⛔ **PRED is computed in the same pass regardless (zero marginal cost) but is QUOTABLE ONLY IF
+  BOTH reads PASS.** Otherwise it is reported as *"dependency failed — the next lever is box-head
+  quality"* (§10's own commitment), with its number stamped **NOT A RESULT**.
+
+### S1A.5 `S1-ORACLE-CV` — the pre-registered decomposition (MM point 3)
+
+Recorded **t0** boxes with recorded t0 velocities (finite difference of the recorded tracks at t0)
+are extrapolated **by the same code path as PRED**. `ORACLE − ORACLE-CV` = the cost of having no
+motion forecast. `ORACLE-CV − PRED` = the cost of detection and velocity error. It is a diagnostic
+only, stamped T0 and never a claim.
+
+### S1A.6 Controls that must read known values, and the mutations that prove them
+
+| control | known value |
+|---|---|
+| BASE vs the model | the harness's BASE index == `out["sel_idx"]` on **every** window |
+| `S1-GATE-CONST` | recovery **exactly 0**: empty tracks ⇒ nc ≡ 1 ⇒ BASE's pick on every window |
+| `S1-RANDOM` | exactly the candidate mean (an identity, tested) |
+| inference replicate | selections and nc flags identical (S1A.3) |
+| **human round-trip** | the human's recorded future, cut to the 8 slots and re-expanded by the S1A.2 spline, must reproduce the directly-scored human's NC and DAC on **≥ 99 %** of windows. The residual is the waypoint representation's own error floor and is printed |
+
+⛔ **Mutations — each must turn its test RED:**
+* **(M-a)** delete the gate's mask ⇒ ORACLE recovers nothing. This also proves CONST's 0 is **not
+  a dead gate**: under recorded tracks the gate must change the pick on ≥ 1 window where BASE
+  collides and a free candidate exists.
+* **(M-b)** score the selected candidate against the **gate's** tracks instead of the recorded
+  ones.
+* **(M-c)** replace the imported checker with a stub that returns nc ≡ 1.
+* **(M-d)** break the spline's `(v0, 0)` boundary; the round-trip control must catch it.
+
+### S1A.7 Verdict — PREREG_S1 §5.1 at dev-box scale, committed now
+
+* **Statistic:** the **collided-selection rate**, the share of windows whose SELECTED candidate has
+  recorded nc = 0. **Estimator:** `paired_episode_cluster_bootstrap` (`taniteval.ci`), PRED − BASE,
+  with `n` windows and `n` episodes printed.
+* ⭐ **SUPPORTED (dev-box scale)** iff PRED's rate is below BASE's with a paired CI excluding zero,
+  **and** both S1A.4 reads PASSED, **and** no family (S1A.8) is separated-worse. **FAIL-HARM** if
+  any family is separated-worse. **REFUTED as configured** if the rate does not separate.
+  **Recovery < 10 % of the ceiling** triggers §10's abandonment reading: the next work is
+  perception quality.
+* **Quotable:** `(pred − base) / (oracle − base)`, the share of the ceiling reached, with RANDOM,
+  BASE and ORACLE quoted **on the same windows** or none of them.
+* ⛔ **The verdict text MUST say (MM point 1(c)):** *internal validity holds (gate vs base on the
+  same fan); EXTERNAL validity to a trained planner does NOT: A8's selector is weak (A3 measured
+  `anchor_acc` 0.092 vs chance 1/117 = 0.0085).*
+
+### S1A.8 Families — per family, never pooled, ADE added (not replaced)
+
+The families are computed on the SELECTED candidate against the human's recorded future, over the
+proxy horizon.
+* **LONGITUDINAL:** along-track error at 2 s and 4 s, speed error at 4 s, and the TTC sub-score.
+* **LATERAL:** cross-track error at 2 s and 4 s, heading error at 4 s, and curvature error masked
+  to windows with `|κ_human| > 1e-3` (the straight-line floor is printed beside it).
+* **TACTICAL:** agreement of the selected candidate's kinematic manoeuvre class with the human's,
+  by the **same** `tac.window_factored_labels` rule on 2 s, with lat and lon reported separately.
+* **STRATEGIC:** nav compliance of the selection (its lateral class at 4 s against the fed turn
+  command), **EVALUATED and reported as PAUSED per PI item 25**. It is never counted as a pass and
+  never blocks.
+* PDMS sub-scores (NC, DAC, EP, TTC, comfort) and ADE/FDE are reported beside the families.
+
+### S1A.9 Compute
+
+* **Passes:** one A8 forward over ≤ 1,000 windows, which also yields the box read, plus the S1A.3
+  replicate pass.
+* **Device:** CPU while A7 holds the GPU (Master Mind), with host RAM watched and `s/window`
+  recorded; or GPU once A7's panel releases it. **The device changes no criterion** and is stated
+  in the result.
+* **Build proof:** analytic unit tests (two boxes that overlap at tick k ⇒ nc = 0 at exactly k; a
+  straight constant-velocity plan ⇒ constant speed and zero yaw), the S1A.6 mutations, and a CPU
+  smoke on ≤ 10 halfB windows before the full pass.
+
+<!-- /S1-AMENDMENT-DEVBOX-2026-09-19 -->
