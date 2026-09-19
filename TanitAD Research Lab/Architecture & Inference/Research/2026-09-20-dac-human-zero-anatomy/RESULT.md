@@ -148,3 +148,46 @@ window, with all 12 variants) · `raw/dac_violating_samples.jsonl` (4,431 rows: 
 band, the cell's channel mass) · `raw/render_index.json`.
 
 🔒 Clip ids appear only as sha12, in file names, titles and rows alike.
+
+## ⭐ Appended 2026-09-20 — the camera projection, approved by the MM: **the 33 are boundary cases, not off-road driving**
+
+Controls first, and they gate the renders: an overlay that is subtly wrong misleads worse than no
+overlay. All four pass on **all 7 cameras** the 33 windows use (`raw/projection_controls.json`):
+
+| control | bar | read |
+|---|---|---|
+| **C1** the ego's own footprint at t0 sits at the image bottom | front-corner rows ≥ 0.75 × 416 = 312 | **471.3 / 481.4** — below the bottom edge, as a bumper-level footprint must be |
+| **C2** a ground point at 60 m is on the horizon row | monotone from below, ≤ 20 px | rows **281.7 → 236.9 → 224.2 → 216.1 → 212.3** against a horizon at **201.1**; Δ(60 m) = **11.1 px** |
+| **C3** the declared 120° field reaches both edges | ±60° within 1 px of columns 0 and 1023 | **−0.5** and **1023.5** |
+| **C4** +y (rig left) projects LEFT, asymmetry the mount can explain | ≤ 2·f·yaw + 2·f·y₀/d + 1 px = 9.2 px | +5 m → col 428.9, −5 m → col 601.7, asymmetry **7.64 px**, mount yaw **0.477°** |
+
+⛔ **My first C4 was WRONG and it failed every camera.** It barred symmetry about the image centre
+at 1 px — which assumes a mount at y = 0 with no yaw. The measured mount carries a **0.477° yaw**,
+and 2·f·yaw alone is 8.1 px of the 7.64 px observed. The bar was an idealisation, not a known
+value; restated against the mount's own numbers, it passes. *(The projection was never the
+problem — reporting a control miss before touching the renders is exactly why it is run first.)*
+
+### What the 33 windows are
+
+They come from **7 clips**, and two supply **22 of the 33** — both narrow one-way streets with
+parked cars, crawled at walking pace.
+
+| | |
+|---|---|
+| off-road corner samples | **804** across the 33 windows |
+| distance from such a corner to the nearest **mapped drivable** cell | median **0.429 m**, p90 0.479 m, **max 1.047 m** |
+| ⭐ within **one cell (0.5 m)** of the corridor | **775 of 804 (96.4 %)**; 803 of 804 within two cells; **one** sample beyond 1.0 m |
+| windows whose **worst** off-road corner is within one cell | **23 of 33** |
+| the mapped corridor's width where they occur | median **3.00 m** — for a **2.297 m** car, i.e. **0.35 m of clearance per side** |
+| the off-road corner's own lateral offset | **1.0–1.2 m** in 26 of 33 windows = the ego's own half-width (1.1485 m) |
+
+⇒ **These are not excursions; they are the car's own body edge touching the far side of the
+boundary cell.** At 0.5 m resolution the map cannot place a kerb more finely than the distance
+almost every one of these samples sits at. `media_projected/` has one image per window (path
+projected into the t0 camera + the map's class panel) so this is checkable by eye, not only by
+statistic: the rails run down the roadway and the red marks ride the kerb line.
+
+⚠️ **The honest residue.** One corner is 1.047 m past the mapped edge, and the corridor width
+reads **0.00 m** at some x — places where the map has **no drivable cell at all across the whole
+lateral extent**, which is a map gap rather than a kerb. Those are the only candidates left for
+cause 3, and they are a handful of samples, not 44.6 % of windows.
