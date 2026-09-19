@@ -632,3 +632,32 @@ their harness is the next real work item, and it is a **PI-visible scope change*
 than a 10.7 h slot in an existing plan.
 
 <!-- A4-A6-INSTRUMENT-DOES-NOT-EXIST-2026-09-19 -->
+
+<!-- A9-DONE-2026-09-19 -->
+## ✅ A9 DONE, 2026-09-19 — the conflict detector's cost at 416 × 1024, re-measured rather than scaled
+
+MEASURED (ours) on A3's exact configuration (resnet34, clean-124 halfA, `--trunk-chunk-ckpt 1
+--trunk-frozen-bn`, batch 2, seed 0), 200 steps `--conflict-detector off` then 200 steps `on`,
+nothing else changed. Rates are `elapsed_s` MARGINAL deltas at `--log-every 10`, steps ≤ 30
+excluded as warm-up.
+
+| arm | median s/step | mean | n (deltas) | wall |
+|---|---|---|---|---|
+| detector **off** | **2.82** | 2.759 | 16 | 640 s |
+| detector **on** | **5.07** | 5.095 | 16 | 1,037 s |
+| **overhead** | ⭐ **+79.8 %** (median ratio) | | | |
+
+**Identity controls — all EXACT, no epsilon (the §7 criterion):** `cos(g, g)` = **1.0**,
+`cos(g, −g)` = **−1.0**, detached `cos` = **NaN**, detached conflict **0.0**, detached `|g_aux|`
+**0.0**. The OFF arm wrote **no** `conflict_controls` row (the detector was really off); the ON
+arm wrote conflict keys on **20/20** logged rows.
+
+⇒ **E14 is TICKED.** The +79.8 % sits **inside** the banked +71.7 … +104.2 % that was measured on
+the smaller grid, so the new geometry did not push the detector's cost past its old upper end —
+but the ruling was *"re-measure rather than scale"*, and now it is measured. ⚠️ It is the cost
+**with the detector reading every step**; the pod budget should carry it at the cadence the pod
+arm will actually use, not this worst case.
+⛔ NOT a capability claim: 200 steps × batch 2 = 0.075 of one halfA epoch. n = 16 deltas per arm
+is thin for a rate; it is quoted as an overhead RATIO measured back-to-back on one box, which
+is what the criterion asks for. Artifacts:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-a9-conflict-cost/`.
