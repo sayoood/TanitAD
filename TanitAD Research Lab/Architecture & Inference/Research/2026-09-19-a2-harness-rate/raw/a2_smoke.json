@@ -1,0 +1,43 @@
+{
+ "_what": "A2 harness rate + 40-step wiring smoke, levers ON",
+ "_evidence_class": "MEASURED (ours)",
+ "_not_a_capability_claim": "40 steps x batch 2 = 80 windows of a 5,302-step epoch = 0.0075 of ONE epoch",
+ "train_rows": 40,
+ "loss_finite": true,
+ "loss_moved": true,
+ "loss_first": 178.69824,
+ "loss_last": 166.23306,
+ "s_per_step_trainer_median": null,
+ "wall_s": 232.0,
+ "cuda_max_mem_gb_peak": null,
+ "fits_7_1_gb": true,
+ "tacv6_n_scene_mean": [
+  496.0
+ ],
+ "rate": {
+  "source": "elapsed_s MARGINAL deltas (never a cumulative field / n)",
+  "n_warm_deltas": 34,
+  "median_s_per_step": 4.55,
+  "mean_s_per_step": 4.5,
+  "min": 2.5,
+  "max": 7.600000000000001,
+  "warmup_excluded": 5
+ },
+ "supersedes": {
+  "value": 2.8,
+  "why": "the sizing harness measured 3 STEPS = TWO deltas; this is 34 warm deltas on the REAL trainer, real clean-124 half, every head live"
+ },
+ "bucket_A_total_h": {
+  "claimed_at_2.8": 33.55,
+  "measured_at_4.55": 40.09
+ },
+ "full_arm_days": {
+  "claimed_at_2.8": 1.31,
+  "measured_at_4.55": 2.12
+ },
+ "_resnet101_caveat": "the r101 rates came from the SAME harness that under-read r34 by 1.62x. They are NOT scaled here -- that would repeat this error. They need their own real-trainer measurement.",
+ "_fields_absent": [
+  "step_s",
+  "cuda_max_mem_gb"
+ ]
+}
