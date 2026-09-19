@@ -583,3 +583,52 @@ sees **0.38 of one epoch**, and **no arm in bucket (A) is a capability claim.** 
 buy more arms; they do not buy more data.
 
 <!-- DEVBOX-PREP-REPRICED-2026-09-19 -->
+
+---
+
+## ⛔ CORRECTION, 2026-09-19 — A4/A5/A6 are BUILD-then-run, not run: the S1 harness does not exist
+
+### The measurement
+
+⛔ **1,435 code files under `stack/`, `taniteval/` and `tools/` were scanned. ZERO mention
+any S1 arm name (`S1-BASE`, `S1-RANDOM`, `S1-GATE-*`, `S1-AGENTS`, `S1-REPL`) or the
+`collided-selection` statistic they are all defined against.** A second, broader probe over
+every `.py/.sh/.json/.md` in the tree found the arm names in exactly **one** file — this
+document — and in **no code at all**.
+
+⇒ A4 (5.3 h), A5 (1.8 h) and A6 (3.6 h) were priced as **eval runs of an existing
+instrument**. There is no instrument. They are **build-then-run**, and their 10.7 h is an
+under-estimate of unknown size until the build is scoped.
+
+⚠️ `PREREG_S1` §8's *"`S1-GATE-ORACLE` and `S1-RANDOM` need no trained perception and can
+run first"* is TRUE and is about **perception**; it does not say the selection-and-gate
+harness exists. Reading it as *"these are cheap"* conflated *needs no trained model* with
+*needs no code*.
+
+⚠️ **AND THE ONLY AVAILABLE CHECKPOINT COULD NOT CARRY THEM ANYWAY.** Every S1 arm is
+scored on a **fan of candidate trajectories**; the 2,000-step halfA map head has a planner
+trained for **0.38 of one epoch** (its paired ADE delta reads ~77 m). A collision statistic
+over that fan would measure the untrained planner, not the gate.
+
+### ⛔ And a CONFLATION OF MINE, corrected in the open
+
+When I paused bucket (A) I wrote that A4–A6 should wait because *"Item 25 shapes how their
+verdict is read"*. **That was wrong.** There are two unrelated things called `S1`:
+
+| | |
+|---|---|
+| `verdict_refcv6.py:121` | `Clause("S1", "STRATEGIC", "route_acc not separably worse than control, and n > 0")` — a **clause ID** in the refcv6 verdict panel, about the STRATEGIC family. **This is Item 25.** |
+| `PREREG_S1_AGENT_SEAM_AND_COLLISION_GATE.md` | `S1` names the **pre-registration**; `S1-BASE` / `S1-RANDOM` / `S1-GATE-*` are its **arms**, about the agent seam and the collision gate. |
+
+⇒ **Item 25 does NOT gate A4–A6.** I let a shared label imply a dependency — the same
+family as every other wrong-scope read in this programme, with the object swapped for a
+NAME. The real blocker is the one above: the instrument does not exist.
+
+### What this does not change
+
+A0 ✅ A1 ✅ A2 ✅ A3 ✅ stand, and A3 discharged `PREREG_S1` §8's blocking dependency at
+**1.70x the floor, held out**. The S1 arms are what would *use* that occupancy; building
+their harness is the next real work item, and it is a **PI-visible scope change** rather
+than a 10.7 h slot in an existing plan.
+
+<!-- A4-A6-INSTRUMENT-DOES-NOT-EXIST-2026-09-19 -->
