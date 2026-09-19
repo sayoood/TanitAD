@@ -22,9 +22,9 @@
    "sha256": "bc7a1d2c66432149ff7d98281eafadb17b8585d8f6e53a02c316e16e70e8b9bb",
    "banked": "2026-08-18",
    "tags": [
-    "planning",
     "cem",
-    "icem"
+    "icem",
+    "planning"
    ],
    "note": "iCEM: coloured noise + elite memory — THE action-search repair adopted in refa_v1_plan.py",
    "cited_by": [
@@ -57,9 +57,9 @@
    "sha256": "0821268c718a8159f4dbb738fc85669eee2c27a996c3a42c8b2b87c27bc6b1f3",
    "banked": "2026-08-18",
    "tags": [
+    "benchmark",
     "frozen-encoder",
-    "robotics",
-    "benchmark"
+    "robotics"
    ],
    "note": "VC-1/CortexBench: no single frozen PVR dominates 17 tasks; task-specific ADAPTATION gives substantial gains",
    "cited_by": [
@@ -92,9 +92,9 @@
    "sha256": "bea140bd7a327551b5fa0c70bcdc9ce4207154449d9c700d255e66aa28e7af31",
    "banked": "2026-08-18",
    "tags": [
+    "benchmark",
     "frozen-encoder",
-    "robotics",
-    "benchmark"
+    "robotics"
    ],
    "note": "Large-scale study of pretrained visual representations, sim + real",
    "cited_by": [
@@ -183,9 +183,9 @@
    "sha256": "53f1ed78305b3f19fcfd6dfd13e942241d19ebc3cf531e93a38138af791b5962",
    "banked": "2026-08-18",
    "tags": [
+    "mpc",
     "planning",
-    "world-model",
-    "mpc"
+    "world-model"
    ],
    "note": "GPC: wrap a FROZEN BC policy with an action-conditioned world model for online planning",
    "cited_by": [
@@ -256,9 +256,9 @@
    "sha256": "77ff73a045d21c3b7a934209c1bb15f86c05f2cbb04dcfd92aaad9abd4969604",
    "banked": "2026-08-18",
    "tags": [
+    "dual-encoder",
     "fine-tuning",
-    "vla",
-    "dual-encoder"
+    "vla"
    ],
    "note": "Full fine-tuning DEGRADES pretrained structure; DUAL ENCODER (frozen anchor + trainable) 35.03 -> 55.55 -> 78.46",
    "cited_by": [
@@ -283,16 +283,18 @@
    "sha256": "bd97804862ae0da306c5406ef76d59003b425dc5c44921d2653ac6029451151c",
    "banked": "2026-08-18",
    "tags": [
+    "A3",
     "driving",
     "e2e-planning",
     "frozen-encoder",
     "sota-2026-09-03",
     "sota-2026-09-03-encoder"
    ],
-   "note": "FROST-Drive: frozen 14B VLM 8.17 RFS BEATS the same encoder fine-tuned 8.13; frozen ImageNet ViT is the WORST arm 7.39 | FROST-Drive: E2E driving with a frozen vision encoder; frozen beats fine-tuned 14B VLM (to verify) | RE-READ 2026-09-03: Table 3 rows - ViT (ImageNet) 7.39, ViT fine-tuned 7.79, VLM 14B fine-tuned 8.13 / ADE@3s 1.47, VLM 14B frozen 8.17 / 1.04, VLM 38B 8.17, VLM 78B 8.24; embedding width 256 -> 7.68; fine-tuning HURTS a strong trunk and HELPS a weak one",
+   "note": "FROST-Drive: frozen 14B VLM 8.17 RFS BEATS the same encoder fine-tuned 8.13; frozen ImageNet ViT is the WORST arm 7.39 | FROST-Drive: E2E driving with a frozen vision encoder; frozen beats fine-tuned 14B VLM (to verify) | RE-READ 2026-09-03: Table 3 rows - ViT (ImageNet) 7.39, ViT fine-tuned 7.79, VLM 14B fine-tuned 8.13 / ADE@3s 1.47, VLM 14B frozen 8.17 / 1.04, VLM 38B 8.17, VLM 78B 8.24; embedding width 256 -> 7.68; fine-tuning HURTS a strong trunk and HELPS a weak one | FROST-Drive: SAME-backbone frozen vs finetuned InternVL3-14B on Waymo Open E2E -- frozen RFS 8.17 / ADE5s 1.88 BEATS finetuned 8.13 / 2.19; frozen vision encoder is 300M; embedding dim 5120 vs 256 is +0.49 RFS. Open-loop only.",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
    ]
   },
   "2602.04880": {
@@ -313,8 +315,8 @@
    "sha256": "34bd2f95c4aa5a2a26b675a3e81829b7f25411ddc3726075048a7af758f284c9",
    "banked": "2026-08-18",
    "tags": [
-    "representation",
     "probing",
+    "representation",
     "robotics"
    ],
    "note": "Probing accuracy for environment STATE correlates with downstream policy performance",
@@ -345,13 +347,15 @@
    "sha256": "4d055d2f8c59404929d813052b8539c1e4c9326d3b27c50cd9371345d98dbb66",
    "banked": "2026-08-18",
    "tags": [
-    "frozen-encoder",
+    "B12_memory",
     "driving",
+    "frozen-encoder",
     "world-model"
    ],
-   "note": "DeepSight: frozen encoder + MSE world-state loss vs DINOv3 future BEV feats; Bench2Drive DS 86.23",
+   "note": "DeepSight: frozen encoder + MSE world-state loss vs DINOv3 future BEV feats; Bench2Drive DS 86.23 | DeepSight full text: DINOv3-feature BEV WM target vs VAE +47 DS; 'long horizon' is 2 s; ablations on Dev10 single seed",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
    ]
   },
   "unece-r157": {
@@ -666,12 +670,14 @@
    "sha256": "f88624aa985b9303ddce94a03f8d8bba22f535508e695a3b1b6256c4e7fcc8f6",
    "banked": "2026-08-22",
    "tags": [
+    "A2",
     "world-models"
    ],
-   "note": "Sub-JEPA: SIGReg's isotropic-Gaussian prior in the FULL embedding space is an overly strong bias because latents live on low-dim manifolds; applies Gaussian constraints over multiple RANDOM SUBSPACES instead. Beats LeWM on 4 continuous-control envs. Directly relevant: our v6F latent sits at effective rank 5.86 in d=2048. | RE-READ 2026-09-03: K frozen row-orthonormal projections with SIGReg per subspace (K=32, Push-T 16); Table 1 (6 seeds) LeWM 84.33/82.67/84.67/67.33 -> 95.00/84.00/89.00/76.33; Table 2 Push-T collapses at K=32 (28.00); Table 3 random-frozen 53.00/68.00/13.33/61.00, trainable-ortho 61.67/82.67/57.00/70.33; Fig 5 open-loop rollout to t=95 LeWM drifts, Sub-JEPA holds - QUALITATIVE, no drift number",
+   "note": "Sub-JEPA: SIGReg's isotropic-Gaussian prior in the FULL embedding space is an overly strong bias because latents live on low-dim manifolds; applies Gaussian constraints over multiple RANDOM SUBSPACES instead. Beats LeWM on 4 continuous-control envs. Directly relevant: our v6F latent sits at effective rank 5.86 in d=2048. | RE-READ 2026-09-03: K frozen row-orthonormal projections with SIGReg per subspace (K=32, Push-T 16); Table 1 (6 seeds) LeWM 84.33/82.67/84.67/67.33 -> 95.00/84.00/89.00/76.33; Table 2 Push-T collapses at K=32 (28.00); Table 3 random-frozen 53.00/68.00/13.33/61.00, trainable-ortho 61.67/82.67/57.00/70.33; Fig 5 open-loop rollout to t=95 LeWM drifts, Sub-JEPA holds - QUALITATIVE, no drift number | Sub-JEPA v1: subspace SIGReg; gains track effective-rank REDUCTION; Reacher/PushT gains within 1 std; K per-env tuned (PushT K=32 collapses 28 %)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/V7_TINY_RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-15-subjepa-rank-direction/RESULT.md"
    ]
   },
   "2510.12796": {
@@ -824,11 +830,15 @@
    "sha256": "a8431697ffa276068375c937cc2f90a2c8059a17b285fba0f0c8ba41eb877e81",
    "banked": "2026-08-23",
    "tags": [
+    "A5",
+    "A5_benchmarks",
     "benchmark-navsim"
    ],
-   "note": "Pseudo-simulation (NAVSIM v2 protocol): 3DGS-synthesised counterfactual observations + proximity weighting reach R2=0.8 vs closed-loop (best open-loop 0.7) with no sequential sim - implementable on our NuRec/gsplat assets",
+   "note": "Pseudo-simulation (NAVSIM v2 protocol): 3DGS-synthesised counterfactual observations + proximity weighting reach R2=0.8 vs closed-loop (best open-loop 0.7) with no sequential sim - implementable on our NuRec/gsplat assets | READ 2026-09-13 (v2 2025-08-27) Table 2: PDM-C navhard two-stage combined 51.3 = s1*s2; Stage1 94.4/98.8/100/99.5/100/93.5/99.3/87.7/36.0; Stage2 NC 88.1 TTC 83.1 LK 73.7 EC 25.4 | v3 positive control for fingerprint: matches post-fix Stage-2 (4/8 tokens, 0 v2 tokens)",
    "cited_by": [
-    "TanitAD Research Lab/Benchmarks & Evals/2026-08-22-lab-run-001/RESULT.md"
+    "TanitAD Research Lab/Benchmarks & Evals/2026-08-22-lab-run-001/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
   "1707.06347": {
@@ -2183,11 +2193,13 @@
    "sha256": "a3217f9fa8806a9d1b01f03bf2005de4a85e1d9bbe2312c39fd993ceaf233b9d",
    "banked": "2026-08-27",
    "tags": [
+    "A1_world_models",
     "hierarchy"
    ],
-   "note": "Hierarchical Planning with Latent World Models: 2-level latent subgoals, 70% vs 0% flat, 3x less planning compute",
+   "note": "Hierarchical Planning with Latent World Models: 2-level latent subgoals, 70% vs 0% flat, 3x less planning compute | READ IN FULL 2026-09-13 (v2 2026-06-16): Table 16 capacity-controlled flat-vs-hierarchy — flat 98M 35%/15% vs hier 94M 78%/61% (Push-T H=10/15); PLDM flat 178k 82/59 vs hier 182k 95/83",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-13-hwm-capacity-matched-hierarchy/RESULT.md"
    ]
   },
   "2602.12540": {
@@ -2777,12 +2789,15 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "datasets",
+    "nuscenes",
     "recovered-orphan"
    ],
    "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-13-qwen-drive-usage-review/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | nuScenes: 1,000 x 20 s scenes (700/150/150), Boston+Singapore, 6 cams 12 Hz + 32-beam LiDAR 20 Hz + 5 radars; 1.4M boxes over 23 classes at 2 Hz keyframes; HD map layers -- candidate map/occupancy supervision set, ~5.6 h",
    "kind": "arxiv",
    "title": "nuScenes: A multimodal dataset for autonomous driving",
    "authors": [
@@ -3358,10 +3373,14 @@
    "sha256": "552116bd40762e0e57b21ec8793187b1ec222ed107472814f126a167fc5dc1f2",
    "banked": "2026-08-28",
    "tags": [
+    "A5",
+    "A5_benchmarks",
     "navsim"
    ],
-   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking.",
+   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2)",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
    ]
@@ -3392,10 +3411,12 @@
    "sha256": "571ddbe7456844d32baa02639fa310c8a34554e2086f9b5c15b6482305dd483f",
    "banked": "2026-08-28",
    "tags": [
+    "A5",
     "navsim"
    ],
-   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02.",
+   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
    ]
@@ -5777,16 +5798,20 @@
    "sha256": "94e394fd9cbffaffb370fdc5f4bb3e2a2833ca41966e02efe800d5afff30371e",
    "banked": "2026-08-30",
    "tags": [
+    "A2",
+    "A2-jepa",
     "A2_jepa",
     "closed-loop-wm",
     "sota-2026-09-03-decodability"
    ],
-   "note": "Delta-JEPA: diagnoses action-insensitivity in JEPA latent world models and predicts latent DIFFERENCES rather than absolute next-latents | READ IN FULL 2026-09-03: LDAD decodes a_t from dz=z_{t+1}-z_t (two ENCODER outputs), ViT-Tiny from scratch; lambda=0 nearly collapses, 50 best (Fig 3); Table 1 Delta-JEPA 100/81.33/89.07/79.27 vs LeWM 74.93/79.87/84.53/64.13; Table 2 dz beats concat +4.07/+1.07/+12.60/+0.67; Table 3 realised end-effector decode target 64.93 vs raw action 81.33; Table 5 dx-from-dz linear r 0.992 vs LeWM 0.765",
+   "note": "Delta-JEPA: diagnoses action-insensitivity in JEPA latent world models and predicts latent DIFFERENCES rather than absolute next-latents | READ IN FULL 2026-09-03: LDAD decodes a_t from dz=z_{t+1}-z_t (two ENCODER outputs), ViT-Tiny from scratch; lambda=0 nearly collapses, 50 best (Fig 3); Table 1 Delta-JEPA 100/81.33/89.07/79.27 vs LeWM 74.93/79.87/84.53/64.13; Table 2 dz beats concat +4.07/+1.07/+12.60/+0.67; Table 3 realised end-effector decode target 64.93 vs raw action 81.33; Table 5 dx-from-dz linear r 0.992 vs LeWM 0.765 | A2 JEPA rotation 2026-09-17 | Delta-JEPA FULL TEXT: decode action from dz=z_{t+1}-z_t beats concat [z_t,z_{t+1}] by +0.67..+12.60 pp (3 seeds); lambda=0 collapses",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-18-ldad-displacement-probe/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
    ]
   },
   "2606.07687": {
@@ -8191,10 +8216,12 @@
    "sha256": "5467fc85a36ba0425f28a8199b65c1b41fb25765bf5c3a05c68a760000d7bf7e",
    "banked": "2026-08-31",
    "tags": [
+    "A5",
     "world-models"
    ],
-   "note": "DriveFuture: LatentAlign sigmoid-anneals the planner condition from GT-future latent to self-predicted forecast; a scheduled-sampling cure for the train/inference latent gap | DriveFuture navhard EPDMS 55.5 (CW-1 subject); re-banked 2026-09-02 after the first copy was found TRUNCATED (no %%EOF) | ⚠️ REPAIRED 2026-09-02: the banked copy was TRUNCATED to 1373148 B (14.5%, no %%EOF, unparseable) while kb_add --verify reported it healthy; refetched complete (9453407 B). Old sha256 b6af52305c6c898c... | READ IN FULL 2026-09-03: BEV latent + ego-status token; action-source mixture {p_gt, p_kin, p_null} with learned null token and constant-acceleration surrogate; LatentAlign alpha(e) = 1 - sigmoid(beta(e-e0)) from grounded sg(enc(I_t+T)) to self-prediction; navhard EPDMS w/o scorer 30.9 -> 32.1 (MSE) -> 32.0 -> 34.6 (Table 4); t_f 0.5/1.0/1.5 -> 30.2/31.2/34.6, q_s 4/16/64 -> 28.2/34.6/33.7, e_o 0.75/0.83/0.95 -> 29.2/34.6/28.9 (Table 5); NO action-sensitivity metric; ego status used at inference",
+   "note": "DriveFuture: LatentAlign sigmoid-anneals the planner condition from GT-future latent to self-predicted forecast; a scheduled-sampling cure for the train/inference latent gap | DriveFuture navhard EPDMS 55.5 (CW-1 subject); re-banked 2026-09-02 after the first copy was found TRUNCATED (no %%EOF) | ⚠️ REPAIRED 2026-09-02: the banked copy was TRUNCATED to 1373148 B (14.5%, no %%EOF, unparseable) while kb_add --verify reported it healthy; refetched complete (9453407 B). Old sha256 b6af52305c6c898c... | READ IN FULL 2026-09-03: BEV latent + ego-status token; action-source mixture {p_gt, p_kin, p_null} with learned null token and constant-acceleration surrogate; LatentAlign alpha(e) = 1 - sigmoid(beta(e-e0)) from grounded sg(enc(I_t+T)) to self-prediction; navhard EPDMS w/o scorer 30.9 -> 32.1 (MSE) -> 32.0 -> 34.6 (Table 4); t_f 0.5/1.0/1.5 -> 30.2/31.2/34.6, q_s 4/16/64 -> 28.2/34.6/33.7, e_o 0.75/0.83/0.95 -> 29.2/34.6/28.9 (Table 5); NO action-sensitivity metric; ego status used at inference | DriveFuture v1: navhard 55.5 table has no PDM-Closed row -> un-stampable by Stage-1 fingerprint",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
    ]
@@ -8803,11 +8830,13 @@
    "sha256": "427bdd1920edc1730ae597aafd308fb2467c157e49387430a0d1de5c8b5c9864",
    "banked": "2026-09-02",
    "tags": [
+    "D",
     "D1_opponent_doctrine"
    ],
-   "note": "Shalev-Shwartz & Shashua: exponential sample-complexity separation favouring semantic-abstraction (modular) training over end-to-end; the theoretical backbone of Mobileye's Compound AI doctrine",
+   "note": "Shalev-Shwartz & Shashua: exponential sample-complexity separation favouring semantic-abstraction (modular) training over end-to-end; the theoretical backbone of Mobileye's Compound AI doctrine | Full text: separation is a VALIDATION bound under an assumed c-approximate independence of sub-module failures plus a residual assumed ~0 - no constructed learning task",
    "cited_by": [
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md"
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
    ]
   },
   "2512.16760": {
@@ -8863,11 +8892,13 @@
    "sha256": "1ebaa937003b0cd34503fb4a667ed239b5dec8375f5f3dec1e085424d008c592",
    "banked": "2026-09-02",
    "tags": [
+    "A1",
     "B9_data_curation"
    ],
-   "note": "MiniWorld: training video world models from scratch under constrained compute",
+   "note": "MiniWorld: training video world models from scratch under constrained compute | MiniWorld v2: from-scratch streaming video WM on one 8-GPU server, Muon, short(21/46f)->long(125/253f) continued training; curation is future work only",
    "cited_by": [
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md"
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
    ]
   },
   "2608.24044": {
@@ -11929,12 +11960,14 @@
    "sha256": "b72fa49a02c7a76f86ee011eaabf479654c0f66a0d50eedbc8957158da5c78da",
    "banked": "2026-09-05",
    "tags": [
+    "B3_decoding",
     "vla",
     "vla-frontier-2026-09-05"
    ],
-   "note": "RT-VLA: real-time VLA via knowledge distillation",
+   "note": "RT-VLA: real-time VLA via knowledge distillation | RT-VLA: SimLingo distilled to real-time student, 44.8x (vision-only) competitive closed loop (abstract-only)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
    ]
   },
   "2608.30144": {
@@ -11953,12 +11986,14 @@
    "sha256": "091ca4de5ab1c921d4b536dbce0721abe7a1e6d8d85010fcdd72645f06f89f62",
    "banked": "2026-09-05",
    "tags": [
+    "A4_vla",
     "vla",
     "vla-frontier-2026-09-05"
    ],
-   "note": "Rethinking language's role in efficient VLA for AVs (when language is worth generating)",
+   "note": "Rethinking language's role in efficient VLA for AVs (when language is worth generating) | READ 2026-09-13: Language Residue taxonomy L1-L4; L1 = train-time-only language, zero inference cost; one onboard autoregressive VLM inference 500-2000 ms vs 20-100 ms loop (relayed from Huang et al. 2026)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-extension-frontier/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-13/RESULT.md"
    ]
   },
   "2607.12659": {
@@ -13444,11 +13479,15 @@
    "sha256": "39bb6505b6a839197e21d6beec1ddd57b2da722b419b2e5bc6c7db2d3c7348cb",
    "banked": "2026-09-06",
    "tags": [
+    "B7",
+    "B7-diffusion-flow",
     "driving-verifier"
    ],
-   "note": "FlowR2A: learns a reward-conditioned action distribution over a dense driving action vocabulary from simulation rewards",
+   "note": "FlowR2A: learns a reward-conditioned action distribution over a dense driving action vocabulary from simulation rewards | FlowR2A: flow-matching p(a|reward), 60 proposals 20 Euler steps 91.3 ms; navtest v1 92.8 PDMS, v2 88.9 EPDMS; uses ego status | FlowR2A FULL TEXT: reward-conditioned flow decoder p(a|r); per-timestep reward conditioning TTC 88.8->94.9; without reward noise the reward acts as a trajectory identifier (leak); navtest 92.8 PDMS / 88.9 EPDMS; 91 ms H20",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
    ]
   },
   "2512.21711": {
@@ -13777,6 +13816,901 @@
    ],
    "note": "ResNet strikes back: timm A1/A2/A3 ImageNet-1k training recipes; A1 = the recipe behind timm resnet34.a1_in1k, the checkpoint DiffusionDrive V1/V2 initialise their image ResNet-34 from | resnet-trunk review 2026-09-15: A1 = 600 epochs (Tab.1); ResNet-34 21.8M params 3.7 GFLOPs, 76.4 top-1 under A1 (Tab.4)",
    "cited_by": []
+  },
+  "2609.10464": {
+   "key": "2609.10464",
+   "kind": "arxiv",
+   "title": "",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://arxiv.org/abs/2609.10464",
+   "path": "TanitAD Research Lab/Library/papers/2609.10464_untitled.pdf",
+   "bytes": 15066247,
+   "sha256": "e16ce9c1eb8edc5890ddc2a3baa50043861c5bc80bc9943b7af0c697e438a1ef",
+   "banked": "2026-09-13",
+   "tags": [
+    "B11_physics",
+    "recovered-orphan"
+   ],
+   "note": "SG-JEPA: gravity as an action coordinate; rollout error -31..48% vs DINO-WM; gains attributed to the ENCODER (jointly trained), not the predictor — v1 2026-09-09 | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-13/RESULT.md"
+   ]
+  },
+  "2508.02047": {
+   "key": "2508.02047",
+   "kind": "arxiv",
+   "title": "Mapillary Vistas Validation for Fine-Grained Traffic Signs: A Benchmark Revealing Vision-Language Model Limitations",
+   "authors": [
+    "Sparsh Garg",
+    "Abhishek Aich"
+   ],
+   "published": "2025-08-04",
+   "abstract": "Obtaining high-quality fine-grained annotations for traffic signs is critical for accurate and safe decision-making in autonomous driving. Widely used datasets, such as Mapillary, often provide only coarse-grained labels - without distinguishing semantically important types such as stop signs or speed limit signs. To this end, we present a new validation set for traffic signs derived from the Mapillary dataset called Mapillary Vistas Validation for Traffic Signs (MVV), where we decompose composite traffic signs into granular, semantically meaningful categories. The dataset includes pixel-level instance masks and has been manually annotated by expert annotators to ensure label fidelity. Further, we benchmark several state-of-the-art VLMs against the self-supervised DINOv2 model on this dataset and show that DINOv2 consistently outperforms all VLM baselines-not only on traffic sign recogni",
+   "url": "https://arxiv.org/abs/2508.02047",
+   "path": "TanitAD Research Lab/Library/papers/2508.02047_untitled.pdf",
+   "bytes": 598330,
+   "sha256": "d8f60fd52a9693486f7d7d96cbda63fcbf443c69289a9694a538acaab4865519",
+   "banked": "2026-09-13",
+   "tags": [
+    "B1_vlm",
+    "recovered-orphan"
+   ],
+   "note": "MVV fine-grained traffic-sign benchmark: DINOv2 beats all VLM baselines on fine-grained sign recognition (abstract-only) — v1 2025-08-04 | FULL TEXT 2026-09-13: T3 signs DINOv2 0.484 vs InternVL-3-9B 0.467 (no CI) — abstract's 'consistently outperforms' is a 1.7 pt margin on signs; fine classes are sign TYPES not values | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-13-posted-speed-limit-supplier/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-13/RESULT.md"
+   ]
+  },
+  "2404.14027": {
+   "key": "2404.14027",
+   "kind": "arxiv",
+   "title": "OccFeat: Self-supervised Occupancy Feature Prediction for Pretraining BEV Segmentation Networks",
+   "authors": [
+    "Sophia Sirko-Galouchenko",
+    "Alexandre Boulch",
+    "Spyros Gidaris",
+    "Andrei Bursuc",
+    "Antonin Vobecky",
+    "Patrick Pérez",
+    "Renaud Marlet"
+   ],
+   "published": "2024-04-22",
+   "abstract": "We introduce a self-supervised pretraining method, called OccFeat, for camera-only Bird's-Eye-View (BEV) segmentation networks. With OccFeat, we pretrain a BEV network via occupancy prediction and feature distillation tasks. Occupancy prediction provides a 3D geometric understanding of the scene to the model. However, the geometry learned is class-agnostic. Hence, we add semantic information to the model in the 3D space through distillation from a self-supervised pretrained image foundation model. Models pretrained with our method exhibit improved BEV semantic segmentation performance, particularly in low-data scenarios. Moreover, empirical results affirm the efficacy of integrating feature distillation with 3D occupancy prediction in our pretraining approach. Repository: https://github.com/valeoai/Occfeat",
+   "url": "https://arxiv.org/abs/2404.14027",
+   "path": "TanitAD Research Lab/Library/papers/2404.14027_untitled.pdf",
+   "bytes": 2697738,
+   "sha256": "4d8e1963478f249bdbaf291a0cee508dd6ec1d28e52cc1f3f93de0755f605850",
+   "banked": "2026-09-13",
+   "tags": [
+    "B13_occupancy",
+    "recovered-orphan"
+   ],
+   "note": "OccFeat: occupancy (voxel occupied if >=1 LiDAR point) + DINOv2 feature targets; +10.6 IoU at 1% labels, +0.3 at 100%; needs LiDAR+camera alignment, trains the ENCODER | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-13/RESULT.md"
+   ]
+  },
+  "2603.23034": {
+   "key": "2603.23034",
+   "kind": "arxiv",
+   "title": "Traffic Sign Recognition in Autonomous Driving: Dataset, Benchmark, and Field Experiment",
+   "authors": [
+    "Guoyang Zhao",
+    "Weiqing Qi",
+    "Kai Zhang",
+    "Chenguang Zhang",
+    "Zeying Gong",
+    "Zhihai Bi",
+    "Kai Chen",
+    "Benshan Ma",
+    "Ming Liu",
+    "Jun Ma"
+   ],
+   "published": "2026-03-24",
+   "abstract": "Traffic Sign Recognition (TSR) is a core perception capability for autonomous driving, where robustness to cross-region variation, long-tailed categories, and semantic ambiguity is essential for reliable real-world deployment. Despite steady progress in recognition accuracy, existing traffic sign datasets and benchmarks offer limited diagnostic insight into how different modeling paradigms behave under these practical challenges. We present TS-1M, a large-scale and globally diverse traffic sign dataset comprising over one million real-world images across 454 standardized categories, together with a diagnostic benchmark designed to analyze model capability boundaries. Beyond standard train-test evaluation, we provide a suite of challenge-oriented settings, including cross-region recognition, rare-class identification, low-clarity robustness, and semantic text understanding, enabling syste",
+   "url": "https://arxiv.org/abs/2603.23034",
+   "path": "TanitAD Research Lab/Library/papers/2603.23034_untitled.pdf",
+   "bytes": 45123965,
+   "sha256": "83530b6338c10700203373bc73cf91b2f3bae11bda2362ba6065075663ce5c2c",
+   "banked": "2026-09-13",
+   "tags": [
+    "B1_vlm",
+    "recovered-orphan"
+   ],
+   "note": "TS-1M traffic-sign benchmark, >1M images / 454 classes; VLMs lead on semantic-text understanding (abstract-only) — candidate sign reader for the speed-limit supplier | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-13-posted-speed-limit-supplier/RESULT.md"
+   ]
+  },
+  "2305.07147": {
+   "key": "2305.07147",
+   "kind": "arxiv",
+   "title": "COLA: Characterizing and Optimizing the Tail Latency for Safe Level-4 Autonomous Vehicle Systems",
+   "authors": [
+    "Haolan Liu",
+    "Zixuan Wang",
+    "Jishen Zhao"
+   ],
+   "published": "2023-05-11",
+   "abstract": "Autonomous vehicles (AVs) are envisioned to revolutionize our life by providing safe, relaxing, and convenient ground transportation. The computing systems in such vehicles are required to interpret various sensor data and generate responses to the environment in a timely manner to ensure driving safety. However, such timing-related safety requirements are largely unexplored in prior works. In this paper, we conduct a systematic study to understand the timing requirements of AV systems. We focus on investigating and mitigating the sources of tail latency in Level-4 AV computing systems. We observe that the performance of AV algorithms is not uniformly distributed -- instead, the latency is susceptible to vehicle environment fluctuations, such as traffic density. This contributes to burst computation and memory access in response to the traffic, and further leads to tail latency in the sy",
+   "url": "https://arxiv.org/abs/2305.07147",
+   "path": "TanitAD Research Lab/Library/papers/2305.07147_untitled.pdf",
+   "bytes": 3736863,
+   "sha256": "752eee8c2525f6ed65164dca91304527d359d39bba05580e0282fec43a82840b",
+   "banked": "2026-09-13",
+   "tags": [
+    "C_bandD",
+    "recovered-orphan"
+   ],
+   "note": "COLA: tail latency in real L4 AV systems is safety-critical (latency aggregation across pipelined modules) — confirms Waymo's every-percentile latency claim independently (abstract-only) | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-13/RESULT.md"
+   ]
+  },
+  "2403.04133": {
+   "key": "2403.04133",
+   "kind": "arxiv",
+   "title": "Towards learning-based planning:The nuPlan benchmark for real-world autonomous driving",
+   "authors": [
+    "Napat Karnchanachari",
+    "Dimitris Geromichalos",
+    "Kok Seang Tan",
+    "Nanxiang Li",
+    "Christopher Eriksen",
+    "Shakiba Yaghoubi",
+    "Noushin Mehdipour",
+    "Gianmarco Bernasconi",
+    "Whye Kit Fong",
+    "Yiluan Guo",
+    "Holger Caesar"
+   ],
+   "published": "2024-03-07",
+   "abstract": "Machine Learning (ML) has replaced traditional handcrafted methods for perception and prediction in autonomous vehicles. Yet for the equally important planning task, the adoption of ML-based techniques is slow. We present nuPlan, the world's first real-world autonomous driving dataset, and benchmark. The benchmark is designed to test the ability of ML-based planners to handle diverse driving situations and to make safe and efficient decisions. To that end, we introduce a new large-scale dataset that consists of 1282 hours of diverse driving scenarios from 4 cities (Las Vegas, Boston, Pittsburgh, and Singapore) and includes high-quality auto-labeled object tracks and traffic light data. We exhaustively mine and taxonomize common and rare driving scenarios which are used during evaluation to get fine-grained insights into the performance and characteristics of a planner. Beyond the dataset",
+   "url": "https://arxiv.org/abs/2403.04133",
+   "path": "TanitAD Research Lab/Library/papers/2403.04133_untitled.pdf",
+   "bytes": 5436499,
+   "sha256": "93073a72b6851b5b71074159731c5cbca9f8e64bbd8b654848e8d4695744d4b3",
+   "banked": "2026-09-13",
+   "tags": [
+    "A5_benchmarks",
+    "recovered-orphan"
+   ],
+   "note": "nuPlan: lane polylines carry a speed-limit attribute; 8 cameras on the sensor subset — an external corpus with a map-sourced posted limit (abstract-only) | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-13-posted-speed-limit-supplier/RESULT.md"
+   ]
+  },
+  "1909.04422": {
+   "key": "1909.04422",
+   "kind": "arxiv",
+   "title": "The Mapillary Traffic Sign Dataset for Detection and Classification on a Global Scale",
+   "authors": [
+    "Christian Ertler",
+    "Jerneja Mislej",
+    "Tobias Ollmann",
+    "Lorenzo Porzi",
+    "Gerhard Neuhold",
+    "Yubin Kuang"
+   ],
+   "published": "2019-09-10",
+   "abstract": "Traffic signs are essential map features globally in the era of autonomous driving and smart cities. To develop accurate and robust algorithms for traffic sign detection and classification, a large-scale and diverse benchmark dataset is required. In this paper, we introduce a traffic sign benchmark dataset of 100K street-level images around the world that encapsulates diverse scenes, wide coverage of geographical locations, and varying weather and lighting conditions and covers more than 300 manually annotated traffic sign classes. The dataset includes 52K images that are fully annotated and 48K images that are partially annotated. This is the largest and the most diverse traffic sign dataset consisting of images from all over world with fine-grained annotations of traffic sign classes. We have run extensive experiments to establish strong baselines for both the detection and the classif",
+   "url": "https://arxiv.org/abs/1909.04422",
+   "path": "TanitAD Research Lab/Library/papers/1909.04422_The-Mapillary-Traffic-Sign-Dataset-for-Detection-and-Classif.pdf",
+   "bytes": 9446536,
+   "sha256": "79360b38e2c4997c81c771739eea684578019faa71bab26fe8da22f0310f9dba",
+   "banked": "2026-09-15",
+   "tags": [
+    "B1",
+    "recovered-orphan"
+   ],
+   "note": "MTSD: 52,453 fully-annotated images, global incl. Vienna+MUTCD sign systems; candidate reader training set for E-DE-SIGN-1 | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-15-speed-sign-reader-selection/RESULT.md"
+   ]
+  },
+  "2511.17183": {
+   "key": "2511.17183",
+   "kind": "arxiv",
+   "title": "Benchmarking Nighttime Traffic Sign Recognition with Illumination-Adaptive Detection and Semantic Attribute Reasoning",
+   "authors": [
+    "Aditya Mishra",
+    "Akshay Agarwal",
+    "Haroon Lone"
+   ],
+   "published": "2025-11-21",
+   "abstract": "Traffic signboards are vital for road safety and intelligent transportation systems. Yet, recognizing traffic signs at night remains underexplored due to the scarcity of real-world public datasets capturing low-light degradations and distractor classes. Existing benchmarks are predominantly daytime and do not reflect challenges such as headlight glare, motion blur, sensor noise, and vandalized or ambiguous signage. To address these gaps, we introduce INTSD, a large-scale nighttime traffic sign dataset collected across diverse regions of India. INTSD contains street-level images spanning 41 traffic signboard classes, multiple distractor categories, and varied lighting and weather conditions, designed to support both detection and fine-grained classification under nighttime scenarios. To benchmark INTSD, we conduct extensive evaluations using state-of-the-art detection and classification m",
+   "url": "https://arxiv.org/abs/2511.17183",
+   "path": "TanitAD Research Lab/Library/papers/2511.17183_Benchmarking-Nighttime-Traffic-Sign-Recognition-with-Illumin.pdf",
+   "bytes": 37887843,
+   "sha256": "587bc457148cf810942095bebf807ba85e14d2d8a15a2a5669e3709b1f70faf8",
+   "banked": "2026-09-15",
+   "tags": [
+    "B1",
+    "recovered-orphan"
+   ],
+   "note": "INTSD (v3): daytime-only sign models fail at night, recovered by night data; our corpus is 34% night | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-15-speed-sign-reader-selection/RESULT.md"
+   ]
+  },
+  "2605.15120": {
+   "key": "2605.15120",
+   "kind": "arxiv",
+   "title": "CLOVER: Closed-Loop Value Estimation and Ranking for End-to-End Autonomous Driving Planning",
+   "authors": [
+    "Sining Ang",
+    "Yuguang Yang",
+    "Canyu Chen",
+    "Yan Wang"
+   ],
+   "published": "2026-05-14",
+   "abstract": "End-to-end autonomous driving planners are commonly trained by imitating a single logged trajectory, yet evaluated by rule-based planning metrics that measure safety, feasibility, progress, and comfort. This creates a training--evaluation mismatch: trajectories close to the logged path may violate planning rules, while alternatives farther from the demonstration can remain valid and high-scoring. The mismatch is especially limiting for proposal-selection planners, whose performance depends on candidate-set coverage and scorer ranking quality. We propose CLOVER, a Closed-LOop Value Estimation and Ranking framework for end-to-end autonomous driving planning. CLOVER follows a lightweight generator--scorer formulation: a generator produces diverse candidate trajectories, and a scorer predicts planning-metric sub-scores to rank them at inference time. To expand proposal support beyond single-",
+   "url": "https://arxiv.org/abs/2605.15120",
+   "path": "TanitAD Research Lab/Library/papers/2605.15120_CLOVER-Closed-Loop-Value-Estimation-and-Ranking-for-End-to-E.pdf",
+   "bytes": 20186230,
+   "sha256": "cdf0b4850472e7d5b035adc1775c93983dd1a7aafa786c4b50dbfabaac6e1053",
+   "banked": "2026-09-15",
+   "tags": [
+    "A5",
+    "recovered-orphan"
+   ],
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
+   ]
+  },
+  "2510.04333": {
+   "key": "2510.04333",
+   "kind": "arxiv",
+   "title": "RAP: 3D Rasterization Augmented End-to-End Planning",
+   "authors": [
+    "Lan Feng",
+    "Yang Gao",
+    "Eloi Zablocki",
+    "Quanyi Li",
+    "Wuyang Li",
+    "Sichao Liu",
+    "Matthieu Cord",
+    "Alexandre Alahi"
+   ],
+   "published": "2025-10-05",
+   "abstract": "Imitation learning for end-to-end driving trains policies only on expert demonstrations. Once deployed in a closed loop, such policies lack recovery data: small mistakes cannot be corrected and quickly compound into failures. A promising direction is to generate alternative viewpoints and trajectories beyond the logged path. Prior work explores photorealistic digital twins via neural rendering or game engines, but these methods are prohibitively slow and costly, and thus mainly used for evaluation. In this work, we argue that photorealism is unnecessary for training end-to-end planners. What matters is semantic fidelity and scalability: driving depends on geometry and dynamics, not textures or lighting. Motivated by this, we propose 3D Rasterization, which replaces costly rendering with lightweight rasterization of annotated primitives, enabling augmentations such as counterfactual recov",
+   "url": "https://arxiv.org/abs/2510.04333",
+   "path": "TanitAD Research Lab/Library/papers/2510.04333_RAP-3D-Rasterization-Augmented-End-to-End-Planning.pdf",
+   "bytes": 21387198,
+   "sha256": "79b5a3f272aa454c7d00435a7fa5ef44e9268c80fbcaf406d0fab0d5cadeb8d4",
+   "banked": "2026-09-15",
+   "tags": [
+    "A5",
+    "recovered-orphan"
+   ],
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
+   ]
+  },
+  "2609.03565": {
+   "key": "2609.03565",
+   "kind": "arxiv",
+   "title": "Toward Physically Grounded JEPA World Models for Goal-Conditioned Robotic Planning",
+   "authors": [
+    "Muyuan Liu",
+    "Yue Huang",
+    "Zheng Liang",
+    "Xiang Gao"
+   ],
+   "published": "2026-09-03",
+   "abstract": "Action-conditioned JEPA world models enable planning toward visually specified goals without reconstructing future pixels, yet latent prediction alone does not explicitly encourage the learned representations to retain information relevant to robotic control. We introduce an end-to-end JEPA world model that augments latent prediction with inverse dynamics (IDM) and state alignment (SA). While inverse dynamics discourages latent collapse and makes latent transitions informative of the actions that produced them, state alignment grounds consecutive representations in their associated physical configuration and motion. Across four benchmark tasks, our model attains the highest success rates on TwoRoom (100%), PushT (98%), and OGBench-Cube (87%), while performing comparably to LeWorldModel on Reacher. Our ablation further shows that adding state alignment consistently improves planning succe",
+   "url": "https://arxiv.org/abs/2609.03565",
+   "path": "TanitAD Research Lab/Library/papers/2609.03565_Toward-Physically-Grounded-JEPA-World-Models-for-Goal-Condit.pdf",
+   "bytes": 624995,
+   "sha256": "5c5fcf62f9b19f19a6f2968b4449d430d4d4cbc3e0fa49218e013f96aeb2ebbd",
+   "banked": "2026-09-15",
+   "tags": [
+    "A2",
+    "recovered-orphan"
+   ],
+   "note": "IDM + state-alignment JEPA (v1): 100/85/98/87 % vs LeWM 87/86/96/74, 3 seeds no std; SA needs GT physical state; IDM-only Reacher 63 % | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
+   ]
+  },
+  "2608.27226": {
+   "key": "2608.27226",
+   "kind": "arxiv",
+   "title": "DINOcular: Self-Supervised Visuospatial Representations",
+   "authors": [
+    "Farkhat Almukhamedov",
+    "Sami Azirar",
+    "Hermann Blum"
+   ],
+   "published": "2026-08-27",
+   "abstract": "We introduce a self-supervised framework for learning joint visuospatial representations from RGB-D observations. While modern vision foundation models are trained almost exclusively on RGB images, many embodied systems have access to explicit depth sensing, which provides geometric information that monocular inputs cannot recover. Our method integrates depth-derived geometric priors with a visual backbone through inter-patch and intra-patch fusion, enabling the model to encode both appearance and spatial structure efficiently. The resulting representation shows promising improvements on 3D awareness while preserving semantic transfer: it outperforms prior methods of comparable scale on multiple 3D geometry benchmarks, and remains competitive when probed for standard RGB-D semantic segmentation tasks.",
+   "url": "https://arxiv.org/abs/2608.27226",
+   "path": "TanitAD Research Lab/Library/papers/2608.27226_DINOcular-Self-Supervised-Visuospatial-Representations.pdf",
+   "bytes": 10827998,
+   "sha256": "4e58524bec0f51426ba953768ce31fa8e6b3dd95fa9c5247a02c598f0669a43a",
+   "banked": "2026-09-15",
+   "tags": [
+    "A3",
+    "recovered-orphan"
+   ],
+   "note": "DINOcular v2: RGB-D visuospatial SSL; beats DINOv3-B on ScanNet corr 16.5 vs 15.7 but semantics far below (ADE 33.9 vs 51.8); trade-off stated | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
+   ]
+  },
+  "2608.07408": {
+   "key": "2608.07408",
+   "kind": "arxiv",
+   "title": "Addressable Memory for Video World Models",
+   "authors": [
+    "Xindi Wu",
+    "Sven Elflein",
+    "James Lucas",
+    "Olga Russakovsky",
+    "Laura Leal-Taixé",
+    "Despoina Paschalidou",
+    "Jonathan Lorraine",
+    "Aljoša Ošep"
+   ],
+   "published": "2026-08-07",
+   "abstract": "We study visual persistence in interactive video world models. These models rely on a Key-Value (KV) cache as a growing visual memory to carry forward previously generated frames. However, we find that models can no longer reliably address stored content once rollouts extend beyond the training horizon, because temporal Rotary Positional Embeddings (RoPE) offsets then fall outside the range seen during training and the model struggles to retrieve the relevant visual information through attention. Moreover, naively compressing the cache in the RoPE-rotated space corrupts memory by averaging together incompatible positional phases. To address this, we propose WorldTrace, a training-free memory framework for long-horizon visual persistence. WorldTrace keeps compressed memory addressable by assigning each summary slot a distinct, in-distribution virtual position. Within this addressable cach",
+   "url": "https://arxiv.org/abs/2608.07408",
+   "path": "TanitAD Research Lab/Library/papers/2608.07408_Addressable-Memory-for-Video-World-Models.pdf",
+   "bytes": 8703185,
+   "sha256": "d9fb2a5a98fe0b3bac20df23d223d3f9494b9785d26a3edf800eb6d66161f37d",
+   "banked": "2026-09-15",
+   "tags": [
+    "B12",
+    "recovered-orphan"
+   ],
+   "note": "WorldTrace: KV entries beyond training context unaddressable; rank-fixed virtual positions +15.5 % TempSSIM at N=48, training-free | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
+   ]
+  },
+  "2309.05192": {
+   "key": "2309.05192",
+   "kind": "arxiv",
+   "title": "Towards Viewpoint Robustness in Bird's Eye View Segmentation",
+   "authors": [
+    "Tzofi Klinghoffer",
+    "Jonah Philion",
+    "Wenzheng Chen",
+    "Or Litany",
+    "Zan Gojcic",
+    "Jungseock Joo",
+    "Ramesh Raskar",
+    "Sanja Fidler",
+    "Jose M. Alvarez"
+   ],
+   "published": "2023-09-11",
+   "abstract": "Autonomous vehicles (AV) require that neural networks used for perception be robust to different viewpoints if they are to be deployed across many types of vehicles without the repeated cost of data collection and labeling for each. AV companies typically focus on collecting data from diverse scenarios and locations, but not camera rig configurations, due to cost. As a result, only a small number of rig variations exist across most fleets. In this paper, we study how AV perception models are affected by changes in camera viewpoint and propose a way to scale them across vehicle types without repeated data collection and labeling. Using bird's eye view (BEV) segmentation as a motivating task, we find through extensive experiments that existing perception models are surprisingly sensitive to changes in camera viewpoint. When trained with data from one camera rig, small changes to pitch, yaw",
+   "url": "https://arxiv.org/abs/2309.05192",
+   "path": "TanitAD Research Lab/Library/papers/2309.05192_Towards-Viewpoint-Robustness-in-Bird-s-Eye-View-Segmentation.pdf",
+   "bytes": 8754852,
+   "sha256": "793e51fa3dd89457c48c668ac9e9e7968aa78e75c0a151687a8d677ac058660e",
+   "banked": "2026-09-15",
+   "tags": [
+    "D",
+    "recovered-orphan"
+   ],
+   "note": "Viewpoint robustness: BEV seg IoU 38.42 -> 18.30 Sedan->SUV; 10 deg pitch = -17 % IoU (counter-evidence for zero-shot embodiment transfer) | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
+   ]
+  },
+  "2606.02956": {
+   "key": "2606.02956",
+   "kind": "arxiv",
+   "title": "The Road Ahead in Autonomous Driving: The KITScenes Multimodal Dataset",
+   "authors": [
+    "Richard Schwarzkopf",
+    "Fabian Immel",
+    "Alexander Blumberg",
+    "Jonas Merkert",
+    "Nils Rack",
+    "Kaiwen Wang",
+    "Fabian Konstantinidis",
+    "Julian Truetsch",
+    "Carlos Fernandez",
+    "Annika Bätz",
+    "Kevin Rösch",
+    "Marlon Steiner"
+   ],
+   "published": "2026-06-01",
+   "abstract": "Existing autonomous driving datasets have enabled major progress, but fall short in sensor fidelity, map completeness, or geographic diversity. We present KITScenes Multimodal, a European dataset built around high-fidelity sensors and maps. Our fully synchronized sensor suite combines high-resolution global-shutter cameras, long-range lidar beyond 400m, 4D imaging radar, and redundant GNSS/INS localization. Our HD maps are, to our knowledge, the most complete of any sensor dataset, validated through autonomous driving trials on open-source software. For the first time in a public dataset, all driving-relevant traffic elements, such as traffic lights, are mapped in 3D to a reprojection-accurate level with full topological connectivity. Recorded in cities with irregular street layouts and mixed traffic modes, our dataset complements existing datasets by broadening the available geographic ",
+   "url": "https://arxiv.org/abs/2606.02956",
+   "path": "TanitAD Research Lab/Library/papers/2606.02956_The-Road-Ahead-in-Autonomous-Driving-The-KITScenes-Multimoda.pdf",
+   "bytes": 28653202,
+   "sha256": "a3703d25767c161faa1c20325db5ac0f0bd2317c56c42c9862a344530e05985c",
+   "banked": "2026-09-15",
+   "tags": [
+    "B1",
+    "recovered-orphan"
+   ],
+   "note": "KITScenes Multimodal: 5.7 h Karlsruhe/Frankfurt/Sindelfingen, Lanelet2 HD map with 220 StVO sign classes mapped in 3D (speed values UNVERIFIED) | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-09-15-speed-sign-reader-selection/RESULT.md"
+   ]
+  },
+  "2609.15169": {
+   "key": "2609.15169",
+   "kind": "arxiv",
+   "title": "GRAVA: Grounded Reasoning-to-Action Representation and Learning for Autonomous Driving",
+   "authors": [
+    "Xiao Liu",
+    "Haoyu Li",
+    "Jianghao Leng",
+    "Lin Wang",
+    "Chao Sun"
+   ],
+   "published": "2026-09-14",
+   "abstract": "Driving vision-language-action (VLA) models increasingly reason before acting, but their intermediate reasoning is often weakly grounded in physical scene evidence and loosely connected to executable behavior. We present GRAVA, a framework built around Grounded Reasoning-to-Action (GRA), which unifies grounding, reasoning, and action generation in a single autoregressive stream. GRA links action-relevant language references to 2D visual regions and ego-centric physical states, organizes object interactions and decisions in a trajectory-anchored typed graph, and serializes this structure into grounded reasoning. A single VLM generates this reasoning followed by a compact Executable Planner action that is deterministically decoded into a continuous trajectory. We further introduce an agentic GRA data construction pipeline that combines forward scene grounding with backward trajectory ancho",
+   "url": "https://arxiv.org/abs/2609.15169",
+   "path": "TanitAD Research Lab/Library/papers/2609.15169_GRAVA-Grounded-Reasoning-to-Action-Representation-and-Learni.pdf",
+   "bytes": 17309907,
+   "sha256": "c462fd8b204cc00c63060b9c4e30ab641cc63de9d69adebfbd95c4c97d1f42d5",
+   "banked": "2026-09-15",
+   "tags": [
+    "A4",
+    "recovered-orphan"
+   ],
+   "note": "GRAVA v1 (abstract-only): 8B AR VLA, reasoning at inference; +19.3 % key-object compliance / +20.5 % closed-loop DS vs action-only on an INTERNAL long-tail benchmark | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md"
+   ]
+  },
+  "2603.16666": {
+   "key": "2603.16666",
+   "kind": "arxiv",
+   "title": "Fast-WAM: Do World Action Models Need Test-time Future Imagination?",
+   "authors": [
+    "Tianyuan Yuan",
+    "Zibin Dong",
+    "Yicheng Liu",
+    "Hang Zhao"
+   ],
+   "published": "2026-03-17",
+   "abstract": "World Action Models (WAMs) have emerged as a promising alternative to Vision-Language-Action (VLA) models for embodied control because they explicitly model how visual observations may evolve under action. Most existing WAMs follow an imagine-then-execute paradigm, incurring substantial test-time latency from iterative video denoising, yet it remains unclear whether explicit future imagination is actually necessary for strong action performance. In this paper, we ask whether WAMs need explicit future imagination at test time, or whether their benefit comes primarily from video modeling during training. We disentangle the role of video modeling during training from explicit future generation during inference by proposing \\textbf{Fast-WAM}, a WAM architecture that retains video co-training during training but skips future prediction at test time. We further instantiate several Fast-WAM var",
+   "url": "https://arxiv.org/abs/2603.16666",
+   "path": "TanitAD Research Lab/Library/papers/2603.16666_Fast-WAM-Do-World-Action-Models-Need-Test-time-Future-Imagin.pdf",
+   "bytes": 2715028,
+   "sha256": "4eea24883dcc4d8a5c0f760870f501baabb07db4eb65e5fd6c3b4b500601be8d",
+   "banked": "2026-09-17",
+   "tags": [
+    "A1",
+    "recovered-orphan"
+   ],
+   "note": "Fast-WAM: skipping test-time future imagination matches imagine-then-execute (RoboTwin 91.8 vs 90.6/91.3); removing video CO-TRAINING drops to 83.8 -- future modelling is a TRAINING signal, not a test-time mechanism; 190 ms vs 810 ms | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+   ]
+  },
+  "2607.07196": {
+   "key": "2607.07196",
+   "kind": "arxiv",
+   "title": "Validate the Dream Before You Trust Its Verdict: Admissibility for World-Model Simulators",
+   "authors": [
+    "Christian Oefinger",
+    "Finn Rasmus Schäfer",
+    "Korbinian Moller",
+    "Mattia Piccinini",
+    "Johannes Betz"
+   ],
+   "published": "2026-07-08",
+   "abstract": "Across robotics, World Models (WMs) are increasingly used to evaluate action policies by simulating the consequences of actions in an imagined world, and returning a success or safety verdict. Yet a verdict is only as trustworthy as the WM that produced it, and the WM itself needs to be certified. In video-generation WMs, fidelity metrics such as Fréchet Video Distance (FVD) reward visual realism, but ignore whether the world responds correctly to the policy's actions, including those unseen in training. Classical simulation-based validation assumes a trusted simulator evaluating an untrusted policy, whereas generative WMs are themselves unverified learned artifacts. Hence, we argue that any WM used as a test oracle must first be accredited before its verdicts can serve as evidence. Building on credibility practices from safety-critical simulation, including Verification, Validation &amp",
+   "url": "https://arxiv.org/abs/2607.07196",
+   "path": "TanitAD Research Lab/Library/papers/2607.07196_Validate-the-Dream-Before-You-Trust-Its-Verdict-Admissibilit.pdf",
+   "bytes": 300931,
+   "sha256": "849ddb44f6f7f1da4d3d6ac5e81cd596460c466460de36f384796ef352baffd4",
+   "banked": "2026-09-17",
+   "tags": [
+    "A5-benchmarks",
+    "C3",
+    "recovered-orphan"
+   ],
+   "note": "Admissibility ladder L0-L4 for world-model simulators used as test oracles; MEASURED reversal on two driving WMs -- higher L0 visual quality ranks LOWER on L1-L2 action-following | Admissibility ladder FULL TEXT: L1 operational = IEC via ACT-Estimator significantly above 1/8 chance; paper explicitly scopes OUT reconstruction-based (NeRF/3DGS) simulators | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-18-ladder-l1-row14/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+   ]
+  },
+  "2608.20974": {
+   "key": "2608.20974",
+   "kind": "arxiv",
+   "title": "WA-JEPA: Rethinking the Video JEPA Paradigm for World-Action Modeling in Autonomous Driving",
+   "authors": [
+    "Xinlin Wang",
+    "Yujiao Xiang",
+    "Yuheng Zhou",
+    "Jingqi Wang",
+    "Minqing Huang",
+    "Jiajie Huang",
+    "Dongxu Wei",
+    "Tingguang Zhou",
+    "Xiyang Wang",
+    "Gong Chen",
+    "Zhi Xu",
+    "Feiyang Tan"
+   ],
+   "published": "2026-08-21",
+   "abstract": "Video Joint Embedding Predictive Architecture (V-JEPA) learns powerful spatiotemporal representations from video through self-supervised latent feature prediction. However, V-JEPA is built around random-mask completion and deterministic regression, making it fundamentally ill-suited for autonomous driving planning that demands future-directed prediction tightly coupled with action. To address this, we rethink the V-JEPA paradigm and present WA-JEPA, a V-JEPA-native world-action model designed for autonomous driving planning. Instead of random spatiotemporal masking, WA-JEPA employs hybrid future-masked pre-training, where the model infers future latents from observed context. Departing from deterministic regression, we recast future prediction as conditional flow matching over latent futures, which substantially improves the model's ability to generate plausible future latents for downst",
+   "url": "https://arxiv.org/abs/2608.20974",
+   "path": "TanitAD Research Lab/Library/papers/2608.20974_WA-JEPA-Rethinking-the-Video-JEPA-Paradigm-for-World-Action.pdf",
+   "bytes": 7370222,
+   "sha256": "6fdb5080e8d8f844df8660ecf96553bca17d3fbdee949d507a77f746e5566cf9",
+   "banked": "2026-09-17",
+   "tags": [
+    "A2",
+    "recovered-orphan"
+   ],
+   "note": "A2 JEPA rotation 2026-09-17 | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+   ]
+  },
+  "2608.07409": {
+   "key": "2608.07409",
+   "kind": "arxiv",
+   "title": "UniJEPA: A Unified Joint-Embedding Predictive Architecture for Task-Agnostic Visual World Modeling",
+   "authors": [
+    "An Lanji",
+    "Dawei Liu",
+    "Jin Li",
+    "Haoran Xu",
+    "Mei Chen",
+    "Yu Tian"
+   ],
+   "published": "2026-08-07",
+   "abstract": "Joint-Embedding Predictive Architectures (JEPAs) have emerged as a principled framework for self-supervised learning of world models in compact latent spaces, yet existing methods are fragmented: some predict masked parts of a single image in latent space (I-JEPA), others learn to predict global photometric transformations (Image World Models), while video-scale JEPAs predict future temporal states and are post-trained for action-conditioned planning (V-JEPA~2, DINO-World, DINO-WM). These objectives are treated as distinct recipes with separate encoders, predictors, and anti-collapse regularizers, hindering a single model from unifying image-level and video-level world modeling. We present UniJEPA, a unified JEPA that jointly learns photometric prediction (image-level transformations) and temporal prediction (video-level next-state dynamics) in one shared latent space. A single end-to-en",
+   "url": "https://arxiv.org/abs/2608.07409",
+   "path": "TanitAD Research Lab/Library/papers/2608.07409_UniJEPA-A-Unified-Joint-Embedding-Predictive-Architecture-fo.pdf",
+   "bytes": 1953245,
+   "sha256": "cfa87aea05d48b018ac8e95132e6218e5837712b10ea1c4ee9679a84d4184269",
+   "banked": "2026-09-17",
+   "tags": [
+    "A2",
+    "recovered-orphan"
+   ],
+   "note": "A2 JEPA rotation 2026-09-17 | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-17/RESULT.md"
+   ]
+  },
+  "2609.06055": {
+   "key": "2609.06055",
+   "kind": "arxiv",
+   "title": "DriveZero: End-to-End Driving Beyond Human Demonstrations",
+   "authors": [
+    "Hao He",
+    "Chengcheng Hu",
+    "Zirun Su",
+    "Heng Zhang",
+    "Haisong Liu",
+    "Jinke Li",
+    "Haochen Tian",
+    "Zhenwei Shen",
+    "Hongyang Li",
+    "Zhichao Li",
+    "Yunchen Yang",
+    "Bochao Huang"
+   ],
+   "published": "2026-09-05",
+   "abstract": "Most end-to-end autonomous-driving systems learn by imitating human driving logs, leaving their learned behavior constrained by the quality and behavioral coverage of the recorded trajectories. This report presents DriveZero, an end-to-end system that learns driving behavior beyond human demonstrations. It decomposes driving into a perception model and an action model, pretrains each in the regime best suited to it, and combines them into one end-to-end planner. The two models call for different learning recipes: perception must understand the world, and benefits from massive and diverse visual data; action must interact with it, and requires closed-loop feedback. On the action side, we introduce DriveRL, a mixed-agent closed-loop reinforcement-learning framework. It converts real driving logs into interactive worlds, where a privileged teacher policy is trained with PPO through closed-l",
+   "url": "https://arxiv.org/abs/2609.06055",
+   "path": "TanitAD Research Lab/Library/papers/2609.06055_DriveZero-End-to-End-Driving-Beyond-Human-Demonstrations.pdf",
+   "bytes": 9392899,
+   "sha256": "82a00048648b155ecad83888b94be95a39c3f6511cb8497eb2fb435feb72797b",
+   "banked": "2026-09-18",
+   "tags": [
+    "A1-world-models",
+    "recovered-orphan"
+   ],
+   "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "2602.11229": {
+   "key": "2602.11229",
+   "kind": "arxiv",
+   "title": "Latent Generative Solvers for Generalizable Long-Term Physics Simulation",
+   "authors": [
+    "Zituo Chen",
+    "Sili Deng"
+   ],
+   "published": "2026-02-11",
+   "abstract": "Reliable physics simulation demands two capabilities that today's neural PDE solvers do not deliver together: generalization across heterogeneous PDE families, and stability under long autoregressive rollouts. Deterministic operators accumulate error geometrically, while existing probabilistic solvers are confined to a single PDE family or short horizons. We close this gap with the \\textbf{Latent Generative Solver} (LGS), three coupled components: (i) a Physics VAE (PhyVAE) compressing twelve PDE families into a shared latent manifold; (ii) a Pyramidal Flow-Forcing Transformer (PFlowFT) that generates the next latent by flow matching, conditioned on a per-trajectory context updated on the model's own predictions; and (iii) input noising during training, for which we derive a sufficient-condition contraction bound explaining the observed long-horizon stability. Pretrained on a 2.5\\,M-traj",
+   "url": "https://arxiv.org/abs/2602.11229",
+   "path": "TanitAD Research Lab/Library/papers/2602.11229_Latent-Generative-Solvers-for-Generalizable-Long-Term-Physic.pdf",
+   "bytes": 3751001,
+   "sha256": "afd68a1b989969ebba82aaa79abd4e1614dbd6c7e2e6d21d122ff66a27f115aa",
+   "banked": "2026-09-18",
+   "tags": [
+    "B11-physics-operators",
+    "recovered-orphan"
+   ],
+   "note": "LGS: latent flow-matching transition is load-bearing (+145-155% L2RE without) and input noising gives a contraction bound L_T(1-k)<1 for long rollouts; 1-step accuracy cost <=16% | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "2605.31476": {
+   "key": "2605.31476",
+   "kind": "arxiv",
+   "title": "IDOL: Inverse-Dynamics-Guided Future Prediction for End-to-End Autonomous Driving",
+   "authors": [
+    "Chenghao Zhang",
+    "Timin Li",
+    "Dongmei Li"
+   ],
+   "published": "2026-05-29",
+   "abstract": "End-to-end autonomous driving has emerged as a compelling paradigm for learning planning directly from sensor observations, while recent world-model-based approaches further enrich this paradigm by enabling explicit reasoning about how the scene may evolve in the future. Yet future prediction alone does not guarantee better planning unless the predicted evolution can be converted into planning-relevant trajectory updates. Many current methods still forecast future scene states without explicitly decoding the motion implications hidden in state transitions. As a result, future reasoning often remains descriptively useful but only weakly coupled to executable motion generation. To address this limitation, we propose \\mathbf{IDOL}, an inverse-dynamics-guided future prediction framework for world-model-based end-to-end planning in latent BEV space, where inverse dynamics serves as the key br",
+   "url": "https://arxiv.org/abs/2605.31476",
+   "path": "TanitAD Research Lab/Library/papers/2605.31476_IDOL-Inverse-Dynamics-Guided-Future-Prediction-for-End-to-En.pdf",
+   "bytes": 4096455,
+   "sha256": "4e55da5aa7369248f39a8e3832913beb5648cef1ad780705d80f18e4dfb99a73",
+   "banked": "2026-09-18",
+   "tags": [
+    "A1-world-models",
+    "recovered-orphan"
+   ],
+   "note": "IDOL (abstract-only): inverse dynamics on adjacent predicted BEV latent states recovers motion deltas that update the plan; SOTA claims on navtest/navhard | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "2605.30542": {
+   "key": "2605.30542",
+   "kind": "arxiv",
+   "title": "Physically Viable World Models: A Case for Query-Conditioned Embodied AI",
+   "authors": [
+    "Adam J. Thorpe",
+    "Stepan Tretiakov",
+    "Cheng-Hsi Hsiao",
+    "Su Ann Low",
+    "Xingjian Li",
+    "Hassan Iqbal",
+    "Neel P. Bhatt",
+    "Ufuk Topcu",
+    "Krishna Kumar"
+   ],
+   "published": "2026-05-28",
+   "abstract": "World models for embodied AI must be physically viable: constructed to answer intervention queries by representing the physical structure governing action outcomes, rather than merely predicting future observations. Existing observation-predictive world models can produce visually plausible but physically wrong rollouts. This failure is structural; distinct physical systems can look identical yet diverge under intervention. We expose this problem with controlled benchmarks that fix the visible scene while varying latent physics. We show that such models may recommend infeasible actions, mispredict interaction outcomes, or certify unsafe behavior. We argue that embodied AI requires world models that identify the simplest physical abstraction sufficient to answer an intervention query. Such a model comprises modular components, including environment representation, latent state and paramet",
+   "url": "https://arxiv.org/abs/2605.30542",
+   "path": "TanitAD Research Lab/Library/papers/2605.30542_Physically-Viable-World-Models-A-Case-for-Query-Conditioned.pdf",
+   "bytes": 41289105,
+   "sha256": "46273291e69dad360a94522458db6060f4a1731a34eb3f724bff1c5f3ec57aff",
+   "banked": "2026-09-18",
+   "tags": [
+    "B11-physics-operators",
+    "recovered-orphan"
+   ],
+   "note": "Physically Viable World Models (abstract-only): observation-predictive WMs fail when distinct physical systems look identical but diverge under intervention; argues query-conditioned minimal physical abstraction | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "2605.31041": {
+   "key": "2605.31041",
+   "kind": "arxiv",
+   "title": "Does Visual Information Play a Decisive Role in Vision-Language-Action Model Driving Behavior?",
+   "authors": [
+    "Jingtao He",
+    "Hongliang Lu",
+    "Xiaoyun Qiu",
+    "Yixuan Wang",
+    "Xinhu Zheng"
+   ],
+   "published": "2026-05-29",
+   "abstract": "Vision-Language-Action (VLA) models have demonstrated promising capability in autonomous driving, highlighting the potential of unified multimodal architectures for jointly modeling perception and planning. However, how current VLA-based driving behavior is grounded in visual information remains poorly understood. Existing evaluation protocols mainly focus on aggregate performance metrics, lacking structured and practical diagnostics to quantify visual-behavior dependency. In this work, we introduce a structured multi-level visual perturbation framework to analyze visual-behavior dependency in VLA-based driving models systematically. The framework organizes controlled visual perturbations along three complementary dimensions: channellevel degradation, information-level disruption, and structurelevel modification. We apply it to VLA-based driving systems and evaluate behavioral responses ",
+   "url": "https://arxiv.org/abs/2605.31041",
+   "path": "TanitAD Research Lab/Library/papers/2605.31041_Does-Visual-Information-Play-a-Decisive-Role-in-Vision-Langu.pdf",
+   "bytes": 6236427,
+   "sha256": "157bffb3d85bf69f46399cf6bdbaa1fb48ac79b6272e715806df90b9c39dd23f",
+   "banked": "2026-09-18",
+   "tags": [
+    "A4-vla",
+    "recovered-orphan"
+   ],
+   "note": "VLA visual grounding (Impromptu-VLA 3B): removing images entirely moves open-loop L2 only +7.1% but NeuroNCAP closed-loop -14.6%; downsampling 75% -27.2% closed-loop. Open-loop is blind to vision dependence | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "1902.03393": {
+   "key": "1902.03393",
+   "kind": "arxiv",
+   "title": "Improved Knowledge Distillation via Teacher Assistant",
+   "authors": [
+    "Seyed-Iman Mirzadeh",
+    "Mehrdad Farajtabar",
+    "Ang Li",
+    "Nir Levine",
+    "Akihiro Matsukawa",
+    "Hassan Ghasemzadeh"
+   ],
+   "published": "2019-02-09",
+   "abstract": "Despite the fact that deep neural networks are powerful models and achieve appealing results on many tasks, they are too large to be deployed on edge devices like smartphones or embedded sensor nodes. There have been efforts to compress these networks, and a popular method is knowledge distillation, where a large (teacher) pre-trained network is used to train a smaller (student) network. However, in this paper, we show that the student network performance degrades when the gap between student and teacher is large. Given a fixed student network, one cannot employ an arbitrarily large teacher, or in other words, a teacher can effectively transfer its knowledge to students up to a certain size, not smaller. To alleviate this shortcoming, we introduce multi-step knowledge distillation, which employs an intermediate-sized network (teacher assistant) to bridge the gap between the student and t",
+   "url": "https://arxiv.org/abs/1902.03393",
+   "path": "TanitAD Research Lab/Library/papers/1902.03393_Improved-Knowledge-Distillation-via-Teacher-Assistant.pdf",
+   "bytes": 1260156,
+   "sha256": "4b84d3d4c455a59c61ab77199e752e17a0947766e50558886a9bb9142a8a20ad",
+   "banked": "2026-09-18",
+   "tags": [
+    "D-opponent-counter",
+    "recovered-orphan"
+   ],
+   "note": "TAKD: distillation degrades when the teacher-student capacity gap is large; an intermediate teacher assistant recovers it. Counter-evidence to unqualified 'distil any teacher into any student' | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
+   ]
+  },
+  "2608.09730": {
+   "key": "2608.09730",
+   "kind": "arxiv",
+   "title": "World Tokens: Enhancing Embodied Policies with Training-Time World Modeling",
+   "authors": [
+    "Qu Tang",
+    "Benhui Zhuang",
+    "Bo Yuan",
+    "Xue Yu",
+    "Longteng Guo",
+    "Junlan Feng"
+   ],
+   "published": "2026-08-10",
+   "abstract": "Vision-language-action (VLA) models are a widely adopted paradigm for embodied policies. They excel at efficient closed-loop control but do not explicitly model how physical scenes evolve as a task unfolds. Recently emerging world-action models (WAMs) leverage pretrained video world models to capture spatiotemporal evolution, yet retaining future generation or a large video backbone in the control loop substantially increases inference cost. We introduce World Tokens, an embodied policy architecture built around a World Adapter that bridges visual-language understanding, world-dynamics modeling, and action generation. It uses world modeling during training to enhance the action policy while preserving efficient deployment. Specifically, the World Adapter transforms VLM features into a fixed set of world tokens, which condition a jointly fine-tuned future-video denoiser and simultaneously",
+   "url": "https://arxiv.org/abs/2608.09730",
+   "path": "TanitAD Research Lab/Library/papers/2608.09730_World-Tokens-Enhancing-Embodied-Policies-with-Training-Time.pdf",
+   "bytes": 4900519,
+   "sha256": "04650e2cea439ca97d52654aee35a11d432ee7008a5955a033eb79364600f399",
+   "banked": "2026-09-19",
+   "tags": [
+    "A4_vla"
+   ],
+   "note": "World Tokens: training-time-only world modelling w/ exclusive routing; R1 Pro 59.4->76.0% vs matched action-only; bypass ablation 97.0->94.1 LIBERO-Long; no seeds",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2608.10413": {
+   "key": "2608.10413",
+   "kind": "arxiv",
+   "title": "DriveVLA-M0: Failure-Aware Memory Augmentation for Autonomous Driving",
+   "authors": [
+    "Zebin Xing",
+    "Yupeng Zheng",
+    "Qiang Chen",
+    "Linbo Wang",
+    "Yichen Zhang",
+    "Pengxuan Yang",
+    "Junli Wang",
+    "Deheng Qian",
+    "Xiaoqing Ye",
+    "Junyu Han",
+    "Yifeng Pan",
+    "Qichao Zhang"
+   ],
+   "published": "2026-08-11",
+   "abstract": "Vision-Language-Action (VLA) models have recently emerged as a promising paradigm for end-to-end autonomous driving by enabling unified reasoning across perception, language, and planning. However, existing approaches lack mechanisms to exploit past failures or adapt to distribution shifts, causing the model to persistently underperform on similar scenarios where it has previously failed. In this paper, we propose DriveVLA-M0, a retrieval-augmented VLA with failure-aware latent memory. We construct a latent memory pool that stores failure cases along with their structure scene representations and expert trajectory labels, and design a dedicated Retrieve Model that decouples static road structure and dynamic agent interactions to enable structurally grounded retrieval. At inference time, retrieved cases are injected into the model via a lightweight decoupled LoRA-based test-time training ",
+   "url": "https://arxiv.org/abs/2608.10413",
+   "path": "TanitAD Research Lab/Library/papers/2608.10413_DriveVLA-M0-Failure-Aware-Memory-Augmentation-for-Autonomous.pdf",
+   "bytes": 6689868,
+   "sha256": "1368b1ae2b8bfcf3442363436ea5b07fefbf3268787c0d44cf9ad4e608664ff2",
+   "banked": "2026-09-19",
+   "tags": [
+    "B10_retrieval"
+   ],
+   "note": "DriveVLA-M0: failure memory from ORACLE-scored train failures, LoRA TTT supervised by stored expert labels; +1.3 PDMS (91.0->92.3); navhard 47.0 two-stage; ego at inference",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2609.03294": {
+   "key": "2609.03294",
+   "kind": "arxiv",
+   "title": "Latent Energy Action Planning with World Models",
+   "authors": [
+    "Phu Pham",
+    "Aniket Bera"
+   ],
+   "published": "2026-09-03",
+   "abstract": "Latent world models support efficient model predictive control from high-dimensional observations, yet optimizing a single learned latent objective can favor action sequences whose decoder-predicted terminal descriptor does not match the goal descriptor. We introduce Latent Energy Action Planning (LEAP), which treats the complete action horizon as a differentiable variable and optimizes it through a frozen LeWorldModel (LeWM). LEAP couples terminal latent goal matching with a terminal-window state energy. Low energy requires the predicted terminal latent to agree with the goal latent and the decoder-predicted terminal descriptor to agree with the goal descriptor. A frozen goal-conditioned proposal initializes the search, a quasi-Newton solver refines actions through the autoregressive rollout, and post-optimization projection enforces the admissible action range. Across four control doma",
+   "url": "https://arxiv.org/abs/2609.03294",
+   "path": "TanitAD Research Lab/Library/papers/2609.03294_Latent-Energy-Action-Planning-with-World-Models.pdf",
+   "bytes": 4620991,
+   "sha256": "bf8bea53e42e017a1b05ffaaf428140b5675a1069d6b49d44528c241768e9535",
+   "banked": "2026-09-19",
+   "tags": [
+    "A2_jepa"
+   ],
+   "note": "LEAP: quasi-Newton action optimisation through frozen LeWM, 77.5->94.8% vs CEM over 4 domains (abstract-only)",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2501.09038": {
+   "key": "2501.09038",
+   "kind": "arxiv",
+   "title": "Do generative video models understand physical principles?",
+   "authors": [
+    "Saman Motamed",
+    "Laura Culp",
+    "Kevin Swersky",
+    "Priyank Jaini",
+    "Robert Geirhos"
+   ],
+   "published": "2025-01-14",
+   "abstract": "AI video generation is undergoing a revolution, with quality and realism advancing rapidly. These advances have led to a passionate scientific debate: Do video models learn \"world models\" that discover laws of physics -- or, alternatively, are they merely sophisticated pixel predictors that achieve visual realism without understanding the physical principles of reality? We address this question by developing Physics-IQ, a comprehensive benchmark dataset that can only be solved by acquiring a deep understanding of various physical principles, like fluid dynamics, optics, solid mechanics, magnetism and thermodynamics. We find that across a range of current models (Sora, Runway, Pika, Lumiere, Stable Video Diffusion, and VideoPoet), physical understanding is severely limited, and unrelated to visual realism. At the same time, some test cases can already be successfully solved. This indicate",
+   "url": "https://arxiv.org/abs/2501.09038",
+   "path": "TanitAD Research Lab/Library/papers/2501.09038_Do-generative-video-models-understand-physical-principles.pdf",
+   "bytes": 22730535,
+   "sha256": "77b0e4cf073a43ec9c9f75f6c766b330068641213cf7ae1395647dab76212175",
+   "banked": "2026-09-19",
+   "tags": [
+    "A1_world_models"
+   ],
+   "note": "Physics-IQ: video-model physical understanding severely limited and UNRELATED to visual realism (counter to Jim Fan WAM claim)",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2609.15781": {
+   "key": "2609.15781",
+   "kind": "arxiv",
+   "title": "When the World Lies: Backdoor Attacks on Latent World Models for Downstream Control",
+   "authors": [
+    "Roberto Riaño",
+    "Gorka Abad",
+    "Stjepan Picek",
+    "Aitor Urbieta"
+   ],
+   "published": "2026-09-14",
+   "abstract": "Pretrained world models, learned simulators that encode an observation into a latent state and predict how it evolves under actions, are beginning to be reused as off-the-shelf dynamics backbones for control, like pretrained encoders and language models are reused today. We show that this reuse opens a supply-chain backdoor: an adversary who controls only a released checkpoint can hijack the downstream controller, even though the victim trains and evaluates entirely on clean data and never sees the trigger. The attack encodes no explicit trigger-to-action rule. Instead, the poisoned model routes trigger-bearing observations into a chosen latent region and reshapes the local dynamics there, so that the victim's own optimization (Dreamer-style actor training in imagination, or MPC/CEM planning over predicted futures) re-discovers the attacker's target action on its own. Across several cont",
+   "url": "https://arxiv.org/abs/2609.15781",
+   "path": "TanitAD Research Lab/Library/papers/2609.15781_When-the-World-Lies-Backdoor-Attacks-on-Latent-World-Models.pdf",
+   "bytes": 2111533,
+   "sha256": "42145a0fb3009015d3536b44c95431c24c4e11ee682ae39605d7ce9c0b64e141",
+   "banked": "2026-09-19",
+   "tags": [
+    "A1_world_models"
+   ],
+   "note": "Backdoored latent WM checkpoint hijacks downstream MPC/actor; passes clean diagnostics (>=75% clean success) (abstract-only)",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2605.07931": {
+   "key": "2605.07931",
+   "kind": "arxiv",
+   "title": "One Token Per Frame: Reconsidering Visual Bandwidth in World Models for VLA Policy",
+   "authors": [
+    "Zuojin Tang",
+    "Shengchao Yuan",
+    "Xiaoxin Bai",
+    "Zhiyuan Jing",
+    "De Ma",
+    "Gang Pan",
+    "Bin Liu"
+   ],
+   "published": "2026-05-08",
+   "abstract": "Vision-language-action (VLA) models increasingly rely on auxiliary world modules to plan over long horizons, yet how such modules should be parameterized on top of a pretrained VLA remains an open design question. Existing world-model-augmented VLAs typically pass the per-frame visual stream into the world module at high visual bandwidth and treat its rollout as a side product of action prediction; under a constrained adaptation budget on a frozen backbone, this leaves both the per-frame representation and the latent action coupling under-examined. We introduce OneWM-VLA, which compresses each view into a single semantic token per frame through an Adaptive Attention Pooling, and produces the resulting latent stream and the action trajectory under a single flow-matching objective rather than connecting them through a separate decoder. Empirically, we find that per-frame visual bandwidth c",
+   "url": "https://arxiv.org/abs/2605.07931",
+   "path": "TanitAD Research Lab/Library/papers/2605.07931_One-Token-Per-Frame-Reconsidering-Visual-Bandwidth-in-World.pdf",
+   "bytes": 2230359,
+   "sha256": "ce0d3abb81a58a7698e90f96bba15c4a6652103bf9a1b3ded7b7bd5382be37df",
+   "banked": "2026-09-19",
+   "tags": [
+    "B8_tokenizers"
+   ],
+   "note": "OneWM-VLA: 1 pooled token/view beats 3/6/12 monotonically (53.1 vs 20.5% MetaWorld H30); no error bars; manipulation only",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
   }
  }
 }

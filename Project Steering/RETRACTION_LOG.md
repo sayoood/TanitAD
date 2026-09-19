@@ -15647,3 +15647,13 @@ was measured on `D:/Projects/TanitAD-artifacts` only — one directory, one prob
 priced as a programme-level blocker. ⇒ **Before writing "X is not on this box", probe a second
 path, a second name, and the tool that owns the fact** (here: the HF fetch receipt that says
 where the fetch wrote).
+
+## RETR-2026-09-19-POSTED-LIMIT-REFIND — a re-find reported as a first finding
+
+**What was said (LAB-RUN-016 frontier scan, 2026-09-19 morning):** *"THE MM STANDING QUESTION HAS ITS FIRST POSITIVE ANSWER: two open corpora carry a map-sourced posted speed limit"* (nuPlan `speed_limit_mps`, WOMD `speed_limit_mph`), and in the search log *"the first POSITIVE result in 9 days of probes"*.
+
+**What is true:** `TanitAD Research Lab/Data Engineering/Research/2026-09-13-posted-speed-limit-supplier/RESULT.md` **F6** had already identified both fields six days earlier (PUBLISHED-CODE), together with the AV2 negative. The facts in the morning report were correct; its **novelty claim** was false. The genuinely new result arrived the same afternoon: the **MEASURED** coverage (`TanitAD Research Lab/Data Engineering/Research/2026-09-19-nuplan-posted-limit-coverage/RESULT.md`: LV/PIT 100 %, BOS 7.1 %, SG 0 %).
+
+**ROOT-CAUSE CLASS:** *V-1 ("search the Library before the web") applied to the Library and the claims register, but not to the Lab's own RESULT packages.* The earlier finding lived in a domain package, which neither `library.json` nor `OPPONENT_CLAIMS_REGISTER.md` indexes. ⇒ **Before calling anything "first", grep `TanitAD Research Lab/*/Research/*/RESULT.md` for the key identifier** (here `speed_limit_mph`), and name the grep in the claim. Same family as *"absence found at one location is not absence"*, with the object swapped from a fact to a priority claim.
+
+<!-- RETR-2026-09-19-POSTED-LIMIT-REFIND -->

@@ -153,31 +153,40 @@ several trainings are live. Logged for the PI rather than taken unilaterally.
 
 ---
 
-## 5b. ⚠ Suite status, stated honestly
+## 5b. ⚠️ Suite status, stated honestly
 
 The two repaired files: **21 passed, 0 failed** (reproduced 3×).
 
-The WIDER suite is **NOT green at HEAD, and was not before this change**:
-**7,720 tests collected, 2 collection ERRORS**, both missing implementation
-symbols, both landed committed-broken in bb030da and untouched by this work:
+The WIDER suite is **NOT green at HEAD, and was not green before this change**:
+**7,720 tests collected, 2 collection ERRORS**. Both are missing implementation
+symbols, both landed committed-broken in `bb030da`, and neither is touched by this
+work:
 
 | module | missing symbol |
 |---|---|
-| tests/test_metric_decode_refusal.py | UntrainedMetricReadout from tanitad.models.v6 |
-| tests/test_refa_v1_dk_hook.py | DistanceKeepingSpec from tanitad.refs.refa_v1 |
+| `tests/test_metric_decode_refusal.py` | `UntrainedMetricReadout` from `tanitad.models.v6` |
+| `tests/test_refa_v1_dk_hook.py` | `DistanceKeepingSpec` from `tanitad.refs.refa_v1` |
 
-Each symbol occurs ONLY in its own test file and nowhere in the implementation.
-A full run past those errors was started and **stopped at 31 %** (~80 min
-projected on this CPU box); it showed further failures in unrelated modules,
-which are **NOT enumerated here** and are therefore not claimed either way.
+Each symbol occurs ONLY inside its own test file and nowhere in the implementation.
+
+A full run past those two errors was started and **stopped at 31 %** (~80 min
+projected on this CPU box). It showed further failures in unrelated modules; those are
+**NOT enumerated here and are therefore not claimed either way**.
 
 ⭐ That this change cannot reach them is MEASURED, not argued, three ways:
-1. no module imports either repaired file (one comment string in
-   tanitad/rl/refc_adapter.py:391 mentions a filename);
-2. the only shared-global vector is _run(spy=True) patching
-   RefCV3Model.forward — after both files run, that attribute is
-   is-identical to its pre-run value, so the patch does not leak;
-3. stack/scripts/refc_v3_train.py is byte-unchanged (md5 verified).
+
+1. **No module imports either repaired file.** The only mention anywhere is a comment
+   string in `tanitad/rl/refc_adapter.py:391` naming one of them.
+2. **The only shared-global vector is closed.** `_run(spy=True)` patches
+   `RefCV3Model.forward`, which is shared state. After both files run, that attribute
+   is `is`-identical to its pre-run value — the patch does not leak.
+3. **`stack/scripts/refc_v3_train.py` is byte-unchanged**, md5 verified after each of
+   the three in-place mutations.
+
+⚠️ What is NOT established: the full-suite failure set, base vs patched, in the style
+of the WP-C record's `suite_failureset_base.txt` / `suite_failureset_patched.txt`. It
+would cost ~2.7 CPU-hours for the pair and was judged not worth it given (1)–(3). Say
+so rather than implying a green suite.
 
 ## 6. Deliverable manifest
 
