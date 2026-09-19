@@ -12185,3 +12185,24 @@ before scoring anything with it.
 | id | claim | evidence | status |
 |---|---|---|---|
 | **D-DAC-HUMAN-ZERO-1** | WITH THE SAM3 MAP LIVE, THE DRIVABLE-AREA COMPLIANCE TERM ZEROES THE RECORDED HUMAN ON 44.6 % OF HELD-OUT WINDOWS -- `dac = 0` on **328 / 736**, and because PDMS multiplies by DAC the human's own PDMS is 0 there. The rule is strict by construction (`pdm_proxy.dac_from_drivable`): DAC is 0 if ANY of the 4 ego-box corners at ANY of 41 ticks lands on a SEEN cell with drivable fraction < 0.5 -- **164 samples per trajectory**, so one noisy cell at range zeroes the window. The banked ddv2 dumps are NOT a counterexample: they read `human_pdms` 0.986 with 0/493 zeros because **DAC was DEAD** there (nothing reached the drivable map, so the multiplier defaulted to ONES); the live/dead stamp postdates them and no ddv2 log carries it. This is the FIRST reading of human DAC compliance with the map live. | MEASURED (TrainingFlyWheel, 736 held-out windows, 0 GPU, on the banked S1 round-trip artifact); the rule re-read at source by the Master Mind | **OPEN -- cause not separated.** Three candidates, none excluded: a noisy or under-segmented SAM3 drivable channel at range; an ANY-corner/ANY-tick rule too strict for a 0.5 m grid; the human legitimately clipping unmapped surface. Binding already: S1's collided-selection statistic is UNAFFECTED (no DAC), but every PDMS/EP/DAC number on this corpus is dominated by a term that fails the human half the time, and `PREREG_D9_REWARD_REPAIR`'s reward multiplies progress by this same DAC with the HUMAN as reference |
+
+<!-- DAC-CAUSE-SEPARATED-2026-09-20 -->
+> ⭐ **`D-DAC-HUMAN-ZERO-1` — CAUSE SEPARATED, 2026-09-20** (`TanitAD Research Lab/Architecture &
+> Inference/Research/2026-09-20-dac-human-zero-anatomy/`; the harness's own loaders reproduce the
+> landed 0.4457 on **736/736** windows before anything is characterised). ⛔ **It is the READ-OUT,
+> not the map and not the human:** `dac_from_drivable` reads the single `drivable` channel of nine,
+> so the **paint the human drives over reads as non-drivable** — of 4,431 violating samples, the
+> argmax class is a lane line 1,443, a crosswalk 1,244, "seen, no map class" 755, sidewalk 532,
+> drivable-but-mixed 354, arrow/text 103; **264 of 328 zeroed windows (80.5 %) are zeroed ONLY by
+> cells whose mass is road surface**, and **63 windows are zeroed at TICK 0**, where the recorded
+> car is on the road by construction. **Under-segmentation AT RANGE is REFUTED:** the violation
+> rate is **5.54 % at 0–15 m** and **2.17 % at 45–60 m**, and under the footprint the map reads
+> **0.93–0.95** drivable against A1's grid-wide **0.31–0.35** (a 2.7× enrichment). Seen-abstention
+> cannot help (15 of 4,431 samples sit below seen 0.75). **10.1 % of zeroed windows carry any
+> explicitly off-road cell.** ⚠️ **Strictness and definition are different axes:** every
+> strictness-only knob bottoms out at **19.6 %**, while definition changes read **8.7 %**
+> (road surface = drivable + paint) and **4.5 %** (explicit off-road only). ⛔ Those two are
+> **PROPOSALS, not findings** — each needs its own pre-registration, known-value control, and a
+> statement of what it would MISS (the off-road rule is silent wherever the map has no class).
+> Controls: all-drivable reads 1.0 under all 12 variants; all-sidewalk and all-"no class" read 0
+> under the current rule. **The current rule's numbers stand exactly as landed; nothing was tuned.**

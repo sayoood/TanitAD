@@ -1,0 +1,197 @@
+{
+ "_what": "D-DAC-HUMAN-ZERO-1 anatomy: the human's DAC on the S1 held-out windows",
+ "_evidence_class": "MEASURED (ours; CPU only, read-only)",
+ "inputs": {
+  "config": "C:/Users/Admin/tanitad-caches/a8-occupancy-5k-20260919/run/config.json",
+  "cache": "D:/Projects/TanitAD-artifacts/v2ep-eval124clean-416x1024cyl-halfB",
+  "labels": "C:/Users/Admin/tanitad-caches/a7-imagenet-knockout-20260919/inputs/s2_labels_v8_eval.jsonl.gz",
+  "agents": "D:/Projects/TanitAD-artifacts/b1-agent-join-3d-20260917/b1eval_agents_3d.jsonl.xz",
+  "maps": "D:/Projects/TanitAD-artifacts/sam3-maps-eval",
+  "roundtrip": "D:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-19-s1-collision-gate\\raw\\roundtrip_halfB_A8cfg.json",
+  "a1": "C:/Users/Admin/qland/a1_per_half_floor.json"
+ },
+ "module_md5_at_start": {
+  "s1_pass": "63ce252d1ed9bd836bbba41132b6a745",
+  "tanitad.rl.pdm_proxy": "524f72483aa52d1f03a9ca15308e0e11",
+  "tanitad.data.semantic_map_gt": "aefbf54f4cb963f6cb68444ddd96f9a8"
+ },
+ "windows": {
+  "drawn": 1000,
+  "eligible": 736,
+  "scored": 736,
+  "no_map": 0
+ },
+ "reproduction": {
+  "windows_where_mine_==_loader_==_published": 736,
+  "reproduced": true,
+  "published_zero_rate": 0.4457
+ },
+ "zero_rate_by_rule": {
+  "V0 current rule (any corner, any tick, drivable < 0.50)": 0.4457,
+  "V1 >= 2 corners at the same tick": 0.1957,
+  "V2 >= 2 consecutive ticks": 0.3342,
+  "V2b >= 4 consecutive ticks": 0.2323,
+  "V3 threshold 0.25": 0.2649,
+  "V4 abstain unless seen fraction >= 0.75": 0.4443,
+  "V5 abstain unless seen fraction >= 0.90": 0.4429,
+  "P1 road surface (drivable + paint) < 0.50": 0.087,
+  "P2 explicit off-road (edge + hatched + sidewalk) >= 0.50": 0.0448,
+  "P1+V1 road surface, >= 2 corners": 0.0543,
+  "P1+V2 road surface, >= 2 consecutive ticks": 0.0693,
+  "P2+V2 explicit off-road, >= 2 consecutive ticks": 0.0326
+ },
+ "violating_samples": {
+  "total": 4431,
+  "per_zeroed_window_mean": 13.51,
+  "by_band": {
+   "0-15": 2982,
+   "15-30": 905,
+   "30-45": 426,
+   "45-60": 118
+  },
+  "by_argmax_channel": {
+   "crosswalk": 1244,
+   "lane / road line": 1443,
+   "drivable": 354,
+   "sidewalk / verge": 532,
+   "seen, no map class": 755,
+   "arrow / text": 103
+  },
+  "seen_frac_lt_0.75": 15,
+  "road_surface_ge_0.5": 2822,
+  "explicit_off_ge_0.5": 804,
+  "no_class_ge_0.5": 754
+ },
+ "zeroed_windows": {
+  "n": 328,
+  "one_sample_only": 40,
+  "one_tick_only": 40,
+  "median_violating_samples": 8.0,
+  "median_first_violating_tick": 7.0,
+  "median_min_violating_x_m": 7.6899999999999995
+ },
+ "by_band": {
+  "0-15": {
+   "samples": 55346,
+   "admissible (inside + seen)": 53871,
+   "violating": 2982,
+   "violation_rate_of_admissible": 0.0554,
+   "mean_drivable_fraction_under_the_footprint": 0.9275
+  },
+  "15-30": {
+   "samples": 33517,
+   "admissible (inside + seen)": 32970,
+   "violating": 905,
+   "violation_rate_of_admissible": 0.0274,
+   "mean_drivable_fraction_under_the_footprint": 0.9538
+  },
+  "30-45": {
+   "samples": 14315,
+   "admissible (inside + seen)": 14092,
+   "violating": 426,
+   "violation_rate_of_admissible": 0.0302,
+   "mean_drivable_fraction_under_the_footprint": 0.9469
+  },
+  "45-60": {
+   "samples": 5561,
+   "admissible (inside + seen)": 5443,
+   "violating": 118,
+   "violation_rate_of_admissible": 0.0217,
+   "mean_drivable_fraction_under_the_footprint": 0.9533
+  }
+ },
+ "tick0": {
+  "windows_with_a_violation_at_tick_0": 63,
+  "note": "the recorded ego's own footprint at t0 \u2014 it is on the road by construction"
+ },
+ "zeroed_by_category": {
+  "only_road_surface_cells": 264,
+  "any_explicit_off_road_cell": 33
+ },
+ "a1_per_band_floor": {
+  "0-15": {
+   "seen_cells": 1192358,
+   "p_drivable_given_seen": 0.3540538999193195
+  },
+  "15-30": {
+   "seen_cells": 1277853,
+   "p_drivable_given_seen": 0.35210153280541656
+  },
+  "30-45": {
+   "seen_cells": 1151224,
+   "p_drivable_given_seen": 0.33100074355642345
+  },
+  "45-60": {
+   "seen_cells": 958804,
+   "p_drivable_given_seen": 0.3115537690706338
+  }
+ },
+ "controls": {
+  "readings": {
+   "all drivable, seen": {
+    "V0 current rule (any corner, any tick, drivable < 0.50)": 1.0,
+    "V1 >= 2 corners at the same tick": 1.0,
+    "V2 >= 2 consecutive ticks": 1.0,
+    "V2b >= 4 consecutive ticks": 1.0,
+    "V3 threshold 0.25": 1.0,
+    "V4 abstain unless seen fraction >= 0.75": 1.0,
+    "V5 abstain unless seen fraction >= 0.90": 1.0,
+    "P1 road surface (drivable + paint) < 0.50": 1.0,
+    "P2 explicit off-road (edge + hatched + sidewalk) >= 0.50": 1.0,
+    "P1+V1 road surface, >= 2 corners": 1.0,
+    "P1+V2 road surface, >= 2 consecutive ticks": 1.0,
+    "P2+V2 explicit off-road, >= 2 consecutive ticks": 1.0
+   },
+   "all sidewalk, seen": {
+    "V0 current rule (any corner, any tick, drivable < 0.50)": 0.0,
+    "V1 >= 2 corners at the same tick": 0.0,
+    "V2 >= 2 consecutive ticks": 0.0,
+    "V2b >= 4 consecutive ticks": 0.0,
+    "V3 threshold 0.25": 0.0,
+    "V4 abstain unless seen fraction >= 0.75": 0.0,
+    "V5 abstain unless seen fraction >= 0.90": 0.0,
+    "P1 road surface (drivable + paint) < 0.50": 0.0,
+    "P2 explicit off-road (edge + hatched + sidewalk) >= 0.50": 0.0,
+    "P1+V1 road surface, >= 2 corners": 0.0,
+    "P1+V2 road surface, >= 2 consecutive ticks": 0.0,
+    "P2+V2 explicit off-road, >= 2 consecutive ticks": 0.0
+   },
+   "all unseen": {
+    "V0 current rule (any corner, any tick, drivable < 0.50)": 1.0,
+    "V1 >= 2 corners at the same tick": 1.0,
+    "V2 >= 2 consecutive ticks": 1.0,
+    "V2b >= 4 consecutive ticks": 1.0,
+    "V3 threshold 0.25": 1.0,
+    "V4 abstain unless seen fraction >= 0.75": 1.0,
+    "V5 abstain unless seen fraction >= 0.90": 1.0,
+    "P1 road surface (drivable + paint) < 0.50": 1.0,
+    "P2 explicit off-road (edge + hatched + sidewalk) >= 0.50": 1.0,
+    "P1+V1 road surface, >= 2 corners": 1.0,
+    "P1+V2 road surface, >= 2 consecutive ticks": 1.0,
+    "P2+V2 explicit off-road, >= 2 consecutive ticks": 1.0
+   },
+   "all 'seen, no map class'": {
+    "V0 current rule (any corner, any tick, drivable < 0.50)": 0.0,
+    "V1 >= 2 corners at the same tick": 0.0,
+    "V2 >= 2 consecutive ticks": 0.0,
+    "V2b >= 4 consecutive ticks": 0.0,
+    "V3 threshold 0.25": 0.0,
+    "V4 abstain unless seen fraction >= 0.75": 0.0,
+    "V5 abstain unless seen fraction >= 0.90": 0.0,
+    "P1 road surface (drivable + paint) < 0.50": 0.0,
+    "P2 explicit off-road (edge + hatched + sidewalk) >= 0.50": 1.0,
+    "P1+V1 road surface, >= 2 corners": 0.0,
+    "P1+V2 road surface, >= 2 consecutive ticks": 0.0,
+    "P2+V2 explicit off-road, >= 2 consecutive ticks": 1.0
+   }
+  },
+  "all_as_specified": true
+ },
+ "wall_s": 192.1,
+ "module_md5_at_end": {
+  "s1_pass": "63ce252d1ed9bd836bbba41132b6a745",
+  "tanitad.rl.pdm_proxy": "524f72483aa52d1f03a9ca15308e0e11",
+  "tanitad.data.semantic_map_gt": "aefbf54f4cb963f6cb68444ddd96f9a8"
+ },
+ "modules_unchanged_during_run": true
+}
