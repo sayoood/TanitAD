@@ -1455,3 +1455,12 @@ shows none, and the corpus-list 530 reproduces the ruling day's own count. Recor
 be revived.**
 
 <!-- PIQ-AUDIT-ADDENDUM-17-GUARD-2026-09-19 -->
+
+<!-- PREFIX-FLOOR-RECORDED-2026-09-19 -->
+> ✅ **Item 17 guard, UPDATE 2026-09-19 — the prefix floor is RECORDED** (supersedes the §C addendum's
+> *"⚠️ The prefix half has no stored floor…"*). `tools/clipid_baseline.json` now holds **530 prefixes in
+> 53 files** against the **NAMED** 4,719-clip v7 corpus list (sha256 `a48251e89c7a8603…`), beside the
+> unchanged UUID floor (120 in 27 files). `--clips` with that list reads NO-GROWTH; **any other list is
+> REFUSED rather than compared** (the same tree reads 530 against the corpus and 870 against the 306k
+> index, so an unnamed floor would manufacture or hide growth). The baseline stores counts and the
+> digest only — no ids. Package: `TanitAD Research Lab/Data Engineering/Research/2026-09-19-clipid-prefix-floor/`.

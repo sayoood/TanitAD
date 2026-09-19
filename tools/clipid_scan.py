@@ -25,17 +25,27 @@ growing. Per file it records *how many*, and nothing else.
 The optional second half (``--clips``) counts 8-char prefixes against a known clip
 list. It is optional precisely because it needs external data; the UUID half is the
 one that always runs.
+
+⭐ **Its floor is recorded against ONE named list** (2026-09-19: the 4,719-clip v7
+corpus, sha256 ``a48251e89c7a8603…``, 530 prefixes). The baseline keeps the list's size
+and digest, never the list, and a run with any other list is REFUSED
+(``ClipListMismatch``): the same tree reads 530 against the corpus and 870 against the
+306,152-clip index, so a cross-list count is meaningless. Rebuild the list in any order
+from the local mirror's mp4 names (``tanitad-data/physicalai/camera/
+camera_front_wide_120fov/<clip id>.mp4``) or the corpus's ``camera/camera_sha256.json``
+keys; both reproduce the digest.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
 from pathlib import Path
 
 __all__ = ["UUID_RE", "scan_text", "scan_tree", "compare_to_baseline",
-           "LeakGrew", "DEFAULT_GLOBS"]
+           "LeakGrew", "DEFAULT_GLOBS", "ClipListMismatch", "list_identity"]
 
 #: A canonical UUID. ⛔ Word-anchored so a longer hex run is not a match.
 UUID_RE = re.compile(
@@ -50,6 +60,27 @@ DEFAULT_GLOBS = ("Project Steering/**/*.md", "TanitAD Research Lab/**/*.md")
 
 class LeakGrew(RuntimeError):
     """A file gained identifiers, or a new file arrived carrying them."""
+
+
+class ClipListMismatch(RuntimeError):
+    """The prefix half was run against a different clip list than its floor was.
+
+    ⛔ Added 2026-09-19 with the first recorded prefix floor. A prefix count is only
+    meaningful against the list it was counted with: the same tree reads 530 prefixes
+    against the 4,719-clip v7 corpus and 870 against the 306,152-clip index. Comparing
+    across lists manufactures growth (or hides it), so the comparison is REFUSED.
+    """
+
+
+def list_identity(ids) -> dict:
+    """``{"n", "sha256_sorted"}`` — the list's identity WITHOUT the list.
+
+    ``sha256("\\n".join(sorted(set(ids))))`` — the programme's existing corpus-id
+    convention (the v7 corpus's `corpus_id_sha256_16` is its first 16 hex). A digest
+    names the list and verifies it; it cannot be turned back into a single clip id.
+    """
+    s = sorted(set(ids))
+    return {"n": len(s), "sha256_sorted": hashlib.sha256("\n".join(s).encode("utf-8")).hexdigest()}
 
 
 def _read_any(p: Path):
@@ -118,7 +149,7 @@ def scan_tree(root, globs=DEFAULT_GLOBS, clip_prefixes=None) -> dict:
     return out
 
 
-def compare_to_baseline(current: dict, baseline: dict) -> dict:
+def compare_to_baseline(current: dict, baseline: dict, prefixes_counted: bool = True) -> dict:
     """Refuse GROWTH, allow what is grandfathered.
 
     ⛔ Three ways to fail, and the third is the one a naive check misses:
@@ -149,7 +180,9 @@ def compare_to_baseline(current: dict, baseline: dict) -> dict:
         if b is None:
             new_files.append(f"{rel} (+{c['uuids']} uuid, +{c['prefixes']} prefix)")
             continue
-        for kind in ("uuids", "prefixes"):
+        # ⚠️ Without a clip list the prefix half was never COUNTED, so every current
+        # prefix count is 0 — comparing it would report a recorded floor as a "cleanup".
+        for kind in (("uuids", "prefixes") if prefixes_counted else ("uuids",)):
             if c[kind] > b.get(kind, 0):
                 grew.append(f"{rel}:{kind} {b.get(kind, 0)} -> {c[kind]}")
             elif c[kind] < b.get(kind, 0):
@@ -176,20 +209,49 @@ def main(argv=None) -> int:
                          "8-char prefix half")
     ap.add_argument("--write-baseline", action="store_true",
                     help="record today's counts as the grandfathered floor")
+    ap.add_argument("--clips-name", default="",
+                    help="a human label recorded beside the list's digest when writing")
     a = ap.parse_args(argv)
-    prefixes = None
+    prefixes, ident = None, None
     if a.clips:
-        prefixes = {l.strip()[:8] for l in Path(a.clips).read_text(
-            encoding="utf-8").split() if l.strip()}
+        # utf-8-sig: a list written by PowerShell carries a BOM, which would otherwise
+        # glue itself to the first id and turn the right list into a "different" one.
+        ids = [l.strip() for l in Path(a.clips).read_text(encoding="utf-8-sig").split()
+               if l.strip()]
+        prefixes = {i[:8] for i in ids}
+        ident = list_identity(ids)
     cur = scan_tree(a.root, clip_prefixes=prefixes)
     if a.write_baseline:
+        # ⛔ A floor recorded over files that were never read under-counts, and the
+        # first real edit to one of them would then read as a leak.
+        if cur.get("_unreadable"):
+            raise LeakGrew(f"refusing to write a baseline: {len(cur['_unreadable'])} "
+                           f"file(s) could not be read: {cur['_unreadable'][:5]}")
+        out = dict(cur)
+        if ident:
+            # the list is NAMED by its digest, never stored — see `list_identity`
+            out["_clips_list"] = dict(ident, name=a.clips_name)
         Path(a.baseline).write_text(
-            json.dumps(cur, indent=1, sort_keys=True) + "\n",
+            json.dumps(out, indent=1, sort_keys=True) + "\n",
             encoding="utf-8", newline="\n")
-        print(f"baseline written: {len(cur)} entries")
+        print(f"baseline written: {len(cur)} entries"
+              + (f", prefix floor against a {ident['n']}-id list" if ident else ""))
         return 0
     base = json.loads(Path(a.baseline).read_text(encoding="utf-8"))
-    rep = compare_to_baseline(cur, base)
+    if ident:
+        rec = base.get("_clips_list")
+        if rec is None:
+            raise ClipListMismatch(
+                "this baseline records NO prefix floor, so the prefix half has nothing "
+                "to compare against. Record one with --write-baseline --clips <list>.")
+        if (rec.get("sha256_sorted"), rec.get("n")) != (ident["sha256_sorted"], ident["n"]):
+            raise ClipListMismatch(
+                f"the prefix floor was recorded against the list {rec.get('name') or '?'} "
+                f"(n={rec.get('n')}, sha256 {str(rec.get('sha256_sorted'))[:16]}…); this run's "
+                f"list is n={ident['n']}, sha256 {ident['sha256_sorted'][:16]}…. Prefix counts "
+                f"are only comparable against the SAME list.")
+    rep = compare_to_baseline(cur, {k: v for k, v in base.items() if not k.startswith("_")},
+                              prefixes_counted=bool(ident))
     print(json.dumps(rep, indent=1))
     return 0
 

@@ -21,7 +21,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from clipid_scan import (  # noqa: E402
     UUID_RE, LeakGrew, compare_to_baseline, scan_text, scan_tree,
+    ClipListMismatch, main,
 )
+import clipid_scan as CS  # noqa: E402
 
 # ⛔⛔ SYNTHETIC, and this matters more than it looks. My first version used two
 # REAL corpus clip ids copied out of `extrinsics141.json` — so the guard's own
@@ -156,3 +158,110 @@ def test_the_prefix_half_is_OPT_IN_and_off_without_a_clip_list():
     text = "clip deadbeef is a road bend"
     assert scan_text(text)["prefixes"] == 0
     assert scan_text(text, clip_prefixes={"deadbeef"})["prefixes"] == 1
+
+
+# ── the NAMED prefix floor (2026-09-19) ─────────────────────────────────────
+# A prefix count only means something against the list it was counted with, so the
+# floor records the list's DIGEST and a run against any other list is refused.
+# ⛔ Synthetic ids only — same reason as U1/U2: a real corpus id here would bank one.
+L1 = ["deadbeef-0000-4000-8000-00000000000a", "deadbeef-0000-4000-8000-00000000000b"]
+L1_ONE_OFF = ["deadbeef-0000-4000-8000-00000000000a", "deadbeef-0000-4000-8000-00000000000c"]
+
+
+def _clips(tmp_path, name, ids):
+    p = tmp_path / name
+    p.write_text("\n".join(ids) + "\n", encoding="utf-8")
+    return str(p)
+
+
+def _run(root, base, clips=None, write=False, name=""):
+    argv = ["--root", str(root), "--baseline", str(base)]
+    if clips:
+        argv += ["--clips", clips]
+    if write:
+        argv += ["--write-baseline"]
+    if name:
+        argv += ["--clips-name", name]
+    return main(argv)
+
+
+def _repo(tmp_path, body="clip deadbeef is a road bend"):
+    return _tree(tmp_path / "repo", {"Project Steering/a.md": body})
+
+
+def test_a_prefix_floor_recorded_against_a_NAMED_list_reads_green_on_legacy(tmp_path, capsys):
+    root, base, c = _repo(tmp_path), tmp_path / "b.json", _clips(tmp_path, "l1.txt", L1)
+    assert _run(root, base, c, write=True, name="synthetic L1") == 0
+    rec = json.loads(base.read_text(encoding="utf-8"))["_clips_list"]
+    assert rec["n"] == 2 and rec["name"] == "synthetic L1"                      # literal
+    capsys.readouterr()
+    assert _run(root, base, c) == 0
+    assert json.loads(capsys.readouterr().out)["verdict"] == "NO-GROWTH"
+
+
+def test_MUT_prefix_GROWTH_against_the_same_list_is_REFUSED(tmp_path):
+    root, base, c = _repo(tmp_path), tmp_path / "b.json", _clips(tmp_path, "l1.txt", L1)
+    _run(root, base, c, write=True)
+    (root / "Project Steering" / "a.md").write_text(
+        "clip deadbeef is a road bend; deadbeef again", encoding="utf-8")
+    with pytest.raises(LeakGrew, match="prefixes 1 -> 2"):
+        _run(root, base, c)
+
+
+def test_MUT_a_DIFFERENT_list_of_the_SAME_size_is_REFUSED_not_compared(tmp_path):
+    """Same n, one id different: a check on the count alone would pass it."""
+    root, base = _repo(tmp_path), tmp_path / "b.json"
+    _run(root, base, _clips(tmp_path, "l1.txt", L1), write=True)
+    with pytest.raises(ClipListMismatch, match="SAME list"):
+        _run(root, base, _clips(tmp_path, "l1b.txt", L1_ONE_OFF))
+
+
+def test_MUT_a_baseline_WITHOUT_a_named_list_refuses_the_prefix_half(tmp_path):
+    root, base = _repo(tmp_path, f"{U1}"), tmp_path / "b.json"
+    _run(root, base, write=True)                                    # UUID half only
+    with pytest.raises(ClipListMismatch, match="NO prefix floor"):
+        _run(root, base, _clips(tmp_path, "l1.txt", L1))
+
+
+def test_the_default_run_does_not_report_the_prefix_floor_as_a_SHRINK(tmp_path, capsys):
+    """Without a list the prefix half is not counted; reading its 0 as a cleanup
+    would tell an operator somebody removed ids nobody touched."""
+    root, base = _repo(tmp_path, f"{U1} and clip deadbeef"), tmp_path / "b.json"
+    _run(root, base, _clips(tmp_path, "l1.txt", L1), write=True)
+    capsys.readouterr()
+    assert _run(root, base) == 0
+    rep = json.loads(capsys.readouterr().out)
+    assert rep["verdict"] == "NO-GROWTH" and rep["shrank"] == []                # literal
+
+
+def test_the_SAME_list_written_differently_is_the_SAME_list(tmp_path, capsys):
+    """The list cannot be banked, so every run REBUILDS it — from a directory listing
+    or a manifest, in any order, perhaps by PowerShell (BOM, CRLF). Its identity is the
+    sorted set; a rebuilt copy must not read as a mismatch."""
+    root, base = _repo(tmp_path), tmp_path / "b.json"
+    _run(root, base, _clips(tmp_path, "l1.txt", L1), write=True)
+    p = tmp_path / "l1_rebuilt.txt"
+    p.write_bytes(b"\xef\xbb\xbf" + ("\r\n".join(L1[::-1] + L1[:1]) + "\r\n").encode("utf-8"))
+    capsys.readouterr()
+    assert _run(root, base, str(p)) == 0
+    assert json.loads(capsys.readouterr().out)["verdict"] == "NO-GROWTH"
+
+
+def test_the_named_list_is_stored_as_a_DIGEST_never_as_ids(tmp_path):
+    root, base = _repo(tmp_path), tmp_path / "b.json"
+    _run(root, base, _clips(tmp_path, "l1.txt", L1), write=True)
+    text = base.read_text(encoding="utf-8")
+    assert all(i not in text for i in L1)
+    assert UUID_RE.findall(text) == []
+    assert len(json.loads(text)["_clips_list"]["sha256_sorted"]) == 64          # literal
+
+
+def test_MUT_a_baseline_is_NOT_written_over_UNREADABLE_files(tmp_path, monkeypatch):
+    root = _tree(tmp_path / "repo", {"Project Steering/a.md": "clip deadbeef",
+                                     "Project Steering/b.md": "anything"})
+    base = tmp_path / "b.json"
+    real = CS._read_any
+    monkeypatch.setattr(CS, "_read_any", lambda p: None if p.name == "b.md" else real(p))
+    with pytest.raises(LeakGrew, match="refusing to write a baseline"):
+        _run(root, base, _clips(tmp_path, "l1.txt", L1), write=True)
+    assert not base.exists()

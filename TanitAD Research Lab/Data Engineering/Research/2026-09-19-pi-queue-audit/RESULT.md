@@ -107,3 +107,5 @@ probe, discarded; every count above comes from the tool's own CLI.
 ⇒ **Still wanting the PI: item 6 (optional), and the v6F runbook only if v6F is to be revived.**
 
 **Re-check, same evening:** the guard reads `NO-GROWTH` on `83d8ae3` and on `bbcfe4c` too — 120 UUIDs in 27 files; prefixes 530 / 870 as at the ruling; 0 files grew. `raw/clipid_guard_recheck.json`.
+
+**⚠️ Superseded later the same day — the prefix floor is now recorded.** "The baseline stores 0 prefixes for every file" held on `07541b7` and no longer does: `tools/clipid_baseline.json` now records **530 prefixes in 53 files** against the **named** 4,719-clip v7 corpus list (sha256 `a48251e89c7a8603…`), and `--clips` with that list reads **NO-GROWTH** on `e0c31f2`. A run with any other list — the 306,152-clip index reads 870 — is refused rather than compared. `…/2026-09-19-clipid-prefix-floor/`.
