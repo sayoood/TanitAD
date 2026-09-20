@@ -12655,3 +12655,44 @@ episodes as every arm-to-arm margin, so *"no arm SUPPORTED by a margin smaller t
 stays valid — that is what a floor is for. ⚠️ Its honest cost is that a wide floor makes
 SUPPORTED hard to earn, so **"no arm clears the floor" is a pre-stated expected outcome**, an
 INCONCLUSIVE rather than a disappointment.
+
+<!-- PANEL-POWER-CORRECTION-AND-HALFA-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — CORRECTION to my own `a9e75c6`: the 62-clip cap does NOT make the panel's question undetectable, and the halfA route to 124 is REFUTED
+
+**What I landed at `a9e75c6`:** *"a wide floor makes SUPPORTED hard to earn, so 'no arm clears the
+floor' is a pre-stated expected outcome."* ⛔ **Too blanket, and corrected here.**
+
+**The arithmetic, from my own measurement.** Single-arm near-forward **se = 0.5784 m**,
+episode-clustered on 21 episodes (`a8_canonical_rescore.json`). The pre-registered bar needs
+**5.9539 → < 2 m**, a **3.9539 m** move = **6.84 se**. A *paired* same-episode difference has a
+**smaller** se than a single-arm one, because the two arms see the same scenes and targets and
+their errors are positively correlated.
+
+⇒ **A lever that genuinely reaches the bar is detected comfortably.** The cap makes
+**sub-metre** levers undetectable — a property of a 62-clip corpus, not a failure of the panel.
+That is the correct pre-statement, and it replaces my blanket one. *(TrainingFlyWheel supplied
+the arithmetic; I verified it against the banked se.)*
+
+⚠️ **What still cannot be stated by anyone yet:** the panel's rule compares a margin to the
+**floor** `|P0 − P0b|`, and that floor's magnitude is **unknown until P0/P0b run**. So the
+detectability of a *given* lever is not knowable in advance — which is precisely why the floor
+arms run first.
+
+⛔ **AND THE halfA ROUTE TO 124 EPISODES IS REFUTED.** halfA is the **TRAINING** corpus, not an
+unused twin: `a8_occupancy_5k.sh:53` — *"A3 train: halfA ONLY (halfB held out)"*;
+`a7_run.sh:95,107` pass `--v2-cache halfA --eval-cache halfB`; and P0/P0b inherit A8's argv
+verbatim, so they train on halfA too. **Pooling the halves would be training-set contamination,
+not a 1.41× narrowing.**
+
+⭐ **And the way I nearly got it wrong is a named class.** `a0_clean124_split.py` says the halves
+are *"independent copies, which is also what makes them safe to hand to two concurrent arms"* —
+**accurate about CONSTRUCTION, and it implies a wrong action about USE.** I read it as "halfA is
+unused" when the panel hands halfA to the trainer. That is `true-but-wrong-for-the-reader`, and the
+sentence will mislead the next reader identically because it is *correct*. ⛔ The check that
+settled it had to be **positive** — find what READS halfA — not an absence of mentions.
+
+⭐ **The one valid route to 124 is 2-FOLD CROSS-FITTING** — each arm run twice (halfA-train/
+halfB-eval, then halfB-train/halfA-eval), pooling the two HELD-OUT reads. Statistically sound,
+~1.41× narrowing. ⛔ It costs **2× GPU per arm** and breaks argv parity with A8 on the second
+fold, so it is a **PI compute decision**. Named, not proposed.
