@@ -12919,3 +12919,47 @@ readmitted here.
 flatter the bar**, since error does not track speed and what dependence the point estimates suggest
 runs the other way. ⚠️ That is weaker than "benign", and it is the honest ceiling on what these two
 measurements support.
+
+<!-- AGENTS-REFUSAL-IS-CLIP-LEVEL-2026-09-20 -->
+
+### ⛔ 2026-09-20 — CORRECTION to my own `5547a76`: the `agents` refusal is a PER-CLIP join defect, **not** a speed-dependent one
+
+MEASURED by me over all 10,258 live halfB windows, independently of the TrainingFlyWheel's run
+which reached the same result first (`…/code/agents_clip.py`, `raw/agents_clip.json`). Speed comes
+from POSES, so the test does not read the join it is testing.
+
+**What `5547a76` said:** the channel *"removes windows **2.08×** faster than kept ones"*. The
+arithmetic stands; ⛔ **the speed reading of it does not.**
+
+**A · The refusals are confined to five clips.** All **369** scattered `agents` refusals come from
+**5 of 60** live clips — ep 60 (122, **33.1 %**), ep 26 (100), ep 1 (59), ep 17 (51), ep 47 (37).
+**Top two = 60.2 %.** Plus the 2 wholly dead (21, 37) ⇒ **7 of 62 clips carry every join defect.**
+
+**B · The dose-response is NOT monotone, which is what refutes the mechanism.**
+
+| decile | speed (m/tick) | n_win | **n_eps** | frac `agents`-refused |
+|---|---|---|---|---|
+| 1–7 | 0.000–1.230 | ~1,026 ea | 18–35 | **0.0000** (seven deciles at exactly zero) |
+| 8 | 1.230–1.583 | 1,026 | 17 | 0.0361 |
+| 9 | 1.584–2.275 | 1,026 | **10** | **0.2349** |
+| 10 | 2.276–3.651 | 1,026 | **7** | 0.0887 |
+
+⇒ **The FASTEST decile has a 2.6× LOWER miss rate than the 9th.** A builder that dropped records
+at speed would make decile 10 the worst; it is the second-best of the three non-zero ones.
+
+⭐ **And the `n_eps` column is the confound made visible:** deciles 9–10 draw from **10 and 7**
+clips against 26–35 in the low deciles. The fast deciles largely *are* the five bad clips. ⇒ "the
+refused windows are 2.08× faster" is a **clip-selection fact**, not a speed effect. ⛔ A two-group
+contrast cannot distinguish these; only the dose-response can, and the 5-episode caveat that both
+of us logged as a *power* limit was in fact **the whole explanation**.
+
+⇒ **Corrected net position on `agents` (5.97 % of windows):** a **per-clip join defect affecting 7
+of 62 halfB clips** (5 partial, 2 total). Not neutral for the corpus; **not** a speed-dependent
+builder failure; and not demonstrably able to flatter the bar.
+
+⭐ **The actionable residue is cheaper than the hypothesis it replaces:** seven of ten speed deciles
+have **exactly zero** misses, so the join is not degraded as a function of anything continuous.
+Whoever reuses this join should ask *"which clips are bad"*, not *"at what speed does it degrade"*.
+⚠️ **And one consequence for the cluster bootstrap that neither of us drew:** the surviving 60
+clusters are **very unequal** — ep 60 contributes **10** kept windows where a healthy clip
+contributes ~132. An episode-clustered interval treats them as equal draws.
