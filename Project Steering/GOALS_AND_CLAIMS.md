@@ -12882,3 +12882,40 @@ prints a plausible `n`. ⇒ **Count every exit by REASON and record exceptions W
 in every diff, and inert** — `sys.stdout.reconfigure` raising `NameError` into its own
 `except Exception`. *"Add a try/except so the checker cannot die"* sounds like hardening and is how
 a checker goes blind.
+
+<!-- SPEED-VS-ERROR-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — near-forward centre error shows NO dependence on ego speed across an 8.5× range, and the direction is the conservative one — but the strata are NOT equally powered
+
+MEASURED, CPU only, `box_quality.match_pairs` on A8 `ckpt_5000`
+(`…/2026-09-20-navhard-clause-stratum-confirm/code/speed_vs_error.py`, `raw/speed_vs_error.json`).
+Supplies the sign that the TrainingFlyWheel's `agents`-refusal finding lacked.
+
+| stratum | windows | episodes | **near pairs** | speed (m/tick) | near-forward L1 | CI95 (episode-clustered) |
+|---|---|---|---|---|---|---|
+| **SLOW** q1 | 48 | 19 | **318** | 0.229 | **7.425** | [6.137, 9.051] |
+| **FAST** q4 | 32 | 14 | **79** | 1.949 | **5.551** | [4.57, 6.95] |
+
+⇒ **Not separated across an 8.51× speed ratio.** ⭐ And the point estimates run the *conservative*
+way: fast windows are **easier** (5.551 vs 7.425), so a filter that removes fast windows leaves the
+kept set **harder** — the bar would be pessimistic, not flattered.
+
+⛔ **BUT THE TEST IS ASYMMETRICALLY POWERED, AND THIS WAS PREDICTED BEFORE IT RAN.** The
+TrainingFlyWheel asked for per-stratum `n` precisely because highway stretches cluster within
+clips. They do: FAST yields **79** near-forward pairs from 14 episodes against SLOW's **318** from
+19, and FAST lost **23 of 55** drawn windows (42 %) to SLOW's **7** (13 %). ⇒ fast windows are
+**sparser in near-forward targets**, so the FAST interval is the wide one and "no dependence" rests
+mostly on its width. Treat this as *no evidence of dependence*, **not** as evidence of none.
+
+⛔ **AND THE TEMPTING SECOND ARGUMENT IS CIRCULAR — DO NOT USE IT.** It is inviting to add *"the
+`agents`-refused windows carry no near-forward targets anyway (227/260 empty), so they could not
+have contributed pairs"*. **That is definitional**: `agents` refuses exactly when join records are
+missing, and the targets are read from that same join. Had the join worked, those windows might
+have carried targets. The TrainingFlyWheel withdrew this argument from its own report and it is not
+readmitted here.
+
+⇒ **Net position on the `agents` channel (5.97 % of windows):** not neutral — it removes windows
+**2.08×** faster than kept ones (separated, but on 5 episodes) — and **not demonstrably able to
+flatter the bar**, since error does not track speed and what dependence the point estimates suggest
+runs the other way. ⚠️ That is weaker than "benign", and it is the honest ceiling on what these two
+measurements support.
