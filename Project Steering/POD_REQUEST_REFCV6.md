@@ -97,3 +97,73 @@ population a collision gate actually acts on — near-forward pairs — the head
 bar, not ~6×."*
 ⇒ That is the pod request's strongest honest line for the perception half: **the dev box has proved
 the instrument and CANNOT answer the question it was built to ask.**
+
+
+<!-- EXTERNAL-BENCHMARK-2026-09-20 -->
+## ⭐ ADDENDUM 2026-09-20 — the request now has an EXTERNAL instrument, and an external limit
+
+Everything in §1 above is measured by instruments this programme wrote. A pod request that rests
+only on those is asking a reviewer to trust the ruler as well as the reading. As of `3b02a41` it
+does not have to. ⚠️ Every row below was measured on **refcv4b** (`refcv4b-b1-v72-40k`,
+`ckpt_40284_FINAL.pt`, md5 `99b573e8…`), NOT on refcv6 — it is evidence about the programme's
+perception path, never about the arm this request would fund.
+
+### P11 — the external ruler is CALIBRATED (MEASURED, the strongest single line here)
+
+Constant velocity on the official NavSim v2 two-stage runner scores combined EPDMS
+**0.1853562745** against the published HF warmup leaderboard's **0.185356**: **Δ +0.000027**,
+identical at the leaderboard's printed precision. Harness `autonomousvision/navsim@0a380a9`,
+post-#151 by two probes. Artifact `…/2026-09-19-navsim-warmup-reference-epdms/raw/A1/`.
+⇒ The programme can now place a number on a scale other people also stand on. ⛔ With one
+standing caveat: warmup NEVER carries an interval (7 log groups against the RG-14 floor of 8), so
+no difference below is quotable with a CI, and none is presented with one.
+
+### P12 — VISION IS LOAD-BEARING, measured on that external scale (MEASURED)
+
+| arm | S2-EPDMS-u | what it says |
+|---|---|---|
+| A1 frames + t0 ego + command | **0.4670** | the pre-registered bar arm |
+| A4 **frames-blind** (constant grey, same ego + command) | **0.0950** | leaves the drivable area on **86.3 %** of scenes; official two-stage EPDMS **0.0** |
+| ECHO `ha0_ext` (a kinematic echo of A1's OWN ego inputs) | 0.4287 | the control that answers *"is it just replaying its inputs?"* |
+
+**A1 − A4 = +0.372** (paired W/T/L 111/81/12), won on **DAC +0.632** and **DDC +0.512** — the
+drivable-area and driving-direction terms, i.e. road geometry read out of pixels. And
+**A1 − ECHO = +0.0383** (W/T/L 55/78/71), again won on **DAC +0.083 / DDC +0.081** while losing
+**EC −0.451**. ⭐ **That pair is the load-bearing sentence for the perception half of this
+request:** the model's advantage over an echo of its own ego state is concentrated exactly in the
+terms that require seeing the road — which is what the P-arms of `PREREG_PERCEPTION_BOX_QUALITY.md`
+(`6a052cb`) exist to improve, and what §5's `D-S1-DEP-BOX` admission says the dev box cannot finish.
+
+### ⛔ P13 — AND THE EXTERNAL LIMIT, stated before anyone quotes the win
+
+A1 beats the devkit CV agent **0.4670 vs 0.3971 (+0.0699)** and that was the pre-registered bar
+BAR-E2-1, which **PASSES**. ⛔ **It must not be quoted as a capability claim, because an all-zero
+STOP plan scores 0.5212 on the same 204 scenes** — above A1, above ECHO, above CV; on the official
+protocol STOP is **0.3009** against CV's **0.1854**. The cause is a protocol property read from
+source, not a defect of ours: EP is set to 1 for EVERY proposal when the best rule-compliant
+progress is ≤ 5 m (`pdm_scorer.py:231-236`), and warmup's stage-2 starts are slow (median v0
+**4.14 m/s**, **36/204** below 1 m/s). ⇒ **This request therefore claims P12 and NOT the CV win**,
+and the discriminating experiment is already assigned: the same arms on a split whose starts are
+not slow, pre-registered before scoring. If STOP wins there too, the defect is ours.
+
+### ⭐ §5 addendum — what the PUBLISHED evidence says the pod money buys
+
+From the DrivoR/TOAD/CLOVER/DriveZero read landed in the same commit (four primaries banked, read
+in full):
+
+* **The largest published lever is ENCODER PRETRAINING** — DrivoR Tab. 4a, navval PDMS: random
+  init **70.1**, ImageNet-21k **87.5**, DINOv2 **90.0**, i.e. **+19.9**. The next largest are
+  +9.9, +6.1, +5.6 and +5.3; compression moves ≤ 0.9. **Our pre-refcv6 REF-C trunk is a randomly
+  initialised 90,458,632-parameter ResNet** (MEASURED). refcv6's PI-directed ImageNet `resnet101`
+  is a move onto the biggest lever anyone has published — and §1's **P2** already proves that
+  trunk FITS this card, so the dev box can test the SWITCH (arm P5-TRUNK) while only a pod can
+  test it **at corpus scale**, which is §2's standing limit.
+* **The scorer is the other half, and ours is the type shown to fail.** TOAD: re-used as a search
+  reward, a fixed-vocabulary scorer drives iPad **34.7 → 23.9** EPDMS while DrivoR's disentangled
+  one drives it to **49.8**. refcv5-v2's scorer is **1,145 parameters** over a fixed anchor
+  vocabulary, anchor-selection accuracy **0.5271**. Registered as backlog rows DR-1/DR-2, both
+  **unranked and awaiting the PI** — neither is in this ask.
+
+⚠️ **What this addendum does NOT change:** §5 is still non-empty and the request is still a DRAFT.
+It adds an external calibration and an external limit; it does not add a driving claim, and A7
+remains the open checklist item.
