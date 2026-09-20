@@ -12283,3 +12283,40 @@ discriminator above carries it.
 > 3.1 s / 33 m), on cells whose drivable fraction is a median **0.40** against the 0.5 threshold.
 > ⇒ **A RANGE CAP WOULD NOT REPAIR IT.** The live candidates are the THRESHOLD (0.5 on a fractional
 > coverage map) and NEAR-FIELD map quality.
+
+<!-- NAVSIM-EXTERNAL-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the programme's FIRST externally calibrated numbers (EvalFlyWheel, `3b02a41`)
+
+⚠️ All four rows are MEASURED on **refcv4b** (`refcv4b-b1-v72-40k`, `ckpt_40284_FINAL.pt`,
+md5 `99b573e8…`), tier **T1-family**, stage-1 loop OPEN / stage-2 UNRULED, background vehicles
+IDM-reactive, ⛔ never closed loop. ⛔ **No interval exists on ANY of them**: NavSim warmup has
+7 log groups against the RG-14 floor of 8, so every difference below is a point estimate with a
+paired W/T/L and nothing more. Artifacts under
+`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/` and
+`…/2026-09-19-navsim-refcv4b-bridge/`.
+
+| id | claim | status |
+|---|---|---|
+| **E-NAVSIM-HARNESS-1** | *The local NavSim v2 harness reproduces the published warmup leaderboard.* Constant velocity, official two-stage runner: combined EPDMS **0.1853562745** vs the HF leaderboard's **0.185356**, Δ **+0.000027**. Harness `autonomousvision/navsim@0a380a9`, post-#151 by two probes. | **SUPPORTED** (MEASURED; the reference number is PUBLISHED/INHERITED) |
+| **D-NAVSIM-STOP-1** | ⛔ *On NavSim warmup stage 2 the statistic REWARDS STANDING STILL.* An all-zero STOP plan scores **S2-EPDMS-u 0.5212** against A1's 0.4670, ECHO's 0.4287 and CV's 0.3971; on the official two-stage protocol STOP is **0.3009** against CV's **0.1854**. Mechanism read from source, not inferred: EP is set to 1 for EVERY proposal when the best rule-compliant progress is ≤ 5 m (`pdm_scorer.py:231-236`), and warmup stage-2 starts are slow (median v0 **4.14 m/s**, **36/204** below 1 m/s). ⇒ **Every warmup NavSim row must be read against STOP, not only against CV.** | **SUPPORTED** (MEASURED + PUBLISHED-CODE) |
+| **D-REFCV4B-VISION-1** | ⭐ *refcv4b's advantage is concentrated in the terms that require seeing the road.* Frames-blind A4 scores **0.0950** and leaves the drivable area on **86.3 %** of scenes (official two-stage EPDMS **0.0**); **A1 − A4 = +0.372**, W/T/L 111/81/12, won on **DAC +0.632 / DDC +0.512**. Against a kinematic echo of A1's OWN ego inputs, **A1 − ECHO = +0.0383**, W/T/L 55/78/71, won on **DAC +0.083 / DDC +0.081** and lost on **EC −0.451**. | **SUPPORTED** (MEASURED) |
+| **C-NAVSIM-BAR-INSUFFICIENT** | ⛔ *BAR-E2-1 passing is NOT a capability claim.* A1 beats the devkit CV agent **0.4670 vs 0.3971 (+0.0699)**, which is the bar as pre-registered (`SPEC.md` blob `cb1d11de`, amended once before any score → `3ca367ca`) — and it is **necessary and insufficient**, because `D-NAVSIM-STOP-1` beats it. | **PASSED AND NOT QUOTABLE ALONE** |
+
+⭐ **`H-NAVHARD-STOP-1`, pre-registered now, before the data:** *on a split whose starts are NOT
+slow, STOP must LOSE to A1.* If STOP still wins there, the defect is ours and not the protocol's.
+Both outcomes are committed in advance; the arms (A1, A2, CV, ECHO, STOP) run **unchanged**, and
+the reported statistic includes the fraction of scenes on which the ≤ 5 m EP clause fires on each
+split — that fraction is the mechanism made visible. **OPEN**, assigned to the EvalFlyWheel.
+
+⚠️ **Scope, so nobody widens these later:** refcv4b is not refcv6, NavSim is not PhysicalAI, and
+`D-REFCV4B-VISION-1` is evidence that the perception path does real work — not that the model
+drives. `E-REFCV6V2-DRIVE` is untouched by all four rows.
+
+<!-- DRIVOR-LEVERS-2026-09-20 -->
+### 2026-09-20 — two published levers, read from primaries (Research Lab, `3b02a41`)
+
+| id | claim | status |
+|---|---|---|
+| **D-PRETRAIN-LEVER-1** | *Encoder pretraining is the largest published lever in this architecture family.* DrivoR Tab. 4a, navval PDMS: random init **70.1**, ImageNet-21k **87.5**, DINOv2 **90.0** (**+19.9**); next largest +9.9, +6.1, +5.6, +5.3; compression ≤ 0.9. ⚠️ **Our pre-refcv6 REF-C trunk is a randomly initialised 90,458,632-parameter ResNet** (MEASURED today). refcv6's PI-directed ImageNet `resnet101` moves onto this lever. | **PUBLISHED** (full text) + **MEASURED** (our param count) |
+| **D-SCORER-TYPE-1** | ⛔ *Our scorer is the type shown to fail as a search reward.* TOAD: re-used as a CEM objective, a fixed-vocabulary scorer drives iPad **34.7 → 23.9** EPDMS while DrivoR's disentangled one drives it to **49.8**. refcv5-v2's scorer is **1,145 parameters** over a fixed anchor vocabulary, anchor-selection accuracy **0.5271**, and its T1 `os` ADE loses to the kinematic echo control. | **PUBLISHED + MEASURED**; remedies proposed as backlog **DR-1 / DR-2**, unranked, ⛔ awaiting the PI |
