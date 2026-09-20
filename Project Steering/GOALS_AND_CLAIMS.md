@@ -12252,3 +12252,34 @@ discriminator above carries it.
 > `ckpt_5000.pt` at 416 × 1024 and emitted **all four binding families**, stamped T1 self-action open
 > loop, at **7.4 s/window** end to end (n = 7 on ONE episode; ⚠️ scaling that to 736 windows is an
 > EXTRAPOLATION, not a measurement — the S1 harness measured 7.80 s/window over 736 real windows).
+
+<!-- BOXHEAD-CURVE-2026-09-20 -->
+> ⭐ **`D-S1-DEP-BOX`, quantified (2026-09-20, CPU, A8's own 498 banked rows):** at 5,000 steps
+> `box3d_centre` is **10.32 m = 5.16× the 2 m matching bar**, still falling. ⛔ **This run CANNOT say
+> how many steps close that gap:** the log-log fit is **not quotable** over the full window
+> (R² 0.4100, n = 498) and is worse over the last half (R² 0.0931, n = 251); the prescribed fallback,
+> the matched-step ratio, reads **×0.6896 per 2,000 steps** (15.11 m at 1k–3k → 10.42 m at 3k–5k),
+> whose projection to 2 m lands at **~13,885 steps — PAST the 2× extrapolation bound (10,000)** and
+> therefore inadmissible as a step count. Nothing here bounds CORPUS scale either: A8 is one corpus
+> at one size, so a scale claim would have no second point to rest on.
+> ⚠️ **`n_matched` stability (36–39) says NOTHING about the head:** `match_slots` matches
+> min(n_target, n_query), and with 100 queries against ≤ 32 padded targets **every** valid target is
+> matched by construction — `n_matched == n_target` on **100 % of 498 rows**. It measures LABEL
+> DENSITY.
+> ⭐ **The error is ISOTROPIC, not longitudinal** (24 held-out windows, 623 matched pairs, scored
+> through the TRAINING matcher because a 2 m greedy matcher would pair only lucky hits and flatter
+> the head): all pairs |dx| 5.36 / |dy| 6.68 (x-share 0.445); **NEAR-FORWARD pairs — the gate's own
+> population — |dx| 3.09 / |dy| 2.97, L1 6.06 m, i.e. 2.2× better than the average and ~3× from the
+> bar rather than ~6×**; far-or-behind pairs (79 % of the population) dominate the average. ⇒ the
+> lever is GENERAL localisation, not a depth fix. ⛔ A centre error per population, NOT a re-measured
+> AP.
+> ⚠️ **Population mismatch, for whoever designs the next detection read:** only **22.3 %**
+> (3,394/15,206) of GT lies inside x ∈ [0, 60], |y| ≤ 16; **49 % is BEHIND the ego**; median range
+> 38.9 m; the field spans ±190 m. The box read's population is *"the 32 nearest agents, 360°"*,
+> which is **not** the gate's population.
+> ⭐ **`D-DAC-HUMAN-ZERO-1` — a hypothesis of ours REVERSED (400 windows, no model):** human DAC by
+> horizon reads **1 s 0.740 · 2 s 0.670 · 3 s 0.603 · 4 s 0.553** — a quarter of windows fail within
+> ONE SECOND — and the first offending corner is **NEAR and EARLY**: median **0.7 s / 7.8 m** (p90
+> 3.1 s / 33 m), on cells whose drivable fraction is a median **0.40** against the 0.5 threshold.
+> ⇒ **A RANGE CAP WOULD NOT REPAIR IT.** The live candidates are the THRESHOLD (0.5 on a fractional
+> coverage map) and NEAR-FIELD map quality.

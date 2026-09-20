@@ -38,6 +38,24 @@ the drivable map, so `score_candidates` defaulted the multiplier to ONES. The
 numbers measure different things, and 44.6 % is the first reading of human DAC compliance with
 the map **live**.
 
+### ⭐ WHERE the human's DAC fails — near and early, at borderline cells, NOT at far range
+
+I expected far-range map noise. **It is not** (`raw/dac_horizon_probe.json`, 400 held-out
+windows, no model, no GPU):
+
+| | |
+|---|---|
+| human DAC by horizon | 1 s **0.740** · 2 s **0.670** · 3 s **0.603** · 4 s **0.553** — a quarter of windows already fail within ONE second |
+| first offending corner, time | p10 **0.0 s** · median **0.7 s** · p90 3.1 s |
+| first offending corner, range | p10 **2.6 m** · median **7.8 m** · p90 33.1 m |
+| the offending cell's drivable fraction | median **0.40** against the 0.5 threshold; 35.8 % of failures sit above 0.4 |
+
+⇒ **A range cap on the DAC horizon would NOT repair this** — the failures start beside the car.
+The two live candidates are the **threshold** (0.5 on a *fractional* coverage map, where the
+offending cells cluster just under it) and the **near-field map quality** itself. Both are
+`PREREG_D9_REWARD_REPAIR`'s to decide; this file supplies the measurement and the discriminator,
+not the repair.
+
 **Consequences, stated rather than discovered later:**
 1. The S1 **primary** statistic is the collided-selection rate, which is `no_at_fault_collision`
    and does **not** involve DAC. It is unaffected.
@@ -137,6 +155,70 @@ threshold, not of a broken wiring.** ⭐ **The next arm's bar, stated as a numbe
 must fall **below ~2 m** (the matching threshold) before any predicted gate can be read at all;
 until then `S1-GATE-PRED` is untestable rather than refuted-in-principle. Everything else in the
 S1 rig is in place and proven, so that arm is a training question, not an instrument question.
+
+### ⛔ Is the head SCORED on targets it is never TRAINED on? No — asked from source, then measured
+
+The absence-vs-defect question (a head scored on targets it cannot represent looks exactly like a
+head that cannot localise). **Answered from SOURCE, so no GPU was spent re-answering it:**
+* the dataset emits targets **RAW** — *"Targets are emitted RAW (no visibility filter here). The
+  filter lives in `refc_agents.agent_losses`…"* (`refc_v3_train.py` ~2676), and that filter
+  belongs to the 2-D agent head's loss, not to the box3d path;
+* the box3d loss matches through `agent_slots.match_slots` (`:481-517`), which Hungarian-matches
+  **every** valid target and drops only the **farthest** when targets exceed queries — here 32
+  padded targets against 100 queries, so it **never drops**;
+* the decode is a **SCALE, not a clamp** (`cx = raw · x_fwd_m`, raw unbounded), so "outside the
+  extent" never meant "unrepresentable".
+⇒ **There is no set the head is trained on but not scored on.** AP 0.00383 is not an artifact of
+scoring unrepresentable targets, and the "not localising **to the 2 m threshold**" reading stands.
+
+**Context, MEASURED** (`raw/gt_extent_probe.json`, 736 labelled windows, 15,206 GT boxes, no
+model): only **22.3 % (3,394)** lie inside the decode extent (x ∈ [0, 60], |y| ≤ 16); **49 % are
+BEHIND the ego**; median range **38.9 m**, 72 % within 60 m, and the field spans ±190 m. ⚠️ The
+box read's GT population is therefore *all 32 nearest agents, 360°* — **not** the gate's
+population, which is only agents that can intersect a 4 s path ahead. A future detection read for
+a gate should state that population explicitly; this one is reported as measured.
+
+### ⭐ How far is 5,000 steps from the 2 m bar? — the dev box CANNOT say, and here is the arithmetic
+
+`raw/box_centre_curve.json`, A8's own banked rows, 0 GPU, under CLAUDE.md's fit discipline.
+
+| | |
+|---|---|
+| last 500 steps | `box3d_centre` **10.32 m** = **5.16×** the 2 m bar |
+| OLS log-log, full window | exponent **not quotable**: **R² 0.4100**, n = 498, window [10, 5000] |
+| OLS log-log, last half | **R² 0.0931**, n = 251, window [2500, 5000] — worse, not better |
+| matched-step ratio (the prescribed fallback) | 15.11 m (1k–3k) → **10.42 m** (3k–5k) = **×0.6896 per 2,000 steps** |
+| what that ratio implies | ~**13,885 total steps** to reach 2 m — ⛔ **beyond the 2× extrapolation bound (10,000)** |
+
+⛔ **The honest sentence, for the pod request's §5 `D-S1-DEP-BOX`:** *at 5,000 steps the head is
+5.16× above the bar; the error is still falling; and **this run cannot say how many steps close
+that gap** — both fits are below R² 0.80 so no exponent is quotable, and the fallback ratio's
+projection lands past the 2× bound.* Nothing here bounds the **corpus** scale either: A8 is one
+corpus at one size, so a scale claim would have no second point to rest on.
+
+**Two one-liners the reading needed:**
+1. **The stable matched count (36–39) says NOTHING about the head.** `match_slots` matches
+   `min(n_target, n_query)` pairs, and with 100 queries against ≤ 32 padded targets **every**
+   valid target is matched by construction — confirmed in the data: `n_matched == n_target` on
+   **100 %** of 498 rows (37.44 each). It measures **label density**.
+2. **The x-vs-y split cannot be read from banked rows:** `box3d_centre` is a **summed** L1 over
+   both axes (`agent_slots.py:577`) and the trainer logs no split. **MEASURED on held-out
+   predictions instead** (`raw/box_axis_probe.json`, 24 windows, **623 matched pairs**, through
+   the **training** matcher — the AP's 2 m greedy matcher would pair only the lucky hits and
+   flatter the head):
+
+| population | mean \|dx\| | mean \|dy\| | L1 sum | x-share |
+|---|---|---|---|---|
+| every matched target (623) | 5.36 m | 6.68 m | **12.04 m** | 0.445 |
+| ⭐ **near-forward — the gate's OWN population** (129) | **3.09 m** | **2.97 m** | **6.06 m** | **0.51** |
+| far or behind (494) | 5.96 m | 7.65 m | 13.60 m | 0.438 |
+
+⇒ **The error is ISOTROPIC, not longitudinal** (x-share 0.445 overall, 0.51 near-forward), so the
+lever is general localisation — not a depth- or range-specific fix. ⭐ **And the near field is
+2.2× better than the average**, which the far/behind 79 % of pairs dominates: on the population a
+collision gate actually acts on, the head is ~3× from the 2 m bar rather than ~6×. ⛔ This is the
+centre error per population, **not** a re-measured AP — the Master Mind's decision not to spend a
+pass on that stands, and no AP number here is restated.
 
 ### What this says, and what it does not
 

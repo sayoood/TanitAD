@@ -84,3 +84,16 @@ end to end at your geometry, every instrument reading a known value; here is the
 and its measured rate; here is the held-out occupancy your collision gate was gated on; here is the
 one lever claim an 8 GiB card could buy and what it cost; and here is the arithmetic showing the
 remainder is not a dev-box question.*
+
+<!-- S5-BOXBAR-2026-09-20 -->
+### ⭐ §5 addendum — `D-S1-DEP-BOX` now has its sentence, and it is an admission
+
+*"At 5,000 steps the box head is **5.16× above the 2 m matching bar** (`box3d_centre` 10.32 m) and
+still falling. **This run cannot say how many steps close that gap**: neither log-log fit is
+quotable (R² 0.4100 full window, 0.0931 last half) and the fallback matched-step ratio's projection
+(~13,885 steps) lands past the 2× extrapolation bound. Nothing here bounds the CORPUS scale either —
+A8 is one corpus at one size, so a scale claim would have no second point to rest on. On the
+population a collision gate actually acts on — near-forward pairs — the head is **~3×** from the
+bar, not ~6×."*
+⇒ That is the pod request's strongest honest line for the perception half: **the dev box has proved
+the instrument and CANNOT answer the question it was built to ask.**
