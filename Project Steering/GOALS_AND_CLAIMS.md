@@ -13443,3 +13443,53 @@ the selection statistic — does not touch the gate at all, and it is required f
 claim (*"quoted on the same windows as actual and oracle, or none is quoted"*, §7; the rule that
 cost a landed claim on 2026-09-17). ⚠️ `S1-GATE-CONST` remains runnable but **loses its
 comparator**, so it can confirm the zero and nothing more.
+
+<!-- PRESENCE-CONSTANT-OPTIMUM-PARTIAL-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — the ∅-weight account explains WHERE presence sits but NOT how it behaves: my own control refuted the clean story
+
+MEASURED + DERIVED, CPU, A8 `ckpt_5000`, 40 windows, matcher-free
+(`…/2026-09-20-perception-bar-rescore/code/presence_optimum.py`, `raw/presence_optimum.json`).
+Follows `286e0d3`, which left three unseparated candidates and ruled the earlier-checkpoint
+discriminator untestable (both banked checkpoints are step 5,000).
+
+**The derivation, which needs no retraining.** `agent_slots.py:556-565` is a weighted BCE —
+matched → 1 at weight 1.0, unmatched → 0 at weight `NO_OBJECT_W` (**0.1**, from source `:232`,
+imported not retyped). For a head with no per-slot information the optimum is one constant per
+window: `L(σ) = p(−log σ) + (1−p)w(−log(1−σ))` ⇒ **`σ* = p / (w + p(1−w))`**.
+
+| | |
+|---|---|
+| pooled matched fraction `p` | **0.2515** |
+| **predicted** `σ*` (pooled) | **0.7706** |
+| **observed** mean presence | **0.7524** |
+| absolute gap | **0.0182** |
+
+⭐ **The aggregate match is real:** the head sits within 0.018 of the analytic constant optimum of
+its own loss. ⇒ the ∅ weight explains **WHERE** the saturation lands, and *"presence is just
+broken"* is too coarse — 0.75 is the arithmetically correct answer to the question this loss asks
+a signal-free head.
+
+⛔ **BUT THE PER-WINDOW CONTROL REFUTES THE CLEAN STORY, AND IT WAS BUILT TO.** `p` varies with the
+target count, so `σ*` varies; a head that had learned the loss's constant solution would TRACK it.
+
+| predictor of the head's per-window mean | MAE |
+|---|---|
+| per-window `σ*` | 0.0679 |
+| **FLAT control** — one global `σ*` | **0.0513** ← *better* |
+
+⇒ **a single global constant predicts the head better than the window-specific optimum.**
+`tracks_per_window: false`. ⚠️ Pearson **r = 0.7161**, so the mean does co-vary substantially — it
+moves with `p` but **badly under-disperses**. ⇒ the head has NOT learned the per-window rate
+either: it is near-invariant **across windows** as well as **across slots**.
+
+⇒ ⛔ **VERDICT: partially supported, and I am not upgrading it.** The ∅ weight accounts for the
+LEVEL; nothing here accounts for the INVARIANCE. The ∅-weight and head-capacity candidates both
+remain alive, and this test **narrowed** rather than settled them. ⭐ The control is what stopped a
+tidy aggregate agreement (0.018!) becoming a mechanism claim — exactly the *"declined to assert is
+the right first move and a poor last one"* rule with the measurement actually run.
+
+⚠️ **One number survives independently of the verdict**, because it is a property of the loss and
+not of this head: the weight that would put the degenerate constant at 0.5 — below any usable
+threshold — is `w = p/(1−p)` = **0.336**, against the current **0.1**. ⛔ That is NOT proposed as
+the fix; it bounds where the non-discriminative attractor sits, nothing more.
