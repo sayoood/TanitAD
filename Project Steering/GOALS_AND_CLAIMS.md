@@ -13183,3 +13183,54 @@ corpus cannot supply one**.
 lane/sidewalk geometry) would not share information with our SAM3-map rules — ⛔ but nuPlan covers
 LV+PIT while this corpus is PhysicalAI, and **whether any overlap exists is UNMEASURED**. Named
 only; no work rests on it.
+
+<!-- DEMOTION-GUARD-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the landing guard now catches silent **DEMOTION**, and the mutation proof DEMONSTRATES the old predicate was blind rather than asserting it
+
+`demote_check.py` + `mutate_demote_check.py`, mutation proof `mutation_proof_demote_check.json`
+(5/5 arms, control green). Wired into `land.sh` after the superset check; `allowdemote/` is the
+waiver channel. Closes the limit logged at `cb274b0`.
+
+**The hole.** `superset_check.py:40` asks whether a value *"appears **anywhere** in the new text"*.
+That is an **EXISTENCE** predicate, and the claim it guards is about **PLACE**. ⇒ a rewrite that
+moves a live figure out of its table row and into a sentence saying it was wrong **passes**, because
+the token still occurs. It caught silent **deletion**, which is what it was built for; it was blind
+to silent **demotion**.
+
+**⛔ DEMONSTRATED, not asserted** — the proof runs the *real* `superset_check` on a *real*
+demotion and prints its verdict:
+
+```
+superset_check on the M1 demotion:   tip tokens: 5 numbers, 1 code spans | waived: 0
+                                     ZZSUPERSET-OKZZ          <- the old guard PASSES
+demote_check   on the same input:    DEMOTED-NUMBER 13.91  (was live on the tip; now only in
+                                     retraction context)      <- the new guard FAILS
+```
+
+| arm | superset | demote | what it pins |
+|---|---|---|---|
+| CONTROL — honest rewrite, figure still live | pass | pass | **no false positive** |
+| **M1 — live figure moved into a retraction line** | **pass** | **FAIL** | the hole itself |
+| M2 — figure deleted outright | **FAIL** | pass | the old guard still works |
+| M3 — M1 plus an `allowdemote` entry | pass | pass | disclosure works |
+| M4 — a live `code span` demoted | pass | **FAIL** | not numbers only |
+
+⛔ **Deliberately narrow.** Requiring a number to stay on the *same line* would refuse every honest
+rewrite and block both sessions. It fires only on: *live on a non-retraction line in the tip* **and**
+*present only on retraction-context lines in the new text*. ⚠️ A marker missing from the
+retraction-context pattern means a demotion goes unflagged — the status quo — whereas a pattern too
+loose would block a landing, so it errs toward silence.
+
+⭐ **Real-data check, not just fixtures:** replayed against `a9e75c6`, a landing that deliberately
+superseded `6.06` — **no false positive**, correctly, because that rewrite kept the table row intact
+and added a banner above it, so the figure genuinely stayed live in its row.
+
+⇒ **Demotion is not forbidden; it must be DISCLOSED** — waived in
+`allowdemote/<basename>.allowdemote`, one token per line, reason after `#`, exactly as `allowdrop`
+works for deletion. The point is that demoting a figure becomes a recorded act rather than a silent
+one.
+
+⭐ Found because the TrainingFlyWheel's own doc-checker carried the identical defect and its
+mutation proof exposed it: asserting `13.91` appeared *somewhere* stayed GREEN when the table cell
+was reverted to the retracted `0.05 %`. **An existence check cannot tell WHERE a number is.**
