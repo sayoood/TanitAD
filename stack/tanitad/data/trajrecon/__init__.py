@@ -113,7 +113,8 @@ sys.modules.setdefault("trajlib", sys.modules[__name__])
 
 __all__ = [
     "accel_source", "camera", "contract", "diagnose", "flow_calib",
-    "frame_folder", "frames", "geo", "ground_calib", "io_sensorlogger",
+    "frame_folder", "frames", "geo", "ground_calib", "horizon_calib",
+    "io_sensorlogger",
     "lane_calib", "pipeline", "plane_calib", "quality", "render_video",
     "run_demo", "scale_calib", "steering", "timesync", "trajectory", "validate",
     "vehicle_frame", "viz", "vp_calib",
