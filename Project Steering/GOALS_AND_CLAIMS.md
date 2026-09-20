@@ -13005,3 +13005,51 @@ to the **perception bar** — 19 non-empty clusters → **n_eff 12.60 (66 %)**, 
 nearly balanced (60 → 56.89, 95 %). ⛔ Its bar figure rests on a raw-gate-target proxy that
 overcounts the banked matched n by **7.2 %** (139 vs 129), which it flagged and did not explain;
 the ratio is likely robust to that, the absolute count less so.
+
+<!-- BAR-NEFF-MEASURED-AND-PAD-EXPLAINED-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the perception bar's effective n is **12.91**, measured from the ACTUAL scored pairs; and the 139-vs-129 gap is EXPLAINED
+
+MEASURED by me, CPU only, `box_quality.match_pairs` on A8 `ckpt_5000` over the bar's own
+24-window selection (`…/code/bar_neff_true.py`, `raw/bar_neff_true.json`).
+
+**CONTROL PASSES: total near-forward pairs = 129, exactly the banked n.** So the cluster sizes
+below are those of the pairs that were really averaged — no proxy anywhere in the chain.
+
+| | non-empty clusters | **n_eff** | % |
+|---|---|---|---|
+| **measured**, from scored pairs | 19 | **12.91** | **67.9 %** |
+| TrainingFlyWheel's raw-gate-target proxy | 19 | 12.60 | 66 % |
+
+⇒ **The proxy was off by 0.31 — about 2.4 %.** It was very nearly right and its conclusion stands;
+what changes is that the figure is now measured rather than inferred. ⛔ **The full chain:**
+129 pairs → 24 windows → 21 episodes → 19 non-empty → **12.91 effective clusters**. A pair-level
+interval on this bar understates by ≈ 3.2×.
+
+⭐ **CORRECTION to `4e76421`**, which said the proxy's 7.2 % overcount "was flagged and not
+explained". True when written, **false now**. The TrainingFlyWheel tested the mechanism it had
+declined to assert and got an **exact identity**: the trainer pads to the nearest 32 over **ALL**
+targets and applies the near-forward filter **later**, so near-behind targets consume slots.
+Re-run in the trainer's order the bar draw yields **129**, against **139** when the pad is applied
+within the gate subset. ⇒ 139 − 129 = the pad, completely.
+
+⭐ **And the method point is worth more than the number:** *"declined to assert" is the right first
+move and a poor last one.* Declining protects against adopting a wrong cause; **only measuring
+distinguishes 129 from "about 129"**, and the test took minutes.
+
+### ⚠️ A limitation this exposed in OUR OWN LANDING GUARD
+
+`qland/superset_check.py:40` — *"a number survives if the SAME normalised value appears **anywhere**
+in the new text"*. That is an **existence** predicate, and the claim it guards is about **place**.
+⇒ A rewrite that **moves a live figure into a retraction note** — changing what a reader takes as
+current — **passes unflagged**, because the token still occurs. The guard catches silent deletion,
+which is what it was built for; it cannot catch silent demotion.
+
+⭐ Found because the TrainingFlyWheel's own doc-checker had the identical hole and its mutation
+proof exposed it: asserting the string `13.91` appeared *somewhere* stayed **GREEN** when the table
+cell was reverted to the retracted `0.05 %`, since `13.91` still occurred elsewhere in the file.
+⇒ **An existence check cannot tell WHERE a number is.** Its fix — anchor to the ROW and compare
+every cell — is the general answer.
+⚠️ ⛔ **NOT a claim that anything landed is wrong.** `a9e75c6` deliberately kept `6.06` and marked
+it superseded, which is the disclosed and intended use. The point is that the guard **did not
+verify** that; it saw a token. Logged as a known limit, not a defect to patch tonight.
