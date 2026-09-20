@@ -12620,3 +12620,38 @@ The spread was measured instead and the tolerance set from it.
 quoted at a precision the procedure does not support. Sitting beside the programme's existing
 rules — *never quote an interval without its estimator*, and *name which variance it answers* —
 this one is: **never quote an interval to more digits than its resampling supports.**
+
+<!-- PERCEPTION-BAR-RESCORE-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — `E-PERCEP-BOX-1`'s primary bar re-measured: **5.9539 m**, not 6.06 m, and its `n` is 21 EPISODES not 129 pairs
+
+MEASURED, CPU only, 0 GPU, no training touched — `taniteval/tools/box_quality.py` (the canonical
+mutation-proven scorer) on the **same** checkpoint the banked figure came from.
+
+| population | corrected | banked | n | interval |
+|---|---|---|---|---|
+| **near-forward** (the primary bar) | **5.9539 m** (\|dx\| 2.9826, \|dy\| 2.9713) | 6.06 (\|dx\| 3.09, \|dy\| 2.97) | 129 pairs = 24 windows = **21 episodes** | **CI95 [4.8922, 7.1084]**, episode-clustered |
+| `all_360` (secondary) | 12.0381 (5.3614, 6.6767) | 12.04 (5.36, 6.68) | 623 pairs | CI95 [9.5176, 15.2023] |
+
+⛔ **The discrepancy is confined to \|dx\| in the near-forward population**; \|dy\| and `all_360`
+reproduce. **Cause NOT asserted** — checkpoint/`n` provenance, transcription and a probe-side bug
+are unseparated. Two independent implementations agree on 5.954; neither reproduces 6.06.
+
+⚠️ **Nothing is rescued and nothing is refuted.** 6.06 lies inside the new interval, so this is a
+better estimate of the same quantity — and `meets_bar` is **false** either way, with 5.95 m still
+~3× the 2 m target. The gate hand-back to `S1-GATE-PRED` remains closed.
+
+⭐ **The bar now carries an interval it never had**, and it is **episode-clustered** because
+`box_quality.py` was already reporting `n_windows 24, n_episodes 21` in its CI block — the
+estimator was right all along and nobody read the denominator it printed. See
+`CLASS-2026-09-20-REPLICATION-UNIT`.
+
+⛔ **And the effective n is STRUCTURALLY CAPPED AT 62** — halfB's clip count. TrainingFlyWheel's
+sweep: 24→50→100→200→400 windows give 21→31→46→57→59 episodes, while overlapping window
+pairs go 1→2→8→36→137 (min gap 1 ⇒ sharing 7 of 8 frames). ⇒ **Do not raise `--n` for power:**
+past ~200 windows it buys nothing and makes the overlap far worse. More power needs more **clips**.
+⭐ The cap does **not** break the panel's logic: the floor `|P0 − P0b|` is measured on the same 62
+episodes as every arm-to-arm margin, so *"no arm SUPPORTED by a margin smaller than the floor"*
+stays valid — that is what a floor is for. ⚠️ Its honest cost is that a wide floor makes
+SUPPORTED hard to earn, so **"no arm clears the floor" is a pre-stated expected outcome**, an
+INCONCLUSIVE rather than a disappointment.

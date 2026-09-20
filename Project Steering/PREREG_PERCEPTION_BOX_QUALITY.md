@@ -17,6 +17,33 @@ of them this box can answer.** Every figure quoted below is MEASURED and carries
 The S1 gate is scored by matching predictions to agents at a **2 m centre distance**. A detector
 whose centre error exceeds that threshold cannot gate, whatever its loss curve says.
 
+> ### ⚠️ CORRECTION 2026-09-20 — READ BEFORE THE TABLE BELOW: the near-forward bar reads **5.9539 m**, not 6.06 m
+>
+> Re-measured on the **same** checkpoint (`a8-occupancy-5k-20260919/run/ckpt_5000.pt`, `--n 24`)
+> with `taniteval/tools/box_quality.py`, the canonical mutation-proven scorer, CPU only:
+> **near-forward L1 5.9539 m** (\|dx\| **2.9826**, \|dy\| **2.9713**), n = 129 pairs,
+> **24 windows, 21 EPISODES**, episode-clustered **CI95 [4.8922, 7.1084]** (±1.1081, se 0.5784).
+> `all_360` reproduces exactly: **12.0381 m** (\|dx\| 5.3614, \|dy\| 6.6767, n = 623).
+> Controls green: `matched_equals_target` true, `n_dropped` 0, `vel_beats_zero_floor` true.
+>
+> ⛔ **The discrepancy is confined to ONE axis of ONE population:** \|dx\| 3.09 → 2.9826 (0.107),
+> carrying L1 6.06 → 5.9539 (0.106). \|dy\| and `all_360` match. A difference in one axis only is
+> not noise, and **the cause is NOT asserted** — a different checkpoint or `n` behind the banked
+> read, a transcription, or a probe-side bug later fixed in `box_quality.py` are all unseparated.
+> Two independent implementations agree on 5.954 and neither reproduces 6.06.
+>
+> ⚠️ **Read both ways.** 6.06 lies INSIDE the new interval, so this is a better estimate of the
+> same quantity, not a refutation. And **nothing is rescued**: `meets_bar` is false either way and
+> 5.95 m is still ~3× the 2 m target.
+>
+> ⛔⛔ **The figures in the table below are SUPERSEDED as point estimates and their `n` is wrong in
+> UNIT.** "n = 129 pairs" is **21 episodes** — the pairs come from 24 windows, one pair of which
+> shares 6 of its 8 frames. See `CLASS-2026-09-20-REPLICATION-UNIT`. Every interval on this bar is
+> episode-clustered; a pair-level interval understates by ~2.5×.
+> ⚠️ And the effective n is **capped at 62** (halfB's clip count), so it does **not** improve by
+> scoring more windows: 24 → 200 windows buys 21 → 57 episodes and 200 → 400 buys 1.035×
+> (TrainingFlyWheel sweep). More power needs more **clips**, not more windows.
+
 | population | today (A8, 5,000 steps) | target |
 |---|---|---|
 | **near-forward** — `x ∈ [0, 60] m, |y| ≤ 16 m`, the population a collision gate ACTS on (n = 129 pairs) | `box3d_centre` **6.06 m** (\|dx\| 3.09, \|dy\| 2.97) | ⭐ **< 2 m** — the primary bar |
