@@ -13403,3 +13403,43 @@ under-training. ⛔ **Both banked checkpoints are step 5,000** (`ckpt.pt` and `c
 that test **cannot be run without retraining**. The ∅-weight and head-capacity candidates remain
 unseparated, and `NO_OBJECT_W` is **0.1** from source (`agent_slots.py:232`), not the 0.02173 a
 handoff prompt carried.
+
+<!-- S1-GATE-PRED-NOT-RUNNABLE-2026-09-20 -->
+
+### ⛔⛔ 2026-09-20 — `S1-GATE-PRED` is NOT RUNNABLE against this head, and running it would produce a number that looks like a clean refutation of the GATE while actually refuting the HEAD
+
+Follows from `286e0d3` / `0c179e8` (the presence head has no per-slot signal) traced through
+`PREREG_S1_AGENT_SEAM_AND_COLLISION_GATE` §6–§7. ⛔ No new compute; this is the consequence.
+
+**The collision, in three lines.**
+1. §6 defines `S1-GATE-CONST` as the **deliberate-regression arm**: the gate wired to an occupancy
+   that says *everything is free*, so it **reorders nothing** and §7 requires it to read
+   **exactly zero** recovery.
+2. MEASURED: the presence head emits **near-constant** occupancy — within-window IQR **0.054**,
+   96.55 of 100 slots above 0.5, and **no threshold beats a constant predictor**.
+3. ⇒ `S1-GATE-PRED` against this head is *everything equally OCCUPIED* where CONST is *everything
+   FREE*. **Different constant, same absence of a differential** — nothing to re-rank on either way.
+
+⇒ ⛔ **`S1-GATE-PRED` would be a SECOND COPY OF THE REGRESSION ARM, not a treatment arm.** It
+would recover ≈ 0 for the same structural reason CONST does.
+
+⭐ **And that is why this must be recorded BEFORE anyone runs it.** The output would read
+`PRED ≈ CONST ≈ 0`, which a reader takes as *"the occupancy gate does not help"* — a claim about
+the **design**. The true reading is *"the gate was never given a signal"* — a claim about the
+**head**. The number cannot separate them, and it is the more damaging of the two conclusions that
+looks the more natural. ⚠️ Textbook `true-but-wrong-for-the-reader`: correct arithmetic implying
+the wrong next action.
+
+⚠️ **§6's own logic also degenerates**, which is the tell: *"if CONST recovers as much as PRED, the
+gain is from the re-ranking machinery"* resolves to **same ≈ same** and concludes *"a PASS on PRED
+means nothing"* — but there is no PASS to invalidate. Both sit at the floor by construction.
+
+⇒ **PRECONDITION added to `S1-GATE-PRED`:** it may run only once the occupancy source carries a
+**per-slot** signal — demonstrated by beating the constant count control (`presence_read.py`) or an
+equivalent. ⛔ Until then it is **blocked**, not failing.
+
+⭐ **What is UNAFFECTED and still worth running:** `S1-RANDOM` — the **no-information control** for
+the selection statistic — does not touch the gate at all, and it is required for *any* oracle-gap
+claim (*"quoted on the same windows as actual and oracle, or none is quoted"*, §7; the rule that
+cost a landed claim on 2026-09-17). ⚠️ `S1-GATE-CONST` remains runnable but **loses its
+comparator**, so it can confirm the zero and nothing more.
