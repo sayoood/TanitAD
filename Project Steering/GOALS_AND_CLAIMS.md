@@ -13493,3 +13493,42 @@ the right first move and a poor last one"* rule with the measurement actually ru
 not of this head: the weight that would put the degenerate constant at 0.5 — below any usable
 threshold — is `w = p/(1−p)` = **0.336**, against the current **0.1**. ⛔ That is NOT proposed as
 the fix; it bounds where the non-discriminative attractor sits, nothing more.
+
+<!-- NO-SLOT-COLLAPSE-2026-09-20 -->
+
+### ⭐ 2026-09-20 — NO slot collapse: the decoder emits **100/100 distinct boxes**, so the 5.9539 m bar STANDS as a localisation measurement — and presence/box DISSOCIATE
+
+MEASURED, CPU, A8 `ckpt_5000`, 40 windows, matcher-free
+(`…/2026-09-20-perception-bar-rescore/code/slot_collapse.py`, `raw/slot_collapse.json`).
+
+**Why it was asked.** `286e0d3` found presence near-constant ACROSS SLOTS. If the slots were
+degenerate as a whole, then **5.9539 m** (`a9e75c6`, `cb274b0`) would not be a localisation error
+at all — it would be the distance from a single blob to whatever targets sat near it, and a landed
+number would need re-reading.
+
+| | |
+|---|---|
+| distinct predicted boxes at 1 cm | **100 of 100** |
+| mean predicted centre spread | **52.167 m** |
+| mean TARGET centre spread (the control) | **42.36 m** |
+| **ratio** (median / mean / min / max) | **1.383** / 1.426 / 0.639 / 2.437 |
+
+⛔ **The control is load-bearing and not optional:** dispersion is divided by the SCENE's own target
+spread, so a genuinely clustered scene cannot masquerade as collapse. Thresholds were written into
+the instrument BEFORE the run (`< 0.15` collapse, `> 0.5` healthy), so the reading was not chosen
+after seeing the number.
+
+⇒ ⭐ **The bar stands.** The decoder spreads its boxes comparably to the scene; only PRESENCE
+collapsed. Nothing landed needs re-reading.
+
+⭐⭐ **AND THE DISSOCIATION IS THE FINDING THAT NARROWS `286e0d3`'s CANDIDATES.** The same decoder,
+on the same forward pass, produces **100 distinct, well-dispersed boxes** and a **near-constant
+presence** (within-window IQR 0.054). ⇒ this is **NOT** a shared-trunk or capacity failure — a
+collapsed trunk could not emit varied boxes. The degeneracy is **specific to the presence output**.
+⇒ the "head capacity" candidate is **materially weakened**, and the remaining explanation must be
+local to the presence term or its projection.
+
+⚠️ **A second observation, not a claim:** the predicted spread is **1.38× the target spread** — the
+decoder is **OVER-dispersed**, scattering boxes wider than the agents actually are. That is the
+opposite of collapse and consistent with a head that has not learned to concentrate; ⛔ whether it
+CAUSES part of the 5.95 m centre error is **not measured here** and is not asserted.
