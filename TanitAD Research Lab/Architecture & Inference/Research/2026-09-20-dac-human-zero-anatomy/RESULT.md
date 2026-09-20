@@ -261,3 +261,65 @@ one-sided 95 % limit. A corpus-level claim needs its samples spent there, not in
 W18, W19, W25, W28, W43, W44, W50, W51, W60 (checked across every field after the label, not just
 the note column, because 14 notes contain commas). The PI's spot-check plan reads *"12 checks on the
 10 BORDERLINE rows"*; it should read 9, or a row is missing its flag. By stratum: B 6, C 1, D 2.
+
+## Appended 2026-09-21 — the hunt for REAL over-boundary events: three routes, **no positives**
+
+The adjudication returned 60/60 on-surface, so the pack held nothing to miss and no candidate can
+be ranked on the error that matters. These three routes look for real departures by mechanisms
+that do **not** consult the rules under test.
+
+### Route 1 — the ego dynamics, a sensor the rules never touch
+
+The corpus's **100 Hz egomotion** (az, vz, z, quaternion) carries genuine high-frequency content
+(sample-to-sample |Δaz| reaching 5.3 m/s²), so it is not a smoothed solution and a kerb strike
+would show. Each window's 4 s span is located through the corpus's own v2ep time grid
+(`semantic_map_gt.episode_frame_times_us`), and the statistic is `max |az − rolling median(az,
+0.5 s)|`. **The threshold was fixed before any overlap with a rule was looked at:** median +
+6 × 1.4826 × MAD = **4.14 m/s²**.
+
+| | |
+|---|---|
+| windows scored | **736** (0 without egomotion, 0 without a usable span) |
+| distribution of the statistic | median **0.81**, p90 2.13, p99 3.99, **max 4.46 m/s²** |
+| over threshold | **6 windows — but only 2 distinct events**, one per clip, the same shock falling inside four overlapping windows of one clip and two of the other |
+| their vertical displacement | z de-trended peak-to-peak **0.032 m and 0.071 m**, against a corpus **median of 0.059 m** — at or below typical |
+| ⭐ injection control | a 10 m/s², 60 ms pulse added to the quietest window lifts the statistic from **0.07 → 10.04**, far above the threshold ⇒ **the search could have found a strike** |
+| windows anywhere above 8 m/s² (half the injected pulse) | **0** |
+
+⇒ **Route 1 finds no mounting event.** Two ordinary road jolts sit at the top of a continuous
+tail, with no vertical displacement to match; nothing in 736 windows comes within a factor of two
+of a kerb strike's magnitude.
+⚠️ **What route 1 cannot see, stated before the result:** a smooth roll onto a flush driveway, a
+paved verge or a dropped kerb makes no shock at all.
+
+### Route 2 — wide margin (⛔ not independent of the rules; reported as a curve)
+
+| margin past the mapped drivable edge | ≥ 0.5 m | ≥ 0.75 m | ≥ 1.0 m | ≥ 1.25 m | ≥ 1.5 m |
+|---|---|---|---|---|---|
+| windows | 10 | 2 | **1** | 0 | 0 |
+
+The widest is **1.047 m** — about two cells of a 0.5 m grid. No window is far enough out that a
+read-out defect could not explain it.
+
+### Route 3 — the sweep where a FALSE-PASS would hide
+
+Stratum D (no rule fires) is **408 windows in 55 clips**, sampled **ten** times so far.
+`media_sweep/` is a blind pack of **58 sheets**: one window from each of the 55 clips, plus the
+**2 route-1 shock events** and the **1 route-2 widest-margin window**, mixed in under ids from the
+same shuffle so a labeller cannot tell them apart. Key held off-repo; sha256 in `raw/sweep_pack.json`.
+
+⛔ **Drawn BY CLIP FIRST — one window per clip — so n equals the cluster count.** The previous
+pack counted windows as independent observations, and its most-flattered candidate rested on three
+clips.
+⛔ **Panel A now states the overlay is NOT depth-tested** (a ground point behind a raised object is
+drawn over it). The first render put that sentence in a font glyph matplotlib does not have, which
+would have shipped the one required disclosure as an empty box; it is plain ASCII now.
+
+### What this means for the term
+
+With **no positives anywhere in the 736**, a rule that simply always answers "on-surface" scores
+**100 %** on this corpus — better than any candidate. ⇒ **This corpus cannot rank the candidates on
+the error that matters.** It can only measure how often each one false-alarms, which the anatomy
+already did (44.57 % / 8.70 % / 4.48 %). Ranking them needs either a corpus that contains real
+departures, or a decision that a term validated only on its false-alarm rate is not the right
+reference for a human-referenced reward. ⛔ Neither is decided here.

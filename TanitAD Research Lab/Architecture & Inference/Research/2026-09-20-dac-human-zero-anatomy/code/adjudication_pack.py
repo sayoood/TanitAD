@@ -79,7 +79,10 @@ def tick0_diagnosis(vs: list[dict]) -> dict:
             "remainder_after_exclusion": len(w_v0) - len(no_class)}
 
 
-def sheet(img0, img2, img4, col, row, front, corners, blind_id, out_png):
+def sheet(img0, img2, img4, col, row, front, corners, blind_id, out_png,
+          panel_a_note=""):
+    # ⛔ `panel_a_note` defaults to "" so the LANDED pack reproduces byte-for-byte;
+    # the 2026-09-21 sweep passes the depth-test disclosure through it.
     H, W = img0.shape[0], img0.shape[1]
     fig = plt.figure(figsize=(13.5, 11.5), constrained_layout=True)
     gs = fig.add_gridspec(3, 2, height_ratios=[1.15, 1.0, 1.0])
@@ -95,8 +98,8 @@ def sheet(img0, img2, img4, col, row, front, corners, blind_id, out_png):
 
     overlay(ax)
     ax.set_xlim(0, W); ax.set_ylim(H, 0); ax.set_axis_off()
-    ax.set_title("A — camera at t0, with the recorded path of the car's own footprint projected in",
-                 fontsize=10)
+    ax.set_title("A — camera at t0, with the recorded path of the car's own footprint "
+                 "projected in" + panel_a_note, fontsize=10)
     # B — the zoom: the FIRST tick whose footprint is fully inside the frame (never a rule's tick)
     vis = [t for t in range(corners.shape[0])
            if front[t].all() and (col[t] > 0).all() and (col[t] < W).all()
