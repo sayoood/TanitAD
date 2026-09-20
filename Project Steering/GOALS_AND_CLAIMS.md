@@ -12845,3 +12845,40 @@ bar's reading of 5.9539 m, never for it.
 
 ⚠️ Still untouched: whether the `agents` refusals (5.97 %) differ on anything beyond target
 geometry. They are not a positional tail and this argument does not cover them.
+
+<!-- DROP-AUDIT-LANDED-BIAS-NUMBERS-VERIFIED-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the landed eligibility-bias numbers rest on LEGITIMATE EMPTIES, not swallowed errors — verified, not assumed
+
+MEASURED, CPU only (`…/2026-09-20-navhard-clause-stratum-confirm/code/drop_audit.py`,
+`raw/drop_audit.json`). Verifies the sample accounting behind `f3fdcc9` and `c6bab8f`.
+
+**Why it was in doubt.** `bias2.py` drew 260 windows per group and reported 251 / 246 / 33 counted.
+The missing ones passed through a bare `except Exception`, which **cannot distinguish "this window
+has no valid targets" from "this window failed to load"** — the same class as the 2,731 phantom
+"unreadable" navhard scenes. The drop counts were printed and read as fine.
+
+| group | drawn | counted | empty (no valid targets) | **EXCEPTIONS** |
+|---|---|---|---|---|
+| KEPT | 260 | **251** | 9 | **0** |
+| `future` | 260 | **246** | 14 | **0** |
+| `agents` | 260 | **33** | 227 | **0** |
+
+⇒ **Zero exceptions in any group. The landed numbers stand as measured.** ⛔ The audit used the
+**identical seed and pools**, so the counted totals reproduce `bias2.py`'s exactly (251 / 246 / 33)
+and the accounting applies to the landed draw rather than to a fresh sample that would have
+required an extrapolation.
+
+⭐ **`agents` at 227/260 empty independently corroborates** the TrainingFlyWheel's finding that
+those windows carry essentially no targets — from a different draw. ⚠️ Partly definitional, as it
+noted: `agents` refuses exactly when join records are missing and the targets are read from that
+join, so this is corroboration of the count, **not** independent evidence about the corpus.
+
+⚠️ **The instrument, not the result, is the lesson.** A bare `except` in a sampling loop makes the
+sample size a number you cannot interpret, and the defect is invisible because the loop still
+prints a plausible `n`. ⇒ **Count every exit by REASON and record exceptions WITH THEIR TYPE.** A
+`FileNotFoundError` and a torch load error would have meant quite different things here.
+⭐ Found only because the TrainingFlyWheel reported an encoding guard that was **present, correct
+in every diff, and inert** — `sys.stdout.reconfigure` raising `NameError` into its own
+`except Exception`. *"Add a try/except so the checker cannot die"* sounds like hardening and is how
+a checker goes blind.
