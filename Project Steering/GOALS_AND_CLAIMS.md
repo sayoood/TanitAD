@@ -12736,3 +12736,74 @@ yet**). If that survives an episode-clustered interval, the bar is measured on a
 ⛔ **NOT ASSERTED.** Populations differing is not the same as the METRIC being biased: that step
 needs error to correlate with density or proximity, which has **not** been measured. Under
 investigation; no claim rests on it.
+
+<!-- D-NAVSIM-CLAUSE-STRATUM-1-CONFIRMED-2026-09-20 -->
+
+### ⭐⭐ 2026-09-20 — `D-NAVSIM-CLAUSE-STRATUM-1` **CONFIRMED at 435 clusters**: the ≤ 5 m EP clause is an **amplifier**, not the cause of STOP's win
+
+MEASURED, 0 GPU. The pre-registration (`b66e8cd`) was written while only `CV.csv` existed and
+`STOP.csv` did not; it fixed the endpoint, estimator, seed, cluster key and the refuting outcome.
+This is that file **executed**, with nothing chosen afterwards.
+Package: `…/2026-09-20-navhard-clause-stratum-confirm/` (`RESULT.md`, `raw/confirm_navhard.json`).
+
+| stratum | scenes | **clusters** | `STOP − CV` | CI95 (orig_scene bootstrap) | STOP / CV / ties |
+|---|---|---|---|---|---|
+| clause **NOT fired** ⭐ *primary* | 4,240 | **435** | **+0.113** | **[0.099, 0.127]** | 1,913 / 1,655 / 672 |
+| clause **FIRED** | 1,222 | 345 | **+0.2376** | [0.214, 0.261] | 468 / **34** / 720 |
+| all | 5,462 | 450 | +0.1409 | [0.129, 0.153] | 2,381 / 1,689 / 1,392 |
+
+⇒ **Remove every scene where the clause fires and stopping STILL wins, separated, on 435
+independent clusters.** Warmup gave **+0.1114** on 16 clusters — **two venues, 27× the clusters,
+agreement to three decimals.** The clause amplifies ≈**2.1×** where it fires and does **not**
+create the effect.
+
+⇒ ⛔ **`D-NAVSIM-STOP-1`'s SECOND mechanism now owns the result**: a zero-displacement plan earns
+EP median **0.195** where the clause is silent (`d86dccb`), and *why* is **UNEXPLAINED**. That is
+the open question on this benchmark; the clause is settled.
+
+⚠️ **The warmup mean/sign divergence did NOT replicate.** There CV won more scenes (83 vs 68)
+while the mean favoured STOP; on navhard both agree (STOP 1,913 / CV 1,655). ⇒ that divergence was
+a **16-cluster artifact**, and reporting both statistics is what made it visible as one.
+
+⚠️ **Pre-stated weakness, unchanged by the result:** the detector is `ego_progress_stage_two == 1.0`
+across every arm scored — **2 arms** here against warmup's **6**. `f_fired` **0.2237** vs **0.1814**
+is consistent with mild over-counting. ⛔ This cuts *against* convenience: over-counting moves
+genuinely-not-fired scenes **into** the fired stratum, which would deflate the primary gap.
+
+⚠️ **Scope.** The venue ruling stands separately — navhard cannot test the *original*
+`H-NAVHARD-STOP-1` (starts are not faster: 3.89 vs 4.14 m/s) and this is a different, stronger
+design. STOP and CV are deterministic, so training and inference variance are zero **for these two
+arms only**; no trained arm inherits that.
+
+<!-- ELIGIBILITY-BIAS-REFUTED-2026-09-20 -->
+
+### ⛔ 2026-09-20 — the eligibility-bias worry is **REFUTED**, by the interval I required before asserting it
+
+`0d7b600` logged as **OPEN, not asserted**: an indicative pass (n = 148 vs 112, **no interval**)
+suggested refused windows carried more and closer near-forward targets, which would have meant the
+perception bar was measured on a subset under-representing dense close traffic. Decomposed by
+refusal reason, **episode-clustered** (`raw/eligibility_bias_by_reason.json`):
+
+| group | windows | episodes | near-forward targets | CI95 | mean range (m) | CI95 |
+|---|---|---|---|---|---|---|
+| **KEPT** | 251 | 58 | 5.096 | [3.761, 6.537] | 52.32 | [45.83, 59.32] |
+| `future` (22.81 %) | 246 | 59 | 5.207 | [3.729, 6.809] | 53.09 | [45.33, 62.18] |
+| `agents` (5.97 %) | 33 | **4** | **0.091** | [0.0, 0.75] | 91.65 | [38.80, 114.64] |
+
+⇒ **The dominant refusal is unbiased** — `future` overlaps KEPT on both measures. ⭐ And `agents`
+separates in the **opposite** direction to the worry: it removes windows with essentially **no**
+near-forward targets. ⚠️ On only 4 episodes / 33 windows — enough to refute the stated worry, not
+to support a claim of its own.
+
+⭐ **The lesson is about the first pass, not the filter.** KEPT's near-forward count read **4.02**
+there and **5.096** here — the same statistic on a different draw — against a CI spanning **2.8**.
+The apparent gap was inside the noise the whole time. Same family as
+`CLASS-2026-09-20-REPLICATION-UNIT` from the other side: there an interval was too narrow for its
+unit; here a difference was quoted before it had an interval at all.
+
+⚠️ **And a defect in my own instrument, found in its output:** `confirm.py` emitted `_CI_mc_error`
+as a **hardcoded literal** reading *"B=10,000 on 16 clusters"* — true of the warmup fixture, false
+on navhard's 435, where the Monte-Carlo error is far smaller. A provenance note that does not
+travel with its data is the *"true quantity quoted outside its scope"* family, inside the very
+instrument built to stop it. Replaced with a computed `_CI_basis`. ⛔ **No number moves** — the
+literal was annotation, never input.
