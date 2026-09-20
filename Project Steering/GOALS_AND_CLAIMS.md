@@ -12446,3 +12446,49 @@ CSV carries **9** (a `grep -c` that also matched the header, plus W46 named in p
 token). ⛔ The CSV is **not** edited — the key is out, and touching a label file after seeing the
 answers destroys the property that made landing it first worth anything. 6 of the 9 fall in
 stratum B, the P1/P2 boundary an adoption decision turns on.
+
+<!-- H-NAVHARD-STOP-1-VENUE-RETIRED-2026-09-20 -->
+
+### ⛔ 2026-09-20 — `H-NAVHARD-STOP-1` keeps its claim and LOSES ITS VENUE: navhard cannot test it
+
+MEASURED, 0 GPU, no scoring, streamed from the PI-authorised archive
+(`…/2026-09-20-navhard-startspeed-precondition/`, landed `6a1d732`).
+
+| split | n | median \|v0\| | below 1 m/s |
+|---|---|---|---|
+| **navhard**, all synthetic scenes | **5,462** (0 unreadable) | **3.89 m/s** | **18.7 %** |
+| **warmup**, the 204 scored stage-2 scenes | 204 | **4.14 m/s** | 17.6 % |
+
+⇒ navhard is marginally **SLOWER**, not faster. The hypothesis's antecedent is *"a split whose
+starts are NOT slow"*, and navhard does not satisfy it, so the five arms there would compare two
+samples of the **same regime** and discriminate nothing.
+
+⛔ **The claim is NOT amended.** No arm has run and no result has been seen. This is a
+**precondition** measurement, and what it retires is the **venue**, not the claim — amending a
+pre-registration after seeing an arm's result is what pre-registration exists to prevent;
+discovering **before running** that the chosen split cannot test it is the opposite case, and is
+exactly when a venue may be changed. `H-NAVHARD-STOP-1` stays **OPEN**.
+
+⭐ **`D-NAVSIM-STRATIFY-1` — the redesign, pre-registered here:** stratify by **START SPEED**, not
+by split. navhard's p25/p75/p90 are **1.58 / 6.66 / 9.41 m/s**, so fast starts are plentiful
+*within* it. The threshold and the resulting n are fixed and stated **before any arm runs**, and
+the report carries the **≤ 5 m EP clause's firing fraction PER STRATUM** — on warmup it fires on
+**37/204 = 18.1 %** (`d86dccb`), and on a fast-start stratum it should collapse toward zero. If it
+does not, the clause is not what makes stopping win.
+⚠️ This tests the **clause only**. `D-NAVSIM-STOP-1`'s second mechanism is untouched: the clause
+explains 18.1 % of warmup scenes and the remaining **82 %** is **UNEXPLAINED**, with a
+zero-displacement plan still earning EP median **0.195** there.
+
+⚠️ **Scope, stated before the comparison:** warmup's figures are over the 204 stage-2 scenes the
+scorer RAN; this reads EVERY synthetic scene in the navhard archive. The populations are not
+identical, so the contrast is indicative of the REGIME rather than matched — decisive here only
+because the hypothesis needs navhard's starts to be MATERIALLY faster and they are not faster at
+all. Count cross-checked two ways: 5,462 scenes read with 0 unreadable, and
+`synthetic_scenes_attributes.csv` carries exactly 5,462 rows.
+
+⚠️ **Recorded against the Master Mind:** the first run reported **2,731 "unreadable"** scenes — a
+third of the archive. They were a **different object** (`openscene_meta_datas`, no `ego_status`)
+matched by a filter on `.pkl` alone, with a bare `except Exception` swallowing the `KeyError`. Had
+it been quoted it would have read as a data-quality problem in a PI-authorised download. The
+discriminating check was to **count the entries by DIRECTORY**. Same family as *"0 hits is a claim
+about the SEARCH, not the content"*: **"2,731 unreadable" was a claim about the FILTER.**
