@@ -193,5 +193,7 @@ failure that matters.)*
 *verification reference* rather than a required input, so I have not pushed them into the repo; say
 the word if they should be banked there instead.
 
-**A7 status, unchanged:** still correctly gated — GPU at **3,950 MiB** (the PI's servers), gate
+**A7 status, unchanged:** still correctly gated — GPU at **3,950 MiB** (⚠️ attributed here to "the
+PI's servers"; MEASURED 2026-09-20 10:15 it is the **Windows desktop session** — see
+`P0_ARMING.md` §8), gate
 untouched at ≤ 2,500 MiB / ≥ 8 GB, launcher armed.

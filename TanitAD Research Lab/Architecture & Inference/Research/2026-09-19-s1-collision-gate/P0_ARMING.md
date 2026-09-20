@@ -4,7 +4,8 @@
 FOR **P0-REPLICATE ONLY** … it must not roll on to P1 unattended."*
 
 ⛔ **No arm has run.** The runner is alive and WAITING on A7; the GPU is still held at ~3,950 MiB by
-the PI's servers and the gate is untouched.
+the desktop session (see §8 — NOT the PI's servers, which was my own unverified assumption)
+and the gate is untouched.
 
 ---
 
@@ -126,7 +127,7 @@ expected 1`. A checker that only ever passes is not a checker.
 |---|---|
 | runner | **ALIVE**, PID 52324 (+child 46140, one launch), polling every 120 s, 72 h ceiling. ⚠️ Superseded the PID-23224 process: stopped it, verified **0** live by PID, edited, re-proved, restarted — never edited under a live run |
 | current decision | `ZZP-WAIT P0-REPLICATE \| A7 arms not VALID yet: [4 arms]` |
-| GPU | **3,950 MiB** held by the PI's servers — the gate is doing its job, not failing |
+| GPU | **3,111–3,958 MiB** held by the **Windows desktop session**, not by any training job (§8). The gate refuses correctly — but it can never clear in this state |
 | A7 | launcher armed and waiting; **not started** |
 | tests | **52 passed bare** (test_p_runner 37, test_prebuild_p3_targets 15), no ambient `PYTHONPATH` |
 | mutation proof | **12/12 CAUGHT, control GREEN** (29 test functions) |
@@ -181,3 +182,96 @@ byte-identical to the tree the new process runs from.
 CAUGHT with a GREEN control** (29 test functions) — three new mutations for the new locks:
 `M10` the two replicates share a seed · `M11` an empty authorisation list launches anyway ·
 `M12` P0b is dropped so the floor collapses to one arm.
+
+---
+
+## 8. ⚠️ CORRECTION + a blocker that will NOT clear on its own (MEASURED 2026-09-20 10:15 CEST)
+
+⛔ **I reported the card as "held by the PI's servers" in three places. That was INHERITED, never
+verified, and it is WRONG.** `nvidia-smi --query-compute-apps` names every holder, and not one is a
+training job:
+
+`dwm.exe` (the desktop compositor) · `explorer.exe` · `SearchHost` · `StartMenuExperienceHost` ·
+`ShellExperienceHost` · `ShellHost` · `CrossDeviceResume` · **`NVIDIA Overlay.exe` ×2** ·
+**`msedgewebview2.exe`** · `GCC.exe`.
+
+**Total 3,211 MiB of 8,188 MiB; ~4,977 MiB free; GPU utilisation 15 %.** This is the **Windows
+desktop session**, browser and NVIDIA overlay — nothing of the PI's, and nothing I may assume is
+transient. *(Evidence class: the earlier claim was INHERITED and is retracted; this one is
+MEASURED, artifact = `nvidia-smi` compute-apps + per-GPU query.)*
+
+⛔ **AND THE GATE HAS NEVER BEEN CLOSE.** Over the launcher's **19** gate samples spanning ~9.4 h:
+**min 3,111 MiB**, median 3,922, max 3,958, and **0 of 19 (0 %) at or below the 2,500 MiB gate** —
+never within **600 MiB** of clearing. The P-runner has logged **172** consecutive WAITs.
+
+⇒ **This is not a wait, it is a deadlock.** `A7-launcher` carries a **24 h ceiling** and expires
+**~2026-09-21 00:52** (~14.5 h from this measurement); the P-runner's 72 h ceiling expires
+~2026-09-23 04:20. On the current trajectory the launcher times out, A7 never runs, and P0/P0b then
+wait out two more days for an A7 that cannot come. ⭐ **A wait that never ends looks exactly like a
+wait that is working** — the same sentence as §2, now about the *resource* rather than the *probe*.
+
+**Two ways out, and NEITHER is mine to take:**
+
+| option | whose call | note |
+|---|---|---|
+| **quiesce the desktop** (close the Edge WebView / NVIDIA overlay, or sign the session out) | the **user's** — it is their desktop | would need to free ≥ 611 MiB from the observed minimum |
+| **re-calibrate the gate** for a desktop box rather than a headless one | the **Master Mind / PI** | ⛔ I was told twice not to lower it, and I have not |
+
+⚠️ **What I could NOT determine, stated rather than guessed:** the arm's actual VRAM need. A8's
+`metrics.jsonl` logs **no GPU-memory key** — `ga_box_memory` is the box-memory module's loss/param
+count (91,136 params), **not** VRAM, and reading it as memory would be exactly the wrong-scope
+error this programme keeps logging. So whether an arm fits in the ~4,977 MiB that remains is
+**unmeasured**, and the gate cannot be re-calibrated on evidence until it is.
+
+## 9. MEASURED — the arm's peak VRAM, and what it says about the gate
+
+§8 said the arm's footprint was **unmeasured** and that the gate could not be re-calibrated on
+evidence until it was. It is now measured. *(PI chose this option directly, 2026-09-20.)*
+
+**Instrument:** `code/vram_probe.py`. The real arm config from the **pinned** tree, argv built by
+**`p_runner.build_argv`** — the same function P0 will use, so the probe cannot drift from the arm
+it measures — with **seed 99** (never 0/1/2 = A8/P0/P0b) into a scratch directory, 12 steps and a
+forced eval at step 10. Artifacts: `raw/vram_probe/`.
+
+⛔ **Only the in-process allocator counter is admissible.** `nvidia-smi`'s total includes the
+desktop, which swings **847 MiB** on this box; you cannot answer a question that turns on ~600 MiB
+by subtracting a baseline that moves by more. The trainer's own
+`gp_cuda_max_mem_gb = torch.cuda.max_memory_allocated()` is the right probe, and it is cumulative
+since process start, so the step-12 row also covers the eval path.
+
+| quantity | value | class |
+|---|---|---|
+| allocator peak, step 10 | **2.5122 GB = 2,573 MiB** | **MEASURED** |
+| allocator peak, step 12 (after the eval) | **2.5122 GB** — *identical* | **MEASURED** |
+| total process footprint on the card | **~2,939 MiB** (a mid-run `nvidia-smi` 6,140 minus the 3,201 post-exit baseline ⇒ ~366 MiB of CUDA context/reserve above the allocator figure) | **ESTIMATED**, single sample |
+| probe wall-clock | 338 s | MEASURED |
+
+⭐ **The peak PLATEAUED**: identical at step 10 and step 12, across the eval boundary. The
+dominant allocations (weights, optimizer state, activations) are all taken by step 10.
+⚠️ It remains a **LOWER BOUND** for a 5,000-step run — 12 steps cannot exclude a later
+fragmentation peak — but the flatness is the evidence against one, and it is stated rather than
+assumed.
+
+### The gate arithmetic
+
+Card **8,188 MiB**. Desktop baseline over 19 samples: **min 3,111 / median 3,922 / max 3,958**.
+
+| desktop | + arm (~2,939) | headroom of 8,188 |
+|---|---|---|
+| min 3,111 | 6,050 | **2,138 MiB** |
+| max 3,958 | **6,897** | **1,291 MiB (15.8 %)** |
+
+⇒ **THE ARM FITS AT EVERY OBSERVED DESKTOP LEVEL.** The `≤ 2,500 MiB used` gate is not measuring
+the quantity that matters: **the desktop alone exceeds it**, so the gate rejects a configuration
+that would in fact run. It was calibrated for a headless box, and this box has a desktop on it.
+
+⛔ **I have NOT changed it.** A gate is a safety device and re-calibrating one is the PI's call,
+not the measuring agent's. For that decision, the evidence supports expressing it as **FREE VRAM**
+rather than used: `free ≥ arm (2,939) + margin (~900, the desktop's own observed swing)` ⇒
+**free ≥ ~3,850 MiB, i.e. used ≤ ~4,300 MiB**, which would have cleared at **all 19** observed
+samples (max 3,958).
+
+⚠️ **The residual risk, named:** at the worst observed desktop level the headroom is 1,291 MiB
+over an ~11 h run. A desktop spike mid-run (more browser tabs) could still OOM the arm. That is a
+real trade the PI is entitled to weigh — it is not a reason to pretend the current gate is right,
+and not a reason for me to move it.
