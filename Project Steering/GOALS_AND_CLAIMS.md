@@ -13532,3 +13532,44 @@ local to the presence term or its projection.
 decoder is **OVER-dispersed**, scattering boxes wider than the agents actually are. That is the
 opposite of collapse and consistent with a head that has not learned to concentrate; ⛔ whether it
 CAUSES part of the 5.95 m centre error is **not measured here** and is not asserted.
+
+<!-- PRESENCE-PROJECTION-HEALTHY-2026-09-21 -->
+
+### ⭐ 2026-09-21 — the presence PROJECTION is healthy: the weights are NOT the cause, and the bias has barely moved from init in 5,000 steps
+
+MEASURED, read-only, **no forward pass and no GPU**
+(`…/2026-09-20-perception-bar-rescore/code/presence_weights.py`, `raw/presence_weights.json`).
+Continues the narrowing at `a15de2d`, which left "local to the presence term or its projection".
+
+**The control is the other rows of the SAME linear layer** — `box`, `cls`, `size`, `v_rel_*`,
+`occluded` all come from that one head (`agent_slots.py:368`) under the same optimiser. Comparing
+presence against itself at init would have measured nothing.
+
+| | |
+|---|---|
+| presence mean row **L2** | **0.728062** |
+| median of the other fields | **0.604818** |
+| **ratio** | **1.2038** — presence is *larger* than the median sibling |
+
+⇒ ⛔ **PROJECTION COLLAPSE IS ELIMINATED.** The presence rows are not degenerate; they are slightly
+heavier than their siblings. The cause is **not in the layer**.
+
+⭐⭐ **AND THE BIAS IS THE SURPRISE.** It reads **−2.928712** against its initialisation
+`logit(0.05)` = **−2.944439** — it has moved **0.0157 in 5,000 steps**, i.e. essentially not at all.
+Yet the observed mean presence is **0.7524**, whose logit is **+1.1115**.
+⇒ the weight·feature term is supplying **≈ +4.040 logits**, and doing so **nearly constantly**
+across slots (within-window IQR 0.054, `286e0d3`) and across windows (`25f5460`).
+
+⚠️ **What that does and does not establish.** It ESTABLISHES that a healthy-norm weight vector is
+producing a large, near-input-INDEPENDENT contribution. ⛔ It does NOT establish why. Two readings
+are open and **neither is asserted**: the slot FEATURES may carry a large near-constant component
+that the weight vector has aligned to, or the weight vector may have aligned to a constant
+direction despite varied features. ⚠️ It is also odd on its face that the **bias** — the cheapest
+parameter to move, and the one that would most directly reach the loss's constant optimum
+σ* ≈ 0.77 (`25f5460`) — did **not** move, while the weights travelled ~4 logits to the same place.
+
+⇒ ⭐ **NEXT DISCRIMINATOR, named and not yet run:** measure the variance of the slot FEATURE
+vectors across slots. If the features are themselves near-constant, the degeneracy is upstream of
+presence entirely and the box head's variety comes from elsewhere in the network; if the features
+vary, the presence weight vector has aligned to a constant direction. That is a forward pass on
+CPU and needs no training.
