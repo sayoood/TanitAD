@@ -160,6 +160,31 @@ def measure(data, fx, height, horizon, yaw, lateral, ranges, reach_m=3.0, k=2.5)
             np.asarray(cross, bool), seen)
 
 
+def per_frame(data, fx, height, horizon, yaw, lateral, ranges, min_n=3, **kw):
+    """Per-FRAME median offset from the lane centre, plus its crossing count.
+
+    ⚠️ A MEDIAN OVER SAMPLES AND A DISTRIBUTION OVER FRAMES ARE DIFFERENT CLAIMS,
+    and reporting the first as if it were the second is the mistake this whole
+    calibration has now made twice (`R-2026-09-19-greenhue`). A calibration can
+    have a median offset of zero while a fifth of frames are half a metre out,
+    and it is a frame that Sayed looks at.
+
+    ⚠️ IT ALSO CANNOT BE READ PER FRAME AS A CALIBRATION ERROR. The metric's
+    premise is that the car drives CENTRED between the markings -- true on
+    average, false in any given frame, where the driver is a few centimetres off
+    and correcting. The per-frame spread therefore contains real driving as well
+    as calibration error, and only the CENTRAL VALUE over many frames is a
+    calibration claim. The spread bounds how much a single frame can be trusted.
+    """
+    out = []
+    for rec in data:
+        off, _pr, cross, _seen = measure([rec], fx, height, horizon, yaw, lateral,
+                                         ranges, **kw)
+        if len(off) >= min_n:
+            out.append((rec[3], float(np.median(off)), int(cross.sum()), len(off)))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--fx", type=float, default=1533.0)

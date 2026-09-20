@@ -2961,3 +2961,110 @@ the docstring was right and the application wrong.
 ⇒ **STANDING RECOMMENDATION: do not override `--cam-yaw` on this corpus.** Let `lane_calib` measure
 it. An override is admissible only with a measurement that beats the metric by more than its noise,
 and this one did not.
+
+---
+
+# Part 29 — three instruments, three different questions, and only the third one mattered
+
+## §138 The complaint contained the specification and I had scored half of it
+
+Sayed, seven renders in, on the frame at `t = 33.63 s`:
+
+> *"the trajectory still [is] leaving the road, **knowing that ego [is] driving between the
+> road markings**"*
+
+`road_containment.py` (Part 28) scores **"is the ribbon on drivable asphalt?"** and gave the v6
+render 96 % of frames clean. That answer is true. It is also **permissive in exactly the direction
+of the error**, because this is a **two-lane carriageway** — the asphalt continues across the
+left-hand line for another ~3.5 m, so a ribbon drifting toward the adjacent lane never leaves the
+mask and never costs a point.
+
+**MEASURED** on his frame (source 908), scale `h/(v−v_h)`, no other calibration:
+
+| range | clear to LEFT line | clear to RIGHT line | lane | centred clear would be |
+|---|---|---|---|---|
+| 10 m | **+0.43 m** | +1.29 m | 3.59 m | 0.87 m |
+| 12 m | **+0.31 m** | +1.39 m | 3.58 m | 0.86 m |
+
+Both positive ⇒ road-containment sees nothing. Yet the ribbon is **0.44 m left of lane centre at
+10 m and 0.55 m at 12 m**, and **a bias that grows with range is residual yaw**.
+
+## §139 Two of the three instruments were also simply broken
+
+**`corridor_edges` locked onto roadside foliage** (`R-2026-09-19-greenhue`). It selected the drawn
+ribbon by hue alone. Composite frame 165 row 340 → columns **834–845 at BGR (28,99,77)**, dark
+foliage, while the ribbon sits at **470–521 in pale (206,229,208)**. A 16 px "1.855 m ribbon" gives
+**0.112 m/px, 20× the true scale**, so ordinary pixel distances became **−6.72 / −8.08 / −10.68 m**;
+and where both share a row, min/max spans both → (470, 835) for a ribbon ending at 521. This
+manufactured *"19.8 % of frames leave the road"* on frames whose ribbon is squarely between the
+painted lines. ⇒ **a colour test selecting a DRAWN overlay must gate on brightness, not only hue.**
+
+**`drivable_mask` called shadowed asphalt "not road"** (`R-2026-09-19-hsvshadow`). Shadow here is
+sky-lit, so it is blue, and `S = (max−min)/max` makes a dark blue-grey pixel read as saturated:
+frame 1860 shadowed asphalt BGR (98,79,58) → **S = 104** against a threshold written for sunlit
+asphalt (**S = 8**). Replaced with CIELAB chromaticity, **MEASURED** on frame 1860:
+
+| region | L\* | a\* | b\* | kept by `\|a*\|<8, −22<b*<6` |
+|---|---|---|---|---|
+| sunlit asphalt | 119 | −1.3 | −3.0 | 99.8 % |
+| **shadowed asphalt** | 76 | −1.3 | −12.1 | **100.0 %** (was lost) |
+| lane paint | 155 | −2.6 | +0.6 | 96.5 % |
+| vegetation bank | 107 | −7.9 | +23.6 | 0.7 % |
+| concrete barrier | 193 | +2.0 | +21.3 | **0.0 %** (was kept) |
+| sky | 183 | −6.5 | −33.2 | 0.0 % |
+
+## §140 `lane_containment.py` — offset from the LANE CENTRE, whose correct value is zero
+
+The car drove between the markings, so the ribbon drawn around its own recorded future path must be
+**centred between them**. That is the metric, and the target is **0.000 m**, not "on the road".
+
+⚠️ **Its own first version could not return a failure.** It searched for paint strictly *outside*
+the ribbon edges, so a sample where the ribbon sits ON a line was **dropped for want of a detection
+instead of recorded as a crossing** — it reported `cross 0.0 %` for **every** arm, including v1,
+whose ribbon is over a metre off centre at 30 m. Anchoring both searches on the ribbon's CENTRE
+gives v1 **8.2 %** and v6 **4.0 %**. *(Caught by a control, not by inspection.)*
+
+## §141 The answer: yaw −6.40°, lateral −0.320 m, horizon 472
+
+Joint scan over yaw × lateral, 300 frames, scoring the **worst per-range median** so a calibration
+cannot trade near field against far — which is how the yaw error hid for three renders. Interior
+optimum, not on a scan edge.
+
+| calibration | worst-range \|offset\| | per-range offsets, 8→30 m |
+|---|---|---|
+| v6 shipped (−7.75, −0.150) | 0.356 m | −0.020 +0.097 +0.143 +0.190 +0.227 +0.278 **+0.356** +0.348 |
+| **v7 (−6.40, −0.320)** | **0.038 m** | −0.038 +0.007 +0.028 +0.001 −0.030 −0.021 −0.031 +0.031 |
+
+v6 climbs monotonically with range (a yaw error); **v7 is flat**. Per frame, over 400 frames:
+
+| calibration | p50 | frames >30 cm off | cross rate |
+|---|---|---|---|
+| v1 (−5.35, −0.126) | −0.415 | 65.3 % | 7.8 % |
+| v5 (−7.01, −0.088) | −0.058 | 36.6 % | 3.3 % |
+| v6 (−7.75, −0.150) | +0.180 | 46.8 % | 4.2 % |
+| pipeline LaneCalib (−6.86, −0.088) | −0.081 | 40.4 % | 3.3 % |
+| **v7 (−6.40, −0.320)** | **+0.027** | **32.8 %** | **3.1 %** |
+
+⭐ **−6.40° agrees with every independent estimate and with the pipeline itself** — `LaneCalib`
+−6.86 (981 segments), FOE −6.31, VP fit −6.05, pair-Hough −6.20…−6.51, road-VP −6.26. **−7.75 agreed
+with none of them**, and it was mine.
+
+## §142 What the remaining spread is — and what it is not
+
+**MEASURED**, splitting v7's per-frame offsets by how much the road curves ahead:
+
+| \|path lateral @ 30 m\| | n | median offset | robust sd |
+|---|---|---|---|
+| **0–0.5 m (straight)** | **274** | **+0.001 m** | 0.349 |
+| 0.5–1.5 m (curving) | 55 | +0.149 m | 0.244 |
+
+**On straight road the calibration is correct to 1 mm of median offset.** The residual correlates
+with curvature (r = +0.301) and steering (r = +0.269) — a **path/heading effect in bends**, not a
+static camera parameter, and it is worth ~0.15 m.
+
+⛔ **THE PER-FRAME SPREAD IS NOT ALL CALIBRATION AND MUST NOT BE READ AS SUCH.** The metric's premise
+is that the car drives centred — true on average, false in any given frame, where the driver is a
+few centimetres off and correcting. Only the **central value over many frames** is a calibration
+claim; the spread bounds how much any single frame can be trusted. On frame 908 itself v7 still
+reads +0.43 m at 12 m, about 1.2 robust-sd from the straight-road median — **an unremarkable frame
+for this spread, and not separable from real driving with one frame.**
