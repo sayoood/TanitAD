@@ -13285,3 +13285,78 @@ value stops counting as live, and a demotion is **falsely reported**, which **bl
 both sessions**. ⇒ `CORRECTION` is now admitted only as an **announcement** (line-initial, or
 followed by a colon or a date), and the doubtful stems are left out. 7/7 pattern cases; the
 mutation proof re-run after the change is still **5/5 with a green control**.
+
+<!-- D-S1-DEP-BOX-FIGURES-CORRECTED-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — `D-S1-DEP-BOX`'s quantification carries SUPERSEDED figures, corrected here
+
+The `BOXHEAD-CURVE-2026-09-20` entry quantifies the blocker with near-forward **\|dx\| 3.09 /
+\|dy\| 2.97, L1 6.06 m**. Those are the values re-measured and corrected the same day.
+
+| | superseded | **measured** (`a9e75c6`, `cb274b0`) |
+|---|---|---|
+| near-forward L1 | 6.06 m | **5.9539 m** |
+| \|dx\| | 3.09 | **2.9826** |
+| \|dy\| | 2.97 | **2.9713** |
+| interval | *none* | **CI95 [4.8922, 7.1084]**, episode-clustered |
+| n | "129 pairs" | 129 pairs = 24 windows = 21 episodes = **12.91 effective clusters** |
+
+⛔ **A live pod blocker was carrying a number a reader would take as current.** The cause of the
+6.06/3.09 gap is known exactly — the trainer pads to nearest-32 over ALL targets and applies the
+near-forward filter LATER, so near-behind targets consume slots. ⚠️ **No conclusion moves:**
+`meets_bar` is false either way at ~3× the 2 m target, and the entry's own reading — *"the lever is
+GENERAL localisation, not a depth fix"* — is unchanged, as is its isotropy finding.
+
+⭐ **What this blocker still needs, stated precisely.** `POD_REQUEST` §5 asks for *"the held-out BOX
+read (AP vs its base rate, velocity MAE)"*. Of that:
+* **localisation** — ✅ done, above, with an interval and a population split.
+* **velocity** — ✅ done: `box_quality`'s own control reads `vel_gain_mps` **2.8738** with
+  `vel_beats_zero_floor` **true** against a zero-velocity predictor.
+* **detection** — ⛔ the remaining gap, and ⭐ **conventional AP is NOT the right instrument here**:
+  `match_slots` pairs min(n_target, n_query), so with ≤ 32 padded targets against 100 queries
+  **every valid target is matched by construction** and there are no missed detections to score.
+  ⛔⛔ Worse, scoring `presence` at predicting *"was matched"* would be **CIRCULAR** —
+  `agent_slots.py:475-477` puts `w["presence"] * -sigmoid(presence_logit)` **into the Hungarian
+  cost**, so which queries get matched already depends on presence. Same trap as enriching a DAC
+  pack with P2's own criterion (`50857f4`).
+⇒ the detection read is therefore **matcher-free**: does the head's COUNT of confident slots track
+the true target count, against a **CONSTANT predictor at the mean** as the no-information control.
+
+### ⛔⛔ 2026-09-20 — the detection read: the box head's PRESENCE output is ~ALWAYS-ON and is **8.4× WORSE than a constant predictor**
+
+MEASURED, CPU, A8 `ckpt_5000`, 40 windows / 27 episodes, matcher-free
+(`…/2026-09-20-perception-bar-rescore/code/presence_read.py`, `raw/presence_read.json`).
+
+| | |
+|---|---|
+| true targets per window | **25.15** |
+| confident slots predicted (σ > 0.5, of 100) | **96.55** |
+| mean presence probability · max | **0.7524** · 0.8551 |
+| **MAE, head** | **71.40** |
+| **MAE, constant control** (predict the mean) | **8.498** |
+| **improvement over constant** | **−62.90**, CI95 **[−66.40, −58.64]**, episode-clustered |
+
+⇒ ⛔ **The head's count does NOT beat a constant predictor — it is separated in the WRONG
+direction.** ⭐ And the prior bias makes it sharper: `presence` is initialised at `logit(0.05)`
+(`agent_slots.py:273`), so an **untrained** head sits near **5** of 100. This one sits at **96.55**.
+It moved far from the prior, **the wrong way**: it learned to say *present* almost everywhere.
+
+⇒ ⛔ **CONSEQUENCE FOR `S1-GATE-PRED`, which is why this blocker exists.** The gate is defined on
+predicted occupancy from the BEV map **and the 3-D box heads**. A presence output that fires on
+96.55 of 100 slots **cannot supply an occupancy signal** — a gate built on it would treat nearly
+every slot as an object. ⇒ the box-head half of `D-S1-DEP-BOX` is **NOT discharged**, and
+`S1-GATE-PRED` must not be run against this head as it stands.
+
+⚠️ ⛔ **THE MECHANISM IS NOT ESTABLISHED, AND MY FIRST READING WAS WRONG.** `agent_slots.py:556-565`
+supervises presence by BCE over **ALL** slots — matched → target 1 at weight 1.0, unmatched →
+target 0 at weight `NO_OBJECT_W`. I first took `NO_OBJECT_W = 0.02173` from a handoff prompt; ⛔
+**source says `0.1`** (`agent_slots.py:232`) and A8's `argv` carries no override, so **0.1 was in
+force**. ⇒ the ∅ term is **present at a conventional DETR-like weight**, which makes the saturation
+*more* anomalous, not less — and it means *"the loss never asked"* is **FALSE**.
+⚠️ Candidates, none separated: under-training at 5,000 steps; a ∅ weight too low for a 100-query /
+25-target ratio (note DETR's own ratio is ~100:7, i.e. **ours has MORE objects**, which should make
+the ∅ weight bite *less*); or a head-capacity limit. **Not asserted.**
+
+⚠️ **Stated limit of this read:** a single threshold (σ > 0.5) was used, the natural one for a
+sigmoid. A sweep was **not** done. The narrow observed range (mean 0.7524, max 0.8551) bounds how
+much a better threshold could recover, but does not rule it out.
