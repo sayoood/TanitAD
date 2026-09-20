@@ -13053,3 +13053,43 @@ every cell — is the general answer.
 ⚠️ ⛔ **NOT a claim that anything landed is wrong.** `a9e75c6` deliberately kept `6.06` and marked
 it superseded, which is the disclosed and intended use. The point is that the guard **did not
 verify** that; it saw a token. Logged as a known limit, not a defect to patch tonight.
+
+<!-- D-NAVSIM-STOP-1-SECOND-MECHANISM-EXPLAINED-2026-09-20 -->
+
+### ⭐⭐ 2026-09-20 — `D-NAVSIM-STOP-1`'s SECOND MECHANISM IS EXPLAINED: a "stopping" plan's ego-progress is its **BRAKING DISTANCE**
+
+MEASURED, 0 GPU, no new scoring (`…/2026-09-20-navhard-clause-stratum-confirm/code/ep_mechanism.py`,
+`raw/ep_mechanism.json`). Closes the question left open at `d86dccb` and made load-bearing by
+`f3fdcc9`, where the ≤ 5 m clause was shown to be an amplifier rather than the cause.
+
+**The prediction, derived from SOURCE and stated before computing.**
+`pdm_scorer._calculate_progress` projects **END minus START** onto the centerline —
+`start = ego_coords[p, 0, CENTER]`, `end = ego_coords[p, -1, CENTER]`, clipped at 0. ⛔ But
+`ego_coords[p, 0]` is the first **SIMULATED** tick, and the ego is propagated by a controller from
+its **initial velocity**: it cannot stop instantly. ⇒ a "stop" plan still travels its **braking
+distance**, which is real centerline progress. ⇒ **PREDICTED: STOP's EP must RISE with \|v0\|.**
+
+| venue | Q1 (\|v0\|≈0.3) | Q3 | Q5 (\|v0\|≈9.6) | **Q5/Q1** | monotone | **EP == 0 in Q1** |
+|---|---|---|---|---|---|---|
+| **warmup**, 167 non-fired | 0.0331 | 0.2429 | **0.3907** | **11.80×** | ✔ | **21.2 %** |
+| **navhard**, 4,240 non-fired | 0.0284 | 0.2437 | **0.3037** | **10.69×** | ✔ | **38.8 %** |
+
+⇒ **Monotone on both venues, ~11× across the speed range.** ⭐ And the `EP == 0` column is the
+clincher: where the ego is genuinely near-stationary, **21–39 % of scenes score EP exactly 0.0** —
+precisely what the source requires when `end == start` — while in every faster quintile that
+fraction collapses to ~0. **The EP a "stationary" plan earns is the ground it covers slowing down.**
+
+⇒ ⛔ **THIS REFRAMES THE WHOLE FINDING, AND IN THE BENCHMARK'S FAVOUR.** The STOP arm is
+**misnamed as a control**: it is not "a plan that does nothing" but "a plan that brakes to a halt",
+and braking from road speed covers real distance along the route. So EPDMS is **not** rewarding
+inaction — it is giving partial progress credit to a policy that takes near-zero collision and
+drivable-area risk. That is defensible benchmark behaviour, not a pathology.
+⚠️ It does **not** rescue *"we beat constant velocity"*: an arm can still be beaten by braking, and
+every warmup/navhard row is still reported against STOP as well as CV (`4609809`).
+
+⚠️ **What is NOT established.** This infers the mechanism from **EP versus v0**; it does not
+measure the STOP arm's actual per-scene displacement, which would need the simulator's rollout and
+is the direct confirmation. ⭐ The inference is strong because the prediction came from the code and
+held on two venues with an independent zero-check, not because the data were unseen — **both
+venues' scores were already known, so this is EXPLORATORY**, a mechanism test rather than a
+pre-registered result.
