@@ -12393,3 +12393,56 @@ under an ambient environment is a guard that does not run.
 ⛔ **No P arm has been run.** P0-REPLICATE goes first when the card frees, and it goes after the
 instrument exists — otherwise the replicate floor would be measured with a scorer nobody had
 tried to break.
+
+<!-- H-DAC-DEF-1-ADJUDICATED-2026-09-20 -->
+
+### ⛔ 2026-09-20 — `H-DAC-DEF-1` is ADJUDICATED and the verdict is INCONCLUSIVE FOR ADOPTION
+
+Blinded 60-window pack built by the DataFlyWheel (`9e29a43`), labelled blind by the Master Mind
+and landed **before** the key (`c38fc6f`), scored by the DataFlyWheel and **re-derived
+independently** by the Master Mind (`code/rescore.py`) — same numbers, different code.
+
+| candidate | fires | false-fire | false-pass | agree % |
+|---|---|---|---|---|
+| **V0** | 50 | 50 | 0 | **16.7 %** |
+| **P1** | 30 | 30 | 0 | **50.0 %** |
+| **P2** | 10 | 10 | 0 | **83.3 %** |
+| *a rule that never fires* | *0* | *0* | *0* | ***100 %*** |
+
+Human labels: **60 on-surface, 0 over-boundary, 0 cannot-tell** (A 20 · B 20 · C 10 · D 10).
+
+⛔ **`D-DAC-ADJ-INCONCLUSIVE` — the verdict is not "no candidate clears".** §5.4's ≥ 95 % bar was
+written for a REPRESENTATIVE sample while §5.1 specifies a DISAGREEMENT-ENRICHED one; the bar is
+therefore unreachable by construction for any rule that ever fires. That is a contradiction inside
+the pre-registration, not a result about the rules. The post-hoc population-reweighted column is
+recorded, labelled post-hoc, and **adopts nothing** — choosing the column that adopts is what
+pre-registration exists to prevent. **No candidate is adopted or rejected.**
+
+⭐ **`D-DAC-ALL-FIRINGS-FALSE` — what holds under either reading.** Sixty windows spanning every
+disagreement region produced **zero** over-boundary labels, so **every firing of every candidate in
+this sample is a false alarm**, and the candidates differ only in how often they false-alarm.
+
+⛔⭐ **`D-DAC-NO-POSITIVES` — the sample cannot RANK the candidates, and this is the load-bearing
+finding.** With 0 over-boundary labels, false-pass is **0/0** for every rule ⇒ **a rule that always
+answers "on-surface" scores 60/60 = 100 %**, beating P2. Agreement on this pack measures how
+*rarely a rule fires*, not whether it is *right*. The draw enriched for RULE FIRING, never for
+actual departures.
+
+⛔⭐ **`D-DAC-CLIP-CLUSTER` — P2's evidence base is 3 clips, not 10 windows.** The draw sampled
+WINDOWS: stratum A 20 windows / 16 clips, B 20 / 13, **C 10 / 3 (largest cluster 6 = 60 %)**, D
+10 / 10. So the candidate the count flatters rests on the smallest and most clustered stratum, and
+per independent observation P2 is the **least**-supported of the three. Same family as the
+`overlapping_holdout_se` rule with the object swapped: the estimator is fine, the **unit** is wrong.
+
+⇒ **Next pack, pre-registered here:** enrich for **POSITIVES** rather than for firing; find
+candidate departures by a mechanism **independent of the rules under test** (a physical cue, a
+human video sweep, or wide-margin agreement of all candidates *plus* the ego's own future pose —
+⛔ never "where V0 fires hardest", which is the check-shares-the-defect trap); spend the next
+samples in **stratum D** (408 windows, 10 sampled), the only unclustered stratum and the only place
+a false-pass can live; and **draw by CLIP first**, reporting the cluster count beside every n.
+
+⚠️ Recorded against the Master Mind: `RESULT_MM_LABELS.md` reports 10 BORDERLINE rows, the landed
+CSV carries **9** (a `grep -c` that also matched the header, plus W46 named in prose without the
+token). ⛔ The CSV is **not** edited — the key is out, and touching a label file after seeing the
+answers destroys the property that made landing it first worth anything. 6 of the 9 fall in
+stratum B, the P1/P2 boundary an adoption decision turns on.

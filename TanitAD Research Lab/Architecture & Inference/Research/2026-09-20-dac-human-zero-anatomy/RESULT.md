@@ -191,3 +191,73 @@ statistic: the rails run down the roadway and the red marks ride the kerb line.
 reads **0.00 m** at some x — places where the map has **no drivable cell at all across the whole
 lateral extent**, which is a map gap rather than a kerb. Those are the only candidates left for
 cause 3, and they are a handful of samples, not 44.6 % of windows.
+
+## Appended 2026-09-20 — the blind labels scored against the key
+
+The Master Mind labelled all 60 sheets blind and landed them (`c38fc6f`,
+`adjudication/LABELS_MASTERMIND.csv`, blob `160576e1ab`) BEFORE the key left this session. Scored
+here against the key whose sha256 was published in the pack before any label existed.
+
+**The three label cells, kept apart** — `cannot-tell` is never folded into agreement or
+disagreement:
+
+| stratum | population | sampled | on-surface | over-boundary | cannot-tell |
+|---|---|---|---|---|---|
+| A — V0 fires, P1 does not | 264 | 20 | **20** | 0 | 0 |
+| B — P1 fires, P2 does not | 31 | 20 | **20** | 0 | 0 |
+| C — all three fire | 33 | 10 | **10** | 0 | 0 |
+| D — none fires | 408 | 10 | **10** | 0 | 0 |
+
+⛔ **Zero `cannot-tell` is a property of the adjudicator's tie-break, not of these images.** The
+rule, fixed before the hard cases and applied to all 60: label on-surface / over-boundary whenever
+the surface beneath the path is visible in ANY panel; reserve `cannot-tell` for when it is visible
+in none. It must not be read as *"the camera always shows enough"*.
+
+### The scoring, both readings
+
+| candidate | agree | false-fire | false-pass | **committed reading (§5.4, over the 60)** | ⚠️ post-hoc, population-reweighted |
+|---|---|---|---|---|---|
+| **V0** (current rule) | 10 | 50 | 0 | **16.7 %** — does not clear | 55.4 % [LB 41.1 %] |
+| **P1** (road surface) | 30 | 30 | 0 | **50.0 %** — does not clear | 91.3 % [LB 72.0 %] |
+| **P2** (explicit off-road) | 50 | 10 | 0 | **83.3 %** — does not clear | **95.5 %** [LB 75.6 %] |
+
+⛔ **A DEFECT IN THIS PRE-REGISTRATION, REPORTED AGAINST MYSELF.** §5.4's bar (≥ 95 % agreement,
+neither error direction above 5 %) was written for a REPRESENTATIVE sample, but §5.1 specifies a
+DISAGREEMENT-ENRICHED one: **50 of the 60 windows were selected *because* a rule fires there**. Over
+such a sample the bar is unreachable by construction for any rule that ever fires, so *"no candidate
+clears"* is partly a property of the sample design and cannot separate **a wrong rule** from **a
+sample built to find firing**. The reweighted column is the quantity the bar was *meant* to express;
+it is **post-hoc**, it is labelled so everywhere, and ⛔ **it adopts nothing**. Which reading governs
+is an amendment for the Master Mind and the PI, to be recorded BEFORE it is used to adopt anything.
+
+### What holds under either reading
+
+⭐ **Sixty windows spanning every disagreement region produced ZERO `over-boundary` labels.** So in
+this sample every firing of every candidate is a **false alarm**, and the candidates differ only in
+how often they false-alarm — which is exactly their landed corpus rates: V0 **44.57 %**, P1
+**8.70 %**, P2 **4.48 %**. With no positives in the sample, "agreement" reduces arithmetically to
+"one minus the false-alarm rate"; that is what the data implies, not a rate chosen for comfort.
+
+⚠️ **Where this design is blind:** stratum D (408 windows, none firing) was sampled **10**. That is
+why the lower bounds above are wide — they let every unsampled window go the other way at the
+one-sided 95 % limit. A corpus-level claim needs its samples spent there, not in the firing strata.
+
+### Two defects in MY instruments, found by the adjudicator
+
+1. ⛔ **The renderer has no depth test.** Ground points beyond a raised foreground object are drawn
+   ON TOP of it, so a snow bank, kerb or parked car in the near field can make an on-road path look
+   as though it runs over the obstacle (caught on one sheet, where panel D shows the car on the
+   cleared carriageway). ⭐ The bias runs **toward over-boundary**, and the adjudicator still
+   returned zero — so it cannot explain the result; it makes the zero **stronger**. The next pack
+   must either depth-test the overlay or say in the sheet header that it does not.
+2. ⚠️ **The blinding is PROCEDURAL, not cryptographic.** The pack carries the seed and the builder,
+   and `dac_windows.jsonl` carries the verdicts, so the key is reconstructible from the commit —
+   the pack's own `key_is_reproducible` says so. **The adjudicator could have derived it and did
+   not**, and that sentence is what makes the discipline auditable rather than asserted.
+
+### One inconsistency in the landed labels
+
+`RESULT_MM_LABELS.md` reports **10** rows flagged BORDERLINE; the CSV it summarises carries **9** —
+W18, W19, W25, W28, W43, W44, W50, W51, W60 (checked across every field after the label, not just
+the note column, because 14 notes contain commas). The PI's spot-check plan reads *"12 checks on the
+10 BORDERLINE rows"*; it should read 9, or a row is missing its flag. By stratum: B 6, C 1, D 2.
