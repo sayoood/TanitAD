@@ -43,6 +43,29 @@ MUTATIONS = [
      '        if arm_status(out_dir, a["name"]) == "INVALID":   # ⛔ RULE 3\n',
      '        if False:  # MUTATION M4\n',
      ["test_plan_STOPS_on_an_INVALID_arm"]),
+    ("M6_the_bound_lets_the_NEXT_arm_run", MOD,
+     '    if arm_status(out_dir, stop_after) == "VALID":\n'
+     '        return None, f"BOUND REACHED: {stop_after} is VALID and the authorisation ends there"\n',
+     "    pass  # MUTATION M6: the authorisation no longer ends\n",
+     ["test_the_bound_REFUSES_the_next_arm",
+      "test_plan_is_DONE_not_RUN_once_the_bound_is_reached"]),
+    ("M7_preflight_accepts_an_unauthorised_arm", MOD,
+     "    elif arm != authorised:\n"
+     "        bad.append(f\"⛔ arm {arm!r} is NOT the authorised arm {authorised!r} — refusing\")\n",
+     "    elif False:  # MUTATION M7\n        pass\n",
+     ["test_preflight_REFUSES_an_unauthorised_arm"]),
+    ("M8_replicate_silently_drops_a_flag", MOD,
+     '_REPLICATE_DROP = {"--out": 1, "--seed": 1}\n',
+     '_REPLICATE_DROP = {"--out": 1, "--seed": 1, "--w-box3d": 1}  # MUTATION M8\n',
+     # ⚠️ ONLY the verbatim test. `test_build_argv_ADDS_NOTHING` cannot see a DROP mutation:
+     # its fixture carries no `--w-box3d`, so removing that flag changes nothing there. Listing
+     # it would have been an expectation I could not meet — MEASURED 2026-09-20, the proof went
+     # ⛔ FAILED on exactly this and the fix was my expectation, never the guard.
+     ["test_build_argv_copies_the_base_VERBATIM_except_out_and_seed"]),
+    ("M9_unreadable_input_passes_preflight", MOD,
+     '        if not p.exists():\n            bad.append(f"{label}: MISSING {path}")\n            continue\n',
+     "        if not p.exists():\n            continue  # MUTATION M9: absent reads as fine\n",
+     ["test_preflight_REFUSES_a_missing_or_wrong_input"]),
     ("M5_partial_arm_is_DELETED_not_moved", MOD,
      "    dst = d.with_name(f\"{arm}.aborted-{int(time.time())}\")\n    shutil.move(str(d), str(dst))\n    return dst\n",
      "    shutil.rmtree(str(d))  # MUTATION M5\n    return d\n",

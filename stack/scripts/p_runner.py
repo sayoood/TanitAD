@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -46,6 +47,57 @@ ARMS: tuple[dict, ...] = (
 )
 GPU_MAX_MIB = 2500
 HOST_MIN_GB = 8
+
+#: ⛔ Flags that must NEVER be carried from the base arm into a replicate: they name the base
+#: run's own output, its seed, or a dump the replicate does not take. Everything else is copied
+#: VERBATIM, because `PREREG_PERCEPTION_BOX_QUALITY` §3.1 defines P0 as *"A8's exact flags, a
+#: different --seed, same steps"* — a replicate that quietly drops a flag is not a replicate.
+_REPLICATE_DROP = {"--out": 1, "--seed": 1}
+
+
+def build_argv(base_argv, *, seed: int, out: str) -> list:
+    """P0's command line from the BASE run's own recorded ``argv``. Pure, so it can be diffed.
+
+    ⛔ Copied verbatim except ``--out`` and ``--seed``. Nothing is added — in particular no
+    ``--eval-window-dump``, because an added flag makes the arm a different experiment and the
+    arm-to-arm difference stops being a floor.
+    """
+    out_argv, i = [], 0
+    base = list(base_argv)
+    while i < len(base):
+        tok = base[i]
+        n = _REPLICATE_DROP.get(tok)
+        if n is not None:
+            i += 1 + n
+            continue
+        out_argv.append(tok)
+        i += 1
+    return ["--out", str(out), "--seed", str(int(seed))] + out_argv
+
+
+def bounded_next(out_dir: Path, stop_after: str | None,
+                 arms: tuple[dict, ...] = ARMS) -> tuple[dict | None, str]:
+    """:func:`next_arm`, with a HARD BOUND. -> ``(arm_or_None, reason)``.
+
+    ⛔ THE AUTHORISATION BOUNDARY. The Master Mind authorised **P0-REPLICATE only** (2026-09-20):
+    chained behind A7, on the unchanged gate, and it *"must not roll on to P1 unattended"*. This
+    function is where that boundary lives, so it can be broken on purpose and seen to go RED
+    (`mutate_p_runner.py`). Once ``stop_after`` is VALID there is no next arm at any gate state.
+    """
+    nxt = next_arm(out_dir, arms)
+    if stop_after is None:
+        return nxt, "unbounded"
+    names = [a["name"] for a in arms]
+    if stop_after not in names:
+        return None, f"⛔ unknown bound {stop_after!r} — refusing to run anything"
+    if arm_status(out_dir, stop_after) == "VALID":
+        return None, f"BOUND REACHED: {stop_after} is VALID and the authorisation ends there"
+    if nxt is None:
+        return None, "every arm VALID"
+    if names.index(nxt["name"]) > names.index(stop_after):
+        return None, (f"⛔ next arm {nxt['name']} is BEYOND the authorised bound {stop_after} — "
+                      f"refusing to launch it unattended")
+    return nxt, f"within the bound ({stop_after})"
 
 
 # ============================================================================ pure decisions
@@ -118,16 +170,17 @@ def a7_clear(a7_dir: Path, arms=("A7-IN-s0", "A7-RND-s0", "A7-IN-s1", "A7-RND-s1
     return True, "A7 complete: 4/4 arms VALID, no panel process"
 
 
-def plan(out_dir: Path, a7_dir: Path, probe: str, panel_procs: int = 0) -> dict:
+def plan(out_dir: Path, a7_dir: Path, probe: str, panel_procs: int = 0,
+         stop_after: str | None = None) -> dict:
     """The whole decision in one place: ``RUN`` / ``WAIT`` / ``STOP`` / ``DONE`` + the reason."""
     for a in ARMS:
         if arm_status(out_dir, a["name"]) == "INVALID":   # ⛔ RULE 3
             return {"action": "STOP", "arm": a["name"],
                     "reason": f"{a['name']} check is INVALID — the panel stops rather than "
                               f"spending the card on arms that cannot be read"}
-    nxt = next_arm(out_dir)
+    nxt, why = bounded_next(out_dir, stop_after)
     if nxt is None:
-        return {"action": "DONE", "arm": None, "reason": "every arm VALID"}
+        return {"action": "DONE", "arm": None, "reason": why}
     ok7, why7 = a7_clear(a7_dir, panel_procs=panel_procs)
     if not ok7:
         return {"action": "WAIT", "arm": nxt["name"], "reason": why7}
@@ -155,46 +208,181 @@ def boxstat(py: str, box: str) -> str:
         return f"probe failed: {type(exc).__name__}"
 
 
+#: ⛔ THE SEARCH STRING IS ASSEMBLED AT RUNTIME AND NEVER APPEARS WHOLE IN ANY COMMAND LINE.
+#: MEASURED 2026-09-20, in this very function, whose previous docstring claimed to avoid exactly
+#: this: a literal `'*a7-imagenet-knockout*a7_run.sh*'` in the PowerShell command **matched the
+#: PowerShell process running it**, plus every shell that had ever typed the pattern — so the
+#: probe read 1..4 while the A7 launcher was demonstrably still WAITING at 3,950 MiB. The runner
+#: would then have waited FOREVER and P0 would never have launched. The documented fix is to make
+#: the emitted token disjoint from the searched token; here the parts are concatenated inside
+#: PowerShell, and the querying process excludes ITSELF by PID.
+_A7_PARTS = ("a7-imagenet", "knockout", "a7_run", "refc_v3_train")
+
+
+def _a7_query() -> str:
+    a, b, c, t = _A7_PARTS
+    return (f"$a='{a}';$b='{b}';$c='{c}';$t='{t}';"
+            "$m=@(Get-CimInstance Win32_Process | Where-Object { $_.ProcessId -ne $PID -and "
+            "$_.CommandLine -ne $null -and ("
+            "($_.CommandLine -like \"*$a-$b*$c.sh*\") -or "
+            "($_.CommandLine -like \"*$t.py*\" -and $_.CommandLine -like \"*$a-$b*\")"
+            ") });"
+            "Write-Output (\"ZQ\" + $m.Count + \"ZQ\")")
+
+
 def count_a7_procs() -> int:
-    """A7 panel processes, counted by their script path — never by a pattern that could match
-    this runner's own command line (the `pgrep -f` self-match trap)."""
-    ps = subprocess.run(["powershell.exe", "-NoProfile", "-Command",
-                         "(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "
-                         "'*a7-imagenet-knockout*a7_run.sh*' }).Count"],
-                        capture_output=True, text=True, timeout=120).stdout.strip()
+    """Live A7 panel processes (the panel script OR its trainer), counted pod-side-style.
+
+    ⛔ Returns **1 on an unreadable probe** — assume BUSY, never assume free. The count is emitted
+    as an opaque ``ZQ<n>ZQ`` marker and parsed from that, so the parser cannot match the words the
+    query itself contains.
+    """
     try:
-        return int(ps)
-    except ValueError:
-        return 1        # unreadable ⇒ assume BUSY, never assume free
+        raw = subprocess.run(["powershell.exe", "-NoProfile", "-Command", _a7_query()],
+                             capture_output=True, text=True, timeout=120).stdout
+    except Exception:                                    # noqa: BLE001
+        return 1
+    m = re.search(r"ZQ(\d+)ZQ", raw or "")
+    return int(m.group(1)) if m else 1
+
+
+def flag_value(argv, flag):
+    """The value after ``flag`` in an argv list, or None. Shared with `p_check_arm`."""
+    for i, t in enumerate(argv):
+        if t == flag:
+            return argv[i + 1] if i + 1 < len(argv) else None
+    return None
+
+
+def md5(path) -> str:
+    import hashlib
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def preflight(arm: str, authorised: str | None, files: dict) -> tuple[bool, list]:
+    """⛔ Everything that must be TRUE before the card is spent. -> ``(ok, reasons)``.
+
+    ``files`` maps a label to ``(path, expected_md5_or_None)``. A file that cannot be read is a
+    REFUSAL, never a pass: the admissible evidence that an input is right is its bytes, and an
+    unreadable file is indistinguishable from a wrong one.
+    """
+    bad = []
+    if authorised is None:
+        bad.append("no --authorise-arm given: this build launches nothing without an explicit "
+                   "arm name")
+    elif arm != authorised:
+        bad.append(f"⛔ arm {arm!r} is NOT the authorised arm {authorised!r} — refusing")
+    for label, (path, want) in files.items():
+        p = Path(path)
+        if not p.exists():
+            bad.append(f"{label}: MISSING {path}")
+            continue
+        if want:
+            try:
+                got = md5(p)
+            except OSError as exc:
+                bad.append(f"{label}: UNREADABLE ({type(exc).__name__}) — INCONCLUSIVE, refusing")
+                continue
+            if got != want:
+                bad.append(f"{label}: md5 {got} != expected {want}")
+    return (not bad), bad
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True, help="the P panel directory")
     ap.add_argument("--a7-dir", required=True)
-    ap.add_argument("--py", default="/c/Users/Admin/venvs/tanitad/Scripts/python.exe")
-    ap.add_argument("--boxstat", default="/c/Users/Admin/qland/boxstat.py")
+    ap.add_argument("--py", default="C:/Users/Admin/venvs/tanitad/Scripts/python.exe")
+    ap.add_argument("--boxstat", default="C:/Users/Admin/qland/boxstat.py")
+    ap.add_argument("--run-tree", default="C:/Users/Admin/tanitad-a7-run",
+                    help="the PINNED tree the arm runs from — never the moving repo")
+    ap.add_argument("--base-config", default=None,
+                    help="the BASE run's config.json; P0 copies its argv verbatim (§3.1)")
+    ap.add_argument("--trainer-md5", default=None, help="the pinned trainer's expected md5")
+    ap.add_argument("--labels-md5", default=None, help="the v7/v8 label file's expected md5")
+    ap.add_argument("--authorise-arm", default=None,
+                    help="⛔ the ONE arm this invocation may launch; without it nothing launches")
+    ap.add_argument("--stop-after", default=None,
+                    help="⛔ hard bound: once this arm is VALID the runner is DONE and will not "
+                         "roll on to the next arm")
     ap.add_argument("--poll-s", type=int, default=60)
-    ap.add_argument("--max-wait-h", type=float, default=48.0)
+    ap.add_argument("--max-wait-h", type=float, default=72.0)
     ap.add_argument("--dry-run", action="store_true",
                     help="print the decision and exit — never launches an arm")
     a = ap.parse_args(argv)
-    out, a7 = Path(a.out), Path(a.a7_dir)
+    out, a7, tree = Path(a.out), Path(a.a7_dir), Path(a.run_tree)
     out.mkdir(parents=True, exist_ok=True)
     deadline = time.time() + a.max_wait_h * 3600
+    trainer = tree / "stack" / "scripts" / "refc_v3_train.py"
     while True:
-        d = plan(out, a7, boxstat(a.py, a.boxstat), count_a7_procs())
+        d = plan(out, a7, boxstat(a.py, a.boxstat), count_a7_procs(), stop_after=a.stop_after)
         print("ZZP-%s %s | %s ZZ" % (d["action"], d["arm"], d["reason"]), flush=True)
         if a.dry_run or d["action"] in ("DONE", "STOP"):
-            return 0 if d["action"] in ("DONE", "RUN") else (3 if d["action"] == "STOP" else 0)
+            return 3 if d["action"] == "STOP" else 0
         if d["action"] == "RUN":
-            # ⛔ The launch itself is deliberately NOT implemented here yet: the P arms' trainer
-            # flags are pre-registered but not yet authorised to run, and a runner that could
-            # start one by accident is worse than one that cannot. The Master Mind's word turns
-            # this into a subprocess call; until then RUN is reported and the loop exits.
-            print("ZZP-READY-TO-LAUNCH %s — launch not armed in this build ZZ" % d["arm"],
+            arm = d["arm"]
+            spec = next(x for x in ARMS if x["name"] == arm)
+            if a.base_config is None:
+                print("ZZP-REFUSED no --base-config: a replicate with no base is not a "
+                      "replicate ZZ", flush=True)
+                return 6
+            base = json.loads(Path(a.base_config).read_text(encoding="utf-8"))
+            base_argv = list(base.get("argv") or [])
+            labels = next((base_argv[i + 1] for i, t in enumerate(base_argv)
+                           if t == "--v7-labels"), None)
+            checks = {"trainer": (trainer, a.trainer_md5)}
+            if labels and a.labels_md5:
+                checks["labels"] = (labels, a.labels_md5)
+            ok, why = preflight(arm, a.authorise_arm, checks)
+            if not ok:
+                for r in why:
+                    print("ZZP-PREFLIGHT-FAIL %s ZZ" % r, flush=True)
+                return 7
+            d_arm = out / arm
+            if arm_status(out, arm) == "PARTIAL":
+                print("ZZP-MOVED-ASIDE %s ZZ" % move_aside(out, arm), flush=True)
+            d_arm.mkdir(parents=True, exist_ok=True)
+            seed = int(spec["flags"][spec["flags"].index("--seed") + 1])
+            cmd_argv = build_argv(base_argv, seed=seed, out=str(d_arm / "run"))
+            (d_arm / "launch.json").write_text(json.dumps(
+                {"arm": arm, "authorised": a.authorise_arm, "stop_after": a.stop_after,
+                 "base_config": str(a.base_config), "run_tree": str(tree),
+                 "trainer_md5": md5(trainer), "seed": seed, "argv": cmd_argv,
+                 "base_argv_n": len(base_argv),
+                 "launched_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+                indent=1), encoding="utf-8")
+            print("ZZP-LAUNCH %s seed=%d ZZ" % (arm, seed), flush=True)
+            t0 = time.time()
+            with open(d_arm / "train.log", "wb") as log:
+                rc = subprocess.run([a.py, "-u", "scripts/refc_v3_train.py"] + cmd_argv,
+                                    cwd=str(tree / "stack"), stdout=log,
+                                    stderr=subprocess.STDOUT,
+                                    env={**os.environ,
+                                         "PYTHONPATH": os.pathsep.join(
+                                             [str(tree / "stack"), str(tree),
+                                              str(tree / "taniteval")]),
+                                         "PYTHONIOENCODING": "utf-8",
+                                         "OMP_NUM_THREADS": "6"}).returncode
+            print("ZZP-TRAIN-RC %s %d wall=%ds ZZ" % (arm, rc, int(time.time() - t0)), flush=True)
+            # ⛔ THE CHECK IS WHAT MAKES THIS RESUMABLE. Without `p_arm_check.json` a FINISHED
+            # 11 h arm reads as PARTIAL and the next invocation moves it aside. Run it whatever
+            # the trainer's status was — the admissible evidence is the artifact, not the rc.
+            steps = int(flag_value(cmd_argv, "--steps") or spec["steps"])
+            chk = subprocess.run(
+                [a.py, str(Path(__file__).resolve().parent / "p_check_arm.py"), str(d_arm),
+                 "--seed", str(seed), "--steps", str(steps)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace")
+            (d_arm / "check.out").write_text(chk.stdout + chk.stderr, encoding="utf-8")
+            st = arm_status(out, arm)
+            print("ZZP-ARM-%s-%s ZZ" % (arm, st), flush=True)
+            # ⛔ THE BOUND AGAIN, AFTER THE ARM: never fall through into the next one.
+            print("ZZP-BOUND-REACHED %s — not rolling on to the next arm ZZ" % a.stop_after,
                   flush=True)
-            return 0
+            return 0 if rc == 0 else 8
         if time.time() > deadline:
             print("ZZP-TIMEOUT after %.1f h ZZ" % a.max_wait_h, flush=True)
             return 4

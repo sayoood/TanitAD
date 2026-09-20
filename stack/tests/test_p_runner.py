@@ -145,3 +145,88 @@ def test_plan_is_DONE_when_every_arm_is_VALID(tmp_path):
     for a in PR.ARMS:
         _check(out, a["name"], "VALID")
     assert PR.plan(out, a7, "1200 12")["action"] == "DONE"
+
+
+# ============================================================ the P0-ONLY authorisation bound
+# ⛔ The Master Mind authorised P0-REPLICATE ONLY (2026-09-20): chained behind A7, unchanged gate,
+# and it "must not roll on to P1 unattended". These pin that boundary. A mutation that lets the
+# runner continue past the bound must turn test_the_bound_REFUSES_the_next_arm RED.
+BOUND = "P0-REPLICATE"
+
+
+def test_without_a_bound_nothing_changes(tmp_path):
+    arm, why = PR.bounded_next(tmp_path, None)
+    assert arm["name"] == "P0-REPLICATE" and why == "unbounded"
+
+
+def test_inside_the_bound_P0_still_runs(tmp_path):
+    arm, why = PR.bounded_next(tmp_path, BOUND)
+    assert arm["name"] == "P0-REPLICATE" and "within the bound" in why
+
+
+def test_the_bound_REFUSES_the_next_arm(tmp_path):
+    """⛔ The rule a mutation must break: P0 VALID ends the authorisation. P1 must NOT start."""
+    _check(tmp_path, "P0-REPLICATE", "VALID")
+    assert PR.next_arm(tmp_path)["name"] == "P1-STEPS", "unbounded, P1 would be next"
+    arm, why = PR.bounded_next(tmp_path, BOUND)
+    assert arm is None and "BOUND REACHED" in why
+
+
+def test_an_unknown_bound_runs_NOTHING(tmp_path):
+    arm, why = PR.bounded_next(tmp_path, "P9-NONSENSE")
+    assert arm is None and "unknown bound" in why
+
+
+def test_plan_is_DONE_not_RUN_once_the_bound_is_reached(tmp_path):
+    out, a7 = tmp_path / "p", _a7_complete(tmp_path)
+    _check(out, "P0-REPLICATE", "VALID")
+    d = PR.plan(out, a7, "0 32", stop_after=BOUND)
+    assert d["action"] == "DONE" and "BOUND REACHED" in d["reason"]
+    assert PR.plan(out, a7, "0 32")["action"] == "RUN", "unbounded, the same state would RUN"
+
+
+# ------------------------------------------------------------------ the replicate's command line
+def test_build_argv_copies_the_base_VERBATIM_except_out_and_seed():
+    base = ["--arm", "hier", "--seed", "0", "--steps", "5000", "--out", "OLD",
+            "--w-box3d", "1.0"]
+    got = PR.build_argv(base, seed=1, out="NEW")
+    assert got[:4] == ["--out", "NEW", "--seed", "1"]
+    assert got[4:] == ["--arm", "hier", "--steps", "5000", "--w-box3d", "1.0"]
+    assert "OLD" not in got and got.count("--seed") == 1 and got.count("--out") == 1
+
+
+def test_build_argv_ADDS_NOTHING():
+    """⛔ An added flag makes the arm a different experiment and the difference stops being
+    a floor — in particular no --eval-window-dump."""
+    base = ["--arm", "hier", "--seed", "0", "--out", "OLD"]
+    got = PR.build_argv(base, seed=1, out="NEW")
+    assert set(got) - set(base) - {"NEW", "1"} == set()
+    assert len(got) == len(base)
+
+
+# ------------------------------------------------------------------ preflight
+def test_preflight_REFUSES_an_unauthorised_arm(tmp_path):
+    f = tmp_path / "t.py"
+    f.write_text("x", encoding="utf-8")
+    ok, why = PR.preflight("P1-STEPS", "P0-REPLICATE", {"trainer": (f, None)})
+    assert ok is False and any("NOT the authorised arm" in r for r in why)
+
+
+def test_preflight_REFUSES_when_no_arm_was_authorised(tmp_path):
+    f = tmp_path / "t.py"
+    f.write_text("x", encoding="utf-8")
+    ok, why = PR.preflight("P0-REPLICATE", None, {"trainer": (f, None)})
+    assert ok is False and any("launches nothing" in r for r in why)
+
+
+def test_preflight_REFUSES_a_missing_or_wrong_input(tmp_path):
+    f = tmp_path / "t.py"
+    f.write_text("x", encoding="utf-8")
+    real = PR.md5(f)
+    ok, _ = PR.preflight("P0-REPLICATE", "P0-REPLICATE", {"trainer": (f, real)})
+    assert ok is True, "the right bytes must pass"
+    bad, why = PR.preflight("P0-REPLICATE", "P0-REPLICATE", {"trainer": (f, "0" * 32)})
+    assert bad is False and any("md5" in r for r in why)
+    miss, why2 = PR.preflight("P0-REPLICATE", "P0-REPLICATE",
+                              {"labels": (tmp_path / "nope.gz", None)})
+    assert miss is False and any("MISSING" in r for r in why2)
