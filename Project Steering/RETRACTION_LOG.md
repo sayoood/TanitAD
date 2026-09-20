@@ -3707,3 +3707,88 @@ line *at the assumed horizon row*, so it measures the yaw **given** the horizon 
 the one parameter still unresolved. It agreed with the shipped value because it was anchored to the
 same assumption. ⇒ **When one estimate agrees with the status quo and four disagree, the burden is
 on the agreeing one**, and the first question is what it shares with the thing it is confirming.
+
+---
+
+## `R-2026-09-19-greenhue` — "19.8 % of frames leave the road" was ROADSIDE FOLIAGE
+
+**WITHDRAWN:** the per-frame result *"19.8 % of v6 frames have a minimum margin below zero"*, and
+every number in the distribution that came with it (`p0 −16.30 m`, `p1 −3.22`, `p5 −0.32`), plus the
+"worst frames" list `47, 165, 162, 155, 169, 374`. All are artifacts. Inspected at full resolution,
+**every one of those frames has the ribbon squarely between the painted lines.**
+
+**ROOT CAUSE — A DETECTOR WITH NO BRIGHTNESS GATE LOCKED ONTO VEGETATION.** `corridor_edges` selected
+the drawn ribbon by hue alone (`g > r+20 & g > b+20`). MEASURED on the v6 render, composite frame 165
+row 340: that test returned columns **834–845 at BGR (28,99,77) / (0,64,42)** — dark foliage on the
+bank — while the ribbon at the next scanned row sits at **470–521 in pale (206,229,208)**. Two
+distinct failures followed, and **both inflate a margin in metres**:
+
+- the foliage **alone** was returned as a 16 px "ribbon"; scaled by the known 1.855 m width that is
+  **0.112 m/px, 20× the true scale at that row**, so an ordinary pixel distance became −6.72 / −8.08
+  / **−10.68 m**;
+- where ribbon and foliage share a row, min/max over green spans **both**: row 360 returned
+  (470, 835) for a ribbon ending at 521 — a 547 px "1.855 m", collapsing the scale to 0.003 m/px.
+
+**CLASS: `R-2026-09-15-seam` again** — a detector rewarded for locking onto continuous non-target
+structure the test could not exclude. ⇒ **A colour test that selects a DRAWN overlay must gate on the
+overlay's own brightness, not only its hue**; the drawn edge is pale (all channels > 190) and every
+natural green in frame is dark. Fixed with `v_min=150` plus a contiguity gate.
+
+⚠️ **AND THE HEADLINE IT CONTRADICTED WAS ALSO WRONG, IN THE OTHER DIRECTION.** The "97.9 % on-road"
+it was called out against is a **mean over (frame, range) SAMPLES**; Sayed looks at **one frame**, and
+a frame is bad if ANY part of the ribbon leaves the road. **A sample mean and a per-frame minimum are
+different questions** and I reported the one that flattered the render. Same family as the
+`overlapping_holdout_se` rule in `CLAUDE.md`: **the estimator is part of the claim.**
+
+---
+
+## `R-2026-09-19-hsvshadow` — the drivable mask called SHADOWED ASPHALT "not road"
+
+**WITHDRAWN:** `road_containment.drivable_mask`'s HSV test `S < 35 & V > 60`, and with it the
+**14.0 %** bad-frame rate it produced for v6 and the per-range profile that appeared to show residual
+yaw (`+0.36 m` at 10 m decaying to `−0.05 m` at 40 m). Re-measured with a chromaticity mask the same
+calibration gives **4.0 %** and a **FLAT** profile (+0.49 … +0.26), i.e. no residual yaw at all.
+
+**ROOT CAUSE — HSV SATURATION IS NOT A COLOURFULNESS MEASURE FOR DARK PIXELS.** Shadow on this road
+is lit by sky, so it is blue, and `S = (max−min)/max` makes a dark blue-grey pixel read as highly
+saturated. MEASURED frame 1860: shadowed asphalt BGR (98,79,58) → **S = 104**, against a threshold
+written for sunlit asphalt (S = 8). The six worst-scoring frames in the recording were frames failed
+on their own shadows. The same test was **accepting** the concrete barrier, padding the right margin.
+
+**THE FIX IS A COLOUR SPACE, NOT A THRESHOLD.** In CIELAB, shadow moves L* and leaves chromaticity
+alone. MEASURED over hand-placed regions of frame 1860 (n = 4.4k–68k), kept by `|a*| < 8, −22 < b* < 6`:
+sunlit asphalt 99.8 %, **shadowed asphalt 100.0 %**, lane paint 96.5 %, vegetation bank 0.7 %,
+concrete barrier 0.0 %, sky 0.0 %.
+
+**CLASS: the `df` / Thor-`free` / cgroup-`usage_in_bytes` family** — a probe that answers a different
+question than the one asked, and therefore looks like an answer.
+
+---
+
+## `R-2026-09-19-roadnotlane` — "on the road" is NOT the specification; "between the markings" is
+
+**WITHDRAWN as the deciding metric:** `road_containment.py`, and the reading that v6 at **4.0 % bad
+frames** means the calibration is correct. It is not wrong, it is **permissive in exactly the
+direction of the error**.
+
+**ROOT CAUSE — A TWO-LANE CARRIAGEWAY.** The drivable surface continues across the left-hand line for
+another ~3.5 m, so a ribbon drifting toward the adjacent lane **never leaves the mask and never costs
+a point**. Sayed's sentence contains the specification and I scored only its first half: *"the
+trajectory still [is] leaving the road, **knowing that ego [is] driving between the road markings**."*
+
+**MEASURED on the frame he sent** (source 908, t = 33.63 s), scale `h/(v−v_h)`, no other calibration:
+clearance to the **left** line `+0.43 m` at 10 m and `+0.31 m` at 12 m, to the **right** line
+`+1.29 m` and `+1.39 m`; lane 3.59 m, so a centred 1.855 m car should clear **0.87 m each side**. The
+ribbon is **0.44 m left of lane centre at 10 m and 0.55 m at 12 m** — both clearances positive, so
+road-containment sees nothing, and **a bias that grows with range is residual yaw**.
+
+⇒ `lane_containment.py`: the quantity is the ribbon's offset from the **LANE CENTRE**, whose correct
+value is known to be **zero** because the car was driving between the markings. Same family as the
+C6 confound — **scoring a marginal that the specification never asked about.**
+
+⚠️ **A SECOND DEFECT, CAUGHT BY A CONTROL, IN THAT METRIC'S FIRST VERSION.** It searched for paint
+strictly OUTSIDE the ribbon edges, so a sample where the ribbon *sits on a line* was **dropped for
+want of a detection instead of recorded as a crossing** — it reported `cross 0.0 %` for every arm in
+the panel, including the first shipped render whose ribbon is over a metre off centre at 30 m. **A
+metric structurally incapable of returning a failure is not measuring the failure, and "0.0 %" reads
+like a pass.** Anchoring the two searches on the ribbon's CENTRE gives v1 8.2 % and v6 4.0 %.

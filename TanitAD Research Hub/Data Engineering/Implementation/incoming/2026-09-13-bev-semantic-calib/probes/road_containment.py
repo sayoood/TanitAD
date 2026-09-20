@@ -67,16 +67,51 @@ import bev_calib as BC, lag_scale as LS, run_real as RR                # noqa: E
 DS = 2                      # mask downsample; 0.5 px at source is far below the signal
 
 
-def drivable_mask(img, s_max=35, v_min=60):
-    """Near-grey = carriageway (asphalt + paint). Everything else is not road."""
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    m = ((hsv[:, :, 1] < s_max) & (hsv[:, :, 2] > v_min)).astype(np.uint8)
+def drivable_mask(img, a_max=8, b_min=-22, b_max=6, legacy=False,
+                  s_max=35, v_min=60):
+    """Carriageway (asphalt + paint) by CHROMATICITY, in CIELAB.
+
+    ⛔ THE HSV VERSION CALLED SHADOWED ASPHALT "NOT ROAD", AND THAT INVENTED A
+    CALIBRATION DEFECT. Shadow on this road is lit by sky, so it is BLUE, and
+    HSV's saturation is ``(max-min)/max`` -- a dark blue-grey pixel is therefore
+    highly "saturated" even though it is plainly grey road. MEASURED 2026-09-19,
+    frame 1860: shadowed asphalt BGR (98,79,58) reads **S = 104**, against the
+    ``S < 35`` written for the sunlit case (S = 8). The consequence was not a
+    small bias: the six worst-scoring frames in the whole recording were frames
+    whose ribbon is squarely BETWEEN THE PAINTED LINES, failed on shadow.
+
+    Lab separates it cleanly because shadow changes L* and leaves chromaticity
+    alone. MEASURED over hand-placed regions of frame 1860 (n = 4.4k-68k each):
+
+        region              L*        a*        b*     kept by this test
+        sunlit asphalt     119      -1.3      -3.0        99.8 %
+        shadowed asphalt    76      -1.3     -12.1       100.0 %   <-- was LOST
+        lane paint         155      -2.6      +0.6        96.5 %
+        vegetation bank    107      -7.9     +23.6         0.7 %
+        concrete barrier   193      +2.0     +21.3         0.0 %   <-- was KEPT
+        sky                183      -6.5     -33.2         0.0 %
+
+    a* is near zero for road whatever the illumination; the verge is warm
+    (b* > +20) and the sky is deep blue (b* = -33), so a two-sided b* window
+    takes both. The barrier going from accepted to rejected matters as much as
+    the shadow: it was padding the margin on the right-hand side.
+
+    ``legacy=True`` restores the HSV test so the change stays auditable.
+    """
+    if legacy:
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        m = ((hsv[:, :, 1] < s_max) & (hsv[:, :, 2] > v_min)).astype(np.uint8)
+    else:
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB).astype(np.int16)
+        a = lab[:, :, 1] - 128
+        b = lab[:, :, 2] - 128
+        m = ((np.abs(a) < a_max) & (b > b_min) & (b < b_max)).astype(np.uint8)
     m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
     m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
     return m[::DS, ::DS]
 
 
-def load(n, s_max, v_min):
+def load(n, s_max=35, v_min=60, legacy=False):
     """Masks and future paths for n frames spread over the whole recording."""
     recs = {int(r["frame"]): r for r in RR.load_records(RR.RUN)}
     fdir = RR.RUN / "frames"
@@ -93,7 +128,8 @@ def load(n, s_max, v_min):
         r = recs[f]
         px, py = np.asarray(r["x"], float), np.asarray(r["y"], float)
         fwd = px > 0.0
-        out.append((drivable_mask(img, s_max, v_min), px[fwd], py[fwd]))
+        out.append((drivable_mask(img, legacy=legacy, s_max=s_max,
+                                  v_min=v_min), px[fwd], py[fwd], f))
     return out
 
 
@@ -109,7 +145,7 @@ def score(data, fx, height, horizon, yaw, lateral, ranges, half_w,
     P["pitch"] = LS.pitch_for_horizon(P, horizon)
     LON = float(P.get("longitudinal", 0.0))
     hit = np.zeros(len(ranges)); tot = np.zeros(len(ranges))
-    for m, px, py in data:
+    for m, px, py, *_ in data:
         H, W = m.shape
         pts = []
         for x in ranges:
@@ -133,6 +169,102 @@ def score(data, fx, height, horizon, yaw, lateral, ranges, half_w,
         return (0.0, hit, tot) if per_range else 0.0
     overall = hit[ok].sum() / tot[ok].sum()
     return (overall, hit, tot) if per_range else overall
+
+
+def row_margin_m(mask_row, col, height, v_src, horizon):
+    """Signed LATERAL margin, in metres, from one ribbon edge to the road edge.
+
+    Positive = this much road still to the outside of the edge; negative = the
+    edge is this far INTO the verge, which is the thing being complained about.
+
+    ⚠️ THE SCALE IS EXACT AND NEEDS NO EXTRA CALIBRATION. With
+    ``u = cx - f(y-lat)/x`` and ``x = f*h/(v-v_h)``, the focal length cancels:
+
+        du/dy = -f/x = -(v - v_h)/h    =>    |dy/du| = h / (v - v_h)
+
+    so a pixel at image row ``v`` is worth ``h/(v-v_h)`` metres of lateral, and
+    the metre value of a margin depends on the camera HEIGHT alone.
+
+    ⛔ WHY THIS IS A ROW SCAN AND NOT A DISTANCE TRANSFORM. A 2-D transform
+    returns the nearest non-road pixel in ANY direction, and near the horizon the
+    road band is only a few rows tall, so the nearest exit is upward -- it would
+    report a lateral margin that is really a longitudinal one, shrinking with
+    range for a ribbon that is perfectly placed. The complaint is lateral, so the
+    measurement is lateral.
+    """
+    W = len(mask_row)
+    c = int(round(col))
+    if not (0 <= c < W):
+        return None
+    mpp = height / max(v_src - horizon, 1e-6) * DS
+    if mask_row[c]:                      # on road: distance out to the nearer edge
+        li = c
+        while li > 0 and mask_row[li - 1]:
+            li -= 1
+        ri = c
+        while ri < W - 1 and mask_row[ri + 1]:
+            ri += 1
+        return float(min(c - li, ri - c) * mpp)
+    d = 1                                 # off road: distance back to the road
+    while d < W:
+        if c - d >= 0 and mask_row[c - d]:
+            break
+        if c + d < W and mask_row[c + d]:
+            break
+        d += 1
+    return float(-d * mpp)
+
+
+def margins(data, fx, height, horizon, yaw, lateral, ranges, half_w):
+    """Per-frame MINIMUM lateral margin over all ranges, and the per-sample values.
+
+    ⛔ THIS EXISTS BECAUSE THE SAMPLE AVERAGE AND THE PER-FRAME MINIMUM ARE
+    DIFFERENT QUESTIONS AND I REPORTED THE WRONG ONE. ``score`` above answers
+    "what fraction of samples are on the road" -- 97.9 % on v6. Sayed is not
+    looking at a sample average; he is looking at ONE FRAME, and a frame is bad
+    if ANY part of the ribbon leaves the road. A per-frame minimum is the
+    quantity his complaint is about, and it can be far worse than the mean.
+
+    ⚠️ It reads NOTHING from the rendered video. The first attempt at this metric
+    recovered the ribbon from the render with ``corridor_edges``, which locked
+    onto roadside FOLIAGE and invented margins of -6 to -16 m on frames that are
+    fully on-road (see that function's docstring). The projection already gives
+    the edge position exactly, so the detector was never needed.
+    """
+    P = dict(RR.NOMINAL)
+    P.update(fx=fx, height=height, lateral=lateral, yaw=np.deg2rad(yaw))
+    P["pitch"] = LS.pitch_for_horizon(P, horizon)
+    LON = float(P.get("longitudinal", 0.0))
+    per_frame = []
+    per_range = [[] for _ in ranges]
+    for m, px, py, *rest in data:
+        H, W = m.shape
+        pts = []
+        for x in ranges:
+            xc = x + LON
+            yc = float(np.interp(xc, px, py))
+            pts.append([xc, yc + half_w]); pts.append([xc, yc - half_w])
+        uv = BC.project_ground(np.asarray(pts, float), P)
+        worst = None
+        for k in range(len(ranges)):
+            vals = []
+            for e in (uv[2 * k], uv[2 * k + 1]):
+                if not np.isfinite(e).all():
+                    continue
+                r = int(e[1] / DS)
+                if not (0 <= r < H):
+                    continue
+                g = row_margin_m(m[r], e[0] / DS, height, float(e[1]), horizon)
+                if g is not None:
+                    vals.append(g)
+            if not vals:
+                continue
+            mk = min(vals)
+            per_range[k].append(mk)
+            worst = mk if worst is None else min(worst, mk)
+        if worst is not None:
+            per_frame.append((rest[0] if rest else -1, worst))
+    return np.asarray(per_frame, float), [np.asarray(v, float) for v in per_range]
 
 
 def main():

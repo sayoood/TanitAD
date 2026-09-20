@@ -50,18 +50,53 @@ S = 2.0 / 3.0                # composite / source scale (720/1080 == 1280/1920)
 ANCHOR_M = 12.0              # range at which the painted line's identity is fixed
 
 
-def corridor_edges(frame, row):
+def corridor_edges(frame, row, v_min=150, max_gap=None):
     """Left/right edge columns of the drawn ribbon at one composite row.
 
     The two edge polylines are drawn OPAQUE at (200,255,200) after the fill is
     blended, so they are green at every range even where the fill has gone amber.
+
+    ⛔ THE HUE TEST ALONE MATCHES ROADSIDE VEGETATION, and that manufactured a
+    metric. MEASURED 2026-09-19 on the v6 render, composite frame 165 row 340:
+    ``g > r+20 & g > b+20`` selected columns 834-845 at BGR (28,99,77)/(0,64,42)
+    -- **dark foliage on the bank**, nowhere near the ribbon, which at the next
+    scanned row sits at columns 470-521 in pale (206,229,208). Two distinct
+    failures followed, and BOTH inflate a margin in metres:
+
+      * the foliage ALONE was returned as a 16 px "ribbon". Scaled by the drawn
+        width it gives 0.112 m/px -- **20x the true scale at that row** -- so an
+        ordinary pixel distance became a -6.72 / -8.08 / -10.68 m "margin";
+      * where the ribbon and the foliage share a row, min/max over green spans
+        BOTH: row 360 returned (470, 835) for a ribbon that ends at 521, i.e. a
+        547 px "1.855 m", collapsing the scale to 0.003 m/px.
+
+    These produced "19.8 % of frames leave the road" on a calibration whose every
+    flagged frame is, on inspection, fully on-road at every range. Same class as
+    ``R-2026-09-15-seam``: a detector locking onto continuous non-target structure
+    that the hue test could not exclude.
+
+    The drawn edge is PALE -- every channel above ~190 -- while foliage is dark;
+    ``v_min`` is that separation and is the ONLY thing added to the hue test.
+    ``max_gap`` additionally rejects a row whose green pixels are not contiguous
+    enough to be one ribbon, which is what catches a merge the brightness gate
+    misses (a sunlit leaf).
     """
     im = frame[row, :PANEL].astype(int)
     b, g, r = im[:, 0], im[:, 1], im[:, 2]
-    green = (g > r + 20) & (g > b + 20)
+    green = (g > r + 20) & (g > b + 20) & (g > v_min)
     idx = np.flatnonzero(green)
     if len(idx) < 2 or idx.max() - idx.min() < 3:
         return None
+    if max_gap is not None and len(idx) > 1:
+        # keep the widest run whose internal gaps stay under max_gap; a genuine
+        # ribbon is the fill plus two edges, so its gaps are small.
+        brk = np.flatnonzero(np.diff(idx) > max_gap)
+        starts = np.concatenate(([0], brk + 1))
+        ends = np.concatenate((brk, [len(idx) - 1]))
+        k = int(np.argmax(idx[ends] - idx[starts]))
+        idx = idx[starts[k]:ends[k] + 1]
+        if len(idx) < 2 or idx.max() - idx.min() < 3:
+            return None
     return float(idx.min()), float(idx.max())
 
 
