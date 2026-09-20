@@ -3160,3 +3160,59 @@ quoted as one.
 `h = 1.586`; the pipeline's `LaneCalib` reads 3.40 m from 981 segments. Those differ by 6.4 %, which
 is the `f·h` degeneracy showing up as a height question, not a horizon one. **The flatness result is
 independent of it; the width VALUE is not.** Do not quote 3.618 m as a measured lane width.
+
+## §145 v8 — the numbers that go with the render
+
+**MEASURED**, 400 frames, `lane_containment`:
+
+| calibration | p50 | p5 | p95 | frames >30 cm off | cross rate |
+|---|---|---|---|---|---|
+| v1 first shipped (−5.35, −0.126, 448.4) | −0.212 | −0.651 | +0.394 | 45.1 % | 8.0 % |
+| v6 last sent (−7.75, −0.150, 472.0) | +0.180 | −0.517 | +0.734 | 46.8 % | 4.2 % |
+| **v8 (−6.40, −0.260, 463.0)** | **−0.003** | −0.653 | +0.556 | **35.7 %** | 4.6 % |
+
+**Per-range median offset (m), + = ribbon left of lane centre:**
+
+| calibration | 8 | 10 | 12 | 15 | 18 | 22 | 26 | 30 |
+|---|---|---|---|---|---|---|---|---|
+| v1 | −0.263 | −0.228 | −0.179 | −0.207 | −0.148 | −0.149 | −0.103 | −0.266 |
+| v6 | −0.022 | +0.055 | +0.145 | +0.186 | +0.280 | +0.300 | +0.382 | +0.373 |
+| **v8** | **−0.081** | **−0.021** | **+0.041** | **−0.012** | **−0.022** | **−0.012** | **+0.010** | **−0.037** |
+
+v6 climbs monotonically — a yaw error. **v8 is flat within 0.081 m over an 8–30 m span.** On straight
+road alone (333 of 400 frames, the calibration claim — §143) the median is **−0.040 m**, against
+v6's +0.124 and v1's −0.211.
+
+⚠️ **THE CROSSING RATE DID NOT IMPROVE (4.2 % → 4.6 %) AND THAT IS REPORTED, NOT BURIED.** Crossings
+are dominated by frames where the car genuinely runs close to a line, which no camera parameter
+fixes. The centring and the flatness are what moved.
+
+⭐ **A SCALE-FREE CONFIRMATION OF THE HORIZON**, in pure pixels — ribbon width ÷ lane width at the
+same row, which needs no `f`, no `h` and no horizon to evaluate:
+
+| | 8 m | 10 m | 12 m | 15 m | 18 m | 22 m | 26 m | 30 m |
+|---|---|---|---|---|---|---|---|---|
+| v6 (hz 472) | 0.507 | 0.499 | 0.497 | 0.492 | 0.489 | 0.487 | 0.485 | **0.480** |
+| v8 (hz 463) | 0.519 | 0.512 | 0.518 | 0.513 | 0.517 | 0.525 | 0.515 | **0.511** |
+
+v6 declines monotonically — **that is the flare**. v8 is flat to sd 0.005.
+
+⚠️ **This is the SAME CONDITION as §144's lane-width test re-expressed, not independent evidence for
+it** — same detections, same underlying requirement that the drawn 1.855 m tracks the lane across
+range. It is worth stating separately only because it contains no metres at all.
+
+⚠️ **The implied lane width of 3.59 m is CONDITIONAL ON `h = 1.586`** and is not a free measurement:
+`ratio = 1.855·h_true /(W_true·h)`, so the value pins `W_true·h`, not `W_true`. The `f·h` degeneracy
+is untouched by any of this. `LaneCalib` reads 3.40 m.
+
+## §146 The one assumption that cannot be tested from inside this metric
+
+`lane_containment` sets the lateral by forcing the ribbon to the lane centre **on average**, so it
+**absorbs the driver's mean lane position into the camera's lateral offset**. The two are exactly
+degenerate here and no amount of data separates them — if the driver habitually sits 10 cm left,
+the fitted `lateral` is 10 cm wrong and the metric reads zero.
+
+The only check available is a physical one, and it passes: the fitted **−0.260 m** sits close to the
+nominal windscreen-mount value of **−0.35 m**, so the assumption is not being forced to buy an
+absurd geometry. ⇒ **quote `lateral = −0.260 m` as "the value that centres the ribbon on this
+recording", never as a measured mount offset.**
