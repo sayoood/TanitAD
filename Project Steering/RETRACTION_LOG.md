@@ -15831,3 +15831,70 @@ advance rather than reasoning harder about the derivation.
 
 **What survives:** the method. `RESULT.md` §2 reports what the same free measurement produced
 anyway — the clause is an amplifier, **not** the cause of STOP's win.
+
+<!-- CLASS-2026-09-20-REPLICATION-UNIT -->
+
+### ⛔⛔ CLASS-2026-09-20-REPLICATION-UNIT — the unit of replication is whatever the SAMPLING drew, not whatever the table has the most rows of
+
+**Two instances found the same day, in two subsystems, by two agents.** Logged as ONE class
+because the root cause is identical and neither is a mistake about the estimator — in **both**
+cases the correct estimator already existed in the codebase and was applied to the wrong unit.
+
+| instance | the table's rows | what the sampling actually drew | shrink |
+|---|---|---|---|
+| **NavSim two-stage** (Master Mind, `2142b55`) | 204 warmup "scenes" · 5,462 navhard | **16** and **450** original-scene clusters (`corresponding_original_scene`, median 12 synthetic scenes each) | 12.75× / 12.1× |
+| **perception box bar** (TrainingFlyWheel, `bar_unit_probe.json`) | 129 near-forward "pairs" | 24 windows → **21 episodes**; one window pair shares **6 of its 8 frames** | 6.1× |
+
+⭐ **The discriminating check is one question: find the line that SAMPLED, and ask what it drew.**
+`randperm` over episodes draws episodes; a synthetic-scene generator seeded from an original scene
+draws original scenes. Everything downstream of that line is expansion, not replication, and
+counting it inflates `n` by exactly the expansion factor.
+
+⚠️ **Neither instance is an estimator error, which is why neither was caught by the existing
+rules.** The programme already mandates a paired episode-cluster bootstrap, and
+`taniteval/tools/box_quality.py:141-156` already routes `eid` to
+`taniteval.ci.episode_cluster_bootstrap`, pinned by `test_the_bootstrap_is_clustered_by_EPISODE`.
+The machinery was right and the **unit fed to it** was wrong. ⇒ A correct estimator applied to an
+inflated unit is *more* dangerous than no interval, because it looks rigorous.
+
+⚠️ **Scope it honestly, both ways.** This widens intervals; it moves no point estimate and
+rescues no arm. The NavSim verdict survives (lower bound > 0 in 12/12 streams) and the perception
+bar does **not** move toward its 2 m target. What it changes is the right to read small
+arm-to-arm differences as real.
+
+⛔ **And the shrink is small BY LUCK in one case, which is the reason to fix the estimator and
+not the number:** the perception draw happened to scatter across 21 of 24 windows. A draw that
+clustered would have collapsed the effective n far harder, and an estimator must not depend on how
+a `randperm` fell.
+
+⭐ Same family as the programme's existing *"never quote an interval without its estimator"* and
+*"name which variance your separated CI answered"* — with the object swapped again: here the
+estimator and the variance are both right and the **denominator** is not.
+
+<!-- RETR-2026-09-20-ABSENCE-AT-ONE-LOCATION-BOX-SCORER -->
+
+### ⚠️ RETR-2026-09-20-ABSENCE-AT-ONE-LOCATION-BOX-SCORER — I rebuilt an instrument that already existed, because I probed one file
+
+**What I claimed:** that the near-forward scorer was hardcoded to A8 and "needs generalising",
+and I began writing `arm_box_score.py` to take any checkpoint.
+
+**What is true:** `taniteval/tools/box_quality.py:175-213` already exposes exactly that —
+`--ckpt --config --cache --labels --agents --device --n --out`, building `windows, eid` with
+`eid = SP.sha12(corp.clip_ids[e_i])`, calling the **episode-clustered** `summarise`, writing
+`_provenance`, and printing controls (`matched_equals_target`, `vel_beats_zero_floor`) that my
+replacement did not have. It is mutation-proven (`mutation_proof_box_quality.json`, 15 passed).
+
+**Root cause: `ABSENCE FOUND AT ONE LOCATION IS NOT ABSENCE`** — the programme's own rule. I read
+`probe_box_axis.py:39`, saw `A8 + "\\ckpt_5000.pt"` hardcoded, and concluded the capability did
+not exist. I never probed the **library that probe imports from**, where the general version had
+been all along. Same shape as the Vulkan ICD (12 days) and `ps -C python3`.
+
+⭐ **What caught it before it landed was the self-test**, and the way it failed is the lesson: my
+copy reproduced the pair counts **exactly** (129 near, 623 all), matched `all_360` L1 (12.038 vs
+12.04) and near \|dy\| (2.971 vs 2.97), and missed near \|dx\| by **0.107** (2.983 vs 3.09). Same
+pairs, same dy, different dx ⇒ a subtly different code path. **A reimplementation that agrees on
+four of six numbers is not a reimplementation, it is a second instrument** — and the panel would
+then have had two.
+
+⛔ `arm_box_score.py` is **discarded, not landed.** The P panel's scorer is `box_quality.py`,
+invoked once per checkpoint.
