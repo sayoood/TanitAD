@@ -115,6 +115,29 @@ uniform-random placement, and the head's boxes spread **±198 m** in x (std 69 m
 spreads 46 m. Predictions and GT share one convention and both centre near zero, so this is
 **not** a frame or unit error: at 5,000 steps the head is **not localising**.
 
+### ⭐ WHY the head misses, and the bar the next arm has to clear
+
+The head is **wired and training** — it is **undertrained**, and that is a different next lever
+from "fix the perception plumbing". MEASURED on A8's own banked `metrics.jsonl` (500 train rows,
+0 GPU):
+
+| steps | `box3d` loss | `box3d_centre` | matched boxes / batch |
+|---|---|---|---|
+| 0–500 | 50.40 | 36.39 | 37.7 |
+| 500–1,500 | 26.19 | 15.54 | 38.3 |
+| 2,000–3,000 | 22.85 | 14.37 | 39.2 |
+| 4,000–5,000 | **18.58** | **9.93** | 36.4 |
+
+`box3d_centre` is a **summed L1 in metres** over (x, y) for matched pairs
+(`agent_slots.py:577`), so at step 5,000 the head's matched boxes are still **~10 m off**, and it
+is still falling. The held-out probe agrees independently: nearest-GT distance **p50 9.54 m**.
+
+⇒ **The AP of 0.0038 is the arithmetic consequence of a ~10 m centre error against a 2 m matching
+threshold, not of a broken wiring.** ⭐ **The next arm's bar, stated as a number:** `box3d_centre`
+must fall **below ~2 m** (the matching threshold) before any predicted gate can be read at all;
+until then `S1-GATE-PRED` is untestable rather than refuted-in-principle. Everything else in the
+S1 rig is in place and proven, so that arm is a training question, not an instrument question.
+
 ### What this says, and what it does not
 
 1. ⭐ **The headroom is real at 416 × 1024 on 124 clips:** a gate on recorded agents removes
@@ -133,6 +156,27 @@ spreads 46 m. Predictions and GT share one convention and both centre near zero,
    ±1 %, between-arm deltas do not.
 7. ⚠️ The fan's collision-free share here is **0.6363** — a NEW measurement on this fan
    (ERRATUM-1), never a check against item 19's 0.553.
+
+## E9 — does the T1 harness run on a refcv6 checkpoint at 416 × 1024, and at what cost?
+
+**Answered, MEASURED 2026-09-20** (`raw/e9_refcv3arm_cpu.json` — clip ids rewritten as `sha12`;
+`raw/e9_refcv3arm_cpu.log`).
+
+1. ⛔ **`taniteval/tools/t1_eval.py` itself does NOT run one, by design.** It carries **0**
+   `refc` references across 28 functions (the control read non-zero, so the file was read), and
+   its rollout `roll_closed` (`:772`) drives the **flagship's** action-feedback loop, which
+   `refc_v3` has no action to feed. **Declared: unwired for refcv6, and correctly so.**
+2. ⭐ **The route that works is `taniteval/tools/refcv3_arm.py` → `t1_eval.analyze`** (8 call
+   sites). It ran end to end on **A8 `ckpt_5000.pt` at 416 × 1024 on CPU**: 7 windows, 1 episode,
+   128 anchors, arms `os` / `ha` / `ha0` / `ha0_ext`, and it emitted **all four binding families**
+   (`longitudinal` speed MAE/bias/RMSE + target-speed accuracy; `lateral` heading, yaw-rate,
+   curvature and cross MAE/bias; `tactical`; `strategic`), stamped **T1 self-action open loop**.
+3. **Cost on CPU: 52 s wall for 7 windows = 7.4 s/window end to end**, model load, corpus build
+   and analysis included; the forward alone is **~5.5 s/window** (its own `[cost]` line). ⚠️ From
+   `n = 7` on ONE episode: an extrapolation to the 736-window read is **~1.1 h forward-only**, and
+   it is an extrapolation, not a measurement. For scale, this night's S1 harness — decode, forward,
+   128 candidate splines, the checker and the box read — measured **7.80 s/window** over 736
+   windows on the same CPU.
 
 ### Next levers, in the order the evidence ranks them
 

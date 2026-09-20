@@ -12233,3 +12233,22 @@ between-arm deltas do not.
 extent (the head's decode scales) that does not describe where the GT is (measured span
 x ∈ [−108, +95] m, y ∈ [−69, +103] m). The verdict does not rest on it — the extent-free
 discriminator above carries it.
+
+<!-- BOXHEAD-UNDERTRAINED-2026-09-20 -->
+> ⭐ **REFINEMENT to `D-S1-BOXHEAD-CHANCE` (2026-09-20, 0 GPU, from A8's OWN banked metrics):** the
+> box head is **WIRED AND LEARNING, just UNDERTRAINED** — which is a different lever from "fix the
+> plumbing". `box3d_centre` (a summed L1 in METRES over x, y on matched pairs,
+> `agent_slots.py:577`) falls **36.39 → 15.54 → 14.37 → 9.93 m** across steps 0–500 / 500–1,500 /
+> 2,000–3,000 / 4,000–5,000 and is **still falling**; matched counts hold at 36–39. The held-out
+> probe agrees independently: nearest-GT **p50 9.54 m**. ⇒ **AP 0.00383 is the arithmetic
+> consequence of a ~10 m centre error against a 2 m matching threshold**, not of broken wiring, and
+> the earlier phrase *"the head is not localising"* is superseded by *"it localises to ~10 m and is
+> improving"*. ⇒ **`S1-GATE-PRED` is UNTESTABLE at dev-box scale, not refuted in principle**, and
+> the next arm's bar is a NUMBER: **`box3d_centre` below ~2 m** before any predicted gate can be
+> read. The S1 rig itself is proven and waiting.
+> ⭐ **E9 ANSWERED (MEASURED, CPU):** `t1_eval.py` does not run a refc checkpoint by design (0 `refc`
+> references; its `roll_closed` drives the flagship's action loop, which refc_v3 cannot feed) — it is
+> **declared unwired**. The working route, `refcv3_arm.py → t1_eval.analyze`, ran end to end on A8's
+> `ckpt_5000.pt` at 416 × 1024 and emitted **all four binding families**, stamped T1 self-action open
+> loop, at **7.4 s/window** end to end (n = 7 on ONE episode; ⚠️ scaling that to 736 windows is an
+> EXTRAPOLATION, not a measurement — the S1 harness measured 7.80 s/window over 736 real windows).
