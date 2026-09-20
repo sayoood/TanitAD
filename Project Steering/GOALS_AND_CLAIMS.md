@@ -12807,3 +12807,41 @@ on navhard's 435, where the Monte-Carlo error is far smaller. A provenance note 
 travel with its data is the *"true quantity quoted outside its scope"* family, inside the very
 instrument built to stop it. Replaced with a computed `_CI_basis`. ⛔ **No number moves** — the
 literal was annotation, never input.
+
+<!-- ELIGIBILITY-BIAS-CLOSED-POSITION-AXIS-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the eligibility-bias question is CLOSED: `future` is a fixed positional tail, verified by index, and it is not biased on the one axis position could drive
+
+MEASURED, CPU only, no model pass (`…/2026-09-20-navhard-clause-stratum-confirm/code/tail_axis.py`,
+`raw/tail_axis.json`). Closes the item left open at `f3fdcc9`.
+
+**A · The positional-tail claim is an IDENTITY, and it is verified by index rather than by its
+arithmetic.** The TrainingFlyWheel derived that `future` must be the last 39 windows of every
+episode (`ROUTE_TICKS` 60, `W` 8, 199 poses ⇒ refuse when `t + 7 + 60 > 198` ⇒ `t` = 132…170).
+Checked directly: `future` count per episode **min 39, max 39, distinct {39}** over all **62**
+episodes, and `future` equals the top-N indices in **62/62 episodes, 0 violations**.
+
+⇒ ⭐ **The dominant 22.81 % of refusals is PROVABLY unbiased, not merely observed to be.** A fixed
+positional tail cannot differ from KEPT on any property except position-in-episode. This is the
+same conclusion as `f3fdcc9`'s empirical overlap, reached by an independent route — and two routes
+agreeing is worth more than either.
+
+**B · The one axis position could drive does not separate.** Target dynamics, episode-clustered:
+
+| group | windows | episodes | target speed (m/s) | CI95 | fraction moving | CI95 |
+|---|---|---|---|---|---|---|
+| **KEPT** | 251 | 58 | 12.103 | [9.831, 14.711] | 0.953 | [0.925, 0.976] |
+| `future` | 246 | 59 | 11.409 | [8.263, 15.494] | 0.861 | [0.773, 0.940] |
+
+⚠️ **Stated precisely: NOT SEPARATED is not the same as NO DIFFERENCE.** The moving-fraction
+intervals overlap by only **0.015**, and the point estimates differ by 0.092 — this is the closest
+call in the whole bias investigation, and a larger sample could separate it.
+
+⭐ **And its DIRECTION does not flatter the bar, which is what makes the residual risk acceptable.**
+The tail carries *fewer* moving targets (0.861 vs 0.953) — consistent with end-of-clip
+deceleration, the mechanism predicted for this axis. Dropping those windows leaves the KEPT set
+*more* dynamic, i.e. harder, not easier. ⇒ any residual bias here works **against** the perception
+bar's reading of 5.9539 m, never for it.
+
+⚠️ Still untouched: whether the `agents` refusals (5.97 %) differ on anything beyond target
+geometry. They are not a positional tail and this argument does not cover them.
