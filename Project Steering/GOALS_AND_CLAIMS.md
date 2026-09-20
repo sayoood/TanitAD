@@ -12206,3 +12206,30 @@ before scoring anything with it.
 > statement of what it would MISS (the off-road rule is silent wherever the map has no class).
 > Controls: all-drivable reads 1.0 under all 12 variants; all-sidewalk and all-"no class" read 0
 > under the current rule. **The current rule's numbers stand exactly as landed; nothing was tuned.**
+
+## S1 — the collision gate, READ at dev-box scale (TrainingFlyWheel, 2026-09-20)
+
+**736 windows / 59 episode clusters**, A8 `ckpt_5000.pt`, 416 × 1024, CPU, paired
+episode-cluster bootstrap, 2,000 draws. Pre-registered in full BEFORE the data
+(`PREREG_S1` S1 AMENDMENT + ERRATA 1-2 + S1A.10 + S1A.11). Artifacts:
+`…/2026-09-19-s1-collision-gate/{RESULT.md, raw/verdict_A8.json, raw/rows_A8.sha12.jsonl.gz}`.
+
+| id | claim | evidence | status |
+|---|---|---|---|
+| **`H-SEL-GATE-1`** | a collision gate on **predicted** occupancy recovers collided-selection headroom | ⛔ **NOT QUOTABLE, and harmful as configured.** `S1-GATE-PRED` 0.2391 vs `S1-BASE` 0.2174 = **+0.0217 [−0.0053, +0.0482], not separated**; share of the ceiling **−11.6 % [−28.9, +2.5]**, i.e. below §10's 10 % line. Its dependency FAILED: BEV AP **0.00383 [0.0025, 0.0056]** — see the box row. And it is **separated-WORSE on 13 of 14 families** (`comfort` −0.182, `tac_lat_agree` −0.182, `cross_4s` +3.38 m, `speed_err_4s` +1.13 m/s …). | ⛔ **REFUTED AS CONFIGURED** (T1\*) — §10's pre-committed reading: **the next work is perception quality, not a better gate** |
+| **the ceiling** | is the 28/493 headroom real away from refcv5-v2's fan? | ⭐ **YES, and larger here.** `S1-GATE-ORACLE` 0.0299 vs BASE 0.2174 = **−0.1875 [−0.2454, −0.1365] separated**: a gate on recorded agents removes **86 %** of colliding selections. Reproduced on a DIFFERENT fan (refcv6's 128 synthetic anchors), corpus (eval124clean halfB) and model. | **SUPPORTED (T0 ceiling, never a capability claim)** |
+| **`D-S1-MOTION-FORECAST`** (new) | ⭐ **HALF the ceiling needs a MOTION FORECAST, not better detection.** With **perfect t0 boxes** and constant-velocity extrapolation, `S1-ORACLE-CV` reaches only 0.1196: `ORACLE − ORACLE-CV` = **0.0897 = 48 %** of the ceiling is lost to having no forecast; `ORACLE-CV − PRED` = 0.1195 is the detection-and-velocity error. | pre-registered diagnostic S1A.5, same pass, same windows | **MEASURED** |
+| **`D-S1-BOXHEAD-CHANCE`** (new) | ⛔ **A8's 3-D box head is NOT LOCALISING at 5,000 steps.** Nearest-GT within 2 m: **6.0 %** for its boxes vs **12.9 %** for uniform-random placement; its boxes spread ±198 m in x (std 69) where GT spreads 46. Predictions and GT share one convention and both centre near 0 ⇒ **not** a frame/unit error. ⚠️ Its **velocities** do beat a zero predictor (MAE 5.43 vs 7.44, gain +2.01 [+0.87, +3.03]). | `raw/box_geometry_probe.txt`; `raw/verdict_A8.json` | **MEASURED** — the binding constraint for any predicted gate |
+| **`D-DAC-ZEROES-THE-HUMAN`** (new) | ⛔ **With the SAM3 map LIVE, the proxy's DAC scores the RECORDED HUMAN non-compliant on 328/736 = 44.6 % of held-out windows**, zeroing human `pdms` there (the rule: any of 4 corners at any of 41 ticks on a seen cell with drivable < 0.5). ⚠️ The banked ddv2 `human_pdms` 0.986 / **0 zeros** is NOT a counterexample: those runs had **DAC DEAD** (no map passed; the LIVE/DEAD stamp postdates them and no ddv2 log carries it). | `raw/roundtrip_halfB_A8cfg.json` (736 windows, 0 GPU) | **MEASURED** — ⚠️ the ddv2 RL reward multiplies progress by this same term with the human as reference (`PREREG_D9_REWARD_REPAIR`) |
+| **controls** | did the instrument read its known values? | `S1-GATE-CONST` **exactly 0.00000 [0, 0]** with the gate proven to re-order under real tracks; BASE == the model's own `sel_idx` on **736/736**; the replicate (50 windows) reproduced **every** selection and nc flag; N read from the checkpoint = **128**; fan collision-free share **0.6363** (a NEW measurement, never a check against item 19's 0.553). | same pass | **ALL PASS** |
+
+⚠️ **Scope, carried with every number above:** internal validity holds (one fan, one checker, one
+scoring rule); **external validity to a trained planner does NOT** — A8's selector is weak
+(`anchor_acc` 0.092 vs chance 1/128 = 0.0078). **nav = v1**, the trained derivation, derived from
+the ego's own future path and therefore **optimistic by construction**. The waypoint
+representation's own floor is ~1 % of windows (S1A.6), so absolute rates carry ±1 % and
+between-arm deltas do not.
+⛔ **RETRACTED as a number, not as a criterion:** S1A.11's random-AP base rate **0.1241** used an
+extent (the head's decode scales) that does not describe where the GT is (measured span
+x ∈ [−108, +95] m, y ∈ [−69, +103] m). The verdict does not rest on it — the extent-free
+discriminator above carries it.
