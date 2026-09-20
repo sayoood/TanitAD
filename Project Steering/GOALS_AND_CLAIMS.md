@@ -13360,3 +13360,46 @@ the ∅ weight bite *less*); or a head-capacity limit. **Not asserted.**
 ⚠️ **Stated limit of this read:** a single threshold (σ > 0.5) was used, the natural one for a
 sigmoid. A sweep was **not** done. The narrow observed range (mean 0.7524, max 0.8551) bounds how
 much a better threshold could recover, but does not rule it out.
+
+<!-- PRESENCE-NO-SIGNAL-2026-09-20 -->
+
+### ⛔⛔ 2026-09-20 — the presence head has **NO PER-SLOT SIGNAL**: no threshold rescues it, and the limitation I flagged on myself is now closed
+
+MEASURED, CPU, A8 `ckpt_5000`, 40 windows, matcher-free
+(`…/2026-09-20-perception-bar-rescore/code/presence_spread.py`, `raw/presence_spread.json`).
+`0c179e8` reported presence firing on 96.55/100 and stated honestly that **one threshold was used
+and no sweep was done**. That hole is closed here.
+
+**The full sweep — no cut yields ~25, and the head falls off a cliff:**
+
+| threshold | 0.05–0.75 | 0.80 | **0.85** | 0.90+ |
+|---|---|---|---|---|
+| mean slots predicted | 100 → 67.7 | 37.33 | **0.30** | 0.00 |
+| MAE (constant control = **8.498**) | 74.85 → 46.43 | 25.53 | **24.85** ← best | 25.15 |
+
+⇒ ⛔ **NO threshold beats the constant control.** The "best" (0.85) predicts **0.3** slots — it is
+effectively *always-zero*, and its MAE 24.85 is simply ≈ the mean true count. The head goes from
+**~all-on to ~all-off between 0.80 and 0.85**.
+
+**Why — the within-window spread, which is the decisive quantity and not the threshold:**
+
+| within-window | std | IQR | range (mean) | range (max) |
+|---|---|---|---|---|
+| presence probability | **0.04909** | **0.05379** | 0.24658 | 0.46122 |
+
+⇒ ⭐ **All 100 probabilities inside a window sit within ~0.05 of one another.** The head emits a
+**near-constant** presence per window; a small tail exists (range to 0.46) but nothing like 25
+separable slots. ⇒ **this is not a misplaced cut — there is no per-slot information to extract**,
+and no threshold or top-k can recover one.
+
+⛔ **CONSEQUENCE, hardening `0c179e8`:** the box head cannot supply occupancy, and
+`S1-GATE-PRED` must not be run against it. The box-head half of `D-S1-DEP-BOX` stays
+**NOT DISCHARGED** — now for a measured structural reason, not an unfinished measurement.
+
+⚠️ **AND ONE CANDIDATE IS NOW RULED OUT AS UNTESTABLE ON BANKED ARTIFACTS.** `0c179e8` named three
+unseparated candidates. The cheapest discriminator would have been presence at an earlier
+checkpoint — saturation growing with steps implicates the ∅ weight, shrinking implicates
+under-training. ⛔ **Both banked checkpoints are step 5,000** (`ckpt.pt` and `ckpt_5000.pt`), so
+that test **cannot be run without retraining**. The ∅-weight and head-capacity candidates remain
+unseparated, and `NO_OBJECT_W` is **0.1** from source (`agent_slots.py:232`), not the 0.02173 a
+handoff prompt carried.
