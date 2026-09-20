@@ -138,3 +138,79 @@ Committed in advance: if `P0`'s replicate floor turns out **larger than the gap 
 head. And if `P3` (supervision) alone closes most of the gap, then the defect was never detector
 capacity but **what we asked it to detect** — and every future perception read must state its
 target population before its number, exactly as `PREREG_S1` now does.
+
+<!-- P3-CORRECTION-AND-AMENDMENT-2026-09-20 -->
+## ⛔ CORRECTION + AMENDMENT to `P3-SUPERVISION`, 2026-09-20 — one number withdrawn, one alternative pre-registered
+
+Both come from the TrainingFlyWheel's P3 pre-build, measured on the TRAIN cache before any arm ran.
+⛔ The pre-registered P3 arm itself is **UNCHANGED**; this adds a correction, a named alternative
+and a CONDITIONAL control. Nothing here was written after seeing an arm's result, because no arm
+has been run.
+
+### ⛔ 1. "~18.7 targets/window" is WITHDRAWN (line 75)
+
+The line reads *"targets/window drop from ~18.7 to ~4.6, **MEASURED**"* and carries **no artifact
+path**. **4.6 is right** (halfA gate-relevant **4.634**). **18.7 reproduces at NONE of the four
+scopings actually measured**: raw 360° **31.13** · delivered-after-pad **18.95** · over all
+windows **18.27** · halfB **19.79**. ⚠️ Its nearest neighbours are the *delivered-after-pad*
+figures, which is the likely origin — and that is exactly the error, because **raw** and
+**delivered after a pad-32 truncation** answer different questions. ⇒ **The true raw drop is
+31.13 → 4.634, i.e. 6.7x, not ~4x.** Registered as `RETR-2026-09-20-P3-TARGET-DENSITY`; the
+`MEASURED` stamp without a path is what let it through.
+
+⭐ **The census that replaces it** (halfA, per labelled window, `raw/p3_census_halfA.json`):
+360° **31.13** (median 20, p95 97, max 149) → gate-relevant **4.634** (median 3, max 34); the gate
+population is **14.88 %** of all supervised boxes, i.e. **~85 % of what the head trains on lies
+outside the population the collision gate reads** — P3's hypothesis, quantified for the first time.
+The pad-32 truncation binds on **34.33 %** of labelled windows under 360°. The grid was **proven,
+not assumed**: 3/3 literals match on halfA and 3/3 on halfB against config files written by
+*different runs on different days*, so the agreement is evidence about the grid rather than about
+one process's determinism, and a mismatch — or the absence of any literal — refuses the bank.
+
+### ⭐ 2. AMENDMENT: a named alternative for a P3 regression, and a CONDITIONAL control arm
+
+⛔ **The risk, MEASURED through the real `slot_set_loss` on 400 halfA windows** (not a
+re-derivation), using per-window count distributions rather than means — a mean would hide the
+zero-target windows that are the whole point (`raw/p3_presence_balance_halfA.json`):
+
+| | 360° | gate-relevant |
+|---|---|---|
+| matched targets / window | 19.02 | **4.855** (3.92x fewer) |
+| presence **positive** weight share | 0.7013 | **0.3379** |
+| windows with **zero** matched targets | 2.75 % | **26.75 %** |
+| `loss_presence` | 0.2061 | 0.1123 |
+
+⇒ the no-object term goes from a **30 % minority** of the presence loss to a **two-to-one
+majority**. `NO_OBJECT_W = 0.1` (the DETR `eos_coef` convention) is implicitly calibrated for
+~19 targets per 100 queries; P3 moves the head to ~4.9 **and does not touch it**.
+
+⛔ **Pre-registered as a NAMED ALTERNATIVE, read from the presence terms and never inferred
+afterwards:** if `P3-SUPERVISION` regresses, *"the presence / no-object balance shifted"* is a live
+explanation with nothing to do with P3's hypothesis. Same defect class as the `--v2` conflation —
+ten levers on two axes, result non-attributable.
+
+⭐ **The control, SOLVED rather than tuned.** From `share = pos / (pos + (Q - pos)*W)`, the weight
+that holds the gate arm's positive share **equal** to the 360° arm's is **`NO_OBJECT_W =
+0.02173`** against today's 0.1 — a 4.6x change, derived from the identity, not swept.
+
+⛔ **MASTER MIND RULING — the control arm is CONDITIONAL, and this is committed in advance:**
+it runs **only if P3 moves the near-forward error beyond `P0`'s replicate floor, in either
+direction**. If P3 is flat there is nothing to attribute and the arm costs a card slot for nothing;
+if P3 moves, the pair separates *"concentrating supervision on the gate population helped"* from
+*"the presence term re-balanced"*, and without it the result is **not quotable as P3's effect**.
+⛔ `NO_OBJECT_W` is **NOT** changed in the main P3 arm — only in the control.
+
+### ✅ 3. What was checked and did NOT need changing
+
+`P3` is **not** confounded by the query budget. The TrainingFlyWheel drafted *"P3 is confounded,
+56.9 % of windows over-queried"* and **retracted it before it shipped**: `--agent-queries 16`
+configures the **2-D agents head**, not the refcv6 box3d decoder, which is built with
+`n_queries=100` and stamps `refcv6_perception.n_queries: 100` in a real run. Re-measured with the
+correct count, `frac_over_queries` is **0.0000** in both populations on both halves. ⇒ no
+disentangling arm is needed. Class: a true quantity quoted outside its scope — the scope being
+**which head a flag configures**.
+
+⚠️ And the pre-build's own premise was **REFUTED, measured**: the whole index path costs **2.5 s**
+against an ~11 h arm (**0.006 %**), so there was never any indexing cost to lift off the card. The
+value of that pass is the census above, not the saving that motivated it — reported as such rather
+than quietly re-purposed.

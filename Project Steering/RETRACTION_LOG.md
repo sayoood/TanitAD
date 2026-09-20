@@ -15734,3 +15734,39 @@ message. A wrong number in the cron prompt is read by a session that has no othe
 way to know it is wrong — so the handoff must be rebuilt from artifacts, never from working state.
 
 **Fixed:** the cron prompt no longer carries a rate for E9; it carries the bound and its file.
+
+### RETR-2026-09-20-P3-TARGET-DENSITY — "targets/window drop from ~18.7 to ~4.6, MEASURED"
+
+**Retracted:** the figure **~18.7** in `PREREG_PERCEPTION_BOX_QUALITY.md:75` (landed `6a052cb`).
+**4.6 stands** (halfA gate-relevant 4.634). 18.7 reproduces at **none** of the four scopings
+measured on the train cache: raw 360° **31.13**, delivered-after-pad **18.95**, over all windows
+**18.27**, halfB **19.79**. ⇒ the true raw drop is **6.7x**, not ~4x.
+
+**Class: a `MEASURED` stamp with NO ARTIFACT PATH.** The programme's rule is that every number
+carries its evidence class **and its path**; this one carried the class and not the path, and the
+class alone is what made it look checked. ⚠️ Its nearest neighbours are the *delivered-after-pad*
+figures, so the likely origin is that scoping quoted as raw — and raw vs delivered-after-a-pad-32
+answer different questions, which is the `df` / `step_s` scope family again.
+
+**Found by:** the TrainingFlyWheel, while building the census that the line describes — i.e. by
+someone going to USE the number rather than by a review. Second instance tonight of the same
+mechanism, after `RETR-2026-09-20-E9-SWINDOW`.
+
+### CORRECTION-2026-09-20-HEX-SHAPE-CHECK — a 40-character shape check passed on a git ERROR STRING
+
+**Caught before it mattered**, so nothing is retracted — logged because the mechanism defeats a
+rule this file already prescribes.
+
+`CLAUDE.md` says to assert **both operands are 40 characters** before comparing blob hashes,
+precisely so an empty string cannot read as a match. ⛔ **40 characters is necessary and NOT
+sufficient.** `git rev-parse <rev>:<path>` on a path that is absent from that commit prints the
+**failed spec itself to stdout** — and MEASURED 2026-09-20, the spec
+`c38fc6f:stack/scripts/mutate_p_runner.py` is **exactly 40 characters long**. My classifier's
+`len(t) == 40` accepted it, and a genuinely NEW file was reported as already on the tip with a
+differing blob — which would have sent it down the superset-check path instead of the add path.
+
+⇒ **The check is a 40-character HEX match, not `len == 40`.** Better still, use the tool whose
+*exit code* answers the question: `git cat-file -e <rev>:<path>` returns non-zero for absence and
+prints nothing. Re-verified that way: all 11 paths NEW, 0 same, 0 differs.
+⭐ Same family as *"assert on the artifact, not the status"* — here the artifact was a string whose
+**shape** was right and whose **alphabet** was not.

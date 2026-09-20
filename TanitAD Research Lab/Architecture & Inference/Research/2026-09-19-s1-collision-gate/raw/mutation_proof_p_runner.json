@@ -1,0 +1,82 @@
+{
+ "ok": true,
+ "results": {
+  "M0_control": {
+   "rc": 0,
+   "failed": [],
+   "n_failed": 0,
+   "n_passed": 14,
+   "tail": "sts/test_p_runner.py::test_A7_incomplete_BLOCKS\nPASSED stack/tests/test_p_runner.py::test_plan_WAITS_while_A7_runs_even_with_a_clear_gate\nPASSED stack/tests/test_p_runner.py::test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear\nPASSED stack/tests/test_p_runner.py::test_plan_STOPS_on_an_INVALID_arm\nPASSED stack/tests/test_p_runner.py::test_plan_is_DONE_when_every_arm_is_VALID\n22 passed in 0.06s\n"
+  },
+  "M1_a_later_arm_may_run_before_P0": {
+   "rc": 1,
+   "failed": [
+    "test_P0_is_UNSKIPPABLE_even_if_a_later_arm_already_ran",
+    "test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear",
+    "test_plan_WAITS_while_A7_runs_even_with_a_clear_gate",
+    "test_with_nothing_done_the_next_arm_is_P0"
+   ],
+   "n_failed": 4,
+   "n_passed": 10,
+   "tail": "ery_arm_is_VALID\nFAILED stack/tests/test_p_runner.py::test_with_nothing_done_the_next_arm_is_P0\nFAILED stack/tests/test_p_runner.py::test_P0_is_UNSKIPPABLE_even_if_a_later_arm_already_ran\nFAILED stack/tests/test_p_runner.py::test_plan_WAITS_while_A7_runs_even_with_a_clear_gate\nFAILED stack/tests/test_p_runner.py::test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear\n4 failed, 18 passed in 0.10s\n",
+   "must_go_red": [
+    "test_P0_is_UNSKIPPABLE_even_if_a_later_arm_already_ran"
+   ],
+   "caught": true
+  },
+  "M2_gate_loosened_to_8GB_of_GPU": {
+   "rc": 1,
+   "failed": [
+    "test_gate_reads_KNOWN_values"
+   ],
+   "n_failed": 1,
+   "n_passed": 14,
+   "tail": ".py::test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear\nPASSED stack/tests/test_p_runner.py::test_plan_STOPS_on_an_INVALID_arm\nPASSED stack/tests/test_p_runner.py::test_plan_is_DONE_when_every_arm_is_VALID\nFAILED stack/tests/test_p_runner.py::test_gate_reads_KNOWN_values[2501 8-False]\nFAILED stack/tests/test_p_runner.py::test_gate_reads_KNOWN_values[3941 9-False]\n2 failed, 20 passed in 0.10s\n",
+   "must_go_red": [
+    "test_gate_reads_KNOWN_values"
+   ],
+   "caught": true
+  },
+  "M3_A7_chaining_removed": {
+   "rc": 1,
+   "failed": [
+    "test_a_running_A7_panel_BLOCKS_even_when_all_its_arms_are_VALID",
+    "test_plan_WAITS_while_A7_runs_even_with_a_clear_gate"
+   ],
+   "n_failed": 2,
+   "n_passed": 12,
+   "tail": "is_done_and_the_gate_is_clear\nPASSED stack/tests/test_p_runner.py::test_plan_STOPS_on_an_INVALID_arm\nPASSED stack/tests/test_p_runner.py::test_plan_is_DONE_when_every_arm_is_VALID\nFAILED stack/tests/test_p_runner.py::test_a_running_A7_panel_BLOCKS_even_when_all_its_arms_are_VALID\nFAILED stack/tests/test_p_runner.py::test_plan_WAITS_while_A7_runs_even_with_a_clear_gate\n2 failed, 20 passed in 0.10s\n",
+   "must_go_red": [
+    "test_a_running_A7_panel_BLOCKS_even_when_all_its_arms_are_VALID",
+    "test_plan_WAITS_while_A7_runs_even_with_a_clear_gate"
+   ],
+   "caught": true
+  },
+  "M4_INVALID_no_longer_stops_the_panel": {
+   "rc": 1,
+   "failed": [
+    "test_plan_STOPS_on_an_INVALID_arm"
+   ],
+   "n_failed": 1,
+   "n_passed": 13,
+   "tail": "::test_A7_incomplete_BLOCKS\nPASSED stack/tests/test_p_runner.py::test_plan_WAITS_while_A7_runs_even_with_a_clear_gate\nPASSED stack/tests/test_p_runner.py::test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear\nPASSED stack/tests/test_p_runner.py::test_plan_is_DONE_when_every_arm_is_VALID\nFAILED stack/tests/test_p_runner.py::test_plan_STOPS_on_an_INVALID_arm - Asse...\n1 failed, 21 passed in 0.10s\n",
+   "must_go_red": [
+    "test_plan_STOPS_on_an_INVALID_arm"
+   ],
+   "caught": true
+  },
+  "M5_partial_arm_is_DELETED_not_moved": {
+   "rc": 1,
+   "failed": [
+    "test_a_directory_without_a_check_is_PARTIAL_and_is_MOVED_not_deleted"
+   ],
+   "n_failed": 1,
+   "n_passed": 13,
+   "tail": "ven_with_a_clear_gate\nPASSED stack/tests/test_p_runner.py::test_plan_RUNS_P0_when_A7_is_done_and_the_gate_is_clear\nPASSED stack/tests/test_p_runner.py::test_plan_STOPS_on_an_INVALID_arm\nPASSED stack/tests/test_p_runner.py::test_plan_is_DONE_when_every_arm_is_VALID\nFAILED stack/tests/test_p_runner.py::test_a_directory_without_a_check_is_PARTIAL_and_is_MOVED_not_deleted\n1 failed, 21 passed in 0.10s\n",
+   "must_go_red": [
+    "test_a_directory_without_a_check_is_PARTIAL_and_is_MOVED_not_deleted"
+   ],
+   "caught": true
+  }
+ }
+}
