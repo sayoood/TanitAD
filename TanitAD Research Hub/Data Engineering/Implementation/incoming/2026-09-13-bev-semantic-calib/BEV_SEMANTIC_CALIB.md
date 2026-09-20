@@ -3216,3 +3216,47 @@ The only check available is a physical one, and it passes: the fitted **−0.260
 nominal windscreen-mount value of **−0.35 m**, so the assumption is not being forced to buy an
 absurd geometry. ⇒ **quote `lateral = −0.260 m` as "the value that centres the ribbon on this
 recording", never as a measured mount offset.**
+
+## §147 The flow horizon and the paint horizon disagree by 37 px — and the pipeline said so
+
+The v8 run's own log, unprompted:
+
+```
+f*h from ground flow:  f*h = 2872.7 px*m  95% CI [2644, 2909]
+                       horizon row = 427.4 px  95% CI [425.7, 438.5]
+WARN  horizon from flow 427.4 px vs the camera's current 464.4 px (-37.0 px)
+WARN  ⚠️ that is a LARGE disagreement. Flow and paint measure different things
+      when the road is not planar; do not adopt either silently. Validate
+      against the markings ... before trusting f*h to set a height.
+ScaleCalib(f*h=2873 from 87285 tracks, spread 0%, focal=1687 px, height=1.703 m)
+```
+
+**`horizon_calib` IS that validation against the markings**, and it says **463.9**.
+
+**They cannot both describe one planar road.** `flow_calib` measures longitudinally
+(how fast the ground flows past, against the odometer); `horizon_calib` measures laterally
+(how wide the lane subtends). A grade or crest separates them, which is precisely the
+caveat the log names — and it is the same caveat `horizon_calib` carries in its own docstring
+about absorbing grade.
+
+⭐ **FOR THIS DELIVERABLE THE PAINT HORIZON IS THE RIGHT ONE, and the reason is the
+specification, not a preference.** The thing being asked for is a ribbon that sits between
+the lane markings. That is a LATERAL requirement, so it must be served by the scale that was
+measured laterally. Adopting 427 would restore the flare the render was remade to remove:
+the flatness check (§145) is decisively against it — at horizon 440 the width-vs-range slope
+is already **+0.0154 m/m**, and 427 lies further out in the same direction.
+
+⛔ **WHAT IS NOT SETTLED, AND MUST NOT BE WRITTEN UP AS IF IT WERE.** `f·h` remains degenerate,
+and this disagreement is now its clearest expression:
+
+| source | f·h | horizon | implied h | implied lane at that h |
+|---|---|---|---|---|
+| flow + scale_calib | 2873 | 427.4 | 1.703 m | 3.91 m (too wide for a lane) |
+| in use for v8 | 2431 | 463.0 | 1.586 m | 3.64 m |
+| if the lane is the 3.5 m standard | — | 463.9 | 1.524 m | 3.50 m |
+
+`horizon_calib` returns **W/h = 2.2969**, a ratio, so it constrains the *product* and never
+splits it. ⇒ **Quote no camera height and no lane width from this work.** What is measured is
+the horizon (laterally, 463.9, R² 0.984) and the yaw (−6.40, agreeing with five independent
+estimates). The height, the focal and the lane width are still one equation short, and
+`ScaleCalib`'s "spread 0 %" is a fit statistic, not evidence that the split is right.
