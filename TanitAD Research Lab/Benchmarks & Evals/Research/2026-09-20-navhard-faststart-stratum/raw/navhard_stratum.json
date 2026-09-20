@@ -1,0 +1,16 @@
+{
+ "_what": "pre-registered fast-start stratum for H-NAVHARD-STOP-1, and its join key",
+ "_evidence_class": "MEASURED (ours) \u2014 streamed from the archive, nothing extracted",
+ "_ordering": "FIXED BEFORE ANY navhard SCORE WAS SEEN by the author. The threshold is derived from the scoring rule, not from the speed or score distribution.",
+ "threshold_ms": 5.0,
+ "horizon_s": 4.0,
+ "_why_this_threshold": "pdm_scorer.py:232-237 sets normalized_progress = ones(...) \u2014 EP 1 for EVERY proposal \u2014 when the best MASKED (rule-compliant) progress is not greater than progress_distance_threshold = 5.0 m (pdm_scorer.yaml:20). Over the 4 s agent time_horizon (agent yamls:7), merely MAINTAINING 5 m/s covers 20 m = 4x the clause distance, so the clause cannot fire on progress grounds for a plan that roughly holds speed.",
+ "_citation_correction": "the clause was carried as pdm_scorer.py:231-236 in four landed docs and 232-237 in a fifth. 231 is a comment, 236 is the bare `else:`, and the cited range EXCLUDED line 237 \u2014 the assignment the claim is about. 232-237 is correct; both constants were re-read from the installed devkit rather than carried forward.",
+ "n_total": 5462,
+ "n_fast": 2116,
+ "n_slow": 3346,
+ "frac_fast": 0.3874,
+ "join_key": "scene_token -> navhard_token_v0.csv",
+ "_prediction": "on the FAST stratum the <= 5 m EP clause's firing fraction must collapse toward zero, and STOP must LOSE to A1. If the clause still fires often, the threshold did not do what it was derived to do; if it collapses and STOP still wins, the clause is NOT what makes stopping win.",
+ "_scope": "this stratifies navhard's synthetic scenes. Which of them a given bench run actually scores is that run's business; the join is by scene_token."
+}

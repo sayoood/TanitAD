@@ -15770,3 +15770,27 @@ differing blob — which would have sent it down the superset-check path instead
 prints nothing. Re-verified that way: all 11 paths NEW, 0 same, 0 differs.
 ⭐ Same family as *"assert on the artifact, not the status"* — here the artifact was a string whose
 **shape** was right and whose **alphabet** was not.
+
+<!-- CORRECTION-2026-09-20-PDM-CLAUSE-LINE-SPAN -->
+
+### ⚠️ CORRECTION-2026-09-20-PDM-CLAUSE-LINE-SPAN — the ≤ 5 m EP clause was cited one line short, five times, and the cited range excluded the line the claim is about
+
+**What was wrong.** The clause was cited as **`pdm_scorer.py:231-236`** in four landed documents
+and as **`232-237`** in a fifth, so the repository contradicted itself and a reader could not
+tell which span was right.
+
+**What is right: `232-237`.** Line 231 is a comment (`# normalize and fill progress values`) and
+236 is the bare `else:`. The range `231-236` therefore **excluded line 237** —
+`normalized_progress = np.ones(len(masked_progress), dtype=np.float64)` — which is the
+assignment that forces ego progress to 1 for every proposal. A reader following the citation
+landed on the branch **test** and not on its **effect**.
+
+**Scope: no number changes.** The clause, its 5.0 m threshold and every measurement resting on
+it (the 18.1 % warmup census, `d86dccb`) are unaffected. This corrects a **citation**, not a
+result, which is why it is logged as a CORRECTION and not a retraction.
+
+⭐ **Why it is worth a log entry anyway.** The span was copied forward five times without anyone
+opening the file. It surfaced only because both constants were **re-read from the installed
+devkit** while pre-registering `D-NAVSIM-STRATIFY-1` rather than carried from a session summary.
+Same family as *"a summary is not a path"* — and in a programme whose rule is that every number
+cites a file, a citation nobody follows is the one place that rule can rot unnoticed.

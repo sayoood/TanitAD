@@ -12492,3 +12492,62 @@ matched by a filter on `.pkl` alone, with a bare `except Exception` swallowing t
 it been quoted it would have read as a data-quality problem in a PI-authorised download. The
 discriminating check was to **count the entries by DIRECTORY**. Same family as *"0 hits is a claim
 about the SEARCH, not the content"*: **"2,731 unreadable" was a claim about the FILTER.**
+
+<!-- D-NAVSIM-STRATIFY-1-THRESHOLD-FIXED-2026-09-20 -->
+
+### ⭐ 2026-09-20 — `D-NAVSIM-STRATIFY-1`: the fast-start threshold is **5.0 m/s**, fixed BEFORE any navhard score exists
+
+PRE-REGISTRATION, landed at `TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-20-navhard-faststart-stratum/`.
+MEASURED join key, 0 GPU, no score read.
+
+⛔ **The ordering is the claim.** The only navhard run in flight is the EvalFlyWheel's
+`taniteval.bench navsim_v2 --ckpt none --split navhard_two_stage --arms CV,STOP` (started 10:28,
+still scoring when this was written). Nothing from it has been read. Once its numbers land, no
+threshold chosen afterwards can be *shown* to be score-blind, however honestly it was picked.
+
+⭐ **The threshold is derived from the scoring rule, not from any distribution** — not the
+scores and not the start speeds. Both constants re-read from the installed devkit:
+
+| constant | value | read from |
+|---|---|---|
+| `progress_distance_threshold` | **5.0 m** | `config/pdm_scoring/scorer/pdm_scorer.yaml:20` (= dataclass default `pdm_scorer.py:58`) |
+| agent `time_horizon` | **4 s** | `config/common/agent/{constant_velocity,ego_status_mlp,human,transfuser}_agent.yaml:7`, all four agree |
+
+⇒ maintaining 5.0 m/s covers **20 m in 4 s = 4× the clause distance**, so the clause cannot
+fire on progress grounds against a plan that roughly holds speed. The speed distribution enters
+**once, after** the number was fixed, to report n.
+
+| stratum | criterion | n | share |
+|---|---|---|---|
+| **FAST** | \|v0\| ≥ 5.0 m/s | **2,116** | **38.7 %** |
+| SLOW | \|v0\| < 5.0 m/s | 3,346 | 61.3 % |
+| total | all navhard synthetic scenes | **5,462** | 100 % |
+
+**Join key `raw/navhard_token_v0.csv`** — 5,462 rows of `scene_token,v0_ms`, tokens asserted
+unique. The banked start-speed run (`6a1d732`) kept the speeds but **not** the tokens, so no
+stratum could be joined to any per-scene dump; that table now exists. ⭐ The stream was re-run
+from scratch and **reproduced the banked distribution exactly** (median **3.89 m/s**, n 5,462,
+0 unreadable) — an independent replication of `6a1d732`, not a re-read of it.
+
+⛔ **The failure criterion is committed, and one outcome refutes the hypothesis outright.**
+Primary endpoint is the clause's firing fraction on FAST. If it collapses (**< 5 %**) and STOP
+still beats CV with a paired-bootstrap CI excluding 0, **the clause is NOT what makes stopping
+win** — the threshold did its job and `H-NAVHARD-STOP-1` dies anyway. If it stays **≥ 15 %**,
+the derivation above is **wrong** and the arm comparison may not be reinterpreted to rescue it.
+
+⛔ **Arm-independent control, which is what makes the stratum load-bearing rather than
+decorative:** `f_slow` must exceed `f_fast`. If the clause fires at the same rate in both strata,
+start speed is not what drives it and the arms are uninterpretable whichever way they come out.
+It is computed from the scorer's own per-scene output and needs **no arm**, exactly as the
+18.1 % census did.
+
+⚠️ **Tests the CLAUSE only.** It explains **18.1 %** of warmup scenes (37/204, `d86dccb`); the
+remaining **82 %** stays **UNEXPLAINED**, a zero-displacement plan still earning EP median
+**0.195** there. `D-NAVSIM-STOP-1`'s second mechanism is untouched by every outcome above.
+
+⚠️ **And this is a WEAKER design than the venue it replaces.** The venue ruling stands —
+navhard-as-a-whole cannot test `H-NAVHARD-STOP-1` (median 3.89 vs warmup 4.14 m/s, `6a1d732`) —
+and this does not restore that comparison. FAST and SLOW differ in start speed **and** in
+whatever co-varies with it (junctions, traffic density, scene type). It is **not** a randomised
+split and must never be written up as one. The control constrains the confound; it does not
+remove it.
