@@ -12963,3 +12963,45 @@ Whoever reuses this join should ask *"which clips are bad"*, not *"at what speed
 ⚠️ **And one consequence for the cluster bootstrap that neither of us drew:** the surviving 60
 clusters are **very unequal** — ep 60 contributes **10** kept windows where a healthy clip
 contributes ~132. An episode-clustered interval treats them as equal draws.
+
+<!-- NEFF-CLUSTER-BALANCE-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — effective cluster counts: navhard's confirmation holds at **n_eff 349.6**, and the replication ratio is **23.2×**, not 27×
+
+MEASURED by me, no re-run and no re-scoring — the cluster sizes were already in the banked join
+table and the scored CSVs (`…/code/neff.py`, `raw/neff.json`). Bounds the power of my own headline
+at `f3fdcc9`.
+
+**Why it was worth computing.** A scene-clustered bootstrap resamples clusters as **equal** draws,
+so unequal sizes make real power lower than the cluster COUNT implies. The right statistic is the
+inverse-Simpson / Kish effective count, `n_eff = (Σnᵢ)² / Σnᵢ²`, which equals the cluster count
+only when the clusters are equal.
+
+| venue · stratum | scenes | clusters | **n_eff** | % | min / med / max |
+|---|---|---|---|---|---|
+| **navhard**, clause NOT fired *(primary)* | 4,240 | 435 | **349.61** | **80.4 %** | 1 / 9 / 20 |
+| navhard, clause FIRED | 1,222 | 345 | 245.28 | 71.1 % | 1 / 3 / 11 |
+| navhard, all | 5,462 | 450 | 396.10 | 88.0 % | 5 / 12 / 20 |
+| **warmup**, clause NOT fired | 167 | 16 | **15.07** | **94.2 %** | 8 / 10 / 17 |
+
+⇒ **The confirmation stands comfortably.** The primary stratum keeps **80.4 %** of its nominal
+count, so "435 clusters" overstates by ~1.24× — modest, and n_eff 349.6 is still **23× warmup's**.
+
+⭐ **But the honest replication ratio is 23.2×, not 27.2×.** `f3fdcc9` says *"27× the clusters"*,
+which is true as a cluster count (435/16) and overstates the **weight** of the replication. The
+effective ratio is 349.61 / 15.07.
+
+⭐ **And the small venue is the better-balanced one** — warmup 94.2 % against navhard's 80.4 %.
+Skew is not a property of small samples here; navhard's larger corpus carries more of it (scene
+counts per original scene run 1 to 20, median 9).
+
+⛔ **This is a DESCRIPTION of power, not a correction to apply.** The bootstrap already resamples
+the actual clusters, so every landed interval already embeds the unequal sizes. ⇒ **no published
+interval changes**; what changes is how their power may be described.
+
+⚠️ **Scope, from the TrainingFlyWheel's parallel measurement:** the same statistic is far less kind
+to the **perception bar** — 19 non-empty clusters → **n_eff 12.60 (66 %)**, so its chain reads
+129 pairs → 24 windows → 21 episodes → 19 non-empty → **12.6 effective**. The eligible pool is
+nearly balanced (60 → 56.89, 95 %). ⛔ Its bar figure rests on a raw-gate-target proxy that
+overcounts the banked matched n by **7.2 %** (139 vs 129), which it flagged and did not explain;
+the ratio is likely robust to that, the absolute count less so.
