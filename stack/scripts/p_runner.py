@@ -36,6 +36,16 @@ ARMS: tuple[dict, ...] = (
     {"name": "P0-REPLICATE", "kind": "replicate", "steps": 5000,
      "why": "the run-to-run floor; no arm may be called SUPPORTED by a smaller margin",
      "flags": ["--seed", "1"]},
+    # ⛔ P0b EXISTS BECAUSE P0-vs-A8 IS NOT A SEED FLOOR. A8's `config.json` carries no commit,
+    # no code hash and no trainer md5, and the repo's trainer already differs from the pinned
+    # tree by 313 diff lines — so |P0 − A8| is `seed + an unquantified CODE DELTA`, an UPPER
+    # BOUND only. Every P arm is judged against this floor, so an arm "clearing" a contaminated
+    # bound might only be clearing a systematic code shift: the exact defect `H-ESTIM-SEED-1`
+    # exists to prevent. |P0 − P0b|, same pinned tree, differing ONLY in seed, IS the floor.
+    # (Master Mind authorisation, 2026-09-20; A8 = seed 0, P0 = 1, P0b = a THIRD value.)
+    {"name": "P0B-REPLICATE", "kind": "replicate", "steps": 5000,
+     "why": "the SEED floor proper: same pinned tree as P0, third seed, nothing else moved",
+     "flags": ["--seed", "2"]},
     {"name": "P1-STEPS", "kind": "lever", "steps": 15000,
      "why": "steps at this corpus size", "flags": ["--seed", "0", "--steps", "15000"]},
     {"name": "P3-SUPERVISION", "kind": "lever", "steps": 5000,
@@ -209,6 +219,7 @@ def boxstat(py: str, box: str) -> str:
 
 
 #: ⛔ THE SEARCH STRING IS ASSEMBLED AT RUNTIME AND NEVER APPEARS WHOLE IN ANY COMMAND LINE.
+#: This is the **`pgrep -f` self-match trap** (CLAUDE.md, "Traps preflight"), in a WMI costume.
 #: MEASURED 2026-09-20, in this very function, whose previous docstring claimed to avoid exactly
 #: this: a literal `'*a7-imagenet-knockout*a7_run.sh*'` in the PowerShell command **matched the
 #: PowerShell process running it**, plus every shell that had ever typed the pattern — so the
@@ -271,11 +282,12 @@ def preflight(arm: str, authorised: str | None, files: dict) -> tuple[bool, list
     unreadable file is indistinguishable from a wrong one.
     """
     bad = []
-    if authorised is None:
+    allowed = [authorised] if isinstance(authorised, str) else list(authorised or [])
+    if not allowed:
         bad.append("no --authorise-arm given: this build launches nothing without an explicit "
                    "arm name")
-    elif arm != authorised:
-        bad.append(f"⛔ arm {arm!r} is NOT the authorised arm {authorised!r} — refusing")
+    elif arm not in allowed:
+        bad.append(f"⛔ arm {arm!r} is NOT among the authorised arms {allowed!r} — refusing")
     for label, (path, want) in files.items():
         p = Path(path)
         if not p.exists():
@@ -304,8 +316,10 @@ def main(argv=None) -> int:
                     help="the BASE run's config.json; P0 copies its argv verbatim (§3.1)")
     ap.add_argument("--trainer-md5", default=None, help="the pinned trainer's expected md5")
     ap.add_argument("--labels-md5", default=None, help="the v7/v8 label file's expected md5")
-    ap.add_argument("--authorise-arm", default=None,
-                    help="⛔ the ONE arm this invocation may launch; without it nothing launches")
+    ap.add_argument("--authorise-arm", action="append", default=None,
+                    help="⛔ an arm this invocation may launch; repeat for each. Without it "
+                         "nothing launches. An arm the bound allows but this list omits is "
+                         "still REFUSED — the two are independent locks, on purpose.")
     ap.add_argument("--stop-after", default=None,
                     help="⛔ hard bound: once this arm is VALID the runner is DONE and will not "
                          "roll on to the next arm")
@@ -318,6 +332,7 @@ def main(argv=None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     deadline = time.time() + a.max_wait_h * 3600
     trainer = tree / "stack" / "scripts" / "refc_v3_train.py"
+    attempted: set = set()
     while True:
         d = plan(out, a7, boxstat(a.py, a.boxstat), count_a7_procs(), stop_after=a.stop_after)
         print("ZZP-%s %s | %s ZZ" % (d["action"], d["arm"], d["reason"]), flush=True)
@@ -325,6 +340,15 @@ def main(argv=None) -> int:
             return 3 if d["action"] == "STOP" else 0
         if d["action"] == "RUN":
             arm = d["arm"]
+            # ⛔ LIVELOCK GUARD. An arm that finished but whose check did NOT read VALID comes
+            # back as PARTIAL, and `plan()` would hand it to us again — and `move_aside` would
+            # delete-by-rename the run we just paid 11 h for, forever. One attempt per arm per
+            # process; anything else is a STOP with the reason named.
+            if arm in attempted:
+                print("ZZP-STOP %s was already attempted in this process and is still not "
+                      "VALID — refusing to spend the card on it again ZZ" % arm, flush=True)
+                return 9
+            attempted.add(arm)
             spec = next(x for x in ARMS if x["name"] == arm)
             if a.base_config is None:
                 print("ZZP-REFUSED no --base-config: a replicate with no base is not a "
@@ -379,10 +403,10 @@ def main(argv=None) -> int:
             (d_arm / "check.out").write_text(chk.stdout + chk.stderr, encoding="utf-8")
             st = arm_status(out, arm)
             print("ZZP-ARM-%s-%s ZZ" % (arm, st), flush=True)
-            # ⛔ THE BOUND AGAIN, AFTER THE ARM: never fall through into the next one.
-            print("ZZP-BOUND-REACHED %s — not rolling on to the next arm ZZ" % a.stop_after,
-                  flush=True)
-            return 0 if rc == 0 else 8
+            # ⛔ BACK THROUGH `plan()`, NEVER STRAIGHT INTO THE NEXT ARM. `plan` re-reads the
+            # bound, the A7 chain and the gate from scratch, so the ONLY way a second arm starts
+            # is by passing every lock again. An INVALID check makes `plan` return STOP here.
+            continue
         if time.time() > deadline:
             print("ZZP-TIMEOUT after %.1f h ZZ" % a.max_wait_h, flush=True)
             return 4

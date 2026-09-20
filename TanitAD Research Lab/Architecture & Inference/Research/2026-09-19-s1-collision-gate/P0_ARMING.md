@@ -124,8 +124,60 @@ expected 1`. A checker that only ever passes is not a checker.
 
 | | |
 |---|---|
-| runner | **ALIVE**, PID 23224 (+child 46172, one launch), polling every 120 s, 72 h ceiling |
+| runner | **ALIVE**, PID 52324 (+child 46140, one launch), polling every 120 s, 72 h ceiling. ⚠️ Superseded the PID-23224 process: stopped it, verified **0** live by PID, edited, re-proved, restarted — never edited under a live run |
 | current decision | `ZZP-WAIT P0-REPLICATE \| A7 arms not VALID yet: [4 arms]` |
 | GPU | **3,950 MiB** held by the PI's servers — the gate is doing its job, not failing |
 | A7 | launcher armed and waiting; **not started** |
-| tests | **47 passed bare** (test_p_runner 32, test_prebuild_p3_targets 15), no ambient `PYTHONPATH` |
+| tests | **52 passed bare** (test_p_runner 37, test_prebuild_p3_targets 15), no ambient `PYTHONPATH` |
+| mutation proof | **12/12 CAUGHT, control GREEN** (29 test functions) |
+| bound | **P0 -> P0b, then STOP** (was P0 only) |
+
+---
+
+## 7. AMENDMENT (same day) — the bound is extended to **P0 -> P0b**, then STOP
+
+The Master Mind accepted §3's limitation and authorised the fix rather than living with it:
+*"extend the bound to P0 -> P0b, then stop … |P0 − P0b| on the same tree, differing only in seed,
+IS the seed floor."* ~22 h of card for two arms, against a 3.2–3.6 day panel whose every result
+depends on the floor being real.
+
+**The reporting rule, committed NOW so it cannot drift once the numbers exist:**
+
+| quantity | how it is reported |
+|---|---|
+| **\|P0 − P0b\|** | same pinned tree, seeds 1 vs 2, nothing else moved ⇒ **THE SEED FLOOR**. Quote this. |
+| **P0 vs A8** | ⛔ an **UPPER BOUND**, never called the floor. Reported beside it, labelled — the gap between the two **is the size of the code delta**, which is worth knowing on its own. |
+| ordering | the floor is reported **BEFORE** anything is interpreted against it, and **P1 does not start until both have landed**. |
+
+**What changed in the runner:**
+
+* `P0B-REPLICATE` inserted as `ARMS[1]` — **both replicates precede every lever**, so no lever can
+  run before the floor exists. Seeds are **1** and **2**; A8 is **0**, and a test asserts all three
+  are distinct (*a replicate sharing A8's seed is not a replicate*).
+* `--authorise-arm` now **repeats**, and it is a **SECOND, INDEPENDENT LOCK**: an arm must pass the
+  ordering bound **and** appear in the explicit list. A test proves each refuses alone — P0b is
+  refused when the list omits it even though the bound allows it.
+* The runner no longer `return`s after an arm; it `continue`s **back through `plan()`**, so a
+  second arm can only start by passing **every** lock again from scratch. An INVALID check still
+  returns STOP there.
+* ⛔ **New livelock guard, and it protects 11 h of card.** An arm that finished but whose check did
+  not read VALID comes back as **PARTIAL** — and `plan()` would hand it back, whereupon
+  `move_aside` would rename away the run just paid for, forever. One attempt per arm per process;
+  a second is a **STOP** with the reason named. *(This hazard only appeared once the runner was
+  allowed to loop; the single-arm build returned before it could bite.)*
+* `build_argv` is asserted to make the two replicates **differ in `--out` and `--seed` ONLY** —
+  every remaining token identical.
+
+**Debt 1 discharged:** the name **`pgrep -f` self-match trap** is back in `count_a7_procs`, now
+beside a real guard rather than in place of one. Debt 2 (`--max-wait-h` 48 -> 72) stands as a
+deliberate ceiling change, and is 72 in this build.
+
+⚠️ **The live process was NOT edited under itself.** Sequence: `TaskStop` → **verified 0 live
+by PID** (the "successfully stopped" message is a claim, the PID count is the evidence) → edit →
+re-prove → restart. Nothing was running, so the restart cost nothing. The landed copy is again
+byte-identical to the tree the new process runs from.
+
+**Re-proof after the amendment:** **52 tests pass bare**, and the mutation proof is **12/12
+CAUGHT with a GREEN control** (29 test functions) — three new mutations for the new locks:
+`M10` the two replicates share a seed · `M11` an empty authorisation list launches anyway ·
+`M12` P0b is dropped so the floor collapses to one arm.

@@ -42,8 +42,15 @@ def _a7_complete(tmp: Path) -> Path:
 # ------------------------------------------------------------------ ordering
 def test_the_first_arm_is_the_REPLICATE_and_the_order_is_the_prereg_s():
     assert PR.ARMS[0]["name"] == "P0-REPLICATE" and PR.ARMS[0]["kind"] == "replicate"
-    assert [a["name"] for a in PR.ARMS] == ["P0-REPLICATE", "P1-STEPS", "P3-SUPERVISION",
-                                            "P4-DECODE", "P5-TRUNK"]
+    # ⛔ BOTH replicates come before ANY lever. P0-vs-A8 is seed + an unquantified code delta;
+    # only |P0 − P0b| on the same pinned tree is the seed floor, and every lever is judged
+    # against it — so a lever that ran before the floor existed could not be read.
+    assert [a["name"] for a in PR.ARMS] == ["P0-REPLICATE", "P0B-REPLICATE", "P1-STEPS",
+                                            "P3-SUPERVISION", "P4-DECODE", "P5-TRUNK"]
+    assert [a["kind"] for a in PR.ARMS[:2]] == ["replicate", "replicate"]
+    # three DISTINCT seeds: A8 is 0, so the two replicates must be 1 and 2, never 0
+    seeds = [int(a["flags"][a["flags"].index("--seed") + 1]) for a in PR.ARMS[:2]]
+    assert seeds == [1, 2] and 0 not in seeds, "a replicate sharing A8's seed is not a replicate"
 
 
 def test_with_nothing_done_the_next_arm_is_P0(tmp_path):
@@ -63,6 +70,8 @@ def test_P0_is_UNSKIPPABLE_even_if_a_later_arm_already_ran(tmp_path):
 
 def test_after_P0_the_order_follows_the_prereg(tmp_path):
     _check(tmp_path, "P0-REPLICATE", "VALID")
+    assert PR.next_arm(tmp_path)["name"] == "P0B-REPLICATE"
+    _check(tmp_path, "P0B-REPLICATE", "VALID")
     assert PR.next_arm(tmp_path)["name"] == "P1-STEPS"
     _check(tmp_path, "P1-STEPS", "VALID")
     assert PR.next_arm(tmp_path)["name"] == "P3-SUPERVISION"
@@ -167,7 +176,7 @@ def test_inside_the_bound_P0_still_runs(tmp_path):
 def test_the_bound_REFUSES_the_next_arm(tmp_path):
     """⛔ The rule a mutation must break: P0 VALID ends the authorisation. P1 must NOT start."""
     _check(tmp_path, "P0-REPLICATE", "VALID")
-    assert PR.next_arm(tmp_path)["name"] == "P1-STEPS", "unbounded, P1 would be next"
+    assert PR.next_arm(tmp_path)["name"] == "P0B-REPLICATE", "unbounded, P0b would be next"
     arm, why = PR.bounded_next(tmp_path, BOUND)
     assert arm is None and "BOUND REACHED" in why
 
@@ -209,7 +218,7 @@ def test_preflight_REFUSES_an_unauthorised_arm(tmp_path):
     f = tmp_path / "t.py"
     f.write_text("x", encoding="utf-8")
     ok, why = PR.preflight("P1-STEPS", "P0-REPLICATE", {"trainer": (f, None)})
-    assert ok is False and any("NOT the authorised arm" in r for r in why)
+    assert ok is False and any("NOT among the authorised arms" in r for r in why)
 
 
 def test_preflight_REFUSES_when_no_arm_was_authorised(tmp_path):
@@ -230,3 +239,64 @@ def test_preflight_REFUSES_a_missing_or_wrong_input(tmp_path):
     miss, why2 = PR.preflight("P0-REPLICATE", "P0-REPLICATE",
                               {"labels": (tmp_path / "nope.gz", None)})
     assert miss is False and any("MISSING" in r for r in why2)
+
+
+# ================================================ the TWO-replicate bound (MM, 2026-09-20)
+# ⛔ The authorisation is now P0 -> P0b, then STOP. P1 must not start unattended. Two INDEPENDENT
+# locks guard it: `--stop-after` (the ordering bound) and `--authorise-arm` (the explicit list).
+# An arm must pass BOTH, so a mistake in either one alone cannot start a lever.
+BOUND2 = "P0B-REPLICATE"
+
+
+def test_the_two_replicate_bound_runs_P0_then_P0b_then_STOPS(tmp_path):
+    a, _w = PR.bounded_next(tmp_path, BOUND2)
+    assert a["name"] == "P0-REPLICATE"
+    _check(tmp_path, "P0-REPLICATE", "VALID")
+    a, _w = PR.bounded_next(tmp_path, BOUND2)
+    assert a["name"] == "P0B-REPLICATE", "the floor needs BOTH replicates"
+    _check(tmp_path, "P0B-REPLICATE", "VALID")
+    a, why = PR.bounded_next(tmp_path, BOUND2)
+    assert a is None and "BOUND REACHED" in why
+    assert PR.next_arm(tmp_path)["name"] == "P1-STEPS", (
+        "unbounded, P1 would start here — the bound is what stops it")
+
+
+def test_plan_is_DONE_after_BOTH_replicates_not_RUN(tmp_path):
+    out, a7 = tmp_path / "p", _a7_complete(tmp_path)
+    _check(out, "P0-REPLICATE", "VALID")
+    assert PR.plan(out, a7, "0 32", stop_after=BOUND2)["arm"] == "P0B-REPLICATE"
+    _check(out, "P0B-REPLICATE", "VALID")
+    d = PR.plan(out, a7, "0 32", stop_after=BOUND2)
+    assert d["action"] == "DONE" and "BOUND REACHED" in d["reason"]
+    assert PR.plan(out, a7, "0 32")["action"] == "RUN", "unbounded, the same state would RUN"
+
+
+def test_the_AUTHORISE_LIST_is_a_SECOND_lock_the_bound_does_not_cover(tmp_path):
+    """⛔ P1 sits inside no bound here, but the list still refuses it — and P0b, which the
+    bound DOES allow, is refused when the list omits it. Two locks, independently."""
+    f = tmp_path / "t.py"
+    f.write_text("x", encoding="utf-8")
+    both = ["P0-REPLICATE", "P0B-REPLICATE"]
+    assert PR.preflight("P0B-REPLICATE", both, {"t": (f, None)})[0] is True
+    ok, why = PR.preflight("P0B-REPLICATE", ["P0-REPLICATE"], {"t": (f, None)})
+    assert ok is False and any("NOT among the authorised arms" in r for r in why)
+    assert PR.preflight("P1-STEPS", both, {"t": (f, None)})[0] is False
+
+
+def test_an_empty_authorisation_list_launches_NOTHING(tmp_path):
+    f = tmp_path / "t.py"
+    f.write_text("x", encoding="utf-8")
+    for empty in (None, []):
+        ok, why = PR.preflight("P0-REPLICATE", empty, {"t": (f, None)})
+        assert ok is False and any("launches nothing" in r for r in why)
+
+
+def test_the_two_replicates_differ_ONLY_in_seed():
+    """⛔ |P0 - P0b| is the seed floor only if the seed is the sole difference. Built from the
+    same base argv, the two command lines must differ in exactly the seed and the out dir."""
+    base = ["--arm", "hier", "--seed", "0", "--steps", "5000", "--out", "OLD", "--w-box3d", "1.0"]
+    p0 = PR.build_argv(base, seed=1, out="A")
+    p0b = PR.build_argv(base, seed=2, out="B")
+    assert p0[:4] == ["--out", "A", "--seed", "1"] and p0b[:4] == ["--out", "B", "--seed", "2"]
+    assert p0[4:] == p0b[4:], "everything after out/seed must be IDENTICAL between replicates"
+    assert len(p0) == len(p0b) == len(base)
