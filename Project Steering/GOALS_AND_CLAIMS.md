@@ -12551,3 +12551,46 @@ and this does not restore that comparison. FAST and SLOW differ in start speed *
 whatever co-varies with it (junctions, traffic density, scene type). It is **not** a randomised
 split and must never be written up as one. The control constrains the confound; it does not
 remove it.
+
+<!-- H-NAVHARD-STOP-1-CLAUSE-IS-NOT-THE-CAUSE-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the ≤ 5 m EP clause is **NOT** what makes stopping win, and my fast-start threshold is REFUTED by its own control
+
+MEASURED, 0 GPU, **no new scoring** — banked per-scene CSVs (`3b02a41`) joined to start speeds
+streamed from the archives. Package: `…/2026-09-20-navhard-faststart-stratum/` (`RESULT.md`).
+
+| stratum | scenes | **clusters** | STOP | CV | **STOP − CV** | CI95 (cluster bootstrap) | STOP / CV / ties |
+|---|---|---|---|---|---|---|---|
+| clause **FIRED** | 37 | 12 | 0.3260 | 0.1081 | **+0.2179** | **[0.0813, 0.3887]** | 15 / **0** / 22 |
+| clause **NOT fired** | 167 | 16 | 0.5463 | 0.4348 | **+0.1114** | **[0.0292, 0.1821]** | 68 / **83** / 16 |
+| all | 204 | 16 | 0.5063 | 0.3756 | +0.1307 | [0.0582, 0.1929] | 83 / 83 / 38 |
+
+⇒ **Remove every scene where the clause fires and stopping STILL wins, separated.** The clause is
+an **amplifier (≈2×), not the cause.** ⇒ `D-NAVSIM-STOP-1`'s second mechanism — a
+zero-displacement plan earning EP median **0.195** where the clause does not fire (`d86dccb`) — is
+now the **load-bearing open question**, no longer a remainder.
+
+⚠️ **The mean and the sign test disagree on the decisive stratum:** CV wins on **83** of the
+not-fired scenes and STOP on **68** — CV wins more often, STOP wins by more. Quote both or neither.
+
+⭐ **`H-ESTIM-SEED-1`'s "necessary not sufficient" caveat does NOT bite here, and the reason is
+structural:** STOP and CV are deterministic rule-based arms (an all-zero plan; a constant-velocity
+extrapolation) with no training and no sampling, so training variance and inference variance are
+**zero by construction**. This is one of the rare cases where the cluster bootstrap answers the
+whole question.
+
+⚠️ **EXPLORATORY, not confirmatory.** Warmup's scores were already known and the clause-fired
+split is defined by the scorer's output, so this is a post-hoc split on a seen venue. The
+confirmatory run is the same computation on navhard, pre-registered against a venue nobody has
+looked at.
+
+⛔ **`D-NAVSIM-STRATIFY-1` (the 5.0 m/s fast-start stratum, `2fc5bcc`) is REFUTED** — the clause
+fires on **32.5 %** of fast starts vs **8.3 %** of slow ones, ~4× the wrong way. See
+`RETR-2026-09-20-FASTSTART-THRESHOLD`.
+
+⛔⛔ **AND A UNIT CORRECTION THAT REACHES EVERY NAVSIM TWO-STAGE INTERVAL:** warmup's 204
+synthetic scenes derive from **16** original scenes and navhard's 5,462 from **450**
+(`corresponding_original_scene`, median 12 scenes/cluster). **Any two-stage interval computed over
+SCENES is pseudo-replication.** This does not retract the 18.1 % census (`d86dccb`) — a proportion,
+not an interval, and it reproduced exactly here (37/204 = 0.1814) — but **no CI previously quoted
+over warmup scenes is admissible** until re-read with clustering.

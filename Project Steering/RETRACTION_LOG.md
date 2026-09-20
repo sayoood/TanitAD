@@ -15794,3 +15794,40 @@ opening the file. It surfaced only because both constants were **re-read from th
 devkit** while pre-registering `D-NAVSIM-STRATIFY-1` rather than carried from a session summary.
 Same family as *"a summary is not a path"* — and in a programme whose rule is that every number
 cites a file, a citation nobody follows is the one place that rule can rot unnoticed.
+
+<!-- RETR-2026-09-20-FASTSTART-THRESHOLD -->
+
+### ⛔ RETR-2026-09-20-FASTSTART-THRESHOLD — the 5.0 m/s fast-start threshold, refuted by the control it committed to, plus a join key that joined nothing
+
+**What was claimed** (`2fc5bcc`, `D-NAVSIM-STRATIFY-1`): a scene starting at ≥ 5.0 m/s covers 20 m
+over the 4 s horizon = 4× the clause distance, so the ≤ 5 m EP clause cannot fire there.
+
+**What is measured:** the clause fires on **32.5 %** of fast starts (27/83) and **8.3 %** of slow
+ones (10/121) — ~**4× more** at speed. The prereg's committed criterion was *"`f_fast` ≥ 15 %
+⇒ the derivation is wrong"*. **The stratum is void and the five arms must not run on it.**
+
+**Root-cause class: a true quantity computed in the wrong SCOPE** — the same family as
+`df` on a pod, `free` on Thor, cgroup `usage_in_bytes`, `step_s`, and the cylindrical-FOV error.
+I priced how far a vehicle **travels**; `pdm_scorer.py:232-237` prices how far a **rule-compliant**
+proposal travels (`masked_progress = progress_raw * multiplicate_metric_scores`). At speed a moving
+arm's compliance collapses — CV's no-at-fault-collision **0.386 vs 0.884**, drivable-area **0.566
+vs 0.818**, driving-direction **0.596 vs 0.959** — so the only compliant proposals are slow ones
+and the best masked progress stays under 5 m **because** the scene is fast.
+
+⚠️ **The prereg named this mechanism and mis-weighted it**, calling it a *"residue"* the control
+would measure. It is the dominant term and it reverses the sign. ⭐ **The control is what caught
+it, and it cost one join** — which is the argument for committing an arm-independent control in
+advance rather than reasoning harder about the derivation.
+
+**Two further defects in the same landing, both corrected:**
+* ⛔ **The join key was keyed on a field that joins nothing.** `scene_token` matches **0 of 204**
+  of the scorer's per-scene tokens; **`initial_token`** matches **204/204**. The table was landed
+  AND sent to the EvalFlyWheel with that key asserted in prose and never tested against a file I
+  already had. Re-emitted as `initial_token,scene_token,orig_scene,v0_ms`.
+* ⛔ **The `n` was right and its UNIT was wrong.** 204 warmup scenes are **16** original-scene
+  clusters; 5,462 navhard scenes are **450**. Any two-stage interval over scenes is
+  pseudo-replication — the programme's paired episode-cluster rule, one level down, with the
+  **unit** missed rather than the rule.
+
+**What survives:** the method. `RESULT.md` §2 reports what the same free measurement produced
+anyway — the clause is an amplifier, **not** the cause of STOP's win.

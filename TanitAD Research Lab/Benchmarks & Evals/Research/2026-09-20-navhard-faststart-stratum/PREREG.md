@@ -75,3 +75,37 @@ The clause has been cited as **`pdm_scorer.py:231-236`** in four landed document
 **`232-237` is correct.** Line 231 is a comment (`# normalize and fill progress values`) and 236 is the bare `else:`; the range `231-236` therefore **excluded line 237** — `normalized_progress = np.ones(...)`, the assignment the entire claim is about. A reader following the citation would have landed on the branch test and not on its effect.
 
 ⭐ The defect is small and the lesson is not: the span was copied forward five times without anyone opening the file. Both constants in §1 were re-read from the installed devkit for this document rather than carried from a summary — which is how the off-by-one surfaced at all.
+
+<!-- AMENDMENT-1-THRESHOLD-REFUTED-BY-ITS-OWN-CONTROL-2026-09-20 -->
+
+---
+
+## 6. ⛔ AMENDMENT 1 — the 5.0 m/s threshold is REFUTED by the control this document committed to
+
+Measured the same day, before any arm ran, with no new scoring: on warmup the clause fires on
+**32.5 %** of fast starts (27/83) and **8.3 %** of slow ones (10/121). §3 committed *"`f_fast`
+≥ 15 % ⇒ the derivation is wrong"*; it reads **32.5 %**, and `f_slow` is **0.25×** `f_fast`
+rather than greater, so the arm-independent control fails **by sign**.
+
+⭐ **The error is nameable in one sentence:** §1 priced how far a vehicle **travels**; the clause
+prices how far a **rule-compliant** proposal travels. At fast starts a moving arm's multiplicative
+compliance collapses (CV: no-at-fault-collision **0.386 vs 0.884**, drivable-area **0.566 vs
+0.818**, driving-direction **0.596 vs 0.959**), so every compliant proposal is a slow one and the
+best masked progress stays under 5 m **because** the scene is fast.
+
+⚠️ §1 already carried this exact caveat and called it a *"residue"* the control would measure.
+It is the dominant term. The caveat was right and its weighting was wrong — which is the reason
+the control was committed in advance rather than argued about afterwards.
+
+⛔ **Consequently §3's endpoints are VOID and the five arms must not be run on this stratum.**
+⛔ **And §2's and §4's `n` are wrong in UNIT:** navhard's 5,462 synthetic scenes derive from
+**450 original scenes** and warmup's 204 from **16** (`corresponding_original_scene`), so any
+interval over scenes is pseudo-replication.
+⛔ **And §2's join key names the wrong field:** `scene_token` joins **0** of 204 against the
+scorer's per-scene CSVs; **`initial_token`** joins 204/204. `raw/navhard_token_v0.csv` is
+re-emitted as `initial_token,scene_token,orig_scene,v0_ms`.
+
+⇒ What survives is the **method**, not the threshold: fix the stratum from the rule, commit the
+failure criterion, and run an arm-independent control **before** the arms. Here that machinery
+refuted its own author's derivation for the price of one join. See `RESULT.md` §2 for the result
+it produced anyway — the clause is **not** what makes stopping win.
