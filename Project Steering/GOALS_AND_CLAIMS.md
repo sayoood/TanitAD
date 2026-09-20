@@ -13093,3 +13093,55 @@ is the direct confirmation. ⭐ The inference is strong because the prediction c
 held on two venues with an independent zero-check, not because the data were unseen — **both
 venues' scores were already known, so this is EXPLORATORY**, a mechanism test rather than a
 pre-registered result.
+
+<!-- DAC-FORK-DEPARTURE-SWEEP-2026-09-20 -->
+
+### ⭐ 2026-09-20 — the DAC fork, measured: real departures **EXIST but are rare (~22 clips)**, and the obvious way to enrich for them is **CIRCULAR**
+
+MEASURED on Thor at the PI's instruction, CPU only, niced, read-only — production was unaffected
+(26.5 clips/h before and after, `ZZSTATUS HEALTHY`). `…/eval/sweep_departures.py` →
+`corpus/departure_sweep.json`. **0 unreadable, 0 exceptions** in either stratum.
+
+**Definition, taken from the publisher rather than invented:** a REAL departure is an ego-path cell
+on a positively non-drivable class, `NON_DRIVABLE = (5, 7)`. Unlabelled is **compliant** under the
+PI's §4(a) ruling of the same day, so this measures the question under the **current** rule.
+
+| stratum | n | read | clips with a departure | rate | non-drivable cells: median / max |
+|---|---|---|---|---|---|
+| **CLEAN** `real == 1.0` | 553 | **0** — zero off-drivable cells *by construction* | **0** | 0 | — |
+| **TAIL** `real < 0.9` (census) | 73 | 73 | **4** | **5.48 %** | **304 / 1,085** |
+| **BODY** `0.9 ≤ real < 1` (sampled) | 2,727 | 300 | **2** | **0.67 %** | **342 / 346** |
+
+⇒ **Corpus estimate: ~22.3 clips with a real departure, CI95 [4.0, 47.4]**, of 3,353 with a
+testable path. Scaling to the full 4,719 gives **~31**.
+
+⭐ **Two findings, and the second matters more than the first.**
+**(1) Departures exist** — 6 found directly, none ambiguous.
+**(2) When they occur they are SUBSTANTIAL, not marginal:** median **304–342** non-drivable path
+cells, max **1,085**. These are not single-cell grazes; they are exactly the unambiguous positives
+an adjudication needs, and a human could label them confidently.
+
+### ⛔⛔ But the obvious enrichment mechanism is CIRCULAR, and that is the load-bearing finding
+
+`corpus_publisher.py:256` — **class 5 = edge, class 7 = sidewalk**. P2 is defined as *"explicit
+off-road only: **edge + hatched + sidewalk** ≥ 0.5"*. ⇒ **selecting clips by "the path crosses
+classes 5/7" IS P2's own criterion.** A pack built that way would be one P2 fires on **by
+construction**, and P2 would then be "validated" on a sample chosen by P2.
+
+⇒ This sweep **answers the existence question and cannot supply the pack.** `PREREG_DAC_DEFINITION`
+§5 requires agreement with **human judgement**, and the Data assignment requires enrichment *"via a
+mechanism INDEPENDENT of the rules"*. A map-based finder is the rule in a different costume.
+
+⚠️ **And the independent route is priced out by the base rate.** Human review of a random sample is
+circularity-free, but at **0.67 %** finding ~20 positives needs ≈ **3,000 windows** adjudicated.
+The two packs already done total **118**.
+
+⇒ ⭐ **RECOMMENDATION — option (B), and the sweep is what makes it defensible rather than
+resigned:** departures exist, they are rare, and we cannot enrich for them without using the rule
+under test. **A false-alarm-only validated term is what we can honestly have**, so DAC settles as a
+**LOW-NOISE PENALTY** and not a correctness criterion — which is where P2 already sits
+provisionally (`aaf0879`, `47f0dbd`).
+⚠️ **One (A) route survives naming:** enrichment from an **independent map** (e.g. nuPlan's own
+lane/sidewalk geometry) would not share information with our SAM3-map rules. ⛔ But nuPlan covers
+LV+PIT while this corpus is PhysicalAI, so corpus overlap is the blocker and I have **not**
+measured whether any exists. Named, not proposed.
