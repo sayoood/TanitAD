@@ -1019,3 +1019,57 @@ wall 40,131 s including five 1,000-window reads. The box was shared with a NAVSI
 D: I/O all afternoon, so this is a CONTENDED figure, not the 2.51 s/step planning rate.
 ⛔ NOT a capability claim: a map head at 0.94 of one epoch over 62 clips.
 Artifacts: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-a8-occupancy-5k/`.
+
+<!-- CHECKLIST-INDEX-STALE-2026-09-20 -->
+## ⛔ THE CHECKLIST AT §E IS A STALE INDEX OF THIS FILE'S OWN CONTENTS (2026-09-20)
+
+**The defect:** §E's boxes read **6 ticked / 14 unticked**. Every closure since has been landed as
+an **APPENDED SECTION further down this same file**, and no box was re-ticked. ⇒ a reader going
+top-down gets **6/20** and a blocker list this file itself refutes below.
+
+⭐ **The line that proves it is not a bookkeeping quibble:** E17's box still reads *"the
+4,713-clip source frames, **which are not on this box**"* — while **§"E17 and E18 CLOSED"** below
+records that constant as **an ABSENCE FROM A SINGLE PROBE** and C3's transfer leg as **VOID**, and
+the pod request's P9 carries the positive measurement (4,719/4,719 matching HF size + LFS sha256,
+61.6 GB, `2a88524`). **The same file asserts both.**
+
+⚠️ Same class as the pinned feature-count rot in `CLAUDE.md` (*"2 of 36"* → 4 → 5 → 6, across
+14 documents) and the 2026-08-16 stale-blocker sweep: **a count in prose rots in lockstep with
+what it counts**. ⛔ The boxes are NOT rewritten here — appended beside, so the record shows what
+was believed and when it was corrected.
+
+### The closure index, by what can be QUOTED — not by what is remembered
+
+| state | items | the evidence |
+|---|---|---|
+| **CLOSED, box already ticked** | E1 E2 E3 E4 E5 E6 | in §E |
+| **CLOSED by a section BELOW §E in this file** | E14 E16 E17 E18 E19 | *"✅ A9 DONE"* (⇒ *"E14 is TICKED"*), *"✅ E16 and E19 CLOSED FROM THE RECORD"*, *"✅ E17 and E18 CLOSED"* |
+| **CLOSED by an artifact outside this file** | E9 E10 E12 | E9: `t1_eval.py` declared unwired for any REF-C arm AND the rate recorded — ⚠️ **≤ 19.2 s/window on CPU, all-in**, an upper BOUND, per `…/2026-09-19-e9-t1eval-refcv6/RESULT.md:37` (see `RETR-2026-09-20-E9-SWINDOW`) · E10: A3's held-out table, IoU **0.57607** vs floor **0.3388** = **1.700×** · E12: `S1-GATE-CONST` **exactly 0.00000 [0, 0]** with the gate proven to re-order under real tracks |
+| ⛔ **OPEN** | **E13** | A7's four arms. The GPU is held by the PI's own servers; the launcher is armed at an unchanged gate |
+| ⚠️ **NOT RE-ADJUDICATED HERE** — believed closed, NOT quoted as closed | E7 E8 E11 E15 E20 | each needs one artifact read, named below |
+
+⛔ **The five I refuse to tick, and exactly what each needs** — because ticking from memory is the
+defect this section exists to correct:
+* **E7** — A0's 62/62 rebuild **from the 124** with the parity record stamped into each manifest.
+  The pod request's P4 cites `782571c` for *"two disjoint 62/62 halves, parity-guarded"*; what is
+  not re-read is whether the **stamp** is in each manifest.
+* **E8** — each half's occupancy floor **in the same panel the head is scored in**. ⚠️ A caveat
+  in the register cuts directly at this: the banked 2,000-step map head **trained on the FULL
+  139-clip cache**, so a per-half floor from that panel is not clean by construction. Read it
+  before ticking.
+* **E11** — `S1-RANDOM`, `S1-BASE` and `S1-GATE-ORACLE` on the **same windows** with the fan's
+  collision-free share ≈ **55.3 %**. The 55.3 % is in the register for `L1-NORL-s0` (25/25); what
+  is unread is the same-windows condition across the three arms.
+* **E15** — the branch. `resnet101` **fits** (`8b1f1db`, real stamped flags `0f6036d`) and a
+  dev-box rate of **2.51 s/step** is recorded (P3) — ⚠️ but **§E4 records 29.1967 s/step for
+  `resnet34`**, and which trunk the 2.51 belongs to is **not stated beside the number**. That is
+  the units/scope class: a true rate quoted without its arm. Settle it from the run's `argv`.
+* **E20** — `POD_REQUEST_REFCV6.md` exists and §4 states C6/C7, so the item's text is satisfied;
+  but the request is still a **DRAFT with §5 non-empty**, so it is recorded as **drafted, not
+  discharged**.
+
+⭐ **The durable fix, and it is the same one `CLAUDE.md` already uses for the feature count:**
+a status list that is maintained by hand next to content that moves **will** drift. ⇒ **Do not
+quote §E's boxes.** Quote this index, and when an item closes, append its closure **and** its row
+here in the same commit — or pin the count with a test, which is what stopped the feature-count rot
+after four repeats.

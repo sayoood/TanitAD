@@ -15704,3 +15704,33 @@ units. A control that is identity-true for any values proves only that the machi
 
 ### RETR-2026-09-19-POSTED-LIMIT-REFIND — second instance, same day (appended)
 The DrivoR deep analysis (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md`) first presented *"DrivoR does not score 56.3; 56.3 is TOAD"* as a **new** correction. It was settled on **2026-09-02** (`Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/`) and pinned as register guideline T-4. **Mechanism this time:** the repo grep for `drivor` was piped through `head -30`, so the list was truncated before the 09-02 package appeared. The same class as the morning instance (a priority claim made without searching the Lab's own packages), with a new vector: **a truncated search listing read as a complete one**. ⇒ Before claiming novelty, run the grep **without a head limit** (or count the hits first), and grep for the **number** (`56.3`) as well as the name.
+
+### RETR-2026-09-20-E9-SWINDOW — "E9's rate is 7.4 s/window"
+
+**Retracted:** the figure **7.4 s/window** for E9, which I stated in session and then wrote into
+the **drumbeat cron prompt** — the artifact a fresh session reads as its complete handoff.
+
+**The truth, from the artifact:**
+`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-e9-t1eval-refcv6/RESULT.md:37` reads
+**"173 s wall for 9 windows ⇒ ≤ 19.2 s/window on CPU, ALL-IN"**, and says in the same row that
+this INCLUDES model load, corpus build and analysis, so the marginal per-window cost is lower and
+**is not separated**. ⇒ the real figure is an **upper bound of 19.2 s/window**, **2.6×** the number
+I quoted, and it is a bound rather than a rate.
+
+**How it was found:** while auditing the dev-box checklist I went to cite E9 and read the package
+instead of my own note.
+
+**Does 7.4 exist at all?** No. Two probes over the whole repo plus a same-breath control that
+reads non-zero (`19.2` is findable): every `7.4` hit is a different quantity — `17.4 s/step` in a
+resume runbook, a `7.4 s` TURN\_L duration, a `0.4–7.4` horizon. The number was not misread from a
+neighbouring row; it did not exist.
+
+**Root-cause class: A SUMMARY IS NOT A PATH** (the existing memory of that name, and the
+2026-09-19 case where two numbers from a session summary reached a landed prereg). The other half
+of E9's sentence — *"`t1_eval.py` is unwired for any REF-C arm by design"* — IS in the artifact
+and stands; the defect was quoting a companion number from memory rather than from the file beside
+it. ⚠️ **The aggravation is the DESTINATION.** A wrong number in chat is corrected by the next
+message. A wrong number in the cron prompt is read by a session that has no other context and no
+way to know it is wrong — so the handoff must be rebuilt from artifacts, never from working state.
+
+**Fixed:** the cron prompt no longer carries a rate for E9; it carries the bound and its file.
