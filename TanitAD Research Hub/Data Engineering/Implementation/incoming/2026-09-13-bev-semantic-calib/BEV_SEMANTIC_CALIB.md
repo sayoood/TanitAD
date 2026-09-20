@@ -3068,3 +3068,46 @@ few centimetres off and correcting. Only the **central value over many frames** 
 claim; the spread bounds how much any single frame can be trusted. On frame 908 itself v7 still
 reads +0.43 m at 12 m, about 1.2 robust-sd from the straight-road median — **an unremarkable frame
 for this spread, and not separable from real driving with one frame.**
+
+## §143 The bend residual is the DRIVER, not a parameter — two pre-registered tests
+
+The +0.15 m left in bends (§142) is the only thing left after v7. Two hypotheses, each with the
+signature it would have to produce written down **before** the run.
+
+**H1 — a time lag between the ego trace and the camera.** Signature: drawing the path recorded at
+frame `f+k` onto the image at frame `f` would **null the bias at exactly one k** and not at the
+others. **REFUTED.** MEASURED over 140 curving frames (`|path lateral @30 m| > 0.5 m`), n ≈ 530
+samples per shift:
+
+| shift | −6 | −4 | −2 | −1 | 0 | +1 | +2 | +4 | +6 |
+|---|---|---|---|---|---|---|---|---|---|
+| Δt (s) | −0.200 | −0.133 | −0.067 | −0.033 | 0 | +0.033 | +0.067 | +0.133 | +0.200 |
+| median offset (m) | +0.116 | +0.116 | +0.112 | +0.109 | +0.108 | +0.107 | +0.105 | +0.104 | +0.106 |
+
+**Flat across ±0.2 s, no null anywhere.** There is no lag to find. *(Testing this on all frames
+would have diluted it to nothing — a lag is invisible on a straight road, which is why the frame set
+is curving-only.)*
+
+**H2 — the driver cuts the corner.** Signature: the bias **flips sign with turn direction**, sitting
+toward the INSIDE of the bend either way. **CONFIRMED.** MEASURED:
+
+| group | frames | n | median offset | robust sd |
+|---|---|---|---|---|
+| LEFT bend (`lat30 > +0.5`) | 281 | 590 | **+0.164** | 0.211 |
+| straight (`\|lat30\| < 0.5`) | 1839 | 625 | −0.032 | 0.374 |
+| RIGHT bend (`lat30 < −0.5`) | 96 | 237 | **−0.457** | 0.472 |
+
+`+` is left of lane centre, so **both bends put the ribbon toward the inside** — the car really does
+drive toward the inside of a bend, and the ribbon is drawn around the car's own recorded path.
+
+⛔ **THIS IS THE METRIC'S PREMISE FAILING, NOT THE CALIBRATION.** `lane_containment` assumes the car
+is centred between the markings. That holds on average and on straight road (median −0.032 m over
+1839 frames) and **is simply false in a bend**. ⇒ **The calibration claim is the straight-road
+median; the bend numbers are a measurement of driving.** Anyone tuning a camera parameter against
+the bend figure would be fitting the driver's line into the mount geometry — the same shape of
+error as `R-2026-09-16-yawnotlateral`, where a driving/geometry effect was absorbed into the wrong
+parameter.
+
+⚠️ The right-bend group is only 96 frames with sd 0.472 (against 281 and 0.211 for left bends), so
+its **−0.457 is the weakest number in the table** and the asymmetry between the two directions is
+not established — only the sign flip is.
