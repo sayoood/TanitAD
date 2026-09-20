@@ -323,3 +323,117 @@ the error that matters.** It can only measure how often each one false-alarms, w
 already did (44.57 % / 8.70 % / 4.48 %). Ranking them needs either a corpus that contains real
 departures, or a decision that a term validated only on its false-alarm rate is not the right
 reference for a human-referenced reward. ⛔ Neither is decided here.
+
+## The ruling (Master Mind, landed `5fbac40`) — recorded here, not restated as mine
+
+**No candidate is adopted as the DAC definition.** The evidence supports one statement — the
+candidates differ only in false-alarm rate (44.57 / 8.70 / 4.48 %) — and a term the reward depends
+on cannot be defined on that alone, because **the degenerate optimum, a rule that never fires,
+scores best on every measurement this corpus can make**.
+
+⭐ **P2 may be used PROVISIONALLY as a LOW-NOISE PENALTY, explicitly not as a correctness
+criterion.** A term false-firing on 4.48 % injects roughly ten times less label noise than one at
+44.57 %. ⛔ That is a statement about **noise**, not **correctness**, and every claim resting on DAC
+must say so in those words. The fork at the end of the previous section is **escalated to the PI
+unchosen**, both branches as written. The register now carries the fact underneath it: on this
+corpus a DAC penalty measures **map and read-out error, not driving error**, because in 736 windows
+the ego never mounted anything.
+
+## Pre-registered reading of the sweep — written BEFORE the labels exist
+
+The Master Mind will label the 58 sheets blind and land the labels before the key is released.
+`code/score_sweep.py` is written and **self-tested on synthetic labels now**
+(`raw/score_sweep_selftest.json`) — a scorer first run at the moment the labels land is a
+liability, so its branches are exercised in advance: it reports 55 clusters, keeps the mixed-in
+three apart, treats `cannot-tell` as its own cell, and **refuses** a missing label or one outside
+the rubric.
+
+**The unit is the CLIP: n = 55, not 58 sheets.** The script asserts one clip per sweep sheet and
+refuses to report a cluster count it cannot stand behind.
+
+| outcome | what it means, committed now |
+|---|---|
+| **k = 0 over-boundary** | the sweep establishes a one-sided 95 % upper bound of **5.3 % of clips** on departures where no rule fires. ⛔ It does **not** establish that none exist. All three candidates remain unfalsified on misses, and the ruling's false-alarm-only reading stands unchanged |
+| **k ≥ 1** | ⛔ the **first false-pass evidence this corpus can give**. A departure where NO rule fires falsifies the silence of V0, P1 **and** P2 alike — none of them fires in stratum D — and P2's provisional low-noise status must be re-read, because a rule that fires rarely *and* misses real departures is not merely quiet. With k = 1 the rate is 1.8 % of clips [UB 8.3 %] |
+| **many `cannot-tell`** | a statement about what these sheets can show, **not** about the map's 0.5 m grid. ⚠️ And the adjudicator's tie-break leans toward on-surface, so a *low* count is unsurprising and is not evidence that the images are sufficient |
+
+**The three mixed-in candidates are scored separately and never folded in** — two route-1 shock
+events and one route-2 widest-margin window are a different population from a clip-first draw. ⛔ An
+`over-boundary` among them would mean route 1 or 2 found a real event after all, and would revive
+the ranking question the ruling closed on this corpus.
+
+⛔ **Nothing is scored until the labels land.** The key stays off-repo until then; its sha256 is
+already published in `raw/sweep_pack.json`.
+
+## Appended 2026-09-21 — the sweep, scored: **k = 0**, and the pre-registered reading governs
+
+Labels landed `3fb47e1` (`adjudication/LABELS_SWEEP_MM.csv`, blob `32d6b4260d`) BEFORE the key was
+released, as committed. Scored with `code/score_sweep.py`, whose branches were exercised on
+synthetic labels a turn earlier.
+
+| population | unit | on-surface | over-boundary | cannot-tell |
+|---|---|---|---|---|
+| **the sweep** — stratum D, one window per clip | **n = 55 CLUSTERS** (not 58 sheets) | 54 | **0** | 1 |
+| the three mixed-in, **never folded in** | 3 windows | 3 | **0** | 0 |
+
+**k = 0 ⇒ the pre-registered reading applies exactly as written:** the sweep establishes a
+one-sided 95 % upper bound of **5.3 % of clips** on departures where no rule fires, and ⛔ it does
+**not** establish that none exist. All three candidates stay unfalsified on misses; the `aaf0879`
+ruling is unchanged.
+
+⭐ **The three mixed-in candidates all read `on-surface`** — the two route-1 vertical-shock events
+and the route-2 widest-margin window. The ranking question the ruling closed stays closed: neither
+physical route turned up a real departure, even under a blind eye that did not know why those
+sheets were in the pack.
+
+⚠️ **The tie-break caveat, carried verbatim:** *one cannot-tell in 58 is a property of the
+adjudicator's rule, not evidence that the camera suffices* — judge whenever the surface is visible
+in ANY panel, reserve cannot-tell for when it is visible in NONE.
+
+**The combined picture: 118 windows — 60 disagreement-enriched, 58 swept by clip — produced ZERO
+`over-boundary` labels.** Every firing of every candidate seen so far is a false alarm, and no rule
+has yet been caught missing anything. ⛔ That is not evidence the rules are safe. It is evidence
+this corpus cannot test them for missing.
+
+### The BORDERLINE count, resolved exactly rather than reported as a mismatch
+
+The CSV flags **7** rows (S10, S18, S28, S31, S36, S51, S56). The Master Mind's note discusses
+**8**, and the eighth is **S53** — the `cannot-tell` row, treated as borderline in prose but
+carrying no flag in its note. Both numbers are right about different sets; the PI's spot-check
+needs the union.
+
+⭐ Their *"five of the eight are tight turns whose inside corner is a kerb or island"* **checks out
+against the file**: S10, S18, S28, S31, S51 — and every one of those five names the declared
+**no-depth-test** artifact doing real work, the far arc drawing *over* the island because it lies
+beyond it. Those five are the priority rows for a second adjudicator.
+
+### S53 is not a one-off: the sheets' own evidence gap, measured
+
+`code/footprint_visibility.py`, geometry only, over **both** packs (118 windows):
+
+| | |
+|---|---|
+| sheets with **no corner visible in any panel** — no overlay at all | **2 of 118 (1.7 %)**: **S53** and **W46** |
+| sheets with no **complete** footprint (the box never closes, though corners show) | **17 of 118 (14.4 %)**; median 33 ticks still show ≥ 1 corner |
+| S53 specifically | the nearest footprint projects to row **436.5** against an image height of **416** — **20 px below the bottom edge**; path length 6.35 m |
+| median ticks with a complete footprint | **31 of 41** |
+
+⭐ **The two zero-overlay sheets are exactly the two rows that caused a counting anomaly in their
+own packs** — W46 was named in prose but never flagged in pack 1; S53 is the lone cannot-tell in
+pack 2. A 1.7 % failure has now produced an anomaly in **both** packs, which is what a systematic
+gap looks like when the sample is small.
+
+⇒ **Fix for the next pack, cheap and rule-independent:** the renderer already knows this from the
+geometry, so a sheet whose footprint never enters the frame should SAY so on its face. Nothing
+about that leaks: it depends on the camera and the path, never on a map or a rule.
+
+### Rubric gap: a car park is neither carriageway nor kerb
+
+S53 is a stationary manoeuvre in a snow-covered **car park**. The rubric names pavement, verge,
+island and kerb as non-roadway and says nothing about a surface that is **trafficable but not
+carriageway**, so both halves of the tie-break fail at once. `RUBRIC_v2_PROPOSAL.md` adds that cell
+and leaves the definitional question where it belongs — whether the drivable-surface map is meant
+to include car parks changes the label, and that is the PI's to rule, not mine to assume.
+
+⚠️ It is also a warning about the corpus: if stationary car-park manoeuvres are common, a DAC term
+will be scoring them.
