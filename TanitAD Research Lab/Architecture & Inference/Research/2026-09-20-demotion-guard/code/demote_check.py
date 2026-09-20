@@ -34,10 +34,19 @@ from superset_check import NUM, CODE, norm_num          # noqa: E402  the canoni
 # A line is RETRACTION CONTEXT when it carries one of these. Conservative on purpose: a marker
 # missing here only means a demotion goes unflagged (the status quo), whereas a marker that is too
 # loose would flag honest prose and block a landing.
+# ⛔ THE ASYMMETRY THAT SETS THIS PATTERN'S SHAPE, and it is not symmetric:
+#   TOO NARROW -> a demotion goes unflagged. That is the STATUS QUO. Safe.
+#   TOO BROAD  -> an innocent live line is read as retraction context, its value stops counting as
+#                 live, and a DEMOTION IS FALSELY REPORTED. That BLOCKS A LANDING for both sessions.
+# ⇒ every doubtful marker is left OUT. MEASURED 2026-09-20: a bare `CORRECTION` matched the
+# innocent live sentence "A correction factor of 1.24 applies", which is exactly the failure that
+# blocks a landing. `CORRECTION` is therefore admitted only as an ANNOUNCEMENT — line-initial
+# (after up to 4 glyph/markup characters) or followed by a colon or a date.
 RETRACT = re.compile(
-    r"RETRACT|SUPERSED|WITHDRAWN|CORRECTION|\bWRONG\b|\bwas wrong\b|NOT the floor|"
-    r"\bI said\b|\bpreviously\b|\bformerly\b|no longer|OUTDATED|STALE|\bvoid\b|VOID",
-    re.IGNORECASE)
+    r"RETRACT|SUPERSED|WITHDRAWN|\bWAS WRONG\b|NOT the floor|"
+    r"\bI said\b|\bpreviously read\b|\bformerly\b|no longer|OUTDATED|\bVOID\b|"
+    r"^[^A-Za-z0-9]{0,4}\**\s*CORRECTION\b|CORRECTION\s*[:—-]|CORRECTION\s+\d{4}-",
+    re.IGNORECASE | re.MULTILINE)
 TRIVIAL = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-1"}
 
 

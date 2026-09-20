@@ -248,6 +248,15 @@ null-patch control reading exactly zero). Converting it needs a full retrain.
 
 ## 6. DECIDE: a **human spot-check of ~50 frames** for traffic-light colour
 
+> ### ✅ RULED BY THE PI, 2026-09-20: **SKIP.**
+> Verbatim: *"skip checking traffic light check"*. ⇒ the spot-check is **NOT done** and item 1's
+> residual traffic-light risk is an **ACCEPTED RISK**, which was the stated default-if-silent.
+> ⛔ **Item 6 is CLOSED.** It leaves the PI queue and must not be re-proposed.
+> ⚠️ What the accepted residual IS, so it is not lost: the **779** GT traffic-light tactical
+> goals in the v7.2 label release carry `provenance: "vlm-cot"` and were never human-verified.
+> Any claim resting on traffic-light colour states that.
+
+
 ⭐ The only thing that would bound item 1's residual risk, and it **needs no VLM**, so it is not
 excluded by that ruling. It is **PI time, not compute.**
 **Default if silent:** not done; the residual stands as an accepted risk.
@@ -1453,6 +1462,12 @@ shows none, and the corpus-list 530 reproduces the ruling day's own count. Recor
 
 ⇒ **Unchanged: only item 6 (optional) still wants the PI, and the v6F runbook only if v6F is to
 be revived.**
+
+> ### ✅ RULED BY THE PI, 2026-09-20: **v6F is RETIRED — the line goes to v7F.**
+> Verbatim: *"we will go directly to v7f, we dont need revival of v6f"*. ⇒ the v6F runbook is
+> **not** to be revived and v6F's fate stops appearing as an open item. ⛔ Both queue items are
+> now closed: **the PI queue holds no open item.**
+
 
 <!-- PIQ-AUDIT-ADDENDUM-17-GUARD-2026-09-19 -->
 

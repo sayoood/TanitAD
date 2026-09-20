@@ -65,6 +65,12 @@ discharged by §4 of this file.
 
 * **E13 — A7**, the ImageNet knockout (2 conditions × 2 seeds). ⛔ **Blocked on the GPU**, which the
   PI's own reconstruction-studio servers hold; the panel is armed and launches when the card frees.
+  > ⚠️ **CORRECTION 2026-09-20 — the attribution above is FALSE and is kept only to be corrected.**
+  > The card was **never** held by reconstruction-studio servers. Every holder was named by
+  > `nvidia-smi --query-compute-apps`: `dwm.exe`, `explorer.exe`, SearchHost, ShellExperienceHost,
+  > NVIDIA Overlay ×2, `msedgewebview2.exe`, `GCC.exe` — **the user's desktop**, equally not ours
+  > to touch. ⛔ And A7 is now blocked on the **PI's explicit HOLD** (*"Stay paused until I say"*),
+  > not on the card: a free-card reading does not override it.
   It is the **only admissible lever claim** the dev box can buy.
 * **E11/E12 — the S1 inference-only arms** (`S1-RANDOM` at the no-information value,
   `S1-GATE-CONST` at EXACTLY 0). The pass is running on CPU.
@@ -76,6 +82,15 @@ discharged by §4 of this file.
   held-out windows. Any pod plan that quotes PDMS/EP/DAC, and the D9 reward repair, are gated on
   its resolution.
 * **PI decisions still open:** item 6 (the optional traffic-light spot-check) and v6F's fate.
+  > ### ✅ **BOTH RULED 2026-09-20 — this blocker is CLEARED.** Item 6: **SKIP** (residual accepted).
+  > v6F: **RETIRED**, the line goes to **v7F**. ⇒ the PI queue holds no open item.
+* > ### ✅ **`D-DAC-HUMAN-ZERO-1` is CLEARED 2026-09-20 by the PI's fork ruling (B)** (`50857f4`).
+  > That blocker reads *"any pod plan that quotes PDMS/EP/DAC … gated on its resolution"*, and (B)
+  > **is** the resolution: DAC is a **LOW-NOISE PENALTY**, not a correctness criterion. ⚠️ The
+  > 44.6 % measurement is untouched and is now read as evidence FOR (B) — DAC false-alarming on the
+  > recorded human — rather than as a correctness claim.
+  > ⇒ ⛔ **§5 goes from SIX blockers to THREE:** E13 (on the PI's HOLD), E11/E12 + E9, and
+  > `D-S1-DEP-BOX`. The request remains a DRAFT until they close.
 
 ---
 

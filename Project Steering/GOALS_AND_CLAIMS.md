@@ -13234,3 +13234,54 @@ one.
 ⭐ Found because the TrainingFlyWheel's own doc-checker carried the identical defect and its
 mutation proof exposed it: asserting `13.91` appeared *somewhere* stayed GREEN when the table cell
 was reverted to the retracted `0.05 %`. **An existence check cannot tell WHERE a number is.**
+
+<!-- PI-QUEUE-EMPTIED-2026-09-20 -->
+
+### ✅ 2026-09-20 — both remaining PI queue items RULED: item 6 **SKIP**, v6F **RETIRED → v7F**. The PI queue holds no open item.
+
+**Item 6 — the human spot-check of ~50 frames for traffic-light colour: SKIP.** PI verbatim:
+*"skip checking traffic light check"*. ⇒ not done; item 1's residual traffic-light risk is an
+**ACCEPTED RISK**, which was the stated default-if-silent. ⛔ CLOSED, not to be re-proposed.
+⚠️ **What the accepted residual IS, recorded so it is not lost:** the **779** GT traffic-light
+tactical goals in the v7.2 label release carry `provenance: "vlm-cot"` and were never
+human-verified. Any claim resting on traffic-light colour must say so.
+
+**v6F — RETIRED.** PI verbatim: *"we will go directly to v7f, we dont need revival of v6f"*. ⇒ the
+v6F runbook is not revived and v6F's fate stops appearing as an open item. **The successor line is
+v7F.**
+
+### ⭐ Consequence: `POD_REQUEST_REFCV6` §5 goes from SIX blockers to THREE
+
+| blocker | state |
+|---|---|
+| **PI decisions (item 6, v6F)** | ✅ **CLEARED** by the two rulings above |
+| **`D-DAC-HUMAN-ZERO-1`** | ✅ **CLEARED** by the fork ruling **(B)** (`50857f4`) — that blocker reads *"any pod plan that quotes PDMS/EP/DAC … gated on its resolution"*, and (B) **is** the resolution |
+| E13 — A7 | ⛔ open, on the PI's **HOLD** |
+| E11/E12 + E9 | open, CPU-side |
+| `D-S1-DEP-BOX` | open |
+
+⚠️ **The 44.6 % human-DAC measurement is untouched** and is now read as evidence **FOR** (B) — DAC
+false-alarming on the recorded human — rather than as a correctness claim. ⛔ The request stays a
+**DRAFT** until the remaining three close.
+
+### ⛔ And a FALSE ATTRIBUTION corrected in the pod request itself
+
+§5 still read *"Blocked on the GPU, which the PI's own **reconstruction-studio servers** hold"*.
+**That is false and has been retracted elsewhere but survived here.** Every holder was named by
+`nvidia-smi --query-compute-apps`: `dwm.exe`, `explorer.exe`, SearchHost, ShellExperienceHost,
+NVIDIA Overlay ×2, `msedgewebview2.exe`, `GCC.exe` — **the user's desktop**. The original sentence
+is KEPT and corrected in place, not deleted. ⛔ And A7 is now blocked on the PI's explicit **HOLD**,
+not on the card — a free-card reading does not override it.
+
+### ⚠️ A false positive found in the new demotion guard, by a question rather than a failure
+
+The TrainingFlyWheel asked whether `demote_check` would read its correction note as retraction
+context. Tested rather than reasoned, and the pattern was wrong **in both directions**: *"Corrected"*
+and *"Correcting"* did **not** match, while the innocent live sentence *"A correction factor of 1.24
+applies"* **did**.
+⭐ **The asymmetry decides the fix, and it is not symmetric:** too NARROW means a demotion goes
+unflagged — the status quo, safe. Too BROAD means an innocent live line is read as retraction, its
+value stops counting as live, and a demotion is **falsely reported**, which **blocks a landing for
+both sessions**. ⇒ `CORRECTION` is now admitted only as an **announcement** (line-initial, or
+followed by a colon or a date), and the doubtful stems are left out. 7/7 pattern cases; the
+mutation proof re-run after the change is still **5/5 with a green control**.
