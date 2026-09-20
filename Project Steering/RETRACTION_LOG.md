@@ -3824,3 +3824,43 @@ complaint lives there.** A metric's blind spot is part of its specification.
 ⚠️ **`v_h = 463` is an EFFECTIVE horizon for this recording, not a mounting pitch.** A constant road
 grade over 8–30 m acts as a horizon offset and is absorbed here — correctly, since the goal is to
 land the drawing on *this* road. It must not be quoted as a camera geometry fact.
+
+---
+
+## `R-2026-09-20-nearestridge` — "the car is 0.75 m left of centre" was the DASHED line wandering
+
+**WITHDRAWN:** every per-frame lane-centre number in the frame-908/932 investigation — *"the car is
++0.75 m off the lane centre"*, *"+0.62 m"*, the frame-932 cross-section reading of a left line at
+**+1.0 m**, and the inference that the ribbon still sat left of centre under v8. Corrected reading:
+**the ribbon is centred to within ~0.09 m** in frame 932 (ribbon 430–610 px in a lane running
+330–730 px; ribbon centre 520, lane centre 530).
+
+**ROOT CAUSE — TWO DETECTOR FAULTS, BOTH BIASING THE SAME WAY.**
+
+1. **The right boundary is DASHED.** Between dashes there is no paint, so a nearest-ridge search
+   returns the next continuous thing outward — the shoulder edge line or the gravel. The pooled
+   histogram shows it plainly: the right side has **three** peaks (−2.18, −1.73, −1.43) where the
+   solid left side has **one** (+1.87→+2.02). A right boundary biased outward moves the computed
+   lane centre right, which reads as **the car being left**.
+2. **`max(left)` picks the NEAREST ridge, not the line.** Any bright structure inside the lane wins.
+   Drawn on the image, the detected "left line" sat visibly inside the carriageway; drawn back at the
+   measured 1.03 m clearance it landed **left of the real paint**. True clearance ≈ **0.79 m**, which
+   is what a centred 1.855 m car has in a 3.5 m lane (0.82 m).
+
+**CLASS: `R-2026-09-15-seam` for the THIRD time**, and `CLAUDE.md` already warns of exactly this
+case — *"the ego lane's right boundary is dashed ... a peak-picker will always prefer the continuous
+structure beyond it."* **I re-derived the failure instead of reading the rule that names it.**
+
+⚠️ **THE LANE-WIDTH GATE DID NOT CATCH IT AND CANNOT.** A false right line at −2.4 m with a false
+left line at +1.0 m gives 3.4 m, comfortably inside the 2.9–4.3 m window. **A plausibility gate on a
+DERIVED quantity does not validate the two measurements it was derived from.**
+
+⭐ **WHAT SURVIVES, AND WHY IT WAS NEVER AT RISK.** The v8 calibration stands. Its evidence is the
+**slope** of the clearance to the SOLID left line against range — v6 **−1.01 deg (R² 0.94)**, v8
+**−0.15 deg (R² 0.29)** over 200 straight frames — and a constant offset in line identification
+cannot change a slope. The scale is confirmed independently by the **painted line's own width:
+0.156 m measured against the 0.15 m European standard (4 %)**, constant over 8–20 m, which also
+re-confirms the horizon, since a wrong one makes that width drift with range.
+
+⇒ **Rule: for this recording, measure against the SOLID line only.** The dashed side may be used for
+a width, never for a boundary position in a single frame.
