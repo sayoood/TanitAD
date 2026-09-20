@@ -3260,3 +3260,40 @@ splits it. ⇒ **Quote no camera height and no lane width from this work.** What
 the horizon (laterally, 463.9, R² 0.984) and the yaw (−6.40, agreeing with five independent
 estimates). The height, the focal and the lane width are still one equation short, and
 `ScaleCalib`'s "spread 0 %" is a fit statistic, not evidence that the split is right.
+
+## §148 The frame Sayed sent, settled — a constant parameter cannot vary with time
+
+v8 improves his frame (source 908, t = 33.63 s) but does not null it, and that needed an answer
+rather than an excuse. **MEASURED** on the source frame, scale `h/(v−v_h)`:
+
+| | 8 m | 10 m | 12 m | 18 m | median off-centre |
+|---|---|---|---|---|---|
+| v6 clear L / R | *(dropped)* | +0.42 / +1.66 | +0.31 / +1.40 | **−0.02** / +1.72 | **+0.62 m** |
+| v8 clear L / R | +0.55 / +1.27 | +0.47 / +1.11 | +0.39 / +1.15 | +0.16 / +1.29 | **+0.37 m** |
+
+v6's left clearance goes **negative at 18 m** — the ribbon is over the line, which is exactly what he
+reported. v8 is positive at every range. But +0.37 m remains, against a straight-road median of
+−0.04 m.
+
+⭐ **THE ARGUMENT THAT SETTLES IT COSTS NOTHING AND I SHOULD HAVE REACHED FOR IT SEVEN RENDERS AGO:
+a camera parameter is CONSTANT, so it produces a CONSTANT offset. Anything that varies with time is
+the car.** **MEASURED**, v8, every 6th frame through his moment:
+
+| t (s) | 31.6 | 32.0 | 32.4 | 32.8 | 33.2 | **33.6** | 34.0 | 34.4 | 35.0 | 35.6 | 36.0 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| steer (°) | −3.00 | −2.65 | −3.06 | −3.10 | −1.93 | **−2.77** | −1.62 | −0.32 | +0.61 | +0.49 | −0.28 |
+| off-centre (m) | −0.29 | −0.17 | +0.10 | +0.15 | +0.33 | **+0.37** | +0.55 | +0.74 | +0.74 | +0.66 | +0.72 |
+
+The offset **drifts smoothly from −0.29 m to +0.74 m over about three seconds**, tracking the
+steering from −3.0° to +1.1°: the driver steers left, the car moves left in the lane. **No
+calibration can do that.** ⇒ the residual at t = 33.63 s is **the car's own lane position**, and the
+frame was sampled mid-drift.
+
+⚠️ **THE ONE WAY THIS ARGUMENT COULD FAIL, CHECKED:** measurement noise is random and would not
+drift smoothly for 3 s while correlating with an independent channel (the steering). It does both.
+
+⛔ **WHAT THIS DOES NOT LICENSE.** It explains ONE frame; it does not retire the global numbers. The
+straight-road median (−0.040 m over 333 frames) is still the calibration claim, and the per-frame
+robust sd of 0.379 m — which this stretch shows is largely real driving — is still the reason a
+single frame can never settle a calibration question in either direction. **That cuts both ways: it
+was not evidence against v6 either, and v6 was wrong for reasons measured over 400 frames.**
