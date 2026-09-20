@@ -1,0 +1,33 @@
+{
+ "_what": "what the PI\u2019s \u00a74 unlabelled-surface ruling is worth, in clips",
+ "_evidence_class": "MEASURED (ours) \u2014 read from corpus_status.py\u2019s own output; NO extra load added to Thor, which is running SAM3 inference",
+ "_source": "corpus_status.py at 2026-09-20 11:14 CEST",
+ "progress_pct": 69.27,
+ "export_check_failures": 87,
+ "published_flagged_total": 63,
+ "flagged_by_reason": {
+  "path untestable (parked / stopped ego)": 9,
+  "near path unlabelled (seen, no class), no path cell on a non-drivable class": 54
+ },
+ "clips_hanging_on_the_s4_ruling_now": 54,
+ "projected_at_corpus_completion": 78,
+ "_why_this_set_is_decisive": "the flag says \u201cno path cell on a NON-DRIVABLE class\u201d \u2014 i.e. nothing the map positively calls non-drivable lies under the ego path. The ONLY thing failing these clips is surface that is SEEN but carries NO CLASS. If \u00a74 rules seen-but-unlabelled = compliant, all of them pass cleanly.",
+ "_what_it_does_NOT_recover": "the 22 GIVEN_UP FAIL-EXPORT-CHECKS clips, which are not published at all and carry different reasons; and the 9 \u201cpath untestable (parked / stopped ego)\u201d clips, which are the zero-motion family, not the unlabelled-surface question",
+ "_scope": "flagged clips ARE published, in a flagged tier. The ruling changes their TIER, not their existence. The projection scales the current count by total/done and assumes the rate is stationary, which is an ESTIMATE, not a measurement.",
+ "raw": {
+  "done": 3269,
+  "total": 4719,
+  "ok": 3182,
+  "given_up": 87,
+  "published": 3171,
+  "published_flagged": 63,
+  "flagged_by_reason": {
+   "path untestable (parked / stopped ego)": 9,
+   "near path unlabelled (seen, no class), no path cell on a non-drivable class": 54
+  },
+  "not_published": {
+   "GIVEN_UP FAIL-EXPORT-CHECKS": 22,
+   "PENDING": 1463
+  }
+ }
+}
