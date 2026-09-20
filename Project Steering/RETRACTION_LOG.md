@@ -15701,3 +15701,6 @@ acceptance's own control could not see it. A self-vs-self paired bootstrap reads
 rows, including wrong ones. ⇒ **When per-unit rows are added to decompose an aggregate, the
 acceptance test is that the rows REBUILD the aggregate by the metric's own weighting, on the same
 units. A control that is identity-true for any values proves only that the machinery runs.**
+
+### RETR-2026-09-19-POSTED-LIMIT-REFIND — second instance, same day (appended)
+The DrivoR deep analysis (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md`) first presented *"DrivoR does not score 56.3; 56.3 is TOAD"* as a **new** correction. It was settled on **2026-09-02** (`Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/`) and pinned as register guideline T-4. **Mechanism this time:** the repo grep for `drivor` was piped through `head -30`, so the list was truncated before the 09-02 package appeared. The same class as the morning instance (a priority claim made without searching the Lab's own packages), with a new vector: **a truncated search listing read as a complete one**. ⇒ Before claiming novelty, run the grep **without a head limit** (or count the hits first), and grep for the **number** (`56.3`) as well as the name.

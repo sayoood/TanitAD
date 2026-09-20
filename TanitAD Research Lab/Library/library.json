@@ -2286,6 +2286,7 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "drivor-analysis",
     "ego-input",
     "input-pipeline",
     "nuscenes",
@@ -2295,6 +2296,7 @@
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -3375,10 +3377,12 @@
    "tags": [
     "A5",
     "A5_benchmarks",
+    "drivor-analysis",
     "navsim"
    ],
    "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2)",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
@@ -3412,10 +3416,12 @@
    "banked": "2026-08-28",
    "tags": [
     "A5",
+    "drivor-analysis",
     "navsim"
    ],
    "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
@@ -8155,10 +8161,12 @@
    "sha256": "69877a91da6c362bec021cc5d153951a1d0b7f0290d607f48fee2b62fff15631",
    "banked": "2026-08-31",
    "tags": [
-    "action-provenance"
+    "action-provenance",
+    "drivor-analysis"
    ],
    "note": "",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
    ]
   },
@@ -14054,10 +14062,12 @@
    "banked": "2026-09-15",
    "tags": [
     "A5",
+    "drivor-analysis",
     "recovered-orphan"
    ],
    "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
@@ -14408,10 +14418,12 @@
    "banked": "2026-09-18",
    "tags": [
     "A1-world-models",
+    "drivor-analysis",
     "recovered-orphan"
    ],
    "note": "DriveZero: frozen multi-VFM consolidation +0.53 PDMS over DINOv3-only (ViT-S navtest); 5.7M privileged PPO teacher distilled to vision student; navhard two-stage 57.1 EPDMS (Scale); consumes ego+nav at inference | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
    ]
   },
@@ -14710,6 +14722,39 @@
    "note": "OneWM-VLA: 1 pooled token/view beats 3/6/12 monotonically (53.1 vs 20.5% MetaWorld H30); no error bars; manipulation only",
    "cited_by": [
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-19/RESULT.md"
+   ]
+  },
+  "2606.07464": {
+   "key": "2606.07464",
+   "kind": "arxiv",
+   "title": "Planning-aligned Token Compression for Long-Context Autonomous Driving",
+   "authors": [
+    "Zhixuan Liang",
+    "Yuxiao Chen",
+    "Yurong You",
+    "Peter Karkus",
+    "Wenhao Ding",
+    "Boyi Li",
+    "Alexander Popov",
+    "Yan Wang",
+    "Maximilian Igl",
+    "Yiming Li",
+    "Danfei Xu",
+    "Nikolai Smolyanskiy"
+   ],
+   "published": "2026-06-05",
+   "abstract": "Monolithic vision-action models represent an emerging paradigm in autonomous driving. However, this architecture produces token sequences that quickly exceed real-time computational budgets when encoding extended temporal context for complex interactions. While approaches like linear transformers and external memory try to make the context lightweight, token compression is most compatible with the architecture as it requires no backbone modifications. Yet existing compression adopts rule-based heuristics like temporal decay, decoupled from planning, risking loss of decision-critical information. We propose COMPACT-VA, a planning-aligned working memory framework built on conditional VQ-VAE, compressing extended context into bounded representations. Compression is conditioned on both historical trajectory and a learned planning intent that the posterior encoder distills from future traject",
+   "url": "https://arxiv.org/abs/2606.07464",
+   "path": "TanitAD Research Lab/Library/papers/2606.07464_Planning-aligned-Token-Compression-for-Long-Context-Autonomo.pdf",
+   "bytes": 1469892,
+   "sha256": "1391b1c3cbfb03e03a40d8332aa53a1c886ab1e44c88a7b9ec69f3d22c1eda00",
+   "banked": "2026-09-19",
+   "tags": [
+    "A1_world_models"
+   ],
+   "note": "COMPACT-VA (NVIDIA): conditional VQ-VAE long-context compression for driving, 3.3x speed/2.7x memory; addresses DrivoR's no-history gap (abstract-level)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md"
    ]
   }
  }
