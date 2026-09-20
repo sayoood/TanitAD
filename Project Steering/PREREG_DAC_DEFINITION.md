@@ -1,5 +1,34 @@
 # PRE-REGISTRATION — what "stayed on the drivable surface" means (`H-DAC-DEF-1`)
 
+> ## ✅ CLOSED BY THE PI, 2026-09-20 — ruling **(B)**: a false-alarm-only validated term is NOT the right reference
+>
+> Verbatim: **"B"**, against the fork *"get a corpus with real departures, or rule that a
+> false-alarm-only validated term isn't the right reference"*.
+>
+> ⇒ **`H-DAC-DEF-1` is CLOSED.** DAC settles as a **LOW-NOISE PENALTY**, ⛔ **not a correctness
+> criterion**, which is where **P2** already sat provisionally (`aaf0879`, `47f0dbd`).
+>
+> **What the ruling LICENSES:** using the term as a penalty in training and selection — a low
+> false-alarm rate is the right property for a penalty — and quoting its magnitude as such.
+> **What it FORBIDS:** ⛔ quoting any DAC number as evidence that a plan **stayed on the drivable
+> surface**; ⛔ claiming any candidate was validated against human judgement for **correctness**;
+> ⛔ reopening the adjudication as though a larger pack would settle it.
+>
+> **Why a larger pack would not — MEASURED before the PI ruled.** The two packs (**118** windows)
+> produced **ZERO** over-boundary labels, so false-pass is `0/0` for every rule and *a rule that
+> never fires scores 100 %*. A corpus-wide sweep then found real departures **do exist but are
+> rare**: **~22 clips** of 3,353 testable, CI95 **[4.0, 47.4]**, and **substantial** when present
+> (median **304–342** non-drivable path cells, max **1,085**).
+> ⛔⛔ **And the obvious way to enrich for them is CIRCULAR:** class **5 = edge**, **7 = sidewalk**,
+> and P2 is *"explicit off-road only: edge + hatched + sidewalk ≥ 0.5"* — so selecting clips by
+> "the path crosses 5/7" **is P2's own criterion**, and P2 would be validated on a sample chosen by
+> P2. The circularity-free route, human review of a random sample, needs ≈ **3,000** windows at a
+> 0.67 % base rate against the 118 done.
+> ⇒ ⭐ **(B) is therefore defensible rather than resigned: we know WHY (A) fails, not merely that
+> it is expensive.** Sweep: `corpus/departure_sweep.json`, landed `7047ee9`.
+>
+> ⚠️ §4's unlabelled-surface question was ruled **(a) + (c)** the same day and remains in force.
+
 ⛔ **STATUS: DRAFT, NOT APPROVED, NOT APPLIED.** Written by the DataFlyWheel 2026-09-20 at the
 Master Mind's request, for the Master Mind to review and the PI to rule on. **No number anywhere in
 the programme changes because this file exists.** Nothing here has been run.

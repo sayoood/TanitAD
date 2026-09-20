@@ -13145,3 +13145,41 @@ provisionally (`aaf0879`, `47f0dbd`).
 lane/sidewalk geometry) would not share information with our SAM3-map rules. ⛔ But nuPlan covers
 LV+PIT while this corpus is PhysicalAI, so corpus overlap is the blocker and I have **not**
 measured whether any exists. Named, not proposed.
+
+<!-- H-DAC-DEF-1-CLOSED-BY-PI-2026-09-20 -->
+
+### ✅ 2026-09-20 — `H-DAC-DEF-1` is **CLOSED** by the PI: ruling **(B)**, a false-alarm-only validated term is NOT the right reference
+
+PI verbatim: **"B"**, against the fork *"get a corpus with real departures, or rule that a
+false-alarm-only validated term isn't the right reference"*. Recorded inline at the head of
+`PREREG_DAC_DEFINITION.md`, above its STATUS line, so the file cannot be read as open.
+
+⇒ **DAC settles as a LOW-NOISE PENALTY**, ⛔ **not a correctness criterion** — where **P2** already
+sat provisionally (`aaf0879`, `47f0dbd`). **No candidate is adopted as a correctness test.**
+
+| | |
+|---|---|
+| **LICENSED** | the term as a **penalty** in training and selection — a low false-alarm rate is the right property for a penalty — and quoting its magnitude as such |
+| ⛔ **FORBIDDEN** | quoting any DAC number as evidence a plan **stayed on the drivable surface**; claiming a candidate was validated against human judgement for **correctness**; reopening the adjudication as though a larger pack would settle it |
+
+⭐ **Why a larger pack would not — measured BEFORE the PI ruled, which is what makes (B)
+defensible rather than resigned.** The two packs (**118** windows) produced **ZERO** over-boundary
+labels ⇒ false-pass is `0/0` for every rule and *a rule that never fires scores 100 %*. The
+corpus-wide sweep (`7047ee9`) then found departures **do exist but are rare** — **~22 clips** of
+3,353 testable, CI95 **[4.0, 47.4]** — and **substantial** when present (median **304–342**
+non-drivable path cells, max **1,085**).
+⛔⛔ **And enrichment is CIRCULAR:** class **5 = edge**, **7 = sidewalk**, while P2 is *"explicit
+off-road only: edge + hatched + sidewalk ≥ 0.5"* ⇒ selecting on 5/7 **is P2's criterion**. The
+circularity-free route needs ≈ **3,000** human-adjudicated windows at a 0.67 % base rate, against
+**118** done. ⇒ **we know WHY (A) fails, not merely that it is expensive.**
+
+⚠️ **What this does NOT overturn.** The `INCONCLUSIVE FOR ADOPTION` verdict stands exactly as
+landed — (B) does not convert it into an adoption, it rules that we **stop trying** to make the
+term a correctness criterion. And §5's *"agreement with a human judgement of the same windows"*
+remains the right criterion for any future correctness claim; what is settled is that **this
+corpus cannot supply one**.
+
+⚠️ **Still open and NOT closed by this:** enrichment from an **independent map** (nuPlan
+lane/sidewalk geometry) would not share information with our SAM3-map rules — ⛔ but nuPlan covers
+LV+PIT while this corpus is PhysicalAI, and **whether any overlap exists is UNMEASURED**. Named
+only; no work rests on it.
