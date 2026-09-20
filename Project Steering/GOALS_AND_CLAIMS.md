@@ -12320,3 +12320,76 @@ drives. `E-REFCV6V2-DRIVE` is untouched by all four rows.
 |---|---|---|
 | **D-PRETRAIN-LEVER-1** | *Encoder pretraining is the largest published lever in this architecture family.* DrivoR Tab. 4a, navval PDMS: random init **70.1**, ImageNet-21k **87.5**, DINOv2 **90.0** (**+19.9**); next largest +9.9, +6.1, +5.6, +5.3; compression ≤ 0.9. ⚠️ **Our pre-refcv6 REF-C trunk is a randomly initialised 90,458,632-parameter ResNet** (MEASURED today). refcv6's PI-directed ImageNet `resnet101` moves onto this lever. | **PUBLISHED** (full text) + **MEASURED** (our param count) |
 | **D-SCORER-TYPE-1** | ⛔ *Our scorer is the type shown to fail as a search reward.* TOAD: re-used as a CEM objective, a fixed-vocabulary scorer drives iPad **34.7 → 23.9** EPDMS while DrivoR's disentangled one drives it to **49.8**. refcv5-v2's scorer is **1,145 parameters** over a fixed anchor vocabulary, anchor-selection accuracy **0.5271**, and its T1 `os` ADE loses to the kinematic echo control. | **PUBLISHED + MEASURED**; remedies proposed as backlog **DR-1 / DR-2**, unranked, ⛔ awaiting the PI |
+
+<!-- ZH-CAP-LIFTED-2026-09-20 -->
+
+### ✅ 2026-09-20 — the eval-side z/h cap is LIFTED, and the rule that replaces it is about ARTIFACTS, not code versions
+
+**`D-REFCV6-EVAL-ZH` — CLOSED.** The standing constraint *"no refcv6 arm may quote an eval-side
+`box3d_z` or `box3d_h` number"* is **stale and is withdrawn**. It was true when the 139-clip
+coverage pass measured `n_z = n_h = 0` over 900 windows on both halves; the cause was a **wiring
+defect**, it was fixed the same day, and it has been demonstrated fixed on data since.
+
+**Three probes, two independent mechanisms** (TrainingFlyWheel, `raw/eval_zh_supervision.json`;
+re-read by the Master Mind before landing):
+
+1. **SOURCE, train reader** — `refc_v3_train.py` builds a `JoinFileReader` for the train split
+   passing `with_track_ids=bool(args.join3d)`.
+2. **SOURCE, eval reader** — the second construction site now passes the **same** flag, and the
+   trainer documents the defect in its own words beside it. ⚠️ The defect class is *"two
+   construction sites, one flag, only one carried it"*, and `lookup_track_ids` returning `None`
+   made `__getitem__` fall through to `zh_targets(t)`'s **all-False** mask — **a zero that reads
+   as PERFECT**, because nothing in the log said the term had gone dark.
+3. **DATA, a different mechanism entirely** — the runs' own artifacts. Every A8 eval row
+   (steps 1,000…5,000) and A3's read **`eval_box3d_n_z` = `eval_box3d_n_h` = `eval_box3d_n_matched`
+   = 38.012**, with `eval_box3d_z` **0.7449** and `eval_box3d_h` **0.2354**.
+
+⭐ **The before/after with the control that makes it conclusive**
+(`…/2026-09-17-refcv6-pipeline-validation/raw/eval_zh_before_after.json`, MEASURED): `n_z` and
+`n_h` go **0.0 → 40.192** (split A) and **0.0 → 35.955** (split B) — **exactly `n_matched`** —
+while **`n_matched` itself is IDENTICAL before and after**, so nothing but z/h moved.
+
+⛔ **The replacement rule is DURABLE and is the point of this entry.** A belief about which code
+version a run used is not evidence. ⇒ **An eval-side z or h number is admissible when THAT RUN's
+own eval row shows `n_z > 0` AND `n_z == n_matched`.** A3 and A8 pass it. Runs predating the fix
+stay capped — not by decree, but because their own rows fail the test. Pinned by
+`stack/tests/test_eval_join_track_ids.py` (4 passed), whose invariant is a **pairing** one: every
+reader built `with_rates` must also be built `with_track_ids`, because counting one without the
+other is what let them drift.
+
+⚠️ **My error, recorded rather than quietly dropped:** I carried this item forward as OPEN into
+tonight's work and into a FlyWheel brief, when the register, `PREREG_REFCV6_DEVBOX_PREPARATION`
+(constant 10, C11, checklist E2) and the runs had all recorded it CLOSED since 2026-09-18. Nothing
+landed was wrong — the staleness was entirely in my working state. Same class as the
+2026-08-16 stale-blocker sweep: **an item believed open is not open**, and the check is the same
+one absence claims need — re-read the artifact before quoting its status.
+
+### ✅ `E-REFCV6-BOXQUAL-INSTRUMENT` — the P-arm scorer EXISTS and has been broken on purpose
+
+`taniteval/tools/box_quality.py`, with `stack/tests/test_box_quality.py` (**15 cases**, every
+expectation a LITERAL — 2.0 / 6.0 / 10.0 m by hand, the bar read at 2 m, geometry read at named
+points including (0,0), (60,16) inclusive and a BEHIND-the-ego point). ⭐ **Both populations are
+structurally inseparable:** `summarise()` always returns near-forward (PRIMARY, the gate's
+population) AND all-360 (SECONDARY, the loss's) plus far-or-behind, and `headline()` **RAISES**
+if asked to render one without the other — so the ∼2× understatement that quoting only the 360°
+number produces is not reachable by accident. It uses the **training** matcher (`match_slots`),
+because at a ∼10 m error the AP's 2 m greedy matcher pairs only lucky hits and flatters the head.
+
+**Mutation proof (`stack/scripts/mutate_box_quality.py`, re-run by the Master Mind before
+landing): 5/5 CAUGHT, control GREEN.** M1 matcher pairs one fewer → the `n_matched == n_target`
+identity breaks; M2 near-forward mask leaks everything → the far/behind-only control fires (4
+red); M3 velocity floor taken from the PREDICTION → the zero-floor literals break; M4 only the
+primary population emitted → both-populations + `headline` red; M5 the bar read 10× too loose →
+the 2 m test red. ⚠️ The FlyWheel's own first run of this proof had a **RED CONTROL** and it
+reported that rather than papering over it — a proof with a red control is void.
+
+⚠️ **One defect the Master Mind found and fixed before landing:** the test was green only under
+an **ambient `PYTHONPATH`**. Bare `pytest -q` gave **14 passed / 1 failed** — `No module named
+'taniteval.ci'` — because the outer `taniteval/` has no `__init__.py` and forms a NAMESPACE
+package that SHADOWS the regular one at `taniteval/taniteval/` (`taniteval.__file__` is `None`).
+One `sys.path.insert` for the inner directory; **15/15 bare**. ⛔ A guard that is green only
+under an ambient environment is a guard that does not run.
+
+⛔ **No P arm has been run.** P0-REPLICATE goes first when the card frees, and it goes after the
+instrument exists — otherwise the replicate floor would be measured with a scorer nobody had
+tried to break.

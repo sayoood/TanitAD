@@ -260,6 +260,31 @@ pass on that stands, and no AP number here is restated.
    128 candidate splines, the checker and the box read — measured **7.80 s/window** over 736
    windows on the same CPU.
 
+## ⭐ Does the EVAL path supervise `box3d_z` / `box3d_h`? — YES in the A3/A8-era runs
+
+The standing caveat (*"`n_z = n_h = 0` over 900 windows on BOTH halves, so no refcv6 arm may quote
+an eval-side z or h number"*) **no longer describes this code or these runs.** It was a **WIRING
+defect, now fixed** — not a design choice. Three probes, two of them independent of each other
+(`raw/eval_zh_supervision.json`):
+
+1. **SOURCE, train reader** — `refc_v3_train.py:6615` passes
+   `with_track_ids=bool(getattr(args, "join3d", None))`.
+2. **SOURCE, eval reader** — `:6814` passes the **same** flag, and `:6799` documents the defect
+   and its history in the trainer's own words (*"`with_track_ids` MUST MATCH THE TRAIN READER … the
+   eval reports `box3d_z` / `box3d_h` = 0.0 with n_z = n_h = 0: a zero that reads as PERFECT"*).
+   Two construction sites, one flag; only one site used to carry it.
+3. ⭐ **DATA, a different mechanism — the runs' OWN artifacts.** Every A8 eval row (steps 1,000
+   through 5,000) and A3's read **`eval_box3d_n_z = eval_box3d_n_h = eval_box3d_n_matched =
+   38.012`**, with `eval_box3d_z` 0.7449 and `eval_box3d_h` 0.2354 — the **same identity** the
+   train side shows, and emphatically not zero.
+
+**Fix cost: already paid** — one flag at the second construction site; nothing further is owed.
+The 900-window `n_z = 0` measurement **predates** it.
+
+⛔ **The durable rule, because a code-version belief is not evidence:** an eval-side z/h number is
+admissible when **that run's own eval row** shows `n_z > 0` **and** `n_z == n_matched`. That is a
+per-run **artifact** check. A3 and A8 pass it; runs predating 2026-09-18 stay capped.
+
 ### Next levers, in the order the evidence ranks them
 
 1. **Perception quality is the binding constraint** (§10's own commitment). The box head must
