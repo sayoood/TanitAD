@@ -12696,3 +12696,43 @@ settled it had to be **positive** — find what READS halfA — not an absence o
 halfB-eval, then halfB-train/halfA-eval), pooling the two HELD-OUT reads. Statistically sound,
 ~1.41× narrowing. ⛔ It costs **2× GPU per arm** and breaks argv parity with A8 on the second
 fold, so it is a **PI compute decision**. Named, not proposed.
+
+<!-- ELIGIBILITY-CENSUS-AND-CEILING-60-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — CORRECTION to `aac9c88`/`a9e75c6`: the effective-n ceiling is **60**, not 62 — and the full-grid eligibility census, re-derived
+
+MEASURED by me over the **full 10,600-window grid**, classified by `corp.eligibility`'s own return
+value, CPU only, no model pass (`raw/eligibility_census.json`, `code/elig_bias.py`).
+
+| outcome | windows | share of 10,600 |
+|---|---|---|
+| **ELIGIBLE** | **7,549** | **71.22 %** |
+| refused `future` (route horizon past the provider's last pose) | 2,418 | 22.81 % |
+| refused `agents` (a tick in the agent window has no join record) | 633 | 5.97 % |
+| refused `t0` | **0** | 0.00 % — that branch never fires on this corpus |
+
+⛔ **The ceiling is 60, not 62: two of halfB's 62 episodes contribute ZERO eligible windows.**
+Per-episode eligible fraction min **0.000**, median **0.772**, max **0.773** — so the typical
+episode is ~77 % eligible and the two zeros are genuine outliers, not a gradient. Numerically
+small (interval ×1.017) but it is the right number, and it only appears if you ask whether the
+surviving subset **covers every clip** instead of assuming the filter is uniform.
+
+⭐ **This census replaces a figure that was wrong and that I repeated downstream.** The
+TrainingFlyWheel first reported *"2,882 of 10,600 eligible (27.2 %)"*; 2,882 was drawn from a
+**4,000-window pool**, so the denominator was wrong and the true share is ~71 %, not 27 %. It
+retracted it; I had already quoted it in a report. ⚠️ **Root cause is `true-but-wrong-for-the-
+reader` with the AUTHOR as the reader:** its artifact field was correctly named
+`n_eligible_in_pool`, and its *print* rendered "2882 of 10600 grid windows" — both halves true,
+the juxtaposition false. ⭐ The durable fix is the right one and worth copying: **put the
+denominator INSIDE the instrument** so the count cannot be printed without it.
+⛔ And the process lesson for me: a second number from a source whose first number was wrong is
+re-derived, never inherited. This census is mine and agrees with its corrected one.
+
+⚠️ **OPEN, and it matters more than the ceiling:** an indicative first pass shows the REFUSED
+windows carry **more and closer** near-forward targets than the kept ones (mean near-forward
+targets 5.11 vs 4.02; mean target range 51.55 m vs 59.16 m, n = 112 vs 148 windows, **no interval
+yet**). If that survives an episode-clustered interval, the bar is measured on a subset that
+**under-represents dense close traffic** — precisely the population a collision gate acts on.
+⛔ **NOT ASSERTED.** Populations differing is not the same as the METRIC being biased: that step
+needs error to correlate with density or proximity, which has **not** been measured. Under
+investigation; no claim rests on it.
