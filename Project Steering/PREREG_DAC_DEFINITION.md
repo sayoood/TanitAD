@@ -164,3 +164,55 @@ It does not claim P1, P2 or P3 is right. It does not claim the human never leave
 surface: **33 windows** carry an explicitly off-road corner, and one sample sits **1.047 m** past
 the mapped edge. It claims only that the current read-out cannot tell those apart from a car
 driving over a crosswalk — and that the difference is what the term is for.
+
+<!-- MM-REVIEW-2026-09-20 -->
+## ⭐ MASTER MIND REVIEW, 2026-09-20 — APPROVED with three amendments, binding on this file
+
+The draft is adopted as written except for the three points below. Its two best choices are kept
+exactly: the criterion is **adjudication, not a rate** ("picking by rate would be choosing the
+comfortable number"), and §7's **apply-to-every-arm with both numbers published** is what keeps
+this a repair rather than a goalpost move.
+
+### A. ⛔ WHO JUDGES — the draft says "human adjudicator" and we must not quietly become one
+
+A model grading the instrument it will then be scored by is not a human judgement, and calling it
+one would be the very substitution this programme keeps catching. The protocol, pre-committed:
+
+1. **Stage 1 — MODEL adjudication, BLIND.** The Master Mind labels all 60 windows from a **blinded
+   pack**: shuffled ids, no stratum in the filename, and **nothing on the render naming which
+   candidate fires**. The labels are landed **before** the key exists in the repo, so the order is
+   verifiable from the commit graph rather than promised.
+2. **Stage 2 — HUMAN spot-check.** The PI labels a stratified **12** of the same 60 (≈ 5 minutes),
+   without seeing stage 1.
+3. **Reading it:** if the PI agrees with the model on **≥ 10/12**, stage 1 carries the adjudication
+   and every number is stamped `adjudicator: model, human-verified 12/60`. If not, ⛔ **the PI's
+   labels replace the model's on those windows, the bar is re-read on the human subset ALONE**, and
+   the disagreement is reported with its pattern (which stratum, which direction).
+4. ⛔ No number from this file may be published as "human adjudicated" unless a human labelled it.
+
+### B. ⛔ THE TICK-0 CONTROL NEEDS AN ESCAPE CLAUSE, OR A MAP DEFECT REJECTS A GOOD RULE
+
+§6 requires the human's own footprint at tick 0 to read **exactly 1.0 under the adopted rule on
+every window**. That is the right control — the car is on the road when the window opens, by
+construction — but today's horizon probe shows the first offending corner is **NEAR and EARLY**
+(median 0.7 s / 7.8 m), so near-field map error is a live cause. A window whose map is
+demonstrably wrong **at t0** would then reject every candidate, including a correct one.
+⇒ **Pre-committed:** a tick-0 failure is first DIAGNOSED. If the ego's own t0 footprint sits on a
+cell the map gives no road class at all, the window is **excluded from the control and COUNTED**,
+and the count is published with the result. ⛔ **Cap: 5 % of windows.** Beyond that the finding is
+not about the rule at all — it is *"the near-field map is unreliable"*, reported as such, and no
+candidate is adopted on that evidence.
+
+### C. The withheld share is identical across arms BY CONSTRUCTION — say where the caveat bites
+
+§4(c) publishes the unlabelled/withheld share beside every number, which is right. Add the reason
+it is not a comparability threat *within* a panel: the map is a property of the WINDOW, not of the
+arm, so two arms scored on the same windows withhold exactly the same set. ⇒ the caveat applies
+**across corpora, geometries and map versions**, where the withheld share genuinely differs, and
+a DAC comparison across those is inadmissible unless both shares are quoted.
+
+### Unchanged and endorsed
+§4's proposal **(a) compliant + (c) always publish the share** stands for the Master Mind; the PI
+may overrule it. §8's exclusion of the occupancy head's GT channel stands. §9's refusal to claim
+any candidate is right stands — and so does its admission that **33 windows carry a genuinely
+off-road corner and one sits 1.047 m past the mapped edge**.
