@@ -1,0 +1,12 @@
+--- a/navsim/common/dataloader.py
++++ b/navsim/common/dataloader.py
+@@ -313,7 +313,8 @@
+         metadata_file = [file for file in metadata_dir.iterdir() if ".csv" in str(file)][0]
+         with open(str(metadata_file), "r") as f:
+             cache_paths = f.read().splitlines()[1:]
+-        metric_cache_dict = {cache_path.split("/")[-2]: cache_path for cache_path in cache_paths}
++        # E1 (2026-09-19) Windows fix: nuPlan writes str(WindowsPath) (backslashes); split on either separator
++        metric_cache_dict = {__import__("re").split(r"[\\/]", cache_path.strip())[-2]: cache_path for cache_path in cache_paths}
+         return metric_cache_dict
+ 
+     @property

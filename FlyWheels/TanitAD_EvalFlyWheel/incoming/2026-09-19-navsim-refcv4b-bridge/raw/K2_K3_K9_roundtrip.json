@@ -1,0 +1,99 @@
+{
+ "n_log_windows": 5077,
+ "n_stage1_scenes": 16,
+ "K2": {
+  "knot_err_max_m": 7.32410687763558e-15,
+  "knot_err_mean_m": 1.1610789026714374e-16,
+  "pass_knots_lt_1e-3_m": true,
+  "interp_2p5s_err_m": {
+   "mean": 0.00852442288144352,
+   "p95": 0.024533004203184168,
+   "max": 0.08852391352909161
+  },
+  "interp_3p5s_err_m": {
+   "mean": 0.015288668979695212,
+   "p95": 0.04707761362635274,
+   "max": 0.14070454114154574
+  },
+  "heading_err_deg_moving": {
+   "n": 3495,
+   "mean": 0.5446131747697225,
+   "p95": 1.7693655682590665,
+   "max": 13.043506749838182
+  },
+  "heading_err_deg_all": {
+   "n": 5093,
+   "mean": 0.3970762168704238,
+   "p95": 1.5742207221639153
+  },
+  "_method": "knots_to_navsim (cubic spline, not-a-knot) on the 6 human poses at 0.5,1,1.5,2,3,4 s; compared at all 8 NavSim times",
+  "_n": 5093
+ },
+ "K3": {
+  "status": "OK",
+  "axis_convention": {
+   "mean_abs_along_final_m": 16.2939,
+   "mean_abs_cross_final_m": 1.406,
+   "K": 8,
+   "horizon_s": 4.0,
+   "mean_speed_mps": 4.2905,
+   "expected_along_m": 17.1619,
+   "rel_err": 0.0506,
+   "verified": true
+  },
+  "lateral_sign": {
+   "n_windows": 5077,
+   "n_turning_windows": 1052,
+   "min_turn_deg": 5.0,
+   "min_lat_m": 0.5,
+   "_what_this_catches": "a y-sign flip (right-handed frame). lateral.assert_axis_convention CANNOT: negating y leaves |y| unchanged.",
+   "_independent_channel": "NavSim (x, y, heading) vehicle yaw",
+   "status": "OK",
+   "agreement": 0.9838,
+   "n": 1052,
+   "verified": true
+  }
+ },
+ "K9": {
+  "by_argmax": {
+   "0": {
+    "n": 534,
+    "n_turning": 283,
+    "frac_y4_pos_among_turning": 0.9964664310954063
+   },
+   "1": {
+    "n": 3565,
+    "n_turning": 293,
+    "frac_y4_pos_among_turning": 0.5290102389078498
+   },
+   "2": {
+    "n": 965,
+    "n_turning": 283,
+    "frac_y4_pos_among_turning": 0.0
+   },
+   "3": {
+    "n": 13,
+    "n_turning": 1,
+    "frac_y4_pos_among_turning": 0.0
+   }
+  },
+  "left_is_index0": 0.9964664310954063,
+  "right_is_index2": 1.0,
+  "pass": true,
+  "_rule": "turning = |y(4 s)| > 2 m; argmax 0 must turn LEFT (+y), 2 RIGHT"
+ },
+ "KF": {
+  "n_scenes": 204,
+  "max_abs_xy_err_m": 3.552713678800501e-15,
+  "max_abs_heading_err_rad": 0.0,
+  "pass_lt_1e-3": true,
+  "_what": "TanitAD training GT convention (refb_labels.ego_frame, refb_labels.py:86) vs the devkit's local AgentInput poses (convert_absolute_to_relative_se2_array) on the same global history"
+ },
+ "KC": {
+  "n": 712,
+  "sign_agree_frac": 0.9691011235955056,
+  "pearson_r": 0.9580087771437791,
+  "median_ratio": 1.0235417125149278,
+  "_rule": "windows with v0 > 4 m/s, >1 m travelled and >1 deg yaw in 0.5 s"
+ }
+}

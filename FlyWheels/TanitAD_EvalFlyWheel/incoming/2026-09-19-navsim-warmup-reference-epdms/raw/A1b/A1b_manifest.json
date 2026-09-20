@@ -1,0 +1,168 @@
+{
+ "label": "A1b",
+ "script": "pdm_score_one_stage",
+ "module": "navsim.planning.script.run_pdm_score_one_stage",
+ "overrides": [
+  "train_test_split=warmup_two_stage",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "train_test_split.scene_filter.include_synthetic_scenes=false",
+  "traffic_agents=reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "experiment_name=e1_A1b_cv_one_stage",
+  "output_dir=C:/Users/Admin/navsim/exp/e1/A1b_cv_one_stage"
+ ],
+ "argv": [
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/code/navsim_win.py",
+  "--script",
+  "pdm_score_one_stage",
+  "--label",
+  "A1b",
+  "--out-dir",
+  "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-warmup-reference-epdms/raw/A1b",
+  "--patch-loader",
+  "--",
+  "train_test_split=warmup_two_stage",
+  "metric_cache_path=C:/Users/Admin/navsim/exp/metric_cache_warmup_two_stage",
+  "train_test_split.scene_filter.include_synthetic_scenes=false",
+  "traffic_agents=reactive",
+  "worker=sequential",
+  "agent=constant_velocity_agent",
+  "experiment_name=e1_A1b_cv_one_stage",
+  "output_dir=C:/Users/Admin/navsim/exp/e1/A1b_cv_one_stage"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "cwd": "D:\\Projects\\TanitAD",
+ "PYTHONHASHSEED": "1",
+ "hash_randomization_flag": 1,
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "C:/Users/Admin/navsim-crun/data/maps",
+  "NAVSIM_EXP_ROOT": "C:/Users/Admin/navsim/exp",
+  "NAVSIM_DEVKIT_ROOT": "C:/Users/Admin/navsim-crun/devkit",
+  "OPENSCENE_DATA_ROOT": "C:/Users/Admin/navsim-crun/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_devkit_root_used": "C:/Users/Admin/navsim-crun/devkit",
+ "navsim_devkit_sha": "0a380a9063d7162ec93d0f51e9990ebac585f720",
+ "nuplan_devkit_sha": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "imported_from": {
+  "navsim": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "C:\\Users\\Admin\\navsim-crun\\devkit\\navsim\\planning\\script\\run_pdm_score_one_stage.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:306-317",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score_one_stage.pdm_score (observation only)"
+ ],
+ "started_local": "2026-09-19 12:48:40",
+ "status": "OK",
+ "ended_local": "2026-09-19 12:54:12",
+ "resources": {
+  "wall_s": 331.07,
+  "peak_rss_mb": 508.9,
+  "peak_process_tree_rss_mb": 508.9,
+  "min_system_available_mb": 3437.9,
+  "n_samples": 164,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 3 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    23.6,
+    5261.2
+   ],
+   [
+    20.2,
+    236.7,
+    4944.1
+   ],
+   [
+    40.4,
+    355.4,
+    4460.5
+   ],
+   [
+    60.6,
+    380.3,
+    4670.8
+   ],
+   [
+    80.8,
+    380.3,
+    4644.4
+   ],
+   [
+    101.0,
+    380.2,
+    4623.2
+   ],
+   [
+    121.2,
+    380.2,
+    4360.2
+   ],
+   [
+    141.4,
+    380.2,
+    4472.9
+   ],
+   [
+    161.6,
+    380.2,
+    4518.1
+   ],
+   [
+    181.8,
+    380.2,
+    4534.7
+   ],
+   [
+    202.0,
+    380.2,
+    4483.9
+   ],
+   [
+    222.2,
+    380.2,
+    4454.6
+   ],
+   [
+    242.4,
+    443.4,
+    4637.9
+   ],
+   [
+    262.7,
+    489.9,
+    4291.3
+   ],
+   [
+    283.0,
+    490.4,
+    4151.6
+   ],
+   [
+    303.2,
+    499.8,
+    3669.4
+   ],
+   [
+    323.4,
+    500.8,
+    3716.0
+   ]
+  ]
+ }
+}

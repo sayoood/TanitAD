@@ -1,0 +1,25 @@
+{
+ "C7_diagnosis": {
+  "per_token_devkit_rows_cells_differing": 0,
+  "summary_cells_differing": 4,
+  "summary_cells": [
+   "extended_pdm_score_stage_two/drivable_area_compliance_stage_two",
+   "extended_pdm_score_stage_two/ego_progress_stage_two",
+   "extended_pdm_score_combined/drivable_area_compliance_stage_two",
+   "extended_pdm_score_combined/ego_progress_stage_two"
+  ],
+  "max_abs_diff": 1.1102230246251565e-16,
+  "score_summaries_identical": true,
+  "pre_aggregation_frame": {
+   "numeric_cols": 19,
+   "cells": 4180,
+   "max_abs_diff": 193.0,
+   "per_column_max_abs_diff_nonzero": {
+    "index": 193.0
+   },
+   "note": "the only nonzero column is the reset_index() row-POSITION column 'index' (order-dependent by construction, not a metric); every metric/weight/endpoint/EC/score column is bit-identical"
+  },
+  "mechanism": "row order of pdm_score_df follows list(set(tokens)) (hash-seed dependent); the weighted means in calculate_individual_mapping_scores sum rows in that order -> 1-ULP float differences in 4 summary means",
+  "verdict_as_preregistered": "FAIL (criterion was exact 0.0)"
+ }
+}
