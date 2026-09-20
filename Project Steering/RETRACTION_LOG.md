@@ -3792,3 +3792,35 @@ want of a detection instead of recorded as a crossing** — it reported `cross 0
 the panel, including the first shipped render whose ribbon is over a metre off centre at 30 m. **A
 metric structurally incapable of returning a failure is not measuring the failure, and "0.0 %" reads
 like a pass.** Anchoring the two searches on the ribbon's CENTRE gives v1 8.2 % and v6 4.0 %.
+
+---
+
+## `R-2026-09-20-horizon472` — the horizon was 9 px out, and the metric that chose it is blind to it
+
+**WITHDRAWN:** `--horizon-row 472`, used for the v6 and v7 renders. **MEASURED** value is
+**463**, with a broad interior minimum over 460–464.
+
+**ROOT CAUSE — I CHOSE IT WITH A METRIC THAT CANNOT SEE IT.** `road_containment` is degenerate in
+the horizon (its own §137 records the ribbon/road width ratio falling 0.197→0.176 as the horizon
+rises 440→500 **while the score rises**), and `lane_containment` scores a *difference* of
+clearances, in which a scale error cancels exactly. Both return "fine" for a 9 px horizon error.
+
+**THE SIGNATURE THAT DOES WORK, AND IT NEEDS NO KNOWN LANE WIDTH:** the lane is the same width at
+8 m and at 30 m; the lateral scale is `h/(v−v_h)`; so a wrong `v_h` makes the MEASURED width trend
+with range, and the horizon that makes it **flat** is right. The width's *value* never enters, so
+`f` and `h` drop out. At 464 the per-range widths are 3.610 3.659 3.661 3.643 3.634 3.595 3.659
+3.656 — **sd 0.024 m over a 3.75× range span**.
+
+**WHAT THE ERROR DID ON SCREEN.** Drawn width ratio `(v−463)/(v−472)` = **1.037 at 10 m and 1.111 at
+30 m** ⇒ the ribbon **flares outward with range**, edges ~0.10 m further out each side at 30 m. **A
+symmetric flare does not move the centre**, so the centre-offset metric is blind to it — while a
+flare is exactly what "the trajectory is leaving the road" looks like.
+
+**CLASS: the same one three times in this part** — `R-2026-09-19-roadnotlane` (scored asphalt, not
+lane), the `cross 0.0 %` selection defect (could not return a failure), and now this (blind to a
+symmetric flare). ⇒ **Before trusting a metric, ask what error it CANNOT see, and check whether the
+complaint lives there.** A metric's blind spot is part of its specification.
+
+⚠️ **`v_h = 463` is an EFFECTIVE horizon for this recording, not a mounting pitch.** A constant road
+grade over 8–30 m acts as a horizon offset and is absorbed here — correctly, since the goal is to
+land the drawing on *this* road. It must not be quoted as a camera geometry fact.

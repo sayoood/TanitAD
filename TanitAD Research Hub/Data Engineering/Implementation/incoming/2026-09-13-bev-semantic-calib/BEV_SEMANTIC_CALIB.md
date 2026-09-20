@@ -3111,3 +3111,52 @@ parameter.
 ⚠️ The right-bend group is only 96 frames with sd 0.472 (against 281 and 0.211 for left bends), so
 its **−0.457 is the weakest number in the table** and the asymmetry between the two directions is
 not established — only the sign flip is.
+
+## §144 The horizon, at last — measured by a signature that needs no known lane width
+
+The horizon has been the one parameter no instrument could pin, because `road_containment` is
+**degenerate** in it (§137: the ribbon/road width ratio falls 0.197→0.176 as the horizon rises
+440→500 *while the score rises*) and because every direct estimate needed `f·h`, which is itself
+degenerate.
+
+⭐ **THE SIGNATURE THAT WORKS: THE LANE IS THE SAME WIDTH AT 8 m AND AT 30 m.** The lateral scale is
+`h/(v − v_h)`, so a WRONG `v_h` makes the *measured* width **trend with range**. The horizon that
+makes it **flat** is the right one — and the flatness condition **does not involve the width's
+value**, so `h` and `f` drop out entirely. Exactly the shape of the `clear_L` test
+(`R-2026-09-16-yawnotlateral`): *parallel means flat*.
+
+**MEASURED**, 200 frames, yaw −6.40, lateral −0.320:
+
+| horizon | 440 | 448 | 456 | **463** | 464 | 472 | 480 | 488 | 496 |
+|---|---|---|---|---|---|---|---|---|---|
+| slope (m/m) | +0.0154 | −0.0053 | −0.0068 | **−0.00015** | +0.0004 | +0.0079 | +0.0146 | +0.0091 | +0.0147 |
+| mean width (m) | 3.580 | 3.410 | 3.480 | 3.618 | 3.640 | 3.805 | 3.951 | 4.017 | 4.096 |
+
+⭐ **`v_h = 463`**, with a broad interior minimum over **460–464** (|slope| ≤ 0.00065). At 464 the
+per-range widths are 3.610 3.659 3.661 3.643 3.634 3.595 3.659 3.656 — **sd 0.024 m across a 3.75×
+range span.** Not on a scan edge.
+
+**WHY THIS MATTERS EVEN THOUGH THE LANE-CENTRE METRIC BARELY MOVES.** The optimum yaw is **−6.40 at
+both** 472 and 463; only the lateral shifts (−0.340 → −0.260) and the worst-range offset is
+unchanged (0.068 → 0.061). That is expected — the offset is a *difference* of clearances, so a scale
+error cancels in it. **The horizon is invisible to the centre metric and very visible on screen:**
+
+    ribbon width drawn at v_h = 472 vs the truth at 463 = (v − 463)/(v − 472)
+      at 10 m  (row 715):  252/243 = 1.037   →  3.7 % too wide
+      at 30 m  (row 553):   90/81  = 1.111   →  11.1 % too wide
+
+⇒ **the ribbon FLARES OUTWARD WITH RANGE**, its edges ~0.10 m further out each side at 30 m. A
+symmetric flare does not move the centre, so `lane_containment` cannot see it — **and a flare is
+precisely what "the trajectory is leaving the road" looks like.** This is the third instrument in
+this part to be blind in exactly the direction of the complaint.
+
+⚠️ **A ROAD GRADE IS ABSORBED HERE AND THAT IS CORRECT, NOT A CONFOUND.** Over 8–30 m a constant
+grade acts as a horizon offset, and the quantity we need is the one that makes the drawing land on
+*this* road — so fitting it in is the right behaviour. It does mean **`v_h = 463` is an effective
+horizon for this recording, not a claim about the camera's mounting pitch**, and it must not be
+quoted as one.
+
+⚠️ **AND IT STILL DOES NOT BREAK `f·h`.** The mean width at the flat point is 3.618 m *given*
+`h = 1.586`; the pipeline's `LaneCalib` reads 3.40 m from 981 segments. Those differ by 6.4 %, which
+is the `f·h` degeneracy showing up as a height question, not a horizon one. **The flatness result is
+independent of it; the width VALUE is not.** Do not quote 3.618 m as a measured lane width.
