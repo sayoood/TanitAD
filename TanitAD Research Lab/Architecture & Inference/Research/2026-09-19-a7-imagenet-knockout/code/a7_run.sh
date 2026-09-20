@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# GATE RAISED 2,500 -> 4,300 MiB on the PI's direct authorisation (Sayed, 2026-09-20),
+# on MEASURED evidence, not to make a blocked chain move. The desktop alone holds
+# 3,111-3,958 MiB (19 samples), so the old ceiling could NEVER clear (0/19 over ~9.4 h)
+# while rejecting a configuration that in fact runs. The arm's own peak is 2,573 MiB
+# allocated / ~2,939 MiB on the card, so worst-case 3,958 + 2,939 = 6,897 of 8,188 leaves
+# 1,291 MiB. Evidence: .../2026-09-19-s1-collision-gate/raw/vram_probe/ .
+# DO NOT restore the old ceiling: on this box it is not safer, it is unsatisfiable.
 # A7 -- resnet34 trunk, ImageNet-init vs random-init, 2 seeds each = 4 arms, ONE AT A TIME.
 # Pre-registered BEFORE any data: Project Steering/PREREG_REFCV6_DEVBOX_PREPARATION.md,
 # "A7 AMENDMENT, 2026-09-19" (A7.1-A7.8). Configuration = C:/Users/Admin/qland/a3_heldout_read.sh
@@ -9,7 +16,7 @@
 #   = `git archive` of HEAD 37645fcc61b1 (stack/ + taniteval/) + the two STAGED blobs
 #     stack/tanitad/models/timm_trunk.py d74ad535c41f, stack/scripts/refc_v3_train.py 87e222388736
 #
-# ⛔ GPU RULE (the Master Mind's): before EACH launch boxstat.py must read GPU <= 2,500 MiB and
+# ⛔ GPU RULE (the Master Mind's): before EACH launch boxstat.py must read GPU <= 4,300 MiB and
 # host free >= 8 GB. An unreadable probe is INCONCLUSIVE, never clear -- the gate keeps waiting.
 # ⭐ RESUMABLE: an arm whose a7_arm_check.json says VALID is skipped; a partial arm directory is
 # moved aside (never deleted) and the arm re-runs from scratch.
@@ -60,7 +67,7 @@ gate() {   # $1 = max wait in seconds
     read -r GU HF <<< "$line"
     case "${GU:-x}${HF:-x}" in
       *[!0-9]*) bad=$((bad + 1)); echo "ZZA7-GATE-PROBE-INCONCLUSIVE '${line}'ZZ" ;;
-      *) if [ "$GU" -le 2500 ] && [ "$HF" -ge 8 ]; then
+      *) if [ "$GU" -le 4300 ] && [ "$HF" -ge 8 ]; then
            echo "ZZA7-GATE-CLEAR gpu=${GU}MiB host=${HF}GB $(date -u +%H:%M:%SZ)ZZ"; return 0
          fi
          [ $((waited % 900)) -eq 0 ] && echo "ZZA7-GATE-WAIT gpu=${GU}MiB host=${HF}GB waited=${waited}sZZ" ;;

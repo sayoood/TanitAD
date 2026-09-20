@@ -31,8 +31,14 @@ MUTATIONS = [
      "    pass  # MUTATION M1: the floor is no longer first\n",
      ["test_P0_is_UNSKIPPABLE_even_if_a_later_arm_already_ran"]),
     ("M2_gate_loosened_to_8GB_of_GPU", MOD,
-     "GPU_MAX_MIB = 2500\n",
+     "GPU_MAX_MIB = 4300\n",
      "GPU_MAX_MIB = 8000  # MUTATION M2\n",
+     ["test_gate_reads_KNOWN_values"]),
+    # ⛔ The gate must also go RED if it is RESTORED to the unsatisfiable 2,500: that value is
+    # not a safer gate on this box, it is one the desktop alone can never satisfy.
+    ("M2b_gate_restored_to_the_unsatisfiable_2500", MOD,
+     "GPU_MAX_MIB = 4300\n",
+     "GPU_MAX_MIB = 2500  # MUTATION M2b\n",
      ["test_gate_reads_KNOWN_values"]),
     ("M3_A7_chaining_removed", MOD,
      '    if panel_procs > 0:\n        return False, f"A7 panel still running ({panel_procs} process(es))"\n',

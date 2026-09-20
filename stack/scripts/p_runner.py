@@ -55,7 +55,21 @@ ARMS: tuple[dict, ...] = (
     {"name": "P5-TRUNK", "kind": "lever", "steps": 5000,
      "why": "capacity: resnet34 -> resnet101", "flags": ["--seed", "0"]},
 )
-GPU_MAX_MIB = 2500
+#: ⛔ RAISED 2,500 -> 4,300 MiB ON THE PI'S DIRECT AUTHORISATION (Sayed, 2026-09-20: *"raise the
+#: gate to 4300 and re-arm"*), on measured evidence, NOT to make a blocked chain move.
+#: WHY THE OLD VALUE WAS WRONG: it was calibrated for a HEADLESS box. This box has a desktop on
+#: it, and the desktop ALONE holds 3,111-3,958 MiB (19 samples) — so `used <= 2500` could never
+#: clear, and over ~9.4 h it cleared 0/19 times while rejecting a configuration that in fact runs.
+#: THE MEASUREMENT (`…/raw/vram_probe/`, instrument `code/vram_probe.py`): the real arm's
+#: in-process `torch.cuda.max_memory_allocated()` peak is **2,573 MiB**, identical at step 10 and
+#: at step 12 after a forced eval, i.e. PLATEAUED; total card footprint ~2,939 MiB including CUDA
+#: context. At the WORST observed desktop level 3,958 + 2,939 = 6,897 of 8,188 MiB, leaving
+#: 1,291 MiB (15.8 %). 4,300 = arm (2,939) + ~900 margin (the desktop's own observed swing is
+#: 847 MiB), expressed as a used-ceiling on an 8,188 MiB card; it would have cleared all 19 samples.
+#: ⚠️ RESIDUAL RISK, ACCEPTED BY THE PI, NOT HIDDEN: 1,291 MiB of headroom across an ~11 h arm, so
+#: a large desktop spike mid-run can still OOM it. That is a trade, not an oversight.
+#: ⛔ DO NOT "restore" 2,500: it is not a safer number here, it is an unsatisfiable one.
+GPU_MAX_MIB = 4300
 HOST_MIN_GB = 8
 
 #: ⛔ Flags that must NEVER be carried from the base arm into a replicate: they name the base

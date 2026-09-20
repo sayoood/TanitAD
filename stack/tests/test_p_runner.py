@@ -99,11 +99,15 @@ def test_a_directory_without_a_check_is_PARTIAL_and_is_MOVED_not_deleted(tmp_pat
 
 # ------------------------------------------------------------------ the gate
 @pytest.mark.parametrize("probe, clear", [
-    ("2500 8", True),        # exactly at both limits is CLEAR
-    ("2501 8", False),       # one MiB over
-    ("2500 7", False),       # one GB under
-    ("3941 9", False),       # the PI's servers, 2026-09-20
-    ("", False), ("x 8", False), ("2500", False),        # unreadable ⇒ INCONCLUSIVE
+    ("4300 8", True),        # exactly at both limits is CLEAR
+    ("4301 8", False),       # one MiB over
+    ("4300 7", False),       # one GB under
+    # ⭐ the DESKTOP baseline this box actually carries (min / median / max of 19 samples,
+    # MEASURED 2026-09-20). All three must now CLEAR — under the old 2,500 ceiling none could,
+    # and the chain sat blocked for ~9.4 h rejecting a configuration that in fact runs.
+    ("3111 9", True), ("3922 9", True), ("3958 9", True),
+    ("4977 9", False),       # desktop + a second arm's worth: still correctly refused
+    ("", False), ("x 8", False), ("4300", False),        # unreadable ⇒ INCONCLUSIVE
 ])
 def test_gate_reads_KNOWN_values(probe, clear):
     ok, why = PR.gate_ok(probe)
