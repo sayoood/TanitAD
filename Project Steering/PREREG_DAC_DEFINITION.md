@@ -84,6 +84,32 @@ options, and the choice is **pre-committed before adjudication**:
 with the unlabelled share always published, so a corpus whose map degrades cannot quietly improve
 its own score. **The PI rules.**
 
+> ### ✅ RULED BY THE PI, 2026-09-20: **(a) for the term, (c) for the reporting**
+>
+> Verbatim: *"a) for the term, (c) for the reporting"*. ⇒ a cell that is **seen but carries no
+> class** is **COMPLIANT**, and the **withheld / unlabelled share is published beside every
+> DAC / EP / PDMS number**. ⛔ §4 is CLOSED; no candidate may restate the question.
+>
+> **What it changes, measured before asking.** `corpus_publisher.reasons()` thresholds
+> `ego_future_path_on_drivable["real"]`, which is `drivable_hits / ALL path cells` — so unlabelled
+> cells sit in the **denominator but not the numerator** and drag the ratio under 0.9. Under (a)
+> they move into the numerator. ⭐ For the **54** clips carrying the flag *"near path unlabelled
+> (seen, no class), **no path cell on a non-drivable class**"*, nothing under the path is on a
+> non-drivable class, so their compliant share is **1.0 by construction** — they pass the 0.9
+> threshold **outright, not marginally**. Projected **78** at corpus completion (`s4_price.json`).
+>
+> ⛔ **NOT applied to the running corpus tonight, deliberately.** The rule is a numerator change
+> and is re-derivable from the **banked `.npz`** via `path_classes()` — **no re-inference**. But
+> changing it mid-run would split the corpus into two populations judged by two rules. ⇒ apply it
+> as **ONE re-tiering pass after production completes (~2026-09-22)**, so every clip is judged by
+> the same rule. Nothing on Thor is edited while the supervisor holds its lock.
+>
+> ⚠️ **Scope.** This does **not** recover the 22 `GIVEN_UP` clips (different reasons, not
+> published) nor the 9 *"path untestable (parked / stopped ego)"* clips — that is the zero-motion
+> family and a separate question. ⚠️ And it changes those clips' **tier**, not their existence:
+> flagged clips are already published, in `semantic_maps/gt_flagged/`.
+
+
 ---
 
 ## 5. How the rule is chosen — human adjudication, not a rate
