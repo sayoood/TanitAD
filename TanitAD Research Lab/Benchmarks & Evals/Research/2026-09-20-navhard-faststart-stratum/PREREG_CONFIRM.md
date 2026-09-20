@@ -42,3 +42,46 @@ From warmup: STOP − CV is **+0.1114**, CI [0.0292, 0.1821], on the scenes wher
 ⚠️ **STOP and CV are deterministic**, so training and inference variance are zero by construction and the cluster bootstrap is the whole question here — **but that property belongs to these two arms only** and does not transfer to any trained arm scored on this stratum later.
 
 ⚠️ **navhard and warmup are different venues.** A replication across them is stronger than a re-analysis within one and weaker than a pre-registered split of a single venue. Say which, in the result.
+
+<!-- INSTRUMENT-AND-PRECISION-2026-09-20 -->
+
+## 4 · The analysis instrument exists BEFORE the data, and it is self-tested
+
+`code/confirm.py` implements §1–§2 exactly. It was written while only `CV.csv` existed and
+`STOP.csv` did not, so the navhard run is a single invocation with nothing left to choose.
+⭐ Every analyst degree of freedom that survives until after the numbers arrive is a place a
+result can be steered.
+
+`--self-test` runs the identical code path on **warmup**, whose answers are landed at `2142b55`:
+
+| check | basis |
+|---|---|
+| `n_scenes` 204 · `n_fired` 37 · clusters 16 · gap **0.1114** · gap-fired **0.2179** · wins **68/83/16** | **exact** — deterministic |
+| CI bounds | **within measured Monte-Carlo error** — resampled quantiles are not deterministic |
+| **VERDICT** | **exact** — it is what the prereg acts on |
+
+⛔ **And it carries DELIBERATE-REGRESSION arms**, because a guard that only ever passes is not
+evidence. The self-test re-introduces the two defects that actually happened — joining on
+`scene_token`, and a one-arm clause detector — and FAILS if either is tolerated. Both are
+rejected (`ZZABORT ... empty join`; `ZZREFUSE ... 1 arm(s)`).
+
+## 5 · ⚠️ A PRECISION CORRECTION to the interval this replication is measured against
+
+The self-test reproduced every point estimate exactly and disagreed with the banked CI in the
+**3rd decimal** — a different RNG stream, not a defect. Measured directly (`code/mc_error.py`,
+**12 independent streams**, B = 10,000, on the 16-cluster fixture):
+
+| bound | mean | sd | range over 12 streams | spread |
+|---|---|---|---|---|
+| lower | 0.0309 | **0.00166** | [0.0281, 0.0333] | 0.0052 |
+| upper | 0.1819 | 0.00066 | [0.1806, 0.1831] | 0.0025 |
+
+⇒ **`2142b55` reported `[0.0292, 0.1821]` to 4 dp; the procedure supports about 3.** Intervals
+are now printed at **3 dp** with their Monte-Carlo error stated.
+
+⭐ **What IS stable is the verdict: the lower bound exceeds zero in 12/12 streams** (min 0.0281).
+So the finding is unchanged and only its reported digits were over-precise — say both.
+
+⛔ **The seed was NOT tuned until the bounds matched.** That would have fitted the instrument to
+its own fixture, which is the *"a check that shares the defect it checks for"* failure in a new
+costume. The tolerance was set from the measured spread instead.

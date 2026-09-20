@@ -12594,3 +12594,29 @@ synthetic scenes derive from **16** original scenes and navhard's 5,462 from **4
 SCENES is pseudo-replication.** This does not retract the 18.1 % census (`d86dccb`) — a proportion,
 not an interval, and it reproduced exactly here (37/204 = 0.1814) — but **no CI previously quoted
 over warmup scenes is admissible** until re-read with clustering.
+
+<!-- CI-PRECISION-CORRECTION-2026-09-20 -->
+
+### ⚠️ 2026-09-20 — precision correction: the clause-stratum intervals at `2142b55` were reported to 4 dp and are stable to 3
+
+MEASURED (`…/2026-09-20-navhard-faststart-stratum/code/mc_error.py`), 12 independent RNG streams,
+B = 10,000, on the 16-cluster warmup fixture: the **lower** CI bound has **sd 0.00166** and a full
+spread of **0.0052** across streams; the upper has sd 0.00066. The landed
+**`[0.0292, 0.1821]`** should read **`[0.031, 0.181]`**, and intervals from this procedure are
+reported at **3 dp** from now on.
+
+⭐ **No finding changes.** The lower bound exceeds zero in **12/12** streams (min **0.0281**), so
+*"remove the scenes where the clause fires and stopping still wins, separated"* stands exactly as
+landed. Every point estimate is deterministic and reproduced **exactly** under a different stream
+(gap **0.1114**, fired-gap **0.2179**, wins **68/83/16**).
+
+⛔ **How it was found, and the trap that was declined:** a second implementation of the same
+pre-registered procedure (`code/confirm.py`, written before navhard's STOP arm existed) disagreed
+in the 3rd decimal. The tempting fix — tune the seed until the bounds match — would have fitted
+the instrument to its own fixture, the *"a check that shares the defect it checks for"* family.
+The spread was measured instead and the tolerance set from it.
+
+⚠️ **General rule this earns:** a bootstrap interval carries its **Monte-Carlo error** or it is
+quoted at a precision the procedure does not support. Sitting beside the programme's existing
+rules — *never quote an interval without its estimator*, and *name which variance it answers* —
+this one is: **never quote an interval to more digits than its resampling supports.**
