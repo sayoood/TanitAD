@@ -13623,3 +13623,47 @@ check whether the low-alignment fields also FAIL their own read — `box_quality
 `vel_gain_mps` **2.8738** beating a zero floor (`cb274b0`), which sits awkwardly beside
 `v_rel_y`'s **0.088** and is exactly the kind of tension worth resolving before anyone calls a
 field dead.
+
+<!-- ALIGNMENT-VALIDATED-AS-A-SCREEN-2026-09-21 -->
+
+### ⭐⭐ 2026-09-21 — alignment SEPARATES dead from alive (validated), does NOT rank the live — and a POOLED velocity metric was hiding a completely dead component
+
+MEASURED, CPU, A8 `ckpt_5000`, 30 windows / **24 episodes** / **775 matched pairs** per field
+(`…/2026-09-20-perception-bar-rescore/code/align_vs_skill.py`, `raw/align_vs_skill.json`).
+Resolves the tension `148ceb9` flagged against its own spectrum.
+
+⭐ **Velocity is the NON-CIRCULAR test and that is why the verdict rests on it:** the Hungarian
+cost uses centre, cls and presence (`agent_slots.py:475-477`) — **not velocity**. Centre is
+reported too, with its partial circularity flagged.
+
+| field | alignment | MAE | zero floor | **skill** | CI95 | beats floor |
+|---|---|---|---|---|---|---|
+| `cy` | 56.713 | 7.9626 | 18.8790 | 0.5782 | [0.4847, 0.6572] | ✅ |
+| `cx` | 24.779 | 5.2684 | 36.2619 | **0.8547** | [0.8272, 0.8795] | ✅ |
+| `v_rel_x` | 7.258 | 4.4679 | 7.5143 | 0.4054 | [0.1880, 0.5719] | ✅ |
+| **`v_rel_y`** | **0.088** | **2.1860** | **2.1863** | **0.0001** | **[−0.0052, 0.0049]** | ⛔ **NO** |
+
+⭐ **`v_rel_y` reads the NO-INFORMATION VALUE ESSENTIALLY EXACTLY** — skill 0.0001 on an interval
+straddling zero at ±0.005. It predicts precisely as well as predicting no motion. **That is a
+control reading its known value**, and it is what makes the rest trustworthy.
+
+⇒ **ALIGNMENT IS VALIDATED AS A SCREEN, NOT AS A RANKING.** The 0.088 field is dead and the three
+above 7 are alive, so the spectrum separates. ⛔ **But it does NOT rank the live ones:** `cy` has
+**2.3× the alignment of `cx`** and **lower** skill (0.578 vs 0.855). ⇒ quote alignment only as
+*"does this field see anything at all"*, never as *"this field is better than that one"*.
+
+### ⛔⛔ AND THE POOLED VELOCITY METRIC WAS HIDING THE DEAD HALF
+
+`box_quality` reports `vel_gain_mps` **2.8738** with `vel_beats_zero_floor` **true** (`cb274b0`),
+and that is **TRUE** — it is an **L2 over BOTH components**. ⇒ `v_rel_x` carries all of it and
+`v_rel_y` contributes **nothing**. **A correct pooled number implied that both components work.**
+
+⚠️ Textbook `true-but-wrong-for-the-reader`, in a control the programme relies on — and it is the
+second time today a pooled figure concealed its parts. ⇒ **`vel_gain_mps` must be reported PER
+COMPONENT**, or it certifies a half-dead head. Nothing landed is retracted: `cb274b0`'s statement
+is accurate as written; what changes is what a reader may conclude from it.
+
+⚠️ **NOT asserted:** that `v_rel_y` is broken rather than unlearnable. Lateral relative velocity may
+carry little signal at this geometry — the floor itself is small (**2.19** vs `v_rel_x`'s 7.51),
+so there is far less to predict. ⛔ Separating *"the head failed"* from *"there is nothing there"*
+needs a target-variance read this does not do.
