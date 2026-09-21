@@ -13759,3 +13759,53 @@ PROBES instead, which carry their own controls.
 ⚠️ **Function class:** LINEAR ridge throughout; a negative is about linear predictability from
 these features only. ⛔ `occluded` (0.284) remains **unexamined** — no target channel was
 identified for it here, and it is NOT covered by this audit.
+
+<!-- E9-RATE-NOT-BOUND-2026-09-21 -->
+
+### ⭐⭐ 2026-09-21 — E9 CLOSED as a RATE: the T1 route costs **6.11 s/window** marginal + **13.0 s** fixed, not 19.2 s/window
+
+MEASURED, CPU, three points, same checkpoint / episodes / device / `--n-boot`
+(`…/2026-09-21-e9-rate/code/e9_rate.sh`, `raw/e9_rate.json`). `POD_REQUEST` §5 asks for *"the T1
+route's s/window at 416 × 1024"*; the record held only a **bound**.
+
+**Why the banked figure was a bound and not a rate.** It is ONE point — `E9B_RC=0 wall=173s` over
+**9 windows** = 19.2 s/window, ALL-IN. ⛔ **A single timing cannot separate model load and episode
+build from per-window work**, and 9 windows is the configuration where a fixed cost is *maximally*
+overweighted. Same family as the `step_s` trap: an accumulated quantity read as a per-unit rate.
+
+**The design isolates the marginal cost:** only `--window-stride` varies, so the model
+construction and episode load are byte-identical across runs.
+
+| windows | wall (s) |
+|---|---|
+| 9 | 70 |
+| 18 | 120 |
+| 35 | 228 |
+
+⇒ **three-point fit: marginal 6.113 s/window, fixed 13.0 s.**
+
+⛔ **AND THE THIRD POINT WAS A PRE-STATED PREDICTION, because two points fit a line EXACTLY and a
+fit that cannot fail is not evidence.** From the first two the model was *fixed 20 s, marginal
+5.556 s/win* ⇒ **predicted 214.4 s**; measured **228 s** at n = 35, an error of **6.3 %**.
+Linearity holds on a point the model had not seen.
+
+**All-in s/window by scale**, which is the number a plan should use: 9 → **7.56**, 18 → 6.84,
+35 → 6.48, 100 → 6.24, 1000 → **6.13**. ⇒ quoting **19.2** over-prices a large T1 run by ~**3×**.
+
+### ⛔ AND THE BANKED 173 s DOES NOT REPRODUCE — reported, not explained
+
+Run A repeated the banked configuration exactly (9 windows) and measured **70 s** against the
+banked **173 s** — a ratio of **2.47×**.
+⚠️ **The cause is NOT asserted.** Candidates, none separated: a warm OS page cache (this corpus has
+been read repeatedly today) versus the original cold read; machine load at the time, when A8 was
+training; and thread count, unrecorded in the original.
+⭐ **The SLOPE is unaffected by this** and is the part E9 needs: all three points were taken
+back-to-back under identical conditions, so the per-window cost is clean even if the absolute
+level reflects today's cache state. ⚠️ The **fixed** term is the one that would move with a cold
+cache, and it is the smaller of the two at any n ≥ 9.
+
+⚠️ **A reproducibility defect in the E9 package, worth fixing wherever commands are banked:** its
+recorded invocation ends in an ellipsis (`--dump-dir …`) which swallowed the **required** `--out`.
+Both first attempts died in 2 s. ⇒ **a command banked with "…" is not a command** — it reads like
+provenance and cannot re-derive the number. ⭐ What caught it was the **wall time** (2 s against an
+expected 173), not the exit code.
