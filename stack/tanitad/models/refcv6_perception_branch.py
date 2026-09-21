@@ -165,6 +165,17 @@ class PerceptionBranchConfig:
     #: say so BY NAME rather than by silently widening the band -- and no argv
     #: reaches this field.
     enforce_param_band: bool = True
+    #: ⛔ derive `occ_logit` from the head's OWN predicted centre instead of
+    #: the learned slice (`agent_slots.occ_logit_from_centre`). MEASURED
+    #: 2026-09-21 (`6c5fb62`): the learned channel LOSES to a 2-parameter read
+    #: of that centre's azimuth by 0.1276 log-loss, CI [-0.1844, -0.0376], and
+    #: never wins in any box-error stratum.
+    #: ⚠️ DEFAULT OFF -- flipping it changes what the model EMITS at
+    #: inference, which is a contract change and the PI's call.
+    #: ⛔ STAMPED in `as_dict`: this branch's stamp is what a reader opening
+    #: `config.json` in isolation gets, and an `occ` number whose source is not
+    #: in the record is unattributable between the learned and derived paths.
+    occ_from_geometry: bool = False
     #: ⛔ NOT a knob the operator sets. It is DERIVED: the box head reads BEV
     #: tokens only when a supervised BEV branch exists, i.e. when ``w_map > 0``.
     #: Building the lift + encoder for an unsupervised feature path would put
@@ -194,6 +205,7 @@ class PerceptionBranchConfig:
                 "bev_tokens_hw": list(self.bev_tokens_hw),
                 "heights_m": list(self.heights_m), "stride": int(self.stride),
                 "use_bev_in_box_head": bool(self.use_bev),
+                "occ_from_geometry": bool(self.occ_from_geometry),
                 "bev_encoder": {"d_in": int(self.bev_cfg.d_in),
                                 "d_model": int(self.bev_cfg.d_model),
                                 "d_out": int(self.bev_cfg.d_out),
@@ -318,6 +330,11 @@ class PerceptionBranch(nn.Module):
                 d_memory=int(cfg.d_model), n_memory=int(self.box_mem.n_tokens),
                 n_queries=int(cfg.n_queries), d_model=int(cfg.d_model),
                 enforce_band=bool(cfg.enforce_param_band))
+            # ⛔ DECLARED IS NOT PLUMBED. A stamped field that never reaches
+            # the module it names reads as "the knob does nothing" rather than
+            # as a bug -- the refcv6 seam defect verbatim. The test pins THIS
+            # line, not the dataclass.
+            self.box_dec.occ_from_geometry = bool(cfg.occ_from_geometry)
 
     # -- refcv6 §4, PI RULING 2026-09-17 R2: BEV TOKENS FOR THE DECODER ----- #
     @property

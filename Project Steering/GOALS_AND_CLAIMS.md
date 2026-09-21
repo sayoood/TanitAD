@@ -14234,3 +14234,66 @@ and left for its own landing.
 ⇒ **`D-S1-DEP-BOX` loses one of its faces without GPU.** `occluded` is now implementable by flipping
 one attribute; `cls` (both heads) and `presence` still need the pre-registered arm in
 `PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md`, which reads LAUNCH and waits on the PI.
+
+<!-- OCC-KNOB-PROVENANCE-DEBT-PAID-2026-09-21 -->
+
+### ⚠️ 2026-09-21 — I added an UNSTAMPABLE KNOB one commit ago: `occ_from_geometry` is now a config field, a stamp entry and a plumbed line on BOTH heads, mutation-proven 5/5
+
+MEASURED by me, CPU only, no GPU
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-occ-knob-provenance/`).
+
+`6a472d1` added `AgentSlotDecoder.occ_from_geometry` — a flag that changes what the model **emits at
+inference** — as a bare attribute with **no config field and no stamp entry**.
+`AgentSeamConfig.as_dict`'s own docstring names the cost: *"a run record that cannot rebuild its own
+model config is not a run record."* A run that enabled it could not be rebuilt from `config.json`,
+and its `occ` numbers would be **unattributable between the learned slice and the derived read** —
+the anchor-units failure in a new costume.
+
+⚠️ **The existing provenance test could not have caught it.**
+`test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE` walks **argparse** dests and this knob
+has no CLI flag. ⇒ **a guard is only as wide as the thing it enumerates**, which is a property of
+the guard and not a fact about the code.
+
+**Fixed on both heads** — `AgentSeamConfig` + `build_agent_head`, and `PerceptionBranchConfig` +
+`PerceptionBranch.__init__` applying it to the `Box3DSlotDecoder` (the head `s1_pass` actually
+scores). ⛔ **Declared is not plumbed**: a stamped field that never reaches the module it names is
+*worse* than an unstamped one, because the record then asserts a behaviour the model does not have
+— the refcv6 seam defect verbatim. The tests pin the **plumbing lines**, not the dataclasses.
+
+⚠️ **And my first probe of the 3-D branch was WRONG.** A grep over `PerceptionBranchConfig`'s field
+block found no `as_dict`, and I nearly recorded *"the perception branch has no stamp"*. A second
+probe — for how the TRAINER records it — found `as_dict` at `refcv6_perception_branch.py:190` and
+`perception_stamp` at `refc_v3_train.py:6183`. *Absence at one location is not absence*, caught by
+the rule rather than by luck.
+
+**The guard pins both stamp key sets as FROZEN LITERALS.** Asserting *"every dataclass field appears
+in `as_dict`"* would be an expression over the code under test and would pass for any future knob
+added to both at once — including one added to neither.
+
+**MUTATION-PROVEN 5/5 with named catchers** (`raw/mutation_proof_occ_stamp.json`): the agent stamp
+entry dropped (the original defect, restored); the perception stamp entry dropped; the stamp
+hardcoding the default instead of the value; and **both** builders ceasing to apply the field.
+Baseline green, every arm RED, both files restored byte-identical, final run green.
+
+⭐ **S5 is caught only because I fixed a test that was lying about itself.** The first version of
+`test_the_config_field_ACTUALLY_REACHES_the_built_box3d_head` asserted only `as_dict` — it passed,
+and it would have passed with the plumbing line deleted. **A test whose NAME claims more than its
+body checks is worse than a missing test, because it reads as coverage.**
+
+⛔⛔ **TWO DEFECTS IN THE PROVER ITSELF, BOTH OF WHICH PRODUCED A VERDICT ABOUT THE TESTS.**
+(1) **CRLF anchors** — these files are CRLF, four of five anchors ended in a newline and matched
+NOTHING; the prover skipped those arms in silence and printed **"ONLY 1/5 CAUGHT"**, a verdict about
+the guard manufactured entirely by a defect in the prover. ⇒ anchors carry no line terminator, and
+**an arm that cannot be applied now ABORTS the run as INVALID** instead of entering an `n/total`
+ratio: *an arm that never applied is not a failed arm, it is no arm at all* — the same family as
+scoring an empty output as "not caught". (2) **A silent no-op edit** — the heredoc patch meant to
+replace the `MUTATIONS` block matched nothing and reported success, so only the *second*
+replacement took effect and the abort fired while the anchors stayed broken.
+
+⭐ With `mutate_occ_geometry.py`'s cp1252 defect (`6a472d1`), that is **three separate ways a
+mutation prover reported a conclusion about the CODE when the fault was in the PROVER** — and all
+three read as findings about the tests. ⇒ **a prover needs its own controls exactly as much as an
+estimator does.**
+
+**Suite:** 537 passed, 6 skipped, 1 failed — the same `--w-r7-wta` / `--refcv7` provenance failure
+already verified PRE-EXISTING against the tip's own file. No new failures.

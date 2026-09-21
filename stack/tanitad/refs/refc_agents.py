@@ -173,6 +173,18 @@ class AgentSeamConfig:
     #: the default because a hard mask has zero gradient to the presence head
     #: through the planner loss.
     presence_hard: bool = False
+    #: ⛔ derive `occ_logit` from the head's OWN predicted centre instead of
+    #: emitting the learned slice — see `agent_slots.occ_logit_from_centre`.
+    #: MEASURED 2026-09-21 (`6c5fb62`): the learned channel LOSES to a
+    #: 2-parameter read of that centre's azimuth by 0.1276 log-loss,
+    #: CI [−0.1844, −0.0376], and never wins in any box-error stratum.
+    #: ⚠️ DEFAULT OFF because flipping it changes what the model EMITS at
+    #: inference — a contract change, and therefore the PI's call.
+    #: ⛔ IT IS STAMPED IN :meth:`as_dict` FOR THE REASON THAT METHOD'S OWN
+    #: DOCSTRING GIVES: a run that enabled it and did not record it could not
+    #: be rebuilt from its record, and its `occ` numbers would be
+    #: unattributable between the two sources.
+    occ_from_geometry: bool = False
 
     def as_dict(self) -> dict:
         """Serialised into ``config.json['seams']['agents']`` — a run record
@@ -188,6 +200,7 @@ class AgentSeamConfig:
             "w_ground": float(self.w_ground),
             "presence_gate": float(self.presence_gate),
             "presence_hard": bool(self.presence_hard),
+            "occ_from_geometry": bool(self.occ_from_geometry),
             "n_classes": int(N_AGENT_CLASSES),
             "classes": list(AGENT_CLASSES),
             "n_queries_default_upstream": int(N_QUERIES_DEFAULT),
@@ -201,11 +214,17 @@ def build_agent_head(cfg: AgentSeamConfig, d_memory: int, n_memory: int
     ``n_memory`` is the conv map's token count (``gh * gw``) — the decoder's
     positional table is per-token, so this is a geometry, not a resize.
     """
-    return AgentSlotDecoder(
+    head = AgentSlotDecoder(
         d_memory=int(d_memory), n_memory=int(n_memory),
         n_queries=int(cfg.queries), d_model=int(cfg.d_model),
         depth=int(cfg.depth), n_heads=int(cfg.n_heads),
         enforce_band=bool(cfg.enforce_band))
+    # ⛔ DECLARED IS NOT PLUMBED. A config field that never reaches the
+    # module it names is the refcv6 seam defect verbatim -- six channels
+    # declared, two never wired -- and it reads as "the knob does nothing"
+    # rather than as a bug. The test pins THIS line, not the dataclass.
+    head.occ_from_geometry = bool(cfg.occ_from_geometry)
+    return head
 
 
 # ---------------------------------------------------------------------------
