@@ -13809,3 +13809,80 @@ recorded invocation ends in an ellipsis (`--dump-dir …`) which swallowed the *
 Both first attempts died in 2 s. ⇒ **a command banked with "…" is not a command** — it reads like
 provenance and cannot re-derive the number. ⭐ What caught it was the **wall time** (2 s against an
 expected 173), not the exit code.
+
+<!-- OCC-CHANNEL-WORSE-THAN-FREE-2026-09-21 -->
+
+### ⛔⛔ 2026-09-21 — `occluded` is WORSE THAN FREE: a 2-parameter read of the head's OWN output beats the dedicated channel
+
+MEASURED by me, CPU only, A8 `ckpt_5000`, no GPU, no new training
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-occ-channel-echo/`). Closes the
+last unexamined field of the quiet-field spectrum — `c920f15` left `occluded` at alignment **0.284**
+with *"no target channel identified"*.
+
+**The field IS supervised here.** `1,482/1,482` valid targets carry a flag (**100.0000 %**), base
+rate **0.5884**. ⇒ the "-1 sentinel means never trained" failure mode (`agent_slots.py:602`, `:730`;
+`refc_v3_train.py:3922`, `:4345`) is **REFUTED for this corpus**.
+
+**The target is an exact geometric identity, re-derived rather than inherited.** Sweeping the
+half-angle 20–90° and choosing it on the FIT half gives **60.0°**, agreement **1.0000 on the fit
+half AND 1.0000 on the scored half** ⇒ `occ == |atan2(cy, cx)| > 60.0°` on the box centre. That
+reproduces `agent_slots.py:82-87` from the data. ⚠️ It means OUT OF THE FRONT CAMERA'S FIELD while
+the track continues — never object-object occlusion.
+
+**The head beats its base rate (0.288 vs 0.675) — and that is not the finding.** 848 scored pairs
+over 18 episodes, episode-disjoint, every hyper-parameter fit-side only:
+
+| arm | logloss |
+|---|---|
+| base-rate control | 0.67462 |
+| H1 HARD predicate on the head's own box | 0.44896 |
+| **O — the head's `occ_logit`** | **0.28818** |
+| H2 logistic on the head's own azimuth (d = 2) | **0.16055** |
+| H3 logistic on the head's whole own box (d = 5) | 0.16211 |
+
+`O − H2` = **−0.1276**, CI **[−0.1844, −0.0376]**, separated. **H3 adds nothing over H2** — exactly
+what the identity predicts, since azimuth is the whole story. ⇒ the channel is a **LOSSY
+re-encoding of a number the head already emits**.
+
+⭐ **The check that makes it admissible.** H2 is fit eval-side while the head trained on the train
+corpus, so it has an in-domain advantage that must be bounded. Its coefficients (azimuth 6.6902,
+bias −7.1085) imply a threshold at **60.88°** against the true **60.0°** — **0.88° off**. A
+2-parameter fit recovered the **physics**, not the corpus.
+
+⛔ **And it survives the matcher-selection confound, which runs entirely against it.** `match_slots`
+pairs on CENTRE (`agent_slots.py:475-477`), so scored pairs are home ground for any arm reading the
+centre. Stratified on the observed confounder `|az_pred − az_gt|` (cuts on the FIT half's 1/3 and
+2/3 quantiles; ONE logistic fit on the whole fit half, so the confounder is never a feature):
+
+| stratum | mean az err | n | H2 | O | CI95 (H2 − O) |
+|---|---|---|---|---|---|
+| LOW | 1.79° | 281 | **0.0307** | 0.2014 | [−0.1942, −0.1401] ⛔ |
+| MID | 6.65° | 301 | **0.0677** | 0.2667 | [−0.2300, −0.1584] ⛔ |
+| HIGH | 24.01° | 266 | 0.4028 | 0.4042 | [−0.1444, 0.2060] — tie |
+
+**The channel never wins.** Best case is a TIE where the box is badly wrong, and it is worst
+**precisely where the box is accurate** — 6.5× worse in the low-error stratum, where the flag is a
+threshold comparison the head has already performed.
+
+⭐⭐ **METHOD, AND I EARNED IT THE HARD WAY: MY OWN FIRST VERDICT WAS THE OPPOSITE.** `occ_echo.py`
+scored the channel against a **HARD 0/1** predicate on the head's box and printed *"⭐ REAL — the occ
+channel beats a free geometric read of its own box"*. A hard predicate eats `−log(clip) = 6.9` per
+error while a logit **HEDGES**, so that control was **structurally handicapped relative to the thing
+it was controlling for**. Allow the box arm to hedge and the sign flips. ⇒ **a control must be able
+to express what the measured thing expresses** — the 2026-08-22 estimator family with the handicap
+in the control's OUTPUT FORM rather than its tuning. It never landed, so nothing is retracted; the
+reversed arm is banked beside the corrected one because the failure is the reusable part.
+
+⚠️ **Scope.** (a) H2/H3 are LINEAR (logistic) — this is evidence against a linear soft read, not
+every read. (b) One checkpoint, one arm, and that is **sufficient**: both arms are readouts of the
+**SAME forward pass**, so `H-ESTIM-SEED-1`'s training-variance floor does not bind and no replicate
+is owed; the CI answers *would another draw of EPISODES say this?*, which is the right question for
+a fixed-model readout. (c) The **P4** question ("does the latent carry agents the camera cannot
+see") is NOT settled by a channel this weak.
+
+⇒ **`D-S1-DEP-BOX`'s three items are not the same kind of work.** Size (`l`/`w`, 75–78 %
+predictable, `c920f15`) and presence (no per-slot signal, `286e0d3`) need **training** and therefore
+the PI's GPU call. **`occluded` does not** — it is a **DECODE** change, computable from the
+predicted centre at zero training cost and strictly better than today's emission. One third of the
+blocker leaves the GPU queue. ⚠️ **Not applied here**: changing a live decode contract belongs in
+the SPEC with its own mutation-audited landing, not in a probe.

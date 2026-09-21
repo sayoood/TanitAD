@@ -1,0 +1,63 @@
+{
+ "_what": "does the occ channel beat a free read of the box WHERE THE BOX IS WRONG?",
+ "_evidence_class": "MEASURED (ours), CPU, A8 ckpt_5000, no new forward pass",
+ "_confound": "match_slots pairs on CENTRE (agent_slots.py:475-477), so matched pairs favour any arm that reads the predicted centre",
+ "_stratifier": "|az_pred - az_gt|, cut at the FIT half's 1/3 and 2/3 quantiles",
+ "cut_points_deg": [
+  3.7388,
+  10.3401
+ ],
+ "H2_implied_threshold_deg": 60.8784,
+ "n_scored_pairs": 848,
+ "strata": [
+  {
+   "stratum": "LOW  box error",
+   "n": 281,
+   "n_episodes": 18,
+   "mean_abs_azimuth_error_deg": 1.7852,
+   "base_rate_here": 0.6157,
+   "logloss_H2_logistic_own_azimuth": 0.03071,
+   "logloss_O_head_occ_logit": 0.2014,
+   "gain_H2_minus_O": -0.17069,
+   "CI95": [
+    -0.19421,
+    -0.14012
+   ],
+   "underpowered": false,
+   "reading": "⛔ the occ channel LOSES to a free read of the box here"
+  },
+  {
+   "stratum": "MID  box error",
+   "n": 301,
+   "n_episodes": 17,
+   "mean_abs_azimuth_error_deg": 6.6498,
+   "base_rate_here": 0.5681,
+   "logloss_H2_logistic_own_azimuth": 0.06772,
+   "logloss_O_head_occ_logit": 0.26671,
+   "gain_H2_minus_O": -0.19899,
+   "CI95": [
+    -0.23002,
+    -0.15842
+   ],
+   "underpowered": false,
+   "reading": "⛔ the occ channel LOSES to a free read of the box here"
+  },
+  {
+   "stratum": "HIGH box error",
+   "n": 266,
+   "n_episodes": 16,
+   "mean_abs_azimuth_error_deg": 24.0057,
+   "base_rate_here": 0.6729,
+   "logloss_H2_logistic_own_azimuth": 0.40277,
+   "logloss_O_head_occ_logit": 0.40415,
+   "gain_H2_minus_O": -0.00138,
+   "CI95": [
+    -0.14438,
+    0.20596
+   ],
+   "underpowered": false,
+   "reading": "— indistinguishable"
+  }
+ ],
+ "_VERDICT": "⛔ THE FINDING SURVIVES THE CONFOUND — the occ channel loses to a free read of the head's own azimuth in every stratum INCLUDING the one where that azimuth is at its worst"
+}
