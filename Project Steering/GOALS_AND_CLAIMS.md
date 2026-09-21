@@ -14051,3 +14051,60 @@ returned to chance immediately.
 
 ⛔ **BINDING CONSEQUENCE FOR EVERY FUTURE ARM ON THIS HEAD: class quality is scored WITHIN SCENE.**
 A pooled number on this corpus is not interpretable, and a pooled improvement is not evidence.
+
+<!-- TACTICAL-PATH-READS-A-COLLAPSED-CLASS-2026-09-21 -->
+
+### ⛔⛔ 2026-09-21 — the class collapse is NOT confined to the scored head: the SECOND agent head, the one that feeds the TACTICAL DECODER, is collapsed too — and its presence field gives that decoder no per-slot weighting at all
+
+MEASURED by me, CPU only, forward hook, A8 `ckpt_5000`, no GPU
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-box-head-class-collapse/`,
+`raw/tac_agent_cls.json`). ⭐ This exists **because of** the wrong-head retraction: that correction
+revealed a second, separately supervised agent head that had never been characterised on its own
+terms, and this asks what it is doing.
+
+**The seam, traced in source rather than assumed:**
+
+| site | what it does |
+|---|---|
+| `refc.py:4185` | `agent_slots = self.agent_head(fmap…)` — the **non-oracle** branch, i.e. what `--agents head` selects, and what A8 ran |
+| `refc.py:4188` | `agent_tokens, agent_pad = self.agent_embed(agent_slots)` |
+| `refc_agents.py:272,275` | `cls_p = softmax(cls_logits)` is **concatenated into the token** — verified in source, not inferred from the `Linear(25, 256)` width |
+| `refcv6_tactical.py:524` | `t = self.agent_in(agent_tokens) + …` — those tokens **are** the tactical decoder's keys and values |
+
+**MEASURED on `core.agent_head` (16 queries, 20 windows, guard: declared queries == slots seen):**
+
+| | |
+|---|---|
+| distinct classes emitted | **1 of 10** — `automobile` on **320/320** slots |
+| mean top1−top2 softmax margin | **0.58105** — confidently wrong, matching the 3-D head's 0.59198 |
+| presence multiplier `sigmoid(presence_logit)` | mean **0.76671**, sd **0.05494**, range **[0.59251, 0.86197]** |
+| slots above the hard gate (0.5) | **320 / 320** |
+
+⇒ **BOTH supervised agent heads have collapsed to the same single class**, independently, with
+near-identical confidence margins. The collapse is therefore a property of the objective, not of one
+head's initialisation — which strengthens `H-BOXCLS-1` and widens it: **the cls re-weighting arm
+must cover BOTH heads**, or the tactical path keeps its constant.
+
+⭐ **AND THE PRESENCE FIELD IS A SECOND, SEPARATE DEFECT ON THE SAME SEAM.** `presence_hard`
+defaults to **False** (`refc_agents.py:175`), so the **soft** path runs: `tok = tok * presence`
+(`:284`), applied **after** `self.norm` (`:275`), so nothing renormalises it. With presence
+near-constant at 0.767 (sd 0.055), that multiplier is effectively **uniform** ⇒ presence supplies
+the tactical decoder with **no per-slot weighting whatever**, which is precisely the job the field
+exists to do. A uniform factor is absorbable by `agent_in`'s weights, so this is not an attenuation
+bug — it is a **missing discrimination**.
+
+⚠️ **NOT ASSERTED, and it is the obvious next arm:** that the decoder therefore attends to *phantom*
+slots at full weight. That claim needs presence compared between slots MATCHED to a real agent and
+unmatched ones, which needs the matcher — deliberately not used here, because the categorical
+question ("how many distinct classes does this head ever emit") needs no matcher and no interval,
+and mixing the two would have imported the matcher's `cls` cost into a finding about `cls`.
+
+⚠️ **Scope.** One checkpoint at 5,000 steps; as with `2adadda`, a collapse at 5,000 steps may be a
+training-duration artifact and this cannot separate that. But the two heads collapsing
+**independently and identically** is evidence the cause is shared, and the shared thing is the
+unweighted `cls` criterion (`agent_slots.py:591`) against a 577.5:1 target — the mechanism
+`NO_OBJECT_W = 0.1` already exists to defeat for presence (`:230-231`).
+
+⇒ **`PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md` is widened**: `A_ctrl` must reproduce the collapse on
+**both** heads, and the criteria are read per head. The gate (`d7fa093`) already reads LAUNCH; this
+does not change that, it changes the arm's scope. Still GPU ⇒ still the PI's call.
