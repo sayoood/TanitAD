@@ -13573,3 +13573,53 @@ vectors across slots. If the features are themselves near-constant, the degenera
 presence entirely and the box head's variety comes from elsewhere in the network; if the features
 vary, the presence weight vector has aligned to a constant direction. That is a forward pass on
 CPU and needs no training.
+
+<!-- PRESENCE-ALIGNMENT-AND-A-BAD-COMPARATOR-2026-09-21 -->
+
+### ⚠️ 2026-09-21 — misalignment is NOT the explanation as I operationalised it — ⛔ but my COMPARATOR was badly chosen, and the field spectrum is the real finding
+
+MEASURED, CPU, forward hook on the slot head, A8 `ckpt_5000`, 12 windows
+(`…/2026-09-20-perception-bar-rescore/code/presence_alignment.py`, `raw/presence_alignment.json`).
+
+⭐ **First, half the question fell out by LOGIC and needed no compute.** Box and presence are slices
+of ONE linear layer applied to ONE per-slot feature vector (`agent_slots.py:368`), and the decoder
+emits **100 distinct boxes** (`a15de2d`). ⇒ **the features MUST vary across slots**, so the
+candidate *"the features are near-constant"* is **ELIMINATED** — it contradicted evidence already
+on the record.
+
+**The surviving reading was geometric**, measured with a dimensionless statistic so a larger weight
+vector could not flatter itself: `alignment(w) = var_slots(w·f) / (|w|² · mean_dim_var(f))`.
+
+| field | alignment | | field | alignment |
+|---|---|---|---|---|
+| **cy** | **56.713** | | yaw_sin | 2.131 |
+| yaw_cos | 39.710 | | **presence** | **1.725** |
+| **cx** | **24.779** | | l | 1.385 |
+| v_rel_x | 7.258 | | occluded | 0.284 |
+| cls | 3.050 | | w | 0.246 |
+| | | | v_rel_y | 0.088 |
+| | | | yaw_rate_rel | **0.025** |
+
+**Against the median (2.131) presence sits at ratio 0.809** ⇒ by the pre-written threshold,
+**misalignment is not supported.**
+
+⛔ **BUT THE COMPARATOR IS WRONG AND I AM SAYING SO RATHER THAN BANKING THE VERDICT.** The median of
+"all other fields" lumps the fields that demonstrably WORK (`cx`, `cy` — the ones producing the 100
+distinct boxes) together with fields that look near-dead themselves (`yaw_rate_rel` **0.025**,
+`v_rel_y` 0.088, `w` 0.246, `occluded` 0.284). Against the WORKING fields presence is
+**14.4× below `cx`** and **32.9× below `cy`**. ⚠️ A control that includes broken siblings sets the
+bar at broken — the same family as *"a check that shares the defect it checks for"*, here in the
+choice of reference rather than in the predicate.
+
+⭐⭐ **AND THE SPECTRUM IS THE FINDING, not presence.** Alignment spans **0.025 → 56.713**, a
+**2,300×** range across twelve fields of one layer. ⇒ the degeneracy is **NOT specific to
+presence**: a minority of fields (`cy`, `yaw_cos`, `cx`, `v_rel_x`) pick up the feature variation
+and most do not. ⛔ **`286e0d3`'s framing — "the presence output specifically is degenerate" — is
+too narrow** and is corrected here.
+
+⚠️ **NOT asserted:** that the low-alignment fields are *broken*. `yaw_rate_rel` and `v_rel_y` may
+legitimately need little variation, and alignment is not accuracy. ⇒ the next honest step is to
+check whether the low-alignment fields also FAIL their own read — `box_quality` already reports
+`vel_gain_mps` **2.8738** beating a zero floor (`cb274b0`), which sits awkwardly beside
+`v_rel_y`'s **0.088** and is exactly the kind of tension worth resolving before anyone calls a
+field dead.
