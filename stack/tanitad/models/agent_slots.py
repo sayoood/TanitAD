@@ -602,7 +602,8 @@ def match_slots(pred: dict, tgt: dict) -> dict:
 # ============================================================================
 
 def slot_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
-                  weights: dict | None = None) -> dict:
+                  weights: dict | None = None,
+                  cls_class_weight: Tensor | None = None) -> dict:
     """DETR set loss over :data:`SLOT_FIELDS`, returned PER TERM.
 
     Terms and their units, all reported separately (§ the four-families rule's
@@ -670,9 +671,25 @@ def slot_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
         ct = tgt["cls"][b][c]
         ok = ct >= 0
         if bool(ok.any()):
+            _cw = (None if cls_class_weight is None else
+                   cls_class_weight.to(device=pred["cls_logits"].device,
+                                       dtype=pred["cls_logits"].dtype))
             acc["cls"] = acc["cls"] + nn.functional.cross_entropy(
-                pred["cls_logits"][b][r][ok], ct[ok], reduction="sum")
-            n["cls"] += int(ok.sum())
+                pred["cls_logits"][b][r][ok], ct[ok], reduction="sum",
+                weight=_cw)
+            # ⛔ THE DENOMINATOR MUST FOLLOW THE WEIGHTS, OR RE-WEIGHTING
+            # SILENTLY CHANGES THE TERM'S SCALE AS WELL AS ITS PER-CLASS
+            # EMPHASIS — two variables inside a one-variable arm, and the
+            # `cls` term would then be competing differently against `centre`,
+            # `size` and the rest for reasons nobody asked for.
+            # `cross_entropy(reduction="sum", weight=w)` returns
+            # Σ w[target_i] · loss_i, so the matching normaliser is
+            # Σ w[target_i], not the item COUNT.
+            # ⭐ This also buys the identity control for free: at w = ones the
+            # weight sum IS the count, so a uniform weight is bit-identical to
+            # passing nothing. A test pins exactly that.
+            n["cls"] += (int(ok.sum()) if _cw is None
+                         else float(_cw[ct[ok]].sum()))
         rm = tgt["rates_mask"][b][c]
         if bool(rm.any()):
             acc["rates"] = acc["rates"] + (

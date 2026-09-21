@@ -781,7 +781,8 @@ def ground_range_prior(pred_box: Tensor, cam,
 def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
                  cam=None,
                  weights: dict | None = None,
-                 filter_visible: bool = True) -> dict:
+                 filter_visible: bool = True,
+                 cls_class_weight=None) -> dict:
     """``slot_set_loss`` + the two monocular terms, per term, with their ``n``.
 
     ⛔ Per-term, never pooled into one score — the four-families discipline's
@@ -805,7 +806,8 @@ def agent_losses(slots: dict, tgt: dict, cfg: AgentSeamConfig,
         tgt = visible_target_filter(tgt)
     n_after = int(tgt["valid"].sum())
     match = match_slots(slots, tgt)
-    out = slot_set_loss(slots, tgt, match=match, weights=weights)
+    out = slot_set_loss(slots, tgt, match=match, weights=weights,
+                        cls_class_weight=cls_class_weight)
     total = out["total"]
     _cams = row_cameras(cam, int(slots["box"].shape[0]))
     _n_cam = sum(1 for c in _cams if c is not None)

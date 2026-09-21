@@ -325,7 +325,8 @@ def zh_targets(tgt: dict, cz=None, h=None, *, mask=None) -> dict:
 
 
 def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
-                   weights: dict | None = None) -> dict:
+                   weights: dict | None = None,
+                   cls_class_weight=None) -> dict:
     """:func:`agent_slots.slot_set_loss` + the ``z`` and ``h`` terms.
 
     ⭐ The 2-D part is CALLED, not re-implemented, so every term, mask and
@@ -341,7 +342,8 @@ def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
     m = match or match_slots(pred, tgt)
     out = slot_set_loss(pred, tgt, match=m,
                         weights={k: v for k, v in (weights or {}).items()
-                                 if k not in BOX3D_LOSS_W})
+                                 if k not in BOX3D_LOSS_W},
+                        cls_class_weight=cls_class_weight)
     if "cz" not in pred or "h" not in pred:
         raise ValueError("box3d_set_loss needs a 3-D prediction (keys 'cz', "
                          "'h'); this looks like a 2-D AgentSlotDecoder output")
