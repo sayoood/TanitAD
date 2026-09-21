@@ -14108,3 +14108,70 @@ unweighted `cls` criterion (`agent_slots.py:591`) against a 577.5:1 target — t
 ⇒ **`PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md` is widened**: `A_ctrl` must reproduce the collapse on
 **both** heads, and the criteria are read per head. The gate (`d7fa093`) already reads LAUNCH; this
 does not change that, it changes the arm's scope. Still GPU ⇒ still the PI's call.
+
+<!-- PRESENCE-IS-WEAK-NOT-INERT-CORRECTION-TO-731ECD7-2026-09-21 -->
+
+### ⚠️ 2026-09-21 — CORRECTION to `731ecd7`: the tactical head's presence is **WEAK, NOT INERT** — it does discriminate where it has the chance, and I overstated it two hours ago
+
+MEASURED by me, CPU only, forward hook, A8 `ckpt_5000`, no GPU
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-box-head-class-collapse/`,
+`raw/presence_need.json`, `code/presence_need.py`).
+
+**What I claimed** in `731ecd7`: presence on `core.agent_head` is near-constant (mean 0.76671,
+sd 0.05494) and therefore *"supplies the tactical decoder with no per-slot weighting whatever"*.
+
+**The untested premise**, and it is the one `3e3dac9` already caught for `v_rel_y`: **a
+near-constant field is only a defect if there was something to vary ABOUT.** This head has 16
+queries, and `match_slots` keeps the `n_queries` NEAREST targets — so if a window carries ≥ 16
+visible agents, every slot is a real agent, no empty slot exists, and uniformly high presence is
+**correct**. That premise had to be measured, not assumed.
+
+**MEASURED — the premise is only partly true, so the test is live:**
+
+| | |
+|---|---|
+| visible agents per window (after `filter_targets_to_visible`) | mean **10.167**, median **9**, range 0–26 |
+| raw valid per window BEFORE the visibility filter | mean **24.7**, max 32 |
+| windows with FEWER than 16 visible agents | **44 / 60 (73.3 %)** |
+
+⇒ presence **does** have work to do in ~3 of 4 windows. ⚠️ Note the visibility filter removes ~59 %
+of "valid" targets (24.7 → 10.2): counting the raw join would have overstated what this head could
+ever be asked to represent, and `filter_targets_to_visible` is documented MANDATORY for exactly
+this reason.
+
+**MEASURED — on slack windows only, matched on CENTRE DISTANCE ALONE.** ⛔ `match_slots`'s own cost
+includes `-sigmoid(presence_logit)` (`agent_slots.py:475-477`), so using it would have made
+*"matched slots have higher presence"* a property of the matcher. This file runs its own Hungarian
+on centre distance; presence never enters the assignment. The threshold is arbitrary, so it is
+**swept rather than assumed**:
+
+| threshold | n at agent | presence at agent | presence empty | difference | CI95 | separated |
+|---|---|---|---|---|---|---|
+| 2 m | 23 | 0.80239 | 0.78838 | +0.01401 | [−0.00095, 0.02753] | no |
+| **4 m** | 64 | 0.80662 | 0.77870 | **+0.02792** | [0.01135, 0.04469] | **yes** |
+| **8 m** | 138 | 0.79618 | 0.76620 | **+0.02998** | [0.01035, 0.05296] | **yes** |
+| **16 m** | 201 | 0.78994 | 0.76480 | **+0.02514** | [0.00424, 0.04809] | **yes** |
+
+⇒ **separated at 3 of 4 thresholds**; the 2 m row is the only failure and carries just 23 positives,
+i.e. underpowered rather than negative. **`731ecd7`'s "no per-slot weighting whatever" is
+CORRECTED: the field is weak, not inert.**
+
+⚠️ **And "weak" is the operative word — do not read this as presence working.** A real-agent slot
+is weighted about **3.6 % more** than an empty one (0.807 vs 0.779), on a multiplier that lives in
+[0.593, 0.862]. A functioning ∅-logit separates ~1.0 from ~0.0. So the seam still delivers nearly
+uniform agent tokens to the tactical decoder; what changes is the *claim's* form — a measured weak
+effect, not an absence — and therefore what an arm would have to beat.
+
+⛔⛔ **THE ESTIMATOR DEFECT THIS RUN CAUGHT IN ITSELF, WHICH IS THE REUSABLE PART.** The first pass
+reported a point estimate of **0.04514** against a bootstrap CI of **[0.01135, 0.04469]** — the
+point sitting **ABOVE its own upper bound**, which is impossible for a single quantity. Cause: the
+point estimate averaged **all** rows while the bootstrap resampled only the episodes carrying
+**both** groups. Two different populations described as one number. ⇒ **a point estimate outside
+its own interval is not a rounding artifact, it is proof that the two were computed over different
+sets** — cheap to check, and it would have shipped a 1.6× overstated effect. Both are now
+restricted to the bootstrap's episode set.
+
+⚠️ **Unchanged by this correction:** the CLASS collapse on both heads (`2adadda`, `731ecd7`) — one
+class of ten on 2,000/2,000 and 320/320 slots — is untouched, and `PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md`
+still reads LAUNCH with both heads in scope. ⭐ What this does change is the **presence** arm's bar:
+it must beat a measured +0.028, not zero.
