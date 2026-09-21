@@ -15898,3 +15898,113 @@ then have had two.
 
 ⛔ `arm_box_score.py` is **discarded, not landed.** The P panel's scorer is `box_quality.py`,
 invoked once per checkpoint.
+
+<!-- RETR-2026-09-21-ALIGNMENT-MEASURED-ON-THE-WRONG-HEAD -->
+
+### ⛔⛔ RETR-2026-09-21-ALIGNMENT-MEASURED-ON-THE-WRONG-HEAD — the whole alignment spectrum describes a head nobody scores
+
+**What I claimed**, in `148ceb9` and then downstream in `4a7166a`, `3e3dac9`, `c920f15` and today's
+`6c5fb62`: an alignment spectrum over the slot head's fields, published as
+
+> `cy 56.713 | yaw_cos 39.710 | cx 24.779 | v_rel_x 7.258 | cls 3.050 | yaw_sin 2.131 |
+> PRESENCE 1.725 | l 1.385 | occluded 0.284 | w 0.246 | v_rel_y 0.088 | yaw_rate_rel 0.025`
+
+and used to argue that presence is not misaligned, that alignment separates dead fields from live
+ones, and that it does not identify defects.
+
+**What is true:** every one of those numbers was measured on **`core.agent_head`** — the 2-D
+:class:`AgentSlotDecoder`, running **16 queries** — while every skill, floor and defect number in
+the same investigation is scored on **`perception.box_dec`**, a :class:`Box3DSlotDecoder`
+(`box3d_head.py:227`) emitting **100 slots**, which is what `s1_pass.py:307` reads as `box_slots`
+(produced at `refcv6_perception_branch.py:426`). Two different live modules. Re-measured on the
+scored head (`raw/align_fix.json`, 12 windows, guard below):
+
+| field | CORRECTED (`box_dec`, 100 slots) | published (`core.agent_head`, 16) | ratio |
+|---|---|---|---|
+| `occluded` | **92.21126** | 0.284 | **×324.7** |
+| `cy` | 74.25487 | 56.713 | ×1.31 |
+| `cx` | 48.74788 | 24.779 | ×1.97 |
+| `yaw_cos` | 26.55927 | 39.710 | ×0.67 |
+| `yaw_sin` | 2.12932 | 2.131 | ×1.00 |
+| `presence` | 1.90992 | 1.725 | ×1.11 |
+| `cls` | 1.61041 | 3.050 | ×0.53 |
+| `v_rel_x` | 1.52587 | 7.258 | ×0.21 |
+| `cz` | 0.35016 | *(absent — the 2-D head has no `cz`)* | — |
+| `v_rel_y` | 0.20805 | 0.088 | ×2.36 |
+| `l` | 0.19640 | 1.385 | ×0.14 |
+| `w` | 0.04704 | 0.246 | ×0.19 |
+| `h` | 0.03523 | *(absent — the 2-D head has no `h`)* | — |
+| `yaw_rate_rel` | 0.02481 | 0.025 | ×1.01 |
+
+⛔ **It is not a rescaling — it is a RE-ORDERING, and the extremes swap ends.** `occluded` moves
+from **second-lowest to highest**; `l` and `w` fall to the bottom; `v_rel_x` drops out of the top
+group. The corrected spectrum also carries two fields the wrong head does not possess at all
+(`cz`, `h`), because the 3-D head is wider — which is the defect's own signature.
+
+**Root cause class: `A MODULE SELECTED BY A WIDTH THAT TWO MODULES SHARE A PREFIX OF`.** The
+selector was *"the first `Linear` whose `out_features` equals the total slot width"*, and
+`SLOT_SLICES` sums to **21**. `Box3DSlotDecoder` **subclasses** `AgentSlotDecoder` and REPLACES
+`self.head` with `nn.Linear(d_model, SLOT3D_WIDTH)` (`box3d_head.py:247`) — deliberately, and its
+docstring says the sharing is the point (*"the duplication that made two geometries drift apart in
+the `advect` precedent cannot happen here"*). So the parent's width still matches a **different
+live module**, the loop `break`s on it, and the probe binds to the wrong head while reporting a
+perfectly plausible spectrum. ⭐ Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` /
+`step_s` / cylindrical-FOV traps — **a true measurement quoted outside its scope** — and worse than
+a wrong number, because both halves were individually correct and the join was silent.
+
+⭐ **THE DURABLE FIX IS AN IDENTITY, NOT A BETTER WIDTH.** A width match is exactly what failed, so
+a stricter width is not the repair. `align_fix.py` selects `box_dec.head` **by name** and then
+asserts, per window, that the hooked tensor's slot count **equals the slot count of the `box_slots`
+that same forward emitted** — a property no other module can satisfy at any width. It fires
+immediately on the old target: `[1, 16, 256]` hooked against `box_slots [100, 4]`.
+
+⚠️ **What actually caught it was a POWER check, not a correctness check.** A class probe reported
+`n_pairs = 248` where every sibling instrument reports **1,482** on the same 60 windows. The 6×
+shortfall was the visible symptom; `max(matched row) = 99 > 16` was the proof. ⇒ **a count that
+disagrees with a sibling instrument on the same input is a defect report**, and it is cheaper than
+any audit.
+
+**What survives and what does not — per claim, because they are not equally exposed:**
+
+* ⭐ **SURVIVES — `3e3dac9` (`v_rel_y` is not a head failure).** Its evidence is a target-side ridge
+  probe with a constant control; no alignment term enters it. Only its *quoted* 0.088 is wrong
+  (**0.20805**).
+* ⭐ **SURVIVES — the `l`/`w` predictability half of `c920f15`** (75–78 % from target-side
+  geometry): also a target-side probe. ⭐ And the corrected spectrum now **agrees** with it — `l`
+  0.196 and `w` 0.047 sit at the bottom, where the measured defects are.
+* ⭐ **SURVIVES, and is now measured on the right head — `148ceb9`'s conclusion** that misalignment
+  does NOT explain presence: `ratio_presence_to_median` is **1.2517** on `box_dec`, comfortably
+  above the 0.3 threshold that would have indicted it.
+* ⛔ **VOID AS PERFORMED — `4a7166a`'s validation** that *"alignment separates dead from alive"*.
+  Its table joined `align` from `core.agent_head` to `MAE`/`skill` from `box_dec`: **two different
+  modules**, so it did not test what it claimed and must be re-run. ⚠️ Stated honestly: its
+  *conclusion* is **not contradicted** by the corrected numbers — among its own four fields the
+  ordering holds (`v_rel_y` 0.208 lowest, then `v_rel_x` 1.526, `cx` 48.7, `cy` 74.3) — it is
+  **unsupported**, which is a different thing and is why this is a void rather than a reversal.
+* ⛔ **WRONG FIGURE IN LANDED CODE — "82× apart".** `align_vs_skill.py:11` and `:121`
+  (`…/2026-09-20-perception-bar-rescore/code/`) state that `v_rel_x` and `v_rel_y` are **82×**
+  apart. On the scored head they are **7.3×** apart (1.52587 / 0.20805). ⚠️ The figure is in the
+  banked CODE, not in `4a7166a`'s message — attributing it to the commit would itself be a
+  number quoted without re-reading its source, which is exactly the `ERRATUM-1` failure.
+* ⚠️ **CONCLUSION SURVIVES, ARGUMENT DOES NOT — `c920f15`'s *"alignment does NOT identify
+  defects"*.** Its stated argument was *"the two LOWEST readings are both innocent"* (`v_rel_y`
+  0.088 and `yaw_rate_rel` 0.025, against `l` at 1.385). On the scored head that argument is
+  **false**: the three lowest are `yaw_rate_rel` 0.0248 (innocent), `h` 0.0352 (unmeasured) and
+  `w` 0.0470 — and `w` **is** a defect. ⭐ The conclusion nevertheless holds by a **different**
+  pair: `l` (a measured defect, **0.19640**) and `v_rel_y` (correctly quiet, **0.20805**) sit
+  within **6 %** of each other, so alignment still cannot separate a defect from an innocent quiet
+  field. **Re-state the argument; do not re-quote the old one.**
+* ⚠️ **CORRECTED — today's `6c5fb62`** quotes `occluded` at "alignment 0.284". The value is
+  **92.21126**. ⭐ That commit's finding is untouched, because it never used alignment as evidence:
+  the occ channel still loses to a 2-parameter read of the head's own azimuth, CI
+  [−0.1844, −0.0376], and that comparison is entirely inside `box_dec`.
+
+⛔ **AND ALIGNMENT IS NOT RE-PROMOTED BY THIS CORRECTION.** On the corrected numbers `cls` sits
+mid-spectrum at **1.610** while being **totally collapsed** (one class of ten on 2,000/2,000
+slots). Its honest status is **UNKNOWN and re-openable**, not "validated".
+
+⛔ **Operational consequence.** No claim may join a number from `core.agent_head` to a number from
+`perception.box_dec`. Any probe hooking a slot head must state **which** head by module path and
+carry the slot-count identity assertion. The `ALIGN` constants embedded in `quiet_fields.py`,
+`align_vs_skill.py` and `presence_alignment.py` are from the wrong head and are superseded by
+`…/2026-09-21-box-head-class-collapse/raw/align_fix.json`.

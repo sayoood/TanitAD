@@ -13886,3 +13886,103 @@ the PI's GPU call. **`occluded` does not** — it is a **DECODE** change, comput
 predicted centre at zero training cost and strictly better than today's emission. One third of the
 blocker leaves the GPU queue. ⚠️ **Not applied here**: changing a live decode contract belongs in
 the SPEC with its own mutation-audited landing, not in a probe.
+
+<!-- BOX-HEAD-CLASS-COLLAPSE-AND-THE-WRONG-HEAD-2026-09-21 -->
+
+### ⛔⛔ 2026-09-21 — the box head's CLASS output has TOTALLY COLLAPSED, its SIZE output is a constant because of it — and the alignment spectrum I have been quoting all night was measured on THE WRONG HEAD
+
+MEASURED by me, CPU only, A8 `ckpt_5000`, no GPU, no training
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-box-head-class-collapse/`).
+Three findings, in the order they forced each other out.
+
+#### 1. ⛔ SIZE is indistinguishable from a single global constant
+
+Matched pairs from `match_slots`, whose cost uses centre/cls/presence but **NOT size**
+(`agent_slots.py:475-477`), so this is not circular. 848 scored pairs / 18 episodes,
+episode-disjoint, every median fit-side only. Per component — never pooled, because `l` and `w`
+differ 3× in scale and pooling hid a dead component once already (`4a7166a`):
+
+| arm | `l` MAE (m) | `w` MAE (m) |
+|---|---|---|
+| **O — the head** | **1.02306** | **0.31953** |
+| F_GLOBAL — one median for everything | 1.03962 | 0.32174 |
+| F_CLSHAT — median per the head's OWN predicted class | 1.03962 | 0.32174 |
+| **F_CLSGT — median per the TRUE class** | **0.39653** | **0.10100** |
+
+The head does not beat a single constant on either component (CI straddles 0 both times). A
+zero-parameter median table keyed on the **true** class beats it **2.6× on `l`** and **3.2× on
+`w`**, separated. ⭐ **And `F_CLSHAT` reads IDENTICAL to `F_GLOBAL` to five decimals** — which is
+only possible if the head's own class prediction carries no discrimination at all. That
+coincidence is what forced the next probe.
+
+#### 2. ⛔⛔ TOTAL CLASS COLLAPSE — one class of ten, everywhere
+
+| | |
+|---|---|
+| matched pairs emitting `automobile` | **1,482 / 1,482** |
+| ALL slots, 20 windows, matched or not | **2,000 / 2,000** |
+| distinct classes predicted | **1 of 10** |
+| top-1 accuracy | 0.77935 |
+| majority-class baseline | **0.77935** — equal to 5 dp, the signature of a constant predictor |
+| mean top1−top2 softmax margin | **0.59198** — confidently wrong, not knife-edge |
+| GT `person` / predicted `person` | **188 / 0** |
+| GT `rider` / predicted `rider` | **50 / 0** |
+| imbalance, majority : rarest | **577.5 : 1** |
+
+⇒ **the size defect is DOWNSTREAM of this.** A head with no usable class cannot condition size on
+it, so it emits the global median — exactly what §1 measured.
+
+⚠️ **238 vulnerable road users are emitted as cars.** Stated plainly because it is a safety
+property, not a metric artifact.
+
+⭐ **THE MECHANISM IS NAMED BY THE CODE'S OWN COMMENT, AND IT IS A HYPOTHESIS, NOT A CONVICTION.**
+`cls` carries weight **1.0** in `SLOT_LOSS_W` and A8 ran `--w-agent 1.0`, so this is not a
+down-weighting artifact. But the `cls` term is a **plain `cross_entropy` with no `weight=`**
+(`agent_slots.py:591`), while presence two hundred lines earlier gets `NO_OBJECT_W = 0.1`
+introduced with the reason *"an unweighted BCE simply learns 'always empty'"* (`:230-231`). **The
+same argument was never applied to `cls`**, on a 577.5:1 target. ⛔ NOT PROVEN: this is
+`ckpt_5000`, and a collapse at 5,000 steps can be a training-DURATION artifact rather than a
+loss-DESIGN one. The separating experiment is a class-weighted arm or a longer run — **GPU, and
+therefore the PI's call**.
+
+#### 3. ⛔⛔ AND THE ALIGNMENT SPECTRUM WAS MEASURED ON A DIFFERENT HEAD — see `RETR-2026-09-21-ALIGNMENT-MEASURED-ON-THE-WRONG-HEAD`
+
+`148ceb9`'s probe hooked *"the first `Linear` whose `out_features` == the total slot width"*.
+`SLOT_SLICES` sums to 21 and the first match is **`core.agent_head`** — the 2-D head, **16
+queries** — while every skill number here is scored on **`perception.box_dec`**, a
+`Box3DSlotDecoder` (`box3d_head.py:227`) emitting **100 slots** (`s1_pass.py:307` ←
+`refcv6_perception_branch.py:426`). `Box3DSlotDecoder` **subclasses** `AgentSlotDecoder` and
+replaces `self.head` with a wider Linear (`:247`), so the parent's width still matches a different
+live module and the loop `break`s on it.
+
+Re-measured on the scored head: **`occluded` 0.284 → 92.21126 (×324.7), moving from second-LOWEST
+to HIGHEST**; `l` 1.385 → 0.196; `w` 0.246 → 0.047; `v_rel_x` 7.258 → 1.526; `cx` ×1.97; `cy`
+×1.31. **A re-ordering, not a rescaling.** Full table and the per-claim exposure are in the
+retraction; the short version is that `3e3dac9` and the predictability half of `c920f15` SURVIVE
+(target-side probes, no alignment term), `148ceb9`'s presence conclusion survives and is now
+measured correctly (ratio **1.2517**), `4a7166a`'s validation is **VOID as performed** (it joined
+two modules) and its "82× apart" is really **7.3×**, and `c920f15`'s *"alignment does not identify
+defects"* is **reversed in its evidence** — though alignment is **not** thereby re-promoted, since
+`cls` sits mid-spectrum at 1.610 while being totally collapsed.
+
+⭐ **The durable fix is an IDENTITY, not a better width**: select `box_dec.head` by name, then
+assert per window that the hooked tensor's slot count **equals** the `box_slots` count that same
+forward emitted. ⚠️ And what caught it was a **power** check, not a correctness check — the class
+probe returned 248 rows where every sibling instrument returns 1,482 on the same windows. **A count
+that disagrees with a sibling on the same input is a defect report.**
+
+#### Consequence for `D-S1-DEP-BOX`
+
+The blocker is **one defect with three faces**, not three independent items:
+
+| face | evidence | what it needs |
+|---|---|---|
+| `cls` collapsed to one class | 2,000/2,000 slots, accuracy == majority baseline | a class-weighted / focal `cls` term ⇒ **GPU, PI's call** |
+| `l`/`w` = global constant | loses to a true-class median lookup 2.6×/3.2× | **downstream of `cls`** — likely free once class works |
+| `presence` degenerate | no per-slot signal (`286e0d3`), and NOT misalignment (ratio 1.25) | **GPU, PI's call** |
+| `occluded` worse than free | loses to a 2-parameter read of its own azimuth (`6c5fb62`) | a **DECODE** change — zero training |
+
+⇒ the SPEC's first arm is **not** "add size capacity". It is **weight the `cls` term the way
+`NO_OBJECT_W` already weights presence**, with the deliberate-regression arm being the unweighted
+one we have measured here, and the success criterion being balanced accuracy against the
+`1/K` constant-predictor value — never raw accuracy, which a collapsed head already scores 0.779 on.
