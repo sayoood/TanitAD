@@ -13714,3 +13714,48 @@ features are an **upper bound** on what an image could supply about the target's
 truncated (it does not change the verdict — even maximal shrinkage loses); and the zero floor here
 is **1.535** over 6,240 pairs / 57 episodes against **2.186** over 775 pairs / 24 episodes in
 `4a7166a` — **different draws of the same quantity**, not a contradiction.
+
+<!-- SIZE-IS-A-GENUINE-DEFECT-2026-09-21 -->
+
+### ⛔⛔ 2026-09-21 — the box head is FAILING AT SIZE: `l` and `w` are 75–78 % predictable and the head does not use it. ⚠️ And alignment does NOT identify defects.
+
+MEASURED, CPU, **no model pass**, 6,244 targets / 57 episodes, episode-disjoint
+(`…/2026-09-20-perception-bar-rescore/code/quiet_fields.py`, `raw/quiet_fields.json`).
+Completes the audit `3e3dac9` left open.
+
+**Same upper-bound logic:** predict each field's TARGET from the other TARGET-side features, which
+the model never sees at inference and which bound what an image could supply. Probe fails ⇒ the
+head cannot be blamed. Probe passes ⇒ signal exists that the head is not using.
+
+| field | alignment | MAE probe | MAE constant | gain | CI95 | verdict |
+|---|---|---|---|---|---|---|
+| **`w`** | 0.246 | **0.0731** | 0.3332 | **+0.2602** | [0.1629, 0.3759] | ⛔ **DEFECT** |
+| **`l`** | **1.385** | **0.2532** | 1.0258 | **+0.7725** | [0.5000, 1.1097] | ⛔ **DEFECT** |
+| `yaw_rate_rel` | 0.025 | 0.0844 | 0.0812 | −0.0032 | [−0.0054, −0.0011] | correctly quiet |
+| `v_rel_y` (`3e3dac9`) | 0.088 | 1.6877 | 1.5350 | −0.1527 | [−0.2883, −0.0369] | correctly quiet |
+
+⇒ ⛔⛔ **SIZE IS A GENUINE, LARGE DEFECT.** `w` is **78.1 %** and `l` **75.3 %** predictable from
+geometry + class against their own best-constant controls, separated, at λ = 10 — *not* at the
+shrink-to-constant end. ⭐ This was the sharp case by construction: **class predicts size** (cars
+have typical dimensions), so a quiet head here cannot be excused by absent signal.
+
+⇒ ⭐ **`D-S1-DEP-BOX` now has a SPECIFIC head change to name, not a vague one:** SIZE (`l`, `w`)
+plus presence. That is what the pod would be buying.
+
+### ⚠️ AND THIS DOWNGRADES MY OWN SCREEN — `4a7166a` is too generous
+
+`4a7166a` called alignment *"validated as a screen separating dead from alive"*. ⛔ **Across the
+wider set it does NOT identify defects.** `l` sits at **1.385** and is a defect, while `v_rel_y`
+(**0.088**) and `yaw_rate_rel` (**0.025**) are BOTH correctly quiet — the two LOWEST readings in
+the whole spectrum are the two fields with nothing to learn.
+⇒ **Alignment describes OUTPUT VARIANCE, not health.** It may be quoted as *"how much this field's
+direction moves"* and **never** as *"this field is fine / broken"*. The velocity pair it appeared
+to separate was a coincidence of that pair, not a property of the statistic.
+⭐ Three entries in three nights have had to qualify this statistic — `148ceb9` (bad comparator),
+`4a7166a` (screen, not ranking), and now this (not a defect detector). ⚠️ **The honest conclusion is
+that alignment earned less than it first appeared**, and the defect list came from the UPPER-BOUND
+PROBES instead, which carry their own controls.
+
+⚠️ **Function class:** LINEAR ridge throughout; a negative is about linear predictability from
+these features only. ⛔ `occluded` (0.284) remains **unexamined** — no target channel was
+identified for it here, and it is NOT covered by this audit.
