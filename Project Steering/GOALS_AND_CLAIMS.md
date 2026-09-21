@@ -13667,3 +13667,50 @@ is accurate as written; what changes is what a reader may conclude from it.
 carry little signal at this geometry — the floor itself is small (**2.19** vs `v_rel_x`'s 7.51),
 so there is far less to predict. ⛔ Separating *"the head failed"* from *"there is nothing there"*
 needs a target-variance read this does not do.
+
+<!-- VY-UNPREDICTABLE-NOT-A-HEAD-FAILURE-2026-09-21 -->
+
+### ⭐⭐ 2026-09-21 — `v_rel_y` is NOT a head failure: even TARGET-SIDE geometry cannot predict it linearly ⇒ "low alignment" can mean **correctly quiet**
+
+MEASURED, CPU, **no model pass**
+(`…/2026-09-20-perception-bar-rescore/code/vy_learnable.py`, `raw/vy_learnable.json`).
+Closes the question `4a7166a` opened and deliberately left open.
+
+⭐ **The asymmetry that makes it decisive.** The probe predicts `v_rel_y` from the TARGET's own
+`cx, cy, range, v_rel_x, cls` — features the model **never sees at inference** and which are
+strictly MORE informative about a target's kinematics than an image. ⇒ if they fail, there is
+nothing to find and the head cannot be blamed.
+
+| | |
+|---|---|
+| n / d / episodes | **6,240 pairs / 6 / 57** (episode-DISJOINT fit vs scored) |
+| λ, chosen on the **FIT split only** | **1000** — the largest offered, i.e. *shrink to the constant* |
+| MAE probe | **1.6877** |
+| MAE zero floor | **1.5350** |
+| MAE best constant (fit-side median) | **1.5350** — *identical* ⇒ median(`v_rel_y`) ≈ 0 |
+| gain over zero | **−0.1527**, CI95 **[−0.2883, −0.0369]**, episode-clustered |
+
+⇒ ⛔ **The probe is WORSE than predicting zero**, on held-out episodes, after its own validation
+asked for maximal shrinkage. Three independent signals agree: the λ search ran to the top of the
+grid, the best constant IS the zero predictor, and the fitted probe loses to both.
+
+⇒ ⭐⭐ **`v_rel_y` IS GENUINELY UNPREDICTABLE AT THIS GEOMETRY. The head did not fail — there is
+nothing there.**
+
+### ⇒ And that REFINES how the alignment screen may be read
+
+`148ceb9`'s spectrum spans 0.025 → 56.7 and `4a7166a` validated it as a screen separating dead from
+alive. ⛔ **But "sees nothing" can be the CORRECT behaviour when there is nothing to see.** At least
+one low-alignment field — `v_rel_y` at **0.088** — is **correctly quiet**.
+⇒ the spectrum may NOT be read as *"most fields of this layer are broken"*. A low reading is a
+prompt to ask whether the target carries signal, **not** a defect finding. ⚠️ `yaw_rate_rel`
+(0.025), `w` (0.246) and `occluded` (0.284) are **unexamined** and may be either kind.
+
+⚠️ **Function class, stated as the rule requires:** this is a **LINEAR** (ridge) probe. The
+negative is about **linear** predictability from these features — it does not prove `v_rel_y` is
+unlearnable by any predictor. ⭐ It is nonetheless strong for the question asked, because the
+features are an **upper bound** on what an image could supply about the target's own motion.
+⚠️ Two scope notes: λ = 1000 was the **largest value in my grid**, so the search may have been
+truncated (it does not change the verdict — even maximal shrinkage loses); and the zero floor here
+is **1.535** over 6,240 pairs / 57 episodes against **2.186** over 775 pairs / 24 episodes in
+`4a7166a` — **different draws of the same quantity**, not a contradiction.
