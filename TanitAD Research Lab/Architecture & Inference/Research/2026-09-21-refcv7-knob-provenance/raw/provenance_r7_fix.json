@@ -1,0 +1,46 @@
+{
+ "_what": "the refcv7 weights were the ONLY two agent knobs with no admissible probe value, so test_P2 was RED at the tip",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "enumeration": {
+  "_how": "a throwaway copy of the test that COLLECTS instead of raising on the first failure, because the shipped loop aborts at the first unstampable knob and would have hidden a second",
+  "knobs_checked_ok": 36,
+  "knobs_unstampable": 2,
+  "unstampable": [
+   "--w-r7-wta",
+   "--w-r7-scorer"
+  ],
+  "refusal": "[refcv7] the weights > 0 without --refcv7: the heads are not built, so the weights would be stamped and read by nothing"
+ },
+ "fix": {
+  "_where": "the seam table in test_refc_v3_agent_provenance.py -- the sanctioned place, explicitly NOT the per-knob VALUE table the docstring forbids",
+  "chain_depth": 4,
+  "chain": [
+   "weights refuse without --refcv7",
+   "--refcv7 refuses without --arm hier (in base)",
+   "--refcv7 refuses without --tac-decoder-v6, which itself refuses without --v7-labels",
+   "--refcv7 refuses without --trunk timm"
+  ],
+  "w_r7_wta_extra": [
+   "--r7-no-select (selection from an UNTRAINED scorer is refused by name when the scorer weight is 0)"
+  ],
+  "w_r7_scorer_extra": [
+   "--w-r7-wta > 0",
+   "--r7-nav-tau-rad > 0",
+   "--agent-join",
+   "--map-gt-root WITH --w-map > 0",
+   "rig extrinsics, because map-gt-root with both perception weights 0 fires the REVERSE refusal"
+  ],
+  "TACV6_ON": "a SEPARATE constant: folding --w-tac-v6 into TACV6 would put the flag TWICE on the w_tac_v6 row, where argparse keeps the LAST occurrence"
+ },
+ "mutation_proof": {
+  "_question": "is the now-green test actually EXERCISING the two knobs, or has it started SKIPPING them?",
+  "_mutation": "agent_knob_stamp drops every dest starting with w_r7",
+  "result": "RED -- 1 failed, 38 passed",
+  "_why_decisive": "before the fix this mutation could NOT have been caught: the test aborted earlier at \"no admissible probe value\", so the stamp was never reached",
+  "trainer_restored_byte_identical": true
+ },
+ "suite": {
+  "test_refc_v3_agent_provenance.py": "39 passed, 0 failed (was 38 passed, 1 failed at the tip)"
+ },
+ "_VERDICT": "the provenance guard now covers 38 of 38 agent knobs and is mutation-proven to fail when the two refcv7 weights stop reaching config.json"
+}

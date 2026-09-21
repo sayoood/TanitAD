@@ -452,6 +452,17 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
     v7lab = tmp_path / "s2_labels_v7.2_probe.jsonl.gz"
     v7lab.write_bytes(b"")
     TACV6 = ["--tac-decoder-v6", "--v7-labels", str(v7lab)]
+    # ⚠️ `--w-tac-v6` DEFAULTS TO 0.0, and `--tac-decoder-v6` with a zero weight
+    # is refused by name (a decoder built, stamped and given NO gradient — the
+    # `tac_goal_tok_head` defect, 40,284 steps at grad_abs_sum exactly 0.0).
+    # The rows above survive on `TACV6` alone only because the knob under test
+    # SUPPLIES that weight itself; a row whose knob does not must add it.
+    # ⛔ It is a SEPARATE constant on purpose. Folding it into `TACV6` would put
+    # `--w-tac-v6` twice on the `w_tac_v6` row, where argparse silently keeps the
+    # LAST occurrence — so the probe would be checking whichever value happened
+    # to come second, and a reordering would change what the test asserts
+    # without changing what it reports.
+    TACV6_ON = TACV6 + ["--w-tac-v6", "1.0"]
     seam = {
         "w_map": ["--trunk", "timm", "--map-gt-root", "m",
                   "--agent-rig-camera", "extrinsics",
@@ -473,6 +484,37 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
         "w_tac_v6": TACV6,
         "tac_decoder_valid_threshold": TACV6,
         "graft_behaviour_sel": TACV6,
+        # ⭐⭐ refcv7 (`SPEC_REFCV7.md`), the same shape a third time — and this
+        # row is the one the table was MISSING: MEASURED 2026-09-21 that
+        # `--w-r7-wta` and `--w-r7-scorer` were the ONLY two knobs of 38 with no
+        # admissible probe value, so this test had been RED at the tip and the
+        # two weights were unverified as stampable.
+        # ⛔ EVERY entry below satisfies a refusal that is CORRECT, and the fix
+        # is to satisfy them, never to weaken one. The chain
+        # (`refc_v3_train.py:644-695`) is FOUR deep: the weights refuse without
+        # `--refcv7`; `--refcv7` refuses without `--arm hier` (in `base`),
+        # without `--tac-decoder-v6` (which itself refuses without
+        # `--v7-labels`), and without `--trunk timm`.
+        # ⚠️ `--r7-no-select` is required, not decoration: with the WTA weight
+        # under test the scorer weight is still 0, and selection from an
+        # UNTRAINED scorer is refused by name. Turning selection off is the
+        # refusal's own stated remedy.
+        "w_r7_wta": TACV6_ON + ["--refcv7", "--trunk", "timm", "--r7-no-select"],
+        # ⚠️ The scorer row is longer because the scorer reads MORE ORACLES, and
+        # each one is its own refusal: `--w-r7-wta > 0` (a WTA decoder built and
+        # never supervised still feeds selection), `--r7-nav-tau-rad > 0` (no
+        # invented default tolerance — the PI's mandatory nav sub-score),
+        # `--agent-join` (else the NC/TTC oracle abstains on every window), and
+        # `--map-gt-root` WITH `--w-map > 0` (the DAC oracle). ⭐ That last pair
+        # is mutual — `--map-gt-root` with both perception weights at 0 fires the
+        # REVERSE refusal — which is exactly why `w_map`'s own row above carries
+        # the rig extrinsics, and why this one must carry them too.
+        "w_r7_scorer": TACV6_ON + [
+            "--refcv7", "--trunk", "timm", "--w-r7-wta", "0.5",
+            "--r7-nav-tau-rad", "0.15", "--agent-join", "j",
+            "--map-gt-root", "m", "--w-map", "1.0",
+            "--agent-rig-camera", "extrinsics",
+            "--agent-rig-extrinsics", str(extr)],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of
