@@ -158,17 +158,65 @@ def test_the_MIRROR_failure_is_also_refused_a_control_must_not_be_stamped():
 
 
 def test_the_guard_is_WIRED_into_the_config_write_not_merely_defined():
-    """⛔ A guard nobody calls is a comment. Assert the call site exists in the
-    trainer's source, immediately around the config.json write."""
-    src = open(os.path.join(_STACK, "scripts", "refc_v3_train.py"),
-               encoding="utf-8").read()
+    """⛔ A guard nobody calls is a comment. The guard must run BEFORE the file is written, or a
+    refused run still leaves an unstamped artifact on disk.
+
+    ⛔⛔ THIS TEST USED TO COMPARE `src.index(...)` OFFSETS, AND IT WAS RED AT THE TIP FOR A REASON
+    THAT WAS NOT A DEFECT IN THE TRAINER. MEASURED 2026-09-21: `refc_v3_train.py` contains **FOUR**
+    `config.json` writes — the PRIMARY one at line 7257, immediately after the guard at 7249, and
+    three RE-writes that add keys to the same dict afterwards (`conflict_detector`,
+    `trunk_bn_recalib`, and the BN-recalib finalisation). The last of those lives in a helper
+    **defined earlier in the file but called later**, at line 3302. `src.index` takes the FIRST
+    occurrence, so the old assertion compared the guard against a write it was never meant to
+    precede and reported `425435 < 190431` as a failure.
+
+    ⭐ A TEXTUAL PREDICATE CANNOT GUARD A CLAIM ABOUT EXECUTION ORDER — the same family as the
+    programme's *"an EXISTENCE predicate cannot guard a claim about PLACE"*. Byte offsets are a
+    proxy for order only when there is exactly one write, and nothing enforced that.
+
+    ⇒ the check is now scoped, via AST, to the function that CONTAINS the guard, and asserts the
+    guard precedes every `config.json` write **in that same function**. Re-writes in other
+    functions are irrelevant by construction: the content they append is already stamped.
+    """
+    import ast
+
+    path = os.path.join(_STACK, "scripts", "refc_v3_train.py")
+    src = open(path, encoding="utf-8").read()
     assert "_assert_speed_max_stamp(_run_config, args)" in src
     assert '"speed_max_derivation": (SPEED_MAX_DERIVATION' in src
-    # the guard must run BEFORE the file is written, or a refused run still
-    # leaves an unstamped artifact on disk.
-    i_guard = src.index("_assert_speed_max_stamp(_run_config, args)")
-    i_write = src.index('(out_dir / "config.json").write_text')
-    assert i_guard < i_write, "the stamp guard runs AFTER config.json is written"
+
+    tree = ast.parse(src)
+
+    def _guard_line(fn):
+        for n in ast.walk(fn):
+            if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id == "_assert_speed_max_stamp"):
+                return n.lineno
+        return None
+
+    def _write_lines(fn):
+        out = []
+        for n in ast.walk(fn):
+            # `(out_dir / "config.json").write_text(...)`
+            if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                    and n.func.attr == "write_text"
+                    and "config.json" in ast.dump(n.func.value)):
+                out.append(n.lineno)
+        return sorted(out)
+
+    holders = [(fn, _guard_line(fn)) for fn in ast.walk(tree)
+               if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and _guard_line(fn) is not None]
+    assert holders, "no function calls _assert_speed_max_stamp — the guard is a comment"
+
+    for fn, g in holders:
+        writes = _write_lines(fn)
+        assert writes, (
+            f"{fn.name}() calls the guard but never writes config.json — the guard is wired to "
+            f"nothing")
+        assert g < min(writes), (
+            f"in {fn.name}() the stamp guard is at line {g} but config.json is first written at "
+            f"line {min(writes)} — a refused run would still leave an unstamped artifact on disk")
 
 
 # ==========================================================================

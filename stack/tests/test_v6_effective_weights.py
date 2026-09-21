@@ -460,6 +460,44 @@ def test_GREEN_the_live_refcv5_command_still_passes():
     assert u0.explicit is True and u0.status == ew.TRAINS and u0.builds_graph
 
 
+#: ⛔ Flags the NAME PATTERN catches that are NOT term weights — the
+#: `NOT_A_PATH` half of this test's own stated model. Membership needs a
+#: reason, and here it is one reason for all three.
+#:
+#: `--r7-w-ttc`, `--r7-w-ep` and `--r7-w-comf` are RELATIVE weights INSIDE the
+#: refcv7 scorer's single 7-sub-score BCE term (`nc dac ttc ep comf spd nav`).
+#: They cannot make a loss term unreachable on their own; the TERM they live in
+#: is `--w-r7-scorer`, which IS in `REFC_WEIGHT_GATES` and carries the whole
+#: gate (`--refcv7` + `--agent-join` + `--w-map > 0` + `--r7-nav-tau-rad > 0`).
+#: So the exhaustiveness contract is satisfied transitively, and the assertion
+#: below proves that rather than assuming it.
+#:
+#: ⛔⛔ AND REGISTERING THEM WOULD REFUSE EVERY EXISTING ARM. MEASURED
+#: 2026-09-21: these three default to **5.0 / 5.0 / 2.0**, while
+#: `refc_weight_specs` states *"every refc weight defaults to 0.0 ON PURPOSE,
+#: so that adding a seam to the code cannot change a run that does not ask for
+#: it"*. `effective_weights.classify` sets `NO_GRAPH` on
+#: `effective > 0.0 and missing` **without consulting `explicit`**, and
+#: `refusals()` refuses `NO_GRAPH` — so a registry entry gated on the scorer
+#: would fire on the DEFAULTS of every run that does not pass `--refcv7`.
+#: ⚠️ The red this replaces was therefore pointing at something real: three
+#: refcv7 flags that break the registry's stated zero-default invariant. That
+#: is recorded here rather than silenced, and changing their defaults is a
+#: refcv7 design decision, not a test fix.
+NOT_A_TERM_WEIGHT = {"r7_w_ttc", "r7_w_ep", "r7_w_comf"}
+
+
+def test_the_excluded_subweights_are_gated_TRANSITIVELY_by_their_term():
+    """⛔ The exclusion above is only honest if the term that owns them really is gated. Asserted,
+    not assumed — otherwise three weights would be silently ungated by a comment."""
+    assert "w_r7_scorer" in V3.REFC_WEIGHT_GATES
+    ap = V3.build_parser()
+    defaults = {a.dest: a.default for a in ap._actions}
+    # the measured reason the naive fix is wrong, pinned as a LITERAL so it
+    # cannot quietly stop being true
+    assert [defaults[d] for d in ("r7_w_ttc", "r7_w_ep", "r7_w_comf")] == [5.0, 5.0, 2.0]
+
+
 def test_REFC_WEIGHT_GATES_covers_every_weight_flag_the_parser_accepts():
     """⛔ THE EXHAUSTIVENESS CONTRACT -- the durable half of the refc change.
     A new `--w-*` cannot ship without a gate, in the shape of
@@ -472,9 +510,14 @@ def test_REFC_WEIGHT_GATES_covers_every_weight_flag_the_parser_accepts():
         o = ac.option_strings[0]
         if "-w-" in o or o.endswith("-w"):
             found.add(ac.dest)
-    assert found == set(V3.REFC_WEIGHT_GATES), (
-        f"ungated weight flags: {sorted(found - set(V3.REFC_WEIGHT_GATES))}; "
+    assert found - NOT_A_TERM_WEIGHT == set(V3.REFC_WEIGHT_GATES), (
+        f"ungated weight flags: "
+        f"{sorted(found - NOT_A_TERM_WEIGHT - set(V3.REFC_WEIGHT_GATES))}; "
         f"gates for non-flags: {sorted(set(V3.REFC_WEIGHT_GATES) - found)}")
+    # the exclusion list may not rot into a dumping ground: every member must
+    # still BE a flag the parser accepts, or it is a stale name silencing
+    # nothing.
+    assert NOT_A_TERM_WEIGHT <= found, sorted(NOT_A_TERM_WEIGHT - found)
 
 
 @pytest.mark.parametrize("extra,needle", [
