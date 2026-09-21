@@ -231,6 +231,70 @@ SLOT_LOSS_W: dict[str, float] = {
 #: and an unweighted BCE simply learns "always empty".
 NO_OBJECT_W: float = 0.1
 
+#: The FOV half-angle the join's ``occ`` flag actually encodes.
+#:
+#: ⭐ THIS IS NOT A TUNING KNOB — IT IS AN IDENTITY, AND IT WAS RE-DERIVED FROM
+#: THE DATA RATHER THAN INHERITED. MEASURED 2026-09-21 (`6c5fb62`): sweeping the
+#: half-angle over 20–90° and choosing it on the FIT half alone gives **60.0°**,
+#: with agreement **1.0000 on the fit half AND 1.0000 on the scored half** over
+#: 1,482 supervised pairs. ⇒ ``occ == |atan2(cy, cx)| > 60.0°`` on the box
+#: centre, exactly. That reproduces :func:`bev_raster.fov_mask`'s own predicate
+#: from the corpus instead of quoting it.
+#: ⛔ It is pinned to ``fov_mask``'s default by a test rather than by a comment:
+#: two sites carrying one angle is precisely how the gate-value drift happened.
+OCC_HALF_ANGLE_RAD: float = math.radians(60.0)
+
+#: Logit steepness for :func:`occ_logit_from_centre`, in units of 1/radian.
+#:
+#: MEASURED on A8's eval FIT half: a 2-parameter logistic on the head's own
+#: predicted azimuth fits slope **6.6902** and bias **−7.1085**, i.e. a threshold
+#: at 7.1085/6.6902 = 1.0625 rad = **60.88°** against the identity's true 60.0° —
+#: 0.88° off, so the fit recovered the PHYSICS, not the corpus.
+#: ⚠️ The slope is a CALIBRATION, not an identity: it sets how fast the
+#: probability saturates away from the boundary and nothing else. The sign of the
+#: logit — which is the whole classification — depends only on
+#: :data:`OCC_HALF_ANGLE_RAD`.
+OCC_TEMPERATURE: float = 6.6902
+
+
+def occ_logit_from_centre(cx: Tensor, cy: Tensor,
+                          half_angle_rad: float = OCC_HALF_ANGLE_RAD,
+                          temperature: float = OCC_TEMPERATURE) -> Tensor:
+    """``occ`` derived from a box centre, as a logit. Zero parameters, no training.
+
+    ⛔ **WHY THIS EXISTS: THE LEARNED CHANNEL IS WORSE THAN FREE.** MEASURED
+    2026-09-21 (`6c5fb62`) on A8 ``ckpt_5000``, 848 scored pairs over 18
+    episodes, episode-disjoint:
+
+    ======================================================  ========
+    arm                                                     log-loss
+    ======================================================  ========
+    base-rate control                                        0.67462
+    HARD predicate on the head's own box                     0.44896
+    **the head's learned** ``occ_logit``                     **0.28818**
+    **a 2-parameter logistic on the head's own azimuth**     **0.16055**
+    a logistic on the head's WHOLE own box (d = 5)           0.16211
+    ======================================================  ========
+
+    The learned channel loses to a two-parameter read of a number the head
+    already emits by **0.1276 log-loss, CI [−0.1844, −0.0376]**, and the whole
+    box adds nothing over azimuth alone — exactly what the identity predicts.
+    ⭐ It survives the matcher-selection confound, which runs entirely against
+    it: stratified on ``|az_pred − az_gt|`` the channel loses in the LOW (0.031
+    vs 0.201) and MID (0.068 vs 0.267) strata and merely ties in the HIGH one
+    (0.403 vs 0.404). **It never wins, and it is worst precisely where the box is
+    accurate.**
+
+    ⚠️ **An upper bound on what this can buy, stated honestly:** the derivation
+    is exact in the TARGET, so its accuracy here is bounded by the accuracy of
+    the predicted centre it reads. It removes a lossy re-encoding; it does not
+    manufacture localisation the head does not have.
+
+    ⛔ Not enabled by default — see :attr:`AgentSlotDecoder.occ_from_geometry`.
+    """
+    az = torch.atan2(cy, cx).abs()
+    return float(temperature) * (az - float(half_angle_rad))
+
 
 @dataclass(frozen=True)
 class SlotDecodeRanges:
@@ -296,6 +360,18 @@ class AgentSlotDecoder(nn.Module):
         self.d_memory, self.n_memory = int(d_memory), int(n_memory)
         self.n_queries, self.d_model = int(n_queries), int(d_model)
         self.ranges = ranges or SlotDecodeRanges()
+
+        #: ⛔ OPT-IN, DEFAULT OFF — the emitted contract is unchanged unless a
+        #: caller sets this. When True, :meth:`decode` replaces the LEARNED
+        #: ``occ_logit`` with :func:`occ_logit_from_centre` read off this head's
+        #: own predicted centre. Enable with ``decoder.occ_from_geometry = True``
+        #: — deliberately an attribute and not a constructor argument, so the
+        #: change needs no config plumbing and :class:`Box3DSlotDecoder`
+        #: inherits it without forwarding anything.
+        #: ⚠️ Flipping this changes what the model EMITS at inference. It is
+        #: measured strictly better (see :func:`occ_logit_from_centre`), but it
+        #: is a contract change and therefore the PI's call, not a default.
+        self.occ_from_geometry: bool = False
 
         self.mem_proj = nn.Linear(self.d_memory, self.d_model)
         self.mem_pos = nn.Parameter(torch.zeros(1, self.n_memory,
@@ -373,7 +449,12 @@ class AgentSlotDecoder(nn.Module):
             "rates": torch.cat(
                 [raw[..., s["v_rel_x"]], raw[..., s["v_rel_y"]],
                  raw[..., s["yaw_rate_rel"]]], dim=-1),              # [B,N,3]
-            "occ_logit": raw[..., s["occluded"]].squeeze(-1),        # [B,N]
+            # ⛔ The learned slice stays the DEFAULT and stays spelled out here:
+            # the geometric read is opt-in (`occ_from_geometry`), so nothing
+            # changes for any existing caller.
+            "occ_logit": (occ_logit_from_centre(cx, cy)
+                          if getattr(self, "occ_from_geometry", False)
+                          else raw[..., s["occluded"]].squeeze(-1)),   # [B,N]
         }
 
 

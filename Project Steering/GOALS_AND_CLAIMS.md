@@ -14175,3 +14175,62 @@ restricted to the bootstrap's episode set.
 class of ten on 2,000/2,000 and 320/320 slots — is untouched, and `PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md`
 still reads LAUNCH with both heads in scope. ⭐ What this does change is the **presence** arm's bar:
 it must beat a measured +0.028, not zero.
+
+<!-- OCC-FROM-GEOMETRY-IMPLEMENTED-OPT-IN-MUTATION-PROVEN-2026-09-21 -->
+
+### ⭐ 2026-09-21 — the `occluded` fix is IMPLEMENTED, opt-in and mutation-proven — and the mutation prover's own cp1252 defect nearly made it weaken a working test
+
+MEASURED by me, CPU only, no GPU, no training
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-occ-decode-implementation/`).
+
+`6c5fb62` measured that the learned `occ_logit` loses to a **2-parameter read of the head's own
+predicted azimuth** by 0.1276 log-loss, CI [−0.1844, −0.0376], never winning in any stratum and
+6.5× worse where the box is accurate. That named a **zero-training** fix, which then sat undone
+across two firings. This lands it.
+
+**Three additive edits to `stack/tanitad/models/agent_slots.py`:** `OCC_HALF_ANGLE_RAD =
+radians(60.0)` and `OCC_TEMPERATURE = 6.6902` (each carrying the measurement that produced it);
+`occ_logit_from_centre(cx, cy, …)`, the identity as a logit with zero parameters; and
+`AgentSlotDecoder.occ_from_geometry: bool = False` with a conditional in `decode`.
+
+⛔ **DEFAULT OFF, and the learned expression stays spelled out** — no existing caller's output
+changes. Flipping the flag changes what the model EMITS at inference, so it is a **contract change
+and the PI's call**, not a default. ⭐ It is an ATTRIBUTE rather than a constructor argument on
+purpose: `Box3DSlotDecoder` replaces `self.head` but inherits the attribute with no forwarding and
+no config plumbing, so the blast radius is one file — pinned by a test on the 3-D head, which is
+the one actually scored.
+
+**MUTATION-PROVEN 5/5, with NAMED catchers** (`raw/mutation_proof_occ_geometry.json`): the
+half-angle drifting from `bev_raster.fov_mask`; an inverted logit sign; a dropped `abs()`; the
+decode reading the RAW slice instead of the DECODED centre (the wrong-UNITS family that produced
+the 396 g anchor table); and the opt-in silently defaulting ON. Baseline green, every arm RED,
+target restored **byte-identical** by md5, final clean run green.
+⭐ Expectations are **literals**, never expressions over the code under test — asserting
+`sign(logit) == (az > OCC_HALF_ANGLE_RAD)` with the module's own constant moves both sides together
+and is green forever. And the half-angle is pinned to `fov_mask` by reading its **signature
+default**, not by a comment: two sites carrying one physical fact is how the gate-value drift
+happened.
+
+⛔⛔ **THE PROVER'S OWN DEFECT, AND IT REPORTED IT AS A FINDING ABOUT THE TESTS.** The first run
+scored **4/5**, marking the UNITS arm as *not caught* with an empty catcher list — while
+hand-running the identical mutation failed **3 named assertions**. Cause:
+`subprocess.run(..., text=True)` decodes the CHILD's output with the **parent's** locale, cp1252
+here; that arm's pytest traceback echoes the failing test's docstring, which carries a non-cp1252
+byte; the reader thread raised `UnicodeDecodeError` and **both stdout and stderr came back EMPTY**
+with rc 1. ⇒ **an empty read is a claim about the PIPE, never about the tests** — the same family
+as `grep` reporting 0 hits for a file it could not open. ⚠️ **And the arms most likely to trip it
+are the ones that are WORKING**, because they produce the richest failure output: a prover with
+this bug systematically under-counts exactly the guards that function, and would have had me weaken
+a correct test. Fixed by decoding utf-8 with `errors="replace"` and by making empty output
+**INCONCLUSIVE** rather than scoring it either way.
+
+**Suite:** `stack/tests/` filtered to `agent or slot or box3d or occ` — **368 passed, 5 skipped,
+1 failed**. ⛔ That failure
+(`test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE`, on `--w-r7-wta` / `--refcv7`) is
+**verified PRE-EXISTING rather than assumed so**: the tip's own `agent_slots.py` was checked out
+over mine and it fails identically. It is a real provenance gap in the refcv7 knobs, recorded here
+and left for its own landing.
+
+⇒ **`D-S1-DEP-BOX` loses one of its faces without GPU.** `occluded` is now implementable by flipping
+one attribute; `cls` (both heads) and `presence` still need the pre-registered arm in
+`PREREG_D-S1-DEP-BOX_CLS_WEIGHT.md`, which reads LAUNCH and waits on the PI.
