@@ -1,0 +1,51 @@
+{
+ "_what": "can box_dec's per-slot features separate VULNERABLE ROAD USERS from vehicles?",
+ "_evidence_class": "MEASURED (ours), CPU, cached features, A8 ckpt_5000",
+ "_supersedes": "cls_nonlinear.py, whose LABEL-SHUFFLED control read 0.15056 against a 1/K of 0.11111 — above the no-information value, which refutes the STATISTIC (macro-recall over classes of n=2,3,4), not the features",
+ "n_fit": 1206,
+ "n_scored": 1476,
+ "VRU_fit": 163,
+ "VRU_scored": 301,
+ "VEH_fit": 1043,
+ "VEH_scored": 1175,
+ "d_pca": 40,
+ "hidden": 64,
+ "weight_decay": 0.1,
+ "seeds_averaged": 3,
+ "TRAIN_AUC_gate": {
+  "NONLINEAR": 1.0,
+  "LINEAR": 0.78417,
+  "LABEL_SHUFFLED_control": 1.0,
+  "rule": "the real arms must FIT their own training data (>0.6); the shuffled arm SHOULD fit it (memorisation) yet must NOT generalise"
+ },
+ "AUC": {
+  "NONLINEAR": 0.58344,
+  "LINEAR": 0.63646,
+  "LABEL_SHUFFLED_control": 0.69868,
+  "CONSTANT_control": 0.5
+ },
+ "AUC_CI95": {
+  "NONLINEAR": [
+   0.5002,
+   0.66692
+  ],
+  "LINEAR": [
+   0.53648,
+   0.7259
+  ],
+  "LABEL_SHUFFLED_control": [
+   0.58598,
+   0.78025
+  ]
+ },
+ "balanced_accuracy": {
+  "NONLINEAR": 0.5335,
+  "LINEAR": 0.62038,
+  "LABEL_SHUFFLED_control": 0.64557,
+  "CONSTANT_control": 0.5,
+  "THE_HEAD_ITSELF": 0.5
+ },
+ "_head_note": "the head emits `automobile` for every slot, so its VRU recall is 0.0 and its balanced accuracy is exactly 0.5 — the constant value",
+ "shuffle_control_returns_to_chance": false,
+ "_VERDICT": "⚠️ INCONCLUSIVE — the LABEL-SHUFFLED control does not return to 0.5, so THIS statistic is broken too and no reading is admissible from it."
+}

@@ -13986,3 +13986,68 @@ The blocker is **one defect with three faces**, not three independent items:
 `NO_OBJECT_W` already weights presence**, with the deliberate-regression arm being the unweighted
 one we have measured here, and the success criterion being balanced accuracy against the
 `1/K` constant-predictor value — never raw accuracy, which a collapsed head already scores 0.779 on.
+
+<!-- BOXCLS-GATE-PASSED-VRU-WITHIN-SCENE-2026-09-21 -->
+
+### ⭐⭐ 2026-09-21 — the class collapse is an OBJECTIVE failure, not a representation one: a LINEAR readout of the head's own features separates a pedestrian from a car WITHIN a scene, while the head scores exactly chance
+
+MEASURED by me, CPU only, cached features from A8 `ckpt_5000`, no GPU, no training
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-09-21-box-head-class-collapse/`,
+`raw/vru_within.json`). This is the **pre-registered launch gate** of `PREREG_BOXCLS.md`
+(`H-BOXCLS-1`), and the gate was written **before** the number existed.
+
+`2adadda` established the collapse (1 class of 10 on 2,000/2,000 slots; 188 `person` and 50 `rider`
+emitted as cars) and named a suspect — the `cls` term is a plain unweighted `cross_entropy`
+(`agent_slots.py:591`) on a **577.5:1** target, while presence gets `NO_OBJECT_W = 0.1` for exactly
+that reason (`:230-231`). ⛔ It explicitly did **not** convict: a representation defect produces an
+identical collapse and demands the opposite fix. This settles it.
+
+**The confound-free question — can the features tell a VRU from a vehicle IN THE SAME SCENE?**
+18 scored episodes carrying both classes, 1,476 rows, 301 VRU, episode-disjoint, PCA and capacity
+chosen fit-side only, 3 seeds averaged:
+
+| arm | within-episode AUC | CI95 |
+|---|---|---|
+| **LINEAR** | **0.58317** | **[0.52416, 0.64653]** — separated |
+| NONLINEAR | 0.52442 | [0.43378, 0.61980] |
+| LABEL-SHUFFLED control | 0.47057 | [0.36058, 0.57529] ✅ returns to chance |
+| CONSTANT control | 0.5 | a KNOWN value |
+| **THE HEAD ITSELF** | **0.5** | it emits one class ⇒ **no within-scene ordering at all** |
+
+⇒ the signal is present **in the very function class the head already is** — `cls` is one
+`nn.Linear` sliced by `SLOT_SLICES` (`agent_slots.py:368`). Under its own **unweighted** objective
+on a 577.5:1 target the constant genuinely **is** the optimum, so the head found it; under a
+class-balanced objective a strictly better linear solution exists. **That is an objective failure,
+and re-weighting is the lever.** `PREREG_BOXCLS.md`'s gate therefore reads **LAUNCH** — needing GPU,
+so the PI's call.
+
+⚠️ **Magnitude, stated honestly: 0.583 is WEAK discrimination.** It establishes that signal EXISTS;
+it does **not** predict that a re-weighted head will classify well. The prereg's criteria are
+unchanged and are not softened by it. ⚠️ The NONLINEAR arm is **not** separated — most likely
+capacity/`n` at 40 PCs, and explicitly **not** evidence against a nonlinear head.
+
+⛔⛔ **AND THE METHOD IS THE OTHER HALF OF THIS ENTRY — THREE ATTEMPTS WERE INADMISSIBLE AND EVERY
+ONE WAS KILLED BY A CONTROL, NEVER BY INSPECTION.**
+
+1. **Macro-recall over 9 classes** — the shuffled control read **0.15056** against a 1/K of
+   **0.11111**, i.e. **above** the no-information value. Cause: `stroller` (n=2), `bus` (n=3) and
+   `animal` (n=4) weigh as much as `automobile` (n=1,141), so one lucky hit adds 0.5 to the mean.
+   The STATISTIC was broken, not the features — and its "⛔ the features do not carry class" verdict
+   is **withdrawn before it was ever quoted**.
+2. **Row-level binary AUC** — shuffled **0.654**, tied with the real arm. ⚠️ My first diagnosis
+   (tie-ranking in my own `auc`) was **WRONG**: fixing ties moved it to 0.647. Recorded as wrong,
+   because a discarded diagnosis is part of the evidence.
+3. **+ per-arm seeds, 3-seed averaging, and a TRAIN-AUC gate** — the gate passes (1.000 / 0.784 /
+   1.000 = the shuffled arm memorises, as it should) and yet the shuffled control **still**
+   generalises at **0.699 on disjoint episodes, beating both real arms**.
+
+⭐ **A permuted-label arm that BEATS the real arm is not noise — it is a map to the confound.** It
+says the thing being measured lives at a level the labels were never varied at. Here that level is
+the EPISODE: VRU density is clustered by scene (urban clips are full of pedestrians, highway clips
+have none), so pooled AUC rewards any model whose output tracks scene appearance, whatever labels
+it saw. ⭐ **The fix is to CONDITION on the confounder, not to correct for it** — score within each
+episode, where a scene-ranking model has no ordering and scores 0.5 by construction. The control
+returned to chance immediately.
+
+⛔ **BINDING CONSEQUENCE FOR EVERY FUTURE ARM ON THIS HEAD: class quality is scored WITHIN SCENE.**
+A pooled number on this corpus is not interpretable, and a pooled improvement is not evidence.

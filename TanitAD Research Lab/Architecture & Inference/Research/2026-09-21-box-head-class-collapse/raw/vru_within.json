@@ -1,0 +1,36 @@
+{
+ "_what": "can box_dec's per-slot features separate a VRU from a vehicle IN THE SAME SCENE?",
+ "_evidence_class": "MEASURED (ours), CPU, cached features, A8 ckpt_5000",
+ "_why_within_episode": "row-level AUC is confounded by episode composition: a LABEL-SHUFFLED control scored 0.699 pooled, beating both real arms, because VRU density is clustered by scene",
+ "n_scored_rows": 1476,
+ "VRU_scored": 301,
+ "episodes_with_both_classes": 18,
+ "d_pca": 40,
+ "hidden": 64,
+ "weight_decay": 0.01,
+ "seeds_averaged": 3,
+ "within_episode_AUC": {
+  "NONLINEAR": 0.52442,
+  "LINEAR": 0.58317,
+  "LABEL_SHUFFLED_control": 0.47057,
+  "CONSTANT_control": 0.5,
+  "THE_HEAD_ITSELF": 0.5
+ },
+ "within_episode_AUC_CI95": {
+  "NONLINEAR": [
+   0.43378,
+   0.6198
+  ],
+  "LINEAR": [
+   0.52416,
+   0.64653
+  ],
+  "LABEL_SHUFFLED_control": [
+   0.36058,
+   0.57529
+  ]
+ },
+ "_head_note": "the head emits `automobile` for EVERY slot, so within any scene it has no ordering at all: AUC exactly 0.5, the constant value",
+ "shuffle_control_returns_to_chance": true,
+ "_VERDICT": "⭐⭐ THE SIGNAL IS THERE AND LINEARLY READABLE — within a single scene the features separate a VRU from a vehicle above chance with a LINEAR readout, which is exactly the function class the head's `cls` already is (agent_slots.py:368). ⇒ the collapse is an OBJECTIVE failure and re-weighting IS the lever."
+}
