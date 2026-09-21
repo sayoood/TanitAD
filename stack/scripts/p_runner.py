@@ -214,8 +214,38 @@ def plan(out_dir: Path, a7_dir: Path, probe: str, panel_procs: int = 0,
     return {"action": "RUN", "arm": nxt["name"], "reason": whyg}
 
 
+def out_dir_is_clean(arm_dir: Path) -> tuple[bool, str]:
+    """⛔ THE MOVE-ASIDE IS LOAD-BEARING, NOT HYGIENE — and this is the guard that proves it.
+
+    ``refc_v3_train.py`` **AUTO-RESUMES** whenever ``ckpt.pt`` exists in ``--out``: it restores
+    model **and** optimizer **and** step, strictly, with no CLI flag and no opt-in
+    (``refc_v3_train.py`` ~:6660, ``resumed {arm} at step {step}``). So launching an arm into a
+    directory that still holds a checkpoint does NOT start the arm — it silently CONTINUES some
+    earlier run, and the result looks like a clean arm in every artifact that matters.
+
+    MEASURED 2026-09-20: `A7-IN-s0` was interrupted at step 1,070 holding a step-1,000
+    checkpoint. Re-running it without clearing the directory would have resumed from 1,000 **and**
+    re-run ``--trunk-bn-recalib`` on a partially-trained model — a different experiment inside a
+    knockout whose entire premise is that nothing else differs.
+
+    ⭐ A comment cannot enforce this; ``count_a7_procs``'s docstring asserted a guarantee it did
+    not have. So the runner CHECKS, and refuses.
+    """
+    ck = Path(arm_dir) / "run" / "ckpt.pt"
+    if ck.exists():
+        return False, (f"⛔ {ck} EXISTS: the trainer would silently AUTO-RESUME from it and "
+                       f"produce a contaminated arm that looks clean. Move the directory aside "
+                       f"first.")
+    return True, "clean: no checkpoint to resume from"
+
+
 def move_aside(out_dir: Path, arm: str) -> Path | None:
-    """⛔ RULE 4: a partial arm is MOVED, never deleted — its log is the only record of why."""
+    """⛔ RULE 4: a partial arm is MOVED, never deleted — its log is the only record of why.
+
+    ⛔ It is also what makes the arm CLEAN: see :func:`out_dir_is_clean`. Without it a re-run
+    inherits the old ``ckpt.pt`` and auto-resumes. Do not "simplify" this into a delete or a
+    no-op.
+    """
     d = Path(out_dir) / arm
     if not d.exists():
         return None
@@ -227,7 +257,9 @@ def move_aside(out_dir: Path, arm: str) -> Path | None:
 # ============================================================================ the executor
 def boxstat(py: str, box: str) -> str:
     try:
-        return subprocess.run([py, box], capture_output=True, text=True, timeout=120).stdout.strip()
+        return subprocess.run([py, box], capture_output=True, text=True,
+                              encoding="utf-8", errors="replace",
+                              timeout=120).stdout.strip()
     except Exception as exc:                             # noqa: BLE001 — unreadable ⇒ INCONCLUSIVE
         return f"probe failed: {type(exc).__name__}"
 
@@ -263,8 +295,17 @@ def count_a7_procs() -> int:
     query itself contains.
     """
     try:
+        # ⛔ `encoding=` IS NAMED, and it is not cosmetic here. Without it the CHILD's
+        # output is decoded with the PARENT's locale codec -- cp1252 on this box -- so a single
+        # non-Latin-1 glyph anywhere in PowerShell's output raises UnicodeDecodeError, the
+        # `except` below fires, and the probe returns 1 = BUSY. MEASURED 2026-09-21 in a sibling
+        # tool: that exact defect returned EMPTY stdout AND stderr with rc 1 and was read as a
+        # finding about the code. The fail-safe return is correct; reaching it for a DECODING
+        # reason is not, and it would hold A7 paused on a stray character.
         raw = subprocess.run(["powershell.exe", "-NoProfile", "-Command", _a7_query()],
-                             capture_output=True, text=True, timeout=120).stdout
+                             capture_output=True, text=True,
+                             encoding="utf-8", errors="replace",
+                             timeout=120).stdout
     except Exception:                                    # noqa: BLE001
         return 1
     m = re.search(r"ZQ(\d+)ZQ", raw or "")
@@ -316,6 +357,19 @@ def preflight(arm: str, authorised: str | None, files: dict) -> tuple[bool, list
             if got != want:
                 bad.append(f"{label}: md5 {got} != expected {want}")
     return (not bad), bad
+
+
+# ⛔ A CHECKER MUST NOT DIE ON ITS OWN OUTPUT. MEASURED 2026-09-20: three separate
+# readouts crashed with a cp1252 `UnicodeEncodeError` on this box mid-print -- one of
+# them after reporting "lines lost = 1" but BEFORE naming the line, i.e. it had verified
+# nothing while looking like it had. Relying on the caller to export PYTHONIOENCODING is
+# a habit; this is a guard. `errors="replace"` means the print degrades instead of
+# raising even if the stream cannot take utf-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001 -- a stream that cannot be reconfigured is not fatal
+    pass
 
 
 def main(argv=None) -> int:
@@ -384,6 +438,13 @@ def main(argv=None) -> int:
             if arm_status(out, arm) == "PARTIAL":
                 print("ZZP-MOVED-ASIDE %s ZZ" % move_aside(out, arm), flush=True)
             d_arm.mkdir(parents=True, exist_ok=True)
+            # ⛔ AFTER the move-aside, assert the directory really is clean. The trainer
+            # auto-resumes from any ckpt.pt it finds, so a stale one turns this arm into a
+            # continuation of someone else's run — and nothing downstream could tell.
+            cl, why_cl = out_dir_is_clean(d_arm)
+            if not cl:
+                print("ZZP-REFUSED %s ZZ" % why_cl, flush=True)
+                return 10
             seed = int(spec["flags"][spec["flags"].index("--seed") + 1])
             cmd_argv = build_argv(base_argv, seed=seed, out=str(d_arm / "run"))
             (d_arm / "launch.json").write_text(json.dumps(
