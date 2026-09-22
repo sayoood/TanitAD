@@ -4958,6 +4958,18 @@ def _seam_stamp(cfg, args) -> dict:
 # ⭐ THE PROVENANCE CLOSURE — every knob reaches the record, BY CONSTRUCTION
 # ---------------------------------------------------------------------------
 
+#: ⛔⛔ ONE TABLE, PAIRING EACH CHOICE WITH THE CORPUS LINE ITS ARTIFACT MUST DECLARE.
+#: MEASURED 2026-09-22: the parity join covers **193 / 4,719 = 4.09 %** of the v7/B1 corpus refcv6
+#: trains on, and the two frequency vectors differ by up to **1.857x** (`rider`) -- inside the
+#: range that made a held-out EVAL proxy inadmissible in `e172c65`. Pairing the choice with the
+#: line here means a mismatch cannot be expressed: `load_cls_class_weight` REFUSES it.
+#: ⭐ `b1` is the one refcv6 uses. `train2400` remains correct for a PARITY-line arm.
+CLS_WEIGHT_CHOICES = {
+    "train2400": (_agent_slots.CLS_WEIGHTS_TRAIN2400, _agent_slots.CORPUS_LINE_PARITY),
+    "b1": (_agent_slots.CLS_WEIGHTS_B1, _agent_slots.CORPUS_LINE_B1),
+}
+
+
 def _cls_weight_stamp(args) -> dict:
     """The `agent_cls_weight` seam block — intent, artifact, and a `built` slot.
 
@@ -4970,7 +4982,8 @@ def _cls_weight_stamp(args) -> dict:
     mode = str(getattr(args, "agent_cls_weight", "off"))
     if mode == "off":
         return {"requested": "off", "mode": "off", "built": None}
-    _, st = _agent_slots.load_cls_class_weight()
+    _name, _line = CLS_WEIGHT_CHOICES[mode]
+    _, st = _agent_slots.load_cls_class_weight(_name, expect_corpus_line=_line)
     return dict(st, requested=mode, mode=mode, built=None)
 
 
@@ -6231,13 +6244,15 @@ def train(args) -> dict:
     # model, so the loss sites read it without threading it through every call signature.
     # ⛔ `off` attaches None, which is BIT-IDENTICAL to every arm trained before this flag.
     model._cls_class_weight, model._cls_class_weight_stamp = None, None
-    if str(getattr(args, "agent_cls_weight", "off")) == "train2400":
-        _cw, _cws = _agent_slots.load_cls_class_weight()
+    _cwmode = str(getattr(args, "agent_cls_weight", "off"))
+    if _cwmode != "off":
+        _cwname, _cwline = CLS_WEIGHT_CHOICES[_cwmode]
+        _cw, _cws = _agent_slots.load_cls_class_weight(_cwname, expect_corpus_line=_cwline)
         model._cls_class_weight = _cw.to(device)
         model._cls_class_weight_stamp = _cws
-        print("[v3] agent cls weight: train2400 (%d classes, imbalance %s:1, digest %s)"
-              % (len(_cws["weights"]), _cws["imbalance_majority_to_rarest"], _cws["digest"]),
-              flush=True)
+        print("[v3] agent cls weight: %s on corpus line %s (%d classes, imbalance %s:1, "
+              "digest %s)" % (_cwmode, _cws["corpus_line"], len(_cws["weights"]),
+                              _cws["imbalance_majority_to_rarest"], _cws["digest"]), flush=True)
     model._w_map = float(getattr(args, "w_map", 0.0) or 0.0)
     model._w_box3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
     model._perception = None
@@ -8125,7 +8140,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "REFUSED at startup, never guessed -- the `df` / "
                          "`step_s` scope family in a geometry costume.")
     g5.add_argument("--agent-cls-weight", default="off",
-                    choices=["off", "train2400"],
+                    choices=["off", "train2400", "b1"],
                     help="H-BOXCLS-1. 'train2400' weights the slot `cls` term by INVERSE TRAIN "
                          "FREQUENCY, read from the banked artifact "
                          "`tanitad/data/agent_cls_weights_train2400.json` (2,308 episodes / "

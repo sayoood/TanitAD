@@ -82,6 +82,18 @@ MUTATIONS = [
     ("S9_out_of_vocabulary_class_relabelled_to_zero", SLOTS,
      '                [idx.get(str(c), -1) for c in list(classes)[:n]],',
      '                [idx.get(str(c), 0) for c in list(classes)[:n]],'),
+    # ⛔ C-arms: the CORPUS-LINE guard, added after a vector counted on the parity join (4.09 %
+    # overlap with refcv6's corpus) was reported as refcv6 readiness. Each arm re-opens the exact
+    # door that defect walked through.
+    ("C1_loader_stops_checking_the_corpus_line", SLOTS,
+     '    if expect_corpus_line is not None and str(_line) != str(expect_corpus_line):',
+     '    if False:'),
+    ("C2_loader_accepts_an_artifact_with_no_line", SLOTS,
+     '    if not _line:',
+     '    if False:'),
+    ("C3_the_b1_choice_points_at_the_parity_artifact", TRAIN,
+     '    "b1": (_agent_slots.CLS_WEIGHTS_B1, _agent_slots.CORPUS_LINE_B1),',
+     '    "b1": (_agent_slots.CLS_WEIGHTS_TRAIN2400, _agent_slots.CORPUS_LINE_B1),'),
 ]
 
 

@@ -2,8 +2,8 @@
  "_what": "mutation proof that test_cls_weight_stamp.py can actually FAIL",
  "_evidence_class": "MEASURED (ours), CPU",
  "targets": {
-  "stack\\tanitad\\models\\agent_slots.py": "3c716d7aa7387ca866856e71814d6773",
-  "stack\\scripts\\refc_v3_train.py": "28ab61a21d768f39ffbc3356495e6931"
+  "stack\\scripts\\refc_v3_train.py": "1b87d6a61abe998c8ccdc135d90c5f1b",
+  "stack\\tanitad\\models\\agent_slots.py": "fa4f5d1e1bbd6d83c22ece9546969d4e"
  },
  "arms": [
   {
@@ -28,6 +28,8 @@
     "test_digest_moves_when_one_weight_is_edited",
     "test_the_vector_is_normalised_to_mean_one",
     "test_a_rare_class_error_costs_more_under_the_train_weight",
+    "test_every_choice_maps_to_an_artifact_that_declares_the_expected_line",
+    "test_the_b1_vector_is_the_measured_b1_census",
     "test_the_seam_check_is_bidirectional_and_digest_aware[off",
     "test_the_seam_check_is_bidirectional_and_digest_aware[train2400",
     "test_the_seam_check_is_bidirectional_and_digest_aware[record",
@@ -105,6 +107,36 @@
     "test_an_out_of_vocabulary_class_is_masked_not_relabelled"
    ],
    "tail": null
+  },
+  {
+   "arm": "C1_loader_stops_checking_the_corpus_line",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_load_refuses_a_vector_counted_on_another_corpus"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C2_loader_accepts_an_artifact_with_no_line",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_load_refuses_an_artifact_that_declares_no_corpus_line"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "C3_the_b1_choice_points_at_the_parity_artifact",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_every_choice_maps_to_an_artifact_that_declares_the_expected_line"
+   ],
+   "tail": null
   }
  ],
  "baseline": {
@@ -116,7 +148,7 @@
   "rc": 0,
   "failed": []
  },
- "arms_caught": 9,
- "arms_total": 9,
- "_VERDICT": "⭐ MUTATION-PROVEN — all 9/9 arms RED, including the self-agreeing `built` stamp and BOTH loss-site forwards; both files restored byte-identical and the final clean run is green."
+ "arms_caught": 12,
+ "arms_total": 12,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 12/12 arms RED, including the self-agreeing `built` stamp and BOTH loss-site forwards; both files restored byte-identical and the final clean run is green."
 }

@@ -261,6 +261,20 @@ OCC_TEMPERATURE: float = 6.6902
 #: recomputation: two runs at the same flag must be the same arm, and a vector recomputed at
 #: launch is only as stable as whatever corpus happened to be mounted.
 CLS_WEIGHTS_TRAIN2400 = "agent_cls_weights_train2400.json"
+CLS_WEIGHTS_B1 = "agent_cls_weights_b1.json"
+
+#: ⛔⛔ A CLASS-WEIGHT VECTOR IS ONLY VALID FOR THE CORPUS IT WAS COUNTED ON, AND THIS
+#: CONSTANT EXISTS BECAUSE I SHIPPED ONE THAT WAS NOT.
+#: MEASURED 2026-09-22: `train2400_agents.jsonl.xz` (the PARITY line) overlaps refcv6's 4,719-clip
+#: v7/B1 corpus by **193 clips = 4.09 %**, while `b1_train_plus_eval_agents.jsonl.xz` covers
+#: **96.76 %** with 0 clips outside. I censused the first and reported it as refcv6 readiness.
+#: ⚠️ The argument against that is this programme's own: `e172c65` refused a held-out EVAL split
+#: as a frequency proxy BECAUSE class frequencies are sampling-sensitive (2.26x across two disjoint
+#: 62-clip halves). A 4 %-overlapping corpus is that refusal with a better disguise.
+#: ⭐ So the line is DECLARED in the artifact and CHECKED on load -- the `anchors.pt` units fix
+#: in a frequency costume: a file that declares no scope is REFUSED, never guessed.
+CORPUS_LINE_PARITY = "parity-physicalai-train-e438721ae894"
+CORPUS_LINE_B1 = "v7-b1-physicalai-b1-w120-256x640cyl"
 
 
 def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
@@ -292,7 +306,8 @@ def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
 
 
 def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
-                          classes: tuple[str, ...] = AGENT_CLASSES):
+                          classes: tuple[str, ...] = AGENT_CLASSES,
+                          *, expect_corpus_line: str | None = None):
     """-> (weight tensor [C], stamp dict). Reads the banked vector; computes nothing.
 
     ⛔ REFUSES rather than guesses. A class in :data:`AGENT_CLASSES` that the artifact does not
@@ -311,6 +326,21 @@ def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
         raise SystemExit(f"[agent-slots] ⛔ class-weight artifact not found: {p}. The vector is "
                          f"READ from a banked file, never recomputed at launch.")
     art = _json.loads(p.read_text(encoding="utf-8"))
+    # ⛔ THE CORPUS LINE IS CHECKED BEFORE ANYTHING ELSE. A vector counted on one corpus and
+    # applied to another is a correct number under the wrong scope -- and a file that declares no
+    # scope at all is REFUSED rather than assumed, exactly as `refc_v3_train` refuses a
+    # `controls`-carrying anchor file that declares no units.
+    _line = art.get("corpus_line")
+    if not _line:
+        raise SystemExit(
+            f"[agent-slots] ⛔ the class-weight artifact {name} declares no `corpus_line`. A "
+            f"frequency vector is only valid for the corpus it was counted on, and this one does "
+            f"not say which that is. Refusing rather than guessing.")
+    if expect_corpus_line is not None and str(_line) != str(expect_corpus_line):
+        raise SystemExit(
+            f"[agent-slots] ⛔ {name} was counted on corpus line {_line!r} but this arm trains "
+            f"on {expect_corpus_line!r}. MEASURED 2026-09-22: the parity and v7-B1 lines share "
+            f"only 4.09 % of their clips, so the vectors are not interchangeable.")
     w = art.get("weights_inv_freq_mean1") or {}
     missing = [c for c in classes if c not in w]
     if missing:
@@ -328,7 +358,8 @@ def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
         raise SystemExit(f"[agent-slots] ⛔ class-weight artifact {name} states digest "
                          f"{_stated!r} but its own weights digest to {_dig!r}. The vector and its "
                          f"attestation disagree; refusing rather than training an edited vector.")
-    stamp = {"source": name, "normalisation": art.get("_normalisation"),
+    stamp = {"source": name, "corpus_line": str(_line),
+             "normalisation": art.get("_normalisation"),
              "weights": {c: float(w[c]) for c in classes},
              "counts": art.get("counts"),
              "imbalance_majority_to_rarest": art.get("imbalance_majority_to_rarest"),

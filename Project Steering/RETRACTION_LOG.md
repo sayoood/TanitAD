@@ -16129,3 +16129,119 @@ a refusing loader. I did not discover a systemic hole; I made a single artifact 
 follow an existing convention and then quoted its unverifiable field as a measurement. Both the
 defect and its fix are one file wide, and saying so is part of the correction: **a retraction
 that inflates its own scope teaches the wrong lesson as surely as one that hides it.**
+
+<!-- RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6 -->
+
+### ⛔⛔ RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6 — I built `H-BOXCLS-1`'s weight vector on a corpus that overlaps refcv6's by 4 %, and reported it as training readiness
+
+**What I claimed** (`d014414`, landed, and to the PI in the same hour): a section headed
+**"TRAINING READINESS"** stating *"the train agent join is INSIDE PARITY … an `--agents` arm
+trains on 2,308 / 2,400 = 96.17 % of the parity clip set, entirely within it"*, and — worse,
+because it was the decision the PI would act on — *"Nothing else waits"* beyond his GPU call.
+
+**What is true.** MEASURED 2026-09-22, digests only:
+
+| | clips | overlap with refcv6's corpus (the 4,719-clip v7/SAM3 line) |
+|---|---|---|
+| `train2400_agents.jsonl.xz` — what I censused | 2,308 | **193 = 4.09 %** |
+| `b1_train_plus_eval_agents.jsonl.xz` — the right one | 4,566 | **4,566 = 96.76 %, 0 outside** |
+
+⛔ **The parity join is the join for the PARITY line (`physicalai-train-e438721ae894`), and
+refcv6 does not train on that line.** `SPEC_REFCV6_V2.md` §, and the register row for the
+416 × 1024 cache, both say so explicitly: `decision_grade` **False** for the parity-trained line,
+**True** for *"the v7.2/B1 line refcv6 trains on"*; `train_v6_staged.py:2902` names the corpus —
+`physicalai-b1-w120-256x640cyl`, **4,713 clips**. My coverage number was a true statement about
+the wrong population.
+
+⚠️ **AND THE ARGUMENT AGAINST THE VECTOR IS MY OWN, FROM THIS SAME SESSION.** `e172c65` refused a
+held-out EVAL split as a proxy for TRAIN class frequencies **because class frequencies are
+sampling-sensitive** — 2.26x across two disjoint 62-clip halves, up to 2.167x against the measured
+train vector. A weight vector censused on a corpus that shares **4 %** of its clips with the one
+being trained is that refusal exactly, with a bigger sample and a better disguise. I wrote the
+refusal and then walked into it.
+
+**Root cause: A DEFINITE ARTICLE DOING SCOPE WORK.** `CLAUDE.md` cites *"the 2,308-episode train
+join"* as the basis for `--agent-queries 100`, which is correct **for the parity line**. I read
+"the train join" as *the* train join, never asked *"which corpus does refcv6 train on?"*, and
+inherited a scope from a citation. ⭐ This is the same rot the feature-count table exists to
+prevent — *"'our ingest' was never DEFINED … always state the layer"* — one object over. The
+fix is identical: **a corpus-scoped number carries its line (parity / v7-B1 / eval-139), or it is
+not quotable.**
+
+⚠️ **And the second probe is what found the right join — again.** `RETR-2026-09-22-TRAIN-JOIN-EXISTS`
+was logged hours earlier with the lesson *"independence is a property of the ASSUMPTION a probe
+rests on"*. Listing `tanitad-data/joins/joins/` shows exactly one join and invites the conclusion
+that it is the only one. A search across the machine on a different assumption found
+`b1_train_plus_eval_agents.jsonl.xz` in `a40-rescue/` — a directory whose name says nothing about
+joins. ⇒ **the lesson held the second time only because I ran the probe BEFORE declaring the gap.**
+Had I reported "refcv6 has no agent join" the correction would have been the third in one day.
+
+#### What is retracted
+
+1. The **"TRAINING READINESS"** framing of the parity-coverage section: it measures the parity
+   line, not refcv6's.
+2. **"Nothing else waits"** beyond the GPU call. Something did.
+3. The claim that `agent_cls_weights_train2400.json` is the vector `H-BOXCLS-1` should run **for
+   refcv6**. It is the correct vector for a **parity-line** arm and is retained, renamed in
+   meaning rather than deleted.
+
+#### What is NOT retracted — and it is most of the work
+
+* The **plumbing, the stamp, the bidirectional guard, the 23 tests and the 9/9 mutation proof**
+  are corpus-independent. `--agent-cls-weight` reaching both loss paths, `built` being read off
+  the model, and the digest refusing on mismatch are true of any vector.
+* The **structural gradient-mass result** — weighting changes no slot's gradient direction and is
+  a pure redistribution, `w ∝ count^(−α)` ⇒ share `∝ count^(1−α)` — is arithmetic and holds for
+  every corpus. ⚠️ The specific **shares** (76.574 % → 10.000 %) are parity's and must be re-read
+  on the B1 census.
+* **E11 / E12** (`S1-GATE-CONST` exactly 0, `S1-RANDOM` the exact candidate mean) use no corpus.
+* `RETR-2026-09-22-SELF-ATTESTING-DIGEST` and `CORR-2026-09-22-VOCAB-ATTRIBUTION` are unaffected.
+* The parity-coverage measurement itself is **correct about parity** — 2,308 inside, 0 outside,
+  gap 92 = 79 + 10 + 3. It simply does not answer the refcv6 question.
+
+#### The B1 census — MEASURED, and the two vectors are not interchangeable
+
+All four controls reproduced the independent coverage tally before any count was read
+(**4,566** clips / **875,657** frames / **28,958,699** boxes / **0** frames outside the v7
+corpus); the census ABORTS otherwise, because a partial read yields a plausible vector from a
+partial corpus.
+
+| | parity (`train2400`) | **B1 (refcv6's line)** |
+|---|---|---|
+| clips | 2,308 | **4,566** |
+| boxes in vocabulary | 12,112,052 | **28,929,493** |
+| imbalance majority : rarest | 1,071.1 : 1 | ⛔ **1,825.7 : 1** (1.70× worse) |
+| `train_or_tram_car` (out of vocabulary) | 10,077 | **29,206** |
+| digest | `bde3aa19dfd0e59a` | **`c3937558f59299e7`** |
+
+**Max weight ratio parity ÷ B1: 1.857× on `rider`** — and `rider`'s *share* is 1.408× higher on
+B1, `animal`'s 0.570×, `heavy_truck`'s 0.650×. ⇒ by the programme's own standard the parity
+vector is **inadmissible** for refcv6: `e172c65` refused an eval proxy over disagreements of this
+size, and the largest eval-vs-train gap that justified it was **2.167×**.
+
+⭐ **The structural gradient-mass result survives unchanged** — weighting scales each slot's
+gradient and changes no direction; `w ∝ count^(−α)` ⇒ share `∝ count^(1−α)`. Only the numbers
+move, and they move in the direction that makes the lever *larger*: on B1, `automobile`
+**74.374 % → 10.001 %** and `animal` **0.0407 % → 10.000 %**, a **×245.5** increase against
+parity's ×139.9. Identity control: **1.39e-17** on exact weights, **1.15e-05** on the banked
+6-dp vector.
+
+⭐ **The durable fix is mechanical, not a resolution to be careful.** The weight artifact now has
+to name its corpus line in the field the loader reads, and `load_cls_class_weight` has to refuse a
+vector whose declared line does not match the arm's. A vector that cannot state which corpus it
+was counted on is the `anchors.pt` units defect in a frequency costume — a correct number applied
+under the wrong scope, reading exactly like an answer.
+
+
+#### What was built in the same turn — the fix, not just the finding
+
+* `agent_cls_weights_b1.json` — the correct vector, **built by a producer script**
+  (`build_cls_weight_artifact.py`), which the first artifact never had.
+* `corpus_line` is now a **declared, load-bearing field**. `load_cls_class_weight` refuses a
+  vector whose line does not match the arm's, **and refuses an artifact that declares none** —
+  silence is the state that produced this retraction, so it is not a permitted state.
+* `--agent-cls-weight {off,train2400,b1}`, with `CLS_WEIGHT_CHOICES` pairing each choice to the
+  line its artifact must declare, so a mismatch is **inexpressible** rather than discouraged.
+* **27 tests, mutation-proven 12/12** — including `C1` (loader stops checking the line),
+  `C2` (loader accepts an artifact with no line) and `C3` (the `b1` choice points at the parity
+  artifact). Each re-opens the exact door this defect walked through, and each goes RED.

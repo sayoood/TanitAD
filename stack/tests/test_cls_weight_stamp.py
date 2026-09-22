@@ -234,10 +234,73 @@ def _trainer_src() -> str:
     return TRAINER.read_text(encoding="utf-8")
 
 
-def test_the_flag_exists_with_exactly_two_choices():
+def test_the_flag_offers_off_and_both_corpus_lines():
     src = _trainer_src()
     assert '"--agent-cls-weight"' in src
-    assert 'choices=["off", "train2400"]' in src
+    assert 'choices=["off", "train2400", "b1"]' in src
+
+
+def test_every_choice_maps_to_an_artifact_that_declares_the_expected_line():
+    """⛔⛔ THE GUARD AGAINST THE DEFECT THAT COST THIS SESSION A RETRACTION.
+
+    `agent_cls_weights_train2400.json` was counted on the PARITY join and briefly reported as
+    refcv6 training readiness. MEASURED: that join covers **193 / 4,719 = 4.09 %** of refcv6's
+    corpus, and the two frequency vectors differ by up to **1.857×** on `rider` — inside the
+    range that made a held-out EVAL proxy inadmissible in `e172c65`. Pairing each choice with
+    the line its artifact must declare makes the mismatch INEXPRESSIBLE rather than merely
+    discouraged."""
+    sys.path.insert(0, str(REPO / "stack" / "scripts"))
+    import refc_v3_train as T  # noqa: E402
+    assert set(T.CLS_WEIGHT_CHOICES) == {"train2400", "b1"}
+    for mode, (name, line) in T.CLS_WEIGHT_CHOICES.items():
+        vec, stamp = A.load_cls_class_weight(name, expect_corpus_line=line)
+        assert stamp["corpus_line"] == line, mode
+        assert abs(float(vec.mean()) - 1.0) < 1e-6, mode
+    # ⭐ and the two lines are genuinely DIFFERENT vectors, or the guard guards nothing
+    v_par, _ = A.load_cls_class_weight(A.CLS_WEIGHTS_TRAIN2400,
+                                       expect_corpus_line=A.CORPUS_LINE_PARITY)
+    v_b1, _ = A.load_cls_class_weight(A.CLS_WEIGHTS_B1,
+                                      expect_corpus_line=A.CORPUS_LINE_B1)
+    assert A.cls_weight_digest(v_par) != A.cls_weight_digest(v_b1)
+    ratio = max(float(a / b) for a, b in zip(v_par, v_b1))
+    assert ratio > 1.5, f"the two vectors differ by only {ratio:.3f}x"
+
+
+def test_load_refuses_a_vector_counted_on_another_corpus():
+    """The refusal must FIRE — a guard never shown to fire is not a guard."""
+    with pytest.raises(SystemExit) as e:
+        A.load_cls_class_weight(A.CLS_WEIGHTS_B1,
+                                expect_corpus_line=A.CORPUS_LINE_PARITY)
+    assert "corpus line" in str(e.value)
+    with pytest.raises(SystemExit) as e2:
+        A.load_cls_class_weight(A.CLS_WEIGHTS_TRAIN2400,
+                                expect_corpus_line=A.CORPUS_LINE_B1)
+    assert "corpus line" in str(e2.value)
+
+
+def test_load_refuses_an_artifact_that_declares_no_corpus_line(tmp_path, monkeypatch):
+    """⛔ A FILE THAT DECLARES NO SCOPE IS REFUSED, NEVER GUESSED — the `anchors.pt` units rule
+    in a frequency costume. Silence is the state that produced the retraction."""
+    art = json.loads(ART.read_text(encoding="utf-8"))
+    art.pop("corpus_line", None)
+    d = tmp_path / "data"
+    d.mkdir()
+    (d / "noline.json").write_text(json.dumps(art), encoding="utf-8")
+    monkeypatch.setattr(A, "__file__", str(tmp_path / "models" / "agent_slots.py"))
+    with pytest.raises(SystemExit) as e:
+        A.load_cls_class_weight("noline.json")
+    assert "corpus_line" in str(e.value)
+
+
+def test_the_b1_vector_is_the_measured_b1_census():
+    """⛔ LITERALS from the B1 census, whose four controls all reproduced the independent
+    coverage tally (4,566 clips / 875,657 frames / 28,958,699 boxes)."""
+    vec, stamp = A.load_cls_class_weight(A.CLS_WEIGHTS_B1,
+                                         expect_corpus_line=A.CORPUS_LINE_B1)
+    assert stamp["digest"] == "c3937558f59299e7"
+    assert float(stamp["imbalance_majority_to_rarest"]) == 1825.7
+    assert stamp["out_of_vocabulary"]["train_or_tram_car"] == 29206
+    assert vec.shape == (EXPECT_N_CLASSES,)
 
 
 def test_built_is_read_off_the_model_not_the_artifact():

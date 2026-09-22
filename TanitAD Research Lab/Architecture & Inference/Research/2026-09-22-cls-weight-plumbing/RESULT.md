@@ -272,3 +272,120 @@ ruling.
 | correction | `Project Steering/GOALS_AND_CLAIMS.md` — `CORR-2026-09-22-VOCAB-ATTRIBUTION` |
 
 **Blocked, and it is the only thing:** the `H-BOXCLS-1` GPU call is the PI's.
+
+<!-- B1-CLS-CENSUS-AND-CORPUS-LINE-GUARD-2026-09-22 -->
+
+### ⛔⭐ 2026-09-22 — `H-BOXCLS-1` is re-based onto the corpus refcv6 ACTUALLY trains on, and the corpus line is now a guard
+
+⛔ **Read `RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6` first.** The weight vector landed in
+`d014414` was counted on the **parity** join, which overlaps refcv6's corpus by **4.09 %**, and I
+reported it as refcv6 training readiness. This row is the correction and the fix.
+
+**THE TWO JOINS, MEASURED (digests only):**
+
+| join | clips | overlap with refcv6's 4,719-clip v7/SAM3 line |
+|---|---|---|
+| `train2400_agents.jsonl.xz` (parity line) | 2,308 | **193 = 4.09 %** |
+| `b1_train_plus_eval_agents.jsonl.xz` | 4,566 | ⭐ **4,566 = 96.76 %, 0 outside** |
+
+⚠️ The right join was found by a probe on a **different assumption** — the joins directory holds
+exactly one file and invites the conclusion that it is the only one; the B1 join lives in
+`a40-rescue/`, a directory whose name says nothing about joins. Same lesson as
+`RETR-2026-09-22-TRAIN-JOIN-EXISTS`, and it held this time **only because the probe ran before the
+declaration**.
+
+**THE B1 CENSUS** — four controls reproduced the independent coverage tally before any count was
+read (**4,566** clips / **875,657** frames / **28,958,699** boxes / **0** outside v7); the census
+ABORTS otherwise, because a partial read yields a plausible vector from a partial corpus.
+
+| class | B1 count | B1 share | parity share | share ratio | B1 weight |
+|---|---|---|---|---|---|
+| automobile | 21,515,941 | 74.374 % | 76.574 % | 0.971 | 0.003190 |
+| person | 5,487,965 | 18.970 % | 15.904 % | 1.193 | 0.012505 |
+| rider | 641,740 | 2.218 % | 1.575 % | ⚠️ **1.408** | 0.106939 |
+| heavy_truck | 553,977 | 1.915 % | 2.948 % | ⚠️ **0.650** | 0.123881 |
+| trailer | 282,911 | 0.978 % | 1.360 % | 0.719 | 0.242575 |
+| bus | 205,566 | 0.711 % | 0.741 % | 0.959 | 0.333845 |
+| protruding_object | 114,855 | 0.397 % | 0.422 % | 0.941 | 0.597511 |
+| other_vehicle | 78,231 | 0.270 % | 0.293 % | 0.922 | 0.877236 |
+| stroller | 36,522 | 0.126 % | 0.110 % | 1.146 | 1.879062 |
+| animal | 11,785 | 0.041 % | 0.072 % | ⚠️ **0.570** | 5.823257 |
+
+⇒ **imbalance 1,825.7 : 1** (vs parity's 1,071.1 : 1 — **1.70× worse**), digest
+**`c3937558f59299e7`**, out-of-vocabulary `train_or_tram_car` **29,206** (0.1009 %).
+**Max weight ratio parity ÷ B1 = 1.857× on `rider`.**
+
+⛔ **BY THE PROGRAMME'S OWN STANDARD THE PARITY VECTOR IS INADMISSIBLE HERE.** `e172c65` refused a
+held-out EVAL split as a frequency proxy over disagreements of exactly this size — the gap that
+justified that refusal was **2.167×**. A vector counted on a 4 %-overlapping corpus is the same
+error with a bigger sample.
+
+⭐ **The structural gradient-mass result survives and the lever is LARGER on B1.** Weighting scales
+each slot's gradient and changes no direction; `w ∝ count^(−α)` ⇒ share `∝ count^(1−α)`. On B1,
+`automobile` **74.374 % → 10.001 %** and `animal` **0.0407 % → 10.000 %** — a **×245.5** increase
+against parity's ×139.9. Identity control **1.39e-17** (exact weights) / **1.15e-05** (banked
+6 dp). α sweep on B1: 0.25 → ×5.5, 0.50 → ×25.5, 0.75 → ×92.7, 1.00 → ×245.5.
+
+**THE GUARD — a mismatch is now INEXPRESSIBLE, not merely discouraged.**
+
+* `corpus_line` is a declared field on every weight artifact.
+* `load_cls_class_weight` **REFUSES** a vector whose declared line ≠ the arm's, **and REFUSES an
+  artifact that declares no line at all** — silence is the state that produced the retraction, so
+  it is not a permitted state. (The `anchors.pt` units rule in a frequency costume.)
+* `--agent-cls-weight {off,train2400,b1}`; `CLS_WEIGHT_CHOICES` pairs each choice with the line
+  its artifact must declare. `b1` is refcv6's; `train2400` remains correct for a parity-line arm.
+* `agent_cls_weights_b1.json` was **built by a producer script**
+  (`code/build_cls_weight_artifact.py`) — the first artifact had none, which is how an
+  unreproducible digest shipped (`RETR-2026-09-22-SELF-ATTESTING-DIGEST`).
+
+**Evidence:** `stack/tests/test_cls_weight_stamp.py` — **27 tests**, mutation-proven **12/12**,
+both target files restored byte-identical. The three new arms each re-open the door this defect
+walked through: **C1** the loader stops checking the line, **C2** the loader accepts an artifact
+declaring none, **C3** the `b1` choice points at the parity artifact. All RED.
+
+⛔ **STILL BLOCKED, AND STILL ONLY THIS:** the GPU call is the PI's — now with the correct vector.
+
+### ⛔ 2026-09-22 — THE NEXT GATING ITEM FOR refcv6, NAMED WITH ITS MEASURED COST: the 4,713-clip corpus cache does not exist
+
+⭐ **SAM3 NO LONGER BLOCKS IT.** `SPEC_REFCV6_V2.md` says *"the corpus rebuild waits on SAM3
+either way"*; SAM3 production completed **4,719/4,719** on 2026-09-22. That dependency is
+discharged, so this is now the binding constraint on a full-corpus refcv6 arm.
+
+**MEASURED — it is absent, on two probes resting on different assumptions** (a directory scan of
+every `v2ep*` tree, and a search for any `manifest.json` under a `v2ep` path). Every local cache
+is the **eval-139** line or a split of it:
+
+| cache | episodes | size |
+|---|---|---|
+| `v2ep-eval139-416x1024cyl` | **139** | 11,073 MB |
+| `v2ep-eval139-408x1024cyl` | 139 | 10,942 MB |
+| `v2ep-eval139-256x1024cyl` | 139 | 7,771 MB |
+| every other local `v2ep*` | ≤ 70 | — |
+
+⇒ **the largest cache on this box is 139 episodes.** The 4,713-clip corpus cache refcv6 trains on
+is not here.
+
+**THE COST, PRICED FROM OUR OWN CACHE RATHER THAN FROM THE SPEC'S FIGURE:**
+
+* 11,073 MB / 139 = **79.7 MB per episode** at 416 × 1024
+* × 4,713 = **375.4 GB** ⭐ *independently consistent with the SPEC's stated 386.5 GB* — two
+  derivations, one from a cache on this disk, one from the plan.
+* build wall: **~10.6 h** (SPEC, INHERITED — not re-timed here).
+
+⚠️ **AND THE DISK IS THE SHARP EDGE.** `D:` has **402.3 GB free** of 4,000.7 GB. The corpus needs
+**375.4–386.5 GB**, leaving **15.8–26.9 GB of headroom — 4 to 7 %**. ⛔ `CLAUDE.md` records a full
+quota killing a flagship mid-checkpoint, and the PNG-codec finding says the encode is 70 % of the
+build, so a failure at hour 8 costs the whole run. ⚠️ `D:` is also **exFAT** with **1 MiB
+clusters**; `.v2ep.pt` files are large (~80 MB) so cluster inflation is not the threat it is for
+many-small-files corpora, but the *free-space* figure above is the one that binds.
+
+⛔ **THIS IS A NAMED BLOCKER, NOT A TASK I AM TAKING.** A ~10.6 h build consuming ~94 % of the
+remaining space on the project disk is compute-and-storage spend the PI has not authorised.
+**What would unblock it:** his go-ahead plus a decision on where it lands — free space on `D:`,
+another volume, or build it where the compute is. *(The dev box uplink is a MEASURED 1.2 MB/s, so
+moving 375 GB off this box is not an option: that is ~87 days.)*
+
+⭐ **What does NOT wait on it:** the eval-139 line at 416 × 1024 is complete (139/139, geometry
+declared, `d8306f1`), and `SPEC_REFCV6_V2.md` §  states the pipeline is validated on exactly
+those 139 clips *"before any pod hour is spent"*. The `b1` weight vector, the plumbing, the stamp
+and the guard are all in place for that validation run.
