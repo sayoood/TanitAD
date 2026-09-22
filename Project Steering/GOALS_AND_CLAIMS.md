@@ -15443,3 +15443,68 @@ moving 375 GB off this box is not an option: that is ~87 days.)*
 declared, `d8306f1`), and `SPEC_REFCV6_V2.md` §  states the pipeline is validated on exactly
 those 139 clips *"before any pod hour is spent"*. The `b1` weight vector, the plumbing, the stamp
 and the guard are all in place for that validation run.
+
+<!-- PREFLIGHT-ON-REAL-DATA-2026-09-22 -->
+
+### ⭐⭐ 2026-09-22 — the preflight RUN ON REAL DATA: the B1 join and the 416×1024 cache genuinely fit, and the join now declares itself
+
+MEASURED (`.../2026-09-22-cls-weight-plumbing/raw/preflight_real.json` and `…_real2.json`), CPU,
+read-only except for one new sidecar.
+
+⛔ **The earlier NO-GO was mostly a statement about MISSING ARGUMENTS, not about the data.** Run
+bare, `refcv5_preflight.py` reports 9 INCONCLUSIVE, every one of them *"no `--v2-cache` /
+`--agent-join` / `--anchors` given"*. Supplying the real eval-139 cache and the B1 join converts
+them into verdicts — which is what "readiness" has to mean.
+
+**WHAT THE REAL RUN PROVES — the first end-to-end evidence that these two artifacts fit:**
+
+| check | result |
+|---|---|
+| **agent join joins to the cache** | ⭐ **139/139 episodes on the STABLE id (1.0000)**; **0** joining only on the colliding 16-bit legacy key; join carries **875,657** records / **4,566** clips |
+| episode ids are collision-free | **139 distinct** stable ids for 139 files *(control: the legacy 16-bit key collides on 34/2,308 train clips)* |
+
+⇒ the B1 join and the 416 × 1024 eval cache are **joinable at 100 %**, measured through the
+trainer's own id function rather than by matching filenames.
+
+**THE GAP IT FOUND, AND IT WAS REAL.** The preflight reported, in its own words:
+
+> *no sidecar at `b1_train_plus_eval_agents.jsonl.xz.meta.json` — the digest scope is UNDECLARED,
+> and a checker inherited from the other join REFUSES a good file*
+
+The **parity** join carries a full sidecar; the join refcv6 actually trains on carried **none**.
+Same defect shape as the class-weight vector that declared no corpus line, and the same fix.
+⭐ Built with `tanitad.data.join_meta` — **not by hand**, because a hand-typed attestation is
+exactly what `RETR-2026-09-22-SELF-ATTESTING-DIGEST` cost. `md5(compressed)` =
+**`0c31a3a63d7205e9fa50e8ac4204ef46`**, `join_meta.verify → verified: True`, and the refusal
+control fires when the declaration is stripped.
+⇒ **MEASURED FLIP, verified by re-running rather than assumed:** `[INCONCLUSIVE] join digest
+declares its scope` → **`[PASS]`**; totals **7 PASS / 3 FAIL / 7 INCONCLUSIVE → 8 PASS / 3 FAIL /
+6 INCONCLUSIVE**.
+
+⚠️ **ONE DELIBERATE OMISSION.** The sidecar does **not** copy the parity sidecar's `conventions`
+block (frame, time base, occlusion-flag semantics). Those are unverified for THIS join against its
+builder, and copying them because the sibling has them is how an INHERITED fact becomes a
+MEASURED-looking one. They sit under `_NOT_ESTABLISHED` with that reason stated.
+
+**THE THREE REMAINING FAILS — none is a defect in refcv6's data or code:**
+
+| FAIL | what it actually is |
+|---|---|
+| `refcv5 modules import` — `taniteval.ci` | the known **namespace-package shadow**: the inner package is `taniteval/taniteval/`, so `PYTHONPATH` must name *that* directory, not the repo root. VERIFIED today — it imports immediately when it does. Not a missing module. |
+| `every weighted term has a gradient` — `agent_w_ground` **1.164e-10** | `D-RC5-GROUND-DEAD`, already registered, already guarded by `assert_ground_prior_is_supervised`, and re-derived independently today (input-independent across five distributions). |
+| `v2 cache … path names the parity key: False` | ⛔ **the checker's SCOPE, not the cache's.** `refcv5_preflight` is parity-scoped and judges a correctly **B1-line** cache against a parity expectation. This is `RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6` **in the checking layer** — the same error one level up from the data. |
+
+⭐ **That third row is the one worth carrying forward.** Having just fixed a corpus-line confusion
+in an artifact, the identical confusion is sitting in the guard that inspects artifacts — and it
+fires as a FAIL on a correct file, which is the mirror of a guard that passes a broken one. Both
+make the checker untrustworthy; only the second is usually noticed.
+
+**The six remaining INCONCLUSIVEs are all missing inputs**, not findings: `--clip-ids`,
+`--v7-labels`, `--anchors`, a per-clip camera bank, the camera scope, and `--smoke`. Each names
+exactly what would settle it.
+
+⛔ **VERDICT STAYS NO-GO, correctly** — and it is not the blocker. `SPEC_REFCV6_V2.md` puts the
+pipeline validation on the 139 eval clips *"before any pod hour is spent"*, and those two
+artifacts are now proven to join. What gates an actual run remains the PI's: the go-ahead (the
+2026-09-11 stop on launching stands — see `PI_DECISION_QUEUE.md`'s 2026-09-22 reconciliation) and
+the 4,713-clip corpus cache.
