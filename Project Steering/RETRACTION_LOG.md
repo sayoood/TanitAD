@@ -16008,3 +16008,45 @@ slots). Its honest status is **UNKNOWN and re-openable**, not "validated".
 carry the slot-count identity assertion. The `ALIGN` constants embedded in `quiet_fields.py`,
 `align_vs_skill.py` and `presence_alignment.py` are from the wrong head and are superseded by
 `…/2026-09-21-box-head-class-collapse/raw/align_fix.json`.
+
+<!-- RETR-2026-09-22-TRAIN-JOIN-EXISTS -->
+
+### ⛔⛔ RETR-2026-09-22-TRAIN-JOIN-EXISTS — I reported a BLOCKER that was already satisfied, and put it in front of the PI as a reason to provision compute
+
+**What I claimed** (`e172c65`, and verbally to the PI twice): *"no TRAIN agent join exists on the
+dev box or on Thor (two probes); building one is a pod-side step over the 2,376-episode parity
+corpus"*, and on that basis told him `H-BOXCLS-1` had **two** blockers — his GPU call **and** a
+pod-side join build.
+
+**What is true:** `C:/Users/Admin/tanitad-data/joins/joins/train2400_agents.jsonl.xz` —
+**136.7 MB, built 2026-09-05** — is the canonical train agent join. Its own summary reads
+**2,308 episodes / 433,040 frames / 12,122,129 agent boxes**, and ⭐ **`CLAUDE.md` ALREADY CITES
+THOSE EXACT FIGURES** as the basis for `--agent-queries 100`. The artifact was not merely present;
+it was already load-bearing in the programme's own steering file.
+
+**Root cause: `ABSENCE FOUND AT ONE LOCATION IS NOT ABSENCE` — and TWO probes in the wrong places
+are still one wrong place.** I searched `D:/Projects/TanitAD-artifacts` and Thor, found only the
+eval join, and declared absence. Joins live in `C:/Users/Admin/tanitad-data/joins/joins/`. I never
+probed the machine's own data root, never grepped for `*agents*.jsonl*` across it, and never asked
+the obvious question — *what built the EVAL join, and where did its inputs live?* — which would have
+pointed straight at `tanitad-data` on the first hop.
+
+⚠️ **The programme has a memory note for exactly this failure** — *"Re-probe the debt before
+re-declaring: D-7 sat 'blocked' for 5 passes while banked in our own Library"* — and I reproduced it
+anyway, one week later, on a different artifact.
+
+⭐ **AND THE COUNTING RULE DID NOT SAVE ME, WHICH IS THE PART WORTH KEEPING.** "Two probes" satisfied
+the letter of the absence rule while both probes shared one assumption: that a *derived corpus
+artifact* lives beside other derived corpus artifacts. **Independence is a property of the
+ASSUMPTION each probe rests on, not of the number of commands run** — the same defect as taking
+repeated samples through one broken channel and calling them replicates.
+⇒ **the discriminating probe is to ask what BUILT the thing you already have, and look where ITS
+inputs live.** `b1eval_agents_3d.jsonl.xz.meta.json` names `build_b1_agent_join_3d.py` and its
+`obstacle_dir` under `tanitad-data`; one read of that metadata answers the question.
+
+⚠️ **What this does NOT retract.** The measurement in `e172c65` — that class frequencies are
+sampling-sensitive to **2.26x** across two disjoint 62-clip eval halves, so a held-out eval split
+is not an admissible proxy — **stands, and is now confirmed against the real thing**: the eval
+halves' weight vectors differ from the measured TRAIN vector by up to **2.167x** (`rider`). The
+refusal to proxy was correct. Only the claim about the join's EXISTENCE, and the pod-compute
+conclusion drawn from it, are withdrawn.
