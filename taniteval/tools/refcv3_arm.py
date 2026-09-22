@@ -2802,7 +2802,8 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
             else:
                 comps_[key] = bb
                 unav_.pop(key, None)
-        fam["_ci_coverage"]["longitudinal"] = ff.ci_coverage(lon, "longitudinal")
+        fam["_ci_coverage"]["longitudinal"] = ff.ci_coverage(
+            lon, "longitudinal", fam)
         fam["_intervals_complete"] = bool(
             fam["_ci_coverage"]["longitudinal"].get("complete")
             and fam["_ci_coverage"]["lateral"].get("complete"))

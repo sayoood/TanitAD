@@ -309,6 +309,25 @@ _NON_METRIC_KEYS = frozenset({
     "n_unavailable", "n_undeclared", "path_steps", "alpha",
 })
 
+#: ⛔ Numeric leaves that ARE measurements but whose interval lives in
+#: ANOTHER family's block. They are NOT provenance, so they do not belong in
+#: :data:`_NON_METRIC_KEYS`, and they are NOT undeclared either -- the quantity
+#: is bounded, just not here. Each entry NAMES the family and component that
+#: bounds it, and :func:`ci_coverage` VERIFIES that interval really exists
+#: rather than trusting this table.
+#:
+#: MEASURED 2026-09-22 on the refcv3 e2e arm: the LATERAL block reports
+#: ``_along_mae_m_for_context`` = 9.0068, which is the ALONG-track error carried
+#: beside cross-track so a reader can compare the two axes. It is the IDENTICAL
+#: number to LONGITUDINAL's declared ``along_mae_m`` (9.0068), which carries a
+#: full episode-cluster interval [7.1367, 10.8779] over 42 windows / 3 episodes.
+#: ⚠️ Without this table the structural detector called it UNDECLARED and
+#: `complete` read False -- correctly, on its own terms, because nothing told it
+#: the quantity was bounded one block over.
+_CROSS_FAMILY_CONTEXT: dict[str, tuple[str, str]] = {
+    "_along_mae_m_for_context": ("longitudinal", "along_mae_m"),
+}
+
 #: The unit the bootstrap resamples. Stated in every emitted CI block, because
 #: an interval whose cluster unit is the WINDOW rather than the EPISODE is
 #: anti-conservative by roughly the within-clip correlation and looks identical.
@@ -774,14 +793,88 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S, eid=None,
     curv_bias, _ = _masked(P["curvature"] - G["curvature"], both_pair)
 
     ct_err = P["cross"] - G["cross"]
+    along_err = P["along"] - G["along"]
+
+    # ------------------------------------------------------------------ #
+    # ⛔ AN UNDEFINED TERM IS REFUSED, NEVER NULL AND NEVER ZERO.
+    # MEASURED 2026-09-19 (W1, on the NavSim STOP floor): this function returned
+    # `None` for heading / yaw-rate / curvature when EVERY step of a plan was below
+    # `min_ds_m` — a stationary plan has no path tangent — and
+    # `tools/criteria_check.py` reads a null exactly as it reads a MISSING key, so
+    # three binding LATERAL criteria came out as SILENT-OMISSION violations on an
+    # arm whose instruments had honestly declined. A null is the one shape that
+    # cannot carry its reason; a 0.0 would be worse still (perfect lateral
+    # agreement, from a car that never moved). W1 repaired it at the artifact seam
+    # (`bench/navsim/artifacts.py::refuse_undefined_lateral`); this is the same
+    # repair at the SOURCE, so every consumer gets the reason, not only NavSim's.
+    # ⚠️ The DEFINED branch is untouched — no banked number moves.
+    # ------------------------------------------------------------------ #
+    min_ds_m = float(P["min_ds_m"])
+    n_steps_total, n_pairs_total = int(both.numel()), int(both_pair.numel())
+
+    def _undefined(metric: str, unit: str, n_valid: int, n_total: int) -> dict:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": (
+                f"{metric} is UNDEFINED here: {int(n_valid)} of {int(n_total)} {unit} cleared the "
+                f"min-displacement gate min_ds_m={round(min_ds_m, 4)} m "
+                f"(= MIN_DS_MPS {MIN_DS_MPS} m/s x dt {dt} s). A path whose steps do not move has "
+                f"NO TANGENT, so heading / yaw-rate / curvature ERRORS do not exist for it. ⛔ "
+                f"Refused with its n rather than returned as null (which tools/criteria_check.py "
+                f"reads as a SILENT OMISSION — MEASURED 2026-09-19 on the NavSim STOP floor, three "
+                f"ABSENT violations) and rather than 0.0 (which would read as perfect lateral "
+                f"agreement from an arm that never moved)."),
+            "n": int(n_valid),
+            "n_steps_total": int(n_total),
+            "min_ds_m": round(min_ds_m, 4),
+            "_what_would_make_it_defined": "a plan with at least one step longer than min_ds_m",
+        }
+
     out = {
-        "heading_mae_deg": round(math.degrees(head_mae), 4) if n_head else None,
-        "yaw_rate_mae_degps": round(math.degrees(yaw_mae), 4) if n_head else None,
-        "curvature_mae_1pm": round(curv_mae, 6) if n_curv else None,
-        "curvature_bias_1pm": round(curv_bias, 6) if n_curv else None,
+        "heading_mae_deg": (round(math.degrees(head_mae), 4) if n_head else
+                            _undefined("heading_mae_deg", "steps", n_head, n_steps_total)),
+        # ⛔ GUARDED ON `n_curv`, NOT `n_head` — this is the SECOND HALF of the 2026-08-23 fix
+        # noted at `n_steps_yaw_rate` below, and it rewrites NO number. `yaw_mae` is masked by
+        # `both_pair`, so it was emitted under the HEADING count while being a PAIR statistic:
+        # with valid single steps but NO valid pair it emitted **NaN** under a non-zero n_head.
+        # MEASURED 2026-09-20 (W2) on a plan that advances on alternate steps only: n_head 24,
+        # n_curv 0, `yaw_rate_mae_degps` = nan — and a NaN is WORSE than the null this commit
+        # fixes, because it is a `float` and therefore passes every `isinstance(v, (int, float))`
+        # guard downstream (summarize.py writes it straight into `metrics`) while
+        # `json.dumps(..., allow_nan=False)` refuses it. n_curv > 0 implies n_head > 0, so the
+        # DEFINED branch is bit-for-bit what it always was; only NaN and None become refusals.
+        "yaw_rate_mae_degps": (round(math.degrees(yaw_mae), 4) if n_curv else
+                               _undefined("yaw_rate_mae_degps", "step PAIRS", n_curv, n_pairs_total)),
+        "curvature_mae_1pm": (round(curv_mae, 6) if n_curv else
+                              _undefined("curvature_mae_1pm", "step pairs", n_curv, n_pairs_total)),
+        "curvature_bias_1pm": (round(curv_bias, 6) if n_curv else
+                               _undefined("curvature_bias_1pm", "step pairs", n_curv, n_pairs_total)),
         "cross_mae_m": round(float(ct_err.abs().mean()), 4),
         "cross_bias_m": round(float(ct_err.mean()), 4),            # + = drifts LEFT of the human
         "cross_final_mae_m": round(float(ct_err[:, -1].abs().mean()), 4),
+        # ⚠️ WHAT `cross_*` IS, so it is never quoted as something it is not (W2, 2026-09-20).
+        # `_seq_geometry` returns `cross` = the ego-frame **y column** of the waypoints
+        # (four_families.py, `"cross": p[..., 1][:, 1:]`), so `cross_mae_m` is
+        # `mean |y_pred - y_gt|` at MATCHED TIME INDEX: a LATERAL OFFSET in the window's own
+        # frame — NOT a distance to the GT path, no Frenet rotation, no arc-length matching.
+        # ⛔ It is a lateral ERROR only while the two paths progress together. When the
+        # along-track error is large (a stopped or slow arm against a moving human) the two
+        # points compared sit at different places along the route and the number degenerates
+        # to the GT's own lateral excursion: MEASURED 2026-09-19 (W1, NavSim warmup) a
+        # constant-velocity arm and an all-zero STOP plan both read 1.0658 m, because BOTH
+        # have y == 0 — a LATERAL row quoted alone cannot tell a moving arm from a parked one.
+        # The along-track context that says whether it is informative is emitted beside it.
+        "_cross_is": ("lateral OFFSET at matched time index (mean |y_pred - y_gt| in the window's "
+                      "ego frame), NOT a distance to the GT path: no projection, no arc-length "
+                      "matching. Read it WITH _along_mae_m_for_context and with the LONGITUDINAL "
+                      "family; a large along-track error makes it uninterpretable as a lateral "
+                      "error (two arms with y == 0 score identically however differently they "
+                      "drive)."),
+        "_along_mae_m_for_context": round(float(along_err.abs().mean()), 4),
+        "_projection_based_alternative": ("taniteval/taniteval/lateral.py::frenet_dense decomposes "
+                                          "pred-gt in the GT PATH's own frame (along^2 + cross^2 == "
+                                          "||pred-gt||^2); driving.py publishes it as "
+                                          "headline.pathgeom_crosstrack_m."),
         # transparency: how much of the horizon was usable
         "n_steps_heading": n_head,
         "n_steps_curvature": n_curv,
@@ -794,6 +887,10 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S, eid=None,
         # also what its interval has to be formed over. The emitted VALUE is
         # deliberately unchanged — moving it would silently rewrite banked
         # numbers, and this is the honest first half of that fix.
+        # ⭐ SECOND HALF LANDED 2026-09-20 (W2): the term is now GUARDED on `n_curv`, so the
+        # `n_curv == 0` case REFUSES instead of emitting NaN. Still no number is rewritten —
+        # n_curv > 0 implies n_head > 0, so every case that produced a real value produces the
+        # identical value; only the NaN (and the old `None`) became a refusal with its n.
         "n_steps_yaw_rate": n_curv,
         "excluded_below_min_ds": int((~both).sum()),
         # ⛔ the gate SCALES with dt now. A fixed 0.05 m on a 0.5 s grid excluded ~nothing and let
@@ -1596,7 +1693,8 @@ def _numeric_leaves(obj, prefix: str = "") -> dict:
     return out
 
 
-def ci_coverage(family_block: dict, family: str) -> dict:
+def ci_coverage(family_block: dict, family: str,
+                other_families: dict | None = None) -> dict:
     """⭐ AUDIT one emitted LONGITUDINAL/LATERAL block for interval coverage.
 
     This is the instrument that makes a MISSING interval fail rather than read as
@@ -1631,7 +1729,7 @@ def ci_coverage(family_block: dict, family: str) -> dict:
     comps = ci.get("components", {}) or {}
     nas = ci.get("unavailable", {}) or {}
 
-    missing, unavail, not_reported = [], [], []
+    missing, unavail, not_reported, context = [], [], [], []
     for c in declared:
         if c in comps and "lo" in comps[c] and "hi" in comps[c]:
             continue
@@ -1653,6 +1751,21 @@ def ci_coverage(family_block: dict, family: str) -> dict:
         leaf = path.rsplit(".", 1)[-1]
         if leaf in _NON_METRIC_KEYS or path in declared:
             continue
+        # ⭐ a measurement bounded in ANOTHER family is context, not a hole --
+        # but ONLY if that other interval actually exists. The table names where
+        # to look; this VERIFIES it, so the table cannot silence a real gap by
+        # pointing at a component that was never bounded.
+        if leaf in _CROSS_FAMILY_CONTEXT:
+            fam_other, key_other = _CROSS_FAMILY_CONTEXT[leaf]
+            other = (other_families or {}).get(fam_other) or {}
+            oc = ((other.get("ci") or {}).get("components") or {}).get(key_other)
+            if isinstance(oc, dict) and "lo" in oc and "hi" in oc:
+                context.append(f"{path} -> {fam_other}.{key_other}")
+                continue
+            # the pointer is stale or the other family never bounded it: this is
+            # a REAL hole and must read as one
+            undeclared.append(path)
+            continue
         undeclared.append(path)
 
     return {
@@ -1663,6 +1776,7 @@ def ci_coverage(family_block: dict, family: str) -> dict:
         "missing": sorted(missing),
         "unavailable": sorted(unavail),
         "undeclared": sorted(undeclared),
+        "context_bounded_elsewhere": sorted(context),
         "not_reported": sorted(not_reported),
         "complete": not missing and not undeclared,
         "⛔_verdict": ("VIOLATION — a reported component carries no interval and "
@@ -1761,8 +1875,8 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
     # were `_complete: true` while every scalar in them was a bare point
     # estimate, and nothing in the record said so.
     fam["_ci_coverage"] = {
-        "longitudinal": ci_coverage(fam["longitudinal"], "longitudinal"),
-        "lateral": ci_coverage(fam["lateral"], "lateral"),
+        "longitudinal": ci_coverage(fam["longitudinal"], "longitudinal", fam),
+        "lateral": ci_coverage(fam["lateral"], "lateral", fam),
     }
     fam["_intervals_complete"] = bool(
         fam["_ci_coverage"]["longitudinal"].get("complete")
