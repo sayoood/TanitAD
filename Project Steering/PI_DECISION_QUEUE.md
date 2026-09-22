@@ -1523,3 +1523,25 @@ disaster taught, and it would sit in the corpus permanently.
 
 **What unblocks it:** one word — A, B or C. Nothing else waits on this; the pass itself is written
 against whichever you pick and runs after DONE.
+
+> ### ⛔ AMENDED 2026-09-22, BEFORE ANY APPLY — **the "default B if silent" I offered is WITHDRAWN**
+>
+> I wrote that if you did not answer before production ended I would apply **B**. That was **my own
+> statement, and my own statement is not your approval.** A/B/C was put to you as a DECISION; acting
+> on my own default would be **taking** it, not covering for its absence. ⚠️ And B was never free:
+> it commits the repo to an untidy layout that only **C — your call — resolves**.
+>
+> ⭐ **The default is narrowed to what your §4 ruling ITSELF authorises: the JUDGEMENT, recorded in
+> the manifest, with NO bytes moved.** `s4_retier.py --layout` now defaults to `pending`; every
+> re-tiered entry carries `layout_open: true`, names this queue item, and names the path its bytes
+> are **actually** at. ⛔ **`--layout A`, `B` and `C` ALL now refuse** without
+> `--i-have-the-pi-ruling <X>` — the guard previously covered only C, which is how B became a silent
+> default in the first place.
+>
+> ⚠️ **`pending` is NOT option A.** A's hazard was **silence** — a file under `gt_flagged/` that the
+> record calls validated, with nothing saying so. A **documented** interim state is not a silent
+> inconsistency: a reader in isolation is told exactly what is true, which is the entire point of
+> the rule A would have violated.
+>
+> ⇒ nothing is foreclosed, nothing irreversible happens, and **A, B and C all remain fully available
+> whenever you answer.** The question is unchanged: **A, B or C.**
