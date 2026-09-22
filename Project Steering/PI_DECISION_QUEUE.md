@@ -1576,3 +1576,52 @@ against whichever you pick and runs after DONE.
 > ⚠️ Nothing was destroyed: the same bytes are in `gt/` from the same commit, the local sources
 > remain in `corpus/out/`, each clip's `worldmap/` copy is untouched, and the pre-pass manifest is
 > snapshotted at `publish/SEMANTIC_MAPS_MANIFEST.pre-s4.json` (md5 `705afde1fcb57f608be71ffe22440c86`).
+
+<!-- RECONCILE-2026-09-22-REFCV6-READINESS-IS-NOT-A-LAUNCH -->
+
+---
+
+## ⛔⛔ RECONCILIATION 2026-09-22 — refcv6 READINESS work resumed on the PI's word; the STOP on LAUNCHING is **NOT** superseded
+
+⚠️ **READ THIS BEFORE ACTING ON EITHER THE DIRECTIVE ABOVE OR THE NEW REGISTER ROWS.** The record
+now contains two things a fresh session could combine into the wrong action, and this note exists
+to make that combination impossible.
+
+**What the record says in two places:**
+
+1. **This file, 2026-09-11:** *"refcv6 TRAINING IS STOPPED"*, with the warning that
+   `chain_refcv6.sh` and `sup_refcv6.sh` are staged and correct and *"a fresh context must NOT
+   relaunch them"*. ⭐ **STILL TRUE AND VERIFIED TODAY:** both are present in the banked tree
+   (**186** and **244** lines) and on disk at
+   `TanitAD Research Lab/Architecture & Inference/Research/2026-09-10-refcv6-build/code/`.
+2. **`GOALS_AND_CLAIMS.md`, 2026-09-22** (`d014414`, `ff9a073`): rows stating that `H-BOXCLS-1` is
+   implemented, stamped, mutation-proven, re-based onto the B1 corpus, and that *"still blocked,
+   and still only this: the GPU call is the PI's"*.
+
+**What the PI actually said, 2026-09-22, verbatim, in his own channel:**
+
+> *"are we ready now to train refcv6?"*
+
+> *"build the train agent-join and do also the rest to achieve the traibning readiness of refcv6"*
+
+⛔ **THOSE ARE READINESS INSTRUCTIONS. NEITHER IS AN INSTRUCTION TO RELAUNCH.** He asked whether we
+are ready and told me to *achieve* readiness; readiness work proceeded on that word and is what
+`d014414` and `ff9a073` contain. **He has not said to restart the training**, and the 2026-09-11
+stop therefore stands on the launch itself.
+
+⇒ **"The GPU call is the PI's" means the call is HIS TO MAKE — it does not mean "launch when a card
+frees."** A free-card reading is not authority. This is the same shape as the standing A7 rule
+(*"Stay paused until I say"* — a clear card does not override what he asked), and the drumbeat
+already records a session acting on *"A7 IS RUNNING"* after he had paused it.
+
+⚠️ **What I have NOT verified, and therefore do not assert:** whether Thor is still held by the
+Qwen-Drive / LiDAR-BEV work that motivated the 09-11 stop. The directive's reason was that *"the
+two cannot share the card"*; I have not probed Thor this firing, so treat the card's occupancy as
+**UNKNOWN**, not free. ⛔ Do not infer it from the dev box's `boxstat` — that reads the USER'S
+DESKTOP GPU, a different machine entirely.
+
+**The honest one-line state:** refcv6 is *materially* readier than it was — the class-weight lever
+is built, guarded and pointed at the right corpus, and the eval-139 line at 416×1024 is complete —
+**and it is not cleared to launch.** Two things gate an actual run, and both are the PI's:
+the go-ahead itself, and the 4,713-clip corpus cache (MEASURED absent; ~375.4 GB against 402.3 GB
+free on `D:`; ~10.6 h build) — see the register row *"THE NEXT GATING ITEM FOR refcv6"*.
