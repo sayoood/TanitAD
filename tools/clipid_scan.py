@@ -38,6 +38,7 @@ keys; both reproduce the digest.
 from __future__ import annotations
 
 import argparse
+import os
 import hashlib
 import json
 import re
@@ -211,7 +212,39 @@ def main(argv=None) -> int:
                     help="record today's counts as the grandfathered floor")
     ap.add_argument("--clips-name", default="",
                     help="a human label recorded beside the list's digest when writing")
+    ap.add_argument("--from-ref", default="",
+                    help="scan a GIT REF's tree instead of --root (see the note below)")
+    ap.add_argument("--git-dir", default="C:/Users/Admin/tanitad-push/.git",
+                    help="the repository --from-ref is read from")
     a = ap.parse_args(argv)
+
+    # ⛔⛔ SCAN WHAT IS BANKED, NOT WHAT HAPPENS TO BE ON DISK.
+    # MEASURED 2026-09-22, and the guard was wrong in BOTH directions at once:
+    #   * the local worktree held  3 of the 18 recent research packages; landings go to the
+    #     PUSH CLONE and never touch it, so 15 banked packages were INVISIBLE to this scan
+    #     -- a growth guard that cannot see the growth;
+    #   * and it reported a leak (`2026-09-20-refe-plan/REVIEW_4_FINAL.md`, +1 uuid) in a file
+    #     that exists ONLY in the worktree and was never landed -- a FALSE POSITIVE on drift.
+    # The banked tree, scanned properly, reads NO-GROWTH: 27 files / 120 uuids / 0 prefixes,
+    # exactly the recorded floor. ⭐ `--root` answers "what is on this disk"; the question the
+    # guard exists to answer is "what is in the RECORD", and those are different populations.
+    if a.from_ref:
+        import subprocess, tarfile, tempfile, io
+        td = tempfile.mkdtemp(prefix="clipid_ref_")
+        r = subprocess.run(["git", "archive", a.from_ref,
+                            "TanitAD Research Lab", "Project Steering"],
+                           env={"GIT_DIR": a.git_dir, "PATH": os.environ["PATH"]},
+                           capture_output=True)
+        if r.returncode != 0 or not r.stdout:
+            raise SystemExit(
+                f"[clipid] ⛔ could not export {a.from_ref!r} from {a.git_dir!r}: "
+                f"{(r.stderr or b'')[:200]!r}. An EMPTY export would scan an empty tree and "
+                f"report NO-GROWTH, which is why this refuses instead of continuing.")
+        with tarfile.open(fileobj=io.BytesIO(r.stdout)) as tf:
+            tf.extractall(td, filter="data")   # 3.12+ requires it; "data" strips absolute paths and links
+        a.root = td
+        print(f"[clipid] scanning the BANKED tree {a.from_ref} from {a.git_dir} -> {td}",
+              flush=True)
     prefixes, ident = None, None
     if a.clips:
         # utf-8-sig: a list written by PowerShell carries a BOM, which would otherwise
