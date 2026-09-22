@@ -1,0 +1,83 @@
+{
+ "_what": "is an inverse-frequency class weight STABLE under a 62-clip draw?",
+ "_evidence_class": "MEASURED (ours), CPU, read-only over the EVAL 3-D join",
+ "_scope": "halfA and halfB are BOTH eval. Agreement says a 62-clip sample suffices; it does NOT say eval resembles TRAIN. Only the first is tested here.",
+ "_blocker": "no TRAIN agent join exists on the dev box or on Thor (two probes); building one is a pod-side step over the 2,376-episode parity corpus",
+ "n_lines": 26394,
+ "n_agents": 905512,
+ "n_clips_seen": 139,
+ "n_clips_outside_the_124_split": 15,
+ "n_agents_outside_the_124_split": 106514,
+ "_outside_is_expected": "the stamp excludes 11 clips inside parity TRAIN and 4 with no SAM3 map; they are counted apart, never folded in",
+ "counts": {
+  "halfA": {
+   "automobile": 283417,
+   "heavy_truck": 10056,
+   "bus": 3170,
+   "other_vehicle": 1502,
+   "trailer": 3276,
+   "person": 59575,
+   "rider": 8840,
+   "stroller": 230,
+   "animal": 171,
+   "protruding_object": 1577
+  },
+  "halfB": {
+   "automobile": 296717,
+   "heavy_truck": 7000,
+   "bus": 4789,
+   "other_vehicle": 1431,
+   "trailer": 3969,
+   "person": 98562,
+   "rider": 12449,
+   "stroller": 475,
+   "animal": 273,
+   "protruding_object": 1450
+  }
+ },
+ "weight_vectors": {
+  "halfA": {
+   "animal": 4.73547,
+   "automobile": 0.00286,
+   "bus": 0.25545,
+   "heavy_truck": 0.08053,
+   "other_vehicle": 0.53912,
+   "person": 0.01359,
+   "protruding_object": 0.51348,
+   "rider": 0.0916,
+   "stroller": 3.52072,
+   "trailer": 0.24718
+  },
+  "halfB": {
+   "animal": 4.66375,
+   "automobile": 0.00429,
+   "bus": 0.26586,
+   "heavy_truck": 0.18189,
+   "other_vehicle": 0.88973,
+   "person": 0.01292,
+   "protruding_object": 0.87807,
+   "rider": 0.10227,
+   "stroller": 2.68043,
+   "trailer": 0.32079
+  }
+ },
+ "classes_present_in_only_one_half": [],
+ "agreement": {
+  "_statistic": "per-class ratio of the two halves' normalised weights (1.0 = identical)",
+  "ratios": {
+   "animal": 1.0154,
+   "automobile": 0.6659,
+   "bus": 0.9608,
+   "heavy_truck": 0.4427,
+   "other_vehicle": 0.6059,
+   "person": 1.0522,
+   "protruding_object": 0.5848,
+   "rider": 0.8957,
+   "stroller": 1.3135,
+   "trailer": 0.7705
+  },
+  "max_abs_log_ratio_class": "heavy_truck",
+  "max_ratio": 2.2587
+ },
+ "_VERDICT": "⛔ SAMPLING-SENSITIVE — the two halves disagree by up to 2.2587x (worst class: heavy_truck) on a 62-clip draw. A proxy vector would be a number with no evidence class ⇒ the TRAIN join is genuinely REQUIRED, and that is a pod-side build."
+}
