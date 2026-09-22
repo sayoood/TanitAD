@@ -1,0 +1,57 @@
+{
+ "_what": "inverse-frequency class weights for the agent/box slot head cls term (H-BOXCLS-1)",
+ "_evidence_class": "MEASURED (ours), CPU, read-only over the canonical TRAIN agent join",
+ "_ruling": "H-BOXCLS-1: the cls collapse is an OBJECTIVE failure (gate passed d7fa093); this is the weight it needs",
+ "_source": {
+  "join": "tanitad-data/joins/joins/train2400_agents.jsonl.xz",
+  "built": "2026-09-05",
+  "n_episodes": 2308,
+  "n_frames": 433040,
+  "n_boxes_in_vocab": 12112052,
+  "_identity": "these three numbers reproduce the join meta EXACTLY and are the vector's provenance: recompute and compare"
+ },
+ "_normalisation": "inverse frequency, normalised to MEAN 1 -- scale is absorbed by slot_set_loss's weight-following denominator, so only the RELATIVE emphasis is expressed",
+ "_out_of_vocabulary": {
+  "train_or_tram_car": 10077,
+  "_handling": "targets_from_join maps it to -1 and slot_set_loss masks ok = ct >= 0, so it is EXCLUDED from the cls term, never relabelled (VERIFIED by round-trip)"
+ },
+ "counts": {
+  "automobile": 9274706,
+  "heavy_truck": 357048,
+  "bus": 89781,
+  "other_vehicle": 35543,
+  "trailer": 164688,
+  "person": 1926364,
+  "rider": 190793,
+  "stroller": 13346,
+  "animal": 8659,
+  "protruding_object": 51124
+ },
+ "share": {
+  "automobile": 0.765742,
+  "heavy_truck": 0.029479,
+  "bus": 0.007413,
+  "other_vehicle": 0.002935,
+  "trailer": 0.013597,
+  "person": 0.159045,
+  "rider": 0.015752,
+  "stroller": 0.001102,
+  "animal": 0.000715,
+  "protruding_object": 0.004221
+ },
+ "imbalance_majority_to_rarest": 1071.1,
+ "weights_inv_freq_mean1": {
+  "animal": 4.374664,
+  "automobile": 0.004084,
+  "bus": 0.421918,
+  "heavy_truck": 0.106093,
+  "other_vehicle": 1.065757,
+  "person": 0.019664,
+  "protruding_object": 0.740948,
+  "rider": 0.198541,
+  "stroller": 2.838319,
+  "trailer": 0.230012
+ },
+ "_self_digest_sha256_of_weights": "bde3aa19dfd0e59a",
+ "_digest_recipe": "sha256(\"|\".join(f\"{class}={weight:.6f}\" for class in AGENT_CLASSES order))[:16] -- tanitad.models.agent_slots.cls_weight_digest; VERIFIED on every load, and a PERMUTED vector digests differently (checked)"
+}

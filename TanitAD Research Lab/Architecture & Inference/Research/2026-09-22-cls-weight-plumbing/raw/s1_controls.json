@@ -1,0 +1,38 @@
+{
+ "_what": "E11 (S1-RANDOM) and E12 (S1-GATE-CONST) proven as identities, CPU only",
+ "_evidence_class": "MEASURED (ours), CPU, no checkpoint, no corpus",
+ "_checker": "tanitad.rl.pdm_proxy.no_at_fault_collision (IMPORTED, not reimplemented)",
+ "_prereg": "Project Steering/PREREG_S1_AGENT_SEAM_AND_COLLISION_GATE.md",
+ "n_ticks": 40,
+ "dt": 0.1,
+ "arms": {
+  "S1-GATE-CONST": {
+   "_committed": "recovery exactly 0 (empty tracks => nc == 1 => BASE's pick every window)",
+   "n_windows": 64,
+   "n_candidates": 8,
+   "windows_where_gate_changed_the_pick": 0,
+   "min_nc_over_all_candidates": 1.0,
+   "recovery": 0.0,
+   "PASS": true
+  },
+  "_CONTROL_gate_bites_on_real_tracks": {
+   "_why": "'recovery exactly 0 under empty tracks' is satisfied vacuously by a gate that never masks anything. This runs the SAME path against a stopped car on the ego's line and requires the pick to MOVE.",
+   "n_windows": 64,
+   "windows_where_gate_changed_the_pick": 64,
+   "distinct_nc_values_seen": [
+    0.5,
+    1.0
+   ],
+   "PASS": true
+  },
+  "S1-RANDOM": {
+   "_committed": "exactly the candidate mean (an identity, tested)",
+   "n_draws": 256,
+   "n_candidates": 8,
+   "max_abs_difference_expectation_vs_mean": 0.0,
+   "PASS": true,
+   "_note": "no RNG is consumed: the arm is the EXPECTATION, so it has no sampling variance and no interval. A version that drew samples would report a CI around a quantity that is exact."
+  }
+ },
+ "_VERDICT": "⭐ BOTH S1 CONTROLS READ THEIR COMMITTED VALUES, CPU ONLY, BEFORE ANY GPU: S1-GATE-CONST recovery exactly 0 over 64 windows (nc == 1 for every candidate), S1-RANDOM exactly the candidate mean (max |err| 0.00e+00), and the discriminating control confirms the SAME gate does bite on real tracks (64/64 windows) -- so the zero is a property of the empty world, not of an inert gate."
+}

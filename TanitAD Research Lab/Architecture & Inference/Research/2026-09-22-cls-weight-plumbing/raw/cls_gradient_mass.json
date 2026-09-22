@@ -1,0 +1,134 @@
+{
+ "_what": "exactly what inverse-frequency weighting does to the cls term: it redistributes GRADIENT MASS across classes and changes no slot's gradient direction",
+ "_evidence_class": "MEASURED (ours) / ANALYTIC -- CPU, no checkpoint, no forward pass",
+ "_source_counts": "stack/tanitad/data/agent_cls_weights_train2400.json (TRAIN census)",
+ "_digest": "bde3aa19dfd0e59a",
+ "_structural_fact": "d/d(logits)[w[c] * CE] = w[c] * (softmax - onehot): the weight is a scalar on the slot's whole gradient, so DIRECTION is unchanged and only the slot's relative contribution moves. The weight-following denominator fixes the total scale.",
+ "n_classes": 10,
+ "identity_control": {
+  "_target": "at alpha=1, count*w is constant, so every class share is EXACTLY 1/C. An ANALYTIC target, not a re-run of the producer's own arithmetic.",
+  "expected_share": 0.1,
+  "max_abs_deviation_EXACT_weights_from_counts": 2.7755575615628914e-17,
+  "max_abs_deviation_BANKED_6dp_weights": 5.477611609197575e-06,
+  "_reading": "the identity holds to machine precision on weights derived from the counts, and to ~5.5e-06 on the BANKED vector because it stores 6 dp. That gap is the ARTIFACT's precision, not a flaw in the mathematics -- and quantifying it is why the target is derived from counts rather than from the stored weights.",
+  "banked_precision_is_negligible_for_this_use": true,
+  "PASS": true
+ },
+ "per_class": [
+  {
+   "class": "automobile",
+   "count": 9274706,
+   "mass_share_unweighted": 0.765742,
+   "mass_share_inv_freq": 0.099995,
+   "fold_change": 0.1
+  },
+  {
+   "class": "person",
+   "count": 1926364,
+   "mass_share_unweighted": 0.159045,
+   "mass_share_inv_freq": 0.1,
+   "fold_change": 0.6
+  },
+  {
+   "class": "heavy_truck",
+   "count": 357048,
+   "mass_share_unweighted": 0.029479,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 3.4
+  },
+  {
+   "class": "rider",
+   "count": 190793,
+   "mass_share_unweighted": 0.015752,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 6.3
+  },
+  {
+   "class": "trailer",
+   "count": 164688,
+   "mass_share_unweighted": 0.013597,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 7.4
+  },
+  {
+   "class": "bus",
+   "count": 89781,
+   "mass_share_unweighted": 0.007413,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 13.5
+  },
+  {
+   "class": "protruding_object",
+   "count": 51124,
+   "mass_share_unweighted": 0.004221,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 23.7
+  },
+  {
+   "class": "other_vehicle",
+   "count": 35543,
+   "mass_share_unweighted": 0.002935,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 34.1
+  },
+  {
+   "class": "stroller",
+   "count": 13346,
+   "mass_share_unweighted": 0.001102,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 90.8
+  },
+  {
+   "class": "animal",
+   "count": 8659,
+   "mass_share_unweighted": 0.000715,
+   "mass_share_inv_freq": 0.100001,
+   "fold_change": 139.9
+  }
+ ],
+ "headline": {
+  "automobile_before": 0.765742,
+  "automobile_after": 0.099995,
+  "animal_before": 0.000715,
+  "animal_after": 0.100001,
+  "animal_fold_increase": 139.9
+ },
+ "alpha_sweep": [
+  {
+   "alpha": 0.0,
+   "weight_ratio_majority_to_rarest": 1.0,
+   "mass_share_automobile": 0.765742,
+   "mass_share_animal": 0.000715,
+   "animal_fold_vs_alpha0": 1.0
+  },
+  {
+   "alpha": 0.25,
+   "weight_ratio_majority_to_rarest": 5.7,
+   "mass_share_automobile": 0.634212,
+   "mass_share_animal": 0.003387,
+   "animal_fold_vs_alpha0": 4.7
+  },
+  {
+   "alpha": 0.5,
+   "weight_ratio_majority_to_rarest": 32.7,
+   "mass_share_automobile": 0.448098,
+   "mass_share_animal": 0.013692,
+   "animal_fold_vs_alpha0": 19.2
+  },
+  {
+   "alpha": 0.75,
+   "weight_ratio_majority_to_rarest": 187.2,
+   "mass_share_automobile": 0.245923,
+   "mass_share_animal": 0.042987,
+   "animal_fold_vs_alpha0": 60.1
+  },
+  {
+   "alpha": 1.0,
+   "weight_ratio_majority_to_rarest": 1071.1,
+   "mass_share_automobile": 0.1,
+   "mass_share_animal": 0.1,
+   "animal_fold_vs_alpha0": 139.9
+  }
+ ],
+ "_VERDICT": "⭐ THE LEVER IS A PURE REDISTRIBUTION, AND ITS SIZE IS EXACT. Unweighted, `automobile` carries 76.574% of the cls term's gradient mass and `animal` carries 0.0715%. At full inverse frequency every class carries EXACTLY 10.0% (max deviation 2.8e-17, an identity, not a fit) -- a 140x increase for `animal` and a 7.7x cut for `automobile`. ⛔ No slot's gradient direction changes; only which slots dominate the sum. ⇒ the milder-exponent family is parametrised exactly by w ∝ count^(-alpha), mass share ∝ count^(1-alpha), and alpha is the ONE knob a follow-up arm would move."
+}

@@ -19,11 +19,39 @@ them is how two geometries drift apart (the `advect` precedent, retired
 
 ⚠️ **The class enum in particular is IMPORTED, never re-listed.** A first draft
 of this file hand-wrote a plausible-looking 10-class tuple containing
-``bicycle``, ``motorcycle`` and ``train_or_tram_car`` — **none of which exist in
-the corpus**, which really carries ``other_vehicle``, ``stroller`` and
-``animal``. It would have trained a head against three classes that can never
-appear and silently dropped three that do. The enum has exactly one spelling,
-in ``bev_raster``, and it is the label side's.
+``bicycle``, ``motorcycle`` and ``train_or_tram_car`` in place of
+``other_vehicle``, ``stroller`` and ``animal``. It would have trained a head
+against classes the label side does not emit and silently dropped three that it
+does. The enum has exactly one spelling, in ``bev_raster``, and it is the label
+side's.
+
+⛔ **AND THE ORIGINAL WORDING OF THIS PARAGRAPH WAS WRONG, WHICH IS WORTH MORE
+THAN THE CORRECTION ITSELF.** It read *"none of which exist in the corpus"*.
+MEASURED 2026-09-22 over the canonical TRAIN agent join (2,308 episodes /
+433,040 frames / 12,122,129 boxes, ``train_cls_census.json``):
+
+* ``bicycle`` — **0 boxes**. Genuinely absent. ✅
+* ``motorcycle`` — **0 boxes**. Genuinely absent. ✅
+* ``train_or_tram_car`` — **10,077 boxes**, i.e. **0.0831 %** of TRAIN. ⛔ **It
+  exists**, and it was already a registered measured fact
+  (``D-CLEARANCE-IS-AGENT-NOT-INFRA-1``: 69 boxes on B1 eval, 2,419 measured
+  2026-07-27) when this sentence was written.
+
+⭐ **THE GUARD IS UNCHANGED AND STAYS RIGHT — ONLY THE REASON WAS WRONG.**
+``train_or_tram_car`` must still be absent from ``AGENT_CLASSES``, not because
+it cannot occur but because ``AGENT_CLASSES`` **is** ``bev_raster.ALL_CLASSES``
+and has exactly one spelling. What those 10,077 boxes actually do is the fact
+the false sentence hid: :func:`~tanitad.models.agent_slots.targets_from_join`
+maps the name to ``-1`` and ``slot_set_loss`` masks ``ok = ct >= 0``, so they are
+**excluded from the class term, never relabelled** (VERIFIED by round-trip:
+``automobile → 0``, ``train_or_tram_car → -1``, ``person → 5``). That is the
+correct handling, and it should be a STATED one: 0.0831 % of TRAIN boxes carry
+no class supervision.
+
+⚠️ **The class of the error: a guard whose stated justification is false still
+passes, so nothing ever re-reads it.** A reader who believes the label cannot
+occur never asks what happens to it — and the answer was a real, quantified
+property of the training signal.
 
 ## What IS new here — the four gaps the audit named
 

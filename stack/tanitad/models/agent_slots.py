@@ -257,6 +257,87 @@ OCC_HALF_ANGLE_RAD: float = math.radians(60.0)
 OCC_TEMPERATURE: float = 6.6902
 
 
+#: The banked TRAIN class-frequency weights (`H-BOXCLS-1`). A NAMED ARTIFACT, never a
+#: recomputation: two runs at the same flag must be the same arm, and a vector recomputed at
+#: launch is only as stable as whatever corpus happened to be mounted.
+CLS_WEIGHTS_TRAIN2400 = "agent_cls_weights_train2400.json"
+
+
+def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
+    """A STATED, reproducible digest of a class-weight vector: 16 hex chars.
+
+    ⛔ **WHY THIS FUNCTION EXISTS, AND IT IS A CORRECTION.** The banked artifact shipped a
+    ``_self_digest_sha256_of_weights`` that **no code could reproduce** -- it was written by hand
+    beside the numbers it claimed to attest. A digest nothing can recompute is a DECORATION: it
+    cannot detect an edited vector, a permuted class order, or a stamp that never reached the
+    model. This is the `A CHECK THAT SHARES THE DEFECT IT CHECKS FOR IS GREEN FOREVER` family,
+    in its most literal form -- the check and the claim were the same keystrokes.
+
+    ⭐ The recipe is deliberately **over the TENSOR plus the CLASS NAMES**, not over the JSON
+    text: the whole point is that it can be computed from the weight the MODEL carries, so the
+    run record's `built` slot states a fact about the weights rather than re-reading the file
+    that produced them. Class names are included so a PERMUTED vector -- same ten numbers, wrong
+    order, the failure that would silently up-weight `automobile` -- cannot collide.
+
+    Values are formatted at 6 dp, which is the precision the artifact states and is stable across
+    a float32 device round-trip.
+    """
+    import hashlib as _hashlib
+    vals = [float(v) for v in (vec.detach().to("cpu").reshape(-1).tolist()
+                               if hasattr(vec, "detach") else list(vec))]
+    if len(vals) != len(classes):
+        raise ValueError(f"cls_weight_digest: {len(vals)} values for {len(classes)} classes")
+    payload = "|".join(f"{c}={v:.6f}" for c, v in zip(classes, vals))
+    return _hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
+                          classes: tuple[str, ...] = AGENT_CLASSES):
+    """-> (weight tensor [C], stamp dict). Reads the banked vector; computes nothing.
+
+    ⛔ REFUSES rather than guesses. A class in :data:`AGENT_CLASSES` that the artifact does not
+    name would otherwise silently take an implicit weight, and the arm would be running a vector
+    nobody wrote. MEASURED on the canonical train join: 2,308 episodes / 433,040 frames /
+    12,122,129 boxes, imbalance **1,071.1 : 1** (`automobile` : `animal`).
+
+    ⚠️ The returned stamp carries ALL TEN values plus the artifact's digest, because
+    `config.json` is where a finished run states the weights it trained at -- a flag name alone
+    does not reconstruct the arm.
+    """
+    import json as _json
+    import pathlib as _pathlib
+    p = _pathlib.Path(__file__).resolve().parent.parent / "data" / name
+    if not p.exists():
+        raise SystemExit(f"[agent-slots] ⛔ class-weight artifact not found: {p}. The vector is "
+                         f"READ from a banked file, never recomputed at launch.")
+    art = _json.loads(p.read_text(encoding="utf-8"))
+    w = art.get("weights_inv_freq_mean1") or {}
+    missing = [c for c in classes if c not in w]
+    if missing:
+        raise SystemExit(f"[agent-slots] ⛔ the class-weight artifact {name} does not name "
+                         f"{missing}; a class with no stated weight would take an implicit one and "
+                         f"the run would train a vector nobody wrote.")
+    vec = torch.tensor([float(w[c]) for c in classes], dtype=torch.float32)
+    # ⛔ THE DIGEST IS VERIFIED, NOT COPIED. The artifact's stated digest must reproduce from
+    # the vector just built, or the file and its own attestation disagree and the run refuses.
+    # Before `cls_weight_digest` existed this field was unreproducible by any code and could not
+    # have caught an edited or permuted vector -- see that function's docstring.
+    _dig = cls_weight_digest(vec, classes)
+    _stated = art.get("_self_digest_sha256_of_weights")
+    if _stated != _dig:
+        raise SystemExit(f"[agent-slots] ⛔ class-weight artifact {name} states digest "
+                         f"{_stated!r} but its own weights digest to {_dig!r}. The vector and its "
+                         f"attestation disagree; refusing rather than training an edited vector.")
+    stamp = {"source": name, "normalisation": art.get("_normalisation"),
+             "weights": {c: float(w[c]) for c in classes},
+             "counts": art.get("counts"),
+             "imbalance_majority_to_rarest": art.get("imbalance_majority_to_rarest"),
+             "digest": _dig,
+             "out_of_vocabulary": art.get("_out_of_vocabulary"),
+             "provenance": art.get("_source")}
+    return vec, stamp
+
+
 def occ_logit_from_centre(cx: Tensor, cy: Tensor,
                           half_angle_rad: float = OCC_HALF_ANGLE_RAD,
                           temperature: float = OCC_TEMPERATURE) -> Tensor:

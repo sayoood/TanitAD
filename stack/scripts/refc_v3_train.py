@@ -96,6 +96,8 @@ from tanitad.refs import tac_goal_head as _tac_goal_head  # noqa: E402
 # `t1_eval.py` trap: both arms, 40 episodes, 6,844 windows each, then a dead
 # `from taniteval import selgap` in `analyze()`).
 from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
+from tanitad.refs import refcv7_heads as r7h  # noqa: E402
+from tanitad.refs import refcv7_oracle as r7o  # noqa: E402
 from tanitad.refs import refcv6_max_speed as v6ms  # noqa: E402
 from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
@@ -627,7 +629,93 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
                 "or drop --tac-goal-tok-head.")
         cfg.tac_goal_tok_head = True
     _pin_refcv6_tactical(cfg, args)
+    _pin_refcv7(cfg, args)
     return cfg
+
+
+def _pin_refcv7(cfg, args) -> None:
+    """refcv7 (PI 2026-09-19, `SPEC_REFCV7.md`) — argv -> cfg, with refusals.
+
+    ⛔ Every refusal fires before `config.json` and before a batch: each is a
+    dead-flag or zero-gradient class this trainer already refuses elsewhere.
+    """
+    on = bool(getattr(args, "refcv7", False))
+    w_wta = float(getattr(args, "w_r7_wta", 0.0) or 0.0)
+    w_sc = float(getattr(args, "w_r7_scorer", 0.0) or 0.0)
+    if not on:
+        if w_wta > 0.0 or w_sc > 0.0:
+            raise SystemExit(
+                "[refcv7] ⛔ --w-r7-wta / --w-r7-scorer > 0 without --refcv7: "
+                "the heads are not built, so the weights would be stamped and "
+                "read by nothing.")
+        return
+    if args.arm != "hier":
+        raise SystemExit("[refcv7] ⛔ --refcv7 needs --arm hier (it rides the "
+                         "hierarchy's refcv6 scene hook).")
+    if not bool(getattr(args, "tac_decoder_v6", False)):
+        raise SystemExit(
+            "[refcv7] ⛔ --refcv7 needs --tac-decoder-v6: the scene (agent "
+            "slots + BEV tokens) and the [nav, max-speed, v0, a0] condition "
+            "exist only in the refcv6 scene hook.")
+    if str(getattr(args, "trunk", "refc")) != "timm":
+        raise SystemExit("[refcv7] ⛔ --refcv7 needs --trunk timm (the image "
+                         "tokens are the stride-16 map).")
+    if w_wta <= 0.0 and w_sc <= 0.0:
+        raise SystemExit(
+            "[refcv7] ⛔ --refcv7 with BOTH weights 0: two heads built and "
+            "trained at zero gradient (the tac_goal_tok_head defect).")
+    if w_wta <= 0.0:
+        raise SystemExit(
+            "[refcv7] ⛔ --w-r7-wta 0: the WTA decoder would be built and never "
+            "supervised, and its 64 untrained proposals would still enter "
+            "selection. Pass a weight, or drop --refcv7.")
+    sel = not bool(getattr(args, "r7_no_select", False))
+    if w_sc <= 0.0 and sel:
+        raise SystemExit(
+            "[refcv7] ⛔ scorer selection with --w-r7-scorer 0: the DEPLOYED "
+            "pick would come from an untrained scorer. Pass --w-r7-scorer > 0, "
+            "or --r7-no-select.")
+    if w_sc > 0.0:
+        if not (float(getattr(args, "r7_nav_tau_rad", 0.0) or 0.0) > 0.0):
+            raise SystemExit(
+                "[refcv7] ⛔ --w-r7-scorer > 0 needs --r7-nav-tau-rad > 0. The "
+                "nav sub-score is how selection FOLLOWS nav (PI: mandatory); "
+                "`compliance_target` has no default tolerance and an invented "
+                "one is a number with no evidence class. Derive it on the TRAIN "
+                "split: scripts/refcv7_derive_nav_tau.py.")
+        if not getattr(args, "agent_join", None):
+            raise SystemExit(
+                "[refcv7] ⛔ --w-r7-scorer > 0 needs --agent-join: without GT "
+                "agents the NC/TTC oracle abstains on EVERY window and the "
+                "scorer's safety heads are never supervised.")
+        if not (float(getattr(args, "w_map", 0.0) or 0.0) > 0.0):
+            raise SystemExit(
+                "[refcv7] ⛔ --w-r7-scorer > 0 needs the SAM3 map (--map-gt-root "
+                "with --w-map > 0): the DAC oracle reads it, and without it "
+                "drivable-area compliance is never supervised.")
+    hc = cfg.refcv7_head_cfg
+    hc.d_model = int(args.r7_d_model)
+    hc.n_layers = int(args.r7_layers)
+    hc.n_heads = int(args.r7_heads)
+    hc.n_queries = int(args.r7_queries)
+    hc.scorer_self_attn = bool(getattr(args, "r7_scorer_self_attn", False))
+    cfg.refcv7 = True
+    cfg.refcv7_img_pool = int(args.r7_img_pool)
+    cfg.refcv7_select = sel
+    cfg.refcv7_w_ttc = float(args.r7_w_ttc)
+    cfg.refcv7_w_ep = float(args.r7_w_ep)
+    cfg.refcv7_w_comf = float(args.r7_w_comf)
+    if bool(getattr(args, "r7_toad", False)):
+        if w_sc <= 0.0:
+            raise SystemExit(
+                "[refcv7] ⛔ --r7-toad with --w-r7-scorer 0: the search's reward "
+                "IS the scorer, so an untrained one would be optimised against "
+                "(TOAD's own finding: a scorer that does not generalise off its "
+                "proposals makes the search WORSE than the base planner).")
+        cfg.refcv7_toad = True
+        cfg.refcv7_toad_iters = int(args.r7_toad_iters)
+        cfg.refcv7_toad_samples = int(args.r7_toad_samples)
+        cfg.refcv7_toad_seed = int(args.r7_toad_seed)
 
 
 def _pin_refcv6_tactical(cfg, args) -> None:
@@ -1803,6 +1891,31 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
                    "(`--tac-decoder-v6` with a zero weight), the case this "
                    "audit cannot see because a zero weight is a legal value.",
     },
+    # ---- refcv7 (PI 2026-09-19): DrivoR's two heads ---------------------- #
+    "w_r7_wta": {
+        "flag": "--w-r7-wta",
+        "term": "refcv7 WTA proposal decoder (winner-takes-all L1, 64 queries)",
+        "gate": lambda a: (
+            bool(getattr(a, "refcv7", False)),
+            "--w-r7-wta needs --refcv7 (no decoder => no `r7_wta`)"),
+        "mask": None,
+        "already": "_pin_refcv7",
+    },
+    "w_r7_scorer": {
+        "flag": "--w-r7-scorer",
+        "term": "refcv7 disentangled scorer vs the PhysicalAI oracle "
+                "(7 sub-score BCE: nc dac ttc ep comf spd nav)",
+        "gate": lambda a: (
+            bool(getattr(a, "refcv7", False))
+            and bool(getattr(a, "agent_join", None))
+            and float(getattr(a, "w_map", 0.0) or 0.0) > 0.0
+            and float(getattr(a, "r7_nav_tau_rad", 0.0) or 0.0) > 0.0,
+            "--w-r7-scorer needs --refcv7, --agent-join (NC/TTC oracle), the "
+            "SAM3 map with --w-map > 0 (DAC oracle) and --r7-nav-tau-rad > 0 "
+            "(nav oracle)"),
+        "mask": None,
+        "already": "_pin_refcv7",
+    },
 }
 
 
@@ -1954,6 +2067,11 @@ class V3Dataset(RouteV21Dataset):
     #: rows would make the loss-time refusal fire at random instead of at
     #: launch, which is the ``nav_args`` lesson.
     ego_history: bool = False
+    #: ⭐ refcv7 (PI 2026-09-19): emit the GT agent boxes at each of the 8 V3
+    #: waypoint slots, in the window's t0 ego frame, for the scorer's NC/TTC
+    #: ORACLE. LABEL-ONLY (future agents). ⛔ Default False keeps the item's
+    #: KEY SET byte-identical (`test_refc_v3_u8_batches.py`); per-DATASET gate.
+    r7_agent_future: bool = False
     #: ⛔ NOT a literal in the loss. The negative policy is a property of THE
     #: LOADED SPLIT (`v7_labels.tactical_goal_targets.__doc__`: 3,574 of 4,572
     #: clips were never ASKED the traffic-light question, so their absence is
@@ -2501,6 +2619,62 @@ class V3Dataset(RouteV21Dataset):
               flush=True)
         return self.agent_join_stats
 
+    def _agent_future_item(self, ep, f: int) -> dict:
+        """refcv7 ORACLE block: the GT agent set at each V3 waypoint slot.
+
+        For slot ``h`` (ticks) the join is read at frame ``f + h`` — the SAME
+        stacked-row index convention ``_agent_item`` and ``future_poses_ext``
+        use (``future_poses_ext[h - 1]`` is frame ``f + h``) — and each box is
+        moved from that frame's rig into the rig at ``f`` through the ego's own
+        poses: rig(f+h) -> world -> rig(f). Rows are ``(x, y, l, w, yaw)``.
+
+        ⚠️ ASSUMPTION, stated: ``ep.poses`` are the RIG poses the join's boxes
+        are expressed in (both are ego-frame at their frame, and
+        ``waypoint_targets`` uses the same poses for the plan's GT). A slot past
+        the clip end or absent from the join is marked UNLABELLED — the loss
+        then refuses to let NC/TTC pass or fail that window (abstain, never a
+        silent "no collision").
+        """
+        import math as _m
+        r = self.agent_join
+        eid = int(ep.episode_id)
+        pad = int(self.agent_pad)
+        hz = tuple(int(h) for h in v3.V3_HORIZONS)
+        S = len(hz)
+        T = int(ep.poses.shape[0])
+        box = torch.zeros(S, pad, 5, dtype=torch.float32)
+        valid = torch.zeros(S, pad, dtype=torch.bool)
+        lab = torch.zeros(S, dtype=torch.bool)
+        p0 = [float(v) for v in ep.poses[f][:3]]
+        c0, s0 = _m.cos(p0[2]), _m.sin(p0[2])
+        for k, h in enumerate(hz):
+            fk = int(f) + h
+            if fk > T - 1:
+                continue
+            ag = r.lookup(eid, fk)
+            if ag is None:
+                continue                      # NO_LABEL: stays unlabelled
+            lab[k] = True
+            a = _np.asarray(ag, dtype=_np.float64).reshape(-1, 6)
+            if a.shape[0] == 0:
+                continue                      # labelled CLEAR
+            if a.shape[0] > pad:
+                a = a[_np.argsort(_np.hypot(a[:, 0], a[:, 1]))[:pad]]
+            pk = [float(v) for v in ep.poses[fk][:3]]
+            ck, sk = _m.cos(pk[2]), _m.sin(pk[2])
+            wx = pk[0] + ck * a[:, 0] - sk * a[:, 1]
+            wy = pk[1] + sk * a[:, 0] + ck * a[:, 1]
+            dx, dy = wx - p0[0], wy - p0[1]
+            lx = c0 * dx + s0 * dy
+            ly = -s0 * dx + c0 * dy
+            lyaw = a[:, 2] + pk[2] - p0[2]
+            n = a.shape[0]
+            box[k, :n] = torch.from_numpy(_np.stack(
+                [lx, ly, a[:, 3], a[:, 4], lyaw], axis=1)).float()
+            valid[k, :n] = True
+        return {"r7_agent_fut": box, "r7_agent_fut_valid": valid,
+                "r7_agent_fut_label": lab}
+
     def _agent_item(self, ep, f: int) -> dict:
         """The padded target block for ONE window, at its NOW frame ``f``.
 
@@ -2825,6 +2999,8 @@ class V3Dataset(RouteV21Dataset):
         # tactical heads are supervised at ONE instant, not two.
         if self.agent_join is not None:
             item.update(self._agent_item(ep, t + w - 1))
+            if self.r7_agent_future:
+                item.update(self._agent_future_item(ep, t + w - 1))
         # ---- refcv6 §2: the SAM3 map target at the SAME instant ------------
         # ⛔ `t + w - 1` -- the window's NOW as a STACKED-ROW index, which is
         # what `MapGTStore.raw_frames` converts. The detector, the tactical
@@ -3793,7 +3969,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         ag = _refc_agents.agent_losses(
             slots_ag, tgt_ag, core.agents,
             cam=_resolve_rig_cameras(model, ep_ag,
-                                     int(tgt_ag["valid"].shape[0])))
+                                     int(tgt_ag["valid"].shape[0])),
+            cls_class_weight=getattr(model, "_cls_class_weight", None))
         loss = loss + w_agent * ag["total"]
         for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
                      "ground"):
@@ -4192,7 +4369,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                            and v.shape[:1] == _b3_keep.shape[:1] else v)
                        for k, v in _pout["box_slots"].items()} \
                     if _b3_keep is not None else _pout["box_slots"]
-                _brow = _perc.box3d_loss_row(_s3, _t3)
+                _brow = _perc.box3d_loss_row(
+                    _s3, _t3,
+                    cls_class_weight=getattr(model, "_cls_class_weight", None))
                 loss = loss + _w_b3d * _brow["loss"]
                 extra["box3d"] = _brow["loss"]
                 for _k3, _v3 in _brow.items():
@@ -4201,6 +4380,110 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             else:
                 extra["box3d"] = out["fmap_s16"].sum() * 0.0
                 extra["box3d_n_z"] = 0.0
+
+    # ---- refcv7 (PI 2026-09-19): WTA proposals + the disentangled scorer ----
+    # ⛔ Both terms are ABSENT from the graph at weight 0 (not multiplied by 0),
+    # so a refcv6 run is bit-identical. With a weight they REFUSE rather than
+    # skip when their inputs are missing (the WP-6 rule).
+    _w_r7w = float(getattr(model, "_w_r7_wta", 0.0) or 0.0)
+    _w_r7s = float(getattr(model, "_w_r7_scorer", 0.0) or 0.0)
+    if _w_r7w > 0.0 or _w_r7s > 0.0:
+        if "r7_wta" not in out:
+            raise SystemExit("[refcv7] ⛔ a refcv7 weight is set but `out` has "
+                             "no `r7_wta`: the heads were not built or their "
+                             "forward never ran.")
+        _gt7 = traj_tgt.float()
+        if _w_r7w > 0.0:
+            _l7w, _best7 = r7h.wta_loss(out["r7_wta"].float(), _gt7, slot_valid)
+            loss = loss + _w_r7w * _l7w
+            extra["r7_wta"] = _l7w
+            extra["r7_wta_best_l1"] = _l7w.detach()
+        if _w_r7s > 0.0:
+            for _k in ("r7_agent_fut", "r7_agent_fut_valid", "r7_agent_fut_label",
+                       "map_frac", "map_seen"):
+                if _k not in batch:
+                    raise SystemExit(
+                        f"[refcv7] ⛔ --w-r7-scorer > 0 but the batch has no "
+                        f"`{_k}`: that oracle input is not wired "
+                        f"(`ds.r7_agent_future` / the map store), so a scorer "
+                        f"head would be trained on abstentions only.")
+            _slot_t = torch.tensor([h * 0.1 for h in v3.V3_HORIZONS],
+                                   device=device, dtype=torch.float32)
+            _cand = out["r7_candidates"].float()                 # detached
+            model._r7_calls = int(getattr(model, "_r7_calls", 0)) + 1
+            _np7 = int(getattr(model, "_r7_n_perturb", 0) or 0)
+            _extra_c = [_gt7[:, None]]                           # the human path
+            if _np7 > 0:
+                _extra_c.append(r7o.smooth_perturbations(
+                    torch.cat([_cand, _gt7[:, None]], dim=1), _slot_t, _np7,
+                    seed=model._r7_calls))
+            _xc = torch.cat(_extra_c, dim=1).detach()
+            _allc = torch.cat([_cand, _xc], dim=1)
+            _ag = batch["r7_agent_fut"].to(device).permute(0, 2, 1, 3).float()
+            _agv = batch["r7_agent_fut_valid"].to(device).permute(0, 2, 1)
+            _lab_ok = batch["r7_agent_fut_label"].to(device).all(dim=1)  # [B]
+            _mf = batch["map_frac"].to(device).float()
+            _ms = batch["map_seen"].to(device).to(torch.bool)
+            _v_lim = out.get("r7_v_lim")
+            _vl = None
+            if _v_lim is not None and bool(torch.isfinite(_v_lim).any()):
+                _vl = torch.where(torch.isfinite(_v_lim), _v_lim.float(),
+                                  torch.full_like(_v_lim.float(), 1e6))
+            _orc = r7o.oracle_subscores(
+                _allc, _slot_t, v0.float(), _gt7, slot_valid,
+                agents=_ag, agents_valid=_agv,
+                drivable=_mf[:, 1], seen=_ms, max_speed_ms=_vl,
+                nav_cmd=nav_cmd, nav_tau_rad=model._r7_nav_tau_rad)
+            # NC/TTC abstain unless EVERY slot's agent set is labelled
+            for _k in ("nc", "ttc"):
+                _orc[_k + "_mask"] = _orc[_k + "_mask"] & _lab_ok[:, None]
+            # ⛔⛔ A TRUNCATED GT IS NOT A GOOD TRAJECTORY. MEASURED 2026-09-19 on
+            # eval-139: `waypoint_targets` CLAMPS past the clip end, so a window
+            # whose 6 s horizon runs off the clip has a GT that stalls — it reads
+            # as a violent stop and scores comfort 0 (on COMPLETE GT the human
+            # fails comfort 0/161 times). Feeding that as the scorer's positive
+            # example, and deriving EP / nav from its length and heading, would
+            # teach the scorer that stopping dead is what the human does.
+            # ⇒ rows without a complete GT: the GT CANDIDATE is masked out of
+            # every sub-score, and the two GT-DERIVED sub-scores abstain.
+            _gt_full = slot_valid.all(dim=1)                       # [B]
+            _gt_col = _cand.shape[1]                               # the GT column
+            for _k in r7o.SUBSCORES:
+                _mk = _orc[_k + "_mask"].clone()
+                _mk[:, _gt_col] = _mk[:, _gt_col] & _gt_full
+                if _k in ("ep", "nav"):
+                    _mk = _mk & _gt_full[:, None]
+                _orc[_k + "_mask"] = _mk
+            extra["r7_gt_full_frac"] = float(_gt_full.float().mean())
+            if "map_label" in batch:
+                _orc["dac_mask"] = (_orc["dac_mask"]
+                                    & batch["map_label"].to(device).bool()[:, None])
+            if _vl is not None:
+                _orc["spd_mask"] = (_orc["spd_mask"]
+                                    & torch.isfinite(_v_lim).to(device)[:, None])
+            _lx = model.refcv7_scorer.score(out["r7_mem"], _xc, out["r7_v0"],
+                                            out["r7_cond"])
+            _lall = {k: torch.cat([out["r7_logits"][k], _lx[k]], dim=1)
+                     for k in out["r7_logits"]}
+            _l7s, _log7 = r7h.scorer_loss(_lall, _orc)
+            loss = loss + _w_r7s * _l7s
+            extra["r7_scorer"] = _l7s
+            for _k, _v in _log7.items():
+                extra[f"r7_bce_{_k}"] = _v
+            with torch.no_grad():
+                for _k in r7o.SUBSCORES:
+                    _m = _orc[_k + "_mask"]
+                    extra[f"r7_orc_{_k}_rate"] = (
+                        float(_orc[_k][_m].mean()) if bool(_m.any()) else float("nan"))
+                    extra[f"r7_orc_{_k}_cov"] = float(_m.float().mean())
+                # ⭐ selection quality ON THE ORACLE, with its RANDOM control
+                # (memory: an oracle gap without a random control is not a claim)
+                _n = _cand.shape[1]
+                _agg = r7o.aggregate({k: _orc[k][:, :_n] for k in r7o.SUBSCORES})
+                _b = torch.arange(_agg.shape[0], device=device)
+                extra["r7_sel_oracle_pick"] = float(_agg[_b, out["r7_sel_idx"]].mean())
+                extra["r7_sel_oracle_best"] = float(_agg.max(dim=1).values.mean())
+                extra["r7_sel_oracle_random"] = float(_agg.mean())
 
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
@@ -4656,12 +4939,40 @@ def _seam_stamp(cfg, args) -> dict:
         # ITSELF. See `agent_knob_dests`: a knob added to `build_parser`
         # tomorrow is stamped tomorrow, with no list here to rot.
         "agent_knobs": agent_knob_stamp(args),
+        # ⭐⭐ H-BOXCLS-1 — THE CLASS WEIGHT, IN THE SAME THREE-FACT SHAPE AS
+        # `tac_goal_tok_head` AND `max_speed_input` ABOVE, AND FOR THE SAME REASON.
+        # `requested` is what ARGV asked for; the artifact block is what the banked
+        # FILE says; `built` is the DIGEST OF THE TENSOR THE MODEL ACTUALLY CARRIES,
+        # filled by `train` and checked by `assert_seams_are_built`.
+        # ⛔ ALL TEN VALUES, not the flag name. A flag name alone does not reconstruct
+        # the arm, and a vector recomputed later is only as stable as whatever corpus
+        # was mounted then — the `anchors.pt` units post-mortem in one more costume.
+        # ⛔ AND `requested` ALONE WOULD BE THE DEFECT THIS BLOCK EXISTS TO CLOSE:
+        # a stamped field that never reaches the module is exactly what `305debd`
+        # fixed for `occ_from_geometry`. Only `built` is evidence.
+        "agent_cls_weight": _cls_weight_stamp(args),
     }
 
 
 # ---------------------------------------------------------------------------
 # ⭐ THE PROVENANCE CLOSURE — every knob reaches the record, BY CONSTRUCTION
 # ---------------------------------------------------------------------------
+
+def _cls_weight_stamp(args) -> dict:
+    """The `agent_cls_weight` seam block — intent, artifact, and a `built` slot.
+
+    ⛔ `built` is **None here on purpose**: this function runs before the model
+    exists, so it can only state INTENT and what the FILE says. `train` fills
+    `built` with the digest of the tensor actually attached to the model, and
+    `assert_seams_are_built` refuses when the two disagree. A block that
+    reported its own request as the fact would be green forever.
+    """
+    mode = str(getattr(args, "agent_cls_weight", "off"))
+    if mode == "off":
+        return {"requested": "off", "mode": "off", "built": None}
+    _, st = _agent_slots.load_cls_class_weight()
+    return dict(st, requested=mode, mode=mode, built=None)
+
 
 def agent_knob_dests(parser: argparse.ArgumentParser | None = None
                      ) -> tuple[str, ...]:
@@ -5089,6 +5400,43 @@ def assert_seams_are_built(model, stamp: dict) -> None:
         bad.append(
             "the seam stamp carries no `tac_goal_tok_head` block but the "
             "head WAS BUILT -- a live seam absent from the run record")
+
+    # --- H-BOXCLS-1: the agent/box class weight -------------------------- #
+    # ⛔ BIDIRECTIONAL, like the two blocks below, and the reason is the same one twice over.
+    # A record that ASKS for `train2400` while the model carries no weight is an arm reported as
+    # re-weighted that trained unweighted -- the `--agent-cls-weight` flag parsing and going
+    # nowhere. The mirror image, a weight on the model that the record calls `off`, makes the
+    # arm unreproducible from its own config. And because `built` is a DIGEST rather than a
+    # boolean, a THIRD failure is reachable here that a bool could not see: the right flag
+    # loading the WRONG VECTOR.
+    cw = stamp.get("agent_cls_weight")
+    cw_built = getattr(model, "_cls_class_weight", None) is not None
+    if isinstance(cw, dict):
+        wants = str(cw.get("requested", cw.get("mode", "off"))) != "off"
+        if wants and not cw_built:
+            bad.append(
+                "stamp requests agent_cls_weight=" + str(cw.get("requested")) +
+                " but model._cls_class_weight is None -- the record would claim a re-weighted "
+                "cls term the run did not train; the flag parsed and reached nothing")
+        if cw_built and not wants:
+            bad.append(
+                "model carries a cls class weight but the run record says agent_cls_weight is "
+                "off -- the arm cannot be reproduced from its own config.json")
+        if cw_built and cw.get("built") is not None:
+            _live = _agent_slots.cls_weight_digest(model._cls_class_weight)
+            if str(cw["built"]) != _live:
+                bad.append(
+                    f"stamp says agent_cls_weight.built={cw['built']!r} but the weight on the "
+                    f"model digests to {_live!r} -- the record and the weights disagree about "
+                    f"WHICH vector the cls term is running")
+        if wants and cw.get("digest") and cw.get("built") and cw["digest"] != cw["built"]:
+            bad.append(
+                f"the banked artifact digests to {cw['digest']!r} but the model carries "
+                f"{cw['built']!r} -- the loaded vector is not the banked one")
+    elif cw_built:
+        bad.append(
+            "model carries a cls class weight but the seam stamp has no `agent_cls_weight` "
+            "block -- a live re-weighting absent from the run record")
 
     # --- E16: the max-speed conditioner ---------------------------------- #
     # ⛔ BIDIRECTIONAL, exactly like the block above. A conditioner in the
@@ -5695,6 +6043,11 @@ CONFLICT_PERCEPTION_TERMS = (
     # could run `--tac-decoder-d-bev > 0` before tonight — but a reader
     # comparing across that date must know.
     ("tac_v6", lambda m: float(getattr(m, "_w_tac_v6", 0.0))),    # refcv6 §4
+    # ⭐ refcv7: both new objectives reach the shared trunk (the scorer by
+    # design — DrivoR lets its gradient reach the encoder), so the detector
+    # must see them or R3's mitigation silently stops covering the trunk.
+    ("r7_wta", lambda m: float(getattr(m, "_w_r7_wta", 0.0))),    # refcv7 D1
+    ("r7_scorer", lambda m: float(getattr(m, "_w_r7_scorer", 0.0))),  # D2
 )
 
 
@@ -5874,6 +6227,17 @@ def train(args) -> dict:
     # ⭐ At weight 0.0 NOTHING happens here: no submodule, so `model.parameters()`
     # is the same list, `state_dict()` the same keys, and the RNG draw order
     # unchanged. That is the bit-identity condition, met by construction.
+    # ⭐ H-BOXCLS-1: the class weight is LOADED from a banked artifact and attached to the
+    # model, so the loss sites read it without threading it through every call signature.
+    # ⛔ `off` attaches None, which is BIT-IDENTICAL to every arm trained before this flag.
+    model._cls_class_weight, model._cls_class_weight_stamp = None, None
+    if str(getattr(args, "agent_cls_weight", "off")) == "train2400":
+        _cw, _cws = _agent_slots.load_cls_class_weight()
+        model._cls_class_weight = _cw.to(device)
+        model._cls_class_weight_stamp = _cws
+        print("[v3] agent cls weight: train2400 (%d classes, imbalance %s:1, digest %s)"
+              % (len(_cws["weights"]), _cws["imbalance_majority_to_rarest"], _cws["digest"]),
+              flush=True)
     model._w_map = float(getattr(args, "w_map", 0.0) or 0.0)
     model._w_box3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
     model._perception = None
@@ -5947,6 +6311,19 @@ def train(args) -> dict:
     # above are SHARED with this channel and are fitted from the loaded split
     # further down, never from a literal.
     model._w_tac_v6 = float(getattr(args, "w_tac_v6", 0.0) or 0.0)
+    # ⭐ refcv7 — the weights on the BUILT model, and the same built-vs-weight
+    # refusal refcv6 applies, read off the object rather than argv.
+    model._w_r7_wta = float(getattr(args, "w_r7_wta", 0.0) or 0.0)
+    model._w_r7_scorer = float(getattr(args, "w_r7_scorer", 0.0) or 0.0)
+    model._r7_n_perturb = int(getattr(args, "r7_n_perturb", 0) or 0)
+    model._r7_nav_tau_rad = float(getattr(args, "r7_nav_tau_rad", 0.0) or 0.0)
+    model._r7_calls = 0
+    _r7_built = getattr(model, "refcv7_wta", None) is not None
+    if _r7_built != (model._w_r7_wta > 0.0):
+        raise SystemExit(
+            "[refcv7] ⛔ the MODEL and the WEIGHT disagree: refcv7 heads are "
+            "%s but --w-r7-wta is %.6g." % ("BUILT" if _r7_built else "None",
+                                           model._w_r7_wta))
     # ⛔⛔ A BUILT DECODER WITH NO LIVE WEIGHT IS REFUSED HERE TOO — and this
     # is NOT redundant with `_pin_refcv6_tactical`. That guard reads ARGV;
     # this one reads THE MODEL THAT WAS ACTUALLY BUILT. The 2026-09-17
@@ -6218,6 +6595,8 @@ def train(args) -> dict:
         # ⭐ refcv6 §2b: the ego-history channel is a DATASET decision, taken
         # here so the trainer's `pose_hist` refusal fires at launch.
         ds.ego_history = bool(getattr(args, "ego_history", False))
+        # ⭐ refcv7: the scorer's NC/TTC oracle needs the future agent boxes
+        ds.r7_agent_future = float(getattr(args, "w_r7_scorer", 0.0) or 0.0) > 0.0
         # ⭐⭐ refcv6 §4 SHARES THIS CHANNEL, AND THAT IS THE POINT. The
         # behaviour decoder's 22 validity queries are supervised by the SAME
         # `tactical_goal_targets` (y, w) pair, under the SAME
@@ -6487,6 +6866,8 @@ def train(args) -> dict:
             # in-training eval would run a model whose condition is missing an
             # input it was trained with.
             e_ds.ego_history = bool(getattr(args, "ego_history", False))
+            e_ds.r7_agent_future = (
+                float(getattr(args, "w_r7_scorer", 0.0) or 0.0) > 0.0)
             # ⭐ refcv6 §4 rides the SAME eval wiring, and for the SAME reason
             # arm C_w0p05 died on it: the in-training eval calls
             # `compute_losses_v3`, whose refcv6 block REFUSES (SystemExit, so
@@ -6693,6 +7074,14 @@ def train(args) -> dict:
             model.tac_decoder_v6.provenance()
         _seams["tac_decoder_v6"]["loss_weights"] = \
             v6tac.TacticalLossWeights().to_dict()
+    # ⭐ H-BOXCLS-1: `built` is the digest of the tensor the MODEL CARRIES, computed by
+    # `cls_weight_digest` off `model._cls_class_weight` -- never re-read from the artifact.
+    # ⛔ That distinction IS the check: re-reading the file would agree with itself forever
+    # and could not see a flag that parsed but never reached the loss, which is precisely the
+    # defect `305debd` fixed for `occ_from_geometry`.
+    _cwv = getattr(model, "_cls_class_weight", None)
+    _seams["agent_cls_weight"]["built"] = (
+        None if _cwv is None else _agent_slots.cls_weight_digest(_cwv))
     _seams["max_speed_onehot_v6"]["built"] = (
         getattr(model, "max_speed_1h_v6", None) is not None)
     assert_knobs_stamped(args, _seams)
@@ -7735,6 +8124,15 @@ def build_parser() -> argparse.ArgumentParser:
                          "DERIVED from anchor_slots and a NON-UNIFORM prefix is "
                          "REFUSED at startup, never guessed -- the `df` / "
                          "`step_s` scope family in a geometry costume.")
+    g5.add_argument("--agent-cls-weight", default="off",
+                    choices=["off", "train2400"],
+                    help="H-BOXCLS-1. 'train2400' weights the slot `cls` term by INVERSE TRAIN "
+                         "FREQUENCY, read from the banked artifact "
+                         "`tanitad/data/agent_cls_weights_train2400.json` (2,308 episodes / "
+                         "12,122,129 boxes, imbalance 1071.1:1). 'off' is bit-identical to today. "
+                         "MEASURED: the unweighted cls term collapses to ONE class of ten on "
+                         "2000/2000 slots, and the signal IS linearly readable from the head's own "
+                         "features (d7fa093), so the collapse is an OBJECTIVE failure.")
     g5.add_argument("--agents", default="off",
                     choices=["off", "head", "oracle"],
                     help="E-AGT-*. 'head' = the LEARNED monocular 3D head "
@@ -8237,6 +8635,56 @@ def build_parser() -> argparse.ArgumentParser:
                           "decoder no `behaviour_term` is ever produced and "
                           "the flag would be silently inert while "
                           "config.json stamps it on.")
+    # ---- refcv7 (PI 2026-09-19): DrivoR's proven planning heads ---------- #
+    # `Project Steering/SPEC_REFCV7.md`. ⛔ A run that passes none of these is
+    # BIT-IDENTICAL to refcv6 (`test_refcv7_model.py`).
+    g7 = ap.add_argument_group("refcv7 (DrivoR heads on refcv6)")
+    g7.add_argument("--refcv7", action="store_true",
+                    help="build the WTA proposal decoder (64 learned queries, one "
+                         "token per trajectory) and the DISENTANGLED scorer "
+                         "(stop-gradient re-embedding, 7 oracle sub-scores). "
+                         "Needs --arm hier, --tac-decoder-v6, --trunk timm.")
+    g7.add_argument("--w-r7-wta", type=float, default=0.0,
+                    help="weight of the winner-takes-all L1 (DrivoR eq. 1). "
+                         "⛔ REFUSED at 0 under --refcv7.")
+    g7.add_argument("--w-r7-scorer", type=float, default=0.0,
+                    help="weight of the scorer's 7 sub-score BCE against the "
+                         "PhysicalAI oracle. Needs --agent-join, --w-map > 0 "
+                         "and --r7-nav-tau-rad.")
+    g7.add_argument("--r7-queries", type=int, default=64)
+    g7.add_argument("--r7-d-model", type=int, default=256)
+    g7.add_argument("--r7-layers", type=int, default=4)
+    g7.add_argument("--r7-heads", type=int, default=8)
+    g7.add_argument("--r7-img-pool", type=int, default=2,
+                    help="avg-pool factor on the stride-16 map for the image "
+                         "tokens (416x1024 -> 13x32 = 416 tokens at 2)")
+    g7.add_argument("--r7-no-select", action="store_true",
+                    help="ARM: train the scorer but keep the refcv6 pick deployed")
+    g7.add_argument("--r7-scorer-self-attn", action="store_true",
+                    help="ARM: DrivoR's original scorer with candidate self-"
+                         "attention (a candidate's score then depends on its "
+                         "companions — not a stationary search reward)")
+    g7.add_argument("--r7-nav-tau-rad", type=float, default=0.0,
+                    help="terminal-heading tolerance for the nav sub-score, "
+                         "DERIVED on the TRAIN split by "
+                         "scripts/refcv7_derive_nav_tau.py. No default.")
+    g7.add_argument("--r7-n-perturb", type=int, default=32,
+                    help="smooth off-proposal variants per window shown to the "
+                         "scorer (the TOAD lesson: a scorer trained only on its "
+                         "own proposals fails as a search reward)")
+    g7.add_argument("--r7-toad", action="store_true",
+                    help="TOAD test-time search over the deployed pick (CEM on the "
+                         "slot controls through the vocabulary's own integrator). "
+                         "⛔ EVAL/INFERENCE ONLY — skipped in model.training. Needs "
+                         "--w-r7-scorer > 0: the search reward IS the scorer.")
+    g7.add_argument("--r7-toad-iters", type=int, default=5)
+    g7.add_argument("--r7-toad-samples", type=int, default=64)
+    g7.add_argument("--r7-toad-seed", type=int, default=0,
+                    help="INFERENCE seed of the search; vary it on purpose to "
+                         "measure the inference-variance floor")
+    g7.add_argument("--r7-w-ttc", type=float, default=5.0)
+    g7.add_argument("--r7-w-ep", type=float, default=5.0)
+    g7.add_argument("--r7-w-comf", type=float, default=2.0)
     # ---- refcv6 §5: THE 4-VALUE MAX-SPEED INPUT (PI 2026-09-16) ---------- #
     # ⭐ THE PI, verbatim: *"It should few discrete values: 30 kph, 50 kph,
     # 100 kph, 120 kph ... Let use it as input in our next experiment"*.

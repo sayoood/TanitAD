@@ -123,8 +123,15 @@ def check_imports():
 
 def check_class_enum():
     """The vocabulary has exactly ONE spelling, and it is the label side's. A
-    first draft hand-wrote `bicycle/motorcycle/train_or_tram_car`, none of
-    which exist in the corpus."""
+    first draft hand-wrote `bicycle/motorcycle/train_or_tram_car`.
+
+    ⛔ The justification used to read "none of which exist in the corpus"; that is
+    true of `bicycle` and `motorcycle` (0 boxes each) and FALSE of
+    `train_or_tram_car` (**10,077 boxes = 0.0831 % of TRAIN**, MEASURED
+    2026-09-22). The check below is unchanged and still correct: the reason to
+    forbid the name is that `AGENT_CLASSES` **is** `bev_raster.ALL_CLASSES`, not
+    that the label cannot occur. Those boxes map to `-1` and are masked out of
+    the class term — correct handling, and now a stated one."""
     try:
         from tanitad.data.bev_raster import ALL_CLASSES
         from tanitad.refs.refc_agents import AGENT_CLASSES, N_AGENT_CLASSES

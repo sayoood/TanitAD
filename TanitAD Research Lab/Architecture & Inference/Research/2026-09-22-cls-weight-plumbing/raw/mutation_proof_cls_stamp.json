@@ -1,0 +1,122 @@
+{
+ "_what": "mutation proof that test_cls_weight_stamp.py can actually FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tanitad\\models\\agent_slots.py": "3c716d7aa7387ca866856e71814d6773",
+  "stack\\scripts\\refc_v3_train.py": "28ab61a21d768f39ffbc3356495e6931"
+ },
+ "arms": [
+  {
+   "arm": "S1_built_reads_the_artifact_not_the_model",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_built_is_read_off_the_model_not_the_artifact"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S2_digest_ignores_class_names",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_digest_matches_the_banked_literal",
+    "test_digest_is_permutation_sensitive",
+    "test_digest_survives_a_device_and_dtype_round_trip",
+    "test_digest_moves_when_one_weight_is_edited",
+    "test_the_vector_is_normalised_to_mean_one",
+    "test_a_rare_class_error_costs_more_under_the_train_weight",
+    "test_the_seam_check_is_bidirectional_and_digest_aware[off",
+    "test_the_seam_check_is_bidirectional_and_digest_aware[train2400",
+    "test_the_seam_check_is_bidirectional_and_digest_aware[record",
+    "test_the_seam_check_is_bidirectional_and_digest_aware[model",
+    "test_train2400_stamps_all_ten_values_and_a_null_built"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S3_load_stops_verifying_its_own_digest",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_load_refuses_a_vector_that_disagrees_with_its_own_attestation"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S4_agent_losses_site_drops_the_weight",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_both_loss_call_sites_pass_the_weight"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S5_box3d_site_drops_the_weight",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_both_loss_call_sites_pass_the_weight"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S6_seam_check_loses_the_reverse_direction",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_seam_check_is_bidirectional_and_digest_aware[model"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S7_seam_check_stops_comparing_digests",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_seam_check_is_bidirectional_and_digest_aware[record"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S8_seam_check_loses_the_forward_direction",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_seam_check_is_bidirectional_and_digest_aware[record"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "S9_out_of_vocabulary_class_relabelled_to_zero",
+   "file": "stack\\tanitad\\models\\agent_slots.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_an_out_of_vocabulary_class_is_masked_not_relabelled"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 9,
+ "arms_total": 9,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 9/9 arms RED, including the self-agreeing `built` stamp and BOTH loss-site forwards; both files restored byte-identical and the final clean run is green."
+}

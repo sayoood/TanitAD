@@ -29,15 +29,23 @@ from tanitad.refs import refc, refc_agents as ra
 # ---------------------------------------------------------------------------
 def test_class_enum_is_the_corpus_enum():
     """CONTROL. A first draft of `refc_agents` hand-wrote a plausible 10-class
-    tuple containing `bicycle`, `motorcycle`, `train_or_tram_car` — none of
-    which exist in the corpus. This pins the enum to the label side's."""
+    tuple containing `bicycle`, `motorcycle`, `train_or_tram_car` in place of
+    `other_vehicle`, `stroller`, `animal`. This pins the enum to the label side's.
+
+    ⛔ This docstring used to say those three "do not exist in the corpus".
+    MEASURED 2026-09-22 over the canonical TRAIN join: `bicycle` 0, `motorcycle`
+    0, **`train_or_tram_car` 10,077 (0.0831 % of TRAIN)**. The assertion below is
+    unchanged — the name is forbidden because `AGENT_CLASSES` **is**
+    `bev_raster.ALL_CLASSES`, not because the label cannot occur — but a guard
+    resting on a false reason is one nobody re-reads."""
     from tanitad.data.bev_raster import ALL_CLASSES
     assert ra.AGENT_CLASSES == tuple(ALL_CLASSES)
     assert ra.N_AGENT_CLASSES == 10
     # the three that DO exist and were nearly dropped
     for name in ("other_vehicle", "stroller", "animal"):
         assert name in ra.AGENT_CLASSES
-    # the three that were invented
+    # the three the draft invented IN THIS ENUM (two of which are also absent
+    # from the corpus; the third is not — see the docstring)
     for name in ("bicycle", "motorcycle", "train_or_tram_car"):
         assert name not in ra.AGENT_CLASSES
 

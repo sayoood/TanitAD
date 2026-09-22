@@ -497,9 +497,10 @@ def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
     return row
 
 
-def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None) -> dict:
+def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None,
+                   cls_class_weight=None) -> dict:
     """:func:`box3d_set_loss` plus per-term counts, flattened for the log row."""
-    r = box3d_set_loss(slots, tgt, weights=weights)
+    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight)
     row = {"loss": r["total"]}
     for k, v in r.items():
         if k.startswith("loss_") and torch.is_tensor(v):
