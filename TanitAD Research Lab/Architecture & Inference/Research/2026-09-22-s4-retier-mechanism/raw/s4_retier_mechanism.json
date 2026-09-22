@@ -1,0 +1,45 @@
+{
+ "_what": "how the S4 re-tier lands in the HF repo -- the only self-consistent option deletes published files",
+ "_evidence_class": "MEASURED (ours), read-only, no writes to Thor or HF",
+ "measured": {
+  "local_gt_sources_present": "77/77",
+  "out_dir": "4546 npz, 14 GB",
+  "total_bytes_MB": 148.6,
+  "mean_MB": 1.93,
+  "max_MB": 3.1,
+  "publisher_commit_ops": "CommitOperationAdd only -- no delete path exists today"
+ },
+ "options": [
+  {
+   "id": "A",
+   "what": "manifest-only; bytes stay in gt_flagged/",
+   "storage_MB": 0,
+   "self_consistent": false,
+   "why": "a consumer globbing gt/ gets 78 fewer maps than the manifest promises"
+  },
+  {
+   "id": "B",
+   "what": "add to gt/, keep the gt_flagged/ copy",
+   "storage_MB": 150,
+   "self_consistent": false,
+   "why": "mirrored: gt_flagged/ holds 78 clips the record calls validated"
+  },
+  {
+   "id": "C",
+   "what": "add to gt/, DELETE from gt_flagged/",
+   "storage_MB": 0,
+   "self_consistent": true,
+   "why": "the only fully consistent option -- but it deletes published files"
+  }
+ ],
+ "_not_mine_to_take": "C permanently removes files from a published dataset repo; the S4 ruling authorises a RE-TIER (a judgement), not a deletion",
+ "_argument_for_C_stated_fairly": "the deleted file is one the same pipeline produced and is simultaneously re-uploading, not unique data",
+ "safe_default": {
+  "option": "B",
+  "why": "nothing irreversible; C stays available afterwards",
+  "cost_stated": "~150 MB and an untidy gt_flagged/; the pass records the duplicate EXPLICITLY, naming both paths per entry"
+ },
+ "_A_rejected_as_default": "a file under gt_flagged/ that the record calls validated is the 'artifact that cannot be read in isolation' failure, and would be permanent and silent",
+ "pi_queue_item": 19,
+ "production_eta": "2026-09-22 17:44"
+}

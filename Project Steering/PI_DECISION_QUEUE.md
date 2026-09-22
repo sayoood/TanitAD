@@ -1479,3 +1479,47 @@ be revived.**
 > REFUSED rather than compared** (the same tree reads 530 against the corpus and 870 against the 306k
 > index, so an unnamed floor would manufacture or hide growth). The baseline stores counts and the
 > digest only — no ids. Package: `TanitAD Research Lab/Data Engineering/Research/2026-09-19-clipid-prefix-floor/`.
+
+
+---
+
+## 19. DECIDE (or let the safe default stand): how the §4 re-tier lands in the HF repo — the only option that leaves it self-consistent DELETES published files
+
+**Asked because the ruling is yours and already made; only the MECHANISM is open.** You ruled §4 on
+2026-09-20 — *"a) for the term, (c) for the reporting"* — and the prereg applies it as ONE pass
+after production completes (**ETA today 17:44**, 4,545/4,719 at the time of writing). The premise is
+now verified on live data (`b513a26`): all **77** clips carrying the flag *"near path unlabelled
+(seen, no class), no path cell on a non-drivable class"* have **zero** NON_DRIVABLE path cells, so
+their compliant share under (a) is **exactly 1.0** and they clear the 0.9 threshold outright. The
+(c) quantity is measured: withheld share min 0.1001 / median 0.1372 / mean 0.1706 / **max 0.4603**,
+none above 50 %.
+
+**What is NOT decided is where the bytes end up.** `corpus_publisher.gt_path()` routes validated
+clips to `semantic_maps/gt/` and flagged clips to `semantic_maps/gt_flagged/`, so a re-tier changes
+a clip's DIRECTORY. MEASURED: the 77 local sources all still exist in `corpus/out/` (4,546 npz,
+14 GB), so any option is executable; they total **148.6 MB** (mean 1.93, max 3.10).
+⚠️ And the publisher imports **`CommitOperationAdd` only** — it has no delete path today.
+
+| option | storage | leaves the repo SELF-CONSISTENT? |
+|---|---|---|
+| **A** — manifest-only; bytes stay in `gt_flagged/` | **0 MB** | ⛔ no: 78 clips the manifest calls *validated* sit under `gt_flagged/`, and a consumer globbing `gt/` gets 78 fewer maps than the manifest promises |
+| **B** — add to `gt/`, keep the `gt_flagged/` copy | **~150 MB** | ⛔ no, mirrored: `gt_flagged/` then holds 78 clips the manifest calls validated |
+| **C** — add to `gt/`, **delete** from `gt_flagged/` | 0 net | ✅ yes — and it is the only one |
+
+⛔ **I am not taking C on my own authority.** It permanently removes files from a published dataset
+repo, and deleting published data is outside what I do without your word — your §4 ruling authorises
+the **re-tier**, which is a judgement, not a deletion. ⚠️ Note the deletion in C is of a file the
+**same pipeline produced and is simultaneously re-uploading**, not of unique data; that is an
+argument for C, not a reason to skip asking.
+
+⭐ **SAFE DEFAULT IF YOU DO NOT ANSWER BEFORE PRODUCTION ENDS: B**, because nothing about it is
+irreversible and C stays available afterwards at any time. ⚠️ Its cost is honest and stated: ~150 MB
+and a `gt_flagged/` directory that contradicts the manifest for 78 clips — so the pass will record
+the duplicate **explicitly** in the manifest, and the re-tiered entries will name **both** paths,
+so no reader of the record is misled even while the layout is untidy.
+⛔ A is NOT the default despite being free: a file under `gt_flagged/` that the record calls
+validated is precisely the *artifact that cannot be read in isolation* failure the anchor-units
+disaster taught, and it would sit in the corpus permanently.
+
+**What unblocks it:** one word — A, B or C. Nothing else waits on this; the pass itself is written
+against whichever you pick and runs after DONE.
