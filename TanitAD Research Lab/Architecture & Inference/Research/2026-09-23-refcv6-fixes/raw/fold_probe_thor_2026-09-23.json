@@ -1,0 +1,29 @@
+{
+ "_what": "fold probe, resnet101.a1_in1k pretrained, 416x1024, CUDA (Thor)",
+ "_evidence_class": "MEASURED (ours), Thor",
+ "torch": "2.13.0+cu130",
+ "fp32": {
+  "bn_folded": 104,
+  "rel_err_per_level": [
+   0.00222977576777339,
+   0.006658800411969423
+  ],
+  "s_fwd_bwd_8img_unfolded": 0.4984,
+  "s_fwd_bwd_8img_folded": 0.4528,
+  "speedup": 1.101,
+  "max_mem_gib_unfolded": 8.81,
+  "max_mem_gib_folded": 4.99
+ },
+ "bf16_cl": {
+  "bn_folded": 104,
+  "rel_err_per_level": [
+   0.026694033294916153,
+   0.07214701920747757
+  ],
+  "s_fwd_bwd_8img_unfolded": 0.3278,
+  "s_fwd_bwd_8img_folded": 0.2073,
+  "speedup": 1.581,
+  "max_mem_gib_unfolded": 5.04,
+  "max_mem_gib_folded": 3.14
+ }
+}

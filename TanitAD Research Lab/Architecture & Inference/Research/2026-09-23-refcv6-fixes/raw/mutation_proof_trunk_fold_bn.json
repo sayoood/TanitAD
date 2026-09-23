@@ -1,0 +1,179 @@
+{
+ "_what": "mutation proof that the frozen-BN FOLD tests can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tanitad\\refs\\refc.py": "00efccfef16245e292c1b0984e6f1c20",
+  "stack\\tests\\test_trunk_speed_levers.py": "1716cf536202146c897ef6a22736bb54",
+  "stack\\scripts\\refc_v3_train.py": "41732ea9dc8b0d391b55959a20cdc494",
+  "stack\\tanitad\\models\\timm_trunk.py": "efe42022fa6debd43436a20a1e1502b0"
+ },
+ "arms": [
+  {
+   "arm": "F1_fold_drops_the_running_mean",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_is_the_SAME_FUNCTION_and_the_same_GRADIENTS",
+    "test_fold_bn_keeps_every_state_dict_key_and_LOADS_into_an_unfolded_trunk"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F2_fold_drops_eps",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_is_the_SAME_FUNCTION_and_the_same_GRADIENTS",
+    "test_fold_bn_keeps_every_state_dict_key_and_LOADS_into_an_unfolded_trunk"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F3_bn_not_replaced_applied_twice",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_is_the_SAME_FUNCTION_and_the_same_GRADIENTS",
+    "test_fold_bn_makes_the_BN_pass_the_identity",
+    "test_fold_bn_keeps_every_state_dict_key_and_LOADS_into_an_unfolded_trunk",
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F4_conv_not_folded_bn_dropped",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_is_the_SAME_FUNCTION_and_the_same_GRADIENTS",
+    "test_fold_bn_keeps_every_state_dict_key_and_LOADS_into_an_unfolded_trunk",
+    "test_fold_bn_composes_with_bf16_and_chunked_checkpointing"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F5_STAMPED_but_NOT_APPLIED",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_makes_the_BN_pass_the_identity",
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F6_trunk_folds_a_training_bn",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_REFUSES_a_bn_that_trains"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F7_trainer_accepts_fold_without_frozen",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_REFUSES_a_bn_that_trains"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F8_trainer_does_not_pin_the_flag",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_REFUSES_a_bn_that_trains",
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped",
+    "test_fold_bn_REFUSES_the_refc_trunk_and_NAMES_the_flag",
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F9_build_encoder_drops_the_flag",
+   "file": "stack\\tanitad\\refs\\refc.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped",
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F10_stamp_is_a_constant",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped",
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F11_refc_refusal_ignores_fold",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_REFUSES_the_refc_trunk_and_NAMES_the_flag"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F12_shortcut_bns_left_unfolded",
+   "file": "stack\\tanitad\\models\\timm_trunk.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_fold_bn_is_the_SAME_FUNCTION_and_the_same_GRADIENTS",
+    "test_fold_bn_flag_reaches_the_BUILT_trunk_FOLDED_and_is_stamped",
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F13_record_reads_the_wrong_module",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F14_record_dropped",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_train_RECORDS_the_levers_the_BUILT_trunk_applied"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 14,
+ "arms_total": 14,
+ "_VERDICT": "MUTATION-PROVEN -- all 14/14 arms RED, including the fold stamped but not applied and the eps-only wrong fold; all files restored byte-identical and the final clean run is green."
+}

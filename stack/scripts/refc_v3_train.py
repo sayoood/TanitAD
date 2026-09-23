@@ -355,12 +355,18 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # the in-repo `refc` trunk has neither, so the flag would be stamped and do nothing.
     cfg.core.encoder.trunk_bf16 = bool(getattr(args, "trunk_bf16", False))
     cfg.core.encoder.trunk_channels_last = bool(getattr(args, "trunk_channels_last", False))
-    if (cfg.core.encoder.trunk_bf16 or cfg.core.encoder.trunk_channels_last) \
-            and _trunk != "timm":
+    cfg.core.encoder.trunk_fold_bn = bool(getattr(args, "trunk_fold_bn", False))
+    if cfg.core.encoder.trunk_fold_bn and not cfg.core.encoder.trunk_frozen_bn:
         raise SystemExit(
-            "[v3] ⛔ --trunk-bf16 / --trunk-channels-last need --trunk timm; the "
-            "in-repo `refc` trunk implements neither, so the flag would be stamped "
-            "into config.json and change nothing. Got --trunk %s." % _trunk)
+            "[v3] ⛔ --trunk-fold-bn without --trunk-frozen-bn: only a FROZEN BatchNorm is a "
+            "fixed affine that can be folded into its conv; a BN training on the batch is "
+            "not, and folding it would change the function.")
+    if (cfg.core.encoder.trunk_bf16 or cfg.core.encoder.trunk_channels_last
+            or cfg.core.encoder.trunk_fold_bn) and _trunk != "timm":
+        raise SystemExit(
+            "[v3] ⛔ --trunk-bf16 / --trunk-channels-last / --trunk-fold-bn need --trunk timm; "
+            "the in-repo `refc` trunk implements none of them, so the flag would be "
+            "stamped into config.json and change nothing. Got --trunk %s." % _trunk)
     # ⛔ C26: equalize the rig-correlated black strip (see `--equalize-bottom-rows`).
     cfg.core.encoder.trunk_equalize_bottom_rows = int(
         getattr(args, "equalize_bottom_rows", 0) or 0)
@@ -4809,6 +4815,23 @@ def _refcv6_tactical_block(args, model, tac_goal_stats) -> dict | None:
     return block
 
 
+def _trunk_levers_built(model):
+    """The backbone levers as the BUILT trunk reports them, for `config.json`.
+
+    `seams.trunk_fold_bn` (and its siblings) record the CONFIG -- what was asked for. This
+    records what the constructed trunk DID: how many BatchNorms it pinned (`bn_pinned`), how
+    many conv/BN pairs it folded (`bn_folded`), its checkpoint chunk, bf16, NHWC. A flag that
+    parsed and was stamped but never reached the modules reads `true` above and shows up
+    here as a missing count. `None` for a trunk that has no levers (the in-repo `refc` one).
+    """
+    enc = getattr(getattr(model, "core", None), "encoder", None)
+    lv = getattr(enc, "memory_levers", None)
+    if not isinstance(lv, dict):
+        return None
+    return {str(k): (v if isinstance(v, (bool, int, float, str)) or v is None else repr(v))
+            for k, v in lv.items()}
+
+
 def _seam_stamp(cfg, args) -> dict:
     """The hierarchy-seam booleans, serialised so a finished run can rebuild
     its own model config from its own record.
@@ -4922,6 +4945,7 @@ def _seam_stamp(cfg, args) -> dict:
         "trunk_frozen_bn": bool(getattr(core.encoder, "trunk_frozen_bn", False)),
         "trunk_bf16": bool(getattr(core.encoder, "trunk_bf16", False)),
         "trunk_channels_last": bool(getattr(core.encoder, "trunk_channels_last", False)),
+        "trunk_fold_bn": bool(getattr(core.encoder, "trunk_fold_bn", False)),
         "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
         "trunk_fuse_identity": bool(getattr(core.encoder,
                                             "trunk_fuse_identity", True)),
@@ -7654,6 +7678,9 @@ def train(args) -> dict:
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
         # ⭐ the backend setting as it IS, read back -- not the flag that asked for it
         "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
+        # ⭐ the backbone levers as the BUILT trunk reports them (`bn_folded`, `bn_pinned`,
+        # `chunk_ckpt`, `bf16`, `channels_last`) -- the seam stamp says what was asked for
+        "trunk_memory_levers": _trunk_levers_built(model),
         # ⭐ whether this process RESUMED, and where in the data order it picked up
         "data_order": _data_order,
         # ⭐ A7: `null` is the baseline (no recalibration) and is distinguishable
@@ -9065,6 +9092,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "of GPU time is memory-bound backbone elementwise work (BN, "
                          "ReLU, residual adds), which bf16 halves. --trunk timm only. "
                          "Stamped in config.json.")
+    ap.add_argument("--trunk-fold-bn", action="store_true",
+                    help="⭐ SPEED: fold every FROZEN backbone BatchNorm into the conv before "
+                         "it -- the same function (BN(conv(x;W)) = conv(x; s*W) + beta - "
+                         "mu*s), with no separate BN pass. MEASURED 2026-09-23 on Thor: BN "
+                         "was ~23 %% of GPU time. gamma/beta still train; state_dict keys "
+                         "are unchanged. Requires --trunk-frozen-bn. Stamped.")
     ap.add_argument("--cudnn-benchmark", action="store_true",
                     help="⭐ SPEED: torch.backends.cudnn.benchmark = True -- cuDNN times "
                          "its convolution algorithms once per input shape and keeps the "

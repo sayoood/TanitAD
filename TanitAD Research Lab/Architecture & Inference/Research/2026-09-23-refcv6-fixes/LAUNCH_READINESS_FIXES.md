@@ -140,7 +140,7 @@ per batch (the only admissible memory probe on Thor) and s/step with the conflic
 step vs amortised. The budget is fixed in **samples** — the prereg's `full` = 40,284 × 20 =
 **805,680** windows ≈ 1.08 epochs of 746,946 — so the batch decision cannot move it.
 
-## ⛔ Blocker
+## ⛔ Blocker — ✅ RESOLVED 2026-09-23: no reboot was needed (§7, `CORR-2026-09-23-THOR-REBOOT-AND-OOM`)
 
 Thor MemAvailable **13.4 GB of 128.8 GB** with no process accounting for it (largest RSS 1.7 GB;
 Slab 1.2 GB; Shmem 0.2 GB) after 38.4 days of uptime — kernel-side GPU memory that only a reboot
@@ -248,3 +248,90 @@ outputs left in bf16, the trainer not pinning the flag, `build_encoder` dropping
 **The launch configuration now:** batch 8, chunk 8, frozen BN, bf16 + channels_last, conflict probe
 every 10th step, in-run eval every 500 steps ⇒ ~0.73–0.76 samples/s ⇒ pre-registered `cut`
 (240,000 windows, 30,000 steps) ≈ **3.8 days**, `full` (805,680 windows, 100,750 steps) ≈ **12.6 days**.
+
+## 9. Faster still (the PI's second choice, 2026-09-23): the frozen BatchNorms folded into their convs — 1.27× more, 1.98× over fp32
+
+**Evidence class:** MEASURED (ours — Thor, plus the dev box where named). Smoke S8; probes
+`code/fold_probe.py`, `code/fold_precision.py`, `code/fold_bias_mechanism.py`,
+`code/fold_bias_speed.py`; the identical smoke read `code/step_budget.py` →
+`raw/step_budget_S3_S4_S8.json`.
+
+**The lever (`--trunk-fold-bn`, launch knob `TRUNK_FOLD_BN=1`).** Chunked checkpointing already
+REQUIRES BatchNorm frozen at its ImageNet statistics (§7), and a frozen BN is a fixed per-channel
+affine. `BN(conv(x; W)) = conv(x; s·W) + (β − μ·s)` with `s = γ/√(σ²+ε)` is the same function, so
+the conv computes it directly and the BN becomes the identity — no separate BN pass forward or
+backward, and no activation saved for BN's own backward. γ and β still train (through `s` and the
+bias). Only the two instances' `forward` change, so the module tree and every `state_dict` key are
+identical: a folded run's checkpoint loads into an unfolded model and back. Refused without
+`--trunk-frozen-bn` and for the `refc` trunk. resnet101: **104 conv/BN pairs folded** (MEASURED on
+Thor; resnet18 in CI: 20).
+
+**Is it the same function?** Against a strict-fp32 reference (unfolded, TF32 off), resnet101
+pretrained, 416 × 1024, relative error per feature level:
+
+| arm | level 1 | level 2 | reads |
+|---|---|---|---|
+| folded, strict fp32 | 1.4e-6 | 4.2e-6 | exact up to rounding |
+| unfolded, TF32 (cuDNN's fp32 default) | 0.19 % | 0.61 % | — |
+| folded, TF32 | 0.18 % | 0.54 % | no worse |
+| unfolded, bf16 + NHWC (§8, the launch precision) | 1.85 % | 4.72 % | — |
+| **folded, bf16 + NHWC** | **2.10 %** | **5.81 %** | a little worse — see below |
+
+⚠️ **The bf16 cost is real and its mechanism is measured, not argued.** Under autocast the conv
+receives its folded bias in bf16, so each channel's whole offset carries ONE rounding — an error
+coherent over the feature map. The same fold with its bias added in fp32 after a bias-free conv
+reads **1.76 % / 4.66 %** — better than not folding (dev box: A/B there 1.83 % / 4.80 % and
+2.04 % / 5.70 %, reproducing Thor). But that variant costs an extra pass: backbone fwd+bwd
+**0.318 s** against the shipped fold's **0.189 s** and the unfolded **0.283 s** — slower than not
+folding. Its adoption bar, committed before running (within 5 % of the shipped fold), failed ⇒
+the shipped fold stays; the precision gain is recorded as priced, not taken.
+
+**Does training notice?** Same seed, same data order, 30 steps, relative loss difference per step:
+
+| pair | max | mean | reads |
+|---|---|---|---|
+| S4 vs S3 (bf16 + NHWC alone) | 0.66 % | 0.35 % | §8's lever |
+| **S8 vs S4 (the fold)** | 1.06 % | 0.36 % | — |
+| **S8 vs S3 (both levers vs fp32)** | 0.70 % | **0.22 %** | no further from fp32 than S4 is |
+
+In-run eval (2 batches at steps 20 and 30, 46 metrics): median relative deviation 0.09–0.10 % for
+S8 vs S4 against 0.03–0.04 % for S4 vs S3. The largest (agent yaw 0.848 → 0.679 at step 30; box
+height ~8 %) are means over **21 matched objects**, where one object moves the mean; the per-step
+TRAINING agent terms track within ~1 % (agent presence 0.1861 / 0.1865 / 0.1858 for S3 / S4 / S8).
+⛔ **No replicate arm was run**, so this rig's run-to-run floor is NOT measured (`H-ESTIM-SEED-1`).
+The claim is "tracks within bf16's own deviation from fp32 on the training loss", not "identical".
+
+**Speed — every smoke read the same way** (`code/step_budget.py`: plain step = median delta over
+steps with no conflict reading and no preceding eval; conflict and eval costs as extras over it;
+launch projection = plain + conflict/10 + eval-per-batch × 8/500):
+
+| smoke | levers | plain step (median, n=25) | conflict reading (+s, n=1) | smoke eval (+s, 2 batches) | **projected launch s/step** | samples/s | peak `cuda_max_mem_gb` |
+|---|---|---|---|---|---|---|---|
+| S3 | fp32 | 15.8 | 21.3 | 15.6 | 18.06 | 0.443 | 18.03 |
+| S4 | bf16 + NHWC | 10.1 | 13.9 | 11.4 | 11.58 | 0.691 | 13.17 |
+| **S8** | **bf16 + NHWC + fold** | **8.1** | **9.4** | **10.3** | **9.12** | **0.877** | **11.84** |
+
+Backbone alone (8 images, fwd+bwd, `raw/fold_probe_thor_2026-09-23.json`): fp32 0.498 → 0.453 s
+(1.10×), 8.81 → 4.99 GiB; bf16 + NHWC 0.328 → 0.207 s (**1.58×**), 5.04 → 3.14 GiB.
+
+⇒ **The launch configuration now: batch 8, chunk 8, frozen + FOLDED BN, bf16 + NHWC, conflict
+probe every 10th step, eval every 500 ⇒ 0.877 samples/s ⇒ `cut` (240,000 windows) ≈ 3.2 days,
+`full` (805,680) ≈ 10.6 days.**
+
+⚠️ **CORRECTION to §8's budget line.** §8 quoted 0.73–0.76 samples/s for S4 (`cut` ≈ 3.8 d, `full`
+≈ 12.6 d). The same smoke read with the identical method above gives **0.691 samples/s** (`cut`
+≈ 4.0 d, `full` ≈ 13.5 d) — §8's derivation was not banked with its number, so it cannot be
+re-checked; `code/step_budget.py` now banks the derivation and applies it to every smoke.
+
+**The record now carries the fact, not only the flag.** `config.json` gains `trunk_memory_levers`,
+read off the BUILT trunk (`bn_folded`, `bn_pinned`, `chunk_ckpt`, `bf16`, `channels_last`) beside
+the seam stamp, which records only what was asked for.
+
+**Tests.** `stack/tests/test_trunk_speed_levers.py` +8: the folded trunk is the same function with
+the same gradients (relative-norm tolerance 1e-5 — MEASURED 2.1e-6 for the correct fold against
+2.2e-4 for the subtlest wrong one, eps dropped: `raw/fold_margin_cpu_2026-09-23.json`); the BN passes its input through untouched; every
+`state_dict` key survives and loads into an unfolded trunk; a training BN and the `refc` trunk are
+refused, the refusal naming the flag; the flag reaches the BUILT trunk; and a real `train()` on
+the synthetic rig writes `trunk_memory_levers.bn_folded == 20`. **Mutation 14/14**
+(`raw/mutation_proof_trunk_fold_bn.json`) — including the fold STAMPED but not applied, eps
+dropped, the shortcut BNs left unfolded, and the record reading the wrong module.

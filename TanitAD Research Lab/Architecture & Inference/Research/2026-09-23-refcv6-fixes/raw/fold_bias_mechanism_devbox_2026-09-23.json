@@ -1,0 +1,20 @@
+{
+ "_what": "Why is the FOLDED bf16 trunk a little further from strict fp32 than the UNFOLDED bf16 trunk?",
+ "_evidence_class": "MEASURED (ours), dev-box RTX 4060",
+ "torch": "2.11.0+cu128",
+ "device": "NVIDIA GeForce RTX 4060",
+ "rel_err_vs_strict_fp32_per_level": {
+  "A_unfolded_bf16_cl": [
+   0.01834,
+   0.04796
+  ],
+  "B_folded_bf16_cl": [
+   0.02038,
+   0.05703
+  ],
+  "C_folded_fp32_bias_bf16_cl": [
+   0.01758,
+   0.04658
+  ]
+ }
+}

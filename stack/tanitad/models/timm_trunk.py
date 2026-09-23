@@ -191,6 +191,9 @@ class TimmTrunkConfig:
     #: the layout conversions cuDNN otherwise inserts. Neither changes a weight or a frame.
     bf16: bool = False
     channels_last: bool = False
+    #: fold each FROZEN BatchNorm into its conv (the same function, no separate BN pass);
+    #: requires ``frozen_bn``. See :func:`_fold_frozen_bn_`.
+    fold_bn: bool = False
     #: ⭐ PI 2026-09-16: the PRIMARY. `resnet34.a1_in1k` — the papers' and
     #: DiffusionDrive's own — is the second comparison run, selected by name.
     model_name: str = "resnet101.a1_in1k"
@@ -395,6 +398,61 @@ def _relu_out_of_place_(net) -> int:
     return n
 
 
+def _conv_bn_pairs(net) -> list:
+    """Every ``(conv, bn)`` pair whose BN directly follows its conv, by NAME, not by guess.
+
+    timm ResNets name them ``convN`` / ``bnN`` (stem and every bottleneck) and put the
+    shortcut in a ``Sequential(Conv2d, BatchNorm2d)``. MEASURED on resnet101: 104 convs,
+    104 BatchNorms, 104 pairs. A BN whose width does not match its conv is refused.
+    """
+    pairs = []
+    for mod in net.modules():
+        ch = dict(mod.named_children())
+        for k, c in ch.items():
+            if isinstance(c, nn.Conv2d) and k.startswith("conv"):
+                b = ch.get("bn" + k[len("conv"):])
+                if isinstance(b, nn.BatchNorm2d):
+                    pairs.append((c, b))
+        if isinstance(mod, nn.Sequential):
+            items = list(mod.children())
+            for a, b in zip(items, items[1:]):
+                if isinstance(a, nn.Conv2d) and isinstance(b, nn.BatchNorm2d):
+                    pairs.append((a, b))
+    for c, b in pairs:
+        if int(b.num_features) != int(c.out_channels):
+            raise ValueError(f"conv/bn width mismatch {c.out_channels} vs {b.num_features}")
+    return pairs
+
+
+def _fold_frozen_bn_(net) -> int:
+    """Fold every FROZEN BatchNorm into the conv before it; returns how many pairs.
+
+    ⭐ SPEED (MEASURED 2026-09-23 on Thor): with BN pinned to its running statistics each
+    BatchNorm is a fixed per-channel affine, yet it cost ~23 % of GPU time as separate
+    memory-bound passes forward AND backward. ``BN(conv(x; W)) = conv(x; s*W) + (beta -
+    mu*s)`` with ``s = gamma / sqrt(var + eps)`` is the SAME function, so the conv computes
+    it directly and the BN becomes the identity. ``gamma``/``beta`` still train (through
+    ``s`` and the bias); the running statistics are the frozen constants they already are.
+
+    ⛔ NOTHING IS REPLACED: only the two instances' ``forward`` change, so the module tree
+    and every ``state_dict`` key are identical -- a folded run's checkpoint loads into an
+    unfolded model and vice versa. ⛔ Frozen BN only: a BN that trains on the batch is not
+    a fixed affine, and the trunk refuses the lever without it.
+    """
+    pairs = _conv_bn_pairs(net)
+    for conv, bn in pairs:
+        def _fwd(x, _c=conv, _b=bn):
+            s = _b.weight / torch.sqrt(_b.running_var + _b.eps)
+            w = _c.weight * s.reshape(-1, 1, 1, 1)
+            bias = _b.bias - _b.running_mean * s
+            if _c.bias is not None:
+                bias = bias + _c.bias * s
+            return _c._conv_forward(x, w, bias)
+        conv.forward = _fwd
+        bn.forward = (lambda x: x)   # noqa: E731 -- its affine now lives in the conv
+    return len(pairs)
+
+
 def _freeze_bn_(net) -> int:
     """Pin every BatchNorm to EVAL (ImageNet running stats); returns how many.
 
@@ -541,6 +599,13 @@ class TimmResNetTrunk(nn.Module):
         if bool(getattr(self.cfg, "frozen_bn", False)):
             self.memory_levers["frozen_bn"] = True
             self.memory_levers["bn_pinned"] = _freeze_bn_(self.net)
+        if bool(getattr(self.cfg, "fold_bn", False)):
+            if not self.memory_levers["frozen_bn"]:
+                raise ValueError(
+                    "trunk fold_bn without frozen_bn: a BatchNorm that trains on the batch "
+                    "is not a fixed affine, so folding it would change the function. Pass "
+                    "frozen_bn=True, or do not fold.")
+            self.memory_levers["bn_folded"] = _fold_frozen_bn_(self.net)
         _ck = int(getattr(self.cfg, "chunk_ckpt", 0) or 0)
         if _ck > 0:
             # ⚠️ REFUSED, not silently allowed: chunking without frozen BN is a

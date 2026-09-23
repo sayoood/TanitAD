@@ -358,6 +358,7 @@ class CNNEncoderConfig:
     #: ⛔ SPEED LEVERS (timm trunk only), real fields for the same reason as above.
     trunk_bf16: bool = False         # the BACKBONE under bf16 autocast; outputs back to fp32
     trunk_channels_last: bool = False  # the BACKBONE in NHWC
+    trunk_fold_bn: bool = False      # fold each FROZEN BN into its conv; needs trunk_frozen_bn
 
     @property
     def feat_dim(self) -> int:
@@ -1457,7 +1458,8 @@ def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
             chunk_ckpt=int(getattr(cfg, "trunk_chunk_ckpt", 0) or 0),
             frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)),
             bf16=bool(getattr(cfg, "trunk_bf16", False)),
-            channels_last=bool(getattr(cfg, "trunk_channels_last", False)))
+            channels_last=bool(getattr(cfg, "trunk_channels_last", False)),
+            fold_bn=bool(getattr(cfg, "trunk_fold_bn", False)))
     raise ValueError(
         f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
         f"would otherwise fall through to the legacy trunk and the run would "

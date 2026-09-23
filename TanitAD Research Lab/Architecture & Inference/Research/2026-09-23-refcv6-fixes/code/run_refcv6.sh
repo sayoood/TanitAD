@@ -5,6 +5,8 @@
 #   [EVAL=1 AGENT_JOIN=<train+eval 2-D join> JOIN3D=<train+eval 3-D join>] ./run_refcv6.sh
 #   [TRUNK_BF16=1] [TRUNK_CL=1]  the backbone in bf16 / NHWC (speed; outputs back to fp32)
 #   [CUDNN_BENCH=1]  cuDNN autotuning   [TRUNK_FROZEN_BN=1]  frozen BN without chunking
+#   [TRUNK_FOLD_BN=1]  fold each FROZEN BN into its conv (same function, no BN pass);
+#   needs frozen BN, i.e. TRUNK_CHUNK>0 or TRUNK_FROZEN_BN=1 -- the trainer refuses otherwise
 #   [TRUNK_CHUNK=<N>]  gradient-checkpoint the backbone in slices of N images; N > 0 also
 #   pins BatchNorm to its ImageNet statistics (--trunk-frozen-bn, which the chunking
 #   REQUIRES to stay exact). MEASURED 2026-09-23 on Thor: unchunked resnet101 at 416x1024
@@ -31,6 +33,7 @@ SPEED_ARGS=()   # the backbone in bf16 and/or NHWC -- see --trunk-bf16 / --trunk
 if [ "${TRUNK_BF16:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-bf16); fi
 if [ "${TRUNK_CL:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-channels-last); fi
 if [ "${CUDNN_BENCH:-0}" = "1" ]; then SPEED_ARGS+=(--cudnn-benchmark); fi
+if [ "${TRUNK_FOLD_BN:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-fold-bn); fi
 EVAL_ARGS=()
 if [ "$EVAL" = "1" ]; then
   EVAL_ARGS=(--eval-cache "$D/refcv6-b1-416x1024-eval139"

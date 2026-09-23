@@ -15678,3 +15678,16 @@ and two thirds of it is memory-bound backbone elementwise work. `--trunk-bf16` +
 (backbone only; outputs back to fp32) take batch 8 from **17.99 → 11.56 s/step** and **18.0 → 13.2 GB**,
 losses tracking step for step; bigger chunks, cuDNN autotuning and dropping checkpointing each bought
 ≤ 3 %. Mutation 5/5. ⇒ `cut` ≈ **3.8 days**, `full` ≈ **12.6 days** on Thor — the budget is the PI's.
+
+<!-- REFCV6-FOLD-2026-09-23 -->
+
+### 2026-09-23 (evening) — refcv6 faster still: the frozen BatchNorms folded into their convs
+
+MEASURED on Thor (`…/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §9): with BN already frozen
+for checkpointing, `--trunk-fold-bn` computes each BN inside its conv (the same function: 1.4e-6
+relative in strict fp32; in bf16 the folded bias adds ~0.25–1.1 pp of rounding error, mechanism
+measured). Read identically for every smoke, the launch step goes **11.58 → 9.12 s** (0.69 → **0.877
+samples/s**, 1.98× over fp32), memory 13.2 → 11.8 GB, losses tracking (S8 vs fp32 S3 mean 0.22 %).
+Mutation 14/14. ⇒ `cut` ≈ **3.2 days**, `full` ≈ **10.6 days** on Thor — the budget is the PI's.
+⚠️ §8's "0.73–0.76 samples/s" for S4 does not reproduce under the identical read (0.69): its
+`cut` ≈ 3.8 d / `full` ≈ 12.6 d were ~6 % optimistic (`CORR-2026-09-23-S4-BUDGET-READ`).

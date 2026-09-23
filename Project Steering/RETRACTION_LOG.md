@@ -16333,3 +16333,18 @@ asked the PI for one. MEASURED the same morning, both halves were wrong:
 worse by a probe of the wrong scope (`free` on unified memory). ⇒ read `journalctl -k` for the OOM
 record FIRST — it names the victim, the allocator (`NVRM … ADDR_SYSMEM`) and the victim's RSS — and
 never OOM-probe a batch size on Thor: each kill strands its GPU memory for tens of minutes.
+
+### CORR-2026-09-23-S4-BUDGET-READ — "0.73–0.76 samples/s ⇒ cut ≈ 3.8 d, full ≈ 12.6 d" does not reproduce
+
+**My number, landed in `…/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §8 and put to the PI
+as the budget options.** Re-reading the SAME smoke (S4, Thor, `metrics.jsonl`) with one banked
+method — plain step = median delta over steps with no conflict reading and no preceding eval
+(10.1 s, n=25); conflict reading +13.9 s every 10th step; eval +5.7 s per batch × 8 per 500 steps —
+gives **11.58 s/step = 0.691 samples/s ⇒ cut ≈ 4.0 d, full ≈ 13.5 d**, ~6 % slower than quoted.
+The PI chose "faster still" rather than a budget, so no decision rested on it.
+
+**Class:** a projection whose DERIVATION was not banked with it — the arithmetic lived in the turn,
+so the artifact carries a number nobody can re-check (the "a summary is not a path" family, for a
+computation). **Durable fix:** `code/step_budget.py` banks the method and is applied identically to
+every smoke (`raw/step_budget_S3_S4_S8.json`); a smoke comparison quotes the projected launch
+s/step from it, never a window mean read by hand.
