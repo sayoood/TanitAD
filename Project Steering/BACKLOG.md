@@ -351,3 +351,17 @@ The filed diff was applied **as written** (flag in `build_parser`, two-line pin 
 ⚠ **`D-TACGOAL-TRAINER-SEAM-OPEN` stays OPEN.** The head now BUILDS, is STAMPED and is ROLLABLE from a command line; **supervising** it still needs the two additive edits in `V3Dataset` / `compute_losses_v3` and the `MANEUVER_WEIGHT` budget decision, which is an owner/PI call.
 
 ⭐ `…/Research/2026-09-06-tacgoal-flag/RESULT.md` · `stack/tests/test_tac_goal_trainer_flag.py`
+
+<!-- EVAL-REFCV6-STANDARD-TESTS-2026-09-23 -->
+
+### OPEN — 2026-09-23 · refcv6 standard test battery + NavSim suite · owner: EvalFlyWheel
+
+The PI asked (2026-09-23): *"contact the eval fly wheel agent to prepare the required standard tests
+inclduing the navsimn suite for refcv6"*. Sent to the EvalFlyWheel session by cross-session message
+(**queued — that session was offline**); the durable brief is
+`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/BRIEF.md`: the four-family
+held-out battery with controls, the NavSim bridge extended to refcv6 (incl. navtest PDMS if
+provisionable), the other charter benchmarks, and the checkpoint steps to snapshot. **Deadline:**
+ready before refcv6-r101-s0 finishes (≈ 2026-09-27). **Master Mind side:** snapshot the requested
+checkpoints (md5) to the dev box; the run's training reports are the "refcv6 Training Watch"
+artifact, refreshed at 00/04/08/12/16/20:13 Berlin.
