@@ -359,6 +359,8 @@ class CNNEncoderConfig:
     trunk_bf16: bool = False         # the BACKBONE under bf16 autocast; outputs back to fp32
     trunk_channels_last: bool = False  # the BACKBONE in NHWC
     trunk_fold_bn: bool = False      # fold each FROZEN BN into its conv; needs trunk_frozen_bn
+    trunk_dedup_frames: bool = False  # each distinct frame of overlapping stacks ONCE; needs trunk_frozen_bn
+    trunk_compile: bool = False       # the backbone through torch.compile (Inductor); timm only
 
     @property
     def feat_dim(self) -> int:
@@ -1459,7 +1461,9 @@ def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
             frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)),
             bf16=bool(getattr(cfg, "trunk_bf16", False)),
             channels_last=bool(getattr(cfg, "trunk_channels_last", False)),
-            fold_bn=bool(getattr(cfg, "trunk_fold_bn", False)))
+            fold_bn=bool(getattr(cfg, "trunk_fold_bn", False)),
+            dedup_frames=bool(getattr(cfg, "trunk_dedup_frames", False)),
+            compile_backbone=bool(getattr(cfg, "trunk_compile", False)))
     raise ValueError(
         f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
         f"would otherwise fall through to the legacy trunk and the run would "

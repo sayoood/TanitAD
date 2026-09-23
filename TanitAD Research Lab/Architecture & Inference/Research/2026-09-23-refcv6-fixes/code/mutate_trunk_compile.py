@@ -1,21 +1,16 @@
-"""MUTATION PROOF for the frozen-BN FOLD tests in `test_trunk_speed_levers.py`.
+"""MUTATION PROOF for `test_trunk_compile.py` (--trunk-compile).
 
-Anchors are WHOLE LINES, matched by equality over lines (CRLF- and indent-safe).
+Anchors are WHOLE LINES (or a WINDOW of consecutive whole lines), matched by equality.
 
-  F1  the fold drops the running-mean term              (a DIFFERENT function)
-  F2  the fold drops eps                                (the subtlest wrong fold: 2.2e-4 rel)
-  F3  the BN is NOT replaced -> applied twice          (a DIFFERENT function)
-  F4  the conv is NOT folded but the BN is removed      (BN silently dropped)
-  F5  STAMPED BUT NOT APPLIED: the right count recorded, the net left unfolded
-  F6  the trunk accepts fold_bn on a BN that trains
-  F7  the trainer accepts --trunk-fold-bn without --trunk-frozen-bn
-  F8  the trainer does not pin --trunk-fold-bn into the config
-  F9  build_encoder does not pass fold_bn to the trunk
-  F10 config.json stamps a constant instead of the config value
-  F11 the refc-trunk refusal ignores --trunk-fold-bn
-  F12 the shortcut (downsample) BNs are silently left unfolded
-  F13 config.json reads the levers off the WRONG module (the record goes blind)
-  F14 config.json drops the built-trunk record
+  C1  STAMPED BUT NOT APPLIED: `_backbone` always runs the eager `self.net`
+  C2  the compiled wrapper is REGISTERED as a submodule (state_dict keys change)
+  C3  the backend knob is ignored (always Inductor)
+  C4  the trunk never records the backend in memory_levers
+  C5  the trainer does not pin --trunk-compile into the config
+  C6  build_encoder does not pass compile_backbone to the trunk
+  C7  config.json stamps a constant
+  C8  the refc-trunk refusal ignores --trunk-compile
+  C9  the donated-buffer switch is removed (S11's step-1 crash on Thor)
 """
 from __future__ import annotations
 
@@ -28,60 +23,43 @@ import sys
 
 REPO = pathlib.Path("D:/Projects/TanitAD")
 TRAIN = REPO / "stack" / "scripts" / "refc_v3_train.py"
-TESTS = REPO / "stack" / "tests" / "test_trunk_speed_levers.py"
+TESTS = REPO / "stack" / "tests" / "test_trunk_compile.py"
 TT = REPO / "stack" / "tanitad" / "models" / "timm_trunk.py"
 RC = REPO / "stack" / "tanitad" / "refs" / "refc.py"
 PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
-OUT = pathlib.Path("C:/Users/Admin/qland/work/pbox/mutation_proof_trunk_fold_bn.json")
+OUT = pathlib.Path("C:/Users/Admin/qland/work/f_dedup/mutation_proof_trunk_compile.json")
 
 # chr() on purpose: a heredoc eats one backslash level; there is no escape here to eat.
 EOL_CHARS = chr(13) + chr(10)
 
 MUTATIONS = [
-    ("F1_fold_drops_the_running_mean", TT,
-     '            bias = _b.bias - _b.running_mean * s',
-     '            bias = _b.bias + 0.0 * s'),
-    ("F2_fold_drops_eps", TT,
-     '            s = _b.weight / torch.sqrt(_b.running_var + _b.eps)',
-     '            s = _b.weight / torch.sqrt(_b.running_var)'),
-    ("F3_bn_not_replaced_applied_twice", TT,
-     '        bn.forward = (lambda x: x)   # noqa: E731 -- its affine now lives in the conv',
-     '        pass'),
-    ("F4_conv_not_folded_bn_dropped", TT,
-     '        conv.forward = _fwd',
-     '        pass'),
-    ("F5_STAMPED_but_NOT_APPLIED", TT,
-     '            self.memory_levers["bn_folded"] = _fold_frozen_bn_(self.net)',
-     '            self.memory_levers["bn_folded"] = len(_conv_bn_pairs(self.net))'),
-    # the same `if not ...frozen_bn` line guards chunk_ckpt too: anchor on the WINDOW
-    ("F6_trunk_folds_a_training_bn", TT,
-     ('        if bool(getattr(self.cfg, "fold_bn", False)):',
-      '            if not self.memory_levers["frozen_bn"]:'),
-     '            if False:'),
-    ("F7_trainer_accepts_fold_without_frozen", TRAIN,
-     '    if cfg.core.encoder.trunk_fold_bn and not cfg.core.encoder.trunk_frozen_bn:',
-     '    if False:'),
-    ("F8_trainer_does_not_pin_the_flag", TRAIN,
-     '    cfg.core.encoder.trunk_fold_bn = bool(getattr(args, "trunk_fold_bn", False))',
-     '    cfg.core.encoder.trunk_fold_bn = False'),
-    ("F9_build_encoder_drops_the_flag", RC,
-     '            fold_bn=bool(getattr(cfg, "trunk_fold_bn", False)),',
-     '            fold_bn=False,'),
-    ("F10_stamp_is_a_constant", TRAIN,
-     '        "trunk_fold_bn": bool(getattr(core.encoder, "trunk_fold_bn", False)),',
-     '        "trunk_fold_bn": False,'),
-    ("F11_refc_refusal_ignores_fold", TRAIN,
-     '            or cfg.core.encoder.trunk_fold_bn',
-     '            or False'),
-    ("F12_shortcut_bns_left_unfolded", TT,
-     '        if isinstance(mod, nn.Sequential):',
-     '        if False:'),
-    ("F13_record_reads_the_wrong_module", TRAIN,
-     '    enc = getattr(getattr(model, "core", None), "encoder", None)',
-     '    enc = getattr(model, "encoder", None)'),
-    ("F14_record_dropped", TRAIN,
-     '        "trunk_memory_levers": _trunk_levers_built(model),',
-     '        "trunk_memory_levers": None,'),
+    ("C1_STAMPED_but_NOT_APPLIED", TT,
+     '        net = self._net_fn if getattr(self, "_net_fn", None) is not None else self.net',
+     '        net = self.net'),
+    ("C2_wrapper_registered_as_a_submodule", TT,
+     '            object.__setattr__(self, "_net_fn", torch.compile(self.net, backend=_be))',
+     '            self._net_fn = torch.compile(self.net, backend=_be)'),
+    ("C3_backend_knob_ignored", TT,
+     '            object.__setattr__(self, "_net_fn", torch.compile(self.net, backend=_be))',
+     '            object.__setattr__(self, "_net_fn", torch.compile(self.net))'),
+    ("C4_backend_never_recorded", TT,
+     '            self.memory_levers["compile"] = _be',
+     '            pass'),
+    ("C5_trainer_does_not_pin_the_flag", TRAIN,
+     '    cfg.core.encoder.trunk_compile = bool(getattr(args, "trunk_compile", False))',
+     '    cfg.core.encoder.trunk_compile = False'),
+    ("C6_build_encoder_drops_the_flag", RC,
+     '            compile_backbone=bool(getattr(cfg, "trunk_compile", False)))',
+     '            compile_backbone=False)'),
+    ("C7_stamp_is_a_constant", TRAIN,
+     '        "trunk_compile": bool(getattr(core.encoder, "trunk_compile", False)),',
+     '        "trunk_compile": False,'),
+    ("C8_refc_refusal_ignores_compile", TRAIN,
+     '            or cfg.core.encoder.trunk_compile) and _trunk != "timm":',
+     '            or False) and _trunk != "timm":'),
+    ("C9_donated_buffer_switch_removed", TT,
+     '            _fconfig.donated_buffer = False',
+     '            pass'),
 ]
 
 
@@ -115,7 +93,7 @@ def main() -> int:
     files = {TRAIN, TESTS, TT, RC}
     orig = {p: p.read_bytes() for p in files}
     md5 = {p: hashlib.md5(b).hexdigest() for p, b in orig.items()}
-    res = {"_what": "mutation proof that the frozen-BN FOLD tests can FAIL",
+    res = {"_what": "mutation proof that the --trunk-compile tests can FAIL",
            "_evidence_class": "MEASURED (ours), CPU",
            "targets": {str(p.relative_to(REPO)): m for p, m in md5.items()}, "arms": []}
     try:
@@ -167,8 +145,8 @@ def main() -> int:
     n = sum(1 for a in res["arms"] if a.get("went_RED"))
     res["arms_caught"], res["arms_total"] = n, len(MUTATIONS)
     res["_VERDICT"] = (
-        f"MUTATION-PROVEN -- all {n}/{len(MUTATIONS)} arms RED, including the fold "
-        "stamped but not applied and the eps-only wrong fold; all files restored "
+        f"MUTATION-PROVEN -- all {n}/{len(MUTATIONS)} arms RED, including the compile "
+        "stamped but not applied and the wrapper registered as a submodule; all files restored "
         "byte-identical and the final clean run is green."
         if n == len(MUTATIONS) and res["restored_ok"] and rc_f == 0 else
         f"ONLY {n}/{len(MUTATIONS)} CAUGHT.")

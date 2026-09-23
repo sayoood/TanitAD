@@ -15691,3 +15691,20 @@ samples/s**, 1.98× over fp32), memory 13.2 → 11.8 GB, losses tracking (S8 vs 
 Mutation 14/14. ⇒ `cut` ≈ **3.2 days**, `full` ≈ **10.6 days** on Thor — the budget is the PI's.
 ⚠️ §8's "0.73–0.76 samples/s" for S4 does not reproduce under the identical read (0.69): its
 `cut` ≈ 3.8 d / `full` ≈ 12.6 d were ~6 % optimistic (`CORR-2026-09-23-S4-BUDGET-READ`).
+
+<!-- REFCV6-DEDUP-COMPILE-2026-09-23 -->
+
+### 2026-09-23 (night) — refcv6 at 2.36 samples/s: each frame once, batch 16, compiled backbone — and the PI's launch decision
+
+MEASURED on Thor (`…/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §10): the trunk made **24
+backbone passes per sample for 10 distinct frames** (a D-015 row stacks frames j..j+2, so
+consecutive rows share two). `--trunk-dedup-frames` computes each once — the same function with
+BN frozen, the overlap VERIFIED per batch on the data (the run log reads 80 frames for 192 window
+slots at batch 8). Batch 16 by the pre-registered rule; `--trunk-compile` +33 %, closer to fp32
+than eager bf16 (1.75 %/4.67 % vs 2.08 %/5.74 %) after its first real step exposed — and a
+documented switch fixed — AOTAutograd's donated buffers against the conflict detector's
+retain-graph backward. Launch step **6.79 s at batch 16 = 2.36 samples/s, 5.3× this morning's
+fp32**; losses track (each lever's shift ≤ bf16's own). Mutation 14/14 + 14/14 + 9/9.
+⇒ **PI, verbatim: "Full, ~4.0 days (Recommended)" and "Keep every 10th (Recommended)"** — the
+pre-registered budget (50,400 steps) and cadence; the launch is authorised
+(`PI_DECISION_QUEUE.md`, `REFCV6-LAUNCH-DECIDED-2026-09-23`).

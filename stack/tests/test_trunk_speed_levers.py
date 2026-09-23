@@ -261,7 +261,7 @@ def test_fold_bn_REFUSES_the_refc_trunk_and_NAMES_the_flag():
     from tanitad.refs import refc_v3 as v3
     args = T.build_parser().parse_args(["--arm", "hier", "--out", "x", "--trunk", "refc",
                                         "--trunk-frozen-bn", "--trunk-fold-bn"])
-    with pytest.raises(SystemExit, match="--trunk-fold-bn need --trunk timm"):
+    with pytest.raises(SystemExit, match=r"--trunk-fold-bn .*need --trunk timm"):
         T._pin_trainer_cfg(v3.RefCV3Config(hier=True), args)
 
 

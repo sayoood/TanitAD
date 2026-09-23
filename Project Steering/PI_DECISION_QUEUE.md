@@ -1625,3 +1625,34 @@ is built, guarded and pointed at the right corpus, and the eval-139 line at 416�
 **and it is not cleared to launch.** Two things gate an actual run, and both are the PI's:
 the go-ahead itself, and the 4,713-clip corpus cache (MEASURED absent; ~375.4 GB against 402.3 GB
 free on `D:`; ~10.6 h build) — see the register row *"THE NEXT GATING ITEM FOR refcv6"*.
+
+<!-- REFCV6-LAUNCH-DECIDED-2026-09-23 -->
+
+---
+
+## ✅ 2026-09-23 (evening) — refcv6: GO-AHEAD, BUDGET and CADENCE all decided by the PI; the 09-22 "not cleared to launch" is SUPERSEDED
+
+**Why this entry exists.** The reconciliation above (2026-09-22) correctly recorded that the PI had
+asked for READINESS, not a launch. Since then the PI has said both, in his own channel:
+
+1. **The go-ahead, conditional on readiness** (overnight 2026-09-22 → 23, verbatim): *"Loop
+   autonmously overnight until training readiness of refcv6 is achieved and all review findings are
+   fixe.d iterate with review and fix until no issues are found, then start the training of refcv6,
+   remeber inclduing our newst corpus with the correct tactical labels, use nav command as imnput,
+   ego data as input, the right resolution and use the semantic maps and the agents from data set as
+   supervisong including the end2ned training and the diffusion planner as included in the paper"*.
+2. **Speed before budget** (2026-09-23, asked for the budget twice with measured numbers):
+   *"Make it faster first"* (→ `LAUNCH_READINESS_FIXES.md` §8, 1.56×), then *"Faster still
+   first"* (→ §9 fold, §10 frame dedup + batch 16 + compile). BatchNorm: *"Frozen BN
+   (Recommended)"*.
+3. **The budget and the conflict cadence** (2026-09-23 evening, asked with 2.36 samples/s MEASURED
+   on Thor): **"Full, ~4.0 days (Recommended)"** and **"Keep every 10th (Recommended)"**.
+
+⇒ **The launch is authorised**, with the pre-registered `full` budget (805,680 windows = 50,400
+steps at batch 16) and the pre-registered cadence (conflict probe every 10th step). Nothing about
+it deviates from `…/2026-09-23-refcv6-fixes/SMOKE_DECISION_RULES.md`. The Qwen-Drive / LiDAR-BEV
+occupancy that motivated the 09-11 stop is gone: Thor ran today's refcv6 smokes (S3 through S11b)
+with no other python process on the box (`ps` read before each launch).
+
+**What still belongs to the PI during the run:** stopping it, extending it, and any change of arm.
+A healthy run does not wake the PI.

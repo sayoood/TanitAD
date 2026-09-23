@@ -7,6 +7,9 @@
 #   [CUDNN_BENCH=1]  cuDNN autotuning   [TRUNK_FROZEN_BN=1]  frozen BN without chunking
 #   [TRUNK_FOLD_BN=1]  fold each FROZEN BN into its conv (same function, no BN pass);
 #   needs frozen BN, i.e. TRUNK_CHUNK>0 or TRUNK_FROZEN_BN=1 -- the trainer refuses otherwise
+#   [TRUNK_DEDUP=1]  compute each distinct frame of the window's overlapping 3-frame stacks
+#   once (10 per window, not 24; the same function, checked per batch); needs frozen BN
+#   [TRUNK_COMPILE=1]  the backbone through torch.compile (Inductor; compiles on the first step)
 #   [TRUNK_CHUNK=<N>]  gradient-checkpoint the backbone in slices of N images; N > 0 also
 #   pins BatchNorm to its ImageNet statistics (--trunk-frozen-bn, which the chunking
 #   REQUIRES to stay exact). MEASURED 2026-09-23 on Thor: unchunked resnet101 at 416x1024
@@ -34,6 +37,8 @@ if [ "${TRUNK_BF16:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-bf16); fi
 if [ "${TRUNK_CL:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-channels-last); fi
 if [ "${CUDNN_BENCH:-0}" = "1" ]; then SPEED_ARGS+=(--cudnn-benchmark); fi
 if [ "${TRUNK_FOLD_BN:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-fold-bn); fi
+if [ "${TRUNK_DEDUP:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-dedup-frames); fi
+if [ "${TRUNK_COMPILE:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-compile); fi
 EVAL_ARGS=()
 if [ "$EVAL" = "1" ]; then
   EVAL_ARGS=(--eval-cache "$D/refcv6-b1-416x1024-eval139"

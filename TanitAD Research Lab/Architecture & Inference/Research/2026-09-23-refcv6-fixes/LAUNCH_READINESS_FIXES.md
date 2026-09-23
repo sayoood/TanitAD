@@ -335,3 +335,132 @@ refused, the refusal naming the flag; the flag reaches the BUILT trunk; and a re
 the synthetic rig writes `trunk_memory_levers.bn_folded == 20`. **Mutation 14/14**
 (`raw/mutation_proof_trunk_fold_bn.json`) — including the fold STAMPED but not applied, eps
 dropped, the shortcut BNs left unfolded, and the record reading the wrong module.
+
+## 10. Each distinct frame through the backbone ONCE (`--trunk-dedup-frames`), and batch 16 by the pre-registered rule
+
+**Evidence class:** MEASURED (ours, Thor). Profile of the §9 configuration
+(`raw/profile_S8_fold_by_cuda.txt`); smokes S9 / S10 (`raw/step_budget_S9_S10.json`, read with
+`code/step_budget.py`); same-seed tracking `raw/tracking_S3_S4_S8_S9.json` (`code/smoke_tracking.py`).
+
+**What the §9 profile still said.** With BN folded, ~60 % of GPU time was still memory-bound
+elementwise work in the backbone (`aten::add_` 31.7 %, ReLU 9.2 % + its backward 7.3 %, copies
+6.0 %) against 31 % in convolutions — the backbone simply had too much to do. Reading the data
+path said why: `--arm hier` sends EVERY window row's 3-frame stack through the trunk
+(`RefCModel.forward` → `encoder.forward_features(frames.reshape(b * w, ...))`), and a D-015 row
+stacks raw frames (j, j+1, j+2) oldest → newest (`tanitad/data/v2_dataset.py::_decode_stacked`).
+Consecutive rows share two frames, so each sample made **24 backbone passes for 10 distinct
+frames**. Every row matters (the hierarchy hook reads the pooled feature of all 8), so rows
+cannot be skipped — but no frame needs computing twice.
+
+**The lever.** Compute each distinct frame once and gather it into every slot that uses it. With
+BN frozen a frame's features depend on that frame alone, so this is the same function; the
+gather's backward SUMS each frame's gradient over its slots, which is what the separate passes'
+weight gradients summed to. ⛔ **The overlap is VERIFIED per batch, never assumed**: row i+1
+reuses row i's frames only where the data are exactly equal, so a window boundary, another clip or
+any input without the D-015 structure computes all three frames — the lever is exact on every
+input and merely does nothing where there is nothing to share. Requires `--trunk-frozen-bn`;
+"shared" mode with K ≥ 2 only; refused for the `refc` trunk. Launch knob `TRUNK_DEDUP=1`.
+
+**On the real data** (S9 = §9's S8 + dedup, batch 8), the run log proves it every step:
+`trunk_frame_slots 216 / trunk_frames_computed 104` — the window's 192 slots from **80 frames
+(8 samples × 10, every window's overlap verified)** plus the 24 future frames, which share
+nothing — and 648 / 312 on conflict-reading steps. `config.json`'s `trunk_memory_levers`, read off
+the built trunk: `chunk_ckpt 8, frozen_bn, bn_pinned 104, relu_out_of_place 100, bf16,
+channels_last, bn_folded 104, dedup_frames`.
+
+**Same function, in practice too.** Step 1's loss is identical (196.00 / 196.00). Through step 23,
+S9 stays within **0.07 %** of S8 — tighter than bf16 alone (0.2–0.66 % from fp32) or the fold
+(0.1–0.9 %). From step 24 the difference grows (max 2.17 % at step 29), which is how any two
+trajectories drift apart through the optimizer: S8 vs S4 reaches 1.05 % at the same step. In-run
+eval median deviation from S8: 0.005 % (step 20) and 0.02 % (step 30); eval loss 153.63 → 153.61
+and 107.23 → 107.76. ⛔ No replicate arm → the rig's run-to-run floor is still not measured.
+
+**Speed** (identical read, `code/step_budget.py`):
+
+| smoke | batch | levers | plain step | conflict reading | smoke eval (2 batches) | **projected launch s/step** | **samples/s** | peak `cuda_max_mem_gb` |
+|---|---|---|---|---|---|---|---|---|
+| S8 (§9) | 8 | bf16 + NHWC + fold | 8.1 | +9.4 | +10.3 | 9.12 | 0.877 | 11.84 |
+| **S9** | 8 | + **dedup** | **4.4** | +4.9 | +6.6 | **4.94** | **1.618** | 11.37 |
+| **S10** | **16** | + dedup | 8.0 | +8.7 | +18.1 | 9.02 | **1.775** | 21.23 |
+
+**The batch, by the rule fixed before any smoke** (`SMOKE_DECISION_RULES.md`: the largest of
+{4, 8, 12, 16} whose peak fits in 60 % of MemAvailable, and among those the highest samples/s).
+§7 smoked only batches 4 and 8; with the step now 3.7× cheaper the rule was run to the end. Batch
+16 peaks at 21.2 GB — far inside 60 % of Thor's ~79 GB available — and is 9.7 % faster per
+sample than batch 8 (the conflict reading and the per-step overheads amortise over twice the
+samples). ⇒ **batch 16.** Batch 12 was not smoked; step time is close to linear in the batch, so
+it would fall between. The budget stays fixed in SAMPLES, so the batch does not move it: `full` =
+ceil(805,680 / 16) = 50,355 → **50,400 steps**; `cut` = 240,000 / 16 = **15,000 steps**.
+
+**Tests.** `stack/tests/test_trunk_dedup_frames.py` — 9 tests: every slot gets the features the
+plain backbone computes; `forward_features` and the parameter GRADIENTS match (fusion randomised,
+so every stack position matters); a hook on the stem counts exactly B × (W + K − 1) frames; a
+batch with no overlap computes every slot; one corrupted overlapping frame is not reused; the
+refusals; the composition with chunking, bf16, NHWC and the fold; the flag reaches the BUILT trunk
+and the stamp; and a real `train()` on D-015-structured synthetic windows logs fewer computed
+frames than slots, per row, with the plain run's loss. **Mutation 13/13**
+(`raw/mutation_proof_trunk_dedup_frames.json`) — including the dedup stamped but not applied, the
+slot map off by one, the overlap check that always says "same", and a log counter never reset.
+
+### 10b. The backbone through `torch.compile` (`--trunk-compile`) — +33 %, and closer to fp32
+
+**Evidence class:** MEASURED (ours, Thor). `code/compile_probe.py` → `raw/compile_probe_thor_2026-09-23.json`;
+`code/compile_precision.py` → `raw/compile_precision_thor_2026-09-23.json`; smokes S11 / S11b
+(`raw/S11_compile_donated_buffer_failure.txt`, `raw/step_budget_S10_S11b.json`,
+`raw/tracking_S10_S11b.json`).
+
+**The micro-benchmark** (resnet101, 416 × 1024, bf16 + NHWC, frozen + folded BN, chunk 8, 24
+images, fwd+bwd): eager 0.826 s → compiled **0.539 s (1.53×)**, compile 32 s once, memory unchanged.
+
+**⛔ It FAILED the precision bar committed with it**: relative difference vs EAGER ≤ 1 %, read
+2.05 % / 5.46 % ⇒ declined as registered. That bar compared two bf16 computations with each other,
+and bf16 alone sits ~2 % / ~5 % from fp32, so it could not tell "compile is wrong" from "two bf16
+roundings differ". **The cheapest discriminating test, pre-registered as a NEW arm before it ran**:
+against strict fp32 (TF32 off), compile is admissible iff its error ≤ 1.10 × the eager bf16 path's
+at both levels. Read: **compiled 1.75 % / 4.67 % vs eager 2.08 % / 5.74 % (ratio 0.84 / 0.81)** —
+the compiled backbone is CLOSER to fp32 (Inductor keeps fused intermediates in fp32 rather than
+rounding to bf16 between operations). ⇒ admissible.
+
+**⛔ The first real step crashed, and the fix is the documented switch.** S11 (batch 16, every lever
++ compile) died at step 1: *"This backward function was compiled with non-empty donated buffers
+which requires create_graph=False and retain_graph=False"*. The trainer backpropagates through one
+graph more than once — the conflict detector's per-term gradients use `retain_graph=True` before
+the step's own backward — and AOTAutograd's donated buffers forbid that. With compile on, the trunk
+now sets `torch._functorch.config.donated_buffer = False` and records it
+(`trunk_memory_levers.compile_donated_buffer: false`). The CPU backends used in CI do not donate,
+so the test pins the switch and runs the trainer's retain-graph pattern; **S11b is the proof**.
+
+| smoke | batch | levers | plain step | conflict reading | **projected launch s/step** | **samples/s** | peak `cuda_max_mem_gb` |
+|---|---|---|---|---|---|---|---|
+| S10 | 16 | bf16 + NHWC + fold + dedup | 8.0 | +8.7 | 9.02 | 1.775 | 21.23 |
+| **S11b** | 16 | + **compile** | **6.0** | +6.7 | **6.79** | **2.358** | 21.24 |
+
+Same seed and data, S11b vs S10, per-step training loss: **max 0.57 %, mean 0.16 %** — smaller than
+bf16's own shift (0.66 % / 0.35 %) or the fold's (1.06 % / 0.36 %); in-run eval median deviation
+0.07 % (eval loss 140.87 → 140.66, 99.41 → 99.34). Dedup at batch 16: 432 slots / 208 frames per
+step. `config.json` of S11b records, read off the built trunk: `chunk_ckpt 8, frozen_bn,
+bn_pinned 104, relu_out_of_place 100, bf16, channels_last, bn_folded 104, dedup_frames,
+compile_donated_buffer false, compile inductor`.
+
+**Tests.** `stack/tests/test_trunk_compile.py` — 7 tests (`aot_eager` on CPU: the dev box has no
+Triton): OFF is the eager network itself; same outputs and gradients; the compiled callable is what
+RUNS (a counting wrapper sees every chunk); state_dict keys unchanged and loadable both ways;
+composes with chunking, bf16, NHWC, fold and dedup; the flag reaches the BUILT trunk and the stamp
+and is refused for the `refc` trunk; donated buffers off. **Mutation 9/9**
+(`raw/mutation_proof_trunk_compile.json`). The fold proof re-run on this commit's files: **14/14**
+(`raw/mutation_proof_trunk_fold_bn_on_F.json`, two anchors moved with the new flags).
+
+### 10c. The launch — the PI's decisions, 2026-09-23 evening
+
+Asked with the numbers above, the PI chose, verbatim: **"Full, ~4.0 days (Recommended)"** and
+**"Keep every 10th (Recommended)"** — the pre-registered budget and the pre-registered conflict
+cadence, so the launch carries **no deviation** from `SMOKE_DECISION_RULES.md`.
+
+| | |
+|---|---|
+| batch | **16** (the rule: largest that fits, highest samples/s) |
+| steps | **50,400** = ceil(805,680 / 16) rounded up to 50 — the pre-registered `full` |
+| trunk | resnet101.a1_in1k, 416 × 1024, chunk 8, frozen + folded BN, bf16 + NHWC, dedup, compile |
+| conflict probe | every 10th step (pre-registered) |
+| in-run eval | every 500 steps, 8 batches, train + eval joins |
+| projected | **6.79 s/step ⇒ 2.36 samples/s ⇒ ≈ 3.96 days** (fp32 this morning: 18.06 s/step at batch 8 ⇒ ≈ 21 days) |

@@ -356,15 +356,25 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     cfg.core.encoder.trunk_bf16 = bool(getattr(args, "trunk_bf16", False))
     cfg.core.encoder.trunk_channels_last = bool(getattr(args, "trunk_channels_last", False))
     cfg.core.encoder.trunk_fold_bn = bool(getattr(args, "trunk_fold_bn", False))
+    cfg.core.encoder.trunk_dedup_frames = bool(getattr(args, "trunk_dedup_frames", False))
+    cfg.core.encoder.trunk_compile = bool(getattr(args, "trunk_compile", False))
+    if cfg.core.encoder.trunk_dedup_frames and not cfg.core.encoder.trunk_frozen_bn:
+        raise SystemExit(
+            "[v3] ⛔ --trunk-dedup-frames without --trunk-frozen-bn: a BatchNorm training on "
+            "the batch makes each frame's features depend on which frames share its batch, "
+            "so computing a shared frame once would change the function.")
     if cfg.core.encoder.trunk_fold_bn and not cfg.core.encoder.trunk_frozen_bn:
         raise SystemExit(
             "[v3] ⛔ --trunk-fold-bn without --trunk-frozen-bn: only a FROZEN BatchNorm is a "
             "fixed affine that can be folded into its conv; a BN training on the batch is "
             "not, and folding it would change the function.")
     if (cfg.core.encoder.trunk_bf16 or cfg.core.encoder.trunk_channels_last
-            or cfg.core.encoder.trunk_fold_bn) and _trunk != "timm":
+            or cfg.core.encoder.trunk_fold_bn
+            or cfg.core.encoder.trunk_dedup_frames
+            or cfg.core.encoder.trunk_compile) and _trunk != "timm":
         raise SystemExit(
-            "[v3] ⛔ --trunk-bf16 / --trunk-channels-last / --trunk-fold-bn need --trunk timm; "
+            "[v3] ⛔ --trunk-bf16 / --trunk-channels-last / --trunk-fold-bn / "
+            "--trunk-dedup-frames / --trunk-compile need --trunk timm; "
             "the in-repo `refc` trunk implements none of them, so the flag would be "
             "stamped into config.json and change nothing. Got --trunk %s." % _trunk)
     # ⛔ C26: equalize the rig-correlated black strip (see `--equalize-bottom-rows`).
@@ -4946,6 +4956,8 @@ def _seam_stamp(cfg, args) -> dict:
         "trunk_bf16": bool(getattr(core.encoder, "trunk_bf16", False)),
         "trunk_channels_last": bool(getattr(core.encoder, "trunk_channels_last", False)),
         "trunk_fold_bn": bool(getattr(core.encoder, "trunk_fold_bn", False)),
+        "trunk_dedup_frames": bool(getattr(core.encoder, "trunk_dedup_frames", False)),
+        "trunk_compile": bool(getattr(core.encoder, "trunk_compile", False)),
         "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
         "trunk_fuse_identity": bool(getattr(core.encoder,
                                             "trunk_fuse_identity", True)),
@@ -8155,6 +8167,14 @@ def train(args) -> dict:
             if torch.cuda.is_available():
                 row["cuda_max_mem_gb"] = round(
                     torch.cuda.max_memory_allocated() / 2 ** 30, 3)
+            # ⭐ --trunk-dedup-frames, observed rather than asserted: frame SLOTS the trunk
+            # filled vs frames it actually COMPUTED, summed over every trunk call since the
+            # last row (a refcv6 window: 10 of 24; the future frames: nothing to share).
+            _enc = getattr(getattr(model, "core", None), "encoder", None)
+            _ddc = getattr(_enc, "dedup_counts", None)
+            if _ddc and _ddc[0] > 0:
+                row["trunk_frame_slots"], row["trunk_frames_computed"] = map(int, _ddc)
+                _enc.dedup_counts = [0, 0]
             # AFTER the rounding comprehension above, deliberately:
             # a real 1e-8 gradient rounded to 5 dp reads 0.0, which
             # is the exact signature of the defect this measures.
@@ -9098,6 +9118,21 @@ def build_parser() -> argparse.ArgumentParser:
                          "mu*s), with no separate BN pass. MEASURED 2026-09-23 on Thor: BN "
                          "was ~23 %% of GPU time. gamma/beta still train; state_dict keys "
                          "are unchanged. Requires --trunk-frozen-bn. Stamped.")
+    ap.add_argument("--trunk-dedup-frames", action="store_true",
+                    help="⭐ SPEED, EXACT: compute each DISTINCT frame of the window's "
+                         "overlapping K-frame stacks once and gather it into every stack "
+                         "that uses it (a D-015 row stacks frames j..j+K-1, so a window of "
+                         "W rows holds W+K-1 distinct frames: refcv6 10, not 24). With BN "
+                         "frozen that is the same function with the same gradients; the "
+                         "overlap is VERIFIED per batch by exact equality. Requires "
+                         "--trunk-frozen-bn. Logged per step as trunk_frame_slots / "
+                         "trunk_frames_computed; stamped.")
+    ap.add_argument("--trunk-compile", action="store_true",
+                    help="⭐ SPEED: run the backbone through torch.compile (Inductor). MEASURED "
+                         "2026-09-23 on Thor: backbone fwd+bwd 1.53x faster and closer to "
+                         "strict fp32 than eager bf16. The compiled callable sits outside the "
+                         "module tree, so state_dict keys are unchanged. --trunk timm only. "
+                         "Stamped; trunk_memory_levers records the backend.")
     ap.add_argument("--cudnn-benchmark", action="store_true",
                     help="⭐ SPEED: torch.backends.cudnn.benchmark = True -- cuDNN times "
                          "its convolution algorithms once per input shape and keeps the "

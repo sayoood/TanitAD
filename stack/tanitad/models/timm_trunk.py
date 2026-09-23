@@ -194,6 +194,22 @@ class TimmTrunkConfig:
     #: fold each FROZEN BatchNorm into its conv (the same function, no separate BN pass);
     #: requires ``frozen_bn``. See :func:`_fold_frozen_bn_`.
     fold_bn: bool = False
+    #: ⭐ SPEED, EXACT: compute each DISTINCT frame of overlapping K-stacks ONCE. A D-015 row
+    #: stacks raw frames (j, ..., j+K-1), so row i+1 repeats row i's newest K-1 frames: a
+    #: window of W rows holds W+K-1 distinct frames, not W*K (refcv6: 10, not 24). With BN
+    #: frozen, a frame's features depend on that frame alone, so computing it once and
+    #: GATHERING it into every slot is the same function with the same gradients. Verified
+    #: per batch on the data, never assumed. Requires ``frozen_bn``; "shared" mode, K >= 2.
+    #: See :meth:`TimmResNetTrunk._backbone_dedup`.
+    dedup_frames: bool = False
+    #: ⭐ SPEED: the backbone through ``torch.compile``. MEASURED 2026-09-23 on Thor (resnet101,
+    #: 416x1024, bf16 + NHWC, frozen + folded BN, chunk 8): fwd+bwd 1.53x faster, and CLOSER to
+    #: strict fp32 than the eager bf16 path (1.75 % / 4.67 % vs 2.08 % / 5.74 %) -- Inductor keeps
+    #: fused intermediates in fp32. The compiled callable is held OUTSIDE the module tree, so
+    #: every state_dict key is unchanged. ``compile_backend`` exists for CI (the dev box has no
+    #: Triton); a run uses "inductor".
+    compile_backbone: bool = False
+    compile_backend: str = "inductor"
     #: ⭐ PI 2026-09-16: the PRIMARY. `resnet34.a1_in1k` — the papers' and
     #: DiffusionDrive's own — is the second comparison run, selected by name.
     model_name: str = "resnet101.a1_in1k"
@@ -606,6 +622,24 @@ class TimmResNetTrunk(nn.Module):
                     "is not a fixed affine, so folding it would change the function. Pass "
                     "frozen_bn=True, or do not fold.")
             self.memory_levers["bn_folded"] = _fold_frozen_bn_(self.net)
+        if bool(getattr(self.cfg, "dedup_frames", False)):
+            if not self.memory_levers["frozen_bn"]:
+                raise ValueError(
+                    "trunk dedup_frames without frozen_bn: a BatchNorm that trains on the "
+                    "batch makes each frame's features depend on WHICH frames share its "
+                    "batch, so computing a frame once would not be the same function. Pass "
+                    "frozen_bn=True, or do not dedup.")
+            if str(self.cfg.mode) != "shared" or self.k < 2:
+                raise ValueError(
+                    f"trunk dedup_frames needs mode 'shared' with K >= 2 frames per stack "
+                    f"(got mode {self.cfg.mode!r}, K {self.k}): only separate per-frame "
+                    f"passes have frames to share.")
+            self.memory_levers["dedup_frames"] = True
+        #: (frame slots, frames computed) of the LAST deduplicated call, and the same pair
+        #: ACCUMULATED over every call since the run log last read and reset it -- a training
+        #: step calls the trunk more than once (the window, then the future frames).
+        self.last_dedup: tuple | None = None
+        self.dedup_counts: list = [0, 0]
         _ck = int(getattr(self.cfg, "chunk_ckpt", 0) or 0)
         if _ck > 0:
             # ⚠️ REFUSED, not silently allowed: chunking without frozen BN is a
@@ -623,6 +657,23 @@ class TimmResNetTrunk(nn.Module):
             # and the state_dict stay identical, so checkpoints remain interchangeable
             # with unlevered runs of the same lineage.
             self.memory_levers["chunk_ckpt"] = _ck
+        # ⭐ compile LAST, so it sees the network exactly as the levers above left it. Set with
+        # `object.__setattr__` so nn.Module does NOT register the wrapper: the module tree and
+        # every state_dict key stay the eager trunk's, and a compiled run's checkpoint loads
+        # into an uncompiled model (and back).
+        object.__setattr__(self, "_net_fn", None)
+        if bool(getattr(self.cfg, "compile_backbone", False)):
+            _be = str(getattr(self.cfg, "compile_backend", "inductor") or "inductor")
+            # ⛔ THE TRAINER BACKPROPAGATES THROUGH ONE GRAPH MORE THAN ONCE (the conflict
+            # detector's per-term gradients use retain_graph=True before the step's backward).
+            # AOTAutograd's DONATED BUFFERS forbid that: MEASURED 2026-09-23 on Thor, the first
+            # compiled smoke (S11) died at step 1 with "compiled with non-empty donated buffers
+            # which requires create_graph=False and retain_graph=False". Its documented switch:
+            import torch._functorch.config as _fconfig
+            _fconfig.donated_buffer = False
+            self.memory_levers["compile_donated_buffer"] = bool(_fconfig.donated_buffer)
+            object.__setattr__(self, "_net_fn", torch.compile(self.net, backend=_be))
+            self.memory_levers["compile"] = _be
 
     # -- the normalisation, in one place ---------------------------------- #
     def normalise(self, x: Tensor) -> Tensor:
@@ -658,19 +709,58 @@ class TimmResNetTrunk(nn.Module):
         ck = int(self.memory_levers.get("chunk_ckpt", 0) or 0)
         bf = bool(self.memory_levers.get("bf16", False))
         cl = bool(self.memory_levers.get("channels_last", False))
+        # the compiled backbone when --trunk-compile asked for it; otherwise `self.net` itself
+        net = self._net_fn if getattr(self, "_net_fn", None) is not None else self.net
         if not (bf or cl):
             # the exact pre-lever path -- no autocast context is even entered
             if ck <= 0:
-                return self.net(x)
-            return _chunked_backbone(self.net, x, ck)
+                return net(x)
+            return _chunked_backbone(net, x, ck)
         if cl:
             x = x.contiguous(memory_format=torch.channels_last)
         with torch.autocast(device_type=x.device.type, dtype=torch.bfloat16,
                             enabled=bf):
-            out = self.net(x) if ck <= 0 else _chunked_backbone(self.net, x, ck)
+            out = net(x) if ck <= 0 else _chunked_backbone(net, x, ck)
         # ⛔ back to float32 and the default layout: everything downstream of the backbone
         # (fusion, decoders, trajectory integration, losses) must see what it always saw.
         return [o.float().contiguous() for o in out]
+
+    def _backbone_dedup(self, per: Tensor):
+        """``[N, K, 3, H, W]`` -> the backbone's (s16, s32) for all ``N*K`` frame slots, in the
+        ``row * K + position`` order :meth:`forward_features` has always used -- computing each
+        DISTINCT frame of adjacent overlapping stacks once and gathering it into its slots.
+
+        ⛔ VERIFIED, NEVER ASSUMED: row ``i+1`` reuses row ``i``'s frames only where the data
+        say they ARE the same frame -- exact equality of ``per[i+1, :K-1]`` and ``per[i, 1:]``.
+        A window boundary (the next sample, another clip) fails the check and computes all K
+        frames, and so does any input without the D-015 structure: the lever is exact on
+        every input and merely does nothing where there is nothing to share. The gather's
+        backward SUMS each frame's gradient over its slots, which is what the separate
+        passes' weight gradients summed to. ``last_dedup`` = (slots, frames computed).
+        """
+        n, k = int(per.shape[0]), int(per.shape[1])
+        same = ((per[1:, :k - 1] == per[:-1, 1:]).flatten(1).all(dim=1).tolist()
+                if n > 1 else [])
+        slot = [[0] * k for _ in range(n)]
+        rows: list = []
+        pos: list = []
+        for i in range(n):
+            first = 0
+            if i > 0 and same[i - 1]:
+                slot[i][:k - 1] = slot[i - 1][1:]
+                first = k - 1
+            for j in range(first, k):
+                slot[i][j] = len(rows)
+                rows.append(i)
+                pos.append(j)
+        dev = per.device
+        uniq = per[torch.tensor(rows, device=dev), torch.tensor(pos, device=dev)]
+        f16u, f32u = self._backbone(uniq)
+        flat = torch.tensor([u for r in slot for u in r], device=f16u.device)
+        self.last_dedup = (n * k, len(rows))
+        self.dedup_counts = [self.dedup_counts[0] + n * k, self.dedup_counts[1] + len(rows)]
+        return f16u.index_select(0, flat), f32u.index_select(0, flat)
+
     def forward_features(self, x: Tensor,
                          already_normalised: bool = False
                          ) -> tuple[Tensor, Tensor, Tensor]:
@@ -697,9 +787,13 @@ class TimmResNetTrunk(nn.Module):
             # K into the batch is what makes them one kernel launch while
             # keeping the stem's input exactly 3 ImageNet channels.
             b = x.shape[0]
-            per = x.reshape(b, self.k, 3, *x.shape[2:]).reshape(
-                b * self.k, 3, *x.shape[2:])
-            f16, f32 = self._backbone(per)
+            if self.memory_levers.get("dedup_frames"):
+                f16, f32 = self._backbone_dedup(
+                    x.reshape(b, self.k, 3, *x.shape[2:]))
+            else:
+                per = x.reshape(b, self.k, 3, *x.shape[2:]).reshape(
+                    b * self.k, 3, *x.shape[2:])
+                f16, f32 = self._backbone(per)
             s16 = self.fuse16(f16.reshape(b, self.k, *f16.shape[1:]))
             s32 = self.fuse32(f32.reshape(b, self.k, *f32.shape[1:]))
         self.last_s16 = s16
