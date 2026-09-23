@@ -15723,3 +15723,17 @@ reading reached the log only on log steps (every 50th) — never the same step �
 (~10 % of run time) was computed and discarded. The smokes logged every step and could not show it.
 Fixed in the next commit (a reading off the log cadence gets its own row; `test_conflict_readings_
 are_logged.py`, mutation 2/2); the live run switches to it at a checkpoint (logging only).
+
+<!-- REFCV6-SWITCH-287d72e-2026-09-23 -->
+
+### 2026-09-23 (night) — refcv6-r101-s0 switched to `287d72e` at step 500: the conflict readings are recorded
+
+MEASURED on Thor (`…/2026-09-23-refcv6-fixes/raw/launch_2026-09-23/switch/`): after the step-500
+checkpoint (1.17 GB) and its in-run eval (eval_loss 38.17), the supervisor then the trainer were
+stopped by explicit pid (lock free, no orphans, no summary.json), the manifest's `CODE` pointed at
+the shipped `287d72e` tree (2,201 files md5-verified), and a fresh supervisor (pid 3346328,
+trainer 3346338, 2026-09-23 21:45 Berlin) resumed: "resumed hier at step 500", "resumed data
+order: epoch 0, 500 batches in". **Conflict readings now land every 10th step as rows of their own
+— 501, 511, …, 591 — `cd_cos` −0.157 … +0.088** (near-orthogonal planning and perception
+gradients on the trunk, mild conflicts). Logging only: the arm is unchanged. Steps 550–600 ran at
+6.53 s/step (one window; 6.40–6.42 before the switch).
