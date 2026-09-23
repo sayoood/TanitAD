@@ -15668,3 +15668,13 @@ MEASURED on Thor with the launch line (in-run eval on, train + eval joins). Full
 * Throughput **~0.44–0.47 samples/s** at batch 8 (probe every 10th step; every step costs +124 %).
   ⛔ Pre-registered `full` (805,680 windows) ≈ **20 days**; `cut` (240,000) ≈ **6 days** — the PI decides.
 * The eval split's box z/h are supervised in-run (`eval_box3d_n_h` 19–21).
+
+<!-- REFCV6-SPEED-2026-09-23 -->
+
+### 2026-09-23 (afternoon) — refcv6 made 1.56× faster before launch, as the PI chose
+
+MEASURED on Thor (`…/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §8): the step is GPU-bound
+and two thirds of it is memory-bound backbone elementwise work. `--trunk-bf16` + `--trunk-channels-last`
+(backbone only; outputs back to fp32) take batch 8 from **17.99 → 11.56 s/step** and **18.0 → 13.2 GB**,
+losses tracking step for step; bigger chunks, cuDNN autotuning and dropping checkpointing each bought
+≤ 3 %. Mutation 5/5. ⇒ `cut` ≈ **3.8 days**, `full` ≈ **12.6 days** on Thor — the budget is the PI's.

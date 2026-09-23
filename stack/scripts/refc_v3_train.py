@@ -351,6 +351,16 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # live). They travel on the CONFIG, not on a wrapper, so `config.json` records them.
     cfg.core.encoder.trunk_chunk_ckpt = int(getattr(args, "trunk_chunk_ckpt", 0) or 0)
     cfg.core.encoder.trunk_frozen_bn = bool(getattr(args, "trunk_frozen_bn", False))
+    # ⭐ SPEED LEVERS (2026-09-23): the backbone in bf16 and/or NHWC. timm trunk only --
+    # the in-repo `refc` trunk has neither, so the flag would be stamped and do nothing.
+    cfg.core.encoder.trunk_bf16 = bool(getattr(args, "trunk_bf16", False))
+    cfg.core.encoder.trunk_channels_last = bool(getattr(args, "trunk_channels_last", False))
+    if (cfg.core.encoder.trunk_bf16 or cfg.core.encoder.trunk_channels_last) \
+            and _trunk != "timm":
+        raise SystemExit(
+            "[v3] ⛔ --trunk-bf16 / --trunk-channels-last need --trunk timm; the "
+            "in-repo `refc` trunk implements neither, so the flag would be stamped "
+            "into config.json and change nothing. Got --trunk %s." % _trunk)
     # ⛔ C26: equalize the rig-correlated black strip (see `--equalize-bottom-rows`).
     cfg.core.encoder.trunk_equalize_bottom_rows = int(
         getattr(args, "equalize_bottom_rows", 0) or 0)
@@ -4910,6 +4920,8 @@ def _seam_stamp(cfg, args) -> dict:
         # that trained BN on the batch, so this row is what keeps a later panel honest.
         "trunk_chunk_ckpt": int(getattr(core.encoder, "trunk_chunk_ckpt", 0) or 0),
         "trunk_frozen_bn": bool(getattr(core.encoder, "trunk_frozen_bn", False)),
+        "trunk_bf16": bool(getattr(core.encoder, "trunk_bf16", False)),
+        "trunk_channels_last": bool(getattr(core.encoder, "trunk_channels_last", False)),
         "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
         "trunk_fuse_identity": bool(getattr(core.encoder,
                                             "trunk_fuse_identity", True)),
@@ -6692,6 +6704,9 @@ def train(args) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if args.device == "auto" else args.device
     torch.manual_seed(args.seed)
+    # ⭐ SPEED (2026-09-23): opt-in cuDNN autotuning; config.json records the setting as read back.
+    if bool(getattr(args, "cudnn_benchmark", False)):
+        torch.backends.cudnn.benchmark = True
     cfg = _pin_trainer_cfg(
         v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
         v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"), args)
@@ -7637,6 +7652,8 @@ def train(args) -> dict:
     assert_seams_are_built(model, _seams)
     _run_config = {
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
+        # ⭐ the backend setting as it IS, read back -- not the flag that asked for it
+        "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
         # ⭐ whether this process RESUMED, and where in the data order it picked up
         "data_order": _data_order,
         # ⭐ A7: `null` is the baseline (no recalibration) and is distinguishable
@@ -9040,6 +9057,25 @@ def build_parser() -> argparse.ArgumentParser:
                          "(chunked vs unchunked agree to 7.2e-6, MEASURED). The "
                          "pin survives the trainer's own model.train(), which "
                          "recurses and would otherwise silently un-freeze it.")
+    ap.add_argument("--trunk-bf16", action="store_true",
+                    help="⭐ SPEED: run the BACKBONE ONLY under bf16 autocast; its "
+                         "outputs are cast back to float32, so the fusion, decoders, "
+                         "trajectory integration and every loss stay fp32. MEASURED "
+                         "2026-09-23 on Thor: the refcv6 step is GPU-bound and ~2/3 "
+                         "of GPU time is memory-bound backbone elementwise work (BN, "
+                         "ReLU, residual adds), which bf16 halves. --trunk timm only. "
+                         "Stamped in config.json.")
+    ap.add_argument("--cudnn-benchmark", action="store_true",
+                    help="⭐ SPEED: torch.backends.cudnn.benchmark = True -- cuDNN times "
+                         "its convolution algorithms once per input shape and keeps the "
+                         "fastest (our shapes are fixed). Changes WHICH algorithm runs, "
+                         "not the model; off by default so the default path is "
+                         "unchanged. Stamped in config.json.")
+    ap.add_argument("--trunk-channels-last", action="store_true",
+                    help="⭐ SPEED: keep the BACKBONE in NHWC (channels_last). "
+                         "MEASURED 2026-09-23 on Thor: 12 %% of GPU time was cuDNN's "
+                         "NCHW<->NHWC conversions around each convolution. --trunk "
+                         "timm only. Stamped in config.json.")
     ap.add_argument("--trunk-bn-recalib", type=int, default=0,
                     help="⭐ A7 (2026-09-19): before step 1, re-estimate every backbone "
                          "BatchNorm's running statistics on N FIXED training windows "

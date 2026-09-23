@@ -355,6 +355,9 @@ class CNNEncoderConfig:
     #: and trains the other arm.
     trunk_chunk_ckpt: int = 0        # 0 = off; N = leading-batch chunk size
     trunk_frozen_bn: bool = False    # required by trunk_chunk_ckpt; CHANGES THE ARM
+    #: ⛔ SPEED LEVERS (timm trunk only), real fields for the same reason as above.
+    trunk_bf16: bool = False         # the BACKBONE under bf16 autocast; outputs back to fp32
+    trunk_channels_last: bool = False  # the BACKBONE in NHWC
 
     @property
     def feat_dim(self) -> int:
@@ -1452,7 +1455,9 @@ def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
             # `config.json`. A lever applied by a wrapper is a lever the run
             # cannot prove it used.
             chunk_ckpt=int(getattr(cfg, "trunk_chunk_ckpt", 0) or 0),
-            frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)))
+            frozen_bn=bool(getattr(cfg, "trunk_frozen_bn", False)),
+            bf16=bool(getattr(cfg, "trunk_bf16", False)),
+            channels_last=bool(getattr(cfg, "trunk_channels_last", False)))
     raise ValueError(
         f"CNNEncoderConfig.trunk {kind!r} not in ('refc', 'timm'). A typo here "
         f"would otherwise fall through to the legacy trunk and the run would "

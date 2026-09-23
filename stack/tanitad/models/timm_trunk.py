@@ -180,6 +180,17 @@ class TimmTrunkConfig:
     #: `ga_trunk` on resnet34 — a config that fits but is a DIFFERENT ARM. With BN
     #: frozen, chunked and unchunked agree to 7.2e-6.
     frozen_bn: bool = False
+    #: ⛔ SPEED LEVERS — both OFF by default, and with both off `_backbone` runs the exact
+    #: pre-lever code path. MEASURED 2026-09-23 (torch.profiler, Thor, resnet101 at
+    #: 416x1024, batch 8, chunk 8): the step is GPU-BOUND and ~two thirds of GPU time is
+    #: MEMORY-BOUND elementwise work (BN 23 %, residual adds 14 %, ReLU 17 %) plus 12 % in
+    #: NCHW<->NHWC layout conversions around every convolution.
+    #: `bf16`: run the BACKBONE ONLY under bf16 autocast (halves the bytes those ops move;
+    #: outputs are cast back to float32, so the fusion, decoders, trajectory integration
+    #: and every loss stay in fp32). `channels_last`: keep the backbone in NHWC, removing
+    #: the layout conversions cuDNN otherwise inserts. Neither changes a weight or a frame.
+    bf16: bool = False
+    channels_last: bool = False
     #: ⭐ PI 2026-09-16: the PRIMARY. `resnet34.a1_in1k` — the papers' and
     #: DiffusionDrive's own — is the second comparison run, selected by name.
     model_name: str = "resnet101.a1_in1k"
@@ -520,7 +531,13 @@ class TimmResNetTrunk(nn.Module):
         # UNWRAPPED backbone, and the freeze must precede the wrap because it walks
         # `.modules()` on the real network.
         self.memory_levers: dict = {"chunk_ckpt": 0, "frozen_bn": False,
-                                    "bn_pinned": 0, "relu_out_of_place": 0}
+                                    "bn_pinned": 0, "relu_out_of_place": 0,
+                                    "bf16": bool(getattr(self.cfg, "bf16", False)),
+                                    "channels_last": bool(
+                                        getattr(self.cfg, "channels_last", False))}
+        if self.memory_levers["channels_last"]:
+            # in place: the module tree and the state_dict keys are unchanged
+            self.net.to(memory_format=torch.channels_last)
         if bool(getattr(self.cfg, "frozen_bn", False)):
             self.memory_levers["frozen_bn"] = True
             self.memory_levers["bn_pinned"] = _freeze_bn_(self.net)
@@ -574,9 +591,21 @@ class TimmResNetTrunk(nn.Module):
         sites below cannot drift apart.
         """
         ck = int(self.memory_levers.get("chunk_ckpt", 0) or 0)
-        if ck <= 0:
-            return self.net(x)
-        return _chunked_backbone(self.net, x, ck)
+        bf = bool(self.memory_levers.get("bf16", False))
+        cl = bool(self.memory_levers.get("channels_last", False))
+        if not (bf or cl):
+            # the exact pre-lever path -- no autocast context is even entered
+            if ck <= 0:
+                return self.net(x)
+            return _chunked_backbone(self.net, x, ck)
+        if cl:
+            x = x.contiguous(memory_format=torch.channels_last)
+        with torch.autocast(device_type=x.device.type, dtype=torch.bfloat16,
+                            enabled=bf):
+            out = self.net(x) if ck <= 0 else _chunked_backbone(self.net, x, ck)
+        # ⛔ back to float32 and the default layout: everything downstream of the backbone
+        # (fusion, decoders, trajectory integration, losses) must see what it always saw.
+        return [o.float().contiguous() for o in out]
     def forward_features(self, x: Tensor,
                          already_normalised: bool = False
                          ) -> tuple[Tensor, Tensor, Tensor]:

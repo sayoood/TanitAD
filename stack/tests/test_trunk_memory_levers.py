@@ -31,8 +31,10 @@ def test_the_default_applies_NOTHING():
     """⛔ The parity requirement. A memory flag that perturbs the default path has failed
     regardless of what it enables — every banked arm was trained without these."""
     t = _mk()
+    # ⭐ 2026-09-23: the two SPEED levers joined the dict -- and are OFF by default too.
     assert t.memory_levers == {"chunk_ckpt": 0, "frozen_bn": False,
-                               "bn_pinned": 0, "relu_out_of_place": 0}
+                               "bn_pinned": 0, "relu_out_of_place": 0,
+                               "bf16": False, "channels_last": False}
 
 
 def test_SAME_BREATH_CONTROL_bn_really_does_train_by_default():

@@ -3,6 +3,8 @@
 #
 #   CODE=<shipped tree> OUT=<run dir> BATCH=<B> STEPS=<S> CONFLICT_EVERY=<N> [WORKERS=..]
 #   [EVAL=1 AGENT_JOIN=<train+eval 2-D join> JOIN3D=<train+eval 3-D join>] ./run_refcv6.sh
+#   [TRUNK_BF16=1] [TRUNK_CL=1]  the backbone in bf16 / NHWC (speed; outputs back to fp32)
+#   [CUDNN_BENCH=1]  cuDNN autotuning   [TRUNK_FROZEN_BN=1]  frozen BN without chunking
 #   [TRUNK_CHUNK=<N>]  gradient-checkpoint the backbone in slices of N images; N > 0 also
 #   pins BatchNorm to its ImageNet statistics (--trunk-frozen-bn, which the chunking
 #   REQUIRES to stay exact). MEASURED 2026-09-23 on Thor: unchunked resnet101 at 416x1024
@@ -23,7 +25,12 @@ AGENT_JOIN="${AGENT_JOIN:-/home/nvidia/percprobe/raw/b1train_agents.jsonl.xz}"
 JOIN3D="${JOIN3D:-$D/join3d/b1train_agents_3d.jsonl.xz}"
 TRUNK_CHUNK="${TRUNK_CHUNK:-0}"
 CKPT_ARGS=()
-if [ "$TRUNK_CHUNK" -gt 0 ]; then CKPT_ARGS=(--trunk-chunk-ckpt "$TRUNK_CHUNK" --trunk-frozen-bn); fi
+if [ "$TRUNK_CHUNK" -gt 0 ]; then CKPT_ARGS=(--trunk-chunk-ckpt "$TRUNK_CHUNK" --trunk-frozen-bn)
+elif [ "${TRUNK_FROZEN_BN:-0}" = "1" ]; then CKPT_ARGS=(--trunk-frozen-bn); fi
+SPEED_ARGS=()   # the backbone in bf16 and/or NHWC -- see --trunk-bf16 / --trunk-channels-last
+if [ "${TRUNK_BF16:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-bf16); fi
+if [ "${TRUNK_CL:-0}" = "1" ]; then SPEED_ARGS+=(--trunk-channels-last); fi
+if [ "${CUDNN_BENCH:-0}" = "1" ]; then SPEED_ARGS+=(--cudnn-benchmark); fi
 EVAL_ARGS=()
 if [ "$EVAL" = "1" ]; then
   EVAL_ARGS=(--eval-cache "$D/refcv6-b1-416x1024-eval139"
@@ -51,6 +58,7 @@ exec /home/nvidia/venvs/tanitad-train/bin/python "$CODE/stack/scripts/refc_v3_tr
   --w-box3d 1.0 --join3d "$JOIN3D" --bev-coupling \
   --equalize-bottom-rows 43 --opt dd --lr 1e-4 --warmup 2000 --seed 0 --u8-batches \
   ${CKPT_ARGS[@]+"${CKPT_ARGS[@]}"} \
+  ${SPEED_ARGS[@]+"${SPEED_ARGS[@]}"} \
   --workers "$WORKERS" --conflict-every "$CONFLICT_EVERY" \
   --save-every "$SAVE_EVERY" --log-every "$LOG_EVERY" --batch "$BATCH" --steps "$STEPS" \
   --out "$OUT"

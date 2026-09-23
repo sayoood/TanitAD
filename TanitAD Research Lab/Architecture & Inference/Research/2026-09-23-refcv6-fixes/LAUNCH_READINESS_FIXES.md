@@ -212,3 +212,39 @@ CPU-side work in the step) are measured next, not assumed.
 **Thor memory, corrected:** the "~105 GB leak that only a reboot frees" is the GPU allocations of
 processes that were KILLED — released by the driver with a delay (MEASURED: 19 → 93 GB within ~40 min
 after an OOM-kill; a normally-exiting smoke released at once, 102 GB free after S3). No reboot needed.
+
+## 8. Faster first (the PI's choice, 2026-09-23): 1.56x from two backbone levers, measured
+
+**Evidence class:** MEASURED (ours, Thor). Profile: `raw/profile_S3_fp32_by_cuda.txt` /
+`_by_cpu.txt` (`code/profile_step.py`, the real `train()`, 2 recorded steps after 4 warm-up).
+Smokes: `raw/speed_smokes_2026-09-23.json`.
+
+**Where the time went (fp32, batch 8, chunk 8):** the step is **GPU-bound** — the CPU core at 100 %
+is waiting on a full command buffer (46 % of CPU time), not working. About **two thirds of GPU time
+is memory-bound elementwise work** in the backbone (BatchNorm fwd+bwd ~23 %, ReLU ~17 %, residual
+adds ~14 %) plus **~12 % NCHW↔NHWC layout conversions** cuDNN inserts around every convolution;
+convolution math itself is ~39 %.
+
+| smoke | batch | trunk | levers | s/step | peak `cuda_max_mem_gb` | verdict |
+|---|---|---|---|---|---|---|
+| S3 | 8 | chunk 8 + frozen BN | fp32 | **17.99** (steps 3→30) | 18.03 | baseline |
+| **S4** | 8 | chunk 8 + frozen BN | **bf16 + channels_last** | **11.56** (steps 4→30) | **13.17** | ⭐ **1.56× faster**, −27 % memory |
+| S5 | 8 | chunk 24 + frozen BN | bf16 + channels_last | 11.67 (4→14) | 21.32 | bigger chunks: no gain |
+| S6 | 8 | chunk 8 + frozen BN | bf16 + channels_last + cuDNN autotune | 11.24 (4→14) | 13.82 | autotune: no gain → stays opt-in |
+| S7 | 4 | **no checkpointing** + frozen BN | bf16 + channels_last | 4.90 (4→16) = 1.225 s/sample | **57.24** | ~3 % per sample for 4.5× the memory: not worth it |
+
+S3/S4 windows both contain one in-run eval and the every-10th-step conflict readings. The losses
+track step for step (S3 196.61 / 232.00 / 188.51 …, S4 195.84 / 231.46 / 187.91 …): the levers
+change the arithmetic precision of the BACKBONE only, whose outputs return to float32 before the
+fusion, the decoders, the trajectory integration and every loss.
+
+**The levers** (`--trunk-bf16`, `--trunk-channels-last`, opt-in `--cudnn-benchmark`; launch-script
+knobs `TRUNK_BF16` / `TRUNK_CL` / `CUDNN_BENCH`): real config fields, passed by `build_encoder`,
+recorded in the trunk's `memory_levers`, stamped in `config.json`, refused for the `refc` trunk.
+`stack/tests/test_trunk_speed_levers.py` — 7 tests, the key one a forward hook that must SEE a
+bfloat16 activation in the stem; **mutation 5/5** (autocast ignoring the flag, NHWC removed,
+outputs left in bf16, the trainer not pinning the flag, `build_encoder` dropping it).
+
+**The launch configuration now:** batch 8, chunk 8, frozen BN, bf16 + channels_last, conflict probe
+every 10th step, in-run eval every 500 steps ⇒ ~0.73–0.76 samples/s ⇒ pre-registered `cut`
+(240,000 windows, 30,000 steps) ≈ **3.8 days**, `full` (805,680 windows, 100,750 steps) ≈ **12.6 days**.
