@@ -521,6 +521,7 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
     # values would be the rotting list this test exists to avoid.
     cand = {float: (0.137, 1.37), int: (61, 7)}
     checked = 0
+    dormant: list = []
     for a in p._actions:
         if a.dest not in t.agent_knob_dests(p) or not a.option_strings:
             continue
@@ -554,8 +555,17 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
             checked += 1
             break
         else:
+            # ⛔ refcv7 is DORMANT on a tree that lacks its modules: `--refcv7` REFUSES by
+            # name there (`_pin_refcv7`), so its knobs have no admissible value HERE. Only
+            # that exact refusal, with the modules genuinely absent, is excused -- and the
+            # excused set is pinned to refcv7 knobs below, so it cannot grow silently.
+            if (t.r7h is None and last is not None
+                    and "NOT IN THIS TREE" in str(last)):
+                dormant.append(a.dest)
+                continue
             raise AssertionError(f"no admissible probe value for {opt}: "
                                  f"{last}")
+    assert all(d.startswith(("w_r7_", "r7_")) for d in dormant), dormant
     # the same-breath control: a loop that checked nothing passes vacuously.
     assert checked >= 12, checked
 

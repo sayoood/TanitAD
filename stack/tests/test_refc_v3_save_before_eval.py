@@ -198,7 +198,13 @@ def test_ckpt_on_disk_before_the_eval_and_an_eval_death_does_not_end_the_run(
     assert at_eval == {"ckpt_exists": True, "ckpt_step": 1,
                        "milestone_exists": True, "rows": [(1, False, True)]}
     ck = torch.load(out / "ckpt.pt", map_location="cpu", weights_only=False)
-    assert set(ck) == {"model", "opt", "step"} and ck["step"] == 1
+    # ⭐ `data_pos` since 2026-09-23: the resume position (ResumableEpochSampler).
+    assert set(ck) == {"model", "opt", "step", "data_pos"} and ck["step"] == 1
+    assert {k: ck["data_pos"][k] for k in ("scheme", "epoch", "batch", "seed",
+                                           "batch_size")} == {
+        "scheme": "resumable-epoch-sampler/1", "epoch": 0, "batch": 1,
+        "seed": 0, "batch_size": 2}
+    assert ck["data_pos"]["n"] > 0
     ms = torch.load(out / "ckpt_1.pt", map_location="cpu", weights_only=False)
     assert set(ms) == {"model", "step"} and ms["step"] == 1
     assert json.loads((out / "summary.json").read_text())["done"] is True
@@ -291,7 +297,7 @@ def test_step_loop_saves_before_it_evals_in_the_source():
     src = (ROOT / "scripts" / "refc_v3_train.py").read_text(encoding="utf-8")
     loop = src[src.index("    while step < args.steps:"):
                src.index("    # ⛔ the done-marker")]
-    i_save = loop.index('"opt": opt.state_dict(), "step": step}, ck)')
+    i_save = loop.index('"opt": opt.state_dict(), "step": step,')
     i_eval = loop.index("if eval_dl is not None and (step % args.eval_every")
     assert i_save < i_eval, "ckpt.pt must be written BEFORE the eval block"
     assert loop.index("if step in MILESTONES:") < i_eval

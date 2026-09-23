@@ -1,0 +1,43 @@
+{
+ "_what": "mutation proof that test_trainer_imports_without_refcv7.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\scripts\\refc_v3_train.py": "6910a56f6e71df4829e4d9b313c7a524",
+  "stack\\tests\\test_trainer_imports_without_refcv7.py": "632d2385c25e63cbdb6e7433d37f4dda"
+ },
+ "arms": [
+  {
+   "arm": "I1_tolerance_removed_plain_import_back",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_trainer_IMPORTS_when_the_refcv7_modules_are_absent",
+    "test_refcv7_REFUSES_by_name_while_its_modules_are_missing"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "I3_refcv7_refusal_removed",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_refcv7_REFUSES_by_name_while_its_modules_are_missing"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 2,
+ "arms_total": 2,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 2/2 arms RED, including the the d014414 import and the missing refusal; both files restored byte-identical and the final clean run is green."
+}

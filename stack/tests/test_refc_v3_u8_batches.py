@@ -49,7 +49,8 @@ THE DTYPE PATH, traced from source at HEAD ``1f9d08d`` (file:line quoted):
      transient worker RSS).
   4. COLLATE. torch's ``default_collate`` — no custom ``collate_fn`` anywhere
      on this path (``refc_v3_train.py`` ``DataLoader(ds, batch_size=..,
-     shuffle=True, num_workers=.., prefetch_factor=.., drop_last=True,
+     sampler=ResumableEpochSampler(..), num_workers=.., prefetch_factor=..,
+     drop_last=True,
      persistent_workers=..)``); in a worker it allocates the stacked storage
      in shared memory (``/dev/shm`` under the ``file_system`` strategy the
      trainer sets at ``train()``'s top). ``pin_memory`` is NOT set on this
@@ -247,8 +248,19 @@ HEAD_BATCH01 = {
 #: the 1-step train() at HEAD (flag-less trainer): what compute_losses_v3
 #: received (the collated float batch, moved to "cpu") and its raw loss.
 HEAD_TRAIN1 = {
-    "frames": (_F, (2, 4, 1, 64, 64), "ea9932d9bfeee4ba7c67ca675f0f369ed7fe7d00ab8a2e4fda52af5d276efb8c"),
-    "future_frames": (_F, (2, 20, 1, 64, 64), "a57a5796f4f668b07599d9ef6b1034eee9db3dfcd44a7765a30546e1b5d1a474"),
+    # ⭐ RE-MINTED 2026-09-23 (ResumableEpochSampler), under the rule below -- the change
+    # ACCOUNTED FOR before the constant moved. The trainer's loader stopped drawing its
+    # permutation from the global RNG (a relaunch used to REPLAY the epoch), which moves
+    # exactly TWO things in a fresh run's first step: WHICH windows form the batch, and ONE
+    # fewer global-RNG draw at `iter(dl)` (RandomSampler's seed). Evidence, MEASURED on a clean
+    # tree: the old pinned batch is windows (39, 31); forcing that pair first AND restoring the
+    # one draw reproduces the old loss 214.58363342285156 / "69955643" BIT FOR BIT; the natural
+    # new first batch is windows (4, 16) = ResumableEpochSampler(40, 0, 2).permutation(0)[:2],
+    # byte-equal to their direct `default_collate` from the dataset. The u8 property --
+    # `torch.equal(on, off)` -- is unchanged and still asserted.
+    # Previous values: frames ea9932d9..., future_frames a57a5796..., loss 214.58363342285156.
+    "frames": (_F, (2, 4, 1, 64, 64), "8d0303d1d250ff8121376f4b1d935fe8f41f5bf7918c0e740b96b7bf41a14dc8"),
+    "future_frames": (_F, (2, 20, 1, 64, 64), "ff57d483e19ab8e209e2c08e9f9dd661ecfeff5396c599f254366a5446dcb805"),
     # ⭐ RE-MINTED 2026-09-04 (refcv4). The previous pin was
     # 214.69766235351562 / "9ab25643", recorded before the TACTICAL AUX BUDGET
     # FIX: `compute_losses_v3` spent `LAT_WEIGHT*(loss_lat + loss_lat_tac) +
@@ -267,8 +279,8 @@ HEAD_TRAIN1 = {
     #     i.e. 0.025 x (loss_lat + loss_lat_tac + loss_lon + loss_lon_tac),
     #     which is the halving's arithmetic to 8 significant figures.
     # Any FUTURE movement of this constant needs the same two lines of evidence.
-    "loss": 214.58363342285156,
-    "loss_hex": "69955643",                 # struct.pack("<f", loss).hex()
+    "loss": 156.04623413085938,
+    "loss_hex": "d60b1c43",                 # struct.pack("<f", loss).hex()
 }
 
 # -------------------------------------------------------- the live shape

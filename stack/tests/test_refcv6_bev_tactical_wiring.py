@@ -444,3 +444,81 @@ def test_conflict_terms_READS_the_tactical_key_and_WEIGHTS_it():
     class _Z(_M):
         _w_tac_v6 = 0.0
     assert T._conflict_terms(_Z(), losses) == (None, None)
+
+
+# =========================================================================== #
+# 7. THE RUN RECORD — config.json['refcv6_tactical'] must say what the forward #
+#    actually does                                                             #
+# =========================================================================== #
+def _record_block(model):
+    """The REAL builder of ``config.json['refcv6_tactical']``, called with the
+    arguments ``train()`` passes it — never a copy of its logic."""
+    import argparse
+
+    import refc_v3_train as T
+    args = argparse.Namespace(w_tac_v6=1.0, tac_decoder_valid_threshold=0.5,
+                              graft_behaviour_sel=False)
+    return T._refcv6_tactical_block(args, model, None)
+
+
+def test_RECORD_a_bev_arm_SAYS_bev_and_AGREES_with_its_own_forward():
+    """⛔⛔ MEASURED 2026-09-23: this block was a LITERAL on every arm —
+    ``scene_sources_live: ["agent"]``, ``scene_sources_blocked: ["bev"]`` and an
+    AGENT-ONLY warning — including the R2 arm the PI asked for, while
+    ``_seam_stamp`` in the same file said the opposite. The launch-ready refcv6
+    arm would have recorded itself as the arm R2 ruled out.
+
+    ⭐ The expectation is NOT a re-derivation of the stamp. It is the forward's
+    own ``bev_tokens_fed``, produced at run time by ``_bev_hook``, plus LITERAL
+    source lists — so the record is checked against what the model did."""
+    model, _ = _model(d_bev=16)
+    blk = _record_block(model)
+    assert bool(_fwd(model)["perception"]["bev_tokens_fed"]) is True
+    assert blk["scene_sources_live"] == ["agent", "bev"]
+    assert blk["scene_sources_blocked"] == []
+    assert blk["d_bev_built"] == 16
+    assert "⛔" not in blk, "a BEV arm must not carry the AGENT-ONLY warning"
+
+
+def test_RECORD_an_agent_only_arm_still_SAYS_agent_only():
+    """⭐ THE DISCRIMINATING CONTROL — same fixture, ``d_bev 0``. Without it the
+    test above passes on a constant ``["agent", "bev"]``."""
+    model, _ = _model(d_bev=0)
+    blk = _record_block(model)
+    assert bool(_fwd(model)["perception"]["bev_tokens_fed"]) is False
+    assert blk["scene_sources_live"] == ["agent"]
+    assert blk["scene_sources_blocked"] == ["bev"]
+    assert blk["⛔"].startswith("AGENT-ONLY")
+
+
+def test_RECORD_a_declared_bev_width_with_NO_branch_is_NOT_claimed():
+    """A decoder built with ``d_bev > 0`` but no perception branch attached has
+    no BEV token to read (``_bev_hook`` returns None and the forward refuses —
+    ``test_MUTATION_a_declared_bev_source_with_NO_branch_REFUSES``). The width
+    is a DECLARATION, not a delivery, so the record must not claim the map."""
+    model, _ = _model(d_bev=16, attach=False)
+    blk = _record_block(model)
+    assert blk["scene_sources_live"] == ["agent"]
+    assert blk["scene_sources_blocked"] == ["bev"]
+    assert "no perception branch is attached" in blk["⛔"]
+
+
+def test_RECORD_zero_tactical_weight_is_ABSENT_as_null():
+    """The default path's record must not grow a block: absent-as-null, as
+    before the builder existed."""
+    import argparse
+
+    import refc_v3_train as T
+    model, _ = _model(d_bev=16)
+    assert T._refcv6_tactical_block(
+        argparse.Namespace(w_tac_v6=0.0), model, None) is None
+
+
+def test_RECORD_train_writes_the_block_FROM_THE_BUILDER():
+    """The call site. The historical defect was an inline literal AT THIS SITE,
+    so a correct builder whose result ``train()`` never used would be the same
+    defect again. ⛔ And the literal must not survive anywhere in the trainer."""
+    src = (ROOT / "scripts" / "refc_v3_train.py").read_text(encoding="utf-8")
+    assert ('"refcv6_tactical": _refcv6_tactical_block(args, model, '
+            'tac_goal_stats),') in src
+    assert src.count('"scene_sources_live": ["agent"]') == 0

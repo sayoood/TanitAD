@@ -16245,3 +16245,72 @@ under the wrong scope, reading exactly like an answer.
 * **27 tests, mutation-proven 12/12** — including `C1` (loader stops checking the line),
   `C2` (loader accepts an artifact with no line) and `C3` (the `b1` choice points at the parity
   artifact). Each re-opens the exact door this defect walked through, and each goes RED.
+
+
+---
+
+### RETR-2026-09-23-RESUME-REPLAY — "no `--resume`, a relaunch RESTARTS the arm" was false, and the truth was worse
+
+**Retracted:** `PREREG_REFCV6.md` §7 item 8 (*"`refc_v3_train.py` has no `--resume`, so a relaunch
+RESTARTS the arm"*) and the matching log line in `…/2026-09-10-refcv6-build/code/sup_refcv6.sh`.
+
+**What is true, MEASURED by reading the loop (`stack/scripts/refc_v3_train.py`, the `ckpt.pt` block
+of `train()`):** there is no `--resume` *flag*, but `train()` resumes **on its own** whenever
+`<out>/ckpt.pt` exists — model, optimiser and step. So a supervised relaunch into the same `--out`
+did **not** restart the arm. It resumed, and it **replayed the data**: the loader was
+`DataLoader(shuffle=True)`, whose permutation is drawn from the global torch RNG at `iter(dl)`, and
+every launch re-seeds that RNG from `--seed`. A run resumed at step k re-trained `perm[0 : k·B]` and
+never reached `perm[(steps − k)·B : steps·B]` — on a one-epoch budget resumed at its midpoint, half
+the corpus is trained twice and half never, with a healthy loss curve and nothing in any log.
+
+**Class:** *absence found at one location* (a FLAG was searched for, the BEHAVIOUR was not) —
+and a new sibling worth naming: **a resume that restores the weights but not the data position.**
+
+**Fix, same turn:** `ResumableEpochSampler` (epoch-e permutation = a pure function of `(seed, e)`),
+`next_train_batch` (the loop step, a named function so the test calls the real thing) and
+`resume_data_position` (refuses a changed `--batch`, corpus size or seed, naming the field; a legacy
+checkpoint resumes and says the order restarted). `ckpt.pt` now carries `data_pos`, `config.json`
+carries `data_order`, and every log row carries `data_epoch`/`data_batch`.
+`stack/tests/test_resume_continues_the_data_order.py`: 8 tests, including `train()` end to end —
+a 3+3-step resumed run trains on exactly the windows a 6-step uninterrupted run trains on in steps
+4–6, read off `V3Dataset.__getitem__`. **Mutation-proven 7/7**, and arm D3 *is* the historical
+defect (`shuffle=True` restored).
+
+### CORR-2026-09-23-R2-LAUNCH-LINE — my refcv6 launch line had an AGENT-ONLY tactical decoder, and the trainer's record would have hidden it
+
+**My error.** The smoke launch line I built overnight (`/home/nvidia/refcv6_v2/smoke1/run.sh`)
+carried no `--tac-decoder-d-bev`, whose default `0` builds the behaviour decoder **agent-only** —
+against PI ruling R2 (*"use also the map for tactical behavior decoding"*, binding since 2026-09-17)
+and the PI's order of 2026-09-23 to train with the SAM3 maps end to end. MEASURED from that smoke's
+own `config.json`: `seams.tac_decoder_v6.decoder_cfg.d_bev = 0`, `sources ["agent"]`,
+`bev_tokens_reach_decoder false`. The launch line now carries `--tac-decoder-d-bev 96`
+(= `BEVEncoderConfig.d_out`; the trainer's pin refuses any other width).
+
+**The compounding defect, in the trainer.** `config.json['refcv6_tactical']` was written with
+`scene_sources_live ["agent"]`, `scene_sources_blocked ["bev"]` and an AGENT-ONLY warning as
+**literals** — true while R2's seam was blocked, left behind when R2 landed (`58678e3`). A correct
+BEV arm would have recorded itself as the arm R2 ruled out. Now built by `_refcv6_tactical_block`,
+which reads the constructed decoder and the attached perception branch — the two facts
+`_bev_hook` gates the feed on. 5 tests in `test_refcv6_bev_tactical_wiring.py` §7, each
+cross-checked against the forward's own `bev_tokens_fed`; **mutation-proven 5/5**.
+
+**Class:** the stale-literal stamp — a record that was true while a seam was blocked and was never
+revisited when the seam opened (the `bev_tokens_reach_decoder` literal `False` was the same defect
+one block over, fixed with R2; this one was missed).
+
+### CORR-2026-09-23-UNIMPORTABLE-TIP — since `d014414` the branch could not import its own refcv6 trainer
+
+**My error, found by the first CLEAN-TREE suite** (a `git archive` of the tip plus one commit's
+files): 16 test modules died at collection with `ImportError: cannot import name 'refcv7_heads'
+from 'tanitad.refs'`. `d014414` (2026-09-22 21:47, H-BOXCLS-1) landed `refc_v3_train.py` whole
+from a worktree that also held the **unlanded refcv7 stream** — its trainer hooks came along, its
+three modules (`refcv7_heads.py`, `refcv7_oracle.py`, `refcv7_toad.py`) did not. Every suite run
+since stayed green because every run used that same worktree. A refcv6 launch shipped from the
+tip would have died at line 99.
+
+**Class:** a gate that shares the defect it checks for — the suite ran on a tree that had what
+the commit lacked, the `ls-tree` / blob-comparison family in a test-runner costume. **Durable
+fix:** landings are gated on a CLEAN tree (tip + exactly the commit's files), and the trainer now
+tolerates ONLY the refcv7 modules' own absence (`--refcv7` refuses by name while they are missing),
+so the stream is dormant, not deleted. `stack/tests/test_trainer_imports_without_refcv7.py`
+(3 tests, one a control that must FAIL when a different module is absent); mutation 2/2.

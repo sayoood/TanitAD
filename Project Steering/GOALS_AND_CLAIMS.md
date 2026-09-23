@@ -15597,3 +15597,46 @@ join ∩ validated SAM3 map, with **0 eval clips** by construction and each remo
 
 **Reviews and fixes banked in this commit:** the five 2026-09-22 review reports with their
 instruments and raw evidence, and both 2026-09-23 fix packages.
+
+
+<!-- REFCV6-LAUNCH-READINESS-2026-09-23 -->
+
+### ⭐ 2026-09-23 (morning) — refcv6 launch readiness: three more defects found and fixed before the first GPU-hour; the one blocker is Thor's memory
+
+**What the arm will train on — MEASURED on Thor from the smoke's own `config.json` and log
+(`/home/nvidia/refcv6_v2/smoke1/`, 2026-09-23 07:45, the run OOM-killed after startup):**
+4,369 train episodes → **746,946 windows** (window 8, horizon 20, 416 × 1024). SAM3 map GT on
+**746,946 / 746,946** windows (floor 0.90, PASS). Agent join on **719,739 / 746,946** windows
+(96.4 %), 4,369 / 4,369 episodes. Max-speed ceiling fed on 746,946 / 746,946. Rig camera per clip
+on 4,369 / 4,369. v8 labels md5 `b45377a1…`, 4,572 records, joined 4,369 / 4,369; nav from v7:
+follow 2,752 / left 779 / right 838, missing 0. The stamps confirm last night's fixes on the real
+config: `route_loss_applied false` under `no_strategic true`, `encoder_lr_mult 0.5`, `bev_coupling`
+built (`ddv2-faithful`), class weights on the B1 line with the visible population, equalize 43.
+
+**Found and fixed this morning — each with tests whose expectations are literals, and a mutation proof:**
+
+| defect | how it was found | fix | proof |
+|---|---|---|---|
+| **the launch line trained an AGENT-ONLY tactical decoder** (PI ruling R2 says map too), **and `config.json` hard-coded AGENT-ONLY on every arm** | reading the two stamps side by side; confirmed on the smoke record (`d_bev 0`) | `--tac-decoder-d-bev 96`; `_refcv6_tactical_block` reads the built decoder | 5 tests, **5/5** — `CORR-2026-09-23-R2-LAUNCH-LINE` |
+| **a relaunch RESUMED and REPLAYED the data order** (prereg §7.8 said it restarted) | reading the loop while planning a multi-day run on a box that needs a reboot | `ResumableEpochSampler` + `ckpt.pt['data_pos']` | 8 tests incl. `train()` end to end, **7/7** — `RETR-2026-09-23-RESUME-REPLAY` |
+| **the 3-D join build died at clip ~340** on a clip that never moves | its own traceback (`RegistrationError: only 0 of 200 poses are moving`) | the 25 stationary train clips (the 2-D train meta's own `time_source` count) are timed from the camera timestamp grid, exactly as the 2-D train build timed them | 25 / 25 refuse position registration (control); 25 / 25 cover every v2ep frame; C9 gates every line |
+| **the branch could not IMPORT its own trainer** since `d014414` (my H-BOXCLS-1 landing swept in the unlanded refcv7 stream's hooks without its modules) | the first CLEAN-TREE suite: 16 modules died at collection | the trainer tolerates ONLY the refcv7 modules' absence; `--refcv7` refuses by name | 3 tests incl. a control that must FAIL, **2/2** — `CORR-2026-09-23-UNIMPORTABLE-TIP` |
+
+**Eval, built on Thor so the run can report held-out numbers while it trains:** an eval-139 view
+(139 clips, **0** overlap with the train view), v8 eval labels (md5 `eefc38d1…`; three copies
+agree), a merged per-clip extrinsics table (4,508 clips; eval camera heights 1.2131–1.6622 m), SAM3
+GT on **137 / 139** eval clips (train control 4,369 / 4,369). ⚠️ The in-run eval scores trajectory,
+tactical and MAP; its agent/box terms read **n = 0** because the train join holds no eval clip —
+the documented control, not a result. The perception verdict is the post-hoc four-family panel on
+the eval joins.
+
+Every CUDA log row now carries `cuda_max_mem_gb` (`torch.cuda.max_memory_allocated`, the only
+admissible device-memory probe on Thor) and the data position (`data_epoch`, `data_batch`).
+
+⛔ **BLOCKER — PI (a reboot).** Thor MemAvailable **13.4 GB of 128.8 GB** with no process
+accounting for it (largest RSS 1.7 GB, the join builder; Slab 1.2 GB; Shmem 0.2 GB) after 38.4 days
+uptime: kernel-side GPU memory. No sudo. The smoke OOMs on it.
+
+**Budget, stated in samples so it survives the batch decision:** the prereg's `full` is
+40,284 steps × batch 20 = **805,680** windows ≈ **1.08** epochs of 746,946. Steps =
+ceil(805,680 / B) at the batch the post-reboot smoke measures to fit.

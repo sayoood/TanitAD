@@ -671,3 +671,16 @@ families rather than one.
   nothing in the model consumes their output usefully. That is a real defect — it is simply not
   *this* row's defect. The post-training gate (`stack/scripts/check_untrained_params.py`) now catches
   it before publication rather than after.
+
+
+---
+
+## ⛔ CORRECTION 2026-09-23 — §7 item 8 is false: a relaunch RESUMED, and replayed the data
+
+§7 item 8 says *"`refc_v3_train.py` has no `--resume`, so a relaunch RESTARTS the arm."* There is
+no `--resume` flag, but `train()` resumes by itself from `<out>/ckpt.pt` (model, optimiser, step) —
+and until 2026-09-23 it then **replayed the start of the epoch**, because the loader's `shuffle=True`
+permutation came from the global RNG that every launch re-seeds. Fixed the same day
+(`ResumableEpochSampler`; `ckpt.pt['data_pos']`); a relaunch into the same `--out` now continues
+the same permutation at the same batch and loses at most `--save-every` steps. Full account:
+`RETRACTION_LOG.md`, `RETR-2026-09-23-RESUME-REPLAY`.

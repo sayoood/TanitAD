@@ -234,8 +234,13 @@ while [ "$launch" -lt "$MAX_RELAUNCH" ]; do
 
   cur="$(final_step_from_metrics)"
   log "ARTIFACT CHECK FAILED: metrics.jsonl reaches ${cur}, wanted >= ${STEPS}."
-  log "⚠️ refc_v3_train.py has NO --resume (two probes) -- a relaunch RESTARTS this arm."
-  log "   Relaunching only because MAX_RELAUNCH allows it; set MAX_RELAUNCH=1 to forbid."
+  # ⭐ CORRECTED 2026-09-23: the old two lines said "refc_v3_train.py has NO --resume --
+  #    a relaunch RESTARTS this arm". There is no --resume FLAG, but train() resumes on
+  #    its own from <out>/ckpt.pt, and since 2026-09-23 the checkpoint also carries the
+  #    DATA POSITION (ResumableEpochSampler), so a relaunch continues the same
+  #    permutation instead of replaying the start of the epoch.
+  log "relaunching into the SAME out dir: train() RESUMES from ckpt.pt (model, optimiser,"
+  log "   step, data position) and loses at most --save-every steps. MAX_RELAUNCH=1 forbids it."
   sleep 30 200>&-
 done
 

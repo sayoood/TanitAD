@@ -1,0 +1,74 @@
+{
+ "_what": "mutation proof that the tactical run-record tests can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\scripts\\refc_v3_train.py": "85f6613324ec4f8636fe6c458d280d65",
+  "stack\\tests\\test_refcv6_bev_tactical_wiring.py": "424a90a7e7a82832fd38e279a59e3393"
+ },
+ "arms": [
+  {
+   "arm": "T1_helper_writes_the_historical_literal",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_RECORD_a_bev_arm_SAYS_bev_and_AGREES_with_its_own_forward",
+    "test_RECORD_train_writes_the_block_FROM_THE_BUILDER"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "T2_bev_live_from_width_alone_no_branch_check",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_RECORD_a_declared_bev_width_with_NO_branch_is_NOT_claimed"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "T3_bev_forced_live_on_every_arm",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_RECORD_an_agent_only_arm_still_SAYS_agent_only",
+    "test_RECORD_a_declared_bev_width_with_NO_branch_is_NOT_claimed"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "T4_train_stops_calling_the_builder",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_RECORD_train_writes_the_block_FROM_THE_BUILDER"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "T5_blocked_list_back_to_the_literal",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_RECORD_a_bev_arm_SAYS_bev_and_AGREES_with_its_own_forward"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 5,
+ "arms_total": 5,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 5/5 arms RED, including the the historical literal and the call-site regression; both files restored byte-identical and the final clean run is green."
+}

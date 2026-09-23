@@ -96,8 +96,21 @@ from tanitad.refs import tac_goal_head as _tac_goal_head  # noqa: E402
 # `t1_eval.py` trap: both arms, 40 episodes, 6,844 windows each, then a dead
 # `from taniteval import selgap` in `analyze()`).
 from tanitad.refs import refcv6_tactical as v6tac  # noqa: E402
-from tanitad.refs import refcv7_heads as r7h  # noqa: E402
-from tanitad.refs import refcv7_oracle as r7o  # noqa: E402
+# ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
+# `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
+# absent). Its trainer integration arrived in d014414, swept in from a worktree that
+# held the unlanded refcv7 stream, and from then on this file could not be IMPORTED
+# from a clean checkout -- every refcv6 run and 16 test modules died at this line,
+# while every suite run on that worktree stayed green. ⇒ ONLY the modules' own
+# absence is tolerated here (any other ImportError still raises), and `--refcv7`
+# REFUSES while they are missing (`_pin_refcv7`), so refcv7 is dormant, not deleted.
+try:
+    from tanitad.refs import refcv7_heads as r7h  # noqa: E402
+    from tanitad.refs import refcv7_oracle as r7o  # noqa: E402
+except ImportError as _e_r7:                      # pragma: no cover - tree-dependent
+    if "refcv7_" not in str(_e_r7):
+        raise
+    r7h = r7o = None
 from tanitad.refs import refcv6_max_speed as v6ms  # noqa: E402
 from dataclasses import replace as _dc_replace  # noqa: E402
 from tanitad.models import vocab_v7  # noqa: E402
@@ -653,6 +666,12 @@ def _pin_refcv7(cfg, args) -> None:
                 "the heads are not built, so the weights would be stamped and "
                 "read by nothing.")
         return
+    if r7h is None or r7o is None:
+        raise SystemExit(
+            "[refcv7] ⛔ --refcv7, but tanitad.refs.refcv7_heads / refcv7_oracle are "
+            "NOT IN THIS TREE -- the refcv7 stream has not landed its modules on this "
+            "branch. Land them (with refc_v3.py's refcv7 fields and their tests), or "
+            "run without --refcv7.")
     if args.arm != "hier":
         raise SystemExit("[refcv7] ⛔ --refcv7 needs --arm hier (it rides the "
                          "hierarchy's refcv6 scene hook).")
@@ -4069,7 +4088,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             # from the real arm's, so the control would differ in the seed as
             # well as in the information — the same one-variable violation the
             # head's construction order exists to avoid. The training loader
-            # runs with shuffle=True, so row i-1 is an unrelated window.
+            # SHUFFLES (ResumableEpochSampler), so row i-1 is an unrelated window.
             _bo = torch.roll(_bo, shifts=1, dims=0)
             _bm = torch.roll(_bm, shifts=1, dims=0)
         _bv = _refc_bev_aux.bev_aux_loss(
@@ -4728,6 +4747,56 @@ def _check_anchor_artifact_against_cfg(art, cfg, args) -> None:
             + ". Rebuild the vocabulary for this trainer, or launch with the "
               "matching flags (--anchor-ref-speed for ref_speed_ms; kappa_cap "
               "and alat_v_floor are adopted from the file).")
+
+
+def _refcv6_tactical_block(args, model, tac_goal_stats) -> dict | None:
+    """``config.json['refcv6_tactical']`` -- READ OFF THE BUILT MODEL.
+
+    ⛔⛔ WHY THIS IS A FUNCTION. Until 2026-09-23 the block was written inline
+    in :func:`train` with ``scene_sources_live: ["agent"]``,
+    ``scene_sources_blocked: ["bev"]`` and an AGENT-ONLY warning as LITERALS.
+    That was true while PI ruling R2's seam was structurally blocked, and it
+    was left behind when R2 was implemented (``RefCV3Model._bev_hook``).
+    MEASURED by reading the two stamps side by side: ``_seam_stamp``'s
+    ``bev_tokens_reach_decoder`` is derived from the decoder's width, this
+    block was not -- so a BEV arm's own record would have declared the arm
+    agent-only while its behaviour decoder read the map. The one arm the PI
+    asked for (*"the agent and the map"*) would have been indistinguishable,
+    in its own artifact, from the one R2 ruled out.
+
+    ⇒ ``bev`` is live only when the forward can actually deliver a BEV token:
+    the CONSTRUCTED decoder declares it (``cfg.sources`` and ``d_bev > 0``)
+    AND a perception branch is attached. Those are the two facts
+    ``_bev_hook`` itself gates the feed on, read off the same objects.
+    ``None`` when the tactical weight is 0.0 (absent-as-null, as before).
+    """
+    if float(getattr(args, "w_tac_v6", 0.0) or 0.0) <= 0.0:
+        return None
+    dcfg = getattr(getattr(model, "tac_decoder_v6", None), "cfg", None)
+    sources = [str(s) for s in (getattr(dcfg, "sources", ()) or ())]
+    d_bev = int(getattr(dcfg, "d_bev", 0) or 0)
+    branch = getattr(model, "_perception", None)
+    bev_live = "bev" in sources and d_bev > 0 and branch is not None
+    block = {
+        "w_tac_v6": float(args.w_tac_v6),
+        "loss_weights": v6tac.TacticalLossWeights().to_dict(),
+        "valid_threshold": float(
+            getattr(args, "tac_decoder_valid_threshold", 0.5)),
+        "graft_behaviour_sel": bool(getattr(args, "graft_behaviour_sel", False)),
+        "label_limits": tac_goal_stats,
+        "scene_sources_live": [s for s in sources if s != "bev" or bev_live],
+        "scene_sources_blocked": [] if bev_live else ["bev"],
+        "d_bev_built": d_bev,
+    }
+    if not bev_live:
+        block["⛔"] = (
+            "AGENT-ONLY. The PI asked for 'the agent and the map' (ruling R2); "
+            "this arm's behaviour decoder was built with d_bev %d%s, so no BEV "
+            "token reaches it. Any result from this arm is about the AGENT half "
+            "and must say so."
+            % (d_bev, "" if branch is not None
+               else " and no perception branch is attached"))
+    return block
 
 
 def _seam_stamp(cfg, args) -> dict:
@@ -5943,6 +6012,103 @@ def apply_lr_schedule(opt, args, sched, step) -> None:
         if "initial_lr" not in g:
             g["initial_lr"] = float(g.get("lr", args.lr))
         g["lr"] = g["initial_lr"] * sched(step)
+
+
+class ResumableEpochSampler(torch.utils.data.Sampler):
+    """Shuffle like ``shuffle=True`` -- but with a data ORDER a checkpoint can resume.
+
+    ⛔⛔ THE DEFECT, MEASURED 2026-09-23 BY READING THE LOOP. ``train()`` resumes from
+    ``<out>/ckpt.pt`` (model, optimiser, step), and its loader was
+    ``DataLoader(shuffle=True)``, whose permutation is drawn from the GLOBAL torch RNG at
+    ``iter(dl)``. That RNG is re-seeded from ``--seed`` at startup, so a relaunch drew the
+    SAME permutation as step 0 and trained its first batches again. A run resumed at
+    step k re-trained ``perm[0 : k*B]`` and never reached ``perm[(steps - k)*B : steps*B]``:
+    on a one-epoch budget resumed at its midpoint, HALF the corpus is seen twice and the
+    other half never -- with a healthy loss curve and nothing in any log.
+
+    ⇒ The permutation of epoch ``e`` is a pure function of ``(seed, e)``, and the position
+    inside it is STATE that the checkpoint carries (``ckpt.pt['data_pos']``). A resumed run
+    therefore continues the SAME permutation at the SAME batch. ``skip_batches`` applies to
+    ONE pass and is then spent, so a later epoch starts at its beginning.
+
+    ⚠️ Scope, stated so nobody over-reads it: this makes the data ORDER exact across a
+    resume. Stochastic draws (diffusion noise, dropout, worker-side randomness) are NOT
+    replayed bit-exactly -- they need no replay to be unbiased; the order did.
+    """
+
+    SCHEME = "resumable-epoch-sampler/1"
+
+    def __init__(self, n: int, seed: int, batch: int):
+        self.n, self.seed, self.batch = int(n), int(seed), int(batch)
+        self.epoch = 0
+        self.skip_batches = 0
+
+    def permutation(self, epoch: int) -> torch.Tensor:
+        g = torch.Generator().manual_seed(self.seed * 1_000_003 + int(epoch))
+        return torch.randperm(self.n, generator=g)
+
+    def __iter__(self):
+        p = self.permutation(self.epoch)[self.skip_batches * self.batch:]
+        self.skip_batches = 0
+        return iter(p.tolist())
+
+    def __len__(self) -> int:
+        return self.n - self.skip_batches * self.batch
+
+
+def next_train_batch(it, dl, sampler, dpos: dict):
+    """One training batch, with the data POSITION kept in ``dpos`` -> ``(it, batch)``.
+
+    ⛔ A NAMED FUNCTION SO A TEST CAN CALL THE REAL THING (the ``apply_lr_schedule``
+    precedent). ``dpos`` is ``{"epoch": e, "batch": k}`` = the ``k`` batches of epoch ``e``
+    consumed so far, which is exactly what ``ckpt.pt['data_pos']`` stores and what a resumed
+    ``ResumableEpochSampler`` skips.
+    """
+    try:
+        batch = next(it)
+    except StopIteration:
+        sampler.epoch += 1
+        dpos["epoch"], dpos["batch"] = sampler.epoch, 0
+        it = iter(dl)
+        batch = next(it)
+    dpos["batch"] += 1
+    return it, batch
+
+
+def resume_data_position(state: dict, sampler, n: int, batch: int) -> dict:
+    """Restore the sampler from ``ckpt.pt['data_pos']`` -> the resume stamp.
+
+    ⛔ REFUSES a changed ``--batch`` or corpus size: the position is counted in batches
+    of the size it was written with, over a permutation of THAT many windows, so either
+    change would land the run at a different point of a different permutation while
+    ``config.json`` called it a resume. A LEGACY checkpoint (no ``data_pos``) resumes
+    with the order restarting at epoch 0 and says so, loudly, in the stamp.
+    """
+    dp = state.get("data_pos")
+    if dp is None:
+        print("[v3] ⚠️ RESUMED FROM A LEGACY ckpt.pt (no data_pos): the data order "
+              "restarts at epoch 0, batch 0 -- the replay defect "
+              "`ResumableEpochSampler` exists to close.", flush=True)
+        return {"scheme": ResumableEpochSampler.SCHEME, "resumed_from": None,
+                "legacy_checkpoint": True}
+    bad = [f"{k} {dp.get(k)!r} -> {v!r}"
+           for k, v in (("batch_size", int(batch)), ("n", int(n)),
+                        ("seed", int(sampler.seed)),
+                        ("scheme", ResumableEpochSampler.SCHEME))
+           if dp.get(k) != v]
+    if bad:
+        raise SystemExit(
+            "[v3] ⛔ resume REFUSED: the checkpoint's data position was written for a "
+            "different run -- " + "; ".join(bad) + ". Resuming would continue a "
+            "different permutation at a different point while calling it a resume. "
+            "Start a fresh --out, or restore the original flags.")
+    sampler.epoch = int(dp["epoch"])
+    sampler.skip_batches = int(dp["batch"])
+    print(f"[v3] resumed data order: epoch {sampler.epoch}, "
+          f"{sampler.skip_batches} batches in", flush=True)
+    return {"scheme": ResumableEpochSampler.SCHEME,
+            "resumed_from": {"epoch": sampler.epoch, "batch": sampler.skip_batches},
+            "legacy_checkpoint": False}
 
 
 def build_optimizer(model, args):
@@ -7349,8 +7515,11 @@ def train(args) -> dict:
           f"{frame_batch_bytes / 1e9:.3f} GB per collated batch "
           f"({'uint8' if u8 else 'float32'}), <= {n_flight} in flight "
           f"-> ~{n_flight * frame_batch_bytes / 1e9:.2f} GB", flush=True)
+    # ⛔ NOT `shuffle=True`: its permutation comes from the global RNG, which a relaunch
+    # re-seeds, so every resume replayed the start of the epoch. See ResumableEpochSampler.
+    _train_sampler = ResumableEpochSampler(len(ds), int(args.seed), int(args.batch))
     dl = torch.utils.data.DataLoader(
-        ds, batch_size=args.batch, shuffle=True, num_workers=args.workers,
+        ds, batch_size=args.batch, sampler=_train_sampler, num_workers=args.workers,
         **pf,
         drop_last=True, persistent_workers=args.workers > 0)
 
@@ -7369,12 +7538,17 @@ def train(args) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     step = 0
     ck = out_dir / "ckpt.pt"
+    _data_order = {"scheme": ResumableEpochSampler.SCHEME, "seed": int(args.seed),
+                   "resumed_from": None, "legacy_checkpoint": False}
     if ck.exists():
         state = torch.load(ck, map_location=device, weights_only=False)
         model.load_state_dict(state["model"])          # strict — resume exact
         opt.load_state_dict(state["opt"])
         step = int(state["step"])
         print(f"[v3] resumed {args.arm} at step {step}")
+        _data_order.update(resume_data_position(state, _train_sampler, len(ds),
+                                                args.batch))
+        _data_order["resumed_at_step"] = step
     # ⛔ M18: the record is CHECKED before it is written. A knob that does not
     # reach config.json refuses the run here, not in an audit months later.
     _seams = _seam_stamp(cfg, args)
@@ -7422,6 +7596,8 @@ def train(args) -> dict:
     assert_seams_are_built(model, _seams)
     _run_config = {
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
+        # ⭐ whether this process RESUMED, and where in the data order it picked up
+        "data_order": _data_order,
         # ⭐ A7: `null` is the baseline (no recalibration) and is distinguishable
         # from a trainer that predates the flag -- the `refcv6: null` convention.
         "trunk_bn_recalib": None,
@@ -7631,22 +7807,9 @@ def train(args) -> dict:
         # number quoted without them is unreadable: 9 of 22 tokens sit ON the
         # pos_weight cap (for those the CAP, not the data, sets the weight)
         # and 10 of 22 sit under the n=200 scoreability floor.
-        "refcv6_tactical": (
-            None if float(getattr(args, "w_tac_v6", 0.0) or 0.0) <= 0.0 else
-            {"w_tac_v6": float(args.w_tac_v6),
-             "loss_weights": v6tac.TacticalLossWeights().to_dict(),
-             "valid_threshold": float(
-                 getattr(args, "tac_decoder_valid_threshold", 0.5)),
-             "graft_behaviour_sel": bool(
-                 getattr(args, "graft_behaviour_sel", False)),
-             "label_limits": tac_goal_stats,
-             "scene_sources_live": ["agent"],
-             "scene_sources_blocked": ["bev"],
-             "⛔": ("AGENT-ONLY. The PI asked for 'the agent and the map'; "
-                    "no BEV token reaches the behaviour decoder on this path "
-                    "(refc_v3.RefCV3Model.forward does not pass "
-                    "`bev_tokens=` to self.core). Any result from this arm is "
-                    "about the AGENT half and must say so.")}),
+        # ⛔ Its scene sources are read off the BUILT decoder -- this block
+        # once hard-coded AGENT-ONLY and would have mislabelled every R2 arm.
+        "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
         # ⭐⭐ refcv6 §5 — the 4-way one-hot set-speed census.
         "refcv6_max_speed": ({"train": max_speed_v6_stats,
                               "eval": eval_max_speed_v6_stats}
@@ -7743,14 +7906,12 @@ def train(args) -> dict:
         (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                              encoding="utf-8")
     t0, model = time.time(), model.train()
+    # the data POSITION, saved in ckpt.pt -- a resumed run continues the same permutation
+    _dpos = {"epoch": _train_sampler.epoch, "batch": _train_sampler.skip_batches}
     it = iter(dl)
     _bev_parity_checked = False        # WP-D: the E-DEC-18b gate fires once
     while step < args.steps:
-        try:
-            batch = next(it)
-        except StopIteration:
-            it = iter(dl)
-            batch = next(it)
+        it, batch = next_train_batch(it, dl, _train_sampler, _dpos)
         # ⛔⛔ SCALE EACH GROUP FROM ITS OWN `initial_lr`, NEVER FROM `args.lr`.
         # MEASURED 2026-09-22: this loop wrote `args.lr * sched(step)` into EVERY
         # group, so `build_optimizer`'s encoder group -- correctly built at
@@ -7891,7 +8052,14 @@ def train(args) -> dict:
                    if (torch.is_tensor(v) and v.ndim == 0)
                    or isinstance(v, (int, float, bool))}
             row.update(step=step, elapsed_s=round(time.time() - t0, 1),
-                       lr=opt.param_groups[0]["lr"])
+                       lr=opt.param_groups[0]["lr"],
+                       data_epoch=int(_dpos["epoch"]),
+                       data_batch=int(_dpos["batch"]))
+            # ⛔ On Thor (unified memory) this is the ONLY admissible device-memory
+            # reading -- `mem_get_info`, `free` and `tegrastats` all mis-report there.
+            if torch.cuda.is_available():
+                row["cuda_max_mem_gb"] = round(
+                    torch.cuda.max_memory_allocated() / 2 ** 30, 3)
             # AFTER the rounding comprehension above, deliberately:
             # a real 1e-8 gradient rounded to 5 dp reads 0.0, which
             # is the exact signature of the defect this measures.
@@ -7941,7 +8109,12 @@ def train(args) -> dict:
         # batches) is a separate change.
         if step % args.save_every == 0 or step == args.steps:
             torch.save({"model": model.state_dict(),
-                        "opt": opt.state_dict(), "step": step}, ck)
+                        "opt": opt.state_dict(), "step": step,
+                        "data_pos": {"scheme": ResumableEpochSampler.SCHEME,
+                                     "epoch": int(_dpos["epoch"]),
+                                     "batch": int(_dpos["batch"]),
+                                     "n": len(ds), "seed": int(args.seed),
+                                     "batch_size": int(args.batch)}}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
@@ -8965,9 +9138,11 @@ def build_parser() -> argparse.ArgumentParser:
                           "over the SCENE — agent slots (and BEV tokens when "
                           "a build supplies them). ⛔ Image tokens are "
                           "STRUCTURALLY excluded. Needs --arm hier, "
-                          "--v7-labels and --agents (the agent slots are the "
-                          "only live key/value source; see the RESULT's "
-                          "blocked-seam section for the BEV half). ⛔ REFUSES "
+                          "--v7-labels and --agents. The agent slots are "
+                          "always a key/value source; the MAP is one too "
+                          "only with --tac-decoder-d-bev 96 and --w-map > 0 "
+                          "(PI ruling R2) -- without them the arm is "
+                          "AGENT-ONLY and its config.json says so. ⛔ REFUSES "
                           "with --w-tac-v6 0: a built head with no live "
                           "weight is exactly the 2,262,020-parameter "
                           "zero-gradient defect this flag exists to close.")
