@@ -15640,3 +15640,13 @@ uptime: kernel-side GPU memory. No sudo. The smoke OOMs on it.
 **Budget, stated in samples so it survives the batch decision:** the prereg's `full` is
 40,284 steps × batch 20 = **805,680** windows ≈ **1.08** epochs of 746,946. Steps =
 ceil(805,680 / B) at the batch the post-reboot smoke measures to fit.
+
+<!-- REFCV6-JOIN3D-REQUIRED-2026-09-23 -->
+
+### 2026-09-23 — refcv6: a `--join3d` that was asked for is now REQUIRED to exist and cover the corpus
+
+MEASURED by reading the call site before launch: a missing `--join3d` path returned `None` from
+`open_join3d` and was accepted, training the 2-D rung while `argv` named a 3-D join. Fixed by
+`require_join3d` at both call sites; 5 tests, mutation 3/3. The launch's joins are in place and
+verified: train 3-D join 849,263 lines, every gated control passed (C9 exact time on all lines,
+C3 median base +0.0084 m over 21,952,289 agents); train + eval joins 875,657 rows each.

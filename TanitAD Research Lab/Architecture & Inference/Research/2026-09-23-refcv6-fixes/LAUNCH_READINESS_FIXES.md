@@ -145,3 +145,16 @@ step vs amortised. The budget is fixed in **samples** — the prereg's `full` = 
 Thor MemAvailable **13.4 GB of 128.8 GB** with no process accounting for it (largest RSS 1.7 GB;
 Slab 1.2 GB; Shmem 0.2 GB) after 38.4 days of uptime — kernel-side GPU memory that only a reboot
 frees. There is no sudo on the box. The smoke OOMs on it; the PI has been asked for the reboot.
+
+## 6. One more silent path, closed before the launch (commit after `LAUNCH_READINESS_FIXES` landed)
+
+* ⛔ `open_join3d` returns `None` for a path that does not exist — right for its default caller —
+  and `train()` handed that straight to `enable_join3d`. A mistyped `--join3d`, or a 3-D build
+  that had not finished writing, therefore trained the **2-D rung** (`zh_mask` all-False,
+  `box3d_n_z 0`) for the whole run while `argv` named a 3-D join; so did a join that exists but
+  covers none of the corpus.
+* ✅ `require_join3d` — called at BOTH join3d sites — refuses a missing path and a zero-coverage
+  TRAIN join by name; on the EVAL split zero coverage warns that its z/h terms read n = 0.
+* 🧪 `stack/tests/test_join3d_asked_for_is_required.py` — 5 tests against the real `AgentJoin3D`
+  on a file in the builder's line format, with a GREEN control. **Mutation 3/3**
+  (`raw/mutation_proof_join3d_required.json`, `code/mutate_join3d_required.py`).

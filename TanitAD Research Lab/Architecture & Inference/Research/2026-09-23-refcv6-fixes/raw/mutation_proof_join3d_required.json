@@ -1,0 +1,52 @@
+{
+ "_what": "mutation proof that test_join3d_asked_for_is_required.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tests\\test_join3d_asked_for_is_required.py": "2732f5a8963783123c44dc5c5797a7fa",
+  "stack\\scripts\\refc_v3_train.py": "40203fa886a452880180ee520a1ac73e"
+ },
+ "arms": [
+  {
+   "arm": "J1_missing_path_not_refused",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_MISSING_path_that_was_asked_for_REFUSES"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "J2_zero_train_coverage_not_refused",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_join_covering_ZERO_of_the_corpus_REFUSES_on_train"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "J3_call_site_bypasses_the_guard",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_train_CALLS_the_guard_at_BOTH_join3d_sites"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 3,
+ "arms_total": 3,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 3/3 arms RED, including the the silent 2-D-rung path; both files restored byte-identical and the final clean run is green."
+}

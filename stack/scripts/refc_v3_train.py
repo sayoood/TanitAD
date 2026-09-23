@@ -5828,6 +5828,38 @@ def _clip_table_for_caches(cache_dirs) -> tuple[dict, int]:
     return table, (n_stacks.pop() if n_stacks else 0)
 
 
+def require_join3d(join3d, path, n_clips: int, *, split: str = "train"):
+    """⛔ ``--join3d`` was ASKED FOR: refuse the two states that silently train the 2-D rung.
+
+    MEASURED 2026-09-23 by reading the call site: ``open_join3d`` returns ``None`` for a path
+    that does not exist -- correct for its DEFAULT caller, which may run masked -- and the
+    trainer handed that ``None`` straight to ``enable_join3d``. A mistyped path, or a build that
+    had not finished, therefore trained with ``zh_mask`` all-False and ``box3d_n_z 0`` for the
+    whole run while ``argv`` named a 3-D join. The same outcome follows from a join that
+    exists but covers none of this corpus's clips (the wrong file).
+
+    ``split="eval"`` WARNS on zero coverage instead of refusing: the eval side's z/h terms
+    then read ``n = 0``, which is the documented control -- and it says so in the log.
+    """
+    if join3d is None:
+        raise SystemExit(
+            f"[v3] ⛔ --join3d {path!r} does not exist. A path that was ASKED FOR and is "
+            f"absent would train the 2-D rung (zh_mask all-False, box3d_n_z 0) while "
+            f"config.json names a 3-D join. Fix the path, or wait for the build to finish.")
+    n = int(getattr(join3d, "n_lines", 0) or 0)
+    if n == 0:
+        msg = (f"--join3d {path!r} covers ZERO lines for this {split} split's {n_clips} "
+               f"clips")
+        if split == "train":
+            raise SystemExit(
+                f"[v3] ⛔ {msg} -- the wrong join for this corpus; the arm would train the "
+                f"2-D rung while config.json names a 3-D join.")
+        print(f"[v3] ⚠️ {msg}: its z/h terms read n = 0 on this split (the documented "
+              f"control) -- no {split}-side z or h number from this run is quotable.",
+              flush=True)
+    return join3d
+
+
 def _verify_agent_join(args) -> dict | None:
     """Check ``--agent-join`` against its sidecar's **declared** digest scope.
 
@@ -7283,8 +7315,9 @@ def train(args) -> dict:
                 % (_cache_nstack,))
         if ds.map_clip_of_ep is None:
             ds.map_clip_of_ep, ds.map_n_stack = _clip_of_ep, _cache_nstack
-        join3d_stats = ds.enable_join3d(_agent_cuboid.open_join3d(
-            args.join3d, clips=set(_clip_of_ep.values())))
+        join3d_stats = ds.enable_join3d(require_join3d(
+            _agent_cuboid.open_join3d(args.join3d, clips=set(_clip_of_ep.values())),
+            args.join3d, len(set(_clip_of_ep.values()))))
         join3d_stats["frame_key"] = "RAW v2ep (= episode index + n_stack - 1)"
         join3d_stats["n_stack"] = int(ds.map_n_stack)
         print("[v3] 3-D cuboid join: %s" % join3d_stats, flush=True)
@@ -7454,9 +7487,10 @@ def train(args) -> dict:
             if getattr(args, "join3d", None) and e_ds.agent_join is not None:
                 if e_ds.map_clip_of_ep is None:
                     e_ds.map_clip_of_ep, e_ds.map_n_stack = _e_clip, _e_ns
-                eval_join3d_stats = e_ds.enable_join3d(
+                eval_join3d_stats = e_ds.enable_join3d(require_join3d(
                     _agent_cuboid.open_join3d(
-                        args.join3d, clips=set(_e_clip.values())))
+                        args.join3d, clips=set(_e_clip.values())),
+                    args.join3d, len(set(_e_clip.values())), split="eval"))
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
