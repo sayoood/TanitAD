@@ -158,3 +158,57 @@ frees. There is no sudo on the box. The smoke OOMs on it; the PI has been asked 
 * 🧪 `stack/tests/test_join3d_asked_for_is_required.py` — 5 tests against the real `AgentJoin3D`
   on a file in the builder's line format, with a GREEN control. **Mutation 3/3**
   (`raw/mutation_proof_join3d_required.json`, `code/mutate_join3d_required.py`).
+
+## 7. The first real steps on Thor — three more defects, and the number that decides the budget
+
+**Evidence class:** MEASURED (ours, Thor, 2026-09-23, the launch line with in-run eval and the train +
+eval joins). Raw per-smoke summaries: `raw/smoke_summaries_2026-09-23.json`; decision rules fixed
+before any smoke ran: `SMOKE_DECISION_RULES.md`.
+
+| smoke | batch | trunk | conflict probe | steps | peak `cuda_max_mem_gb` | s/step (from step 5) | eval rows | outcome |
+|---|---|---|---|---|---|---|---|---|
+| `b4_ce1` | 4 | unchunked | every step | 0 | — | — | 0 | **OOM-killed** in the first step (`NVRM … ADDR_SYSMEM`) |
+| `ck_b4_ce1` | 4 | chunk 1 + frozen BN | every step | 0 | — | — | 0 | **`NameError: args`** in `compute_losses_v3` |
+| `ck_b4_ce1_fix` / `plain_b1_cd` | 4 / 1 | chunk 1 / unchunked | every step | 0 | — | — | 0 | the detector's controls **refused** (NaN) — checkpointing ruled out as the cause |
+| `ck_b4_nocd` | 4 | chunk 1 + frozen BN | off | 40 | 6.68 | 8.61 | 2 | trains; loss 196.0 → 139.4 |
+| `S1_b4_ce1` | 4 | chunk 1 + frozen BN | every step | 24* | 6.87 | 19.27 | 1 | trains; controls read exactly; *stopped after its step-20 eval |
+| `S3_b8_ce10_ck8` | 8 | chunk 8 + frozen BN | every 10th | 30 | 18.03 | 18.16 (incl. eval) | 2 | trains; loss 196.6 → 125.7 |
+
+**The three defects, each fixed and mutation-proven:**
+
+1. ⛔ **Unchunked resnet101 at 416 × 1024 needs ~22 GB PER SAMPLE** — `--arm hier` sends all 8 window
+   steps × 3 frames through the trunk (the trainer's own help, MEASURED 2026-09-18) — so batch 4 OOMs
+   on Thor. `--trunk-chunk-ckpt` fixes memory (batch 8 at 18 GB) and REQUIRES `--trunk-frozen-bn`
+   (BatchNorm pinned to ImageNet statistics). `run_refcv6.sh` takes it as `TRUNK_CHUNK`.
+2. ⛔ **`compute_losses_v3` read `args`, which it does not have** (`--map-lift-valid-mask`,
+   `--box3d-visible-filter`, both from the 2026-09-23 perception fix). The first map loss on real data
+   died with `NameError`; no test reached either line (the fake branch has no lift). The knobs now
+   travel on the model. ⭐ A sweep of every `LOAD_GLOBAL` in the 82 modules on the refcv6 import path
+   found exactly these two; `stack/tests/test_no_unresolved_globals.py` keeps it at zero (positive
+   control plants the defect; **mutation 2/2**).
+3. ⛔ **The conflict detector refused to START on refcv6**: `cos(g,g)` read NaN. MEASURED with the real
+   `train()` (`code/diag_trunk_reach.py`): on step 1 the trajectory loss reached **all 316 trunk
+   tensors and every gradient was exactly 0**; after ONE optimizer update **all 316 were non-zero**.
+   Cause: `control_head` is zero-initialised by design (the first refinement pass is the identity).
+   A 0/0 control is UNDEFINED, not missed — the detector now defers while the plan gradient is
+   exactly zero and REFUSES if that lasts past `max_deferred_steps` (200), because a real detach is
+   also exactly zero, forever. `stack/tests/test_conflict_controls_defer_on_zero_init.py`;
+   **mutation 4/4** (no deferral; no bound; NaN deferred; the trainer measuring on a deferred step).
+   ⭐ **So refcv6 IS trained end to end**: every loss term reaches the trunk from step 2.
+
+**What the in-run eval now carries:** 84 metrics per eval row, with the eval split's box z/h
+supervised (`eval_box3d_n_h` 19–21) — the long-open *"the eval path supervises neither z nor h"*
+question is answered by the train + eval 3-D join.
+
+**Conflict probe cadence (rule fixed before the data):** every step costs **+124 %** (19.27 vs 8.61
+s/step at batch 4) → above the 25 % threshold → **every 10th step**, stamped in `config.json`.
+
+⛔ **THE BUDGET IS A PI DECISION, and this is the number that makes it one:** about **0.44–0.47
+samples/s** at batch 8. The pre-registered `full` budget (805,680 windows) is **~20 days** of Thor;
+the pre-registered `cut` (12,000 steps × 20 = 240,000 windows) is **~6 days**. Thor's GPU draws
+24–31 W during steps while ONE CPU core sits at 100 % — the next efficiency levers (bf16 autocast,
+CPU-side work in the step) are measured next, not assumed.
+
+**Thor memory, corrected:** the "~105 GB leak that only a reboot frees" is the GPU allocations of
+processes that were KILLED — released by the driver with a delay (MEASURED: 19 → 93 GB within ~40 min
+after an OOM-kill; a normally-exiting smoke released at once, 102 GB free after S3). No reboot needed.

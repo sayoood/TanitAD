@@ -16314,3 +16314,22 @@ fix:** landings are gated on a CLEAN tree (tip + exactly the commit's files), an
 tolerates ONLY the refcv7 modules' own absence (`--refcv7` refuses by name while they are missing),
 so the stream is dormant, not deleted. `stack/tests/test_trainer_imports_without_refcv7.py`
 (3 tests, one a control that must FAIL when a different module is absent); mutation 2/2.
+
+### CORR-2026-09-23-THOR-REBOOT-AND-OOM — "Thor needs a reboot for ~105 GB of leaked GPU memory" was wrong twice
+
+**My error, told to the PI on 2026-09-23.** I reported that the refcv6 smoke was OOM-killed because
+~105 GB of GPU (nvmap) memory had leaked over 38 days of uptime, that only a reboot frees it, and
+asked the PI for one. MEASURED the same morning, both halves were wrong:
+
+* **The memory was not permanently lost.** It is the GPU allocations of processes that were KILLED
+  (the driver's `ADDR_SYSMEM` allocations, invisible to every process's RSS), released with a delay:
+  after one OOM-kill MemAvailable fell to 19 GB with all processes holding 1.3 GB, and rose to 93 GB
+  within ~40 minutes with no action; a smoke that EXITED normally released at once (102 GB free).
+* **The smoke would have OOM'd anyway.** Unchunked resnet101 at 416 × 1024 needs ~22 GB per SAMPLE
+  (`--arm hier` sends 8 window steps × 3 frames through the trunk — the trainer's own 2026-09-18
+  measurement); batch 8 is ~176 GB. The reboot I asked for would not have let it run.
+
+**Class:** a symptom read as its own root cause (the `CUDNN_STATUS_NOT_INITIALIZED` family), made
+worse by a probe of the wrong scope (`free` on unified memory). ⇒ read `journalctl -k` for the OOM
+record FIRST — it names the victim, the allocator (`NVRM … ADDR_SYSMEM`) and the victim's RSS — and
+never OOM-probe a batch size on Thor: each kill strands its GPU memory for tens of minutes.

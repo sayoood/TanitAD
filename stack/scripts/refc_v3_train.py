@@ -4349,7 +4349,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 # sit on cells `BEVLift.forward` has zeroed and replaced with a learned
                 # `unobserved` constant -- asking the head to name a class from it.
                 _mvalid = _pout.get("map_valid")
-                if _mvalid is not None and getattr(args, "map_lift_valid_mask", True):
+                if _mvalid is not None and getattr(model, "_map_lift_valid_mask", True):
                     _mvalid = _mvalid.index_select(0, _msel)
                 else:
                     _mvalid = None
@@ -4470,7 +4470,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 _brow = _perc.box3d_loss_row(
                     _s3, _t3,
                     cls_class_weight=getattr(model, "_cls_class_weight", None),
-                    visible_filter=bool(getattr(args, "box3d_visible_filter", True)))
+                    visible_filter=bool(getattr(model, "_box3d_visible_filter", True)))
                 loss = loss + _w_b3d * _brow["loss"]
                 extra["box3d"] = _brow["loss"]
                 for _k3, _v3 in _brow.items():
@@ -6749,6 +6749,13 @@ def train(args) -> dict:
                  _cws["digest"]), flush=True)
     model._w_map = float(getattr(args, "w_map", 0.0) or 0.0)
     model._w_box3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
+    # ⛔ The two perception loss knobs travel ON THE MODEL, like the weights above:
+    # `compute_losses_v3` has no `args`. MEASURED 2026-09-23 by the first real step at
+    # 416x1024 -- it read `getattr(args, ...)` there and died with NameError, which no test
+    # reached because the fake perception branch has no lift (so `map_valid` was None and
+    # the expression short-circuited before touching `args`).
+    model._map_lift_valid_mask = bool(getattr(args, "map_lift_valid_mask", True))
+    model._box3d_visible_filter = bool(getattr(args, "box3d_visible_filter", True))
     model._perception = None
     model._lift_bank = None
     perception_stamp = None
@@ -8011,6 +8018,13 @@ def train(args) -> dict:
                     # costs one step; a run whose probe cannot read +1 costs the
                     # whole card and answers nothing.
                     _cd_ctl = _cd.self_check(_cd_lt, _cd_la)
+                if not _cd_checked and getattr(_cd_ctl, "deferred", False):
+                    # ⭐ the plan gradient on the trunk is EXACTLY zero on this step
+                    # (refcv6's zero-initialised `control_head` makes it so on step 1):
+                    # the controls cannot be read yet, so NO reading is taken and they
+                    # run again next step -- `self_check` refuses if it never changes.
+                    _cd_row = {"cd_deferred": 1}
+                elif not _cd_checked:
                     _cd_checked = True
                     print("[v3] conflict controls OK: cos(g,g)=%r cos(g,-g)=%r "
                           "detached cos=%r conflict=%r |g_aux|=%r"
@@ -8023,7 +8037,9 @@ def train(args) -> dict:
                                           "conflict_provenance":
                                               _cd.provenance()}) + "\n")
                     log.flush()
-                if step % _cd_cfg.every == 0 and _cd_cfg.mode != _gcf.MODE_SUBTRACT:
+                # ⛔ only once the controls have READ: a deferred step takes no reading.
+                if (_cd_checked and step % _cd_cfg.every == 0
+                        and _cd_cfg.mode != _gcf.MODE_SUBTRACT):
                     _cd_row = _cd.measure(_cd_lt, _cd_la, step=step).row()
         # ⚠️ `subtract` mode reads `.grad`, so it must run AFTER the backward
         # (and the backward must retain the graph for its one aux pass) and
@@ -8031,7 +8047,8 @@ def train(args) -> dict:
         # (`_cd_la` is only reached when `_cd is not None`, where the tuple
         #  unpack above has always bound it.)
         _cd_sub = (_cd is not None and _cd_cfg.mode == _gcf.MODE_SUBTRACT
-                   and _cd_la is not None and step % _cd_cfg.every == 0)
+                   and _cd_la is not None and _cd_checked
+                   and step % _cd_cfg.every == 0)
         if _cd_sub:
             losses["loss"].backward(retain_graph=True)
         else:

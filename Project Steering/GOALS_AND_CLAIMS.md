@@ -15650,3 +15650,21 @@ MEASURED by reading the call site before launch: a missing `--join3d` path retur
 `require_join3d` at both call sites; 5 tests, mutation 3/3. The launch's joins are in place and
 verified: train 3-D join 849,263 lines, every gated control passed (C9 exact time on all lines,
 C3 median base +0.0084 m over 21,952,289 agents); train + eval joins 875,657 rows each.
+
+<!-- REFCV6-FIRST-REAL-STEPS-2026-09-23 -->
+
+### 2026-09-23 — refcv6's first real steps on Thor: three defects fixed, the arm trains end to end, and the budget is a PI decision
+
+MEASURED on Thor with the launch line (in-run eval on, train + eval joins). Full record:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §7.
+
+* Unchunked resnet101 at 416 × 1024 needs ~22 GB per sample → `--trunk-chunk-ckpt` (requires
+  `--trunk-frozen-bn`); batch 8 fits at **18.0 GB**.
+* `compute_losses_v3` read an `args` it does not have → `NameError` on the first real map loss; fixed,
+  and an unresolved-global sweep over 82 modules is now pinned at zero (mutation 2/2).
+* The conflict detector refused to start: the trajectory gradient on the trunk is **exactly 0 on step 1**
+  (zero-init `control_head`, 316/316 tensors reached, all zero) and **non-zero on all 316 after one
+  update** — the detector now defers, bounded (mutation 4/4). ⇒ **refcv6 trains end to end.**
+* Throughput **~0.44–0.47 samples/s** at batch 8 (probe every 10th step; every step costs +124 %).
+  ⛔ Pre-registered `full` (805,680 windows) ≈ **20 days**; `cut` (240,000) ≈ **6 days** — the PI decides.
+* The eval split's box z/h are supervised in-run (`eval_box3d_n_h` 19–21).

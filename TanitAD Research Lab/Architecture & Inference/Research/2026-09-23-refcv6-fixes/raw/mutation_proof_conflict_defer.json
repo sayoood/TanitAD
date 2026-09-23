@@ -1,0 +1,64 @@
+{
+ "_what": "mutation proof that test_conflict_controls_defer_on_zero_init.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\tests\\test_conflict_controls_defer_on_zero_init.py": "7e4d210bc3305dc45b8762bcc75db187",
+  "stack\\scripts\\refc_v3_train.py": "7b08ca6c1a6e638c703b5f04c91e2fce",
+  "stack\\tanitad\\train\\grad_conflict.py": "1959e2e5eb1b583cea4328ee960e3633"
+ },
+ "arms": [
+  {
+   "arm": "F1_no_deferral",
+   "file": "stack\\tanitad\\train\\grad_conflict.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_ZERO_INIT_head_defers_on_step_1_then_the_controls_read_EXACTLY",
+    "test_a_DETACHED_trajectory_head_is_REFUSED_after_the_bound"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F2_no_bound_on_the_deferral",
+   "file": "stack\\tanitad\\train\\grad_conflict.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_DETACHED_trajectory_head_is_REFUSED_after_the_bound"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F3_nan_deferred_too",
+   "file": "stack\\tanitad\\train\\grad_conflict.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_a_NAN_plan_gradient_is_NOT_deferred_it_FAILS"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "F4_trainer_measures_on_a_deferred_step",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_trainer_takes_NO_reading_on_a_deferred_step"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 4,
+ "arms_total": 4,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 4/4 arms RED, including the the step-1 refusal Thor hit; all files restored byte-identical and the final clean run is green."
+}

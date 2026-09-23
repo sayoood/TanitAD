@@ -1,0 +1,42 @@
+{
+ "_what": "mutation proof that test_no_unresolved_globals.py can FAIL",
+ "_evidence_class": "MEASURED (ours), CPU",
+ "targets": {
+  "stack\\scripts\\refc_v3_train.py": "8f014bfab05d761341fb233d5bda4598",
+  "stack\\tests\\test_no_unresolved_globals.py": "4f96f40247a651e501dcbdeb1829d518"
+ },
+ "arms": [
+  {
+   "arm": "G1_map_loss_reads_args_again",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_refcv6_import_path_has_NO_unresolved_globals"
+   ],
+   "tail": null
+  },
+  {
+   "arm": "G2_box3d_loss_reads_args_again",
+   "file": "stack\\scripts\\refc_v3_train.py",
+   "rc": 1,
+   "went_RED": true,
+   "caught_by": [
+    "test_the_refcv6_import_path_has_NO_unresolved_globals"
+   ],
+   "tail": null
+  }
+ ],
+ "baseline": {
+  "rc": 0,
+  "failed": []
+ },
+ "restored_ok": true,
+ "final_clean_run": {
+  "rc": 0,
+  "failed": []
+ },
+ "arms_caught": 2,
+ "arms_total": 2,
+ "_VERDICT": "⭐ MUTATION-PROVEN — all 2/2 arms RED, including the both historical NameError sites; both files restored byte-identical and the final clean run is green."
+}

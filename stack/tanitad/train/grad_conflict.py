@@ -341,6 +341,11 @@ class ConflictConfig:
     float64: bool = True
     #: ⛔ refuse to run when an analytic control misses (prereg §4).
     require_controls: bool = True
+    #: how many consecutive checks may find the plan gradient on the trunk EXACTLY zero
+    #: before that is refused as "the planner is not trained through the trunk". A
+    #: zero-initialised output head makes it zero on step 1 only (see
+    #: :meth:`GradientConflictDetector.controls`); a real detach keeps it zero forever.
+    max_deferred_steps: int = 200
 
     def __post_init__(self) -> None:
         if self.mode not in PLAN_SIDE:
@@ -348,6 +353,9 @@ class ConflictConfig:
                 f"mode must be one of {sorted(PLAN_SIDE)}, got {self.mode!r}")
         if int(self.every) < 1:
             raise ValueError(f"every must be >= 1, got {self.every}")
+        if int(self.max_deferred_steps) < 1:
+            raise ValueError(
+                f"max_deferred_steps must be >= 1, got {self.max_deferred_steps}")
         if not self.trunk_prefixes:
             raise ValueError(
                 "no trunk prefix: the detector would measure the empty set and "
@@ -359,7 +367,8 @@ class ConflictConfig:
                 "include_heads": bool(self.include_heads),
                 "every": int(self.every), "mode": str(self.mode),
                 "float64": bool(self.float64),
-                "require_controls": bool(self.require_controls)}
+                "require_controls": bool(self.require_controls),
+                "max_deferred_steps": int(self.max_deferred_steps)}
 
 
 @dataclass(frozen=True)
@@ -463,6 +472,9 @@ class ControlResult:
     detached_degenerate: bool
     ok: bool
     failures: tuple = ()
+    #: the plan gradient on the trunk was EXACTLY zero, so the controls could not be
+    #: read on this step (undefined, not missed); the caller retries on the next step.
+    deferred: bool = False
 
     def as_dict(self) -> dict:
         return {"self_cos": self.self_cos, "negated_cos": self.negated_cos,
@@ -470,7 +482,8 @@ class ControlResult:
                 "detached_conflict": self.detached_conflict,
                 "detached_norm_aux": self.detached_norm_aux,
                 "detached_degenerate": bool(self.detached_degenerate),
-                "ok": bool(self.ok), "failures": list(self.failures)}
+                "ok": bool(self.ok), "failures": list(self.failures),
+                "deferred": bool(self.deferred)}
 
 
 # --------------------------------------------------------------------------- #
@@ -510,6 +523,7 @@ class GradientConflictDetector:
         self.group_index = dict(sorted(groups.items()))
         self._dtype = torch.float64 if cfg.float64 else torch.float32
         self._controls: ControlResult | None = None
+        self._n_deferred = 0
         #: MODE_REUSE only -- the last step's (params, g_traj, g_aux).
         self.last_grads = None
 
@@ -675,6 +689,25 @@ class GradientConflictDetector:
         p = list(self.trunk_params)
         g = self.grads(loss_traj, p, retain_graph=True)
         st_self = cosine_stats(g, g, dtype=self._dtype)
+        # ⭐⭐ A plan gradient that is EXACTLY zero makes cos(g, g) a 0/0: the controls are
+        # UNDEFINED on this step, not missed. MEASURED 2026-09-23 on refcv6's launch
+        # configuration (Thor, 416x1024): `control_head` is zero-initialised BY DESIGN (the
+        # first refinement pass is the identity), so d(traj)/d(trunk) was exactly 0 on step 1
+        # -- all 316 trunk tensors reached, every one zero -- and non-zero on all 316 after
+        # one optimizer update. The run refused to start on a control that could not be
+        # read. ⇒ wait for a step on which it can be; `self_check` bounds the wait. ⛔ A NaN
+        # norm is NOT this case (NaN != 0.0) and still fails below.
+        if st_self["norm_traj"] == 0.0:
+            nan = float("nan")
+            res = ControlResult(
+                self_cos=st_self["cos"], negated_cos=nan, detached_cos=nan,
+                detached_conflict=nan, detached_norm_aux=nan,
+                detached_degenerate=True, ok=False,
+                failures=("the plan gradient on the trunk is exactly zero on this "
+                          "step: the controls are undefined, not missed",),
+                deferred=True)
+            self._controls = res
+            return res
         gneg = [None if x is None else -x for x in g]
         st_neg = cosine_stats(g, gneg, dtype=self._dtype)
         src = loss_aux if loss_aux is not None else loss_traj
@@ -723,6 +756,18 @@ class GradientConflictDetector:
         card pretending otherwise.
         """
         res = self.controls(loss_traj, loss_aux, retain_graph=retain_graph)
+        if res.deferred:
+            self._n_deferred += 1
+            if self._n_deferred > int(self.cfg.max_deferred_steps):
+                raise ControlFailure(
+                    f"the plan gradient on the shared trunk has been EXACTLY ZERO on "
+                    f"{self._n_deferred} consecutive checks (bound "
+                    f"{int(self.cfg.max_deferred_steps)}): the planner is NOT trained "
+                    f"through the trunk -- a detach, or an output head that never "
+                    f"leaves its zero initialisation. A zero-init head is zero on "
+                    f"step 1 only.")
+            return res
+        self._n_deferred = 0
         if not res.ok and self.cfg.require_controls:
             raise ControlFailure(
                 "the gradient-conflict detector's analytic controls did not read "
