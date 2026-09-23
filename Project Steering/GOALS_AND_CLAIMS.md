@@ -15708,3 +15708,18 @@ fp32**; losses track (each lever's shift ≤ bf16's own). Mutation 14/14 + 14/14
 ⇒ **PI, verbatim: "Full, ~4.0 days (Recommended)" and "Keep every 10th (Recommended)"** — the
 pre-registered budget (50,400 steps) and cadence; the launch is authorised
 (`PI_DECISION_QUEUE.md`, `REFCV6-LAUNCH-DECIDED-2026-09-23`).
+
+<!-- REFCV6-LAUNCHED-2026-09-23 -->
+
+### 2026-09-23 (night) — refcv6 LAUNCHED on Thor, 6.4 s/step — and a launch-only defect that discarded every conflict reading
+
+MEASURED (`…/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §11, `raw/launch_2026-09-23/`):
+refcv6-r101-s0 started **2026-09-23 20:42 Berlin** from `284393c` (2,200 files md5-verified on
+Thor; live command line == dry run), batch 16, 50,400 steps (the pre-registered `full`, the PI's
+choice). Steps 50–200: **6.40–6.42 s/step**, 21.24 GB, loss 83.2 → 56.4, 10,400 of 21,600 frame
+slots computed per 50 steps ⇒ finish ≈ 2026-09-27.
+⛔ The rows carried **no `cd_*` key**: the conflict detector measures on logged steps 10k+1 and its
+reading reached the log only on log steps (every 50th) — never the same step — so every reading
+(~10 % of run time) was computed and discarded. The smokes logged every step and could not show it.
+Fixed in the next commit (a reading off the log cadence gets its own row; `test_conflict_readings_
+are_logged.py`, mutation 2/2); the live run switches to it at a checkpoint (logging only).

@@ -8196,6 +8196,14 @@ def train(args) -> dict:
             log.flush()
             print(f"[v3:{args.arm}] step {step} "
                   f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
+        elif _cd_row:
+            # ⛔ A CONFLICT READING THAT FALLS ON A STEP THE LOG SKIPS GETS ITS OWN ROW, under
+            # its own step. MEASURED 2026-09-23 on the launched refcv6 run: --conflict-every 10
+            # measures on logged steps 10k+1, --log-every 50 writes rows at 50k -- never the
+            # same step -- so every reading was computed (~10 % of run time) and discarded.
+            # `_cd_row` is cleared every step above, so this cannot re-log a stale reading.
+            log.write(json.dumps({"step": step, **_cd_row}) + "\n")
+            log.flush()
         # ---- checkpoint FIRST, eval second (C-REFCV3-EVAL-DEATH) ----------
         # ⛔ THE ORDER OF THESE TWO BLOCKS IS LOAD-BEARING. MEASURED 2026-09-02:
         # refcv3 died SILENTLY at --eval-every 500 boundaries (steps 2,000 /

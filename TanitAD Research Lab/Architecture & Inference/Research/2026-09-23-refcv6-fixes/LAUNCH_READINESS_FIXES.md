@@ -464,3 +464,67 @@ cadence, so the launch carries **no deviation** from `SMOKE_DECISION_RULES.md`.
 | conflict probe | every 10th step (pre-registered) |
 | in-run eval | every 500 steps, 8 batches, train + eval joins |
 | projected | **6.79 s/step ⇒ 2.36 samples/s ⇒ ≈ 3.96 days** (fp32 this morning: 18.06 s/step at batch 8 ⇒ ≈ 21 days) |
+
+## 11. The launch — and the conflict readings it was throwing away
+
+**Evidence class:** MEASURED (ours, Thor). Banked under `raw/launch_2026-09-23/`: the manifest that
+was run (`refcv6-r101-s0.env`), the dry-run command line and the LIVE one read from the trainer's
+own `/proc/<pid>/cmdline`, the supervisor's start output, `config.json` as the run wrote it, and
+its first metrics rows.
+
+**What was launched.** 2026-09-23 **20:42 Europe/Berlin** (18:42:47Z), commit **`284393c`** shipped
+by `ship_commit_to_thor.py` (**2,200 files, 0 missing, 0 differing** by md5 on Thor; `tanitad`,
+`taniteval` and the trainer import from that tree, asserted by `__file__`), under
+`sup_refcv6.sh refcv6-r101-s0` (supervisor pid 3336492, trainer pid 3336502, lock
+`runs.d/refcv6-r101-s0.lock`, `MAX_RELAUNCH` 4). The live command line equals the dry run
+flag for flag: batch **16**, **50,400** steps, 416 × 1024, resnet101, chunk 8, frozen + folded BN,
+bf16 + NHWC, dedup, compile, conflict probe every 10th step, eval every 500 × 8 batches, the v8
+labels with nav from v7, ego history, the SAM3 map, the agent and 3-D box joins (train + eval),
+DDIM diffusion. `config.json` records, read off the BUILT trunk, `chunk_ckpt 8, bn_pinned 104,
+bn_folded 104, bf16, channels_last, dedup_frames, compile inductor, compile_donated_buffer false`,
+a fresh data order (`resumed_from: null`), seed 0.
+
+| step | loss | elapsed s | s/step (per 50) | peak `cuda_max_mem_gb` | frames computed / slots |
+|---|---|---|---|---|---|
+| 50 | 83.17 | 347.4 | — | 21.236 | 10,400 / 21,600 |
+| 100 | 62.58 | 667.9 | 6.41 | 21.237 | 10,400 / 21,600 |
+| 150 | 58.00 | 987.9 | 6.40 | 21.237 | 10,400 / 21,600 |
+| 200 | 56.40 | 1,308.7 | 6.42 | 21.237 | 10,400 / 21,600 |
+
+⇒ **6.4 s/step** on the real run (the §10 projection was 6.79 incl. eval) ⇒ ≈ **3.8 days** with
+the in-run evals ⇒ finish ≈ **2026-09-27** (Berlin).
+
+⛔ **THE DEFECT THE SMOKES COULD NOT SHOW.** The rows at steps 50, 100, 150 and 200 carried **no
+`cd_*` key**. The detector measures on pre-increment steps divisible by `--conflict-every` —
+logged steps **10k+1** (the smokes show readings at 11 and 21) — and its reading was merged ONLY
+into a log row; `_cd_row` is cleared every step, deliberately, so a stale reading cannot be
+re-logged. With `--log-every 50` a reading step is never a log step: **every reading was computed —
+about 10 % of the run's time — and discarded.** The smokes logged every step, which is exactly
+why they never showed it.
+**Class:** a smoke that differs from the launch in an OPERATIONAL knob (the log cadence) cannot
+see a defect that only the launch's value exhibits — the same family as "a check that shares the
+defect it checks for". ⇒ smoke the launch line **as launched**, log cadence included.
+
+**The fix (this commit):** a reading that falls on a step the log skips is written as a ROW OF ITS
+OWN, under its own step (`{"step": s, "cd_*": ...}` — no loss keys, so every reader that selects
+training rows by their `loss` is unaffected). `stack/tests/test_conflict_readings_are_logged.py`
+runs the real `train()` with the detector forced on (`--conflict-every 2 --log-every 5`, six steps)
+and requires readings on steps **1, 3, 5** — 1 and 3 as own rows, 5 inside its log row — with the
+set written as a literal; **mutation 2/2** (`raw/mutation_proof_conflict_log.json`: the branch
+removed; the own row under the wrong step).
+
+**Why not simply `--log-every 1`, as the smokes ran?** It would record the readings with no code
+change, but ESTIMATED from two runs (not a controlled measurement): the launch at `--log-every 50`
+reads 6.40 s/step with the probe, while S11b's per-step-logging figures predict 6.67 — per-step
+logging (a row of ~90 scalars, each a device sync) plausibly costs ~0.26 s/step, ~4 % or about four
+hours of this run. The code fix records every reading at the 50-step cadence without that cost.
+
+**Switching the live run to this commit** is a logging-only change and follows the supervisor's rule
+7: ship the commit, point the manifest's `CODE` at it, and — right after a checkpoint and its eval —
+kill the supervisor, then the trainer (explicit pids), then start a fresh supervisor, which resumes
+from `ckpt.pt` with the data position. The switch step and the new pids are recorded in
+`GOALS_AND_CLAIMS.md` when it happens.
+
+**Monitoring:** two session crons on the dev box — a progress check at 08/12/16/20:13 Berlin and a
+night check at 00/04:13 — each read both pids, the last training row, the supervisor's opaque
+progress token and the latest in-run eval, and stay SILENT on a healthy run.
