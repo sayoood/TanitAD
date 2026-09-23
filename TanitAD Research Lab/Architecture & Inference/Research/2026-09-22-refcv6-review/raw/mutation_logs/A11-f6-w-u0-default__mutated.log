@@ -1,0 +1,439 @@
+s.....................................................F....F...F.F...... [ 58%]
+.............................................FFF....                     [100%]
+================================== FAILURES ===================================
+__________________________ test_defaults_are_all_OFF __________________________
+
+    def test_defaults_are_all_OFF():
+        """\u26d4 CONTROL THAT MUST READ A KNOWN VALUE. Adding the seams to the code
+        must not change a run that does not ask for them."""
+        a = _args()
+        assert a.sampler == "none"
+        assert a.agents == "off"
+>       assert a.w_u0 == 0.0
+E       AssertionError: assert 1.0 == 0.0
+E        +  where 1.0 = Namespace(size='small', arm='hier', data_root=None, v2_cache=None, prefetch_factor=1, u8_batches=False, eval_cache=Non...args=False, nav_from_v7=False, goal_point_inject=False, goal_point_geo_prior=False, goal_point_t=4.0, goal_point_w=0.0).w_u0
+
+tests\test_refc_v3_refcv5_wiring.py:52: AssertionError
+____________________ test_ddim_without_the_x0_LOSS_REFUSES ____________________
+
+    def test_ddim_without_the_x0_LOSS_REFUSES():
+        """\u26d4\u26d4 THE SUBTLEST GUARD, and the one most worth having. `control_head` is
+        ZERO-INIT. With `--w-u0 0` nothing supervises it, so it stays at exactly
+        zero forever: the arm is the anchored Gaussian with NO DENOISER, and every
+        log row still says 'sampler: ddim'. It would read as 'diffusion does not
+        help' � a REFUTATION manufactured by a missing loss."""
+>       with pytest.raises(SystemExit, match="w-u0"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+tests\test_refc_v3_refcv5_wiring.py:111: Failed
+__________________ test_seam_stamp_on_a_DEFAULT_run_says_off __________________
+
+    def test_seam_stamp_on_a_DEFAULT_run_says_off():
+        """CONTROL. The stamp must distinguish 'off' from 'absent'."""
+        cfg = _cfg()
+        a = _args()
+        t._pin_refcv5_seams(cfg, a)
+        st = t._seam_stamp(cfg, a)
+        assert st["sampler"] == "none"
+        assert st["agents"] is None
+        assert st["cross_agent"] is False
+>       assert st["w_agent"] == 0.0 and st["w_u0"] == 0.0
+E       assert (0.0 == 0.0 and 1.0 == 0.0)
+
+tests\test_refc_v3_refcv5_wiring.py:172: AssertionError
+________________ test_seam_guard_PASSES_an_honest_default_run _________________
+
+    def test_seam_guard_PASSES_an_honest_default_run():
+        """\u26d4 CONTROL THAT MUST READ A KNOWN VALUE. A guard that rejects everything
+        proves nothing about the three below."""
+        m, st = _built()
+>       t.assert_seams_are_built(m, st)          # must not raise
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_refc_v3_refcv5_wiring.py:223: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+model = RefCV3Model(
+  (core): RefCModel(
+    (encoder): ResNetEncoder(
+      (stem): Sequential(
+        (0): Conv2d(9, 32, k..., bias=True)
+  (scorer): GoalDistanceScorer(
+    (goal_point): Linear(in_features=512, out_features=2, bias=True)
+  )
+)
+stamp = {'hier': True, 'hierarchy': True, 'no_strategic': False, 'goal_str_loss_applied': False, ...}
+
+    def assert_seams_are_built(model, stamp: dict) -> None:
+        """REFUSE to write a run record that claims a seam THE WEIGHTS DO NOT HAVE.
+    
+        \u26d4\u26d4 **THE DEFECT THIS CLOSES, MEASURED 2026-09-06.** ``DecoderConfig`` had
+        no ``sampler`` field, so ``_pin_refcv5_seams``'s ``core.decoder.sampler =
+        "ddim"`` created an AD-HOC ATTRIBUTE on an unfrozen dataclass. Python
+        accepted it; the two guards in ``_pin_refcv5_seams`` read it back and
+        PASSED; ``_seam_stamp`` copied it into ``config.json``. The model contained
+        no denoiser at all -- ``refc.py`` had zero occurrences of ``control_head``.
+        A run would have trained, converged, written a checkpoint and STATED IN ITS
+        OWN RECORD that it used a sampler it did not have. That is not a missing
+        feature, it is FALSE PROVENANCE: every later comparison against that arm
+        would have been unfalsifiable.
+    
+        \u2b50 **Why the field alone is not the fix.** Declaring ``sampler`` on the
+        dataclass removes THIS instance and none of the class. The stamp is built
+        from the CONFIG, and a config is a statement of intent; only the MODEL is a
+        statement of fact. So the record is checked against the built modules, here,
+        immediately before ``config.json`` is written -- the same discipline as
+        :func:`assert_knobs_stamped` one level down, and it runs at startup rather
+        than becoming an unanswerable question in an audit months later.
+    
+        \u26a0 **The check is BIDIRECTIONAL.** A seam that is BUILT but NOT STAMPED is
+        equally unfalsifiable -- it is the `SEAM_STATE.md` failure, where six live
+        seams were absent from ``config.json`` and the arm was reconstructible only
+        by knowing what ``refc_v3.py`` forces.
+        """
+        core = getattr(model, "core", model)
+        dec = core.decoder
+        bad: list[str] = []
+    
+        def _mod(obj, name):
+            return getattr(obj, name, None)
+    
+        # --- WP-4: the sampler ------------------------------------------------ #
+        if str(stamp.get("sampler", "none")) != "none":
+            for name in ("control_head", "time_mlp", "sched"):
+                if _mod(dec, name) is None:
+                    bad.append(
+                        f"stamp says sampler={stamp['sampler']!r} but "
+                        f"decoder.{name} is None -- the record would claim a "
+                        f"denoiser the weights do not contain")
+        elif _mod(dec, "control_head") is not None:
+            bad.append(
+                "stamp says sampler='none' but decoder.control_head WAS BUILT -- "
+                "a live sampler absent from the run record")
+        if float(stamp.get("w_u0", 0.0)) > 0.0 and _mod(dec, "control_head") is None:
+            bad.append(
+                f"stamp says w_u0={stamp['w_u0']} but there is no control_head "
+                f"for that loss to supervise: the term would be silently skipped "
+                f"while the weight is stamped")
+    
+        # --- refcv6 �2/�3: the trunk and the F-flags, BOTH DIRECTIONS ---------- #
+        # \u26d4 A stamped `trunk: timm` on a model whose encoder is the in-repo
+        # ResNet would claim an ImageNet prior the weights do not have � the same
+        # false provenance as a stamped sampler with no denoiser. And an F3/F4 arm
+        # whose heads were not built would train the BASELINE under refcv6's name.
+        _enc = _mod(core, "encoder")
+        _is_timm = type(_enc).__name__ == "TimmResNetTrunk"
+        if str(stamp.get("trunk", "refc")) == "timm" and not _is_timm:
+            bad.append(
+                "stamp says trunk='timm' but core.encoder is a "
+                f"{type(_enc).__name__} -- the record would claim an ImageNet "
+                "prior the weights do not have")
+        if str(stamp.get("trunk", "refc")) != "timm" and _is_timm:
+            bad.append(
+                "stamp says trunk='refc' but core.encoder IS the timm ImageNet "
+                "trunk -- a live prior absent from the run record")
+        _eh = stamp.get("ego_history")
+        _eh_built = _mod(core, "ego_hist") is not None
+        if _eh is not None and bool(_eh.get("enable")) and not _eh_built:
+            bad.append("stamp carries an `ego_history` block but core.ego_hist is "
+                       "None -- the record would claim an input the model never "
+                       "reads")
+        if (_eh is None or not bool(_eh.get("enable"))) and _eh_built:
+            bad.append("core.ego_hist IS built but the stamp says ego_history is "
+                       "off -- a live input absent from the run record")
+        _r6 = stamp.get("refcv6")
+        _built = _mod(dec, "rv6")
+        if _r6 is not None:
+            if _mod(dec, "cascade") is None and bool(_r6.get("f3_per_layer")):
+                bad.append("stamp says F3 but decoder.cascade is None -- the "
+                           "per-layer heads were never built")
+            if _mod(dec, "adaln") is None and bool(_r6.get("f4_adaln")):
+                bad.append("stamp says F4 but decoder.adaln is None -- the "
+                           "AdaLN modulation was never built")
+            if _built is not None and _rv6.flag_stamp(_built) != _r6:
+                bad.append("the stamped refcv6 block differs from the one the "
+                           "decoder was BUILT with -- the record would name a "
+                           "different arm than the one that trains")
+        elif _built is not None and _built.any_on:
+            bad.append("decoder carries live refcv6 flags but the stamp says "
+                       "refcv6=null -- a live arm absent from the run record")
+    
+        # --- WP-6: the agent seam --------------------------------------------- #
+        layers = list(getattr(dec, "layers", []))
+        if bool(stamp.get("cross_agent", False)):
+            dead = [i for i, ly in enumerate(layers)
+                    if _mod(ly, "cross_agent") is None]
+            if dead:
+                bad.append(
+                    f"stamp says cross_agent=True but decoder layers {dead} have "
+                    f"no agent attention -- the tokens would reach nothing")
+        else:
+            live = [i for i, ly in enumerate(layers)
+                    if _mod(ly, "cross_agent") is not None]
+            if live:
+                bad.append(
+                    f"stamp says cross_agent=False but decoder layers {live} DO "
+                    f"cross-attend agents -- a live seam absent from the record")
+        # --- WP-B: the waypoint index ----------------------------------------- #
+        # \u26d4 BIDIRECTIONAL, exactly like the WP-4 and WP-6 checks above. A stamped
+        # index with no bias heads is FALSE PROVENANCE; attached heads absent from
+        # the record are the `SEAM_STATE.md` failure. And a stamped MODE that the
+        # attached config does not carry would let a CONTROL arm be reported as the
+        # treatment, which is worse than either.
+        _wps = stamp.get("wp_index")
+        _wp_live = [i for i, ly in enumerate(layers)
+                    if _mod(ly, "wp_index") is not None]
+        if _wps is not None and bool(_wps.get("enable", False)):
+            _dead = [i for i, _ in enumerate(layers) if i not in set(_wp_live)]
+            if _dead:
+                bad.append(
+                    f"stamp says wp_index.enable=True but decoder layers {_dead} "
+                    f"have no bias head -- the record would claim a waypoint "
+                    f"index the weights do not contain")
+            _cfg_mode = str(getattr(_mod(dec, "wp_index_cfg"), "mode", "<none>"))
+            if _wp_live and _cfg_mode != str(_wps.get("mode")):
+                bad.append(
+                    f"stamp says wp_index.mode={_wps.get('mode')!r} but the "
+                    f"attached config carries {_cfg_mode!r} -- a CONTROL arm "
+                    f"would be reported as the treatment, or the reverse")
+        elif _wp_live:
+            bad.append(
+                f"stamp carries no live wp_index but decoder layers {_wp_live} DO "
+                f"index the agent attention by waypoint -- a live seam absent "
+                f"from the run record")
+        if stamp.get("agents") is not None:
+            for name in ("agent_head", "agent_embed"):
+                if _mod(core, name) is None:
+                    bad.append(
+                        f"stamp carries an `agents` block but core.{name} is "
+                        f"None -- the record would claim a detector that was "
+                        f"never built")
+        else:
+            for name in ("agent_head", "agent_embed"):
+                if _mod(core, name) is not None:
+                    bad.append(
+                        f"stamp says agents=None but core.{name} WAS BUILT -- a "
+                        f"live agent seam absent from the run record")
+    
+        # --- E15 (GP-2): the goal-point edge and its ranking seam ------------- #
+        # \u26d4 BIDIRECTIONAL, exactly like the two above. A stamped goal point with
+        # no head is FALSE PROVENANCE; a built head absent from the record is the
+        # `SEAM_STATE.md` failure. And a stamped `graft_gp_point` with no gate on
+        # the decoder would be a run claiming a selection seam that ranks nothing.
+        gpst = stamp.get("goal_point")
+        head_built = _mod(model, "gp_head") is not None
+        gate_built = _mod(dec, "gp_point_gate") is not None
+        if gpst is not None and bool(gpst.get("goal_point_inject", False)):
+            if not head_built:
+                bad.append(
+                    "stamp says goal_point_inject=True but model.gp_head is None "
+                    "-- the record would claim an E15 head the weights do not "
+                    "contain")
+            if bool(gpst.get("graft_gp_point", False)) and not gate_built:
+                bad.append(
+                    "stamp says graft_gp_point=True but decoder.gp_point_gate is "
+                    "None -- the record would claim a ranking seam that ranks "
+                    "nothing")
+            if not bool(gpst.get("graft_gp_point", False)) and gate_built:
+                bad.append(
+                    "stamp says graft_gp_point=False but decoder.gp_point_gate "
+                    "WAS BUILT -- a live selection seam absent from the record")
+            if float(gpst.get("w_goal_point", 0.0)) <= 0.0:
+                bad.append(
+                    "stamp says w_goal_point=%s with an E15 head built: the head "
+                    "would be supervised by nothing and the PREREG section 5 head "
+                    "gate would fail for a reason that is not about the goal form"
+                    % (gpst.get("w_goal_point"),))
+            if (int(gpst.get("gp_slot", -1)) < 0
+                    and bool(gpst.get("graft_gp_point", False))):
+                bad.append(
+                    "stamp carries graft_gp_point=True with gp_slot < 0 -- the "
+                    "goal and the anchor would be compared at different times")
+        else:
+            if head_built:
+                bad.append(
+                    "stamp carries no goal_point block but model.gp_head WAS "
+                    "BUILT -- a live E15 edge absent from the run record")
+            if gate_built:
+                bad.append(
+                    "stamp carries no goal_point block but decoder.gp_point_gate "
+                    "WAS BUILT -- a live S7 selection seam absent from the record")
+    
+        # --- D-TACGOAL-1 / D-ROLL-1h: the tactical-goal SET head ------------- #
+        # \u26d4 BIDIRECTIONAL, like the three above, and it is the check whose
+        # ABSENCE was the D-ROLL-1 regression: 11,286 params in the model that
+        # no recorded `param_breakdown` names makes the checkpoint unloadable,
+        # and 11,286 params in the record that the weights lack is the mirror
+        # image. The stamp's `built` is read off the module; `cfg` is intent.
+        tg = stamp.get("tac_goal_tok_head")
+        tg_built = _mod(model, "tac_goal_tok_head") is not None
+        if isinstance(tg, dict):
+            if tg.get("built") is not None and bool(tg["built"]) != tg_built:
+                bad.append(
+                    f"stamp says tac_goal_tok_head.built={tg['built']!r} but "
+                    f"model.tac_goal_tok_head is "
+                    f"{'BUILT' if tg_built else 'None'} -- the record and the "
+                    f"weights disagree about 11,286 parameters, which is the "
+                    f"D-ROLL-1 rollability defect exactly")
+            if bool(tg.get("cfg", False)) and not tg_built:
+                bad.append(
+                    "stamp says tac_goal_tok_head was pinned onto the config "
+                    "but model.tac_goal_tok_head is None -- the record would "
+                    "claim a supervised head the weights do not contain")
+            if not bool(tg.get("cfg", False)) and tg_built:
+                bad.append(
+                    "model.tac_goal_tok_head WAS BUILT but the run record does "
+                    "not ask for it -- 11,286 parameters absent from the "
+                    "record, which is what makes a checkpoint unrollable")
+        elif tg_built:
+            bad.append(
+                "the seam stamp carries no `tac_goal_tok_head` block but the "
+                "head WAS BUILT -- a live seam absent from the run record")
+    
+        # --- H-BOXCLS-1: the agent/box class weight -------------------------- #
+        # \u26d4 BIDIRECTIONAL, like the two blocks below, and the reason is the same one twice over.
+        # A record that ASKS for `train2400` while the model carries no weight is an arm reported as
+        # re-weighted that trained unweighted -- the `--agent-cls-weight` flag parsing and going
+        # nowhere. The mirror image, a weight on the model that the record calls `off`, makes the
+        # arm unreproducible from its own config. And because `built` is a DIGEST rather than a
+        # boolean, a THIRD failure is reachable here that a bool could not see: the right flag
+        # loading the WRONG VECTOR.
+        cw = stamp.get("agent_cls_weight")
+        cw_built = getattr(model, "_cls_class_weight", None) is not None
+        if isinstance(cw, dict):
+            wants = str(cw.get("requested", cw.get("mode", "off"))) != "off"
+            if wants and not cw_built:
+                bad.append(
+                    "stamp requests agent_cls_weight=" + str(cw.get("requested")) +
+                    " but model._cls_class_weight is None -- the record would claim a re-weighted "
+                    "cls term the run did not train; the flag parsed and reached nothing")
+            if cw_built and not wants:
+                bad.append(
+                    "model carries a cls class weight but the run record says agent_cls_weight is "
+                    "off -- the arm cannot be reproduced from its own config.json")
+            if cw_built and cw.get("built") is not None:
+                _live = _agent_slots.cls_weight_digest(model._cls_class_weight)
+                if str(cw["built"]) != _live:
+                    bad.append(
+                        f"stamp says agent_cls_weight.built={cw['built']!r} but the weight on the "
+                        f"model digests to {_live!r} -- the record and the weights disagree about "
+                        f"WHICH vector the cls term is running")
+            if wants and cw.get("digest") and cw.get("built") and cw["digest"] != cw["built"]:
+                bad.append(
+                    f"the banked artifact digests to {cw['digest']!r} but the model carries "
+                    f"{cw['built']!r} -- the loaded vector is not the banked one")
+        elif cw_built:
+            bad.append(
+                "model carries a cls class weight but the seam stamp has no `agent_cls_weight` "
+                "block -- a live re-weighting absent from the run record")
+    
+        # --- E16: the max-speed conditioner ---------------------------------- #
+        # \u26d4 BIDIRECTIONAL, exactly like the block above. A conditioner in the
+        # weights that no recorded `param_breakdown` names is the D-ROLL-1
+        # rollability defect; a conditioner in the record that the weights lack
+        # is its mirror image, and both make the checkpoint unloadable through
+        # `refcv3_arm.cross_check_config`.
+        ms = stamp.get("max_speed_input")
+        ms_built = _mod(model, "max_speed_cond") is not None
+        if isinstance(ms, dict):
+            if ms.get("built") is not None and bool(ms["built"]) != ms_built:
+                bad.append(
+                    f"stamp says max_speed_input.built={ms['built']!r} but "
+                    f"model.max_speed_cond is "
+                    f"{'BUILT' if ms_built else 'None'} -- the record and the "
+                    f"weights disagree about the E16 conditioner")
+            if bool(ms.get("cfg", False)) and not ms_built:
+                bad.append(
+                    "stamp says max_speed_input was pinned onto the config but "
+                    "model.max_speed_cond is None -- the record would claim a "
+                    "ceiling channel the weights do not contain")
+            if not bool(ms.get("cfg", False)) and ms_built:
+                bad.append(
+                    "model.max_speed_cond WAS BUILT but the run record does not "
+                    "ask for it -- parameters absent from the record, which is "
+                    "what makes a checkpoint unrollable")
+        elif ms_built:
+            bad.append(
+                "the seam stamp carries no `max_speed_input` block but the "
+                "conditioner WAS BUILT -- a live seam absent from the record")
+    
+        if bad:
+>           raise SystemExit(
+                "[v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to "
+                "write config.json rather than stamping a configuration that did "
+                "not happen:\n  - " + "\n  - ".join(bad))
+E           SystemExit: [v3] \u26d4\u26d4 THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to write config.json rather than stamping a configuration that did not happen:
+E             - stamp says w_u0=1.0 but there is no control_head for that loss to supervise: the term would be silently skipped while the weight is stamped
+
+scripts\refc_v3_train.py:5485: SystemExit
+____________ test_GREEN_refc_passes_once_the_gate_is_open[extra1] _____________
+
+extra = ['--w-agent', '1.0', '--agents', 'head', '--agent-join', '/tmp/j.jsonl']
+
+    @pytest.mark.parametrize("extra", [
+        ["--w-u0", "0.5", "--sampler", "ddim"],
+        ["--w-agent", "1.0", "--agents", "head", "--agent-join", "/tmp/j.jsonl"],
+        ["--agent-w-project", "1.0", "--agents", "oracle"],
+        ["--goal-point-w", "1.0", "--goal-point-inject"],
+    ])
+    def test_GREEN_refc_passes_once_the_gate_is_open(extra):
+        """\u2b50 Four controls, one per refusal: a guard that refuses everything gets
+        deleted."""
+>       assert _v3_refusal(["--arm", "hier", "--out", "/tmp/o", *extra]) is None
+E       AssertionError: assert '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' is None
+E        +  where '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' = _v3_refusal(['--arm', 'hier', '--out', '/tmp/o', '--w-agent', '1.0', ...])
+
+tests\test_v6_effective_weights.py:543: AssertionError
+____________ test_GREEN_refc_passes_once_the_gate_is_open[extra2] _____________
+
+extra = ['--agent-w-project', '1.0', '--agents', 'oracle']
+
+    @pytest.mark.parametrize("extra", [
+        ["--w-u0", "0.5", "--sampler", "ddim"],
+        ["--w-agent", "1.0", "--agents", "head", "--agent-join", "/tmp/j.jsonl"],
+        ["--agent-w-project", "1.0", "--agents", "oracle"],
+        ["--goal-point-w", "1.0", "--goal-point-inject"],
+    ])
+    def test_GREEN_refc_passes_once_the_gate_is_open(extra):
+        """\u2b50 Four controls, one per refusal: a guard that refuses everything gets
+        deleted."""
+>       assert _v3_refusal(["--arm", "hier", "--out", "/tmp/o", *extra]) is None
+E       AssertionError: assert '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' is None
+E        +  where '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' = _v3_refusal(['--arm', 'hier', '--out', '/tmp/o', '--agent-w-project', '1.0', ...])
+
+tests\test_v6_effective_weights.py:543: AssertionError
+____________ test_GREEN_refc_passes_once_the_gate_is_open[extra3] _____________
+
+extra = ['--goal-point-w', '1.0', '--goal-point-inject']
+
+    @pytest.mark.parametrize("extra", [
+        ["--w-u0", "0.5", "--sampler", "ddim"],
+        ["--w-agent", "1.0", "--agents", "head", "--agent-join", "/tmp/j.jsonl"],
+        ["--agent-w-project", "1.0", "--agents", "oracle"],
+        ["--goal-point-w", "1.0", "--goal-point-inject"],
+    ])
+    def test_GREEN_refc_passes_once_the_gate_is_open(extra):
+        """\u2b50 Four controls, one per refusal: a guard that refuses everything gets
+        deleted."""
+>       assert _v3_refusal(["--arm", "hier", "--out", "/tmp/o", *extra]) is None
+E       AssertionError: assert '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' is None
+E        +  where '[v3] REFUSED (effective-weight audit): --w-u0 1 in this arm: --sampler none: `control_head` is built only for --sampl...s term is skipped -- a head that is built, stamped, and supervised by nothing. Build the precondition or set --w-u0 0.' = _v3_refusal(['--arm', 'hier', '--out', '/tmp/o', '--goal-point-w', '1.0', ...])
+
+tests\test_v6_effective_weights.py:543: AssertionError
+============================== warnings summary ===============================
+tests/test_refcv6_diffusion.py::test_F3_cascade_heads_are_ZERO_INIT
+  C:\Users\Admin\AppData\Local\Temp\mt\stack\tests\test_refcv6_diffusion.py:260: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(h.weight.abs().max()) == 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_refcv5_wiring.py::test_defaults_are_all_OFF - Asser...
+FAILED tests/test_refc_v3_refcv5_wiring.py::test_ddim_without_the_x0_LOSS_REFUSES
+FAILED tests/test_refc_v3_refcv5_wiring.py::test_seam_stamp_on_a_DEFAULT_run_says_off
+FAILED tests/test_refc_v3_refcv5_wiring.py::test_seam_guard_PASSES_an_honest_default_run
+FAILED tests/test_v6_effective_weights.py::test_GREEN_refc_passes_once_the_gate_is_open[extra1]
+FAILED tests/test_v6_effective_weights.py::test_GREEN_refc_passes_once_the_gate_is_open[extra2]
+FAILED tests/test_v6_effective_weights.py::test_GREEN_refc_passes_once_the_gate_is_open[extra3]
+7 failed, 116 passed, 1 skipped, 1 warning in 16.05s

@@ -1,0 +1,164 @@
+{
+  "attached_bev_params": 3210,
+  "n_layers_with_bev_wp": 2,
+  "C1_direct_call_fires": 1,
+  "C1_rows": [
+    {
+      "site": "layer0.bev_wp[BEV]",
+      "layer": 0,
+      "kind": "bev_wp",
+      "q_shape": [
+        2,
+        6,
+        32
+      ],
+      "ctx_shape": [
+        2,
+        12,
+        120,
+        64
+      ],
+      "wp_shape": [
+        2,
+        6,
+        4,
+        2
+      ],
+      "q_ptr": 4395900997632,
+      "k_ptr": 4395901255680,
+      "wp_ptr": 4395899488512,
+      "bev_is_none": false
+    }
+  ],
+  "C2_prefilter_fires": 0,
+  "C2_rows": [],
+  "C3_default_sampler_fires": 0,
+  "C3_default_classifier_fires": 0,
+  "decode_call_sites": [
+    {
+      "line": 2563,
+      "callee": "_decode_ctrl",
+      "positional_names": [
+        "kv",
+        "cond",
+        "x_path",
+        "tt",
+        "agents",
+        "agent_pad",
+        "agent_pos",
+        "bev"
+      ],
+      "kwargs": [],
+      "n_positional": 8,
+      "carries_bev": true
+    },
+    {
+      "line": 2866,
+      "callee": "_decode",
+      "positional_names": [
+        "kv",
+        "cond",
+        "xs",
+        "agent_tokens",
+        "agent_pad",
+        "agent_pos",
+        "bev"
+      ],
+      "kwargs": [],
+      "n_positional": 8,
+      "carries_bev": true
+    },
+    {
+      "line": 2878,
+      "callee": "_decode",
+      "positional_names": [
+        "kv",
+        "cond",
+        "x0",
+        "agent_tokens",
+        "agent_pad",
+        "agent_pos"
+      ],
+      "kwargs": [],
+      "n_positional": 7,
+      "carries_bev": false
+    },
+    {
+      "line": 2884,
+      "callee": "_decode",
+      "positional_names": [
+        "kv",
+        "cond",
+        "x0",
+        "agent_tokens",
+        "agent_pad",
+        "agent_pos"
+      ],
+      "kwargs": [],
+      "n_positional": 7,
+      "carries_bev": false
+    },
+    {
+      "line": 2966,
+      "callee": "_decode",
+      "positional_names": [
+        "kv",
+        "cond",
+        "x_in",
+        "t_idx"
+      ],
+      "kwargs": [],
+      "n_positional": 4,
+      "carries_bev": false
+    },
+    {
+      "line": 2997,
+      "callee": "_sample",
+      "positional_names": [
+        "kv",
+        "cond",
+        "bank",
+        "v_ms",
+        "steps",
+        "agent_tokens",
+        "agent_pad",
+        "agent_pos"
+      ],
+      "kwargs": [],
+      "n_positional": 8,
+      "carries_bev": false
+    },
+    {
+      "line": 3057,
+      "callee": "_decode",
+      "positional_names": [
+        "kv",
+        "cond",
+        "x",
+        "t_e",
+        "agent_tokens",
+        "agent_pad",
+        "agent_pos"
+      ],
+      "kwargs": [],
+      "n_positional": 7,
+      "carries_bev": false
+    }
+  ],
+  "n_sites_carrying_bev": 2,
+  "n_sites_total": 7,
+  "callers_passing_bev_kwarg": [
+    {
+      "file": "stack\\tanitad\\refs\\refc.py",
+      "line": 4270,
+      "callee": "self.decoder"
+    }
+  ],
+  "bev_coupling_assignments": [
+    {
+      "file": "integration\\verify_patch.py",
+      "line": 80,
+      "target": "cfg.decoder.bev_coupling"
+    }
+  ]
+}

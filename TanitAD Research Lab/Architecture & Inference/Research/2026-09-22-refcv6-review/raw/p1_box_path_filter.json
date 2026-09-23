@@ -1,0 +1,32 @@
+{
+ "_evidence_class": "MEASURED (ours; this file + raw/p1_box_path_filter.json)",
+ "code": {
+  "refcv6_box_loss": "refc_v3_train.py:4372 -> refcv6_perception_branch.box3d_loss_row:503 -> box3d_head.box3d_set_loss:327",
+  "v6_agent_loss": "refc_v3_train.py:3969 -> refc_agents.agent_losses:812 (filter_visible=True) -> refc_agents.visible_target_filter:394"
+ },
+ "arms": {
+  "all_three": {
+   "n_boxes_constructed": 3,
+   "refcv6_box3d_n_matched": 3.0,
+   "refcv6_box3d_n_target": 3.0,
+   "v6_n_target_prefilter": 3,
+   "v6_n_target_visible": 1,
+   "v6_filter_visible": true
+  },
+  "only_A_control": {
+   "n_boxes_constructed": 1,
+   "refcv6_box3d_n_matched": 1.0,
+   "refcv6_box3d_n_target": 1.0,
+   "v6_n_target_prefilter": 1,
+   "v6_n_target_visible": 1,
+   "v6_filter_visible": true
+  }
+ },
+ "verdict": {
+  "refcv6_path_filters": false,
+  "v6_path_filters": true,
+  "delta_refcv6_targets": 2.0,
+  "delta_v6_visible": 0,
+  "reading": "if delta_refcv6_targets == 2 and delta_v6_visible == 0, the refcv6 box path supervises the behind-ego and 120 m boxes that the v6 path drops BY DESIGN"
+ }
+}

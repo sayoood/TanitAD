@@ -1,0 +1,75 @@
+{
+  "OURS_cylindrical": {
+    "256x640": {
+      "projection": "cylindrical",
+      "f_ref": 305.5774907364391,
+      "HFOV_deg": 120.0,
+      "deg_per_px_uniform": 0.1875,
+      "deg_per_px_crosscheck_1_over_f_ref": 0.1875,
+      "crosscheck_agrees": true,
+      "edge_local_density_vs_center": 1.0,
+      "stride16_deg_per_col": 3.0,
+      "stride32_deg_per_col": 6.0,
+      "evidence": "MEASURED (ours) from trunk_shapes + calib"
+    },
+    "256x1024": {
+      "projection": "cylindrical",
+      "f_ref": 488.92398517830253,
+      "HFOV_deg": 120.0,
+      "deg_per_px_uniform": 0.117187,
+      "deg_per_px_crosscheck_1_over_f_ref": 0.117187,
+      "crosscheck_agrees": true,
+      "edge_local_density_vs_center": 1.0,
+      "stride16_deg_per_col": 1.875,
+      "stride32_deg_per_col": 3.75,
+      "evidence": "MEASURED (ours) from trunk_shapes + calib"
+    },
+    "416x1024": {
+      "projection": "cylindrical",
+      "f_ref": 488.92398517830253,
+      "HFOV_deg": 120.0,
+      "deg_per_px_uniform": 0.117187,
+      "deg_per_px_crosscheck_1_over_f_ref": 0.117187,
+      "crosscheck_agrees": true,
+      "edge_local_density_vs_center": 1.0,
+      "stride16_deg_per_col": 1.875,
+      "stride32_deg_per_col": 3.75,
+      "evidence": "MEASURED (ours) from trunk_shapes + calib"
+    }
+  },
+  "SPEC_10_1_claim_0_1172": {
+    "spec_value": 0.1172,
+    "recomputed_416x1024": 0.117187,
+    "recomputed_256x1024": 0.117187,
+    "AGREES_to_4dp": true,
+    "note": "f_ref is a HORIZONTAL quantity on a cylindrical frame, so 256x1024 and 416x1024 have the SAME azimuth resolution; only the vertical field changes."
+  },
+  "NAVSIM_DD_1024_wide": {
+    "assumed_HFOV_deg": 140.0,
+    "evidence": "INHERITED \u2014 SPEC_REFCV6_V2.md:145-146 ('~140 deg, 3 stitched cameras'); no derivation exists in the repo",
+    "average_deg_per_px": 0.136719,
+    "SPEC_quotes": 0.1367,
+    "average_reproduces_SPEC": true,
+    "projection": "PINHOLE mosaic (3 cropped forward cameras)",
+    "single_pinhole_equivalent_f_px": 186.3528,
+    "deg_per_px_at_IMAGE_CENTRE": 0.307459,
+    "deg_per_px_at_IMAGE_EDGE": 0.035966,
+    "centre_to_edge_ratio": 8.5486,
+    "caveat": "an AVERAGE deg/px is not a resolution on a pinhole: the centre is coarser and the edge finer. A cylindrical frame's is uniform by construction (ratio exactly 1)."
+  },
+  "COMPARISON": {
+    "ours_uniform": 0.117187,
+    "theirs_average": 0.136719,
+    "ratio_average_basis": 1.1667,
+    "ratio_at_THEIR_IMAGE_CENTRE": 2.6237,
+    "ratio_at_THEIR_IMAGE_EDGE": 0.3069,
+    "reading": "on the AVERAGE basis SPEC uses, ours is finer by the quoted factor. If their mosaic is read as one pinhole, ours is much finer where the road ahead is (centre) and COARSER at the image edge. Which reading is right depends on the stitch, which is not in our record."
+  },
+  "ASSUMPTION_FREE_COMPARISON": {
+    "both_are_1024_px_wide": true,
+    "ours_HFOV_deg": 120.0,
+    "theirs_HFOV_deg_INHERITED": 140.0,
+    "statement": "at the SAME pixel width we cover a NARROWER field (120.0 vs ~140), so we spend more pixels per degree on average \u2014 1.1667x \u2014 with no optics assumption at all. Everything beyond that needs their stitch.",
+    "ratio": 1.1667
+  }
+}

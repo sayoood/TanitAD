@@ -1,0 +1,73 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "eval-139 (135 banked SAM3 GT clips on the dev box) -- NOT the v7-B1 train corpus, for which no SAM3 GT is on this machine",
+ "root": "D:/Projects/TanitAD-artifacts/sam3-maps-eval",
+ "n_clip_files": 135,
+ "frame_stride": 5,
+ "n_frames_read": 5527,
+ "rule": "seen = 2*(255 - cart_frac[:, 8]) >= 255  (semantic_map_gt.py:330-331)",
+ "seen_mask_is_real": {
+  "frac_seen_overall": 0.9126685146025572,
+  "frac_unseen_overall": 0.08733148539744284,
+  "n_frames_with_zero_seen_cells": 0,
+  "integer_vs_float_rule_mismatches": 0,
+  "control_note": "0 mismatches means the integer rule and the float-share rule select the same cells; a non-zero seen fraction strictly below 1 means the mask actually selects (an all-true mask would read 1.0)"
+ },
+ "label_mass_on_seen_cells": {
+  "seen, no map class": {
+   "share_of_seen_mass": 0.25904228412619157,
+   "share_of_all_mass": 0.23670961799432766
+  },
+  "drivable": {
+   "share_of_seen_mass": 0.34001810640337043,
+   "share_of_all_mass": 0.31038687912252316
+  },
+  "lane / road line": {
+   "share_of_seen_mass": 0.016644163256983185,
+   "share_of_all_mass": 0.015191502718933115
+  },
+  "crosswalk": {
+   "share_of_seen_mass": 0.005234019998647593,
+   "share_of_all_mass": 0.004777795272967097
+  },
+  "arrow / text": {
+   "share_of_seen_mass": 0.0006726534349808229,
+   "share_of_all_mass": 0.0006139100250057738
+  },
+  "non-drivable edge": {
+   "share_of_seen_mass": 0.005874771045864139,
+   "share_of_all_mass": 0.005361790050479333
+  },
+  "hatched area": {
+   "share_of_seen_mass": 0.0006266273211955477,
+   "share_of_all_mass": 0.0005724497621246417
+  },
+  "sidewalk / verge": {
+   "share_of_seen_mass": 0.37140875680413343,
+   "share_of_all_mass": 0.33905076910275544
+  },
+  "not seen": {
+   "share_of_seen_mass": 0.0004786176086333765,
+   "share_of_all_mass": 0.08733528595088381
+  }
+ },
+ "per_clip_frac_seen": {
+  "n_clips": 135,
+  "min": 0.563913,
+  "p10": 0.8369654,
+  "p50": 0.943544,
+  "p90": 0.9554288,
+  "max": 0.968988,
+  "n_clips_below_0.10": 0
+ },
+ "wall_s": 226.4,
+ "bias_by_forward_range": {
+  "cell_m": 0.5,
+  "frac_seen_near_0_30m": 0.9733109903654785,
+  "frac_seen_far_30_60m": 0.8520260388396357,
+  "near_over_far": 1.142348879021373,
+  "rows_below_1pct_seen": 0,
+  "first_row_below_50pct": null
+ }
+}
+wrote D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-22-refcv6-review\raw\p3_map_seen_mask_census.json

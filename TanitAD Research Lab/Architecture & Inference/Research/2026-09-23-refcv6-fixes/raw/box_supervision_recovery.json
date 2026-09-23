@@ -1,0 +1,129 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "v7-B1 (physicalai-b1-w120-256x640cyl) -- NOT the parity line",
+ "join": "b1_train_plus_eval_agents.jsonl.xz",
+ "queries": 100,
+ "corpus": {
+  "n_frames": 875657,
+  "n_boxes": 28958699,
+  "n_in_field": 11639984,
+  "n_in_field_and_decode_box": 4741807,
+  "n_behind_ego": 14490476,
+  "frac_in_field": 0.4019512064405932,
+  "frac_in_field_and_decode_box": 0.16374378558926284,
+  "frac_behind_ego": 0.5003842196087608
+ },
+ "supervision": {
+  "A_slots_spent_before": 27350533,
+  "A_of_which_behind_the_ego": 13696011,
+  "A_frac_behind_the_ego": 0.5007584678514309,
+  "B_visible_supervised_before": 4665258,
+  "C_visible_supervised_after": 4741653,
+  "RECOVERED_C_minus_B": 76395,
+  "RECOVERED_frac_of_B": 0.01637530014417209,
+  "REMOVED_A_minus_B": 22685275,
+  "REMOVED_frac_of_A": 0.829427163265886,
+  "slots_spent_after": 4741653,
+  "_reading": "the fix REMOVES A-B supervision the camera cannot see and RECOVERS C-B in-field boxes the budget was throwing away; the two are different quantities and are never summed"
+ },
+ "per_class": {
+  "visible_supervised_before": {
+   "automobile": 3200014,
+   "heavy_truck": 63967,
+   "bus": 28407,
+   "other_vehicle": 8988,
+   "trailer": 40288,
+   "person": 1140653,
+   "rider": 138529,
+   "stroller": 11032,
+   "animal": 2479,
+   "protruding_object": 26281
+  },
+  "visible_supervised_after": {
+   "automobile": 3219249,
+   "heavy_truck": 64278,
+   "bus": 28692,
+   "other_vehicle": 8988,
+   "trailer": 40451,
+   "person": 1193476,
+   "rider": 141927,
+   "stroller": 11054,
+   "animal": 2479,
+   "protruding_object": 26366
+  },
+  "recovered": {
+   "automobile": 19235,
+   "heavy_truck": 311,
+   "bus": 285,
+   "other_vehicle": 0,
+   "trailer": 163,
+   "person": 52823,
+   "rider": 3398,
+   "stroller": 22,
+   "animal": 0,
+   "protruding_object": 85
+  },
+  "ratio_after_over_before": {
+   "automobile": 1.006,
+   "heavy_truck": 1.0049,
+   "bus": 1.01,
+   "other_vehicle": 1.0,
+   "trailer": 1.004,
+   "person": 1.0463,
+   "rider": 1.0245,
+   "stroller": 1.002,
+   "animal": 1.0,
+   "protruding_object": 1.0032
+  },
+  "removed_not_visible": {
+   "automobile": 17347671,
+   "heavy_truck": 467578,
+   "bus": 155208,
+   "other_vehicle": 68523,
+   "trailer": 235118,
+   "person": 3807773,
+   "rider": 460599,
+   "stroller": 25200,
+   "animal": 9301,
+   "protruding_object": 87441
+  },
+  "_out_of_vocabulary_seen": {
+   "train_or_tram_car": 20863
+  }
+ },
+ "controls": {
+  "EXACT_CODE_n_frames": 250,
+  "EXACT_CODE_n_agreeing": 250,
+  "EXACT_CODE_all_agree": true,
+  "ANALYTIC_frames_with_at_least_N_visible": 25,
+  "ANALYTIC_after_equals_N_on_all": true,
+  "IDENTITY_vs_p2_b1_join_filter_census": {
+   "n_boxes": true,
+   "n_in_field": true,
+   "n_in_field_and_box": true,
+   "n_behind_ego": true
+  },
+  "IDENTITY_all_agree": true,
+  "NULL_ARM_recovery_with_no_field_cut": 0,
+  "NULL_ARM_expectation": 0,
+  "NULL_ARM_passed": true
+ },
+ "reconciliation_with_p6_azimuth_only": {
+  "_why": "p6 reports 27.18 % destroyed by ordering, this pass reports +1.64 % recovered. Both are correct: p6's set is IN-FIELD (azimuth only) on OVER-BUDGET lines; ours is in-field AND inside the decode box -- what the head can express -- over the whole corpus. Most in-field boxes on a crowded frame are beyond 60 m, so the decode box removes them whether or not the budget does.",
+  "n_lines_over_budget": 45592,
+  "azimuth_only_available_if_filtered_first": 2300748,
+  "azimuth_only_kept_by_nearest_N_of_raw": 1675369,
+  "azimuth_only_lost_to_ordering": 625379,
+  "p6_reported": {
+   "n_infield_lost_to_ordering": 625379,
+   "n_infield_available_if_filtered_first": 2300748,
+   "n_lines_over_budget": 45592
+  },
+  "reproduces_p6": {
+   "n_lines_over_budget": true,
+   "available": true,
+   "lost": true
+  }
+ },
+ "wall_s": 133.5
+}

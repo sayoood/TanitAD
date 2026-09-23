@@ -15577,3 +15577,23 @@ pack declares release `v8`, 4,572 records, and is the newest that exists — it 
   **0 failed**.
 
 **Full suite at the tip of these changes:** see the landing commit (it is the gate).
+
+<!-- B1-416-CORPUS-COMPLETE-2026-09-23 -->
+
+### ⭐ 2026-09-23 — the refcv6 corpus at 416×1024 is BUILT, and the black strip IS the rig
+
+MEASURED on Thor (`TanitAD Research Lab/Data Engineering/Research/2026-09-23-b1-416x1024-cache/RESULT.md` §9).
+**4,713 / 4,713** episodes at `/home/nvidia/data/physicalai-b1-w120-416x1024cyl`, **393.0 GB**
+(83.38 MB/ep), built in **4.87 h** against SPEC §10.6's ~10.6 h estimate; geometry derived and
+bitwise-equal to the analytic `f_ref` (HFOV 120.0000°).
+
+⛔ **The black bottom strip is the RIG, not a nuisance.** Full-corpus census: **2,721 / 4,713 =
+57.73 %** carry 26–43 black rows, 1,992 carry none. The pilot showed perfect separation by
+principal point (rig A 0/2, rig B 8/8), so the strip is rig B's label painted into every rig-B
+frame — C26 in its purest form. Mitigated by `--equalize-bottom-rows 43` (`e152e40`).
+
+**The train view refcv6 trains on:** **4,369** clips = cache ∩ v8 train labels ∩ B1 train agent
+join ∩ validated SAM3 map, with **0 eval clips** by construction and each removal recorded.
+
+**Reviews and fixes banked in this commit:** the five 2026-09-22 review reports with their
+instruments and raw evidence, and both 2026-09-23 fix packages.

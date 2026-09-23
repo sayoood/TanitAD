@@ -1,0 +1,40 @@
+..................F.F.................s................................. [ 66%]
+....................................                                     [100%]
+================================== FAILURES ===================================
+___________ test_P2_knob_set_is_derived_from_the_parser_not_listed ____________
+
+    def test_P2_knob_set_is_derived_from_the_parser_not_listed():
+        p = t.build_parser()
+        dests = t.agent_knob_dests(p)
+        # \u26d4 same-breath control: the parser really did yield options (a zero-count
+        # "pass" from a broken read is indistinguishable from a genuine absence).
+        assert len(p._actions) > 40
+        assert len(dests) >= 15
+        for must in ("w_agent", "w_u0", "agent_w_project", "agent_w_ground",
+                     "agent_queries"):
+>           assert must in dests, must
+E           AssertionError: w_agent
+E           assert 'w_agent' in ('agent_cam_height', 'agent_cls_weight', 'agent_join', 'agent_join_allow_legacy_ids', 'agent_join_no_rates', 'agent_join_verify', ...)
+
+tests\test_refc_v3_agent_provenance.py:392: AssertionError
+_________ test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob _________
+
+    def test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob():
+        """\u26d4 DELIBERATE REGRESSION: a gate never shown to fail the defect
+        certifies nothing. Drop one knob from the stamp; the run must refuse."""
+        a = _args("--agents", "oracle", "--w-agent", "0.25")
+        cfg, a = _cfg_at(args=a)
+        stamp = t._seam_stamp(cfg, a)
+        t.assert_knobs_stamped(a, stamp)                          # green first
+        broken = dict(stamp)
+        broken["agent_knobs"] = {k: v for k, v in stamp["agent_knobs"].items()
+                                 if k != "w_agent"}
+>       with pytest.raises(SystemExit, match="do NOT reach config.json"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+tests\test_refc_v3_agent_provenance.py:573: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_refc_v3_agent_provenance.py::test_P2_knob_set_is_derived_from_the_parser_not_listed
+FAILED tests/test_refc_v3_agent_provenance.py::test_P2_assert_knobs_stamped_FAILS_a_stamp_that_lost_a_knob
+2 failed, 105 passed, 1 skipped in 7.03s

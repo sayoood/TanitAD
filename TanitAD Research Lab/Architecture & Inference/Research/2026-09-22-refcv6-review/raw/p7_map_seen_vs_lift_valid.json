@@ -1,0 +1,40 @@
+{
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + the code beside it)",
+ "_line": "eval-139 SAM3 GT x the refcv5-v2 141-clip extrinsics table",
+ "maps": "D:/Projects/TanitAD-artifacts/sam3-maps-eval",
+ "extrinsics": "D:/Projects/TanitAD-artifacts/refcv5v2_final/extrinsics141.json",
+ "frame_stride": 10,
+ "n_clips_scored": 135,
+ "n_clips_without_extrinsics": 0,
+ "n_frames": 2825,
+ "lift_valid_cells_per_clip": {
+  "mean_frac_of_7680": 0.8900250771604938,
+  "min": 0.8869791666666667,
+  "max": 0.8951822916666666
+ },
+ "map_supervision_vs_lift_validity": {
+  "n_seen_cells": 19647460,
+  "n_seen_AND_lift_valid": 17476890,
+  "n_seen_but_lift_INVALID": 2170570,
+  "frac_of_map_supervision_on_unprojectable_cells": 0.11047585794805029,
+  "per_clip_frac": {
+   "min": 0.061,
+   "p50": 0.1111,
+   "p90": 0.12120800000000001,
+   "max": 0.15506
+  }
+ },
+ "controls": {
+  "ANALYTIC_valid_cells_outside_60deg": 0,
+  "ANALYTIC_expectation": 0,
+  "ANALYTIC_passed": true,
+  "DISCRIMINATING_all_true_valid_would_lose": 0,
+  "DISCRIMINATING_all_false_valid_would_lose": 19647460,
+  "note": "the measured figure sits strictly between the two discriminating arms, so it is a property of the lift geometry and not of the arithmetic"
+ },
+ "fix_is_available_today": {
+  "where": "refcv6_perception_branch.LiftGeometryBank.geometry:271 already returns `valid [Z,X,Y]`; BEVLift.forward:262 already consumes it",
+  "what": "pass `seen & valid.any(dim=1)` to map_soft_ce instead of `seen`; n_map_cells already travels with the loss so the change is visible in the log row"
+ },
+ "wall_s": 4.7
+}
