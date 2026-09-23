@@ -1446,6 +1446,8 @@ def build_encoder(cfg: CNNEncoderConfig) -> nn.Module:
             fuse_identity_init=bool(getattr(cfg, "trunk_fuse_identity", True)),
             pretrained=bool(getattr(cfg, "trunk_pretrained", True)),
             imagenet_norm=bool(getattr(cfg, "trunk_imagenet_norm", True)),
+            equalize_bottom_rows=int(
+                getattr(cfg, "trunk_equalize_bottom_rows", 0) or 0),
             # ⛔ The memory levers travel with the config so they reach
             # `config.json`. A lever applied by a wrapper is a lever the run
             # cannot prove it used.
@@ -2545,6 +2547,9 @@ class AnchoredDiffusionDecoder(nn.Module):
         # noised anchor inside the 56.9 x 46 m window. It is applied ONLY on
         # the F8 arm, because on our control normalisation the same clamp would
         # bound (a_lon, a_lat) at +-4 / +-3 m/s^2, a different physical claim.
+        # ⭐ This one matches DD's TRAINING clamp (`:474`), which fires once
+        # after `add_noise` and before the single decoder call. The EVAL clamp
+        # is a different statement and lives at the top of the ladder below.
         if rv6.f8_flat_waypoint_noise:
             x_n = x_n.clamp(-1.0, 1.0)
         # ---- refcv6 F2: DD's step semantics -------------------------------- #
@@ -2557,6 +2562,20 @@ class AnchoredDiffusionDecoder(nn.Module):
         layer_u0: list[Tensor] = []
         layer_conf: list[Tensor] = []
         for i, (t, t_prev) in enumerate(pairs):
+            # ---- refcv6 F8: DD CLAMPS INSIDE THE LADDER -------------------- #
+            # ⛔⛔ THE CLAMP USED TO SIT ONLY ABOVE THIS LOOP. DD's test path
+            # re-clamps at the TOP OF EVERY ITERATION —
+            # `x_boxes = torch.clamp(img, min=-1, max=1)`
+            # (`transfuser_model_v2.py:519`) — and then denormalises the CLAMPED
+            # state. Ours denormalised whatever `sched.step` produced: MEASURED
+            # 2026-09-22 `|x_n|` reached 15.04 after one step, 15x outside DD's
+            # box, and pass 2 then fed an out-of-box sample to `dd_denorm_
+            # waypoints`. `clamp` is IDEMPOTENT, so iteration 0 is bit-identical
+            # to the pre-loop clamp and only iterations >= 1 change. F8 has
+            # never been run on any arm (`…/2026-09-22-refcv6-review` §1.1), so
+            # nothing banked is affected; the stamp records which semantics ran.
+            if rv6.f8_flat_waypoint_noise:
+                x_n = x_n.clamp(-1.0, 1.0)
             x_path = self._state_to_path(denorm(x_n), v, metre)
             tt = (train_t.to(torch.float32) if t is None else
                   torch.full((b,), float(t), device=dev, dtype=torch.float32))
@@ -2602,7 +2621,19 @@ class AnchoredDiffusionDecoder(nn.Module):
                 # legitimate arm -- but an arm that wants the sampler to reach
                 # SELECTION must run `--sel-refined`, and this key is how a
                 # reader tells which one they are looking at.
-                "sampler_ranks_the_fan": bool(self.sel.refined)}
+                # ⛔⛔ THIS KEY USED TO READ `bool(self.sel.refined)` ALONE AND
+                # WAS THEREFORE FALSE ON AN F5 ARM THAT DOES RANK THE FAN. The
+                # ranked surface is chosen by
+                # `base = refined if (sel.refined or rv6.f5_emitting_conf)
+                #         else conf`
+                # (one method down), so a stamp that omits the F5 term contradicts
+                # the line it claims to describe. MEASURED 2026-09-22: with
+                # `--f5-emitting-conf` the sampler perturbation moved `sel_score`
+                # by 0.609841 and `sel_idx` [0,0] -> [1,4] while this key still
+                # said `false`. Off F5 the value is unchanged, so every banked
+                # arm's telemetry is bit-identical.
+                "sampler_ranks_the_fan": bool(self.sel.refined
+                                              or rv6.f5_emitting_conf)}
         # ⛔ STAMPED ONLY WHEN AN F-FLAG IS ON. `tele` reaches `config.json`
         # and the `sel_tele` dump, and a key that appears on every run is a key
         # a reader stops reading. With all nine off the dict is the pre-refcv6
@@ -2763,6 +2794,63 @@ class AnchoredDiffusionDecoder(nn.Module):
                     "experiment. Build the anchors with controls "
                     "(`--anchor-file` from build_refc_anchors), or run "
                     "`sampler='none'`.")
+            # ⛔⛔ AND THE SAME REFUSAL, READ OFF THE TENSOR INSTEAD OF THE
+            # FLAG. The message above names `anchor_controls` of all zeros as
+            # the failure — and until 2026-09-23 NOTHING READ THAT TENSOR.
+            # MEASURED 2026-09-22 (`…/2026-09-22-refcv6-review` §6.1) with
+            # `anchor_v0_cond=True` and the buffer left at its registered
+            # zeros: the forward did NOT raise, F9 PASSED, and the rolled bank
+            # was exactly degenerate — `bank_max_spread_across_anchors_m
+            # 0.000000000`, every one of the N candidates the same straight
+            # line (control, with real controls: 7.106836 m). It is reachable
+            # from argv as `--sampler ddim --anchor-v0-conditioned` WITHOUT
+            # `--anchors`, where the trainer prints a warning and does not
+            # refuse. The literal `0.0` is the whole discriminator: a
+            # v0-conditioned bank whose controls sum to exactly zero cannot
+            # express anything but "do nothing".
+            # ⚠️ LATCHED, not re-read: `anchor_controls` is a BUFFER and is not
+            # trained, so one host sync per model settles it forever. A test
+            # that mutates the buffer afterwards must clear
+            # `_v0_controls_nonzero`.
+            if (not getattr(self, "_v0_controls_nonzero", False)
+                    and getattr(self, "anchor_controls", None) is not None):
+                if float(self.anchor_controls.abs().sum()) == 0.0:
+                    raise ValueError(
+                        "refcv5 WP-4 / refcv6 F9: the anchor vocabulary "
+                        "DECLARES `v0_conditioned=True` but `anchor_controls` "
+                        "is all zeros, so every one of the "
+                        f"{int(self.anchors.shape[0])} candidates rolls to the "
+                        "SAME straight line and the anchored Gaussian is "
+                        "centred on 'do nothing'. MEASURED spread across "
+                        "anchors: 0.000000000 m. This is the exact state the "
+                        "declaration-only refusal above was written for and "
+                        "could not see. Load a controls-carrying bank "
+                        "(`--anchors <anchor_artifact>.pt`) or run "
+                        "`sampler='none'`.")
+                self._v0_controls_nonzero = True
+            # ---- refcv6 F5 / D-SEL: is the RANKED surface the EMITTED fan? -- #
+            # ⛔ Opt-in, default OFF, so every banked arm is untouched. On a
+            # sampler build with neither `--sel-refined` nor `--f5-emitting-
+            # conf`, `base = conf` — the CLASSIFIER pass over the raw anchor
+            # bank. MEASURED 2026-09-22: perturbing ONLY the sampler moved
+            # `traj` 12.20 m and `sel_score` by EXACTLY 0.0, `sel_idx`
+            # unchanged. That is REFe's class-C defect — judging the proposal,
+            # not the path. It is a legitimate arm ("improve the geometry, keep
+            # the ranking"), which is why this refuses only when the operator
+            # asks it to.
+            if (self.rv6.f5_refuse_blind_rank
+                    and not (self.sel.refined
+                             or self.rv6.f5_emitting_conf)):
+                raise ValueError(
+                    "refcv6 F5 guard: `f5_refuse_blind_rank` is set and this "
+                    "sampler build would rank the fan with the CLASSIFIER "
+                    "surface, which never saw the sample. MEASURED: a "
+                    "sampler-only perturbation moves `traj` 12.20 m and "
+                    "`sel_score` exactly 0.000000. Pass `--f5-emitting-conf` "
+                    "(DD-faithful: `transfuser_model_v2.py:554-557` gathers "
+                    "`poses_reg` by the argmax of the SAME pass's "
+                    "`poses_cls`), or `--sel-refined`, or drop this guard and "
+                    "document the arm as anchor-bank-ranked.")
             # ---- refcv6 F7: the refusal, RETAINED but now conditional ----- #
             # ⭐ Two of the three named sites ARE widened (see
             # `refcv6_diffusion.F7_UNWIDENED_SITES`): the matched-anchor target
@@ -2794,9 +2882,19 @@ class AnchoredDiffusionDecoder(nn.Module):
                     "consumer reads it. Refusing rather than mis-indexing.")
         # ---- refcv6 F9: the vocabulary is a NO-CHANGE item, so assert it -- #
         if self.rv6.f9_assert_vocab:
+            # ⭐ THE TENSOR, NOT JUST THE DECLARATION. `assert_f9_vocabulary`
+            # had no tensor parameter at all until 2026-09-23, so it passed on
+            # the exactly-degenerate bank of §6.1. It is handed the controls
+            # ONLY on a sampler build, because "the anchored Gaussian would be
+            # centred on 'do nothing'" is a statement about the sampler; a
+            # classifier build with F9 on is unchanged, bit for bit.
             _rv6.assert_f9_vocabulary(int(self.anchors.shape[0]),
                                       bool(self.anchor_v0_cond),
-                                      int(self.rv6.f9_n_anchors))
+                                      int(self.rv6.f9_n_anchors),
+                                      anchor_controls=(
+                                          self.anchor_controls
+                                          if self.control_head is not None
+                                          else None))
         kv = self.feat_proj(fmap.flatten(2).transpose(1, 2))  # [B, P, d]
         cond = self.cond_proj(m)                              # [B, d]
         if self.ctx_to_cond is not None and ctx is not None:
@@ -2877,13 +2975,16 @@ class AnchoredDiffusionDecoder(nn.Module):
             else:                                 # nothing to save this batch
                 conf0, offset = self._decode(kv, cond, x0, 0,
                                              agent_tokens, agent_pad,
-                                             agent_pos)
+                                             agent_pos, bev)
                 pre_tele["prefilter_k"] = int(n)
                 pre_tele["prefilter_speedup"] = 1.0
         else:
+            # ⛔ `bev` (coupling (1)) was omitted here too — this is the DEFAULT
+            # classifier pass, so on every non-prefilter build the BEV read was
+            # dead. See the note at the `_sample` call below.
             conf0, offset = self._decode(kv, cond, x0, 0,
                                          agent_tokens, agent_pad,
-                                         agent_pos)   # classifier
+                                         agent_pos, bev)   # classifier
         x = self._feasible(bank + offset, v_ms)               # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
@@ -2963,7 +3064,12 @@ class AnchoredDiffusionDecoder(nn.Module):
             # removability proof, so it is REPORTED rather than silently fixed.
             # ⚠️ Inert for refcv5-v2 (`--sampler ddim` sets `_loop_steps = 0`),
             # LIVE for any classifier/refine arm.
-            r_conf, off = self._decode(kv, cond, x_in, t_idx)
+            # ⚠️ `bev=` ONLY. The agent asymmetry above is preserved exactly as
+            # documented; coupling (1) is a different seam and its address —
+            # `x_in` — moves on every pass of THIS loop too, which is the whole
+            # claim. Bitwise inert at HEAD: no shipped arm builds `bev_wp`, and
+            # the sampler's gate is zero-init even when one does.
+            r_conf, off = self._decode(kv, cond, x_in, t_idx, bev=bev)
             # EVERY pass that moves a waypoint, not just the classifier pass.
             x = self._feasible(x_in + off, v_ms)
             # The refined readout carries the SAME priors as the classifier
@@ -2994,9 +3100,20 @@ class AnchoredDiffusionDecoder(nn.Module):
             # `--sampler ddim --w-u0 0` STANDS until the PI rules on refcv6 arm
             # D. It simply must be argued on that basis rather than on a
             # gradient claim that measurement contradicts.
+            # ⛔⛔ `bev` IS THE NINTH ARGUMENT AND IT USED TO BE OMITTED. The
+            # call passed EIGHT positionals ending at `agent_pos`, so coupling
+            # (1) defaulted to None on the WHOLE diffusion path and
+            # `_decode_ctrl`'s correct-looking `bev` forward at `:2563` always
+            # forwarded None. MEASURED 2026-09-22 with a forward hook on
+            # `BEVWaypointSampler.forward`: 0 fires in the sampler and 0 in the
+            # classifier, with `bev` handed straight to `forward`. Pinned by
+            # `test_refcv6_diffusion.py::test_coupling1_REACHES_the_sampler…`,
+            # which counts module calls through the FORWARD rather than
+            # constructing the sampler standalone — the existing coupling-(1)
+            # tests all call `s(q, wp, bev)` directly and were green throughout.
             x, u0_hat, s_conf, smp_tele = self._sample(
                 kv, cond, bank, v_ms, steps, agent_tokens, agent_pad,
-                agent_pos)
+                agent_pos, bev)
             # Stage 0 applies to EVERY pass that moves a waypoint; a no-op
             # returning the same object when `feasible_decode` is off.
             x = self._feasible(x, v_ms)
@@ -3055,7 +3172,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                    if sel.score_emitted_t < 0
                    else min(sel.score_emitted_t, self.cfg.diffusion_steps))
             e_conf, _ = self._decode(kv, cond, x, t_e,
-                                     agent_tokens, agent_pad, agent_pos)
+                                     agent_tokens, agent_pad, agent_pos, bev)
             prefinal = refined
             refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
                                             "refined", 0)
@@ -3969,6 +4086,32 @@ class RefCModel(nn.Module):
             bev_tokens = perception_out.get("bev_tokens")
             if bev_pad is None:
                 bev_pad = perception_out.get("bev_pad")
+            # ---- refcv6 coupling (1): BREAK B, closed here ---------------- #
+            # ⛔⛔ THE SECOND OF THE THREE BREAKS the 2026-09-22 review named:
+            # `RefCModel.forward` DECLARED `bev` and forwarded it, and NO
+            # CALLER EVER SUPPLIED IT — `refc_v3.py`'s two `self.core(...)`
+            # calls pass `scene_hook` / `bev_hook` / `bev_tokens` and never
+            # `bev`. So even with the arity fixed, coupling (1) had no map.
+            # ⚠️ `bev_tokens` is NOT that map. It is the §4 TACTICAL seam, a
+            # `[B, T, d]` SEQUENCE (`refcv6_perception_branch.py:450`);
+            # coupling (1) reads a DENSE `[B, d_bev, X, Y]` grid at the
+            # candidate's own waypoints, which is `bev_feats`
+            # (`bev_encoder.py:263`). One branch, two tensors, two consumers.
+            # ⛔ SCOPED TO BUILDS THAT CARRY THE COUPLING, so a §4 tactical arm
+            # — which supplies the hook and has no `bev_wp` — is untouched, and
+            # `bev` stays `None` there exactly as before.
+            if int(getattr(self.decoder, "bev_coupling_params",
+                           lambda: 0)()) > 0:
+                if bev is not None and "bev_feats" in perception_out:
+                    raise ValueError(
+                        "refcv6 coupling (1): BOTH an explicit `bev=` and a "
+                        "`bev_hook` producing `bev_feats` reached this "
+                        "forward. Two suppliers for one tensor is how a "
+                        "caller silently trains on the one it did not mean — "
+                        "the hook's map carries the trunk's graph and an "
+                        "explicit tensor usually does not. Pass exactly one.")
+                if bev is None:
+                    bev = perception_out.get("bev_feats")
 
         # REF-C v3 hierarchy hook (gated by the ARGUMENT, not by a config flag:
         # with hook=None this block is untouched dead code and the forward is
@@ -4267,6 +4410,25 @@ class RefCModel(nn.Module):
             ch = ego_channels_from_poses(ego_poses, n_past,
                                          dt=float(self.ego_hist.cfg.dt))
             ego_vec = self.ego_hist(ch)
+        # ⛔⛔ THE GUARD THAT MAKES THE WHOLE FIX SELF-ENFORCING: a coupling
+        # that is BUILT, counted in `param_breakdown`, stamped into
+        # `config.json` by `bev_coupling_provenance()` and then handed NO MAP
+        # is precisely the state the 2026-09-22 review MEASURED (0 forward-hook
+        # fires) — and it is indistinguishable, from the outside, from a
+        # coupling that helps nothing. Refuse it here, before the compute,
+        # rather than let another arm report "the BEV coupling does not help"
+        # while never having had a BEV map.
+        if bev is None and int(getattr(self.decoder, "bev_coupling_params",
+                                       lambda: 0)()) > 0:
+            raise ValueError(
+                "refcv6 coupling (1): the BEV waypoint sampler is BUILT "
+                f"({int(self.decoder.bev_coupling_params())} params over "
+                f"{len(self.decoder.layers)} layers) but no BEV map reached "
+                "this forward — `bev=` is None and no `bev_hook` supplied "
+                "`bev_feats`. Every candidate would be scored without the map "
+                "the arm claims to read, and the result would read as 'the "
+                "coupling does not help'. Pass `bev=` a [B, d_bev, X, Y] map, "
+                "or build without `decoder.bev_coupling`.")
         dec = self.decoder(fmap, m, ctx=ctx_dec, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,

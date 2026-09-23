@@ -181,6 +181,16 @@ def _build_and_backward(extra_argv: list[str] | None = None, *, corrupt=None):
     model._tac_goal_pos_weight = None
     model._tac_goal_class_mask = None
     model.train()
+    # ⚠️ 2026-09-23: `LIVE_ARGV` declares `--anchor-v0-conditioned` over the smoke
+    # config's registered ZERO `anchor_controls`, i.e. an EXACTLY degenerate bank -- every
+    # candidate the same straight line, spread 0.000000000 m. The decoder now refuses that
+    # state on the TENSOR (`refc.py`, the 2026-09-22 review's F9 finding), so this fixture
+    # carries a real control ladder -- the same one `test_refc_sampler.py` adopted.
+    _ac = model.core.decoder.anchor_controls
+    _n = int(_ac.shape[0])
+    with torch.no_grad():
+        _ac.copy_(torch.stack([torch.linspace(-2.0, 2.0, _n),
+                               torch.linspace(-1.5, 1.5, _n)], dim=-1).to(_ac.dtype))
 
     eps = T._synth_episodes(2, cfg.core, seed=0)
     ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20,

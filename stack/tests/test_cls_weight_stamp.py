@@ -407,10 +407,30 @@ def test_train2400_stamps_all_ten_values_and_a_null_built():
     import argparse
     sys.path.insert(0, str(REPO / "stack" / "scripts"))
     import refc_v3_train as T  # noqa: E402
-    blk = T._cls_weight_stamp(argparse.Namespace(agent_cls_weight="train2400"))
+    # ⛔ `box3d_visible_filter=False` IS LOAD-BEARING HERE. `train2400` is the PARITY
+    # vector and was counted on the RAW join only; since 2026-09-23 the box loss filters
+    # by default, and a filtered loss under a raw-counted vector REFUSES (next test). The
+    # stamp's SHAPE is what this test is about, so it takes the path that vector supports.
+    blk = T._cls_weight_stamp(argparse.Namespace(agent_cls_weight="train2400",
+                                                 box3d_visible_filter=False))
     assert blk["requested"] == "train2400"
     assert blk["built"] is None, "the stamp builder runs before the model exists"
     assert set(blk["weights"]) == set(A.AGENT_CLASSES)
     assert len(blk["weights"]) == EXPECT_N_CLASSES
     assert blk["digest"] == EXPECT_DIGEST
     assert blk["out_of_vocabulary"]["train_or_tram_car"] == 10077
+
+
+def test_a_raw_counted_vector_is_REFUSED_under_the_default_visibility_filter():
+    """⛔ THE OTHER HALF, and the one the old version of the test above hid.
+
+    Since 2026-09-23 the refcv6 box loss filters to in-field, in-decode-box targets by
+    DEFAULT (MEASURED: 50.038 % of raw B1 targets sit behind the ego). The parity vector
+    was counted on the RAW join, and the per-class frequencies move by up to 1.746x under
+    the filter -- so pairing them is a scope error, and it must be REFUSED rather than run."""
+    import argparse
+    sys.path.insert(0, str(REPO / "stack" / "scripts"))
+    import refc_v3_train as T  # noqa: E402
+    with pytest.raises(SystemExit) as e:
+        T._cls_weight_stamp(argparse.Namespace(agent_cls_weight="train2400"))
+    assert "visibility filter" in str(e.value) or "population" in str(e.value)

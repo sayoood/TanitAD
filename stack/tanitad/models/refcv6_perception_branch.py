@@ -67,7 +67,8 @@ from tanitad.models.trunk_shapes import (PERCEPTION_STRIDE,
                                          frame_for_width)
 
 __all__ = ["PerceptionBranchConfig", "LiftGeometryBank", "PerceptionBranch",
-           "build_perception_branch", "grad_reach_report", "FORWARD_EXCLUSIONS"]
+           "build_perception_branch", "grad_reach_report", "FORWARD_EXCLUSIONS",
+           "map_valid_from_lift", "map_loss_row", "box3d_loss_row"]
 
 
 # --------------------------------------------------------------------------- #
@@ -230,12 +231,22 @@ class LiftGeometryBank:
     """
 
     def __init__(self, extr_by_clip: dict, *, frame, stride: int,
-                 heights_m=HEIGHTS_M, grid: BEVGrid = GRID_DEFAULT):
+                 heights_m=HEIGHTS_M, grid: BEVGrid = GRID_DEFAULT,
+                 equalize_bottom_rows: int = 0):
         from tanitad.data.v2_dataset import stable_episode_id
         self.frame = frame
         self.stride = int(stride)
         self.heights_m = tuple(float(h) for h in heights_m)
         self.grid_spec = grid
+        # ⛔ C26: rows the TRUNK zeroes must be rows the LIFT treats as UNOBSERVED.
+        # The lift's `observed` mask existed and was never passed (2026-09-22 review);
+        # without it a zeroed row reads as observed black road.
+        self.equalize_bottom_rows = int(equalize_bottom_rows or 0)
+        self._observed = None
+        if self.equalize_bottom_rows > 0:
+            _o = torch.ones(int(frame.height), int(frame.width), dtype=torch.bool)
+            _o[-self.equalize_bottom_rows:, :] = False
+            self._observed = _o
         self._extr: dict[int, object] = {}
         self.clip_of: dict[int, str] = {}
         for cid, e in extr_by_clip.items():
@@ -269,7 +280,8 @@ class LiftGeometryBank:
                 f"road plane in the wrong place. Pass an extrinsics table that "
                 f"covers every clip in the cache.")
         g = build_lift_geometry(e, frame=self.frame, stride=self.stride,
-                                heights_m=self.heights_m, grid=self.grid_spec)
+                                heights_m=self.heights_m, grid=self.grid_spec,
+                                observed=self._observed)
         hit = (g.grid, g.valid)
         self._cache[k] = hit
         return hit
@@ -432,6 +444,15 @@ class PerceptionBranch(nn.Module):
             out["bev"] = bev
             out["bev_feats"] = bev_feats
             out["map_logits"] = mb["map_logits"]
+            # ⭐ THE FIX'S INPUT, EMITTED RATHER THAN RE-DERIVED. The map loss needs
+            # "which cells did the camera reach at THIS instant", and the lift already
+            # knows -- it is the same `valid.any(dim=1)` it uses to decide where to
+            # substitute its `unobserved` embedding. Emitting it costs one reduction and
+            # no parameter; re-deriving it at the loss site would be a second spelling of
+            # a projection test, which is how two masks drift apart.
+            # ⚠️ ADDITIVE KEY ONLY: nothing here changes what an existing arm computes.
+            # The behaviour change is at the LOSS, where the caller chooses to pass it.
+            out["map_valid"] = map_valid_from_lift(valid)
             # ⭐⭐ PI RULING 2026-09-17 R2/R3. The tactical behaviour decoder's
             # keys and values are "the scene embeddings, for the agent AND THE
             # MAP". This is the map half, and it is emitted ATTACHED: R3
@@ -476,7 +497,21 @@ def frame_for_model(model):
 # --------------------------------------------------------------------------- #
 # the losses -- thin, so the arithmetic stays in the tested modules            #
 # --------------------------------------------------------------------------- #
+def map_valid_from_lift(valid: Tensor) -> Tensor:
+    """``valid [B,Z,X,Y]`` -> ``[B,X,Y]`` bool: the cells the camera actually reaches.
+
+    ⭐ **EXACTLY the predicate** :class:`BEVLift` already uses to decide which cells get
+    its ``unobserved`` embedding (``bev_lift.py:262``: ``~valid.any(dim=1)``), spelled
+    once so the loss's mask and the feature's substitution cannot drift apart.
+    """
+    if valid.dim() != 4:
+        raise ValueError(f"[perception] lift `valid` must be [B,Z,X,Y], got "
+                         f"{tuple(valid.shape)}")
+    return valid.any(dim=1)
+
+
 def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
+                 lift_valid: Tensor | None = None,
                  with_metrics: bool = False) -> dict:
     """:func:`map_soft_ce` plus the per-head COUNT the log row must carry.
 
@@ -484,11 +519,52 @@ def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
     a map loss of 0.0 on 200,000 cells are opposite findings, and without the
     count the log cannot tell them apart -- the ``tac_goal_n_supervised``
     precedent, one head over.
+
+    ⛔⛔ ``lift_valid`` ``[B,X,Y]`` NARROWS ``seen`` TO WHAT THE CAMERA REACHES AT THIS
+    INSTANT, AND PASSING IT IS A BEHAVIOUR CHANGE -- stated, not discovered later.
+    The SAM3 ``seen`` mask is a **clip-lifetime** mask: the label artifact declares
+    itself ``non_causal`` on **135 of 135** files (*"labels use every frame of the
+    clip"*), which is legal for a LABEL under the PI's 2026-08-03 ruling and wrong as
+    the supervision mask of a vision-only head. MEASURED 2026-09-22
+    (``…/2026-09-22-refcv6-review/raw/p4_map_gt_noncausal.json``): of the **590** cells
+    per frame that lie outside the rig's +-60 deg at EVERY instant -- an analytic count
+    that the census reproduced exactly -- **90.088 % are labelled ``seen``**, against
+    90.597 % of the in-field cells. The mask does not separate them at all.
+
+    Against the mask this pipeline ALREADY COMPUTES (``raw/p7_map_seen_vs_lift_valid.json``,
+    135 clips, real per-clip extrinsics): **2,170,570 of 19,647,460 supervised cells =
+    11.048 %** are cells :meth:`bev_lift.BEVLift.forward` has already zeroed and replaced
+    with a learned ``unobserved`` constant. The loss then asks the head to name a class
+    from a constant. ⚠️ 11.048 % is a **LOWER** bound: it prices geometry only (azimuth,
+    elevation, range), never inter-agent or hood occlusion.
+
+    ⛔ ``map_metrics`` is narrowed by the SAME mask when it is passed. A loss scored on
+    one cell set and an IoU on another is two rules, and the IoU is the number a
+    collision gate would read.
     """
-    r = map_soft_ce(logits, frac, seen)
-    row = {"loss": r["loss"], "n_map_cells": float(r["n_cells"])}
+    m_seen = seen
+    n_prefilter = int(seen.sum())
+    if lift_valid is not None:
+        if tuple(lift_valid.shape) != tuple(seen.shape):
+            raise ValueError(
+                f"[perception] lift_valid {tuple(lift_valid.shape)} must match seen "
+                f"{tuple(seen.shape)} -- [B, X, Y] on the BEV grid. Reduce the lift's "
+                f"[B,Z,X,Y] over heights with map_valid_from_lift first.")
+        if lift_valid.dtype != torch.bool:
+            raise ValueError(
+                f"[perception] lift_valid must be bool, got {lift_valid.dtype} -- the "
+                f"same rule map_soft_ce's `seen` carries: a float mask would weight "
+                f"cells instead of selecting them")
+        m_seen = seen & lift_valid.to(seen.device)
+    r = map_soft_ce(logits, frac, m_seen)
+    row = {"loss": r["loss"], "n_map_cells": float(r["n_cells"]),
+           # ⭐ BOTH counts, always. `n_map_cells_seen` - `n_map_cells` IS the
+           # supervision the geometric mask removed, on this batch, in the log row --
+           # so an arm that claims the fix can be told from one that only stamped it.
+           "n_map_cells_seen": float(n_prefilter),
+           "n_map_cells_unobserved": float(n_prefilter - int(r["n_cells"]))}
     if with_metrics:
-        m = map_metrics(logits.detach(), frac, seen)
+        m = map_metrics(logits.detach(), frac, m_seen)
         row["map_acc"] = float(m["acc"])
         for i, c in enumerate(m["classes"]):
             v = float(m["iou"][i])
@@ -498,15 +574,25 @@ def map_loss_row(logits: Tensor, frac: Tensor, seen: Tensor, *,
 
 
 def box3d_loss_row(slots: dict, tgt: dict, *, weights: dict | None = None,
-                   cls_class_weight=None) -> dict:
-    """:func:`box3d_set_loss` plus per-term counts, flattened for the log row."""
-    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight)
+                   cls_class_weight=None, visible_filter: bool = True) -> dict:
+    """:func:`box3d_set_loss` plus per-term counts, flattened for the log row.
+
+    ``visible_filter`` is forwarded verbatim; see :func:`box3d_set_loss` for what it
+    does, what it measured, and why it defaults ON as of 2026-09-23.
+    """
+    r = box3d_set_loss(slots, tgt, weights=weights, cls_class_weight=cls_class_weight,
+                       visible_filter=visible_filter)
     row = {"loss": r["total"]}
     for k, v in r.items():
         if k.startswith("loss_") and torch.is_tensor(v):
             row[f"box3d_{k[5:]}"] = v
     for k, v in (r.get("n") or {}).items():
         row[f"box3d_n_{k}"] = float(v)
+    # ⭐ THE ARM, IN THE LOG ROW. `metrics.jsonl` is what a reader opening a finished run
+    # in isolation gets, and a `box3d_n_dropped_not_visible` of 0 means two opposite
+    # things -- "the filter is off" and "every box was already visible" -- unless the
+    # flag travels beside it. The `anchors.pt` units lesson, in a boolean costume.
+    row["box3d_visible_filter"] = 1.0 if visible_filter else 0.0
     return row
 
 

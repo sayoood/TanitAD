@@ -152,7 +152,8 @@ __all__ = [
     "PARAM_BAND", "N_QUERIES_DEFAULT", "MATCH_COST_W", "SLOT_LOSS_W",
     "NO_OBJECT_W", "AgentSlotDecoder", "hungarian", "match_slots",
     "slot_set_loss", "targets_from_join", "track_rates_from_join",
-    "SlotDecodeRanges",
+    "SlotDecodeRanges", "TARGET_POPULATION_RAW", "TARGET_POPULATION_VISIBLE",
+    "JOIN_CORPUS_LINES", "corpus_line_for_join",
 ]
 
 #: The class vocabulary — IMPORTED from the label side, never re-listed.
@@ -276,6 +277,75 @@ CLS_WEIGHTS_B1 = "agent_cls_weights_b1.json"
 CORPUS_LINE_PARITY = "parity-physicalai-train-e438721ae894"
 CORPUS_LINE_B1 = "v7-b1-physicalai-b1-w120-256x640cyl"
 
+#: ⛔⛔ THE SECOND SCOPE A FREQUENCY VECTOR CARRIES, AND THE ONE THAT HAS NO NAME YET.
+#: :data:`CORPUS_LINE_B1` answers *"counted on WHICH CORPUS?"*. This answers *"counted
+#: over WHICH BOXES OF IT?"* — and the two are independent. MEASURED 2026-09-22
+#: (`…/2026-09-22-refcv6-review/raw/p6_query_budget_bias.json`) on the v7-B1 line: adding
+#: :func:`refc_agents.visible_target_filter` to the loss changes the frequencies the `cls`
+#: term actually meets by **1.746x** (`other_vehicle`), **1.729x** (`heavy_truck`) and
+#: **0.663x** (`stroller`) — **2.63x end to end** — because 83.626 % of the raw join lies
+#: outside the decode box and the survivors are not a uniform sample of it.
+#: ⇒ **A filtered loss running the raw vector is a NEW scope error**, and it is exactly
+#: the `anchors.pt` units defect in a frequency costume: a correct number applied outside
+#: the population it was counted on. The vector and the filter must move together, so the
+#: population is DECLARED in the artifact and CHECKED on load, never inferred.
+TARGET_POPULATION_RAW = "raw_join"
+TARGET_POPULATION_VISIBLE = "in_field_and_decode_box"
+
+#: ``(weights key, digest key, counts key)`` per population. ⛔ ONE artifact carries BOTH
+#: vectors, deliberately: two FILES selected by one flag is the very defect
+#: `raw/p5_cls_weight_guard.json` measured -- the expectation and the file would again come
+#: from the same key, and the guard could not go red on the operator error it names.
+_CLS_WEIGHT_KEYS_RAW = ("weights_inv_freq_mean1",
+                        "_self_digest_sha256_of_weights", "counts")
+_CLS_WEIGHT_KEYS_VISIBLE = ("weights_inv_freq_mean1_visible",
+                            "_self_digest_sha256_of_weights_visible", "counts_visible")
+
+#: Join artifact -> the corpus line it IS. ⛔ This exists so the expected line can be
+#: derived from **the arm** (which join it actually trains on) instead of from the same
+#: key that picks the weight file. MEASURED 2026-09-22 (`raw/p5_cls_weight_guard.json`):
+#: with both sides selected by one key the guard **cannot go red on the operator error it
+#: names** — `train2400` artifact + `train2400` expectation LOADS on a B1 arm, because the
+#: arm's actual corpus was never an input. Two independent sources is the whole fix.
+JOIN_CORPUS_LINES: dict[str, str] = {
+    "b1_train_plus_eval_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1train_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1eval_agents.jsonl.xz": CORPUS_LINE_B1,
+    "b1eval_agents_3d.jsonl.xz": CORPUS_LINE_B1,
+    "train2400_agents.jsonl.xz": CORPUS_LINE_PARITY,
+    "val40_agents.jsonl.xz": CORPUS_LINE_PARITY,
+}
+
+
+def corpus_line_for_join(join_path, *, strict: bool = False) -> str | None:
+    """The corpus line a join file IS, from the ARM rather than from the weight key.
+
+    ⭐ Two independent sources are the point. ``CLS_WEIGHT_CHOICES`` states which line a
+    weight artifact *claims*; this states which line the arm *trains*. A guard fed both
+    can refuse the mismatch; a guard fed one key twice agrees with itself forever.
+
+    ⚠️ Returns ``None`` (or raises with ``strict=True``) for a join this table does not
+    name — **never a guess**. An unknown join is a case for the operator to state the line
+    explicitly and have that stated-by-the-operator provenance land in ``config.json``,
+    which is the `--anchor-control-units` precedent verbatim.
+    """
+    import pathlib as _pathlib
+    if join_path is None:
+        if strict:
+            raise SystemExit(
+                "[agent-slots] ⛔ corpus_line_for_join: no join path. The expected corpus "
+                "line must come from the arm, not from the flag that picks the vector.")
+        return None
+    base = _pathlib.Path(str(join_path)).name
+    hit = JOIN_CORPUS_LINES.get(base)
+    if hit is None and strict:
+        raise SystemExit(
+            f"[agent-slots] ⛔ corpus_line_for_join: {base!r} is not a join this table "
+            f"names, so the arm's corpus line cannot be DERIVED. State it explicitly "
+            f"(and it will be recorded as operator-supplied) rather than letting the "
+            f"weight key answer a question about the arm.")
+    return hit
+
 
 def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
     """A STATED, reproducible digest of a class-weight vector: 16 hex chars.
@@ -307,8 +377,16 @@ def cls_weight_digest(vec, classes: tuple[str, ...] = AGENT_CLASSES) -> str:
 
 def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
                           classes: tuple[str, ...] = AGENT_CLASSES,
-                          *, expect_corpus_line: str | None = None):
+                          *, expect_corpus_line: str | None = None,
+                          target_population: str | None = None):
     """-> (weight tensor [C], stamp dict). Reads the banked vector; computes nothing.
+
+    ``target_population`` selects WHICH counted population the vector must be over:
+    :data:`TARGET_POPULATION_RAW` (the default, and what every pre-2026-09-23 arm ran) or
+    :data:`TARGET_POPULATION_VISIBLE`. ⛔ It is the arm's ACTUAL box-loss filter state, not
+    a second name for the file — passing the visible population selects a different vector
+    from the same artifact, so a filtered loss cannot silently run the raw frequencies.
+    An artifact that carries no vector for the requested population is REFUSED.
 
     ⛔ REFUSES rather than guesses. A class in :data:`AGENT_CLASSES` that the artifact does not
     name would otherwise silently take an implicit weight, and the arm would be running a vector
@@ -341,7 +419,36 @@ def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
             f"[agent-slots] ⛔ {name} was counted on corpus line {_line!r} but this arm trains "
             f"on {expect_corpus_line!r}. MEASURED 2026-09-22: the parity and v7-B1 lines share "
             f"only 4.09 % of their clips, so the vectors are not interchangeable.")
-    w = art.get("weights_inv_freq_mean1") or {}
+    # ⛔ AND SO IS THE TARGET POPULATION. The corpus line says WHICH CLIPS were counted;
+    # this says WHICH BOXES OF THEM. MEASURED 2026-09-22: the two populations' vectors
+    # differ by 2.63x end to end on the same corpus, so a file that names only the corpus
+    # is under-scoped for an arm that filters. Absent == RAW, which is what every arm
+    # before 2026-09-23 ran and is therefore the only safe default.
+    _pop = str(target_population or TARGET_POPULATION_RAW)
+    _art_pop = str(art.get("target_population") or TARGET_POPULATION_RAW)
+    if _pop == TARGET_POPULATION_RAW:
+        _wkey, _dkey, _ckey = _CLS_WEIGHT_KEYS_RAW
+        if _art_pop != TARGET_POPULATION_RAW:
+            raise SystemExit(
+                f"[agent-slots] ⛔ {name}'s primary vector is counted over "
+                f"{_art_pop!r} but this arm's box loss is unfiltered "
+                f"({TARGET_POPULATION_RAW!r}).")
+    elif _pop == TARGET_POPULATION_VISIBLE:
+        _wkey, _dkey, _ckey = _CLS_WEIGHT_KEYS_VISIBLE
+        if not art.get(_wkey):
+            raise SystemExit(
+                f"[agent-slots] ⛔ this arm applies the visibility filter to the box loss "
+                f"({TARGET_POPULATION_VISIBLE!r}) but {name} carries no vector counted on "
+                f"that population -- only the raw-join one. MEASURED 2026-09-22: the two "
+                f"differ by up to 1.746x per class and 2.63x end to end, so running the "
+                f"raw vector under a filtered loss swaps one scope error for another. "
+                f"Recount with stack/scripts/build_cls_weight_artifact.py --visible, or "
+                f"turn the filter off by name.")
+    else:
+        raise SystemExit(
+            f"[agent-slots] ⛔ unknown target_population {target_population!r}; expected "
+            f"{TARGET_POPULATION_RAW!r} or {TARGET_POPULATION_VISIBLE!r}.")
+    w = art.get(_wkey) or {}
     missing = [c for c in classes if c not in w]
     if missing:
         raise SystemExit(f"[agent-slots] ⛔ the class-weight artifact {name} does not name "
@@ -353,16 +460,23 @@ def load_cls_class_weight(name: str = CLS_WEIGHTS_TRAIN2400,
     # Before `cls_weight_digest` existed this field was unreproducible by any code and could not
     # have caught an edited or permuted vector -- see that function's docstring.
     _dig = cls_weight_digest(vec, classes)
-    _stated = art.get("_self_digest_sha256_of_weights")
+    _stated = art.get(_dkey)
     if _stated != _dig:
         raise SystemExit(f"[agent-slots] ⛔ class-weight artifact {name} states digest "
                          f"{_stated!r} but its own weights digest to {_dig!r}. The vector and its "
                          f"attestation disagree; refusing rather than training an edited vector.")
+    _counts = art.get(_ckey)
+    _imb = (art.get("imbalance_majority_to_rarest") if _pop == TARGET_POPULATION_RAW
+            else art.get("imbalance_majority_to_rarest_visible"))
     stamp = {"source": name, "corpus_line": str(_line),
+             # ⛔ IN THE STAMP, so `config.json` states the population the arm trained at.
+             # A weight vector without its population is the `anchors.pt` file without its
+             # units: a reader opening the record in isolation cannot tell which one ran.
+             "target_population": _pop,
              "normalisation": art.get("_normalisation"),
              "weights": {c: float(w[c]) for c in classes},
-             "counts": art.get("counts"),
-             "imbalance_majority_to_rarest": art.get("imbalance_majority_to_rarest"),
+             "counts": _counts,
+             "imbalance_majority_to_rarest": _imb,
              "digest": _dig,
              "out_of_vocabulary": art.get("_out_of_vocabulary"),
              "provenance": art.get("_source")}

@@ -15508,3 +15508,72 @@ pipeline validation on the 139 eval clips *"before any pod hour is spent"*, and 
 artifacts are now proven to join. What gates an actual run remains the PI's: the go-ahead (the
 2026-09-11 stop on launching stands — see `PI_DECISION_QUEUE.md`'s 2026-09-22 reconciliation) and
 the 4,713-clip corpus cache.
+
+<!-- REFCV6-REVIEW-FIXES-2026-09-23 -->
+
+### ⭐⭐ 2026-09-23 — refcv6: five independent reviews, every launch-blocking finding FIXED and MUTATION-PROVEN, and the eval split protected
+
+MEASURED, CPU (dev box) + Thor. Reviews: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-22-refcv6-review/`
+(`TRUNK_INPUT_REVIEW.md`, `DIFFUSION_PAPER_REVIEW.md`, `TACTICAL_NAV_HIERARCHY_REVIEW.md`,
+`PERCEPTION_DATA_REVIEW.md`, `TRAINING_GUARDS_REVIEW.md`). Fixes: `.../2026-09-23-refcv6-fixes/`.
+
+**THE PI'S ORDER, 2026-09-23:** *"Fix all findings and evaluate them"*, then *"iterate with review
+and fix until no issues are found, then start the training of refcv6"* — newest corpus, correct
+tactical labels, nav + ego as input, the right resolution, SAM3 maps + dataset agents as
+supervision, end-to-end, the DiffusionDrive planner.
+
+#### What was wrong, and is now fixed — each with a test whose expectation is a LITERAL and a mutation that goes RED
+
+| finding (review) | measured before | fix | mutation proof |
+|---|---|---|---|
+| **DiffusionDrive coupling (1) built and never called** (diffusion) | BEV-sampler forward hook fired **0** times; `bev` was the 9th arg and the call passed 8 | wired at all 7 call sites; trainer route + `--bev-coupling`; **0 → 6** fires | diffusion stream M1/M2/M10/M11 RED |
+| **selector blind to the emitted trajectory** (diffusion) | sampler-only perturbation: `traj` 12.20 m, `sel_score` **exactly 0.0** | every refcv6 arm carries `--f5-emitting-conf` (DD ranks the emitted path) | M3/M4/M9 RED |
+| **F9 guard read the declaration, not the tensor** (diffusion) | all-zero controls passed; bank spread **0.000000000 m** | guard reads `anchor_controls` | M5/M5b/M6 RED |
+| **route loss trained the trunk under `--no-strategic`** (tactical) | route CE reached **28 / 60** trunk tensors | gated on the bypass, `route_loss_applied` stamped | **3/3** incl. a control-of-the-control |
+| **encoder lr x0.5 destroyed every step** (training) | ratio **1.0000** at all six sampled steps; `initial_lr` occurred 0 times | `apply_lr_schedule` scales each group from its own `initial_lr`; ratio **0.500000** at all six | **3/3** |
+| **box loss had NO visibility filter** (perception) | **50.038 %** of B1 targets behind the ego; **50.076 %** of query slots spent there | filter before the budget, default ON | perception M1/M2/M3 RED |
+| **map `seen` was clip-lifetime** (perception) | **11.048 %** of map supervision on cells the lift zeroed | narrowed by the lift's own `valid` | M4/M5 RED |
+| **cls-weight guard could not catch the operator error** (perception) | parity vector loaded on a B1 arm with no refusal | line derived from the ARM's join; population follows the filter | M6/M7 RED |
+| **no eval exclusion on the `--v2-cache` path** (found while building the launch) | the 416 corpus cache holds **141 eval clips**; the loader takes every file | `refuse_eval_clips_in_train` + a train-only view | **4/4** |
+| **rig-correlated black strip (C26)** (trunk) | **2,721 / 4,713 = 57.73 %** of clips carry 26–43 black rows; 0.899 decodable on eval-139 | `--equalize-bottom-rows 43` at the trunk AND the lift marks those rows unobserved | **5/5** |
+| **optimizer recipe never checked on the running object** (training) | the multiplier was destroyed while `config.json` stamped it | `assert_optimizer_matches_recipe` at startup, after one schedule step | refuses on the reintroduced defect |
+
+⭐ **Two findings the reviews flagged were NOT defects in this arm, and are stated so rather than
+"fixed":** the strategic heads being BUILT (`BYPASS, never delete` is the file's design — what
+mattered was the route LOSS reaching the trunk, now gated); and v8.0 vs v8.1 labels (the HF v8
+pack declares release `v8`, 4,572 records, and is the newest that exists — it is what the arm uses).
+
+#### ⛔ Deliberately DEFERRED, each with its reason — none affects the arm being launched
+
+* **`assert_knobs_stamped` is `f(x) == f(x)`** and **zeroing every lr passes 176 tests** (training
+  review F-4/F-5). Defense-in-depth for FUTURE regressions; this launch is protected by
+  `assert_optimizer_matches_recipe` and the encoder-lr test, which measure the running object.
+* **grad clip 100 reached 2 of 4 sites** (F-2): the unreached sites are the GRPO / RL-pilot
+  scripts. This is an IL launch; the RL arms are not run.
+* **`frame_for_model` mis-derives `f_ref` for the rig-clean frames** (trunk #2): latent — no
+  refcv6 arm uses those frames, and equalization keeps the 416×1024 geometry.
+* **`fuse_identity_init` is not bit-identical in TRAIN mode** (trunk #3): it breaks the K=1 vs
+  K=3 IDENTITY claim at init, not training correctness; recorded for the K-ablation arm.
+
+#### Process failures of the night, stated because they will recur
+
+* ⛔ **A killed mutation harness leaves its arm APPLIED.** The session process died while
+  `mutate_encoder_lr.py` had arm L2 in place; its restore lives in `finally:`, which does not run
+  on a kill. `refc_v3_train.py` was left with `if False:` where the `initial_lr` latch belongs —
+  the harness had re-injected the defect it was proving. Caught only because a baseline read RED.
+  ⇒ `qland/scan_mutation_residue.py` now scans every harness's targets for an unrestored arm
+  (7 harnesses, 32 arms, with a self-test that proves it fires); **run it after any interruption.**
+* ⛔ **An agent's patch is not a verified patch.** I applied a sibling's `config.json` hunk by its
+  fallback note, which said `core.decoder` at that site "is the same object" as the module. It
+  was a `DecoderConfig`, and the call broke every config stamp (`AttributeError` across 6+ test
+  files). Rebuilt on the file's own three-fact idiom (intent at `_seam_stamp`, fact at `train`,
+  bidirectional check in `assert_seams_are_built`).
+* ⛔ **A test that transcribes the code it guards cannot fail when that code regresses.** Twice
+  tonight (encoder lr, eval exclusion) the first test copied the logic and a mutation of the REAL
+  code stayed green (**1 / 3** arms). Both fixes: extract the logic into a named function the
+  trainer calls and the test calls.
+* ⚠️ **A failure counter that greps letters counts printed text.** A suite read "97 F/E" at 72 %;
+  a test prints a table containing "ValueError RAISED". True count from progress lines only:
+  **0 failed**.
+
+**Full suite at the tip of these changes:** see the landing commit (it is the gate).

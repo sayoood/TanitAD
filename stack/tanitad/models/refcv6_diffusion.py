@@ -115,6 +115,15 @@ class DiffusionFlags:
     f4_zero_init: bool = False
     # -- F5 -- emitting pass's own confidence + focal loss -------------------
     f5_emitting_conf: bool = False
+    #: ⛔ The GUARD, not the feature. Default OFF, so every banked arm is
+    #: untouched. When True a sampler build REFUSES unless the ranked surface is
+    #: the emitted fan's own score (``sel.refined`` or :attr:`f5_emitting_conf`).
+    #: MEASURED 2026-09-22 on the default config: perturbing ONLY the sampler
+    #: moved ``traj`` 12.20 m and ``sel_score`` by **exactly 0.0** — the ranked
+    #: score is blind to the trajectory the model emits, which is REFe's class-C
+    #: defect in a different architecture. Enforced in ``refc.py``'s WP-4
+    #: preflight so it refuses BEFORE the compute.
+    f5_refuse_blind_rank: bool = False
     f5_focal: bool = False
     f5_focal_gamma: float = 2.0        # `multimodal_loss.py:151`
     f5_focal_alpha: float = 0.25       # `multimodal_loss.py:152`
@@ -138,6 +147,7 @@ class DiffusionFlags:
         return bool(
             self.f1_random_t or self.f2_dd_step or self.f3_per_layer
             or self.f4_adaln or self.f5_emitting_conf or self.f5_focal
+            or self.f5_refuse_blind_rank
             or self.f6_w_u0_zero or int(self.f7_samples_per_anchor) > 1
             or self.f8_flat_waypoint_noise or self.f9_assert_vocab)
 
@@ -173,11 +183,21 @@ def flag_stamp(flags: DiffusionFlags) -> dict:
         "f4_adaln": bool(flags.f4_adaln),
         "f4_zero_init": bool(flags.f4_zero_init),
         "f5_emitting_conf": bool(flags.f5_emitting_conf),
+        "f5_refuse_blind_rank": bool(flags.f5_refuse_blind_rank),
         "f5_focal": bool(flags.f5_focal),
         "f6_w_u0_zero": bool(flags.f6_w_u0_zero),
         "f7_samples_per_anchor": int(flags.f7_samples_per_anchor),
         "f7_ack_eval_join": bool(flags.f7_ack_eval_join),
         "f8_flat_waypoint_noise": bool(flags.f8_flat_waypoint_noise),
+        #: ⭐ Provenance for the 2026-09-23 fix: DD re-clamps the normalised
+        #: sample at the top of EVERY ladder iteration
+        #: (`transfuser_model_v2.py:519`); until then we clamped once, outside
+        #: the loop, and `|x_n|` was MEASURED at 15.04 after one `sched.step`.
+        #: A literal `True`, not a knob: there is no F8 arm to keep compatible
+        #: (F8 has never been run) and two clamp semantics under one flag name
+        #: is how an arm becomes unattributable. It is stamped so any future
+        #: artifact says which semantics produced it.
+        "f8_clamp_in_ladder": True,
         "f9_assert_vocab": bool(flags.f9_assert_vocab),
         "any_on": bool(flags.any_on),
     }
@@ -444,7 +464,8 @@ def candidate_to_anchor_id(idx: Tensor, n_anchors: int, groups: int) -> Tensor:
 # ============================================================================
 
 def assert_f9_vocabulary(n_anchors: int, v0_conditioned: bool,
-                         expect_n: int = 117) -> None:
+                         expect_n: int = 117,
+                         anchor_controls: Tensor | None = None) -> None:
     """F9 is a NO-CHANGE item, so it is enforced as an assertion.
 
     ⭐ Spec §3: *"keep the v0-conditioned 117-anchor vocabulary (no change;
@@ -453,6 +474,20 @@ def assert_f9_vocabulary(n_anchors: int, v0_conditioned: bool,
     and MEASURED, the v0 conditioning is what makes the anchored Gaussian mean
     anything (``refc.py``'s WP-4 preflight refuses a fixed bank for the same
     reason).
+
+    ⛔⛔ ``anchor_controls`` IS THE HALF THIS FUNCTION DID NOT HAVE. Until
+    2026-09-23 the signature was ``(n_anchors, v0_conditioned, expect_n)`` —
+    **three declarations and no tensor** — so the third message below was
+    unenforceable by construction. MEASURED 2026-09-22
+    (`…/2026-09-22-refcv6-review` §6.1): with ``v0_conditioned=True`` and the
+    ``anchor_controls`` buffer left at its registered zeros, this function
+    PASSED, the decoder forward did not raise, and the rolled bank was exactly
+    degenerate — spread across anchors **0.000000000 m**, one straight line
+    repeated N times (control, with real controls: **7.106836 m**). The
+    expectation here is the literal ``0.0``: a v0-conditioned bank whose
+    controls sum to exactly zero is the "do nothing" vocabulary the message
+    describes. ``None`` keeps the declaration-only behaviour for callers that
+    genuinely have no tensor (a classifier build).
     """
     if int(n_anchors) != int(expect_n):
         raise ValueError(
@@ -464,6 +499,17 @@ def assert_f9_vocabulary(n_anchors: int, v0_conditioned: bool,
             "F9: the vocabulary must stay v0-CONDITIONED. A fixed-path bank "
             "carries `anchor_controls` of all zeros, so the anchored Gaussian "
             "would be centred on 'do nothing'.")
+    if anchor_controls is not None and bool(v0_conditioned):
+        if float(anchor_controls.abs().sum()) == 0.0:
+            raise ValueError(
+                "F9: the vocabulary DECLARES v0-conditioned but "
+                "`anchor_controls` is all zeros -- the exact state the "
+                "declaration cannot see. Every one of the "
+                f"{int(n_anchors)} candidates rolls to the SAME straight line "
+                "(MEASURED spread across anchors 0.000000000 m; a controls-"
+                "carrying bank reads 7.106836 m), so the anchored Gaussian is "
+                "centred on 'do nothing' and the arm would be a plausible-"
+                "looking WRONG experiment. Load the anchor artifact.")
 
 
 # ============================================================================

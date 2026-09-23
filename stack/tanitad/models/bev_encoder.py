@@ -267,7 +267,8 @@ class BEVMapBranch(nn.Module):
 # the loss                                                                     #
 # --------------------------------------------------------------------------- #
 def map_soft_ce(logits: Tensor, frac: Tensor, seen: Tensor, *,
-                check_sum: bool = True, tol: float = FRAC_SUM_TOL) -> dict:
+                check_sum: bool = True, tol: float = FRAC_SUM_TOL,
+                class_weight: Tensor | None = None) -> dict:
     """Soft cross-entropy against the SAM3 fractions, on SEEN cells only.
 
     ``logits`` ``[B, 9, X, Y]`` · ``frac`` ``[B, 9, X, Y]`` in [0, 1]
@@ -282,6 +283,27 @@ def map_soft_ce(logits: Tensor, frac: Tensor, seen: Tensor, *,
     ⛔ Refuses (``ValueError``) a target whose per-cell fractions do not sum to 1
     within ``tol`` on a SEEN cell -- see the module docstring, decision 2. Pass
     ``check_sum=False`` only in a shape test with synthetic targets.
+
+    ``class_weight`` ``[C]`` >= 0, DEFAULT ``None`` -- **off, so nothing an existing
+    arm computes moves.** It exists because the map label is as imbalanced as the
+    boxes and this head had no way to say so: MEASURED 2026-09-22 over 135 clips /
+    5,527 frames (``…/2026-09-22-refcv6-review/raw/p3_map_seen_mask_census.json``,
+    **eval-139 line**), label mass on seen cells is ``sidewalk/verge`` **37.14 %**,
+    ``drivable`` **34.00 %**, ``seen-no-map-class`` **25.90 %** = **97.05 % in three
+    of nine classes**, against ``arrow/text`` **0.067 %** and ``hatched area``
+    **0.063 %**. A head can reach a good soft CE while never predicting five classes.
+
+    ⭐ **THE DENOMINATOR FOLLOWS THE WEIGHTS**, exactly as ``slot_set_loss``'s ``cls``
+    term does and for the same reason: the loss is
+    ``sum_cells sum_c w_c p_c (-log q_c) / sum_cells sum_c w_c p_c``, so re-weighting
+    moves the RELATIVE emphasis and nothing else. At ``w = ones`` the weight mass IS
+    the seen-cell count, which makes a uniform weight **bit-identical to passing
+    nothing** -- the identity control, and it is pinned by a test rather than argued.
+
+    ⚠️ **NO VECTOR IS BANKED FOR THIS**, deliberately. The only census that exists is
+    over the **eval-139** clips; shipping it for a **v7-B1 train** arm would be the
+    scope error this file's sibling (``agent_slots.TARGET_POPULATION_*``) was written
+    to stop. The mechanism is here; the vector waits on a train-line map census.
     """
     if logits.dim() != 4 or frac.dim() != 4 or seen.dim() != 3:
         raise ValueError(f"shapes must be logits [B,C,X,Y], frac [B,C,X,Y], seen "
@@ -314,8 +336,24 @@ def map_soft_ce(logits: Tensor, frac: Tensor, seen: Tensor, *,
     per_cell_c = -(p * logp)                                # [B, C, X, Y]
     mf = m.unsqueeze(1).to(logits.dtype)
     n = int(m.sum())
-    denom = float(max(n, 1))
-    per_class = (per_cell_c * mf).sum(dim=(0, 2, 3)) / denom
+    if class_weight is None:
+        denom = float(max(n, 1))
+        per_class = (per_cell_c * mf).sum(dim=(0, 2, 3)) / denom
+    else:
+        cw = torch.as_tensor(class_weight, device=logits.device,
+                             dtype=logits.dtype).reshape(-1)
+        if cw.numel() != logits.shape[1]:
+            raise ValueError(f"class_weight has {cw.numel()} entries for "
+                             f"{logits.shape[1]} map classes")
+        if bool((cw < 0).any()):
+            raise ValueError("class_weight must be >= 0; a negative weight would "
+                             "REWARD getting that class wrong")
+        cwv = cw.view(1, -1, 1, 1)
+        # ⛔ Σ_cells Σ_c w_c p_c -- the weight MASS, not the cell count. At w = ones
+        # this is Σ_cells Σ_c p_c = n exactly (p is renormalised to sum 1), so the
+        # uniform case reproduces the branch above bit for bit.
+        denom = (p * cwv * mf).sum().clamp_min(1e-12)
+        per_class = (per_cell_c * cwv * mf).sum(dim=(0, 2, 3)) / denom
     loss = per_class.sum() if n else logits.sum() * 0.0
     # cells whose label mass is in class c, for the per-class denominators
     n_per_class = (p * mf).sum(dim=(0, 2, 3)).detach()

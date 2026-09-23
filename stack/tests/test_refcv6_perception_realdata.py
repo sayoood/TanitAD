@@ -572,8 +572,13 @@ def test_the_3d_join_reaches_the_height_targets():
                            depth=1, n_heads=4, enforce_band=False)
     pred = dec(torch.randn(1, 8, 16))
     m = match_slots(pred, t3)
-    with_labels = box3d_set_loss(pred, t3, match=m)
-    without = box3d_set_loss(pred, zh_targets(tgt), match=m)
+    # ⛔ `visible_filter=False` is the SCOPE of this assertion: both arms must score the
+    # SAME matched pairs so the only difference is whether the z/h labels are present.
+    # `m` was built over the unfiltered targets, and since 2026-09-23 `box3d_set_loss`
+    # refuses that pairing silently (see its docstring) rather than re-admitting the
+    # filtered boxes through the assignment.
+    with_labels = box3d_set_loss(pred, t3, match=m, visible_filter=False)
+    without = box3d_set_loss(pred, zh_targets(tgt), match=m, visible_filter=False)
 
     assert with_labels["n"]["z"] == n_z and with_labels["n"]["h"] == n_z
     assert without["n"]["z"] == 0 and float(without["loss_z"]) == 0.0

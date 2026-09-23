@@ -326,7 +326,10 @@ def zh_targets(tgt: dict, cz=None, h=None, *, mask=None) -> dict:
 
 def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
                    weights: dict | None = None,
-                   cls_class_weight=None) -> dict:
+                   cls_class_weight=None,
+                   visible_filter: bool = True,
+                   visible_ranges: SlotDecodeRanges | None = None,
+                   visible_half_angle_rad: float | None = None) -> dict:
     """:func:`agent_slots.slot_set_loss` + the ``z`` and ``h`` terms.
 
     ⭐ The 2-D part is CALLED, not re-implemented, so every term, mask and
@@ -337,8 +340,74 @@ def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
     ``loss_z`` and ``loss_h`` are ``0.0`` with ``n["z"] == n["h"] == 0``, and
     ``total`` is then EXACTLY the 2-D total -- asserted by
     ``tests/test_refcv6_perception.py::test_no_zh_labels_is_the_2d_loss_exactly``.
+
+    ⛔⛔ ``visible_filter`` -- DEFAULT ON since 2026-09-23, AND THAT IS A BEHAVIOUR
+    CHANGE, stated here rather than discovered later. Until then this path applied
+    **no field cut at all**, while the v6 seam one module over
+    (``refc_agents.agent_losses``, ``filter_visible=True``) has always applied one.
+    MEASURED 2026-09-22 over the v7-B1 join (28,958,699 boxes,
+    ``…/2026-09-22-refcv6-review/raw/p2_b1_join_filter_census.json``): only
+    **40.195 %** of those boxes are inside the rig's 120 deg field, only **16.374 %**
+    are also inside the decode box, and **50.038 % are BEHIND THE EGO** -- so a
+    monocular head was being trained to name cuboids at ``cx < 0``.
+
+    ⭐ AND IT IS APPLIED **BEFORE** :func:`agent_slots.match_slots`, WHICH IS THE
+    WHOLE FIX. ``match_slots`` keeps the ``n_queries`` NEAREST by ``sqrt(cx^2+cy^2)``
+    -- correct policy *after* a field cut, destructive without one, because a car
+    5 m BEHIND then outranks a car 40 m ahead. MEASURED on the same join
+    (``raw/p6_query_budget_bias.json``): **49.145 % of 4,559,200 query slots** on
+    over-budget frames went to ``cx < 0`` boxes and **625,379 in-field boxes
+    (27.18 % of what was available)** were destroyed by ordering alone, class-biased
+    -- ``bus`` 55.98 %, ``heavy_truck`` 43.85 %, ``animal`` 0 %. Filtering first
+    fixes both findings with one call; filtering after the budget would fix neither.
+
+    ⛔ Turning it OFF is the deliberate-regression arm and must be asked for by name
+    -- the same rule ``agent_losses`` carries. ⛔ And it is not free: the class
+    frequencies the ``cls`` term meets change by up to **1.746x**, so a filtered arm
+    must load the ``TARGET_POPULATION_VISIBLE`` vector
+    (:func:`agent_slots.load_cls_class_weight`). Those two land together or not at all.
+
+    ⚠️ ``match=`` is incompatible with ``visible_filter=True``: a match computed on
+    the unfiltered targets would re-admit exactly the boxes the filter removed, and
+    the counts would disagree with the loss. Pass one or the other.
     """
     w = {**BOX3D_LOSS_W, **(weights or {})}
+    tgt_raw = tgt
+    if visible_filter:
+        if match is not None:
+            raise ValueError(
+                "box3d_set_loss: a precomputed `match` with visible_filter=True. The "
+                "match would have been built over the UNFILTERED targets, so the "
+                "filtered boxes would return through the assignment and `n` would "
+                "describe a different set from the loss. Pass visible_filter=False "
+                "with your own match, or let this compute the match.")
+        # ⛔ THE ONE SPELLING, imported here rather than re-implemented. A second
+        # copy of the azimuth+decode-box predicate is how two seams end up
+        # disagreeing about what the camera sees -- the failure `OCC_HALF_ANGLE_RAD`
+        # is pinned by a test to avoid. Local import: `tanitad.refs` sits above
+        # `tanitad.models` in the layering, and only this branch needs it.
+        from tanitad.refs.refc_agents import (FOV_HALF_ANGLE_RAD,
+                                              visible_target_filter)
+        tgt = visible_target_filter(
+            tgt, ranges=visible_ranges,
+            half_angle_rad=(FOV_HALF_ANGLE_RAD if visible_half_angle_rad is None
+                            else float(visible_half_angle_rad)))
+        # the 3-D mask follows the 2-D validity, or a filtered-out row could still
+        # carry a z/h target into the `zh_mask` loop below
+        if tgt.get("zh_mask") is not None:
+            tgt = {**tgt, "zh_mask": tgt["zh_mask"] & tgt["valid"]}
+    n_valid_prefilter = int(tgt_raw["valid"].sum())
+    n_valid_postfilter = int(tgt["valid"].sum())
+    # ⛔⛔ `tgt`, NOT `tgt_raw` -- THIS LINE IS THE D-2 FIX. `match_slots` keeps the
+    # nearest `n_queries` targets, so whichever set it is handed is the set the budget
+    # ranks. Handed the RAW set it spent 50.076 % of its query slots on boxes BEHIND THE
+    # EGO (MEASURED 2026-09-23 over the whole v7-B1 join, 27,350,533 slots,
+    # `…/2026-09-23-refcv6-fixes/raw/box_supervision_recovery.json`) and threw away
+    # 76,395 in-field-and-decodable boxes it could have supervised. ⚠️ The review's
+    # 27.18 % is a DIFFERENT scope -- azimuth-only, over-budget lines -- and both
+    # figures are reproduced side by side in that artifact.
+    # `tgt_raw` is read only for the prefilter count above and by the deliberate-
+    # regression arm; nothing in the loss may rank or score it.
     m = match or match_slots(pred, tgt)
     out = slot_set_loss(pred, tgt, match=m,
                         weights={k: v for k, v in (weights or {}).items()
@@ -368,8 +437,17 @@ def box3d_set_loss(pred: dict, tgt: dict, *, match: dict | None = None,
     out["loss_z"] = acc_z / max(n_z, 1)
     out["loss_h"] = acc_h / max(n_z, 1)
     out["total"] = out["total"] + w["z"] * out["loss_z"] + w["h"] * out["loss_h"]
-    out["n"] = {**out["n"], "z": n_z, "h": n_z}
+    # ⭐ COUNTED, not asserted. `target_prefilter` - `target_visible` is how much
+    # supervision the field cut removed ON THIS BATCH, in the log row, from the step it
+    # lands -- the `n_map_cells` discipline one head over. A filter whose effect is not
+    # in the record is indistinguishable from a filter that never ran (the
+    # `tac_goal_tok_head` class), and this one silently changed 59.8 % of the targets.
+    out["n"] = {**out["n"], "z": n_z, "h": n_z,
+                "target_prefilter": n_valid_prefilter,
+                "target_visible": n_valid_postfilter,
+                "dropped_not_visible": n_valid_prefilter - n_valid_postfilter}
     out["_weights"] = {**out["_weights"], **w}
+    out["_visible_filter"] = bool(visible_filter)
     return out
 
 

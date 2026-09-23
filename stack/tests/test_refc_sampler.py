@@ -337,6 +337,14 @@ def test_sampler_groups_gt_one_REFUSES_rather_than_mis_indexing():
         graft_maneuver=False, graft_target_latent=False,
         grounded_selector=False, horizons=(5, 10, 15, 20),
         v0_conditioned=True)
+    # ⚠️ 2026-09-23: this fixture declared `v0_conditioned=True` and left
+    # `anchor_controls` at its registered ZEROS, so the bank it exercised was
+    # EXACTLY degenerate — all 5 candidates the same straight line, spread
+    # 0.000000000 m. The decoder now refuses that state on the tensor rather
+    # than on the flag (`…/2026-09-22-refcv6-review` §6.1), and this test wants
+    # F7's refusal, not the vocabulary's. Same ladder as `_v0_decoder`.
+    dec.anchor_controls.copy_(torch.stack(
+        [torch.linspace(-2.0, 2.0, 5), torch.linspace(-1.5, 1.5, 5)], dim=-1))
     with pytest.raises(NotImplementedError, match="loss_cls"):
         dec(torch.randn(1, 16, 3, 5), torch.randn(1, 8), steps=2,
             v_ms=torch.tensor([10.0]))
@@ -373,6 +381,12 @@ def test_metre_space_arm_is_REACHABLE():
         graft_maneuver=False, graft_target_latent=False,
         grounded_selector=False, horizons=(5, 10, 15, 20),
         v0_conditioned=True).eval()
+    # ⚠️ 2026-09-23, same as above: a v0-conditioned build with all-zero
+    # `anchor_controls` is the degenerate bank the decoder now refuses on the
+    # TENSOR. The metre arm is about the sampler SPACE, so it needs a real
+    # vocabulary to be about anything.
+    dec.anchor_controls.copy_(torch.stack(
+        [torch.linspace(-2.0, 2.0, 5), torch.linspace(-1.5, 1.5, 5)], dim=-1))
     out = dec(torch.randn(1, 16, 3, 5), torch.randn(1, 8), steps=2,
               v_ms=torch.tensor([10.0]))
     assert out["sel_tele"]["sampler_space"] == "metre"

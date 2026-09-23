@@ -121,6 +121,7 @@ from tanitad.data import semantic_map_gt as _sem_map  # noqa: E402
 from tanitad.data import agent_cuboid_gt as _agent_cuboid  # noqa: E402
 from tanitad.models import box3d_head as _box3d_head  # noqa: E402
 from tanitad.models import refcv6_perception_branch as _perc  # noqa: E402
+from tanitad.models import refc_bev_coupling as _bevc  # noqa: E402
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -337,6 +338,9 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     # live). They travel on the CONFIG, not on a wrapper, so `config.json` records them.
     cfg.core.encoder.trunk_chunk_ckpt = int(getattr(args, "trunk_chunk_ckpt", 0) or 0)
     cfg.core.encoder.trunk_frozen_bn = bool(getattr(args, "trunk_frozen_bn", False))
+    # ⛔ C26: equalize the rig-correlated black strip (see `--equalize-bottom-rows`).
+    cfg.core.encoder.trunk_equalize_bottom_rows = int(
+        getattr(args, "equalize_bottom_rows", 0) or 0)
     # ⛔ A7 (2026-09-19): recalibration is only meaningful when the statistics are
     # then FROZEN -- an unfrozen BN trains on batch statistics and its running stats
     # are overwritten by momentum within steps, so a stamp saying "recalibrated"
@@ -1194,6 +1198,43 @@ def _pin_refcv5_seams(cfg, args) -> None:
                 "⚠️ --wp-index-mode is the dangerous one: it names a CONTROL "
                 "ARM, so a reader would believe a control had been run. Pass "
                 "--wp-index on, or leave these at their defaults." % _dead_wp)
+    # ---- refcv6 coupling (1) -- BREAK C, the missing config route --------- #
+    # ⛔ `DecoderConfig.bev_coupling` was assigned in exactly ONE file in the
+    # repository (`integration/verify_patch.py`), so NO TRAINING RUN COULD BUILD
+    # THE SAMPLER AT ALL. `refc.py` reads it and calls `attach_bev_coupling`.
+    # MEASURED 2026-09-22: a forward hook on `BEVWaypointSampler.forward` fired
+    # **0 times** on the default path -- one of the three DiffusionDrive
+    # couplings in the SPEC's own diagram was built and never called.
+    if bool(getattr(args, "bev_coupling", False)):
+        if float(getattr(args, "w_map", 0.0) or 0.0) <= 0.0:
+            raise SystemExit(
+                "[v3] ⛔ --bev-coupling with --w-map 0. Coupling (1) reads "
+                "the DENSE `bev_feats` the MAP BRANCH produces; with no map "
+                "branch the sampler would be BUILT, counted in "
+                "param_breakdown, STAMPED into config.json and handed no map "
+                "-- the exact 0-forward-hook-fires state the 2026-09-22 review "
+                "MEASURED, and an arm in it would publish 'the BEV coupling "
+                "does not help' while never having had a BEV map.")
+        core.decoder.bev_coupling = _bevc.BEVCouplingConfig(
+            enable=True,
+            learned_offsets=bool(
+                getattr(args, "bev_coupling_learned_offsets", False)),
+            offset_max_m=float(
+                getattr(args, "bev_coupling_offset_max_m", 2.0)))
+        # ⛔ NOT A LITERAL: `d_bev` is the BEV ENCODER's `d_out`, downstream
+        # of the stride-16 map whose own width is 1024 on resnet101 and 256 on
+        # resnet34. Read from the SAME config object the branch is built from.
+        core.decoder.bev_coupling_d_bev = int(
+            _perc.PerceptionBranchConfig(
+                w_map=float(getattr(args, "w_map", 0.0) or 0.0),
+                w_box3d=float(getattr(args, "w_box3d", 0.0) or 0.0)
+            ).bev_cfg.d_out)
+        print("[v3] refcv6 coupling (1) ON: d_bev=%d learned_offsets=%s "
+              "offset_max_m=%.3g -> %d decoder layers"
+              % (core.decoder.bev_coupling_d_bev,
+                 core.decoder.bev_coupling.learned_offsets,
+                 core.decoder.bev_coupling.offset_max_m,
+                 int(core.decoder.layers)), flush=True)
     _pin_refcv6_perception(cfg, args)
 
 
@@ -3629,8 +3670,24 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                                            .to(device))
     loss_law = F.mse_loss(out["law_pred"], law_tgt)
 
+    # ⛔⛔ THE ROUTE TERM IS GATED ON THE STRATEGIC BYPASS, FOR THE REASON THIS FILE
+    # ALREADY STATES ABOUT ITS NEIGHBOUR. See the `g_str` block below: *"with `--no-strategic`
+    # the E4 FiLM is skipped ... supervising it anyway would push gradient through
+    # `str_goal_head` -> `StrategicCtx` -> the SHARED ENCODER, i.e. the strategic layer would
+    # still shape the trunk that produces the plan. That is a SECOND variable inside a
+    # one-variable arm."* The route readout is bypassed by the same flag, so the same argument
+    # applies verbatim -- and it had been applied to ONE term and not to its neighbour.
+    # ⛔ MEASURED 2026-09-22 with `no_strategic=True`: the route CE put non-zero gradient on
+    # **28 of 60 trunk tensors** (Σ|grad| 91.66) against a no-backward control of 0/60 -- the
+    # same 28/60 the trajectory loss reaches. So refcv6's "strategic layer OFF" arm was
+    # training the shared trunk through a strategic head.
+    # ⭐ Same shape as the ADVISORY's class G: *"the file's own rule, six lines above the
+    # defect, already said ... the principle had been applied to one term and not to its
+    # neighbour."*
+    _route_on = not bool(getattr(core, "no_strategic", False))
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
-            + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
+            + LAW_WEIGHT * loss_law
+            + (ROUTE_WEIGHT * loss_route if _route_on else 0.0)
             + (LAT_WEIGHT / 2.0) * (loss_lat + loss_lat_tac)
             + (LON_WEIGHT / 2.0) * (loss_lon + loss_lon_tac))
     # ⛔ THE /2 IS THE FIX, NOT A TYPO. `refc_train.py:83-91` states in writing
@@ -4267,12 +4324,28 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             extra["map_n_windows"] = float(_mlab.shape[0])
             extra["map_n_labelled"] = float(int(_mlab.sum()))
             if int(_mlab.sum()):
+                # ⛔⛔ D-3 (MEASURED 2026-09-22): `map_seen` is a CLIP-LIFETIME mask.
+                # 90.088 % of the 590 cells outside the rig's ±60° at EVERY instant are
+                # labelled `seen`; 2,170,570 of 19,647,460 supervised cells (11.048 %)
+                # sit on cells `BEVLift.forward` has zeroed and replaced with a learned
+                # `unobserved` constant -- asking the head to name a class from it.
+                _mvalid = _pout.get("map_valid")
+                if _mvalid is not None and getattr(args, "map_lift_valid_mask", True):
+                    _mvalid = _mvalid.index_select(0, _msel)
+                else:
+                    _mvalid = None
                 _mrow = _perc.map_loss_row(
                     _pout["map_logits"].index_select(0, _msel),
                     batch["map_frac"].to(device).index_select(0, _msel),
-                    batch["map_seen"].to(device).index_select(0, _msel))
+                    batch["map_seen"].to(device).index_select(0, _msel),
+                    lift_valid=_mvalid)
                 loss = loss + _w_map * _mrow["loss"]
                 extra["map"] = _mrow["loss"]
+                # ⭐ BOTH counts, BEFORE `n_map_cells` ON PURPOSE:
+                # `test_map_iou_drivable.py` measures a CHARACTER distance from that
+                # line to `map_iou_drivable`; text inserted before it costs no headroom.
+                extra["n_map_cells_seen"] = _mrow["n_map_cells_seen"]
+                extra["n_map_cells_unobserved"] = _mrow["n_map_cells_unobserved"]
                 extra["n_map_cells"] = _mrow["n_map_cells"]
                 # ---- occupancy quality, in a form a collision gate can use --- #
                 # ⛔ A SOFT CE IS NOT A QUALITY READ. `map` falls monotonically
@@ -4293,6 +4366,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 with torch.no_grad():
                     _dch = _sem_map.CHANNELS.index("drivable")
                     _sn = batch["map_seen"].to(device).index_select(0, _msel)
+                    if _mvalid is not None:      # SAME CELL SET AS THE LOSS
+                        _sn = _sn & _mvalid
                     _gt = (batch["map_frac"].to(device).index_select(0, _msel)[:, _dch]
                            >= 0.5) & _sn
                     _pr = (_pout["map_logits"].index_select(0, _msel)
@@ -4369,9 +4444,14 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                            and v.shape[:1] == _b3_keep.shape[:1] else v)
                        for k, v in _pout["box_slots"].items()} \
                     if _b3_keep is not None else _pout["box_slots"]
+                # ⛔⛔ D-1/D-2 (MEASURED 2026-09-22 on v7-B1, 28,958,699 boxes):
+                # until 2026-09-23 this path applied NO field cut, so 59.805 % of its
+                # targets were outside the camera and 50.038 % were BEHIND THE EGO, and
+                # `match_slots`' nearest-N then spent 50.076 % of its query slots there.
                 _brow = _perc.box3d_loss_row(
                     _s3, _t3,
-                    cls_class_weight=getattr(model, "_cls_class_weight", None))
+                    cls_class_weight=getattr(model, "_cls_class_weight", None),
+                    visible_filter=bool(getattr(args, "box3d_visible_filter", True)))
                 loss = loss + _w_b3d * _brow["loss"]
                 extra["box3d"] = _brow["loss"]
                 for _k3, _v3 in _brow.items():
@@ -4683,6 +4763,10 @@ def _seam_stamp(cfg, args) -> dict:
         "goal_str_loss_applied": bool(
             getattr(args, "goal_str", False)
             and not getattr(core, "no_strategic", False)),
+        # ⛔ THE SAME THREE-FACT DISCIPLINE FOR THE ROUTE TERM. Before 2026-09-22 this term
+        # was applied unconditionally, so a `--no-strategic` arm's `config.json` could not be
+        # distinguished from one that trained the route head into the shared trunk.
+        "route_loss_applied": bool(not getattr(core, "no_strategic", False)),
         "graft_maneuver": bool(core.graft_maneuver),
         "factored_maneuver": bool(core.factored_maneuver),
         "graft_prior_center": bool(core.graft_prior_center),
@@ -4726,6 +4810,18 @@ def _seam_stamp(cfg, args) -> dict:
         "wp_index": (core.decoder.wp_index.as_dict()
                      if getattr(core.decoder, "wp_index", None) is not None
                      else None),
+        # ⭐ refcv6 coupling (1), STRUCTURALLY -- and `provenance` in
+        # particular, because an arm with `learned_offsets` on that reports
+        # itself as "DiffusionDrive's coupling" is a MISLABELLED arm, not a
+        # better one. `enabled: false` when the seam is off, so the two states
+        # are distinguishable in the record and not merely by absence.
+        # ⛔ INTENT ONLY, from the CONFIG. `_seam_stamp` runs on `cfg`, where
+        # `core.decoder` is a `DecoderConfig` -- the provenance METHOD lives on the
+        # decoder MODULE (`AnchoredDiffusionDecoder.bev_coupling_provenance`). The first
+        # integration of this patch called the method here and broke EVERY config stamp
+        # with `AttributeError`; `train` fills `built` from the module instead, the same
+        # three-fact idiom as `tac_goal_tok_head` and `agent_cls_weight`.
+        "bev_coupling": _bev_coupling_intent(core),
         "sampler": str(getattr(core.decoder, "sampler", "none")),
         "sampler_space": str(getattr(core.decoder, "sampler_space", "control")),
         "sampler_infer_t": int(getattr(core.decoder, "sampler_infer_t", 8)),
@@ -4970,6 +5066,94 @@ CLS_WEIGHT_CHOICES = {
 }
 
 
+def refuse_eval_clips_in_train(cache_dirs, args) -> list[str]:
+    """REFUSE a training cache that contains v7.2 EVAL clips. Returns the hits it allowed.
+
+    ⛔ A NAMED FUNCTION SO A TEST CAN CALL THE REAL REFUSAL. Inline in `train()`, the
+    `if` could be disabled while every test stayed green -- the helper would still classify,
+    the source order would still read right -- which is the `apply_lr_schedule` lesson
+    from the same night, one guard over.
+    """
+    hits = _eval_clips_in_v2_cache(cache_dirs)
+    if hits and not bool(getattr(args, "allow_eval_clips_in_train", False)):
+        raise SystemExit(
+            "[v3] ⛔ --v2-cache contains %d v7.2 EVAL clip(s). Training on them "
+            "voids every eval-139 number this arm will ever report. Point --v2-cache "
+            "at a TRAIN-ONLY view (the programme's pattern: a symlink view like "
+            "`refav1-fp8-train`), or pass --allow-eval-clips-in-train BY NAME for a "
+            "run that is never scored on that split (it is stamped into config.json)."
+            % len(hits))
+    return hits
+
+
+def _eval_clips_in_v2_cache(cache_dirs) -> list[str]:
+    """-> the v7.2 EVAL clip ids present in the given ``*.v2ep.pt`` cache dir(s).
+
+    Reads the DIRECTORY LISTING only (filenames are ``<clip_id>.v2ep.pt``) and classifies
+    by membership in the banked eval digest set (``parity.clips_in_v72_eval``), so it opens
+    no episode and costs one ``listdir`` per directory. ⚠️ Symlink views are listed
+    by the LINK name, which is the clip id -- the refav1 train view relies on exactly that.
+    """
+    from tanitad.data import parity as _par
+    dirs = [cache_dirs] if isinstance(cache_dirs, (str, Path)) else list(cache_dirs)
+    ids = []
+    for d in dirs:
+        for f in Path(d).glob("*.v2ep.pt"):
+            ids.append(f.name[: -len(".v2ep.pt")])
+    return _par.clips_in_v72_eval(ids)
+
+
+def _bev_coupling_intent(core) -> dict:
+    """What the CONFIG asks of coupling (1). `built` is None here on purpose: this runs
+    before the model exists, and only the constructed decoder can state what was built."""
+    bc = getattr(core.decoder, "bev_coupling", None)
+    if bc is None or not bool(getattr(bc, "enable", False)):
+        return {"requested": False, "built": None}
+    return {"requested": True,
+            "learned_offsets": bool(getattr(bc, "learned_offsets", False)),
+            "offset_max_m": float(getattr(bc, "offset_max_m", 2.0)),
+            "built": None}
+
+
+def _cls_weight_expectation(args, key_line: str) -> tuple[str, str, str]:
+    """-> (expected corpus line, target population, where the line came from).
+
+    ⛔⛔ D-4 (MEASURED 2026-09-22): with the expectation and the artifact selected
+    by the SAME key, the guard **cannot go red on the operator error it names** -- a B1
+    arm launched with `--agent-cls-weight train2400` loaded the PARITY vector and
+    nothing refused. The arm's ACTUAL corpus was never an input. Two independent
+    sources is the whole fix: `CLS_WEIGHT_CHOICES` says what the FILE claims,
+    `corpus_line_for_join` says what the ARM trains, and they must agree.
+
+    ⛔ The POPULATION comes from the box loss's own filter flag, so a filtered loss
+    cannot silently run raw-join frequencies (1.746x `other_vehicle`, 0.663x
+    `stroller`, 2.63x end to end).
+    """
+    _arm = _agent_slots.corpus_line_for_join(getattr(args, "agent_join", None))
+    if _arm is None:
+        src = "weight-key-only (the join is not a line this table names)"
+        print("[v3] ⚠️ agent cls weight: the corpus line could not be DERIVED "
+              "from --agent-join %r, so the only source is the --agent-cls-weight "
+              "key. The guard is single-sourced on this arm and cannot catch an "
+              "artifact/corpus mismatch." % (getattr(args, "agent_join", None),),
+              flush=True)
+        line = key_line
+    elif str(_arm) != str(key_line):
+        raise SystemExit(
+            "[v3] ⛔ --agent-cls-weight %r declares corpus line %r but "
+            "--agent-join is the %r line. MEASURED 2026-09-22: the two lines share "
+            "4.09 %% of their clips and their vectors differ by up to 1.857x. "
+            "Refusing." % (str(getattr(args, "agent_cls_weight", "off")),
+                           key_line, _arm))
+    else:
+        src = "derived-from-join (agrees with the weight key)"
+        line = _arm
+    pop = (_agent_slots.TARGET_POPULATION_VISIBLE
+           if bool(getattr(args, "box3d_visible_filter", True))
+           else _agent_slots.TARGET_POPULATION_RAW)
+    return line, pop, src
+
+
 def _cls_weight_stamp(args) -> dict:
     """The `agent_cls_weight` seam block — intent, artifact, and a `built` slot.
 
@@ -4983,8 +5167,11 @@ def _cls_weight_stamp(args) -> dict:
     if mode == "off":
         return {"requested": "off", "mode": "off", "built": None}
     _name, _line = CLS_WEIGHT_CHOICES[mode]
-    _, st = _agent_slots.load_cls_class_weight(_name, expect_corpus_line=_line)
-    return dict(st, requested=mode, mode=mode, built=None)
+    _line, _pop, _src = _cls_weight_expectation(args, _line)
+    _, st = _agent_slots.load_cls_class_weight(_name, expect_corpus_line=_line,
+                                               target_population=_pop)
+    return dict(st, requested=mode, mode=mode, built=None,
+                corpus_line_source=_src)
 
 
 def agent_knob_dests(parser: argparse.ArgumentParser | None = None
@@ -5414,6 +5601,23 @@ def assert_seams_are_built(model, stamp: dict) -> None:
             "the seam stamp carries no `tac_goal_tok_head` block but the "
             "head WAS BUILT -- a live seam absent from the run record")
 
+    # --- refcv6 coupling (1) ------------------------------------------------ #
+    # ⛔ BIDIRECTIONAL. MEASURED 2026-09-22: a forward hook on the BEV sampler fired
+    # 0 times on the default path -- the coupling was built into the SPEC's diagram and
+    # never called. A record claiming it without the module (or the reverse) is the same
+    # false-provenance class this function exists for.
+    bcp = stamp.get("bev_coupling")
+    if isinstance(bcp, dict) and isinstance(bcp.get("built"), dict):
+        _bc_req = bool(bcp.get("requested", False))
+        _bc_on = bool(bcp["built"].get("enabled", False))
+        if _bc_req and not _bc_on:
+            bad.append("stamp requests bev_coupling but the decoder built NO BEV "
+                       "sampler -- the record would claim DiffusionDrive coupling (1) "
+                       "on a model that cannot read the map at its waypoints")
+        if _bc_on and not _bc_req:
+            bad.append("the decoder built a BEV sampler but the record says "
+                       "bev_coupling was not requested -- unreproducible from config.json")
+
     # --- H-BOXCLS-1: the agent/box class weight -------------------------- #
     # ⛔ BIDIRECTIONAL, like the two blocks below, and the reason is the same one twice over.
     # A record that ASKS for `train2400` while the model carries no weight is an arm reported as
@@ -5646,6 +5850,8 @@ def refcv6_flags_from_args(args) -> "_rv6.DiffusionFlags | None":
         f4_adaln=bool(getattr(args, "f4_adaln", False)),
         f4_zero_init=bool(getattr(args, "f4_zero_init", False)),
         f5_emitting_conf=bool(getattr(args, "f5_emitting_conf", False)),
+        f5_refuse_blind_rank=bool(getattr(args, "f5_refuse_blind_rank",
+                                          False)),
         f5_focal=bool(getattr(args, "f5_focal", False)),
         f6_w_u0_zero=bool(getattr(args, "f6_w_u0_zero", False)),
         f7_samples_per_anchor=int(getattr(args, "f7_samples_per_anchor", 1)),
@@ -5653,6 +5859,90 @@ def refcv6_flags_from_args(args) -> "_rv6.DiffusionFlags | None":
         f8_flat_waypoint_noise=bool(getattr(args, "f8_flat_noise", False)),
         f9_assert_vocab=bool(getattr(args, "f9_assert_vocab", False)))
     return flags if flags.any_on else None
+
+
+def assert_optimizer_matches_recipe(opt, args) -> dict:
+    """REFUSE to start if the optimizer that will RUN is not the recipe the run claims.
+
+    ⛔⛔ WHY. MEASURED 2026-09-22: `build_optimizer` produced the DiffusionDrive recipe
+    correctly -- AdamW, weight decay 1e-4, encoder at 0.5x the heads -- and the loop then
+    overwrote the multiplier on step one, while `config.json` stamped `encoder_lr_mult: 0.5`.
+    `assert_seams_are_built` checks modules, not the optimizer, so the one place the recipe
+    lives was never compared against the record. This runs AFTER `build_optimizer` and
+    AFTER one application of the schedule, so it tests the state a real step would see.
+
+    Only the `dd` optimizer carries a recipe to check; `adam` (the single-group default)
+    is reported and passed through.
+    """
+    opt_name = str(getattr(args, "opt", "adam"))
+    info = {"opt": opt_name, "type": type(opt).__name__,
+            "groups": [{"name": g.get("name", "?"), "lr": float(g["lr"]),
+                        "weight_decay": float(g.get("weight_decay", 0.0))}
+                       for g in opt.param_groups]}
+    if opt_name != "dd":
+        return info
+    bad = []
+    if type(opt).__name__ != "AdamW":
+        bad.append(f"optimizer is {type(opt).__name__}, the recipe is AdamW")
+    names = {g.get("name") for g in opt.param_groups}
+    if names != {"encoder", "head"}:
+        bad.append(f"param groups are {sorted(map(str, names))}, the recipe needs "
+                   f"exactly an 'encoder' and a 'head' group")
+    want_wd = float(getattr(args, "weight_decay", 1e-4))
+    for g in opt.param_groups:
+        if abs(float(g.get("weight_decay", 0.0)) - want_wd) > 1e-12:
+            bad.append(f"group {g.get('name')!r} weight_decay "
+                       f"{float(g.get('weight_decay', 0.0))} != {want_wd}")
+    # the MULTIPLIER, after one application of the schedule -- the failure was a step-1
+    # overwrite, so a build-time ratio alone is not the test
+    by = {g.get("name"): g for g in opt.param_groups}
+    if "encoder" in by and "head" in by:
+        _probe = [dict(lr=float(g["lr"]), initial_lr=g.get("initial_lr"))
+                  for g in opt.param_groups]
+        apply_lr_schedule(opt, args, lambda _s: 0.5, 0)
+        want = float(getattr(args, "encoder_lr_mult", 0.5))
+        got = float(by["encoder"]["lr"]) / max(float(by["head"]["lr"]), 1e-30)
+        for g, pr in zip(opt.param_groups, _probe):          # restore exactly
+            g["lr"] = pr["lr"]
+            if pr["initial_lr"] is None:
+                g.pop("initial_lr", None)
+            else:
+                g["initial_lr"] = pr["initial_lr"]
+        if abs(got - want) > 1e-9:
+            bad.append(f"encoder/head lr ratio after one schedule step is {got:.6f}, the "
+                       f"recipe is {want} -- the schedule is overwriting the multiplier")
+        info["encoder_head_ratio_after_step"] = got
+    if bad:
+        raise SystemExit("[v3] ⛔ THE OPTIMIZER THAT WILL RUN IS NOT THE RECIPE THE RUN "
+                         "CLAIMS:\n  - " + "\n  - ".join(bad))
+    return info
+
+
+def apply_lr_schedule(opt, args, sched, step) -> None:
+    """Scale EACH group from its OWN ``initial_lr``. One step's worth of the schedule.
+
+    ⛔⛔ THIS IS A NAMED FUNCTION SO A TEST CAN CALL THE REAL THING.
+    MEASURED 2026-09-22: the loop body used to write ``args.lr * sched(step)`` into
+    **every** group, overwriting ``build_optimizer``'s encoder group -- correctly built at
+    5.0e-05 against the heads' 1.0e-04, ratio 0.5000 -- with the HEAD rate on the first
+    step. The ratio read **1.0000 at steps 0/1/1999/2000/15000/29999**, so 21.28 M encoder
+    parameters (99.3 % of the trainable weight) trained at the head rate for the whole run
+    while ``config.json`` stamped ``encoder_lr_mult: 0.5``. SPEC §2's *"encoder lr x0.5"*
+    (DiffusionDrive ``rl_config.py:124-128``) had never been applied by any run.
+
+    ⭐ AND IT IS A FUNCTION FOR A SECOND REASON, WHICH THE MUTATION PROOF FORCED. The
+    first guard for this defect ran a TRANSCRIPTION of the loop body in the test file, so
+    restoring the defect in the trainer left it GREEN -- the advisory's *"the test STUBS the
+    method under test"* shape exactly. A test that imports and calls THIS cannot drift from
+    what the trainer runs.
+
+    ⚠️ ``initial_lr`` is latched ONCE, from whatever ``build_optimizer`` decided, so the
+    multiplier lives in exactly one place and the schedule is a pure scalar on top of it.
+    """
+    for g in opt.param_groups:
+        if "initial_lr" not in g:
+            g["initial_lr"] = float(g.get("lr", args.lr))
+        g["lr"] = g["initial_lr"] * sched(step)
 
 
 def build_optimizer(model, args):
@@ -6247,12 +6537,18 @@ def train(args) -> dict:
     _cwmode = str(getattr(args, "agent_cls_weight", "off"))
     if _cwmode != "off":
         _cwname, _cwline = CLS_WEIGHT_CHOICES[_cwmode]
-        _cw, _cws = _agent_slots.load_cls_class_weight(_cwname, expect_corpus_line=_cwline)
+        # ⛔ ONE SPELLING of the expectation. Two call sites deriving it separately
+        # is how the stamp and the tensor end up describing different arms.
+        _cwline, _cwpop, _cwsrc = _cls_weight_expectation(args, _cwline)
+        _cw, _cws = _agent_slots.load_cls_class_weight(
+            _cwname, expect_corpus_line=_cwline, target_population=_cwpop)
         model._cls_class_weight = _cw.to(device)
         model._cls_class_weight_stamp = _cws
-        print("[v3] agent cls weight: %s on corpus line %s (%d classes, imbalance %s:1, "
-              "digest %s)" % (_cwmode, _cws["corpus_line"], len(_cws["weights"]),
-                              _cws["imbalance_majority_to_rarest"], _cws["digest"]), flush=True)
+        print("[v3] agent cls weight: %s on corpus line %s, population %s (%s) "
+              "(%d classes, imbalance %s:1, digest %s)"
+              % (_cwmode, _cws["corpus_line"], _cws["target_population"], _cwsrc,
+                 len(_cws["weights"]), _cws["imbalance_majority_to_rarest"],
+                 _cws["digest"]), flush=True)
     model._w_map = float(getattr(args, "w_map", 0.0) or 0.0)
     model._w_box3d = float(getattr(args, "w_box3d", 0.0) or 0.0)
     model._perception = None
@@ -6273,9 +6569,13 @@ def train(args) -> dict:
                     "One mount pose for the whole corpus biases every BEV "
                     "cell the lift fills.")
             model._lift_bank = _perc.LiftGeometryBank(
-                _ptable, frame=_pframe, stride=int(_pcfg.stride))
+                _ptable, frame=_pframe, stride=int(_pcfg.stride),
+                equalize_bottom_rows=int(
+                    getattr(args, "equalize_bottom_rows", 0) or 0))
         perception_stamp = {
             **_pcfg.as_dict(),
+            # ⛔ C26: the rows zeroed at the trunk AND marked unobserved in the lift.
+            "equalize_bottom_rows": int(getattr(args, "equalize_bottom_rows", 0) or 0),
             "branch_params": model._perception.param_breakdown(),
             "fmap_s16_channels": int(model.core.encoder.s16_dim),
             "fmap_s16_hw": list(model.core.encoder.s16_shape),
@@ -6496,6 +6796,16 @@ def train(args) -> dict:
         from tanitad.data.v2_dataset import build_v2_providers
         v2_parity = parity.assert_v2_parity_cache(
             args.v2_cache, label="v3 v2-cache", require=args.require_parity)
+        # ⛔⛔ EVAL CLIPS MUST NEVER BE TRAINED ON -- AND THIS PATH HAD NO GUARD.
+        # MEASURED 2026-09-23: `build_v2_providers` loads EVERY `*.v2ep.pt` in the
+        # directory, and the only check before it is the PARITY membership guard above,
+        # which does not refuse by default. The refcv6 corpus cache on Thor
+        # (`physicalai-b1-w120-416x1024cyl`, 4,713 clips) holds **141 v7.2 EVAL clips**
+        # beside the 4,572 train clips, so a launch pointed at it would have trained on
+        # its own evaluation set and every eval-139 number afterwards would be void.
+        # ⭐ Checked on the DIRECTORY LISTING, before a single provider is built: the
+        # providers do not expose `clip_id`, but the filenames ARE `<clip_id>.v2ep.pt`.
+        refuse_eval_clips_in_train(args.v2_cache, args)
         eps = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)
         if v2_parity.get("parity") and len(eps) != v2_parity["episodes_loaded"]:
             raise parity.ParityViolation(
@@ -7047,6 +7357,10 @@ def train(args) -> dict:
     withheld_stamp = _apply_withheld_bank(model, args, eps, device)
 
     opt = build_optimizer(model, args)
+    # ⛔ THE RECIPE IS CHECKED ON THE OBJECT THAT WILL RUN, AT STARTUP. See
+    # `assert_optimizer_matches_recipe`: the 2026-09-22 review measured the encoder
+    # multiplier destroyed every step while config.json stamped it, and no guard saw it.
+    assert_optimizer_matches_recipe(opt, args)
     sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \
         0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)
                               / max(1, args.steps - args.warmup)))   # noqa: E731
@@ -7078,6 +7392,8 @@ def train(args) -> dict:
     # the `param_breakdown_v3` idiom, and the reason is the `--image-hw`
     # post-mortem: a second copy of the build condition is how a record drifts
     # from the model it claims to describe.
+    # ⭐ refcv6 coupling (1): the FACT, read off the constructed decoder.
+    _seams["bev_coupling"]["built"] =         model.core.decoder.bev_coupling_provenance()
     _seams["tac_decoder_v6"]["built"] = (
         getattr(model, "tac_decoder_v6", None) is not None)
     if getattr(model, "tac_decoder_v6", None) is not None:
@@ -7435,8 +7751,20 @@ def train(args) -> dict:
         except StopIteration:
             it = iter(dl)
             batch = next(it)
-        for g in opt.param_groups:
-            g["lr"] = args.lr * sched(step)
+        # ⛔⛔ SCALE EACH GROUP FROM ITS OWN `initial_lr`, NEVER FROM `args.lr`.
+        # MEASURED 2026-09-22: this loop wrote `args.lr * sched(step)` into EVERY
+        # group, so `build_optimizer`'s encoder group -- correctly built at
+        # 5.0e-05 against the heads' 1.0e-04, ratio 0.5000 -- was overwritten to the
+        # HEAD rate on the very first step. Ratio read **1.0000 at steps
+        # 0/1/1999/2000/15000/29999**, i.e. 21.28 M encoder params (99.3 % of the
+        # trainable weight) trained at the head rate for the whole run while
+        # `config.json` stamped `encoder_lr_mult: 0.5`. SPEC §2's "encoder lr x0.5"
+        # -- DiffusionDrive `rl_config.py:124-128`, the recipe the arm claims to
+        # follow -- was therefore never applied by any run.
+        # ⭐ `initial_lr` is latched ONCE from what `build_optimizer` decided, so
+        # the multiplier lives in exactly one place and the schedule is a pure
+        # scalar on top of it. `sched` still returns the same shape for every group.
+        apply_lr_schedule(opt, args, sched, step)
         # ⭐ H-EGO-LIT-4: the withheld bank goes live after the warm-up. Set
         # EVERY step (not once) so a resumed run lands in the right regime,
         # and logged so the record says which bank each step trained on.
@@ -7931,6 +8259,18 @@ def build_parser() -> argparse.ArgumentParser:
                          "shuffle the hit rate is ~lru/n_clips, so big "
                          "values buy RAM pressure, not throughput. 6 "
                          "matches the v6 chain's setting.")
+    ap.add_argument("--equalize-bottom-rows", type=int, default=0,
+                    help="C26 mitigation. Zero the bottom N rows of EVERY frame before "
+                         "normalisation (train AND eval), and mark them UNOBSERVED in the "
+                         "BEV lift. MEASURED 2026-09-23 over the 4,713-clip 416x1024 B1 "
+                         "cache: 57.73 %% of clips carry a 26-43 row black strip whose "
+                         "presence identifies the rig (0.899 decodable on eval-139); the "
+                         "rest carry none. N = 43 (the measured corpus MAX) makes the "
+                         "region constant. 0 = off, bit-identical.")
+    ap.add_argument("--allow-eval-clips-in-train", action="store_true",
+                    help="⛔ DELIBERATE, NAMED OVERRIDE. Permit v7.2 EVAL clips in "
+                         "--v2-cache. Refused by default because training on them voids "
+                         "every eval-139 number the arm reports. Stamped into config.json.")
     ap.add_argument("--require-parity", action="store_true",
                     help="REFUSE unless --v2-cache references a REGISTERED "
                          "corpus key (B1 is unregistered as of 2026-09-01: "
@@ -8554,6 +8894,33 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight on the 3-D cuboid set loss "
                          "(`box3d_head.box3d_set_loss`, Hungarian, metres). "
                          "> 0 needs --agent-join AND --join3d.")
+    # ⛔ DEFAULT ON, AND THAT IS A BEHAVIOUR CHANGE (2026-09-23). Until then the
+    # refcv6 box path applied no field cut at all while the v6 seam one module over
+    # always has. `--no-box3d-visible-filter` is the deliberate-regression arm.
+    # ⛔ It also selects the CLASS-WEIGHT POPULATION: the frequencies the `cls` term
+    # meets move by up to 1.746x under the filter.
+    g6.add_argument("--box3d-visible-filter", dest="box3d_visible_filter",
+                    action="store_true", default=True,
+                    help="apply `refc_agents.visible_target_filter` to the 3-D box "
+                         "targets BEFORE the query budget (DEFAULT). MEASURED on "
+                         "v7-B1: 59.805 %% of raw targets are outside the 120 deg "
+                         "field, 50.038 %% are behind the ego, and the nearest-N "
+                         "budget spent 50.076 %% of its slots on them.")
+    g6.add_argument("--no-box3d-visible-filter", dest="box3d_visible_filter",
+                    action="store_false",
+                    help="DELIBERATE REGRESSION: train the 3-D box head on every box "
+                         "in the join, including the ones behind the ego. Requires "
+                         "--agent-cls-weight to resolve to a raw_join vector.")
+    g6.add_argument("--map-lift-valid-mask", dest="map_lift_valid_mask",
+                    action="store_true", default=True,
+                    help="narrow the map loss's `seen` mask to cells the camera "
+                         "reaches at THIS instant, using the lift's own `valid` "
+                         "(DEFAULT). MEASURED: 11.048 %% of map supervision sits on "
+                         "cells BEVLift has already replaced with `unobserved`.")
+    g6.add_argument("--no-map-lift-valid-mask", dest="map_lift_valid_mask",
+                    action="store_false",
+                    help="DELIBERATE REGRESSION: supervise every `seen` cell, "
+                         "including the ones no camera reached in this frame.")
     g6.add_argument("--map-gt-root", default=None,
                     help="directory of `<sha12>.sam3mapgt.npz` (or the "
                          "canonical semantic_maps/gt/ layout). Clip ids appear "
@@ -8795,6 +9162,30 @@ def build_parser() -> argparse.ArgumentParser:
                          "-- the pass that emitted the fan (DD `:544-552`). "
                          "REMOVES a decoder call; refuses alongside "
                          "--sel-score-emitted.")
+    g6.add_argument("--f5-refuse-blind-rank", action="store_true",
+                    help="F5 GUARD, not the feature. Refuse a sampler build "
+                         "whose RANKED score is the CLASSIFIER surface -- "
+                         "MEASURED 2026-09-22, a sampler-only perturbation "
+                         "moves `traj` 12.20 m and `sel_score` EXACTLY 0.0, "
+                         "i.e. the ranking judges the PROPOSAL, not the path. "
+                         "Satisfied by --f5-emitting-conf (DD-faithful) or "
+                         "--sel-refined. Default OFF: an arm that wants "
+                         "'improve the geometry, keep the ranking' is "
+                         "legitimate and must say so.")
+    g6.add_argument("--bev-coupling", action="store_true",
+                    help="refcv6 coupling (1): the BEV map read AT THE "
+                         "CANDIDATE'S OWN WAYPOINTS, in every decoder layer "
+                         "and on every denoising pass (DiffusionDrive "
+                         "`blocks.py:88-108`), behind a zero-init gate. "
+                         "⛔ Requires --w-map > 0: the dense `bev_feats` "
+                         "it reads come from the MAP BRANCH.")
+    g6.add_argument("--bev-coupling-learned-offsets", action="store_true",
+                    help="OUR EXTENSION, off by default. Each (query, "
+                         "waypoint) also predicts a bounded metric offset. "
+                         "The released DD samples AT the waypoints; the "
+                         "provenance stamp reports which build ran.")
+    g6.add_argument("--bev-coupling-offset-max-m", type=float, default=2.0,
+                    help="bound on that offset, metres (tanh-scaled).")
     g6.add_argument("--f5-focal", action="store_true",
                     help="F5b. DD's sigmoid FOCAL classification loss "
                          "(gamma 2.0, alpha 0.25, `multimodal_loss.py:"

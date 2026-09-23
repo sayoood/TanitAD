@@ -205,6 +205,14 @@ class TimmTrunkConfig:
     #: counts come from timm's ``feature_info``.
     image_hw: tuple[int, int] = (256, 1024)
     imagenet_norm: bool = True
+    #: ⛔ C26 -- the RIG-CORRELATED BLACK STRIP. MEASURED 2026-09-23 over all 4,713
+    #: clips of the 416x1024 B1 cache: **2,721 (57.73 %)** carry 26-43 fully-black bottom
+    #: rows and 1,992 carry ZERO -- bimodal, nothing between. A strip whose presence
+    #: identifies the rig is a shortcut (MEASURED on eval-139: an arbitrary label painted
+    #: as that strip is 0.899 balanced-accuracy decodable from an 8x16 thumbnail). Zeroing
+    #: the bottom N rows of EVERY frame makes the region constant, so it carries no rig
+    #: information. 0 = off, bit-identical to every existing arm.
+    equalize_bottom_rows: int = 0
     out_indices: tuple[int, ...] = (3, 4)
     #: ⛔ False ONLY for the deliberate-regression arm and for tests that must
     #: build the graph without a download. Every caller that sets it is stamped.
@@ -536,7 +544,21 @@ class TimmResNetTrunk(nn.Module):
 
     # -- the normalisation, in one place ---------------------------------- #
     def normalise(self, x: Tensor) -> Tensor:
-        """ImageNet mean/std on a ``[B, 3K, H, W]`` float tensor in ``[0, 1]``."""
+        """ImageNet mean/std on a ``[B, 3K, H, W]`` float tensor in ``[0, 1]``.
+
+        ⛔ The C26 equalization runs FIRST and in the ``[0, 1]`` domain, so the zeroed
+        rows are byte-for-byte the black the strip clips already carry -- then both kinds
+        of clip go through the same normalisation. It runs whether or not ImageNet
+        normalisation is on, and on EVERY forward (train and eval alike): a mask applied at
+        training only would hand the evaluator a distribution the model never saw."""
+        _eq = int(getattr(self.cfg, "equalize_bottom_rows", 0) or 0)
+        if _eq > 0:
+            if _eq >= int(x.shape[-2]):
+                raise ValueError(f"equalize_bottom_rows {_eq} >= frame height "
+                                 f"{int(x.shape[-2])}")
+            x = x.clone()
+            x[..., -_eq:, :] = 0.0
+            self.equalize_calls = getattr(self, "equalize_calls", 0) + 1
         if not self.cfg.imagenet_norm:
             return x
         if x.shape[1] != self._mean.shape[1]:

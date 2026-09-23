@@ -4,6 +4,8 @@
  "_ruling": "H-BOXCLS-1: the cls collapse is an OBJECTIVE failure (gate passed d7fa093); this is the weight it needs",
  "corpus_line": "parity-physicalai-train-e438721ae894",
  "_corpus_line_note": "⛔ LOAD-BEARING, and added as a CORRECTION. This vector was counted on the PARITY join and was briefly reported as refcv6 training readiness; MEASURED 2026-09-22 the parity join covers 193/4,719 = 4.09 % of refcv6's corpus. It is correct for a PARITY-line arm and REFUSED for any other -- see RETR-2026-09-22-WRONG-CORPUS-FOR-REFCV6.",
+ "target_population": "raw_join",
+ "_target_population_note": "⛔ THE SECOND SCOPE. `corpus_line` says WHICH CLIPS; this says WHICH BOXES OF THEM. This vector is counted over EVERY box in the parity join. ⛔ NO `weights_inv_freq_mean1_visible` IS BANKED HERE and that is a NAMED BLOCKER, not an oversight: the visible-population census has been run on the v7-B1 line only (MEASURED 2026-09-23, stack/scripts/build_cls_weight_artifact.py over b1_train_plus_eval_agents.jsonl.xz). A PARITY arm that turns the box-loss visibility filter ON is therefore REFUSED by `load_cls_class_weight` rather than served the raw vector -- unblock it by rerunning the producer against train2400_agents.jsonl.xz.",
  "_source": {
   "join": "tanitad-data/joins/joins/train2400_agents.jsonl.xz",
   "built": "2026-09-05",

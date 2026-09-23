@@ -279,7 +279,12 @@ def test_no_zh_labels_is_the_2d_loss_exactly():
     pred = d3(torch.randn(1, 8, 16))
     m = match_slots(pred, t3)
     two = slot_set_loss(pred, t3, match=m)
-    three = box3d_set_loss(pred, t3, match=m)
+    # ⛔ `visible_filter=False` HERE IS THE SCOPE, NOT A WORKAROUND. This test pins one
+    # thing: the z/h terms add EXACTLY nothing when there is no 3-D label. Both sides
+    # must therefore see the same target set, and `m` was built over the unfiltered one.
+    # Since 2026-09-23 `box3d_set_loss` REFUSES a supplied match with the filter on,
+    # precisely so this pairing has to be stated rather than assumed.
+    three = box3d_set_loss(pred, t3, match=m, visible_filter=False)
     assert three["n"]["z"] == 0 and three["n"]["h"] == 0
     assert float(three["loss_z"]) == 0.0 and float(three["loss_h"]) == 0.0
     assert torch.equal(three["total"], two["total"])

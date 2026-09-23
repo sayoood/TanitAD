@@ -356,15 +356,31 @@ def filter_targets_to_visible(tgt: dict, half_angle_rad: float = _FOV_HALF,
     well it guesses at the unobservable.
 
     ⭐ **AND IT HOLDS ON TRAIN, HARDER — MEASURED, so it is no longer a val40
-    claim.** Over the whole 2,308-clip train join (**12,122,129 boxes**,
-    ``…/2026-09-05-agent-join-into-batch/raw/train_agent_density.json``):
-    in-field **4,977,314 = 41.06 %** ⇒ **58.94 % are OUT OF FIELD**, and
-    in-field ∩ decode box **1,899,481 = 15.67 %** ⇒ **84.33 % fall OUTSIDE THE
-    DECODE BOX** (val40, among kept targets at N = 16, read 61.8 % and 80.1 %).
-    ⚠️ The two are not the same denominator — val40's is *targets kept by*
-    ``match_slots``, train's is *every box in the join* — but the conclusion is
-    the same in both and the decode-box cut is **more** severe on train, so the
-    filter's default-ON is a train-corpus fact and not an inherited one.
+    claim.** ⛔⛔ **BOTH LINES, NAMED, BECAUSE THE FIRST NUMBERS HERE WERE QUOTED
+    ACROSS LINES AND THAT HAS ALREADY COST THIS PROGRAMME A RETRACTION.**
+
+    **PARITY** line (``physicalai-train-e438721ae894``, the 2,308-clip train join,
+    **12,122,129 boxes**, ``…/2026-09-05-agent-join-into-batch/raw/
+    train_agent_density.json``): in-field **4,977,314 = 41.06 %** ⇒ **58.94 % OUT
+    OF FIELD**; in-field ∩ decode box **1,899,481 = 15.67 %** ⇒ **84.33 % outside
+    the decode box**.
+
+    **v7-B1** line (``physicalai-b1-w120-256x640cyl``, 4,566 clips / 875,657 frames
+    / **28,958,699 boxes**, MEASURED 2026-09-22, ``…/2026-09-22-refcv6-review/raw/
+    p2_b1_join_filter_census.json``): in-field **11,639,984 = 40.195 %**; in-field ∩
+    decode box **4,741,807 = 16.374 %**; **behind the ego (cx < 0) 14,490,476 =
+    50.038 %**.
+
+    ⚠️ **THEY ARE NOT INTERCHANGEABLE AND THE 41.06 / 15.67 PAIR IS THE PARITY ONE.**
+    refcv6 trains the **v7-B1** line, so a default justified here for a refcv6 arm is
+    justified by the second block, not the first. The conclusion survives on both —
+    the FOV cut is in fact *worse* on B1 — which is precisely why the substitution
+    went unnoticed; the numbers are close, the scopes are not.
+
+    ⚠️ The val40 figures are also a different denominator — *targets kept by*
+    ``match_slots`` at N = 16, not *every box in the join* — so the filter's
+    default-ON is a statement about all three populations, each quoted in its own
+    scope.
 
     ``half_angle_rad`` defaults to the rig's own 120° (±60°) — the SAME
     predicate ``bev_raster.fov_mask`` applies, and the same one the join's

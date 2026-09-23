@@ -100,13 +100,25 @@ def capture_sampler_inputs(decoder):
     records: list[SamplerInputs] = []
     orig = decoder._sample
 
-    def hook(kv, cond, bank, v_ms, steps, agents=None, agent_pad=None, agent_pos=None):
+    def hook(kv, cond, bank, v_ms, steps, agents=None, agent_pad=None, agent_pos=None,
+             bev=None):
         if agents is not None:
             raise D.Ddv2ConfigError("agent tokens reached the sampler; the binding is for an "
                                     "agent-free build (refcv5-v2 ran --agents off)")
+        # ⛔ refcv6 coupling (1), 2026-09-23. `_sample` gained a ninth parameter when the
+        # BEV-at-the-candidate's-waypoints coupling was wired to its consumer (it had been
+        # built and never called -- 0 forward-hook fires). A FIXED-ARITY hook is how a
+        # signature change becomes a TypeError three tests deep, so `bev` is accepted here,
+        # forwarded verbatim, and REFUSED for the same reason `agents` is: refcv5-v2 was
+        # trained with no BEV coupling, and a chain that silently dropped it on a
+        # coupling-built model would be a different model.
+        if bev is not None:
+            raise D.Ddv2ConfigError("a BEV map reached the sampler (refcv6 coupling (1)); the "
+                                    "binding is for the refcv5-v2 build, which has no "
+                                    "`bev_coupling`")
         rng_cpu = torch.get_rng_state()
         rng_cuda = torch.cuda.get_rng_state(bank.device) if bank.is_cuda else None
-        out = orig(kv, cond, bank, v_ms, steps, agents, agent_pad, agent_pos)
+        out = orig(kv, cond, bank, v_ms, steps, agents, agent_pad, agent_pos, bev)
         b = bank.shape[0]
         v = (bank.new_full((b,), decoder.anchor_ref_speed) if v_ms is None
              else v_ms.reshape(-1).to(torch.float32))
