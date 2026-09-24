@@ -3366,3 +3366,47 @@ toward 0 in every time bin, and the painted line must read a constant ~0.15 m wi
   drift is not established as a camera movement. **Horizon stays at 463.**
 - The 0–10 s bin reads 0.25 m under both horizons: a different (wider) marking there, not a scale
   error — that bin cannot be used for scale.
+
+## §153 Per-frame camera pointing from the CAR itself — the cowl edge (PI's suggestion)
+
+A smoothed lane-based track lags the fast stabiliser jumps, and a per-frame lane estimate is too noisy.
+**Anything rigid to the car moves in the image only when the image moves relative to the car** — which
+is exactly what the overlay needs, per frame, independent of the road.
+
+Three car-fixed references, registered by phase correlation on gradient magnitude against one fixed
+reference frame (`probes/carfixed_layer.py`, `probes/cowl_track.py`):
+
+| reference | 5-s bins vs bonnet | note |
+|---|---|---|
+| windscreen sticker (top-left, translucent) | agrees to t≈45 s, then drifts off by up to 10 px | trees show through it |
+| glossy bonnet (rows 860–1080, ±15-frame median) | — | r = 0.990 with the sticker in dx overall |
+| **windscreen/bonnet COWL edge** (rows 1022–1080) — *the PI's suggestion* | **within 1–2 px, both axes, whole clip** | opaque, non-reflective: registers PER FRAME (response 0.77, 0.31 px jitter at ±4 frames) |
+
+27 of 2216 cowl frames had low confidence (response < 0.3 or > 10 px off the local median) and are
+interpolated. Result: **yaw −7.80…−5.86 deg, horizon 450–482 px, max frame-to-frame yaw step 0.15 deg.**
+
+## §154 The acceptance test: did the car end up where the ribbon said?
+
+`probes/predict_vs_outcome.py` — the PI's original specification ("since we know the future"). At
+frame F the ribbon's centre at range X, as a fraction of the lane width between the lane lines fitted
+in F; at frame F′, when the car has travelled X − 8 m, the ribbon's centre at 8 m (where a yaw error
+barely matters) between the lane lines fitted in F′. Same patch of road. **The difference is the
+drawing error in metres — assuming nothing about the car being centred or parallel.** Control: the
+same test on v8's constant yaw.
+
+| error at 30 m (m) | 0–10 s | 10–20 s | 20–30 s | 30–40 s | robust sd |
+|---|---|---|---|---|---|
+| v8 constant −6.40 *(control)* | +0.42 | +0.44 | +0.27 | **−0.32** | 0.50 |
+| **cowl per-frame** | +0.08 | −0.03 | −0.02 | **−0.15** | 0.29 |
+
+At 20 m the cowl track is within ±0.06 m in every bin (v8: up to 0.24). **The test discriminates** (the
+control fails it), and the cowl-referenced camera passes. ⇒ In 30–40 s, the ribbon pointing toward the
+left line is **mostly the car's own drift within the lane** — the residual drawing error there is
+≤0.15 m at 30 m.
+
+Horizon from the cowl: paint-width spread between 10-s bins **0.026 → 0.018 m** (30–40 s: 0.140 → 0.156
+m); per-frame sd 0.011 → 0.013. **Passes modestly; adopted.**
+
+⚠️ **Coverage:** no prediction/outcome pairs after ~50 s (both lane lines must be fitted in F and F′,
+and the late clip is curves); the 40 m row is too noisy to use (sd ≈ 0.65 m). The cowl correction is
+applied everywhere, but it is **validated only on 0–50 s**.
