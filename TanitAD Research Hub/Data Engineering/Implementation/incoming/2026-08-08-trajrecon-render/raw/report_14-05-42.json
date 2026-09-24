@@ -1,0 +1,82 @@
+{
+ "recording": "2026-08-08_14-05-42-android",
+ "zip": "2026-08-08_14-05-42-android.zip",
+ "status": "REJECTED",
+ "started_utc": "2026-08-08T19:22:20.192682+00:00",
+ "outputs": {},
+ "diagnosis": {
+  "verdict": "REJECT",
+  "stats": {
+   "platform_detected": "android",
+   "platform": "android",
+   "device": "SM-G990B",
+   "gravity_mag_ms2": 9.8067,
+   "total_accel_mag_ms2": 9.9633,
+   "unit_notes": "accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]",
+   "frozen_fraction": 0.0,
+   "n_fixes": 10,
+   "hacc_median_m": 3.81,
+   "n_speed_missing": 0,
+   "speed_range_ms": [
+    3.46,
+    5.32
+   ],
+   "max_gap_s": 1.0,
+   "accel_hz": 105.17,
+   "gyro_hz": 105.17,
+   "gravity_hz": 105.17,
+   "gravity_norm": 9.807,
+   "gyro_absmax": 0.533,
+   "gps_distance_m": 39.8,
+   "moving_fraction": 1.0,
+   "accel_tier": 4,
+   "accel_quality": 0.031,
+   "video_duration_s": 8.53,
+   "video_frames": 256,
+   "video_fps": 30.006,
+   "sensor_duration_s": 9.22
+  },
+  "findings": [
+   {
+    "level": "DEGRADED",
+    "code": "EMPTY_CSV",
+    "message": "Annotation.csv is essentially empty",
+    "evidence": {
+     "bytes": 0
+    }
+   },
+   {
+    "level": "REJECT",
+    "code": "NO_MOTION",
+    "message": "only 40 m travelled (< 50.0 m)",
+    "evidence": {}
+   },
+   {
+    "level": "DEGRADED",
+    "code": "ACCEL_UNUSABLE",
+    "message": "accelerometer carries no usable longitudinal signal; speed will be GNSS-driven only",
+    "evidence": {
+     "source": "disabled (total_accel - R(q)^T*g, quality=0.03)"
+    }
+   },
+   {
+    "level": "DEGRADED",
+    "code": "WEAK_VEHICLE_FRAME",
+    "message": "phone->vehicle lateral axis is weakly determined",
+    "evidence": {
+     "lateral_score": 0.041
+    }
+   },
+   {
+    "level": "REJECT",
+    "code": "TOO_SHORT",
+    "message": "less than 15 s of overlapping video and sensor data",
+    "evidence": {
+     "overlap_s": 8.5
+    }
+   }
+  ]
+ },
+ "finished_utc": "2026-08-08T19:22:23.282413+00:00",
+ "duration_s": 3.0897464752197266
+}
