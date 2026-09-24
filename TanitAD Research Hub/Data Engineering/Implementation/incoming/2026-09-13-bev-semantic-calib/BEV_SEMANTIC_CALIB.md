@@ -3410,3 +3410,36 @@ m); per-frame sd 0.011 → 0.013. **Passes modestly; adopted.**
 ⚠️ **Coverage:** no prediction/outcome pairs after ~50 s (both lane lines must be fitted in F and F′,
 and the late clip is curves); the 40 m row is too noisy to use (sd ≈ 0.65 m). The cowl correction is
 applied everywhere, but it is **validated only on 0–50 s**.
+
+## §155 The 10-second bin hid the PI's 1.5 seconds — again
+
+§154's "−0.15 m at 30 m in 30–40 s" is a **bin median**. Frame by frame around the PI's frame, the cowl
+track still leaves **−0.45 … −0.77 m at 30 m over t = 33.9–35.4 s** (−0.54 m at 34.43 s; v8 there:
+−0.70). The same pooled-vs-specific error as `R-2026-09-24-constantyaw`, one level down — in time bins
+instead of the whole clip. ⇒ **When the PI names a moment, report that moment's pairs, not its bin.**
+
+## §156 It is not the trajectory — the gyro says so
+
+Hypothesis (stated to the PI as a suspicion): the reconstructed path is too straight during a small
+steering correction, because the error grows faster than linearly with range. **REFUTED.** The phone's
+gyro projected on gravity (landscape mount, gravity along +x) is the car's true yaw rate; dead-reckoning
+30 m ahead from gyro + speed alone reproduces the recorded path **to within 0.04 m at every sample from
+33.0 to 36.5 s** (e.g. 34.53 s: path +0.02, gyro +0.02). The trajectory is right; the car went nearly
+straight.
+
+## §157 So it is the camera — and the car-fixed references under-read it
+
+At frame 932 two independent lane-based measures agree on the yaw the drawing needs: the lane vanishing
+point (**−4.65°**) and prediction-vs-outcome (−6.11 + 0.54/22 rad = **−4.70°**). The cowl says **−6.11°**.
+Across the clip the lane VP moves **1.34× (column) / 1.43× (row)** as far as the car-fixed references.
+Pure EIS warps shift near and far content equally, so a pure-EIS model predicts 1.0.
+
+**HYPOTHESIS (not measured):** the phone also moves in its holder. The cowl, the bonnet and the sticker
+all sit ~1–1.5 m from the lens, so a sideways translation of the phone shifts them by `f·δ/Z` while it
+does not move the distant lane at all, and a pivoting holder couples that translation to the rotation.
+That would make every car-fixed reference a biased measure of the rotation the drawing needs, and it is
+consistent with sticker and cowl agreeing with each other (similar Z) but not with the lane.
+
+⇒ **v12: fuse.** The cowl for fast changes (precise, lag-free); prediction-vs-outcome against the lane
+lines for the absolute level, low-passed over ~2 s. Fit on half the prediction frames, tested on the
+other half.
