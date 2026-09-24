@@ -112,7 +112,7 @@ import sys
 sys.modules.setdefault("trajlib", sys.modules[__name__])
 
 __all__ = [
-    "accel_source", "camera", "contract", "diagnose", "flow_calib",
+    "accel_source", "attitude_track", "camera", "contract", "diagnose", "flow_calib",
     "frame_folder", "frames", "geo", "ground_calib", "horizon_calib",
     "io_sensorlogger",
     "lane_calib", "pipeline", "plane_calib", "quality", "render_video",

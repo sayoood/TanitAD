@@ -54,6 +54,7 @@ from trajlib import diagnose as DG
 from trajlib import timesync as TS
 from trajlib import viz
 from trajlib.camera import calibrate_camera
+from trajlib.attitude_track import camera_for_time, load_attitude_track
 from trajlib.io_sensorlogger import load_session
 from trajlib.steering import AUDI_A6_ETRON, estimate_steering
 from trajlib.trajectory import (ego_trajectory, estimate_trajectory,
@@ -392,6 +393,23 @@ def process_one(zip_path, out_dir, scratch, args, log) -> dict:
             "value": round(float(args.lateral_offset), 3), "unit": "m",
             "source": "OPERATOR OVERRIDE --lock-lateral (not measured)"}
         log(f"    override: lateral offset locked at {args.lateral_offset:+.3f} m", "WARN")
+    if getattr(args, "attitude_track", None):
+        _trk = load_attitude_track(args.attitude_track)
+        calib["parameters"]["attitude_track"] = {
+            "path": os.path.abspath(args.attitude_track),
+            "n": int(_trk.t.size),
+            "yaw_deg_range": [round(float(_trk.yaw_deg.min()), 3),
+                              round(float(_trk.yaw_deg.max()), 3)],
+            "horizon_row_range": (None if _trk.horizon_row is None else
+                                  [round(float(_trk.horizon_row.min()), 1),
+                                   round(float(_trk.horizon_row.max()), 1)]),
+            "source": ("TIME-VARYING attitude for DRAWING ONLY (not a mount calibration): "
+                       + (_trk.source or "no source recorded"))}
+        log(f"    attitude track: {_trk.t.size} samples, yaw "
+            f"{_trk.yaw_deg.min():+.2f}..{_trk.yaw_deg.max():+.2f} deg"
+            + ("" if _trk.horizon_row is None else
+               f", horizon {_trk.horizon_row.min():.1f}..{_trk.horizon_row.max():.1f} px")
+            + " -- applied per rendered frame", "WARN")
 
     # The trajectory is about to be re-referenced to the vehicle, so the camera
     # is no longer at the origin: it sits at the mount position.  project()
@@ -825,7 +843,10 @@ def emit_outputs(out_dir, session, video, sync, traj, steer, cam, args, log, cal
     ego = _ego_at(traj, float(ft[mid]), args)
     img = _grab_bgr(video, int(mid))
     if img is not None and ego is not None:
-        panel = _compose(img, ego, cam, steer, float(ft[mid]), args)
+        _trk = (load_attitude_track(args.attitude_track)
+                if getattr(args, "attitude_track", None) else None)
+        panel = _compose(img, ego, camera_for_time(cam, _trk, float(ft[mid])),
+                         steer, float(ft[mid]), args)
         cv2.imwrite(os.path.join(out_dir, "validation.png"), panel)
         outs["validation.png"] = f"composite at t={ft[mid]:.1f}s"
 
@@ -933,6 +954,8 @@ def _render_video(video, indices, ft, traj, steer, cam, args, out_path, log):
         log("ffmpeg not on PATH; skipping the video", "WARN")
         return 0
     fps = max(video.avg_fps / max(args.video_stride, 1), 1.0)
+    track = (load_attitude_track(args.attitude_track)
+             if getattr(args, "attitude_track", None) else None)
     proc, n = None, 0
     t0 = time.time()
     for k, fi in enumerate(indices):
@@ -940,7 +963,8 @@ def _render_video(video, indices, ft, traj, steer, cam, args, out_path, log):
         img = _grab_bgr(video, int(fi))
         if ego is None or img is None:
             continue
-        panel = _compose(img, ego, cam, steer, float(ft[fi]), args)
+        cam_t = camera_for_time(cam, track, float(ft[fi]))
+        panel = _compose(img, ego, cam_t, steer, float(ft[fi]), args)
         if proc is None:
             h, w = panel.shape[:2]
             proc = subprocess.Popen(
@@ -1006,6 +1030,12 @@ def main():
                     help="make --cam-height authoritative. Without it scale_calib "
                          "recomputes the height from f*h and the lane width and the "
                          "operator's value is silently discarded.")
+    ap.add_argument("--attitude-track", default=None,
+                    help="JSON {t_session_s, yaw_deg[, horizon_row]} applied PER FRAME when "
+                         "drawing the overlay. For recordings with electronic stabilisation, "
+                         "where the crop -- and so the effective camera -- moves during the "
+                         "clip and no constant yaw can be right (see attitude_track.py). "
+                         "Changes only the drawing; the trajectory is camera-independent.")
     ap.add_argument("--lock-lateral", action="store_true",
                     help="keep --lateral-offset even if lane_calib measures one")
     ap.add_argument("--vehicle-width", type=float, default=1.8)
