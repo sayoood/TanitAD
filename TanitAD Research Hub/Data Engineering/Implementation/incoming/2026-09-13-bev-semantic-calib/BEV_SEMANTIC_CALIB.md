@@ -3443,3 +3443,19 @@ consistent with sticker and cowl agreeing with each other (similar Z) but not wi
 ⇒ **v12: fuse.** The cowl for fast changes (precise, lag-free); prediction-vs-outcome against the lane
 lines for the absolute level, low-passed over ~2 s. Fit on half the prediction frames, tested on the
 other half.
+
+## §158 v12 rendered — the PI's frame is parallel to the lane
+
+Frame 932 (t = 34.43 s), measured against both lane lines fitted as whole lines:
+
+| render | yaw here | path-vs-lane | ribbon off lane centre, near → far (lane widths) |
+|---|---|---|---|
+| v8 constant | −6.40 | **−1.75°** | −0.175 → −0.340 |
+| v11 cowl | −6.11 | −1.40° | −0.156 → −0.291 |
+| **v12 cowl + outcome level** | **−4.87** | **−0.16°** | **−0.085 → −0.106** |
+
+The residual offset is now the same near and far (≈0.3 m left): a constant position in the lane, i.e.
+where the car actually was, not a rotation. Render: `out_v12`, 2216/2216 frames, track applied per frame.
+
+⚠️ Validated mainly on 5–40 s. After ~40 s there are almost no prediction/outcome pairs, so v12 there is
+the cowl track plus a constant (+0.13°) — v11 behaviour.
