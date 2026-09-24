@@ -3297,3 +3297,72 @@ straight-road median (−0.040 m over 333 frames) is still the calibration claim
 robust sd of 0.379 m — which this stretch shows is largely real driving — is still the reason a
 single frame can never settle a calibration question in either direction. **That cuts both ways: it
 was not evidence against v6 either, and v6 was wrong for reasons measured over 400 frames.**
+
+---
+
+# Part 30 — the camera moves during the clip: EIS, measured at last
+
+## §149 The PI was right, and the evidence against him was pooled
+
+Frame 932 (t = 34.43 s), v8 render. Both lane lines fitted as **whole Hough lines** — top-hat to isolate
+paint, `HoughLinesP`, segments grouped per side and fitted as one line `u = a + b·v` weighted by segment
+length — and **drawn onto the frame and checked to lie on the paint before any number was read**
+(`scratchpad/vp_check.py`, image `vp_932.png`). They meet at **(834, 473)**. The drawn ribbon's
+straight-ahead direction meets that row at **787**. The ribbon is rotated **1.75 deg left of the lane**,
+its left edge crossing the solid line at ~20–30 m. Scanning the drawing yaw on that frame nulls the
+angle at **−4.65 deg**, ~1:1 in yaw.
+
+## §150 It drifts, with time, not with steering
+
+Gated straight frames only (`|path lateral @ 40 m| < 0.3 m`; both lines found; slopes, vanishing-point
+row and lane width at row 720 all physically plausible), every 3rd frame, n = 128:
+
+| t (s) | 0–5 | 5–10 | 10–15 | 15–20 | 20–25 | 25–30 | 30–35 | 35–40 | 40–45 | 50–55 | 60–65 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| lane VP column | 757 | 747 | 746 | 766 | 773 | 762 | **821** | **805** | **807** | 760 | 798 |
+| lane VP row | 475 | 463 | 468 | 483 | 484 | 458 | **490** | **489** | 479 | 467 | 463 |
+
+Column p10–p90 spread **80 px ≈ 3 deg**, lag-1 autocorrelation **+0.64**; row spread **37 px**,
+autocorrelation **+0.54** — slow drifts, not noise. Against the angle: steering **r = +0.09**, path
+curvature r = −0.35, **time r = −0.41**; steering is flat across bins (−1.1…+0.6 deg) while the angle
+moves ~4 deg. **The car is not turning. The image is.** EIS (operator-confirmed, Part 6) moves the crop
+window, and a moved crop is a moved camera.
+
+⭐ **This is the risk §2 named on day one** — *"the mount rotation is not constant across frames — the
+one assumption the whole method rests on"* — and §1041 left as *"not measured"*. Every constant yaw since
+was a pooled average of a drifting quantity, which is why each render fixed one stretch and broke
+another: **v6's −7.75 fits t < 30 s; the 30–50 s stretch wants ≈ −4.9; v8's −6.40 fits neither end.**
+
+## §151 The fix: a per-frame attitude track, for DRAWING only
+
+`stack/tanitad/data/trajrecon/attitude_track.py` + `pipeline.py --attitude-track`: a
+`(t_session_s, yaw_deg[, horizon_row])` track interpolated per rendered frame. The trajectory is
+camera-independent and does not move. Track v9: running median ±3 s (widened to ≥ 3 samples, max ±8 s),
+then a 1.5 s Gaussian; yaw **−7.92…−5.62 deg**, horizon **456…489 px**.
+
+⚠️ **What it absorbs.** Fitting to the lane VP assumes the car heads along the lane on average over the
+window, so heading changes slower than ~6 s are absorbed as "camera". Real lane-keeping wobble is
+shorter and survives. **The track is a measurement of effective pointing for this clip, not a mount
+calibration**, and the constant `--cam-yaw` stays in the record only as the fallback.
+
+## §152 Held-out check of track v9 — yaw passes (halfway), horizon FAILS
+
+Evaluated on **337 straight frames that were NOT used to build the track** (fit on every 3rd frame,
+evaluated on the frames offset by one). Two pre-registered tests: the path-vs-lane angle must fall
+toward 0 in every time bin, and the painted line must read a constant ~0.15 m wide.
+
+| t (s) | 0–10 | 10–20 | 20–30 | **30–40** | **40–50** | 60–70 | pooled |
+|---|---|---|---|---|---|---|---|
+| angle, v8 constant −6.40 | +1.38 | +0.61 | +1.12 | **−1.34** | **−1.40** | +0.03 | med +0.57, sd 1.20 |
+| angle, yaw track | −0.09 | −0.40 | +0.17 | **−0.55** | **−0.70** | +0.41 | med −0.22, sd 0.92 |
+| paint width, horizon 463 | 0.246 | 0.156 | 0.162 | 0.144 | 0.150 | 0.146 | med 0.156, sd 0.019 |
+| paint width, horizon track | 0.256 | 0.168 | 0.156 | 0.164 | 0.164 | 0.147 | med 0.162, sd 0.021 |
+
+- **Yaw track: adopted, but it only halves the error in the PI's stretch** (−1.4 → −0.6 deg at 30–50 s):
+  the ±3 s median + Gaussian blurs a fast jump (the VP column moves ~60 px in 5 s at t ≈ 30 s).
+- ⛔ **Horizon track: REJECTED by its own test.** Paint width gets less consistent (sd 0.019 → 0.021)
+  and moves further from 0.15 m exactly where it was meant to help. The straight-line VP **row** is a
+  poor horizon estimator — a crest or dip ahead bends the fitted lines vertically — so its 458–490 px
+  drift is not established as a camera movement. **Horizon stays at 463.**
+- The 0–10 s bin reads 0.25 m under both horizons: a different (wider) marking there, not a scale
+  error — that bin cannot be used for scale.

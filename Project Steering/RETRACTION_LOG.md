@@ -3864,3 +3864,37 @@ re-confirms the horizon, since a wrong one makes that width drift with range.
 
 ⇒ **Rule: for this recording, measure against the SOLID line only.** The dashed side may be used for
 a width, never for a boundary position in a single frame.
+
+---
+
+## `R-2026-09-24-constantyaw` — "v8 is geometrically correct" — no constant yaw can be, on this clip
+
+**WITHDRAWN:** the conclusion reported to the PI on 2026-09-20 that *"v8 is geometrically right"* and
+*"the ribbon is centred to within ~0.09 m"* in frame 932, and `R-2026-09-20-nearestridge`'s "corrected
+reading" that rests on it. **The PI was right both times he said the trajectory leaves the lane.**
+
+**WHAT IS TRUE, MEASURED 2026-09-24.** Both lane lines fitted as WHOLE Hough lines — drawn on the frame
+and checked to sit on the paint before any number was used — on frame 932 meet at column 834; the drawn
+ribbon heads for column 787. The ribbon is rotated **1.75 deg left of the lane** and its left edge
+crosses the solid line at ~20–30 m, exactly as reported. Over the clip, on gated straight frames, the
+lane's vanishing point **walks ~80 px (≈3 deg of yaw)**: column ~751 at t 0–10 s, ~830 at 40–50 s,
+lag-1 autocorrelation +0.64. It tracks **time** (r −0.41), not steering (r +0.09). The row drifts too,
+458–490 px. **Electronic stabilisation moves the crop, so the effective camera moves during the clip.**
+
+**ROOT CAUSE — THREE LAYERS.**
+1. **A constant-parameter model on a time-varying camera.** EIS was operator-confirmed on in Part 6 and
+   named in §2 as *"the single biggest threat ... the one assumption the whole method rests on"*, and
+   §1041 records it as *"not measured"*. It was never measured until now. Every constant yaw fitted a
+   **pooled** statistic that averages a drifting quantity: v6's −7.75 matched the first 30 s, v8's
+   −6.40 sits between, and the 30–50 s stretch the PI kept sending wants ≈ −4.9.
+2. **Pooled evidence was used to overrule a specific complaint.** "Median offset −0.04 m over 333
+   frames" and "clearance flat over 200 frames" are true of the POOL and false of the STRETCH. A pooled
+   statistic cannot rebut a claim about a particular moment when the quantity drifts in time.
+3. **The "centred to 0.09 m" reading was an eyeball estimate from a screenshot**, the exact failure
+   `R-2026-09-15-screenshot` exists to prevent, and it was used to retract a roughly-correct number.
+   The per-row detector's "+0.75 m" was contaminated, but it was closer to the truth than the
+   eyeball that replaced it.
+
+**CLASS: a pooled statistic answering a question about a subset** — same family as the sample-mean vs
+per-frame-minimum error in `R-2026-09-19-greenhue`, now in the time dimension. ⇒ **When the PI reports
+a failure at a specific moment, test for time-dependence BEFORE citing a pooled number against him.**
