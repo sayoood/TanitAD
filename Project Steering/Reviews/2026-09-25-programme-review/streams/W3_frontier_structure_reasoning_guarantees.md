@@ -950,7 +950,394 @@ thing to hype for our use case specifically** (see E6 for why).
 
 ## F. Mathematical guarantees & runtime assurance
 
-*(filling in below)*
+**What can actually be GUARANTEED vs. statistically bounded — stated up front, since the brief asks
+for this explicitly:**
+
+| Mechanism | What is GUARANTEED | Under which assumptions | What is only STATISTICAL |
+|---|---|---|---|
+| RSS | No-blame-for-collision under the model's own rules | Other agents obey the same kinematic bounds (max brake/accel) assumed by the model; sensing is perfect | Whether the *modeled* bounds match the real world (a leading vehicle that brakes harder than assumed breaks the guarantee) |
+| Hard CBF (classical) | Forward invariance of the safe set | Exact, correct dynamics model; no actuation limits violated; correct relative degree | Robustness to model mismatch — is a soft/statistical property unless paired with robust-CBF variants |
+| Differentiable CBF (BarrierNet) | Same as hard CBF, at each layer's QP | Same as above, PLUS the QP is solved exactly (it is, for these small QPs) | The *learned* part upstream of the safety layer is not guaranteed anything — only the filtered output is |
+| HJ reachability | Exact safe/unsafe set membership, exact optimal control at the boundary | Known dynamics + known disturbance/action bounds; suffers the curse of dimensionality (classically ≤ 5-6 state dims tractable) | High-dimensional/learned approximations (DeepReach) trade the *exact* guarantee for a *statistically validated* approximation — this must be stated, not glossed over |
+| Simplex / runtime assurance | Safety of the **verified baseline controller only**, switched to when needed | The switching logic itself is correct and the baseline really is safe | Whether the advanced (learned) controller is ever actually better — no guarantee on performance, only on the fallback |
+| Conformal prediction | Marginal coverage at the chosen level (e.g. 90% of the time the true value is in the predicted set), **in expectation over the calibration distribution** | Exchangeability (or a stated relaxation of it) between calibration and deployment data | NOT a guarantee for any single trajectory/episode, and breaks under distribution shift unless adaptive/online variants are used |
+| NN formal verification (α,β-CROWN) | Exact certification that a specific property holds for **all** inputs in a specified bounded region | The property and input region are precisely specified in advance; scales to millions of parameters for the properties VNN-COMP benchmarks (bounded local robustness, reachability of small nets) | Does **not** currently certify open-ended semantic properties ("detects all pedestrians") on a large ViT-scale perception backbone — this is the most commonly overclaimed guarantee in the popular literature and must not be confused with what VNN-COMP actually benchmarks |
+| Statistical model checking / importance splitting | An estimate of rare-event probability with a stated confidence interval | Correctness of the simulation model as a proxy for reality (sim-to-real gap is not covered) | Always statistical by definition — the entire category |
+
+### F1. RSS — Responsibility-Sensitive Safety
+- **What:** A parametrized, technology-neutral formal model (five core rules — safe longitudinal/
+  lateral distances, right-of-way, occlusion caution, avoid-if-possible) that defines a "safety
+  envelope" independent of the AV's own planner; the planner can be anything, RSS only rejects
+  proposed actions that would violate the envelope.
+- **Evidence:** PUBLISHED — original Mobileye RSS formalization (Shalev-Shwartz, Shammah, Shashua,
+  2017/2018, well-established prior knowledge, not independently re-verified this pass); formal
+  verification/refinement/testing treatment: "Slow Down, Move Over: A Case Study in Formal
+  Verification, Refinement, and Testing of RSS," arXiv:2305.08812. **2026 update, PUBLISHED:** in
+  March 2026 TÜV SÜD issued a formal recommendation for Mobileye's Safety Management System for SAE
+  Level 4, per Mobileye's own blog/press material (secondary source, not independently audited here).
+  Maturity: **PROVEN** as a formal model (it is literally a mathematical proof structure, "verifiable
+  without millions of miles of driving," per Mobileye's own framing) and increasingly PROVEN as an
+  industry-accepted certification basis (the TÜV SÜD step).
+- **Pain points:** **P8 directly** — RSS is the most mature, most externally validated answer to "no
+  formal safety layer is known." **P1** — RSS is explicitly independent of the planner, so it composes
+  with *any* choice TanitAD makes for the learned planner itself.
+- **Admissibility:** Clean — RSS's inputs are relative positions/velocities/accelerations of the ego
+  and nearby agents, all vision/`obstacle.offline`-derivable, no privileged signal, no interaction
+  with the situation-classifier firewall.
+- **Cost:** ~5-7 eng-days for a minimal longitudinal+lateral RSS-distance check (the two simplest of
+  the five rules), ~0 A40-days (RSS distance checks are closed-form arithmetic, not learned).
+- **Experiment:** Implement the RSS safe-longitudinal-distance rule only, run it as a passive monitor
+  (not yet gating) alongside the existing v1 flagship on the AlpaSim closed-loop suite, and check how
+  often the flagship's own trajectory would have violated it. **Outcome A:** violation rate is low and
+  concentrated in the known-failure scenarios → RSS distance-check correctly flags the existing known
+  problem (cheap confirmatory instrument, promote to an active guard per B4's pattern). **Outcome B:**
+  violation rate is high even on passing scenarios → either RSS's parameters (max brake/accel bounds)
+  need calibration to TanitAD's ODD, or the flagship is closer to the safety boundary more often than
+  the pass/fail AlpaSim metric alone reveals (itself a finding worth having, tying into P10).
+
+### F2. Control Barrier Functions — classical, and BarrierNet's differentiable/learned variant
+- **What:** A CBF defines a safe set via a scalar function whose non-negativity is forward-invariant
+  under a control law satisfying a derivative condition; classically this is solved as a QP filter on
+  top of any nominal controller. **BarrierNet** embeds this QP as a differentiable layer, end-to-end
+  trainable by gradient descent, so the safety layer can be learned/adapted jointly with the policy
+  rather than hand-tuned, while keeping the QP's hard guarantee on the *final* output.
+- **Evidence:** PUBLISHED — BarrierNet, *IEEE Transactions on Robotics* 2023 (Xiao et al.) —
+  foundational, differentiable CBF-QP safety layers "guarantee safety" for the filtered output and
+  "can be used in conjunction with any neural network-based controller." **Applied specifically to
+  vision-based end-to-end driving:** "Differentiable Control Barrier Functions for Vision-based
+  End-to-End Autonomous Driving," arXiv:2203.02401 — this is BarrierNet's own driving-specific
+  instantiation, i.e. **directly on point for TanitAD's architecture shape** (vision in, safety-
+  filtered control out). 2026 follow-on: "End-to-End Learning of Safe Optimal Feedback Control in
+  High Dimensions with Control Barrier Function Layers," arXiv:2607.20674. Maturity: **PROVEN**
+  (peer-reviewed IEEE T-RO, multi-year adoption, and a driving-specific instantiation already exists).
+- **Pain points:** **P1 (selection)** and **P6 (compounding error)** — a CBF-QP layer is a
+  *hard* constraint on the final command (unlike B4's discrete replace-if-violated guard, a CBF-QP
+  finds the *closest feasible* command via a small convex optimization, which is smoother and doesn't
+  discard the network's intent as bluntly). **P8** — genuinely GUARANTEEs forward invariance of the
+  safe set, conditional on the dynamics model and actuation bounds being correct (see the table
+  above) — this is one of the few mechanisms in this whole report where "guarantee" is not loosely
+  used.
+- **Admissibility:** Clean — same input class as RSS/B4 (kinematics + nearby-agent state).
+- **Cost:** ~6-10 A40-days (the QP layer itself is cheap; most of the cost is defining the barrier
+  function(s) for TanitAD's ODD — road-edge, lead-vehicle, and validating relative-degree conditions
+  hold for the chosen state representation), ~8-10 eng-days (differentiable QP layers, e.g. via
+  cvxpylayers or qpth, are mature but need careful integration).
+- **Experiment:** Attach a single-barrier (road-edge / off-road) CBF-QP layer to the deployed v1
+  flagship's waypoint output (same latency budget concern as B4 — a small QP is sub-ms, easily fits
+  inside the 18.75-27.87ms optimized planning tick per `MODEL_REGISTRY.md`), re-run AlpaSim.
+  **Outcome A:** off-road closed-loop failures (the exact failure mode already measured for v1) drop
+  to near-zero **with a mathematical forward-invariance argument**, not just an empirical improvement
+  → this becomes the leading candidate for the "guaranteed envelope" architecture's core safety layer.
+  **Outcome B:** the QP is frequently infeasible (nominal command too far from the safe set to find a
+  nearby feasible one) → indicates the *upstream* planner is proposing commands too far from safe too
+  often, which is itself important evidence that the fix needs to happen earlier in the stack (B3/B7
+  selection), not only at the final filter.
+
+### F3. Hamilton-Jacobi reachability + DeepReach — exact where tractable, approximate at scale
+- **What:** Computes the exact set of states from which a system can avoid (or is forced into) an
+  unsafe outcome under worst-case disturbance, via solving a Hamilton-Jacobi-Isaacs PDE; DeepReach
+  replaces the classical grid-based PDE solver (exponential in state dimension) with a neural PDE
+  solution, trading the *exact* guarantee for a *learned, statistically-validated* approximation that
+  scales to higher dimensions.
+- **Evidence:** PUBLISHED — DeepReach (Bansal & Tomlin, ICRA 2021, foundational, well-established).
+  2026 activity: "Gradient-Free Neural Hamilton-Jacobi Reachability for Scalable Safety-Critical
+  Control," arXiv:2609.14087 (**Sept 2026, very recent**) — targets exactly reachability's classical
+  scalability bottleneck. "HJ Reachability-Based Safe Reinforcement Learning for Emergency Collision
+  Avoidance," arXiv:2606.15311. "Extending and Unifying the Fundamental Tasks of HJ Reachability
+  Analysis," arXiv:2608.18060. Maturity: **PROVEN** for low-dimensional state (classical HJ
+  reachability, exact, used operationally e.g. in airspace collision avoidance for decades);
+  PROMISING for the neural/scaled variants at automotive-relevant dimension.
+- **Pain points:** **P8** — HJ reachability is the other major formal-guarantee family besides
+  CBFs, and its guarantee (exact safe-set membership + the actual optimal safe control at the
+  boundary) is arguably *stronger* than a CBF's (a CBF needs a barrier function to be hand-designed
+  well; reachability computes the maximal safe set directly, if it's tractable). **P6** — reachability
+  sets can be precomputed **offline**, so the *online* cost is a cheap lookup/gradient evaluation, not
+  a per-step optimization, which is attractive for the 10 Hz budget.
+- **Admissibility:** Clean.
+- **Cost:** Precomputing an HJ value function for TanitAD's ego + one lead-agent (a 2-4 dimensional
+  relative-state reachability problem — tractable *classically*, no neural approximation needed at
+  this dimension) is ESTIMATED ~3-5 eng-days + modest CPU compute (no A40 needed for a 2-4D grid).
+  Extending to multi-agent or higher-fidelity dynamics would need DeepReach-style neural
+  approximation, ESTIMATED ~10-15 A40-days.
+- **Experiment:** Precompute a classical (grid-based, exact, no neural approximation) 3D HJ
+  reachability set for ego-vs-single-lead-vehicle longitudinal safety (relative position, relative
+  velocity, ego acceleration bound), use it as an online lookup-based safety filter, and compare
+  against F2's CBF-QP on the same AlpaSim scenarios. **Outcome A:** HJ reachability and CBF-QP give
+  similar practical safety outcomes → prefer whichever is cheaper to maintain/extend (likely the
+  CBF-QP, since reachability's curse of dimensionality bites hard the moment more than 1-2 agents
+  matter). **Outcome B:** HJ reachability catches near-boundary cases the CBF barrier function (which
+  is hand-designed and may be conservative or, worse, non-conservative in the wrong place) misses →
+  worth the extra investment for the highest-stakes longitudinal scenarios specifically (car-following
+  at speed, which per the fact sheet is 88.7% of the oracle gap).
+
+### F4. Simplex / runtime-assurance architectures — the general pattern the "guaranteed envelope" is built on
+- **What:** Control authority defaults to an unverified, high-performance "advanced" controller (the
+  learned flagship), but a verified, provably-safe "baseline" controller and a decision module
+  monitor safety-relevant conditions and can **switch** authority to the baseline when the advanced
+  controller's proposed action would be unsafe. Classical Simplex treats the advanced controller as a
+  pure black box; newer variants allow bounded, formally-justified information flow *from* the
+  learned component *to* the safety monitor.
+- **Evidence:** PUBLISHED — the Black-Box Simplex Architecture (arXiv:2102.12981, foundational).
+  **Simplex-Drive** (IEEE conf., 2022, arXiv-indexed ~2109.13446): DRL advanced controller +
+  Velocity-Obstacle baseline with **provable safety guarantees**, verified mode-management switching.
+  **Synergistic Simplex**, arXiv:2605.08190 (2026): the key 2026 advance — allows the safety monitor
+  to *use* ML outputs (normally prohibited in classical Simplex, which must treat the learned
+  component as untrusted), with a **formal derivation of the conditions under which this preserves
+  safety** — i.e. a principled way to be less conservative than black-box Simplex without giving up
+  the guarantee. **Mission-Level Runtime Assurance Framework for Autonomous Driving,**
+  arXiv:2606.06996 (2026) — driving-specific. Maturity: **PROVEN** as an architecture pattern
+  (decades of aerospace/CPS runtime-assurance deployment; Simplex-Drive specifically demonstrates the
+  provable-baseline property for a driving-shaped problem).
+- **Pain points:** **P8 end-to-end** — this is the architectural *frame* the whole "guaranteed
+  envelope" section below is built around: TanitAD's learned flagship is the advanced controller,
+  never itself verified; a small, genuinely verifiable baseline (a Koopman-LQR car-following
+  controller from E3, or a simple lane-centered PD controller) is the Simplex baseline; F2's CBF-QP
+  or F1's RSS check is the switching/monitor logic. **P9 (few A40s)** — critically, this pattern
+  **does not require the flagship itself to ever be formally verified** (which would be intractable
+  at any interesting param count per F5 below) — only the small baseline needs a proof, which is
+  cheap.
+- **Admissibility:** Clean — the switching logic's inputs are the same kinematics/agent-state class as
+  F1/F2.
+- **Cost:** ~10-15 eng-days for a first Simplex wrapper (baseline controller + switching logic +
+  integration with the existing flagship's output), ~5-8 A40-days if the baseline itself needs any
+  learning component (Koopman lifting, E3).
+- **Experiment:** Wrap the deployed v1 flagship in a minimal Simplex architecture with a
+  hand-designed baseline (constant-time-headway car-following + lane-centering) and a switch
+  condition = F2's CBF value crossing a threshold; run the full AlpaSim closed-loop suite.
+  **Outcome A:** pass rate approaches or exceeds flat REF-C's 8/12 **while retaining the flagship's
+  behaviour on the 8 scenarios it already handles well** → this is the core validation of the
+  "guaranteed envelope > either component alone" thesis this report closes with. **Outcome B:** the
+  switch triggers so often that the system is effectively running the (crude, hand-designed) baseline
+  most of the time → the baseline itself needs to be less conservative (motivating Synergistic
+  Simplex's ML-informed monitor, or a better baseline via E3's Koopman-LQR rather than a hand-tuned
+  PD controller).
+
+### F5. NN formal verification (α,β-CROWN / VNN-COMP) — what scale actually means here
+- **What:** Certifies that a specified property (typically: output stays within bounds, or a decision
+  doesn't change) holds for **every** input in a bounded region (e.g. an L∞ ball around a test image),
+  via sound bound-propagation + branch-and-bound.
+- **Evidence:** PUBLISHED — α,β-CROWN has won **VNN-COMP 2021 through 2025** (5 consecutive years,
+  github.com/Verified-Intelligence/alpha-beta-CROWN), described by its own documentation as scaling
+  "to relatively large convolutional networks (e.g., millions of parameters)" on benchmarks including
+  an aerospace-collision-avoidance net (`collins-aerospace-benchmark`) and a driving-relevant one
+  (`cctsdb-yolo-2023`, a traffic-sign/object-detection-shaped benchmark). VNN-COMP 2026 results were
+  not yet available as of this search (competition runs later in the year). Maturity: **PROVEN** as a
+  verification *tool* (5-year winning streak, actively maintained, GPU-accelerated); **the scale claim
+  needs a precise reading, not a loose one.**
+- **The precise reading (this is the section's most important nuance-check):** "Scales to millions of
+  parameters" refers to *specific benchmark properties* — typically local robustness (small input
+  perturbation doesn't flip a bounded output) on convolutional classifiers/detectors, or reachability
+  of small control networks (ACAS Xu-style, a handful of layers). It does **not** mean one can certify
+  an open-ended semantic property ("this network correctly perceives all pedestrians") on a
+  ViT-scale backbone the size of TanitAD's own 87M-parameter encoder. TanitAD's encoder is within the
+  *parameter-count* range α,β-CROWN has verified nets at, but the *properties* that matter for driving
+  safety (semantic perception correctness, not just local output-bound robustness) are not the
+  properties VNN-COMP benchmarks certify. **This is the single most commonly overclaimed guarantee in
+  the public discourse around "provably safe AI," and this report explicitly does not repeat that
+  overclaim** — see the "what is hype" section below.
+- **Pain points:** **P8**, narrowly: verification is realistically applicable to TanitAD's *small*
+  components — a CBF barrier-function network (if learned rather than hand-designed), a tiny
+  fallback/baseline controller (F4's Simplex baseline), or a bounded-robustness property of the
+  tactical head's manoeuvre classifier (e.g. "a small perturbation to the input never flips
+  lane-keep→lane-change") — **not** the full encoder-to-trajectory pipeline.
+- **Admissibility:** N/A (a verification tool, not a runtime component).
+- **Cost:** ~5-8 eng-days to set up α,β-CROWN against a small, well-scoped property (e.g. the
+  Simplex-baseline controller's local robustness, or a bounded-input-perturbation property of the
+  5-way tactical manoeuvre classifier). ~0 A40-days (verification is typically run once, offline,
+  design-time — though GPU-accelerated for speed).
+- **Experiment:** Formally verify a **bounded local-robustness property** of the F4 Simplex baseline
+  controller (a small network, if it has any learned component) or of the tactical manoeuvre
+  classifier alone: "for all inputs within ε of a validation-set input, the manoeuvre decision does
+  not flip." **Outcome A:** verified for a meaningful ε → a genuine, citable formal-verification
+  result for the safety case (Section F9), scoped honestly to what it actually covers. **Outcome B:**
+  verification fails / times out even at this small scale → informative about which of TanitAD's
+  small components are actually verification-tractable, narrowing future safety-case claims to what's
+  achievable rather than aspirational.
+
+### F6. Conformal prediction for forecasting and planning — Lindemann's line and its 2026 successors
+- **What:** A distribution-free calibration technique that converts any point predictor (of a lead
+  agent's future trajectory, of the ego's own imagined rollout error, etc.) into a **prediction
+  region** with a marginal coverage guarantee, using only exchangeability between calibration and
+  deployment data — no assumption on the predictor's correctness or the data's distribution shape.
+- **Evidence:** PUBLISHED — foundational driving/planning line: Lars Lindemann et al., "Safe Planning
+  in Dynamic Environments using Conformal Prediction," arXiv:2210.10254 — MPC using CP-calibrated
+  prediction regions, **provably safe with a user-defined probability**, compatible with any
+  trajectory predictor (RNN/LSTM) with no assumption on the true trajectory distribution. Successor:
+  Dixit, Lindemann et al., "Adaptive Conformal Prediction for Motion Planning among Dynamic Agents,"
+  PMLR v211 (arXiv:2212.00278). **2026 successor directly relevant here:** "Barrier Function
+  Conformal Safety Clearance Certification with CVaR for Driving Trajectory Selection,"
+  arXiv:2608.26533 (Aug 2026) — **fuses CBF + conformal prediction + CVaR risk** specifically for
+  trajectory *selection* (i.e., P1). Also: "Safe, Out-of-Distribution-Adaptive MPC with Conformalized
+  Neural Network Ensembles," arXiv:2406.02436 — handles OOD, not just in-distribution coverage.
+  Maturity: **PROVEN** (Lindemann's line is a mature, multi-year, widely-cited body of work with a
+  real mathematical guarantee — marginal coverage under exchangeability is a clean, checkable
+  theorem, not a loose claim).
+- **Pain points:** **P1 (selection)** — the 2608.26533 fusion paper is literally "conformal +
+  barrier + selection," i.e. this specific 2026 paper is doing exactly what TanitAD needs for its
+  named #1 pain point. **P7 (imagination anti-calibration) — this is the most direct, most rigorous
+  answer to P7 in this entire report:** conformal prediction is *precisely* a calibration technique,
+  and applying it to TanitAD's H15 imagination module's own rollout error (calibrate: "how often is
+  the imagined rollout within X of the true continuation") would convert an anti-calibrated
+  confidence signal into one with an actual, checkable coverage guarantee.
+- **Admissibility:** Clean — CP calibration uses held-out *ground-truth outcomes* (available offline,
+  from the training corpus), not any privileged runtime signal; the calibrated predictor at inference
+  uses only the same inputs the underlying predictor already used.
+- **Cost:** ~4-6 A40-days (computing nonconformity scores over a held-out split of the existing
+  corpus, no retraining needed — CP wraps an existing predictor), ~5-6 eng-days.
+- **Experiment:** Calibrate a conformal prediction region for TanitAD's H15 imagination module's
+  rollout error, using a held-out slice of the 2376-episode training corpus (respecting the sacred
+  parity split) as the calibration set, and check whether the resulting prediction-region width
+  correlates with actual closed-loop risk (does a wide CP region on a given scene predict an AlpaSim
+  near-failure?). **Outcome A:** yes → TanitAD gains a **mathematically-grounded** (not just
+  empirically-tuned) imagination-confidence signal, directly resolving P7's "anti-calibrated"
+  diagnosis with a real coverage guarantee, and this becomes a leading Section-F component for the
+  envelope (a wide CP region = trigger F4's Simplex switch). **Outcome B:** CP region width doesn't
+  track risk → the miscalibration is not a simple "confidence too high/low" problem fixable by
+  rescaling (which is all marginal CP does) but a structural one (the predictor is confidently wrong
+  in specific *scenarios*, which argues for conditional/adaptive CP — group-conditional calibration by
+  scenario type — as the next thing to try before giving up on the calibration approach.
+
+### F7. Statistical model checking, importance splitting, and rare-event simulation
+- **What:** Estimates the probability of a rare safety-critical event (e.g. a specific rule
+  violation or near-collision) via adaptive importance splitting rather than naive Monte Carlo, which
+  would need prohibitively many rollouts to see enough rare events to estimate their rate precisely.
+- **Evidence:** PUBLISHED — "Adaptive Splitting of Reusable Temporal Monitors for Rare Traffic
+  Violations," arXiv:2405.15771 — combines temporal-logic monitors (B6) with splitting for rare-event
+  estimation. The **PEGASUS Project** (German landmark initiative) — structured scenario-based safety
+  validation pipeline: scenario derivation from real-world data → statistical parameterization →
+  simulation → coverage-driven evaluation (this is process/methodology, PROVEN and industrially
+  adopted in Germany, not a single paper). "Testing Rare Downstream Safety Violations via Upstream
+  Adaptive Sampling of Perception Error Models," arXiv:2209.09674. Maturity: **PROVEN** as a technique
+  (importance splitting for rare-event SMC is decades-old, mathematically well-founded); PROMISING
+  specifically combined with temporal-logic traffic-rule monitors (a more recent, driving-specific
+  synthesis).
+- **Pain points:** **P8/P10** — TanitAD's closed-loop eval suite is currently only 12 AlpaSim
+  scenarios (B11's concern); rare-event simulation via importance splitting is the statistically
+  correct way to *estimate a violation rate* rather than just observe pass/fail on a small fixed set,
+  which directly strengthens the evidence base needed for any safety-case claim (F9).
+- **Admissibility:** N/A (an evaluation methodology).
+- **Cost:** ~6-10 eng-days (implementing adaptive splitting on top of AlpaSim requires control over
+  the simulator's initial-condition sampling, which needs to be checked for feasibility). ~5-10
+  A40-days (each splitting stage still needs simulation rollouts, though far fewer than naive Monte
+  Carlo for the same rare-event precision — that is the whole point of the technique).
+- **Experiment:** Apply adaptive importance splitting to estimate the rate of TanitAD's known
+  off-road/longitudinal closed-loop failure mode under a *parametrized* scenario distribution (e.g.
+  lead-vehicle deceleration magnitude as the splitting parameter) rather than the fixed 12-scenario
+  suite. **Outcome A:** the estimated failure rate as a function of scenario severity gives a smooth,
+  interpretable curve (e.g. "failure probability crosses 10% once lead-vehicle deceleration exceeds
+  X m/s²") → this is a genuinely new, quantified, publication-grade safety characterization, an order
+  above "8/12 vs 2/12." **Outcome B:** the failure rate is highly non-monotonic/noisy in the
+  splitting parameter → suggests the failure mode is not simply "harder scenario = more failures" but
+  depends on some other latent factor (worth identifying, e.g. via B1's failure-taxonomy approach).
+
+### F8. Safety standards in 2026 — ISO 26262, ISO 21448 SOTIF, UL 4600, ISO/PAS 8800
+- **What:** Four complementary standards covering, respectively: systematic/random hardware-software
+  faults (26262), performance limitations absent any fault — "correct but inadequate" behaviour
+  (21448/SOTIF), a goal-based structured safety-case argument for autonomous products generally
+  (UL 4600), and AI/ML-specific safety-related risks — bias, robustness, generalization, malfunction
+  from AI specifically (ISO/PAS 8800).
+- **Evidence:** PUBLISHED —
+  **ISO/PAS 8800:2024**, "Road Vehicles — Safety and Artificial Intelligence" (published December
+  2024, still current/active in 2026 per multiple certification-body sources: UL Solutions, SGS, TÜV
+  Rheinland). Explicitly designed to be used **by tailoring applicable clauses from ISO 26262-4, -6,
+  and -8** rather than replacing them — i.e. it's a bridge/extension standard, not a standalone
+  replacement. Developed by ISO/TC22/SC32/WG14 across 17 countries.
+  **UL 4600**, Edition 3 (March 2023, still the current edition as of this search; ongoing technical-
+  committee work through April 2025/2026 on AI-specific prompts within it) — the safety-case *format*
+  (claims + argument + evidence) most directly applicable to a learned, hard-to-formally-verify
+  planner, since it is explicitly goal-based/technology-agnostic rather than prescribing specific
+  techniques.
+  **ISO 21448:2022 (SOTIF)** — the standard most relevant to TanitAD's actual failure mode: v1's
+  closed-loop losses are off-road/longitudinal *without a component fault* (the network functions
+  "correctly" by its own training objective, but the resulting behaviour is inadequate) — this is
+  the textbook SOTIF hazard category, not an ISO 26262 hazard.
+  Maturity: **PROVEN/current** — these are live, adopted, actively-referenced industry standards in
+  2026, not research proposals.
+- **Pain points:** **P8, directly and comprehensively.** SOTIF is the *right standard* to frame
+  v1's actual measured failure mode under (P6's compounding-error, off-road/longitudinal losses are
+  "insufficient performance of the intended function," the SOTIF hazard definition almost verbatim).
+  ISO/PAS 8800's tailoring-of-26262 approach gives a concrete checklist for what an AI-specific safety
+  argument needs to additionally cover (bias, robustness, generalization) beyond a classical hardware/
+  software safety case.
+- **Admissibility:** N/A (process/documentation standards).
+- **Cost:** ~5-8 eng-days to map TanitAD's existing evidence (gate results, `MODEL_REGISTRY.md`,
+  AlpaSim closed-loop results, the REGULATION_TRACE.md table) against SOTIF's and ISO/PAS 8800's
+  specific clause structure — this is documentation/gap-analysis work, not research or GPU work.
+- **Experiment:** N/A in the usual sense (this is a standards-mapping exercise, not an empirical
+  test) — but it is pre-registerable as a **gap analysis**: map every existing TanitAD safety-relevant
+  artifact (D8 ODD-monitoring harness, H11 monitors, the D-gates) against SOTIF's specific hazard
+  categories. **Outcome A:** most SOTIF categories already have a corresponding TanitAD artifact →
+  the programme is closer to a SOTIF-structured safety case than it currently documents itself as
+  being, and the gap analysis itself becomes a valuable artifact. **Outcome B:** major SOTIF
+  categories (e.g. "insufficient robustness to reasonably foreseeable misuse") have no corresponding
+  artifact at all → identifies concrete new work items for the safety case, more useful than a vague
+  "we should be safer" observation.
+
+### F9. Safety case *patterns* for learned/VLA-based planners specifically (2026)
+- **What:** Reusable safety-case templates (claims + argument + evidence, UL-4600-style) tailored to
+  the specific challenges of AI/learned components: evaluation without ground truth, dynamic model
+  updates post-deployment, and threshold-based (not binary) risk decisions.
+- **Evidence:** PUBLISHED — **"Safety Case Patterns for VLA-based driving systems: Insights from
+  SimLingo,"** arXiv:2603.16013 (2026) — **the single most directly relevant paper in this whole
+  report to "what does a credible safety case for a learned planner look like in 2026,"** since it is
+  explicitly built around a VLA-based driving system, the same architecture family TanitAD sits in
+  (a learned, largely-opaque, vision-conditioned planner). "A Structured Approach to Safety Case
+  Construction for AI Systems," arXiv:2601.22773 (2026) — general (not driving-specific) AI safety-
+  case template with the same claims-argument-evidence structure. Maturity: PROMISING (both are 2026
+  papers; safety-case *patterns* for learned AD planners are an actively-forming, not yet
+  standardized, sub-field — this is a genuinely open area, appropriately reflected by PROMISING
+  rather than PROVEN).
+- **Pain points:** **P8**, as close to a direct answer as this report finds to the brief's closing
+  question ("what does a credible safety case for a learned planner look like in 2026") — this paper
+  should be read in full (not just abstract-level) before TanitAD drafts its own safety case
+  narrative.
+- **Admissibility:** N/A (documentation methodology).
+- **Cost:** ~1 eng-day to read in full and produce an internal gap-map against it (this is a
+  reading/synthesis task, high value for low cost — should be one of the very first follow-ups from
+  this report, independent of any GPU-day budget).
+- **Experiment:** N/A (methodology adoption, not an empirical test) — the actionable next step is
+  simply: **read arXiv:2603.16013 in full and produce a TanitAD-specific safety-case skeleton
+  (claims/argument/evidence table) using its pattern**, before any of F1-F7's individual mechanisms
+  are assembled into the "guaranteed envelope" this report proposes below — the pattern paper is
+  about *how to structure the argument*, which should come before, not after, choosing the specific
+  mechanisms.
+
+### F10. Imagination-refusal / selective abstention for world-model rollouts — the most direct P7 hit
+- **What:** A mechanism for a world model to learn **where to refuse its own imagination** — i.e., to
+  recognize when a rollout has drifted into a regime where its own predictions should not be trusted
+  for downstream decision-making, using execution-settled credit (did trusting this rollout actually
+  pay off, retrospectively) as the training signal for the refusal decision itself.
+- **Evidence:** PUBLISHED — **"DreamLedger: Where to Refuse World-Model Imagination Using
+  Execution-Settled Credit,"** arXiv:2608.23863 (Aug 2026). This is not a driving-specific paper (the
+  framing is general model-based-RL), but the *problem statement* — a world model's imagination
+  needs a principled refusal/trust mechanism, trained against real outcomes rather than a hand-tuned
+  confidence threshold — is **almost a direct restatement of TanitAD's own P7** ("imagination
+  confidence anti-calibrated"). Maturity: PROMISING (specific quantitative results UNVERIFIED, fetch
+  blocked; the problem framing itself is the valuable find here, independent of the paper's own
+  numbers).
+- **Pain points:** **P7, most directly of anything found in this entire review.** Where F6 (conformal
+  prediction) offers a general-purpose, distribution-free calibration wrapper, DreamLedger's
+  "execution-settled credit" idea is a specific, driving-compatible training signal: **did acting on
+  this imagined rollout actually work out, after the fact, in the real trajectory the corpus
+  recorded** — which is directly computable from PhysicalAI's offline logged trajectories without any
+  new data collection.
+- **Admissibility:** Clean (a training-time credit-assignment signal from logged outcomes, not a
+  runtime privileged input).
+- **Cost:** ~8-12 A40-days (training a refusal/trust head against execution-settled credit needs a
+  full pass computing "did the imagined rollout match what actually happened" over the training
+  corpus, then a supervised head on top), ~6-8 eng-days.
+- **Experiment:** Compute execution-settled credit for TanitAD's existing H15 imagination module over
+  the training corpus (imagined rollout vs. logged actual continuation, per clip) and train a small
+  refusal head to predict low-credit (untrustworthy) rollouts from the rollout itself, then check
+  whether this refusal signal fires more often on the known closed-loop-failure scenario types than
+  on passing ones. **Outcome A:** yes → directly resolves P7 with a mechanism purpose-built for
+  exactly this problem, and the refusal signal becomes a second (independent-lineage) input to the
+  F4 Simplex switch, alongside F2's CBF value and F6's CP-region width. **Outcome B:** refusal signal
+  doesn't discriminate → combine with A6's finding (if the underlying imagination has no physical
+  grounding to begin with, no amount of calibrating *when to trust it* helps — the fix would need to
+  happen upstream, at the representation level, not at the trust-decision level).
+
+---
 
 ---
 

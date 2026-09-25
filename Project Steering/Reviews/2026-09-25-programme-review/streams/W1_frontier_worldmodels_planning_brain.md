@@ -837,3 +837,299 @@ are the highest-value reads, not the VLA-reasoning literature in category D.
   architecture-validation value in the TOP-10 discussion below.
 
 ---
+
+## 5. Category E — Brain/cortex-inspired architectures
+
+### LeCun's H-JEPA / Configurator / Cost-Module architecture
+- **What:** The full 6-module agent decomposition (Configurator, Perception, World Model, Cost Module,
+  Actor, Short-Term Memory) from *A Path Towards Autonomous Machine Intelligence*, with hierarchical
+  planning (higher levels set abstract subgoals for lower levels).
+- **Evidence:** PUBLISHED — position paper (2022) + ongoing elaboration (Meta AI blog, various follow-on
+  papers e.g. *Value-guided action planning with JEPA world models*, arXiv 2601.00844, found in this
+  survey — a 2026 continuation of the programme). Maturity: **PROVEN as a framework** (widely cited,
+  actively extended), **SPECULATIVE as a complete implementation** (no full 6-module system has been
+  published end-to-end at scale by LeCun's own group as of what I found).
+- **Pain points:** **P3 directly** — our own 4-brain split IS a partial instantiation of this
+  architecture (World Model = operative, Actor = tactical/strategic, hierarchy = the strategic/tactical
+  split); the piece we are explicitly MISSING relative to the full LeCun design is a **Configurator**
+  (a module that reconfigures cost/actor/world-model behavior per situation) — this is architecturally
+  distinct from (and safer than) letting a "situation classifier" feed the goal path directly, because a
+  Configurator RECONFIGURES which cost terms and actor parameters are active, rather than injecting a
+  content signal into the goal itself. **This may be exactly the legitimate way to use situation
+  information that the binding admissibility rule is trying to rule OUT of the goal path** — worth a
+  careful design discussion, since a Configurator-style use of situation (reweighting cost terms, e.g.
+  "in a merge situation, weight TTC higher") is architecturally different from a goal-path leak, but the
+  distinction is subtle enough to need explicit, written justification before building it (per the
+  binding rule's own instruction: "if a shared trunk feeds both, say so and justify why that is not a
+  back door").
+- **Admissibility:** ⚠️ **nuanced — see above.** A Configurator that reweights COST, not one that emits a
+  GOAL, is the safer reading, but this needs to be argued explicitly, not assumed.
+- **Cost to try:** a minimal Configurator (situation-conditioned cost-term reweighting, e.g. modulating
+  the existing loss/cost weights fed to the tactical head based on a coarse scene-derived signal) is
+  **~5-8 eng-days**, no new GPU beyond retraining affected heads.
+- **Cheapest discriminating experiment:** implement the narrowest possible Configurator — reweight ONLY
+  the existing TTC/comfort/progress cost terms already in `taniteval` based on a cheap, clearly
+  vision-only scene signal (e.g., "how many agents are close") — and check (a) whether it improves
+  selection quality, and (b) run the SAME leak test the programme uses elsewhere (could the reweighting
+  signal have been computed from the situation classifier's output?). Outcome A: improves selection AND
+  passes the leak test → a validated, admissible new mechanism, distinct from a goal-path leak; Outcome
+  B: fails the leak test → confirms the Configurator pattern is NOT a safe workaround for this programme
+  and must not be pursued further under this framing.
+
+### Active inference & predictive coding for driving
+- **What:** Frame driving control as minimizing "surprise" (prediction error) under a generative model,
+  unifying perception and action; several 2025-2026 papers apply this directly to AV control and human
+  driver modelling.
+- **Evidence:** PUBLISHED — *Towards Human-Like Driving: Active Inference in AV Control*, arXiv
+  2407.07684; *Active inference as a unified model of collision avoidance behavior in human drivers*,
+  arXiv 2506.02215; *Towards Intelligible HRI: Active Inference... Occluded Pedestrian Scenarios*, arXiv
+  2602.23109 (HRI 2026 — genuinely new, in-scope for 2026); combining active inference with diffusion
+  motion prediction, arXiv 2406.00211. Maturity: **PROMISING** (multiple independent groups, growing
+  2025-2026 body of work; no large-scale industrial deployment found).
+- **Pain points:** **P7 directly** — "surprise"/prediction-error IS our imagination-error signal (A9);
+  active inference formalizes using that SAME quantity to drive ACTION SELECTION (minimize expected
+  future surprise), not just as a free OOD monitor. This is a principled, literature-grounded upgrade
+  path for turning our already-existing, already-free imagination-error signal into a selection
+  criterion, rather than adding a whole new mechanism; **P8** (safety) — active inference's
+  "occluded pedestrian" HRI-2026 application is a direct hit on exactly the kind of hidden-actor
+  scenario the programme's own H15/LOPS work targets.
+- **Admissibility:** clean — surprise is computed from the model's own prediction error against
+  observed frames, not from a situation classifier.
+- **Cost to try:** using imagination-error (already computed, free) as an additional SELECTION term
+  (prefer candidates with lower predicted future surprise, not just lower cost) is a **cheap addition,
+  ~3-5 eng-days**, 0 new GPU-days.
+- **Cheapest discriminating experiment:** add "minimize predicted imagination-error over the rollout" as
+  an extra term in candidate scoring (alongside whatever selector is chosen from category C) and check
+  whether it correlates with/improves the v5f selection gap independently of the other proposed scoring
+  fixes. Outcome A: adds independent signal → active-inference-style surprise-minimization is a free,
+  literature-grounded ingredient to fold into ANY of the category-C selector designs; Outcome B: redundant
+  with cost-based scoring already used → deprioritize, but keep imagination-error as the OOD monitor it
+  already is.
+
+### Basal ganglia-inspired action selection (direct analogue of our selector, P1)
+- **What:** Direct/indirect pathway gating: the direct pathway FACILITATES a candidate action, the
+  indirect pathway INHIBITS competitors — a biological WINNER-TAKE-ALL circuit for exactly the
+  "many candidate actions, pick one" problem our tactical head has.
+- **Evidence:** PUBLISHED — foundational robotics line (robot basal ganglia models, action selection in
+  survival tasks, contracting dynamical-systems formulation) plus recent computational work
+  quantitatively analyzing D1/D2 pathway contributions (arXiv 2404.13888) and spiking-network
+  arm/locomotor coordination (arXiv 2606.11034, 2026). Maturity: **PROVEN as a robotics mechanism**
+  (decades of replication in behavior-based robotics), **SPECULATIVE as a direct fit for a modern deep
+  tactical head** (no found paper wires this INTO a modern transformer-based driving stack specifically).
+- **Pain points:** **P1 — the most direct biological analogue to our exact defect.** The key structural
+  idea worth stealing is NOT the spiking-neuron biology, but the **competitive dual-pathway gating
+  principle**: separate the "how good is this candidate" (direct/facilitation, ~ our scorer) from "how
+  much should this candidate be suppressed given the OTHERS" (indirect/inhibition, ~ an explicit
+  competition/normalization term) — which our SINGLE softmax collapses into one computation. This maps
+  onto a concrete, testable architecture change: replace the tactical softmax with an explicit
+  scorer-plus-lateral-inhibition mechanism (e.g., a normalization that suppresses near-duplicate
+  candidates, rather than a plain softmax over raw scores).
+- **Admissibility:** clean (an architectural/computational analogy, not a data source).
+- **Cost to try:** **~4-6 eng-days** to prototype a lateral-inhibition/competition layer on top of the
+  existing candidate scores (whichever scorer is chosen from category C).
+- **Cheapest discriminating experiment:** on the frozen v1/v5f candidate set, replace the final softmax
+  with a simple lateral-inhibition rule (e.g., score candidates, then suppress candidates too similar to
+  a higher-scoring one before renormalizing) and measure whether the SELECTED trajectory's ADE improves
+  purely from this normalization change, with NO change to the underlying per-candidate scores. Outcome
+  A: improves → part of our P1 defect is in how scores get turned into a DECISION (missing competition/
+  suppression), independent of scoring quality — a very cheap fix; Outcome B: no change → the defect is
+  entirely in the per-candidate scores themselves, ruling out this specific mechanism cheaply.
+
+### Cerebellar forward models (motor prediction, Smith-predictor pattern)
+- **What:** The cerebellum is modelled as a **forward model**: it takes a copy of the motor command
+  (efference copy) and predicts the SENSORY CONSEQUENCE ahead of actual feedback, acting as a Smith
+  predictor to compensate for feedback delay.
+- **Evidence:** PUBLISHED — *50 years since the Marr, Ito, and Albus models of the cerebellum*, arXiv
+  2003.05647 (review); cerebellar-predictive-learning spiking control, arXiv 2011.01641; a 2026 brain-
+  inspired reflexive-control paper (arXiv 2601.14628) explicitly built around an "Iterative Refinement
+  Loop" using anticipated sensory feedback. Maturity: **PROVEN as neuroscience**, **PROMISING as a
+  robotics control pattern** (multiple working implementations, none at driving-planner scale found).
+- **Pain points:** **P6 (latency)** — this is precisely the Smith-predictor pattern our own operative
+  brain already implements (predict forward to compensate for the ~100ms planning-tick latency against a
+  10Hz budget) — mostly CORROBORATING evidence that the operative brain's basic design (predict-ahead to
+  cancel latency) is the biologically correct pattern, not a new lever.
+- **Admissibility:** clean.
+- **Cost/experiment:** **no new experiment needed** — this is validation-by-analogy for the existing
+  operative-brain design, worth citing in any paper/positioning writeup rather than a build item.
+
+### Hippocampal replay & cognitive maps
+- **What:** Replay = reactivation of place-cell sequences encoding recent experience, occurring in
+  hippocampus/PFC; theorized to support value-based RL and to be equivalent to a "cognitive map" (≈ a
+  world model, in RL terms).
+- **Evidence:** PUBLISHED — *Brain-Like Replay Naturally Emerges in RL Agents*, arXiv 2402.01467 (replay
+  emerges WITHOUT being explicitly designed in, when an RL agent has both a policy net and a world
+  model — directly relevant to whether our own architecture would benefit from an explicit replay
+  buffer, or might already exhibit replay-like dynamics); *A Robotic Model of Hippocampal Reverse Replay
+  for RL*, arXiv 2102.11914 (reverse replay accelerates learning + improves stability/robustness).
+  Maturity: **PROMISING** (solid computational-neuroscience-to-RL bridge, not yet driving-specific).
+- **Pain points:** **P4/P10** — directly upstream of the programme's OWN H10 (latent RAG / continual
+  learning from experience), which the programme has ALREADY measured has a real mechanism (+18.8% on
+  surprise contexts) and a real failure mode (−24% interference on well-predicted contexts, hence
+  surprise-gated retrieval). The hippocampal-replay literature's finding that **REVERSE replay
+  specifically improves stability** is a concrete, testable refinement to H10's write policy (currently
+  "write on imagination-error spike," forward in time) — reverse-order replay of stored surprising
+  episodes during a training/consolidation phase is untested in the programme's own H10 work.
+- **Admissibility:** clean (operates on stored past experience, not live classifier output).
+- **Cost to try:** **~3-5 eng-days** to add a reverse-replay consolidation pass to the existing H10
+  memory-write mechanism (which the programme has already implemented per `INITIAL_RESEARCH_SYNTHESIS.md`).
+- **Cheapest discriminating experiment:** on the existing surprise-gated memory buffer, compare
+  forward-order vs reverse-order replay during a consolidation/fine-tuning pass, measuring the SAME
+  interference metric H10 already tracks (−24% on well-predicted contexts). Outcome A: reverse replay
+  reduces interference vs forward → adopt cheaply, directly improves an already-known programme defect;
+  Outcome B: no difference → replay ORDER doesn't matter for us, simplifying the H10 implementation
+  (no need to maintain ordering) without losing anything.
+
+### Dual-process (System 1/2) driving: DriveVLM-Dual, FASIONAD, ETA
+- **What:** A slow VLM branch does high-level reasoning/situational assessment at low frequency; a fast
+  classical/learned planner does real-time trajectory generation, with the slow branch's output serving
+  as a reference/conditioning signal for the fast branch (async, slow-fast coupling).
+- **Evidence:** PUBLISHED — DriveVLM-Dual, arXiv 2402.12289; FASIONAD ("FAst and Slow FusION Thinking"),
+  arXiv 2411.18013; ETA ("Efficiency through Thinking Ahead"), arXiv 2506.07725. Maturity: **PROVEN**
+  (multiple independent groups converging on the same slow/fast split, 2024-2026).
+- **Pain points:** **P3/P9 — this is the closest external validation of our OWN operative/tactical/
+  strategic frequency separation** (10-20Hz / cadence-5 / cadence-20), independently re-derived by at
+  least three separate groups for driving specifically (plus Gemini Robotics 1.5's dual-model split in
+  category D, and LeCun's Configurator/Actor split in this category) — this is strong corroborating
+  evidence, from FIVE independent sources now, that hierarchical multi-timescale processing is the right
+  shape for this problem, which is directly relevant to defending H1 against the "flat REF-C ties/beats
+  us" finding (P3): the finding may be about EXECUTION quality within the hierarchy, not about whether
+  hierarchy is the right shape.
+- **Admissibility:** clean (reasoning conditions the fast planner via features, not via a smuggled
+  situation-classifier output — though exactly HOW each system couples the branches would need the same
+  disjointness audit if any coupling mechanism were adopted verbatim).
+- **Cost/experiment:** **primarily a corroboration item**; the actionable piece already appears in
+  category D (AutoVLA's adaptive fast/slow SWITCH experiment) — do not duplicate, reference instead.
+
+### Hierarchical Reasoning Model (HRM) and Tiny Recursive Model (TRM)
+- **What:** HRM: two recurrent modules (slow/abstract high-level, fast/detailed low-level) doing
+  MULTI-STEP LATENT reasoning in a single forward pass, no chain-of-thought text. TRM (its successor):
+  strips this down to ONE tiny 2-layer network recursing on its own latent+answer state, and BEATS HRM.
+- **Evidence:** PUBLISHED — HRM: arXiv 2506.21734 (Sapient + Tsinghua), **27M params, 1000 training
+  examples**, strong ARC-AGI/Sudoku/Maze results (confirmed via direct GitHub fetch). TRM: arXiv
+  2510.04871 (Jolicoeur-Martineau, Samsung SAIL Montreal), **7M params**, **45% ARC-AGI-1 / 8%
+  ARC-AGI-2** — beats HRM's reported **40%** on ARC-AGI-1 with fewer params and, per the author's own
+  framing, "nothing to do with the human brain, no hierarchy, no fixed-point theorem" (confirmed via
+  direct GitHub fetch). Maturity: **PROVEN** (both open-sourced, TRM is a direct, reproducible
+  improvement on HRM).
+- **Pain points:** **P1/P9 — the TRM result is a load-bearing CAUTION, not just an opportunity**: the
+  author explicitly shows that the "hierarchical, brain-inspired" framing of HRM was UNNECESSARY for its
+  own reported gains — a much simpler single tiny recursive network matches or beats it. This is directly
+  relevant to the programme's own hierarchy question (P3): before attributing any future TanitAD result
+  to "hierarchy," the TRM precedent says **explicitly test whether a same-parameter-budget FLAT recursive
+  network matches it**, exactly the same falsification discipline the programme already applies via
+  REF-B. Positively: TRM's tiny-recursive-refinement pattern (refine an answer + a latent through K
+  steps with ONE small network) is itself a candidate mechanism for our tactical head's SELECTION step —
+  iteratively refine a candidate/decision through a few recursive passes instead of one softmax.
+- **Admissibility:** clean (pure architecture, no data-source implications).
+- **Cost to try:** prototyping a TRM-style recursive-refinement tactical head (small network, K
+  recursive steps refining the manoeuvre+trajectory choice) is **~6-10 eng-days**, ~1 GPU-day.
+- **Cheapest discriminating experiment:** replace the tactical head's single-pass softmax with a TRM-style
+  small network doing K=3-6 recursive refinement steps over the SAME candidate representations (same
+  params budget, enforced like REF-B), and measure the selection gap. Outcome A: improves → recursive
+  refinement (not raw capacity or hierarchy per se) is a cheap, general fix, AND is a caution to
+  re-examine whether some of our own claimed "hierarchy" gains are actually "iteration" gains in
+  disguise; Outcome B: no improvement → rules out recursive refinement cheaply, redirecting to the
+  scoring-mechanism experiments in category C instead.
+
+### Neural Circuit Policies / Liquid Networks (Closed-form Continuous-time, CfC)
+- **What:** ODE-inspired but SOLVER-FREE ("closed-form") continuous-time recurrent units; extremely
+  parameter-efficient (a full CfC lane-keeping controller uses **~4,000 parameters**), causal by
+  construction, and originally demonstrated for exactly our domain — end-to-end steering.
+- **Evidence:** PUBLISHED — *Closed-form Continuous-time Neural Networks*, arXiv 2106.13898 (Nature
+  Machine Intelligence 2022) — foundational, 100×+ faster than ODE-solver-based counterparts; follow-on
+  robust-flight-navigation OOD result (Science Robotics) shows strong OOD generalization for liquid
+  networks specifically, a property directly relevant to our P4/OOD concerns. Maturity: **PROVEN**
+  (published in Nature MI, flight-tested OOD).
+- **Pain points:** **P6 (latency/edge deployment)** — 4K-parameter continuous-time controllers are an
+  extreme point on the efficiency axis, useful specifically for a Jetson-Thor-class FALLBACK/monitor
+  channel (H11) that must be cheap and always-on, rather than for the main world model; **P4** — the
+  documented OOD robustness of liquid networks is a genuinely distinct mechanism from our imagination-
+  error OOD signal and could serve as an independent, architecturally-different second OOD channel
+  (redundant-channel safety-case value, same idea the programme already logged for ZipDepth in the
+  2026-07-11 screening).
+- **Admissibility:** clean.
+- **Cost to try:** a CfC-based lightweight fallback/OOD monitor, running alongside (not instead of) the
+  main world model, is **~5-8 eng-days**, **0 GPU beyond a tiny training run** given the ~4K-parameter
+  scale.
+- **Cheapest discriminating experiment:** train a minimal CfC controller as an INDEPENDENT redundant OOD/
+  safety channel (predict next-frame heading/speed from raw sensor input, flag divergence from the main
+  model's own action as a safety signal) and check whether its OOD-flagging DISAGREES informatively with
+  the imagination-error monitor on any held-out scenario class. Outcome A: it flags cases imagination-
+  error misses → adopt as a genuinely redundant (not merely duplicate) safety channel, strengthening the
+  P8 safety story cheaply; Outcome B: perfectly correlated with existing monitor → no redundancy value
+  added, deprioritize.
+
+### Thousand Brains Project (Numenta / Monty)
+- **What:** Cortical-column-inspired "learning modules," each maintaining an OBJECT-CENTRIC REFERENCE
+  FRAME via grid-cell-like path integration, voting together across many semi-independent modules rather
+  than one monolithic network.
+- **Evidence:** PUBLISHED — *The Thousand Brains Project: A New Paradigm for Sensorimotor Intelligence*
+  (2412.18354) + *Thousand Brains Theory 2.0* (arXiv 2507.05888, 2025) + active open-source `tbp.monty`
+  framework; now an **independent non-profit**, partly Gates-Foundation-funded, running a "Meet Monty
+  2026" onboarding series (confirms active 2026 development). Maturity: **SPECULATIVE-for-driving**
+  (no automotive-scale application found; strongest evidence is at small sensorimotor/object-recognition
+  scale).
+- **Pain points:** **P3/P5** — the "many semi-independent modules voting, each with its own reference
+  frame" idea is architecturally distinct from both a monolithic encoder AND our current strict
+  4-brain hierarchy — it suggests a THIRD topology (parallel, voting modules rather than a strict
+  cadence hierarchy) worth being aware of as a contrast case, but is far too immature/small-scale to
+  adopt directly for driving.
+- **Admissibility:** N/A (no working system to assess at our scale).
+- **Cost/experiment:** **not recommended this cycle** — flag as a watch item only; the object-centric
+  reference-frame idea is closer to a Phase-2+ representation-learning research question than a
+  near-term experiment.
+
+### Continuous Thought Machines (Sakana AI)
+- **What:** Neurons carry their OWN per-neuron temporal processing (a short history of past inputs, not
+  just current activation) and the network uses cross-neuron **synchronization** itself as a latent
+  representation — i.e., timing/synchrony IS the code, not just activation magnitude. Adaptive "ticks"
+  let the network spend more or less computation per input based on difficulty.
+- **Evidence:** PUBLISHED — arXiv 2505.05522 (Sakana AI). Maturity: **PROMISING** (novel, open-sourced,
+  one strong lab's result; not yet widely replicated).
+- **Pain points:** **P9 (compute)** — adaptive per-input compute ("ticks") is directly relevant to a
+  Thor-class latency budget: spend more compute on hard frames (e.g., a dense intersection), less on
+  easy ones (empty highway), rather than the FIXED per-tick compute our cadence hierarchy currently
+  implies; **P1** — using synchrony/timing as an explicit representation is a genuinely different
+  computational primitive from anything else in this survey, worth a small exploratory read even though
+  it is early-stage.
+- **Admissibility:** clean (pure architecture).
+- **Cost to try:** full adoption is a large architecture change (**ESTIMATED 15-20+ eng-days**) — NOT
+  recommended as a near-term experiment given the priority order; the adaptive-compute-per-difficulty
+  IDEA alone is cheaper to approximate (e.g., using imagination-error as a proxy for "how hard is this
+  frame" to gate extra tactical-head compute) — **~5 eng-days** for that narrower version.
+- **Cheapest discriminating experiment:** the narrow version — gate an EXTRA recursive refinement pass
+  (see TRM above) on high imagination-error frames only, and measure whether compute-adaptive refinement
+  beats fixed-compute refinement at MATCHED AVERAGE compute. Outcome A: yes → adaptive compute is a free
+  efficiency win compatible with a Thor budget; Outcome B: no → fixed-cadence compute is fine, and the
+  full CTM architecture is correctly left as a longer-horizon research bet, not a near-term item.
+
+### Energy-Based Transformers (EBTs) — System 2 thinking via energy minimization
+- **What:** Instead of a direct forward pass, assign an ENERGY to each (input, candidate-prediction)
+  pair and predict by gradient-descending that energy until convergence — makes "think longer for harder
+  inputs" (System 2) emerge from unsupervised learning, modality-agnostic.
+- **Evidence:** PUBLISHED — arXiv 2507.02092 (Gladstone et al.). **Up to 35% higher scaling rate**
+  (data/params/FLOPs/depth) vs standard Transformer++ during TRAINING; **+29% inference improvement from
+  "thinking longer"** on language tasks; beats Diffusion Transformers on image denoising with FEWER
+  forward passes. Maturity: **PROMISING** (strong single-paper result across two modalities, not yet
+  widely replicated at scale).
+- **Pain points:** **P1 — this is a genuinely different mechanism for "selection" than anything else in
+  this survey**: instead of generating K candidates and scoring them (the entire category-C playbook),
+  an energy-based head could score a SINGLE continuous trajectory space directly and gradient-descend to
+  the best point, sidestepping the "generate diverse, then pick" pipeline (and its P1 failure mode)
+  altogether. This is speculative for driving specifically but conceptually the most different idea in
+  the whole survey, hence a genuine disruptive-bet candidate (see below).
+- **Admissibility:** clean (energy computed from scene features + candidate, no classifier dependency
+  implied).
+- **Cost to try:** this is a genuinely new head TYPE, not a drop-in — **ESTIMATED 15-25 eng-days** for a
+  first driving-scoped prototype (energy function over trajectory space, gradient-descent inference
+  loop), plus **2-4 GPU-days**.
+- **Cheapest discriminating experiment:** on a SMALL toy version first (not the full flagship) — train an
+  energy-based scorer over trajectory space using existing candidates + ground truth as positive/negative
+  examples, and check whether gradient-descending from a random trajectory init converges to something
+  competitive with the current BEST candidate in the fan, without ever enumerating the fan. Outcome A:
+  competitive → a fundamentally different, potentially more efficient selection paradigm is viable and
+  worth the larger investment; Outcome B: does not converge well / energy landscape too non-convex at
+  our data scale → informative negative result, keep candidate-based scoring (category C) as the
+  approach and mark EBT-style selection as not yet ready for our data regime.
+
+---
