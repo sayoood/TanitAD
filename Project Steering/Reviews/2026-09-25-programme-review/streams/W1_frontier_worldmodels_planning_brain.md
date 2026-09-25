@@ -1,6 +1,6 @@
 # Stream W1 — Frontier research: world models, imagination, planning/selection, driving foundation models, brain-inspired architectures
 
-**Status: IN PROGRESS — banking incrementally.** Orchestrator: whole-programme review, 2026-09-25.
+**Status: COMPLETE.** Orchestrator: whole-programme review, 2026-09-25.
 Author: W1 subagent (Sonnet). Method: web research (WebSearch/WebFetch), primary sources preferred.
 
 ## 0. Delta baseline — what the programme already screened (skimmed before searching)
@@ -1133,3 +1133,143 @@ are the highest-value reads, not the VLA-reasoning literature in category D.
   approach and mark EBT-style selection as not yet ready for our data regime.
 
 ---
+
+## 6. Ranked TOP-10 for TanitAD
+
+Ranked by (expected P1/P2/P3 impact) × (admissibility) ÷ (cost), given "a few A40s" and the priority
+order P1 (selection) > P2 (longitudinal) > P3 (hierarchy justification) established by the fact sheet.
+
+| # | Idea | Pain point(s) | Cost (eng-days / A40-GPU-days) | Why it's ranked here |
+|---|---|---|---|---|
+| 1 | **SimLingo-style disentangled lat/lon output head** | P1, P2 | 3–5 / ~1 | Cheapest, most direct fix for the EXACT diagnosed defect (one softmax mixing lat+lon); vision-only, so trivially admissible; the pattern is already SOTA (85.94 DS, camera-only). |
+| 2 | **ZTRS-style reward-driven (EPO) loss swap** on the existing tactical head | P1 (primarily), P2 | 0 new modules / ~1 retrain | Tests whether the LOSS FUNCTION (imitation vs reward) — not architecture — is the dominant cause of the 0.525→1.025 selection gap; if true, this is the single highest-value finding available this quarter. |
+| 3 | **WoTE-style world-model-scored selection**, reusing our OWN predictor as the reward model | P1 | 5–8 / 0 (reuses existing predictor) | Directly implements our own "imagine-and-select" thesis the way the literature does it end-to-end; zero new GPU-days. |
+| 4 | **GTRS/DriveSuprim-style coarse-to-fine, sensor-robust learned scorer** | P1 | 6–12 / 1–2 | Current NAVSIM v2/AAAI-2026 SOTA; GTRS specifically targets robustness under imperfect sensing — our actual situation (from-scratch, single camera), unlike most privileged-BEV SOTA. |
+| 5 | **Basal-ganglia-style lateral-inhibition/competition layer** on top of any scorer above | P1 | 4–6 / 0 | Very cheap; separates "how good" from "how much to suppress duplicates," which a plain softmax conflates — complements #2–4, doesn't compete with them. |
+| 6 | **GoalFlow-style predicted geometric goal point** ⚠️ GATED on admissibility verification | P1, P3 | 10–15 / 2–4 | Exactly the lever the programme's OWN binding rule names as preferred ("+4.7," predicted not supplied) — but GoalFlow's own goal-scorer inputs are UNVERIFIED for vision-only-ness; verify before building. |
+| 7 | **π*0.6/RECAP-style offline advantage-conditioning** from the historical best-in-fan-vs-selected gap | P1 | 8–12 / ~0 (log-only) | Cheapest possible version of "learn from your own past selection mistakes," entirely from logs already on disk, no live correction loop needed. |
+| 8 | **TRM-style recursive-refinement tactical head** + mandatory flat-matched-params control | P1, P3 (methodological) | 6–10 / ~1 | Cheap fix AND forces the same hierarchy-attribution discipline the programme already applies via REF-B — directly answers "is this gain from hierarchy or from iteration?" |
+| 9 | **Dreamer-4-style RL-in-imagination** for the tactical head (policy-gradient against imagined rollouts) | P1, P7, P9 | 10–20 / a few | Highest ceiling in this list — the closest published analogue to our whole thesis, at industrial scale, with a genuine long-horizon (20,000+ action) credit-assignment result; correspondingly the most engineering-heavy item here. |
+| 10 | **Active-inference surprise-minimization** folded into candidate scoring | P7 (feeds P1) | 3–5 / 0 | Reuses the ALREADY-FREE imagination-error signal (A9) as a selection criterion, not just an OOD monitor — principled, nearly free. |
+
+**Not in the top 10 but flagged as important watch/escalation items:** NVIDIA Cosmos 3/Predict 2.5 as a
+possible fix for the "cosmos loader" version drift + the missing map/junction/traffic-light scenario
+classes (P3/P4) — escalate to whoever owns the DataEng cosmos integration; Alpamayo-R1's PhysicalAI-AV
+training-data relationship — UNVERIFIED, escalate to a stream with working arXiv/HF fetch access;
+Hydra-MDP's "factorised path×velocity" characterization — still tier B, still the programme's own #1
+re-verification target, still blocked on fetch access from this container.
+
+## 7. Three disruptive bets (high-risk / high-reward), each with kill criteria
+
+### Bet 1 — Eliminate imitation learning from the tactical (and eventually operative) training objective, ZTRS-style
+**The bet:** replace behaviour-cloning losses with a pure rule-based-reward policy-gradient objective
+(ZTRS's EPO, or a scoped variant) across the tactical head, on the theory that BC is itself teaching the
+model to imitate a HUMAN'S selection habits including their noise, rather than to select well against an
+explicit, controllable notion of "good." This questions the training PARADIGM, not just the architecture.
+**Why it's disruptive:** if it works, it could resolve P1 AND P2 simultaneously (rule-based reward can
+encode speed-holding/distance-keeping directly, addressing the 88.7% longitudinal gap at the objective
+level, not just the architecture level) with no new parameters.
+**Kill criteria (pre-committed):** (a) if, at matched compute, the reward-only policy's SAFETY floor
+(collision/off-road rate on held-out windows) is worse than the current imitation-trained baseline by
+more than a pre-registered margin, kill it — reward misspecification in a domain this rich is a known
+failure mode (CaRL and RAD both build in imitation-as-regularizer for exactly this reason, which is
+itself evidence this risk is real, not hypothetical); (b) if the cheap discriminating experiment (§3,
+ZTRS entry) shows NO improvement in the selection gap, do not proceed to the full retrain.
+
+### Bet 2 — Train the tactical+operative loop by RL entirely inside our own world model (Dreamer-4-style)
+**The bet:** stop supervising the tactical head at all; train it by policy gradient against imagined
+rollouts scored by `taniteval` cost proxies, the way Dreamer 4 trains a Minecraft agent purely from
+offline video plus imagination — no live environment needed, matching our own offline-corpus constraint.
+**Why it's disruptive:** this is the single most industrially-validated version of "the world model is
+not just a representation, it is a training environment" found in this entire survey (a real 20,000+
+action credit-assignment result, 100× data efficiency vs the prior SOTA) — if it transfers, it could
+make P1 AND P7 (imagination calibration, forced to matter once the policy is optimized against it) and
+P9 (a single training loop instead of separate supervised heads) all move together.
+**Kill criteria (pre-committed):** (a) reward hacking — if the trained policy achieves high IMAGINED
+reward but its imagination-error AT THE STATES IT VISITS spikes (i.e., it has learned to exploit world-
+model blind spots rather than to drive well), kill before any further scaling — this is the textbook
+failure mode the world-model-RL literature itself warns about (see the Raw2Drive "world-model alignment"
+bonus find in §2, whose whole premise is that this failure mode is common enough to need its own fix);
+(b) if the cheap pilot (§1, Dreamer-4 entry: REINFORCE/GRPO on the tactical head against existing
+imagined rollouts, no new world-model training) shows no improvement over the current softmax, do not
+proceed to a full Dreamer-4-style retrain of the whole loop.
+
+### Bet 3 — Replace generate-and-score entirely with an Energy-Based Transformer selection head
+**The bet:** instead of generating K candidates and scoring them (every single item in category C), learn
+an energy function over the full continuous trajectory space and select by gradient descent — potentially
+sidestepping the entire "candidate fan is too narrow / scorer is too weak" dichotomy that frames every
+other P1 fix in this report.
+**Why it's disruptive:** it is the most CONCEPTUALLY different mechanism found in this entire survey —
+not a variation on generate-and-score, a different paradigm entirely — with a real (non-driving) result
+showing higher scaling rates and better test-time compute utilization than standard transformers.
+**Kill criteria (pre-committed):** (a) if the small-scale toy prototype (§5, EBT entry: energy scorer
+over existing candidates + GT as positive/negative examples, gradient-descent-from-random-init) does not
+converge to a trajectory competitive with the best-in-fan candidate, kill before any larger investment —
+energy landscapes are known to be hard to make well-behaved (non-convex, multiple local minima) and our
+13-hour corpus may simply be too small to shape a good one; (b) do not invest ANY engineering time beyond
+the toy prototype (a few days) until outcome (a) is decided — this bet's entire cost structure is
+front-loaded into a cheap go/no-go gate by design.
+
+## 8. Literature that CONTRADICTS the programme's current direction
+
+1. **TRM's own headline finding directly undercuts a "hierarchy/brain-inspiration" framing on its
+   OWN turf.** Jolicoeur-Martineau (TRM) explicitly demonstrates that HRM's biologically-inspired
+   two-timescale hierarchy was NOT necessary for HRM's results — a single tiny non-hierarchical recursive
+   network matches or beats it, and the author states this in so many words ("nothing to do with the
+   human brain... does not require any hierarchy"). **This is a direct, load-bearing tension with H1**,
+   not a minor caveat: it is a recent (Oct 2025), reproducible, falsifiable demonstration that apparent
+   "hierarchy" gains can actually be "iterative refinement" gains wearing a hierarchy's clothes. The
+   programme's own REF-B (flat E2E baseline) is exactly the right falsifier for THIS possibility applied
+   to TanitAD — but TRM raises the bar: REF-B should be matched not just on parameters but on **compute
+   spent per decision** (recursive refinement steps cost compute too), or a flat-but-iterative baseline
+   could look like it "loses to hierarchy" purely because it wasn't given the same iteration budget.
+2. **TOAD's finding (search discovers new trajectories; re-ranking does not) is in tension with a
+   pure-better-scorer reading of our P1 fix.** Much of category C (Hydra-MDP, GTRS, DriveSuprim) is
+   architecturally "keep the fan fixed, build a better scorer" — TOAD's own ablation says the GAINS in
+   that family of methods came from finding NEW candidates outside the original fan, not from ranking the
+   existing ones better. If this generalizes, several of the TOP-10 items above (specifically #4, #6 in
+   spirit) may under-deliver unless paired with iPad/TOAD-style test-time search (#already flagged as a
+   cheap experiment in §3) — this is a genuine reason NOT to treat "install a better scorer" as
+   sufficient on its own before that experiment is run.
+3. **The "Agentic AI" hard-modular-swarm philosophy (Uber/Autobrains Munich robotaxi program, per the
+   programme's own `External Anaysis.md`) is philosophically opposed to a jointly-trained, differentiable
+   4-brain hierarchy for the exact reason the programme cares about most: certification.** That
+   programme's explicit argument is that SEPARATELY-trained, deterministically-composed single-purpose
+   agents are easier to certify under exactly the WP.29-style regulation the programme's own H11 targets,
+   BECAUSE errors can be isolated to one agent instead of diffusing through a jointly-trained
+   differentiable stack. This does not mean the swarm approach is right — but it is a real, currently-
+   deployed (Munich pilot) counter-architecture whose entire selling point is the safety-case property
+   our own end-to-end-differentiable 4-brain design does NOT structurally have, and the programme's H11
+   monitoring story should explicitly address why layered monitors on a joint model are an adequate
+   substitute for hard module isolation, rather than leaving the comparison unaddressed.
+4. **CaRL's finding that reward SIMPLICITY beats complex shaping (at massive sample counts) is in mild
+   tension with our own multi-term energy design** (`E_total = αE_str + βE_tac + γE_op`, multiple loss
+   terms per gate). CaRL's regime (300–500M samples, 8-GPU node) is far from ours (13h, a few A40s), so
+   this does not directly transfer, but it is a reason to periodically ask whether cost/loss-term count is
+   creeping up for reasons of engineering convenience rather than measured necessity — worth a cheap
+   ablation next time a new loss term is proposed.
+
+## 9. Deliverable manifest
+
+| Artifact | Location | Notes |
+|---|---|---|
+| This stream report | `repo:Project Steering/Reviews/2026-09-25-programme-review/streams/W1_frontier_worldmodels_planning_brain.md` | Staged (`git add`), not committed, per operating rules. Single file, no other artifacts produced. |
+| Final summary to orchestrator | delivered via `SubagentHandback` | Compact TOP-10 + 3 bets + contradictions + this manifest, ≤1200 words. |
+
+No code, data, or pod artifacts were produced by this stream (research-only brief). No sibling files
+were read or modified beyond the read-only skim listed in §0. All searches/fetches are logged in the
+Method Note (§ above §1) for auditability.
+
+**Escalations for the orchestrator / other streams (not actioned here, per this stream's research-only
+scope):**
+1. Re-verify Hydra-MDP's "factorised path×velocity vocabulary" claim from primary text — needs working
+   arXiv/HF fetch access, which this container's egress proxy blocks (only `github.com` was reachable).
+2. Resolve whether Alpamayo-R1 trains on PhysicalAI-AV specifically, or only shares its ecosystem —
+   needs the same fetch access; the answer changes how directly AR1's numbers function as a competitive
+   bar for TanitAD.
+3. Confirm the version of NVIDIA Cosmos currently wired into `stack/`'s "cosmos loader" (per the
+   2026-07-08 screening digest) against the newly-released Cosmos 3 / Predict 2.5 / Reason 2 — likely 1-2
+   major versions behind, and Predict 2.5's longer long-tail generation window may resolve the
+   previously-logged "Cosmos T=39 temporal semantics" blocker.
+4. GoalFlow's goal-point-scorer input list needs a primary-source read before ANY goal-point work is
+   authorized, per the binding admissibility rule — flagged as gated, not cleared, in the TOP-10 table.

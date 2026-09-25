@@ -163,3 +163,36 @@ The strategic brain is trained on `nav_cmd` minted by the *same* `route_from_fut
 | 6 | Learned critic / value (offline RL) | 3.2(a) | none in-programme; needs outcome labels or closed-loop data | defer |
 | 7 | Energy-based selection | — | none in-programme; mathematically rank 1 with a contrastive loss | no case to fund separately |
 
+---
+
+## Q4 — The longitudinal deficit: why lateral is good and longitudinal is weak
+
+### 4.1 The measured shape (all on the canonical 881 windows unless stated)
+
+| fact | number | class · source |
+|---|---|---|
+| v1's separated win over CV is **entirely lateral** | cross-track +0.7720 [+0.4166, +1.1914]; along-track +0.2543 [−0.0278, +0.5304] **not separated**; speed MAE Δ −0.0032 [−0.1285, +0.1182] | MEASURED `taniteval/results/driving_flagship-30k.json` (quoted verbatim in `taniteval/taniteval/driving.py:22-31`) |
+| even **handed the true future accel**, along-track error at 2 s barely beats CV | WM 0.826 m · bicycle 0.829 m · CV 0.915 m (mean \|along\|) | MEASURED `latlon_decomposition.json` |
+| v1 is **2.0× worse than holding v0** on the 639 steady windows (72 % of val) | speed MAE 0.4231 vs 0.2109 m/s, paired Δ −0.2122 [−0.2778, −0.1443] | MEASURED (same source); every one of the 14 arms with a dump is separated-worse than hold-v0 there (registry §6 reading 4) |
+| the fed longitudinal action is a poor measurement of what it claims to be | native `ax` ↔ pose dv/dt **r = 0.434**; ↔ `ax_fd` **0.759** | INHERITED `IDM_DIAGNOSIS.md`; `V5_PLAN.md` §8 E-GOAL-3 |
+| v1's WM-fidelity squared error is **87 % longitudinal** | 0.8733 share | MEASURED `latlon_decomposition.json` (open_grnd) |
+| the selection headroom is longitudinal | oracle along-track recovers **+83.7 %**, oracle cross-track **+2.9 %** (n.s.) | INHERITED `V5_PLAN.md` §8 |
+| perfect lead-vehicle state buys little at 2 s on this corpus | 41.65 % of windows have no vehicle ahead within 50 m; gap/closing/TTC worth **+2.3** recovery points (n.s. on the primary axis) | INHERITED `V5_PLAN.md` §8 E-GOAL-1 (privileged `obstacle.offline` tracks) |
+| the single largest longitudinal lever measured anywhere | a **0.1 s speed difference `ax_fd`**; `v + ax_fd` ≈ the full 10-column history block (+0.0002 [−0.0023, +0.0027]) | INHERITED `V5_PLAN.md` §8 E-GOAL-3 |
+
+### 4.2 Causal account — four stacked causes
+
+1. **Lateral is handed in; longitudinal is not.** Road curvature ahead is visible in a single frame (lane lines and road edges occupy large image areas), and on the headline surface the future **curvature is supplied** as `steer = atan(2.9 κ)` (`stack/tanitad/data/physicalai.py:12,621`). Longitudinal change depends on things that are either invisible at this resolution (closing rates, §Q5) or not in the data (signals, stop lines, route), and on the current acceleration — which is fed through the wrong column.
+2. **The architecture withholds the best longitudinal observable.** The WM is fed native `ax` (r = 0.434 with dv/dt) and a **constant** v0 broadcast over the whole 8-step window and all 20 future steps (`flagship_losses.py:227-238`), so it never observes a speed *history*; `ax_fd` — which by itself carries most of the predictable longitudinal signal (E-GOAL-3/4) — is fed to **no** arm. REF-C sees v0 only, zeroed on 50 % of training samples, and no acceleration. This is a **one-column input fix**, parity-neutral (it changes an input, not the episode set).
+3. **No architectural "keep speed" default.** Both families emit absolute trajectories: REF-C's anchors are FPS draws from a v0-agnostic synthetic unicycle pool (candidate speed tracks ego speed at slope **−0.129** vs GT **+1.0003**, INHERITED V5_PLAN §8) and the WM integrates a noisy control. Holding the current speed — correct on 72 % of windows — must be *reproduced* by an offset head or by integration rather than being the zero-residual default. That is why every arm loses to hold-v0 on steady windows while winning brake/accel transients. HYPOTHESIS (mechanism), consistent with every MEASURED number above; a residual-over-kinematic-prior parameterisation is the cheapest test (R-4).
+4. **Train/eval horizon mismatch in the operative.** v1 trains the recursive rollout at K = 4 and the `op` readout at 4 steps but is scored at 20 (`train_flagship4b.py:794`; §2.1 fact 3). A fine-tune at K = 20 (RR-20) took WM-fidelity ADE 0.424 → **0.348** (paired Δ CI [0.0613, 0.0906]) and erased the speed bias (+0.9397 → −0.0092 m/s), at a **2.2×** curvature-MAE cost (INHERITED, `V5_FLAGSHIP_DEEP_REVIEW.md` §1 P5). The +0.94 m/s bias is therefore a **compounding** artefact, not a vision deficit.
+
+### 4.3 Can the encoder see speed or closing rate?
+
+- **Ego speed: partly.** Near-field ground flow is resolvable: with f = 266 px and camera height ≈ 1.22 m (INHERITED `stack/tanitad/replay/rr_log.py:47`), a ground point 10 m ahead sits ~32 px below the principal point and moves ~3–4 px per 100 ms at 10 m/s (ESTIMATED, pinhole geometry). A linear probe on frozen v1 z reaches R² **0.772** for speed, with a **17 % shrinkage** toward the training mean (gain 0.830) — a classic regression-dilution signature of monocular scale ambiguity across two camera rigs (INHERITED `IDM_DIAGNOSIS.md`). R² 0.77 leaves speed errors of order metres-per-second — metres at 2 s. **That is why every head without v0 sits at ~3 m** (no-speed 3.0175, v1 tactical head 3.3839) and why the fed v0 is load-bearing: on the v3enc checkpoint, replacing v0 by another window's (in-distribution) v0 raises the 0.4 s grounded error **0.26 → 2.09 m**, zero-filling it **0.94 m** (MEASURED `taniteval/results/postmortem_b_egodropout_v3enc10k.json`, 6,400 training windows).
+- **Lead-vehicle closing rate: essentially no.** A 1.8 m-wide car at 40 m is ~12 px wide (¾ of one 16-px patch); closing at 5 m/s its width changes by ~1.5 px/s — **~0.3 px across the 200 ms three-frame stack** and ~1.2 px across the 0.8 s predictor window, after the patch embedding and a 4×4 average pool have diluted it into a cell 64 × 64 px wide (ESTIMATED). Range-rate is therefore not observable at the distances that matter for braking at speed. On this corpus and at 2 s this costs little (E-GOAL-1, 4.1), but it is decisive for closed-loop safety (TTC), which no open-loop metric here measures.
+
+### 4.4 Why the no-speed control collapses to 3.0 m
+
+It is the same mechanism as the tactical head: without v0 the step readout must infer per-step displacement from a latent whose speed content is R² ≈ 0.77–0.86 with shrinkage, so the per-step error is a *systematic* fraction of speed, and SE(2) accumulation over 20 steps turns it into metres (a 2 m/s speed error ≈ 2.5 m mean error over 0.5–2 s; ESTIMATED). The speed input is not a "shortcut" the model should be weaned off — it is the only metric-speed channel the architecture has. The v2/v3enc "anti-shortcut" levers that zero-filled it and penalised the encoder for encoding it (§Q6) are the programme's clearest self-inflicted architectural wound.
+

@@ -513,19 +513,527 @@ in the TOP-10 below.
 
 ## E. Curation & active learning
 
-*(section pending)*
+**The central admissibility issue for this whole section:** classic "data engines" (Tesla, Waymo) are
+FLEET flywheels — TanitAD has no deployed fleet, so the mechanism, not just the scale, doesn't transfer.
+The substitutes are corpus-internal (dedup, curated mixtures) or reuse our own already-designed
+surprise-gated write mechanism (H10) over a fixed offline corpus rather than live miles.
+
+**E1. SemDeDup — semantic deduplication.**
+Uses pretrained embeddings to find and remove near-duplicate (not exact-duplicate) samples.
+*Evidence:* PUBLISHED (arXiv:2303.09540) — removes **50% of a LAION subset with minimal performance loss**,
+roughly halving training time, with OOD performance actually IMPROVING. **Maturity: PROVEN** in
+vision-language web-scale data; **UNVERIFIED/domain gap** for driving video/trajectory data specifically —
+no driving-specific replication found this pass, flagged rather than assumed to transfer.
+*Pain points:* P4 indirectly (frees compute/eng-time by cutting redundant highway-cruise-style windows,
+which are likely over-represented in any dashcam-style corpus) and P9 (few A40s — less redundant data means
+more effective passes per GPU-day).
+*Admissibility:* fully admissible — an internal filtering step on already-licensed data.
+*Cost:* ~3-5 eng-days to embed and cluster the existing 2,376-episode corpus (or any new-source candidate)
+and identify near-duplicate windows; 0 additional GPU-days (a preprocessing step, arguably SAVES GPU-days).
+*Experiment:* embed all parity-corpus windows with the existing trained encoder, run SemDeDup-style
+semantic clustering, and check what fraction are near-duplicates. **A:** a meaningful fraction (>15-20%) are
+near-duplicates → re-train a matched-compute arm on the deduplicated set and check whether ADE holds or
+improves at fewer effective steps — if so, this is a free compute-efficiency win with no new data needed.
+**B:** the corpus is already low-redundancy (plausible — it's curated, not raw fleet dump) → dedup has
+little to offer here, but the SAME analysis becomes a useful pre-ingest filter for any NEW source (L2D, ZOD)
+before it's added, which is where redundancy is more likely to matter.
+
+**E2. MOSAIC — cross-referenced from §A3.**
+Already scored under Data Scaling Laws since it is fundamentally a scaling-law-driven MIXTURE optimizer;
+equally an active-curation method (it decides not just how much data but which domain to add next). See §A3
+for the full six-field entry; **no separate scoring here** to avoid double-counting in the TOP-10.
+
+**E3. Fleet-scale data engines — Tesla shadow mode, Waymo's outer learning loop.**
+Tesla: onboard anomaly detection (perception mismatches, unexpected planner deviations) triggers upload of
+rare events from a deployed fleet. Waymo: a "Critic" model automatically flags suboptimal behaviour from
+autonomous miles and feeds edge cases back into closed-loop RL.
+*Evidence:* PUBLISHED-by-report (secondary sources; exact papers not independently opened this pass —
+**UNVERIFIED at the primary-source level**, numbers as reported: Tesla's data engine cited as having
+ingested **>9 billion miles** by early 2026 targeting a 10-billion-mile threshold; Waymo's Critic loop
+cited as operating over **>100 million autonomous miles**). **Maturity: PROVEN operationally at those two
+companies**, but the evidence for the SPECIFIC numbers here is secondary, not a primary paper read directly.
+*Pain points:* directly illustrates the SCALE at which fleet data engines operate — useful as a calibration
+point for how far TanitAD's problem is from that regime, not as a directly portable technique.
+*Admissibility:* **not directly admissible as a mechanism** — requires a deployed fleet TanitAD does not
+have. The TRANSFERABLE lesson is narrower: an UNCERTAINTY/SURPRISE-triggered flagging mechanism, applied not
+to live fleet miles but to (a) our own model's imagination-error signal over the FIXED offline corpus
+(already H10 in our own hub docs) and (b) any shadow/replay logs from closed-loop simulation (§D4) once
+that exists.
+*Cost:* N/A as a fleet mechanism; the H10 imagination-error-write mechanism is already scoped in our own
+docs with its own cost estimate.
+*Experiment:* N/A — this entry exists to make the SCOPING GAP explicit (fleet-scale mechanisms don't apply
+here) rather than to propose a new experiment; the actionable item is H10's own pre-registration, not a new
+one.
+
+**E4. Trajectory-entropy-based data pruning.**
+Prunes large-scale AV datasets by maximizing retained trajectory entropy (diversity of motion patterns)
+rather than random or uniform sub-sampling.
+*Evidence:* PUBLISHED (title: "Are All Data Necessary? Efficient Data Pruning for Large-scale Autonomous
+Driving Dataset via Trajectory Entropy Maximization," arXiv:2512.19270) — found via direct search of
+driving-specific pruning literature; exact retained-fraction/performance numbers not independently opened
+this pass — **UNVERIFIED at the number level**, title/arXiv id/mechanism confirmed. **Maturity: PROMISING**
+pending that verification.
+*Pain points:* P1 (selection) directly — a concrete, driving-native alternative/complement to SemDeDup's
+embedding-based dedup, using MOTION diversity specifically rather than visual-semantic similarity, which
+may catch a different kind of redundancy (e.g. visually distinct but kinematically repetitive highway
+cruising).
+*Admissibility:* fully admissible.
+*Cost:* ~3-5 eng-days to implement a trajectory-entropy scoring pass over the parity corpus.
+*Experiment:* compute trajectory-entropy scores over the 2,376 parity episodes, compare the ranking to
+SemDeDup's (E1) semantic-redundancy ranking — do they flag the SAME windows as low-value, or different ones?
+**A:** they overlap heavily → one method suffices, prefer the cheaper (SemDeDup, reuses the existing
+encoder). **B:** they flag different windows → the two are complementary (visual vs. kinematic redundancy
+are different things), and a combined filter is worth the extra eng-time.
+
+**E5. TAROT — targeted data selection via optimal transport.**
+A general-purpose data-selection method that matches a training distribution to a target distribution via
+optimal transport, rather than heuristic scoring.
+*Evidence:* PUBLISHED (arXiv:2412.00420) — a general ML method, not driving-specific; found in the same
+search cluster as MOSAIC and the trajectory-entropy paper, exact numbers not independently opened this pass
+— **UNVERIFIED** beyond title/mechanism/id. **Maturity: PROMISING**, general-domain.
+*Pain points:* P1 — a candidate alternative to MOSAIC for the specific sub-problem of "which of our val-like
+target scenarios are under-represented in the training mixture," which OT-based matching is well-suited to.
+*Admissibility:* fully admissible.
+*Cost:* ~5 eng-days to adapt (OT-based selection needs a feature embedding + a target-distribution
+definition, e.g. "the val-episode distribution" or "the lead-present subpopulation" from the falsified
+lead-state gate's own stratification).
+*Experiment:* lower priority than E1/A3 given it targets the same problem with more implementation
+complexity; recommend only if MOSAIC (A3) under-delivers on its own discriminating experiment.
 
 ## F. Distillation & privileged teachers
 
-*(section pending)*
+Privileged-information distillation is explicitly ADMISSIBLE per our own binding rules: ground-truth /
+label derivation may use anything (ego, other agents, maps, future poses), and a teacher trained on
+privileged information whose DISTILLED OUTPUT (not its privileged inputs) supervises the vision-only student
+is a label-time use, not an inference-time leak — provided the same discipline as the situation-classifier
+rule is applied: the student's INFERENCE inputs must never include the privileged channel or a
+classifier-derived echo of it.
+
+**F1. Learning by Cheating — the founding teacher-student pattern.**
+A privileged agent (ground-truth layout + traffic participants) is trained first, then acts as a teacher
+for a purely vision-based student that never sees privileged state.
+*Evidence:* PUBLISHED (Chen, Zhou, Koltun, Krähenbühl, arXiv:1912.12294, CoRL 2019) — substantially
+outperforms prior SOTA on the CARLA and NoCrash benchmarks. **Maturity: PROVEN**, foundational.
+*Pain points:* P1 (selection) — the general pattern this whole section instantiates: a privileged teacher
+sees the "right answer" more easily and passes DISTILLED judgment, not raw privileged state, to the student.
+*Admissibility:* admissible under our own rule as stated above.
+*Cost:* the pattern itself is near-free to adopt structurally; cost is dominated by whichever specific
+teacher (F2-F6) is chosen.
+*Experiment:* superseded by the more modern, driving-planning-specific instantiations below (F4-F6).
+
+**F2. Roach — an RL teacher, not just a privileged-BC teacher.**
+Trains a reinforcement-learning expert on bird's-eye-view state to a NEW CARLA performance ceiling, then
+uses it as the imitation target/supervision source for a vision-based student.
+*Evidence:* PUBLISHED (Zhang, Liniger, Dai, Yu, Van Gool, arXiv:2108.08265, ICCV 2021) — the RL coach sets a
+new CARLA performance upper bound; the resulting E2E student achieves **78% success on NoCrash-dense** while
+generalizing to a new town and new weather. **Maturity: PROVEN.**
+*Pain points:* P1, and P8 (no safety layer) indirectly — an RL-trained privileged teacher that has already
+learned to avoid collisions under full state access is a natural SOURCE of safety-relevant supervision for
+a student that cannot see full state.
+*Admissibility:* admissible (teacher trained with privileged simulator state at LABEL/TRAINING time only).
+*Cost:* HIGH if training the RL teacher from scratch in CARLA (CARLA rendering is blocked on our pods per
+our own DATA_STRATEGY doc); LOW-MEDIUM if a pretrained Roach-style checkpoint or its published rollouts can
+be reused directly as supervision without needing to render CARLA ourselves.
+*Experiment:* lower near-term priority than F4/F5 given the CARLA-rendering blocker; revisit once/if D3's
+Cosmos-Transfer scoping resolves that blocker.
+
+**F3. PlanT — object-level, explainable planning transformer teacher.**
+Uses a compact OBJECT-LEVEL (not pixel/BEV-grid) input representation for a privileged planning transformer,
+distilled to a camera-based student.
+*Evidence:* PUBLISHED (Renz et al., arXiv:2210.14222, CoRL 2022) — matches the CARLA expert's driving score
+on the Longest6 benchmark while being **5.3× faster at inference** than equivalent pixel-based planning
+baselines, with attention weights that identify the most relevant objects (an explainability by-product).
+**Maturity: PROVEN.**
+*Pain points:* P1, P3 (hierarchy/tactical decisions) — PlanT's object-level representation is a natural fit
+for TanitAD's `obstacle.offline` tracks, which ARE an object-level representation already sitting
+license-clean but under-used on the parity corpus.
+*Admissibility:* admissible.
+*Cost:* ~8-12 eng-days to build a PlanT-style object-level privileged planner head fed by `obstacle.offline`,
+used ONLY to generate distillation TARGETS (e.g. a soft trajectory-scoring signal) for the existing
+vision-only tactical head, never to feed the deployed student at inference; ~3-5 A40-days.
+*Experiment:* train a small PlanT-style object-level scorer on `obstacle.offline` + ego state (privileged,
+training-only), use its output trajectory SCORES as an auxiliary distillation target for the existing
+tactical head (vision-only at inference), and check tactical-decision-quality metrics (per our own
+binding four-metric-family rule) against the undistilled baseline. **A:** tactical metrics improve → a
+concrete, admissible use of our already-available-but-under-ingested agent tracks, distinct from (and not
+contradicted by) the already-falsified DIRECT lead-state input finding, since this is a training-time
+distillation target, not an inference-time feature. **B:** no improvement → strengthens the existing
+finding that agent state doesn't easily help THIS corpus/task combination, now tested via a second,
+independent mechanism.
+
+**F4. Hydra-MDP / Hydra-MDP++ — multi-teacher rule-based + human distillation.**
+A multi-head decoder learns diverse trajectory candidates, each supervised by a DIFFERENT teacher: human
+demonstration AND multiple rule-based simulators (collision, traffic-light compliance, lane-keeping,
+comfort), so the student learns to satisfy metrics no single human-imitation loss would capture.
+*Evidence:* PUBLISHED (Hydra-MDP, arXiv:2406.06978 — 1st place, NAVSIM challenge; Hydra-MDP++,
+arXiv:2503.12820 — adds traffic-light/lane-keeping/comfort teachers) — **91.0% drive score on NAVSIM**
+reported for Hydra-MDP++ via image-encoder scaling. **Maturity: PROVEN** (competition-winning, widely cited).
+*Pain points:* **P2 (longitudinal), P3 (tactical/strategic decision quality) directly** — rule-based
+teachers are EXACTLY the mechanism to inject "what good distance-keeping/lane-keeping looks like" as a
+training signal without needing more human-labelled (steer, accel) pairs; this is a strong, concrete
+candidate for closing the 88.7%-of-oracle-gap longitudinal problem our own fact sheet names as P2.
+*Admissibility:* admissible — rule-based teachers are DERIVED, computable quantities (TTC, lane-keeping
+error, comfort jerk), not privileged sensor channels; they can be computed from our own future-pose
+ground truth at label time and never touch inference.
+*Cost:* ~10-15 eng-days to implement 3-4 rule-based teacher scores (collision, TTC/headway, lane-keeping,
+comfort) as auxiliary distillation targets alongside the existing trajectory head; ~5-8 A40-days.
+*Experiment:* add a Hydra-MDP-style multi-teacher auxiliary loss (TTC/headway teacher specifically, since
+that's our named longitudinal weak point) to the existing flagship's trajectory head, matched-compute
+against the current single-teacher (human-imitation-only) baseline, and evaluate on the LONGITUDINAL metric
+family (target-speed accuracy, headway/TTC — per our own binding four-family eval rule). **A:** longitudinal
+metrics improve without ADE regression → directly actionable against P2, our single largest named pain
+point. **B:** no improvement → the longitudinal gap may not be a SUPERVISION-signal problem (i.e. the model
+isn't lacking the right training target) but a REPRESENTATION or ARCHITECTURE problem — redirects effort
+toward B/C's representation-learning levers instead.
+
+**F5. CaRL — scaling reinforcement learning with a single simple reward.**
+Shows that PPO fails to scale with complex shaped rewards at large batch sizes, and that a SINGLE reward
+(route completion) scales cleanly to very large sample counts on modest hardware.
+*Evidence:* PUBLISHED (Jaeger, Dauner, Beißwenger, Gerstenecker, Chitta, Geiger — CoRL 2025, PMLR 305,
+arXiv:2504.17838) — scales PPO to **300M samples in CARLA and 500M samples in nuPlan on a SINGLE 8-GPU
+node**; achieves **64 DS on CARLA longest6 v2**, outperforming more-complex-reward RL by a large margin.
+**Maturity: PROVEN.**
+*Pain points:* P9 (few A40s) — the headline result is precisely that a simple-reward RL recipe needs LESS
+engineering/tuning and scales on modest hardware, which is directly relevant to a few-A40 programme; P8 (no
+safety layer) — RL against a route-completion-plus-no-collision reward is itself a route to a supervision
+signal that never appears in imitation-learning-only data.
+*Admissibility:* admissible — RL reward is a DERIVED simulator/replay quantity computed at training time,
+not a privileged inference input, PROVIDED it is computed in a replay/simulation setting (our own CARLA
+rendering is blocked on-pod, but nuPlan-style replay against recorded logs does not require rendering).
+*Cost:* HIGH relative to imitation-learning fine-tuning (RL is sample-hungry even at CaRL's improved
+efficiency); ESTIMATED 15-20 A40-days for even a scaled-down pilot given TanitAD's much smaller compute
+budget than CaRL's "single 8-GPU node" figure implies for OUR node count.
+*Experiment:* lower near-term priority given cost; the more actionable takeaway is the REWARD-DESIGN lesson
+(prefer one simple, well-behaved reward over many shaped terms) if/when TanitAD's own RMFM rule-injection
+work (already Phase-1-flagship per our internal H9 notes) runs into PPO-scaling issues — a documented
+pitfall to avoid pre-emptively rather than a new experiment to run now.
+
+**F6. DiMA and the VLM→planner distillation family (Drive-KD, BucketKD, PlanKD).**
+Distill a large multi-modal LLM's scene understanding into a small vision-only planner via auxiliary
+surrogate tasks (masked reconstruction, future prediction, scene editing) and representation alignment
+(KL-divergence between student/teacher hidden features); the LLM is DISCARDED at inference, leaving only the
+efficient vision planner.
+*Evidence:* PUBLISHED (DiMA, arXiv:2501.09757, CVPR 2025 — three surrogate tasks, shared scene encoder
+doubling as MLLM tokenizer and planner feature extractor); PUBLISHED (Drive-KD, arXiv:2601.21288, Jan 2026
+— multi-teacher VLM distillation); PUBLISHED (BucketKD, arXiv:2607.10565, July 2026 — safety-aware,
+bucket-based KD for motion planning); PlanKD referenced via search synthesis as an information-bottleneck
+planning-feature-distillation method with a safety-aware waypoint-attentive mechanism — **exact arXiv id
+UNVERIFIED this pass**. **Maturity: PROVEN** (DiMA, peer-reviewed CVPR 2025); **PROMISING** (the 2026
+successors, less independently checked).
+*Pain points:* P3 (tactical/strategic — VLM world/traffic-rule knowledge is exactly the semantic layer our
+hierarchy's strategic level currently lacks any external source for, per our own fact sheet's "no maps, no
+route, no traffic-light labels" finding), and this is the SAME mechanism as §H's "knowledge injection" —
+cross-referenced there, not double-scored.
+*Admissibility:* admissible — the VLM teacher may use ANY signal (including text/world knowledge) at label/
+distillation time; the deployed student remains vision-only, satisfying the vision-only-at-inference rule
+by construction (there is no VLM at inference at all, let alone one carrying situation-classifier output).
+*Cost:* HIGH to train a full VLM teacher from scratch (out of reach on a few A40s); LOW-MEDIUM (~8-12
+eng-days, ~3-5 A40-days) to use an EXISTING open-weight VLM (no training) purely as a frozen annotator that
+labels our own clips with traffic-semantic tags (e.g. "four-way stop," "protected left," "school zone")
+offline, then distill THOSE labels into an auxiliary classification head on the existing encoder — a much
+cheaper slice of the same idea.
+*Experiment:* the cheap slice above: label a sample of parity-corpus clips with an off-the-shelf VLM's
+traffic-scene-type judgment (offline, training-time only), add it as an auxiliary multi-task head, and check
+whether the STRATEGIC metric family (per our binding four-family rule) improves. **A:** it does → a cheap,
+admissible first step toward closing P3 (no route/goal signal is a bigger gap, but scene-type semantics is
+adjacent and answers whether VLM knowledge injection helps AT ALL for our setup before committing to a full
+DiMA-style joint-training pipeline). **B:** no improvement → either the strategic metric family itself needs
+more instrumentation first (per our own binding rule 3: "a missing metric is a work item"), or traffic-
+scene-type semantics specifically isn't the missing ingredient (route/goal likely matters more, per P3's own
+framing) — informs prioritizing a goal-point predictor (already flagged admissible per our binding
+goal-input rule) over VLM-semantic injection.
 
 ## G. Structural priors that substitute for data
 
-*(section pending)*
+**G1. Kinematic bicycle model as an output/decoder layer.**
+Constrains the trajectory decoder's output to be dynamically feasible (bounded curvature-speed coupling)
+rather than letting a free-form regression head output physically impossible paths.
+*Evidence:* PUBLISHED (kinematic bicycle model consistency analysis for AV trajectory planning, IEEE — the
+foundational formulation is decades old and well-established; TanitAD's OWN label parametrization,
+`steer = atan(2.9·κ)`, is already exactly this family of prior). **Maturity: PROVEN**, and already partially
+adopted internally.
+*Pain points:* P2 (longitudinal), G-general (structural priors substitute for data by ruling out large
+swaths of the output space that no amount of extra labelled data would otherwise teach the model to avoid).
+*Admissibility:* fully admissible (a decoder architecture choice, not a data source).
+*Cost:* if not already fully applied to EVERY output head (tactical waypoints, strategic goal points), the
+incremental cost of extending it is LOW (~3-5 eng-days); this is closer to an audit item than a new
+experiment.
+*Experiment:* audit which of the four output heads (operative, tactical, strategic, plus any fallback) use a
+kinematically-constrained decoder vs. a free regression head, and for any that don't, add the constraint and
+matched-compute-compare. **A:** an unconstrained head shows measurable ADE or lateral-family (curvature
+error, yaw-rate error — per our binding four-family rule) improvement once constrained → cheap, direct win.
+**B:** all heads are already constrained, or constraining an already-good head shows no change → the prior
+is already fully exploited here, redirect structural-prior effort to G2/G4 below.
+
+**G2. SE(2) equivariance / mirror symmetry.**
+Builds left-right mirror symmetry and rotation/translation invariance into the network architecture itself
+(equivariant layers), rather than relying on data augmentation to teach the model the same invariance
+empirically.
+*Evidence:* PUBLISHED ("Pioneering SE(2)-Equivariant Trajectory Planning for Automated Driving,"
+arXiv:2403.11304) — improves L2 distance at 3s by **20.6%** and surpasses SOTA **despite using only a small
+split of the dataset**, i.e. the paper's own framing is explicitly a SAMPLE-EFFICIENCY result, not just an
+accuracy one; explicitly contrasted against data augmentation, which "does not ensure equivariance and
+requires longer training times." **Maturity: PROVEN** (peer-reviewed, quantified small-data result).
+*Pain points:* **P4 directly, mechanistically the cleanest item in this whole section** — mirror-symmetry
+equivariance means every left-turn example the model sees IS also a right-turn example for free, roughly
+DOUBLING the effective diversity of manoeuvre-completion examples in a 2,376-episode corpus at zero
+additional data cost.
+*Admissibility:* fully admissible (an architecture/training-time symmetry, not a data source).
+*Cost:* MEDIUM — ~8-12 eng-days to retrofit SE(2)/mirror equivariance into the existing ViT+predictor
+stack (equivariant layers are a real architectural change, not a drop-in); ~3-5 A40-days to validate at
+matched compute.
+*Experiment:* the cheapest version is NOT full equivariant layers but a mirror-flip DATA AUGMENTATION
+control first (flip every training frame + negate steer/yaw labels), to check whether the underlying
+left/right-manoeuvre imbalance is even present and exploitable in our corpus, BEFORE investing in the
+harder equivariant-architecture change. **A:** mirror-augmentation alone improves manoeuvre-class-balanced
+tactical metrics → the imbalance is real and exploitable; escalate to full equivariant layers for the
+(per the cited paper) additional gain augmentation alone can't reach. **B:** no improvement from simple
+mirroring → either our corpus is already left-right balanced (less likely for real-world driving, but
+possible for our specific route selection) or the tactical head isn't sensitive to this axis, in which case
+skip the more expensive equivariant-architecture investment.
+
+**G3. Equivariant Continuous Convolutions (ECCO) — a second, older equivariance result.**
+An equivariant convolutional architecture for trajectory prediction that bakes in the same symmetry class as
+G2 at the convolution level.
+*Evidence:* PUBLISHED (title and mechanism confirmed via search synthesis: "up to 8× fewer parameters and
+significantly better sample efficiency than standard models"; exact arXiv id **UNVERIFIED this pass** — not
+independently opened, likely the NeurIPS-era Walters et al. equivariant-continuous-convolution line but not
+confirmed with certainty). **Maturity: PROMISING** pending id verification, but the 8×-fewer-parameters
+claim is a second independent data point for the same G2 mechanism.
+*Pain points:* P4, P9 (few A40s — fewer parameters at matched accuracy is a direct compute-budget win for a
+sub-300M-parameter, few-A40 programme).
+*Admissibility:* fully admissible.
+*Cost:* folds into G2's cost estimate if pursued (same underlying mechanism family); do not double-budget.
+*Experiment:* subsumed by G2's experiment — if G2's mirror-augmentation control (Outcome A) succeeds,
+ECCO's specific convolutional formulation becomes a candidate IMPLEMENTATION detail to compare against a
+simpler equivariant-attention approach, not a separately prioritized experiment.
+
+**G4. Trajectory vocabularies / anchors — factorized, combinatorial coverage.**
+Discretizes the planning output space into a VOCABULARY of anchor trajectories (path anchors × velocity
+anchors, combined combinatorially), turning trajectory generation into scoring/selection over a fixed,
+interpretable set rather than free-form regression.
+*Evidence:* PUBLISHED (VADv2, arXiv:2402.13243 — probabilistic planning over a large tokenized vocabulary,
+SOTA on CARLA Town05 and Bench2Drive); PUBLISHED (SparseDriveV2, arXiv:2603.29163, "Scoring is All You
+Need," early 2026 — a factorized vocabulary of **1024 path anchors × 256 velocity anchors = 262,144
+combinatorial trajectories** for NAVSIM v1, with SparseDriveV2 itself achieving **32× denser** vocabulary
+coverage than prior methods via the same factorization trick). **Maturity: PROVEN** (multiple independent
+SOTA results on this family).
+*Pain points:* **P1 (selection) directly** — our own fact sheet names "good candidates, bad choice" as P1;
+an anchor-vocabulary + scoring architecture is LITERALLY a reformulation of planning as candidate-selection,
+which is the mechanistic answer to a selection-quality problem, more so than a generation-quality one.
+P3 (tactical — the "5-way softmax that mixes lat+lon" already flagged as our single largest known defect in
+our own binding eval rule) — a factorized path×velocity vocabulary is a direct, concrete alternative to a
+single mixed-manoeuvre softmax, decomposing the SAME decision into two more legible, separately-scoreable
+axes.
+*Admissibility:* fully admissible (an output-parametrization choice).
+*Cost:* MEDIUM-HIGH — ~15-20 eng-days to replace the tactical head's decision structure with a factorized
+anchor vocabulary + scorer; ~5-8 A40-days to re-train/fine-tune and validate.
+*Experiment:* replace ONLY the tactical head's 5-way manoeuvre softmax with a small factorized
+anchor-vocabulary + scorer (start small: e.g. 32 path anchors × 8 velocity anchors = 256 combinations, far
+short of SparseDriveV2's 262K, sized for our sub-300M budget), matched-compute against the existing softmax,
+and evaluate specifically on the TACTICAL metric family (manoeuvre-decision quality, confusion over classes
+— per our binding four-family rule). **A:** confusion/decision-quality metrics improve → directly addresses
+our own already-named single largest defect (P1/P3 combined), prioritize a fuller rollout. **B:** no
+improvement → the mixed-softmax's problem may be in the TRAINING SIGNAL (what it's being taught to prefer)
+rather than the OUTPUT PARAMETERIZATION, redirecting effort to F4's rule-based-teacher approach instead.
+
+**G5. Auxiliary tasks from `obstacle.offline` — occupancy/agent-box forecasting.**
+Adds a future-occupancy or future-agent-box forecasting auxiliary head, trained using our OWN already
+license-clean but under-ingested 3D agent tracks (available on 97.44% of clips per our own fact sheet),
+purely as a REPRESENTATION-SHAPING auxiliary loss, not as a direct runtime input.
+*Evidence:* PUBLISHED, general mechanism (occupancy/flow forecasting as an auxiliary task is well-established
+across UniPAD/ViDAR §B3 and dedicated occupancy-flow papers such as arXiv:2609.18442, "Risk-Aware World
+Modeling with Flow-Guided Occupancy Evolution"); the DRIVING-SPECIFIC number for OUR corpus does not yet
+exist and must be measured, not assumed. **Maturity: PROVEN as a general pretext-task class; UNTESTED for
+our specific data/architecture** — correctly scoped as our own work item, not an external citation to lean
+on for the number.
+*Pain points:* **P4 directly, and at near-zero marginal DATA cost** — this is explicitly a case where "the
+label already exists in our license-clean corpus and is simply unused," per our own DATA_STRATEGY_FOR_
+HIERARCHY.md's own framing of `obstacle.offline`. It is IMPORTANT to distinguish this from the
+ALREADY-FALSIFIED use: the lead-state gate falsified using agent state as a DIRECT INPUT to the longitudinal
+head; using the SAME underlying labels as an AUXILIARY REPRESENTATION-LEARNING TARGET (predict where other
+agents will be, as a training-time-only loss, not a runtime input). This is a mechanistically DIFFERENT
+claim, and treating the earlier falsification as covering this case too would be exactly the kind of
+over-generalized "absence"/refutation error our own CLAUDE.md operating standard warns against.
+*Admissibility:* fully admissible (auxiliary loss at training time only; no runtime input change).
+*Cost:* ~5-8 eng-days (mostly re-deriving box-forecasting targets from `obstacle.offline`, which requires
+the same ~12.4 GB ingest already scoped and costed in DATA_STRATEGY_FOR_HIERARCHY.md); ~2-4 A40-days.
+*Experiment:* add a future-agent-box-forecasting auxiliary head (predict nearby agents' positions 1-2s
+ahead from the current latent), trained jointly but contributing NOTHING to the deployed inference path,
+and measure whether the MAIN task's four metric families improve at matched compute vs. a no-auxiliary
+control. **A:** any family improves → a genuinely free win (data already licensed and downloaded-scale
+costed), ship it. **B:** no improvement → a second, independent, mechanistically-distinct test of whether
+`obstacle.offline` carries exploitable signal for THIS corpus/architecture at all, complementing (not
+duplicating) the already-falsified direct-input finding and F3's distillation-target test.
+
+**G6. Kinematic-Consistency-Error — a diagnostic prior for imagination quality.**
+Defines a metric that decodes IMAGINED (rolled-out) latents into physical quantities and checks whether
+they are KINEMATICALLY CONSISTENT (e.g. implied acceleration/curvature is physically plausible) even when
+they are not necessarily predicting the right DYNAMIC outcome — i.e. separates "the rollout looks like
+smooth physically-plausible motion" from "the rollout is predicting what will actually happen."
+*Evidence:* PUBLISHED ("Imagined Rollouts are Kinematic, Not Dynamic: A Diagnosis of Long-Horizon World-Model
+Failure," arXiv:2607.05966, July 2026) — the paper's central claim, as reported in the operationalized
+"Kinematic-Consistency Error" diagnostic, is that world models' imagined rollouts DEGRADE by becoming
+kinematically-plausible-but-dynamically-wrong over long horizons, rather than becoming obviously physically
+broken — meaning a naive visual/ADE-based check of imagined rollouts can look fine while the underlying
+DYNAMICS reasoning has already failed. **Maturity: PROMISING** (July 2026, single paper, mechanism directly
+applicable regardless of independent replication since it's a diagnostic tool, not a training method).
+*Pain points:* **P7 (anti-calibrated imagination) directly** — this is a ready-made, external, off-the-shelf
+diagnostic for exactly TanitAD's own named pain point, and per our own operating-standard rule ("a missing
+metric is a work item, not an excuse"), imagination quality currently likely lacks this specific lens.
+*Admissibility:* fully admissible (an evaluation/diagnostic instrument, not a data source or architecture
+change by itself, though its RESULT may motivate one).
+*Cost:* LOW — ~4-6 eng-days to implement the Kinematic-Consistency-Error metric against existing imagined
+rollouts from already-trained checkpoints; 0 additional GPU-days (a post-hoc analysis of existing rollouts).
+*Experiment:* compute Kinematic-Consistency-Error on the flagship's already-generated imagined rollouts
+across increasing horizons, and check whether it degrades BEFORE, WITH, or AFTER the already-known ADE-based
+imagination-decay curve (this directly extends the already-pre-registered E-CR experiment on imagination
+decay in `PREREG_deep_research_2026-07-29.md`, rather than duplicating it). **A:** kinematic consistency
+degrades LATER than ADE/dynamic accuracy → our imagination's problem is primarily DYNAMIC (predicting the
+wrong outcome), not kinematic (the shape of the rollout stays physically sane) — points toward more training
+signal/data as the fix (favor §A4/§B7). **B:** kinematic consistency degrades AT THE SAME TIME OR EARLIER
+than dynamic accuracy → the rollout is losing even basic physical plausibility, which is an ARCHITECTURAL
+finding (favor G1's kinematic-constraint layer applied to the IMAGINATION path specifically, not just the
+final output decoder) — a clean, falsifiable answer either way, and cheap to obtain since it reuses existing
+checkpoints.
 
 ## H. Knowledge injection & continual/fleet learning
 
-*(section pending)*
+**H1. R²LPL — Rollout-Retrieval Lifelong Policy Learning.**
+A closed-loop rollout exposes failures; a RETRIEVAL step specifically identifies RECOVERABLE
+mistake-related states and constructs corrective targets from them; a lifelong-learning step updates the
+policy with this new knowledge plus replayed memory — an explicit Rollout→Retrieve→Learn cycle.
+*Evidence:* PUBLISHED (Gong, Wang, Lu, Gong — Beijing Institute of Technology; Li — NTU;
+"Learning from Mistakes: Rollout-Retrieval Lifelong Policy Learning for Autonomous Driving," arXiv:2606.30537,
+June 2026). Mechanism confirmed in detail; specific quantitative gain over a non-retrieval baseline not
+independently opened this pass — **UNVERIFIED at the number level**, mechanism and venue confirmed.
+**Maturity: PROMISING** (recent, single paper).
+*Pain points:* **P6 (compounding error), and directly extends TanitAD's OWN already-implemented H10
+mechanism** (latent-RAG, surprise-gated write, MEASURED in-house at +18.8% on unseen surprise contexts but
+**−24% interference on well-predicted contexts**). R²LPL's retrieval is gated on RECOVERABLE MISTAKES
+specifically (outcome-conditioned), which is a MORE SELECTIVE trigger than generic prediction-surprise —
+a concrete, externally-motivated candidate fix for exactly the interference side-effect our own docs already
+measured and flagged as a known failure mode of the current surprise-gate.
+*Admissibility:* admissible — retrieval keys and corrective targets are derived from the model's OWN past
+rollouts/replay, not a privileged runtime channel.
+*Cost:* MEDIUM — ~10-12 eng-days to add outcome-conditioning (not just surprise-magnitude) to the existing
+H10 memory-write trigger; ~3-5 A40-days to re-run the D7 gate (repeat-exposure improvement) already planned
+for H10 with this modification.
+*Experiment:* re-run the ALREADY-PLANNED H10/D7 gate (repeat-exposure improvement test) with the write
+trigger changed from pure imagination-error magnitude to "imagination-error magnitude AND the state was
+later followed by a recoverable correction" (R²LPL's outcome-conditioning), and compare the
+well-predicted-context interference number against the already-measured −24% baseline. **A:** interference
+shrinks materially (e.g. toward −10% or better) while the +18.8% surprise-context gain is retained → a
+direct, quantified fix to an already-known and already-costed failure mode, adopt outcome-conditioned
+retrieval as the H10 write policy. **B:** interference persists similarly → the interference is likely a
+property of the RETRIEVAL/FUSION mechanism (e.g. the cross-attention gate itself) rather than the WRITE
+TRIGGER, redirecting the fix toward the gate-MLP/fusion architecture instead of the trigger condition — a
+useful, falsifiable narrowing either way.
+
+**H2. MoE-LoRA continual adaptation.**
+Combines feature-generation replay with a Mixture-of-Experts router and LoRA adapters, so new-domain
+knowledge is added via new low-rank adapter capacity while old-domain behaviour is preserved via replay,
+rather than full-network fine-tuning risking catastrophic forgetting.
+*Evidence:* PUBLISHED (feature-generation-replay + MoE-LoRA for data-driven autonomous guidance, MDPI —
+title/mechanism confirmed via search; exact quantitative retention numbers **UNVERIFIED this pass**, not
+independently opened). Broader context: LoRA is explicitly characterized in the 2026 continual-learning
+literature as "a continual-learning method in disguise" — a capacity-allocation view of adapters that is a
+useful FRAME even independent of this specific paper. **Maturity: PROMISING.**
+*Pain points:* directly relevant to H8's already-existing Sparse MoE tactical router (our own hub docs
+already note the router interface is in place for sensor-modality and skill experts) — LoRA-per-new-domain
+is a natural extension of an architecture TanitAD already has, rather than a new architectural commitment.
+*Admissibility:* admissible.
+*Cost:* ~8-10 eng-days to add LoRA-adapter slots to the existing MoE tactical router for a SECOND data
+source (e.g. L2D, once ingested) without retraining the base network; ~2-4 A40-days.
+*Experiment:* when L2D (already planned per DATA_STRATEGY_FOR_HIERARCHY.md) is ingested as a new arm, train
+a LoRA adapter for it on top of the frozen flagship base rather than a full fine-tune, and compare
+parity-corpus performance BEFORE vs. AFTER the L2D-adapter addition (testing for forgetting). **A:**
+parity-corpus performance is unchanged (within CI) while L2D-relevant metrics improve → LoRA-per-source is a
+safe, low-risk way to grow the corpus mixture without the "new data = new arm, never re-selection" invariant
+being put at risk by full-network drift. **B:** parity performance degrades → the base network is not as
+modular as hoped, and full multi-source joint training (with its own forgetting risks) may be unavoidable —
+informs a real architectural decision before L2D integration proceeds at scale.
+
+**H3. Continual test-time adaptation (CTTA) and world-model-aware online adaptation.**
+CTTA methods adapt a frozen-at-deployment model continually as it encounters a SEQUENCE of shifting target
+domains at test time, without domain-boundary labels; a world-model-specific variant (AdaWM-style) DIAGNOSES
+a world-model/policy MISMATCH via a divergence measure and triggers alignment fine-tuning rather than
+adapting blindly.
+*Evidence:* PUBLISHED (CTTA survey, "Continual Test-Time Adaptation in Computer Vision: Methods, Benchmarks,
+and Future Directions," arXiv:2607.08164, July 2026 — general CV survey, not driving-specific); AdaWM-style
+adaptive world-model RL referenced via search synthesis, exact arXiv id **UNVERIFIED this pass**.
+**Maturity: PROMISING**, general-domain for CTTA; **SPECULATIVE** for the WM-mismatch-diagnosis framing
+applied to driving specifically.
+*Pain points:* P6 (a model that can detect its own world-model/policy mismatch at deployment time is a
+softer, cheaper version of the fleet-learning flywheel TanitAD cannot otherwise afford, per §E3's admissibility
+gap) — this is the SPECULATIVE, Thor-deployment-relevant end of the continual-learning spectrum: adapting
+ONE deployed unit online, rather than a fleet.
+*Admissibility:* admissible IF adaptation uses only the deployed vehicle's own vision-only observations
+(consistent with the vision-only-at-inference rule) — a CTTA method that uses privileged signals to steer
+adaptation would violate the same rule that governs the situation classifier and must be checked explicitly
+before adoption, not assumed safe by default.
+*Cost:* HIGH — CTTA on an embedded Jetson Thor target is a nontrivial systems problem (online updates,
+catastrophic-forgetting risk with no replay buffer of prior deployment data by default); ESTIMATED 15-20
+eng-days for even a minimal on-device CTTA pilot, and this cannot be meaningfully GPU-cost-estimated without
+Thor hardware access (which this review stream does not have — flagged as a hardware-in-the-loop dependency).
+*Experiment:* given the cost and Thor-access dependency, this is NOT a near-term experiment; the actionable
+item is a SCOPING note for whichever stream owns Thor deployment: read the CTTA survey (arXiv:2607.08164) for
+a benchmark/method shortlist before any online-adaptation design work begins, rather than designing from
+scratch.
+
+**H4. VLM knowledge injection — cross-referenced from §F6.**
+Traffic-rule/semantic knowledge injection via a VLM teacher, distilled into a vision-only student that
+discards the VLM at inference, is the SAME mechanism scored in full under §F6 (DiMA/Drive-KD/BucketKD/PlanKD)
+since distillation and knowledge-injection are the same technique viewed from two angles here. See §F6 for
+the full six-field entry and the concrete cheap experiment (offline VLM scene-type labelling → auxiliary
+head). **No separate scoring here** to avoid double-counting in the TOP-10.
+
+**H5. Genie 3 → Waymo World Model — the fleet-scale ceiling, and why it doesn't directly transfer.**
+DeepMind's Genie 3 (a general-purpose, real-time interactive world model pretrained on a massive diverse
+video corpus) was adopted by Waymo and specialized via post-training into a driving-specific world model
+that outputs Waymo's own LiDAR modality, letting Waymo explore situations never directly observed by its
+fleet.
+*Evidence:* PUBLISHED (Genie 3, Google DeepMind, Aug 2025 — real-time interactive world generation,
+photorealistic, ~1 minute memory); PUBLISHED-by-report (Waymo's Feb 2026 adoption and specialization,
+"the Waymo World Model," via Waymo's own blog and secondary coverage — **not independently opened as a
+primary technical paper this pass**, so the LiDAR-transfer mechanism detail is reported, not verified
+first-hand). **Maturity: PROVEN** for Genie 3 itself; **PUBLISHED-by-report, UNVERIFIED-at-the-mechanism-
+level** for the Waymo specialization specifically.
+*Pain points:* illustrates the CEILING of the "pretrain on huge diverse video, specialize via post-training"
+recipe — but **explicitly requires a fleet + LiDAR TanitAD does not have**, so this is scored primarily as
+an ADMISSIBILITY/FEASIBILITY note, not a directly portable technique. The TRANSFERABLE LESSON, independent
+of Waymo's specific execution, is that general video-pretrained world knowledge CAN be grafted onto a
+sensor-specific small model via post-training — which is exactly what TanitAD's OWN frozen-encoder arm
+attempted and failed at (2.17 m ADE), suggesting the GRAFTING MECHANISM (naive frozen-backbone + linear
+probe) is what needs fixing, not the underlying premise — pointing back at §B6/B7 (WA-JEPA, LFG) as the
+mechanistically richer grafting recipes worth retrying instead.
+*Admissibility:* the GENERAL lesson is admissible; the SPECIFIC Waymo mechanism is not reproducible here
+(no fleet, no LiDAR) and should not be cited as a directly portable recipe.
+*Cost:* N/A as a directly portable technique.
+*Experiment:* none standalone — this entry exists to correctly SCOPE the ambition (aim above published SOTA
+per our own operating standard, but via B6/B7's cheaper, sensor-matched recipes, not via a fleet-scale
+system TanitAD cannot build).
+
+**H6. AdaWorld — context-invariant latent actions for fast adaptation.**
+Extracts LATENT ACTIONS from unlabeled video in a context-invariant way, so a demonstrated action can be
+transferred to new environments/embodiments with minimal or no further training, and a base world model can
+be adapted to a new context quickly with limited data.
+*Evidence:* PUBLISHED (arXiv:2503.18938, ICML 2025) — **70.5% human success rate on LIBERO transfer vs. 20%
+for baseline**; faster adaptation with limited data on game and robotic tasks. **Maturity: PROVEN**, but
+**in robotics/game domains, NOT driving** — flagged explicitly, no driving-specific number exists.
+*Pain points:* SPECULATIVE relevance to "fleet learning" in spirit — a new sensor rig, a new city, or a new
+country could in principle be treated as a new "context" that AdaWorld-style latent-action transfer adapts
+to quickly, rather than retraining from scratch; this is the most SPECULATIVE item in this stream and should
+be weighted accordingly.
+*Admissibility:* admissible in principle (self-supervised, no privileged signal).
+*Cost:* HIGH to adapt the method to driving's continuous, high-precision action space (the same LAPA/Genie
+discretization mismatch already flagged in our own internal H7 notes applies here too); ESTIMATED 15-20
+eng-days for a driving-specific feasibility pilot alone.
+*Experiment:* not recommended as a near-term experiment given cost and domain mismatch; listed for
+completeness per the brief's explicit coverage list, and because its CORE MECHANISM (context-invariant
+latent actions from unlabeled video) is conceptually continuous with §C's IDM-camera-rig-transfer work — if
+§C's fixes (canonicalization, rig-conditioning) succeed, AdaWorld-style context-transfer becomes a more
+plausible NEXT step (new rig = new "context") worth revisiting then, not now.
 
 ## Ranked TOP-10 for TanitAD
 

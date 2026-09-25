@@ -1,8 +1,15 @@
 # Stream W3 — Frontier research: structured physical understanding, symbolic & neuro-symbolic reasoning, knowledge & rules, tool use, physics-grounded neural operators, mathematical guarantees
 
-**Status: IN PROGRESS — banking incrementally.** Orchestrator: PI Sayed, whole-programme review, 2026-09-25.
+**Status: COMPLETE.** Orchestrator: PI Sayed, whole-programme review, 2026-09-25.
 Method: web research (WebSearch/WebFetch), primary sources preferred, arXiv ids quoted where found.
 Evidence-class legend: **PUBLISHED** (title, arXiv id/venue, year, key number) · **ESTIMATED** · **HYPOTHESIS** · **UNVERIFIED**.
+Coverage: 6 sub-sections (A structured physical world understanding, B symbolic/neuro-symbolic
+reasoning, C knowledge injection, D tool use, E physics-grounded operators/dynamics, F mathematical
+guarantees/runtime assurance), 34 distinct ideas each carrying the six required fields, closing with
+a ranked TOP-10, a sized "guaranteed envelope" architecture, and an explicit hype list. 40 WebSearch
+calls used (of the ≤45 budget); WebFetch was blocked for `arxiv.org`/`huggingface.co` in this
+container (see the Deliverable Manifest's environment-constraint note) so no WebFetch calls
+contributed usable content — this is disclosed rather than hidden.
 
 ## 0. Delta check against existing docs (read first, not re-derived)
 
@@ -1343,24 +1350,218 @@ for this explicitly:**
 
 ## Ranked TOP-10 for TanitAD
 
-*(filling in below)*
+Ranked by (measured pain-point fit) × (cost cheapness) × (evidence maturity), not by novelty alone —
+per the operating standard's preference for the cheapest discriminating experiment over the most
+exciting one.
+
+| # | Idea | Section | Pain points | Cost | Why it's ranked here |
+|---|---|---|---|---|---|
+| 1 | **Post hoc neuro-symbolic safety guard** on the deployed flagship's command output | B4 | P1, P6 | ~2-4 eng-days, **0 A40-days** | Cheapest possible intervention in the whole report; zero retraining; converged upon independently by 3 papers in a 3-month window (2606-2608.xxxxx); targets the *exact measured* v1 failure mode (off-road/longitudinal, not collision) |
+| 2 | **Tiered-rulebook reranking of candidates** (RECTOR pattern) | B7 | P1 | ~4-6 eng-days, 0-2 A40-days | Only entry in the whole report with a concrete, checkable, reproducible external benchmark number (WOMD, 43,219 instances, 28.58%→20.42%); directly a selection-layer fix for the named #1 pain point |
+| 3 | **Differentiable CBF-QP safety filter** (BarrierNet, driving-specific instantiation already exists) | F2 | P1, P6, P8 | ~8-10 eng-days, ~6-10 A40-days | The clearest *genuine mathematical guarantee* (forward invariance) available at TanitAD's latency budget (sub-ms QP fits inside the measured 18.75-27.87ms tick with room to spare) |
+| 4 | **Simplex / runtime-assurance wrapper** around the flagship | F4 | P8 (frames all of P1/P2/P6) | ~10-15 eng-days, ~5-8 A40-days | The architectural frame everything else in this TOP-10 plugs into; critically, it does NOT require the 263M-param flagship itself to be formally verified — only a small baseline needs a proof |
+| 5 | **Conformal-calibrated imagination confidence** for H15 | F6 | P7 | ~5-6 eng-days, ~4-6 A40-days | The single most rigorous (real coverage-guarantee theorem) answer found to the named P7 diagnosis; wraps the *existing* H15 module, no architecture change |
+| 6 | **DreamLedger-style execution-settled imagination refusal** | F10 | P7 | ~6-8 eng-days, ~8-12 A40-days | Complementary to #5: a problem-specific, driving-compatible *training signal* (did trusting this rollout pay off, per the logged corpus) rather than a purely statistical wrapper — the two together (learned refusal + CP coverage bound) is stronger than either alone |
+| 7 | **RSS longitudinal/lateral distance monitor** | F1 | P8, P2 | ~5-7 eng-days, 0 A40-days | Most externally validated mechanism in the report (2026 TÜV SÜD SMS recommendation for Mobileye); zero compute; composes with anything |
+| 8 | **Differentiable Kinematic Bicycle Model decoder** | E1 | P2, LATERAL family | ~4-5 eng-days, ~5-8 A40-days | Near-free architectural change (small param delta) that makes curvature/yaw-rate/speed outputs kinematically consistent *by construction* — directly serves the BINDING 4-metric-family rule's LATERAL family |
+| 9 | **Train-time-only relational/risk structure** (GraphPilot pattern / RiskWorld-style risk readout on H15) | A1, A3 | P3, P10 | ~5-8 eng-days, ~5-12 A40-days | The cleanest demonstrated recipe for injecting structure without violating the vision-only inference rule (GraphPilot's own headline result is that the gain *survives removing the graph at test time*) |
+| 10 | **Scenic/Chat2Scenic-driven closed-loop scenario expansion** | B11 | P10, P6 | ~5-8 eng-days, 0 A40-days (sim only) | TanitAD's closed-loop evidence base is 12 scenarios; every other item in this table is only as trustworthy as the eval suite that measures it — this is the cheapest lever on statistical power for everything above |
+
+**Honorable mentions, not in the top 10 but flagged for the next pass:** F9 (SimLingo safety-case
+pattern — ~1 eng-day to read, should probably be done *before* #1-10 are assembled into a safety
+narrative, not after); F3 (HJ reachability, offline/exact for the single-lead-agent longitudinal
+case — a strong complement to #3 specifically for P2's 88.7%-of-oracle-gap problem); E3 (Koopman-LQR
+as a formally-analyzable candidate for #4's Simplex baseline controller); F5 (NN verification,
+narrowly scoped to whatever small learned component ends up in the baseline or guard, not the
+flagship); B3 (verifiable reasoning-action consistency, a good complement to #1 if TanitAD ever adds
+an explicit reasoning trace).
 
 ---
 
 ## Proposed "guaranteed envelope" architecture
 
-*(filling in below)*
+A learned planner (TanitAD's existing 263.4M-param flagship, per `MODEL_REGISTRY.md`, unchanged)
+wrapped in layers that are each small, each independently justified above, and each sized to fit
+comfortably inside the measured latency headroom (optimized planning tick **18.75-27.87 ms** p50
+against a **100 ms** / 10 Hz budget — roughly **72-81 ms of slack**, per `MODEL_REGISTRY.md`'s L4
+latency-optimization results) and the sub-300M parameter budget (263.4M existing + the additions
+below stay under ~275M).
+
+```
+ VISION (FRONT camera, 3×256×256, vision-only — no ego state, no situation-classifier output)
+   │
+   ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 0 — LEARNED FLAGSHIP (existing, UNCHANGED)                        │
+ │ ViT encoder(87M) → operative(97M) → tactical(49M) → strategic(8M)       │
+ │ + H15 imagination(22M) + grounding(13M)  =  263.4M params, ~18-28ms     │
+ │ Produces: candidate trajectory/anchors + H15 imagined rollout latents   │
+ └───────────────────────────────────┬───────────────────────────────────┘
+                                      │ candidates + imagined rollout
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 1 — SELECTION GUARANTEE (B7 rulebook rerank; ~0 new params)        │
+ │ Tiered rule scoring (Safety≻Legal≻Road≻Comfort) over candidates,         │
+ │ CPU-only, <1ms.  Picks the trajectory, not just the argmax of the net.   │
+ └───────────────────────────────────┬───────────────────────────────────┘
+                                      │ selected trajectory
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 2 — TRUST GATE (F6 conformal + F10 refusal head; <1M new params)   │
+ │ CP-calibrated coverage bound on H15's imagined rollout  +                │
+ │ execution-settled-credit refusal score.  Two independent-lineage         │
+ │ confidence signals feeding Layer 4's switch (defense in depth: they can  │
+ │ disagree, and disagreement is itself a signal).                         │
+ └───────────────────────────────────┬───────────────────────────────────┘
+                                      │ trajectory + trust score
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 3 — HARD SAFETY FILTER (F2 CBF-QP + F1 RSS check; ~0 new params)   │
+ │ Differentiable CBF-QP: closest-feasible command w.r.t. road-edge +       │
+ │ lead-vehicle barriers — a GENUINE forward-invariance guarantee,          │
+ │ conditional on the dynamics model (sub-ms QP).  RSS distance check runs  │
+ │ in parallel as a diverse, independently-derived redundant check.        │
+ │ F3's precomputed HJ-reachability lookup (offline-computed, 0 online      │
+ │ params) adds an EXACT boundary check for the single-lead-agent           │
+ │ longitudinal case — TanitAD's named 88.7%-of-oracle-gap problem.         │
+ └───────────────────────────────────┬───────────────────────────────────┘
+                                      │ filtered command  (or: INFEASIBLE / low-trust)
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 4 — RUNTIME-ASSURANCE SWITCH (F4 Simplex; ~0 new params)           │
+ │ IF Layer 2 trust is low  OR  Layer 3's QP is infeasible  OR  the CBF     │
+ │ value crosses threshold  →  switch authority to Layer 5.  ELSE pass      │
+ │ Layer 3's filtered command through.  Switch logic itself is simple       │
+ │ enough to be exhaustively tested / formally verified (F5).              │
+ └──────────────────┬──────────────────────────────────┬───────────────────┘
+        (normal)    │                        (fallback) │
+                     ▼                                    ▼
+     ┌───────────────────────────┐      ┌──────────────────────────────────┐
+     │ command → actuation       │      │ LAYER 5 — VERIFIED BASELINE       │
+     │                           │      │ (E3 Koopman-LQR or PD car-        │
+     │                           │      │ following + lane-centering,       │
+     │                           │      │ 1-5M params, LINEAR → provably    │
+     │                           │      │ stable by classical control       │
+     │                           │      │ theory, no vision needed — this   │
+     │                           │      │ IS the existing Brain-4           │
+     │                           │      │ FallbackMonitor/MRM hook per      │
+     │                           │      │ REGULATION_TRACE.md, made         │
+     │                           │      │ concrete)                        │
+     │                           │      └──────────────┬───────────────────┘
+     └─────────────┬─────────────┘                     │
+                   └──────────────────┬─────────────────┘
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │ LAYER 6 — FINAL NEURO-SYMBOLIC GUARD (B4; ~0 new params, 0 A40-days)     │
+ │ Runs regardless of which upstream path produced the command; nearest-   │
+ │ safe-alternative replace-if-violated; every intervention traceable to   │
+ │ a named rule.  Near-free defense in depth against anything Layers 1-5   │
+ │ missed or got wrong.                                                    │
+ └───────────────────────────────────┬───────────────────────────────────┘
+                                      ▼
+                              ACTUATION (10 Hz)
+```
+
+**Parameter budget:** 263.4M (Layer 0, unchanged) + ~1M (Layer 2 refusal head) + ~1-5M (Layer 5
+baseline, if a learned Koopman lifting is used rather than a pure hand-tuned PD controller) + ~0 for
+Layers 1/3/4/6 (classical arithmetic, QPs, and lookups, not learned networks) = **~265-270M total,
+comfortably inside the sub-300M budget.**
+
+**Latency budget:** Layer 0 is the entire existing cost (~18-28ms optimized). Layers 1/3/4/6 are
+each sub-millisecond (rule scoring, a small QP, threshold comparisons, a rule lookup). Layer 2's CP
+lookup is a table read; the refusal head is a small MLP forward pass on already-computed latents
+(<1ms). Layer 5 only executes on the fallback path (rare by design) and is itself designed to be
+cheap (linear control law). **Total added latency is ESTIMATED low single-digit milliseconds**,
+leaving most of the measured 72-81ms of slack for the Jetson Thor port's own overhead (this is an
+A40-proxy measurement per `MODEL_REGISTRY.md`'s own caveat; Thor validation is still needed and this
+report does not claim otherwise).
+
+**What is GUARANTEED by this architecture, precisely stated (per the table at the top of Section F):**
+Layer 3's CBF-QP guarantees forward invariance of the CBF-defined safe set **conditional on the
+dynamics model and actuation bounds being correct**. Layer 5's baseline is stable **conditional on
+being genuinely linear/small enough to verify, which must be enforced as a design constraint, not
+assumed**. Layer 6 guarantees every intervention is traceable to a named rule (an auditability
+guarantee, not a safety-optimality one). **Nothing in this architecture guarantees the Layer-0
+flagship itself is safe** — that is the entire point of the design: safety is a property of the
+envelope, engineered to hold even when the learned core is wrong, not a claim about the learned
+core.
 
 ---
 
 ## What is hype
 
-*(filling in below)*
+1. **"Formal verification proves the whole model is safe."** VNN-COMP-scale certification
+   (α,β-CROWN, F5) genuinely scales to millions of parameters — but only for specific, narrow
+   properties (bounded local robustness, small-network reachability), never for open-ended semantic
+   correctness of a ViT-scale perception backbone. Quoting "scales to millions of parameters" as if it
+   meant "can verify our whole encoder is safe" is the single most common overclaim in this space and
+   this report explicitly does not make it.
+2. **Hamiltonian/Lagrangian neural networks for road-vehicle ego-dynamics.** The technique's core
+   guarantee (energy conservation) is close to the *wrong* invariant for a system that constantly
+   sheds energy (braking, drag, friction) and gains it from an external actuator. Genuinely useful
+   for manipulators/rigid-body robotics; a weak fit here specifically (E6).
+3. **FNO/DeepONet operator learning for TanitAD's occupancy/traffic-flow needs, at the current data
+   scale.** Genuinely proven for macroscopic, multi-sensor, PDE-governed traffic fields (freeway
+   networks with many sensors); TanitAD has one ego vehicle, one camera, no road-network topology —
+   there is no PDE-scale field to learn the solution operator *of* yet (E5, gated behind occupancy
+   adoption which is itself gated behind solving the metric-depth problem, A7).
+4. **LLM tool-calling agents (Agent-Driver-style) as a real-time planning-loop component.** Genuinely
+   powerful offline/design-time (scenario triage, rule authoring via LangProp); latencies reported in
+   the literature are orders of magnitude too slow for a 100ms/10Hz budget on Jetson Thor. Useful as
+   an offline tool, not a runtime brain (D1).
+5. **Chain-of-thought / reasoning traces treated as a safety mechanism in themselves.** ReasonBreak
+   (D4) demonstrates reasoning traces are an active, demonstrated adversarial attack surface. An
+   explanation is not a guarantee unless independently paired with an action-level check (which is
+   exactly why this report's envelope checks the *command*, in Layers 1/3/6, not only the *reasoning*).
+6. **"Provably safe" language (RSS, CBF, HJ reachability) used without stating the assumptions.** All
+   three are genuine, real mathematics — but every one of them is conditional (correct dynamics model,
+   bounded disturbance, other agents obeying assumed kinematic limits). Marketing language that drops
+   the conditions is a form of hype even when the underlying theorem is sound. This is why this report
+   opens Section F with an explicit GUARANTEED-vs-STATISTICAL table rather than a prose claim.
+7. **Industry safety-process certification (e.g. a 2026 TÜV SÜD Safety-Management-System
+   recommendation) mistaken for certification that a specific learned planner's outputs are safe.**
+   An SMS certification is about the *lifecycle process* around the system, not a formal proof about
+   any one neural network's behaviour — a distinction worth keeping sharp in any TanitAD safety-case
+   narrative that cites this kind of industry precedent (F1, F8).
+8. **Full 4D/occupancy world-model adoption (OccWorld family) as a drop-in for TanitAD specifically,
+   before the metric-scale problem is solved.** The architecture family is genuinely proven — for
+   multi-camera or LiDAR-equipped setups. TanitAD's single front camera with no metric depth
+   supervision and no GNSS makes the *input assumption* of nearly every OccWorld variant untrue for
+   us; ZipDepth-style fusion (already screened, second-step candidate) is the honest, scaled-down
+   first step, not the full architecture (A7).
 
 ---
 
 ## Deliverable manifest
 
-| Artifact | Location |
-|---|---|
-| This report | `repo:Project Steering/Reviews/2026-09-25-programme-review/streams/W3_frontier_structure_reasoning_guarantees.md` |
+| Artifact | Location | Notes |
+|---|---|---|
+| This report (Sections A-F, TOP-10, envelope architecture, hype list) | `repo:Project Steering/Reviews/2026-09-25-programme-review/streams/W3_frontier_structure_reasoning_guarantees.md` | Staged in the working tree this session (see below); only copy of this artifact — exists in exactly one place, as required. |
+
+**No other artifacts were produced** (no code, no data files, no separate scratch notes worth
+banking — all working notes are already folded into the report body above). This stream did not
+touch any file outside its own assigned path, per the session's operating rules (write only the
+assigned stream file; do not edit any existing file).
+
+**Escalation for the orchestrator:** none of this stream's findings require a PI decision to act on —
+items 1, 2, 7, 8, 10 in the TOP-10 are pure engineering/eng-days work against the *existing deployed
+v1 checkpoint* with **zero GPU-days and zero retraining** (B4's guard, B7's reranker, F1's RSS
+monitor, and B11's scenario expansion), and could be started immediately by whichever stream owns
+`stack/`. The one item worth flagging explicitly to the PI: **F9 (read arXiv:2603.16013, "Safety
+Case Patterns for VLA-based driving systems: Insights from SimLingo," in full) is recommended as the
+*first* follow-up from this entire report**, because it addresses how to *structure* a safety-case
+argument, which should shape how items 1-10 get assembled and documented rather than being retrofitted
+after the fact.
+
+**Environment constraint affecting this report's evidence quality (stated once, applies throughout):**
+this container's egress proxy blocks direct fetch of `arxiv.org` and `huggingface.co`
+(`EGRESS_BLOCKED`, confirmed via the proxy status endpoint as a declared policy, not a transient
+fault — not retried or routed around, per the proxy README's own instruction). All arXiv ids and
+numbers in this report come from WebSearch result snippets (cross-checked against ≥2 independent
+snippets where I report a number as PUBLISHED) rather than from opening the primary PDF/abstract page
+directly. Every number I could not cross-confirm this way is explicitly marked UNVERIFIED inline
+rather than silently upgraded to PUBLISHED. A follow-up pass with arxiv.org/huggingface.co access (or
+via an allowed mirror this session didn't find, e.g. institutional proxies, semantic scholar API if
+allowed) would let every UNVERIFIED figure above be either confirmed or corrected — this is the
+single biggest actionable gap in this report's own evidence chain, and it is a container/policy
+limitation, not a research shortcut taken.
