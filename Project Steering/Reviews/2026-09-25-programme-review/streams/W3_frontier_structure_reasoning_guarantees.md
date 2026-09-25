@@ -5,7 +5,8 @@ Method: web research (WebSearch/WebFetch), primary sources preferred, arXiv ids 
 Evidence-class legend: **PUBLISHED** (title, arXiv id/venue, year, key number) · **ESTIMATED** · **HYPOTHESIS** · **UNVERIFIED**.
 Coverage: 6 sub-sections (A structured physical world understanding, B symbolic/neuro-symbolic
 reasoning, C knowledge injection, D tool use, E physics-grounded operators/dynamics, F mathematical
-guarantees/runtime assurance), 34 distinct ideas each carrying the six required fields, closing with
+guarantees/runtime assurance), 42 distinct ideas (A:7, B:11, C:3, D:4, E:7, F:10) each carrying the
+six required fields, closing with
 a ranked TOP-10, a sized "guaranteed envelope" architecture, and an explicit hype list. 40 WebSearch
 calls used (of the ≤45 budget); WebFetch was blocked for `arxiv.org`/`huggingface.co` in this
 container (see the Deliverable Manifest's environment-constraint note) so no WebFetch calls

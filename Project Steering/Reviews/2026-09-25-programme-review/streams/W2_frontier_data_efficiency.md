@@ -1,8 +1,10 @@
 # Stream W2 — Frontier research: massively reducing labelled-data needs for driving; knowledge injection; continual/fleet learning
 
-**Status:** IN PROGRESS (banking incrementally). **Date:** 2026-09-25. **Model tier:** Sonnet.
+**Status:** COMPLETE. **Date:** 2026-09-25. **Model tier:** Sonnet.
 **Method:** web research (WebSearch/WebFetch), primary sources + arXiv ids, evidence-class discipline per
-`CLAUDE.md` rule "Operating standard §1". Search/fetch budget: ≤45 searches, ≤30 fetches.
+`CLAUDE.md` rule "Operating standard §1". Search/fetch budget: ≤45 searches, ≤30 fetches — used ≈45
+`WebSearch` calls; `WebFetch` was blocked by environment egress policy for every research-paper host tried
+(see the Methodology note before the TOP-10, which also states what that means for evidence weight).
 
 **Delta skim performed against** (headers/conclusions only, 2026-09-25):
 `TanitAD Research Hub/2026-07-08-screening-digest.md`, `INITIAL_RESEARCH_SYNTHESIS.md` (v1.1,
@@ -1035,18 +1037,170 @@ latent actions from unlabeled video) is conceptually continuous with §C's IDM-c
 §C's fixes (canonicalization, rig-conditioning) succeed, AdaWorld-style context-transfer becomes a more
 plausible NEXT step (new rig = new "context") worth revisiting then, not now.
 
+## Methodology note — a tool constraint that bears on evidence weight
+
+In this environment, `WebFetch` returned `EGRESS_BLOCKED` for every research-paper host tried
+(arxiv.org, huggingface.co, openaccess.thecvf.com, waymo.com, ar5iv.labs.arxiv.org,
+semanticscholar.org, themoonlight.io, developer.nvidia.com) — a policy block, not a transient
+failure (confirmed via the proxy status endpoint: no relay failures logged, i.e. the block is at
+the tool layer, not the network). `github.com` fetched fine. Every finding above therefore comes
+from `WebSearch`'s own synthesis of primary sources (which reliably surfaced titles, arXiv ids,
+venues, and — usually — the key numbers) rather than a direct full-text read of the paper. Every
+item's evidence line says explicitly whether the specific number was independently corroborated by
+the search synthesis (**PUBLISHED** with the number stated) or only the title/mechanism/id was
+confirmed while a specific figure came from one search snippet without full-text cross-checking
+(flagged **UNVERIFIED at the number level** inline). Two citations already used internally
+(`VLM³`, arXiv:2605.30561, and the general shape of the Waymo/DriveVLA-W0/MOSAIC scaling claims)
+were independently re-derived from fresh searches and matched the internal docs' citations — a
+positive cross-check, not just an assumption. **Recommendation: before any of the TOP-10 items
+below is used to justify a GPU-day spend, whoever picks it up should do one direct full-text read
+of that item's cited paper** (this environment's WebFetch block may not apply to other sessions/
+environments) rather than relying solely on this stream's search-synthesized numbers, per our own
+binding rule that a claim deciding a GPU-day must be MEASURED or PUBLISHED — not a second-hand
+paraphrase of PUBLISHED.
+
 ## Ranked TOP-10 for TanitAD
 
-*(pending)*
+Ranked by (mechanistic fit to TanitAD's exact setup: one front camera, sub-300M, JEPA-style,
+few A40s) × (evidence strength/recency) ÷ (cost), with named pain points in brackets.
 
-## A concrete "10x less labelled data" programme
+1. **LFG label-free monocular pretraining (§B7)** [P4, P5] — exact sensor-configuration match,
+   strongest single number found (81.4 PDMS at 10% labels, beats multi-camera+LiDAR at 100%),
+   CVPR 2026. First move is a near-zero-cost weights probe, not a full reproduction.
+2. **Camera-rig-transfer fix combo for our own IDM line (§C1+C2+C3)** [P4, P5] — un-sticks a
+   1000×-data-leverage thesis TanitAD had ALREADY committed to (H7) and already measured as
+   failed; three independent, cheap, non-exclusive fixes (canonicalization, rig-conditioning,
+   eval-protocol audit) now exist in the literature where none were on record before.
+3. **Imagination-loss-weight sweep motivated by DriveVLA-W0 (§A4)** [P4, P7] — near-zero
+   incremental cost (reuses the existing training pipeline and existing loss terms), and is an
+   external, independent test of TanitAD's own core architectural bet.
+4. **SE(2)/mirror-symmetry prior (§G2)** [P4] — the cleanest mechanistic data-multiplier in this
+   whole stream (a free ~2× on manoeuvre diversity from symmetry alone); cheapest possible first
+   test is a mirror-flip augmentation control, not new architecture.
+5. **`obstacle.offline` auxiliary occupancy/box-forecasting head (§G5)** [P4] — the data is
+   ALREADY license-clean and its ingest is ALREADY costed (~12.4 GB, ~3 eng-days) in our own
+   DATA_STRATEGY_FOR_HIERARCHY.md; this is a mechanistically distinct use from the
+   already-falsified direct-input finding, not a re-run of it.
+6. **Rule-based longitudinal teacher, Hydra-MDP-style (§F4)** [P2] — directly targets the
+   named 88.7%-of-oracle-gap pain point with an admissible, computable (TTC/headway) training
+   signal, independent of whether more labelled data ever arrives.
+7. **MOSAIC-style scaling-law-guided mixture selection (§A3)** [P1, P4] — turns "how much of
+   L2D/ZOD/Cosmos-Drive-Dreams to add" from a guess into a measured decision; potential ~5×
+   labelled-data multiplier if the NVIDIA result transfers.
+8. **Cosmos-Drive-Dreams integration (§D2)** [P4] — already license-cleared internally, already
+   downloadable (81,802 synthetic clips), reported gains persist even on top of larger real data.
+9. **Outcome-conditioned retrieval for H10 (§H1, via R²LPL)** [P6] — a targeted, externally
+   motivated fix for an ALREADY-MEASURED, already-flagged failure mode (−24% interference) in an
+   already-implemented mechanism, not a new mechanism from scratch.
+10. **Factorized anchor-vocabulary tactical head (§G4)** [P1, P3] — directly reformulates the
+    already-named single largest defect (5-way softmax mixing lat+lon) as candidate-selection;
+    ranked 10th only because it is the highest-cost/highest-risk item in the top group
+    (15-20 eng-days) relative to the others' cheap first experiments.
 
-*(pending)*
+**Honorable mentions just outside the top 10:** the Kinematic-Consistency-Error diagnostic (§G6)
+— extremely cheap and squarely on P7, but it is a DIAGNOSTIC, not itself a fix, so it is better
+read as Phase 0 due-diligence than a top-10 investment; the DINOv3 frozen-encoder re-test (§B4) —
+cheap and resolves a real internal tension with our own H4 finding, but lower expected value since
+TanitAD's from-scratch encoder already works.
+
+## A concrete "10x less labelled data" programme — sequenced, with gates
+
+Every phase below is gated on the previous phase's discriminating experiments; a **B** (falsifying)
+outcome on a gate cuts that line and reallocates its budget rather than proceeding on hope, per our
+own pre-registration discipline. Costs are cumulative ESTIMATES, not commitments.
+
+**Phase 0 — this week, ≈0-5 A40-days, ≈10-15 eng-days (pure diagnostics, no new architecture).**
+Run these five in parallel (they touch disjoint files/mechanisms):
+- G6 Kinematic-Consistency-Error on existing imagined rollouts (0 GPU-days).
+- C3 audit: was the original IDM camera-rig failure discovered via a proper held-out-rig protocol,
+  or same-rig train/test? (0 GPU-days, answers whether C1/C2 or a re-scope is next.)
+- G2 mirror-flip augmentation control (≈1 A40-day).
+- B7 LFG weights probe, if released weights exist (≈0-1 A40-day; else this item slips to Phase 1
+  as a from-scratch pretrain and is far more expensive — check this FIRST).
+- A3 three-point scaling-curve fit on existing checkpoint sizes (0 new GPU-days if smoke
+  checkpoints already exist).
+**Gate 0 → 1:** at least 3 of 5 must return a clean, actionable outcome (A or a clearly-scoped B)
+before committing Phase 1 budget; a Phase-0 item that returns an ambiguous result gets ONE re-run
+with a larger n before being carried into Phase 1, not carried forward ambiguous.
+
+**Phase 1 — weeks 2-4, ≈20-35 A40-days, ≈35-50 eng-days (the fixes Phase 0 unlocked).**
+- C1 (+C2 if C3's audit says architectural, not evaluation) camera-rig canonicalization fix,
+  re-run on the SAME held-out-rig benchmark that first exposed the failure.
+- A4 imagination-loss-weight sweep (3 short arms).
+- G5 `obstacle.offline` auxiliary head (ingest + head + ablation).
+- F4 longitudinal rule-based teacher (TTC/headway specifically).
+- H1 outcome-conditioned H10 retrieval re-run of the existing D7 gate.
+**Gate 1 → 2:** each item graduates independently on its own pre-stated Outcome A/B (see the §A-H
+entries above) — this is not a single go/no-go for the whole phase. Track how many of the five
+graduate; fewer than 2 graduating is itself a signal to pause and re-examine whether the underlying
+diagnosis (Phase 0) was read correctly before spending Phase 2 budget.
+
+**Phase 2 — month 2, ≈25-45 A40-days, ≈40-60 eng-days (the bigger bets Phase 1 justified).**
+- B7 LFG full reproduction/fine-tune — ONLY if the Phase-0 weights probe showed promise; otherwise
+  this becomes a from-scratch pretrain, re-costed and re-gated on its own before proceeding.
+- D2 Cosmos-Drive-Dreams mixture integration at the ratio A3's Phase-0/1 curve-fitting suggests.
+- G4 factorized anchor-vocabulary tactical head (start small: 256 combinations, not 262K).
+- G2 full SE(2)-equivariant architecture — only if Phase 0's mirror-augmentation control showed a
+  real, exploitable left-right imbalance.
+**Gate 2 → 3:** re-run the full four-metric-family eval (per our binding rule) on whatever
+combination of the above graduated, with a paired episode-cluster bootstrap CI, before any of it is
+called a program result.
+
+**Phase 3 — research bets, do NOT schedule GPU yet, propose and pre-register only:**
+- D4 Instant NuRec + AlpaSim closed-loop pilot (answers P10, no external benchmark).
+- D3 Cosmos-Transfer scoping spike (may resolve the CARLA-rendering blocker without new hardware).
+- A5/D5 World Engine-style post-training on synthesized safety-critical variations — gated on D4.
+- H3 CTTA / online world-model-mismatch adaptation — gated on Thor hardware access, which this
+  review stream does not have; scope only, do not design in depth yet.
+- H6 AdaWorld-style rig-as-context transfer — gated on §C's fixes succeeding (a new rig only
+  becomes a promising "context to transfer to" once we know rig-transfer itself is fixable).
 
 ## What NOT to do
 
-*(pending)*
+- **Do not attempt to replicate Waymo's 500K-hour or Tesla/Waymo's fleet-scale (9B-mile /
+  100M-autonomous-mile) data-engine mechanisms.** Both the scale and the FLEET PRECONDITION are
+  absent here (§E3); citing them as a roadmap item rather than a calibration point would waste
+  a report's worth of credibility on something structurally inapplicable.
+- **Do not re-run or reinterpret the already-falsified lead-state-as-direct-longitudinal-input
+  finding under a new name.** §G5's auxiliary-task use of `obstacle.offline` is mechanistically
+  different (training-time representation shaping, not a runtime input) — say so explicitly every
+  time, because conflating the two would itself be the over-generalized-absence error our own
+  operating standard warns against.
+- **Do not build a from-scratch CARLA-rendering pipeline before running D3's cheap scoping spike**
+  on whether Cosmos-Transfer can condition on CARLA's STATE rather than its rendered pixels — the
+  render blocker may already have a bypass.
+- **Do not adopt Genie-3/Waymo-World-Model-style fleet+LiDAR specialization as a literal target.**
+  §H5 is included for the transferable LESSON (post-training grafts video-pretrained knowledge
+  onto a small model), not as an architecture to copy — we have no fleet and no LiDAR.
+- **Do not pursue discrete latent-action codebooks (Genie/LAPA/AdaWorld-style) for the continuous
+  steer/accel/yaw action space.** This mismatch is ALREADY on record in our own internal H7 design
+  doc (LAPA underperforms real-action grounding on fine-grained continuous motion) — this stream's
+  research only reinforces that prior finding, it does not reopen the question.
+- **Do not spend GPU-days replicating CaRL's RL-from-scratch recipe at anything like its reported
+  scale (300M/500M samples on an 8-GPU node) on our few-A40 budget (§F5).** Take the REWARD-DESIGN
+  lesson (one simple reward beats many shaped ones) as a design note for our own RMFM work, not as
+  a call to build a comparable RL pipeline.
+- **Do not treat any UNVERIFIED-at-the-number-level figure in this report as decision-grade.**
+  Several items above (ECCO's exact id, PlanKD's exact id, the Tesla/Waymo mile-counts, the
+  "8,192-hour" plateau's exact source paper, R²LPL's and MoE-LoRA's specific quantitative gains)
+  were flagged inline as not independently full-text-verified this pass, per the Methodology note
+  above — re-verify with a direct fetch before citing any of these numbers in a document that will
+  itself be quoted downstream (our own CLAUDE.md rule against citing summaries of summaries applies
+  to this report too).
+- **Do not let this stream's TOP-10 substitute for `MODEL_REGISTRY.md` or raw eval JSON.** Every
+  number in this report is EXTERNAL literature, not a TanitAD result; none of it is quotable as a
+  TanitAD claim until one of the pre-registered experiments above is actually run in-house.
 
 ## Deliverable manifest
 
-*(pending)*
+| Artifact | Location | Notes |
+|---|---|---|
+| This stream report (W2, frontier data-efficiency review) | `repo:Project Steering/Reviews/2026-09-25-programme-review/streams/W2_frontier_data_efficiency.md` | Staged (`git add`), not committed, per operating rules. Sole copy — exists in only this one location; no pod/worktree copy exists or is needed since no code was written, only research. |
+
+No other artifacts were produced (this is a research-only stream: no code, no checkpoints, no pod
+or worktree work). Nothing is stranded — the single deliverable is in the repo and staged.
+**Escalation:** none required to merge (it is a standalone review document, additive, no conflicts
+with any other stream's file per the directory-partition rule). The orchestrator should read this
+alongside the other 8 stream files when compiling the whole-programme review; no other integration
+step is needed.
+
