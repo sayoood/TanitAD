@@ -45,3 +45,68 @@ The vision-anticipation panel (prior review F0: "flagship beats the CTRV oracle 
 
 `…/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md:457` reads "grounded operative rollout 0.4271 vs ungrounded tactical head 3.3839 … Strong and directly hierarchy-supporting: the grounded consequence readout beats the direct supervised head by 7.9×", and registry §6 reading 2 turns it into "the head is a lossy readout of a good world model". **Both compare a path handed the expert's controls against a path that must predict them without v0.** The 7.9× is dominated by the controls and by v0, not by grounding. This reading underpinned the v3 pivot (P2) and should be withdrawn as evidence for "grounding > supervision". CODE + MEASURED (rows a, d above).
 
+---
+
+## Q2 — Hierarchy information flow: intended vs real
+
+### 2.1 Per-brain ledger (flagship v1 `flagship4b-speedjerk-30k`)
+
+Params MEASURED from `taniteval/results/eff_flagship-30k.json` → `fp32.params.by_module_m` (model 263.44 M + 13.43 M grounding heads kept outside the model). Loss weights CODE `stack/tanitad/train/flagship_losses.py:151-164` (`LossWeights`) + `stack/scripts/train_flagship4b.py:224-231,655-656` (H15). Horizons CODE `train_flagship4b.py:794-796`.
+
+| brain | params | trained on (inputs) | receives at inference, **as scored** | outputs | loss that trains it | conditions whom |
+|---|---:|---|---|---|---|---|
+| ViT encoder + 4×4 readout | 87.02 + 0.10 M | 8 × (9-ch 256² stack) | same | z ∈ ℝ^{8×2048} | *everything* flows here: JEPA (1.0), K=4 rollout (0.5), tactical-pred JEPA (0.5), goal-latent (0.5), **metric inv-dyn on real pairs 2.0 × 3 levels**, **forward-consistency 1.0 × 3 levels**, SIGReg (0.1, 64 dims exempt), action inv-dyn (0.5), H15 NLL (0.5 × p=0.5), and the planner CEs/L2 through the state window | — |
+| operative predictor | 91.36 M | z window + (steer, `ax`, v0-constant) window; **intent only on the JEPA path** (`flagship_losses.py:247`) | z window + **expert future actions**, **`intent=None`** (`metric_dynamics.py:236,259`) | ẑ_{t+1,2,4} | JEPA 1.0 (intent-conditioned); rollout + grounding fwd (intent-free) | — |
+| tactical predictor | 26.54 M | z window + actions | **nothing reads it** | ẑ_{t+8,16} | JEPA 0.5 | none |
+| strategic policy | 8.39 M | z window + `nav_cmd` (an **echo** of the route target, `config.py:282-292`: echo rate 1.0000, `_ROUTE_TO_NAV` is a bijection) | z window + **constant `follow`** | ctx ∈ ℝ²⁵⁶, route logits | route CE 0.5 (on the echo) | FiLM → tactical |
+| tactical policy | 22.74 M | z window + ctx | z window + ctx(follow) — only in the closed-loop / plan_direct harness, never in the headline | 5-way manoeuvre, 4 waypoints, goal latent, intent | wp L2 1.0 (**÷ pose_scale² = ÷100**), manoeuvre CE 0.5, goal-latent JEPA 0.5 | intent FiLM → operative (**JEPA path only**) |
+| H15 imagination field | 22.06 M | token grid with a masked sector | **nothing reads it** | belief tokens + log-var | NLL 0.5 on 50 % of batches | none |
+| action inverse dynamics | 5.25 M | (z_{t-1}, z_t) | nothing | action | 0.5 | none |
+| grounding op / tac / str | 13.43 M (3 × invdyn + 3 × step readout) | real latent pairs; the **same** intent-free rollout decoded to k = 4 / 16 / 20 | **`step['op']` only** (`taniteval/taniteval/loaders.py:65,85`) | Δpose | invdyn 2.0, fwd 1.0 (per level) | — |
+
+**Three code facts the ledger exposes (CODE):**
+1. **The "cadence" does not exist.** `TacticalPolicyConfig.cadence = 5` and `StrategicPolicyConfig.cadence = 20` (`config.py:118,140`) are read by **no code in the repository** (`grep '\.cadence'` → only the `run_hierarchy` docstring, `fourbrain.py:376-377`). Training runs every brain every step; the closed-loop harness re-plans strategic and tactical **every tick** (`taniteval/taniteval/closedloop.py:265-271`). "Thinking fast/slow" has never been executed on any measured path.
+2. **All three levels read the identical 8-frame, 0.8 s state window.** The strategic brain has no memory, no longer receptive field, no route/map input, and (at inference) a constant command — so it is a function of *the same 0.8 s the operative sees*; with a 20-tick cadence it could only ever be a **staler** copy of that information. The three "levels" of grounding are three copies of the same head decoding the **same** intent-free rollout truncated at 0.4 / 1.6 / 2.0 s (`train_flagship4b.py:794-796`; `metric_dynamics.py:348,375`) — levels of *horizon*, not of *abstraction*.
+3. **The eval decodes a 20-step rollout with the readout trained on 4 steps.** TanitEval uses `grounding.step['op']`, whose forward-consistency loss covers only the first `op_fwd_k = 4` transitions, while `step['str']` was trained on all 20. Which of the three identical heads decodes k = 20 best has never been measured (0 GPU-training, ~1 A40-hour eval; §8).
+
+**Parameter consequence.** On the scored 0.4271 path the model uses encoder + readout + predictor + one step readout ≈ **180.6 M of 276.9 M (65 %)**. **~85.0 M (32 % of the 263.4 M model) — tactical_pred 26.5, tactical 22.7, H15 22.1, strategic 8.4, inv-dyn 5.2 — plus 11.3 M of the 13.4 M grounding heads are training-time auxiliaries or sit on paths no headline scores** (180.6 + 85.0 + 11.3 = 276.9 M). (MEASURED param counts; the "not on the path" statement is CODE.)
+
+### 2.2 Are the seams load-bearing? — corrected verdict **0 of 3**
+
+| seam | published | corrected / current | verdict | source |
+|---|---|---|---|---|
+| nav → strategic | "load-bearing by construction" (2026-07-25 dry-run) | route acc 1.0 *with* the command, `route_skill_vs_chance` **0.0** without; the label is a deterministic function of the fed command | **ECHO** — not a seam | MEASURED registry §8 D-A6 / D-033; CODE `config.py:282-292` |
+| strategic ctx → tactical | man-acc Δ(real − mean ctx) **+0.0439** (`heldout`) | **+0.0148** full-set (fails the 0.02 practical floor); goal-latent cos Δ **0.0050** (fails 0.01); wp-ADE Δ 0.0437 m on a 3.38 m head | **NOT load-bearing** (point estimates; the panel persists no per-window arrays, so no interval exists) | MEASURED `…/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/JACK_BLAST_RADIUS.md` §5.1, `jack_hierarchy_recompute.json` |
+| tactical intent → operative | harmful when ungated (cos vs none −0.238; intent-proj norm 31.4 swamps act-emb 28.3) | excluded from every deployed / scored path by design | **HARMFUL → removed** | INHERITED registry §8 D-033; CODE `rollout.py:151` |
+
+The 2026-08-02 v5 deep review independently counts **0/3 beneficial seams for v1 and 0/3 for v2corpus**, manoeuvre κ (declared vs driven) 0.253 (v1) / 0.0072 (v2corpus), and vision-route accuracy equal to the majority-straight rate (0.9474 vs 0.9474) — INHERITED, `Project Steering/V5_FLAGSHIP_DEEP_REVIEW.md` §1 P2. **What changed since the 2026-07-25 review: its "1 of 3 seams load-bearing" is now 0 of 3** (the one positive seam was a `heldout`-estimator artefact).
+
+### 2.3 Intended vs real dataflow
+
+```
+INTENDED (design docs, fourbrain.py:1-16, config.py:372-388)
+  frames ─► ViT ─► readout z[8] ─┬─► STRATEGIC(z, nav)  every 20 ticks ─ctx──┐
+                                 │                                           ▼
+                                 ├─► TACTICAL(z, ctx)   every 5 ticks  ─intent┐ ─► manoeuvre, 2 s goal
+                                 │                                            ▼
+                                 └─► OPERATIVE(z, a, intent) every tick ─► ẑ ─► step readout ─► trajectory
+       (brain 4: fallback monitor on imagination error)
+
+REAL — v1, as trained and as scored
+  TRAIN:  z[8] ─► STRATEGIC(z, nav=ECHO of route label) ─ctx─► TACTICAL ─intent─► OPERATIVE(JEPA k=1,2,4 only)
+          z[8] + EXPERT (steer, ax, v0) ─► OPERATIVE(intent=None) ×20 ─► step['op'|'tac'|'str'] ─► metres  (grounding)
+          token grid ─► H15 (masked sector)            z ─► tactical_pred (k=8,16)          z ─► inv-dyn
+          └─ none of these three outputs is read at inference
+
+  SCORED HEADLINE (0.4271, "wm_fidelity_ade_2s"):
+          z[8] + EXPERT FUTURE (steer, ax) + v0 ─► OPERATIVE(intent=None) ×20 ─► step['op'] ─► SE(2) ─► metres
+          [strategic, tactical, tactical_pred, H15, intent seam, cadence: all ABSENT]
+
+  THE HIERARCHY'S OWN DECISION (3.3839 direct / 1.9028 tracked / 1.7318 closed loop):
+          z[8] ─► STRATEGIC(z, follow) ─ctx─► TACTICAL(z, ctx) ─► 4 waypoints   (no v0; re-run every tick)
+```
+
+### 2.4 The nav-echo defect, precisely
+
+The strategic brain is trained on `nav_cmd` minted by the *same* `route_from_future*` call as its route target (`config.py:282-287`), so the CE is solvable by the identity map — and it is (`route_skill_vs_chance` 0.0). At inference it receives `follow` (index 0) on every window (`fourbrain.py:384-385`, `closedloop.py:260`), so its ctx is a function of 0.8 s of pixels plus a constant. The dataset has **no** map, route, lane graph or traffic-light signal (CLAUDE.md rule 2, five probes), and ego coordinates are clip-local (no GNSS). ⇒ **In this corpus the strategic level has no information source that the operative level lacks.** The only non-circular strategic gradient in the repo is LEVER A (`v2_route_from_vision`, nav forced to `follow`), used only in the killed v2/v3enc arms. This is a **data-imposed** ceiling on the strategic brain, not a tuning problem: no architecture change can make a strategic brain load-bearing on inputs that carry no strategic information (HYPOTHESIS-grade as stated, but it follows from the CODE + dataset facts cited).
+

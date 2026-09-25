@@ -311,3 +311,529 @@ succeeded, all `github.com`).
   Flagging as an explicit gap for a follow-up search with the acronym's expansion, if known.
 
 ---
+
+## 2. Category B — Imagination / RL-in-world-model training for driving
+
+### Think2Drive — delta on programme's existing coverage
+Already logged (External Analysis.md). Confirmed via independent search: **DreamerV3-based** world
+model (learns transition + reward + termination models), planner trained by maximizing predicted
+reward INSIDE the world model; **expert-level in CARLA-v2 within 3 days on a single A6000 GPU**; first
+reported **100% route completion** on CARLA-v2's 39 corner-case scenarios (construction zones, dense
+merges). PUBLISHED, arXiv 2402.16720, ECCV 2024. Maturity: **PROVEN** (peer-reviewed, widely cited
+baseline now). **Delta over prior programme note:** confirms the base architecture is literally
+DreamerV3 (i.e., this is close to a straight transfer of Hafner's Dreamer lineage to driving, which
+strengthens the case that Dreamer 4's newer imagination-training recipe — shortcut forcing,
+transformer backbone — is a live upgrade path for a Think2Drive-style CARLA loop, not a speculative one).
+
+### RAD — Training an E2E Driving Policy via Large-Scale 3DGS-based RL
+- **What:** Builds a photorealistic **3D Gaussian Splatting** digital twin of real logs, then trains
+  an E2E driving policy by large-scale RL inside that twin (extensive OOD state-space exploration via
+  trial-and-error), with imitation learning blended in as a regularizer and safety-specific rewards for
+  causal, safety-critical events.
+- **Evidence:** PUBLISHED — arXiv 2502.13144 (2025). Maturity: **PROMISING** (strong single-lab result,
+  spawned a visible follow-on line — GSDrive 2604.28111 does multi-mode trajectory probing in the same
+  3DGS environment).
+- **Pain points:** **P2** (longitudinal — RL-in-photoreal-twin directly exposes speed-holding/distance
+  mistakes to a REWARD signal rather than only an imitation loss, which is exactly the kind of signal
+  missing from our supervised tactical head's 3.4m ADE failure); **P6** (closed-loop — this trains
+  policy against a *closed-loop*, reactive proxy of the real world, not open-loop frames).
+- **Admissibility:** clean at the mechanism level; reward shaping choices would need the same audit as
+  any other objective design.
+- **Cost to try:** we have no 3DGS reconstruction of our own corpus and no budget for one on "a few
+  A40s" — this is **NOT cheaply reproducible on our stack**. ESTIMATED cost if attempted: 3DGS
+  reconstruction of even a small subset of PhysicalAI-AV clips would need per-clip multi-view calibration
+  we may not have (FRONT-camera-only capture is a poor fit for splatting, which wants multi-view
+  coverage) — flag as **HIGH cost, likely infeasible at our sensor configuration**, not just expensive.
+- **Cheapest discriminating experiment:** N/A directly; the transferable IDEA (reward-shaped RL
+  fine-tuning on top of an imitation-pretrained policy, even without 3DGS) is testable cheaply via the
+  Dreamer-4/TD-MPC2 experiments already proposed above, which reuse our own predictor instead of a
+  splatting environment.
+
+### CaRL — Learning Scalable Planning Policies with Simple Rewards
+- **What:** Argues (and demonstrates) that **reward simplicity + massive parallel PPO** beats complex,
+  hand-engineered reward shaping for driving RL. Scales PPO to 300M samples (CARLA) / 500M samples
+  (nuPlan) on a **single 8-GPU node**.
+- **Evidence:** PUBLISHED — arXiv 2504.17838. Headline: **64 DS on CARLA longest6 v2** (beats more
+  complex-reward RL baselines by a large margin); **91.3 (non-reactive) / 90.6 (reactive) on nuPlan
+  Val14** — best learning-based approach there, an order of magnitude faster than prior RL work.
+  Maturity: **PROVEN** (strong, simple, replicated-in-spirit-by-Raw2Drive below).
+- **Pain points:** **P2/P9** — this is direct evidence that a SIMPLE reward (not an elaborate
+  multi-term cost) is enough if you can afford enough samples; on our compute budget (a few A40s,
+  not an 8-GPU node) the finding to take is the reward-design simplicity, not the sample count.
+- **Admissibility:** clean (reward is behavioral/kinematic, not classifier-derived).
+- **Cost to try:** an 8-GPU-node-scale reproduction is out of reach; a scaled-down version (CaRL's
+  reward function, our compute budget, our existing predictor as the environment instead of CARLA) is
+  **ESTIMATED 3–5 GPU-days** for a small-scale pilot.
+- **Cheapest discriminating experiment:** apply CaRL's simple-reward recipe as the reward signal for the
+  same "RL on top of the frozen predictor's tactical head" experiment proposed under Dreamer 4/TD-MPC2
+  above, and compare against a hand-shaped multi-term reward on the SAME setup. Outcome A: simple
+  reward matches or beats the shaped one → CaRL's finding transfers, simplifying our own reward design
+  work; Outcome B: shaped reward wins clearly → our small-sample regime (13h, not 300M PPO samples)
+  needs the extra shaping signal that CaRL's massive-sample regime can afford to skip.
+
+### Raw2Drive — RL with Aligned World Models for E2E AD (CARLA v2) [bonus find]
+- **What:** Not in the original brief list but surfaced directly alongside CaRL/RAD in search results —
+  an RL approach that explicitly **aligns** a learned world model to the real environment before using
+  it for policy training in CARLA v2 (addressing the classic "policy exploits world-model modelling
+  error" failure mode).
+- **Evidence:** PUBLISHED (arXiv id visible in URL as `2505.16394`; **UNVERIFIED in full detail**, title
+  and one-line framing only — no fetch of the abstract succeeded). Maturity: **SPECULATIVE-to-PROMISING**.
+- **Pain points:** **P7** directly — "world-model/reality alignment before RL" is precisely the
+  calibration problem our P7 names (blind-rollout confidence rising as fidelity decays). Worth a closer
+  read before the programme runs ANY RL-in-imagination experiment, since misalignment is the textbook
+  failure mode of exactly that class of method.
+- **Cost / experiment:** hold for a dedicated read; flagged here so it isn't lost.
+
+### GSDrive — Reinforcing Driving Policies by Multi-mode Trajectory Probing in 3DGS [bonus find]
+- **What:** Multi-mode future-trajectory probing inside a 3DGS environment to reinforce driving
+  policies — essentially RAD's environment class combined with a Hydra-MDP/GTRS-style multi-candidate
+  probing scorer.
+- **Evidence:** PUBLISHED — arXiv 2604.28111 (title + abstract-level framing only via WebSearch).
+  Maturity: **SPECULATIVE-to-PROMISING**.
+- **Pain points:** **P1** (multi-mode probing + reinforcement is again a "generate many, score
+  properly" design — same family as WoTE/TD-MPC2 above).
+- **Cost / experiment:** same infeasibility caveat as RAD (3DGS reconstruction cost on FRONT-camera-only
+  data); read the scoring-head design (transferable) separately from the 3DGS environment
+  (not transferable at our budget).
+
+---
+
+## 3. Category C — Planning & SELECTION (our P1) — the highest-priority category for this programme
+
+**Framing note.** Every item below is a worked instance of "generate diverse candidates, then score/
+select" for driving trajectories — i.e., the exact problem class our P1 defect lives in (best-in-fan
+0.525 vs selected 1.025 ADE; a single 5-way softmax mixing lateral+longitudinal decisions). Reading
+them side by side, THREE distinct selection mechanisms recur across the field and are worth naming
+explicitly because they are not interchangeable:
+1. **Learned scorer over a fixed/generated candidate set** (Hydra-MDP, GTRS, DriveSuprim, WoTE) — score
+   each candidate on multiple sub-metrics, then rank.
+2. **Reward-driven generation without imitation** (ZTRS) — skip imitation learning entirely, train the
+   scorer/policy jointly from rule-based reward.
+3. **Preference/RLHF-style fine-tuning of an already-good generator** (TrajHF) — keep imitation as the
+   base, then align toward human/rule preference post-hoc.
+Our own defect (world model generates well, tactical head selects badly) is closest to failure mode
+(1) with an under-trained or under-expressive scorer — which is exactly why GTRS/Hydra-MDP/DriveSuprim
+are the highest-value reads, not the VLA-reasoning literature in category D.
+
+### DiffusionDrive — Truncated Diffusion for E2E Driving
+- **What:** Denoises from an **anchored** (prior multi-mode anchor) Gaussian rather than pure noise, and
+  **truncates** the diffusion schedule — real-time multi-mode trajectory generation without vanilla
+  diffusion's step count.
+- **Evidence:** PUBLISHED — arXiv 2411.15139, CVPR 2025. **10× reduction in denoising steps** (to ~2)
+  vs vanilla diffusion policy, while improving planning quality/mode diversity. A **DiffusionDriveV2**
+  (arXiv 2512.07745) adds RL-constrained truncated diffusion on top. Maturity: **PROVEN** (CVPR,
+  widely built upon — GoalFlow, GTRS, and others explicitly position against it).
+- **Pain points:** **P1** — directly the "generate diverse, keep it cheap" half of the problem; does
+  NOT by itself solve selection (still needs a scorer on top, hence GTRS/Hydra-MDP layering on top of
+  diffusion generators) — read together with a scorer, not alone.
+- **Admissibility:** clean (denoises conditioned on scene features).
+- **Cost to try:** swapping our tactical head's candidate generator for a truncated-diffusion generator
+  (keeping our own encoder/predictor) is a **medium architecture change, ~5-7 eng-days**, ~1-2 GPU-days
+  to retrain the head at our scale.
+- **Cheapest discriminating experiment:** generate the SAME number of candidates via truncated-diffusion
+  vs our current mechanism (whatever produces the "fan" in the v5f log) and measure candidate DIVERSITY
+  and best-in-fan ADE only (not selection) — isolate whether our generator or our selector is the
+  weaker half. Outcome A: diffusion-generated fan has a better best-in-fan floor → generation quality is
+  part of the P1 gap too; Outcome B: no improvement in best-in-fan → confirms selection (not generation)
+  is the entire P1 defect, sharpening the case for GTRS/WoTE/TD-MPC2-style scorers as the sole fix needed.
+
+### GoalFlow — Goal-Driven Flow Matching
+- **What:** Score/select a **goal point** from candidates using scene information, THEN condition Flow
+  Matching trajectory generation on that goal — directly resolves diffusion's mode-divergence problem by
+  anchoring generation to a committed endpoint. Needs only **1 denoising step**.
+- **Evidence:** PUBLISHED — arXiv 2503.05689, CVPR 2025, code released. **PDMS 90.3** on NAVSIM.
+  Maturity: **PROVEN** (CVPR, code+repo live). GitHub README (fetched directly) confirms the "Goal
+  Point scorer" module and 1-step flow matching but its own code for the goal-scoring module was still
+  marked "coming soon" at last check — **the exact inputs to the goal scorer (vision-only vs
+  privileged/ego) are UNVERIFIED from what I could access.**
+- **Pain points:** **P1 and P3 simultaneously** — this is the single most on-point external validation
+  of the programme's OWN binding admissibility rule: *"a goal input is admissible... a PREDICTED
+  geometric goal point... is the lever that actually works (+4.7)"* (per the programme's own binding
+  doc, quoting the wider literature). GoalFlow is a full worked implementation of exactly that
+  prescription, at SOTA level, for the flagship's likely strategic-brain goal signal.
+- **Admissibility:** **⚠️ MUST VERIFY BEFORE ADOPTING** — the binding rule requires the goal be computed
+  from vision/scene only, never from the situation classifier's output and never (at inference) from
+  privileged ego/future-path signal. GoalFlow's goal-point scorer inputs were not confirmed from
+  available sources. This is the single highest-priority "verify before you touch it" item in this
+  entire report.
+- **Cost to try:** implementing an analogous goal-point predictor + flow-matching-conditioned tactical
+  generation is a **substantial architecture addition, ~10-15 eng-days**, ~2-4 GPU-days to train at our
+  scale — justified only after the admissibility check above passes.
+- **Cheapest discriminating experiment:** BEFORE building anything, read GoalFlow's actual goal-scorer
+  input feature list (needs arXiv/HF fetch access this container lacks — **hand this specific
+  sub-question to whichever stream/agent has working WebFetch**). If vision-only: prototype a minimal
+  goal-point head off our EXISTING encoder features (no new training data), and check whether
+  conditioning the tactical head's manoeuvre choice on a predicted goal point (rather than the current
+  5-way softmax) improves the v5f selection gap. Outcome A: improves it → strong, literature-backed,
+  admissible fix for P1+P3 together; Outcome B: goal point turns out to require privileged info → the
+  finding itself is valuable (explains why the technique "works" in papers using CARLA GT rather than
+  human logs) and must NOT be adopted as-is.
+
+### Hydra-MDP / Hydra-MDP++ — re-verification (programme's explicit #1 target, R5)
+- **What:** Multi-teacher (human + rule-based) knowledge distillation into a multi-head decoder, each
+  head scoring a different evaluation metric (Hydra-MDP++ adds traffic-light compliance, lane-keeping,
+  extended comfort).
+- **Evidence:** PUBLISHED — arXiv 2406.06978 (1st place, NAVSIM CVPR24 Challenge + Innovation Award) and
+  Hydra-MDP++ arXiv 2503.12820. GitHub README (fetched directly) confirms the multi-teacher,
+  multi-head-decoder framing and the CVPR24 win, but the repository itself states **"delay in code and
+  model release due to company policy"** — code/weights were not available even at the source. **Could
+  NOT re-verify the specific "factorised path × velocity vocabulary" characterization** that
+  `REFERENCE_SYSTEMS_RANKED.md` attributes to this system (arxiv.org fetch blocked in this container).
+  **Status: still tier B / re-verify — this survey did not close that gap, only confirmed the broader
+  mechanism class.**
+- **Pain points:** **P1** (multi-teacher distillation onto a MULTI-HEAD decoder is a structurally clean
+  answer to "one softmax mixes lat+lon" IF the heads are organized around separable sub-metrics/axes —
+  exactly what needs the primary-source confirmation above before we treat it as validated).
+- **Admissibility:** clean at the mechanism level described (distillation from rule-based teachers).
+- **Cost/experiment:** **unchanged recommendation from the existing registry — this remains the
+  programme's #1 re-verification target**, now additionally blocked on WebFetch access; escalate to a
+  stream/session with working arXiv access rather than re-attempting here.
+
+### GTRS — Generalized Trajectory Scoring (NAVSIM v2 Challenge winner)
+- **What:** Unifies coarse (static vocabulary) and fine (dynamically generated) trajectory scoring:
+  integrates a **diffusion-based trajectory generator**, a **vocabulary generalization technique**, and
+  a **sensor augmentation strategy** so the scorer degrades gracefully under sub-optimal/imperfect
+  sensor input (i.e., robust to exactly the kind of imperfect perception a camera-only, from-scratch
+  system like ours will have, vs privileged-GT-perception baselines).
+- **Evidence:** PUBLISHED — arXiv 2506.06664, **winning solution of the NAVSIM v2 Challenge**.
+  Maturity: **PROVEN** (competition-winning, later work — SparseDriveV2 2603.29163 — explicitly builds
+  on "scoring is all you need" framing from this line).
+- **Pain points:** **P1 directly, and specifically the robustness-to-imperfect-perception angle** —
+  most selection literature (Hydra-MDP, DriveSuprim) is read/tuned against near-perfect BEV perception;
+  GTRS's sensor-augmentation robustness result is the closest match to OUR situation (a small,
+  from-scratch, single-camera encoder, not a mature perception stack).
+- **Admissibility:** clean (scores trajectories against scene features + rule-based sub-metrics).
+- **Cost to try:** implementing a coarse-vocabulary + fine-diffusion-proposal hybrid scorer on our
+  tactical head is a **medium-large change, ~8-12 eng-days**, ~2 GPU-days retrain.
+- **Cheapest discriminating experiment:** as a CHEAPER first cut before the full hybrid, replicate just
+  GTRS's **vocabulary generalization** idea (score a static coarse vocabulary AND our own dynamically
+  generated candidates with the SAME scorer, rather than only the dynamic set) on the frozen v1
+  predictor, and check whether adding the coarse vocabulary changes best-in-fan or selected ADE.
+  Outcome A: coarse vocabulary improves either metric → cheap generalization lever, adopt; Outcome B: no
+  change → our dynamic generation already covers the useful part of trajectory space, and the win (if
+  any) must come from the scorer itself, sharpening the case for a GTRS/DriveSuprim-style coarse-to-fine
+  scorer specifically.
+
+### DriveSuprim — Towards Precise Trajectory Selection
+- **What:** **Coarse-to-fine progressive candidate filtering** + **rotation-based augmentation** for
+  OOD robustness + **self-distillation**. Explicitly argues selection-based methods beat single-trajectory
+  regression BECAUSE they can evaluate alternatives in safety-critical scenes where subtle differences
+  matter — this is close to a direct citation for our own "the world model generates good candidates,
+  the head just doesn't pick well" diagnosis.
+- **Evidence:** PUBLISHED — arXiv 2506.06659, **AAAI 2026**. **93.5% PDMS on NAVSIM v1, 87.1% EPDMS on
+  NAVSIM v2**, without extra data. Maturity: **PROVEN** (AAAI-accepted, current or near-current SOTA on
+  both NAVSIM versions per what I could find).
+- **Pain points:** **P1 directly**, and notably **rotation-based augmentation for OOD robustness** is
+  methodologically adjacent to the programme's OWN `pseudosim.py` `dyaw` heading-perturbation instrument
+  (already built for E-DPSI) — DriveSuprim's augmentation could be read as an independent argument that
+  heading/rotation robustness training (not just measurement) is a real, current-SOTA-relevant lever.
+- **Admissibility:** clean.
+- **Cost to try:** coarse-to-fine progressive filtering is a natural fit for a K-candidate tactical head
+  — **~6-10 eng-days**, ~1-2 GPU-days.
+- **Cheapest discriminating experiment:** apply DriveSuprim's rotation-based augmentation specifically to
+  our tactical head's TRAINING data (not just as an eval probe, which is what E-DPSI already does) and
+  re-measure both E-DPSI's heading-shortcut sweep AND the selected-vs-best-in-fan ADE gap. Outcome A:
+  both improve → rotation augmentation is a genuine two-for-one fix (closes a shortcut AND improves
+  selection robustness); Outcome B: only one improves → separates "shortcut removal" from "selection
+  quality" as two distinct benefits, useful for prioritization either way.
+
+### ZTRS — Zero-Imitation E2E Driving with Trajectory Scoring
+- **What:** **Eliminates imitation learning entirely.** Trained solely on real images + rule-based
+  rewards via **Exhaustive Policy Optimization (EPO)**, a policy-gradient variant for enumerable
+  trajectory actions with dense supervision. Five modules: image backbone, trajectory tokenizer,
+  Transformer decoder, policy head (likelihoods per action), scoring heads (predicted sub-metric
+  scores).
+- **Evidence:** PUBLISHED — arXiv 2510.24108 (most recent revision dated **2026-07-08**, i.e. this is
+  itself a 2026 update, squarely in-scope for "not just 2024-25 classics"). SOTA on **Navhard**,
+  outperforms IL baselines on **HUGSIM**. Maturity: **PROMISING** (novel enough — "first framework
+  eliminating IL entirely" — to not yet be PROVEN at the Hydra-MDP/GTRS replication level, but the
+  July-2026 revision shows active, current development).
+- **Pain points:** **P1 (most directly of anything in this survey)** — if a policy can be trained
+  end-to-end from **rule-based reward alone**, this bypasses the entire "imitation learns to imitate a
+  bad selection habit" failure mode implicated in the v5f gap; **P2** — rule-based rewards can encode
+  speed-holding/distance-keeping DIRECTLY as a dense reward term, rather than hoping BC captures it
+  (relevant to the 88.7% longitudinal gap).
+- **Admissibility:** clean — reward is rule-based (rules over trajectories against the scene), not
+  situation-classifier-derived.
+- **Cost to try:** this is the most architecturally disruptive item in category C — replacing
+  imitation-trained heads with a pure policy-gradient objective is a **large change, ESTIMATED 15-20
+  eng-days**, ~3-5 GPU-days for a driving-scale reproduction at our size.
+- **Cheapest discriminating experiment:** do NOT reproduce ZTRS wholesale first. Instead, take the
+  EXISTING tactical head and replace only its TRAINING LOSS with an EPO-style policy-gradient objective
+  over the same discrete manoeuvre vocabulary (same enumerable action space we already have, same
+  encoder/predictor frozen), using `taniteval`'s rule-based cost terms as the reward. Outcome A: the
+  v5f selection gap closes substantially → the LOSS FUNCTION (imitation vs reward-driven), not
+  architecture, was the dominant cause of P1, which would be the single highest-value finding available
+  to the programme this quarter; Outcome B: no change → rules out the loss-function hypothesis cheaply
+  (one training run, no new modules) before any larger ZTRS-style rebuild is considered.
+
+### iPad — Iterative Proposal-centric E2E Autonomous Driving
+- **What:** **Iteratively refines** trajectory proposals toward human-like trajectories while preserving
+  multi-modality at intersections (rather than one-shot generation). Also used as a baseline planner
+  for **TOAD** (Test-Time Trajectory Optimization, arXiv 2606.07170), which explicitly reports gains
+  come from **search discovering NEW trajectories, not re-ranking/smoothing existing ones** — an
+  important, directly on-point empirical distinction.
+- **Evidence:** PUBLISHED — arXiv 2505.15111 (iPad); TOAD arXiv 2606.07170 tested WITH iPad and
+  Hydra-MDP as base planners. Maturity: **PROMISING** (iPad); TOAD's finding (search > re-ranking) is
+  **PROMISING** and directly relevant methodologically.
+- **Pain points:** **P1** — TOAD's finding is a sharp, falsifiable claim directly against our own
+  candidate approach: if search-based test-time trajectory discovery beats re-ranking a fixed candidate
+  set, that argues our fix should not be "a better scorer over the SAME fan" but "generate MORE/BETTER
+  candidates at inference time," which changes which of the two P1 experiments above (generator vs
+  selector) is worth prioritizing.
+- **Admissibility:** clean.
+- **Cost to try:** test-time search (even simple gradient-free perturbation search around the existing
+  fan) is CHEAP — **~3-5 eng-days, 0 GPU-days beyond eval compute** (it's an inference-time technique).
+- **Cheapest discriminating experiment:** on the frozen v5f checkpoint, add a simple test-time search
+  step (e.g., local perturbation + re-score using existing cost terms) around the current fan and
+  measure whether the SELECTED trajectory's ADE improves beyond just re-ranking the existing fan.
+  Outcome A: improves → TOAD's "search beats re-ranking" finding transfers, and test-time search is a
+  near-free P1 win layered on top of whatever scorer is chosen; Outcome B: no improvement → our fan
+  already spans the useful search space and the whole P1 fix is in scoring/selection, not generation
+  breadth — directly informs which of GTRS/DriveSuprim/ZTRS to prioritize next.
+
+### TrajHF — RLHF for Trajectory Generation
+- **What:** GRPO-based direct fine-tuning of an already-imitation-trained generative trajectory model
+  toward human PREFERENCE (personalized driving style), using multi-conditional denoising + behavior
+  cloning loss retained to preserve base capability (avoids catastrophic forgetting of the imitation
+  prior).
+- **Evidence:** PUBLISHED — arXiv 2503.10434 (*Learning Personalized Driving Styles via RLHF*),
+  performance "comparable to SOTA on NAVSIM." Maturity: **PROMISING**.
+- **Pain points:** **P1 (tertiary)** — less about fixing wrong selection, more about ALIGNING an
+  already-adequate generator toward a preference axis; more directly useful if/when the programme wants
+  a comfort/style axis than as a P1 fix per se. Also a candidate mechanism for the "goal/tactical
+  preference" axis distinct from the situation classifier (relevant to the admissibility rule — GRPO
+  reward here is human-preference-derived, not classifier-derived, so it is a clean pattern to imitate
+  if a preference signal is ever wanted).
+- **Admissibility:** clean.
+- **Cost to try:** LOW priority relative to the other category-C items above; **~5-8 eng-days** if
+  pursued, no new GPU beyond fine-tuning cost.
+- **Cheapest discriminating experiment:** deprioritized — only worth running after a P1 selection fix
+  (GTRS/ZTRS/DriveSuprim-style) is in place, since RLHF preference-tuning on top of a demonstrably bad
+  selector would confound style-alignment gains with selection-quality gains.
+
+### Current leaderboard snapshot (NAVSIM v2 / Bench2Drive / WOD-E2E) — as of search date, not live-verified
+- **NAVSIM v2 / EPDMS (`navhard`):** could not resolve a single authoritative current top-line number
+  from this container (HF Space leaderboard not fetchable); by paper-reported EPDMS, **DriveSuprim
+  87.1%** and **GTRS** (challenge winner) are the strongest confirmed points; a system called
+  **"DriveZero-Scale"** appeared in search results as evaluated 2026-09-05 but its score was
+  **UNVERIFIED** (not resolvable from snippets).
+- **Bench2Drive Driving Score:** search results reported **AutoVLA 78.84**, "MindDrive" 78.04, and
+  "SpaceDrive+" 78.02 as top-3 — **these three numbers are UNVERIFIED beyond the search snippet** (no
+  primary source opened; "MindDrive"/"SpaceDrive+" could not be independently traced to a paper in the
+  time available and may be leaderboard-only entries without a public write-up). Separately, **ORION**
+  is independently confirmed via its own abstract-level search result at **77.74 DS / 54.62% SR**, and
+  **SimLingo** at **85.94 DS** (its own claim, vision-only, CARLA LB2.0 context rather than strictly
+  Bench2Drive — do not treat as directly comparable without checking the exact track).
+- **WOD-E2E (Waymo):** **no formal 2026 Challenge**, but the leaderboard is active; scored by **Rater
+  Feedback Score (RFS)**, not ADE — reinforcing the programme's own already-adopted rule (R6 in the
+  registry) never to rank on ADE alone.
+- ⚠️ **Reporting caveat for whoever uses this snapshot:** none of these numbers should be quoted as a
+  programme decision input (per CLAUDE.md rule — this is INHERITED-from-search-snippet, not
+  independently re-verified against a primary source at the individual-claim level for most rows).
+  Treat this subsection as "where to look next," not as a citable leaderboard.
+
+---
+
+## 4. Category D — Foundation & VLA models for driving and robotics
+
+### Alpamayo-R1 — verify relationship to PhysicalAI-AV (per brief's explicit instruction)
+- **What:** 10B-param VLA: **Cosmos-Reason** VLM backbone (physical-AI-pretrained) + a **diffusion
+  trajectory decoder**; trained via a "Chain-of-Causation" (CoC) SFT stage (hybrid auto-label +
+  human-in-the-loop causal reasoning traces) then RL to align reasoning with action.
+- **Evidence:** PUBLISHED — arXiv 2511.00088 (*Alpamayo-R1: Bridging Reasoning and Action Prediction for
+  Generalizable Autonomous Driving in the Long Tail*). **12% planning-accuracy improvement on
+  challenging cases** vs a trajectory-only baseline; **35% reduction in close-encounter rate**
+  (closed-loop sim); RL post-training **+45% reasoning quality, +37% reasoning-action consistency**;
+  **99ms latency**, real-time on-vehicle road tests. Family: Alpamayo 1 Nano (10B) → 1.5 Nano → 2 Super
+  (34B); open ecosystem includes **AlpaSim** (closed-loop AV sim) and **AlpaGym** (closed-loop RL
+  training) — both already used by the programme for its own closed-loop numbers (8/12 vs 2/12).
+  Maturity: **PROVEN at the vendor level** (NVIDIA research publication + open weights + road-test
+  claim), independent replication **UNVERIFIED**.
+  ⚠️ **Verification result on the specific question asked: I could NOT confirm from any source opened in
+  this session that Alpamayo-R1 is trained specifically on the PhysicalAI-AV corpus.** Every source
+  found describes Alpamayo-R1's OWN dataset as the "Chain-of-Causation" (CoC) dataset (auto-labelled +
+  human-in-the-loop reasoning traces over driving logs), and separately describes PhysicalAI-AV as part
+  of the wider "Alpamayo open ecosystem" (alongside AlpaSim/AlpaGym) — but no source stated outright
+  that AR1's own training footage IS the PhysicalAI-AV release, vs. NVIDIA's separate internal fleet
+  logs used only to build CoC. **Mark this UNVERIFIED, not assumed-true, until someone with arXiv full-text
+  access reads AR1's §"Data" section directly.** This matters concretely: if AR1 is trained on the SAME
+  corpus we are, its numbers become a much more direct competitive/reference bar; if not, it is a
+  same-ecosystem but different-corpus comparison.
+- **Pain points:** **P3 (strategic-brain design)** — Chain-of-Causation is a concrete, working example
+  of a "singular high-level decision + minimal causal factors + causal text path" strategic layer, one
+  concrete alternative to our own strategic-brain design if we ever add reasoning traces; **P8**
+  (safety) — the "Semantic Observer" concept mentioned alongside it (1-2Hz semantic-anomaly detection
+  layer) is architecturally identical in spirit to our own fallback-monitor idea (H11).
+- **Admissibility:** the CoC reasoning trace is derived from privileged/offline labels (per "ground
+  truth may use ego + other + maps" rule) — fine for a LABEL, would need re-audit if any part of it were
+  fed back as a live inference-time input to a downstream module.
+- **Cost to try:** not reproducible at our scale (10B params, NVIDIA-fleet CoC data); the transferable
+  IDEA (constrain any reasoning/decision explanation to ONE decision + minimal causal factors + a
+  2-second context window) is a **design pattern, ~2-3 eng-days** to prototype as an explainability head
+  off our OWN latents (H13-style), not a retrain.
+- **Cheapest discriminating experiment:** N/A for reproduction; the actionable item is the verification
+  task above (arXiv full-text read of AR1's data section) — **hand to a stream with WebFetch access,
+  ~30 minutes**.
+
+### EMMA — End-to-End Multimodal Model for Autonomous Driving (Waymo)
+- **What:** Gemini-powered E2E model recasting ALL driving tasks (planning, perception, road-graph) as
+  vision-question-answering in a single language space — maximizes use of a pretrained LLM's world
+  knowledge and chain-of-thought.
+- **Evidence:** PUBLISHED — arXiv 2410.23262 (Waymo). SOTA motion planning on nuScenes, competitive on
+  WOMD and WOD 3D detection; co-training across tasks improves all three. Stated limitations: few image
+  frames, no LiDAR/radar, computationally expensive. Maturity: **PROVEN** (Waymo-published, replicated
+  open-source as "OpenEMMA").
+- **Pain points:** **P10** (evaluation — EMMA's own stated limitation, "computationally expensive" +
+  "text-only I/O for geometry," is a caution directly against a text-mediated strategic brain for a
+  sub-300M/Thor-class budget); **P3** — a full VLM-as-planner is the opposite end of the spectrum from
+  our compact 4-brain design; useful as the "what we are deliberately NOT doing and why" comparison
+  point in any paper/positioning section.
+- **Admissibility:** N/A (not planned for adoption; reference only).
+- **Cost/experiment:** not applicable at our budget; **reference item, no experiment proposed.**
+
+### AutoVLA — adaptive reasoning + RL fine-tuning VLA
+- **What:** Single autoregressive model unifying reasoning and action; **dual thinking modes** — "fast"
+  (trajectory-only) and "slow" (chain-of-thought-augmented) — chosen adaptively; tokenizes continuous
+  trajectories into discrete feasible actions for direct LM integration.
+- **Evidence:** PUBLISHED — arXiv 2506.13757 (UCLA). Reported **78.84 Driving Score on Bench2Drive**
+  (UNVERIFIED against a primary fetch, per leaderboard caveat above, but internally consistent across
+  multiple independent search snippets). Maturity: **PROMISING-to-PROVEN**.
+- **Pain points:** **P1/P9** — the fast/slow SWITCH is itself a cheap, concrete instance of "don't always
+  pay for expensive reasoning," directly relevant to our own cadence design (operative 10Hz / tactical
+  5-cadence / strategic 20-cadence) — worth reading as a possible trigger-condition design for WHEN the
+  tactical brain should escalate to a more expensive computation, rather than always running fixed-cadence.
+- **Admissibility:** clean if the fast/slow trigger is scene-derived, not classifier-derived — would
+  need the same disjointness check as any gating signal if adopted.
+- **Cost to try:** **~4-6 eng-days** to prototype an adaptive-cadence trigger (reuse existing imagination-
+  error signal, already free per A9, as the trigger rather than building a new one).
+- **Cheapest discriminating experiment:** using the EXISTING imagination-error monitor as an "escalate to
+  slow/tactical" trigger (rather than fixed cadence-5), check whether escalation correlates with the
+  windows where the current tactical head is actually wrong (i.e., does high imagination-error predict
+  bad tactical decisions). Outcome A: yes → free, already-available signal for adaptive-cadence routing;
+  Outcome B: no correlation → the fixed-cadence assumption is fine and adaptive triggering is not a
+  priority lever.
+
+### ORION — holistic VLA-instructed action generation
+- QT-Former (long-term history) + LLM reasoning + generative planner, jointly aligning reasoning and
+  action spaces. PUBLISHED, arXiv 2503.19755, ICCV 2025. **77.74 DS / 54.62% SR on Bench2Drive**
+  ("outperforms SOTA by 14.28 DS / 19.61% SR" per the paper's own claim). Maturity: **PROVEN**
+  (ICCV-accepted, code released). Pain point: **P3** — another concrete "align reasoning space and
+  action space" design, same family as Alpamayo-R1/AutoVLA but smaller/more accessible (Xiaomi lab, not
+  NVIDIA-fleet-scale data) — the most REPRODUCIBLE of the three VLA-reasoning systems if the programme
+  ever wants to prototype a language-mediated strategic brain. Admissibility: needs the same audit as
+  any reasoning-to-action bridge. Cost: full reproduction is still a large VLA build (**ESTIMATED
+  15-25 eng-days**); not recommended before P1/P2 fixes above given the priority order. Cheapest
+  experiment: read its "align reasoning space and action space" loss design as a reference architecture
+  only, no build — **0 GPU-days**.
+
+### SimLingo — Vision-Only Closed-Loop Driving with Language-Action Alignment
+- **What:** Camera-only (**no LiDAR**), decouples **speed** waypoints from **path** waypoints via a
+  disentangled MLP head — i.e., an explicit LAT/LON split at the output head, precisely the fix our own
+  P1 diagnosis (single 5-way softmax MIXING lat+lon) is missing. Introduces "Action Dreaming" — an
+  instruction-following consistency check between language and control.
+- **Evidence:** PUBLISHED — arXiv 2503.09594 (Tübingen, Renz et al.). **SOTA on CARLA Leaderboard 2.0
+  and Bench2Drive using camera only**, DS **85.94**. Maturity: **PROVEN**.
+- **Pain points:** **P1 — this is the single cleanest existing precedent for "split lat/lon at the head"
+  the survey found.** Directly actionable: SimLingo's disentangled-MLP pattern (separate heads for
+  temporal/speed vs geometric/path waypoints, feeding from a shared trunk) is close to a drop-in
+  replacement for our 5-way manoeuvre softmax's mixed lat+lon design; **P2** — the speed head is
+  explicitly separated and independently supervised, which is exactly the kind of architectural
+  isolation our 88.7%-longitudinal-gap diagnosis calls for.
+- **Admissibility:** clean — vision-only by design (also directly compliant with the programme's OWN
+  vision-only-inference binding rule, unlike most of category D).
+  ⭐ **Strongest single admissibility fit in category D.**
+- **Cost to try:** splitting the tactical head's output into a disentangled lat-MLP + lon-MLP off the
+  SAME shared trunk is a **small-to-medium change, ~3-5 eng-days**, ~1 GPU-day retrain.
+- **Cheapest discriminating experiment:** on the frozen v1 encoder/predictor, replace ONLY the tactical
+  head's final layer — one 5-way softmax → two separate heads (manoeuvre-lateral class + target-speed
+  regression) — retrain just that head, and re-measure both the tactical ADE (currently ~3.4m, worse
+  than constant-velocity) and the longitudinal-specific metrics (target-speed accuracy, distance-keeping)
+  the programme's binding eval rule already requires. Outcome A: tactical ADE improves and beats
+  constant-velocity → validates the "mixed softmax" diagnosis as the dominant cause and gives a cheap,
+  near-drop-in fix; Outcome B: no improvement → the defect is deeper than output-head entanglement
+  (e.g., in the training data/loss itself), redirecting effort toward ZTRS/GTRS-style objective changes
+  instead of an architecture change.
+
+### OpenDriveVLA
+- Open-source-LLM-based VLA; hierarchical vision-language alignment (2D+3D tokens → unified semantic
+  space). PUBLISHED, arXiv 2503.23463, **AAAI 2026**. nuScenes open-loop **L2 0.33m** (3B/7B versions).
+  Maturity: **PROVEN** (AAAI-accepted, code released). Pain point: **P5** (representation) — its
+  hierarchical 2D/3D token alignment is a concrete recipe for grounding a from-scratch encoder's tokens
+  geometrically without a full 3D detector, potentially relevant if the encoder ever needs auxiliary 3D
+  grounding losses. Admissibility: clean. Cost: **~10+ eng-days** for the alignment mechanism alone;
+  lower priority than category-C items. Cheapest experiment: not prioritized this cycle — logged as a
+  P5 backlog read.
+
+### π0 / π0.5 / π*0.6 (RECAP) — Physical Intelligence's generalist-robot lineage
+- **What:** π0 → π0.5 (open-world generalization via co-training on heterogeneous robot/web/semantic
+  data) → **π*0.6 with RECAP** ("RL with Experience & Corrections via Advantage-conditioned Policies")
+  — combines (1) demonstrations, (2) real-time EXPERT CORRECTIONS during autonomous execution, and (3)
+  self-improvement via RL from autonomous trials, into one advantage-conditioned policy.
+- **Evidence:** PUBLISHED — π0.5 arXiv 2504.16054; π*0.6/RECAP via Physical Intelligence's own technical
+  report (`pi.website/download/pistar06.pdf`, not fetchable from this container — **PUBLISHED via
+  vendor primary source, mechanism confirmed by multiple independent secondary write-ups, but I did not
+  personally read the PDF**). Headline: **π*0.6 doubles throughput and cuts failures 2×+ on hard tasks**;
+  ran unattended for **18 hours** making espresso, folded **50 novel laundry items** in an unseen home,
+  assembled/labelled **59 real factory boxes**. Maturity: **PROVEN at the vendor-demo level**
+  (extensive real-robot hours, not yet third-party replicated).
+- **Pain points:** **P1 — RECAP is the most directly transferable MECHANISM in category D for our
+  selection problem**, because it explicitly targets "imitation's key flaw: small mistakes compound in
+  real interaction" via a THIRD data source most driving work ignores: **live corrections during
+  autonomous execution**, not just offline demonstrations or a reward function. Our own equivalent would
+  be flagging exactly the windows where the tactical head's selection diverges from a better-scoring
+  candidate (already measurable via the v5f "best-in-fan vs selected" gap) and training an advantage-
+  conditioned correction signal from THOSE specific failures, rather than a blanket reward or a blanket
+  imitation loss.
+- **Admissibility:** clean — corrections come from execution outcomes, not a situation classifier.
+- **Cost to try:** a scoped, driving-specific RECAP analogue (advantage-conditioning the tactical head on
+  its OWN historical best-in-fan-vs-selected gap, as a cheap proxy for "expert correction," entirely
+  offline on existing logs) is **ESTIMATED 8-12 eng-days**, minimal new GPU (reuses existing rollouts).
+- **Cheapest discriminating experiment:** construct an offline "advantage" label per training window =
+  (best-in-fan ADE − selected ADE) from EXISTING v5f-style logs, and add an advantage-conditioned
+  auxiliary loss term to the tactical head (predict/condition on this advantage at train time, similar in
+  spirit to RECAP but built entirely from logs already on disk — no live correction loop needed for this
+  cheap version). Outcome A: selection gap narrows → strong, cheap, log-only validation of the RECAP
+  mechanism for driving; Outcome B: no change → the advantage signal from past logs is too sparse/noisy
+  to shape the head this way, and a genuine live-correction loop (expensive, needs a sim or fleet) would
+  be needed to test RECAP properly — a much bigger ask, correctly deferred.
+
+### GR00T N1 / N1.5 / N1.6 / N1.7 (NVIDIA humanoid foundation model)
+- **What:** Open VLA foundation model for generalist humanoid robots; rapid iteration — N1 (Mar 2025) →
+  N1.5 (May 2025, frozen VLM + Eagle 2.5 grounding + FLARE objective learning from human ego-video +
+  GR00T-Dreams synthetic-data blueprint, cutting data-collection time from ~3 months to **36 hours**) →
+  N1.6 (Dec 2025, Cosmos-2B VLM backbone, 2× larger DiT, state-relative action chunks) → N1.7 (current).
+- **Evidence:** PUBLISHED — arXiv 2503.14734 (GR00T N1) + NVIDIA Newsroom for N1.5/N1.6 (press-release
+  level; **UNVERIFIED in technical depth** beyond what WebSearch summarized). Maturity: **PROVEN**
+  (shipped, iterated 4 times in ~18 months — this is a fast-moving, well-resourced reference line even
+  if not driving-specific).
+- **Pain points:** **P4/P9** — the **GR00T-Dreams** synthetic-data-generation blueprint (36h vs 3 months)
+  is a directly relevant PATTERN for our own small-data problem (P4): use a world model to GENERATE
+  action-labelled training variety cheaply, rather than collect more real hours. This is architecturally
+  the same idea as our own inverse-dynamics-labels-from-passive-video plan (H7) but industrially proven
+  at humanoid scale.
+- **Admissibility:** N/A directly (not a driving system); as a pattern, clean.
+- **Cost to try:** not directly portable (different embodiment/domain); the TRANSFERABLE idea (world-
+  model-driven synthetic action-label generation) is already on our own roadmap as H7 — this is
+  corroborating evidence to prioritize H7, not a new build. **0 additional cost — reference item.**
+
+### Gemini Robotics 1.5 / ER 1.5 / ER 1.6 / ER 2
+- **What:** Dual-model system: Gemini Robotics 1.5 (vision+instruction → motor commands) + Gemini
+  Robotics-ER (embodied reasoning: plans using digital tools like web search before handing off to the
+  execution model). **Motion Transfer** mechanism: a task learned on one embodiment (ALOHA2 dual-arm)
+  transfers DIRECTLY to a different embodiment (Franka, and Apptronik's Apollo humanoid) **without
+  retraining**.
+- **Evidence:** PUBLISHED — arXiv 2510.03342 (Google DeepMind). Maturity: **PROVEN at vendor-demo level**
+  (specific cross-embodiment zero-shot transfer claim, not independently replicated by a third party in
+  what I found).
+- **Pain points:** **P4/P6** — Motion Transfer is relevant to any future embodiment change (e.g., if the
+  Jetson Thor target vehicle platform changes, or if the model is ever adapted across vehicle types); the
+  "reason first with digital tools, then hand off to a fast execution model" split is architecturally the
+  SAME dual-process idea as our own strategic (slow)/operative (fast) split, independently arrived at by
+  a completely different lab — **corroborating evidence for H1's frequency-separation design**, not a
+  new technique to adopt.
+- **Admissibility:** N/A directly (different domain); as a design pattern, clean.
+- **Cost/experiment:** reference/corroboration item only — **0 cost, no experiment**, cited for the
+  architecture-validation value in the TOP-10 discussion below.
+
+---
