@@ -11,13 +11,13 @@
 ## 1. Verdict
 
 TanitAD has built three things of lasting value:
-- **A measurement culture better than most funded labs'.** Evidence classes, pre-registration, a paired episode-cluster bootstrap, and a retraction log organised by root cause.
-- **A camera world model whose latent integrates driving controls as accurately as a physics model does.**
-- **A credible embedded path.** The planning tick on Jetson Thor is 60.3 ms p50 / 63.1 ms p95 against a 100 ms budget (MEASURED, `TanitAD Research Hub/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md:286-304`, ±13 % run-to-run). NuRec scenes render and drive closed-loop on the same board.
+- **An unusually rigorous measurement culture.** Evidence classes, pre-registration, a paired episode-cluster bootstrap, and a retraction log organised by root cause.
+- **A camera world model whose latent integrates given driving controls about as well as a kinematic bicycle model:** 0.4271 [0.3675, 0.4871] vs 0.4518 [0.3097, 0.6174]. The comparison is unpaired and not separated; the paired delta has not been computed.
+- **A credible embedded path.** A v1 tick (encoder, heads, a 9-manoeuvre imagined fan, scoring) runs in 60.3 ms p50 / 63.1 ms p95 on Jetson Thor against a 100 ms budget (MEASURED, `TanitAD Research Hub/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md:286-304`, ±13 % run-to-run). That selector path has no open-loop score yet. NuRec scenes render on Thor; where the closed-loop driver's inference ran is not recorded.
 
-It has not yet built a driver that beats a simple baseline. The review now explains why, and the explanation changes the plan.
+It has not yet built a *hierarchical* driver that beats its own flat reference. REF-C clears all three trivial floors (CV separated; CTRV and best-of-3 on the point estimate, `MODEL_REGISTRY.md` §6), while the hierarchy's two decision paths (1.9028 plan-tracked, 3.3839 direct) do not clear CV (0.8377). The review now explains why, and the explanation changes the plan.
 
-**1. The headline "tie" is not a driving result.** The flagship's 0.4271 m is scored by feeding the world model the expert's recorded future steering and acceleration (CODE `taniteval/taniteval/rollout.py:146-147`; the harness itself labels it `actions_source="expert_future"`, `honest_metric_name="wm_fidelity_ade_2s"`, `:181-185`). A zero-parameter bicycle model given the same controls scores 0.4518 [0.3097, 0.6174] (MEASURED, `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`). REF-C, which must predict the future, scores 0.4728. The registry has recorded this since 2026-07-27 (`MODEL_REGISTRY.md:192`), yet its §6 leaderboard still ranks the two as "1=". On paths where the hierarchy itself must decide, the flat 104 M REF-C-base beats it by 1.9× to 7.2× (0.4728 vs P2-over-WM 0.893 legacy, hierarchy plan tracked 1.9028, tactical head 3.3839; stream R1 §1).
+**1. The headline "tie" is not a driving result.** The flagship's 0.4271 m is scored by feeding the world model the expert's recorded future steering and acceleration (CODE `taniteval/taniteval/rollout.py:146-147`; the harness itself labels it `actions_source="expert_future"`, `honest_metric_name="wm_fidelity_ade_2s"`, `:181-185`). A zero-parameter bicycle model given the same controls scores 0.4518 [0.3097, 0.6174] (MEASURED, `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`). REF-C, which must predict the future, scores 0.4728. The registry has recorded this since 2026-07-27 (`MODEL_REGISTRY.md:192`), yet its §6 leaderboard still ranks the two as "1=". On the two paths where the hierarchy itself decides, the flat 104 M REF-C-base beats it by 4.0× to 7.2× (0.4728 vs plan-tracked 1.9028 and tactical head 3.3839, all full-set, `closedloop_flagship-30k.CORRECTED.json`). The P2 CEM planner's 0.893 is a deprecated split-mean of a path handed a future speed target, and is not comparable (registry §6 row 10).
 
 **2. The hierarchy is not running as designed.**
 - The tactical and strategic cadences are configured but read by no code (`config.py:118,140`).
@@ -30,23 +30,23 @@ It has not yet built a driver that beats a simple baseline. The review now expla
 **3. The decision defect is a missing cost model and a wrong training target, not a missing layer.**
 - **The wrong target.** Selectors are trained to guess which candidate happened to be closest to one realised future, not to minimise expected cost.
 - **The missing feature.** No arm receives the single most informative longitudinal observable, a 0.1 s speed difference.
-- **What the right target plus that feature achieved.** A per-candidate expected-cost regressor over REF-C's fan, given that feature, reduced ADE from 0.5015 to 0.3917 with no goal input, and to 0.3040 with a `(v, ax_fd)` goal head (600-episode deployment; INHERITED from `…/incoming/2026-07-28-egoal-4-joint/EGOAL_4.md`, re-read by R1). This is the programme's largest measured decision-quality lever, and it came from a better target and a better feature, not from more hierarchy.
+- **What the right target plus that feature achieved.** A per-candidate expected-cost regressor over REF-C's fan, given that feature, reduced ADE from 0.5015 to 0.3917 with no goal input, and to 0.3040 with a `(v, ax_fd)` goal head. These are MEASURED-by-path (`…/incoming/2026-07-28-egoal-4-joint/raw/e4_select_sel.json`) but out-of-fold *within* val-600; the selector was never trained on the train corpus. They are also 600-episode numbers, a different and easier deployment (CV floor 0.692 vs 0.838; REF-C-XL's own pick there is 0.5015), so they are not comparable with the 40-episode figures in claim 1. This is still the programme's largest measured decision-quality lever, and it came from a better target and a better feature, not from more hierarchy. It must replicate on train-corpus fans before it decides any GPU-days (decision D2a).
 
 **4. The longitudinal gap is largely a data and interface fact.**
 - **Noisy acceleration channel.** The dataset's logged acceleration correlates only r = 0.434 with the pose-derived one (INHERITED, `IDM_DIAGNOSIS.md`).
 - **No speed history.** Ego speed is broadcast as a constant across the whole window, so the world model never sees how speed has been changing (CODE `flagship_losses.py:227-238`).
 - **The lead car is barely visible.** At the parity crop's 4.98 px/deg, a car 50 m ahead is about 10 px wide (ESTIMATED, R3).
-- **The speed bias is a compounding artefact.** The world model is trained at 4 rollout steps and scored at 20. A 20-step fine-tune removed the bias (+0.94 → −0.009 m/s) and cut WM-fidelity ADE from 0.424 to 0.348 (INHERITED, `V5_FLAGSHIP_DEEP_REVIEW.md` §1 P5).
+- **The speed bias is a compounding artefact.** The world model is trained at 4 rollout steps and scored at 20. A 20-step fine-tune removed the bias (driving harness +0.19 → −0.002 m/s; four-family instrument +0.94 → −0.009 m/s) and cut WM-fidelity ADE from 0.424 to 0.348 (MEASURED, raw JSON in `…/incoming/2026-08-02-rollout-recovery-verdict/`, not yet registered; primary `CR_k` pending).
 
 **5. The strategy is running on a sliver of its assets and has skipped its deciding experiments.**
-- **Data usage is a sliver.** The programme trains on 0.78 % of PhysicalAI-AV: 13.2 h of about 1,700 h, 1 of 6 cameras, no image augmentation (R3; dataset size PUBLISHED via the Hugging Face card).
+- **Data usage is a sliver.** The programme trains on 0.78 % of PhysicalAI-AV: 13.2 h of about 1,700 h, 1 of 7 camera streams, no image augmentation (R3; dataset size MEASURED by the in-repo feature probe `…/2026-07-26-physicalai-feature-probe/PHYSICALAI_FEATURE_PROBE.md` and PUBLISHED on the Hugging Face card).
 - **The deciding experiments were skipped.** The three experiments that decide the thesis were not run: hierarchy vs flat, the data-efficiency slope, and one recognised external number. The July review asked for all three.
 - **Where things stand.** The repository has been silent for 52 days. The mission plan's first final evaluation is on **05.10.2026**, ten days from now.
 
 ### What to present on 05.10.2026, and what not to
 
 Do not present 0.4271 as a planning result or the hierarchy as validated. Present:
-- **A camera-only world model** whose latent dynamics match a physics model, running inside budget on Thor.
+- **A camera-only world model** whose latent integrates given controls as well as a kinematic model (not separated), and a v1 selector tick that runs inside budget on Thor. State that the accuracy of that tick's path is not yet measured.
 - **A flat planner that drives,** plus a measured, pre-registered route to making it better through cost-aware selection.
 - **A safety envelope** designed around it.
 - **An evaluation apparatus that caught its own headline error.** That last point is a strength when stated plainly.
@@ -56,10 +56,10 @@ Do not present 0.4271 as a planning result or the hierarchy as validated. Presen
 | # | decision | why | cost |
 |---|---|---|---|
 | D1 | **Split the leaderboard into two tables.** Planners (the model chooses) and world-model fidelity (given the expert's controls). No rank may cross them. | Row 1= compares unlike surfaces; everything downstream inherited it | 0 GPU, 1 eng-day |
-| D2 | **Make REF-C the driving baseline-of-record and build v6 around the decision layer.** REF-C's fan (or a factorised lat×lon fan), a per-candidate expected-cost selector trained on the parity train corpus with `ax_fd`, multi-target costs distilled from `obstacle.offline` tracks, a K = 20 world model as a consequence feature, a kinematic decoder, and a safety envelope | the only lever with a large measured effect is selection; the hierarchy has 0/3 load-bearing seams | ≈ 6–12 A40-days to a gated first result |
-| D3 | **Re-scope the strategic brain to what the mission defines and the data can supervise.** A supervisor (engage/degrade/ODD, calibrated uncertainty, runtime assurance) plus a predicted goal point. Pre-register hierarchy-vs-flat only once a strategic information source exists | on this corpus the strategic level has no information the operative lacks (R1 §2.4) | 0 GPU to re-scope; the test later |
-| D4 | **Run the data-efficiency slope now.** Label-free world-model pretraining on the unused 99 % of PhysicalAI-AV (and LFG-style front-camera video), then supervised heads at 1/3/10/30/100 % of labelled hours, against REF-C at the same fractions, on the four families | "1000× less data" is the mission's first priority goal, and it has never been measured | ≈ 10–25 A40-days for a first slope |
-| D5 | **Enter one external closed-loop benchmark.** The NVIDIA AlpaSim E2E Closed Loop Challenge 2026 has a track on PhysicalAI-AV NuRec (the programme's own data and harness); the leaderboard closes 2026-10-31. Confirm front-camera eligibility this week | no recognised external number exists | ≈ 1 eng-day to confirm eligibility |
+| D2 | **D2a, now:** retrain the expected-cost selector on parity-train fan dumps (Δ2) and score it paired on val-40 and val-600; E-GOAL-4 graduates only if its gain survives. **D2b, on graduation:** make REF-C the driving baseline-of-record and build v6 around the decision layer. That means REF-C's fan (or a factorised lat×lon fan), the expected-cost selector with `ax_fd`, multi-target costs distilled from `obstacle.offline` tracks, a K = 20 world model as a consequence feature, a kinematic decoder, and a safety envelope | the only lever with a large measured effect is selection; the hierarchy has 0/3 load-bearing seams | D2a ≈ 0.5 A40-day; the whole ladder ≈ 5.8; one full v6 run after it ≈ 5–7 |
+| D3 | **Re-scope the strategic brain to what the mission defines and the data can supervise.** A supervisor (engage/degrade/ODD, calibrated uncertainty, runtime assurance) plus a predicted goal point. Pre-register the tactical-level test now (Δ4, 0.3 A40-day, frozen dumps); pre-register the strategic-level test once a corpus with a route or goal source exists (AlpaSim routes, L2D) | on this corpus the strategic level has no information the operative lacks (R1 §2.4) | 0 GPU to re-scope; the test later |
+| D4 | **Run the data-efficiency slope now.** Label-free world-model pretraining on the unused part of PhysicalAI-AV's *train* split (never its val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge), and later LFG-style front-camera video, then supervised heads at 1/3/10/30/100 % of labelled hours, against REF-C at the same fractions, on the four families | "1000× less data" is the mission's first priority goal, and it has never been measured | ≈ 10–25 A40-days for a first slope |
+| D5 | **Enter one external closed-loop benchmark.** The NVIDIA AlpaSim E2E Closed Loop Challenge 2026 has a track on PhysicalAI-AV NuRec (the programme's own data and harness); the closing date (reported 2026-10-31, UNVERIFIED) and front-camera-only eligibility (the default configuration is 4 cameras) must both be confirmed this week | no recognised external number exists | ≈ 1 eng-day to confirm eligibility |
 
 ---
 
@@ -71,11 +71,11 @@ Grades compare against the independent review of 2026-07-25 (`Reviews/2026-07-25
 |---|:--:|:--:|---|
 | Measurement infrastructure (instruments, estimator, gate) | A− | A− | four-family, distance-keeping and corridor instruments now exist and pass their own controls |
 | Measurement in use (what decisions actually rest on) | C+ | **C** | the four-family instrument has zero callers in the standard runner; tactical/strategic never measured on the canonical val; the leaderboard still mixes WM fidelity with planners |
-| Core-thesis validation (hierarchy, imagination, sub-300 M structure) | D+ | **D** | seams corrected 1/3 → 0/3; the hierarchy's own decisions lose to a flat planner 1.9–7.2×; cadence never executed; v5f's imagination tokens have no candidate axis |
+| Core-thesis validation (hierarchy, imagination, sub-300 M structure) | D+ | **D** | graded as implemented, not as a refuted idea (the strategic level is untestable on this corpus); seams corrected 1/3 → 0/3; the hierarchy's own decisions lose to a flat planner 4.0–7.2×; cadence never executed; v5f's imagination tokens have no candidate axis |
 | World model as a dynamics model | — | B+ | latent integration of given controls matches a bicycle model; K = 20 fine-tune fixes the speed bias |
 | Architecture and trainer code | C | C | 22 M dead parameters in the v4/v5f line; no `torch.compile`, fused optimiser or flash attention in 8 trainers; seeds only via `torch.manual_seed` |
-| Data strategy | — | **D+** | 0.78 % of the corpus, 1 of 6 cameras, no augmentation, the IDM route refuted as built, the corpus contrast confounded |
-| Embedded deployment | — | A− | 60.3 ms p50 on Thor with a batched 9-candidate fan; NuRec rendering on Thor |
+| Data strategy | — | **D+** | 0.78 % of the corpus, 1 of 7 camera streams, no augmentation, the IDM route refuted as built, the corpus contrast confounded |
+| Embedded deployment | — | A− | 60.3 ms p50 on Thor for v1's 9-manoeuvre selector path (whose accuracy is not yet measured); NuRec rendering on Thor |
 | Workflow, automation, documentation | B− | **C+** | no hooks, CI or pre-commit enforce any rule; no LLM spend ledger; `LOOP_STATE.md` grew 122 → 203 KB; 52 days of silence |
 
 ---
@@ -93,7 +93,7 @@ The previous review ranked 16 proposals. Follow-through, checked in the reposito
 | **Hierarchy vs flat planner-over-WM, pre-registered** | **not done** | still "PROVE — build the decisive test" (`PROGRAM_OVERVIEW.md:81`); its precondition (a live route input) is the target of `PREREG_lan_refc.md`, whose falsifier fired on 2026-08-03 |
 | **Data-efficiency slope** | **not done** | the phrase appears only inside the 07-25 review files |
 | **One recognised external benchmark number** | **not done** | AlpaSim-first was adopted; no external number exists |
-| Give the reactive renderer an owner | largely done | NuRec on Thor; v1 and REF-C driven closed-loop on Thor |
+| Give the reactive renderer an owner | largely done | NuRec scenes render on Thor; closed-loop videos of v1 and REF-C were rendered there; where the driver's inference ran is not recorded |
 
 The pattern the July review named has repeated. The apparatus improved on every axis, while the three experiments that decide the thesis were not run. Then the repository went quiet: the last commit is 2026-08-04 (MEASURED, `git log`). 149 commits fall on 9 calendar days, 49 of them on 2026-08-03 alone (MEASURED).
 
@@ -179,14 +179,15 @@ The 2026-08-02 deep review independently found 0/3 for v1 and for v2corpus (`V5_
 - **(b) The wrong decision-theoretic target.** Selectors are trained on P(hindsight-best) instead of argmin E[cost].
 - **(c) Starved of the key longitudinal feature.** No arm receives `ax_fd`, the 0.1 s speed difference.
 - **(d) Candidate consequences never reach the ranking.**
-- **(e) The manoeuvre label destroys information.** It overwrites a live longitudinal manoeuvre as a turn on 9.68 % of windows.
+- **(e) The manoeuvre label destroys information.** It overwrites a live longitudinal manoeuvre as a turn on 9.68 % of windows (INHERITED, `…/incoming/2026-08-03-dtac1-tactical-head/`).
 
 **Already settled, so v6 must not re-buy it:**
 - Discriminative re-scoring of the v4 fan is ceilinged at 0.4907, even in-sample.
 - Imagination-consistency scoring is refuted (0.5645).
 - Conditioning the fan on v0 is refuted: the fan already contains speed-matched candidates.
 - REF-C v1.2's 47 learned re-scorers recovered at most 8.4 % of the gap.
-- The expected-cost regressor with `ax_fd` (E-GOAL-4) recovered about 32 % of the gap with no goal.
+- The expected-cost regressor with `ax_fd` (E-GOAL-4) recovered roughly a third of the gap with no goal: 32–36 %, depending on whether the gap is measured to the oracle-in-fan or to the `R_goal2s` floor.
+- The registry's standing claim that the oracle gap is about 92 % irreducible (`MODEL_REGISTRY.md:1355-1357`) is contradicted by E-GOAL-4 and must be revisited.
 
 The last two disagree by roughly 4× and must be reconciled before v6 is funded. The leading hypotheses are the `ax_fd` feature, v1.2's top-8 restriction, and the deployment (40 vs 600 episodes).
 
@@ -194,7 +195,7 @@ The last two disagree by roughly 4× and must be reconciled before v6 is funded.
 1. A per-candidate expected-cost selector (regress each candidate's cost, pick the argmin). Feed it candidate kinematics, v0, `ax_fd` and scene tokens, and train it on the parity train corpus rather than val folds.
 2. Hydra-MDP-style multi-target distillation into that selector. Collision, TTC, progress and comfort sub-scores are computed offline from `obstacle.offline` tracks (97.44 % coverage). There are no drivable-area terms, because there is no map.
 3. Factorised lateral × longitudinal heads as features.
-4. Predicted goal-point conditioning as a free inductive bias. Do not fund a goal *supplier*: in E-GOAL-4 the goal carried no information beyond `(v, ax_fd)` (R² 0.9999).
+4. Predicted goal-point conditioning as an inductive bias (Δ4). Do not fund a goal *supplier* yet. The only goal tested so far (E-GOAL-4) was itself a fitted function of `(v, ax_fd)` (`EGOAL_4.md:50`, audit G-6), so its gain (0.3917 → 0.3040, 600-episode, out-of-fold within val) is a re-parameterisation of ego kinematics, not new information. The oracle route command also failed at the fusion (§7). A vision-predicted geometric goal point is untested here; Δ4 is where it earns or loses its place.
 5. World-model rollout scoring, only after a cost exists.
 
 ### 4.4 The longitudinal deficit
@@ -205,7 +206,7 @@ The last two disagree by roughly 4× and must be reconciled before v6 is funded.
 | even given the true controls, along-track error barely beats CV | mean \|along\| at 2 s: WM 0.826 · bicycle 0.829 · CV 0.915 m | MEASURED `latlon_decomposition.json` |
 | v1 is 2.0× worse than holding current speed on the 639 steady windows (72 %) | speed MAE 0.4231 vs 0.2109 m/s | MEASURED; every arm with a dump is separated-worse there |
 | the logged longitudinal channel is a poor measurement | native `ax` ↔ pose dv/dt r = 0.434; ↔ `ax_fd` 0.759 | INHERITED |
-| 87 % of v1's WM-fidelity squared error is longitudinal | 0.8733 | MEASURED |
+| 87 % of v1's WM-fidelity squared error is longitudinal | 0.8733 | MEASURED `…/2026-07-26-closedloop-artifact-rerun/latlon_decomposition.json` |
 | the flagship's WM-fidelity path runs fast vs the human | +0.1911 m/s [+0.0922, +0.2846]; REF-C indistinguishable from the human | MEASURED `…/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md:160,370` |
 | a perfect lead-vehicle state buys little at 2 s on this corpus | 41.65 % of windows have no vehicle within 50 m; +2.3 recovery points, not separated | INHERITED (E-GOAL-1) |
 
@@ -213,7 +214,11 @@ The last two disagree by roughly 4× and must be reconciled before v6 is funded.
 1. **Curvature is handed in; speed change is not.** Lateral wins because future curvature is supplied as steer on the headline surface. Longitudinal change depends on things invisible at this resolution or absent from the data.
 2. **The best longitudinal observable is withheld.** Speed is broadcast as a constant over the window, and `ax_fd` is fed to no arm. This is a one-column, parity-neutral input fix.
 3. **There is no "keep speed" default.** Both families emit absolute trajectories, so holding speed, which is correct on 72 % of windows, has to be reproduced rather than being the zero-residual default. A residual-over-kinematic-prior parameterisation is the cheap test.
-4. **The world model is trained at K = 4 and scored at K = 20.** The speed bias is compounding. The K = 20 fine-tune (RR-20) removed it (+0.9397 → −0.0092 m/s) and cut WM-fidelity ADE 0.424 → 0.348, at a 2.2× curvature-MAE cost.
+4. **The world model is trained at K = 4 and scored at K = 20.** The K = 20 fine-tune (RR-20) cut WM-fidelity ADE 0.4244 → 0.3485 (paired, separated; MEASURED `…/2026-08-02-rollout-recovery-verdict/rr20.json`, `rrctl.json`, `ab_rrctl_vs_rr20.json`, 881/40). It removed the speed bias on both instruments that measure it:
+   - driving harness +0.1879 → −0.0018 m/s (`rr20.json`);
+   - four-family instrument +0.9397 → −0.0092 m/s (`fourfam_rr20.json`).
+
+   The two instruments derive speed differently and disagree 5× on the pre-fix bias, which must be reconciled before either is quoted alone. The costs: curvature MAE 2.2× worse, miss@2m 0.043 → 0.056, and a loss on sharp-curvature windows (win-rate 0.43, n = 122). RR-20 is not in `MODEL_REGISTRY.md`, and its pre-registered primary `CR_k` was never computed (§6).
 
 The 2026-08-04 analysis concluded that the longitudinal gap is a speed-setting bias rather than a headway failure. That holds, but it was measured on the WM-fidelity path, so the bias belongs to the world model's integration and not to a planning decision.
 
@@ -245,7 +250,7 @@ CODE + INHERITED (R1 §5.1). At 25 m/s a 2–4 s headway puts the lead car 50–
   - It scores 2.1675 on the WM-fidelity surface, while *given* the expert's controls; a bicycle given the same controls scores 0.4518.
   - Its error is 94.2 % longitudinal, with a 4.5× train-to-held-out gap.
   - It encodes only the latest RGB frame of each stack (CODE `stack/scripts/dino_precompute.py:44`), while the flagship encodes the 9-channel three-frame stack, which makes optical flow linearly available.
-  - H4 is therefore established for "frozen single-frame semantic features plus a temporal adapter as a metric-odometry substrate", not for "pretrained encoders are worse for driving". PUBLISHED counter-evidence exists (DINO-WM, arXiv 2411.04983). The untested case that matters is a frozen or fine-tuned **video** encoder (BACKLOG B5).
+  - H4 is therefore established for "frozen single-frame semantic features plus a temporal adapter as a metric-odometry substrate", not for "pretrained encoders are worse for driving". PUBLISHED counter-evidence exists (DINO-WM, arXiv 2411.04983; not V1-checked). The untested case that matters is a frozen or fine-tuned **video** encoder (BACKLOG B5).
 - **v2 and v3enc were architecture-caused, by lever design.** The "anti-shortcut" pack attacked every metric-speed channel at once:
   - v0 zero-filled on 25 % of samples, where 0 m/s is an in-distribution "stationary";
   - an encoder penalised for encoding speed;
@@ -279,7 +284,7 @@ The anti-calibration finding (confidence rises as fidelity decays) is expected b
 ### 4.8 Deployability
 
 - **Current tick.** The measured Thor tick with a batched 9-candidate fan through a bf16 dynamic TensorRT engine is 60.3 / 63.1 ms p50/p95 (MEASURED, runbook §3). On an A40, all levers take the v1 "plan tick" from 97.3 ms to 18.75 ms (MEASURED `eff_levers_flagship-30k.json`).
-- **The timed tick is one rollout of *given* actions, not a decision.** A world-model-scored decision over a 256-candidate fan would be about 32 saturated Thor batches × ~70 ms ≈ 2.2 s, roughly 22× over budget (ESTIMATED, R1 §8).
+- **The timed tick is v1's `TacticalSelector`.** It runs a 9-manoeuvre (3 steer × 3 accel) imagine-and-select over the world model with a heuristic displacement-plus-comfort score (`fourbrain.py:566-571`, runbook `:288`). It is a decision, but on a path that has never been scored open- or closed-loop (`eval_behavior.py:23-25`; no results JSON), so the 60.3 ms and the 0.4271 belong to different paths. A world-model-scored decision over a REF-C-class 256-candidate fan would be about 32 saturated Thor batches × ~70 ms ≈ 2.2 s, roughly 22× over budget (ESTIMATED, R1 §8).
 - **The sequential 20-step roll is launch-bound, not FLOP-bound.**
 - **What fits 10 Hz on Thor with margin:** a REF-C-class decoder, a per-candidate scorer over 256 candidates, and one reference roll at k = 10 with a cached encoder. At most a top-8 imagined-consequence pass can be added.
 
@@ -307,6 +312,11 @@ ego: v0, ax_fd, 8-step speed history, yaw rate (learned null row) ────�
 removed: v1 tactical/strategic policies, tactical predictor, H15, probe tokens, nav-echo CE, hard-argmin CE
 ```
 
+**Inference inputs, stated per the 2026-08-03 rulings:**
+- The tactical posterior reads patch tokens and z only. It is vision-only at inference, and its kinematic labels are used at label time only.
+- The goal head reads patch tokens, z and ego kinematics, and never the tactical posterior or any situation-classifier output.
+- Both share the encoder trunk. That is admissible because neither head's output is an input to the other; Δ4's R² test against the flat inputs checks that the shared trunk has not re-created the leak.
+
 The v6 ladder (R1 §9.2) is nine discriminating experiments with both outcomes pre-stated. Together they cost about **5.8 A40-days**, mostly in parallel, and Δ2/Δ3/Δ4/Δ8 run on frozen fan dumps:
 
 | Δ | change | fixes | adopt if … / otherwise … | A40-days |
@@ -325,7 +335,7 @@ The v6 ladder (R1 §9.2) is nine discriminating experiments with both outcomes p
 - **The tactical level is falsifiable now.** It fails if the hierarchical selector (Δ4) is not separated-better than the flat one at matched capacity, and its inputs are regressable from the flat inputs at R² ≥ 0.99.
 - **The strategic level is not testable on PhysicalAI-AV.** It needs a corpus with a route or goal source (AlpaSim scenes, L2D, or an external mapped corpus).
 - **The world model as a decision component is falsifiable now (Δ8).**
-- **The whole thesis** is falsified at this scale if a flat REF-C-class planner with the same inputs and budget matches v6 on all four families and in closed loop. The existing evidence already leans this way: REF-B v2, which is hierarchical with no world model, scores 0.5913 against flat REF-C's 0.47.
+- **The whole thesis** is falsified at this scale if a flat REF-C-class planner with the same inputs and budget matches v6 on all four families and in closed loop. The one existing hierarchical-vs-flat pair (REF-B v2 0.5913 vs REF-C-base 0.4728, separated) leans this way. It is confounded by decoder family and label version, so it is a prior, not evidence.
 
 ---
 
@@ -371,7 +381,7 @@ The v6 ladder (R1 §9.2) is nine discriminating experiments with both outcomes p
 
 *Stream R3, `streams/R3_data_encoding_labels.md`.*
 
-1. **The programme trains on under 1 % of the corpus it has.** PhysicalAI-AV has 306,152 clips, about 1,700 h, 6 camera views, LiDAR and radar (PUBLISHED, Hugging Face dataset card, via R3). The parity corpus is 2,376 clips = 13.2 h = 0.776 %; the balanced v2 corpus is 2.94 %; v5f is 0.78 %. Every trained arm reads only `camera_front_wide`. MEASURED (code and manifests).
+1. **The programme trains on under 1 % of the corpus it has.** PhysicalAI-AV has 306,152 clips, about 1,700 h, 7 camera views (front-wide 120°, front-tele 30°, cross left/right 120°, rear left/right 70°, rear-tele 30°), LiDAR and radar (MEASURED, in-repo feature probe `PHYSICALAI_FEATURE_PROBE.md:70-76`; PUBLISHED, Hugging Face card). Its own split is train 153,625 / val 90,928 / test 61,599 clips. The parity corpus is 2,376 clips = 13.2 h = 0.776 %; the balanced v2 corpus is 2.94 %; v5f is 0.78 %. Every trained arm reads only `camera_front_wide`. MEASURED (code and manifests).
 2. **No image augmentation of any kind exists on real-camera pixels**: no mirror flip (with steer-sign and lateral-coordinate flip, the cheapest data doubling in driving), no random crop, no colour jitter. MEASURED (grep over the data and training tree; R3 §1.4).
 3. **The input cannot see what the longitudinal family needs.** Three RGB frames at 100 ms spacing, channel-stacked into 9 channels at 256 × 256, give the encoder 200 ms of motion baseline. The ego-speed scalar `v0` carries speed. That explains the no-speed control collapsing to 3.0 m, and it bounds how well closing speed to a lead vehicle can be inferred from pixels. The parity crop is 256 px over 51.4° (≈ 4.98 px/deg): a 1.8 m-wide car is ≈ 10 px at 50 m and ≈ 5 px at 100 m, less than one 16-px patch; a traffic-light face at 50 m is ≈ 1.7 px and a lane stripe at 30 m ≈ 1.2 px. ESTIMATED (R3 §2, simple trigonometry from `calib.py:38` and `situations.py:67`). A distant lead vehicle is barely present in the input, and traffic-light state is not legible at all.
 4. **Labels.** Steer = atan(2.9·κ) against true wheelbases of 2.73–3.22 m (+8.6 % cross-track error, MODEL_REGISTRY §0.1.1). Situation labels are derived from ego dynamics, which makes any ego-fed classifier partly read its own label source (the PI's 2026-08-03 ruling). The intersection label's cross-traffic half (`sc_cross.py`, needs `obstacle.offline`) is stranded in `incoming/` and never promoted, so `situations.py` computes only the turn half.
@@ -436,7 +446,7 @@ The field has converged on generating many candidates and scoring them well.
 
 All five are confirmed by V1. They are the published form of the programme's own E-GOAL-4 result and of v6 steps Δ2/Δ3.
 
-- **GoalFlow** (arXiv:2503.05689, PDMS 90.3, confirmed) shows goal points help. On this corpus, however, a goal adds nothing beyond `(v, ax_fd)` at 2 s (R1 §3.3). Take it as an inductive bias and don't build a goal supplier.
+- **GoalFlow** (arXiv:2503.05689, PDMS 90.3, confirmed) shows goal points help. No goal tested on this corpus has added information beyond `(v, ax_fd)`, but the only one tested was constructed from `(v, ax_fd)` (§4.3). Treat the geometric goal point as an untested inductive bias, not a refuted lever.
 - **SimLingo** (arXiv:2503.09594, confirmed) is a vision-only closed-loop leader with separate path and speed outputs, which is the lateral/longitudinal factorisation D-TAC1 found necessary.
 - W1 flags one counter-finding (not V1-checked): re-ranking a fixed fan cannot find trajectories the fan lacks, so search can beat scoring.
 
@@ -482,7 +492,7 @@ In driving, action labels come free from odometry. The scarce resource is *hours
 - **Privileged teachers** (learning by cheating, Roach, PlanT, Hydra-MDP): dense per-sample supervision from signals the model cannot see at inference.
 - **Rig transfer** for inverse-dynamics pseudo-labels: Rig3R (arXiv:2506.02265, confirmed) and focal-length canonicalisation. The programme's own IDM line failed held-out-rig transfer. Audit whether that test was truly held-out before redesigning.
 
-**The cheapest label-free source is already on disk:** the unused 99 % of PhysicalAI-AV, same rigs, in-domain. Use it before YouTube.
+**The cheapest label-free source is already on disk:** the unused part of PhysicalAI-AV's *train* split, about 153 k clips / 850 h, same rigs, in-domain. Use it before YouTube. Never use the HF val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge. Register that exclusion list before the run, or the one external number is contaminated (the REF-A I-JEPA leak class).
 
 **Verdicts:**
 - **ADOPT** mirror augmentation (with steer and lateral sign flips).
@@ -576,7 +586,7 @@ Tool-calling LLM agents are orders of magnitude too slow for a 10 Hz loop. Tools
 ### 10.10 Continual and continuous training
 
 With no fleet, TanitAD's data engine is:
-1. mine hard windows from the unused 99 % of PhysicalAI-AV and from closed-loop failures in NuRec/AlpaSim;
+1. mine hard windows from the unused train split of PhysicalAI-AV and from closed-loop failures in NuRec/AlpaSim;
 2. fine-tune on them with replay;
 3. re-gate on the four families.
 
@@ -632,7 +642,7 @@ Ranked by evidence × fit × cost. "In-house" means TanitAD's own measurement (c
 | 1 | Per-candidate **expected-cost** selection instead of hindsight-best CE | proven in-house + published | E-GOAL-4 0.5015 → 0.3917 (INHERITED); Hydra-MDP, GTRS, DriveSuprim | selection | 0.5 A40-day | Δ2 on parity-train fan dumps |
 | 2 | **Multi-target rule-based teacher** (collision, TTC, progress, comfort) distilled into the scorer | proven (NAVSIM winners) | Hydra-MDP arXiv:2406.06978 | no cost model | 0.3 | Δ3 from `obstacle.offline` |
 | 3 | **Speed history + measured acceleration** (`ax_fd`) as inputs | proven in-house | v0 as an action channel: +2.21 m [2.04, 2.39]; E-GOAL-3/4 | longitudinal | 1.0 | Δ1 |
-| 4 | **Train at the evaluation horizon** (K = 20) | proven in-house | RR-20: 0.424 → 0.348, speed bias erased | compounding | 0.9 | Δ7 |
+| 4 | **Train at the evaluation horizon** (K = 20) | measured in-house on a secondary endpoint (ADE); primary `CR_k` pending; lateral family worsened | RR-20: 0.4244 → 0.3485, speed bias removed | compounding | 0.9 | Δ7 |
 | 5 | **Planner reads rich spatial features**, not the 2,048-float WM state | proven in-house | same decoder: oracle-in-fan 0.164 on REF-C's map vs 0.338 on the WM state | readout bottleneck | 0.7 | Δ6 |
 | 6 | **Factorised path × speed outputs** | proven (published + in-house) | SimLingo arXiv:2503.09594; D-TAC1 | tactical | 0.3 | Δ4 |
 | 7 | **Mirror / SE(2) symmetry** | proven (published) | +20.6 % L2@3s on small data, arXiv:2403.11304 | small data | ≈ 1 | mirror-flip control arm |
@@ -678,7 +688,7 @@ Each bet is sized to leapfrog rather than catch up, and each carries a pre-commi
 ### Bet C — "1000× less labelled data" becomes a measured curve
 
 **Thesis.**
-- Pretrain the world model label-free on the unused 99 % of PhysicalAI-AV (front-wide + front-tele), and later on front-camera web video (LFG-style).
+- Pretrain the world model label-free on the unused part of PhysicalAI-AV's *train* split, about 153 k clips / 850 h, front-wide + front-tele. Never use the HF val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge; register the exclusion list before the run. Later, add front-camera web video (LFG-style).
 - Then train v6's heads at 1, 3, 10, 30 and 100 % of the paired hours.
 - Train REF-C at the same fractions.
 - Report all four families and closed loop.
@@ -722,6 +732,8 @@ Found by the streams and checked where marked. P0 = this week at near-zero GPU; 
 | P0 | Evidence built on the unlike comparison | HPP0 "7.9×" (`HPP0_CONFOUND_AUDIT.md:457`); registry §6 reading 2; the vision-anticipation panel (`generalization.py:371-399`) | withdraw as hierarchy evidence; re-run anticipation with zero-order-hold actions | 1 A40-hour |
 | P0 | Four-family instrument has no callers; tactical/strategic never measured on the canonical val | `taniteval/four_families.py`; `runner.py:341-342` | wire `all_families` into `runner.run_one`; fold distance-keeping into `driving.py`; extend the horizon fix to the lateral family | 1.5–2 eng-days |
 | P0 | RR-20 has no admissible verdict under its own pre-registration | `PREREG_rollout_recovery.md` (primary `CR_k` missing) | compute `CR_k` on the existing checkpoints | 0.05 A40-day |
+| P0 | RR-20 / RR-CTL are unregistered; two speed-bias instruments disagree 5× under one key | `…/incoming/2026-08-02-rollout-recovery-verdict/`; `four_families.py:185` vs `driving.py:342` | register both arms in `MODEL_REGISTRY.md` with all five JSONs; state which `speed_bias_mps` is canonical | 1 hour |
+| P0 | The Thor-timed path (`TacticalSelector`, 9 primitives) has no accuracy measurement | `eval_behavior.py:23-25`; runbook `:134-137` | score it once on val-40 (four families), so the dossier's latency and accuracy refer to one path; otherwise label the tick "latency of the v1 selector path, accuracy not measured" | ≤ 0.2 A40-day |
 | P0 | 22 M untrained H15 parameters in every v4-line run incl. v5f | CODE `train_flagship_v4.py:390,395,999`; `fourbrain.py:456` | confirm with a CPU state_dict diff; remove or train (Δ5) | CPU |
 | P0 | v5f's defining lever cannot rank | CODE `flagship_v15.py:638-656` | evaluate v5f's latest checkpoint once on the four families with `--goal-mode produced` or `neutral`, never `oracle`; stop the line at 10 k unless it beats REF-C-XL on the decision surface (R1 R-8) | ≤ 0.5 A40-day |
 | P0 | The world model has never been measured as a like-for-like forecaster on the canonical windows | R1 R-2 | roll v1 under the held last action on the 881, paired vs REF-C-base, CTRV and the bicycle | 0.1 A40-day |
@@ -754,6 +766,17 @@ Found by the streams and checked where marked. P0 = this week at near-zero GPU; 
 
 The goal is a dossier the PI can defend in front of anyone: every number with its estimator, every family reported, and the hierarchy stated as it stands.
 
+**Priority order, so a slipped item still leaves a defensible deliverable:**
+1. registry split (D1);
+2. four-family panel on val-40 for v1 and REF-C;
+3. Δ2 on val-40;
+4. the Thor tick stated honestly;
+5. the existing 12-scene closed-loop table as it is;
+6. envelope v0;
+7. new closed-loop runs.
+
+**Dependency.** The val-40 fan dumps are in the repo (`taniteval/results/fan_refc-{base,xl}-30k.pt`, `windows_*.pt`). The 600-episode fan dump is not: its poses lived on the terminated pod2 (`EGOAL_4.md:81`). Either cost its regeneration (the REF-C-XL checkpoint, the val-600 corpus and one GPU) or run days 2–5 on val-40 only and move the 600 arm to Phase A.
+
 | days | work | GPU | output |
 |---|---|---|---|
 | 1 | Fleet check after 52 days (what is alive, where v5f stopped, what it costs); allow `download.pytorch.org` for cloud sessions; registry split (D1) | 0 | a truthful fleet and leaderboard |
@@ -767,7 +790,7 @@ The goal is a dossier the PI can defend in front of anyone: every number with it
 
 | phase | days | aim | contents | gate to pass |
 |---|---|---|---|---|
-| A | 11–30 | make decisions measurable and fix the decision layer | the rest of the v6 ladder (Δ1, Δ4–Δ7, Δ9); mirror augmentation; `obstacle.offline` auxiliary heads; strategic supervisor v0 with conformal thresholds; the 600-episode deployment as the paired decision set and the closed-loop suite grown to ≥ 50 scenes; hooks, CI, token ledger | v6 separated-better than REF-C-base on at least one family and non-inferior on the rest, and non-inferior in closed loop; ≥ 4 of 9 ladder steps graduate |
+| A | 11–30 | make decisions measurable and fix the decision layer | the rest of the v6 ladder (Δ1, Δ4–Δ7, Δ9); mirror augmentation; `obstacle.offline` auxiliary heads; strategic supervisor v0 with conformal thresholds; the 600-episode deployment as the paired decision set and the closed-loop suite grown to ≥ 50 scenes; hooks, CI, token ledger | on the 600-episode deployment (val-40's MDE is 0.06–0.16 m): v6 separated-better than REF-C-base on at least one family and non-inferior on the rest, with pre-registered margins (e.g. paired ADE@2s upper bound < +0.02 m); non-inferior in closed loop; ≥ 4 of 9 ladder steps graduate |
 | B | 31–60 | scale what graduated | label-free pretraining on 10–30 % of PhysicalAI-AV (front-wide + front-tele) → the data-efficiency slope (Bet C); envelope v1 with a vision range head; RL fine-tuning in imagination or NuRec (Bet D); failure-mining with replay; the strategic test on a corpus with route information (AlpaSim routes or L2D) | slope with R² ≥ 0.8 over ≥ 4 fractions; supervisor AUROC gate (Bet B) |
 | C | 61–90 | prove it externally | AlpaSim Challenge entry or its successor; a second external benchmark if feasible; the safety case (ISO/PAS 8800 / UL 4600 patterns); the data-efficiency paper | an external number with a rank; a safety case with explicit assumptions |
 
@@ -780,12 +803,13 @@ The goal is a dossier the PI can defend in front of anyone: every number with it
 - **Pods to keep, release or provision** for Phases A–B.
 - **Cloud-environment network access** (`download.pytorch.org`).
 - **Whether the 05.10 dossier states the hierarchy result as it stands.** This review recommends it does.
+- **Which reading of "4B architecture" the 05.10 evaluation scores.** Phase 0 (`Mission Plan.md:181`) asks for "a running architecture with the most important hypotheses like the 4B architecture". v1 satisfies the four brains as built, and it loses to a flat planner. v6 keeps four measurable *roles*: proposer, selector, forecaster, supervisor. This review recommends scoring the roles, and saying so in the dossier.
 
 ### 14.4 How to run it with agents, efficiently
 
 | role | model | effort | why |
 |---|---|---|---|
-| orchestrator: briefs, relay, verification of load-bearing claims | Opus 5.5 | high | the programme's own scorecard locates its dominant error source at this layer (R5) |
+| orchestrator: briefs, relay, verification of load-bearing claims | Opus 5.5 (Opus 5 where 5.5 is not yet available) | high | the programme's own scorecard locates its dominant error source at this layer (R5) |
 | architecture judgment, gate adjudication, causal analysis | Opus 5.5 | high to xhigh | low error tolerance; this review's architecture stream is the example |
 | implementation, experiments, literature screens | Sonnet 5 | medium to high | bounded tasks with a check; about half the Opus price |
 | extraction, lint triage, citation and number checks | Haiku 4.5 | low | the judgment lives in the tool; this review's fact base and citation check cost little |
@@ -827,6 +851,7 @@ Prices, per million input/output tokens: Haiku 4.5 $1/$5, Sonnet 5 $2/$10, Opus 
 | W3 | frontier: structure, reasoning, tools, neural operators, guarantees | Sonnet 5 | `streams/W3_frontier_structure_reasoning_guarantees.md` |
 | H1 | fact base: registry arms, retractions, hypotheses, timeline | Haiku 4.5 | `streams/H1_fact_base.md` |
 | V1 | independent citation check of 31 load-bearing references | Haiku 4.5 | `streams/V1_citation_check.md` |
+| X1 | red-team of this synthesis: 7 must-fix and 11 should-fix findings, all applied | Fable 5.1 | `streams/X1_redteam.md` |
 
 The orchestrator (Opus 5.5) wrote this synthesis and re-verified these load-bearing facts in the source:
 - the expert-future-controls headline (`rollout.py:146-147,181-185`);
@@ -843,6 +868,14 @@ All deliverables are in this folder and nothing lives only in the container.
 - **The flagship's speed bias.** The 2026-08-04 "speed-setting bias" (+0.1911 m/s) was measured on the WM-fidelity path. It is a world-model integration bias, fixed by K = 20 training, not a planning decision.
 - **Retraction classes.** H1's retraction-class counts (C3 19, C4 15, C5 12, C1 8, C2 7, C6 7 of 68) are a Haiku grouping of free text and disagree with the log's own ranked order. Treat them as indicative only.
 - **V1's summary line.** V1 reports 23 confirmed / 7 unconfirmed; its table rows show 24 confirmed, 6 with the number unconfirmed, and 1 ID mismatch. The table is used here.
+- **Applied from the red-team (X1).** The corrections, and the source each rests on:
+  - PhysicalAI-AV has 7 camera streams, not 6 (in-repo feature probe).
+  - The Thor tick is v1's 9-manoeuvre selector, a decision on an unscored path, not a single rollout of given actions.
+  - The hierarchy's losses are 4.0–7.2× on full-set numbers; the deprecated P2 split-mean is no longer used.
+  - The goal-information claim was true by construction and is restated.
+  - E-GOAL-4 is out-of-fold within val-600 and must replicate on train-corpus fans before it decides GPU-days.
+  - Label-free pretraining is restricted to the HF train split, with a registered exclusion list.
+  - Two RR-20 speed-bias instruments disagree 5× and are both quoted.
 
 ## Appendix C — Method, limits and orchestrator findings
 

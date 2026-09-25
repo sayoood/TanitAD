@@ -1,0 +1,1985 @@
+<title>TanitAD Programme Review</title>
+<meta name="description" content="Whole-programme review of TanitAD: 4-brain world model, training, data, evaluation, agent harness, frontier research and plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#121820; --muted:#556070; --rule:#D8DDE5;
+  --accent:#9C6200; --accent-soft:#FFF3D6; --lane:#E3A21A; --code-bg:#EEF1F5;
+  --ev-m-fg:#17693F; --ev-m-bg:#DFF3E7; --ev-p-fg:#1D56A0; --ev-p-bg:#E2ECF9;
+  --ev-i-fg:#6A4A9E; --ev-i-bg:#EEE8F8; --ev-e-fg:#865300; --ev-e-bg:#FAEED3;
+  --ev-h-fg:#46505E; --ev-h-bg:#E9EDF2; --ev-u-fg:#A02828; --ev-u-bg:#FBE5E5;
+  --callout:#F8F1E1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1216; --surface:#151A21; --ink:#E3E7ED; --muted:#98A3B2; --rule:#28303A;
+    --accent:#F0B13A; --accent-soft:#2A2110; --lane:#E9AE2E; --code-bg:#1B222B;
+    --ev-m-fg:#7BD7A2; --ev-m-bg:#12301F; --ev-p-fg:#8DB9F2; --ev-p-bg:#142741;
+    --ev-i-fg:#C3A8F0; --ev-i-bg:#261C3A; --ev-e-fg:#F2C572; --ev-e-bg:#33260C;
+    --ev-h-fg:#B9C2CE; --ev-h-bg:#222A34; --ev-u-fg:#F29A9A; --ev-u-bg:#3A1616;
+    --callout:#1E1A10;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1216; --surface:#151A21; --ink:#E3E7ED; --muted:#98A3B2; --rule:#28303A;
+  --accent:#F0B13A; --accent-soft:#2A2110; --lane:#E9AE2E; --code-bg:#1B222B;
+  --ev-m-fg:#7BD7A2; --ev-m-bg:#12301F; --ev-p-fg:#8DB9F2; --ev-p-bg:#142741;
+  --ev-i-fg:#C3A8F0; --ev-i-bg:#261C3A; --ev-e-fg:#F2C572; --ev-e-bg:#33260C;
+  --ev-h-fg:#B9C2CE; --ev-h-bg:#222A34; --ev-u-fg:#F29A9A; --ev-u-bg:#3A1616;
+  --callout:#1E1A10;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16.5px;line-height:1.62;padding-inline:16px;padding-block:0 64px}
+.hero{max-width:1240px;margin:0 auto;padding-block:40px 20px}
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hero h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:clamp(34px,5.4vw,58px);
+  line-height:1.02;letter-spacing:-.005em;margin:.25em 0 .2em;text-wrap:balance}
+.hero p.sub{max-width:72ch;color:var(--muted);font-size:18px;margin:0}
+.lane{height:6px;margin-block:22px 0;background:repeating-linear-gradient(90deg,var(--lane) 0 46px,transparent 46px 78px);border-radius:2px;opacity:.9}
+.legend{display:flex;flex-wrap:wrap;gap:8px 10px;margin-top:16px;align-items:center;font-size:13.5px;color:var(--muted)}
+.wrap{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:28px}
+@media (min-width:1080px){.wrap{grid-template-columns:260px minmax(0,1fr)}}
+nav.toc{font-size:14px}
+@media (min-width:1080px){nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;
+  max-height:calc(100vh - 32px);overflow:auto;padding-right:8px}}
+nav.toc details summary{cursor:pointer;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);padding-block:6px}
+nav.toc ol{list-style:none;margin:0;padding:0}
+nav.toc .toc-l0>li{margin-block:6px}
+nav.toc .toc-l0>li>a{font-weight:600;color:var(--ink)}
+nav.toc .toc-l1{margin:4px 0 8px 10px;border-left:2px solid var(--rule);padding-left:10px}
+nav.toc .toc-l1 a{color:var(--muted);font-size:13.5px}
+nav.toc a{text-decoration:none;display:block;padding-block:1px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--accent)}
+main{min-width:0;background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:clamp(18px,3.2vw,44px)}
+main>*{max-width:80ch}
+main>.tbl,main>pre,main>figure{max-width:none}
+h2,h3,h4{font-family:"Barlow Condensed","Arial Narrow",sans-serif;line-height:1.15;text-wrap:balance;scroll-margin-top:16px}
+h2{font-size:32px;font-weight:700;margin:2.2em 0 .5em;padding-top:.6em;border-top:1px solid var(--rule)}
+main>h2:first-child{margin-top:0;border-top:0;padding-top:0}
+h3{font-size:23px;font-weight:600;margin:1.8em 0 .4em}
+h4{font-size:18px;font-weight:600;margin:1.4em 0 .3em;letter-spacing:.01em}
+p,li{max-width:80ch}
+a{color:var(--accent)}
+strong{font-weight:600}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em;background:var(--code-bg);padding:.08em .35em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+pre code{background:none;padding:0;overflow-wrap:normal}
+blockquote{margin:1.2em 0;padding:12px 18px;background:var(--callout);border-left:4px solid var(--lane);border-radius:0 8px 8px 0}
+blockquote p{margin:.4em 0}
+.tbl{overflow-x:auto;margin:1.1em 0;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;vertical-align:top;padding:8px 11px;border-bottom:1px solid var(--rule)}
+th{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  background:var(--bg);font-weight:500;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td{min-width:7ch}
+hr{border:0;border-top:1px dashed var(--rule);margin:2em 0}
+.ev{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;font-weight:500;letter-spacing:.06em;
+  padding:1px 6px;border-radius:999px;vertical-align:1px;line-height:1.55;white-space:nowrap}
+.ev-m{color:var(--ev-m-fg);background:var(--ev-m-bg)} .ev-p{color:var(--ev-p-fg);background:var(--ev-p-bg)}
+.ev-i{color:var(--ev-i-fg);background:var(--ev-i-bg)} .ev-e{color:var(--ev-e-fg);background:var(--ev-e-bg)}
+.ev-h{color:var(--ev-h-fg);background:var(--ev-h-bg)} .ev-u{color:var(--ev-u-fg);background:var(--ev-u-bg)}
+figure.chart{margin:1.4em 0;padding:14px 12px 8px;border:1px solid var(--rule);border-radius:8px;overflow-x:auto}
+figure.chart figcaption{font-size:13.5px;color:var(--muted);margin-top:6px;max-width:80ch}
+footer{max-width:1240px;margin:28px auto 0;color:var(--muted);font-size:13.5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+<header class="hero">
+  <div class="eyebrow">TanitAD · independent programme review · 2026-09-25</div>
+  <h1>TanitAD Programme Review</h1>
+  <p class="sub">Model, training, data, evaluation and agent-harness review of the hierarchical latent world model, with frontier research mapped to the programme's defects and a sequenced plan.</p>
+  <div class="lane" aria-hidden="true"></div>
+  <div class="legend"><span>Evidence classes:</span> <span class="ev ev-m">MEASURED</span> <span class="ev ev-p">PUBLISHED</span> <span class="ev ev-i">INHERITED</span> <span class="ev ev-e">ESTIMATED</span> <span class="ev ev-h">HYPOTHESIS</span> <span class="ev ev-u">UNVERIFIED</span></div>
+</header>
+<div class="wrap">
+  <nav class="toc" aria-label="Contents"><details open><summary>Contents</summary><ol class="toc-l0"><li><a href="#1-verdict">1. Verdict</a><ol class="toc-l1"><li><a href="#what-to-present-on-05102026-and-what-not-to">What to present on 05.10.2026, and what not to</a></li><li><a href="#the-five-decisions-this-review-asks-of-the-pi">The five decisions this review asks of the PI</a></li></ol></li><li><a href="#2-scorecard">2. Scorecard</a></li><li><a href="#3-what-happened-after-the-2026-07-25-review">3. What happened after the 2026-07-25 review</a></li><li><a href="#4-the-world-model-and-its-hierarchy">4. The world model and its hierarchy</a><ol class="toc-l1"><li><a href="#41-what-each-headline-number-measures">4.1 What each headline number measures</a></li><li><a href="#42-the-hierarchy-as-built">4.2 The hierarchy as built</a></li><li><a href="#43-the-decision-defect">4.3 The decision defect</a></li><li><a href="#44-the-longitudinal-deficit">4.4 The longitudinal deficit</a></li><li><a href="#45-the-latent-state-resolution-and-temporal-context">4.5 The latent state, resolution and temporal context</a></li><li><a href="#46-representation-and-why-the-later-lines-failed">4.6 Representation, and why the later lines failed</a></li><li><a href="#47-imagination">4.7 Imagination</a></li><li><a href="#48-deployability">4.8 Deployability</a></li><li><a href="#49-verdict-on-the-model-and-v6">4.9 Verdict on the model, and v6</a></li></ol></li><li><a href="#5-why-the-models-have-the-results-they-have">5. Why the models have the results they have</a></li><li><a href="#6-training-recipes-and-non-collapse">6. Training recipes and non-collapse</a></li><li><a href="#7-data-encoding-and-resolution">7. Data, encoding and resolution</a></li><li><a href="#8-evaluation-and-statistics">8. Evaluation and statistics</a></li><li><a href="#9-the-agentic-harness">9. The agentic harness</a></li><li><a href="#10-frontier-research-mapped-onto-tanitad">10. Frontier research, mapped onto TanitAD</a><ol class="toc-l1"><li><a href="#101-planning-and-trajectory-selection-the-decision-defect">10.1 Planning and trajectory selection (the decision defect)</a></li><li><a href="#102-world-models-and-imagination-based-training">10.2 World models and imagination-based training</a></li><li><a href="#103-foundation-models-vlas-and-robotics-transfer">10.3 Foundation models, VLAs and robotics transfer</a></li><li><a href="#104-data-efficiency-needing-far-less-labelled-driving-goal-2s-first-priority">10.4 Data efficiency: needing far less labelled driving (Goal 2's first priority)</a></li><li><a href="#105-structured-physical-world-understanding">10.5 Structured physical world understanding</a></li><li><a href="#106-mathematical-guarantees-and-the-safety-envelope-goal-2-no-compromise-in-safety">10.6 Mathematical guarantees and the safety envelope (Goal 2: "no compromise in safety")</a></li><li><a href="#107-symbolic-and-neuro-symbolic-reasoning-knowledge-injection">10.7 Symbolic and neuro-symbolic reasoning; knowledge injection</a></li><li><a href="#108-physics-grounded-neural-operators-and-dynamics">10.8 Physics-grounded neural operators and dynamics</a></li><li><a href="#109-tool-use-for-autonomous-driving">10.9 Tool use for autonomous driving</a></li><li><a href="#1010-continual-and-continuous-training">10.10 Continual and continuous training</a></li><li><a href="#1011-brain-and-cortex-inspired-approaches">10.11 Brain- and cortex-inspired approaches</a></li><li><a href="#1012-ai-that-engineers-ai-harness-engineering">10.12 AI that engineers AI; harness engineering</a></li></ol></li><li><a href="#11-catalogue-of-proven-strategies-for-this-programme">11. Catalogue of proven strategies for this programme</a></li><li><a href="#12-disruptive-bets">12. Disruptive bets</a><ol class="toc-l1"><li><a href="#bet-a-the-world-model-becomes-the-critic-not-the-headline">Bet A — The world model becomes the critic, not the headline</a></li><li><a href="#bet-b-the-strategic-brain-becomes-the-safety-supervisor-the-mission-describes">Bet B — The strategic brain becomes the safety supervisor the mission describes</a></li><li><a href="#bet-c-1000-less-labelled-data-becomes-a-measured-curve">Bet C — "1000× less labelled data" becomes a measured curve</a></li><li><a href="#bet-d-train-in-imagination-and-in-re-simulation">Bet D — Train in imagination and in re-simulation</a></li><li><a href="#bet-e-let-agents-engineer-the-stack-under-mechanical-guardrails">Bet E — Let agents engineer the stack, under mechanical guardrails</a></li></ol></li><li><a href="#13-fix-list">13. Fix list</a></li><li><a href="#14-the-plan">14. The plan</a><ol class="toc-l1"><li><a href="#141-the-ten-days-to-the-05102026-evaluation">14.1 The ten days to the 05.10.2026 evaluation</a></li><li><a href="#142-days-1190">14.2 Days 11–90</a></li><li><a href="#143-decisions-only-the-pi-can-make">14.3 Decisions only the PI can make</a></li><li><a href="#144-how-to-run-it-with-agents-efficiently">14.4 How to run it with agents, efficiently</a></li></ol></li><li><a href="#15-what-would-change-this-assessment">15. What would change this assessment</a></li><li><a href="#appendix-a-streams-and-deliverables">Appendix A — Streams and deliverables</a></li><li><a href="#appendix-b-reconciliations-between-streams">Appendix B — Reconciliations between streams</a></li><li><a href="#appendix-c-method-limits-and-orchestrator-findings">Appendix C — Method, limits and orchestrator findings</a><ol class="toc-l1"><li><a href="#how-this-review-was-produced">How this review was produced</a></li><li><a href="#alignment-with-the-mission-plan">Alignment with the mission plan</a></li><li><a href="#fix-now-items-found-by-the-orchestrator-measured-2026-09-25">Fix-now items found by the orchestrator (MEASURED 2026-09-25)</a></li></ol></li></ol></details></nav>
+  <main><p><strong>Date:</strong> 2026-09-25 · <strong>Commissioned by:</strong> Sayed (PI) · <strong>Repo state reviewed:</strong> <code>main</code> at <code>467ce8a</code> (last commit 2026-08-04) · <strong>Scope:</strong> the model and its hierarchy, training and anti-collapse, data and encoding, evaluation, the agent harness, frontier research that can be adapted, and a plan.</p>
+<p><strong>How to read this.</strong> Section 1 is the verdict and the five decisions it asks for. Sections 3–9 are the review, one area each, with every claim tagged by evidence class. Section 10 maps frontier research onto the programme's defects. Sections 11–14 are the strategy: proven levers, disruptive bets, the fix list and the plan. Stream reports with full file:line evidence are in <code>streams/</code>. Model facts follow <code>Project Steering/MODEL_REGISTRY.md</code> and raw result JSONs; ADE numbers are full-set means with episode-cluster bootstrap CI95 over the canonical 881 val windows / 40 episodes unless stated.</p>
+<p><strong>Evidence classes:</strong> <span class="ev ev-m">MEASURED</span> (programme artifact, path given) · <span class="ev ev-p">PUBLISHED</span> (cited paper) · <span class="ev ev-i">INHERITED</span> (another document, not re-verified here) · <span class="ev ev-e">ESTIMATED</span> · <span class="ev ev-h">HYPOTHESIS</span> · <span class="ev ev-u">UNVERIFIED</span>. "CODE" marks a static fact read from source at the cited file:line.</p>
+<hr />
+<h2 id="1-verdict">1. Verdict</h2>
+<p>TanitAD has built three things of lasting value:
+- <strong>An unusually rigorous measurement culture.</strong> Evidence classes, pre-registration, a paired episode-cluster bootstrap, and a retraction log organised by root cause.
+- <strong>A camera world model whose latent integrates given driving controls about as well as a kinematic bicycle model:</strong> 0.4271 [0.3675, 0.4871] vs 0.4518 [0.3097, 0.6174]. The comparison is unpaired and not separated; the paired delta has not been computed.
+- <strong>A credible embedded path.</strong> A v1 tick (encoder, heads, a 9-manoeuvre imagined fan, scoring) runs in 60.3 ms p50 / 63.1 ms p95 on Jetson Thor against a 100 ms budget (<span class="ev ev-m">MEASURED</span>, <code>TanitAD Research Hub/Production &amp; Optimization/THOR_DEPLOYMENT_RUNBOOK.md:286-304</code>, ±13 % run-to-run). That selector path has no open-loop score yet. NuRec scenes render on Thor; where the closed-loop driver's inference ran is not recorded.</p>
+<p>It has not yet built a <em>hierarchical</em> driver that beats its own flat reference. REF-C clears all three trivial floors (CV separated; CTRV and best-of-3 on the point estimate, <code>MODEL_REGISTRY.md</code> §6), while the hierarchy's two decision paths (1.9028 plan-tracked, 3.3839 direct) do not clear CV (0.8377). The review now explains why, and the explanation changes the plan.</p>
+<p><strong>1. The headline "tie" is not a driving result.</strong> The flagship's 0.4271 m is scored by feeding the world model the expert's recorded future steering and acceleration (CODE <code>taniteval/taniteval/rollout.py:146-147</code>; the harness itself labels it <code>actions_source="expert_future"</code>, <code>honest_metric_name="wm_fidelity_ade_2s"</code>, <code>:181-185</code>). A zero-parameter bicycle model given the same controls scores 0.4518 [0.3097, 0.6174] (<span class="ev ev-m">MEASURED</span>, <code>…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json</code>). REF-C, which must predict the future, scores 0.4728. The registry has recorded this since 2026-07-27 (<code>MODEL_REGISTRY.md:192</code>), yet its §6 leaderboard still ranks the two as "1=". On the two paths where the hierarchy itself decides, the flat 104 M REF-C-base beats it by 4.0× to 7.2× (0.4728 vs plan-tracked 1.9028 and tactical head 3.3839, all full-set, <code>closedloop_flagship-30k.CORRECTED.json</code>). The P2 CEM planner's 0.893 is a deprecated split-mean of a path handed a future speed target, and is not comparable (registry §6 row 10).</p>
+<p><strong>2. The hierarchy is not running as designed.</strong>
+- The tactical and strategic cadences are configured but read by no code (<code>config.py:118,140</code>).
+- All three brains see the same 0.8 s window.
+- The strategic brain is trained on an echo of its own label and receives a constant command at inference.
+- <strong>0 of 3 inter-brain seams are load-bearing.</strong> The July review's "1 of 3" was an artefact of the deprecated estimator.
+- About 85 M of the 263 M parameters sit off every scored path.
+- In the v4/v5f line a further 22 M (the H15 imagination field) never receive a gradient (CODE, verified; §4 and §6).</p>
+<p><strong>3. The decision defect is a missing cost model and a wrong training target, not a missing layer.</strong>
+- <strong>The wrong target.</strong> Selectors are trained to guess which candidate happened to be closest to one realised future, not to minimise expected cost.
+- <strong>The missing feature.</strong> No arm receives the single most informative longitudinal observable, a 0.1 s speed difference.
+- <strong>What the right target plus that feature achieved.</strong> A per-candidate expected-cost regressor over REF-C's fan, given that feature, reduced ADE from 0.5015 to 0.3917 with no goal input, and to 0.3040 with a <code>(v, ax_fd)</code> goal head. These are <span class="ev ev-m">MEASURED</span>-by-path (<code>…/incoming/2026-07-28-egoal-4-joint/raw/e4_select_sel.json</code>) but out-of-fold <em>within</em> val-600; the selector was never trained on the train corpus. They are also 600-episode numbers, a different and easier deployment (CV floor 0.692 vs 0.838; REF-C-XL's own pick there is 0.5015), so they are not comparable with the 40-episode figures in claim 1. This is still the programme's largest measured decision-quality lever, and it came from a better target and a better feature, not from more hierarchy. It must replicate on train-corpus fans before it decides any GPU-days (decision D2a).</p>
+<p><strong>4. The longitudinal gap is largely a data and interface fact.</strong>
+- <strong>Noisy acceleration channel.</strong> The dataset's logged acceleration correlates only r = 0.434 with the pose-derived one (<span class="ev ev-i">INHERITED</span>, <code>IDM_DIAGNOSIS.md</code>).
+- <strong>No speed history.</strong> Ego speed is broadcast as a constant across the whole window, so the world model never sees how speed has been changing (CODE <code>flagship_losses.py:227-238</code>).
+- <strong>The lead car is barely visible.</strong> At the parity crop's 4.98 px/deg, a car 50 m ahead is about 10 px wide (<span class="ev ev-e">ESTIMATED</span>, R3).
+- <strong>The speed bias is a compounding artefact.</strong> The world model is trained at 4 rollout steps and scored at 20. A 20-step fine-tune removed the bias (driving harness +0.19 → −0.002 m/s; four-family instrument +0.94 → −0.009 m/s) and cut WM-fidelity ADE from 0.424 to 0.348 (<span class="ev ev-m">MEASURED</span>, raw JSON in <code>…/incoming/2026-08-02-rollout-recovery-verdict/</code>, not yet registered; primary <code>CR_k</code> pending).</p>
+<p><strong>5. The strategy is running on a sliver of its assets and has skipped its deciding experiments.</strong>
+- <strong>Data usage is a sliver.</strong> The programme trains on 0.78 % of PhysicalAI-AV: 13.2 h of about 1,700 h, 1 of 7 camera streams, no image augmentation (R3; dataset size <span class="ev ev-m">MEASURED</span> by the in-repo feature probe <code>…/2026-07-26-physicalai-feature-probe/PHYSICALAI_FEATURE_PROBE.md</code> and <span class="ev ev-p">PUBLISHED</span> on the Hugging Face card).
+- <strong>The deciding experiments were skipped.</strong> The three experiments that decide the thesis were not run: hierarchy vs flat, the data-efficiency slope, and one recognised external number. The July review asked for all three.
+- <strong>Where things stand.</strong> The repository has been silent for 52 days. The mission plan's first final evaluation is on <strong>05.10.2026</strong>, ten days from now.</p>
+<h3 id="what-to-present-on-05102026-and-what-not-to">What to present on 05.10.2026, and what not to</h3>
+<p>Do not present 0.4271 as a planning result or the hierarchy as validated. Present:
+- <strong>A camera-only world model</strong> whose latent integrates given controls as well as a kinematic model (not separated), and a v1 selector tick that runs inside budget on Thor. State that the accuracy of that tick's path is not yet measured.
+- <strong>A flat planner that drives,</strong> plus a measured, pre-registered route to making it better through cost-aware selection.
+- <strong>A safety envelope</strong> designed around it.
+- <strong>An evaluation apparatus that caught its own headline error.</strong> That last point is a strength when stated plainly.</p>
+<h3 id="the-five-decisions-this-review-asks-of-the-pi">The five decisions this review asks of the PI</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>decision</th>
+<th>why</th>
+<th>cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td><strong>Split the leaderboard into two tables.</strong> Planners (the model chooses) and world-model fidelity (given the expert's controls). No rank may cross them.</td>
+<td>Row 1= compares unlike surfaces; everything downstream inherited it</td>
+<td>0 GPU, 1 eng-day</td>
+</tr>
+<tr>
+<td>D2</td>
+<td><strong>D2a, now:</strong> retrain the expected-cost selector on parity-train fan dumps (Δ2) and score it paired on val-40 and val-600; E-GOAL-4 graduates only if its gain survives. <strong>D2b, on graduation:</strong> make REF-C the driving baseline-of-record and build v6 around the decision layer. That means REF-C's fan (or a factorised lat×lon fan), the expected-cost selector with <code>ax_fd</code>, multi-target costs distilled from <code>obstacle.offline</code> tracks, a K = 20 world model as a consequence feature, a kinematic decoder, and a safety envelope</td>
+<td>the only lever with a large measured effect is selection; the hierarchy has 0/3 load-bearing seams</td>
+<td>D2a ≈ 0.5 A40-day; the whole ladder ≈ 5.8; one full v6 run after it ≈ 5–7</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><strong>Re-scope the strategic brain to what the mission defines and the data can supervise.</strong> A supervisor (engage/degrade/ODD, calibrated uncertainty, runtime assurance) plus a predicted goal point. Pre-register the tactical-level test now (Δ4, 0.3 A40-day, frozen dumps); pre-register the strategic-level test once a corpus with a route or goal source exists (AlpaSim routes, L2D)</td>
+<td>on this corpus the strategic level has no information the operative lacks (R1 §2.4)</td>
+<td>0 GPU to re-scope; the test later</td>
+</tr>
+<tr>
+<td>D4</td>
+<td><strong>Run the data-efficiency slope now.</strong> Label-free world-model pretraining on the unused part of PhysicalAI-AV's <em>train</em> split (never its val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge), and later LFG-style front-camera video, then supervised heads at 1/3/10/30/100 % of labelled hours, against REF-C at the same fractions, on the four families</td>
+<td>"1000× less data" is the mission's first priority goal, and it has never been measured</td>
+<td>≈ 10–25 A40-days for a first slope</td>
+</tr>
+<tr>
+<td>D5</td>
+<td><strong>Enter one external closed-loop benchmark.</strong> The NVIDIA AlpaSim E2E Closed Loop Challenge 2026 has a track on PhysicalAI-AV NuRec (the programme's own data and harness); the closing date (reported 2026-10-31, <span class="ev ev-u">UNVERIFIED</span>) and front-camera-only eligibility (the default configuration is 4 cameras) must both be confirmed this week</td>
+<td>no recognised external number exists</td>
+<td>≈ 1 eng-day to confirm eligibility</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-scorecard">2. Scorecard</h2>
+<p>Grades compare against the independent review of 2026-07-25 (<code>Reviews/2026-07-25-independent-chief-scientist-review/00_CHIEF_SCIENTIST_REVIEW.md</code> §2).</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>dimension</th>
+<th style="text-align: center;">07-25</th>
+<th style="text-align: center;">now</th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Measurement infrastructure (instruments, estimator, gate)</td>
+<td style="text-align: center;">A−</td>
+<td style="text-align: center;">A−</td>
+<td>four-family, distance-keeping and corridor instruments now exist and pass their own controls</td>
+</tr>
+<tr>
+<td>Measurement in use (what decisions actually rest on)</td>
+<td style="text-align: center;">C+</td>
+<td style="text-align: center;"><strong>C</strong></td>
+<td>the four-family instrument has zero callers in the standard runner; tactical/strategic never measured on the canonical val; the leaderboard still mixes WM fidelity with planners</td>
+</tr>
+<tr>
+<td>Core-thesis validation (hierarchy, imagination, sub-300 M structure)</td>
+<td style="text-align: center;">D+</td>
+<td style="text-align: center;"><strong>D</strong></td>
+<td>graded as implemented, not as a refuted idea (the strategic level is untestable on this corpus); seams corrected 1/3 → 0/3; the hierarchy's own decisions lose to a flat planner 4.0–7.2×; cadence never executed; v5f's imagination tokens have no candidate axis</td>
+</tr>
+<tr>
+<td>World model as a dynamics model</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">B+</td>
+<td>latent integration of given controls matches a bicycle model; K = 20 fine-tune fixes the speed bias</td>
+</tr>
+<tr>
+<td>Architecture and trainer code</td>
+<td style="text-align: center;">C</td>
+<td style="text-align: center;">C</td>
+<td>22 M dead parameters in the v4/v5f line; no <code>torch.compile</code>, fused optimiser or flash attention in 8 trainers; seeds only via <code>torch.manual_seed</code></td>
+</tr>
+<tr>
+<td>Data strategy</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;"><strong>D+</strong></td>
+<td>0.78 % of the corpus, 1 of 7 camera streams, no augmentation, the IDM route refuted as built, the corpus contrast confounded</td>
+</tr>
+<tr>
+<td>Embedded deployment</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">A−</td>
+<td>60.3 ms p50 on Thor for v1's 9-manoeuvre selector path (whose accuracy is not yet measured); NuRec rendering on Thor</td>
+</tr>
+<tr>
+<td>Workflow, automation, documentation</td>
+<td style="text-align: center;">B−</td>
+<td style="text-align: center;"><strong>C+</strong></td>
+<td>no hooks, CI or pre-commit enforce any rule; no LLM spend ledger; <code>LOOP_STATE.md</code> grew 122 → 203 KB; 52 days of silence</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="3-what-happened-after-the-2026-07-25-review">3. What happened after the 2026-07-25 review</h2>
+<p>The previous review ranked 16 proposals. Follow-through, checked in the repository today (<span class="ev ev-m">MEASURED</span> by file presence and grep):</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>proposal</th>
+<th>status</th>
+<th>evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gate co-primary on corridor departure at a registered horizon</td>
+<td>done</td>
+<td><code>stack/scripts/run_gate.py:65</code></td>
+</tr>
+<tr>
+<td>Closed-loop CIs through the episode-cluster bootstrap</td>
+<td>done</td>
+<td><code>taniteval/taniteval/closedloop.py:782</code></td>
+</tr>
+<tr>
+<td><code>safe_commit.py</code>, <code>registry_lint.py</code>, <code>repo_janitor.py</code></td>
+<td>done</td>
+<td><code>tools/</code>, with tests</td>
+</tr>
+<tr>
+<td><code>results_ledger.py</code>, <code>ckpt_relay.py</code>, <code>LOOP_STATE</code> split, fan-out governor</td>
+<td>not done</td>
+<td>no files; <code>LOOP_STATE.md</code> grew instead</td>
+</tr>
+<tr>
+<td><strong>Hierarchy vs flat planner-over-WM, pre-registered</strong></td>
+<td><strong>not done</strong></td>
+<td>still "PROVE — build the decisive test" (<code>PROGRAM_OVERVIEW.md:81</code>); its precondition (a live route input) is the target of <code>PREREG_lan_refc.md</code>, whose falsifier fired on 2026-08-03</td>
+</tr>
+<tr>
+<td><strong>Data-efficiency slope</strong></td>
+<td><strong>not done</strong></td>
+<td>the phrase appears only inside the 07-25 review files</td>
+</tr>
+<tr>
+<td><strong>One recognised external benchmark number</strong></td>
+<td><strong>not done</strong></td>
+<td>AlpaSim-first was adopted; no external number exists</td>
+</tr>
+<tr>
+<td>Give the reactive renderer an owner</td>
+<td>largely done</td>
+<td>NuRec scenes render on Thor; closed-loop videos of v1 and REF-C were rendered there; where the driver's inference ran is not recorded</td>
+</tr>
+</tbody>
+</table></div>
+<p>The pattern the July review named has repeated. The apparatus improved on every axis, while the three experiments that decide the thesis were not run. Then the repository went quiet: the last commit is 2026-08-04 (<span class="ev ev-m">MEASURED</span>, <code>git log</code>). 149 commits fall on 9 calendar days, 49 of them on 2026-08-03 alone (<span class="ev ev-m">MEASURED</span>).</p>
+<hr />
+<h2 id="4-the-world-model-and-its-hierarchy">4. The world model and its hierarchy</h2>
+<p><em>Stream R1 (Opus), <code>streams/R1_architecture_causal.md</code>. The load-bearing code facts in this section were re-verified by the orchestrator.</em></p>
+<h3 id="41-what-each-headline-number-measures">4.1 What each headline number measures</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>path</th>
+<th>what it receives at inference</th>
+<th>brains on the path</th>
+<th>ADE@2s</th>
+<th>what it measures</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flagship v1 <code>flagship-30k</code></td>
+<td>8 encoded frames, past controls, v0, <strong>the expert's future controls for all 20 steps</strong></td>
+<td>encoder → operative predictor (intent-free) → step readout</td>
+<td><strong>0.4271</strong> [0.3675, 0.4871]</td>
+<td>how well the latent integrates known controls; nothing is chosen</td>
+</tr>
+<tr>
+<td>kinematic bicycle, same expert controls</td>
+<td>v0 + expert future controls</td>
+<td>none</td>
+<td>0.4518 [0.3097, 0.6174]</td>
+<td>the information content of the controls themselves</td>
+</tr>
+<tr>
+<td>REF-C-base (104 M)</td>
+<td>the same frames + v0; no future information</td>
+<td>ResNet trunk → anchored decoder → argmax anchor</td>
+<td><strong>0.4728</strong> [0.3835, 0.5699]</td>
+<td>a planner: it must predict</td>
+</tr>
+<tr>
+<td>v1.6 (REF-C's decoder on v1's latent)</td>
+<td>frames + v0</td>
+<td>encoder → REF-C-style decoder</td>
+<td>0.4375 [0.3423, 0.5501]</td>
+<td>the one flagship-line planner that ties REF-C, at a 144 % cost to the world model</td>
+</tr>
+<tr>
+<td>v1 hierarchy plan → pure pursuit → bicycle</td>
+<td>frames, constant <code>follow</code> command</td>
+<td>strategic → tactical</td>
+<td>1.9028 [1.732, 2.0745]</td>
+<td>the hierarchy driving its own plan</td>
+</tr>
+<tr>
+<td>v1 tactical head, direct</td>
+<td>frames, constant <code>follow</code>, <strong>no v0</strong></td>
+<td>strategic → tactical</td>
+<td>3.3839 [2.8336, 3.9722]</td>
+<td>the hierarchy's own decision</td>
+</tr>
+<tr>
+<td>CV · CTRV · best-of-3 kinematic · ego-status MLP</td>
+<td>v0 (+ yaw rate)</td>
+<td>none</td>
+<td>0.8377 · 0.523 · 0.5005 · 0.5735</td>
+<td>trivial forecasters</td>
+</tr>
+</tbody>
+</table></div>
+<p>Sources: MODEL_REGISTRY §6 and §1.4b; <code>taniteval/results/driving_*.json</code>; <code>…/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json</code>. All <span class="ev ev-m">MEASURED</span>. The bicycle comparison is unpaired, and the paired delta has not been computed.</p>
+<figure class="chart"><svg viewBox="0 0 840 546" width="100%" style="min-width:680px;max-width:840px" role="img" aria-labelledby="lbt lbd" font-family="Barlow, system-ui, sans-serif">
+<title id="lbt">ADE at 2 s on two different surfaces: planners that choose, and world models handed the expert's future controls</title>
+<desc id="lbd">Flat REF-C planners score about 0.47 m. The hierarchy's own decision paths score 1.9 and 3.4 m. The flagship headline of 0.43 m is a world model handed the expert's controls and matches a zero-parameter bicycle model given the same controls.</desc>
+<line x1="262.0" y1="64" x2="262.0" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="262.0" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.3</text>
+<line x1="368.5" y1="64" x2="368.5" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="368.5" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.5</text>
+<line x1="453.0" y1="64" x2="453.0" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="453.0" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.75</text>
+<line x1="512.9" y1="64" x2="512.9" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="512.9" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">1</text>
+<line x1="597.4" y1="64" x2="597.4" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="597.4" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">1.5</text>
+<line x1="657.4" y1="64" x2="657.4" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="657.4" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">2</text>
+<line x1="741.9" y1="64" x2="741.9" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="741.9" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">3</text>
+<line x1="801.8" y1="64" x2="801.8" y2="502" stroke="var(--rule)" stroke-width="1"/>
+<text x="801.8" y="518" text-anchor="middle" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">4</text>
+<text x="537" y="538" text-anchor="middle" font-size="12" fill="var(--muted)">ADE@2s in metres, log scale · lower is better</text>
+<line x1="368.7" y1="62" x2="368.7" y2="502" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="363.7" y="14" text-anchor="end" font-size="12" fill="var(--muted)">kinematic best-of-3 0.501</text>
+<line x1="397.0" y1="62" x2="397.0" y2="502" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="402.0" y="14" text-anchor="start" font-size="12" fill="var(--muted)">ego-status, no vision 0.574</text>
+<line x1="377.8" y1="62" x2="377.8" y2="502" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="382.8" y="31" text-anchor="start" font-size="12" fill="var(--muted)">CTRV oracle 0.523</text>
+<line x1="476.0" y1="62" x2="476.0" y2="502" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="481.0" y="48" text-anchor="start" font-size="12" fill="var(--muted)">constant velocity 0.838</text>
+<text x="8" y="91" font-size="12.5" font-weight="600" fill="var(--ink)" letter-spacing=".02em">Planners: the model chooses</text>
+<g><title>v1.6 · REF-C decoder on v1 WM: 0.4375 m, CI95 [0.3423, 0.5501]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="100.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="118.0" text-anchor="end" font-size="13" fill="var(--ink)">v1.6 · REF-C decoder on v1 WM</text>
+<line x1="289.5" y1="114.0" x2="388.4" y2="114.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="289.5" y1="109.0" x2="289.5" y2="119.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="388.4" y1="109.0" x2="388.4" y2="119.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="340.6" cy="114.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="396.4" y="118.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.438</text>
+</g>
+<g><title>REF-C-XL · flat, 252M: 0.4714 m, CI95 [0.3896, 0.5556]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="128.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="146.0" text-anchor="end" font-size="13" fill="var(--ink)">REF-C-XL · flat, 252M</text>
+<line x1="316.5" y1="142.0" x2="390.4" y2="142.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="316.5" y1="137.0" x2="316.5" y2="147.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="390.4" y1="137.0" x2="390.4" y2="147.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="356.2" cy="142.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="398.4" y="146.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.471</text>
+</g>
+<g><title>REF-C-base · flat, 104M: 0.4728 m, CI95 [0.3835, 0.5699]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="156.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="174.0" text-anchor="end" font-size="13" fill="var(--ink)">REF-C-base · flat, 104M</text>
+<line x1="313.2" y1="170.0" x2="395.7" y2="170.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="313.2" y1="165.0" x2="313.2" y2="175.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="395.7" y1="165.0" x2="395.7" y2="175.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="356.8" cy="170.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="403.7" y="174.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.473</text>
+</g>
+<g><title>REF-C-small · flat, 55M: 0.5261 m, CI95 [0.4295, 0.6262]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="184.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="202.0" text-anchor="end" font-size="13" fill="var(--ink)">REF-C-small · flat, 55M</text>
+<line x1="336.8" y1="198.0" x2="415.4" y2="198.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="336.8" y1="193.0" x2="336.8" y2="203.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="415.4" y1="193.0" x2="415.4" y2="203.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="379.1" cy="198.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="423.4" y="202.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.526</text>
+</g>
+<g><title>REF-B v2 · hierarchical BC, no WM: 0.5913 m, CI95 [0.4766, 0.7131]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="212.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="230.0" text-anchor="end" font-size="13" fill="var(--ink)">REF-B v2 · hierarchical BC, no WM</text>
+<line x1="358.5" y1="226.0" x2="442.4" y2="226.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="358.5" y1="221.0" x2="358.5" y2="231.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="442.4" y1="221.0" x2="442.4" y2="231.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="403.4" cy="226.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="450.4" y="230.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.591</text>
+</g>
+<g><title>v4.1 @10k · WM + planner head: 0.8522 m, CI95 [0.7468, 0.9800]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="240.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="258.0" text-anchor="end" font-size="13" fill="var(--ink)">v4.1 @10k · WM + planner head</text>
+<line x1="452.1" y1="254.0" x2="508.7" y2="254.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="452.1" y1="249.0" x2="452.1" y2="259.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="508.7" y1="249.0" x2="508.7" y2="259.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="479.6" cy="254.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="516.7" y="258.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.852</text>
+</g>
+<g><title>v1 hierarchy plan → tracker: 1.9028 m, CI95 [1.7320, 2.0745]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="268.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="286.0" text-anchor="end" font-size="13" fill="var(--ink)">v1 hierarchy plan → tracker</text>
+<line x1="627.4" y1="282.0" x2="665.0" y2="282.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="627.4" y1="277.0" x2="627.4" y2="287.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="665.0" y1="277.0" x2="665.0" y2="287.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="647.0" cy="282.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="673.0" y="286.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">1.903</text>
+</g>
+<g><title>v1 tactical head, direct: 3.3839 m, CI95 [2.8336, 3.9722]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes</title>
+<rect x="0" y="296.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="314.0" text-anchor="end" font-size="13" fill="var(--ink)">v1 tactical head, direct</text>
+<line x1="730.0" y1="310.0" x2="800.4" y2="310.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="730.0" y1="305.0" x2="730.0" y2="315.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<line x1="800.4" y1="305.0" x2="800.4" y2="315.0" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="767.0" cy="310.0" r="5" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+<text x="722.0" y="314.0" text-anchor="end" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">3.384</text>
+</g>
+<text x="8" y="345" font-size="12.5" font-weight="600" fill="var(--ink)" letter-spacing=".02em">Given the expert's controls</text>
+<g><title>flagship v1 world model (headline): 0.4271 m, CI95 [0.3675, 0.4871]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes (scored with the expert's future controls)</title>
+<rect x="0" y="354.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="372.0" text-anchor="end" font-size="13" fill="var(--ink)">flagship v1 world model (headline)</text>
+<line x1="304.3" y1="368.0" x2="363.0" y2="368.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="304.3" y1="363.0" x2="304.3" y2="373.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="363.0" y1="363.0" x2="363.0" y2="373.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="335.6" cy="368.0" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+<text x="371.0" y="372.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.427</text>
+</g>
+<g><title>kinematic bicycle, 0 parameters: 0.4518 m, CI95 [0.3097, 0.6174]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes (scored with the expert's future controls)</title>
+<rect x="0" y="382.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="400.0" text-anchor="end" font-size="13" fill="var(--ink)">kinematic bicycle, 0 parameters</text>
+<line x1="268.6" y1="396.0" x2="412.4" y2="396.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="268.6" y1="391.0" x2="268.6" y2="401.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="412.4" y1="391.0" x2="412.4" y2="401.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="347.3" cy="396.0" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+<text x="420.4" y="400.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">0.452</text>
+</g>
+<g><title>v3enc @10k (RESTART): 1.9654 m, CI95 [1.6556, 2.2859]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes (scored with the expert's future controls)</title>
+<rect x="0" y="410.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="428.0" text-anchor="end" font-size="13" fill="var(--ink)">v3enc @10k (RESTART)</text>
+<line x1="618.0" y1="424.0" x2="685.2" y2="424.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="618.0" y1="419.0" x2="618.0" y2="429.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="685.2" y1="419.0" x2="685.2" y2="429.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="653.7" cy="424.0" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+<text x="693.2" y="428.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">1.965</text>
+</g>
+<g><title>REF-A · frozen DINOv2: 2.1675 m, CI95 [1.9081, 2.4212]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes (scored with the expert's future controls)</title>
+<rect x="0" y="438.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="456.0" text-anchor="end" font-size="13" fill="var(--ink)">REF-A · frozen DINOv2</text>
+<line x1="647.6" y1="452.0" x2="697.2" y2="452.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="647.6" y1="447.0" x2="647.6" y2="457.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="697.2" y1="447.0" x2="697.2" y2="457.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="674.1" cy="452.0" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+<text x="705.2" y="456.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">2.167</text>
+</g>
+<g><title>flagship no-speed control: 3.0175 m, CI95 [2.5450, 3.5444]; full-set mean, episode-cluster bootstrap, 881 windows / 40 episodes (scored with the expert's future controls)</title>
+<rect x="0" y="466.0" width="840" height="28" fill="transparent"/>
+<text x="250" y="484.0" text-anchor="end" font-size="13" fill="var(--ink)">flagship no-speed control</text>
+<line x1="707.6" y1="480.0" x2="776.6" y2="480.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="707.6" y1="475.0" x2="707.6" y2="485.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<line x1="776.6" y1="475.0" x2="776.6" y2="485.0" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/>
+<circle cx="743.1" cy="480.0" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>
+<text x="784.6" y="484.0" font-size="12" fill="var(--muted)" style="font-variant-numeric:tabular-nums">3.018</text>
+</g>
+</svg><figcaption>Filled points: planners that must choose a trajectory from frames and ego speed. Hollow points: models handed the expert's logged future steering and acceleration, so nothing is chosen. ADE@2s full-set mean with 95 % episode-cluster bootstrap interval, 881 val windows / 40 episodes (MODEL_REGISTRY §6 and §1.4b; the bicycle and hierarchy-path values from the 2026-07-26 closed-loop artifact rerun). Dashed lines: trivial floors on the same windows. Off-scale: flagship v2 5.94 (given controls). P2 CEM over v1 (0.893) is omitted: legacy estimator, not recomputable. Overlapping intervals are not an ordering; orderings come only from paired tests.</figcaption></figure>
+<p><strong>Reading.</strong> To first order, the whole leaderboard is ordered by how much speed and control information each scored path is handed:
+- expert future controls + v0: 0.43, the same as the bicycle given them (0.45);
+- v0 + vision: REF-C 0.47;
+- v0 + yaw rate: CTRV 0.52;
+- v0 alone: CV 0.84;
+- no metric speed at all: no-speed control 3.02 and v1 tactical head 3.38.</p>
+<p>Every number is <span class="ev ev-m">MEASURED</span>. The causal reading is an analysis (<span class="ev ev-h">HYPOTHESIS</span>-grade), and no number in the table contradicts it.</p>
+<p><strong>The fair counterpoint, and the measurement that decides it.</strong> The like-for-like test of the world model as a <em>forecaster</em> is to roll it under the held last action, with no future information, on the canonical 881 windows, paired against REF-C-base. It has not been run. The only such number found scores 0.3351 against hold-speed's 0.5933 (<span class="ev ev-i">INHERITED</span>; R1 §8). It comes from the 599-window blind-imagination subset (windows with ≥ 18.5 s of future), so it is not comparable to the 881. It is still the strongest hint that the world model predicts well on its own. It costs about 0.1 A40-day (R1 R-2), and it belongs in the 05.10 dossier.</p>
+<p><strong>Collateral.</strong>
+- <strong>The "strongest scientific claim" is not identified.</strong> The vision-anticipation panel (<code>generalization.py:371-399</code>) also keeps the true future actions and only replaces the latent. It shows that the metric decode needs the scene latent. It does not show that the model anticipates a manoeuvre. That is not a refutation, but the claim cannot be credited to vision yet. The fix costs about one A40-hour: re-run it with zero-order-hold actions.
+- <strong>Some "hierarchy-supporting" evidence should be withdrawn.</strong> The HPP0 audit's "grounded rollout beats the direct head by 7.9×" (<code>HPP0_CONFOUND_AUDIT.md:457</code>) compares a path handed the expert's controls and v0 with one that has neither.</p>
+<h3 id="42-the-hierarchy-as-built">4.2 The hierarchy as built</h3>
+<pre><code>INTENDED                                            REAL (v1, as trained and scored)
+frames → ViT → z[8] ─┬─ STRATEGIC(z, nav) /20 ticks   train:  STRATEGIC(z, nav = echo of its own route label)
+                     ├─ TACTICAL(z, ctx)  /5 ticks            → TACTICAL → intent → OPERATIVE (JEPA k=1,2,4 only)
+                     └─ OPERATIVE(z, a, intent) /tick          grounding: z + EXPERT controls → OPERATIVE(intent=None) ×20
+                                                       score:  z + EXPERT future controls + v0 → OPERATIVE ×20 → metres
+                                                               [strategic, tactical, intent, cadence: all absent]
+</code></pre>
+<p>Three code facts (CODE, R1 §2.1):
+- <strong>Cadence does not exist.</strong> <code>TacticalPolicyConfig.cadence = 5</code> and <code>StrategicPolicyConfig.cadence = 20</code> are read by no code. Training runs every brain every step, and the closed-loop harness re-plans every tick (<code>closedloop.py:265-271</code>).
+- <strong>One window for all levels.</strong> Every brain reads the same 8-frame, 0.8 s window. The three grounding levels decode the same intent-free rollout at 0.4, 1.6 and 2.0 s: levels of horizon, not of abstraction.
+- <strong>Train/eval horizon mismatch.</strong> The evaluation decodes a 20-step rollout with the readout trained on 4 steps (<code>train_flagship4b.py:794</code>).</p>
+<p><strong>Seams: 0 of 3 load-bearing.</strong>
+- <strong>Nav → strategic: an echo.</strong> Route accuracy is 1.0 with the command and skill-vs-chance is 0.0 without it.
+- <strong>Strategic → tactical: not load-bearing.</strong> The manoeuvre-accuracy gain is +0.0148 on the full set, below the 0.02 floor; the July "+0.0439" was the deprecated split-mean.
+- <strong>Tactical intent → operative: harmful, then removed.</strong> Its cosine vs no intent is −0.238, and it is excluded from every scored path.</p>
+<p>The 2026-08-02 deep review independently found 0/3 for v1 and for v2corpus (<code>V5_FLAGSHIP_DEEP_REVIEW.md</code> §1 P2).</p>
+<p><strong>Parameters.</strong> The scored path uses about 180.6 M of 276.9 M (model + grounding heads). About 96 M sit only on training-time or unscored paths: 85 M of the model (tactical predictor 26.5 M, tactical policy 22.7 M, H15 22.1 M, strategic 8.4 M, inverse dynamics 5.2 M) and 11.3 M of the 13.4 M grounding heads. <span class="ev ev-m">MEASURED</span> from <code>taniteval/results/eff_flagship-30k.json</code>.</p>
+<p><strong>A cheap fix that is already measured.</strong> The headline decodes all 20 steps with the <code>op</code> readout, which was trained on 4 steps. The programme's own C8 readout rule (<code>op</code> up to 0.5 s, <code>str</code> beyond) measured −0.3414 m at 2 s on the deployable regime (<span class="ev ev-i">INHERITED</span>, <code>readout_selection.py</code>). No production caller applies it yet (0.05 A40-day).</p>
+<p><strong>The strategic brain has nothing to learn from on this corpus.</strong> PhysicalAI-AV carries no map, route, lane graph or traffic-light signal, and its coordinates are clip-local. The strategic brain sees the same 0.8 s of pixels as the operative, plus a constant. No architecture change can make it load-bearing on inputs that carry no strategic information. The mission plan also defines the strategic layer differently: as the engage/disengage/diagnosis/degradation authority, plus navigation. That supervisory role <em>is</em> supervisable on this data (§12, Bet B).</p>
+<h3 id="43-the-decision-defect">4.3 The decision defect</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>arm</th>
+<th>how it decides</th>
+<th>symptom</th>
+<th>cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1 tactical head</td>
+<td>one transformer → 5-way manoeuvre softmax + 4 unimodal L2 waypoints</td>
+<td>3.3839 direct; 1.9028 tracked</td>
+<td>no v0; unimodal L2 regresses to the conditional mean; waypoint loss ÷100; the softmax priority-collapses two orthogonal axes</td>
+</tr>
+<tr>
+<td>REF-C base/XL</td>
+<td>128/256 FPS anchors, argmax of the unrefined confidence</td>
+<td>oracle-in-fan 0.1640 vs pick 0.4714 (XL); pick &gt; 2× oracle on 45.4 % of windows; never emits <code>accelerate</code></td>
+<td>confidence trained by CE against the nearest anchor to one realised future; v0 dropped on 50 % of training samples; no acceleration input</td>
+</tr>
+<tr>
+<td>v4/v5 head</td>
+<td>REF-C decoder on the WM's 16 cells × 8 frames, refined logits</td>
+<td>v4.1 gate FAIL 0.8522</td>
+<td>hard-argmin CE against the hindsight-best candidate (<code>flagship_v15.py:861-866</code>)</td>
+</tr>
+<tr>
+<td>v5f "conditional imagination"</td>
+<td>the same head + 32 imagination tokens</td>
+<td>trainer-log <code>plan_ade</code> 1.03 vs <code>oracle_ade</code> 0.53 (not quotable)</td>
+<td><strong>the imagination tokens are identical for all 256 candidates</strong> (<code>IMAGINATION_HAS_CANDIDATE_AXIS = False</code>, <code>flagship_v15.py:638-656</code>), so they add context but cannot rank. The v5 restart adopted this lever six days after the code recorded that fact</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Oracle − pick measures fan dispersion, not selector quality.</strong> It grows with fan size by construction: REF-C-XL's oracle is 12.0 m at K = 1, 0.81 m at K = 32, 0.26 m at K = 128 and 0.16 m at K = 256 (<span class="ev ev-m">MEASURED</span>, <code>scaleab_refc-base-30k_vs_refc-xl-30k.json</code>). The registry's "v5f would be ~2× better if it chose correctly" overstates the recoverable share.</p>
+<p><strong>Root causes</strong> (R1 §3.2):
+- <strong>(a) No cost model anywhere.</strong> The world model "obediently simulates" a 181 km/h candidate and rates it self-consistent (E-V5-1). Consistency is not plausibility.
+- <strong>(b) The wrong decision-theoretic target.</strong> Selectors are trained on P(hindsight-best) instead of argmin E[cost].
+- <strong>(c) Starved of the key longitudinal feature.</strong> No arm receives <code>ax_fd</code>, the 0.1 s speed difference.
+- <strong>(d) Candidate consequences never reach the ranking.</strong>
+- <strong>(e) The manoeuvre label destroys information.</strong> It overwrites a live longitudinal manoeuvre as a turn on 9.68 % of windows (<span class="ev ev-i">INHERITED</span>, <code>…/incoming/2026-08-03-dtac1-tactical-head/</code>).</p>
+<p><strong>Already settled, so v6 must not re-buy it:</strong>
+- Discriminative re-scoring of the v4 fan is ceilinged at 0.4907, even in-sample.
+- Imagination-consistency scoring is refuted (0.5645).
+- Conditioning the fan on v0 is refuted: the fan already contains speed-matched candidates.
+- REF-C v1.2's 47 learned re-scorers recovered at most 8.4 % of the gap.
+- The expected-cost regressor with <code>ax_fd</code> (E-GOAL-4) recovered roughly a third of the gap with no goal: 32–36 %, depending on whether the gap is measured to the oracle-in-fan or to the <code>R_goal2s</code> floor.
+- The registry's standing claim that the oracle gap is about 92 % irreducible (<code>MODEL_REGISTRY.md:1355-1357</code>) is contradicted by E-GOAL-4 and must be revisited.</p>
+<p>The last two disagree by roughly 4× and must be reconciled before v6 is funded. The leading hypotheses are the <code>ax_fd</code> feature, v1.2's top-8 restriction, and the deployment (40 vs 600 episodes).</p>
+<p><strong>Ranked fixes</strong> (R1 §3.4):
+1. A per-candidate expected-cost selector (regress each candidate's cost, pick the argmin). Feed it candidate kinematics, v0, <code>ax_fd</code> and scene tokens, and train it on the parity train corpus rather than val folds.
+2. Hydra-MDP-style multi-target distillation into that selector. Collision, TTC, progress and comfort sub-scores are computed offline from <code>obstacle.offline</code> tracks (97.44 % coverage). There are no drivable-area terms, because there is no map.
+3. Factorised lateral × longitudinal heads as features.
+4. Predicted goal-point conditioning as an inductive bias (Δ4). Do not fund a goal <em>supplier</em> yet. The only goal tested so far (E-GOAL-4) was itself a fitted function of <code>(v, ax_fd)</code> (<code>EGOAL_4.md:50</code>, audit G-6), so its gain (0.3917 → 0.3040, 600-episode, out-of-fold within val) is a re-parameterisation of ego kinematics, not new information. The oracle route command also failed at the fusion (§7). A vision-predicted geometric goal point is untested here; Δ4 is where it earns or loses its place.
+5. World-model rollout scoring, only after a cost exists.</p>
+<h3 id="44-the-longitudinal-deficit">4.4 The longitudinal deficit</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>fact</th>
+<th>number</th>
+<th>class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1's separated win over CV is entirely lateral</td>
+<td>cross-track +0.7720 [+0.4166, +1.1914]; along-track +0.2543 [−0.0278, +0.5304] not separated</td>
+<td><span class="ev ev-m">MEASURED</span> <code>driving_flagship-30k.json</code></td>
+</tr>
+<tr>
+<td>even given the true controls, along-track error barely beats CV</td>
+<td>mean |along| at 2 s: WM 0.826 · bicycle 0.829 · CV 0.915 m</td>
+<td><span class="ev ev-m">MEASURED</span> <code>latlon_decomposition.json</code></td>
+</tr>
+<tr>
+<td>v1 is 2.0× worse than holding current speed on the 639 steady windows (72 %)</td>
+<td>speed MAE 0.4231 vs 0.2109 m/s</td>
+<td><span class="ev ev-m">MEASURED</span>; every arm with a dump is separated-worse there</td>
+</tr>
+<tr>
+<td>the logged longitudinal channel is a poor measurement</td>
+<td>native <code>ax</code> ↔ pose dv/dt r = 0.434; ↔ <code>ax_fd</code> 0.759</td>
+<td><span class="ev ev-i">INHERITED</span></td>
+</tr>
+<tr>
+<td>87 % of v1's WM-fidelity squared error is longitudinal</td>
+<td>0.8733</td>
+<td><span class="ev ev-m">MEASURED</span> <code>…/2026-07-26-closedloop-artifact-rerun/latlon_decomposition.json</code></td>
+</tr>
+<tr>
+<td>the flagship's WM-fidelity path runs fast vs the human</td>
+<td>+0.1911 m/s [+0.0922, +0.2846]; REF-C indistinguishable from the human</td>
+<td><span class="ev ev-m">MEASURED</span> <code>…/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md:160,370</code></td>
+</tr>
+<tr>
+<td>a perfect lead-vehicle state buys little at 2 s on this corpus</td>
+<td>41.65 % of windows have no vehicle within 50 m; +2.3 recovery points, not separated</td>
+<td><span class="ev ev-i">INHERITED</span> (E-GOAL-1)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Four stacked causes:</strong>
+1. <strong>Curvature is handed in; speed change is not.</strong> Lateral wins because future curvature is supplied as steer on the headline surface. Longitudinal change depends on things invisible at this resolution or absent from the data.
+2. <strong>The best longitudinal observable is withheld.</strong> Speed is broadcast as a constant over the window, and <code>ax_fd</code> is fed to no arm. This is a one-column, parity-neutral input fix.
+3. <strong>There is no "keep speed" default.</strong> Both families emit absolute trajectories, so holding speed, which is correct on 72 % of windows, has to be reproduced rather than being the zero-residual default. A residual-over-kinematic-prior parameterisation is the cheap test.
+4. <strong>The world model is trained at K = 4 and scored at K = 20.</strong> The K = 20 fine-tune (RR-20) cut WM-fidelity ADE 0.4244 → 0.3485 (paired, separated; <span class="ev ev-m">MEASURED</span> <code>…/2026-08-02-rollout-recovery-verdict/rr20.json</code>, <code>rrctl.json</code>, <code>ab_rrctl_vs_rr20.json</code>, 881/40). It removed the speed bias on both instruments that measure it:
+   - driving harness +0.1879 → −0.0018 m/s (<code>rr20.json</code>);
+   - four-family instrument +0.9397 → −0.0092 m/s (<code>fourfam_rr20.json</code>).</p>
+<p>The two instruments derive speed differently and disagree 5× on the pre-fix bias, which must be reconciled before either is quoted alone. The costs: curvature MAE 2.2× worse, miss@2m 0.043 → 0.056, and a loss on sharp-curvature windows (win-rate 0.43, n = 122). RR-20 is not in <code>MODEL_REGISTRY.md</code>, and its pre-registered primary <code>CR_k</code> was never computed (§6).</p>
+<p>The 2026-08-04 analysis concluded that the longitudinal gap is a speed-setting bias rather than a headway failure. That holds, but it was measured on the WM-fidelity path, so the bias belongs to the world model's integration and not to a planning decision.</p>
+<p><strong>What the camera can see</strong> (<span class="ev ev-e">ESTIMATED</span>, pinhole geometry; R1 §4.3, R3 §2):
+- <strong>Ego speed, partly.</strong> A linear probe on the frozen latent gets R² 0.772, with 17 % shrinkage toward the mean. That leaves errors of order metres per second.
+- <strong>Closing rate on a lead car, essentially no.</strong> A car 40 m ahead is about 12 px wide, and closing at 5 m/s changes its width by about 0.3 px across the 200 ms frame stack.</p>
+<p>Closing rate therefore cannot come from this input. It needs a higher-resolution or tele view, or explicit tracks at label time.</p>
+<h3 id="45-the-latent-state-resolution-and-temporal-context">4.5 The latent state, resolution and temporal context</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th></th>
+<th>v1 (256×256 pinhole)</th>
+<th>v5f (120° cylindrical, 176×624 valid)</th>
+<th>REF-C decoder input</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>angular sampling</td>
+<td>≈ 4.6–5.0 px/deg, 51.4° HFOV</td>
+<td>5.333 px/deg</td>
+<td>same frames as v1</td>
+</tr>
+<tr>
+<td>what the planner sees per frame</td>
+<td><strong>4×4 cells × 128 = 2,048 floats</strong>; each cell averages 16 tokens = 64×64 px ≈ 13.8° × 13.8°</td>
+<td><strong>the same 2,048 floats</strong>; each cell ≈ 48×160 px, <strong>2.2× coarser horizontally</strong> than v1</td>
+<td><strong>45,056 (base) / 63,488 (XL) floats</strong>, 22–31× more than one WM state</td>
+</tr>
+<tr>
+<td>effective dimensionality</td>
+<td>covariance effective rank ≈ <strong>30 of 2,048</strong>, mostly ego-motion</td>
+<td>not measured</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>CODE + <span class="ev ev-i">INHERITED</span> (R1 §5.1). At 25 m/s a 2–4 s headway puts the lead car 50–100 m ahead, where it is 5–10 px wide: under half a patch, averaged into a 64×64 px cell with 15 other tokens (<span class="ev ev-e">ESTIMATED</span>).</p>
+<p><strong>Verdict.</strong> The 4×4×128 readout suits a world model whose job is ego-motion, and for that job it is adequate. It is the wrong substrate for a decision layer, and it makes a cost model over agents impossible in principle:
+- <strong>Richer map, better proposals.</strong> On the <em>same</em> decoder algorithm, REF-C on its 8×8×F map proposes about 2× better than v1.5 on the WM state (oracle-in-fan 0.164 vs 0.338; <span class="ev ev-i">INHERITED</span>, registry §4.1).
+- <strong>v5f bought periphery at the cost of detail.</strong> Because the state stayed 2,048-d, its wider field of view is spent at coarser resolution per cell.
+- <strong>No memory beyond 0.8 s.</strong> No arm remembers anything older, which is too short for closing-rate estimation at range and, by construction, for anything strategic.
+- <strong>The resolution null is narrower than it sounds.</strong> "A 1.5× resolution change is a null" was measured on two <em>global</em> probes (scene class, ego speed). It says nothing about object-level observability.</p>
+<h3 id="46-representation-and-why-the-later-lines-failed">4.6 Representation, and why the later lines failed</h3>
+<ul>
+<li><strong>REF-A (frozen DINOv2 / I-JEPA) fails at metric ego-motion decoding, not at scene understanding.</strong></li>
+<li>It scores 2.1675 on the WM-fidelity surface, while <em>given</em> the expert's controls; a bicycle given the same controls scores 0.4518.</li>
+<li>Its error is 94.2 % longitudinal, with a 4.5× train-to-held-out gap.</li>
+<li>It encodes only the latest RGB frame of each stack (CODE <code>stack/scripts/dino_precompute.py:44</code>), while the flagship encodes the 9-channel three-frame stack, which makes optical flow linearly available.</li>
+<li>H4 is therefore established for "frozen single-frame semantic features plus a temporal adapter as a metric-odometry substrate", not for "pretrained encoders are worse for driving". <span class="ev ev-p">PUBLISHED</span> counter-evidence exists (DINO-WM, arXiv 2411.04983; not V1-checked). The untested case that matters is a frozen or fine-tuned <strong>video</strong> encoder (BACKLOG B5).</li>
+<li><strong>v2 and v3enc were architecture-caused, by lever design.</strong> The "anti-shortcut" pack attacked every metric-speed channel at once:</li>
+<li>v0 zero-filled on 25 % of samples, where 0 m/s is an in-distribution "stationary";</li>
+<li>an encoder penalised for encoding speed;</li>
+<li>the metric inverse-dynamics gradient scaled down.</li>
+</ul>
+<p>Encoder speed R² fell 0.861 → 0.30 (<span class="ev ev-i">INHERITED</span>). R1 calls this the programme's clearest self-inflicted architectural wound.
+- <strong>v4.x and v5 degraded the world model whenever a planner's gradient entered the trunk.</strong>
+  - v1.6: the canary went 0.452 → 1.1022.
+  - v4 from scratch: 1.1409 at 30 k.</p>
+<p>The common factor is architectural: the planner and the world model compete for one ~30-effective-dimension, 16-cell state. Their gradients are orthogonal on average (cos +0.0043), the signature of two objectives that want different representations. v6 separates them (Δ6).
+- <strong>v5f is not what its description says.</strong> The production trainer builds v1's whole <code>WorldModel</code>, so all three v1 brains train as auxiliaries. On top of that sit one REF-C-class operative planner and a <code>GoalScalarHead</code> that feeds nothing, plus the 22 M untrained H15 field (CODE <code>train_flagship_v4.py:99-103,1282-1354</code>). It is not a three-planner hierarchy. The goal MLP feeds nothing during training and is used only at evaluation, which is a train/serve skew (R1). Every published v4 MODE-B number also used future-derived ("oracle") goal tokens by default (CODE <code>eval_flagship_v4.py:91-107</code>).</p>
+<h3 id="47-imagination">4.7 Imagination</h3>
+<p>Three different mechanisms share the word:
+- <strong>(i) H15:</strong> a 22 M sector-masked belief field trained with a one-step NLL, on no inference path.
+- <strong>(ii) Blind predictor rollouts:</strong> every "grounded rollout", including the headline, is already one.
+- <strong>(iii) v5f's probe tokens,</strong> which have no candidate axis.</p>
+<p>The anti-calibration finding (confidence rises as fidelity decays) is expected by construction. The σ-head was only ever trained one step ahead on encodings of real frames, and nothing regularises rolled-out states (R2: inter-sample belief cosine 0.219 → 0.805 by k = 8). The H15 target branch is also not stop-gradient (CODE <code>train_flagship4b.py:229</code>).</p>
+<p><strong>What imagination has measurably bought:</strong>
+- Re-planning every tick on the imagined latent beats committing to one plan: −0.1711 [−0.2615, −0.0838] closed loop (<span class="ev ev-m">MEASURED</span>).
+- One reference roll of a good world model, used as a selection reference, gave −0.2918 [−0.4233, −0.1598]. It was <em>harmful</em> (+0.2090) when v4's own world model scored its own fan (<span class="ev ev-i">INHERITED</span>).
+- Probe tokens used as shared decoder context gave −0.1355 (<span class="ev ev-i">INHERITED</span>, legacy estimator).
+- Per-candidate consistency scoring is refuted.</p>
+<p><strong>The imagination role with measured value is the cheapest one:</strong> a single reference roll as a selector feature. Imagination as a consequence model for choosing needs three things it lacks: a cost, horizon-aware uncertainty, and candidate-conditioned rolls restricted to a small top-K.</p>
+<h3 id="48-deployability">4.8 Deployability</h3>
+<ul>
+<li><strong>Current tick.</strong> The measured Thor tick with a batched 9-candidate fan through a bf16 dynamic TensorRT engine is 60.3 / 63.1 ms p50/p95 (<span class="ev ev-m">MEASURED</span>, runbook §3). On an A40, all levers take the v1 "plan tick" from 97.3 ms to 18.75 ms (<span class="ev ev-m">MEASURED</span> <code>eff_levers_flagship-30k.json</code>).</li>
+<li><strong>The timed tick is v1's <code>TacticalSelector</code>.</strong> It runs a 9-manoeuvre (3 steer × 3 accel) imagine-and-select over the world model with a heuristic displacement-plus-comfort score (<code>fourbrain.py:566-571</code>, runbook <code>:288</code>). It is a decision, but on a path that has never been scored open- or closed-loop (<code>eval_behavior.py:23-25</code>; no results JSON), so the 60.3 ms and the 0.4271 belong to different paths. A world-model-scored decision over a REF-C-class 256-candidate fan would be about 32 saturated Thor batches × ~70 ms ≈ 2.2 s, roughly 22× over budget (<span class="ev ev-e">ESTIMATED</span>, R1 §8).</li>
+<li><strong>The sequential 20-step roll is launch-bound, not FLOP-bound.</strong></li>
+<li><strong>What fits 10 Hz on Thor with margin:</strong> a REF-C-class decoder, a per-candidate scorer over 256 candidates, and one reference roll at k = 10 with a cached encoder. At most a top-8 imagined-consequence pass can be added.</li>
+</ul>
+<h3 id="49-verdict-on-the-model-and-v6">4.9 Verdict on the model, and v6</h3>
+<p>The programme has demonstrated two things:
+- <strong>a good ego-motion world model:</strong> a from-scratch visual-odometry encoder whose latent integrates given controls about as well as a bicycle does;
+- <strong>a good flat decision layer borrowed from DiffusionDrive,</strong> whose remaining weakness is longitudinal selection.</p>
+<p>It has not demonstrated, on any number, that the hierarchy or the world model improves decisions. The two small exceptions point at the right role for the world model: shared context, and one reference roll. <strong>The thesis is not refuted. It is unpaid-for, and on PhysicalAI-AV its strategic level cannot be paid for, because the corpus contains no strategic information.</strong></p>
+<pre><code>frames ─► ViT (from scratch) ─┬─► z[8] ─► operative predictor = THE WORLD MODEL (JEPA + grounding + SIGReg, K = 20)
+                              │             └─► ONE reference roll, held last action ─► r            (feature)
+                              └─► last-frame PATCH TOKENS ───────────────┐
+ego: v0, ax_fd, 8-step speed history, yaw rate (learned null row) ───────┤
+                                                                         ▼
+          anchored decoder (REF-C algorithm; anchors = residuals over a CTRA prior) ─► 256 candidates
+          TACTICAL  = factorised lateral(3) × longitudinal(3) posterior, kinematic labels ─┐
+          STRATEGIC = predicted goal point from vision + ego (never from the situation classifier) ─┤
+                                                                         ▼
+          per-candidate EXPECTED-COST head: along/cross error, collision, TTC, progress, jerk
+                                                                         ▼
+          argmin cost ─► 20-step plan ─► safety envelope (§10.6) ─► controls
+removed: v1 tactical/strategic policies, tactical predictor, H15, probe tokens, nav-echo CE, hard-argmin CE
+</code></pre>
+<p><strong>Inference inputs, stated per the 2026-08-03 rulings:</strong>
+- The tactical posterior reads patch tokens and z only. It is vision-only at inference, and its kinematic labels are used at label time only.
+- The goal head reads patch tokens, z and ego kinematics, and never the tactical posterior or any situation-classifier output.
+- Both share the encoder trunk. That is admissible because neither head's output is an input to the other; Δ4's R² test against the flat inputs checks that the shared trunk has not re-created the leak.</p>
+<p>The v6 ladder (R1 §9.2) is nine discriminating experiments with both outcomes pre-stated. Together they cost about <strong>5.8 A40-days</strong>, mostly in parallel, and Δ2/Δ3/Δ4/Δ8 run on frozen fan dumps:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Δ</th>
+<th>change</th>
+<th>fixes</th>
+<th>adopt if … / otherwise …</th>
+<th style="text-align: right;">A40-days</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Δ1</td>
+<td>feed <code>ax_fd</code> and the true 8-step speed history; learned null row instead of zero-fill</td>
+<td>withheld longitudinal observable</td>
+<td>≥ 20 % separated reduction in steady-window speed error → adopt in the WM; null → keep <code>ax_fd</code> in the selector only</td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>Δ2</td>
+<td>per-candidate expected-cost regression replaces the hard-argmin CE</td>
+<td>wrong decision target</td>
+<td>separated gain on both deployments when trained on <em>train</em> episodes → adopt; gain only out-of-fold within val → E-GOAL-4 was an artefact</td>
+<td style="text-align: right;">0.5</td>
+</tr>
+<tr>
+<td>Δ3</td>
+<td>Hydra-style cost targets (collision, TTC, progress, comfort) from <code>obstacle.offline</code></td>
+<td>no cost model</td>
+<td>TTC violations separated-lower with ADE non-inferior (Δ &lt; +0.02 m) → adopt; null → keep for closed loop only</td>
+<td style="text-align: right;">0.3</td>
+</tr>
+<tr>
+<td>Δ4</td>
+<td>honest hierarchy: factorised tactical posterior + predicted goal, both into the selector; cadence implemented; nav-echo CE deleted</td>
+<td>seams 0/3</td>
+<td>hierarchical separated-better with R² &lt; 0.99 against the flat inputs → the level carries information; ≥ 0.99 → inductive bias only; null → tactical level falsified on this corpus</td>
+<td style="text-align: right;">0.3</td>
+</tr>
+<tr>
+<td>Δ5</td>
+<td>remove about 80 M of off-path auxiliaries and H15</td>
+<td>unpaid parameters</td>
+<td>no separated harm → remove, and spend the budget and step time on Δ6</td>
+<td style="text-align: right;">1.0</td>
+</tr>
+<tr>
+<td>Δ6</td>
+<td>the decoder also cross-attends last-frame patch tokens; the WM keeps its compact state</td>
+<td>readout bottleneck, planner/WM competition</td>
+<td>oracle-in-fan and pick both separated-better → adopt; null → the WM state is a sufficient substrate</td>
+<td style="text-align: right;">0.7</td>
+</tr>
+<tr>
+<td>Δ7</td>
+<td>train rollout and readout at K = 20 (curriculum 4 → 20) with the curvature term active</td>
+<td>compounding speed bias</td>
+<td>bias fix kept with curvature cost &lt; 1.5× → K = 20 from the start; otherwise a late fine-tune</td>
+<td style="text-align: right;">0.9</td>
+</tr>
+<tr>
+<td>Δ8</td>
+<td>one reference roll <code>r</code> as a selector feature, with the arm's <strong>own</strong> WM</td>
+<td>WM not on the decision path</td>
+<td>separated gain with the arm's own WM → the WM earns its place in the loop; otherwise it stays a representation learner</td>
+<td style="text-align: right;">0.1</td>
+</tr>
+<tr>
+<td>Δ9</td>
+<td>anchors as residuals over a CTRA prior</td>
+<td>no "keep speed" default</td>
+<td>first arm ever to beat hold-v0 on steady windows → adopt</td>
+<td style="text-align: right;">1.0</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Falsifying the hierarchy, level by level:</strong>
+- <strong>The tactical level is falsifiable now.</strong> It fails if the hierarchical selector (Δ4) is not separated-better than the flat one at matched capacity, and its inputs are regressable from the flat inputs at R² ≥ 0.99.
+- <strong>The strategic level is not testable on PhysicalAI-AV.</strong> It needs a corpus with a route or goal source (AlpaSim scenes, L2D, or an external mapped corpus).
+- <strong>The world model as a decision component is falsifiable now (Δ8).</strong>
+- <strong>The whole thesis</strong> is falsified at this scale if a flat REF-C-class planner with the same inputs and budget matches v6 on all four families and in closed loop. The one existing hierarchical-vs-flat pair (REF-B v2 0.5913 vs REF-C-base 0.4728, separated) leans this way. It is confounded by decoder family and label version, so it is a prior, not evidence.</p>
+<hr />
+<h2 id="5-why-the-models-have-the-results-they-have">5. Why the models have the results they have</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>arm</th>
+<th>result</th>
+<th>first-order cause</th>
+<th>evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flagship v1, headline</td>
+<td>0.4271</td>
+<td>a world model given the expert's future controls and v0; integrates them as well as a bicycle</td>
+<td>CODE <code>rollout.py:146-147</code>; <span class="ev ev-m">MEASURED</span> bicycle 0.4518</td>
+</tr>
+<tr>
+<td>flagship v1, tactical head</td>
+<td>3.3839</td>
+<td>speed-blind by construction (no v0 port); unimodal L2 regression; loss weight ÷100; priority-collapsed manoeuvre label</td>
+<td>CODE <code>fourbrain.py:328-361</code>; <span class="ev ev-m">MEASURED</span></td>
+</tr>
+<tr>
+<td>flagship no-speed control</td>
+<td>3.0175</td>
+<td>no metric-speed channel; the latent's speed content (R² ≈ 0.77) leaves m/s errors that compound to metres</td>
+<td><span class="ev ev-m">MEASURED</span>; <span class="ev ev-e">ESTIMATED</span> arithmetic</td>
+</tr>
+<tr>
+<td>REF-C base/XL</td>
+<td>0.4728 / 0.4714</td>
+<td>a multimodal anchored planner on a rich 8×8×F map; weakness is selection (pick &gt; 2× oracle on 45 % of windows) and longitudinal (v0 dropped 50 % in training, no acceleration)</td>
+<td><span class="ev ev-m">MEASURED</span> <code>scaleab_…json</code>; CODE <code>refc.py:1888-1891</code></td>
+</tr>
+<tr>
+<td>REF-C-small</td>
+<td>0.5261</td>
+<td>the same algorithm with fewer anchors; the ladder's knee is anchor count, not encoder scale</td>
+<td>registry §4.2 verdict</td>
+</tr>
+<tr>
+<td>REF-B v2</td>
+<td>0.5913</td>
+<td>hierarchical behaviour cloning without a world model; unimodal heads</td>
+<td><span class="ev ev-m">MEASURED</span></td>
+</tr>
+<tr>
+<td>REF-A (frozen DINOv2)</td>
+<td>2.1675</td>
+<td>single-frame semantic features cannot be decoded into metric ego-motion</td>
+<td><span class="ev ev-m">MEASURED</span>; CODE <code>dino_precompute.py:44</code></td>
+</tr>
+<tr>
+<td>v2 (killed) / v3enc (RESTART)</td>
+<td>5.94 / 1.9654</td>
+<td>anti-shortcut levers removed the metric-speed channels</td>
+<td><span class="ev ev-i">INHERITED</span> registry §1.3/1.4</td>
+</tr>
+<tr>
+<td>v4.1 (gate fail)</td>
+<td>0.8522</td>
+<td>planner gradient into the shared trunk degraded the world model; hindsight-argmin selector</td>
+<td><span class="ev ev-m">MEASURED</span>; CODE <code>flagship_v15.py:861-866</code></td>
+</tr>
+<tr>
+<td>v1.6</td>
+<td>0.4375</td>
+<td>REF-C's decoder on v1's latent: ties REF-C, but degrades the world model 144 %</td>
+<td><span class="ev ev-i">INHERITED</span> §1.4b</td>
+</tr>
+<tr>
+<td>v5f (never evaluated)</td>
+<td>trainer log only</td>
+<td>imagination tokens cannot rank; 22 M untrained parameters; 19.58 s/step</td>
+<td>CODE; registry §1.8</td>
+</tr>
+<tr>
+<td>every arm on steady windows</td>
+<td>worse than holding speed</td>
+<td>absolute-trajectory outputs with no zero-residual "keep speed" default</td>
+<td><span class="ev ev-m">MEASURED</span> registry §6 reading 4</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="6-training-recipes-and-non-collapse">6. Training recipes and non-collapse</h2>
+<p><em>Stream R2, <code>streams/R2_training_anticollapse.md</code>.</em></p>
+<p><strong>What is right.</strong> SIGReg is implemented faithfully to LeJEPA (Balestriero &amp; LeCun, arXiv:2511.08544): a sliced Epps–Pulley test with 512 fresh directions per call, forced to fp32 (<code>stack/tanitad/models/sigreg.py</code>). There is no EMA teacher and no stop-gradient anywhere in the training stack, which is the LeJEPA recipe and removes a whole class of collapse heuristics. <span class="ev ev-m">MEASURED</span> (code read).</p>
+<p><strong>What is wrong, in order of consequence.</strong></p>
+<ol>
+<li><strong>The regulariser guards the wrong subspace.</strong> <code>free_dims = 64</code> exempts 64 dimensions from the isotropy test, while an orthogonality report on the trained checkpoint puts the energy-carrying subspace at only about 19–30 of 2,048 dimensions. Isotropy improves during training (0.254 → 0.546), but mostly on the low-energy complement. This agrees with the flat <code>vision_use ≈ 12.9 %</code> and the route head's zero skill: the state is low-rank, and SIGReg is not what keeps it informative. <span class="ev ev-i">INHERITED</span> from R2's reading of the in-repo orthogonality report; re-check on the next checkpoint.</li>
+<li><strong>Nothing regularises the rollout.</strong> SIGReg applies to encoder states, never to recursively predicted or imagined states. The 2026-07-18 diagnostic measured the predicted failure: inter-sample belief cosine rises from 0.219 to 0.805 by k = 8 (states collapse toward an attractor) while epistemic variance shrinks (false confidence). This is the mechanism behind the "anti-calibrated imagination" finding. <span class="ev ev-m">MEASURED</span> (programme artifact, cited in R2).</li>
+<li><strong>The v4/v5f line carries about 22 M parameters that never train.</strong> Verified by the orchestrator in the source: <code>train_flagship_v4.py:390,395</code> builds <code>WorldModel(flagship4b_config())</code>, which instantiates the H15 <code>ImaginationField</code> (<code>fourbrain.py:456</code>); <code>train_flagship_v4.py:999</code> puts every world parameter in the trunk optimiser group; the file never computes an H15 loss (v1's trainer does, <code>train_flagship4b.py:655-658</code>); and <code>fourbrain.py</code> never calls the module in <code>forward</code>. In the from-scratch v5f run those weights stay at random initialisation. <span class="ev ev-m">MEASURED</span> (static). Cost is memory and a misleading parameter count, and the H15 capability is simply absent from the line that was meant to test imagination.</li>
+<li><strong>Temporal collapse is ungated.</strong> <code>latent_screen.py</code>'s pre-flight gates fail on v1's latent (frame-to-frame jitter 51.0× against a ≤ 2× gate; derivative correlation +0.089 against &gt; 0.50). Isotropy converging and the latent being temporally smooth are different properties, and only the first is watched.</li>
+<li><strong>The loss is dominated by supervised metric terms.</strong> For v1's active terms the SSL core weighs about 2.6 against about 11.5 for supervised metric-motion terms (≈ 4.4 : 1 supervised). The fix the 2026-07-18 research recommended (<code>invdyn_gradscale = 0.25</code>) exists in code and ships at the no-op default 1.0.</li>
+<li><strong>A pre-registered result has no admissible verdict.</strong> <code>PREREG_rollout_recovery.md</code> names <code>CR_k</code> as the primary and forbids trading it for ADE; the finished run reports only ADE (0.3485 vs 0.4244 m, a large separated win) and no <code>CR_k</code>. Computing <code>CR_k</code> from the existing checkpoints costs about 0.05 GPU-days.</li>
+<li><strong>Compute is left on the table.</strong> None of the eight trainers uses <code>torch.compile</code>, fused AdamW or explicit flash attention. v5f's <code>--cond-imagination</code> runs a sequential 20-step frozen-predictor rollout at batch × 32, 16 times per optimiser step, the same shape that CUDA graphs already sped up 1.75–3.46× at inference. v5f runs at 19.58 s per optimiser step (MODEL_REGISTRY §1.8), about 3.3 samples/s. No per-stage profile exists, so the split is <span class="ev ev-e">ESTIMATED</span> from code.</li>
+<li><strong>Reproducibility is unchanged since July.</strong> Only <code>torch.manual_seed</code> is set in all eight trainers; data order and CUDA kernels are not seeded or made deterministic.</li>
+</ol>
+<p><strong>Why the failed lines failed</strong> (R2 §3): v2 changed ten levers at once and is unattributable; v3enc's RESTART verdict came from a gate window in which the decorrelation lever it was testing was held at 0.0 throughout, so the lever was never engaged and is not refuted; v4.1/v4.2 hit a real Pareto tension between keeping the world model good and training a planner on the same trunk; v1.6 is a clean statistical tie. None of the four implicates the encoder, SIGReg or the grounding core.</p>
+<h2 id="7-data-encoding-and-resolution">7. Data, encoding and resolution</h2>
+<p><em>Stream R3, <code>streams/R3_data_encoding_labels.md</code>.</em></p>
+<ol>
+<li><strong>The programme trains on under 1 % of the corpus it has.</strong> PhysicalAI-AV has 306,152 clips, about 1,700 h, 7 camera views (front-wide 120°, front-tele 30°, cross left/right 120°, rear left/right 70°, rear-tele 30°), LiDAR and radar (<span class="ev ev-m">MEASURED</span>, in-repo feature probe <code>PHYSICALAI_FEATURE_PROBE.md:70-76</code>; <span class="ev ev-p">PUBLISHED</span>, Hugging Face card). Its own split is train 153,625 / val 90,928 / test 61,599 clips. The parity corpus is 2,376 clips = 13.2 h = 0.776 %; the balanced v2 corpus is 2.94 %; v5f is 0.78 %. Every trained arm reads only <code>camera_front_wide</code>. <span class="ev ev-m">MEASURED</span> (code and manifests).</li>
+<li><strong>No image augmentation of any kind exists on real-camera pixels</strong>: no mirror flip (with steer-sign and lateral-coordinate flip, the cheapest data doubling in driving), no random crop, no colour jitter. <span class="ev ev-m">MEASURED</span> (grep over the data and training tree; R3 §1.4).</li>
+<li><strong>The input cannot see what the longitudinal family needs.</strong> Three RGB frames at 100 ms spacing, channel-stacked into 9 channels at 256 × 256, give the encoder 200 ms of motion baseline. The ego-speed scalar <code>v0</code> carries speed. That explains the no-speed control collapsing to 3.0 m, and it bounds how well closing speed to a lead vehicle can be inferred from pixels. The parity crop is 256 px over 51.4° (≈ 4.98 px/deg): a 1.8 m-wide car is ≈ 10 px at 50 m and ≈ 5 px at 100 m, less than one 16-px patch; a traffic-light face at 50 m is ≈ 1.7 px and a lane stripe at 30 m ≈ 1.2 px. <span class="ev ev-e">ESTIMATED</span> (R3 §2, simple trigonometry from <code>calib.py:38</code> and <code>situations.py:67</code>). A distant lead vehicle is barely present in the input, and traffic-light state is not legible at all.</li>
+<li><strong>Labels.</strong> Steer = atan(2.9·κ) against true wheelbases of 2.73–3.22 m (+8.6 % cross-track error, MODEL_REGISTRY §0.1.1). Situation labels are derived from ego dynamics, which makes any ego-fed classifier partly read its own label source (the PI's 2026-08-03 ruling). The intersection label's cross-traffic half (<code>sc_cross.py</code>, needs <code>obstacle.offline</code>) is stranded in <code>incoming/</code> and never promoted, so <code>situations.py</code> computes only the turn half.</li>
+<li><strong>The distance-keeping instrument works; the standard harness does not call it.</strong> The 2026-08-04 val-40 panel (<code>…/incoming/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md</code>) computed lead-vehicle metrics for 25 arms (LEAD 270 / NO_LEAD 551 / NO_LABEL 60 windows), but it was built by scripts in that incoming folder. R3 is right that <code>taniteval</code>'s runner still reports distance-keeping as unavailable.</li>
+<li><strong>The v2 corpus comparison is doubly confounded.</strong> 21 of 40 canonical val episodes are in v2corpus's training selection (the headline now uses the 19 leak-free ones), and the launch also changed the whole <code>--v2</code> lever pack and <code>rollout_k</code> (12 vs 4). "More data helped" is not yet admissible. The lever-matched control is designed and was never launched.</li>
+<li><strong>The IDM pseudo-labelling thesis is refuted as built.</strong> <code>dynenc-branchB</code> failed its pre-registered held-out-rig gate (rig-B speed R² −0.667 against a &gt; 0.9 gate) and underperformed v1's own encoder in-domain. The YouTube-IDM route needs a different design (below).</li>
+<li><strong>The goal fix has an adverse prior.</strong> REF-C given the oracle route did not separate on ADE and got worse on cross-track, losing about 91 % of the oracle's benefit downstream. The bottleneck is the fusion architecture, not the label, so a better goal label alone will not rescue a decoder that cannot use it.</li>
+</ol>
+<h2 id="8-evaluation-and-statistics">8. Evaluation and statistics</h2>
+<p><em>Stream R4, <code>streams/R4_eval_metrics_closedloop.md</code>.</em></p>
+<ol>
+<li><strong>The four-family rule is binding on paper only.</strong> <code>taniteval/four_families.py</code> implements all four families as specified, but <code>runner.py</code>, <code>bench.py</code> and <code>driving.py</code> never call it, and none of the 103 files in <code>taniteval/results/</code> carries its <code>_binding_rule</code> sentinel. Every four-family number lives in an unmerged <code>incoming/</code> one-off. <span class="ev ev-m">MEASURED</span>.</li>
+<li><strong>Tactical and strategic have never been measured on the canonical val for any arm.</strong> The only populated runs use a 19-episode subset. The most complete canonical panel (2026-08-04, 881 windows / 40 episodes) reports both families UNAVAILABLE for flagship-30k and refc-base-30k. <code>hierarchy.run</code>, the only producer of those families, accepts flagship-family arms only (<code>runner.py:341-342</code>), so REF-B and REF-C can never get a tactical or strategic number as the code stands.</li>
+<li><strong>"Instrument built, never wired" is systemic.</strong> The same pattern appears in <code>idm_families.py</code>, the late-fusion fix in <code>sitclf_deploy.py</code>, the control suite in <code>control.py</code>, and <code>lateral.py</code>: each is tested and has zero callers outside its tests.</li>
+<li><strong>Power.</strong> At 40 episodes the minimum detectable paired effect on ADE@2s is roughly 0.06–0.16 m, depending on how correlated the two arms are (Δ 0.044 is not separated; Δ 0.12–0.16 is). The 600-episode deployment shrinks intervals 2.8–3.9× (close to the √15 theory) but is an easier corpus (CV floor 0.838 → 0.692) and cannot be mixed with the 40-episode leaderboard.</li>
+<li><strong>Closed loop.</strong> <code>closedloop.py</code> lets the world model simulate itself; AlpaSim NuRec is reconstruction-OOD-confounded (REF-C's ADE on reconstructions is 3.21× its real-footage value); <code>pseudosim.py</code> is the only non-extrapolating instrument and is explicitly not a driving score (no collision gate, EPDMS <code>filter_m</code> contract recorded but not applied). There is also a citation trap: two AlpaSim result files both called "REF-C suite" disagree (unpaired solo run: base 6/12; paired rerun <code>flagship_vs_refc_suite_results.json</code>: base 8/12 vs flagship 2/12, p = 0.0078). The registry cites the right one.</li>
+<li><strong>A matching external benchmark exists and has a deadline.</strong> NVIDIA's AlpaSim E2E Closed Loop Challenge 2026 has a track on PhysicalAI-AV NuRec, the data and harness TanitAD already uses. The challenge and its PhysicalAI-AV NuRec track are confirmed by an independent search (streams/V1_citation_check.md); the 2026-10-31 closing date and front-camera-only eligibility are <span class="ev ev-u">UNVERIFIED</span> (the default configuration is 4 cameras). Confirm both this week.</li>
+<li><strong>The gate protocol is sound</strong> (it refuses train-log slopes, bare exponents and the deprecated estimator), but the 2026-07-26 horizon fix has not reached the four-family lateral metric, which is still computed at 2.0 s only.</li>
+<li><strong>Stale registry statement.</strong> MODEL_REGISTRY §0.3 still says TanitEval is uncommitted; <code>taniteval/</code> is 263 tracked files.</li>
+</ol>
+<h2 id="9-the-agentic-harness">9. The agentic harness</h2>
+<p><em>Stream R5, <code>streams/R5_agentic_harness.md</code>.</em></p>
+<ol>
+<li><strong>No rule is enforced by a machine.</strong> <code>.claude/settings.json</code> and <code>settings.local.json</code> define no hooks; there is no pre-commit configuration and no CI workflow. Claude Code's <code>Stop</code> hook can block a turn from ending and <code>PreToolUse</code> can deny or redirect a specific command. Those are exact mechanical matches for "never end a turn having only reported" (flagged four times) and "<code>safe_commit.py</code> is the only sanctioned commit path". <span class="ev ev-m">MEASURED</span> + <span class="ev ev-p">PUBLISHED</span>.</li>
+<li><strong>The resource that blew the budget is the one nothing measures.</strong> <code>RESOURCE_LEDGER.md</code> tracks GPU dollars only. There is no LLM token or API spend ledger, although CLAUDE.md records a fan-out that exhausted the weekly API budget and <code>LOOP_STATE.md:46</code> records a 215-agent, 12.9 M-token burst on 07-29.</li>
+<li><strong>The largest error source is the orchestrator's relay layer, by the programme's own scorecard.</strong> <code>BOOST_PROGRAM.md</code> (07-26) marks every mechanised measure as working and marks "no unverified premise in briefs" as failing "at my layer". Retraction R-2026-08-04-briefs is the same class.</li>
+<li><strong>State documents grow instead of shrinking.</strong> <code>LOOP_STATE.md</code> went from 122 KB to 203 KB (472 → 1,493 lines) in 9 days after two reviews called it a liability; its "read this first" pointer is wrong by about 1,300 lines.</li>
+<li><strong>Boom, bust, silence.</strong> 149 commits fall on 9 calendar days (49 on 2026-08-03 alone), then nothing for 52 days, with no handoff note found.</li>
+<li><strong>The prior automation proposals were 3/10 built</strong> (<code>safe_commit.py</code>, <code>registry_lint.py</code>, <code>repo_janitor.py</code>).</li>
+<li><strong>No model-routing policy exists</strong> for the production loop.</li>
+<li><strong>"≥ 5 streams, always" should be conditional.</strong> Anthropic's published multi-agent guidance advises against fan-out for highly interdependent work. Parallelism pays on independent questions (this review) and costs on coupled ones (one trainer, one registry).</li>
+</ol>
+<hr />
+<h2 id="10-frontier-research-mapped-onto-tanitad">10. Frontier research, mapped onto TanitAD</h2>
+<p><em>Streams W1, W2, W3 (Sonnet; about 130 web searches) and the verification pass V1 (Haiku).</em></p>
+<p>This container's egress policy blocked arxiv.org and huggingface.co pages, so the research streams worked from search results. V1 then independently re-searched the 31 citations this section leans on (<code>streams/V1_citation_check.md</code>):
+- <strong>24 confirmed:</strong> the id, the title and the claim match.
+- <strong>6 exist with the specific number unconfirmed.</strong> Those numbers are marked <span class="ev ev-u">UNVERIFIED</span> below.
+- <strong>1 ID mismatch:</strong> arXiv:2608.26533 is a barrier-function conformal safety-clearance paper, not the imagination-calibration work it was cited for.</p>
+<p>Treat every <span class="ev ev-p">PUBLISHED</span> number here as search-verified, not full-text-verified, until someone reads the paper before spending GPU-days on it.</p>
+<p><strong>Verdict scale:</strong>
+- <strong>ADOPT:</strong> do it now; the evidence is strong and the cost is low.
+- <strong>TRIAL:</strong> run a pre-registered, discriminating experiment first.
+- <strong>WATCH:</strong> track it, and don't spend on it yet.
+- <strong>AVOID:</strong> it doesn't fit this programme, or it is hype at this scale.</p>
+<h3 id="101-planning-and-trajectory-selection-the-decision-defect">10.1 Planning and trajectory selection (the decision defect)</h3>
+<p>The field has converged on generating many candidates and scoring them well.
+- <strong>Hydra-MDP</strong> (arXiv:2406.06978) distils rule-based metric teachers into per-candidate scorers.
+- <strong>GTRS</strong> (arXiv:2506.06664) won the NAVSIM v2 challenge with sensor-robust generalized scoring.
+- <strong>DriveSuprim</strong> (arXiv:2506.06659) reaches 87.1 EPDMS with coarse-to-fine selection.
+- <strong>WoTE</strong> (arXiv:2504.01941) scores candidates with a BEV world model, reaching PDMS 88.3.
+- <strong>ZTRS</strong> (arXiv:2510.24108) drops imitation and learns the scorer from reward alone.</p>
+<p>All five are confirmed by V1. They are the published form of the programme's own E-GOAL-4 result and of v6 steps Δ2/Δ3.</p>
+<ul>
+<li><strong>GoalFlow</strong> (arXiv:2503.05689, PDMS 90.3, confirmed) shows goal points help. No goal tested on this corpus has added information beyond <code>(v, ax_fd)</code>, but the only one tested was constructed from <code>(v, ax_fd)</code> (§4.3). Treat the geometric goal point as an untested inductive bias, not a refuted lever.</li>
+<li><strong>SimLingo</strong> (arXiv:2503.09594, confirmed) is a vision-only closed-loop leader with separate path and speed outputs, which is the lateral/longitudinal factorisation D-TAC1 found necessary.</li>
+<li>W1 flags one counter-finding (not V1-checked): re-ranking a fixed fan cannot find trajectories the fan lacks, so search can beat scoring.</li>
+</ul>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> expected-cost, multi-target scoring (Δ2 + Δ3) and a path + speed-profile output factorisation.
+- <strong>TRIAL</strong> a ZTRS-style reward-only scorer as a competing arm.
+- <strong>TRIAL</strong> world-model scoring only after a cost exists (Δ8).</p>
+<h3 id="102-world-models-and-imagination-based-training">10.2 World models and imagination-based training</h3>
+<ul>
+<li><strong>Dreamer 4</strong> (arXiv:2509.24527, confirmed) trains agents entirely inside a scalable world model learned from offline data.</li>
+<li><strong>DriveVLA-W0</strong> (arXiv:2510.12796, confirmed) finds that world modelling as dense supervision amplifies data scaling in driving models.</li>
+<li><strong>LeJEPA</strong> (arXiv:2511.08544, confirmed) is the programme's anti-collapse basis, and R2 found the implementation faithful.</li>
+</ul>
+<p>What this means here: TanitAD's world model is a good dynamics model, but it has no cost and anti-calibrated uncertainty. RL inside it today would optimise against an exploitable model. The literature's own failure mode is reward rising while imagination error at visited states climbs.</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> world modelling as a trunk-shaping auxiliary loss (keep JEPA and grounding).
+- <strong>TRIAL</strong> imagination fine-tuning of the decision layer (Dreamer-style) <em>after</em> Δ3 (a cost) and horizon-aware uncertainty exist, with imagination error monitored at visited states as the kill signal.
+- <strong>TRIAL</strong> RL in NuRec re-simulation on Thor in Phase C.</p>
+<h3 id="103-foundation-models-vlas-and-robotics-transfer">10.3 Foundation models, VLAs and robotics transfer</h3>
+<ul>
+<li><strong>Alpamayo-R1</strong> (arXiv:2511.00088, confirmed) is NVIDIA's reasoning VLA with chain-of-causation traces. Its link to PhysicalAI-AV training data is <span class="ev ev-u">UNVERIFIED</span>.</li>
+<li>Robotics foundation lines (π0.x with RECAP-style learning from experience, GR00T N1.x, Gemini Robotics 1.5) show the same pattern: a large pretrained backbone, a small action head, and RL or advantage-conditioning from deployment experience. These were reported by W1 and not V1-checked.</li>
+</ul>
+<p>A multi-billion-parameter VLA cannot be the 10 Hz planner inside a sub-300 M, Thor-resident budget. It can be a label-time <strong>teacher</strong>, which the PI's rules allow: privileged and knowledge signals are fine at label time.</p>
+<p><strong>Verdicts:</strong>
+- <strong>TRIAL</strong> a VLM/VLA as an offline labeler for hazards, manoeuvre intent and rule-relevant events (BACKLOG B8 already compares Cosmos Reason1 and Reason2).
+- <strong>TRIAL</strong> RECAP-style advantage conditioning from logged selection outcomes (log-only, cheap).
+- <strong>AVOID</strong> a VLA as the onboard planner.</p>
+<h3 id="104-data-efficiency-needing-far-less-labelled-driving-goal-2s-first-priority">10.4 Data efficiency: needing far less labelled driving (Goal 2's first priority)</h3>
+<p>In driving, action labels come free from odometry. The scarce resource is <em>hours of paired video and egomotion</em>, and the multiplier is <em>label-free video</em>. The claim worth making is "closed-loop quality Q reached with N hours of paired data, where competitors need M". It needs a measured slope, which the programme has never had.</p>
+<ul>
+<li><strong>LFG, "Learning to Drive is a Free Gift"</strong> (arXiv:2602.22091, CVPR 2026): label-free pretraining from front-camera video reaches 85.2 PDMS (confirmed). The "81.4 PDMS with 10 % of labels" figure is <span class="ev ev-u">UNVERIFIED</span>. It is the closest sensor match found.</li>
+<li><strong>DriveVLA-W0</strong> (confirmed) finds that world modelling amplifies data scaling.</li>
+<li><strong>SE(2) and mirror symmetry</strong> (arXiv:2403.11304, confirmed): +20.6 % L2@3s on small data. TanitAD has no mirror augmentation at all (R3).</li>
+<li><strong>Cosmos-Drive-Dreams</strong> (arXiv:2506.09042, confirmed): synthetic driving data from world foundation models, already licence-cleared internally.</li>
+<li><strong>MOSAIC</strong> (arXiv:2604.08366; exists, "80 % fewer examples" <span class="ev ev-u">UNVERIFIED</span>): scaling-aware data selection for end-to-end driving.</li>
+<li><strong>Privileged teachers</strong> (learning by cheating, Roach, PlanT, Hydra-MDP): dense per-sample supervision from signals the model cannot see at inference.</li>
+<li><strong>Rig transfer</strong> for inverse-dynamics pseudo-labels: Rig3R (arXiv:2506.02265, confirmed) and focal-length canonicalisation. The programme's own IDM line failed held-out-rig transfer. Audit whether that test was truly held-out before redesigning.</li>
+</ul>
+<p><strong>The cheapest label-free source is already on disk:</strong> the unused part of PhysicalAI-AV's <em>train</em> split, about 153 k clips / 850 h, same rigs, in-domain. Use it before YouTube. Never use the HF val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge. Register that exclusion list before the run, or the one external number is contaminated (the REF-A I-JEPA leak class).</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> mirror augmentation (with steer and lateral sign flips).
+- <strong>ADOPT</strong> the data-efficiency slope experiment (decision D4).
+- <strong>TRIAL</strong> the LFG weights probe, then reproduction.
+- <strong>TRIAL</strong> <code>obstacle.offline</code> auxiliary heads and a privileged cost teacher.
+- <strong>TRIAL</strong> a Cosmos-Drive-Dreams mixture once the slope exists.
+- <strong>TRIAL</strong> a rig-canonicalised IDM after the protocol audit.
+- W2's sequenced programme (<code>streams/W2_…</code> §"10x less labelled data") is the data track: Phase 0 about 0–5 A40-days of diagnostics, Phase 1 about 20–35, Phase 2 about 25–45 (<span class="ev ev-e">ESTIMATED</span>), with a gate between phases.</p>
+<h3 id="105-structured-physical-world-understanding">10.5 Structured physical world understanding</h3>
+<p>The clean way to inject structure without violating vision-only inference is <strong>train-time-only structure</strong>. GraphPilot (arXiv:2511.11266, confirmed) finds that relational supervision at training time keeps its gains with the graph removed at test time. TanitAD's structure source is <code>obstacle.offline</code>: 3D agent tracks on 97.44 % of clips, 10 dynamic classes, all unused. Two routes use it: auxiliary heads that predict agent boxes, occupancy and TTC from the latent, and the per-candidate cost targets (Δ3).</p>
+<p>The readout bottleneck (§4.5) is the other half. Structure the planner cannot see is structure it cannot use, hence Δ6 (the planner reads patch tokens).</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> train-time-only structure (auxiliary heads and cost targets).
+- <strong>WATCH</strong> object-centric slot world models.
+- <strong>AVOID</strong> full occupancy world models (OccWorld-class) until monocular metric depth is solved; there is one camera and no GNSS.</p>
+<h3 id="106-mathematical-guarantees-and-the-safety-envelope-goal-2-no-compromise-in-safety">10.6 Mathematical guarantees and the safety envelope (Goal 2: "no compromise in safety")</h3>
+<p>Nothing can guarantee the learned planner itself. Neural-network verification scales to local robustness, not to ViT-scale semantic correctness. Safety must be an <em>envelope</em> property: small, verifiable layers around the learned core. W3's envelope, corrected by V1:</p>
+<pre><code>L0 learned planner (v6)  ─► candidates + one reference roll
+L1 rule-tiered rerank     Safety ≻ Legal ≻ Comfort over agent/kinematic predicates  (RECTOR, arXiv:2605.25095; its violation-rate numbers UNVERIFIED)
+L2 trust gate             conformally calibrated uncertainty + refusal signal        (conformal planning: Lindemann et al., RA-L 2023; DreamLedger arXiv:2608.23863)
+L3 hard filter            CBF-QP on road-edge and lead-vehicle barriers + RSS check  (BarrierNet arXiv:2203.02401; RSS, Shalev-Shwartz et al. 2017)
+L4 runtime-assurance switch  Simplex: low trust or infeasible QP ─► fallback       (Synergistic Simplex arXiv:2605.08190)
+L5 verified fallback      small controller (e.g. Koopman-LQR or kinematic MPC), stop-in-lane
+L6 post-hoc guard         neuro-symbolic check of the final command                  (arXiv:2608.11451)
+</code></pre>
+<p><strong>What is guaranteed, and under which assumptions:</strong>
+- CBF forward invariance holds only if the dynamics model and the state estimate are within their assumed error bounds.
+- The Simplex switching logic is small enough to test exhaustively.
+- Conformal coverage is marginal and assumes exchangeability; it must be recalibrated when the deployment distribution moves.</p>
+<p><strong>The design constraint the review adds.</strong> L3 needs lead-vehicle range and closing rate at inference, and the 256-px front crop cannot provide closing rate at range (a 40 m car changes width by about 0.3 px across the frame stack; R1 §4.3). So the envelope's perception channel must come from a high-resolution centre crop or the <strong>front-tele camera</strong>, which PhysicalAI-AV provides and the programme does not use, plus a monocular range head supervised by <code>obstacle.offline</code>. All of that is vision-only, so it is admissible.</p>
+<p><strong>The safety case.</strong> Use the safety-case patterns for VLA-based driving (arXiv:2603.16013, confirmed) and the 2026 standards set: ISO 26262, ISO 21448 SOTIF, UL 4600 and ISO/PAS 8800.</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> RSS longitudinal check + CBF-QP filter + Simplex switch + calibrated trust gate as v6's safety layer.
+- <strong>TRIAL</strong> rule-tiered reranking.
+- <strong>AVOID</strong> "provably safe" language without its assumptions.</p>
+<h3 id="107-symbolic-and-neuro-symbolic-reasoning-knowledge-injection">10.7 Symbolic and neuro-symbolic reasoning; knowledge injection</h3>
+<ul>
+<li><strong>Formalised traffic rules</strong> exist: Rulebooks (Censi et al., ICRA 2019), STL/LTL monitors, and CommonRoad's rule formalisation. Most rules, though, need semantics this corpus lacks: lanes, signals, speed limits, right of way. A rule layer here is limited to agent-relative and kinematic predicates (headway, TTC, comfort, speed consistency) until a mapped corpus or simulator supplies more.</li>
+<li><strong>Knowledge injection</strong> that respects the vision-only rule happens at label time: a VLM or VLA teacher labels hazards and manoeuvres, and a rule-based teacher supplies cost targets.</li>
+<li><strong>Chain-of-thought is not a safety mechanism on its own.</strong> W3 cites reasoning-trace attacks (not V1-checked).</li>
+</ul>
+<p><strong>Verdicts:</strong>
+- <strong>TRIAL</strong> kinematic and agent rule monitors inside L1/L6.
+- <strong>TRIAL</strong> VLM-teacher labels.
+- <strong>WATCH</strong> program synthesis of policies (LangProp) as a route to an interpretable fallback controller.
+- <strong>AVOID</strong> reasoning traces as the safety argument.</p>
+<h3 id="108-physics-grounded-neural-operators-and-dynamics">10.8 Physics-grounded neural operators and dynamics</h3>
+<p>The programme's own evidence says the world model behaves like a bicycle model when given controls (§4.1), so make the physics explicit where it helps:
+- a differentiable kinematic decoder (controls → trajectory, feasible by construction; the specific paper arXiv:2603.12421 exists, its decoder claim is <span class="ev ev-u">UNVERIFIED</span>, and the technique is standard);
+- anchors as residuals over a CTRA prior (Δ9);
+- a physics-consistent regulariser on imagined rollouts (kinematic-consistency error).</p>
+<p>The neural-operator families mostly miss this problem:
+- <strong>FNO, DeepONet and PINO</strong> solve PDE-scale fields. A single front camera with no map and no sensor network offers no such field, so they are a scale mismatch here.
+- <strong>Hamiltonian and Lagrangian networks</strong> encode energy conservation, the wrong invariant for a dissipative, externally actuated vehicle.
+- <strong>Koopman operators</strong> are useful in one place: a linear-in-lifted-space controller is a good candidate for the verified fallback (L5).</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> a kinematic decoder and residual-over-prior outputs.
+- <strong>TRIAL</strong> a Koopman or kinematic-MPC fallback.
+- <strong>AVOID</strong> FNO/DeepONet/PINO and HNN/LNN for vehicle dynamics at this scale.</p>
+<h3 id="109-tool-use-for-autonomous-driving">10.9 Tool use for autonomous driving</h3>
+<p>Tool-calling LLM agents are orders of magnitude too slow for a 10 Hz loop. Tools belong in the <em>offline</em> loop:
+- <strong>Scenario generation</strong> to expand the closed-loop suite, which at 12 AlpaSim scenes is the statistical bottleneck. Chat2Scenic (arXiv:2607.14387, confirmed) compiles 76.42 % of LLM-written Scenic scenarios.
+- <strong>Reward and cost design</strong> (Eureka-style).
+- <strong>Labelers and data mining.</strong></p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> LLM-generated scenarios, with human review, to reach at least 50–100 closed-loop scenes.
+- <strong>TRIAL</strong> LLM-proposed cost terms judged by the harness.
+- <strong>AVOID</strong> tool calls in the control loop.</p>
+<h3 id="1010-continual-and-continuous-training">10.10 Continual and continuous training</h3>
+<p>With no fleet, TanitAD's data engine is:
+1. mine hard windows from the unused train split of PhysicalAI-AV and from closed-loop failures in NuRec/AlpaSim;
+2. fine-tune on them with replay;
+3. re-gate on the four families.</p>
+<p>Region and rig adaptation, which is a mission goal, fits parameter-efficient adapters per rig or region with replay against forgetting.</p>
+<p><strong>Verdicts:</strong>
+- <strong>TRIAL</strong> a failure-mining → replay fine-tune loop in Phase B.
+- <strong>TRIAL</strong> per-rig adapters, since the two camera rigs are a known confound.
+- <strong>WATCH</strong> test-time adaptation on Thor.</p>
+<h3 id="1011-brain-and-cortex-inspired-approaches">10.11 Brain- and cortex-inspired approaches</h3>
+<p>The useful brain analogy is not four brains that each predict a trajectory. It is the division of labour the neuroscience actually describes, and each part has a measurable job in v6:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>brain function</th>
+<th>v6 counterpart</th>
+<th>measurable job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>habitual fast policy (System 1)</td>
+<td>the anchored decoder</td>
+<td>proposes candidates every tick</td>
+</tr>
+<tr>
+<td>basal-ganglia action selection with lateral inhibition</td>
+<td>expected-cost argmin + duplicate suppression</td>
+<td>picks one; its failure is the measured selection gap</td>
+</tr>
+<tr>
+<td>cerebellar forward model</td>
+<td>the operative world model (one reference roll)</td>
+<td>predicts consequences; value measured by Δ8</td>
+</tr>
+<tr>
+<td>deliberation on demand (System 2)</td>
+<td>top-K consequence rolls only when the trust gate is low</td>
+<td>the cadence done right: thinking slow when needed, not on a fixed timer</td>
+</tr>
+<tr>
+<td>prefrontal supervision</td>
+<td>the strategic supervisor (Bet B)</td>
+<td>engage/degrade decisions, calibrated against closed-loop outcomes</td>
+</tr>
+</tbody>
+</table></div>
+<p>Three published findings bear on this:
+- <strong>TRM</strong> (arXiv:2510.04871, confirmed): a tiny recursive network beats the hierarchical HRM with no hierarchy at all. Any hierarchy claim must beat a flat baseline with matched compute per decision, not just matched parameters.
+- <strong>Energy-Based Transformers</strong> (arXiv:2507.02092, confirmed) recast selection as energy minimisation.
+- <strong>Neural Circuit Policies and liquid networks</strong> show compact interpretable controllers, relevant to the fallback.</p>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> the dual-process control flow.
+- <strong>TRIAL</strong> basal-ganglia-style inhibition in the selector (cheap).
+- <strong>WATCH</strong> EBT selection.
+- <strong>AVOID</strong> citing neural analogy as evidence.</p>
+<h3 id="1012-ai-that-engineers-ai-harness-engineering">10.12 AI that engineers AI; harness engineering</h3>
+<ul>
+<li><strong>Where agents are reliable today.</strong> Agent systems are strongest on bounded tasks of a day or less, with a clear check. That is exactly the shape of the v6 ladder: nine pre-registered, frozen-dump experiments.</li>
+<li><strong>Reward hacking is measured.</strong> A 2026 study of autonomous research agents reports a 30.5 % hack rate on open-ended tasks (arXiv:2609.28614; that figure confirmed, a second figure <span class="ev ev-u">UNVERIFIED</span>). TanitAD's gate rules (void secondaries, privileged-input primaries, pre-registration) are genuine countermeasures to that class and should be kept.</li>
+<li><strong>The gap is mechanical enforcement</strong> (§9).</li>
+</ul>
+<p><strong>Verdicts:</strong>
+- <strong>ADOPT</strong> hooks, CI, a token ledger and model routing (§13).
+- <strong>TRIAL</strong> an autonomous experiment loop on the v6 ladder, with humans at spend, publish and thesis decisions.
+- <strong>AVOID</strong> unbounded research agents without pre-registration.</p>
+<hr />
+<h2 id="11-catalogue-of-proven-strategies-for-this-programme">11. Catalogue of proven strategies for this programme</h2>
+<p>Ranked by evidence × fit × cost. "In-house" means TanitAD's own measurement (class as cited in §4–§8). <span class="ev ev-p">PUBLISHED</span> items carry the V1 status from §10.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>strategy</th>
+<th>maturity</th>
+<th>key evidence</th>
+<th>fixes</th>
+<th>cost to test</th>
+<th>first experiment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Per-candidate <strong>expected-cost</strong> selection instead of hindsight-best CE</td>
+<td>proven in-house + published</td>
+<td>E-GOAL-4 0.5015 → 0.3917 (<span class="ev ev-i">INHERITED</span>); Hydra-MDP, GTRS, DriveSuprim</td>
+<td>selection</td>
+<td>0.5 A40-day</td>
+<td>Δ2 on parity-train fan dumps</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Multi-target rule-based teacher</strong> (collision, TTC, progress, comfort) distilled into the scorer</td>
+<td>proven (NAVSIM winners)</td>
+<td>Hydra-MDP arXiv:2406.06978</td>
+<td>no cost model</td>
+<td>0.3</td>
+<td>Δ3 from <code>obstacle.offline</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Speed history + measured acceleration</strong> (<code>ax_fd</code>) as inputs</td>
+<td>proven in-house</td>
+<td>v0 as an action channel: +2.21 m [2.04, 2.39]; E-GOAL-3/4</td>
+<td>longitudinal</td>
+<td>1.0</td>
+<td>Δ1</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Train at the evaluation horizon</strong> (K = 20)</td>
+<td>measured in-house on a secondary endpoint (ADE); primary <code>CR_k</code> pending; lateral family worsened</td>
+<td>RR-20: 0.4244 → 0.3485, speed bias removed</td>
+<td>compounding</td>
+<td>0.9</td>
+<td>Δ7</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Planner reads rich spatial features</strong>, not the 2,048-float WM state</td>
+<td>proven in-house</td>
+<td>same decoder: oracle-in-fan 0.164 on REF-C's map vs 0.338 on the WM state</td>
+<td>readout bottleneck</td>
+<td>0.7</td>
+<td>Δ6</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Factorised path × speed outputs</strong></td>
+<td>proven (published + in-house)</td>
+<td>SimLingo arXiv:2503.09594; D-TAC1</td>
+<td>tactical</td>
+<td>0.3</td>
+<td>Δ4</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Mirror / SE(2) symmetry</strong></td>
+<td>proven (published)</td>
+<td>+20.6 % L2@3s on small data, arXiv:2403.11304</td>
+<td>small data</td>
+<td>≈ 1</td>
+<td>mirror-flip control arm</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Kinematic decoder and residual-over-prior outputs</strong></td>
+<td>proven technique; untested here</td>
+<td>standard; R1 Δ9</td>
+<td>steady-window loss, lateral consistency</td>
+<td>1.0</td>
+<td>Δ9</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Train-time-only structure</strong> from privileged tracks</td>
+<td>proven (LbC, Roach, PlanT; GraphPilot arXiv:2511.11266)</td>
+<td>gains persist with structure removed at test time</td>
+<td>structure, longitudinal</td>
+<td>1–3</td>
+<td><code>obstacle.offline</code> auxiliary heads</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Label-free video pretraining</strong> of the world model</td>
+<td>promising → proven</td>
+<td>LFG arXiv:2602.22091 (85.2 PDMS); DriveVLA-W0 arXiv:2510.12796</td>
+<td>data efficiency</td>
+<td>10–25</td>
+<td>the slope (D4)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Safety envelope:</strong> RSS + CBF-QP + Simplex + calibrated trust gate</td>
+<td>components proven; integration promising</td>
+<td>RSS 2017; BarrierNet arXiv:2203.02401; Simplex arXiv:2605.08190; conformal planning 2023</td>
+<td>safety by design</td>
+<td>2–4 eng-weeks</td>
+<td>closed-loop A/B with and without the envelope</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Conformal calibration</strong> of uncertainty from two-head disagreement</td>
+<td>proven (published)</td>
+<td>Lindemann et al., RA-L 2023</td>
+<td>anti-calibrated imagination</td>
+<td>0.2</td>
+<td>calibrate on the 600-episode deployment</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>LLM-generated closed-loop scenarios</strong></td>
+<td>promising</td>
+<td>Chat2Scenic arXiv:2607.14387</td>
+<td>12-scene power bottleneck</td>
+<td>eng-days</td>
+<td>grow the suite to ≥ 50 scenes</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>RL fine-tuning in re-simulation or imagination</strong></td>
+<td>promising</td>
+<td>Dreamer 4 arXiv:2509.24527; RAD; CaRL</td>
+<td>closed-loop compounding</td>
+<td>5–20</td>
+<td>only after #2 and #12 exist</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong>Training-throughput engineering</strong> (profile, bf16, <code>torch.compile</code>, CUDA graphs, fused AdamW)</td>
+<td>proven engineering</td>
+<td>CUDA graphs already 1.75–3.46× at inference (R2)</td>
+<td>19.58 s/step</td>
+<td>eng-days</td>
+<td>200-step profile, then one lever at a time</td>
+</tr>
+<tr>
+<td>16</td>
+<td><strong>Mechanical guardrails</strong> (hooks, CI, token ledger, model routing)</td>
+<td>proven engineering</td>
+<td>Claude Code hooks; R5</td>
+<td>process tax, idle turns, budget blow-ups</td>
+<td>eng-days</td>
+<td>wire four hooks to existing tools</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="12-disruptive-bets">12. Disruptive bets</h2>
+<p>Each bet is sized to leapfrog rather than catch up, and each carries a pre-committed kill criterion.</p>
+<h3 id="bet-a-the-world-model-becomes-the-critic-not-the-headline">Bet A — The world model becomes the critic, not the headline</h3>
+<p><strong>Thesis.</strong> Stop asking the world model to be the planner. Make it the consequence model inside a cost-aware selector: REF-C-class proposals, an expected-cost regressor with Hydra-style multi-target costs, and one reference roll from the arm's <em>own</em> world model as a feature. A ZTRS-style reward-only scorer runs as the competing arm.</p>
+<p><strong>Why disruptive.</strong> It is the only path in which the programme's distinctive asset (a vision world model) earns a measured place in decisions. It keeps the latency inside Thor's budget (§4.8).</p>
+<p><strong>First gate:</strong> Δ2 + Δ3 + Δ8 on frozen fans, about 1 A40-day.</p>
+<p><strong>Kill:</strong> Δ8 with the arm's own world model never beats the same selector without it, on either deployment. Then the world model is a representation learner, and the thesis is stated that way.</p>
+<h3 id="bet-b-the-strategic-brain-becomes-the-safety-supervisor-the-mission-describes">Bet B — The strategic brain becomes the safety supervisor the mission describes</h3>
+<p><strong>Thesis.</strong> The mission's strategic layer engages, degrades and blocks autonomy and diagnoses the system. Build exactly that:
+- a supervisor fed calibrated uncertainty (two-head disagreement, conformal thresholds), imagination-vs-observation error, and envelope signals (QP feasibility, RSS margin);
+- it outputs engage / cautious / degrade / minimal-risk manoeuvre;
+- it is trained and validated on closed-loop failure outcomes in NuRec/AlpaSim.</p>
+<p><strong>Why disruptive.</strong> It turns the hierarchy from an unmeasurable claim into the "safety by design, no compromise between modular and E2E" architecture of Goal 2. It is also the natural carrier for UN ADS / WP.29 evidence, and it answers W1's modular-certifiability counter-argument.</p>
+<p><strong>First gate:</strong> the supervisor's risk score predicts closed-loop failures on held-out scenes at a pre-registered AUROC (proposed ≥ 0.75).</p>
+<p><strong>Kill:</strong> at matched progress, supervisor-driven degradation does not reduce failures (paired, n ≥ 50 scenes).</p>
+<h3 id="bet-c-1000-less-labelled-data-becomes-a-measured-curve">Bet C — "1000× less labelled data" becomes a measured curve</h3>
+<p><strong>Thesis.</strong>
+- Pretrain the world model label-free on the unused part of PhysicalAI-AV's <em>train</em> split, about 153 k clips / 850 h, front-wide + front-tele. Never use the HF val/test splits or any clip whose NuRec scene is in the closed-loop suite or the challenge; register the exclusion list before the run. Later, add front-camera web video (LFG-style).
+- Then train v6's heads at 1, 3, 10, 30 and 100 % of the paired hours.
+- Train REF-C at the same fractions.
+- Report all four families and closed loop.</p>
+<p>The deliverable is the slope, fitted over at least 4 fractions with R² ≥ 0.8 as CLAUDE.md requires, plus the fraction at which pretrained v6 matches REF-C trained on 100 %.</p>
+<p><strong>Why disruptive.</strong> It is the mission's first priority goal, and nobody has published it for front-camera-only world-model planners at this scale.</p>
+<p><strong>First gate:</strong> at 10 % of paired hours, the pretrained arm is separated-better than the non-pretrained arm on at least two families.</p>
+<p><strong>Kill:</strong> no separated shift at two or more fractions. Then move the data-efficiency claim to structure priors and privileged teachers (#7–#9 in §11).</p>
+<h3 id="bet-d-train-in-imagination-and-in-re-simulation">Bet D — Train in imagination and in re-simulation</h3>
+<p><strong>Thesis.</strong> Once Bet A supplies a cost and §11 #12 supplies calibrated uncertainty, fine-tune the decision layer in two ways:
+- by RL inside the world model (Dreamer-4-style);
+- by RL in NuRec re-simulation on Thor (RAD-style), where the programme already renders at usable rates.</p>
+<p><strong>Why disruptive.</strong> Closed-loop training attacks compounding error directly, which open-loop imitation cannot.</p>
+<p><strong>Kill:</strong> imagined reward rises while imagination error at visited states rises (reward hacking), or closed-loop success does not improve (paired, n ≥ 50).</p>
+<h3 id="bet-e-let-agents-engineer-the-stack-under-mechanical-guardrails">Bet E — Let agents engineer the stack, under mechanical guardrails</h3>
+<p><strong>Thesis.</strong> The v6 ladder, the data slope and the envelope are sequences of bounded, pre-registered tasks, which is the shape at which current agents are reliable. Run them as an autonomous loop:
+- <strong>Models:</strong> Sonnet implements, Opus adjudicates, Haiku lints and extracts.
+- <strong>Guardrails:</strong> hooks enforce the rules, a token ledger prices every stream, and every result lands in the registry by pointer.
+- <strong>Humans decide</strong> on spend, publication and thesis questions.</p>
+<p><strong>Kill:</strong> the retraction rate per validated finding, or the cost per validated finding, exceeds the programme's pre-loop baseline over two weeks.</p>
+<hr />
+<h2 id="13-fix-list">13. Fix list</h2>
+<p>Found by the streams and checked where marked. P0 = this week at near-zero GPU; P1 = next two weeks; P2 = month two.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>pri</th>
+<th>defect</th>
+<th>where</th>
+<th>fix</th>
+<th>cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P0</td>
+<td>Leaderboard §6 ranks WM fidelity (given the expert's controls) as 1= with planners</td>
+<td><code>MODEL_REGISTRY.md</code> §6 vs <code>:192</code>; CODE <code>rollout.py:146-147</code></td>
+<td>two tables (decision D1); replace the "legacy only" tactical-head row with 3.3839 [2.8336, 3.9722]</td>
+<td>1 eng-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Evidence built on the unlike comparison</td>
+<td>HPP0 "7.9×" (<code>HPP0_CONFOUND_AUDIT.md:457</code>); registry §6 reading 2; the vision-anticipation panel (<code>generalization.py:371-399</code>)</td>
+<td>withdraw as hierarchy evidence; re-run anticipation with zero-order-hold actions</td>
+<td>1 A40-hour</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Four-family instrument has no callers; tactical/strategic never measured on the canonical val</td>
+<td><code>taniteval/four_families.py</code>; <code>runner.py:341-342</code></td>
+<td>wire <code>all_families</code> into <code>runner.run_one</code>; fold distance-keeping into <code>driving.py</code>; extend the horizon fix to the lateral family</td>
+<td>1.5–2 eng-days</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>RR-20 has no admissible verdict under its own pre-registration</td>
+<td><code>PREREG_rollout_recovery.md</code> (primary <code>CR_k</code> missing)</td>
+<td>compute <code>CR_k</code> on the existing checkpoints</td>
+<td>0.05 A40-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>RR-20 / RR-CTL are unregistered; two speed-bias instruments disagree 5× under one key</td>
+<td><code>…/incoming/2026-08-02-rollout-recovery-verdict/</code>; <code>four_families.py:185</code> vs <code>driving.py:342</code></td>
+<td>register both arms in <code>MODEL_REGISTRY.md</code> with all five JSONs; state which <code>speed_bias_mps</code> is canonical</td>
+<td>1 hour</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>The Thor-timed path (<code>TacticalSelector</code>, 9 primitives) has no accuracy measurement</td>
+<td><code>eval_behavior.py:23-25</code>; runbook <code>:134-137</code></td>
+<td>score it once on val-40 (four families), so the dossier's latency and accuracy refer to one path; otherwise label the tick "latency of the v1 selector path, accuracy not measured"</td>
+<td>≤ 0.2 A40-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>22 M untrained H15 parameters in every v4-line run incl. v5f</td>
+<td>CODE <code>train_flagship_v4.py:390,395,999</code>; <code>fourbrain.py:456</code></td>
+<td>confirm with a CPU state_dict diff; remove or train (Δ5)</td>
+<td>CPU</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>v5f's defining lever cannot rank</td>
+<td>CODE <code>flagship_v15.py:638-656</code></td>
+<td>evaluate v5f's latest checkpoint once on the four families with <code>--goal-mode produced</code> or <code>neutral</code>, never <code>oracle</code>; stop the line at 10 k unless it beats REF-C-XL on the decision surface (R1 R-8)</td>
+<td>≤ 0.5 A40-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>The world model has never been measured as a like-for-like forecaster on the canonical windows</td>
+<td>R1 R-2</td>
+<td>roll v1 under the held last action on the 881, paired vs REF-C-base, CTRV and the bicycle</td>
+<td>0.1 A40-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>The headline decodes 20 steps with a readout trained on 4</td>
+<td>R1 R-11; <code>readout_selection.py</code></td>
+<td>apply the committed C8 rule (<code>op</code> ≤ 0.5 s, <code>str</code> beyond) to every production caller</td>
+<td>0.05 A40-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Registry-integrity suite red at HEAD</td>
+<td>2 MISSING citations (§ Appendix C, O1)</td>
+<td>commit <code>BACKUP_LOG.txt</code> from the dev box; cite the HF copy of the no-speed checkpoint or record it as <code>unresolved</code> deliberately</td>
+<td>dev box, minutes</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Registry §0.3 says TanitEval is uncommitted</td>
+<td>it is 263 tracked files</td>
+<td>correct the statement</td>
+<td>minutes</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Two AlpaSim result files both named "REF-C suite" disagree (6/12 vs 8/12)</td>
+<td>R4 §3</td>
+<td>mark the unpaired one superseded</td>
+<td>1 hour</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>AlpaSim E2E Challenge date and sensor eligibility unknown</td>
+<td>R4, V1</td>
+<td>confirm both</td>
+<td>1 eng-day</td>
+</tr>
+<tr>
+<td>P0</td>
+<td>Cloud sessions cannot run the test suite</td>
+<td><code>download.pytorch.org</code> denied by the environment's network policy</td>
+<td>allow the host, or provide a CPU-torch wheel cache</td>
+<td>settings</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>No image augmentation of any kind</td>
+<td>R3 §1.4</td>
+<td>mirror flip with steer and lateral sign flip, then crop and colour jitter</td>
+<td>2 eng-days</td>
+</tr>
+<tr>
+<td>P1</td>
+<td><code>v0</code> broadcast as a constant; <code>ax_fd</code> fed to no arm</td>
+<td>CODE <code>flagship_losses.py:227-238</code></td>
+<td>Δ1</td>
+<td>1 A40-day</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Nothing regularises rolled-out states; the σ-head is trained one-step only</td>
+<td>R2 §2; R1 §7</td>
+<td>SIGReg/isotropy on rollout states; two-head disagreement for uncertainty</td>
+<td>2–3 A40-days</td>
+</tr>
+<tr>
+<td>P1</td>
+<td><code>invdyn_gradscale</code> fix ships at the no-op default</td>
+<td>R2 §6</td>
+<td>ablate 0.25 vs 1.0 at a 5 k gate</td>
+<td>1 A40-day</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Seeds only; no deterministic data order</td>
+<td>8 trainers</td>
+<td><code>seed_everything</code> + seeded DataLoader</td>
+<td>0.5 eng-day</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>No profile, no compile / fused optimiser / flash attention</td>
+<td>8 trainers; 19.58 s/step</td>
+<td>profile 200 steps, then add levers one at a time</td>
+<td>1–2 eng-days</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Cadence configured, never executed</td>
+<td>CODE <code>config.py:118,140</code></td>
+<td>implement in the deployed loop, or delete the claim</td>
+<td>1 eng-day</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>Intersection label half-built</td>
+<td><code>sc_cross.py</code> stranded in <code>incoming/</code></td>
+<td>promote into <code>stack/</code></td>
+<td>1 eng-day</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>No mechanical enforcement of any CLAUDE.md rule</td>
+<td><code>.claude/settings*.json</code> have no hooks; no CI</td>
+<td><code>Stop</code> idle guard; <code>PreToolUse</code> on commit → <code>safe_commit.py</code>; <code>SubagentStop</code> manifest check; <code>SessionEnd</code> → <code>session_guard.py</code>; CI for <code>pytest</code> and <code>registry_lint</code></td>
+<td>2–3 eng-days</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>No LLM spend ledger; no fan-out governor</td>
+<td>R5</td>
+<td>per-stream token ledger; semaphore on sub-agent spawns</td>
+<td>1–2 eng-days</td>
+</tr>
+<tr>
+<td>P1</td>
+<td><code>LOOP_STATE.md</code> 203 KB and growing</td>
+<td>R5</td>
+<td>split into a ≤ 1,500-token header + dated shards; size-guard hook</td>
+<td>1 eng-day</td>
+</tr>
+<tr>
+<td>P2</td>
+<td><code>hierarchy.run</code> accepts flagship arms only</td>
+<td><code>runner.py:341-342</code></td>
+<td>tactical/strategic families for REF-B/REF-C (an architecture question)</td>
+<td>PI + 2–3 eng-days</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>The v2corpus contrast is confounded</td>
+<td>R3 §4</td>
+<td>launch the lever-matched control before any "more data helped" claim</td>
+<td>≈ 6 A40-days</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Registry copies numbers rather than pointing at them</td>
+<td>07-25 proposal #9</td>
+<td><code>results_ledger.py</code></td>
+<td>3 eng-days</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="14-the-plan">14. The plan</h2>
+<h3 id="141-the-ten-days-to-the-05102026-evaluation">14.1 The ten days to the 05.10.2026 evaluation</h3>
+<p>The goal is a dossier the PI can defend in front of anyone: every number with its estimator, every family reported, and the hierarchy stated as it stands.</p>
+<p><strong>Priority order, so a slipped item still leaves a defensible deliverable:</strong>
+1. registry split (D1);
+2. four-family panel on val-40 for v1 and REF-C;
+3. Δ2 on val-40;
+4. the Thor tick stated honestly;
+5. the existing 12-scene closed-loop table as it is;
+6. envelope v0;
+7. new closed-loop runs.</p>
+<p><strong>Dependency.</strong> The val-40 fan dumps are in the repo (<code>taniteval/results/fan_refc-{base,xl}-30k.pt</code>, <code>windows_*.pt</code>). The 600-episode fan dump is not: its poses lived on the terminated pod2 (<code>EGOAL_4.md:81</code>). Either cost its regeneration (the REF-C-XL checkpoint, the val-600 corpus and one GPU) or run days 2–5 on val-40 only and move the 600 arm to Phase A.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>days</th>
+<th>work</th>
+<th>GPU</th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Fleet check after 52 days (what is alive, where v5f stopped, what it costs); allow <code>download.pytorch.org</code> for cloud sessions; registry split (D1)</td>
+<td>0</td>
+<td>a truthful fleet and leaderboard</td>
+</tr>
+<tr>
+<td>1–2</td>
+<td>Wire the four families into the runner; compute <code>CR_k</code> for RR-20; measure the world model as a held-last-action forecaster on the 881; apply the readout rule; confirm the dead-H15 diff; confirm AlpaSim Challenge date and eligibility</td>
+<td>≈ 0.3 A40-day</td>
+<td>four-family panels become routine; the like-for-like forecaster number</td>
+</tr>
+<tr>
+<td>2–5</td>
+<td>Frozen-fan ladder on REF-C-XL: Δ2 (expected-cost selector trained on parity-train fans, reconciling E-GOAL-4 with v1.2), Δ3 (<code>obstacle.offline</code> cost targets), Δ8 (reference roll with v1's world model), each on val-40 and the 600-episode deployment, paired</td>
+<td>≈ 1–1.5 A40-days</td>
+<td>the first decision-layer result on the correct target</td>
+</tr>
+<tr>
+<td>3–7</td>
+<td>Safety envelope v0 in simulation: RSS longitudinal check + kinematic CBF-QP + Simplex fallback on the selected trajectory. Labelled as an oracle-perception envelope test, because the simulator supplies lead state; the deployable version needs the vision range head of Phase A</td>
+<td>Thor</td>
+<td>envelope mechanism measured: collisions, off-road, progress</td>
+</tr>
+<tr>
+<td>5–9</td>
+<td>Closed loop on Thor: REF-C-base vs REF-C + selector (± envelope) vs flagship v1's tactical path, paired, on every available NuRec scene. Report n; 12 scenes are underpowered</td>
+<td>Thor</td>
+<td>the closed-loop table</td>
+</tr>
+<tr>
+<td>9–10</td>
+<td>The dossier: four families per arm with paired CIs; closed loop; Thor latency; what the hierarchy has and has not shown; the plan below</td>
+<td>0</td>
+<td>the 05.10 deliverable</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="142-days-1190">14.2 Days 11–90</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>phase</th>
+<th>days</th>
+<th>aim</th>
+<th>contents</th>
+<th>gate to pass</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>11–30</td>
+<td>make decisions measurable and fix the decision layer</td>
+<td>the rest of the v6 ladder (Δ1, Δ4–Δ7, Δ9); mirror augmentation; <code>obstacle.offline</code> auxiliary heads; strategic supervisor v0 with conformal thresholds; the 600-episode deployment as the paired decision set and the closed-loop suite grown to ≥ 50 scenes; hooks, CI, token ledger</td>
+<td>on the 600-episode deployment (val-40's MDE is 0.06–0.16 m): v6 separated-better than REF-C-base on at least one family and non-inferior on the rest, with pre-registered margins (e.g. paired ADE@2s upper bound &lt; +0.02 m); non-inferior in closed loop; ≥ 4 of 9 ladder steps graduate</td>
+</tr>
+<tr>
+<td>B</td>
+<td>31–60</td>
+<td>scale what graduated</td>
+<td>label-free pretraining on 10–30 % of PhysicalAI-AV (front-wide + front-tele) → the data-efficiency slope (Bet C); envelope v1 with a vision range head; RL fine-tuning in imagination or NuRec (Bet D); failure-mining with replay; the strategic test on a corpus with route information (AlpaSim routes or L2D)</td>
+<td>slope with R² ≥ 0.8 over ≥ 4 fractions; supervisor AUROC gate (Bet B)</td>
+</tr>
+<tr>
+<td>C</td>
+<td>61–90</td>
+<td>prove it externally</td>
+<td>AlpaSim Challenge entry or its successor; a second external benchmark if feasible; the safety case (ISO/PAS 8800 / UL 4600 patterns); the data-efficiency paper</td>
+<td>an external number with a rank; a safety case with explicit assumptions</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Compute</strong> (<span class="ev ev-e">ESTIMATED</span>): Phase A 10–20 A40-days, Phase B 30–60, Phase C 10–20 plus Thor time. That is within a few A40s over 90 days if training throughput improves as §13 intends. At today's 19.58 s/step, Phase B does not fit.</p>
+<h3 id="143-decisions-only-the-pi-can-make">14.3 Decisions only the PI can make</h3>
+<ul>
+<li><strong>D1–D5</strong> (§1).</li>
+<li><strong>Whether to stop the v5f line</strong> once its last checkpoint is evaluated.</li>
+<li><strong>Pods to keep, release or provision</strong> for Phases A–B.</li>
+<li><strong>Cloud-environment network access</strong> (<code>download.pytorch.org</code>).</li>
+<li><strong>Whether the 05.10 dossier states the hierarchy result as it stands.</strong> This review recommends it does.</li>
+<li><strong>Which reading of "4B architecture" the 05.10 evaluation scores.</strong> Phase 0 (<code>Mission Plan.md:181</code>) asks for "a running architecture with the most important hypotheses like the 4B architecture". v1 satisfies the four brains as built, and it loses to a flat planner. v6 keeps four measurable <em>roles</em>: proposer, selector, forecaster, supervisor. This review recommends scoring the roles, and saying so in the dossier.</li>
+</ul>
+<h3 id="144-how-to-run-it-with-agents-efficiently">14.4 How to run it with agents, efficiently</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>role</th>
+<th>model</th>
+<th>effort</th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>orchestrator: briefs, relay, verification of load-bearing claims</td>
+<td>Opus 5.5 (Opus 5 where 5.5 is not yet available)</td>
+<td>high</td>
+<td>the programme's own scorecard locates its dominant error source at this layer (R5)</td>
+</tr>
+<tr>
+<td>architecture judgment, gate adjudication, causal analysis</td>
+<td>Opus 5.5</td>
+<td>high to xhigh</td>
+<td>low error tolerance; this review's architecture stream is the example</td>
+</tr>
+<tr>
+<td>implementation, experiments, literature screens</td>
+<td>Sonnet 5</td>
+<td>medium to high</td>
+<td>bounded tasks with a check; about half the Opus price</td>
+</tr>
+<tr>
+<td>extraction, lint triage, citation and number checks</td>
+<td>Haiku 4.5</td>
+<td>low</td>
+<td>the judgment lives in the tool; this review's fact base and citation check cost little</td>
+</tr>
+<tr>
+<td>red-team of anything going to the PI or outside the programme</td>
+<td>Fable 5.1</td>
+<td>high, sparingly</td>
+<td>the most capable model where one wrong claim costs GPU-weeks</td>
+</tr>
+</tbody>
+</table></div>
+<p>Prices, per million input/output tokens: Haiku 4.5 $1/$5, Sonnet 5 $2/$10, Opus 5.5 $4/$20, Fable 5.1 $10/$50 (Claude API reference, cached 2026-06-24).</p>
+<p><strong>Operating rules that save tokens without losing rigour:</strong>
+1. Five to seven streams on <em>independent</em> questions. For coupled work (one trainer, one registry), use a single stream with depth.
+2. Every brief carries the preamble, a priority order, a file budget (≤ 1,000 lines) and a summary budget (≤ 1,200 words).
+3. The orchestrator reads summaries, then targeted ranges, never whole state files.
+4. Sub-agents never spawn sub-agents.
+5. Every stream logs its tokens.
+6. Load-bearing claims are re-checked by a second, cheaper model before they reach the PI. This review's Haiku pass caught a wrong arXiv id and six unconfirmed numbers for a few cents.</p>
+<hr />
+<h2 id="15-what-would-change-this-assessment">15. What would change this assessment</h2>
+<ul>
+<li><strong>A hierarchy decision path wins.</strong> If the tactical or strategic path beats REF-C-base, paired on the same windows, the hierarchy verdict in §4.9 reverses.</li>
+<li><strong>Δ2 fails to replicate.</strong> If the selector trained on parity-train episodes does not reproduce E-GOAL-4, the selection lever is smaller than §1 claims. v6's centre of gravity then moves to Δ6 (planner substrate) and Δ9 (residual anchors).</li>
+<li><strong>Label-free pretraining does not shift the curve.</strong> The data-efficiency claim then rests on structure priors and privileged teachers, and "1000×" should not be stated.</li>
+<li><strong>The AlpaSim Challenge cannot take a front-camera-only entry.</strong> Then choose a benchmark that can (for example Bench2Drive with a front camera), not a different sensor set.</li>
+<li><strong>v5f's last checkpoint evaluates well on all four families.</strong> Revisit §4.3's reading of the probe-token lever. This is unlikely, since the lever cannot rank by construction, but the checkpoint should be measured, not assumed.</li>
+</ul>
+<hr />
+<h2 id="appendix-a-streams-and-deliverables">Appendix A — Streams and deliverables</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>stream</th>
+<th>scope</th>
+<th>model</th>
+<th>file</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>architecture and causal diagnosis</td>
+<td>Opus 5.5</td>
+<td><code>streams/R1_architecture_causal.md</code></td>
+</tr>
+<tr>
+<td>R2</td>
+<td>training, anti-collapse, compute</td>
+<td>Sonnet 5</td>
+<td><code>streams/R2_training_anticollapse.md</code></td>
+</tr>
+<tr>
+<td>R3</td>
+<td>data, encoding, resolution, labels</td>
+<td>Sonnet 5</td>
+<td><code>streams/R3_data_encoding_labels.md</code></td>
+</tr>
+<tr>
+<td>R4</td>
+<td>evaluation, statistics, closed loop, external benchmarks</td>
+<td>Sonnet 5</td>
+<td><code>streams/R4_eval_metrics_closedloop.md</code></td>
+</tr>
+<tr>
+<td>R5</td>
+<td>agent harness, token efficiency, AI-engineering-AI</td>
+<td>Sonnet 5</td>
+<td><code>streams/R5_agentic_harness.md</code></td>
+</tr>
+<tr>
+<td>W1</td>
+<td>frontier: world models, planning/selection, VLAs, brain-inspired</td>
+<td>Sonnet 5</td>
+<td><code>streams/W1_frontier_worldmodels_planning_brain.md</code></td>
+</tr>
+<tr>
+<td>W2</td>
+<td>frontier: data efficiency, pretraining, distillation, continual learning</td>
+<td>Sonnet 5</td>
+<td><code>streams/W2_frontier_data_efficiency.md</code></td>
+</tr>
+<tr>
+<td>W3</td>
+<td>frontier: structure, reasoning, tools, neural operators, guarantees</td>
+<td>Sonnet 5</td>
+<td><code>streams/W3_frontier_structure_reasoning_guarantees.md</code></td>
+</tr>
+<tr>
+<td>H1</td>
+<td>fact base: registry arms, retractions, hypotheses, timeline</td>
+<td>Haiku 4.5</td>
+<td><code>streams/H1_fact_base.md</code></td>
+</tr>
+<tr>
+<td>V1</td>
+<td>independent citation check of 31 load-bearing references</td>
+<td>Haiku 4.5</td>
+<td><code>streams/V1_citation_check.md</code></td>
+</tr>
+<tr>
+<td>X1</td>
+<td>red-team of this synthesis: 7 must-fix and 11 should-fix findings, all applied</td>
+<td>Fable 5.1</td>
+<td><code>streams/X1_redteam.md</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The orchestrator (Opus 5.5) wrote this synthesis and re-verified these load-bearing facts in the source:
+- the expert-future-controls headline (<code>rollout.py:146-147,181-185</code>);
+- the untrained H15 module in the v4 line;
+- the 2026-08-04 distance-keeping numbers (resolving a conflict between R3 and the repository);
+- the Thor tick artifact;
+- the follow-through audit.</p>
+<p>All deliverables are in this folder and nothing lives only in the container.</p>
+<h2 id="appendix-b-reconciliations-between-streams">Appendix B — Reconciliations between streams</h2>
+<ul>
+<li><strong>Distance-keeping.</strong> R3 says distance-keeping is unavailable for every arm. The 2026-08-04 artifact (<code>…/incoming/2026-08-04-distance-keeping-arms/DISTANCE_KEEPING_ARMS.md</code>) computed it for 25 arms on val-40. Both are true: the numbers exist, but they come from incoming-folder scripts that the standard runner does not call.</li>
+<li><strong>The flagship's speed bias.</strong> The 2026-08-04 "speed-setting bias" (+0.1911 m/s) was measured on the WM-fidelity path. It is a world-model integration bias, fixed by K = 20 training, not a planning decision.</li>
+<li><strong>Retraction classes.</strong> H1's retraction-class counts (C3 19, C4 15, C5 12, C1 8, C2 7, C6 7 of 68) are a Haiku grouping of free text and disagree with the log's own ranked order. Treat them as indicative only.</li>
+<li><strong>V1's summary line.</strong> V1 reports 23 confirmed / 7 unconfirmed; its table rows show 24 confirmed, 6 with the number unconfirmed, and 1 ID mismatch. The table is used here.</li>
+<li><strong>Applied from the red-team (X1).</strong> The corrections, and the source each rests on:</li>
+<li>PhysicalAI-AV has 7 camera streams, not 6 (in-repo feature probe).</li>
+<li>The Thor tick is v1's 9-manoeuvre selector, a decision on an unscored path, not a single rollout of given actions.</li>
+<li>The hierarchy's losses are 4.0–7.2× on full-set numbers; the deprecated P2 split-mean is no longer used.</li>
+<li>The goal-information claim was true by construction and is restated.</li>
+<li>E-GOAL-4 is out-of-fold within val-600 and must replicate on train-corpus fans before it decides GPU-days.</li>
+<li>Label-free pretraining is restricted to the HF train split, with a registered exclusion list.</li>
+<li>Two RR-20 speed-bias instruments disagree 5× and are both quoted.</li>
+</ul>
+<h2 id="appendix-c-method-limits-and-orchestrator-findings">Appendix C — Method, limits and orchestrator findings</h2>
+<h3 id="how-this-review-was-produced">How this review was produced</h3>
+<p>Ten streams (nine in parallel, then a citation check), each on the cheapest Claude model that could do its job, each writing a banked stream report into <code>streams/</code> with a deliverable manifest. The orchestrator (Opus 5.5) wrote the synthesis and checked the load-bearing numbers against <code>MODEL_REGISTRY.md</code> and the repo.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>stream</th>
+<th>scope</th>
+<th>model</th>
+<th>why this tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>architecture &amp; causal diagnosis of the 4-brain world model</td>
+<td>Opus 5.5</td>
+<td>highest-judgment question in the programme</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>training recipes, objectives, anti-collapse, compute</td>
+<td>Sonnet 5</td>
+<td>structured code reading with good judgment at half the Opus price</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>data, encoding, resolution, labels</td>
+<td>Sonnet 5</td>
+<td>same</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>evaluation, statistics, closed loop, external benchmarks</td>
+<td>Sonnet 5</td>
+<td>same</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>agentic harness, token efficiency, AI-engineering-AI</td>
+<td>Sonnet 5</td>
+<td>doc-heavy reading plus web research</td>
+</tr>
+<tr>
+<td>W1</td>
+<td>frontier: world models, imagination, planning/selection, VLAs, brain-inspired</td>
+<td>Sonnet 5</td>
+<td>web research and screening</td>
+</tr>
+<tr>
+<td>W2</td>
+<td>frontier: data efficiency, pretraining, pseudo-labels, distillation, continual learning</td>
+<td>Sonnet 5</td>
+<td>web research and screening</td>
+</tr>
+<tr>
+<td>W3</td>
+<td>frontier: structure, symbolic reasoning, knowledge, tools, neural operators, guarantees</td>
+<td>Sonnet 5</td>
+<td>web research and screening</td>
+</tr>
+<tr>
+<td>H1</td>
+<td>fact base: registry arms, retraction log, hypotheses, decisions, git timeline</td>
+<td>Haiku 4.5</td>
+<td>mechanical extraction from 200–330 KB files</td>
+</tr>
+<tr>
+<td>V1</td>
+<td>independent citation check of 31 load-bearing references</td>
+<td>Haiku 4.5</td>
+<td>mechanical search-and-compare</td>
+</tr>
+</tbody>
+</table></div>
+<p>Prices used for routing (Claude API reference, cached 2026-06-24, per million input/output tokens): Haiku 4.5 $1/$5 · Sonnet 5 $2/$10 · Opus 5.5 $4/$20 · Fable 5.1 $10/$50. Fable 5.1 was used once, for a bounded red-team of this synthesis (<code>streams/X1_redteam.md</code>).</p>
+<p>Limits of this review: it is static. This container has no pod access, so nothing here re-runs a model; every model number is quoted from <code>MODEL_REGISTRY.md</code> or a committed results JSON, and every research claim cites its paper. <code>torch</code> could not be installed (the network policy denies <code>download.pytorch.org</code>), and every <code>stack/tests</code> and <code>taniteval/tests</code> module needs it at collection (directly, or through <code>tanitad</code> imports), so those suites were not run. The torch-free <code>tools/tests</code> suite was run: 237 pass, 2 fail, 1 skip (the 2 failures are real and pre-existing at HEAD; see "Fix now").</p>
+<h3 id="alignment-with-the-mission-plan">Alignment with the mission plan</h3>
+<p><code>Project Steering/Mission Plan.md</code> sets the bar: beat Wayve, Waymo, Pony, Momenta and Autobrains "with clear theoretic and practical proofs"; <strong>Goal 1</strong> a running closed-loop system on embedded (Orin, Thor); <strong>Goal 2</strong> generalisation with far less data ("magnitude less e.g. 1000x less"), safety by design with no safety/E2E compromise, inference efficiency, UN ADS regulation compliance, adaptability; <strong>P7: first final evaluation on 05.10.2026</strong>, ten days from this review.</p>
+<p>The mission's own definition of the layers matters for the architecture verdict. The strategic layer is "engaging, deactivating, ending or blocking the usage of autonomous driving, diagnosis of the overall state of the system", plus navigation and explanations. The tactical layer plans 3–5 s and owns manoeuvre selection and interactions. The implementation narrowed the strategic brain to four nav commands and a route head on a corpus with no routes, and trains and evaluates the tactical brain at a 2 s horizon. Both brains were built for jobs the data cannot supervise and the metric cannot see.</p>
+<h3 id="fix-now-items-found-by-the-orchestrator-measured-2026-09-25">Fix-now items found by the orchestrator (<span class="ev ev-m">MEASURED</span> 2026-09-25)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>defect</th>
+<th>evidence</th>
+<th>fix</th>
+<th>owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O1</td>
+<td>The registry-integrity suite is red at HEAD: 2 MISSING citations</td>
+<td><code>python tools/registry_paths.py --only-bad</code> → <code>_pod_backup/pod2-2026-08-03/ckpts/BACKUP_LOG.txt</code>, <code>…/flagship4b-phase0-30k_ckpt.pt</code>; <code>tools/tests/test_registry_paths_allow.py</code> 2 failures</td>
+<td>Commit <code>BACKUP_LOG.txt</code> from the dev box (it is small and not git-ignored; only <code>*.pt</code> is, <code>.gitignore:48</code>). For the 3.3 GB no-speed checkpoint, cite the HF copy <code>Sayood/tanitad-flagship-4b-phase0</code> as the primary location, or record it as <code>unresolved</code> and raise <code>max_unresolved</code> deliberately. The test forbids allowlisting to make it pass.</td>
+<td>PI dev box</td>
+</tr>
+<tr>
+<td>O2</td>
+<td>The no-speed ablation control's <code>config.json</code>, <code>train_log.jsonl</code> and gate JSONs have no reachable copy</td>
+<td><code>MODEL_REGISTRY.md:153</code></td>
+<td>Accept the loss formally in the registry (the control's ADE survives in <code>taniteval/results/driving_flagship-nospeed.json</code>), or re-run the control if any future claim leans on its training curve</td>
+<td>registry maintainer</td>
+</tr>
+<tr>
+<td>O3</td>
+<td>The stack and TanitEval test suites cannot run in a cloud session</td>
+<td><code>download.pytorch.org</code> denied by the environment network policy; all <code>stack/tests</code> and <code>taniteval/tests</code> modules need <code>torch</code> at collection</td>
+<td>Allow <code>download.pytorch.org</code> in the cloud environment's network settings, or add a CPU-torch wheel cache, so cloud agents can honour "pytest -q green before any commit"</td>
+<td>PI (environment settings)</td>
+</tr>
+</tbody>
+</table></div></main>
+</div>
+<footer>Source of record: <code>Project Steering/Reviews/2026-09-25-programme-review/</code> in the TanitAD repository (branch <code>claude/optimistic-shannon-vixpo6</code>). Model facts follow <code>MODEL_REGISTRY.md</code>; research claims cite their papers.</footer>
+<script>
+(function(){try{var d=document.querySelector('nav.toc details');if(window.matchMedia('(max-width:1079px)').matches)d.removeAttribute('open');}catch(e){}})();
+</script>
