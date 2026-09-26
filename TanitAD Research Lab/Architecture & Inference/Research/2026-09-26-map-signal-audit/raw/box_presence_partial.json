@@ -1,0 +1,102 @@
+{
+ "source": "C:/Users/Admin/qland/work/mapvid/boxes_summary.json",
+ "source_md5": "f1ec935fd52a083d350fb912cb41b8b8",
+ "what": "single operating point (the model's own presence_gate 0.5) per clip, from the video agent's counts; matched = Hungarian-matched to a visible target (the TRAINING assignment), 100 slots per window",
+ "per_clip": {
+  "0191487845ef|box3d": {
+   "targets_per_window": 80.27,
+   "conf_per_window": 98.66,
+   "TPR_matched_slots_conf": 0.9966,
+   "FPR_unmatched_slots_conf": 0.948,
+   "n_matched": 13580,
+   "n_unmatched": 3520,
+   "precision_at_gate_2m_greedy": 0.3844,
+   "recall_at_gate_2m_greedy": 0.4725
+  },
+  "0191487845ef|agent": {
+   "targets_per_window": 80.27,
+   "conf_per_window": 99.18,
+   "TPR_matched_slots_conf": 0.9992,
+   "FPR_unmatched_slots_conf": 0.9631,
+   "n_matched": 13580,
+   "n_unmatched": 3520,
+   "precision_at_gate_2m_greedy": 0.3518,
+   "recall_at_gate_2m_greedy": 0.4346
+  },
+  "9f8bedcfb9de|box3d": {
+   "targets_per_window": 24.51,
+   "conf_per_window": 98.26,
+   "TPR_matched_slots_conf": 0.9833,
+   "FPR_unmatched_slots_conf": 0.9823,
+   "n_matched": 4192,
+   "n_unmatched": 12908,
+   "precision_at_gate_2m_greedy": 0.1623,
+   "recall_at_gate_2m_greedy": 0.6505
+  },
+  "9f8bedcfb9de|agent": {
+   "targets_per_window": 24.51,
+   "conf_per_window": 99.65,
+   "TPR_matched_slots_conf": 0.9969,
+   "FPR_unmatched_slots_conf": 0.9964,
+   "n_matched": 4192,
+   "n_unmatched": 12908,
+   "precision_at_gate_2m_greedy": 0.1499,
+   "recall_at_gate_2m_greedy": 0.6095
+  },
+  "34765c024267|box3d": {
+   "targets_per_window": 20.99,
+   "conf_per_window": 71.05,
+   "TPR_matched_slots_conf": 0.9025,
+   "FPR_unmatched_slots_conf": 0.6595,
+   "n_matched": 3590,
+   "n_unmatched": 13510,
+   "precision_at_gate_2m_greedy": 0.2427,
+   "recall_at_gate_2m_greedy": 0.8214
+  },
+  "34765c024267|agent": {
+   "targets_per_window": 20.99,
+   "conf_per_window": 80.92,
+   "TPR_matched_slots_conf": 0.9279,
+   "FPR_unmatched_slots_conf": 0.7777,
+   "n_matched": 3590,
+   "n_unmatched": 13510,
+   "precision_at_gate_2m_greedy": 0.1989,
+   "recall_at_gate_2m_greedy": 0.7666
+  }
+ },
+ "analytic": {
+  "formula": "weighted BCE, matched target 1 weight 1, unmatched target 0 weight w0=0.1 (agent_slots.py:233, :864-873): for a slot matched with (model-conditional) probability pi the optimum is p* = pi/(pi + w0(1-pi)), i.e. logit(p*) = logit(pi) + ln(1/w0) = logit(pi) + 2.3026",
+  "gate_0.5_corresponds_to_pi": 0.0909,
+  "gate_for_pi_0.5": 0.9091,
+  "exchangeable_slots_p_star_by_K_of_100": {
+   "4": 0.2941,
+   "5": 0.3448,
+   "10": 0.5263,
+   "21": 0.7266,
+   "24.5": 0.7644,
+   "50": 0.9091,
+   "80": 0.9756
+  },
+  "exchangeable_loss_per_slot_K5": 0.0934,
+  "prior_init_loss_per_slot_K5 (p=0.05 everywhere)": 0.1547
+ },
+ "training_record_MEASURED_metrics_jsonl": {
+  "visible_targets_per_labelled_window_median": {
+   "0-1k": 5.53,
+   "1-5k": 4.94,
+   "5-20k": 5.31,
+   "20-34.5k": 5.0,
+   "34.5-38.25k": 4.75
+  },
+  "box3d_presence_loss_median": {
+   "0-1k": 0.103,
+   "1-5k": 0.0871,
+   "5-20k": 0.0777,
+   "20-34.5k": 0.0693,
+   "34.5-38.25k": 0.0659
+  },
+  "eval_targets_per_window_38k": 4.21,
+  "eval_box3d_presence_38k": 0.0625,
+  "n_dropped_median": 0
+ }
+}
