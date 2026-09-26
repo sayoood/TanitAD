@@ -118,8 +118,7 @@ def part2_fixed_subset(cfg: dict) -> dict:
 
 
 def main():
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q5_inrun_eval_calculators (light job; the brief's 8 GB floor applies to every job)")
     cfg = C.load_config()
     out = {"what": "Q5: the in-run eval's calculators -- what they write, how they aggregate, "
                    "what state they carry",

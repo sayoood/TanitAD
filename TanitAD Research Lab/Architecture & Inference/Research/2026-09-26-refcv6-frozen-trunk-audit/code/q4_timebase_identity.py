@@ -191,8 +191,7 @@ def run_manifest(name: str, path: Path) -> dict:
 
 if __name__ == "__main__":
     # light job (two pose manifests, < 0.5 GB); the 8 GB floor is for model builds
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q4_timebase_identity (light job; the brief's 8 GB floor applies to every job)")
     from tanitad.data import physicalai as pai
     wb_ok = float(pai.WHEELBASE) == WHEELBASE
     out = {"what": "Q4 data-side time base: row step vs the egomotion log's own velocity",

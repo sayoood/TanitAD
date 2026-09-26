@@ -38,6 +38,29 @@
   }
  },
  "G2_pretrained_weights": {
-  "skipped": "RAM < 8.8 GB at the time (brief rule 6)"
+  "C_downloaded": {
+   "raised": false
+  },
+  "C_stem_abs_sum": 1402.778076171875,
+  "R2_stem_x1.05": {
+   "raised": true,
+   "type": "RuntimeError",
+   "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 1472.9169 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~"
+  },
+  "R3_stem_intact_layer4_random": {
+   "raised": false
+  },
+  "R1_random_init": {
+   "raised": true,
+   "type": "RuntimeError",
+   "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 190.7475 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~8"
+  },
+  "R1_stem_abs_sum": 190.7474822998047,
+  "verdict": {
+   "C_green": true,
+   "R1_red": true,
+   "R2_red": true,
+   "R3_red": false
+  }
  }
 }

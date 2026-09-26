@@ -44,7 +44,7 @@ def run(split, man_path, lab_path, md5_want, q4c_path):
     by_sid = {stable_episode_id(l.clip_id): l for l in labels}
     m = torch.load(str(man_path), map_location="cpu", weights_only=False)
     tot = dict(windows=0, adm_trainer=0, adm_true=0, trainer_only=0, true_only=0,
-               clips_median_clock=0, clips=0)
+               clips_median_clock=0, clips=0, adm_fixA=0, fixA_only=0, true_only_vs_fixA=0)
     off_anchor = []
     for i in range(len(m["poses"])):
         T = int(m["poses"][i].shape[0])
@@ -68,18 +68,24 @@ def run(split, man_path, lab_path, md5_want, q4c_path):
             tot["adm_true"] += int(a_true)
             tot["trainer_only"] += int(a_tr and not a_true)
             tot["true_only"] += int(a_true and not a_tr)
+            # fix part A (the patch in A16_fix_f3_and_label_clock.diff): + (n_stack - 1) rows, 0.1 s
+            a_fa = v7l.tactical_class_ids(lab, (r + ns - 1) * 0.1)[0] != v7l.IGNORE_ID
+            tot["adm_fixA"] += int(a_fa)
+            tot["fixA_only"] += int(a_fa and not a_true)
+            tot["true_only_vs_fixA"] += int(a_true and not a_fa)
     o = np.asarray(off_anchor)
     tot["offset_at_trainer_anchor_row_s"] = {"median": float(np.median(o)),
                                              "p05": float(np.quantile(o, .05)),
                                              "p95": float(np.quantile(o, .95))}
     tot["frac_trainer_admitted_outside_true_band"] = tot["trainer_only"] / max(tot["adm_trainer"], 1)
     tot["frac_true_band_ignored_by_trainer"] = tot["true_only"] / max(tot["adm_true"], 1)
+    tot["fixA_frac_admitted_outside_true_band"] = tot["fixA_only"] / max(tot["adm_fixA"], 1)
+    tot["fixA_frac_true_band_ignored"] = tot["true_only_vs_fixA"] / max(tot["adm_true"], 1)
     return tot
 
 
 if __name__ == "__main__":
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q4d_label_offset_true_clock (light job; the brief's 8 GB floor applies to every job)")
     out = {"what": "Q4d: tactical-label admission on each clip's MEASURED clock (q4c)",
            "evidence_class": "MEASURED (ours)", "splits": {}}
     for s, args in SPLITS.items():

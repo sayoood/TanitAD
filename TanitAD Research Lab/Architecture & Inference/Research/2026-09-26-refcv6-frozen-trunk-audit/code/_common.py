@@ -21,6 +21,9 @@ from pathlib import Path
 # CUDA_VISIBLE_DEVICES="" left the RTX 4060 visible and bootstrap()'s CPU-only assertion fired.
 # "-1" is a non-empty invalid index that hides every device.
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# the code tree under test is READ-ONLY (brief): no __pycache__ written into it
+sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ.setdefault("MKL_NUM_THREADS", "4")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")

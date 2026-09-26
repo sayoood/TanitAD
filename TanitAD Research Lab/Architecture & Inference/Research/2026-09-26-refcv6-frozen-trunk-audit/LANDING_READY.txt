@@ -33,3 +33,41 @@ TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q6_guards.log
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q7_filters.json
 TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q7_filters.log
+
+## 2026-09-26 batch 2: A16 fixes for the NEXT launch (F3 pass-through + refusal; label clock) -- full files at their REPO paths under code/fix/, based on tip 9d16c441 blobs; status: WRITTEN + syntax-checked, my own test run RAM-gated (chain2.sh)
+# land these at their repo paths (full files; CRLF kept for refc.py / refc_v3_train.py as in the tip blobs):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/tanitad/refs/refc.py  ->  stack/tanitad/refs/refc.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/scripts/refc_v3_train.py  ->  stack/scripts/refc_v3_train.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/tanitad/data/clip_clock.py  ->  stack/tanitad/data/clip_clock.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/scripts/build_clip_clock_sidecar.py  ->  stack/scripts/build_clip_clock_sidecar.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/tests/test_refcv6_f3_cascade_reaches_loss.py  ->  stack/tests/test_refcv6_f3_cascade_reaches_loss.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/tests/test_refcv6_label_clock.py  ->  stack/tests/test_refcv6_label_clock.py
+# package files:
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/A16_batch2.patch
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/apply_fix_edits.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/fix/export_fix.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/chain2.sh
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q6b_census_granularity.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q7b_agent_join_coverage.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q6b_census_granularity.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q6b_census_granularity.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q4d_label_offset_true_clock.json
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/q4d_label_offset_true_clock.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/f3test_tip.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/raw/f3test_patched.log
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/RESULT.md
+# package files MODIFIED since batch 1 (RAM floor now 8 GB for every job; env-driven scratch; q4d fix-A arm; q3 RAM trims) -- re-land:
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/_common.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q2_positional_tensors.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q3_hooks_forward.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q3b_f3_cascade_reach.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q4_timebase_identity.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q4b_label_time_offset.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q4c_grid_vs_egolog.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q4d_label_offset_true_clock.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q5_inrun_eval_calculators.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q6_guards.py
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/q7_filters.py
+# first-version artifacts behind raw/f3test_*.log (superseded by code/fix/, kept for provenance):
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/A16_fix_f3_and_label_clock.diff
+TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-refcv6-frozen-trunk-audit/code/test_refcv6_f3_cascade_reaches_loss.PROPOSED.py

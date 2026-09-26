@@ -121,8 +121,7 @@ def control_K2(ego: pd.DataFrame) -> dict:
 
 
 def main():
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q4c_grid_vs_egolog (light job; the brief's 8 GB floor applies to every job)")
     avail = {p.stem for p in EGO_DIR.glob("*.parquet")}
     out = {"what": "Q4c: each cache row's true timestamp recovered from the 100 Hz egomotion log",
            "evidence_class": "MEASURED (ours)", "ego_dir_n_files": len(avail), "splits": {},

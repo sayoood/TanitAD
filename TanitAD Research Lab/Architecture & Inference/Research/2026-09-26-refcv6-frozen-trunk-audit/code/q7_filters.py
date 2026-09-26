@@ -195,8 +195,7 @@ def window_level(cfg: dict) -> dict:
 
 
 def main():
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q7_filters (light job; the brief's 8 GB floor applies to every job)")
     cfg = C.load_config()
     out = {"what": "Q7: upstream filters on refcv6's data path -- counts and correlation",
            "evidence_class": "MEASURED (ours) over the run's own view record, labels and log",

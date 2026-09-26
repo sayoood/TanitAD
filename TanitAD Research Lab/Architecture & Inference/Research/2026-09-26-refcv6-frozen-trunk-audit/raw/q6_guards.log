@@ -1,2 +1,32 @@
+[audit:RAM] ok for q6_guards (light job; the brief's 8 GB floor applies to every job): available 9.28 GB
+D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-26-refcv6-frozen-trunk-audit\code\q6_guards.py:95: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  res["C_stem_abs_sum"] = float(net.conv1.weight.abs().sum())
 {"R1_red": true, "R2_red": true, "R3_red": false, "C_green": true} {"guard": "|t_trainer(row) - t_true(row)| <= 0.05 s (PROPOSED; none exists)", "n_checks": 408, "shipped_mapping_violations": 408, "fixed_mapping_passes": 408, "worst_shipped_offset_s": 0.5161, "verdict": {"shipped_red": true, "fixed_green": true}}
-[audit] wrote D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-26-refcv6-frozen-trunk-audit\raw\q6_guards.json (1311 B)
+{
+ "C_downloaded": {
+  "raised": false
+ },
+ "C_stem_abs_sum": 1402.778076171875,
+ "R2_stem_x1.05": {
+  "raised": true,
+  "type": "RuntimeError",
+  "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 1472.9169 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~"
+ },
+ "R3_stem_intact_layer4_random": {
+  "raised": false
+ },
+ "R1_random_init": {
+  "raised": true,
+  "type": "RuntimeError",
+  "msg": "refcv6 trunk 'resnet101.a1_in1k': conv1.weight |w|.sum() = 190.7475 is outside [1374.7225, 1430.8336] \u2014 the ImageNet weights were NOT loaded (a He init reads ~8"
+ },
+ "R1_stem_abs_sum": 190.7474822998047,
+ "verdict": {
+  "C_green": true,
+  "R1_red": true,
+  "R2_red": true,
+  "R3_red": false
+ }
+}
+[audit] wrote D:\Projects\TanitAD\TanitAD Research Lab\Architecture & Inference\Research\2026-09-26-refcv6-frozen-trunk-audit\raw\q6_guards.json (2036 B)

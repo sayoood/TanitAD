@@ -47,8 +47,7 @@ def load_sd(p: Path) -> tuple[dict, dict]:
 
 
 def main():
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q2_positional_tensors (light job; the brief's 8 GB floor applies to every job)")
     sds, metas = {}, {}
     for k, p in CKPTS.items():
         sds[k], metas[k] = load_sd(p)

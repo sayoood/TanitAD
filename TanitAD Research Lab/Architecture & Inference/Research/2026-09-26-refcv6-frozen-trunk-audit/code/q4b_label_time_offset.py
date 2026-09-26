@@ -126,8 +126,7 @@ def run(split: str, man_path: Path, lab_path: Path, md5_want: str, dt_fallback: 
 
 
 if __name__ == "__main__":
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q4b_label_time_offset (light job; the brief's 8 GB floor applies to every job)")
     out = {"what": "Q4b: training/eval windows whose tactical-label admission moves under the "
                    "correct provider->raw time mapping",
            "evidence_class": "MEASURED (ours; label functions are the trainer's own, "

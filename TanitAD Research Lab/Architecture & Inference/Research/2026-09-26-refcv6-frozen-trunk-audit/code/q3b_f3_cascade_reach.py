@@ -131,8 +131,7 @@ def run_arm(name: str, argv: list, patch_passthrough: bool) -> dict:
 
 
 if __name__ == "__main__":
-    if C.ram_available_gb() < 1.5:
-        raise SystemExit("[audit:RAM] < 1.5 GB available even for a light job")
+    C.ram_guard("q3b_f3_cascade_reach (light job; the brief's 8 GB floor applies to every job)")
     SCR.mkdir(parents=True, exist_ok=True)
     res = {"what": "F3 per-layer loss reach on the PRODUCTION forward (real train(), synthetic rig)",
            "evidence_class": "MEASURED (ours, CPU)",
