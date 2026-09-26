@@ -1,0 +1,75 @@
+{
+ "tau": 0.18063741505146028,
+ "youden_j": 0.2342,
+ "tpr_informative": 0.4272,
+ "fpr_follow": 0.193,
+ "unit": "rad",
+ "n_pos": 213371,
+ "n_neg": 363184,
+ "p10_informative": 0.0046,
+ "p50_informative": 0.1112,
+ "p50_follow": 0.0315,
+ "p90_follow": 0.3896,
+ "status": "OK",
+ "rule": "argmax over the grid of TPR(informative |GT| >= tau) - FPR(follow |GT| >= tau); derived from GT + label only",
+ "what": "nav-compliance tau for --graft-nav-compliance (E1; informative until the PI decides)",
+ "evidence_class": "MEASURED (dev box, CPU; GT poses + labels only, no model)",
+ "split": "refcv6/refcv7 TRAIN (4,369 clips; config.json v2_cache /home/nvidia/data/refcv6-b1-416x1024-train)",
+ "inputs": {
+  "manifest": {
+   "path": "/home/nvidia/data/refcv6-b1-416x1024-train/_v2manifest.pt",
+   "sha256": "50772f31cbdb312bff069d1762f9c08257bd149852f4ba4318b9d2787529ae8a",
+   "n_clips": 4369
+  },
+  "labels": {
+   "path": "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+   "sha256": "0cb3c5021491f6bad9a17c4c9168c87864a1e371eafa5ec0dd320cf9d5c23371",
+   "md5": "b45377a1f25263b5c0f3d318c126b1ac"
+  }
+ },
+ "code": {
+  "tree": "/home/nvidia/gate_fix_2224/FIX",
+  "script_sha256": "0f551ec2472faa2c8e16f9a3ceb10aed7d8240a8a53d98194b494f88784bd551"
+ },
+ "window": 8,
+ "stride": 1,
+ "horizons": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "windows_total": 746946,
+ "windows_scored": 576555,
+ "windows_skipped_short_future": 170391,
+ "windows_skipped_no_nav": 0,
+ "n_pos_left_or_right": 213371,
+ "n_neg_follow": 363184,
+ "nav_from_v7_stats": {
+  "n_clips": 4369,
+  "follow": 2752,
+  "left": 779,
+  "right": 838,
+  "missing": 0,
+  "derivation": "v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)",
+  "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False (refav1_loader convention)",
+  "label_md5": "b45377a1f25263b5c0f3d318c126b1ac",
+  "allow_oracle_nav": true
+ },
+ "heading_rule": "compliance_target: last-segment heading of the GT waypoint path, 0.05 m stall",
+ "method": {
+  "function": "taniteval.nav_compliance.derive_tolerance",
+  "args": {
+   "pos": "|terminal heading| of GT paths on LEFT or RIGHT windows",
+   "neg": "|terminal heading| of GT paths on FOLLOW windows",
+   "grid": "None -> np.linspace(0, max(|pos| U |neg|), 401)[1:]",
+   "unit": "rad"
+  },
+  "selection": "argmax over the grid of TPR(pos >= tau) - FPR(neg >= tau)"
+ },
+ "seconds": 142.6
+}

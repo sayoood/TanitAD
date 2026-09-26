@@ -181,6 +181,11 @@ def _feas_with_origin(x: Tensor) -> Tensor:
     return torch.cat([z, x], dim=-2)
 from tanitad.refs import refc_select as sl
 from tanitad.refs import refc_tactical as tac
+# ⛔⛔ G-HYG (SPEC_REFCV7 §2, 2026-09-26): every config dataclass below REFUSES an undeclared
+# attribute at assignment. D-REFCV6-EQUALIZE-DROPPED was the THIRD time an ad-hoc attribute on
+# `CNNEncoderConfig` was dropped by a rebuild while argv and config.json still stated it; each
+# earlier fix declared one field and left the class open. See `tanitad/train/config_hygiene.py`.
+from tanitad.train.config_hygiene import strict_fields
 
 # Strategic vocabulary — order pinned against scripts/refb_labels.py indices
 # by tests/test_refc.py (same 4-wide interface as tanitad.refs.refb).
@@ -300,6 +305,7 @@ def default_anchors(horizons: tuple[int, ...], n_anchors: int,
 # Configs
 # ============================================================================
 
+@strict_fields
 @dataclass
 class CNNEncoderConfig:
     """ResNet-34-style trunk (torchvision-free): stem /4, four stages /2 each
@@ -361,6 +367,12 @@ class CNNEncoderConfig:
     trunk_fold_bn: bool = False      # fold each FROZEN BN into its conv; needs trunk_frozen_bn
     trunk_dedup_frames: bool = False  # each distinct frame of overlapping stacks ONCE; needs trunk_frozen_bn
     trunk_compile: bool = False       # the backbone through torch.compile (Inductor); timm only
+    #: ⛔⛔ C26 -- zero the bottom N rows of EVERY frame before normalisation (timm trunk; 0 = off,
+    #: bit-identical). A REAL FIELD since 2026-09-26 (FIX-3, D-REFCV6-EQUALIZE-DROPPED): the
+    #: trainer set it as an AD-HOC attribute, the `--image-hw` `dataclasses.replace` rebuild
+    #: carried only declared fields, and refcv6-r101-s0 trained with `--equalize-bottom-rows 43`
+    #: in its argv and an un-equalised trunk (`build_encoder` read `getattr(cfg, ..., 0)`).
+    trunk_equalize_bottom_rows: int = 0
 
     @property
     def feat_dim(self) -> int:
@@ -411,12 +423,14 @@ class CNNEncoderConfig:
         return (h // 32, w // 32)
 
 
+@strict_fields
 @dataclass
 class MeasurementConfig:
     hidden: int = 128
     d_out: int = 128
 
 
+@strict_fields
 @dataclass
 class TrajectoryConfig:
     # 2 s @ 10 Hz in 0.5 s strides (the REF-B tactical horizons) — time-indexed
@@ -426,6 +440,7 @@ class TrajectoryConfig:
     horizons: tuple[int, ...] = (5, 10, 15, 20)
 
 
+@strict_fields
 @dataclass
 class AnchorConfig:
     n_anchors: int = 128          # FPS vocabulary size (base 128; XL 256; 20 smoke)
@@ -474,6 +489,7 @@ class AnchorConfig:
     kappa_cap: float = 0.12          # ~8.3 m turn radius; a parking-lot bound
 
 
+@strict_fields
 @dataclass
 class DecoderConfig:
     d: int = 384                  # decoder width (anchor queries + cross-attn)
@@ -584,17 +600,20 @@ class DecoderConfig:
     bev_coupling_d_bev: int = 96
 
 
+@strict_fields
 @dataclass
 class LawConfig:
     hidden: int = 2048            # latent-world-model aux MLP width
 
 
+@strict_fields
 @dataclass
 class StrategicCtxConfig:
     hidden: int = 512             # ctx GRU width
     d_ctx: int = 64               # strategic token -> decoder condition seam
 
 
+@strict_fields
 @dataclass
 class ImaginationConfig:
     """H15 belief field over the conv-map tokens (graft_imagination). Sized on
@@ -606,6 +625,7 @@ class ImaginationConfig:
     head_hidden: int = 1024       # flow / log-variance head hidden width
 
 
+@strict_fields
 @dataclass
 class LanConfig:
     """LAN — Lane-Anchored Navigation route conditioning (graft_lan, default
@@ -629,6 +649,7 @@ class LanConfig:
         return self.k * self.feats
 
 
+@strict_fields
 @dataclass
 class SelectionConfig:
     """D-SEL — the selection-surface policy the decoder carries.
@@ -711,6 +732,7 @@ class SelectionConfig:
                     or self.seam_clamp > 0.0)
 
 
+@strict_fields
 @dataclass
 class RefCConfig:
     encoder: CNNEncoderConfig = field(default_factory=CNNEncoderConfig)
@@ -1656,6 +1678,16 @@ class AnchoredDiffusionDecoder(nn.Module):
     forward -> {anchor_logits [B, N], anchor_traj [B, N, S, 2], offset (base)
     [B, N, S, 2], traj [B, S, 2] (selected), sel_idx [B]}.
     """
+
+    #: ⛔⛔ PI RULING 2026-09-26 (SPEC_REFCV7 §7 / A2, D-REFCV7-E1): the speed-ceiling argmax
+    #: filter is INFERENCE-ONLY. It has no parameters, but in TRAINING it changed WHICH candidate
+    #: is selected, and the selected `traj` feeds `law_pred = law_head(cat(pooled, traj))`, whose
+    #: MSE is a training loss -- so a filter meant for the emitted plan was also shaping the LAW
+    #: head's input (and its gradient into the fan) from an EGO-FUTURE channel. False keeps the
+    #: training-time selection unmasked. ⚠️ True restores the pre-ruling behaviour and exists ONLY
+    #: for the deliberate-regression test (`test_speed_ceiling_inference_only.py`); G-DVB refuses
+    #: a built decoder that carries it.
+    speed_ceiling_in_training: bool = False
 
     def __init__(self, feat_dim: int, n_steps: int, d_meas: int, d_ctx: int,
                  tac_latent_dim: int, anchors: Tensor, cfg: DecoderConfig,
@@ -3334,7 +3366,8 @@ class AnchoredDiffusionDecoder(nn.Module):
         # a typed 0.1 would report every planned speed 5x too high and the
         # obedience test would fail an obedient model. Same derivation, same
         # reason, as `_feasible`'s prefix dt four hundred lines above.
-        if self.speed_ceiling_filter and v_limit_ms is not None:
+        if (self.speed_ceiling_filter and v_limit_ms is not None
+                and (not self.training or self.speed_ceiling_in_training)):   # PI 2026-09-26 A2
             _keep, _st = v6sel.SpeedCeilingFilter(
                 horizons=self.anchor_horizons,
                 tick_s=self.anchor_dt)(x, v_limit_ms)
@@ -3497,6 +3530,14 @@ class ImaginationField(nn.Module):
 class RefCModel(nn.Module):
     """Anchored-Diffusion-C: ResNet encoder + anchored-diffusion trajectory
     decoder + LAW aux + maneuver/route aux heads + hierarchical conditioning."""
+
+    #: ⛔⛔ The decoder outputs `forward` copies into its result VERBATIM. ONE tuple, read by the
+    #: forward below AND by the G-DVB guard (`tanitad/train/declared_vs_built.py`), so the
+    #: guard checks the list the forward actually uses. D-REFCV6-F3-WHITELIST: an inline tuple
+    #: that omitted `layer_u0_hat` / `layer_logits` skipped refcv6's F3 cascade loss for 34,500
+    #: steps while config.json stamped F3.
+    DECODER_PASSTHROUGH: tuple[str, ...] = (
+        "prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits")
 
     def __init__(self, cfg: RefCConfig):
         super().__init__()
@@ -4529,7 +4570,7 @@ class RefCModel(nn.Module):
         # omitted them skipped F3's loss for the whole of refcv6-r101-s0 (0 of 668 training rows
         # carried `cascade`; stage-0..2 heads bit-identical across 29,000 steps). Pinned by
         # tests/test_refcv6_f3_cascade_reaches_loss.py on the REAL train().
-        for _k in ("prefinal_logits", "reach_keep", "layer_u0_hat", "layer_logits"):
+        for _k in type(self).DECODER_PASSTHROUGH:     # G-DVB reads the SAME tuple
             # S1b's in-forward control and S1c's CE support, passed through
             # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
             # both. Re-deriving either outside the decoder is how two

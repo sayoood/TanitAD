@@ -1,0 +1,968 @@
+{
+ "tree": "C:\\Users\\Admin\\dvb_tip_0926a",
+ "tanitad_file": "C:\\Users\\Admin\\dvb_tip_0926a\\stack\\tanitad\\__init__.py",
+ "trainer_file": "C:\\Users\\Admin\\dvb_tip_0926a\\stack\\scripts\\refc_v3_train.py",
+ "live_config": "D:\\refcv6_eval_kit\\ckpt\\config.json",
+ "live_argv": [
+  "--arm",
+  "hier",
+  "--size",
+  "small",
+  "--trunk",
+  "timm",
+  "--trunk-name",
+  "resnet101.a1_in1k",
+  "--trunk-mode",
+  "shared",
+  "--trunk-fuse",
+  "concat1x1",
+  "--ego-history",
+  "--no-strategic",
+  "--image-hw",
+  "416",
+  "1024",
+  "--sampler",
+  "ddim",
+  "--f1-random-t",
+  "--f2-dd-step",
+  "--f3-per-layer",
+  "--f4-adaln",
+  "--f5-focal",
+  "--f5-emitting-conf",
+  "--f6-w-u0-zero",
+  "--f9-assert-vocab",
+  "--anchors",
+  "D:\\refcv6_eval_kit\\data\\anchors\\refc_anchors_6s_v0cond_alat_117.pt",
+  "--anchor-v0-conditioned",
+  "--n-anchors",
+  "117",
+  "--v2-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-train",
+  "--v7-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_train.jsonl.gz",
+  "--nav-from-v7",
+  "--eval-cache",
+  "/home/nvidia/data/refcv6-b1-416x1024-eval139",
+  "--eval-labels",
+  "/home/nvidia/data/v8labels/labels/s2_labels_v8_eval.jsonl.gz",
+  "--eval-every",
+  "500",
+  "--eval-batches",
+  "8",
+  "--speed-max-sidecar-v6-eval",
+  "D:\\refcv6_eval_kit\\data\\refcv6_speed_max_v8_eval.jsonl",
+  "--tac-decoder-v6",
+  "--w-tac-v6",
+  "1.0",
+  "--tac-decoder-d-bev",
+  "96",
+  "--graft-behaviour-sel",
+  "--max-speed-input-v6",
+  "--speed-max-sidecar-v6",
+  "/home/nvidia/data/refcv6_speed_max_v8_train.jsonl",
+  "--agents",
+  "head",
+  "--agent-join",
+  "D:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+  "--agent-rig-camera",
+  "extrinsics",
+  "--agent-rig-extrinsics",
+  "D:\\refcv6_eval_kit\\data\\refcv6_train_eval139_extrinsics.json",
+  "--agent-cls-weight",
+  "b1",
+  "--w-agent",
+  "1.0",
+  "--w-map",
+  "1.0",
+  "--map-gt-root",
+  "D:\\refcv6_eval_kit\\data\\sam3_gt_eval_thor137",
+  "--w-box3d",
+  "1.0",
+  "--join3d",
+  "D:\\refcv6_eval_kit\\data\\join3d\\b1_train_plus_eval_agents_3d.jsonl.xz",
+  "--bev-coupling",
+  "--equalize-bottom-rows",
+  "43",
+  "--opt",
+  "dd",
+  "--lr",
+  "1e-4",
+  "--warmup",
+  "2000",
+  "--seed",
+  "0",
+  "--u8-batches",
+  "--trunk-chunk-ckpt",
+  "8",
+  "--trunk-frozen-bn",
+  "--trunk-bf16",
+  "--trunk-channels-last",
+  "--trunk-fold-bn",
+  "--trunk-dedup-frames",
+  "--trunk-compile",
+  "--workers",
+  "6",
+  "--conflict-every",
+  "10",
+  "--save-every",
+  "500",
+  "--log-every",
+  "50",
+  "--batch",
+  "16",
+  "--steps",
+  "50400",
+  "--out",
+  "C:\\Users\\Admin\\AppData\\Local\\Temp\\dvb_audit_out"
+ ],
+ "rebuild_calls_on_live_argv": [
+  {
+   "class": "CNNEncoderConfig",
+   "changes": [
+    "image_size",
+    "image_width"
+   ],
+   "dropped": {
+    "trunk_equalize_bottom_rows": "43"
+   },
+   "undeclared_before": [
+    "trunk_equalize_bottom_rows"
+   ],
+   "undeclared_after": []
+  }
+ ],
+ "runtime_undeclared_on_final_cfg_live_argv": {
+  "cfg": {
+   "class": "RefCV3Config",
+   "undeclared": {
+    "u0_absent_under_ddim": "'pi-acknowledged-2026-09-11-refcv6-arm-D'"
+   }
+  }
+ },
+ "static_assignments": [
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 338,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_vocab_version",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 345,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 346,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_name",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 348,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_mode",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 352,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_chunk_ckpt",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 353,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_frozen_bn",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 356,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_bf16",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 357,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_channels_last",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 358,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_fold_bn",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 359,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_dedup_frames",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 360,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_compile",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 381,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_equalize_bottom_rows",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": false,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 398,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_fuse",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 399,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_fuse_identity",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 430,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.decoder.refcv6",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 470,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.no_strategic",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 553,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.sel_refined",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 554,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.sel_score_emitted",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 555,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.sel_score_emitted_t",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 409,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.trunk_pretrained",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 412,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder.in_channels",
+   "owner_class": "CNNEncoderConfig",
+   "declared_field": true,
+   "under_encoder": true
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 419,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.ego_history",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 434,
+   "file": "refc_v3_train.py",
+   "target": "args.w_u0",
+   "owner_class": "argparse.Namespace",
+   "declared_field": null,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 435,
+   "file": "refc_v3_train.py",
+   "target": "args.ack_ddim_no_u0",
+   "owner_class": "argparse.Namespace",
+   "declared_field": null,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 459,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.encoder",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 472,
+   "file": "refc_v3_train.py",
+   "target": "cfg.ego_state_inject",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 473,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.ego_valid_channel",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 475,
+   "file": "refc_v3_train.py",
+   "target": "cfg.echo_base",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 477,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.ego_valid_channel",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 479,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.ego_dropout",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 494,
+   "file": "refc_v3_train.py",
+   "target": "cfg.goal_point_inject",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 498,
+   "file": "refc_v3_train.py",
+   "target": "cfg.goal_point_cfg",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 501,
+   "file": "refc_v3_train.py",
+   "target": "cfg.nav_inject",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 509,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.gp_slot",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 511,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.gp_scale_m",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 531,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.sel_accel_max",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 565,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.sel_score_emitted_t",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 566,
+   "file": "refc_v3_train.py",
+   "target": "args.sel_score_emitted_t",
+   "owner_class": "argparse.Namespace",
+   "declared_field": null,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 567,
+   "file": "refc_v3_train.py",
+   "target": "args.sel_score_emitted_t_source",
+   "owner_class": "argparse.Namespace",
+   "declared_field": null,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 577,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.n_anchors",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 579,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.v0_conditioned",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 580,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.ref_speed_ms",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 592,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.control_units",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 624,
+   "file": "refc_v3_train.py",
+   "target": "cfg.nav_args_inject",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 650,
+   "file": "refc_v3_train.py",
+   "target": "cfg.max_speed_input",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 651,
+   "file": "refc_v3_train.py",
+   "target": "cfg.max_speed_cfg",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 673,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_goal_tok_head",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 513,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.graft_gp_point",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 602,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.kappa_cap",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_trainer_cfg",
+   "line": 604,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.anchors.alat_v_floor_ms",
+   "owner_class": "AnchorConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 950,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 951,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler_space",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 952,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler_train_t_max",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 954,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler_infer_t",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 955,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler_steps",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 956,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.sampler_groups",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1010,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_decode",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1011,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_mu",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1012,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_entry",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1013,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_a_max",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1014,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_kappa_max",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1016,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.feasible_prefix_slots",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1002,
+   "file": "refc_v3_train.py",
+   "target": "cfg.u0_absent_under_ddim",
+   "owner_class": "RefCV3Config",
+   "declared_field": false,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1066,
+   "file": "refc_v3_train.py",
+   "target": "core.bev_aux",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1103,
+   "file": "refc_v3_train.py",
+   "target": "core.agents",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1104,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.cross_agent",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1191,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.wp_index",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1263,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.bev_coupling",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv5_seams",
+   "line": 1272,
+   "file": "refc_v3_train.py",
+   "target": "core.decoder.bev_coupling_d_bev",
+   "owner_class": "DecoderConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 867,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_decoder_v6",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 868,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_decoder_cfg",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 869,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_decoder_valid_threshold",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 883,
+   "file": "refc_v3_train.py",
+   "target": "cfg.tac_decoder_bev_detach",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 903,
+   "file": "refc_v3_train.py",
+   "target": "cfg.core.graft_behaviour_sel",
+   "owner_class": "RefCConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv6_tactical",
+   "line": 936,
+   "file": "refc_v3_train.py",
+   "target": "cfg.max_speed_onehot_v6",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 746,
+   "file": "refc_v3_train.py",
+   "target": "hc.d_model",
+   "owner_class": "Refcv7HeadConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 747,
+   "file": "refc_v3_train.py",
+   "target": "hc.n_layers",
+   "owner_class": "Refcv7HeadConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 748,
+   "file": "refc_v3_train.py",
+   "target": "hc.n_heads",
+   "owner_class": "Refcv7HeadConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 749,
+   "file": "refc_v3_train.py",
+   "target": "hc.n_queries",
+   "owner_class": "Refcv7HeadConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 750,
+   "file": "refc_v3_train.py",
+   "target": "hc.scorer_self_attn",
+   "owner_class": "Refcv7HeadConfig",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 751,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 752,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_img_pool",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 753,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_select",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 754,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_w_ttc",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 755,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_w_ep",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 756,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_w_comf",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 764,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_toad",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 765,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_toad_iters",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 766,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_toad_samples",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  },
+  {
+   "helper": "_pin_refcv7",
+   "line": 767,
+   "file": "refc_v3_train.py",
+   "target": "cfg.refcv7_toad_seed",
+   "owner_class": "RefCV3Config",
+   "declared_field": true,
+   "under_encoder": false
+  }
+ ],
+ "trunk_as_built_WITH_image_hw_416x1024": {
+  "argv_equalize_bottom_rows": 43,
+  "cfg_has_attr": false,
+  "cfg_value": "MISSING",
+  "declared_field": false,
+  "trunk_cfg_equalize_bottom_rows": 0,
+  "trunk_image_hw": [
+   416,
+   1024
+  ],
+  "equalize_calls_after_one_normalise": 0,
+  "norm_calls": 1,
+  "bottom43_zeroed_in_01_domain": false
+ }
+}

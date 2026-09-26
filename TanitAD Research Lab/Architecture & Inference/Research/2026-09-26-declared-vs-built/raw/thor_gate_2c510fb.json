@@ -1,0 +1,365 @@
+{
+ "what": "declared-vs-built batch-1 gate, run ON THOR by the Master Mind (second runner; the dev box was RAM-starved)",
+ "evidence_class": "MEASURED (Thor, CPU, CUDA_VISIBLE_DEVICES empty; pytest 9.1.1 from a --no-deps side folder, the training venv untouched)",
+ "host": "tanitad-thor-wifi:/home/nvidia/gate_fix_2224",
+ "base_commit": "2c510fb0302642b50f165be4859feca2937bd9fe",
+ "archive_md5": "cf2a4191f7f185cd56c70cff18e27f10",
+ "overlay_tar_md5": "ec45c246c6ecd0786d403e44a97bb3aa",
+ "plan": "raw/gate_plan.json (the fixes agent's); every overlay file md5-verified after it was written on Thor",
+ "counts": {
+  "TIPRED": {
+   "fail": 57,
+   "pass": 23,
+   "skip": 2
+  },
+  "FIX": {
+   "pass": 2539,
+   "skip": 38,
+   "fail": 42
+  },
+  "TIP": {
+   "pass": 2459,
+   "skip": 36,
+   "fail": 42
+  }
+ },
+ "regressions_FIX_fail_TIP_pass": [],
+ "fail_sets_identical": true,
+ "n_fail_both": 42,
+ "new_tests_on_FIX": {
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-CNNEncoderConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-MeasurementConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-TrajectoryConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-AnchorConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-DecoderConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-LawConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-StrategicCtxConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-ImaginationConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-LanConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-SelectionConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc-RefCConfig]": [
+   "pass",
+   ""
+  ],
+  "test_every_refc_and_refc_v3_config_class_is_STRICT[tanitad.refs.refc_v3-RefCV3Config]": [
+   "pass",
+   ""
+  ],
+  "test_no_OTHER_dataclass_in_those_modules_escaped_the_list": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_an_undeclared_attribute_RAISES_and_names_itself[encoder]": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_an_undeclared_attribute_RAISES_and_names_itself[decoder]": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_an_undeclared_attribute_RAISES_and_names_itself[anchors]": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_an_undeclared_attribute_RAISES_and_names_itself[core]": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_an_undeclared_attribute_RAISES_and_names_itself[v3]": [
+   "pass",
+   ""
+  ],
+  "test_the_error_is_an_AttributeError_so_hasattr_style_code_keeps_its_meaning": [
+   "pass",
+   ""
+  ],
+  "test_declared_fields_replace_init_and_post_init_are_UNCHANGED": [
+   "pass",
+   ""
+  ],
+  "test_the_DELIBERATE_REGRESSION_an_undecorated_class_ACCEPTS_the_attribute": [
+   "pass",
+   ""
+  ],
+  "test_a_frozen_dataclass_is_left_alone_and_counts_as_strict": [
+   "pass",
+   ""
+  ],
+  "test_a_non_dataclass_is_refused_by_the_decorator": [
+   "pass",
+   ""
+  ],
+  "test_the_WALKER_finds_a_dict_injection_the_decorator_cannot_see": [
+   "pass",
+   ""
+  ],
+  "test_pin_trainer_cfg_REFUSES_a_surviving_dict_injection": [
+   "pass",
+   ""
+  ],
+  "test_every_pin_assignment_targets_a_DECLARED_field": [
+   "pass",
+   ""
+  ],
+  "test_FIX3_the_field_is_DECLARED_and_survives_the_rebuild": [
+   "pass",
+   ""
+  ],
+  "test_FIX3_image_hw_416x1024_build_EQUALISES_the_bottom_43_rows": [
+   "pass",
+   ""
+  ],
+  "test_FIX3_the_in_repo_trunk_REFUSES_a_lever_it_does_not_implement": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_field_removed_WITH_G_HYG_the_pin_RAISES_at_assignment": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_field_removed_WITHOUT_G_HYG_the_trunk_does_not_equalise_and_G_DVB_names_it": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_synthetic_undeclared_lever_is_REFUSED_at_assignment": [
+   "pass",
+   ""
+  ],
+  "test_MUTATION_synthetic_lever_that_BYPASSES_G_HYG_is_refused_by_G_DVB": [
+   "pass",
+   ""
+  ],
+  "test_GDVB_a_clean_build_passes_in_train_and_is_RECORDED": [
+   "pass",
+   ""
+  ],
+  "test_GDVB_MUTATION_train_REFUSES_before_step_1_when_C26_is_dropped": [
+   "pass",
+   ""
+  ],
+  "test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed": [
+   "pass",
+   ""
+  ],
+  "test_GDVB_a_NEW_flag_without_an_entry_is_REFUSED": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_the_declaration_is_READ_OFF_THE_DECODER": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_refcv6_r101_s0s_build_DECLARES_only_what_it_built": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_MUTATION_unwire_one_selection_term_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_MUTATION_the_STATIC_declaration_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_dead_selection_flags_REFUSE_at_the_pin": [
+   "pass",
+   ""
+  ],
+  "test_FIX4_the_flags_default_OFF": [
+   "pass",
+   ""
+  ],
+  "test_the_ack_ddim_no_u0_stamp_REACHES_the_seam_stamp": [
+   "pass",
+   ""
+  ],
+  "test_a_PRE_FIX_record_is_rebuilt_with_the_rows_its_trunk_really_zeroed[config0-0]": [
+   "pass",
+   ""
+  ],
+  "test_a_PRE_FIX_record_is_rebuilt_with_the_rows_its_trunk_really_zeroed[config1-43]": [
+   "pass",
+   ""
+  ],
+  "test_a_PRE_FIX_record_is_rebuilt_with_the_rows_its_trunk_really_zeroed[config2-0]": [
+   "pass",
+   ""
+  ],
+  "test_a_PRE_FIX_record_is_rebuilt_with_the_rows_its_trunk_really_zeroed[config3-43]": [
+   "pass",
+   ""
+  ],
+  "test_DRIVORT_levers_are_listed_with_their_ARGPARSE_defaults": [
+   "pass",
+   ""
+  ],
+  "test_DRIVORT_a_refcv7_launch_REFUSES_any_set_DrivoR_T_flag": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_REQUIRED_ON_is_the_PI_literal": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_all_three_on_and_built_PASSES": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_RED_an_argv_missing_one_is_REFUSED[graft_tac8_prior]": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_RED_an_argv_missing_one_is_REFUSED[graft_nav_compliance]": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_RED_an_argv_missing_one_is_REFUSED[speed_ceiling_filter]": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_RED_on_in_argv_but_UNBUILT_is_REFUSED": [
+   "pass",
+   ""
+  ],
+  "test_REFCV7_tau_must_EQUAL_the_banked_file": [
+   "pass",
+   ""
+  ],
+  "test_GDVB_REFUSES_a_decoder_carrying_the_in_training_ceiling_switch": [
+   "pass",
+   ""
+  ],
+  "test_the_pinned_fingerprints_are_the_MEASURED_literals": [
+   "pass",
+   ""
+  ],
+  "test_G2_GREEN_the_real_checkpoint_passes_and_fingerprints_as_measured": [
+   "skip",
+   "resnet34.a1_in1k weights not in the local HF cache (LocalEntryNotFoundError); a SKIP is not a pass -- run where the checkpoint is cached"
+  ],
+  "test_G2_R3_stem_intact_layer4_RANDOM_now_goes_RED": [
+   "skip",
+   "resnet34.a1_in1k weights not in the local HF cache (LocalEntryNotFoundError); a SKIP is not a pass -- run where the checkpoint is cached"
+  ],
+  "test_G2_R1_a_random_init_still_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_G2_every_stage_is_checked_not_only_layer4": [
+   "pass",
+   ""
+  ],
+  "test_G1_R3_meta_ABSENT_with_a_named_blob_now_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_G1_meta_without_source_md5_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_G1_GREEN_controls_matching_meta_reads_and_no_named_blob_is_unchanged": [
+   "pass",
+   ""
+  ],
+  "test_the_TRUE_clock_PASSES_with_its_numbers": [
+   "pass",
+   ""
+  ],
+  "test_DELIBERATE_REGRESSION_the_historical_mapping_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_a_REAL_corpus_with_NO_sidecar_is_REFUSED": [
+   "pass",
+   ""
+  ],
+  "test_a_SYNTHETIC_corpus_is_skipped_and_SAYS_so": [
+   "pass",
+   ""
+  ],
+  "test_UNVERIFIED_clips_are_counted_and_over_the_cap_REFUSED": [
+   "pass",
+   ""
+  ],
+  "test_the_trainer_wires_the_guard_after_BOTH_clock_resolutions": [
+   "pass",
+   ""
+  ],
+  "test_E2b_EVAL_mode_excludes_the_unverified_clips_TACTICAL_targets_only": [
+   "pass",
+   ""
+  ],
+  "test_E2b_RED_the_train_policy_still_REFUSES_the_same_coverage": [
+   "pass",
+   ""
+  ],
+  "test_E2b_RED_without_the_exclusion_the_unverified_clip_IS_scored": [
+   "pass",
+   ""
+  ],
+  "test_the_ceiling_BITES_at_eval": [
+   "pass",
+   ""
+  ],
+  "test_the_ceiling_is_INERT_in_training_and_the_LAW_input_is_unmasked": [
+   "pass",
+   ""
+  ],
+  "test_RED_ARM_the_pre_ruling_behaviour_goes_RED": [
+   "pass",
+   ""
+  ],
+  "test_the_default_is_the_ruling": [
+   "pass",
+   ""
+  ],
+  "test_a_PRE_FIX_record_rebuilds_the_trunk_UN_equalised_and_says_why": [
+   "pass",
+   ""
+  ],
+  "test_a_POST_FIX_record_rebuilds_what_it_stamped": [
+   "pass",
+   ""
+  ],
+  "test_DELIBERATE_REGRESSION_without_the_resolver_the_eval_trunk_would_equalise": [
+   "pass",
+   ""
+  ]
+ },
+ "tipred_counts": {
+  "fail": 57,
+  "pass": 23,
+  "skip": 2
+ },
+ "verdict": "PASS: 0 regressions; every new test green on FIX except 2 SKIPS (resnet34.a1_in1k not in Thor's HF cache -- to be run where cached); the new tests go RED on unfixed code (TIPRED 57 fail)"
+}

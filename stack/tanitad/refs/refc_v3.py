@@ -113,6 +113,9 @@ from tanitad.refs import refcv6_tactical as v6tac
 from tanitad.refs import refcv7_heads as r7h
 from tanitad.refs import refcv7_oracle as r7o
 from tanitad.refs import refcv7_toad as r7t
+# ⛔⛔ G-HYG (SPEC_REFCV7 §2, 2026-09-26): `RefCV3Config` REFUSES an undeclared attribute at
+# assignment -- see `tanitad/train/config_hygiene.py` and `refc.py`'s configs.
+from tanitad.train.config_hygiene import strict_fields
 
 __all__ = [
     "V3_HORIZONS", "SEAM_SLOT", "GOAL_TAU_STEPS", "RefCV3Config",
@@ -341,6 +344,7 @@ def kinematic_goal_extrapolation(v0: Tensor, a0: Tensor, k0: Tensor,
 # "an ablation's 'everything else identical' must be DERIVED and pinned").
 # ============================================================================
 
+@strict_fields
 @dataclass
 class RefCV3Config:
     #: ⭐ v7 mandate default; the kinematic trainer passes "kin3"
@@ -624,6 +628,14 @@ class RefCV3Config:
     # carries the stamp with the channel off.
     max_speed_onehot_v6: bool = False
 
+    # --- refcv6 arm D: `--sampler ddim` with `--w-u0 0` (PI RULING 2026-09-11) -------------
+    # ⛔ A DECLARED FIELD since 2026-09-26 (G-HYG). `_pin_refcv5_seams` set it as an AD-HOC
+    # attribute, which survived only because nothing rebuilt `RefCV3Config` -- and nothing read
+    # it either: `--ack-ddim-no-u0`'s help promises it is STAMPED into config.json, and the live
+    # refcv6-r101-s0 config.json carries no such key (MEASURED 2026-09-26). `None` = not
+    # acknowledged; the trainer now stamps it under `seams.u0_absent_under_ddim`.
+    u0_absent_under_ddim: str | None = None
+
     @property
     def n_goal_taus(self) -> int:
         return len(self.goal_tau_steps)
@@ -856,6 +868,63 @@ def refc_v3_smoke_config(hier: bool = True) -> RefCV3Config:
     if hier:
         cfg.core.graft_target_latent = True
     return cfg
+
+
+# ============================================================================
+# ⛔⛔ FIX-4 (D-REFCV6-CONFIG-BUILD, 2026-09-26): the refcv6 SELECTION surface, READ OFF THE
+# BUILT MODEL. `provenance_roles()["selection_inputs"]` was a static literal emitted whenever
+# the v6 decoder was on; refcv6-r101-s0's config.json declared the 8x8 tactical prior, the
+# nav-compliance term and the max-speed argmax filter, and its decoder had built none of the
+# three (no trainer flag reached `graft_tac8_prior` / `graft_nav_compliance` /
+# `speed_ceiling_filter`). The declaration is now derived from the modules, keyed by name so
+# G-DVB (`tanitad/train/declared_vs_built.py`) can check argv -> built -> declared by KEY.
+# ============================================================================
+
+#: ``(key, phrase)`` -- the phrase is what `selection_inputs` has always said for that mechanism.
+REFCV6_SELECTION_MECHANISMS: tuple[tuple[str, str], ...] = (
+    ("anchor_confidence", "anchor confidence (the decoder's own)"),
+    ("maneuver_prior_5way", "image-only 5-way maneuver prior -> anchor prior (H19)"),
+    ("image_prior_lat3_lon3",
+     "image-only lat3/lon3 prior -> anchor prior (D-TAC1 factored head; in use because the "
+     "8x8 tactical posterior does NOT replace it on this build)"),
+    ("tac8_prior", "tactical lat/lon posterior -> anchor prior (DETACHED, "
+                   "zero-init 8 -> n_anchors)"),
+    ("behaviour_set", "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, "
+                      "zero-init; the 5 situation columns are structurally dead)"),
+    ("nav_compliance", "nav compliance (PARAMETER-FREE geometric predicate, one "
+                       "zero-init gate)"),
+    ("speed_ceiling", "max-speed ceiling (ARGMAX FILTER, no parameters)"),
+)
+
+
+def refcv6_selection_built(model) -> dict[str, bool]:
+    """``{key: built}`` for every refcv6 selection mechanism, read off the MODULES.
+
+    ⚠️ "Built" means the forward can act through it: the speed ceiling needs a fed limit
+    (``max_speed_1h_v6``; without it ``v_limit_ms`` is +inf on every row and the filter is
+    inert), and the behaviour set needs the gate that produces ``behaviour_term``.
+    """
+    dec = model.core.decoder
+    tac8 = getattr(dec, "tac8_lat_to_anchor", None) is not None
+    return {
+        "anchor_confidence": True,
+        "maneuver_prior_5way": getattr(dec, "maneuver_to_anchor", None) is not None,
+        "image_prior_lat3_lon3": (getattr(dec, "lat_to_anchor", None) is not None
+                                  and not tac8),
+        "tac8_prior": tac8,
+        "behaviour_set": (bool(getattr(dec, "graft_behaviour_sel", False))
+                          and getattr(model, "tac_behaviour_gate_v6", None) is not None),
+        "nav_compliance": getattr(dec, "navc_gate", None) is not None,
+        "speed_ceiling": (bool(getattr(dec, "speed_ceiling_filter", False))
+                          and getattr(model, "max_speed_1h_v6", None) is not None),
+    }
+
+
+def refcv6_selection_mechanisms(model) -> list[tuple[str, bool]]:
+    """``[(phrase, built)]`` in the declared order -- the source of both
+    ``selection_inputs`` (built) and ``selection_inputs_not_built`` (off)."""
+    built = refcv6_selection_built(model)
+    return [(phrase, bool(built[key])) for key, phrase in REFCV6_SELECTION_MECHANISMS]
 
 
 # ============================================================================
@@ -1333,19 +1402,23 @@ class RefCV3Model(nn.Module):
             # declared inputs, so the ruling applies to them; a missing key is
             # refused rather than assumed empty, because a guard that passes on
             # an absent declaration is a guard proven by inspection.
-            "selection_inputs": ([
-                "anchor confidence (the decoder's own)",
-                "tactical lat/lon posterior -> anchor prior (DETACHED, "
-                "zero-init 8 -> n_anchors)",
-                "valid-behaviour set over the 17 ADMISSIBLE tokens (DETACHED, "
-                "zero-init; the 5 situation columns are structurally dead)",
-                "nav compliance (PARAMETER-FREE geometric predicate, one "
-                "zero-init gate)",
-                "max-speed ceiling (ARGMAX FILTER, no parameters)",
-            ] if v6 else [
-                "anchor confidence (the decoder's own)",
-                "the D-SEL grafts this build has on (route/goal/gp/cons)",
-            ]),
+            # ⛔⛔ FIX-4 (D-REFCV6-CONFIG-BUILD, 2026-09-26): READ OFF THE BUILT DECODER. This
+            # list used to be a STATIC literal emitted whenever v6 was on, so refcv6-r101-s0's
+            # config.json declared five selection inputs while its decoder had built two of
+            # them (MEASURED on ckpt_30000: 0 `tac8_*` and 0 `navc_*` keys, and
+            # `speed_ceiling_filter` False). Each refcv6 mechanism is now listed ONLY when the
+            # decoder holds it, and every one that is off is NAMED under
+            # `selection_inputs_not_built` -- an omission a reader can see, never a silence.
+            "selection_inputs": (
+                [s for s, on in refcv6_selection_mechanisms(self) if on] if v6 else [
+                    "anchor confidence (the decoder's own)",
+                    "the D-SEL grafts this build has on (route/goal/gp/cons)",
+                ]),
+            "selection_inputs_not_built": (
+                [s for s, on in refcv6_selection_mechanisms(self) if not on]
+                if v6 else []),
+            # the same facts, machine-readable by KEY (G-DVB compares argv against these)
+            "selection_mechanisms_built": (refcv6_selection_built(self) if v6 else None),
             "required_live_edges": (
                 ["ego_state -> {z_tac, g_str, g_tac}", "frames -> every goal"]
                 if v4 else ["frames -> every goal"]),

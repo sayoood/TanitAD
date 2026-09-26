@@ -1,0 +1,391 @@
+diff --git baself/stack/scripts/refc_v3_train.py fixlf/stack/scripts/refc_v3_train.py
+index a8466e2..b15bcb8 100644
+--- baself/stack/scripts/refc_v3_train.py
++++ fixlf/stack/scripts/refc_v3_train.py
+@@ -122,6 +122,10 @@ from tanitad.refs import refc_wp_index as _refc_wp_index  # noqa: E402  (WP-B)
+ from tanitad.models import kinematic as kin  # noqa: E402
+ from tanitad.models import refcv6_diffusion as _rv6  # noqa: E402  (refcv6 §3)
+ from tanitad.train import grad_conflict as _gcf  # noqa: E402  (refcv6 §6)
++# ⛔⛔ SPEC_REFCV7 §2 launch gate, 2026-09-26: G-HYG (config dataclasses refuse undeclared
++# attributes) and G-DVB (every argv lever equals the BUILT model's value).
++from tanitad.train import config_hygiene as _hyg  # noqa: E402
++from tanitad.train import declared_vs_built as _dvb  # noqa: E402
+ from tanitad.models import agent_slots as _agent_slots  # noqa: E402
+ # --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
+ # ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
+@@ -305,6 +309,42 @@ def _assert_speed_max_stamp(cfg_dict: dict, args) -> None:
+             f"{stamp!r}")
+ 
+ 
++#: ⛔ G3 (SPEC_REFCV7 FIX-2): the largest admissible |t_trainer - t_true| of a label read, s.
++LABEL_CLOCK_TOL_S: float = 0.05
++#: ⛔ G3: the largest fraction of a split's clips that may lack a MEASURED clock (they are
++#: counted and stamped). 0.01 admits refcv6's train split (22 of 4,369 = 0.50 % uncovered,
++#: MEASURED `config.json.label_clock`); set 0.0 to require full sidecar coverage.
++LABEL_CLOCK_MAX_UNVERIFIED_FRAC: float = 0.01
++
++
++def trunk_equalize_rows_as_trained(config: dict) -> tuple[int, str]:
++    """``(rows, why)`` -- the C26 rows a RECORDED run's trunk ACTUALLY zeroed.
++
++    ⛔⛔ FOR EVERY REBUILD OF A PRE-FIX CHECKPOINT. Before 2026-09-26 (FIX-3) the value was an
++    undeclared attribute: with ``--image-hw`` the rebuild dropped it and the trunk trained with
++    0 rows (refcv6-r101-s0: argv 43, trunk 0); without ``--image-hw`` it survived. A tree with
++    the fix rebuilds EVERY such argv with the rows argv names -- a model the weights never
++    were. An eval loader rebuilding a recorded run must override the trunk (not the lift) to
++    this value when ``config.json`` predates the stamp.
++
++    * ``seams.trunk_equalize_bottom_rows`` present -> that (a post-fix record states it);
++    * else argv ``--equalize-bottom-rows N > 0`` with ``--image-hw`` -> ``0`` (DROPPED);
++    * else argv ``N`` (no rebuild ran, the attribute reached the trunk) or ``0``.
++    """
++    seams = config.get("seams") if isinstance(config, dict) else None
++    if isinstance(seams, dict) and "trunk_equalize_bottom_rows" in seams:
++        return int(seams["trunk_equalize_bottom_rows"]), "stamped (post-fix record)"
++    argv = list(config.get("argv") or []) if isinstance(config, dict) else []
++    n = 0
++    if "--equalize-bottom-rows" in argv:
++        n = int(argv[argv.index("--equalize-bottom-rows") + 1])
++    if n > 0 and "--image-hw" in argv:
++        return 0, (f"DROPPED: pre-fix record, argv --equalize-bottom-rows {n} with --image-hw "
++                   f"(D-REFCV6-EQUALIZE-DROPPED) -- the trunk trained with 0 rows")
++    return n, ("no --equalize-bottom-rows in argv" if n == 0 else
++               "pre-fix record without --image-hw: the attribute reached the trunk")
++
++
+ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
+     """The trainer's OWN pins on a freshly built config (both arms, all paths).
+ 
+@@ -378,8 +418,22 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
+             "the in-repo `refc` trunk implements none of them, so the flag would be "
+             "stamped into config.json and change nothing. Got --trunk %s." % _trunk)
+     # ⛔ C26: equalize the rig-correlated black strip (see `--equalize-bottom-rows`).
+-    cfg.core.encoder.trunk_equalize_bottom_rows = int(
+-        getattr(args, "equalize_bottom_rows", 0) or 0)
++    # ⛔⛔ FIX-3 (D-REFCV6-EQUALIZE-DROPPED, 2026-09-26): this line set an UNDECLARED attribute
++    # and the `--image-hw` `dataclasses.replace` below dropped it, so refcv6-r101-s0 trained
++    # with `--equalize-bottom-rows 43` in argv and an un-equalised trunk. It is now a DECLARED
++    # field (`CNNEncoderConfig.trunk_equalize_bottom_rows`) that the rebuild carries, the
++    # config class REFUSES any undeclared attribute (G-HYG), and G-DVB reads the BUILT trunk.
++    _eq_rows = int(getattr(args, "equalize_bottom_rows", 0) or 0)
++    if _eq_rows < 0:
++        raise SystemExit("[v3] ⛔ --equalize-bottom-rows %d: a row COUNT cannot be negative."
++                         % _eq_rows)
++    if _eq_rows > 0 and _trunk != "timm":
++        raise SystemExit(
++            "[v3] ⛔ --equalize-bottom-rows %d with --trunk %s: the in-repo `refc` trunk "
++            "implements no equalisation (only `TimmResNetTrunk.normalise` zeroes rows) and the "
++            "BEV lift that shares the mask needs --trunk timm, so the flag would be stamped and "
++            "reach nothing. Pass --trunk timm, or drop the flag." % (_eq_rows, _trunk))
++    cfg.core.encoder.trunk_equalize_bottom_rows = _eq_rows
+     # ⛔ A7 (2026-09-19): recalibration is only meaningful when the statistics are
+     # then FROZEN -- an unfrozen BN trains on batch statistics and its running stats
+     # are overwritten by momentum within steps, so a stamp saying "recalibrated"
+@@ -673,6 +727,10 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
+         cfg.tac_goal_tok_head = True
+     _pin_refcv6_tactical(cfg, args)
+     _pin_refcv7(cfg, args)
++    # ⛔⛔ G-HYG: the strict config classes refuse an undeclared attribute AT ASSIGNMENT; this
++    # walk catches the two routes that bypass `__setattr__` (a `__dict__` write, and a config
++    # class of another module that is not decorated) before any model is built from it.
++    _hyg.assert_config_hygiene(cfg, where="_pin_trainer_cfg")
+     return cfg
+ 
+ 
+@@ -901,6 +959,40 @@ def _pin_refcv6_tactical(cfg, args) -> None:
+                 "class this trainer already refuses five times. Pass "
+                 "--tac-decoder-v6, or drop --graft-behaviour-sel.")
+         cfg.core.graft_behaviour_sel = True
++    # ---- ⛔⛔ FIX-4 (D-REFCV6-CONFIG-BUILD, 2026-09-26): the OTHER three refcv6 selection
++    # levers. `RefCConfig` declared them and the decoder builds them (refc.py), but NO FLAG
++    # reached them, while `provenance_roles()` declared all of them whenever v6 was on. OFF by
++    # default -- a run that passes none is bit-identical -- and every dead combination REFUSES.
++    # ⚠️ Turning any of them ON changes the arm; that is a design decision, not wiring.
++    if bool(getattr(args, "graft_tac8_prior", False)):
++        if not _on6:
++            raise SystemExit(
++                "[v3] ⛔ --graft-tac8-prior without --tac-decoder-v6: the 8x8 tactical "
++                "posterior is produced by the behaviour decoder's scene hook and by nothing "
++                "else, so the zero-init 8 -> n_anchors grafts would be built and never fed.")
++        cfg.core.graft_tac8_prior = True
++    _navc = bool(getattr(args, "graft_nav_compliance", False))
++    _navc_tau = float(getattr(args, "nav_compliance_tau_rad", 0.0) or 0.0)
++    if _navc and not _navc_tau > 0.0:
++        raise SystemExit(
++            "[v3] ⛔ --graft-nav-compliance needs --nav-compliance-tau-rad > 0. The tolerance "
++            "is DERIVED per corpus on the TRAIN split "
++            "(`taniteval.nav_compliance.derive_tolerance(pos, neg)`) and the arm must state it; "
++            "an invented one decides what 'compliant' means with no evidence class.")
++    if _navc_tau and not _navc:
++        raise SystemExit(
++            "[v3] ⛔ --nav-compliance-tau-rad %.6g without --graft-nav-compliance: the "
++            "tolerance of a term that is not built -- stamped and read by nothing." % _navc_tau)
++    if _navc:
++        cfg.core.graft_nav_compliance = True
++        cfg.core.nav_compliance_tau_rad = _navc_tau
++    if bool(getattr(args, "speed_ceiling_filter", False)):
++        if not bool(getattr(args, "max_speed_input_v6", False)):
++            raise SystemExit(
++                "[v3] ⛔ --speed-ceiling-filter without --max-speed-input-v6: the filter's "
++                "ceiling IS the fed 4-way set speed; with no channel every row's limit is "
++                "+inf and the argmax filter is built and INERT.")
++        cfg.core.speed_ceiling_filter = True
+     # ---- §5: the 4-way one-hot set-speed -------------------------------- #
+     if bool(getattr(args, "max_speed_input_v6", False)):
+         if args.arm != "hier":
+@@ -2981,6 +3073,110 @@ class V3Dataset(RouteV21Dataset):
+     #: ⛔ THE DELIBERATE-REGRESSION SWITCH, for tests ONLY: True restores the historical
+     #: ``(t + w - 1) * v7_dt`` so a guard can prove it goes RED on the defect it exists for.
+     legacy_label_clock: bool = False
++    #: ⛔ G3's EVAL mode (E2(b), 2026-09-26): clips whose label clock could not be MEASURED (the
++    #: sidecar refused them). Their TACTICAL targets read as "clip has no record" (IGNORE), so
++    #: the tactical family is scored on verified clips only; nav, ego and every other input and
++    #: target are untouched, so the other three families keep every clip.
++    tactical_excluded_sids: frozenset = frozenset()
++
++    def assert_label_clock_true(self, sidecar_path: str | None, *, split: str,
++                                synthetic: bool = False,
++                                tol_s: float | None = None,
++                                max_unverified_frac: float | None = None,
++                                exclude_unverified_tactical: bool = False) -> dict:
++        """⛔⛔ G3 / G-CLOCK (SPEC_REFCV7 FIX-2): every label read lands within ``tol_s`` of the
++        clip's MEASURED clock, or the run REFUSES.
++
++        ``t_true`` is computed HERE from the sidecar table read afresh and the literal rule
++        *provider row r is raw row r + n_stack - 1, and raw row k sits at grid_start + k * dt*
++        -- never through :meth:`_now_s`, which is the code under test. Three rows per clip
++        (its first, middle and last window). The historical ``(t + w - 1) * 0.1`` read labels
++        0.369 s early at the median (A16, q4d) and is this guard's regression arm.
++
++        * a synthetic corpus has no true clock: skipped and STAMPED as skipped;
++        * a real corpus with no ``--clip-clock-sidecar``: REFUSED -- the fallback reads
++          ``grid_start_s = 0.0``, +0.113 s off at the corpus median, so nothing is verifiable;
++        * clips the sidecar does not cover are UNVERIFIED; more than ``max_unverified_frac`` of
++          the split REFUSES, fewer are counted and stamped by name-count;
++        * ``exclude_unverified_tactical=True`` (the EVAL split): instead of refusing, the
++          unverified clips' TACTICAL targets are excluded and the family is scored on the
++          verified clips, with n and the reason stamped -- the four-families rule's per-family n,
++          never a raised cap (MEASURED: eval-139 has 3 unverified clips = 2.16 %, all refused
++          by the sidecar for "fewer than 20 moving rows").
++        """
++        from tanitad.data import clip_clock as _cc
++        tol = float(LABEL_CLOCK_TOL_S if tol_s is None else tol_s)
++        cap = float(LABEL_CLOCK_MAX_UNVERIFIED_FRAC if max_unverified_frac is None
++                    else max_unverified_frac)
++        if synthetic:
++            return {"g3": "SKIPPED: synthetic corpus (no true clock exists)", "split": split}
++        if not sidecar_path:
++            raise SystemExit(
++                f"[v3] ⛔ G3 ({split}): v7/v8 labels on a REAL corpus with no "
++                f"--clip-clock-sidecar. The pose-dt fallback clocks every clip from "
++                f"grid_start 0.0, which is +0.113 s off at the corpus median -- no label time "
++                f"can be shown within {tol} s of the truth. Build it with "
++                f"scripts/build_clip_clock_sidecar.py and pass it.")
++        table = _cc.read_clip_clock_sidecar(str(sidecar_path)).table
++        by_ep: dict = {}
++        for e_i, t in self.index:
++            by_ep.setdefault(int(e_i), []).append(int(t))
++        w = int(self.window)
++        worst, bad, unverified, n_checked = 0.0, [], [], 0
++        for e_i, ts in by_ep.items():
++            ep = self.episodes[e_i]
++            sid = int(ep.episode_id)
++            if sid not in table:
++                unverified.append(sid)
++                continue
++            g0, dt = table[sid]
++            n_stack = int(ep.frames.shape[1]) // 3
++            ts = sorted(ts)
++            for t in {ts[0], ts[len(ts) // 2], ts[-1]}:
++                want = float(g0) + (t + w - 1 + (n_stack - 1)) * float(dt)
++                got = float(self._now_s(ep, t))
++                err = abs(got - want)
++                n_checked += 1
++                worst = max(worst, err)
++                if err > tol:
++                    bad.append((sid, t, round(got, 4), round(want, 4)))
++        if bad:
++            raise SystemExit(
++                f"[v3] ⛔ G3 ({split}): {len(bad)} of {n_checked} label reads are more than "
++                f"{tol} s from the clip's MEASURED clock (worst {worst:.4f} s). The trainer "
++                f"would supervise the tactical heads at the wrong instant "
++                f"(D-REFCV6-LABEL-CLOCK). First (sid, t, t_trainer, t_true): {bad[:4]}")
++        n_ep = len(by_ep)
++        frac = len(unverified) / max(n_ep, 1)
++        if exclude_unverified_tactical:
++            self.tactical_excluded_sids = frozenset(int(x) for x in unverified)
++            return {"g3": "PASS", "split": split, "tol_s": tol,
++                    "n_clips": n_ep, "n_reads_checked": n_checked,
++                    "worst_abs_err_s": round(worst, 6),
++                    "n_unverified_clips": len(unverified),
++                    "tactical_scored_on_clips": n_ep - len(unverified),
++                    "tactical_excluded_clips": len(unverified),
++                    "tactical_excluded_sids": sorted(int(x) for x in unverified),
++                    "tactical_excluded_reason": (
++                        "no MEASURED label clock (absent from the clip-clock sidecar): their "
++                        "tactical targets cannot be shown within tol_s of the truth"),
++                    "families_on_all_clips": ["longitudinal", "lateral", "strategic"],
++                    "mode": "per-family: TACTICAL on verified clips only (E2(b))",
++                    "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"}
++        if frac > cap:
++            raise SystemExit(
++                f"[v3] ⛔ G3 ({split}): {len(unverified)} of {n_ep} clips ({frac:.2%}) have no "
++                f"measured clock in {sidecar_path} -- above the {cap:.0%} the guard admits "
++                f"(LABEL_CLOCK_MAX_UNVERIFIED_FRAC). Rebuild the sidecar over this split, or "
++                f"raise the cap as a RECORDED operator decision (--label-clock-max-unverified).")
++        return {"g3": "PASS", "split": split, "tol_s": tol,
++                "n_clips": n_ep, "n_reads_checked": n_checked,
++                "worst_abs_err_s": round(worst, 6),
++                "n_unverified_clips": len(unverified),
++                "max_unverified_frac": cap,
++                "max_unverified_frac_source": ("default" if max_unverified_frac is None
++                                               else "operator (--label-clock-max-unverified)"),
++                "rule": "t_true = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s (sidecar)"}
+ 
+     @staticmethod
+     def _raw_offset(ep) -> int:
+@@ -3090,6 +3286,8 @@ class V3Dataset(RouteV21Dataset):
+         # The window's NOW is the last OBSERVED frame: t + w - 1 at dt.
+         if self.v7_by_sid is not None:
+             lab = self.v7_by_sid.get(int(ep.episode_id))
++            if int(ep.episode_id) in self.tactical_excluded_sids:
++                lab = None            # G3 eval mode: no measured clock -> tactical EXCLUDED
+             if lab is None:
+                 lat_v7 = lon_v7 = v7l.IGNORE_ID       # clip has no record
+             else:
+@@ -5053,6 +5251,9 @@ def _seam_stamp(cfg, args) -> dict:
+         "trunk_fold_bn": bool(getattr(core.encoder, "trunk_fold_bn", False)),
+         "trunk_dedup_frames": bool(getattr(core.encoder, "trunk_dedup_frames", False)),
+         "trunk_compile": bool(getattr(core.encoder, "trunk_compile", False)),
++        # ⛔⛔ FIX-3: C26 in the RECORD. Absent from every config.json before 2026-09-26, which
++        # is also how `trunk_equalize_rows_as_trained` tells a pre-fix record from a new one.
++        "trunk_equalize_bottom_rows": int(core.encoder.trunk_equalize_bottom_rows),
+         "trunk_fuse": str(getattr(core.encoder, "trunk_fuse", "concat1x1")),
+         "trunk_fuse_identity": bool(getattr(core.encoder,
+                                             "trunk_fuse_identity", True)),
+@@ -5088,6 +5289,16 @@ def _seam_stamp(cfg, args) -> dict:
+                                              "feasible_prefix_slots", 4)),
+         "w_agent": float(getattr(args, "w_agent", AGENT_WEIGHT_DEFAULT)),
+         "w_u0": float(getattr(args, "w_u0", U0_WEIGHT_DEFAULT)),
++        # ⭐ `--ack-ddim-no-u0` promised this stamp; before G-HYG it lived only as an ad-hoc
++        # attribute nothing read (the refcv6-r101-s0 config.json carries no such key).
++        "u0_absent_under_ddim": getattr(cfg, "u0_absent_under_ddim", None),
++        # ⭐ FIX-4: the four refcv6 selection levers, as the CONFIG carries them (the built
++        # facts are `provenance_roles.selection_mechanisms_built`, checked by G-DVB).
++        "graft_tac8_prior": bool(getattr(core, "graft_tac8_prior", False)),
++        "graft_behaviour_sel": bool(getattr(core, "graft_behaviour_sel", False)),
++        "graft_nav_compliance": bool(getattr(core, "graft_nav_compliance", False)),
++        "nav_compliance_tau_rad": float(getattr(core, "nav_compliance_tau_rad", 0.0)),
++        "speed_ceiling_filter": bool(getattr(core, "speed_ceiling_filter", False)),
+         # ⭐⭐ E15 (GP-2, 2026-09-06) — THE GOAL-POINT STAMP, INCLUDING THE
+         # MACHINE-READABLE ADMISSIBILITY DECLARATION.
+         #
+@@ -5897,6 +6108,15 @@ def assert_seams_are_built(model, stamp: dict) -> None:
+             "the seam stamp carries no `max_speed_input` block but the "
+             "conditioner WAS BUILT -- a live seam absent from the record")
+ 
++    # --- FIX-3: C26 -- the stamped equalisation vs the rows the BUILT trunk zeroes --------- #
++    if "trunk_equalize_bottom_rows" in stamp and _is_timm:
++        _eq_b = int(getattr(getattr(_enc, "cfg", None), "equalize_bottom_rows", -1))
++        if int(stamp["trunk_equalize_bottom_rows"]) != _eq_b:
++            bad.append(
++                f"stamp says trunk_equalize_bottom_rows="
++                f"{stamp['trunk_equalize_bottom_rows']} but the BUILT trunk zeroes {_eq_b} "
++                f"rows -- D-REFCV6-EQUALIZE-DROPPED")
++
+     if bad:
+         raise SystemExit(
+             "[v3] ⛔⛔ THE RUN RECORD DOES NOT MATCH THE MODEL. Refusing to "
+@@ -7214,6 +7434,11 @@ def train(args) -> dict:
+         ds.v7_dt = 0.1
+         # ⭐⭐ A16 2026-09-26: the label clock (tanitad/data/clip_clock.py), resolved ONCE.
+         clip_clock_stats = ds.enable_clip_clock(getattr(args, "clip_clock_sidecar", None))
++        # ⛔⛔ G3: the clock is VERIFIED against the measured one before any batch is read.
++        clip_clock_stats["g3"] = ds.assert_label_clock_true(
++            getattr(args, "clip_clock_sidecar", None), split="train",
++            synthetic=bool(getattr(args, "synth_episodes", 0)),
++            max_unverified_frac=getattr(args, "label_clock_max_unverified", None))
+         # ---- ⭐ PI 2026-09-16: the absence-is-negative sidecar ------------
+         # ⛔ Loaded HERE, before the manifest is stamped into the run record,
+         # so a run that used the ruling cannot produce a config.json that does
+@@ -7513,6 +7738,13 @@ def train(args) -> dict:
+             e_ds.v7_dt = 0.1
+             eval_clip_clock_stats = e_ds.enable_clip_clock(
+                 getattr(args, "clip_clock_sidecar", None))
++            # ⛔ E2(b): the EVAL split never raises the cap -- its unverified clips are EXCLUDED
++            # from the TACTICAL family (n + reason in config.json); the other families keep them.
++            eval_clip_clock_stats["g3"] = e_ds.assert_label_clock_true(
++                getattr(args, "clip_clock_sidecar", None), split="eval",
++                synthetic=bool(getattr(args, "synth_episodes", 0)),
++                max_unverified_frac=getattr(args, "label_clock_max_unverified", None),
++                exclude_unverified_tactical=True)
+             # the in-training eval sees the SAME nav source as training
+             # (refused above when --eval-labels is missing)
+             if nav_on:
+@@ -7741,6 +7973,14 @@ def train(args) -> dict:
+         _data_order.update(resume_data_position(state, _train_sampler, len(ds),
+                                                 args.batch))
+         _data_order["resumed_at_step"] = step
++    # ⛔⛔ G-DVB (SPEC_REFCV7 §2): ARGV against the BUILT model, skipping the config in between.
++    # `assert_seams_are_built` below compares the stamp (built FROM the config) with the model,
++    # so a lever lost between argv and the config is lost from both and they agree -- that is
++    # how refcv6-r101-s0 passed with `--equalize-bottom-rows 43` and an un-equalised trunk.
++    # Here -- after the withheld bank, the optimizer and any resume, BEFORE the seam stamp,
++    # config.json and the first step -- every registered lever is read off the modules, and any
++    # mismatch REFUSES.
++    _dvb.refuse_on_mismatch(model, args, build_parser(), where="train")
+     # ⛔ M18: the record is CHECKED before it is written. A knob that does not
+     # reach config.json refuses the run here, not in an audit months later.
+     _seams = _seam_stamp(cfg, args)
+@@ -7798,6 +8038,12 @@ def train(args) -> dict:
+         # ⭐ A7: `null` is the baseline (no recalibration) and is distinguishable
+         # from a trainer that predates the flag -- the `refcv6: null` convention.
+         "trunk_bn_recalib": None,
++        # ⭐ G-DVB passed (it refuses otherwise): what it compared, for the record
++        "declared_vs_built": {"registry_entries": len(_dvb.REGISTRY),
++                              "built_checks": sum(1 for _l in _dvb.REGISTRY.values()
++                                                  if _l.kind in ("built", "loss")),
++                              "mismatches": 0,
++                              "module": "tanitad/train/declared_vs_built.py"},
+         # ⛔ `argv` records what was TYPED and the seam stamps record what
+         # was BUILT; neither says whether each weight's loss term is
+         # actually reached. A run record that does not carry its effective
+@@ -8536,6 +8782,13 @@ def build_parser() -> argparse.ArgumentParser:
+                     help="FIXED number of eval batches — the same windows "
+                          "every time, so step-to-step deltas are the model "
+                          "moving and not the sample moving")
++    ap.add_argument("--label-clock-max-unverified", type=float, default=None,
++                    help="⛔ G3 (SPEC_REFCV7 FIX-2): the largest fraction of a split's clips "
++                         "that may lack a MEASURED clock in --clip-clock-sidecar (their labels "
++                         "cannot be shown within 0.05 s of the truth). Default None = "
++                         "LABEL_CLOCK_MAX_UNVERIFIED_FRAC (0.01). A larger value is an OPERATOR "
++                         "decision and is stamped in config.json `label_clock.*.g3`. MEASURED on "
++                         "refcv6's splits: train 22/4,369 (0.50 %%), eval 3/139 (2.16 %%).")
+     ap.add_argument("--clip-clock-sidecar", default=None,
+                     help="A16 2026-09-26: JSON-lines {sid, grid_start_s, dt_s} built by "
+                          "`scripts/build_clip_clock_sidecar.py` from each clip's 100 Hz "
+@@ -9464,6 +9717,24 @@ def build_parser() -> argparse.ArgumentParser:
+                           "decoder no `behaviour_term` is ever produced and "
+                           "the flag would be silently inert while "
+                           "config.json stamps it on.")
++    # ⛔⛔ FIX-4 (D-REFCV6-CONFIG-BUILD, 2026-09-26): the three refcv6 selection mechanisms
++    # `provenance_roles()` declared with no flag to build them. OFF by default (bit-identical).
++    g6t.add_argument("--graft-tac8-prior", action="store_true",
++                     help="refcv6 §4: the 8x8 tactical posterior REPLACES the image-only "
++                          "lat3/lon3 anchor prior, through NEW zero-init 8 -> n_anchors "
++                          "grafts (1,872 params at 117 anchors). Needs --tac-decoder-v6. "
++                          "⚠️ CHANGES THE ARM.")
++    g6t.add_argument("--graft-nav-compliance", action="store_true",
++                     help="refcv6 §5: the PARAMETER-FREE nav-compliance predicate reaches "
++                          "the RANKED score behind ONE zero-init gate. Needs "
++                          "--nav-compliance-tau-rad. ⚠️ CHANGES THE ARM.")
++    g6t.add_argument("--nav-compliance-tau-rad", type=float, default=0.0,
++                     help="the terminal-heading tolerance of --graft-nav-compliance, DERIVED "
++                          "on the TRAIN split (no default that means anything; 0 = unset).")
++    g6t.add_argument("--speed-ceiling-filter", action="store_true",
++                     help="refcv6 §5: the fed 4-way set speed FILTERS THE ARGMAX (the S2 "
++                          "pattern; the score stays unmasked). Needs --max-speed-input-v6. "
++                          "⚠️ CHANGES THE ARM, and the channel is EGO-FUTURE derived.")
+     # ---- refcv7 (PI 2026-09-19): DrivoR's proven planning heads ---------- #
+     # `Project Steering/SPEC_REFCV7.md`. ⛔ A run that passes none of these is
+     # BIT-IDENTICAL to refcv6 (`test_refcv7_model.py`).

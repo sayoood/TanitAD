@@ -1,0 +1,24 @@
+diff --git baself/stack/tanitad/refs/refcv6_max_speed.py fixlf/stack/tanitad/refs/refcv6_max_speed.py
+index dfc3b48..4c3d45b 100644
+--- baself/stack/tanitad/refs/refcv6_max_speed.py
++++ fixlf/stack/tanitad/refs/refcv6_max_speed.py
+@@ -367,6 +367,19 @@ def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None
+     if _os.path.isfile(meta_path):
+         with open(meta_path, "r", encoding="utf-8") as fh:
+             meta = _json.load(fh)
++    # ⛔⛔ FIX-5 (A16 audit Q6, G1 regression R3, 2026-09-26): the md5 cross-check below was
++    # SKIPPED whenever the `.meta.json` was absent -- MEASURED: a sidecar built over a different
++    # label blob read clean on the dev-box kit, which ships no meta. The builder
++    # (`scripts/build_refcv6_speed_max_window.py`) ALWAYS writes one, so an absent meta is a copy
++    # that lost its provenance. When the caller names the blob it loaded, the meta is REQUIRED.
++    if label_md5 and not meta.get("source_md5"):
++        raise SpeedMaxStampError(
++            f"[refcv6-vmax] ⛔ {meta_path!r} is "
++            f"{'ABSENT' if not _os.path.isfile(meta_path) else 'missing `source_md5`'}, so this "
++            f"sidecar cannot be shown to be built over the label blob this run loaded "
++            f"({label_md5!r}). The builder always writes it; copy it beside the sidecar (or "
++            f"rebuild). Refusing rather than skipping the only check that catches a sidecar from "
++            f"another release.")
+     if label_md5 and meta.get("source_md5") and \
+             str(meta["source_md5"]) != str(label_md5):
+         raise SpeedMaxStampError(
