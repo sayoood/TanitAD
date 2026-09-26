@@ -415,3 +415,6 @@ register rows carry them. The fix itself cannot close the following:
 5. **The Thor half of `D-REFAV1-LON-T1`** was not re-derived, because its dumps live on Thor only.
    Its dev-box twin kept its sign and separation (−0.1009 → −0.1161). Re-read it when Thor is free
    (after refcv6-r101-s0 finishes).
+
+- 2026-09-26 update to `YAWMASK-FOLLOWUPS-2026-09-26`, item 1: `CLAUDE.md` is DONE on the PI's instruction (`226d39e`); it now
+  reads 4/42 = 9.5 %. The rest of the propagation sweep (`raw/propagation_sites.txt`) stays open.

@@ -1764,3 +1764,14 @@ yaw-rate cell scored step pairs with no tangent. With the mask:
 2. **`CLAUDE.md:183`** quotes "6 of 42 … 14.3 %" inside the binding `H-ESTIM-SEED-1` rule.
    - DEFAULT if you say nothing: CLAUDE.md is unchanged, and the register carries the correction.
    - Say "update CLAUDE.md" and the Master Mind will annotate the line with 4/42 = 9.5 % and the RETR id.
+
+### ✅ RESOLVED (2026-09-26 ~15:20 Berlin) — item "the yaw-rate correction touches two things only the PI can change", part 2
+
+The PI, verbatim: *"update CLAUDE.md with the corrected rate"*. It is done in `226d39e`.
+- The `H-ESTIM-SEED-1` rule now reads 4 of 42 = 9.5 % (2 of 14 on the VERDICT.md rows).
+- The old 6 of 42 = 14.3 % is kept in a dated correction note.
+- The D: working copy carries the same edit.
+- The G: copy is not touched (standing rule).
+
+Part 1, the public `tanitad-refc-v3` HF card, is STILL OPEN. Its default stands: the card is
+unchanged.
