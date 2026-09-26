@@ -669,7 +669,19 @@ class REFe(nn.Module):
         emb = self.pos3d_mlp(fr)                                      # [U, n_cam*P, width]
         return emb[torch.tensor(idx, device=emb.device)]              # [B, n_cam*P, width]
 
-    def forward(self, img, ego, goal, detach_scorer: bool = True, calib=None):
+    def score_trajectories(self, trajs, sctx):
+        """The scoring decoder on ANY set of trajectories: [B, K, T, traj_dim] -> [B, K, 6].
+
+        The SAME modules `forward` applies to the proposals (score query MLP, scoring decoder,
+        score head). ⚠️ The decoder's self-attention spans the set, so a trajectory is scored IN ITS
+        SET: pass a complete set (the on-policy labeller writes all 64 labels of a frame or none).
+        """
+        s = self.score_q_mlp(trajs.flatten(2))
+        for blk in self.score_dec:
+            s = blk(s, sctx)
+        return self.score_head(s)
+
+    def forward(self, img, ego, goal, detach_scorer: bool = True, calib=None, score_extra=None):
         """`detach_scorer=False` is the DELIBERATE-REGRESSION path and exists so the validator can
         exercise the REAL forward pass with one property flipped, instead of restating it.
 
@@ -739,7 +751,13 @@ class REFe(nn.Module):
         sctx = visual_ctx.detach() if self.cfg.detach_scorer_context else visual_ctx
         for blk in self.score_dec:
             s = blk(s, sctx)
-        return traj, self.score_head(s)
+        if score_extra is None:
+            return traj, self.score_head(s)
+        # ⭐ ON-POLICY SCORER SUPERVISION (PI decision 2026-09-26, option B, the paper's version):
+        # the labelled trajectories -- the student's OWN proposals, scored by the teacher's
+        # simulator -- are scored as THEIR OWN set against the same visual context, so each label
+        # meets the exact trajectory it belongs to (no nearest-proposal assignment, no drift).
+        return traj, self.score_head(s), self.score_trajectories(score_extra, sctx)
 
 
 def wta_loss(traj, target, yaw_w: float = 0.1):

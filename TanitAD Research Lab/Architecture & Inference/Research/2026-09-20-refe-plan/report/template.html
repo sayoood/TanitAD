@@ -85,6 +85,7 @@ figure .fh h3 + p { font-size: 13.5px; color: var(--ink-2); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend .lk { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
 .legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend .sw.ring { border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 2px var(--s1); }
 details.tv { font-size: 13px; }
 details.tv summary { cursor: pointer; color: var(--ink-2); width: max-content; padding: 2px 0; }
 details.tv summary:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 3px; }
@@ -211,6 +212,32 @@ a { color: var(--s1); }
     </figure>
   </section>
 
+  <section id="selection">
+    <div class="sec-head"><h2>Choosing among the 64 proposals</h2>
+      <p class="lead" id="sel-lead"></p></div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>PDMS if the plan had been chosen differently</h3><p id="cap-selpdms"></p></div>
+        <div class="chart" id="c-selpdms"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>Does the scorer know which proposals pass?</h3><p id="cap-selauc"></p></div>
+        <div class="legend"><span><i class="sw" style="background:var(--s1);border-radius:50%"></i>within a scene (what choosing needs)</span><span><i class="sw ring"></i>pooled over all scenes (the pre-registered bar)</span></div>
+        <div class="chart" id="c-selauc"></div>
+      </figure>
+    </div>
+    <div class="grid2">
+      <figure>
+        <div class="fh"><h3>Where the pick loses its points</h3><p>Mean sub-score ×100 at the planner's pick, at a random proposal, and at the proposal with the best PDMS.</p></div>
+        <div class="tbl" id="t-selcomp"></div>
+      </figure>
+      <figure>
+        <div class="fh"><h3>The scorer's skill at ranking</h3><p>Within one scene, over the 64 proposals; 95% log-cluster intervals.</p></div>
+        <div class="tbl" id="t-selskill"></div>
+      </figure>
+    </div>
+  </section>
+
   <section id="reading">
     <div class="sec-head"><h2>Interpretation</h2><p class="lead">What the data says, what is at risk, and what is being done about it.</p></div>
     <div class="findings" id="findings"></div>
@@ -256,6 +283,12 @@ a { color: var(--s1); }
     if (!e8) return [["s-warn", "?", "Proposal diversity: pre-registered check at epoch 8 pending"]];
     const col = e8.proposals.endpoint_spread_m < 0.5 && (e8.proposals.ade_random_m - e8.proposals.ade_oracle_m) < 0.2;
     return [col ? ["s-critical", "!", "Proposal head collapsed at epoch 8: decision needed"] : ["s-good", "✓", "Proposals diverse: pre-registered check passed at epoch 8"]];
+  })()).concat((() => {
+    // SPEC_NAVTEST E-6 (Amendments 3 + 3a): every proposal scored
+    const s = (D.selection || [])[(D.selection || []).length - 1];
+    if (!s) return [];
+    return [s.verdict.outcome === "SELECTION_BOUND" ? ["s-serious", "!", "Selection is the bottleneck: best proposal " + fmt(s.a_pdms.oracle.mean, 1) + " PDMS, pick " + fmt(s.a_pdms.actual.mean, 1) + " (random " + fmt(s.a_pdms.random.mean, 1) + "): decision needed"]
+      : s.verdict.outcome === "UNDETERMINED" ? ["s-warn", "?", "Selection diagnosis undecided at 200 tokens"] : ["s-good", "✓", "Selection is not the bottleneck"]];
   })());
   chips.forEach(([cls, ic, txt]) => { const c = el("span", { class: "chip " + cls }); c.append(el("i"), el("b", { class: "ic", "aria-hidden": "true" }, ic), document.createTextNode(txt)); $("chips").append(c); });
   $("now-lead").textContent = "Step " + int(P.last_step + 1) + " of " + int(P.total_steps) + " (" + (100 * doneFrac).toFixed(1) +
@@ -657,8 +690,121 @@ a { color: var(--s1); }
   ];
   table("t-eval", colH, rowsF.map(([lab, f]) => [lab].concat(EVs.map(f)).concat(pending.map(() => "pending"))));
 
+  // ---------- selection diagnosis (SPEC E-6 / Amendment 3): every proposal scored ----------
+  const SELs = D.selection || [], SL = SELs[SELs.length - 1];
+  if (!SL) {
+    $("selection").hidden = true;
+  } else {
+    const SA = SL.a_pdms, SEv = EVs.find(v => v.epoch === SL.epoch) || EVs[EVs.length - 1], sfl = SEv.floors || {};
+    const civ = v => "[" + fmt(v.ci95[0], 1) + ", " + fmt(v.ci95[1], 1) + "]";
+    const g = SL.gates || {};
+    $("sel-lead").textContent = "Each of the 64 proposals of every one of the 200 tokens was scored as its own submission by the same NAVSIM harness, " +
+      int(SL.N * SL.M) + " plans from the snapshot after epoch " + SL.epoch + ". The planner's own pick re-scores to the identical number on all " + (g.G2 ? g.G2.tokens_compared : SL.N) + " tokens, so the table is the harness's verdict, not a re-implementation. " +
+      "Choosing the best proposal would score " + fmt(SA.oracle.mean, 1) + " PDMS; the planner's pick scores " + fmt(SA.actual.mean, 1) + " and a random proposal " + fmt(SA.random.mean, 1) + ". " +
+      (SL.desc ? "It is not one lucky proposal: a typical scene has " + fmt(SL.desc.good_median, 1) + " of 64 proposals scoring 80 or more (mean " + fmt(SL.desc.good_mean, 1) + "). The pick scores zero on " + pct(SL.desc.pick_zero, 0) + " of tokens, while on " + pct(1 - SL.desc.all_zero, 0) + " of tokens at least one proposal scores above zero, and it leaves the drivable area on " + pct(SL.desc.pick_dac_fail, 0) + " of tokens where " + pct(SL.desc.dac_any, 0) + " have a proposal that stays on it. " : "") +
+      "The pick realises " + pct(SA.selection_skill.value, 0) + " of the gain a perfect chooser would have over a random one (95% interval " + pct(SA.selection_skill.ci95[0], 0) + " to " + pct(SA.selection_skill.ci95[1], 0) + "). " +
+      ({ SELECTION_BOUND: "By the rule written before the table was read (SPEC Amendments 3 and 3a), the run is selection-bound: good plans are among the proposals and the scorer does not find them.",
+         NOT_SELECTION_BOUND: "By the rule written before the table was read (SPEC Amendments 3 and 3a), the run is not selection-bound.",
+         UNDETERMINED: "By the rule written before the table was read (SPEC Amendments 3 and 3a), 200 tokens cannot decide; the table is being extended to more tokens." })[SL.verdict.outcome];
+    const XR = SL.EXPLORATORY_rules;
+    const selRows = [
+      { lab: "Best of 64 (oracle)", v: SA.oracle, c: "var(--s3)" },
+      { lab: "Planner's pick", v: SA.actual, c: "var(--s1)", strong: true },
+      { lab: "Random proposal", v: SA.random, c: "var(--s2)" },
+      { lab: "Medoid, no scorer", v: SL.confirmatory_medoid.pdms, c: "var(--ink-2)", what: "pre-registered comparison" },
+      { lab: "Sum of logits · exploratory", v: XR.logitsum.pdms, c: "var(--deemph)", what: "exploratory" },
+      { lab: "Violation terms only · expl.", v: XR.violation_only.pdms, c: "var(--deemph)", what: "exploratory" },
+      { lab: "Without progress · expl.", v: XR.aggregate_without_EP.pdms, c: "var(--deemph)", what: "exploratory" },
+    ];
+    $("cap-selpdms").textContent = "Same 200 tokens; 95% log-cluster intervals. Dashed lines: standing still (" + fmt(sfl.STOP && sfl.STOP.pdms, 1) + ") and the human driver (" +
+      fmt(sfl.HUMAN && sfl.HUMAN.pdms, 1) + "). The medoid (the proposal closest to all the others) was the one alternative named in advance; the grey rules are exploratory and are not claims until they hold on other tokens.";
+    mount("c-selpdms", host => {
+      host.replaceChildren();
+      const W = Math.max(300, host.clientWidth), rowH = 30, m = { t: 24, r: 52, b: 28, l: Math.min(196, Math.round(W * 0.42)) };
+      const H = m.t + m.b + rowH * selRows.length;
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "PDMS under different ways of choosing among the 64 proposals");
+      const xs = d3.scaleLinear().domain([0, 100]).range([m.l, W - m.r]);
+      svg.append("g").selectAll("line").data([0, 25, 50, 75, 100]).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t).attr("y2", H - m.b);
+      svg.append("g").selectAll("text").data([0, 25, 50, 75, 100]).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d);
+      const refs = [["STOP", "stand still"], ["HUMAN", "human"]].filter(([k]) => sfl[k]).map(([k, lab]) => ({ x: xs(sfl[k].pdms), lab }));
+      refs.forEach((r, i) => {
+        svg.append("line").attr("x1", r.x).attr("x2", r.x).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--deemph)").style("stroke-width", 1.5).style("stroke-dasharray", "4 3");
+        svg.append("text").attr("x", r.x).attr("y", m.t - 10).attr("text-anchor", i === refs.length - 1 && r.x > W - 60 ? "end" : "middle").attr("class", "lbl").text(r.lab);
+      });
+      const tip = tipFor(host);
+      selRows.forEach((r, i) => {
+        const y = m.t + rowH * i + rowH / 2;
+        svg.append("text").attr("x", m.l - 10).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", r.strong ? "lbl-strong" : "lbl").text(r.lab);
+        svg.append("line").attr("x1", xs(r.v.ci95[0])).attr("x2", xs(r.v.ci95[1])).attr("y1", y).attr("y2", y).style("stroke", r.c).style("stroke-width", 2);
+        svg.append("circle").attr("cx", xs(r.v.mean)).attr("cy", y).attr("r", 5).style("fill", r.c).style("stroke", "var(--surface)").style("stroke-width", 2);
+        svg.append("text").attr("x", W - 4).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", (r.strong ? "lbl-strong" : "lbl") + " num").text(fmt(r.v.mean, 1));
+        const hit = svg.append("rect").attr("x", 0).attr("y", y - rowH / 2).attr("width", W).attr("height", rowH).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, xs(r.v.mean) / W * host.clientWidth, (y / H) * host.clientHeight, r.lab.replace(" · exploratory", "").replace(" · expl.", ""), [
+          { color: r.c, value: fmt(r.v.mean, 2) + " " + civ(r.v), label: "PDMS, 95% interval" },
+          { color: "var(--deemph)", value: String(r.v.n), label: "tokens" }].concat(r.what ? [{ color: "var(--deemph)", value: "", label: r.what }] : []));
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+    });
+
+    const CC = SL.c_components, names = { NC: "No collision (NC)", DAC: "Drivable area (DAC)", DDC: "Driving direction (DDC)", TTC: "Time to collision (TTC)", C: "Comfort (C)" };
+    const compKeys = ["NC", "DAC", "DDC", "TTC", "C"];
+    $("cap-selauc").textContent = "Area under the ROC curve of each predicted component against the harness's own pass/fail on the same proposals: 0.5 is a coin flip, 1.0 is perfect. A component is marked failing when its pooled AUC is below 0.60 while it actually varies within the scene on at least 20% of tokens (both written in advance). Progress is continuous: its rank correlation with the truth is " +
+      fmt(CC.EP.within_token_spearman ? CC.EP.within_token_spearman.mean : null, 2) + " within a scene and " + fmt(CC.EP.pooled_spearman, 2) + " pooled.";
+    mount("c-selauc", host => {
+      host.replaceChildren();
+      const W = Math.max(300, host.clientWidth), rowH = 40, m = { t: 22, r: 62, b: 28, l: Math.min(186, Math.round(W * 0.40)) };
+      const H = m.t + m.b + rowH * compKeys.length;
+      const svg = d3.select(host).append("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("height", H).attr("role", "img").attr("aria-label", "How well the scorer separates passing from failing proposals, per component");
+      const xs = d3.scaleLinear().domain([0.3, 1]).range([m.l, W - m.r]);
+      const ticks = [0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+      svg.append("g").selectAll("line").data(ticks).join("line").attr("class", "gridline").attr("x1", d => xs(d)).attr("x2", d => xs(d)).attr("y1", m.t).attr("y2", H - m.b);
+      svg.append("g").selectAll("text").data(ticks).join("text").attr("x", d => xs(d)).attr("y", H - m.b + 17).attr("text-anchor", "middle").attr("class", "num").text(d => d.toFixed(1));
+      svg.append("line").attr("x1", xs(0.5)).attr("x2", xs(0.5)).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--ink-2)").style("stroke-width", 1.5);
+      svg.append("text").attr("x", xs(0.5)).attr("y", m.t - 10).attr("text-anchor", "middle").attr("class", "lbl").text("chance");
+      svg.append("line").attr("x1", xs(0.6)).attr("x2", xs(0.6)).attr("y1", m.t - 6).attr("y2", H - m.b).style("stroke", "var(--critical)").style("stroke-width", 1.5).style("stroke-dasharray", "4 3");
+      svg.append("text").attr("x", xs(0.6) + 4).attr("y", m.t - 10).attr("text-anchor", "start").attr("class", "lbl").text("bar 0.60");
+      const tip = tipFor(host);
+      compKeys.forEach((k, i) => {
+        const c = CC[k], y = m.t + rowH * i + rowH / 2 - 4, wt = c.within_token_auc;
+        svg.append("text").attr("x", m.l - 10).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl-strong").text(names[k]);
+        svg.append("text").attr("x", m.l - 10).attr("y", y + 14).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl").text("varies in " + Math.round(100 * c.share_tokens_varying) + "% of scenes");
+        const clampX = v => xs(Math.max(0.3, Math.min(1, v)));
+        if (wt) {
+          svg.append("line").attr("x1", clampX(wt.ci95[0])).attr("x2", clampX(wt.ci95[1])).attr("y1", y).attr("y2", y).style("stroke", "var(--s1)").style("stroke-width", 2);
+          svg.append("circle").attr("cx", clampX(wt.mean)).attr("cy", y).attr("r", 5).style("fill", "var(--s1)").style("stroke", "var(--surface)").style("stroke-width", 2);
+        }
+        svg.append("circle").attr("cx", clampX(c.pooled_auc)).attr("cy", y).attr("r", 4.5).style("fill", "var(--surface)").style("stroke", "var(--s1)").style("stroke-width", 2);
+        svg.append("text").attr("x", W - 4).attr("y", y).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl-strong num").text(fmt(wt ? wt.mean : c.pooled_auc, 2));
+        svg.append("text").attr("x", W - 4).attr("y", y + 14).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl num").text("pooled " + fmt(c.pooled_auc, 2));
+        if (c.FAILING) svg.append("text").attr("x", m.l - 10).attr("y", y + 28).attr("dy", "0.32em").attr("text-anchor", "end").attr("class", "lbl").style("fill", "var(--critical)").text("● fails the bar");
+        const hit = svg.append("rect").attr("x", 0).attr("y", y - rowH / 2 + 4).attr("width", W).attr("height", rowH).style("fill", "transparent").attr("tabindex", 0);
+        const show = () => showTip(host, tip, clampX(c.pooled_auc) / W * host.clientWidth, (y / H) * host.clientHeight, names[k], [
+          { color: "var(--s1)", value: wt ? fmt(wt.mean, 3) + " [" + fmt(wt.ci95[0], 2) + ", " + fmt(wt.ci95[1], 2) + "]" : "–", label: "AUC within a scene (" + (wt ? wt.n : 0) + " scenes)" },
+          { color: "var(--s1)", value: fmt(c.pooled_auc, 3), label: "AUC pooled" },
+          { color: "var(--deemph)", value: pct(c.true_rate, 0), label: "proposals that pass" },
+          { color: "var(--deemph)", value: pct(c.mean_pred_prob, 0), label: "mean predicted pass" }]);
+        hit.on("pointermove focus", show).on("pointerleave blur", () => { tip.hidden = true; });
+      });
+    });
+
+    const CA = SL.a_components_at;
+    table("t-selcomp", ["Component", "Planner's pick", "Random proposal", "Best proposal"],
+      [["PDMS", fmt(SA.actual.mean, 1), fmt(SA.random.mean, 1), fmt(SA.oracle.mean, 1)]].concat(
+        ["NC", "DAC", "DDC", "EP", "TTC", "C"].map(k => [({ EP: "Ego progress (EP)" })[k] || names[k], fmt(100 * CA[k].pick, 1), fmt(100 * CA[k].random, 1), fmt(100 * CA[k].oracle_pick, 1)])));
+    const B = SL.b_ranking, DL = SL.d_path_length, s2 = v => v ? fmt(v.mean, 2) + " [" + fmt(v.ci95[0], 2) + ", " + fmt(v.ci95[1], 2) + "]" : "–";
+    table("t-selskill", ["Measure", "Value"], [
+      ["Rank correlation, scorer vs truth (0 = no skill; " + B.tokens_true_pdms_varies + " scenes)", s2(B.within_token_spearman_agg_vs_pdms)],
+      ["Pick is a best proposal (random: " + pct(B.top1_hit_random_expectation.mean, 0) + ")", pct(B.top1_hit.mean, 0)],
+      ["Pick's path length ÷ mean of 64", s2(DL.pick_over_mean)],
+      ["Scorer favours longer paths (rank corr.)", s2(DL.within_token_spearman_agg_vs_length)],
+      ["Truth favours longer paths (rank corr.)", s2(DL.within_token_spearman_truePDMS_vs_length)],
+      ["Medoid minus pick, PDMS points (pre-registered)", s2(SL.confirmatory_medoid.medoid_minus_actual)],
+    ]);
+  }
+
   // ---------- findings ----------
   // ---- findings computed from the learning-curve points ----
+  const SEvF = SL ? (EVs.find(v => v.epoch === SL.epoch) || EVs[EVs.length - 1]) : null;
   const lastE = EVs[EVs.length - 1], e8 = EVs.find(v => v.epoch === 8), gapOf = v => v.proposals.ade_random_m - v.proposals.ade_oracle_m;
   const spreadList = EVs.map(v => "e" + v.epoch + " " + fmt(v.proposals.endpoint_spread_m, 2)).join(", ");
   let divFinding;
@@ -671,23 +817,37 @@ a { color: var(--s1); }
     divFinding = ["s-warn", "Watch", "Proposal diversity", "Endpoint spread by snapshot: " + spreadList + " m. The pre-registered decision reads the snapshot after epoch 8.", "Apply SPEC Amendment 2 when that point lands."];
   }
   const selBad = lastE.proposals.ade_selected_m > lastE.proposals.ade_random_m;
-  const selFinding = [selBad ? "s-serious" : "s-warn", selBad ? "Bottleneck" : "Watch", "Choosing among the proposals is now the bottleneck",
+  const selFinding = SL ? (() => {
+    const o = SL.verdict.outcome, fails = SL.verdict.failing_scorer_outputs, sk = SL.a_pdms.selection_skill, rho = SL.b_ranking.within_token_spearman_agg_vs_pdms;
+    const cls = o === "SELECTION_BOUND" ? "s-serious" : o === "UNDETERMINED" ? "s-warn" : "s-good";
+    return [cls, o === "SELECTION_BOUND" ? "Bottleneck" : o === "UNDETERMINED" ? "Undecided" : "Not the bottleneck",
+      o === "SELECTION_BOUND" ? "The scorer, not the proposals, is losing the points" : o === "UNDETERMINED" ? "Whether the scorer is the bottleneck is not yet decided" : "Choosing among the proposals is not the main loss",
+      "Every proposal was scored by the harness after epoch " + SL.epoch + ": the best proposal scores " + fmt(SL.a_pdms.oracle.mean, 1) + " PDMS, the planner's pick " + fmt(SL.a_pdms.actual.mean, 1) + ", a random proposal " + fmt(SL.a_pdms.random.mean, 1) +
+      ". The pick realises " + pct(sk.value, 0) + " of the gain available over a random pick (95% interval " + pct(sk.ci95[0], 0) + " to " + pct(sk.ci95[1], 0) + "), and within a scene the scorer's ranking correlates " + fmt(rho.mean, 2) + " with the truth. " +
+      (fails.length ? "Scorer outputs that fail the pre-registered bar: " + fails.join(", ") + "." : "No scorer output fails the pre-registered bar on its own.") +
+      " Within a scene its drivable-area, driving-direction and comfort outputs rank proposals at chance (AUC " + fmt(SL.c_components.DAC.within_token_auc.mean, 2) + ", " + fmt(SL.c_components.DDC.within_token_auc.mean, 2) + ", " + fmt(SL.c_components.C.within_token_auc.mean, 2) + "), and it believes " + pct(SL.c_components.DAC.mean_pred_prob, 0) + " of proposals stay on the road where " + pct(SL.c_components.DAC.true_rate, 0) + " do." +
+      " The scorer is taught by 8–9 fixed candidates per scene, each attached to its nearest proposal about " + fmt(eN.assign_d_median, 1) + " m away, so most of the 64 proposals it ranks are never supervised directly.",
+      o === "SELECTION_BOUND" ? "How the scorer is supervised is a recipe decision, set out in the PI report. The table is re-taken at every snapshot to see whether the complete bank, read from epoch 12, moves it." : o === "UNDETERMINED" ? "Extend the table to more tokens before any claim." : "Look for the loss in the proposals themselves."];
+  })() : [selBad ? "s-serious" : "s-warn", selBad ? "Bottleneck" : "Watch", "Choosing among the proposals is now the bottleneck",
     "After epoch " + lastE.epoch + " the best of 64 proposals lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future, a random proposal " + fmt(lastE.proposals.ade_random_m, 2) + " m, and the planner's pick " + fmt(lastE.proposals.ade_selected_m, 2) + " m" + (selBad ? ", worse than picking at random" : "") + ". Picks by snapshot: " + EVs.map(v => "e" + v.epoch + " " + fmt(v.proposals.ade_selected_m, 2)).join(", ") + " m. The snapshot after epoch 5 had no scorer training yet; later snapshots have.",
     "Watch the pick close in on the best proposal as the scorer trains on the complete bank from epoch 12."];
   const aboveStop = lastE.vs_stop && lastE.vs_stop.delta > 0 && lastE.vs_stop.separated;
   const pdmsFinding = [aboveStop ? "s-good" : "s-serious", aboveStop ? "Above standing still" : "Not yet driving", aboveStop ? "NAVSIM PDMS beats standing still" : "NAVSIM PDMS is below standing still",
-    "PDMS by snapshot: " + EVs.map(v => "e" + v.epoch + " " + fmt(v.pdms, 1)).join(", ") + ", against " + fmt(fl.STOP.pdms, 1) + " for standing still and " + fmt(fl.CV.pdms, 1) + " for constant velocity. Latest: no collision " + fmt(lastE.subscores.NC, 1) + ", drivable area " + fmt(lastE.subscores.DAC, 1) + ", progress " + fmt(lastE.subscores.EP, 1) + ", " + lastE.zeroed + " of 200 tokens zeroed. The picked plans are cautious: they cover " + fmt(lastE.families.progress_ratio_median, 2) + " of the human's distance with a speed bias of " + fmt(lastE.families.speed_bias_mps, 2) + " m/s. Slow plans rarely collide or leave the road, and NAVSIM scores that well (standing still scores " + fmt(fl.STOP.pdms, 1) + "), so part of the gain is caution rather than driving.",
+    "PDMS by snapshot: " + EVs.map(v => "e" + v.epoch + " " + fmt(v.pdms, 1)).join(", ") + ", against " + fmt(fl.STOP.pdms, 1) + " for standing still and " + fmt(fl.CV.pdms, 1) + " for constant velocity. Latest: no collision " + fmt(lastE.subscores.NC, 1) + ", drivable area " + fmt(lastE.subscores.DAC, 1) + ", progress " + fmt(lastE.subscores.EP, 1) + ", " + lastE.zeroed + " of 200 tokens zeroed. " +
+      (lastE.families.progress_ratio_median > 1.05 || lastE.families.speed_bias_mps > 0.5
+        ? "The picked plans are now fast: they cover " + fmt(lastE.families.progress_ratio_median, 2) + "× the human's distance with a speed bias of +" + fmt(lastE.families.speed_bias_mps, 2) + " m/s, and fast plans leave the road and close gaps more often. The peak after epoch 5 came from cautious picks (" + fmt(EVs.find(v => v.epoch === 5) ? EVs.find(v => v.epoch === 5).families.progress_ratio_median : null, 2) + "× the human's distance), which NAVSIM rewards: standing still scores " + fmt(fl.STOP.pdms, 1) + "."
+        : "The picked plans are cautious: they cover " + fmt(lastE.families.progress_ratio_median, 2) + " of the human's distance with a speed bias of " + fmt(lastE.families.speed_bias_mps, 2) + " m/s. Slow plans rarely collide or leave the road, and NAVSIM scores that well (standing still scores " + fmt(fl.STOP.pdms, 1) + "), so part of the gain is caution rather than driving."),
     "Better selection should raise progress without giving back safety; the full 12,146-token navtest run is for the final checkpoint."];
   const F = [
     ["s-good", "On track", "Pace and finish date", "The A40 has held " + fmt(P.steady_s_per_step_median, 1) + " s per step for " + fmt(P.elapsed_h, 0) + " hours, including the 39 hours when data preparation shared the pod's CPUs. The run ends around " + berlin(etaDate) + ", " + totalDays.toFixed(1) + " days in total, inside the 7-day budget.", "Nothing to change. Next check: the scorer catch-up enters at the epoch-12 boundary."],
-    ["s-good", "On track", "The proposals are learning", "Loss medians fell every epoch (" + fmt(pe[0].traj_L1_median, 1) + " → " + fmt(eN.traj_L1_median, 2) + "). On NAVSIM the best of the 64 proposals now lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future on average (open-loop ADE), down from " + fmt(EVs[0].proposals.ade_oracle_m, 2) + " m after epoch 1 (" + EVs.map(v => fmt(v.proposals.ade_oracle_m, 2)).join(" → ") + " m).", "The proposals are good enough to drive well; whether the planner picks the right one is the next finding."],
+    ["s-good", "On track", "The proposals are learning", "Loss medians fell every epoch (" + fmt(pe[0].traj_L1_median, 1) + " → " + fmt(eN.traj_L1_median, 2) + "). On NAVSIM the best of the 64 proposals now lands " + fmt(lastE.proposals.ade_oracle_m, 2) + " m from the human's future on average (open-loop ADE), down from " + fmt(EVs[0].proposals.ade_oracle_m, 2) + " m after epoch 1 (" + EVs.map(v => fmt(v.proposals.ade_oracle_m, 2)).join(" → ") + " m).", (SL ? "Scored by the harness, the best of the 64 averages " + fmt(SL.a_pdms.oracle.mean, 1) + " PDMS after epoch " + SL.epoch + ", near the human driver's " + fmt((SEvF.floors.HUMAN || {}).pdms, 1) + ". The loss is in the choice (next findings)." : "The proposals are good enough to drive well; whether the planner picks the right one is the next finding.")],
     [bankFixed ? "s-good" : "s-serious", bankFixed ? "Fixed" : "Fixing now", "A third of the scorer's targets reached training late",
       "Training has read 120,264 scorer frames since epoch 8, about 63 % of what data preparation produced. Two causes: the pod's bank assembler stopped on Sep 25 at 10:06 with no error logged and no OOM kill recorded, and the dev box's uploader died on Sep 24 at 19:02, leaving 124,619 scorer rows behind. " +
       (bankFixed ? "On " + A.last_local + " the rows were re-uploaded and one catch-up pass brought the bank to " + int(A.scorer_frames) + " frames (" + int(A.sc0) + " rank-0, " + int(A.sc1) + " augmented)." : ""),
       bankFixed ? "From the next epoch boundary training reads the complete scorer bank; the trainer's next bank line must show " + int(A.scorer_frames) + " frames." : "Re-upload the rows, then run one catch-up assembler pass."],
     divFinding,
     selFinding,
-    ["s-warn", "Watch", "The scorer learns on trajectories the model does not propose", "The scorer is supervised on a fixed candidate set around the teacher's path (lateral ±2/±4 m, speed ×0.5/×1.5, stop, reverse, over-curb), assigned to the nearest proposal. That nearest proposal is about " + fmt(eN.assign_d_median, 1) + " m away and has not come closer since epoch 5. This is a declared departure from DriveZero, which scores the student's own proposals online, and the most likely reason the selection lags.", "If the pick stays far from the best proposal once the scorer has trained on the complete bank, this departure is the first thing to revisit."],
+    ...(SL ? [] : [["s-warn", "Watch", "The scorer learns on trajectories the model does not propose", "The scorer is supervised on a fixed candidate set around the teacher's path (lateral ±2/±4 m, speed ×0.5/×1.5, stop, reverse, over-curb), assigned to the nearest proposal. That nearest proposal is about " + fmt(eN.assign_d_median, 1) + " m away and has not come closer since epoch 5. This is a declared departure from DriveZero, which scores the student's own proposals online, and the most likely reason the selection lags.", "If the pick stays far from the best proposal once the scorer has trained on the complete bank, this departure is the first thing to revisit."]]),
     pdmsFinding,
     ["s-good", "Fixed", "The evaluation environment was damaged and has been rebuilt", "The eval venv lived under the Windows temp folder, and a cleanup removed part of its packages on Sep 24 around 17:46, so torch could no longer import and the learning curve stopped after epoch 3. It was rebuilt offline from the local package cache into a permanent location and reproduces a banked evaluation bit for bit: the same poses and the same PDMS, 19.6473.", "No further action; long-lived environments no longer live under the temp folder."],
   ];

@@ -36,6 +36,9 @@ def main() -> int:
     ap.add_argument("--ckpt", action="append", required=True, help="name=path, in training order")
     ap.add_argument("--wait-frames", action="store_true")
     ap.add_argument("--frames-log", default=os.path.join(DATA, "build_frames.log"))
+    ap.add_argument("--selection", action="store_true",
+                    help="SPEC E-6: also score every proposal of each point and write its selection readout")
+    ap.add_argument("--workers", type=int, default=4, help="parallel single-proposal scoring runs (RAM-bound)")
     a = ap.parse_args()
     if a.wait_frames:
         while True:
@@ -59,6 +62,14 @@ def main() -> int:
             subprocess.call(cmd, cwd=HERE)
             if point(name) is None:
                 print(f"ZZCURVE_FAIL {name}"); return 1
+        if a.selection and not os.path.exists(os.path.join(DATA, "proptable", name, "readout.json")):
+            print(f"  -> {name}: every proposal scored (SPEC E-6)", flush=True)
+            if subprocess.call([sys.executable, os.path.join(HERE, "proposal_table.py"), "--ckpt", path,
+                                "--name", name, "--tokens", a.tokens, "--reuse-dump",
+                                "--workers", str(a.workers)], cwd=HERE) != 0 \
+                    or subprocess.call([sys.executable, os.path.join(HERE, "selection_readout.py"),
+                                        "--name", name, "--tokens", a.tokens], cwd=HERE) != 0:
+                print(f"ZZCURVE_FAIL {name} selection"); return 1
         names.append(name)
     print(f"\n  {'point':18s} {'PDMS':>7s} {'vs STOP':>9s} {'vs prev':>9s} {'ADE sel':>8s} "
           f"{'random':>7s} {'oracle':>7s} {'spread':>7s} {'#best':>5s}")

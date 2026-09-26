@@ -106,5 +106,19 @@ chord SAGITTA R(1 - cos(w dt / 2)) + 1e-9 m (dt = 0.2 s).
 > a disjoint-token confirmation. The same table is re-taken at every later snapshot on the same tokens: from epoch 12 the
 > trainer reads the full 189,858-frame scorer bank, and whether the scorer's skill moves with it is the question.
 
+> **AMENDMENT 3a -- 2026-09-26 ~10:10 Berlin, BEFORE the per-proposal table was read** (25 of the 64 per-proposal
+> score files existed on disk; none had been opened or aggregated). Amendment 3's first clause ("actual - random has a
+> 95 % upper bound below +2.0 PDMS") CANNOT FIRE at n = 200: the readout's mutation self-test
+> (`eval/selftest_selection_readout.py`, synthetic tables on these 200 tokens / 93 logs) gives a truly RANDOM selector a
+> 95 % interval for actual - random of about [-4.1, +5.5] PDMS on three seeds, so the bar would call a coin flip "not
+> selection-bound". Replaced by the SHARE OF THE AVAILABLE GAIN the pick realises: **skill = (actual - random) /
+> (oracle - random)**, both sums over the same resampled logs (paired, 10,000). **SELECTION-BOUND** iff the skill's 95 %
+> upper bound is below **0.25** AND oracle - actual exceeds 10 PDMS; **NOT SELECTION-BOUND** iff its lower bound is above
+> 0.25 OR oracle - actual is at most 10 PDMS; otherwise **UNDETERMINED**, and the table is extended to more tokens before
+> any claim. Self-test after the change: oracle-ranked scorer -> NOT (skill 1.0); random scorer -> SELECTION-BOUND (skill
+> 0.010 [-0.059, 0.079]) while the old clause stays silent; noise on DAC alone -> DAC is the only failing output. The
+> component rule, the gates, the medoid comparison and everything else in Amendment 3 are unchanged; the old clause's
+> result is still reported, labelled unused.
+
 **Subset first:** W3's `A1_sub200_tokens.json` (200 tokens) for E-0..E-2, then the full 12,146.
 **Tier stamp:** NAVSIM v1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents, as W3 stamps it.

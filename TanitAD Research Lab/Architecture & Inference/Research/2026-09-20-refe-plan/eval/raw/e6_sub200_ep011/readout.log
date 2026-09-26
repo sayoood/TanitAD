@@ -1,0 +1,337 @@
+{
+ "name": "sub200_ep011",
+ "N": 200,
+ "M": 64,
+ "n_logs": 93,
+ "boot": 10000,
+ "spec": "SPEC_NAVTEST.md E-6 / AMENDMENT 3 (blob 4c5aa5e6)",
+ "pick_reproduced_by_transcribed_aggregate": 1.0,
+ "a_pdms": {
+  "actual": {
+   "mean": 43.8274,
+   "n": 200,
+   "ci95": [
+    37.4135,
+    50.5911
+   ]
+  },
+  "random": {
+   "mean": 43.1881,
+   "n": 200,
+   "ci95": [
+    38.9013,
+    47.7305
+   ]
+  },
+  "oracle": {
+   "mean": 91.2157,
+   "n": 200,
+   "ci95": [
+    89.2249,
+    93.1185
+   ]
+  },
+  "actual_minus_random": {
+   "mean": 0.6393,
+   "n": 200,
+   "ci95": [
+    -4.2529,
+    5.8796
+   ]
+  },
+  "oracle_minus_actual": {
+   "mean": 47.3883,
+   "n": 200,
+   "ci95": [
+    41.2581,
+    53.3904
+   ]
+  },
+  "selection_skill": {
+   "value": 0.0133,
+   "n": 200,
+   "ci95": [
+    -0.0895,
+    0.1215
+   ]
+  }
+ },
+ "a_components_at": {
+  "NC": {
+   "pick": 0.8625,
+   "random": 0.8117,
+   "oracle_pick": 1.0
+  },
+  "DAC": {
+   "pick": 0.63,
+   "random": 0.6687,
+   "oracle_pick": 0.99
+  },
+  "EP": {
+   "pick": 0.4725,
+   "random": 0.4419,
+   "oracle_pick": 0.8902
+  },
+  "TTC": {
+   "pick": 0.74,
+   "random": 0.6941,
+   "oracle_pick": 0.985
+  },
+  "C": {
+   "pick": 0.515,
+   "random": 0.5136,
+   "oracle_pick": 0.815
+  },
+  "DDC": {
+   "pick": 0.88,
+   "random": 0.9054,
+   "oracle_pick": 0.94
+  }
+ },
+ "b_ranking": {
+  "tokens_true_pdms_varies": 198,
+  "within_token_spearman_agg_vs_pdms": {
+   "mean": 0.1294,
+   "n": 198,
+   "ci95": [
+    0.0797,
+    0.1805
+   ]
+  },
+  "top1_hit": {
+   "mean": 0.15,
+   "n": 200,
+   "ci95": [
+    0.1013,
+    0.2038
+   ]
+  },
+  "top1_hit_random_expectation": {
+   "mean": 0.1461,
+   "n": 200,
+   "ci95": [
+    0.1151,
+    0.1797
+   ]
+  },
+  "pooled_spearman_agg_vs_pdms": 0.0861
+ },
+ "c_components": {
+  "NC": {
+   "pooled_auc": 0.7796,
+   "within_token_auc": {
+    "mean": 0.7243,
+    "n": 120,
+    "ci95": [
+     0.6835,
+     0.7612
+    ]
+   },
+   "share_tokens_varying": 0.6,
+   "mean_pred_prob": 0.7958,
+   "true_rate": 0.8034,
+   "FAILING": false
+  },
+  "DAC": {
+   "pooled_auc": 0.653,
+   "within_token_auc": {
+    "mean": 0.5449,
+    "n": 143,
+    "ci95": [
+     0.5008,
+     0.5905
+    ]
+   },
+   "share_tokens_varying": 0.715,
+   "mean_pred_prob": 0.9725,
+   "true_rate": 0.6687,
+   "FAILING": false
+  },
+  "DDC": {
+   "pooled_auc": 0.6646,
+   "within_token_auc": {
+    "mean": 0.5328,
+    "n": 105,
+    "ci95": [
+     0.466,
+     0.6034
+    ]
+   },
+   "share_tokens_varying": 0.525,
+   "mean_pred_prob": 0.945,
+   "true_rate": 0.8602,
+   "FAILING": false
+  },
+  "TTC": {
+   "pooled_auc": 0.7473,
+   "within_token_auc": {
+    "mean": 0.6533,
+    "n": 142,
+    "ci95": [
+     0.6133,
+     0.6905
+    ]
+   },
+   "share_tokens_varying": 0.71,
+   "mean_pred_prob": 0.6001,
+   "true_rate": 0.6941,
+   "FAILING": false
+  },
+  "C": {
+   "pooled_auc": 0.5595,
+   "within_token_auc": {
+    "mean": 0.4881,
+    "n": 159,
+    "ci95": [
+     0.4512,
+     0.526
+    ]
+   },
+   "share_tokens_varying": 0.795,
+   "mean_pred_prob": 0.858,
+   "true_rate": 0.5136,
+   "FAILING": true
+  },
+  "EP": {
+   "pooled_spearman": -0.0946,
+   "within_token_spearman": {
+    "mean": 0.1278,
+    "n": 198,
+    "ci95": [
+     0.0464,
+     0.2042
+    ]
+   },
+   "share_tokens_varying": 0.99,
+   "mean_pred_prob": 0.9375,
+   "true_mean": 0.4419
+  }
+ },
+ "d_path_length": {
+  "pick_over_mean": {
+   "mean": 1.0462,
+   "n": 200,
+   "ci95": [
+    0.9983,
+    1.0912
+   ]
+  },
+  "pick_length_percentile": {
+   "mean": 0.6016,
+   "n": 200,
+   "ci95": [
+    0.5454,
+    0.657
+   ]
+  },
+  "within_token_spearman_agg_vs_length": {
+   "mean": 0.1054,
+   "n": 200,
+   "ci95": [
+    0.0123,
+    0.1952
+   ]
+  },
+  "within_token_spearman_truePDMS_vs_length": {
+   "mean": -0.0407,
+   "n": 198,
+   "ci95": [
+    -0.1248,
+    0.0392
+   ]
+  },
+  "within_token_spearman_predEP_vs_length": {
+   "mean": 0.8693,
+   "n": 200,
+   "ci95": [
+    0.8546,
+    0.8843
+   ]
+  }
+ },
+ "confirmatory_medoid": {
+  "pdms": {
+   "mean": 43.7053,
+   "n": 200,
+   "ci95": [
+    37.2307,
+    50.3914
+   ]
+  },
+  "medoid_minus_actual": {
+   "mean": -0.1221,
+   "n": 200,
+   "ci95": [
+    -6.6662,
+    6.1465
+   ]
+  }
+ },
+ "EXPLORATORY_rules": {
+  "logitsum": {
+   "pdms": {
+    "mean": 39.9072,
+    "n": 200,
+    "ci95": [
+     33.7885,
+     45.8592
+    ]
+   },
+   "minus_actual": {
+    "mean": -3.9203,
+    "n": 200,
+    "ci95": [
+     -9.8874,
+     1.6609
+    ]
+   }
+  },
+  "violation_only": {
+   "pdms": {
+    "mean": 47.8738,
+    "n": 200,
+    "ci95": [
+     42.1038,
+     53.7014
+    ]
+   },
+   "minus_actual": {
+    "mean": 4.0463,
+    "n": 200,
+    "ci95": [
+     0.1738,
+     7.6812
+    ]
+   }
+  },
+  "aggregate_without_EP": {
+   "pdms": {
+    "mean": 48.5193,
+    "n": 200,
+    "ci95": [
+     42.655,
+     54.425
+    ]
+   },
+   "minus_actual": {
+    "mean": 4.6919,
+    "n": 200,
+    "ci95": [
+     0.4333,
+     9.0964
+    ]
+   }
+  },
+  "_label": "post-hoc rules on the same 200 tokens -- exploratory, never claimed without a disjoint-token confirmation (SPEC E-6)"
+ },
+ "verdict": {
+  "outcome": "SELECTION_BOUND",
+  "SELECTION_BOUND": true,
+  "failing_scorer_outputs": [
+   "C"
+  ],
+  "original_clause_amendment3": false,
+  "rule": "AMENDMENT 3a: skill = (actual-random)/(oracle-random), paired log-cluster bootstrap; SELECTION-BOUND iff skill 95% upper < 0.25 AND oracle-actual > 10 PDMS; NOT iff skill 95% lower > 0.25 OR oracle-actual <= 10; else UNDETERMINED (extend the tokens). FAILING output iff pooled AUC < 0.60 and it varies within token on >= 20% of tokens"
+ }
+}
+ZZREADOUT sub200_ep011 SELECTION_BOUND failing=['C']

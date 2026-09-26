@@ -12,8 +12,8 @@ import subprocess
 import sys
 
 PKG = "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY = ("C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/"
-       "bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe")
+# the rebuilt interpreter (eval/EVAL_VENV.md); the %TEMP% driverl-venv was deleted 2026-09-24
+VPY = os.environ.get("REFE_DRIVERL_PY", "C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe")
 TSV = "C:/Users/Admin/dz/DriveZero/DriveRL/output/task_logs"
 
 out = {"sheets": [], "scores": {}}

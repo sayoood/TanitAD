@@ -20,12 +20,14 @@ REFE_DRIVERL_PY=C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe \
   --tokens <tokens.json> --frames <frames_dir>
 ```
 
-⚠️ `eval_checkpoint.py` still **defaults** `DRIVERL_PY` to the dead `%TEMP%` venv, so `REFE_DRIVERL_PY` must
-be set on every call until that default is changed. Ten more scripts hard-code the dead path (not env-overridable):
+✅ **Repointed 2026-09-26 (integration).** `eval_checkpoint.py` now DEFAULTS `DRIVERL_PY` to this venv, and the
+nine live scripts that hard-coded the dead `%TEMP%` path now read `REFE_DRIVERL_PY` with this venv as the default:
 `refe/run_image_isolation.sh`, `code/finalize_mini.py`, `code/run_mini_teacher.sh`, `code/stage0_post.py`,
 `code/run_headline_suite.sh`, `code/arrange_test_early.sh`, `code/arrange_watcher.sh`,
-`code/fetch_scenario_cameras.sh`, `code/queue_camera_fetch.sh`, `raw/2026-09-21-review6/rank_instrument_attack.py`.
-None was edited here (repointing them is an integration decision).
+`code/fetch_scenario_cameras.sh`, `code/queue_camera_fetch.sh` (syntax-checked: `bash -n` / `py_compile`). ⚠️ Only
+the EVAL path is verified bit-for-bit here; the teacher / camera scripts were not re-run on this venv, so their first
+use is a smoke. `raw/2026-09-21-review6/rank_instrument_attack.py` still names the dead path and is left as recorded
+evidence.
 
 ## 1. Why it was rebuilt
 

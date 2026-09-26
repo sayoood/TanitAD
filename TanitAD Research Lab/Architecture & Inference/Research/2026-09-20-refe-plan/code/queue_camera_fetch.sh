@@ -12,7 +12,7 @@
 # Markers: CAMLIST_DONE, CAM_ZIP_DONE <n>, CAM_ZIP_FAIL <n>, CAMERA_FETCH_DONE
 set -u
 PKG="D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 B="https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/mini_set"
 OUT="D:/Projects/TanitAD/data/nuplan-camera/mini"          # D: ONLY (PI)
 L="D:/Projects/TanitAD/data/nuplan/pull_splits.log"

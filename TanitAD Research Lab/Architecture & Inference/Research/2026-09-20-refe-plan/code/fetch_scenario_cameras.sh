@@ -9,7 +9,7 @@
 # Markers: SCEN_CAM_ZIP_DONE <n> / SCEN_CAM_FAIL <n> / SCENARIO_CAMERAS_DONE
 set -u
 PKG="D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 B="https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/mini_set"
 OUT="D:/Projects/TanitAD/data/nuplan-camera/scenarios"
 LOGS="2021.05.12.23.36.44_veh-35_01133_01535,2021.05.25.14.16.10_veh-35_01690_02183,2021.06.07.12.54.00_veh-35_01843_02314,2021.06.08.14.35.24_veh-26_02555_03004,2021.06.09.14.58.55_veh-35_01894_02311,2021.07.16.18.06.21_veh-38_04933_05307"

@@ -24,7 +24,7 @@ MINI_DB="${1:?MINI_DB_DIR}"; PROTO="${2:-nr}"; LIMIT="${3:-8}"; TTS="${4:-0}"
 [[ "$PROTO" == nr || "$PROTO" == r ]] || { echo "proto must be nr or r"; exit 2; }
 
 DZ="C:/Users/Admin/dz/DriveZero/DriveRL"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 LINKS="D:/Projects/TanitAD/data/nuplan/dblinks"   # LINK-FREE: their runner only needs $LINKS/driverl_val14 to EXIST, so it is a plain dir on D:
 OUT="C:/dzo"                                       # near the drive root: Windows MAX_PATH, see the arithmetic below
 mkdir -p "$OUT"

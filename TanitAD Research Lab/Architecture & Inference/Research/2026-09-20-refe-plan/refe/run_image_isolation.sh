@@ -6,7 +6,7 @@
 # ViT-S at batch 8 fits the 8 GB card; ViT-L does not, which is itself why the confound arose.
 set -u
 PKG="D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 cd "$PKG/refe"
 # Wait for the in-flight ViT-L real-image run to release the GPU. Two ViT-L/ViT-S jobs on an 8 GB
 # card would spill to host RAM and make both timings meaningless -- the same trap as batch 4.

@@ -89,8 +89,11 @@ def main() -> int:
     seam = os.path.join(DATA, "seams", f"refe_{a.name}.npz")
     out = {"name": a.name, "ckpt": a.ckpt, "tokens": a.tokens, "started": time.strftime("%Y-%m-%dT%H:%M:%S")}
     # 1 seam
+    # SPEC E-6: the same forward pass also writes every proposal + the scorer's logits, so the
+    # selection diagnosis (eval/proposal_table.py --reuse-dump) needs no second inference
     rc, txt = run([DRIVERL_PY, "refe_navtest_seam.py", "--ckpt", a.ckpt, "--frames", a.frames,
-                   "--tokens", a.tokens, "--out", seam, "--arm", f"REFe_{a.name}"],
+                   "--tokens", a.tokens, "--out", seam, "--arm", f"REFe_{a.name}",
+                   "--dump-proposals", os.path.join(DATA, "proptable", a.name, "proposals.npz")],
                   HERE, env_driverl(), os.path.join(pdir, "1_seam.log"))
     m = re.search(r"ZZSEAM_OK (\d+) ([0-9.]+)", txt)
     if not m:

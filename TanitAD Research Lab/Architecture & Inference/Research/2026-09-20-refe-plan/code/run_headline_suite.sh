@@ -47,7 +47,7 @@
 set -euo pipefail
 TASKS="${1:-test14hard_nr,test14hard_r,test14random_nr,test14random_r}"
 DZ="C:/Users/Admin/dz/DriveZero/DriveRL"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 # DZ11_DATA_ROOT exists so the GUARDS can be mutation-tested against a fixture; production leaves it unset.
 DATA="${DZ11_DATA_ROOT:-D:/Projects/TanitAD/data/nuplan}"
 TRAINVAL="$DATA/nuplan-v1.1/splits/trainval"
@@ -126,7 +126,11 @@ export DRIVERL_EVAL_WORKER_MODE="${DRIVERL_EVAL_WORKER_MODE:-ray_local}"
 export DRIVERL_EVAL_LOCAL_GPUS=1 DRIVERL_EVAL_SKIP_PREFLIGHT=0
 export DRIVERL_EVAL_TTS_ENABLED=0
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-6}"     # MANDATORY -- see note 3
-export DRIVERL_EVAL_RUN_ID="h$(date +%m%d)"        # <=7 chars -- see note 2
+# ⛔ RESPECT AN OVERRIDE. This was an unconditional export, so a REPLICATE launched on the same
+# day silently reused the first run's id and wrote into its directory -- the run-id collision this
+# package already documented once, reintroduced by a date-derived default. A replicate is the only
+# way to put an interval on a score, so the id has to be settable.
+export DRIVERL_EVAL_RUN_ID="${DRIVERL_EVAL_RUN_ID:-h$(date +%m%d)}"   # <=7 chars -- see note 2
 export DRIVERL_EVAL_OUTPUT_ROOT="C:/dzo"
 # ⛔ RAY'S TEMP DIR MUST BE SHORT, AND THE RUNNER REFUSES WITHOUT IT.
 # MEASURED 2026-09-20 on the first real launch: "ERROR: set DRIVERL_EVAL_RAY_TEMP_DIR to a short

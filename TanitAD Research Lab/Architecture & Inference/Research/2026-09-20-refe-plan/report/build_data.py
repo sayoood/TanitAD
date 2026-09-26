@@ -189,6 +189,30 @@ for name in sorted(os.listdir(PTS)):
         },
     })
 
+# SPEC E-6 (AMENDMENT 3): the selection diagnosis -- every one of the 64 proposals scored by the same
+# harness -- one readout per snapshot that has one (eval/proposal_table.py + eval/selection_readout.py)
+selection = []
+PT = os.path.join(os.path.dirname(PTS), "proptable")
+if os.path.isdir(PT):
+    for name in sorted(os.listdir(PT)):
+        rp, gp = os.path.join(PT, name, "readout.json"), os.path.join(PT, name, "gates.json")
+        if name.startswith("sub200_ep") and os.path.exists(rp) and os.path.exists(gp):
+            r = json.load(open(rp, encoding="utf-8"))
+            r["epoch"] = int(name[len("sub200_ep"):])
+            r["gates"] = json.load(open(gp, encoding="utf-8")).get("gates")
+            # descriptive, from the table itself (not pre-registered): how many proposals would do well
+            T = np.load(os.path.join(PT, name, "table.npz"))
+            tp, ts, tk = T["pdms"], T["sub"], T["pick"]
+            ar_, good = np.arange(tp.shape[0]), (T["pdms"] >= 0.8).sum(1)
+            r["desc"] = {"good_mean": round(float(good.mean()), 1), "good_median": float(np.median(good)),
+                         "tok_ge1_good": round(float((good >= 1).mean()), 4),
+                         "pick_zero": round(float((tp[ar_, tk] == 0).mean()), 4),
+                         "all_zero": round(float((tp.max(1) == 0).mean()), 4),
+                         "dac_any": round(float((ts[:, :, 1].max(1) == 1).mean()), 4),
+                         "pick_dac_fail": round(float((ts[ar_, tk, 1] == 0).mean()), 4)}
+            selection.append(r)
+selection.sort(key=lambda r: r["epoch"])
+
 # the bank ASSEMBLER's own log: every pass reports the scorer frames it appended (sc0 = rank 0,
 # sc1 = augmented). Their sum is what the bank holds, whether or not training has read it yet.
 asm = {"passes": 0, "sc0": 0, "sc1": 0, "last_local": None, "last_sc_new": 0}
@@ -224,7 +248,7 @@ out = {
                  "winners_mean_now": round(float(rolling_mean(win)[last_i]), 3),
                  "mem_gb_max": round(float(np.nanmax(mem)), 2), "n_ckpts": len(ckpts)},
     "series": series, "per_epoch": per_epoch, "bank_events": bank_events, "epoch_events": epoch_events,
-    "evals": evals,
+    "evals": evals, "selection": selection,
 }
 json.dump(out, open(os.path.join(HERE, "report_data.json"), "w", encoding="utf-8"))
 p = out["progress"]

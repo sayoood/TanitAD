@@ -122,6 +122,10 @@ def main() -> int:
     ap.add_argument("--select", default="best")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--backbone", default="vitl16")
+    ap.add_argument("--dump-proposals", default=None,
+                    help="REPORT ONLY (SPEC E-6): also write EVERY proposal on NAVSIM's grid and the "
+                         "scorer's raw six logits per token to this .npz, for eval/proposal_table.py. "
+                         "The seam itself is unchanged.")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
@@ -148,6 +152,7 @@ def main() -> int:
     rows_tok, rows_fp, rows_pose, misses = [], [], [], []
     ctrl_err, n_ctrl, interp_err = [], 0, []
     prop_diag: list = []
+    dump_props, dump_logits, dump_pick = [], [], []
     n_prop = 0
     t0 = time.time()
     for li, (log, lt) in enumerate(sorted(by_log.items())):
@@ -189,6 +194,13 @@ def main() -> int:
                               int(ade.argmin()), int(k),
                               float(np.linalg.norm(ends - ends.mean(0), axis=-1).mean())))
             n_prop = int(traj.shape[0])
+            if a.dump_proposals:
+                # SPEC E-6: all M proposals in the SAME to_navsim conversion the seam row used, and
+                # the scorer's raw logits from the SAME forward pass -- never a second model call
+                dump_props.append(np.stack([to_navsim(traj[j].float().cpu().numpy())
+                                            for j in range(traj.shape[0])]).astype(np.float32))
+                dump_logits.append(_score.float().cpu().numpy().astype(np.float32))
+                dump_pick.append(int(k))
             # the frame/time control: the log's own future through the SAME grid, in REFe's frame
             px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
             c, s = math.cos(-pyaw), math.sin(-pyaw)
@@ -245,6 +257,15 @@ def main() -> int:
                     "expectation); oracle = best of M; oracle_index_* = how many proposals are "
                     "ever best (WTA collapse if few); endpoint_spread = mean distance of the M "
                     "endpoints from their centroid"}
+    if a.dump_proposals:
+        # rows are appended at the same point as the seam's rows, so they align with rows_tok
+        assert len(dump_pick) == len(rows_tok), (len(dump_pick), len(rows_tok))
+        os.makedirs(os.path.dirname(os.path.abspath(a.dump_proposals)), exist_ok=True)
+        np.savez(a.dump_proposals, token=np.array(rows_tok), fingerprint=np.array(rows_fp),
+                 proposals=np.stack(dump_props), logits=np.stack(dump_logits),
+                 pick=np.array(dump_pick, dtype=np.int64), select=np.array(a.select),
+                 ckpt=np.array(str(a.ckpt)), sampling=np.array([NAVSIM_N, NAVSIM_DT]))
+        rep["proposal_dump"] = os.path.abspath(a.dump_proposals)
     json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)
     print(json.dumps({k: v for k, v in rep.items() if k != "miss_examples"}, indent=1))
     ok = (len(rows_tok) == len(toks) and n_ctrl > 0 and float(ce.max()) <= FRAME_CONTROL_MAX_M)

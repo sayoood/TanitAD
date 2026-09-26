@@ -28,8 +28,8 @@ ZIP_D = f"{DATA}/nuplan-v1.1_mini.zip"
 URL = "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/nuplan-v1.1_mini.zip"
 EXPECT = 8_550_100_030  # Content-Length from the S3 HEAD, 2026-09-20
 PKG = "D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY = ("C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/"
-       "bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe")
+# the rebuilt interpreter (eval/EVAL_VENV.md); the %TEMP% driverl-venv was deleted 2026-09-24
+VPY = os.environ.get("REFE_DRIVERL_PY", "C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe")
 LINK_D = f"{DATA}/dblinks/driverl_val14"  # plain dir on D: (the C: junction approach was retired 2026-09-20)
 OUT_ROOT = "C:/dzo/m-nr-n"  # short: Windows MAX_PATH, see run_mini_teacher.sh
 SCORE_TSV = "C:/Users/Admin/dz/DriveZero/DriveRL/output/task_logs/m-nr-n/score_summary.tsv"

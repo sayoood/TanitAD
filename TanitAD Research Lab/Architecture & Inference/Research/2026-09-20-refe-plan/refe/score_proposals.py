@@ -505,7 +505,11 @@ def route_arc_length(sd, step: int = -1) -> float:
         return float("nan")
     route = rp[..., :2].reshape(rp.shape[0], 1, -1, 2)          # [N, 1, P, 2] ONE long baseline
     mask = torch.ones(route.shape[0], 1, dtype=torch.bool, device=route.device)
-    pos = sd.agent_positions_all[:, :, step, :]
+    # ⭐ EGO ONLY under the ego view (2026-09-24): only [0, 0] is read below, and the progress is a
+    # per-agent projection reduced over route SEGMENTS, never over agents. MEASURED 2.69 ms/call x
+    # 2 calls per prefix = 13.4 % of a frame with all 128 slots; REFE_SCORER_EGO_VIEW=0 keeps them.
+    pos = (sd.agent_positions_all[:, _EGO_AGENT:_EGO_AGENT + 1, step, :] if EGO_VIEW
+           else sd.agent_positions_all[:, :, step, :])
     try:
         _idx, arc = CenterLine.calculate_baseline_progress(pos, route, mask)
     except Exception:

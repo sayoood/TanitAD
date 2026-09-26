@@ -23,7 +23,7 @@
 # once already).
 set -u
 PKG="D:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan"
-VPY="C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/bd7d00af-b98e-42f1-a53c-cb4113059b0f/scratchpad/driverl-venv/Scripts/python.exe"
+VPY="${REFE_DRIVERL_PY:-C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe}"
 EL="D:/Projects/TanitAD/data/nuplan/extract_test.log"
 echo "$(date +%T) arrange_test_early armed; watching $EL for SPLIT_DONE/SPLIT_FAIL test"
 while true; do
