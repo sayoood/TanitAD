@@ -1073,11 +1073,24 @@ def gt_command(xy: np.ndarray, valid: np.ndarray) -> str:
     return "RIGHT" if x >= 2 else ("LEFT" if x <= -2 else "FORWARD")
 
 
-def expected_sample_counts(n_samples: int = 6019, n_scenes: int = 150) -> dict:
+def expected_sample_counts(n_samples: int = 6019, n_scenes: int = 150,
+                           scene_names: Iterable[str] | None = None) -> dict:
     """The three sample sets on a split, assuming every scene has >= 8 samples.
 
     Full val: 6,019 / 5,119 / 4,819 — BEV-Planner (2312.03031 App.: "the number of final valid
-    samples is 5119") and AD-MLP (2305.10430 §3.3: "all 4819 ones") publish the last two."""
+    samples is 5119") and AD-MLP (2305.10430 §3.3: "all 4819 ones") publish the last two.
+
+    ⛔ This is ARITHMETIC — it reads no data and IGNORES ST-P3's scene blacklist. It agrees with the real
+    :func:`sample_sets` on val only because no val scene is blacklisted. MEASURED 2026-09-26 on train
+    (700 scenes, 28,130 samples): **16** train scenes are blacklisted and the formula's ST-P3 count is
+    **22,530 against a measured 22,020** (+510). Pass ``scene_names`` and it REFUSES wherever that
+    assumption fails, so the formula can never silently stand in for the measurement."""
+    if scene_names is not None:
+        blk = sorted(n for n in scene_names if n[-4:].isdigit() and int(n[-4:]) in STP3_SCENE_BLACKLIST)
+        if blk:
+            raise RefusedInput(f"expected_sample_counts is a blacklist-blind formula, but {len(blk)} of these "
+                               f"scenes are on ST-P3's blacklist ({blk[:6]}{'…' if len(blk) > 6 else ''}); "
+                               f"its ST-P3 count would be wrong — measure with sample_sets() instead")
     return {"uniad": n_samples, "vad": n_samples - N_FUTURE * n_scenes,
             "stp3": n_samples - (STP3_RECEPTIVE_FIELD - 1 + STP3_N_FUTURE) * n_scenes}
 

@@ -670,3 +670,34 @@ blacklist** — measured, not assumed — which is why the blacklist-blind formu
 on val. ⚠️ That is a property of val: on train the blacklist removes scenes, and the formula would over-count.
 ⇒ W6's pre-registered first-contact checks (6,019 / 5,119 / 4,819) are **fully reproduced**, and both published
 counts match exactly.
+
+## §23 On TRAIN the sample-count formula is wrong by 510 — now it REFUSES there
+
+Master Mind: *"assert the blacklist intersection on train explicitly, so the formula can never silently
+stand in for the measurement there."* This needed no planning tier — the blacklist is a property of scene
+metadata, and all 850 trainval scenes are already local.
+
+MEASURED 2026-09-26:
+* **train = 700 scenes by two independent routes** — the devkit's `train_detect ∪ train_track` (banked
+  `devkit_splits_b40adc4.py.txt`) and `scene.json − val` — which agree exactly. ⚠️ The devkit's
+  `train = list(sorted(set(…)))` is not a literal, so the existing `literal_eval` parser silently skips it;
+  it is rebuilt from its two literal halves.
+* **16 of ST-P3's 22 blacklisted scenes are in train** (0161–0168, 0170–0176, 0419); the other six
+  (0309–0314) are not in trainval at all.
+* ST-P3 on train: **measured 22,020** vs the formula's **22,530** — **+510 (+2.3 %), silently**. UniAD (28,130)
+  and VAD (23,930) agree, since the blacklist touches only ST-P3. Sanity: 510 / 16 ≈ 32 samples per scene,
+  consistent with ~40-sample scenes minus the 8 the formula already subtracts.
+
+**The pin:** `expected_sample_counts(…, scene_names=…)` **REFUSES** whenever any scene is blacklisted, naming
+them — so the arithmetic cannot stand in where it is wrong. **6 tests**, all measured literals: 700 / 16 /
+the six absent entries; refusal on train; still answering on val (control); the two train routes agree; and
+the MUTATION arm — real metadata, `(28,130, 22,020, 22,530)` — which fails the moment the blacklist stops
+mattering. **77 nuScenes tests pass.**
+
+### ⚠️ A dark guard, surfaced by reading skip reasons
+The one pre-existing skip is *"NOT RUN: OpenCV not installed in this venv"* — the test that checks our
+`cv_fill_poly` against `cv2.fillPoly`. **That rasteriser builds every collision grid, and its direct check has
+never run here.** Today's floors reproducing PARA-Drive to 0.6–4.4 % vouch for it indirectly, not directly.
+⛔ **Not fixed by installing OpenCV:** `CLAUDE.md` records `uv pip install` silently dragging torch forward to
+a wheel the driver cannot run. The safe fix is a **banked reference raster** produced once by OpenCV
+elsewhere and compared as a literal — a named work item.
