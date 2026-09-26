@@ -623,3 +623,19 @@ only at >= 13.5 GB free (the box reached 13.25 and 13.59 GB today), still under 
 documents is ALREADY established by other means (0 of 3,871 metrics rows carried `cascade` before the fix; the
 stage 0-2 heads were bit-identical at 1k/5k/30k; the fix's tests go RED on the tip) — Q3 is its instrument-level
 record, not its only evidence.
+
+## Q3 — PRODUCED 2026-09-26 20:15 (Master Mind): the owed JSON exists
+
+`raw/q3_hooks_forward.json` (34,504 B; log `raw/q3_hooks_forward_lite1ep_b.log`).
+- Run: MEASURED, dev-box CPU fp32, the as-launched tree, `ckpt_30000.pt` (pre-switch). Window: episode `1655838298f8`, t = 136.
+- Mode: `Q3_KEEP_ALIVE=0` + `Q3_ONLY_EPISODE_SHA12`. It started once 13.5 GB was free and stayed above the 8 GB watchdog. Forward: 81.8 s.
+
+| read | result |
+|---|---|
+| **F3 at the launched config** | `cascade_in_losses: False`. The per-stage cascade term is absent from `compute_losses_v3`'s losses: the instrument-level record of D-REFCV6-F3-WHITELIST. |
+| **Attention provenance** | 30 attention modules, **0 never called**. Of the distinct call signatures: **18** resolved to a named module output; **6** are functional (no module output owns the pointer); **6 UNRESOLVED**. UNRESOLVED means the producing output was freed before the call; the low-memory mode refuses to guess. Those 6 need a keep-alive run on a quiet box to name them. |
+| **Q1: the stem input as launched** | It equals the ImageNet-normalised raw frames **without** the bottom-43-row equalisation: `stem_vs_no_equalize_max_abs` **0.0**, vs 1.8495 against the equalised reference. Frames compared: 8, png codec. BN fold exact: rel err 1.16e-7. |
+| **Q2: does the tactical decoder read WHERE a BEV cell is?** | Its output is invariant to the ORDER of the BEV tokens, the L/R-mirrored token permutation, and the agent-token order: max abs change ≤ 2e-6 against a base |output| of 11.21 (a set-attention decoder). The positive controls move it strongly: zeroed BEV 6.76, channel-shuffled 4.57. A ridge probe recovers each BEV token's own (row, col) from its FEATURE: R² **0.972 / 0.960** (5 splits, held-out half of 480 cells), against −0.06–0.004 for permuted labels and −0.03–0.00 for a constant. ⇒ Position reaches the decoder THROUGH THE FEATURES, not through token order. A token permutation is therefore not a scene mirror, and the "mirrored" read above tests order, not left/right geometry. |
+
+Nothing here changes the fix already landed (82c2331) or the live run's stamp. The two items worth a follow-up are the missing
+equalisation (a design question: was it meant to be on at launch?) and the 6 UNRESOLVED sources. Both are logged in BACKLOG by the Master Mind.

@@ -440,3 +440,9 @@ register rows carry them. The fix itself cannot close the following:
 4. **Live outputs still to land.** Land the full-split cache build and the full floors
    (`raw/cache_full/**`, the driver logs, `verdict_full.json`, `cross_protocol_full.json`) once
    `navtest_full_after_final.py` writes its END marker.
+
+- 2026-09-26 A16 audit Q3 follow-ups (owner: Arch). Evidence: `…/2026-09-26-refcv6-frozen-trunk-audit/raw/q3_hooks_forward.json`, which is MEASURED.
+  - (1) At the launched config, the stem input carries NO bottom-43-row equalisation: the diff to the un-equalised reference is 0.0.
+    Decide whether that was intended, from the SPEC and the train-time transform, before anyone "fixes" it.
+  - (2) 6 attention key/memory sources read UNRESOLVED in the low-memory mode. Name them with one `Q3_KEEP_ALIVE=1` run when the dev box
+    has ≥ 16 GB free (post-FINAL).
