@@ -477,3 +477,13 @@ register rows carry them. The fix itself cannot close the following:
 - D:'s `GOALS_AND_CLAIMS.md` carries 25 non-blank lines absent from the tip, and `RETRACTION_LOG.md` carries 17. Example: the EvalFlyWheel's "R25 (2026-09-26) … SPEC_NAVTEST Amendment 3" retraction.
 - The D: copies are otherwise ~3,700 lines behind the tip.
 - Owners hand these lines over as append blocks via LANDING_READY; the Master Mind lands them.
+
+### DONE — 2026-09-26 ~22:00 — the Training Watch builder refuses a NavSim summary whose count guard is not PASS
+- **Counts:** `EXPECTED_N` holds the published split sizes as literals: navtest 12,146 tokens; navhard 450 + 5,462; warmup 16 + 204. They are authored from the NAVSIM protocol, independently of the summaries read. `_count_guard` renders a mismatch as "UNAVAILABLE — count guard FAIL (n of N)".
+- **Designed subsets:** a designed navtest subset (`tokens_subset` names its token file) still shows, with its own n.
+- **Tests:**
+  - 3 new tests;
+  - the old test `test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier`, which pinned the partial run as correct, is REPLACED;
+  - clean tree: 17 passed;
+  - mutation proof: 11 of 11 arms RED, including one per new guard;
+  - the proof is in `…/2026-09-23-refcv6-fixes/raw/mutation_proof_training_watch_refcv6_navsim.json`.

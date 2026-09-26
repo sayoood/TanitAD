@@ -201,11 +201,13 @@ def _eval_pkg(tmp_path):
     (m5 / "summary_navtest.json").write_text(json.dumps({"n_tokens": 12146, "arms": arms_nt, "pairs": {
         "R6_A1__minus__STOP": {"interval": {"delta": -0.1534, "lo": -0.1829, "hi": -0.1277}}}}), encoding="utf-8")
     (m5 / "summary_navhard.json").write_text(json.dumps({"arms": {
-        "R6_A1": {"official_two_stage_EPDMS": 0.1512, "n_stage2": 5462}, "STOP_zero": {"official_two_stage_EPDMS": 0.2985},
+        "R6_A1": {"official_two_stage_EPDMS": 0.1512, "n_stage1": 450, "n_stage2": 5462},
+        "STOP_zero": {"official_two_stage_EPDMS": 0.2985},
         "CV_official": {"official_two_stage_EPDMS": 0.1148}, "ECHO_ha0_ext": {"official_two_stage_EPDMS": 0.1429}}}),
         encoding="utf-8")
     for d in (m5, m30):
-        (d / "summary_warmup.json").write_text(json.dumps({"arms": {"R6_A1": {"n_stage2": 204}}}), encoding="utf-8")
+        (d / "summary_warmup.json").write_text(json.dumps({"arms": {"R6_A1": {"n_stage1": 16, "n_stage2": 204}}}),
+                                               encoding="utf-8")
     warm = lambda v, m: {"verdict": "FAIL", "values": {"R6_A1": v, "CV_official": 0.3971, "STOP_zero": 0.5212,
                                                       "ECHO_ha0_ext": 0.4287}, "margin": m, "seed_floor": 0.0157,
                          "interval": "UNAVAILABLE (7 logs < 8)"}
@@ -265,19 +267,56 @@ def test_an_unreadable_eval_package_shows_nothing_rather_than_a_guess(tmp_path, 
     assert 'class="chip crit verdict"' not in page and 'class="chip good verdict"' not in page
 
 
-def test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier(tmp_path, monkeypatch):
-    """MEASURED 2026-09-26: step 30000's navtest was banked on 1,464 tokens (not the published 12,146) with the
-    verdict "FAIL (SUBSET — not the published split)". The page must show each cell's own n and keep the
-    qualifier, so a subset can never read as the full split."""
-    pkg, live = _eval_pkg(tmp_path)
+def _navtest30(pkg, *, n, subset):
+    """Bank a step-30000 navtest summary with `n` tokens; `subset` names a designed token file, or None for
+    a claim to the full split. The PDMS values are the retracted 2026-09-26 figures."""
     m30 = pkg / "navsim" / "raw" / "milestones" / "step30000"
     arms = {"R6_A1": {"PDMS": 64.1368, "interval": {"lo": 0.6173, "hi": 0.6656}},
             "STOP": {"PDMS": 61.7235}, "CV": {"PDMS": 19.4959}, "HUMAN": {"PDMS": 94.81}}
-    (m30 / "summary_navtest.json").write_text(json.dumps({"n_tokens": 1464, "arms": arms, "pairs": {
-        "R6_A1__minus__STOP": {"interval": {"delta": 0.0241, "lo": -0.0048, "hi": 0.0524}}}}), encoding="utf-8")
+    (m30 / "summary_navtest.json").write_text(json.dumps({"n_tokens": n, "tokens_subset": subset, "arms": arms,
+        "pairs": {"R6_A1__minus__STOP": {"interval": {"delta": 0.0241, "lo": -0.0048, "hi": 0.0524}}}}),
+        encoding="utf-8")
     bars = json.loads((m30 / "BARS.json").read_text(encoding="utf-8"))
     bars["bars"]["navtest"] = {"verdict": "FAIL (SUBSET — not the published split)"}
     (m30 / "BARS.json").write_text(json.dumps(bars), encoding="utf-8")
+
+
+def test_a_PARTIAL_full_split_navtest_is_REFUSED_not_shown(tmp_path, monkeypatch):
+    """MEASURED 2026-09-26 (RETR-2026-09-26-NAVTEST30K-PARTIAL): the step-30000 navtest scorer stopped after
+    1,464 of 12,146 rows, its partial CSV was parsed anyway, and version 8 of this page showed "64.14 ...
+    SUBSET". A summary that claims the full split (no token file) with the wrong count is a FAILED run: the
+    page must refuse it with the counts, and never show its PDMS. This test REPLACES the 2026-09-26 test
+    `test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier`, which pinned that defect as correct."""
+    pkg, live = _eval_pkg(tmp_path)
+    _navtest30(pkg, n=1464, subset=None)
+    mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
+    page, summary = mod.build()
+    assert summary["navsim"]["30000"]["navtest"] == "UNAVAILABLE — count guard FAIL (1,464 of 12,146)"
+    assert "UNAVAILABLE — count guard FAIL (1,464 of 12,146)" in page
+    assert "64.14" not in page and "n = 1,464" not in page
+    assert summary["navsim"]["5000"]["navtest"] == 46.4846        # a complete split still reads
+
+
+def test_navhard_and_warmup_with_the_wrong_stage_counts_are_REFUSED(tmp_path, monkeypatch):
+    pkg, live = _eval_pkg(tmp_path)
+    m5 = pkg / "navsim" / "raw" / "milestones" / "step5000"
+    s = json.loads((m5 / "summary_navhard.json").read_text(encoding="utf-8"))
+    s["arms"]["R6_A1"]["n_stage2"] = 2517                        # a scorer stopped mid stage two
+    (m5 / "summary_navhard.json").write_text(json.dumps(s), encoding="utf-8")
+    w = {"arms": {"R6_A1": {"n_stage2": 204}}}                    # stage one's count is MISSING
+    (m5 / "summary_warmup.json").write_text(json.dumps(w), encoding="utf-8")
+    mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
+    page, summary = mod.build()
+    assert summary["navsim"]["5000"]["navhard"] == "UNAVAILABLE — count guard FAIL (n_stage2 2,517 of 5,462)"
+    assert summary["navsim"]["5000"]["warmup"] == "UNAVAILABLE — count guard FAIL (n_stage1 missing of 16)"
+    assert "<b>0.1512</b>" not in page
+
+
+def test_a_DESIGNED_navtest_subset_shows_its_own_n_and_keeps_the_qualifier(tmp_path, monkeypatch):
+    """A designed selection names its token file (`tokens_subset`) and carries its own n. The page shows it,
+    with each cell's own n and the verdict's qualifier beside the chip, so it can never read as the full split."""
+    pkg, live = _eval_pkg(tmp_path)
+    _navtest30(pkg, n=1464, subset="tokens_w3_sub.txt")
     mod = _load(monkeypatch, _run_dir(tmp_path), eval_pkg=pkg, eval_live=live)
     page, summary = mod.build()
     assert summary["navsim"]["30000"]["navtest"] == 64.1368

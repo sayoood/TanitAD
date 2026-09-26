@@ -1,11 +1,11 @@
 {
  "_what": "clean-tree run + mutation proof of the refcv6 Training Watch NavSim + battery section (added 2026-09-26)",
  "_evidence_class": "MEASURED (ours), CPU",
- "tip": "59f0d46abf0bf8019c2d7331c54a66c9d00233b3",
+ "tip": "da8400b7ec5fa9615334550af78aa3455f581b57",
  "clean_tree": {
   "rc": 0,
   "failed": [],
-  "summary": "15 passed in 0.60s"
+  "summary": "17 passed in 0.36s"
  },
  "arms": [
   {
@@ -40,7 +40,7 @@
    "arm": "a FAIL verdict chip that looks like a health chip",
    "went_RED": true,
    "caught_by": [
-    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier",
+    "test_a_DESIGNED_navtest_subset_shows_its_own_n_and_keeps_the_qualifier",
     "test_navsim_kpis_are_read_from_the_banked_milestones_and_a_started_split_reads_running"
    ]
   },
@@ -55,14 +55,35 @@
    "arm": "the cell's own sample count dropped",
    "went_RED": true,
    "caught_by": [
-    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier"
+    "test_a_DESIGNED_navtest_subset_shows_its_own_n_and_keeps_the_qualifier"
    ]
   },
   {
    "arm": "the verdict's SUBSET qualifier dropped",
    "went_RED": true,
    "caught_by": [
-    "test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier"
+    "test_a_DESIGNED_navtest_subset_shows_its_own_n_and_keeps_the_qualifier"
+   ]
+  },
+  {
+   "arm": "a PARTIAL full-split navtest is shown (the 64.14 defect)",
+   "went_RED": true,
+   "caught_by": [
+    "test_a_PARTIAL_full_split_navtest_is_REFUSED_not_shown"
+   ]
+  },
+  {
+   "arm": "navhard / warmup stage counts are not checked",
+   "went_RED": true,
+   "caught_by": [
+    "test_navhard_and_warmup_with_the_wrong_stage_counts_are_REFUSED"
+   ]
+  },
+  {
+   "arm": "a DESIGNED token subset is refused like a partial run",
+   "went_RED": true,
+   "caught_by": [
+    "test_a_DESIGNED_navtest_subset_shows_its_own_n_and_keeps_the_qualifier"
    ]
   }
  ],
@@ -70,7 +91,7 @@
  "final_clean_run": {
   "rc": 0,
   "failed": [],
-  "summary": "15 passed in 0.22s"
+  "summary": "17 passed in 0.47s"
  },
- "_VERDICT": "MUTATION-PROVEN -- 8/8 arms RED; restored; final run green."
+ "_VERDICT": "MUTATION-PROVEN -- 11/11 arms RED; restored; final run green."
 }

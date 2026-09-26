@@ -50,6 +50,16 @@ ARMS = [
     ("the verdict's SUBSET qualifier dropped",
      """'<span class="chip crit verdict"><i></i>bar failed</span>' + rest(4)""",
      """'<span class="chip crit verdict"><i></i>bar failed</span>'"""),
+    # 2026-09-26 (RETR-2026-09-26-NAVTEST30K-PARTIAL): the count guard. Each arm reintroduces the real defect.
+    ("a PARTIAL full-split navtest is shown (the 64.14 defect)",
+     'return None if got == want else f"UNAVAILABLE',
+     'return None if True else f"UNAVAILABLE'),
+    ("navhard / warmup stage counts are not checked",
+     "for k, v in EXPECTED_N[split].items() if a1.get(k) != v]",
+     "for k, v in EXPECTED_N[split].items() if False]"),
+    ("a DESIGNED token subset is refused like a partial run",
+     'if s.get("tokens_subset"):',
+     'if False:'),
 ]
 
 

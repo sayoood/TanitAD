@@ -195,9 +195,36 @@ def _num(x):
     return x if isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) else None
 
 
+#: The published split sizes, written here as literals from the NAVSIM protocol, independently of any
+#: summary this page reads. The scorer driver's own constants agree (navsim/code/score_arm6.py:72-76).
+#: A banked summary must match them. MEASURED 2026-09-26: a scorer that stopped after 1,464 of 12,146
+#: navtest rows was parsed anyway and rendered here as "64.14 ... SUBSET". A FAILED run's partial output
+#: is never a smaller valid run (RETR-2026-09-26-NAVTEST30K-PARTIAL).
+EXPECTED_N = {"navtest": {"n_tokens": 12146}, "navhard": {"n_stage1": 450, "n_stage2": 5462},
+              "warmup": {"n_stage1": 16, "n_stage2": 204}}
+
+
+def _cnt(x):
+    return f"{x:,}" if isinstance(x, int) and not isinstance(x, bool) else "missing"
+
+
+def _count_guard(split, s):
+    """None when the summary's sample counts are the published split's, or when the summary is a DESIGNED
+    navtest token subset (it names its token file and carries its own n). Otherwise the refusal text."""
+    if split == "navtest":
+        got, want = s.get("n_tokens"), EXPECTED_N["navtest"]["n_tokens"]
+        if s.get("tokens_subset"):
+            return None if isinstance(got, int) and got > 0 else "UNAVAILABLE — a token subset without its count"
+        return None if got == want else f"UNAVAILABLE — count guard FAIL ({_cnt(got)} of {want:,})"
+    a1 = (s.get("arms") or {}).get("R6_A1") or {}
+    bad = [f"{k} {_cnt(a1.get(k))} of {v:,}" for k, v in EXPECTED_N[split].items() if a1.get(k) != v]
+    return "UNAVAILABLE — count guard FAIL (" + "; ".join(bad) + ")" if bad else None
+
+
 def navsim_read():
     """Per checkpoint and split: the headline KPI, its controls, the paired read vs STOP and the bar
-    verdict -- or the split's status ("running" / "not run") when nothing is banked for it."""
+    verdict -- or the split's status ("running" / "not run") when nothing is banked for it, or an
+    UNAVAILABLE refusal when the banked summary's counts are not the published split's."""
     ms = os.path.join(EVAL_PKG, "navsim", "raw", "milestones")
     live = os.path.join(EVAL_LIVE, "navsim", "raw", "milestones")
     res, published = {}, {}
@@ -215,6 +242,10 @@ def navsim_read():
                 ld = os.path.join(live, f"step{step}")
                 started = any(os.path.exists(os.path.join(ld, f"{p}_{split}")) for p in ("bridge", "scores"))
                 row[split] = {"status": "running" if started else "not run"}
+                continue
+            refusal = _count_guard(split, s)
+            if refusal:
+                row[split] = {"status": refusal}
                 continue
             arms = s.get("arms", {})
             if split == "navtest":

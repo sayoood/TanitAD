@@ -17786,3 +17786,26 @@ W8's own row, verbatim:
 **Rule:**
 - Before naming a new arm or spec, search the name across the registry, the steering docs and the code.
 - Before landing a new file, assert its path is absent from the tip. The lander now enforces this.
+
+### RETR-2026-09-26-NAVSIM-STRATEGIC-REASON — every NavSim artifact told its reader "NAVSIM has no map"
+
+**What was wrong.** The STRATEGIC family's n/a `reason` in every NavSim artifact was PhysicalAI-AV's statement, "carries NO map, NO lane graph…". Those artifacts are the `criteria_*.json` files, the summaries and every report built from them.
+- The statement is true for PhysicalAI and false for NAVSIM, which has a map, a lane graph and a route.
+- So it told readers the family was blocked on a CORPUS fact ("no rescore can produce it", "must come from AlpaSim"). On NavSim the family is blocked on EVAL ENGINEERING.
+
+**Why it survived.**
+- The adapter carried the correct NavSim fact only in a side key, which the criteria check never read.
+- The summary appended that fact AFTER the PhysicalAI sentence.
+- The test named `…_not_the_physicalai_one` checked only the side key, so it was green the whole time.
+
+**Fix** (EvalFlyWheel batch 13, found by W8's E3, landed da8400b).
+- `four_families.STRATEGIC_NA_BY_CORPUS` holds one statement per corpus, and an unknown corpus is REFUSED.
+- 6 tests; 3 source mutations are RED.
+- The verdicts are unchanged: strat.* stays REFUSED; only the explanation was wrong.
+- 8 banked NavSim v2 runs (2026-09-20/21) deliberately keep the pre-fix explanation text. LEADERBOARD shows 0 occurrences.
+
+**Class:** TRUE BUT WRONG FOR THE READER, guarded by a check that tested a side key instead of the field readers see. It is a check that shares the defect it checks for.
+
+**Rule:**
+- A guard asserts on the field the READER sees (the rendered criteria and summary text), never on a side channel.
+- A corpus fact is always quoted with its corpus.
