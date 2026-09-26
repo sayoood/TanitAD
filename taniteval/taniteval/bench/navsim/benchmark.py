@@ -289,7 +289,8 @@ def run_benchmark(ctx) -> None:
         bank = getattr(a, "frame_bank", None) or MA.DEFAULT_BANKS.get(prof.name)
         if not bank or not Path(bank).exists():
             raise P.Refusal(f"no frame bank for {prof.name} (pass --frame-bank; E2's build_frames.py builds one)")
-        ctx.gpu = GpuGapLauncher(requested=a.device, log=ctx.log)
+        ctx.gpu = GpuGapLauncher(requested=a.device, log=ctx.log,
+                                 limit_mib=getattr(a, "gpu_mem_limit_mib", None))
         mres = MA.run_model_arms(arms=model_req, doc=doc, ckpt=a.ckpt, bank=bank, out_dir=run.p("raw/model"),
                               gpu=ctx.gpu, threads=int(getattr(a, "cpu_threads", 6) or 6),
                               ckpt_md5=getattr(a, "ckpt_md5", None),

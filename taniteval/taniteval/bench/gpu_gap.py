@@ -38,6 +38,46 @@ DEFAULT_MEM_LIMIT_MIB = 1024          # "< 1 GB"
 DEFAULT_INTERVAL_S = 60.0             # "re-checked every minute"
 DEFAULT_MAX_WAIT_S = 8 * 3600.0
 
+#: Env override for the foreign-GPU-memory limit, in MiB.
+#:
+#: ⛔ WHY THIS EXISTS. ``DEFAULT_MEM_LIMIT_MIB`` was hardcoded at 1024 and **unreachable from every
+#: caller**: ``limit_mib`` was threaded correctly through :func:`gap_verdict`, :func:`device_policy`
+#: and :class:`GpuGapLauncher`, yet both construction sites (``contract.py``, ``navsim/benchmark.py``)
+#: omitted it and the CLI had no flag — the "built, tested, and unreachable from its caller" class in
+#: ``CLAUDE.md``, which has now surfaced six times in this programme.
+#:
+#: MEASURED 2026-09-20/26 on the dev box: with **no training process alive at all**, the Windows/WDDM
+#: desktop (explorer, Chrome, VS Code, the NVIDIA overlay) holds **1,175–5,812 MiB**, so a 1,024 MiB
+#: limit can NEVER be satisfied — W7 sampled 0 gaps in 12 samples and every model arm silently fell
+#: back to CPU. The PI's own instruction for this box (relayed 2026-09-26) is to gate at
+#: **4,300 MiB used with >= 8 GB free host RAM**, which the hardcoded limit made unexpressible.
+#:
+#: ⚠️ Raising the limit does NOT weaken the standing invariant: a live training process still refuses
+#: regardless of this value (see :func:`gap_verdict`). This bounds only FOREIGN GPU MEMORY.
+ENV_MEM_LIMIT = "TANITAD_GPU_MEM_LIMIT_MIB"
+
+
+def resolve_mem_limit_mib(limit_mib=None) -> float:
+    """The limit actually in force: explicit argument > ``TANITAD_GPU_MEM_LIMIT_MIB`` > 1024.
+
+    ⛔ Resolved HERE, at the impure boundary, and never inside :func:`gap_verdict` — that predicate
+    stays pure and literal-tested, and its callers hand it an already-resolved number.
+    A malformed or non-positive env value is IGNORED (falling back to the default) rather than
+    silently disabling the gate: a gate that reads ``limit=0`` would refuse forever, and one that
+    reads ``limit=inf`` would never refuse at all.
+    """
+    if limit_mib is not None:
+        return float(limit_mib)
+    raw = os.environ.get(ENV_MEM_LIMIT)
+    if raw:
+        try:
+            v = float(raw)
+            if v > 0 and v != float("inf"):
+                return v
+        except (TypeError, ValueError):
+            pass
+    return float(DEFAULT_MEM_LIMIT_MIB)
+
 #: a training job, by the SCRIPT it runs (basename contains "train"), or a torch launcher
 TRAINING_SCRIPT_RE = re.compile(r"(?:^|[\\/\s])[\w.\-]*train[\w.\-]*\.py\b|\btorchrun\b|torch\.distributed\.run",
                                 re.IGNORECASE)
@@ -148,13 +188,18 @@ DECISIONS = ("CUDA", "CPU", "REFUSE")
 
 
 def device_policy(requested: str, *, accept_training_box_load: bool = False, probe=default_probe,
-                  cuda_available=default_cuda_available, limit_mib: float = DEFAULT_MEM_LIMIT_MIB,
+                  cuda_available=default_cuda_available, limit_mib=None,
                   queue_hint: str = "", processes=None) -> dict:
     """The decision for OUR-MODEL INFERENCE on this box. Pure w.r.t. ``probe`` — unit-tested with
     literals. Returns ``{decision, reason, training_pids, mem_used_mib, record}``; ``record`` is what
-    ``bench_run.json`` must carry (including any accepted override)."""
+    ``bench_run.json`` must carry (including any accepted override).
+
+    ``limit_mib=None`` resolves through :func:`resolve_mem_limit_mib` (explicit > env > 1024), so the
+    limit in force is always the one recorded in ``record["limit_mib"]`` — never an assumed default.
+    """
     if requested not in ("auto", "cpu", "cuda"):
         raise ValueError(f"device must be auto|cpu|cuda, got {requested!r}")
+    limit_mib = resolve_mem_limit_mib(limit_mib)
     pids, used = probe()
     v = gap_verdict(pids, used, limit_mib=limit_mib, cuda_available=cuda_available())
     rec = {"requested": requested, "training_pids": sorted(pids or []), "mem_used_mib": used,
@@ -195,12 +240,13 @@ device_gate = device_policy
 
 
 class GpuGapLauncher:
-    def __init__(self, requested: str = "auto", *, limit_mib: float = DEFAULT_MEM_LIMIT_MIB,
+    def __init__(self, requested: str = "auto", *, limit_mib=None,
                  interval_s: float = DEFAULT_INTERVAL_S, max_wait_s: float = DEFAULT_MAX_WAIT_S,
                  probe=default_probe, cuda_available=default_cuda_available,
                  sleep=time.sleep, clock=time.time, log=print):
         if requested not in ("auto", "cpu", "cuda"):
             raise ValueError(f"device must be auto|cpu|cuda, got {requested!r}")
+        limit_mib = resolve_mem_limit_mib(limit_mib)
         self.requested, self.limit_mib, self.interval_s = requested, float(limit_mib), float(interval_s)
         self.max_wait_s = float(max_wait_s)
         self._probe, self._cuda_available, self._sleep, self._clock, self._log = (

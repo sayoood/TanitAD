@@ -1,0 +1,318 @@
+# Can every standard eval actually RUN? — a reachability audit of `python -m taniteval.bench`
+
+**Package** `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/`
+**Owner** EvalFlyWheel orchestrator · **Date** 2026-09-26 (Europe/Berlin)
+**Asked by** the PI: *"assure that all the standard evals can be run in our eval suite"*; and by the
+Master Mind, relaying the PI 2026-09-23: *"prepare the required standard tests including the navsim
+suite for refcv6"*.
+
+⛔ **The question is RUNNABILITY, not existence.** `CLAUDE.md` records five — now six — instances of
+*"built, tested, and unreachable from its caller"*, three of them found only after an arm had been
+trained on the unreachable thing. So every row below is a **verdict from the real CLI**, not a reading
+of the source.
+
+## §1 The audit — MEASURED 2026-09-26 by invoking the CLI
+
+`python -m taniteval.bench --help` exposes **navsim_v2, navsim_v1, nuscenes_ol, internal_t1** plus
+`submit / validate / reaggregate / gpu-gap / tombstone`. ⚠️ It must be run with cwd `taniteval/` (or
+`PYTHONPATH`): from the repo root `taniteval` resolves to the outer namespace directory and dies with
+`No module named taniteval.bench` — the namespace-shadow trap, and the thing that killed W7's
+post-run step on 09-20.
+
+| benchmark | verdict | evidence |
+|---|---|---|
+| **navsim_v2** `warmup_two_stage` | ✅ **DRY_RUN_PASSED** 1.2 s | floors CV+STOP added by rule |
+| **navsim_v1** `navtest` | ✅ **DRY_RUN_PASSED** 3.0 s | *"12146/12146 scenes in the metric cache"* |
+| **nuscenes_ol** `val` | ⚠️ **REFUSED — by design** | *"runs ONE convention per run and has no default: set `TANITAD_NUSCENES_PROTOCOL`"*. A deliberate refusal (ST-P3 and UniAD are different quantities), **not** a defect. The real blocker is data: the download needs the PI's registration. |
+| **internal_t1** | ✅ reachable; needs `--ckpt --episodes --labels` | device gate passed on CPU (*"explicit --device cpu and no training process is alive"*); ran 539.8 s before **my own `timeout`** killed it |
+
+⚠️ **`internal_t1` is the refcv6-critical one and it is NOT too slow because of a defect — it is too
+slow on CPU.** 2 episodes did not finish in 9 minutes at 416x1024, so the 139-clip split needs the
+GPU. See §4.
+
+⭐ **All four splits' data is present on the dev box.** `v2ep-eval139-416x1024cyl` holds **139/139**
+clips (11 GB) and `s2_labels_v7.2_eval.jsonl.gz` is banked — so refcv6's held-out eval needs **no**
+transfer from Thor.
+
+## §2 ⛔ The one real defect, and it was on refcv6's critical path — FIXED
+
+`DEFAULT_MEM_LIMIT_MIB = 1024` was hardcoded, and **`limit_mib` was reachable in every signature and
+passed by nobody.** Verified with same-breath controls that must read non-zero:
+
+| probe | result | control |
+|---|---|---|
+| CLI flag for the limit | **0** | `--ram-floor-mb` → **1** |
+| `os.environ`/`getenv` in `gpu_gap.py` | **0** | `OVERRIDE_FLAG` → **8** |
+| call sites passing `limit_mib` | **0 of 2** (`contract.py:466`, `navsim/benchmark.py:292`) | — |
+
+⇒ the gate always ran at 1,024 MiB. MEASURED: with **no training process at all**, this desktop's
+WDDM compositor holds **1,175–6,085 MiB**, so the gate could never open — W7 sampled **0 gaps in 12
+samples** and every model arm silently fell back to CPU, which for a 416x1024 ResNet is ~100x too slow.
+
+**Fix:** `--gpu-mem-limit-mib` + `$TANITAD_GPU_MEM_LIMIT_MIB`, resolved by
+`resolve_mem_limit_mib()` (explicit > env > 1024) at the impure boundaries only — ⛔ `gap_verdict`
+stays the pure, literal-tested predicate and never reads the environment.
+
+⭐ **The proof is DIFFERENTIAL, which is stronger than a pass/fail.** Same command, same box, one
+flag changed:
+* `--gpu-mem-limit-mib 4300` → *"training process alive: pids [...]; **GPU memory used 6058 MiB >= limit 4300 MiB**"*
+* `--gpu-mem-limit-mib 7000` → *"training process alive: pids [...]"* — **the memory clause is gone and nothing else changed.**
+
+**Controls (19 tests, `taniteval/tests/test_gpu_gap_limit_reachable.py`), all literal expectations:**
+a malformed / `0` / `inf` env value is IGNORED (a gate reading 0 refuses forever; one reading `inf`
+never refuses); the CLI default is `None`, not 1024, so the env still applies; **5,812 MiB is still
+refused at limit 4300**, so the gate remains a real threshold; and ⛔ **the discriminating control —
+a live training pid REFUSES at `limit_mib=10**9` with zero foreign memory.** That invariant was also
+confirmed in production, not only in the test: four `diag_onpolicy_train.py` pids are alive on this
+box right now and both flag values refuse.
+
+## §3 ⚠️ Two gates now answer one question — a convergence item, not a bug
+
+The refcv6 battery ships **its own** gate, `battery/code/gpu_gate.py`, and it is the better-specified
+one: `used < 4300 MiB` **and** no other python compute on the GPU **and** free host RAM >= 8 GB — the
+PI's policy exactly, plus a documented fix for a self-gating bug (it had waited on its own CUDA
+context; `evaluate()` now drops the caller's pids — the `pgrep -f` self-match family).
+
+Its live verdict, MEASURED: `{"ok": false, "gpu_used_mib": 6085, "python_compute": [2 foreign pids],
+"free_ram_gb": 7.15}` — a correct WAIT.
+
+⇒ The battery does **not** have §2's defect. But `gpu_gap.py` calls itself *"the ONE definition"* for
+training processes while a second definition of *"may I use the GPU"* now lives beside it. §2 makes
+convergence possible (the suite can finally be told 4,300); ⛔ the suite gate still has **no host-RAM
+clause and no foreign-compute clause**, which the battery's does. **Escalated to W1 / the Master
+Mind** rather than written into a README.
+
+## §4 ⛔ What actually blocks refcv6's eval tomorrow — the box, not the harness
+
+refcv6-r101-s0 finishes on Thor ~2026-09-27 19:30 Berlin. Both gates refuse **right now**, correctly:
+
+* GPU **6,085 MiB** used of 8,188 — held by another session's `diag_onpolicy_train.py` (refe-plan, 4 pids);
+* free host RAM **7.15 GB** < the battery's 8 GB floor.
+
+⇒ The final battery will **WAIT**, not fail. The harness is ready; the *box* is not. This needs a PI
+scheduling decision: finish/pause the refe on-policy training, or provision a pod. ⚠️ CPU is not a
+fallback here — §1 measured the CPU rate.
+
+## §5 The leaderboard omits the community headline it was asked about
+
+The Master Mind quoted **DiffusionDrive navtest PDMS 88.1**. ⭐ **That number is correct and banked** —
+`products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md:593`, primary `2411.15139` Tab. 1, cross-checked
+against the live leaderboard at **88.0157**. ⚠️ I nearly reported it as misattributed: my first probe
+searched only `published_results.json`, where DiffusionDrive appears **only** under
+`EPDMS_v2_navtest_single_stage` (84.5 / 85.5 / 87.5, camera **+ LiDAR**). A second probe found the v1 row.
+*Absence found at one location is not absence* — again.
+
+⛔ **But the asymmetry is a real gap:** `published_results.json` is what the leaderboard GENERATOR
+consumes, and it holds **16** `PDMS_v1_navtest` rows with **DiffusionDrive not among them** (Hydra-MDP
+is, at 91.3). So the generated leaderboard omits the headline. **Work item for W4.**
+⚠️ And flag, do not adjudicate: our banked Hydra-MDP is **91.3** while DiffusionDrive's paper claims
+**+1.6 over Hydra-MDP** at 88.1 — implying ~86.5. Different variants/backbones are the likely
+explanation; it needs the primaries side by side, not a guess.
+
+## §6 My own errors this turn — one class, three instances
+
+⛔ **A filter's output read as the world.**
+1. I reported `internal_t1`'s `--episodes`/`--labels` as **absent from the CLI** and called it "a real
+   gap on tomorrow's critical path". **False.** Both are exposed; my `sed` range had truncated
+   `--help` and I read the truncation as absence. The grep control (episodes 2, labels 1, vs `--arms`
+   2) settles it. Its `FAILED` verdict was correct behaviour — it named exactly the missing flags.
+2. "5 scoring processes alive" and "waiter = 5 procs" were **my own shells and the query itself**
+   matching the search string — the `pgrep -f` trap, twice.
+3. I wrote the new test into `taniteval/taniteval/tests/` (inside the package) instead of the real
+   suite at `taniteval/tests/`, then ran `pytest taniteval/tests` from cwd `taniteval/` and saw
+   **19 passed** — my file alone — and nearly recorded that as "the suite is green". ⭐ The tell was
+   arithmetic: the suite collects **2,382** tests. Moved; 54 pass with the 35 pre-existing gate tests.
+
+⇒ In all three the probe's scope was mistaken for the fact. The cheap discriminator each time was a
+**control that had to read a known non-zero value**, and it is the same lesson as §5.
+
+## §7 Manifest
+
+| artifact | where |
+|---|---|
+| this audit | `repo:FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md` |
+| the fix | `repo:taniteval/taniteval/bench/gpu_gap.py`, `cli.py`, `contract.py`, `navsim/benchmark.py` — staged, **not committed** |
+| 19 tests, literal + mutation + the training-invariant control | `repo:taniteval/tests/test_gpu_gap_limit_reachable.py` |
+| refcv6 battery (SIBLING stream, already built — do not duplicate) | `repo:FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/` — 610 files, pre-registered SPEC `32625b9a…`, G0-A2 PASS at step 5000, chain queued for 30000 + FINAL |
+| navhard stage-1 frames (the 09-20 unlock) | **dev box only**: `C:/Users/Admin/tanitad-caches/navhard-stage1-frames-20260920` — `COMPLETE: 3375/3375`, 76/76 logs, 32/32 receipts |
+
+## §8 ⛔ THE SUITE IS NOT GREEN — 32 failing tests on the tip, and this gates the COMMIT decision
+
+MEASURED 2026-09-26, the full run (43m 09s): **31 failed · 2,380 passed · 27 skipped**
+(32 failing node ids in `.pytest_cache`).
+
+⛔ **And the wrapper reported `exit code 0`.** The command ended `… | tail -15`, so the status came
+from `tail`, not from pytest — the `$?`-through-a-pipe trap that `CLAUDE.md` documents twice. I was one
+sentence from reporting the suite green off a number that was never pytest's. ⚠️ The log file is also
+**tail-truncated** (1,500 bytes, showing 9 of 31), so the enumeration below comes from
+`.pytest_cache/v/cache/lastfailed`, not from the log.
+
+| failing file | node ids |
+|---|---|
+| `tools/tests/test_release_gate.py` | **17** |
+| `taniteval/tests/test_render_openloop_video.py` | **9** |
+| `tools/tests/test_registry_paths_allow.py` | 2 |
+| `taniteval/tests/test_benchreport_legacy_compat.py` · `tools/tests/test_library.py` · `test_library_tracking.py` | 1 each |
+
+**Not caused by §2's fix**, established positively rather than by inference:
+* **0 of the 7** failing files import `gpu_gap`, `bench.cli`, `bench.contract` or `navsim.benchmark`
+  — with the control that **all 7** import *something*, so the grep is working;
+* the fix's own neighbourhood (gate + contract + reuse-seams + reuse-floors) passes **112 tests**;
+* the release-gate failure is a fixture/policy mismatch — the gate prints
+  `VERDICT: ADVISORY-FAIL (1 registry-named criterion)` under the PI's 2026-08-28 advisory ruling while
+  `test_a_clean_release_exits_zero` expects 0 — and the nine others are video-rendering tests.
+
+⭐ **Why this was invisible: every recent report measured a SUBSET.** W7 banked *"323 taniteval and 186
+checker tests pass"*, W3 *"the suite is 94/94 green"* — both true of what they ran, and neither is the
+suite. `CLAUDE.md` requires `pytest -q` green before any commit, so **the PI's pending commit decision
+now carries a precondition**: 32 tests to fix or explicitly waive, in a tree whose HEAD has not moved
+in five days (`37645fc`) while **2,820 paths sit staged**.
+
+⚠️ I have NOT fixed them: they span seven unrelated concerns, none is on refcv6's critical path, and
+guessing at another stream's fixtures under a deadline is how the release gate got an expected value
+of *"whatever the code does"* in the first place. They are named here as a work item with their
+enumeration, which is the honest form.
+
+## §9 ⛔⛔ THE A16 RESUME SILENTLY CHANGES THE EVAL'S LABEL CLOCK — flag before the FINAL, not after
+
+**Context (INHERITED from the Master Mind, 2026-09-26):** the PI has ruled refcv6-r101-s0 **stops and
+resumes with the A16 fixes** (commit `82c2331`); F3's cascade loss *"had never run"* and tactical labels
+were *"0.37 s early"*. Checkpoints from the switch step onward are a **hybrid**.
+⚠️ `82c2331` is **NOT present locally** (HEAD is `37645fc`, five days old), so its exact file list is
+**UNVERIFIED by me**. Everything below is read from the frozen-trunk audit's own artifact.
+
+⭐ **"F3's cascade loss had never run" is the SEVENTH instance of the `CLAUDE.md` class this audit is
+about** — built, tested, and unreachable from its caller — and it ran for ~3 days of GPU before anyone
+noticed. That is the same defect family as §2, in a trainer instead of a gate.
+
+### The eval consequence nobody has stated
+
+The 0.37 s defect is **in `V3Dataset`**, not in the trainer:
+*"`V3Dataset` evaluates the label band at `t_now = (t + w - 1) * 0.1` … while the labels live on the RAW
+clip timeline"* — and its fix is also in `V3Dataset`
+(`t_now = grid_start_s + (t + w - 1 + n_stack - 1) * dt_s`, plus a new `tanitad/data/clip_clock.py`).
+
+⛔ **The eval path SUBCLASSES that class:** `taniteval/tools/refcv3_arm.py:1707` —
+`class EvalV3Windows(tr.V3Dataset)`. The battery's `refcv6_loader.py`, `refcv6_roll.py`,
+`check_pairing_surface.py` and `reproduce_inrun_eval.py` all reference it too.
+
+⇒ **The eval's tactical label clock changes the moment the battery runs against `82c2331`** — for
+**every** checkpoint it scores, including the pre-switch milestones (5,000 and 30,000) that were
+*trained* under the OLD clock. Magnitude, already MEASURED by the audit on the eval split:
+**598 / 5,699 windows (10.5 %)** change band membership (train side: 19,044/179,129 = 10.6 % outside
+the true band, 13,315 = 7.7 % wrongly unsupervised).
+
+| milestone | trained under | will be scored under | consequence |
+|---|---|---|---|
+| 5,000 · 30,000 | old clock (0.37 s early) | **corrected** clock | train/eval MISMATCH — penalised on the tactical family specifically |
+| FINAL (hybrid) | part old, part corrected | corrected | closest match, but not a single arm |
+
+⇒ ⛔ **The TACTICAL family — one of the four mandatory families — is not comparable across the switch
+unless the label clock is pinned as a recorded arm property.** And a cross-milestone learning curve is
+no longer one trajectory: it spans two experiments, the *"a derived constant silently changed the
+experiment, so the reproduction is not a replay"* class.
+
+**Recommendation to the battery stream (its SPEC amendment discipline is already correct — every
+amendment so far was written BEFORE the measurement it governs):**
+1. Record the **label clock** (old / corrected, with the `dt_s` source) in every battery result, beside
+   the tier and loop stamps. An arm property that is not in the manifest is invisible in six weeks.
+2. Score **all** milestones with the **corrected** clock so the EVAL is at least internally consistent,
+   and state plainly that the pre-switch checkpoints were trained under the old one.
+3. ⛔ Do not publish a tactical comparison across the switch step without that stamp, and do not fit a
+   learning-curve exponent across it at all.
+4. Name the switch step explicitly; "from the switch step onward is a hybrid" is not a number.
+
+## §10 Master Mind items 4 and 5 — DONE
+
+**Item 5 — the one-copy frames now have a checksum manifest.**
+`…/2026-09-20-navhard-stage1-extract/raw/MANIFEST_stage1_frames.json`, written by `code/write_manifest.py`:
+**3,375 files · 76 logs · 711,722,316 bytes**, sha256 per file, keyed by the loader's own relative
+`data_path` so a future check verifies what the scorer will actually open. Independently cross-checked
+the same hour: `--verify` still reads `COMPLETE: 3375/3375`. ⭐ The two answer DIFFERENT questions and
+both are kept — `--verify` = *"is every file the scorer asks for present and a valid JPEG?"*; the
+manifest = *"are the bytes still the bytes we extracted?"* Moving the set anywhere (e.g. private HF) is
+a quota/spend question for the PI and has NOT been done.
+
+**Item 4 — DiffusionDrive added to `PDMS_v1_navtest`, and upgraded from INHERITED to PRIMARY.**
+`products/P7-TanitEval/benchmarks/published_results.json`, row `v1.diffusiondrive`, 113 → **114** rows
+with a superset guard: **0 of the 113 original rows changed** (compared by sorted-key serialisation, not
+by "the file differs"). The file has no HEAD version — it is new since 09-19 — so my three-blob check
+correctly read INCONCLUSIVE; index == worktree.
+
+⭐ **Verified in the banked PDF rather than inherited from our own prose:** `2411.15139`, p.1 abstract
+and p.2 both state **88.1 PDMS**, p.2 naming the **navtest split** and the **aligned ResNet-34
+backbone**; **Tab. 1 is on p.6**, captioned *"Comparison on planning-oriented NAVSIM navtest split with
+closed-loop metrics"*. Cross-checked against the live leaderboard at **88.0157**.
+
+**The Hydra-MDP question, recorded and largely resolved — but not adjudicated in the data file.**
+`NAVSIM_PROTOCOL.md` carries the variant ladder two lines above DiffusionDrive: `Hydra-MDP-V8192` 83.0,
+**`Hydra-MDP-V8192-W-EP` 86.5**, `Hydra-MDP++` 86.6 (camera only) — all `2406.06978v4` Tab. 1. So
+DiffusionDrive's *"+1.6 over Hydra-MDP"* at 88.1 matches **86.5 = V8192-W-EP**, consistently. ⚠️ What
+remains open is **this file's own Hydra-MDP row at 91.3**, whose source is `2406.15349` Tab. 3 p.9 — the
+**NAVSIM** paper, a different artifact. Which number belongs in the column is W4's to settle from the two
+primaries; the row's `notes` field says exactly that and adjudicates nothing.
+
+## §11 ⛔ Correction to §8 — the count is 31, and my "order-dependence" claim was WRONG
+
+I wrote in §8 that `test_leaderboard.py` had one failure, and then — seeing it pass **76/76** in
+isolation — concluded that *"at least one failure is order-dependent"*. **Both were wrong, from the same
+cause: I enumerated from `.pytest_cache/v/cache/lastfailed`, which carries entries from EARLIER runs.**
+
+MEASURED: the cache holds **32** node ids; **exactly 1 no longer resolves** —
+`test_leaderboard.py::test_the_print_convention_block_keeps_the_probes_own_verdict_and_scope`, whose
+function was **renamed** to `…_block_prints_…` (control: the file defines 69 `test_` functions, so the
+grep works). **32 − 1 stale = 31, which reconciles exactly with the run's `31 failed`.**
+
+⇒ **`test_leaderboard.py` is fully green (76/76) and was never among the failures.** There is **no
+evidence of order dependence** — I invented it to explain a discrepancy whose real cause was a stale
+cache. The corrected table is six files, 31 ids: release_gate **17**, render_openloop_video **9**,
+registry_paths_allow **2**, and benchreport_legacy_compat / library / library_tracking **1 each**.
+
+⭐ **Class — the third instance in this one audit, and they are all the same mistake:** a truncated
+`--help` read as a missing flag (§6.1), a process list matching my own shells read as running jobs
+(§6.2), and now a stale test cache read as this run's failures. **The artifact of a probe is not the
+world.** Each time, the cheap discriminator was arithmetic or a must-read-nonzero control — here, that
+31 ≠ 32 was visible from the start and I let it pass unchased for two messages.
+⚠️ `tools/tests/test_library_tracking.py::test_every_banked_pdf_is_in_head` is very likely a GENUINE and
+fully explained failure: HEAD is five days old while PDFs have been banked since, so "every banked PDF
+is in HEAD" is false **because of the commit backlog**, not because of a defect. Classifying the
+remaining 30 is still the work item; ⛔ a count is not a diagnosis.
+
+## §12 ⭐ A5 (dual-clock tactical scoring) IS implementable — costs ZERO extra inference, and has one trap
+
+MEASURED 2026-09-26 in the A16 fix package
+(`…/2026-09-26-refcv6-frozen-trunk-audit/code/fix/stack/scripts/refc_v3_train.py`):
+
+1. ⭐ **The old clock is still reachable.** `_now_s` (`:3005`) carries
+   `if self.legacy_label_clock: return r * float(self.v7_dt)` — **exactly** the historical defect
+   `(t + w - 1) * 0.1`. ⚠️ I first concluded the opposite: `--clip-clock-sidecar` is the only
+   clock-matching CLI flag, and without it dt still comes from the clip's poses, i.e. the CORRECTED
+   formula either way. The legacy path is a **dataclass field**, not a flag.
+2. ⛔ **`legacy_label_clock: bool = False` (`:2983`) and there is NO CLI flag** — `add_argument` hits
+   for it: **0** (control: 205 `add_argument` calls in the file). It is reachable programmatically only.
+3. ⭐ **The clock moves LABELS ONLY, not model inputs.** `_now_s` has exactly **two** call sites
+   (`:3097`, `:3117`), both on the label-band path. ⚠️ Stated as a positive assertion over call sites,
+   **not** an exhaustive trace of `enable_nav_from_v7`; nav is not among them, which is consistent with
+   the nav input being clock-independent but does not prove it.
+
+⇒ **A5 costs NO extra rollout.** The model's outputs do not depend on the clock, so one inference pass
+per checkpoint is scored TWICE — once with `legacy_label_clock=False`, once `=True`. What A5 needs is
+for the battery to SET that field (or for a flag to be added), which is the one wiring step.
+
+### ⛔ The trap, and the control that catches it
+
+`legacy_label_clock` defaults to **False** with no CLI route — the textbook *"a flag whose default
+disables it"* hazard from `CLAUDE.md`. If the battery forgets to set it, **A5 still produces a
+"both clocks" table: the same clock run twice, printing two identical numbers that look like
+agreement.** That is worse than a missing row, because it reads as evidence.
+
+⭐ **Required control: the two clocks MUST disagree on a known, non-zero number of windows.** The
+frozen-trunk audit already measured the expected magnitude on this very split — **598 / 5,699
+(10.5 %)** change band membership. So the assertion is a literal, not a vibe:
+
+* legacy vs corrected band assignment must differ on **~598** eval windows (and on **> 0** always);
+* if the two columns are identical, the run must be REFUSED, not published — the switch did not take.
+
+⚠️ And the mirror-image control is just as cheap: scoring the SAME clock twice must produce
+**bit-identical** tactical numbers, which proves the comparison harness is deterministic and that any
+difference seen above comes from the clock and not from run-to-run noise.

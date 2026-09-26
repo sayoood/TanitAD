@@ -453,9 +453,12 @@ class BenchContext:
         carries the queue command. ⛔ Floors / reference agents do not call this: the devkit scorer
         is CPU by construction and is not our-model inference."""
         from .gpu_gap import GpuGapLauncher, device_policy
+        # ⛔ limit_mib MUST be threaded from the caller: it was reachable in every signature and passed
+        # by nobody, so the gate ran at a hardcoded 1024 MiB that a desktop box can never satisfy.
+        lim = getattr(self.args, "gpu_mem_limit_mib", None)
         pol = device_policy(getattr(self.args, "device", "auto"),
                             accept_training_box_load=bool(getattr(self.args, "accept_training_box_load", False)),
-                            queue_hint=queue_hint)
+                            limit_mib=lim, queue_hint=queue_hint)
         self.rec["device_policy"] = {**pol["record"], "decision": pol["decision"], "reason": pol["reason"]}
         self.log(f"[device] {pol['decision']}: {pol['reason']}")
         if pol["decision"] == "REFUSE":
@@ -463,5 +466,6 @@ class BenchContext:
         if pol["decision"] == "CPU":
             return "cpu"
         if self.gpu is None:
+            kw.setdefault("limit_mib", lim)          # setdefault: a caller's explicit kw still wins
             self.gpu = GpuGapLauncher(requested="cuda", log=self.log, **kw)
         return self.gpu.acquire()

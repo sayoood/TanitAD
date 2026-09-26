@@ -1,0 +1,44 @@
+# LANDING_READY — EvalFlyWheel suite-runnability audit + the GPU-gate reachability fix
+# For the Master Mind as single committer (PI ruling 2026-09-26). Paths are repo-relative.
+# ⛔ NOTHING here is committed or pushed by me. All paths staged by exact path and blob-verified
+#    (index blob == `git hash-object`, both 40 chars) at the end of the turn.
+# ⚠️ Read RESULT.md §8 and §11 BEFORE the clean-tree test run: the full suite was 31 failed /
+#    2,380 passed / 27 skipped, and at least one of those failures reproduces only under the
+#    full-suite ordering. None of the 7 failing files imports anything in this batch (control:
+#    all 7 import something). Expect a non-green run that this batch did not cause.
+
+## 2026-09-26 batch 1 — the fix (4 files) + its tests + the audit
+
+# the reachability fix: --gpu-mem-limit-mib / $TANITAD_GPU_MEM_LIMIT_MIB, threaded to both call sites
+taniteval/taniteval/bench/gpu_gap.py
+taniteval/taniteval/bench/cli.py
+taniteval/taniteval/bench/contract.py
+taniteval/taniteval/bench/navsim/benchmark.py
+
+# 19 tests: literal expectations, a mutation arm for the old behaviour, and the discriminating
+# control that a live training pid still REFUSES at limit_mib=1e9
+taniteval/tests/test_gpu_gap_limit_reachable.py
+
+# the audit itself (contains the A16 label-clock finding in §9 — read it before the FINAL eval)
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/LANDING_READY.txt
+
+## 2026-09-26 batch 2 — Master Mind item 4 (W4 source row)
+
+# DiffusionDrive navtest PDMS 88.1 added under PDMS_v1_navtest, verified in the banked primary
+# (2411.15139 Tab. 1 p.6). 113 -> 114 rows; superset-guarded (0 of the 113 originals changed).
+# ⚠️ This file is W4's. It has NO HEAD version (new since 09-19), so a three-blob check reads
+#    INCONCLUSIVE by design; index == worktree.
+products/P7-TanitEval/benchmarks/published_results.json
+
+## 2026-09-26 batch 3 — Master Mind item 5 (the one-copy frame set)
+
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/code/write_manifest.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-20-navhard-stage1-extract/raw/MANIFEST_stage1_frames.json
+
+# ⛔ EXISTS IN ONE PLACE ONLY, off-repo, NOT covered by any commit:
+#    C:/Users/Admin/tanitad-caches/navhard-stage1-frames-20260920
+#    3,375 files · 76 logs · 711,722,316 bytes · sha256 per file in the manifest above.
+#    Provenance: extracted from the sha256-verified navtest camera archives (32 shards,
+#    127,882,665,618 B); reproducible from them in ~1.5-2 h if lost. Relocating it (e.g. private HF)
+#    is a quota/spend decision for the PI and has NOT been done.

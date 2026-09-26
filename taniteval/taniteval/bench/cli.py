@@ -43,6 +43,12 @@ def build_parser() -> argparse.ArgumentParser:
                             "The results tree is APPEND-ONLY: a run is never deleted, so a run you do not want on "
                             "the leaderboard goes here (or is tombstoned afterwards).")
         p.add_argument("--ram-floor-mb", type=float, default=3000.0)
+        p.add_argument("--gpu-mem-limit-mib", type=float, default=None,
+                       help="max FOREIGN GPU memory (MiB) that still counts as a gap; default 1024, "
+                            "or $TANITAD_GPU_MEM_LIMIT_MIB. On a DESKTOP box the idle compositor holds "
+                            "1,175-5,812 MiB, so the 1,024 default can never be satisfied and every "
+                            "model arm silently falls back to CPU; the PI's gate for this box is 4300. "
+                            "A live training process still REFUSES regardless of this value.")
         p.add_argument("--accept-training-box-load", action="store_true",
                        help="run OUR-MODEL inference on CPU although a training process is alive "
                             "(orchestrator arbitration 2026-09-20). The flag AND the accepted training PIDs are "
