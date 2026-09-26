@@ -647,3 +647,26 @@ nothing is masked (the property that makes the change safe for VAD). **71 nuScen
 
 ⇒ **Both nuScenes protocols now reproduce PARA-Drive's published GT-collision floors: UniAD within 0.6–4.4 %,
 VAD within 1.5–3.0 %.** Two genuine harness defects, each pre-registered and externally confirmed.
+
+## §22 W6's first-contact pre-registration — all THREE sample counts now reproduced from real data
+
+§17 reproduced two of W6's three pre-registered counts through the benchmark; the third (**4,819**, the ST-P3
+pipeline / AD-MLP rule) has no named protocol in the CLI's closed set. ⚠️ It must not be "confirmed" with
+`expected_sample_counts()` — that function is pure ARITHMETIC (6,019 − 8·150) and reads no data, so calling
+it would echo the formula back and pass by construction. The measurement is `sample_sets()` on the real
+metadata, which flags every actual sample per pipeline and applies ST-P3's **scene blacklist**, which the
+formula ignores.
+
+MEASURED 2026-09-26 (`Meta.load` + `sample_sets(meta, DEVKIT_VAL_SCENES)`, 150 val scenes, 114 s):
+
+| pipeline | measured | formula | published |
+|---|---|---|---|
+| UniAD | 6,019 | 6,019 | — |
+| VAD | **5,119** | 5,119 | **5,119** (BEV-Planner, 2312.03031 App.) |
+| ST-P3 | **4,819** | 4,819 | **4,819** (AD-MLP, 2305.10430 §3.3) |
+
+Control: UniAD and VAD equal the counts the benchmark itself measured in §17. ⭐ **No val scene is on the ST-P3
+blacklist** — measured, not assumed — which is why the blacklist-blind formula agrees with the real data path
+on val. ⚠️ That is a property of val: on train the blacklist removes scenes, and the formula would over-count.
+⇒ W6's pre-registered first-contact checks (6,019 / 5,119 / 4,819) are **fully reproduced**, and both published
+counts match exactly.
