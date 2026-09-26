@@ -23,6 +23,9 @@ import sys
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import model_stamp6 as M6  # noqa: E402
+
 W3RAW = "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/raw"
 FLOORS = {"CV": f"{W3RAW}/CV_navtest/CV_navtest.csv", "STOP": f"{W3RAW}/STOP_navtest/STOP_navtest.csv",
           "HUMAN": f"{W3RAW}/HUMAN_navtest/HUMAN_navtest.csv",
@@ -33,8 +36,16 @@ TERMS = {"NC": "no_at_fault_collisions", "DAC": "drivable_area_compliance", "EP"
          "DDC": "driving_direction_compliance", "PDMS": "score"}
 
 
-#: every refcv6 number carries this stamp (Master Mind, 2026-09-26)
-MODEL_STAMP = ('"F3 detach-only, F4 on the last layer only" — Master Mind audit 2026-09-26 (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; landed 9d16c441): the F3 per-stage cascade loss never ran (decoder stages 0-2 frozen at init) and tactical labels are read ~0.37 s early; INHERITED')
+
+
+def _step_from_bridge(bridge: str):
+    """The checkpoint step, read from the R6_A1 seam manifest the bridge wrote (None if absent)."""
+    try:
+        m = json.load(open(os.path.join(bridge, "seam_R6_A1.manifest.json"), encoding="utf-8"))
+        return (m.get("model") or {}).get("step")
+    except Exception:                                                     # noqa: BLE001
+        return None
+
 
 def read(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -90,7 +101,8 @@ def main(argv=None) -> int:
             raise SystemExit(f"⛔ {k} lacks {len(miss)} of the refcv6 tokens — not paired")
     clusters = [tok2log[t] for t in toks]
     out = {"_label": a.label, "protocol": "PDMS_v1_navtest", "n_tokens": len(toks),
-           "model_as_trained": MODEL_STAMP,
+           "model_as_trained": M6.stamp(_step_from_bridge(a.bridge) if a.bridge else None),
+           "checkpoint_step": _step_from_bridge(a.bridge) if a.bridge else None,
            "tokens_subset": os.path.abspath(a.tokens) if a.tokens else None,
            "n_logs": len(set(clusters)), "floors_source": FLOORS,
            "estimator": {"name": ci.ESTIMATOR, "paired": ci.PAIRED_ESTIMATOR,

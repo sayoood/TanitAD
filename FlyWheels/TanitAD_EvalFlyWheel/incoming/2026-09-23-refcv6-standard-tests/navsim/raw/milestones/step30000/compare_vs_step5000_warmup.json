@@ -1,0 +1,35 @@
+{
+ "what": "R6_A1 step 5000 -> step 30000 on warmup",
+ "a": "raw/milestones/step5000",
+ "b": "raw/milestones/step30000",
+ "step_a": 5000,
+ "step_b": 30000,
+ "device_a": "cpu fp32",
+ "device_b": "cpu fp32",
+ "same_device": true,
+ "model_as_trained_a": "\"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early\" (steps <= 34,500: the F3 per-stage cascade loss never ran, decoder stages 0-2 frozen at init; Master Mind audit 2026-09-26, GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST / D-REFCV6-LABEL-CLOCK; INHERITED)",
+ "model_as_trained_b": "\"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early\" (steps <= 34,500: the F3 per-stage cascade loss never ran, decoder stages 0-2 frozen at init; Master Mind audit 2026-09-26, GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST / D-REFCV6-LABEL-CLOCK; INHERITED)",
+ "S2_EPDMS_u_a": 0.3965612212704268,
+ "official_two_stage_EPDMS_a": {
+  "status": "UNAVAILABLE",
+  "reason": "stage-1 rows are the declared CV stand-in (no original stage-1 frames for this split on this box)",
+  "n": 16
+ },
+ "seed_floor_a": 0.015712511661176487,
+ "S2_EPDMS_u_b": 0.4752783245953191,
+ "official_two_stage_EPDMS_b": {
+  "status": "UNAVAILABLE",
+  "reason": "stage-1 rows are the declared CV stand-in (no original stage-1 frames for this split on this box)",
+  "n": 16
+ },
+ "seed_floor_b": 0.010835327960747876,
+ "delta_S2_EPDMS_u": 0.07871710332489229,
+ "scene_wtl_stage2": {
+  "win": 85,
+  "tie": 82,
+  "loss": 37,
+  "n": 204
+ },
+ "interval": "UNAVAILABLE by design (warmup: 7 logs < the 8-cluster floor)",
+ "exceeds_both_seed_floors": true
+}

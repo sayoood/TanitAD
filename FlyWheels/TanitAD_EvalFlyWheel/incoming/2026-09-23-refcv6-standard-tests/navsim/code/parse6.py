@@ -26,6 +26,9 @@ import sys
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import model_stamp6 as M6  # noqa: E402
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
 E2 = os.path.abspath(os.path.join(PKG, "..", "..", "2026-09-19-navsim-refcv4b-bridge"))
@@ -45,8 +48,16 @@ PAIRS = [("R6_A1", "CV_official", "A1 vs CV"), ("R6_A1", "STOP_zero", "A1 vs STO
          ("STOP_zero", "CV_official", "STOP vs CV (floor ordering)")]
 
 
-#: every refcv6 number carries this stamp (Master Mind, 2026-09-26)
-MODEL_STAMP = ('"F3 detach-only, F4 on the last layer only" — Master Mind audit 2026-09-26 (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; landed 9d16c441): the F3 per-stage cascade loss never ran (decoder stages 0-2 frozen at init) and tactical labels are read ~0.37 s early; INHERITED')
+
+
+def _step_from_bridge(bridge: str):
+    """The checkpoint step, read from the R6_A1 seam manifest the bridge wrote (None if absent)."""
+    try:
+        m = json.load(open(os.path.join(bridge, "seam_R6_A1.manifest.json"), encoding="utf-8"))
+        return (m.get("model") or {}).get("step")
+    except Exception:                                                     # noqa: BLE001
+        return None
+
 
 def _load_mod(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -106,7 +117,8 @@ def main(argv=None) -> int:
     log_of = {t: r["log_name"] for t, r in doc["tokens"].items()}
     mapping = doc["reactive_all_mapping"]
     out = {"_label": a.label, "split": a.split,
-           "model_as_trained": MODEL_STAMP,
+           "model_as_trained": M6.stamp(_step_from_bridge(a.bridge)),
+           "checkpoint_step": _step_from_bridge(a.bridge),
            "_primary": "S2-EPDMS-u (E2 SPEC §2) + the official two-stage EPDMS where the arm's "
                        "stage-1 rows are its own", "arms": {}, "pairs": {}}
     arms = {}

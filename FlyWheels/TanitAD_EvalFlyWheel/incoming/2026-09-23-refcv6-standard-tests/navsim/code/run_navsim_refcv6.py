@@ -230,12 +230,24 @@ def main(argv=None) -> int:
         arms = over.get(sk, sp["arms"])
         dev = a.device
         if dev == "auto":
+            # ⚠️ MEASURED 2026-09-26: with the box at 97 % CPU (five sessions) a CPU bridge ran at
+            # 4.6 s/scene — a full navtest split (12,146) ≈ 15 h and navhard (2 × 5,912) ≈ 16 h on CPU
+            # vs ~1 h / ~2.5 h on the card. For those two EXPENSIVE splits a longer wait for the
+            # brief's gate (default 3 h, env R6_EXPENSIVE_GPU_WAIT_S) bounds the downside at +3 h and
+            # wins ~10 h whenever the card frees; the cheap splits keep --gpu-wait-s.
+            wait_s = a.gpu_wait_s
+            if (sk == "navhard" or (sk == "navtest" and not a.tokens_navtest)):
+                wait_s = max(wait_s, int(os.environ.get("R6_EXPENSIVE_GPU_WAIT_S", "10800")))
             t0 = time.time()
             ok = gate_ok()
-            while not ok and time.time() - t0 < a.gpu_wait_s:
+            if not ok:
+                log(f"GPU gate closed at the start of {sk}: waiting up to {wait_s} s", qlog)
+            while not ok and time.time() - t0 < wait_s:
                 time.sleep(60)
                 ok = gate_ok()
             dev = "cuda" if ok else "cpu"
+            log(f"device for {sk}: {dev} (gate {'open' if ok else 'closed'} after "
+                f"{int(time.time() - t0)} s)", qlog)
         elif dev == "cuda":
             # an EXPLICIT --device cuda still obeys the brief's gate before ANY CUDA work (the K0/KD
             # pytest included): wait up to --gpu-wait-s, else fall back to CPU and say so
@@ -433,6 +445,15 @@ def main(argv=None) -> int:
             summary["cuda_controls"] = prev["cuda_controls"]
     with open(msp, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=1)
+    # the step-to-step read: this milestone vs the first RESULT reading (step 5,000), per split run
+    # here, when both carry R6_A1 on the split (code/step_compare.py; never re-scores)
+    ref = os.path.join(PKG, "raw", "milestones", "step5000")
+    if step > 5000 and os.path.exists(os.path.join(ref, "MILESTONE_SUMMARY.json")):
+        for sk in [s_ for s_ in a.splits.split(",") if s_]:
+            if os.path.exists(os.path.join(ref, f"summary_{sk}.json")) and                     os.path.exists(os.path.join(out, f"summary_{sk}.json")) and not a.tokens_navtest:
+                run([PY, os.path.join(HERE, "step_compare.py"), "--split", sk, "--a", ref, "--b", out,
+                     "--out", os.path.join(out, f"compare_vs_step5000_{sk}.json")], env,
+                    os.path.join(out, f"compare_vs_step5000_{sk}.log"))
     run([PY, os.path.join(HERE, "bars6.py"), "--milestone", out], env,
         os.path.join(out, "bars.log"))
     log(f"DONE bars={'present' if os.path.exists(os.path.join(out, 'BARS.json')) else 'ABSENT'}",

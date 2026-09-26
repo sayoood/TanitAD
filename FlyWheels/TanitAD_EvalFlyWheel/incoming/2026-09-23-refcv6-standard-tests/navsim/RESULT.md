@@ -12,14 +12,17 @@ Every number is **MEASURED by this stream** unless marked; its artifact is named
 every NavSim row: tier **T1-family**; stage-1 loop **OPEN**; stage 2 **UNRULED**; v2 background
 **IDM-reactive**, v1 **non-reactive (logged)**; ⛔ never closed loop; **zero-shot** (PhysicalAI-AV B1 →
 nuPlan cameras, 3-camera stitch); the **device + precision** of every refcv6 row is stated beside it
-(amendment A3: one device per split). ⚠️ **Model-as-trained stamp on EVERY refcv6 number: "F3
-detach-only, F4 on the last layer only"** — the Master Mind's audit of the live run (2026-09-26,
-`GOALS_AND_CLAIMS` D-REFCV6-F3-WHITELIST and D-REFCV6-LABEL-CLOCK, landed `9d16c441`; INHERITED, not
-re-verified by this stream): the F3 per-stage cascade loss has never run (decoder stages 0–2 frozen
-at initialisation) and tactical labels are read ~0.37 s early. The run continues unchanged unless
-the PI decides otherwise; this stream scores the model as built.
+(amendment A3: one device per split). ⚠️ **Model-as-trained stamp on EVERY refcv6 number — STEP-AWARE**
+(`code/model_stamp6.py`, written into every summary and BARS file): steps **≤ 34,500** (5,000, 30,000)
+= **"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"**; the FINAL (after
+34,500) = **"hybrid: F3 cascade loss + true label clock from step 34,500"**. Source: the Master Mind's
+audit (`GOALS_AND_CLAIMS` D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK, landed `9d16c441`) and the PI's
+ruling of 2026-09-26 13:30 Berlin ("Stop now, resume with fixes": stopped at the 34,500 checkpoint,
+resumed on commit `82c2331`) — INHERITED, not re-verified here. ⛔ A pre- vs post-switch comparison
+mixes further training with the fixes: never attribute it to the fixes alone (`step_compare.py`
+flags it).
 
-## 0. Headline (status 2026-09-26 ~10:00Z — updated as checkpoints land)
+## 0. Headline (status 2026-09-26 ~12:00Z — updated as checkpoints land)
 
 **PROVEN.** (1) The NavSim harness still reads its known values on ALL THREE splits through this
 package's own drivers — warmup CV/STOP/ECHO vs E2, navhard CV vs W7 (KH-nav), navtest STOP vs W3
@@ -34,11 +37,14 @@ stops. Vision is the one input lever beyond inference noise (warmup A1 − BLIND
 single-term ceiling (navhard stage 2 +0.170, navtest +11.1), and on navtest the deficit sits at 2–5
 m/s, where the selected plan travels 1.21× the human's 4 s distance and 55.7 % of the plans that
 overshoot the human by > 2 m are at-fault collisions — speed bias +0.68 m/s (four families).
-(5) The max-speed input is INERT at step 5,000 (200/200 navtest plans bit-identical with it
+(5) **Step 30,000 (mid-run, warmup, same device as 5,000): S2-EPDMS-u 0.3966 → 0.4753 (+0.079,
+beyond both seed floors)** — it now beats CV (+0.078) and ECHO (+0.047) but still loses to STOP
+(−0.046): BAR-R6-W1 still FAILS. navtest / navhard @ 30,000 are running. (6) The max-speed input is INERT at step 5,000 (200/200 navtest plans bit-identical with it
 withheld; its oracle definition moves 8/200, inside the seed floor) — the ARGMAX ceiling filter the
 run's config declares is not built (§6.7).
 
-**Read every refcv6 number above as "F3 detach-only, F4 on the last layer only"** (header stamp).
+**Read every refcv6 number above with its step-aware stamp** (header): 5,000 and 30,000 are
+"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early".
 
 **NOT PROVEN / NOT YET MEASURED.** The mid-run (30,000) and FINAL readings — running / armed,
 unattended (§9). The
@@ -338,6 +344,48 @@ all inside it. Plan level (`plan_deltas_warmup.json`): seed replicate 4 s endpoi
 102/204 stage-2 scenes score 0; unique zeros DAC 36, NC 16; single-term ceilings **DAC +0.135** >
 EP +0.050 > NC +0.048 (`decomposition_warmup.json`) — the same ranking as navhard and navtest.
 
+### 3.4 Step 30,000 — the mid-run reading (in progress; stamp: "F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early")
+
+`ckpt_30000.pt`, md5 `0c5c67b3ecf28495d54348e3436371bf` (Thor `md5sum` == dev box, fetched read-only
+2026-09-26T09:55Z). Run by the results lane (`code/campaign_0926.sh` → `milestone_waiter.sh 30000`).
+
+**warmup_two_stage @ 30,000 — CPU fp32, exact dedup, all six arms — reviewed 2026-09-26.** Every
+arm 220 / 0 / 220, seam calls == declaration (204 refcv6 + 16 declared CV stand-ins; BLIND 220
+own); one E1 RAM-guard abort (another session's pytest runs) retried and PASSED; harness control:
+CV / STOP / ECHO reproduced bit-exactly (§1).
+
+| warmup @ 30,000 | device | S2-EPDMS-u | stop frac | NC | DAC | DDC | EP | TTC |
+|---|---|---|---|---|---|---|---|---|
+| **R6_A1** | CPU fp32 | **0.4753** | 0.000 | 0.757 | 0.824 | 0.865 | 0.863 | 0.716 |
+| R6_A1_s1 (seed 1) | CPU fp32 | 0.4644 | 0.000 | 0.757 | 0.828 | 0.873 | 0.855 | 0.721 |
+| R6_BLIND (own stage 1: official 0.0000) | CPU fp32 | 0.1924 | 0.000 | 0.684 | 0.324 | 0.395 | 0.685 | 0.637 |
+| R6_NAVOFF | CPU fp32 | 0.4915 | 0.000 | 0.779 | 0.804 | 0.855 | 0.846 | 0.716 |
+| R6_VMAXOFF | CPU fp32 | 0.4748 | 0.000 | 0.757 | 0.824 | 0.865 | 0.862 | 0.716 |
+| R6_A1NT | CPU fp32 | 0.4772 | 0.000 | 0.757 | 0.824 | 0.868 | 0.860 | 0.716 |
+| CV / STOP / ECHO (floors) | model-free | 0.3971 / **0.5212** / 0.4287 | — / 1.000 / — | | | | | |
+
+Seed floor **0.0108**. A1 − STOP **−0.0460** (W/T/L 101/33/70) ⇒ **BAR-R6-W1: FAILED** (the margin is
+4× the seed floor, below zero). A1 − CV **+0.0781**, A1 − ECHO **+0.0465** — both beyond the seed
+floor: at 30,000 refcv6 beats every model-free floor except STOP on warmup.
+
+**5,000 → 30,000 on the SAME device** (`compare_vs_step5000_warmup.json`, both CPU fp32, both
+pre-switch): S2-EPDMS-u **+0.0787** (0.3966 → 0.4753), scene W/T/L 85 / 82 / 37, beyond BOTH seed
+floors (0.0157, 0.0108) — a training effect by this rig's own standard (inference and LOG draws;
+training variance untested, one run). The ladder moved: DAC's single-term ceiling fell from +0.135 to
+**+0.056**, NC is now first (+0.071); by command STRAIGHT (193 scenes) is at −0.031 vs STOP (was
+−0.127), LEFT (11) at −0.463 (was −0.360).
+
+Lever reads at 30,000 vs the seed floor (0.0108): **vision A1 − BLIND +0.283** (the frames-blind arm
+collapses: DAC 0.324); **nav A1 − NAVOFF −0.0162 — withholding the command IS BETTER, beyond the
+floor**, and the gain sits on STRAIGHT commands (+0.024 on 193 scenes; on the 11 LEFT scenes NAVOFF is
+worse, 0.068 vs 0.197). The NavSim "straight" command enters as the v7 `follow` token; NAVOFF gives the
+tactical decoder an all-zero nav row. ⚠️ Warmup is 7 logs, no interval; this is a lever READ, not a
+claim — navhard / navtest carry no NAVOFF arm (SPEC §3). Max speed A1 − VMAXOFF +0.0005 (2/202/0);
+time construction −0.0020 — both inside the floor.
+
+**navtest @ 30,000 and navhard @ 30,000:** ⏳ running — the navtest split waits up to 3 h for the GPU
+gate (another session holds the card) before a ~15 h CPU pass (§9).
+
 ## 4. Deliverable 4 — navtest v1 PDMS
 
 **Data: ALL ON THIS BOX — nothing to download.** Probed twice (the receipt AND the disk):
@@ -500,10 +548,11 @@ tokens (not PhysicalAI clip ids).
 
 | artifact | where | single location? |
 |---|---|---|
-| SPEC / PLAN / RESULT / COMMS, `code/` (22 scripts), `tests/` (5 suites) | repo: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/` (via LANDING_READY) + ev6 working tree | no |
+| SPEC / PLAN / RESULT / COMMS, `code/` (38 scripts), `tests/` (5 suites) | repo: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/` (via LANDING_READY) + ev6 working tree | no |
 | harness controls (warmup CV/STOP/ECHO, KH-nav, KH-navtest), KD/KL/KDET/KDEC, plan deltas, runner check | repo: `…/navsim/raw/controls/`, `raw/harness_repro*/`, `raw/floors/` | no |
 | step-1,000 pipeline validation (warmup 6 arms, navhard, navtest sub200 + diagnostics) | repo: `…/navsim/raw/{bridge,scores}_*_s1000/`, `raw/summary_*_s1000.json`, `raw/navtest_s1000_sub200/` | no |
-| step-5,000 reading (navhard 2 arms, navtest full + 4 diagnostic arms; warmup re-running) | repo: `…/navsim/raw/milestones/step5000*/` | no |
+| step-5,000 reading (warmup 6 arms, navhard 2 arms, navtest full + 4 diagnostic arms) | repo: `…/navsim/raw/milestones/step5000*/` | no |
+| step-30,000 reading (warmup 6 arms + `compare_vs_step5000_warmup.json`; navtest / navhard running) | repo: `…/navsim/raw/milestones/step30000*/` (as each split is reviewed) | no |
 | scorer logs (`score_*.log`, `r6*.log`) | ev6 + D: package only (UUIDs ⇒ never landed) | ⚠️ local only |
 | seam `.npz` files under `raw/milestones/*/bridge_*/` | ev6 only (rebuildable from the landed `rows_*.jsonl`) | ⚠️ single location |
 | 416 frame banks: warmup / navhard s1 / navhard s2 (10.4 GB) | `C:/Users/Admin/tanitad-caches/refcv6-navsim-20260923/` | ⚠️ single location (rebuildable: `code/frames416.py`, `code/build_navhard_frames.sh`) |
@@ -514,17 +563,28 @@ tokens (not PhysicalAI clip ids).
 
 ## 9. Where this stopped, and what runs unattended
 
-**Hand-off state 2026-09-26 ~08:40Z** (resumed 07:48Z after the weekly-limit stop of 2026-09-24
-02:38Z; everything the stop left running had finished and was reviewed, §3.3 / COMMS D20).
+**Hand-off 2026-09-26 ~12:00Z** (resumed 07:48Z after the weekly-limit stop of 2026-09-24 02:38Z).
+DONE and banked in this session: every unattended output of 09-24 reviewed; step 5,000 on all three
+splits (warmup re-run); harness controls on all three splits; step 30,000 warmup; the runner fixes
+(D15–D17, D23–D24); landing batches 1–4. RUNNING, unattended:
 
-| lane | script → log | does | done-marker |
+| lane | script → log | does now / next | done-marker |
 |---|---|---|---|
-| results | `code/campaign_0926.sh` → `raw/campaign_0926.log` | warmup @ 5,000 (re-run, CPU after the gate wait) → `milestone_waiter.sh 30000` (fetch read-only + md5; warmup → navtest + 200-token diagnostics → navhard) → `raw/milestones/waiter_30000.log` | `ZZCAMPAIGN0926DONEZZ` |
-| precision | `code/kp_lane.sh` → `raw/kp_lane.log` | KP (step 1,000 warmup, CUDA vs CPU) then KP-navtest (step 5,000, 200 tokens) — only when the GPU gate opens (≤ 24 h) | `ZZKPLANEDONEZZ` |
-| final | `code/milestone_waiter.sh final` → `raw/milestones/waiter_final.log` | polls Thor every 10 min (read-only `cat summary.json`); after `"done": true` fetches `ckpt.pt` (md5 before / after / dev box) and runs all three splits + diagnostics | `ZZMILESTONEfinalDONEZZ` |
+| results | `code/campaign_0926.sh` → `raw/campaign_0926.log`, `raw/milestones/waiter_30000.log`, `raw/milestones/step30000/runner.log` | **navtest @ 30,000** (waits ≤ 3 h for the GPU gate from 11:44Z, else CPU ≈ 15 h at today's 97 % box load) → 200-token diagnostics (4 arms) → **navhard @ 30,000** (2 arms; ≤ 3 h gate wait, else CPU ≈ 16 h); every phase copies its outputs to D: (copy-only) and writes `compare_vs_step5000_<split>.json` | `ZZMILESTONE30000DONEZZ`, then `ZZCAMPAIGN0926DONEZZ` |
+| final | `code/milestone_waiter.sh final` → `raw/milestones/waiter_final.log` | polls Thor every 10 min (read-only `cat summary.json`); the run resumed at 34,500 on 82c2331 in the SAME run dir (checked read-only 11:45Z: step 34,571) and ends ≈ 2026-09-27 17:30Z; then fetches `ckpt.pt` (md5 before / after / dev box) and runs warmup → navtest (+diagnostics) → navhard | `ZZMILESTONEfinalDONEZZ` |
+| precision | `code/kp_lane.sh` → `raw/kp_lane.log` | KP + KP-navtest, only when the GPU gate opens (≤ 24 h from 08:02Z) | `ZZKPLANEDONEZZ` |
 
-Every unattended output is COPIED to the D: package (copy-only, no git) but is **not** declared
-landing-ready until an agent has reviewed it: count guards (`*.counts.json` PASS, successful ==
-expected, failed 0, seam calls == declaration), stand-ins (0 on navhard/navtest), device + precision
-per split (`seam_*.manifest.json`), the seed replicate, and the harness control on the split — then
-`python code/stage_to_repo.py --only <globs> --landing "<heading>"` and a message to the Master Mind.
+⚠️ If the 30,000 lane is still running when the FINAL starts, the two compete for the CPU / card; the
+FINAL is the headline — stopping the results lane then (kill `campaign_0926.sh` and its runner by
+explicit PID) and resuming 30,000 later loses nothing (every bridge resumes from its rows, every
+scored arm is skipped by its counts).
+
+⚠️ The FINAL is rebuilt with the KIT's `config.json`: the resumed run's config (scp'd read-only
+2026-09-26) differs from it only by `--clip-clock-sidecar` (a training-data input) plus the
+`data_order` / `label_clock` records — no model-construction flag — and `load_refcv6`'s strict load
+(0 missing / 0 unexpected) is the check that would go RED if that were wrong.
+
+**To resume this stream** (any agent): read this section, then for each finished lane review its
+outputs as D20 lists (count guards, stand-ins, device + precision per split, the seed replicate, the
+harness control per split), add the reading to §3 with its step-aware stamp, run
+`python code/stage_to_repo.py --only <paths> --landing "<heading>"`, and message the Master Mind.
