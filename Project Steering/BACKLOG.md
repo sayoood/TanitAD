@@ -446,3 +446,11 @@ register rows carry them. The fix itself cannot close the following:
     Decide whether that was intended, from the SPEC and the train-time transform, before anyone "fixes" it.
   - (2) 6 attention key/memory sources read UNRESOLVED in the low-memory mode. Name them with one `Q3_KEEP_ALIVE=1` run when the dev box
     has ≥ 16 GB free (post-FINAL).
+
+- 2026-09-26 **D-REFCV6-EQUALIZE-DROPPED** (owner: Arch). Evidence: `…/2026-09-26-refcv6-frozen-trunk-audit/code/eq_probe.py`.
+  - The problem: `--equalize-bottom-rows` is dropped from the trunk by the `--image-hw` `dataclasses.replace` rebuild
+    (`refc_v3_train.py:381` vs `:459`; the field is undeclared on `CNNEncoderConfig`).
+  - Fix it for the next run: declare the field; add a post-build assert that the trunk equalises exactly what argv says;
+    add a test via `_pin_trainer_cfg` + `--image-hw`, with a mutation arm.
+  - Audit every OTHER ad-hoc `cfg.core.encoder.<x> = ...` in `_pin_trainer_cfg` for the same loss. Any undeclared attribute
+    set before line 459 dies the same way.

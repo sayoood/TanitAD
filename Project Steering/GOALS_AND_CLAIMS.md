@@ -16011,3 +16011,31 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 - The growing L2 gain says the kinematic-prior complementarity persists as the model trains, which supports
   `H-REFCV6-RESIDUAL-PRIOR`. SPEC A6 (the train-fitted blend) is next in the battery queue.
 - The FINAL (post-switch, "hybrid") runs Sunday night. navhard @30k has been running since 19:21 Berlin.
+
+<!-- D-REFCV6-EQUALIZE-DROPPED-2026-09-26 -->
+### 2026-09-26 — refcv6's `--equalize-bottom-rows 43` never reached the image trunk (a declared lever silently dropped)
+
+| id | claim | evidence | status |
+|---|---|---|---|
+| **D-REFCV6-EQUALIZE-DROPPED** | The C26 trunk equalisation of the rig-correlated black strip (`--equalize-bottom-rows 43`, in refcv6-r101-s0's argv and `config.json`) was **never applied to the image trunk**, before or after the A16 switch. The mechanism is below the table. | MEASURED 2026-09-26 by the Master Mind, CPU, no checkpoint: `…/2026-09-26-refcv6-frozen-trunk-audit/code/eq_probe.py`. The probe was built exactly as the trainer builds it, from the run's own argv on the as-launched tree. See the measured chain below the table. The audit's Q3 on the real checkpoint agrees: `equalize_calls` 0, and the stem input equals the un-equalised reference with max abs diff **0.0**. The fix tree 82c2331 carries the same two lines (`:381`, `:459`). | **OPEN — a defect.** Train and eval are CONSISTENT (both off), so every banked eval stays valid for the model as trained. What is wrong is the run's RECORD, and C26's purpose is unrealised. |
+
+**The mechanism.**
+- `_pin_trainer_cfg` sets `cfg.core.encoder.trunk_equalize_bottom_rows` as an UNDECLARED attribute (`refc_v3_train.py:381`).
+- The `--image-hw` rebuild then replaces the encoder config with `dataclasses.replace` (`:459`), which carries only DECLARED fields. `CNNEncoderConfig` (`refc.py:304`) declares none of that name.
+- So the trunk is built with `equalize_bottom_rows = 0` (`refc.py:1455`).
+- The perception LIFT does receive 43 (`config.json` `refcv6_perception.equalize_bottom_rows`), so C26 is half-applied.
+
+**The measured chain (`eq_probe.py`):**
+- `args.equalize_bottom_rows` is 43;
+- after the pin, `cfg.core.encoder.trunk_equalize_bottom_rows` is MISSING (not a declared field);
+- `trunk.cfg.equalize_bottom_rows` is 0;
+- after one `normalise` call, `equalize_calls` is 0 and the bottom 43 rows are not zeroed.
+
+**Same class as `D-REFCV6-F3-WHITELIST` and `D-REFCV6-CONFIG-BUILD`:** a lever declared in the config that the built model does not have.
+
+**Fix, for the NEXT run; the live run is not touched:**
+- declare `trunk_equalize_bottom_rows: int = 0` on `CNNEncoderConfig`;
+- after the build, ASSERT `trunk.cfg.equalize_bottom_rows == args.equalize_bottom_rows` and refuse otherwise;
+- add a test through `_pin_trainer_cfg` with `--image-hw`, with a mutation arm that removes the field and must go RED.
+
+**Quote every refcv6-r101-s0 number with "trunk C26 equalisation OFF (declared 43, dropped)".**
