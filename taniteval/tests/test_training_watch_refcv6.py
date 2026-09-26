@@ -289,3 +289,17 @@ def test_a_SUBSET_navtest_shows_its_own_n_and_keeps_the_qualifier(tmp_path, monk
             '(SUBSET — not the published split)</span>') in page
     assert "bar: FAIL (SUBSET — not the published split)" in page   # and the summary line carries it too
     assert "12k tokens" not in page                              # no fixed label that would mislabel a subset
+
+
+def test_a_run_STOPPED_by_the_PI_reads_stopped_not_NOT_RUNNING(tmp_path, monkeypatch):
+    """2026-09-26: the PI stopped refcv6-r101-s0. A stopped run is not an outage: the chip must say so, and no
+    finish time may be quoted for a run that will never reach its planned end."""
+    d = _run_dir(tmp_path, trainer_alive=False)
+    st = json.loads((d / "remote_state.json").read_text(encoding="utf-8"))
+    st["sup_alive"], st["stopped"] = "0", "1"
+    (d / "remote_state.json").write_text(json.dumps(st), encoding="utf-8")
+    mod = _load(monkeypatch, d)
+    page, summary = mod.build()
+    assert summary["stopped"] is True and summary["done"] is False
+    assert "stopped by the PI" in page and "NOT RUNNING" not in page
+    assert "Stopped by the PI." in page and "finish ≈" not in page

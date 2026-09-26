@@ -16039,3 +16039,12 @@ PI_DECISION_QUEUE, 2026-09-26 yaw item).
 - add a test through `_pin_trainer_cfg` with `--image-hw`, with a mutation arm that removes the field and must go RED.
 
 **Quote every refcv6-r101-s0 number with "trunk C26 equalisation OFF (declared 43, dropped)".**
+
+<!-- REFCV6-STOPPED-REFCV7-REGISTERED-2026-09-26 -->
+### 2026-09-26 — refcv6-r101-s0 STOPPED by the PI; refcv7 registered with a binding launch gate
+
+| id | record | evidence | status |
+|---|---|---|---|
+| **D-REFCV6-STOPPED** | The PI stopped refcv6-r101-s0: *"go with b, stop refcv6, do all fixes, build refcv7, validate the setup again and retrain"*. It was stopped at step **38,250** (the last logged training row). The last checkpoint is step **38,000**, md5 `5a2e7222a9f5f8c7aa7bf38ef4698d8a`: 3-way verified, 1,101 tensors, 0 non-finite. It is being uploaded PRIVATE to the PI's HF account as `Sayood/tanitad-refcv6-r101-s0`, with a model card stating all four defects. The upload was IN PROGRESS at this landing; a verification line follows when every file is verified by size. There is **no FINAL** for refcv6: Thor holds `STOPPED_BY_PI.json` and deliberately no `summary.json`. | MEASURED; `D:/refcv6_eval_kit/ckpt_final/` | DONE |
+| **SPEC-REFCV7** | refcv7 = refcv6 + FIX-1..5 (the F3 cascade, the label clock + G3, the trunk equalise, the selection terms BUILT, the guard blind spots) + NEW-1 (the plan is a residual on the causal kinematic prior). Bars are pre-registered: BAR-R7-1 (beats the echo at 0-2 s), R7-2 (beats refcv6@38k), R7-3 (6 s non-regression), R7-N1 (NavSim navtest > STOP, full split). | `Project Steering/SPEC_REFCV7.md` | REGISTERED, before any code or number |
+| **D-LAUNCH-GATE** | ⛔ BINDING from now on: **no training run starts without a launch-gate PASS token** bound to (commit, argv sha256, data sha256s). The supervisor refuses without it. The checks are G-HYG, G-DVB, G-LIVE, G-CLOCK, G-EVAL, G-CKPT and G-SUITE, each with a deliberate-regression arm that must FAIL the gate. | SPEC_REFCV7 §2; the CLAUDE.md binding section | BINDING (PI 2026-09-26) |

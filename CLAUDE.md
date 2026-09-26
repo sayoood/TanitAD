@@ -1282,3 +1282,29 @@ and ⛔ never extended to longitudinal, lateral or tactical, which keep full for
 the pause; lifting it is the PI's call (`verdict_refcv6.py --unpause-strategic` restores S1).
 ⛔ **Nav is an INPUT at training AND inference** — stated by the PI many times; it is not an oracle
 that disappears at deployment.
+
+## ⛔ BINDING — NO TRAINING LAUNCH WITHOUT A LAUNCH-GATE PASS (PI, 2026-09-26)
+
+**PI, verbatim:** *"Assure that this is not happening again because we lost a lot of time and energy. If we are starting a training session, we are sure about the correctness of the config."*
+
+refcv6 trained with three config-vs-build defects, each found by hand, weeks late, and each costing GPU-days:
+- the per-stage loss was absent for 34,500 steps;
+- a declared image equalisation was dropped for all 38,250 steps;
+- 2 of 3 declared selection mechanisms were never built.
+
+The PI stopped it. From now on:
+
+1. **No training run starts without a PASS token** from `stack/scripts/launch_gate.py`, bound to the exact commit, argv sha256 and data-manifest sha256s.
+   - The supervisor REFUSES to start the trainer without a matching token.
+   - A token is never hand-written or hand-edited.
+2. **The gate's checks** (`Project Steering/SPEC_REFCV7.md` §2):
+   - **G-HYG:** config dataclasses refuse undeclared attributes.
+   - **G-DVB:** every argv lever equals the built model's value.
+   - **G-LIVE:** a real-data smoke in which every declared loss term appears with a finite value and every trainable group gets a gradient.
+   - **G-CLOCK:** label time.
+   - **G-EVAL:** the eval loader builds the identical model.
+   - **G-CKPT:** checkpoint round-trip.
+   - **G-SUITE:** clean-tree tests with 0 regressions.
+   - Each check has a deliberate-regression arm that must make the gate FAIL.
+3. **A new trainer flag without a G-DVB entry is refused by the gate itself.** Adding a lever means adding its check.
+4. **A config that DECLARES a lever the model does not BUILD is a launch blocker, never a footnote.**

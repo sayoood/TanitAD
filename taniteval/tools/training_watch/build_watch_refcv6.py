@@ -103,6 +103,8 @@ def pull() -> None:
         'echo "K:stderr_bytes=$(stat -c %s $O/train.stderr.log 2>/dev/null || echo -1)"',
         'echo "K:ckpt=$(stat -c \'%s %Y\' $O/ckpt.pt 2>/dev/null)"',
         'echo "K:done=$(test -e $O/summary.json && echo 1 || echo 0)"',
+        # the PI's stop (2026-09-26) writes STOPPED_BY_PI.json and deliberately NO summary.json
+        'echo "K:stopped=$(test -e $O/STOPPED_BY_PI.json && echo 1 || echo 0)"',
         'echo "K:now=$(date -u +%s)"',
         # the stderr CONTENT in the same breath as its size: a non-empty stderr is read and
         # diagnosed line by line, never judged by its byte count
@@ -535,6 +537,7 @@ def build() -> str:
     stderr_ok = stderr_read_ok and not stderr_truncated and not stderr_undiag and n_err_client == 0
     launches_total = sup_log.count("lock acquired")
     done = st.get("done") == "1"
+    stopped = st.get("stopped") == "1"
     ckpt = st.get("ckpt", "").split()
     ckpt_gb = int(ckpt[0]) / 1e9 if len(ckpt) == 2 else None
     ckpt_age_min = (int(st["now"]) - int(ckpt[1])) / 60 if len(ckpt) == 2 else None
@@ -555,7 +558,8 @@ def build() -> str:
         return f'<span class="chip {cls}"><i></i>{esc(good if ok else bad)}</span>'
 
     learning = bool(ev) and len(ev) >= 2 and e_last["eval_traj"] < e_first["eval_traj"]
-    chips = (chip(tr_alive and sup_alive and not done, "training", "finished" if done else "NOT RUNNING", warn=done)
+    chips = (chip(tr_alive and sup_alive and not done and not stopped, "training",
+                  "finished" if done else ("stopped by the PI" if stopped else "NOT RUNNING"), warn=done or stopped)
              + chip(learning or len(ev) < 2, "learning" if len(ev) >= 2 else "first eval in", "eval traj not falling", warn=True)
              + chip(unplanned == 0 and token_ok and (n_err in (0, None)),
                     f"{unplanned} unplanned deaths · {planned} planned switch",
@@ -657,7 +661,9 @@ def build() -> str:
         tl.append(f'<rect class="{cls}" x="{900*s0/TOTAL:.1f}" y="30" width="{max(1.5, 900*(s1-s0)/TOTAL):.1f}" height="26" rx="2"/>')
     tl.append(f'<text class="tick" x="{min(900*step_now/TOTAL+6, 640):.1f}" y="47">{step_now:,} of {TOTAL:,}</text>')
     tl.append(f'<text class="tick" x="0" y="80">launched {FACTS["launch_berlin"]} Berlin</text>')
-    tl.append(f'<text class="tick" x="900" y="80" text-anchor="end">finish ≈ {finish:%a %d %b %H:%M} Berlin at {pace:.2f} s/step</text></svg>')
+    tl.append((f'<text class="tick" x="900" y="80" text-anchor="end">stopped by the PI at step {step_now:,}</text></svg>')
+              if stopped else
+              f'<text class="tick" x="900" y="80" text-anchor="end">finish ≈ {finish:%a %d %b %H:%M} Berlin at {pace:.2f} s/step</text></svg>')
     timeline = "".join(tl)
 
     # ------------------------------------------------------------ tables --
@@ -733,7 +739,12 @@ def build() -> str:
                     f"anchor accuracy {e_first['eval_anchor_acc']:.3f} → {e_last['eval_anchor_acc']:.3f} (chance {CHANCE_ANCHOR:.4f}), "
                     f"map IoU {e_first['eval_map_iou_drivable']:.3f} → {e_last['eval_map_iou_drivable']:.3f} "
                     f"over {len(ev)} eval(s) from step {e_first['step']:,} to {e_last['step']:,}.</li>")
-    says.append(f"<li><b>Pace.</b> {pace:.2f} s/step marginal over the last {k} logged rows ⇒ finish ≈ {finish:%a %d %b %H:%M} Berlin.</li>")
+    if stopped:
+        says.append(f"<li><b>Stopped by the PI.</b> The run was stopped at step {step_now:,} (<code>STOPPED_BY_PI.json</code>); "
+                    "its last checkpoint is the one written before the stop. It will not reach its planned end, so no "
+                    "finish time is quoted.</li>")
+    else:
+        says.append(f"<li><b>Pace.</b> {pace:.2f} s/step marginal over the last {k} logged rows ⇒ finish ≈ {finish:%a %d %b %H:%M} Berlin.</li>")
     says.append(f"<li><b>Stability.</b> {len(segs)} segment(s): {planned} planned switch, {unplanned} unplanned; "
                 f"stderr {stderr_b:,} B in {len(stderr_lines)} line(s), {len(stderr_undiag)} undiagnosed, "
                 f"{n_err_client} traceback/OOM; peak {mem_peak:.2f} GB.</li>")
@@ -802,7 +813,7 @@ def build() -> str:
   <div class="tiles">
    <div class="tile"><b>{step_now:,}</b><span>step of {TOTAL:,} ({pct:.1f} %)</span></div>
    <div class="tile"><b>{pace:.2f} s</b><span>per step, marginal</span></div>
-   <div class="tile"><b>{finish:%a %H:%M}</b><span>finish ≈ {finish:%d %b} Berlin ({eta_s/3600:.0f} h)</span></div>
+   {('<div class="tile"><b>stopped</b><span>by the PI at step ' + format(step_now, ',') + '</span></div>') if stopped else ('<div class="tile"><b>' + format(finish, '%a %H:%M') + '</b><span>finish ≈ ' + format(finish, '%d %b') + ' Berlin (' + format(eta_s / 3600, '.0f') + ' h)</span></div>')}
    {e_tile}
   </div></div>
 </div>
@@ -884,7 +895,7 @@ built by <code>taniteval/tools/training_watch/build_watch_refcv6.py</code>, no h
                "n_err_client": n_err_client, "token_ok": token_ok, "token_split": token_split,
                "stderr_lines": len(stderr_lines), "stderr_undiagnosed": len(stderr_undiag),
                "stderr_read_ok": stderr_read_ok and not stderr_truncated,
-               "sup_alive": sup_alive, "train_alive": tr_alive, "done": done,
+               "sup_alive": sup_alive, "train_alive": tr_alive, "done": done, "stopped": stopped,
                "cd_last_step": cd_last and cd_last["step"], "cd_cos_last": cd_last and cd_last.get("cd_cos"),
                "readings_ok": readings_ok, "mem_peak_gb": round(mem_peak, 3),
                "navsim": {str(s): {sp: (r.get("value") if r.get("status") == "ok" else r.get("status"))

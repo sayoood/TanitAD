@@ -1789,3 +1789,11 @@ The PI, verbatim: *"you can download opencv on D: 1 let it unchanged, 4: I solve
    - Rendering and banking the reference rasters is with the EvalFlyWheel.
 3. **"A second training seed" and "REFe scorer supervision"** (item 4 of the Master Mind's status list) were **solved by
    the PI with another agent**. Their resolution is recorded in that session, not here.
+
+### ✅ RESOLVED (2026-09-26 ~20:40 Berlin) — the next arm: the PI chose (b)
+
+- **The PI, verbatim:** *"go with b, stop refcv6, do all fixes, build refcv7, validate the setup again and retrain. push the last valid refcv6 checkpoint to my hf account. Give the map rendering video and also the detected agent boxes by the model. Assure that this is not happening again … If we are starting a training session, we are sure about the correctness of the config"*.
+- **refcv6:** STOPPED at step 38,250. The checkpoint at step 38,000 is being uploaded PRIVATE (`Sayood/tanitad-refcv6-r101-s0`; in progress at this landing, verified in a follow-up).
+- **refcv7:** `SPEC_REFCV7.md`; the build is in progress.
+- **The launch gate:** now BINDING for every arm.
+- **Videos:** the map video is delivered; the agent-box video is being rendered at step 38,000.
