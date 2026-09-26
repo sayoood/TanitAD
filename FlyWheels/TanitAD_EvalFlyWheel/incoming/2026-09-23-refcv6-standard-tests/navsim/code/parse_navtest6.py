@@ -80,6 +80,19 @@ def main(argv=None) -> int:
     spec.loader.exec_module(ci)
     tok2log = {t: r["log_name"] for t, r in
                json.load(gzip.open(INPUTS, "rt", encoding="utf-8"))["tokens"].items()}
+    def _guard(csv_path: str, name: str) -> None:
+        # ⛔ a CSV beside a FAILED count guard is PARTIAL work that reads exactly like a result
+        # (MEASURED 2026-09-26: 1,464 of 12,146 rows -> "PDMS 64.14"). Refuse; write nothing.
+        cnt = csv_path[:-4] + ".counts.json" if csv_path.endswith(".csv") else ""
+        if cnt and os.path.exists(cnt):
+            st = json.load(open(cnt, encoding="utf-8")).get("status")
+            if st != "PASS":
+                raise SystemExit(f"⛔ {name}: count guard {st!r} ({cnt}) — refused, no summary written")
+    _guard(a.arm_csv, "R6_A1")
+    if a.seed_csv:
+        _guard(a.seed_csv, "R6_A1_s1")
+    for e in a.extra:
+        _guard(e.split("=", 1)[1], e.split("=", 1)[0])
     arms = {"R6_A1": read(a.arm_csv)}
     if a.seed_csv:
         arms["R6_A1_s1"] = read(a.seed_csv)

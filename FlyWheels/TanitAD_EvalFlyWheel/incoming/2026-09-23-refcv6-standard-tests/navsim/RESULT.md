@@ -22,7 +22,7 @@ resumed on commit `82c2331`) — INHERITED, not re-verified here. ⛔ A pre- vs 
 mixes further training with the fixes: never attribute it to the fixes alone (`step_compare.py`
 flags it).
 
-## 0. Headline (status 2026-09-26 ~12:00Z — updated as checkpoints land)
+## 0. Headline (status 2026-09-26 ~19:15Z — updated as checkpoints land)
 
 **PROVEN.** (1) The NavSim harness still reads its known values on ALL THREE splits through this
 package's own drivers — warmup CV/STOP/ECHO vs E2, navhard CV vs W7 (KH-nav), navtest STOP vs W3
@@ -39,15 +39,20 @@ m/s, where the selected plan travels 1.21× the human's 4 s distance and 55.7 % 
 overshoot the human by > 2 m are at-fault collisions — speed bias +0.68 m/s (four families).
 (5) **Step 30,000 (mid-run, warmup, same device as 5,000): S2-EPDMS-u 0.3966 → 0.4753 (+0.079,
 beyond both seed floors)** — it now beats CV (+0.078) and ECHO (+0.047) but still loses to STOP
-(−0.046): BAR-R6-W1 still FAILS. navtest / navhard @ 30,000 are running. (6) The max-speed input is INERT at step 5,000 (200/200 navtest plans bit-identical with it
+(−0.046): BAR-R6-W1 still FAILS. On W3's 200 navtest tokens it is now TIED with STOP (62.57 vs 62.58;
+at 5,000 −13.5) — but the inference seed alone moves that reading by 5.1 PDMS (separated), so the
+full-split 30,000 reading (being re-scored after a partial score was caught and quarantined, §3.4)
+needs its own seed replicate before any bar margin near zero is read. navhard @ 30,000 is scoring. (6) The max-speed input is INERT at step 5,000 (200/200 navtest plans bit-identical with it
 withheld; its oracle definition moves 8/200, inside the seed floor) — the ARGMAX ceiling filter the
 run's config declares is not built (§6.7).
 
 **Read every refcv6 number above with its step-aware stamp** (header): 5,000 and 30,000 are
 "F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early".
 
-**NOT PROVEN / NOT YET MEASURED.** The mid-run (30,000) and FINAL readings — running / armed,
-unattended (§9). The
+**NOT PROVEN / NOT YET MEASURED.** navtest (full split) and navhard at 30,000 — scoring (§9).
+**There will be no step-50,400 FINAL: the PI stopped refcv6 at step 38,000 ("go with b, stop
+refcv6", 2026-09-26 18:40Z, §3.5).** Its last checkpoint is copied and md5-verified; scoring it
+awaits the Master Mind's / PI's go. The
 precision floor KP (CPU fp32 vs CUDA bf16) — waits for the GPU gate, which another session holds.
 Nothing here is closed loop, and every reading is zero-shot (PhysicalAI-AV → nuPlan cameras; the
 NavSim camera sits ~0.57 m higher than the training rigs).
@@ -383,8 +388,57 @@ tactical decoder an all-zero nav row. ⚠️ Warmup is 7 logs, no interval; this
 claim — navhard / navtest carry no NAVOFF arm (SPEC §3). Max speed A1 − VMAXOFF +0.0005 (2/202/0);
 time construction −0.0020 — both inside the floor.
 
-**navtest @ 30,000 and navhard @ 30,000:** ⏳ running — the navtest split waits up to 3 h for the GPU
-gate (another session holds the card) before a ~15 h CPU pass (§9).
+**navtest @ 30,000 — full split: NO VALID SCORE YET (a partial score was caught and quarantined).**
+The bridge ran on CUDA as-trained (gate open after 10 min; K0 PASS, KD FAIL ⇒ native path;
+12,146/12,146 rows, 0 stand-ins). The official scorer then **FAILED its count guard** — E1's RAM guard
+aborted it 6 times (14:12–14:46Z) while other sessions squeezed the box: 1,464 of 12,146 rows.
+⛔ **The runner parsed the PARTIAL CSV anyway** (it gated on the CSV's existence): an unattended
+`summary_navtest.json` read "PDMS 64.14" on 1,464 tokens and `BARS.json` evaluated BAR-R6-T1 on
+them — a number that looks like "refcv6 beats STOP" and is not a result. Caught in review
+2026-09-26 ~18:50Z; quarantined (ev6 and D:) in
+`raw/milestones/step30000/INVALID_partial_navtest_score_20260926/` with `INVALID.txt`; the step-30,000
+BARS now reads navtest UNAVAILABLE. **Fixed at the consumers**: `parse_navtest6.py` and `parse6.py`
+REFUSE any arm whose count guard is not PASS (mutation-tested on this very CSV: refused, no summary;
+a PASS arm still parses 12,146 tokens), and the runner gates the parse on counts PASS; the scorer
+now waits for ≥ 6 GB and retries 12×. ⏳ Re-score of the complete seam queued
+(`code/rescore_navtest_30000.sh`, after the navhard scorer frees RAM).
+
+**navtest @ 30,000 — the 200-token diagnostic (W3's subset; CPU fp32; 4 arms, each 200 / 0 / 200,
+seam calls 200) — reviewed:**
+
+| 200 tokens | 5,000 (CPU fp32) | **30,000 (CPU fp32)** |
+|---|---|---|
+| R6_A1 PDMS | 49.06 | **62.57** [57.13, 68.76] |
+| R6_A1_s1 (inference seed 1) | 47.80 | 67.63 [62.58, 73.13] |
+| **seed floor A1 − A1_s1** | +1.26 [−3.17, +5.78] | **−5.06 [−8.44, −1.76] — separated** |
+| A1 − STOP (STOP 62.58 on these tokens) | −13.52 [−21.33, −5.75] | **−0.02 [−5.76, +6.14]** |
+| A1 − CV (CV 21.82) | +27.24 | +40.74 |
+| A1 − VMAXOFF / ORACLE − A1 | 0.00 / +0.16 | −0.50 / −0.30 (inside the floor) |
+
+⚠️ **The inference seed alone moves this 200-token reading by 5.1 PDMS at 30,000** (the DDIM sampler
+is stochastic at eval; same checkpoint, same device, same tokens; same anchor on 86.5 % of scenes) —
+the third variance CLAUDE.md names. Any 30,000 navtest difference smaller than that is not an
+effect; the full-split reading (12,146 tokens) is where the seed noise averages down, and it needs
+its own replicate before a bar margin near zero can be read. On these 200 tokens refcv6 @ 30,000 is
+**tied with STOP** (at 5,000 it lost by 13.5).
+
+**navhard @ 30,000:** ⏳ bridge done on CUDA as-trained (gate open 17:20Z after a 108-min wait; K0
+PASS, KD FAIL ⇒ native path), scorer running.
+
+### 3.5 The run was STOPPED by the PI at step 38,000 — there will be no step-50,400 FINAL
+
+`STOPPED_BY_PI.json` in the run dir (read-only, 2026-09-26): stopped 18:40:45Z, *"PI 2026-09-26,
+verbatim: go with b, stop refcv6"*; last logged step 38,211; last checkpoint `ckpt.pt` = **step
+38,000**, md5 `5a2e7222a9f5f8c7aa7bf38ef4698d8a`; *"no summary.json is written, so the FINAL chains
+(which wait for summary.json done:true) never fire on this run"*. This stream's FINAL waiter is gone
+(it exited without firing). The last model of refcv6-r101-s0 is **step 38,000** — post-switch, stamp
+**"hybrid: F3 cascade loss + true label clock from step 34,500"** (3,500 fixed steps on top of 34,500
+unfixed ones). It was copied READ-ONLY to `D:/refcv6_eval_kit/ckpt/ckpt_step38000_stopped.pt` (md5 on
+Thor before == after == dev box == the stop record; the file's own `step` = 38,000) so it survives any
+clean-up of the run dir. ⛔ **Scoring it is NOT started**: whether refcv6's last checkpoint gets the
+NavSim suite now that the PI chose "b" is the Master Mind's / PI's call (it is ~6–10 h of the shared
+box). One command does it: `python code/run_navsim_refcv6.py --ckpt
+D:/refcv6_eval_kit/ckpt/ckpt_step38000_stopped.pt --md5 5a2e7222a9f5f8c7aa7bf38ef4698d8a`.
 
 ## 4. Deliverable 4 — navtest v1 PDMS
 
@@ -563,28 +617,25 @@ tokens (not PhysicalAI clip ids).
 
 ## 9. Where this stopped, and what runs unattended
 
-**Hand-off 2026-09-26 ~12:00Z** (resumed 07:48Z after the weekly-limit stop of 2026-09-24 02:38Z).
-DONE and banked in this session: every unattended output of 09-24 reviewed; step 5,000 on all three
-splits (warmup re-run); harness controls on all three splits; step 30,000 warmup; the runner fixes
-(D15–D17, D23–D24); landing batches 1–4. RUNNING, unattended:
+**Hand-off 2026-09-26 ~19:15Z.** Woken by the FINAL waiter's exit: the PI stopped the run at step
+38,000 (§3.5), so that chain can never fire; its last checkpoint is copied (not scored — awaiting a
+go). Reviewed since the ~12:00Z hand-off: the step-30,000 navtest diagnostic (banked, §3.4) and the
+step-30,000 navtest full-split scorer FAILURE — whose partial CSV the runner had parsed into a
+misleading summary and bar (quarantined; parsers and runner fixed; D20-style review is what caught it).
 
 | lane | script → log | does now / next | done-marker |
 |---|---|---|---|
-| results | `code/campaign_0926.sh` → `raw/campaign_0926.log`, `raw/milestones/waiter_30000.log`, `raw/milestones/step30000/runner.log` | **navtest @ 30,000** (waits ≤ 3 h for the GPU gate from 11:44Z, else CPU ≈ 15 h at today's 97 % box load) → 200-token diagnostics (4 arms) → **navhard @ 30,000** (2 arms; ≤ 3 h gate wait, else CPU ≈ 16 h); every phase copies its outputs to D: (copy-only) and writes `compare_vs_step5000_<split>.json` | `ZZMILESTONE30000DONEZZ`, then `ZZCAMPAIGN0926DONEZZ` |
-| final | `code/milestone_waiter.sh final` → `raw/milestones/waiter_final.log` | polls Thor every 10 min (read-only `cat summary.json`); the run resumed at 34,500 on 82c2331 in the SAME run dir (checked read-only 11:45Z: step 34,571) and ends ≈ 2026-09-27 17:30Z; then fetches `ckpt.pt` (md5 before / after / dev box) and runs warmup → navtest (+diagnostics) → navhard | `ZZMILESTONEfinalDONEZZ` |
+| results | `code/campaign_0926.sh` → `raw/milestones/waiter_30000.log`, `raw/milestones/step30000/runner.log` | navhard @ 30,000: bridge done (CUDA as-trained), scorer running (2 arms) | `ZZMILESTONE30000DONEZZ`, `ZZCAMPAIGN0926DONEZZ` |
+| re-score | `code/rescore_navtest_30000.sh` → `raw/milestones/rescore_navtest_30000.log` | waits for the line above, then re-runs navtest @ 30,000 (0 new bridge rows; scorer RAM-gated at 6 GB × 12 retries; parse only on counts PASS) | `ZZRESCORENAVTEST30000DONEZZ` |
 | precision | `code/kp_lane.sh` → `raw/kp_lane.log` | KP + KP-navtest, only when the GPU gate opens (≤ 24 h from 08:02Z) | `ZZKPLANEDONEZZ` |
+| final | — | **retired**: the run was stopped, `summary.json` will never exist; step 38,000 awaits a go (§3.5) | — |
 
-⚠️ If the 30,000 lane is still running when the FINAL starts, the two compete for the CPU / card; the
-FINAL is the headline — stopping the results lane then (kill `campaign_0926.sh` and its runner by
-explicit PID) and resuming 30,000 later loses nothing (every bridge resumes from its rows, every
-scored arm is skipped by its counts).
+Unattended outputs no longer reach D: at all (`stage_to_repo.py` without `--only/--landing` is a
+no-op since 2026-09-26 ~18:55Z): the lander lands D:'s bytes at landing time, and an unattended copy
+had overwritten an already-listed file (`step30000/BARS.json`) with a bar computed on the partial CSV.
 
-⚠️ The FINAL is rebuilt with the KIT's `config.json`: the resumed run's config (scp'd read-only
-2026-09-26) differs from it only by `--clip-clock-sidecar` (a training-data input) plus the
-`data_order` / `label_clock` records — no model-construction flag — and `load_refcv6`'s strict load
-(0 missing / 0 unexpected) is the check that would go RED if that were wrong.
-
-**To resume this stream** (any agent): read this section, then for each finished lane review its
-outputs as D20 lists (count guards, stand-ins, device + precision per split, the seed replicate, the
-harness control per split), add the reading to §3 with its step-aware stamp, run
-`python code/stage_to_repo.py --only <paths> --landing "<heading>"`, and message the Master Mind.
+**To resume this stream** (any agent): read this section; for each finished lane review its outputs
+as D20 lists (count guards PASS — never a CSV beside a FAILED guard —, stand-ins, device + precision
+per split, the seed replicate, the harness control per split), add the reading to §3 with its
+step-aware stamp, run `python code/stage_to_repo.py --only <paths> --landing "<heading>"`, and
+message the Master Mind.

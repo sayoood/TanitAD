@@ -362,10 +362,12 @@ def main(argv=None) -> int:
             if sk == "navtest":
                 lab = f"r6s{step}_{arm}" + ("_sub" if a.tokens_navtest else "")
                 cnt = os.path.join(sdir, lab, f"{lab}.counts.json")
-                for _try in range(6):               # RAM-gated, retried on the RAM guard's abort
+                for _try in range(12):              # RAM-gated, retried on the RAM guard's abort
                     if counts_pass(cnt):
                         break
-                    ram_wait(4.0)
+                    # 6 GB, not 4: MEASURED 2026-09-26 the 12,146-token scorer died 6/6 times after
+                    # a 4 GB gate while other sessions squeezed the box (E1 aborts below 3 GB)
+                    ram_wait(6.0)
                     sc = [PY, os.path.join(HERE, "score_navtest6.py"), "--label", lab, "--seam",
                           seam, "--out", sdir] + (["--tokens", a.tokens_navtest]
                                                   if a.tokens_navtest else [])
@@ -398,7 +400,7 @@ def main(argv=None) -> int:
                 ca = os.path.join(sdir, la, f"{la}.csv")
                 if arm != "R6_A1" and os.path.exists(ca):
                     extras.append(f"{arm}={ca}")
-            if os.path.exists(csv):
+            if counts_pass(os.path.join(sdir, lab, f"{lab}.counts.json")):   # never a partial CSV
                 run([PY, os.path.join(HERE, "parse_navtest6.py"), "--arm-csv", csv, "--label",
                      label, "--out", summ, "--bridge", bdir] + (["--extra"] + extras if extras else [])
                     + (["--tokens", a.tokens_navtest] if a.tokens_navtest else [])

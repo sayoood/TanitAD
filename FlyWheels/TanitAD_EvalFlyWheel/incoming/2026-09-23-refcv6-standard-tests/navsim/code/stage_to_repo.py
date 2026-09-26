@@ -84,6 +84,14 @@ def main(argv=None) -> int:
     ap.add_argument("--landing", default="", help="one-line heading: append the batch to LANDING_READY.txt")
     a = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
+    if not (a.reconcile or a.dry_run or a.only or a.landing):
+        # ⛔ MEASURED 2026-09-26: the unattended milestone waiter's bare copy overwrote D: files that a
+        # REVIEWED batch had already listed (step30000/BARS.json, then carrying a bar computed on a
+        # PARTIAL navtest CSV) — and the lander lands D:'s bytes at landing time. Unreviewed outputs
+        # therefore never reach D:; only an explicit --only/--landing batch copies.
+        print(json.dumps({"mode": "no-op", "why": "a bare call copies nothing: unattended outputs reach "
+                          "D: only in a reviewed --only/--landing batch"}))
+        return 0
     items = collect(a.gzip_mb)
     if a.only:
         items = [it for it in items if any(fnmatch.fnmatch(it[1].removesuffix(".gz"), g)

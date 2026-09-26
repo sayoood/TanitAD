@@ -123,11 +123,20 @@ def main(argv=None) -> int:
                        "stage-1 rows are its own", "arms": {}, "pairs": {}}
     arms = {}
     floor_dir = a.floors or a.scores
+    out["arms_refused"] = {}
     for arm in MODEL_ARMS + FLOORS:
         d = a.scores if arm in MODEL_ARMS else floor_dir
         p = os.path.join(d, f"score_{arm}{a.csv_suffix}.csv")
         if not os.path.exists(p):
             continue
+        cnt = os.path.join(d, f"score_{arm}{a.csv_suffix}.counts.json")
+        if arm in MODEL_ARMS:
+            st = (json.load(open(cnt, encoding="utf-8")).get("status")
+                  if os.path.exists(cnt) else "NO_COUNTS")
+            if st != "PASS":
+                # ⛔ a CSV beside a FAILED count guard is partial work (MEASURED 2026-09-26 on navtest)
+                out["arms_refused"][arm] = f"count guard {st} ({cnt})"
+                continue
         df = load_csv(p, stage_of, arm)
         arms[arm] = df
         s2, s1 = df[df.stage == 2], df[df.stage == 1]
