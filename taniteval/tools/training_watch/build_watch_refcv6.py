@@ -40,6 +40,8 @@ FACTS = {
     "segments": [
         ("284393c", "launch", "2026-09-23 20:42"),
         ("287d72e", "logging-only switch at the step-500 checkpoint", "2026-09-23 21:45"),
+        ("82c2331", "A16 fixes (F3 cascade loss live, true label clock) at the step-34,500 checkpoint -- "
+                    "the PI's 'stop now, resume with fixes'", "2026-09-26 13:30"),
     ],
     "pi": ('"Full, ~4.0 days (Recommended)"', '"Keep every 10th (Recommended)"'),
     # Every stderr line is either DIAGNOSED here -- exact text, with the diagnosis and its date --
@@ -530,6 +532,15 @@ def build() -> str:
     says.append(f"<li><b>Stability.</b> {len(segs)} segment(s): {planned} planned switch, {unplanned} unplanned; "
                 f"stderr {stderr_b:,} B in {len(stderr_lines)} line(s), {len(stderr_undiag)} undiagnosed, "
                 f"{n_err_client} traceback/OOM; peak {mem_peak:.2f} GB.</li>")
+    # A16 (2026-09-26): F3's per-stage cascade loss never ran until the PI's switch. The row that
+    # first carries `cascade` is read from the log itself, so the page cannot claim it early.
+    cas = [r["step"] for r in tr if "cascade" in r]
+    says.append("<li><b>F3 cascade loss (A16).</b> " + (
+        f"active from step {cas[0]:,} ({len(cas)} logged rows carry it); before that the run trained "
+        "F3 detach-only with F4 on the last layer only (GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST), so "
+        "the run is a hybrid from that step on (the PI's ruling, 2026-09-26).</li>" if cas else
+        "not in any logged row yet: F3 detach-only, F4 on the last layer only "
+        "(GOALS_AND_CLAIMS D-REFCV6-F3-WHITELIST).</li>"))
     if cd_after:
         cvals = [r["cd_cos"] for r in cd_after if r.get("cd_cos") is not None]
         neg = sum(1 for v in cvals if v < 0)

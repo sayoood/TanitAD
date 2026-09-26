@@ -609,3 +609,70 @@ eval traj **0.586** (1.219 at step 1,000), 2 s goal error **3.59 m** (5.21), anc
 500 steps, one eval included, is **6.78 s/step**. Each in-run eval adds about 64 s: the 50-step
 intervals that follow one read ~7.93–7.98 s/step against ~6.65. The finish is therefore
 **≈ 2026-09-27 19:30 Berlin**, not the ~17:50 projected at step 1,150 from a window with no eval in it.
+
+## 13. The PI's A16 switch — F3's cascade loss and the true label clock, from step 34,500 (2026-09-26)
+
+**Why.** The A16 frozen-trunk audit (`…/2026-09-26-refcv6-frozen-trunk-audit/`, 92337fa) found two
+defects in the running arm. The Master Mind confirmed the first independently.
+
+- **F3's per-stage cascade loss had never run.** `RefCModel.forward` dropped `layer_u0_hat` and
+  `layer_logits`, so the trainer's guard skipped the term silently:
+  - 0 of 3,871 log rows carried `cascade`;
+  - the stage-0–2 heads were bit-identical at steps 1k, 5k and 30k.
+- **Every tactical label was read ~0.37 s early.** 10.6 % of the tactically supervised windows
+  fell outside the true band.
+
+**The decision.** The PI was asked with four options: finish then run a corrected arm; finish then
+fine-tune; stop and resume with the fixes; restart clean. The PI chose, verbatim, **"Stop now,
+resume with fixes"**.
+
+**The fix, 82c2331.**
+- The two keys pass through `RefCModel.forward`, and the F3 block now REFUSES instead of skipping.
+- Labels are read at `grid_start + (t + w − 1 + n_stack − 1) · dt` on each clip's measured clock,
+  via a new `--clip-clock-sidecar` and the `CLIP_CLOCK` knob in `run_refcv6.sh`.
+- Tests on a clean tree:
+  - `test_refcv6_f3_cascade_reaches_loss` runs the real `train()`; it FAILS on the unfixed tip and
+    PASSES on the fix.
+  - `test_refcv6_label_clock` has literal bands and the old formula as its regression arm.
+  - The two new test files give 8 passed. The refcv6-related suites show 0 regressions against the
+    tip: every other failure fails identically there.
+- The sidecar, `raw/refcv6_clip_clock_sidecar.jsonl` in the audit package, was built on the dev box
+  from each clip's 100 Hz egomotion log:
+  - 4,483 clips clocked, 25 refused by the controls;
+  - median dt 0.1006666 s, median grid start +0.1135 s;
+  - keyed by sid, with no clip ids.
+
+**The switch, MEASURED.** It was a Thor-side `setsid nohup` script, `switch_a16.sh`; its log is in
+`raw/launch_2026-09-23/switch_a16/`. It followed the procedure that has worked before:
+1. Shipped 82c2331 to `/home/nvidia/refcv6_run/82c2331a2f`: 2,670 files, md5 checked per file on
+   Thor.
+2. A preflight with Thor's own training interpreter: the new tree imports, the sidecar reads 4,483
+   rows, and the pass-through is present.
+3. Waited for the **step-34,500 checkpoint**: ckpt.pt written 13:28:31 Berlin, md5
+   `3fbbde7470914b8bd55176e60fe399d3`.
+4. Swapped the run's config file to v3 (md5 `b1b3c99165b118260b0c530f3a507191`). The diff is
+   exactly `CODE` → the new tree, plus `CLIP_CLOCK`.
+5. Killed the SUPERVISOR first by explicit pid (3346328). The trainer (3346338) ignored INT and was
+   stopped by TERM; then its recorded children. Lock holders afterwards: none.
+6. A fresh supervisor started from the new tree (3410715). It is the supervisor script fixed in
+   b08f278, so its status tokens are no longer split.
+7. The new trainer is pid 3410728:
+   - its argv carries `--clip-clock-sidecar`;
+   - it logs `resumed hier at step 34500` with its data position (`epoch 0, 34500 batches in`);
+   - `config.json` `label_clock`: train 4,347 / 4,369 clips from the sidecar (13 fall back to
+     pose dt, 9 to nominal), eval 136 / 139, raw offset +2 rows;
+   - the **first row, step 34,550, carries `cascade` 3.097**;
+   - stderr is unchanged.
+Wall-clock lost: about 2 minutes of stop and restart, plus the load and compile. The steps between
+34,500 and the kill are re-done on the fixed code, from the resumed data position.
+
+**What the run is now, and how to quote it.**
+- Checkpoints up to and including step 34,500 (the trainer's 5k/15k/20k/30k, the snapshots at
+  10k/25k): *"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"*.
+- Every checkpoint after it, the FINAL included: *"hybrid — F3 cascade loss and the true label clock
+  from step 34,500"*.
+- A difference between a pre-switch and a post-switch checkpoint mixes training time with the fix,
+  and is never attributed to the fix alone.
+- The cascade loss is part of the total loss, so the loss curve steps at the switch.
+- The Training Watch now carries the switch as its third planned segment, and reads the first
+  `cascade` row from the log itself.

@@ -15856,3 +15856,11 @@ Code identity: the run executes `287d72e`; `stack/tanitad` tree `eed94ed8…` ==
    the aggregate eval is not RNG-isolated. Q6: the max-speed md5 binding no-ops without `.meta.json`
    (the dev-box kit has none). Q1 at the launched config and the full Q3 hook table: PENDING (RAM).
 <!-- A16-REFCV6-FROZEN-TRUNK-AUDIT-2026-09-26 -->
+
+<!-- A16-SWITCH-2026-09-26 -->
+### 2026-09-26 — refcv6-r101-s0 switched to the A16 fixes at step 34,500 (PI: "Stop now, resume with fixes")
+
+| id | record | evidence | status |
+|---|---|---|---|
+| **D-REFCV6-A16-SWITCH** | The live run stopped at the step-34,500 checkpoint and resumed on 82c2331. From there, F3's per-stage cascade loss trains, and tactical labels are read on each clip's measured clock. The first post-switch row is step 34,550, `cascade` 3.097. Label clock: 4,347 of 4,369 train clips come from the sidecar. | MEASURED: `TanitAD Research Lab/Architecture & Inference/Research/2026-09-23-refcv6-fixes/LAUNCH_READINESS_FIXES.md` §13 and `raw/launch_2026-09-23/switch_a16/`. Checkpoint md5 `3fbbde74…`; config md5 `b1b3c991…`; new trainer pid 3410728. | DONE |
+| **Quoting rule** | Checkpoints at or before step 34,500 are *"F3 detach-only, F4 on the last layer only; tactical labels ~0.37 s early"* (D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK). Every later checkpoint, the FINAL included, is *"hybrid: F3 + true label clock from step 34,500"*. A pre-vs-post-switch difference is never attributed to the fix alone. | PI decision 2026-09-26 (AskUserQuestion, option 3 of 4) | BINDING for every refcv6 number |

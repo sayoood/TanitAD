@@ -1,0 +1,16 @@
+[2026-09-26T11:22:59Z] switcher start (pid 3408729): NEW=/home/nvidia/refcv6_run/82c2331a2f WANT=ckpt step >= 34500
+[2026-09-26T11:29:02Z] checkpoint: step 34500, ckpt.pt 1170630561 B 2026-09-26 13:28:31.172261571 +0200, md5 3fbbde7470914b8bd55176e60fe399d3
+[2026-09-26T11:29:02Z] config now v3: md5 b1b3c99165b118260b0c530f3a507191
+[2026-09-26T11:29:02Z] trainer children recorded: 3347015 3347016 3347017 3347018 3347021 3347022 3347097 
+[2026-09-26T11:30:32Z] trainer ignored INT -> TERM
+[2026-09-26T11:30:35Z] old pids: sup gone, trainer gone
+[2026-09-26T11:30:36Z] new supervisor started (launcher pid 3410715)
+[2026-09-26T11:30:46Z] new trainer pid 3410728: clip-clock flag in cmdline: 1
+[2026-09-26T11:30:46Z] supervisors running: 1
+[2026-09-26T11:42:26Z] metrics rows with cascade in the last 400: 1; last train.log lines:
+[v3] refcv7 disentangled scorer vs the PhysicalAI oracle (7 sub-score BCE: nc dac ttc ep comf spd nav)  --w-r7-scorer      0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-r7-scorer needs --refcv7, --agent-join (NC/TTC oracle), the SAM3 map with --w-map > 0 (DAC oracle) and --r7-nav-tau-rad > 0 (nav oracle)          
+[v3] 4/12 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3] conflict detector ON (probe, plan side=traj, every=10): theta_trunk = 316 tensors / 58231872 params in 6 groups (fuse, stage_layer1, stage_layer2, stage_layer3, stage_layer4, stem); aux terms = box3d, map, tac_v6
+[v3] ⚠️ conflict detector MEASURED overhead (dev-box CPU, batch 2, 77k-6.9M trunks): probe +72..104%, subtract +26..62% of step time, rising with trunk size. Divide by --conflict-every (10) to amortise; the GPU figure is UNVERIFIED.
+[v3] conflict controls OK: cos(g,g)=1.0 cos(g,-g)=-1.0 detached cos=nan conflict=0.0 |g_aux|=0.0
+[2026-09-26T11:42:26Z] ZZSWITCH-DONE-3410728-cascade1-ZZ

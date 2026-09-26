@@ -34,6 +34,9 @@ def _load(monkeypatch, run_dir):
     spec = importlib.util.spec_from_file_location("build_watch_refcv6_under_test", BUILDER)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    # the synthetic run has exactly one planned switch; pin it here so the live run's own segment
+    # list (FACTS) can grow without changing what these tests expect
+    mod.FACTS["segments"] = [("a", "launch", "t0"), ("b", "planned switch", "t1")]
     return mod
 
 
