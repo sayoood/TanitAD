@@ -34,8 +34,8 @@
 | step 1000 (kit) | VOID (M1 no power) | **PASS** | **PASS** (fp32 wrapper 6.7e-7; bf16 P1 8.4e-4; W1/W2 detected 1/26) | pipeline validation only: seed 0 rolled on GPU; panel on CPU (§3) |
 | step 5000 | FAIL (wrapper 3.9e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 1.9e-6; §1b) | **DONE, both seeds (§4)**: BAR-R6-1..4 **FAIL**, BAR-R6-5 **PASS**. The A4 L2 blend beats the echo (−0.0122 sep, both seeds). Banked `raw/step5000/` |
 | step 30000 | FAIL (wrapper 8.1e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 2.1e-6) | **DONE, both seeds (§4b)**: BAR-R6-1 **FAIL** (+0.0225 sep), 2–4 FAIL (not separated; ties the arms), 5 **PASS**. L2 blend −0.0364 sep. Banked |
-| step 15000 / 20000 (optional) | — | — | — | `chain_optional.sh`: after the L3 rolls, never started after 12:00 09-27 (ckpts pulled read-only, md5 `46eb2185…` / `f4320c89…`) |
-| FINAL (step 50,400; post-switch HYBRID) | — | — | — | `chain_final_v2.sh` on the **82c2331 tree** (SPEC A5). It waits for `summary.json` (Thor ETA ~09-27 19:30 Berlin), pulls `ckpt.pt`, metrics and config with 3-way md5, then runs. The old chain's final stage is DEFERRED |
+| step 15000 / 20000 (optional) | — | — | — | **CANCELLED** at the PI's stop (Master Mind 20:50 09-26); never run |
+| FINAL | — | — | — | **NONE**: the PI stopped refcv6 at step 38,250 (20:40 09-26); last checkpoint 38,000, md5 `5a2e7222…`. `chain_final_v2.sh` was CANCELLED (§4c) |
 
 **Unattended chains.** `code/chain_milestones.sh` runs step 5000 and then step 30000, both on their training tree. It logs to `raw/chain.log` on the dev box. Its final stage is DEFERRED (SPEC A5): `pull_final.sh` now prints `ZZFINALDEFERREDZZ`, and `code/chain_final_v2.sh` runs the FINAL on the 82c2331 tree.
 * It banks each tag, sanitized, into `raw/<tag>/`.
@@ -49,16 +49,28 @@
 * `raw/post_watch.log`: `ZZPOSTDONE_<tag>ZZ`, `ZZL3DONE_<tag>ZZ`.
 * `raw/optional.log`: `ZZOPTDONE_15000ZZ`, `ZZOPTDONE_20000ZZ`.
 * `raw/final_v2.log`: `ZZFINALWAITZZ` polls, `ZZFINALOKZZ`, `ZZBFINALDONEZZ`, `ZZBANKED_finalZZ`, `ZZFINALV2ENDZZ`.
+* `raw/a6/a6_chain.log`: `ZZA6ROLL_s0ZZ` / `_s1ZZ`, then `ZZA6DONEZZ "verdict": …` (result in `raw/a6/step5000/A6.md`).
+* `raw/step35000_gate/dryrun.log`: `ZZDRYDONEZZ G0 … G0-A2 …` (the FINAL-gate dry run).
+* `raw/chain45k.log`: `ZZ45SKIPZZ` or `ZZ45DONEZZ`. A skip is reported as SKIPPED-BY-CUTOFF, not as absent.
 
 The headline is BAR-R6-1 at BOTH seeds of the FINAL tag (`raw/final/battery_summary.json` → `bars`).
 
-**Where I stopped** (updated each turn): 2026-09-26 ~15:40 Berlin.
-* Step 5000 is DONE and landed (51a4443 / 048ae3b).
-* Step 30000 is GATE-WAITING: the NavSim sibling's `run_bridge6.py --split navtest` has held the GPU since ~14:07.
-* Queue: 30k → A6 (139 train clips pulled, md5 PASS) → 35k gate dry run (snapshot pulled, md5 `68a4ef3b…`) → L3 → 15k/20k (cutoff 12:00 09-27) → 45k if room → FINAL (`chain_final_v2.sh` polling Thor).
-* Every chain above is armed and running unattended.
+**Where I stopped** (updated each turn): 2026-09-26 ~21:05 Berlin.
+* **refcv6 is STOPPED by the PI (38,250). There is no FINAL; the battery is closed (§4c).**
+* Still running unattended:
+  * **A6**: `a6_chain.sh`, seed 0 rolling. Seed 1 waits for `…/mapvid/BOXES_DONE`, ceiling 01:00 09-27. Then fit, score and bank.
+  * **L3 at 30k**: `l3_tag.sh step30000`, after A6.
+* Every other chain was stopped by explicit PID and logged in its own log (§4c).
 
-<!-- HEADLINE -->
+> ⭐ **HEADLINE (pre-registered: BAR-R6-1 on the FINAL, both inference seeds): NOT EVALUABLE.** The PI stopped refcv6 at step 38,250 on 2026-09-26 20:40, so no FINAL exists.
+> * **refcv6 is NOT PROVEN to beat the echo control at 0–2 s** at any evaluated milestone (T1, S2, both seeds):
+>   * step 5000: +0.0885 sep;
+>   * step 30000: +0.0225 [+0.0068, +0.0395] sep.
+> * **It beats the echo at 1–6 s** (BAR-R6-5 PASS at 5k and 30k). At 30k it ties refcv4b and refcv5-v2.
+> * **The next lever and its measured result:** the causal-hold composite beats the echo at both seeds, −0.0364 sep at 30k (A4 L2). It is the residual-on-kinematic-prior lever refcv7 is built on.
+> * Its deployable test (A6) and L3 are still running.
+> * G0-A2 (operative) PASS at 1k / 5k / 30k (§4c).
+
 
 ---
 
@@ -397,9 +409,65 @@ The primary bar is one the programme has not yet cleared with any arm.
 * **OBEDIENCE: FAIL** (structural).
 * **STRATEGIC:** N/A, n = 0.
 
-<!-- STEP15000_20000 -->
+## 4c. refcv6 is CLOSED: the PI stopped the run. What was proven, what was not, and what it leaves behind
 
-<!-- FINAL -->
+**The stop (INHERITED from the Master Mind; register block `REFCV6-STOPPED-REFCV7-REGISTERED-2026-09-26`, landed `d0cdbc8`).**
+* The PI stopped `refcv6-r101-s0` at 20:40 Berlin on 2026-09-26, verbatim *"go with b, stop refcv6"*.
+* The last logged training row is step **38,250**. The last checkpoint is step **38,000**, `ckpt.pt`, md5 `5a2e7222a9f5f8c7aa7bf38ef4698d8a`, verified three ways.
+* Thor carries `STOPPED_BY_PI.json` and, deliberately, no `summary.json`.
+* **There is no FINAL.** The next arm is refcv7 (`Project Steering/SPEC_REFCV7.md`): refcv6 plus all fixes, plus a residual-on-kinematic-prior output, plus the built selection terms.
+
+**⭐ The pre-registered headline** (BAR-R6-1 on the FINAL, at both inference seeds) is **NOT EVALUABLE**: the FINAL checkpoint was never produced.
+* **At every evaluated milestone, refcv6 is NOT PROVEN to beat the echo control at 0–2 s** (T1, S2):
+  * step 5000: +0.0885 sep at both seeds;
+  * step 30000: +0.0225 [+0.0068, +0.0395] sep, and +0.0224 at seed 1.
+* No programme arm has cleared this bar on this surface:
+  * refcv4b +0.0088, not separated;
+  * refcv5-v2 +0.0204, separated worse.
+* **What refcv6 did clear (BAR-R6-5, 1–6 s): it beats the echo** at both milestones and both seeds: −0.4729 sep at 5k, −0.7475 sep at 30k.
+* At 30k it **ties** refcv4b and refcv5-v2 at both horizons (no separated cell).
+
+**G0, per checkpoint.**
+
+| checkpoint | G0 as registered | G0-A1 | G0-A2 (operative) | battery |
+|---|---|---|---|---|
+| step 1000 (kit) | VOID (M1 had no power) | PASS | PASS | pipeline validation only |
+| step 5000 | FAIL (wrapper 3.9e-3; M1 VOID) | FAIL (wrapper only) | **PASS** | done, both seeds |
+| step 30000 | FAIL (wrapper 8.1e-3; M1 VOID) | FAIL (wrapper only) | **PASS** | done, both seeds |
+| step 35000 snapshot (post-switch) | — | — | — | the FINAL-gate dry run was CANCELLED at the stop |
+| step 15000 / 20000 | — | — | — | CANCELLED at the stop (Master Mind); never run |
+| step 45000 | — | — | — | CANCELLED: the run stopped at 38,250, so no 45k snapshot exists |
+| FINAL | — | — | — | **none**: the run was stopped |
+
+**The four refcv6 defects in the register.** Every refcv6 number here carries them, and none is attributed to the registered design.
+* **D-REFCV6-F3-WHITELIST.** The F3 per-stage loss never ran before 34,500; decoder stages 0–2 are bit-identical at 1k/5k/30k. It was fixed in the post-switch hybrid, which no battery evaluated.
+* **D-REFCV6-LABEL-CLOCK.** Tactical labels were read ~0.37 s early before 34,500.
+  * This battery scored TACTICAL under both clocks (SPEC A5; controls C1–C4 PASS).
+  * Clock sensitivity at 5k/30k is ≤ 0.012 κ.
+* **D-REFCV6-EQUALIZE-DROPPED.** The C26 trunk equalisation was never applied, before or after the switch. Train and eval are consistent (both off), so every banked number here holds for the model as trained.
+* **D-REFCV6-CONFIG-BUILD.** Only one of the three declared selection mechanisms is built, and the max-speed input is inert.
+  * This battery's independent reading agrees: max-speed-withheld − `os` = +0.0020 (not separated) at 5k and +0.0000 (not separated) at 30k.
+
+**⭐ RULE ZERO: what refcv6 leaves behind.** "BAR-R6-1 not proven" is the refutation. The next lever is the residual-on-kinematic-prior output, and its measured result is:
+* **A4 L2 (cross-fitted composite `w·os + (1−w)·ha`) beats the echo at both seeds:**
+  * −0.0122 sep at 5k;
+  * **−0.0364 [−0.0464, −0.0265] sep at 30k**.
+  * The shuffled control reads exactly 0, and the lever grows with training.
+* **It is generic (exploratory):** the refcv4b composite reads −0.0315 sep and the refcv5-v2 composite −0.0267 sep, and refcv6 at 30k is the strongest of the three.
+* That lever is refcv7's output parameterisation (`SPEC_REFCV7`).
+* **Still running and banking unattended:**
+  * **A6**, the deployable test of that premise: `w` fit on 139 TRAIN clips, eval scored with no refit. Seed 0 is rolling; seed 1 waits for the boxes render.
+  * **L3** (eps = 0) at 30k, which informs refcv7's inference noise.
+  * Their results land in `raw/a6/step5000/A6.md` and `raw/step30000/levers/EPS0.md`, with markers `ZZA6DONEZZ` and `ZZL3DONE_step30000ZZ`.
+
+**Stopped at the PI's stop**, each by explicit PID and logged in its own log:
+* `chain_final_v2.sh` + `pull_final_v2.sh` (`ZZFINALV2CANCELLEDZZ`);
+* `gate_dryrun_35k.sh` (`ZZDRYFAILZZ CANCELLED`);
+* `chain_optional.sh` (`ZZOPTCANCELLEDZZ`);
+* `chain_45k.sh` (`ZZ45CANCELLEDZZ`);
+* `l3_tag.sh step5000` (`ZZL3SKIP_step5000ZZ`).
+
+**The battery code stays as it is.** refcv7 gets its own battery SPEC once its launch config is frozen.
 
 
 ---
