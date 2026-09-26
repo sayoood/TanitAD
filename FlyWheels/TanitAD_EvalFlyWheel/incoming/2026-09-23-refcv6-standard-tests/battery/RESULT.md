@@ -5,16 +5,27 @@
 **Pre-registration:** `SPEC.md`, registered 2026-09-23 23:33 Berlin (sha256 `32625b9a…`), before any refcv6 forward. Two amendments, each written BEFORE the measurement it governs:
 * **A1** (09-24 01:11, `1ae8f6af…`): new deliberate regressions M2–M4, after the as-registered M1 had no power (§1).
 * **A2** (09-26 09:50, `7bfca6cf…`): the wrapper control is redefined to isolate the merge from bf16 arithmetic, after step 5000's wrapper clause read FAIL (§1b).
+* **A3** (09-26 12:46, `fd65da5c…`): the paired LATERAL yaw-rate cell is masked to steps with a path tangent (four_families' own `pair_valid`), after the shared unmasked cell was measured inflating refcv4b 6.4× (§5 F10). No bar reads yaw-rate.
+* **A4** (09-26 12:58, `e94e1ab6…`): a zero-training LEVER PANEL, reported with no bar, under RULE ZERO. L1 inference-seed average; L2 causal-hold blend `w·os + (1−w)·ha` (2-fold episode-disjoint cross-fit, identity and shuffled-plan controls); L2e echo blend (diagnostic only); L3 deterministic DDIM (eps = 0, one extra GPU roll). Each lever is a DIFFERENT planner from the registered arm.
 **Evidence class:** MEASURED (ours) unless stated. Every number cites a JSON under `raw/`.
 
 > ⛔ **Every number from the kit checkpoint (step 1000) is PIPELINE VALIDATION ONLY (SPEC §3.6).**
 > No bar is evaluated on it, and no step-1000 number is a result about refcv6.
 
+> ⛔ **RUN-DEFECT STAMP, carried by every refcv6 number in this document** (Master Mind audit
+> `92337fa6`; register `D-REFCV6-F3-WHITELIST`, `D-REFCV6-LABEL-CLOCK`, landed `9d16c441`):
+> **"F3 detach-only (no per-stage loss), F4 on the last layer only; tactical labels ~0.37 s early."**
+> * Decoder stages 0–2 carry frozen, randomly-initialised modulations: their heads are bit-identical at 1k / 5k / 30k.
+> * The tactical band is read on the provider row at `row × 0.1`; the true anchor is at 8.369 s. On the eval split, 598 / 5,699 (10.5 %) of tactical-supervised windows lie outside the true ±2 s band.
+> * **My TACTICAL declared-head scores use the trainer's own label code**, i.e. the same early clock as training. They measure agreement with the labels the model was trained on, not with the true band. The trajectory-derived tactical κ reads no label and is not exposed.
+> * A cache row is 0.100667 s (programme-wide). Rates in m/s assume 0.1 s, i.e. +0.67 %, identically for every arm, baseline and control.
+> * ⛔ **No weakness below is attributed to the registered refcv6 design while these hold.**
+
 ## STATUS — where the work stands (kept current; read this first if I am stopped again)
 
 | checkpoint | G0 as registered | G0-A1 | G0-A2 (operative gate) | battery (T1, S2 + S6, 2 inference seeds) |
 |---|---|---|---|---|
-| step 1000 (kit) | VOID (M1 no power) | **PASS** | pending: probe queued behind the gate | pipeline validation only: seed 0 rolled on GPU; panel on CPU (§3) |
+| step 1000 (kit) | VOID (M1 no power) | **PASS** | **PASS** (fp32 wrapper 6.7e-7; bf16 P1 8.4e-4; W1/W2 detected 1/26) | pipeline validation only: seed 0 rolled on GPU; panel on CPU (§3) |
 | step 5000 | FAIL (wrapper 3.9e-3 + M1 VOID) | **FAIL** (wrapper clause only) | **PASS** (fp32 wrapper 1.9e-6; §1b) | queued in `code/chain_milestones.sh` |
 | step 30000 | — | — | — | queued (ckpt pulled read-only, md5 `0c5c67b3…`) |
 | FINAL (step 50,400) | — | — | — | the chain waits for `summary.json` (Thor ETA ~09-27 19:30 Berlin), pulls `ckpt.pt` with 3-way md5, then runs |
@@ -23,6 +34,8 @@
 * It banks each tag, sanitized, into `raw/<tag>/`.
 * It appends the paths to `LANDING_READY.txt`.
 * Every GPU stage waits on the dev-box gate. The orchestrator holds no CUDA context.
+
+**Post-bank watcher** (`code/post_chain_watch.sh`, started 13:07 09-26, markers in `raw/post_watch.log`). After the chain banks a tag it runs `post_tag.sh <tag>`: the A3 recompute (step 5000 only, whose panels predate A3), the A4 lever panel, re-rendered tables, a re-bank and a LANDING_READY append. After step 30000 is banked, while the chain waits on Thor, it runs the L3 eps0 rolls for step 5000 and step 30000 behind the gate; after the final, L3 for the final.
 
 **If I am stopped:** the chain keeps going. Read `raw/chain.log` markers (`ZZB5000DONEZZ`, `ZZB30000DONEZZ`, `ZZFINALOKZZ`, `ZZBFINALDONEZZ`, `ZZBANKED_<tag>ZZ`) and each tag's `battery_summary.json`.
 
@@ -93,6 +106,7 @@
   * W2, micro-parts concatenated in reverse: 27 terms.
 * ⇒ **The wrapper's merge is exact. The step-5000 reading is precision, not a merge defect.**
 * ⇒ **G0-A2 at step 5000 = PASS.** Both verdicts are always reported.
+* **The same probe at step 1000** (`raw/g0_step1000/g0_step1000_A2_table.md`): P1 8.44e-4 and P2 8.45e-4, which reproduce the §2 reading; **P3 6.7e-7**; W1/W2 detected 1/26 ⇒ **G0-A2 PASS**. So the bf16 batch-size sensitivity **grows with training** (8.4e-4 at step 1000 → 3.9e-3 at step 5000), while the fp32 merge stays exact at both. That is why a fixed 1e-3 bar on the bf16 reading was the wrong instrument.
 * ⚠️ The battery itself does not use the wrapper: its rolls are single-window forwards. The bf16 batch-size sensitivity (~4e-3 relative on loss terms) is ~2 orders below the DDIM inference-seed spread of the plans.
 
 ---
@@ -107,6 +121,8 @@
 | `code/refcv6_roll.py` | Runs refcv3_arm's own `run_dump` (the dump contract, nav controls, model-free controls and lead join are all refcv3_arm's). Three seams are patched: the model builder, the corpus builder, and the model call. The call is wrapped so refcv6 receives **`ego_poses` (the observed window) and `v_max_ms`/`v_max_valid` (the eval sidecar)**. Two further arms run under a forked RNG: max-speed withheld, and the 30 km/h obedience forward. An **exact per-window backbone memo** (`torch.equal` frames, BN frozen) removes the 5–6× repeated trunk passes. | refcv3_arm's call never passes `ego_poses` or `v_max_ms`, and the refcv6 build **refuses both omissions** (`refc.py:4413`, `refc_v3.py:1937`). So refcv3_arm cannot roll the full refcv6 arm; the 2026-09-19 E9 run was a `--size tiny` checkpoint without these channels. |
 | `code/microbatch.py` | Splits the ONE `model(...)` call inside `compute_losses_v3` into micro-batches (3,3,3,3,4) and merges the outputs. Every loss reduction therefore still runs over the in-run eval's 16-row batch. | A 16-row refcv6 forward does not fit the 8 GB RTX 4060: the frames alone are 1.96 GB fp32 before the trunk normalises them twice. |
 | `code/reproduce_inrun_eval.py` | GATE G0 (SPEC §2): the trainer's own `compute_losses_v3` over the trainer's own 128 fixed windows, 8 inference seeds, a wrapper control, and deliberate-regression arm M1. | — |
+| `code/g0_mutations.py` / `code/wrapper_probe.py` | G0-A1 (M2–M4 deliberate loader regressions) and G0-A2 (the fp32 merge-isolating wrapper probe with its floor and W1/W2 regressions). | — |
+| `code/roll_seed.py`, `code/chain_milestones.sh`, `code/pull_milestone.sh`, `code/pull_final.sh` | Per-seed GPU child process; the unattended milestone chain; read-only md5-verified checkpoint pulls (the final only after `summary.json`, with md5 checked on Thor before and after the copy and on the dev box). | — |
 | `code/refcv6_panel.py` | The panel dump: refcv6 + STOP + the banked baselines as arms on the SAME windows, with pairing verified per window. Also the analysis (refcv3_arm, imported), cross-model paired families, the v6 tactical decoder metrics, the frozen acceptance instruments, the 6 s read, and the VOID gates. | refcv3_arm pairs arms inside one roll only; it has no cross-checkpoint pairing and no STOP control. |
 | `code/run_battery.py` | ONE command: gate → G0 → rolls per inference seed → panels → bars. | — |
 | `code/check_pairing_surface.py` | MODEL-FREE proof that the 416×1024 kit clips and the 256×640 baseline clips carry bit-identical poses and actions, and that the banked GT equals the GT recomputed from the kit. | — |
@@ -129,7 +145,7 @@
 The **VOID gates** are checked on every panel: model-free arms bit-identical across all dumps, `g` bit-identical, STOP displacement 0, `ha0` curvature 0.
 
 **Controls that had to read a known value, and did (all MEASURED):**
-* wrapper micro vs plain: 8.4e-4 max relative;
+* wrapper micro vs plain: 8.4e-4 max relative at step 1000 under bf16. Under A2 the merge-isolating fp32 probe reads **1.9e-6** at step 5000, and both deliberate wrapper regressions are detected (§1b);
 * frame memo on the real trunk: max |Δ| **0.0** (`raw/controls/frame_memo_exactness_cpu.txt`);
 * inference seeds **must differ** on a sampler arm. The first CPU smoke read **4.5e-8 m** between seeds 0 and 1, which exposed the loader resetting the caller's RNG (fixed with `fork_rng`, §5). After the fix: **0.22 m**;
 * AUROC/AP against sklearn: identical to 1e-15; 1.0 / 0.0 / 0.5 on separable / reversed / tied;
@@ -210,7 +226,25 @@ The **VOID gates** are checked on every panel: model-free arms bit-identical acr
 | F7 | **My orchestrator deadlocked on its own GPU gate.** After the step-1000 seed-0 roll the process held a CUDA context (1,826 MiB), and `gate_wait()` did not exclude its own pid, so it waited on itself: 11 WAIT rows from 03:39 Berlin. It also blocked the sibling NavSim stream. The Master Mind caught it. | mine; a check that shares the defect it checks for | ✅ Stopped by explicit PID. Fixes: (a) `gpu_gate.evaluate()` always drops the caller's own pids; (b) the orchestrator **never initialises CUDA**, because every GPU stage (G0, G0-A1, each seed roll) is a child process (`roll_seed.py`), and `parent_cuda_initialized` is recorded False. `test_gpu_gate.py` 6/6, including a mutation arm that reproduces the defect. The 8 GB RAM rule is unchanged |
 | F9 | **The §2 wrapper control conflated merge exactness with bf16 batch-size numerics.** Its 1e-3 bar was never measured. It held at step 1000 (8.4e-4) and read 3.9e-3 at step 5000. | an unmeasured tolerance; a control whose question was wider than its purpose | ✅ Amendment A2, registered before measuring: an fp32-deterministic wrapper probe with its own floor and two deliberate wrapper regressions. The merge is exact (1.9e-6); G0-A2 PASS. The as-registered FAIL is kept and reported |
 | F8 | **The frozen OBEDIENCE bar is unsatisfiable on 97.5 % of its population** (§3). | instrument design | ⚠️ **ESCALATED** (owner / PI). Reported, not changed |
+| F10 | **The paired yaw-rate cell in the shared `taniteval/tools/refav1_arm.py::_components` is scored on steps with NO path tangent.** `four_families` masks yaw-rate with `pred.pair_valid & gt.pair_valid` (`four_families.py:786-791`); `_components` masks heading but not yaw-rate (`refav1_arm.py:2058`). MEASURED at step 5000 seed 0 (`code/probes/yaw_mask_probe.py`): refcv4b 0.2034 rad/s unmasked vs 0.0318 masked (6.4×; 235 windows > 1 rad/s carry 83 % of the sum, every one with a stopped/crawling GT step); the cell `os − refcv4b` read −0.1683 rad/s separated and is −0.0042 [−0.0075, −0.0011] on valid steps (40× smaller); `refcv4b − ha0_ext` +0.1721 → +0.0073. Every other paired cell is bit-identical before/after. The same `_components` feeds `paired_openloop.py`, `openloop_suite.py`, `stratified_openloop.py`. | a check that shares the defect it checks for (a mask applied to heading, forgotten on its derivative) | ✅ In-package: SPEC **A3** (registered before any unread panel), `LAT_yaw_rate_mae_radps_valid` in every paired table, the unmasked cell labelled DEFECTIVE; `code/test_yaw_valid.py` 3/3 with a mutation arm that re-introduces the defect and is caught. ⚠️ **ESCALATED**: the shared instrument and any landed paired yaw-rate claim (candidates: `2026-09-05-mm-decisions.md` M26 0.2176 → 0.0427 rad/s; `PREREG_REFCV6.md` L1–L4 yaw-rate clause) are the owner's to re-read |
 | F6 | **GPU contention.** 7 REFe `augment_search.py` shards (another stream) held python compute on the RTX 4060 23:18–00:00, and the brief's gate correctly WAITED. My first gated launcher then died on an MSYS `/c/` path inside a Python string (the MSYS-path trap). | environment; mine | ✅ Relaunched with Windows paths. No battery number was affected |
 
 
-<!-- MANIFEST -->
+---
+
+## 6. Deliverable manifest
+
+`PKG` = `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/`. Repo copies are landed by the Master Mind from `LANDING_READY.txt`. Batch 1 is `9f52118b` on `agent/arch-inf-20260803`.
+
+| artifact | where it lives | only in one place? |
+|---|---|---|
+| `SPEC.md` (registration + A1 + A2) and its sha records `raw/SPEC_SHA256_*.txt` | repo:`PKG` (batch 1) + dev box `C:/Users/Admin/ev6_battery/` | no |
+| battery code, `code/*.py`, `code/*.sh` (loader, roll, panel, runner, G0/A1/A2 tools, gate + test, chain, pulls, renderers, sanitizer) | repo:`PKG/code/` + dev box `C:/Users/Admin/ev6_battery/code/` | no |
+| model-free pairing proof, kit checks, controls | repo:`PKG/raw/{pairing_surface.json,kit_checks,controls}` | no |
+| G0 / G0-A1 / G0-A2 at step 1000 and step 5000 | repo:`PKG/raw/g0_step1000/`, `PKG/raw/step5000/` (+ dev box `raw/`) | no |
+| step-1000 pipeline validation (analysis, cross-paired, tactical, S6, acceptance, tables) | repo:`PKG/raw/step1000/` | no |
+| battery tags step5000 / step30000 / final (JSON, logs, tables, dump tarball ≤ 19 MiB) | auto-banked to `PKG/raw/<tag>/` by `chain_milestones.sh`, then landed from `LANDING_READY.txt` | dev box only until landed |
+| per-window decision sidecars (`dump_s*/decisions/*.npz`, ~25 KB/window) and the panel/S6 dumps | dev box `C:/Users/Admin/ev6_battery/raw/<tag>/` | **YES, dev box only**: derivable from the banked dumps plus the banked baseline dumps; too large to land |
+| checkpoints `ckpt_step1000.pt`, `ckpt_5000.pt`, `ckpt_30000.pt`, `ckpt_final.pt` + `MD5SUMS` | dev box `D:/refcv6_eval_kit/ckpt/` (read-only copies of Thor files) | copies; the originals are on Thor |
+| SAM3 GT for the 137 eval clips, byte-identical to Thor | dev box `D:/refcv6_eval_kit/data/sam3_gt_eval_thor137/` (+ `_GT_RECORD.json` landed) | copy |
+

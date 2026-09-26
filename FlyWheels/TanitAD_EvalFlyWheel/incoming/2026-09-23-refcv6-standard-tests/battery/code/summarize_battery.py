@@ -80,8 +80,15 @@ def dk_table(an: dict) -> str:
     return "\n".join(out)
 
 
+YAW_VALID = "LAT_yaw_rate_mae_radps_valid"      # SPEC A3 (refcv6_panel.YAW_VALID)
+
+
 def paired_table(cp: dict, names=None) -> str:
-    out = ["| cell (b − a) | ADE m [CI] sep | FDE m | speed MAE | along MAE | heading ° | yaw-rate rad/s | "
+    a3 = any(YAW_VALID in ((b.get("families") or {}).get("lateral") or {})
+             for b in cp["pairs"].values())
+    yaw_hdr = ("yaw-rate rad/s (valid steps, A3)" if a3 else
+               "yaw-rate rad/s (⚠ UNMASKED shared cell, DEFECTIVE per SPEC A3 — do not quote)")
+    out = [f"| cell (b − a) | ADE m [CI] sep | FDE m | speed MAE | along MAE | heading ° | {yaw_hdr} | "
            "cross-track | traj lat correct | traj lon correct |", "|---|---|---|---|---|---|---|---|---|---|"]
     for nm, blk in cp["pairs"].items():
         if names and nm not in names:
@@ -97,13 +104,16 @@ def paired_table(cp: dict, names=None) -> str:
                 return "—"
             s = "**sep**" if x.get("separated") else "ns"
             return f"{f(x['delta'])} [{f(x['lo'])}, {f(x['hi'])}] {s}"
+        yaw = c('lateral', YAW_VALID) if a3 else c('lateral', 'LAT_yaw_rate_mae_radps')
         out.append(f"| {blk['direction']} | {c('ADE', 'ade_m')} | {c('ADE', 'fde_m')} | "
                    f"{c('longitudinal', 'LON_speed_mae_mps')} | {c('longitudinal', 'LON_along_mae_m')} | "
-                   f"{c('lateral', 'LAT_heading_mae_deg')} | {c('lateral', 'LAT_yaw_rate_mae_radps')} | "
+                   f"{c('lateral', 'LAT_heading_mae_deg')} | {yaw} | "
                    f"{c('lateral', 'LAT_cross_mae_m')} | {c('tactical', 'TAC_traj_lat_correct')} | "
                    f"{c('tactical', 'TAC_traj_lon_correct')} |")
     n = cp.get("n_windows"), cp.get("n_episodes")
-    return "\n".join(out) + f"\n\nn = {n[0]} windows / {n[1]} episodes · estimator: paired episode-cluster bootstrap"
+    return ("\n".join(out) + f"\n\nn = {n[0]} windows / {n[1]} episodes · estimator: paired episode-cluster bootstrap"
+            + ("" if a3 else "\n\n⚠ This panel predates SPEC A3: its yaw-rate column is the shared UNMASKED "
+               "cell (scored on steps with no path tangent) and must not be quoted."))
 
 
 def tactical_tables(t: dict) -> str:
@@ -145,6 +155,13 @@ def main():
           "episode-cluster bootstrap (n_boot 2000, seed 0, cluster = clip). One training seed: every "
           "separated cell answers the EPISODE question only; the INFERENCE question is answered by the "
           "seed replicate.\n")
+    print("⛔ **Run-defect stamp (every refcv6 number):** F3 detach-only (no per-stage loss), F4 on the "
+          "last layer only; tactical labels ~0.37 s early (D-REFCV6-F3-WHITELIST, D-REFCV6-LABEL-CLOCK; "
+          "audit 92337fa6). No weakness below may be attributed to the REGISTERED design while these "
+          "hold. The TACTICAL declared-head scores use the trainer's label clock, i.e. the same "
+          "~0.37 s-early admission as training (eval: 598/5,699 = 10.5 % of tactical-supervised "
+          "windows lie outside the true ±2 s band). Physical-unit rates use dt = 0.5 s for a true "
+          "0.5033 s (row = 0.100667 s), identically for every arm and baseline.\n")
     g0 = (s.get("stages") or {}).get("g0") or {}
     print("### Gate\n")
     print(f"* G0 as registered: **{g0.get('G0_as_registered')}**; G0-A1: **{g0.get('G0_A1')}**; "

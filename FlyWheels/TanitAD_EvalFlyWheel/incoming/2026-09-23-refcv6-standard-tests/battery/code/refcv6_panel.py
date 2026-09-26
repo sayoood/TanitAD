@@ -178,6 +178,55 @@ def load_panel(panel_dir: str):
     return man, {k: np.concatenate(v) for k, v in arrs.items()}, np.asarray(eid)
 
 
+#: SPEC AMENDMENT A3. The shared `refav1_arm._components` scores yaw-rate over EVERY step, while
+#: `four_families` itself masks it with `pred.pair_valid & gt.pair_valid` (a stopped or crawling
+#: step has no path tangent). MEASURED at step 5000 seed 0: refcv4b 0.2034 rad/s unmasked vs
+#: 0.0318 on valid steps. The `_valid` cell below is the one the renderer shows; the shared cell
+#: stays in the JSON, labelled DEFECTIVE, and is never quoted.
+YAW_VALID = "LAT_yaw_rate_mae_radps_valid"
+YAW_SHARED = "LAT_yaw_rate_mae_radps"
+A3_NOTE = ("SPEC A3: `LAT_yaw_rate_mae_radps` (shared refav1_arm._components) is scored on steps "
+           "with no path tangent and is DEFECTIVE -- quote `LAT_yaw_rate_mae_radps_valid` "
+           "(four_families' own pred&gt pair_valid mask, per-window mean over valid steps).")
+
+
+def yaw_rate_valid(P: np.ndarray, G: np.ndarray, dt: float) -> np.ndarray:
+    """A3: per-window yaw-rate MAE (rad/s) over the steps where BOTH the prediction's and the
+    GT's `pair_valid` hold -- four_families' own geometry and its own mask (four_families.py
+    `both_pair`), never re-derived. NaN for a window with no valid step pair."""
+    from taniteval import four_families as ff
+    pt, gt = torch.as_tensor(P).float(), torch.as_tensor(G).float()
+    Pg, Gg = ff._seq_geometry(pt, dt), ff._seq_geometry(gt, dt)
+    m = Pg["pair_valid"] & Gg["pair_valid"]
+    err = (Pg["yaw_rate"] - Gg["yaw_rate"]).abs()
+    nv = m.sum(1)
+    return torch.where(nv > 0, (err * m).sum(1) / nv.clamp_min(1),
+                       torch.full_like(err[:, 0], float("nan"))).numpy()
+
+
+def _paired_yaw_valid(comps: dict, a_: str, b_: str, eid, n_boot: int, seed: int) -> dict:
+    """b − a on the A3 cell, the SAME estimator `_paired_families` uses (paired episode-cluster
+    bootstrap, windows with a non-finite value on either side dropped and counted)."""
+    from taniteval import ci as _ci
+    a_v, b_v = comps[a_][YAW_VALID], comps[b_][YAW_VALID]
+    keep = np.isfinite(a_v) & np.isfinite(b_v)
+    if keep.sum() == 0:
+        return {"status": "REFUSED", "reason": "no window has a valid step pair for both arms",
+                "amendment": "A3"}
+    e = [x for x, kp in zip(eid, keep) if kp]
+    r = _ci.paired_episode_cluster_bootstrap(b_v[keep], a_v[keep], e, n_boot=n_boot, seed=seed)
+    r["n_dropped_nonfinite"] = int((~keep).sum())
+    r["amendment"] = "A3"
+    return r
+
+
+def _attach_a3(block: dict, comps: dict, a_: str, b_: str, eid, n_boot: int, seed: int) -> dict:
+    lat = block.setdefault("families", {}).setdefault("lateral", {})
+    lat[YAW_VALID] = _paired_yaw_valid(comps, a_, b_, eid, n_boot, seed)
+    block["A3_note"] = A3_NOTE
+    return block
+
+
 def cross_paired(panel_dir: str, pairs, n_boot=2000, seed=0) -> dict:
     R = RR.ra3()
     ra = R.ra
@@ -185,15 +234,18 @@ def cross_paired(panel_dir: str, pairs, n_boot=2000, seed=0) -> dict:
     dt = float(man["grid"]["dt_s"])
     need = sorted({x for p in pairs for x in p[:2] if x in A})
     comps = {x: ra._components(A[x], A["g"], dt) for x in need}
+    for x in comps:                                    # SPEC A3
+        comps[x][YAW_VALID] = yaw_rate_valid(A[x], A["g"], dt)
     tiers = {x: TIERS.get(x, "T1") for x in need}
     out = {}
     for a_, b_, nm in pairs:
         if a_ in comps and b_ in comps:
-            out[nm] = ra._paired_families(comps, a_, b_, list(eid), tiers, n_boot, seed)
+            out[nm] = _attach_a3(ra._paired_families(comps, a_, b_, list(eid), tiers, n_boot, seed),
+                                 comps, a_, b_, list(eid), n_boot, seed)
         else:
             out[nm] = {"status": "ABSENT", "missing": [x for x in (a_, b_) if x not in comps]}
     return {"n_windows": int(len(eid)), "n_episodes": int(len(set(eid.tolist()))),
-            "dt_s": dt, "pairs": out,
+            "dt_s": dt, "pairs": out, "A3_note": A3_NOTE,
             "means": {x: {k: float(np.nanmean(v)) for k, v in comps[x].items()} for x in comps}}
 
 
@@ -207,8 +259,11 @@ def seed_replicate(panel_a: str, panel_b: str, n_boot=2000, seed=0) -> dict:
         raise SystemExit("[panel] seed replicate: the two dumps are not the same windows")
     dt = float(ma["grid"]["dt_s"])
     comps = {"os_A": ra._components(A["os"], A["g"], dt), "os_B": ra._components(B["os"], B["g"], dt)}
-    blk = ra._paired_families(comps, "os_B", "os_A", list(eid), {"os_A": "T1", "os_B": "T1"},
-                              n_boot, seed)
+    comps["os_A"][YAW_VALID] = yaw_rate_valid(A["os"], A["g"], dt)      # SPEC A3
+    comps["os_B"][YAW_VALID] = yaw_rate_valid(B["os"], B["g"], dt)
+    blk = _attach_a3(ra._paired_families(comps, "os_B", "os_A", list(eid),
+                                         {"os_A": "T1", "os_B": "T1"}, n_boot, seed),
+                     comps, "os_B", "os_A", list(eid), n_boot, seed)
     ident = float(np.abs(A["os"].astype(np.float64) - B["os"].astype(np.float64)).max())
     return {"direction": "os(seed A) - os(seed B)", "max_abs_path_diff_m": ident,
             "families": blk["families"]}

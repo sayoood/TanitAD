@@ -197,3 +197,83 @@ It is **PIPELINE VALIDATION ONLY**. The runner is run end to end on it, and G0 i
   * the term and its merge rule are named;
   * the wrapper is fixed and the reproduction re-run before any battery number.
 * **A2 applies to every milestone from step 5000 on.** The step-1000 probe is run too and reported. **Both verdicts are always shown:** G0-A1 as registered, and G0-A2.
+
+## AMENDMENT A3: registered 2026-09-26 ~12:50 Europe/Berlin. The paired yaw-rate cell is scored on steps that have no path tangent. Written BEFORE the step-5000 two-seed panels, step 30000 and the final were read
+
+**Where it was found.** In the step-5000 inference-seed-0 early panel, which had been read. No bar reads yaw-rate, so no verdict depends on this amendment.
+
+**What was found.** MEASURED with `code/probes/yaw_mask_probe.py` on `raw/step5000_s0_early/panel`: 4,754 windows, dt 0.5 s, `min_ds` 0.25 m.
+* **Source of the cell.** The paired LATERAL yaw-rate cell comes from `taniteval/tools/refav1_arm.py::_components`, which is imported.
+  * It scores `|yaw_rate_pred − yaw_rate_gt|` over **every** step.
+  * `four_families._seq_geometry` publishes `pair_valid` because a stopped or crawling step has no path tangent: *"a stopped or crawling vehicle has no meaningful path tangent"*.
+  * `_components` applies the validity mask to heading, but not to yaw-rate.
+* **refcv4b.** Its per-window yaw-rate MAE is 0.2034 rad/s unmasked and 0.0318 rad/s on valid steps, 6.4× higher unmasked. 235 windows above 1 rad/s carry 83 % of the unmasked sum, and all 235 contain a GT step below `min_ds`: the vehicle is stopped or crawling there.
+* **The other arms (`os`, `ha`, `ha0_ext`, refcv5-v2).** Unmasked is 1.15–1.43× the masked value. For every one of these arms the same 15 windows carry 17–30 % of the sum (the sets were verified identical), and each of the 15 has a GT step below `min_ds`.
+* **The artefact cell.** The seed-0 cell `os − refcv4b` yaw-rate read **−0.1683 rad/s, separated**. That comes from refcv4b's heading noise on stopped-GT windows, not from refcv6's lateral skill.
+* **The level tables were already correct.** They come from `four_families`, which is masked: `os` 1.5649 °/s, refcv4b 1.7557 °/s.
+
+**A3.**
+* **New cell.** Every paired table adds `LAT_yaw_rate_mae_radps_valid`.
+  * The per-step error is identical to the shared cell's, but it is averaged per window over the steps where **both** the prediction's and the GT's `pair_valid` are true.
+  * The mask is four_families' own, taken from four_families' own geometry, not re-derived.
+  * A window with no valid step pair is dropped from that cell only, and every cell states `n_dropped_nonfinite`.
+* **Estimator unchanged:** paired episode-cluster bootstrap, n_boot 2000, seed 0, cluster = clip.
+* **Renderer.** The yaw-rate column shows the `_valid` cell. The shared unmasked cell stays in the JSON, labelled DEFECTIVE (A3), and is never quoted.
+* **Scope.**
+  * No bar reads yaw-rate, and no bar or tolerance changes.
+  * Heading is already masked.
+  * Cross-track, along-track, speed and accel have no tangent and are unaffected.
+* **Shared instrument not patched here.** The defect is in the shared instrument, so it is escalated to the Master Mind and not patched there by this package. It also affects the paired yaw-rate cells of every battery that used `_paired_families`.
+* **Deliberate regression.** `code/test_yaw_valid.py` builds a GT-stopped window and a jittering prediction, and fixes three literals:
+  * the `_valid` cell must read exactly 0.0 on the valid window;
+  * it must drop the stopped window;
+  * the shared unmasked cell must read the jitter (> 1 rad/s), so the test demonstrably sees the defect.
+* **Step 5000.** The chain's `cross_paired` for step 5000 was imported before A3 existed. It is recomputed with A3 after the chain banks step 5000, then re-rendered and re-banked, and both versions are kept.
+
+## AMENDMENT A4: registered 2026-09-26 ~13:05 Europe/Berlin. A zero-training LEVER PANEL, reported with no bar. Written BEFORE the step-5000 inference-seed-1 panel, step 30000 and the final were read
+
+**Why it exists.** Under CLAUDE.md RULE ZERO, a FAIL on BAR-R6-1 must leave the next lever and that lever's result behind it, not only the verdict.
+* The only surface read when A4 was written was the step-5000 seed-0 early panel. There, `os − ha0_ext` = +0.0885 at 0–2 s; the along-track and cross-track gaps are both separated.
+* At that time no programme arm cleared the 2 s echo bar on this surface:
+  * refcv4b +0.0088, not separated;
+  * refcv5-v2 +0.0204, separated worse.
+* A4 asks which **zero-training** lever moves the 0–2 s gap, and by how much.
+* ⛔ **Nothing in A4 changes a bar, a verdict or the headline.** Each lever is a DIFFERENT planner from the registered refcv6 arm, and it is reported as such.
+
+**Common rules.**
+* Surface S2, metric ADE 0–2 s, tier T1.
+* Paired episode-cluster bootstrap (n_boot 2000, seed 0, cluster = clip), on the battery's own panel windows.
+* n (windows / episodes) is printed with every cell.
+* Every hyper-parameter is fit on a FIT split only and scored on the other split (2-fold, episode-disjoint cross-fit).
+
+**L1: inference-seed average.** `os_avg = (os_s0 + os_s1) / 2` per window.
+* Cells: `os_avg − ha0_ext`, `os_avg − os_s0` and `os_avg − os_s1`.
+* ⚠️ **By the triangle inequality, `os_avg`'s per-window ADE is at most the mean of the two seeds' ADEs.** Its gain over the single seeds is therefore guaranteed in SIGN, and only its MAGNITUDE is information: it prices the inference-sampling term.
+* L1 also reports the mean and p95 of `|os_s0 − os_s1|` per instant. An average of two samples can average across modes, which ADE rewards and driving may not.
+* L1 has one draw only (two seeds make one average), so it carries no replicate of its own. It is read against the single-seed replicate floor `|ADE(os_s0) − ADE(os_s1)|`.
+
+**L2: causal-hold blend.** `blend_k = w_k · os_k + (1 − w_k) · ha_k` at each instant k ∈ {0.5, 1.0, 1.5, 2.0} s.
+* `w_k` ∈ {0.00, 0.05, …, 1.00} is chosen per fold to minimise that fold's mean L2 error at instant k.
+* **Folds:** the panel's episode index parity (even / odd), with each fold scored using the other fold's `w`.
+* `ha` holds only the action closed at t0 (every frame ≤ t0), so the blend is causal: it uses what refcv6's own ego-history input already carries.
+* **Run per inference seed**, with `os_s0` and `os_s1` separately; the two readings are the replicate.
+* **Controls:**
+  * (i) **identity:** `w ≡ 0` must read `blend − ha` = 0.0 exactly, CI [0, 0];
+  * (ii) **shuffled-plan control** `blend_shuf`: the same cross-fit with `os` replaced by the `os` of the window N/2 positions later (a fixed cross-episode derangement). This prices the gain available from shrinkage alone.
+* **Cells:** `blend − ha0_ext`, `blend − ha`, `blend − blend_shuf`, the fitted `w_k` per fold, and the same four for the echo blend **L2e** below.
+* **L2e** is the same blend with `ha0_ext` in place of `ha`. Its curvature `k0` is the recorded channel AT t0, and whether that is admissible at inference is **unruled**, so L2e is **diagnostic only**. It answers *"does refcv6 carry information the echo lacks?"* and is never a candidate planner.
+
+**Interpretation, committed now for each outcome of L2** (per checkpoint, both seeds):
+* `blend − ha0_ext` < 0 separated at both seeds, **and** `blend − blend_shuf` < 0 separated ⇒ refcv6's plan carries 0–2 s information that a causal kinematic hold lacks. The next lever is a **residual-on-kinematic-prior output parameterisation** (training; MM / PI decision).
+* `blend` beats `ha` but not `ha0_ext` ⇒ the complementary information is real, but composition alone does not clear the echo bar.
+* `w_k` ≤ 0.10 at every k in both folds ⇒ at 0–2 s refcv6 adds nothing beyond a causal hold; the short-horizon lever is not composition.
+
+**L3: deterministic DDIM (`eps = 0`).**
+* **Roll:** one extra GPU roll per checkpoint, on the same windows as the battery.
+  * `torch.randn_like` returns zeros for the whole roll process.
+  * The only `randn_like` on refcv6's eval path is the anchored-Gaussian draw (`refc.py:2551`). Of the 5 sites in `stack/tanitad`, the other four are training-only or belong to other models; `refc.py:3065` is `zeros_like` outside training. The same patch was used by the A2 probe.
+* **Cells:** `os_eps0 − ha0_ext` and `os_eps0 − os_s0`. Plus the VOID gate that the model-free arms are bit-identical to the battery's.
+* **What it answers.** `refc.py` states that the eval draw is stochastic **by design**, so L3 answers *"what does the draw cost or buy at 0–2 s?"*. It does not claim the design is wrong.
+* **When it runs.** Only behind the dev-box gate, and only when the chain is not using the GPU. Otherwise it is reported as **NOT RUN (compute)**, with the reason.
+
+**Ranking (RULE ZERO item 5).** The levers are ranked by their measured `− ha0_ext` effect. The largest is named as the next lever, with its evidence class, in RESULT.md.
