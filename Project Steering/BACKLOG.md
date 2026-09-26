@@ -388,3 +388,30 @@ closed by landing alone:
    carries raw PhysicalAI clip ids (`"clip_id": "<uuid>"`). The clip-id rule keeps new ones out of
    the record. It is still on D:, staged. **Fix:** re-emit it with `sha12(clip_id)`, and check
    whether its run summary cites the file's hash.
+
+<!-- YAWMASK-FOLLOWUPS-2026-09-26 -->
+
+### OPEN — 2026-09-26 · the yaw-rate mask landed; five follow-ups · owner: see each item
+
+The shared paired yaw-rate cell (`taniteval/tools/refav1_arm.py::_components`) now masks tangent-less
+step pairs exactly as heading does (`RETR-2026-09-26-YAWMASK`). Four landed claims moved, and the
+register rows carry them. The fix itself cannot close the following:
+
+1. **Propagation sweep (0 GPU; any doc agent).** About 80 lines still quote the defective numbers:
+   6/42 = 14.3 % (now 4/42 = 9.5 %), M26's −80.4 % yaw (now −4.3 %), and refcv3's LATERAL "LOST"
+   (now WON 3/3). The list is `…/2026-09-26-yaw-rate-mask/raw/propagation_sites.txt`. Annotate each
+   site with the corrected value and the RETR id; never silently overwrite a number. `CLAUDE.md:183`
+   waits on the PI (PI_DECISION_QUEUE).
+2. **`H-KINGATE-1`'s `kin_gate_eval.py` has its OWN unmasked `_yaw` / `_head` / `_kappa`** (same
+   defect class, a separate instrument). Mask them the way `four_families.lateral` does, add a
+   known-value stopped-window control, and re-read H-KINGATE-1. Owner: EvalFlyWheel.
+3. **The battery's clone `C:/Users/Admin/ev6` must be synced** to a tip that has the fix before its
+   next tag. Until then the battery runs the historical cell, although its own A3 cell already
+   masks. `recompute_a3.py` refuses any pre-A3 panel once the shared cell moves (by design). Owner:
+   EvalFlyWheel battery.
+4. **`PREREG_REFCV6.md` L2 amendment A-YAW** is drafted in the package's RESULT §4.6 and NOT applied.
+   No code builds that panel today. If a builder is ever written, it must use the masked cell and
+   °/s-vs-rad/s units. Owner: Arch.
+5. **The Thor half of `D-REFAV1-LON-T1`** was not re-derived, because its dumps live on Thor only.
+   Its dev-box twin kept its sign and separation (−0.1009 → −0.1161). Re-read it when Thor is free
+   (after refcv6-r101-s0 finishes).

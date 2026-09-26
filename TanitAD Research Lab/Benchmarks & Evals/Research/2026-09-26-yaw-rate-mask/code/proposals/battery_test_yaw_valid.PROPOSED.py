@@ -1,10 +1,8 @@
-"""The refcv6 battery's `code/test_yaw_valid.py`, REPLACED 2026-09-26 in the YAWMASK landing.
+"""PROPOSED replacement for the refcv6 battery's `code/test_yaw_valid.py` -- NOT APPLIED.
 
 Owner: the EvalFlyWheel battery package
 (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/battery/`).
-Written by the yaw-rate agent as `code/proposals/battery_test_yaw_valid.PROPOSED.py` in
-`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-26-yaw-rate-mask/`; the Master Mind
-applied it in the same commit as the shared fix, so the suite never went red in between.
+This file lives in the 2026-09-26-yaw-rate-mask package only as a proposal.
 
 WHY IT IS NEEDED. The landed test's deliberate regression is the SHARED
 `refav1_arm._components` cell itself: two of its three tests assert the shared cell

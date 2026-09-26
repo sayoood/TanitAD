@@ -106,7 +106,7 @@
 | LONGITUDINAL | `LON_speed_mae_mps` | −0.0364 [−0.0636, −0.0079] → model WINS | +0.1976 [+0.1737, +0.2204] → ⛔ floor WINS | 4,823 |
 | LATERAL | `LAT_cross_mae_m` | −0.2048 [−0.2686, −0.1500] → model WINS | −0.0142 [−0.0288, +0.0004] → TIE | 4,823 |
 | LATERAL | `LAT_heading_mae_deg` | −1.3741 [−1.7569, −1.0418] → model WINS | −0.1332 [−0.2539, −0.0138] → model WINS | 4,548 |
-| LATERAL | `LAT_yaw_rate_mae_radps` | +0.1700 [+0.1006, +0.2534] → ⛔ floor WINS | +0.1849 [+0.1162, +0.2683] → ⛔ floor WINS | 4,823 |
+| LATERAL | `LAT_yaw_rate_mae_radps` | **−0.0100 [−0.0168, −0.0037] → model WINS** (masked cell, n 4,524; unmasked it read +0.1700 [+0.1006, +0.2534] → floor WINS, `RETR-2026-09-26-YAWMASK`) | **+0.0064 [+0.0023, +0.0107] → ⛔ floor WINS** (masked, n 4,535; unmasked +0.1849 [+0.1162, +0.2683]) | 4,823 windows; 4,524 / 4,535 with a valid pair |
 | TACTICAL | `TAC_traj_lat_correct` | +0.0881 [+0.0580, +0.1233] → model WINS | +0.0158 [+0.0017, +0.0273] → model WINS | 4,823 |
 | TACTICAL | `TAC_traj_lon_correct` | −0.0100 [−0.0356, +0.0162] → TIE | −0.0966 [−0.1189, −0.0739] → ⛔ floor WINS | 4,823 |
 

@@ -17680,3 +17680,37 @@ term (0/668 + 0/66 rows) and its stage-0..2 heads are bit-identical across 29,00
 (the advisory's "every instrument built its inputs FROM the component it was testing"); the silent
 `and "<key>" in out` guard is the class-F shape that let it pass. **Durable fix:** assert the TERM in
 the consumer's output on the real `train()` (q3b's arm A/B), and make the F3 block refuse, not skip.
+
+<!-- RETR-2026-09-26-YAWMASK -->
+### RETR-2026-09-26-YAWMASK — four landed yaw-rate readings came from a cell that scored standstill jitter
+
+**Retracted / corrected** (every one re-derived on its own dumps; reproduction control exact on each):
+1. Decisions 2026-09-05 **M26** / `D-FEASDEC-T1-1`: *"yaw-rate error 0.2176 → 0.0427 rad/s, −80.4 %, separated"* and
+   *"yaw-rate goes from worse than a constant-velocity straight line to better than it"* → **0.0320 → 0.0304 rad/s,
+   Δ −0.0014 [−0.0029, −0.0004], ≈ −4.3 %; base already beats the line (−0.0100 [−0.0168, −0.0037])**. Retracted.
+2. refcv3 @40,284 LATERAL *"LOST (2/3 won), yaw-rate +0.1700 [+0.1006, +0.2534]"* (`D-REFCV3-40284c`, MODEL_REGISTRY,
+   HF card, LEADERBOARD) → **−0.0100 [−0.0168, −0.0037] WON; family WON (3/3)**. The sign flips.
+3. `H-ESTIM-SEED-1` / `D-REPLICATE-FPRATE` / `CLAUDE.md`: *"6 of 42 = 14.3 %"* (and *"3 of 14 = 21.4 %"*) →
+   **4/42 = 9.5 % (2/14 = 14.3 %)**. The rule stands; the number was half defect.
+4. `D-RL-VETO-T1-1`: *"`LAT_yaw_rate_mae_radps` … WITHIN-NOISE"* → **QUOTABLE regression (5.8× its floor)** —
+   the defect hid a real effect.
+
+**Class: AN ADMISSIBILITY MASK PUBLISHED BY THE PRODUCER AND APPLIED TO ONE SIBLING METRIC BUT NOT THE NEXT** —
+`_seq_geometry` returns `valid` and `pair_valid`; `_components` put the first on heading and never put the second on
+yaw-rate, under a docstring that said "never a re-derivation" (the GEOMETRY was shared; the REDUCTION was re-derived).
+It is C29's consequence (2) in an eval cell — *a mask that no caller uses* — and `D-FEASDEC-STOPSTEP-1`'s
+"`atan2(0,0) == 0` is a heading, not an undefined" one level up, in the metric instead of the path.
+
+**Why it survived for weeks, and the part worth keeping:** the contradiction was ON THE RECORD. The registry and the
+HF card both printed "TWO YAW-RATE NUMBERS DISAGREE IN SIGN AND BOTH ARE MEASURED", filed it as a *scope trap*, wrote
+down the correct HYPOTHESIS (near-stationary steps) — and kept the unmasked number as the family verdict. A
+disagreement in SIGN between two instruments on one metric is a DEFECT REPORT, not a scope note; the discriminating
+experiment (mask the pairs, re-read) cost minutes and was run only when a battery tripped over it (F10).
+⛔ And the feasibility lever "won" −80 % by removing, inside the PATH, the very jitter the METRIC was scoring — a
+lever and an instrument defect cancelling, read as skill.
+
+**Durable fix:** `_components` masks yaw-rate exactly as heading, and every `_paired_families` block stamps
+`yaw_rate_cell` (a key whose definition changed must name its definition); `taniteval/tests/
+test_refav1_components_yaw_mask.py` pins literal targets and goes RED on the historical defect and on three wrong
+masks. **Rule:** a metric built from a geometry that publishes a validity mask must use the mask the reference
+estimator uses, and must carry a known-value control on a stopped window (undefined → dropped, never scored).

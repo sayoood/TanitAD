@@ -1747,3 +1747,20 @@ measurements run first:
 
 The residual head is pre-registered for refcv7 in the meantime. If (a) holds and (b) does not
 vanish, the recommendation becomes: build it into refcv7.
+
+## 🔴 NEW ITEM (2026-09-26 ~15:30 Berlin) — the yaw-rate correction touches two things only the PI can change
+
+`RETR-2026-09-26-YAWMASK` (MEASURED, 0 GPU; register block `YAWMASK-2026-09-26`): the shared paired
+yaw-rate cell scored step pairs with no tangent. With the mask:
+- refcv3 @40,284 LATERAL goes **LOST (2/3) → WON (3/3)**; yaw-rate vs `ha0` goes +0.1700 →
+  **−0.0100 [−0.0168, −0.0037]**.
+- The replicate false-positive rate of `H-ESTIM-SEED-1` goes 6/42 = 14.3 % → **4/42 = 9.5 %**. The
+  rule stands.
+
+1. **The PUBLIC HF card `tanitad-refc-v3`** still says LATERAL LOST with the old yaw number.
+   - Republishing a public card is yours.
+   - DEFAULT if you say nothing: leave the card as is, and record the correction in the registry
+     (done) and on the leaderboard (done).
+2. **`CLAUDE.md:183`** quotes "6 of 42 … 14.3 %" inside the binding `H-ESTIM-SEED-1` rule.
+   - DEFAULT if you say nothing: CLAUDE.md is unchanged, and the register carries the correction.
+   - Say "update CLAUDE.md" and the Master Mind will annotate the line with 4/42 = 9.5 % and the RETR id.
