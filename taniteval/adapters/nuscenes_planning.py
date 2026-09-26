@@ -155,6 +155,29 @@ UNIAD_VEHICLE_CLASSES = ("car", "bus", "construction_vehicle", "bicycle", "motor
 #: category.json's ORDER — :func:`vad_category_index_audit` prints it on first contact.
 VAD_HUMAN_INDEX = frozenset(range(2, 9))
 VAD_VEHICLE_INDEX = frozenset(range(14, 24))
+#: VAD's INTENDED classes, selected by NAME so the answer cannot depend on category.json's ORDER.
+#: Pre-registered 2026-09-26 (…/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_VAD_NAME_BASED.md,
+#: sha256 3ca3f905…). Under the 32-entry lidarseg ordering VAD's literal index sets are exactly these
+#: two name families (W6's F10 — INHERITED), so on the metadata VAD itself used this reproduces it
+#: verbatim; on the 23-entry base metadata the index sets pick barriers and cones instead.
+VAD_PEDESTRIAN_PREFIX = "human.pedestrian."
+VAD_VEHICLE_PREFIX = "vehicle."
+
+
+def vad_target_by_name(cat: str) -> int:
+    """VAD occupancy target by category NAME: 1 = vehicle map, 2 = pedestrian map, 0 = not an agent.
+
+    Replaces ``1 if idx in VAD_VEHICLE_INDEX else (2 if idx in VAD_HUMAN_INDEX else 0)``, whose answer
+    depended on the ORDER of category.json. Applied AFTER the unchanged ``NAME_MAPPING ∈ DET_CLASSES``
+    filter, so the effective set is 12 categories: 4 pedestrians (adult, child, construction_worker,
+    police_officer) and 8 vehicles (car, truck, bus.bendy, bus.rigid, trailer, construction,
+    motorcycle, bicycle). ⛔ Barriers and traffic cones are detection classes but in NEITHER map.
+    """
+    if cat.startswith(VAD_VEHICLE_PREFIX):
+        return 1
+    if cat.startswith(VAD_PEDESTRIAN_PREFIX):
+        return 2
+    return 0
 #: VAD_base_e2e.py:11 point_cloud_range -> CustomObjectRangeFilter bev range (x_min, y_min, x_max, y_max).
 VAD_BEV_RANGE = (-15.0, -30.0, 15.0, 30.0)
 
@@ -1139,8 +1162,8 @@ def occupancy_vad(meta: Meta, sample: dict) -> np.ndarray:
         x_min, y_min, x_max, y_max = VAD_BEV_RANGE
         if not (x0 > x_min and y0 > y_min and x0 < x_max and y0 < y_max):
             continue
-        idx = meta.cat_index.get(cat, -1)
-        target = 1 if idx in VAD_VEHICLE_INDEX else (2 if idx in VAD_HUMAN_INDEX else 0)
+        # by NAME, not by category.json INDEX -- see vad_target_by_name (pre-registered 2026-09-26)
+        target = vad_target_by_name(cat)
         if target == 0:
             continue
         w, l = float(a["size"][0]), float(a["size"][1])
@@ -1185,8 +1208,11 @@ def vad_category_order_ok(audit: dict) -> tuple[bool, str]:
     direction dropping most road users predicts.
 
     ⭐ This function existed only as ``vad_category_index_audit``, which the benchmark NEVER CALLED —
-    the eighth "built, tested, unreachable from its caller" instance. It is now the gate: the scorer
-    calls it for the VAD pipeline and REFUSES collision on a False.
+    the eighth "built, tested, unreachable from its caller" instance. From 55aa747 it REFUSED VAD
+    collision on a False; since the pre-registered name-based fix PASSED its external gate
+    (GT-collision floor 1.035 / 0.987 / 0.938 % vs PARA-Drive Tab. 8's 1.02 / 0.96 / 0.91 %, all within
+    3 %) selection is BY NAME (:func:`vad_target_by_name`) and this is an AUDIT, recorded on every
+    VAD run: it says whether VAD's own index-based code would have been right on this metadata.
 
     True iff: no index is out of range, the pedestrian set selects ONLY ``human.*`` names and ALL of
     them, and the vehicle set selects ONLY ``vehicle.*`` names and ALL of them.
@@ -1207,10 +1233,11 @@ def vad_category_order_ok(audit: dict) -> tuple[bool, str]:
         bad.append(f"vehicles MISSED {audit['vehicle_names_not_selected']}")
     if not bad:
         return True, ""
-    return False, ("VAD collision REFUSED: its literal category indices ({2..8} pedestrian, "
+    return False, ("VAD's INDEX-based selection would be WRONG here: its literal category indices ({2..8} pedestrian, "
                    "{14..23} vehicle) assume the 32-entry lidarseg category.json ordering, but this "
                    f"one has {audit['n_categories']} entries — " + "; ".join(bad)
-                   + ". A grid built from them holds the wrong objects. L2 is unaffected.")
+                   + ". A grid built from them would hold the wrong objects; the harness selects by "
+                   "NAME instead (vad_target_by_name), so this is recorded, not refused.")
 
 
 # --------------------------------------------------------------------------- #
@@ -1559,15 +1586,27 @@ def evaluate_arms(meta: Meta, scene_names: Sequence[str], protocol: str,
     vad_audit, coll_refusal = None, ""
     if tag.pipeline is Pipeline.VAD:
         raw_audit = vad_category_index_audit(meta)
-        ok, coll_refusal = vad_category_order_ok(raw_audit)
-        vad_audit = {"order_ok": ok, "refusal_reason": coll_refusal or None,
+        order_ok, order_reason = vad_category_order_ok(raw_audit)
+        # ⭐ Selection is BY NAME (vad_target_by_name), so category.json's ORDER no longer decides which
+        # objects are in the grid. The order audit is still RECORDED -- it says whether VAD's own
+        # index-based code would have been right on this metadata -- but it no longer refuses.
+        names = [c["name"] for c in meta.t.get("category", [])]
+        sel = {n: vad_target_by_name(n) for n in names if NAME_MAPPING.get(n) in DET_CLASSES}
+        peds = sorted(n for n, t in sel.items() if t == 2)
+        vehs = sorted(n for n, t in sel.items() if t == 1)
+        if not peds or not vehs:                   # a degenerate category.json: refuse, never guess
+            coll_refusal = (f"VAD collision REFUSED: the name rule selects {len(peds)} pedestrian and "
+                            f"{len(vehs)} vehicle categories on this category.json "
+                            f"({len(names)} entries) -- a grid missing a whole map is not VAD's metric")
+        vad_audit = {"selection": "by_name (vad_target_by_name; pre-registered 2026-09-26)",
+                     "selected_pedestrians": peds, "selected_vehicles": vehs,
+                     "refusal_reason": coll_refusal or None,
+                     "index_order_ok": order_ok,
+                     "index_order_note": (order_reason or "VAD's literal index sets would have selected the "
+                                                          "intended classes on this category.json"),
                      "n_categories": raw_audit["n_categories"],
-                     "indices_out_of_range": raw_audit["indices_out_of_range"],
-                     "pedestrian_set_selects": {str(i): v for i, v in raw_audit["human_index_2_8"].items()},
-                     "vehicle_set_selects": {str(i): v for i, v in raw_audit["vehicle_index_14_23"].items()},
-                     "pedestrians_missed": raw_audit["human_names_not_selected"],
-                     "vehicles_missed": raw_audit["vehicle_names_not_selected"]}
-        if not ok:
+                     "indices_out_of_range": raw_audit["indices_out_of_range"]}
+        if coll_refusal:
             occ = None
     scored = np.array([r[key] for r in rows], bool)
     cmds = []

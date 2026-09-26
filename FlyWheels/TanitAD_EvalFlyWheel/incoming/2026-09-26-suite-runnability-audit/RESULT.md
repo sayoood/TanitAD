@@ -517,3 +517,76 @@ unchanged** (STOP `6.590993453736307`, CV `0.8181846342993767`). The pre-fix run
 or a name-based reimplementation. ⛔ Not by guessing the 32-entry order — that assumption IS the bug.
 ⭐ Whichever route: **it must reproduce PARA-Drive's 0.96 % VAD GT-collision floor** before any VAD
 collision number is quoted.
+
+## §18 ⭐ VAD collision restored BY NAME — the pre-registered external gate PASSED (within 3 %)
+
+Master Mind, RULE ZERO: the cheapest lever first — no download, no PI decision.
+**Pre-registered BEFORE any code change:** `raw/nuscenes/PREREG_VAD_NAME_BASED.md`, sha256
+`3ca3f9056ca230cbe8096e1b6f6cc019a02355f27f962b6f55df7fb1ddfa71ea`, staged while the adapter's worktree blob
+still equalled the landed `55aa747` blob (`a2062ed0…`) — the prereg provably predates the code.
+
+**Change:** `occupancy_vad` selects agents by NAME (`vad_target_by_name`: `vehicle.*` → vehicle map,
+`human.pedestrian.*` → pedestrian map) instead of by `category.json` INDEX; every other filter unchanged.
+
+**Gate C — the external one — PASS**, run `20260926T133942Z-nuscenes_ol-none-2caba6`, `nuScenes_OL_L2_stp3`, 5,119 samples, against the
+banked primary **PARA-Drive Table 8 (p.8), VAD-protocol GT row**:
+
+| horizon | ours | PARA-Drive | ratio | band ±25 % |
+|---|---|---|---|---|
+| 1.0 s | **1.0354 %** | 1.02 % | 1.015 | IN |
+| 2.0 s | **0.9865 %** | 0.96 % | 1.028 | IN |
+| 3.0 s | **0.9377 %** | 0.91 % | 1.030 | IN |
+| avg | **0.9865 %** | 0.96 % | 1.028 | IN |
+
+and the published shape **1 s > 2 s > 3 s** holds. ⭐ **Within 1.5–3 % at every horizon** — far inside the
+±25 % band, whose width was fixed in advance from our UniAD path's measured +10…+23 % deviation. The
+pre-fix index-based value, **0.359 %**, sat far outside it.
+
+**Gate A PASS** (name rule ≡ index rule slot-for-slot on the ordering VAD's indices assume). **Gate B
+PASS** — on the real 23-entry file the rule selects exactly the pre-registered 12: pedestrians adult,
+child, construction_worker, police_officer; vehicles car, truck, bus.bendy, bus.rigid, trailer,
+construction, motorcycle, bicycle; ⛔ barrier and traffic cone excluded. **Gate D PASS** — L2 bit-identical
+(STOP `6.590993453736307`, CV `0.8181846342993767`). Mutation arm: putting the index rule back reproduces
+the broken selection (barriers/cones in, adult pedestrians and cars out). **67 nuScenes tests pass.**
+
+⇒ Per the pre-registered outcome table, the refusal is **lifted**: the VAD collision column is computed by
+name, and its GT floor is quotable **with the caveat that our reproduction of PARA-Drive's GT floors is
+banded, not bit-exact**. The index-order audit is still written to every run
+(`controls.vad_category_audit.index_order_ok = False` on the base metadata, with the reason) — it now
+answers *"would VAD's own code have been right here?"*, not *"may we score?"*.
+
+⭐ **An INHERITED claim, upgraded by an external measurement:** W6's F10 (the lidarseg ordering puts exactly
+the 7 pedestrian and 10 vehicle names at 2..8 and 14..23) was never re-verified — but the name rule built
+on it reproduces the number VAD's index-based code produced on that ordering, to 3 %.
+
+### ⚠️ The next question this sharpens — UniAD
+VAD now reproduces PARA-Drive to ~3 %; our UniAD-protocol GT floor sits **+10 / +12 / +23 / +15 %** above
+PARA-Drive's UniAD row (0.385 / 0.424 / 0.430 / 0.413 vs 0.35 / 0.38 / 0.35 / 0.36). The harness demonstrably
+CAN match PARA-Drive closely, so the UniAD gap is more likely a real difference in the UniAD path than a
+reporting quirk. Not investigated here — named as the next lever.
+
+## §19 The fetch script now actually COMPARES — by the object's own S3 ETag
+
+Master Mind: *"a fetched-but-never-compared checksum is the same unreachable-guard class as
+`vad_category_index_audit`"*. It was: the script downloaded `md5.checksum` and compared nothing against it —
+and that file is wrong for at least one object (§17).
+
+* **`tools/verify_s3_etag.py`** (new, general — not nuScenes-specific): single-part ETag = plain md5;
+  multipart = `md5(md5(part_1)‖…‖md5(part_n))-n`, trying the part sizes uploaders use and keeping only those
+  whose COUNT matches the suffix. ⭐ A failure to reconstruct is **INCONCLUSIVE**, never MATCH and never
+  MISMATCH — it is not evidence about the bytes. Exit 0 / 1 / 3.
+* **7 tests, non-circular by construction:** the positive and negative controls use the LIVE S3 ETag as a
+  LITERAL (S3 computed it, not us); ⛔ one flipped bit mid-file must read MISMATCH (streamed through a
+  wrapper — no 0.46 GB copy); the publisher's `md5.checksum` value must NOT verify the served object; the
+  single-part branch uses the textbook md5 constants of `b""` and `b"abc"`.
+* **Wired into `fetch_nuscenes_after_tou.sh`:** per file, HEAD the object for its ETag, verify, **exit 1 and
+  refuse on MISMATCH**, record `s3_etag` + `etag_verdict` in the receipt. It refuses to start at all if the
+  verifier is missing. `md5.checksum` is kept for reference only and says so.
+
+**Both branches exercised in the REAL script, not only in unit tests:**
+* **positive** — the authorised meta tier re-run (curl no-ops on a complete file, MEASURED exit 0):
+  `etag "fd4ea76d…022-56" -> MATCH (8 MiB parts)`; the receipt now carries `"etag_verdict": "MATCH"`;
+* **negative** — a scratch copy with a stand-in verifier reporting MISMATCH: **exit 1**, *"REFUSING to mark
+  it verified"*, **0** verified receipt entries — while the real receipt stayed at MATCH.
+⭐ The Terms-of-Use refusal still fires FIRST (rc 2, no network touched).
+⇒ **The 45 GB `planning` tier is now content-verifiable per archive** before anyone relies on it.

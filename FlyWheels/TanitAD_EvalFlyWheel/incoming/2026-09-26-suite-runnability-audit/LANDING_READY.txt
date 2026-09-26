@@ -139,3 +139,35 @@ taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20
 taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/GT.csv
 taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/scores/STOP.csv
 taniteval/results/bench/nuscenes_ol/val/20260926T132840Z-nuscenes_ol-none-fcfc20/summary.json
+
+## 2026-09-26 batch 8 -- VAD collision BY NAME (pre-registered gate PASSED, within 3% of PARA-Drive) + the fetch script now COMPARES by S3 ETag
+
+# Prereg sha256 3ca3f905... staged BEFORE the code change. Gate C: GT floor 1.035/0.987/0.938% vs PARA-Drive
+# 1.02/0.96/0.91%. Gates A,B,D pass; 67 nuScenes tests. ETag verifier: 7 tests; both branches run in the real
+# script (MATCH on the real archive; exit 1 + REFUSE on a deliberate mismatch). EXCLUDES W8 files (cli.py,
+# navsim/benchmark.py, contract.py are W8 in-progress edits -- not mine, not staged).
+taniteval/adapters/nuscenes_planning.py
+taniteval/tests/test_nuscenes_vad_category_gate.py
+tools/verify_s3_etag.py
+tools/tests/test_verify_s3_etag.py
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/code/fetch_nuscenes_after_tou.sh
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/RESULT.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/RECEIPT_meta.json
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_VAD_NAME_BASED.md
+FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-26-suite-runnability-audit/raw/nuscenes/PREREG_VAD_NAME_BASED.sha256
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/artifacts/STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/bench_run.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/CV.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/GT.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/criteria/STOP.txt
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/bench.log
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/benchreport.log
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_CV.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_GT.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/raw/criteria_STOP.json
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/CV.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/GT.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/scores/STOP.csv
+taniteval/results/bench/nuscenes_ol/val/20260926T133942Z-nuscenes_ol-none-2caba6/summary.json

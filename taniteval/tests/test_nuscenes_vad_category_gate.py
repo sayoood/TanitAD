@@ -1,4 +1,11 @@
-"""The VAD collision column must REFUSE when VAD's literal category indices select the wrong classes.
+"""VAD collision selects agents by NAME, and the index-order audit is recorded — not trusted.
+
+HISTORY, both steps MEASURED 2026-09-26:
+1. ``55aa747`` — the index-based grid was REFUSED (collision UNAVAILABLE) on the 23-entry base metadata.
+2. The pre-registered name-based fix (``…/raw/nuscenes/PREREG_VAD_NAME_BASED.md``, sha256 3ca3f905…)
+   PASSED its external gate: VAD-protocol GT-collision floor **1.035 / 0.987 / 0.938 %** at 1/2/3 s vs
+   PARA-Drive Table 8's **1.02 / 0.96 / 0.91 %** — within 3 % at every horizon, same decreasing shape.
+   Selection is now ``vad_target_by_name``; the tests below pin it AND keep the refusal machinery honest.
 
 ⛔ WHY (MEASURED 2026-09-26, the harness's first contact with real nuScenes metadata). VAD selects
 colliding agents by raw ``category.json`` INDEX — ``{2..8}`` pedestrian, ``{14..23}`` vehicle — which
@@ -92,7 +99,60 @@ def test_the_REAL_base_metadata_is_refused_and_says_why():
     assert audit["indices_out_of_range"] == [23]
     assert set(audit["human_names_not_selected"]) == {"human.pedestrian.adult", "human.pedestrian.child"}
     assert "vehicle.truck" in audit["vehicle_names_not_selected"]
-    assert "pedestrians MISSED" in reason and "L2 is unaffected" in reason
+    assert "pedestrians MISSED" in reason and "selects by NAME" in reason
+
+
+# ------------------------------------------- the name rule (pre-registered gates A and B)
+
+#: the pre-registered effective set — a LITERAL, written before the run (PREREG §"Derived effective set")
+EXPECTED_PEDESTRIANS = ["human.pedestrian.adult", "human.pedestrian.child",
+                        "human.pedestrian.construction_worker", "human.pedestrian.police_officer"]
+EXPECTED_VEHICLES = ["vehicle.bicycle", "vehicle.bus.bendy", "vehicle.bus.rigid", "vehicle.car",
+                     "vehicle.construction", "vehicle.motorcycle", "vehicle.trailer", "vehicle.truck"]
+
+
+def _effective(names, rule):
+    """Apply the UNCHANGED detection-class filter, then a target rule; return (peds, vehs)."""
+    sel = {n: rule(i, n) for i, n in enumerate(names) if NP.NAME_MAPPING.get(n) in NP.DET_CLASSES}
+    return sorted(n for n, t in sel.items() if t == 2), sorted(n for n, t in sel.items() if t == 1)
+
+
+def _index_rule(i, _n):
+    return 1 if i in NP.VAD_VEHICLE_INDEX else (2 if i in NP.VAD_HUMAN_INDEX else 0)
+
+
+def _name_rule(_i, n):
+    return NP.vad_target_by_name(n)
+
+
+def test_GATE_A_name_rule_equals_index_rule_on_the_ordering_vad_assumed():
+    """On the ordering VAD's indices assume, the name rule reproduces verbatim VAD slot for slot."""
+    names = _intended_32()
+    for i, n in enumerate(names):
+        assert _index_rule(i, n) == _name_rule(i, n), f"slot {i} {n!r} disagrees"
+
+
+@pytest.mark.skipif(not os.path.exists(REAL_CATEGORY), reason="nuScenes metadata not on this box")
+def test_GATE_B_real_metadata_selects_exactly_the_preregistered_12():
+    names = [c["name"] for c in json.load(open(REAL_CATEGORY, encoding="utf-8"))]
+    peds, vehs = _effective(names, _name_rule)
+    assert peds == EXPECTED_PEDESTRIANS
+    assert vehs == EXPECTED_VEHICLES
+    assert "movable_object.barrier" not in peds + vehs
+    assert "movable_object.trafficcone" not in peds + vehs
+
+
+@pytest.mark.skipif(not os.path.exists(REAL_CATEGORY), reason="nuScenes metadata not on this box")
+def test_MUTATION_the_index_rule_on_the_same_file_is_the_bug():
+    """⛔ Deliberate regression: put the INDEX rule back and the selection must be the broken one —
+    barriers and cones in, adult/child pedestrians and the common vehicles out. If this ever reads
+    identical to the name rule, the fix is not what is making the difference."""
+    names = [c["name"] for c in json.load(open(REAL_CATEGORY, encoding="utf-8"))]
+    peds_i, vehs_i = _effective(names, _index_rule)
+    assert (peds_i, vehs_i) != _effective(names, _name_rule)
+    assert "human.pedestrian.adult" not in peds_i
+    assert "vehicle.car" not in vehs_i
+    assert "movable_object.barrier" in vehs_i or "movable_object.trafficcone" in vehs_i
 
 
 # ------------------------------------------------------------------ the kernel

@@ -26,18 +26,33 @@ set -euo pipefail
 ROOT="${TANITAD_NUSCENES_HOME:-D:/Archive/devbox-C/nuscenes}"
 BASE="https://motional-nuscenes.s3.amazonaws.com"
 CURL=(curl -sS --fail --ssl-no-revoke -L -C -)          # --ssl-no-revoke: dev-box TLS proxy
+# ⭐ CONTENT verification against each S3 object's OWN ETag (multipart-aware), added 2026-09-26.
+# NOT md5.checksum: MEASURED, the bucket's md5.checksum does not match the served trainval_meta object
+# (537d3954... received vs 3eee6988... listed) while the recomputed multipart ETag matched the live one.
+REPO="${TANITAD_REPO:-$(cd "$(dirname "$0")/../../../../.." && pwd)}"
+VERIFY="$REPO/tools/verify_s3_etag.py"
+PY="${TANITAD_PY:-C:/Users/Admin/venvs/tanitad/Scripts/python.exe}"
+[ -x "$PY" ] || PY=python
 
 if [ "${1:-}" != "--i-accepted-the-nuscenes-terms-of-use" ] || [ -z "${2:-}" ]; then
   echo "REFUSED: this script only runs for a human who has accepted the nuScenes Terms of Use." >&2
-  echo "  bash $0 --i-accepted-the-nuscenes-terms-of-use \"<your name>\" [pilot|planning|maps|sweeps]" >&2
+  echo "  bash $0 --i-accepted-the-nuscenes-terms-of-use \"<your name>\" [meta|pilot|planning|maps|sweeps]" >&2
   exit 2
 fi
 WHO="$2"; TIER="${3:-planning}"
+# refuse BEFORE any byte is fetched if the verifier is unreachable -- a download that cannot be
+# content-checked must not be allowed to look checked
+[ -f "$VERIFY" ] || { echo "REFUSED: content verifier missing at $VERIFY" >&2; exit 2; }
 
 # key<TAB>expected bytes (MEASURED 2026-09-19 by bucket LIST, cross-checked by HEAD)
 PILOT="public/v1.0/v1.0-mini.tgz	4168148189
 public/v1.0/nuScenes-map-expansion-v1.3.zip	398535531"
 MAPS="public/v1.0/nuScenes-map-expansion-v1.3.zip	398535531"
+# META: the 0.46 GB metadata ALONE. Added 2026-09-26 so the harness can be validated end to end
+# (GT-collision floor, STOP + CV floors, sample counts 6,019/5,119/4,819, the VAD category audit)
+# BEFORE the 44.9 GB keyframe pull -- "planning" bundles both and offered no cheaper first step.
+META="public/v1.0/v1.0-trainval_meta.tgz	461678030"
+
 PLANNING="public/v1.0/v1.0-trainval_meta.tgz	461678030
 public/v1.0/v1.0-trainval01_keyframes.tgz	4529954279
 public/v1.0/v1.0-trainval02_keyframes.tgz	4272745444
@@ -63,6 +78,7 @@ public/v1.0/v1.0-trainval10_blobs_camera.tgz	27323394106"
 case "$TIER" in
   pilot)    LIST="$PILOT" ;;
   maps)     LIST="$MAPS" ;;
+  meta)     LIST="$META" ;;
   planning) LIST="$PLANNING" ;;
   sweeps)   LIST="$SWEEPS" ;;
   *) echo "unknown tier $TIER" >&2; exit 2 ;;
@@ -85,13 +101,26 @@ while IFS=$'\t' read -r KEY WANT; do
     exit 1
   fi
   MD5=$(md5sum "$OUT" | cut -d' ' -f1)
+  ETAG=$(curl -sSI --ssl-no-revoke "$BASE/$KEY" | tr -d '\r' | awk 'tolower($1)=="etag:"{print $2}') || ETAG=""
+  if [ -z "$ETAG" ]; then
+    ETAG='""'; VRC=3; VERDICT="INCONCLUSIVE: no ETag from HEAD"
+  else
+    VRC=0; VERDICT=$("$PY" "$VERIFY" "$OUT" "$ETAG") || VRC=$?
+  fi
+  echo "   etag $ETAG -> $VERDICT"
+  if [ "$VRC" -eq 1 ]; then
+    echo "CONTENT MISMATCH for $KEY against its own S3 ETag — REFUSING to mark it verified" >&2
+    exit 1
+  fi
   [ $first -eq 1 ] || printf ',\n' >> "$RECEIPT"
-  printf '  {"key": "%s", "bytes": %s, "md5": "%s"}' "$KEY" "$GOT" "$MD5" >> "$RECEIPT"
+  printf '  {"key": "%s", "bytes": %s, "md5": "%s", "s3_etag": %s, "etag_verdict": "%s"}' \
+         "$KEY" "$GOT" "$MD5" "$ETAG" "${VERDICT%%:*}" >> "$RECEIPT"
   first=0
 done <<< "$LIST"
 printf '\n],\n' >> "$RECEIPT"
 
-# the bucket ships its own md5 list; fetch it and leave it beside the archives for verification
+# the bucket ships its own md5 list. ⚠️ KEPT FOR REFERENCE ONLY -- it is NOT the verification: MEASURED
+# 2026-09-26 it does not describe the served trainval_meta object. The per-file s3_etag verdicts above are.
 "${CURL[@]}" -o "$ROOT/archives/md5.checksum" "$BASE/public/v1.0/md5.checksum" || true
 printf ' "md5_checksum_file": "archives/md5.checksum",\n' >> "$RECEIPT"
 printf ' "licence": "CC BY-NC-SA 4.0 (research-only, share-alike; derivatives inherit NC+SA). The\\n' >> "$RECEIPT"
